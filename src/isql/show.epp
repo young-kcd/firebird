@@ -4034,14 +4034,14 @@ static processing_state show_generators(const SCHAR* object)
 			{
 				isqlGlob.printf("Generator %s, current value is %" QUADFORMAT "d%s",
 						 GEN.RDB$GENERATOR_NAME,
-						 *((ISC_INT64*)&outBuffer[off]),
+						 *((ISC_INT64*) &outBuffer[off]),
 						 NEWLINE);
 			}
 			else
 			{
 				isqlGlob.printf("Generator %s, current value is %ld%s",
 						 GEN.RDB$GENERATOR_NAME,
-						 *((SLONG*)&outBuffer[off]),
+						 *((SLONG*) &outBuffer[off]),
 						 NEWLINE);
 			}
 		}
@@ -5367,7 +5367,7 @@ static processing_state show_users()
 	unsigned off = outMetadata->getOffset(fbStatus, 0);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
-	vary* my_user = (vary*)&outBuffer[off];
+	vary* my_user = (vary*) &outBuffer[off];
 
 	const char* getuser = isqlGlob.major_ods < ODS_VERSION10 ?
 	    "select user from rdb$database" : "select current_user from rdb$database";

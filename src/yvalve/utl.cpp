@@ -185,9 +185,7 @@ void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 	// Open the blob.  If it failed, what the hell -- just return failure
 	IBlob *blob = att->createBlob(status, tra, blobId);
 	if (!status->isSuccess())
-	{
 		return;
-	}
 
 	// Copy data from file to blob.  Make up boundaries at end of line.
 	TEXT buffer[512];
@@ -199,24 +197,27 @@ void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 		const SSHORT c = fgetc(file);
 		if (feof(file))
 			break;
+
 		*p++ = static_cast<TEXT>(c);
-		if ((c != '\n') && p < buffer_end)
+
+		if (c != '\n' && p < buffer_end)
 			continue;
+
 		const SSHORT l = p - buffer;
+
 		blob->putSegment(status, l, buffer);
 		if (!status->isSuccess())
 		{
 			blob->close(&temp);
 			return;
 		}
+
 		p = buffer;
 	}
 
 	const SSHORT l = p - buffer;
 	if (l != 0)
-	{
 		blob->putSegment(status, l, buffer);
-	}
 
 	blob->close(&temp);
 	return;
@@ -238,9 +239,7 @@ void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 
 	IBlob *blob = att->openBlob(status, tra, blobId);
 	if (!status->isSuccess())
-	{
 		return;
-	}
 
 	// Copy data from blob to scratch file
 
@@ -374,9 +373,7 @@ FB_BOOLEAN FB_CARG UtlInterface::editBlob(Firebird::IStatus* status, ISC_QUAD* b
 	}
 
 	if (!status->isSuccess() && status->get()[1] != isc_segstr_eof)
-	{
 		isc_print_status(status->get());
-	}
 
 	return rc;
 }
@@ -396,7 +393,9 @@ void FB_CARG UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
 	{
 		ex.stuffException(status);
 	}
-	fclose(file);
+
+	if (file)
+		fclose(file);
 }
 
 void FB_CARG UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
@@ -424,7 +423,9 @@ void FB_CARG UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
 	{
 		ex.stuffException(status);
 	}
-	fclose(file);
+
+	if (file)
+		fclose(file);
 }
 
 void UtlInterface::version(IStatus* status, IAttachment* att,
@@ -450,12 +451,12 @@ void UtlInterface::version(IStatus* status, IAttachment* att,
 		const TEXT* implementations = 0;
 		const UCHAR* dbis = NULL;
 		bool redo;
-		do {
+
+		do
+		{
 			att->getInfo(status, sizeof(info), info, buf_len, buf);
 			if (!status->isSuccess())
-			{
 				return;
-			}
 
 			const UCHAR* p = buf;
 			redo = false;
@@ -464,7 +465,9 @@ void UtlInterface::version(IStatus* status, IAttachment* att,
 			{
 				const UCHAR item = *p++;
 				const USHORT len = static_cast<USHORT>(gds__vax_integer(p, 2));
+
 				p += 2;
+
 				switch (item)
 				{
 				case isc_info_firebird_version:
@@ -495,6 +498,7 @@ void UtlInterface::version(IStatus* status, IAttachment* att,
 				default:
 					(Arg::Gds(isc_random) << "Invalid info item").raise();
 				}
+
 				p += len;
 			}
 
@@ -513,13 +517,12 @@ void UtlInterface::version(IStatus* status, IAttachment* att,
 
 		UCHAR diCount = 0;
 		if (dbis)
-		{
 			diCount = *dbis++;
-		}
 
 		string s;
 
 		UCHAR diCurrent = 0;
+
 		for (UCHAR level = 0; level < count; ++level)
 		{
 			const USHORT implementation_nr = *implementations++;
@@ -527,29 +530,29 @@ void UtlInterface::version(IStatus* status, IAttachment* att,
 			const int l = *versions++; // it was UCHAR
 			const TEXT* implementation_string;
 			string dbi_string;
+
 			if (dbis && dbis[diCurrent * 6 + 5] == level)
 			{
 				dbi_string = DbImplementation::pick(&dbis[diCurrent * 6]).implementation();
 				implementation_string = dbi_string.c_str();
+
 				if (++diCurrent >= diCount)
-				{
 					dbis = NULL;
-				}
 			}
 			else
 			{
 				dbi_string = DbImplementation::fromBackwardCompatibleByte(implementation_nr).implementation();
 				implementation_string = dbi_string.nullStr();
+
 				if (!implementation_string)
-				{
 					implementation_string = "**unknown**";
-				}
 			}
+
 			const TEXT* class_string;
+
 			if (impl_class_nr >= FB_NELEM(impl_class) || !(class_string = impl_class[impl_class_nr]))
-			{
 				class_string = "**unknown**";
-			}
+
 			s.printf("%s (%s), version \"%.*s\"", implementation_string, class_string, l, versions);
 
 			callback->callback(s.c_str());
@@ -626,6 +629,7 @@ YAttachment* FB_CARG UtlInterface::executeCreateDatabase(
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
+		return NULL;
 	}
 }
 
@@ -1656,6 +1660,7 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 		isc_print_status(st.get());
 		return FB_FAILURE;
 	}
+
 	return FB_SUCCESS;
 }
 
@@ -1723,6 +1728,7 @@ static int any_text_dump(ISC_QUAD* blob_id,
 		isc_print_status(st.get());
 		return FB_FAILURE;
 	}
+
 	return FB_SUCCESS;
 }
 
@@ -1816,9 +1822,7 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 
 	int rc = UtlInterfacePtr()->editBlob(&st, blob_id, att, tra, field_name);
 	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
-	{
 		isc_print_status(st.get());
-	}
 
 	return rc;
 }
@@ -1928,6 +1932,7 @@ static int any_text_load(ISC_QUAD* blob_id,
 		isc_print_status(st.get());
 		return FB_FAILURE;
 	}
+
 	return FB_SUCCESS;
 }
 

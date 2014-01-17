@@ -466,20 +466,20 @@ void FB_CARG Why::UtlInterface::getPerfCounters(Firebird::IStatus* status, Fireb
 		for (char* nm = strtok_r(set, delim, &save); nm; nm = strtok_r(NULL, delim, &save))
 		{
 			Firebird::NoCaseString name(nm);
+
 			for (unsigned i = 0; i < TOTAL_COUNTERS; ++i)
 			{
 				if (name == knownCounters[i].name)
 				{
 					if (cntLink[i] != ~0u)
-					{
 						(Firebird::Arg::Gds(isc_random) << "Duplicated name").raise();	//report name & position
-					}
+
 					cntLink[i] = n++;
 					typeMask |= knownCounters[i].type;
+
 					if (knownCounters[i].type == CNT_DB_INFO)
-					{
 						*pinfo++ = knownCounters[i].code;
-					}
+
 					goto found;
 				}
 			}
@@ -505,9 +505,11 @@ found:		;
 			{
 				if (cntLink[i] == ~0u)
 					continue;
+
 				if (knownCounters[i].type == CNT_TIMER)
 				{
 					clock_t v = 0;
+
 					switch(knownCounters[i].code)
 					{
 					case CNT_TIME_REAL:
@@ -523,6 +525,7 @@ found:		;
 						fb_assert(false);
 						break;
 					}
+
 					counters[cntLink[i]] = v;
 				}
 			}
@@ -534,15 +537,15 @@ found:		;
 			UCHAR buffer[BUFFER_LARGE];
 			att->getInfo(status, pinfo - info, info, sizeof(buffer), buffer);
 			if (!status->isSuccess())
-			{
 				return;
-			}
 
 			const UCHAR* p = buffer;
+
 			while (true)
 			{
 				SINT64 v = 0;
 				UCHAR ipb = *p++;
+
 				switch (ipb)
 				{
 				case isc_info_reads:
@@ -576,9 +579,8 @@ found:		;
 					if (knownCounters[i].type == CNT_DB_INFO && knownCounters[i].code == ipb)
 					{
 						if (cntLink[i] != ~0u)
-						{
 							counters[cntLink[i]] = v;
-						}
+
 						break;
 					}
 				}

@@ -4970,9 +4970,10 @@ static void release_statement( Rsr** statement)
 		fb_assert(transaction);
 
 		size_t pos;
-		if (!transaction->rtr_cursors.find(*statement, pos))
+		if (transaction->rtr_cursors.find(*statement, pos))
+			transaction->rtr_cursors.remove(pos);
+		else
 			fb_assert(false);
-		transaction->rtr_cursors.remove(pos);
 	}
 
 	delete (*statement)->rsr_select_format;
