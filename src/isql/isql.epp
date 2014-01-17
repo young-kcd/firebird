@@ -1978,7 +1978,7 @@ static processing_state add_row(TEXT* tabname)
 			return (SKIP);
 
 		unsigned i = n_cols;
-		while (--i >= 0)
+		while (i-- > 0)
 		{
 			if (colnumber[i] == ~0u)
 			{
@@ -3174,7 +3174,11 @@ static processing_state bulk_insert_hack(const char* command)
 		if (M__trans)
 		{
 			if (commit_failureM)
+			{
 				M__trans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					M__trans = NULL;
+			}
 			else
 				commit_trans(&M__trans);
 		}
@@ -3182,7 +3186,11 @@ static processing_state bulk_insert_hack(const char* command)
 		if (D__trans)
 		{
 			if (commit_failureD)
+			{
 				D__trans->rollback(fbStatus);
+				if (fbStatus->isSuccess())
+					D__trans = NULL;
+			}
 			else
 				commit_trans(&D__trans);
 		}
@@ -4375,7 +4383,8 @@ static processing_state end_trans()
 						// Commit failed, so roll back anyway
 						ret = FAIL;
 					}
-					M__trans = NULL;
+					else
+						M__trans = NULL;
 				}
 			}
 			else
@@ -4386,10 +4395,9 @@ static processing_state end_trans()
 				{
 					M__trans->rollback(fbStatus);
 					if (ISQL_errmsg(fbStatus))
-					{
 						ret = FAIL;
-					}
-					M__trans = NULL;
+					else
+						M__trans = NULL;
 				}
 			}
 		}
@@ -4408,10 +4416,9 @@ static processing_state end_trans()
 				STDERROUT(infobuf);
 				M__trans->rollback(fbStatus);
 				if (ISQL_errmsg(fbStatus))
-				{
 					ret = FAIL;
-				}
-				M__trans = NULL;
+				else
+					M__trans = NULL;
 			}
 		}
 	}
@@ -4422,10 +4429,9 @@ static processing_state end_trans()
 	{
 		D__trans->commit(fbStatus);
 		if (ISQL_errmsg(fbStatus))
-		{
 			ret = FAIL;
-		}
-		D__trans = NULL;
+		else
+			D__trans = NULL;
 	}
 	return ret;
 }
