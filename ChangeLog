@@ -1,3 +1,41 @@
+ 2014-01-17 15:05  asfernandes 
+   M src/isql/show.epp
+   M src/remote/server/server.cpp
+   M src/yvalve/perf.cpp
+   M src/yvalve/utl.cpp
+Misc. and fixes.
+
+ 2014-01-17 14:53  dimitr 
+   M src/jrd/opt.cpp
+Placed booleans closer to the retrieval for limited navigational scans. Hopefully, this shouldn't affect anything else.
+
+ 2014-01-17 14:17  alexpeshkoff 
+   M src/jrd/blb_proto.h
+Cleanup
+
+ 2014-01-17 14:09  alexpeshkoff 
+   M src/isql/isql.epp
+Misc postfixes for ISQL, thanks to Adriano
+
+ 2014-01-17 13:14  alexpeshkoff 
+   M src/remote/server/server.cpp
+misc
+
+ 2014-01-17 12:33  alexpeshkoff 
+   M src/dsql/dsql.cpp
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed CORE-4286: "Statement already has a cursor assigned" error when trying to execute another SQL statement using different cursor name. Moved method setCursorName() from IStatement to IResultSet - it was my fault when splitting cursor from statement.
+
+ 2014-01-17 12:19  dimitr 
+   M src/dsql/ExprNodes.h
+Fixed CORE-4318: Predicates involving PSQL variables/parameters are not pushed inside the aggregation.
+
  2014-01-16 14:52  asfernandes 
    M src/common/classes/TempFile.cpp
    M src/gpre/gpreswi.h
