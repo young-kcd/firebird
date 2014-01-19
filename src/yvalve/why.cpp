@@ -848,19 +848,14 @@ namespace {
 
 			statement->cursor->close(status);
 			if (!status->isSuccess())
-			{
 				Arg::StatusVector(status->get()).raise();
-			}
+
 			statement->cursor = NULL;
 		}
 		else if (pseudoOpened)
-		{
 			pseudoOpened = false;
-		}
 		else if (raise)
-		{
 			Arg::Gds(isc_dsql_cursor_close_err).raise();
-		}
 	}
 
 	void IscStatement::closeStatement(Why::StatusVector* status)
@@ -869,9 +864,8 @@ namespace {
 		{
 			statement->free(status);
 			if (!status->isSuccess())
-			{
 				Arg::StatusVector(status->get()).raise();
-			}
+
 			statement = NULL;
 			cursorName = "";
 		}
@@ -2064,20 +2058,18 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			{
 				statement->statement->openCursor(&status, transaction,
 					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
+
 				if (!status.isSuccess())
-				{
 					return status[1];
-				}
 
 				fb_assert(statement->statement->cursor);
 
 				if (statement->cursorName.hasData())
 				{
 					statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
+
 					if (status.isSuccess())
-					{
 						statement->cursorName = "";
-					}
 				}
 			}
 			else	// delay execution till first fetch (with output format)
@@ -2341,17 +2333,14 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 			if (statement->cursorName.hasData())
 			{
 				statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
+
 				if (status.isSuccess())
-				{
 					statement->cursorName = "";
-				}
 			}
 		}
 
 		if (!statement->statement->cursor->fetchNext(&status, reinterpret_cast<UCHAR*>(msg)))
-		{
 			return status.isSuccess() ? 100 : status[1];
-		}
 	}
 	catch (const Exception& e)
 	{
@@ -2436,10 +2425,9 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 		{
 			statement->closeStatement(&status);
 			if (!status.isSuccess())
-			{
 				return status[1];
-			}
 		}
+
 		statement->cursorName = "";
 
 		if (traHandle && *traHandle)
@@ -2484,10 +2472,9 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 		{
 			statement->closeStatement(&status);
 			if (!status.isSuccess())
-			{
 				return status[1];
-			}
 		}
+
 		statement->cursorName = "";
 
 		if (traHandle && *traHandle)
@@ -2535,6 +2522,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 				(Arg::Gds(isc_dsql_decl_err) <<
 				 Arg::Gds(isc_dsql_cursor_redefined) << statement->cursorName).raise();
 			}
+
 			statement->cursorName = cursorName;
 		}
 	}

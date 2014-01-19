@@ -5016,10 +5016,10 @@ void JResultSet::setCursorName(IStatus* user_status, const char* cursor)
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status, "JStatement::setCursorName");
+			transliterateException(tdbb, ex, user_status, "JResultSet::setCursorName");
 			return;
 		}
-		trace_warning(tdbb, user_status, "JStatement::setCursorName");
+		trace_warning(tdbb, user_status, "JResultSet::setCursorName");
 	}
 	catch (const Exception& ex)
 	{

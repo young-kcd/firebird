@@ -855,7 +855,7 @@ SINT64 query_performance_frequency()
 }
 
 
-// returns system and user time in milliseconds that process runs 
+// returns system and user time in milliseconds that process runs
 void get_process_times(SINT64 &userTime, SINT64 &sysTime)
 {
 #if defined(WIN_NT)

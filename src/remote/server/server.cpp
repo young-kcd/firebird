@@ -3238,10 +3238,9 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 				if (statement->rsr_cursor_name.hasData())
 				{
 					statement->rsr_cursor->setCursorName(&status_vector, statement->rsr_cursor_name.c_str());
+
 					if (status_vector.isSuccess())
-					{
 						statement->rsr_cursor_name = "";
-					}
 				}
 			}
 		}
@@ -3320,14 +3319,18 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	{
 		statement->rsr_flags.clear(Rsr::EOF_SET | Rsr::STREAM_ERR);
 		statement->clearException();
+
 		RMessage* message = statement->rsr_message;
+
 		if (message != NULL)
 		{
 			statement->rsr_buffer = message;
+
 			while (true)
 			{
 				message->msg_address = NULL;
 				message = message->msg_next;
+
 				if (message == statement->rsr_message)
 					break;
 			}
@@ -3337,23 +3340,17 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	// If required, call delayed open()
 
 	if (!statement->rsr_par_metadata)
-	{
 		statement->checkCursor();
-	}
 	else
 	{
 		if (statement->rsr_cursor)
-		{
 			Arg::Gds(isc_dsql_cursor_open_err).raise();
-		}
 
 		InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
 			sqldata->p_sqldata_blr.cstr_address, msg_length, NULL);
 
 		if (!msgBuffer.metadata)
-		{
 			Arg::Gds(isc_dsql_cursor_open_err).raise();
-		}
 
 		fb_assert(statement->rsr_rtr);
 
@@ -3364,19 +3361,16 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 											 statement->rsr_parameters.begin(),
 											 msgBuffer.metadata);
 		if (!status_vector.isSuccess())
-		{
 			status_exception::raise(status_vector.get());
-		}
 
 		statement->rsr_rtr->rtr_cursors.add(statement);
 
 		if (statement->rsr_cursor_name.hasData())
 		{
 			statement->rsr_cursor->setCursorName(&status_vector, statement->rsr_cursor_name.c_str());
+
 			if (status_vector.isSuccess())
-			{
 				statement->rsr_cursor_name = "";
-			}
 		}
 
 		statement->rsr_par_metadata = NULL;
@@ -4075,6 +4069,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 		if (!status_vector.isSuccess())
 			return this->send_response(sendL, 0, 0, &status_vector, false);
 	}
+
 	statement->rsr_cursor_name = "";
 
 	Rdb* rdb = statement->rsr_rdb;
@@ -5446,9 +5441,7 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
 
 
 	if (statement->rsr_cursor)
-	{
 		statement->rsr_cursor->setCursorName(&status_vector, name);
-	}
 	else
 	{
 		if (statement->rsr_cursor_name.hasData() && statement->rsr_cursor_name != name)
