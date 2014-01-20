@@ -859,8 +859,8 @@ SINT64 query_performance_frequency()
 void get_process_times(SINT64 &userTime, SINT64 &sysTime)
 {
 #if defined(WIN_NT)
-	FILETIME utime, stime;
-	if (GetProcessTimes(GetCurrentProcess(), NULL, NULL, &stime, &utime))
+	FILETIME utime, stime, dummy;
+	if (GetProcessTimes(GetCurrentProcess(), &dummy, &dummy, &stime, &utime))
 	{
 		LARGE_INTEGER lint;
 
