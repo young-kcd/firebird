@@ -2399,7 +2399,21 @@ static processing_state blobedit(const TEXT* action, const TEXT* const* cmd)
 
 	processing_state rc = SKIP;
 	if (!strcmp(action, "BLOBVIEW"))
-		Firebird::UtlInterfacePtr()->editBlob(fbStatus, &blobid, DB, M__trans, "blob");
+	{
+		Firebird::UtlInterfacePtr utl;
+		PathName tmpf = TempFile::create(fbStatus, "blob");
+		if (ISQL_errmsg(fbStatus))
+			return ps_ERR;
+		const char* filename = tmpf.c_str();
+
+		utl->dumpBlob(fbStatus, &blobid, DB, M__trans, filename, FB_TRUE);
+		if (ISQL_errmsg(fbStatus))
+			rc = ps_ERR;
+		else
+			gds__edit(filename, 0);
+
+		unlink(filename);
+	}
 	else if ((!strcmp(action, "BLOBDUMP")) && (*cmd[2]))
 	{
 		// If this is a blobdump, make sure there is a file name

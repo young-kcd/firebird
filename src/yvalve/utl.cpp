@@ -358,26 +358,6 @@ namespace Why {
 
 UtlInterface utlInterface;
 
-FB_BOOLEAN FB_CARG UtlInterface::editBlob(Firebird::IStatus* status, ISC_QUAD* blobId,
-		Firebird::IAttachment* att, Firebird::ITransaction* tra, const char* tempFile)
-{
-	FB_BOOLEAN rc = FB_FALSE;
-
-	try
-	{
-		rc = edit(status, blobId, att, tra, TRUE, tempFile);
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(status);
-	}
-
-	if (!status->isSuccess() && status->get()[1] != isc_segstr_eof)
-		isc_print_status(status->get());
-
-	return rc;
-}
-
 void FB_CARG UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
@@ -428,7 +408,7 @@ void FB_CARG UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
 		fclose(file);
 }
 
-void UtlInterface::version(IStatus* status, IAttachment* att,
+void UtlInterface::getVersion(IStatus* status, IAttachment* att,
 	IVersionCallback* callback)
 {
 /**************************************
@@ -1481,7 +1461,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 		return FB_FAILURE;
 
 	VersionCallback callback(routine, user_arg);
-	UtlInterfacePtr()->version(&st, att, &callback);
+	UtlInterfacePtr()->getVersion(&st, att, &callback);
 
 	return st.isSuccess() ? FB_SUCCESS : FB_FAILURE;
 }
@@ -1820,7 +1800,17 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 	if (!st.isSuccess())
 		return FB_FAILURE;
 
-	int rc = UtlInterfacePtr()->editBlob(&st, blob_id, att, tra, field_name);
+	int rc = FB_SUCCESS;
+
+	try
+	{
+		rc = edit(&st, blob_id, att, tra, TRUE, field_name) ? FB_SUCCESS : FB_FAILURE;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(&st);
+	}
+
 	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
 		isc_print_status(st.get());
 

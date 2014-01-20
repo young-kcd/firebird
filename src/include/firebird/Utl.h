@@ -46,21 +46,19 @@ class ITransaction;
 class IUtl : public IVersioned
 {
 public:
-	virtual void FB_CARG version(IStatus* status, IAttachment* att,
+	virtual void FB_CARG getVersion(IStatus* status, IAttachment* att,
 		IVersionCallback* callback) = 0;
 	virtual void FB_CARG loadBlob(IStatus* status, ISC_QUAD* blobId,
 		IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
 	virtual void FB_CARG dumpBlob(IStatus* status, ISC_QUAD* blobId,
 		IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
-	virtual FB_BOOLEAN FB_CARG editBlob(IStatus* status, ISC_QUAD* blobId,
-		IAttachment* att, ITransaction* tra, const char* tempFile = NULL) = 0;
 	virtual void FB_CARG getPerfCounters(IStatus* status, IAttachment* att,
 		const char* countersSet, ISC_INT64* counters) = 0;
 	virtual IAttachment* FB_CARG executeCreateDatabase(Firebird::IStatus* status,
 		unsigned stmtLength, const char* creatDBstatement, unsigned dialect,
 		FB_BOOLEAN* stmtIsCreateDb = NULL) = 0;
 };
-#define FB_UTL_VERSION (FB_VERSIONED_VERSION + 6)
+#define FB_UTL_VERSION (FB_VERSIONED_VERSION + 5)
 
 } // namespace Firebird
 
