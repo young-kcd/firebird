@@ -45,6 +45,7 @@
 #include "../isql/isql.h"
 #include "../jrd/intl.h"
 #include "../common/intlobj_new.h"
+#include "../common/classes/AlignedBuffer.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"
 #include "../isql/iutils_proto.h"
@@ -3997,8 +3998,8 @@ static processing_state show_generators(const SCHAR* object)
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
 
-	unsigned char outBuffer[20];
-	fb_assert(outMetadata->getMessageLength(fbStatus) <= sizeof(outBuffer));
+	Firebird::AlignedBuffer<20> outBuffer;
+	fb_assert(outMetadata->getMessageLength(fbStatus) <= outBuffer.size());
 	unsigned off = outMetadata->getOffset(fbStatus, 0);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
