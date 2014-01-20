@@ -62,8 +62,8 @@ namespace Jrd {
 
 int TraceConnectionImpl::getConnectionID()
 {
-	//return m_att->att_attachment_id;
-	return PAG_attachment_id(JRD_get_thread_data());
+	return m_att->att_attachment_id;
+	//return PAG_attachment_id(JRD_get_thread_data());
 }
 
 int TraceConnectionImpl::getProcessID()
