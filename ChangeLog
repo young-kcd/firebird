@@ -1,3 +1,24 @@
+ 2014-01-20 14:36  alexpeshkoff 
+   M src/include/firebird/Utl.h
+   M src/isql/isql.epp
+   M src/isql/show.epp
+   M src/yvalve/utl.cpp
+   M src/yvalve/utl_proto.h
+Changes in IUtl, suggested by Adriano & Dmitry
+
+ 2014-01-20 13:08  alexpeshkoff 
+   A src/common/classes/AlignedBuffer.h
+   M src/isql/show.epp
+Fixed possible alignment issue
+
+ 2014-01-20 10:20  hvlad 
+   M src/jrd/trace/TraceObjects.cpp
+Fixed bug CORE-4319 : Engine crashes when trace config contains line "connection_id=NN" and we attempt to connect to non-existent database/alias
+
+ 2014-01-20 09:13  hvlad 
+   M src/common/utils.cpp
+Fixed bug CORE-4320 : Regression: isql crash when receiving statistics of execution of sql query
+
  2014-01-19 20:38  asfernandes 
    M src/common/utils.cpp
    M src/jrd/jrd.cpp
