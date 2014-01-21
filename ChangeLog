@@ -1,3 +1,7 @@
+ 2014-01-20 10:24  hvlad 
+   M src/jrd/trace/TraceObjects.cpp
+Fixed bug CORE-4319 : Engine crashes when trace config contains line "connection_id=NN" and we attempt to connect to non-existent database/alias
+
  2014-01-11 08:52  dimitr 
    M src/jrd/btr.cpp
 Better output for CHARs.
