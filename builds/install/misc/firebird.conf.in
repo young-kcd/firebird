@@ -209,9 +209,9 @@
 #
 # This sets the number of pages from any one database that can be held
 # in cache at once. If you increase this value, the engine will
-# allocate more pages to the cache for every database. By default, the
-# SuperServer allocates 2048 pages for each database and the classic
-# allocates 75 pages per client connection per database.
+# allocate more pages to the cache for every database. By default 
+# SuperServer allocates 2048 pages for each database whilst Classic
+# and SuperClassic allocate 75 pages per client connection per database.
 #
 # Type: integer
 #
