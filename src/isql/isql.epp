@@ -1898,6 +1898,13 @@ static processing_state add_row(TEXT* tabname)
 	Firebird::string str2;
 	str2.printf("SELECT * FROM %s", tabname);
 
+	if (global_Stmt)
+	{
+		global_Stmt->free(fbStatus);
+		if (ISQL_errmsg(fbStatus))
+			return (SKIP);
+	}
+
 	global_Stmt = DB->prepare(fbStatus, D__trans, 0, str2.c_str(), isqlGlob.SQL_dialect,
 		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 	if (ISQL_errmsg(fbStatus))
@@ -1914,6 +1921,7 @@ static processing_state add_row(TEXT* tabname)
 	global_Stmt->free(fbStatus);
 	if (ISQL_errmsg(fbStatus))
 		return (SKIP);
+	global_Stmt = NULL;
 
 	// Array for storing select/insert column mapping, colcheck sets it up
 	Firebird::Array<unsigned> coln;
@@ -2505,6 +2513,13 @@ static processing_state bulk_insert_hack(const char* command)
 	// Prepare the dynamic query stored in string.
 	// But put this on the DDL transaction to get maximum visibility of
 	// metadata.
+
+	if (global_Stmt)
+	{
+		global_Stmt->free(fbStatus);
+		if (ISQL_errmsg(fbStatus))
+			return (SKIP);
+	}
 
 	global_Stmt = DB->prepare(fbStatus, Autocommit ? D__trans : M__trans,  0, command,
 		isqlGlob.SQL_dialect, Firebird::IStatement::PREPARE_PREFETCH_METADATA |
@@ -8222,6 +8237,14 @@ static processing_state process_statement(const TEXT* str2)
 	// metadata.
 
 	Firebird::ITransaction* prepare_trans = Autocommit ? D__trans : M__trans;
+
+	if (global_Stmt)
+	{
+		global_Stmt->free(fbStatus);
+		if (ISQL_errmsg(fbStatus))
+			return (SKIP);
+	}
+
 	global_Stmt = DB->prepare(fbStatus, prepare_trans, 0, str2, isqlGlob.SQL_dialect,
 		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 	if (!fbStatus->isSuccess())
