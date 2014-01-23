@@ -1,3 +1,7 @@
+ 2014-01-22 11:21  alexpeshkoff 
+   M src/isql/isql.epp
+Fixed CORE-4321: Regression: ISQL does not destroy the SQL statement
+
  2014-01-20 14:36  alexpeshkoff 
    M src/include/firebird/Utl.h
    M src/isql/isql.epp
