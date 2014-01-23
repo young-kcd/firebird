@@ -33,9 +33,9 @@
 
 #include "fb_types.h"
 #include "../common/classes/fb_string.h"
-#include "../jrd/os/config_root.h"
-#include "../jrd/os/path_utils.h"
-#include "../jrd/file_params.h"
+#include "../common/config/os/config_root.h"
+#include "../common/os/path_utils.h"
+#include "../common/file_params.h"
 
 #include <CoreServices/CoreServices.h>
 #include <CoreFoundation/CFBundle.h>
