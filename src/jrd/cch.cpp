@@ -187,7 +187,7 @@ static inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
 	QUE_INIT(bdb->bdb_dirty);
 }
 
-static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only, ISC_STATUS* status);
+static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only);
 static void flushAll(thread_db* tdbb, USHORT flush_flag);
 
 static void recentlyUsed(BufferDesc* bdb);
@@ -1090,8 +1090,6 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	ISC_STATUS* const status = tdbb->tdbb_status_vector;
-
 	// note that some of the code for btc_flush()
 	// replicates code in the for loop
 	// to minimize call overhead -- changes should be made in both places
@@ -1115,7 +1113,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 		}
 		else
 #endif
-			flushDirty(tdbb, transaction_mask, sys_only, status);
+			flushDirty(tdbb, transaction_mask, sys_only);
 	}
 	else
 		flushAll(tdbb, flush_flag);
@@ -2606,16 +2604,16 @@ static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 // then write them all at last iteration (of course write_buffer will also check
 // for precedence before write)
 
-static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only,
-	ISC_STATUS* status)
+static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only)
 {
 	SET_TDBB(tdbb);
+	ISC_STATUS* const status = tdbb->tdbb_status_vector;
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush;
 
 	{  // dirtySync scope
-		Sync dirtySync(&bcb->bcb_syncDirtyBdbs, "purgePrecedence");
+		Sync dirtySync(&bcb->bcb_syncDirtyBdbs, "flushDirty");
 		dirtySync.lock(SYNC_EXCLUSIVE);
 
 		QUE que_inst = bcb->bcb_dirty.que_forward, next;
