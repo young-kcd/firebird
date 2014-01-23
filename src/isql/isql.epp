@@ -526,7 +526,7 @@ static bool startTransaction(Firebird::ITransaction** t, unsigned len = 0, const
 			return false;
 	}
 
-	return true;
+	return DB;
 }
 
 static bool M_Transaction()
@@ -742,7 +742,7 @@ bool ISQL_dbcheck()
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
 
-	if (!isqlGlob.global_Db_name[0])
+	if (!(DB && isqlGlob.global_Db_name[0]))
 	{
 		if (!Quiet)
 		{
@@ -1794,7 +1794,7 @@ void ISQL_print_validation(FILE* fp,
  **************************************/
 	// Don't bother with null blobs
 
-	if (blobid->gds_quad_high == 0)
+	if (blobid->gds_quad_high == 0 || !DB)
 		return;
 
 	Firebird::IBlob* blob = DB->openBlob(fbStatus, trans, blobid);
@@ -1874,11 +1874,10 @@ static processing_state add_row(TEXT* tabname)
 	if (!Interactive)
 		return (ps_ERR);
 
-	if (Input_file)
+	if (Input_file || !DB)
 		return ps_ERR;
 
 	// There may have been a commit transaction before we got here
-
 	if (!M_Transaction())
 	{
 		return FAIL;
@@ -2488,13 +2487,15 @@ static processing_state bulk_insert_hack(const char* command)
 
 	// If somebody did a commit or rollback, we are out of a transaction
 
-	M_Transaction();
+	if (!M_Transaction())
+		return ps_ERR;
 
 	// No need to start a default transaction unless there is no current one
 
 	if (Autocommit)
 	{
-		D_Transaction();
+		if (!D_Transaction())
+			return ps_ERR;
 	}
 
 	// If statistics are requested, then reserve them here
@@ -3238,6 +3239,8 @@ static processing_state bulk_insert_hack(const char* command)
 
 	// Get rid of the statement handle.
 	global_Stmt->free(fbStatus);
+	if (fbStatus->isSuccess())
+		global_Stmt = NULL;
 
 	// Statistics printed here upon request
 	if (Stats && (print_performance(perf_before) == ps_ERR))
@@ -4248,7 +4251,7 @@ static processing_state drop_db()
  *	Drop the current database
  *
  **************************************/
-	if (isqlGlob.global_Db_name[0])
+	if (DB && isqlGlob.global_Db_name[0])
 	{
 		DB->dropDatabase(fbStatus);
 		if (ISQL_errmsg(fbStatus))
@@ -5694,6 +5697,8 @@ void ISQL_get_version(bool call_by_create_db)
 
 	global_dialect_spoken = 0;
 
+	if (!DB)
+		return;
 	DB->getInfo(fbStatus, sizeof(db_version_info), db_version_info,
 						  sizeof(buffer), buffer);
 	if(ISQL_errmsg(fbStatus))
@@ -8197,11 +8202,13 @@ static processing_state process_statement(const TEXT* str2)
 	public:
 		CancelHolder()
 		{
-			DB->cancelOperation(fbStatus, fb_cancel_enable);
+			if (DB)
+				DB->cancelOperation(fbStatus, fb_cancel_enable);
 		}
 		~CancelHolder()
 		{
-			DB->cancelOperation(fbStatus, fb_cancel_disable);
+			if (DB)
+				DB->cancelOperation(fbStatus, fb_cancel_disable);
 		}
 	};
 
@@ -8212,12 +8219,16 @@ static processing_state process_statement(const TEXT* str2)
 
 	// If somebody did a commit or rollback, we are out of a transaction
 
-	M_Transaction();
+	if (!M_Transaction())
+		return ps_ERR;
 
 	// No need to start a default transaction unless there is no current one
 
 	if (Autocommit)
-		D_Transaction();
+	{
+		if (!D_Transaction())
+			return ps_ERR;
+	}
 
 	// If statistics are requested, then reserve them here
 
