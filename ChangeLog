@@ -1,3 +1,8 @@
+ 2014-01-23 18:35  dimitr 
+   M builds/win32/msvc8/Firebird2.sln
+   M builds/win32/msvc9/Firebird2.sln
+Fixed CORE-4323: FB 2.1.5 64bits Windows zip kit misses fbsvcmgr.exe.
+
  2014-01-11 08:50  dimitr 
    M src/jrd/btr.cpp
    M src/jrd/btr_proto.h
