@@ -1,3 +1,17 @@
+ 2014-01-23 12:26  alexpeshkoff 
+   M src/common/classes/fb_tls.h
+   M src/isql/isql.epp
+Misc formattingsrc/common/classes/fb_tls.h
+
+ 2014-01-23 11:20  hvlad 
+   M src/jrd/cch.cpp
+Misc.
+
+ 2014-01-23 09:46  paulbeach 
+   M src/common/config/os/darwin/config_root.cpp
+   M src/common/os/darwin/mod_loader.cpp
+Darwin port for Firebird 3
+
  2014-01-22 11:21  alexpeshkoff 
    M src/isql/isql.epp
 Fixed CORE-4321: Regression: ISQL does not destroy the SQL statement
