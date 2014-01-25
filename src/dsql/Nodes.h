@@ -47,32 +47,14 @@ class ValueExprNode;
 // Must be less then MAX_SSHORT. Not used for static arrays.
 const int MAX_CONJUNCTS	= 32000;
 
-// CVC: Obsolete.
-// Note that MAX_STREAMS currently MUST be <= MAX_UCHAR.
-// Here we should really have a compile-time fb_assert, since this hard-coded
-// limit is NOT negotiable so long as we use an array of UCHAR, where index 0
-// tells how many streams are in the array (and the streams themselves are
-// identified by a UCHAR).
-//const unsigned int MAX_STREAMS = 255;
-
 // New: MAX_STREAMS should be a multiple of BITS_PER_LONG (32 and hard to believe it will change)
 
-//typedef ULONG StreamType; // sorry, it can't be here because this file includes Visitors.h
 const StreamType INVALID_STREAM = ~StreamType(0);
 const StreamType MAX_STREAMS = 4096;
 
-
 const StreamType STREAM_MAP_LENGTH = MAX_STREAMS + 2;
 
-// CVC: Obsolete
-// This is number of ULONG's needed to store bit-mapped flags for all streams
-// OPT_STREAM_BITS = (MAX_STREAMS + 1) / BITS_PER_LONG
-// This value cannot be increased simple way. Decrease is possible, but it is also
-// hardcoded in several places such as TEST_DEP_ARRAYS macro
-// Note: TEST_DEP_ARRAYS is no longer used.
-
 // New formula is simply MAX_STREAMS / BITS_PER_LONG
-//const int OPT_STREAM_BITS = 8;
 const int OPT_STREAM_BITS = MAX_STREAMS / BITS_PER_LONG; // 128 with 4096 streams
 
 // Number of streams, conjuncts, indices that will be statically allocated
@@ -81,9 +63,7 @@ const int OPT_STREAM_BITS = MAX_STREAMS / BITS_PER_LONG; // 128 with 4096 stream
 const int OPT_STATIC_ITEMS = 64;
 
 typedef Firebird::HalfStaticArray<StreamType, OPT_STATIC_ITEMS> StreamList;
-//typedef Firebird::Array<StreamType> StreamList;
 typedef Firebird::SortedArray<StreamType> SortedStreamList;
-//typedef StreamType stream_array_t[MAX_STREAMS + 1];
 
 typedef Firebird::Array<NestConst<ValueExprNode> > NestValueArray;
 
