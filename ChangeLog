@@ -1,3 +1,7 @@
+ 2014-01-24 14:38  dimitr 
+   M src/jrd/Optimizer.cpp
+I hope this will finally close the bad planning issue during restore. To be field tested.
+
  2014-01-22 11:18  paulbeach 
    M builds/install/misc/firebird.conf.in
 Correct DefaultDbCachePages to include the value for SuperClassic
