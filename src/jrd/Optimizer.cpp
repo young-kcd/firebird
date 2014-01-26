@@ -1259,7 +1259,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	// This flag disables our smart index selection algorithm.
 	// It's set for any explicit (i.e. user specified) plan which
 	// requires all existing indices to be considered for a retrieval.
-	const bool acceptAll = csb->csb_rpt[stream].csb_plan;
+	// It's also set for internal (system) requests used by the engine itself.
+	const bool acceptAll = csb->csb_rpt[stream].csb_plan || (csb->csb_g_flags & csb_internal);
 
 	double totalSelectivity = MAXIMUM_SELECTIVITY; // worst selectivity
 	double totalIndexCost = 0;
