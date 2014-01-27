@@ -87,7 +87,6 @@ static PageNumber get_root_page(thread_db*, jrd_rel*);
 static int index_block_flush(void*);
 static idx_e insert_key(thread_db*, jrd_rel*, Record*, jrd_tra*, WIN *, index_insertion*, IndexErrorContext&);
 static bool key_equal(const temporary_key*, const temporary_key*);
-static string print_key(thread_db*, jrd_rel*, index_desc*, Record*);
 static void release_index_block(thread_db*, IndexBlock*);
 static void signal_index_deletion(thread_db*, jrd_rel*, USHORT);
 
