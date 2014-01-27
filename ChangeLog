@@ -1,3 +1,7 @@
+ 2014-01-26 15:27  dimitr 
+   M src/jrd/Optimizer.cpp
+Front-ported my recent commit re. possibly slow restore.
+
  2014-01-25 09:05  dimitr 
    M src/dsql/Nodes.h
 Misc.
