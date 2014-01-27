@@ -49,12 +49,11 @@ be also used to store any short information about user. Clauses INACTIVE/ACTIVE 
 user's login to server not dropping it from the list and restoring that ability.
 
 TAGS is a list of end-user defined attributes. Length of the value should not exceed 255 bytes.
+Assigning name some value sets new or modifies existing tag. To remove the tag use DROP option.
 Setting a list of tags for the user keeps earlier set tags if they are not mentioned currently.
 Notice - UID/GID, entered by deprecated gsec, are treated as tags in SQL interface.
 
 To access list of users please select from virtual tables SEC$USERS and SEC$USER_ATTRIBUTES.
-This feature highly depends upon user management plugin. Take into an account that some options
-are ignored when using legacy user management plugin.
 
 
 Samples:
@@ -85,3 +84,21 @@ Samples:
 	================ ============================== 
 	B                x
 	C                sample
+
+ Displaying users' list:
+  SELECT CAST(U.SEC$USER_NAME AS CHAR(20)) LOGIN,
+    CAST(A.SEC$KEY AS CHAR(10)) TAG,
+    CAST(A.SEC$VALUE AS CHAR(20)) "VALUE"
+  FROM SEC$USERS U LEFT JOIN SEC$USER_ATTRIBUTES A
+    ON U.SEC$USER_NAME = A.SEC$USER_NAME;
+
+   LOGIN                TAG        VALUE
+   ==================== ========== ====================
+   SYSDBA               <null>     <null>
+   ALEX                 B          x
+   ALEX                 C          sample
+
+
+Notice!
+This feature highly depends upon user management plugin. Take into an account that some options
+are ignored when using legacy user management plugin.
