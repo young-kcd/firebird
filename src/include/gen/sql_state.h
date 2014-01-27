@@ -1116,6 +1116,7 @@ static const struct {
 	{336397318, "42000"}, // 1030 dsql_alter_user_failed
 	{336397319, "42000"}, // 1031 dsql_grant_failed
 	{336397320, "42000"}, // 1032 dsql_revoke_failed
+	{336397321, "42000"}, // 1033 dsql_cte_recursive_aggregate
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec

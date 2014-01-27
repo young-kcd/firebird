@@ -2242,6 +2242,8 @@ C --
       PARAMETER (GDS__dsql_grant_failed                = 336397319)
       INTEGER*4 GDS__dsql_revoke_failed              
       PARAMETER (GDS__dsql_revoke_failed               = 336397320)
+      INTEGER*4 GDS__dsql_cte_recursive_aggregate    
+      PARAMETER (GDS__dsql_cte_recursive_aggregate     = 336397321)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

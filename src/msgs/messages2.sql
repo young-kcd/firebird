@@ -2551,6 +2551,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_alter_user_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1030, NULL, 'ALTER USER @1 failed', NULL, NULL);
 ('dsql_grant_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1031, NULL, 'GRANT failed', NULL, NULL);
 ('dsql_revoke_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1032, NULL, 'REVOKE failed', NULL, NULL);
+('dsql_cte_recursive_aggregate', 'pass1_rse_impl', 'dsql.cpp', NULL, 13, 1033, NULL, 'Recursive member of CTE cannot use aggregate or window function', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

@@ -1723,6 +1723,7 @@ static RseNode* pass1_rse(DsqlCompilerScratch* dsqlScratch, RecordSourceNode* in
 	string save_alias;
 	RseNode* rseNode = input->as<RseNode>();
 	const bool isRecursive = rseNode && (rseNode->dsqlFlags & RecordSourceNode::DFLAG_RECURSIVE);
+	AutoSetRestore<USHORT> autoScopeLevel(&dsqlScratch->scopeLevel, dsqlScratch->scopeLevel);
 
 	if (isRecursive)
 	{
@@ -1730,6 +1731,10 @@ static RseNode* pass1_rse(DsqlCompilerScratch* dsqlScratch, RecordSourceNode* in
 		save_alias = dsqlScratch->recursiveCtx->ctx_alias;
 
 		dsqlScratch->recursiveCtx->ctx_alias = *dsqlScratch->getNextCTEAlias();
+
+		// ASF: We need to reset the scope level to the same value found in the non-recursive
+		// part of the query, to verify usage of aggregate functions correctly. See CORE-4322.
+		dsqlScratch->scopeLevel = dsqlScratch->recursiveCtx->ctx_scope_level;
 	}
 
 	RseNode* ret = pass1_rse_impl(dsqlScratch, input, order, rows, updateLock, flags);
@@ -1877,12 +1882,34 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 	rse->dsqlSelectList = pass1_sel_list(dsqlScratch, selectList);
 	--dsqlScratch->inSelectList;
 
+	if (inputRse->dsqlFlags & RecordSourceNode::DFLAG_RECURSIVE)
+	{
+		if (Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_EQUAL, false,
+				rse->dsqlSelectList))
+		{
+			// Recursive member of CTE cannot use aggregate function
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  Arg::Gds(isc_dsql_cte_recursive_aggregate));
+		}
+	}
+
 	// Process ORDER clause, if any
 	if (order)
 	{
 		++dsqlScratch->inOrderByClause;
 		rse->dsqlOrder = PASS1_sort(dsqlScratch, order, selectList);
 		--dsqlScratch->inOrderByClause;
+
+		if (inputRse->dsqlFlags & RecordSourceNode::DFLAG_RECURSIVE)
+		{
+			if (Aggregate2Finder::find(dsqlScratch->scopeLevel, FIELD_MATCH_TYPE_EQUAL, false,
+					rse->dsqlOrder))
+			{
+				// Recursive member of CTE cannot use aggregate function
+				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+						  Arg::Gds(isc_dsql_cte_recursive_aggregate));
+			}
+		}
 	}
 
 	// A GROUP BY, HAVING, or any aggregate function in the select list

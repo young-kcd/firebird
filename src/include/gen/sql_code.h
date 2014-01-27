@@ -1116,6 +1116,7 @@ static const struct {
 	{336397318, -901}, /* 1030 dsql_alter_user_failed */
 	{336397319, -901}, /* 1031 dsql_grant_failed */
 	{336397320, -901}, /* 1032 dsql_revoke_failed */
+	{336397321, -104}, /* 1033 dsql_cte_recursive_aggregate */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

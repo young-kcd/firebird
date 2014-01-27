@@ -667,8 +667,6 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 					Arg::Gds(isc_dsql_cte_wrong_clause) << input->alias <<
 														   Arg::Str("HAVING"));
 			}
-			// hvlad: we need also forbid any aggregate function here
-			// but for now i have no idea how to do it simple
 
 			if (!dsqlAll)
 			{
