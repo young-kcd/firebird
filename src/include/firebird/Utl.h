@@ -46,7 +46,7 @@ class ITransaction;
 class IUtl : public IVersioned
 {
 public:
-	virtual void FB_CARG getVersion(IStatus* status, IAttachment* att,
+	virtual void FB_CARG getFbVersion(IStatus* status, IAttachment* att,
 		IVersionCallback* callback) = 0;
 	virtual void FB_CARG loadBlob(IStatus* status, ISC_QUAD* blobId,
 		IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;

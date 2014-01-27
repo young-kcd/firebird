@@ -89,7 +89,7 @@ class UtlInterface : public Firebird::AutoIface<Firebird::IUtl, FB_UTL_VERSION>
 {
 	// IUtl implementation
 public:
-	void FB_CARG getVersion(Firebird::IStatus* status, Firebird::IAttachment* att,
+	void FB_CARG getFbVersion(Firebird::IStatus* status, Firebird::IAttachment* att,
 		Firebird::IVersionCallback* callback);
 	void FB_CARG loadBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
 		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);

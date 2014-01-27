@@ -408,7 +408,7 @@ void FB_CARG UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
 		fclose(file);
 }
 
-void UtlInterface::getVersion(IStatus* status, IAttachment* att,
+void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
 	IVersionCallback* callback)
 {
 /**************************************
@@ -1461,7 +1461,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 		return FB_FAILURE;
 
 	VersionCallback callback(routine, user_arg);
-	UtlInterfacePtr()->getVersion(&st, att, &callback);
+	UtlInterfacePtr()->getFbVersion(&st, att, &callback);
 
 	return st.isSuccess() ? FB_SUCCESS : FB_FAILURE;
 }

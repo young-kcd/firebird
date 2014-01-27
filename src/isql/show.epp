@@ -1567,7 +1567,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isqlGlob.printf("Server version:%s", NEWLINE);
 		VersionCallback callback;
-		Firebird::UtlInterfacePtr()->getVersion(fbStatus, DB, &callback);
+		Firebird::UtlInterfacePtr()->getFbVersion(fbStatus, DB, &callback);
 		if (!fbStatus->isSuccess())
 		{
 			IUTILS_msg_get(CANNOT_GET_SRV_VER, msg_string);
