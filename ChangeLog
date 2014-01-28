@@ -1,3 +1,33 @@
+ 2014-01-27 16:47  alexpeshkoff 
+   M src/include/firebird/Utl.h
+   M src/isql/show.epp
+   M src/yvalve/utl.cpp
+   M src/yvalve/utl_proto.h
+Renamed it once more
+
+ 2014-01-27 07:14  alexpeshkoff 
+   M doc/sql.extensions/README.user_management
+Doc enhancement
+
+ 2014-01-27 01:09  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DsqlCompilerScratch.cpp
+   M src/dsql/pass1.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-4322 - Engine crashes when use aggregate or window functions in recursive query. Vlad, please review.
+
+ 2014-01-27 01:09  asfernandes 
+   M src/jrd/idx.cpp
+Misc.
+
  2014-01-26 15:27  dimitr 
    M src/jrd/Optimizer.cpp
 Front-ported my recent commit re. possibly slow restore.
