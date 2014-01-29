@@ -331,34 +331,34 @@ void UserManagement::list(Auth::IUser* u)
 	Record* record = buffer->getTempRecord();
 	record->nullify();
 
-	int attachment_charset = ttype_none;
+	int charset = CS_METADATA;
 
 	if (u->userName()->entered())
 	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_user_name, VALUE_STRING, strlen(u->userName()->get()), u->userName()->get()),
-				 attachment_charset);
+				 charset);
 	}
 
 	if (u->firstName()->entered())
 	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_first_name, VALUE_STRING, strlen(u->firstName()->get()), u->firstName()->get()),
-				 attachment_charset);
+				 charset);
 	}
 
 	if (u->middleName()->entered())
 	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_middle_name, VALUE_STRING, strlen(u->middleName()->get()), u->middleName()->get()),
-				 attachment_charset);
+				 charset);
 	}
 
 	if (u->lastName()->entered())
 	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->lastName()->get()), u->lastName()->get()),
-				 attachment_charset);
+				 charset);
 	}
 
 	if (u->active()->entered())
@@ -366,14 +366,14 @@ void UserManagement::list(Auth::IUser* u)
 		UCHAR v = u->active()->get() ? '\1' : '\0';
 		putField(threadDbb, record,
 				 DumpField(f_sec_active, VALUE_BOOLEAN, sizeof(v), &v),
-				 attachment_charset);
+				 charset);
 	}
 
 	if (u->comment()->entered())
 	{
 		putField(threadDbb, record,
 				 DumpField(f_sec_comment, VALUE_STRING, strlen(u->comment()->get()), u->comment()->get()),
-				 attachment_charset);
+				 charset);
 	}
 
 	buffer->store(record);
@@ -391,15 +391,15 @@ void UserManagement::list(Auth::IUser* u)
 
 			putField(threadDbb, record,
 					 DumpField(f_sec_attr_user, VALUE_STRING, strlen(u->userName()->get()), u->userName()->get()),
-					 attachment_charset);
+					 charset);
 
 			putField(threadDbb, record,
 					 DumpField(f_sec_attr_key, VALUE_STRING, b->name.length(), b->name.c_str()),
-					 attachment_charset);
+					 charset);
 
 			putField(threadDbb, record,
 					 DumpField(f_sec_attr_value, VALUE_STRING, b->value.length(), b->value.c_str()),
-					 attachment_charset);
+					 charset);
 
 			buffer->store(record);
 		}
