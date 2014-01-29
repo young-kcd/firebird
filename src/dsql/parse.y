@@ -4549,10 +4549,12 @@ comment
 	| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
 		{ $$ = newNode<CommentOnNode>($3, *$4, *$5, *$7); }
 	| COMMENT ON USER symbol_user_name IS ddl_desc
-		{ CreateAlterUserNode* node =
-			newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$4);
-		  node->comment = $6;
-		  $$ = node; }
+		{
+			CreateAlterUserNode* node =
+				newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$4);
+			node->comment = $6;
+			$$ = node;
+		}
 	;
 
 %type <intVal> ddl_type0
