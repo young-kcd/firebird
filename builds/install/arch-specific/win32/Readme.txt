@@ -30,7 +30,7 @@ Known Problems
 
 To run firebird.exe as a multi-client superserver
 it is necessary to start it with the -m parameter.
-Unfortunately for Alpha 1 neither the guardian nor 
+Unfortunately for Alpha 2 neither the guardian nor 
 the cpl applet know about this. 
 
 If the guardian is used to execute firebird.exe as 
@@ -40,7 +40,7 @@ an application in this alpha release.
 
 The cpl applet cannot configure firebird as a service
 correctly and the installer will not install it for
-this alpha 1 release.
+this alpha release.
 
 Neither of these problems are relevant to running 
 firebird as a service via instsvc.exe which works 

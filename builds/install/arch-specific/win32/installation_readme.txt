@@ -1,4 +1,4 @@
-Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha1)
+Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha2)
 ========================================================
 
 
@@ -19,6 +19,10 @@ Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha1)
 #                                                      #
 ############## END NOTE ################################
 
+Security3.fdb
+The version shipped with Alpha1 is incompatible with 
+Alpha2. The installer will keep a copy of the old 
+database but will not carry out data migration.
 
 
 
