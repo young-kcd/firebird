@@ -1,3 +1,11 @@
+ 2014-01-29 15:36  asfernandes 
+   M src/jrd/UserManagement.cpp
+Fixed CORE-4301 - Non-ASCII data in SEC$USERS is not read correctly.
+
+ 2014-01-29 15:35  asfernandes 
+   M src/dsql/parse.y
+Misc.
+
  2014-01-27 16:47  alexpeshkoff 
    M src/include/firebird/Utl.h
    M src/isql/show.epp
