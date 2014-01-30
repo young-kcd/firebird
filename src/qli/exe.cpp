@@ -667,10 +667,14 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 
 	// We've got a blob copy on our hands.
 
-	if (!from_desc) {
-		*to_desc->dsc_address = 0;
+	if ((!from_desc) || UserBlob::blobIsNull(*(ISC_QUAD*) from_desc->dsc_address)
+					 || (from_desc->dsc_missing & DSC_missing))
+	{
+		memset(to_desc->dsc_address, 0, sizeof(ISC_QUAD));
+		to_desc->dsc_missing |= DSC_missing;
 		return true;
 	}
+	to_desc->dsc_missing &= ~DSC_missing;
 
 
 	// Format blob parameter block for the existing blob
