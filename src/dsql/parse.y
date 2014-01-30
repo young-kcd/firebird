@@ -5823,7 +5823,7 @@ create_user_clause
 
 %type <createAlterUserNode> alter_user_clause
 alter_user_clause
-	: symbol_user_name SET passwd_opt
+	: symbol_user_name set_noise passwd_opt
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, *$1);
 			$$->password = $3;
@@ -5837,7 +5837,7 @@ alter_user_clause
 
 %type <createAlterUserNode> alter_cur_user_clause
 alter_cur_user_clause
-	: SET passwd_opt
+	: set_noise passwd_opt
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_MOD, "");
 			$$->password = $2;
@@ -5851,7 +5851,7 @@ alter_cur_user_clause
 
 %type <createAlterUserNode> replace_user_clause
 replace_user_clause
-	: symbol_user_name SET passwd_opt
+	: symbol_user_name set_noise passwd_opt
 		{
 			$$ = newNode<CreateAlterUserNode>(CreateAlterUserNode::USER_RPL, *$1);
 			$$->password = $3;
@@ -5861,6 +5861,11 @@ replace_user_clause
 		{
 			$$ = $4;
 		}
+	;
+
+set_noise
+	: // nothing
+	| SET
 	;
 
 %type <stringPtr> passwd_opt
