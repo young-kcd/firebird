@@ -1,3 +1,11 @@
+ 2014-01-30 14:52  alexpeshkoff 
+   M src/qli/exe.cpp
+Fixed CORE-4327: Error in QLI when copying NULL blobs between databases
+
+ 2014-01-30 09:11  alexpeshkoff 
+   M src/dsql/parse.y
+Fixed CORE-4326: Keyword SET should not be required in ALTER USER statement
+
  2014-01-29 15:36  asfernandes 
    M src/jrd/UserManagement.cpp
 Fixed CORE-4301 - Non-ASCII data in SEC$USERS is not read correctly.
