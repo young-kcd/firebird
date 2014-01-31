@@ -1,3 +1,7 @@
+ 2014-01-30 14:53  alexpeshkoff 
+   M src/qli/exe.cpp
+Backported fix for CORE-4327: Error in QLI when copying NULL blobs between databases
+
  2014-01-23 18:35  dimitr 
    M builds/win32/msvc8/Firebird2.sln
    M builds/win32/msvc9/Firebird2.sln
