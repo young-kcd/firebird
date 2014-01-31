@@ -162,6 +162,11 @@ public:
 		dir_iterator being returned.
 	**/
 	static dir_iterator* newDirItr(MemoryPool&, const Firebird::PathName&);
+
+	/** setDirIterator converts all dir iterators to one required on current
+		platform.
+	**/
+	static void setDirIterator(char* path);
 };
 
 #endif // JRD_OS_PATH_UTILS_H

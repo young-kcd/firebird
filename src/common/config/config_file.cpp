@@ -262,7 +262,7 @@ ConfigFile::Stream::~Stream()
  *	Parse line, taking quotes into account
  */
 
-ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& input, KeyType& key, String& value)
+ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& input, Parameter& par)
 {
 	int inString = 0;
 	String::size_type valStart = 0;
@@ -276,7 +276,7 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 		switch (input[n])
 		{
 		case '"':
-			if (key.isEmpty())		// quoted string to the left of = doesn't make sense
+			if (par.name.isEmpty())		// quoted string to the left of = doesn't make sense
 				return LINE_BAD;
 			if (inString >= 2)		// one more quote after quoted string doesn't make sense
 				return LINE_BAD;
@@ -284,11 +284,11 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 			break;
 
 		case '=':
-			if (key.isEmpty())
+			if (par.name.isEmpty())
 			{
-				key = input.substr(0, n).ToNoCaseString();
-				key.rtrim(" \t\r");
-				if (key.isEmpty())		// not good - no key
+				par.name = input.substr(0, n).ToNoCaseString();
+				par.name.rtrim(" \t\r");
+				if (par.name.isEmpty())		// not good - no key
 					return LINE_BAD;
 				valStart = n + 1;
 			}
@@ -306,15 +306,15 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 
 		case ' ':
 		case '\t':
-			if (n == incLen && key.isEmpty())
+			if (n == incLen && par.name.isEmpty())
 			{
 				KeyType inc = input.substr(0, n).ToNoCaseString();
 				if (inc == include)
 				{
-					value = input.substr(n);
-					value.alltrim(" \t\r");
+					par.value = input.substr(n);
+					par.value.alltrim(" \t\r");
 
-					if (!macroParse(value, fileName))
+					if (!macroParse(par.value, fileName))
 					{
 						return LINE_BAD;
 					}
@@ -331,9 +331,16 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 			{
 				if (inString != 1)
 				{
-					if (input[n] == '}')	// Subconf close mark not expected
+					if (input[n] == '}')
 					{
-						return LINE_BAD;
+						String s = input.substr(n + 1);
+						s.ltrim(" \t\r");
+						if (s.hasData() && s[0] != '#')
+						{
+							return LINE_BAD;
+						}
+						par.value = input.substr(0, n);
+						return LINE_END_SUB;
 					}
 
 					hasSub = true;
@@ -354,21 +361,21 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 	if (inString == 1)				// If we are still inside a string, it's error
 		return LINE_BAD;
 
-	if (key.isEmpty())
+	if (par.name.isEmpty())
 	{
-		key = input.substr(0, eol).ToNoCaseString();
-		key.rtrim(" \t\r");
-		value.erase();
+		par.name = input.substr(0, eol).ToNoCaseString();
+		par.name.rtrim(" \t\r");
+		par.value.erase();
 	}
 	else
 	{
-		value = input.substr(valStart, eol - valStart);
-		value.alltrim(" \t\r");
-		value.alltrim("\"");
+		par.value = input.substr(valStart, eol - valStart);
+		par.value.alltrim(" \t\r");
+		par.value.alltrim("\"");
 	}
 
 	// Now expand macros in value
-	if (!macroParse(value, fileName))
+	if (!macroParse(par.value, fileName))
 	{
 		return LINE_BAD;
 	}
@@ -399,6 +406,9 @@ bool ConfigFile::macroParse(String& value, const char* fileName) const
 			++subTo;
 
 			// Avoid double slashes in pathnames
+			PathUtils::setDirIterator(value.begin());
+			PathUtils::setDirIterator(macro.begin());
+
 			if (subFrom > 0 && value[subFrom - 1] == PathUtils::dir_sep &&
 				macro.length() > 0 && macro[0] == PathUtils::dir_sep)
 			{
@@ -585,7 +595,7 @@ void ConfigFile::parse(Stream* stream)
 		Parameter current;
 		current.line = line;
 
-		switch (parseLine(streamName, inputLine, current.name, current.value))
+		switch (parseLine(streamName, inputLine, current))
 		{
 		case LINE_BAD:
 			badLine(streamName, inputLine);
@@ -616,18 +626,23 @@ void ConfigFile::parse(Stream* stream)
 				SubStream subStream(stream->getFileName());
 				while (stream->getLine(inputLine, line))
 				{
-					if (inputLine[0] == '}')
+					switch(parseLine(streamName, inputLine, current))
 					{
-						String s = inputLine.substr(1);
-						s.ltrim(" \t\r");
-						if (s.hasData() && s[0] != '#')
-						{
-							badLine(streamName, s);
-							return;
-						}
+					case LINE_END_SUB:
+						if (current.value.hasData())
+							subStream.putLine(current.value, line);
 						break;
+
+					//case LINE_START_SUB:	will be ignored at next level. Ignore here?
+					case LINE_BAD:
+						badLine(streamName, inputLine);
+						return;
+
+					default:
+						subStream.putLine(inputLine, line);
+						continue;
 					}
-					subStream.putLine(inputLine, line);
+					break;
 				}
 
 				previous->sub = FB_NEW(getPool())

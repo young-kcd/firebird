@@ -192,3 +192,11 @@ bool PathUtils::canAccess(const Firebird::PathName& path, int mode)
 	return access(path.c_str(), mode) == 0;
 }
 
+void PathUtils::setDirIterator(char* path)
+{
+	for (; *path; ++path)
+	{
+		if (*path == '\\')
+			*path = '/';
+	}
+}

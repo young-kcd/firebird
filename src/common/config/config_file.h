@@ -124,7 +124,7 @@ public:
 	bool macroParse(String& value, const char* fileName) const;
 
 private:
-	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB, LINE_INCLUDE};
+	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB, LINE_END_SUB, LINE_INCLUDE};
 
     Parameters parameters;
 	USHORT flags;
@@ -134,7 +134,7 @@ private:
 
 	// utilities
 	void parse(Stream* stream);
-	LineType parseLine(const char* fileName, const String& input, KeyType& key, String& value);
+	LineType parseLine(const char* fileName, const String& input, Parameter& par);
 	bool translate(const char* fileName, const String& from, String& to) const;
 	void badLine(const char* fileName, const String& line);
 	void include(const char* currentFileName, const Firebird::PathName& path);

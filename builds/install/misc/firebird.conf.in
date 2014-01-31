@@ -58,18 +58,20 @@
 # ------------------
 # There is a number of predefined macro commands, that can be used in config
 # files where directory name is needed. They are available using $(name) syntax.
-# The complete list of the as follows:
+# The complete list of them as follows:
 #	root - root directory of firebird instance
 #	install - directory where firebird is installed
 #	this - directory where current configuration file is located
 #	dir_conf - directory where firebird.conf and databases.conf are located
-#	dir_secdb - directory where default security database is located
+#	dir_secDb - directory where default security database is located
 #	dir_plugins - directory where plugins are located
 #	dir_udf - directory where UDFs are located by default
 #	dir_sample - directory where samples are located
-#	dir_sampledb - directory where sample DB (employee.fdb) is located
+#	dir_sampleDb - directory where sample DB (employee.fdb) is located
 #	dir_intl - directory where international modules are located
 #	dir_msg - directory where messages file (firebird.msg) is located
+# Like the rest of config internals macros are case-insensitive.
+# Capital letters here are used only for better human readability.
 #
 #
 # Includes
@@ -118,6 +120,24 @@
 # Type: string (special format)
 #
 #DatabaseAccess = Full
+
+
+# ----------------------------
+# Ability to access databases remotely
+#
+# RemoteAccess may be true or false (1/0, Yes/No) - it's boolean value.
+# By default RemoteAccess to all databases except security DB is enabled.
+# If you plan to use more than one dedicated security database it's
+# recommended to disable remote access to them in databases.conf.
+# However (as an additional method to have secure enhanced firebird
+# installation) one can disable remote access globally and re-enable
+# in databases.conf only for specific databases.
+#
+# Per-database configurable.
+#
+# Type: boolean
+#
+#RemoteAccess = true
 
 
 # ----------------------------
@@ -727,7 +747,7 @@
 #
 # Type: string (pathname)
 #
-#SecurityDatabase = $(root)/security3.fdb
+#SecurityDatabase = $(dir_secDb)/security3.fdb
 
 
 # ==============================
