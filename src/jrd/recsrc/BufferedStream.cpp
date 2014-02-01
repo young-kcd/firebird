@@ -284,7 +284,12 @@ bool BufferedStream::lockRecord(thread_db* tdbb) const
 void BufferedStream::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) const
 {
 	if (detailed)
-		plan += printIndent(++level) + "Record Buffer";
+	{
+		string extras;
+		extras.printf(" (record length: %"ULONGFORMAT")", m_format->fmt_length);
+
+		plan += printIndent(++level) + "Record Buffer" + extras;
+	}
 
 	m_next->print(tdbb, plan, detailed, level);
 }

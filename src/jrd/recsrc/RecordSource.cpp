@@ -104,16 +104,64 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 
 	case InversionNode::TYPE_INDEX:
 		{
+			const IndexRetrieval* const retrieval = inversion->retrieval;
+			const jrd_rel* const relation = retrieval->irb_relation;
+
 			MetaName indexName;
-			MET_lookup_index(tdbb, indexName, inversion->retrieval->irb_relation->rel_name,
-							 (USHORT) (inversion->retrieval->irb_index + 1));
+			MET_lookup_index(tdbb, indexName, relation->rel_name,
+							 (USHORT) (retrieval->irb_index + 1));
 
 			if (detailed)
 			{
 				if (!navigation)
 					plan += "Bitmap" + printIndent(++level);
 
-				plan += "Index \"" + printName(tdbb, indexName.c_str()) + "\" Scan";
+				const index_desc& idx = retrieval->irb_desc;
+				const bool uniqueIdx = (idx.idx_flags & idx_unique);
+				const USHORT segCount = idx.idx_count;
+
+				const USHORT minSegs = MIN(retrieval->irb_lower_count, retrieval->irb_upper_count);
+				const USHORT maxSegs = MAX(retrieval->irb_lower_count, retrieval->irb_upper_count);
+
+				const bool equality = (retrieval->irb_generic & irb_equality);
+				const bool partial = (retrieval->irb_generic & irb_partial);
+
+				const bool fullscan = (maxSegs == 0);
+				const bool unique = uniqueIdx && equality && (minSegs == segCount);
+
+				string bounds;
+				if (!unique && !fullscan)
+				{
+					if (retrieval->irb_lower_count && retrieval->irb_upper_count)
+					{
+						if (equality)
+						{
+							if (partial)
+								bounds.printf(" (partial match: %d/%d)", maxSegs, segCount);
+							else
+								bounds.printf(" (full match)");
+						}
+						else
+						{
+							bounds.printf(" (lower bound: %d/%d, upper bound: %d/%d)",
+										  retrieval->irb_lower_count, segCount,
+										  retrieval->irb_upper_count, segCount);
+						}
+					}
+					else if (retrieval->irb_lower_count)
+					{
+						bounds.printf(" (lower bound: %d/%d)",
+									  retrieval->irb_lower_count, segCount);
+					}
+					else if (retrieval->irb_upper_count)
+					{
+						bounds.printf(" (upper bound: %d/%d)",
+									  retrieval->irb_upper_count, segCount);
+					}
+				}
+
+				plan += "Index \"" + printName(tdbb, indexName.c_str()) + "\" " +
+					(fullscan ? "Full" : unique ? "Unique" : "Range") + " Scan" + bounds;
 			}
 			else
 			{
