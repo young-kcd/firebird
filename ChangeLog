@@ -1,3 +1,9 @@
+ 2014-02-01 09:42  dimitr 
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+Extended the detailed plan output.
+
  2014-01-31 14:43  alexpeshkoff 
    M builds/install/misc/databases.conf.in
    M builds/install/misc/firebird.conf.in
