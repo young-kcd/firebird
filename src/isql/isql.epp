@@ -526,7 +526,7 @@ static bool startTransaction(Firebird::ITransaction** t, unsigned len = 0, const
 			return false;
 	}
 
-	return DB;
+	return DB != NULL;
 }
 
 static bool M_Transaction()
