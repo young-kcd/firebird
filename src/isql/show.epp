@@ -5363,8 +5363,8 @@ static processing_state show_users()
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
 
-	unsigned char outBuffer[MAX_SQL_IDENTIFIER_SIZE * 4 + 32];
-	fb_assert(outMetadata->getMessageLength(fbStatus) <= sizeof(outBuffer));
+	Firebird::AlignedBuffer<MAX_SQL_IDENTIFIER_SIZE * 4 + 32> outBuffer;
+	fb_assert(outMetadata->getMessageLength(fbStatus) <= outBuffer.size());
 	unsigned off = outMetadata->getOffset(fbStatus, 0);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
