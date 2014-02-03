@@ -471,10 +471,14 @@ dsc* NthValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* 
 {
 	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
 
-	dsc* desc = EVL_expr(tdbb, request, row);
-	SINT64 records;
+	window->move(0);	// Come back to our row because row may reference columns.
 
-	if (!desc || (request->req_flags & req_null) || (records = MOV_get_int64(desc, 0)) <= 0)
+	dsc* desc = EVL_expr(tdbb, request, row);
+	if (!desc || (request->req_flags & req_null))
+		return NULL;
+
+	SINT64 records = MOV_get_int64(desc, 0);
+	if (records <= 0)
 	{
 		status_exception::raise(Arg::Gds(isc_sysf_argnmustbe_positive) <<
 			Arg::Num(2) << Arg::Str(aggInfo.name));
@@ -564,10 +568,14 @@ dsc* LagLeadWinNode::aggExecute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 
 dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* window) const
 {
-	dsc* desc = EVL_expr(tdbb, request, rows);
-	SINT64 records;
+	window->move(0);	// Come back to our row because rows may reference columns.
 
-	if (!desc || (request->req_flags & req_null) || (records = MOV_get_int64(desc, 0)) < 0)
+	dsc* desc = EVL_expr(tdbb, request, rows);
+	if (!desc || (request->req_flags & req_null))
+		return NULL;
+
+	SINT64 records = MOV_get_int64(desc, 0);
+	if (records < 0)
 	{
 		status_exception::raise(Arg::Gds(isc_sysf_argnmustbe_nonneg) <<
 			Arg::Num(2) << Arg::Str(aggInfo.name));
