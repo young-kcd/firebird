@@ -1,3 +1,12 @@
+ 2014-02-02 01:07  asfernandes 
+   M src/isql/show.epp
+Fixed alignment issue.
+
+ 2014-02-02 01:02  asfernandes 
+   M src/isql/isql.epp
+   M src/qli/exe.cpp
+Misc.
+
  2014-02-01 09:42  dimitr 
    M src/jrd/recsrc/BufferedStream.cpp
    M src/jrd/recsrc/RecordSource.cpp
