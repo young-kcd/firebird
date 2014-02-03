@@ -78,7 +78,7 @@
 
 
 #ifdef	WIN_NT
-#define FD_SETSIZE 1024
+#define FD_SETSIZE 2048
 #endif
 
 #ifndef WIN_NT
