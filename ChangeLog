@@ -1,3 +1,17 @@
+ 2014-02-03 15:07  asfernandes 
+   M src/dsql/WinNodes.cpp
+Fixed CORE-4330 and CORE-4331.
+CORE-4330 - Not correct result function LAG, if OFFSET value ​​are assigned from a table.
+CORE-4331 - LAG, LEAD and NTH_VALUE raise error when the second argument is NULL.
+
+ 2014-02-03 08:58  paulbeach 
+   M src/common/os/darwin/mod_loader.cpp
+Darwin port
+
+ 2014-02-03 08:47  paulbeach 
+   M src/remote/inet.cpp
+Users on Windows are hitting the 1024 FD_SETSIZE socket limit
+
  2014-02-02 01:07  asfernandes 
    M src/isql/show.epp
 Fixed alignment issue.
