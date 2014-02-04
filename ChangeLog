@@ -1,3 +1,7 @@
+ 2014-02-03 08:45  paulbeach 
+   M src/remote/inet.cpp
+Users on Windows are hitting the 1024 FD_SETSIZE socket limit
+
  2014-01-30 14:53  alexpeshkoff 
    M src/qli/exe.cpp
 Backported fix for CORE-4327: Error in QLI when copying NULL blobs between databases
