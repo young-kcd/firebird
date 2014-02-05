@@ -1087,13 +1087,15 @@ void EXE_execute_triggers(thread_db* tdbb,
 	const Firebird::TimeStamp timestamp =
 		request ? request->req_timestamp : Firebird::TimeStamp::getCurrentTimeStamp();
 
+	jrd_req* trigger = NULL;
+
 	try
 	{
 		for (trig_vec::iterator ptr = vector->begin(); ptr != vector->end(); ++ptr)
 		{
 			ptr->compile(tdbb);
 
-			jrd_req* trigger = ptr->statement->findRequest(tdbb);
+			trigger = ptr->statement->findRequest(tdbb);
 
 			if (!is_db_trigger)
 			{
@@ -1145,19 +1147,28 @@ void EXE_execute_triggers(thread_db* tdbb,
 			trigger->req_flags &= ~req_in_use;
 
 			if (!ok)
-			{
 				trigger_failure(tdbb, trigger);
-				break;
-			}
+
+			trigger = NULL;
 		}
 
 		if (vector != *triggers)
 			MET_release_triggers(tdbb, &vector);
 	}
-	catch (const Firebird::Exception&)
+	catch (const Firebird::Exception& ex)
 	{
 		if (vector != *triggers)
 			MET_release_triggers(tdbb, &vector);
+
+		if (trigger)
+		{
+			EXE_unwind(tdbb, trigger);
+			trigger->req_attachment = NULL;
+			trigger->req_flags &= ~req_in_use;
+
+			ex.stuff_exception(tdbb->tdbb_status_vector);
+			trigger_failure(tdbb, trigger);
+		}
 
 		throw;
 	}
