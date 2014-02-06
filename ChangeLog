@@ -1,3 +1,7 @@
+ 2014-02-05 17:59  dimitr 
+   M src/jrd/exe.cpp
+Fixed some refactoring errors of mine. This should cure CORE-4334: Resources (e.g. sort files) owned by trigger may not be released when it's interrupted asynchronously.
+
  2014-02-03 15:07  asfernandes 
    M src/dsql/WinNodes.cpp
 Fixed CORE-4330 and CORE-4331.
