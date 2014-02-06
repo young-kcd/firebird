@@ -1571,10 +1571,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 							matches.add(bestCandidate->boolean);
 					}
 				}
-				else
+				else if (!bestCandidate->condition)
 				{
-					fb_assert(!bestCandidate->condition);
-
 					if (!bestCandidate->inversion && bestCandidate->scratch)
 					{
 						invCandidate->inversion = composeInversion(invCandidate->inversion,
