@@ -1334,7 +1334,7 @@ static void gen_create_database( const act* action, int column)
 static int gen_cursor_close( const act* action, const gpre_req* request, int column)
 {
 	PAT args;
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const TEXT* pattern1 = "if (%RIs && !isc_dsql_free_statement (%V1, &%RIs, %L1))";
 
 	args.pat_request = request;
@@ -1376,7 +1376,7 @@ static int gen_cursor_open( const act* action, const gpre_req* request, int colu
 {
 	PAT args;
 	TEXT s[MAX_CURSOR_SIZE];
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const TEXT* pattern1 = "if (!%RIs && %RH%IF && %DH%EN)";
 	const TEXT* pattern2 = "if (!%RIs%IF && %DH%EN)";
 	const TEXT* pattern3 = "isc_dsql_alloc_statement2 (%V1, &%DH, &%RIs);";
@@ -1569,7 +1569,7 @@ static void gen_ddl( const act* action, int column)
 
 static void gen_drop_database( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const gpre_dbb* db = (gpre_dbb*) action->act_object;
 	align(column);
 
@@ -1589,7 +1589,7 @@ static void gen_dyn_close( const act* action, int column)
 {
 	TEXT s[MAX_CURSOR_SIZE];
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const dyn* statement = (dyn*) action->act_object;
 	printa(column, "isc_embed_dsql_close (%s, %s);",
 		   global_status_name, make_name(s, statement->dyn_cursor_name));
@@ -1606,7 +1606,7 @@ static void gen_dyn_declare( const act* action, int column)
 {
 	TEXT s1[MAX_CURSOR_SIZE], s2[MAX_CURSOR_SIZE];
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const dyn* statement = (dyn*) action->act_object;
 	printa(column, "isc_embed_dsql_declare (%s, %s, %s);",
 		   global_status_name,
@@ -1625,7 +1625,7 @@ static void gen_dyn_describe(const act* action, int column, bool bind_flag)
 {
 	TEXT s[MAX_CURSOR_SIZE];
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const dyn* statement = (dyn*) action->act_object;
 	printa(column, "isc_embed_dsql_describe%s (%s, %s, %d, %s);",
 		   bind_flag ? "_bind" : "",
@@ -1647,7 +1647,7 @@ static void gen_dyn_execute( const act* action, int column)
 	gpre_req* request;
 	gpre_req req_const;
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans)
@@ -1701,7 +1701,7 @@ static void gen_dyn_fetch( const act* action, int column)
 {
 	TEXT s[MAX_CURSOR_SIZE];
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const dyn* statement = (dyn*) action->act_object;
 	printa(column, "SQLCODE = isc_embed_dsql_fetch (%s, %s, %d, %s);",
 		   global_status_name, make_name(s, statement->dyn_cursor_name),
@@ -1722,7 +1722,7 @@ static void gen_dyn_immediate( const act* action, int column)
 	gpre_req* request;
 	gpre_req req_const;
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const dyn* statement = (dyn*) action->act_object;
 	const gpre_dbb* database = statement->dyn_database;
 	const TEXT* transaction;
@@ -1770,7 +1770,7 @@ static void gen_dyn_insert( const act* action, int column)
 {
 	TEXT s[MAX_CURSOR_SIZE];
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const dyn* statement = (dyn*) action->act_object;
 	printa(column, "isc_embed_dsql_insert (%s, %s, %d, %s);",
 		   global_status_name,
@@ -1792,7 +1792,7 @@ static void gen_dyn_open( const act* action, int column)
 	gpre_req* request;
 	gpre_req req_const;
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans)
@@ -1845,7 +1845,7 @@ static void gen_dyn_prepare( const act* action, int column)
 	gpre_req* request;
 	gpre_req req_const;
 
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	dyn* statement = (dyn*) action->act_object;
 	const TEXT* transaction;
 	if (statement->dyn_trans)
@@ -2004,7 +2004,7 @@ static void gen_erase( const act* action, int column)
 
 static SSHORT gen_event_block(act* action)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	gpre_nod* init = (gpre_nod*) action->act_object;
 	//gpre_sym* event_name = (gpre_sym*) init->nod_arg[0];
 
@@ -2026,7 +2026,7 @@ static SSHORT gen_event_block(act* action)
 
 static void gen_event_init( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const TEXT* pattern1 = "fb_%L1l = isc_event_block (&fb_%L1a, &fb_%L1b, (short) %N2";
 	const TEXT* pattern2 = "isc_wait_for_event (%V1, &%DH, fb_%L1l, fb_%L1a, fb_%L1b);";
 	const TEXT* pattern3 = "isc_event_counts (fb_events, fb_%L1l, fb_%L1a, fb_%L1b);";
@@ -2086,7 +2086,7 @@ static void gen_event_init( const act* action, int column)
 
 static void gen_event_wait( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	TEXT s[64];
 	const TEXT* pattern1 = "isc_wait_for_event (%V1, &%DH, fb_%L1l, fb_%L1a, fb_%L1b);";
 	const TEXT* pattern2 = "isc_event_counts (isc_events, fb_%L1l, fb_%L1a, fb_%L1b);";
@@ -2392,7 +2392,7 @@ static void gen_function( const act* function, int column)
 
 static void gen_get_or_put_slice(const act* action, const ref* reference, bool get, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const TEXT* pattern1 =
 		"isc_get_slice (%V1, &%DH, &%RT, &%S2, (short) %N1, (char*) %S3, 0, (%S6*) 0, (%S6) %L1, %S5, &isc_array_length);";
 	const TEXT* pattern2 =
@@ -2442,7 +2442,7 @@ static void gen_get_or_put_slice(const act* action, const ref* reference, bool g
 
 static void gen_get_segment( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const TEXT* pattern1 =
 		"%IF%S1 [1] = %ENisc_get_segment (%V1, &%BH, &%I1, (short) sizeof(%I2), %I2);";
 
@@ -2563,7 +2563,7 @@ static void gen_on_error( const act* action, USHORT column)
 
 static void gen_procedure( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	column += INDENT;
 	const gpre_req* request = action->act_request;
 	const gpre_port* in_port = request->req_vport;
@@ -2617,7 +2617,7 @@ static void gen_procedure( const act* action, int column)
 
 static void gen_put_segment( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const TEXT* pattern1 = "%IF%S1 [1] = %ENisc_put_segment (%V1, &%BH, %I1, %I2);";
 
 	if (!action->act_error)
@@ -2755,7 +2755,7 @@ static void gen_receive( const act* action, int column, const gpre_port* port)
 
 static void gen_release( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const gpre_dbb* exp_db = (gpre_dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next)
@@ -2974,7 +2974,7 @@ static void gen_routine( const act* action, int column)
 
 static void gen_s_end( const act* action, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	if (action->act_error)
 		begin(column);
 
@@ -3146,7 +3146,7 @@ static void gen_send( const act* action, const gpre_port* port, int column)
 
 static void gen_slice( const act* action, const ref* var_reference, int column)
 {
-		ObjectNotImplemented();
+	ObjectNotImplemented();
 	const TEXT* pattern1 = "isc_get_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
 (char*) %I1, (short) %N2, %I1v, %I1s, %S5, &isc_array_length);";
 	const TEXT* pattern2 = "isc_put_slice (%V1, &%DH, &%RT, &%FR, (short) %N1, \
