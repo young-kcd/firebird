@@ -8094,9 +8094,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 		rse->dsqlStreams->items[0] = baseRelation;
 		rse->dsqlStreams->items[0] = doDsqlPass(dsqlScratch, rse->dsqlStreams->items[0]);
-
-		rse->dsqlWhere = querySpec->dsqlWhere;
-		rse->dsqlWhere = doDsqlPass(dsqlScratch, rse->dsqlWhere);
+		rse->dsqlWhere = doDsqlPass(dsqlScratch, querySpec->dsqlWhere);
 
 		dsqlScratch->contextNumber = 0;	// OLD context
 
