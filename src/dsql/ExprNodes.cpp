@@ -5103,9 +5103,9 @@ dsql_fld* FieldNode::resolveContext(DsqlCompilerScratch* dsqlScratch, const Meta
 		// If a qualifier is present and it's equal to the alias then we've already the right table-name
 		if (!(qualifier.hasData() && qualifier == table_name))
 		{
-			if (strcmp(table_name, NEW_CONTEXT) == 0)
+			if (strcmp(table_name, NEW_CONTEXT_NAME) == 0)
 				table_name = NULL;
-			else if (strcmp(table_name, OLD_CONTEXT) == 0)
+			else if (strcmp(table_name, OLD_CONTEXT_NAME) == 0)
 			{
 				// Only use the OLD context if it is explicit used. That means the
 				// qualifer should hold the "OLD" alias.

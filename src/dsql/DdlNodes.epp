@@ -3145,7 +3145,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 			if (hasOldContext(type.value))
 			{
-				relationNode->alias = OLD_CONTEXT;
+				relationNode->alias = OLD_CONTEXT_NAME;
 				dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNode);
 				oldContext->ctx_flags |= CTX_system;
 			}
@@ -3154,7 +3154,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 			if (hasNewContext(type.value))
 			{
-				relationNode->alias = NEW_CONTEXT;
+				relationNode->alias = NEW_CONTEXT_NAME;
 				dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNode);
 				newContext->ctx_flags |= CTX_system;
 			}
@@ -6042,11 +6042,11 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	// errors in pre_store and pre_modify triggers. Also, what sense can I make from NEW in
 	// pre_delete? However, we clash at JRD with "no current record for fetch operation".
 
-	dsqlNode->alias = OLD_CONTEXT;
+	dsqlNode->alias = OLD_CONTEXT_NAME;
 	dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, dsqlNode);
 	oldContext->ctx_flags |= CTX_system;
 
-	dsqlNode->alias = NEW_CONTEXT;
+	dsqlNode->alias = NEW_CONTEXT_NAME;
 	dsql_ctx* newContext = PASS1_make_context(dsqlScratch, dsqlNode);
 	newContext->ctx_flags |= CTX_system;
 
@@ -8096,13 +8096,13 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 		rse->dsqlStreams->items[0] = doDsqlPass(dsqlScratch, rse->dsqlStreams->items[0]);
 		rse->dsqlWhere = doDsqlPass(dsqlScratch, querySpec->dsqlWhere);
 
-		dsqlScratch->contextNumber = 0;	// OLD context
+		dsqlScratch->contextNumber = OLD_CONTEXT_VALUE;
 
 		dsql_ctx* oldContext;
 
 		{	/// scope
 			AutoSetRestore<string> autoAlias(&relationNode->alias, sourceNode->alias);
-			relationNode->alias = OLD_CONTEXT;
+			relationNode->alias = OLD_CONTEXT_NAME;
 
 			oldContext = PASS1_make_context(dsqlScratch, relationNode);
 			oldContext->ctx_flags |= CTX_system;
@@ -8161,7 +8161,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 			{
 				FieldNode* oldValueNode = FB_NEW(pool) FieldNode(pool);
 				oldValueNode->dsqlName = (aliasNode ? aliasNode->name : valueNode->dsqlName);
-				oldValueNode->dsqlQualifier = OLD_CONTEXT;
+				oldValueNode->dsqlQualifier = OLD_CONTEXT_NAME;
 
 				valueNod = oldValueNode->dsqlPass(dsqlScratch);
 				fieldNod = fieldNode->dsqlPass(dsqlScratch);
@@ -8179,7 +8179,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 	// ASF: We'll now map the view's base table into the trigger's NEW context.
 
 	++dsqlScratch->scopeLevel;
-	dsqlScratch->contextNumber = 1;	// NEW context
+	dsqlScratch->contextNumber = NEW_CONTEXT_VALUE;
 
 	dsql_ctx* newContext;
 

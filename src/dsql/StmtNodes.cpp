@@ -159,9 +159,9 @@ namespace
 				newContext->ctx_flags |= CTX_null;
 			}
 
-			oldContext->ctx_alias = oldContext->ctx_internal_alias = OLD_CONTEXT;
+			oldContext->ctx_alias = oldContext->ctx_internal_alias = OLD_CONTEXT_NAME;
 
-			newContext->ctx_alias = newContext->ctx_internal_alias = NEW_CONTEXT;
+			newContext->ctx_alias = newContext->ctx_internal_alias = NEW_CONTEXT_NAME;
 			newContext->ctx_flags |= CTX_returning;
 			scratch->context->push(newContext);
 		}
@@ -351,11 +351,11 @@ AssignmentNode* AssignmentNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		tail = &csb->csb_rpt[stream];
 
 		// Assignments to the OLD context are prohibited for all trigger types.
-		if ((tail->csb_flags & csb_trigger) && stream == 0)
+		if ((tail->csb_flags & csb_trigger) && stream == OLD_CONTEXT_VALUE)
 			ERR_post(Arg::Gds(isc_read_only_field));
 
 		// Assignments to the NEW context are prohibited for post-action triggers.
-		if ((tail->csb_flags & csb_trigger) && stream == 1 &&
+		if ((tail->csb_flags & csb_trigger) && stream == NEW_CONTEXT_VALUE &&
 			(csb->csb_g_flags & csb_post_trigger))
 		{
 			ERR_post(Arg::Gds(isc_read_only_field));
@@ -6242,7 +6242,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		// marks it with CTX_null so all fields be resolved to NULL constant.
 		dsql_ctx* old_context = FB_NEW(dsqlScratch->getPool()) dsql_ctx(dsqlScratch->getPool());
 		*old_context = *context;
-		old_context->ctx_alias = old_context->ctx_internal_alias = OLD_CONTEXT;
+		old_context->ctx_alias = old_context->ctx_internal_alias = OLD_CONTEXT_NAME;
 		old_context->ctx_flags |= CTX_system | CTX_null | CTX_returning;
 		dsqlScratch->context->push(old_context);
 
@@ -6250,7 +6250,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		dsql_ctx* new_context = FB_NEW(dsqlScratch->getPool()) dsql_ctx(dsqlScratch->getPool());
 		*new_context = *context;
 		new_context->ctx_scope_level = ++dsqlScratch->scopeLevel;
-		new_context->ctx_alias = new_context->ctx_internal_alias = NEW_CONTEXT;
+		new_context->ctx_alias = new_context->ctx_internal_alias = NEW_CONTEXT_NAME;
 		new_context->ctx_flags |= CTX_system | CTX_returning;
 		dsqlScratch->context->push(new_context);
 	}

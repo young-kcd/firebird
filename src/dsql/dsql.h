@@ -64,8 +64,11 @@ DEFINE_TRACE_ROUTINE(dsql_trace);
 #include "../jrd/EngineInterface.h"
 
 // Context aliases used in triggers
-const char* const OLD_CONTEXT = "OLD";
-const char* const NEW_CONTEXT = "NEW";
+const char* const OLD_CONTEXT_NAME = "OLD";
+const char* const NEW_CONTEXT_NAME = "NEW";
+
+const int OLD_CONTEXT_VALUE = 0;
+const int NEW_CONTEXT_VALUE = 1;
 
 namespace Jrd
 {
