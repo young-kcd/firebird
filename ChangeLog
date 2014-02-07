@@ -1,3 +1,22 @@
+ 2014-02-06 09:52  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed the assertion.
+
+ 2014-02-06 06:53  robocop 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.h
+Give names to the old and new streams in triggers.
+
+ 2014-02-06 06:53  robocop 
+   M src/gpre/obj_cxx.cpp
+Misc.
+
+ 2014-02-06 00:37  asfernandes 
+   M src/dsql/DdlNodes.epp
+Misc.
+
  2014-02-05 17:59  dimitr 
    M src/jrd/exe.cpp
 Fixed some refactoring errors of mine. This should cure CORE-4334: Resources (e.g. sort files) owned by trigger may not be released when it's interrupted asynchronously.
