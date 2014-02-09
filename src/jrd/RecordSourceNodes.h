@@ -282,12 +282,9 @@ public:
 		return checkStream == stream;
 	}
 
-	virtual void computeDbKeyStreams(StreamList& streams) const
+	virtual void computeDbKeyStreams(StreamList& streamList) const
 	{
-		//fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-		fb_assert(streams.getCount() < MAX_STREAMS);
-		//streams[++streams[0]] = getStream();
-		streams.add(getStream());
+		streamList.add(getStream());
 	}
 
 	virtual bool computable(CompilerScratch* /*csb*/, StreamType /*stream*/,
@@ -361,7 +358,7 @@ public:
 		return checkStream == stream;
 	}
 
-	virtual void computeDbKeyStreams(StreamList& /*streams*/) const
+	virtual void computeDbKeyStreams(StreamList& /*streamList*/) const
 	{
 	}
 
@@ -370,8 +367,7 @@ public:
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual bool jrdStreamFinder(StreamType findStream);
-	virtual void jrdStreamsCollector(SortedStreamList& streamList);
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
@@ -426,7 +422,7 @@ public:
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(StreamType checkStream) const;
 
-	virtual void computeDbKeyStreams(StreamList& /*streams*/) const
+	virtual void computeDbKeyStreams(StreamList& /*streamList*/) const
 	{
 	}
 
@@ -434,6 +430,7 @@ public:
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
+
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
@@ -485,11 +482,12 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(StreamType checkStream) const;
-	virtual void computeDbKeyStreams(StreamList& streams) const;
+	virtual void computeDbKeyStreams(StreamList& streamList) const;
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
+
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
@@ -544,7 +542,6 @@ public:
 		return 0;
 	}
 
-	virtual void getStreams(StreamList& list) const;
 	virtual WindowSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
 	virtual RecordSourceNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -553,10 +550,13 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(StreamType checkStream) const;
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
-	virtual void computeDbKeyStreams(StreamList& /*streams*/) const
+	virtual void computeDbKeyStreams(StreamList& /*streamList*/) const
 	{
 	}
+
+	virtual void computeRseStreams(StreamList& streamList) const;
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
@@ -641,10 +641,6 @@ public:
 		return obj;
 	}
 
-	virtual void getStreams(StreamList& /*list*/) const
-	{
-	}
-
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
@@ -668,19 +664,18 @@ public:
 
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb);
 	virtual bool containsStream(StreamType checkStream) const;
-	virtual void computeDbKeyStreams(StreamList& streams) const;
+	virtual void computeDbKeyStreams(StreamList& streamList) const;
+	virtual void computeRseStreams(StreamList& streamList) const;
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
 	virtual void findDependentFromStreams(const OptimizerRetrieval* optRet,
 		SortedStreamList* streamList);
 
-	virtual bool jrdStreamFinder(StreamType findStream);
-	virtual void jrdStreamsCollector(SortedStreamList& streamList);
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
-	void computeRseStreams(const CompilerScratch* csb, StreamList& streams) const;
 	void planCheck(const CompilerScratch* csb) const;
 	static void planSet(CompilerScratch* csb, PlanNode* plan);
 
@@ -766,7 +761,7 @@ public:
 		return false;
 	}
 
-	virtual void computeDbKeyStreams(StreamList& /*streams*/) const
+	virtual void computeDbKeyStreams(StreamList& /*streamList*/) const
 	{
 		fb_assert(false);
 	}

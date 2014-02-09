@@ -212,25 +212,13 @@ bool ExprNode::jrdPossibleUnknownFinder()
 	return false;
 }
 
-// Search if somewhere in the expression the given stream is used.
-bool ExprNode::jrdStreamFinder(StreamType findStream)
-{
-	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-	{
-		if (**i && (*i)->getExpr()->jrdStreamFinder(findStream))
-			return true;
-	}
-
-	return false;
-}
-
 // Return all streams referenced by the expression.
-void ExprNode::jrdStreamsCollector(SortedStreamList& streamList)
+void ExprNode::collectStreams(SortedStreamList& streamList) const
 {
-	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+	for (const NodeRef* const* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
 	{
 		if (**i)
-			(*i)->getExpr()->jrdStreamsCollector(streamList);
+			(*i)->getExpr()->collectStreams(streamList);
 	}
 }
 
@@ -3960,7 +3948,7 @@ bool DerivedExprNode::computable(CompilerScratch* csb, StreamType stream,
 		return false;
 
 	SortedStreamList argStreams;
-	arg->jrdStreamsCollector(argStreams);
+	arg->collectStreams(argStreams);
 
 	for (StreamType* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
 	{
@@ -5521,7 +5509,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		// ASF: If the view field doesn't reference any of the view streams,
 		// evaluate it based on the view dbkey - CORE-1245.
 		SortedStreamList streams;
-		sub->jrdStreamsCollector(streams);
+		sub->collectStreams(streams);
 
 		bool view_refs = false;
 		for (size_t i = 0; i < streams.getCount(); i++)
@@ -7888,17 +7876,6 @@ void RecordKeyNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 		raiseError(dsqlRelation->dsqlContext);
 }
 
-bool RecordKeyNode::jrdStreamFinder(StreamType findStream)
-{
-	return recStream == findStream;
-}
-
-void RecordKeyNode::jrdStreamsCollector(SortedStreamList& streamList)
-{
-	if (!streamList.exist(recStream))
-		streamList.add(recStream);
-}
-
 bool RecordKeyNode::computable(CompilerScratch* csb, StreamType stream,
 	bool allowOnlyCurrentStream, ValueExprNode* /*value*/)
 {
@@ -8954,24 +8931,13 @@ ValueExprNode* SubQueryNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return this;
 }
 
-bool SubQueryNode::jrdStreamFinder(StreamType findStream)
-{
-	if (rse && rse->jrdStreamFinder(findStream))
-		return true;
-
-	if (value1 && value1->jrdStreamFinder(findStream))
-		return true;
-
-	return false;
-}
-
-void SubQueryNode::jrdStreamsCollector(SortedStreamList& streamList)
+void SubQueryNode::collectStreams(SortedStreamList& streamList) const
 {
 	if (rse)
-		rse->jrdStreamsCollector(streamList);
+		rse->collectStreams(streamList);
 
 	if (value1)
-		value1->jrdStreamsCollector(streamList);
+		value1->collectStreams(streamList);
 }
 
 bool SubQueryNode::computable(CompilerScratch* csb, StreamType stream,

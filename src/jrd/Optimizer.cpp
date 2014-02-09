@@ -77,8 +77,8 @@ bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType
 		}
 
 		SortedStreamList exprStreams, nodeStreams;
-		idx->idx_expression->jrdStreamsCollector(exprStreams);
-		node->jrdStreamsCollector(nodeStreams);
+		idx->idx_expression->collectStreams(exprStreams);
+		node->collectStreams(nodeStreams);
 
 		if (exprStreams.getCount() == 1 && exprStreams[0] == 0 &&
 			nodeStreams.getCount() == 1 && nodeStreams[0] == stream)

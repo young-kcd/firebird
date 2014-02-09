@@ -632,17 +632,11 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 
 	// mark all the substreams as inactive
 
-	const NestConst<RecordSourceNode>* ptr = rse->rse_relations.begin();
-	for (const NestConst<RecordSourceNode>* const end = rse->rse_relations.end(); ptr != end; ++ptr)
-	{
-		const RecordSourceNode* const node = *ptr;
+	StreamList streams;
+	rse->computeRseStreams(streams);
 
-		StreamList streams;
-		node->getStreams(streams);
-
-		for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
-			csb->csb_rpt[*i].deactivate();
-	}
+	for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
+		csb->csb_rpt[*i].deactivate();
 
 	return rsb;
 }

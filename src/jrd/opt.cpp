@@ -329,7 +329,6 @@ static USHORT river_count(USHORT count, ValueExprNode** eq_class);
 static bool search_stack(const ValueExprNode*, const ValueExprNodeStack&);
 static void set_direction(SortNode*, SortNode*);
 static void set_position(const SortNode*, SortNode*, const MapNode*);
-static void set_rse_inactive(CompilerScratch*, const RseNode*);
 
 
 // macro definitions
@@ -502,7 +501,11 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		opt->parentStack = NULL;
 
 	// clear the csb_active flag of all streams in the RseNode
-	set_rse_inactive(csb, rse);
+	StreamList rseStreams;
+	rse->computeRseStreams(rseStreams);
+
+	for (StreamList::iterator i = rseStreams.begin(); i != rseStreams.end(); ++i)
+		csb->csb_rpt[*i].deactivate();
 
 	// go through the record selection expression generating
 	// record source blocks for all streams
@@ -1173,7 +1176,7 @@ static void check_sorts(RseNode* rse)
 				// This position doesn't use a simple field, thus we should
 				// check the expression internals.
 				SortedStreamList streams;
-				(*sort_ptr)->jrdStreamsCollector(streams);
+				(*sort_ptr)->collectStreams(streams);
 
 				// We can use this sort only if there's a single stream
 				// referenced by the expression.
@@ -2359,7 +2362,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 
 			if (tail->opt_conjunct_flags & opt_conjunct_matched)
 			{
-				if (node->jrdStreamFinder(stream))
+				if (node->findStream(stream))
 				{
 					compose(tdbb, &boolean, node);
 					tail->opt_conjunct_flags |= opt_conjunct_used;
@@ -2381,7 +2384,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (inversion && condition)
 		{
 			if (condition->computable(csb, INVALID_STREAM, false) &&
-				!condition->jrdStreamFinder(stream))
+				!condition->findStream(stream))
 			{
 				RecordSource* const rsb1 =
 					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);
@@ -2994,7 +2997,6 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 				key->expressions.add((*selected_class)[number]);
 			}
 
-			fb_assert(river->getStreams().getCount() <= MAX_STREAMS);
 			StreamList streams;
 			streams.assign(river->getStreams());
 			rsb = OPT_gen_sort(tdbb, opt->opt_csb, streams, NULL, rsb, key, false);
@@ -3549,36 +3551,4 @@ static void set_position(const SortNode* from_clause, SortNode* to_clause, const
 		++to_swap;
 	}
 
-}
-
-
-static void set_rse_inactive(CompilerScratch* csb, const RseNode* rse)
-{
-/***************************************************
- *
- *  s e t _ r s e _ i n a c t i v e
- *
- ***************************************************
- *
- * Functional Description:
- *    Set all the streams involved in an RseNode as inactive. Do it recursively.
- *
- ***************************************************/
-	const NestConst<RecordSourceNode>* ptr = rse->rse_relations.begin();
-
-	for (const NestConst<RecordSourceNode>* const end = rse->rse_relations.end(); ptr != end; ++ptr)
-	{
-		const RecordSourceNode* node = *ptr;
-
-		if (node->type == RseNode::TYPE)
-			set_rse_inactive(csb, static_cast<const RseNode*>(node));
-		else
-		{
-			StreamList sourceStreams;
-			node->getStreams(sourceStreams);
-
-			for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
-				csb->csb_rpt[*i].deactivate();
-		}
-	}
 }

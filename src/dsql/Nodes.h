@@ -579,9 +579,17 @@ public:
 	}
 
 	virtual bool jrdPossibleUnknownFinder();
-	virtual bool jrdStreamFinder(StreamType findStream);
-	virtual void jrdStreamsCollector(SortedStreamList& streamList);
 	virtual bool jrdUnmappableNode(const MapNode* mapNode, StreamType shellStream);
+
+	virtual void collectStreams(SortedStreamList& streamList) const;
+
+	virtual bool findStream(StreamType stream)
+	{
+		SortedStreamList streams;
+		collectStreams(streams);
+
+		return streams.exist(stream);
+	}
 
 	virtual void print(Firebird::string& text) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
@@ -835,14 +843,7 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(StreamType /*findStream*/)
-	{
-		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
-		// been set to 0 in CMP_pass2, so that doesn't happens.
-		return false;
-	}
-
-	virtual void jrdStreamsCollector(SortedStreamList& /*streamList*/)
+	virtual void collectStreams(SortedStreamList& /*streamList*/) const
 	{
 		// ASF: Although in v2.5 the visitor happens normally for the node childs, nod_count has
 		// been set to 0 in CMP_pass2, so that doesn't happens.
@@ -982,12 +983,6 @@ public:
 		stream = value;
 	}
 
-	// Identify the streams that make up an RseNode.
-	virtual void getStreams(StreamList& list) const
-	{
-		list.add(getStream());
-	}
-
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
 		ExprNode::dsqlPass(dsqlScratch);
@@ -1008,7 +1003,6 @@ public:
 	virtual RecordSourceNode* pass2(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual void pass2Rse(thread_db* tdbb, CompilerScratch* csb) = 0;
 	virtual bool containsStream(StreamType checkStream) const = 0;
-
 	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
@@ -1019,14 +1013,15 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(StreamType /*findStream*/)
-	{
-		return true;
-	}
-
 	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
+	}
+
+	virtual void collectStreams(SortedStreamList& streamList) const
+	{
+		if (!streamList.exist(getStream()))
+			streamList.add(getStream());
 	}
 
 	virtual bool sameAs(const ExprNode* /*other*/, bool /*ignoreStreams*/) const
@@ -1035,7 +1030,14 @@ public:
 	}
 
 	// Identify all of the streams for which a dbkey may need to be carried through a sort.
-	virtual void computeDbKeyStreams(StreamList& streams) const = 0;
+	virtual void computeDbKeyStreams(StreamList& streamList) const = 0;
+
+	// Identify the streams that make up an RseNode.
+	virtual void computeRseStreams(StreamList& streamList) const
+	{
+		streamList.add(getStream());
+	}
+
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream) = 0;
 
 public:

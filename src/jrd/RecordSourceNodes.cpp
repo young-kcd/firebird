@@ -64,13 +64,7 @@ namespace
 		AutoActivateResetStreams(CompilerScratch* csb, const RseNode* rse)
 			: m_csb(csb), m_streams(getPool()), m_flags(getPool())
 		{
-			const NestConst<RecordSourceNode>* const end = rse->rse_relations.end();
-			const NestConst<RecordSourceNode>* ptr;
-
-			for (ptr = rse->rse_relations.begin(); ptr != end; ++ptr)
-			{
-				(*ptr)->getStreams(m_streams);
-			}
+			rse->computeRseStreams(m_streams);
 
 			if (m_streams.getCount() >= MAX_STREAMS)
 				ERR_post(Arg::Gds(isc_too_many_contexts));
@@ -1231,20 +1225,15 @@ void ProcedureSourceNode::findDependentFromStreams(const OptimizerRetrieval* opt
 		targetList->findDependentFromStreams(optRet, streamList);
 }
 
-bool ProcedureSourceNode::jrdStreamFinder(StreamType /*findStream*/)
+void ProcedureSourceNode::collectStreams(SortedStreamList& streamList) const
 {
-	// ASF: We used to visit nodes that were not handled appropriately. This is
-	// equivalent with the legacy code.
-	return sourceList && targetList;
-}
+	RecordSourceNode::collectStreams(streamList);
 
-void ProcedureSourceNode::jrdStreamsCollector(SortedStreamList& streamList)
-{
 	if (sourceList)
-		sourceList->jrdStreamsCollector(streamList);
+		sourceList->collectStreams(streamList);
 
 	if (targetList)
-		targetList->jrdStreamsCollector(streamList);
+		targetList->collectStreams(streamList);
 }
 
 
@@ -1922,12 +1911,12 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, cons
 }
 
 // Identify all of the streams for which a dbkey may need to be carried through a sort.
-void UnionSourceNode::computeDbKeyStreams(StreamList& streams) const
+void UnionSourceNode::computeDbKeyStreams(StreamList& streamList) const
 {
 	const NestConst<RseNode>* ptr = clauses.begin();
 
 	for (const NestConst<RseNode>* const end = clauses.end(); ptr != end; ++ptr)
-		(*ptr)->computeDbKeyStreams(streams);
+		(*ptr)->computeDbKeyStreams(streamList);
 }
 
 bool UnionSourceNode::computable(CompilerScratch* csb, StreamType stream,
@@ -2144,6 +2133,17 @@ bool WindowSourceNode::containsStream(StreamType checkStream) const
 	return false;
 }
 
+void WindowSourceNode::collectStreams(SortedStreamList& streamList) const
+{
+	for (ObjectsArray<Partition>::const_iterator partition = partitions.begin();
+		 partition != partitions.end();
+		 ++partition)
+	{
+		if (!streamList.exist(partition->stream))
+			streamList.add(partition->stream);
+	}
+}
+
 RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
 	for (ObjectsArray<Partition>::iterator partition = partitions.begin();
@@ -2192,13 +2192,13 @@ bool WindowSourceNode::computable(CompilerScratch* csb, StreamType stream,
 	return rse->computable(csb, stream, allowOnlyCurrentStream, NULL);
 }
 
-void WindowSourceNode::getStreams(StreamList& list) const
+void WindowSourceNode::computeRseStreams(StreamList& streamList) const
 {
 	for (ObjectsArray<Partition>::const_iterator partition = partitions.begin();
 		 partition != partitions.end();
 		 ++partition)
 	{
-		list.add(partition->stream);
+		streamList.add(partition->stream);
 	}
 }
 
@@ -2783,8 +2783,8 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 	// represent that work has to be done to retrieve them;
 	// find all the substreams involved and compile them as well
 
-	computeRseStreams(opt->opt_csb, opt->beds);
-	computeRseStreams(opt->opt_csb, opt->localStreams);
+	computeRseStreams(opt->beds);
+	computeRseStreams(opt->localStreams);
 	computeDbKeyStreams(opt->keyStreams);
 
 	RecordSource* rsb;
@@ -2856,41 +2856,6 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 		rsb = OPT_compile(tdbb, opt->opt_csb, this, opt->parentStack);
 
 	return rsb;
-}
-
-// Identify the streams that make up a RseNode.
-//void RseNode::computeRseStreams(const CompilerScratch* csb, UCHAR* streams) const
-void RseNode::computeRseStreams(const CompilerScratch* csb, StreamList& streams) const
-{
-	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
-
-	for (const NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
-	{
-		const RecordSourceNode* node = *ptr;
-
-		if (node->type == RseNode::TYPE)
-			static_cast<const RseNode*>(node)->computeRseStreams(csb, streams);
-		else
-		{
-			// This is a bit inefficient, dumping into a list, then joining the list to another list.
-			StreamList sourceStreams;
-			node->getStreams(sourceStreams);
-
-			if (streams.getCount() + sourceStreams.getCount() >= MAX_STREAMS)
-				ERR_post(Arg::Gds(isc_too_many_contexts));
-
-			/***
-			for (StreamList::iterator i = sourceStreams.begin(); i != sourceStreams.end(); ++i)
-			{
-				//fb_assert(streams[0] < MAX_STREAMS && streams[0] < MAX_UCHAR);
-				fb_assert(streams.getCount() < MAX_STREAMS);
-				//streams[++streams[0]] = (UCHAR) *i;
-				streams.add(*i);
-			}
-			***/
-			streams.join(sourceStreams);
-		}
-	}
 }
 
 // Check that all streams in the RseNode have a plan specified for them.
@@ -3109,13 +3074,20 @@ void RseNode::planSet(CompilerScratch* csb, PlanNode* plan)
 	tail->csb_plan = plan;
 }
 
-// Identify all of the streams for which a dbkey may need to be carried through a sort.
-void RseNode::computeDbKeyStreams(StreamList& streams) const
+void RseNode::computeDbKeyStreams(StreamList& streamList) const
 {
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
 	for (const NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
-		(*ptr)->computeDbKeyStreams(streams);
+		(*ptr)->computeDbKeyStreams(streamList);
+}
+
+void RseNode::computeRseStreams(StreamList& streamList) const
+{
+	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
+
+	for (const NestConst<RecordSourceNode>* const end = rse_relations.end(); ptr != end; ++ptr)
+		(*ptr)->computeRseStreams(streamList);
 }
 
 bool RseNode::computable(CompilerScratch* csb, StreamType stream,
@@ -3179,63 +3151,27 @@ void RseNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 		(*ptr)->findDependentFromStreams(optRet, streamList);
 }
 
-bool RseNode::jrdStreamFinder(StreamType findStream)
-{
-	if (rse_first && rse_first->jrdStreamFinder(findStream))
-		return true;
-
-	if (rse_skip && rse_skip->jrdStreamFinder(findStream))
-		return true;
-
-	if (rse_boolean && rse_boolean->jrdStreamFinder(findStream))
-		return true;
-
-	// ASF: The legacy code used to visit rse_sorted and rse_projection. But note that
-	// visiting them, the visitor always returns true, because nod_sort is not handled
-	// there. So I replaced these lines by the if/return below.
-	//
-	// if (rse_sorted && rse_sorted->jrdStreamFinder(findStream))
-	//     return true;
-	//
-	// if (rse_projection && rse_projection->jrdStreamFinder(findStream))
-	//     return true;
-
-	if (rse_sorted || rse_projection)
-		return true;
-
-	NestConst<RecordSourceNode>* ptr;
-	const NestConst<RecordSourceNode>* end;
-
-	for (ptr = rse_relations.begin(), end = rse_relations.end(); ptr != end; ++ptr)
-	{
-		if ((*ptr)->jrdStreamFinder(findStream))
-			return true;
-	}
-
-	return false;
-}
-
-void RseNode::jrdStreamsCollector(SortedStreamList& streamList)
+void RseNode::collectStreams(SortedStreamList& streamList) const
 {
 	if (rse_first)
-		rse_first->jrdStreamsCollector(streamList);
+		rse_first->collectStreams(streamList);
 
 	if (rse_skip)
-		rse_skip->jrdStreamsCollector(streamList);
+		rse_skip->collectStreams(streamList);
 
 	if (rse_boolean)
-		rse_boolean->jrdStreamsCollector(streamList);
+		rse_boolean->collectStreams(streamList);
 
 	// ASF: The legacy code used to visit rse_sorted and rse_projection, but the nod_sort was never
 	// handled.
-	// rse_sorted->jrdStreamsCollector(streamList);
-	// rse_projection->jrdStreamsCollector(streamList);
+	// rse_sorted->collectStreams(streamList);
+	// rse_projection->collectStreams(streamList);
 
-	NestConst<RecordSourceNode>* ptr;
+	const NestConst<RecordSourceNode>* ptr;
 	const NestConst<RecordSourceNode>* end;
 
 	for (ptr = rse_relations.begin(), end = rse_relations.end(); ptr != end; ++ptr)
-		(*ptr)->jrdStreamsCollector(streamList);
+		(*ptr)->collectStreams(streamList);
 }
 
 

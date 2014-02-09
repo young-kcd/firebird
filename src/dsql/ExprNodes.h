@@ -610,12 +610,7 @@ public:
 		return false;
 	}
 
-	virtual bool jrdStreamFinder(StreamType findStream)
-	{
-		return fieldStream == findStream;
-	}
-
-	virtual void jrdStreamsCollector(SortedStreamList& streamList)
+	virtual void collectStreams(SortedStreamList& streamList) const
 	{
 		if (!streamList.exist(fieldStream))
 			streamList.add(fieldStream);
@@ -1084,8 +1079,11 @@ public:
 		return false;
 	}
 
-	virtual bool jrdStreamFinder(StreamType findStream);
-	virtual void jrdStreamsCollector(SortedStreamList& streamList);
+	virtual void collectStreams(SortedStreamList& streamList) const
+	{
+		if (!streamList.exist(recStream))
+			streamList.add(recStream);
+	}
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
@@ -1308,8 +1306,7 @@ public:
 		return true;
 	}
 
-	virtual bool jrdStreamFinder(StreamType findStream);
-	virtual void jrdStreamsCollector(SortedStreamList& streamList);
+	virtual void collectStreams(SortedStreamList& streamList) const;
 
 	virtual bool computable(CompilerScratch* csb, StreamType stream,
 		bool allowOnlyCurrentStream, ValueExprNode* value);
