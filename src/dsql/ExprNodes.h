@@ -605,7 +605,7 @@ public:
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 	virtual bool sameAs(const ExprNode* other, bool ignoreStreams) const;
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return false;
 	}
@@ -616,7 +616,7 @@ public:
 			streamList.add(fieldStream);
 	}
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return true;
 	}
@@ -1074,7 +1074,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return false;
 	}
@@ -1296,12 +1296,12 @@ public:
 	virtual bool dsqlFieldFinder(FieldFinder& visitor);
 	virtual ValueExprNode* dsqlFieldRemapper(FieldRemapper& visitor);
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}
@@ -1499,7 +1499,7 @@ public:
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}

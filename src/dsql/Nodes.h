@@ -578,10 +578,39 @@ public:
 		target = node ? node->dsqlFieldRemapper(visitor) : NULL;
 	}
 
-	virtual bool jrdPossibleUnknownFinder();
-	virtual bool jrdUnmappableNode(const MapNode* mapNode, StreamType shellStream);
+	// Check if expression could return NULL or expression can turn NULL into a true/false.
+	virtual bool possiblyUnknown()
+	{
+		for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+		{
+			if (**i && (*i)->getExpr()->possiblyUnknown())
+				return true;
+		}
 
-	virtual void collectStreams(SortedStreamList& streamList) const;
+		return false;
+	}
+
+	// Verify if this node is allowed in an unmapped boolean.
+	virtual bool unmappable(const MapNode* mapNode, StreamType shellStream)
+	{
+		for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+		{
+			if (**i && !(*i)->getExpr()->unmappable(mapNode, shellStream))
+				return false;
+		}
+
+		return true;
+	}
+
+	// Return all streams referenced by the expression.
+	virtual void collectStreams(SortedStreamList& streamList) const
+	{
+		for (const NodeRef* const* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
+		{
+			if (**i)
+				(*i)->getExpr()->collectStreams(streamList);
+		}
+	}
 
 	virtual bool findStream(StreamType stream)
 	{
@@ -838,7 +867,7 @@ public:
 
 	virtual AggNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}
@@ -850,7 +879,7 @@ public:
 		return;
 	}
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}
@@ -1008,12 +1037,12 @@ public:
 		fb_assert(false);
 	}
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}
 
-	virtual bool jrdUnmappableNode(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
+	virtual bool unmappable(const MapNode* /*mapNode*/, StreamType /*shellStream*/)
 	{
 		return false;
 	}

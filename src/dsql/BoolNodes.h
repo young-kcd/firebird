@@ -78,9 +78,9 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
-		return blrOp == blr_equiv ? true : BoolExprNode::jrdPossibleUnknownFinder();
+		return blrOp == blr_equiv ? true : BoolExprNode::possiblyUnknown();
 	}
 
 	virtual BoolExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -122,7 +122,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}
@@ -149,7 +149,7 @@ public:
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}
@@ -187,7 +187,7 @@ public:
 		return true;
 	}
 
-	virtual bool jrdPossibleUnknownFinder()
+	virtual bool possiblyUnknown()
 	{
 		return true;
 	}

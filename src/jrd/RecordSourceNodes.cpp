@@ -2821,7 +2821,7 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 			{
 				BoolExprNode* deliverNode = stackItem.object();
 
-				if (!deliverNode->jrdPossibleUnknownFinder())
+				if (!deliverNode->possiblyUnknown())
 					deliverStack.push(deliverNode);
 			}
 
@@ -3542,7 +3542,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 					// Check also the expression inside the map, because aggregate
 					// functions aren't allowed to be delivered to the WHERE clause.
 					ValueExprNode* value = map->sourceList[fieldId];
-					okNode = value->jrdUnmappableNode(map, shellStream);
+					okNode = value->unmappable(map, shellStream);
 
 					if (okNode)
 						*newChildren[indexArg] = map->sourceList[fieldId];
@@ -3550,7 +3550,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 			}
 			else
 			{
-				if ((okNode = children[indexArg]->jrdUnmappableNode(map, shellStream)))
+				if ((okNode = children[indexArg]->unmappable(map, shellStream)))
 					*newChildren[indexArg] = children[indexArg];
 			}
 		}

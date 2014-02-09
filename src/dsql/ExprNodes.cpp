@@ -200,40 +200,6 @@ ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	return this;
 }
 
-// Check if expression could return NULL or expression can turn NULL into a true/false.
-bool ExprNode::jrdPossibleUnknownFinder()
-{
-	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-	{
-		if (**i && (*i)->getExpr()->jrdPossibleUnknownFinder())
-			return true;
-	}
-
-	return false;
-}
-
-// Return all streams referenced by the expression.
-void ExprNode::collectStreams(SortedStreamList& streamList) const
-{
-	for (const NodeRef* const* i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-	{
-		if (**i)
-			(*i)->getExpr()->collectStreams(streamList);
-	}
-}
-
-// Verify if this node is allowed in an unmapped boolean.
-bool ExprNode::jrdUnmappableNode(const MapNode* mapNode, StreamType shellStream)
-{
-	for (NodeRef** i = jrdChildNodes.begin(); i != jrdChildNodes.end(); ++i)
-	{
-		if (**i && !(*i)->getExpr()->jrdUnmappableNode(mapNode, shellStream))
-			return false;
-	}
-
-	return true;
-}
-
 
 //--------------------
 

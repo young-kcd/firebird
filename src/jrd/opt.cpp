@@ -587,7 +587,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 		{
 			BoolExprNode* const node = iter.object();
 
-			if (rse->rse_jointype != blr_inner && node->jrdPossibleUnknownFinder())
+			if (rse->rse_jointype != blr_inner && node->possiblyUnknown())
 			{
 				// parent missing conjunctions shouldn't be
 				// distributed to FULL OUTER JOIN streams at all
