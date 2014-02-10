@@ -1,3 +1,23 @@
+ 2014-02-09 18:28  dimitr 
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/opt.cpp
+Renamed a few methods for better readability.
+
+ 2014-02-09 15:58  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/jrd/Optimizer.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/cmp.cpp
+   M src/jrd/opt.cpp
+Fixed refactoring errors that caused some optimizer regressions. Also, simplified code a little.
+
  2014-02-06 09:52  dimitr 
    M src/jrd/Optimizer.cpp
 Fixed the assertion.
