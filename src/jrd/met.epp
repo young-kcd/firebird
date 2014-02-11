@@ -2487,7 +2487,9 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 					IND.RDB$INDEX_NAME EQ IDX.RDB$FOREIGN_KEY AND
 					IND.RDB$UNIQUE_FLAG = 1
 			{
-				const jrd_rel* partner_relation = MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
+				//// ASF: Hack fix for CORE-4304, until nasty interactions between dfw and met are not resolved.
+				const jrd_rel* partner_relation = relation->rel_name == IND.RDB$RELATION_NAME ?
+					relation : MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
 
 				if (partner_relation && !IDX.RDB$INDEX_INACTIVE && !IND.RDB$INDEX_INACTIVE)
 				{
@@ -4809,7 +4811,9 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
 			IND.RDB$INDEX_NAME EQ IDX.RDB$FOREIGN_KEY AND
 			IND.RDB$UNIQUE_FLAG = 1
 	{
-		const jrd_rel* partner_relation = MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
+		//// ASF: Hack fix for CORE-4304, until nasty interactions between dfw and met are not resolved.
+		const jrd_rel* partner_relation = relation->rel_name == IND.RDB$RELATION_NAME ?
+			relation : MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
 
 		if (partner_relation && !IDX.RDB$INDEX_INACTIVE && !IND.RDB$INDEX_INACTIVE)
 		{
@@ -4866,7 +4870,9 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
 			IDX.RDB$RELATION_NAME EQ relation->rel_name.c_str() AND
 			IND.RDB$FOREIGN_KEY EQ IDX.RDB$INDEX_NAME
 	{
-		const jrd_rel* partner_relation = MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
+		//// ASF: Hack fix for CORE-4304, until nasty interactions between dfw and met are not resolved.
+		const jrd_rel* partner_relation = relation->rel_name == IND.RDB$RELATION_NAME ?
+			relation : MET_lookup_relation(tdbb, IND.RDB$RELATION_NAME);
 
 		if (partner_relation && !IDX.RDB$INDEX_INACTIVE && !IND.RDB$INDEX_INACTIVE)
 		{
