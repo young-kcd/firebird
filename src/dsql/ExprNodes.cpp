@@ -10572,6 +10572,14 @@ ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 ValueExprNode* UdfCallNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
+	if (function->fun_deterministic && !function->fun_inputs)
+	{
+		// Deterministic function without input arguments is expected to be
+		// always returning the same result, so it can be marked as invariant
+		nodFlags |= FLAG_INVARIANT;
+		csb->csb_invariants.push(&impureOffset);
+	}
+
 	ValueExprNode::pass2(tdbb, csb);
 
 	dsc desc;
@@ -10600,14 +10608,13 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	UCHAR* impure = request->getImpure<UCHAR>(impureOffset);
 	impure_value* value = request->getImpure<impure_value>(impureOffset);
-	const bool invariant = nodFlags & FLAG_INVARIANT;
 
 	USHORT& invariantFlags = value->vlu_flags;
 
 	// If the function is known as being both deterministic and invariant,
 	// check whether it has already been evaluated
 
-	if (function->fun_deterministic && invariant)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		if (invariantFlags & VLU_computed)
 		{
@@ -10783,7 +10790,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		INTL_adjust_text_descriptor(tdbb, &value->vlu_desc);
 
 	// If the function is declared as invariant, mark it as computed.
-	if (function->fun_deterministic && invariant)
+	if (nodFlags & FLAG_INVARIANT)
 	{
 		invariantFlags |= VLU_computed;
 
