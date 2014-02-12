@@ -674,7 +674,7 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int 
  *
  **************************************/
 // Skidder: Calls to this function must be replaced with MemoryPool::print_contents
-	Firebird::PathName report_name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "fbsrvreport.txt");
+	Firebird::PathName report_name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, "fbsrvreport.txt");
 	// Our new facilities don't expose flags for reporting.
 	const bool used_only = !(flags & ALLOC_verbose);
 	getDefaultMemoryPool()->print_contents(report_name.c_str(), used_only, filter_filename);
@@ -1053,7 +1053,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	{
 		if (CleanupTraceHandles::trace_file_handle == INVALID_HANDLE_VALUE)
 		{
-			Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
+			Firebird::PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, LOGFILE);
 			// We do not care to close this file.
 			// It will be closed automatically when our process terminates.
 			CleanupTraceHandles::trace_file_handle = CreateFile(name.c_str(), GENERIC_WRITE,
@@ -1077,7 +1077,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
 	}
 	ReleaseMutex(CleanupTraceHandles::trace_mutex_handle);
 #else
-	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
+	Firebird::PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, LOGFILE);
 	int file = open(name.c_str(), O_CREAT | O_APPEND | O_WRONLY, 0660);
 	if (file == -1)
 		return;
@@ -1182,7 +1182,7 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
+	Firebird::PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, LOGFILE);
 
 #ifdef WIN_NT
 	WaitForSingleObject(CleanupTraceHandles::trace_mutex_handle, INFINITE);
@@ -1247,7 +1247,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 	now = time((time_t *)0);
 #endif
 
-	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
+	Firebird::PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, LOGFILE);
 
 	const int oldmask = umask(0111);
 #ifdef WIN_NT

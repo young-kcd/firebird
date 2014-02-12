@@ -178,7 +178,7 @@ namespace
 	{
 	public:
 		explicit AliasesConf(MemoryPool& p)
-			: ConfigCache(p, fb_utils::getPrefix(fb_utils::FB_DIR_CONF, ALIAS_FILE)),
+			: ConfigCache(p, fb_utils::getPrefix(Firebird::DirType::FB_DIR_CONF, ALIAS_FILE)),
 			  databases(getPool()), aliases(getPool())
 		{ }
 

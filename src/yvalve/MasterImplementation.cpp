@@ -685,6 +685,26 @@ namespace Why {
 
 
 //
+// ConfigManager (config info access)
+//
+
+namespace Firebird {
+
+	extern IConfigManager* iConfigManager;
+
+} // namespace Firebird
+
+namespace Why {
+
+	Firebird::IConfigManager* FB_CARG MasterImplementation::getConfigManager()
+	{
+		return Firebird::iConfigManager;
+	}
+
+} // namespace Why
+
+
+//
 // get master
 //
 

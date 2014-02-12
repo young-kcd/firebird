@@ -95,6 +95,7 @@ class ITransaction;
 class IDtc;
 class IMetadataBuilder;
 class IDebug;
+class IConfigManager;
 
 struct UpgradeInfo
 {
@@ -124,8 +125,9 @@ public:
 	virtual Firebird::IDebug* FB_CARG getDebug() = 0;
 	virtual int FB_CARG serverMode(int mode) = 0;
 	virtual IUtl* FB_CARG getUtlInterface() = 0;
+	virtual IConfigManager* FB_CARG getConfigManager() = 0;
 };
-#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 14)
+#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 15)
 
 } // namespace Firebird
 

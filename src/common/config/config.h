@@ -351,4 +351,7 @@ private:
 	Firebird::RefPtr<Config> config;
 };
 
+// Create default instance of IFirebirdConf interface
+Firebird::IFirebirdConf* getFirebirdConfig();
+
 #endif // COMMON_CONFIG_H

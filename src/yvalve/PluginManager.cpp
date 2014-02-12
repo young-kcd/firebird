@@ -95,7 +95,7 @@ namespace
 	public:
 		explicit StaticConfHolder(MemoryPool& p)
 			: confFile(FB_NEW(p) ConfigFile(p,
-				fb_utils::getPrefix(fb_utils::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
+				fb_utils::getPrefix(Firebird::DirType::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
 		{
 		}
 
@@ -123,6 +123,41 @@ namespace
 
 		return RefPtr<ConfigFile>(NULL);
 	}
+
+	struct PluginLoadInfo
+	{
+		PathName curModule, regName, plugConfigFile;
+		RefPtr<ConfigFile> conf;
+
+		PluginLoadInfo(const char* pluginName)
+		{
+			// define default values for plugin ...
+			curModule = fb_utils::getPrefix(Firebird::DirType::FB_DIR_PLUGINS, pluginName);
+			regName = pluginName;
+
+			// and try to load them from conf file
+			conf = findConfig("Plugin", pluginName);
+
+			if (conf.hasData())
+			{
+				const ConfigFile::Parameter* v = conf->findParameter("RegisterName");
+				if (v)
+				{
+					regName = v->value.ToPathName();
+				}
+
+				v = conf->findParameter("Module");
+				if (v)
+				{
+					curModule = v->value.ToPathName();
+				}
+			}
+
+			plugConfigFile = curModule;
+			changeExtension(plugConfigFile, "conf");
+		}
+	};
+
 
 	bool flShutdown = false;
 
@@ -246,6 +281,21 @@ namespace
 
 		return NULL;
 	}
+
+	IConfig* findDefConfig(ConfigFile* defaultConfig, const PathName& confName)
+	{
+		if (defaultConfig)
+		{
+			const ConfigFile::Parameter* p = defaultConfig->findParameter("Config");
+			IConfig* rc = new ConfigAccess(p ? findConfig("Config", p->value.c_str()) : RefPtr<ConfigFile>(NULL));
+			rc->addRef();
+			return rc;
+		}
+
+		IConfig* rc = PluginManagerInterfacePtr()->getConfig(confName.nullStr());
+		return rc;
+	}
+
 
 	// Plugins registered when loading plugin module.
 	// This is POD object - no dtor, only simple data types inside.
@@ -435,17 +485,7 @@ namespace
 
 		IConfig* getDefaultConfig()
 		{
-			if (defaultConfig.hasData())
-			{
-				const ConfigFile::Parameter* p = defaultConfig->findParameter("Config");
-				IConfig* rc = new ConfigAccess(p ? findConfig("Config", p->value.c_str()) : RefPtr<ConfigFile>(NULL));
-				rc->addRef();
-				return rc;
-			}
-
-			IConfig* iconf = PluginManagerInterfacePtr()->getConfig(confName.nullStr());
-
-			return iconf;
+			return findDefConfig(defaultConfig, confName);
 		}
 
 		const PluginModule* getPluggedModule() const
@@ -760,51 +800,29 @@ namespace
 				break;
 			}
 
-			// define default values for plugin ...
-			PathName curModule = fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, currentName.c_str());
-			PathName regName = currentName;
-
-			// and try to load them from conf file
-			RefPtr<ConfigFile> conf = findConfig("Plugin", currentName.c_str());
-
-			if (conf.hasData())
-			{
-				const ConfigFile::Parameter* v = conf->findParameter("RegisterName");
-				if (v)
-				{
-					regName = v->value.ToPathName();
-				}
-
-				v = conf->findParameter("Module");
-				if (v)
-				{
-					curModule = v->value.ToPathName();
-				}
-			}
+			// setup loadinfo
+			PluginLoadInfo info(currentName.c_str());
 
 			// Check if module is loaded and load it if needed
-			RefPtr<PluginModule> m(modules->findModule(curModule));
+			RefPtr<PluginModule> m(modules->findModule(info.curModule));
 			if (!m.hasData() && !flShutdown)
 			{
-				m = loadModule(curModule);
+				m = loadModule(info.curModule);
 			}
 			if (!m.hasData())
 			{
 				continue;
 			}
 
-			int r = m->findPlugin(interfaceType, regName);
+			int r = m->findPlugin(interfaceType, info.regName);
 			if (r < 0)
 			{
 				gds__log("Misconfigured: module %s does not contain plugin %s type %d",
-						 curModule.c_str(), regName.c_str(), interfaceType);
+						 info.curModule.c_str(), info.regName.c_str(), interfaceType);
 				continue;
 			}
 
-			PathName plugConfigFile = curModule;
-			changeExtension(plugConfigFile, "conf");
-
-			currentPlugin = new ConfiguredPlugin(m, r, conf, plugConfigFile, currentName);
+			currentPlugin = new ConfiguredPlugin(m, r, info.conf, info.plugConfigFile, currentName);
 
 			plugins->put(MapKey(interfaceType, currentName), currentPlugin);
 			return;
@@ -902,7 +920,7 @@ void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, co
 
 	if (current == builtin)
 	{
-		PathName plugConfigFile = fb_utils::getPrefix(fb_utils::FB_DIR_PLUGINS, defaultName);
+		PathName plugConfigFile = fb_utils::getPrefix(Firebird::DirType::FB_DIR_PLUGINS, defaultName);
 		changeExtension(plugConfigFile, "conf");
 
 		ConfiguredPlugin* p = new ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
@@ -1028,5 +1046,102 @@ void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 		semPtr->enter();
 	}
 }
+
+}	// namespace Firebird
+
+namespace {
+
+class DirCache
+{
+public:
+	DirCache(MemoryPool &p)
+		: cache(p)
+	{
+		cache.resize(DirType::FB_DIRCOUNT);
+		for (unsigned i = 0; i < DirType::FB_DIRCOUNT; ++i)
+		{
+			cache[i] = fb_utils::getPrefix(i, "");
+		}
+	}
+
+	const char* getDir(unsigned code)
+	{
+		fb_assert(code < DirType::FB_DIRCOUNT);
+		return cache[code].c_str();
+	}
+
+private:
+	ObjectsArray<PathName> cache;
+};
+
+InitInstance<DirCache> dirCache;
+
+}	// anonymous namespace
+
+namespace Firebird {
+
+// Generic access to all config interfaces
+class ConfigManager : public AutoIface<IConfigManager, FB_CONFIG_MANAGER_VERSION>
+{
+public:
+	const char* getDirectory(unsigned code)
+	{
+		try
+		{
+			return dirCache().getDir(code);
+		}
+		catch(const Exception&)
+		{
+			return NULL;
+		}
+	}
+
+	IConfig* getPluginConfig(const char* pluginName)
+	{
+		try
+		{
+			// setup loadinfo
+			PluginLoadInfo info(pluginName);
+			return findDefConfig(info.conf, info.plugConfigFile);
+		}
+		catch(const Exception&)
+		{
+			return NULL;
+		}
+	}
+
+	IFirebirdConf* getFirebirdConf()
+	{
+		try
+		{
+			return getFirebirdConfig();
+		}
+		catch(const Exception&)
+		{
+			return NULL;
+		}
+	}
+
+	IFirebirdConf* getDatabaseConf(const char* dbName)
+	{
+		try
+		{
+			PathName dummy;
+			Firebird::RefPtr<Config> config;
+			expandDatabaseName(dbName, dummy, &config);
+
+			IFirebirdConf* firebirdConf = new FirebirdConf(config);
+			firebirdConf->addRef();
+			return firebirdConf;
+		}
+		catch(const Exception&)
+		{
+			return NULL;
+		}
+	}
+};
+
+static ConfigManager configManager;
+IConfigManager* iConfigManager(&configManager);
 
 }	// namespace Firebird

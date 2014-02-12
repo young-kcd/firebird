@@ -771,6 +771,12 @@ public:
 		fb_assert(false);
 		return NULL;
 	}
+
+	virtual IConfigManager* FB_CARG getConfigManager()
+	{
+		fb_assert(false);
+		return NULL;
+	}
 };
 
 

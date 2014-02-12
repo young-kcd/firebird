@@ -983,9 +983,10 @@ bool bootBuild()
 	return state == FB_BOOT_SET;
 }
 
+using namespace ::Firebird::DirType;
 
 // Build full file name in specified directory
-Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
+Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 {
 	Firebird::PathName s;
 	char tmp[MAXPATHLEN];
@@ -996,8 +997,8 @@ Firebird::PathName getPrefix(FB_DIR prefType, const char* name)
 		FB_GUARDDIR, FB_PLUGDIR
 	};
 
-	fb_assert(FB_NELEM(configDir) == FB_DIR_LAST);
-	fb_assert(prefType < FB_DIR_LAST);
+	fb_assert(FB_NELEM(configDir) == FB_DIRCOUNT);
+	fb_assert(prefType < FB_DIRCOUNT);
 
 	if (! bootBuild())
 	{

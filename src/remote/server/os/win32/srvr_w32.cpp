@@ -345,7 +345,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	// due to remote access
 
 	//gds_alloc_report(0, __FILE__, __LINE__);
-	PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "memdebug.log");
+	PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, "memdebug.log");
 	FILE* file = fopen(name.c_str(), "w+t");
 	if (file)
 	{

@@ -50,7 +50,7 @@ public:
 	{
 		try
 		{
-			ConfigFile file(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, CONFIG_FILE),
+			ConfigFile file(fb_utils::getPrefix(Firebird::DirType::FB_DIR_CONF, CONFIG_FILE),
 				ConfigFile::ERROR_WHEN_MISS);
 			defaultConfig = new Config(file);
 		}
@@ -83,6 +83,13 @@ public:
 		return missConf;
 	}
 
+	Firebird::IFirebirdConf* getFirebirdConf()
+	{
+		Firebird::IFirebirdConf* rc = new FirebirdConf(defaultConfig);
+		rc->addRef();
+		return rc;
+	}
+
 private:
 	Firebird::RefPtr<Config> defaultConfig;
 
@@ -107,6 +114,12 @@ Firebird::InitInstance<ConfigImpl> firebirdConf;
 Firebird::InitInstance<ConfigRoot> rootDetector;
 
 }	// anonymous namespace
+
+
+Firebird::IFirebirdConf* getFirebirdConfig()
+{
+	return firebirdConf().getFirebirdConf();
+}
 
 /******************************************************************************
  *

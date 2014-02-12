@@ -2155,7 +2155,7 @@ void Service::readFbLog()
 {
 	bool svc_started = false;
 
-	Firebird::PathName name = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, LOGFILE);
+	Firebird::PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, LOGFILE);
 	FILE* file = fopen(name.c_str(), "r");
 
 	try

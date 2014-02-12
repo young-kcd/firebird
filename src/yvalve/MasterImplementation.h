@@ -75,6 +75,7 @@ namespace Why
 		Firebird::IDebug* FB_CARG getDebug();
 		int FB_CARG serverMode(int mode);
 		Firebird::IUtl* FB_CARG getUtlInterface();
+		Firebird::IConfigManager* FB_CARG getConfigManager();
 	};
 
 	void shutdownTimers();

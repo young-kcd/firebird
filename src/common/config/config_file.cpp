@@ -497,9 +497,10 @@ bool ConfigFile::translate(const char* fileName, const String& from, String& to)
 bool ConfigFile::substituteStandardDir(const String& from, String& to) const
 {
 	using namespace fb_utils;
+	using namespace Firebird::DirType;
 
 	struct Dir {
-		FB_DIR code;
+		unsigned code;
 		const char* name;
 	} dirs[] = {
 #define NMDIR(a) {a, #a},
@@ -512,7 +513,7 @@ bool ConfigFile::substituteStandardDir(const String& from, String& to) const
 		NMDIR(FB_DIR_INTL)
 		NMDIR(FB_DIR_MSG)
 #undef NMDIR
-		{FB_DIR_LAST, NULL}
+		{FB_DIRCOUNT, NULL}
 	};
 
 	for (const Dir* d = dirs; d->name; ++d)

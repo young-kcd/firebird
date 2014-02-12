@@ -142,17 +142,11 @@ namespace fb_utils
 
 	void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
 
-	enum FB_DIR {
-		FB_DIR_BIN = 0, FB_DIR_SBIN, FB_DIR_CONF, FB_DIR_LIB, FB_DIR_INC, FB_DIR_DOC, FB_DIR_UDF,
-		FB_DIR_SAMPLE, FB_DIR_SAMPLEDB, FB_DIR_HELP, FB_DIR_INTL, FB_DIR_MISC, FB_DIR_SECDB,
-		FB_DIR_MSG, FB_DIR_LOG, FB_DIR_GUARD, FB_DIR_PLUGINS,
-		FB_DIR_LAST};
-
 	// Returns true if called from firebird build process (appr. environment is set)
 	bool bootBuild();
 
 	// Add appropriate file prefix.
-	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
+	Firebird::PathName getPrefix(unsigned prefType, const char* name);
 
 	// moves DB path information (from limbo transaction) to another buffer
 	void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,

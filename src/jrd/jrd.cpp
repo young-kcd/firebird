@@ -5105,7 +5105,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
  ******************************************************/
 	TEXT fname[MAXPATHLEN];
 
-	Firebird::string fname = fb_utils::getPrefix(fb_utils::FB_DIR_LOG, "proc_info.log");
+	Firebird::string fname = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, "proc_info.log");
 	FILE* fptr = fopen(fname.c_str(), "a+");
 	if (!fptr)
 	{

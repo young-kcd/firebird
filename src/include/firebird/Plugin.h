@@ -187,7 +187,7 @@ public:
 	// Main function called to access plugins registered in plugins manager
 	// Has front-end in GetPlugins.h - template GetPlugins
 	// In namesList parameter comma or space separated list of names of configured plugins is passed
-	// missingFunctionClass is used to add functions "notImplemented" to the end of vtable
+	// UpgradeInfo is used to add functions "notImplemented" to the end of vtable
 	// in case when plugin's version is less than desired
 	// If caller already has an interface for firebird.conf, it may be passed here
 	// If parameter is missing, plugins will get access to default (non database specific) config
@@ -230,7 +230,43 @@ namespace PluginType {
 	static const unsigned int KeyHolder = 18;
 
 	static const unsigned int MaxType = 19;	// keep in sync please
+}
+
+
+// Generic access to all config interfaces
+class IConfigManager : public IVersioned
+{
+public:
+	virtual const char* FB_CARG getDirectory(unsigned code) = 0;
+	virtual IFirebirdConf* FB_CARG getFirebirdConf() = 0;
+	virtual IFirebirdConf* FB_CARG getDatabaseConf(const char* dbName) = 0;
+	virtual IConfig* FB_CARG getPluginConfig(const char* configuredPlugin) = 0;
 };
+#define FB_CONFIG_MANAGER_VERSION (FB_VERSIONED_VERSION + 4)
+
+namespace DirType {
+	// Codes for IConfigManager::getDirectory()
+
+	static const unsigned int FB_DIR_BIN = 0;
+	static const unsigned int FB_DIR_SBIN = 1;
+	static const unsigned int FB_DIR_CONF = 2;
+	static const unsigned int FB_DIR_LIB = 3;
+	static const unsigned int FB_DIR_INC = 4;
+	static const unsigned int FB_DIR_DOC = 5;
+	static const unsigned int FB_DIR_UDF = 6;
+	static const unsigned int FB_DIR_SAMPLE = 7;
+	static const unsigned int FB_DIR_SAMPLEDB = 8;
+	static const unsigned int FB_DIR_HELP = 9;
+	static const unsigned int FB_DIR_INTL = 10;
+	static const unsigned int FB_DIR_MISC = 11;
+	static const unsigned int FB_DIR_SECDB = 12;
+	static const unsigned int FB_DIR_MSG = 13;
+	static const unsigned int FB_DIR_LOG = 14;
+	static const unsigned int FB_DIR_GUARD = 15;
+	static const unsigned int FB_DIR_PLUGINS = 16;
+
+	static const unsigned int FB_DIRCOUNT = 17;
+}
 
 }	// namespace Firebird
 
