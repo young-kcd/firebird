@@ -1,3 +1,11 @@
+ 2014-02-11 14:52  asfernandes 
+   M src/jrd/met.epp
+Fixed CORE-4304 - Engine crashes when attempt to REcreate table with FK after syntax error before such recreating.
+
+ 2014-02-11 09:28  dimitr 
+   M src/dsql/ExprNodes.cpp
+Slightly changed the invariant handling code for functions.
+
  2014-02-09 18:28  dimitr 
    M src/dsql/BoolNodes.h
    M src/dsql/ExprNodes.cpp
