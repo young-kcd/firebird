@@ -1,3 +1,31 @@
+ 2014-02-12 11:20  alexpeshkoff 
+   M src/common/classes/MsgPrint.cpp
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/config/config_file.cpp
+   M src/common/db_alias.cpp
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/gpre/languages/ftn.cpp
+   M src/include/firebird/Interface.h
+   M src/include/firebird/Plugin.h
+   M src/intl/utils/dtest.c
+   M src/jrd/IntlManager.cpp
+   M src/jrd/fun.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/qli/help.epp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/utilities/guard/util.cpp
+   M src/utilities/ibmgr/srvrmgr.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/gds.cpp
+Added access to configuration interfaces from IMaster and support for getting configured directories
+
  2014-02-11 14:52  asfernandes 
    M src/jrd/met.epp
 Fixed CORE-4304 - Engine crashes when attempt to REcreate table with FK after syntax error before such recreating.
