@@ -252,7 +252,7 @@ public:
 	// TraceProcedure implementation
 	virtual const char* FB_CARG getProcName()
 	{
-		return m_request->getStatement()->procedure->getName().identifier.c_str();
+		return m_request->getStatement()->procedure->getName().toString().c_str();
 	}
 
 	virtual TraceParams* FB_CARG getInputs()	{ return &m_inputs; }
