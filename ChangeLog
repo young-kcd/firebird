@@ -1,3 +1,7 @@
+ 2014-02-13 21:15  hvlad 
+   M src/jrd/trace/TraceObjects.h
+Use qualified name for packaged stored procedures in trace output
+
  2014-02-12 11:20  alexpeshkoff 
    M src/common/classes/MsgPrint.cpp
    M src/common/config/config.cpp
