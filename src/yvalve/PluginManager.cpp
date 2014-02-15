@@ -528,7 +528,7 @@ namespace
 		PathName confName;
 		PathName plugName;
 
-		static const FB_UINT64 DEFAULT_DELAY = 1000000;		// 1 sec
+		static const FB_UINT64 DEFAULT_DELAY = 1000000 * 60;		// 1 min
 		FB_UINT64 delay;
 	};
 
@@ -1084,7 +1084,7 @@ namespace Firebird {
 class ConfigManager : public AutoIface<IConfigManager, FB_CONFIG_MANAGER_VERSION>
 {
 public:
-	const char* getDirectory(unsigned code)
+	const char* FB_CARG getDirectory(unsigned code)
 	{
 		try
 		{
@@ -1096,7 +1096,7 @@ public:
 		}
 	}
 
-	IConfig* getPluginConfig(const char* pluginName)
+	IConfig* FB_CARG getPluginConfig(const char* pluginName)
 	{
 		try
 		{
@@ -1110,7 +1110,7 @@ public:
 		}
 	}
 
-	IFirebirdConf* getFirebirdConf()
+	IFirebirdConf* FB_CARG getFirebirdConf()
 	{
 		try
 		{
@@ -1122,7 +1122,7 @@ public:
 		}
 	}
 
-	IFirebirdConf* getDatabaseConf(const char* dbName)
+	IFirebirdConf* FB_CARG getDatabaseConf(const char* dbName)
 	{
 		try
 		{
