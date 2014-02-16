@@ -1,3 +1,8 @@
+ 2014-02-15 11:12  hvlad 
+   M src/yvalve/PluginManager.cpp
+Fixed Windows build
+Increased default unload delay time for unused plugin modules from 1 sec to 1 min
+
  2014-02-13 21:15  hvlad 
    M src/jrd/trace/TraceObjects.h
 Use qualified name for packaged stored procedures in trace output
