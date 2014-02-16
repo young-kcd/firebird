@@ -10,9 +10,11 @@
 #include "../../../common/dllinst.h"
 #include "../common/os/mod_loader.h"
 #include <windows.h>
+#include "../common/os/path_utils.h"
+#include "../common/config/config.h"
+#include "../common/classes/ImplementHelper.h"
 
-typedef Firebird::string string;
-typedef Firebird::PathName PathName;
+using namespace Firebird;
 
 /// This is the Win32 implementation of the mod_loader abstraction.
 
@@ -169,7 +171,7 @@ bool ModuleLoader::isLoadableModule(const PathName& module)
 	return hMod != 0;
 }
 
-void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
+void ModuleLoader::doctorModuleExtension(PathName& name)
 {
 	const PathName::size_type pos = name.rfind(".dll");
 	if (pos != PathName::npos && pos == name.length() - 4)
@@ -177,7 +179,7 @@ void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 	name += ".dll";
 }
 
-ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath)
+ModuleLoader::Module *ModuleLoader::loadModule(const PathName& modPath)
 {
 	ContextActivator ctx;
 
@@ -185,8 +187,24 @@ ModuleLoader::Module *ModuleLoader::loadModule(const Firebird::PathName& modPath
 	const UINT oldErrorMode =
 		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 
-	const HMODULE module = LoadLibraryEx(modPath.c_str(), 0,
-		Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
+	HMODULE module = 0;
+	if (PathUtils::isRelative(modPath))
+	{
+		MasterInterfacePtr master;
+		const char* baseDir = master->getConfigManager()->getDirectory(DirType::FB_DIR_BIN);
+
+		PathName fullName;
+		PathUtils::concatPath(fullName, baseDir, modPath);
+
+		module = LoadLibraryEx(fullName.c_str(), 0,
+			Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
+	}
+
+	if (!module)
+	{
+		module = LoadLibraryEx(modPath.c_str(), 0,
+			Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
+	}
 
 	// Restore old mode in case we are embedded into user application
 	SetErrorMode(oldErrorMode);
@@ -203,7 +221,7 @@ Win32Module::~Win32Module()
 		FreeLibrary(module);
 }
 
-void *Win32Module::findSymbol(const Firebird::string& symName)
+void *Win32Module::findSymbol(const string& symName)
 {
 	FARPROC result = GetProcAddress(module, symName.c_str());
 	if (!result)
