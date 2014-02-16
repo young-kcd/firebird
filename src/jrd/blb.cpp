@@ -1685,7 +1685,7 @@ void blb::put_slice(thread_db*	tdbb,
 	// Make sure relation is scanned
 	MET_scan_relation(tdbb, relation);
 
-	jrd_fld* field;
+	jrd_fld* field = NULL;
 	if (n < 0 || !(field = MET_get_field(relation, n))) {
 		IBERROR(197);			// msg 197 field for array not known
 	}

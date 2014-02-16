@@ -742,7 +742,7 @@ void EXE_send(thread_db* tdbb, jrd_req* request, USHORT msg, ULONG length, const
 	if (!(request->req_flags & req_active))
 		ERR_post(Arg::Gds(isc_req_sync));
 
-	const StmtNode* message;
+	const StmtNode* message = NULL;
 	const StmtNode* node;
 
 	if (request->req_operation != jrd_req::req_receive)

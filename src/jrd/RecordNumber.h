@@ -46,6 +46,10 @@ public:
 	// for big- and little-endian machines.
 	class Packed
 	{
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wunused-private-field"
+#endif
+
 #ifdef WORDS_BIGENDIAN
 	private:
 		UCHAR bid_number_up;				// Upper byte of 40-bit record number
@@ -65,6 +69,11 @@ public:
 		ULONG bid_number;					// Lower bytes of 40-bit record number
 											// or 32-bit temporary ID of blob or array
 #endif
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic warning "-Wunused-private-field"
+#endif
+
 	public:
 		ULONG& bid_temp_id()
 		{

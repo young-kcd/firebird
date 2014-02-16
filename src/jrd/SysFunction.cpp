@@ -1151,6 +1151,7 @@ dsc* evlStdMath(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		break;
 	default:
 		fb_assert(0);
+		return NULL;
 	}
 
 	if (isinf(rc))
@@ -2493,6 +2494,7 @@ dsc* evlLnLog10(thread_db* tdbb, const SysFunction* function, const NestValueArr
 		break;
 	default:
 		fb_assert(0);
+		return NULL;
 	}
 
 	impure->vlu_misc.vlu_double = rc;

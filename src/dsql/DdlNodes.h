@@ -1902,7 +1902,7 @@ public:
 		  roles(p),
 		  object(NULL),
 		  users(p),
-		  grantAdminOption(NULL),
+		  grantAdminOption(false),
 		  grantor(NULL)
 	{
 	}
