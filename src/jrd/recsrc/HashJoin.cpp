@@ -33,6 +33,8 @@
 
 #include "RecordSource.h"
 
+#include <stdlib.h>
+
 using namespace Firebird;
 using namespace Jrd;
 
@@ -40,60 +42,239 @@ using namespace Jrd;
 // Data access: hash join
 // ----------------------
 
+namespace
+{
+	typedef int (*qsort_compare_callback)(const void* a1, const void* a2, void* arg);
+
+	struct qsort_ctx_data
+	{
+	  void* arg;
+	  qsort_compare_callback compare;
+	};
+
+	int qsort_ctx_arg_swap(void* arg, const void* a1, const void* a2)
+	{
+	  struct qsort_ctx_data* ss = (struct qsort_ctx_data*) arg;
+	  return (ss->compare)(a1, a2, ss->arg);
+	}
+
+#define USE_QSORT_CTX
+
+	void qsort_ctx(void* base, size_t count, size_t width, qsort_compare_callback compare, void* arg)
+	{
+#if defined(LINUX)
+		qsort_r(base, count, width, compare, arg);
+#elif defined(WIN_NT)
+		struct qsort_ctx_data tmp = {arg, compare};
+		qsort_s(base, count, width, &qsort_ctx_arg_swap, &tmp);
+#elif defined(DARWIN) || defined(FREEBSD)
+		struct qsort_ctx_data tmp = {arg, compare};
+		qsort_r(base, count, width, &tmp, &qsort_ctx_arg_swap);
+#else
+#undef USE_QSORT_CTX
+#endif
+	}
+
+} // namespace
+
+static const size_t HASH_SIZE = 1009;
+static const size_t COLLISION_PREALLOCATE_SIZE = 32;			// 256 KB
+static const size_t KEYBUF_PREALLOCATE_SIZE = 64 * 1024; 		// 64 KB
+static const size_t KEYBUF_SIZE_LIMIT = 1024 * 1024 * 1024; 	// 1 GB
+
 class HashJoin::HashTable : public PermanentStorage
 {
-	static const size_t HASH_SIZE = 1009;
+	struct Collision
+	{
+#ifdef USE_QSORT_CTX
+		Collision()
+			: offset(0), position(0)
+		{}
 
-	typedef Firebird::Array<FB_UINT64> CollisionList;
+		Collision(void* /*ctx*/, ULONG off, ULONG pos)
+			: offset(off), position(pos)
+		{}
+#else
+		Collision()
+			: context(NULL), offset(0), position(0)
+		{}
+
+		Collision(void* ctx, ULONG off, ULONG pos)
+			: context(ctx), offset(off), position(pos)
+		{}
+
+		void* context;
+#endif
+
+		ULONG offset;
+		ULONG position;
+	};
+
+	class CollisionList
+	{
+		static const size_t INVALID_ITERATOR = size_t(~0);
+
+	public:
+		CollisionList(MemoryPool& pool, const KeyBuffer* keyBuffer, ULONG itemLength)
+			: m_collisions(pool, COLLISION_PREALLOCATE_SIZE),
+			  m_keyBuffer(keyBuffer), m_itemLength(itemLength), m_iterator(INVALID_ITERATOR)
+		{}
+
+#ifdef USE_QSORT_CTX
+		static int compare(const void* p1, const void* p2, void* arg)
+#else
+		static int compare(const void* p1, const void* p2)
+#endif
+		{
+			const Collision* const c1 = static_cast<const Collision*>(p1);
+			const Collision* const c2 = static_cast<const Collision*>(p2);
+
+			fb_assert(c1->context == c2->context);
+
+			const CollisionList* const collisions =
+#ifdef USE_QSORT_CTX
+				static_cast<const CollisionList*>(arg);
+#else
+				static_cast<const CollisionList*>(c1->context);
+#endif
+			const UCHAR* const baseAddress = collisions->m_keyBuffer->begin();
+
+			const UCHAR* const ptr1 = baseAddress + c1->offset;
+			const UCHAR* const ptr2 = baseAddress + c2->offset;
+
+			return memcmp(ptr1, ptr2, collisions->m_itemLength);
+		}
+
+		void sort()
+		{
+			Collision* const base = m_collisions.begin();
+			const size_t count = m_collisions.getCount();
+			const size_t width = sizeof(Collision);
+
+#ifdef USE_QSORT_CTX
+			qsort_ctx(base, count, width, compare, this);
+#else
+			qsort(base, count, width, compare);
+#endif
+		}
+
+		void add(const Collision& collision)
+		{
+			m_collisions.add(collision);
+		}
+
+		bool locate(ULONG length, const UCHAR* data)
+		{
+			const UCHAR* const ptr1 = data;
+			const ULONG len1 = length;
+			const ULONG len2 = m_itemLength;
+			const ULONG minLen = MIN(len1, len2);
+
+			size_t highBound = m_collisions.getCount(), lowBound = 0;
+			const UCHAR* const baseAddress = m_keyBuffer->begin();
+
+			while (highBound > lowBound)
+			{
+				const size_t temp = (highBound + lowBound) >> 1;
+				const UCHAR* const ptr2 = baseAddress + m_collisions[temp].offset;
+				const int result = memcmp(ptr1, ptr2, minLen);
+
+				if (result > 0 || (!result && len1 > len2))
+					lowBound = temp + 1;
+				else
+					highBound = temp;
+			}
+
+			if (highBound >= m_collisions.getCount() ||
+				lowBound >= m_collisions.getCount())
+			{
+				m_iterator = INVALID_ITERATOR;
+				return false;
+			}
+
+			const UCHAR* const ptr2 = baseAddress + m_collisions[lowBound].offset;
+
+			if (memcmp(ptr1, ptr2, minLen))
+			{
+				m_iterator = INVALID_ITERATOR;
+				return false;
+			}
+
+			m_iterator = lowBound;
+			return true;
+		}
+
+		bool iterate(ULONG length, const UCHAR* data, ULONG& position)
+		{
+			if (m_iterator >= m_collisions.getCount())
+				return false;
+
+			const Collision& collision = m_collisions[m_iterator++];
+			const UCHAR* const baseAddress = m_keyBuffer->begin();
+
+			const UCHAR* const ptr1 = data;
+			const ULONG len1 = length;
+			const UCHAR* const ptr2 = baseAddress + collision.offset;
+			const ULONG len2 = m_itemLength;
+			const ULONG minLen = MIN(len1, len2);
+
+			if (memcmp(ptr1, ptr2, len1))
+			{
+				m_iterator = INVALID_ITERATOR;
+				return false;
+			}
+
+			position = collision.position;
+			return true;
+		}
+
+	private:
+		Array<Collision> m_collisions;
+		const KeyBuffer* const m_keyBuffer;
+		const ULONG m_itemLength;
+		size_t m_iterator;
+	};
 
 public:
 	HashTable(MemoryPool& pool, size_t streamCount, size_t tableSize = HASH_SIZE)
-		: PermanentStorage(pool), m_streamCount(streamCount), m_tableSize(tableSize), m_slot(0)
+		: PermanentStorage(pool), m_streamCount(streamCount),
+		  m_tableSize(tableSize), m_slot(0)
 	{
 		m_collisions = FB_NEW(pool) CollisionList*[streamCount * tableSize];
 		memset(m_collisions, 0, streamCount * tableSize * sizeof(CollisionList*));
-
-		m_iterators = FB_NEW(pool) size_t[streamCount];
-		memset(m_iterators, 0, streamCount * sizeof(size_t));
 	}
 
 	~HashTable()
 	{
 		for (size_t i = 0; i < m_streamCount * m_tableSize; i++)
-		{
 			delete m_collisions[i];
-		}
 
 		delete[] m_collisions;
-		delete[] m_iterators;
 	}
 
-	size_t hash(const UCHAR* address, size_t length, ULONG* prior_value = NULL)
+	size_t hash(ULONG length, const UCHAR* buffer) const
 	{
-		ULONG hash_value = prior_value ? *prior_value : 0;
+		ULONG hash_value = 0;
 
 		UCHAR* p = NULL;
-		const UCHAR* q = address;
+		const UCHAR* q = buffer;
 		for (size_t l = 0; l < length; l++)
 		{
 			if (!(l & 3))
-			{
 				p = (UCHAR*) &hash_value;
-			}
 
 			*p++ += *q++;
-		}
-
-		if (prior_value)
-		{
-			*prior_value = hash_value;
 		}
 
 		return (hash_value % m_tableSize);
 	}
 
-	void put(size_t stream, size_t slot, FB_UINT64 value)
+	void put(size_t stream,
+			 ULONG keyLength, const KeyBuffer* keyBuffer,
+			 ULONG offset, ULONG position)
 	{
+		const size_t slot = hash(keyLength, keyBuffer->begin() + offset);
+
 		fb_assert(stream < m_streamCount);
 		fb_assert(slot < m_tableSize);
 
@@ -101,119 +282,127 @@ public:
 
 		if (!collisions)
 		{
-			collisions = FB_NEW(getPool()) CollisionList(getPool());
+			collisions = FB_NEW(getPool()) CollisionList(getPool(), keyBuffer, keyLength);
 			m_collisions[stream * m_tableSize + slot] = collisions;
 		}
 
-		collisions->add(value);
+		collisions->add(Collision(collisions, offset, position));
 	}
 
-	bool setup(size_t slot)
+	bool setup(ULONG length, const UCHAR* data)
 	{
-		fb_assert(slot < m_tableSize);
+		const size_t slot = hash(length, data);
 
 		for (size_t i = 0; i < m_streamCount; i++)
 		{
-			if (!m_collisions[i * m_tableSize + slot])
-			{
-				return false;
-			}
+			CollisionList* const collisions = m_collisions[i * m_tableSize + slot];
 
-			reset(i);
+			if (!collisions)
+				return false;
+
+			if (!collisions->locate(length, data))
+				return false;
 		}
 
 		m_slot = slot;
 		return true;
 	}
 
-	void reset(size_t stream)
-	{
-		fb_assert(stream < m_streamCount);
-
-		m_iterators[stream] = 0;
-	}
-
-	bool iterate(size_t stream, FB_UINT64& value)
+	void reset(size_t stream, ULONG length, const UCHAR* data)
 	{
 		fb_assert(stream < m_streamCount);
 
 		CollisionList* const collisions = m_collisions[stream * m_tableSize + m_slot];
-		size_t& iterator = m_iterators[stream];
+		collisions->locate(length, data);
+	}
 
-		if (iterator < collisions->getCount())
+	bool iterate(size_t stream, ULONG length, const UCHAR* data, ULONG& position)
+	{
+		fb_assert(stream < m_streamCount);
+
+		CollisionList* const collisions = m_collisions[stream * m_tableSize + m_slot];
+		return collisions->iterate(length, data, position);
+	}
+
+	void sort()
+	{
+		for (size_t i = 0; i < m_streamCount * m_tableSize; i++)
 		{
-			value = (*collisions)[iterator++];
-			return true;
-		}
+			CollisionList* const collisions = m_collisions[i];
 
-		return false;
+			if (collisions)
+				collisions->sort();
+		}
 	}
 
 private:
 	const size_t m_streamCount;
 	const size_t m_tableSize;
 	CollisionList** m_collisions;
-	size_t* m_iterators;
 	size_t m_slot;
 };
 
 
 HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
 				   RecordSource* const* args, NestValueArray* const* keys)
-	: m_leader(args[0]), m_leaderKeys(keys[0]),
-	  m_leaderIntlLengths(FB_NEW(csb->csb_pool) KeyLengthArray(csb->csb_pool)),
-	  m_args(csb->csb_pool, count - 1), m_keys(csb->csb_pool, count - 1),
-	  m_intlLengths(csb->csb_pool, count - 1),
+	: m_args(csb->csb_pool, count - 1),
 	  m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
 {
 	fb_assert(count >= 2);
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
 
-	fb_assert(m_leader);
-	fb_assert(m_leaderKeys);
+	m_leader.source = args[0];
+	m_leader.keys = keys[0];
+	m_leader.keyLengths = FB_NEW(csb->csb_pool)
+		KeyLengthArray(csb->csb_pool, m_leader.keys->getCount());
+	m_leader.totalKeyLength = 0;
 
-	for (size_t j = 0; j < m_leaderKeys->getCount(); j++)
+	for (size_t j = 0; j < m_leader.keys->getCount(); j++)
 	{
 		dsc desc;
-		(*m_leaderKeys)[j]->getDesc(tdbb, csb, &desc);
+		(*m_leader.keys)[j]->getDesc(tdbb, csb, &desc);
+
+		USHORT keyLength = desc.dsc_length;
 
 		if (IS_INTL_DATA(&desc))
-		{
-			const USHORT key_length =
-				INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
+			keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
+		else if (desc.dsc_dtype == dtype_varying)
+			keyLength -= sizeof(USHORT);
 
-			m_leaderIntlLengths->add(key_length);
-		}
+		m_leader.keyLengths->add(keyLength);
+		m_leader.totalKeyLength += keyLength;
 	}
 
 	for (size_t i = 1; i < count; i++)
 	{
 		RecordSource* const sub_rsb = args[i];
 		fb_assert(sub_rsb);
-		m_args.add(FB_NEW(csb->csb_pool) BufferedStream(csb, sub_rsb));
 
-		NestValueArray* const sub_keys = keys[i];
-		fb_assert(sub_keys);
-		m_keys.add(sub_keys);
+		SubStream sub;
+		sub.buffer = FB_NEW(csb->csb_pool) BufferedStream(csb, sub_rsb);
+		sub.keys = keys[i];
+		sub.keyLengths = FB_NEW(csb->csb_pool)
+			KeyLengthArray(csb->csb_pool, sub.keys->getCount());
+		sub.totalKeyLength = 0;
 
-		KeyLengthArray* const intl_lengths =
-			FB_NEW(csb->csb_pool) KeyLengthArray(csb->csb_pool);
-		m_intlLengths.add(intl_lengths);
-
-		for (size_t j = 0; j < sub_keys->getCount(); j++)
+		for (size_t j = 0; j < sub.keys->getCount(); j++)
 		{
 			dsc desc;
-			(*sub_keys)[j]->getDesc(tdbb, csb, &desc);
+			(*sub.keys)[j]->getDesc(tdbb, csb, &desc);
+
+			USHORT keyLength = desc.dsc_length;
 
 			if (IS_INTL_DATA(&desc))
-			{
-				const USHORT key_length =
-					INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
+				keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
+			else if (desc.dsc_dtype == dtype_varying)
+				keyLength -= sizeof(USHORT);
 
-				intl_lengths->add(key_length);
-			}
+			sub.keyLengths->add(keyLength);
+			sub.totalKeyLength += keyLength;
 		}
+
+		m_args.add(sub);
 	}
 }
 
@@ -224,27 +413,50 @@ void HashJoin::open(thread_db* tdbb) const
 
 	impure->irsb_flags = irsb_open | irsb_mustread;
 
+	delete impure->irsb_arg_buffer;
 	delete impure->irsb_hash_table;
-	MemoryPool& pool = *tdbb->getDefaultPool();
-	impure->irsb_hash_table = FB_NEW(pool) HashTable(pool, m_args.getCount());
+	delete[] impure->irsb_leader_buffer;
+	delete[] impure->irsb_record_counts;
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	MemoryPool& pool = *tdbb->getDefaultPool();
+
+	const size_t argCount = m_args.getCount();
+
+	impure->irsb_arg_buffer = FB_NEW(pool) KeyBuffer(pool, KEYBUF_PREALLOCATE_SIZE);
+	impure->irsb_hash_table = FB_NEW(pool) HashTable(pool, argCount);
+	impure->irsb_leader_buffer = FB_NEW(pool) UCHAR[m_leader.totalKeyLength];
+	impure->irsb_record_counts = FB_NEW(pool) ULONG[argCount];
+
+	for (size_t i = 0; i < argCount; i++)
 	{
 		// Read and cache the inner streams. While doing that,
 		// hash the join condition values and populate hash tables.
 
-		m_args[i]->open(tdbb);
+		m_args[i].buffer->open(tdbb);
 
-		FB_UINT64 position = 0;
-		while (m_args[i]->getRecord(tdbb))
+		ULONG& counter = impure->irsb_record_counts[i];
+		counter = 0;
+
+		while (m_args[i].buffer->getRecord(tdbb))
 		{
-			const size_t hash_slot = hashKeys(tdbb, request, impure->irsb_hash_table,
-											   m_keys[i], m_intlLengths[i]);
-			impure->irsb_hash_table->put(i, hash_slot, position++);
+			const ULONG offset = (ULONG) impure->irsb_arg_buffer->getCount();
+			if (offset > KEYBUF_SIZE_LIMIT)
+				status_exception::raise(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blktoobig));
+
+			impure->irsb_arg_buffer->resize(offset + m_args[i].totalKeyLength);
+			UCHAR* const keys = impure->irsb_arg_buffer->begin() + offset;
+
+			computeKeys(tdbb, request, m_args[i], keys);
+			impure->irsb_hash_table->put(i, m_args[i].totalKeyLength,
+										 impure->irsb_arg_buffer,
+										 offset, counter++);
 		}
+
 	}
 
-	m_leader->open(tdbb);
+	impure->irsb_hash_table->sort();
+
+	m_leader.source->open(tdbb);
 }
 
 void HashJoin::close(thread_db* tdbb) const
@@ -261,10 +473,19 @@ void HashJoin::close(thread_db* tdbb) const
 		delete impure->irsb_hash_table;
 		impure->irsb_hash_table = NULL;
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
-			m_args[i]->close(tdbb);
+		delete impure->irsb_arg_buffer;
+		impure->irsb_arg_buffer = NULL;
 
-		m_leader->close(tdbb);
+		delete[] impure->irsb_leader_buffer;
+		impure->irsb_leader_buffer = NULL;
+
+		delete[] impure->irsb_record_counts;
+		impure->irsb_record_counts = NULL;
+
+		for (size_t i = 0; i < m_args.getCount(); i++)
+			m_args[i].buffer->close(tdbb);
+
+		m_leader.source->close(tdbb);
 	}
 }
 
@@ -279,24 +500,27 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 	if (!(impure->irsb_flags & irsb_open))
 		return false;
 
+	const ULONG leaderKeyLength = m_leader.totalKeyLength;
+	UCHAR* leaderKeyBuffer = impure->irsb_leader_buffer;
+
 	while (true)
 	{
 		if (impure->irsb_flags & irsb_mustread)
 		{
 			// Fetch the record from the leading stream
 
-			if (!m_leader->getRecord(tdbb))
+			if (!m_leader.source->getRecord(tdbb))
 				return false;
 
-			// Hash the comparison keys
+			// Compute and hash the comparison keys
 
-			const size_t hash_slot = hashKeys(tdbb, request, impure->irsb_hash_table,
-											   m_leaderKeys, m_leaderIntlLengths);
+			memset(leaderKeyBuffer, 0, leaderKeyLength);
+			computeKeys(tdbb, request, m_leader, leaderKeyBuffer);
 
 			// Ensure the every inner stream having matches for this hash slot.
 			// Setup the hash table for the iteration through collisions.
 
-			if (!impure->irsb_hash_table->setup(hash_slot))
+			if (!impure->irsb_hash_table->setup(leaderKeyLength, leaderKeyBuffer))
 				continue;
 
 			impure->irsb_flags &= ~irsb_mustread;
@@ -307,27 +531,32 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 
 		if (impure->irsb_flags & irsb_first)
 		{
+			bool found = true;
+
 			for (size_t i = 0; i < m_args.getCount(); i++)
 			{
-				if (!fetchRecord(tdbb, impure->irsb_hash_table, i))
+				if (!fetchRecord(tdbb, impure, i))
 				{
-					fb_assert(false);
-					return false;
+					found = false;
+					break;
 				}
+			}
+
+			if (!found)
+			{
+				impure->irsb_flags |= irsb_mustread;
+				continue;
 			}
 
 			impure->irsb_flags &= ~irsb_first;
 		}
-		else if (!fetchRecord(tdbb, impure->irsb_hash_table, m_args.getCount() - 1))
+		else if (!fetchRecord(tdbb, impure, m_args.getCount() - 1))
 		{
 			impure->irsb_flags |= irsb_mustread;
 			continue;
 		}
 
-		// Ensure that the comparison keys are really equal
-
-		if (compareKeys(tdbb, request))
-			break;
+		break;
 	}
 
 	return true;
@@ -350,23 +579,23 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 	{
 		plan += printIndent(++level) + "Hash Join (inner)";
 
-		m_leader->print(tdbb, plan, true, level);
+		m_leader.source->print(tdbb, plan, true, level);
 
 		for (size_t i = 0; i < m_args.getCount(); i++)
-			m_args[i]->print(tdbb, plan, true, level);
+			m_args[i].source->print(tdbb, plan, true, level);
 	}
 	else
 	{
 		level++;
 		plan += "HASH (";
-		m_leader->print(tdbb, plan, false, level);
+		m_leader.source->print(tdbb, plan, false, level);
 		plan += ", ";
 		for (size_t i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
 				plan += ", ";
 
-			m_args[i]->print(tdbb, plan, false, level);
+			m_args[i].source->print(tdbb, plan, false, level);
 		}
 		plan += ")";
 	}
@@ -374,126 +603,89 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 
 void HashJoin::markRecursive()
 {
-	m_leader->markRecursive();
+	m_leader.source->markRecursive();
 
 	for (size_t i = 0; i < m_args.getCount(); i++)
-		m_args[i]->markRecursive();
+		m_args[i].source->markRecursive();
 }
 
 void HashJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	m_leader->findUsedStreams(streams, expandAll);
+	m_leader.source->findUsedStreams(streams, expandAll);
 
 	for (size_t i = 0; i < m_args.getCount(); i++)
-		m_args[i]->findUsedStreams(streams, expandAll);
+		m_args[i].source->findUsedStreams(streams, expandAll);
 }
 
 void HashJoin::invalidateRecords(jrd_req* request) const
 {
-	m_leader->invalidateRecords(request);
+	m_leader.source->invalidateRecords(request);
 
 	for (size_t i = 0; i < m_args.getCount(); i++)
-		m_args[i]->invalidateRecords(request);
+		m_args[i].source->invalidateRecords(request);
 }
 
 void HashJoin::nullRecords(thread_db* tdbb) const
 {
-	m_leader->nullRecords(tdbb);
+	m_leader.source->nullRecords(tdbb);
 
 	for (size_t i = 0; i < m_args.getCount(); i++)
-		m_args[i]->nullRecords(tdbb);
+		m_args[i].source->nullRecords(tdbb);
 }
 
-size_t HashJoin::hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
-	const NestValueArray* keys, const KeyLengthArray* lengths) const
+void HashJoin::computeKeys(thread_db* tdbb, jrd_req* request,
+						   const SubStream& sub, UCHAR* keyBuffer) const
 {
-	ULONG hash_value = 0;
-	size_t hash_slot = 0;
-	size_t intl_index = 0;
-
-	for (size_t i = 0; i < keys->getCount(); i++)
+	for (size_t i = 0; i < sub.keys->getCount(); i++)
 	{
-		const dsc* const desc = EVL_expr(tdbb, request, (*keys)[i]);
+		const dsc* const desc = EVL_expr(tdbb, request, (*sub.keys)[i]);
+		const USHORT keyLength = (*sub.keyLengths)[i];
 
 		if (desc && !(request->req_flags & req_null))
 		{
-			fb_assert(!desc->isBlob());
-
 			USHORT length = desc->dsc_length;
 			UCHAR* address = desc->dsc_address;
 
 			MoveBuffer buffer;
 
-			if (desc->isText())
+			if (IS_INTL_DATA(desc))
 			{
-				// Adjust the data length to the real string length
+				// Convert the INTL string into the binary comparable form
 
-				length = MOV_get_string(desc, &address, NULL, 0);
+				address = buffer.getBuffer(keyLength);
 
-				if (IS_INTL_DATA(desc))
-				{
-					// Convert the INTL string into the binary comparable form
+				dsc temp;
+				temp.makeText(keyLength, ttype_sort_key, address);
 
-					const USHORT key_length = (*lengths)[intl_index++];
-					address = buffer.getBuffer(key_length);
-
-					dsc temp;
-					temp.makeText(key_length, ttype_sort_key, address);
-
-					length = INTL_string_to_key(tdbb, INTL_INDEX_TYPE(desc),
-												desc, &temp, INTL_KEY_UNIQUE);
-				}
-				else
-				{
-					// Adjust the data length to ignore trailing spaces
-
-					CHARSET_ID charset = desc->getCharSet();
-					if (charset == ttype_dynamic)
-						charset = tdbb->getCharSet();
-
-					const UCHAR space = (charset == ttype_binary) ? '\0' : ' ';
-					const UCHAR* ptr = address + length;
-					while (length && *--ptr == space)
-						length--;
-				}
+				length = INTL_string_to_key(tdbb, INTL_INDEX_TYPE(desc),
+											desc, &temp, INTL_KEY_UNIQUE);
+			}
+			else if (desc->dsc_dtype == dtype_varying)
+			{
+				length -= sizeof(USHORT);
+				address += sizeof(USHORT);
 			}
 
-			hash_slot = table->hash(address, length, &hash_value);
-		}
-	}
+			fb_assert(length == keyLength);
 
-	return hash_slot;
+			memcpy(keyBuffer, address, length);
+		}
+
+		keyBuffer += keyLength;
+	}
 }
 
-bool HashJoin::compareKeys(thread_db* tdbb, jrd_req* request) const
+bool HashJoin::fetchRecord(thread_db* tdbb, Impure* impure, size_t stream) const
 {
-	for (size_t i = 0; i < m_leaderKeys->getCount(); ++i)
-	{
-		const dsc* const desc1 = EVL_expr(tdbb, request, (*m_leaderKeys)[i]);
-		const bool null1 = (request->req_flags & req_null);
+	HashTable* const hashTable = impure->irsb_hash_table;
 
-		for (size_t j = 0; j < m_keys.getCount(); j++)
-		{
-			const dsc* const desc2 = EVL_expr(tdbb, request, (*m_keys[j])[i]);
-			const bool null2 = (request->req_flags & req_null);
+	const BufferedStream* const arg = m_args[stream].buffer;
 
-			if (null1 != null2)
-				return false;
+	const ULONG leaderKeyLength = m_leader.totalKeyLength;
+	const UCHAR* leaderKeyBuffer = impure->irsb_leader_buffer;
 
-			if (!null1 && !null2 && MOV_compare(desc1, desc2) != 0)
-				return false;
-		}
-	}
-
-	return true;
-}
-
-bool HashJoin::fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const
-{
-	const BufferedStream* const arg = m_args[stream];
-	FB_UINT64 position;
-
-	if (table->iterate(stream, position))
+	ULONG position;
+	if (hashTable->iterate(stream, leaderKeyLength, leaderKeyBuffer, position))
 	{
 		arg->locate(tdbb, position);
 
@@ -503,12 +695,12 @@ bool HashJoin::fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) con
 
 	while (true)
 	{
-		if (stream == 0 || !fetchRecord(tdbb, table, stream - 1))
+		if (stream == 0 || !fetchRecord(tdbb, impure, stream - 1))
 			return false;
 
-		table->reset(stream);
+		hashTable->reset(stream, leaderKeyLength, leaderKeyBuffer);
 
-		if (table->iterate(stream, position))
+		if (hashTable->iterate(stream, leaderKeyLength, leaderKeyBuffer, position))
 		{
 			arg->locate(tdbb, position);
 

@@ -803,12 +803,29 @@ namespace Jrd
 	{
 		class HashTable;
 
-		struct Impure : public RecordSource::Impure
+		typedef Firebird::Array<USHORT> KeyLengthArray;
+		typedef Firebird::Array<UCHAR> KeyBuffer;
+
+		struct SubStream
 		{
-			HashTable* irsb_hash_table;
+			union
+			{
+				RecordSource* source;
+				BufferedStream* buffer;
+			};
+
+			NestValueArray* keys;
+			KeyLengthArray* keyLengths;
+			ULONG totalKeyLength;
 		};
 
-		typedef Firebird::Array<USHORT> KeyLengthArray;
+		struct Impure : public RecordSource::Impure
+		{
+			KeyBuffer* irsb_arg_buffer;
+			HashTable* irsb_hash_table;
+			UCHAR* irsb_leader_buffer;
+			ULONG* irsb_record_counts;
+		};
 
 	public:
 		HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
@@ -831,17 +848,12 @@ namespace Jrd
 		void nullRecords(thread_db* tdbb) const;
 
 	private:
-		size_t hashKeys(thread_db* tdbb, jrd_req* request, HashTable* table,
-			const NestValueArray* keys, const KeyLengthArray* lengths) const;
-		bool compareKeys(thread_db* tdbb, jrd_req* request) const;
-		bool fetchRecord(thread_db* tdbb, HashTable* table, size_t stream) const;
+		void computeKeys(thread_db* tdbb, jrd_req* request,
+						 const SubStream& sub, UCHAR* buffer) const;
+		bool fetchRecord(thread_db* tdbb, Impure* impure, size_t stream) const;
 
-		NestConst<RecordSource> m_leader;
-		NestValueArray* m_leaderKeys;
-		KeyLengthArray* m_leaderIntlLengths;
-		Firebird::Array<NestConst<BufferedStream> > m_args;
-		Firebird::Array<NestValueArray*> m_keys;
-		Firebird::Array<KeyLengthArray*> m_intlLengths;
+		SubStream m_leader;
+		Firebird::Array<SubStream> m_args;
 		const bool m_outerJoin;
 		const bool m_semiJoin;
 		const bool m_antiJoin;
