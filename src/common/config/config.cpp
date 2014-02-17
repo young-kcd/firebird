@@ -144,7 +144,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_INTEGER,		"ConnectionTimeout",		(ConfigValue) 180},			// seconds
 	{TYPE_INTEGER,		"DummyPacketInterval",		(ConfigValue) 0},			// seconds
 	{TYPE_INTEGER,		"LockMemSize",				(ConfigValue) 1048576},		// bytes
-	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 1009},		// slots
+	{TYPE_INTEGER,		"LockHashSlots",			(ConfigValue) 8191},		// slots
 	{TYPE_INTEGER,		"LockAcquireSpins",			(ConfigValue) 0},
 	{TYPE_INTEGER,		"EventMemSize",				(ConfigValue) 65536},		// bytes
 	{TYPE_INTEGER,		"DeadlockTimeout",			(ConfigValue) 10},			// seconds
