@@ -1,3 +1,19 @@
+ 2014-02-16 21:52  asfernandes 
+   M src/dsql/DdlNodes.h
+   M src/jrd/RecordNumber.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/exe.cpp
+Warnings.
+
+ 2014-02-16 13:26  hvlad 
+   M src/common/os/win32/mod_loader.cpp
+Windows only changes:
+- try to load DLL's from fbclient's folder if DLL's file name contains no full path 
+- if attempt above failed, load DLL using given file name (as is)
+- cleanup
+It should fix CORE-4275 (create database fault if fbclient.dll loaded from another directory (Providers = Engine12))
+
  2014-02-15 11:12  hvlad 
    M src/yvalve/PluginManager.cpp
 Fixed Windows build
