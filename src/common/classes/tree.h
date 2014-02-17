@@ -81,7 +81,7 @@ enum LocType { locEqual, locLess, locGreat, locGreatEqual, locLessEqual };
 // Fast and simple B+ tree of simple types.
 // Tree is always accessed via accessor classes. There is default accessor
 // built into the class to simplify programming in single-threaded
-// non-reenterant access model.
+// non-reentrant access model.
 //
 // Notes:
 //
@@ -101,7 +101,7 @@ enum LocType { locEqual, locLess, locGreat, locGreatEqual, locLessEqual };
 // for this when real need arises. It will still be much faster than allowing duplicates
 // in BePlusTree itself
 //
-// 2) We could store ultimate item count for each node and make tree accessable like
+// 2) We could store ultimate item count for each node and make tree accessible like
 // an indexed dynamic array without increase of algorithm calculation costs (this is one
 // more classical B+ tree feature). This is also not done to improve tree performance a little
 //
@@ -250,7 +250,7 @@ public:
 		if (level == 0)
 			return ((ItemList*) root)->getCount();
 
-		// Tree is large. Roughtly estimate number of leaf nodes using number of
+		// Tree is large. Roughly estimate number of leaf nodes using number of
 		// items in root list and depth of the tree. Theoretically possible fill
 		// factor range for the tree on each level for current NEED_MERGE routine
 		// is [0.375, 1]. We take 3/5 = 0.6 as most probable case and
@@ -272,7 +272,7 @@ public:
 		if (level == 0)
 			return sizeof(ItemList);
 
-		// Tree is large. Roughtly estimate memory consumption using number
+		// Tree is large. Roughly estimate memory consumption using number
 		// of items in root list and depth of the tree. Approach to approximation
 		// is the same as in approxCount() routine above
 		size_t bytes_per_node = sizeof(ItemList);
@@ -396,7 +396,7 @@ public:
 			// and compiler will be able to eliminate most of code
 			void *list = tree->root;
 			if (!list)
-				return false; // Uninitalized tree
+				return false; // Uninitialized tree
 
 			for (int lev = tree->level; lev; lev--)
 			{
@@ -455,7 +455,7 @@ public:
 		{
 			void* items = tree->root;
 			if (!items)
-				return false; // Uninitalized tree
+				return false; // Uninitialized tree
 
 			for (int i = tree->level; i > 0; i--)
 				items = (*(NodeList*) items)[0];
@@ -469,7 +469,7 @@ public:
 		{
 			void *items = tree->root;
 			if (!items)
-				return false; // Uninitalized tree
+				return false; // Uninitialized tree
 
 			for (int i = tree->level; i > 0; i--)
 				items = (*(NodeList*) items)[((NodeList*) items)->getCount() - 1];
@@ -481,7 +481,7 @@ public:
 			}
 			return false;
 		}
-		// Accessor position must be establised via successful call to getFirst(),
+		// Accessor position must be established via successful call to getFirst(),
 		// getLast() or locate() before you can call this method
 		bool getNext()
 		{
@@ -502,7 +502,7 @@ public:
 			}
 			return true;
 		}
-		// Accessor position must be establised via successful call to getFirst(),
+		// Accessor position must be established via successful call to getFirst(),
 		// getLast() or locate() before you can call this method
 		bool getPrev()
 		{
@@ -530,7 +530,7 @@ public:
 	protected:
 
 		// Returns true if current position is valid and already points to the given key.
-		// Note that we can't guarantie validity of current position if tree is accessed
+		// Note that we can't guarantee validity of current position if tree is accessed
 		// by different Accessor's. Therefore this method is private and can be used only
 		// via tree::defaultAccessor.
 		bool isPositioned(const Key& key) const
