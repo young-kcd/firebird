@@ -80,7 +80,7 @@ public:
 		return;
 #else
 
-		if (!Firebird::bEmbedded || !mCreateActCtx)
+		if (!mCreateActCtx)
 			return;
 
 		ACTCTX_SECTION_KEYED_DATA ackd;
@@ -162,8 +162,8 @@ bool ModuleLoader::isLoadableModule(const PathName& module)
 {
 	ContextActivator ctx;
 
-	const HMODULE hMod = LoadLibraryEx(module.c_str(), 0,
-		(Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0) | LOAD_LIBRARY_AS_DATAFILE);
+	const HMODULE hMod = 
+		LoadLibraryEx(module.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH | LOAD_LIBRARY_AS_DATAFILE);
 
 	if (hMod) {
 		FreeLibrary(hMod);
@@ -196,14 +196,12 @@ ModuleLoader::Module *ModuleLoader::loadModule(const PathName& modPath)
 		PathName fullName;
 		PathUtils::concatPath(fullName, baseDir, modPath);
 
-		module = LoadLibraryEx(fullName.c_str(), 0,
-			Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
+		module = LoadLibraryEx(fullName.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
 	}
 
 	if (!module)
 	{
-		module = LoadLibraryEx(modPath.c_str(), 0,
-			Firebird::bEmbedded ? LOAD_WITH_ALTERED_SEARCH_PATH : 0);
+		module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
 	}
 
 	// Restore old mode in case we are embedded into user application
