@@ -1,3 +1,16 @@
+ 2014-02-17 15:11  dimitr 
+   M src/common/config/config.cpp
+Increased default number of hash slots.
+
+ 2014-02-17 15:10  dimitr 
+   M src/common/classes/tree.h
+Totally misc.
+
+ 2014-02-17 15:07  dimitr 
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+Reworked the hash joins implementation for a better performance. To be field tested.
+
  2014-02-16 21:52  asfernandes 
    M src/dsql/DdlNodes.h
    M src/jrd/RecordNumber.h
