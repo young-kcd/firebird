@@ -1011,7 +1011,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		recursive_map_ctx = dsqlScratch->contextNumber++;
 
 		dsqlScratch->recursiveCtxId = dsqlScratch->contextNumber;
-		rse = pass1_union(dsqlScratch, unionQuery, NULL, NULL, NULL, 0);
+		rse = pass1_union(dsqlScratch, unionQuery, NULL, NULL, false, 0);
 		dsqlScratch->contextNumber = dsqlScratch->recursiveCtxId + 1;
 
 		// recursive union always has exactly 2 members
@@ -1048,7 +1048,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 			unionExpr->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 1);
 			unionExpr->dsqlClauses->items[0] = input;
 			unionExpr->dsqlAll = true;
-			rse = pass1_union(dsqlScratch, unionExpr, NULL, NULL, NULL, 0);
+			rse = pass1_union(dsqlScratch, unionExpr, NULL, NULL, false, 0);
 		}
 		else
 			rse = PASS1_rse(dsqlScratch, input, false);

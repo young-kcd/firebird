@@ -129,7 +129,9 @@ class HashJoin::HashTable : public PermanentStorage
 			const Collision* const c1 = static_cast<const Collision*>(p1);
 			const Collision* const c2 = static_cast<const Collision*>(p2);
 
+#ifndef USE_QSORT_CTX
 			fb_assert(c1->context == c2->context);
+#endif
 
 			const CollisionList* const collisions =
 #ifdef USE_QSORT_CTX
@@ -345,8 +347,7 @@ private:
 
 HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
 				   RecordSource* const* args, NestValueArray* const* keys)
-	: m_args(csb->csb_pool, count - 1),
-	  m_outerJoin(false), m_semiJoin(false), m_antiJoin(false)
+	: m_args(csb->csb_pool, count - 1)
 {
 	fb_assert(count >= 2);
 

@@ -824,7 +824,7 @@ void ArithmeticNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 void ArithmeticNode::getDescDialect1(thread_db* /*tdbb*/, dsc* desc, dsc& desc1, dsc& desc2)
 {
-	USHORT dtype;
+	USHORT dtype = 0;
 
 	switch (blrOp)
 	{
@@ -8225,7 +8225,10 @@ void ScalarNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* csb, dsc* desc)
 	const ArrayField* array;
 
 	if (!field || !(array = field->fld_array))
+	{
 		IBERROR(223);	// msg 223 argument of scalar operation must be an array
+		return;
+	}
 
 	*desc = array->arr_desc.iad_rpt[0].iad_desc;
 

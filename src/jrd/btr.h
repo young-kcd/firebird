@@ -207,7 +207,14 @@ class BtrPageGCLock : public Lock
 	// as second long needed for 8-byte key already "allocated" by compiler
 	// because of alignment rules. Anyway, to be formally correct, let introduce
 	// 4-byte field for guarantee we have space for lock key.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
 	ULONG unused;
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 public:
 	explicit BtrPageGCLock(thread_db* tdbb);

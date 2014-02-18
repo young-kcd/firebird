@@ -87,6 +87,7 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 	else
 	{
 		ERR_post(Arg::Gds(isc_read_only));
+		return;
 	}
 
 	const SLONG id = MOV_get_long(&desc, 0);

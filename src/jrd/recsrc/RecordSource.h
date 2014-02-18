@@ -854,9 +854,6 @@ namespace Jrd
 
 		SubStream m_leader;
 		Firebird::Array<SubStream> m_args;
-		const bool m_outerJoin;
-		const bool m_semiJoin;
-		const bool m_antiJoin;
 	};
 
 	class MergeJoin : public RecordSource

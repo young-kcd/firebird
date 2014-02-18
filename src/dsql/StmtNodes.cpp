@@ -6136,7 +6136,7 @@ StmtNode* StoreNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool upd
 		if (dsqlReturning || statement2)
 			selExpr->dsqlFlags |= RecordSourceNode::DFLAG_SINGLETON;
 
-		RseNode* rse = PASS1_rse(dsqlScratch, selExpr, NULL);
+		RseNode* rse = PASS1_rse(dsqlScratch, selExpr, false);
 		node->dsqlRse = rse;
 		values = rse->dsqlSelectList;
 	}

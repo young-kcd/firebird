@@ -60,7 +60,7 @@ private:
 	template <typename T> class ContextManager;
 	class TransactionImpl;
 
-	class RoutineMetadata :
+	class RoutineMetadata FB_FINAL :
 		public Firebird::VersionedIface<Firebird::IRoutineMetadata, FB_ROUTINE_METADATA_VERSION>,
 		public Firebird::PermanentStorage
 	{

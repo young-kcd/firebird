@@ -39,7 +39,7 @@ class GarbageCollector
 {
 public:
 	GarbageCollector(MemoryPool& p, Database* dbb)
-	  : m_pool(p), m_database(dbb), m_relations(m_pool), m_nextRelID(0)
+	  : m_pool(p), m_relations(m_pool), m_nextRelID(0)
 	{}
 
 	~GarbageCollector();
@@ -100,7 +100,6 @@ private:
 
 	Firebird::MemoryPool& m_pool;
 	Firebird::SyncObject m_sync;
-	Database* m_database;
 	RelGarbageArray m_relations;
 	USHORT m_nextRelID;
 };

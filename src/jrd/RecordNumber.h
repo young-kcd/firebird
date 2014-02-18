@@ -46,8 +46,9 @@ public:
 	// for big- and little-endian machines.
 	class Packed
 	{
-#if defined(__GNUC__)
-#pragma GCC diagnostic ignored "-Wunused-private-field"
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-private-field"
 #endif
 
 #ifdef WORDS_BIGENDIAN
@@ -70,8 +71,8 @@ public:
 											// or 32-bit temporary ID of blob or array
 #endif
 
-#if defined(__GNUC__)
-#pragma GCC diagnostic warning "-Wunused-private-field"
+#ifdef __clang__
+#pragma clang diagnostic pop
 #endif
 
 	public:

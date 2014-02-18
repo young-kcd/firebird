@@ -2567,8 +2567,8 @@ static void check_dependencies(thread_db* tdbb,
 			obj_type = isc_package_name;
 			break;
 		default:
-			fb_assert(FALSE);
-			break;
+			fb_assert(false);
+			return;
 		}
 
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
