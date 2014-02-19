@@ -1,3 +1,28 @@
+ 2014-02-18 11:48  hvlad 
+   M src/jrd/JrdStatement.cpp
+Let subroutine's statement know what procedure\function it belongs to.
+It allows to know subroutine name and thus produce better error messages (see EXE\stuff_stack_trace) and trace subroutine's correctly.
+
+ 2014-02-18 11:42  hvlad 
+   M src/common/os/win32/mod_loader.cpp
+Additional patch for bug CORE-4275 (create database fault if fbclient.dll loaded from another directory (Providers = Engine12)): use LOAD_WITH_ALTERED_SEARCH_PATH flag unconditionally
+
+ 2014-02-18 01:49  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/pass1.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/GarbageCollector.h
+   M src/jrd/RecordNumber.h
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/btr.h
+   M src/jrd/dfw.epp
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+Warnings and make Linux debug build compile.
+
  2014-02-17 15:11  dimitr 
    M src/common/config/config.cpp
 Increased default number of hash slots.
