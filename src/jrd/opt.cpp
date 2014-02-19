@@ -104,13 +104,16 @@ namespace Jrd
 	{
 	public:
 		River(CompilerScratch* csb, RecordSource* rsb, RecordSourceNode* node, const StreamList& streams)
-			: m_rsb(rsb), m_node(node), m_streams(csb->csb_pool)
+			: m_rsb(rsb), m_nodes(csb->csb_pool), m_streams(csb->csb_pool)
 		{
+			if (node)
+				m_nodes.add(node);
+
 			m_streams.assign(streams);
 		}
 
 		River(CompilerScratch* csb, RecordSource* rsb, RiverList& rivers)
-			: m_rsb(rsb), m_node(NULL), m_streams(csb->csb_pool)
+			: m_rsb(rsb), m_nodes(csb->csb_pool), m_streams(csb->csb_pool)
 		{
 			for (River** iter = rivers.begin(); iter < rivers.end(); iter++)
 			{
@@ -121,6 +124,7 @@ namespace Jrd
 				if (count + delta >= MAX_STREAMS)
 					ERR_post(Arg::Gds(isc_too_many_contexts));
 
+				m_nodes.join(sub_river->m_nodes);
 				m_streams.join(sub_river->m_streams);
 			}
 		}
@@ -145,17 +149,13 @@ namespace Jrd
 		void activate(CompilerScratch* csb)
 		{
 			for (const StreamType* iter = m_streams.begin(); iter < m_streams.end(); iter++)
-			{
 				csb->csb_rpt[*iter].activate();
-			}
 		}
 
 		void deactivate(CompilerScratch* csb)
 		{
 			for (const StreamType* iter = m_streams.begin(); iter < m_streams.end(); iter++)
-			{
 				csb->csb_rpt[*iter].deactivate();
-			}
 		}
 
 		bool isReferenced(const ExprNode* node) const
@@ -170,7 +170,13 @@ namespace Jrd
 
 		bool isComputable(CompilerScratch* csb) const
 		{
-			return m_node ? m_node->computable(csb, INVALID_STREAM, false) : true;
+			for (RecordSourceNode* const* iter = m_nodes.begin(); iter < m_nodes.end(); iter++)
+			{
+				if (!(*iter)->computable(csb, INVALID_STREAM, false))
+					return false;
+			}
+
+			return true;
 		}
 
 	protected:
@@ -204,7 +210,7 @@ namespace Jrd
 		}
 
 		RecordSource* m_rsb;
-		RecordSourceNode* const m_node;
+		HalfStaticArray<RecordSourceNode*, OPT_STATIC_ITEMS> m_nodes;
 		StreamList m_streams;
 	};
 
