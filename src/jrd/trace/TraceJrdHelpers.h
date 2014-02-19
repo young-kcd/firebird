@@ -220,6 +220,90 @@ private:
 };
 
 
+class TraceFuncExecute
+{
+public:
+	TraceFuncExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller, 
+					 const UCHAR* inMsg, ULONG inMsgLength) :
+		m_tdbb(tdbb),
+		m_request(request),
+		m_inMsg(inMsg),
+		m_inMsgLength(inMsgLength)
+	{
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		m_need_trace = trace_mgr->needs(TRACE_EVENT_FUNC_EXECUTE);
+		if (!m_need_trace)
+			return;
+
+		//m_request->req_proc_inputs = inputs;
+		m_request->req_proc_caller = caller;
+
+		{	// scope
+			TraceConnectionImpl conn(m_tdbb->getAttachment());
+			TraceTransactionImpl tran(m_tdbb->getTransaction());
+			
+			TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(), 
+				m_request->getStatement()->function->getInputFormat(),
+				m_inMsg, m_inMsgLength);
+			TraceFunctionImpl func(m_request, &inputs, NULL, NULL);
+
+			trace_mgr->event_func_execute(&conn, &tran, &func, true, res_successful);
+		}
+
+		m_start_clock = fb_utils::query_performance_counter();
+
+		m_request->req_fetch_elapsed = 0;
+		m_request->req_fetch_rowcount = 0;
+		fb_assert(!m_request->req_fetch_baseline);
+		m_request->req_fetch_baseline = NULL;
+
+		MemoryPool* pool = m_request->req_pool;
+		m_request->req_fetch_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, m_request->req_stats);
+	}
+
+	~TraceFuncExecute()
+	{
+		finish(res_failed);
+	}
+
+	void finish(ntrace_result_t result, const dsc* value = NULL)
+	{
+		if (!m_need_trace)
+			return;
+
+		m_need_trace = false;
+
+		TraceRuntimeStats stats(m_tdbb->getAttachment(), m_request->req_fetch_baseline, &m_request->req_stats,
+			fb_utils::query_performance_counter() - m_start_clock,
+			m_request->req_fetch_rowcount);
+
+		TraceConnectionImpl conn(m_tdbb->getAttachment());
+		TraceTransactionImpl tran(m_tdbb->getTransaction());
+
+		TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(), 
+			m_request->getStatement()->function->getInputFormat(),
+			m_inMsg, m_inMsgLength);
+
+		TraceFunctionImpl func(m_request, &inputs, stats.getPerf(), value);
+
+		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
+		trace_mgr->event_func_execute(&conn, &tran, &func,  false, result);
+
+		m_request->req_proc_inputs = NULL;
+		m_request->req_proc_caller = NULL;
+		m_request->req_fetch_baseline = NULL;
+	}
+
+private:
+	bool m_need_trace;
+	thread_db* const m_tdbb;
+	jrd_req* const m_request;
+	const UCHAR* m_inMsg; 
+	ULONG m_inMsgLength;
+	SINT64 m_start_clock;
+};
+
+
 class TraceTrigExecute
 {
 public:

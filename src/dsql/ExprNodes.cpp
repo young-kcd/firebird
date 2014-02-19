@@ -56,6 +56,9 @@
 #include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/Collation.h"
+#include "../jrd/trace/TraceManager.h"
+#include "../jrd/trace/TraceObjects.h"
+#include "../jrd/trace/TraceJrdHelpers.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -10720,7 +10723,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		jrd_req* funcRequest = function->getStatement()->findRequest(tdbb);
 
 		// trace function execution start
-		//// TODO: TraceProcExecute trace(tdbb, funcRequest, request, inputTargets);
+		TraceFuncExecute trace(tdbb, funcRequest, request, inMsg, inMsgLength);
 
 		// Catch errors so we can unwind cleanly.
 
@@ -10749,12 +10752,10 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 				}
 			}
 		}
-		catch (const Exception&)
+		catch (const Exception& ex)
 		{
-			/*** TODO:
 			const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
-			trace.finish(false, noPriv ? res_unauthorized : res_failed);
-			***/
+			trace.finish(noPriv ? res_unauthorized : res_failed);
 
 			tdbb->setRequest(request);
 			EXE_unwind(tdbb, funcRequest);
@@ -10764,21 +10765,15 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 			throw;
 		}
 
-		//// TODO: trace.finish(false, res_successful);
-
-		EXE_unwind(tdbb, funcRequest);
-		tdbb->setRequest(request);
-
-		funcRequest->req_attachment = NULL;
-		funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
-		funcRequest->req_timestamp.invalidate();
-
 		const dsc* fmtDesc = function->getOutputFormat()->fmt_desc.begin();
 		const ULONG nullOffset = (IPTR) fmtDesc[1].dsc_address;
 		SSHORT* const nullPtr = reinterpret_cast<SSHORT*>(outMsg + nullOffset);
 
 		if (*nullPtr)
+		{
 			request->req_flags |= req_null;
+			trace.finish(res_successful);
+		}
 		else
 		{
 			request->req_flags &= ~req_null;
@@ -10786,7 +10781,16 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 			const ULONG argOffset = (IPTR) fmtDesc[0].dsc_address;
 			value->vlu_desc = *fmtDesc;
 			value->vlu_desc.dsc_address = outMsg + argOffset;
+
+			trace.finish(res_successful, &value->vlu_desc);
 		}
+
+		EXE_unwind(tdbb, funcRequest);
+		tdbb->setRequest(request);
+
+		funcRequest->req_attachment = NULL;
+		funcRequest->req_flags &= ~(req_in_use | req_proc_fetch);
+		funcRequest->req_timestamp.invalidate();
 	}
 
 	if (!(request->req_flags & req_null))

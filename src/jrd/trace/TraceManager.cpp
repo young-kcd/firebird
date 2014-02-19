@@ -393,6 +393,13 @@ void TraceManager::event_set_context(TraceDatabaseConnection* connection,
 		(connection, transaction, procedure, started, proc_result));
 }
 
+ void TraceManager::event_func_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
+		TraceFunction* function, bool started, ntrace_result_t func_result)
+ {
+	EXECUTE_HOOKS(trace_func_execute,
+		(connection, transaction, function, started, func_result));
+ }
+
 void TraceManager::event_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceTrigger* trigger, bool started, ntrace_result_t trig_result)
 {

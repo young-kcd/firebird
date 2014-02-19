@@ -305,11 +305,11 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceDatabaseConnection
 	logRecordConn(action, connection);
 }
 
-void TracePluginImpl::logRecordProc(const char* action, TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, const char* proc_name)
+void TracePluginImpl::logRecordProcFunc(const char* action, TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, const char* obj_type, const char* obj_name)
 {
 	string temp;
-	temp.printf(NEWLINE "Procedure %s:" NEWLINE, proc_name);
+	temp.printf(NEWLINE "%s %s:" NEWLINE, obj_type, obj_name);
 	record.insert(0, temp);
 
 	if (!transaction) {
@@ -1253,7 +1253,73 @@ void TracePluginImpl::log_event_proc_execute(TraceDatabaseConnection* connection
 			break;
 	}
 
-	logRecordProc(event_type, connection, transaction, procedure->getProcName());
+	logRecordProcFunc(event_type, connection, transaction, "Procedure", procedure->getProcName());
+}
+
+void TracePluginImpl::log_event_func_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
+		TraceFunction* function, bool started, ntrace_result_t func_result)
+{
+	if (!config.log_function_start && started)
+		return;
+
+	if (!config.log_function_finish && !started)
+		return;
+
+	// Do not log operation if it is below time threshold
+	const PerformanceInfo* info = started ? NULL : function->getPerf();
+	if (config.time_threshold && info && info->pin_time < config.time_threshold)
+		return;
+
+	TraceParams* params = function->getInputs();
+	if (params && params->getCount())
+	{
+		appendParams(params);
+		record.append(NEWLINE);
+	}
+
+	if (!started && func_result == res_successful)
+	{
+		params = function->getResult();
+		{
+			record.append("returns:"NEWLINE);
+			appendParams(params);
+			record.append(NEWLINE);
+		}
+	}
+
+	if (info)
+	{
+		if (info->pin_records_fetched)
+		{
+			string temp;
+			temp.printf("%"QUADFORMAT"d records fetched" NEWLINE, info->pin_records_fetched);
+			record.append(temp);
+		}
+		appendGlobalCounts(info);
+		appendTableCounts(info);
+	}
+
+	const char* event_type;
+	switch (func_result)
+	{
+		case res_successful:
+			event_type = started ? "EXECUTE_FUNCTION_START" :
+								   "EXECUTE_FUNCTION_FINISH";
+			break;
+		case res_failed:
+			event_type = started ? "FAILED EXECUTE_FUNCTION_START" :
+								   "FAILED EXECUTE_FUNCTION_FINISH";
+			break;
+		case res_unauthorized:
+			event_type = started ? "UNAUTHORIZED EXECUTE_FUNCTION_START" :
+								   "UNAUTHORIZED EXECUTE_FUNCTION_FINISH";
+			break;
+		default:
+			event_type = "Unknown event at executing function";
+			break;
+	}
+
+	logRecordProcFunc(event_type, connection, transaction, "Function", function->getFuncName());
 }
 
 void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
@@ -2156,6 +2222,28 @@ ntrace_boolean_t TracePluginImpl::trace_proc_execute(TraceDatabaseConnection* co
 		master->upgradeInterface(procedure, FB_TRACE_PROCEDURE_VERSION, upInfo);
 
 		log_event_proc_execute(connection, transaction, procedure, started, proc_result);
+		return true;
+	}
+	catch (const Firebird::Exception& ex)
+	{
+		marshal_exception(ex);
+		return false;
+	}
+}
+
+// Stored function executing
+ntrace_boolean_t TracePluginImpl::trace_func_execute(TraceDatabaseConnection* connection,
+	TraceTransaction* transaction, TraceFunction* function,
+	bool started, ntrace_result_t func_result)
+{
+	try
+	{
+		MasterInterfacePtr master;
+		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
+		master->upgradeInterface(function, FB_TRACE_FUNCTION_VERSION, upInfo);
+
+		log_event_func_execute(connection, transaction, function, started, func_result);
 		return true;
 	}
 	catch (const Firebird::Exception& ex)

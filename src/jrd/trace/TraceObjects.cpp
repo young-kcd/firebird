@@ -305,16 +305,15 @@ const char* TraceFailedSQLStatement::getTextUTF8()
 }
 
 
+/// TraceParamsImpl
 
-/// TraceProcedureImpl::JrdParamsImpl
-
-size_t TraceProcedureImpl::JrdParamsImpl::getCount()
+size_t TraceParamsImpl::getCount()
 {
 	fillParams();
 	return m_descs.getCount();
 }
 
-const dsc* TraceProcedureImpl::JrdParamsImpl::getParam(size_t idx)
+const dsc* TraceParamsImpl::getParam(size_t idx)
 {
 	fillParams();
 
@@ -324,7 +323,10 @@ const dsc* TraceProcedureImpl::JrdParamsImpl::getParam(size_t idx)
 	return NULL;
 }
 
-void TraceProcedureImpl::JrdParamsImpl::fillParams()
+
+/// TraceParamsFromValuesImpl
+
+void TraceParamsFromValuesImpl::fillParams()
 {
 	if (m_descs.getCount() || !m_params)
 		return;
@@ -380,6 +382,33 @@ void TraceProcedureImpl::JrdParamsImpl::fillParams()
 
 		if (from_desc)
 			m_descs.add(*from_desc);
+	}
+}
+
+
+/// TraceParamsFromMsgImpl
+
+void TraceParamsFromMsgImpl::fillParams()
+{
+	if (m_descs.getCount() || !m_format || !m_inMsg || !m_inMsgLength)
+		return;
+
+	const dsc* fmtDesc = m_format->fmt_desc.begin();
+	const dsc* const fmtEnd = m_format->fmt_desc.end();
+		
+	dsc* desc = m_descs.getBuffer(m_format->fmt_count / 2);
+
+	for (; fmtDesc < fmtEnd; fmtDesc += 2, desc++)
+	{
+		const ULONG valOffset = (IPTR) fmtDesc[0].dsc_address;
+
+		*desc = fmtDesc[0];
+		desc->dsc_address = (UCHAR*) m_inMsg + valOffset;
+
+		const ULONG nullOffset = (IPTR) fmtDesc[1].dsc_address;
+		const SSHORT* const nullPtr = (const SSHORT*) (m_inMsg + nullOffset);
+		if (*nullPtr == -1)
+			desc->setNull();
 	}
 }
 

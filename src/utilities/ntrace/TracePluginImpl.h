@@ -187,8 +187,8 @@ private:
 	void logRecordConn(const char* action, TraceDatabaseConnection* connection);
 	void logRecordTrans(const char* action, TraceDatabaseConnection* connection,
 		TraceTransaction* transaction);
-	void logRecordProc(const char* action, TraceDatabaseConnection* connection,
-		TraceTransaction* transaction, const char* proc_name);
+	void logRecordProcFunc(const char* action, TraceDatabaseConnection* connection,
+		TraceTransaction* transaction, const char* obj_type, const char* obj_name);
 	void logRecordStmt(const char* action, TraceDatabaseConnection* connection,
 		TraceTransaction* transaction, TraceStatement* statement,
 		bool isSQL);
@@ -219,6 +219,10 @@ private:
 	void log_event_proc_execute(
 		TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 		bool started, ntrace_result_t proc_result);
+
+	void log_event_func_execute(
+		TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function,
+		bool started, ntrace_result_t func_result);
 
 	void log_event_trigger_execute(
 		TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
@@ -272,9 +276,11 @@ private:
 	int FB_CARG trace_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result);
 
-	// Stored procedure and triggers executing
+	// Stored procedures, functions and triggers execution
 	int FB_CARG trace_proc_execute (TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 			bool started, ntrace_result_t proc_result);
+	int FB_CARG trace_func_execute (TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function,
+			bool started, ntrace_result_t func_result);
 	int FB_CARG trace_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
 			bool started, ntrace_result_t trig_result);
 

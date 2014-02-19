@@ -158,6 +158,16 @@ public:
 };
 #define FB_TRACE_PROCEDURE_VERSION (FB_VERSIONED_VERSION + 3)
 
+class TraceFunction : public Firebird::IVersioned
+{
+public:
+	virtual const char* FB_CARG getFuncName() = 0;
+	virtual TraceParams* FB_CARG getInputs() = 0;
+	virtual TraceParams* FB_CARG getResult() = 0;
+	virtual PerformanceInfo* FB_CARG getPerf() = 0;
+};
+#define FB_TRACE_FUNCTION_VERSION (FB_VERSIONED_VERSION + 4)
+
 class TraceTrigger : public Firebird::IVersioned
 {
 public:
@@ -308,7 +318,7 @@ public:
 	virtual int FB_CARG trace_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 			ntrace_boolean_t commit, ntrace_boolean_t retain_context, ntrace_result_t tra_result) = 0;
 
-	// Stored procedure and triggers executing
+	// Stored procedures and triggers execution
 	virtual int FB_CARG trace_proc_execute (TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure,
 			bool started, ntrace_result_t proc_result) = 0;
 	virtual int FB_CARG trace_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger,
@@ -349,8 +359,12 @@ public:
 	// Sweep activity
 	virtual ntrace_boolean_t FB_CARG trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep,
 			ntrace_process_state_t sweep_state) = 0;
+
+	// Stored functions execution
+	virtual int FB_CARG trace_func_execute (TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function,
+			bool started, ntrace_result_t func_result) = 0;
 };
-#define FB_TRACE_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 20)
+#define FB_TRACE_PLUGIN_VERSION (FB_REFCOUNTED_VERSION + 21)
 
 // Trace plugin second level factory (this is what is known to PluginManager as "trace plugin")
 class TraceFactory : public Firebird::IPluginBase
@@ -386,6 +400,7 @@ enum TraceEvent
 	TRACE_EVENT_SERVICE_DETACH,
 	TRACE_EVENT_ERROR,
 	TRACE_EVENT_SWEEP,
+	TRACE_EVENT_FUNC_EXECUTE,
 	TRACE_EVENT_MAX					// keep it last
 };
 

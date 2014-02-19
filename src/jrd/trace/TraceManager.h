@@ -81,6 +81,9 @@ public:
 	void event_proc_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceProcedure* procedure, bool started, ntrace_result_t proc_result);
 
+	void event_func_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
+		TraceFunction* function, bool started, ntrace_result_t func_result);
+
 	void event_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
 		TraceTrigger* trigger, bool started, ntrace_result_t trig_result);
 
