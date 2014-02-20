@@ -1,3 +1,21 @@
+ 2014-02-19 23:16  hvlad 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/ntrace.h
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceManager.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/fbtrace.conf
+   M src/utilities/ntrace/paramtable.h
+Improvement CORE-4345: Ability to trace stored functions execution
+
+ 2014-02-19 10:19  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4344: Error "no current record for fetch operation" when table inner join procedure inner join table.
+
  2014-02-18 11:48  hvlad 
    M src/jrd/JrdStatement.cpp
 Let subroutine's statement know what procedure\function it belongs to.
