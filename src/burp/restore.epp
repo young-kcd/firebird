@@ -10509,6 +10509,7 @@ struct FixGenerator
 	const char* table;
 	const char* field;
 	const char* prefix;
+	int ods;
 };
 
 void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
@@ -10550,16 +10551,16 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
 
 static const FixGenerator genToFix[] =
 {
-	{ "RDB$CONSTRAINT_NAME",	"RDB$RELATION_CONSTRAINTS",	"RDB$CONSTRAINT_NAME",	"INTEG_" },
-	{ "RDB$FIELD_NAME",			"RDB$FIELDS",				"RDB$FIELD_NAME",		"RDB$" },
-	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$" },
-	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$PRIMARY" },
-	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$FOREIGN" },
-	{ "RDB$TRIGGER_NAME",		"RDB$TRIGGERS",				"RDB$TRIGGER_NAME",		"CHECK_" },
+	{ "RDB$CONSTRAINT_NAME",	"RDB$RELATION_CONSTRAINTS",	"RDB$CONSTRAINT_NAME",	"INTEG_" 		, DB_VERSION_DDL8 },
+	{ "RDB$FIELD_NAME",			"RDB$FIELDS",				"RDB$FIELD_NAME",		"RDB$"			, DB_VERSION_DDL8 },
+	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$"			, DB_VERSION_DDL8 },
+	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$PRIMARY"	, DB_VERSION_DDL8 },
+	{ "RDB$INDEX_NAME",			"RDB$INDICES", 				"RDB$INDEX_NAME",		"RDB$FOREIGN"	, DB_VERSION_DDL8 },
+	{ "RDB$TRIGGER_NAME",		"RDB$TRIGGERS",				"RDB$TRIGGER_NAME",		"CHECK_"		, DB_VERSION_DDL8 },
 	///"RDB$BACKUP_HISTORY"	// unused ???
-	{ "RDB$GENERATOR_NAME",		"RDB$GENERATORS",			"RDB$GENERATOR_NAME",	"RDB$" },
-	{ "RDB$SECURITY_CLASS",		"RDB$SECURITY_CLASSES",		"RDB$SECURITY_CLASS",	"SQL$" },
-	{ "SQL$DEFAULT",			"RDB$SECURITY_CLASSES",		"RDB$SECURITY_CLASS",	"SQL$DEFAULT" },
+	{ "RDB$SECURITY_CLASS",		"RDB$SECURITY_CLASSES",		"RDB$SECURITY_CLASS",	"SQL$" 			, DB_VERSION_DDL8 },
+	{ "SQL$DEFAULT",			"RDB$SECURITY_CLASSES",		"RDB$SECURITY_CLASS",	"SQL$DEFAULT" 	, DB_VERSION_DDL8 },
+	{ "RDB$GENERATOR_NAME",		"RDB$GENERATORS",			"RDB$GENERATOR_NAME",	"RDB$" 			, DB_VERSION_DDL12 },
 	{ NULL, NULL, NULL, NULL }
 };
 
@@ -10582,7 +10583,8 @@ void fix_system_generators(BurpGlobals* tdgbl)
 
 	for (const FixGenerator* g = genToFix; g->name; ++g)
 	{
-		fix_generator(tdgbl, g);
+		if (tdgbl->runtimeODS >= g->ods)
+			fix_generator(tdgbl, g);
 	}
 }
 
