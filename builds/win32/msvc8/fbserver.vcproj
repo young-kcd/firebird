@@ -65,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="$(OutDir)\firebird.exe"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
 				ModuleDefinitionFile=""
@@ -146,7 +146,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="$(OutDir)\firebird.exe"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
 				ModuleDefinitionFile=""
@@ -225,7 +225,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="$(OutDir)\firebird.exe"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile=""
@@ -304,7 +304,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
 				OutputFile="$(OutDir)\firebird.exe"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile=""

@@ -16,7 +16,7 @@
       <Tool Name="VCManagedResourceCompilerTool" />
       <Tool Name="VCResourceCompilerTool" />
       <Tool Name="VCPreLinkEventTool" />
-      <Tool Name="VCLinkerTool" AdditionalDependencies="mpr.lib icuuc.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
+      <Tool Name="VCLinkerTool" AdditionalDependencies="mpr.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
       <Tool Name="VCALinkTool" />
       <Tool Name="VCManifestTool" />
       <Tool Name="VCXDCMakeTool" />
@@ -37,7 +37,7 @@
       <Tool Name="VCManagedResourceCompilerTool" />
       <Tool Name="VCResourceCompilerTool" />
       <Tool Name="VCPreLinkEventTool" />
-      <Tool Name="VCLinkerTool" AdditionalDependencies="mpr.lib icuuc.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
+      <Tool Name="VCLinkerTool" AdditionalDependencies="mpr.lib" OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\$(ProjectName).dll" LinkIncremental="1" AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib" SuppressStartupBanner="true" GenerateDebugInformation="true" ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb" ImportLibrary="$(IntDir)\$(TargetName).lib" GenerateManifest="false" />
       <Tool Name="VCALinkTool" />
       <Tool Name="VCManifestTool" />
       <Tool Name="VCXDCMakeTool" />

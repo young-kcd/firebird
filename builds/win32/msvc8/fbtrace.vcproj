@@ -56,7 +56,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
@@ -126,7 +126,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile="..\defs\plugin.def"
 				TargetMachine="17"
@@ -199,7 +199,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile="..\defs\plugin.def"
 			/>
@@ -272,7 +272,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib icuuc.lib"
+				AdditionalDependencies="mpr.lib"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
 				ModuleDefinitionFile="..\defs\plugin.def"
 				TargetMachine="17"
