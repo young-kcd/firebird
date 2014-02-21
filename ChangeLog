@@ -1,3 +1,7 @@
+ 2014-02-20 06:52  dimitr 
+   M src/burp/restore.epp
+Fixed CORE-4346: v3 GBAK cannot restore backups on pre-v3 server versions.
+
  2014-02-19 23:16  hvlad 
    M src/dsql/ExprNodes.cpp
    M src/jrd/ntrace.h
