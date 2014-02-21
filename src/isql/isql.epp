@@ -2013,7 +2013,6 @@ static processing_state add_row(TEXT* tabname)
 	STDERROUT(infobuf);
 
 	TEXT txt[MSG_LENGTH];
-	const char* name;
 	bool done = false;
 	while (!done)
 	{

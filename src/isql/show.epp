@@ -3974,7 +3974,6 @@ static processing_state show_generators(const SCHAR* object)
  *         incrementing by 0 to not change the current value.
  *
  **************************************/
-	SSHORT indicator;
 	bool found = false;
 	XSQLDA sqlda;
 	const char genIdStr[] = "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE";
