@@ -245,7 +245,7 @@ private:
 class TraceParamsImpl : public Firebird::AutoIface<TraceParams, FB_TRACE_PARAMS_VERSION>
 {
 public:
-	TraceParamsImpl(Firebird::MemoryPool& pool) :
+	explicit TraceParamsImpl(Firebird::MemoryPool& pool) :
 		m_descs(pool)
 	{}
 

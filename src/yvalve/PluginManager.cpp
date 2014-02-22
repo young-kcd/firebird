@@ -1054,7 +1054,7 @@ namespace {
 class DirCache
 {
 public:
-	DirCache(MemoryPool &p)
+	explicit DirCache(MemoryPool &p)
 		: cache(p)
 	{
 		cache.resize(DirType::FB_DIRCOUNT);
