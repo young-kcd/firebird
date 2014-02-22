@@ -665,7 +665,7 @@ string IntlUtil::escapeAttribute(Jrd::CharSet* cs, const string& s)
 		ULONG l;
 		UCHAR* uc = (UCHAR*)(&l);
 
-		const ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(uc), uc);
+		const ULONG uSize = cs->getConvToUnicode().convert(size, p, sizeof(l), uc);
 
 		if (uSize == 2)
 		{
