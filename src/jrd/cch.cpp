@@ -267,17 +267,19 @@ int CCH_down_grade_dbb(void* ast_object)
 		dbb->dbb_ast_flags |= DBB_assert_locks;
 
 		BufferControl* bcb = dbb->dbb_bcb;
-
-		SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
-		bcb->bcb_flags &= ~BCB_exclusive;
-
-		if (bcb && bcb->bcb_count)
+		if (bcb)
 		{
-			const bcb_repeat* tail = bcb->bcb_rpt;
-			fb_assert(tail);			// once I've got here with NULL. AP.
-			for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; ++tail)
+			SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
+			bcb->bcb_flags &= ~BCB_exclusive;
+
+			if (bcb->bcb_count)
 			{
-				PAGE_LOCK_ASSERT(tdbb, bcb, tail->bcb_bdb->bdb_lock);
+				const bcb_repeat* tail = bcb->bcb_rpt;
+				fb_assert(tail);			// once I've got here with NULL. AP.
+				for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; ++tail)
+				{
+					PAGE_LOCK_ASSERT(tdbb, bcb, tail->bcb_bdb->bdb_lock);
+				}
 			}
 		}
 
