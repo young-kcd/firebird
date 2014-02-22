@@ -420,7 +420,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
  *	is null, parse, but do not generate anything.
  *
  **************************************/
-	SLONG n, count, variable, value, sdl_operator;
+	SLONG n, count, variable, value, sdl_operator = 0;
 	IPTR* label;
 	const UCHAR* expressions[MAX_ARRAY_DIMENSIONS];
 	const UCHAR** expr;
