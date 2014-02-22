@@ -153,8 +153,8 @@ bool CMP_node_match( const qli_nod* node1, const qli_nod* node2)
 	case nod_constant:
 		{
 			if (node1->nod_desc.dsc_dtype != node2->nod_desc.dsc_dtype ||
-				node2->nod_desc.dsc_scale != node2->nod_desc.dsc_scale ||
-				node2->nod_desc.dsc_length != node2->nod_desc.dsc_length)
+				node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale ||
+				node1->nod_desc.dsc_length != node2->nod_desc.dsc_length)
 			{
 				return false;
 			}
