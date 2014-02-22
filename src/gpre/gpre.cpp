@@ -1887,7 +1887,7 @@ static bool get_switches(int			argc,
 				return false;
 			}
 
-			if (**argv != 'n' || **argv != 'N') {
+			if (**argv != 'n' && **argv != 'N') {
 				fprintf(stderr,
 						   "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
 				print_switches();
