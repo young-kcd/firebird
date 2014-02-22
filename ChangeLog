@@ -1,3 +1,30 @@
+ 2014-02-21 15:47  asfernandes 
+   M src/common/common.h
+   M src/isql/isql.epp
+   M src/isql/show.epp
+Warnings.
+
+ 2014-02-21 15:46  asfernandes 
+   M builds/win32/adjust_vc7_files.cmd
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/fbserver.vcxproj
+   M builds/win32/msvc10/fbtrace.vcxproj
+   M builds/win32/msvc10/intl.vcxproj
+   M builds/win32/msvc7/fb_inet_server.vcproj
+   M builds/win32/msvc7/fbembed.vcproj
+   M builds/win32/msvc7/fbserver.vcproj
+   M builds/win32/msvc7/fbtrace.vcproj
+   M builds/win32/msvc7/intl.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc8/fbserver.vcproj
+   M builds/win32/msvc8/fbtrace.vcproj
+   M builds/win32/msvc8/intl.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/fbserver.vcproj
+   M builds/win32/msvc9/fbtrace.vcproj
+   M builds/win32/msvc9/intl.vcproj
+It's not needed anymore to link against ICU import libraries.
+
  2014-02-20 06:52  dimitr 
    M src/burp/restore.epp
 Fixed CORE-4346: v3 GBAK cannot restore backups on pre-v3 server versions.
