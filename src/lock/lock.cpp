@@ -914,11 +914,9 @@ SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 
 	switch (aggregate)
 	{
-	case LCK_MIN:
 	case LCK_CNT:
 	case LCK_AVG:
 	case LCK_SUM:
-	case LCK_ANY:
 		for (const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_forward);
 			 lock_srq != &data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_forward))
 		{
@@ -927,11 +925,6 @@ SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 
 			switch (aggregate)
 			{
-			case LCK_MIN:
-				data = lock->lbl_data;
-				break;
-
-			case LCK_ANY:
 			case LCK_CNT:
 				++count;
 				break;
@@ -943,26 +936,38 @@ SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 				data += lock->lbl_data;
 				break;
 			}
-
-			if (aggregate == LCK_MIN || aggregate == LCK_ANY)
-				break;
 		}
 
-		if (aggregate == LCK_CNT || aggregate == LCK_ANY)
+		if (aggregate == LCK_CNT)
 			data = count;
 		else if (aggregate == LCK_AVG)
 			data = count ? data / count : 0;
 		break;
 
-	case LCK_MAX:
-		for (const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_backward);
-			 lock_srq != &data_header; lock_srq = (SRQ) SRQ_ABS_PTR(lock_srq->srq_backward))
+	case LCK_ANY:
+		if (!SRQ_EMPTY(data_header))
+			data = 1;
+		break;
+
+	case LCK_MIN:
+		if (!SRQ_EMPTY(data_header))
 		{
+			const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_forward);
 			const lbl* const lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
 			CHECK(lock->lbl_series == series);
 
 			data = lock->lbl_data;
-			break;
+		}
+		break;
+
+	case LCK_MAX:
+		if (!SRQ_EMPTY(data_header))
+		{
+			const srq* lock_srq = (SRQ) SRQ_ABS_PTR(data_header.srq_backward);
+			const lbl* const lock = (lbl*) ((UCHAR*) lock_srq - OFFSET(lbl*, lbl_lhb_data));
+			CHECK(lock->lbl_series == series);
+
+			data = lock->lbl_data;
 		}
 		break;
 
