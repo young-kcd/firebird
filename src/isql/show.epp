@@ -3975,7 +3975,6 @@ static processing_state show_generators(const SCHAR* object)
  *
  **************************************/
 	bool found = false;
-	XSQLDA sqlda;
 	const char genIdStr[] = "SELECT GEN_ID(%s, 0) FROM RDB$DATABASE";
 	TEXT query[sizeof(genIdStr) + QUOTEDLENGTH], gen_name[QUOTEDLENGTH];
 
