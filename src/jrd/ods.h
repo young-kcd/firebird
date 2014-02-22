@@ -334,7 +334,7 @@ const USHORT irt_expression		= 32;
 const int STUFF_COUNT		= 4;
 
 const ULONG END_LEVEL		= ~0;
-const ULONG END_BUCKET		= (~0) << 1;
+const ULONG END_BUCKET		= (~0u) << 1;
 
 // Header page
 
