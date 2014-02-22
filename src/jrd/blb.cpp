@@ -976,7 +976,7 @@ void blb::move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, const ValueExprNod
 
 	// If the target node is a field, we need more work to do.
 
-	const FieldNode* fieldNode;
+	const FieldNode* fieldNode = 0;
 
 	if (field)
 	{
