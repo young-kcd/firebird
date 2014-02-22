@@ -9495,13 +9495,16 @@ void realign(BurpGlobals* tdgbl, UCHAR* buffer, const burp_rel* relation)
  *	than the new.
  *
  **************************************/
+	UCHAR* p = 0;
+	const UCHAR* q = 0;
+
 	for (const burp_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
 
-		UCHAR* p = buffer + field->fld_offset;
-		const UCHAR* q = buffer + field->fld_old_offset;
+		p = buffer + field->fld_offset;
+		q = buffer + field->fld_old_offset;
 		USHORT l = field->fld_length;
 
 		// CVC: This code assumes fld_offset < fld_old_offset,
@@ -9527,8 +9530,8 @@ void realign(BurpGlobals* tdgbl, UCHAR* buffer, const burp_rel* relation)
 		{
 			if (field->fld_flags & FLD_computed)
 				continue;
-			UCHAR* p = buffer + FB_ALIGN(p - buffer, sizeof(SSHORT));
-			const UCHAR* q = buffer + FB_ALIGN(q - buffer, sizeof(SSHORT));
+			p = buffer + FB_ALIGN(p - buffer, sizeof(SSHORT));
+			q = buffer + FB_ALIGN(q - buffer, sizeof(SSHORT));
 			*p++ = *q++;
 			*p++ = *q++;
 		}
