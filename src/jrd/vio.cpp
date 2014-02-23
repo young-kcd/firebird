@@ -716,7 +716,10 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					state = check_precommitted(transaction, rpb);
 
 				if (state == tra_active)
-					ERR_post(Arg::Gds(isc_deadlock));
+				{
+					ERR_post(Arg::Gds(isc_deadlock) <<
+						Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+				}
 
 				// refetch the record and try again.  The active transaction
 				// could have updated the record a second time.
