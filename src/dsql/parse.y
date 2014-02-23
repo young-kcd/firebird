@@ -188,7 +188,7 @@ using namespace Firebird;
 %token <metaNamePtr> DESC
 %token <metaNamePtr> DISTINCT
 %token <metaNamePtr> DO
-%token <metaNamePtr> DOMAIN
+%token <metaNamePtr> KW_DOMAIN
 %token <metaNamePtr> DROP
 %token <metaNamePtr> ELSE
 %token <metaNamePtr> END
@@ -263,7 +263,7 @@ using namespace Firebird;
 %token <metaNamePtr> ORDER
 %token <metaNamePtr> OUTER
 %token <metaNamePtr> OUTPUT_TYPE
-%token <metaNamePtr> OVERFLOW
+%token <metaNamePtr> KW_OVERFLOW
 %token <metaNamePtr> PAGE
 %token <metaNamePtr> PAGES
 %token <metaNamePtr> KW_PAGE_SIZE
@@ -782,7 +782,7 @@ grant0($node)
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
-	| usage_privilege(NOTRIAL(&$node->privileges)) ON DOMAIN symbol_domain_name
+	| usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
 			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
 		{
 			$node->object = newNode<GranteeClause>(obj_field, *$4);
@@ -940,7 +940,7 @@ revoke0($node)
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
 		}
-	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON DOMAIN symbol_domain_name
+	| rev_grant_option usage_privilege(NOTRIAL(&$node->privileges)) ON KW_DOMAIN symbol_domain_name
 			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
 			$node->object = newNode<GranteeClause>(obj_field, *$5);
@@ -1224,7 +1224,7 @@ create_clause
 	| GENERATOR generator_clause				{ $$ = $2; }
 	| SEQUENCE generator_clause					{ $$ = $2; }
 	| DATABASE db_clause						{ $$ = $2; }
-	| DOMAIN domain_clause						{ $$ = $2; }
+	| KW_DOMAIN domain_clause					{ $$ = $2; }
 	| SHADOW shadow_clause						{ $$ = $2; }
 	| ROLE role_clause							{ $$ = $2; }
 	| COLLATION collation_clause				{ $$ = $2; }
@@ -3307,9 +3307,9 @@ trigger_ddl_type_items
 	| CREATE VIEW			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_VIEW); }
 	| ALTER VIEW			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_VIEW); }
 	| DROP VIEW				{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_VIEW); }
-	| CREATE DOMAIN			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_DOMAIN); }
-	| ALTER DOMAIN			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_DOMAIN); }
-	| DROP DOMAIN			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_DOMAIN); }
+	| CREATE KW_DOMAIN		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_DOMAIN); }
+	| ALTER KW_DOMAIN		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_DOMAIN); }
+	| DROP KW_DOMAIN		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_DOMAIN); }
 	| CREATE ROLE			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_ROLE); }
 	| ALTER ROLE			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_ROLE); }
 	| DROP ROLE				{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_ROLE); }
@@ -3388,7 +3388,7 @@ alter_clause
 			{ $<alterDatabaseNode>$ = newNode<AlterDatabaseNode>(); }
 		alter_db($<alterDatabaseNode>2)
 			{ $$ = $<alterDatabaseNode>2; }
-	| DOMAIN alter_domain					{ $$ = $2; }
+	| KW_DOMAIN alter_domain				{ $$ = $2; }
 	| INDEX alter_index_clause				{ $$ = $2; }
 	| EXTERNAL FUNCTION alter_udf_clause	{ $$ = $3; }
 	| FUNCTION alter_function_clause		{ $$ = $2; }
@@ -3782,7 +3782,7 @@ drop_clause
 		{ $$ = newNode<DropRelationNode>(*$2, true); }
 	| FILTER symbol_filter_name
 		{ $$ = newNode<DropFilterNode>(*$2); }
-	| DOMAIN symbol_domain_name
+	| KW_DOMAIN symbol_domain_name
 		{ $$ = newNode<DropDomainNode>(*$2); }
 	| EXTERNAL FUNCTION symbol_UDF_name
 		{ $$ = newNode<DropFunctionNode>(*$3); }
@@ -4565,7 +4565,7 @@ ddl_type0
 
 %type <intVal> ddl_type1
 ddl_type1
-	: DOMAIN				{ $$ = obj_field; }
+	: KW_DOMAIN				{ $$ = obj_field; }
 	| TABLE					{ $$ = obj_relation; }
 	| VIEW					{ $$ = obj_view; }
 	| PROCEDURE				{ $$ = obj_procedure; }
@@ -7077,7 +7077,7 @@ non_reserved_word
 //	| DB_KEY
 	| DESC
 	| DO
-	| DOMAIN
+	| KW_DOMAIN
 	| ENTRY_POINT
 	| EXCEPTION
 	| EXIT
@@ -7099,7 +7099,7 @@ non_reserved_word
 	| NAMES
 	| OPTION
 	| OUTPUT_TYPE
-	| OVERFLOW
+	| KW_OVERFLOW
 	| PAGE
 	| PAGES
 	| KW_PAGE_SIZE
