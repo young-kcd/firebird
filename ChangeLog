@@ -1,3 +1,19 @@
+ 2014-02-22 22:24  robocop 
+   M src/jrd/sdl.cpp
+Warning (PVS-Studio).
+
+ 2014-02-22 22:24  robocop 
+   M src/gpre/gpre.cpp
+Logic error (PVS-Studio).
+
+ 2014-02-22 06:49  robocop 
+   M src/qli/compile.cpp
+This bug comes from IB, maybe from the dawn of time (PVS-Studio).
+
+ 2014-02-22 06:46  robocop 
+   M src/burp/restore.epp
+Revert code as it was in FB1.5 (PVS-Studio).
+
  2012-06-20 09:37  paulbeach 
    M builds/posix/postfix.darwin
 Copy libfbclient.dylib to Firebird SuperServer Framework Libraries to support the ODBC driver
