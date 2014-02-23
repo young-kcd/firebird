@@ -1,3 +1,19 @@
+ 2014-02-22 22:23  robocop 
+   M src/jrd/sdl.cpp
+Warning (PVS-Studio).
+
+ 2014-02-22 22:23  robocop 
+   M src/gpre/gpre.cpp
+Logic error (PVS-Studio).
+
+ 2014-02-22 07:00  robocop 
+   M src/burp/restore.epp
+Revert code as it was in FB1.5 (PVS-Studio).
+
+ 2014-02-22 06:59  robocop 
+   M src/qli/compile.cpp
+This bug comes from IB, maybe from the dawn of time (PVS-Studio).
+
  2014-01-30 14:53  alexpeshkoff 
    M src/qli/exe.cpp
 Backported fix for CORE-4327: Error in QLI when copying NULL blobs between databases
