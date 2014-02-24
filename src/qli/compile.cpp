@@ -155,8 +155,8 @@ int CMP_node_match( QLI_NOD node1, QLI_NOD node2)
 	case nod_constant:
 		{
 			if (node1->nod_desc.dsc_dtype != node2->nod_desc.dsc_dtype ||
-				node2->nod_desc.dsc_scale != node2->nod_desc.dsc_scale ||
-				node2->nod_desc.dsc_length != node2->nod_desc.dsc_length)
+				node1->nod_desc.dsc_scale != node2->nod_desc.dsc_scale ||
+				node1->nod_desc.dsc_length != node2->nod_desc.dsc_length)
 				return FALSE;
 			p1 = node1->nod_desc.dsc_address;
 			p2 = node2->nod_desc.dsc_address;
@@ -184,7 +184,7 @@ int CMP_node_match( QLI_NOD node1, QLI_NOD node2)
 							  node2->nod_arg[e_stt_value]);
 
 	case nod_function:
-		if (node1->nod_arg[e_fun_function] != node1->nod_arg[e_fun_function])
+		if (node1->nod_arg[e_fun_function] != node2->nod_arg[e_fun_function])
 			return FALSE;
 		return CMP_node_match(node1->nod_arg[e_fun_args],
 							  node2->nod_arg[e_fun_args]);

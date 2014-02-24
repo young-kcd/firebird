@@ -1862,7 +1862,7 @@ static BOOLEAN get_switches(int			argc,
 				return FALSE;
 			}
 
-			if (**argv != 'n' || **argv != 'N') {
+			if (**argv != 'n' && **argv != 'N') {
 				ib_fprintf(ib_stderr,
 						   "-sqlda :  Deprecated Feature: you must use XSQLDA\n ");
 				print_switches();

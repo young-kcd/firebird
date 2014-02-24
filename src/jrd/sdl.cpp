@@ -400,7 +400,7 @@ static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
  *	is null, parse, but do not generate anything.
  *
  **************************************/
-	SLONG n, count, variable, value, op, operator_;
+	SLONG n, count, variable, value, op, operator_i = 0;
 	IPTR *label;
 	UCHAR *p, *ptr1, *expressions[16], **expr;
 
