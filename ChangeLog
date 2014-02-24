@@ -1,3 +1,7 @@
+ 2014-02-23 07:10  dimitr 
+   M src/jrd/vio.cpp
+Backported detailed error reporting for conflicts during reading in NORECVER transactions.
+
  2014-02-22 22:22  robocop 
    M src/jrd/sdl.cpp
 Warning (PVS-Studio).
