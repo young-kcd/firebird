@@ -150,8 +150,14 @@ private:
 class Win32Module : public ModuleLoader::Module
 {
 public:
-	Win32Module(HMODULE m) : module(m) {}
+	Win32Module(MemoryPool& pool, const PathName& aFileName, HMODULE m)
+		: Module(pool, aFileName),
+		  module(m)
+	{
+	}
+
 	~Win32Module();
+
 	void *findSymbol(const string&);
 
 private:
@@ -179,7 +185,7 @@ void ModuleLoader::doctorModuleExtension(PathName& name)
 	name += ".dll";
 }
 
-ModuleLoader::Module *ModuleLoader::loadModule(const PathName& modPath)
+ModuleLoader::Module* ModuleLoader::loadModule(const PathName& modPath)
 {
 	ContextActivator ctx;
 
@@ -210,7 +216,10 @@ ModuleLoader::Module *ModuleLoader::loadModule(const PathName& modPath)
 	if (!module)
 		return 0;
 
-	return FB_NEW(*getDefaultMemoryPool()) Win32Module(module);
+	char fileName[MAX_PATH];
+	GetModuleFileName(module, fileName, sizeof(fileName));
+
+	return FB_NEW(*getDefaultMemoryPool()) Win32Module(*getDefaultMemoryPool(), fileName, module);
 }
 
 Win32Module::~Win32Module()
@@ -219,7 +228,7 @@ Win32Module::~Win32Module()
 		FreeLibrary(module);
 }
 
-void *Win32Module::findSymbol(const string& symName)
+void* Win32Module::findSymbol(const string& symName)
 {
 	FARPROC result = GetProcAddress(module, symName.c_str());
 	if (!result)

@@ -38,6 +38,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/rwlock.h"
 #include "../common/StatusHolder.h"
+#include "../common/os/path_utils.h"
 
 #include <unicode/ustring.h>
 #include <unicode/utrans.h>
@@ -110,6 +111,7 @@ public:
 	int minorVersion;
 
 	void (U_EXPORT2 *uInit)(UErrorCode* status);
+	void (U_EXPORT2 *uSetDataDirectory)(const char* directory);
 };
 }
 
@@ -237,6 +239,7 @@ private:
 		catch (const status_exception&)
 		{ }
 
+		getEntryPoint("u_setDataDirectory", module, uSetDataDirectory);
 		getEntryPoint("ucnv_open", module, ucnv_open);
 		getEntryPoint("ucnv_close", module, ucnv_close);
 		getEntryPoint("ucnv_fromUChars", module, ucnv_fromUChars);
@@ -255,6 +258,15 @@ private:
 		getEntryPoint("ucnv_getMinCharSize", module, ucnv_getMinCharSize);
 		getEntryPoint("ucnv_setFromUCallBack", module, ucnv_setFromUCallBack);
 		getEntryPoint("ucnv_setToUCallBack", module, ucnv_setToUCallBack);
+
+#ifdef WIN_NT
+		if (uSetDataDirectory)
+		{
+			PathName path, file;
+			PathUtils::splitLastComponent(path, file, module->fileName);
+			uSetDataDirectory(path.c_str());
+		}
+#endif
 
 		if (uInit)
 		{
@@ -1010,6 +1022,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 
 		try
 		{
+			icu->getEntryPoint("u_setDataDirectory", icu->ucModule, icu->uSetDataDirectory);
 			icu->getEntryPoint("u_versionToString", icu->ucModule, icu->uVersionToString);
 			icu->getEntryPoint("uloc_countAvailable", icu->ucModule, icu->ulocCountAvailable);
 			icu->getEntryPoint("uloc_getAvailable", icu->ucModule, icu->ulocGetAvailable);
@@ -1035,6 +1048,15 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 			delete icu;
 			continue;
 		}
+
+#ifdef WIN_NT
+		if (icu->uSetDataDirectory)
+		{
+			PathName path, file;
+			PathUtils::splitLastComponent(path, file, icu->ucModule->fileName);
+			icu->uSetDataDirectory(path.c_str());
+		}
+#endif
 
 		UErrorCode status = U_ZERO_ERROR;
 
@@ -1098,7 +1120,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 
 	LocalStatus lastError;
 	string version;
-	const int majorArray[] = {4, 3, 5, 6, 0};
+	const int majorArray[] = {5, 4, 3, 6, 0};
 
 	for (const int* major = majorArray; *major; ++major)
 	{

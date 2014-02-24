@@ -9,13 +9,9 @@
 ::==========
 :: MAIN
 
-@echo Building ICU %FB_OBJ_DIR% for %FB_TARGET_PLATFORM%
+@echo Extracting pre-built ICU
 
-if %MSVC_VERSION% GEQ 8 (
-    @call compile.bat %FB_ROOT_PATH%\extern\icu\source\allinone\allinone_%MSVC_VERSION% make_icu_%FB_TARGET_PLATFORM%.log
-) else (
-    @call compile.bat %FB_ROOT_PATH%\extern\icu\source\allinone\allinone make_icu_%FB_TARGET_PLATFORM%.log
-)
+%FB_ROOT_PATH%\extern\icu\icu.exe -y > make_icu_%FB_TARGET_PLATFORM%.log
 
 if errorlevel 1 call :ERROR build failed - see make_icu_%FB_TARGET_PLATFORM%.log for details
 @goto :EOF
@@ -33,7 +29,3 @@ cancel_script > nul 2>&1
 ::End of ERROR
 ::------------
 @goto :EOF
-
-
-
-

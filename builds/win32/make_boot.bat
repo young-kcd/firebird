@@ -69,9 +69,8 @@ if "%ERRLEV%"=="1" goto :END
 
 @findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in > %FB_BIN_DIR%\firebird.conf
 
-for %%v in ( icuuc30 icudt30 icuin30 ) do (
-@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_BIN_DIR% >nul 2>&1
-)
+@copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
+@copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
 
 ::=======
 @call :databases
