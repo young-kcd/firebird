@@ -1,3 +1,8 @@
+ 2014-02-23 02:01  asfernandes 
+   M src/dsql/parse.y
+   M src/yvalve/keywords.cpp
+Warnings (conflict with MSVC math.h defines).
+
  2014-02-22 18:34  dimitr 
    M src/lock/lock.cpp
 Changed the code to be better understandable (PVS-Studio).
