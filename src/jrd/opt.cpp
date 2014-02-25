@@ -5596,7 +5596,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 	map->smb_key_length = (USHORT) map_length >> SHIFTLONG;
 	USHORT flag_offset = (USHORT) map_length;
-	map_length += items - sort->nod_count;
+	map_length += stream_stack.getCount();
 	// Now go back and process all to fields involved with the sort.  If the
 	// field has already been mentioned as a sort key, don't bother to repeat it.
 	while (stream_stack.hasData())
@@ -5646,7 +5646,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		map_length += desc->dsc_length;
 	}
 
-	if (dbkey_streams)
+	if (dbkey_streams && dbkey_streams[0])
 	{
 		const UCHAR* const end_ptrL = dbkey_streams + dbkey_streams[0];
 
