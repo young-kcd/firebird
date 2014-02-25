@@ -497,6 +497,9 @@ namespace
 		explicit OverwriteHolder(Database* to_remove)
 			: MutexLockGuard(databases_mutex, FB_FUNCTION), dbb(to_remove)
 		{
+			if (!dbb)
+				return;
+
 			for (Database** d_ptr = &databases; *d_ptr; d_ptr = &(*d_ptr)->dbb_next)
 			{
 				if (*d_ptr == dbb)

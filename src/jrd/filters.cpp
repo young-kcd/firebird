@@ -801,22 +801,22 @@ ISC_STATUS filter_transliterate_text(USHORT action, BlobControl* control)
 		return FB_SUCCESS;
 
 	case isc_blob_filter_close:
-		// ASF: Raise error at close functions is something bad,
-		// but I know no better thing to do here.
-		if (aux->ctlaux_init_action == isc_blob_filter_create && aux->ctlaux_buffer1_unused != 0)
-		{
-			return isc_transliteration_failed;
-		}
-
-		if (aux && aux->ctlaux_buffer1)
-		{
-			gds__free(aux->ctlaux_buffer1);
-			aux->ctlaux_buffer1 = NULL;
-			aux->ctlaux_buffer1_len = 0;
-		}
-
 		if (aux)
 		{
+			// ASF: Raise error at close functions is something bad,
+			// but I know no better thing to do here.
+			if (aux->ctlaux_init_action == isc_blob_filter_create && aux->ctlaux_buffer1_unused != 0)
+			{
+				return isc_transliteration_failed;
+			}
+
+			if (aux->ctlaux_buffer1)
+			{
+				gds__free(aux->ctlaux_buffer1);
+				aux->ctlaux_buffer1 = NULL;
+				aux->ctlaux_buffer1_len = 0;
+			}
+
 			gds__free(aux);
 			control->ctl_data[0] = 0;
 			aux = NULL;

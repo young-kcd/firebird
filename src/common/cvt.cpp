@@ -1907,12 +1907,12 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 }
 
 
-USHORT CVT_make_string(const dsc*          desc,
+USHORT CVT_make_string(const dsc*    desc,
 					   USHORT        to_interp,
 					   const char**  address,
 					   vary*         temp,
 					   USHORT        length,
-					   ErrorFunction    err)
+					   ErrorFunction err)
 {
 /**************************************
  *
@@ -1925,14 +1925,15 @@ USHORT CVT_make_string(const dsc*          desc,
  *     The pointer to this string is returned in address.
  *
  **************************************/
+	fb_assert(desc != NULL);
+	fb_assert(address != NULL);
+	fb_assert(err != NULL);
+
 	const USHORT from_interp = INTL_TTYPE(desc);
 
 	const bool simple_return = desc->isText() &&
 		(from_interp == to_interp || to_interp == ttype_none || to_interp == ttype_binary);
 
-	fb_assert(desc != NULL);
-	fb_assert(address != NULL);
-	fb_assert(err != NULL);
 	fb_assert((temp != NULL && length > 0) || simple_return);
 
 	if (simple_return)

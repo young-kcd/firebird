@@ -879,6 +879,9 @@ static void shutdown_shadow(Shadow* shadow)
  *	Stop shadowing to a given shadow number.
  *
  **************************************/
+	if (!shadow)
+		return;
+
 	Database* dbb = GET_DBB();
 
 	// find the shadow block and delete it from linked list
@@ -893,18 +896,15 @@ static void shutdown_shadow(Shadow* shadow)
 
 	// close the shadow files and free up the associated memory
 
-	if (shadow)
+	PIO_close(shadow->sdw_file);
+	jrd_file* file;
+	jrd_file* free = shadow->sdw_file;
+	for (; (file = free->fil_next); free = file)
 	{
-		PIO_close(shadow->sdw_file);
-		jrd_file* file;
-		jrd_file* free = shadow->sdw_file;
-		for (; (file = free->fil_next); free = file)
-		{
-			delete free;
-		}
 		delete free;
-		delete shadow;
 	}
+	delete free;
+	delete shadow;
 }
 
 

@@ -54,14 +54,14 @@ int GlobalRWLock::blocking_ast_cached_lock(void* ast_object)
 
 	try
 	{
-		Database* const dbb = globalRWLock->cachedLock->lck_dbb;
+		if (!globalRWLock->cachedLock)
+			return 0;
 
+		Database* const dbb = globalRWLock->cachedLock->lck_dbb;
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 		MutexLockGuard counterGuard(globalRWLock->counterMutex, FB_FUNCTION);
-
-		if (globalRWLock->cachedLock)
-			globalRWLock->blockingAstHandler(tdbb);
+		globalRWLock->blockingAstHandler(tdbb);
 	}
 	catch (const Exception&)
 	{} // no-op

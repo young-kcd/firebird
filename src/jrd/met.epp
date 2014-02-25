@@ -4137,13 +4137,14 @@ static int blocking_ast_procedure(void* ast_object)
 
 	try
 	{
-		Database* const dbb = procedure->existenceLock->lck_dbb;
-
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, procedure->existenceLock);
-
 		if (procedure->existenceLock)
-			LCK_release(tdbb, procedure->existenceLock);
+		{
+			Database* const dbb = procedure->existenceLock->lck_dbb;
 
+			AsyncContextHolder tdbb(dbb, FB_FUNCTION, procedure->existenceLock);
+
+			LCK_release(tdbb, procedure->existenceLock);
+		}
 		procedure->flags |= Routine::FLAG_OBSOLETE;
 	}
 	catch (const Exception&)
@@ -4173,18 +4174,20 @@ static int blocking_ast_relation(void* ast_object)
 
 	try
 	{
-		Database* const dbb = relation->rel_existence_lock->lck_dbb;
-
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, relation->rel_existence_lock);
-
-		if (relation->rel_use_count)
-			relation->rel_flags |= REL_blocking;
-		else
+		if (relation->rel_existence_lock)
 		{
-			relation->rel_flags &= ~REL_blocking;
-			relation->rel_flags |= REL_check_existence;
-			if (relation->rel_existence_lock)
+			Database* const dbb = relation->rel_existence_lock->lck_dbb;
+
+			AsyncContextHolder tdbb(dbb, FB_FUNCTION, relation->rel_existence_lock);
+
+			if (relation->rel_use_count)
+				relation->rel_flags |= REL_blocking;
+			else
+			{
+				relation->rel_flags &= ~REL_blocking;
+				relation->rel_flags |= REL_check_existence;
 				LCK_release(tdbb, relation->rel_existence_lock);
+			}
 		}
 	}
 	catch (const Exception&)

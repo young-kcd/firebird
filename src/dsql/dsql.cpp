@@ -235,10 +235,8 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 	JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, dsqlMsgBuffer);
 
 	const dsql_par* const eof = statement->getEof();
-
-	dsc eofDesc = eof->par_desc;
-	eofDesc.dsc_address = dsqlMsgBuffer + (IPTR) eofDesc.dsc_address;
-	const bool eofReached = eof && !*((USHORT*) eofDesc.dsc_address);
+	const USHORT* eofPtr = eof ? (USHORT*) (dsqlMsgBuffer + (IPTR) eof->par_desc.dsc_address) : NULL;
+	const bool eofReached = eof && !(*eofPtr);
 
 	if (eofReached)
 	{
