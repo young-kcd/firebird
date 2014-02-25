@@ -115,7 +115,7 @@ void CMP_alloc_temp(qli_nod* node)
 	if (node->nod_desc.dsc_address)
 		return;
 
-	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length + 
+	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length +
 					     type_alignments[node->nod_desc.dsc_dtype]);
 	node->nod_desc.dsc_address = (UCHAR *) FB_ALIGN((FB_UINT64)(U_IPTR)(string->str_data), type_alignments[node->nod_desc.dsc_dtype]);
 	QLI_validate_desc(node->nod_desc);
@@ -178,7 +178,7 @@ bool CMP_node_match( const qli_nod* node1, const qli_nod* node2)
 							  node2->nod_arg[e_stt_value]);
 
 	case nod_function:
-		if (node1->nod_arg[e_fun_function] != node1->nod_arg[e_fun_function])
+		if (node1->nod_arg[e_fun_function] != node2->nod_arg[e_fun_function])
 			return false;
 		return CMP_node_match(node1->nod_arg[e_fun_args],
 							  node2->nod_arg[e_fun_args]);
@@ -1105,7 +1105,7 @@ static qli_nod* compile_prompt( qli_nod* node)
 			prompt_length = 8;
 			break;
 
-		
+
 		case dtype_long:
 		case dtype_real:
 			prompt_length = 15;
@@ -1389,7 +1389,7 @@ static qli_nod* compile_statement( qli_nod* node, qli_req* request, bool interna
 		return node;
 
 	default:
-		ERRQ_bugcheck(360);			// Msg360 not yet implemented (compile_statement) 
+		ERRQ_bugcheck(360);			// Msg360 not yet implemented (compile_statement)
 		return NULL;
 	}
 }
