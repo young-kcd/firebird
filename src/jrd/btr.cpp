@@ -1415,7 +1415,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 }
 
 
-USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buffer,
+bool BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buffer,
 				  RelationPages* relPages)
 {
 /**************************************
@@ -1433,16 +1433,16 @@ USHORT BTR_lookup(thread_db* tdbb, jrd_rel* relation, USHORT id, index_desc* buf
 
 	index_root_page* root = fetch_root(tdbb, &window, relation, relPages);
 	if (!root) {
-		return FB_FAILURE;
+		return false;
 	}
 
 	if (id >= root->irt_count || !BTR_description(tdbb, relation, root, buffer, id))
 	{
 		CCH_RELEASE(tdbb, &window);
-		return FB_FAILURE;
+		return false;
 	}
 	CCH_RELEASE(tdbb, &window);
-	return FB_SUCCESS;
+	return true;
 }
 
 

@@ -3975,7 +3975,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			if (isTempIndex && (index->idl_count == 1))
 			{
 				index_desc idx;
-				if (BTR_lookup(tdbb, relation, id, &idx, relPages) == FB_SUCCESS)
+				if (BTR_lookup(tdbb, relation, id, &idx, relPages))
 				{
 					index->idl_count--;
 					LCK_release(tdbb, index->idl_lock);

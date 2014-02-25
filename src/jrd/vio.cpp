@@ -1467,7 +1467,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 					jrd_rel *partner;
 					index_desc idx;
 
-					if ((BTR_lookup(tdbb, r2, id - 1, &idx, r2->getBasePages()) == FB_SUCCESS) &&
+					if ((BTR_lookup(tdbb, r2, id - 1, &idx, r2->getBasePages())) &&
 						MET_lookup_partner(tdbb, r2, &idx, index_name.nullStr()) &&
 						(partner = MET_lookup_relation_id(tdbb, idx.idx_primary_relation, false)) )
 					{
