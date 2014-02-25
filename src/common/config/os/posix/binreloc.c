@@ -46,16 +46,12 @@ _br_find_exe (BrInitError *error)
 	return NULL;
 #else
 	char *line, *result;
-	size_t buf_size;
+	size_t buf_size = (PATH_MAX > SSIZE_MAX ? SSIZE_MAX : PATH_MAX) - 1;
 	ssize_t size;
 	struct stat stat_buf;
 	FILE *f;
 
 	/* Read from /proc/self/exe (symlink) */
-	if (sizeof (path) > SSIZE_MAX)
-		buf_size = SSIZE_MAX - 1;
-	else
-		buf_size = PATH_MAX - 1;
 	char* path = (char *) malloc (buf_size);
 	if (path == NULL)
 	{
