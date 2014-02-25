@@ -96,14 +96,11 @@ int main( int argc, char **argv)
 	memset(pub, 0, sizeof(pub));
 
 	printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
-	printf
-		("You will be prompted for facility, module, routine and message text\n");
-	printf
-		("You *must* enter module and routine names for each message; be prepared\n");
+	printf("You will be prompted for facility, module, routine and message text\n");
+	printf("You *must* enter module and routine names for each message; be prepared\n");
 	printf("You will be returned a message number for the message\n");
 	printf("You may assign an optional symbol for the message\n");
-	printf
-		("Escape sequences may be entered and will be translated to single bytes\n");
+	printf("Escape sequences may be entered and will be translated to single bytes\n");
 
 	READY;
 	START_TRANSACTION;
@@ -140,7 +137,8 @@ int main( int argc, char **argv)
 
 						/* All JRD messages are public.  Only ask if entering messages
 						 * in a component other than JRD */
-						if (X.FAC_CODE != 0) {
+						if (X.FAC_CODE != 0)
+						{
 							printf("Public [y/n]: ");
 							gets((char*) pub);
 							if (*pub == 'Y' || *pub == 'y')
@@ -177,13 +175,15 @@ int main( int argc, char **argv)
 								S.SQL_CODE = sql_num;
 
 								strcpy(S.GDS_SYMBOL, symbol);
-								if (sql_class[0]) {
+								if (sql_class[0])
+								{
 									strcpy(S.SQL_CLASS, sql_class);
 									S.SQL_CLASS.NULL = FALSE;
 								}
 								else
 									S.SQL_CLASS.NULL = TRUE;
-								if (sql_sub_class[0]) {
+								if (sql_sub_class[0])
+								{
 									strcpy(S.SQL_SUBCLASS, sql_sub_class);
 									S.SQL_SUBCLASS.NULL = FALSE;
 								}
@@ -199,9 +199,9 @@ int main( int argc, char **argv)
 							strcpy(Y.MODULE, module);
 							strcpy(Y.ROUTINE, routine);
 							strcpy(Y.SYMBOL, symbol);
-							if (!translate(text, (UCHAR*) Y.TEXT, sizeof(Y.TEXT))) {
-								printf
-									("Message too long: max length: %d\n",
+							if (!translate(text, (UCHAR*) Y.TEXT, sizeof(Y.TEXT)))
+							{
+								printf("Message too long: max length: %d\n",
 									 sizeof(Y.TEXT));
 								break;
 							}
@@ -212,7 +212,8 @@ int main( int argc, char **argv)
 				END_MODIFY;
 			}
 		END_FOR;
-		if (!count) {
+		if (!count)
+		{
 			printf("Facilty %s not found\n  Known facilities are:\n",
 					  facility);
 			FOR F IN FACILITIES SORTED BY F.FACILITY
@@ -240,7 +241,8 @@ static void ascii_str_upper( UCHAR * str)
  *
  **************************************/
 
-	while (*str) {
+	while (*str)
+	{
 		/* subtract 32 if necessary */
 
 		if (*str >= LOWER_A && *str <= LOWER_Z)
@@ -317,7 +319,8 @@ static bool get_sql_code( SSHORT * sql_code)
 		/* Allow for leading sign */
 		if (*p == '+')
 			p++;
-		else if (*p == '-') {
+		else if (*p == '-')
+		{
 			p++;
 			sign = -1;
 		}
@@ -327,7 +330,8 @@ static bool get_sql_code( SSHORT * sql_code)
 			p++;
 
 		/* and if anything is left, convert to a number .. */
-		if (*p && isdigit(*p)) {
+		if (*p && isdigit(*p))
+		{
 			sql_num = sign * atoi((char*) p);
 			*sql_code = sql_num;
 			ret = true;
@@ -342,7 +346,8 @@ static bool get_sql_code( SSHORT * sql_code)
 	if (ret)
 	{
 		bool got_it = false;
-		if (sql_num < 0) {
+		if (sql_num < 0)
+		{
 			srch_num = 1000 + sql_num;
 			FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_NEGATIVE
 				AND M.NUMBER = srch_num
@@ -350,7 +355,8 @@ static bool get_sql_code( SSHORT * sql_code)
                 got_it = true;
 			END_FOR;
 		}
-		else {
+		else
+		{
 			srch_num = sql_num;
 			FOR M IN MESSAGES WITH M.FAC_CODE = FAC_SQL_POSITIVE
 				AND M.NUMBER = srch_num
@@ -358,9 +364,9 @@ static bool get_sql_code( SSHORT * sql_code)
                 got_it = true;
 			END_FOR;
 		}
-		if (!got_it) {
-			printf("Warning: SQL code %d is not in the SQLERR facility.\n",
-					  sql_num);
+		if (!got_it)
+		{
+			printf("Warning: SQL code %d is not in the SQLERR facility.\n", sql_num);
 			printf("You will need to add it there too.\n");
 		}
 	}
@@ -391,10 +397,8 @@ static bool get_sql_subclass( char* sql_sub_class)
 
 		if (length == 3)
 			return true;
-		else {
-			fprintf(stderr, "Sqlsubclass is three characters!\n");
-			continue;
-		}
+
+		fprintf(stderr, "Sqlsubclass is three characters!\n");
 	}
 
 	return false;
@@ -415,7 +419,8 @@ static bool get_symbol( char* symbol)
  *	or false if user breaks out
  *
  **************************************/
-	while (true) {
+	while (true)
+	{
 		fprintf(stderr, "Symbols are required for system errors!\n");
 		printf(" Symbol: ");
 		gets(symbol);
@@ -456,20 +461,22 @@ static bool store_sql_msg()
 			break;
 
 		STORE Y IN MESSAGES USING
-			if (sql_num < 0) {
+			if (sql_num < 0)
+			{
 				Y.NUMBER = 1000 + sql_num;
 				Y.FAC_CODE = FAC_SQL_NEGATIVE;
 			}
-			else {
+			else
+			{
 				Y.NUMBER = sql_num;
 				Y.FAC_CODE = FAC_SQL_POSITIVE;
 			}
 
 			/* translate escape sequences to single bytes */
 
-			if (!translate(text, (UCHAR*) Y.TEXT, sizeof(Y.TEXT))) {
-				printf("Message too long: max length: %d\n",
-						  sizeof(Y.TEXT));
+			if (!translate(text, (UCHAR*) Y.TEXT, sizeof(Y.TEXT)))
+			{
+				printf("Message too long: max length: %d\n", sizeof(Y.TEXT));
 				return false;
 			}
 		END_STORE;
@@ -498,7 +505,8 @@ static bool translate( const UCHAR* source, UCHAR* target, SSHORT length)
 	{
 		if (!--length)
 			return false;
-		if (*q == '\\') {
+		if (*q == '\\')
+		{
 			*q++;
 			switch (*q)
 			{

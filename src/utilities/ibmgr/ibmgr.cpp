@@ -396,11 +396,11 @@ static SSHORT get_switches(int argc,
 				break;
 
 			case IN_SW_IBMGR_PIDFILE:
-			{
-				Firebird::PathName pf(string);
-				pf.copyTo(ibmgr_data->pidfile, sizeof(ibmgr_data->pidfile));
+				{
+					Firebird::PathName pf(string);
+					pf.copyTo(ibmgr_data->pidfile, sizeof(ibmgr_data->pidfile));
+				}
 				break;
-			}
 
 			case IN_SW_IBMGR_0:
 				SRVRMGR_msg_get(MSG_INVPAR, msg);

@@ -56,7 +56,8 @@ int main( int argc, char **argv)
 	READY;
 	START_TRANSACTION;
 
-	for (;;) {
+	for (;;)
+	{
 		printf("Facility: ");
 		if (!gets(facility))
 			break;

@@ -981,7 +981,9 @@ static void print_db_header( FILE* file, const header_page* header)
 	SLONG number;
 
 	const UCHAR* p = header->hdr_data;
-	for (const UCHAR* const end = p + header->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
+	for (const UCHAR* const end = p + header->hdr_page_size;
+		p < end && *p != HDR_end;
+		p += 2 + p[1])
 	{
 		switch (*p)
 		{
@@ -1124,8 +1126,7 @@ static void write_headers(FILE* file, rbdb* rbdb, ULONG lower, ULONG upper)
 				fprintf(file, "data page, checksum %d\n", page->pag_checksum);
 				const data_page* data = (data_page*) page;
 				fprintf(file, "\trelation %d, sequence %ld, records on page %d\n",
-						   data->dpg_relation, data->dpg_sequence,
-						   data->dpg_count);
+						   data->dpg_relation, data->dpg_sequence, data->dpg_count);
 				fprintf(file, "\t%s%s%s%s\n",
 						   (data->pag_flags & dpg_orphan) ? "orphan " : "",
 						   (data->pag_flags & dpg_full) ? "full " : "",
@@ -1163,8 +1164,7 @@ static void write_headers(FILE* file, rbdb* rbdb, ULONG lower, ULONG upper)
 				fprintf(file, "blob page, checksum %d\n", page->pag_checksum);
 				const blob_page* blob = (blob_page*) page;
 				fprintf(file, "\tlead page: %ld, sequence: %ld, length: %d\n",
-						   blob->blp_lead_page, blob->blp_sequence,
-						   blob->blp_length);
+						   blob->blp_lead_page, blob->blp_sequence, blob->blp_length);
 				fprintf(file, "\tcontains %s\n",
 						   (blob->pag_flags & blp_pointers) ? "pointers" : "data");
 			}

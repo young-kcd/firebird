@@ -3655,8 +3655,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	const TEXT* p = NULL;
 
 	// If there is a user parameter, we will set it into the create stmt.
-	if (global_usr || global_psw ||
-		(*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)))
+	if (global_usr || global_psw || (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)))
 	{
 		strip_quotes(isqlGlob.User, usr);
 		strip_quotes(Password, psw);
@@ -3693,8 +3692,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 					if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
 						sprintf(local_statement + strlen(local_statement),
 								" SET NAMES \'%s\' ", ISQL_charset);
-					sprintf(local_statement + strlen(local_statement), "%s",
-							p);
+					sprintf(local_statement + strlen(local_statement), "%s", p);
 				}
 			}
 		}
@@ -3718,10 +3716,8 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 				strlen(isqlGlob.User) + strlen(Password) + 24 + 2 * cnt;
 
 			if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
-				arglength +=
-					strlen(ISQL_charset) + strlen(" SET NAMES \'\' ");
-			new_local_statement =
-				(TEXT*) ISQL_ALLOC(arglength + 1);
+				arglength += strlen(ISQL_charset) + strlen(" SET NAMES \'\' ");
+			new_local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
 
 			if (!new_local_statement)
 			{
@@ -3755,8 +3751,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 					ISQL_FREE(new_local_statement);
 				return (FAIL);
 			}
-			copy_str(&temp_str, &temp_local_stmt_str, &done,
-				 str_begin, str_end, str_flag);
+			copy_str(&temp_str, &temp_local_stmt_str, &done, str_begin, str_end, str_flag);
 		}
 
 		if (new_local_statement)
@@ -3771,8 +3766,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 			sprintf(temp_str + strlen(temp_str), " PASSWORD \'%s\' ", psw);
 
 		if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
-			sprintf(temp_str + strlen(temp_str),
-					" SET NAMES \'%s\' ", ISQL_charset);
+			sprintf(temp_str + strlen(temp_str), " SET NAMES \'%s\' ", ISQL_charset);
 
 		if (new_local_statement)
 			temp_str = new_local_statement + strlen(new_local_statement);

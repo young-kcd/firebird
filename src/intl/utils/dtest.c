@@ -71,7 +71,8 @@ int main(int argc, char** argv)
 	char buffer[200];
 	struct texttype this_textobj;
 
-	if (argc <= 1) {
+	if (argc <= 1)
+	{
 		printf("usage: dtest Intl_module_name\n");
 		return (1);
 	}
@@ -79,7 +80,8 @@ int main(int argc, char** argv)
 
 	FPTR_INT func = 0;
 
-	for (int i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++)
+	{
 
 #ifdef LIKE_JRD
 		{
@@ -94,22 +96,24 @@ int main(int argc, char** argv)
 			func = (FPTR_INT) ISC_lookup_entrypoint(path.c_str(), entry, NULL);
 		}
 #else
-		if (strcmp(vector[i], "ask") == 0) {
+		if (strcmp(vector[i], "ask") == 0)
+		{
 			gets(buffer);
 			func = (FPTR_INT) ISC_lookup_entrypoint(buffer, "ld_init", NULL);
 		}
 		else
-			func =
-				(FPTR_INT) ISC_lookup_entrypoint(vector[i], "ld_init", NULL);
+			func = (FPTR_INT) ISC_lookup_entrypoint(vector[i], "ld_init", NULL);
 #endif
 		if (func == NULL)
 			printf("Cannot find %s.init\n", vector[i]);
-		else {
+		else
+		{
 			FULL_DEBUG("This testobj %ld\n", &this_textobj);
 			FULL_DEBUG("size of %d\n", sizeof(this_textobj));
 			if ((*func) (99, &this_textobj) != 99)
 				printf("%s.Init returned bad result\n", vector[i]);
-			else {
+			else
+			{
 				FULL_DEBUG("Called init ok\n");
 				FULL_DEBUG("ld_init is %ld %ld\n",
 						   this_textobj.
@@ -120,7 +124,8 @@ int main(int argc, char** argv)
 						   texttype_functions[(int) intl_fn_NULL], func);
 				if (func == NULL)
 					printf("%s.Init OK can't find ID\n", vector[i]);
-				else {
+				else
+				{
 					FULL_DEBUG("About to call ID fn\n");
 					(*func) (sizeof(buffer), buffer);
 					FULL_DEBUG("Back from ID fn \n");
@@ -132,7 +137,8 @@ int main(int argc, char** argv)
 				FULL_DEBUG("ld_to_key is %ld\n", func);
 				if (func == NULL)
 					printf("%s: Can't find str_to_key\n", vector[i]);
-				else {
+				else
+				{
 					try_fc("cote", func);
 					try_fc("COTE", func);
 					try_fc("co-te", func);

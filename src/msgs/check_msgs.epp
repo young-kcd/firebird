@@ -82,6 +82,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		if (*p != '-')
 			sw_bad = true;
 		else
+		{
 			switch (UPPER(p[1]))
 			{
 			case 'D':
@@ -95,6 +96,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			default:
 				sw_bad = true;
 			}
+		}
 		if (sw_bad)
 		{
 			printf("Invalid option \"%s\".  Valid options are:\n", p);
@@ -108,7 +110,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (ind_jrd = fopen(INCLUDE_INDICATOR, "r"))
 	{
-		if (!fstat(fileno(ind_jrd), &file_stat)) {
+		if (!fstat(fileno(ind_jrd), &file_stat))
+		{
 			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_jrd);
 			flag_jrd = false;
 		}
@@ -117,7 +120,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	if (ind_msg = fopen(MESSAGE_INDICATOR, "r"))
 	{
-		if (!fstat(fileno(ind_msg), &file_stat)) {
+		if (!fstat(fileno(ind_msg), &file_stat))
+		{
 			isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_msg);
 			flag_msg = false;
 		}
@@ -129,7 +133,8 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		flag_loc = true;
 		if (ind_loc = fopen(LOCALE_INDICATOR, "r"))
 		{
-			if (!fstat(fileno(ind_loc), &file_stat)) {
+			if (!fstat(fileno(ind_loc), &file_stat))
+			{
 				isc_encode_date(localtime(&file_stat.st_mtime), (ISC_QUAD*) &date_loc);
 				flag_loc = false;
 			}
@@ -173,22 +178,31 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	FINISH;
 
 	if (flag_jrd)
-		if (ind_jrd = fopen(INCLUDE_INDICATOR, "w")) {
+	{
+		if (ind_jrd = fopen(INCLUDE_INDICATOR, "w"))
+		{
 			fputc(' ', ind_jrd);
 			fclose(ind_jrd);
 		}
+	}
 
 	if (flag_msg)
-		if (ind_msg = fopen(MESSAGE_INDICATOR, "w")) {
+	{
+		if (ind_msg = fopen(MESSAGE_INDICATOR, "w"))
+		{
 			fputc(' ', ind_msg);
 			fclose(ind_msg);
 		}
+	}
 
 	if (flag_loc)
-		if (ind_loc = fopen(LOCALE_INDICATOR, "w")) {
+	{
+		if (ind_loc = fopen(LOCALE_INDICATOR, "w"))
+		{
 			fputc(' ', ind_loc);
 			fclose(ind_loc);
 		}
+	}
 
 	exit(FINI_OK);
 }

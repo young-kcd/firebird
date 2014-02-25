@@ -80,18 +80,16 @@ int main( int argc, char **argv)
 	SSHORT msg_number;
 
 	printf("\nHit Ctrl-D (or Ctrl-Z) at prompt to exit level\n");
-	printf
-		("You will be prompted for facility, module, routine and message text\n");
-	printf
-		("You *must* enter module and routine names for each message; be prepared\n");
+	printf("You will be prompted for facility, module, routine and message text\n");
+	printf("You *must* enter module and routine names for each message; be prepared\n");
 	printf("You may assign an optional symbol for the message\n");
-	printf
-		("Escape sequences may be entered and will be translated to single bytes\n");
+	printf("Escape sequences may be entered and will be translated to single bytes\n");
 
 	READY;
 	START_TRANSACTION;
 
-	for (;;) {
+	for (;;)
+	{
 		printf("Facility: ");
 		if (!gets(facility))
 			break;
@@ -100,7 +98,8 @@ int main( int argc, char **argv)
 		ascii_str_upper(facility);
 		FOR X IN FACILITIES WITH X.FACILITY = facility
 			count++;
-			for (;;) {
+			for (;;)
+			{
 				bool sys_error = false;
 
 				printf("Message number (%d) ? ", msg_number + 1);
@@ -134,7 +133,8 @@ int main( int argc, char **argv)
 				END_FOR
 
 				printf(" Modify? ");
-				if (mustget(yesno) && (yesno[0] == 'y' || yesno[0] == 'Y')) {
+				if (mustget(yesno) && (yesno[0] == 'y' || yesno[0] == 'Y'))
+				{
 					module[0] = 0;
 					printf(" Module: ");
 					if (!gets(module))
@@ -151,7 +151,8 @@ int main( int argc, char **argv)
 					printf(" Symbol: ");
 					if (!gets(symbol))
 						break;
-					if (sys_error || X.FAC_CODE == 0) {
+					if (sys_error || X.FAC_CODE == 0)
+					{
 						printf("SQLCODE: ");
 						if (mustget(nstring))
 							sql_number = atoi(nstring);
@@ -171,9 +172,7 @@ int main( int argc, char **argv)
 							if (text[0])
 								while (!translate(text, Y.TEXT, sizeof(Y.TEXT)))
 								{
-									printf
-										("Message too long: max length: %d\n",
-										 sizeof(Y.TEXT));
+									printf("Message too long: max length: %d\n", sizeof(Y.TEXT));
 									mustget(text);
 								}
 							if (symbol[0])
@@ -197,7 +196,8 @@ int main( int argc, char **argv)
 				}
 			}
 		END_FOR;
-		if (!count) {
+		if (!count)
+		{
 			printf("Facilty %s not found\n  Known facilities are:\n",
 					  facility);
 			FOR F IN FACILITIES SORTED BY F.FACILITY
@@ -228,7 +228,8 @@ static void ascii_str_upper( char* str)
  *
  **************************************/
 
-	while (*str) {
+	while (*str)
+	{
 		/* subtract 32 if necessary */
 
 		if (*str >= LOWER_A && *str <= LOWER_Z)
@@ -314,7 +315,8 @@ static bool get_sql_class(char* sql_class)
  *	return true if we get one, otherwise false
  *
  **************************************/
-	while (true) {
+	while (true)
+	{
 		printf("   SQLCLASS: ");
 		gets(sql_class);
 		const SSHORT length = strlen(sql_class);
@@ -344,7 +346,8 @@ static bool get_sql_subclass(char* sql_sub_class)
  *	return true if we get one, otherwise false
  *
  **************************************/
-	while (true) {
+	while (true)
+	{
 		printf("SQLSUBCLASS: ");
 		gets(sql_sub_class);
 		const SSHORT length = strlen(sql_sub_class);
@@ -373,7 +376,8 @@ static bool get_symbol(char* symbol)
  *	return true when we get one
  *
  **************************************/
-	while (true) {
+	while (true)
+	{
 		fprintf(stderr, "Symbols are required for system errors!\n");
 		printf(" Symbol: ");
 		gets(symbol);
@@ -425,7 +429,8 @@ static bool translate(const char* source, char* target, SSHORT length)
 		if (!--length)
 			return false;
 
-		if (*q == '\\') {
+		if (*q == '\\')
+		{
 			*q++;
 			switch (*q)
 			{
