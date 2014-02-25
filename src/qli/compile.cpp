@@ -182,7 +182,7 @@ bool CMP_node_match( const qli_nod* node1, const qli_nod* node2)
 							  node2->nod_arg[e_stt_value]);
 
 	case nod_function:
-		if (node1->nod_arg[e_fun_function] != node1->nod_arg[e_fun_function])
+		if (node1->nod_arg[e_fun_function] != node2->nod_arg[e_fun_function])
 			return false;
 		return CMP_node_match(node1->nod_arg[e_fun_args],
 							  node2->nod_arg[e_fun_args]);
