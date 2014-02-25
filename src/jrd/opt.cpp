@@ -2502,14 +2502,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		}
 	}
 
-	// CVC: I'm not sure about this change, please check! 6 is an educated guess only.
-	// It comes from sort->expressions + streams * 3 + db_key_streams * 2 + the loop above,
-	// all of them having a theoretical maximum of MAX_STREAMS, thus MAX_STREAMS * 7,
-	// although the contribution of sort->expressions and the loop above seem to be small.
-	//if (items > MAX_USHORT)
-	if (items >= MAX_STREAMS * 7)
-		ERR_post(Arg::Gds(isc_imp_exc));
-
 	// Now that we know the number of items, allocate a sort map block.
 	SortedStream::SortMap* map =
 		FB_NEW(*tdbb->getDefaultPool()) SortedStream::SortMap(*tdbb->getDefaultPool());
@@ -2623,7 +2615,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	map_length = ROUNDUP(map_length, sizeof(SLONG));
 	map->keyLength = map_length;
 	ULONG flag_offset = map_length;
-	map_length += items - sort->expressions.getCount();
+	map_length += stream_list.getCount();
 
 	// Now go back and process all to fields involved with the sort.  If the
 	// field has already been mentioned as a sort key, don't bother to repeat it.
@@ -2677,7 +2669,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		map_length += desc->dsc_length;
 	}
 
-	if (dbkey_streams)
+	if (dbkey_streams && dbkey_streams->hasData())
 	{
 		const StreamType* const end_ptrL = dbkey_streams->end();
 
@@ -2708,7 +2700,6 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		}
 	}
 
-	//for (ptr = &streams[1]; ptr <= end_ptr; ptr++, map_item++)
 	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
 	{
 		map_item->clear();
