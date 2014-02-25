@@ -698,11 +698,9 @@ void ComparativeBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* desc[2] = {NULL, NULL};
-	SSHORT comparison;
 	bool computed_invariant = false;
 
 	request->req_flags &= ~req_same_tx_upd;
-	SSHORT force_equal = 0;
 
 	// Evaluate arguments.  If either is null, result is null, but in
 	// any case, evaluate both, since some expressions may later depend
@@ -712,7 +710,7 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	const ULONG flags = request->req_flags;
 	request->req_flags &= ~req_null;
-	force_equal |= request->req_flags & req_same_tx_upd;
+	bool force_equal = (request->req_flags & req_same_tx_upd) != 0;
 
 	// Currently only nod_like, nod_contains, nod_starts and nod_similar may be marked invariant
 	if (nodFlags & FLAG_INVARIANT)
@@ -803,7 +801,8 @@ bool ComparativeBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return false;
 
-	force_equal |= request->req_flags & req_same_tx_upd;
+	force_equal |= (request->req_flags & req_same_tx_upd) != 0;
+	int comparison; // while the two switch() below are in sync, no need to initialize
 
 	switch (blrOp)
 	{

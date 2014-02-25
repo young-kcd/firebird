@@ -95,7 +95,7 @@ static const BYTE compare_priority[] =
 	dtype_boolean				// compares with nothing except itself
 };
 
-static inline SSHORT QUAD_COMPARE(const SQUAD* arg1, const SQUAD* arg2)
+static inline int QUAD_COMPARE(const SQUAD* arg1, const SQUAD* arg2)
 {
 /**************************************
  *
@@ -188,7 +188,7 @@ bool CVT2_get_binary_comparable_desc(dsc* result, const dsc* arg1, const dsc* ar
 }
 
 
-SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
+int CVT2_compare(const dsc* arg1, const dsc* arg2)
 {
 /**************************************
  *
@@ -253,7 +253,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			{
 				// keep old ttype_binary compare rules
 				USHORT l = MIN(arg1->dsc_length, arg2->dsc_length);
-				SSHORT rc = memcmp(p1, p2, l);
+				int rc = memcmp(p1, p2, l);
 				if (rc)
 				{
 					return rc;
@@ -519,7 +519,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 			USHORT length = CVT_get_string_ptr(arg2, &t, &p, NULL, 0);
 
 			USHORT l = MIN(arg1->dsc_length, length);
-			SSHORT rc = memcmp(arg1->dsc_address, p, l);
+			int rc = memcmp(arg1->dsc_address, p, l);
 			if (rc)
 			{
 				return rc;
@@ -541,7 +541,7 @@ SSHORT CVT2_compare(const dsc* arg1, const dsc* arg2)
 }
 
 
-SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
+int CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 {
 /**************************************
  *
@@ -560,7 +560,7 @@ SSHORT CVT2_blob_compare(const dsc* arg1, const dsc* arg2)
 
 	SLONG l1, l2;
 	USHORT ttype2;
-	SSHORT ret_val = 0;
+	int ret_val = 0;
 
 	thread_db* tdbb = NULL;
 	SET_TDBB(tdbb);

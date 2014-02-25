@@ -45,7 +45,7 @@ using namespace Jrd;
 
 static RecordSourceNode* dsqlPassRelProc(DsqlCompilerScratch* dsqlScratch, RecordSourceNode* source);
 static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, StreamType stream);
-static SSHORT strcmpSpace(const char* p, const char* q);
+static int strcmpSpace(const char* p, const char* q);
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	RecordSourceNode* source, BoolExprNode** boolean, RecordSourceNodeStack& stack);
 static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Format** inputFormat);
@@ -3283,7 +3283,7 @@ static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, StreamType strea
 }
 
 // Compare two strings, which could be either space-terminated or null-terminated.
-static SSHORT strcmpSpace(const char* p, const char* q)
+static int strcmpSpace(const char* p, const char* q)
 {
 	for (; *p && *p != ' ' && *q && *q != ' '; p++, q++)
 	{

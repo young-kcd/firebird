@@ -1147,7 +1147,7 @@ void MaxMinAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
 		return;
 	}
 
-	const SLONG result = MOV_compare(desc, &impure->vlu_desc);
+	const int result = MOV_compare(desc, &impure->vlu_desc);
 
 	if ((type == TYPE_MAX && result > 0) || (type == TYPE_MIN && result < 0))
 		EVL_make_value(tdbb, desc, impure);
