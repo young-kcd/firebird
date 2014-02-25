@@ -1,3 +1,9 @@
+ 2014-02-24 08:58  paulbeach 
+   M src/gpre/gpre.cpp
+   M src/jrd/sdl.cpp
+   M src/qli/compile.cpp
+Fix some minor bugs (as per Claudio) for completeness that pre-date Firebird.
+
  2012-06-20 09:39  paulbeach 
    M builds/posix/postfix.darwin
 Copy libfbclient.dylib to Firebird SuperServer Framework Libraries to support the ODBC driver
