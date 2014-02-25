@@ -1047,7 +1047,7 @@ bool DPM_fetch(thread_db* tdbb, record_param* rpb, USHORT lock)
 }
 
 
-SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT latch_wait)
+bool DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT latch_wait)
 {
 /**************************************
  *
@@ -1066,8 +1066,8 @@ SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT la
  *                      <negative number> => Latch timeout interval in seconds.
  *
  * return:
- *	1:	fetch back was successful.
- *	0:	unsuccessful (only possible is latch_wait <> 1),
+ *	true:	fetch back was successful.
+ *	false:	unsuccessful (only possible is latch_wait <> 1),
  *			The latch timed out.
  *			The latch on the fetched page is downgraded to shared.
  *			The fetched page is unmarked.
@@ -1096,7 +1096,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT la
 							  pag_data,
 							  latch_wait)))
 	{
-		return 0;
+		return false;
 	}
 
 	const RecordNumber number = rpb->rpb_number;
@@ -1121,7 +1121,7 @@ SSHORT DPM_fetch_back(thread_db* tdbb, record_param* rpb, USHORT lock, SSHORT la
 
 	rpb->rpb_number = number;
 
-	return 1;
+	return true;
 }
 
 

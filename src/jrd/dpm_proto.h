@@ -52,7 +52,7 @@ ULONG	DPM_data_pages(Jrd::thread_db*, Jrd::jrd_rel*);
 void	DPM_delete(Jrd::thread_db*, Jrd::record_param*, ULONG);
 void	DPM_delete_relation(Jrd::thread_db*, Jrd::jrd_rel*);
 bool	DPM_fetch(Jrd::thread_db*, Jrd::record_param*, USHORT);
-SSHORT	DPM_fetch_back(Jrd::thread_db*, Jrd::record_param*, USHORT, SSHORT);
+bool	DPM_fetch_back(Jrd::thread_db*, Jrd::record_param*, USHORT, SSHORT);
 void	DPM_fetch_fragment(Jrd::thread_db*, Jrd::record_param*, USHORT);
 SINT64	DPM_gen_id(Jrd::thread_db*, SLONG, bool, SINT64);
 bool	DPM_get(Jrd::thread_db*, Jrd::record_param*, SSHORT);
