@@ -2205,28 +2205,34 @@ bool BTR_types_comparable(const dsc& target, const dsc& source)
 	{
 		return true;
 	}
-	else if (DTYPE_IS_TEXT(target.dsc_dtype))
+
+	if (DTYPE_IS_TEXT(target.dsc_dtype))
 	{
 		// should we also check for the INTL stuff here?
 		return (DTYPE_IS_TEXT(source.dsc_dtype) || source.dsc_dtype == dtype_dbkey);
 	}
-	else if (target.dsc_dtype == dtype_int64)
+
+	if (target.dsc_dtype == dtype_int64)
 	{
 		return (source.dsc_dtype <= dtype_long || source.dsc_dtype == dtype_int64);
 	}
-	else if (DTYPE_IS_NUMERIC(target.dsc_dtype))
+
+	if (DTYPE_IS_NUMERIC(target.dsc_dtype))
 	{
 		return (source.dsc_dtype <= dtype_double || source.dsc_dtype == dtype_int64);
 	}
-	else if (target.dsc_dtype == dtype_sql_date)
+
+	if (target.dsc_dtype == dtype_sql_date)
 	{
 		return (source.dsc_dtype <= dtype_sql_date || source.dsc_dtype == dtype_timestamp);
 	}
-	else if (DTYPE_IS_DATE(target.dsc_dtype))
+
+	if (DTYPE_IS_DATE(target.dsc_dtype))
 	{
 		return (source.dsc_dtype <= dtype_timestamp);
 	}
-	else if (target.dsc_dtype == dtype_boolean)
+
+	if (target.dsc_dtype == dtype_boolean)
 	{
 		return (source.dsc_dtype == dtype_boolean);
 	}
