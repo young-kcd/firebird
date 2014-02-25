@@ -52,11 +52,13 @@ namespace
 	  qsort_compare_callback compare;
 	};
 
+#if defined(WIN_NT) || defined(DARWIN) || defined(FREEBSD)
 	int qsort_ctx_arg_swap(void* arg, const void* a1, const void* a2)
 	{
 	  struct qsort_ctx_data* ss = (struct qsort_ctx_data*) arg;
 	  return (ss->compare)(a1, a2, ss->arg);
 	}
+#endif
 
 #define USE_QSORT_CTX
 
