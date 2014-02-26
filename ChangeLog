@@ -1,3 +1,82 @@
+ 2014-02-25 14:47  asfernandes 
+   M src/jrd/recsrc/HashJoin.cpp
+Fix warning in Linux.
+
+ 2014-02-25 14:18  hvlad 
+   M src/common/cvt.cpp
+   M src/dsql/dsql.cpp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/filters.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/sdw.cpp
+Fixed warning by PVS-Studio
+Review is appreciated
+
+ 2014-02-25 09:59  hvlad 
+   M extern/icu
+Ignore generated (unpacked) files and folders
+
+ 2014-02-25 09:27  alexpeshkoff 
+   M src/common/config/os/posix/binreloc.c
+Fixed posix build and expected logic of the code
+
+ 2014-02-25 09:01  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4353: Sorting records are larger than really necessary.
+
+ 2014-02-25 07:21  alexpeshkoff 
+   D extern/icu/as_is
+   D extern/icu/debian
+   D extern/icu/packaging
+   D extern/icu/source
+Complete cleanup - removed empty dirs
+
+ 2014-02-25 06:31  robocop 
+   M src/jrd/dpm.epp
+   M src/jrd/dpm_proto.h
+Make DPM_fetch_back return bool.
+
+ 2014-02-25 06:30  robocop 
+   M src/jrd/btr.cpp
+   M src/jrd/btr_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/vio.cpp
+Make BTR_lookup return bool.
+
+ 2014-02-25 06:29  robocop 
+   M src/jrd/btr.cpp
+Misc.
+
+ 2014-02-25 06:22  robocop 
+   M src/qli/compile.cpp
+This bug comes from IB, maybe from the dawn of time (PVS-Studio).
+
+ 2014-02-25 06:20  robocop 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/cvt2.cpp
+   M src/jrd/cvt2_proto.h
+Make comparisons return plain int (PVS-Studio).
+
+ 2014-02-25 06:13  robocop 
+   M src/common/config/os/posix/binreloc.c
+   M src/intl/utils/dtest.c
+   M src/intl/utils/mapgen4.c
+   M src/isql/isql.epp
+   M src/misc/makeHeader.cpp
+   M src/misc/memtest.cpp
+   M src/msgs/change_msgs.epp
+   M src/msgs/check_msgs.epp
+   M src/msgs/enter_msgs.epp
+   M src/msgs/include.epp
+   M src/msgs/modify_msgs.epp
+   M src/utilities/ibmgr/ibmgr.cpp
+   M src/utilities/rebuild/rebuild.cpp
+   M src/utilities/relay.cpp
+Misc.
+
  2014-02-24 16:23  asfernandes 
    M builds/win32/make_boot.bat
    M builds/win32/make_icu.bat
