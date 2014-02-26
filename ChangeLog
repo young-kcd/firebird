@@ -1,3 +1,7 @@
+ 2014-02-25 06:26  robocop 
+   M src/qli/compile.cpp
+This bug comes from IB, maybe from the dawn of time (PVS-Studio).
+
  2014-02-22 22:24  robocop 
    M src/jrd/sdl.cpp
 Warning (PVS-Studio).
