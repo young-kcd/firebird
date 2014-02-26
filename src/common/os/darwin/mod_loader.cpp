@@ -37,6 +37,8 @@
 
 /// This is the Darwin implementation of the mod_loader abstraction.
 
+//#define DEBUG_LOADER
+
 class DlfcnModule : public ModuleLoader::Module
 {
 public:
@@ -65,9 +67,16 @@ bool ModuleLoader::isLoadableModule(const Firebird::PathName& module)
 
 void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 {
-	Firebird::PathName::size_type pos = name.rfind(".dylib");
-	if (pos != Firebird::PathName::npos && pos == name.length() - 6)
-		return;		// No doctoring necessary
+	Firebird::PathName::size_type pos = name.rfind('/');
+	pos = (pos == Firebird::PathName::npos) ? 0 : pos + 1;
+	if (name.find("lib", pos) != pos)
+	{
+		name.insert(pos, "lib");
+	}
+
+	pos = name.rfind(".dylib");
+	if (pos == name.length() - 6)
+		return;
 	name += ".dylib";
 }
 
@@ -83,7 +92,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 	if (module == NULL)
 	{
 #ifdef DEBUG_LOADER
-		fprintf(stderr, "load error: %s: %s\n", mod_path.c_str(), dlerror());
+		fprintf(stderr, "load error: %s: %s\n", modPath.c_str(), dlerror());
 #endif // DEBUG_LOADER
 		return 0;
 	}

@@ -221,7 +221,6 @@ static const char* semName = "/firebird_temp_sem";
 
 	Semaphore::~Semaphore()
 	{
-		fb_assert(value == 0);
 		int err = pthread_mutex_destroy(&mu);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");

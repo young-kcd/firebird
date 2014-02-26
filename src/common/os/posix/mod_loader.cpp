@@ -68,7 +68,7 @@ void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 		return;
 
 	Firebird::PathName::size_type pos = name.rfind(".so");
-	if (pos == Firebird::PathName::npos || pos != name.length() - 3)
+	if (pos != name.length() - 3)
 	{
 		name += ".so";
 	}

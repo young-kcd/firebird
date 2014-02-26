@@ -26,6 +26,7 @@
  *  2008 Khorsun Vladyslav
  */
 
+#include "firebird.h"
 #include "../common/classes/ImplementHelper.h"
 
 #include "TraceConfiguration.h"
@@ -129,7 +130,7 @@ void registerTrace(Firebird::IPluginManager* iPlugin)
 }
 
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	Firebird::CachedMasterInterface::set(master);
 	registerTrace(Firebird::PluginManagerInterfacePtr());

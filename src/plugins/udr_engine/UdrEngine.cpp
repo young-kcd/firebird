@@ -414,7 +414,7 @@ public:
 //--------------------------------------
 
 
-extern "C" void fbUdrRegFunction(const char* name, FunctionFactory* factory)
+extern "C" void FB_DLL_EXPORT fbUdrRegFunction(const char* name, FunctionFactory* factory)
 {
 	FunctionNode* node = new FunctionNode();
 	node->name = name;
@@ -425,7 +425,7 @@ extern "C" void fbUdrRegFunction(const char* name, FunctionFactory* factory)
 }
 
 
-extern "C" void fbUdrRegProcedure(const char* name, ProcedureFactory* factory)
+extern "C" void FB_DLL_EXPORT fbUdrRegProcedure(const char* name, ProcedureFactory* factory)
 {
 	ProcedureNode* node = new ProcedureNode();
 	node->name = name;
@@ -436,7 +436,7 @@ extern "C" void fbUdrRegProcedure(const char* name, ProcedureFactory* factory)
 }
 
 
-extern "C" void fbUdrRegTrigger(const char* name, TriggerFactory* factory)
+extern "C" void FB_DLL_EXPORT fbUdrRegTrigger(const char* name, TriggerFactory* factory)
 {
 	TriggerNode* node = new TriggerNode();
 	node->name = name;
@@ -724,7 +724,7 @@ class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {
 } factory;
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	CachedMasterInterface::set(master);
 

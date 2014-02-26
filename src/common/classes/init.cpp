@@ -58,6 +58,15 @@ namespace
 
 	void allClean()
 	{
+#ifndef DARWIN		// Somewhy cleanup code is called more than once on MAC
+		fb_assert(initDone);
+#endif
+		if (!initDone)
+		{
+			return;
+		}
+		initDone = false;
+
 		Firebird::InstanceControl::destructors();
 
 		try
