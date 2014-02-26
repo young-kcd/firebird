@@ -1,3 +1,11 @@
+ 2014-02-25 09:02  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4353: Sorting records are larger than really necessary.
+
+ 2014-02-25 06:23  robocop 
+   M src/qli/compile.cpp
+This bug comes from IB, maybe from the dawn of time (PVS-Studio).
+
  2014-02-23 07:10  dimitr 
    M src/jrd/vio.cpp
 Backported detailed error reporting for conflicts during reading in NORECVER transactions.
