@@ -23,8 +23,9 @@
 # This init script contains functions specific for debian
 # init scripts.
 
-# Source function library.
-#. /etc/rc.d/init.d/functions
+# Source LSB function library.
+. /lib/lsb/init-functions
+
 
 FIREBIRD=@FB_CONFDIR@
 FBRunUser=firebird
@@ -67,6 +68,10 @@ case "$1" in
 	RETVAL=$?
 	;;
   stop)
+	if pidof $GUARDIAN > /dev/null; then
+		echo -n "Stopping Guardian server: "
+		start-stop-daemon --stop --quiet --oknodo --retry 10 --exec $GUARDIAN
+	fi	
 	echo -n "Stopping Firebird server: "
 	if [ -f $pidfile ]
 	then
