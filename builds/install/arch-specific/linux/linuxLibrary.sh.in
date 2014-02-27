@@ -116,7 +116,7 @@ detectDistro() {
 	    linuxDistro="Debian"
 	elif [ -e /etc/gentoo-release ]
 	then
-	    # Debian
+	    # Gentoo
 	    linuxDistro="Gentoo"
 	elif [ -e /etc/rc.d/init.d/functions ]
 	then
@@ -415,7 +415,8 @@ EOF
 		# One more way to register service - used in Debian 
     	elif [ -x /usr/sbin/update-rc.d ]
 	    then
-			/usr/sbin/update-rc.d -f firebird defaults
+		    /usr/sbin/update-rc.d -f firebird remove	
+		    /usr/sbin/update-rc.d -f firebird defaults
 	    fi
 
     	# More SuSE - rc.config fillup
