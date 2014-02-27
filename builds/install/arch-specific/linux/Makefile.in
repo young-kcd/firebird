@@ -51,7 +51,7 @@ Version=$(BuildVersion)-$(PackageVersion)
 
 
 
-# This means something like: FirebirdCS-2.0.0-1.i386.tar.gz
+# This means something like: FirebirdCS-*.0.0-*.i386.tar.gz
 
 TarDir= Firebird-$(Version).$(CpuType)
 TarFile=Firebird-$(Version).$(CpuType).tar.gz
@@ -84,24 +84,6 @@ debugfile:  $(DebugFile)
 
 $(DebugFile) :  buildImageDir
 	(cd $(GEN_ROOT)/$(DebugDir); tar -czf ../$(DebugFile) .)
-
-# objcopy --add-gnu-debuglink fails with binutils 2.14 or older
-# its failure affects only GDB ability to pick up external debug 
-# symbols automatically. We may use eu-strip command from elfutils 
-# instead, but it doesn't work or compile with such distros 
-# as Mandrake 9.0 not saying about older ones. New binutils
-# seem to compile and work everywhere I tried, but we try to 
-# use eu-strip first since it is a part of default Red Hat 9 
-# install and is available in binary form for Mandrake 9.1 and newer.
-#
-#     28-Dec-2003. Nickolay Samofatov
-#
-# Do not use eu-strip any longer because version 0.89/AMD64 shipped with 
-# Mandrake 9.2 produces broken debuginfo packages and there is no easy way to 
-# detect the breakage. Binutils seem to be more reliable alternative to me.
-#
-#     05-Apr-2004. Nickolay Samofatov
-#
 
 buildRoot:
 	(cd $(GEN_ROOT); ./install/makeInstallImage.sh)
