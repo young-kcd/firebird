@@ -407,15 +407,15 @@ EOF
 	    then
 			/sbin/rc-update add firebird default
 
-	    # Suse (& Debian ?) specific 
+	    # Suse specific 
     	elif [ -x /sbin/insserv ]
 	    then
     	    /sbin/insserv /etc/init.d/firebird
 
-		# One more way to register service - used in Knoppix (& Debian ?)
+		# One more way to register service - used in Debian 
     	elif [ -x /usr/sbin/update-rc.d ]
 	    then
-			/usr/sbin/update-rc.d firebird start 14 2 3 5 . stop 20 0 1 6 .
+			/usr/sbin/update-rc.d -f firebird defaults
 	    fi
 
     	# More SuSE - rc.config fillup
