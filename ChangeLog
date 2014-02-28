@@ -1,3 +1,39 @@
+ 2014-02-27 16:42  mapopa 
+   M builds/install/arch-specific/linux/README
+cleanup old text and links 
+
+ 2014-02-27 16:23  mapopa 
+   M builds/install/arch-specific/linux/linuxLibrary.sh.in
+Removing any old system startup links for /etc/init.d/firebird
+
+ 2014-02-27 16:12  mapopa 
+   M builds/install/arch-specific/linux/linuxLibrary.sh.in
+Fix debian update-rc.d warning
+update-rc.d: warning:  start runlevel arguments (2 3 5) do not match firebird Default-Start values (2 3 4 5)
+
+ 2014-02-27 15:55  mapopa 
+   M builds/install/arch-specific/linux/Makefile.in
+cleanup old comments 
+
+ 2014-02-27 15:38  mapopa 
+   M builds/install/arch-specific/linux/firebird.init.d.debian.in
+kill the guardian also at install time in debian
+
+ 2014-02-27 08:54  mapopa 
+   M extern/editline/configure
+revert configure , use the old one
+
+ 2014-02-27 07:47  mapopa 
+   M extern/editline/ChangeLog
+   M extern/editline/aclocal.m4
+   M extern/editline/config.guess
+   M extern/editline/config.sub
+   M extern/editline/configure
+   M extern/editline/missing
+   M extern/editline/src/chared.c
+   M extern/editline/src/readline.c
+sync with libedit-20140213-3.1
+
  2014-02-26 12:31  alexpeshkoff 
    M src/common/classes/init.cpp
    M src/common/classes/semaphore.cpp
