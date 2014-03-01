@@ -1,3 +1,7 @@
+ 2014-02-28 15:03  hvlad 
+   M src/include/firebird/UdrEngine.h
+Fixed Windows build
+
  2014-02-27 16:42  mapopa 
    M builds/install/arch-specific/linux/README
 cleanup old text and links 
