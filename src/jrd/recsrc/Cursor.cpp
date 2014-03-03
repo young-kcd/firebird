@@ -272,11 +272,13 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 	{
 		return (impure->irsb_state == POSITIONED);
 	}
-	else if (impure->irsb_state == BOS && offset < 0)
+
+	if (impure->irsb_state == BOS && offset < 0)
 	{
 		return false;
 	}
-	else if (impure->irsb_state == EOS && offset > 0)
+
+	if (impure->irsb_state == EOS && offset > 0)
 	{
 		return false;
 	}

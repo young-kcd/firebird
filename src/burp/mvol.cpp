@@ -819,25 +819,25 @@ static int get_text(UCHAR* text, SSHORT length)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	ULONG l = get(tdgbl);
-	length -= l;
-	const ULONG l2 = l;
+	ULONG len = get(tdgbl);
+	length -= len;
+	const ULONG len2 = len;
 
 	if (length < 0)
 	{
 		BURP_error_redirect(0, 46);	// msg 46 string truncated
 	}
 
-	if (l)
+	if (len)
 	{
 		do {
 			*text++ = get(tdgbl);
-		} while (--l);
+		} while (--len);
 	}
 
 	*text = 0;
 
-	return l2;
+	return len2;
 }
 
 

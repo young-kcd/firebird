@@ -195,7 +195,7 @@ Version 9: FB2.5.
 			We anyway tried a recovery routine in v2.5 that may be backported.
 
 Version 10: FB3.0.
-			See backup_capabilities in backup.epp.
+			See backup_capabilities in OdsDetection.h.
 */
 
 const int ATT_BACKUP_FORMAT		= 10;

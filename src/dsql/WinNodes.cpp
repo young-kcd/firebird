@@ -485,7 +485,7 @@ dsc* NthValueWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* 
 	}
 
 	desc = EVL_expr(tdbb, request, from);
-	SLONG fromPos = desc ? MOV_get_long(desc, 0) : FROM_FIRST;
+	const SLONG fromPos = desc ? MOV_get_long(desc, 0) : FROM_FIRST;
 
 	if (fromPos == FROM_FIRST)
 	{

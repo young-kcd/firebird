@@ -1426,8 +1426,8 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_cancel_operation(ISC_STATUS* user_status,
 {
 	if (m_api.fb_cancel_operation)
 		return m_api.fb_cancel_operation(user_status, db_handle, option);
-	else
-		return notImplemented(user_status);
+
+	return notImplemented(user_status);
 }
 
 void IscProvider::loadAPI()

@@ -78,7 +78,7 @@ void ProcedureScan::open(thread_db* tdbb) const
 	rpb->rpb_record = NULL;
 
 	ULONG iml;
-	UCHAR* im;
+	const UCHAR* im;
 
 	if (m_sourceList)
 	{
@@ -281,14 +281,14 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 	if (indicator)
 	{
 		record->setNull(to_id);
-		const USHORT l = to_desc->dsc_length;
+		const USHORT len = to_desc->dsc_length;
 		UCHAR* const p = record->rec_data + (IPTR) to_desc->dsc_address;
 		switch (to_desc->dsc_dtype)
 		{
 		case dtype_text:
 			/* YYY - not necessarily the right thing to do */
 			/* YYY for text formats that don't have trailing spaces */
-			if (l)
+			if (len)
 			{
 				const CHARSET_ID chid = DSC_GET_CHARSET(to_desc);
 				/*
@@ -299,7 +299,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 					chid = INTL_charset(tdbb, chid);
 				*/
 				const char pad = chid == ttype_binary ? '\0' : ' ';
-				memset(p, pad, l);
+				memset(p, pad, len);
 			}
 			break;
 
@@ -312,8 +312,8 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 			break;
 
 		default:
-			if (l)
-				memset(p, 0, l);
+			if (len)
+				memset(p, 0, len);
 			break;
 		}
 	}

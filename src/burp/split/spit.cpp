@@ -1048,8 +1048,8 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 		return FB_FAILURE;
 	}
 
-	SLONG skip_to_num = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) + sizeof(hdr_rec.text1);
-	SLONG skip_to_total = skip_to_num + sizeof(hdr_rec.num) + sizeof(hdr_rec.text2);
+	const SLONG skip_to_num = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) + sizeof(hdr_rec.text1);
+	const SLONG skip_to_total = skip_to_num + sizeof(hdr_rec.num) + sizeof(hdr_rec.text2);
 
 	char_ptr1 = reinterpret_cast<char*>(io_buffer + skip_to_num);
 	const TEXT* char_ptr2 = reinterpret_cast<char*>(io_buffer + skip_to_total);

@@ -1287,7 +1287,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
-	ULONG l;
 	ULONG length = from->dsc_length;
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
@@ -1439,31 +1438,31 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		{
 		case dtype_dbkey:
 			{
-				USHORT l = to->getStringLength();
+				USHORT len = to->getStringLength();
 				UCHAR* ptr = to->dsc_address;
 
 				if (to->dsc_dtype == dtype_varying)
 					ptr += sizeof(USHORT);
 
-				if (l < from->dsc_length)
+				if (len < from->dsc_length)
 				{
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-						Arg::Gds(isc_trunc_limits) << Arg::Num(l) << Arg::Num(from->dsc_length));
+						Arg::Gds(isc_trunc_limits) << Arg::Num(len) << Arg::Num(from->dsc_length));
 				}
 
 				Jrd::CharSet* charSet = cb->getToCharset(to->getCharSet());
 				cb->validateData(charSet, from->dsc_length, from->dsc_address);
 
 				memcpy(ptr, from->dsc_address, from->dsc_length);
-				l -= from->dsc_length;
+				len -= from->dsc_length;
 				ptr += from->dsc_length;
 
 				switch (to->dsc_dtype)
 				{
 				case dtype_text:
-					if (l > 0)
+					if (len > 0)
 					{
-						memset(ptr, 0, l);	// Always PAD with nulls, not spaces
+						memset(ptr, 0, len);	// Always PAD with nulls, not spaces
 					}
 					break;
 
@@ -1511,10 +1510,12 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 				if (cb->transliterate(from, to, charset2))
 					return;
 
+				ULONG len;
+
 				{ // scope
 					USHORT strtype_unused;
 					UCHAR *ptr;
-					length = l = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
+					length = len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
 					q = ptr;
 				} // end scope
 
@@ -1535,7 +1536,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 					cb->validateData(toCharset, length, q);
 					toLength = length;
 
-					l -= length;
+					len -= length;
 					fill = ULONG(to->dsc_length) - length;
 
 					CVT_COPY_BUFF(q, p, length);
@@ -1559,7 +1560,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 					cb->validateData(toCharset, length, q);
 					toLength = length;
 
-					l -= length;
+					len -= length;
 					CVT_COPY_BUFF(q, p, length);
 					*p = 0;
 					break;
@@ -1569,7 +1570,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 					cb->validateData(toCharset, length, q);
 					toLength = length;
 
-					l -= length;
+					len -= length;
 					// TMN: Here we should really have the following fb_assert
 					// fb_assert(length <= MAX_USHORT);
 					((vary*) p)->vary_length = (USHORT) length;
@@ -1580,7 +1581,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 				cb->validateLength(toCharset, toLength, start, to_size);
 
-				if (l)
+				if (len)
 				{
 					// Scan the truncated string to ensure only spaces lost
 					// Warning: it is correct only for narrow and multi-byte
@@ -1593,7 +1594,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 									Arg::Gds(isc_trunc_limits) <<
 										Arg::Num(to->getStringLength()) << Arg::Num(from->getStringLength()));
 						}
-					} while (--l);
+					} while (--len);
 				}
 			}
 			return;
@@ -1647,12 +1648,14 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 
 	case dtype_short:
-		l = CVT_get_long(from, (SSHORT) to->dsc_scale, cb->err);
-		// TMN: Here we should really have the following fb_assert
-		// fb_assert(l <= MAX_SSHORT);
-		*(SSHORT *) p = (SSHORT) l;
-		if (*(SSHORT *) p != SLONG(l))
-			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+		{
+			ULONG lval = CVT_get_long(from, (SSHORT) to->dsc_scale, cb->err);
+			// TMN: Here we should really have the following fb_assert
+			// fb_assert(lval <= MAX_SSHORT);
+			*(SSHORT*) p = (SSHORT) lval;
+			if (*(SSHORT*) p != SLONG(lval))
+				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+		}
 		return;
 
 	case dtype_long:
@@ -1687,11 +1690,11 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		{
 			USHORT strtype_unused;
 			UCHAR* ptr;
-			USHORT l = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
+			USHORT len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
 
-			if (l == to->dsc_length)
+			if (len == to->dsc_length)
 			{
-				memcpy(to->dsc_address, ptr, l);
+				memcpy(to->dsc_address, ptr, len);
 				return;
 			}
 		}
@@ -1701,8 +1704,10 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 	case DEFAULT_DOUBLE:
 #ifdef HPUX
-		const double d_value = CVT_get_double(from, cb->err);
-		memcpy(p, &d_value, sizeof(double));
+		{
+			const double d_value = CVT_get_double(from, cb->err);
+			memcpy(p, &d_value, sizeof(double));
+		}
 #else
 		*(double*) p = CVT_get_double(from, cb->err);
 #endif

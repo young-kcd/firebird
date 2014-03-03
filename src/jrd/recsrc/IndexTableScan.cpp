@@ -462,7 +462,7 @@ UCHAR* IndexTableScan::getPosition(thread_db* tdbb, Impure* impure, win* window)
 	IndexNode node;
 	if (incarnation == impure->irsb_nav_incarnation)
 	{
-		pointer = ((UCHAR*) page + impure->irsb_nav_offset);
+		pointer = (UCHAR*) page + impure->irsb_nav_offset;
 
 		// The new way of doing things is to have the current
 		// nav_offset be the last node fetched.

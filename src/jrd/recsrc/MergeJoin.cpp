@@ -452,7 +452,7 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index) const
 	const SortedStream* const sort_rsb = m_args[index];
 	Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[index];
 
-	UCHAR* sort_data = sort_rsb->getData(tdbb);
+	const UCHAR* sort_data = sort_rsb->getData(tdbb);
 	if (!sort_data)
 		return -1;
 

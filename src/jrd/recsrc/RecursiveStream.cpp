@@ -303,7 +303,7 @@ void RecursiveStream::cleanupLevel(jrd_req* request, Impure* impure) const
 	UCHAR* const tmp = impure->irsb_stack;
 	memcpy(saveImpure, tmp, m_saveSize);
 
-	UCHAR* p = tmp + m_saveSize;
+	const UCHAR* p = tmp + m_saveSize;
 
 	for (size_t i = 0; i < m_innerStreams.getCount(); i++)
 	{

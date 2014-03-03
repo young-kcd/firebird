@@ -1953,7 +1953,7 @@ static act* act_create_shadow()
 
 	act* action = MSC_action(request, ACT_create_shadow);
 	action->act_whenever = gen_whenever();
-	SLONG shadow_number = EXP_USHORT_ordinal(true);
+	const SLONG shadow_number = EXP_USHORT_ordinal(true);
 
 	USHORT file_flags = 0;
 

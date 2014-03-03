@@ -969,7 +969,8 @@ void Statement::deallocate(thread_db* tdbb)
 		try {
 			doClose(tdbb, true);
 		}
-		catch (const Exception&) {
+		catch (const Exception&)
+		{
 			// ignore
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
@@ -1126,7 +1127,8 @@ void Statement::preprocess(const string& sql, string& ret)
 		execBlock = (ident2 == "BLOCK");
 		passAsIs = false;
 	}
-	else {
+	else
+	{
 		passAsIs = !(ident == "INSERT" || ident == "UPDATE" ||  ident == "DELETE" ||
 			ident == "MERGE" || ident == "SELECT" || ident == "WITH");
 	}

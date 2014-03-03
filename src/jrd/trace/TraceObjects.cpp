@@ -241,7 +241,7 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 	USHORT first_index = 0;
 	for (size_t i = 0 ; i < m_params->getCount(); ++i)
 	{
-		dsql_par* parameter = (*m_params)[i];
+		const dsql_par* parameter = (*m_params)[i];
 
 		if (parameter->par_index)
 		{
@@ -395,7 +395,7 @@ void TraceParamsFromMsgImpl::fillParams()
 
 	const dsc* fmtDesc = m_format->fmt_desc.begin();
 	const dsc* const fmtEnd = m_format->fmt_desc.end();
-		
+
 	dsc* desc = m_descs.getBuffer(m_format->fmt_count / 2);
 
 	for (; fmtDesc < fmtEnd; fmtDesc += 2, desc++)

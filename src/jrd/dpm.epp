@@ -227,7 +227,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 
 	// Get the number of data-pages for this relation
 
-	ULONG dataPages = DPM_data_pages(tdbb, relation);
+	const ULONG dataPages = DPM_data_pages(tdbb, relation);
 
 	// AB: If we have only 1 data-page then the cardinality calculation
 	// is to worse to be useful, therefore rely on the record count
@@ -706,7 +706,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 
 	WIN* const window = &rpb->getWindow(tdbb);
 	data_page* page = (data_page*) window->win_buffer;
-	ULONG sequence = page->dpg_sequence;
+	const ULONG sequence = page->dpg_sequence;
 	data_page::dpg_repeat* index = &page->dpg_rpt[rpb->rpb_line];
 	const RecordNumber number = rpb->rpb_number;
 

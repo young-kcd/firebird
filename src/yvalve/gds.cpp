@@ -2834,7 +2834,7 @@ static void blr_print_cond(gds_ctl* control, SSHORT level)
 	SSHORT n;
 
 	const USHORT ctype = control->ctl_blr_reader.getByte();
-	SLONG offset = control->ctl_blr_reader.getOffset();
+	const SLONG offset = control->ctl_blr_reader.getOffset();
 
 	switch (ctype)
 	{

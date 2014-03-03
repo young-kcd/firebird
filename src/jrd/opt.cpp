@@ -3379,7 +3379,7 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 	patternCanonicalLen = matchTextType->canonical(p_count, p,
 		patternCanonicalLen, patternCanonical.getBuffer(patternCanonicalLen));
 
-	for (UCHAR* patternPtr = patternCanonical.begin(); patternPtr < patternCanonical.end(); )
+	for (const UCHAR* patternPtr = patternCanonical.begin(); patternPtr < patternCanonical.end(); )
 	{
 		// if there are escape characters, skip past them and
 		// don't treat the next char as a wildcard
