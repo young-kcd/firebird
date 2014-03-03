@@ -122,7 +122,7 @@ bool	get_generator(BurpGlobals* tdgbl);
 bool	get_global_field(BurpGlobals* tdgbl);
 bool	get_index(BurpGlobals* tdgbl, const burp_rel*);
 void	get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
-SLONG	get_numeric(BurpGlobals* tdgbl);
+SLONG	get_int32(BurpGlobals* tdgbl);
 SINT64  get_int64(BurpGlobals* tdgbl);
 bool	get_package(BurpGlobals* tdgbl);
 bool	get_procedure(BurpGlobals* tdgbl);
@@ -921,31 +921,31 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 			{
 			case att_SQL_dialect:
 				SQL_dialect_flag = true;
-				SQL_dialect = (USHORT) get_numeric(tdgbl);
+				SQL_dialect = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_page_size:
-				page_size = get_numeric(tdgbl);
+				page_size = get_int32(tdgbl);
 				break;
 
 			case att_sweep_interval:
-				sweep_interval = get_numeric(tdgbl);
+				sweep_interval = get_int32(tdgbl);
 				break;
 
 			case att_forced_writes:
-				forced_writes = get_numeric(tdgbl) != FALSE;
+				forced_writes = get_int32(tdgbl) != FALSE;
 				break;
 
 			case att_no_reserve:
-				no_reserve = get_numeric(tdgbl) != FALSE;
+				no_reserve = get_int32(tdgbl) != FALSE;
 				break;
 
 			case att_db_read_only:
-				db_read_only = get_numeric(tdgbl) != FALSE;
+				db_read_only = get_int32(tdgbl) != FALSE;
 				break;
 
 			case att_page_buffers:
-				page_buffers = get_numeric(tdgbl);
+				page_buffers = get_int32(tdgbl);
 				break;
 
 			default:
@@ -1144,7 +1144,7 @@ void eat_blob(BurpGlobals* tdgbl)
  *
  **************************************/
 
-	const SLONG length = get_numeric(tdgbl);
+	const SLONG length = get_int32(tdgbl);
 
 	get_skip(tdgbl, length);
 }
@@ -1380,10 +1380,10 @@ bool get_acl(BurpGlobals* tdgbl, const TEXT* owner_nm, ISC_QUAD* blob_id, ISC_QU
 
 	while ((item = *p++) != isc_info_end)
 	{
-		const USHORT l = (USHORT) gds__vax_integer (p, 2);
+		const USHORT len = (USHORT) gds__vax_integer (p, 2);
 		p += 2;
-		const SLONG n = gds__vax_integer (p, l);
-		p += l;
+		const SLONG n = gds__vax_integer (p, len);
+		p += len;
 		switch (item)
 		{
 		case isc_info_blob_max_segment:
@@ -1552,7 +1552,7 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 		switch (attribute)
 		{
 		case att_blob_field_number:
-			field_number = (USHORT) get_numeric(tdgbl);
+			field_number = (USHORT) get_int32(tdgbl);
 			for (field = relation->rel_fields; field; field = field->fld_next)
 			{
 				if (field->fld_number == field_number)
@@ -1574,7 +1574,7 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 			break;
 
 		case att_array_dimensions:
-			field->fld_dimensions = (SSHORT) get_numeric(tdgbl);
+			field->fld_dimensions = (SSHORT) get_int32(tdgbl);
 			end_ranges = fld_ranges + 2 * field->fld_dimensions;
 			for (range = fld_ranges; range < end_ranges; range += 2)
 			{
@@ -1582,12 +1582,12 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 					bad_attribute (scan_next_attr, attribute, 58);
 					// msg 58 array
 				else
-					range[0] = get_numeric(tdgbl);
+					range[0] = get_int32(tdgbl);
 				if (get_attribute(&attribute, tdgbl) != att_array_range_high)
 					bad_attribute (scan_next_attr, attribute, 58);
 					// msg 58 array
 				else
-					range[1] = get_numeric(tdgbl);
+					range[1] = get_int32(tdgbl);
 				slice_length *= (range[1] - range[0] + 1);
 			}
 			break;
@@ -2050,19 +2050,19 @@ void get_blob(BurpGlobals* tdgbl, const burp_fld* fields, UCHAR* record_buffer)
 		switch (attribute)
 		{
 		case att_blob_field_number:
-			field_number = (USHORT) get_numeric(tdgbl);
+			field_number = (USHORT) get_int32(tdgbl);
 			break;
 
 		case att_blob_max_segment:
-			max_segment = (USHORT) get_numeric(tdgbl);
+			max_segment = (USHORT) get_int32(tdgbl);
 			break;
 
 		case att_blob_number_segments:
-			segments = get_numeric(tdgbl);
+			segments = get_int32(tdgbl);
 			break;
 
 		case att_blob_type:
-			blob_type = (UCHAR) get_numeric(tdgbl);
+			blob_type = (UCHAR) get_int32(tdgbl);
 			break;
 
 		default:
@@ -2140,7 +2140,7 @@ void get_blr_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
  *
  **************************************/
 
-	size_t length = get_numeric(tdgbl);
+	size_t length = get_int32(tdgbl);
 
 	// Create new blob
 
@@ -2242,7 +2242,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 					case att_charset_numchar:
 						X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
-						X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric(tdgbl);
+						X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_coll:
@@ -2252,12 +2252,12 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 					case att_charset_id:
 						X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-						X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+						X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_sysflag:
 						X.RDB$SYSTEM_FLAG.NULL = FALSE;
-						X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_description:
@@ -2272,7 +2272,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 					case att_charset_bytes_char:
 						X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
-						X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric(tdgbl);
+						X.RDB$BYTES_PER_CHARACTER = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_security_class:
@@ -2355,7 +2355,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 					case att_charset_numchar:
 						X.RDB$NUMBER_OF_CHARACTERS.NULL = FALSE;
-						X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_numeric(tdgbl);
+						X.RDB$NUMBER_OF_CHARACTERS = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_coll:
@@ -2365,12 +2365,12 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 					case att_charset_id:
 						X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-						X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+						X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_sysflag:
 						X.RDB$SYSTEM_FLAG.NULL = FALSE;
-						X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_description:
@@ -2385,7 +2385,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 
 					case att_charset_bytes_char:
 						X.RDB$BYTES_PER_CHARACTER.NULL = FALSE;
-						X.RDB$BYTES_PER_CHARACTER = (USHORT) get_numeric(tdgbl);
+						X.RDB$BYTES_PER_CHARACTER = (USHORT) get_int32(tdgbl);
 						break;
 
 					case att_charset_security_class:
@@ -2523,27 +2523,27 @@ bool get_collation(BurpGlobals* tdgbl)
 
 				case att_coll_id:
 					X.RDB$COLLATION_ID.NULL = FALSE;
-					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_cs_id:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_attr:
 					X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
-					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_subtype:	// No longer used: 93-11-15 DBS
 					// still present to handle V4 R&D gbak files
-					get_numeric(tdgbl);
+					get_int32(tdgbl);
 					break;
 
 				case att_coll_sysflag:
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_description:
@@ -2644,27 +2644,27 @@ bool get_collation(BurpGlobals* tdgbl)
 
 				case att_coll_id:
 					X.RDB$COLLATION_ID.NULL = FALSE;
-					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_cs_id:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_attr:
 					X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
-					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_subtype:	// No longer used: 93-11-15 DBS
 					// still present to handle V4 R&D gbak files
-					get_numeric(tdgbl);
+					get_int32(tdgbl);
 					break;
 
 				case att_coll_sysflag:
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_description:
@@ -2745,27 +2745,27 @@ bool get_collation(BurpGlobals* tdgbl)
 
 				case att_coll_id:
 					X.RDB$COLLATION_ID.NULL = FALSE;
-					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_cs_id:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_attr:
 					X.RDB$COLLATION_ATTRIBUTES.NULL = FALSE;
-					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ATTRIBUTES = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_subtype:	// No longer used: 93-11-15 DBS
 					// still present to handle V4 R&D gbak files
-					get_numeric(tdgbl);
+					get_int32(tdgbl);
 					break;
 
 				case att_coll_sysflag:
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_coll_description:
@@ -3056,21 +3056,21 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 	{
 		if (get(tdgbl) != att_data_length)
 			BURP_error_redirect (NULL, 39); // msg 39 expected record length
-		USHORT l = (USHORT) get_numeric(tdgbl);
-		if (!tdgbl->gbl_sw_transportable && l != length)
+		USHORT len = (USHORT) get_int32(tdgbl);
+		if (!tdgbl->gbl_sw_transportable && len != length)
 		{
 #ifdef sparc
 			if (!old_length)
 				old_length = recompute_length(tdgbl, relation);
 #endif
-			if (l != old_length)
+			if (len != old_length)
 			{
-				BURP_error(40, true, SafeArg() << length << l);
+				BURP_error(40, true, SafeArg() << length << len);
 				// msg 40 wrong length record, expected %ld encountered %ld
 			}
 		}
 		if (!buffer) {
-			buffer = (SSHORT *) BURP_alloc (MAX (length, l));
+			buffer = (SSHORT *) BURP_alloc (MAX (length, len));
 		}
 
 		UCHAR* p;
@@ -3081,10 +3081,10 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 				// msg 55 Expected XDR record length
 			else
 			{
-				data.lstr_length = l = (USHORT) get_numeric(tdgbl);
-				if (l > data.lstr_allocated)
+				data.lstr_length = len = (USHORT) get_int32(tdgbl);
+				if (len > data.lstr_allocated)
 				{
-					data.lstr_allocated = l;
+					data.lstr_allocated = len;
 					if (data.lstr_address)
 						BURP_free (data.lstr_address);
 					data.lstr_address = BURP_alloc(data.lstr_allocated);
@@ -3098,10 +3098,10 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 			BURP_error_redirect (NULL, 41); // msg 41 expected data attribute
 
 		if (tdgbl->gbl_sw_compress)
-			decompress (tdgbl, p, l);
+			decompress (tdgbl, p, len);
 		else
 		{
-			get_block(tdgbl, p, l);
+			get_block(tdgbl, p, len);
 		}
 
 		if (old_length)
@@ -3729,41 +3729,41 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_field_position:
 					X.RDB$FIELD_POSITION.NULL = FALSE;
-					X.RDB$FIELD_POSITION = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_POSITION = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_number:
-					field->fld_number = (USHORT) get_numeric(tdgbl);
+					field->fld_number = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_type:
-					field->fld_type = (USHORT) get_numeric(tdgbl);
+					field->fld_type = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_length:
-					field->fld_length = (USHORT) get_numeric(tdgbl);
+					field->fld_length = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_scale:
-					field->fld_scale = (USHORT) get_numeric(tdgbl);
+					field->fld_scale = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_sub_type:
-					field->fld_sub_type = (USHORT) get_numeric(tdgbl);
+					field->fld_sub_type = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case att_view_context:
-					X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
+					X.RDB$VIEW_CONTEXT = (USHORT) get_int32(tdgbl);
 					X.RDB$VIEW_CONTEXT.NULL = FALSE;
 					break;
 
 				case att_field_computed_flag:
-					if (get_numeric(tdgbl))
+					if (get_int32(tdgbl))
 						field->fld_flags |= FLD_computed;
 					break;
 
@@ -3789,7 +3789,7 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_field_dimensions:
 					{
-						field->fld_dimensions = (USHORT) get_numeric(tdgbl);
+						field->fld_dimensions = (USHORT) get_int32(tdgbl);
 						field->fld_flags |= FLD_array;
 						USHORT n = field->fld_dimensions;
 						for (SLONG* rp = field->fld_ranges; n; rp += 2, n--)
@@ -3798,23 +3798,23 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 								bad_attribute(scan_next_attr, attribute, 58);
 							// msg 58 array
 							else
-								*rp = get_numeric(tdgbl);
+								*rp = get_int32(tdgbl);
 							if (get_attribute(&attribute, tdgbl) != att_field_range_high)
 								bad_attribute(scan_next_attr, attribute, 58);
 								// msg 58 array
 							else
-								*(rp + 1) = get_numeric(tdgbl);
+								*(rp + 1) = get_int32(tdgbl);
 						}
 					}
 					break;
 
 				case att_field_update_flag:
 					X.RDB$UPDATE_FLAG.NULL = FALSE;
-					X.RDB$UPDATE_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$UPDATE_FLAG = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_character_length:
-					field->fld_character_length = (USHORT) get_numeric(tdgbl);
+					field->fld_character_length = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_default_source:
@@ -3829,21 +3829,21 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_field_null_flag:
 					if (tdgbl->gbl_sw_novalidity) {
-						get_numeric(tdgbl); // skip
+						get_int32(tdgbl); // skip
 					}
 					else
 					{
 						X.RDB$NULL_FLAG.NULL = FALSE;
-						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$NULL_FLAG = (USHORT) get_int32(tdgbl);
 					}
 					break;
 
 				case att_field_character_set:
-					field->fld_character_set_id = (USHORT) get_numeric(tdgbl);
+					field->fld_character_set_id = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_collation_id:
-					field->fld_collation_id = (USHORT) get_numeric(tdgbl);
+					field->fld_collation_id = (USHORT) get_int32(tdgbl);
 					X.RDB$COLLATION_ID.NULL = FALSE;
 					X.RDB$COLLATION_ID = field->fld_collation_id;
 					break;
@@ -3857,7 +3857,7 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_field_identity_type:
 					X.RDB$IDENTITY_TYPE.NULL = FALSE;
-					X.RDB$IDENTITY_TYPE = (SSHORT) get_numeric(tdgbl);
+					X.RDB$IDENTITY_TYPE = (SSHORT) get_int32(tdgbl);
 					break;
 
 				default:
@@ -3935,41 +3935,41 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_field_position:
 					X.RDB$FIELD_POSITION.NULL = FALSE;
-					X.RDB$FIELD_POSITION = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_POSITION = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_number:
-					field->fld_number = (USHORT) get_numeric(tdgbl);
+					field->fld_number = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_type:
-					field->fld_type = (USHORT) get_numeric(tdgbl);
+					field->fld_type = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_length:
-					field->fld_length = (USHORT) get_numeric(tdgbl);
+					field->fld_length = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_scale:
-					field->fld_scale = (USHORT) get_numeric(tdgbl);
+					field->fld_scale = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_sub_type:
-					field->fld_sub_type = (USHORT) get_numeric(tdgbl);
+					field->fld_sub_type = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case att_view_context:
-					X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
+					X.RDB$VIEW_CONTEXT = (USHORT) get_int32(tdgbl);
 					X.RDB$VIEW_CONTEXT.NULL = FALSE;
 					break;
 
 				case att_field_computed_flag:
-					if (get_numeric(tdgbl))
+					if (get_int32(tdgbl))
 						field->fld_flags |= FLD_computed;
 					break;
 
@@ -3995,7 +3995,7 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_field_dimensions:
 					{
-						field->fld_dimensions = (USHORT) get_numeric(tdgbl);
+						field->fld_dimensions = (USHORT) get_int32(tdgbl);
 						field->fld_flags |= FLD_array;
 						USHORT n = field->fld_dimensions;
 						for (SLONG* rp = field->fld_ranges; n; rp += 2, n--)
@@ -4004,23 +4004,23 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 								bad_attribute(scan_next_attr, attribute, 58);
 							// msg 58 array
 							else
-								*rp = get_numeric(tdgbl);
+								*rp = get_int32(tdgbl);
 							if (get_attribute(&attribute, tdgbl) != att_field_range_high)
 								bad_attribute(scan_next_attr, attribute, 58);
 								// msg 58 array
 							else
-								*(rp + 1) = get_numeric(tdgbl);
+								*(rp + 1) = get_int32(tdgbl);
 						}
 					}
 					break;
 
 				case att_field_update_flag:
 					X.RDB$UPDATE_FLAG.NULL = FALSE;
-					X.RDB$UPDATE_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$UPDATE_FLAG = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_character_length:
-					field->fld_character_length = (USHORT) get_numeric(tdgbl);
+					field->fld_character_length = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_default_source:
@@ -4035,21 +4035,21 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 
 				case att_field_null_flag:
 					if (tdgbl->gbl_sw_novalidity) {
-						get_numeric(tdgbl); // skip
+						get_int32(tdgbl); // skip
 					}
 					else
 					{
 						X.RDB$NULL_FLAG.NULL = FALSE;
-						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$NULL_FLAG = (USHORT) get_int32(tdgbl);
 					}
 					break;
 
 				case att_field_character_set:
-					field->fld_character_set_id = (USHORT) get_numeric(tdgbl);
+					field->fld_character_set_id = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_collation_id:
-					field->fld_collation_id = (USHORT) get_numeric(tdgbl);
+					field->fld_collation_id = (USHORT) get_int32(tdgbl);
 					X.RDB$COLLATION_ID.NULL = FALSE;
 					X.RDB$COLLATION_ID = field->fld_collation_id;
 					break;
@@ -4098,15 +4098,15 @@ bool get_field_dimensions(BurpGlobals* tdgbl)
 				break;
 
 			case att_field_dimensions:
-				X.RDB$DIMENSION = (USHORT) get_numeric(tdgbl);
+				X.RDB$DIMENSION = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_field_range_low:
-				X.RDB$LOWER_BOUND = get_numeric(tdgbl);
+				X.RDB$LOWER_BOUND = get_int32(tdgbl);
 				break;
 
 			case att_field_range_high:
-				X.RDB$UPPER_BOUND = get_numeric(tdgbl);
+				X.RDB$UPPER_BOUND = get_int32(tdgbl);
 				break;
 
 			default:
@@ -4155,23 +4155,23 @@ bool get_files(BurpGlobals* tdgbl)
 				break;
 
 			case att_file_sequence:
-				X.RDB$FILE_SEQUENCE = (USHORT) get_numeric(tdgbl);
+				X.RDB$FILE_SEQUENCE = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_file_start:
-				X.RDB$FILE_START = get_numeric(tdgbl);
+				X.RDB$FILE_START = get_int32(tdgbl);
 				break;
 
 			case att_file_length:
-				X.RDB$FILE_LENGTH = get_numeric(tdgbl);
+				X.RDB$FILE_LENGTH = get_int32(tdgbl);
 				break;
 
 			case att_file_flags:
-				X.RDB$FILE_FLAGS |= get_numeric(tdgbl);
+				X.RDB$FILE_FLAGS |= get_int32(tdgbl);
 				break;
 
 			case att_shadow_number:
-				X.RDB$SHADOW_NUMBER = (USHORT) get_numeric(tdgbl);
+				X.RDB$SHADOW_NUMBER = (USHORT) get_int32(tdgbl);
 				if (tdgbl->gbl_sw_kill && X.RDB$SHADOW_NUMBER)
 					X.RDB$FILE_FLAGS |= FILE_inactive;
 				break;
@@ -4241,11 +4241,11 @@ bool get_filter(BurpGlobals* tdgbl)
 				break;
 
 			case att_filter_input_sub_type:
-				X.RDB$INPUT_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+				X.RDB$INPUT_SUB_TYPE = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_filter_output_sub_type:
-				X.RDB$OUTPUT_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+				X.RDB$OUTPUT_SUB_TYPE = (USHORT) get_int32(tdgbl);
 				break;
 
 			default:
@@ -4350,7 +4350,7 @@ bool get_function(BurpGlobals* tdgbl)
 					break;
 
 				case att_function_return_arg:
-					X.RDB$RETURN_ARGUMENT = (USHORT) get_numeric(tdgbl);
+					X.RDB$RETURN_ARGUMENT = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_function_query_name:
@@ -4358,7 +4358,7 @@ bool get_function(BurpGlobals* tdgbl)
 					break;
 
 				case att_function_type:
-					X.RDB$FUNCTION_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FUNCTION_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_function_engine_name:
@@ -4385,7 +4385,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_private_flag:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$PRIVATE_FLAG = (USHORT) get_int32(tdgbl);
 						X.RDB$PRIVATE_FLAG.NULL = FALSE;
 					}
 					else
@@ -4415,7 +4415,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_valid_blr:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$VALID_BLR = get_numeric(tdgbl);
+						X.RDB$VALID_BLR = get_int32(tdgbl);
 						X.RDB$VALID_BLR.NULL = FALSE;
 					}
 					else
@@ -4456,7 +4456,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_legacy_flag:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$LEGACY_FLAG = get_numeric(tdgbl);
+						X.RDB$LEGACY_FLAG = get_int32(tdgbl);
 						X.RDB$LEGACY_FLAG.NULL = FALSE;
 					}
 					else
@@ -4466,7 +4466,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_deterministic_flag:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$DETERMINISTIC_FLAG = get_numeric(tdgbl);
+						X.RDB$DETERMINISTIC_FLAG = get_int32(tdgbl);
 						X.RDB$DETERMINISTIC_FLAG.NULL = FALSE;
 					}
 					else
@@ -4531,7 +4531,7 @@ bool get_function(BurpGlobals* tdgbl)
 					break;
 
 				case att_function_return_arg:
-					X.RDB$RETURN_ARGUMENT = (USHORT) get_numeric(tdgbl);
+					X.RDB$RETURN_ARGUMENT = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_function_query_name:
@@ -4539,7 +4539,7 @@ bool get_function(BurpGlobals* tdgbl)
 					break;
 
 				case att_function_type:
-					X.RDB$FUNCTION_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FUNCTION_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_function_engine_name:
@@ -4552,7 +4552,7 @@ bool get_function(BurpGlobals* tdgbl)
 
 				case att_function_private_flag:
 					if (tdgbl->RESTORE_format >= 10)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 89);
 					break;
@@ -4567,7 +4567,7 @@ bool get_function(BurpGlobals* tdgbl)
 
 				case att_function_valid_blr:
 					if (tdgbl->RESTORE_format >= 10)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 89);
 					break;
@@ -4590,7 +4590,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_legacy_flag:
 				case att_function_deterministic_flag:
 					if (tdgbl->RESTORE_format >= 10)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 89);
 					break;
@@ -4645,35 +4645,35 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				break;
 
 			case att_functionarg_position:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_passing_mechanism:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_field_type:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_field_scale:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_field_length:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_field_sub_type:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_character_set:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_field_precision:
-				get_numeric(tdgbl);
+				get_int32(tdgbl);
 				break;
 
 			case att_functionarg_package_name:
@@ -4697,7 +4697,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 			case att_functionarg_null_flag:
 			case att_functionarg_type_mechanism:
 				if (tdgbl->RESTORE_format >= 10)
-					get_numeric(tdgbl);
+					get_int32(tdgbl);
 				else
 					bad_attribute(scan_next_attr, attribute, 90);
 				break;
@@ -4777,40 +4777,40 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					break;
 
 				case att_functionarg_position:
-					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
+					X.RDB$ARGUMENT_POSITION = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_passing_mechanism:
-					X.RDB$MECHANISM = (USHORT) get_numeric(tdgbl);
+					X.RDB$MECHANISM = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_type:
-					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_scale:
-					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SCALE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_length:
-					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_sub_type:
 					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_character_set:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_precision:
 					if (tdgbl->RESTORE_format >= 6)
 					{
 						X.RDB$FIELD_PRECISION.NULL = FALSE;
-						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
+						X.RDB$FIELD_PRECISION = (USHORT) get_int32(tdgbl);
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 90);
@@ -4870,7 +4870,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_collation_id:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$COLLATION_ID = get_numeric(tdgbl);
+						X.RDB$COLLATION_ID = get_int32(tdgbl);
 						X.RDB$COLLATION_ID.NULL = FALSE;
 					}
 					else
@@ -4880,7 +4880,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_null_flag:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$NULL_FLAG = get_numeric(tdgbl);
+						X.RDB$NULL_FLAG = get_int32(tdgbl);
 						X.RDB$NULL_FLAG.NULL = FALSE;
 					}
 					else
@@ -4890,7 +4890,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_type_mechanism:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$ARGUMENT_MECHANISM = get_numeric(tdgbl);
+						X.RDB$ARGUMENT_MECHANISM = get_int32(tdgbl);
 						X.RDB$ARGUMENT_MECHANISM.NULL = FALSE;
 					}
 					else
@@ -4960,40 +4960,40 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					break;
 
 				case att_functionarg_position:
-					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
+					X.RDB$ARGUMENT_POSITION = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_passing_mechanism:
-					X.RDB$MECHANISM = (USHORT) get_numeric(tdgbl);
+					X.RDB$MECHANISM = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_type:
-					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_scale:
-					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SCALE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_length:
-					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_sub_type:
 					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_character_set:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_precision:
 					if (tdgbl->RESTORE_format >= 6)
 					{
 						X.RDB$FIELD_PRECISION.NULL = FALSE;
-						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
+						X.RDB$FIELD_PRECISION = (USHORT) get_int32(tdgbl);
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 90);
@@ -5020,7 +5020,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_null_flag:
 				case att_functionarg_type_mechanism:
 					if (tdgbl->RESTORE_format >= 10)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 90);
 					break;
@@ -5072,38 +5072,38 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 					break;
 
 				case att_functionarg_position:
-					X.RDB$ARGUMENT_POSITION = (USHORT) get_numeric(tdgbl);
+					X.RDB$ARGUMENT_POSITION = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_passing_mechanism:
-					X.RDB$MECHANISM = (USHORT) get_numeric(tdgbl);
+					X.RDB$MECHANISM = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_type:
-					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_scale:
-					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SCALE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_length:
-					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_sub_type:
 					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
-					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_character_set:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_functionarg_field_precision:
 					if (tdgbl->RESTORE_format >= 6)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 90);
 					break;
@@ -5129,7 +5129,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 				case att_functionarg_null_flag:
 				case att_functionarg_type_mechanism:
 					if (tdgbl->RESTORE_format >= 10)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 90);
 					break;
@@ -5204,7 +5204,7 @@ bool get_generator(BurpGlobals* tdgbl)
 
 		case att_gen_value:
 			// IB v5 or earlier, gen_id value is an SLONG
-			value = (SINT64) get_numeric(tdgbl);
+			value = (SINT64) get_int32(tdgbl);
 			break;
 
 		case att_gen_value_int64:
@@ -5224,7 +5224,7 @@ bool get_generator(BurpGlobals* tdgbl)
 			break;
 
 		case att_gen_sysflag:
-			sysFlag = (fb_sysflag) get_numeric(tdgbl);
+			sysFlag = (fb_sysflag) get_int32(tdgbl);
 			break;
 
 		case att_gen_security_class:
@@ -5359,25 +5359,25 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_type:
-					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_length:
-					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_scale:
-					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SCALE = (USHORT) get_int32(tdgbl);
 					X.RDB$FIELD_SCALE.NULL = FALSE;
 					break;
 
 				case att_field_sub_type:
-					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_int32(tdgbl);
 					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 					break;
 
 				case att_field_segment_length:
-					X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$SEGMENT_LENGTH = (USHORT) get_int32(tdgbl);
 					if (X.RDB$SEGMENT_LENGTH)
 						X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 					break;
@@ -5522,17 +5522,17 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case att_field_null_flag:
 					if (tdgbl->gbl_sw_novalidity) {
-						get_numeric(tdgbl); // skip
+						get_int32(tdgbl); // skip
 					}
 					else
 					{
-						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$NULL_FLAG = (USHORT) get_int32(tdgbl);
 						X.RDB$NULL_FLAG.NULL = FALSE;
 					}
 					break;
@@ -5549,27 +5549,27 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_external_length:
 					X.RDB$EXTERNAL_LENGTH.NULL = FALSE;
-					X.RDB$EXTERNAL_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_external_scale:
 					X.RDB$EXTERNAL_SCALE.NULL = FALSE;
-					X.RDB$EXTERNAL_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_SCALE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_external_type:
 					X.RDB$EXTERNAL_TYPE.NULL = FALSE;
-					X.RDB$EXTERNAL_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_dimensions:
 					X.RDB$DIMENSIONS.NULL = FALSE;
-					X.RDB$DIMENSIONS = (USHORT) get_numeric(tdgbl);
+					X.RDB$DIMENSIONS = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_character_length:
 					X.RDB$CHARACTER_LENGTH.NULL = FALSE;
-					X.RDB$CHARACTER_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_default_source:
@@ -5584,19 +5584,19 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_character_set:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_collation_id:
 					X.RDB$COLLATION_ID.NULL = FALSE;
-					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_precision:
 					if (tdgbl->RESTORE_format >= 6)
 					{
 						X.RDB$FIELD_PRECISION.NULL = FALSE;
-						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
+						X.RDB$FIELD_PRECISION = (USHORT) get_int32(tdgbl);
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 92);
@@ -5726,25 +5726,25 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_type:
-					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_length:
-					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_scale:
-					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SCALE = (USHORT) get_int32(tdgbl);
 					X.RDB$FIELD_SCALE.NULL = FALSE;
 					break;
 
 				case att_field_sub_type:
-					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_int32(tdgbl);
 					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 					break;
 
 				case att_field_segment_length:
-					X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$SEGMENT_LENGTH = (USHORT) get_int32(tdgbl);
 					if (X.RDB$SEGMENT_LENGTH)
 						X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 					break;
@@ -5889,17 +5889,17 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case att_field_null_flag:
 					if (tdgbl->gbl_sw_novalidity) {
-						get_numeric(tdgbl); // skip
+						get_int32(tdgbl); // skip
 					}
 					else
 					{
-						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$NULL_FLAG = (USHORT) get_int32(tdgbl);
 						X.RDB$NULL_FLAG.NULL = FALSE;
 					}
 					break;
@@ -5916,27 +5916,27 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_external_length:
 					X.RDB$EXTERNAL_LENGTH.NULL = FALSE;
-					X.RDB$EXTERNAL_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_external_scale:
 					X.RDB$EXTERNAL_SCALE.NULL = FALSE;
-					X.RDB$EXTERNAL_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_SCALE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_external_type:
 					X.RDB$EXTERNAL_TYPE.NULL = FALSE;
-					X.RDB$EXTERNAL_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_dimensions:
 					X.RDB$DIMENSIONS.NULL = FALSE;
-					X.RDB$DIMENSIONS = (USHORT) get_numeric(tdgbl);
+					X.RDB$DIMENSIONS = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_character_length:
 					X.RDB$CHARACTER_LENGTH.NULL = FALSE;
-					X.RDB$CHARACTER_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_default_source:
@@ -5951,19 +5951,19 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_character_set:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_collation_id:
 					X.RDB$COLLATION_ID.NULL = FALSE;
-					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_precision:
 					if (tdgbl->RESTORE_format >= 6)
 					{
 						X.RDB$FIELD_PRECISION.NULL = FALSE;
-						X.RDB$FIELD_PRECISION = (USHORT) get_numeric(tdgbl);
+						X.RDB$FIELD_PRECISION = (USHORT) get_int32(tdgbl);
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 92);
@@ -6076,25 +6076,25 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_type:
-					X.RDB$FIELD_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_length:
-					X.RDB$FIELD_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_scale:
-					X.RDB$FIELD_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SCALE = (USHORT) get_int32(tdgbl);
 					X.RDB$FIELD_SCALE.NULL = FALSE;
 					break;
 
 				case att_field_sub_type:
-					X.RDB$FIELD_SUB_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$FIELD_SUB_TYPE = (USHORT) get_int32(tdgbl);
 					X.RDB$FIELD_SUB_TYPE.NULL = FALSE;
 					break;
 
 				case att_field_segment_length:
-					X.RDB$SEGMENT_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$SEGMENT_LENGTH = (USHORT) get_int32(tdgbl);
 					if (X.RDB$SEGMENT_LENGTH)
 						X.RDB$SEGMENT_LENGTH.NULL = FALSE;
 					break;
@@ -6239,17 +6239,17 @@ bool get_global_field(BurpGlobals* tdgbl)
 					break;
 
 				case att_field_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case att_field_null_flag:
 					if (tdgbl->gbl_sw_novalidity) {
-						get_numeric(tdgbl); // skip
+						get_int32(tdgbl); // skip
 					}
 					else
 					{
-						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$NULL_FLAG = (USHORT) get_int32(tdgbl);
 						X.RDB$NULL_FLAG.NULL = FALSE;
 					}
 					break;
@@ -6266,27 +6266,27 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_external_length:
 					X.RDB$EXTERNAL_LENGTH.NULL = FALSE;
-					X.RDB$EXTERNAL_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_external_scale:
 					X.RDB$EXTERNAL_SCALE.NULL = FALSE;
-					X.RDB$EXTERNAL_SCALE = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_SCALE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_external_type:
 					X.RDB$EXTERNAL_TYPE.NULL = FALSE;
-					X.RDB$EXTERNAL_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$EXTERNAL_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_dimensions:
 					X.RDB$DIMENSIONS.NULL = FALSE;
-					X.RDB$DIMENSIONS = (USHORT) get_numeric(tdgbl);
+					X.RDB$DIMENSIONS = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_character_length:
 					X.RDB$CHARACTER_LENGTH.NULL = FALSE;
-					X.RDB$CHARACTER_LENGTH = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_LENGTH = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_default_source:
@@ -6301,17 +6301,17 @@ bool get_global_field(BurpGlobals* tdgbl)
 
 				case att_field_character_set:
 					X.RDB$CHARACTER_SET_ID.NULL = FALSE;
-					X.RDB$CHARACTER_SET_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$CHARACTER_SET_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_collation_id:
 					X.RDB$COLLATION_ID.NULL = FALSE;
-					X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+					X.RDB$COLLATION_ID = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_precision:
 					if (tdgbl->RESTORE_format >= 6)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 92);
 					break;
@@ -6420,15 +6420,15 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 				break;
 
 			case att_segment_count:
-				X.RDB$SEGMENT_COUNT = segments = (USHORT) get_numeric(tdgbl);
+				X.RDB$SEGMENT_COUNT = segments = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_index_unique_flag:
-				X.RDB$UNIQUE_FLAG = (USHORT) get_numeric(tdgbl);
+				X.RDB$UNIQUE_FLAG = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_index_inactive:
-				X.RDB$INDEX_INACTIVE = (USHORT) get_numeric(tdgbl);
+				X.RDB$INDEX_INACTIVE = (USHORT) get_int32(tdgbl);
 				// Defer foreign key index activation
 				// Modified by Toni Martir, all index deferred when verbose
 				if (tdgbl->gbl_sw_verbose)
@@ -6447,7 +6447,7 @@ bool get_index(BurpGlobals* tdgbl, const burp_rel* relation)
 
 			case att_index_type:
 				X.RDB$INDEX_TYPE.NULL = FALSE;
-				X.RDB$INDEX_TYPE = (USHORT) get_numeric(tdgbl);
+				X.RDB$INDEX_TYPE = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_index_field_name:
@@ -6548,7 +6548,7 @@ void get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
 
-	const size_t length = get_numeric(tdgbl);
+	const size_t length = get_int32(tdgbl);
 
 	// Create new blob
 
@@ -6585,16 +6585,16 @@ void get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
 		// msg 23 isc_close_blob failed
 }
 
-SLONG get_numeric(BurpGlobals* tdgbl)
+SLONG get_int32(BurpGlobals* tdgbl)
 {
 /**************************************
  *
- *	g e t _ n u m e r i c
+ *	g e t _ i n t 3 2
  *
  **************************************
  *
  * Functional description
- *	Get a numeric value from the input stream.
+ *	Get a 32-bit numeric value from the input stream.
  *
  **************************************/
 	SLONG	value[2];
@@ -6830,7 +6830,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_inputs:
-					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric(tdgbl);
+					X.RDB$PROCEDURE_INPUTS = (USHORT) get_int32(tdgbl);
 					if (X.RDB$PROCEDURE_INPUTS == 0)
 						X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
 					else
@@ -6838,12 +6838,12 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_outputs:
-					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric(tdgbl);
+					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_procedure_type:
 					if (tdgbl->RESTORE_format >= 8)
-						X.RDB$PROCEDURE_TYPE = (USHORT) get_numeric(tdgbl);
+						X.RDB$PROCEDURE_TYPE = (USHORT) get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 290);
 					break;
@@ -6852,7 +6852,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 8)
 					{
 						X.RDB$VALID_BLR.NULL = FALSE;
-						X.RDB$VALID_BLR = (USHORT) get_numeric(tdgbl);
+						X.RDB$VALID_BLR = (USHORT) get_int32(tdgbl);
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 290);
@@ -6904,7 +6904,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 				case att_procedure_private_flag:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$PRIVATE_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$PRIVATE_FLAG = (USHORT) get_int32(tdgbl);
 						X.RDB$PRIVATE_FLAG.NULL = FALSE;
 					}
 					else
@@ -6984,7 +6984,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_inputs:
-					X.RDB$PROCEDURE_INPUTS = (USHORT) get_numeric(tdgbl);
+					X.RDB$PROCEDURE_INPUTS = (USHORT) get_int32(tdgbl);
 					if (X.RDB$PROCEDURE_INPUTS == 0)
 						X.RDB$PROCEDURE_INPUTS.NULL = TRUE;
 					else
@@ -6992,13 +6992,13 @@ bool get_procedure(BurpGlobals* tdgbl)
 					break;
 
 				case att_procedure_outputs:
-					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_numeric(tdgbl);
+					X.RDB$PROCEDURE_OUTPUTS = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_procedure_type:
 				case att_procedure_valid_blr:
 					if (tdgbl->RESTORE_format >= 8)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 290);
 					break;
@@ -7021,7 +7021,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 
 				case att_procedure_private_flag:
 					if (tdgbl->RESTORE_format >= 10)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 290);
 					break;
@@ -7116,11 +7116,11 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 					break;
 
 				case att_procedureprm_type:
-					X.RDB$PARAMETER_TYPE= (USHORT) get_numeric(tdgbl);
+					X.RDB$PARAMETER_TYPE= (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_procedureprm_number:
-					X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric(tdgbl);
+					X.RDB$PARAMETER_NUMBER= (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_procedureprm_field_source:
@@ -7161,7 +7161,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 					if (tdgbl->RESTORE_format >= 8)
 					{
 						X.RDB$COLLATION_ID.NULL = FALSE;
-						X.RDB$COLLATION_ID = (USHORT) get_numeric(tdgbl);
+						X.RDB$COLLATION_ID = (USHORT) get_int32(tdgbl);
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 291);
@@ -7169,14 +7169,14 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 
 				case att_procedureprm_null_flag:
 					if (tdgbl->RESTORE_format >= 8)
-						X.RDB$NULL_FLAG = (USHORT) get_numeric(tdgbl);
+						X.RDB$NULL_FLAG = (USHORT) get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 291);
 					break;
 
 				case att_procedureprm_mechanism:
 					if (tdgbl->RESTORE_format >= 8)
-						X.RDB$PARAMETER_MECHANISM = (USHORT) get_numeric(tdgbl);
+						X.RDB$PARAMETER_MECHANISM = (USHORT) get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 291);
 					break;
@@ -7237,11 +7237,11 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 					break;
 
 				case att_procedureprm_type:
-					X.RDB$PARAMETER_TYPE= (USHORT) get_numeric(tdgbl);
+					X.RDB$PARAMETER_TYPE= (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_procedureprm_number:
-					X.RDB$PARAMETER_NUMBER= (USHORT) get_numeric(tdgbl);
+					X.RDB$PARAMETER_NUMBER= (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_procedureprm_field_source:
@@ -7270,7 +7270,7 @@ bool get_procedure_prm (BurpGlobals* tdgbl, GDS_NAME package_name, GDS_NAME proc
 				case att_procedureprm_null_flag:
 				case att_procedureprm_mechanism:
 					if (tdgbl->RESTORE_format >= 8)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 291);
 					break;
@@ -7474,11 +7474,11 @@ bool get_relation(BurpGlobals* tdgbl)
 
 		case att_relation_flags:
 			rel_flags_null = false;
-			rel_flags = get_numeric(tdgbl);
+			rel_flags = get_int32(tdgbl);
 			break;
 
 		case att_relation_system_flag:
-			sys_flag = get_numeric(tdgbl);
+			sys_flag = get_int32(tdgbl);
 			break;
 
 		case att_relation_ext_description:
@@ -7504,7 +7504,7 @@ bool get_relation(BurpGlobals* tdgbl)
 			if (tdgbl->RESTORE_format >= 8)
 			{
 				type_null = false;
-				type = get_numeric(tdgbl);
+				type = get_int32(tdgbl);
 			}
 			else
 				bad_attribute(scan_next_attr, attribute, 111);
@@ -7797,7 +7797,7 @@ bool get_relation_data(BurpGlobals* tdgbl)
 			break;
 
 		case rec_gen_id:
-			gen_id = get_numeric(tdgbl);
+			gen_id = get_int32(tdgbl);
 			store_blr_gen_id(tdgbl, name, gen_id, 0, NULL, NULL, NULL, fb_sysflag_user);
 			get_record(&record, tdgbl);
 			break;
@@ -8177,7 +8177,7 @@ void get_source_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
 
-	SLONG length = get_numeric(tdgbl);
+	SLONG length = get_int32(tdgbl);
 
 	// Create new blob
 
@@ -8337,7 +8337,7 @@ bool get_trigger_old (BurpGlobals* tdgbl, burp_rel* relation)
 			switch (attribute)
 			{
 			case att_trig_type:
-				type = (enum trig_t) get_numeric(tdgbl);
+				type = (enum trig_t) get_int32(tdgbl);
 				break;
 
 			case att_trig_blr:
@@ -8469,7 +8469,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 				switch (attribute)
 				{
 				case att_trig_type:
-					X.RDB$TRIGGER_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$TRIGGER_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_trig_type2:
@@ -8480,7 +8480,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 					break;
 
 				case att_trig_flags:
-					X.RDB$FLAGS = (USHORT) get_numeric(tdgbl);
+					X.RDB$FLAGS = (USHORT) get_int32(tdgbl);
 					X.RDB$FLAGS.NULL = FALSE;
 					break;
 
@@ -8512,7 +8512,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 					break;
 
 				case att_trig_sequence:
-					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric(tdgbl);
+					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_trig_description:
@@ -8526,19 +8526,19 @@ bool get_trigger(BurpGlobals* tdgbl)
 					break;
 
 				case att_trig_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case att_trig_inactive:
-					X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric(tdgbl);
+					X.RDB$TRIGGER_INACTIVE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_trig_valid_blr:
 					if (tdgbl->RESTORE_format >= 8)
 					{
 						X.RDB$VALID_BLR.NULL = FALSE;
-						X.RDB$VALID_BLR = (USHORT) get_numeric(tdgbl);
+						X.RDB$VALID_BLR = (USHORT) get_int32(tdgbl);
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 134);
@@ -8605,11 +8605,11 @@ bool get_trigger(BurpGlobals* tdgbl)
 				switch (attribute)
 				{
 				case att_trig_type:
-					X.RDB$TRIGGER_TYPE = (USHORT) get_numeric(tdgbl);
+					X.RDB$TRIGGER_TYPE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_trig_flags:
-					X.RDB$FLAGS = (USHORT) get_numeric(tdgbl);
+					X.RDB$FLAGS = (USHORT) get_int32(tdgbl);
 					X.RDB$FLAGS.NULL = FALSE;
 					break;
 
@@ -8641,7 +8641,7 @@ bool get_trigger(BurpGlobals* tdgbl)
 					break;
 
 				case att_trig_sequence:
-					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_numeric(tdgbl);
+					X.RDB$TRIGGER_SEQUENCE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_trig_description:
@@ -8655,17 +8655,17 @@ bool get_trigger(BurpGlobals* tdgbl)
 					break;
 
 				case att_trig_system_flag:
-					X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+					X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 					X.RDB$SYSTEM_FLAG.NULL = FALSE;
 					break;
 
 				case att_trig_inactive:
-					X.RDB$TRIGGER_INACTIVE = (USHORT) get_numeric(tdgbl);
+					X.RDB$TRIGGER_INACTIVE = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_trig_valid_blr:
 					if (tdgbl->RESTORE_format >= 8)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 134);
 					break;
@@ -8766,7 +8766,7 @@ bool get_trigger_message(BurpGlobals* tdgbl)
 			break;
 
 		case att_trigmsg_number:
-			number = (USHORT) get_numeric(tdgbl);
+			number = (USHORT) get_int32(tdgbl);
 			break;
 
 		case att_trigmsg_text:
@@ -8834,7 +8834,7 @@ bool get_type(BurpGlobals* tdgbl)
  *
  **************************************/
 	att_type	attribute;
-	ULONG		l;
+	ULONG		len = 0;
 	TEXT		temp[GDS_NAME_LEN];
 	scan_attr_t		scan_next_attr;
 
@@ -8851,11 +8851,11 @@ bool get_type(BurpGlobals* tdgbl)
 			switch (attribute)
 			{
 			case att_type_name:
-				l = GET_TEXT(X.RDB$TYPE_NAME);
+				len = GET_TEXT(X.RDB$TYPE_NAME);
 				break;
 
 			case att_type_type:
-				X.RDB$TYPE = (USHORT) get_numeric(tdgbl);
+				X.RDB$TYPE = (USHORT) get_int32(tdgbl);
 				break;
 
 			case att_type_field_name:
@@ -8873,7 +8873,7 @@ bool get_type(BurpGlobals* tdgbl)
 				break;
 
 			case att_type_system_flag:
-				X.RDB$SYSTEM_FLAG = (USHORT) get_numeric(tdgbl);
+				X.RDB$SYSTEM_FLAG = (USHORT) get_int32(tdgbl);
 				X.RDB$SYSTEM_FLAG.NULL = FALSE;
 				break;
 
@@ -8884,7 +8884,7 @@ bool get_type(BurpGlobals* tdgbl)
 			}
 		}
 
-		MISC_terminate (X.RDB$TYPE_NAME, temp, l, sizeof(temp));
+		MISC_terminate (X.RDB$TYPE_NAME, temp, len, sizeof(temp));
 		BURP_verbose (128, SafeArg() << temp << X.RDB$FIELD_NAME);
 		// msg 128  restoring type %s for field %s
 
@@ -8950,7 +8950,7 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 
 		case att_priv_grant_option:
 			flags |= USER_PRIV_GRANT_OPTION;
-			grant_option = (USHORT) get_numeric(tdgbl);
+			grant_option = (USHORT) get_int32(tdgbl);
 			break;
 
 		case att_priv_object_name:
@@ -8966,12 +8966,12 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 
 		case att_priv_user_type:
 			flags |= USER_PRIV_USER_TYPE;
-			user_type = (USHORT) get_numeric(tdgbl);
+			user_type = (USHORT) get_int32(tdgbl);
 			break;
 
 		case att_priv_obj_type:
 			flags |= USER_PRIV_OBJECT_TYPE;
-			object_type = (USHORT) get_numeric(tdgbl);
+			object_type = (USHORT) get_int32(tdgbl);
 			break;
 
 		default:
@@ -9173,13 +9173,13 @@ bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 					break;
 
 				case att_view_context_id:
-					X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
+					X.RDB$VIEW_CONTEXT = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_view_context_type:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						X.RDB$CONTEXT_TYPE = (USHORT) get_numeric(tdgbl);
+						X.RDB$CONTEXT_TYPE = (USHORT) get_int32(tdgbl);
 						X.RDB$CONTEXT_TYPE.NULL = FALSE;
 					}
 					else
@@ -9234,12 +9234,12 @@ bool get_view(BurpGlobals* tdgbl, burp_rel* relation)
 					break;
 
 				case att_view_context_id:
-					X.RDB$VIEW_CONTEXT = (USHORT) get_numeric(tdgbl);
+					X.RDB$VIEW_CONTEXT = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_view_context_type:
 					if (tdgbl->RESTORE_format >= 10)
-						get_numeric(tdgbl);
+						get_int32(tdgbl);
 					else
 						bad_attribute(scan_next_attr, attribute, 140);
 					break;
@@ -9294,7 +9294,7 @@ void ignore_array(BurpGlobals* tdgbl, burp_rel* relation)
 		switch (attribute)
 		{
 		case att_blob_field_number:
-			field_number = (USHORT) get_numeric(tdgbl);
+			field_number = (USHORT) get_int32(tdgbl);
 			for (field = relation->rel_fields; field; field = field->fld_next)
 			{
 				if (field->fld_number == field_number)
@@ -9306,7 +9306,7 @@ void ignore_array(BurpGlobals* tdgbl, burp_rel* relation)
 			break;
 
 		case att_array_dimensions:
-			field->fld_dimensions = (SSHORT) get_numeric(tdgbl);
+			field->fld_dimensions = (SSHORT) get_int32(tdgbl);
 			end_ranges = field->fld_ranges + 2 * field->fld_dimensions;
 			for (range = field->fld_ranges; range < end_ranges; range += 2)
 			{
@@ -9314,12 +9314,12 @@ void ignore_array(BurpGlobals* tdgbl, burp_rel* relation)
 					bad_attribute(scan_next_attr, attribute, 58);
 					// msg 58 array
 				else
-					range[0] = get_numeric(tdgbl);
+					range[0] = get_int32(tdgbl);
 				if (get_attribute(&attribute, tdgbl) != att_array_range_high)
 					bad_attribute(scan_next_attr, attribute, 58);
 					// msg 58 array
 				else
-					range[1] = get_numeric(tdgbl);
+					range[1] = get_int32(tdgbl);
 			}
 			break;
 
@@ -9383,19 +9383,19 @@ void ignore_blob(BurpGlobals* tdgbl)
 		switch (attribute)
 		{
 		case att_blob_field_number:
-			get_numeric(tdgbl);
+			get_int32(tdgbl);
 			break;
 
 		case att_blob_max_segment:
-			get_numeric(tdgbl);
+			get_int32(tdgbl);
 			break;
 
 		case att_blob_number_segments:
-			segments = get_numeric(tdgbl);
+			segments = get_int32(tdgbl);
 			break;
 
 		case att_blob_type:
-			get_numeric(tdgbl);
+			get_int32(tdgbl);
 			break;
 
 		default:
@@ -9436,28 +9436,28 @@ rec_type ignore_data(BurpGlobals* tdgbl, burp_rel* relation)
 		if (get(tdgbl) != att_data_length)
 			BURP_error_redirect (NULL, 39);
 			// msg 39 expected record length
-		USHORT l = (USHORT) get_numeric(tdgbl);
+		USHORT len = (USHORT) get_int32(tdgbl);
 		if (tdgbl->gbl_sw_transportable)
 		{
 			if (get(tdgbl) != att_xdr_length)
 				BURP_error_redirect (NULL, 55);
 				// msg 55 Expected XDR record length
 			else
-				l = (USHORT) get_numeric(tdgbl);
+				len = (USHORT) get_int32(tdgbl);
 		}
 		if (get(tdgbl) != att_data_data)
 			BURP_error_redirect (NULL, 41);
 			// msg 41 expected data attribute
-		if (l)
+		if (len)
 		{
 			if (tdgbl->gbl_sw_compress)
 			{
-				UCHAR* buffer = (UCHAR*) BURP_alloc (l);
-				decompress (tdgbl, buffer, l);
+				UCHAR* buffer = (UCHAR*) BURP_alloc (len);
+				decompress (tdgbl, buffer, len);
 				BURP_free (buffer);
 			}
 			else
-				get_skip(tdgbl, l);
+				get_skip(tdgbl, len);
 		}
 		++records;
 
