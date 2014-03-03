@@ -527,7 +527,7 @@ void TimerEntry::cleanup()
 
 TimerDelay curTime()
 {
-	return fb_utils::query_performance_counter() / (fb_utils::query_performance_frequency() / 1000000);
+	return 1000000 * fb_utils::query_performance_counter() / fb_utils::query_performance_frequency();
 }
 
 TimerEntry* getTimer(ITimer* timer)
