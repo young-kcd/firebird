@@ -156,7 +156,7 @@ static void add_clump(thread_db* tdbb, USHORT type, USHORT len, const UCHAR* ent
 
 	UCHAR* entry_p;
 	const UCHAR* clump_end;
-	while (mode != CLUMP_ADD)
+	if (mode != CLUMP_ADD)
 	{
 		const bool found = find_type(tdbb, &window, &page, LCK_write, type, &entry_p, &clump_end);
 
@@ -170,51 +170,48 @@ static void add_clump(thread_db* tdbb, USHORT type, USHORT len, const UCHAR* ent
 
 		// If not found, just go and add the entry
 
-		if (!found)
-			break;
-
-		// if same size, overwrite it
-
-		if (entry_p[1] == len)
+		if (found)
 		{
-			entry_p += 2;
-			if (len)
+
+			// if same size, overwrite it
+			const USHORT oldLen = entry_p[1] + 2u;
+
+			if (oldLen - 2u == len)
 			{
-				//if (must_write)
+				entry_p += 2;
+				if (len)
+				{
 					CCH_MARK_MUST_WRITE(tdbb, &window);
-				//else
-				//	CCH_MARK(tdbb, &window);
-
-				memcpy(entry_p, entry, len);
+					memcpy(entry_p, entry, len);
+				}
+				CCH_RELEASE(tdbb, &window);
+				return; // true;
 			}
+
+			// delete the entry
+
+			// Page is marked must write because of precedence problems.  Later
+			// on we may allocate a new page and set up a precedence relationship.
+			// This may be the lower precedence page and so it cannot be dirty
+
+			CCH_MARK_MUST_WRITE(tdbb, &window);
+
+			*end_addr -= oldLen;
+
+			const UCHAR* r = entry_p + oldLen;
+			USHORT shift = clump_end - r + 1;
+			if (shift)
+				memmove(entry_p, r, shift);
+
 			CCH_RELEASE(tdbb, &window);
-			return; // true;
+
+			// refetch the page
+
+			window.win_page = HEADER_PAGE;
+			page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+			header = (header_page*) page;
+			end_addr = &header->hdr_end;
 		}
-
-		// delete the entry
-
-		// Page is marked must write because of precedence problems.  Later
-		// on we may allocate a new page and set up a precedence relationship.
-		// This may be the lower precedence page and so it cannot be dirty
-
-		CCH_MARK_MUST_WRITE(tdbb, &window);
-
-		*end_addr -= (2 + entry_p[1]);
-
-		const UCHAR* r = entry_p + 2 + entry_p[1];
-		USHORT l = clump_end - r + 1;
-		if (l)
-			memmove(entry_p, r, l);
-
-		CCH_RELEASE(tdbb, &window);
-
-		// refetch the page
-
-		window.win_page = HEADER_PAGE;
-		page = CCH_FETCH(tdbb, &window, LCK_write, pag_header);
-		header = (header_page*) page;
-		end_addr = &header->hdr_end;
-		break;
 	}
 
 	// Add the entry
@@ -370,7 +367,7 @@ bool PAG_add_header_entry(thread_db* tdbb, header_page* header,
 
 	UCHAR* p = header->hdr_data;
 	while (*p != HDR_end && *p != type)
-		p += 2 + p[1];
+		p += 2u + p[1];
 
 	if (*p != HDR_end)
 		return false;
@@ -463,15 +460,15 @@ bool PAG_replace_entry_first(thread_db* tdbb, header_page* header,
 
 	UCHAR* p = header->hdr_data;
 	while (*p != HDR_end && *p != type) {
-		p += 2 + p[1];
+		p += 2u + p[1];
 	}
 
 	// Remove item if found it somewhere
 	if (*p != HDR_end)
 	{
-		UCHAR l = p[1] + 2;
-		memmove(p, p + l, header->hdr_end - (p - (UCHAR*) header) - l + 1); // to preserve HDR_end
-		header->hdr_end -= l;
+		const USHORT shift = p[1] + 2u;
+		memmove(p, p + shift, header->hdr_end - (p - (UCHAR*) header) - shift + 1); // to preserve HDR_end
+		header->hdr_end -= shift;
 	}
 
 	if (!entry) {
@@ -484,6 +481,7 @@ bool PAG_replace_entry_first(thread_db* tdbb, header_page* header,
 	}
 
 	// Actually add the item
+	fb_assert(len <= MAX_UCHAR);
 	memmove(header->hdr_data + len + 2, header->hdr_data, header->hdr_end - HDR_SIZE + 1);
 	header->hdr_data[0] = type;
 	header->hdr_data[1] = len;
@@ -815,12 +813,12 @@ bool PAG_delete_clump_entry(thread_db* tdbb, USHORT type)
 	header_page* header = (header_page*) page;
 	USHORT* end_addr = &header->hdr_end;
 
-	*end_addr -= (2 + entry_p[1]);
+	*end_addr -= (2u + entry_p[1]);
 
 	const UCHAR* r = entry_p + 2 + entry_p[1];
-	USHORT l = clump_end - r + 1;
-	if (l)
-		memmove(entry_p, r, l);
+	USHORT shift = clump_end - r + 1;
+	if (shift)
+		memmove(entry_p, r, shift);
 
 	CCH_RELEASE(tdbb, &window);
 
@@ -1329,7 +1327,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 			if (shadow_number && !file->fil_min_page)
 				CCH_RELEASE(tdbb, &window);
 
-			for (const UCHAR* p = header->hdr_data; *p != HDR_end; p += 2 + p[1])
+			for (const UCHAR* p = header->hdr_data; *p != HDR_end; p += 2u + p[1])
 			{
 				switch (*p)
 				{
@@ -1788,10 +1786,7 @@ static void find_clump_space(thread_db* tdbb,
 
 		if (free_space > (2 + len))
 		{
-			//if (must_write)
-				CCH_MARK_MUST_WRITE(tdbb, window);
-			//else
-			//	CCH_MARK(tdbb, window);
+			CCH_MARK_MUST_WRITE(tdbb, window);
 
 			fb_assert(type <= MAX_UCHAR);
 			fb_assert(len <= MAX_UCHAR);
@@ -1821,11 +1816,7 @@ static void find_clump_space(thread_db* tdbb,
 	WIN new_window(DB_PAGE_SPACE, -1);
 	pag* new_page = (PAG) DPM_allocate(tdbb, &new_window);
 
-	//if (must_write)
-		CCH_MARK_MUST_WRITE(tdbb, &new_window);
-	//else
-	//	CCH_MARK(tdbb, &new_window);
-
+	CCH_MARK_MUST_WRITE(tdbb, &new_window);
 
 	header_page* const new_header = (header_page*) new_page;
 	new_header->hdr_header.pag_type = pag_header;
@@ -1891,7 +1882,7 @@ static bool find_type(thread_db* tdbb,
 		const SLONG next_page = header->hdr_next_page;
 
 		UCHAR* q = 0;
-		for (; (*p != HDR_end); p += 2 + p[1])
+		for (; (*p != HDR_end); p += 2u + p[1])
 		{
 			if (*p == type)
 				q = p;
