@@ -25,6 +25,16 @@
 
 #include "./ExternalEngine.h"
 
+#ifndef FB_DLL_EXPORT
+#if defined(WIN_NT)
+#define FB_DLL_EXPORT __declspec(dllexport)
+#elif defined(DARWIN)
+#define FB_DLL_EXPORT API_ROUTINE
+#else
+#define FB_DLL_EXPORT
+#endif // OS choice (WIN_NT, DARWIN)
+#endif // FB_DLL_EXPORT
+
 
 namespace Firebird
 {
@@ -62,7 +72,6 @@ public:
 	virtual ExternalTrigger* FB_CARG newItem(IStatus* status, ExternalContext* context,
 		const IRoutineMetadata* metadata) = 0;
 };
-
 
 // Routine registration functions.
 extern "C" void FB_DLL_EXPORT fbUdrRegFunction(const char* name, FunctionFactory* factory);
