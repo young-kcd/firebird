@@ -1,3 +1,44 @@
+ 2014-03-03 20:00  robocop 
+   M src/burp/backup.epp
+   M src/burp/restore.epp
+Rename get_numeric and put_numeric to what they are really: get_int32 and put_int32.
+
+ 2014-03-03 11:18  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Avoid zerodivide error, reported by Dmitry Sibiryakov
+
+ 2014-03-03 09:24  alexpeshkoff 
+   M src/include/firebird/UdrEngine.h
+This fixes linux build and hopefully does not break windows & darwin
+
+ 2014-03-03 04:41  robocop 
+   M src/jrd/pag.cpp
+Replace the "while" with unconditional break with an "if". (PVS_Studio).
+
+ 2014-03-03 04:37  robocop 
+   M src/burp/burp.h
+   M src/burp/mvol.cpp
+   M src/burp/split/spit.cpp
+   M src/common/cvt.cpp
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/WinNodes.cpp
+   M src/gpre/sql.cpp
+   M src/jrd/dpm.epp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/AggregatedStream.cpp
+   M src/jrd/recsrc/Cursor.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceLog.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/yvalve/gds.cpp
+Misc.
+
  2014-02-28 15:03  hvlad 
    M src/include/firebird/UdrEngine.h
 Fixed Windows build
