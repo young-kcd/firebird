@@ -244,6 +244,7 @@ enum att_type {
 	att_page_buffers,		// page buffers for buffer cache
 	att_SQL_dialect,		// SQL dialect that it speaks
 	att_db_read_only,		// Is the database ReadOnly?
+	att_database_linger,	// Disconnection timeout
 
 	// Relation attributes
 

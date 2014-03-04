@@ -9649,7 +9649,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 	// msg 129 started transaction
 
 	att_type	attribute;
-	isc_req_handle  req_handle2 = 0, req_handle3 = 0;
+	isc_req_handle  req_handle2 = 0, req_handle3 = 0, req_handle4 = 0;
 
 	while (get_attribute(&attribute, tdgbl) != att_end)
 	{
@@ -9696,6 +9696,35 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 				general_on_error ();
 			END_ERROR;
 			break;
+			
+		case att_database_linger:
+			if (tdgbl->RESTORE_format >= 10)
+			{
+				if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+				{
+					FOR (REQUEST_HANDLE req_handle4)
+						X IN RDB$DATABASE
+						MODIFY X USING
+							X.RDB$LINGER = get_int32(tdgbl);
+						END_MODIFY;
+						ON_ERROR
+							general_on_error();
+						END_ERROR;
+					END_FOR;
+					ON_ERROR
+						general_on_error();
+					END_ERROR;
+				}
+				else
+					get_int32(tdgbl);
+			}
+			else
+			{
+				// Functions that use scan_next_attr initialize it to NO_SKIP using skip_init().
+				// Here we don't use that logic, hence the first param to bad_attribute is hardcoded.
+				bad_attribute(NO_SKIP, attribute, 352);
+			}
+			break;
 
 		default:
 			{
@@ -9709,6 +9738,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 
 	MISC_release_request_silent(req_handle2);
 	MISC_release_request_silent(req_handle3);
+	MISC_release_request_silent(req_handle4);
 
 	if (tdgbl->gbl_sw_fix_fss_data)
 	{
@@ -9937,9 +9967,9 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 
 	if (tdgbl->defaultCollations.getCount() > 0)
 	{
-		isc_req_handle req_handle4 = 0;
+		isc_req_handle req_handle5 = 0;
 
-		FOR (REQUEST_HANDLE req_handle4)
+		FOR (REQUEST_HANDLE req_handle5)
 			CS IN RDB$CHARACTER_SETS
 
 			for (size_t i = 0; i < tdgbl->defaultCollations.getCount(); ++i)
@@ -9961,7 +9991,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 			general_on_error ();
 		END_ERROR;
 
-		MISC_release_request_silent(req_handle4);
+		MISC_release_request_silent(req_handle5);
 	}
 
 	// This piece of code is to fix bug 10098: restore of database with
@@ -9993,9 +10023,9 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 
 	if (tdgbl->gbl_sw_kill)
 	{
-		isc_req_handle req_handle4 = 0;
+		isc_req_handle req_handle5 = 0;
 
-		FOR (REQUEST_HANDLE req_handle4)
+		FOR (REQUEST_HANDLE req_handle5)
 			FIL IN RDB$FILES WITH FIL.RDB$SHADOW_NUMBER NOT MISSING
 			AND FIL.RDB$SHADOW_NUMBER NE 0
 		ERASE FIL;
@@ -10007,13 +10037,13 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 			general_on_error ();
 		END_ERROR;
 
-		MISC_release_request_silent(req_handle4);
+		MISC_release_request_silent(req_handle5);
 	}
 
 	// update statistics for system indices
-	isc_req_handle req_handle5 = 0;
+	isc_req_handle req_handle6 = 0;
 
-	FOR (REQUEST_HANDLE req_handle5)
+	FOR (REQUEST_HANDLE req_handle6)
 		IND IN RDB$INDICES WITH IND.RDB$SYSTEM_FLAG EQ 1
 		MODIFY IND
 			IND.RDB$STATISTICS.NULL = FALSE;
@@ -10027,7 +10057,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 		general_on_error ();
 	END_ERROR;
 
-	MISC_release_request_silent(req_handle5);
+	MISC_release_request_silent(req_handle6);
 
 	return true;
 }

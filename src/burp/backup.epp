@@ -2698,18 +2698,36 @@ void write_database( const TEXT* dbb_file)
 
 	put(tdgbl, (UCHAR) rec_database);
 
-	FOR (REQUEST_HANDLE req_handle1)
-		D IN RDB$DATABASE
-
-		if (!D.RDB$SECURITY_CLASS.NULL)
-			PUT_TEXT (att_database_security_class, D.RDB$SECURITY_CLASS);
-		put_source_blob (att_database_description2, att_database_description, D.RDB$DESCRIPTION);
-		if (!D.RDB$CHARACTER_SET_NAME.NULL)
-			PUT_TEXT (att_database_dfl_charset, D.RDB$CHARACTER_SET_NAME);
-	END_FOR;
-	ON_ERROR
-		general_on_error();
-	END_ERROR;
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			D IN RDB$DATABASE
+			if (!D.RDB$SECURITY_CLASS.NULL)
+				PUT_TEXT (att_database_security_class, D.RDB$SECURITY_CLASS);
+			put_source_blob (att_database_description2, att_database_description, D.RDB$DESCRIPTION);
+			if (!D.RDB$CHARACTER_SET_NAME.NULL)
+				PUT_TEXT (att_database_dfl_charset, D.RDB$CHARACTER_SET_NAME);
+			if (!D.RDB$LINGER.NULL)
+				put_int32(att_database_linger, D.RDB$LINGER);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else
+	{
+		FOR (REQUEST_HANDLE req_handle1)
+			D IN RDB$DATABASE
+			if (!D.RDB$SECURITY_CLASS.NULL)
+				PUT_TEXT (att_database_security_class, D.RDB$SECURITY_CLASS);
+			put_source_blob (att_database_description2, att_database_description, D.RDB$DESCRIPTION);
+			if (!D.RDB$CHARACTER_SET_NAME.NULL)
+				PUT_TEXT (att_database_dfl_charset, D.RDB$CHARACTER_SET_NAME);
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
 
 	MISC_release_request_silent(req_handle1);
 
