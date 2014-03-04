@@ -687,7 +687,7 @@
 #
 # Type: integer
 #
-#LockHashSlots = 1009
+#LockHashSlots = 8191
 
 # ----------------------------
 #
