@@ -164,26 +164,24 @@ void PPG_print_header(const header_page* header, ULONG page,
 			uSvc->printf(false, "plugin %s", header->hdr_crypt_plugin);
 		}
 
-		const USHORT sd_flags = flags & hdr_shutdown_mask;
-		if (sd_flags == hdr_shutdown_multi)
+		if (flags & hdr_shutdown_mask)
 		{
 			if (flag_count++)
 				uSvc->printf(false, ", ");
-			uSvc->printf(false, "multi-user maintenance");
-		}
-
-		if (sd_flags == hdr_shutdown_single)
-		{
-			if (flag_count++)
-				uSvc->printf(false, ", ");
-			uSvc->printf(false, "single-user maintenance");
-		}
-
-		if (sd_flags == hdr_shutdown_full)
-		{
-			if (flag_count++)
-				uSvc->printf(false, ", ");
-			uSvc->printf(false, "full shutdown");
+			switch (flags & hdr_shutdown_mask)
+			{
+			case hdr_shutdown_multi:
+				uSvc->printf(false, "multi-user maintenance");
+				break;
+			case hdr_shutdown_single:
+				uSvc->printf(false, "single-user maintenance");
+				break;
+			case hdr_shutdown_full:
+				uSvc->printf(false, "full shutdown");
+				break;
+			default:
+				uSvc->printf(false, "wrong shutdown state %d", flags & hdr_shutdown_mask);
+			}
 		}
 
 		if (flags & hdr_read_only)
