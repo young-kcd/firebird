@@ -9097,8 +9097,6 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 			X.RDB$OBJECT_TYPE.NULL = FALSE;
 			X.RDB$OBJECT_TYPE = object_type;
 
-
-
 			// If OBJECT_TYPE didn't exist before and we have a field level
 			// user privileges, then use obj_field instead.
 
@@ -9495,8 +9493,8 @@ void realign(BurpGlobals* tdgbl, UCHAR* buffer, const burp_rel* relation)
  *	than the new.
  *
  **************************************/
-	UCHAR* p = 0;
-	const UCHAR* q = 0;
+	UCHAR* p = NULL;
+	const UCHAR* q = NULL;
 
 	for (const burp_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{

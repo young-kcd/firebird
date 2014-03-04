@@ -223,7 +223,7 @@ private:
 class TraceFuncExecute
 {
 public:
-	TraceFuncExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller, 
+	TraceFuncExecute(thread_db* tdbb, jrd_req* request, jrd_req* caller,
 					 const UCHAR* inMsg, ULONG inMsgLength) :
 		m_tdbb(tdbb),
 		m_request(request),
@@ -241,8 +241,8 @@ public:
 		{	// scope
 			TraceConnectionImpl conn(m_tdbb->getAttachment());
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
-			
-			TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(), 
+
+			TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(),
 				m_request->getStatement()->function->getInputFormat(),
 				m_inMsg, m_inMsgLength);
 			TraceFunctionImpl func(m_request, &inputs, NULL, NULL);
@@ -280,7 +280,7 @@ public:
 		TraceConnectionImpl conn(m_tdbb->getAttachment());
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
 
-		TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(), 
+		TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(),
 			m_request->getStatement()->function->getInputFormat(),
 			m_inMsg, m_inMsgLength);
 
@@ -298,7 +298,7 @@ private:
 	bool m_need_trace;
 	thread_db* const m_tdbb;
 	jrd_req* const m_request;
-	const UCHAR* m_inMsg; 
+	const UCHAR* m_inMsg;
 	ULONG m_inMsgLength;
 	SINT64 m_start_clock;
 };

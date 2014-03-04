@@ -280,7 +280,7 @@ private:
 class TraceParamsFromMsgImpl : public TraceParamsImpl
 {
 public:
-	TraceParamsFromMsgImpl(Firebird::MemoryPool& pool, const Format* format, 
+	TraceParamsFromMsgImpl(Firebird::MemoryPool& pool, const Format* format,
 		const UCHAR* inMsg, ULONG inMsgLength) :
 		TraceParamsImpl(pool),
 		m_format(format),

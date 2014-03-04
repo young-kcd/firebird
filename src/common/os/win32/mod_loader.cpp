@@ -168,7 +168,7 @@ bool ModuleLoader::isLoadableModule(const PathName& module)
 {
 	ContextActivator ctx;
 
-	const HMODULE hMod = 
+	const HMODULE hMod =
 		LoadLibraryEx(module.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH | LOAD_LIBRARY_AS_DATAFILE);
 
 	if (hMod) {
@@ -206,9 +206,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const PathName& modPath)
 	}
 
 	if (!module)
-	{
 		module = LoadLibraryEx(modPath.c_str(), 0, LOAD_WITH_ALTERED_SEARCH_PATH);
-	}
 
 	// Restore old mode in case we are embedded into user application
 	SetErrorMode(oldErrorMode);
