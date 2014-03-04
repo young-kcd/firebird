@@ -672,7 +672,6 @@ struct burp_fld
 	SSHORT		fld_null_flag;
 	ISC_QUAD	fld_default_value;
 	ISC_QUAD	fld_default_source;
-	SSHORT		fld_character_length; // only assigned in restore.epp but never used.
 	SSHORT		fld_character_set_id;
 	SSHORT		fld_collation_id;
 };

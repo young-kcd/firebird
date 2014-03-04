@@ -3813,10 +3813,6 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 					X.RDB$UPDATE_FLAG = (USHORT) get_int32(tdgbl);
 					break;
 
-				case att_field_character_length:
-					field->fld_character_length = (USHORT) get_int32(tdgbl);
-					break;
-
 				case att_field_default_source:
 					X.RDB$DEFAULT_SOURCE.NULL = FALSE;
 					get_source_blob (tdgbl, X.RDB$DEFAULT_SOURCE, global_tr);
@@ -4017,10 +4013,6 @@ burp_fld* get_field(BurpGlobals* tdgbl, burp_rel* relation)
 				case att_field_update_flag:
 					X.RDB$UPDATE_FLAG.NULL = FALSE;
 					X.RDB$UPDATE_FLAG = (USHORT) get_int32(tdgbl);
-					break;
-
-				case att_field_character_length:
-					field->fld_character_length = (USHORT) get_int32(tdgbl);
 					break;
 
 				case att_field_default_source:
