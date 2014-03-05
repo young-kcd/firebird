@@ -982,8 +982,8 @@ static void print_db_header( FILE* file, const header_page* header)
 
 	const UCHAR* p = header->hdr_data;
 	for (const UCHAR* const end = p + header->hdr_page_size;
-		p < end && *p != HDR_end;
-		p += 2 + p[1])
+		 p < end && *p != HDR_end;
+		 p += 2 + p[1])
 	{
 		switch (*p)
 		{

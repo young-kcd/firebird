@@ -899,10 +899,10 @@ static void shutdown_shadow(Shadow* shadow)
 	PIO_close(shadow->sdw_file);
 	jrd_file* file;
 	jrd_file* free = shadow->sdw_file;
+
 	for (; (file = free->fil_next); free = file)
-	{
 		delete free;
-	}
+
 	delete free;
 	delete shadow;
 }
