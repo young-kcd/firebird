@@ -1,3 +1,32 @@
+ 2014-03-04 14:25  robocop 
+   M src/utilities/gstat/ppg.cpp
+Misc.
+
+ 2014-03-04 14:24  robocop 
+   M src/burp/backup.epp
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Backup and restore rdb$linger.
+
+ 2014-03-04 14:21  robocop 
+   M src/burp/burp.h
+   M src/burp/restore.epp
+Cleanup: remove useless burp_fld.fld_character_length.
+
+ 2014-03-04 02:12  asfernandes 
+   M builds/install/arch-specific/linux/README
+   M src/burp/restore.epp
+   M src/common/os/win32/mod_loader.cpp
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceObjects.h
+Misc.
+
+ 2014-03-04 01:55  asfernandes 
+   M builds/install/misc/firebird.conf.in
+Adjust for the change in the code.
+
  2014-03-03 20:00  robocop 
    M src/burp/backup.epp
    M src/burp/restore.epp
