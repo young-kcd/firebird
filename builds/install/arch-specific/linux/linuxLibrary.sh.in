@@ -394,7 +394,7 @@ EOF
 	    # Install the firebird init.d script
     	cp @FB_MISCDIR@/$srcScript $initScript
 	    chown root:root $initScript
-    	chmod ug=rx,o=r $initScript
+    	chmod u=rwx,g=rx,o=r $initScript
 
 
 	    # RedHat and Mandrake specific 
