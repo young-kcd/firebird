@@ -2279,7 +2279,8 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	for (DsqlContextStack::iterator iter(*base_context); iter.hasData(); ++iter)
 	{
 		if ((iter.object()->ctx_flags & CTX_system) ||
-			(iter.object()->ctx_scope_level != dsqlScratch->scopeLevel))
+			iter.object()->ctx_scope_level != dsqlScratch->scopeLevel ||
+			iter.object() == dsqlScratch->recursiveCtx)	// CORE-4322, CORE-4354
 		{
 			temp.push(iter.object());
 		}
