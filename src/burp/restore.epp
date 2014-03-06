@@ -1838,7 +1838,7 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 			if (data_at == 0)
 			{
 				buffer = BURP_alloc (return_length);
-				SLONG lcount;
+				SLONG lcount = 0;
 				if (tdgbl->gbl_sw_transportable)
 				{
 					if (get_attribute(&attribute, tdgbl) != att_xdr_array)
@@ -1965,7 +1965,7 @@ void get_array(BurpGlobals* tdgbl, burp_rel* relation, UCHAR* record_buffer)
 		const USHORT blr_length = blr - blr_buffer;
 
 		buffer = BURP_alloc (return_length);
-		SLONG lcount;
+		SLONG lcount = 0;
 		if (tdgbl->gbl_sw_transportable)
 		{
 			if (get_attribute(&attribute, tdgbl) != att_xdr_array)
