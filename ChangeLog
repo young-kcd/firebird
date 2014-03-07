@@ -1,3 +1,11 @@
+ 2014-03-06 16:20  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-4357 - Parsing of recursive query returns error "Column does not belong to referenced table" for source that HAS such column. Relates to CORE-4322.
+
+ 2014-03-06 16:20  asfernandes 
+   M src/burp/restore.epp
+Warnings.
+
  2014-03-05 16:59  mapopa 
    M builds/install/arch-specific/linux/linuxLibrary.sh.in
 make init script writeable by the root user 
