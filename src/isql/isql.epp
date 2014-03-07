@@ -384,7 +384,7 @@ static void print_message(Firebird::IMessageMetadata* msg, const char* dir);
 static void process_header(Firebird::IMessageMetadata*, const unsigned pad[], TEXT header[], TEXT header2[]);
 static void process_plan();
 static SLONG process_record_count(const int statement_type);
-static SSHORT process_request_type();
+static int process_request_type();
 static unsigned process_message_display(Firebird::IMessageMetadata* msg, unsigned pad[]);
 static processing_state process_statement(const TEXT*);
 #ifdef WIN_NT
@@ -7917,10 +7917,10 @@ static void process_plan()
 		case isc_info_sql_get_plan:
 		case isc_info_sql_explain_plan:
 			{
-				ULONG l = gds__vax_integer(reinterpret_cast<const UCHAR*>(planPtr) + 1, 2);
-				if (l > planSize - 3)
-					l = planSize - 3;
-				IUTILS_printf2(Diag, "%.*s%s", l, planPtr + 3, NEWLINE);
+				ULONG len = gds__vax_integer(planPtr + 1, 2);
+				if (len > planSize - 3)
+					len = planSize - 3;
+				IUTILS_printf2(Diag, "%.*s%s", len, planPtr + 3, NEWLINE);
 			}
 			return;
 		case isc_info_truncated:
@@ -7997,14 +7997,14 @@ static SLONG process_record_count(const int statement_type)
 
 		if (count_buffer[0] == isc_info_sql_records)
 		{
-			const UCHAR* p = reinterpret_cast<const UCHAR*>(count_buffer + 3);
+			const UCHAR* p = count_buffer + 3;
 			while (*p != isc_info_end)
 			{
 				const UCHAR count_is = *p++;
-				const SSHORT l = gds__vax_integer(p, 2);
+				const SSHORT len = gds__vax_integer(p, 2);
 				p += 2;
-				const SLONG count = gds__vax_integer(p, l);
-				p += l;
+				const SLONG count = gds__vax_integer(p, len);
+				p += len;
 				if (count_is == count_type)
 					return count;
 			}
@@ -8019,7 +8019,7 @@ static SLONG process_record_count(const int statement_type)
 // ***************************************
 // Retrieve the statement type according to the DSQL layer.
 // A failure is indicated by returning zero.
-static SSHORT process_request_type()
+static int process_request_type()
 {
 	if (!global_Stmt)
 		return 0;
@@ -8030,9 +8030,9 @@ static SSHORT process_request_type()
 	{
 		if (info_buffer[0] == isc_info_sql_stmt_type)
 		{
-		    const UCHAR* b = reinterpret_cast<const UCHAR*>(info_buffer);
-			const SSHORT l = gds__vax_integer(b + 1, 2);
-			return (SSHORT) gds__vax_integer(b + 3, l);
+		    const UCHAR* b = info_buffer;
+			const SSHORT len = gds__vax_integer(b + 1, 2);
+			return gds__vax_integer(b + 3, len);
 		}
 
 		//IUTILS_msg_get(UNKNOWN_STATEMENT_TYPE, errmsg);

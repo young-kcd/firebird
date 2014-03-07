@@ -868,7 +868,7 @@ static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 
 	// Pass 0 - inputs, pass 1 - return value
 
-	for (SSHORT pass = 0; pass < 2; pass++)
+	for (int pass = 0; pass < 2; pass++)
 	{
 		bool first_time = true;
 
