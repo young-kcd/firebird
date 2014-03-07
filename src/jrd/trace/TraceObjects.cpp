@@ -309,24 +309,18 @@ const char* TraceFailedSQLStatement::getTextUTF8()
 
 size_t TraceParamsImpl::getCount()
 {
-	fillParams();
-	return m_descs.getCount();
+	return m_descs->getCount();
 }
 
 const dsc* TraceParamsImpl::getParam(size_t idx)
 {
-	fillParams();
-
-	if (idx >= 0 && idx < m_descs.getCount())
-		return &m_descs[idx];
-
-	return NULL;
+	return m_descs->getParam(idx);
 }
 
 
-/// TraceParamsFromValuesImpl
+/// TraceDscFromValues
 
-void TraceParamsFromValuesImpl::fillParams()
+void TraceDscFromValues::fillParams()
 {
 	if (m_descs.getCount() || !m_params)
 		return;
@@ -386,9 +380,9 @@ void TraceParamsFromValuesImpl::fillParams()
 }
 
 
-/// TraceParamsFromMsgImpl
+/// TraceDscFromMsg
 
-void TraceParamsFromMsgImpl::fillParams()
+void TraceDscFromMsg::fillParams()
 {
 	if (m_descs.getCount() || !m_format || !m_inMsg || !m_inMsgLength)
 		return;

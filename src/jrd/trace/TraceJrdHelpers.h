@@ -242,10 +242,10 @@ public:
 			TraceConnectionImpl conn(m_tdbb->getAttachment());
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
 
-			TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(),
+			TraceDscFromMsg inputs(*getDefaultMemoryPool(),
 				m_request->getStatement()->function->getInputFormat(),
 				m_inMsg, m_inMsgLength);
-			TraceFunctionImpl func(m_request, &inputs, NULL, NULL);
+			TraceFunctionImpl func(m_request, inputs, NULL, NULL);
 
 			trace_mgr->event_func_execute(&conn, &tran, &func, true, res_successful);
 		}
@@ -280,11 +280,11 @@ public:
 		TraceConnectionImpl conn(m_tdbb->getAttachment());
 		TraceTransactionImpl tran(m_tdbb->getTransaction());
 
-		TraceParamsFromMsgImpl inputs(*getDefaultMemoryPool(),
+		TraceDscFromMsg inputs(*getDefaultMemoryPool(),
 			m_request->getStatement()->function->getInputFormat(),
 			m_inMsg, m_inMsgLength);
 
-		TraceFunctionImpl func(m_request, &inputs, stats.getPerf(), value);
+		TraceFunctionImpl func(m_request, inputs, stats.getPerf(), value);
 
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		trace_mgr->event_func_execute(&conn, &tran, &func,  false, result);

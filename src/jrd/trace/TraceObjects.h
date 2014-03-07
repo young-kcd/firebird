@@ -242,28 +242,70 @@ private:
 };
 
 
+// forward declaration
+class TraceDescriptors;
+
 class TraceParamsImpl : public Firebird::AutoIface<TraceParams, FB_TRACE_PARAMS_VERSION>
 {
 public:
-	explicit TraceParamsImpl(Firebird::MemoryPool& pool) :
-		m_descs(pool)
+	explicit TraceParamsImpl(TraceDescriptors *descs) :
+		m_descs(descs)
 	{}
 
+	// TraceParams implementation
 	virtual size_t FB_CARG getCount();
 	virtual const dsc* FB_CARG getParam(size_t idx);
+
+private:
+	TraceDescriptors *m_descs;
+};
+
+
+class TraceDescriptors
+{
+public:
+	explicit TraceDescriptors(Firebird::MemoryPool& pool) :
+		m_descs(pool),
+		m_traceParams(this)
+	{
+	}
+
+	size_t getCount()
+	{
+		fillParams();
+		return m_descs.getCount();
+	}
+
+	const dsc* getParam(size_t idx)
+	{
+		fillParams();
+
+		if (idx >= 0 && idx < m_descs.getCount())
+			return &m_descs[idx];
+
+		return NULL;
+	}
+
+	operator TraceParams* ()
+	{
+		return &m_traceParams;
+	}
 
 protected:
 	virtual void fillParams() = 0;
 
 	Firebird::HalfStaticArray<dsc, 16> m_descs;
+
+private:
+	TraceParamsImpl	m_traceParams;
 };
 
 
-class TraceParamsFromValuesImpl : public TraceParamsImpl
+class TraceDscFromValues : public TraceDescriptors
 {
 public:
-	TraceParamsFromValuesImpl(Firebird::MemoryPool& pool, jrd_req* request, const ValueListNode* params) :
-		TraceParamsImpl(pool),
+	TraceDscFromValues(Firebird::MemoryPool& pool, jrd_req* request, const ValueListNode* params) :
+		TraceDescriptors(pool),
 		m_request(request),
 		m_params(params)
 	{}
@@ -277,12 +319,12 @@ private:
 };
 
 
-class TraceParamsFromMsgImpl : public TraceParamsImpl
+class TraceDscFromMsg : public TraceDescriptors
 {
 public:
-	TraceParamsFromMsgImpl(Firebird::MemoryPool& pool, const Format* format,
+	TraceDscFromMsg(Firebird::MemoryPool& pool, const Format* format,
 		const UCHAR* inMsg, ULONG inMsgLength) :
-		TraceParamsImpl(pool),
+		TraceDescriptors(pool),
 		m_format(format),
 		m_inMsg(inMsg),
 		m_inMsgLength(inMsgLength)
@@ -298,11 +340,11 @@ private:
 };
 
 
-class TraceParamsFromDscImpl : public TraceParamsImpl
+class TraceDscFromDsc : public TraceDescriptors
 {
 public:
-	TraceParamsFromDscImpl(Firebird::MemoryPool& pool, const dsc* desc) :
-		TraceParamsImpl(pool)
+	TraceDscFromDsc(Firebird::MemoryPool& pool, const dsc* desc) :
+		TraceDescriptors(pool)
 	{
 		if (desc)
 			m_descs.add(*desc);
@@ -335,13 +377,13 @@ public:
 		return m_name.c_str();
 	}
 
-	virtual TraceParams* FB_CARG getInputs()	{ return &m_inputs; }
+	virtual TraceParams* FB_CARG getInputs()	{ return m_inputs; }
 	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; };
 
 private:
 	jrd_req* const m_request;
 	PerformanceInfo* const m_perf;
-	TraceParamsFromValuesImpl m_inputs;
+	TraceDscFromValues m_inputs;
 	Firebird::string m_name;
 };
 
@@ -364,14 +406,14 @@ public:
 	}
 
 	virtual TraceParams* FB_CARG getInputs()	{ return m_inputs; }
-	virtual TraceParams* FB_CARG getResult()	{ return &m_value; }
+	virtual TraceParams* FB_CARG getResult()	{ return m_value; }
 	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; };
 
 private:
 	jrd_req* const m_request;
 	PerformanceInfo* const m_perf;
 	TraceParams* m_inputs;
-	TraceParamsFromDscImpl m_value;
+	TraceDscFromDsc m_value;
 	Firebird::string m_name;
 };
 
