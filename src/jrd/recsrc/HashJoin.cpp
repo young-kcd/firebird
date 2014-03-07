@@ -669,7 +669,7 @@ void HashJoin::computeKeys(thread_db* tdbb, jrd_req* request,
 				address += sizeof(USHORT);
 			}
 
-			fb_assert(length == keyLength);
+			fb_assert(length <= keyLength);
 
 			memcpy(keyBuffer, address, length);
 		}
