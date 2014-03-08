@@ -1433,7 +1433,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 							if (!diffCost && !bestCandidateCost)
 							{
 								// Two zero costs should be handled as being the same
-								// (other comparison criterias should be applied, see below).
+								// (other comparison criteria should be applied, see below).
 								diffCost = 1;
 							}
 							else if (diffCost)
@@ -2223,7 +2223,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 	if (binaryNode && binaryNode->blrOp == blr_and)
 	{
-		// Recursivly call this procedure for every boolean
+		// Recursively call this procedure for every boolean
 		// and finally get candidate inversions.
 		// Normally we come here from within a OR conjunction.
 		InversionCandidateList inversions;
