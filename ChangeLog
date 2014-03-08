@@ -1,3 +1,18 @@
+ 2014-03-07 20:34  robocop 
+   M src/isql/extract.epp
+   M src/isql/isql.epp
+Misc.
+
+ 2014-03-07 16:21  asfernandes 
+   M src/jrd/recsrc/HashJoin.cpp
+Fixed problem with hash join using keys with non-none character set. Dmitry, please review.
+
+ 2014-03-07 12:48  hvlad 
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+Refactor TraceParamsImpl and company
+
  2014-03-06 16:20  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Fixed CORE-4357 - Parsing of recursive query returns error "Column does not belong to referenced table" for source that HAS such column. Relates to CORE-4322.
