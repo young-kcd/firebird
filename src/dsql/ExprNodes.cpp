@@ -6729,15 +6729,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			{
 				const dsql_ctx* const derivedContext = stack.object();
 
-				if (derivedContext->ctx_relation ||
-					derivedContext->ctx_procedure ||
-					derivedContext->ctx_map)
-				{
-					// bottleneck
-					fb_assert(derivedContext->ctx_context <= MAX_UCHAR);
-					derivedContexts.add(derivedContext->ctx_context);
-				}
-				else
+				if (derivedContext->ctx_win_maps.hasData())
 				{
 					for (const PartitionMap* const* iter = derivedContext->ctx_win_maps.begin();
 						iter != derivedContext->ctx_win_maps.end(); ++iter)
@@ -6746,6 +6738,12 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 						fb_assert((*iter)->context <= MAX_UCHAR);
 						derivedContexts.add((*iter)->context);
 					}
+				}
+				else
+				{
+					// bottleneck
+					fb_assert(derivedContext->ctx_context <= MAX_UCHAR);
+					derivedContexts.add(derivedContext->ctx_context);
 				}
 			}
 
