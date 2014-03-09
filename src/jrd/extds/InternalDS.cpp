@@ -31,7 +31,6 @@
 #include "../common/dsc.h"
 #include "../../dsql/dsql.h"
 #include "../../dsql/sqlda_pub.h"
-#include "../common/classes/InternalMessageBuffer.h"
 
 #include "../blb_proto.h"
 #include "../evl_proto.h"
@@ -494,12 +493,10 @@ void InternalStatement::doExecute(thread_db* tdbb)
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		fb_assert(m_inMetadata->length == m_in_buffer.getCount());
-		InternalMessageBuffer inMsg(m_inMetadata, m_in_buffer.begin());
 		fb_assert(m_outMetadata->length == m_out_buffer.getCount());
-		InternalMessageBuffer outMsg(m_outMetadata, m_out_buffer.begin());
 
 		m_request->execute(&status, transaction,
-			inMsg.metadata, inMsg.buffer, outMsg.metadata, outMsg.buffer);
+			m_inMetadata, m_in_buffer.begin(), m_outMetadata, m_out_buffer.begin());
 	}
 
 	if (!status.isSuccess())
@@ -522,10 +519,9 @@ void InternalStatement::doOpen(thread_db* tdbb)
 		}
 
 		fb_assert(m_inMetadata->length == m_in_buffer.getCount());
-		InternalMessageBuffer inMsg(m_inMetadata, m_in_buffer.begin());
 
 		m_cursor = m_request->openCursor(&status, transaction,
-			inMsg.metadata, inMsg.buffer, m_outMetadata);
+			m_inMetadata, m_in_buffer.begin(), m_outMetadata);
 	}
 
 	if (!status.isSuccess())

@@ -221,13 +221,6 @@ InternalMessageBuffer::InternalMessageBuffer(unsigned aBlrLength, const unsigned
 	metadata->addRef();
 }
 
-InternalMessageBuffer::InternalMessageBuffer(IMessageMetadata* aMetadata, unsigned char* aBuffer)
-{
-	buffer = aBuffer;
-	metadata = aMetadata;
-	metadata->addRef();
-}
-
 InternalMessageBuffer::~InternalMessageBuffer()
 {
 	metadata->release();

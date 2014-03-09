@@ -38,7 +38,6 @@ class InternalMessageBuffer
 public:
 	InternalMessageBuffer(unsigned aBlrLength, const unsigned char* aBlr,
 		unsigned aBufferLength, unsigned char* aBuffer);
-	InternalMessageBuffer(IMessageMetadata* aMetadata, unsigned char* aBuffer);
 	~InternalMessageBuffer();
 
 public:
