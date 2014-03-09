@@ -2505,12 +2505,13 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 		for (const NestConst<ValueExprNode>* const end = union_items->items.end(); ptr != end; ++ptr)
 		{
 			// Set up the dsql_map* between the sub-rses and the union context.
-			dsql_map* map = union_context->ctx_map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
+			dsql_map* map = FB_NEW(*tdbb->getDefaultPool()) dsql_map;
 			map->map_position = count++;
 			fb_assert(count != 0); // no wrap, please!
 			map->map_node = *uptr++;
 			map->map_next = union_context->ctx_map;
 			map->map_partition = NULL;
+			union_context->ctx_map = map;
 
 		    *ptr = FB_NEW(pool) DsqlMapNode(pool, union_context, map);
 		}
