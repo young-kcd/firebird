@@ -1,3 +1,17 @@
+ 2014-03-09 09:33  dimitr 
+   M src/dsql/ExprNodes.cpp
+Reworked one of my prior commits that caused regression CORE-4360: Select from derived table which contains GROUP BY on field with literal value returns wrong result.
+
+ 2014-03-09 09:30  dimitr 
+   M src/dsql/pass1.cpp
+Fixed what I believe was a mistake.
+
+ 2014-03-09 01:55  asfernandes 
+   M src/common/classes/InternalMessageBuffer.cpp
+   M src/common/classes/InternalMessageBuffer.h
+   M src/jrd/extds/InternalDS.cpp
+Cleanup InternalMessageBuffer.
+
  2014-03-08 07:26  dimitr 
    M src/jrd/Optimizer.cpp
 Totally misc.
