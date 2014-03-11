@@ -1203,7 +1203,7 @@ static void gen_compile( const act* action, int column)
 	PAT args;
 	const TEXT* pattern1 =
 		"%RH = %DH->compileRequest(%V1, sizeof(%RI), %RI);";
-	const TEXT* pattern2 = "if (!%RH%IF && %S1%EN)";
+	const TEXT* pattern2 = "if (!%RH%IF && %S1%EN && %DH)";
 
 	const gpre_req* request = action->act_request;
 	args.pat_request = request;
@@ -3957,7 +3957,7 @@ static void t_start_auto(const act* action,
 		for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 		{
 			printa(column + INDENT * 2, "{%s, NULL, 0}%s\n",
-				db->dbb_next->dbb_name->sym_string, db->dbb_next ? "," : "");
+				db->dbb_name->sym_string, db->dbb_next ? "," : "");
 		}
 
 		printa(column + INDENT, " };\n\n");
