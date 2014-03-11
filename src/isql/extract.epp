@@ -64,7 +64,8 @@
 using MsgFormat::SafeArg;
 
 
-DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
+//DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
+DATABASE DB = EXTERN COMPILETIME "yachts.lnk" RUNTIME isqlGlob.global_Db_name;
 
 static bool extract_rel_constraints(const char* relation_name);
 static void get_procedure_args(const char*);

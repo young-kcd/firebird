@@ -69,7 +69,8 @@ using Firebird::string;
 using MsgFormat::SafeArg;
 
 
-DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
+//DATABASE DB = EXTERN COMPILETIME "yachts.lnk";
+DATABASE DB = EXTERN COMPILETIME "yachts.lnk" RUNTIME isqlGlob.global_Db_name;
 
 
 // This enumeration tell comment-related routines how to behave: for SHOW,

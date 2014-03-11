@@ -136,7 +136,8 @@ using MsgFormat::SafeArg;
 #include <unicode/utf8.h>
 
 
-DATABASE DB = COMPILETIME "yachts.lnk";
+//DATABASE DB = COMPILETIME "yachts.lnk";
+DATABASE DB = COMPILETIME "yachts.lnk" RUNTIME isqlGlob.global_Db_name;
 
 IsqlGlobals isqlGlob;
 
@@ -752,8 +753,8 @@ bool ISQL_dbcheck()
 		}
 		return false;
 	}
-	else
-		return true;
+
+	return true;
 }
 
 static char userPrompt2[MSG_LENGTH];
