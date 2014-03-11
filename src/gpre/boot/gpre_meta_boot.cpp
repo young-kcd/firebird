@@ -438,12 +438,14 @@ gpre_prc* MET_get_procedure(gpre_dbb* db, const TEXT* string, const TEXT* owner_
 	gpre_prc* procedure = NULL;
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_procedure &&
 			(procedure = (gpre_prc*) symbol->sym_object) && procedure->prc_database == db &&
 			(!owner[0] || (procedure->prc_owner && !strcmp(owner, procedure->prc_owner->sym_string))))
 		{
 			break;
 		}
+	}
 
 	if (!procedure)
 		return NULL;
@@ -471,12 +473,14 @@ gpre_rel* MET_get_relation(gpre_dbb* db, const TEXT* string, const TEXT* owner_n
 	strcpy(owner, owner_name);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_relation &&
 			(relation = (gpre_rel*) symbol->sym_object) && relation->rel_database == db &&
 			(!owner[0] || (relation->rel_owner && !strcmp(owner, relation->rel_owner->sym_string))))
 		{
 			return relation;
 		}
+	}
 
 	return NULL;
 }
@@ -513,11 +517,13 @@ udf* MET_get_udf(gpre_dbb* db, const TEXT* string)
 	strcpy(name, string);
 	udf* udf_val = NULL;
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_udf &&
 			(udf_val = (udf*) symbol->sym_object) && udf_val->udf_database == db)
 		{
 			break;
 		}
+	}
 
 	if (!udf_val)
 		return NULL;
@@ -558,11 +564,13 @@ gpre_index* MET_index(gpre_dbb* db, const TEXT* string)
 	//const SSHORT length = strlen(name);
 
 	for (gpre_sym* symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_index &&
 			(index = (gpre_index*) symbol->sym_object) && index->ind_relation->rel_database == db)
 		{
 			return index;
 		}
+	}
 
 	return NULL;
 }
@@ -644,12 +652,14 @@ bool MET_type(gpre_fld* field, const TEXT* string, SSHORT* ptr)
 	field_type* type;
 
 	for (gpre_sym* symbol = HSH_lookup(string); symbol; symbol = symbol->sym_homonym)
+	{
 		if (symbol->sym_type == SYM_type && (type = (field_type*) symbol->sym_object) &&
 			(!type->typ_field || type->typ_field == field))
 		{
 			*ptr = type->typ_value;
 			return true;
 		}
+	}
 
 	fb_assert(0);
 	return false;
