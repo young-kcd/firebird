@@ -7050,16 +7050,14 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 #ifdef DEV_BUILD
 static processing_state passthrough(const char* cmd)
 {
-	processing_state ret = SKIP;
+	if (!DB)
+		return FAIL;
+
 	M__trans = DB->execute(fbStatus, M__trans, 0, cmd, isqlGlob.SQL_dialect, NULL, NULL, NULL, NULL);
 	if (ISQL_errmsg(fbStatus))
-	{
-		if (!DB)
-			ret = FAIL;
-		else
-			ret = ps_ERR;
-	}
-	return ret;
+		return ps_ERR;
+
+	return SKIP;
 }
 #endif
 
