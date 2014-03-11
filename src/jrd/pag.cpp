@@ -913,12 +913,9 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 		pages->pip_header.pag_type = pag_pages;
 		pages->pip_used = (pageSpace.scnFirst ? pageSpace.scnFirst : pageSpace.pipFirst) + 1;
 		pages->pip_min = pages->pip_used;
-		UCHAR* p = pages->pip_bits;
-		int i = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
+		int count = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 
-		while (i--) {
-			*p++ = 0xff;
-		}
+		memset(pages->pip_bits, 0xff, count);
 
 		pages->pip_bits[0] &= ~(1 | 2);
 		if (pageSpace.scnFirst) {
