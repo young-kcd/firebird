@@ -69,10 +69,6 @@ using namespace Firebird;
 
 const int MAX_LEVELS	= 16;
 
-//inline void MOVE_BYTE(UCHAR*& x_from, UCHAR*& x_to)
-//{
-//	*x_to++ = *x_from++;
-//}
 
 #define OVERSIZE	(MAX_PAGE_SIZE + BTN_PAGE_SIZE + MAX_KEY + sizeof (SLONG) - 1) / sizeof (SLONG)
 
