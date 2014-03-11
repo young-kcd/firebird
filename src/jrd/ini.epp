@@ -447,6 +447,7 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	*acl++ = ACL_end;
 	memcpy(acl, NON_REL_PUBLIC_ACL, sizeof(NON_REL_PUBLIC_ACL));
 	acl += sizeof(NON_REL_PUBLIC_ACL);
+	*acl++ = ACL_end; // Put an extra terminator to avoid scl.epp:walk_acl() missing the end.
 
 	USHORT length = acl - buffer;
 
@@ -503,6 +504,7 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	*acl++ = ACL_end;
 	memcpy(acl, REL_PUBLIC_ACL, sizeof(REL_PUBLIC_ACL));
 	acl += sizeof(REL_PUBLIC_ACL);
+	*acl++ = ACL_end; // Put an extra terminator to avoid scl.epp:walk_acl() missing the end.
 
 	length = acl - buffer;
 
