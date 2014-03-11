@@ -1888,22 +1888,34 @@ static void list_create_db()
 
 	FOR DBP IN RDB$DATABASE
 		WITH DBP.RDB$CHARACTER_SET_NAME NOT MISSING
-		AND DBP.RDB$CHARACTER_SET_NAME != " ";
-		isqlGlob.printf("DEFAULT CHARACTER SET %s",
-			fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME));
+		AND DBP.RDB$CHARACTER_SET_NAME != " "
+		isqlGlob.printf("DEFAULT CHARACTER SET %s%s",
+			fb_utils::exact_name(DBP.RDB$CHARACTER_SET_NAME), isqlGlob.global_Term);
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
 
+	FOR DBP2 IN RDB$DATABASE
+		WITH DBP2.RDB$LINGER NOT MISSING
+		AND DBP2.RDB$LINGER > 0
+		isqlGlob.printf("%sALTER DATABASE SET LINGER TO %d%s", NEWLINE, DBP2.RDB$LINGER,
+			isqlGlob.global_Term);
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(fbStatus);
+		return;
+	END_ERROR;
+
+
 	if (nodb)
 	{
-		isqlGlob.printf("%s */%s", isqlGlob.global_Term, NEWLINE);
+		isqlGlob.printf(" */%s", NEWLINE);
 	}
 	else
 	{
-		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
+		isqlGlob.printf("%s", NEWLINE);
 	}
 
 	// List secondary files and shadows as alter db and create shadow in comment
