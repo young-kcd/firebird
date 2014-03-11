@@ -159,7 +159,8 @@ const int PREPARE_LOCKERR	= 3;
 static int prepare_update(thread_db*, jrd_tra*, TraNumber commit_tid_read, record_param*,
 	record_param*, record_param*, PageStack&, bool);
 
-static void protect_system_table(thread_db*, const jrd_rel*, const char*, bool = false);
+static void protect_system_table(thread_db* tdbb, const jrd_rel* relation, const char* operation,
+	bool force_flag = false);
 static void purge(thread_db*, record_param*);
 static Record* replace_gc_record(jrd_rel*, Record**, ULONG);
 static void replace_record(thread_db*, record_param*, PageStack*, const jrd_tra*);
@@ -2932,6 +2933,29 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	{
 		switch ((RIDS) relation->rel_id)
 		{
+		case rel_pages:
+		case rel_database:
+		case rel_formats:
+		case rel_trans:
+		case rel_rcon:
+		case rel_refc:
+		case rel_ccon:
+		case rel_roles:
+		case rel_sec_users:
+		case rel_sec_user_attributes:
+			protect_system_table(tdbb, relation, "INSERT");
+			break;
+
+		case rel_types:
+		case rel_msgs:
+			if (!(tdbb->getDatabase()->dbb_flags & DBB_creating))
+				protect_system_table(tdbb, relation, "INSERT", true);
+			break;
+
+		case rel_log:
+			protect_system_table(tdbb, relation, "INSERT", true);
+			break;
+
 		case rel_relations:
 			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 			DFW_post_work(transaction, dfw_create_relation, &desc, 0);
@@ -3229,7 +3253,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 #ifdef VIO_DEBUG
