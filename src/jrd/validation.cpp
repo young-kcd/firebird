@@ -1738,7 +1738,7 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				// check the left and right sibling pointers against the parent pointers
 				if (previous_number != down_page->btr_left_sibling)
 				{
-					corrupt(tdbb, validate, VAL_INDEX_BAD_LEFT_SIBLINK, relation,
+					corrupt(tdbb, validate, VAL_INDEX_BAD_LEFT_SIBLING, relation,
 							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page));
 				}
 
