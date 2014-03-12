@@ -1966,6 +1966,70 @@ ISC_STATUS API_ROUTINE isc_dsql_execute(ISC_STATUS* userStatus, FB_API_HANDLE* t
 }
 
 
+static void execute_32bit_m(IStatus* status, YTransaction* transaction, FB_API_HANDLE* traHandle,
+	IscStatement* statement,
+	unsigned inBlrLength, const UCHAR* inBlr, unsigned inMsgLength, UCHAR* inMsg,
+	unsigned outBlrLength, const UCHAR* outBlr, unsigned outMsgLength, UCHAR* outMsg)
+{
+	InternalMessageBuffer inMsgBuffer(inBlrLength, inBlr, inMsgLength, inMsg);
+	InternalMessageBuffer outMsgBuffer(outBlrLength, outBlr, outMsgLength, outMsg);
+
+	statement->checkCursor(false);
+
+	unsigned flags = statement->statement->getFlags(status);
+	if (status->isSuccess())
+	{
+		if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
+		{
+			if (outBlrLength)
+			{
+				statement->statement->openCursor(status, transaction,
+					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
+
+				if (!status->isSuccess())
+					return;
+
+				fb_assert(statement->statement->cursor);
+
+				if (statement->cursorName.hasData())
+				{
+					statement->statement->cursor->setCursorName(status, statement->cursorName.c_str());
+
+					if (status->isSuccess())
+						statement->cursorName = "";
+				}
+			}
+			else	// delay execution till first fetch (with output format)
+			{
+				statement->parMetadata = inMsgBuffer.metadata;
+				statement->parameters.assign(static_cast<UCHAR*>(inMsgBuffer.buffer), inMsgLength);
+				statement->transaction = transaction;
+			}
+		}
+		else
+		{
+			ITransaction* newTrans = statement->statement->execute(status, transaction,
+				inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata, outMsgBuffer.buffer);
+
+			if (status->isSuccess())
+			{
+				if (transaction && !newTrans)
+				{
+					transaction->destroy();
+					*traHandle = 0;
+				}
+				else if (!transaction && newTrans)
+				{
+					// in this case we know for sure that newTrans points to YTransaction
+					if (traHandle)
+						*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
+				}
+			}
+		}
+	}
+}
+
+
 // Execute a non-SELECT dynamic SQL statement.
 ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* traHandle,
 	FB_API_HANDLE* stmtHandle, USHORT dialect, const XSQLDA* inSqlda, const XSQLDA* outSqlda)
@@ -1978,6 +2042,10 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		statement->checkPrepared();
 
+		RefPtr<YTransaction> transaction;
+		if (traHandle && *traHandle)
+			transaction = translateHandle(transactions, traHandle);
+
 		Array<UCHAR> inBlr, inMessage, outBlr, outMessage;
 
 		sqldaParse(inSqlda, inBlr, inMessage, dialect);
@@ -1985,14 +2053,9 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		sqldaParse(outSqlda, outBlr, outMessage, dialect);
 
-		if (isc_dsql_execute2_m(status, traHandle, stmtHandle,
-				inBlr.getCount(), reinterpret_cast<SCHAR*>(inBlr.begin()), 0,
-				inMessage.getCount(), reinterpret_cast<SCHAR*>(inMessage.begin()),
-				outBlr.getCount(), reinterpret_cast<SCHAR*>(outBlr.begin()), 0,
-				outMessage.getCount(), reinterpret_cast<SCHAR*>(outMessage.begin())))
-		{
-			return status[1];
-		}
+		execute_32bit_m(&status, transaction, traHandle, statement,
+			inBlr.getCount(), inBlr.begin(), inMessage.getCount(), inMessage.begin(),
+			outBlr.getCount(), outBlr.begin(), outMessage.getCount(), outMessage.begin());
 
 		sqldaMove(outSqlda, outMessage, false);
 	}
@@ -2039,67 +2102,11 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		if (traHandle && *traHandle)
 			transaction = translateHandle(transactions, traHandle);
 
-		InternalMessageBuffer inMsgBuffer(inBlrLength, reinterpret_cast<const unsigned char*>(inBlr),
-										  inMsgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)));
-		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
-										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
-
-		statement->checkCursor(false);
-
-		unsigned flags = statement->statement->getFlags(&status);
-		if (!status.isSuccess())
-		{
-			return status[1];
-		}
-
-		if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
-		{
-			if (outBlrLength)
-			{
-				statement->statement->openCursor(&status, transaction,
-					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
-
-				if (!status.isSuccess())
-					return status[1];
-
-				fb_assert(statement->statement->cursor);
-
-				if (statement->cursorName.hasData())
-				{
-					statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
-
-					if (status.isSuccess())
-						statement->cursorName = "";
-				}
-			}
-			else	// delay execution till first fetch (with output format)
-			{
-				statement->parMetadata = inMsgBuffer.metadata;
-				statement->parameters.assign(static_cast<UCHAR*>(inMsgBuffer.buffer), inMsgLength);
-				statement->transaction = transaction;
-				return 0;
-			}
-		}
-		else
-		{
-			ITransaction* newTrans = statement->statement->execute(&status, transaction,
-				inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata, outMsgBuffer.buffer);
-
-			if (status.isSuccess())
-			{
-				if (transaction && !newTrans)
-				{
-					transaction->destroy();
-					*traHandle = 0;
-				}
-				else if (!transaction && newTrans)
-				{
-					// in this case we know for sure that newTrans points to YTransaction
-					if (traHandle)
-						*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
-				}
-			}
-		}
+		execute_32bit_m(&status, transaction, traHandle, statement,
+			inBlrLength, reinterpret_cast<const unsigned char*>(inBlr),
+			inMsgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)),
+			outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
+			outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 	}
 	catch (const Exception& e)
 	{
@@ -2136,12 +2143,28 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 	const XSQLDA* inSqlda, const XSQLDA* outSqlda)
 {
 	StatusVector status(userStatus);
-	ISC_STATUS s = 0;
 
 	try
 	{
 		if (!sqlStmt)
 			Arg::Gds(isc_command_end_err).raise();
+
+		FB_BOOLEAN stmtIsCrDb = FB_FALSE;
+		YAttachment* att = utlInterface.executeCreateDatabase(&status, stmtLength, sqlStmt, dialect, &stmtIsCrDb);
+
+		if (stmtIsCrDb)
+		{
+			if (status.isSuccess())
+				*dbHandle = att->getHandle();
+
+			return status[1];
+		}
+
+		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
+		RefPtr<YTransaction> transaction;
+
+		if (traHandle && *traHandle)
+			transaction = translateHandle(transactions, traHandle);
 
 		Array<UCHAR> inBlr, inMessage, outBlr, outMessage;
 
@@ -2150,22 +2173,39 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 
 		sqldaParse(outSqlda, outBlr, outMessage, dialect);
 
-		s = isc_dsql_exec_immed2_m(status, dbHandle, traHandle, stmtLength, sqlStmt, dialect,
-				inBlr.getCount(), reinterpret_cast<SCHAR*>(inBlr.begin()), 0,
-				inMessage.getCount(), reinterpret_cast<SCHAR*>(inMessage.begin()),
-				outBlr.getCount(), reinterpret_cast<SCHAR*>(outBlr.begin()), 0,
-				outMessage.getCount(), reinterpret_cast<SCHAR*>(outMessage.begin()));
+		InternalMessageBuffer inMsgBuffer(inBlr.getCount(), inBlr.begin(),
+			inMessage.getCount(), inMessage.begin());
+		InternalMessageBuffer outMsgBuffer(outBlr.getCount(), outBlr.begin(),
+			outMessage.getCount(), outMessage.begin());
 
-		if (s == 0)
+		ITransaction* newTrans = attachment->execute(&status, transaction, stmtLength, sqlStmt,
+			dialect, inMsgBuffer.metadata, inMsgBuffer.buffer,
+			outMsgBuffer.metadata, outMsgBuffer.buffer);
+
+		if (status.isSuccess())
+		{
+			if (transaction && !newTrans)
+			{
+				transaction->destroy();
+				*traHandle = 0;
+			}
+			else if (!transaction && newTrans)
+			{
+				// in this case we know for sure that newTrans points to YTransaction
+				if (traHandle)
+					*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
+			}
+
 			sqldaMove(outSqlda, outMessage, false);
+		}
+
 	}
 	catch (const Exception& e)
 	{
 		e.stuffException(&status);
-		s = status[1];
 	}
 
-	return s;
+	return 	status[1];
 }
 
 
@@ -2263,6 +2303,51 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 }
 
 
+static ISC_STATUS fetch_32bit_m(IStatus* status, FB_API_HANDLE* stmtHandle,
+	unsigned blrLength, const UCHAR* blr, unsigned msgLength, UCHAR* msg)
+{
+	RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
+
+	if (!statement->parMetadata)
+		statement->checkCursor(true);
+	else
+	{
+		statement->checkCursor(false);
+
+		InternalMessageBuffer msgBuffer(blrLength, blr, msgLength, msg);
+
+		if (!msgBuffer.metadata)
+		{
+			(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+			 Arg::Gds(isc_dsql_cursor_open_err)).raise();
+		}
+
+		statement->statement->openCursor(status, statement->transaction,
+			statement->parMetadata, statement->parameters.begin(), msgBuffer.metadata);
+		if (!status->isSuccess())
+			return status->get()[1];
+
+		fb_assert(statement->statement->cursor);
+		statement->parMetadata = NULL;
+		statement->parameters.clear();
+		statement->transaction = NULL;
+
+		if (statement->cursorName.hasData())
+		{
+			statement->statement->cursor->setCursorName(status, statement->cursorName.c_str());
+
+			if (status->isSuccess())
+				statement->cursorName = "";
+		}
+	}
+
+	if (!statement->statement->cursor->fetchNext(status, reinterpret_cast<UCHAR*>(msg)))
+		return status->isSuccess() ? 100 : status->get()[1];
+
+	return status->get()[1];
+}
+
+
 // Fetch next record from a dynamic SQL cursor
 ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
 	USHORT dialect, const XSQLDA* sqlda)
@@ -2277,12 +2362,11 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 		Array<UCHAR> outBlr, outMessage;
 		sqldaParse(sqlda, outBlr, outMessage, dialect);
 
-		ISC_STATUS s = isc_dsql_fetch_m(status, stmtHandle,
-			outBlr.getCount(), reinterpret_cast<SCHAR*>(outBlr.begin()), 0,
-			outMessage.getCount(), reinterpret_cast<SCHAR*>(outMessage.begin()));
+		ISC_STATUS rc = fetch_32bit_m(&status, stmtHandle, outBlr.getCount(), outBlr.begin(),
+			outMessage.getCount(), outMessage.begin());
 
-		if (s && s != 101)
-			return s;
+		if (rc)
+			return rc;
 
 		sqldaMove(sqlda, outMessage, false);
 	}
@@ -2303,44 +2387,8 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 
 	try
 	{
-		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
-
-		if (!statement->parMetadata)
-			statement->checkCursor(true);
-		else
-		{
-			statement->checkCursor(false);
-
-			InternalMessageBuffer msgBuffer(blrLength, reinterpret_cast<UCHAR*>(blr),
-				msgLength, reinterpret_cast<UCHAR*>(msg));
-
-			if (!msgBuffer.metadata)
-			{
-				(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
-				 Arg::Gds(isc_dsql_cursor_open_err)).raise();
-			}
-
-			statement->statement->openCursor(&status, statement->transaction,
-				statement->parMetadata, statement->parameters.begin(), msgBuffer.metadata);
-			if (!status.isSuccess())
-				return status[1];
-
-			fb_assert(statement->statement->cursor);
-			statement->parMetadata = NULL;
-			statement->parameters.clear();
-			statement->transaction = NULL;
-
-			if (statement->cursorName.hasData())
-			{
-				statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
-
-				if (status.isSuccess())
-					statement->cursorName = "";
-			}
-		}
-
-		if (!statement->statement->cursor->fetchNext(&status, reinterpret_cast<UCHAR*>(msg)))
-			return status.isSuccess() ? 100 : status[1];
+		return fetch_32bit_m(&status, stmtHandle, blrLength, reinterpret_cast<UCHAR*>(blr),
+			msgLength, reinterpret_cast<UCHAR*>(msg));
 	}
 	catch (const Exception& e)
 	{
