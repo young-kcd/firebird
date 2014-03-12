@@ -34,7 +34,6 @@
 
 namespace Firebird {
 
-
 class MsgMetadata : public RefCntIface<IMessageMetadata, FB_MESSAGE_METADATA_VERSION>
 {
 public:
@@ -105,12 +104,12 @@ public:
 
 	virtual int FB_CARG release();
 
-	virtual unsigned FB_CARG getCount(IStatus* /*status*/) const
+	virtual unsigned FB_CARG getCount(IStatus* /*status*/)
 	{
 		return (unsigned) items.getCount();
 	}
 
-	virtual const char* FB_CARG getField(IStatus* status, unsigned index) const
+	virtual const char* FB_CARG getField(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].field.c_str();
@@ -119,7 +118,7 @@ public:
 		return NULL;
 	}
 
-	virtual const char* FB_CARG getRelation(IStatus* status, unsigned index) const
+	virtual const char* FB_CARG getRelation(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].relation.c_str();
@@ -128,7 +127,7 @@ public:
 		return NULL;
 	}
 
-	virtual const char* FB_CARG getOwner(IStatus* status, unsigned index) const
+	virtual const char* FB_CARG getOwner(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].owner.c_str();
@@ -137,7 +136,7 @@ public:
 		return NULL;
 	}
 
-	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) const
+	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].alias.c_str();
@@ -146,7 +145,7 @@ public:
 		return NULL;
 	}
 
-	virtual unsigned FB_CARG getType(IStatus* status, unsigned index) const
+	virtual unsigned FB_CARG getType(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].type;
@@ -155,7 +154,7 @@ public:
 		return 0;
 	}
 
-	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index) const
+	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].nullable;
@@ -164,7 +163,7 @@ public:
 		return false;
 	}
 
-	virtual int FB_CARG getSubType(IStatus* status, unsigned index) const
+	virtual int FB_CARG getSubType(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].subType;
@@ -173,7 +172,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const
+	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].length;
@@ -182,7 +181,7 @@ public:
 		return 0;
 	}
 
-	virtual int FB_CARG getScale(IStatus* status, unsigned index) const
+	virtual int FB_CARG getScale(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].scale;
@@ -191,7 +190,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index) const
+	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].charSet;
@@ -200,7 +199,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index) const
+	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].offset;
@@ -209,7 +208,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index) const
+	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].nullInd;
@@ -218,9 +217,9 @@ public:
 		return 0;
 	}
 
-	virtual IMetadataBuilder* FB_CARG getBuilder(IStatus* status) const;
+	virtual IMetadataBuilder* FB_CARG getBuilder(IStatus* status);
 
-	virtual unsigned FB_CARG getMessageLength(IStatus* /*status*/) const
+	virtual unsigned FB_CARG getMessageLength(IStatus* /*status*/)
 	{
 		return length;
 	}

@@ -45,14 +45,6 @@ public:
 };
 #define FB_EVENT_CALLBACK_VERSION (FB_REFCOUNTED_VERSION + 1)
 
-/*
-class ShutdownCallback
-{
-public:
-	virtual void FB_CARG shutdownCallbackFunction(int reason, int mask) = 0;
-};
-*/
-
 class IBlob : public IRefCounted
 {
 public:
@@ -93,22 +85,22 @@ class IMetadataBuilder;			// Forward
 class IMessageMetadata : public IRefCounted
 {
 public:
-	virtual unsigned FB_CARG getCount(IStatus* status) const = 0;
-	virtual const char* FB_CARG getField(IStatus* status, unsigned index) const = 0;
-	virtual const char* FB_CARG getRelation(IStatus* status, unsigned index) const = 0;
-	virtual const char* FB_CARG getOwner(IStatus* status, unsigned index) const = 0;
-	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getType(IStatus* status, unsigned index) const = 0;
-	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index) const = 0;
-	virtual int FB_CARG getSubType(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) const = 0;
-	virtual int FB_CARG getScale(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index) const = 0;
-	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index) const = 0;
+	virtual unsigned FB_CARG getCount(IStatus* status) = 0;
+	virtual const char* FB_CARG getField(IStatus* status, unsigned index) = 0;
+	virtual const char* FB_CARG getRelation(IStatus* status, unsigned index) = 0;
+	virtual const char* FB_CARG getOwner(IStatus* status, unsigned index) = 0;
+	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index) = 0;
+	virtual unsigned FB_CARG getType(IStatus* status, unsigned index) = 0;
+	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index) = 0;
+	virtual int FB_CARG getSubType(IStatus* status, unsigned index) = 0;
+	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index) = 0;
+	virtual int FB_CARG getScale(IStatus* status, unsigned index) = 0;
+	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index) = 0;
+	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index) = 0;
+	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index) = 0;
 
-	virtual IMetadataBuilder* FB_CARG getBuilder(IStatus* status) const = 0;
-	virtual unsigned FB_CARG getMessageLength(IStatus* status) const = 0;
+	virtual IMetadataBuilder* FB_CARG getBuilder(IStatus* status) = 0;
+	virtual unsigned FB_CARG getMessageLength(IStatus* status) = 0;
 };
 #define FB_MESSAGE_METADATA_VERSION (FB_REFCOUNTED_VERSION + 15)
 

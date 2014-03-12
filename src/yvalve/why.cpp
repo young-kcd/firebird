@@ -996,7 +996,7 @@ static void setTextType(XSQLVAR* var, unsigned charSet)
 }
 
 // Describe parameters metadata in an sqlda.
-static void sqldaDescribeParameters(XSQLDA* sqlda, const IMessageMetadata* parameters)
+static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters)
 {
 	if (!sqlda)
 		return;

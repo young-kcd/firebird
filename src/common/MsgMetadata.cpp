@@ -312,7 +312,7 @@ unsigned MsgMetadata::makeOffsets()
 }
 
 
-IMetadataBuilder* MsgMetadata::getBuilder(IStatus* status) const
+IMetadataBuilder* MsgMetadata::getBuilder(IStatus* status)
 {
 	try
 	{
