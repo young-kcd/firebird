@@ -212,7 +212,9 @@ const int VAL_INDEX_CYCLE				= 25;
 const int VAL_SCNS_PAGE_INCONSISTENT	= 26;
 const int VAL_PAG_WRONG_SCN				= 27;
 const int VAL_BLOB_UNKNOWN_LEVEL		= 28;
-const int VAL_MAX_ERROR					= 29;
+const int VAL_INDEX_BAD_LEFT_SIBLINK	= 29;
+const int VAL_INDEX_MISSES_NODE			= 30;
+const int VAL_MAX_ERROR					= 31;
 
 
 // Procedure block

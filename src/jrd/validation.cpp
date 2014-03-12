@@ -683,7 +683,9 @@ static const TEXT msg_table[VAL_MAX_ERROR][80] =
 	"Index %d has a circular reference at page %"ULONGFORMAT,	// 25
 	"SCN's page %"ULONGFORMAT" (sequence %"ULONGFORMAT") inconsistent",
 	"Page %"ULONGFORMAT" has SCN %"ULONGFORMAT" while at SCN's page it is %"ULONGFORMAT,
-	"Blob %"SQUADFORMAT" has unknown level %d instead of (0, 1, 2)"
+	"Blob %"SQUADFORMAT" has unknown level %d instead of (0, 1, 2)",
+	"Index %d has inconsistent left sibling pointer, page %ld level %ld",
+	"Index %d misses node on page %ld level %ld"
 };
 
 
@@ -1736,9 +1738,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				// check the left and right sibling pointers against the parent pointers
 				if (previous_number != down_page->btr_left_sibling)
 				{
-					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
-							__FILE__, __LINE__);
+					corrupt(tdbb, validate, VAL_INDEX_BAD_LEFT_SIBLINK, relation,
+							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page));
 				}
 
 				downNode.readNode(pointer, leafPage);
@@ -1747,9 +1748,8 @@ RTN Vdr::walk_index(thread_db* tdbb, bool validate, jrd_rel* relation,
 				if (!(downNode.isEndBucket || downNode.isEndLevel) &&
 					(next_number != down_page->btr_sibling))
 				{
-					corrupt(tdbb, validate, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page),
-							__FILE__, __LINE__);
+					corrupt(tdbb, validate, VAL_INDEX_MISSES_NODE, relation,
+							id + 1, next, page->btr_level, (ULONG) (node.nodePointer - (UCHAR*) page));
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {
