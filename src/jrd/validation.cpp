@@ -618,7 +618,7 @@ enum RTN {
 
 #pragma FB_COMPILER_MESSAGE("This table goes to gds__log and it's not localized")
 
-static const TEXT msg_table[VAL_MAX_ERROR][66] =
+static const TEXT msg_table[VAL_MAX_ERROR][68] =
 {
 	"Page %ld wrong type (expected %d encountered %d)",	// 0
 	"Checksum error on page %ld",
@@ -645,7 +645,9 @@ static const TEXT msg_table[VAL_MAX_ERROR][66] =
 	"Relation has %ld orphan backversions (%ld in use)",
 	"Index %d is corrupt (missing entries)",
 	"Index %d has orphan child page at page %ld",
-	"Index %d has a circular reference at page %ld"
+	"Index %d has a circular reference at page %ld",	// 25
+	"Index %d has inconsistent left sibling pointer, page %ld level %ld",
+	"Index %d misses node on page %ld level %ld"
 };
 
 
@@ -1696,8 +1698,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				// check the left and right sibling pointers against the parent pointers
 				if (previous_number != down_page->btr_left_sibling)
 				{
-					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+					corrupt(tdbb, control, VAL_INDEX_BAD_LEFT_SIBLING, relation,
+							id + 1, next, page->btr_level);
 				}
 
 				BTreeNode::readNode(&downNode, pointer, flags, leafPage);
@@ -1706,8 +1708,8 @@ static RTN walk_index(thread_db* tdbb, vdr* control, jrd_rel* relation,
 				if (!(downNode.isEndBucket || downNode.isEndLevel) &&
 					(next_number != down_page->btr_sibling))
 				{
-					corrupt(tdbb, control, VAL_INDEX_PAGE_CORRUPT, relation,
-							id + 1, next, page->btr_level, __FILE__, __LINE__);
+					corrupt(tdbb, control, VAL_INDEX_MISSES_NODE, relation,
+							id + 1, next, page->btr_level);
 				}
 
 				if (downNode.isEndLevel && down_page->btr_sibling) {

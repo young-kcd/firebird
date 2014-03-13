@@ -214,7 +214,9 @@ const int VAL_REL_CHAIN_ORPHANS			= 22;
 const int VAL_INDEX_MISSING_ROWS		= 23;
 const int VAL_INDEX_ORPHAN_CHILD		= 24;
 const int VAL_INDEX_CYCLE				= 25;
-const int VAL_MAX_ERROR					= 26;
+const int VAL_INDEX_BAD_LEFT_SIBLING	= 26;
+const int VAL_INDEX_MISSES_NODE			= 27;
+const int VAL_MAX_ERROR					= 28;
 
 
 struct DSqlCacheItem
