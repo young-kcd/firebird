@@ -853,7 +853,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 
 		LocalStatus status;
 
-		for (unsigned i = 0; i < format->fmt_count / 2; ++i)
+		for (unsigned i = 0; i < format->fmt_count / 2u; ++i)
 		{
 			const char* fieldName = metadata->triggerFields->getField(&status, i);
 			status.check();

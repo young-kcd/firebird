@@ -1976,7 +1976,7 @@ static void execute_32bit_m(IStatus* status, YTransaction* transaction, FB_API_H
 
 	statement->checkCursor(false);
 
-	unsigned flags = statement->statement->getFlags(status);
+	const unsigned flags = statement->statement->getFlags(status);
 	if (status->isSuccess())
 	{
 		if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
@@ -2002,7 +2002,7 @@ static void execute_32bit_m(IStatus* status, YTransaction* transaction, FB_API_H
 			else	// delay execution till first fetch (with output format)
 			{
 				statement->parMetadata = inMsgBuffer.metadata;
-				statement->parameters.assign(static_cast<UCHAR*>(inMsgBuffer.buffer), inMsgLength);
+				statement->parameters.assign(inMsgBuffer.buffer, inMsgLength);
 				statement->transaction = transaction;
 			}
 		}
@@ -2341,8 +2341,8 @@ static ISC_STATUS fetch_32bit_m(IStatus* status, FB_API_HANDLE* stmtHandle,
 		}
 	}
 
-	if (!statement->statement->cursor->fetchNext(status, reinterpret_cast<UCHAR*>(msg)))
-		return status->isSuccess() ? 100 : status->get()[1];
+	if (!statement->statement->cursor->fetchNext(status, msg) && status->isSuccess())
+		return 100;
 
 	return status->get()[1];
 }

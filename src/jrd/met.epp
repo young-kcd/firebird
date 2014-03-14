@@ -4394,8 +4394,8 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
  **************************************
  *
  * Functional description
- *      Lookup view contexts and store in a linked
- *      list on the relation block.
+ *      Lookup view contexts and store in a sorted
+ *      array on the relation block.
  *
  **************************************/
 	SET_TDBB(tdbb);

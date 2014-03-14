@@ -50,7 +50,7 @@ MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr,
 
 	BlrReader rdr(aBlr, aBlrLength);
 
-	UCHAR byte = rdr.getByte();
+	const UCHAR byte = rdr.getByte();
 	if (byte != blr_version4 && byte != blr_version5)
 	{
 		(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
