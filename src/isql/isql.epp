@@ -8313,7 +8313,8 @@ static processing_state process_statement(const TEXT* str2)
 
 	// if PLAN is set and this is not DDL, print out the plan now
 
-	if (Plan && statement_type != isc_info_sql_stmt_ddl)
+	if (Plan && statement_type != isc_info_sql_stmt_ddl &&
+		statement_type != isc_info_sql_stmt_set_generator)
 	{
 		process_plan();
 		if (Planonly && !is_selectable)
@@ -8329,7 +8330,9 @@ static processing_state process_statement(const TEXT* str2)
 
 		// If this is an autocommit, put the DDL stmt on a special trans
 
-		if (Autocommit && (statement_type == isc_info_sql_stmt_ddl))
+		if (Autocommit &&
+			(statement_type == isc_info_sql_stmt_ddl ||
+			 statement_type == isc_info_sql_stmt_set_generator))
 		{
 			DB->execute(fbStatus, D__trans, 0, str2, isqlGlob.SQL_dialect, NULL, NULL, NULL, NULL);
 			if (ISQL_errmsg(fbStatus))
