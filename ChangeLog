@@ -1,3 +1,8 @@
+ 2014-03-13 09:29  roman-simakov 
+   M src/jrd/jrd.h
+   M src/jrd/validation.cpp
+Corrected gfix messages to avoid user's panic. Reviewed by Vlad.
+
  2014-02-25 09:02  dimitr 
    M src/jrd/opt.cpp
 Fixed CORE-4353: Sorting records are larger than really necessary.
