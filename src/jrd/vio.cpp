@@ -2943,11 +2943,11 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_roles:
 		case rel_sec_users:
 		case rel_sec_user_attributes:
+		case rel_msgs:
 			protect_system_table(tdbb, relation, "INSERT");
 			break;
 
 		case rel_types:
-		case rel_msgs:
 			if (!(tdbb->getDatabase()->dbb_flags & DBB_creating))
 				protect_system_table(tdbb, relation, "INSERT", true);
 			break;
