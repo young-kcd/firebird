@@ -804,26 +804,11 @@ void RelationSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 
 RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
-	//fb_assert(stream <= MAX_UCHAR);
-	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	fb_assert(opt->beds.getCount() < MAX_STREAMS);
-	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
-		ERR_post(Arg::Gds(isc_too_many_contexts));
-
-	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
-	opt->beds.add(stream);
-
 	// we have found a base relation; record its stream
 	// number in the streams array as a candidate for
 	// merging into a river
 
-	// TMN: Is the intention really to allow streams[0] to overflow?
-	// I must assume that is indeed not the intention (not to mention
-	// it would make code later on fail), so I added the following fb_assert.
-	//fb_assert(opt->compileStreams[0] < MAX_STREAMS && opt->compileStreams[0] < MAX_UCHAR);
-	fb_assert(opt->compileStreams.getCount() < MAX_STREAMS);
-
-	//opt->compileStreams[++opt->compileStreams[0]] = (UCHAR) stream;
+	opt->beds.add(stream);
 	opt->compileStreams.add(stream);
 
 	if (opt->rse->rse_jointype == blr_left)
@@ -832,11 +817,8 @@ RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bo
 	// if we have seen any booleans or sort fields, we may be able to
 	// use an index to optimize them; retrieve the current format of
 	// all indices at this time so we can determine if it's possible
-	// AB: if a parentStack was available and conjunctCount was 0
-	// then no indices where retrieved. Added also OR check on
-	// parentStack below. SF BUG # [ 508594 ]
 
-	if (opt->conjunctCount || opt->rse->rse_sorted || opt->rse->rse_aggregate || opt->parentStack)
+	if (opt->opt_conjuncts.getCount() || opt->rse->rse_sorted || opt->rse->rse_aggregate)
 	{
 		if (relation && !relation->rel_file && !relation->isVirtual())
 		{
@@ -1172,22 +1154,10 @@ void ProcedureSourceNode::pass2Rse(thread_db* tdbb, CompilerScratch* csb)
 
 RecordSource* ProcedureSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
-	fb_assert(stream <= MAX_UCHAR);
-	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	fb_assert(opt->beds.getCount() < MAX_STREAMS);
-	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
-		ERR_post(Arg::Gds(isc_too_many_contexts));
-
-	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
 	opt->beds.add(stream);
-
-	RecordSource* rsb = generate(tdbb, opt);
-	//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-	fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
-	//opt->localStreams[++opt->localStreams[0]] = stream;
 	opt->localStreams.add(stream);
 
-	return rsb;
+	return generate(tdbb, opt);
 }
 
 // Compile and optimize a record selection expression into a set of record source blocks (rsb's).
@@ -1493,27 +1463,14 @@ bool AggregateSourceNode::containsStream(StreamType checkStream) const
 
 RecordSource* AggregateSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
-	//fb_assert(stream <= MAX_UCHAR);
-	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	fb_assert(opt->beds.getCount() < MAX_STREAMS);
-	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
-		ERR_post(Arg::Gds(isc_too_many_contexts));
-
-	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
 	opt->beds.add(stream);
 
-	BoolExprNodeStack::const_iterator stackEnd;
-	if (opt->parentStack)
-		stackEnd = opt->conjunctStack.merge(*opt->parentStack);
+	BoolExprNodeStack conjunctStack;
+	for (USHORT i = 0; i < opt->opt_conjuncts.getCount(); i++)
+		conjunctStack.push(opt->opt_conjuncts[i].opt_conjunct_node);
 
-	RecordSource* rsb = generate(tdbb, opt, &opt->conjunctStack, stream);
+	RecordSource* const rsb = generate(tdbb, opt, &conjunctStack, stream);
 
-	if (opt->parentStack)
-		opt->conjunctStack.split(stackEnd, *opt->parentStack);
-
-	//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-	fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
-	//opt->localStreams[++opt->localStreams[0]] = stream;
 	opt->localStreams.add(stream);
 
 	return rsb;
@@ -1559,9 +1516,6 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 	}
 
 	RecordSource* const nextRsb = OPT_compile(tdbb, csb, rse, &deliverStack);
-
-	fb_assert(stream <= MAX_STREAMS);
-	//fb_assert(stream <= MAX_UCHAR);
 
 	// allocate and optimize the record source block
 
@@ -1827,37 +1781,18 @@ bool UnionSourceNode::containsStream(StreamType checkStream) const
 
 RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool /*innerSubStream*/)
 {
-	//fb_assert(stream <= MAX_UCHAR);
-	//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-	fb_assert(opt->beds.getCount() < MAX_STREAMS);
-	if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
-		ERR_post(Arg::Gds(isc_too_many_contexts));
-
-	//opt->beds[++opt->beds[0]] = (UCHAR) stream;
 	opt->beds.add(stream);
 
-	//const SSHORT i = (SSHORT) opt->keyStreams[0];
 	const size_t oldCount = opt->keyStreams.getCount();
 	computeDbKeyStreams(opt->keyStreams);
 
-	BoolExprNodeStack::const_iterator stackEnd;
-	if (opt->parentStack)
-		stackEnd = opt->conjunctStack.merge(*opt->parentStack);
+	BoolExprNodeStack conjunctStack;
+	for (USHORT i = 0; i < opt->opt_conjuncts.getCount(); i++)
+		conjunctStack.push(opt->opt_conjuncts[i].opt_conjunct_node);
 
-	//RecordSource* rsb = generate(tdbb, opt, opt->keyStreams + i + 1,
-	//	(USHORT) (opt->keyStreams[0] - i), &opt->conjunctStack, stream);
-	RecordSource* rsb = generate(tdbb, opt, opt->keyStreams.begin() + oldCount,
-		(opt->keyStreams.getCount() - oldCount), &opt->conjunctStack, stream);
+	RecordSource* const rsb = generate(tdbb, opt, opt->keyStreams.begin() + oldCount,
+		opt->keyStreams.getCount() - oldCount, &conjunctStack, stream);
 
-	if (opt->parentStack)
-		opt->conjunctStack.split(stackEnd, *opt->parentStack);
-
-	//fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-	fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
-	if (opt->localStreams.getCount() >= MAX_STREAMS) // all builds check
-		ERR_post(Arg::Gds(isc_too_many_contexts));
-
-	//opt->localStreams[++opt->localStreams[0]] = stream;
 	opt->localStreams.add(stream);
 
 	return rsb;
@@ -2150,37 +2085,15 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 		 partition != partitions.end();
 		 ++partition)
 	{
-		//fb_assert(partition->stream <= MAX_UCHAR);
-		fb_assert(partition->stream <= MAX_STREAMS);
-		//fb_assert(opt->beds[0] < MAX_STREAMS && opt->beds[0] < MAX_UCHAR); // debug check
-		fb_assert(opt->beds.getCount() < MAX_STREAMS);
-		if (opt->beds.getCount() >= MAX_STREAMS) // all builds check
-			ERR_post(Arg::Gds(isc_too_many_contexts));
-
-		//opt->beds[++opt->beds[0]] = (UCHAR) partition->stream;
 		opt->beds.add(partition->stream);
 	}
 
-	BoolExprNodeStack deliverStack;
-
-	RecordSource* rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(tdbb, opt->opt_csb,
-		partitions, OPT_compile(tdbb, opt->opt_csb, rse, &deliverStack));
+	RecordSource* const rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(tdbb, opt->opt_csb,
+		partitions, OPT_compile(tdbb, opt->opt_csb, rse, NULL));
 
 	StreamList rsbStreams;
 	rsb->findUsedStreams(rsbStreams);
 
-	if (rsbStreams.getCount() + opt->localStreams.getCount() >= MAX_STREAMS)
-		ERR_post(Arg::Gds(isc_too_many_contexts));
-
-	/***
-	for (StreamList::iterator i = rsbStreams.begin(); i != rsbStreams.end(); ++i)
-	{
-		fb_assert(opt->localStreams[0] < MAX_STREAMS && opt->localStreams[0] < MAX_UCHAR);
-		fb_assert(opt->localStreams.getCount() < MAX_STREAMS);
-		opt->localStreams[++opt->localStreams[0]] = *i;
-		opt->localStreams.add(*i);
-	}
-	***/
 	opt->localStreams.join(rsbStreams);
 
 	return rsb;
@@ -2788,75 +2701,56 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 	computeRseStreams(opt->localStreams);
 	computeDbKeyStreams(opt->keyStreams);
 
-	RecordSource* rsb;
+	BoolExprNodeStack conjunctStack;
 
 	// pass RseNode boolean only to inner substreams because join condition
 	// should never exclude records from outer substreams
-	if (opt->rse->rse_jointype == blr_inner || (opt->rse->rse_jointype == blr_left && innerSubStream))
+	if (opt->rse->rse_jointype == blr_inner ||
+		(opt->rse->rse_jointype == blr_left && innerSubStream))
 	{
 		// AB: For an (X LEFT JOIN Y) mark the outer-streams (X) as
 		// active because the inner-streams (Y) are always "dependent"
 		// on the outer-streams. So that index retrieval nodes could be made.
-		// For an INNER JOIN mark previous generated RecordSource's as active.
+
 		if (opt->rse->rse_jointype == blr_left)
 		{
-			for (StreamList::iterator i = opt->outerStreams.begin(); i != opt->outerStreams.end(); ++i)
-				opt->opt_csb->csb_rpt[*i].activate();
-		}
-
-		//const BoolExprNodeStack::iterator stackSavepoint(opt->conjunctStack);
-		BoolExprNodeStack::const_iterator stackEnd;
-		BoolExprNodeStack deliverStack;
-
-		if (opt->rse->rse_jointype != blr_inner)
-		{
-			// Make list of nodes that can be delivered to an outer-stream.
-			// In fact these are all nodes except when a IS NULL comparison is done.
-			// Note! Don't forget that this can be burried inside a expression
-			// such as "CASE WHEN (FieldX IS NULL) THEN 0 ELSE 1 END = 0"
-			BoolExprNodeStack::iterator stackItem;
-			if (opt->parentStack)
-				stackItem = *opt->parentStack;
-
-			for (; stackItem.hasData(); ++stackItem)
+			for (StreamList::iterator i = opt->outerStreams.begin();
+				i != opt->outerStreams.end(); ++i)
 			{
-				BoolExprNode* deliverNode = stackItem.object();
-
-				if (!deliverNode->possiblyUnknown())
-					deliverStack.push(deliverNode);
+				opt->opt_csb->csb_rpt[*i].activate();
 			}
 
-			stackEnd = opt->conjunctStack.merge(deliverStack);
+			// Push all conjuncts except "missing" ones (e.g. IS NULL)
+
+			for (USHORT i = 0; i < opt->opt_base_missing_conjuncts; i++)
+				conjunctStack.push(opt->opt_conjuncts[i].opt_conjunct_node);
 		}
 		else
 		{
-			if (opt->parentStack)
-				stackEnd = opt->conjunctStack.merge(*opt->parentStack);
+			for (USHORT i = 0; i < opt->opt_conjuncts.getCount(); i++)
+				conjunctStack.push(opt->opt_conjuncts[i].opt_conjunct_node);
 		}
 
-		rsb = OPT_compile(tdbb, opt->opt_csb, this, &opt->conjunctStack);
-
-		if (opt->rse->rse_jointype != blr_inner)
-		{
-			// Remove previously added parent conjuctions from the stack.
-			opt->conjunctStack.split(stackEnd, deliverStack);
-		}
-		else
-		{
-			if (opt->parentStack)
-				opt->conjunctStack.split(stackEnd, *opt->parentStack);
-		}
+		RecordSource* const rsb = OPT_compile(tdbb, opt->opt_csb, this, &conjunctStack);
 
 		if (opt->rse->rse_jointype == blr_left)
 		{
-			for (StreamList::iterator i = opt->outerStreams.begin(); i != opt->outerStreams.end(); ++i)
-				opt->opt_csb->csb_rpt[*i].csb_flags &= ~csb_active;
+			for (StreamList::iterator i = opt->outerStreams.begin();
+				i != opt->outerStreams.end(); ++i)
+			{
+				opt->opt_csb->csb_rpt[*i].deactivate();
+			}
 		}
-	}
-	else
-		rsb = OPT_compile(tdbb, opt->opt_csb, this, opt->parentStack);
 
-	return rsb;
+		return rsb;
+	}
+
+	// Push only parent conjuncts to the outer stream
+
+	for (USHORT i = opt->opt_base_parent_conjuncts; i < opt->opt_conjuncts.getCount(); i++)
+		conjunctStack.push(opt->opt_conjuncts[i].opt_conjunct_node);
+
+	return OPT_compile(tdbb, opt->opt_csb, this, &conjunctStack);
 }
 
 // Check that all streams in the RseNode have a plan specified for them.

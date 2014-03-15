@@ -54,15 +54,12 @@ class RseNode;
 class OptimizerBlk : public pool_alloc<type_opt>
 {
 public:
-	OptimizerBlk(MemoryPool* pool, RseNode* aRse, BoolExprNodeStack* aParentStack)
+	OptimizerBlk(MemoryPool* pool, RseNode* aRse)
 		: opt_conjuncts(*pool),
 		  opt_streams(*pool),
 		  rse(aRse),
-		  parentStack(aParentStack),
 		  outerStreams(*pool),
 		  subStreams(*pool),
-		  conjunctStack(*pool),
-		  conjunctCount(0),
 		  compileStreams(*pool),
 		  beds(*pool),
 		  localStreams(*pool),
@@ -94,10 +91,7 @@ public:
 	Firebird::HalfStaticArray<opt_stream, OPT_STATIC_ITEMS> opt_streams;
 
 	RseNode* const rse;
-	BoolExprNodeStack* parentStack;
 	StreamList outerStreams, subStreams;
-	BoolExprNodeStack conjunctStack;
-	SLONG conjunctCount;
 	StreamList compileStreams, beds, localStreams, keyStreams;
 	bool optimizeFirstRows;
 };

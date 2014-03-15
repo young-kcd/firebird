@@ -43,7 +43,7 @@ namespace Jrd {
 
 Firebird::string OPT_get_plan(Jrd::thread_db* tdbb, const Jrd::jrd_req* request, bool detailed);
 Jrd::RecordSource* OPT_compile(Jrd::thread_db* tdbb, Jrd::CompilerScratch* cbb,
-	Jrd::RseNode* rse, Jrd::BoolExprNodeStack* const parent_stack);
+	Jrd::RseNode* rse, Jrd::BoolExprNodeStack* parent_stack);
 void OPT_gen_aggregate_distincts(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, Jrd::MapNode* map);
 Jrd::SortedStream* OPT_gen_sort(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb, const Jrd::StreamList& streams,
 	const Jrd::StreamList* dbkey_streams, Jrd::RecordSource* prior_rsb, Jrd::SortNode* sort, bool project_flag);
