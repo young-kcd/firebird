@@ -9111,7 +9111,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 			else
 				request->req_flags &= ~req_null;
 
-			return desc;
+			return (request->req_flags & req_null) ? NULL : desc;
 		}
 	}
 
