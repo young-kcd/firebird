@@ -1,3 +1,14 @@
+ 2014-03-15 18:43  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-4366: Wrong result of WHERE predicate when it contains NULL IS NOT DISTINCT FROM (select min(NULL) from ...)
+
+ 2014-03-15 18:00  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+   M src/jrd/rse.h
+Refactored the conjuncts handling code in the optimizer to be simpler and avoid duplication. As a side effect, this also fixes CORE-4365: Equality predicate distribution does not work for some complex queries. Cleanup up some legacy checks that I consider unnecessary. 
+
  2014-03-14 16:45  asfernandes 
    M src/jrd/vio.cpp
 Fixed restore of sh_test.gbk in TCS.
