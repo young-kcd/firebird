@@ -257,7 +257,7 @@ public:
 	virtual const dsc* FB_CARG getParam(size_t idx);
 
 private:
-	TraceDescriptors *m_descs;
+	TraceDescriptors* m_descs;
 };
 
 

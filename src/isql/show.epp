@@ -2982,7 +2982,7 @@ static void show_db()
 			isqlGlob.printf("Linger: %d seconds%s", DBB2.RDB$LINGER, NEWLINE);
 
 		if (++pass > 1)
-		isqlGlob.printf("RDB$DATABASE has more than one record%s", NEWLINE);
+			isqlGlob.printf("RDB$DATABASE has more than one record%s", NEWLINE);
 
 	END_FOR
 	ON_ERROR

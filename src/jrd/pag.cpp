@@ -710,7 +710,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 	page_inv_page* new_pip_page = (page_inv_page*) new_page;
 	new_pip_page->pip_header.pag_type = pag_pages;
 	const UCHAR* end = (UCHAR*) new_pip_page + dbb->dbb_page_size;
-	memset(new_pip_page->pip_bits, 0xff, end - new_pip_page->pip_bits);
+	memset(new_pip_page->pip_bits, 0xFF, end - new_pip_page->pip_bits);
 
 	CCH_must_write(tdbb, window);
 	CCH_RELEASE(tdbb, window);
@@ -915,12 +915,11 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 		pages->pip_min = pages->pip_used;
 		int count = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
 
-		memset(pages->pip_bits, 0xff, count);
+		memset(pages->pip_bits, 0xFF, count);
 
 		pages->pip_bits[0] &= ~(1 | 2);
-		if (pageSpace.scnFirst) {
+		if (pageSpace.scnFirst)
 			pages->pip_bits[0] &= ~(1 << pageSpace.scnFirst);
-		}
 
 		CCH_RELEASE(tdbb, &window);
 	}

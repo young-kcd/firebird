@@ -2715,7 +2715,8 @@ RecordSource* RseNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSub
 		if (opt->rse->rse_jointype == blr_left)
 		{
 			for (StreamList::iterator i = opt->outerStreams.begin();
-				i != opt->outerStreams.end(); ++i)
+				 i != opt->outerStreams.end();
+				 ++i)
 			{
 				opt->opt_csb->csb_rpt[*i].activate();
 			}

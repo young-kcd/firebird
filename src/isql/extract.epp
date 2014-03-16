@@ -1882,9 +1882,7 @@ static void list_create_db()
 	// any CRLF and therefore the output looks ugly.
 	const bool translate = true;
 	if (SHOW_dbb_parameters(DB, info_buf, page_items, sizeof(page_items), translate, " "))
-	{
 		isqlGlob.printf("%s", info_buf);
-	}
 
 	FOR DBP IN RDB$DATABASE
 		WITH DBP.RDB$CHARACTER_SET_NAME NOT MISSING
@@ -1910,13 +1908,9 @@ static void list_create_db()
 
 
 	if (nodb)
-	{
 		isqlGlob.printf(" */%s", NEWLINE);
-	}
 	else
-	{
 		isqlGlob.printf("%s", NEWLINE);
-	}
 
 	// List secondary files and shadows as alter db and create shadow in comment
 

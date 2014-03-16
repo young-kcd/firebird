@@ -9696,7 +9696,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 				general_on_error ();
 			END_ERROR;
 			break;
-			
+
 		case att_database_linger:
 			if (tdgbl->RESTORE_format >= 10)
 			{
