@@ -75,7 +75,6 @@ class IndexTableScan;
 class ComparativeBoolNode;
 class InversionNode;
 class PlanNode;
-class River;
 class SortNode;
 
 double OPT_getRelationCardinality(thread_db*, jrd_rel*, const Format*);
@@ -298,8 +297,6 @@ private:
 	StreamInfoList innerStreams;
 	StreamType remainingStreams;
 };
-
-typedef Firebird::HalfStaticArray<River*, OPT_STATIC_ITEMS> RiverList;
 
 } // namespace Jrd
 

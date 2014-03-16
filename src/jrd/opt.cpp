@@ -98,8 +98,11 @@ using namespace Firebird;
 #endif
 
 
-namespace Jrd
+namespace
 {
+	class River;
+	typedef HalfStaticArray<River*, OPT_STATIC_ITEMS> RiverList;
+
 	inline void compose(MemoryPool& pool, BoolExprNode** node1, BoolExprNode* node2)
 	{
 		if (node2)
