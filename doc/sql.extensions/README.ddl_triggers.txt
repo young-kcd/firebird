@@ -91,7 +91,7 @@ Semantics:
 	   FUNCTION} triggers.
 
 Notes:
-	1) COMMENT ON, GRANT and REVOKE does not fire DDL triggers.
+	1) COMMENT ON, GRANT, REVOKE and ALTER DATABASE does not fire DDL triggers.
 
 Utilities support:
 	DDL triggers is a type of database triggers, so the parameters -nodbtriggers (GBAK and ISQL)
