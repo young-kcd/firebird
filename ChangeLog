@@ -1,3 +1,17 @@
+ 2014-03-16 18:46  asfernandes 
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Scope.
+
+ 2014-03-16 18:41  asfernandes 
+   M src/burp/restore.epp
+   M src/isql/extract.epp
+   M src/isql/show.epp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/trace/TraceObjects.h
+Misc.
+
  2014-03-15 18:43  dimitr 
    M src/dsql/ExprNodes.cpp
 Fixed CORE-4366: Wrong result of WHERE predicate when it contains NULL IS NOT DISTINCT FROM (select min(NULL) from ...)
