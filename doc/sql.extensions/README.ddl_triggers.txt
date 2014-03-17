@@ -90,6 +90,9 @@ Semantics:
 	8) Packaged procedures and triggers do not fire individual {CREATE | ALTER | DROP} {PROCEDURE |
 	   FUNCTION} triggers.
 
+Notes:
+	1) COMMENT ON, GRANT and REVOKE does not fire DDL triggers.
+
 Utilities support:
 	DDL triggers is a type of database triggers, so the parameters -nodbtriggers (GBAK and ISQL)
 	and -T (NBACKUP) also works for them.
