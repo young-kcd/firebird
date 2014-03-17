@@ -245,7 +245,7 @@ namespace
 			return true;
 		}
 
-		void applyLocalBoolean(OptimizerBlk* opt)
+		RecordSource* applyLocalBoolean(OptimizerBlk* opt)
 		{
 			fb_assert(m_rsb);
 
@@ -276,6 +276,8 @@ namespace
 
 			if (boolean)
 				m_rsb = FB_NEW(csb->csb_pool) FilteredStream(csb, m_rsb, boolean);
+
+			return m_rsb;
 		}
 
 	protected:
@@ -3010,11 +3012,9 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		rivers_to_merge.add(river);
 		org_rivers.remove(iter);
 
-		RecordSource* rsb = river->getRecordSource();
-
 		// Apply local river booleans, if any
 
-		river->applyLocalBoolean(opt);
+		RecordSource* rsb = river->applyLocalBoolean(opt);
 
 		// Collect RSBs and keys to join
 
