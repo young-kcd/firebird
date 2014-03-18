@@ -280,7 +280,7 @@ public:
 	{
 		fillParams();
 
-		if (idx >= 0 && idx < m_descs.getCount())
+		if (/*idx >= 0 &&*/ idx < m_descs.getCount())
 			return &m_descs[idx];
 
 		return NULL;
