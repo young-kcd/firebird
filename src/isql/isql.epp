@@ -4623,7 +4623,7 @@ static processing_state frontend(const TEXT* statement)
 	switch (frontoptions.getCommand(parms[0]))
 	{
 	case FrontOptions::show:
-		if (!frontendTransaction())
+		if (DB && !frontendTransaction())
 		{
 			// Free the frontend command
 			frontend_free_parms(parms, lparms, parm_defaults);
