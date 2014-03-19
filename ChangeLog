@@ -1,3 +1,7 @@
+ 2014-03-18 16:33  asfernandes 
+   M src/jrd/trace/TraceObjects.h
+Warning.
+
  2014-03-17 17:37  dimitr 
    M src/jrd/opt.cpp
 Fixed a regression in my recent commit, thanks to Adriano.
