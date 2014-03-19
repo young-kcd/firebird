@@ -477,7 +477,6 @@ public:
 
 private:
 	Firebird::IProvider* provider;
-	Firebird::ICryptKeyCallback* cryptCallback;
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 };
 

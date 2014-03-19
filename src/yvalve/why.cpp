@@ -87,7 +87,7 @@ static bool isNetworkError(const IStatus* status);
 static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
 //static void saveErrorString(ISC_STATUS* status);
 static void error804(ISC_STATUS err);
-static void sqldaDescribeParameters(XSQLDA* sqlda, const IMessageMetadata* parameters);
+static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters);
 static void sqldaMove(const XSQLDA* sqlda, Array<UCHAR>& message, bool binding);
 static void sqldaParse(const XSQLDA* sqlda, Array<UCHAR>& blr, Array<UCHAR>& message, USHORT dialect);
 static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
@@ -5113,7 +5113,6 @@ void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTra
 YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
 	: YHelper<YService, Firebird::IService, FB_SERVICE_VERSION>(aNext),
 	  provider(aProvider),
-	  cryptCallback(NULL),
 	  utf8Connection(utf8)
 {
 	provider->addRef();
