@@ -8802,7 +8802,7 @@ SubQueryNode::SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDs
 	  value1(aValue1),
 	  value2(aValue2),
 	  rsb(NULL),
-	  parentForNode(NULL)
+	  ownSavepoint(true)
 {
 	addChildNode(dsqlRse, rse);
 	addChildNode(value1, value1);
@@ -8824,7 +8824,7 @@ DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 		node->value2 = PAR_parse_value(tdbb, csb);
 
 		if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
-			node->parentForNode = csb->csb_currentForNode;
+			node->ownSavepoint = false;
 	}
 
 	return node;
@@ -9015,9 +9015,11 @@ ValueExprNode* SubQueryNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	SubQueryNode* node = FB_NEW(*tdbb->getDefaultPool()) SubQueryNode(*tdbb->getDefaultPool(), blrOp);
 	node->nodScale = nodScale;
+	node->ownSavepoint = this->ownSavepoint;
 	node->rse = copier.copy(tdbb, rse);
 	node->value1 = copier.copy(tdbb, value1);
 	node->value2 = copier.copy(tdbb, value2);
+
 	return node;
 }
 
@@ -9125,7 +9127,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 	try
 	{
 		StableCursorSavePoint savePoint(tdbb, request->req_transaction,
-			blrOp == blr_via && parentForNode == NULL);
+			blrOp == blr_via && ownSavepoint);
 
 		rsb->open(tdbb);
 

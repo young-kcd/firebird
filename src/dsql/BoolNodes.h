@@ -208,7 +208,7 @@ public:
 	NestConst<RecordSourceNode> dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<RecordSource> rsb;
-	NestConst<StmtNode> parentForNode;
+	bool ownSavepoint;
 };
 
 

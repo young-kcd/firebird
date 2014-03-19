@@ -1639,7 +1639,7 @@ RseBoolNode::RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsql
 	  dsqlRse(aDsqlRse),
 	  rse(NULL),
 	  rsb(NULL),
-	  parentForNode(NULL)
+	  ownSavepoint(true)
 {
 	addChildNode(dsqlRse, rse);
 }
@@ -1653,7 +1653,7 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		node->rse->flags |= RseNode::FLAG_OPT_FIRST_ROWS;
 
 	if (csb->csb_currentForNode && csb->csb_currentForNode->parBlrBeginCnt <= 1)
-		node->parentForNode = csb->csb_currentForNode;
+		node->ownSavepoint = false;
 
 	return node;
 }
@@ -1710,6 +1710,7 @@ BoolExprNode* RseBoolNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	RseBoolNode* node = FB_NEW(*tdbb->getDefaultPool()) RseBoolNode(
 		*tdbb->getDefaultPool(), blrOp);
 	node->nodFlags = nodFlags;
+	node->ownSavepoint = this->ownSavepoint;
 	node->rse = copier.copy(tdbb, rse);
 
 	return node;
@@ -1826,8 +1827,7 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 	}
 
-	StableCursorSavePoint savePoint(tdbb, request->req_transaction,
-		parentForNode == NULL);
+	StableCursorSavePoint savePoint(tdbb, request->req_transaction, ownSavepoint);
 
 	rsb->open(tdbb);
 	bool value = rsb->getRecord(tdbb);
@@ -1907,6 +1907,7 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 
 	RseBoolNode* rseBoolNode = FB_NEW(csb->csb_pool) RseBoolNode(csb->csb_pool, blr_any);
 	rseBoolNode->rse = innerRse;
+	rseBoolNode->ownSavepoint = this->ownSavepoint;
 
 	andNode->arg2 = rseBoolNode;
 
@@ -1915,6 +1916,7 @@ BoolExprNode* RseBoolNode::convertNeqAllToNotAny(thread_db* tdbb, CompilerScratc
 
 	rseBoolNode = FB_NEW(csb->csb_pool) RseBoolNode(csb->csb_pool, blr_any);
 	rseBoolNode->rse = newInnerRse;
+	rseBoolNode->ownSavepoint = this->ownSavepoint;
 
 	orNode->arg2 = rseBoolNode;
 
