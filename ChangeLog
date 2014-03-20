@@ -1,3 +1,22 @@
+ 2014-03-19 22:31  hvlad 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+Additional patch for CORE-3362 : Cursors should ignore changes made by the same statement:
+- fixed error when "NOT IN" expression is turned into (better optimized) equivalent expression: 
+  new RseBoolNode's lost parentForNode member (required later to [not]set stable cursor savepoint)
+- replaced pointer to outer ForNode (parentForNode) by boolean flag (ownSavepoint) - it simplifies cloning of nodes
+
+ 2014-03-19 16:19  asfernandes 
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Warnings.
+
+ 2014-03-19 16:19  asfernandes 
+   M src/isql/isql.epp
+Revert the behavior of SHOW command without a database connection. It makes sense for SHOW SQL DIALECT.
+
  2014-03-18 16:33  asfernandes 
    M src/jrd/trace/TraceObjects.h
 Warning.
