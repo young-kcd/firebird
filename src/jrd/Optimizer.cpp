@@ -529,9 +529,6 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 
 		getInversionCandidates(&inversions, &indexScratches, 1);
 
-		if (sort)
-			analyzeNavigation();
-
 		// Second, handle "OR" comparisons
 		for (OptimizerBlk::opt_conjunct* tail = opt_begin; tail < opt_end; tail++)
 		{
@@ -550,6 +547,9 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 				}
 			}
 		}
+
+		if (sort)
+			analyzeNavigation();
 
 #ifdef OPT_DEBUG_RETRIEVAL
 		// Debug
