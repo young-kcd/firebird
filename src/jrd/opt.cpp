@@ -689,7 +689,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 			nodeBase = opt->opt_base_conjuncts;
 		}
 
-		fb_assert(nodeBase >= 0 && j >= 0);
+		fb_assert(nodeBase >= 0 && j >= 0 && nodeBase + j < MAX_CONJUNCTS);
 		opt->opt_conjuncts[nodeBase + j].opt_conjunct_node = node;
 	}
 

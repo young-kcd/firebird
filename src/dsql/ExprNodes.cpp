@@ -1508,7 +1508,7 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNo
 
 	const SLONG l1 = MOV_get_long(desc, node->nodScale);
 	const SINT64 l2 = MOV_get_long(&value->vlu_desc, node->nodScale);
-	SINT64 rc = (blrOp == blr_subtract) ? l2 - l1 : l2 + l1;
+	const SINT64 rc = (blrOp == blr_subtract) ? l2 - l1 : l2 + l1;
 
 	if (rc < MIN_SLONG || rc > MAX_SLONG)
 		ERR_post(Arg::Gds(isc_exception_integer_overflow));
@@ -10395,7 +10395,8 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 		csb->csb_blr_reader.setPos(savePos);
 		return SysFuncCallNode::parse(tdbb, pool, csb, blr_sys_function);
 	}
-	else if (blrOp == blr_subfunc)
+
+	if (blrOp == blr_subfunc)
 	{
 		DeclareSubFuncNode* declareNode;
 		if (csb->subFunctions.get(name.identifier, declareNode))
