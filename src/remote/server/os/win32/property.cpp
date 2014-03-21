@@ -66,7 +66,7 @@ static USHORT usServerFlags;	// Server Flag Mask
 LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions to be called from this file only.
-static char *MakeVersionString(char *, int, USHORT);
+static char *MakeVersionString(char*, size_t, USHORT);
 static void RefreshUserCount(HWND);
 
 HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask)
@@ -214,7 +214,7 @@ LRESULT CALLBACK GeneralPage(HWND hDlg, UINT unMsg, WPARAM wParam, LPARAM lParam
 	return FALSE;
 }
 
-static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
+static char* MakeVersionString(char* pchBuf, size_t nLen, USHORT usServerFlagMask)
 {
 /******************************************************************************
  *
@@ -242,7 +242,7 @@ static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
 		if (p < end)
 			*p++ = '\n';
 	}
-	if (usServerFlagMask & SRVR_wnet)
+	if ((usServerFlagMask & SRVR_wnet) && end > p)
 	{
 		p += LoadString(hInstance, IDS_NP, p, end - p);
 		if (p < end)
@@ -250,8 +250,17 @@ static char* MakeVersionString(char* pchBuf, int nLen, USHORT usServerFlagMask)
 		if (p < end)
 			*p++ = '\n';
 	}
-	if (usServerFlagMask & SRVR_xnet) {
+	if ((usServerFlagMask & SRVR_xnet) && end > p)
+	{
 		p += LoadString(hInstance, IDS_IPC, p, end - p);
+		if (p < end)
+			*p++ = '\r';
+		if (p < end)
+			*p++ = '\n';
+	}
+	if ((usServerFlagMask & SRVR_multi_client) && end > p)
+	{
+		p += LoadString(hInstance, IDS_SUPER, p, end - p);
 	}
 	*p = '\0';
 	return pchBuf;

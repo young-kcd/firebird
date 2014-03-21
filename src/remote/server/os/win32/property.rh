@@ -28,7 +28,7 @@ produced by Borland Resource Workshop
 *****************************************************************************/
 
 #define GENERAL_DLG     1
-#define IDC_PRODNAME    124  
+#define IDC_PRODNAME    124
 #define IDC_IBSVR_ICON  126
 #define IDC_LOCATION_TEXT 128
 #define IDC_CAPABILITIES_TEXT 129
@@ -50,6 +50,7 @@ produced by Borland Resource Workshop
 #define IDS_TCP         11
 #define IDS_NP          12
 #define IDS_IPC         13
+#define IDS_SUPER       14
 
 #define IDS_SERVERPROD_NAME     76
 #define IDS_LOCALPROD_NAME      77
