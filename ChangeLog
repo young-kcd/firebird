@@ -1,3 +1,19 @@
+ 2014-03-21 23:05  robocop 
+   M src/remote/server/os/win32/property.cpp
+   M src/remote/server/os/win32/property.rc
+   M src/remote/server/os/win32/property.rh
+Windows only: I prefer to know from the properties dialog when the Server is using the -m startup option.
+
+ 2014-03-21 23:03  robocop 
+   M doc/sql.extensions/README.ddl_triggers.txt
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/opt.cpp
+Misc.
+
+ 2014-03-21 18:57  dimitr 
+   M src/jrd/Optimizer.cpp
+This should fix the regression reported in fb-devel.
+
  2014-03-19 22:31  hvlad 
    M src/dsql/BoolNodes.cpp
    M src/dsql/BoolNodes.h
