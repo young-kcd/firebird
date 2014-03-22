@@ -755,15 +755,16 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				"    record's transaction (%"ULONGFORMAT") is dead (my TID - %"ULONGFORMAT")\n",
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
-			if (gcPolicyBackground && !(rpb->rpb_flags & rpb_chained) && attachment->att_flags & ATT_notify_gc)
+			if (gcPolicyBackground && !(rpb->rpb_flags & rpb_chained) &&
+				(attachment->att_flags & ATT_notify_gc))
 			{
 				notify_garbage_collector(tdbb, rpb);
 			}
 
 		case tra_precommitted:
 
-			if (attachment->att_flags & ATT_NO_CLEANUP ||
-				rpb->rpb_flags & (rpb_chained | rpb_gc_active))
+			if ((attachment->att_flags & ATT_NO_CLEANUP) ||
+				(rpb->rpb_flags & (rpb_chained | rpb_gc_active)))
 			{
 				if (rpb->rpb_b_page == 0)
 				{
@@ -1019,13 +1020,13 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 			const bool cannotGC =
 				rpb->rpb_transaction_nr >= oldest_snapshot || rpb->rpb_b_page == 0 ||
-				rpb->rpb_flags & rpb_chained || attachment->att_flags & ATT_no_cleanup;
+				(rpb->rpb_flags & rpb_chained) || (attachment->att_flags & ATT_no_cleanup);
 
 			if (cannotGC)
 			{
 				if (gcPolicyBackground &&
-					attachment->att_flags & (ATT_notify_gc | ATT_garbage_collector) &&
-					(rpb->rpb_b_page != 0 && !(rpb->rpb_flags & rpb_chained)) )
+					(attachment->att_flags & (ATT_notify_gc | ATT_garbage_collector)) &&
+					rpb->rpb_b_page != 0 && !(rpb->rpb_flags & rpb_chained) )
 				{
 					// VIO_chase_record_version
 					notify_garbage_collector(tdbb, rpb);
@@ -1058,7 +1059,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		// system crashed. Clear the flag and set the state to tra_dead to
 		// reattempt the backout.
 
-		if (!(rpb->rpb_flags & rpb_chained) && rpb->rpb_flags & rpb_gc_active)
+		if (!(rpb->rpb_flags & rpb_chained) && (rpb->rpb_flags & rpb_gc_active))
 		{
 			if (!rpb->rpb_transaction_nr) {
 				state = tra_active;
@@ -1301,10 +1302,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		rpb->rpb_stream_flags &= ~(RPB_s_refetch | RPB_s_refetch_no_undo);
 	}
 
-	bool same_tx = false;
-	if (rpb->rpb_transaction_nr == transaction->tra_number) {
-		same_tx = true;			// deleting tx has updated/inserted this record before
-	}
+	// deleting tx has updated/inserted this record before
+	const bool same_tx = (rpb->rpb_transaction_nr == transaction->tra_number);
 
 	// Special case system transaction
 
@@ -2231,7 +2230,7 @@ void VIO_init(thread_db* tdbb)
 	// notify the garbage collector to garbage collect. Every other
 	// attachment notifies the garbage collector to do their dirty work.
 
-	if (dbb->dbb_flags & DBB_garbage_collector &&
+	if ((dbb->dbb_flags & DBB_garbage_collector) &&
 		!(attachment->att_flags & (ATT_no_cleanup | ATT_gbak_attachment)))
 	{
 		attachment->att_flags |= ATT_notify_gc;
@@ -3531,7 +3530,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									it was modified and deleted under our savepoint
 									we need to back it out to the state as it were
 									before our transaction started */
-									if (record->rec_length == 0 && record->rec_flags & REC_new_version)
+									if (record->rec_length == 0 && (record->rec_flags & REC_new_version))
 									{
 										if (!DPM_get(tdbb, &rpb, LCK_write)) {
 											BUGCHECK(186);	// msg 186 record disappeared
@@ -5316,6 +5315,7 @@ static void protect_system_table(thread_db* tdbb,
  *	Disallow modifications on system tables for everyone except
  *	the GBAK restore process and internal (system) requests used
  *	by the engine itself.
+ *	Here we can test a Database flag to bypass the exception for special purposes.
  *
  **************************************/
 	const Attachment* const attachment = tdbb->getAttachment();
