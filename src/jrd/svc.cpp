@@ -2478,7 +2478,7 @@ void Service::finish(USHORT flag)
 		{
 			svc_flags |= SVC_finished;
 		}
-		if (svc_flags & SVC_finished && svc_flags & SVC_detached)
+		if ((svc_flags & SVC_finished) && (svc_flags & SVC_detached))
 		{
 			delete this;
 			return;

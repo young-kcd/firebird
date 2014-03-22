@@ -1047,13 +1047,13 @@ static TokenType getToken(const char** begin, const char* end)
 	default:
 		if (classes(c) & CHR_DIGIT)
 		{
-			while (p < end && classes(*p) & CHR_DIGIT)
+			while (p < end && (classes(*p) & CHR_DIGIT))
 				p++;
 			ret = ttOther;
 		}
 		else if (classes(c) & CHR_IDENT)
 		{
-			while (p < end && classes(*p) & CHR_IDENT)
+			while (p < end && (classes(*p) & CHR_IDENT))
 				p++;
 			ret = ttIdent;
 		}

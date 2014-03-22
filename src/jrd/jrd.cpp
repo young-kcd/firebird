@@ -6688,7 +6688,7 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
 
 	Jrd::Attachment* attachment = NULL;
 
-	while ((attachment = jAtt->getHandle()) && attachment->att_flags & ATT_purge_started)
+	while ((attachment = jAtt->getHandle()) && (attachment->att_flags & ATT_purge_started))
 	{
 		attachment->att_use_count--;
 

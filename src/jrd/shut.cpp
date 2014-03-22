@@ -258,7 +258,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 	}
 
 	if (!exclusive && !successful &&
-		(timeout > 0 || flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction)))
+		(timeout > 0 || (flag & (isc_dpb_shut_attachment | isc_dpb_shut_transaction))))
 	{
 		notify_shutdown(tdbb, 0, -1, guard);	// Tell everyone we're giving up
 		attachment->att_flags &= ~ATT_shutdown_manager;

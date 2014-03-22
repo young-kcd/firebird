@@ -1090,7 +1090,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			*out++ = c;
 			break;
 		}
-		if (picture->pic_flags & PIC_suppress_blanks && out[-1] == ' ')
+		if ((picture->pic_flags & PIC_suppress_blanks) && out[-1] == ' ')
 			--out;
 	}
 

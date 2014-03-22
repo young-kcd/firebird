@@ -905,10 +905,10 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 					// than one row. The same is true for an equivalence scan for
 					// any primary index.
 					const bool single_match =
-						((segment->scanType == segmentScanEqual &&
-							scratch.idx->idx_flags & idx_unique) ||
+						(segment->scanType == segmentScanEqual &&
+							(scratch.idx->idx_flags & idx_unique)) ||
 						(segment->scanType == segmentScanEquivalent &&
-							scratch.idx->idx_flags & idx_primary));
+							(scratch.idx->idx_flags & idx_primary));
 
 					// dimitr: IS NULL scan against primary key is guaranteed
 					//		   to return zero rows. Do we need yet another

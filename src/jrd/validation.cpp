@@ -1990,7 +1990,7 @@ RTN Vdr::walk_record(thread_db* tdbb,
 	// If the record is a fragment, not large, or we're not interested in
 	// chasing records, skip the record
 
-	if (header->rhd_flags & (rhd_fragment | rhd_deleted) ||
+	if ((header->rhd_flags & (rhd_fragment | rhd_deleted)) ||
 		!((header->rhd_flags & rhd_large) || (validate && (vdr_flags & vdr_records))))
 	{
 		return rtn_ok;

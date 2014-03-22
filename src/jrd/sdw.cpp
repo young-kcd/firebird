@@ -1081,7 +1081,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 			delete shadow_file;
 		}
 		delete[] spare_buffer;
-		if (file_flags & FILE_manual && !delete_files) {
+		if ((file_flags & FILE_manual) && !delete_files) {
 			ERR_post(Arg::Gds(isc_shadow_missing) << Arg::Num(shadow_number));
 		}
 		else

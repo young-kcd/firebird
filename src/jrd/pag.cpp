@@ -1628,7 +1628,7 @@ void PAG_set_db_SQL_dialect(thread_db* tdbb, SSHORT flag)
 		{
 		case SQL_DIALECT_V5:
 
-			if (dbb->dbb_flags & DBB_DB_SQL_dialect_3 || header->hdr_flags & hdr_SQL_dialect_3)
+			if ((dbb->dbb_flags & DBB_DB_SQL_dialect_3) || (header->hdr_flags & hdr_SQL_dialect_3))
 			{
 				// Check the returned value here!
 				ERR_post_warning(Arg::Warning(isc_dialect_reset_warning));

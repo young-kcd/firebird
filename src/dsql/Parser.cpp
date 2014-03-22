@@ -387,7 +387,7 @@ int Parser::yylexAux()
 		// The Introducer (_) is skipped, all other idents are copied
 		// to become the name of the character set.
 		char* p = string;
-		for (; lex.ptr < lex.end && classes(*lex.ptr) & CHR_IDENT; lex.ptr++)
+		for (; lex.ptr < lex.end && (classes(*lex.ptr) & CHR_IDENT); lex.ptr++)
 		{
 			if (lex.ptr >= lex.end)
 				return -1;
@@ -1019,7 +1019,7 @@ int Parser::yylexAux()
 	{
 		char* p = string;
 		check_copy_incr(p, UPPER (c), string);
-		for (; lex.ptr < lex.end && classes(*lex.ptr) & CHR_IDENT; lex.ptr++)
+		for (; lex.ptr < lex.end && (classes(*lex.ptr) & CHR_IDENT); lex.ptr++)
 		{
 			if (lex.ptr >= lex.end)
 				return -1;

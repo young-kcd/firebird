@@ -2116,7 +2116,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 			if (field->fld_flags & FLD_computed)
 				continue;
 			if ((field->fld_system_flag && field->fld_system_flag != relation->rel_system_flag) ||
-				field->fld_flags & FLD_array)
+				(field->fld_flags & FLD_array))
 			{
 				continue;
 			}
@@ -2287,7 +2287,7 @@ static int generate_fields( qli_ctx* context, qli_lls* values, qli_syntax* rse)
 	for (qli_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if ((field->fld_system_flag && field->fld_system_flag != relation->rel_system_flag) ||
-			field->fld_flags & FLD_array)
+			(field->fld_flags & FLD_array))
 		{
 			continue;
 		}
@@ -2339,7 +2339,7 @@ static int generate_items(const qli_syntax* symbol, qli_lls* right, qli_lls* ite
 	for (qli_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if ((field->fld_system_flag && field->fld_system_flag != relation->rel_system_flag) ||
-			field->fld_flags & FLD_array)
+			(field->fld_flags & FLD_array))
 		{
 			continue;
 		}

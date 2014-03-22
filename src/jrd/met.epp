@@ -3626,7 +3626,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 
 	try {
 
-	if (relation->rel_flags & REL_scanned || relation->rel_flags & REL_deleted)
+	if (relation->rel_flags & (REL_scanned | REL_deleted))
 		return;
 
 	relation->rel_flags |= REL_being_scanned;

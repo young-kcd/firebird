@@ -1991,8 +1991,8 @@ lrq* LockManager::deadlock_walk(lrq* request, bool* maybe_deadlock)
 
 		own* const owner = (own*) SRQ_ABS_PTR(block->lrq_owner);
 
-		if (owner->own_flags & (OWN_signaled | OWN_wakeup) || !SRQ_EMPTY((owner->own_blocks)) ||
-			block->lrq_flags & LRQ_just_granted)
+		if ((owner->own_flags & (OWN_signaled | OWN_wakeup)) || !SRQ_EMPTY((owner->own_blocks)) ||
+			(block->lrq_flags & LRQ_just_granted))
 		{
 			*maybe_deadlock = true;
 			continue;

@@ -346,14 +346,14 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	// and no events have been posted (via stored procedures etc)
 	// no-op the operation.
 
-	if (retaining_flag && !(transaction->tra_flags & TRA_write || transaction->tra_deferred_job))
+	if (retaining_flag && !((transaction->tra_flags & TRA_write) || transaction->tra_deferred_job))
 	{
 		if (sysTran->tra_flags & TRA_write)
 			transaction_flush(tdbb, FLUSH_SYSTEM, 0);
 
 		transaction->tra_flags &= ~TRA_prepared;
 		// Get rid of all user savepoints
-		while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user)
+		while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
 		{
 			Savepoint* const next = transaction->tra_save_point->sav_next;
 			transaction->tra_save_point->sav_next = NULL;
@@ -721,7 +721,7 @@ void TRA_invalidate(thread_db* tdbb, ULONG mask)
 			 transaction = transaction->tra_next)
 		{
 			const ULONG transaction_mask = 1L << (transaction->tra_number & (BITS_PER_LONG - 1));
-			if (transaction_mask & mask && transaction->tra_flags & TRA_write)
+			if ((transaction_mask & mask) && (transaction->tra_flags & TRA_write))
 				transaction->tra_flags |= TRA_invalidated;
 		}
 
@@ -1285,7 +1285,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		// Free all savepoint data
 		// We can do it in reverse order because nothing except simple deallocation
 		// of memory is really done in VIO_verb_cleanup when we pass NULL as sav_next
-		while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user)
+		while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
 		{
 			Savepoint* const next = transaction->tra_save_point->sav_next;
 			transaction->tra_save_point->sav_next = NULL;
@@ -1382,7 +1382,8 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 
 	// If we're terminating ourselves and we've been precommitted then just return.
 
-	if (transaction && transaction->tra_number == number && transaction->tra_flags & TRA_precommitted)
+	if (transaction && transaction->tra_number == number &&
+		(transaction->tra_flags & TRA_precommitted))
 	{
 		return;
 	}
@@ -2402,7 +2403,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 
 	// Get rid of all user savepoints
 	// Why we can do this in reverse order described in commit method
-	while (transaction->tra_save_point && transaction->tra_save_point->sav_flags & SAV_user)
+	while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
 	{
 		Savepoint* const next = transaction->tra_save_point->sav_next;
 		transaction->tra_save_point->sav_next = NULL;
@@ -3277,7 +3278,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// forever without impacting garbage collection or causing
 	// transaction bitmap growth.
 
-	if (trans->tra_flags & TRA_readonly && trans->tra_flags & TRA_read_committed)
+	if ((trans->tra_flags & TRA_readonly) && (trans->tra_flags & TRA_read_committed))
 	{
 		TRA_set_state(tdbb, trans, trans->tra_number, tra_committed);
 		LCK_release(tdbb, lock);

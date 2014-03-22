@@ -172,11 +172,12 @@ SLONG LOCK_enq(PTR prior_request,
 	if ((status & 1) &&
 	    (((status = lksb.lksb_status) & 1) || status == SS$_VALNOTVALID))
 	{
-		if (data) {
+		if (data)
+		{
 			if (lock_type == LCK$K_EXMODE)
-			write_data(lksb.lksb_lock_id, data);
+				write_data(lksb.lksb_lock_id, data);
 			else
-			LOCK_write_data(lksb.lksb_lock_id, data);
+				LOCK_write_data(lksb.lksb_lock_id, data);
 		}
 		return lksb.lksb_lock_id;
 	}
@@ -246,8 +247,9 @@ SLONG LOCK_read_data(PTR lock_id)
 					LCK$K_NLMODE, &lksb,
 					LCK$M_CONVERT | LCK$M_VALBLK, &desc, NULL,	/* Lock parent (not used) */
 					gds__completion_ast,	/* AST routine when granted */
-					NULL, NULL, NULL, NULL); if (status & 1)
-	ISC_wait(&lksb, EVENT_FLAG);
+					NULL, NULL, NULL, NULL);
+	if (status & 1)
+		ISC_wait(&lksb, EVENT_FLAG);
 	if (!status && !(lksb.lksb_status & 1))
 		return 0;
 	return lksb.lksb_value[0];
@@ -292,8 +294,9 @@ SLONG LOCK_write_data(PTR lock_id, SLONG data)
 	status =
 	sys$enq(EVENT_FLAG, LCK$K_EXMODE, &lksb, LCK$M_CONVERT, &desc, NULL,	/* Lock parent (not used) */
 		   gds__completion_ast,	/* AST routine when granted */
-		   NULL, NULL, NULL, NULL); if (status & 1)
-	ISC_wait(&lksb, EVENT_FLAG);
+		   NULL, NULL, NULL, NULL);
+	if (status & 1)
+		ISC_wait(&lksb, EVENT_FLAG);
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
 		return 0;
 	return write_data(lock_id, data);
@@ -314,7 +317,8 @@ static bool lock_error(ISC_STATUS * status_vector,
  *
  **************************************/
 
-	if (code == SS$_DEADLOCK) {
+	if (code == SS$_DEADLOCK)
+	{
 		*status_vector++ = isc_arg_gds;
 		*status_vector++ = isc_deadlock;
 	}
@@ -358,6 +362,8 @@ static SLONG write_data(SLONG lock_id, SLONG data)
 					 NULL,
 					 NULL);
 	if (!(status & 1) || !((status = lksb.lksb_status) & 1))
-	return 0;
+		return 0;
+
+	return 1; // maybe 1 ???
 }
 

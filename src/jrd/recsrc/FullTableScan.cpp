@@ -70,7 +70,7 @@ void FullTableScan::open(thread_db* tdbb) const
 
 		BufferControl* const bcb = dbb->dbb_bcb;
 
-		if (attachment->att_flags & ATT_gbak_attachment ||
+		if ((attachment->att_flags & ATT_gbak_attachment) ||
 			DPM_data_pages(tdbb, rpb->rpb_relation) > bcb->bcb_count)
 		{
 			rpb->getWindow(tdbb).win_flags = WIN_large_scan;
