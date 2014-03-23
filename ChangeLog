@@ -1,3 +1,31 @@
+ 2014-03-22 20:56  robocop 
+   M src/jrd/vio.cpp
+Misc.
+
+ 2014-03-22 20:51  robocop 
+   M src/common/classes/sparse_bitmap.h
+   M src/dsql/Parser.cpp
+   M src/jrd/Optimizer.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/os/vms/vmslock.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/validation.cpp
+   M src/lock/lock.cpp
+   M src/qli/expand.cpp
+   M src/qli/picstr.cpp
+Misc.
+
+ 2014-03-22 16:54  dimitr 
+   M src/remote/server/os/win32/property.rc
+More correct textual description.
+
  2014-03-21 23:05  robocop 
    M src/remote/server/os/win32/property.cpp
    M src/remote/server/os/win32/property.rc
