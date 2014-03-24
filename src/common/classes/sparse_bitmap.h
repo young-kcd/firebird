@@ -304,7 +304,7 @@ public:
 
 			// Look up a bucket for our key
 			T key_aligned = key & ~(T) (BUNCH_BITS - 1);
-			if (!treeAccessor.locate(lt, key_aligned)) m
+			if (!treeAccessor.locate(lt, key_aligned))
 			{
 				// If we didn't find the desired bucket no way we can find desired value
 				return false;
