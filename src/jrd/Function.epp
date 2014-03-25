@@ -430,10 +430,13 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 						{
 							function->parseBlr(tdbb, csb, &X.RDB$FUNCTION_BLR);
 						}
-						catch (const Exception&)
+						catch (const Exception& ex)
 						{
+							ISC_STATUS_ARRAY temp_status;
+							ex.stuff_exception(temp_status);
 							const string name = function->getName().toString();
-							status_exception::raise(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name));
+							(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name)
+								<< Arg::StatusVector(temp_status)).raise();
 						}
 					}
 				}

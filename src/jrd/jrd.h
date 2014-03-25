@@ -222,7 +222,6 @@ const int VAL_MAX_ERROR					= 31;
 class jrd_prc : public Routine
 {
 public:
-	///const MessageNode* prc_output_msg;
 	const Format*	prc_record_format;
 	prc_t		prc_type;					// procedure type
 
@@ -235,7 +234,6 @@ private:
 public:
 	explicit jrd_prc(MemoryPool& p)
 		: Routine(p),
-		  ///prc_output_msg(NULL),
 		  prc_record_format(NULL),
 		  prc_type(prc_legacy),
 		  prc_external(NULL)

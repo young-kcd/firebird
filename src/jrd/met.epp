@@ -1722,7 +1722,7 @@ DmlNode* MET_get_dependencies(thread_db* tdbb,
 }
 
 
-jrd_fld* MET_get_field(jrd_rel* relation, USHORT id)
+jrd_fld* MET_get_field(const jrd_rel* relation, USHORT id)
 {
 /**************************************
  *
@@ -1738,9 +1738,7 @@ jrd_fld* MET_get_field(jrd_rel* relation, USHORT id)
 	vec<jrd_fld*>* vector;
 
 	if (!relation || !(vector = relation->rel_fields) || id >= vector->count())
-	{
 		return NULL;
-	}
 
 	return (*vector)[id];
 }
@@ -3288,16 +3286,13 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 
 			if (external || !P.RDB$PROCEDURE_BLR.NULL)
 			{
-				MemoryPool* csb_pool = attachment->createPool();
-
+				MemoryPool* const csb_pool = attachment->createPool();
 				Jrd::ContextPoolHolder context(tdbb, csb_pool);
-				CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
-
-				if (!P.RDB$DEBUG_INFO.NULL)
-					DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, *csb->csb_dbg_info);
 
 				try
 				{
+					AutoPtr<CompilerScratch> csb(CompilerScratch::newCsb(*csb_pool, 5));
+
 					if (external)
 					{
 						HalfStaticArray<char, 512> body;
@@ -3317,36 +3312,35 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 							(P.RDB$ENTRYPOINT.NULL ? "" : P.RDB$ENTRYPOINT), body.begin());
 					}
 					else
-						procedure->parseBlr(tdbb, csb, &P.RDB$PROCEDURE_BLR);
+					{
+						if (!P.RDB$DEBUG_INFO.NULL)
+							DBG_parse_debug_info(tdbb, &P.RDB$DEBUG_INFO, *csb->csb_dbg_info);
+
+						try
+						{
+							procedure->parseBlr(tdbb, csb, &P.RDB$PROCEDURE_BLR);
+						}
+						catch (const Exception& ex)
+						{
+							ISC_STATUS_ARRAY temp_status;
+							ex.stuff_exception(temp_status);
+							const string name = procedure->getName().toString();
+							(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(name)
+								<< Arg::StatusVector(temp_status)).raise();
+						}
+					}
 				}
 				catch (const Exception&)
 				{
-					delete csb;
-
 					if (procedure->getStatement())
 						procedure->releaseStatement(tdbb);
 					else
 						attachment->deletePool(csb_pool);
 
-					ERR_post(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(procedure->getName().toString()));
+					throw;
 				}
 
 				procedure->getStatement()->procedure = procedure;
-
-				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
-				{
-					MessageNode* node = csb->csb_rpt[i].csb_message;
-
-					/***
-					if (node)
-					{
-						if (node->messageNumber == 1)
-							procedure->prc_output_msg = node;
-					}
-					***/
-				}
-
-				delete csb;
 			}
 			else
 			{

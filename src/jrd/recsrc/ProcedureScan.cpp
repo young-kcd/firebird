@@ -171,7 +171,6 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	}
 
 	const Format* const rec_format = m_format;
-	///const Format* const msg_format = m_procedure->prc_output_msg->format;
 	const Format* const msg_format = m_procedure->getOutputFormat();
 	const ULONG oml = msg_format->fmt_length;
 	UCHAR* om = impure->irsb_message;
