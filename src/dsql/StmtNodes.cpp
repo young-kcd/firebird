@@ -1761,13 +1761,8 @@ DeclareSubProcNode* DeclareSubProcNode::pass1(thread_db* /*tdbb*/, CompilerScrat
 
 DeclareSubProcNode* DeclareSubProcNode::pass2(thread_db* tdbb, CompilerScratch* /*csb*/)
 {
-	{	// scope
-		ContextPoolHolder context(tdbb, &subCsb->csb_pool);
-		PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
-	}
-
-	fb_assert(subCsb->csb_rpt.getCount() >= 2);
-	///routine->prc_output_msg = subCsb->csb_rpt[1].csb_message;
+	ContextPoolHolder context(tdbb, &subCsb->csb_pool);
+	PAR_blr(tdbb, NULL, blrStart, blrLength, NULL, &subCsb, NULL, false, 0);
 
 	return this;
 }
@@ -2750,7 +2745,6 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	}
 	else
 	{
-		///format = procedure->prc_output_msg->format;
 		format = procedure->getOutputFormat();
 		outMsgLength = format->fmt_length;
 		outMsg = tempBuffer.getBuffer(outMsgLength + FB_DOUBLE_ALIGN - 1);
