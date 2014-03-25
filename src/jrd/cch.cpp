@@ -115,7 +115,7 @@ static void check_precedence(thread_db*, WIN*, PageNumber);
 static void clear_precedence(thread_db*, BufferDesc*);
 static BufferDesc* dealloc_bdb(BufferDesc*);
 #ifndef SUPERSERVER
-static void down_grade(thread_db*, BufferDesc*);
+static void down_grade(thread_db*, BufferDesc*, int high = 0);
 #endif
 static void expand_buffers(thread_db*, ULONG);
 static BufferDesc* get_buffer(thread_db*, const PageNumber, LATCH, SSHORT);
@@ -4518,7 +4518,7 @@ static BufferDesc* dealloc_bdb(BufferDesc* bdb)
 #ifndef SUPERSERVER
 // CVC: Nobody was interested in the result from this function, so I made it
 // void instead of bool, but preserved the returned values in comments.
-static void down_grade(thread_db* tdbb, BufferDesc* bdb)
+static void down_grade(thread_db* tdbb, BufferDesc* bdb, int high)
 {
 /**************************************
  *
@@ -4535,6 +4535,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
  **************************************/
 	SET_TDBB(tdbb);
 
+	const bool oldBlocking = (bdb->bdb_ast_flags & BDB_blocking);
 	bdb->bdb_ast_flags |= BDB_blocking;
 	Lock* lock = bdb->bdb_lock;
 	Database* dbb = bdb->bdb_dbb;
@@ -4552,11 +4553,31 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	// If the BufferDesc is in use and, being written or already
 	// downgraded to read, mark it as blocking and exit.
 
-	if (bdb->bdb_use_count) {
-		return; // false;
-	}
+	bool justWrite = false;
+	if (bdb->bdb_use_count) 
+	{
+		// hvlad: buffer is in use and we can't downgrade its lock. But if this
+		// buffer blocks some lower precedence buffer, it is enough to just write 
+		// our (high) buffer to clear precedence and thus allow blocked (low) 
+		// buffer to be downgraded. LATCH_io guarantees that there is no buffer
+		// modification in progress currently and it is safe to write it right now.
+		// No need to mark our buffer as blocking nor to change state of our lock.
 
-	latch_bdb(tdbb, LATCH_io, bdb, bdb->bdb_page, 1);
+		if (high && (bdb->bdb_flags & BDB_dirty) && 
+			latch_bdb(tdbb, LATCH_io, bdb, bdb->bdb_page, 0) == 0)
+		{
+			if (!oldBlocking) {
+				bdb->bdb_ast_flags &= ~BDB_blocking;
+			}
+			justWrite = true;
+		}
+		else
+			return; // false;
+	}
+	else
+	{
+		latch_bdb(tdbb, LATCH_io, bdb, bdb->bdb_page, 1);
+	}
 
 	// If the page isn't dirty, the lock can be quietly downgraded.
 
@@ -4589,7 +4610,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		BufferDesc* blocking_bdb = precedence->pre_hi;
 		if (blocking_bdb->bdb_flags & BDB_dirty)
 		{
-			down_grade(tdbb, blocking_bdb);
+			down_grade(tdbb, blocking_bdb, high + 1);
 			if (blocking_bdb->bdb_flags & BDB_dirty) {
 				in_use = true;
 			}
@@ -4621,7 +4642,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		bdb->bdb_transactions = 0;
 		PAGE_LOCK_RELEASE(bdb->bdb_lock);
 	}
-	else
+	else if (!justWrite)
 	{
 		bdb->bdb_ast_flags &= ~BDB_blocking;
 		LCK_downgrade(tdbb, lock);
