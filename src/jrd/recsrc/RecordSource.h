@@ -205,10 +205,11 @@ namespace Jrd
 		void print(thread_db* tdbb, Firebird::string& plan,
 				   bool detailed, unsigned level) const;
 
-		void setInversion(InversionNode* inversion)
+		void setInversion(InversionNode* inversion, BoolExprNode* condition)
 		{
-			fb_assert(!m_inversion);
+			fb_assert(!m_inversion && !m_condition);
 			m_inversion = inversion;
+			m_condition = condition;
 		}
 
 	private:
@@ -224,6 +225,7 @@ namespace Jrd
 		const Firebird::string m_name;
 		NestConst<InversionNode> const m_index;
 		NestConst<InversionNode> m_inversion;
+		NestConst<BoolExprNode> m_condition;
 		const size_t m_length;
 		size_t m_offset;
 	};

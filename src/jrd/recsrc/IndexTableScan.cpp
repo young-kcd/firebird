@@ -42,8 +42,8 @@ using namespace Jrd;
 
 IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, StreamType stream,
 			InversionNode* index, USHORT length)
-	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_index(index), m_inversion(NULL),
-	  m_length(length), m_offset(0)
+	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_index(index),
+	  m_inversion(NULL), m_condition(NULL), m_length(length), m_offset(0)
 {
 	fb_assert(m_index);
 
@@ -191,7 +191,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 		//    is not in the bitmap for the inversion, or
 		// 2) the record has already been visited
 
-		if ((m_inversion &&
+		if ((!(impure->irsb_flags & irsb_mustread) &&
 			 (!impure->irsb_nav_bitmap ||
 				!RecordBitmap::test(*impure->irsb_nav_bitmap, number.getValue()))) ||
 			RecordBitmap::test(impure->irsb_nav_records_visited, number.getValue()))
@@ -593,6 +593,7 @@ bool IndexTableScan::setupBitmaps(thread_db* tdbb, Impure* impure) const
 	// than one leaf node reference to the same record number; the
 	// bitmap allows us to filter out the multiple references.
 	RecordBitmap::reset(impure->irsb_nav_records_visited);
+	impure->irsb_flags |= irsb_mustread;
 
 	// the first time we open the stream, compute a bitmap
 	// for the inversion tree -- this may cause problems for
@@ -600,10 +601,14 @@ bool IndexTableScan::setupBitmaps(thread_db* tdbb, Impure* impure) const
 	// view of the database when the stream is opened
 	if (m_inversion)
 	{
-		// There is no need to reset or release the bitmap, it is
-		// done in EVL_bitmap()
-		impure->irsb_nav_bitmap = EVL_bitmap(tdbb, m_inversion, NULL);
-		return (*impure->irsb_nav_bitmap != NULL);
+		if (!m_condition || !m_condition->execute(tdbb, tdbb->getRequest()))
+		{
+			impure->irsb_flags &= ~irsb_mustread;
+			// There is no need to reset or release the bitmap, it is
+			// done in EVL_bitmap()
+			impure->irsb_nav_bitmap = EVL_bitmap(tdbb, m_inversion, NULL);
+			return (*impure->irsb_nav_bitmap != NULL);
+		}
 	}
 
 	return true;

@@ -2379,8 +2379,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			if (sort_ptr)
 				*sort_ptr = NULL;
 
-			if (inversion && !condition)
-				nav_rsb->setInversion(inversion);
+			nav_rsb->setInversion(inversion, condition);
 
 			rsb = nav_rsb;
 		}
