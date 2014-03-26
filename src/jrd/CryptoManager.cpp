@@ -217,7 +217,7 @@ namespace Jrd {
 			(Arg::Gds(isc_cp_name_too_long) << Arg::Num(31)).raise();
 		}
 
-		bool newCryptState = plugName.hasData();
+		const bool newCryptState = plugName.hasData();
 
 		{	// window scope
 			Header hdr(tdbb, LCK_write);

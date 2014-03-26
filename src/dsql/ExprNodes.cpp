@@ -2632,7 +2632,8 @@ ValueExprNode* CastNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	dsc* value = EVL_expr(tdbb, request, source);
-	value = request->req_flags & req_null ? NULL : value;
+	if (request->req_flags & req_null)
+		value = NULL;
 
 	impure_value* impure = request->getImpure<impure_value>(impureOffset);
 

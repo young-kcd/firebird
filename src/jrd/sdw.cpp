@@ -888,7 +888,8 @@ static void shutdown_shadow(Shadow* shadow)
 
 	for (Shadow** ptr = &dbb->dbb_shadow; *ptr; ptr = &(*ptr)->sdw_next)
 	{
-		if (*ptr == shadow) {
+		if (*ptr == shadow)
+		{
 			*ptr = shadow->sdw_next;
 			break;
 		}
@@ -978,9 +979,8 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 	shadow = NULL;
 	SLONG* const spare_buffer =
 		FB_NEW(*tdbb->getDefaultPool()) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE) / sizeof(SLONG)];
-	SLONG* spare_page = reinterpret_cast<SLONG*>((SCHAR *)
-												(((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) &
-													~((U_IPTR) MIN_PAGE_SIZE - 1)));
+	UCHAR* spare_page = (UCHAR*)(((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) &
+													~((U_IPTR) MIN_PAGE_SIZE - 1));
 
 	WIN window(DB_PAGE_SPACE, -1);
 	jrd_file* shadow_file = 0;

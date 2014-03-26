@@ -472,7 +472,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 		case blr_domain_name:
 		case blr_domain_name2:
 		{
-			bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
+			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
 			MetaName* name = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
 			PAR_name(csb, *name);
 

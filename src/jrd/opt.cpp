@@ -2584,7 +2584,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 	SortedStream::SortMap::Item* map_item = map->items.getBuffer(items);
 	sort_key_def* sort_key = map->keyItems.getBuffer(2 * sort->expressions.getCount());
 	int* nullOrder = sort->nullOrder.begin();
-	bool* descending = sort->descending.begin();
+	const bool* descending = sort->descending.begin();
 
 	for (NestConst<ValueExprNode>* node_ptr = sort->expressions.begin();
 		 node_ptr != end_node;

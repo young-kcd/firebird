@@ -431,7 +431,7 @@ public:
 			}
 
 			// if we asked for more data but received nothing switch to next plugin
-			bool forceNext = (flags & CONT_AUTH) && (!authPort->port_srv_auth_block->hasDataForPlugin());
+			const bool forceNext = (flags & CONT_AUTH) && (!authPort->port_srv_auth_block->hasDataForPlugin());
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: ServerAuth calls plug %s\n",
 				forceNext ? "forced-NEXT" : authItr->name()));
 			int authResult = forceNext ? Auth::AUTH_CONTINUE :
