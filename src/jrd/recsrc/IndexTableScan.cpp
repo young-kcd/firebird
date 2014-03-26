@@ -95,6 +95,7 @@ void IndexTableScan::close(thread_db* tdbb) const
 
 		if (impure->irsb_nav_page)
 		{
+			fb_assert(impure->irsb_nav_btr_gc_lock);
 			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
 			delete impure->irsb_nav_btr_gc_lock;
 			impure->irsb_nav_btr_gc_lock = NULL;
@@ -543,12 +544,15 @@ UCHAR* IndexTableScan::openStream(thread_db* tdbb, Impure* impure, win* window) 
 
 void IndexTableScan::setPage(thread_db* tdbb, Impure* impure, win* window) const
 {
-	const SLONG newPage = window ? window->win_page.getPageNum() : 0;
+	const ULONG newPage = window ? window->win_page.getPageNum() : 0;
 
 	if (impure->irsb_nav_page != newPage)
 	{
 		if (impure->irsb_nav_page)
+		{
+			fb_assert(impure->irsb_nav_btr_gc_lock);
 			impure->irsb_nav_btr_gc_lock->enablePageGC(tdbb);
+		}
 
 		if (newPage)
 		{

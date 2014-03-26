@@ -325,7 +325,7 @@ struct win
 	explicit win(const PageNumber& wp)
 		: win_page(wp), win_bdb(NULL), win_flags(0)
 	{}
-	win(const USHORT pageSpaceID, const SLONG pageNum)
+	win(const USHORT pageSpaceID, const ULONG pageNum)
 		: win_page(pageSpaceID, pageNum), win_bdb(NULL), win_flags(0)
 	{}
 };
@@ -338,11 +338,11 @@ typedef win WIN;
 // alternative would be to initialize 16 elements of the array with 16 calls
 // to the constructor: win my_array[n] = {win(-1), ... (win-1)};
 // When all places are changed, this class can disappear and win's constructor
-// may get the default value of -1 to "wp".
+// may get the default value of ~0 to "wp".
 struct win_for_array: public win
 {
 	win_for_array()
-		: win(DB_PAGE_SPACE, -1)
+		: win(DB_PAGE_SPACE, ~0)
 	{}
 };
 

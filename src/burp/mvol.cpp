@@ -1393,6 +1393,8 @@ bool MVOL_split_hdr_read()
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
+	fb_assert(tdgbl->action);
+	fb_assert(tdgbl->action->act_file);
 	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
 	if (tdgbl->action && tdgbl->action->act_file &&

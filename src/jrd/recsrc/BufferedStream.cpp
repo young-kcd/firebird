@@ -225,7 +225,9 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 			if (!EVL_field(NULL, buffer_record, (USHORT) i, &from))
 			{
 				fb_assert(map.map_type == FieldMap::REGULAR_FIELD);
-				record->setNull(map.map_id);
+				fb_assert(record);
+				if (record)
+					record->setNull(map.map_id);
 				continue;
 			}
 

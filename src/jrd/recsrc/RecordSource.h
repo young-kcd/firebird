@@ -182,7 +182,7 @@ namespace Jrd
 		struct Impure : public RecordSource::Impure
 		{
 			RecordNumber irsb_nav_number;				// last record number
-			SLONG irsb_nav_page;						// index page number
+			ULONG irsb_nav_page;						// index page number
 			SLONG irsb_nav_incarnation;					// buffer/page incarnation counter
 			RecordBitmap** irsb_nav_bitmap;				// bitmap for inversion tree
 			RecordBitmap* irsb_nav_records_visited;		// bitmap of records already retrieved
