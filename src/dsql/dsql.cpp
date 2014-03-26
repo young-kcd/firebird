@@ -870,7 +870,14 @@ void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 	scratch->flags |= DsqlCompilerScratch::FLAG_DDL;
 
-	node = Node::doDsqlPass(scratch, node);
+	try
+	{
+		node = Node::doDsqlPass(scratch, node);
+	}
+	catch (status_exception& ex)
+	{
+		rethrowDdlException(ex, false);
+	}
 
 	if (scratch->getAttachment()->dbb_read_only)
 		ERRD_post(Arg::Gds(isc_read_only_database));
@@ -902,13 +909,42 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	// run all statements under savepoint control
 	{	// scope
 		AutoSavePoint savePoint(tdbb, req_transaction);
-		node->executeDdl(tdbb, internalScratch, req_transaction);
+
+		try
+		{
+			node->executeDdl(tdbb, internalScratch, req_transaction);
+		}
+		catch (status_exception& ex)
+		{
+			rethrowDdlException(ex, true);
+		}
+
 		savePoint.release();	// everything is ok
 	}
 
 	JRD_autocommit_ddl(tdbb, req_transaction);
 
 	trace.finish(false, res_successful);
+}
+
+// Rethrow an exception with isc_no_meta_update and prefix codes.
+void DsqlDdlRequest::rethrowDdlException(status_exception& ex, bool metadataUpdate)
+{
+	Arg::StatusVector newVector;
+
+	if (metadataUpdate)
+		newVector << Arg::Gds(isc_no_meta_update);
+
+	node->putErrorPrefix(newVector);
+
+	const ISC_STATUS* status = ex.value();
+
+	if (status[1] == isc_no_meta_update)
+		status += 2;
+
+	newVector.append(Arg::StatusVector(status));
+
+	status_exception::raise(newVector);
 }
 
 

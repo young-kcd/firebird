@@ -637,6 +637,10 @@ public:
 		bool singleton);
 
 private:
+	// Rethrow an exception with isc_no_meta_update and prefix codes.
+	void rethrowDdlException(Firebird::status_exception& ex, bool metadataUpdate);
+
+private:
 	NestConst<DdlNode> node;
 	DsqlCompilerScratch* internalScratch;
 };

@@ -171,33 +171,11 @@ public:
 	// execution is a hack.
 	void executeDdl(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 	{
-		using namespace Firebird;
-
 		// dsqlScratch should be NULL with CREATE DATABASE.
 		if (dsqlScratch)
 			dsqlScratch->setTransaction(transaction);
 
-		try
-		{
-			execute(tdbb, dsqlScratch, transaction);
-		}
-		catch (status_exception& ex)
-		{
-			// Rethrow an exception with isc_no_meta_update and prefix codes.
-
-			Arg::StatusVector newVector;
-			newVector << Arg::Gds(isc_no_meta_update);
-			putErrorPrefix(newVector);
-
-			const ISC_STATUS* status = ex.value();
-
-			if (status[1] == isc_no_meta_update)
-				status += 2;
-
-			newVector.append(Arg::StatusVector(status));
-
-			status_exception::raise(newVector);
-		}
+		execute(tdbb, dsqlScratch, transaction);
 	}
 
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -241,11 +219,10 @@ protected:
 		const Firebird::string& computedSource = "",
 		const BlrDebugWriter::BlrData& computedValue = BlrDebugWriter::BlrData());
 
-protected:
+public:
 	// Prefix DDL exceptions. To be implemented in each command.
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector) = 0;
 
-public:
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction) = 0;
 };
 
