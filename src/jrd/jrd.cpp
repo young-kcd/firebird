@@ -2949,7 +2949,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 				bool err = drop_files(file);
 				for (; shadow; shadow = shadow->sdw_next)
 				{
-					err = err || drop_files(shadow->sdw_file);
+					err = drop_files(shadow->sdw_file) || err;
 				}
 
 				tdbb->setDatabase(NULL);
