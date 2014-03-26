@@ -831,7 +831,7 @@ const StmtNode* CompoundStmtNode::execute(thread_db* tdbb, jrd_req* request, Exe
 
 		case jrd_req::req_return:
 		case jrd_req::req_sync:
-			if (impure->sta_state < int(statements.getCount()))
+			if (impure->sta_state < statements.getCount())
 			{
 				request->req_operation = jrd_req::req_evaluate;
 				return statements[impure->sta_state++];
