@@ -415,7 +415,17 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			case CreateAlterPackageNode::Item::FUNCTION:
 				{
 					CreateAlterFunctionNode* const fun = (*items)[i].function;
+
+					if (functionNames.exist(fun->name))
+					{
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_dyn_duplicate_package_item) <<
+								Arg::Str("FUNCTION") << Arg::Str(fun->name));
+					}
+
 					functionNames.add(fun->name);
+
 					fun->alter = true;
 					fun->package = name;
 					fun->dsqlPass(itemScratch);
@@ -425,7 +435,17 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			case CreateAlterPackageNode::Item::PROCEDURE:
 				{
 					CreateAlterProcedureNode* const proc = (*items)[i].procedure;
+
+					if (procedureNames.exist(proc->name))
+					{
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_dyn_duplicate_package_item) <<
+								Arg::Str("PROCEDURE") << Arg::Str(proc->name));
+					}
+
 					procedureNames.add(proc->name);
+
 					proc->alter = true;
 					proc->package = name;
 					proc->dsqlPass(itemScratch);
@@ -745,6 +765,8 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	// process declaredItems and items
 	Array<CreateAlterPackageNode::Item>* arrays[] = {declaredItems, items};
+	SortedArray<MetaName> functionNames[FB_NELEM(arrays)];
+	SortedArray<MetaName> procedureNames[FB_NELEM(arrays)];
 
 	for (unsigned i = 0; i < FB_NELEM(arrays); ++i)
 	{
@@ -768,6 +790,17 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				case CreateAlterPackageNode::Item::FUNCTION:
 					{
 						CreateAlterFunctionNode* const fun = (*arrays[i])[j].function;
+
+						if (functionNames[i].exist(fun->name))
+						{
+							status_exception::raise(
+								Arg::Gds(isc_no_meta_update) <<
+								Arg::Gds(isc_dyn_duplicate_package_item) <<
+									Arg::Str("FUNCTION") << Arg::Str(fun->name));
+						}
+
+						functionNames[i].add(fun->name);
+
 						fun->package = name;
 						fun->create = true;
 						if (arrays[i] == items)
@@ -779,6 +812,17 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				case CreateAlterPackageNode::Item::PROCEDURE:
 					{
 						CreateAlterProcedureNode* const proc = (*arrays[i])[j].procedure;
+
+						if (procedureNames[i].exist(proc->name))
+						{
+							status_exception::raise(
+								Arg::Gds(isc_no_meta_update) <<
+								Arg::Gds(isc_dyn_duplicate_package_item) <<
+									Arg::Str("PROCEDURE") << Arg::Str(proc->name));
+						}
+
+						procedureNames[i].add(proc->name);
+
 						proc->package = name;
 						proc->create = true;
 						if (arrays[i] == items)

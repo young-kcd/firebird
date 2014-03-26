@@ -902,6 +902,7 @@ static const struct {
 	{336068889, "HY000"}, // 281 dyn_coll_used_function
 	{336068890, "HY000"}, // 282 dyn_domain_used_function
 	{336068891, "42000"}, // 283 dyn_alter_user_no_clause
+	{336068894, "42000"}, // 286 dyn_duplicate_package_item
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig

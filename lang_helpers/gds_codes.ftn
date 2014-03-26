@@ -1814,6 +1814,8 @@ C --
       PARAMETER (GDS__dyn_domain_used_function         = 336068890)
       INTEGER*4 GDS__dyn_alter_user_no_clause        
       PARAMETER (GDS__dyn_alter_user_no_clause         = 336068891)
+      INTEGER*4 GDS__dyn_duplicate_package_item      
+      PARAMETER (GDS__dyn_duplicate_package_item       = 336068894)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

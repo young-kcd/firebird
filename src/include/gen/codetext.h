@@ -903,6 +903,7 @@ static const struct {
 	{"dyn_coll_used_function", 336068889},
 	{"dyn_domain_used_function", 336068890},
 	{"dyn_alter_user_no_clause", 336068891},
+	{"dyn_duplicate_package_item", 336068894},
 	{"gbak_unknown_switch", 336330753},
 	{"gbak_page_size_missing", 336330754},
 	{"gbak_page_size_toobig", 336330755},

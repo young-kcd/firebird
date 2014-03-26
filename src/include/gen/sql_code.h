@@ -902,6 +902,7 @@ static const struct {
 	{336068889, -901}, /* 281 dyn_coll_used_function */
 	{336068890, -901}, /* 282 dyn_domain_used_function */
 	{336068891, -901}, /* 283 dyn_alter_user_no_clause */
+	{336068894, -901}, /* 286 dyn_duplicate_package_item */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

@@ -906,6 +906,7 @@ Data source : @4"},		/* eds_statement */
 	{336068889, "Collation @1 is used in function @2 (parameter name @3) and cannot be dropped"},		/* dyn_coll_used_function */
 	{336068890, "Domain @1 is used in function @2 (parameter name @3) and cannot be dropped"},		/* dyn_domain_used_function */
 	{336068891, "ALTER USER requires at least one clause to be specified"},		/* dyn_alter_user_no_clause */
+	{336068894, "Duplicate @1 @2"},		/* dyn_duplicate_package_item */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */

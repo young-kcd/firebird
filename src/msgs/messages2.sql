@@ -1907,6 +1907,7 @@ COMMIT WORK;
 ('dyn_alter_user_no_clause', 'CreateAlterUserNode', 'DdlNodes.epp', NULL, 8, 283, NULL, 'ALTER USER requires at least one clause to be specified', NULL, NULL);
 (NULL, 'DYN_delete_role', 'dyn_del.epp', NULL, 8, 284, NULL, 'Cannot delete system SQL role @1', NULL, NULL);
 (NULL, 'DdlNodes.epp', 'AlterRelationNode::modifyField', NULL, 8, 285, NULL, 'Column @1 is not an identity column', NULL, NULL);
+('dyn_duplicate_package_item', NULL, 'PackageNodes.epp', NULL, 8, 286, NULL, 'Duplicate @1 @2', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);
