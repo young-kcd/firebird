@@ -1,3 +1,21 @@
+ 2014-03-25 14:43  dimitr 
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+Allowed conditional bitmap scans for the index navigation.
+
+ 2014-03-25 13:52  dimitr 
+   M src/dsql/StmtNodes.cpp
+Cleanup.
+
+ 2014-03-25 13:51  dimitr 
+   M src/jrd/Function.epp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/recsrc/ProcedureScan.cpp
+Fixed CORE-4371: Create function/sp which references to non-existent exception: error message is "Error while parsing function's BLR" instead of "exception not defined".
+
  2014-03-24 09:46  alexpeshkoff 
    M src/common/classes/sparse_bitmap.h
 fixed build
