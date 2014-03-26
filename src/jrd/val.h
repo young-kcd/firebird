@@ -64,7 +64,7 @@ class PatternMatcher;
 
 struct impure_state
 {
-	SSHORT sta_state;
+	ULONG sta_state;
 };
 
 struct impure_value
