@@ -1,3 +1,11 @@
+ 2014-03-25 13:32  hvlad 
+   M src/jrd/cch.cpp
+Fixed bug CORE-2848 : "lock conversion denied" or "lock denied" error
+
+ 2014-03-25 10:12  hvlad 
+   M src/jrd/dpm.epp
+Fixed bug CORE-4372 : Deadlock is possible when two data pages contains record fragments pointing to each other
+
  2014-03-13 09:29  roman-simakov 
    M src/jrd/jrd.h
    M src/jrd/validation.cpp
