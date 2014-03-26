@@ -182,7 +182,7 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 		}
 		break;
 	case isc_dpb_shut_multi:
-		if ((dbb->dbb_ast_flags & DBB_shutdown_full) || (dbb->dbb_ast_flags & DBB_shutdown_single))
+		if (dbb->dbb_ast_flags & (DBB_shutdown_full | DBB_shutdown_single))
 		{
 			bad_mode(dbb);
 		}

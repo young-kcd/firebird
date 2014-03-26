@@ -3016,7 +3016,7 @@ static rhd* locate_space(thread_db* tdbb,
 			const bool dp_is_secondary = PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary);
 			//if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
 			if (dp_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_full) &&
-				((type == DPM_primary && !dp_is_secondary) || (type != DPM_primary && dp_is_secondary)))
+				((type == DPM_primary) ^ dp_is_secondary))
 			{
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
