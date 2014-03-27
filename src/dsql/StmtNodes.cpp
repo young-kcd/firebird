@@ -3270,7 +3270,7 @@ void ExecStatementNode::getString(thread_db* tdbb, jrd_req* request, const Value
 	{
 		const Jrd::Attachment* att = tdbb->getAttachment();
 		len = MOV_make_string2(tdbb, dsc, (useAttCS ? att->att_charset : dsc->getTextType()),
-			&p, buffer);
+			&p, buffer, false);
 	}
 
 	str.assign((char*) p, len);
