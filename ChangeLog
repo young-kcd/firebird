@@ -1,3 +1,57 @@
+ 2014-03-26 19:11  robocop 
+   M src/jrd/dpm.epp
+   M src/jrd/shut.cpp
+Shortcut.
+
+ 2014-03-26 19:10  robocop 
+   M src/jrd/jrd.cpp
+Try to drop as many shadow files as possible.
+
+ 2014-03-26 19:10  robocop 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/par.cpp
+   M src/jrd/sdw.cpp
+   M src/remote/server/server.cpp
+Misc.
+
+ 2014-03-26 19:06  robocop 
+   M src/burp/mvol.cpp
+   M src/jrd/jrd.h
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+Warnings.
+
+ 2014-03-26 16:55  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/PackageNodes.epp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-4373 - Duplicate names in package are not checked.
+
+ 2014-03-26 16:55  asfernandes 
+   M src/dsql/Nodes.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+Fixed CORE-4376 - Preparation of erroneous DDL statement does not show the main command failed.
+
+ 2014-03-26 16:42  dimitr 
+   M src/dsql/StmtNodes.cpp
+Misc.
+
+ 2014-03-26 16:41  dimitr 
+   M src/jrd/val.h
+Fixed CORE-4375: Procedure executes infinitely if contains more than 32767 statements inside any BEGIN/END block.
+
  2014-03-25 14:43  dimitr 
    M src/jrd/opt.cpp
    M src/jrd/recsrc/IndexTableScan.cpp
