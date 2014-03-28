@@ -785,6 +785,9 @@ const
 	gds_auth_datalength                  = 335545070;
 	gds_info_unprepared_stmt             = 335545071;
 	gds_idx_key_value                    = 335545072;
+	gds_forupdate_virtualtbl             = 335545073;
+	gds_forupdate_systbl                 = 335545074;
+	gds_forupdate_temptbl                = 335545075;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

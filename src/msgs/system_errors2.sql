@@ -759,6 +759,9 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-902, '28', '000', 0, 750, 'auth_datalength', NULL, NULL);
 (-901, 'HY', '007', 0, 751, 'info_unprepared_stmt', NULL, NULL)
 (-901, 'HY', '007', 0, 752, 'idx_key_value', NULL, NULL)
+(-901, 'HY', '000', 0, 753, 'forupdate_virtualtbl', NULL, NULL)
+(-901, 'HY', '000', 0, 754, 'forupdate_systbl', NULL, NULL)
+(-901, 'HY', '000', 0, 755, 'forupdate_temptbl', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

@@ -2021,9 +2021,8 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 					 Arg::Gds(isc_tpb_reserv_virtualtbl) << Arg::Str(relation_name));
 		}
 
-		// Reject explicit attempts to take locks on system tables, but RDB$ADMIN role
-		// can do that for whatever is needed.
-		if (relation->isSystem() && !tdbb->getAttachment()->locksmith())
+		// Reject explicit attempts to take locks on system tables.
+		if (relation->isSystem())
 		{
 			ERR_post(Arg::Gds(isc_bad_tpb_content) <<
 		    		 Arg::Gds(isc_tpb_reserv_systbl) << Arg::Str(relation_name));

@@ -777,6 +777,9 @@ Data source : @4"},		/* eds_statement */
 	{335545070, "Client authentication plugin expected @2 bytes of @3 from server, got @1"},		/* auth_datalength */
 	{335545071, "Attempt to get information about an unprepared dynamic SQL statement."},		/* info_unprepared_stmt */
 	{335545072, "Problematic key value is @1"},		/* idx_key_value */
+	{335545073, "Cannot select virtual table @1 for update WITH LOCK"},		/* forupdate_virtualtbl */
+	{335545074, "Cannot select system table @1 for update WITH LOCK"},		/* forupdate_systbl */
+	{335545075, "Cannot select temporary table @1 for update WITH LOCK"},		/* forupdate_temptbl */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

@@ -773,6 +773,9 @@ static const struct {
 	{335545070, -902}, /* 750 auth_datalength */
 	{335545071, -901}, /* 751 info_unprepared_stmt */
 	{335545072, -901}, /* 752 idx_key_value */
+	{335545073, -901}, /* 753 forupdate_virtualtbl */
+	{335545074, -901}, /* 754 forupdate_systbl */
+	{335545075, -901}, /* 755 forupdate_temptbl */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

@@ -1402,6 +1402,22 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 			break;
 
 		case blr_writelock:
+			// PAR_parseRecordSource() called RelationSourceNode::parse() => MET_scan_relation().
+			for (size_t iter = 0; iter < rse->rse_relations.getCount(); ++iter)
+			{
+				const RecordSourceNode* subNode = rse->rse_relations[iter];
+				if (subNode->type != RelationSourceNode::TYPE)
+					continue;
+				const RelationSourceNode* relNode = static_cast<const RelationSourceNode*>(subNode);
+				const jrd_rel* relation = relNode->relation;
+				fb_assert(relation);
+				if (relation->isVirtual())
+					PAR_error(csb, Arg::Gds(isc_forupdate_virtualtbl) << relation->rel_name, false);
+				if (relation->isSystem())
+					PAR_error(csb, Arg::Gds(isc_forupdate_systbl) << relation->rel_name, false);
+				if (relation->isTemporary())
+					PAR_error(csb, Arg::Gds(isc_forupdate_temptbl) << relation->rel_name, false);
+			}
 			rse->flags |= RseNode::FLAG_WRITELOCK;
 			break;
 

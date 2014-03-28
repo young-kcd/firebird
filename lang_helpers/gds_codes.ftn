@@ -1556,6 +1556,12 @@ C --
       PARAMETER (GDS__info_unprepared_stmt             = 335545071)
       INTEGER*4 GDS__idx_key_value                   
       PARAMETER (GDS__idx_key_value                    = 335545072)
+      INTEGER*4 GDS__forupdate_virtualtbl            
+      PARAMETER (GDS__forupdate_virtualtbl             = 335545073)
+      INTEGER*4 GDS__forupdate_systbl                
+      PARAMETER (GDS__forupdate_systbl                 = 335545074)
+      INTEGER*4 GDS__forupdate_temptbl               
+      PARAMETER (GDS__forupdate_temptbl                = 335545075)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

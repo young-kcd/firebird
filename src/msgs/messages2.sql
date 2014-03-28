@@ -860,6 +860,9 @@ Data source : @4', NULL, NULL)
 ('auth_datalength', NULL, NULL, NULL, 0, 750, NULL, 'Client authentication plugin expected @2 bytes of @3 from server, got @1', NULL, NULL);
 ('info_unprepared_stmt', NULL, NULL, NULL, 0, 751, NULL, 'Attempt to get information about an unprepared dynamic SQL statement.', NULL, NULL);
 ('idx_key_value', NULL, NULL, NULL, 0, 752, NULL, 'Problematic key value is @1', NULL, NULL);
+('forupdate_virtualtbl', 'PAR_rse', 'par.cpp', NULL, 0, 753, NULL, 'Cannot select virtual table @1 for update WITH LOCK', NULL, NULL)
+('forupdate_systbl', 'PAR_rse', 'par.cpp', NULL, 0, 754, NULL, 'Cannot select system table @1 for update WITH LOCK', NULL, NULL)
+('forupdate_temptbl', 'PAR_rse', 'par.cpp', NULL, 0, 755, NULL, 'Cannot select temporary table @1 for update WITH LOCK', NULL, NULL)
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

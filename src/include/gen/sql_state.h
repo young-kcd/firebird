@@ -773,6 +773,9 @@ static const struct {
 	{335545070, "28000"}, // 750 auth_datalength
 	{335545071, "HY007"}, // 751 info_unprepared_stmt
 	{335545072, "HY007"}, // 752 idx_key_value
+	{335545073, "HY000"}, // 753 forupdate_virtualtbl
+	{335545074, "HY000"}, // 754 forupdate_systbl
+	{335545075, "HY000"}, // 755 forupdate_temptbl
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw
