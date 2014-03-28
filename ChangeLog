@@ -1,3 +1,7 @@
+ 2014-03-27 15:18  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Fixed CORE-4374 - Truncation error when using EXECUTE STATEMENT with a blob.
+
  2014-03-26 19:11  robocop 
    M src/jrd/dpm.epp
    M src/jrd/shut.cpp
