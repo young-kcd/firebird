@@ -1,3 +1,18 @@
+ 2014-03-28 22:00  robocop 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/par.cpp
+   M src/jrd/tra.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Do not take explicit locks on virtual/sys/temp tables using TPBs.
+
  2014-03-27 15:18  asfernandes 
    M src/dsql/StmtNodes.cpp
 Fixed CORE-4374 - Truncation error when using EXECUTE STATEMENT with a blob.
