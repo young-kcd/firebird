@@ -29,6 +29,7 @@
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
 #include "../jrd/Function.h"
+#include "../jrd/Optimizer.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
 #include "../jrd/extds/ExtDS.h"
@@ -1045,7 +1046,22 @@ CursorStmtNode* CursorStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 CursorStmtNode* CursorStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	ExprNode::doPass2(tdbb, csb, scrollExpr.getAddress());
+
+	// Find streams used by the cursor and temporarily activate them,
+	// so that pass2(intoStmt) could use indices for nodes referring to the base tables
+	// (useful for correlated sub-queries in the select list, see CORE-4379 for example)
+
+	const Cursor* const cursor = csb->csb_cursors[cursorNumber];
+	fb_assert(cursor);
+
+	StreamList cursorStreams;
+	cursor->getAccessPath()->findUsedStreams(cursorStreams);
+
+	StreamStateHolder stateHolder(csb, cursorStreams);
+	stateHolder.activate();
+
 	doPass2(tdbb, csb, intoStmt.getAddress(), this);
+
 	return this;
 }
 
@@ -1222,6 +1238,11 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 
 	cursor = FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
 		(rse->flags & RseNode::FLAG_SCROLLABLE));
+
+	if (cursorNumber >= csb->csb_cursors.getCount())
+		csb->csb_cursors.grow(cursorNumber + 1);
+
+	csb->csb_cursors[cursorNumber] = cursor;
 
 	return this;
 }

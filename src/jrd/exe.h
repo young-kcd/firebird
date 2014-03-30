@@ -414,6 +414,7 @@ class CompilerScratch : public pool_alloc<type_csb>
 		csb_resources(p),
 		csb_dependencies(p),
 		csb_fors(p),
+		csb_cursors(p),
 		csb_invariants(p),
 		csb_current_nodes(p),
 		csb_pool(p),
@@ -493,6 +494,7 @@ public:
 	ResourceList	csb_resources;				// Resources (relations and indexes)
 	Firebird::Array<Dependency>	csb_dependencies;	// objects that this statement depends upon
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
+	Firebird::Array<const Cursor*> csb_cursors;	// named cursors
 	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
 	Firebird::Array<RseOrExprNode> csb_current_nodes;	// RseNode's and other invariant
 												// candidates within whose scope we are
