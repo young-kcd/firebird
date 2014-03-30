@@ -298,6 +298,70 @@ private:
 	StreamType remainingStreams;
 };
 
+class StreamStateHolder
+{
+public:
+	explicit StreamStateHolder(CompilerScratch* csb)
+		: m_csb(csb), m_streams(csb->csb_pool), m_flags(csb->csb_pool)
+	{
+		for (StreamType stream = 0; stream < csb->csb_n_stream; stream++)
+			m_streams.add(stream);
+
+		init();
+	}
+
+	StreamStateHolder(CompilerScratch* csb, const StreamList& streams)
+		: m_csb(csb), m_streams(csb->csb_pool), m_flags(csb->csb_pool)
+	{
+		m_streams.assign(streams);
+
+		init();
+	}
+
+	~StreamStateHolder()
+	{
+		for (size_t i = 0; i < m_streams.getCount(); i++)
+		{
+			const StreamType stream = m_streams[i];
+
+			if (m_flags[i >> 3] & (1 << (i & 7)))
+				m_csb->csb_rpt[stream].activate();
+			else
+				m_csb->csb_rpt[stream].deactivate();
+		}
+	}
+
+	void activate()
+	{
+		for (const StreamType* iter = m_streams.begin(); iter != m_streams.end(); ++iter)
+			m_csb->csb_rpt[*iter].activate();
+	}
+
+	void deactivate()
+	{
+		for (const StreamType* iter = m_streams.begin(); iter != m_streams.end(); ++iter)
+			m_csb->csb_rpt[*iter].deactivate();
+	}
+
+private:
+	void init()
+	{
+		m_flags.resize(FLAG_BYTES(m_streams.getCount()));
+
+		for (size_t i = 0; i < m_streams.getCount(); i++)
+		{
+			const StreamType stream = m_streams[i];
+
+			if (m_csb->csb_rpt[stream].csb_flags & csb_active)
+				m_flags[i >> 3] |= (1 << (i & 7));
+		}
+	}
+
+	CompilerScratch* const m_csb;
+	StreamList m_streams;
+	Firebird::HalfStaticArray<UCHAR, sizeof(SLONG)> m_flags;
+};
+
 } // namespace Jrd
 
 #endif // OPTIMIZER_H
