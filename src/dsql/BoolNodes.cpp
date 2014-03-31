@@ -1636,10 +1636,10 @@ static RegisterBoolNode<RseBoolNode> regRseBoolNodeExists(blr_exists);	// ASF: W
 RseBoolNode::RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse)
 	: TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>(pool),
 	  blrOp(aBlrOp),
+	  ownSavepoint(true),
 	  dsqlRse(aDsqlRse),
 	  rse(NULL),
-	  rsb(NULL),
-	  ownSavepoint(true)
+	  rsb(NULL)
 {
 	addChildNode(dsqlRse, rse);
 }

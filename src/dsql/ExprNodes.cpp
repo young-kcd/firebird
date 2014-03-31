@@ -8799,11 +8799,11 @@ SubQueryNode::SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDs
 			ValueExprNode* aValue1, ValueExprNode* aValue2)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_SUBQUERY>(pool),
 	  blrOp(aBlrOp),
+	  ownSavepoint(true),
 	  dsqlRse(aDsqlRse),
 	  value1(aValue1),
 	  value2(aValue2),
-	  rsb(NULL),
-	  ownSavepoint(true)
+	  rsb(NULL)
 {
 	addChildNode(dsqlRse, rse);
 	addChildNode(value1, value1);

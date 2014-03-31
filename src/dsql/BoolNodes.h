@@ -205,10 +205,10 @@ private:
 
 public:
 	UCHAR blrOp;
+	bool ownSavepoint;
 	NestConst<RecordSourceNode> dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<RecordSource> rsb;
-	bool ownSavepoint;
 };
 
 

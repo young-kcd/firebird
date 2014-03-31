@@ -1323,12 +1323,12 @@ public:
 
 public:
 	UCHAR blrOp;
+	bool ownSavepoint;
 	NestConst<RecordSourceNode> dsqlRse;
 	NestConst<RseNode> rse;
 	NestConst<ValueExprNode> value1;
 	NestConst<ValueExprNode> value2;
 	NestConst<RecordSource> rsb;
-	bool ownSavepoint;
 };
 
 

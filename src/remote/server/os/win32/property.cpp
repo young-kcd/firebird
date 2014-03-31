@@ -66,7 +66,7 @@ static USHORT usServerFlags;	// Server Flag Mask
 LRESULT CALLBACK GeneralPage(HWND, UINT, WPARAM, LPARAM);
 
 // Static functions to be called from this file only.
-static char *MakeVersionString(char*, size_t, USHORT);
+static char* MakeVersionString(char*, size_t, USHORT);
 static void RefreshUserCount(HWND);
 
 HWND DisplayProperties(HWND hParentWnd, HINSTANCE hInst, USHORT usServerFlagMask)
