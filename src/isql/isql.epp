@@ -1807,9 +1807,12 @@ void ISQL_print_validation(FILE* fp,
 	bool firsttime = true;
 	TEXT buffer[BUFFER_LENGTH512];
 
-	size_t length;
-	while ( (length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer)) )
+	do
 	{
+		size_t length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer);
+		if (!fbStatus->isSuccess() && fbStatus->get()[1] != isc_segment)
+			break;
+
 		buffer[length] = 0;
 		const TEXT* p = buffer;
 		if (isComputedField)
@@ -1839,10 +1842,10 @@ void ISQL_print_validation(FILE* fp,
 		}
 
 		IUTILS_printf(fp, buffer);
-	}
-	if (!issql) {
+	} while (true);
+
+	if (!issql)
 		IUTILS_printf2(fp, "%s", (isComputedField ? " */" : ")"));
-	}
 
 	if ((!fbStatus->isSuccess()) && (fbStatus->get()[1] != isc_segstr_eof))
 		ISQL_errmsg(fbStatus);
@@ -7553,9 +7556,13 @@ processing_state ISQL_print_item_blob(FILE* fp, const IsqlVar* var, Firebird::IT
 	}
 
 	TEXT buffer[BUFFER_LENGTH512];
-	size_t length;
-	while ( (length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer)) )
+
+	do
 	{
+		size_t length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer);
+		if (!fbStatus->isSuccess() && fbStatus->get()[1] != isc_segment)
+			break;
+
 		// Special displays for blr or acl subtypes
 
 		if (blob_subtype > isc_blob_text && blob_subtype < isc_blob_max_predefined_subtype)
@@ -7575,7 +7582,7 @@ processing_state ISQL_print_item_blob(FILE* fp, const IsqlVar* var, Firebird::IT
 			buffer[length] = 0;
 			IUTILS_printf(fp, buffer);
 		}
-	}
+	} while (true);
 
 	if ((!fbStatus->isSuccess()) && (fbStatus->get()[1] != isc_segstr_eof))
 	{
