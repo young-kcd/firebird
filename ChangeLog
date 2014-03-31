@@ -1,3 +1,13 @@
+ 2014-03-30 12:59  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.h
+Fixed CORE-4379: Poor performance of explicit cursors containing correlated subqueries in the select list.
+
+ 2014-03-30 12:57  dimitr 
+   M src/jrd/Optimizer.h
+   M src/jrd/opt.cpp
+Moved the helper class to the public scope for reuse outside the optimizer.
+
  2014-03-28 22:00  robocop 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
