@@ -1,3 +1,15 @@
+ 2014-03-31 16:17  asfernandes 
+   M src/isql/isql.epp
+Fixed CORE-4380 - ISQL truncates blob when reading an empty segment.
+
+ 2014-03-31 02:04  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/remote/server/os/win32/property.cpp
+Misc.
+
  2014-03-30 12:59  dimitr 
    M src/dsql/StmtNodes.cpp
    M src/jrd/exe.h
