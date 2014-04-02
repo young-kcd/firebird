@@ -122,16 +122,17 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_
  **************************************/
 	SET_TDBB(tdbb);
 
+	const ULONG relId = relation->rel_id;
+
 	Lock* lock;
 	vec<Lock*>* vector = transaction->tra_relation_locks;
-	if (vector && (relation->rel_id < vector->count()) && (lock = (*vector)[relation->rel_id]))
+	if (vector && (relId < vector->count()) && (lock = (*vector)[relId]))
 	{
 		return lock;
 	}
 
 	vector = transaction->tra_relation_locks =
-		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks,
-					   relation->rel_id + 1);
+		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks, relId + 1);
 
 	const USHORT relLockLen = relation->getRelLockKeyLength();
 	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock(tdbb, relLockLen, LCK_relation);
@@ -145,7 +146,7 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_
 	// transactions, if a transaction is specified
 	lock->lck_compatible2 = transaction;
 
-	(*vector)[relation->rel_id] = lock;
+	(*vector)[relId] = lock;
 
 	return lock;
 }

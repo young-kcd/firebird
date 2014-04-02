@@ -207,7 +207,7 @@ void MET_get_domain(thread_db* tdbb, MemoryPool& csbPool, const MetaName& name, 
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	bool found = false;
 
 	AutoCacheRequest handle(tdbb, irq_l_domain, IRQ_REQUESTS);
@@ -270,7 +270,7 @@ MetaName MET_get_relation_field(thread_db* tdbb, MemoryPool& csbPool, const Meta
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	bool found = false;
 	MetaName sourceName;
 
@@ -349,7 +349,7 @@ void MET_update_partners(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	vec<jrd_rel*>* relations = attachment->att_relations;
 
@@ -436,7 +436,7 @@ void MET_verify_cache(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* att = tdbb->getAttachment();
+	Attachment* att = tdbb->getAttachment();
 	if (!att)
 		return;
 
@@ -673,7 +673,7 @@ void MET_clear_cache(thread_db* tdbb)
 	MET_verify_cache(tdbb);
 #endif
 
-	Jrd::Attachment* att = tdbb->getAttachment();
+	Attachment* att = tdbb->getAttachment();
 
 	for (unsigned i = 0; i < DB_TRIGGER_MAX; i++)
 		release_cached_triggers(tdbb, att->att_triggers[i]);
@@ -825,7 +825,7 @@ bool MET_routine_in_use(thread_db* tdbb, Routine* routine)
 	MET_verify_cache(tdbb);
 #endif
 
-	Jrd::Attachment* att = tdbb->getAttachment();
+	Attachment* att = tdbb->getAttachment();
 
 	vec<jrd_rel*>* relations = att->att_relations;
 	{ // scope
@@ -941,7 +941,7 @@ void MET_activate_shadow(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	// Erase any secondary files of the primary database of the shadow being activated.
@@ -1031,7 +1031,7 @@ DeferredWork* MET_change_fields(thread_db* tdbb, jrd_tra* transaction, const dsc
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	dsc relation_name;
 	DeferredWork* dw = NULL;
@@ -1261,7 +1261,7 @@ Format* MET_current(thread_db* tdbb, jrd_rel* relation)
 		return relation->rel_current_format;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!(relation->rel_flags & REL_scanned))
 	{
@@ -1338,7 +1338,7 @@ void MET_delete_shadow(thread_db* tdbb, USHORT shadow_number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	AutoRequest handle;
@@ -1438,7 +1438,7 @@ Format* MET_format(thread_db* tdbb, jrd_rel* relation, USHORT number)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	Format* format;
@@ -1598,7 +1598,7 @@ bool MET_get_char_coll_subtype_info(thread_db* tdbb, USHORT id, SubtypeInfo* inf
 	const USHORT collation_id = id >> 8;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	AutoCacheRequest request(tdbb, irq_l_subtype, IRQ_REQUESTS);
 	bool found = false;
@@ -1667,7 +1667,7 @@ DmlNode* MET_get_dependencies(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	fb_assert(domain_validation.isEmpty() || object_name == domain_validation); // for now
 
@@ -1761,7 +1761,7 @@ void MET_get_shadow_files(thread_db* tdbb, bool delete_files)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	AutoRequest handle;
@@ -1824,7 +1824,7 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
  **************************************/
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
@@ -1857,7 +1857,7 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 void MET_load_ddl_triggers(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
@@ -1907,7 +1907,7 @@ void MET_load_trigger(thread_db* tdbb,
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
@@ -2030,7 +2030,7 @@ void MET_lookup_cnstrt_for_index(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	constraint_name = "";
 	AutoCacheRequest request(tdbb, irq_l_cnstrt, IRQ_REQUESTS);
@@ -2061,7 +2061,7 @@ void MET_lookup_cnstrt_for_trigger(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	constraint_name = "";
 	relation_name = "";
@@ -2107,7 +2107,7 @@ void MET_lookup_exception(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	// We need to look up exception in RDB$EXCEPTIONS
 
@@ -2143,7 +2143,7 @@ bool MET_load_exception(thread_db* tdbb, ExceptionItem& item)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	// We need to look up exception in RDB$EXCEPTIONS
 
@@ -2179,7 +2179,7 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const MetaName& name)
  *
  *****************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	// Start by checking field names that we already know
 	vec<jrd_fld*>* vector = relation->rel_fields;
@@ -2240,7 +2240,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	FPTR_BFILTER_CALLBACK filter = NULL;
@@ -2284,7 +2284,7 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (item.name == "RDB$GENERATORS")
 	{
@@ -2319,7 +2319,7 @@ SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (name == "RDB$GENERATORS")
 		return 0;
@@ -2350,7 +2350,7 @@ void MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name)
  *
  **************************************/
 	SET_TDBB (tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (!gen_id)
 	{
@@ -2387,7 +2387,7 @@ void MET_lookup_index(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	index_name = "";
 
@@ -2420,7 +2420,7 @@ SLONG MET_lookup_index_name(thread_db* tdbb,
 	SLONG id = -1;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	AutoCacheRequest request(tdbb, irq_l_index_name, IRQ_REQUESTS);
 
@@ -2460,7 +2460,7 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
  **************************************/
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (relation->rel_flags & REL_check_partners) {
 		scan_partners(tdbb, relation);
@@ -2558,7 +2558,7 @@ jrd_prc* MET_lookup_procedure(thread_db* tdbb, const QualifiedName& name, bool n
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	jrd_prc* check_procedure = NULL;
 
 	// See if we already know the procedure by name
@@ -2628,7 +2628,7 @@ jrd_prc* MET_lookup_procedure_id(thread_db* tdbb, USHORT id,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	jrd_prc* check_procedure = NULL;
 
 	jrd_prc* procedure;
@@ -2691,7 +2691,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const MetaName& name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	// See if we already know the relation by name
 
@@ -2706,7 +2706,7 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const MetaName& name)
 		if (relation)
 		{
 			if (relation->rel_flags & REL_deleting)
-				Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex, FB_FUNCTION);
+				Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex, FB_FUNCTION);
 
 			if (!(relation->rel_flags & REL_deleted))
 			{
@@ -2787,7 +2787,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	// System relations are above suspicion
 
@@ -2803,7 +2803,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 	if (vector && (id < (SLONG) vector->count()) && (relation = (*vector)[id]))
 	{
 		if (relation->rel_flags & REL_deleting)
-			Jrd::Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex, FB_FUNCTION);
+			Attachment::CheckoutLockGuard guard(attachment, relation->rel_drop_mutex, FB_FUNCTION);
 
 		if (relation->rel_flags & REL_deleted)
 			return return_deleted ? relation : NULL;
@@ -2881,7 +2881,7 @@ DmlNode* MET_parse_blob(thread_db*	tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	blb* blob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
 	ULONG length = blob->blb_length + 10;
@@ -2917,7 +2917,7 @@ void MET_parse_sys_trigger(thread_db* tdbb, jrd_rel* relation)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	relation->rel_flags &= ~REL_sys_triggers;
@@ -3057,7 +3057,7 @@ void MET_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	AutoCacheRequest request(tdbb, irq_s_trans, IRQ_REQUESTS);
 
@@ -3086,7 +3086,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
 	if (id >= attachment->att_procedures.getCount())
@@ -3430,7 +3430,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	vec<jrd_rel*>* vector = attachment->att_relations;
 	MemoryPool* pool = attachment->att_pool;
 
@@ -3604,7 +3604,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
  **************************************/
 	SET_TDBB(tdbb);
 	trig_vec* triggers[TRIGGER_MAX];
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 	bool dependencies = false;
@@ -3965,7 +3965,7 @@ void MET_trigger_msg(thread_db* tdbb, string& msg, const MetaName& name,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	AutoCacheRequest request(tdbb, irq_s_msgs, IRQ_REQUESTS);
 
@@ -3995,7 +3995,7 @@ void MET_update_shadow(thread_db* tdbb, Shadow* shadow, USHORT file_flags)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	AutoRequest handle;
 
@@ -4024,7 +4024,7 @@ void MET_update_transaction(thread_db* tdbb, jrd_tra* transaction, const bool do
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	AutoCacheRequest request(tdbb, irq_m_trans, IRQ_REQUESTS);
 
@@ -4082,7 +4082,7 @@ static int blocking_ast_dsql_cache(void* ast_object)
 static DSqlCacheItem* get_dsql_cache_item(thread_db* tdbb, int type, const QualifiedName& name)
 {
 	Database* dbb = tdbb->getDatabase();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	string key((char*) &type, sizeof(type));
 	int len = name.identifier.length();
@@ -4311,7 +4311,7 @@ static void get_trigger(thread_db* tdbb, jrd_rel* relation,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	if (blob_id->isEmpty() && (engine.isEmpty() || entryPoint.isEmpty()))
 		return;
@@ -4345,7 +4345,7 @@ static bool get_type(thread_db* tdbb, USHORT* id, const UCHAR* name, const TEXT*
 	UCHAR buffer[MAX_SQL_IDENTIFIER_SIZE];			// BASED ON RDB$TYPE_NAME
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	fb_assert(id != NULL);
 	fb_assert(name != NULL);
@@ -4393,7 +4393,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 	AutoCacheRequest request(tdbb, irq_view_context, IRQ_REQUESTS);
 
@@ -4446,7 +4446,7 @@ static void make_relation_scope_name(const TEXT* rel_name, const USHORT rel_flag
 static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5);
 
@@ -4469,7 +4469,7 @@ static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id)
 static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name)
 {
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	CompilerScratch* csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), 5, name);
 
@@ -4614,7 +4614,7 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 	bool found = false;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	fb_assert(id != NULL);
 
@@ -4702,7 +4702,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
  *      Save trigger data to passed vector
  *
  **************************************/
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	trig_vec* vector = *ptr;
 
 	if (!vector)
@@ -4776,7 +4776,7 @@ void scan_partners(thread_db* tdbb, jrd_rel* relation)
  *      scan of primary dependencies on relation's primary key.
  *
  **************************************/
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	AutoCacheRequest request(tdbb, irq_foreign1, IRQ_REQUESTS);
 	frgn* references = &relation->rel_foreign_refs;
@@ -5152,7 +5152,7 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const MetaName& trig_name)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	// See if this is a system trigger, with the flag set as TRG_ignore_perm
 
@@ -5191,7 +5191,7 @@ static bool verify_TRG_ignore_perm(thread_db* tdbb, const MetaName& trig_name)
 	return false;
 }
 
-int MET_get_linger(Jrd::thread_db* tdbb)
+int MET_get_linger(thread_db* tdbb)
 {
 /**************************************
  *
@@ -5204,7 +5204,7 @@ int MET_get_linger(Jrd::thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 	int rc = 0;
 
 	AutoCacheRequest request(tdbb, irq_linger, IRQ_REQUESTS);

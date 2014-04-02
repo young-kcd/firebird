@@ -1245,7 +1245,8 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 					}
 				}
 			}
-			if (!phase) {
+			if (!phase)
+			{
 				Firebird::makePermanentVector(tdbb->tdbb_status_vector, err_status);
 				ERR_punt();
 			}

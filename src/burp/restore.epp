@@ -10539,7 +10539,7 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
 {
 /**************************************
  *
- *	f i x G e n e r a t o r
+ *	f i x _ g e n e r a t o r
  *
  **************************************
  *
@@ -10591,7 +10591,7 @@ void fix_system_generators(BurpGlobals* tdgbl)
 {
 /**************************************
  *
- *	f i x A l l G e n e r a t o r s
+ *	f i x _ s y s t e m _ g e n e r a t o r s
  *
  **************************************
  *
