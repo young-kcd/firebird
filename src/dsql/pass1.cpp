@@ -1813,7 +1813,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 			(streamList->items.getCount() != 1 ||
 				!(relNode = streamList->items[0]->as<RelationSourceNode>()) ||
 				!(relation = relNode->dsqlContext->ctx_relation) ||
-				(relation->rel_flags & REL_view) || (relation->rel_flags & REL_external)))
+				(relation->rel_flags & (REL_view | REL_external))))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  // Token unknown
