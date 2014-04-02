@@ -462,7 +462,7 @@ string OPT_get_plan(thread_db* tdbb, const jrd_req* request, bool detailed)
 
 	if (request)
 	{
-		Array<const RecordSource*>& fors = request->getStatement()->fors;
+		const Array<const RecordSource*>& fors = request->getStatement()->fors;
 
 		for (size_t i = 0; i < fors.getCount(); i++)
 		{

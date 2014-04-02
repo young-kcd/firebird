@@ -1231,7 +1231,7 @@ void DatabaseSnapshot::putCall(DumpRecord& record, const jrd_req* request,
 		record.storeInteger(f_mon_call_caller_id, request->req_caller->req_id);
 	}
 
-	JrdStatement* statement = request->getStatement();
+	const JrdStatement* statement = request->getStatement();
 	const Routine* routine = statement->getRoutine();
 
 	// object name/type

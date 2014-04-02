@@ -236,14 +236,22 @@ public:
 		  req_rpb(*req_pool),
 		  impureArea(*req_pool)
 	{
+		fb_assert(statement);
 		setAttachment(attachment);
 		req_rpb = statement->rpbsSetup;
 		impureArea.grow(statement->impureSize);
 	}
 
-	/*const*/ JrdStatement* getStatement() const
+	JrdStatement* getStatement()
 	{
 		return statement;
+	}
+	
+	const JrdStatement* getStatement() const
+	{
+		return statement;
+	}
+
 	}
 
 	void setAttachment(Attachment* newAttachment)
@@ -254,7 +262,7 @@ public:
 	}
 
 private:
-	/*const*/ JrdStatement* const statement;
+	JrdStatement* const statement;
 
 public:
 	MemoryPool* req_pool;
