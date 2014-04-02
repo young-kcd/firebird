@@ -246,12 +246,10 @@ public:
 	{
 		return statement;
 	}
-	
+
 	const JrdStatement* getStatement() const
 	{
 		return statement;
-	}
-
 	}
 
 	void setAttachment(Attachment* newAttachment)
