@@ -1,3 +1,30 @@
+ 2014-04-02 11:53  alexpeshkoff 
+   M src/jrd/constants.h
+Fixed DDL triggers with code > 31
+
+ 2014-04-02 11:23  alexpeshkoff 
+   M src/jrd/req.h
+fixed the build
+
+ 2014-04-02 02:32  robocop 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/req.h
+Fix constness.
+
+ 2014-04-02 02:22  robocop 
+   M src/burp/restore.epp
+   M src/dsql/DdlNodes.epp
+   M src/jrd/dfw.epp
+   M src/jrd/grant.epp
+   M src/jrd/met.epp
+   M src/jrd/rlck.cpp
+Misc.
+
+ 2014-04-02 02:20  robocop 
+   M src/dsql/pass1.cpp
+Shortcut.
+
  2014-03-31 16:17  asfernandes 
    M src/isql/isql.epp
 Fixed CORE-4380 - ISQL truncates blob when reading an empty segment.
