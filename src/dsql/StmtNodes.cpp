@@ -8872,7 +8872,7 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 			else
 				const_cast<char*>(value)[length] = 0;	// safe cast - data is actually on the stack
 
-			const TEXT*	name = NULL;
+			string name;
 			const FieldNode* fieldNode = i->value->as<FieldNode>();
 
 			if (fieldNode)
@@ -8884,11 +8884,14 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 				if (vector && fieldNode->fieldId < vector->count() &&
 					(field = (*vector)[fieldNode->fieldId]))
 				{
-					name = field->fld_name.c_str();
+					if (!relation->rel_name.isEmpty()) 
+						name.printf("\"%s\".\"%s\"", relation->rel_name.c_str(), field->fld_name.c_str());
+					else
+						name.printf("\"%s\"", field->fld_name.c_str());
 				}
 			}
 
-			if (!name)
+			if (name.isEmpty())
 				name = UNKNOWN_STRING_MARK;
 
 			ERR_post(Arg::Gds(isc_not_valid) << Arg::Str(name) << Arg::Str(value));
