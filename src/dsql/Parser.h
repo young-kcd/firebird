@@ -221,6 +221,7 @@ private:
 		int termNo, int stkPos, int yychar, YYPOSN& yyposn, void*);
 
 	int yylex();
+	bool yylexSkipSpaces();
 	int yylexAux();
 
 	void yyerror(const TEXT* error_string);

@@ -277,6 +277,42 @@ void Parser::yyReducePosn(YYPOSN& ret, YYPOSN* termPosns, YYSTYPE* /*termVals*/,
 
 int Parser::yylex()
 {
+	if (!yylexSkipSpaces())
+		return -1;
+
+	yyposn.firstLine = lex.lines;
+	yyposn.firstColumn = lex.ptr - lex.line_start;
+	yyposn.firstPos = lex.ptr - 1;
+
+	lex.prev_keyword = yylexAux();
+
+	const TEXT* ptr = lex.ptr;
+	const TEXT* last_token = lex.last_token;
+	const TEXT* line_start = lex.line_start;
+	SLONG lines = lex.lines;
+
+	// Lets skip spaces before store lastLine/lastColumn. This is necessary so yyReducePosn does
+	// produce invalid line/column information - CORE-4381.
+	yylexSkipSpaces();
+
+	yyposn.lastLine = lex.lines;
+	yyposn.lastColumn = lex.ptr - lex.line_start;
+
+	lex.ptr = ptr;
+	lex.last_token = last_token;
+	lex.line_start = line_start;
+	lex.lines = lines;
+
+	// But the correct value for lastPos is the old (before the second yyLexSkipSpaces)
+	// value of lex.ptr.
+	yyposn.lastPos = ptr;
+
+	return lex.prev_keyword;
+}
+
+
+bool Parser::yylexSkipSpaces()
+{
 	UCHAR tok_class;
 	SSHORT c;
 
@@ -285,7 +321,7 @@ int Parser::yylex()
 	for (;;)
 	{
 		if (lex.ptr >= lex.end)
-			return -1;
+			return false;
 
 		c = *lex.ptr++;
 
@@ -313,7 +349,7 @@ int Parser::yylex()
 				}
 			}
 			if (lex.ptr >= lex.end)
-				return -1;
+				return false;
 
 			continue;
 		}
@@ -343,7 +379,7 @@ int Parser::yylex()
 				// since it's not a token really.
 				lex.last_token = &start_block;
 				yyerror("unterminated block comment");
-				return -1;
+				return false;
 			}
 			lex.ptr++;
 			continue;
@@ -355,17 +391,7 @@ int Parser::yylex()
 			break;
 	}
 
-	yyposn.firstLine = lex.lines;
-	yyposn.firstColumn = lex.ptr - lex.line_start;
-	yyposn.firstPos = lex.ptr - 1;
-
-	lex.prev_keyword = yylexAux();
-
-	yyposn.lastLine = lex.lines;
-	yyposn.lastColumn = lex.ptr - lex.line_start;
-	yyposn.lastPos = lex.ptr;
-
-	return lex.prev_keyword;
+	return true;
 }
 
 
