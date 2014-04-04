@@ -252,6 +252,11 @@ public:
 		return statement;
 	}
 
+	bool hasInternalStatement() const
+	{
+		return statement->flags & JrdStatement::FLAG_INTERNAL;
+	}
+
 	void setAttachment(Attachment* newAttachment)
 	{
 		req_attachment = newAttachment;
