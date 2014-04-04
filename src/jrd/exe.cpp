@@ -4043,7 +4043,7 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				const_cast<char*>(value)[length] = 0;	// safe cast - data is actually on the stack
 			}
 
-			const TEXT*	name = 0;
+			string name;
 			if (node->nod_type == nod_field)
 			{
 				const USHORT stream = (USHORT)(IPTR) node->nod_arg[e_fld_stream];
@@ -4054,11 +4054,18 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				const vec<jrd_fld*>* vector = relation->rel_fields;
 				if (vector && id < vector->count() && (field = (*vector)[id]))
 				{
-					name = field->fld_name.c_str();
+					if (!relation->rel_name.isEmpty())
+					{
+						name = relation->rel_name.c_str();
+						name.append(".");
+					}
+					name.append(field->fld_name.c_str());
+
+					name.printf("\"%s\".\"%s\"", relation->rel_name.c_str(), field->fld_name.c_str());
 				}
 			}
 
-			if (!name)
+			if (name.isEmpty())
 			{
 				name = UNKNOWN_STRING_MARK;
 			}
