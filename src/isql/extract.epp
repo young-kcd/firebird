@@ -196,6 +196,7 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		listDomainConstraints();
 		list_all_triggers();
 		list_all_grants();
+		SHOW_maps(true, "");
 		SHOW_comments(false); // Let's make this an option later.
 	}
 

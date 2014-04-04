@@ -621,3 +621,29 @@
 	const USHORT  f_sec_attr_value = 2;
 
 
+// Relation 45 (RDB$MAP)
+
+	const USHORT  f_map_name = 0;
+	const USHORT  f_map_using = 1;
+	const USHORT  f_map_plugin = 2;
+	const USHORT  f_map_db = 3;
+	const USHORT  f_map_from_type = 4;
+	const USHORT  f_map_from = 5;
+	const USHORT  f_map_to_type = 6;
+	const USHORT  f_map_to = 7;
+	const USHORT  f_map_sys_flag = 8;
+	const USHORT  f_map_desc = 9;
+
+
+// Relation 46 (SEC$GLOBAL_MAP)
+
+	const USHORT  f_sec_map_name = 0;
+	const USHORT  f_sec_map_using = 1;
+	const USHORT  f_sec_map_plugin = 2;
+	const USHORT  f_sec_map_db = 3;
+	const USHORT  f_sec_map_from_type = 4;
+	const USHORT  f_sec_map_from = 5;
+	const USHORT  f_sec_map_to_type = 6;
+	const USHORT  f_sec_map_to = 7;
+
+

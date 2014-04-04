@@ -68,7 +68,7 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE database, FB_
 
 	Firebird::string sql;
 	sql.printf((user->admin()->get() ? "GRANT %s TO \"%s\"" : "REVOKE %s FROM \"%s\""),
-			"RDB$ADMIN", userName.c_str());
+			ADMIN_ROLE, userName.c_str());
 	isc_dsql_execute_immediate(isc_status, &database, &trans, sql.length(), sql.c_str(), SQL_DIALECT_V6, NULL);
 
 	if (isc_status[1] && user->admin()->get() == 0)
@@ -79,7 +79,7 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE database, FB_
 				WITH R.RDB$USER EQ user->userName()->get()
 				 AND R.RDB$RELATION_NAME EQ 'RDB$ADMIN'
 				 AND R.RDB$PRIVILEGE EQ 'M'
-			sql.printf("REVOKE RDB$ADMIN FROM \"%s\" GRANTED BY \"%s\"",
+			sql.printf("REVOKE " ADMIN_ROLE " FROM \"%s\" GRANTED BY \"%s\"",
 				userName.c_str(), R.RDB$GRANTOR);
 		END_FOR
 
@@ -162,11 +162,8 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo
 				dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
 
 			str = logonInfo->role();
-
 			if (str && str[0])
 				dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
-			else if (logonInfo->forceAdmin())
-				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 		}
 
 		ISC_STATUS_ARRAY status;
@@ -350,7 +347,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 		case MAP_SET_OPER:
 			{
 				Firebird::string sql;
-				sql.printf("ALTER ROLE RDB$ADMIN %s AUTO ADMIN MAPPING",
+				sql.printf("ALTER ROLE " ADMIN_ROLE " %s AUTO ADMIN MAPPING",
 					user->operation() == MAP_SET_OPER ? "SET" : "DROP");
 				isc_dsql_execute_immediate(isc_status, &database, &transaction, sql.length(), sql.c_str(), 1, NULL);
 				if (isc_status[1] != 0)

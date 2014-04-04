@@ -757,12 +757,23 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-902, '28', '000', 0, 748, 'secdb_name', NULL, NULL);
 (-902, '28', '000', 0, 749, 'auth_data', NULL, NULL);
 (-902, '28', '000', 0, 750, 'auth_datalength', NULL, NULL);
-(-901, 'HY', '007', 0, 751, 'info_unprepared_stmt', NULL, NULL)
-(-901, 'HY', '007', 0, 752, 'idx_key_value', NULL, NULL)
-(-901, 'HY', '000', 0, 753, 'forupdate_virtualtbl', NULL, NULL)
-(-901, 'HY', '000', 0, 754, 'forupdate_systbl', NULL, NULL)
-(-901, 'HY', '000', 0, 755, 'forupdate_temptbl', NULL, NULL)
-(-901, '42', '000', 0, 756, 'cant_modify_sysobj', NULL, NULL)
+(-901, 'HY', '007', 0, 751, 'info_unprepared_stmt', NULL, NULL);
+(-901, 'HY', '007', 0, 752, 'idx_key_value', NULL, NULL);
+(-901, 'HY', '000', 0, 753, 'forupdate_virtualtbl', NULL, NULL);
+(-901, 'HY', '000', 0, 754, 'forupdate_systbl', NULL, NULL);
+(-901, 'HY', '000', 0, 755, 'forupdate_temptbl', NULL, NULL);
+(-901, '42', '000', 0, 756, 'cant_modify_sysobj', NULL, NULL);
+(-901, '08', '004', 0, 757, 'server_misconfigured', NULL, NULL);
+(-901, '0A', '000', 0, 758, 'alter_role', NULL, NULL);
+(-901, '42', 'S01', 0, 759, 'map_already_exists', NULL, NULL);
+(-901, '42', 'S01', 0, 760, 'map_not_exists', NULL, NULL);
+(-901, '08', '004', 0, 761, 'map_load', NULL, NULL);
+(-901, '08', '004', 0, 762, 'map_aster', NULL, NULL);
+(-901, '08', '004', 0, 763, 'map_multi', NULL, NULL);
+(-901, '08', '004', 0, 764, 'map_undefined', NULL, NULL);
+(-924, 'HY', '000', 0, 765, 'baddpb_damaged_mode', NULL, NULL);
+(-924, 'HY', '000', 0, 766, 'baddpb_buffers_range', NULL, NULL);
+(-924, 'HY', '000', 0, 767, 'baddpb_temp_buffers', NULL, NULL);
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
@@ -1117,6 +1128,7 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1031, 'dsql_grant_failed', NULL, NULL);
 (-901, '42', '000', 13, 1032, 'dsql_revoke_failed', NULL, NULL);
 (-104, '42', '000', 13, 1033, 'dsql_cte_recursive_aggregate', NULL, NULL)
+(-901, '42', '000', 13, 1034, 'dsql_mapping_failed', NULL, NULL);
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

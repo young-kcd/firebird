@@ -73,11 +73,12 @@ namespace Firebird
 			return hash(&value, sizeof value, hashSize);
 		}
 
-		const static size_t DEFAULT_SIZE = 97;		// largest prime number < 100
 	};
 
+	const size_t DEFAULT_HASH_SIZE = 97;			// largest prime number < 100
+
 	template <typename C,
-			  size_t HASHSIZE = DefaultHash<C>::DEFAULT_SIZE,
+			  size_t HASHSIZE = DEFAULT_HASH_SIZE,
 			  typename K = C,						// default key
 			  typename KeyOfValue = DefaultKeyValue<C>,	// default keygen
 			  typename F = DefaultHash<K> >			// hash function definition
@@ -164,11 +165,21 @@ namespace Firebird
 
 		~Hash()
 		{
+			// by default we let hash entries be cleaned by someone else
+			cleanup(NULL);
+		}
+
+		typedef void CleanupRoutine(C* toClean);
+		void cleanup(CleanupRoutine* cleanupRoutine)
+		{
 			for (size_t n = 0; n < HASHSIZE; ++n)
 			{
 				while (data[n])
 				{
-					 data[n]->unLink();
+					Entry* entry = data[n];
+					entry->unLink();
+					if (cleanupRoutine)
+						cleanupRoutine(entry->get());
 				}
 			}
 		}

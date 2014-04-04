@@ -864,6 +864,17 @@ Data source : @4', NULL, NULL)
 ('forupdate_systbl', 'PAR_rse', 'par.cpp', NULL, 0, 754, NULL, 'Cannot select system table @1 for update WITH LOCK', NULL, NULL)
 ('forupdate_temptbl', 'PAR_rse', 'par.cpp', NULL, 0, 755, NULL, 'Cannot select temporary table @1 for update WITH LOCK', NULL, NULL)
 ('cant_modify_sysobj', NULL, 'ExprNodes.cpp', NULL, 0, 756, NULL, 'System @1 @2 cannot be modified', NULL, 'Ex: System generator rdb$... cannot be modified')
+('server_misconfigured', 'expandDatabaseName', 'db_alias.cpp', NULL, 0, 757, NULL, 'Server misconfigured - contact administrator please', NULL, NULL);
+('alter_role', 'MappingNode::validateAdmin', 'DdlNodes.epp', NULL, 0, 758, NULL, 'Deprecated backward compatibility ALTER ROLE ... SET/DROP AUTO ADMIN mapping may be used only for RDB$ADMIN role', NULL, NULL);
+('map_already_exists', 'MappingNode::execute', 'DdlNodes.epp', NULL, 0, 759, NULL, 'Mapping @1 already exists', NULL, NULL);
+('map_not_exists', 'MappingNode::execute', 'DdlNodes.epp', NULL, 0, 760, NULL, 'Mapping @1 does not exist', NULL, NULL);
+('map_load', 'check', 'Mapping.cpp', NULL, 0, 761, NULL, '@1 failed when loading mapping cache', NULL, NULL);
+('map_aster', 'Cache::map', 'Mapping.cpp', NULL, 0, 762, NULL, 'Invalid name <*> in authentication block', NULL, NULL);
+('map_multi', 'Cache::search', 'Mapping.cpp', NULL, 0, 763, NULL, 'Multiple maps found for @1', NULL, NULL);
+('map_undefined', 'Found::set', 'Mapping.cpp', NULL, 0, 764, NULL, 'Undefined mapping result - more than one different results found', NULL, NULL);
+('baddpb_damaged_mode', 'attachDatabase', 'jrd.cpp', NULL, 0, 765, NULL, 'Incompatible mode of attachment to damaged database', NULL, NULL);
+('baddpb_buffers_range', 'DatabaseOptions::get', 'jrd.cpp', NULL, 0, 766, NULL, 'Attempt to set in database number of buffers which is out of acceptable range [@1:@2]', NULL, NULL);
+('baddpb_temp_buffers', 'DatabaseOptions::get', 'jrd.cpp', NULL, 0, 767, NULL, 'Attempt to temporarily set number of buffers less than @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -2282,6 +2293,7 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'fix_system_generators', 'restore.epp', NULL, 12, 350, NULL, 'fixing system generators', NULL, NULL);
 (NULL, 'BURP_abort', 'burp.cpp', NULL, 12, 351, NULL, 'Error closing database, but backup file is OK', NULL, NULL);
 (NULL, NULL, 'restore.epp', NULL, 12, 352, NULL, 'database', NULL, NULL);
+(NULL, 'get_mapping', 'restore.epp', NULL, 12, 353, NULL, 'required mapping attributes are missing in backup file', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -2559,6 +2571,7 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_grant_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1031, NULL, 'GRANT failed', NULL, NULL);
 ('dsql_revoke_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1032, NULL, 'REVOKE failed', NULL, NULL);
 ('dsql_cte_recursive_aggregate', 'pass1_rse_impl', 'dsql.cpp', NULL, 13, 1033, NULL, 'Recursive member of CTE cannot use aggregate or window function', NULL, NULL);
+('dsql_mapping_failed', 'MappingNode::putErrorPrefix', 'DdlNodes.h', NULL, 13, 1034, NULL, '@2 MAPPING @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

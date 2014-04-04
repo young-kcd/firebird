@@ -35,6 +35,7 @@
 #ifdef AUTH_DEBUG
 
 #include "firebird/Auth.h"
+#include "firebird/Plugin.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/init.h"
@@ -57,6 +58,7 @@ public:
 
 private:
 	Firebird::string str;
+	Firebird::RefPtr<Firebird::IConfig> config;
 };
 
 class DebugClient FB_FINAL : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>

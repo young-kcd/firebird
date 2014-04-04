@@ -162,7 +162,8 @@ enum drq_type_t
 	drq_l_arg_src,			// lookup a function argument source
 	drq_l_prm_coll,			// lookup procedure parameter collation
 	drq_l_arg_coll,			// lookup function argument collation
-	drq_m_map,				// modify os=>db names mapping
+	drq_map_sto,			// store login mapping
+	drq_map_mod,			// modify/erase login mapping
 	drq_l_idx_name,			// lookup index name
 	drq_l_collation,		// DSQL/DdlNodes: lookup collation
 	drq_m_charset,			// DSQL/DdlNodes: modify character set

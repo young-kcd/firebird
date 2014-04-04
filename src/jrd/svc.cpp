@@ -56,11 +56,13 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/ibase.h"
 #include "../common/utils_proto.h"
+#include "../common/db_alias.h"
 #include "../jrd/scl.h"
 #include "../jrd/msg_encode.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/EngineInterface.h"
+#include "../jrd/Mapping.h"
 
 #include "../common/classes/DbImplementation.h"
 
@@ -244,17 +246,9 @@ void Service::getOptions(ClumpletReader& spb)
 			svc_auth_block.add(spb.getBytes(), spb.getClumpLength());
 			break;
 
-		case isc_spb_trusted_auth:
-			spb.getString(svc_trusted_login);
-			break;
-
-		case isc_spb_trusted_role:
-			svc_trusted_role = true;
-			break;
-
 		case isc_spb_command_line:
 			spb.getString(svc_command_line);
-			{
+/*			{
 				// HACK: this does not care about the words on allowed places.
 				string cLine = svc_command_line;
 				cLine.upper();
@@ -264,6 +258,10 @@ void Service::getOptions(ClumpletReader& spb)
 					(Arg::Gds(isc_bad_spb_form) << Arg::Gds(isc_no_trusted_spb)).raise();
 				}
 			}
+ */			break;
+
+		case isc_spb_expected_db:
+			spb.getPath(svc_expected_db);
 			break;
 
 		case isc_spb_address_path:
@@ -711,7 +709,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
 	svc_username(getPool()), svc_auth_block(getPool()),
-	svc_trusted_login(getPool()), svc_trusted_role(false), svc_utf8(false),
+	svc_expected_db(getPool()), svc_trusted_role(false), svc_utf8(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
@@ -766,26 +764,21 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		}
 		else
 		{
-			if (svc_trusted_login.hasData())
-			{
-				svc_username = svc_trusted_login;
-			}
-
 			if (!svc_username.hasData())
 			{
 				if (svc_auth_block.hasData())
 				{
-					// stub instead mapUser(....);
-					AuthReader auth(svc_auth_block);
-					Firebird::string method;
-					if (auth.getInfo(&svc_username, &method, NULL) && method == "Win_Sspi")
-					{
-						auth.moveNext();
-						if (!auth.isEof())
-						{
-							svc_trusted_role = true;
-						}
-					}
+					PathName dummy;
+					RefPtr<Config> config;
+					expandDatabaseName(svc_expected_db, dummy, &config);
+
+					string trusted_role;
+					mapUser(svc_username, trusted_role, NULL, &svc_auth_block, svc_auth_block,
+						NULL, config->getSecurityDatabase());
+
+					// to be changed after refsoft special roles patch!!!
+					trusted_role.upper();
+					svc_trusted_role = trusted_role == ADMIN_ROLE;
 				}
 				else
 				{
@@ -2045,17 +2038,9 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		{
 			if (svc_username.hasData())
 			{
-				string auth = "-";
-				auth += TRUSTED_USER_SWITCH;
-				auth += ' ';
+				string auth = "-user ";
 				auth += svc_username;
 				auth += ' ';
-				if (svc_trusted_role)
-				{
-					auth += "-";
-					auth += TRUSTED_ROLE_SWITCH;
-					auth += ' ';
-				}
 				svc_switches = auth + svc_switches;
 			}
 		}
@@ -2782,14 +2767,14 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					string s;
 					spb.getString(s);
 
-					// HACK: this does not care about the words on allowed places.
+					/* // HACK: this does not care about the words on allowed places.
 					string cLine = s;
 					cLine.upper();
 					if (cLine.find(TRUSTED_USER_SWITCH) != string::npos ||
 						cLine.find(TRUSTED_ROLE_SWITCH) != string::npos)
 					{
 						(Arg::Gds(isc_bad_spb_form) << Arg::Gds(isc_no_trusted_spb)).raise();
-					}
+					} */
 
 					switches += s;
 					switches += ' ';

@@ -47,9 +47,10 @@ class IWriter : public Firebird::IVersioned
 public:
 	virtual void FB_CARG reset() = 0;
 	virtual void FB_CARG add(const char* name) = 0;
-	virtual void FB_CARG setAttribute(unsigned char tag, const char* value) = 0;
+	virtual void FB_CARG setType(const char* value) = 0;
+	virtual void FB_CARG setDb(const char* value) = 0;
 };
-#define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 3)
+#define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 4)
 
 // Representation of auth-related data, passed to/from server auth plugin
 class IServerBlock : public Firebird::IVersioned
@@ -149,12 +150,11 @@ class ILogonInfo : public Firebird::IVersioned
 public:
 	virtual const char* FB_CARG name() = 0;
 	virtual const char* FB_CARG role() = 0;
-	virtual int FB_CARG forceAdmin() = 0;
 	virtual const char* FB_CARG networkProtocol() = 0;
 	virtual const char* FB_CARG remoteAddress() = 0;
 	virtual unsigned int FB_CARG authBlock(const unsigned char** bytes) = 0;
 };
-#define FB_AUTH_LOGON_INFO_VERSION (FB_VERSIONED_VERSION + 6)
+#define FB_AUTH_LOGON_INFO_VERSION (FB_VERSIONED_VERSION + 5)
 
 class IManagement : public Firebird::IPluginBase
 {

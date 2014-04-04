@@ -347,7 +347,7 @@ static bool setPath(const PathName& filename, PathName& expandedName)
 
 // Full processing of database name
 // Returns true if alias was found in databases.conf
-bool expandDatabaseName(const Firebird::PathName& alias,
+bool expandDatabaseName(Firebird::PathName alias,
 						Firebird::PathName& file,
 						Firebird::RefPtr<Config>* config)
 {
@@ -358,8 +358,11 @@ bool expandDatabaseName(const Firebird::PathName& alias,
 	catch (const fatal_exception& ex)
 	{
 		gds__log("File databases.conf contains bad data: %s", ex.what());
-		(Arg::Gds(isc_random) << "Server misconfigured - contact administrator please").raise();
+		Arg::Gds(isc_server_misconfigured).raise();
 	}
+
+	// remove whitespaces from database name
+	alias.trim();
 
 	ReadLockGuard guard(aliasesConf().rwLock, "expandDatabaseName");
 

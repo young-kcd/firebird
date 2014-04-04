@@ -146,7 +146,7 @@ class UserData : public IUser
 {
 public:
 	UserData()
-		: op(0), trustedRole(0), trustedAuth(0), authenticationBlock(*getDefaultMemoryPool())
+		: op(0), trustedAuth(0), authenticationBlock(*getDefaultMemoryPool())
 	{ }
 
 	// IUser implementation
@@ -204,10 +204,10 @@ public:
 
 	typedef Firebird::Array<UCHAR> AuthenticationBlock;
 
-	int op, trustedRole, trustedAuth;
+	int op, trustedAuth;
 	CharField user, pass, first, last, middle, com, attr;
 	IntField adm, act;
-	CharField database, dba, dbaPassword, role, trustedUser;
+	CharField database, dba, dbaPassword, role;
 	AuthenticationBlock authenticationBlock;
 
 	// deprecated

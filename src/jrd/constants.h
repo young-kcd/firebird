@@ -81,7 +81,7 @@ const char* const ISC_USER = "ISC_USER";
 const char* const ISC_PASSWORD = "ISC_PASSWORD";
 
 const char* const NULL_ROLE = "NONE";
-const char* const ADMIN_ROLE = "RDB$ADMIN";
+#define ADMIN_ROLE "RDB$ADMIN"		// It's used in C-string concatenations
 
 // User name assigned to any user granted USR_locksmith rights.
 // If this name is changed, modify also the trigger in
@@ -91,7 +91,6 @@ const char* const SYSDBA_USER_NAME = "SYSDBA";
 // This temporary set of flags is needed to implement minimum form of
 // ALTER ROLE RDB$ADMIN ADD/DROP SYSTEM_NAME "Domain Admins".
 // Value 1 is skipped because rdb$system_flag = 1 is used in all other cases.
-const SSHORT ROLE_FLAG_MAY_TRUST	= 2;
 const SSHORT ROLE_FLAG_DBO			= 4;
 
 const char* const PRIMARY_KEY		= "PRIMARY KEY";
@@ -359,7 +358,10 @@ static const char* const DDL_TRIGGER_ACTION_NAMES[][2] =
 	{"ALTER", "PACKAGE"},
 	{"DROP", "PACKAGE"},
 	{"CREATE", "PACKAGE BODY"},
-	{"DROP", "PACKAGE BODY"}
+	{"DROP", "PACKAGE BODY"},
+	{"CREATE", "MAPPING"},
+	{"ALTER", "MAPPING"},
+	{"DROP", "MAPPING"}
 };
 
 const int DDL_TRIGGER_BEFORE	= 0;
@@ -407,6 +409,9 @@ const int DDL_TRIGGER_ALTER_PACKAGE				= 41;
 const int DDL_TRIGGER_DROP_PACKAGE				= 42;
 const int DDL_TRIGGER_CREATE_PACKAGE_BODY		= 43;
 const int DDL_TRIGGER_DROP_PACKAGE_BODY			= 44;
+const int DDL_TRIGGER_CREATE_MAPPING			= 45;
+const int DDL_TRIGGER_ALTER_MAPPING				= 46;
+const int DDL_TRIGGER_DROP_MAPPING				= 47;
 
 // that's how database trigger action types are encoded
 //    (TRIGGER_TYPE_DB | type)
@@ -418,11 +423,12 @@ const int DDL_TRIGGER_DROP_PACKAGE_BODY			= 44;
 // is specified by the client application
 #define USERNAME_SWITCH "USER"
 #define PASSWORD_SWITCH "PASSWORD"
+/*
 #define TRUSTED_USER_SWITCH "TRUSTED_SVC"
 #define TRUSTED_USER_SWITCH_LEN (sizeof(TRUSTED_USER_SWITCH) - 1)
 #define TRUSTED_ROLE_SWITCH "TRUSTED_ROLE"
 #define TRUSTED_ROLE_SWITCH_LEN (sizeof(TRUSTED_ROLE_SWITCH) - 1)
-
+ */
 const TraNumber MAX_TRA_NUMBER = ~TraNumber(0);
 
 #endif // JRD_CONSTANTS_H

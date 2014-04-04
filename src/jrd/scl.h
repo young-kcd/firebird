@@ -28,6 +28,10 @@
 #include "../common/classes/tree.h"
 #include "../common/security.h"
 
+namespace Firebird {
+class ClumpletWriter;
+}
+
 namespace Jrd {
 
 const size_t ACL_BLOB_BUFFER_SIZE = MAX_USHORT; // used to read/write acl blob
@@ -91,7 +95,7 @@ public:
 	Firebird::string	usr_project_name;	// Project name
 	Firebird::string	usr_org_name;		// Organization name
 	Firebird::string	usr_auth_method;	// Authentication method
-	Auth::UserData::AuthenticationBlock usr_auth_block;	// Authentication block like it was passed to engine
+	Auth::UserData::AuthenticationBlock usr_auth_block;	// Authentication block after mapping
 	USHORT				usr_user_id;		// User id
 	USHORT				usr_group_id;		// Group id
 	USHORT				usr_flags;			// Misc. crud
@@ -146,6 +150,8 @@ public:
 
 		return *this;
 	}
+
+	void populateDpb(Firebird::ClumpletWriter& dpb);
 };
 
 // These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.

@@ -325,7 +325,8 @@ public:
 		SRAM_DATABASE_SNAPSHOT = 0xFE,	// use downcount for shared memory types
 		SRAM_EVENT_MANAGER = 0xFD,
 		SRAM_TRACE_CONFIG = 0xFC,
-		SRAM_TRACE_LOG = 0xFB
+		SRAM_TRACE_LOG = 0xFB,
+		SRAM_MAPPING_RESET = 0xFA,
 	};
 
 protected:

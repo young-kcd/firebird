@@ -56,6 +56,7 @@
 #include "../common/classes/array.h"
 #include "../common/config/config.h"
 #include "../common/os/os_utils.h"
+#include "../common/classes/ClumpletWriter.h"
 
 
 const int UIC_BASE	= 10;
@@ -872,20 +873,8 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 			}
 			END_FOR
 		}
-
-		if (!found && (tempId.usr_flags & USR_trole))
-		{
-            request.reset(tdbb, irq_verify_trusted_role, IRQ_REQUESTS);
-
-            FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
-    	        WITH RR.RDB$ROLE_NAME  EQ sql_role
-        	    AND RR.RDB$SYSTEM_FLAG > 0
-			{
-                if (RR.RDB$SYSTEM_FLAG & ROLE_FLAG_MAY_TRUST)
-                    found = true;
-			}
-            END_FOR
-		}
+		else
+			found = true;
 
         if (!found)
             role_name = NULL_ROLE;
@@ -1452,3 +1441,10 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 	return privilege;
 }
 
+void Jrd::UserId::populateDpb(Firebird::ClumpletWriter& dpb)
+{
+	if (usr_auth_block.hasData())
+		dpb.insertBytes(isc_dpb_auth_block, usr_auth_block.begin(), usr_auth_block.getCount());
+	else
+		dpb.insertString(isc_dpb_user_name, usr_user_name);
+}

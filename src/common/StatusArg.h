@@ -274,6 +274,7 @@ class OsError : public Base
 {
 public:
 	OsError() throw();
+	explicit OsError(ISC_STATUS s) throw();
 };
 
 } // namespace Arg

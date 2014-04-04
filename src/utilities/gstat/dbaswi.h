@@ -69,8 +69,8 @@ const static struct Switches::in_sw_tab_t dba_in_sw_table[] =
     {IN_SW_DBA_RELATION,		isc_spb_sts_table,			"TABLE",	0,0,0,	false,	35,	1, NULL},	// msg 35: -t      tablename
 	// special switch to avoid including creation date, only for tests (no message)
     {IN_SW_DBA_NOCREATION,		isc_spb_sts_nocreation,	"NOCREATION",	0,0,0,	false,	0,	1, NULL},	// msg (ignored) -n suppress creation date
-    {IN_SW_DBA_TRUSTED_USER,	0,				TRUSTED_USER_SWITCH,	0,0,0,	false,	0,	TRUSTED_USER_SWITCH_LEN, NULL},	// msg 0 - ignored
-    {IN_SW_DBA_TRUSTED_ROLE,	0,				TRUSTED_ROLE_SWITCH,	0,0,0,	false,	0,	TRUSTED_ROLE_SWITCH_LEN, NULL},	// msg 0 - ignored
+//    {IN_SW_DBA_TRUSTED_USER,	0,				TRUSTED_USER_SWITCH,	0,0,0,	false,	0,	TRUSTED_USER_SWITCH_LEN, NULL},	// msg 0 - ignored
+//    {IN_SW_DBA_TRUSTED_ROLE,	0,				TRUSTED_ROLE_SWITCH,	0,0,0,	false,	0,	TRUSTED_ROLE_SWITCH_LEN, NULL},	// msg 0 - ignored
 #ifdef TRUSTED_AUTH
     {IN_SW_DBA_TRUSTEDAUTH,		0,							"TRUSTED",	0,0,0,	false,	36,	2, NULL},	// msg 36: -tr     use trusted authentication
 #endif

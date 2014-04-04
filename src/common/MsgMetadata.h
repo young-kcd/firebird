@@ -256,6 +256,34 @@ public:
 	RefPtr<IAttachment> attachment;
 };
 
+class MetadataBuilder FB_FINAL : public RefCntIface<IMetadataBuilder, FB_METADATA_BUILDER_VERSION>
+{
+public:
+	MetadataBuilder(const MsgMetadata* from);
+	MetadataBuilder(unsigned fieldCount);
+
+	virtual int FB_CARG release();
+
+	// IMetadataBuilder implementation
+	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type);
+	virtual void FB_CARG setSubType(IStatus* status, unsigned index, int subType);
+	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length);
+	virtual void FB_CARG setCharSet(IStatus* status, unsigned index, unsigned charSet);
+	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale);
+	virtual void FB_CARG truncate(IStatus* status, unsigned count);
+	virtual void FB_CARG remove(IStatus* status, unsigned index);
+	virtual void FB_CARG moveNameToIndex(IStatus* status, const char* name, unsigned index);
+	virtual unsigned FB_CARG addField(IStatus* status);
+	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
+
+private:
+	RefPtr<MsgMetadata> msgMetadata;
+	Mutex mtx;
+
+	void metadataError(const char* functionName);
+	void indexError(unsigned index, const char* functionName);
+};
+
 }	// namespace Firebird
 
 #endif	// COMMON_MSG_METADATA_H

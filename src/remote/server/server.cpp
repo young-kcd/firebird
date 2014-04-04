@@ -427,7 +427,7 @@ public:
 			if (!authServer)
 			{
 				authServer = authItr->plugin();
-				authPort->port_srv_auth_block->authBlockWriter.setMethod(authItr->name());
+				authPort->port_srv_auth_block->authBlockWriter.setPlugin(authItr->name());
 			}
 
 			// if we asked for more data but received nothing switch to next plugin
@@ -1805,7 +1805,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 				}
 				else
 				{
-					port->port_srv_auth_block->authBlockWriter.setMethod(plugins->name());
+					port->port_srv_auth_block->authBlockWriter.setPlugin(plugins->name());
 					switch (plugins->plugin()->authenticate(&status, port->port_srv_auth_block,
 						&port->port_srv_auth_block->authBlockWriter))
 					{

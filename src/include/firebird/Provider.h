@@ -116,10 +116,11 @@ public:
 	virtual void FB_CARG truncate(IStatus* status, unsigned count) = 0;
 	virtual void FB_CARG moveNameToIndex(IStatus* status, const char* name, unsigned index) = 0;
 	virtual void FB_CARG remove(IStatus* status, unsigned index) = 0;
+	virtual unsigned FB_CARG addField(IStatus* status) = 0;
 
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 };
-#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 9)
+#define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 10)
 
 class IResultSet : public IRefCounted
 {

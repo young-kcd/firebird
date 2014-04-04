@@ -54,6 +54,7 @@
 #include "../common/utils_proto.h"
 #include "memory_routines.h"
 #include "../burp/OdsDetection.h"
+#include "../auth/trusted/AuthSspi.h"
 
 using MsgFormat::SafeArg;
 
@@ -7971,37 +7972,155 @@ bool get_mapping(BurpGlobals* tdgbl)
  *
  * Functional description
  *	Restore mapping to users and roles
- *	Restricted version - only single
- *	mapping is accepted
  *
  **************************************/
 	att_type		attribute;
 	scan_attr_t		scan_next_attr;
 	TEXT			temp[GDS_NAME_LEN];
 	SSHORT			l;
-	Firebird::string role, os;
+	Firebird::string role;
 
-	if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	{
+		STORE (REQUEST_HANDLE tdgbl->handles_get_mapping_req_handle1)
+			M IN RDB$MAP
+
+			M.RDB$MAP_TO_TYPE.NULL = TRUE;
+			M.RDB$MAP_NAME.NULL = TRUE;
+			M.RDB$MAP_USING.NULL = TRUE;
+			M.RDB$MAP_PLUGIN.NULL = TRUE;
+			M.RDB$MAP_DB.NULL = TRUE;
+			M.RDB$MAP_FROM_TYPE.NULL = TRUE;
+			M.RDB$MAP_FROM.NULL = TRUE;
+			M.RDB$MAP_TO.NULL = TRUE;
+			M.RDB$DESCRIPTION.NULL = TRUE;
+
+			skip_init(&scan_next_attr);
+			while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
+			{
+				switch (attribute)
+				{
+				case att_auto_map_role:
+					GET_TEXT(temp);
+					M.RDB$MAP_NAME.NULL = FALSE;
+					strcpy(M.RDB$MAP_NAME, "AutoAdminImplementationMapping");
+					M.RDB$MAP_FROM.NULL = FALSE;
+					strcpy(M.RDB$MAP_FROM, FB_DOMAIN_ANY_RID_ADMINS);
+					M.RDB$MAP_FROM_TYPE.NULL = FALSE;
+					strcpy(M.RDB$MAP_FROM_TYPE, FB_PREDEFINED_GROUP);
+					M.RDB$MAP_USING.NULL = FALSE;
+					strcpy(M.RDB$MAP_USING, "P");
+					M.RDB$MAP_PLUGIN.NULL = FALSE;
+					strcpy(M.RDB$MAP_PLUGIN, "Win_Sspi");
+					M.RDB$MAP_TO_TYPE.NULL = FALSE;
+					M.RDB$MAP_TO_TYPE = 1;
+					M.RDB$MAP_TO.NULL = FALSE;
+					strcpy(M.RDB$MAP_TO, ADMIN_ROLE);
+
+					BURP_verbose(301);
+					// msg 301, restoring names mapping
+					BURP_verbose (298, M.RDB$MAP_NAME);
+					break;
+
+				case att_map_name:
+					M.RDB$MAP_NAME.NULL = FALSE;
+					GET_TEXT(M.RDB$MAP_NAME);
+					if (tdgbl->firstMap)
+					{
+						tdgbl->firstMap = false;
+						BURP_verbose(301);
+						// msg 301, restoring names mapping
+					}
+					BURP_verbose (298, M.RDB$MAP_NAME);
+					break;
+
+				case att_map_using:
+					M.RDB$MAP_USING.NULL = FALSE;
+					GET_TEXT(M.RDB$MAP_USING);
+					break;
+
+				case att_map_plugin:
+					M.RDB$MAP_PLUGIN.NULL = FALSE;
+					GET_TEXT(M.RDB$MAP_PLUGIN);
+					break;
+
+				case att_map_db:
+					M.RDB$MAP_DB.NULL = FALSE;
+					GET_TEXT(M.RDB$MAP_DB);
+					break;
+
+				case att_map_from_type:
+					M.RDB$MAP_FROM_TYPE.NULL = FALSE;
+					GET_TEXT(M.RDB$MAP_FROM_TYPE);
+					break;
+
+				case att_map_from:
+					M.RDB$MAP_FROM.NULL = FALSE;
+					GET_TEXT(M.RDB$MAP_FROM);
+					break;
+
+				case att_map_to_type:
+					M.RDB$MAP_TO_TYPE.NULL = FALSE;
+					M.RDB$MAP_TO_TYPE = (USHORT) get_int32(tdgbl);
+					break;
+
+				case att_map_to:
+					M.RDB$MAP_TO.NULL = FALSE;
+					GET_TEXT(M.RDB$MAP_TO);
+					break;
+
+				case att_map_description:
+					M.RDB$DESCRIPTION.NULL = FALSE;
+					get_source_blob (tdgbl, M.RDB$DESCRIPTION, false);
+					break;
+
+				default:
+					// msg 299 name mapping
+					bad_attribute(scan_next_attr, attribute, 299);
+					break;
+				}
+			}
+
+			if (M.RDB$MAP_NAME.NULL || M.RDB$MAP_USING.NULL ||
+				M.RDB$MAP_FROM_TYPE.NULL || M.RDB$MAP_TO_TYPE.NULL)
+			{
+				// msg 353 required mapping attributes are missing in backup file
+				BURP_error(353, true);
+			}
+
+		END_STORE;
+		ON_ERROR
+			general_on_error ();
+		END_ERROR;
+	}
+	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11_1)
 	{
 		skip_init(&scan_next_attr);
 		while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
 		{
 			switch (attribute)
 			{
-/*			case att_map_role:
-				l = GET_TEXT(temp);
-				role.assign(temp, l);
-				break;
-
-			case att_map_os:
-				l = GET_TEXT(temp);
-				os.assign(temp, l);
-				break;
- */
 			case att_auto_map_role:
 				l = GET_TEXT(temp);
 				role.assign(temp, l);
 				break;
+
+			case att_map_to_type:
+				get_int32(tdgbl);
+				break;
+
+			case att_map_name:
+			case att_map_using:
+			case att_map_plugin:
+			case att_map_db:
+			case att_map_from_type:
+			case att_map_from:
+			case att_map_to:
+				GET_TEXT(temp);
+				break;
+
+			case att_map_description:
+				eat_blob(tdgbl);
 
 			default:
 				// msg 299 name mapping
@@ -8015,24 +8134,25 @@ bool get_mapping(BurpGlobals* tdgbl)
 			return true;	// silently skip attributes on old server
 		}
 
-		if (role != ADMIN_ROLE)
-		{
-			BURP_error(300, false);
-			return true;
-		}
-
 		if (tdgbl->firstMap)
 		{
 			tdgbl->firstMap = false;
 			BURP_verbose(301);
 			// msg 301, restoring names mapping
 		}
+
+		if (role != ADMIN_ROLE)
+		{
+			BURP_error(300, false);
+			return true;
+		}
+
 		BURP_verbose(298, ADMIN_ROLE);
 		// msg 298, restoring map @1
 		Firebird::string sql;
 		sql.printf("%s ('%s', %d) %s",
 			"UPDATE OR INSERT INTO RDB$ROLES(RDB$ROLE_NAME, RDB$SYSTEM_FLAG) VALUES",
-			ADMIN_ROLE, ROLE_FLAG_MAY_TRUST | ROLE_FLAG_DBO,
+			ADMIN_ROLE, ROLE_FLAG_DBO,
 			"MATCHING (RDB$ROLE_NAME)");
 		isc_dsql_execute_immediate(tdgbl->status_vector, &tdgbl->db_handle, &tdgbl->tr_handle,
 								   sql.length(), sql.c_str(), 1, NULL);

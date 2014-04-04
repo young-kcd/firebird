@@ -1,8 +1,8 @@
 /*
  *	PROGRAM:		Firebird authentication
- *	MODULE:			Auth.cpp
- *	DESCRIPTION:	Implementation of interfaces, passed to plugins
- *					Plugins loader
+ *	MODULE:			AuthDbg.cpp
+ *	DESCRIPTION:	Test module for various auth types
+ *					NOT FOR PRODUCTION USE !
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -54,8 +54,9 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 
 namespace Auth {
 
-DebugServer::DebugServer(Firebird::IPluginConfig*)
-	: str(getPool())
+DebugServer::DebugServer(Firebird::IPluginConfig* pConf)
+	: str(getPool()),
+	  config(Firebird::REF_NO_INCR, pConf->getDefaultConfig())
 { }
 
 int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* sb,
@@ -95,6 +96,13 @@ int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* s
 #endif
 		writerInterface->add(str.c_str());
 		str.erase();
+
+		Firebird::RefPtr<Firebird::IConfigEntry> group(Firebird::REF_NO_INCR, config->find("GROUP"));
+		if (group)
+		{
+			writerInterface->add(group->getValue());
+			writerInterface->setType("GROUP");
+		}
 
 		return AUTH_SUCCESS;
 	}

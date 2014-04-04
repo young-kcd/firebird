@@ -42,6 +42,7 @@
 #include "../jrd/intl_classes.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/UserManagement.h"
+#include "../jrd/Mapping.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -73,6 +74,7 @@
 #include "../jrd/trace/TraceJrdHelpers.h"
 #include "../jrd/Function.h"
 #include "../jrd/Collation.h"
+#include "../jrd/Mapping.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -374,6 +376,23 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (!(transaction->tra_flags & TRA_prepared))
 		DFW_perform_work(tdbb, transaction);
+
+	// Commit associated transaction in security DB
+
+	SecDbContext* secContext = transaction->getSecDbContext();
+	if (secContext && secContext->tra)
+	{
+		LocalStatus s;
+		secContext->tra->commit(&s);
+
+		if (!s.isSuccess())
+			status_exception::raise(s.get());
+
+		secContext->tra = NULL;
+		flashMap(tdbb->getDatabase()->dbb_config->getSecurityDatabase());
+
+		transaction->eraseSecDbContext();
+	}
 
 	if (transaction->tra_flags & (TRA_prepare2 | TRA_reconnected))
 		MET_update_transaction(tdbb, transaction, true);
@@ -956,6 +975,17 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 	{
 		MET_prepare(tdbb, transaction, length, msg);
 		transaction->tra_flags |= TRA_prepare2;
+	}
+
+	// Prepare associated transaction in security DB
+
+	SecDbContext* secContext = transaction->getSecDbContext();
+	if (secContext && secContext->tra)
+	{
+		LocalStatus s;
+		secContext->tra->prepare(&s, length, msg);
+		if (!s.isSuccess())
+			status_exception::raise(s.get());
 	}
 
 	// Perform any meta data work deferred
@@ -3302,6 +3332,7 @@ jrd_tra::~jrd_tra()
 	delete tra_undo_record;
 	delete tra_undo_space;
 	delete tra_user_management;
+	delete tra_mapping_list;
 	delete tra_gen_ids;
 
 	if (!tra_outer)
@@ -3325,6 +3356,8 @@ jrd_tra::~jrd_tra()
 	{
 		MemoryPool::deletePool(tra_autonomous_pool);
 	}
+
+	delete tra_sec_db_context;
 }
 
 
@@ -3355,6 +3388,16 @@ UserManagement* jrd_tra::getUserManagement()
 		tra_user_management = FB_NEW(*tra_pool) UserManagement(this);
 	}
 	return tra_user_management;
+}
+
+
+MappingList* jrd_tra::getMappingList()
+{
+	if (!tra_mapping_list)
+	{
+		tra_mapping_list = FB_NEW(*tra_pool) MappingList(this);
+	}
+	return tra_mapping_list;
 }
 
 
@@ -3537,4 +3580,42 @@ void TraceSweepEvent::report(ntrace_process_state_t state)
 
 	if (state == process_state_failed || state == process_state_finished)
 		m_need_trace = false;
+}
+
+SecDbContext::SecDbContext(IAttachment* a, ITransaction* t)
+	: att(a), tra(t), savePoint(0)
+{ }
+
+SecDbContext::~SecDbContext()
+{
+	LocalStatus s;
+	if (tra)
+	{
+		tra->rollback(&s);
+		tra = NULL;
+	}
+	if (att)
+	{
+		att->detach(&s);
+		att = NULL;
+	}
+}
+
+SecDbContext* jrd_tra::getSecDbContext()
+{
+	return tra_sec_db_context;
+}
+
+SecDbContext* jrd_tra::setSecDbContext(IAttachment* att, ITransaction* tra)
+{
+	fb_assert(!tra_sec_db_context);
+
+	tra_sec_db_context = FB_NEW(*getDefaultMemoryPool()) SecDbContext(att, tra);
+	return tra_sec_db_context;
+}
+
+void jrd_tra::eraseSecDbContext()
+{
+	delete tra_sec_db_context;
+	tra_sec_db_context = NULL;
 }

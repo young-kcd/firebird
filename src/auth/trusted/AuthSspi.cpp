@@ -369,7 +369,12 @@ int WinSspiServer::authenticate(Firebird::IStatus* status,
 
 			writerInterface->add(login.c_str());
 			if (wheel)
-				writerInterface->add("RDB$ADMIN");
+			{
+				writerInterface->add(FB_DOMAIN_ANY_RID_ADMINS);
+				writerInterface->setType(FB_PREDEFINED_GROUP);
+			}
+
+			// ToDo: walk groups to which login belongs and list them using writerInterface
 
 			return AUTH_SUCCESS;
 		}

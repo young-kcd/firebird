@@ -250,10 +250,17 @@ int FB_CARG MasterImplementation::same(IVersioned* first, IVersioned* second)
 
 IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsigned fieldCount)
 {
-	MsgMetadata* msgMetadata = new MsgMetadata;
-	msgMetadata->items.grow(fieldCount);
-
-	return msgMetadata->getBuilder(status);
+	try
+	{
+		IMetadataBuilder* bld = new MetadataBuilder(fieldCount);
+		bld->addRef();
+		return bld;
+	}
+	catch(const Exception& ex)
+	{
+		ex.stuffException(status);
+		return NULL;
+	}
 }
 
 IDebug* FB_CARG MasterImplementation::getDebug()

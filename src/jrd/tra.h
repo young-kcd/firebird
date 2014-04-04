@@ -50,6 +50,11 @@ namespace EDS {
 class Transaction;
 }
 
+namespace Firebird {
+class IAttachment;
+class ITransaction;
+};
+
 namespace Jrd {
 
 class blb;
@@ -65,8 +70,19 @@ class DeferredWork;
 class DeferredJob;
 class dsql_opn;
 class UserManagement;
+class MappingList;
 class thread_db;
 
+class SecDbContext
+{
+public:
+	SecDbContext(Firebird::IAttachment* a, Firebird::ITransaction* t);
+	~SecDbContext();
+
+	Firebird::IAttachment* att;
+	Firebird::ITransaction* tra;
+	int savePoint;
+};
 
 //Moved to fb_types.h
 //typedef ULONG TraNumber;
@@ -174,6 +190,8 @@ public:
 		tra_undo_space(NULL),
 		tra_undo_record(NULL),
 		tra_user_management(NULL),
+		tra_sec_db_context(NULL),
+		tra_mapping_list(NULL),
 		tra_autonomous_pool(NULL),
 		tra_autonomous_cnt(0)
 	{
@@ -283,6 +301,8 @@ private:
 
 	Record* tra_undo_record;	// temporary record used for the undo purposes
 	UserManagement* tra_user_management;
+	SecDbContext* tra_sec_db_context;
+	MappingList* tra_mapping_list;
 	MemoryPool* tra_autonomous_pool;
 	USHORT tra_autonomous_cnt;
 	static const USHORT TRA_AUTONOMOUS_PER_POOL = 64;
@@ -335,6 +355,10 @@ public:
 	}
 
 	UserManagement* getUserManagement();
+	SecDbContext* getSecDbContext();
+	SecDbContext* setSecDbContext(Firebird::IAttachment* att, Firebird::ITransaction* tra);
+	void eraseSecDbContext();
+	MappingList* getMappingList();
 
 	GenIdCache* getGenIdCache()
 	{
@@ -503,7 +527,8 @@ enum dfw_t {
 	dfw_arg_new_name,		// new name
 	dfw_arg_field_not_null,	// set domain to not nullable
 	dfw_db_crypt,			// change database encryption status
-	dfw_set_linger			// set database linger
+	dfw_set_linger,			// set database linger
+	dfw_flash_cache			// flash user mapping cache
 };
 
 // Verb actions

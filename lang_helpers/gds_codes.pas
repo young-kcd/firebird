@@ -789,6 +789,17 @@ const
 	gds_forupdate_systbl                 = 335545074;
 	gds_forupdate_temptbl                = 335545075;
 	gds_cant_modify_sysobj               = 335545076;
+	gds_server_misconfigured             = 335545077;
+	gds_alter_role                       = 335545078;
+	gds_map_already_exists               = 335545079;
+	gds_map_not_exists                   = 335545080;
+	gds_map_load                         = 335545081;
+	gds_map_aster                        = 335545082;
+	gds_map_multi                        = 335545083;
+	gds_map_undefined                    = 335545084;
+	gds_baddpb_damaged_mode              = 335545085;
+	gds_baddpb_buffers_range             = 335545086;
+	gds_baddpb_temp_buffers              = 335545087;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -1135,6 +1146,7 @@ const
 	gds_dsql_grant_failed                = 336397319;
 	gds_dsql_revoke_failed               = 336397320;
 	gds_dsql_cte_recursive_aggregate     = 336397321;
+	gds_dsql_mapping_failed              = 336397322;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

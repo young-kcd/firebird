@@ -75,7 +75,7 @@ public:
 			"SELECT PLG$USER_NAME, PLG$VERIFIER, PLG$SALT, PLG$COMMENT, "
 			"   PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$ATTRIBUTES, PLG$ACTIVE "
 			"FROM PLG$SRP WHERE CURRENT_USER = 'SYSDBA' "
-			"   OR CURRENT_ROLE = 'RDB$ADMIN' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
+			"   OR CURRENT_ROLE = '" ADMIN_ROLE "' OR CURRENT_USER = PLG$SRP.PLG$USER_NAME"
 			,
 			"GRANT ALL ON PLG$SRP to VIEW PLG$SRP_VIEW"
 			,
@@ -94,7 +94,7 @@ public:
 		{
 			for (const char** sql = script; *sql; ++sql)
 			{
-				att->execute(&s, ddlTran, 0, *sql, 3, NULL, NULL, NULL, NULL);
+				att->execute(&s, ddlTran, 0, *sql, SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 				check(&s);
 			}
 
@@ -143,19 +143,24 @@ public:
 			unsigned int authBlockSize = logonInfo->authBlock(&authBlock);
 
 			if (authBlockSize)
+			{
+#if SRP_DEBUG > 0
+				fprintf(stderr, "SrpManagement: Using authBlock size %d\n", authBlockSize);
+#endif
 				dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
+			}
 			else
 			{
 				const char* str = logonInfo->name();
+#if SRP_DEBUG > 0
+				fprintf(stderr, "SrpManagement: Using name '%s'\n", str);
+#endif
 				if (str && str[0])
 					dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
 
 				str = logonInfo->role();
-
 				if (str && str[0])
 					dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
-				else if (logonInfo->forceAdmin())
-					dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 			}
 
 			Firebird::DispatcherPtr p;
@@ -200,9 +205,9 @@ public:
 			case MAP_SET_OPER:
 				{
 					Firebird::string sql;
-					sql.printf("ALTER ROLE RDB$ADMIN %s AUTO ADMIN MAPPING",
+					sql.printf("ALTER ROLE " ADMIN_ROLE " %s AUTO ADMIN MAPPING",
 						user->operation() == MAP_SET_OPER ? "SET" : "DROP");
-					att->execute(status, tra, sql.length(), sql.c_str(), 3, NULL, NULL, NULL, NULL);
+					att->execute(status, tra, sql.length(), sql.c_str(), SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 					check(status);
 				}
 				break;
@@ -218,7 +223,7 @@ public:
 					{
 						for (unsigned repeat = 0; ; ++repeat)
 						{
-							stmt = att->prepare(status, tra, 0, insert, 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+							stmt = att->prepare(status, tra, 0, insert, SQL_DIALECT_V6, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 							if (status->isSuccess())
 							{
 								break;
@@ -286,7 +291,7 @@ public:
 						dumpIt("verifier", s);
 						verifier.set(s.getCount(), s.begin());
 
-						stmt->execute(status, tra, add.metadata, add.buffer, NULL, NULL);
+						stmt->execute(status, tra, add.getMetadata(), add.getBuffer(), NULL, NULL);
 						check(status);
 
 						stmt->free(status);
@@ -333,7 +338,7 @@ public:
 					Firebird::IStatement* stmt = NULL;
 					try
 					{
-						stmt = att->prepare(status, tra, 0, update.c_str(), 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+						stmt = att->prepare(status, tra, 0, update.c_str(), SQL_DIALECT_V6, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 						check(status);
 
 						Meta im(stmt, false);
@@ -381,7 +386,7 @@ public:
 						assignField(active, user->active());
 						setField(login, user->userName());
 
-						stmt->execute(status, tra, up.metadata, up.buffer, NULL, NULL);
+						stmt->execute(status, tra, up.getMetadata(), up.getBuffer(), NULL, NULL);
 						check(status);
 
 						if (!checkCount(status, &upCount, isc_info_update_count))
@@ -410,7 +415,7 @@ public:
 					Firebird::IStatement* stmt = NULL;
 					try
 					{
-						stmt = att->prepare(status, tra, 0, del, 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
+						stmt = att->prepare(status, tra, 0, del, SQL_DIALECT_V6, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 						check(status);
 
 						Meta im(stmt, false);
@@ -418,7 +423,7 @@ public:
 						Name login(dl);
 						setField(login, user->userName());
 
-						stmt->execute(status, tra, dl.metadata, dl.buffer, NULL, NULL);
+						stmt->execute(status, tra, dl.getMetadata(), dl.getBuffer(), NULL, NULL);
 						check(status);
 
 						if (!checkCount(status, &delCount, isc_info_delete_count))
@@ -448,7 +453,7 @@ public:
 											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN 0 ELSE 1 END, PLG$ACTIVE "
 											"FROM PLG$SRP_VIEW LEFT JOIN RDB$USER_PRIVILEGES "
 											"	ON PLG$SRP_VIEW.PLG$USER_NAME = RDB$USER_PRIVILEGES.RDB$USER "
-											"		AND RDB$RELATION_NAME = 'RDB$ADMIN' "
+											"		AND RDB$RELATION_NAME = '" ADMIN_ROLE "' "
 											"		AND RDB$PRIVILEGE = 'M' ";
 					if (user->userName()->entered())
 					{
@@ -459,7 +464,7 @@ public:
 					Firebird::IResultSet* rs = NULL;
 					try
 					{
-						stmt = att->prepare(status, tra, 0, disp.c_str(), 3,
+						stmt = att->prepare(status, tra, 0, disp.c_str(), SQL_DIALECT_V6,
 							Firebird::IStatement::PREPARE_PREFETCH_METADATA);
 						check(status);
 
@@ -481,10 +486,10 @@ public:
 						}
 
 						rs = stmt->openCursor(status, tra, (par ? par->getMetadata() : NULL),
-							(par ? par->buffer : NULL), om);
+							(par ? par->getBuffer() : NULL), om);
 						check(status);
 
-						while (rs->fetchNext(status, di.buffer))
+						while (rs->fetchNext(status, di.getBuffer()))
 						{
 							check(status);
 

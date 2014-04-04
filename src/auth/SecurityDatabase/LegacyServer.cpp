@@ -351,7 +351,7 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 
 		MasterInterfacePtr()->upgradeInterface(authBlock, FB_AUTH_WRITER_VERSION, upInfo);
 		authBlock->add(login.c_str());
-		authBlock->setAttribute(AuthReader::AUTH_SECURE_DB, secureDbName);
+		authBlock->setDb(secureDbName);
 		return AUTH_SUCCESS;
 	}
 

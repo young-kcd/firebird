@@ -37,5 +37,6 @@ void	SHOW_print_metadata_text_blob(FILE*, ISC_QUAD*, bool escape_squote = false)
 processing_state	SHOW_metadata(const SCHAR* const*, SCHAR**);
 void	SHOW_read_owner();
 const Firebird::string SHOW_trigger_action(SINT64);
+processing_state	SHOW_maps(bool extract, const SCHAR* map_name);
 
 #endif // ISQL_SHOW_PROTO_H

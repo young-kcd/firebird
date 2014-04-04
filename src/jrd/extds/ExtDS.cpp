@@ -313,15 +313,10 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	const Jrd::Attachment* attachment = tdbb->getAttachment();
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
-	const string& attUser = attachment->att_user->usr_user_name;
-	const string& attRole = attachment->att_user->usr_sql_role_name;
-
 	if ((m_provider.getFlags() & prvTrustedAuth) &&
-		(user.isEmpty() || user == attUser) && pwd.isEmpty() &&
-		(role.isEmpty() || role == attRole))
+		user.isEmpty() && pwd.isEmpty() && role.isEmpty())
 	{
-		dpb.insertString(isc_dpb_trusted_auth, attUser);
-		dpb.insertString(isc_dpb_trusted_role, attRole);
+		attachment->att_user->populateDpb(dpb);
 	}
 	else
 	{
@@ -340,6 +335,8 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	if (cs) {
 		dpb.insertString(isc_dpb_lc_ctype, cs->getName());
 	}
+
+	// remote network address???
 }
 
 bool Connection::isSameDatabase(thread_db* tdbb, const string& dbName,

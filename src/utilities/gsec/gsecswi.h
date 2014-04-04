@@ -53,8 +53,8 @@ const int IN_SW_GSEC_DBA_PASSWORD		= 18;	// Database Admin. Password
 const int IN_SW_GSEC_SQL_ROLE_NAME		= 19;	// SQL Role to assume
 const int IN_SW_GSEC_AMBIG				= 20;	// ambiguous switch
 //const int IN_SW_GSEC_USERNAME			= 21;	// placeholder for the username
-const int IN_SW_GSEC_DBA_TRUSTED_USER	= 22;	// Database Admin. Trusted User name
-const int IN_SW_GSEC_DBA_TRUSTED_ROLE	= 23;	// use trusted role for auth
+//const int IN_SW_GSEC_DBA_TRUSTED_USER	= 22;	// Database Admin. Trusted User name
+//const int IN_SW_GSEC_DBA_TRUSTED_ROLE	= 23;	// use trusted role for auth
 #ifdef TRUSTED_AUTH
 const int IN_SW_GSEC_TRUSTED_AUTH		= 24;	// Use trusted authentication
 #endif
@@ -86,10 +86,10 @@ static const struct Switches::in_sw_tab_t gsec_in_sw_table [] =
     {IN_SW_GSEC_DBA_PASSWORD, 		0,						"PASSWORD",	0, 0, 0, false,	0,	2, NULL},	// Database Admin. Password
     {IN_SW_GSEC_FETCH_PASSWORD,		0,				"FETCH_PASSWORD",	0, 0, 0, false, 0,	2, NULL},	// Fetch Database Admin. Password
     {IN_SW_GSEC_SQL_ROLE_NAME,		isc_spb_sql_role_name,	"ROLE",		0, 0, 0, false,	0,	2, NULL},	// SQL Role to assume
-	{IN_SW_GSEC_DBA_TRUSTED_USER,	0,			TRUSTED_USER_SWITCH,	0, 0, 0, false,	0,
+/*	{IN_SW_GSEC_DBA_TRUSTED_USER,	0,			TRUSTED_USER_SWITCH,	0, 0, 0, false,	0,
 															TRUSTED_USER_SWITCH_LEN, NULL},	// Database Admin. Trusted User name
 	{IN_SW_GSEC_DBA_TRUSTED_ROLE,	0,			TRUSTED_ROLE_SWITCH,	0, 0, 0, false,	0,
-															TRUSTED_ROLE_SWITCH_LEN, NULL},	// Use trusted role for auth
+															TRUSTED_ROLE_SWITCH_LEN, NULL},	// Use trusted role for auth */
 #ifdef TRUSTED_AUTH
 	{IN_SW_GSEC_TRUSTED_AUTH,		0,						"TRUSTED",	0, 0, 0, false,	0,	1, NULL},	// Database Admin. Trusted User name
 #endif

@@ -109,6 +109,7 @@
 #include "../jrd/event_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../jrd/flags.h"
+#include "../jrd/Mapping.h"
 
 #include "../jrd/Database.h"
 
@@ -860,7 +861,7 @@ public:
 	string	dpb_config;
 
 public:
-	static const ULONG DPB_FLAGS_MASK = DBB_damaged | DBB_security_db;
+	static const ULONG DPB_FLAGS_MASK = DBB_damaged;
 
 	DatabaseOptions()
 	{
@@ -1291,7 +1292,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, org_filename.c_str(), &config);
+			getUserInfo(userId, options, expanded_name.c_str(), &config);
 		}
 		catch (const Exception& ex)
 		{
@@ -1442,14 +1443,13 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 			else
 			{
-				if ((dbb->dbb_flags & DatabaseOptions::DPB_FLAGS_MASK) != options.dpb_flags)
+				if ((dbb->dbb_flags & DatabaseOptions::DPB_FLAGS_MASK) !=
+					(options.dpb_flags & DatabaseOptions::DPB_FLAGS_MASK))
 				{
 					// looks like someone tries to attach incompatibly
 					Arg::Gds err(isc_bad_dpb_content);
 					if ((dbb->dbb_flags & DBB_damaged) != (options.dpb_flags & DBB_damaged))
-						err << Arg::Gds(isc_random) << "incompatible damaged database mode";
-					if ((dbb->dbb_flags & DBB_security_db) != (options.dpb_flags & DBB_security_db))
-						err << Arg::Gds(isc_random) << "incompatible security database mode";
+						err << Arg::Gds(isc_baddpb_damaged_mode);
 					err.raise();
 				}
 
@@ -2387,7 +2387,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, org_filename.c_str(), &config);
+			getUserInfo(userId, options, expanded_name.c_str(), &config);
 		}
 		catch (const Exception& ex)
 		{
@@ -5471,7 +5471,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			if (dpb_page_buffers &&
 				(dpb_page_buffers < MIN_PAGE_BUFFERS || dpb_page_buffers > MAX_PAGE_BUFFERS))
 			{
-				ERR_post(Arg::Gds(isc_bad_dpb_content));
+				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_baddpb_buffers_range));
 			}
 			dpb_set_page_buffers = true;
 			break;
@@ -5480,9 +5480,11 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			if (!Config::getSharedCache())
 			{
 				dpb_buffers = rdr.getInt();
-				if (dpb_buffers < 10)
+				int TEMP_LIMIT = 25;
+				if (dpb_buffers < TEMP_LIMIT)
 				{
-					ERR_post(Arg::Gds(isc_bad_dpb_content));
+					ERR_post(Arg::Gds(isc_bad_dpb_content) <<
+							 Arg::Gds(isc_baddpb_temp_buffers) << Arg::Num(TEMP_LIMIT));
 				}
 			}
 			else
@@ -5662,10 +5664,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 		case isc_dpb_sec_attach:
 			dpb_sec_attach = rdr.getInt() != 0;
 			if (dpb_sec_attach)
-			{
-				dpb_buffers = 50;
 				dpb_flags |= DBB_security_db;
-			}
 			break;
 
 		case isc_dpb_gbak_attach:
@@ -6990,6 +6989,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 	}
 	else
 	{
+		auth_method = "User name in DPB";
 		if (options.dpb_trusted_login.hasData())
 		{
 			name = options.dpb_trusted_login;
@@ -7000,32 +7000,19 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		}
 		else if (options.dpb_auth_block.hasData())
 		{
-			// stub instead mapUser(....);
-			AuthReader auth(options.dpb_auth_block);
-			PathName secureDb;
-			if (auth.getInfo(&name, &auth_method, &secureDb))
-			{
-				ISC_systemToUtf8(name);
-
-				if (secureDb.hasData())
-				{
-					if (config && (secureDb != (*config)->getSecurityDatabase()))
-						(Arg::Gds(isc_sec_context) << dbName).raise();
-				}
-				else
-				{
-					auth.moveNext();
-					if (auth.getInfo(&trusted_role, NULL, NULL))
-						ISC_systemToUtf8(trusted_role);
-				}
-			}
+			mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
+				dbName, config ? (*config)->getSecurityDatabase() : NULL);
+			ISC_systemToUtf8(name);
+			ISC_systemToUtf8(trusted_role);
 		}
 		else
 		{
+			auth_method = "OS user name";
 			wheel = ISC_get_user(&name, &id, &group);
 			ISC_systemToUtf8(name);
 			if (id == 0)
 			{
+				auth_method = "OS user name / wheel";
 				wheel = true;
 			}
 		}
@@ -7063,7 +7050,6 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 	user.usr_auth_method = auth_method;
 	user.usr_user_id = id;
 	user.usr_group_id = group;
-	user.usr_auth_block.assign(options.dpb_auth_block);
 
 	if (wheel)
 	{

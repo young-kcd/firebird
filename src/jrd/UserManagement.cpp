@@ -88,12 +88,6 @@ UserManagement::UserManagement(jrd_tra* tra)
 			return att->att_user->usr_sql_role_name.c_str();
 		}
 
-		int FB_CARG forceAdmin()
-		{
-			return ((att->att_user->usr_flags & USR_trole) &&
-					att->att_user->usr_sql_role_name == ADMIN_ROLE) ? 1 : 0;
-		}
-
 		const char* FB_CARG networkProtocol()
 		{
 			return att->att_network_protocol.c_str();

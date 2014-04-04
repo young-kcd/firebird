@@ -283,16 +283,16 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 		uSvc->checkService();
 
-		fb_assert(user_data->trustedUser.entered() || user_data->authenticationBlock.hasData());
-		if (user_data->trustedUser.entered() || user_data->authenticationBlock.hasData())
+		fb_assert(user_data->dba.entered() || user_data->authenticationBlock.hasData());
+		if (user_data->dba.entered() || user_data->authenticationBlock.hasData())
 		{
 			class GsecInfo : public Firebird::AutoIface<ILogonInfo, FB_AUTH_LOGON_INFO_VERSION>
 			{
 			public:
-				GsecInfo(const char* pTrustedUser, const char* pRole, int pTrustedRole,
+				GsecInfo(const char* pDba, const char* pRole,
 						 const char* pProtocol, const char* pAddress,
 						 const UserData::AuthenticationBlock* pAuthBlock)
-					: trustedUser(pTrustedUser), sqlRole(pRole), trustedRole(pTrustedRole),
+					: dba(pDba), sqlRole(pRole),
 					  protocol(pProtocol), address(pAddress),
 					  authBytes(pAuthBlock->getCount() ? pAuthBlock->begin() : NULL),
 					  authLength(pAuthBlock->getCount())
@@ -301,17 +301,12 @@ int gsec(Firebird::UtilSvc* uSvc)
 				// ILogonInfo implementation
 				const char* FB_CARG name()
 				{
-					return trustedUser;
+					return dba;
 				}
 
 				const char* FB_CARG role()
 				{
 					return sqlRole;
-				}
-
-				int FB_CARG forceAdmin()
-				{
-					return trustedRole;
 				}
 
 				const char* FB_CARG networkProtocol()
@@ -331,9 +326,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 				}
 
 			private:
-				const char* trustedUser;
+				const char* dba;
 				const char* sqlRole;
-				int trustedRole;
 				const char* protocol;
 				const char* address;
 				const unsigned char* authBytes;
@@ -351,8 +345,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 						"Management plugin is missing or failed to load").value(), GsecMsg15);
 				}
 
-				GsecInfo info(user_data->trustedUser.get(), user_data->role.get(),
-							  user_data->trustedRole && !user_data->role.entered(),
+				GsecInfo info(user_data->dba.get(), user_data->role.get(),
 							  network_protocol.c_str(), remote_address.c_str(), &user_data->authenticationBlock);
 				manager->start(&st, &info);
 			}
@@ -881,11 +874,6 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->role.set(string);
 				user_data->role.setEntered(1);
 				break;
-			case IN_SW_GSEC_DBA_TRUSTED_USER:
-				tdsec->utilSvc->checkService();
-				user_data->trustedUser.set(string);
-				user_data->trustedUser.setEntered(1);
-				break;
 			case IN_SW_GSEC_MAPPING:
 				{
 					Firebird::string val(string);
@@ -993,10 +981,6 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				user_data->user.clear();
 				tdsec->tsec_interactive = false;
 				break;
-			case IN_SW_GSEC_DBA_TRUSTED_USER:
-			case IN_SW_GSEC_DBA_TRUSTED_ROLE:
-				tdsec->utilSvc->checkService();
-				// fall through ...
 			case IN_SW_GSEC_PASSWORD:
 			case IN_SW_GSEC_UID:
 			case IN_SW_GSEC_GID:
@@ -1087,19 +1071,6 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 						break;
 					}
 					user_data->dba.setSpecified(1);
-					break;
-				case IN_SW_GSEC_DBA_TRUSTED_USER:
-					tdsec->utilSvc->checkService();
-					if (user_data->trustedUser.specified())
-					{
-						err_msg_no = GsecMsg79;
-						break;
-					}
-					user_data->trustedUser.setSpecified(1);
-					break;
-				case IN_SW_GSEC_DBA_TRUSTED_ROLE:
-					tdsec->utilSvc->checkService();
-					user_data->trustedRole = 1;
 					break;
 				case IN_SW_GSEC_DBA_PASSWORD:
 				case IN_SW_GSEC_FETCH_PASSWORD:

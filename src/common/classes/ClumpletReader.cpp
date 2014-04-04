@@ -32,6 +32,7 @@
 #include "fb_exception.h"
 
 #include "../jrd/ibase.h"
+#include "firebird/Auth.h"
 
 #ifdef DEBUG_CLUMPLETS
 #include "../yvalve/gds_proto.h"
@@ -827,48 +828,44 @@ AuthReader::AuthReader(const AuthBlock& authBlock)
 	rewind();
 }
 
-bool AuthReader::getInfo(string* name, string* method, PathName* secureDb)
+static inline void erase(NoCaseString& s)
+{
+	s.erase();
+}
+
+static inline void set(NoCaseString& s, const ClumpletReader& rdr)
+{
+	s.assign(rdr.getBytes(), rdr.getClumpLength());
+}
+
+bool AuthReader::getInfo(Info& info)
 {
 	if (isEof())
 	{
 		return false;
 	}
 
-	if (name)
-	{
-		*name = "";
-	}
-	if (method)
-	{
-		*method = "";
-	}
-	if (secureDb)
-	{
-		*secureDb = "";
-	}
+	erase(info.type);
+	erase(info.name);
+	erase(info.plugin);
+	erase(info.secDb);
 
 	ClumpletReader internal(WideUnTagged, getBytes(), getClumpLength());
 	for (internal.rewind(); !internal.isEof(); internal.moveNext())
 	{
 		switch(internal.getClumpTag())
 		{
-		case AUTH_NAME:
-			if (name)
-			{
-				internal.getString(*name);
-			}
+		case AUTH_TYPE:
+			set(info.type, internal);
 			break;
-		case AUTH_METHOD:
-			if (method)
-			{
-				internal.getString(*method);
-			}
+		case AUTH_NAME:
+			set(info.name, internal);
+			break;
+		case AUTH_PLUGIN:
+			set(info.plugin, internal);
 			break;
 		case AUTH_SECURE_DB:
-			if (secureDb)
-			{
-				internal.getPath(*secureDb);
-			}
+			set(info.secDb, internal);
 			break;
 		default:
 			break;
@@ -887,12 +884,12 @@ void dumpAuthBlock(const char* text, ClumpletReader* pb, unsigned char param)
 		Firebird::AuthReader::AuthBlock tmp;
 		tmp.assign(pb->getBytes(), pb->getClumpLength());
 		Firebird::AuthReader rdr(tmp);
-		string name, method;
+		string name, plugin;
 		PathName secureDb;
 		bool x = false;
-		while (rdr.getInfo(&name, &method, &secureDb))
+		while (rdr.getInfo(&name, &plugin, &secureDb))
 		{
-			fprintf(stderr, " %s::%s::%s", name.c_str(), method.c_str(), secureDb.c_str());
+			fprintf(stderr, " %s::%s::%s", name.c_str(), plugin.c_str(), secureDb.c_str());
 			x = true;
 			rdr.moveNext();
 		}

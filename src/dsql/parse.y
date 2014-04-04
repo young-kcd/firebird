@@ -96,6 +96,9 @@
 #include "../jrd/Attachment.h"
 #include "../common/StatusArg.h"
 
+// This is needed here to provide backward compatibility when working with SSPI plugin
+#include "../auth/trusted/AuthSspi.h"
+
 // since UNIX isn't standard, we have to define
 // stuff which is in <limits.h> (which isn't available on all UNIXes...
 
@@ -563,6 +566,8 @@ using namespace Firebird;
 %token <metaNamePtr> RDB_RECORD_VERSION
 %token <metaNamePtr> LINGER
 %token <metaNamePtr> TAGS
+%token <metaNamePtr> PLUGIN
+%token <metaNamePtr> SERVERWIDE
 
 // precedence declarations for expression evaluation
 
@@ -687,6 +692,8 @@ using namespace Firebird;
 	Jrd::DeclareSubFuncNode* declareSubFuncNode;
 	Jrd::dsql_req* dsqlReq;
 	Jrd::CreateAlterUserNode* createAlterUserNode;
+	Jrd::MappingNode* mappingNode;
+	Jrd::MappingNode::OP mappingOp;
 }
 
 %include types.y
@@ -1231,6 +1238,8 @@ create_clause
 	| USER create_user_clause					{ $$ = $2; }
 	| PACKAGE package_clause					{ $$ = $2; }
 	| PACKAGE BODY package_body_clause			{ $$ = $3; }
+	| MAPPING create_map_clause(false)			{ $$ = $2; }
+	| GLOBAL MAPPING create_map_clause(true)	{ $$ = $3; }
 	;
 
 
@@ -1272,15 +1281,17 @@ create_or_alter
 
 %type <ddlNode> replace_clause
 replace_clause
-	: PROCEDURE replace_procedure_clause	{ $$ = $2; }
-	| FUNCTION replace_function_clause		{ $$ = $2; }
-	| TRIGGER replace_trigger_clause		{ $$ = $2; }
-	| PACKAGE replace_package_clause		{ $$ = $2; }
-	| VIEW replace_view_clause				{ $$ = $2; }
-	| EXCEPTION replace_exception_clause	{ $$ = $2; }
-	| GENERATOR replace_sequence_clause		{ $$ = $2; }
-	| SEQUENCE replace_sequence_clause		{ $$ = $2; }
-	| USER replace_user_clause				{ $$ = $2; }
+	: PROCEDURE replace_procedure_clause		{ $$ = $2; }
+	| FUNCTION replace_function_clause			{ $$ = $2; }
+	| TRIGGER replace_trigger_clause			{ $$ = $2; }
+	| PACKAGE replace_package_clause			{ $$ = $2; }
+	| VIEW replace_view_clause					{ $$ = $2; }
+	| EXCEPTION replace_exception_clause		{ $$ = $2; }
+	| GENERATOR replace_sequence_clause			{ $$ = $2; }
+	| SEQUENCE replace_sequence_clause			{ $$ = $2; }
+	| USER replace_user_clause					{ $$ = $2; }
+	| MAPPING replace_map_clause(false)			{ $$ = $2; }
+	| GLOBAL MAPPING replace_map_clause(true)	{ $$ = $3; }
 	;
 
 
@@ -3330,6 +3341,9 @@ trigger_ddl_type_items
 	| DROP PACKAGE			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_PACKAGE); }
 	| CREATE PACKAGE BODY	{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_PACKAGE_BODY); }
 	| DROP PACKAGE BODY		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_PACKAGE_BODY); }
+	| CREATE MAPPING		{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_CREATE_MAPPING); }
+	| ALTER MAPPING			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_ALTER_MAPPING); }
+	| DROP MAPPING			{ $$ = TRIGGER_TYPE_DDL | (1LL << DDL_TRIGGER_DROP_MAPPING); }
 	| trigger_ddl_type OR
 		trigger_ddl_type	{ $$ = $1 | $3; }
 	;
@@ -3398,6 +3412,8 @@ alter_clause
 	| CHARACTER SET alter_charset_clause	{ $$ = $3; }
 	| GENERATOR alter_sequence_clause		{ $$ = $2; }
 	| SEQUENCE alter_sequence_clause		{ $$ = $2; }
+	| MAPPING alter_map_clause(false)		{ $$ = $2; }
+	| GLOBAL MAPPING alter_map_clause(true)	{ $$ = $3; }
 	;
 
 %type <alterDomainNode> alter_domain
@@ -3664,10 +3680,20 @@ module_op
 	| MODULE_NAME utf_string	{ $$ = $2; }
 	;
 
-%type <ddlNode>	alter_role_clause
+%type <mappingNode>	alter_role_clause
 alter_role_clause
 	: symbol_role_name alter_role_enable AUTO ADMIN MAPPING
-		{ $$ = newNode<AlterRoleNode>(*$1, $2); }
+		{
+			$$ = newNode<MappingNode>(MappingNode::MAP_RPL, "AutoAdminImplementationMapping");
+			$$->op = $2 ? MappingNode::MAP_RPL :  MappingNode::MAP_DROP;
+			$$->from = newNode<IntlString>(FB_DOMAIN_ANY_RID_ADMINS);
+			$$->fromType = newNode<MetaName>(FB_PREDEFINED_GROUP);
+			$$->mode = 'P';
+			$$->plugin = newNode<MetaName>("Win_Sspi");
+			$$->role = true;
+			$$->to = $1;
+			$$->validateAdmin();
+		}
 	;
 
 %type <boolVal>	alter_role_enable
@@ -3804,6 +3830,10 @@ drop_clause
 		{ $$ = newNode<DropPackageNode>(*$2); }
 	| PACKAGE BODY symbol_package_name
 		{ $$ = newNode<DropPackageBodyNode>(*$3); }
+	| MAPPING drop_map_clause(false)
+		{ $$ = $2; }
+	| GLOBAL MAPPING drop_map_clause(true)
+		{ $$ = $3; }
 	;
 
 
@@ -5926,6 +5956,165 @@ user_var_option($node)
 		}
 	;
 
+
+// logons mapping
+
+%type <mappingNode> create_map_clause(<boolVal>)
+create_map_clause($global)
+	: map_clause(MappingNode::MAP_ADD)
+ 		{
+			$$ = $1;
+			$$->global = $global;
+		}
+	map_to(NOTRIAL($2))
+		{
+			$$ = $2;
+		}
+	;
+
+%type <mappingNode> alter_map_clause(<boolVal>)
+alter_map_clause($global)
+	: map_clause(MappingNode::MAP_MOD)
+ 		{
+			$$ = $1;
+		}
+	map_to(NOTRIAL($2))
+		{
+			$$ = $2;
+		}
+	;
+
+%type <mappingNode> replace_map_clause(<boolVal>)
+replace_map_clause($global)
+	: map_clause(MappingNode::MAP_RPL)
+ 		{
+			$$ = $1;
+			$$->global = $global;
+		}
+	map_to(NOTRIAL($2))
+		{
+			$$ = $2;
+		}
+	;
+
+%type <mappingNode> drop_map_clause(<boolVal>)
+drop_map_clause($global)
+	: map_name
+ 		{
+ 			MappingNode* node = newNode<MappingNode>(MappingNode::MAP_DROP, *$1);
+			node->global = $global;
+			$$ = node;
+		}
+	;
+
+%type <mappingNode> map_clause(<mappingOp>)
+map_clause($op)
+	: map_name
+ 		{
+			$$ = newNode<MappingNode>($op, *$1);
+		}
+	USING map_using(NOTRIAL($2))
+	FROM map_from(NOTRIAL($2))
+		{
+			$$ = $2;
+		}
+	;
+
+%type <metaNamePtr> map_name
+map_name
+	: valid_symbol_name
+		{ $$ = $1; }
+	;
+
+%type map_from(<mappingNode>)
+map_from($node)
+	: map_from_symbol_name map_logoninfo
+		{
+			$node->fromType = $1;
+			$node->from = $2;
+		}
+	| ANY map_from_symbol_name
+		{
+			$node->fromType = $2;
+			$node->from = newNode<IntlString>("*");
+		}
+	;
+
+%type <metaNamePtr> map_from_symbol_name
+map_from_symbol_name
+	: valid_symbol_name
+	| USER
+		{ $$ = newNode<MetaName>("USER"); }
+	| GROUP
+		{ $$ = newNode<MetaName>("GROUP"); }
+	;
+
+%type <intlStringPtr> map_logoninfo
+map_logoninfo
+	: STRING
+	| valid_symbol_name
+		{ $$ = newNode<IntlString>($1->c_str()); }
+	;
+
+%type map_using(<mappingNode>)
+map_using($node)
+	: PLUGIN valid_symbol_name map_in
+		{
+			$node->mode = 'P';
+			$node->plugin = $2;
+			$node->db = $3;
+		}
+	| ANY PLUGIN map_in
+		{
+			$node->mode = 'P';
+			$node->db = $3;
+		}
+	| ANY PLUGIN SERVERWIDE
+		{
+			$node->mode = 'S';
+		}
+	| MAPPING map_in
+		{
+			$node->mode = 'M';
+			$node->db = $2;
+		}
+	| '*' map_in
+		{
+			$node->mode = '*';
+			$node->db = $2;
+		}
+	;
+
+%type <metaNamePtr> map_in
+map_in
+	: // nothing
+		{ $$ = NULL; }
+	| KW_IN valid_symbol_name
+		{ $$ = $2; }
+	;
+
+%type map_to(<mappingNode>)
+map_to($node)
+	: TO map_role valid_symbol_name
+		{
+			$node->role = $2;
+			$node->to = $3;
+		}
+	| TO map_role
+		{
+			$node->role = $2;
+		}
+	;
+
+%type <boolVal> map_role
+map_role
+	: ROLE
+		{ $$ = true; }
+	| USER
+		{ $$ = false; }
+	;
+
+
 // value types
 
 %type <valueExprNode> value
@@ -7163,6 +7352,8 @@ non_reserved_word
 	| USAGE
 	| LINGER
 	| TAGS
+	| PLUGIN
+	| SERVERWIDE
 	;
 
 %%

@@ -174,7 +174,8 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 				Field<Varying> slt(dat);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Ready to run statement with login '%s'\n", account.c_str()));
 
-				stmt->execute(status, tra, par.metadata, par.buffer, dat.metadata, dat.buffer);
+				stmt->execute(status, tra, par.getMetadata(), par.getBuffer(),
+					dat.getMetadata(), dat.getBuffer());
 				if (!status->isSuccess())
 				{
 					status_exception::raise(status->get());
@@ -266,7 +267,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 		{
 			MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 			writerInterface->add(account.c_str());
-			writerInterface->setAttribute(AuthReader::AUTH_SECURE_DB, secDbName);
+			writerInterface->setDb(secDbName);
 			return AUTH_SUCCESS;
 		}
 	}

@@ -4073,16 +4073,45 @@ void write_mapping()
  *
  **************************************/
 	isc_req_handle req_handle = 0;
+	TEXT temp[GDS_NAME_LEN];
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	if (tdgbl->runtimeODS >= DB_VERSION_DDL11_2)
+	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+	{
+		FOR (REQUEST_HANDLE req_handle)
+			M IN RDB$MAP
+			WITH (M.RDB$SYSTEM_FLAG EQ 0 OR M.RDB$SYSTEM_FLAG MISSING)
+
+			put(tdgbl, rec_mapping);
+			const SSHORT l = PUT_TEXT(att_map_name, M.RDB$MAP_NAME);
+			PUT_TEXT(att_map_using, M.RDB$MAP_USING);
+			if (!M.RDB$MAP_PLUGIN.NULL) PUT_TEXT(att_map_plugin, M.RDB$MAP_PLUGIN);
+			if (!M.RDB$MAP_DB.NULL) PUT_TEXT(att_map_db, M.RDB$MAP_DB);
+			PUT_TEXT(att_map_from_type, M.RDB$MAP_FROM_TYPE);
+			if (!M.RDB$MAP_FROM.NULL) PUT_TEXT(att_map_from, M.RDB$MAP_FROM);
+			put_int32(att_map_to_type, M.RDB$MAP_TO_TYPE);
+			if (!M.RDB$MAP_TO.NULL) PUT_TEXT(att_map_to, M.RDB$MAP_TO);
+			if (!M.RDB$DESCRIPTION.NULL)
+				put_source_blob(att_map_description, att_map_description, M.RDB$DESCRIPTION);
+			put(tdgbl, att_end);
+
+			MISC_terminate (M.RDB$MAP_NAME, temp, l, sizeof(temp));
+			BURP_verbose (297, temp);
+			// msg 297 writing mapping for %s
+
+		END_FOR;
+		ON_ERROR
+			general_on_error();
+		END_ERROR;
+	}
+	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11_2)
 	{
 		FOR (REQUEST_HANDLE req_handle)
 			X IN RDB$ROLES
 			WITH X.RDB$ROLE_NAME EQ ADMIN_ROLE
 
-			if (X.RDB$SYSTEM_FLAG == (ROLE_FLAG_MAY_TRUST | ROLE_FLAG_DBO))
+			if (X.RDB$SYSTEM_FLAG == ROLE_FLAG_DBO)
 			{
 				put(tdgbl, rec_mapping);
 				//put_text(att_map_os, DOMAIN-ADMINS, strlen(DOMAIN-ADMINS) + 1);

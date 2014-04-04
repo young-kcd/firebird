@@ -355,7 +355,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 			adminRole = true;
 			break;
-
+/*
 		case IN_SW_TRACE_TRUSTED_USER:
 			if (!uSvc->isService())
 				usage(uSvc, isc_trace_switch_svc_only, sw->in_sw_name);
@@ -376,7 +376,7 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 			adminRole = true;
 			break;
-
+ */
 		case IN_SW_TRACE_SERVICE_NAME:
 			if (uSvc->isService())
 				continue;
@@ -431,17 +431,17 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		authBlock.add(bytes, authBlockSize);
 
 		AuthReader auth(authBlock);
-		PathName secureDb;
+		AuthReader::Info info;
 
-		if (auth.getInfo(&user, NULL, &secureDb))
+		if (auth.getInfo(info))
 		{
 			pwd = "";
+			user = info.name.ToString();
 			adminRole = false;
-			if (!secureDb.hasData())
+			if (!info.secDb.hasData())
 			{
 				auth.moveNext();
-				string trusted_role;
-				if (auth.getInfo(&trusted_role, NULL, NULL))
+				if (auth.getInfo(info))
 				{
 					adminRole = true;
 				}

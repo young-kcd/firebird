@@ -84,6 +84,7 @@
 #include "../common/classes/objects_array.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
+#include "../jrd/Mapping.h"
 
 #include "../jrd/Optimizer.h"
 #include "../dsql/BoolNodes.h"
@@ -2285,7 +2286,11 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else if (relation->isVirtual())
 	{
 		// Virtual table: monitoring or security
-		if (relation->rel_id == rel_sec_users || relation->rel_id == rel_sec_user_attributes)
+		if (relation->rel_id == rel_sec_global_map)
+		{
+			rsb = FB_NEW(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream);
+		}
+		else if (relation->rel_id == rel_sec_users || relation->rel_id == rel_sec_user_attributes)
 		{
 			rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream);
 		}

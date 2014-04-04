@@ -30,6 +30,10 @@
 
 #include <firebird.h>
 
+// This is old versions backward compatibility
+#define FB_PREDEFINED_GROUP "Predefined_Group"
+#define FB_DOMAIN_ANY_RID_ADMINS "DOMAIN_ANY_RID_ADMINS"
+
 #ifdef TRUSTED_AUTH
 
 #include <../common/classes/fb_string.h>

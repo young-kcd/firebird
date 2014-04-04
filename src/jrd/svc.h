@@ -289,7 +289,7 @@ private:
 
 	Firebird::string	svc_username;
 	Firebird::AuthReader::AuthBlock	svc_auth_block;
-	Firebird::string	svc_trusted_login;
+	Firebird::PathName	svc_expected_db;
 	bool                svc_trusted_role;
 	bool				svc_utf8;
 	Firebird::string	svc_switches;	// Full set of switches

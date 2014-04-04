@@ -781,6 +781,17 @@ Data source : @4"},		/* eds_statement */
 	{335545074, "Cannot select system table @1 for update WITH LOCK"},		/* forupdate_systbl */
 	{335545075, "Cannot select temporary table @1 for update WITH LOCK"},		/* forupdate_temptbl */
 	{335545076, "System @1 @2 cannot be modified"},		/* cant_modify_sysobj */
+	{335545077, "Server misconfigured - contact administrator please"},		/* server_misconfigured */
+	{335545078, "Deprecated backward compatibility ALTER ROLE ... SET/DROP AUTO ADMIN mapping may be used only for RDB$ADMIN role"},		/* alter_role */
+	{335545079, "Mapping @1 already exists"},		/* map_already_exists */
+	{335545080, "Mapping @1 does not exist"},		/* map_not_exists */
+	{335545081, "@1 failed when loading mapping cache"},		/* map_load */
+	{335545082, "Invalid name <*> in authentication block"},		/* map_aster */
+	{335545083, "Multiple maps found for @1"},		/* map_multi */
+	{335545084, "Undefined mapping result - more than one different results found"},		/* map_undefined */
+	{335545085, "Incompatible mode of attachment to damaged database"},		/* baddpb_damaged_mode */
+	{335545086, "Attempt to set in database number of buffers which is out of acceptable range [@1:@2]"},		/* baddpb_buffers_range */
+	{335545087, "Attempt to temporarily set number of buffers less than @1"},		/* baddpb_temp_buffers */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
@@ -1127,6 +1138,7 @@ Data source : @4"},		/* eds_statement */
 	{336397319, "GRANT failed"},		/* dsql_grant_failed */
 	{336397320, "REVOKE failed"},		/* dsql_revoke_failed */
 	{336397321, "Recursive member of CTE cannot use aggregate or window function"},		/* dsql_cte_recursive_aggregate */
+	{336397322, "@2 MAPPING @1 failed"},		/* dsql_mapping_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

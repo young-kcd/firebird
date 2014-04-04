@@ -185,20 +185,29 @@ public:
 class AuthReader : public ClumpletReader
 {
 public:
+	static const unsigned char AUTH_NAME = 1;		// name described by it's type
+	static const unsigned char AUTH_PLUGIN = 2;		// plugin which added a record
+	static const unsigned char AUTH_TYPE = 3;		// it can be user/group/role/etc. - what plugin sets
+	static const unsigned char AUTH_SECURE_DB = 4;	// sec. db in which context record was added
+													// missing when plugin is server-wide
 	typedef Array<UCHAR> AuthBlock;
 
-	// name and method are required attributes for any record
-	// name is set by plugin when it calls add()
-	static const unsigned char AUTH_NAME = 0;
-	// method is just a name of plugin which created this record
-	static const unsigned char AUTH_METHOD = 1;
+	struct Info
+	{
+		NoCaseString type, name, plugin, secDb;
+		unsigned found, current;
 
-	// additional attributes - only security database is used currently
-	static const unsigned char AUTH_SECURE_DB = 100;
+		Info()
+			: found(0), current(0)
+		{ }
+	};
 
 	explicit AuthReader(const AuthBlock& authBlock);
+	AuthReader(const ClumpletReader& rdr)
+		: ClumpletReader(rdr)
+	{ }
 
-	bool getInfo(string* name, string* method, PathName* secDb);
+	bool getInfo(Info& info);
 };
 
 //#define AUTH_BLOCK_DEBUG

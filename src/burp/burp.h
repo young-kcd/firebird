@@ -596,10 +596,16 @@ enum att_type {
 	att_coll_owner_name,
 
 	// Names mapping
-	att_map_os = SERIES,
-	att_map_user,
-	att_map_role,
-	att_auto_map_role,
+	att_map_name = SERIES,
+	att_map_using,
+	att_map_plugin,
+	att_auto_map_role,		// Keep it at pos.4 - ODS11.2 compatibility issue
+	att_map_db,
+	att_map_from_type,
+	att_map_from,
+	att_map_to_type,
+	att_map_to,
+	att_map_description,
 
 	// Package attributes
 	att_package_name = SERIES,

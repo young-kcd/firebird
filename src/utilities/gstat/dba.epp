@@ -362,9 +362,9 @@ int gstat(Firebird::UtilSvc* uSvc)
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
 	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
 
-	TEXT tr_buff[128], *tr_user = tr_buff;
-	MOVE_CLEAR(tr_buff, sizeof(tr_buff));
-	bool trusted_role = false;
+	// TEXT tr_buff[128], *tr_user = tr_buff;
+	// MOVE_CLEAR(tr_buff, sizeof(tr_buff));
+	// bool trusted_role = false;
 
 #ifdef TRUSTED_AUTH
 	bool trusted_auth = false;
@@ -457,7 +457,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 				}
 			}
 			break;
-		case IN_SW_DBA_TRUSTED_USER:
+/*		case IN_SW_DBA_TRUSTED_USER:
 			uSvc->checkService();
 			if (argv < end)
 				fb_utils::copy_terminate(tr_user, *argv++, sizeof(tr_buff));
@@ -466,6 +466,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 			uSvc->checkService();
 			trusted_role = true;
 			break;
+ */
 #ifdef TRUSTED_AUTH
 		case IN_SW_DBA_TRUSTEDAUTH:
 			trusted_auth = true;
@@ -751,14 +752,14 @@ int gstat(Firebird::UtilSvc* uSvc)
 							password, strlen(password));
 		}
 
-		if (*tr_user)
+/*		if (*tr_user)
 		{
 			uSvc->checkService();
 			dpb.insertString(isc_dpb_trusted_auth, tr_user, strlen(tr_user));
 			if (trusted_role)
 				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 		}
-
+ */
 #ifdef TRUSTED_AUTH
 		if (trusted_auth)
 			dpb.insertTag(isc_dpb_trusted_auth);

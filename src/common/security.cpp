@@ -54,7 +54,7 @@ Get::Get(Config* firebirdConf)
 
 void FB_CARG UserData::clear()
 {
-	op = trustedRole = trustedAuth = 0;
+	op = 0;
 
 	// interface fields
 	user.clear();
@@ -72,7 +72,6 @@ void FB_CARG UserData::clear()
 	dba.clear();
 	dbaPassword.clear();
 	role.clear();
-	trustedUser.clear();
 
 	// never clear this permanent block!	authenticationBlock.clear();
 

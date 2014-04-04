@@ -60,8 +60,8 @@ const SINT64 sw_buffers			= 0x0000000020000000L;
 const SINT64 sw_mode			= 0x0000000040000000L;
 const SINT64 sw_set_db_dialect	= 0x0000000080000000L;
 const SINT64 sw_trusted_auth	= QUADCONST(0x0000000100000000);	// Byte 4, Bit 0
-const SINT64 sw_trusted_svc		= QUADCONST(0x0000000200000000);
-const SINT64 sw_trusted_role	= QUADCONST(0x0000000400000000);
+//const SINT64 sw_trusted_svc	= QUADCONST(0x0000000200000000);
+//const SINT64 sw_trusted_role	= QUADCONST(0x0000000400000000);
 const SINT64 sw_fetch_password	= QUADCONST(0x0000000800000000);
 const SINT64 sw_nolinger		= QUADCONST(0x0000001000000000);
 
@@ -115,8 +115,8 @@ enum alice_switches
 #ifdef TRUSTED_AUTH
 	IN_SW_ALICE_TRUSTED_AUTH		=	44,
 #endif
-	IN_SW_ALICE_TRUSTED_USER		=	45,
-	IN_SW_ALICE_TRUSTED_ROLE		=	46,
+//	IN_SW_ALICE_TRUSTED_USER		=	45,
+//	IN_SW_ALICE_TRUSTED_ROLE		=	46,
 	IN_SW_ALICE_HIDDEN_ONLINE		=	47,
 	IN_SW_ALICE_FETCH_PASSWORD		=	48,
 	IN_SW_ALICE_NOLINGER			=	49
@@ -199,7 +199,7 @@ static const Switches::in_sw_tab_t alice_in_sw_table[] =
 		sw_list, 0, false, 41, 2, NULL},
 	// msg 41: \t-prompt\t\tprompt for commit/rollback (-l)
 	{IN_SW_ALICE_PASSWORD, 0, "PASSWORD", sw_password,
-		0, (sw_trusted_auth | sw_trusted_svc | sw_trusted_role | sw_fetch_password),
+		0, (sw_trusted_auth /*| sw_trusted_svc | sw_trusted_role */| sw_fetch_password),
 		false, 42, 2, NULL},
 	// msg 42: \t-password\tdefault password
 #ifdef DEV_BUILD
@@ -233,15 +233,15 @@ static const Switches::in_sw_tab_t alice_in_sw_table[] =
 		0, (sw_user | sw_password), false, 115, 3, NULL},
 	// msg 115: 	-trusted	use trusted authentication
 #endif
-	{IN_SW_ALICE_TRUSTED_USER, 0, TRUSTED_USER_SWITCH, sw_trusted_svc,
+/*	{IN_SW_ALICE_TRUSTED_USER, 0, TRUSTED_USER_SWITCH, sw_trusted_svc,
 		0, (sw_trusted_svc | sw_user | sw_password), false, 0, TRUSTED_USER_SWITCH_LEN, NULL},
 	{IN_SW_ALICE_TRUSTED_ROLE, 0, TRUSTED_ROLE_SWITCH, sw_trusted_role,
-		sw_trusted_svc, (sw_user | sw_password), false, 0, TRUSTED_ROLE_SWITCH_LEN, NULL},
+		sw_trusted_svc, (sw_user | sw_password), false, 0, TRUSTED_ROLE_SWITCH_LEN, NULL}, */
 	{IN_SW_ALICE_NO_RESERVE, 0, "USE", sw_no_reserve,
 		0, ~(sw_no_reserve | sw_user | sw_password | sw_nolinger), false, 49, 1, NULL},
 	// msg 49: \t-use\t\tuse full or reserve space for versions
 	{IN_SW_ALICE_USER, 0, "USER", sw_user,
-		0, (sw_trusted_auth | sw_trusted_svc | sw_trusted_role), false, 50, 4, NULL},
+		0, (sw_trusted_auth /*| sw_trusted_svc | sw_trusted_role*/), false, 50, 4, NULL},
 	// msg 50: \t-user\t\tdefault user name
 	{IN_SW_ALICE_VALIDATE, isc_spb_rpr_validate_db, "VALIDATE", sw_validate,
 		0, ~(sw_validate | sw_user | sw_password | sw_nolinger), false, 51, 1, NULL},

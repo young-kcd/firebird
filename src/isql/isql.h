@@ -268,6 +268,8 @@ const int NO_GRANT_ON_FUN			= 180;		// There is no privilege granted on function
 const int REPORT_NEW1				= 181;		// Current memory = !\nDelta memory = !\nMax memory = !\nElapsed time= ~ sec\n
 const int REPORT_NEW2				= 182;		// Cpu = ~ sec\n (skipped on windows)
 const int REPORT_NEW3				= 183;		// Buffers = !\nReads = !\nWrites = !\nFetches = !\n
+const int NO_MAP					= 184;		// There is no mapping from @1 in this database
+const int NO_MAPS					= 185;		// There are no mappings in this database
 
 
 // Initialize types

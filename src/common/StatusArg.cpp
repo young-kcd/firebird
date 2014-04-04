@@ -273,6 +273,13 @@ OsError::OsError() throw() :
 #else
 	Base(isc_arg_unix, errno) { }
 #endif
+
+OsError::OsError(ISC_STATUS s) throw() :
+#ifdef WIN_NT
+	Base(isc_arg_win32, s) { }
+#else
+	Base(isc_arg_unix, s) { }
+#endif
 } // namespace Arg
 
 } // namespace Firebird

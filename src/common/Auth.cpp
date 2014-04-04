@@ -30,6 +30,7 @@
 #include "../jrd/ibase.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/utils_proto.h"
+#include "../common/db_alias.h"
 
 using namespace Firebird;
 
@@ -38,7 +39,7 @@ namespace Auth {
 WriterImplementation::WriterImplementation()
 	: current(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE),
 	  result(*getDefaultMemoryPool(), ClumpletReader::WideUnTagged, MAX_DPB_SIZE),
-	  method(*getDefaultMemoryPool()),
+	  plugin(*getDefaultMemoryPool()), type(*getDefaultMemoryPool()),
 	  sequence(0)
 { }
 
@@ -65,16 +66,17 @@ void WriterImplementation::add(const char* name)
 
 	current.clear();
 	current.insertString(AuthReader::AUTH_NAME, name);
-	fb_assert(method.hasData());
-	if (method.hasData())
+	fb_assert(plugin.hasData());
+	if (plugin.hasData())
 	{
-		current.insertString(AuthReader::AUTH_METHOD, method);
+		current.insertString(AuthReader::AUTH_PLUGIN, plugin);
 	}
+	type = "USER";
 }
 
-void WriterImplementation::setMethod(const char* m)
+void WriterImplementation::setPlugin(const char* m)
 {
-	method = m;
+	plugin = m;
 }
 
 void WriterImplementation::putLevel()
@@ -84,15 +86,24 @@ void WriterImplementation::putLevel()
 	{
 		return;
 	}
+	current.insertString(AuthReader::AUTH_TYPE, type);
 
 	result.insertBytes(sequence++, current.getBuffer(), current.getBufferLength());
 }
 
-void WriterImplementation::setAttribute(unsigned char tag, const char* value)
+void WriterImplementation::setType(const char* value)
+{
+	if (value)
+		type = value;
+}
+
+void WriterImplementation::setDb(const char* value)
 {
 	if (value)
 	{
-		current.insertString(tag, value);
+		PathName target;
+		expandDatabaseName(value, target, NULL);
+		current.insertPath(AuthReader::AUTH_SECURE_DB, target);
 	}
 }
 

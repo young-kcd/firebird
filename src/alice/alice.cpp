@@ -200,7 +200,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			version = true;
 		}
 
-        if (table->in_sw_value & sw_trusted_svc)
+/*        if (table->in_sw_value & sw_trusted_svc)
         {
 			uSvc->checkService();
 			if (--argc <= 0) {
@@ -214,7 +214,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			uSvc->checkService();
 			tdgbl->ALICE_data.ua_tr_role = true;
 			continue;
-		}
+		} */
 #ifdef TRUSTED_AUTH
         if (table->in_sw_value & sw_trusted_auth)
         {
@@ -472,7 +472,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	}
 
 	if (!flags || !(flags & ~(sw_user | sw_password | sw_fetch_password |
-								sw_trusted_auth | sw_trusted_svc | sw_trusted_role)))
+								sw_trusted_auth/* | sw_trusted_svc | sw_trusted_role*/)))
 	{
 		if (!help && !uSvc->isService())
 		{

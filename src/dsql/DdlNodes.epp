@@ -59,6 +59,7 @@
 #include "../utilities/gsec/gsec.h"
 #include "../common/dsc_proto.h"
 #include "../common/StatusArg.h"
+#include "../auth/SecureRemotePassword/Message.h"
 
 namespace Jrd {
 
@@ -9147,55 +9148,426 @@ bool CreateRoleNode::isItUserName(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void AlterRoleNode::print(string& text) const
+void MappingNode::print(string& text) const
 {
+	const char* null = "<Null>";
+
 	text.printf(
-		"AlterRoleNode\n"
-		"  name: '%s'\n"
-		"  map: '%d'\n",
-		name.c_str(), map);
+		"MappingNode\n"
+		"  op: '%s'\n"
+		"  global: '%d'\n"
+		"  mode: '%c'\n"
+		"  plugin: '%s'\n"
+		"  db: '%s'\n"
+		"  fromType: '%s'\n"
+		"  from: '%s'\n"
+		"  role: '%d'\n"
+		"  to: '%s'\n",
+		op, global, mode,
+		plugin ? plugin->c_str() : null, db ? db->c_str() : null,
+		fromType ? fromType->c_str() : null, from ? from->getString().c_str() : null,
+		role, to ? to->c_str() : null);
 }
 
-// It's purpose is to add/drop mapping from OS security name to DB security object.
-void AlterRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+void MappingNode::validateAdmin()
 {
-	// run all statements under savepoint control
-	AutoSavePoint savePoint(tdbb, transaction);
+	if (to && (*to != ADMIN_ROLE))
+		Arg::Gds(isc_alter_role).raise();
+}
 
-	// This is FB 2.5 limited implementation!
-	// Later it should work with new system table, something like RDB$MAPPING.
+// add some item to DLL in "double quotes"
+void MappingNode::addItem(string& ddl, const char* text)
+{
+	ddl += '"';
+	char c;
+	while (c = *text++)
+	{
+		ddl += c;
+		if (c == '"')
+			ddl += c;
+	}
+	ddl += '"';
+}
 
-	if (name != ADMIN_ROLE)
-		status_exception::raise(Arg::Gds(isc_wish_list));
-
+// It's purpose is to add/drop mapping from any security name to DB security object.
+void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+{
 	if (!(tdbb->getAttachment() && tdbb->getAttachment()->locksmith()))
 		status_exception::raise(Arg::Gds(isc_adm_task_denied));
 
-	AutoCacheRequest request(tdbb, drq_m_map, DYN_REQUESTS);
-	bool found = false;
+	if (global)
+	{
+		LocalStatus st;
+		LocalStatus s2;			// we will use it in DDL case and remember
+		IStatus* s = &st;
+		class Check
+		{
+		public:
+			static void status(IStatus* s)
+			{
+				if (!s->isSuccess())
+					status_exception::raise(s->get());
+			}
+		};
 
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		ROL IN RDB$ROLES
-		WITH ROL.RDB$ROLE_NAME EQ name.c_str()
+		SecDbContext* secDbContext = transaction->getSecDbContext();
+		if (!secDbContext)
+		{
+			const char* secDb = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
+			ClumpletWriter dpb(ClumpletWriter::WideTagged, MAX_DPB_SIZE, isc_dpb_version2);
+			if (tdbb->getAttachment()->att_user)
+				tdbb->getAttachment()->att_user->populateDpb(dpb);
+			IAttachment* att = DispatcherPtr()->attachDatabase(s, secDb,
+				dpb.getBufferLength(), dpb.getBuffer());
+			Check::status(s);
+
+			ITransaction* tra = att->startTransaction(s, 0, NULL);
+			Check::status(s);
+
+			secDbContext = transaction->setSecDbContext(att, tra);
+		}
+
+		// run all statements under savepoint control
+		string savePoint;
+		savePoint.printf("GLOBALMAP%d", secDbContext->savePoint++);
+		secDbContext->att->execute(s, secDbContext->tra, 0, ("SAVEPOINT " + savePoint).c_str(),
+			SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+		Check::status(s);
+
+		try
+		{
+			// first of all try to use regenerated DDL statement
+			// that's the best way if security database is FB3 or higher fb version
+			string ddl;
+
+			switch(op)
+			{
+			case MAP_ADD:
+				ddl = "CREATE MAPPING ";
+				break;
+			case MAP_MOD:
+				ddl = "ALTER MAPPING ";
+				break;
+			case MAP_DROP:
+				ddl = "DROP MAPPING ";
+				break;
+			case MAP_RPL:
+				ddl = "CREATE OR ALTER MAPPING ";
+				break;
+			}
+
+			addItem(ddl, name.c_str());
+			if (op != MAP_DROP)
+			{
+				ddl += " USING ";
+				switch (mode)
+				{
+				case 'P':
+					if (!plugin)
+						ddl += "ANY PLUGIN ";
+					else
+					{
+						ddl += "PLUGIN ";
+						addItem(ddl, plugin->c_str());
+						ddl += ' ';
+					}
+					break;
+				case 'S':
+					ddl += "ANY PLUGIN SERVERWIDE ";
+					break;
+				case '*':
+					ddl += "* ";
+					break;
+				case 'M':
+					ddl += "MAPPING ";
+					break;
+				}
+
+				if (db)
+				{
+					ddl += "IN ";
+					addItem(ddl, db->c_str());
+					ddl += ' ';
+				}
+
+				if (fromType)
+				{
+					ddl += "FROM ";
+					if (!from)
+						ddl += "ANY ";
+					addItem(ddl, fromType->c_str());
+					ddl += ' ';
+					if (from)
+					{
+						addItem(ddl, from->getString().c_str());
+						ddl += ' ';
+					}
+				}
+
+				ddl += "TO ";
+				ddl += (role ? "ROLE" : "USER");
+				if (to)
+				{
+					ddl += ' ';
+					addItem(ddl, to->c_str());
+				}
+			}
+
+			// Now try to run DDL
+			secDbContext->att->execute(&s2, secDbContext->tra, 0, ddl.c_str(), SQL_DIALECT_V6,
+				NULL, NULL, NULL, NULL);
+
+			if (!s2.isSuccess())
+			{
+				// try direct access to rdb$map table in secure db
+
+				// check presence of such record in the table
+				Message check;
+				Field<Varying> nm(check, 1);
+				nm = name.c_str();
+
+				Message result;
+				Field<ISC_INT64> cnt(result);
+
+				const char* checkSql = "select count(*) from RDB$MAP where RDB$MAP_NAME = ?";
+
+				secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
+					check.getMetadata(), check.getBuffer(), result.getMetadata(), result.getBuffer());
+				Check::status(s);
+
+				if (cnt > 1 && op != MAP_DROP)
+					ERRD_bugcheck("Database mapping misconfigured");
+
+				bool hasLine = cnt > 0;
+				switch(op)
+				{
+				case MAP_ADD:
+					if (hasLine)
+						(Arg::Gds(isc_map_already_exists) << name).raise();
+					break;
+
+				case MAP_MOD:
+				case MAP_DROP:
+					if (!hasLine)
+						(Arg::Gds(isc_map_not_exists) << name).raise();
+					break;
+
+				case MAP_RPL:
+					op = hasLine ? MAP_MOD : MAP_DROP;
+					break;
+				}
+
+				// Get ready to modify table
+				Message full;
+				Field<ISC_SHORT> toType(full);
+				Field<Varying> t(full, MAX_SQL_IDENTIFIER_LEN);
+				Field<Varying> usng2(full, 1);
+				Field<Varying> plug2(full, MAX_SQL_IDENTIFIER_LEN);
+				Field<Varying> d2(full, MAX_SQL_IDENTIFIER_LEN);
+				Field<Varying> type2(full, MAX_SQL_IDENTIFIER_LEN);
+				Field<Varying> f2(full, 255);
+				Field<Varying> nm2(full, MAX_SQL_IDENTIFIER_LEN);
+
+				toType = role ? 1 : 0;
+				if (to)
+					t = to->c_str();
+				usng2.set(1, &mode);
+				if (plugin)
+					plug2 = plugin->c_str();
+				if (db)
+					d2 = db->c_str();
+				if (fromType)
+					type2 = fromType->c_str();
+				if (from)
+					f2 = from->getString().c_str();
+				nm2 = name.c_str();
+
+				Message* msg = NULL;
+				const char* sql = NULL;
+				switch(op)
+				{
+				case MAP_ADD:
+					sql = "insert into RDB$MAP(RDB$MAP_TO_TYPE, RDB$MAP_TO, RDB$MAP_USING, "
+						"RDB$MAP_PLUGIN, RDB$MAP_DB, RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_NAME) "
+						"values (?, ?, ?, ?, ?, ?, ?, ?)";
+					msg = &full;
+					break;
+				case MAP_MOD:
+					sql = "update RDB$MAP set RDB$MAP_TO_TYPE = ?, RDB$MAP_TO = ?, "
+						"RDB$MAP_USING = ?, RDB$MAP_PLUGIN = ?, RDB$MAP_DB = ?, "
+						"RDB$MAP_FROM_TYPE = ?, RDB$MAP_FROM = ? "
+						"where RDB$MAP_NAME = ?";
+					msg = &full;
+					break;
+				case MAP_DROP:
+					sql = "delete from RDB$MAP where RDB$MAP_NAME = ?";
+					msg = &check;
+					break;
+				}
+
+				// Actual modification
+				fb_assert(sql && msg);
+				secDbContext->att->execute(s, secDbContext->tra, 0, sql, SQL_DIALECT_V6,
+					msg->getMetadata(), msg->getBuffer(), NULL, NULL);
+				Check::status(s);
+
+				secDbContext->att->execute(s, secDbContext->tra, 0, ("RELEASE SAVEPOINT " + savePoint).c_str(),
+					SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+				savePoint.erase();
+				Check::status(s);
+			}
+		}
+		catch(const Exception&)
+		{
+			if (savePoint.hasData())
+			{
+				secDbContext->att->execute(s, secDbContext->tra, 0, ("ROLLBACK TO SAVEPOINT " + savePoint).c_str(),
+					SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+			}
+
+			if (!s2.isSuccess())
+			{
+				const ISC_STATUS* stat2 = s2.get();
+				if (stat2[1] != isc_dsql_token_unk_err)
+				{
+					status_exception::raise(stat2);
+				}
+			}
+			throw;
+		}
+
+		return;
+	}
+
+	// run all statements under savepoint control
+	AutoSavePoint savePoint(tdbb, transaction);
+
+	fb_assert(op == MAP_DROP || fromType);
+
+	short plugNull = plugin ? FALSE  : TRUE;
+	short dbNull = db ? FALSE : TRUE;
+	short fromNull = from ? FALSE : TRUE;
+
+	char usingText[2];
+	usingText[0] = mode;
+	usingText[1] = '\0';
+
+	AutoCacheRequest request1(tdbb, drq_map_mod, DYN_REQUESTS);
+	bool found = false;
+	int ddlTriggerAction = 0;
+
+	FOR(REQUEST_HANDLE request1 TRANSACTION_HANDLE transaction)
+		M IN RDB$MAP
+		WITH M.RDB$MAP_NAME EQ name.c_str()
 	{
 		found = true;
+		switch (op)
+		{
+		case MAP_ADD:
+			break;
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_ROLE, name);
+		case MAP_MOD:
+		case MAP_RPL:
+			ddlTriggerAction = DDL_TRIGGER_ALTER_MAPPING;
+			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
 
-		MODIFY ROL
-			ROL.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO | (map ? ROLE_FLAG_MAY_TRUST : 0);
-		END_MODIFY
+			MODIFY M
+				if (to)
+				{
+					M.RDB$MAP_TO.NULL = FALSE;
+					strcpy(M.RDB$MAP_TO, to->c_str());
+				}
+				else
+					M.RDB$MAP_TO.NULL = TRUE;
+				M.RDB$MAP_TO_TYPE = role ? 1 : 0;
+
+				strcpy(M.RDB$MAP_USING, usingText);
+				M.RDB$MAP_PLUGIN.NULL = plugNull;
+				if (!plugNull)
+					strcpy(M.RDB$MAP_PLUGIN, plugin->c_str());
+
+				M.RDB$MAP_DB.NULL = dbNull;
+				if (!dbNull)
+					strcpy(M.RDB$MAP_DB, db->c_str());
+
+				strcpy(M.RDB$MAP_FROM_TYPE, fromType->c_str());
+				M.RDB$MAP_FROM.NULL = fromNull;
+				if (!fromNull)
+					strcpy(M.RDB$MAP_FROM, from->getString().c_str());
+			END_MODIFY
+			break;
+
+		case MAP_DROP:
+			ddlTriggerAction = DDL_TRIGGER_DROP_MAPPING;
+			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
+
+			ERASE M;
+			break;
+		}
 	}
 	END_FOR
 
-	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_ROLE, name);
-	else
+	AutoCacheRequest request2(tdbb, drq_map_sto, DYN_REQUESTS);
+	switch (op)
 	{
-		status_exception::raise(
-			Arg::Gds(isc_random) << Arg::Str("Missing RDB$ADMIN role in the database"));
+	case MAP_ADD:
+		if (found)
+		{
+			(Arg::Gds(isc_map_already_exists) << name).raise();
+		}
+		// fall through ...
+
+	case MAP_RPL:
+		if (found)
+			break;
+
+		ddlTriggerAction = DDL_TRIGGER_CREATE_MAPPING;
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
+
+		STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+		M IN RDB$MAP
+		{
+			strcpy(M.RDB$MAP_NAME, name.c_str());
+			strcpy(M.RDB$MAP_USING, usingText);
+			M.RDB$MAP_PLUGIN.NULL = plugNull;
+			if (!plugNull)
+				strcpy(M.RDB$MAP_PLUGIN, plugin->c_str());
+
+			M.RDB$MAP_DB.NULL = dbNull;
+			if (!dbNull)
+				strcpy(M.RDB$MAP_DB, db->c_str());
+
+			strcpy(M.RDB$MAP_FROM_TYPE, fromType->c_str());
+			M.RDB$MAP_FROM.NULL = fromNull;
+			if (!fromNull)
+				strcpy(M.RDB$MAP_FROM, from->getString().c_str());
+
+			M.RDB$MAP_TO_TYPE = role ? 1 : 0;
+			if (to)
+			{
+				M.RDB$MAP_TO.NULL = FALSE;
+				strcpy(M.RDB$MAP_TO, to->c_str());
+			}
+			else
+				M.RDB$MAP_TO.NULL = TRUE;
+		}
+		END_STORE
+		break;
+
+	case MAP_MOD:
+	case MAP_DROP:
+		if (!found)
+		{
+			(Arg::Gds(isc_map_not_exists) << name).raise();
+		}
+		break;
 	}
 
+	fb_assert(ddlTriggerAction > 0);
+	if (ddlTriggerAction > 0)
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name);
+
+	DFW_post_work(transaction, dfw_flash_cache, NULL, 0);
 	savePoint.release();	// everything is ok
 }
 

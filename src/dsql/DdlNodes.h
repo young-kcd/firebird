@@ -1749,15 +1749,27 @@ public:
 };
 
 
-class AlterRoleNode : public DdlNode
+class MappingNode : public DdlNode
 {
 public:
-	AlterRoleNode(MemoryPool& p, const Firebird::MetaName& aName, bool aMap)
+	enum OP {MAP_ADD, MAP_MOD, MAP_RPL, MAP_DROP};
+
+	MappingNode(MemoryPool& p, OP o, const Firebird::MetaName& nm)
 		: DdlNode(p),
-		  name(p, aName),
-		  map(aMap)
+		  name(p, nm),
+		  plugin(NULL),
+		  db(NULL),
+		  fromType(NULL),
+		  from(NULL),
+		  to(NULL),
+		  op(o),
+		  mode('#'),
+		  global(false),
+		  role(false)
 	{
 	}
+
+	void validateAdmin();
 
 public:
 	virtual void print(Firebird::string& text) const;
@@ -1766,12 +1778,25 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_alter_role_failed) << name;
+		statusVector << Firebird::Arg::Gds(isc_dsql_mapping_failed) << name <<
+			(op == MAP_ADD ? "CREATE" : op == MAP_MOD ?
+			 "ALTER" : op == MAP_RPL ? "CREATE OR ALTER" : "DROP");
 	}
+
+private:
+	void addItem(Firebird::string& ddl, const char* text);
 
 public:
 	Firebird::MetaName name;
-	bool map;
+	Firebird::MetaName* plugin;
+	Firebird::MetaName* db;
+	Firebird::MetaName* fromType;
+	IntlString* from;
+	Firebird::MetaName* to;
+	OP op;
+	char mode;	// * - any source, P - plugin, M - mapping, S - any serverwide plugin
+	bool global;
+	bool role;
 };
 
 

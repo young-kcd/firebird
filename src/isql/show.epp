@@ -1458,6 +1458,8 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 
 	if ((!fbStatus->isSuccess()) && fbStatus->get()[1] != isc_segstr_eof)
 		ISQL_errmsg(fbStatus);
+
+	blob->close(fbStatus);
 }
 
 
@@ -1485,7 +1487,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 			role, table, view, system, index, domain, exception,
 			filter, function, generator, grant, procedure, trigger,
 			check, database, comment, dependency, collation, security_class,
-			users, package, schema, wrong
+			users, package, schema, map, wrong
 		};
 		ShowOptions(const optionsMap* inmap, size_t insize, int wrongval)
 			: OptionsBase(inmap, insize, wrongval)
@@ -1541,7 +1543,8 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		{ShowOptions::security_class, "SECCLASSES", 6},
 		{ShowOptions::users, "USERS", 0},
 		{ShowOptions::package, "PACKAGES", 4},
-		{ShowOptions::schema, "SCHEMAS", 4}
+		{ShowOptions::schema, "SCHEMAS", 4},
+		{ShowOptions::map, "MAPPING", 3}
 	};
 
 	const ShowOptions showoptions(options, FB_NELEM(options), ShowOptions::wrong);
@@ -2131,6 +2134,24 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 				key = NO_PACKAGE;
 			else
 				key = NO_PACKAGES;
+		}
+		break;
+
+	case ShowOptions::map:
+		if (*cmd[2] == '"')
+		{
+			remove_delimited_double_quotes(lcmd[2]);
+			ret = SHOW_maps(false, lcmd[2]);
+		}
+		else
+			ret = SHOW_maps(false, cmd[2]);
+
+		if (ret == OBJECT_NOT_FOUND)
+		{
+			if (*cmd[2])
+				key = NO_MAP;
+			else
+				key = NO_MAPS;
 		}
 		break;
 
@@ -4272,6 +4293,149 @@ static processing_state show_packages(const SCHAR* package_name)
 		return (OBJECT_NOT_FOUND);
 
 	return (SKIP);
+}
+
+
+static void printIdent(bool quote, char* ident, const char* format = NULL)
+{
+	fb_utils::exact_name(ident);
+	char quotedIdent[BUFFER_LENGTH128];
+	if (quote && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+	{
+		IUTILS_copy_SQL_id(ident, quotedIdent, DBL_QUOTE);
+		ident = quotedIdent;
+	}
+
+	isqlGlob.printf(format ? format : "%s", ident);
+}
+
+
+static void printMap(bool extract, bool global, char* name, char* usng, char* plugin, char* db,
+	char* fromType, char* from, short toType, char* to)
+{
+	if (extract)
+	{
+	isqlGlob.printf("CREATE ");
+		if (global)
+			isqlGlob.printf("GLOBAL ");
+	}
+	printIdent(extract, name, extract ? "MAPPING %s " : "%s ");
+
+	isqlGlob.printf("USING ");
+	switch (usng[0])
+	{
+	case 'P':
+		if (!plugin)
+			isqlGlob.printf("ANY PLUGIN ");
+		else
+			printIdent(extract, plugin, "PLUGIN %s ");
+		break;
+	case 'S':
+		isqlGlob.printf("ANY PLUGIN SERVERWIDE ");
+		break;
+	case '*':
+		isqlGlob.printf("* ");
+		break;
+	case 'M':
+		isqlGlob.printf("MAPPING ");
+		break;
+	default:
+		isqlGlob.printf("/*unknown = %c*/ ", usng[0]);
+	}
+
+	if (db)
+		printIdent(extract, db, "IN %s ");
+
+	fb_utils::exact_name(from);
+	bool anyObj = strcmp(from, "*") == 0;
+	isqlGlob.printf("FROM %s", anyObj ? "ANY " : "");
+	printIdent(extract, fromType, "%s ");
+	if (!anyObj)
+		printIdent(extract, from, "%s ");
+
+	isqlGlob.printf("TO %s ", toType ? "ROLE" : "USER");
+	if (to)
+		printIdent(extract, to);
+	isqlGlob.printf("%s%s", extract ? ";" : "", NEWLINE);
+}
+
+
+processing_state SHOW_maps(bool extract, const SCHAR* map_name)
+{
+/*************************************
+*
+*	s h o w _ m a p s
+*
+**************************************
+*
+* Functional description
+*	Show all maps or maps to map_name
+************************************/
+	if (isqlGlob.major_ods < ODS_VERSION12)
+		return OBJECT_NOT_FOUND;
+
+	bool first = true;
+
+	//  List all mappings
+	FOR M IN RDB$MAP WITH
+		(M.RDB$SYSTEM_FLAG NE 1 OR M.RDB$SYSTEM_FLAG MISSING)
+		SORTED BY M.RDB$MAP_NAME
+
+		Firebird::NoCaseString nm = M.RDB$MAP_NAME;
+		nm.trim();
+
+		if ((!*map_name) || (nm == map_name))
+		{
+			if (first && extract)
+				isqlGlob.printf("%s/* Mapping security objects for this database */%s", NEWLINE, NEWLINE);
+			first = false;
+
+			printMap(extract, false, M.RDB$MAP_NAME, M.RDB$MAP_USING,
+				M.RDB$MAP_PLUGIN.NULL ? NULL : M.RDB$MAP_PLUGIN,
+				M.RDB$MAP_DB.NULL ? NULL : M.RDB$MAP_DB,
+				M.RDB$MAP_FROM_TYPE, M.RDB$MAP_FROM,
+				M.RDB$MAP_TO_TYPE, M.RDB$MAP_TO.NULL ? NULL : M.RDB$MAP_TO);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(fbStatus);
+		return ps_ERR;
+	END_ERROR;
+
+	bool firstGlobal = true;
+
+	//  List global mappings
+	FOR M IN SEC$GLOBAL_MAP
+		SORTED BY M.SEC$MAP_NAME
+
+		Firebird::NoCaseString nm = M.SEC$MAP_NAME;
+		nm.trim();
+
+		if ((!*map_name) || (nm == map_name))
+		{
+			if (firstGlobal)
+			{
+				const char* sep = extract ? "/" : "**";
+				isqlGlob.printf("%s%s* Global mapping *%s%s",
+					(first && (!extract)) ? "" : NEWLINE, sep, sep, NEWLINE);
+				firstGlobal = false;
+			}
+
+			first = false;
+
+			printMap(extract, true, M.SEC$MAP_NAME, M.SEC$MAP_USING,
+				M.SEC$MAP_PLUGIN.NULL ? NULL : M.SEC$MAP_PLUGIN,
+				M.SEC$MAP_DB.NULL ? NULL : M.SEC$MAP_DB,
+				M.SEC$MAP_FROM_TYPE, M.SEC$MAP_FROM,
+				M.SEC$MAP_TO_TYPE, M.SEC$MAP_TO.NULL ? NULL : M.SEC$MAP_TO);
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(fbStatus);
+		return ps_ERR;
+	END_ERROR;
+
+	return first ? OBJECT_NOT_FOUND : SKIP;
 }
 
 

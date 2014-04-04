@@ -1564,6 +1564,28 @@ C --
       PARAMETER (GDS__forupdate_temptbl                = 335545075)
       INTEGER*4 GDS__cant_modify_sysobj              
       PARAMETER (GDS__cant_modify_sysobj               = 335545076)
+      INTEGER*4 GDS__server_misconfigured            
+      PARAMETER (GDS__server_misconfigured             = 335545077)
+      INTEGER*4 GDS__alter_role                      
+      PARAMETER (GDS__alter_role                       = 335545078)
+      INTEGER*4 GDS__map_already_exists              
+      PARAMETER (GDS__map_already_exists               = 335545079)
+      INTEGER*4 GDS__map_not_exists                  
+      PARAMETER (GDS__map_not_exists                   = 335545080)
+      INTEGER*4 GDS__map_load                        
+      PARAMETER (GDS__map_load                         = 335545081)
+      INTEGER*4 GDS__map_aster                       
+      PARAMETER (GDS__map_aster                        = 335545082)
+      INTEGER*4 GDS__map_multi                       
+      PARAMETER (GDS__map_multi                        = 335545083)
+      INTEGER*4 GDS__map_undefined                   
+      PARAMETER (GDS__map_undefined                    = 335545084)
+      INTEGER*4 GDS__baddpb_damaged_mode             
+      PARAMETER (GDS__baddpb_damaged_mode              = 335545085)
+      INTEGER*4 GDS__baddpb_buffers_range            
+      PARAMETER (GDS__baddpb_buffers_range             = 335545086)
+      INTEGER*4 GDS__baddpb_temp_buffers             
+      PARAMETER (GDS__baddpb_temp_buffers              = 335545087)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -2256,6 +2278,8 @@ C --
       PARAMETER (GDS__dsql_revoke_failed               = 336397320)
       INTEGER*4 GDS__dsql_cte_recursive_aggregate    
       PARAMETER (GDS__dsql_cte_recursive_aggregate     = 336397321)
+      INTEGER*4 GDS__dsql_mapping_failed             
+      PARAMETER (GDS__dsql_mapping_failed              = 336397322)
       INTEGER*4 GDS__gsec_cant_open_db               
       PARAMETER (GDS__gsec_cant_open_db                = 336723983)
       INTEGER*4 GDS__gsec_switches_error             

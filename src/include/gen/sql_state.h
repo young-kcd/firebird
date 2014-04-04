@@ -777,6 +777,17 @@ static const struct {
 	{335545074, "HY000"}, // 754 forupdate_systbl
 	{335545075, "HY000"}, // 755 forupdate_temptbl
 	{335545076, "42000"}, // 756 cant_modify_sysobj
+	{335545077, "08004"}, // 757 server_misconfigured
+	{335545078, "0A000"}, // 758 alter_role
+	{335545079, "42S01"}, // 759 map_already_exists
+	{335545080, "42S01"}, // 760 map_not_exists
+	{335545081, "08004"}, // 761 map_load
+	{335545082, "08004"}, // 762 map_aster
+	{335545083, "08004"}, // 763 map_multi
+	{335545084, "08004"}, // 764 map_undefined
+	{335545085, "HY000"}, // 765 baddpb_damaged_mode
+	{335545086, "HY000"}, // 766 baddpb_buffers_range
+	{335545087, "HY000"}, // 767 baddpb_temp_buffers
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw
@@ -1123,6 +1134,7 @@ static const struct {
 	{336397319, "42000"}, // 1031 dsql_grant_failed
 	{336397320, "42000"}, // 1032 dsql_revoke_failed
 	{336397321, "42000"}, // 1033 dsql_cte_recursive_aggregate
+	{336397322, "42000"}, // 1034 dsql_mapping_failed
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec

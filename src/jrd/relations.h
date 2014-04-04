@@ -619,3 +619,29 @@ RELATION(nam_sec_user_attributes, rel_sec_user_attributes, ODS_12_0, rel_virtual
 	FIELD(f_sec_attr_key, nam_sec_attr_key, fld_attr_key, 0, ODS_12_0)
 	FIELD(f_sec_attr_value, nam_sec_attr_value, fld_attr_value, 0, ODS_12_0)
 END_RELATION
+
+// Relation 45 (RDB$MAP)
+RELATION(nam_map, rel_map, ODS_12_0, rel_persistent)
+	FIELD(f_map_name, nam_map_name, fld_map_name, 1, ODS_12_0)
+	FIELD(f_map_using, nam_map_using, fld_map_using, 1, ODS_12_0)
+	FIELD(f_map_plugin, nam_map_plugin, fld_map_plugin, 1, ODS_12_0)
+	FIELD(f_map_db, nam_map_db, fld_map_db, 1, ODS_12_0)
+	FIELD(f_map_from_type, nam_map_from_type, fld_map_from_type, 1, ODS_12_0)
+	FIELD(f_map_from, nam_map_from, fld_map_from, 1, ODS_12_0)
+	FIELD(f_map_to_type, nam_map_to_type, fld_obj_type, 1, ODS_8_0)
+	FIELD(f_map_to, nam_map_to, fld_map_to, 1, ODS_12_0)
+	FIELD(f_map_sys_flag, nam_sys_flag, fld_flag, 1, ODS_12_0)
+	FIELD(f_map_desc, nam_description, fld_description, 1, ODS_12_0)
+END_RELATION
+
+// Relation 46 (SEC$GLOBAL_MAP)
+RELATION(nam_sec_global_map, rel_sec_global_map, ODS_12_0, rel_virtual)
+	FIELD(f_sec_map_name, nam_sec_map_name, fld_map_name, 1, ODS_12_0)
+	FIELD(f_sec_map_using, nam_sec_map_using, fld_map_using, 0, ODS_12_0)
+	FIELD(f_sec_map_plugin, nam_sec_map_plugin, fld_map_plugin, 0, ODS_12_0)
+	FIELD(f_sec_map_db, nam_sec_map_db, fld_map_db, 0, ODS_12_0)
+	FIELD(f_sec_map_from_type, nam_sec_map_from_type, fld_map_from_type, 0, ODS_12_0)
+	FIELD(f_sec_map_from, nam_sec_map_from, fld_map_from, 0, ODS_12_0)
+	FIELD(f_sec_map_to_type, nam_sec_map_to_type, fld_obj_type, 0, ODS_8_0)
+	FIELD(f_sec_map_to, nam_sec_map_to, fld_map_to, 0, ODS_12_0)
+END_RELATION

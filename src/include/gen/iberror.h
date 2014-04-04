@@ -812,6 +812,17 @@ const ISC_STATUS isc_forupdate_virtualtbl             = 335545073L;
 const ISC_STATUS isc_forupdate_systbl                 = 335545074L;
 const ISC_STATUS isc_forupdate_temptbl                = 335545075L;
 const ISC_STATUS isc_cant_modify_sysobj               = 335545076L;
+const ISC_STATUS isc_server_misconfigured             = 335545077L;
+const ISC_STATUS isc_alter_role                       = 335545078L;
+const ISC_STATUS isc_map_already_exists               = 335545079L;
+const ISC_STATUS isc_map_not_exists                   = 335545080L;
+const ISC_STATUS isc_map_load                         = 335545081L;
+const ISC_STATUS isc_map_aster                        = 335545082L;
+const ISC_STATUS isc_map_multi                        = 335545083L;
+const ISC_STATUS isc_map_undefined                    = 335545084L;
+const ISC_STATUS isc_baddpb_damaged_mode              = 335545085L;
+const ISC_STATUS isc_baddpb_buffers_range             = 335545086L;
+const ISC_STATUS isc_baddpb_temp_buffers              = 335545087L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1158,6 +1169,7 @@ const ISC_STATUS isc_dsql_alter_user_failed           = 336397318L;
 const ISC_STATUS isc_dsql_grant_failed                = 336397319L;
 const ISC_STATUS isc_dsql_revoke_failed               = 336397320L;
 const ISC_STATUS isc_dsql_cte_recursive_aggregate     = 336397321L;
+const ISC_STATUS isc_dsql_mapping_failed              = 336397322L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -1259,7 +1271,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1203;
+const ISC_STATUS isc_err_max                          = 1215;
 
 #else /* c definitions */
 
@@ -2041,6 +2053,17 @@ const ISC_STATUS isc_err_max                          = 1203;
 #define isc_forupdate_systbl                 335545074L
 #define isc_forupdate_temptbl                335545075L
 #define isc_cant_modify_sysobj               335545076L
+#define isc_server_misconfigured             335545077L
+#define isc_alter_role                       335545078L
+#define isc_map_already_exists               335545079L
+#define isc_map_not_exists                   335545080L
+#define isc_map_load                         335545081L
+#define isc_map_aster                        335545082L
+#define isc_map_multi                        335545083L
+#define isc_map_undefined                    335545084L
+#define isc_baddpb_damaged_mode              335545085L
+#define isc_baddpb_buffers_range             335545086L
+#define isc_baddpb_temp_buffers              335545087L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2387,6 +2410,7 @@ const ISC_STATUS isc_err_max                          = 1203;
 #define isc_dsql_grant_failed                336397319L
 #define isc_dsql_revoke_failed               336397320L
 #define isc_dsql_cte_recursive_aggregate     336397321L
+#define isc_dsql_mapping_failed              336397322L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -2488,7 +2512,7 @@ const ISC_STATUS isc_err_max                          = 1203;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1203
+#define isc_err_max                          1215
 
 #endif
 

@@ -45,16 +45,17 @@ public:
 	WriterImplementation();
 
 	void store(Firebird::ClumpletWriter* to, unsigned char tag);
-	void setMethod(const char* m);
+	void setPlugin(const char* m);
 
 	// IWriter implementation
 	void FB_CARG reset();
 	void FB_CARG add(const char* name);
-	void FB_CARG setAttribute(unsigned char tag, const char* value);
+	void FB_CARG setType(const char* value);
+	void FB_CARG setDb(const char* value);
 
 private:
 	Firebird::ClumpletWriter current, result;
-	Firebird::string method;
+	Firebird::string plugin, type;
 	unsigned int sequence;
 
 	void putLevel();
