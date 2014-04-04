@@ -4054,14 +4054,10 @@ static void validate(thread_db* tdbb, jrd_nod* list)
 				const vec<jrd_fld*>* vector = relation->rel_fields;
 				if (vector && id < vector->count() && (field = (*vector)[id]))
 				{
-					if (!relation->rel_name.isEmpty())
-					{
-						name = relation->rel_name.c_str();
-						name.append(".");
-					}
-					name.append(field->fld_name.c_str());
-
-					name.printf("\"%s\".\"%s\"", relation->rel_name.c_str(), field->fld_name.c_str());
+					if (!relation->rel_name.isEmpty()) 
+						name.printf("\"%s\".\"%s\"", relation->rel_name.c_str(), field->fld_name.c_str());
+					else
+						name.printf("\"%s\"", field->fld_name.c_str());
 				}
 			}
 
