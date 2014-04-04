@@ -28,7 +28,8 @@
 
 struct dsc;
 
-namespace Jrd {
+namespace Jrd
+{
 	class jrd_tra;
 	class jrd_req;
 	class JrdStatement;
@@ -45,6 +46,15 @@ namespace Jrd {
 	class DeferredWork;
 	struct FieldInfo;
 	class ExceptionItem;
+
+// index status
+
+	enum IndexStatus
+	{
+		MET_object_active,
+		MET_object_inactive,
+		MET_object_unknown
+	};
 }
 
 struct SubtypeInfo
@@ -95,7 +105,7 @@ bool		MET_load_generator(Jrd::thread_db*, Jrd::GeneratorItem&, bool* sysGen = 0)
 SLONG		MET_lookup_generator(Jrd::thread_db*, const Firebird::MetaName&, bool* sysGen = 0);
 bool		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Firebird::MetaName&, bool* sysGen = 0);
 void		MET_lookup_index(Jrd::thread_db*, Firebird::MetaName&, const Firebird::MetaName&, USHORT);
-SLONG		MET_lookup_index_name(Jrd::thread_db*, const Firebird::MetaName&, SLONG*, SSHORT*);
+SLONG		MET_lookup_index_name(Jrd::thread_db*, const Firebird::MetaName&, SLONG*, Jrd::IndexStatus* status);
 bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::index_desc*, const TEXT*);
 Jrd::jrd_prc*	MET_lookup_procedure(Jrd::thread_db*, const Firebird::QualifiedName&, bool);
 Jrd::jrd_prc*	MET_lookup_procedure_id(Jrd::thread_db*, USHORT, bool, bool, USHORT);

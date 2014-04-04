@@ -1085,7 +1085,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	               *p = UPPER (*p);
 	               */
 				SLONG relation_id;
-				SSHORT idx_status;
+				IndexStatus idx_status;
 				const SLONG index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
 
 				if (idx_status == MET_object_unknown || idx_status == MET_object_inactive)
@@ -1145,7 +1145,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					 *p = UPPER(*p);
 	  	             */
 					SLONG relation_id;
-					SSHORT idx_status;
+					IndexStatus idx_status;
 					const SLONG index_id = MET_lookup_index_name(tdbb, name, &relation_id, &idx_status);
 
 					if (idx_status == MET_object_unknown || idx_status == MET_object_inactive)

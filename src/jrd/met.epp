@@ -2417,7 +2417,7 @@ void MET_lookup_index(thread_db* tdbb,
 
 SLONG MET_lookup_index_name(thread_db* tdbb,
 							const MetaName& index_name,
-							SLONG* relation_id, SSHORT* status)
+							SLONG* relation_id, IndexStatus* status)
 {
 /**************************************
  *
