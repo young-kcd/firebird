@@ -3618,7 +3618,7 @@ static LatchState latch_buffer(thread_db* tdbb, Sync &bcbSync, BufferDesc *bdb,
 	// allocate another buffer and read old page image (or even zero's)
 	// from disk into new buffer
 
-	const bool waitPending = (bdb->bdb_flags & BDB_free_pending && bdb->bdb_page == page);
+	const bool waitPending = ((bdb->bdb_flags & BDB_free_pending) && bdb->bdb_page == page);
 
 	bcbSync.unlock();
 
