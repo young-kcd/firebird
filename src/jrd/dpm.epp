@@ -76,13 +76,13 @@ using namespace Firebird;
 static void check_swept(thread_db*, record_param*);
 static void delete_tail(thread_db*, rhdf*, const USHORT, USHORT);
 static void fragment(thread_db*, record_param*, SSHORT, const Compressor&, SSHORT, const jrd_tra*);
-static void extend_relation(thread_db*, jrd_rel*, WIN*, USHORT);
-static UCHAR* find_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
+static void extend_relation(thread_db*, jrd_rel*, WIN*, const Jrd::RecordStorageType type);
+static UCHAR* find_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, const Jrd::RecordStorageType type);
 static bool get_header(WIN*, SSHORT, record_param*);
 static pointer_page* get_pointer_page(thread_db*, jrd_rel*, RelationPages*, WIN*, USHORT, USHORT);
-static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, USHORT);
+static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, const Jrd::RecordStorageType type);
 static void mark_full(thread_db*, record_param*);
-static void store_big_record(thread_db*, record_param*, PageStack&, const UCHAR*, ULONG, USHORT);
+static void store_big_record(thread_db*, record_param*, PageStack&, const UCHAR*, ULONG, const Jrd::RecordStorageType type);
 
 
 PAG DPM_allocate(thread_db* tdbb, WIN* window)
@@ -1450,7 +1450,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 			// equivalent to scanning single large blobs.
 
 			if (blob->getMaxSequence() > dbb->dbb_bcb->bcb_count ||
-				attachment->att_flags & ATT_gbak_attachment)
+				(attachment->att_flags & ATT_gbak_attachment))
 			{
 				blob->blb_flags |= BLB_large_scan;
 			}
@@ -1862,7 +1862,7 @@ void DPM_scan_pages( thread_db* tdbb)
 }
 
 
-void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, USHORT type)
+void DPM_store( thread_db* tdbb, record_param* rpb, PageStack& stack, const Jrd::RecordStorageType type)
 {
 /**************************************
  *
@@ -2544,7 +2544,7 @@ static void fragment(thread_db* tdbb,
 }
 
 
-static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, USHORT type)
+static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, const Jrd::RecordStorageType type)
 {
 /**************************************
  *
@@ -2713,7 +2713,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 						 SSHORT	size,
 						 PageStack&	stack,
 						 Record*	record,
-						 USHORT	type)
+						 const Jrd::RecordStorageType type)
 {
 /**************************************
  *
@@ -2938,7 +2938,7 @@ static pointer_page* get_pointer_page(thread_db* tdbb,
 
 static rhd* locate_space(thread_db* tdbb,
 						 record_param* rpb,
-						 SSHORT size, PageStack& stack, Record* record, USHORT type)
+						 SSHORT size, PageStack& stack, Record* record, const Jrd::RecordStorageType type)
 {
 /**************************************
  *
@@ -3197,7 +3197,7 @@ static void store_big_record(thread_db* tdbb,
 							 PageStack& stack,
 							 const UCHAR* control,
 							 ULONG size,
-							 USHORT type)
+							 const Jrd::RecordStorageType type)
 {
 /**************************************
  *

@@ -28,15 +28,28 @@
 #include "../jrd/sbm.h"
 
 // fwd. decl.
-namespace Jrd {
+namespace Jrd
+{
 	class blb;
 	class jrd_rel;
 	struct record_param;
 	class Record;
 	class jrd_tra;
 	struct win;
+
+// Store allocation policy types.  Parameter to DPM_store()
+
+//I don't see it stored, but since the first constant was 1, I'm using the same values in the enum.
+	enum RecordStorageType
+	{
+		DPM_primary = 1,	// New primary record
+		DPM_secondary,		// Chained version of primary record
+		DPM_other			// Independent (or don't care) record
+	};
 }
-namespace Ods {
+
+namespace Ods
+{
 	struct pag;
 	struct data_page;
 }
@@ -63,7 +76,7 @@ void	DPM_pages(Jrd::thread_db*, SSHORT, int, ULONG, ULONG);
 SLONG	DPM_prefetch_bitmap(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::PageBitmap*, SLONG);
 #endif
 void	DPM_scan_pages(Jrd::thread_db*);
-void	DPM_store(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, USHORT);
+void	DPM_store(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack&, const Jrd::RecordStorageType type);
 RecordNumber DPM_store_blob(Jrd::thread_db*, Jrd::blb*, Jrd::Record*);
 void	DPM_rewrite_header(Jrd::thread_db*, Jrd::record_param*);
 void	DPM_update(Jrd::thread_db*, Jrd::record_param*, Jrd::PageStack*, const Jrd::jrd_tra*);

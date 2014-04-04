@@ -134,12 +134,6 @@ const USHORT RPB_s_refetch_no_undo	= 0x20;	// re-fetch required due to modify\er
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records
 
-// Store allocation policy types.  Parameter to DPM_store()
-
-const USHORT DPM_primary	= 1;	// New primary record
-const USHORT DPM_secondary	= 2;	// Chained version of primary record
-const USHORT DPM_other		= 3;	// Independent (or don't care) record
-
 // Record block (holds data, remember data?)
 
 class Record : public pool_alloc_rpt<SCHAR, type_rec>
@@ -171,7 +165,7 @@ public:
 		rec_data[id >> 3] &= ~(1 << (id & 7));
 	}
 
-	bool isNull(USHORT id)
+	bool isNull(USHORT id) const
 	{
 		return ((rec_data[id >> 3] & (1 << (id & 7))) != 0);
 	}
