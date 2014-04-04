@@ -291,7 +291,7 @@ int Parser::yylex()
 	const TEXT* line_start = lex.line_start;
 	SLONG lines = lex.lines;
 
-	// Lets skip spaces before store lastLine/lastColumn. This is necessary so yyReducePosn does
+	// Lets skip spaces before store lastLine/lastColumn. This is necessary to avoid yyReducePosn
 	// produce invalid line/column information - CORE-4381.
 	yylexSkipSpaces();
 
