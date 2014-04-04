@@ -950,7 +950,7 @@ static void			unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStat
 	Jrd::Attachment* attachment, Database* dbb);
 static JAttachment*	init(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*);
-static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&);
+static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
@@ -5906,7 +5906,7 @@ static JAttachment* init(thread_db* tdbb,
 								fb_assert(!(dbb->dbb_flags & DBB_new));
 
 								tdbb->setDatabase(dbb);
-								jAtt = create_attachment(alias_name, dbb, options);
+								jAtt = create_attachment(alias_name, dbb, options, !attach_flag);
 
 								if (dbb->dbb_linger_timer)
 									dbb->dbb_linger_timer->reset();
@@ -5960,9 +5960,9 @@ static JAttachment* init(thread_db* tdbb,
 		dbbGuard.lock(SYNC_EXCLUSIVE);
 
 		tdbb->setDatabase(dbb);
-		jAtt = create_attachment(alias_name, dbb, options);
+		jAtt = create_attachment(alias_name, dbb, options, !attach_flag);
 		tdbb->setAttachment(jAtt->getHandle());
-	}
+	} // end scope
 
 	// provide context pool for the rest stuff
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
@@ -6003,7 +6003,8 @@ static JAttachment* init(thread_db* tdbb,
 
 static JAttachment* create_attachment(const PathName& alias_name,
 									  Database* dbb,
-									  const DatabaseOptions& options)
+									  const DatabaseOptions& options,
+									  bool newDb)
 {
 /**************************************
  *
@@ -6045,6 +6046,8 @@ static JAttachment* create_attachment(const PathName& alias_name,
 	jAtt->addRef();		// See also REF_NO_INCR RefPtr in unwindAttach()
 	attachment->att_interface = jAtt;
 	jAtt->manualLock(attachment->att_flags);
+	if (newDb)
+		attachment->att_flags |= ATT_creator;
 
 	return jAtt;
 }

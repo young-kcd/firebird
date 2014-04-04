@@ -811,6 +811,7 @@ const ISC_STATUS isc_idx_key_value                    = 335545072L;
 const ISC_STATUS isc_forupdate_virtualtbl             = 335545073L;
 const ISC_STATUS isc_forupdate_systbl                 = 335545074L;
 const ISC_STATUS isc_forupdate_temptbl                = 335545075L;
+const ISC_STATUS isc_cant_modify_sysobj               = 335545076L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -941,6 +942,7 @@ const ISC_STATUS isc_dyn_coll_used_function           = 336068889L;
 const ISC_STATUS isc_dyn_domain_used_function         = 336068890L;
 const ISC_STATUS isc_dyn_alter_user_no_clause         = 336068891L;
 const ISC_STATUS isc_dyn_duplicate_package_item       = 336068894L;
+const ISC_STATUS isc_dyn_cant_modify_sysobj           = 336068895L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -1257,7 +1259,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1201;
+const ISC_STATUS isc_err_max                          = 1203;
 
 #else /* c definitions */
 
@@ -2038,6 +2040,7 @@ const ISC_STATUS isc_err_max                          = 1201;
 #define isc_forupdate_virtualtbl             335545073L
 #define isc_forupdate_systbl                 335545074L
 #define isc_forupdate_temptbl                335545075L
+#define isc_cant_modify_sysobj               335545076L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2168,6 +2171,7 @@ const ISC_STATUS isc_err_max                          = 1201;
 #define isc_dyn_domain_used_function         336068890L
 #define isc_dyn_alter_user_no_clause         336068891L
 #define isc_dyn_duplicate_package_item       336068894L
+#define isc_dyn_cant_modify_sysobj           336068895L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2484,7 +2488,7 @@ const ISC_STATUS isc_err_max                          = 1201;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1201
+#define isc_err_max                          1203
 
 #endif
 

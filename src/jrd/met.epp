@@ -2271,7 +2271,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 }
 
 
-bool MET_load_generator(thread_db* tdbb, GeneratorItem& item)
+bool MET_load_generator(thread_db* tdbb, GeneratorItem& item, bool* sysGen)
 {
 /**************************************
  *
@@ -2286,9 +2286,11 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item)
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 
-	if (item.name == "RDB$GENERATORS")
+	if (item.name == MASTER_GENERATOR)
 	{
 		item.id = 0;
+		if (sysGen)
+			*sysGen = true;
 		return true;
 	}
 
@@ -2299,6 +2301,8 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item)
 	{
 		item.id = X.RDB$GENERATOR_ID;
 		item.secName = X.RDB$SECURITY_CLASS;
+		if (sysGen)
+			*sysGen = (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1);
 		return true;
 	}
 	END_FOR
@@ -2306,7 +2310,7 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item)
 	return false;
 }
 
-SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name)
+SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name, bool* sysGen)
 {
 /**************************************
  *
@@ -2321,14 +2325,21 @@ SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name)
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 
-	if (name == "RDB$GENERATORS")
+	if (name == MASTER_GENERATOR)
+	{
+		if (sysGen)
+			*sysGen = true;
 		return 0;
+	}
 
 	AutoCacheRequest request(tdbb, irq_l_gen_id, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE request)
 		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_NAME EQ name.c_str()
 	{
+		if (sysGen)
+			*sysGen = (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1);
+
 		return X.RDB$GENERATOR_ID;
 	}
 	END_FOR
@@ -2336,7 +2347,7 @@ SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name)
 	return -1;
 }
 
-void MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name)
+bool MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name, bool* sysGen)
 {
 /**************************************
  *
@@ -2352,11 +2363,7 @@ void MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name)
 	SET_TDBB (tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 
-	if (!gen_id)
-	{
-		name = "RDB$GENERATORS";
-		return;
-	}
+	fb_assert(gen_id != 0);
 
 	name = "";
 
@@ -2365,9 +2372,14 @@ void MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name)
 	FOR (REQUEST_HANDLE request)
 		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_ID EQ gen_id
 	{
+		if (sysGen)
+			*sysGen = (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1);
+
 		name = X.RDB$GENERATOR_NAME;
 	}
 	END_FOR
+
+	return name.length() != 0;
 }
 
 void MET_lookup_index(thread_db* tdbb,
@@ -5012,11 +5024,14 @@ static void store_dependencies(thread_db* tdbb,
 		case obj_field:
 			dpdo_name = dependency.name;
 			break;
-			// CVC: Here I'm going to track those pesky things named generators and UDFs.
 		case obj_generator:
 			{
+				// CVC: Here I'm going to track those pesky things named generators and UDFs.
+				// But don't track sys gens.
+				bool sysGen = false;
 				const SLONG number = dependency.number;
-				MET_lookup_generator_id (tdbb, number, name);
+				if (number == 0 || !MET_lookup_generator_id(tdbb, number, name, &sysGen) || sysGen)
+					continue;
 				dpdo_name = &name;
 			}
 			break;

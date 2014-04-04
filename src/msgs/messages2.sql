@@ -863,6 +863,7 @@ Data source : @4', NULL, NULL)
 ('forupdate_virtualtbl', 'PAR_rse', 'par.cpp', NULL, 0, 753, NULL, 'Cannot select virtual table @1 for update WITH LOCK', NULL, NULL)
 ('forupdate_systbl', 'PAR_rse', 'par.cpp', NULL, 0, 754, NULL, 'Cannot select system table @1 for update WITH LOCK', NULL, NULL)
 ('forupdate_temptbl', 'PAR_rse', 'par.cpp', NULL, 0, 755, NULL, 'Cannot select temporary table @1 for update WITH LOCK', NULL, NULL)
+('cant_modify_sysobj', NULL, 'ExprNodes.cpp', NULL, 0, 756, NULL, 'System @1 @2 cannot be modified', NULL, 'Ex: System generator rdb$... cannot be modified')
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
@@ -1911,6 +1912,7 @@ COMMIT WORK;
 (NULL, 'DYN_delete_role', 'dyn_del.epp', NULL, 8, 284, NULL, 'Cannot delete system SQL role @1', NULL, NULL);
 (NULL, 'DdlNodes.epp', 'AlterRelationNode::modifyField', NULL, 8, 285, NULL, 'Column @1 is not an identity column', NULL, NULL);
 ('dyn_duplicate_package_item', NULL, 'PackageNodes.epp', NULL, 8, 286, NULL, 'Duplicate @1 @2', NULL, NULL);
+('dyn_cant_modify_sysobj', NULL, 'DdlNodes.epp', NULL, 8, 287, NULL, 'System @1 @2 cannot be modified', NULL, 'Ex: System generator rdb$... cannot be modified');
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

@@ -5615,7 +5615,8 @@ GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
 	: TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>(pool),
 	  dialect1(aDialect1),
 	  generator(pool, name),
-	  arg(aArg)
+	  arg(aArg),
+	  sysGen(false)
 {
 	addChildNode(arg, arg);
 }
@@ -5628,7 +5629,16 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	GenIdNode* const node =
 		FB_NEW(pool) GenIdNode(pool, (csb->blrVersion == 4), name, PAR_parse_value(tdbb, csb));
 
-	if (!MET_load_generator(tdbb, node->generator))
+	// This check seems faster than ==, but assumes the special generator is named ""
+	if (name.length() == 0) //(name == MASTER_GENERATOR)
+	{
+		fb_assert(!MASTER_GENERATOR[0]);
+		if (!(csb->csb_g_flags & csb_internal))
+			PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
+
+		node->generator.id = 0;
+	}
+	else if (!MET_load_generator(tdbb, node->generator, &node->sysGen))
 		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 
 	if (csb->csb_g_flags & csb_get_dependencies)
@@ -5652,6 +5662,7 @@ ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	GenIdNode* const node = FB_NEW(getPool())
 		GenIdNode(getPool(), dialect1, generator.name, doDsqlPass(dsqlScratch, arg));
 	node->generator = generator;
+	node->sysGen = sysGen;
 	return node;
 }
 
@@ -5699,6 +5710,7 @@ ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	GenIdNode* const node = FB_NEW(*tdbb->getDefaultPool()) GenIdNode(
 		*tdbb->getDefaultPool(), dialect1, generator.name, copier.copy(tdbb, arg));
 	node->generator = generator;
+	node->sysGen = sysGen;
 	return node;
 }
 
@@ -5755,7 +5767,18 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 	if (request->req_flags & req_null)
 		return NULL;
 
-	const SINT64 new_val = DPM_gen_id(tdbb, generator.id, false, MOV_get_int64(value, 0));
+	const SINT64 change = MOV_get_int64(value, 0);
+	if (sysGen && change != 0)
+	{
+		const ULONG aflags = ATT_gbak_attachment | ATT_creator;
+		if (!request->hasInternalStatement() &&
+			(tdbb->getAttachment()->att_flags & aflags) != aflags)
+		{
+			status_exception::raise(Arg::Gds(isc_cant_modify_sysobj) << "generator" << generator.name);
+		}
+	}
+
+	const SINT64 new_val = DPM_gen_id(tdbb, generator.id, false, change);
 
 	if (dialect1)
 		impure->make_long((SLONG) new_val);

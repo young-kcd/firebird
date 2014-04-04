@@ -762,6 +762,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, 'HY', '000', 0, 753, 'forupdate_virtualtbl', NULL, NULL)
 (-901, 'HY', '000', 0, 754, 'forupdate_systbl', NULL, NULL)
 (-901, 'HY', '000', 0, 755, 'forupdate_temptbl', NULL, NULL)
+(-901, '42', '000', 0, 756, 'cant_modify_sysobj', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)
@@ -895,6 +896,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, 'HY', '000', 8, 282, 'dyn_domain_used_function', NULL, NULL)
 (-901, '42', '000', 8, 283, 'dyn_alter_user_no_clause', NULL, NULL)
 (-901, '42', '000', 8, 286, 'dyn_duplicate_package_item', NULL, NULL)
+(-901, '42', '000', 8, 287, 'dyn_cant_modify_sysobj', NULL, NULL)
 --  GBAK
 (-901, '00', '000', 12, 1, 'gbak_unknown_switch', NULL, NULL)
 (-901, '00', '000', 12, 2, 'gbak_page_size_missing', NULL, NULL)

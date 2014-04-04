@@ -398,8 +398,9 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	for (const gen* generator = generators; generator->gen_name; generator++)
 		store_generator(tdbb, generator, handle1, ownerName);
 
+	// Redundant, VIO_store does the job.
 	// Adjust the value of the hidden generator RDB$GENERATORS
-	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
+	//DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
 
 	// store system-defined triggers
 

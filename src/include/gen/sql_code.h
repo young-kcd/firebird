@@ -776,6 +776,7 @@ static const struct {
 	{335545073, -901}, /* 753 forupdate_virtualtbl */
 	{335545074, -901}, /* 754 forupdate_systbl */
 	{335545075, -901}, /* 755 forupdate_temptbl */
+	{335545076, -901}, /* 756 cant_modify_sysobj */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
@@ -906,6 +907,7 @@ static const struct {
 	{336068890, -901}, /* 282 dyn_domain_used_function */
 	{336068891, -901}, /* 283 dyn_alter_user_no_clause */
 	{336068894, -901}, /* 286 dyn_duplicate_package_item */
+	{336068895, -901}, /* 287 dyn_cant_modify_sysobj */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

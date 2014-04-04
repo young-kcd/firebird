@@ -123,6 +123,10 @@ const int IMPLICIT_DOMAIN_PREFIX_LEN = 4;
 const char* const IMPLICIT_PK_PREFIX = "RDB$PRIMARY";
 const int IMPLICIT_PK_PREFIX_LEN = 11;
 
+// The invisible "id zero" generator.
+const char* const MASTER_GENERATOR = ""; //Was "RDB$GENERATORS";
+
+
 // Automatically created security classes for SQL objects.
 // Keep in sync with trig.h
 const char* const DEFAULT_CLASS				= "SQL$DEFAULT";

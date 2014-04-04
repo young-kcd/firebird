@@ -788,6 +788,7 @@ const
 	gds_forupdate_virtualtbl             = 335545073;
 	gds_forupdate_systbl                 = 335545074;
 	gds_forupdate_temptbl                = 335545075;
+	gds_cant_modify_sysobj               = 335545076;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;
@@ -918,6 +919,7 @@ const
 	gds_dyn_domain_used_function         = 336068890;
 	gds_dyn_alter_user_no_clause         = 336068891;
 	gds_dyn_duplicate_package_item       = 336068894;
+	gds_dyn_cant_modify_sysobj           = 336068895;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;

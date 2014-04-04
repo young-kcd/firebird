@@ -780,6 +780,7 @@ Data source : @4"},		/* eds_statement */
 	{335545073, "Cannot select virtual table @1 for update WITH LOCK"},		/* forupdate_virtualtbl */
 	{335545074, "Cannot select system table @1 for update WITH LOCK"},		/* forupdate_systbl */
 	{335545075, "Cannot select temporary table @1 for update WITH LOCK"},		/* forupdate_temptbl */
+	{335545076, "System @1 @2 cannot be modified"},		/* cant_modify_sysobj */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
@@ -910,6 +911,7 @@ Data source : @4"},		/* eds_statement */
 	{336068890, "Domain @1 is used in function @2 (parameter name @3) and cannot be dropped"},		/* dyn_domain_used_function */
 	{336068891, "ALTER USER requires at least one clause to be specified"},		/* dyn_alter_user_no_clause */
 	{336068894, "Duplicate @1 @2"},		/* dyn_duplicate_package_item */
+	{336068895, "System @1 @2 cannot be modified"},		/* dyn_cant_modify_sysobj */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */

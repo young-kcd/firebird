@@ -3573,6 +3573,10 @@ static bool set_generator(thread_db* tdbb,
 					DPM_gen_id(tdbb, id, true, value);
 				}
 			}
+#ifdef DEV_BUILD			
+			else // This is a test only
+				status_exception::raise(Arg::Gds(isc_cant_modify_sysobj) << "generator" << work->dfw_name);
+#endif				
 		}
 		break;
 	}

@@ -3145,7 +3145,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			EVL_field(0, rpb->rpb_record, f_gen_name, &desc);
 			EVL_field(0, rpb->rpb_record, f_gen_id, &desc2);
 			object_id = set_metadata_id(tdbb, rpb->rpb_record,
-										f_gen_id, drq_g_nxt_gen_id, "RDB$GENERATORS");
+										f_gen_id, drq_g_nxt_gen_id, MASTER_GENERATOR);
 			transaction->getGenIdCache()->put(object_id, 0);
 			DFW_post_work(transaction, dfw_set_generator, &desc, object_id);
 			set_system_flag(tdbb, rpb->rpb_record, f_gen_sys_flag);
@@ -5323,7 +5323,7 @@ static void protect_system_table(thread_db* tdbb,
 
 	if (force_flag ||
 		(!(attachment->att_flags & ATT_gbak_attachment) &&
-		!(request->getStatement()->flags & JrdStatement::FLAG_INTERNAL)))
+		!request->hasInternalStatement()))
 	{
 		fb_assert(relation->rel_flags & REL_scanned);
 

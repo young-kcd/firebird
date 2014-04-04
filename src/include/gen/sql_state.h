@@ -776,6 +776,7 @@ static const struct {
 	{335545073, "HY000"}, // 753 forupdate_virtualtbl
 	{335545074, "HY000"}, // 754 forupdate_systbl
 	{335545075, "HY000"}, // 755 forupdate_temptbl
+	{335545076, "42000"}, // 756 cant_modify_sysobj
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw
@@ -906,6 +907,7 @@ static const struct {
 	{336068890, "HY000"}, // 282 dyn_domain_used_function
 	{336068891, "42000"}, // 283 dyn_alter_user_no_clause
 	{336068894, "42000"}, // 286 dyn_duplicate_package_item
+	{336068895, "42000"}, // 287 dyn_cant_modify_sysobj
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig

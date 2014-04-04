@@ -1562,6 +1562,8 @@ C --
       PARAMETER (GDS__forupdate_systbl                 = 335545074)
       INTEGER*4 GDS__forupdate_temptbl               
       PARAMETER (GDS__forupdate_temptbl                = 335545075)
+      INTEGER*4 GDS__cant_modify_sysobj              
+      PARAMETER (GDS__cant_modify_sysobj               = 335545076)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
@@ -1822,6 +1824,8 @@ C --
       PARAMETER (GDS__dyn_alter_user_no_clause         = 336068891)
       INTEGER*4 GDS__dyn_duplicate_package_item      
       PARAMETER (GDS__dyn_duplicate_package_item       = 336068894)
+      INTEGER*4 GDS__dyn_cant_modify_sysobj          
+      PARAMETER (GDS__dyn_cant_modify_sysobj           = 336068895)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

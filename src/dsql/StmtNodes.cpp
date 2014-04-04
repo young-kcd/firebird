@@ -6513,8 +6513,12 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 				GenIdNode* const genNode = FB_NEW(csb->csb_pool)
 					GenIdNode(csb->csb_pool, (csb->blrVersion == 4), generatorName, literal);
 
-				if (!MET_load_generator(tdbb, genNode->generator))
+				bool sysGen = false;
+				if (!MET_load_generator(tdbb, genNode->generator, &sysGen))
 					PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(generatorName));
+
+				if (sysGen)
+					PAR_error(csb, Arg::Gds(isc_cant_modify_sysobj) << "generator" << generatorName);
 
 				assign->asgnFrom = genNode;
 			}
@@ -7139,8 +7143,12 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 	SetGeneratorNode* const node = FB_NEW(pool) SetGeneratorNode(pool, name);
 
-	if (!MET_load_generator(tdbb, node->generator))
+	bool sysGen = false;
+	if (!MET_load_generator(tdbb, node->generator, &sysGen))
 		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
+
+	if (sysGen)
+		PAR_error(csb, Arg::Gds(isc_cant_modify_sysobj) << "generator" << name);
 
 	node->value = PAR_parse_value(tdbb, csb);
 

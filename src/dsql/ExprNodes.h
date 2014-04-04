@@ -679,6 +679,8 @@ public:
 	bool dialect1;
 	GeneratorItem generator;
 	NestConst<ValueExprNode> arg;
+private:
+	bool sysGen;
 };
 
 

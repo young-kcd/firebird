@@ -4881,6 +4881,8 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
+	bool forbidden = false;
+
 	if (legacy)
 	{
 		// The only need for this code is that for the sake of backward compatibility
@@ -4889,9 +4891,12 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		// that the generator created in another transaction can be found here. This is done
 		// using MET_lookup_generator() which works in the system transaction.
 
-		const SLONG id = MET_lookup_generator(tdbb, name);
+		const SLONG id = MET_lookup_generator(tdbb, name, &forbidden);
 		if (id < 0)
 			return false;
+
+		if (forbidden)
+			status_exception::raise(Arg::Gds(isc_dyn_cant_modify_sysobj) << "generator" << Arg::Str(name));
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
@@ -4918,6 +4923,12 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
+		if (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1)
+		{
+			forbidden = true;
+			break;
+		}
+
 		const SLONG id = X.RDB$GENERATOR_ID;
 		const SINT64 val = value.specified ?
 			value.value : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
@@ -4932,6 +4943,9 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		found = true;
 	}
 	END_FOR
+
+	if (forbidden)
+		status_exception::raise(Arg::Gds(isc_dyn_cant_modify_sysobj) << "generator" << Arg::Str(name));
 
 	return found;
 }
@@ -4952,7 +4966,7 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 	{
 		try
 		{
-			SINT64 id = DYN_UTIL_gen_unique_id(tdbb, drq_g_nxt_gen_id, "RDB$GENERATORS");
+			SINT64 id = DYN_UTIL_gen_unique_id(tdbb, drq_g_nxt_gen_id, MASTER_GENERATOR);
 
 			id %= MAX_SSHORT + 1;
 			if (id == 0)
