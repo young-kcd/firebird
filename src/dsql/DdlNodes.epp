@@ -4868,6 +4868,31 @@ void CreateAlterSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsql
 
 }
 
+void CreateAlterSequenceNode::putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
+{
+	// Possibilities I see in parse.y
+	//CREATE SEQ -> !legacy, create, !alter
+	//REPL SEQ (create or alter) -> !legacy, create, alter
+	//ALTER SEQ -> !legacy, !create, alter
+	//SET GENERATOR -> legacy, !create, alter
+	ISC_STATUS rc = 0;
+	if (legacy)
+	{
+		if (alter)
+			rc = isc_dsql_set_generator_failed;
+		else
+			rc = isc_dsql_create_sequence_failed; // no way to distinguish
+	}
+	else
+	{
+		if (alter)
+			rc = isc_dsql_alter_sequence_failed;
+		else
+			rc = isc_dsql_create_sequence_failed;
+	}
+	statusVector << Firebird::Arg::Gds(rc) << name;
+}
+
 void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {

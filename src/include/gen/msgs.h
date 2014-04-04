@@ -1139,6 +1139,9 @@ Data source : @4"},		/* eds_statement */
 	{336397320, "REVOKE failed"},		/* dsql_revoke_failed */
 	{336397321, "Recursive member of CTE cannot use aggregate or window function"},		/* dsql_cte_recursive_aggregate */
 	{336397322, "@2 MAPPING @1 failed"},		/* dsql_mapping_failed */
+	{336397323, "ALTER SEQUENCE @1 failed"},		/* dsql_alter_sequence_failed */
+	{336397324, "CREATE GENERATOR @1 failed"},		/* dsql_create_generator_failed */
+	{336397325, "SET GENERATOR @1 failed"},		/* dsql_set_generator_failed */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

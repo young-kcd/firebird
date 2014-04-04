@@ -935,10 +935,7 @@ public:
 	}
 
 protected:
-	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
-	{
-		statusVector << Firebird::Arg::Gds(isc_dsql_create_sequence_failed) << name;
-	}
+	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector);
 
 private:
 	void executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);

@@ -1135,6 +1135,9 @@ static const struct {
 	{336397320, -901}, /* 1032 dsql_revoke_failed */
 	{336397321, -104}, /* 1033 dsql_cte_recursive_aggregate */
 	{336397322, -901}, /* 1034 dsql_mapping_failed */
+	{336397323, -901}, /* 1035 dsql_alter_sequence_failed */
+	{336397324, -901}, /* 1036 dsql_create_generator_failed */
+	{336397325, -901}, /* 1037 dsql_set_generator_failed */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

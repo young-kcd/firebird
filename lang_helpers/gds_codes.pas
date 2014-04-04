@@ -1147,6 +1147,9 @@ const
 	gds_dsql_revoke_failed               = 336397320;
 	gds_dsql_cte_recursive_aggregate     = 336397321;
 	gds_dsql_mapping_failed              = 336397322;
+	gds_dsql_alter_sequence_failed       = 336397323;
+	gds_dsql_create_generator_failed     = 336397324;
+	gds_dsql_set_generator_failed        = 336397325;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

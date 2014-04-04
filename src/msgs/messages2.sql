@@ -2572,6 +2572,9 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_revoke_failed', 'getMainErrorCode', 'DdlNodes.h', NULL, 13, 1032, NULL, 'REVOKE failed', NULL, NULL);
 ('dsql_cte_recursive_aggregate', 'pass1_rse_impl', 'dsql.cpp', NULL, 13, 1033, NULL, 'Recursive member of CTE cannot use aggregate or window function', NULL, NULL);
 ('dsql_mapping_failed', 'MappingNode::putErrorPrefix', 'DdlNodes.h', NULL, 13, 1034, NULL, '@2 MAPPING @1 failed', NULL, NULL);
+('dsql_alter_sequence_failed', 'putErrorPrefix', 'DdlNodes.h', NULL, 13, 1035, NULL, 'ALTER SEQUENCE @1 failed', NULL, NULL);
+('dsql_create_generator_failed', 'putErrorPrefix', 'DdlNodes.h', NULL, 13, 1036, NULL, 'CREATE GENERATOR @1 failed', NULL, NULL);
+('dsql_set_generator_failed', 'putErrorPrefix', 'DdlNodes.h', NULL, 13, 1037, NULL, 'SET GENERATOR @1 failed', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);
