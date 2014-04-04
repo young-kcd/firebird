@@ -5770,9 +5770,7 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 	const SINT64 change = MOV_get_int64(value, 0);
 	if (sysGen && change != 0)
 	{
-		const ULONG aflags = ATT_gbak_attachment | ATT_creator;
-		if (!request->hasInternalStatement() &&
-			(tdbb->getAttachment()->att_flags & aflags) != aflags)
+		if (!request->hasInternalStatement() && !tdbb->getAttachment()->isRWGbak())
 		{
 			status_exception::raise(Arg::Gds(isc_cant_modify_sysobj) << "generator" << generator.name);
 		}

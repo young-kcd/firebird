@@ -1657,9 +1657,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			// GBAK security feature of only allowing the owner or sysdba to backup a
 			// database. smistry 10/5/98
 
-			if ((attachment->att_flags & ATT_gbak_attachment) ||
-				(attachment->att_flags & ATT_gfix_attachment) ||
-				(attachment->att_flags & ATT_gstat_attachment))
+			if (attachment->isUtility())
 			{
 				validateAccess(attachment);
 			}
@@ -1687,8 +1685,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				ERR_post(Arg::Gds(isc_no_wal));
 			}
 
-			if (((attachment->att_flags & ATT_gfix_attachment) ||
-				(attachment->att_flags & ATT_gstat_attachment)))
+			if (attachment->att_flags & (ATT_gfix_attachment | ATT_gstat_attachment))
 			{
 				options.dpb_no_db_triggers = true;
 			}

@@ -335,6 +335,8 @@ public:
 	bool locksmith() const;
 	jrd_tra* getSysTransaction();
 	void setSysTransaction(jrd_tra* trans);	// used only by TRA_init
+	bool isRWGbak() const;
+	bool isUtility() const; // gbak, gfix and gstat.
 
 	PreparedStatement* prepareStatement(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::string& text, Firebird::MemoryPool* pool = NULL);
@@ -393,7 +395,10 @@ const ULONG ATT_purge_started		= 0x10000L; // Purge already started - avoid 2 pu
 const ULONG ATT_system				= 0x20000L; // Special system attachment
 const ULONG ATT_creator				= 0x40000L; // This attachment created the DB.
 
+// Composed flags (mixtures of the previous values).
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
+const ULONG ATT_RW_GBAK				= (ATT_gbak_attachment | ATT_creator);
+const ULONG ATT_ANY_UTILITY			= (ATT_gbak_attachment | ATT_gfix_attachment | ATT_gstat_attachment);
 
 
 inline bool Attachment::locksmith() const
@@ -409,6 +414,20 @@ inline jrd_tra* Attachment::getSysTransaction()
 inline void Attachment::setSysTransaction(jrd_tra* trans)
 {
 	att_sys_transaction = trans;
+}
+
+// Gbak changes objects when it's restoring (creating) a db.
+// Other attempts are fake. Gbak reconnects to change R/O status and other db-wide settings,
+// but it doesn't modify generators or tables that seconds time.
+inline bool Attachment::isRWGbak() const
+{
+	return (att_flags & ATT_RW_GBAK) == ATT_RW_GBAK;
+}
+
+// Any of the three original utilities: gbak, gfix or gstat.
+inline bool Attachment::isUtility() const
+{
+	return att_flags & ATT_ANY_UTILITY;
 }
 
 // This class holds references to all attachments it contains

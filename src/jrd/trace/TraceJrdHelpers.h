@@ -380,10 +380,7 @@ public:
 		Attachment* attachment = m_tdbb->getAttachment();
 
 		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_BLR_COMPILE) &&
-			m_blr_length && m_blr &&
-			!(attachment->att_flags & ATT_gstat_attachment) &&
-			!(attachment->att_flags & ATT_gbak_attachment) &&
-			!(attachment->att_flags & ATT_gfix_attachment);
+			m_blr_length && m_blr && !attachment->isUtility();
 
 		if (!m_need_trace)
 			return;
@@ -446,9 +443,7 @@ public:
 		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_BLR_EXECUTE) &&
 			!statement->sqlText &&
 			!(statement->flags & JrdStatement::FLAG_INTERNAL) &&
-			!(attachment->att_flags & ATT_gstat_attachment) &&
-			!(attachment->att_flags & ATT_gbak_attachment) &&
-			!(attachment->att_flags & ATT_gfix_attachment);
+			!attachment->isUtility();
 
 		if (!m_need_trace)
 			return;
