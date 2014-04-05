@@ -1,3 +1,11 @@
+ 2014-04-04 08:52  hvlad 
+   M src/jrd/exe.cpp
+Wrong code was committed (for CORE-4252), sorry
+
+ 2014-04-04 08:37  hvlad 
+   M src/jrd/exe.cpp
+Improvement CORE-4252 : Add table name to text of validation contraint error message, to help identify error context
+
  2014-03-25 13:32  hvlad 
    M src/jrd/cch.cpp
 Fixed bug CORE-2848 : "lock conversion denied" or "lock denied" error
