@@ -1,3 +1,170 @@
+ 2014-04-04 20:30  robocop 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+When I tried to modify a system domain, I got the confusing message "create domain failed", so I tried to improve the feedback to the user.
+
+ 2014-04-04 18:39  robocop 
+   M src/jrd/met.epp
+   M src/jrd/met.h
+   M src/jrd/met_proto.h
+   M src/jrd/par.cpp
+Use enumerations where possible (2).
+
+ 2014-04-04 18:36  robocop 
+   M src/jrd/dpm.epp
+   M src/jrd/dpm_proto.h
+   M src/jrd/req.h
+Use enumerations where possible (1).
+
+ 2014-04-04 16:10  asfernandes 
+   M src/dsql/Parser.cpp
+Misc.
+
+ 2014-04-04 16:05  asfernandes 
+   M src/dsql/Parser.cpp
+   M src/dsql/Parser.h
+Fixed CORE-4381 - Incorrect line/column information in runtime errors.
+
+ 2014-04-04 15:57  alexpeshkoff 
+   M builds/install/misc/databases.conf.in
+   A doc/sql.extensions/README.mapping.html
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/alice/alice.cpp
+   M src/alice/aliceswi.h
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthDbg.h
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/burpswi.h
+   M src/burp/restore.epp
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/MsgMetadata.cpp
+   M src/common/MsgMetadata.h
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/ClumpletReader.h
+   M src/common/classes/Hash.h
+   M src/common/db_alias.cpp
+   M src/common/db_alias.h
+   M src/common/isc_s_proto.h
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/include/firebird/Auth.h
+   M src/include/firebird/Provider.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/ids.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/isql/extract.epp
+   M src/isql/isql.h
+   M src/isql/show.epp
+   M src/isql/show_proto.h
+   A src/jrd/Mapping.cpp
+   A src/jrd/Mapping.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/constants.h
+   M src/jrd/dfw.epp
+   M src/jrd/drq.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/fields.h
+   M src/jrd/idx.h
+   M src/jrd/jrd.cpp
+   M src/jrd/names.h
+   M src/jrd/opt.cpp
+   M src/jrd/relations.h
+   M src/jrd/scl.epp
+   M src/jrd/scl.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceCmdLine.cpp
+   M src/jrd/trace/traceswi.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsecswi.h
+   M src/utilities/gstat/dba.epp
+   M src/utilities/gstat/dbaswi.h
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/nbackup/nbkswi.h
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/keywords.cpp
+Implemented CORE-3370: Resolve additional aspects of multiple security databases from services and cross-database requests POV (mapping names)
+
+ 2014-04-04 08:53  hvlad 
+   M src/dsql/StmtNodes.cpp
+Improvement CORE-4252 : Add table name to text of validation contraint error message, to help identify error context
+
+ 2014-04-04 07:52  robocop 
+   M src/jrd/cch.cpp
+Misc.
+
+ 2014-04-04 07:51  robocop 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceJrdHelpers.h
+A bit less repetitive code.
+
+ 2014-04-04 06:45  robocop 
+   M src/jrd/req.h
+The 0th generator becomes unnamed. Only internal requests can access it (zero length names are not allowed from outside). RDB$GENERATORS is no longer a reserved name.System generators cannot be changed by user requests, but can be queried with gen_id(g, 0) if the permissions (ACL) allow that. We don't track dependencies on sys generators, it's not necessary.
+
+ 2014-04-04 06:39  robocop 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/Attachment.h
+   M src/jrd/constants.h
+   M src/jrd/dfw.epp
+   M src/jrd/ini.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/vio.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+The 0th generator becomes unnamed. Only internal requests can access it (zero length names are not allowed from outside). RDB$GENERATORS is no longer a reserved name.System generators cannot be changed by user requests, but can be queried with gen_id(g, 0) if the permissions (ACL) allow that. We don't track dependencies on sys generators, it's not necessary.
+
  2014-04-02 11:53  alexpeshkoff 
    M src/jrd/constants.h
 Fixed DDL triggers with code > 31
