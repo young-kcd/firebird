@@ -2493,15 +2493,15 @@ jrd_rel* MET_lookup_relation(thread_db* tdbb, const Firebird::MetaName& name)
 		X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ name.c_str()
 
         if (!REQUEST(irq_l_relation))
-		{
 			REQUEST(irq_l_relation) = request;
-		}
 
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
+
 		if (relation->rel_name.length() == 0)
-		{
 			relation->rel_name = name;
-		}
+
+		if (!X.RDB$VIEW_BLR.isEmpty())
+			relation->rel_flags |= REL_jrd_view;
 	END_FOR;
 
 	if (!REQUEST(irq_l_relation))
@@ -2587,10 +2587,14 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
 
         if (!REQUEST(irq_l_rel_id))
 			REQUEST(irq_l_rel_id) = request;
+
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
-		if (relation->rel_name.length() == 0) {
+
+		if (relation->rel_name.length() == 0)
 			relation->rel_name = X.RDB$RELATION_NAME;
-		}
+
+		if (!X.RDB$VIEW_BLR.isEmpty())
+			relation->rel_flags |= REL_jrd_view;
 	END_FOR;
 
 	if (!REQUEST(irq_l_rel_id))
@@ -3603,6 +3607,9 @@ void MET_scan_relation( thread_db* tdbb, jrd_rel* relation)
 
 		if (!REL.RDB$VIEW_BLR.isEmpty())
 		{
+			fb_assert(relation->rel_flags & REL_jrd_view);
+			relation->rel_flags |= REL_jrd_view;
+
 			/* parse the view blr, getting dependencies on relations, etc. at the same time */
 
 			if (dependencies)
