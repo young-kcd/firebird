@@ -42,7 +42,6 @@
 #include "../jrd/intl_classes.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/UserManagement.h"
-#include "../jrd/Mapping.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/cmp_proto.h"

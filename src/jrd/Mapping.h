@@ -57,7 +57,7 @@ protected:
 class MappingList : public DataDump
 {
 public:
-	MappingList(jrd_tra* tra);
+	explicit MappingList(jrd_tra* tra);
 
 	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
 };

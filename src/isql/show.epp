@@ -4315,7 +4315,7 @@ static void printMap(bool extract, bool global, char* name, char* usng, char* pl
 {
 	if (extract)
 	{
-	isqlGlob.printf("CREATE ");
+		isqlGlob.printf("CREATE ");
 		if (global)
 			isqlGlob.printf("GLOBAL ");
 	}

@@ -203,7 +203,7 @@ public:
 		return metadata;
 	}
 
-	bool hasMetadata()
+	bool hasMetadata() const
 	{
 		return metadata ? true : false;
 	}
@@ -256,7 +256,7 @@ public:
 	class Null
 	{
 	public:
-		Null(Message* m)
+		explicit Null(Message* m)
 			: msg(m), ptr(NULL)
 		{ }
 

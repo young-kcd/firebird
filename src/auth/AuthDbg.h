@@ -50,7 +50,7 @@ namespace Auth {
 class DebugServer FB_FINAL : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
 {
 public:
-	DebugServer(Firebird::IPluginConfig*);
+	explicit DebugServer(Firebird::IPluginConfig*);
 
     int authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
     				 IWriter* writerInterface);

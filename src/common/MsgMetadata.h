@@ -259,7 +259,7 @@ public:
 class MetadataBuilder FB_FINAL : public RefCntIface<IMetadataBuilder, FB_METADATA_BUILDER_VERSION>
 {
 public:
-	MetadataBuilder(const MsgMetadata* from);
+	explicit MetadataBuilder(const MsgMetadata* from);
 	MetadataBuilder(unsigned fieldCount);
 
 	virtual int FB_CARG release();

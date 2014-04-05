@@ -4099,8 +4099,7 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 	case isc_dyn_char_fld_too_small:
 		// msg 208: New size specified for column %s must be at least %d characters.
 		status_exception::raise(
-			Arg::Gds(errorCode) << origFld.dyn_fld_name.c_str() <<
-				Arg::Num(origLen));
+			Arg::Gds(errorCode) << origFld.dyn_fld_name.c_str() << Arg::Num(origLen));
 		break;
 
 	case isc_dyn_scale_too_big:
@@ -4269,7 +4268,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 				dsql_fld localField(dsqlScratch->getStatement()->getPool());
 
-				// Get the attributes of the domain, and set any occurances of
+				// Get the attributes of the domain, and set any occurrences of
 				// keyword VALUE to the correct type, length, scale, etc.
 				if (!METD_get_domain(dsqlScratch->getTransaction(), &localField, name))
 				{
@@ -4949,7 +4948,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
-		if (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1)
+		if (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == fb_sysflag_system)
 		{
 			forbidden = true;
 			break;

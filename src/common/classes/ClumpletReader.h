@@ -203,7 +203,7 @@ public:
 	};
 
 	explicit AuthReader(const AuthBlock& authBlock);
-	AuthReader(const ClumpletReader& rdr)
+	explicit AuthReader(const ClumpletReader& rdr)
 		: ClumpletReader(rdr)
 	{ }
 

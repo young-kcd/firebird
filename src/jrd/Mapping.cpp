@@ -225,7 +225,7 @@ public:
 class Cache : public MapHash, public GlobalStorage
 {
 public:
-	Cache(const NoCaseString& db)
+	explicit Cache(const NoCaseString& db)
 		: name(getPool(), db), dataFlag(false)
 	{ }
 

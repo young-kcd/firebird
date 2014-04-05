@@ -5480,7 +5480,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			if (!Config::getSharedCache())
 			{
 				dpb_buffers = rdr.getInt();
-				int TEMP_LIMIT = 25;
+				const int TEMP_LIMIT = 25;
 				if (dpb_buffers < TEMP_LIMIT)
 				{
 					ERR_post(Arg::Gds(isc_bad_dpb_content) <<
