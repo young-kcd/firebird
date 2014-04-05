@@ -453,6 +453,9 @@
     <ClCompile Include="..\..\..\src\jrd\Routine.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\Mapping.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
@@ -975,6 +978,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\dsql\BlrDebugWriter.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\Mapping.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -49,6 +49,11 @@
 #include "../jrd/ini.h"
 #include "gen/ids.h"
 
+#ifdef WIN_NT
+#include <process.h>
+#define getpid _getpid
+#endif
+
 #define MAP_DEBUG(A) A
 
 using namespace Firebird;

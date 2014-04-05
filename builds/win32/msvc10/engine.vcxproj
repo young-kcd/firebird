@@ -88,6 +88,7 @@
     <ClCompile Include="..\..\..\src\jrd\jrd.cpp" />
     <ClCompile Include="..\..\..\src\jrd\JrdStatement.cpp" />
     <ClCompile Include="..\..\..\src\jrd\lck.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\Mapping.cpp" />
     <ClCompile Include="..\..\..\src\jrd\mov.cpp" />
     <ClCompile Include="..\..\..\src\jrd\nbak.cpp" />
     <ClCompile Include="..\..\..\src\jrd\nodebug.cpp" />
@@ -262,6 +263,7 @@
     <ClInclude Include="..\..\..\src\jrd\lck_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\license.h" />
     <ClInclude Include="..\..\..\src\jrd\lls.h" />
+    <ClInclude Include="..\..\..\src\jrd\Mapping.h" />
     <ClInclude Include="..\..\..\src\jrd\met.h" />
     <ClInclude Include="..\..\..\src\jrd\met_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\mov_proto.h" />
