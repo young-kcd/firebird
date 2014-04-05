@@ -131,15 +131,16 @@ const int WAIT_PERIOD	= -1;
 
 DATABASE DB = FILENAME "ODS.RDB";
 
+using namespace Firebird;
 using namespace Jrd;
 
 namespace Jrd {
 
-typedef Firebird::Hash<
+typedef Hash<
 	DeferredWork,
-	Firebird::DefaultHash<DeferredWork>::DEFAULT_SIZE,
+	DefaultHash<DeferredWork>::DEFAULT_SIZE,
 	DeferredWork,
-	Firebird::DefaultKeyValue<DeferredWork>,
+	DefaultKeyValue<DeferredWork>,
 	DeferredWork
 > DfwHash;
 
@@ -159,15 +160,15 @@ private:
 
 public:
 	Lock*			dfw_lock;		// relation creation lock
-	Firebird::Array<DeferredWork*>  dfw_args;	// arguments
+	Array<DeferredWork*>  dfw_args;	// arguments
 	SLONG			dfw_sav_number;	// save point number
 	USHORT			dfw_id;			// object id, if appropriate
 	USHORT			dfw_count;		// count of block posts
-	Firebird::string	dfw_name;		// name of object
+	string	dfw_name;		// name of object
 
 public:
 	DeferredWork(MemoryPool& p, DeferredWork*** end, 
-				 enum dfw_t t, USHORT id, SLONG sn, const Firebird::string& name)
+				 enum dfw_t t, USHORT id, SLONG sn, const string& name)
 	  : dfw_type(t), dfw_end(end), dfw_prev(dfw_end ? *dfw_end : NULL), 
 		dfw_next(dfw_prev ? *dfw_prev : NULL), dfw_lock(NULL), dfw_args(p),
 		dfw_sav_number(sn), dfw_id(id), dfw_count(1), dfw_name(p, name)
@@ -270,15 +271,15 @@ public:
 
 		work.dfw_name.copyTo(place, 32);	// It's good enough to have first 32 bytes
 
-		return Firebird::DefaultHash<DeferredWork>::hash(key, sizeof key, hashSize);
+		return DefaultHash<DeferredWork>::hash(key, sizeof key, hashSize);
 	}
 };
 
 class DfwSavePoint;
 
-typedef Firebird::Hash<
+typedef Hash<
 	DfwSavePoint,
-	Firebird::DefaultHash<DfwSavePoint>::DEFAULT_SIZE,
+	DefaultHash<DfwSavePoint>::DEFAULT_SIZE,
 	SLONG,
 	DfwSavePoint
 > DfwSavePointHash;
@@ -369,7 +370,7 @@ static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 /* ---------------------------------------------------------------- */
 
 static void check_dependencies(thread_db*, const TEXT*, const TEXT*, int, jrd_tra*);
-static void check_filename(const Firebird::string&, bool);
+static void check_filename(const string&, bool);
 static void check_system_generator(const TEXT*, const dfw_t);
 static bool formatsAreEqual(const Format*, const Format*);
 static bool	find_depend_in_dfw(thread_db*, TEXT*, USHORT, USHORT, jrd_tra*);
@@ -387,7 +388,35 @@ static void	setup_trigger_details(thread_db*, jrd_rel*, blb*, trig_vec**, const 
 static bool validate_text_type (thread_db*, const TemporaryField*);
 
 static void check_partners(thread_db*, const USHORT);
-static Firebird::string get_string(const dsc* desc);
+static string get_string(const dsc* desc);
+
+static void raiseDbInUseError(bool timeout)
+{
+	if (timeout)
+	{
+		ERR_post(isc_no_meta_update,
+				 isc_arg_gds, isc_lock_timeout,
+				 isc_arg_gds, isc_obj_in_use,
+				 isc_arg_string, "DATABASE",
+				 isc_arg_end);
+	}
+
+	ERR_post(isc_no_meta_update,
+			 isc_arg_gds, isc_obj_in_use,
+			 isc_arg_string, "DATABASE",
+			 isc_arg_end);
+}
+
+static void raiseObjInUseError(const string& obj_type, const string& obj_name)
+{
+	string name;
+	name.printf("%s \"%s\"", obj_type.c_str(), obj_name.c_str());
+
+	ERR_post(isc_no_meta_update,
+			 isc_arg_gds, isc_obj_in_use,
+			 isc_arg_string, ERR_cstring(name),
+			 isc_arg_end);
+}
 
 static const UCHAR nonnull_validation_blr[] =
 {
@@ -446,7 +475,7 @@ static const deferred_task task_table[] =
 };
 
 
-USHORT DFW_assign_index_type(const Firebird::string& name, SSHORT field_type, SSHORT ttype)
+USHORT DFW_assign_index_type(const string& name, SSHORT field_type, SSHORT ttype)
 {
 /**************************************
  *
@@ -645,7 +674,7 @@ void DFW_perform_system_work(thread_db* tdbb)
 	Database* const dbb = tdbb->getDatabase();
 
 	THREAD_EXIT();
-	Firebird::MutexLockGuard guard(dbb->dbb_mutexes[DBB_MUTX_sys_dfw]);
+	MutexLockGuard guard(dbb->dbb_mutexes[DBB_MUTX_sys_dfw]);
 	THREAD_ENTER();
 
 	DFW_perform_work(dbb->dbb_sys_trans);
@@ -716,23 +745,22 @@ void DFW_perform_work(jrd_tra* transaction)
 				}
 			}
 			if (!phase) {
-				Firebird::stuff_exception(tdbb->tdbb_status_vector, 
-					Firebird::status_exception(err_status, true));
+				stuff_exception(tdbb->tdbb_status_vector, status_exception(err_status, true));
 				ERR_punt();
 			}
 			++phase;
 			tdbb->tdbb_flags &= ~TDBB_deferred;
 		}	
-		catch (const Firebird::Exception& ex) {
+		catch (const Exception& ex) {
 			tdbb->tdbb_flags &= ~TDBB_deferred;
 
 			/* Do any necessary cleanup */
 			if (!phase) {
-				Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+				stuff_exception(tdbb->tdbb_status_vector, ex);
 				ERR_punt();
 			}
 			else {
-				Firebird::stuff_exception(err_status, ex);
+				stuff_exception(err_status, ex);
 			}
 			phase = 0;
 			more = true;
@@ -839,7 +867,7 @@ DeferredWork* DFW_post_system_work(thread_db* tdbb, enum dfw_t type, const dsc* 
 	Database* const dbb = tdbb->getDatabase();
 
 	THREAD_EXIT();
-	Firebird::MutexLockGuard guard(dbb->dbb_mutexes[DBB_MUTX_sys_dfw]);
+	MutexLockGuard guard(dbb->dbb_mutexes[DBB_MUTX_sys_dfw]);
 	THREAD_ENTER();
 
 	return DFW_post_work(dbb->dbb_sys_trans, type, desc, id);
@@ -881,8 +909,8 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const dsc* de
 		job->hash.add(sp);
 	}
 
-	const Firebird::string name = get_string(desc);
-	DeferredWork tmp(Firebird::AutoStorage::getAutoMemoryPool(), 0, type, id, sav_number, name);
+	const string name = get_string(desc);
+	DeferredWork tmp(AutoStorage::getAutoMemoryPool(), 0, type, id, sav_number, name);
 	DeferredWork* work = sp->hash.lookup(tmp);
 	if (work)
 	{
@@ -938,7 +966,7 @@ DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const
  *	Post an argument for work to be deferred to commit time.
  *
  **************************************/
-	const Firebird::string name = get_string(desc);
+	const string name = get_string(desc);
 
 	DeferredWork* arg = work->findArg(type);
 
@@ -1037,19 +1065,10 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 3:
-		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-		{
-			return true;
-		}
-		else
-		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_lock_timeout,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(dbb->dbb_filename.c_str()),
-					 isc_arg_end);
-			return false;
-		}
+		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+			raiseDbInUseError(true);
+		return true;
+
 	case 4:
 		CCH_flush(tdbb, FLUSH_FINI, 0L);
 		max = PageSpace::maxAlloc(dbb) + 1;
@@ -1158,7 +1177,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	USHORT sequence, add_sequence;
 	bool finished;
 	ULONG min_page;
-	Firebird::PathName expanded_fname;
+	PathName expanded_fname;
 
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
@@ -1217,12 +1236,8 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						 * may be GDML
 						 */
 						if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-							ERR_post(isc_no_meta_update,
-									 isc_arg_gds, isc_lock_timeout,
-									 isc_arg_gds, isc_obj_in_use,
-									 isc_arg_string,
-									 ERR_cstring(dbb->dbb_filename.c_str()),
-									 isc_arg_end);
+							raiseDbInUseError(true);
+
 						add_file(tdbb, phase, work, NULL);
 						finished = true;
 					}
@@ -1231,11 +1246,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						/* We cannot add a file to a shadow that is still
 						 * in the process of being created.
 						 */
-						ERR_post(isc_no_meta_update,
-								 isc_arg_gds, isc_obj_in_use,
-								 isc_arg_string,
-								 ERR_cstring(dbb->dbb_filename.c_str()),
-								 isc_arg_end);
+						raiseDbInUseError(false);
 					}
 					break;
 				}
@@ -1358,7 +1369,7 @@ static bool add_difference( thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			dbb->dbb_backup_manager->set_difference(tdbb, work->dfw_name.c_str());
 			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		}
-		catch (const Firebird::Exception&) {
+		catch (const Exception&) {
 			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 			throw;
 		}
@@ -1409,7 +1420,7 @@ static bool delete_difference(	thread_db*	tdbb,
 			dbb->dbb_backup_manager->set_difference(tdbb, NULL);
 			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 		}
-		catch (const Firebird::Exception&) {
+		catch (const Exception&) {
 			dbb->dbb_backup_manager->unlock_shared_database(tdbb);
 			throw;
 		}
@@ -1690,7 +1701,7 @@ static void check_dependencies(thread_db* tdbb,
 }
 
 
-static void check_filename(const Firebird::string& name, bool shareExpand)
+static void check_filename(const string& name, bool shareExpand)
 {
 /**************************************
  *
@@ -1703,8 +1714,8 @@ static void check_filename(const Firebird::string& name, bool shareExpand)
  *	inet node name.
  *
  **************************************/
-	const Firebird::PathName file_name(name.ToPathName());
-	const bool valid = file_name.find("::") == Firebird::PathName::npos;
+	const PathName file_name(name.ToPathName());
+	const bool valid = file_name.find("::") == PathName::npos;
 
 	if (!valid || ISC_check_if_remote(file_name, shareExpand)) {
 		ERR_post(isc_no_meta_update, isc_arg_gds, isc_node_name_err, isc_arg_end);
@@ -2239,7 +2250,7 @@ static bool create_index(	thread_db*	tdbb,
 
 				if (!partner_relation)
 				{
-					Firebird::MetaName constraint_name;
+					MetaName constraint_name;
 					MET_lookup_cnstrt_for_index(tdbb, constraint_name, work->dfw_name);
 					ERR_post(isc_partner_idx_not_found,
 							 isc_arg_string, ERR_cstring(constraint_name), isc_arg_end);
@@ -2327,7 +2338,7 @@ static bool create_index(	thread_db*	tdbb,
 				DFW_release_protect_lock(tdbb, transaction, partnerLock);
 			}
 		}
-		catch (const Firebird::Exception&)
+		catch (const Exception&)
 		{
 			if (relationLock && releaseRelationLock) {
 				DFW_release_protect_lock(tdbb, transaction, relationLock);
@@ -2701,7 +2712,7 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 				else
 				{
 					SLONG length = 0;
-					Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+					HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
 
 					if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
 					{
@@ -2710,8 +2721,8 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						length = BLB_get_data(tdbb, blob, buffer.getBuffer(length), length);
 					}
 
-					const Firebird::string specificAttributes((const char*) buffer.begin(), length);
-					Firebird::string newSpecificAttributes;
+					const string specificAttributes((const char*) buffer.begin(), length);
+					string newSpecificAttributes;
 
 					// ASF: If setupCollationAttributes fail we store the original
 					// attributes. This should be what we want for new databases
@@ -2985,7 +2996,7 @@ static bool create_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	case 1:
 		{
-			const Firebird::MetaName depName(work->dfw_name);
+			const MetaName depName(work->dfw_name);
 			jrd_req* handle = NULL;
 			bid validation;
 			validation.clear();
@@ -3119,7 +3130,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 	case 1:
 		{
-			const Firebird::MetaName depName(work->dfw_name);
+			const MetaName depName(work->dfw_name);
 			jrd_req* handle = NULL;
 			bid validation;
 			validation.clear();
@@ -3328,10 +3339,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						index->idl_count++;
 					}
 					
-					ERR_post(isc_no_meta_update,
-							isc_arg_gds, isc_obj_in_use,
-							isc_arg_string, "INDEX",
-							isc_arg_end);
+					raiseObjInUseError("INDEX", arg->dfw_name);
 				}
 				index->idl_count++;
 			}
@@ -3529,10 +3537,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
 										  LCK_EX, transaction->getLockWait()))
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 			}
 		}
 
@@ -3555,10 +3560,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 		{
 			/*
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			raiseObjInUseError("PROCEDURE", work->dfw_name);
 			*/
 			gds__log("Deleting procedure %s which is currently in use by active user requests",
 					 work->dfw_name.c_str());
@@ -3578,10 +3580,7 @@ static bool delete_procedure(	thread_db*	tdbb,
 			if (CMP_clone_is_active(procedure->prc_request))
 			{
 				procedure->prc_flags = old_flags;
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 			}
 
 			CMP_release(tdbb, procedure->prc_request);
@@ -3706,10 +3705,9 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 			if (adjusted) {
 				++relation->rel_use_count;
 			}
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+
+			const string obj_type = relation->isView() ? "VIEW" : "TABLE";
+			raiseObjInUseError(obj_type, work->dfw_name);
 		}
 		return true;
 
@@ -3745,12 +3743,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 
 		if (relation->rel_sweep_count)
-		{
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
-		}
+			raiseObjInUseError("TABLE", work->dfw_name);
 
 #ifdef GARBAGE_THREAD
 		/* Free any memory associated with the relation's
@@ -3844,7 +3837,7 @@ static bool delete_rfr(thread_db* tdbb, SSHORT phase, DeferredWork* work,
  **************************************/
 	int rel_exists, field_count;
 	jrd_req* handle;
-	Firebird::MetaName f;
+	MetaName f;
 	jrd_rel* relation;
 
 	SET_TDBB(tdbb);
@@ -4294,7 +4287,7 @@ static void get_procedure_dependencies(DeferredWork* work, bool compile)
 		{
 			Jrd::ContextPoolHolder context(tdbb, new_pool);
 
-			const Firebird::MetaName depName(work->dfw_name);
+			const MetaName depName(work->dfw_name);
 			MET_get_dependencies(tdbb, NULL, NULL, NULL, &blob_id, 
 							compile ? &request : NULL,
 							NULL, depName, obj_procedure, 0);
@@ -4366,7 +4359,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile)
 			(type & 1) ? csb_pre_trigger : csb_post_trigger;
 
 		Jrd::ContextPoolHolder context(tdbb, new_pool);
-		const Firebird::MetaName depName(work->dfw_name);
+		const MetaName depName(work->dfw_name);
 		MET_get_dependencies(tdbb, relation, NULL, NULL, &blob_id,
 							 compile ? &request : NULL,
 							 NULL, depName, obj_trigger, par_flags);
@@ -4549,7 +4542,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version,
 		else {
 			// Use generic representation of formats with 32-bit offsets
 			
-			Firebird::Array<Ods::Descriptor> odsDescs;
+			Array<Ods::Descriptor> odsDescs;
 			Ods::Descriptor *odsDesc = odsDescs.getBuffer(format->fmt_count);
 		
 			for (Format::fmt_desc_const_iterator desc = format->fmt_desc.begin();
@@ -4961,10 +4954,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 			if (!LCK_convert_non_blocking(tdbb, procedure->prc_existence_lock,
 										  LCK_EX, transaction->getLockWait()))
 			{
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						isc_arg_end);
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 			}
 		}
 
@@ -5000,10 +4990,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 		{
 			/*
-			ERR_post(isc_no_meta_update,
-					 isc_arg_gds, isc_obj_in_use,
-					 isc_arg_string, ERR_cstring(work->dfw_name),
-					 isc_arg_end);
+			raiseObjInUseError("PROCEDURE", work->dfw_name);
 			*/
 			gds__log("Modifying procedure %s which is currently in use by active user requests",
 					 work->dfw_name.c_str());
@@ -5042,10 +5029,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 		if (procedure->prc_request)
 		{
 			if (CMP_clone_is_active(procedure->prc_request))
-				ERR_post(isc_no_meta_update,
-						 isc_arg_gds, isc_obj_in_use,
-						 isc_arg_string, ERR_cstring(work->dfw_name),
-						 isc_arg_end);
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 
 			/* release the request */
 
@@ -5081,9 +5065,9 @@ static bool modify_procedure(	thread_db*	tdbb,
 		procedure->prc_flags &= ~(PRC_obsolete | PRC_being_altered);
 
 		}	// try
-		catch (const Firebird::Exception& ex)
+		catch (const Exception& ex)
 		{
-			Firebird::stuff_exception(tdbb->tdbb_status_vector, ex);
+			stuff_exception(tdbb->tdbb_status_vector, ex);
 #ifdef SUPERSERVER
 			THD_rec_mutex_unlock(&tdbb->getDatabase()->dbb_sp_rec_mutex);
 #endif
@@ -5114,7 +5098,7 @@ static bool modify_procedure(	thread_db*	tdbb,
 					if (MET_procedure(tdbb, work->dfw_id, false, 0))
 						valid_blr = TRUE;
 				}
-				catch (const Firebird::Exception&)
+				catch (const Exception&)
 				{
 				}
 
@@ -5206,7 +5190,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 
 			if (arg)
 			{
-				const Firebird::MetaName relation_name(arg->dfw_name);
+				const MetaName relation_name(arg->dfw_name);
 				SSHORT valid_blr = FALSE;
 
 				try
@@ -5245,7 +5229,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 	
 							valid_blr = TRUE;
 						}
-						catch (const Firebird::Exception&)
+						catch (const Exception&)
 						{
 							JrdMemoryPool::deletePool(new_pool);
 							throw;
@@ -5254,7 +5238,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						JrdMemoryPool::deletePool(new_pool);
 					}
 				}
-				catch (const Firebird::Exception&)
+				catch (const Exception&)
 				{
 				}
 
@@ -5317,7 +5301,7 @@ static void put_summary_blob(blb* blob, RSR_T type, bid* blob_id)
 		length = (USHORT)BLB_get_data(tdbb, blr, buffer, (SLONG) length);
 		put_summary_record(blob, type, buffer, length);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Exception&) {
 		if (buffer != temp)
 			delete[] buffer;
 		throw;
@@ -5365,10 +5349,7 @@ Lock* DFW_protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relat
 	if (inUse) 
 	{
 		releaseLock = false;
-		ERR_post(isc_no_meta_update,
-				isc_arg_gds, isc_obj_in_use,
-				isc_arg_string, relation->rel_name.c_str(),
-				isc_arg_end);
+		raiseObjInUseError("TABLE", relation->rel_name.c_str());
 	}
 
 	return relLock;
@@ -5405,7 +5386,7 @@ static void put_summary_record(blb*		blob,
 	try {
 		BLB_put_segment(tdbb, blob, buffer, length + 1);
 	}
-	catch (const Firebird::Exception&) {
+	catch (const Exception&) {
 		if (buffer != temp)
 			delete[] buffer;
 		throw;
@@ -5709,7 +5690,7 @@ static bool validate_text_type(thread_db* tdbb,
 
 
 
-static Firebird::string get_string(const dsc* desc)
+static string get_string(const dsc* desc)
 {
 /**************************************
  *
@@ -5726,7 +5707,7 @@ static Firebird::string get_string(const dsc* desc)
 
 	if (!desc)
 	{
-		return Firebird::string();
+		return string();
 	}
 
 	// Find the actual length of the string, searching until the claimed
@@ -5747,6 +5728,6 @@ static Firebird::string get_string(const dsc* desc)
 		;
 	length = (p + 1) - str;
 
-	return Firebird::string(str, length);
+	return string(str, length);
 }
 
