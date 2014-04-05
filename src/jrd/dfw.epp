@@ -402,6 +402,28 @@ static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
 static void check_partners(thread_db*, const USHORT);
 static string get_string(const dsc* desc);
 
+static void raiseDbInUseError(bool timeout)
+{
+	if (timeout)
+	{
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_lock_timeout) <<
+				 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+	}
+
+	ERR_post(Arg::Gds(isc_no_meta_update) <<
+			 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+}
+
+static void raiseObjInUseError(const string& obj_type, const string& obj_name)
+{
+	string name;
+	name.printf("%s \"%s\"", obj_type.c_str(), obj_name.c_str());
+
+	ERR_post(Arg::Gds(isc_no_meta_update) <<
+			 Arg::Gds(isc_obj_in_use) << Arg::Str(name));
+}
+
 static const UCHAR nonnull_validation_blr[] =
 {
 	blr_version5,
@@ -1049,13 +1071,9 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		return true;
 
 	case 3:
-		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
-			return true;
-
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_lock_timeout) <<
-				 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
-		return false;
+		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD))
+			raiseDbInUseError(true);
+		return true;
 
 	case 4:
 		CCH_flush(tdbb, FLUSH_FINI, 0L);
@@ -1231,8 +1249,7 @@ static bool add_shadow( thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_t
 						/* We cannot add a file to a shadow that is still
 						 * in the process of being created.
 						 */
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
+						raiseDbInUseError(false);
 					}
 					break;
 				}
@@ -3400,8 +3417,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 						index->idl_count++;
 					}
 
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str("INDEX"));
+					raiseObjInUseError("INDEX", arg->dfw_name);
 				}
 				index->idl_count++;
 			}
@@ -3589,10 +3605,7 @@ static bool delete_procedure(thread_db*	tdbb,
 		if (procedure->prc_existence_lock)
 		{
 			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX, transaction->getLockWait()))
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-			}
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 		}
 
 		/* If we are in a multi-client server, someone else may have marked
@@ -3614,8 +3627,7 @@ static bool delete_procedure(thread_db*	tdbb,
 		if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 		{
 			/*
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+			raiseObjInUseError("PROCEDURE", work->dfw_name);
 			*/
 			gds__log("Deleting procedure %s which is currently in use by active user requests",
 					 work->dfw_name.c_str());
@@ -3635,8 +3647,7 @@ static bool delete_procedure(thread_db*	tdbb,
 			if (CMP_clone_is_active(procedure->prc_request))
 			{
 				procedure->prc_flags = old_flags;
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 			}
 
 			MET_release_procedure_request(tdbb, procedure);
@@ -3765,11 +3776,11 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		if (relation->rel_use_count || (relation->rel_existence_lock &&
 			!LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX, transaction->getLockWait())))
 		{
-			if (adjusted) {
+			if (adjusted)
 				++relation->rel_use_count;
-			}
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+
+			const string obj_type = relation->isView() ? "VIEW" : "TABLE";
+			raiseObjInUseError(obj_type, work->dfw_name);
 		}
 
 		fb_assert(!relation->rel_use_count);
@@ -3812,10 +3823,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work,
 		}
 
 		if (relation->rel_sweep_count)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-		}
+			raiseObjInUseError("TABLE", work->dfw_name);
 
 #ifdef GARBAGE_THREAD
 		// Free any memory associated with the relation's garbage collection bitmap
@@ -5022,10 +5030,7 @@ static bool modify_procedure(thread_db*	tdbb,
 			/* Let procedure be deleted if only this transaction is using it */
 
 			if (!LCK_convert(tdbb, procedure->prc_existence_lock, LCK_EX, transaction->getLockWait()))
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-			}
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 		}
 
 		/* If we are in a multi-client server, someone else may have marked
@@ -5047,8 +5052,7 @@ static bool modify_procedure(thread_db*	tdbb,
 			if (procedure->prc_use_count && MET_procedure_in_use(tdbb, procedure))
 			{
 				/*
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+				raiseObjInUseError("PROCEDURE", work->dfw_name);
 				*/
 				gds__log("Modifying procedure %s which is currently in use by active user requests",
 						 work->dfw_name.c_str());
@@ -5079,8 +5083,7 @@ static bool modify_procedure(thread_db*	tdbb,
 			if (procedure->prc_request)
 			{
 				if (CMP_clone_is_active(procedure->prc_request))
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+					raiseObjInUseError("PROCEDURE", work->dfw_name);
 
 				/* release the request */
 
@@ -5378,10 +5381,8 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 		}
 	}
 
-	if (inUse ) {
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_obj_in_use) << Arg::Str(relation->rel_name));
-	}
+	if (inUse)
+		raiseObjInUseError("TABLE", relation->rel_name.c_str());
 
 	return relLock;
 }
