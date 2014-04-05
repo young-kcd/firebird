@@ -1836,7 +1836,10 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 		const SSHORT timeout = (wait == jrd_tra::tra_wait) ? trans->getLockWait() : 0;
 
 		if (!LCK_lock(tdbb, &temp_lock, LCK_read, timeout))
+		{
+			fb_utils::init_status(tdbb->tdbb_status_vector);
 			return tra_active;
+		}
 
 		LCK_release(tdbb, &temp_lock);
 	}
