@@ -3716,7 +3716,9 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	Attachment* const attachment = transaction->tra_attachment;
 	dsql_fld* type = nameType->type;
 
-	if (fb_utils::implicit_domain(nameType->name.c_str()))
+	// The commented line should be restored when implicit domains get their own sys flag.
+	//if (fb_utils::implicit_domain(nameType->name.c_str()))
+	if (strncmp(nameType->name.c_str(), IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN) == 0)
 	{
 		status_exception::raise(
 			Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
@@ -4244,6 +4246,12 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		found = true;
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 			DDL_TRIGGER_ALTER_DOMAIN, name);
+
+		if (!FLD.RDB$SYSTEM_FLAG.NULL && FLD.RDB$SYSTEM_FLAG == fb_sysflag_system)
+		{
+			status_exception::raise(Arg::Gds(isc_dyn_cant_modify_sysobj) <<
+				"domain" << Arg::Str(name));
+		}
 
 		MODIFY FLD
 			if (dropConstraint)
