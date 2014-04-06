@@ -190,7 +190,7 @@ public:
 		trimAll();
 	}
 
-	Map(AuthReader::Info& info)   //type, name, plugin, secDb
+	explicit Map(AuthReader::Info& info)   //type, name, plugin, secDb
 		: plugin(getPool()), db(getPool()),
 		  fromType(getPool()), from(getPool()), to(getPool()),
 		  toRole(false), usng(info.plugin.hasData() ? 'P' : 'M')
