@@ -1321,7 +1321,7 @@ class SetGeneratorNode : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR
 public:
 	SetGeneratorNode(MemoryPool& pool, const Firebird::MetaName& name, ValueExprNode* aValue = NULL)
 		: TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>(pool),
-		  generator(pool, name), value(aValue), sysGen(false)
+		  generator(pool, name), value(aValue)
 	{
 	}
 
@@ -1343,9 +1343,6 @@ public:
 public:
 	GeneratorItem generator;
 	NestConst<ValueExprNode> value;
-
-private:
-	bool sysGen;
 };
 
 
