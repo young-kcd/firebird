@@ -2387,7 +2387,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, expanded_name.c_str(), &config);
+			getUserInfo(userId, options, NULL, &config);
 		}
 		catch (const Exception& ex)
 		{
