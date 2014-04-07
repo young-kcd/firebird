@@ -388,7 +388,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			status_exception::raise(s.get());
 
 		secContext->tra = NULL;
-		flashMap(tdbb->getDatabase()->dbb_config->getSecurityDatabase());
+		clearMap(tdbb->getDatabase()->dbb_config->getSecurityDatabase());
 
 		transaction->eraseSecDbContext();
 	}

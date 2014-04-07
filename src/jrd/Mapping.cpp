@@ -579,7 +579,7 @@ public:
 			sharedMemory->removeMapFile();
 	}
 
-	void flashMap(const char* dbName)
+	void clearMap(const char* dbName)
 	{
 		PathName target;
 		expandDatabaseName(dbName, target, NULL);
@@ -678,7 +678,7 @@ public:
 
 		try
 		{
-			Thread::start(flashDelivery, this, THREAD_high, &threadHandle);
+			Thread::start(clearDelivery, this, THREAD_high, &threadHandle);
 		}
 		catch (const Exception&)
 		{
@@ -688,7 +688,7 @@ public:
 	}
 
 private:
-	void flashDeliveryThread()
+	void clearDeliveryThread()
 	{
 		MappingHeader::Process* p = &sharedMemory->getHeader()->process[process];
 		while (p->flags & MappingHeader::FLAG_ACTIVE)
@@ -767,10 +767,10 @@ private:
 		MappingIpc* const data;
 	};
 
-	static THREAD_ENTRY_DECLARE flashDelivery(THREAD_ENTRY_PARAM par)
+	static THREAD_ENTRY_DECLARE clearDelivery(THREAD_ENTRY_PARAM par)
 	{
 		MappingIpc* m = (MappingIpc*)par;
-		m->flashDeliveryThread();
+		m->clearDeliveryThread();
 		return 0;
 	}
 
@@ -952,9 +952,9 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	}
 }
 
-void flashMap(const char* dbName)
+void clearMap(const char* dbName)
 {
-	mappingIpc->flashMap(dbName);
+	mappingIpc->clearMap(dbName);
 }
 
 const Format* GlobalMappingScan::getFormat(thread_db* tdbb, jrd_rel* relation) const

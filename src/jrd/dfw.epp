@@ -399,7 +399,7 @@ static bool drop_package_body(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool grant_privileges(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool db_crypt(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 static bool set_linger(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
-static bool flash_cache(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
+static bool clear_mapping(thread_db*, SSHORT, DeferredWork*, jrd_tra*);
 
 // ----------------------------------------------------------------
 
@@ -971,7 +971,7 @@ static const deferred_task task_table[] =
 	{ dfw_store_view_context_type, store_view_context_type },
 	{ dfw_db_crypt, db_crypt },
 	{ dfw_set_linger, set_linger },
-	{ dfw_flash_cache, flash_cache },
+	{ dfw_clear_mapping, clear_mapping },
 	{ dfw_null, NULL }
 };
 
@@ -2036,15 +2036,15 @@ static bool set_linger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 	return false;
 }
 
-static bool flash_cache(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
+static bool clear_mapping(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*)
 {
 /**************************************
  *
- *	s e t _ l i n g e r
+ *	c l e a r _ m a p p i n g
  *
  **************************************
  *
- * Set linger interval in Database block.
+ * Clear security names mapping cache
  *
  **************************************/
 
@@ -2058,7 +2058,7 @@ static bool flash_cache(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_t
 		return true;
 
 	case 3:
-		flashMap(dbb->dbb_filename.c_str());
+		clearMap(dbb->dbb_filename.c_str());
 		break;
 	}
 

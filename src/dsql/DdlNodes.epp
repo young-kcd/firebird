@@ -9599,7 +9599,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 	if (ddlTriggerAction > 0)
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name);
 
-	DFW_post_work(transaction, dfw_flash_cache, NULL, 0);
+	DFW_post_work(transaction, dfw_clear_mapping, NULL, 0);
 	savePoint.release();	// everything is ok
 }
 
