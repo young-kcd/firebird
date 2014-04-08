@@ -2971,6 +2971,8 @@ Elapsed time= ~ sec
 Reads = !
 Writes = !
 Fetches = !', NULL, NULL);
+('NO_MAP', 'SHOW_metadata', 'show.epp', NULL, 17, 184, NULL, 'There is no mapping @1 in this database', NULL, NULL)
+('NO_MAPS', 'SHOW_metadata', 'show.epp', NULL, 17, 185, NULL, 'There are no mappings in this database', NULL, NULL)
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);
