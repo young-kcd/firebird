@@ -27,10 +27,11 @@
 
 #include "firebird.h"
 #include "../common/classes/InternalMessageBuffer.h"
-#include "../common/MsgMetadata.h"
 #include "../common/utils_proto.h"
 #include "../intl/charsets.h"
 #include "../common/classes/BlrReader.h"
+#include "../common/gdsassert.h"
+#include "../common/StatusHolder.h"
 
 using namespace Firebird;
 
@@ -53,11 +54,9 @@ MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr,
 	const UCHAR byte = rdr.getByte();
 	if (byte != blr_version4 && byte != blr_version5)
 	{
-		(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-		 Arg::Gds(isc_dsql_sqlda_err)
-#ifdef DEV_BUILD
-		 << Arg::Gds(isc_random) << "Wrong BLR version"
-#endif
+		(Arg::Gds(isc_dsql_error) <<
+		 Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+		 Arg::Gds(isc_wroblrver2) << Arg::Num(blr_version4) << Arg::Num(blr_version5) << Arg::Num(byte)
 		).raise();
 	}
 

@@ -437,6 +437,10 @@ public:
 	void addCleanupHandler(Firebird::IStatus* status, CleanupCallback* callback);
 	YTransaction* getTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);
 	void getNextTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra, NextTransaction& next);
+	void execute(Firebird::IStatus* status, FB_API_HANDLE* traHandle,
+		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 
 public:
 	Firebird::IProvider* provider;

@@ -88,8 +88,6 @@ static void nullCheck(const FB_API_HANDLE* ptr, ISC_STATUS code);
 //static void saveErrorString(ISC_STATUS* status);
 static void error804(ISC_STATUS err);
 static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters);
-static void sqldaMove(const XSQLDA* sqlda, Array<UCHAR>& message, bool binding);
-static void sqldaParse(const XSQLDA* sqlda, Array<UCHAR>& blr, Array<UCHAR>& message, USHORT dialect);
 static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 	FB_API_HANDLE* traHandle, FB_API_HANDLE* blobHandle, ISC_QUAD* blobId,
 	USHORT bpbLength, const UCHAR* bpb, bool createFlag);
@@ -108,6 +106,494 @@ namespace Why {
 
 namespace {
 
+// Class-wrapper around external SQLDA.
+// Can be used as local variable, but do it with care
+class SQLDAMetadata FB_FINAL : public RefCntIface<IMessageMetadata, FB_MESSAGE_METADATA_VERSION>
+{
+friend class SQLDAMetadataLauncher;
+private:
+	int detach(); // is called from launcher class when it goes off
+
+	// Fool-proof requested by Alex
+	// Private memory operators to be sure that this class is used in heap only with launcher
+	void* operator new (size_t s) { return MemoryPool::globalAlloc(s); }
+	void operator delete (void* mem) { MemoryPool::globalFree(mem); }
+
+public:
+	SQLDAMetadata(const XSQLDA* aSqlda);
+	~SQLDAMetadata() { delete[] offsets; }
+
+	virtual int FB_CARG release();
+
+	unsigned FB_CARG getCount(IStatus* status);
+	const char* FB_CARG getField(IStatus* status, unsigned index);
+	const char* FB_CARG getRelation(IStatus* status, unsigned index);
+	const char* FB_CARG getOwner(IStatus* status, unsigned index);
+	const char* FB_CARG getAlias(IStatus* status, unsigned index);
+	unsigned FB_CARG getType(IStatus* status, unsigned index);
+	FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index);
+	int FB_CARG getSubType(IStatus* status, unsigned index);
+	unsigned FB_CARG getLength(IStatus* status, unsigned index);
+	int FB_CARG getScale(IStatus* status, unsigned index);
+	unsigned FB_CARG getCharSet(IStatus* status, unsigned index);
+	unsigned FB_CARG getOffset(IStatus* status, unsigned index);
+	unsigned FB_CARG getNullOffset(IStatus* status, unsigned index);
+
+	IMetadataBuilder* FB_CARG getBuilder(IStatus* status);
+	unsigned FB_CARG getMessageLength(IStatus* status);
+
+	void gatherData(Buffer& to);	// Copy data from SQLDA into target buffer.
+	void scatterData(Buffer& from);
+private:
+	void assign(); // copy metadata from sqlda and calculate length and offsets
+
+	const XSQLDA* sqlda;
+	unsigned count;
+	// Internal structure to copy metadata from sqlda
+	struct OffsetItem
+	{
+		unsigned type;
+		int subType;
+		unsigned length;
+		int scale;
+		unsigned charSet;
+		unsigned offset;
+		unsigned indOffset;
+	} *offsets;
+	unsigned length;
+	bool speedHackEnabled; // May be user by stupid luck use right buffer format even with SQLDA interface?..
+};
+
+// Initial owner for SQLDAMetadata. It must not live longer that XSQLDA it is created for is know to be valid and fixed.
+// Mostly it means that instance of this class has to be a local variable at the same or nested level with the original XSQLDA*.
+// When launcher is dying, the rocket must either die too or switch to internal sources and take off
+// Using of this class brings overhead of dynamic memory and pointers, but with current architecture (reference counted interfaces
+// only plain buffers) - inevitable.
+class SQLDAMetadataLauncher
+{
+public:
+	SQLDAMetadata* metadata;
+
+	SQLDAMetadataLauncher(const XSQLDA* sqlda):metadata(NULL) { if (sqlda) { metadata = new SQLDAMetadata(sqlda); metadata->addRef(); } }
+	~SQLDAMetadataLauncher() { if (metadata) { metadata->detach(); }}
+
+	UCHAR* getBuffer(); // Provide empty data buffer with the same live time
+	void gatherData(Buffer& to) { if (metadata) metadata->gatherData(to); else to.clear(); }
+ 	void scatterData() { if (metadata) metadata->scatterData(buffer); }
+private:
+	// Private operator new prevents this class from being allocated in heap, so it can be used only as stack or static variable
+	void* operator new (size_t);
+
+	Buffer buffer;
+};
+
+SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda): offsets(NULL), length(0), speedHackEnabled(false)
+{
+	sqlda = aSqlda;
+
+	if (sqlda && sqlda->version != SQLDA_VERSION1)
+	{
+		(Arg::Gds(isc_dsql_sqlda_err) <<
+		 Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+		 Arg::Gds(isc_random) << "Invalid SQLDA version"
+		).raise();
+	}
+}
+
+unsigned FB_CARG SQLDAMetadata::getCount(IStatus* status)
+{
+	if (sqlda)
+		return sqlda->sqld;
+	else
+		return count;
+}
+
+const char* FB_CARG SQLDAMetadata::getField(IStatus* status, unsigned index)
+{
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		return sqlda->sqlvar[index].sqlname;
+	}
+	else	// we are in free fly. It is only possible for input sqlda which usually have no names inside
+		return "";	// Old conversion sqlda->BLR->metadata dropped them anyway
+}
+
+const char* FB_CARG SQLDAMetadata::getRelation(IStatus* status, unsigned index)
+{
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		return sqlda->sqlvar[index].relname;
+	}
+	else
+		return "";
+}
+
+const char* FB_CARG SQLDAMetadata::getOwner(IStatus* status, unsigned index)
+{
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		return sqlda->sqlvar[index].ownname;
+	}
+	else
+		return "";
+}
+
+const char* FB_CARG SQLDAMetadata::getAlias(IStatus* status, unsigned index)
+{
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		return sqlda->sqlvar[index].aliasname;
+	}
+	else
+		return "";
+}
+
+unsigned FB_CARG SQLDAMetadata::getType(IStatus* status, unsigned index)
+{
+	if (offsets)
+	{
+		fb_assert(count > index);
+		return offsets[index].type & ~1;
+	}
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		return sqlda->sqlvar[index].sqltype & ~1;
+	}
+	fb_assert(false);
+	return 0;
+}
+
+FB_BOOLEAN FB_CARG SQLDAMetadata::isNullable(IStatus* status, unsigned index)
+{
+	if (offsets)
+	{
+		fb_assert(count > index);
+		return offsets[index].type & 1;
+	}
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		return sqlda->sqlvar[index].sqltype & 1;
+	}
+	fb_assert(false);
+	return FB_FALSE;
+}
+
+int FB_CARG SQLDAMetadata::getSubType(IStatus* status, unsigned index)
+{
+	if (offsets)
+	{
+		fb_assert(count > index);
+		return offsets[index].subType;
+	}
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		ISC_SHORT sqltype = sqlda->sqlvar[index].sqltype & ~1;
+		if (sqltype == SQL_VARYING || sqltype == SQL_TEXT)
+			return 0;
+		return sqlda->sqlvar[index].sqlsubtype;
+	}
+	fb_assert(false);
+	return 0;
+}
+
+unsigned FB_CARG SQLDAMetadata::getLength(IStatus* status, unsigned index)
+{
+	if (offsets)
+	{
+		fb_assert(count > index);
+		return offsets[index].length;
+	}
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		return sqlda->sqlvar[index].sqllen;
+	}
+	fb_assert(false);
+	return 0;
+}
+
+int FB_CARG SQLDAMetadata::getScale(IStatus* status, unsigned index)
+{
+	if (offsets)
+	{
+		fb_assert(count > index);
+		return offsets[index].scale;
+	}
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		if ((sqlda->sqlvar[index].sqltype & ~1) == SQL_BLOB)
+			return 0;
+		return sqlda->sqlvar[index].sqlscale;
+	}
+	fb_assert(false);
+	return 0;
+}
+
+unsigned FB_CARG SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
+{
+	if (offsets)
+	{
+		fb_assert(count > index);
+		return offsets[index].charSet;
+	}
+	if (sqlda)
+	{
+		fb_assert(sqlda->sqld > (int)index);
+		switch (sqlda->sqlvar[index].sqltype & ~1)
+		{
+		case SQL_TEXT:
+		case SQL_VARYING:
+			return sqlda->sqlvar[index].sqlsubtype;
+		case SQL_BLOB:
+			return sqlda->sqlvar[index].sqlscale;
+		default:
+			return 0;
+		}
+	}
+	fb_assert(false);
+	return 0;
+}
+
+unsigned FB_CARG SQLDAMetadata::getOffset(IStatus* status, unsigned index)
+{
+	if (!offsets)
+		assign();
+
+	fb_assert(count > index);
+	return offsets[index].offset;
+}
+
+unsigned FB_CARG SQLDAMetadata::getNullOffset(IStatus* status, unsigned index)
+{
+	if (!offsets)
+		assign();
+
+	fb_assert(count > index);
+	return offsets[index].indOffset;
+}
+
+// ATTENTION!!! Keep this method in sync with MsgMetadata::MakeOffsets()
+void SQLDAMetadata::assign()
+{
+	if (offsets)
+		return; // already assigned
+
+	if (sqlda->sqld <= 0) // malformed sqlda?
+		return;
+
+	count = (USHORT)sqlda->sqld;
+	speedHackEnabled = true; // May be we are lucky...
+	ISC_SCHAR* Base = sqlda->sqlvar[0].sqldata;
+
+	offsets = new OffsetItem[count];
+	for (unsigned i = 0; i < count; i++)
+	{
+		const XSQLVAR& var = sqlda->sqlvar[i];
+		OffsetItem& it = offsets[i];
+
+		it.type = var.sqltype;
+		it.subType = var.sqlsubtype;
+		it.length = var.sqllen;
+		it.scale = var.sqlscale;
+		switch (var.sqltype & ~1)
+		{
+		case SQL_TEXT:
+		case SQL_VARYING:
+			it.charSet = var.sqlsubtype;
+			it.subType = 0;
+			break;
+		case SQL_BLOB:
+			it.charSet = var.sqlscale;
+			it.scale = 0;
+			break;
+		default:
+			it.charSet = 0;
+		}
+		// No matter how good or bad is the way data is placed in message buffer, it cannot be changed
+		// because changing of it on current codebase will completely kill remote module and may be the engine as well
+		length = fb_utils::sqlTypeToDsc(length, var.sqltype, var.sqllen,
+			NULL /*dtype*/, NULL /*length*/, &it.offset, &it.indOffset);
+		if (it.offset != var.sqldata-Base || it.indOffset != (ISC_SCHAR*)(var.sqlind)-Base)
+			speedHackEnabled = false; // No luck
+	}
+}
+
+unsigned FB_CARG SQLDAMetadata::getMessageLength(IStatus* status)
+{
+	if (!offsets)
+		assign();
+	return length;
+}
+
+void SQLDAMetadata::gatherData(Buffer& to)
+{
+	fb_assert(sqlda); // Ensure that data is gathered before take off because later they can be already changed
+	if (sqlda->sqld > 0)
+	{
+		unsigned l = getMessageLength(NULL);
+		if (speedHackEnabled)
+		{
+			to.assign(reinterpret_cast<UCHAR*>(sqlda->sqlvar[0].sqldata), l);
+			return;
+		}
+		UCHAR* result = to.getBuffer(l, false);
+		for (unsigned i = 0; i < count; i++)
+		{
+			SSHORT* nullInd = (SSHORT*)(result + offsets[i].indOffset);
+			UCHAR* data = result + offsets[i].offset;
+
+			const XSQLVAR& var = sqlda->sqlvar[i];
+			unsigned len = var.sqllen;
+			if ((var.sqltype & ~1) == SQL_VARYING)
+				len += sizeof(USHORT);
+
+			if (var.sqltype & 1)
+			{
+				// Make sure user has specified a location for null indicator.
+				if (!var.sqlind)
+				{
+					(Arg::Gds(isc_dsql_sqlda_value_err) <<
+					 Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					 Arg::Gds(isc_random) << "empty pointer to NULL indicator variable" <<
+					 Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+					).raise();
+				}
+
+				*nullInd = *var.sqlind;
+			}
+			else
+				*nullInd = 0;
+
+			// Make sure user has specified a data location (unless NULL).
+			if (!var.sqldata && !*nullInd && (var.sqltype & ~1) != SQL_NULL)
+			{
+				(Arg::Gds(isc_dsql_sqlda_value_err) <<
+					Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					Arg::Gds(isc_random) << "empty pointer to data" <<
+					Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+				).raise();
+			}
+
+			// This is assertion instead of error check because such situation is next to impossible: buffer size is calculated a routine above
+			fb_assert(data + len < result + length);
+
+			// Copy data - unless known to be NULL.
+			if (!*nullInd)
+				memcpy(data, var.sqldata, len);
+		}
+	}
+	else
+		to.clear();
+}
+
+void SQLDAMetadata::scatterData(Buffer& from)
+{
+	fb_assert(sqlda);
+	fb_assert(offsets); // Not reliable, but still check that input buffer can come from this metadata
+	fb_assert(length == from.getCount());
+
+	if (speedHackEnabled)
+		return; // Data is already in user's buffer
+
+	for (unsigned i = 0; i < count; i++)
+	{
+		const XSQLVAR& var = sqlda->sqlvar[i];
+
+		if ((var.sqltype & ~1) != SQL_NULL)
+		{
+			unsigned len = var.sqllen;
+
+			// Make sure user has specified a data location.
+			if (!var.sqldata)
+			{
+				(Arg::Gds(isc_dsql_sqlda_value_err) <<
+					Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					Arg::Gds(isc_random) << "empty pointer to data" <<
+					Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+				).raise();
+			}
+
+			if ((var.sqltype & ~1) == SQL_VARYING)
+				len += sizeof(SSHORT);
+
+			memcpy(var.sqldata, from.begin() + offsets[i].offset, len);
+		}
+
+		if (var.sqltype & 1)
+		{
+			// Make sure user has specified a location for null indicator.
+			if (!var.sqlind)
+			{
+				(Arg::Gds(isc_dsql_sqlda_value_err) <<
+					Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+					Arg::Gds(isc_random) << "empty pointer to NULL indicator variable" <<
+					Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+				).raise();
+			}
+
+			*var.sqlind = *reinterpret_cast<ISC_SHORT*>(from.begin() + offsets[i].indOffset);
+		}
+	}
+
+}
+
+UCHAR* SQLDAMetadataLauncher::getBuffer()
+{
+	if (metadata)
+	{
+		if (metadata->speedHackEnabled)
+			return reinterpret_cast<UCHAR*>(metadata->sqlda->sqlvar[0].sqldata);
+		else
+			return buffer.getBuffer(metadata->getMessageLength(NULL), false);
+	}
+	else
+	{
+		buffer.clear();
+		return NULL;
+	}
+}
+
+IMetadataBuilder* FB_CARG SQLDAMetadata::getBuilder(IStatus* status)
+{
+	// no way to construct SQLDA
+	fb_assert(false);
+	return NULL;
+}
+
+int SQLDAMetadata::release()
+{
+	if (--refCounter != 0)
+	{
+		return 1;
+	}
+
+	delete this;
+	return 0;
+}
+
+int SQLDAMetadata::detach()
+{
+	// This code can lead to unnecessary work but not to segfault
+	if (refCounter.value() > 1)
+	{
+		if (!offsets) // in current codebase this is never true because offsets are allocated on buffer size calculation
+			assign();
+	}
+	sqlda = NULL;
+	speedHackEnabled = false;
+
+	return release();
+}
+
+
 class IscStatement : public RefCounted, public GlobalStorage, public YObject
 {
 public:
@@ -120,8 +606,14 @@ public:
 	{ }
 
 	FB_API_HANDLE& getHandle();
+	void openCursor(IStatus* status, FB_API_HANDLE* traHandle,
+					IMessageMetadata* inMetadata, UCHAR* buffer, IMessageMetadata* outMetadata);
 	void closeCursor(Why::StatusVector* status, bool raise);
 	void closeStatement(Why::StatusVector* status);
+
+	void execute(IStatus* status, FB_API_HANDLE* traHandle,
+				 IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata, UCHAR* outBuffer);
+	FB_BOOLEAN fetch(IStatus* status, IMessageMetadata* outMetadata, UCHAR* outBuffer);
 
 	void checkPrepared(ISC_STATUS code = isc_unprepared_stmt) const
 	{
@@ -129,18 +621,16 @@ public:
 			Arg::Gds(code).raise();
 	}
 
-	void checkCursor(bool mustBeOpen) const
+	void checkCursorOpened() const
 	{
-		if (mustBeOpen)
-		{
-			if (!statement || !statement->cursor)
+		if (!statement || !statement->cursor)
 				Arg::Gds(isc_dsql_cursor_not_open).raise();
-		}
-		else
-		{
-			if (statement && statement->cursor)
-				Arg::Gds(isc_dsql_cursor_open_err).raise();
-		}
+	}
+
+	void checkCursorClosed() const
+	{
+		if (statement && statement->cursor)
+			Arg::Gds(isc_dsql_cursor_open_err).raise();
 	}
 
 	RefPtr<ITransaction> transaction;
@@ -223,6 +713,9 @@ template <typename T>
 RefPtr<T> translateHandle(GlobalPtr<GenericMap<Pair<NonPooled<FB_API_HANDLE, T*> > > >& map,
 	FB_API_HANDLE* handle)
 {
+	if (!handle)
+		status_exception::raise(Arg::Gds(T::ERROR_CODE));
+
 	ReadLockGuard sync(handleMappingLock, FB_FUNCTION);
 
 	T** obj = map->get(*handle);
@@ -419,7 +912,6 @@ namespace Why
 			{
 				case 0:
 				case 100:
-				case 101:
 					return true;
 
 				default:
@@ -840,6 +1332,31 @@ namespace Why
 }	// namespace Why
 
 namespace {
+	void IscStatement::openCursor(IStatus* status, FB_API_HANDLE* traHandle,
+					IMessageMetadata* inMetadata, UCHAR* buffer, IMessageMetadata* outMetadata)
+	{
+		checkCursorClosed();
+
+		// Transaction is not optional for statement returning result set
+		RefPtr<YTransaction> transaction = translateHandle(transactions, traHandle);;
+
+		statement->openCursor(status, transaction,
+			inMetadata, buffer, outMetadata);
+
+		if (!status->isSuccess())
+			return;
+
+		fb_assert(statement->cursor);
+
+		if (cursorName.hasData())
+		{
+			statement->cursor->setCursorName(status, cursorName.c_str());
+
+			if (status->isSuccess())
+				cursorName = "";
+		}
+	}
+
 	void IscStatement::closeCursor(Why::StatusVector* status, bool raise)
 	{
 		if (statement && statement->cursor)
@@ -871,6 +1388,65 @@ namespace {
 		}
 	}
 
+	void IscStatement::execute(IStatus* status, FB_API_HANDLE* traHandle,
+				 IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata, UCHAR* outBuffer)
+	{
+		checkCursorClosed();
+
+		RefPtr<YTransaction> transaction;
+		if (traHandle && *traHandle)
+			transaction = translateHandle(transactions, traHandle);
+
+		ITransaction* newTrans = statement->execute(status, transaction,
+			inMetadata, inBuffer, outMetadata, outBuffer);
+
+		if (status->isSuccess())
+		{
+			if (transaction && !newTrans)
+			{
+				transaction->destroy();
+				*traHandle = 0;
+			}
+			else if (!transaction && newTrans)
+			{
+				// in this case we know for sure that newTrans points to YTransaction
+				if (traHandle)
+					*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
+			}
+		}
+	}
+
+	FB_BOOLEAN IscStatement::fetch(IStatus* status, IMessageMetadata* outMetadata, UCHAR* outBuffer)
+	{
+		if (!transaction)
+			checkCursorOpened();
+		else
+		{
+			checkCursorClosed();
+
+			statement->openCursor(status, transaction,
+				parMetadata, parameters.begin(), outMetadata);
+			// Clean stored data even if execution failed
+			parMetadata = NULL;
+			parameters.clear();
+			transaction = NULL;
+
+			if (!status->isSuccess())
+				return FB_FALSE;
+
+			fb_assert(statement->cursor);
+
+			if (cursorName.hasData())
+			{
+				statement->cursor->setCursorName(status, cursorName.c_str());
+
+				if (status->isSuccess())
+					cursorName = "";
+			}
+		}
+
+		return statement->cursor->fetchNext(status, outBuffer);
+	}
 }
 
 struct TEB
@@ -1054,247 +1630,6 @@ static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters)
 		status.check();
 		var->aliasname_length = fb_utils::snprintf(var->aliasname, sizeof(var->aliasname), "%s", s);
 	}
-}
-
-// This routine moves data from the SQLDA into a message buffer or vice-versa.
-static void sqldaMove(const XSQLDA* sqlda, Array<UCHAR>& message, bool binding)
-{
-	if (!sqlda)
-		return;
-
-	unsigned runOffset = 0;
-	UCHAR* msgBuf = message.begin();
-
-	const XSQLVAR* var = sqlda->sqlvar;
-
-	for (USHORT i = 0; i < sqlda->sqld; ++i, ++var)
-	{
-		unsigned len, offset, nullOffset;
-		runOffset = fb_utils::sqlTypeToDsc(runOffset, var->sqltype, var->sqllen,
-			NULL, &len, &offset, &nullOffset);
-
-		SSHORT* nullInd = (SSHORT*) (msgBuf + nullOffset);
-
-		if (!binding)
-		{
-			// Move data from the message into the SQLDA.
-
-			if ((var->sqltype & ~1) != SQL_NULL)
-			{
-				// Make sure user has specified a data location.
-				if (!var->sqldata)
-					error804(isc_dsql_sqlda_value_err);
-
-				memcpy(var->sqldata, msgBuf + offset, len);
-			}
-
-			if (var->sqltype & 1)
-			{
-				// Make sure user has specified a location for null indicator.
-				if (!var->sqlind)
-					error804(isc_dsql_sqlda_value_err);
-
-				*var->sqlind = *nullInd;
-			}
-		}
-		else
-		{
-			// Move data from the SQLDA into the message. If the indicator variable identifies a
-			// null value, permit the data value to be missing.
-
-			if (var->sqltype & 1)
-			{
-				// Make sure user has specified a location for null indicator.
-				if (!var->sqlind)
-					error804(isc_dsql_sqlda_value_err);
-
-				*nullInd = *var->sqlind;
-			}
-			else
-				*nullInd = 0;
-
-			// Make sure user has specified a data location (unless NULL).
-			if (!var->sqldata && !*nullInd && (var->sqltype & ~1) != SQL_NULL)
-				error804(isc_dsql_sqlda_value_err);
-
-			// Copy data - unless known to be NULL.
-			if (size_t(offset) + len > message.getCount())
-				error804(isc_dsql_sqlda_value_err);
-
-			if (!*nullInd)
-				memcpy(msgBuf + offset, var->sqldata, len);
-		}
-	}
-}
-
-// This routine creates a blr message that describes a SQLDA.
-static void sqldaParse(const XSQLDA* sqlda, Array<UCHAR>& blr, Array<UCHAR>& message, USHORT dialect)
-{
-	blr.clear();
-	message.clear();
-
-	if (!sqlda)
-		return;
-
-	if (sqlda->version != SQLDA_VERSION1)
-		error804(isc_dsql_sqlda_err);
-
-	const USHORT count = sqlda->sqld;
-	fb_assert(count < MAX_USHORT / 2); // Nobody does this, but...
-
-	if (count == 0)
-		return;	// If there isn't an SQLDA, don't bother with anything else.
-
-	// This is a call from execute or open, or the first call from fetch.
-	// Determine the size of the blr, allocate a blr buffer, create the blr, and finally allocate
-	// a message buffer.
-
-	// The message buffer we are describing could be for a message to either IB 4.0 or IB 3.3 - thus
-	// we need to describe the buffer with the right set of blr. As the BLR is only used to describe
-	// space allocation and alignment, we can safely use blr_text for both 4.0 and 3.3.
-
-	// Generate the blr for the message and at the same time, determine the size of the message
-	// buffer. Allow for a null indicator with each variable in the SQLDA.
-
-	if (dialect > SQL_DIALECT_V5)
-		blr.add(blr_version5);
-	else
-		blr.add(blr_version4);
-
-	blr.add(blr_begin);
-	blr.add(blr_message);
-	blr.add(0);
-	blr.add((count * 2) & 0xFF);
-	blr.add(((count * 2) >> 8) & 0xFF);
-
-	unsigned msgLen = 0;
-	const XSQLVAR* var = sqlda->sqlvar;
-
-	for (USHORT i = 0; i < count; ++i, ++var)
-	{
-		USHORT dtype = var->sqltype & ~1;
-		USHORT len = var->sqllen;
-
-		switch (dtype)
-		{
-			case SQL_VARYING:
-				blr.add(blr_varying);
-				blr.add(len & 0xFF);
-				blr.add((len >> 8) & 0xFF);
-				dtype = dtype_varying;
-				len += sizeof(USHORT);
-				break;
-
-			case SQL_TEXT:
-				blr.add(blr_text);
-				blr.add(len & 0xFF);
-				blr.add((len >> 8) & 0xFF);
-				dtype = dtype_text;
-				break;
-
-			case SQL_DOUBLE:
-				blr.add(blr_double);
-				dtype = dtype_double;
-				break;
-
-			case SQL_FLOAT:
-				blr.add(blr_float);
-				dtype = dtype_real;
-				break;
-
-			case SQL_D_FLOAT:
-				blr.add(blr_d_float);
-				dtype = dtype_d_float;
-				break;
-
-			case SQL_TYPE_DATE:
-				blr.add(blr_sql_date);
-				dtype = dtype_sql_date;
-				break;
-
-			case SQL_TYPE_TIME:
-				blr.add(blr_sql_time);
-				dtype = dtype_sql_time;
-				break;
-
-			case SQL_TIMESTAMP:
-				blr.add(blr_timestamp);
-				dtype = dtype_timestamp;
-				break;
-
-			case SQL_BLOB:
-				blr.add(blr_quad);
-				blr.add(0);
-				dtype = dtype_blob;
-				break;
-
-			case SQL_ARRAY:
-				blr.add(blr_quad);
-				blr.add(0);
-				dtype = dtype_array;
-				break;
-
-			case SQL_LONG:
-				blr.add(blr_long);
-				blr.add(var->sqlscale);
-				dtype = dtype_long;
-				break;
-
-			case SQL_SHORT:
-				blr.add(blr_short);
-				blr.add(var->sqlscale);
-				dtype = dtype_short;
-				break;
-
-			case SQL_INT64:
-				blr.add(blr_int64);
-				blr.add(var->sqlscale);
-				dtype = dtype_int64;
-				break;
-
-			case SQL_QUAD:
-				blr.add(blr_quad);
-				blr.add(var->sqlscale);
-				dtype = dtype_quad;
-				break;
-
-			case SQL_BOOLEAN:
-				blr.add(blr_bool);
-				dtype = dtype_boolean;
-				break;
-
-			case SQL_NULL:
-				blr.add(blr_text);
-				blr.add(len & 0xFF);
-				blr.add((len >> 8) & 0xFF);
-				dtype = dtype_text;
-				break;
-
-			default:
-				error804(isc_dsql_sqlda_value_err);
-		}
-
-		blr.add(blr_short);
-		blr.add(0);
-
-		unsigned align = type_alignments[dtype];
-		if (align)
-			msgLen = FB_ALIGN(msgLen, align);
-
-		msgLen += len;
-
-		align = type_alignments[dtype_short];
-		if (align)
-			msgLen = FB_ALIGN(msgLen, align);
-
-		msgLen += sizeof(SSHORT);
-	}
-
-	blr.add(blr_end);
-	blr.add(blr_eoc);
-
-	///memset(message.getBuffer(msgLen), 0, msgLen);
-	message.getBuffer(msgLen);
 }
 
 // Open or create an existing blob (extended edition).
@@ -1966,70 +2301,6 @@ ISC_STATUS API_ROUTINE isc_dsql_execute(ISC_STATUS* userStatus, FB_API_HANDLE* t
 }
 
 
-static void execute_32bit_m(IStatus* status, YTransaction* transaction, FB_API_HANDLE* traHandle,
-	IscStatement* statement,
-	unsigned inBlrLength, const UCHAR* inBlr, unsigned inMsgLength, UCHAR* inMsg,
-	unsigned outBlrLength, const UCHAR* outBlr, unsigned outMsgLength, UCHAR* outMsg)
-{
-	InternalMessageBuffer inMsgBuffer(inBlrLength, inBlr, inMsgLength, inMsg);
-	InternalMessageBuffer outMsgBuffer(outBlrLength, outBlr, outMsgLength, outMsg);
-
-	statement->checkCursor(false);
-
-	const unsigned flags = statement->statement->getFlags(status);
-	if (status->isSuccess())
-	{
-		if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
-		{
-			if (outBlrLength)
-			{
-				statement->statement->openCursor(status, transaction,
-					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
-
-				if (!status->isSuccess())
-					return;
-
-				fb_assert(statement->statement->cursor);
-
-				if (statement->cursorName.hasData())
-				{
-					statement->statement->cursor->setCursorName(status, statement->cursorName.c_str());
-
-					if (status->isSuccess())
-						statement->cursorName = "";
-				}
-			}
-			else	// delay execution till first fetch (with output format)
-			{
-				statement->parMetadata = inMsgBuffer.metadata;
-				statement->parameters.assign(inMsgBuffer.buffer, inMsgLength);
-				statement->transaction = transaction;
-			}
-		}
-		else
-		{
-			ITransaction* newTrans = statement->statement->execute(status, transaction,
-				inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata, outMsgBuffer.buffer);
-
-			if (status->isSuccess())
-			{
-				if (transaction && !newTrans)
-				{
-					transaction->destroy();
-					*traHandle = 0;
-				}
-				else if (!transaction && newTrans)
-				{
-					// in this case we know for sure that newTrans points to YTransaction
-					if (traHandle)
-						*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
-				}
-			}
-		}
-	}
-}
-
-
 // Execute a non-SELECT dynamic SQL statement.
 ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* traHandle,
 	FB_API_HANDLE* stmtHandle, USHORT dialect, const XSQLDA* inSqlda, const XSQLDA* outSqlda)
@@ -2042,22 +2313,37 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		statement->checkPrepared();
 
-		RefPtr<YTransaction> transaction;
-		if (traHandle && *traHandle)
-			transaction = translateHandle(transactions, traHandle);
+		SQLDAMetadataLauncher inMessage(inSqlda);
 
-		Array<UCHAR> inBlr, inMessage, outBlr, outMessage;
+		const unsigned flags = statement->statement->getFlags(&status);
+		if (!status.isSuccess())
+		{
+			return status[1];
+		}
 
-		sqldaParse(inSqlda, inBlr, inMessage, dialect);
-		sqldaMove(inSqlda, inMessage, true);
+		if ((flags & IStatement::FLAG_HAS_CURSOR) && (!outSqlda))
+		{
+			// delay execution till first fetch (with output sqlda)
+			statement->parMetadata = inMessage.metadata;
+			inMessage.gatherData(statement->parameters);
+			statement->transaction = translateHandle(transactions, traHandle);
+			return 0;
+		}
+		else
+		{
+			Array<UCHAR> inMsgBuffer;
 
-		sqldaParse(outSqlda, outBlr, outMessage, dialect);
+			inMessage.gatherData(inMsgBuffer);
 
-		execute_32bit_m(&status, transaction, traHandle, statement,
-			inBlr.getCount(), inBlr.begin(), inMessage.getCount(), inMessage.begin(),
-			outBlr.getCount(), outBlr.begin(), outMessage.getCount(), outMessage.begin());
+			SQLDAMetadataLauncher outMessage(outSqlda);
 
-		sqldaMove(outSqlda, outMessage, false);
+			statement->execute(&status, traHandle,
+				inMessage.metadata, inMsgBuffer.begin(), outMessage.metadata, outMessage.getBuffer());
+
+			if (status.isSuccess())
+				outMessage.scatterData();
+		}
+
 	}
 	catch (const Exception& e)
 	{
@@ -2098,15 +2384,32 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 
 		statement->checkPrepared();
 
-		RefPtr<YTransaction> transaction;
-		if (traHandle && *traHandle)
-			transaction = translateHandle(transactions, traHandle);
+		InternalMessageBuffer inMsgBuffer(inBlrLength, (const UCHAR*)inBlr, inMsgLength, (UCHAR*)inMsg);
+		InternalMessageBuffer outMsgBuffer(outBlrLength, (const UCHAR*)outBlr, outMsgLength, (UCHAR*)outMsg);
 
-		execute_32bit_m(&status, transaction, traHandle, statement,
-			inBlrLength, reinterpret_cast<const unsigned char*>(inBlr),
-			inMsgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)),
-			outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
-			outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
+		const unsigned flags = statement->statement->getFlags(&status);
+		if (status.isSuccess())
+		{
+			if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
+			{
+				if (outBlrLength)
+				{
+					statement->openCursor(&status, traHandle,
+						inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
+				}
+				else	// delay execution till first fetch (with output format)
+				{
+					statement->parMetadata = inMsgBuffer.metadata;
+					statement->parameters.assign(inMsgBuffer.buffer, inMsgLength);
+					statement->transaction = translateHandle(transactions, traHandle);;
+				}
+			}
+			else
+			{
+				statement->execute(&status, traHandle,
+					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata, outMsgBuffer.buffer);
+			}
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -2161,42 +2464,20 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 		}
 
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
-		RefPtr<YTransaction> transaction;
 
-		if (traHandle && *traHandle)
-			transaction = translateHandle(transactions, traHandle);
+		Array<UCHAR> inMessageBuffer;
 
-		Array<UCHAR> inBlr, inMessage, outBlr, outMessage;
+		SQLDAMetadataLauncher inMessage(inSqlda), outMessage(outSqlda);
 
-		sqldaParse(inSqlda, inBlr, inMessage, dialect);
-		sqldaMove(inSqlda, inMessage, true);
+		inMessage.gatherData(inMessageBuffer);
 
-		sqldaParse(outSqlda, outBlr, outMessage, dialect);
-
-		InternalMessageBuffer inMsgBuffer(inBlr.getCount(), inBlr.begin(),
-			inMessage.getCount(), inMessage.begin());
-		InternalMessageBuffer outMsgBuffer(outBlr.getCount(), outBlr.begin(),
-			outMessage.getCount(), outMessage.begin());
-
-		ITransaction* newTrans = attachment->execute(&status, transaction, stmtLength, sqlStmt,
-			dialect, inMsgBuffer.metadata, inMsgBuffer.buffer,
-			outMsgBuffer.metadata, outMsgBuffer.buffer);
+		attachment->execute(&status, traHandle, stmtLength, sqlStmt,
+			dialect, inMessage.metadata, inMessageBuffer.begin(),
+			outMessage.metadata, outMessage.getBuffer());
 
 		if (status.isSuccess())
 		{
-			if (transaction && !newTrans)
-			{
-				transaction->destroy();
-				*traHandle = 0;
-			}
-			else if (!transaction && newTrans)
-			{
-				// in this case we know for sure that newTrans points to YTransaction
-				if (traHandle)
-					*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
-			}
-
-			sqldaMove(outSqlda, outMessage, false);
+			outMessage.scatterData();
 		}
 
 	}
@@ -2265,34 +2546,15 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
-		RefPtr<YTransaction> transaction;
-
-		if (traHandle && *traHandle)
-			transaction = translateHandle(transactions, traHandle);
 
 		InternalMessageBuffer inMsgBuffer(inBlrLength, reinterpret_cast<const unsigned char*>(inBlr),
 										  inMsgLength, reinterpret_cast<UCHAR*>(const_cast<SCHAR*>(inMsg)));
 		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
 										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
-		ITransaction* newTrans = attachment->execute(&status, transaction, stmtLength, sqlStmt,
+		attachment->execute(&status, traHandle, stmtLength, sqlStmt,
 			dialect, inMsgBuffer.metadata, inMsgBuffer.buffer,
 			outMsgBuffer.metadata, outMsgBuffer.buffer);
-
-		if (status.isSuccess())
-		{
-			if (transaction && !newTrans)
-			{
-				transaction->destroy();
-				*traHandle = 0;
-			}
-			else if (!transaction && newTrans)
-			{
-				// in this case we know for sure that newTrans points to YTransaction
-				if (traHandle)
-					*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
-			}
-		}
 	}
 	catch (const Exception& e)
 	{
@@ -2301,52 +2563,6 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 
 	return status[1];
 }
-
-
-static ISC_STATUS fetch_32bit_m(IStatus* status, FB_API_HANDLE* stmtHandle,
-	unsigned blrLength, const UCHAR* blr, unsigned msgLength, UCHAR* msg)
-{
-	RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
-
-	if (!statement->parMetadata)
-		statement->checkCursor(true);
-	else
-	{
-		statement->checkCursor(false);
-
-		InternalMessageBuffer msgBuffer(blrLength, blr, msgLength, msg);
-
-		if (!msgBuffer.metadata)
-		{
-			(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
-			 Arg::Gds(isc_dsql_cursor_open_err)).raise();
-		}
-
-		statement->statement->openCursor(status, statement->transaction,
-			statement->parMetadata, statement->parameters.begin(), msgBuffer.metadata);
-		if (!status->isSuccess())
-			return status->get()[1];
-
-		fb_assert(statement->statement->cursor);
-		statement->parMetadata = NULL;
-		statement->parameters.clear();
-		statement->transaction = NULL;
-
-		if (statement->cursorName.hasData())
-		{
-			statement->statement->cursor->setCursorName(status, statement->cursorName.c_str());
-
-			if (status->isSuccess())
-				statement->cursorName = "";
-		}
-	}
-
-	if (!statement->statement->cursor->fetchNext(status, msg) && status->isSuccess())
-		return 100;
-
-	return status->get()[1];
-}
-
 
 // Fetch next record from a dynamic SQL cursor
 ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stmtHandle,
@@ -2357,18 +2573,20 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 	try
 	{
 		if (!sqlda)
-			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err));
+			status_exception::raise(Arg::Gds(isc_dsql_sqlda_err) << Arg::Gds(isc_random) << "No output SQLDA for fetch");
 
-		Array<UCHAR> outBlr, outMessage;
-		sqldaParse(sqlda, outBlr, outMessage, dialect);
+		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 
-		ISC_STATUS rc = fetch_32bit_m(&status, stmtHandle, outBlr.getCount(), outBlr.begin(),
-			outMessage.getCount(), outMessage.begin());
+		SQLDAMetadataLauncher outMessage(sqlda);
 
-		if (rc)
-			return rc;
-
-		sqldaMove(sqlda, outMessage, false);
+		if (statement->fetch(&status, outMessage.metadata, outMessage.getBuffer()))
+		{
+			outMessage.scatterData();
+		}
+		else if (status.isSuccess())
+		{
+			return 100;
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -2387,8 +2605,19 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 
 	try
 	{
-		return fetch_32bit_m(&status, stmtHandle, blrLength, reinterpret_cast<UCHAR*>(blr),
-			msgLength, reinterpret_cast<UCHAR*>(msg));
+		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
+
+		InternalMessageBuffer msgBuffer(blrLength, reinterpret_cast<UCHAR*>(blr), msgLength, reinterpret_cast<UCHAR*>(msg));
+
+		if (!msgBuffer.metadata)
+		{
+			(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				Arg::Gds(isc_dsql_cursor_open_err)).raise();
+		}
+
+		if (!statement->fetch(&status, msgBuffer.metadata, reinterpret_cast<UCHAR*>(msg)) && status.isSuccess())
+			return 100;
+
 	}
 	catch (const Exception& e)
 	{
@@ -2426,7 +2655,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 		else if (option & DSQL_close)
 		{
 			// Only close the cursor
-			statement->closeCursor(&status, !statement->parMetadata);
+			statement->closeCursor(&status, !statement->transaction);
 		}
 	}
 	catch (const Exception& e)
@@ -4969,6 +5198,36 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 	}
 
 	return transaction;
+}
+
+
+void YAttachment::execute(Firebird::IStatus* status, FB_API_HANDLE* traHandle,
+		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer,
+		Firebird::IMessageMetadata* outMetadata, void* outBuffer)
+{
+	RefPtr<YTransaction> transaction;
+
+	if (traHandle && *traHandle)
+		transaction = translateHandle(transactions, traHandle);
+
+	ITransaction* newTrans = execute(status, transaction, stmtLength, sqlStmt,
+		dialect, inMetadata, inBuffer, outMetadata, outBuffer);
+
+	if (status->isSuccess())
+	{
+		if (transaction && !newTrans)
+		{
+			transaction->destroy();
+			*traHandle = 0;
+		}
+		else if (!transaction && newTrans)
+		{
+			// in this case we know for sure that newTrans points to YTransaction
+			if (traHandle)
+				*traHandle = static_cast<YTransaction*>(newTrans)->getHandle();
+		}
+	}
 }
 
 YEvents* YAttachment::queEvents(IStatus* status, IEventCallback* callback,
