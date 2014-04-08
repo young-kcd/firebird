@@ -4079,7 +4079,10 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 			if (newTrans == trans)
 				newTrans = transaction;
 			else
+			{
+				transaction = NULL;		// Get ready for correct return in OOM case
 				newTrans = new YTransaction(attachment, newTrans);
+			}
 		}
 
 		return newTrans;
@@ -4089,7 +4092,7 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 		e.stuffException(status);
 	}
 
-	return NULL;
+	return transaction;
 }
 
 IResultSet* YStatement::openCursor(Firebird::IStatus* status, ITransaction* transaction,
@@ -4952,7 +4955,10 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 			if (newTrans == trans)
 				newTrans = transaction;
 			else
+			{
+				transaction = NULL;		// Get ready for correct return in OOM case
 				newTrans = new YTransaction(this, newTrans);
+			}
 		}
 
 		return newTrans;
@@ -4962,7 +4968,7 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 		e.stuffException(status);
 	}
 
-	return NULL;
+	return transaction;
 }
 
 YEvents* YAttachment::queEvents(IStatus* status, IEventCallback* callback,

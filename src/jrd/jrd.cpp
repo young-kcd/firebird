@@ -4345,7 +4345,7 @@ void SysAttachment::destroy(Attachment* attachment)
 }
 
 
-JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
+ITransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 	JTransaction* jt = apiTra ? getAttachment()->getTransactionInterface(user_status, apiTra) : NULL;
@@ -4374,6 +4374,7 @@ JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 			}
 			else if (tra && !jt)
 			{
+				apiTra = NULL;		// Get ready for correct return in OOM case
 				jt = new JTransaction(tra, getAttachment());
 				tra->setInterface(jt);
 				jt->addRef();
@@ -4387,14 +4388,14 @@ JTransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JStatement::execute");
-			return NULL;
+			return apiTra;
 		}
 		trace_warning(tdbb, user_status, "JStatement::execute");
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return NULL;
+		return apiTra;
 	}
 
 	successful_completion(user_status);
@@ -4505,6 +4506,7 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 			}
 			else if (tra && !jt)
 			{
+				apiTra = NULL;		// Get ready for correct return in OOM case
 				jt = new JTransaction(tra, this);
 				jt->addRef();
 				tra->setInterface(jt);
@@ -4518,14 +4520,14 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JAttachment::execute");
-			return NULL;
+			return apiTra;
 		}
 		trace_warning(tdbb, user_status, "JAttachment::execute");
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return NULL;
+		return apiTra;
 	}
 
 	successful_completion(user_status);

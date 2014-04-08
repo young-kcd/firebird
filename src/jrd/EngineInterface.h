@@ -194,7 +194,7 @@ public:
 	virtual Firebird::IMessageMetadata* FB_CARG getInputMetadata(Firebird::IStatus* userStatus);
 	virtual unsigned FB_CARG getType(Firebird::IStatus* status);
     virtual const char* FB_CARG getPlan(Firebird::IStatus* status, FB_BOOLEAN detailed);
-	virtual JTransaction* FB_CARG execute(Firebird::IStatus* status,
+	virtual Firebird::ITransaction* FB_CARG execute(Firebird::IStatus* status,
 		Firebird::ITransaction* transaction, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	virtual JResultSet* FB_CARG openCursor(Firebird::IStatus* status,

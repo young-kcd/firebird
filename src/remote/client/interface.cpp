@@ -1837,15 +1837,15 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 			transaction = NULL;
 			rt->clear();
 			statement->rsr_rtr = NULL;
-			return 0;
+			return NULL;
 		}
 		else if (!transaction && packet->p_resp.p_resp_object)
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
 			statement->rsr_rtr = transaction;
-			Transaction* t = new Transaction(transaction, remAtt);
-			t->addRef();
-			return t;
+			Transaction* newTrans = new Transaction(transaction, remAtt);
+			newTrans->addRef();
+			return newTrans;
 		}
 	}
 	catch (const Exception& ex)
@@ -2190,14 +2190,14 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 			release_transaction(transaction);
 			transaction = NULL;
 			rt->clear();
-			return 0;
+			return NULL;
 		}
 		else if (!transaction && packet->p_resp.p_resp_object)
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
-			Firebird::ITransaction* t = new Transaction(transaction, this);
-			t->addRef();
-			return t;
+			Firebird::ITransaction* newTrans = new Transaction(transaction, this);
+			newTrans->addRef();
+			return newTrans;
 		}
 	}
 	catch (const Exception& ex)
