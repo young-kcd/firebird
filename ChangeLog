@@ -1,3 +1,12 @@
+ 2014-04-05 18:10  dimitr 
+   M src/jrd/dfw.epp
+Simplest solution for CORE-4386: Report more details for "object in use" errors. Also, I've removed the database filename from the error message for security reasons. v3 is going to get a more complete solution.
+
+ 2014-04-05 09:18  dimitr 
+   M src/jrd/Relation.h
+   M src/jrd/met.epp
+Backported the view flag.
+
  2014-02-25 06:24  robocop 
    M src/qli/compile.cpp
 This bug comes from IB, maybe from the dawn of time (PVS-Studio).
