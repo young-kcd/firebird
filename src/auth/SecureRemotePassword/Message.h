@@ -37,7 +37,7 @@ public:
 #endif // INTERNAL_FIREBIRD
 
 
-// Linked list of various fields 
+// Linked list of various fields
 class FieldLink
 {
 public:
@@ -177,7 +177,7 @@ public:
 			Firebird::status_exception::raise(status->get());
 #else
 			char s[100];
-			const ISC_STATUS *st = status->get();
+			const ISC_STATUS* st = status->get();
 			fb_interpret(s, sizeof(s), &st);
 			fatalErrorHandler(s);
 #endif

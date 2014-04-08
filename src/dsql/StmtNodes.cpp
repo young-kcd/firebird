@@ -8884,7 +8884,7 @@ static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& vali
 				if (vector && fieldNode->fieldId < vector->count() &&
 					(field = (*vector)[fieldNode->fieldId]))
 				{
-					if (!relation->rel_name.isEmpty()) 
+					if (!relation->rel_name.isEmpty())
 						name.printf("\"%s\".\"%s\"", relation->rel_name.c_str(), field->fld_name.c_str());
 					else
 						name.printf("\"%s\"", field->fld_name.c_str());

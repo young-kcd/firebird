@@ -4086,14 +4086,26 @@ void write_mapping()
 			put(tdgbl, rec_mapping);
 			const SSHORT l = PUT_TEXT(att_map_name, M.RDB$MAP_NAME);
 			PUT_TEXT(att_map_using, M.RDB$MAP_USING);
-			if (!M.RDB$MAP_PLUGIN.NULL) PUT_TEXT(att_map_plugin, M.RDB$MAP_PLUGIN);
-			if (!M.RDB$MAP_DB.NULL) PUT_TEXT(att_map_db, M.RDB$MAP_DB);
+
+			if (!M.RDB$MAP_PLUGIN.NULL)
+				PUT_TEXT(att_map_plugin, M.RDB$MAP_PLUGIN);
+
+			if (!M.RDB$MAP_DB.NULL)
+				PUT_TEXT(att_map_db, M.RDB$MAP_DB);
+
 			PUT_TEXT(att_map_from_type, M.RDB$MAP_FROM_TYPE);
-			if (!M.RDB$MAP_FROM.NULL) PUT_TEXT(att_map_from, M.RDB$MAP_FROM);
+
+			if (!M.RDB$MAP_FROM.NULL)
+				PUT_TEXT(att_map_from, M.RDB$MAP_FROM);
+
 			put_int32(att_map_to_type, M.RDB$MAP_TO_TYPE);
-			if (!M.RDB$MAP_TO.NULL) PUT_TEXT(att_map_to, M.RDB$MAP_TO);
+
+			if (!M.RDB$MAP_TO.NULL)
+				PUT_TEXT(att_map_to, M.RDB$MAP_TO);
+
 			if (!M.RDB$DESCRIPTION.NULL)
 				put_source_blob(att_map_description, att_map_description, M.RDB$DESCRIPTION);
+
 			put(tdgbl, att_end);
 
 			MISC_terminate (M.RDB$MAP_NAME, temp, l, sizeof(temp));

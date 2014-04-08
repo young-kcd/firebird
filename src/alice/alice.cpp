@@ -200,8 +200,9 @@ int alice(Firebird::UtilSvc* uSvc)
 			version = true;
 		}
 
-/*        if (table->in_sw_value & sw_trusted_svc)
-        {
+		/***
+		if (table->in_sw_value & sw_trusted_svc)
+		{
 			uSvc->checkService();
 			if (--argc <= 0) {
 				ALICE_error(13);	// msg 13: user name required
@@ -214,10 +215,12 @@ int alice(Firebird::UtilSvc* uSvc)
 			uSvc->checkService();
 			tdgbl->ALICE_data.ua_tr_role = true;
 			continue;
-		} */
+		}
+		***/
+
 #ifdef TRUSTED_AUTH
-        if (table->in_sw_value & sw_trusted_auth)
-        {
+		if (table->in_sw_value & sw_trusted_auth)
+		{
 			tdgbl->ALICE_data.ua_trusted = true;
 			continue;
 		}

@@ -683,7 +683,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			tdgbl->gbl_sw_user = argv[itr];
 			break;
-/*		case IN_SW_BURP_TRUSTED_USER:
+		/***
+		case IN_SW_BURP_TRUSTED_USER:
 			uSvc->checkService();
 			if (++itr >= argc)
 			{
@@ -692,7 +693,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			tdgbl->gbl_sw_tr_user = argv[itr];
 			break;
- */		case IN_SW_BURP_ROLE:
+		***/
+		case IN_SW_BURP_ROLE:
 			if (++itr >= argc)
 			{
 				BURP_error(253, true);
@@ -1029,7 +1031,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			break;
 
-/*		case IN_SW_BURP_TRUSTED_USER:
+		/***
+		case IN_SW_BURP_TRUSTED_USER:
 			uSvc->checkService();
 			if (!authBlock)
 			{
@@ -1046,7 +1049,8 @@ int gbak(Firebird::UtilSvc* uSvc)
 				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 			}
 			break;
- */
+		***/
+
 #ifdef TRUSTED_AUTH
 		case IN_SW_BURP_TRUSTED_AUTH:
 			if (!dpb.find(isc_dpb_trusted_auth))
