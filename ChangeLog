@@ -1,3 +1,55 @@
+ 2014-04-07 15:23  asfernandes 
+   M src/dsql/StmtNodes.h
+Warning.
+
+ 2014-04-07 09:28  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Resolved first problem, reported by Vlad privately - it was bad idea to try to load cache from database which is not created yet
+
+ 2014-04-07 07:17  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+   M src/jrd/Mapping.cpp
+   M src/jrd/Mapping.h
+   M src/jrd/dfw.epp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+Names cleanup - thanks to Claudio
+
+ 2014-04-06 01:20  robocop 
+   M src/jrd/Mapping.cpp
+Misc.
+
+ 2014-04-06 01:16  robocop 
+   M src/dsql/DdlNodes.epp
+Protect system domains.
+
+ 2014-04-06 01:15  robocop 
+   M src/jrd/fields.h
+Misc (formatting).
+
+ 2014-04-05 18:27  dimitr 
+   M src/jrd/tra.cpp
+Fixed one more possible case of LM error kept in the status vector after successful execution.
+
+ 2014-04-05 02:15  robocop 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M src/jrd/Mapping.cpp
+Never underestimate the brute force approach to make a build succeed after changes in other platforms.
+
+ 2014-04-05 01:44  robocop 
+   M src/auth/AuthDbg.h
+   M src/auth/SecureRemotePassword/Message.h
+   M src/common/MsgMetadata.h
+   M src/common/classes/ClumpletReader.h
+   M src/dsql/DdlNodes.epp
+   M src/isql/show.epp
+   M src/jrd/Mapping.cpp
+   M src/jrd/Mapping.h
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+Misc.
+
  2014-04-04 20:30  robocop 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
