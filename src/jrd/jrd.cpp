@@ -1249,10 +1249,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		bool is_alias = false;
 		MutexEnsureUnlock guardDbInit(dbInitMutex, FB_FUNCTION);
 
-#ifdef WIN_NT
-		guardDbInit.enter();		// Required to correctly expand name of just created database
-#endif
-
 		try
 		{
 			// Process database parameter block
@@ -1293,6 +1289,23 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			// Check for correct credentials supplied
 			getUserInfo(userId, options, expanded_name.c_str(), &config);
+
+#ifdef WIN_NT
+			guardDbInit.enter();		// Required to correctly expand name of just created database
+
+			// Need to re-expand under lock to take into an account file existance (or not)
+			is_alias = expandDatabaseName(org_filename, expanded_name, &config);
+			if (!is_alias)
+			{
+				expanded_name = filename;
+
+				if (!options.dpb_utf8_filename)
+					ISC_systemToUtf8(expanded_name);
+
+				ISC_unescape(expanded_name);
+				ISC_utf8ToSystem(expanded_name);
+			}
+#endif
 		}
 		catch (const Exception& ex)
 		{
@@ -2337,12 +2350,6 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		bool is_alias = false;
 		Firebird::RefPtr<Config> config;
 
-#ifdef WIN_NT
-		// In windows expanded filename depends upon file existence
-		// Therefore have to keep lock longer
-		guardDbInit.enter();
-#endif
-
 		try
 		{
 			// Process database parameter block
@@ -2388,6 +2395,23 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			// Check for correct credentials supplied
 			getUserInfo(userId, options, NULL, &config);
+
+#ifdef WIN_NT
+			guardDbInit.enter();		// Required to correctly expand name of just created database
+
+			// Need to re-expand under lock to take into an account file existance (or not)
+			is_alias = expandDatabaseName(org_filename, expanded_name, &config);
+			if (!is_alias)
+			{
+				expanded_name = filename;
+
+				if (!options.dpb_utf8_filename)
+					ISC_systemToUtf8(expanded_name);
+
+				ISC_unescape(expanded_name);
+				ISC_utf8ToSystem(expanded_name);
+			}
+#endif
 		}
 		catch (const Exception& ex)
 		{
