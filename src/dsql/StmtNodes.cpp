@@ -7134,6 +7134,7 @@ const StmtNode* SelectNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSt
 //--------------------
 
 
+// This is only for GPRE's cmp_set_generator().
 static RegisterNode<SetGeneratorNode> regSetGeneratorNode(blr_set_generator);
 
 DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)

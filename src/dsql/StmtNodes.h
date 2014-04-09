@@ -1316,6 +1316,7 @@ public:
 };
 
 
+// This is only for GPRE's cmp_set_generator().
 class SetGeneratorNode : public TypedNode<StmtNode, StmtNode::TYPE_SET_GENERATOR>
 {
 public:
