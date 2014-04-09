@@ -1,3 +1,43 @@
+ 2014-04-08 16:13  alexpeshkoff 
+   M src/common/classes/InternalMessageBuffer.cpp
+   M src/common/classes/InternalMessageBuffer.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Patch from Dmitry Sibiryakov - convert SQLDA directly to IMessageMetadata w/o intermediate BLR
+
+ 2014-04-08 13:45  alexpeshkoff 
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Implemented improvement CORE-4387: IStatement::execute() and IAttachment::execute() functions should return on error pointer to old transaction interface
+
+ 2014-04-08 10:46  alexpeshkoff 
+   M doc/sql.extensions/README.mapping.html
+misc
+
+ 2014-04-08 10:33  alexpeshkoff 
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Added isql error messages
+
+ 2014-04-08 10:32  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+Turned off debugging
+
+ 2014-04-08 07:15  hvlad 
+   M src/jrd/jrd.cpp
+Patch by Alex (re.CORE-3370 and deadlock in user mapping code)
+
+ 2014-04-08 03:37  asfernandes 
+   M src/alice/alice.cpp
+   M src/auth/SecureRemotePassword/Message.h
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/dfw.epp
+Misc.
+
  2014-04-07 15:23  asfernandes 
    M src/dsql/StmtNodes.h
 Warning.
