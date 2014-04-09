@@ -174,11 +174,24 @@ class SQLDAMetadataLauncher
 public:
 	SQLDAMetadata* metadata;
 
-	SQLDAMetadataLauncher(const XSQLDA* sqlda):metadata(NULL) { if (sqlda) { metadata = new SQLDAMetadata(sqlda); metadata->addRef(); } }
-	~SQLDAMetadataLauncher() { if (metadata) { metadata->detach(); }}
+	explicit SQLDAMetadataLauncher(const XSQLDA* sqlda) : metadata(NULL)
+	{
+		if (sqlda)
+		{
+			metadata = new SQLDAMetadata(sqlda); 
+			metadata->addRef();
+		}
+	}
+	~SQLDAMetadataLauncher() { if (metadata) metadata->detach(); }
 
 	UCHAR* getBuffer(); // Provide empty data buffer with the same live time
-	void gatherData(Buffer& to) { if (metadata) metadata->gatherData(to); else to.clear(); }
+	void gatherData(Buffer& to)
+	{
+		if (metadata)
+			metadata->gatherData(to);
+		else
+			to.clear();
+	}
  	void scatterData() { if (metadata) metadata->scatterData(buffer); }
 private:
 	// Private operator new prevents this class from being allocated in heap, so it can be used only as stack or static variable
@@ -187,7 +200,7 @@ private:
 	Buffer buffer;
 };
 
-SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda): offsets(NULL), length(0), speedHackEnabled(false)
+SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda) : offsets(NULL), length(0), speedHackEnabled(false)
 {
 	sqlda = aSqlda;
 
@@ -204,8 +217,8 @@ unsigned FB_CARG SQLDAMetadata::getCount(IStatus* status)
 {
 	if (sqlda)
 		return sqlda->sqld;
-	else
-		return count;
+
+	return count;
 }
 
 const char* FB_CARG SQLDAMetadata::getField(IStatus* status, unsigned index)
@@ -215,8 +228,9 @@ const char* FB_CARG SQLDAMetadata::getField(IStatus* status, unsigned index)
 		fb_assert(sqlda->sqld > (int)index);
 		return sqlda->sqlvar[index].sqlname;
 	}
-	else	// we are in free fly. It is only possible for input sqlda which usually have no names inside
-		return "";	// Old conversion sqlda->BLR->metadata dropped them anyway
+	
+	// we are in free fly. It is only possible for input sqlda which usually have no names inside
+	return "";	// Old conversion sqlda->BLR->metadata dropped them anyway
 }
 
 const char* FB_CARG SQLDAMetadata::getRelation(IStatus* status, unsigned index)
@@ -226,8 +240,8 @@ const char* FB_CARG SQLDAMetadata::getRelation(IStatus* status, unsigned index)
 		fb_assert(sqlda->sqld > (int)index);
 		return sqlda->sqlvar[index].relname;
 	}
-	else
-		return "";
+
+	return "";
 }
 
 const char* FB_CARG SQLDAMetadata::getOwner(IStatus* status, unsigned index)
@@ -237,8 +251,8 @@ const char* FB_CARG SQLDAMetadata::getOwner(IStatus* status, unsigned index)
 		fb_assert(sqlda->sqld > (int)index);
 		return sqlda->sqlvar[index].ownname;
 	}
-	else
-		return "";
+
+	return "";
 }
 
 const char* FB_CARG SQLDAMetadata::getAlias(IStatus* status, unsigned index)
@@ -248,8 +262,8 @@ const char* FB_CARG SQLDAMetadata::getAlias(IStatus* status, unsigned index)
 		fb_assert(sqlda->sqld > (int)index);
 		return sqlda->sqlvar[index].aliasname;
 	}
-	else
-		return "";
+
+	return "";
 }
 
 unsigned FB_CARG SQLDAMetadata::getType(IStatus* status, unsigned index)
@@ -391,7 +405,7 @@ void SQLDAMetadata::assign()
 
 	count = (USHORT)sqlda->sqld;
 	speedHackEnabled = true; // May be we are lucky...
-	ISC_SCHAR* Base = sqlda->sqlvar[0].sqldata;
+	ISC_SCHAR* const Base = sqlda->sqlvar[0].sqldata;
 
 	offsets = new OffsetItem[count];
 	for (unsigned i = 0; i < count; i++)
@@ -421,7 +435,7 @@ void SQLDAMetadata::assign()
 		// because changing of it on current codebase will completely kill remote module and may be the engine as well
 		length = fb_utils::sqlTypeToDsc(length, var.sqltype, var.sqllen,
 			NULL /*dtype*/, NULL /*length*/, &it.offset, &it.indOffset);
-		if (it.offset != var.sqldata-Base || it.indOffset != (ISC_SCHAR*)(var.sqlind)-Base)
+		if (it.offset != var.sqldata - Base || it.indOffset != (ISC_SCHAR*)(var.sqlind) - Base)
 			speedHackEnabled = false; // No luck
 	}
 }
@@ -436,62 +450,67 @@ unsigned FB_CARG SQLDAMetadata::getMessageLength(IStatus* status)
 void SQLDAMetadata::gatherData(Buffer& to)
 {
 	fb_assert(sqlda); // Ensure that data is gathered before take off because later they can be already changed
-	if (sqlda->sqld > 0)
+	if (sqlda->sqld <= 0)
 	{
-		unsigned l = getMessageLength(NULL);
-		if (speedHackEnabled)
+		to.clear();
+		return;
+	}
+	
+	const unsigned l = getMessageLength(NULL);
+	if (speedHackEnabled)
+	{
+		to.assign(reinterpret_cast<UCHAR*>(sqlda->sqlvar[0].sqldata), l);
+		return;
+	}
+	
+	UCHAR* result = to.getBuffer(l, false);
+	for (unsigned i = 0; i < count; i++)
+	{
+		SSHORT* nullInd = (SSHORT*)(result + offsets[i].indOffset);
+		UCHAR* data = result + offsets[i].offset;
+
+		const XSQLVAR& var = sqlda->sqlvar[i];
+		unsigned len = var.sqllen;
+		if ((var.sqltype & ~1) == SQL_VARYING)
+			len += sizeof(USHORT);
+
+		if (var.sqltype & 1)
 		{
-			to.assign(reinterpret_cast<UCHAR*>(sqlda->sqlvar[0].sqldata), l);
-			return;
-		}
-		UCHAR* result = to.getBuffer(l, false);
-		for (unsigned i = 0; i < count; i++)
-		{
-			SSHORT* nullInd = (SSHORT*)(result + offsets[i].indOffset);
-			UCHAR* data = result + offsets[i].offset;
-
-			const XSQLVAR& var = sqlda->sqlvar[i];
-			unsigned len = var.sqllen;
-			if ((var.sqltype & ~1) == SQL_VARYING)
-				len += sizeof(USHORT);
-
-			if (var.sqltype & 1)
-			{
-				// Make sure user has specified a location for null indicator.
-				if (!var.sqlind)
-				{
-					(Arg::Gds(isc_dsql_sqlda_value_err) <<
-					 Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					 Arg::Gds(isc_random) << "empty pointer to NULL indicator variable" <<
-					 Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
-					).raise();
-				}
-
-				*nullInd = *var.sqlind;
-			}
-			else
-				*nullInd = 0;
-
-			// Make sure user has specified a data location (unless NULL).
-			if (!var.sqldata && !*nullInd && (var.sqltype & ~1) != SQL_NULL)
+			// Make sure user has specified a location for null indicator.
+			if (!var.sqlind)
 			{
 				(Arg::Gds(isc_dsql_sqlda_value_err) <<
-					Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-					Arg::Gds(isc_random) << "empty pointer to data" <<
-					Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+				 Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				 Arg::Gds(isc_random) << "empty pointer to NULL indicator variable" <<
+				 Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
 				).raise();
 			}
 
-			// This is assertion instead of error check because such situation is next to impossible: buffer size is calculated a routine above
-			fb_assert(data + len < result + length);
-
-			// Copy data - unless known to be NULL.
-			if (!*nullInd)
-				memcpy(data, var.sqldata, len);
+			*nullInd = *var.sqlind;
 		}
+		else
+			*nullInd = 0;
+
+		// Make sure user has specified a data location (unless NULL).
+		if (!var.sqldata && !*nullInd && (var.sqltype & ~1) != SQL_NULL)
+		{
+			(Arg::Gds(isc_dsql_sqlda_value_err) <<
+				Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				Arg::Gds(isc_random) << "empty pointer to data" <<
+				Arg::Gds(isc_index_name) << Arg::Num(i)  // To be replaced later with proper message
+			).raise();
+		}
+
+		// This is assertion instead of error check because such situation is next to impossible: buffer size is calculated a routine above
+		fb_assert(data + len < result + length);
+
+		// Copy data - unless known to be NULL.
+		if (!*nullInd)
+			memcpy(data, var.sqldata, len);
 	}
-	else
-		to.clear();
+
+
+
 }
 
 void SQLDAMetadata::scatterData(Buffer& from)
@@ -551,8 +570,8 @@ UCHAR* SQLDAMetadataLauncher::getBuffer()
 	{
 		if (metadata->speedHackEnabled)
 			return reinterpret_cast<UCHAR*>(metadata->sqlda->sqlvar[0].sqldata);
-		else
-			return buffer.getBuffer(metadata->getMessageLength(NULL), false);
+
+		return buffer.getBuffer(metadata->getMessageLength(NULL), false);
 	}
 	else
 	{
@@ -624,7 +643,7 @@ public:
 	void checkCursorOpened() const
 	{
 		if (!statement || !statement->cursor)
-				Arg::Gds(isc_dsql_cursor_not_open).raise();
+			Arg::Gds(isc_dsql_cursor_not_open).raise();
 	}
 
 	void checkCursorClosed() const
@@ -2329,20 +2348,19 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 			statement->transaction = translateHandle(transactions, traHandle);
 			return 0;
 		}
-		else
-		{
-			Array<UCHAR> inMsgBuffer;
 
-			inMessage.gatherData(inMsgBuffer);
+		Array<UCHAR> inMsgBuffer;
 
-			SQLDAMetadataLauncher outMessage(outSqlda);
+		inMessage.gatherData(inMsgBuffer);
 
-			statement->execute(&status, traHandle,
-				inMessage.metadata, inMsgBuffer.begin(), outMessage.metadata, outMessage.getBuffer());
+		SQLDAMetadataLauncher outMessage(outSqlda);
 
-			if (status.isSuccess())
-				outMessage.scatterData();
-		}
+		statement->execute(&status, traHandle,
+			inMessage.metadata, inMsgBuffer.begin(), outMessage.metadata, outMessage.getBuffer());
+
+		if (status.isSuccess())
+			outMessage.scatterData();
+
 
 	}
 	catch (const Exception& e)
