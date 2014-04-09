@@ -568,7 +568,7 @@ using namespace Firebird;
 %token <metaNamePtr> TAGS
 %token <metaNamePtr> PLUGIN
 %token <metaNamePtr> SERVERWIDE
-%token <metaNamePtr> STEP
+%token <metaNamePtr> INCREMENT
 
 // precedence declarations for expression evaluation
 
@@ -1496,7 +1496,11 @@ start_with
 %type <nullableInt32Val> step_option
 step_option
 	: /* nothing */ 			{ $$ = Nullable<SLONG>::empty(); }
-	| STEP signed_long_integer	{ $$ = Nullable<SLONG>::val($2); }
+	| INCREMENT by_noise signed_long_integer	{ $$ = Nullable<SLONG>::val($3); }
+
+by_noise
+	: // nothing
+	| BY
 
 %type <createAlterSequenceNode> replace_sequence_clause
 replace_sequence_clause
@@ -7362,7 +7366,7 @@ non_reserved_word
 	| TAGS
 	| PLUGIN
 	| SERVERWIDE
-	| STEP
+	| INCREMENT
 	;
 
 %%

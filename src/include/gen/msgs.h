@@ -923,7 +923,7 @@ Data source : @4"},		/* eds_statement */
 	{336068891, "ALTER USER requires at least one clause to be specified"},		/* dyn_alter_user_no_clause */
 	{336068894, "Duplicate @1 @2"},		/* dyn_duplicate_package_item */
 	{336068895, "System @1 @2 cannot be modified"},		/* dyn_cant_modify_sysobj */
-	{336068896, "STEP 0 is an illegal option for sequence @1"},		/* dyn_cant_use_zero_step */
+	{336068896, "INCREMENT BY 0 is an illegal option for sequence @1"},		/* dyn_cant_use_zero_increment */
 	{336330753, "found unknown switch"},		/* gbak_unknown_switch */
 	{336330754, "page size parameter missing"},		/* gbak_page_size_missing */
 	{336330755, "Page size specified (@1) greater than limit (16384 bytes)"},		/* gbak_page_size_toobig */

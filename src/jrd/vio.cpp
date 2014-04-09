@@ -3180,6 +3180,11 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				DFW_post_work(transaction, dfw_grant, &desc, obj_exception);
 			break;
 
+		case rel_backup_history:
+			set_metadata_id(tdbb, rpb->rpb_record,
+							f_backup_id, drq_g_nxt_nbakhist_id, "RDB$BACKUP_HISTORY");
+			break;
+
 		default:    // Shut up compiler warnings
 			break;
 		}

@@ -3171,7 +3171,7 @@ void write_generators()
 			if (!X.RDB$INITIAL_VALUE.NULL)
 				put_int64(att_gen_init_val, X.RDB$INITIAL_VALUE);
 
-			put_int32(att_gen_id_step, X.RDB$GENERATOR_STEP);
+			put_int32(att_gen_id_step, X.RDB$GENERATOR_INCREMENT);
 
 			put(tdgbl, att_end);
 			MISC_terminate (X.RDB$GENERATOR_NAME, temp, l, sizeof(temp));

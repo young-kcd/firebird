@@ -2823,8 +2823,8 @@ static void list_generators()
 				if (!G2.RDB$INITIAL_VALUE.NULL && G2.RDB$INITIAL_VALUE != 0)
 					isqlGlob.printf(" START WITH %" SQUADFORMAT, G2.RDB$INITIAL_VALUE);
 
-				if (G2.RDB$GENERATOR_STEP != 1)
-					isqlGlob.printf(" STEP %ld", G2.RDB$GENERATOR_STEP);
+				if (G2.RDB$GENERATOR_INCREMENT != 1)
+					isqlGlob.printf(" INCREMENT %ld", G2.RDB$GENERATOR_INCREMENT);
 
 			END_FOR
 			ON_ERROR

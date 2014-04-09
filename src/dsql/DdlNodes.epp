@@ -4911,7 +4911,7 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	{
 		initialStep = step.value;
 		if (initialStep == 0)
-			status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_step) << Arg::Str(name));
+			status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_increment) << Arg::Str(name));
 	}
 	store(tdbb, transaction, name, fb_sysflag_user, val, initialStep);
 
@@ -4936,7 +4936,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		if (id < 0)
 			return false;
 
-		if (forbidden)
+		if (forbidden && !tdbb->getAttachment()->isRWGbak())
 			status_exception::raise(Arg::Gds(isc_dyn_cant_modify_sysobj) << "generator" << Arg::Str(name));
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
@@ -4947,11 +4947,11 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		{
 			const SLONG newStep = step.value;
 			if (newStep == 0)
-				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_step) << Arg::Str(name));
+				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_increment) << Arg::Str(name));
 
 			// Perhaps it's better to move this to DFW?
 			if (newStep != oldStep)
-				MET_update_generator_step(tdbb, id, newStep);
+				MET_update_generator_increment(tdbb, id, newStep);
 		}
 
 		transaction->getGenIdCache()->put(id, val);
@@ -4987,12 +4987,12 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		{
 			const SLONG newStep = step.value;
 			if (newStep == 0)
-				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_step) << Arg::Str(name));
+				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_increment) << Arg::Str(name));
 
-			if (newStep != X.RDB$GENERATOR_STEP)
+			if (newStep != X.RDB$GENERATOR_INCREMENT)
 			{
 				MODIFY X
-					X.RDB$GENERATOR_STEP = newStep;
+					X.RDB$GENERATOR_INCREMENT = newStep;
 				END_MODIFY
 			}
 		}
@@ -5049,7 +5049,7 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 				X.RDB$INITIAL_VALUE.NULL = FALSE;
 				X.RDB$INITIAL_VALUE = val;
 
-				X.RDB$GENERATOR_STEP = step;
+				X.RDB$GENERATOR_INCREMENT = step;
 			}
 			END_STORE
 

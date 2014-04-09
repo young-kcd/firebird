@@ -218,6 +218,7 @@ static const TOK tokens[] =
 	{IIF, "IIF", 2, true},
 	{KW_IN, "IN", 1, false},
 	{INACTIVE, "INACTIVE", 1, false},
+	{INCREMENT, "INCREMENT", 2, false},
 	{INDEX, "INDEX", 1, false},
 	{INNER, "INNER", 1, false},
 	{INPUT_TYPE, "INPUT_TYPE", 1, false},
@@ -386,7 +387,6 @@ static const TOK tokens[] =
 	{STARTING, "STARTS", 1, false},	// Alias of STARTING
 	{STATEMENT, "STATEMENT", 2, true},
 	{STATISTICS, "STATISTICS", 1, false},
-	{STEP, "STEP", 2, false},
 	{SUBSTRING,	"SUBSTRING", 2, true},
 	{SUB_TYPE, "SUB_TYPE", 1, false},
 	{SUM, "SUM", 1, false},

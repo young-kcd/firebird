@@ -5674,7 +5674,7 @@ ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 void GenIdNode::setParameterName(dsql_par* parameter) const
 {
-	parameter->par_name = parameter->par_alias = (implicit ? "GEN_ID2" : "GEN_ID");
+	parameter->par_name = parameter->par_alias = (implicit ? "NEXT_VALUE" : "GEN_ID");
 }
 
 bool GenIdNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
@@ -5796,7 +5796,7 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		change = MOV_get_int64(value, 0);
 	}
-	if (sysGen && change != 0 && generator.id != 9)
+	if (sysGen && change != 0)
 	{
 		if (!request->hasInternalStatement() && !tdbb->getAttachment()->isRWGbak())
 		{

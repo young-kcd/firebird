@@ -315,7 +315,7 @@
 	const USHORT  f_gen_class = 4;
 	const USHORT  f_gen_owner = 5;
 	const USHORT  f_gen_init_val = 6;
-	const USHORT  f_gen_step = 7;
+	const USHORT  f_gen_increment = 7;
 
 
 // Relation 21 (RDB$FIELD_DIMENSIONS)

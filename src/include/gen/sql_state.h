@@ -919,7 +919,7 @@ static const struct {
 	{336068891, "42000"}, // 283 dyn_alter_user_no_clause
 	{336068894, "42000"}, // 286 dyn_duplicate_package_item
 	{336068895, "42000"}, // 287 dyn_cant_modify_sysobj
-	{336068896, "42000"}, // 288 dyn_cant_use_zero_step
+	{336068896, "42000"}, // 288 dyn_cant_use_zero_increment
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig

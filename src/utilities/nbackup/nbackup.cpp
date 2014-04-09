@@ -270,7 +270,7 @@ public:
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
 		username(_username), password(_password), /*trustedUser(_trustedUser),*/
 		run_db_triggers(_run_db_triggers), /*trustedRole(_trustedRole), */direct_io(_direct_io),
-		dbase(0), backup(0), db_size_pages(0), m_silent(false), m_printed(false)
+		dbase(0), backup(0), db_size_pages(0), m_odsNumber(0), m_silent(false), m_printed(false)
 	{
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
@@ -305,7 +305,7 @@ public:
 	void backup_database(int level, const PathName& fname);
 	void restore_database(const BackupFiles& files);
 
-	bool printed()
+	bool printed() const
 	{
 		return m_printed;
 	}
@@ -326,6 +326,7 @@ private:
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
 	ULONG db_size_pages;	// In pages
+	USHORT m_odsNumber;
 	bool m_silent;		// are we already handling an exception?
 	bool m_printed;		// pr_error() was called to print status vector
 
@@ -338,6 +339,7 @@ private:
 
 	void internal_lock_database();
 	void get_database_size();
+	void get_ods();
 	void internal_unlock_database();
 	void attach_database();
 	void detach_database();
@@ -716,6 +718,22 @@ void NBackup::get_database_size()
 	}
 }
 
+void NBackup::get_ods()
+{
+	m_odsNumber = 0;
+	const char db_version_info[] = { isc_info_ods_version };
+	char res[128];
+	if (isc_database_info(status, &newdb, sizeof(db_version_info), db_version_info, sizeof(res), res))
+	{
+		pr_error(status, "ods info");
+	}
+	else if (res[0] == isc_info_ods_version)
+	{
+		USHORT len = isc_vax_integer (&res[1], 2);
+		m_odsNumber = isc_vax_integer (&res[3], len);
+	}
+}
+
 void NBackup::internal_unlock_database()
 {
 	if (m_silent)
@@ -821,10 +839,10 @@ void NBackup::backup_database(int level, const PathName& fname)
 			if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 				pr_error(status, "allocate statement");
 			char str[200];
-			sprintf(str, "select rdb$guid, rdb$scn from rdb$backup_history "
-				"where rdb$backup_id = "
-				  "(select max(rdb$backup_id) from rdb$backup_history "
-				   "where rdb$backup_level = %d)", level - 1);
+			sprintf(str, "SELECT RDB$GUID, RDB$SCN FROM RDB$BACKUP_HISTORY "
+				"WHERE RDB$BACKUP_ID = "
+				  "(SELECT MAX(RDB$BACKUP_ID) FROM RDB$BACKUP_HISTORY "
+				   "WHERE RDB$BACKUP_LEVEL = %d)", level - 1);
 			if (isc_dsql_prepare(status, &trans, &stmt, 0, str, 1, NULL))
 				pr_error(status, "prepare history query");
 			if (isc_dsql_describe(status, &stmt, 1, out_sqlda))
@@ -1098,6 +1116,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		// Write about successful backup to backup history table
 		if (isc_start_transaction(status, &trans, 1, &newdb, 0, NULL))
 			pr_error(status, "start transaction");
+
 		char in_sqlda_data[XSQLDA_LENGTH(4)];
 		XSQLDA *in_sqlda = (XSQLDA *)in_sqlda_data;
 		in_sqlda->version = SQLDA_VERSION1;
@@ -1105,11 +1124,25 @@ void NBackup::backup_database(int level, const PathName& fname)
 		isc_stmt_handle stmt = 0;
 		if (isc_dsql_allocate_statement(status, &newdb, &stmt))
 			pr_error(status, "allocate statement");
-		if (isc_dsql_prepare(status, &trans, &stmt, 0,
-			"insert into rdb$backup_history(rdb$backup_id, rdb$timestamp, "
-			  "rdb$backup_level, rdb$guid, rdb$scn, rdb$file_name) "
-			"values(gen_id(rdb$backup_history, 1), 'now', ?, ?, ?, ?)",
-			1, NULL))
+
+		const char* insHistory;
+		get_ods();
+		if (m_odsNumber >= ODS_VERSION12)
+		{
+			insHistory =
+				"INSERT INTO RDB$BACKUP_HISTORY(RDB$BACKUP_ID, RDB$TIMESTAMP, "
+					"RDB$BACKUP_LEVEL, RDB$GUID, RDB$SCN, RDB$FILE_NAME) "
+				"VALUES(NULL, 'NOW', ?, ?, ?, ?)";
+		}
+		else
+		{
+			insHistory =
+				"INSERT INTO RDB$BACKUP_HISTORY(RDB$BACKUP_ID, RDB$TIMESTAMP, "
+					"RDB$BACKUP_LEVEL, RDB$GUID, RDB$SCN, RDB$FILE_NAME) "
+				"VALUES(GEN_ID(RDB$BACKUP_HISTORY, 1), 'NOW', ?, ?, ?, ?)";
+		}
+
+		if (isc_dsql_prepare(status, &trans, &stmt, 0, insHistory, 1, NULL))
 		{
 			pr_error(status, "prepare history insert");
 		}

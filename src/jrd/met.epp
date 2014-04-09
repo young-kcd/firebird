@@ -2306,7 +2306,7 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item, bool* sysGen, SLON
 		if (sysGen)
 			*sysGen = (X.RDB$SYSTEM_FLAG == fb_sysflag_system);
 		if (step)
-			*step = X.RDB$GENERATOR_STEP;
+			*step = X.RDB$GENERATOR_INCREMENT;
 
 		return true;
 	}
@@ -2347,7 +2347,7 @@ SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name, bool* sysGen, 
 		if (sysGen)
 			*sysGen = (X.RDB$SYSTEM_FLAG == fb_sysflag_system);
 		if (step)
-			*step = X.RDB$GENERATOR_STEP;
+			*step = X.RDB$GENERATOR_INCREMENT;
 
 		return X.RDB$GENERATOR_ID;
 	}
@@ -2391,11 +2391,11 @@ bool MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name, bool
 	return name.length() != 0;
 }
 
-void MET_update_generator_step(thread_db* tdbb, SLONG gen_id, SLONG step)
+void MET_update_generator_increment(thread_db* tdbb, SLONG gen_id, SLONG step)
 {
 /**************************************
  *
- *      M E T _ u p d a t e _ g e n e r a t o r _ s t e p
+ *      M E T _ u p d a t e _ g e n e r a t o r _ i n c r e m e n t
  *
  **************************************
  *
@@ -2417,7 +2417,7 @@ void MET_update_generator_step(thread_db* tdbb, SLONG gen_id, SLONG step)
 			return;
 
 		MODIFY X
-			X.RDB$GENERATOR_STEP = step;
+			X.RDB$GENERATOR_INCREMENT = step;
 		END_MODIFY
 	END_FOR
 }

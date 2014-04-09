@@ -231,6 +231,7 @@ enum drq_type_t
 	drq_e_xcp_prvs,			// erase exception privileges
 	drq_e_gen_prvs,			// erase generator privileges
 	drq_e_gfld_prvs,		// erase domain privileges
+	drq_g_nxt_nbakhist_id,	// generate next history ID for nbackup
 
 	drq_MAX
 };

@@ -10337,7 +10337,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SI
 			}
 			X.RDB$INITIAL_VALUE.NULL = FALSE;
 			X.RDB$INITIAL_VALUE = initial_value;
-			X.RDB$GENERATOR_STEP = step;
+			X.RDB$GENERATOR_INCREMENT = step;
 		END_STORE;
 		ON_ERROR
 			general_on_error ();

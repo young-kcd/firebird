@@ -4076,8 +4076,8 @@ static processing_state show_generators(const SCHAR* object)
 					WITH G2.RDB$GENERATOR_NAME = GEN.RDB$GENERATOR_NAME
 
 					ISC_INT64 initval = !G2.RDB$INITIAL_VALUE.NULL ? G2.RDB$INITIAL_VALUE : 0;
-					isqlGlob.printf(", initial value: %" QUADFORMAT "d%, step: %ld",
-						initval, G2.RDB$GENERATOR_STEP);
+					isqlGlob.printf(", initial value: %" QUADFORMAT "d%, increment: %ld",
+						initval, G2.RDB$GENERATOR_INCREMENT);
 
 				END_FOR
 				ON_ERROR
