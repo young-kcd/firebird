@@ -246,7 +246,7 @@ public:
 	{
 	}
 
-	static RelationSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp,
+	static RelationSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp,
 		bool parseContext);
 
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -327,7 +327,7 @@ public:
 	{
 	}
 
-	static ProcedureSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp);
+	static ProcedureSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp);
 
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -465,7 +465,7 @@ public:
 	{
 	}
 
-	static UnionSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp);
+	static UnionSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp);
 
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 

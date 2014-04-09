@@ -954,6 +954,7 @@ const ISC_STATUS isc_dyn_domain_used_function         = 336068890L;
 const ISC_STATUS isc_dyn_alter_user_no_clause         = 336068891L;
 const ISC_STATUS isc_dyn_duplicate_package_item       = 336068894L;
 const ISC_STATUS isc_dyn_cant_modify_sysobj           = 336068895L;
+const ISC_STATUS isc_dyn_cant_use_zero_step           = 336068896L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -1274,7 +1275,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1218;
+const ISC_STATUS isc_err_max                          = 1219;
 
 #else /* c definitions */
 
@@ -2198,6 +2199,7 @@ const ISC_STATUS isc_err_max                          = 1218;
 #define isc_dyn_alter_user_no_clause         336068891L
 #define isc_dyn_duplicate_package_item       336068894L
 #define isc_dyn_cant_modify_sysobj           336068895L
+#define isc_dyn_cant_use_zero_step           336068896L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2518,7 +2520,7 @@ const ISC_STATUS isc_err_max                          = 1218;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1218
+#define isc_err_max                          1219
 
 #endif
 

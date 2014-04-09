@@ -4023,7 +4023,7 @@ static processing_state show_generators(const SCHAR* object)
 	// If the user has set his client dialect to 1, we take that to
 	// mean that he wants to see just the lower 32 bits of the
 	// generator, as in V5.  Otherwise, we show him the whole 64-bit value.
-	bool use64 = isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION;
+	const bool use64 = isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION;
 	mb->setType(fbStatus, 0, use64 ? SQL_INT64 : SQL_LONG);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
@@ -4066,20 +4066,27 @@ static processing_state show_generators(const SCHAR* object)
 				continue;
 
 			found = true;
-			if (isqlGlob.SQL_dialect >= SQL_DIALECT_V6_TRANSITION)
+			ISC_INT64 val = use64 ? *((ISC_INT64*) &outBuffer[off]) : *((SLONG*) &outBuffer[off]);
+
+			isqlGlob.printf("Generator %s, current value: %" QUADFORMAT "d%",
+					 GEN.RDB$GENERATOR_NAME, val);
+			if (isqlGlob.major_ods >= ODS_VERSION12)
 			{
-				isqlGlob.printf("Generator %s, current value is %" QUADFORMAT "d%s",
-						 GEN.RDB$GENERATOR_NAME,
-						 *((ISC_INT64*) &outBuffer[off]),
-						 NEWLINE);
+				FOR G2 IN RDB$GENERATORS
+					WITH G2.RDB$GENERATOR_NAME = GEN.RDB$GENERATOR_NAME
+
+					ISC_INT64 initval = !G2.RDB$INITIAL_VALUE.NULL ? G2.RDB$INITIAL_VALUE : 0;
+					isqlGlob.printf(", initial value: %" QUADFORMAT "d%, step: %ld",
+						initval, G2.RDB$GENERATOR_STEP);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(fbStatus);
+					return ps_ERR;
+				END_ERROR;
 			}
-			else
-			{
-				isqlGlob.printf("Generator %s, current value is %ld%s",
-						 GEN.RDB$GENERATOR_NAME,
-						 *((SLONG*) &outBuffer[off]),
-						 NEWLINE);
-			}
+
+			isqlGlob.prints(NEWLINE);
 		}
 	END_FOR
 	ON_ERROR

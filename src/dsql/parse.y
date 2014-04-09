@@ -568,6 +568,7 @@ using namespace Firebird;
 %token <metaNamePtr> TAGS
 %token <metaNamePtr> PLUGIN
 %token <metaNamePtr> SERVERWIDE
+%token <metaNamePtr> STEP
 
 // precedence declarations for expression evaluation
 
@@ -602,6 +603,7 @@ using namespace Firebird;
 	int intVal;
 	unsigned uintVal;
 	SLONG int32Val;
+	BaseNullable<SLONG> nullableInt32Val;
 	SINT64 int64Val;
 	FB_UINT64 uint64Val;
 	BaseNullable<SINT64> nullableInt64Val;
@@ -1476,8 +1478,8 @@ check_constraint
 
 %type <createAlterSequenceNode> generator_clause
 generator_clause
-	: symbol_generator_name start_with_opt
-		{ $$ = newNode<CreateAlterSequenceNode>(*$1, $2); }
+	: symbol_generator_name start_with_opt step_option
+		{ $$ = newNode<CreateAlterSequenceNode>(*$1, $2, $3); }
 	;
 
 %type <nullableInt64Val> start_with_opt
@@ -1491,16 +1493,21 @@ start_with
 	: START WITH sequence_value		{ $$ = $3; }
 	;
 
+%type <nullableInt32Val> step_option
+step_option
+	: /* nothing */ 			{ $$ = Nullable<SLONG>::empty(); }
+	| STEP signed_long_integer	{ $$ = Nullable<SLONG>::val($2); }
+
 %type <createAlterSequenceNode> replace_sequence_clause
 replace_sequence_clause
-	: symbol_generator_name replace_sequence_options
+	: symbol_generator_name replace_sequence_options step_option
 		{
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2, $3);
 			node->alter = true;
 			$$ = node;
 		}
 	;
-	
+
 %type <nullableInt64Val> replace_sequence_options
 replace_sequence_options
 	: RESTART						{ $$ = Nullable<SINT64>::empty(); }
@@ -1509,9 +1516,9 @@ replace_sequence_options
 
 %type <createAlterSequenceNode> alter_sequence_clause
 alter_sequence_clause
-	: symbol_generator_name RESTART restart_value_opt
+	: symbol_generator_name restart_value_opt step_option
 		{
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $3);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2, $3);
 			node->create = false;
 			node->alter = true;
 			$$ = node;
@@ -1520,8 +1527,9 @@ alter_sequence_clause
 
 %type <nullableInt64Val> restart_value_opt
 restart_value_opt
-	: /* nothing */			{ $$ = Nullable<SINT64>::empty(); }
-	| WITH sequence_value	{ $$ = Nullable<SINT64>::val($2); }
+	: /* nothing */					{ $$ = Nullable<SINT64>::empty(); }
+	| RESTART						{ $$ = Nullable<SINT64>::empty(); }
+	| RESTART WITH sequence_value	{ $$ = Nullable<SINT64>::val($3); }
 	;
 
 %type <createAlterSequenceNode> set_generator_clause
@@ -1529,7 +1537,7 @@ set_generator_clause
 	: SET GENERATOR symbol_generator_name TO sequence_value
 		{
 			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$3,
-				Nullable<SINT64>::val($5));
+				Nullable<SINT64>::val($5), Nullable<SLONG>::empty());
 			node->create = false;
 			node->alter = true;
 			node->legacy = true;
@@ -6943,10 +6951,10 @@ next_value_expression
 	: NEXT KW_VALUE FOR symbol_generator_name
 		{
 			$$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION),
-				*$4, MAKE_const_slong(1));
+				*$4, ((Jrd::ValueExprNode*)0), true);
 		}
 	| GEN_ID '(' symbol_generator_name ',' value ')'
-		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), *$3, $5); }
+		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), *$3, $5, false); }
 	;
 
 
@@ -7354,6 +7362,7 @@ non_reserved_word
 	| TAGS
 	| PLUGIN
 	| SERVERWIDE
+	| STEP
 	;
 
 %%

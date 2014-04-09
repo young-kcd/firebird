@@ -2815,8 +2815,23 @@ static void list_generators()
 
 		isqlGlob.printf("CREATE GENERATOR %s", SQL_identifier);
 
-		if (!GEN.RDB$INITIAL_VALUE.NULL && GEN.RDB$INITIAL_VALUE != 0)
-			isqlGlob.printf(" START WITH %" SQUADFORMAT, GEN.RDB$INITIAL_VALUE);
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR G2 IN RDB$GENERATORS
+				WITH G2.RDB$GENERATOR_NAME = GEN.RDB$GENERATOR_NAME
+
+				if (!G2.RDB$INITIAL_VALUE.NULL && G2.RDB$INITIAL_VALUE != 0)
+					isqlGlob.printf(" START WITH %" SQUADFORMAT, G2.RDB$INITIAL_VALUE);
+
+				if (G2.RDB$GENERATOR_STEP != 1)
+					isqlGlob.printf(" STEP %ld", G2.RDB$GENERATOR_STEP);
+
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(fbStatus);
+				return;
+			END_ERROR;
+		}
 
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	}

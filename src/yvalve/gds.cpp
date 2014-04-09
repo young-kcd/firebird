@@ -297,6 +297,7 @@ static const UCHAR
 	function2[]	= { op_byte, op_literal, op_pad, op_byte, op_literal, op_pad, op_byte, op_line,
 					op_args, 0},
 	gen_id[]	= { op_byte, op_literal, op_line, op_verb, 0},
+	gen_id2[]	= { op_byte, op_literal, op_line, 0},
 	declare[]	= { op_word, op_dtype, op_line, 0},
 	variable[]	= { op_word, op_line, 0},
 	indx[]		= { op_line, op_verb, op_indent, op_byte, op_line, op_args, 0},

@@ -435,7 +435,7 @@ AvgAggNode::AvgAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueEx
 	dsqlCompatDialectVerb = "avg";
 }
 
-DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	AvgAggNode* node = FB_NEW(pool) AvgAggNode(pool,
 		(blrOp == blr_agg_average_distinct),
@@ -651,7 +651,7 @@ ListAggNode::ListAggNode(MemoryPool& pool, bool aDistinct, ValueExprNode* aArg,
 	addChildNode(delimiter, delimiter);
 }
 
-DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	ListAggNode* node = FB_NEW(pool) ListAggNode(pool,
 		(blrOp == blr_agg_list_distinct));
@@ -777,7 +777,7 @@ CountAggNode::CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, Val
 {
 }
 
-DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	CountAggNode* node = FB_NEW(pool) CountAggNode(pool,
 		(blrOp == blr_agg_count_distinct),
@@ -868,7 +868,7 @@ SumAggNode::SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueEx
 	dsqlCompatDialectVerb = "sum";
 }
 
-DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	SumAggNode* node = FB_NEW(pool) SumAggNode(pool, (blrOp == blr_agg_total_distinct),
 		(csb->blrVersion == 4));
@@ -1100,7 +1100,7 @@ MaxMinAggNode::MaxMinAggNode(MemoryPool& pool, MaxMinType aType, ValueExprNode* 
 {
 }
 
-DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	MaxMinAggNode* node = FB_NEW(pool) MaxMinAggNode(pool,
 		(blrOp == blr_agg_max ? TYPE_MAX : TYPE_MIN));

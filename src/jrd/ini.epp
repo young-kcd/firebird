@@ -1191,6 +1191,8 @@ static void store_generator(thread_db* tdbb, const gen* generator, AutoRequest& 
 		}
 		else
 			X.RDB$DESCRIPTION.NULL = TRUE;
+
+		X.RDB$GENERATOR_STEP = 0; // only sys gens have zero default increment
 	}
 	END_STORE
 }

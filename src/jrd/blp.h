@@ -198,11 +198,6 @@ static const struct
 	{"current_time2", byte_line},
 	{"agg_list", two}, // 170
 	{"agg_list_distinct", two},
-	/***
-	// These verbs were added in 6.0, primarily to support 64-bit integers, now obsolete
-	{"gen_id2", gen_id},
-	{"set_generator2", gen_id},
-	***/
 	{"modify2", modify2},
 	{NULL, NULL},
 	// New BLR in FB1
@@ -225,7 +220,7 @@ static const struct
 	{"auto_trans", byte_verb},
 	{"similar", similar},
 	{"exec_stmt", exec_stmt},
-	{"stmt_expr", two},
+	{"stmt_expr", two}, // 190
 	{"derived_expr", derived_expr},
 	{"procedure3", procedure3},
 	{"exec_proc2", exec_proc2},
@@ -235,7 +230,7 @@ static const struct
 	{"continue_loop", byte_line},
 	{"procedure4", procedure4},
 	{"agg_function", function},
-	{"substring_similar", three},
+	{"substring_similar", three}, // 200
 	{"bool_as_value", one},
 	{"coalesce", byte_args},
 	{"decode", decode},
@@ -245,5 +240,6 @@ static const struct
 	{"subfunc_decl", subfunc_decl},
 	{"subfunc", function},
 	{"record_version2", byte_line},
+	{"gen_id2", gen_id2}, // 210
 	{0, 0}
 };

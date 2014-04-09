@@ -105,6 +105,7 @@ enum irq_type_t
 	irq_get_role_name,		// get SQL role name
 	irq_format6,			// make a new format for a record
 	irq_r_gen_id_num,		// lookup generator by ID.
+	irq_upd_gen_id_step,	// update the STEP of a generator (only for legacy code).
 	irq_verify_role_name,	// ensure role exists in roles & user_privileges.
 	irq_m_index_seg,		// modify per-segment index selectivity
 

@@ -452,7 +452,7 @@ RecSourceListNode* RecSourceListNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 // Parse a relation reference.
 RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* csb,
-	SSHORT blrOp, bool parseContext)
+	const SSHORT blrOp, bool parseContext)
 {
 	SET_TDBB(tdbb);
 
@@ -844,7 +844,7 @@ RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bo
 
 // Parse an procedural view reference.
 ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch* csb,
-	SSHORT blrOp)
+	const SSHORT blrOp)
 {
 	SET_TDBB(tdbb);
 
@@ -1554,7 +1554,7 @@ void AggregateSourceNode::findDependentFromStreams(const OptimizerRetrieval* opt
 
 
 // Parse a union reference.
-UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, SSHORT blrOp)
+UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp)
 {
 	SET_TDBB(tdbb);
 

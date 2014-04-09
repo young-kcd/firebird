@@ -911,17 +911,18 @@ class CreateAlterSequenceNode : public DdlNode
 {
 public:
 	CreateAlterSequenceNode(MemoryPool& pool, const Firebird::MetaName& aName,
-				BaseNullable<SINT64> aValue)
+				BaseNullable<SINT64> aValue, BaseNullable<SLONG> aStep)
 		: DdlNode(pool),
 		  create(true),
 		  alter(false),
 		  legacy(false),
 		  name(pool, aName),
-		  value(aValue)
+		  value(aValue),
+		  step(aStep)
 	{}
 
 	static SSHORT store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
-		fb_sysflag sysFlag, SINT64 value);
+		fb_sysflag sysFlag, SINT64 value, SLONG step);
 
 public:
 	virtual void print(Firebird::string& text) const;
@@ -946,7 +947,8 @@ public:
 	bool alter;
 	bool legacy;
 	const Firebird::MetaName name;
-	BaseNullable<SINT64> value;
+	const BaseNullable<SINT64> value;
+	const BaseNullable<SLONG> step;
 };
 
 

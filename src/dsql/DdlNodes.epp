@@ -4906,7 +4906,14 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
 
 	const SINT64 val = value.specified ? value.value : 0;
-	store(tdbb, transaction, name, fb_sysflag_user, val);
+	SLONG initialStep = 1;
+	if (step.specified)
+	{
+		initialStep = step.value;
+		if (initialStep == 0)
+			status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_step) << Arg::Str(name));
+	}
+	store(tdbb, transaction, name, fb_sysflag_user, val, initialStep);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
 }
@@ -4924,7 +4931,8 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		// that the generator created in another transaction can be found here. This is done
 		// using MET_lookup_generator() which works in the system transaction.
 
-		const SLONG id = MET_lookup_generator(tdbb, name, &forbidden);
+		SLONG oldStep = 0;
+		const SLONG id = MET_lookup_generator(tdbb, name, &forbidden, &oldStep);
 		if (id < 0)
 			return false;
 
@@ -4935,6 +4943,16 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		fb_assert(value.specified);
 		const SINT64 val = value.specified ? value.value : 0;
+		if (step.specified)
+		{
+			const SLONG newStep = step.value;
+			if (newStep == 0)
+				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_step) << Arg::Str(name));
+
+			// Perhaps it's better to move this to DFW?
+			if (newStep != oldStep)
+				MET_update_generator_step(tdbb, id, newStep);
+		}
 
 		transaction->getGenIdCache()->put(id, val);
 		dsc desc;
@@ -4965,6 +4983,19 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		const SLONG id = X.RDB$GENERATOR_ID;
 		const SINT64 val = value.specified ?
 			value.value : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
+		if (step.specified)
+		{
+			const SLONG newStep = step.value;
+			if (newStep == 0)
+				status_exception::raise(Arg::Gds(isc_dyn_cant_use_zero_step) << Arg::Str(name));
+
+			if (newStep != X.RDB$GENERATOR_STEP)
+			{
+				MODIFY X
+					X.RDB$GENERATOR_STEP = newStep;
+				END_MODIFY
+			}
+		}
 
 		transaction->getGenIdCache()->put(id, val);
 		dsc desc;
@@ -4984,7 +5015,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 }
 
 SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, const MetaName& name,
-	fb_sysflag sysFlag, SINT64 val)
+	fb_sysflag sysFlag, SINT64 val, SLONG step)
 {
 	Attachment* const attachment = transaction->tra_attachment;
 	const string& userName = attachment->att_user->usr_user_name;
@@ -5017,6 +5048,8 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 
 				X.RDB$INITIAL_VALUE.NULL = FALSE;
 				X.RDB$INITIAL_VALUE = val;
+
+				X.RDB$GENERATOR_STEP = step;
 			}
 			END_STORE
 
@@ -5575,7 +5608,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			DYN_UTIL_generate_generator_name(tdbb, fieldDefinition.identitySequence);
 
 			CreateAlterSequenceNode::store(tdbb, transaction, fieldDefinition.identitySequence,
-				fb_sysflag_identity_generator, clause->identityStart);
+				fb_sysflag_identity_generator, clause->identityStart, 1);
 		}
 
 		BlrDebugWriter::BlrData defaultValue;

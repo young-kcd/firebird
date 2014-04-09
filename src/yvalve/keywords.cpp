@@ -386,6 +386,7 @@ static const TOK tokens[] =
 	{STARTING, "STARTS", 1, false},	// Alias of STARTING
 	{STATEMENT, "STATEMENT", 2, true},
 	{STATISTICS, "STATISTICS", 1, false},
+	{STEP, "STEP", 2, false},
 	{SUBSTRING,	"SUBSTRING", 2, true},
 	{SUB_TYPE, "SUB_TYPE", 1, false},
 	{SUM, "SUM", 1, false},

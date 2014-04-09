@@ -496,6 +496,7 @@ enum att_type {
 	att_gen_owner_name,
 	att_gen_sysflag,
 	att_gen_init_val,
+	att_gen_id_step,
 
 	// Stored procedure attributes
 

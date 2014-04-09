@@ -250,7 +250,7 @@ ArithmeticNode::ArithmeticNode(MemoryPool& pool, UCHAR aBlrOp, bool aDialect1,
 	addChildNode(arg2, arg2);
 }
 
-DmlNode* ArithmeticNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* ArithmeticNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	ArithmeticNode* node = FB_NEW(pool) ArithmeticNode(
 		pool, blrOp, (csb->blrVersion == 4));
@@ -1457,7 +1457,7 @@ dsc* ArithmeticNode::execute(thread_db* tdbb, jrd_req* request) const
 
 // Add (or subtract) the contents of a descriptor to value block, with dialect-1 semantics.
  // This function can be removed when dialect-3 becomes the lowest supported dialect. (Version 7.0?)
-dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNode* node, UCHAR blrOp)
+dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNode* node, const UCHAR blrOp)
 {
 	const ArithmeticNode* arithmeticNode = node->as<ArithmeticNode>();
 
@@ -1520,7 +1520,7 @@ dsc* ArithmeticNode::add(const dsc* desc, impure_value* value, const ValueExprNo
 
 // Add (or subtract) the contents of a descriptor to value block, with dialect-3 semantics, as in
 // the blr_add, blr_subtract, and blr_agg_total verbs following a blr_version5.
-dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const ValueExprNode* node, UCHAR blrOp)
+dsc* ArithmeticNode::add2(const dsc* desc, impure_value* value, const ValueExprNode* node, const UCHAR blrOp)
 {
 	const ArithmeticNode* arithmeticNode = node->as<ArithmeticNode>();
 
@@ -2359,7 +2359,7 @@ BoolAsValueNode::BoolAsValueNode(MemoryPool& pool, BoolExprNode* aBoolean)
 	addChildNode(boolean, boolean);
 }
 
-DmlNode* BoolAsValueNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* BoolAsValueNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	BoolAsValueNode* node = FB_NEW(pool) BoolAsValueNode(pool);
 	node->boolean = PAR_parse_boolean(tdbb, csb);
@@ -2450,7 +2450,7 @@ CastNode::CastNode(MemoryPool& pool, ValueExprNode* aSource, dsql_fld* aDsqlFiel
 }
 
 // Parse a datatype cast.
-DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	CastNode* node = FB_NEW(pool) CastNode(pool);
 
@@ -2745,7 +2745,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<CoalesceNode> regCoalesceNode(blr_coalesce);
 
-DmlNode* CoalesceNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* CoalesceNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	CoalesceNode* node = FB_NEW(pool) CoalesceNode(pool);
 	node->args = PAR_args(tdbb, csb);
@@ -2951,7 +2951,7 @@ ConcatenateNode::ConcatenateNode(MemoryPool& pool, ValueExprNode* aArg1, ValueEx
 	addChildNode(arg2, arg2);
 }
 
-DmlNode* ConcatenateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* ConcatenateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	ConcatenateNode* node = FB_NEW(pool) ConcatenateNode(pool);
 	node->arg1 = PAR_parse_value(tdbb, csb);
@@ -3212,7 +3212,7 @@ ValueExprNode* ConcatenateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 static RegisterNode<CurrentDateNode> regCurrentDateNode(blr_current_date);
 
 DmlNode* CurrentDateNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
-								UCHAR /*blrOp*/)
+								const UCHAR /*blrOp*/)
 {
 	return FB_NEW(pool) CurrentDateNode(pool);
 }
@@ -3293,7 +3293,7 @@ dsc* CurrentDateNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 static RegisterNode<CurrentTimeNode> regCurrentTimeNode(blr_current_time);
 static RegisterNode<CurrentTimeNode> regCurrentTimeNode2(blr_current_time2);
 
-DmlNode* CurrentTimeNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* CurrentTimeNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	unsigned precision = DEFAULT_TIME_PRECISION;
 
@@ -3403,7 +3403,7 @@ static RegisterNode<CurrentTimeStampNode> regCurrentTimeStampNode(blr_current_ti
 static RegisterNode<CurrentTimeStampNode> regCurrentTimeStampNode2(blr_current_timestamp2);
 
 DmlNode* CurrentTimeStampNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb,
-	UCHAR blrOp)
+	const UCHAR blrOp)
 {
 	unsigned precision = DEFAULT_TIMESTAMP_PRECISION;
 
@@ -3512,7 +3512,7 @@ dsc* CurrentTimeStampNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 static RegisterNode<CurrentRoleNode> regCurrentRoleNode(blr_current_role);
 
 DmlNode* CurrentRoleNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
-								UCHAR /*blrOp*/)
+								const UCHAR /*blrOp*/)
 {
 	return FB_NEW(pool) CurrentRoleNode(pool);
 }
@@ -3607,7 +3607,7 @@ ValueExprNode* CurrentRoleNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 static RegisterNode<CurrentUserNode> regCurrentUserNode(blr_user_name);
 
 DmlNode* CurrentUserNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
-								UCHAR /*blrOp*/)
+								const UCHAR /*blrOp*/)
 {
 	return FB_NEW(pool) CurrentUserNode(pool);
 }
@@ -3700,7 +3700,7 @@ ValueExprNode* CurrentUserNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 
 static RegisterNode<DecodeNode> regDecodeNode(blr_decode);
 
-DmlNode* DecodeNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* DecodeNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	DecodeNode* node = FB_NEW(pool) DecodeNode(pool);
 	node->test = PAR_parse_value(tdbb, csb);
@@ -3893,7 +3893,7 @@ dsc* DecodeNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<DerivedExprNode> regDerivedExprNode(blr_derived_expr);
 
-DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* DerivedExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	DerivedExprNode* node = FB_NEW(pool) DerivedExprNode(pool);
 
@@ -4140,7 +4140,7 @@ ExtractNode::ExtractNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg)
 	addChildNode(arg, arg);
 }
 
-DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
 
@@ -4511,7 +4511,7 @@ FieldNode::FieldNode(MemoryPool& pool, StreamType stream, USHORT id, bool aById)
 }
 
 // Parse a field.
-DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	const USHORT context = csb->csb_blr_reader.getByte();
 
@@ -5608,26 +5608,31 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 
 
 static RegisterNode<GenIdNode> regGenIdNode(blr_gen_id);
+static RegisterNode<GenIdNode> regGenIdNode2(blr_gen_id2);
 
 GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
 					 const Firebird::MetaName& name,
-					 ValueExprNode* aArg)
+					 ValueExprNode* aArg, bool aImplicit)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>(pool),
 	  dialect1(aDialect1),
 	  generator(pool, name),
 	  arg(aArg),
-	  sysGen(false)
+	  step(0),
+	  sysGen(false),
+	  implicit(aImplicit)
 {
 	addChildNode(arg, arg);
 }
 
-DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	MetaName name;
 	PAR_name(csb, name);
 
+	ValueExprNode* explicitStep = (blrOp == blr_gen_id2) ? NULL : PAR_parse_value(tdbb, csb);
 	GenIdNode* const node =
-		FB_NEW(pool) GenIdNode(pool, (csb->blrVersion == 4), name, PAR_parse_value(tdbb, csb));
+		FB_NEW(pool) GenIdNode(pool, (csb->blrVersion == 4), name, explicitStep,
+								(blrOp == blr_gen_id2));
 
 	// This check seems faster than ==, but assumes the special generator is named ""
 	if (name.length() == 0) //(name == MASTER_GENERATOR)
@@ -5638,7 +5643,7 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 
 		node->generator.id = 0;
 	}
-	else if (!MET_load_generator(tdbb, node->generator, &node->sysGen))
+	else if (!MET_load_generator(tdbb, node->generator, &node->sysGen, &node->step))
 		PAR_error(csb, Arg::Gds(isc_gennotdef) << Arg::Str(name));
 
 	if (csb->csb_g_flags & csb_get_dependencies)
@@ -5660,15 +5665,16 @@ void GenIdNode::print(string& text) const
 ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	GenIdNode* const node = FB_NEW(getPool())
-		GenIdNode(getPool(), dialect1, generator.name, doDsqlPass(dsqlScratch, arg));
+		GenIdNode(getPool(), dialect1, generator.name, doDsqlPass(dsqlScratch, arg), implicit);
 	node->generator = generator;
+	node->step = step;
 	node->sysGen = sysGen;
 	return node;
 }
 
 void GenIdNode::setParameterName(dsql_par* parameter) const
 {
-	parameter->par_name = parameter->par_alias = "GEN_ID";
+	parameter->par_name = parameter->par_alias = (implicit ? "GEN_ID2" : "GEN_ID");
 }
 
 bool GenIdNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
@@ -5679,22 +5685,33 @@ bool GenIdNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 
 void GenIdNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
-	dsqlScratch->appendUChar(blr_gen_id);
-	dsqlScratch->appendNullString(generator.name.c_str());
-	GEN_expr(dsqlScratch, arg);
+	if (implicit)
+	{
+		dsqlScratch->appendUChar(blr_gen_id2);
+		dsqlScratch->appendNullString(generator.name.c_str());
+	}
+	else
+	{
+		dsqlScratch->appendUChar(blr_gen_id);
+		dsqlScratch->appendNullString(generator.name.c_str());
+		GEN_expr(dsqlScratch, arg);
+	}
 }
 
 void GenIdNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
-	dsc desc1;
-	MAKE_desc(dsqlScratch, &desc1, arg);
+	if (!implicit)
+	{
+		dsc desc1;
+		MAKE_desc(dsqlScratch, &desc1, arg);
+	}
 
 	if (dialect1)
 		desc->makeLong(0);
 	else
 		desc->makeInt64(0);
 
-	desc->setNullable(true);
+	desc->setNullable(!implicit); // blr_gen_id2 cannot return NULL
 }
 
 void GenIdNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
@@ -5708,8 +5725,9 @@ void GenIdNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc
 ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	GenIdNode* const node = FB_NEW(*tdbb->getDefaultPool()) GenIdNode(
-		*tdbb->getDefaultPool(), dialect1, generator.name, copier.copy(tdbb, arg));
+		*tdbb->getDefaultPool(), dialect1, generator.name, copier.copy(tdbb, arg), implicit);
 	node->generator = generator;
+	node->step = step;
 	node->sysGen = sysGen;
 	return node;
 }
@@ -5722,7 +5740,10 @@ bool GenIdNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 	const GenIdNode* o = other->as<GenIdNode>();
 	fb_assert(o);
 
-	return dialect1 == o->dialect1 && generator.name == o->generator.name;
+	// I'm not sure if I should include "implicit" in the comparison, but it means different BLR code
+	// and nullable v/s not nullable.
+	return dialect1 == o->dialect1 && generator.name == o->generator.name &&
+		implicit == o->implicit;
 }
 
 bool GenIdNode::sameAs(const ExprNode* other, bool ignoreStreams) const
@@ -5733,7 +5754,10 @@ bool GenIdNode::sameAs(const ExprNode* other, bool ignoreStreams) const
 	const GenIdNode* const otherNode = other->as<GenIdNode>();
 	fb_assert(otherNode);
 
-	return dialect1 == otherNode->dialect1 && generator.id == otherNode->generator.id;
+	// I'm not sure if I should include "implicit" in the comparison, but it means different BLR code
+	// and nullable v/s not nullable.
+	return dialect1 == otherNode->dialect1 && generator.id == otherNode->generator.id &&
+		implicit == otherNode->implicit;
 }
 
 ValueExprNode* GenIdNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -5762,13 +5786,17 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 	request->req_flags &= ~req_null;
 
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
-	const dsc* const value = EVL_expr(tdbb, request, arg);
+	SINT64 change = step;
+	if (!implicit)
+	{
+		const dsc* const value = EVL_expr(tdbb, request, arg);
 
-	if (request->req_flags & req_null)
-		return NULL;
+		if (request->req_flags & req_null)
+			return NULL;
 
-	const SINT64 change = MOV_get_int64(value, 0);
-	if (sysGen && change != 0)
+		change = MOV_get_int64(value, 0);
+	}
+	if (sysGen && change != 0 && generator.id != 9)
 	{
 		if (!request->hasInternalStatement() && !tdbb->getAttachment()->isRWGbak())
 		{
@@ -5812,7 +5840,7 @@ InternalInfoNode::InternalInfoNode(MemoryPool& pool, ValueExprNode* aArg)
 	addChildNode(arg, arg);
 }
 
-DmlNode* InternalInfoNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* InternalInfoNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	InternalInfoNode* node = FB_NEW(pool) InternalInfoNode(pool);
 
@@ -5984,7 +6012,7 @@ LiteralNode::LiteralNode(MemoryPool& pool)
 }
 
 // Parse a literal value.
-DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* LiteralNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	LiteralNode* node = FB_NEW(pool) LiteralNode(pool);
 
@@ -6807,7 +6835,7 @@ NegateNode::NegateNode(MemoryPool& pool, ValueExprNode* aArg)
 	addChildNode(arg, arg);
 }
 
-DmlNode* NegateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* NegateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	NegateNode* node = FB_NEW(pool) NegateNode(pool);
 	node->arg = PAR_parse_value(tdbb, csb);
@@ -7001,7 +7029,7 @@ ValueExprNode* NegateNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 static RegisterNode<NullNode> regNullNode(blr_null);
 
 DmlNode* NullNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* /*csb*/,
-	UCHAR /*blrOp*/)
+	const UCHAR /*blrOp*/)
 {
 	return FB_NEW(pool) NullNode(pool);
 }
@@ -7339,7 +7367,7 @@ ParameterNode::ParameterNode(MemoryPool& pool)
 	addChildNode(argIndicator);
 }
 
-DmlNode* ParameterNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* ParameterNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	MessageNode* message = NULL;
 	USHORT n = csb->csb_blr_reader.getByte();
@@ -7672,7 +7700,7 @@ RecordKeyNode::RecordKeyNode(MemoryPool& pool, UCHAR aBlrOp, const MetaName& aDs
 	addDsqlChildNode(dsqlRelation);
 }
 
-DmlNode* RecordKeyNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* RecordKeyNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	RecordKeyNode* node = FB_NEW(pool) RecordKeyNode(pool, blrOp);
 
@@ -8230,7 +8258,7 @@ void RecordKeyNode::raiseError(dsql_ctx* context) const
 
 static RegisterNode<ScalarNode> regScalarNode1(blr_index);
 
-DmlNode* ScalarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* ScalarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	ScalarNode* node = FB_NEW(pool) ScalarNode(pool);
 	node->field = PAR_parse_value(tdbb, csb);
@@ -8319,7 +8347,7 @@ dsc* ScalarNode::execute(thread_db* tdbb, jrd_req* request) const
 
 static RegisterNode<StmtExprNode> regStmtExprNode(blr_stmt_expr);
 
-DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* StmtExprNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	StmtExprNode* node = FB_NEW(pool) StmtExprNode(pool);
 
@@ -8388,7 +8416,7 @@ StrCaseNode::StrCaseNode(MemoryPool& pool, UCHAR aBlrOp, ValueExprNode* aArg)
 	addChildNode(arg, arg);
 }
 
-DmlNode* StrCaseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* StrCaseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	StrCaseNode* node = FB_NEW(pool) StrCaseNode(pool, blrOp);
 	node->arg = PAR_parse_value(tdbb, csb);
@@ -8579,7 +8607,7 @@ StrLenNode::StrLenNode(MemoryPool& pool, UCHAR aBlrSubOp, ValueExprNode* aArg)
 	addChildNode(arg, arg);
 }
 
-DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	UCHAR blrSubOp = csb->csb_blr_reader.getByte();
 
@@ -8831,7 +8859,7 @@ SubQueryNode::SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDs
 	addChildNode(value2, value2);
 }
 
-DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	// We treat blr_from as blr_via after parse.
 	SubQueryNode* node = FB_NEW(pool) SubQueryNode(pool, (blrOp == blr_from ? blr_via : blrOp));
@@ -9296,7 +9324,7 @@ SubstringNode::SubstringNode(MemoryPool& pool, ValueExprNode* aExpr, ValueExprNo
 }
 
 DmlNode* SubstringNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
-	UCHAR /*blrOp*/)
+	const UCHAR /*blrOp*/)
 {
 	SubstringNode* node = FB_NEW(pool) SubstringNode(pool);
 	node->expr = PAR_parse_value(tdbb, csb);
@@ -9635,7 +9663,7 @@ SubstringSimilarNode::SubstringSimilarNode(MemoryPool& pool, ValueExprNode* aExp
 }
 
 DmlNode* SubstringSimilarNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
-	UCHAR /*blrOp*/)
+	const UCHAR /*blrOp*/)
 {
 	SubstringSimilarNode* node = FB_NEW(pool) SubstringSimilarNode(pool);
 	node->expr = PAR_parse_value(tdbb, csb);
@@ -9867,7 +9895,7 @@ SysFuncCallNode::SysFuncCallNode(MemoryPool& pool, const MetaName& aName, ValueL
 }
 
 DmlNode* SysFuncCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
-	UCHAR /*blrOp*/)
+	const UCHAR /*blrOp*/)
 {
 	MetaName name;
 	const USHORT count = PAR_name(csb, name);
@@ -10059,7 +10087,7 @@ TrimNode::TrimNode(MemoryPool& pool, UCHAR aWhere, ValueExprNode* aValue, ValueE
 	addChildNode(trimChars, trimChars);
 }
 
-DmlNode* TrimNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* TrimNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	UCHAR where = csb->csb_blr_reader.getByte();
 	UCHAR what = csb->csb_blr_reader.getByte();
@@ -10397,7 +10425,7 @@ UdfCallNode::UdfCallNode(MemoryPool& pool, const QualifiedName& aName, ValueList
 }
 
 DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb,
-	UCHAR blrOp)
+	const UCHAR blrOp)
 {
 	const UCHAR* savePos = csb->csb_blr_reader.getPos();
 
@@ -10885,7 +10913,7 @@ ValueIfNode::ValueIfNode(MemoryPool& pool, BoolExprNode* aCondition, ValueExprNo
 	addChildNode(falseValue, falseValue);
 }
 
-DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	ValueIfNode* node = FB_NEW(pool) ValueIfNode(pool);
 	node->condition = PAR_parse_boolean(tdbb, csb);
@@ -11099,7 +11127,7 @@ VariableNode::VariableNode(MemoryPool& pool)
 {
 }
 
-DmlNode* VariableNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* VariableNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	const USHORT n = csb->csb_blr_reader.getWord();
 	vec<DeclareVariableNode*>* vector = csb->csb_variables;

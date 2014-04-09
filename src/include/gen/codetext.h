@@ -920,6 +920,7 @@ static const struct {
 	{"dyn_alter_user_no_clause", 336068891},
 	{"dyn_duplicate_package_item", 336068894},
 	{"dyn_cant_modify_sysobj", 336068895},
+	{"dyn_cant_use_zero_step", 336068896},
 	{"gbak_unknown_switch", 336330753},
 	{"gbak_page_size_missing", 336330754},
 	{"gbak_page_size_toobig", 336330755},

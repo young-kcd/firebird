@@ -101,9 +101,10 @@ void		MET_lookup_cnstrt_for_trigger(Jrd::thread_db*, Firebird::MetaName&, Firebi
 void		MET_lookup_exception(Jrd::thread_db*, SLONG, /* OUT */ Firebird::MetaName&, /* OUT */ Firebird::string*);
 int			MET_lookup_field(Jrd::thread_db*, Jrd::jrd_rel*, const Firebird::MetaName&);
 Jrd::BlobFilter*	MET_lookup_filter(Jrd::thread_db*, SSHORT, SSHORT);
-bool		MET_load_generator(Jrd::thread_db*, Jrd::GeneratorItem&, bool* sysGen = 0);
-SLONG		MET_lookup_generator(Jrd::thread_db*, const Firebird::MetaName&, bool* sysGen = 0);
+bool		MET_load_generator(Jrd::thread_db*, Jrd::GeneratorItem&, bool* sysGen = 0, SLONG* step = 0);
+SLONG		MET_lookup_generator(Jrd::thread_db*, const Firebird::MetaName&, bool* sysGen = 0, SLONG* step = 0);
 bool		MET_lookup_generator_id(Jrd::thread_db*, SLONG, Firebird::MetaName&, bool* sysGen = 0);
+void		MET_update_generator_step(Jrd::thread_db* tdbb, SLONG gen_id, SLONG step);
 void		MET_lookup_index(Jrd::thread_db*, Firebird::MetaName&, const Firebird::MetaName&, USHORT);
 SLONG		MET_lookup_index_name(Jrd::thread_db*, const Firebird::MetaName&, SLONG*, Jrd::IndexStatus* status);
 bool		MET_lookup_partner(Jrd::thread_db*, Jrd::jrd_rel*, struct Jrd::index_desc*, const TEXT*);

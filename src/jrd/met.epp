@@ -2271,7 +2271,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 }
 
 
-bool MET_load_generator(thread_db* tdbb, GeneratorItem& item, bool* sysGen)
+bool MET_load_generator(thread_db* tdbb, GeneratorItem& item, bool* sysGen, SLONG* step)
 {
 /**************************************
  *
@@ -2291,6 +2291,8 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item, bool* sysGen)
 		item.id = 0;
 		if (sysGen)
 			*sysGen = true;
+		if (step)
+			*step = 1;
 		return true;
 	}
 
@@ -2302,7 +2304,10 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item, bool* sysGen)
 		item.id = X.RDB$GENERATOR_ID;
 		item.secName = X.RDB$SECURITY_CLASS;
 		if (sysGen)
-			*sysGen = (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1);
+			*sysGen = (X.RDB$SYSTEM_FLAG == fb_sysflag_system);
+		if (step)
+			*step = X.RDB$GENERATOR_STEP;
+
 		return true;
 	}
 	END_FOR
@@ -2310,7 +2315,7 @@ bool MET_load_generator(thread_db* tdbb, GeneratorItem& item, bool* sysGen)
 	return false;
 }
 
-SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name, bool* sysGen)
+SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name, bool* sysGen, SLONG* step)
 {
 /**************************************
  *
@@ -2329,6 +2334,8 @@ SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name, bool* sysGen)
 	{
 		if (sysGen)
 			*sysGen = true;
+		if (step)
+			*step = 1;
 		return 0;
 	}
 
@@ -2338,7 +2345,9 @@ SLONG MET_lookup_generator(thread_db* tdbb, const MetaName& name, bool* sysGen)
 		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_NAME EQ name.c_str()
 	{
 		if (sysGen)
-			*sysGen = (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1);
+			*sysGen = (X.RDB$SYSTEM_FLAG == fb_sysflag_system);
+		if (step)
+			*step = X.RDB$GENERATOR_STEP;
 
 		return X.RDB$GENERATOR_ID;
 	}
@@ -2367,13 +2376,13 @@ bool MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name, bool
 
 	name = "";
 
-	AutoCacheRequest request (tdbb, irq_r_gen_id_num, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_r_gen_id_num, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
 		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_ID EQ gen_id
 	{
 		if (sysGen)
-			*sysGen = (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == 1);
+			*sysGen = (X.RDB$SYSTEM_FLAG == fb_sysflag_system);
 
 		name = X.RDB$GENERATOR_NAME;
 	}
@@ -2381,6 +2390,38 @@ bool MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name, bool
 
 	return name.length() != 0;
 }
+
+void MET_update_generator_step(thread_db* tdbb, SLONG gen_id, SLONG step)
+{
+/**************************************
+ *
+ *      M E T _ u p d a t e _ g e n e r a t o r _ s t e p
+ *
+ **************************************
+ *
+ * Functional description
+ *      Update the step in a generator searched by ID.
+ *		This function is for legacy code "SET GENERATOR TO value" only!
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Attachment* attachment = tdbb->getAttachment();
+
+	AutoCacheRequest request(tdbb, irq_upd_gen_id_step, IRQ_REQUESTS);
+
+	FOR (REQUEST_HANDLE request)
+		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_ID EQ gen_id
+
+		// We never accept changing the step in sys gens.
+		if (X.RDB$SYSTEM_FLAG == fb_sysflag_system)
+			return;
+
+		MODIFY X
+			X.RDB$GENERATOR_STEP = step;
+		END_MODIFY
+	END_FOR
+}
+
 
 void MET_lookup_index(thread_db* tdbb,
 						MetaName& index_name,

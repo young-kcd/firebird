@@ -37,7 +37,7 @@ public:
 	BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, BoolExprNode* aArg1 = NULL,
 		BoolExprNode* aArg2 = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -72,7 +72,7 @@ public:
 	ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp, ValueExprNode* aArg1 = NULL,
 		ValueExprNode* aArg2 = NULL, ValueExprNode* aArg3 = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -116,7 +116,7 @@ class MissingBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_MISSING_BO
 public:
 	explicit MissingBoolNode(MemoryPool& pool, ValueExprNode* aArg = NULL, bool aDsqlUnknown = false);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -143,7 +143,7 @@ class NotBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_NOT_BOOL>
 public:
 	explicit NotBoolNode(MemoryPool& pool, BoolExprNode* aArg = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -171,7 +171,7 @@ class RseBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_RSE_BOOL>
 public:
 	RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsqlRse = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp);
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual void print(Firebird::string& text) const;
 	virtual BoolExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);

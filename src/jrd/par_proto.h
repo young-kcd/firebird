@@ -77,7 +77,7 @@ Jrd::SortNode*	PAR_sort_internal(Jrd::thread_db*, Jrd::CompilerScratch*, UCHAR b
 SLONG			PAR_symbol_to_gdscode(const Firebird::string&);
 
 typedef Jrd::DmlNode* (*NodeParseFunc)(Jrd::thread_db* tdbb, MemoryPool& pool,
-	Jrd::CompilerScratch* csb, UCHAR blrOp);
+	Jrd::CompilerScratch* csb, const UCHAR blrOp);
 
 Jrd::BoolExprNode* PAR_parse_boolean(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb);
 Jrd::ValueExprNode* PAR_parse_value(Jrd::thread_db* tdbb, Jrd::CompilerScratch* csb);

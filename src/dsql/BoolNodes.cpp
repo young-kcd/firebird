@@ -145,7 +145,7 @@ BinaryBoolNode::BinaryBoolNode(MemoryPool& pool, UCHAR aBlrOp, BoolExprNode* aAr
 	addChildNode(arg2, arg2);
 }
 
-DmlNode* BinaryBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* BinaryBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	BinaryBoolNode* node = FB_NEW(pool) BinaryBoolNode(pool, blrOp);
 	node->arg1 = PAR_parse_boolean(tdbb, csb);
@@ -354,7 +354,7 @@ ComparativeBoolNode::ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp,
 	addChildNode(arg3, arg3);
 }
 
-DmlNode* ComparativeBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* ComparativeBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	ComparativeBoolNode* node = FB_NEW(pool) ComparativeBoolNode(pool, blrOp);
 
@@ -1363,7 +1363,7 @@ MissingBoolNode::MissingBoolNode(MemoryPool& pool, ValueExprNode* aArg, bool aDs
 	addChildNode(arg, arg);
 }
 
-DmlNode* MissingBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* MissingBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	MissingBoolNode* node = FB_NEW(pool) MissingBoolNode(pool);
 	node->arg = PAR_parse_value(tdbb, csb);
@@ -1453,7 +1453,7 @@ NotBoolNode::NotBoolNode(MemoryPool& pool, BoolExprNode* aArg)
 	addChildNode(arg, arg);
 }
 
-DmlNode* NotBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
+DmlNode* NotBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
 {
 	NotBoolNode* node = FB_NEW(pool) NotBoolNode(pool);
 	node->arg = PAR_parse_boolean(tdbb, csb);
@@ -1644,7 +1644,7 @@ RseBoolNode::RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsql
 	addChildNode(dsqlRse, rse);
 }
 
-DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR blrOp)
+DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
 	RseBoolNode* node = FB_NEW(pool) RseBoolNode(pool, blrOp);
 	node->rse = PAR_rse(tdbb, csb);
