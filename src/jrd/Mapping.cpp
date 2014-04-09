@@ -73,10 +73,9 @@ void check(const char* s, IStatus* st)
 {
 	if (st->isSuccess())
 		return;
-	Arg::Gds newStatus(isc_map_load);
-	newStatus << s;
-	newStatus << Arg::StatusVector(st->get());
 
+	Arg::StatusVector newStatus(st->get());
+	newStatus << Arg::Gds(isc_map_load) << s;
 	newStatus.raise();
 }
 
