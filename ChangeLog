@@ -1,3 +1,7 @@
+ 2014-04-08 08:18  hvlad 
+   M src/jrd/req.h
+Avoid issues with not initialized members of record_param.
+
  2014-04-05 18:08  dimitr 
    M src/jrd/dfw.epp
 Simplest solution for CORE-4386: Report more details for "object in use" errors. Also, I've removed the database filename from the error message for security reasons. v3 is going to get a more complete solution.
