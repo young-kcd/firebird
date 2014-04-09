@@ -62,7 +62,6 @@
 #include "../common/classes/GetPlugins.h"
 #include "../common/classes/fb_tls.h"
 #include "../common/classes/InternalMessageBuffer.h"
-//#include "../yvalve/prepa_proto.h"
 #include "../yvalve/utl_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../yvalve/MasterImplementation.h"
@@ -120,6 +119,8 @@ private:
 	void operator delete (void* mem) { MemoryPool::globalFree(mem); }
 
 public:
+	typedef UCharBuffer DataBuffer;
+
 	SQLDAMetadata(const XSQLDA* aSqlda);
 	~SQLDAMetadata() { delete[] offsets; }
 
@@ -142,8 +143,8 @@ public:
 	IMetadataBuilder* FB_CARG getBuilder(IStatus* status);
 	unsigned FB_CARG getMessageLength(IStatus* status);
 
-	void gatherData(Buffer& to);	// Copy data from SQLDA into target buffer.
-	void scatterData(Buffer& from);
+	void gatherData(DataBuffer& to);	// Copy data from SQLDA into target buffer.
+	void scatterData(DataBuffer& from);
 private:
 	void assign(); // copy metadata from sqlda and calculate length and offsets
 
@@ -185,7 +186,7 @@ public:
 	~SQLDAMetadataLauncher() { if (metadata) metadata->detach(); }
 
 	UCHAR* getBuffer(); // Provide empty data buffer with the same live time
-	void gatherData(Buffer& to)
+	void gatherData(SQLDAMetadata::DataBuffer& to)
 	{
 		if (metadata)
 			metadata->gatherData(to);
@@ -197,7 +198,7 @@ private:
 	// Private operator new prevents this class from being allocated in heap, so it can be used only as stack or static variable
 	void* operator new (size_t);
 
-	Buffer buffer;
+	SQLDAMetadata::DataBuffer buffer;
 };
 
 SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda) : offsets(NULL), length(0), speedHackEnabled(false)
@@ -447,7 +448,7 @@ unsigned FB_CARG SQLDAMetadata::getMessageLength(IStatus* status)
 	return length;
 }
 
-void SQLDAMetadata::gatherData(Buffer& to)
+void SQLDAMetadata::gatherData(DataBuffer& to)
 {
 	fb_assert(sqlda); // Ensure that data is gathered before take off because later they can be already changed
 	if (sqlda->sqld <= 0)
@@ -513,7 +514,7 @@ void SQLDAMetadata::gatherData(Buffer& to)
 
 }
 
-void SQLDAMetadata::scatterData(Buffer& from)
+void SQLDAMetadata::scatterData(DataBuffer& from)
 {
 	fb_assert(sqlda);
 	fb_assert(offsets); // Not reliable, but still check that input buffer can come from this metadata
@@ -654,7 +655,7 @@ public:
 
 	RefPtr<ITransaction> transaction;
 	RefPtr<IMessageMetadata> parMetadata;
-	Array<UCHAR> parameters;
+	SQLDAMetadata::DataBuffer parameters;
 	string cursorName;
 	YAttachment* attachment;
 	YStatement* statement;
@@ -2349,7 +2350,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 			return 0;
 		}
 
-		Array<UCHAR> inMsgBuffer;
+		SQLDAMetadata::DataBuffer inMsgBuffer;
 
 		inMessage.gatherData(inMsgBuffer);
 
@@ -2483,7 +2484,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 
-		Array<UCHAR> inMessageBuffer;
+		SQLDAMetadata::DataBuffer inMessageBuffer;
 
 		SQLDAMetadataLauncher inMessage(inSqlda), outMessage(outSqlda);
 

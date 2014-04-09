@@ -30,7 +30,6 @@
 #define FB_COMMON_CLASSES_INTERNAL_MESSAGE_BUFFER
 
 #include "firebird/Provider.h"
-#include "../common/MsgMetadata.h"
 
 namespace Firebird {
 
@@ -45,8 +44,6 @@ public:
 	Firebird::IMessageMetadata* metadata;
 	UCHAR* buffer;
 };
-
-typedef Array<UCHAR> Buffer; // May be it will become a class in the future, but now it is just a plain array
 
 } // namespace Firebird
 

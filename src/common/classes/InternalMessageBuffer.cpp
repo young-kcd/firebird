@@ -31,7 +31,7 @@
 #include "../intl/charsets.h"
 #include "../common/classes/BlrReader.h"
 #include "../common/gdsassert.h"
-#include "../common/StatusHolder.h"
+#include "../common/MsgMetadata.h"
 
 using namespace Firebird;
 
