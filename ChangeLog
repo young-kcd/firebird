@@ -1,3 +1,107 @@
+ 2014-04-09 13:29  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+Restored original error code when database file not found
+
+ 2014-04-09 12:32  alexpeshkoff 
+   M src/common/classes/InternalMessageBuffer.cpp
+   M src/common/classes/InternalMessageBuffer.h
+   M src/yvalve/why.cpp
+Bad name "Buffer" and misc cleanup around
+
+ 2014-04-09 07:38  robocop 
+   M doc/sql.extensions/README.ddl.txt
+Documentation for the generator increment.
+
+ 2014-04-09 07:17  robocop 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/burp/backup.epp
+   M src/burp/restore.epp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/parse.y
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/ids.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/isql/extract.epp
+   M src/isql/show.epp
+   M src/jrd/drq.h
+   M src/jrd/fields.h
+   M src/jrd/ini.epp
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/jrd/vio.cpp
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/keywords.cpp
+Fixing several issues with my previous commit:
+Use increment [by], no step.
+Enable again code in ini.epp because it's needed when restoring (but not when creating gens directly in a new db).
+Gbak has code to fix system generators and we should allow it.
+Nbackup cannot update the history generator when doing a backup.
+Field name renamed to rdb$generator_increment.
+
+ 2014-04-09 02:35  robocop 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+Misc.
+
+ 2014-04-09 02:29  robocop 
+   M src/yvalve/why.cpp
+Misc.
+
+ 2014-04-09 02:28  robocop 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/burp/backup.epp
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/parse.y
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/ids.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/isql/extract.epp
+   M src/isql/show.epp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/jrd/fields.h
+   M src/jrd/ini.epp
+   M src/jrd/irq.h
+   M src/jrd/met.epp
+   M src/jrd/met_proto.h
+   M src/jrd/names.h
+   M src/jrd/par_proto.h
+   M src/jrd/relations.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/gds.cpp
+   M src/yvalve/keywords.cpp
+Implemented STEP for generators/sequences and took the opportunity to make the blrOp param const. Please rebuild the databases.
+
  2014-04-08 16:13  alexpeshkoff 
    M src/common/classes/InternalMessageBuffer.cpp
    M src/common/classes/InternalMessageBuffer.h
