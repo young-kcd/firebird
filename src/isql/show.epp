@@ -4438,8 +4438,7 @@ processing_state SHOW_maps(bool extract, const SCHAR* map_name)
 		}
 	END_FOR
 	ON_ERROR
-		ISQL_errmsg(fbStatus);
-		return ps_ERR;
+		ISQL_errmsg(fbStatus);		// report error but not return error on it
 	END_ERROR;
 
 	return first ? OBJECT_NOT_FOUND : SKIP;

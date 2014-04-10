@@ -774,7 +774,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 					string trusted_role;
 					mapUser(svc_username, trusted_role, NULL, &svc_auth_block, svc_auth_block,
-						NULL, config->getSecurityDatabase());
+						NULL, NULL, config->getSecurityDatabase());
 
 					// to be changed after refsoft special roles patch!!!
 					trusted_role.upper();

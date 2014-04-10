@@ -959,7 +959,7 @@ static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
 static void		strip_quotes(string&);
 static void		purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags = 0);
-static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const RefPtr<Config>*);
+static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*, const RefPtr<Config>*);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -971,7 +971,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 	m_filename(filename),
 	m_options(options)
 {
-	getUserInfo(m_id, *m_options, m_filename, NULL);
+	getUserInfo(m_id, *m_options, m_filename, m_filename, NULL);
 }
 
 
@@ -1288,7 +1288,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, expanded_name.c_str(), &config);
+			getUserInfo(userId, options, org_filename.c_str(), expanded_name.c_str(), &config);
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -2394,7 +2394,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, NULL, &config);
+			getUserInfo(userId, options, NULL, NULL, &config);
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database
@@ -7003,7 +7003,7 @@ static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bo
 
  **/
 static void getUserInfo(UserId& user, const DatabaseOptions& options,
-	const char* dbName, const RefPtr<Config>* config)
+	const char* aliasName, const char* dbName, const RefPtr<Config>* config)
 {
 	bool wheel = false;
 	int id = -1, group = -1;	// CVC: This var contained trash
@@ -7027,7 +7027,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		else if (options.dpb_auth_block.hasData())
 		{
 			mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
-				dbName, config ? (*config)->getSecurityDatabase() : NULL);
+				aliasName, dbName, config ? (*config)->getSecurityDatabase() : NULL);
 			ISC_systemToUtf8(name);
 			ISC_systemToUtf8(trusted_role);
 		}

@@ -229,8 +229,8 @@ public:
 class Cache : public MapHash, public GlobalStorage
 {
 public:
-	explicit Cache(const NoCaseString& db)
-		: name(getPool(), db), dataFlag(false)
+	Cache(const NoCaseString& aliasDb, const NoCaseString& db)
+		: alias(getPool(), aliasDb), name(getPool(), db), dataFlag(false)
 	{ }
 
 	void populate()
@@ -254,9 +254,16 @@ public:
 				MAX_DPB_SIZE, isc_dpb_version1);
 			embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
 				strlen(SYSDBA_USER_NAME));
-			att = prov->attachDatabase(&st, name.c_str(),
+			embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+			att = prov->attachDatabase(&st, alias.c_str(),
 				embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-			check("IProvider::attachDatabase", &st);
+			if (!st.isSuccess())
+			{
+				// missing DB is not a reason to fail mapping at once
+				if (st.get()[1] == isc_io_error)
+					return;
+				check("IProvider::attachDatabase", &st);
+			}
 
 			ClumpletWriter readOnly(ClumpletWriter::Tpb, MAX_DPB_SIZE, isc_tpb_version1);
 			readOnly.insertTag(isc_tpb_read);
@@ -278,7 +285,15 @@ public:
 				"	RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 				"FROM RDB$MAP",
 				3, NULL, NULL, mMap.getMetadata());
-			check("IAttachment::openCursor", &st);
+			// check("IAttachment::openCursor", &st);
+			if (!st.isSuccess())
+			{
+				// errors when opening cursor - soomer of all table RDB$MAP is missing
+				// in non-FB3 security DB
+				tra->release();
+				att->detach(&st);
+				return;
+			}
 
 			while (curs->fetchNext(&st, mMap.getBuffer()))
 			{
@@ -343,6 +358,9 @@ public:
 		const NoCaseString& originalUserName)
 	{
 		MAP_DEBUG(fprintf(stderr, "Key = %s\n", from.makeHashKey().c_str()));
+		if (!dataFlag)
+			return;
+
 		Map* to = lookup(from);
 		if (! to)
 			return;
@@ -454,7 +472,7 @@ public:
 
 public:
 	SyncObject syncObject;
-	NoCaseString name;
+	NoCaseString alias, name;
 	bool dataFlag;
 };
 
@@ -465,16 +483,20 @@ GlobalPtr<Mutex> treeMutex;
 
 void setupIpc();
 
-Cache* locate(const NoCaseString& target, bool flagAdd)
+Cache* locate(const NoCaseString& target)
 {
 	fb_assert(treeMutex->locked());
 	Cache* c;
-	if (!tree().get(target, c))
-	{
-		if (!flagAdd)
-			return NULL;
+	return tree().get(target, c) ? c : NULL;
+}
 
-		c = new Cache(target);
+Cache* locate(const NoCaseString& alias, const NoCaseString& target)
+{
+	fb_assert(treeMutex->locked());
+	Cache* c = locate(target);
+	if (!c)
+	{
+		c = new Cache(alias, target);
 		*(tree().put(target)) = c;
 
 		setupIpc();
@@ -512,7 +534,7 @@ void resetMap(const char* securityDb)
 {
 	MutexLockGuard g(treeMutex, FB_FUNCTION);
 
-	Cache* cache = locate(securityDb, false);
+	Cache* cache = locate(securityDb);
 	if (!cache)
 	{
 		MAP_DEBUG(fprintf(stderr, "Cache not found for %s\n", securityDb));
@@ -793,11 +815,11 @@ namespace Jrd {
 
 void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	AuthReader::AuthBlock* newAuthBlock, const AuthReader::AuthBlock& authBlock,
-	const char* db, const char* securityDb)
+	const char* alias, const char* db, const char* securityAlias)
 {
 	AuthReader::Info info;
 
-	if (!securityDb)
+	if (!securityAlias)
 	{
 		// We are in the error handler - perform minimum processing
 		trusted_role = "";
@@ -817,8 +839,8 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 
 	// expand security database name (db is expected to be expanded)
 	PathName secExpanded;
-	expandDatabaseName(securityDb, secExpanded, NULL);
-	securityDb = secExpanded.c_str();
+	expandDatabaseName(securityAlias, secExpanded, NULL);
+	const char* securityDb = secExpanded.c_str();
 
 	// Create new writer
 	AuthWriter newBlock;
@@ -846,8 +868,8 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 
 			Cache* cDb = NULL;
 			if (db)
-				cDb = locate(db, true);
-			Cache* cSec = locate(securityDb, true);
+				cDb = locate(alias, db);
+			Cache* cSec = locate(securityAlias, securityDb);
 
 			SyncObject dummySync;
 			Sync sDb((!(flags & FLAG_DB)) ? &cDb->syncObject : &dummySync, FB_FUNCTION);
