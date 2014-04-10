@@ -171,6 +171,16 @@ static void set_system_flag(thread_db*, Record*, USHORT);
 static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, const bool, const bool);
 
+
+inline void check_gbak_cheating(thread_db* tdbb, const jrd_rel* relation, const char* op)
+{
+	const ULONG uflags = tdbb->getAttachment()->att_flags;
+	if ((uflags & ATT_gbak_attachment) && !(uflags & ATT_creator))
+		protect_system_table(tdbb, relation, op, true);
+}
+
+
+
 // Pick up relation ids
 #include "../jrd/ini.h"
 
@@ -1316,6 +1326,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	transaction->tra_flags |= TRA_write;
 	jrd_rel* relation = rpb->rpb_relation;
 
+	check_gbak_cheating(tdbb, relation, "DELETE");
+
 	// If we're about to erase a system relation, check to make sure
 	// everything is completely kosher.
 
@@ -2355,6 +2367,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		return;
 	}
 
+	check_gbak_cheating(tdbb, relation, "UPDATE");
+
 	// If we're about to modify a system relation, check to make sure
 	// everything is completely kosher.
 
@@ -2927,6 +2941,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	transaction->tra_flags |= TRA_write;
 	jrd_rel* relation = rpb->rpb_relation;
 	DSC desc, desc2;
+
+	check_gbak_cheating(tdbb, relation, "INSERT");
 
 	if (needDfw(tdbb, transaction))
 	{
