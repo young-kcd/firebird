@@ -4068,7 +4068,7 @@ static processing_state show_generators(const SCHAR* object)
 			found = true;
 			ISC_INT64 val = use64 ? *((ISC_INT64*) &outBuffer[off]) : *((SLONG*) &outBuffer[off]);
 
-			isqlGlob.printf("Generator %s, current value: %" QUADFORMAT "d%",
+			isqlGlob.printf("Generator %s, current value: %" SQUADFORMAT,
 					 GEN.RDB$GENERATOR_NAME, val);
 			if (isqlGlob.major_ods >= ODS_VERSION12)
 			{
@@ -4076,7 +4076,7 @@ static processing_state show_generators(const SCHAR* object)
 					WITH G2.RDB$GENERATOR_NAME = GEN.RDB$GENERATOR_NAME
 
 					ISC_INT64 initval = !G2.RDB$INITIAL_VALUE.NULL ? G2.RDB$INITIAL_VALUE : 0;
-					isqlGlob.printf(", initial value: %" QUADFORMAT "d%, increment: %ld",
+					isqlGlob.printf(", initial value: %" SQUADFORMAT ", increment: %ld",
 						initval, G2.RDB$GENERATOR_INCREMENT);
 
 				END_FOR
