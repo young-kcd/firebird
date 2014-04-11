@@ -1,3 +1,19 @@
+ 2014-04-10 16:43  alexpeshkoff 
+   M src/isql/show.epp
+   M src/jrd/Mapping.cpp
+   M src/jrd/Mapping.h
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+Fixed mapping errors reported by Claudio & Treeve
+
+ 2014-04-10 01:39  robocop 
+   M src/jrd/vio.cpp
+Experimental way of stopping gbak impersonation in sys tables. Gbak only needs to write to sys tables when it's restoring and only in the first attachment. Second and third attachment are for bringing the DB online and setting the R/O flag. Please test.
+
+ 2014-04-10 01:36  robocop 
+   M src/isql/show.epp
+Let's see if this time I got the formatting well done.
+
  2014-04-09 13:29  alexpeshkoff 
    M src/jrd/Mapping.cpp
 Restored original error code when database file not found
