@@ -679,6 +679,7 @@ public:
 	const bool dialect1;
 	GeneratorItem generator;
 	NestConst<ValueExprNode> arg;
+
 private:
 	SLONG step;
 	bool sysGen;

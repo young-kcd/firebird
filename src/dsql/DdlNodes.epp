@@ -9240,7 +9240,7 @@ void MappingNode::validateAdmin()
 		Arg::Gds(isc_alter_role).raise();
 }
 
-// add some item to DLL in "double quotes"
+// add some item to DDL in "double quotes"
 void MappingNode::addItem(string& ddl, const char* text)
 {
 	ddl += '"';
@@ -9482,7 +9482,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 				Check::status(s);
 			}
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			if (savePoint.hasData())
 			{
@@ -9494,10 +9494,9 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 			{
 				const ISC_STATUS* stat2 = s2.get();
 				if (stat2[1] != isc_dsql_token_unk_err)
-				{
 					status_exception::raise(stat2);
-				}
 			}
+
 			throw;
 		}
 
@@ -9622,9 +9621,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 	case MAP_MOD:
 	case MAP_DROP:
 		if (!found)
-		{
 			(Arg::Gds(isc_map_not_exists) << name).raise();
-		}
 		break;
 	}
 

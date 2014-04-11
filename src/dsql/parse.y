@@ -1495,7 +1495,7 @@ start_with
 
 %type <nullableInt32Val> step_option
 step_option
-	: /* nothing */ 			{ $$ = Nullable<SLONG>::empty(); }
+	: /* nothing */ 							{ $$ = Nullable<SLONG>::empty(); }
 	| INCREMENT by_noise signed_long_integer	{ $$ = Nullable<SLONG>::val($3); }
 
 by_noise
@@ -3697,7 +3697,7 @@ alter_role_clause
 	: symbol_role_name alter_role_enable AUTO ADMIN MAPPING
 		{
 			$$ = newNode<MappingNode>(MappingNode::MAP_RPL, "AutoAdminImplementationMapping");
-			$$->op = $2 ? MappingNode::MAP_RPL :  MappingNode::MAP_DROP;
+			$$->op = $2 ? MappingNode::MAP_RPL : MappingNode::MAP_DROP;
 			$$->from = newNode<IntlString>(FB_DOMAIN_ANY_RID_ADMINS);
 			$$->fromType = newNode<MetaName>(FB_PREDEFINED_GROUP);
 			$$->mode = 'P';
@@ -5974,39 +5974,39 @@ user_var_option($node)
 %type <mappingNode> create_map_clause(<boolVal>)
 create_map_clause($global)
 	: map_clause(MappingNode::MAP_ADD)
- 		{
-			$$ = $1;
-			$$->global = $global;
-		}
-	map_to(NOTRIAL($2))
-		{
-			$$ = $2;
-		}
+	 		{
+				$$ = $1;
+				$$->global = $global;
+			}
+		map_to(NOTRIAL($2))
+			{
+				$$ = $2;
+			}
 	;
 
 %type <mappingNode> alter_map_clause(<boolVal>)
 alter_map_clause($global)
 	: map_clause(MappingNode::MAP_MOD)
- 		{
-			$$ = $1;
-		}
-	map_to(NOTRIAL($2))
-		{
-			$$ = $2;
-		}
+	 		{
+				$$ = $1;
+			}
+		map_to(NOTRIAL($2))
+			{
+				$$ = $2;
+			}
 	;
 
 %type <mappingNode> replace_map_clause(<boolVal>)
 replace_map_clause($global)
 	: map_clause(MappingNode::MAP_RPL)
- 		{
-			$$ = $1;
-			$$->global = $global;
-		}
-	map_to(NOTRIAL($2))
-		{
-			$$ = $2;
-		}
+	 		{
+				$$ = $1;
+				$$->global = $global;
+			}
+		map_to(NOTRIAL($2))
+			{
+				$$ = $2;
+			}
 	;
 
 %type <mappingNode> drop_map_clause(<boolVal>)
@@ -6022,14 +6022,14 @@ drop_map_clause($global)
 %type <mappingNode> map_clause(<mappingOp>)
 map_clause($op)
 	: map_name
- 		{
-			$$ = newNode<MappingNode>($op, *$1);
-		}
-	USING map_using(NOTRIAL($2))
-	FROM map_from(NOTRIAL($2))
-		{
-			$$ = $2;
-		}
+ 			{
+				$$ = newNode<MappingNode>($op, *$1);
+			}
+		USING map_using(NOTRIAL($2))
+		FROM map_from(NOTRIAL($2))
+			{
+				$$ = $2;
+			}
 	;
 
 %type <metaNamePtr> map_name
@@ -6055,17 +6055,14 @@ map_from($node)
 %type <metaNamePtr> map_from_symbol_name
 map_from_symbol_name
 	: valid_symbol_name
-	| USER
-		{ $$ = newNode<MetaName>("USER"); }
-	| GROUP
-		{ $$ = newNode<MetaName>("GROUP"); }
+	| USER					{ $$ = newNode<MetaName>("USER"); }
+	| GROUP					{ $$ = newNode<MetaName>("GROUP"); }
 	;
 
 %type <intlStringPtr> map_logoninfo
 map_logoninfo
 	: STRING
-	| valid_symbol_name
-		{ $$ = newNode<IntlString>($1->c_str()); }
+	| valid_symbol_name		{ $$ = newNode<IntlString>($1->c_str()); }
 	;
 
 %type map_using(<mappingNode>)
@@ -6099,10 +6096,8 @@ map_using($node)
 
 %type <metaNamePtr> map_in
 map_in
-	: // nothing
-		{ $$ = NULL; }
-	| KW_IN valid_symbol_name
-		{ $$ = $2; }
+	: /* nothing */				{ $$ = NULL; }
+	| KW_IN valid_symbol_name	{ $$ = $2; }
 	;
 
 %type map_to(<mappingNode>)
@@ -6120,10 +6115,8 @@ map_to($node)
 
 %type <boolVal> map_role
 map_role
-	: ROLE
-		{ $$ = true; }
-	| USER
-		{ $$ = false; }
+	: ROLE		{ $$ = true; }
+	| USER		{ $$ = false; }
 	;
 
 
@@ -6955,7 +6948,7 @@ next_value_expression
 	: NEXT KW_VALUE FOR symbol_generator_name
 		{
 			$$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION),
-				*$4, ((Jrd::ValueExprNode*)0), true);
+				*$4, ((Jrd::ValueExprNode*) NULL), true);
 		}
 	| GEN_ID '(' symbol_generator_name ',' value ')'
 		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), *$3, $5, false); }

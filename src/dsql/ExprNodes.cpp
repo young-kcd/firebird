@@ -5787,6 +5787,7 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 	SINT64 change = step;
+
 	if (!implicit)
 	{
 		const dsc* const value = EVL_expr(tdbb, request, arg);
@@ -5796,12 +5797,11 @@ dsc* GenIdNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		change = MOV_get_int64(value, 0);
 	}
+
 	if (sysGen && change != 0)
 	{
 		if (!request->hasInternalStatement() && !tdbb->getAttachment()->isRWGbak())
-		{
 			status_exception::raise(Arg::Gds(isc_cant_modify_sysobj) << "generator" << generator.name);
-		}
 	}
 
 	const SINT64 new_val = DPM_gen_id(tdbb, generator.id, false, change);
