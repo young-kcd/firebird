@@ -5989,6 +5989,7 @@ alter_map_clause($global)
 	: map_clause(MappingNode::MAP_MOD)
 	 		{
 				$$ = $1;
+				$$->global = $global;
 			}
 		map_to(NOTRIAL($2))
 			{
