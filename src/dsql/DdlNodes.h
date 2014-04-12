@@ -919,7 +919,20 @@ public:
 		  name(pool, aName),
 		  value(aValue),
 		  step(aStep)
-	{}
+	{
+		// Unfortunately, line/column carry no useful information here.
+		// Hence, the check was created directly in parse.y.
+		/*
+		if (!aValue.specified && !aStep.specified)
+		{
+			using namespace Firebird;
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  // Unexpected end of command
+					  Arg::Gds(isc_command_end_err2) << Arg::Num(this->line) <<
+													Arg::Num(this->column));
+		}
+		*/
+	}
 
 	static SSHORT store(thread_db* tdbb, jrd_tra* transaction, const Firebird::MetaName& name,
 		fb_sysflag sysFlag, SINT64 value, SLONG step);

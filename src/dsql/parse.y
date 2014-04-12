@@ -1520,8 +1520,10 @@ replace_sequence_options
 
 %type <createAlterSequenceNode> alter_sequence_clause
 alter_sequence_clause
-	: symbol_generator_name restart_value_opt step_option
+	: symbol_generator_name restart_value_opt2 step_option
 		{
+			if (!$2.specified && !$3.specified)
+				yyerrorIncompleteCmd();
 			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2, $3);
 			node->create = false;
 			node->alter = true;
@@ -1531,10 +1533,16 @@ alter_sequence_clause
 
 %type <nullableInt64Val> restart_value_opt
 restart_value_opt
-	: /* nothing */					{ $$ = Nullable<SINT64>::empty(); }
-	| RESTART						{ $$ = Nullable<SINT64>::empty(); }
+	: RESTART						{ $$ = Nullable<SINT64>::empty(); }
 	| RESTART WITH sequence_value	{ $$ = Nullable<SINT64>::val($3); }
 	;
+
+%type <nullableInt64Val> restart_value_opt2
+restart_value_opt2
+	: /* nothing */			{ $$ = Nullable<SINT64>::empty(); }
+	| restart_value_opt
+	;
+
 
 %type <createAlterSequenceNode> set_generator_clause
 set_generator_clause
@@ -3562,13 +3570,13 @@ alter_op($relationNode)
 			clause->dropDefault = true;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt symbol_column_name RESTART restart_value_opt
+	| col_opt symbol_column_name restart_value_opt
 		{
 			RelationNode::AlterColTypeClause* clause = newNode<RelationNode::AlterColTypeClause>();
 			clause->field = newNode<dsql_fld>();
 			clause->field->fld_name = *$2;
 			clause->identityRestart = true;
-			clause->identityRestartValue = $4;
+			clause->identityRestartValue = $3;
 			$relationNode->clauses.add(clause);
 		}
 	;

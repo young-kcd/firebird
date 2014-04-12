@@ -289,7 +289,7 @@ int Parser::yylex()
 	const TEXT* ptr = lex.ptr;
 	const TEXT* last_token = lex.last_token;
 	const TEXT* line_start = lex.line_start;
-	SLONG lines = lex.lines;
+	const SLONG lines = lex.lines;
 
 	// Lets skip spaces before store lastLine/lastColumn. This is necessary to avoid yyReducePosn
 	// produce invalid line/column information - CORE-4381.
@@ -1112,7 +1112,7 @@ void Parser::yyerror_detailed(const TEXT* /*error_string*/, int yychar, YYSTYPE&
  **************************************/
 	const TEXT* line_start = lex.line_start;
 	SLONG lines = lex.lines;
-	if (lex.last_token < lex.line_start)
+	if (lex.last_token < line_start)
 	{
 		line_start = lex.line_start_bk;
 		lines--;
@@ -1146,6 +1146,16 @@ void Parser::yyerror(const TEXT* error_string)
 	yyerror_detailed(error_string, -1, errt_value, errt_posn);
 }
 
+void Parser::yyerrorIncompleteCmd()
+{
+	const TEXT* line_start = lex.line_start;
+	SLONG lines = lex.lines;
+
+	ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+			  // Unexpected end of command
+			  Arg::Gds(isc_command_end_err2) << Arg::Num(lines) <<
+												Arg::Num(lex.ptr - line_start + 1));
+}
 
 void Parser::check_bound(const char* const to, const char* const string)
 {
