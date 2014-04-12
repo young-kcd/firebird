@@ -1,3 +1,14 @@
+ 2014-04-11 16:59  alexpeshkoff 
+   M src/dsql/parse.y
+Fixed alter global mapping - thanks to Adriano
+
+ 2014-04-11 02:06  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/parse.y
+Misc.
+
  2014-04-10 16:43  alexpeshkoff 
    M src/isql/show.epp
    M src/jrd/Mapping.cpp
