@@ -501,15 +501,8 @@ extern "C" int remove(const char* path);
    is an SINT64 or FB_UINT64. */
 #define QUADFORMAT "I64"
 /* The following macro creates a quad-sized constant, possibly one
-   which is too large to fit in a long int.  The Microsoft compiler does
-   not permit the LL suffix which some other platforms require, but it
-   handles numbers up to the largest 64-bit integer correctly without such
-   a suffix, so the macro definition is trivial. */
-#ifdef __GNUC__ // needed for gcc 3.3.1
+   which is too large to fit in a long int. */
 #define QUADCONST(n) (n##LL)
-#else
-#define QUADCONST(n) (n)
-#endif
 
 #ifdef AMD64
 #define FB_CPU CpuAmd
