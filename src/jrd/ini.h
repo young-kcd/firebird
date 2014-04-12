@@ -32,6 +32,7 @@
 #include "../jrd/obj.h"
 #include "../jrd/dflt.h"
 #include "../jrd/constants.h"
+#include "../jrd/ods.h"
 
 //******************************
 // names.h
@@ -41,9 +42,12 @@
 
 #define NAME(name, id) id,
 
-enum name_ids { nam_MIN,
+enum name_ids
+{
+	nam_MIN,
 #include "../jrd/names.h"
-nam_MAX};
+	nam_MAX
+};
 
 #undef NAME
 
@@ -68,9 +72,11 @@ const USHORT TIMESTAMP_SIZE	= 8;
 
 
 #define FIELD(type, name, dtype, length, sub_type, dflt_blr, nullable)	type,
-enum gflds {
+enum gflds
+{
 #include "../jrd/fields.h"
-gfld_MAX};
+	gfld_MAX
+};
 #undef FIELD
 
 typedef gflds GFLDS;
@@ -97,7 +103,8 @@ struct gfld
 	bool			gfld_nullable;
 };
 
-static const struct gfld gfields[] = {
+static const struct gfld gfields[] =
+{
 #include "../jrd/fields.h"
 	{ 0, 0, dtype_unknown, 0, 0, NULL, 0, false }
 };
@@ -112,9 +119,11 @@ static const struct gfld gfields[] = {
 #define RELATION(name, id, ods, type) id,
 #define FIELD(symbol, name, id, update, ods)
 #define END_RELATION
-enum rids {
+enum rids
+{
 #include "../jrd/relations.h"
-rel_MAX};
+	rel_MAX
+};
 #undef RELATION
 #undef FIELD
 #undef END_RELATION
@@ -156,7 +165,8 @@ static const int relfields[] =
 
 // obtain field types
 
-struct rtyp {
+struct rtyp
+{
 	const TEXT* rtyp_name;
 	SSHORT rtyp_value;
 	int rtyp_field;
@@ -164,7 +174,8 @@ struct rtyp {
 
 #define TYPE(text, type, field)	{ text, type, field },
 
-static const rtyp types[] = {
+static const rtyp types[] =
+{
 #include "../jrd/types.h"
 	{NULL, 0, 0}
 };
