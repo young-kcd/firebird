@@ -219,9 +219,9 @@ bool InternalConnection::cancelExecution()
 }
 
 // this internal connection instance is available for the current execution context if it
-// a) is current conenction and current thread's attachment is equal to
+// a) is current connection and current thread's attachment is equal to
 //	  this attachment, or
-// b) is not current conenction
+// b) is not current connection
 bool InternalConnection::isAvailable(thread_db* tdbb, TraScope /*traScope*/) const
 {
 	return !m_isCurrent ||
