@@ -81,13 +81,13 @@ bool LockedStream::getRecord(thread_db* tdbb) const
 
 	while (m_next->getRecord(tdbb))
 	{
-		// Refetch the record and ensure it still fulfils the search condition
-		while (m_next->refetchRecord(tdbb))
-		{
+		do {
 			// Attempt to lock the record
 			if (m_next->lockRecord(tdbb))
 				return true;	// locked
-		}
+
+			// Refetch the record and ensure it still fulfils the search condition
+		} while (m_next->refetchRecord(tdbb));
 	}
 
 	return false;

@@ -3751,14 +3751,13 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 						   stack, true))
 	{
 		case PREPARE_CONFLICT:
+		case PREPARE_DELETE:
 			org_rpb->rpb_stream_flags |= RPB_s_refetch;
 			return false;
 		case PREPARE_LOCKERR:
 			// We got some kind of locking error (deadlock, timeout or lock_conflict)
 			// Error details should be stuffed into status vector at this point
 			ERR_post(Arg::Gds(isc_concurrent_transaction) << Arg::Num(org_rpb->rpb_transaction_nr));
-		case PREPARE_DELETE:
-			return false;
 	}
 
 	// Old record was restored and re-fetched for write.  Now replace it.
