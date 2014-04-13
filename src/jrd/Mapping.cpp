@@ -329,7 +329,7 @@ public:
 
 			dataFlag = true;
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			if (curs)
 				curs->release();
@@ -715,6 +715,7 @@ private:
 		while (p->flags & MappingHeader::FLAG_ACTIVE)
 		{
 			SLONG value = sharedMemory->eventClear(&p->notifyEvent);
+
 			if (p->flags & MappingHeader::FLAG_DELIVER)
 			{
 				resetMap(sharedMemory->getHeader()->databaseForReset);
@@ -724,6 +725,7 @@ private:
 				}
 				p->flags &= ~MappingHeader::FLAG_DELIVER;
 			}
+
 			if (sharedMemory->eventWait(&p->notifyEvent, value, 0) != FB_SUCCESS)
 			{
 				(Arg::Gds(isc_random) << "Error waiting for notifyEvent in mapping shared memory").raise();
@@ -861,7 +863,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	{
 		AuthReader::Info info;
 
-		for(;;)
+		for (;;)
 		{
 			MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
 			g.enter();
@@ -922,11 +924,13 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		info.plugin = "";
 		info.name = "";
 		info.type = "Seen";
+
 		if (!(flags & FLAG_DB))
 		{
 			info.secDb = db;
 			newBlock.add(info);
 		}
+
 		if (!(flags & FLAG_SEC))
 		{
 			info.secDb = securityDb;
@@ -948,6 +952,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 			(info.secDb == securityDb) ? Found::FND_SEC :
 			//(info.plugin.hasData() && info.secDb.isEmpty()) ? Found::FND_SWIDE :
 			Found::FND_NOTHING;
+
 		if (recordWeight != Found::FND_NOTHING)
 		{
 			if (info.type == NM_USER)
@@ -956,6 +961,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 				fRole.set(recordWeight, info.name, info.plugin);
 		}
 	}
+
 	if (fName.found == Found::FND_NOTHING)
 		(Arg::Gds(isc_sec_context) << db).raise();
 
@@ -1123,7 +1129,7 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		check("IAttachment::detach", &st);
 		att = NULL;
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		if (curs)
 			curs->release();

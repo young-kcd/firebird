@@ -248,7 +248,8 @@ void Service::getOptions(ClumpletReader& spb)
 
 		case isc_spb_command_line:
 			spb.getString(svc_command_line);
-/*			{
+			/***
+			{
 				// HACK: this does not care about the words on allowed places.
 				string cLine = svc_command_line;
 				cLine.upper();
@@ -258,7 +259,8 @@ void Service::getOptions(ClumpletReader& spb)
 					(Arg::Gds(isc_bad_spb_form) << Arg::Gds(isc_no_trusted_spb)).raise();
 				}
 			}
- */			break;
+			***/
+			break;
 
 		case isc_spb_expected_db:
 			spb.getPath(svc_expected_db);
@@ -2767,14 +2769,16 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					string s;
 					spb.getString(s);
 
-					/* // HACK: this does not care about the words on allowed places.
+					/***
+					// HACK: this does not care about the words on allowed places.
 					string cLine = s;
 					cLine.upper();
 					if (cLine.find(TRUSTED_USER_SWITCH) != string::npos ||
 						cLine.find(TRUSTED_ROLE_SWITCH) != string::npos)
 					{
 						(Arg::Gds(isc_bad_spb_form) << Arg::Gds(isc_no_trusted_spb)).raise();
-					} */
+					}
+					***/
 
 					switches += s;
 					switches += ' ';

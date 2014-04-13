@@ -423,12 +423,12 @@ const int DDL_TRIGGER_DROP_MAPPING				= 47;
 // is specified by the client application
 #define USERNAME_SWITCH "USER"
 #define PASSWORD_SWITCH "PASSWORD"
-/*
+/***
 #define TRUSTED_USER_SWITCH "TRUSTED_SVC"
 #define TRUSTED_USER_SWITCH_LEN (sizeof(TRUSTED_USER_SWITCH) - 1)
 #define TRUSTED_ROLE_SWITCH "TRUSTED_ROLE"
 #define TRUSTED_ROLE_SWITCH_LEN (sizeof(TRUSTED_ROLE_SWITCH) - 1)
- */
+***/
 const TraNumber MAX_TRA_NUMBER = ~TraNumber(0);
 
 #endif // JRD_CONSTANTS_H

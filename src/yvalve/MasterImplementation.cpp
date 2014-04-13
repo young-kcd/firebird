@@ -256,7 +256,7 @@ IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsi
 		bld->addRef();
 		return bld;
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 		return NULL;

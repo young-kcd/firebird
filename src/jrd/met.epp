@@ -2388,7 +2388,7 @@ bool MET_lookup_generator_id(thread_db* tdbb, SLONG gen_id, MetaName& name, bool
 	}
 	END_FOR
 
-	return name.length() != 0;
+	return name.hasData();
 }
 
 void MET_update_generator_increment(thread_db* tdbb, SLONG gen_id, SLONG step)

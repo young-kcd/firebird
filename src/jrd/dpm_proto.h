@@ -37,9 +37,8 @@ namespace Jrd
 	class jrd_tra;
 	struct win;
 
-// Store allocation policy types.  Parameter to DPM_store()
-
-//I don't see it stored, but since the first constant was 1, I'm using the same values in the enum.
+	// Store allocation policy types.  Parameter to DPM_store()
+	// I don't see it stored, but since the first constant was 1, I'm using the same values in the enum.
 	enum RecordStorageType
 	{
 		DPM_primary = 1,	// New primary record

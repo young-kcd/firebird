@@ -640,7 +640,8 @@ void NBackup::attach_database()
 
 		if (password.hasData())
 			dpb.insertString(isc_dpb_password, password);
-/*
+
+		/***
 		if (trustedUser.hasData())
 		{
 			uSvc->checkService();
@@ -651,7 +652,8 @@ void NBackup::attach_database()
 		{
 			uSvc->checkService();
 			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-		}*/
+		}
+		***/
 	}
 
 	if (!run_db_triggers)
@@ -1482,7 +1484,8 @@ void nbackup(UtilSvc* uSvc)
 
 		switch (rc->in_sw)
 		{
-/*		case IN_SW_NBK_TRUSTED_USER:
+		/***
+		case IN_SW_NBK_TRUSTED_USER:
 			uSvc->checkService();
 			if (++itr >= argc)
 				missingParameterForSwitch(uSvc, argv[itr - 1]);
@@ -1494,7 +1497,7 @@ void nbackup(UtilSvc* uSvc)
 			uSvc->checkService();
 			trustedRole = true;
 			break;
- */
+		***/
 		case IN_SW_NBK_USER_NAME:
 			if (++itr >= argc)
 				missingParameterForSwitch(uSvc, argv[itr - 1]);

@@ -47,8 +47,7 @@ namespace Jrd
 	struct FieldInfo;
 	class ExceptionItem;
 
-// index status
-
+	// index status
 	enum IndexStatus
 	{
 		MET_object_active,

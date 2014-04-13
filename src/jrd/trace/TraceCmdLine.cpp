@@ -355,7 +355,8 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 			adminRole = true;
 			break;
-/*
+
+		/***
 		case IN_SW_TRACE_TRUSTED_USER:
 			if (!uSvc->isService())
 				usage(uSvc, isc_trace_switch_svc_only, sw->in_sw_name);
@@ -376,7 +377,8 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 
 			adminRole = true;
 			break;
- */
+		***/
+
 		case IN_SW_TRACE_SERVICE_NAME:
 			if (uSvc->isService())
 				continue;
@@ -438,13 +440,12 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 			pwd = "";
 			user = info.name.ToString();
 			adminRole = false;
+
 			if (!info.secDb.hasData())
 			{
 				auth.moveNext();
 				if (auth.getInfo(info))
-				{
 					adminRole = true;
-				}
 			}
 		}
 	}

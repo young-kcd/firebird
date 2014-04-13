@@ -7027,7 +7027,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		else if (options.dpb_auth_block.hasData())
 		{
 			mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
-				aliasName, dbName, config ? (*config)->getSecurityDatabase() : NULL);
+				aliasName, dbName, (config ? (*config)->getSecurityDatabase() : NULL));
 			ISC_systemToUtf8(name);
 			ISC_systemToUtf8(trusted_role);
 		}

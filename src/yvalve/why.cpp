@@ -145,11 +145,13 @@ public:
 
 	void gatherData(DataBuffer& to);	// Copy data from SQLDA into target buffer.
 	void scatterData(DataBuffer& from);
+
 private:
 	void assign(); // copy metadata from sqlda and calculate length and offsets
 
 	const XSQLDA* sqlda;
 	unsigned count;
+
 	// Internal structure to copy metadata from sqlda
 	struct OffsetItem
 	{
@@ -161,6 +163,7 @@ private:
 		unsigned offset;
 		unsigned indOffset;
 	} *offsets;
+
 	unsigned length;
 	bool speedHackEnabled; // May be user by stupid luck use right buffer format even with SQLDA interface?..
 };
@@ -183,9 +186,15 @@ public:
 			metadata->addRef();
 		}
 	}
-	~SQLDAMetadataLauncher() { if (metadata) metadata->detach(); }
+
+	~SQLDAMetadataLauncher()
+	{
+		if (metadata)
+			metadata->detach();
+	}
 
 	UCHAR* getBuffer(); // Provide empty data buffer with the same live time
+
 	void gatherData(SQLDAMetadata::DataBuffer& to)
 	{
 		if (metadata)
@@ -193,7 +202,13 @@ public:
 		else
 			to.clear();
 	}
- 	void scatterData() { if (metadata) metadata->scatterData(buffer); }
+
+ 	void scatterData()
+	{
+		if (metadata)
+			metadata->scatterData(buffer);
+	}
+
 private:
 	// Private operator new prevents this class from being allocated in heap, so it can be used only as stack or static variable
 	void* operator new (size_t);
@@ -249,7 +264,7 @@ const char* FB_CARG SQLDAMetadata::getOwner(IStatus* status, unsigned index)
 {
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		return sqlda->sqlvar[index].ownname;
 	}
 
@@ -260,7 +275,7 @@ const char* FB_CARG SQLDAMetadata::getAlias(IStatus* status, unsigned index)
 {
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		return sqlda->sqlvar[index].aliasname;
 	}
 
@@ -276,9 +291,10 @@ unsigned FB_CARG SQLDAMetadata::getType(IStatus* status, unsigned index)
 	}
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		return sqlda->sqlvar[index].sqltype & ~1;
 	}
+
 	fb_assert(false);
 	return 0;
 }
@@ -292,9 +308,10 @@ FB_BOOLEAN FB_CARG SQLDAMetadata::isNullable(IStatus* status, unsigned index)
 	}
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		return sqlda->sqlvar[index].sqltype & 1;
 	}
+
 	fb_assert(false);
 	return FB_FALSE;
 }
@@ -308,12 +325,13 @@ int FB_CARG SQLDAMetadata::getSubType(IStatus* status, unsigned index)
 	}
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		ISC_SHORT sqltype = sqlda->sqlvar[index].sqltype & ~1;
 		if (sqltype == SQL_VARYING || sqltype == SQL_TEXT)
 			return 0;
 		return sqlda->sqlvar[index].sqlsubtype;
 	}
+
 	fb_assert(false);
 	return 0;
 }
@@ -327,9 +345,10 @@ unsigned FB_CARG SQLDAMetadata::getLength(IStatus* status, unsigned index)
 	}
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		return sqlda->sqlvar[index].sqllen;
 	}
+
 	fb_assert(false);
 	return 0;
 }
@@ -343,11 +362,12 @@ int FB_CARG SQLDAMetadata::getScale(IStatus* status, unsigned index)
 	}
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		if ((sqlda->sqlvar[index].sqltype & ~1) == SQL_BLOB)
 			return 0;
 		return sqlda->sqlvar[index].sqlscale;
 	}
+
 	fb_assert(false);
 	return 0;
 }
@@ -361,7 +381,7 @@ unsigned FB_CARG SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
 	}
 	if (sqlda)
 	{
-		fb_assert(sqlda->sqld > (int)index);
+		fb_assert(sqlda->sqld > (int) index);
 		switch (sqlda->sqlvar[index].sqltype & ~1)
 		{
 		case SQL_TEXT:
@@ -373,6 +393,7 @@ unsigned FB_CARG SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
 			return 0;
 		}
 	}
+
 	fb_assert(false);
 	return 0;
 }
@@ -406,7 +427,7 @@ void SQLDAMetadata::assign()
 
 	count = (USHORT)sqlda->sqld;
 	speedHackEnabled = true; // May be we are lucky...
-	ISC_SCHAR* const Base = sqlda->sqlvar[0].sqldata;
+	ISC_SCHAR* const base = sqlda->sqlvar[0].sqldata;
 
 	offsets = new OffsetItem[count];
 	for (unsigned i = 0; i < count; i++)
@@ -436,7 +457,7 @@ void SQLDAMetadata::assign()
 		// because changing of it on current codebase will completely kill remote module and may be the engine as well
 		length = fb_utils::sqlTypeToDsc(length, var.sqltype, var.sqllen,
 			NULL /*dtype*/, NULL /*length*/, &it.offset, &it.indOffset);
-		if (it.offset != var.sqldata - Base || it.indOffset != (ISC_SCHAR*)(var.sqlind) - Base)
+		if (it.offset != var.sqldata - base || it.indOffset != (ISC_SCHAR*)(var.sqlind) - Base)
 			speedHackEnabled = false; // No luck
 	}
 }
@@ -509,9 +530,6 @@ void SQLDAMetadata::gatherData(DataBuffer& to)
 		if (!*nullInd)
 			memcpy(data, var.sqldata, len);
 	}
-
-
-
 }
 
 void SQLDAMetadata::scatterData(DataBuffer& from)
@@ -1360,8 +1378,7 @@ namespace {
 		// Transaction is not optional for statement returning result set
 		RefPtr<YTransaction> transaction = translateHandle(transactions, traHandle);;
 
-		statement->openCursor(status, transaction,
-			inMetadata, buffer, outMetadata);
+		statement->openCursor(status, transaction, inMetadata, buffer, outMetadata);
 
 		if (!status->isSuccess())
 			return;
@@ -1409,7 +1426,8 @@ namespace {
 	}
 
 	void IscStatement::execute(IStatus* status, FB_API_HANDLE* traHandle,
-				 IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata, UCHAR* outBuffer)
+				IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata,
+				UCHAR* outBuffer)
 	{
 		checkCursorClosed();
 
@@ -2361,8 +2379,6 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		if (status.isSuccess())
 			outMessage.scatterData();
-
-
 	}
 	catch (const Exception& e)
 	{
@@ -2634,9 +2650,11 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 				Arg::Gds(isc_dsql_cursor_open_err)).raise();
 		}
 
-		if (!statement->fetch(&status, msgBuffer.metadata, reinterpret_cast<UCHAR*>(msg)) && status.isSuccess())
+		if (!statement->fetch(&status, msgBuffer.metadata, reinterpret_cast<UCHAR*>(msg)) &&
+			status.isSuccess())
+		{
 			return 100;
-
+		}
 	}
 	catch (const Exception& e)
 	{

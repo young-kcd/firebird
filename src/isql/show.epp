@@ -4398,10 +4398,10 @@ processing_state SHOW_maps(bool extract, const SCHAR* map_name)
 			first = false;
 
 			printMap(extract, false, M.RDB$MAP_NAME, M.RDB$MAP_USING,
-				M.RDB$MAP_PLUGIN.NULL ? NULL : M.RDB$MAP_PLUGIN,
-				M.RDB$MAP_DB.NULL ? NULL : M.RDB$MAP_DB,
+				(M.RDB$MAP_PLUGIN.NULL ? NULL : M.RDB$MAP_PLUGIN),
+				(M.RDB$MAP_DB.NULL ? NULL : M.RDB$MAP_DB),
 				M.RDB$MAP_FROM_TYPE, M.RDB$MAP_FROM,
-				M.RDB$MAP_TO_TYPE, M.RDB$MAP_TO.NULL ? NULL : M.RDB$MAP_TO);
+				M.RDB$MAP_TO_TYPE, (M.RDB$MAP_TO.NULL ? NULL : M.RDB$MAP_TO));
 		}
 	END_FOR
 	ON_ERROR
@@ -4431,10 +4431,10 @@ processing_state SHOW_maps(bool extract, const SCHAR* map_name)
 			first = false;
 
 			printMap(extract, true, M.SEC$MAP_NAME, M.SEC$MAP_USING,
-				M.SEC$MAP_PLUGIN.NULL ? NULL : M.SEC$MAP_PLUGIN,
-				M.SEC$MAP_DB.NULL ? NULL : M.SEC$MAP_DB,
+				(M.SEC$MAP_PLUGIN.NULL ? NULL : M.SEC$MAP_PLUGIN),
+				(M.SEC$MAP_DB.NULL ? NULL : M.SEC$MAP_DB),
 				M.SEC$MAP_FROM_TYPE, M.SEC$MAP_FROM,
-				M.SEC$MAP_TO_TYPE, M.SEC$MAP_TO.NULL ? NULL : M.SEC$MAP_TO);
+				M.SEC$MAP_TO_TYPE, (M.SEC$MAP_TO.NULL ? NULL : M.SEC$MAP_TO));
 		}
 	END_FOR
 	ON_ERROR
