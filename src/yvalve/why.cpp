@@ -457,7 +457,7 @@ void SQLDAMetadata::assign()
 		// because changing of it on current codebase will completely kill remote module and may be the engine as well
 		length = fb_utils::sqlTypeToDsc(length, var.sqltype, var.sqllen,
 			NULL /*dtype*/, NULL /*length*/, &it.offset, &it.indOffset);
-		if (it.offset != var.sqldata - base || it.indOffset != (ISC_SCHAR*)(var.sqlind) - Base)
+		if (it.offset != var.sqldata - base || it.indOffset != (ISC_SCHAR*)(var.sqlind) - base)
 			speedHackEnabled = false; // No luck
 	}
 }
