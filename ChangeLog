@@ -1,3 +1,19 @@
+ 2014-04-12 06:35  robocop 
+   M src/dsql/DdlNodes.h
+   M src/dsql/Parser.cpp
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+I hope I fixed the issues noted by Adriano about my generators commit.
+
+ 2014-04-12 06:31  robocop 
+   M src/common/common.h
+Simplify QUADCONST definition for Windows.
+
+ 2014-04-12 06:30  robocop 
+   M src/jrd/ini.h
+   M src/jrd/types.h
+Use symbolic constants.
+
  2014-04-11 16:59  alexpeshkoff 
    M src/dsql/parse.y
 Fixed alter global mapping - thanks to Adriano
