@@ -762,18 +762,24 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 
 	// Take out lock on attachment id
 
+	const lock_ast_t ast =
+		(attachment->att_flags & ATT_system) ? NULL : blocking_ast_shutdown_attachment;
+
 	Lock* lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
-		Lock(tdbb, sizeof(SLONG), LCK_attachment, attachment, blocking_ast_shutdown_attachment);
+		Lock(tdbb, sizeof(SLONG), LCK_attachment, attachment, ast);
 	attachment->att_id_lock = lock;
 	lock->lck_key.lck_long = attachment->att_attachment_id;
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
-	// Allocate the cancellation lock
+	// Unless we're a system attachment, allocate the cancellation lock
 
-	lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
-		Lock(tdbb, sizeof(SLONG), LCK_cancel, attachment, blocking_ast_cancel_attachment);
-	attachment->att_cancel_lock = lock;
-	lock->lck_key.lck_long = attachment->att_attachment_id;
+	if (!(attachment->att_flags & ATT_system))
+	{
+		lock = FB_NEW_RPT(*attachment->att_pool, sizeof(SLONG))
+			Lock(tdbb, sizeof(SLONG), LCK_cancel, attachment, blocking_ast_cancel_attachment);
+		attachment->att_cancel_lock = lock;
+		lock->lck_key.lck_long = attachment->att_attachment_id;
+	}
 
 	return attachment->att_attachment_id;
 }

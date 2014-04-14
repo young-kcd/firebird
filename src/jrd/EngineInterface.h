@@ -403,10 +403,7 @@ private:
 class SysAttachment FB_FINAL : public JAttachment
 {
 public:
-	explicit SysAttachment(Attachment* handle)
-		: JAttachment(handle)
-	{
-	}
+	explicit SysAttachment(Attachment* handle);
 
 	void initDone();
 

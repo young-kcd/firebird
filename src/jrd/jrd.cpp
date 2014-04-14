@@ -1445,7 +1445,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				// initialize shadowing as soon as the database is ready for it
 				// but before any real work is done
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
-				CCH_init2(tdbb);
 
 				// linger
 				dbb->dbb_linger_seconds = MET_get_linger(tdbb);
@@ -1754,8 +1753,11 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
 			}
 
-			PAG_attachment_id(tdbb);
+			CCH_init2(tdbb);
 			VIO_init(tdbb);
+
+			PAG_attachment_id(tdbb);
+
 			CCH_release_exclusive(tdbb);
 
 			initGuard.leave();
@@ -2652,6 +2654,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			// but before any real work is done
 
 			SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
+
 			CCH_init2(tdbb);
 			VIO_init(tdbb);
 
@@ -4309,13 +4312,19 @@ void JRequest::unwind(IStatus* user_status, int level)
 }
 
 
+SysAttachment::SysAttachment(Attachment* handle)
+	: JAttachment(handle)
+{
+	handle->att_flags |= ATT_system;
+}
+
+
 void SysAttachment::initDone()
 {
 	Jrd::Attachment* attachment = getHandle();
 	Database* dbb = attachment->att_database;
 	SyncLockGuard guard(&dbb->dbb_sys_attach, SYNC_EXCLUSIVE, "SysAttachment::initDone");
 
-	attachment->att_flags |= ATT_system;
 	attachment->att_next = dbb->dbb_sys_attachments;
 	dbb->dbb_sys_attachments = attachment;
 }
