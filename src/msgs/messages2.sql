@@ -847,7 +847,7 @@ Data source : @4', NULL, NULL)
 ('include_miss', NULL, 'config_file.cpp', NULL, 0, 737, NULL, 'File to include not found', NULL, NULL);
 ('protect_ownership', 'check_owner', 'vio.cpp', NULL, 0, 738, NULL, 'Only the owner can change the ownership', NULL, NULL);
 ('badvarnum', NULL, NULL, NULL, 0, 739, NULL, 'undefined variable number', NULL, NULL);
-('sec_context', 'getUserInfo', 'jrd.cpp', NULL, 0, 740, NULL, 'Missing security context for database @1', NULL, NULL);
+('sec_context', 'getUserInfo', 'jrd.cpp', NULL, 0, 740, NULL, 'Missing security context for @1', NULL, NULL);
 ('multi_segment', 'getMultiPartConnectParameter', 'server.cpp', NULL, 0, 741, NULL, 'Missing segment @1 in multisegment connect block parameter', NULL, NULL);
 ('login_changed', 'ServerAuth::ServerAuth', 'server.cpp', NULL, 0, 742, NULL, 'Different logins in connect and attach packets - client library error', NULL, NULL);
 ('auth_handshake_limit', 'ServerAuth::authenticate', 'server.cpp', NULL, 0, 743, NULL, 'Exceeded exchange limit during authentication handshake', NULL, NULL);

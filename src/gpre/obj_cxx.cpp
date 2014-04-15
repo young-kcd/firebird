@@ -2755,7 +2755,6 @@ static void gen_receive( const act* action, int column, const gpre_port* port)
 
 static void gen_release( const act* action, int column)
 {
-	ObjectNotImplemented();
 	const gpre_dbb* exp_db = (gpre_dbb*) action->act_object;
 
 	for (const gpre_req* request = gpreGlob.requests; request; request = request->req_next)
@@ -2766,8 +2765,8 @@ static void gen_release( const act* action, int column)
 		if (db && request->req_handle && !(request->req_flags & REQ_exp_hand))
 		{
 			printa(column, "if (%s && %s)", db->dbb_name->sym_string, request->req_handle);
-			printa(column + INDENT, "isc_release_request (%s, &%s);",
-				   global_status_name, request->req_handle);
+			printa(column + INDENT, "%s->free(%s);",
+				   request->req_handle, global_status_name);
 			printa(column, "%s = 0;", request->req_handle);
 		}
 	}

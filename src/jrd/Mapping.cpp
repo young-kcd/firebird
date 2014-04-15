@@ -233,37 +233,31 @@ public:
 		: alias(getPool(), aliasDb), name(getPool(), db), dataFlag(false)
 	{ }
 
-	void populate()
+	void populate(IAttachment *att)
 	{
-		if (dataFlag)
-			return;
+		LocalStatus st;
 
-		cleanup(eraseEntry);
+		if (dataFlag)
+		{
+			if (att)
+				att->detach(&st);
+			return;
+		}
+
+		if (!att)
+		{
+			dataFlag = true;
+			return;
+		}
 
 		MAP_DEBUG(fprintf(stderr, "Populate cache for %s\n", name.c_str()));
 
-		LocalStatus st;
-		DispatcherPtr prov;
-		IAttachment* att = NULL;
 		ITransaction* tra = NULL;
 		IResultSet* curs = NULL;
 
 		try
 		{
-			ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
-				MAX_DPB_SIZE, isc_dpb_version1);
-			embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
-				strlen(SYSDBA_USER_NAME));
-			embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
-			att = prov->attachDatabase(&st, alias.c_str(),
-				embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-			if (!st.isSuccess())
-			{
-				// missing DB is not a reason to fail mapping at once
-				if (st.get()[1] == isc_io_error)
-					return;
-				check("IProvider::attachDatabase", &st);
-			}
+			cleanup(eraseEntry);
 
 			ClumpletWriter readOnly(ClumpletWriter::Tpb, MAX_DPB_SIZE, isc_tpb_version1);
 			readOnly.insertTag(isc_tpb_read);
@@ -288,10 +282,11 @@ public:
 			// check("IAttachment::openCursor", &st);
 			if (!st.isSuccess())
 			{
-				// errors when opening cursor - soomer of all table RDB$MAP is missing
+				// errors when opening cursor - sooner of all table RDB$MAP is missing
 				// in non-FB3 security DB
 				tra->release();
 				att->detach(&st);
+				dataFlag = true;
 				return;
 			}
 
@@ -839,7 +834,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		return;
 	}
 
-	// expand security database name (db is expected to be expanded)
+	// expand security database name (db is expected to be expanded, alias - original)
 	PathName secExpanded;
 	expandDatabaseName(securityAlias, secExpanded, NULL);
 	const char* securityDb = secExpanded.c_str();
@@ -862,9 +857,54 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	if (flags != (FLAG_DB | FLAG_SEC))
 	{
 		AuthReader::Info info;
+		SyncType syncType = SYNC_SHARED;
+		IAttachment* iDb = NULL;
+		IAttachment* iSec = NULL;
 
 		for (;;)
 		{
+			if (syncType == SYNC_EXCLUSIVE)
+			{
+				LocalStatus st;
+				DispatcherPtr prov;
+
+				ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
+					MAX_DPB_SIZE, isc_dpb_version1);
+				embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
+					strlen(SYSDBA_USER_NAME));
+				embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+
+				if (!iSec)
+				{
+					iSec = prov->attachDatabase(&st, securityAlias,
+						embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+					if (!st.isSuccess())
+					{
+						// missing security DB is not a reason to fail mapping
+						// do not check error code here - it may be something else for non-native provider
+						iSec = NULL;
+					}
+				}
+
+				if (db && !iDb)
+				{
+					const char* conf = "Providers=" CURRENT_ENGINE;
+					embeddedSysdba.insertString(isc_dpb_config, conf, strlen(conf));
+
+					if (!iDb)
+						iDb = prov->attachDatabase(&st, alias,
+							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+					if (!st.isSuccess())
+					{
+						// missing DB is not a reason to fail mapping
+						if (st.get()[1] != isc_io_error)
+							check("IProvider::attachDatabase", &st);
+						iDb = NULL;
+					}
+				}
+			}
+
+
 			MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
 			g.enter();
 
@@ -877,25 +917,41 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 			Sync sDb((!(flags & FLAG_DB)) ? &cDb->syncObject : &dummySync, FB_FUNCTION);
 			Sync sSec((!(flags & FLAG_SEC)) ? &cSec->syncObject : &dummySync, FB_FUNCTION);
 
-			sSec.lock(SYNC_SHARED);
-			if (!sDb.lockConditional(SYNC_SHARED))
+			sSec.lock(syncType);
+			if (!sDb.lockConditional(syncType))
 			{
 				// Avoid deadlocks cause hell knows which db is security for which
 				sSec.unlock();
 				// Now safely wait for sSec
-				sDb.lock(SYNC_SHARED);
+				sDb.lock(syncType);
 				// and repeat whole operation
 				continue;
 			}
 
-			// Check is it required to populate caches from DB
-			if (cDb)
-				cDb->populate();
-			cSec->populate();
-
-			// Required cache(s) are locked for read - release treeMutex
+			// Required cache(s) are locked somehow - release treeMutex
 			g.leave();
 
+			// Check is it required to populate caches from DB
+			if ((cDb && !cDb->dataFlag) || !cSec->dataFlag)
+			{
+				if (syncType != SYNC_EXCLUSIVE)
+				{
+					syncType = SYNC_EXCLUSIVE;
+					sSec.unlock();
+					sDb.unlock();
+
+					continue;
+				}
+
+				if (cDb)
+					cDb->populate(iDb);
+				cSec->populate(iSec);
+
+				sSec.downgrade(SYNC_SHARED);
+				sDb.downgrade(SYNC_SHARED);
+			}
+
+			// Caches are ready somehow - proceed with analysis
 			AuthReader auth(authBlock);
 
 			// Map in simple mode first main, next security db
@@ -963,7 +1019,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	}
 
 	if (fName.found == Found::FND_NOTHING)
-		(Arg::Gds(isc_sec_context) << db).raise();
+		(Arg::Gds(isc_sec_context) << alias).raise();
 
 	name = fName.value.ToString();
 	trusted_role = fRole.value.ToString();

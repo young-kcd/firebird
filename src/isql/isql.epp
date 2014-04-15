@@ -4251,6 +4251,8 @@ static processing_state drop_db()
  **************************************/
 	if (DB && isqlGlob.global_Db_name[0])
 	{
+		RELEASE_REQUESTS FOR DB;
+
 		DB->dropDatabase(fbStatus);
 		if (ISQL_errmsg(fbStatus))
 		{

@@ -764,7 +764,7 @@ Data source : @4"},		/* eds_statement */
 	{335545057, "File to include not found"},		/* include_miss */
 	{335545058, "Only the owner can change the ownership"},		/* protect_ownership */
 	{335545059, "undefined variable number"},		/* badvarnum */
-	{335545060, "Missing security context for database @1"},		/* sec_context */
+	{335545060, "Missing security context for @1"},		/* sec_context */
 	{335545061, "Missing segment @1 in multisegment connect block parameter"},		/* multi_segment */
 	{335545062, "Different logins in connect and attach packets - client library error"},		/* login_changed */
 	{335545063, "Exceeded exchange limit during authentication handshake"},		/* auth_handshake_limit */

@@ -971,7 +971,7 @@ TraceFailedConnection::TraceFailedConnection(const char* filename, const Databas
 	m_filename(filename),
 	m_options(options)
 {
-	getUserInfo(m_id, *m_options, m_filename, m_filename, NULL);
+	getUserInfo(m_id, *m_options, m_filename, NULL, NULL);
 }
 
 
@@ -2396,7 +2396,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			}
 
 			// Check for correct credentials supplied
-			getUserInfo(userId, options, NULL, NULL, &config);
+			getUserInfo(userId, options, org_filename.c_str(), NULL, &config);
 
 #ifdef WIN_NT
 			guardDbInit.enter();		// Required to correctly expand name of just created database
