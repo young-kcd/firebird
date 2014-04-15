@@ -1,3 +1,14 @@
+ 2014-04-14 15:46  asfernandes 
+   M src/isql/show.epp
+Correction.
+
+ 2014-04-14 15:27  dimitr 
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/jrd/pag.cpp
+1) Prevent shutdown/cancellation for system attachments.
+2) Fixed incorrect generation of attachment IDs causing a hangup during gfix -mode read_only.
+
  2014-04-13 10:58  dimitr 
    M src/jrd/extds/InternalDS.cpp
 Misc.
