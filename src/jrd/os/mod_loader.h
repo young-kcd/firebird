@@ -69,6 +69,10 @@ public:
 
 		/// Destructor
 		virtual ~Module() {}
+
+#ifdef WIN_NT
+		virtual bool getModuleFileName(Firebird::PathName&) = 0;
+#endif
 	protected:
 		/// The constructor is protected so normal code can't allocate instances
 		/// of the class, but the class itself is still able to be subclassed.

@@ -151,6 +151,7 @@ public:
 	Win32Module(HMODULE m) : module(m) {}
 	~Win32Module();
 	void *findSymbol(const string&);
+	bool getModuleFileName(PathName&);
 
 private:
 	const HMODULE module;
@@ -212,4 +213,17 @@ void *Win32Module::findSymbol(const Firebird::string& symName)
 		result = GetProcAddress(module, newSym.c_str());
 	}
 	return (void*) result;
+}
+
+bool Win32Module::getModuleFileName(Firebird::PathName& fileName)
+{
+	if (!module)
+		return false;
+
+	char* ptr = fileName.getBuffer(MAX_PATH);
+	const DWORD len = GetModuleFileName(module, ptr, MAX_PATH);
+	if (!len)
+		return false;
+
+	fileName.resize(len);
 }

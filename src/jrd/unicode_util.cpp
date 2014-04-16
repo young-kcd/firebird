@@ -31,6 +31,7 @@
 #include "../jrd/CharSet.h"
 #include "../jrd/IntlUtil.h"
 #include "../jrd/gdsassert.h"
+#include "../jrd/os/path_utils.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/init.h"
@@ -63,6 +64,7 @@ const char* const UnicodeUtil::DEFAULT_ICU_VERSION =
 static void formatFilename(PathName& filename, const char* templateName,
 	int majorVersion, int minorVersion);
 
+static ModuleLoader::Module* tryLoadIcuModule(const PathName& filename);
 
 // encapsulate ICU collations libraries
 struct UnicodeUtil::ICU
@@ -265,6 +267,21 @@ static void getVersions(const string& configInfo, ObjectsArray<string>& versions
 	if ((n = versionsStr.find_first_not_of(' ', start)) != versionsStr.npos)
 		start = n;
 	versions.add(versionsStr.substr(start));
+}
+
+
+static ModuleLoader::Module* tryLoadIcuModule(const PathName& filename)
+{
+	ModuleLoader::Module* module = ModuleLoader::loadModule(filename);
+
+	if (!module)
+	{
+		PathName name(filename);
+		ModuleLoader::doctorModuleExtention(name);
+		module = ModuleLoader::loadModule(name);
+	}
+
+	return module;
 }
 
 
@@ -880,12 +897,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 
 		icu = FB_NEW(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
 
-		icu->ucModule = ModuleLoader::loadModule(filename);
-		if (!icu->ucModule)
-		{
-			ModuleLoader::doctorModuleExtention(filename);
-			icu->ucModule = ModuleLoader::loadModule(filename);
-		}
+		icu->ucModule = tryLoadIcuModule(filename);
 
 		if (!icu->ucModule)
 		{
@@ -894,13 +906,24 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const Firebird::string& icuVersion,
 		}
 
 		formatFilename(filename, inTemplate, majorVersion, minorVersion);
-
-		icu->inModule = ModuleLoader::loadModule(filename);
-		if (!icu->inModule)
+#ifdef WIN_NT
+		// Try to load inModule from the same folder as ucModule
 		{
-			ModuleLoader::doctorModuleExtention(filename);
-			icu->inModule = ModuleLoader::loadModule(filename);
+			PathName ucPath;
+			if (icu->ucModule->getModuleFileName(ucPath))
+			{
+				size_t pos = ucPath.rfind(PathUtils::dir_sep);
+				if (pos != PathName::npos)
+				{
+					ucPath.resize(pos + 1);
+					ucPath.append(filename);
+					icu->inModule = tryLoadIcuModule(ucPath);
+				}
+			}
 		}
+		if (!icu->inModule)
+#endif
+		icu->inModule = tryLoadIcuModule(filename);
 
 		if (!icu->inModule)
 		{
