@@ -1,3 +1,13 @@
+ 2014-04-15 12:18  alexpeshkoff 
+   M src/gpre/obj_cxx.cpp
+   M src/include/gen/msgs.h
+   M src/isql/isql.epp
+   M src/jrd/Mapping.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/msgs/messages2.sql
+Fixed some errors in mapping code, reported by Vlad privately, when using serverwide auth plugin
+
  2014-04-14 15:46  asfernandes 
    M src/isql/show.epp
 Correction.
