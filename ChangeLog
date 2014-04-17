@@ -1,3 +1,10 @@
+ 2014-04-16 13:13  hvlad 
+   M src/jrd/os/mod_loader.h
+   M src/jrd/os/win32/mod_loader.cpp
+   M src/jrd/unicode_util.cpp
+Load icuin30.dll from the same folder as already loaded icuuc30.dll.
+It should fix CORE-3133 : FBEmbed.dll does not load icuin30.dll from same folder as itself (icudt30.dll, icuuc30.dll load OK)
+
  2014-04-08 08:18  hvlad 
    M src/jrd/req.h
 Avoid issues with not initialized members of record_param.
