@@ -50,14 +50,10 @@ const int ROLE_LENGTH			= 128;
    master programmer for you! */
 
 const int BUFFER_LENGTH128	= 128;
-const int BUFFER_LENGTH155	= 155;
 const int BUFFER_LENGTH256	= 256;
-const int BUFFER_LENGTH360	= 360;
 const int BUFFER_LENGTH400	= 400;
 const int BUFFER_LENGTH512	= 512;
-const int BUFFER_LENGTH80	= 80;
 const int BUFFER_LENGTH60	= 60;
-const int BUFFER_LENGTH120	= 120;
 const int BUFFER_LENGTH180	= 180;
 
 // Define the possible states of processing commands
