@@ -427,6 +427,99 @@ static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
 static void check_partners(thread_db*, const USHORT);
 static string get_string(const dsc* desc);
 
+static ISC_STATUS getErrorCodeByObjectType(int obj_type)
+{
+	ISC_STATUS err_code = 0;
+
+	switch (obj_type)
+	{
+	case obj_relation:
+		err_code = isc_table_name;
+		break;
+	case obj_view:
+		err_code = isc_view_name;
+		break;
+	case obj_procedure:
+		err_code = isc_proc_name;
+		break;
+	case obj_collation:
+		err_code = isc_collation_name;
+		break;
+	case obj_exception:
+		err_code = isc_exception_name;
+		break;
+	case obj_field:
+		err_code = isc_domain_name;
+		break;
+	case obj_generator:
+		err_code = isc_generator_name;
+		break;
+	case obj_udf:
+		err_code = isc_udf_name;
+		break;
+	case obj_index:
+		err_code = isc_index_name;
+		break;
+	case obj_package_header:
+	case obj_package_body:
+		err_code = isc_package_name;
+		break;
+	default:
+		fb_assert(false);
+	}
+
+	return err_code;
+}
+
+static void raiseDatabaseInUseError(bool timeout)
+{
+	if (timeout)
+	{
+		ERR_post(Arg::Gds(isc_no_meta_update) <<
+				 Arg::Gds(isc_lock_timeout) <<
+				 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+	}
+
+	ERR_post(Arg::Gds(isc_no_meta_update) <<
+			 Arg::Gds(isc_obj_in_use) << Arg::Str("DATABASE"));
+}
+
+static void raiseObjectInUseError(const string& obj_type, const string& obj_name)
+{
+	string name;
+	name.printf("%s \"%s\"", obj_type.c_str(), obj_name.c_str());
+
+	ERR_post(Arg::Gds(isc_no_meta_update) <<
+			 Arg::Gds(isc_obj_in_use) << Arg::Str(name));
+}
+
+static void raiseRelationInUseError(const jrd_rel* relation)
+{
+	const string obj_type =
+		relation->isView() ? "VIEW" : "TABLE";
+	const string obj_name = relation->rel_name.c_str();
+
+	raiseObjectInUseError(obj_type, obj_name);
+}
+
+static void raiseRoutineInUseError(const Routine* routine)
+{
+	const string obj_type =
+		(routine->getObjectType() == obj_udf) ? "FUNCTION" : "PROCEDURE";
+	const string obj_name = routine->getName().toString();
+
+	raiseObjectInUseError(obj_type, obj_name);
+}
+
+static void raiseTooManyVersionsError(const int obj_type, const string& obj_name)
+{
+	const ISC_STATUS err_code = getErrorCodeByObjectType(obj_type);
+
+	ERR_post(Arg::Gds(isc_no_meta_update) <<
+			 Arg::Gds(err_code) << Arg::Str(obj_name) <<
+			 Arg::Gds(isc_version_err));
+}
+
 static const UCHAR nonnull_validation_blr[] =
 {
 	blr_version5,
@@ -521,8 +614,7 @@ namespace
 						if (!LCK_convert(tdbb, routine->existenceLock, LCK_EX,
 								transaction->getLockWait()))
 						{
-							ERR_post(Arg::Gds(isc_no_meta_update) <<
-									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+							raiseRoutineInUseError(routine);
 						}
 					}
 
@@ -542,8 +634,7 @@ namespace
 					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
 					{
 						/*
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+						raiseRoutineInUseError(routine);
 						*/
 						gds__log("Modifying %s %s which is currently in use by active user requests",
 								 Self::getTypeStr(), name.toString().c_str());
@@ -551,12 +642,7 @@ namespace
 						USHORT alterCount = routine->alterCount;
 
 						if (alterCount > Routine::MAX_ALTER_COUNT)
-						{
-							ERR_post(Arg::Gds(isc_no_meta_update) <<
-									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()) <<
-									 Arg::Gds(isc_version_err));
-							// Msg357: too many versions
-						}
+							raiseTooManyVersionsError(routine->getObjectType(), work->dfw_name);
 
 						if (routine->existenceLock)
 							LCK_release(tdbb, routine->existenceLock);
@@ -577,10 +663,7 @@ namespace
 					if (routine->getStatement())
 					{
 						if (routine->getStatement()->isActive())
-						{
-							ERR_post(Arg::Gds(isc_no_meta_update) <<
-									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
-						}
+							raiseRoutineInUseError(routine);
 
 						// release the request
 
@@ -680,8 +763,7 @@ namespace
 						if (!LCK_convert(tdbb, routine->existenceLock, LCK_EX,
 								transaction->getLockWait()))
 						{
-							ERR_post(Arg::Gds(isc_no_meta_update) <<
-									 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+							raiseRoutineInUseError(routine);
 						}
 					}
 
@@ -706,8 +788,7 @@ namespace
 					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
 					{
 						/*
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+						raiseRoutineInUseError(routine);
 						*/
 						gds__log("Deleting %s %s which is currently in use by active user requests",
 							Self::getTypeStr(), name.toString().c_str());
@@ -730,8 +811,7 @@ namespace
 						if (routine->getStatement()->isActive())
 						{
 							routine->flags = old_flags;
-							ERR_post(Arg::Gds(isc_no_meta_update) <<
-									 Arg::Gds(isc_obj_in_use) << Arg::Str(name.toString()));
+							raiseRoutineInUseError(routine);
 						}
 
 						routine->releaseStatement(tdbb);
@@ -1587,13 +1667,9 @@ static bool add_file(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra*
 		return true;
 
 	case 3:
-		if (CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, NULL))
-			return true;
-
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_lock_timeout) <<
-				 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
-		break;
+		if (!CCH_exclusive(tdbb, LCK_EX, WAIT_PERIOD, NULL))
+			raiseDatabaseInUseError(true);
+		return true;
 
 	case 4:
 		CCH_flush(tdbb, FLUSH_FINI, 0);
@@ -1764,8 +1840,7 @@ static bool add_shadow(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tr
 					{
 						// We cannot add a file to a shadow that is still
 						// in the process of being created.
-						ERR_post(Arg::Gds(isc_no_meta_update) <<
-								 Arg::Gds(isc_obj_in_use) << Arg::Str(dbb->dbb_filename));
+						raiseDatabaseInUseError(false);
 					}
 					break;
 				}
@@ -2565,44 +2640,7 @@ static void check_dependencies(thread_db* tdbb,
 	}
 	else
 	{
-		ISC_STATUS obj_type;
-		switch (dpdo_type)
-		{
-		case obj_relation:
-			obj_type = isc_table_name;
-			break;
-		case obj_view:
-			obj_type = isc_view_name;
-			break;
-		case obj_procedure:
-			obj_type = isc_proc_name;
-			break;
-		case obj_collation:
-			obj_type = isc_collation_name;
-			break;
-		case obj_exception:
-			obj_type = isc_exception_name;
-			break;
-		case obj_field:
-			obj_type = isc_domain_name;
-			break;
-		case obj_generator:
-			obj_type = isc_generator_name;
-			break;
-		case obj_udf:
-			obj_type = isc_udf_name;
-			break;
-		case obj_index:
-			obj_type = isc_index_name;
-			break;
-		case obj_package_header:
-		case obj_package_body:
-			obj_type = isc_package_name;
-			break;
-		default:
-			fb_assert(false);
-			return;
-		}
+		const ISC_STATUS obj_type = getErrorCodeByObjectType(dpdo_type);
 
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_no_delete) <<						// can not delete
@@ -4036,8 +4074,7 @@ static bool delete_index(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 						index->idl_count++;
 					}
 
-					ERR_post(Arg::Gds(isc_no_meta_update) <<
-							 Arg::Gds(isc_obj_in_use) << Arg::Str("INDEX"));
+					raiseObjectInUseError("INDEX", arg->dfw_name);
 				}
 				index->idl_count++;
 			}
@@ -4277,11 +4314,10 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		if (relation->rel_use_count || (relation->rel_existence_lock &&
 			!LCK_convert(tdbb, relation->rel_existence_lock, LCK_EX, transaction->getLockWait())))
 		{
-			if (adjusted) {
+			if (adjusted)
 				++relation->rel_use_count;
-			}
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
+
+			raiseRelationInUseError(relation);
 		}
 
 		fb_assert(!relation->rel_use_count);
@@ -4323,10 +4359,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 		}
 
 		if (relation->rel_sweep_count)
-		{
-			ERR_post(Arg::Gds(isc_no_meta_update) <<
-					 Arg::Gds(isc_obj_in_use) << Arg::Str(work->dfw_name));
-		}
+			raiseRelationInUseError(relation);
 
 		// Free any memory associated with the relation's garbage collection bitmap
 		if (dbb->dbb_garbage_collector) {
@@ -5148,12 +5181,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 			external_flag = REL.RDB$EXTERNAL_FILE[0];
 
 			if (REL.RDB$FORMAT == MAX_TABLE_VERSIONS)
-			{
-				ERR_post(Arg::Gds(isc_no_meta_update) <<
-						 Arg::Gds(isc_table_name) << Arg::Str(work->dfw_name) <<
-						 Arg::Gds(isc_version_err));
-				// Msg357: too many versions
-			}
+				raiseTooManyVersionsError(obj_relation, work->dfw_name);
 
 			MODIFY REL USING
 				blb* blob = blb::create(tdbb, transaction, &REL.RDB$RUNTIME);
@@ -5698,15 +5726,12 @@ static Lock* protect_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* re
 		}
 	}
 	else {
-		if (!LCK_lock(tdbb, relLock, LCK_PR, transaction->getLockWait())) {
+		if (!LCK_lock(tdbb, relLock, LCK_PR, transaction->getLockWait()))
 			inUse = true;
-		}
 	}
 
-	if (inUse ) {
-		ERR_post(Arg::Gds(isc_no_meta_update) <<
-				 Arg::Gds(isc_obj_in_use) << Arg::Str(relation->rel_name));
-	}
+	if (inUse)
+		raiseRelationInUseError(relation);
 
 	return relLock;
 }
