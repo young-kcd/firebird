@@ -32,11 +32,6 @@ void	ISQL_array_dimensions(const TEXT*);
 //void	ISQL_build_table_list(void**, FILE*, FILE*, FILE*);
 //void	ISQL_build_view_list(void**, FILE*, FILE*, FILE*);
 //int	ISQL_commit_work(int, FILE*, FILE*, FILE*);
-// CVC: Not found, probably in some lost GUI-related file.
-//int		ISQL_create_database(TEXT*,
-//								SCHAR**,
-//								SCHAR*,
-//								SCHAR*, FILE*, FILE*, FILE*);
 bool	ISQL_dbcheck();
 void	ISQL_disconnect_database(bool);
 bool	ISQL_errmsg(Firebird::IStatus*);
