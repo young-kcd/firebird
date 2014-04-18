@@ -289,19 +289,19 @@ const int BIGINT		= 16;
 const int BOOLEAN_TYPE	= 23;
 
 static const sqltypes Column_types[] = {
-	{SMALLINT, "SMALLINT"},		// NTX: keyword
-	{INTEGER, "INTEGER"},		// NTX: keyword
-	{QUAD, "QUAD"},				// NTX: keyword
-	{T_FLOAT, "FLOAT"},			// NTX: keyword
-	{T_CHAR, "CHAR"},			// NTX: keyword
-	{DOUBLE_PRECISION, "DOUBLE PRECISION"},	// NTX: keyword
-	{VARCHAR, "VARCHAR"},		// NTX: keyword
-	{CSTRING, "CSTRING"},		// NTX: keyword
-	{BLOB_ID, "BLOB_ID"},		// NTX: keyword
-	{BLOB, "BLOB"},				// NTX: keyword
-	{blr_sql_time, "TIME"},		// NTX: keyword
-	{blr_sql_date, "DATE"},		// NTX: keyword
-	{blr_timestamp, "TIMESTAMP"},	// NTX: keyword
+	{SMALLINT, "SMALLINT"},		// keyword
+	{INTEGER, "INTEGER"},		// keyword
+	{QUAD, "QUAD"},				// keyword
+	{T_FLOAT, "FLOAT"},			// keyword
+	{T_CHAR, "CHAR"},			// keyword
+	{DOUBLE_PRECISION, "DOUBLE PRECISION"},	// keyword
+	{VARCHAR, "VARCHAR"},		// keyword
+	{CSTRING, "CSTRING"},		// keyword
+	{BLOB_ID, "BLOB_ID"},		// keyword
+	{BLOB, "BLOB"},				// keyword
+	{blr_sql_time, "TIME"},		// keyword
+	{blr_sql_date, "DATE"},		// keyword
+	{blr_timestamp, "TIMESTAMP"},	// keyword
 	{BIGINT, "BIGINT"},			// keyword
 	{BOOLEAN_TYPE, "BOOLEAN"},	// keyword
 	{0, ""}
@@ -312,9 +312,9 @@ static const sqltypes Column_types[] = {
 const int MAX_INTSUBTYPES	= 2;
 
 static const SCHAR* Integral_subtypes[] = {
-	"UNKNOWN",					// Defined type, NTX: keyword
-	"NUMERIC",					// NUMERIC, NTX: keyword
-	"DECIMAL"					// DECIMAL, NTX: keyword
+	"UNKNOWN",					// Defined type, keyword
+	"NUMERIC",					// NUMERIC, keyword
+	"DECIMAL"					// DECIMAL, keyword
 };
 
 // Blob subtypes
@@ -322,15 +322,15 @@ static const SCHAR* Integral_subtypes[] = {
 const int MAX_BLOBSUBTYPES	= 8;
 
 static const SCHAR* Sub_types[] = {
-	"BINARY",					// NTX: keyword
-	"TEXT",						// NTX: keyword
-	"BLR",						// NTX: keyword
-	"ACL",						// NTX: keyword
-	"RANGES",					// NTX: keyword
-	"SUMMARY",					// NTX: keyword
-	"FORMAT",					// NTX: keyword
-	"TRANSACTION_DESCRIPTION",	// NTX: keyword
-	"EXTERNAL_FILE_DESCRIPTION"	// NTX: keyword
+	"BINARY",					// keyword
+	"TEXT",						// keyword
+	"BLR",						// keyword
+	"ACL",						// keyword
+	"RANGES",					// keyword
+	"SUMMARY",					// keyword
+	"FORMAT",					// keyword
+	"TRANSACTION_DESCRIPTION",	// keyword
+	"EXTERNAL_FILE_DESCRIPTION"	// keyword
 };
 
 /* CVC: Notice that
@@ -346,7 +346,7 @@ The names mentioned here are documented in jrd/types.h. */
 const int MAX_UDFPARAM_TYPES = 6;
 
 static const char* UDF_param_types[] = {
-	" BY VALUE",			// NTX: keyword
+	" BY VALUE",			// keyword
 	"",						// BY REFERENCE
 	" BY DESCRIPTOR",		// keyword in FB, internally VMS descriptor
 	"",						// BY ISC_DESCRIPTOR => BLOB
