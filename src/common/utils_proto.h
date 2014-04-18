@@ -167,6 +167,9 @@ namespace fb_utils
 	// Returns next offset value
 	unsigned sqlTypeToDsc(unsigned prevOffset, unsigned sqlType, unsigned sqlLength,
 		unsigned* dtype, unsigned* len, unsigned* offset, unsigned* nullOffset);
+
+	// Check does vector contain particular code or not
+	bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code);
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

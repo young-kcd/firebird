@@ -60,6 +60,9 @@ public:
 	explicit MappingList(jrd_tra* tra);
 
 	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
+
+private:
+	RecordBuffer* makeBuffer(thread_db* tdbb);
 };
 
 } // namespace Jrd

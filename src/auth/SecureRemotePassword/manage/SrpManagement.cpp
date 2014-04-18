@@ -233,23 +233,13 @@ public:
 								Firebird::status_exception::raise(status->get());
 							}
 
-							const ISC_STATUS* v = status->get();
-							while (v[0] == isc_arg_gds)
+							if (fb_utils::containsErrorCode(status->get(), isc_dsql_relation_err))
 							{
-								if (v[1] == isc_dsql_relation_err)
-								{
-									prepareDataStructures();
-									tra->commit(status);
-									check(status);
-									tra = att->startTransaction(status, 0, NULL);
-									check(status);
-									break;
-								}
-
-								do
-								{
-									v += 2;
-								} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
+								prepareDataStructures();
+								tra->commit(status);
+								check(status);
+								tra = att->startTransaction(status, 0, NULL);
+								check(status);
 							}
 						}
 

@@ -1381,4 +1381,20 @@ unsigned sqlTypeToDsc(unsigned runOffset, unsigned sqlType, unsigned sqlLength,
 	return runOffset + sizeof(SSHORT);
 }
 
+bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code)
+{
+	while (v[0] == isc_arg_gds)
+	{
+		if (v[1] == code)
+			return true;
+
+		do
+		{
+			v += (v[0] == isc_arg_cstring ? 3 : 2);
+		} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
+	}
+
+	return false;
+}
+
 } // namespace fb_utils

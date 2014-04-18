@@ -774,6 +774,8 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-924, 'HY', '000', 0, 765, 'baddpb_damaged_mode', NULL, NULL);
 (-924, 'HY', '000', 0, 766, 'baddpb_buffers_range', NULL, NULL);
 (-924, 'HY', '000', 0, 767, 'baddpb_temp_buffers', NULL, NULL);
+(-901, '0A', '000', 0, 768, 'map_nodb', NULL, NULL);
+(-901, '0A', '000', 0, 769, 'map_notable', NULL, NULL);
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

@@ -789,6 +789,8 @@ static const struct {
 	{"baddpb_damaged_mode", 335545085},
 	{"baddpb_buffers_range", 335545086},
 	{"baddpb_temp_buffers", 335545087},
+	{"map_nodb", 335545088},
+	{"map_notable", 335545089},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

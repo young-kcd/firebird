@@ -1586,6 +1586,10 @@ C --
       PARAMETER (GDS__baddpb_buffers_range             = 335545086)
       INTEGER*4 GDS__baddpb_temp_buffers             
       PARAMETER (GDS__baddpb_temp_buffers              = 335545087)
+      INTEGER*4 GDS__map_nodb                        
+      PARAMETER (GDS__map_nodb                         = 335545088)
+      INTEGER*4 GDS__map_notable                     
+      PARAMETER (GDS__map_notable                      = 335545089)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

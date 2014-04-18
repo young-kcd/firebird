@@ -800,6 +800,8 @@ const
 	gds_baddpb_damaged_mode              = 335545085;
 	gds_baddpb_buffers_range             = 335545086;
 	gds_baddpb_temp_buffers              = 335545087;
+	gds_map_nodb                         = 335545088;
+	gds_map_notable                      = 335545089;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

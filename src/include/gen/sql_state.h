@@ -788,6 +788,8 @@ static const struct {
 	{335545085, "HY000"}, // 765 baddpb_damaged_mode
 	{335545086, "HY000"}, // 766 baddpb_buffers_range
 	{335545087, "HY000"}, // 767 baddpb_temp_buffers
+	{335545088, "0A000"}, // 768 map_nodb
+	{335545089, "0A000"}, // 769 map_notable
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

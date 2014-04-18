@@ -875,6 +875,8 @@ Data source : @4', NULL, NULL)
 ('baddpb_damaged_mode', 'attachDatabase', 'jrd.cpp', NULL, 0, 765, NULL, 'Incompatible mode of attachment to damaged database', NULL, NULL);
 ('baddpb_buffers_range', 'DatabaseOptions::get', 'jrd.cpp', NULL, 0, 766, NULL, 'Attempt to set in database number of buffers which is out of acceptable range [@1:@2]', NULL, NULL);
 ('baddpb_temp_buffers', 'DatabaseOptions::get', 'jrd.cpp', NULL, 0, 767, NULL, 'Attempt to temporarily set number of buffers less than @1', NULL, NULL);
+('map_nodb', 'MappingList::getList', 'Mapping.cpp', NULL, 0, 768, NULL, 'Global mapping is not available when database @1 is not present', NULL, NULL);
+('map_notable', 'MappingList::getList', 'Mapping.cpp', NULL, 0, 769, NULL, 'Global mapping is not available when table RDB$MAP is not present in database @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

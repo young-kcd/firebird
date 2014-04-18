@@ -279,15 +279,18 @@ public:
 				"	RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 				"FROM RDB$MAP",
 				3, NULL, NULL, mMap.getMetadata());
-			// check("IAttachment::openCursor", &st);
 			if (!st.isSuccess())
 			{
-				// errors when opening cursor - sooner of all table RDB$MAP is missing
-				// in non-FB3 security DB
-				tra->release();
-				att->detach(&st);
-				dataFlag = true;
-				return;
+				if (fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))
+				{
+					// isc_dsql_relation_err when opening cursor - sooner of all table RDB$MAP
+					// is missing due to non-FB3 security DB
+					tra->release();
+					att->detach(&st);
+					dataFlag = true;
+					return;
+				}
+				check("IAttachment::openCursor", &st);
 			}
 
 			while (curs->fetchNext(&st, mMap.getBuffer()))
@@ -880,8 +883,10 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 						embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 					if (!st.isSuccess())
 					{
+						if (!fb_utils::containsErrorCode(st.get(), isc_io_error))
+							check("IProvider::attachDatabase", &st);
+
 						// missing security DB is not a reason to fail mapping
-						// do not check error code here - it may be something else for non-native provider
 						iSec = NULL;
 					}
 				}
@@ -896,9 +901,10 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 					if (!st.isSuccess())
 					{
-						// missing DB is not a reason to fail mapping
-						if (st.get()[1] != isc_io_error)
+						if (!fb_utils::containsErrorCode(st.get(), isc_io_error))
 							check("IProvider::attachDatabase", &st);
+
+						// missing DB is not a reason to fail mapping
 						iDb = NULL;
 					}
 				}
@@ -1006,7 +1012,6 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		Found::What recordWeight =
 			(db && info.secDb == db) ? Found::FND_DB :
 			(info.secDb == securityDb) ? Found::FND_SEC :
-			//(info.plugin.hasData() && info.secDb.isEmpty()) ? Found::FND_SWIDE :
 			Found::FND_NOTHING;
 
 		if (recordWeight != Found::FND_NOTHING)
@@ -1057,6 +1062,12 @@ MappingList::MappingList(jrd_tra* tra)
 	: DataDump(*tra->tra_pool)
 { }
 
+RecordBuffer* MappingList::makeBuffer(thread_db* tdbb)
+{
+	MemoryPool* const pool = tdbb->getTransaction()->tra_pool;
+	allocBuffer(tdbb, *pool, rel_sec_global_map);
+	return getData(rel_sec_global_map);
+}
 
 RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 {
@@ -1081,9 +1092,20 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 			MAX_DPB_SIZE, isc_dpb_version1);
 		embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
 			strlen(SYSDBA_USER_NAME));
-		att = prov->attachDatabase(&st, tdbb->getDatabase()->dbb_config->getSecurityDatabase(),
+		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
+		att = prov->attachDatabase(&st, dbName,
 			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-		check("IProvider::attachDatabase", &st);
+		if (!st.isSuccess())
+		{
+			if (!fb_utils::containsErrorCode(st.get(), isc_io_error))
+				check("IProvider::attachDatabase", &st);
+
+			// In embedded mode we are not raising any errors - silent return
+			if (MasterInterfacePtr()->serverMode(-1) < 0)
+				return makeBuffer(tdbb);
+
+			(Arg::Gds(isc_map_nodb) << dbName).raise();
+		}
 
 		ClumpletWriter readOnly(ClumpletWriter::Tpb, MAX_DPB_SIZE, isc_tpb_version1);
 		readOnly.insertTag(isc_tpb_read);
@@ -1106,11 +1128,24 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 			"	RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 			"FROM RDB$MAP",
 			3, NULL, NULL, mMap.getMetadata());
-		check("IAttachment::openCursor", &st);
+		if (!st.isSuccess())
+		{
+			if (!fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))
+				check("IAttachment::openCursor", &st);
 
-		MemoryPool* const pool = tdbb->getTransaction()->tra_pool;
-		allocBuffer(tdbb, *pool, rel_sec_global_map);
-		buffer = getData(rel_sec_global_map);
+			// isc_dsql_relation_err when opening cursor - sooner of all table RDB$MAP
+			// is missing due to non-FB3 security DB
+			tra->release();
+			att->detach(&st);
+
+			// In embedded mode we are not raising any errors - silent return
+			if (MasterInterfacePtr()->serverMode(-1) < 0)
+				return makeBuffer(tdbb);
+
+			(Arg::Gds(isc_map_notable) << dbName).raise();
+		}
+
+		buffer = makeBuffer(tdbb);
 		Record* record = buffer->getTempRecord();
 
 		while (curs->fetchNext(&st, mMap.getBuffer()))

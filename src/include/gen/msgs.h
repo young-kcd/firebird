@@ -792,6 +792,8 @@ Data source : @4"},		/* eds_statement */
 	{335545085, "Incompatible mode of attachment to damaged database"},		/* baddpb_damaged_mode */
 	{335545086, "Attempt to set in database number of buffers which is out of acceptable range [@1:@2]"},		/* baddpb_buffers_range */
 	{335545087, "Attempt to temporarily set number of buffers less than @1"},		/* baddpb_temp_buffers */
+	{335545088, "Global mapping is not available when database @1 is not present"},		/* map_nodb */
+	{335545089, "Global mapping is not available when table RDB$MAP is not present in database @1"},		/* map_notable */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
