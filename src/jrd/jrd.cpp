@@ -5066,6 +5066,36 @@ void JResultSet::setCursorName(IStatus* user_status, const char* cursor)
 }
 
 
+void JResultSet::setDelayedOutputFormat(IStatus* user_status, Firebird::IMessageMetadata* outMetadata)
+{
+	try
+	{
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			dsql_req* req = getStatement()->getHandle();
+			fb_assert(req);
+			req->setDelayedFormat(tdbb, outMetadata);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JResultSet::setCursorName");
+			return;
+		}
+		trace_warning(tdbb, user_status, "JResultSet::setCursorName");
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(user_status);
+		return;
+	}
+
+	successful_completion(user_status);
+}
+
+
 void JStatement::getInfo(IStatus* user_status,
 	unsigned int item_length, const unsigned char* items,
 	unsigned int buffer_length, unsigned char* buffer)

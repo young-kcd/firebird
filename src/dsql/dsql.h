@@ -555,6 +555,8 @@ public:
 
 	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
 
+	virtual void setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata);
+
 	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
 
 private:
@@ -598,7 +600,8 @@ class DsqlDmlRequest : public dsql_req
 public:
 	explicit DsqlDmlRequest(MemoryPool& pool, StmtNode* aNode)
 		: dsql_req(pool),
-		  node(aNode)
+		  node(aNode),
+		  needDelayedFormat(false)
 	{
 	}
 
@@ -614,8 +617,12 @@ public:
 
 	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
 
+	virtual void setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata);
+
 private:
 	NestConst<StmtNode> node;
+	Firebird::RefPtr<Firebird::IMessageMetadata> delayedFormat;
+	bool needDelayedFormat;
 };
 
 class DsqlDdlRequest : public dsql_req

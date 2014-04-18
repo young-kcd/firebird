@@ -417,9 +417,8 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	USHORT			rsr_reorder_level; 	// Trigger pipelining at this level
 	USHORT			rsr_batch_count; 	// Count of batches in pipeline
 
-	Firebird::RefPtr<Firebird::IMessageMetadata> rsr_par_metadata;
-	Firebird::UCharBuffer rsr_parameters;
-	Firebird::string rsr_cursor_name;
+	Firebird::string rsr_cursor_name;	// Name for cursor to be set on open
+	bool			rsr_delayed_format;	// Out format ws delayed on execute, set it on fetch
 
 public:
 	// Values for rsr_flags.
@@ -441,7 +440,7 @@ public:
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
 		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0),
-		rsr_parameters(getPool()), rsr_cursor_name(getPool())
+		rsr_cursor_name(getPool()), rsr_delayed_format(false)
 		{ }
 
 	void saveException(const ISC_STATUS* status, bool overwrite);

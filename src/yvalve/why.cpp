@@ -638,9 +638,12 @@ public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_stmt_handle;
 
 	explicit IscStatement(YAttachment* aAttachment)
-		: parameters(getPool()), cursorName(getPool()),
-		  attachment(aAttachment), statement(NULL),
-		  userHandle(NULL), pseudoOpened(false)
+		: cursorName(getPool()),
+		  attachment(aAttachment),
+		  statement(NULL),
+		  userHandle(NULL),
+		  pseudoOpened(false),
+		  delayedFormat(false)
 	{ }
 
 	FB_API_HANDLE& getHandle();
@@ -671,14 +674,11 @@ public:
 			Arg::Gds(isc_dsql_cursor_open_err).raise();
 	}
 
-	RefPtr<ITransaction> transaction;
-	RefPtr<IMessageMetadata> parMetadata;
-	SQLDAMetadata::DataBuffer parameters;
 	string cursorName;
 	YAttachment* attachment;
 	YStatement* statement;
 	FB_API_HANDLE* userHandle;
-	bool pseudoOpened;
+	bool pseudoOpened, delayedFormat;
 };
 
 GlobalPtr<RWLock> handleMappingLock;
@@ -1392,6 +1392,8 @@ namespace {
 			if (status->isSuccess())
 				cursorName = "";
 		}
+
+		delayedFormat = (outMetadata == DELAYED_OUT_FORMAT);
 	}
 
 	void IscStatement::closeCursor(Why::StatusVector* status, bool raise)
@@ -1456,31 +1458,16 @@ namespace {
 
 	FB_BOOLEAN IscStatement::fetch(IStatus* status, IMessageMetadata* outMetadata, UCHAR* outBuffer)
 	{
-		if (!transaction)
-			checkCursorOpened();
-		else
-		{
-			checkCursorClosed();
+		checkCursorOpened();
 
-			statement->openCursor(status, transaction,
-				parMetadata, parameters.begin(), outMetadata);
-			// Clean stored data even if execution failed
-			parMetadata = NULL;
-			parameters.clear();
-			transaction = NULL;
+		if (delayedFormat)
+		{
+			statement->cursor->setDelayedOutputFormat(status, outMetadata);
 
 			if (!status->isSuccess())
 				return FB_FALSE;
 
-			fb_assert(statement->cursor);
-
-			if (cursorName.hasData())
-			{
-				statement->cursor->setCursorName(status, cursorName.c_str());
-
-				if (status->isSuccess())
-					cursorName = "";
-			}
+			delayedFormat = false;
 		}
 
 		return statement->cursor->fetchNext(status, outBuffer);
@@ -2351,34 +2338,45 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		statement->checkPrepared();
 
-		SQLDAMetadataLauncher inMessage(inSqlda);
-
 		const unsigned flags = statement->statement->getFlags(&status);
 		if (!status.isSuccess())
 		{
 			return status[1];
 		}
 
-		if ((flags & IStatement::FLAG_HAS_CURSOR) && (!outSqlda))
-		{
-			// delay execution till first fetch (with output sqlda)
-			statement->parMetadata = inMessage.metadata;
-			inMessage.gatherData(statement->parameters);
-			statement->transaction = translateHandle(transactions, traHandle);
-			return 0;
-		}
-
+		SQLDAMetadataLauncher inMessage(inSqlda);
 		SQLDAMetadata::DataBuffer inMsgBuffer;
-
 		inMessage.gatherData(inMsgBuffer);
 
-		SQLDAMetadataLauncher outMessage(outSqlda);
+		if ((flags & IStatement::FLAG_HAS_CURSOR) && !outSqlda)
+		{
+			statement->checkCursorClosed();
 
-		statement->execute(&status, traHandle,
-			inMessage.metadata, inMsgBuffer.begin(), outMessage.metadata, outMessage.getBuffer());
+			statement->openCursor(&status, traHandle,
+				inMessage.metadata, inMsgBuffer.begin(), DELAYED_OUT_FORMAT);
+			if (!status.isSuccess())
+			{
+				return status[1];
+			}
 
-		if (status.isSuccess())
-			outMessage.scatterData();
+			fb_assert(statement->statement->cursor);
+
+			if (statement->cursorName.hasData())
+			{
+				statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
+				if (status.isSuccess())
+					statement->cursorName = "";
+			}
+		}
+		else
+		{
+			SQLDAMetadataLauncher outMessage(outSqlda);
+
+			statement->execute(&status, traHandle,
+				inMessage.metadata, inMsgBuffer.begin(), outMessage.metadata, outMessage.getBuffer());
+			if (status.isSuccess())
+				outMessage.scatterData();
+		}
 	}
 	catch (const Exception& e)
 	{
@@ -2427,17 +2425,9 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		{
 			if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
 			{
-				if (outBlrLength)
-				{
-					statement->openCursor(&status, traHandle,
-						inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata);
-				}
-				else	// delay execution till first fetch (with output format)
-				{
-					statement->parMetadata = inMsgBuffer.metadata;
-					statement->parameters.assign(inMsgBuffer.buffer, inMsgLength);
-					statement->transaction = translateHandle(transactions, traHandle);;
-				}
+				statement->openCursor(&status, traHandle,
+					inMsgBuffer.metadata, inMsgBuffer.buffer,
+					outBlrLength ? outMsgBuffer.metadata : DELAYED_OUT_FORMAT);
 			}
 			else
 			{
@@ -2692,7 +2682,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 		else if (option & DSQL_close)
 		{
 			// Only close the cursor
-			statement->closeCursor(&status, !statement->transaction);
+			statement->closeCursor(&status, true);
 		}
 	}
 	catch (const Exception& e)
@@ -4465,6 +4455,20 @@ void YResultSet::setCursorName(IStatus* status, const char* name)
 		YEntry<YResultSet> entry(status, this);
 
 		entry.next()->setCursorName(status, name);
+	}
+	catch (const Exception& e)
+	{
+		e.stuffException(status);
+	}
+}
+
+void YResultSet::setDelayedOutputFormat(IStatus* status, IMessageMetadata* format)
+{
+	try
+	{
+		YEntry<YResultSet> entry(status, this);
+
+		entry.next()->setDelayedOutputFormat(status, format);
 	}
 	catch (const Exception& e)
 	{

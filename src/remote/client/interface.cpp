@@ -256,10 +256,14 @@ public:
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual void FB_CARG close(IStatus* status);
+	virtual void FB_CARG setDelayedOutputFormat(IStatus* status, IMessageMetadata* format);
 
 	ResultSet(Statement* s, IMessageMetadata* outFmt)
-		: stmt(s), outputFormat(outFmt), tmpStatement(false)
-	{ }
+		: stmt(s), tmpStatement(false), delayedFormat(outFmt == DELAYED_OUT_FORMAT)
+	{
+		if (!delayedFormat)
+			outputFormat = outFmt;
+	}
 
 private:
 	void releaseStatement();
@@ -269,7 +273,7 @@ private:
 	RefPtr<IMessageMetadata> outputFormat;
 
 public:
-	bool tmpStatement;
+	bool tmpStatement, delayedFormat;
 };
 
 int ResultSet::release()
@@ -1901,7 +1905,7 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 			}
 		}
 
-		BlrFromMessage outBlr(outFormat, dialect);
+		BlrFromMessage outBlr(outFormat == DELAYED_OUT_FORMAT ? NULL : outFormat, dialect);
 		const unsigned int out_blr_length = outBlr.getLength();
 		const UCHAR* const out_blr = outBlr.getBytes();
 
@@ -2725,6 +2729,28 @@ ISC_UINT64 Statement::getAffectedRecords(IStatus* status)
 }
 
 
+void ResultSet::setDelayedOutputFormat(IStatus* status, IMessageMetadata* format)
+{
+	try
+	{
+		reset(status);
+
+		// Check and validate handles, etc.
+		if (!delayedFormat)
+		{
+			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
+		}
+
+		outputFormat = format;
+		delayedFormat = false;
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+
 FB_BOOLEAN ResultSet::fetchNext(IStatus* status, void* buffer)
 {
 /**************************************
@@ -2744,7 +2770,7 @@ FB_BOOLEAN ResultSet::fetchNext(IStatus* status, void* buffer)
 
 		// Check and validate handles, etc.
 
-		if (!stmt)
+		if (delayedFormat || !stmt)
 		{
 			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
 		}

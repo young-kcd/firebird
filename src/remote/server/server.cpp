@@ -3222,35 +3222,22 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if ((flags & IStatement::FLAG_HAS_CURSOR) && (out_msg_length == 0))
 	{
-		if (out_blr_length)
+		statement->rsr_cursor =
+			statement->rsr_iface->openCursor(&status_vector, tra,
+											 iMsgBuffer.metadata, iMsgBuffer.buffer,
+											 out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT);
+		if (status_vector.isSuccess())
 		{
-			fb_assert(transaction);
+			transaction->rtr_cursors.add(statement);
+			statement->rsr_delayed_format = !out_blr_length;
 
-			statement->rsr_cursor =
-				statement->rsr_iface->openCursor(&status_vector, tra,
-												 iMsgBuffer.metadata,
-												 iMsgBuffer.buffer,
-												 oMsgBuffer.metadata);
-			if (status_vector.isSuccess())
+			if (statement->rsr_cursor_name.hasData())
 			{
-				transaction->rtr_cursors.add(statement);
+				statement->rsr_cursor->setCursorName(&status_vector, statement->rsr_cursor_name.c_str());
 
-				if (statement->rsr_cursor_name.hasData())
-				{
-					statement->rsr_cursor->setCursorName(&status_vector, statement->rsr_cursor_name.c_str());
-
-					if (status_vector.isSuccess())
-						statement->rsr_cursor_name = "";
-				}
+				if (status_vector.isSuccess())
+					statement->rsr_cursor_name = "";
 			}
-		}
-		else	// delay execution till first fetch (with output format)
-		{
-			statement->rsr_par_metadata = iMsgBuffer.metadata;
-			statement->rsr_parameters.assign(static_cast<UCHAR*>(iMsgBuffer.buffer), in_msg_length);
-			statement->rsr_rtr = transaction;
-			return this->send_response(sendL, (OBJCT) (transaction ? transaction->rtr_id : 0),
-				0, &status_vector, defer);
 		}
 	}
 	else
@@ -3337,44 +3324,23 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		}
 	}
 
-	// If required, call delayed open()
 
-	if (!statement->rsr_par_metadata)
-		statement->checkCursor();
-	else
+	// If required, call setDelayedOutputFormat()
+
+	statement->checkCursor();
+	if (statement->rsr_delayed_format)
 	{
-		if (statement->rsr_cursor)
-			Arg::Gds(isc_dsql_cursor_open_err).raise();
-
 		InternalMessageBuffer msgBuffer(sqldata->p_sqldata_blr.cstr_length,
 			sqldata->p_sqldata_blr.cstr_address, msg_length, NULL);
 
 		if (!msgBuffer.metadata)
 			Arg::Gds(isc_dsql_cursor_open_err).raise();
 
-		fb_assert(statement->rsr_rtr);
-
-		statement->rsr_cursor =
-			statement->rsr_iface->openCursor(&status_vector,
-											 statement->rsr_rtr->rtr_iface,
-											 statement->rsr_par_metadata,
-											 statement->rsr_parameters.begin(),
-											 msgBuffer.metadata);
+		statement->rsr_cursor->setDelayedOutputFormat(&status_vector, msgBuffer.metadata);
 		if (!status_vector.isSuccess())
 			status_exception::raise(status_vector.get());
 
-		statement->rsr_rtr->rtr_cursors.add(statement);
-
-		if (statement->rsr_cursor_name.hasData())
-		{
-			statement->rsr_cursor->setCursorName(&status_vector, statement->rsr_cursor_name.c_str());
-
-			if (status_vector.isSuccess())
-				statement->rsr_cursor_name = "";
-		}
-
-		statement->rsr_par_metadata = NULL;
-		statement->rsr_parameters.clear();
+		statement->rsr_delayed_format = false;
 	}
 
 

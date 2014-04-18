@@ -205,6 +205,22 @@ void DSQL_execute(thread_db* tdbb,
 }
 
 
+// Provide backward-compatibility
+void DsqlDmlRequest::setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata)
+{
+	if (!needDelayedFormat)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+			Arg::Gds(isc_dsql_sqlda_err) <<
+			Arg::Gds(isc_req_sync));
+	}
+
+	needDelayedFormat = false;
+	delayedFormat = metadata;
+}
+
+
 // Fetch next record from a dynamic SQL cursor.
 bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 {
@@ -244,7 +260,8 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 		return false;
 	}
 
-	map_in_out(this, true, message, NULL, msgBuffer);
+	map_in_out(this, true, message, delayedFormat, msgBuffer);
+	delayedFormat = NULL;
 
 	trace.fetch(false, res_successful);
 	return true;
@@ -763,6 +780,12 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	const bool isBlock = (statement->getType() == DsqlCompiledStatement::TYPE_EXEC_BLOCK);
 
 	message = statement->getReceiveMsg();
+
+	if (outMetadata == DELAYED_OUT_FORMAT)
+	{
+		needDelayedFormat = true;
+		outMetadata = NULL;
+	}
 
 	if (outMetadata && message)
 		parse_metadata(this, outMetadata, message->msg_parameters);
@@ -1575,6 +1598,14 @@ dsql_req::dsql_req(MemoryPool& pool)
 }
 
 void dsql_req::setCursor(thread_db* /*tdbb*/, const TEXT* /*name*/)
+{
+	status_exception::raise(
+		Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+		Arg::Gds(isc_dsql_sqlda_err) <<
+		Arg::Gds(isc_req_sync));
+}
+
+void dsql_req::setDelayedFormat(thread_db* /*tdbb*/, Firebird::IMessageMetadata* /*metadata*/)
 {
 	status_exception::raise(
 		Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<

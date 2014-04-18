@@ -122,6 +122,11 @@ public:
 };
 #define FB_METADATA_BUILDER_VERSION (FB_REFCOUNTED_VERSION + 10)
 
+// This item is for ISC API emulation only
+// It may be gone in future versions
+// Please do not use it!
+static IMessageMetadata* const DELAYED_OUT_FORMAT = (IMessageMetadata*)(1);
+
 class IResultSet : public IRefCounted
 {
 public:
@@ -136,8 +141,13 @@ public:
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
 	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG close(IStatus* status) = 0;
+
+	// This item is for ISC API emulation only
+	// It may be gone in future versions
+	// Please do not use it!
+	virtual void FB_CARG setDelayedOutputFormat(IStatus* status, IMessageMetadata* format) = 0;
 };
-#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 11)
+#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 12)
 
 class IStatement : public IRefCounted
 {

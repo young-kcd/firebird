@@ -156,6 +156,7 @@ public:
 	virtual Firebird::IMessageMetadata* FB_CARG getMetadata(Firebird::IStatus* status);
 	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
 	virtual void FB_CARG close(Firebird::IStatus* status);
+	virtual void FB_CARG setDelayedOutputFormat(Firebird::IStatus* status, Firebird::IMessageMetadata* format);
 
 public:
 	JResultSet(JStatement* aStatement)
