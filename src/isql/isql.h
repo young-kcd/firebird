@@ -38,10 +38,6 @@
 
 // Define lengths used in isql.e
 
-/* Increased this to allow display of somewhat lengthy plans
-   hope this will last a year or so :-)
-   FSG 17.Nov.2000
-*/
 const int PRINT_BUFFER_LENGTH	= 1024;
 const int PLAN_BUFFER_LENGTH	= 1024 * 16;
 const int MAXTERM_SIZE			= 32;	// SQL termination character
@@ -118,11 +114,8 @@ const int ADD_PROMPT				= 9;		// Prompt for add function
 const int VERSION					= 10;		// Version string for -z
 const int NUMBER_PAGES				= 12;		// Number of DB pages allocated = @1 \n
 const int SWEEP_INTERV				= 13;		// Sweep interval = @1 \n
-//const int NUM_WAL_BUFF			= 14;		// Number of wal buffers = @1 \n
-//const int WAL_BUFF_SIZE			= 15;		// Wal buffer size = @1 \n
 const int CKPT_LENGTH				= 16;		// Check point length = @1 \n
 const int CKPT_INTERV				= 17;		// Check point interval = @1 \n
-//const int WAL_GRPC_WAIT			= 18;		// Wal group commit wait = @1 \n
 const int BASE_LEVEL				= 19;		// Base level = @1 \n
 const int LIMBO						= 20;		// Transaction in limbo = @1 \n
 // Help list
