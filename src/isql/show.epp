@@ -169,25 +169,25 @@ static const SCHAR* Object_types[] =
 
 const SCHAR* Trigger_prefix_types[] =
 {
-	"BEFORE",			// NTX: keyword
-	"AFTER"				// NTX: keyword
+	"BEFORE",			// keyword
+	"AFTER"				// keyword
 };
 
 const SCHAR* Trigger_suffix_types[] =
 {
 	"",
-	"INSERT",			// NTX: keyword
-	"UPDATE",			// NTX: keyword
-	"DELETE"			// NTX: keyword
+	"INSERT",			// keyword
+	"UPDATE",			// keyword
+	"DELETE"			// keyword
 };
 
 const SCHAR* Db_trigger_types[] =
 {
-	"CONNECT",				// NTX: keyword
-	"DISCONNECT",			// NTX: keyword
-	"TRANSACTION START",	// NTX: keyword
-	"TRANSACTION COMMIT",	// NTX: keyword
-	"TRANSACTION ROLLBACK"	// NTX: keyword
+	"CONNECT",				// keyword
+	"DISCONNECT",			// keyword
+	"TRANSACTION START",	// keyword
+	"TRANSACTION COMMIT",	// keyword
+	"TRANSACTION ROLLBACK"	// keyword
 };
 
 
@@ -208,12 +208,12 @@ static const struct
 	const char* priv_string;
 } privs[] =
 {
-	{ priv_DELETE, "DELETE"},		// NTX: keyword
-	{ priv_EXECUTE, "EXECUTE"},	// NTX: keyword
-	{ priv_INSERT, "INSERT"},		// NTX: keyword
-	{ priv_SELECT, "SELECT"},		// NTX: keyword
-	{ priv_UPDATE, "UPDATE"},		// NTX: keyword
-	{ priv_REFERENCES, "REFERENCES"},	// NTX: keyword
+	{ priv_DELETE, "DELETE"},		// keyword
+	{ priv_EXECUTE, "EXECUTE"},	// keyword
+	{ priv_INSERT, "INSERT"},		// keyword
+	{ priv_SELECT, "SELECT"},		// keyword
+	{ priv_UPDATE, "UPDATE"},		// keyword
+	{ priv_REFERENCES, "REFERENCES"},	// keyword
 	{ 0, NULL}
 };
 
