@@ -80,7 +80,7 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 	char buffer[MAXPATHLEN + 100];
 
 	fb_utils::snprintf(buffer, sizeof(buffer),
-			"Assertion failure: %s File: %s Line: %ld\n",	// NTX: dev build
+			"Assertion failure: %s File: %s Line: %ld\n",	//dev build
 			(msg ? msg : ""), (file ? file : ""), lineno);
 	ERRD_bugcheck(buffer);
 }
