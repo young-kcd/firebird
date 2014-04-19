@@ -3225,7 +3225,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		statement->rsr_cursor =
 			statement->rsr_iface->openCursor(&status_vector, tra,
 											 iMsgBuffer.metadata, iMsgBuffer.buffer,
-											 out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT);
+											 (out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT));
 		if (status_vector.isSuccess())
 		{
 			transaction->rtr_cursors.add(statement);

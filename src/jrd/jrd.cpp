@@ -5081,10 +5081,10 @@ void JResultSet::setDelayedOutputFormat(IStatus* user_status, Firebird::IMessage
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status, "JResultSet::setCursorName");
+			transliterateException(tdbb, ex, user_status, "JResultSet::setDelayedOutputFormat");
 			return;
 		}
-		trace_warning(tdbb, user_status, "JResultSet::setCursorName");
+		trace_warning(tdbb, user_status, "JResultSet::setDelayedOutputFormat");
 	}
 	catch (const Exception& ex)
 	{

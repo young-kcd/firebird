@@ -897,8 +897,11 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					embeddedSysdba.insertString(isc_dpb_config, conf, strlen(conf));
 
 					if (!iDb)
+					{
 						iDb = prov->attachDatabase(&st, alias,
 							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+					}
+
 					if (!st.isSuccess())
 					{
 						if (!fb_utils::containsErrorCode(st.get(), isc_io_error))
@@ -909,7 +912,6 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					}
 				}
 			}
-
 
 			MutexEnsureUnlock g(treeMutex, FB_FUNCTION);
 			g.enter();

@@ -182,7 +182,7 @@ public:
 	{
 		if (sqlda)
 		{
-			metadata = new SQLDAMetadata(sqlda); 
+			metadata = new SQLDAMetadata(sqlda);
 			metadata->addRef();
 		}
 	}
@@ -244,7 +244,7 @@ const char* FB_CARG SQLDAMetadata::getField(IStatus* status, unsigned index)
 		fb_assert(sqlda->sqld > (int)index);
 		return sqlda->sqlvar[index].sqlname;
 	}
-	
+
 	// we are in free fly. It is only possible for input sqlda which usually have no names inside
 	return "";	// Old conversion sqlda->BLR->metadata dropped them anyway
 }
@@ -477,14 +477,14 @@ void SQLDAMetadata::gatherData(DataBuffer& to)
 		to.clear();
 		return;
 	}
-	
+
 	const unsigned l = getMessageLength(NULL);
 	if (speedHackEnabled)
 	{
 		to.assign(reinterpret_cast<UCHAR*>(sqlda->sqlvar[0].sqldata), l);
 		return;
 	}
-	
+
 	UCHAR* result = to.getBuffer(l, false);
 	for (unsigned i = 0; i < count; i++)
 	{
@@ -2427,7 +2427,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 			{
 				statement->openCursor(&status, traHandle,
 					inMsgBuffer.metadata, inMsgBuffer.buffer,
-					outBlrLength ? outMsgBuffer.metadata : DELAYED_OUT_FORMAT);
+					(outBlrLength ? outMsgBuffer.metadata : DELAYED_OUT_FORMAT));
 			}
 			else
 			{

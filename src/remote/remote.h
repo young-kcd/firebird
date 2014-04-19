@@ -418,7 +418,7 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 	USHORT			rsr_batch_count; 	// Count of batches in pipeline
 
 	Firebird::string rsr_cursor_name;	// Name for cursor to be set on open
-	bool			rsr_delayed_format;	// Out format ws delayed on execute, set it on fetch
+	bool			rsr_delayed_format;	// Out format was delayed on execute, set it on fetch
 
 public:
 	// Values for rsr_flags.

@@ -1905,7 +1905,7 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 			}
 		}
 
-		BlrFromMessage outBlr(outFormat == DELAYED_OUT_FORMAT ? NULL : outFormat, dialect);
+		BlrFromMessage outBlr((outFormat == DELAYED_OUT_FORMAT ? NULL : outFormat), dialect);
 		const unsigned int out_blr_length = outBlr.getLength();
 		const UCHAR* const out_blr = outBlr.getBytes();
 

@@ -633,9 +633,7 @@ namespace
 					// Do not allow to modify routine used by user requests
 					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
 					{
-						/*
-						raiseRoutineInUseError(routine);
-						*/
+						///raiseRoutineInUseError(routine);
 						gds__log("Modifying %s %s which is currently in use by active user requests",
 								 Self::getTypeStr(), name.toString().c_str());
 
@@ -787,9 +785,7 @@ namespace
 					// Do not allow to drop routine used by user requests
 					if (routine->isUsed() && MET_routine_in_use(tdbb, routine))
 					{
-						/*
-						raiseRoutineInUseError(routine);
-						*/
+						///raiseRoutineInUseError(routine);
 						gds__log("Deleting %s %s which is currently in use by active user requests",
 							Self::getTypeStr(), name.toString().c_str());
 

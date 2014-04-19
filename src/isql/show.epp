@@ -208,11 +208,11 @@ static const struct
 	const char* priv_string;
 } privs[] =
 {
-	{ priv_DELETE, "DELETE"},		// keyword
-	{ priv_EXECUTE, "EXECUTE"},	// keyword
-	{ priv_INSERT, "INSERT"},		// keyword
-	{ priv_SELECT, "SELECT"},		// keyword
-	{ priv_UPDATE, "UPDATE"},		// keyword
+	{ priv_DELETE, "DELETE"},			// keyword
+	{ priv_EXECUTE, "EXECUTE"},			// keyword
+	{ priv_INSERT, "INSERT"},			// keyword
+	{ priv_SELECT, "SELECT"},			// keyword
+	{ priv_UPDATE, "UPDATE"},			// keyword
 	{ priv_REFERENCES, "REFERENCES"},	// keyword
 	{ 0, NULL}
 };
