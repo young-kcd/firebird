@@ -226,4 +226,5 @@ bool Win32Module::getModuleFileName(Firebird::PathName& fileName)
 		return false;
 
 	fileName.resize(len);
+	return true;
 }
