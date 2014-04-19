@@ -4941,7 +4941,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
-		fb_assert(value.specified);
+		fb_assert(restartSpecified && value.specified);
 		const SINT64 val = value.specified ? value.value : 0;
 		if (step.specified)
 		{
@@ -4981,8 +4981,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		}
 
 		const SLONG id = X.RDB$GENERATOR_ID;
-		const SINT64 val = value.specified ?
-			value.value : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
+
 		if (step.specified)
 		{
 			const SLONG newStep = step.value;
@@ -4997,7 +4996,13 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 			}
 		}
 
-		transaction->getGenIdCache()->put(id, val);
+		if (restartSpecified)
+		{
+			const SINT64 val = value.specified ?
+				value.value : (!X.RDB$INITIAL_VALUE.NULL ? X.RDB$INITIAL_VALUE : 0);
+			transaction->getGenIdCache()->put(id, val);
+		}
+
 		dsc desc;
 		desc.makeText((USHORT) name.length(), ttype_metadata, (UCHAR*) name.c_str());
 		DFW_post_work(transaction, dfw_set_generator, &desc, id);

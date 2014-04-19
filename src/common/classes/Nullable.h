@@ -39,28 +39,6 @@ public:
 	}
 };
 
-// NullableClear specializations.
-
-template <>
-class NullableClear<Firebird::string>	// string especialization for NullableClear
-{
-public:
-	static void clear(Firebird::string& v)
-	{
-		v = "";
-	}
-};
-
-template <>
-class NullableClear<Firebird::MetaName>	// MetaName especialization for NullableClear
-{
-public:
-	static void clear(Firebird::MetaName& v)
-	{
-		v = "";
-	}
-};
-
 
 // Nullable support without constructor, to allow usage in unions (used in the parser).
 template <typename T> class BaseNullable
@@ -90,6 +68,39 @@ public:
 public:
 	T value;
 	bool specified;
+};
+
+
+// NullableClear specializations.
+
+template <>
+class NullableClear<Firebird::string>	// string especialization for NullableClear
+{
+public:
+	static void clear(Firebird::string& v)
+	{
+		v = "";
+	}
+};
+
+template <>
+class NullableClear<Firebird::MetaName>	// MetaName especialization for NullableClear
+{
+public:
+	static void clear(Firebird::MetaName& v)
+	{
+		v = "";
+	}
+};
+
+template <typename T>
+class NullableClear<BaseNullable<T> >
+{
+public:
+	static void clear(BaseNullable<T>& v)
+	{
+		v.specified = false;
+	}
 };
 
 

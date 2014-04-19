@@ -607,6 +607,7 @@ using namespace Firebird;
 	SINT64 int64Val;
 	FB_UINT64 uint64Val;
 	BaseNullable<SINT64> nullableInt64Val;
+	BaseNullable<BaseNullable<SINT64> > nullableNullableInt64Val;
 	BaseNullable<FB_UINT64> nullableUint64Val;
 	Jrd::ScaledNumber scaledNumber;
 	UCHAR blrOp;
@@ -1508,6 +1509,7 @@ replace_sequence_clause
 		{
 			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2, $3);
 			node->alter = true;
+			node->restartSpecified = true;
 			$$ = node;
 		}
 	;
@@ -1524,9 +1526,10 @@ alter_sequence_clause
 		{
 			if (!$2.specified && !$3.specified)
 				yyerrorIncompleteCmd();
-			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2, $3);
+			CreateAlterSequenceNode* node = newNode<CreateAlterSequenceNode>(*$1, $2.value, $3);
 			node->create = false;
 			node->alter = true;
+			node->restartSpecified = $2.specified;
 			$$ = node;
 		}
 	;
@@ -1537,10 +1540,10 @@ restart_value_opt
 	| RESTART WITH sequence_value	{ $$ = Nullable<SINT64>::val($3); }
 	;
 
-%type <nullableInt64Val> restart_value_opt2
+%type <nullableNullableInt64Val> restart_value_opt2
 restart_value_opt2
-	: /* nothing */			{ $$ = Nullable<SINT64>::empty(); }
-	| restart_value_opt
+	: /* nothing */			{ $$ = Nullable<BaseNullable<SINT64> >::empty(); }
+	| restart_value_opt		{ $$ = Nullable<BaseNullable<SINT64> > ::val($1); }
 	;
 
 
@@ -1553,6 +1556,7 @@ set_generator_clause
 			node->create = false;
 			node->alter = true;
 			node->legacy = true;
+			node->restartSpecified = true;
 			$$ = node;
 		}
 	;

@@ -916,6 +916,7 @@ public:
 		  create(true),
 		  alter(false),
 		  legacy(false),
+		  restartSpecified(false),
 		  name(pool, aName),
 		  value(aValue),
 		  step(aStep)
@@ -959,6 +960,7 @@ public:
 	bool create;
 	bool alter;
 	bool legacy;
+	bool restartSpecified;
 	const Firebird::MetaName name;
 	const BaseNullable<SINT64> value;
 	const BaseNullable<SLONG> step;
