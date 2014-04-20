@@ -1,3 +1,21 @@
+ 2014-04-19 22:17  asfernandes 
+   M src/common/classes/Nullable.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+Fixed problem with ALTER SEQUENCE.
+
+ 2014-04-19 21:36  asfernandes 
+   M src/isql/show.epp
+   M src/jrd/Mapping.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/why.cpp
+Misc.
+
  2014-04-18 15:45  mapopa 
    M src/isql/show.epp
 cleanup comments
