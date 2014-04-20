@@ -6747,12 +6747,12 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
  **************************************/
 	SET_TDBB(tdbb);
 
-	Mutex* attMutex = jAtt->getMutex();
+	Mutex* const attMutex = jAtt->getMutex();
 	fb_assert(attMutex->locked());
 
-	Jrd::Attachment* attachment = NULL;
+	Jrd::Attachment* attachment = jAtt->getHandle();
 
-	while ((attachment = jAtt->getHandle()) && (attachment->att_flags & ATT_purge_started))
+	while (attachment && (attachment->att_flags & ATT_purge_started))
 	{
 		attachment->att_use_count--;
 
@@ -6774,6 +6774,7 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
 	if (!attachment)
 		return;
 
+	fb_assert(attachment->att_flags & ATT_shutdown);
 	attachment->att_flags |= ATT_purge_started;
 
 	fb_assert(attachment->att_use_count > 0);
@@ -6803,6 +6804,7 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
 		return;
 
 	Database* const dbb = attachment->att_database;
+	const bool forcedPurge = (flags & PURGE_FORCE);
 
 	tdbb->tdbb_flags |= TDBB_detaching;
 
@@ -6810,9 +6812,11 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
 	{
 		try
 		{
-			const trig_vec* trig_disconnect = attachment->att_triggers[DB_TRIGGER_DISCONNECT];
-			if (!(attachment->att_flags & ATT_no_db_triggers) &&
-				!(attachment->att_flags & ATT_shutdown) &&
+			const trig_vec* const trig_disconnect =
+				attachment->att_triggers[DB_TRIGGER_DISCONNECT];
+
+			if (!forcedPurge &&
+				!(attachment->att_flags & ATT_no_db_triggers) &&
 				trig_disconnect && !trig_disconnect->isEmpty())
 			{
 				ThreadStatusGuard temp_status(tdbb);
@@ -6856,9 +6860,8 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
 		}
 		catch (const Exception&)
 		{
-			if (!(flags & PURGE_FORCE))
+			if (!forcedPurge)
 			{
-				attachment->att_flags |= ATT_shutdown;
 				attachment->att_flags &= ~ATT_purge_started;
 				throw;
 			}
@@ -6870,20 +6873,16 @@ static void purge_attachment(thread_db* tdbb, JAttachment* jAtt, unsigned flags)
 		// allow to free resources used by dynamic statements
 		EDS::Manager::jrdAttachmentEnd(tdbb, attachment);
 
-		const ULONG att_flags = attachment->att_flags;
-		attachment->att_flags |= ATT_shutdown;
-
 		if (!(dbb->dbb_flags & DBB_bugcheck))
 		{
 			// Check for any pending transactions
-			purge_transactions(tdbb, attachment, flags & PURGE_FORCE);
+			purge_transactions(tdbb, attachment, forcedPurge);
 		}
 	}
 	catch (const Exception&)
 	{
-		if (!(flags & PURGE_FORCE))
+		if (!forcedPurge)
 		{
-			attachment->att_flags |= ATT_shutdown;
 			attachment->att_flags &= ~ATT_purge_started;
 			throw;
 		}
