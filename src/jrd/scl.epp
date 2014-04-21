@@ -235,8 +235,10 @@ void SCL_check_access(thread_db* tdbb,
 		}
 	}
 
-	// Allow recursive procedure call
-	if (type == SCL_object_procedure && obj_type == id_procedure && obj_name == name)
+	// Allow recursive procedure/function call
+
+	if (((type == SCL_object_procedure && obj_type == id_procedure) ||
+		 (type == SCL_object_function && obj_type == id_function)) && obj_name == name)
 	{
 		return;
 	}
