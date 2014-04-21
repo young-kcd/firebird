@@ -235,6 +235,12 @@ void SCL_check_access(thread_db* tdbb,
 		}
 	}
 
+	// Allow recursive procedure call
+	if (type == SCL_object_procedure && obj_type == id_procedure && obj_name == name)
+	{
+		return;
+	}
+
 	const P_NAMES* names;
 	for (names = p_names; names->p_names_priv; names++)
 	{
