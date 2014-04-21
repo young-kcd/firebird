@@ -425,7 +425,7 @@ void SQLDAMetadata::assign()
 	if (sqlda->sqld <= 0) // malformed sqlda?
 		return;
 
-	count = (USHORT)sqlda->sqld;
+	count = (USHORT) sqlda->sqld;
 	speedHackEnabled = true; // May be we are lucky...
 	ISC_SCHAR* const base = sqlda->sqlvar[0].sqldata;
 
@@ -457,7 +457,7 @@ void SQLDAMetadata::assign()
 		// because changing of it on current codebase will completely kill remote module and may be the engine as well
 		length = fb_utils::sqlTypeToDsc(length, var.sqltype, var.sqllen,
 			NULL /*dtype*/, NULL /*length*/, &it.offset, &it.indOffset);
-		if (it.offset != var.sqldata - base || it.indOffset != (ISC_SCHAR*)(var.sqlind) - base)
+		if (it.offset != var.sqldata - base || it.indOffset != ((ISC_SCHAR*) (var.sqlind)) - base)
 			speedHackEnabled = false; // No luck
 	}
 }
@@ -536,10 +536,11 @@ void SQLDAMetadata::scatterData(DataBuffer& from)
 {
 	fb_assert(sqlda);
 	fb_assert(offsets); // Not reliable, but still check that input buffer can come from this metadata
-	fb_assert(length == from.getCount());
 
 	if (speedHackEnabled)
 		return; // Data is already in user's buffer
+
+	fb_assert(length == from.getCount());
 
 	for (unsigned i = 0; i < count; i++)
 	{
@@ -587,10 +588,13 @@ UCHAR* SQLDAMetadataLauncher::getBuffer()
 {
 	if (metadata)
 	{
+		// ASF: It's important to call getMessageLength before check speedHackEnabled.
+		unsigned length = metadata->getMessageLength(NULL);
+
 		if (metadata->speedHackEnabled)
 			return reinterpret_cast<UCHAR*>(metadata->sqlda->sqlvar[0].sqldata);
 
-		return buffer.getBuffer(metadata->getMessageLength(NULL), false);
+		return buffer.getBuffer(length, false);
 	}
 	else
 	{
@@ -2605,13 +2609,9 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 		SQLDAMetadataLauncher outMessage(sqlda);
 
 		if (statement->fetch(&status, outMessage.metadata, outMessage.getBuffer()))
-		{
 			outMessage.scatterData();
-		}
 		else if (status.isSuccess())
-		{
 			return 100;
-		}
 	}
 	catch (const Exception& e)
 	{
