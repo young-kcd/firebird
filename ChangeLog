@@ -1,3 +1,15 @@
+ 2014-04-21 17:05  alexpeshkoff 
+   M src/jrd/scl.epp
+Postfix for CORE-3242: enable same trick for functions too
+
+ 2014-04-21 13:34  alexpeshkoff 
+   M src/jrd/scl.epp
+Fixed CORE-3242: Recursive stored procedure shouldnt require execute right to call itself
+
+ 2014-04-21 01:01  asfernandes 
+   M src/yvalve/why.cpp
+Fixed CORE-4396 - Incorrect result query if it is execute through "execute statement".
+
  2014-04-20 10:09  dimitr 
    M src/jrd/jrd.cpp
 Fixed ON DISCONNECT triggers I accidentally broke more than a year ago.
