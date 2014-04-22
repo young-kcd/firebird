@@ -200,3 +200,13 @@ void PathUtils::setDirIterator(char* path)
 			*path = '/';
 	}
 }
+
+int PathUtils::makeDir(const Firebird::PathName& path)
+{
+	int rc = mkdir(path.c_str(), 0770) ? errno : 0;
+	if (rc == 0)
+	{
+		// try to set exact access we need but ignore possible errors
+		chmod(path.c_str(), 0770);
+	}
+}

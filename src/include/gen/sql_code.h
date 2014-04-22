@@ -922,6 +922,7 @@ static const struct {
 	{336068894, -901}, /* 286 dyn_duplicate_package_item */
 	{336068895, -901}, /* 287 dyn_cant_modify_sysobj */
 	{336068896, -901}, /* 288 dyn_cant_use_zero_increment */
+	{336068897, -901}, /* 289 dyn_cant_use_in_foreignkey */
 	{336330753, -901}, /*   1 gbak_unknown_switch */
 	{336330754, -901}, /*   2 gbak_page_size_missing */
 	{336330755, -901}, /*   3 gbak_page_size_toobig */

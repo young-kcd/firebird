@@ -58,6 +58,7 @@
 #include "../common/config/dir_list.h"
 #include "../common/os/path_utils.h"
 #include "../common/classes/init.h"
+#include "../common/isc_f_proto.h"
 
 #if defined _MSC_VER && _MSC_VER < 1400
 // NS: in VS2003 these only work with static CRT
@@ -258,19 +259,44 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 	_setmaxstdio(2048);
 #endif
 
-	// If file_name has no path part, expand it in ExternalFilesPath.
-	PathName path, name;
-	PathUtils::splitLastComponent(path, name, file_name);
-	if (path.isEmpty())
+	// If file_name is relative expand it in ExternalFilesPath.
+	PathName newName, name(file_name);
+	if (PathUtils::isRelative(name))
 	{
-		// path component not present in file_name
 		ExternalFileDirectoryList::create(dbb);
-		if (!(dbb->dbb_external_file_directory_list->expandFileName(path, name)))
+		if (!(dbb->dbb_external_file_directory_list->expandFileName(newName, name)))
 		{
-			dbb->dbb_external_file_directory_list->defaultName(path, name);
+			if (!dbb->dbb_external_file_directory_list->defaultName(newName, name))
+			{
+				ISC_expand_filename(newName, false);
+			}
 		}
-		file_name = path.c_str();
+		file_name = newName.c_str();
+		name = newName;
 	}
+
+	// Create missing path components
+	ObjectsArray<PathName> paths;
+	for(;;)
+	{
+		PathName path, file;
+		PathUtils::splitLastComponent(path, file, name);
+		if (path.isEmpty())
+			break;
+
+		int rc = PathUtils::makeDir(path.c_str());
+		if (rc == 0 || rc == EEXIST)
+			break;
+		paths.push(path);
+		name = path;
+	}
+	while(paths.hasData())
+	{
+		PathName path(paths.pop());
+		if (PathUtils::makeDir(path.c_str()) != 0)
+			break;
+	}
+	paths.clear();
 
 	ExternalFile* file = FB_NEW_RPT(*relation->rel_pool, (strlen(file_name) + 1)) ExternalFile();
 	relation->rel_file = file;

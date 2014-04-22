@@ -1854,6 +1854,8 @@ C --
       PARAMETER (GDS__dyn_cant_modify_sysobj           = 336068895)
       INTEGER*4 GDS__dyn_cant_use_zero_increment     
       PARAMETER (GDS__dyn_cant_use_zero_increment      = 336068896)
+      INTEGER*4 GDS__dyn_cant_use_in_foreignkey      
+      PARAMETER (GDS__dyn_cant_use_in_foreignkey       = 336068897)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

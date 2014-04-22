@@ -1927,6 +1927,7 @@ COMMIT WORK;
 ('dyn_duplicate_package_item', NULL, 'PackageNodes.epp', NULL, 8, 286, NULL, 'Duplicate @1 @2', NULL, NULL);
 ('dyn_cant_modify_sysobj', NULL, 'DdlNodes.epp', NULL, 8, 287, NULL, 'System @1 @2 cannot be modified', NULL, 'Ex: System generator rdb$... cannot be modified');
 ('dyn_cant_use_zero_increment', NULL, 'DdlNodes.epp', NULL, 8, 288, NULL, 'INCREMENT BY 0 is an illegal option for sequence @1', NULL, NULL);
+('dyn_cant_use_in_foreignkey', NULL, 'DdlNodes.epp', NULL, 8, 289, NULL, 'Can''t use @1 in FOREIGN KEY constraint', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

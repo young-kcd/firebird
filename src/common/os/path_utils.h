@@ -167,6 +167,11 @@ public:
 		platform.
 	**/
 	static void setDirIterator(char* path);
+
+	/** makeDir creates directory passed as parameter.
+		return value is 0 on success or error code on error.
+	**/
+	static int makeDir(const Firebird::PathName& path);
 };
 
 #endif // JRD_OS_PATH_UTILS_H

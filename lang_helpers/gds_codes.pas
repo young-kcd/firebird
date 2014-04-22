@@ -934,6 +934,7 @@ const
 	gds_dyn_duplicate_package_item       = 336068894;
 	gds_dyn_cant_modify_sysobj           = 336068895;
 	gds_dyn_cant_use_zero_increment      = 336068896;
+	gds_dyn_cant_use_in_foreignkey       = 336068897;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;

@@ -83,7 +83,11 @@ static bool fieldExists(thread_db* tdbb, jrd_tra* transaction, const MetaName& r
 	const MetaName& fieldName);
 static bool isItSqlRole(thread_db* tdbb, jrd_tra* transaction, const MetaName& inputName,
 	MetaName& outputName);
-static void makeRelationScopeName(const MetaName& name, const rel_t type, string& message);
+static const char* getRelationScopeName(const rel_t type);
+static void makeRelationScopeName(string& to, const MetaName& name, const rel_t type);
+static void checkRelationType(const rel_t type, const MetaName& name);
+static void checkFkPairTypes(const rel_t masterType, const MetaName& masterName,
+	const rel_t childType, const MetaName& childName);
 static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName& relationName, const MetaName& fieldName, USHORT newPosition,
 	USHORT existingPosition);
@@ -116,8 +120,8 @@ static void checkForeignKeyTempScope(thread_db* tdbb, jrd_tra* transaction,
 	const MetaName&	childRelName, const MetaName& masterIndexName)
 {
 	AutoCacheRequest request(tdbb, drq_l_rel_info, DYN_REQUESTS);
-	bool error = false;
-	string master, child;
+	MetaName masterRelName;
+	rel_t masterType, childType;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		RLC_M IN RDB$RELATION_CONSTRAINTS CROSS
@@ -129,32 +133,20 @@ static void checkForeignKeyTempScope(thread_db* tdbb, jrd_tra* transaction,
 			 REL_C.RDB$RELATION_NAME EQ childRelName.c_str() AND
 			 REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
 	{
-		const rel_t masterType = relationType(REL_M.RDB$RELATION_TYPE.NULL, REL_M.RDB$RELATION_TYPE);
-		fb_assert(masterType == rel_persistent ||
-				  masterType == rel_global_temp_preserve ||
-				  masterType == rel_global_temp_delete);
+		fb_assert(!masterRelName.hasData());
 
-		const rel_t childType = relationType(REL_C.RDB$RELATION_TYPE.NULL, REL_C.RDB$RELATION_TYPE);
-		fb_assert(childType == rel_persistent ||
-				  childType == rel_global_temp_preserve ||
-				  childType == rel_global_temp_delete);
+		masterRelName = REL_M.RDB$RELATION_NAME;
+		masterType = relationType(REL_M.RDB$RELATION_TYPE.NULL, REL_M.RDB$RELATION_TYPE);
+		childType = relationType(REL_C.RDB$RELATION_TYPE.NULL, REL_C.RDB$RELATION_TYPE);
 
-		error = masterType != childType &&
-			!(masterType == rel_global_temp_preserve && childType == rel_global_temp_delete);
-
-		if (error)
-		{
-			makeRelationScopeName(masterIndexName, masterType, master);
-			makeRelationScopeName(childRelName, childType, child);
-			break;
-		}
 	}
 	END_FOR
 
-	if (error)
+	if (masterRelName.hasData())
 	{
-		// Msg 232 : "%s can't reference %s"
-		status_exception::raise(Arg::PrivateDyn(232) << child << master);
+		checkRelationType(masterType, masterRelName);
+		checkRelationType(childType, childRelName);
+		checkFkPairTypes(masterType, masterRelName, childType, childRelName);
 	}
 }
 
@@ -171,8 +163,8 @@ static void checkRelationTempScope(thread_db* tdbb, jrd_tra* transaction,
 	}
 
 	AutoCacheRequest request(tdbb, drq_l_rel_info2, DYN_REQUESTS);
-	bool error = false;
-	string master, child;
+	MetaName masterRelName;
+	rel_t masterType;
 
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		RLC_C IN RDB$RELATION_CONSTRAINTS CROSS
@@ -185,27 +177,17 @@ static void checkRelationTempScope(thread_db* tdbb, jrd_tra* transaction,
 			 IND_M.RDB$INDEX_NAME EQ IND_C.RDB$FOREIGN_KEY AND
 			 IND_M.RDB$RELATION_NAME EQ REL_M.RDB$RELATION_NAME
 	{
-		const rel_t masterType = relationType(REL_M.RDB$RELATION_TYPE.NULL, REL_M.RDB$RELATION_TYPE);
-		fb_assert(masterType == rel_persistent ||
-				  masterType == rel_global_temp_preserve ||
-				  masterType == rel_global_temp_delete);
+		fb_assert(!masterRelName.hasData());
 
-		error = masterType != childType &&
-			!(masterType == rel_global_temp_preserve && childType == rel_global_temp_delete);
-
-		if (error)
-		{
-			makeRelationScopeName(REL_M.RDB$RELATION_NAME, masterType, master);
-			makeRelationScopeName(childRelName, childType, child);
-			break;
-		}
+		masterType = relationType(REL_M.RDB$RELATION_TYPE.NULL, REL_M.RDB$RELATION_TYPE);
+		masterRelName = REL_M.RDB$RELATION_NAME;
 	}
 	END_FOR
 
-	if (error)
+	if (masterRelName.hasData())
 	{
-		// Msg 232 : "%s can't reference %s"
-		status_exception::raise(Arg::PrivateDyn(232) << child << master);
+		checkRelationType(masterType, masterRelName);
+		checkFkPairTypes(masterType, masterRelName, childType, childRelName);
 	}
 }
 
@@ -480,19 +462,62 @@ static bool isItSqlRole(thread_db* tdbb, jrd_tra* transaction, const MetaName& i
 }
 
 // Make string with relation name and type of its temporary scope.
-static void makeRelationScopeName(const MetaName& name, const rel_t type, string& message)
+static void makeRelationScopeName(string& to, const MetaName& name, const rel_t type)
 {
-	const char* scope = NULL;
-
-	if (type == rel_global_temp_preserve)
-		scope = REL_SCOPE_GTT_PRESERVE;
-	else if (type == rel_global_temp_delete)
-		scope = REL_SCOPE_GTT_DELETE;
-	else
-		scope = REL_SCOPE_PERSISTENT;
-
-	message.printf(scope, name.c_str());
+	const char* scope = getRelationScopeName(type);
+	to.printf(scope, name.c_str());
 }
+
+// Get relation type name
+static const char* getRelationScopeName(const rel_t type)
+{
+	switch(type)
+	{
+	case rel_global_temp_preserve:
+		return REL_SCOPE_GTT_PRESERVE;
+	case rel_global_temp_delete:
+		return REL_SCOPE_GTT_DELETE;
+	case rel_external:
+		return REL_SCOPE_EXTERNAL;
+	case rel_view:
+		return REL_SCOPE_VIEW;
+	case rel_virtual:
+		return REL_SCOPE_VIRTUAL;
+	}
+
+	return REL_SCOPE_PERSISTENT;
+}
+
+// Check does relation of given type can be used in FK
+static void checkRelationType(const rel_t type, const MetaName& name)
+{
+	if (type == rel_persistent ||
+		type == rel_global_temp_preserve ||
+		type == rel_global_temp_delete)
+	{
+		return;
+	}
+
+	string scope;
+	makeRelationScopeName(scope, name, type);
+	(Arg::PrivateDyn(289) << scope).raise();
+}
+
+// Check does pair of relations can be used in FK
+static void checkFkPairTypes(const rel_t masterType, const MetaName& masterName,
+	const rel_t childType, const MetaName& childName)
+{
+	if (masterType != childType &&
+		!(masterType == rel_global_temp_preserve && childType == rel_global_temp_delete))
+	{
+		string master, child;
+		makeRelationScopeName(master, masterName, masterType);
+		makeRelationScopeName(child, childName, childType);
+		// Msg 232 : "%s can't reference %s"
+		status_exception::raise(Arg::PrivateDyn(232) << child << master);
+	}
+}
+
 
 // Alters the position of a field with respect to the
 // other fields in the relation.  This will only affect
@@ -6567,25 +6592,11 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 			if (externalFile->length() >= sizeof(REL.RDB$EXTERNAL_FILE))
 				status_exception::raise(Arg::Gds(isc_dyn_name_longer));
 
-			REL.RDB$EXTERNAL_FILE.NULL = FALSE;
-			strcpy(REL.RDB$EXTERNAL_FILE, externalFile->c_str());
-
 			if (ISC_check_if_remote(externalFile->c_str(), false))
 				status_exception::raise(Arg::PrivateDyn(163));
 
-			// Check for any path, present in filename.
-			// If miss it, file will be searched in External Tables Dirs,
-			// that's why no expand_filename required.
-
-			PathName path, file;
-			PathUtils::splitLastComponent(path, file, externalFile->c_str());
-
-			if (path.hasData())	// path component present in filename
-			{
-				ISC_expand_filename(REL.RDB$EXTERNAL_FILE, strlen(REL.RDB$EXTERNAL_FILE),
-					REL.RDB$EXTERNAL_FILE, sizeof(REL.RDB$EXTERNAL_FILE), false);
-			}
-
+			REL.RDB$EXTERNAL_FILE.NULL = FALSE;
+			strcpy(REL.RDB$EXTERNAL_FILE, externalFile->c_str());
 			REL.RDB$RELATION_TYPE = rel_external;
 		}
 	}

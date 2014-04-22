@@ -1,7 +1,8 @@
 
 #include "firebird.h"
 #include "../common/os/path_utils.h"
-#include <io.h> // _access
+#include <io.h> 		// _access
+#include <direct.h>		// _mkdir
 
 /// The Win32 implementation of the path_utils abstraction.
 
@@ -195,3 +196,7 @@ void PathUtils::setDirIterator(char* path)
 	}
 }
 
+int PathUtils::makeDir(const Firebird::PathName& path)
+{
+	return _mkdir(path.c_str()) ? errno : 0;
+}
