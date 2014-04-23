@@ -209,4 +209,6 @@ int PathUtils::makeDir(const Firebird::PathName& path)
 		// try to set exact access we need but ignore possible errors
 		chmod(path.c_str(), 0770);
 	}
+
+	return rc;
 }
