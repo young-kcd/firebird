@@ -1,3 +1,22 @@
+ 2014-04-22 13:37  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/os/path_utils.h
+   M src/common/os/posix/path_utils.cpp
+   M src/common/os/win32/path_utils.cpp
+   M src/dsql/DdlNodes.epp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/constants.h
+   M src/jrd/ext.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-2119: Use entries in restrict list of ExternalFileAccess parameter to mangle filenames with relative path, also fixed assertion and diagnostics related to EXTERNAL FILE tables
+
  2014-04-21 17:05  alexpeshkoff 
    M src/jrd/scl.epp
 Postfix for CORE-3242: enable same trick for functions too
