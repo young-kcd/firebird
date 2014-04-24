@@ -83,7 +83,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const Firebird::PathName& modPath
 	if (module == NULL)
 	{
 #ifdef DEBUG_LOADER
-	fprintf(stderr, "load error: %s: %s\n", mod_path.c_str(), dlerror());
+	fprintf(stderr, "load error: %s: %s\n", modPath.c_str(), dlerror());
 #endif // DEBUG_LOADER
 	return 0;
 	}
