@@ -36,6 +36,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/SafeArg.h"
 #include "../common/UtilSvc.h"
+#include "../jrd/EngineInterface.h"
 #include "../common/classes/Switches.h"
 #include "../common/classes/ClumpletReader.h"
 #include "../burp/split/spit.h"
@@ -95,12 +96,12 @@ const USHORT isc_action_max				= isc_action_svc_last;
 //define isc_info_max                  67
 
 // Bitmask values for the svc_flags variable
-const int SVC_shutdown		= 0x1;
-const int SVC_timeout		= 0x2;
+//const int SVC_shutdown	= 0x1;
+//const int SVC_timeout		= 0x2;
 //const int SVC_forked		= 0x4;
 const int SVC_detached		= 0x8;
 const int SVC_finished		= 0x10;
-const int SVC_thd_running	= 0x20;
+//const int SVC_thd_running	= 0x20;
 const int SVC_evnt_fired	= 0x40;
 const int SVC_cmd_line		= 0x80;
 
@@ -124,8 +125,6 @@ public:		// utilities interface with service
 	virtual bool isService();
 	// client thread started
 	virtual void started();
-	// client thread finished
-	virtual void finish();
 	// put various info items in info buffer
     virtual void putLine(char tag, const char* val);
     virtual void putSLong(char tag, SLONG val);
@@ -183,7 +182,7 @@ public:		// external interface with service
 	}
 
 	// Firebird log reader
-	static THREAD_ENTRY_DECLARE readFbLog(THREAD_ENTRY_PARAM arg);
+	static int readFbLog(Firebird::UtilSvc* uSvc);
 	// Shuts all service threads (should be called after databases shutdown)
 	static void shutdownServices();
 
@@ -224,7 +223,7 @@ private:
 	// true if no more space in stdout buffer
 	bool	full() const;
 	// start service thread
-	void	start(ThreadEntryPoint* service_thread);
+	void	start(const serv_entry* service_run);
 	// Set the flag (either SVC_finished for the main service thread or SVC_detached for the client thread).
 	// If both main thread and client thread are completed that is main thread is finished and
 	// client is detached then free memory used by service.
@@ -267,6 +266,8 @@ private:
 	void makePermanentStatusVector() throw();
 	// Read SPB on attach
 	void getOptions(Firebird::ClumpletReader&);
+	// Invoke appropriate service thread entry and finalize it correctly
+	static THREAD_ENTRY_DECLARE run(THREAD_ENTRY_PARAM arg);
 
 private:
 	ISC_STATUS_ARRAY svc_status;		// status vector for running service
@@ -286,6 +287,8 @@ private:
 	USHORT	svc_user_flag;
 	USHORT	svc_spb_version;
 	bool	svc_do_shutdown;
+	bool	svc_shutdown_in_progress;
+	bool	svc_timeout;
 
 	Firebird::string	svc_username;
 	Firebird::AuthReader::AuthBlock	svc_auth_block;
@@ -314,28 +317,44 @@ public:
 
 	Firebird::Semaphore	svc_detach_sem;
 
+	JService* jSvc;
+
 private:
 	StatusStringsHelper	svc_thread_strings;
 
 	Firebird::Semaphore svc_sem_empty, svc_sem_full;
 
+	class SafeMutexLock
+	{
+	public:
+		SafeMutexLock(Service* svc, const char* f);
+		bool lock();
+
+	protected:
+		Firebird::RefPtr<JService> jSvc;
+		const char* from;
+	};
+
+	friend class SafeMutexLock;
+
 	//Service existence guard
-	class ExistenceGuard
+	class ExistenceGuard : private SafeMutexLock
 	{
 	public:
 		explicit ExistenceGuard(Service* svc, const char* from);
 		~ExistenceGuard();
-		void release();
-
-	private:
-		Service* svc;
-		bool locked;
 	};
 
-	friend class ExistenceGuard;
-
-	Firebird::Mutex		svc_existence_lock;
-	ExistenceGuard*		svc_current_guard;
+	//Service unlock guard
+	class UnlockGuard : private SafeMutexLock
+	{
+	public:
+		explicit UnlockGuard(Service* svc, const char* from);
+		bool enter();
+		~UnlockGuard();
+	private:
+		bool locked, doLock;
+	};
 
 	// Data pipe from client to service
 	Firebird::Semaphore svc_stdin_semaphore;

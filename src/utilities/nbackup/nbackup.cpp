@@ -1402,9 +1402,8 @@ void NBackup::restore_database(const BackupFiles& files)
 	}
 }
 
-THREAD_ENTRY_DECLARE NBACKUP_main(THREAD_ENTRY_PARAM arg)
+int NBACKUP_main(UtilSvc* uSvc)
 {
-	UtilSvc* uSvc = (UtilSvc*) arg;
 	int exit_code = FB_SUCCESS;
 
 	try {
@@ -1435,9 +1434,7 @@ THREAD_ENTRY_DECLARE NBACKUP_main(THREAD_ENTRY_PARAM arg)
 		exit_code = FB_FAILURE;
 	}
 
-	uSvc->started();
-	uSvc->finish();
-	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
+	return exit_code;
 }
 
 enum NbOperation {nbNone, nbLock, nbUnlock, nbFixup, nbBackup, nbRestore};

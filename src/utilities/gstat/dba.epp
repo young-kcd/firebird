@@ -313,7 +313,7 @@ namespace
 const USHORT GSTAT_MSG_FAC	= 21;
 
 
-THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg)
+int main_gstat(Firebird::UtilSvc* uSvc)
 {
 /**********************************************
  *
@@ -323,7 +323,6 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg)
  * Functional Description:
  *   Entrypoint for GSTAT via the services manager
  **********************************************/
-	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
 	int exit_code = FINI_OK;
 
 	try {
@@ -338,8 +337,7 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg)
 		exit_code = FB_FAILURE;
 	}
 
-	uSvc->finish();
-	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
+	return exit_code;
 }
 
 

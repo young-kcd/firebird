@@ -29,16 +29,18 @@
 #ifndef JRD_SVC_TAB_H
 #define JRD_SVC_TAB_H
 
-#include "../common/ThreadStart.h"
+#include "../common/UtilSvc.h"
 
 namespace Jrd {
+
+typedef int ServiceEntry(Firebird::UtilSvc*);
 
 struct serv_entry
 {
 	USHORT				serv_action;		// isc_action_svc_....
 	const TEXT*			serv_name;			// old service name
 	const TEXT*			serv_std_switches;	// old cmd-line switches
-	ThreadEntryPoint*	serv_thd;			// thread to execute
+	ServiceEntry*		serv_thd;			// thread to execute
 };
 
 extern const serv_entry services[];

@@ -63,6 +63,7 @@
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/EngineInterface.h"
 #include "../jrd/Mapping.h"
+#include "../common/classes/RefMutex.h"
 
 #include "../common/classes/DbImplementation.h"
 
@@ -188,8 +189,8 @@ namespace {
 
 using namespace Jrd;
 
-Service::ExistenceGuard::ExistenceGuard(Service* s, const char* from)
-	: svc(s), locked(false)
+Service::SafeMutexLock::SafeMutexLock(Service* svc, const char* f)
+	: from(f)
 {
 	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
@@ -205,28 +206,68 @@ Service::ExistenceGuard::ExistenceGuard(Service* s, const char* from)
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
 
-	// Appears we have correct handle, lock it to make sure service exists
-	// for our lifetime
-	svc->svc_existence_lock.enter(from);
-	fb_assert(!svc->svc_current_guard);
-	svc->svc_current_guard = this;
-	locked = true;
+	// Appears we have correct service object, may use it later to lock mutex
+	jSvc = svc->jSvc;
+}
+
+bool Service::SafeMutexLock::lock()
+{
+	jSvc->mutex.enter(from);
+	return jSvc->svc;
+}
+
+Service::ExistenceGuard::ExistenceGuard(Service* svc, const char* from)
+	: SafeMutexLock(svc, from)
+{
+	if (!lock())
+	{
+		// could not lock service
+		Arg::Gds(isc_bad_svc_handle).raise();
+	}
 }
 
 Service::ExistenceGuard::~ExistenceGuard()
 {
-	release();
-}
-
-void Service::ExistenceGuard::release()
-{
-	if (locked)
+	try
 	{
-		locked = false;
-		svc->svc_current_guard = NULL;
-		svc->svc_existence_lock.leave();
+		jSvc->mutex.leave();
+	}
+	catch(const Exception&)
+	{
+		DtorException::devHalt();
 	}
 }
+
+Service::UnlockGuard::UnlockGuard(Service* svc, const char* from)
+	: SafeMutexLock(svc, from), locked(true), doLock(true)
+{
+	jSvc->mutex.leave();
+	locked = false;
+}
+
+bool Service::UnlockGuard::enter()
+{
+	doLock = false;
+	if (!locked)
+	{
+		if (!lock())
+		{
+			return false;
+		}
+		locked = true;
+	}
+	return true;
+}
+
+Service::UnlockGuard::~UnlockGuard()
+{
+	if (doLock && (!locked) && (!lock()))
+	{
+		// could not lock service
+		DtorException::devHalt();
+	}
+}
+
 
 void Service::getOptions(ClumpletReader& spb)
 {
@@ -425,18 +466,14 @@ bool Service::isService()
 
 void Service::started()
 {
+	// ExistenceGuard guard(this, FB_FUNCTION);
+	// Not needed here - lock is taken by thread waiting for us
+
 	if (!(svc_flags & SVC_evnt_fired))
 	{
-		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 		svc_flags |= SVC_evnt_fired;
 		svcStart.release();
 	}
-}
-
-void Service::finish()
-{
-	svc_sem_full.release();
-	finish(SVC_finished);
 }
 
 void Service::putLine(char tag, const char* val)
@@ -709,14 +746,14 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	: svc_parsed_sw(getPool()),
 	svc_stdout_head(0), svc_stdout_tail(0), svc_service(NULL), svc_service_run(NULL),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
-	svc_resp_len(0), svc_flags(0), svc_user_flag(0), svc_spb_version(0), svc_do_shutdown(false),
+	svc_resp_len(0), svc_flags(SVC_finished), svc_user_flag(0), svc_spb_version(0),
+	svc_do_shutdown(false), svc_shutdown_in_progress(false), svc_timeout(false),
 	svc_username(getPool()), svc_auth_block(getPool()),
 	svc_expected_db(getPool()), svc_trusted_role(false), svc_utf8(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
 	svc_remote_pid(0), svc_trace_manager(NULL), svc_crypt_callback(crypt_callback),
-	svc_current_guard(NULL),
 	svc_stdin_size_requested(0), svc_stdin_buffer(NULL), svc_stdin_size_preload(0),
 	svc_stdin_preload_requested(0), svc_stdin_user_size(0)
 {
@@ -822,7 +859,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			switches += ' ';
 		switches += svc_command_line;
 
-		svc_flags = switches.hasData() ? SVC_cmd_line : 0;
+		svc_flags |= switches.hasData() ? SVC_cmd_line : 0;
 		svc_perm_sw = switches;
 		svc_user_flag = user_flag;
 		svc_service = serv;
@@ -833,7 +870,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		// Only do this if we are working with a version 1 service
 		if (serv->serv_thd && svc_spb_version == isc_spb_version1)
 		{
-			start(serv->serv_thd);
+			start(serv);
 		}
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -917,11 +954,6 @@ Service::~Service()
 
 	delete svc_trace_manager;
 	svc_trace_manager = NULL;
-
-	if (svc_current_guard)
-	{
-		svc_current_guard->release();
-	}
 }
 
 
@@ -982,15 +1014,13 @@ bool Service::checkForShutdown()
 {
 	if (svcShutdown)
 	{
-		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
-
-		if (svc_flags & SVC_shutdown)
+		if (svc_shutdown_in_progress)
 		{
 			// Here we avoid multiple exceptions thrown
 			return true;
 		}
 
-		svc_flags |= SVC_shutdown;
+		svc_shutdown_in_progress = true;
 		status_exception::raise(Arg::Gds(isc_att_shutdown));
 	}
 
@@ -1010,7 +1040,7 @@ void Service::shutdownServices()
 	// signal once for every still running service
 	for (pos = 0; pos < all.getCount(); pos++)
 	{
-		if (all[pos]->svc_flags & SVC_thd_running)
+		if (!(all[pos]->svc_flags & SVC_finished))
 			all[pos]->svc_detach_sem.release();
 		if (all[pos]->svc_stdin_size_requested)
 			all[pos]->svc_stdin_semaphore.release();
@@ -1018,7 +1048,7 @@ void Service::shutdownServices()
 
 	for (pos = 0; pos < all.getCount(); )
 	{
-		if (all[pos]->svc_flags & SVC_thd_running)
+		if (!(all[pos]->svc_flags & SVC_finished))
 		{
 			globalServicesMutex->leave();
 			THD_sleep(1);
@@ -1290,18 +1320,15 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			break;
 
 		case isc_info_svc_running:
-			// Returns the status of the flag SVC_thd_running
+			// Returns the (inversed) status of the flag SVC_finished
 			if (!ck_space_for_numeric(info, end))
 				return 0;
 			*info++ = item;
-			{	// guardian scope
-				MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
-				if (svc_flags & SVC_thd_running)
-					ADD_SPB_NUMERIC(info, TRUE)
-				else
-					ADD_SPB_NUMERIC(info, FALSE)
-			}
+			if (svc_flags & SVC_finished)
+				ADD_SPB_NUMERIC(info, FALSE)
+			else
+				ADD_SPB_NUMERIC(info, TRUE)
 
 			break;
 
@@ -1461,7 +1488,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				return 0;
 			}
 
-			if (svc_flags & SVC_timeout)
+			if (svc_timeout)
 			{
 				*info++ = isc_info_svc_timeout;
 			}
@@ -1547,11 +1574,6 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
 		}
 		throw;
-	}
-
-	if (!(svc_flags & SVC_thd_running))
-	{
-		finish(SVC_finished);
 	}
 
 	return svc_status[1];
@@ -1892,7 +1914,7 @@ void Service::query(USHORT			send_item_length,
 
 			info = INF_put_item(item, length, info + 3, info, end);
 
-			if (svc_flags & SVC_timeout)
+			if (svc_timeout)
 				*info++ = isc_info_svc_timeout;
 			else
 			{
@@ -1930,7 +1952,7 @@ void Service::query(USHORT			send_item_length,
 		throw;
 	}
 
-	if (!(svc_flags & SVC_thd_running))
+	if (svc_flags & SVC_finished)
 	{
 		if ((svc_flags & SVC_detached) &&
 			svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
@@ -1939,9 +1961,20 @@ void Service::query(USHORT			send_item_length,
 			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
 				recv_item_length, recv_items, res_successful);
 		}
-
-		finish(SVC_finished);
 	}
+}
+
+
+THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
+{
+	Service* svc = (Service*)arg;
+	int exit_code = svc->svc_service_run->serv_thd(svc);
+
+	svc->started();
+	svc->svc_sem_full.release();
+	svc->finish(SVC_finished);
+
+	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
 
 
@@ -1980,22 +2013,18 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 								Arg::Gds(isc_svc_start_failed));
 	}
 
-	{ // scope for locked globalServicesMutex
-		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
-
-		if (svc_flags & SVC_thd_running) {
-			status_exception::raise(Arg::Gds(isc_svc_in_use) << Arg::Str(serv->serv_name));
-		}
-
-		// Another service may have been started with this service block.
-		// If so, we must reset the service flags.
-		svc_switches.erase();
-		if (!(svc_flags & SVC_detached))
-		{
-			svc_flags = 0;
-		}
+	if (!(svc_flags & SVC_finished)) {
+		status_exception::raise(Arg::Gds(isc_svc_in_use) << Arg::Str(serv->serv_name));
 	}
 
+	// Another service may have been started with this service block.
+	// If so, we must reset the service flags.
+	svc_switches.erase();
+/*	if (!(svc_flags & SVC_detached))
+	{
+		svc_flags = 0;
+	}
+ */
 	if (!svc_perm_sw.hasData())
 	{
 		// If svc_perm_sw is not used -- call a command-line parsing utility
@@ -2062,7 +2091,6 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
        	status_exception::raise(Arg::Gds(isc_adm_task_denied));
     }
 
-
 	// Break up the command line into individual arguments.
 	parseSwitches();
 
@@ -2071,16 +2099,11 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 
 	if (serv->serv_thd)
 	{
-		{	// scope
-			MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
-			svc_flags &= ~SVC_evnt_fired;
-			svc_flags |= SVC_thd_running;
+		svc_flags &= ~(SVC_evnt_fired | SVC_finished);
 
-			svc_stdout_head = 0;
-			svc_stdout_tail = 0;
-		}
+		svc_stdout_head = svc_stdout_tail = 0;
 
-		Thread::start(serv->serv_thd, this, THREAD_medium);
+		Thread::start(run, this, THREAD_medium);
 
 		// Check for the service being detached. This will prevent the thread
 		// from waiting infinitely if the client goes away.
@@ -2092,6 +2115,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			// to include in its status vector information about the service's
 			// ability to start.
 			// This is needed since Thread::start() will almost always succeed.
+			//
+			// Do not unlock mutex here - one can call start not doing this.
 			if (svcStart.tryEnter(60))
 			{
 				// started() was called
@@ -2131,7 +2156,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 }
 
 
-THREAD_ENTRY_DECLARE Service::readFbLog(THREAD_ENTRY_PARAM arg)
+int Service::readFbLog(UtilSvc* arg)
 {
 	Service* service = (Service*) arg;
 	service->readFbLog();
@@ -2181,12 +2206,10 @@ void Service::readFbLog()
 	{
 		fclose(file);
 	}
-
-	finish(SVC_finished);
 }
 
 
-void Service::start(ThreadEntryPoint* service_thread)
+void Service::start(const serv_entry* service_run)
 {
 	// Break up the command line into individual arguments.
 	parseSwitches();
@@ -2196,7 +2219,8 @@ void Service::start(ThreadEntryPoint* service_thread)
 		argv[0] = svc_service->serv_name;
 	}
 
-	Thread::start(service_thread, this, THREAD_medium);
+	svc_service_run = service_run;
+	Thread::start(run, this, THREAD_medium);
 }
 
 
@@ -2285,10 +2309,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 	*return_length = 0;
 
-	{	// scope
-		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
-		svc_flags &= ~SVC_timeout;
-	}
+	svc_timeout = false;
 
 	bool flagFirst = true;
 	while (length)
@@ -2317,7 +2338,10 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 				break;
 			}
 
+			UnlockGuard guard(this, FB_FUNCTION);
 			svc_sem_full.tryEnter(1, 0);
+			if (!guard.enter())
+				Arg::Gds(isc_bad_svc_handle).raise();
 		}
 #ifdef HAVE_GETTIMEOFDAY
 		GETTIMEOFDAY(&end_time);
@@ -2328,8 +2352,8 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 #endif
 		if (timeout && elapsed_time >= timeout)
 		{
-			MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
-			svc_flags |= SVC_timeout;
+			ExistenceGuard guard(this, FB_FUNCTION);
+			svc_timeout = true;
 			break;
 		}
 
@@ -2458,13 +2482,9 @@ void Service::finish(USHORT flag)
 {
 	if (flag == SVC_finished || flag == SVC_detached)
 	{
-		MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
+		ExistenceGuard guard(this, FB_FUNCTION);
 
 		svc_flags |= flag;
-		if (! (svc_flags & SVC_thd_running))
-		{
-			svc_flags |= SVC_finished;
-		}
 		if ((svc_flags & SVC_finished) && (svc_flags & SVC_detached))
 		{
 			delete this;
@@ -2490,7 +2510,6 @@ void Service::finish(USHORT flag)
 		if (svc_flags & SVC_finished)
 		{
 			svc_sem_full.release();
-			svc_flags &= ~SVC_thd_running;
 		}
 		else
 		{

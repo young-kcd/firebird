@@ -35,14 +35,14 @@
 // Service Functions
 #include "../burp/burp_proto.h"
 #include "../alice/alice_proto.h"
-THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
+int main_gstat(Firebird::UtilSvc* uSvc);
 #include "../utilities/nbackup/nbk_proto.h"
 #include "../utilities/gsec/gsec_proto.h"
 
 namespace Jrd {
 
 #ifdef DEBUG
-THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM);
+int test_thread(Firebird::UtilSvc* uSvc);
 void test_cmd(USHORT, SCHAR *, TEXT **);
 #define TEST_THREAD test_thread
 #define TEST_CMD test_cmd
@@ -51,7 +51,7 @@ void test_cmd(USHORT, SCHAR *, TEXT **);
 // removed as the services API takes shape.  They are used to
 // test that the paths for starting services and parsing command-lines
 // are followed correctly.
-THREAD_ENTRY_DECLARE test_thread(THREAD_ENTRY_PARAM)
+int test_thread(Firebird::UtilSvc* uSvc)
 {
 	gds__log("Starting service");
 	return FINI_OK;

@@ -72,7 +72,7 @@ static void insert_error(ISC_STATUS*, ISC_STATUS);
 static void msg_get(USHORT number, TEXT* msg);
 
 
-THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
+int GSEC_main(Firebird::UtilSvc* uSvc)
 {
 /**********************************************
  *
@@ -82,7 +82,6 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
  * Functional Description:
  *   Entrypoint for GSEC via the services manager
  **********************************************/
-	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
 	int exit_code = FINI_OK;
 
 	try {
@@ -97,8 +96,7 @@ THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM arg)
 		exit_code = FB_FAILURE;
 	}
 
-	uSvc->finish();
-	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
+	return exit_code;
 }
 
 

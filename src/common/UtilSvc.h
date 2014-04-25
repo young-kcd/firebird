@@ -54,7 +54,6 @@ public:
 
 	virtual bool isService() = 0;
 	virtual void started() = 0;
-	virtual void finish() = 0;
 	virtual void outputVerbose(const char* text) = 0;
 	virtual void outputError(const char* text) = 0;
 	virtual void outputData(const void* text, size_t size) = 0;
@@ -109,7 +108,6 @@ public:
 protected:
 	bool usvcDataMode;
 };
-
 
 } // namespace Firebird
 

@@ -442,10 +442,10 @@ public:
 
 public:
 	explicit JService(Service* handle);
-
-private:
+	Firebird::Mutex mutex;
 	Service* svc;
 
+private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 

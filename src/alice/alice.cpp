@@ -93,9 +93,8 @@ static void alice_output(bool error, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
 //	Entry point for GFIX in case of service manager.
 //
 
-THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
+int ALICE_main(Firebird::UtilSvc* uSvc)
 {
-	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
 	int exit_code = FINI_OK;
 
 	try {
@@ -110,8 +109,7 @@ THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 		exit_code = FB_FAILURE;
 	}
 
-	uSvc->finish();
-	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
+	return exit_code;
 }
 
 //____________________________________________________________

@@ -15,6 +15,6 @@ void	GSEC_print_partial(USHORT);
 void	GSEC_diag(USHORT);
 
 int		gsec(Firebird::UtilSvc*);
-THREAD_ENTRY_DECLARE GSEC_main(THREAD_ENTRY_PARAM);
+int		GSEC_main(Firebird::UtilSvc*);
 
 #endif // GSEC_PROTO_H

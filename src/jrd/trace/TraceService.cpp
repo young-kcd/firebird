@@ -331,7 +331,7 @@ bool TraceSvcJrd::checkAliveAndFlags(ULONG sesId, int& flags)
 
 
 // service entrypoint
-THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
+int TRACE_main(UtilSvc* arg)
 {
 	Service* svc = (Service*) arg;
 	int exit_code = FB_SUCCESS;
@@ -350,8 +350,5 @@ THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
 		exit_code = FB_FAILURE;
 	}
 
-	svc->started();
-	svc->finish();
-
-	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
+	return exit_code;
 }

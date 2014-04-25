@@ -3692,24 +3692,26 @@ JService* JProvider::attachServiceManager(IStatus* user_status, const char* serv
  *	Connect to a Firebird service.
  *
  **************************************/
-	JService* svc = NULL;
+	JService* jSvc = NULL;
 
 	try
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		svc = new JService(new Service(service_name, spbLength, spb, cryptCallback));
-		svc->addRef();
+		Service* svc = new Service(service_name, spbLength, spb, cryptCallback);
+		jSvc = new JService(svc);
+		svc->jSvc = jSvc;
+		jSvc->addRef();
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return svc;
+		return jSvc;
 	}
 
 	successful_completion(user_status);
 
-	return svc;
+	return jSvc;
 }
 
 

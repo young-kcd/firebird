@@ -28,7 +28,7 @@
 #include "../common/classes/MsgPrint.h"
 #include "../common/UtilSvc.h"
 
-THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM);
+int		BURP_main(Firebird::UtilSvc*);
 int		gbak(Firebird::UtilSvc*);
 
 void	BURP_abort();

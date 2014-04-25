@@ -28,7 +28,7 @@
 #include "../common/classes/MsgPrint.h"
 #include "../common/UtilSvc.h"
 
-THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM);
+int		ALICE_main(Firebird::UtilSvc*);
 int		alice(Firebird::UtilSvc*);
 
 class AliceGlobals;

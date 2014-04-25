@@ -117,7 +117,7 @@ const ULONG MBYTE	= KBYTE * KBYTE;
 const ULONG GBYTE	= MBYTE * KBYTE;
 
 
-THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
+int BURP_main(Firebird::UtilSvc* uSvc)
 {
 /**************************************
  *
@@ -129,7 +129,6 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
  *	Entrypoint for GBAK via services manager.
  *
  **************************************/
-	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
 	int exit_code = FINI_OK;
 
 	try {
@@ -144,8 +143,7 @@ THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
 		exit_code = FB_FAILURE;
 	}
 
-	uSvc->finish();
-	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
+	return exit_code;
 }
 
 

@@ -39,7 +39,7 @@
 #include "../../jrd/trace/TraceSession.h"
 
 
-THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM);
+int TRACE_main(Firebird::UtilSvc*);
 
 
 namespace Firebird {

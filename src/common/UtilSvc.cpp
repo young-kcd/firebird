@@ -61,8 +61,7 @@ namespace {
 class StandaloneUtilityInterface : public UtilSvc
 {
 public:
-	StandaloneUtilityInterface(int ac, char** av) :
-	  m_finished(false)
+	StandaloneUtilityInterface(int ac, char** av)
 	{
 		while (ac--)
 		{
@@ -131,7 +130,6 @@ public:
 	}
 
 	// do nothing for non-service
-	virtual void finish() { m_finished = true; }
 	virtual void started() { }
 	virtual void putLine(char, const char*) { }
 	virtual void putSLong(char, SLONG) { }
@@ -142,11 +140,8 @@ public:
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual const ISC_STATUS* getStatus() { return 0; }
 	virtual void fillDpb(ClumpletWriter&) { }
-	virtual bool finished() { return m_finished; };
+	virtual bool finished() { return false; };
 	virtual void initStatus() { }
-
-private:
-	bool m_finished;
 };
 
 
