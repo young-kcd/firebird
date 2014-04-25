@@ -35,6 +35,7 @@
 #include "../common/classes/semaphore.h"
 #include "../common/classes/array.h"
 #include "../common/classes/SafeArg.h"
+#include "../common/classes/PublicHandle.h"
 #include "../common/UtilSvc.h"
 #include "../burp/spit.h"
 
@@ -103,7 +104,7 @@ class thread_db;
 class TraceManager;
 
 // Service manager
-class Service : public Firebird::UtilSvc, public TypedHandle<type_svc>
+class Service : public Firebird::UtilSvc, public TypedHandle<type_svc>, public Firebird::PublicHandle
 {
 public:		// utilities interface with service
 	// output to svc_stdout verbose info
@@ -305,19 +306,11 @@ private:
 	Firebird::Semaphore svc_sem_empty, svc_sem_full;
 
 	//Service existence guard
-	class ExistenceGuard
+	class ExistenceGuard : public Firebird::PublicHandleHolder
 	{
 	public:
-		explicit ExistenceGuard(Service* svc);
-		~ExistenceGuard();
-		void release();
-	private:
-		Service* svc;
-		bool locked;
+		explicit ExistenceGuard(Service* svc, const char* from);
 	};
-	friend class ExistenceGuard;
-	Firebird::Mutex		svc_existence_lock;
-	ExistenceGuard*		svc_current_guard;
 
 	// Data pipe from client to service
 	Firebird::Semaphore svc_stdin_semaphore;

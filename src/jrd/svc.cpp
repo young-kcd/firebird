@@ -298,44 +298,10 @@ namespace {
 
 using namespace Jrd;
 
-Service::ExistenceGuard::ExistenceGuard(Service* s)
-	: svc(s), locked(false)
+Service::ExistenceGuard::ExistenceGuard(Service* svc, const char* from)
 {
-	MutexLockGuard guard(globalServicesMutex);
-
-	if (! svc->locateInAllServices())
-	{
-		// Service is so old that it's even missing in allServices array
+	if (!hold(svc, from))
 		Arg::Gds(isc_bad_svc_handle).raise();
-	}
-	
-	if (svc->svc_flags & SVC_detached)
-	{
-		// Service was already detached
-		Arg::Gds(isc_bad_svc_handle).raise();
-	}
-
-	// Appears we have correct handle, lock it to make sure service exists
-	// for our lifetime
-	svc->svc_existence_lock.enter();
-	fb_assert(!svc->svc_current_guard);
-	svc->svc_current_guard = this;
-	locked = true;
-}
-
-Service::ExistenceGuard::~ExistenceGuard()
-{
-	release();
-}
-
-void Service::ExistenceGuard::release()
-{
-	if (locked)
-	{
-		locked = false;
-		svc->svc_current_guard = NULL;
-		svc->svc_existence_lock.leave();
-	}
 }
 
 void Service::parseSwitches()
@@ -795,7 +761,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_trusted_login(getPool()), svc_trusted_role(false), svc_uses_security_database(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
-	svc_remote_pid(0), svc_current_guard(NULL),
+	svc_remote_pid(0),
 	svc_stdin_size_requested(0), svc_stdin_buffer(NULL), svc_stdin_size_preload(0),
 	svc_stdin_preload_requested(0), svc_stdin_user_size(0)
 {
@@ -1027,7 +993,7 @@ static THREAD_ENTRY_DECLARE svcShutdownThread(THREAD_ENTRY_PARAM)
 
 void Service::detach()
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, "detach");
 
 	// save it cause after call to finish() we can't access class members any more
 	const bool localDoShutdown = svc_do_shutdown;
@@ -1057,11 +1023,6 @@ Service::~Service()
 
 	delete svc_trace_manager;
 	svc_trace_manager = NULL;
-
-	if (svc_current_guard)
-	{
-		svc_current_guard->release();
-	}
 }
 
 
@@ -1181,7 +1142,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 						   USHORT buffer_length,
 						   UCHAR* info)
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, "query2");
 
 	UCHAR item;
 	UCHAR buffer[MAXPATHLEN];
@@ -1727,7 +1688,7 @@ void Service::query(USHORT			send_item_length,
 					USHORT			buffer_length,
 					UCHAR*			info)
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, "query");
 
 	UCHAR item, *p;
 	UCHAR buffer[256];
@@ -2125,7 +2086,7 @@ void Service::query(USHORT			send_item_length,
 
 void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
-	ExistenceGuard guard(this);
+	ExistenceGuard guard(this, "start");
 
 	ThreadIdHolder holdId(svc_thread_strings);
 
