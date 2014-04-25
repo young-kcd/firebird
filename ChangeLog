@@ -1,3 +1,7 @@
+ 2014-04-24 11:43  paulbeach 
+   M src/jrd/os/darwin/mod_loader.cpp
+Fix typo in debug routine
+
  2014-04-19 07:34  hvlad 
    M src/jrd/os/win32/mod_loader.cpp
 Missed return
