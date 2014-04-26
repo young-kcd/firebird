@@ -1,3 +1,8 @@
+ 2014-04-25 11:01  alexpeshkoff 
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+Minimal fix for CORE-4303: Possible races while Service destruction
+
  2014-04-24 11:43  paulbeach 
    M src/jrd/os/darwin/mod_loader.cpp
 Fix typo in debug routine
