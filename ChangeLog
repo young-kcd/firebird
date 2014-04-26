@@ -1,3 +1,25 @@
+ 2014-04-25 10:59  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/alice_proto.h
+   M src/burp/burp.cpp
+   M src/burp/burp_proto.h
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/svc_tab.cpp
+   M src/jrd/svc_tab.h
+   M src/jrd/trace/TraceService.cpp
+   M src/jrd/trace/TraceService.h
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/gsec_proto.h
+   M src/utilities/gstat/dba.epp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/nbackup/nbk_proto.h
+Fixed CORE-4303: Possible races while Service destruction, related code cleanup
+
  2014-04-23 12:43  alexpeshkoff 
    M src/common/os/posix/path_utils.cpp
 Missing return - thanks to Claudio
