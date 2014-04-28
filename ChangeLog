@@ -1,3 +1,12 @@
+ 2014-04-26 09:02  mapopa 
+   A builds/misc (from /firebird/trunk/builds/misc:59480)
+revert the change 
+
+ 2014-04-26 08:40  mapopa 
+   M builds/make.new/config/install-sh
+   D builds/misc
+removed 11 years ago due to new method to create security database 
+
  2014-04-25 10:59  alexpeshkoff 
    M src/alice/alice.cpp
    M src/alice/alice_proto.h
