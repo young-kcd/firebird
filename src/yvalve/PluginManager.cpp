@@ -42,6 +42,9 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/db_alias.h"
 
+// register builtin plugins
+#include "../remote/client/interface.h"
+
 //#define DEBUG_PLUGINS
 
 using namespace Firebird;
@@ -887,6 +890,20 @@ namespace
 
 		return NULL;
 	}
+
+	class BuiltinRegister
+	{
+	public:
+		static void init()
+		{
+			PluginManagerInterfacePtr pi;
+			Remote::registerRedirector(pi);
+		}
+
+		static void cleanup()
+		{
+		}
+	};
 } // anonymous namespace
 
 
@@ -965,6 +982,9 @@ IPluginSet* FB_CARG PluginManager::getPlugins(IStatus* status, unsigned int inte
 {
 	try
 	{
+		static InitMutex<BuiltinRegister> registerBuiltinPlugins("RegisterBuiltinPlugins");
+		registerBuiltinPlugins.init();
+
 		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
 		IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, ui, firebirdConf);

@@ -66,7 +66,6 @@
 #include "../yvalve/why_proto.h"
 #include "../yvalve/MasterImplementation.h"
 #include "../yvalve/PluginManager.h"
-#include "../remote/client/interface.h"
 #include "../jrd/acl.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
@@ -1159,20 +1158,6 @@ namespace Why
 	ShutChain* ShutChain::list = NULL;
 	GlobalPtr<Mutex> ShutChain::shutdownCallbackMutex;
 
-	class BuiltinRegister
-	{
-	public:
-		static void init()
-		{
-			PluginManagerInterfacePtr pi;
-			Remote::registerRedirector(pi);
-		}
-
-		static void cleanup()
-		{
-		}
-	};
-
 	class NoEntrypoint
 	{
 	public:
@@ -1343,9 +1328,6 @@ namespace Why
 		{
 			aStatus->init();
 			signalInit();
-
-			static InitMutex<BuiltinRegister> registerBuiltinPlugins("RegisterBuiltinPlugins");
-			registerBuiltinPlugins.init();
 
 			if (!shutdownMode)
 			{
