@@ -46,7 +46,7 @@ const int IN_SW_BURP_R			= 7;	// replace existing database
 //const int IN_SW_BURP_U		= 9;	// don't back up security information
 const int IN_SW_BURP_V			= 10;	// verify actions; verbose with fixed interval (10000)
 const int IN_SW_BURP_Z			= 11;	// print version number
-//const int IN_SW_BURP_D		= 12;	// backup file on tape - APOLLO only
+const int IN_SW_BURP_SKIP_DATA	= 12;	// skip data from table
 const int IN_SW_BURP_E			= 13;	// expand (no compress)
 const int IN_SW_BURP_Y			= 14;	// redirect/suppress status and error output
 const int IN_SW_BURP_L			= 15;	// ignore limbo transactions
@@ -105,18 +105,18 @@ enum BurpOptionType { boGeneral, boMain, boBackup, boRestore };
 static const Switches::in_sw_tab_t reference_burp_in_sw_table[] =
 {
 	{IN_SW_BURP_B,	  0,						"BACKUP_DATABASE",	0, 0, 0, false, 60, 	1, NULL, boMain},
-				// msg 60: %sBACKUP_DATABASE backup database to file
+				// msg 60: @1BACKUP_DATABASE backup database to file
 	{IN_SW_BURP_BU,   isc_spb_res_buffers,		"BUFFERS",			0, 0, 0, false, 257,	2, NULL, boRestore},
-				// msg 257: %sBU(FFERS) override default page buffers
+				// msg 257: @1BU(FFERS) override default page buffers
 	{IN_SW_BURP_C,	  isc_spb_res_create,		"CREATE_DATABASE",	0, 0, 0, false, 73, 	1, NULL, boMain},
-				// msg 73: %sCREATE_DATABASE create database from backup file
+				// msg 73: @1CREATE_DATABASE create database from backup file
 	{IN_SW_BURP_CO,   isc_spb_bkp_convert,		"CONVERT",			0, 0, 0, false, 254,	2, NULL, boBackup},
-				// msg 254: %sCO(NVERT)  backup external files as tables
+				// msg 254: @1CO(NVERT)  backup external files as tables
 	{IN_SW_BURP_E,	  isc_spb_bkp_expand,		"EXPAND",			0, 0, 0, false, 97, 	1, NULL, boBackup},
-				// msg 97: %sEXPAND no data compression
+				// msg 97: @1EXPAND no data compression
 	//{IN_SW_BURP_F,	0,						"FILE_NAMES",		0, 0, 0, false, 0,		0, NULL},
 	{IN_SW_BURP_FA,   isc_spb_bkp_factor,		"FACTOR",			0, 0, 0, false, 181,	2, NULL, boBackup},
-				/* msg 181; %sFACTOR  blocking factor */
+				/* msg 181; @1FACTOR  blocking factor */
 	{IN_SW_BURP_FETCHPASS, 0,					"FETCH_PASSWORD",	0, 0, 0, false, 306,	2, NULL, boGeneral},
 				// msg 306: @1FE(TCH_PASSWORD)	   fetch password from file
 	{IN_SW_BURP_FIX_FSS_DATA,		isc_spb_res_fix_fss_data,
@@ -126,47 +126,49 @@ static const Switches::in_sw_tab_t reference_burp_in_sw_table[] =
 												"FIX_FSS_METADATA", 0, 0, 0, false, 303,	9, NULL, boRestore},
 				// msg 303: @1FIX_FSS_METADATA	   fix malformed UNICODE_FSS metadata
 	{IN_SW_BURP_G,	  isc_spb_bkp_no_garbage_collect, "GARBAGE_COLLECT", 0, 0, 0, false, 177, 1, NULL, boBackup},
-				// msg 177:%sGARBAGE_COLLECT inhibit garbage collection
+				// msg 177:@1GARBAGE_COLLECT inhibit garbage collection
 	{IN_SW_BURP_I,	  isc_spb_res_deactivate_idx, "INACTIVE",		0, 0, 0, false, 78, 	1, NULL, boRestore},
-				// msg 78:%sINACTIVE deactivate indexes during restore
+				// msg 78:@1INACTIVE deactivate indexes during restore
 	{IN_SW_BURP_IG,   isc_spb_bkp_ignore_checksums,   "IGNORE", 	0, 0, 0, false, 178,	2, NULL, boBackup},
-				// msg 178:%sIGNORE ignore bad checksums
+				// msg 178:@1IGNORE ignore bad checksums
 	{IN_SW_BURP_K,	  isc_spb_res_no_shadow,	"KILL", 			0, 0, 0, false, 172,	1, NULL, boRestore},
-				// msg 172:%sKILL restore without creating shadows
+				// msg 172:@1KILL restore without creating shadows
 	{IN_SW_BURP_L,	  isc_spb_bkp_ignore_limbo, "LIMBO",			0, 0, 0, false, 98, 	1, NULL, boBackup},
 				// msg 98 ignore transactions in limbo
 	{IN_SW_BURP_M,	  isc_spb_bkp_metadata_only,	"METADATA", 	0, 0, 0, false, 0,		1, NULL, boGeneral},
 	{IN_SW_BURP_M,	  0,						"META_DATA",		0, 0, 0, false, 63, 	1, NULL, boGeneral},
-				// msg 63: %sMETA_DATA backup or restore metadata only
+				// msg 63: @1META_DATA backup or restore metadata only
 	{IN_SW_BURP_MODE, 0,						"MODE", 			0, 0, 0, false, 278,	2, NULL, boRestore},
-				// msg 278: %sMODE read_only or read_write access
+				// msg 278: @1MODE read_only or read_write access
 	{IN_SW_BURP_N,	  isc_spb_res_no_validity,	"NO_VALIDITY",		0, 0, 0, false, 187,	1, NULL, boRestore},
-				// msg 187: %sN(O_VALIDITY) do not restore database validity conditions
+				// msg 187: @1N(O_VALIDITY) do not restore database validity conditions
 	{IN_SW_BURP_NOD,  isc_spb_bkp_no_triggers,	"NODBTRIGGERS", 	0, 0, 0, false, 294,	3, NULL, boBackup},
-				// msg 294: %sNOD(BTRIGGERS) do not run database triggers
+				// msg 294: @1NOD(BTRIGGERS) do not run database triggers
 	{IN_SW_BURP_NT,   isc_spb_bkp_non_transportable,	  "NT", 	0, 0, 0, false, 239,	2, NULL, boBackup},
-				// msg 239: %sNT Non-Transportable backup file format
+				// msg 239: @1NT Non-Transportable backup file format
 	{IN_SW_BURP_O,	  isc_spb_res_one_at_a_time, "ONE_AT_A_TIME",	0, 0, 0, false, 99,	1, NULL, boRestore},
-				// msg 99: %sONE_AT_A_TIME restore one relation at a time
+				// msg 99: @1ONE_AT_A_TIME restore one relation at a time
 	{IN_SW_BURP_OL,	isc_spb_bkp_old_descriptions, "OLD_DESCRIPTIONS", 0, 0, 0, false, 186, 2, NULL, boBackup},
-				// msg 186: %sOLD_DESCRIPTIONS save old style metadata descriptions
+				// msg 186: @1OLD_DESCRIPTIONS save old style metadata descriptions
 	{IN_SW_BURP_P,	isc_spb_res_page_size,		"PAGE_SIZE",		0, 0, 0, false, 101,	1, NULL, boRestore},
-				// msg 101: %sPAGE_SIZE override default page size
+				// msg 101: @1PAGE_SIZE override default page size
 	{IN_SW_BURP_PASS, 0,						"PASSWORD", 		0, 0, 0, false, 190,	3, NULL, boGeneral},
-				// msg 190: %sPA(SSWORD) Firebird password
+				// msg 190: @1PA(SSWORD) Firebird password
 	{IN_SW_BURP_RECREATE, 0,					"RECREATE_DATABASE", 0, 0, 0, false, 284,	1, NULL, boMain},
-				// msg 284: %sR(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used) database from backup file
+				// msg 284: @1R(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used) database from backup file
 	{IN_SW_BURP_R,	  isc_spb_res_replace,		"REPLACE_DATABASE", 0, 0, 0, false, 112,	3, NULL, boMain},
-				// msg 112: %sREP(LACE_DATABASE) replace database from backup file
+				// msg 112: @1REP(LACE_DATABASE) replace database from backup file
 /**************************************************************
-** msg 252: %sRO(LE) Firebird SQL role
+** msg 252: @1RO(LE) Firebird SQL role
 ***************************************************************/
 	{IN_SW_BURP_ROLE, isc_spb_sql_role_name,	"ROLE",				0, 0, 0, false, 252,	2, NULL, boGeneral},
 	{IN_SW_BURP_S,	  0,						"SKIP_BAD_DATA",	0, 0, 0, false, 0,		4, NULL, boRestore},
 	{IN_SW_BURP_SE,   0,						"SERVICE",			0, 0, 0, false, 277,	2, NULL, boGeneral},
-				// msg 277: %sSE(RVICE) use services manager
+				// msg 277: @1SE(RVICE) use services manager
+	{IN_SW_BURP_SKIP_DATA,   0,					"SKIP_DATA",		0, 0, 0, false, 355,	6, NULL, boGeneral},
+				// msg 355: @1SKIP_DATA skip data for table
 	{IN_SW_BURP_T,	  0,						"TRANSPORTABLE",	0, 0, 0, false, 175,	1, NULL, boBackup},
-				// msg 175: %sTRANSPORTABLE transportable backup -- data in XDR format
+				// msg 175: @1TRANSPORTABLE transportable backup -- data in XDR format
 #ifdef TRUSTED_AUTH
 	{IN_SW_BURP_TRUSTED_AUTH, 0,				"TRUSTED",			0, 0, 0, false, 295,	3, NULL, boGeneral},
 				// msg 295: @1TRU(STED) 		   use trusted authentication
@@ -177,18 +179,18 @@ static const Switches::in_sw_tab_t reference_burp_in_sw_table[] =
 	{IN_SW_BURP_U,	  0,						"UNPROTECTED",		0, 0, 0, false, 0,		5, NULL, boGeneral},
 */
 	{IN_SW_BURP_US,   isc_spb_res_use_all_space,	"USE_ALL_SPACE", 0, 0, 0, false, 276,	4, NULL, boRestore},
-				// msg 276: %sUSE_(ALL_SPACE) do not reserve space for record versions
+				// msg 276: @1USE_(ALL_SPACE) do not reserve space for record versions
 	{IN_SW_BURP_USER, 0,						"USER",				0, 0, 0, false, 191,	4, NULL, boGeneral},
-				// msg 191: %sUSER Firebird user name
+				// msg 191: @1USER Firebird user name
 	{IN_SW_BURP_V,	  isc_spb_verbose,			"VERBOSE",			0, 0, 0, false, 0,		1, NULL, boGeneral},
 	{IN_SW_BURP_V,	  0,						"VERIFY",			0, 0, 0, false, 113,	1, NULL, boGeneral},
-				// msg 113: %sVERIFY report each action taken
+				// msg 113: @1VERIFY report each action taken
 	{IN_SW_BURP_VERBINT, isc_spb_verbint,		"VERBINT",			0, 0, 0, false, 328,	5, NULL, boGeneral},
 				// msg 328: @1VERBI(NT) <n> verbose information with explicit interval
 	{IN_SW_BURP_Y,	  0,						"Y",				0, 0, 0, false, 109,	1, NULL, boGeneral},
-				// msg 109: %sY redirect/suppress output (file path or OUTPUT_SUPPRESS)
+				// msg 109: @1Y redirect/suppress output (file path or OUTPUT_SUPPRESS)
 	{IN_SW_BURP_Z,	  0,						"Z",				0, 0, 0, false, 104,	1, NULL, boGeneral},
-				// msg 104: %sZ print version number
+				// msg 104: @1Z print version number
 /**************************************************************************/
 // The next two 'virtual' switches are hidden from user and are needed
 // for services API

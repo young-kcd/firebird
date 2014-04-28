@@ -39,6 +39,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_pair.h"
 #include "../common/classes/MetaName.h"
+#include "../../jrd/SimilarToMatcher.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -879,6 +880,27 @@ static const char HDR_SPLIT_TAG6[]	= "InterBase/gbak,   ";
 #define HDR_SPLIT_TAG HDR_SPLIT_TAG6
 const FB_UINT64 MIN_SPLIT_SIZE	= FB_CONST64(2048);		// bytes
 
+
+// Copy&paste from TraceUnicodeUtils.h - fixme !!!!!!!!
+class UnicodeCollationHolder
+{
+private:
+	charset* cs;
+	texttype* tt;
+	Firebird::AutoPtr<Jrd::CharSet> charSet;
+	Firebird::AutoPtr<Jrd::TextType> textType;
+
+public:
+	explicit UnicodeCollationHolder(Firebird::MemoryPool& pool);
+	~UnicodeCollationHolder();
+
+	Jrd::TextType* getTextType()
+	{
+		return textType;
+	}
+};
+
+
 // Global switches and data
 
 class BurpGlobals : public Firebird::ThreadData
@@ -891,7 +913,8 @@ public:
 		  verboseInterval(10000),
 		  flag_on_line(true),
 		  firstMap(true),
-		  stdIoMode(false)
+		  stdIoMode(false),
+		  unicodeCollation(*getDefaultMemoryPool())
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -1046,6 +1069,8 @@ public:
 	{
 		ThreadData::restoreSpecific();
 	}
+	void setupSkipData(const Firebird::string& regexp);
+	bool skipRelation(const char* name);
 
 	char veryEnd;
 	//starting after this members must be initialized in constructor explicitly
@@ -1057,6 +1082,8 @@ public:
 	bool flag_on_line;		// indicates whether we will bring the database on-line
 	bool firstMap;			// this is the first time we entered get_mapping()
 	bool stdIoMode;			// stdin or stdout is used as backup file
+	UnicodeCollationHolder unicodeCollation;
+	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > > skipDataMatcher;
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h

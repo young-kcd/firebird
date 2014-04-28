@@ -54,8 +54,10 @@
 #include "../burp/resto_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
+#include "../common/isc_f_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/Switches.h"
+#include "../common/IntlUtil.h"
 #include "../burp/burpswi.h"
 
 #ifdef HAVE_CTYPE_H
@@ -680,6 +682,14 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// user name parameter missing
 			}
 			tdgbl->gbl_sw_user = argv[itr];
+			break;
+		case IN_SW_BURP_SKIP_DATA:
+			if (++itr >= argc)
+			{
+				BURP_error(354, true);
+				// missing regular expression to skip tables
+			}
+			tdgbl->setupSkipData(argv[itr]);
 			break;
 		/***
 		case IN_SW_BURP_TRUSTED_USER:
@@ -2357,3 +2367,87 @@ void close_platf(DESC file)
 	close(file);
 }
 #endif // WIN_NT
+
+
+void BurpGlobals::setupSkipData(const Firebird::string& regexp)
+{
+	if (skipDataMatcher)
+	{
+		BURP_error(356, true);
+		// msg 356 regular expression to skip tables was already set
+	}
+
+	Jrd::TextType* textType = unicodeCollation.getTextType();
+
+	// Compile skip relation expressions
+	try
+	{
+		if (regexp.hasData())
+		{
+			Firebird::string filter(regexp);
+			ISC_systemToUtf8(filter);
+
+			skipDataMatcher.reset(new Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> >(
+				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
+				filter.length(), '\\', true));
+		}
+	}
+	catch (const Firebird::Exception&)
+	{
+		Firebird::fatal_exception::raiseFmt(
+			"error while compiling regular expression \"%s\"", regexp.c_str());
+	}
+}
+
+bool BurpGlobals::skipRelation(const char* name)
+{
+	if (gbl_sw_meta)
+	{
+		return true;
+	}
+
+	if (!skipDataMatcher)
+	{
+		return false;
+	}
+
+	Firebird::string utf8(name);
+	ISC_systemToUtf8(utf8);
+
+	skipDataMatcher->reset();
+	skipDataMatcher->process((const UCHAR*) (utf8.c_str()), utf8.length());
+	return skipDataMatcher->result();
+}
+
+UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
+{
+	cs = FB_NEW(pool) charset;
+	tt = FB_NEW(pool) texttype;
+
+	Firebird::IntlUtil::initUtf8Charset(cs);
+
+	Firebird::string collAttributes("ICU-VERSION=");
+	collAttributes += Jrd::UnicodeUtil::getDefaultIcuVersion();
+	Firebird::IntlUtil::setupIcuAttributes(cs, collAttributes, "", collAttributes);
+
+	Firebird::UCharBuffer collAttributesBuffer;
+	collAttributesBuffer.push(reinterpret_cast<const UCHAR*>(collAttributes.c_str()),
+		collAttributes.length());
+
+	if (!Firebird::IntlUtil::initUnicodeCollation(tt, cs, "UNICODE", 0, collAttributesBuffer, Firebird::string()))
+		Firebird::fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in gbak");
+
+	charSet = Jrd::CharSet::createInstance(pool, 0, cs);
+	textType = FB_NEW(pool) Jrd::TextType(0, tt, charSet);
+}
+
+UnicodeCollationHolder::~UnicodeCollationHolder()
+{
+	fb_assert(tt->texttype_fn_destroy);
+
+	if (tt->texttype_fn_destroy)
+		tt->texttype_fn_destroy(tt);
+
+	// cs should be deleted by texttype_fn_destroy call above
+	delete tt;
+}

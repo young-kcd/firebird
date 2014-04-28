@@ -28,6 +28,7 @@
 #define JRD_SIMILAR_TO_EVALUATOR_H
 
 #include "../jrd/intl_classes.h"
+#include "../jrd/evl_string.h"
 
 // #define DEBUG_SIMILAR
 

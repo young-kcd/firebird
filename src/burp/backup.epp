@@ -357,7 +357,7 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		if (!(relation->rel_flags & REL_view) && !(relation->rel_flags & REL_external))
 		{
 			put_index(relation);
-			if (!tdgbl->gbl_sw_meta)
+			if (!(tdgbl->gbl_sw_meta || tdgbl->skipRelation(relation->rel_name)))
 				put_data(relation);
 		}
 

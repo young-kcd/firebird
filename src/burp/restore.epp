@@ -111,7 +111,7 @@ void	get_blr_blob(BurpGlobals* tdgbl, ISC_QUAD&, bool);
 bool	get_character_set(BurpGlobals* tdgbl);
 bool	get_chk_constraint(BurpGlobals* tdgbl);
 bool	get_collation(BurpGlobals* tdgbl);
-rec_type	get_data(BurpGlobals* tdgbl, burp_rel*);
+rec_type	get_data(BurpGlobals* tdgbl, burp_rel*, bool);
 bool	get_exception(BurpGlobals* tdgbl);
 burp_fld*	get_field(BurpGlobals* tdgbl, burp_rel*);
 bool	get_field_dimensions(BurpGlobals* tdgbl);
@@ -2817,7 +2817,7 @@ bool get_collation(BurpGlobals* tdgbl)
 	return true;
 }
 
-rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
+rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 {
 /**************************************
  *
@@ -2834,7 +2834,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation)
 
 	// If we're only doing meta-data, ignore data records
 
-	if (tdgbl->gbl_sw_meta)
+	if (tdgbl->gbl_sw_meta || skip_relation)
 		return ignore_data(tdgbl, relation);
 
 	// Start by counting the interesting fields
@@ -7660,7 +7660,7 @@ bool get_relation(BurpGlobals* tdgbl)
 	if (gds_status[1])
 		EXEC SQL SET TRANSACTION;
 
-	get_data(tdgbl, relation);
+	get_data(tdgbl, relation, tdgbl->skipRelation(rel_name));
 
 	return true;
 }
@@ -7784,6 +7784,7 @@ bool get_relation_data(BurpGlobals* tdgbl)
 	get_record(&record, tdgbl);
 
 	SLONG gen_id;
+	bool skip_flag = tdgbl->skipRelation(name);
 
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), true)
@@ -7794,7 +7795,7 @@ bool get_relation_data(BurpGlobals* tdgbl)
 			return true;
 
 		case rec_data:
-			record = get_data(tdgbl, relation);
+			record = get_data(tdgbl, relation, skip_flag);
 			// get_data does a GET_RECORD
 			break;
 

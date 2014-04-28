@@ -2298,6 +2298,9 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'BURP_abort', 'burp.cpp', NULL, 12, 351, NULL, 'Error closing database, but backup file is OK', NULL, NULL);
 (NULL, NULL, 'restore.epp', NULL, 12, 352, NULL, 'database', NULL, NULL);
 (NULL, 'get_mapping', 'restore.epp', NULL, 12, 353, NULL, 'required mapping attributes are missing in backup file', NULL, NULL);
+(NULL, NULL, 'burp.cpp', NULL, 12, 354, NULL, 'missing regular expression to skip tables', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 355, NULL, '    @1SKIP_D(ATA)          skip data for table', NULL, NULL);
+(NULL, NULL, 'burp.cpp', NULL, 12, 356, NULL, 'regular expression to skip tables was already set', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
