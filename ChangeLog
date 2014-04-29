@@ -1,3 +1,23 @@
+ 2014-04-28 12:51  alexpeshkoff 
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/why.cpp
+Fixed CORE-4395: execute statement on external doesn't find Firebird 2.5 database
+
+ 2014-04-28 12:50  hvlad 
+   M src/common/classes/Reasons.h
+MSVC 12 support, very first step
+
+ 2014-04-28 09:40  alexpeshkoff 
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/burpswi.h
+   M src/burp/restore.epp
+   M src/jrd/SimilarToMatcher.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Implemented CORE-2208: New gbak option to ignore specific tables data during the backup
+
  2014-04-26 09:02  mapopa 
    A builds/misc (from /firebird/trunk/builds/misc:59480)
 revert the change 
