@@ -591,8 +591,9 @@ public:
             sharedMemory->eventPost(&sMem->process[process].notifyEvent);
 		Thread::waitForCompletion(threadHandle);
 
-		(void)  // Ignore errors in cleanup
-			sharedMemory->eventFini(&sMem->process[process].notifyEvent);
+		// Ignore errors in cleanup
+		sharedMemory->eventFini(&sMem->process[process].notifyEvent);
+		sharedMemory->eventFini(&sMem->callbackEvent);
 
 		if (sharedMemory->getHeader()->processes == 1)
 			sharedMemory->removeMapFile();
