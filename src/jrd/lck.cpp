@@ -735,19 +735,10 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-#ifdef VMS
-	if (!LCK_lock(NULL, lock, LCK_null, LCK_NO_WAIT))
-		return 0;
-
-	const SLONG data = dbb->dbb_lock_mgr->readData(lock->lck_id);
-	LCK_release(lock);
-#else
 	const SLONG data =
 		dbb->dbb_lock_mgr->readData2(lock->lck_type,
 									 (UCHAR*) &lock->lck_key, lock->lck_length,
 									 lock->lck_owner_handle);
-#endif
-
 	fb_assert(LCK_CHECK_LOCK(lock));
 	return data;
 }
