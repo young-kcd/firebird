@@ -200,12 +200,6 @@ Service::SafeMutexLock::SafeMutexLock(Service* svc, const char* f)
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
 
-	if (svc->svc_flags & SVC_detached)
-	{
-		// Service was already detached
-		Arg::Gds(isc_bad_svc_handle).raise();
-	}
-
 	// Appears we have correct service object, may use it later to lock mutex
 	jSvc = svc->jSvc;
 }
@@ -931,6 +925,12 @@ void Service::detach()
 {
 	ExistenceGuard guard(this, FB_FUNCTION);
 
+	if (svc_flags & SVC_detached)
+	{
+		// Service was already detached
+		Arg::Gds(isc_bad_svc_handle).raise();
+	}
+
 	// save it cause after call to finish() we can't access class members any more
 	const bool localDoShutdown = svc_do_shutdown;
 
@@ -1071,6 +1071,12 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 						   UCHAR* info)
 {
 	ExistenceGuard guard(this, FB_FUNCTION);
+
+	if (svc_flags & SVC_detached)
+	{
+		// Service was already detached
+		Arg::Gds(isc_bad_svc_handle).raise();
+	}
 
 	UCHAR item;
 	UCHAR buffer[MAXPATHLEN];
@@ -1589,6 +1595,12 @@ void Service::query(USHORT			send_item_length,
 {
 	ExistenceGuard guard(this, FB_FUNCTION);
 
+	if (svc_flags & SVC_detached)
+	{
+		// Service was already detached
+		Arg::Gds(isc_bad_svc_handle).raise();
+	}
+
 	UCHAR item, *p;
 	UCHAR buffer[256];
 	USHORT l, length, get_flags;
@@ -1967,12 +1979,18 @@ void Service::query(USHORT			send_item_length,
 
 THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 {
-	Service* svc = (Service*)arg;
-	int exit_code = svc->svc_service_run->serv_thd(svc);
+	int exit_code = -1;
+	try
+	{
+		Service* svc = (Service*)arg;
+		int exit_code = svc->svc_service_run->serv_thd(svc);
 
-	svc->started();
-	svc->svc_sem_full.release();
-	svc->finish(SVC_finished);
+		svc->started();
+		svc->svc_sem_full.release();
+		svc->finish(SVC_finished);
+	}
+	catch(const Exception&)
+	{ /* Not much we can do here */ }
 
 	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
@@ -1981,6 +1999,12 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 void Service::start(USHORT spb_length, const UCHAR* spb_data)
 {
 	ExistenceGuard guard(this, FB_FUNCTION);
+
+	if (svc_flags & SVC_detached)
+	{
+		// Service was already detached
+		Arg::Gds(isc_bad_svc_handle).raise();
+	}
 
 	ThreadIdHolder holdId(svc_thread_strings);
 
