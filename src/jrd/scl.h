@@ -84,14 +84,13 @@ const SecurityClass::flags_t SCL_usage			= 2048;		// USAGE access
 const USHORT USR_locksmith	= 1;		// User has great karma
 const USHORT USR_dba		= 2;		// User has DBA privileges
 const USHORT USR_owner		= 4;		// User owns database
-const USHORT USR_trole		= 8;		// Role was set by trusted auth
-
 
 class UserId
 {
 public:
 	Firebird::string	usr_user_name;		// User name
 	Firebird::string	usr_sql_role_name;	// Role name
+	Firebird::string	usr_trusted_role;	// Trusted role if set
 	Firebird::string	usr_project_name;	// Project name
 	Firebird::string	usr_org_name;		// Organization name
 	Firebird::string	usr_auth_method;	// Authentication method
@@ -112,6 +111,7 @@ public:
 	UserId(Firebird::MemoryPool& p, const UserId& ui)
 		: usr_user_name(p, ui.usr_user_name),
 		  usr_sql_role_name(p, ui.usr_sql_role_name),
+		  usr_trusted_role(p, ui.usr_trusted_role),
 		  usr_project_name(p, ui.usr_project_name),
 		  usr_org_name(p, ui.usr_org_name),
 		  usr_auth_method(p, ui.usr_auth_method),
@@ -126,6 +126,7 @@ public:
 	UserId(const UserId& ui)
 		: usr_user_name(ui.usr_user_name),
 		  usr_sql_role_name(ui.usr_sql_role_name),
+		  usr_trusted_role(ui.usr_trusted_role),
 		  usr_project_name(ui.usr_project_name),
 		  usr_org_name(ui.usr_org_name),
 		  usr_auth_method(ui.usr_auth_method),
@@ -140,6 +141,7 @@ public:
 	{
 		usr_user_name = ui.usr_user_name;
 		usr_sql_role_name = ui.usr_sql_role_name;
+		usr_trusted_role = ui.usr_trusted_role;
 		usr_project_name = ui.usr_project_name;
 		usr_org_name = ui.usr_org_name;
 		usr_auth_method = ui.usr_auth_method;

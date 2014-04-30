@@ -802,6 +802,8 @@ const
 	gds_baddpb_temp_buffers              = 335545087;
 	gds_map_nodb                         = 335545088;
 	gds_map_notable                      = 335545089;
+	gds_miss_trusted_role                = 335545090;
+	gds_set_invalid_role                 = 335545091;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

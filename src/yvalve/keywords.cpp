@@ -407,6 +407,7 @@ static const TOK tokens[] =
 	{TRIM, "TRIM", 2, false},
 	{KW_TRUE, "TRUE", 2, false},
 	{TRUNC, "TRUNC", 2, false},
+	{TRUSTED, "TRUSTED", 2, false},
 	{TWO_PHASE, "TWO_PHASE", 2, true},
 	{KW_TYPE, "TYPE", 2, true},
 	{UNCOMMITTED, "UNCOMMITTED", 1, false},

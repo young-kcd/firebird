@@ -1223,6 +1223,87 @@ jrd_tra* JAttachment::getEngineTransaction(IStatus* status, ITransaction* tra)
 	return getTransactionInterface(status, tra)->getHandle();
 }
 
+static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& options)
+{
+	if (userIdRole.hasData())
+	{
+		switch (options.dpb_sql_dialect)
+		{
+		case 0:
+			// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
+			// It means that client SQL dialect was not set by user
+			// and takes DB SQL dialect as client SQL dialect
+			if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+			{
+				// DB created in IB V6.0 by client SQL dialect 3
+				options.dpb_sql_dialect = SQL_DIALECT_V6;
+			}
+			else
+			{
+				// old DB was gbaked in IB V6.0
+				options.dpb_sql_dialect = SQL_DIALECT_V5;
+			}
+			break;
+
+		case 99:
+			// V5 Client --> V6 Server, old client has no concept of dialect
+			options.dpb_sql_dialect = SQL_DIALECT_V5;
+			break;
+
+		default:
+			// V6 Client --> V6 Server, but client SQL dialect was set
+			// by user and was passed.
+			break;
+		}
+
+		CharSet* utf8CharSet = IntlUtil::getUtf8CharSet();
+
+		switch (options.dpb_sql_dialect)
+		{
+		case SQL_DIALECT_V5:
+			{
+				strip_quotes(userIdRole);
+				IntlUtil::toUpper(utf8CharSet, userIdRole);
+			}
+			break;
+
+		case SQL_DIALECT_V6_TRANSITION:
+		case SQL_DIALECT_V6:
+			{
+				if (userIdRole.hasData() && (userIdRole[0] == DBL_QUOTE || userIdRole[0] == SINGLE_QUOTE))
+				{
+					const char end_quote = userIdRole[0];
+					// remove the delimited quotes and escape quote
+					// from ROLE name
+					userIdRole.erase(0, 1);
+					for (string::iterator p = userIdRole.begin(); p < userIdRole.end(); ++p)
+					{
+						if (*p == end_quote)
+						{
+							if (++p < userIdRole.end() && *p == end_quote)
+							{
+								// skip the escape quote here
+								userIdRole.erase(p--);
+							}
+							else
+							{
+								// delimited done
+								userIdRole.erase(--p, userIdRole.end());
+							}
+						}
+					}
+				}
+				else
+					IntlUtil::toUpper(utf8CharSet, userIdRole);
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
 JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char* filename,
 	unsigned int dpb_length, const unsigned char* dpb)
 {
@@ -1505,82 +1586,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 						 Arg::Gds(isc_valid_client_dialects) << Arg::Str("1, 2 or 3"));
 			}
 
-			if (userId.usr_sql_role_name.hasData())
-			{
-				switch (options.dpb_sql_dialect)
-				{
-				case 0:
-					// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
-					// It means that client SQL dialect was not set by user
-					// and takes DB SQL dialect as client SQL dialect
-					if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-					{
-						// DB created in IB V6.0 by client SQL dialect 3
-						options.dpb_sql_dialect = SQL_DIALECT_V6;
-					}
-					else
-					{
-						// old DB was gbaked in IB V6.0
-						options.dpb_sql_dialect = SQL_DIALECT_V5;
-					}
-					break;
-				case 99:
-					// V5 Client --> V6 Server, old client has no concept of dialect
-					options.dpb_sql_dialect = SQL_DIALECT_V5;
-					break;
-				default:
-					// V6 Client --> V6 Server, but client SQL dialect was set
-					// by user and was passed.
-					break;
-				}
-
-				CharSet* utf8CharSet = IntlUtil::getUtf8CharSet();
-
-				switch (options.dpb_sql_dialect)
-				{
-				case SQL_DIALECT_V5:
-					{
-						strip_quotes(userId.usr_sql_role_name);
-						IntlUtil::toUpper(utf8CharSet, userId.usr_sql_role_name);
-					}
-					break;
-
-				case SQL_DIALECT_V6_TRANSITION:
-				case SQL_DIALECT_V6:
-					{
-						string& role = userId.usr_sql_role_name;
-						if (role.hasData() && (role[0] == DBL_QUOTE || role[0] == SINGLE_QUOTE))
-						{
-							const char end_quote = role[0];
-							// remove the delimited quotes and escape quote
-							// from ROLE name
-							role.erase(0, 1);
-							for (string::iterator p = role.begin(); p < role.end(); ++p)
-							{
-								if (*p == end_quote)
-								{
-									if (++p < role.end() && *p == end_quote)
-									{
-										// skip the escape quote here
-										role.erase(p--);
-									}
-									else
-									{
-										// delimited done
-										role.erase(--p, role.end());
-									}
-								}
-							}
-						}
-						else
-							IntlUtil::toUpper(utf8CharSet, role);
-					}
-					break;
-
-				default:
-					break;
-				}
-			}
+			makeRoleName(dbb, userId.usr_sql_role_name, options);
+			makeRoleName(dbb, userId.usr_trusted_role, options);
 
 			options.dpb_sql_dialect = 0;
 
@@ -7126,10 +7133,9 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 	{
 		user.usr_sql_role_name = options.dpb_role_name;
 	}
-	else if (trusted_role.hasData())
+	if (trusted_role.hasData())
 	{
-		user.usr_sql_role_name = trusted_role;
-		user.usr_flags |= USR_trole;
+		user.usr_trusted_role = trusted_role;
 	}
 }
 

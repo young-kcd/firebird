@@ -1509,6 +1509,42 @@ public:
 };
 
 
+// This node should better be session management node,
+// but as long as we do not have other session management and
+// node is rather similiar internally to transaction management
+// let it for now be transaction management node.
+class SetRoleNode : public TransactionNode
+{
+public:
+	explicit SetRoleNode(MemoryPool& pool)
+		: TransactionNode(pool),
+		  trusted(true),
+		  roleName(pool)
+	{
+	}
+
+	SetRoleNode(MemoryPool& pool, Firebird::MetaName* name)
+		: TransactionNode(pool),
+		  trusted(false),
+		  roleName(pool, *name)
+	{
+	}
+
+public:
+	virtual void print(Firebird::string& text) const
+	{
+		text = "SetRoleNode";
+	}
+
+	virtual SetRoleNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual void execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const;
+
+public:
+	bool trusted;
+	Firebird::MetaName roleName;
+};
+
+
 class UpdateOrInsertNode : public TypedNode<DsqlOnlyStmtNode, StmtNode::TYPE_UPDATE_OR_INSERT>
 {
 public:

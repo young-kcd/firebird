@@ -1822,6 +1822,7 @@ static void sql_info(thread_db* tdbb,
 				break;
 			case DsqlCompiledStatement::TYPE_CREATE_DB:
 			case DsqlCompiledStatement::TYPE_DDL:
+			case DsqlCompiledStatement::TYPE_SET_ROLE:
 				number = isc_info_sql_stmt_ddl;
 				break;
 			case DsqlCompiledStatement::TYPE_COMMIT:

@@ -1590,6 +1590,10 @@ C --
       PARAMETER (GDS__map_nodb                         = 335545088)
       INTEGER*4 GDS__map_notable                     
       PARAMETER (GDS__map_notable                      = 335545089)
+      INTEGER*4 GDS__miss_trusted_role               
+      PARAMETER (GDS__miss_trusted_role                = 335545090)
+      INTEGER*4 GDS__set_invalid_role                
+      PARAMETER (GDS__set_invalid_role                 = 335545091)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

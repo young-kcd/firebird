@@ -51,6 +51,8 @@ Jrd::SecurityClass::flags_t SCL_get_mask(Jrd::thread_db* tdbb, const TEXT*, cons
 void SCL_init(Jrd::thread_db* tdbb, bool, const Jrd::UserId& tempId);
 Jrd::SecurityClass* SCL_recompute_class(Jrd::thread_db*, const TEXT*);
 void SCL_release_all(Jrd::SecurityClassList*&);
+bool SCL_role_granted(Jrd::thread_db* tdbb, const Jrd::UserId& usr, const TEXT* sql_role);
+bool SCL_admin_role(Jrd::thread_db* tdbb, const TEXT* sql_role);
 
 namespace Jrd {
 typedef Firebird::Array<UCHAR> Acl;

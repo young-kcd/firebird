@@ -4918,7 +4918,7 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 //#ifdef DEV_BUILD
 			sqlda_display,
 //#endif
-			sql, warning, generator, statistics, heading, bail,
+			sql, warning, sqlCont, heading, bail,
 			bulk_insert, maxrows, wrong
 		};
 		SetOptions(const optionsMap* inmap, size_t insize, int wrongval)
@@ -4948,13 +4948,15 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{SetOptions::sql, "SQL", 0},
 		{SetOptions::warning, "WARNINGS", 7},
 		{SetOptions::warning, "WNG", 0},
-		{SetOptions::generator, "GENERATOR", 0},
-		{SetOptions::statistics, "STATISTICS", 0},
+		{SetOptions::sqlCont, "GENERATOR", 0},
+		{SetOptions::sqlCont, "STATISTICS", 0},
 		{SetOptions::heading, "HEADING", 0},
 		{SetOptions::bail, "BAIL", 0},
 		{SetOptions::bulk_insert, "BULK_INSERT", 0},
 		{SetOptions::maxrows, "ROWCOUNT", 0}, // legacy, compatible with FB2.5
 		{SetOptions::maxrows, "MAXROWS", 0},
+		{SetOptions::sqlCont, "ROLE", 0},
+		{SetOptions::sqlCont, "TRUSTED", 0},	// TRUSTED ROLE, will get DSQL error other case
 	};
 
 	// Display current set options
@@ -4965,6 +4967,10 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 	const SetOptions setoptions(options, FB_NELEM(options), SetOptions::wrong);
 	switch (setoptions.getCommand(parms[1]))
 	{
+	case SetOptions::sqlCont:
+		ret = CONT;
+		break;
+
 	case SetOptions::stat:
 		ret = do_set_command(parms[2], &Stats);
 		break;
@@ -5080,11 +5086,6 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 
 	case SetOptions::warning:
 		ret = do_set_command (parms[2], &Warnings);
-		break;
-
-	case SetOptions::generator:
-	case SetOptions::statistics:
-		ret = CONT;
 		break;
 
 	case SetOptions::heading:

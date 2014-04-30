@@ -103,6 +103,8 @@ enum irq_type_t
 	irq_c_trg_perm,			// check if trig can ignore perm. checks
 	irq_get_role_mem,		// get SQL role membership
 	irq_get_role_name,		// get SQL role name
+	irq_is_admin_role, 		// check is current role admin or not
+	irq_get_att_class,		// get security class for current attachment
 	irq_format6,			// make a new format for a record
 	irq_r_gen_id_num,		// lookup generator by ID.
 	irq_upd_gen_id_step,	// update the STEP of a generator (only for legacy code).

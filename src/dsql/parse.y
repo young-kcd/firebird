@@ -569,6 +569,7 @@ using namespace Firebird;
 %token <metaNamePtr> PLUGIN
 %token <metaNamePtr> SERVERWIDE
 %token <metaNamePtr> INCREMENT
+%token <metaNamePtr> TRUSTED
 
 // precedence declarations for expression evaluation
 
@@ -697,6 +698,7 @@ using namespace Firebird;
 	Jrd::CreateAlterUserNode* createAlterUserNode;
 	Jrd::MappingNode* mappingNode;
 	Jrd::MappingNode::OP mappingOp;
+	Jrd::SetRoleNode* setRoleNode;
 }
 
 %include types.y
@@ -749,6 +751,7 @@ tra_statement
 	: set_transaction							{ $$ = $1; }
 	| commit									{ $$ = $1; }
 	| rollback									{ $$ = $1; }
+	| set_role									{ $$ = $1; }
 	;
 
 
@@ -4468,6 +4471,14 @@ set_transaction
 			{ $$ = $3; }
 	;
 
+%type <setRoleNode> set_role
+set_role
+	: SET ROLE valid_symbol_name
+		{ $$ = newNode<SetRoleNode>($3); }
+	| SET TRUSTED ROLE
+		{ $$ = newNode<SetRoleNode>(); }
+	;
+
 %type tran_option_list_opt(<setTransactionNode>)
 tran_option_list_opt($setTransactionNode)
 	: // nothing
@@ -7373,6 +7384,7 @@ non_reserved_word
 	| PLUGIN
 	| SERVERWIDE
 	| INCREMENT
+	| TRUSTED
 	;
 
 %%

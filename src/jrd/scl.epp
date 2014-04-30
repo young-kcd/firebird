@@ -804,6 +804,91 @@ SecurityClass::flags_t SCL_get_mask(thread_db* tdbb, const TEXT* relation_name, 
 }
 
 
+bool SCL_role_granted(thread_db* tdbb, const UserId& usr, const TEXT* sql_role)
+{
+/**************************************
+ *
+ *	S C L _ r o l e _ g r a n t e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check is sql_role granted to the user.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	if (!strcmp(sql_role, NULL_ROLE))
+	{
+		return true;
+	}
+
+	Firebird::string loginName(usr.usr_user_name);
+	loginName.upper();
+	const TEXT* login_name = loginName.c_str();
+
+	bool found = false;
+
+	AutoCacheRequest request(tdbb, irq_verify_role_name, IRQ_REQUESTS);
+
+	// CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
+	// uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
+	// Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
+	// This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
+	// If you think that an unknown role cannot be granted, think again: someone made sure
+	// in DYN that SYSDBA can do almost anything, including invalid grants.
+
+	FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
+		CROSS UU IN RDB$USER_PRIVILEGES
+		WITH RR.RDB$ROLE_NAME        EQ sql_role
+		AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
+		AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
+		AND (UU.RDB$USER             EQ login_name
+			 OR UU.RDB$USER          EQ "PUBLIC")
+		AND UU.RDB$USER_TYPE         EQ obj_user
+		AND UU.RDB$PRIVILEGE         EQ "M"
+	{
+		if (!UU.RDB$USER.NULL)
+			found = true;
+	}
+	END_FOR
+
+	return found;
+}
+
+
+bool SCL_admin_role(thread_db* tdbb, const TEXT* sql_role)
+{
+/**************************************
+ *
+ *	S C L _ a d m i n _ r o l e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Check is sql_role is an admin role.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	bool adminRole = false;
+
+	AutoCacheRequest request(tdbb, irq_is_admin_role, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request) R IN RDB$ROLES
+		WITH R.RDB$ROLE_NAME EQ sql_role
+	{
+		if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
+			adminRole = true;
+	}
+	END_FOR
+
+	return adminRole;
+}
+
+
 void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 {
 /**************************************
@@ -815,10 +900,8 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
  * Functional description
  *	Check database access control list.
  *
- *	Checks the userinfo database to get the
- *	password and other stuff about the specified
- *	user.   Compares the password to that passed
- *	in, encrypting if necessary.
+ *	Finally fills UserId information
+ *	(role, flags, etc.).
  *
  **************************************/
 	SET_TDBB(tdbb);
@@ -826,17 +909,17 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	const TEXT* sql_role = tempId.usr_sql_role_name.nullStr();
-	Firebird::string loginName(tempId.usr_user_name);
-	loginName.upper();
-	const TEXT* login_name = loginName.c_str();
-	Firebird::MetaName role_name;
 
     // CVC: We'll verify the role and wipe it out when it doesn't exist
 
-	if (strlen(login_name) != 0)
+	if (tempId.usr_user_name.hasData())
 	{
 		if (!create)
 		{
+			Firebird::string loginName(tempId.usr_user_name);
+			loginName.upper();
+			const TEXT* login_name = loginName.c_str();
+
 			AutoCacheRequest request(tdbb, irq_get_role_name, IRQ_REQUESTS);
 
 			FOR(REQUEST_HANDLE request) X IN RDB$ROLES
@@ -851,50 +934,16 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
     // CVC: If we aren't creating a db and sql_role was specified,
     // then verify it against rdb$roles and rdb$user_privileges
 
-    if (!create && sql_role && *sql_role && strcmp(sql_role, NULL_ROLE))
+    if (!create && sql_role && *sql_role)
     {
-        bool found = false;
-
-        AutoCacheRequest request(tdbb, irq_verify_role_name, IRQ_REQUESTS);
-
-        // CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
-        // uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
-        // Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
-        // This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
-        // If you think that an unknown role cannot be granted, think again: someone made sure
-        // in DYN that SYSDBA can do almost anything, including invalid grants.
-
-		if (!(tempId.usr_flags & USR_trole))
-		{
-			FOR (REQUEST_HANDLE request) FIRST 1 RR IN RDB$ROLES
-				CROSS UU IN RDB$USER_PRIVILEGES
-				WITH RR.RDB$ROLE_NAME        EQ sql_role
-				AND RR.RDB$ROLE_NAME         EQ UU.RDB$RELATION_NAME
-				AND UU.RDB$OBJECT_TYPE       EQ obj_sql_role
-				AND (UU.RDB$USER             EQ login_name
-					 OR UU.RDB$USER          EQ "PUBLIC")
-				AND UU.RDB$USER_TYPE         EQ obj_user
-				AND UU.RDB$PRIVILEGE         EQ "M"
-			{
-				if (!UU.RDB$USER.NULL)
-					found = true;
-			}
-			END_FOR
-		}
-		else
-			found = true;
-
-        if (!found)
-            role_name = NULL_ROLE;
+        if (!SCL_role_granted(tdbb, tempId, sql_role))
+            sql_role = NULL;
     }
 
-	if (sql_role)
-	{
-        if (role_name != NULL_ROLE)
-            role_name = sql_role;
-	}
-	else
-		role_name = NULL_ROLE;
+	if (!sql_role)
+		sql_role = tempId.usr_trusted_role.nullStr();
+
+	MetaName role_name(sql_role ? sql_role : NULL_ROLE);
 
 	MemoryPool& pool = *attachment->att_pool;
 	UserId* const user = FB_NEW(pool) UserId(pool, tempId);
@@ -903,9 +952,9 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 
 	if (!create)
 	{
-		AutoRequest handle, handle1, handle2;
+		AutoCacheRequest request(tdbb, irq_get_att_class, IRQ_REQUESTS);
 
-		FOR(REQUEST_HANDLE handle) X IN RDB$DATABASE
+		FOR(REQUEST_HANDLE request) X IN RDB$DATABASE
 		{
 			if (!X.RDB$SECURITY_CLASS.NULL)
 				attachment->att_security_class = SCL_get_class(tdbb, X.RDB$SECURITY_CLASS);
@@ -914,7 +963,9 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 
 		if (dbb->dbb_owner.isEmpty())
 		{
-			FOR(REQUEST_HANDLE handle1)
+			AutoRequest request;
+
+			FOR(REQUEST_HANDLE request)
 				FIRST 1 REL IN RDB$RELATIONS
 				WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
 			{
@@ -927,13 +978,8 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		if (dbb->dbb_owner == user->usr_user_name)
 			user->usr_flags |= USR_owner;
 
-		FOR(REQUEST_HANDLE handle2) R IN RDB$ROLES
-			WITH R.RDB$ROLE_NAME EQ role_name.c_str()
-		{
-			if (R.RDB$SYSTEM_FLAG & ROLE_FLAG_DBO)
-				user->usr_flags |= USR_dba;
-		}
-		END_FOR
+		if (sql_role && SCL_admin_role(tdbb, role_name.c_str()))
+			user->usr_flags |= USR_dba;
 	}
 	else
 	{
@@ -1294,6 +1340,8 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 				case id_sql_role:
 					if (!role_name || check_string(a, role_name))
 						hit = false;
+					else if (user.usr_sql_role_name == user.usr_trusted_role)
+						hit = true;
 					else
 					{
 						TEXT login_name[129];

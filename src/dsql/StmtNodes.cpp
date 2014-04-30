@@ -49,6 +49,7 @@
 #include "../jrd/par_proto.h"
 #include "../jrd/rlck_proto.h"
 #include "../jrd/tra_proto.h"
+#include "../jrd/scl_proto.h"
 #include "../dsql/ddl_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../jrd/vio_proto.h"
@@ -7587,6 +7588,45 @@ void SetTransactionNode::genTableLock(DsqlCompilerScratch* dsqlScratch,
 		dsqlScratch->appendNullString(i->c_str());	// stuff table name
 		dsqlScratch->appendUChar(lockLevel);
 	}
+}
+
+
+//--------------------
+
+
+SetRoleNode* SetRoleNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
+{
+	dsqlScratch->getStatement()->setType(DsqlCompiledStatement::TYPE_SET_ROLE);
+
+	return this;
+}
+
+void SetRoleNode::execute(thread_db* tdbb, dsql_req* request, jrd_tra** transaction) const
+{
+	SET_TDBB(tdbb);
+	Attachment* const attachment = tdbb->getAttachment();
+	UserId* user = attachment->att_user;
+	fb_assert(user);
+
+	if (trusted)
+	{
+		if (!user->usr_trusted_role.hasData())
+			Arg::Gds(isc_miss_trusted_role).raise();
+		user->usr_sql_role_name = user->usr_trusted_role;
+	}
+	else
+	{
+		if (!SCL_role_granted(tdbb, *user, roleName.c_str()))
+			(Arg::Gds(isc_set_invalid_role) << roleName).raise();
+		user->usr_sql_role_name = roleName.c_str();
+	}
+
+	if (SCL_admin_role(tdbb, user->usr_sql_role_name.c_str()))
+		user->usr_flags |= USR_dba;
+	else
+		user->usr_flags &= ~USR_dba;
+
+	SCL_release_all(attachment->att_security_classes);
 }
 
 

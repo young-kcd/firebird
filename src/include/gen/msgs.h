@@ -794,6 +794,8 @@ Data source : @4"},		/* eds_statement */
 	{335545087, "Attempt to temporarily set number of buffers less than @1"},		/* baddpb_temp_buffers */
 	{335545088, "Global mapping is not available when database @1 is not present"},		/* map_nodb */
 	{335545089, "Global mapping is not available when table RDB$MAP is not present in database @1"},		/* map_notable */
+	{335545090, "Your attachment has no trusted role"},		/* miss_trusted_role */
+	{335545091, "Role @1 is invalid or unavailable"},		/* set_invalid_role */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
