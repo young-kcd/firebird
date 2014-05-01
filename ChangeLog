@@ -1,3 +1,64 @@
+ 2014-04-30 15:38  hvlad 
+   M src/jrd/Mapping.cpp
+Fixed event leak. Alex, please review.
+
+ 2014-04-30 15:12  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/parse.y
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/isql/isql.epp
+   M src/jrd/irq.h
+   M src/jrd/jrd.cpp
+   M src/jrd/scl.epp
+   M src/jrd/scl.h
+   M src/jrd/scl_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/keywords.cpp
+Implemented CORE-1377: Add an ability to change role without reconnecting to database
+
+ 2014-04-30 12:20  alexpeshkoff 
+   M src/jrd/svc.cpp
+Fixed unhandled exception in services brought my one of recent commits
+
+ 2014-04-30 11:09  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/fbtrace.vcxproj
+   M builds/win32/msvc10/firebird2.props
+   M builds/win32/msvc10/gpre.vcxproj
+   M builds/win32/msvc10/gpre_common.vcxproj
+   M builds/win32/msvc10/intl.vcxproj
+   M builds/win32/msvc10/isql.vcxproj
+   M builds/win32/msvc10/legacy_auth.vcxproj
+   M builds/win32/msvc10/legacy_usermanager.vcxproj
+   M builds/win32/msvc10/srp.vcxproj
+   M builds/win32/msvc10/udr_engine.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj
+Fixed VC10 build - make all project use the same set of include directories.
+
+ 2014-04-30 09:20  mapopa 
+   M src/jrd/lck.cpp
+VMS lock cleanup
+
+ 2014-04-30 09:14  mapopa 
+   M src/common/classes/alloc.h
+VMS cleanup
+
+ 2014-04-30 09:08  mapopa 
+   D src/jrd/os/vms
+VMS cleanup 
+
  2014-04-28 12:51  alexpeshkoff 
    M src/yvalve/PluginManager.cpp
    M src/yvalve/why.cpp
