@@ -488,7 +488,7 @@ static const char* getRelationScopeName(const rel_t type)
 	return REL_SCOPE_PERSISTENT;
 }
 
-// Check does relation of given type can be used in FK
+// Check, can relation of given type be used in FK?
 static void checkRelationType(const rel_t type, const MetaName& name)
 {
 	if (type == rel_persistent ||
@@ -503,7 +503,7 @@ static void checkRelationType(const rel_t type, const MetaName& name)
 	(Arg::PrivateDyn(289) << scope).raise();
 }
 
-// Check does pair of relations can be used in FK
+// Check, can a pair of relations be used in FK
 static void checkFkPairTypes(const rel_t masterType, const MetaName& masterName,
 	const rel_t childType, const MetaName& childName)
 {

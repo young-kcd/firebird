@@ -156,7 +156,7 @@ void	restore_security_class(BurpGlobals* tdgbl, const TEXT*, const TEXT*);
 USHORT	get_view_base_relation_count(BurpGlobals* tdgbl, const TEXT*, USHORT, bool* error);
 void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SINT64 initial_value,
 	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername, fb_sysflag sysFlag,
-	SLONG step);
+	SLONG increment);
 void	update_global_field(BurpGlobals* tdgbl);
 void	update_view_dbkey_lengths(BurpGlobals* tdgbl);
 void	fix_missing_privileges(BurpGlobals* tdgbl);
@@ -5171,13 +5171,12 @@ bool get_generator(BurpGlobals* tdgbl)
  *	nicely.
  *
  **************************************/
-	SINT64 value = 0;
-	SINT64 initial_value = 0;
-	SLONG step = 1;
+	SINT64 value = 0, initial_value = 0;
 
 	BASED_ON RDB$GENERATORS.RDB$GENERATOR_NAME name = "";
 	BASED_ON RDB$GENERATORS.RDB$SECURITY_CLASS secclass = "";
 	BASED_ON RDB$GENERATORS.RDB$OWNER_NAME ownername = "";
+	BASED_ON RDB$GENERATORS.RDB$GENERATOR_INCREMENT increment = 1;
 	fb_sysflag sysFlag = fb_sysflag_user;
 	att_type	attribute;
 	scan_attr_t		scan_next_attr;
@@ -5244,14 +5243,14 @@ bool get_generator(BurpGlobals* tdgbl)
 
 		case att_gen_init_val:
 			if (tdgbl->RESTORE_format >= 10)
-				initial_value = (SINT64) get_int64(tdgbl);
+				initial_value = get_int64(tdgbl);
 			else
 				bad_attribute(scan_next_attr, attribute, 289);
 			break;
 
-		case att_gen_id_step:
+		case att_gen_id_increment:
 			if (tdgbl->RESTORE_format >= 10)
-				step = get_int32(tdgbl);
+				increment = get_int32(tdgbl);
 			else
 				bad_attribute(scan_next_attr, attribute, 289);
 			break;
@@ -5268,7 +5267,7 @@ bool get_generator(BurpGlobals* tdgbl)
 		value = 0;
 	}
 
-	store_blr_gen_id(tdgbl, name, value, initial_value, descPtr, secPtr, ownerPtr, sysFlag, step);
+	store_blr_gen_id(tdgbl, name, value, initial_value, descPtr, secPtr, ownerPtr, sysFlag, increment);
 
 	return true;
 }
@@ -10299,7 +10298,7 @@ USHORT get_view_base_relation_count(BurpGlobals* tdgbl,
 
 void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SINT64 initial_value,
 	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername, fb_sysflag sysFlag,
-	SLONG step)
+	SLONG increment)
 {
 /**************************************
  *
@@ -10338,7 +10337,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SI
 			}
 			X.RDB$INITIAL_VALUE.NULL = FALSE;
 			X.RDB$INITIAL_VALUE = initial_value;
-			X.RDB$GENERATOR_INCREMENT = step;
+			X.RDB$GENERATOR_INCREMENT = increment;
 		END_STORE;
 		ON_ERROR
 			general_on_error ();

@@ -1413,7 +1413,7 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	SCHAR buffer[BUFFER_LENGTH512];
 	bool endedWithCr = false;
 
-	do
+	while (true)
 	{
 		size_t length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer);
 		if (!fbStatus->isSuccess() && fbStatus->get()[1] != isc_segment)
@@ -1454,7 +1454,7 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 		}
 		else
 			IUTILS_printf(fp, buffer);
-	} while (true);
+	}
 
 	if (endedWithCr)
 	    fputc('\r', fp);

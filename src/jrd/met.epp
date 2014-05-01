@@ -2407,7 +2407,7 @@ void MET_update_generator_increment(thread_db* tdbb, SLONG gen_id, SLONG step)
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 
-	AutoCacheRequest request(tdbb, irq_upd_gen_id_step, IRQ_REQUESTS);
+	AutoCacheRequest request(tdbb, irq_upd_gen_id_increm, IRQ_REQUESTS);
 
 	FOR (REQUEST_HANDLE request)
 		X IN RDB$GENERATORS WITH X.RDB$GENERATOR_ID EQ gen_id

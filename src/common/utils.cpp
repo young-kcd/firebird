@@ -1383,6 +1383,9 @@ unsigned sqlTypeToDsc(unsigned runOffset, unsigned sqlType, unsigned sqlLength,
 
 bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code)
 {
+#ifdef DEV_BUILD
+const ISC_STATUS* const origen = v;
+#endif
 	while (v[0] == isc_arg_gds)
 	{
 		if (v[1] == code)
@@ -1392,6 +1395,7 @@ bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code)
 		{
 			v += (v[0] == isc_arg_cstring ? 3 : 2);
 		} while (v[0] != isc_arg_warning && v[0] != isc_arg_gds && v[0] != isc_arg_end);
+		fb_assert(v - origen < ISC_STATUS_LENGTH);
 	}
 
 	return false;
