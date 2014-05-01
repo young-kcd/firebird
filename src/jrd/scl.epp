@@ -963,9 +963,9 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 
 		if (dbb->dbb_owner.isEmpty())
 		{
-			AutoRequest request;
+			AutoRequest request2;
 
-			FOR(REQUEST_HANDLE request)
+			FOR(REQUEST_HANDLE request2)
 				FIRST 1 REL IN RDB$RELATIONS
 				WITH REL.RDB$RELATION_NAME EQ "RDB$DATABASE"
 			{
