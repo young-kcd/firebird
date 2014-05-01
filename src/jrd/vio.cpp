@@ -1343,6 +1343,10 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		switch ((RIDS) relation->rel_id)
 		{
 		case rel_database:
+		case rel_types:
+		case rel_log:
+		case rel_backup_history:
+		case rel_sec_global_map:
 			protect_system_table(tdbb, relation, "DELETE", true);
 			break;
 
@@ -2378,6 +2382,16 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	{
 		switch ((RIDS) relation->rel_id)
 		{
+		case rel_pages:
+		case rel_formats:
+		case rel_types:
+		case rel_msgs:
+		case rel_log:
+		case rel_backup_history:
+		case rel_sec_global_map:
+			protect_system_table(tdbb, relation, "UPDATE", true);
+			break;
+
 		case rel_database:
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_dat_class);
 			EVL_field(0, org_rpb->rpb_record, f_dat_linger, &desc1);
@@ -2968,6 +2982,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_log:
+		case rel_sec_global_map:
 			protect_system_table(tdbb, relation, "INSERT", true);
 			break;
 
