@@ -1,3 +1,28 @@
+ 2014-05-01 05:55  robocop 
+   M src/jrd/vio.cpp
+More sys tables protected.
+
+ 2014-05-01 05:51  robocop 
+   M src/burp/burpswi.h
+Misc.
+
+ 2014-05-01 05:30  robocop 
+   M src/jrd/scl.epp
+Avoid var shadowing.
+
+ 2014-05-01 05:29  robocop 
+   M src/burp/backup.epp
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/common/utils.cpp
+   M src/dsql/DdlNodes.epp
+   M src/isql/show.epp
+   M src/jrd/fields.h
+   M src/jrd/irq.h
+   M src/jrd/met.epp
+   M src/jrd/relations.h
+Misc.
+
  2014-04-30 15:38  hvlad 
    M src/jrd/Mapping.cpp
 Fixed event leak. Alex, please review.
