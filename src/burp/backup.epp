@@ -2392,13 +2392,13 @@ void write_character_sets()
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$CHARACTER_SETS
-			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1 OR
+			WITH X.RDB$SYSTEM_FLAG NE 1 OR
 				 X.RDB$DEFAULT_COLLATE_NAME NE X.RDB$CHARACTER_SET_NAME
 
 			put(tdgbl, rec_charset);
 			PUT_TEXT (att_charset_name, X.RDB$CHARACTER_SET_NAME);
 
-			if (X.RDB$SYSTEM_FLAG.NULL || X.RDB$SYSTEM_FLAG != 1)
+			if (X.RDB$SYSTEM_FLAG != 1)
 			{
 				if (!X.RDB$FORM_OF_USE.NULL)
 					PUT_TEXT (att_charset_form, X.RDB$FORM_OF_USE);
@@ -2523,7 +2523,7 @@ void write_collations()
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
-			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			X IN RDB$COLLATIONS WITH X.RDB$SYSTEM_FLAG NE 1
 			put(tdgbl, rec_collation);
 			PUT_TEXT (att_coll_name, X.RDB$COLLATION_NAME);
 			put_int32 (att_coll_id, X.RDB$COLLATION_ID);
@@ -2757,7 +2757,7 @@ void write_exceptions()
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$EXCEPTIONS
-			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			WITH X.RDB$SYSTEM_FLAG NE 1
 			put(tdgbl, rec_exception);
 			const SSHORT l = PUT_TEXT (att_exception_name, X.RDB$EXCEPTION_NAME);
 			MISC_terminate (X.RDB$EXCEPTION_NAME, temp, l, sizeof(temp));
@@ -2897,7 +2897,7 @@ void write_functions()
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		FOR (REQUEST_HANDLE req_handle1)
-			X IN RDB$FUNCTIONS WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			X IN RDB$FUNCTIONS WITH X.RDB$SYSTEM_FLAG NE 1
 			put(tdgbl, rec_function);
 
 			SSHORT prefixLen = 0;
@@ -3148,7 +3148,7 @@ void write_generators()
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$GENERATORS
-			WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+			WITH X.RDB$SYSTEM_FLAG NE 1
 			put(tdgbl, rec_generator);
 			const SSHORT l = PUT_TEXT (att_gen_generator, X.RDB$GENERATOR_NAME);
 			SINT64 value = 0;
@@ -3262,8 +3262,7 @@ void write_global_fields()
 	{
 		FOR (REQUEST_HANDLE req_handle1)
 			X IN RDB$FIELDS WITH
-			X.RDB$SYSTEM_FLAG NE 1 OR
-			X.RDB$SYSTEM_FLAG MISSING
+			X.RDB$SYSTEM_FLAG NE 1
 
 			put(tdgbl, rec_global_field);
 			const SSHORT l = PUT_TEXT (att_field_name, X.RDB$FIELD_NAME);
@@ -3484,9 +3483,10 @@ void write_packages()
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
+	// This code is for DDL12 onwards, so no need to check for null sysflag.
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$PACKAGES
-		WITH X.RDB$SYSTEM_FLAG MISSING OR X.RDB$SYSTEM_FLAG NE 1
+		WITH X.RDB$SYSTEM_FLAG NE 1
 	{
 		put(tdgbl, rec_package);
 		const SSHORT l = PUT_TEXT(att_package_name, X.RDB$PACKAGE_NAME);
@@ -4083,7 +4083,7 @@ void write_mapping()
 	{
 		FOR (REQUEST_HANDLE req_handle)
 			M IN RDB$MAP
-			WITH (M.RDB$SYSTEM_FLAG EQ 0 OR M.RDB$SYSTEM_FLAG MISSING)
+			WITH M.RDB$SYSTEM_FLAG EQ 0
 
 			put(tdgbl, rec_mapping);
 			const SSHORT l = PUT_TEXT(att_map_name, M.RDB$MAP_NAME);

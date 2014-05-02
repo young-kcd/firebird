@@ -1502,7 +1502,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		WITH FUN.RDB$FUNCTION_NAME EQ name.c_str() AND
 			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
-		if (!FUN.RDB$SYSTEM_FLAG.NULL && FUN.RDB$SYSTEM_FLAG)
+		if (FUN.RDB$SYSTEM_FLAG)
 		{
 			status_exception::raise(
 				Arg::Gds(isc_dyn_cannot_mod_sysfunc) << FUN.RDB$FUNCTION_NAME);
@@ -2066,7 +2066,7 @@ void DropFunctionNode::dropArguments(thread_db* tdbb, jrd_tra* transaction,
 				FLD IN RDB$FIELDS
 				WITH FLD.RDB$FIELD_NAME EQ ARG.RDB$FIELD_SOURCE AND
 					 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX AND
-					 (FLD.RDB$SYSTEM_FLAG EQ 0 OR FLD.RDB$SYSTEM_FLAG MISSING)
+					 FLD.RDB$SYSTEM_FLAG EQ 0
 			{
 				ERASE FLD;
 			}
@@ -2108,7 +2108,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		WITH FUN.RDB$FUNCTION_NAME EQ name.c_str() AND
 			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
-		if (!FUN.RDB$SYSTEM_FLAG.NULL && FUN.RDB$SYSTEM_FLAG)
+		if (FUN.RDB$SYSTEM_FLAG)
 			status_exception::raise(Arg::Gds(isc_dyn_cannot_mod_sysfunc) << FUN.RDB$FUNCTION_NAME);
 
 		if (package.isEmpty())
@@ -2411,7 +2411,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 		WITH P.RDB$PROCEDURE_NAME EQ name.c_str() AND
 			 P.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
-		if (!P.RDB$SYSTEM_FLAG.NULL && P.RDB$SYSTEM_FLAG)
+		if (P.RDB$SYSTEM_FLAG)
 			status_exception::raise(Arg::Gds(isc_dyn_cannot_mod_sysproc) << P.RDB$PROCEDURE_NAME);
 
 		if (!secondPass && runTriggers && package.isEmpty())
@@ -2585,7 +2585,7 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 			PRM.RDB$PACKAGE_NAME.NULL = TRUE;
 
 		PRM.RDB$SYSTEM_FLAG = 0;
-		PRM.RDB$SYSTEM_FLAG.NULL = FALSE;
+		PRM.RDB$SYSTEM_FLAG.NULL = FALSE; // Probably superflous because the field is not nullable
 
 		PRM.RDB$PARAMETER_NUMBER.NULL = FALSE;
 		PRM.RDB$PARAMETER_NUMBER = pos;
@@ -2794,7 +2794,7 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 				FLD IN RDB$FIELDS
 				WITH FLD.RDB$FIELD_NAME EQ PRM.RDB$FIELD_SOURCE AND
 					 FLD.RDB$FIELD_NAME STARTING WITH IMPLICIT_DOMAIN_PREFIX AND
-					 (FLD.RDB$SYSTEM_FLAG EQ 0 OR FLD.RDB$SYSTEM_FLAG MISSING)
+					 FLD.RDB$SYSTEM_FLAG EQ 0
 			{
 				ERASE FLD;
 			}
@@ -2836,7 +2836,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		WITH PRC.RDB$PROCEDURE_NAME EQ name.c_str() AND
 			 PRC.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
-		if (!PRC.RDB$SYSTEM_FLAG.NULL && PRC.RDB$SYSTEM_FLAG)
+		if (PRC.RDB$SYSTEM_FLAG)
 			status_exception::raise(Arg::Gds(isc_dyn_cannot_mod_sysproc) << PRC.RDB$PROCEDURE_NAME);
 
 		if (package.isEmpty())
@@ -2945,7 +2945,7 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				Arg::Gds(isc_dsql_db_trigger_type_cant_change));
 		}
 
-		if (systemFlag == fb_sysflag_user && !TRG.RDB$SYSTEM_FLAG.NULL)
+		if (systemFlag == fb_sysflag_user)
 		{
 			switch (TRG.RDB$SYSTEM_FLAG)
 			{
@@ -3262,24 +3262,21 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		X IN RDB$TRIGGERS
 		WITH X.RDB$TRIGGER_NAME EQ name.c_str()
 	{
-		if (!X.RDB$SYSTEM_FLAG.NULL)
+		switch (X.RDB$SYSTEM_FLAG)
 		{
-			switch (X.RDB$SYSTEM_FLAG)
-			{
-				case fb_sysflag_check_constraint:
-				case fb_sysflag_referential_constraint:
-				case fb_sysflag_view_check:
-					status_exception::raise(Arg::Gds(isc_dyn_cant_modify_auto_trig));
-					break;
+			case fb_sysflag_check_constraint:
+			case fb_sysflag_referential_constraint:
+			case fb_sysflag_view_check:
+				status_exception::raise(Arg::Gds(isc_dyn_cant_modify_auto_trig));
+				break;
 
-				case fb_sysflag_system:
-					status_exception::raise(
-						Arg::Gds(isc_dyn_cannot_mod_systrig) << X.RDB$TRIGGER_NAME);
-					break;
+			case fb_sysflag_system:
+				status_exception::raise(
+					Arg::Gds(isc_dyn_cannot_mod_systrig) << X.RDB$TRIGGER_NAME);
+				break;
 
-				default:
-					break;
-			}
+			default:
+				break;
 		}
 
 		if (X.RDB$RELATION_NAME.NULL && !transaction->getAttachment()->locksmith())
@@ -3604,7 +3601,7 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 			DDL_TRIGGER_DROP_COLLATION, name);
 
-		if (!COLL.RDB$SYSTEM_FLAG.NULL && COLL.RDB$SYSTEM_FLAG)
+		if (COLL.RDB$SYSTEM_FLAG)
 			status_exception::raise(Arg::Gds(isc_dyn_cannot_del_syscoll));
 
 		if (COLL.RDB$COLLATION_ID == 0 ||
@@ -4272,7 +4269,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 			DDL_TRIGGER_ALTER_DOMAIN, name);
 
-		if (!FLD.RDB$SYSTEM_FLAG.NULL && FLD.RDB$SYSTEM_FLAG == fb_sysflag_system)
+		if (FLD.RDB$SYSTEM_FLAG == fb_sysflag_system)
 		{
 			status_exception::raise(Arg::Gds(isc_dyn_cant_modify_sysobj) <<
 				"domain" << Arg::Str(name));
@@ -4999,7 +4996,7 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
 
-		if (!X.RDB$SYSTEM_FLAG.NULL && X.RDB$SYSTEM_FLAG == fb_sysflag_system)
+		if (X.RDB$SYSTEM_FLAG == fb_sysflag_system)
 		{
 			forbidden = true;
 			break;
@@ -5131,7 +5128,7 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		GEN IN RDB$GENERATORS
 		WITH GEN.RDB$GENERATOR_NAME EQ name.c_str()
 	{
-		if (!GEN.RDB$SYSTEM_FLAG.NULL && GEN.RDB$SYSTEM_FLAG != 0)
+		if (GEN.RDB$SYSTEM_FLAG != 0)
 		{
 			// msg 272: "Cannot delete system generator @1"
 			status_exception::raise(Arg::PrivateDyn(272) << name);
@@ -8393,7 +8390,7 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 		strcpy(IDX.RDB$RELATION_NAME, definition.relation.c_str());
 		IDX.RDB$RELATION_NAME.NULL = FALSE;
 		IDX.RDB$SYSTEM_FLAG = 0;
-		IDX.RDB$SYSTEM_FLAG.NULL = FALSE;
+		IDX.RDB$SYSTEM_FLAG.NULL = FALSE; // Probably redundant.
 
 		// Check if the table is actually a view.
 
@@ -9681,7 +9678,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 
 		const MetaName roleOwner(ROL.RDB$OWNER_NAME);
 
-		if (!ROL.RDB$SYSTEM_FLAG.NULL && ROL.RDB$SYSTEM_FLAG != 0)
+		if (ROL.RDB$SYSTEM_FLAG != 0)
 		{
 			// msg 284: can not drop system SQL role @1
 			status_exception::raise(Arg::PrivateDyn(284) << name);
