@@ -1816,9 +1816,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 				(relation->rel_flags & (REL_view | REL_external))))
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
+					  Arg::Gds(isc_dsql_wlock_simple));
 		}
 	} // end scope block
 
@@ -1827,9 +1825,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 	if ((inputRse->dsqlFirst || inputRse->dsqlSkip) && rows)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-				  // Token unknown
-				  Arg::Gds(isc_token_err) <<
-				  Arg::Gds(isc_random) << Arg::Str("ROWS"));
+				  Arg::Gds(isc_dsql_firstskip_rows));
 	}
 	else if (rows)
 		PASS1_limit(dsqlScratch, rows->length, rows->skip, rse);
@@ -1927,9 +1923,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 		if (updateLock)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
+					  Arg::Gds(isc_dsql_wlock_aggregates));
 		}
 
 		parent_context = FB_NEW(*tdbb->getDefaultPool()) dsql_ctx(*tdbb->getDefaultPool());
@@ -1999,9 +1993,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 		if (updateLock)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
+					  Arg::Gds(isc_dsql_wlock_conflict) << Arg::Str("DISTINCT"));
 		}
 
 		++dsqlScratch->inSelectList;
@@ -2583,9 +2575,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 		if (updateLock)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  // Token unknown
-					  Arg::Gds(isc_token_err) <<
-					  Arg::Gds(isc_random) << Arg::Str("WITH LOCK"));
+					  Arg::Gds(isc_dsql_wlock_conflict) << Arg::Str("UNION"));
 		}
 
 		unionRse->dsqlDistinct = union_items;

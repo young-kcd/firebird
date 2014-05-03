@@ -1148,6 +1148,10 @@ Data source : @4"},		/* eds_statement */
 	{336397323, "ALTER SEQUENCE @1 failed"},		/* dsql_alter_sequence_failed */
 	{336397324, "CREATE GENERATOR @1 failed"},		/* dsql_create_generator_failed */
 	{336397325, "SET GENERATOR @1 failed"},		/* dsql_set_generator_failed */
+	{336397326, "WITH LOCK can be used only with a single physical table"},		/* dsql_wlock_simple */
+	{336397327, "FIRST/SKIP cannot be used with ROWS"},		/* dsql_firstskip_rows */
+	{336397328, "WITH LOCK cannot be used with aggregates"},		/* dsql_wlock_aggregates */
+	{336397329, "WITH LOCK cannot be used with @1"},		/* dsql_wlock_conflict */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */

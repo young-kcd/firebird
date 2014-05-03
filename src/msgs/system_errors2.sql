@@ -1138,6 +1138,10 @@ COMMIT WORK;
 (-901, '42', '000', 13, 1035, 'dsql_alter_sequence_failed', NULL, NULL)
 (-901, '42', '000', 13, 1036, 'dsql_create_generator_failed', NULL, NULL)
 (-901, '42', '000', 13, 1037, 'dsql_set_generator_failed', NULL, NULL)
+(-104, '42', '000', 13, 1038, 'dsql_wlock_simple', NULL, NULL)
+(-104, '42', '000', 13, 1039, 'dsql_firstskip_rows', NULL, NULL)
+(-104, '42', '000', 13, 1040, 'dsql_wlock_aggregates', NULL, NULL)
+(-104, '42', '000', 13, 1041, 'dsql_wlock_conflict', NULL, NULL)
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

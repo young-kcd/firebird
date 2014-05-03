@@ -1156,6 +1156,10 @@ const
 	gds_dsql_alter_sequence_failed       = 336397323;
 	gds_dsql_create_generator_failed     = 336397324;
 	gds_dsql_set_generator_failed        = 336397325;
+	gds_dsql_wlock_simple                = 336397326;
+	gds_dsql_firstskip_rows              = 336397327;
+	gds_dsql_wlock_aggregates            = 336397328;
+	gds_dsql_wlock_conflict              = 336397329;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

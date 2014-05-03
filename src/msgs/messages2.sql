@@ -2584,6 +2584,10 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_alter_sequence_failed', 'putErrorPrefix', 'DdlNodes.h', NULL, 13, 1035, NULL, 'ALTER SEQUENCE @1 failed', NULL, NULL);
 ('dsql_create_generator_failed', 'putErrorPrefix', 'DdlNodes.h', NULL, 13, 1036, NULL, 'CREATE GENERATOR @1 failed', NULL, NULL);
 ('dsql_set_generator_failed', 'putErrorPrefix', 'DdlNodes.h', NULL, 13, 1037, NULL, 'SET GENERATOR @1 failed', NULL, NULL);
+('dsql_wlock_simple', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 1038, NULL, 'WITH LOCK can be used only with a single physical table', NULL, NULL);
+('dsql_firstskip_rows', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 1039, NULL, 'FIRST/SKIP cannot be used with ROWS', NULL, NULL);
+('dsql_wlock_aggregates', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 1040, NULL, 'WITH LOCK cannot be used with aggregates', NULL, NULL);
+('dsql_wlock_conflict', NULL, 'pass1.cpp', NULL, 13, 1041, NULL, 'WITH LOCK cannot be used with @1', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

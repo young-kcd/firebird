@@ -1144,6 +1144,10 @@ static const struct {
 	{336397323, "42000"}, // 1035 dsql_alter_sequence_failed
 	{336397324, "42000"}, // 1036 dsql_create_generator_failed
 	{336397325, "42000"}, // 1037 dsql_set_generator_failed
+	{336397326, "42000"}, // 1038 dsql_wlock_simple
+	{336397327, "42000"}, // 1039 dsql_firstskip_rows
+	{336397328, "42000"}, // 1040 dsql_wlock_aggregates
+	{336397329, "42000"}, // 1041 dsql_wlock_conflict
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec
