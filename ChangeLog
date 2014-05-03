@@ -1,3 +1,12 @@
+ 2014-05-02 03:04  robocop 
+   M src/burp/backup.epp
+   M src/dsql/DdlNodes.epp
+In ODS12, rdb$system_flag is not nullable thus we can simplify some conditions.
+
+ 2014-05-02 03:01  robocop 
+   M src/jrd/vio.cpp
+1.- Don't let gbak delete more than the only table it might clean. 2.- Special case for rdb$types: user can insert records, provided that's locksmith and the records contain non-system types.
+
  2014-05-01 05:55  robocop 
    M src/jrd/vio.cpp
 More sys tables protected.
