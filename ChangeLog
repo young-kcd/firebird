@@ -1,3 +1,17 @@
+ 2014-05-03 00:27  robocop 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/pass1.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Replace "unknown token" by specific messages.
+
  2014-05-02 03:04  robocop 
    M src/burp/backup.epp
    M src/dsql/DdlNodes.epp
