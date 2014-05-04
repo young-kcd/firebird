@@ -480,7 +480,12 @@ static SetValues setValues;
 static bool Merge_diagnostic = false;
 static FILE* Diag;
 static FILE* Help;
+
 static const TEXT* const sql_prompt = "SQL> ";
+
+// Keep in sync with the chars that have their own "case" in get_statement(...).
+static const char FORBIDDEN_TERM_CHARS[] = { '\n', '-', '*', '/', SINGLE_QUOTE, DBL_QUOTE };
+static const char FORBIDDEN_TERM_CHARS_DISPLAY[] = "<ENTER>, -, *, /, SINGLE_QUOTE, DOUBLE_QUOTE";
 
 static bool global_psw = false;
 static bool global_usr = false;
@@ -1270,8 +1275,16 @@ processing_state ISQL_fill_var(IsqlVar* var,
 	var->charSet = msg->getCharSet(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
 	var->nullable = msg->isNullable(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
 
-	var->nullInd = (short*) &buf[msg->getNullOffset(fbStatus, index)];	if (!fbStatus->isSuccess()) return ps_ERR;
-	var->value.setPtr = &buf[msg->getOffset(fbStatus, index)];			if (!fbStatus->isSuccess()) return ps_ERR;
+	if (buf)
+	{
+		var->nullInd = (short*) &buf[msg->getNullOffset(fbStatus, index)];	if (!fbStatus->isSuccess()) return ps_ERR;
+		var->value.setPtr = &buf[msg->getOffset(fbStatus, index)];			if (!fbStatus->isSuccess()) return ps_ERR;
+	}
+	else
+	{
+		var->nullInd = 0;
+		var->value.setPtr = 0;
+	}
 
 	return CONT;
 }
@@ -5068,6 +5081,17 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 	case SetOptions::terminator:
 		{
 			const TEXT* a = (*lparms[2]) ? lparms[2] : DEFTERM;
+			for (size_t iter = 0; iter < sizeof(FORBIDDEN_TERM_CHARS); ++iter)
+			{
+				if (strchr(a, FORBIDDEN_TERM_CHARS[iter]))
+				{
+					TEXT msg_string[MSG_LENGTH];
+					IUTILS_msg_get(INVALID_TERM_CHARS, msg_string, SafeArg() << FORBIDDEN_TERM_CHARS_DISPLAY);
+					isqlGlob.printf("%s\n", msg_string);
+					return ps_ERR;
+				}
+			}
+
 			isqlGlob.Termlen = strlen(a);
 			if (isqlGlob.Termlen < MAXTERM_SIZE)
 			{
