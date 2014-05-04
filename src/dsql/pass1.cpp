@@ -2363,6 +2363,12 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 	thread_db* tdbb = JRD_get_thread_data();
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
+	if (updateLock && !input->dsqlAll)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+				  Arg::Gds(isc_dsql_wlock_conflict) << Arg::Str("UNION"));
+	}
+
 	// set up the rse node for the union.
 
 	UnionSourceNode* unionSource = FB_NEW(pool) UnionSourceNode(pool);
@@ -2406,8 +2412,11 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 			 ++ptr, ++uptr)
 		{
 			dsqlScratch->scopeLevel++;
-			*uptr = pass1_rse(dsqlScratch, *ptr, NULL, NULL, false, 0);
+			*uptr = pass1_rse(dsqlScratch, *ptr, NULL, NULL, updateLock, 0);
 			dsqlScratch->scopeLevel--;
+
+			if (updateLock)
+				(*uptr)->as<RseNode>()->flags &= ~RseNode::FLAG_WRITELOCK;
 
 			while (*(dsqlScratch->context) != base)
 				dsqlScratch->unionContext.push(dsqlScratch->context->pop());
@@ -2571,15 +2580,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 
 	// PROJECT on all the select items unless UNION ALL was specified.
 	if (!input->dsqlAll)
-	{
-		if (updateLock)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					  Arg::Gds(isc_dsql_wlock_conflict) << Arg::Str("UNION"));
-		}
-
 		unionRse->dsqlDistinct = union_items;
-	}
 
 	if (updateLock)
 		unionRse->flags |= RseNode::FLAG_WRITELOCK;
