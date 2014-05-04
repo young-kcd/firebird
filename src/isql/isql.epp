@@ -416,35 +416,67 @@ static SCHAR Password[128];
 static SCHAR Charset[128];
 static bool Merge_stderr;
 
-static ColList global_Cols;
 static Firebird::GlobalPtr<Firebird::UCharBuffer> global_Buffer;
-static int global_Col_default = 0; // Need to write code for it in the future.
-static Firebird::GlobalPtr<InputDevices> Filelist;
-//static TEXT Tmpfile[MAXPATHLEN];
 static bool Abort_flag = false;
 static bool Interrupt_flag = false;
-static bool Echo = false;
-static bool Time_display = false;
-static bool Sqlda_display = false;
+static Firebird::GlobalPtr<InputDevices> Filelist;
+static int Pagelength = 20;
+static bool Nodbtriggers = false; // No database triggers
 static int Exit_value = 0;
 static bool Interactive = true;
 static bool Input_file = false;
-static int Pagelength = 20;
-static bool Stats = false;
-static bool Autocommit = true; // Commit ddl
-static bool Nodbtriggers = false; // No database triggers
-static bool Warnings = true; // Print warnings
-static int Doblob = 1;		// Default to printing only text types
-static bool List = false;
-static bool Docount = false;
-static size_t maxRows = 0;
-static bool Plan = false;
-static bool Planonly = false;
-static bool ExplainPlan = false;
-static bool Heading = true;
-static bool BailOnError = false;
-static int Termlen = 0;
-static SCHAR ISQL_charset[MAXCHARSET_SIZE] = { 0 };
+
+
+// Values used in the SET command.
+// Initial options set exclusively from the command line are not included here.
+class SetValues
+{
+public:
+	SetValues()
+	{
+		//ColList global_Cols;
+		global_Col_default = 0; // Need to write code for it in the future.
+		Echo = false;
+		Time_display = false;
+		Sqlda_display = false;
+		Stats = false;
+		Autocommit = true;	// Commit ddl
+		Warnings = true;	// Print warnings
+		Doblob = 1;			// Default to printing only text types
+		List = false;
+		Docount = false;
+		maxRows = 0;
+		Plan = false;
+		Planonly = false;
+		ExplainPlan = false;
+		Heading = true;
+		BailOnError = false;
+		ISQL_charset[0] = 0;
+	}
+
+	ColList global_Cols;
+	int global_Col_default;	// Need to write code for it in the future.
+	bool Echo;
+	bool Time_display;
+	bool Sqlda_display;
+	bool Stats;
+	bool Autocommit;	// Commit ddl
+	bool Warnings;		// Print warnings
+	int Doblob;			// Default to printing only text types
+	bool List;
+	bool Docount;
+	size_t maxRows;
+	bool Plan;
+	bool Planonly;
+	bool ExplainPlan;
+	bool Heading;
+	bool BailOnError;
+	SCHAR ISQL_charset[MAXCHARSET_SIZE];
+};
+
+static SetValues setValues;
+
+
 static bool Merge_diagnostic = false;
 static FILE* Diag;
 static FILE* Help;
@@ -830,7 +862,7 @@ static void readNextInputLine(const char* prompt)
 
 #endif
 	// @@@ CVC: On 2005-04-02, take the "|| Echo" out at request by Pavel.
-	if (Interactive && !Input_file)// || Echo)
+	if (Interactive && !Input_file)// || setValues.Echo)
 	{
 		// Write the prompt out.
 		fprintf(stdout, "%s", prompt);
@@ -861,7 +893,7 @@ static void readNextInputLine(const char* prompt)
 static void readNextInputLine()
 {
 	readNextInputLine(userPrompt);
-	if (Echo && (lastInputLine != NULL)) {
+	if (setValues.Echo && (lastInputLine != NULL)) {
 		isqlGlob.printf("%s%s", lastInputLine, NEWLINE);
 	}
 }
@@ -927,7 +959,7 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		const ISC_STATUS* vec = status;
 		if (vec[0] != isc_arg_gds ||
 			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] != isc_arg_warning) ||
-			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] == isc_arg_warning && !Warnings))
+			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] == isc_arg_warning && !setValues.Warnings))
 		{
 			return false;
 		}
@@ -1028,7 +1060,7 @@ void ISQL_warning(Firebird::IStatus* st)
 	{
 		if (vec[0] != isc_arg_gds ||
 			vec[2] != isc_arg_warning ||
-			(vec[2] == isc_arg_warning && !Warnings))
+			(vec[2] == isc_arg_warning && !setValues.Warnings))
 		{
 			return;
 		}
@@ -2496,7 +2528,7 @@ static processing_state bulk_insert_hack(const char* command)
 
 	// No need to start a default transaction unless there is no current one
 
-	if (Autocommit)
+	if (setValues.Autocommit)
 	{
 		if (!D_Transaction())
 			return ps_ERR;
@@ -2505,7 +2537,7 @@ static processing_state bulk_insert_hack(const char* command)
 	// If statistics are requested, then reserve them here
 
 	SINT64 perf_before[ISQL_COUNTERS];
-	if (Stats)
+	if (setValues.Stats)
 	{
 		Firebird::UtlInterfacePtr()->getPerfCounters(fbStatus,
 			DB, ISQL_COUNTERS_SET, perf_before);
@@ -2526,9 +2558,9 @@ static processing_state bulk_insert_hack(const char* command)
 			return (SKIP);
 	}
 
-	global_Stmt = DB->prepare(fbStatus, Autocommit ? D__trans : M__trans,  0, command,
+	global_Stmt = DB->prepare(fbStatus, setValues.Autocommit ? D__trans : M__trans,  0, command,
 		isqlGlob.SQL_dialect, Firebird::IStatement::PREPARE_PREFETCH_METADATA |
-		(Plan ? Firebird::IStatement::PREPARE_PREFETCH_DETAILED_PLAN : 0));
+		(setValues.Plan ? Firebird::IStatement::PREPARE_PREFETCH_DETAILED_PLAN : 0));
 	if (!fbStatus->isSuccess())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
@@ -2566,7 +2598,7 @@ static processing_state bulk_insert_hack(const char* command)
 		return ps_ERR;
 	}
 
-	if (Sqlda_display)
+	if (setValues.Sqlda_display)
 	{
 		print_message(message, "IN");
 	}
@@ -2584,10 +2616,10 @@ static processing_state bulk_insert_hack(const char* command)
 
 	// If PLAN is set, print out the plan now.
 
-	if (Plan)
+	if (setValues.Plan)
 	{
 		process_plan();
-		if (Planonly)
+		if (setValues.Planonly)
 			return ret;	// Do not execute.
 	}
 
@@ -3247,7 +3279,7 @@ static processing_state bulk_insert_hack(const char* command)
 		global_Stmt = NULL;
 
 	// Statistics printed here upon request
-	if (Stats && (print_performance(perf_before) == ps_ERR))
+	if (setValues.Stats && (print_performance(perf_before) == ps_ERR))
 		ret = ps_ERR;
 
 	return ret;
@@ -3646,8 +3678,8 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	ISQL_disconnect_database(false);
 
 	SLONG arglength = strlen(statement) + strlen(isqlGlob.User) + strlen(Password) + 24;
-	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
-		arglength += strlen(ISQL_charset) + strlen(" SET NAMES \'\' ");
+	if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
+		arglength += strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' ");
 	TEXT* local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
 	if (!local_statement)
 		return (FAIL);
@@ -3660,7 +3692,8 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	const TEXT* p = NULL;
 
 	// If there is a user parameter, we will set it into the create stmt.
-	if (global_usr || global_psw || (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)))
+	if (global_usr || global_psw ||
+		(*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)))
 	{
 		strip_quotes(isqlGlob.User, usr);
 		strip_quotes(Password, psw);
@@ -3694,9 +3727,9 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 					if (global_psw)
 						sprintf(local_statement + strlen(local_statement),
 								" PASSWORD \'%s\' ", psw);
-					if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
+					if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
 						sprintf(local_statement + strlen(local_statement),
-								" SET NAMES \'%s\' ", ISQL_charset);
+								" SET NAMES \'%s\' ", setValues.ISQL_charset);
 					sprintf(local_statement + strlen(local_statement), "%s", p);
 				}
 			}
@@ -3720,8 +3753,8 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 			arglength = strlen(statement) +
 				strlen(isqlGlob.User) + strlen(Password) + 24 + 2 * cnt;
 
-			if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
-				arglength += strlen(ISQL_charset) + strlen(" SET NAMES \'\' ");
+			if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
+				arglength += strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' ");
 			new_local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
 
 			if (!new_local_statement)
@@ -3770,8 +3803,8 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		if (global_psw)
 			sprintf(temp_str + strlen(temp_str), " PASSWORD \'%s\' ", psw);
 
-		if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET))
-			sprintf(temp_str + strlen(temp_str), " SET NAMES \'%s\' ", ISQL_charset);
+		if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
+			sprintf(temp_str + strlen(temp_str), " SET NAMES \'%s\' ", setValues.ISQL_charset);
 
 		if (new_local_statement)
 			temp_str = new_local_statement + strlen(new_local_statement);
@@ -3947,7 +3980,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 			M_Transaction();
 			if (D__trans)
 				commit_trans(&D__trans);
-			if (Autocommit)
+			if (setValues.Autocommit)
 				D_Transaction();
 		}
 
@@ -4084,7 +4117,7 @@ static void do_isql()
 				IUTILS_msg_get(NO_DB, errbuf);
 				STDERROUT(errbuf);
 			}
-			if (!Interactive && BailOnError)
+			if (!Interactive && setValues.BailOnError)
 				ret = FAIL;
 			else
 				ret = SKIP;
@@ -4096,7 +4129,7 @@ static void do_isql()
 			if (process_statement(statement) == ps_ERR)
 			{
 				Exit_value = FINI_ERROR;
-				if (!Interactive && BailOnError)
+				if (!Interactive && setValues.BailOnError)
 					Abort_flag = true;
 			}
 			break;
@@ -4207,7 +4240,7 @@ static void do_isql()
 		case ps_ERR:
 		case FAIL:
 			Exit_value = FINI_ERROR;
-			if (!Interactive && BailOnError)
+			if (!Interactive && setValues.BailOnError)
 				Abort_flag = true;
 			break;
 
@@ -4233,7 +4266,7 @@ static void do_isql()
 	if (lastInputLine)
 		free(lastInputLine);
 
-	global_Cols.clear(); // The destructor would do anyway if we don't reach this point.
+	setValues.global_Cols.clear(); // The destructor would do anyway if we don't reach this point.
 }
 
 
@@ -4972,56 +5005,56 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		break;
 
 	case SetOptions::stat:
-		ret = do_set_command(parms[2], &Stats);
+		ret = do_set_command(parms[2], &setValues.Stats);
 		break;
 
 	case SetOptions::count:
-		ret = do_set_command(parms[2], &Docount);
+		ret = do_set_command(parms[2], &setValues.Docount);
 		break;
 
 	case SetOptions::list:
-		ret = do_set_command(parms[2], &List);
+		ret = do_set_command(parms[2], &setValues.List);
 		break;
 
 	case SetOptions::plan:
-		ret = do_set_command(parms[2], &Plan);
-		if (Planonly && !Plan)
-			ret = do_set_command("OFF", &Planonly);
+		ret = do_set_command(parms[2], &setValues.Plan);
+		if (setValues.Planonly && !setValues.Plan)
+			ret = do_set_command("OFF", &setValues.Planonly);
 		break;
 
 	case SetOptions::planonly:
-		ret = do_set_command (parms[2], &Planonly);
-		if (Planonly && !Plan)
+		ret = do_set_command (parms[2], &setValues.Planonly);
+		if (setValues.Planonly && !setValues.Plan)
 		{
 			// turn on plan
-			ret = do_set_command ("ON", &Plan);
+			ret = do_set_command ("ON", &setValues.Plan);
 		}
 		break;
 
 	case SetOptions::explain:
-		ret = do_set_command(parms[2], &ExplainPlan);
-		if (ExplainPlan)
-			ret = do_set_command("ON", &Plan);
+		ret = do_set_command(parms[2], &setValues.ExplainPlan);
+		if (setValues.ExplainPlan)
+			ret = do_set_command("ON", &setValues.Plan);
 		break;
 
 	case SetOptions::blobdisplay:
 		// No arg means turn off blob display
 		if (!*parms[2] || !strcmp(parms[2], "OFF"))
-			Doblob = NO_BLOBS;
+			setValues.Doblob = NO_BLOBS;
 		else if (!strcmp(parms[2], "ALL"))
-			Doblob = ALL_BLOBS;
+			setValues.Doblob = ALL_BLOBS;
 		else
-			Doblob = atoi(parms[2]);
+			setValues.Doblob = atoi(parms[2]);
 		break;
 
 	case SetOptions::echo:
-		ret = do_set_command(parms[2], &Echo);
-		if (!Echo)
+		ret = do_set_command(parms[2], &setValues.Echo);
+		if (!setValues.Echo)
 			ISQL_prompt("");
 		break;
 
 	case SetOptions::autoddl:
-		ret = do_set_command(parms[2], &Autocommit);
+		ret = do_set_command(parms[2], &setValues.Autocommit);
 		break;
 
 	case SetOptions::width:
@@ -5035,15 +5068,15 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 	case SetOptions::terminator:
 		{
 			const TEXT* a = (*lparms[2]) ? lparms[2] : DEFTERM;
-			Termlen = strlen(a);
-			if (Termlen < MAXTERM_SIZE)
+			isqlGlob.Termlen = strlen(a);
+			if (isqlGlob.Termlen < MAXTERM_SIZE)
 			{
 				strcpy(isqlGlob.global_Term, a);
 			}
 			else
 			{
-				Termlen = MAXTERM_SIZE - 1;
-				fb_utils::copy_terminate(isqlGlob.global_Term, a, Termlen + 1);
+				isqlGlob.Termlen = MAXTERM_SIZE - 1;
+				fb_utils::copy_terminate(isqlGlob.global_Term, a, isqlGlob.Termlen + 1);
 			}
 		}
 		break;
@@ -5053,27 +5086,27 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		{
 			const size_t lgth = strlen(DEFCHARSET);
 			if (lgth < MAXCHARSET_SIZE)
-				strcpy(ISQL_charset, DEFCHARSET);
+				strcpy(setValues.ISQL_charset, DEFCHARSET);
 			else
-				fb_utils::copy_terminate(ISQL_charset, DEFCHARSET, MAXCHARSET_SIZE);
+				fb_utils::copy_terminate(setValues.ISQL_charset, DEFCHARSET, MAXCHARSET_SIZE);
 		}
 		else
 		{
 			const size_t lgth = strlen(parms[2]);
 			if (lgth < MAXCHARSET_SIZE)
-				strcpy(ISQL_charset, parms[2]);
+				strcpy(setValues.ISQL_charset, parms[2]);
 			else
-				fb_utils::copy_terminate(ISQL_charset, parms[2], MAXCHARSET_SIZE);
+				fb_utils::copy_terminate(setValues.ISQL_charset, parms[2], MAXCHARSET_SIZE);
 		}
 		break;
 
 	case SetOptions::time:
-		ret = do_set_command(parms[2], &Time_display);
+		ret = do_set_command(parms[2], &setValues.Time_display);
 		break;
 
 //#ifdef DEV_BUILD
 	case SetOptions::sqlda_display:
-		ret = do_set_command(parms[2], &Sqlda_display);
+		ret = do_set_command(parms[2], &setValues.Sqlda_display);
 		break;
 //#endif // DEV_BUILD
 
@@ -5085,15 +5118,15 @@ static processing_state frontend_set(const char* cmd, const char* const* parms,
 		break;
 
 	case SetOptions::warning:
-		ret = do_set_command (parms[2], &Warnings);
+		ret = do_set_command (parms[2], &setValues.Warnings);
 		break;
 
 	case SetOptions::heading:
-		ret = do_set_command(parms[2], &Heading);
+		ret = do_set_command(parms[2], &setValues.Heading);
 		break;
 
 	case SetOptions::bail:
-		ret = do_set_command(parms[2], &BailOnError);
+		ret = do_set_command(parms[2], &setValues.BailOnError);
 		break;
 
 	case SetOptions::bulk_insert:
@@ -5232,7 +5265,7 @@ static processing_state get_dialect(const char* const dialect_str,
 					default:
 						break;
 					}
-					if (print_warning && Warnings)
+					if (print_warning && setValues.Warnings)
 					{
 						//print_warning = false;
 						sprintf(bad_dialect_buf, "%s%d%s%d%s%s",
@@ -5282,7 +5315,7 @@ static processing_state get_statement(TEXT* const statement,
 	TEXT con_prompt[MSG_LENGTH];
 	IUTILS_msg_get(CON_PROMPT, con_prompt);
 
-	if (Interactive && !Input_file || Echo) {
+	if (Interactive && !Input_file || setValues.Echo) {
 		ISQL_prompt(statement_prompt);
 	}
 
@@ -5297,7 +5330,7 @@ static processing_state get_statement(TEXT* const statement,
 	size_t valuable_count = 0; // counter of valuable (non-space) chars
 	size_t comment_pos = 0; // position of block comment start
 	size_t non_comment_pos = 0; // position of char after block comment
-	const size_t term_length = Termlen - 1; // additional variable for decreasing calculation
+	const size_t term_length = isqlGlob.Termlen - 1; // additional variable for decreasing calculation
 
 	Filelist->Ifp().indev_line = Filelist->Ifp().indev_aux;
 	bool done = false;
@@ -5352,7 +5385,7 @@ static processing_state get_statement(TEXT* const statement,
 
 			Filelist->removeIntoIfp();
 
-			if (Interactive && !Input_file || Echo)
+			if (Interactive && !Input_file || setValues.Echo)
 				ISQL_prompt(statement_prompt);
 
 			// CVC: Let's detect if we went back to the first level.
@@ -5383,7 +5416,7 @@ static processing_state get_statement(TEXT* const statement,
 			}
 
 			// If in a comment, keep reading
-			if (Interactive && !Input_file || Echo)
+			if (Interactive && !Input_file || setValues.Echo)
 			{
 				if (state == in_block_comment)
 				{
@@ -5494,7 +5527,7 @@ static processing_state get_statement(TEXT* const statement,
 		default:
 			if (state == normal && c == isqlGlob.global_Term[term_length] &&
 				// one-char terminator or the beginning also match
-				(Termlen == 1 ||
+				(isqlGlob.Termlen == 1u ||
 				 (valuable_count >= term_length &&
 				  strncmp(p - term_length, isqlGlob.global_Term, term_length) == 0)))
 			{
@@ -5529,7 +5562,7 @@ static processing_state get_statement(TEXT* const statement,
 
 				// move some content to start of buffer just in case if
 				// the overflow has splitted terminator
-				count = MAX(Termlen, 2);
+				count = MAX(isqlGlob.Termlen, 2u);
 				memcpy(statement, p - count, count);
 				p = statement + count;
 				*p = '\0';
@@ -5725,7 +5758,7 @@ void ISQL_get_version(bool call_by_create_db)
 			global_dialect_spoken = gds__vax_integer(p, length);
 			if (isqlGlob.major_ods < ODS_VERSION10)
 			{
-				if (isqlGlob.SQL_dialect > SQL_DIALECT_V5 && Warnings)
+				if (isqlGlob.SQL_dialect > SQL_DIALECT_V5 && setValues.Warnings)
 				{
 					isqlGlob.printf(NEWLINE);
 					sprintf(bad_dialect_buf, "%s%s%s%d%s%s",
@@ -5755,7 +5788,7 @@ void ISQL_get_version(bool call_by_create_db)
 				default:
 					break;
 				}
-				if (print_warning && Warnings)
+				if (print_warning && setValues.Warnings)
 				{
 					print_warning = false;
 					isqlGlob.printf(NEWLINE);
@@ -5776,7 +5809,7 @@ void ISQL_get_version(bool call_by_create_db)
 				// must be an old or non Firebird server
 				break;
 			}
-			if (isqlGlob.SQL_dialect && isqlGlob.SQL_dialect != SQL_DIALECT_V5 && Warnings)
+			if (isqlGlob.SQL_dialect && isqlGlob.SQL_dialect != SQL_DIALECT_V5 && setValues.Warnings)
 			{
 				isqlGlob.printf(NEWLINE);
 				if (call_by_create_db)
@@ -6005,19 +6038,19 @@ static processing_state print_sets()
  *
  **************************************/
 
-	print_set("Print statistics:", Stats);
-	print_set("Echo commands:", Echo);
-	print_set("List format:", List);
-	print_set("Show Row Count:", Docount);
-	//print_set("Row Count:", Docount);   // Changed print to the above to avoid confusion with next one
-	isqlGlob.printf("%-25s%lu%s", "Select maxrows limit:", maxRows, NEWLINE);
-	print_set("Autocommit DDL:", Autocommit);
-	print_set("Access Plan:", Plan);
-	print_set("Access Plan only:", Planonly);
-	print_set("Explain Access Plan:", ExplainPlan);
+	print_set("Print statistics:", setValues.Stats);
+	print_set("Echo commands:", setValues.Echo);
+	print_set("List format:", setValues.List);
+	print_set("Show Row Count:", setValues.Docount);
+	//print_set("Row Count:", setValues.Docount);   // Changed print to the above to avoid confusion with next one
+	isqlGlob.printf("%-25s%lu%s", "Select maxrows limit:", setValues.maxRows, NEWLINE);
+	print_set("Autocommit DDL:", setValues.Autocommit);
+	print_set("Access Plan:", setValues.Plan);
+	print_set("Access Plan only:", setValues.Planonly);
+	print_set("Explain Access Plan:", setValues.ExplainPlan);
 
 	isqlGlob.printf("%-25s", "Display BLOB type:");
-	switch (Doblob)
+	switch (setValues.Doblob)
 	{
 	case ALL_BLOBS:
 		isqlGlob.printf("ALL");
@@ -6026,20 +6059,20 @@ static processing_state print_sets()
 		isqlGlob.printf("NONE");
 		break;
 	default:
-		isqlGlob.printf("%d", Doblob);
+		isqlGlob.printf("%d", setValues.Doblob);
 	}
 	isqlGlob.printf(NEWLINE);
 
-	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
-		isqlGlob.printf("%-25s%s%s", "Set names:", ISQL_charset, NEWLINE);
+	if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)) {
+		isqlGlob.printf("%-25s%s%s", "Set names:", setValues.ISQL_charset, NEWLINE);
 	}
 
-	print_set("Column headings:", Heading);
+	print_set("Column headings:", setValues.Heading);
 
-	if (global_Cols.count())
+	if (setValues.global_Cols.count())
 	{
 		isqlGlob.printf("Column print widths:%s", NEWLINE);
-		const ColList::item* p = global_Cols.getHead();
+		const ColList::item* p = setValues.global_Cols.getHead();
 		while (p)
 		{
 			isqlGlob.printf("%s%s width: %d%s", TAB_AS_SPACES, p->col_name, p->col_len, NEWLINE);
@@ -6048,9 +6081,9 @@ static processing_state print_sets()
 	}
 	isqlGlob.printf("%-25s%s%s", "Terminator:", isqlGlob.global_Term, NEWLINE);
 
-	print_set("Time:", Time_display);
-	print_set("Warnings:", Warnings);
-	print_set("Bail on error:", BailOnError);
+	print_set("Time:", setValues.Time_display);
+	print_set("Warnings:", setValues.Warnings);
+	print_set("Bail on error:", setValues.BailOnError);
 	return SKIP;
 }
 
@@ -6269,8 +6302,8 @@ static processing_state newdb(TEXT* dbname,
 	// Build up a dpb
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
-	if (*ISQL_charset && strcmp(ISQL_charset, DEFCHARSET)) {
-		dpb.insertString(isc_dpb_lc_ctype, ISQL_charset, strlen(ISQL_charset));
+	if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)) {
+		dpb.insertString(isc_dpb_lc_ctype, setValues.ISQL_charset, strlen(setValues.ISQL_charset));
 	}
 
     unsigned l;
@@ -6384,7 +6417,7 @@ static processing_state newdb(TEXT* dbname,
 			M_Transaction();
 			if (D__trans)
 				commit_trans(&D__trans);
-			if (Autocommit)
+			if (setValues.Autocommit)
 				D_Transaction();
 		}
 	}
@@ -6546,7 +6579,7 @@ static processing_state newsize(const TEXT* colname, const TEXT* sizestr)
 	if (!*sizestr)
 	{
 		// We don't signal error if the item to be removed doesn't exist.
-		global_Cols.remove(colname);
+		setValues.global_Cols.remove(colname);
 		return SKIP;
 	}
 
@@ -6555,7 +6588,7 @@ static processing_state newsize(const TEXT* colname, const TEXT* sizestr)
 		return ps_ERR;
 
 	// We don't care if it was insertion or replacement.
-	global_Cols.put(colname, size);
+	setValues.global_Cols.put(colname, size);
 	return SKIP;
 }
 
@@ -6568,7 +6601,7 @@ static processing_state newMaxRows(const TEXT* newMaxRowsStr)
  **************************************
  *
  * Functional description
- * Sets the new value for the maxRows limit (max rows to be retrieved).
+ * Sets the new value for the setValues.maxRows limit (max rows to be retrieved).
  *
  **************************************/
 
@@ -6609,7 +6642,7 @@ static processing_state newMaxRows(const TEXT* newMaxRowsStr)
 		return ps_ERR;
 	}
 
-	maxRows = newMaxRows;
+	setValues.maxRows = newMaxRows;
 	return SKIP;
 }
 
@@ -6691,9 +6724,9 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 	{ // scope
 		const size_t lgth = strlen(DEFCHARSET);
 		if (lgth < MAXCHARSET_SIZE)
-			strcpy(ISQL_charset, DEFCHARSET);
+			strcpy(setValues.ISQL_charset, DEFCHARSET);
 		else
-			fb_utils::copy_terminate(ISQL_charset, DEFCHARSET, MAXCHARSET_SIZE);
+			fb_utils::copy_terminate(setValues.ISQL_charset, DEFCHARSET, MAXCHARSET_SIZE);
 	} // scope
 
 	// redirected stdin means act like -i was set
@@ -6702,13 +6735,13 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 
 	// Terminators are initialized
 
-	Termlen = strlen(DEFTERM);
-	if (Termlen < MAXTERM_SIZE)
+	isqlGlob.Termlen = strlen(DEFTERM);
+	if (isqlGlob.Termlen < MAXTERM_SIZE)
 		strcpy(isqlGlob.global_Term, DEFTERM);
 	else
 	{
-		Termlen = MAXTERM_SIZE - 1;
-		fb_utils::copy_terminate(isqlGlob.global_Term, DEFTERM, Termlen + 1);
+		isqlGlob.Termlen = MAXTERM_SIZE - 1;
+		fb_utils::copy_terminate(isqlGlob.global_Term, DEFTERM, isqlGlob.Termlen + 1);
 	}
 
 	// Initialize list of input file pointers
@@ -6815,11 +6848,11 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					break;
 
 				case IN_SW_ISQL_BAIL:
-					BailOnError = true;
+					setValues.BailOnError = true;
 					break;
 
 				case IN_SW_ISQL_ECHO:
-					Echo = true;
+					setValues.Echo = true;
 					break;
 
 				case IN_SW_ISQL_MERGE:
@@ -6831,7 +6864,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					break;
 
 				case IN_SW_ISQL_NOAUTOCOMMIT:
-					Autocommit = false;
+					setValues.Autocommit = false;
 					break;
 
 				case IN_SW_ISQL_NODBTRIGGERS:
@@ -6839,7 +6872,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					break;
 
 				case IN_SW_ISQL_NOWARN:
-					Warnings = false;
+					setValues.Warnings = false;
 					break;
 
 				case IN_SW_ISQL_OUTPUT:
@@ -6860,11 +6893,11 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 					break;
 
 				case IN_SW_ISQL_TERM:
-					Termlen = strlen(swarg_str);
-					if (Termlen >= MAXTERM_SIZE) {
-						Termlen = MAXTERM_SIZE - 1;
+					isqlGlob.Termlen = strlen(swarg_str);
+					if (isqlGlob.Termlen >= MAXTERM_SIZE) {
+						isqlGlob.Termlen = MAXTERM_SIZE - 1;
 					}
-					fb_utils::copy_terminate(isqlGlob.global_Term, swarg_str, Termlen + 1);
+					fb_utils::copy_terminate(isqlGlob.global_Term, swarg_str, isqlGlob.Termlen + 1);
 					break;
 
 				case IN_SW_ISQL_DATABASE:
@@ -6879,7 +6912,7 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 						ret = ps_ERR;
 					}
 					else if (swarg_int == 0) // let's interpret -pag 0 as SET HEADING OFF
-						Heading = false;
+						setValues.Heading = false;
 					Pagelength = swarg_int;
 					break;
 
@@ -6954,10 +6987,10 @@ static processing_state parse_arg(int argc, SCHAR** argv, SCHAR* tabname)
 						fb_utils::copy_terminate(Charset, swarg_str, sizeof(Charset));
 						const size_t lgth = strlen(Charset);
 						if (lgth < MAXCHARSET_SIZE) {
-							strcpy(ISQL_charset, Charset);
+							strcpy(setValues.ISQL_charset, Charset);
 						}
 						else
-							fb_utils::copy_terminate(ISQL_charset, Charset, MAXCHARSET_SIZE);
+							fb_utils::copy_terminate(setValues.ISQL_charset, Charset, MAXCHARSET_SIZE);
 					}
 					break;
 
@@ -7088,7 +7121,7 @@ static bool checkSpecial(TEXT* const p, const int length, const double value)
 	else
 		return false;
 
-	if (List) {
+	if (setValues.List) {
 		isqlGlob.printf("%s%s", t, NEWLINE);
 	}
 	sprintf(p, "%*.*s ", length, length, t);
@@ -7117,7 +7150,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 	unsigned dtype = var->type;		// may be modified by print_item_blob()
 	const int dscale = var->scale;
 
-	if (List) {
+	if (setValues.List) {
 		isqlGlob.printf("%-31s ", var->alias);
 	}
 
@@ -7125,7 +7158,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 	{
 		// If field was missing print <null>
 
-		if (List) {
+		if (setValues.List) {
 			isqlGlob.printf("<null>%s", NEWLINE);
 		}
 
@@ -7142,7 +7175,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 
 		for (const TEXT* t = var->value.asChar; t < var->value.asChar + var->length; t++)
 		{
-			if (List) {
+			if (setValues.List) {
 				isqlGlob.printf("%02X", (unsigned int) (UCHAR) *t);
 			}
 			else
@@ -7151,7 +7184,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 				strcat(p, d);
 			}
 		}
-		if (List)
+		if (setValues.List)
 			isqlGlob.printf(NEWLINE);
 		else
 			strcat(p, " ");
@@ -7183,10 +7216,10 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid->gds_quad_high,
 					blobid->gds_quad_low);
 			sprintf(p, "%17s ", blobbuf);
-			if (List)
+			if (setValues.List)
 			{
 				isqlGlob.printf("%s%s", blobbuf, NEWLINE);
-				dtype = ISQL_print_item_blob(isqlGlob.Out, var, M__trans, Doblob);
+				dtype = ISQL_print_item_blob(isqlGlob.Out, var, M__trans, setValues.Doblob);
 				isqlGlob.printf(NEWLINE);
 			}
 			break;
@@ -7213,7 +7246,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 				Firebird::string str_buf;
 				print_item_numeric(value, length, dscale, str_buf.getBuffer(length));
 				sprintf(p, "%s ", str_buf.c_str());
-				if (List)
+				if (setValues.List)
 				{
 					str_buf.ltrim(); // Added 1999-03-23 to left-justify in LIST ON mode
 					isqlGlob.printf("%s%s", str_buf.c_str(), NEWLINE);
@@ -7240,20 +7273,20 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 				if (value == 0)
 				{
 					sprintf(p, "% #*.*g ", length, (int) MIN(8, (length - 6)) - 1, value);
-					if (List) {
+					if (setValues.List) {
 						isqlGlob.printf("%.*g%s", FLOAT_LEN - 6 -1, value, NEWLINE);
 					}
 				}
 				else
 				{
 					sprintf(p, "% #*.*g ", length, (int) MIN(8, (length - 6)), value);
-					if (List) {
+					if (setValues.List) {
 						isqlGlob.printf("%.*g%s", FLOAT_LEN - 6, value, NEWLINE);
 					}
 				}
 #else
 				sprintf(p, "% #*.*g ", length, (int) MIN(8, (length - 6)), value);
-				if (List) {
+				if (setValues.List) {
 					isqlGlob.printf("%.*g%s", FLOAT_LEN - 6, value, NEWLINE);
 				}
 #endif
@@ -7306,7 +7339,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 
 					sprintf(p, "%*.*f ", length, precision, value);
 
-					if (List) {
+					if (setValues.List) {
 						isqlGlob.printf("%.*f%s", precision, /*dscale,*/ value, NEWLINE);
 					}
 				}
@@ -7316,20 +7349,20 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					if (value == 0)
 					{
 						sprintf(p, "% #*.*g ", length, (int) MIN(16, (length - 7)) - 1, value);
-						if (List) {
+						if (setValues.List) {
 							isqlGlob.printf("%#.*g%s", DOUBLE_LEN - 7 - 1, value, NEWLINE);
 						}
 					}
 					else
 					{
 						sprintf(p, "% #*.*g ", length, (int) MIN(16, (length - 7)), value);
-						if (List) {
+						if (setValues.List) {
 							isqlGlob.printf("%#.*g%s", DOUBLE_LEN - 7, value, NEWLINE);
 						}
 					}
 #else
 					sprintf(p, "% #*.*g ", length, (int) MIN(16, (length - 7)), value);
-					if (List) {
+					if (setValues.List) {
 						isqlGlob.printf("%#.*g%s", DOUBLE_LEN - 7, value, NEWLINE);
 					}
 #endif
@@ -7349,14 +7382,14 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					sprintf(&buff2[i * 2], "%02X", (UCHAR)str2[i]);
 				}
 				buff2[hex_len] = 0;
-				if (List) {
+				if (setValues.List) {
 					isqlGlob.printf("%-*s%s", var->length, buff2, NEWLINE);
 				}
 				else
 					sprintf(p, "%-*s ", length, buff2);
 				ISQL_FREE(buff2);
 			}
-			else if (List)
+			else if (setValues.List)
 				isqlGlob.printf("%-*.*s%s", var->length, var->length, str2, NEWLINE);
 			else
 			{
@@ -7383,7 +7416,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					}
 					buff2[hex_len] = '\0'; // there is an extra byte for terminator
 
-					if (List)
+					if (setValues.List)
 					{
 						isqlGlob.printf("%s%s", buff2, NEWLINE);
 					}
@@ -7394,7 +7427,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					}
 					ISQL_FREE(buff2);
 				}
-				else if (List)
+				else if (setValues.List)
 					isqlGlob.printf("%-*.*s%s", avary->vary_length, avary->vary_length, avary->vary_string, NEWLINE);
 				else
 				{
@@ -7417,7 +7450,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			}
 			else
 			{
-				if (Time_display)
+				if (setValues.Time_display)
 					sprintf(d, "%2d-%s-%4d %2.2d:%2.2d:%2.2d.%4.4"ULONGFORMAT,
 							times.tm_mday, alpha_months[times.tm_mon],
 							times.tm_year + 1900, times.tm_hour, times.tm_min,
@@ -7429,7 +7462,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			}
 
 			sprintf(p, "%-*.*s ", length, length, d);
-			if (List) {
+			if (setValues.List) {
 				isqlGlob.printf("%s%s", d, NEWLINE);
 			}
 			break;
@@ -7440,7 +7473,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					times.tm_hour, times.tm_min, times.tm_sec,
 					(*var->value.asTime) % ISC_TIME_SECONDS_PRECISION);
 			sprintf(p, "%-*.*s ", length, length, d);
-			if (List) {
+			if (setValues.List) {
 				isqlGlob.printf("%s%s", d, NEWLINE);
 			}
 			break;
@@ -7451,7 +7484,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 					(times.tm_mon + 1), times.tm_mday);
 
 			sprintf(p, "%-*.*s ", length, length, d);
-			if (List) {
+			if (setValues.List) {
 				isqlGlob.printf("%s%s", d, NEWLINE);
 			}
 			break;
@@ -7459,14 +7492,14 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 		case SQL_BOOLEAN:
 			strcpy(d, (*var->value.asBoolean ? "<true>" : "<false>"));
 			sprintf(p, "%-*.*s ", length, length, d);
-			if (List)
+			if (setValues.List)
 				isqlGlob.printf("%s%s", d, NEWLINE);
 			break;
 
 		default:
 			sprintf(d, "Unknown type: %d", dtype);
 			sprintf(p, "%-*s ", length, d);
-			if (List) {
+			if (setValues.List) {
 				isqlGlob.printf("%s%s", d, NEWLINE);
 			}
 			break;
@@ -7702,7 +7735,7 @@ static processing_state print_line(Firebird::IMessageMetadata* message, UCHAR* b
 		*p = 0;
 	} // scope
 
-	if (List)
+	if (setValues.List)
 	{
 		isqlGlob.printf(NEWLINE);
 		return (CONT);
@@ -7712,7 +7745,7 @@ static processing_state print_line(Firebird::IMessageMetadata* message, UCHAR* b
 
 	// If blobdisplay is not wanted, set varnum back to -1
 
-	if (Doblob == NO_BLOBS)
+	if (setValues.Doblob == NO_BLOBS)
 		varnum = 0;
 	else if (varnum >= maxblob)
 	{
@@ -7734,7 +7767,7 @@ static processing_state print_line(Firebird::IMessageMetadata* message, UCHAR* b
 					"==============================================================================%s",
 					NEWLINE);
 			isqlGlob.printf("%s:  %s", var->alias, NEWLINE);
-			if (ISQL_print_item_blob(isqlGlob.Out, var, M__trans, Doblob) != CONT)
+			if (ISQL_print_item_blob(isqlGlob.Out, var, M__trans, setValues.Doblob) != CONT)
 				return (ps_ERR);
 			isqlGlob.printf(
 					"%s==============================================================================%s",
@@ -7907,7 +7940,7 @@ static void process_plan()
 	// Bug 7565: Note also that the plan must fit into Print_Buffer
 
 	UCHAR plan_info[1];
-	plan_info[0] = ExplainPlan ? isc_info_sql_explain_plan : isc_info_sql_get_plan;
+	plan_info[0] = setValues.ExplainPlan ? isc_info_sql_explain_plan : isc_info_sql_get_plan;
 	UCHAR plan_buffer[PLAN_BUFFER_LENGTH];
 	memset(plan_buffer, 0, sizeof(plan_buffer));
 	UCHAR* planPtr = plan_buffer;
@@ -8094,7 +8127,7 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 			disp_length = 17;
 			break;
 		case SQL_TIMESTAMP:
-			if (Time_display || isqlGlob.SQL_dialect > SQL_DIALECT_V5)
+			if (setValues.Time_display || isqlGlob.SQL_dialect > SQL_DIALECT_V5)
 				disp_length = DATETIME_LEN;
 			else
 				disp_length = DATE_ONLY_LEN;
@@ -8164,8 +8197,8 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 		// Is there a collist entry, then use that width, but only for text
 		if (type == SQL_TEXT || type == SQL_VARYING)
 		{
-			if (!global_Cols.find(var.alias, &pad[i]) && global_Col_default)
-				pad[i] = global_Col_default;
+			if (!setValues.global_Cols.find(var.alias, &pad[i]) && setValues.global_Col_default)
+				pad[i] = setValues.global_Col_default;
 			disp_length = pad[i];
 		}
 
@@ -8227,7 +8260,7 @@ static processing_state process_statement(const TEXT* str2)
 
 	// No need to start a default transaction unless there is no current one
 
-	if (Autocommit)
+	if (setValues.Autocommit)
 	{
 		if (!D_Transaction())
 			return ps_ERR;
@@ -8236,7 +8269,7 @@ static processing_state process_statement(const TEXT* str2)
 	// If statistics are requested, then reserve them here
 
 	SINT64 perf_before[ISQL_COUNTERS];
-	if (Stats)
+	if (setValues.Stats)
 	{
 		Firebird::UtlInterfacePtr()->getPerfCounters(fbStatus,
 			DB, ISQL_COUNTERS_SET, perf_before);
@@ -8250,7 +8283,7 @@ static processing_state process_statement(const TEXT* str2)
 	// But put this on the DDL transaction to get maximum visibility of
 	// metadata.
 
-	Firebird::ITransaction* prepare_trans = Autocommit ? D__trans : M__trans;
+	Firebird::ITransaction* prepare_trans = setValues.Autocommit ? D__trans : M__trans;
 
 	if (global_Stmt)
 	{
@@ -8286,7 +8319,7 @@ static processing_state process_statement(const TEXT* str2)
 	if (!statement_type)
 		return ps_ERR;
 
-	if (Sqlda_display)
+	if (setValues.Sqlda_display)
 	{
 		const bool can_have_input_parameters =
 			statement_type == isc_info_sql_stmt_select ||
@@ -8323,11 +8356,11 @@ static processing_state process_statement(const TEXT* str2)
 
 	// if PLAN is set and this is not DDL, print out the plan now
 
-	if (Plan && statement_type != isc_info_sql_stmt_ddl &&
+	if (setValues.Plan && statement_type != isc_info_sql_stmt_ddl &&
 		statement_type != isc_info_sql_stmt_set_generator)
 	{
 		process_plan();
-		if (Planonly && !is_selectable)
+		if (setValues.Planonly && !is_selectable)
 		{
 			return ret;	// do not execute
 		}
@@ -8335,12 +8368,12 @@ static processing_state process_statement(const TEXT* str2)
 
 	// If the statement isn't a select, execute it and be done
 
-	if (!is_selectable && !Planonly)
+	if (!is_selectable && !setValues.Planonly)
 	{
 
 		// If this is an autocommit, put the DDL stmt on a special trans
 
-		if (Autocommit &&
+		if (setValues.Autocommit &&
 			(statement_type == isc_info_sql_stmt_ddl ||
 			 statement_type == isc_info_sql_stmt_set_generator))
 		{
@@ -8365,7 +8398,7 @@ static processing_state process_statement(const TEXT* str2)
 			if (fbStatus->get()[2] == isc_arg_warning)
 				ISQL_warning(fbStatus);
 
-			if (Stats && (print_performance(perf_before) == ps_ERR))
+			if (setValues.Stats && (print_performance(perf_before) == ps_ERR))
 				ret = ps_ERR;
 			return ret;
 		}
@@ -8380,7 +8413,7 @@ static processing_state process_statement(const TEXT* str2)
 			if (newtrans(str2) == FAIL)
 				return ps_ERR;
 
-			if (Stats && (print_performance(perf_before) == ps_ERR))
+			if (setValues.Stats && (print_performance(perf_before) == ps_ERR))
 				ret = ps_ERR;
 			return ret;
 		}
@@ -8391,7 +8424,7 @@ static processing_state process_statement(const TEXT* str2)
 		if (ISQL_errmsg(fbStatus))
 		{
 			// CVC: Make this conditional if it causes problems. For example
-			// if (BailOnError)
+			// if (setValues.BailOnError)
 			ret = ps_ERR;
 		}
 
@@ -8411,7 +8444,7 @@ static processing_state process_statement(const TEXT* str2)
 
 		// Print statistics report
 
-		if (Docount)
+		if (setValues.Docount)
 		{
 			const SLONG count = process_record_count(statement_type);
 			if (count >= 0)
@@ -8423,7 +8456,7 @@ static processing_state process_statement(const TEXT* str2)
 			}
 		}
 
-		if (Stats && (print_performance(perf_before) == ps_ERR))
+		if (setValues.Stats && (print_performance(perf_before) == ps_ERR))
 			ret = ps_ERR;
 		return ret;
 	}
@@ -8449,10 +8482,10 @@ static processing_state process_statement(const TEXT* str2)
 	// SET SQLDA_DISPLAY ON
 	// will activate code to display the SQLDA after each statement.
 
-	if (Sqlda_display)
+	if (setValues.Sqlda_display)
 		print_message(message, "OUT");
 
-	if (Planonly)
+	if (setValues.Planonly)
 		return ret;
 
 	unsigned bufLen = message->getMessageLength(fbStatus);
@@ -8477,7 +8510,7 @@ static processing_state process_statement(const TEXT* str2)
 	TEXT* header = 0;
 	TEXT* header2 = 0;
 
-	if (Heading)
+	if (setValues.Heading)
 	{
 		header = (TEXT*) ISQL_ALLOC(linelength);
 		header2 = (TEXT*) ISQL_ALLOC(linelength);
@@ -8502,7 +8535,7 @@ static processing_state process_statement(const TEXT* str2)
 			{
 				// do not output unnecessary white text
 				isqlGlob.printf(NEWLINE);
-				if (!List && Heading)
+				if (!setValues.List && setValues.Heading)
 				{
 					isqlGlob.printf("%s%s%s%s",
 									header,
@@ -8545,13 +8578,13 @@ static processing_state process_statement(const TEXT* str2)
 		}
 #endif
 
-		const bool printHead = !List && Heading;
+		const bool printHead = !setValues.List && setValues.Heading;
 		unsigned int lines;
 		for (lines = 0; !Interrupt_flag && !Abort_flag; ++lines)
 		{
 
-			// Check if exceeded maxRows value
-			if (maxRows != 0 && lines >= maxRows)
+			// Check if exceeded setValues.maxRows value
+			if (setValues.maxRows != 0 && lines >= setValues.maxRows)
 				break;
 
 			// Fetch the current cursor
@@ -8596,7 +8629,7 @@ static processing_state process_statement(const TEXT* str2)
 
 		// Record count printed here upon request
 
-		if (Docount)
+		if (setValues.Docount)
 		{
 			TEXT rec_count_msg[MSG_LENGTH];
 			IUTILS_msg_get(REC_COUNT, rec_count_msg, SafeArg() << lines);
@@ -8612,7 +8645,7 @@ static processing_state process_statement(const TEXT* str2)
 
 	// Statistics printed here upon request
 
-	if (Stats && (print_performance(perf_before) == ps_ERR))
+	if (setValues.Stats && (print_performance(perf_before) == ps_ERR))
 		ret = ps_ERR;
 
 	if (pad)

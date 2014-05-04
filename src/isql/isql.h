@@ -363,6 +363,7 @@ public:
 	SCHAR global_Db_name[MAXPATHLEN];
 	SCHAR global_Target_db[MAXPATHLEN];
 	SCHAR global_Term[MAXTERM_SIZE];
+	size_t Termlen;
 	SCHAR User[128];
 	SCHAR Role[256];
 	USHORT SQL_dialect;
