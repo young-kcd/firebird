@@ -551,13 +551,14 @@ void resetMap(const char* securityDb)
 class MappingHeader : public Firebird::MemoryHeader
 {
 public:
-	event_t callbackEvent;
+	SLONG currentProcess;
 	ULONG processes;
 	char databaseForReset[1024];
 
 	struct Process
 	{
 		event_t notifyEvent;
+		event_t callbackEvent;
 		SLONG id;
 		SLONG flags;
 	};
@@ -593,7 +594,7 @@ public:
 
 		// Ignore errors in cleanup
 		sharedMemory->eventFini(&sMem->process[process].notifyEvent);
-		sharedMemory->eventFini(&sMem->callbackEvent);
+		sharedMemory->eventFini(&sMem->process[process].callbackEvent);
 
 		if (sharedMemory->getHeader()->processes == 1)
 			sharedMemory->removeMapFile();
@@ -611,6 +612,31 @@ public:
 		MappingHeader* sMem = sharedMemory->getHeader();
 		target.copyTo(sMem->databaseForReset, sizeof(sMem->databaseForReset));
 
+		// Set currentProcess
+		sMem->currentProcess = -1;
+		for (unsigned n = 0; n < sMem->processes; ++n)
+		{
+			MappingHeader::Process* p = &sMem->process[n];
+			if (!(p->flags & MappingHeader::FLAG_ACTIVE))
+				continue;
+
+			if (p->id == processId)
+			{
+				sMem->currentProcess = n;
+				break;
+			}
+		}
+
+		if (sMem->currentProcess < 0)
+		{
+			// did not find current process
+			// better ignore delivery than fail in it
+			gds__log("MappingIpc::clearMap() failed to find current process %d in shared memory", processId);
+			return;
+		}
+		MappingHeader::Process* current = &sMem->process[sMem->currentProcess];
+
+		// Deliver
 		for (unsigned n = 0; n < sMem->processes; ++n)
 		{
 			MappingHeader::Process* p = &sMem->process[n];
@@ -624,18 +650,19 @@ public:
 				continue;
 			}
 
-			SLONG value = sharedMemory->eventClear(&sMem->callbackEvent);
+			SLONG value = sharedMemory->eventClear(&current->callbackEvent);
 			p->flags |= MappingHeader::FLAG_DELIVER;
 			if (sharedMemory->eventPost(&p->notifyEvent) != FB_SUCCESS)
 			{
 				(Arg::Gds(isc_random) << "Error posting notifyEvent in mapping shared memory").raise();
 			}
-			while (sharedMemory->eventWait(&sMem->callbackEvent, value, 10000) != FB_SUCCESS)
+			while (sharedMemory->eventWait(&current->callbackEvent, value, 10000) != FB_SUCCESS)
 			{
 				if (!ISC_check_process_existence(p->id))
 				{
 					p->flags &= ~MappingHeader::FLAG_ACTIVE;
 					sharedMemory->eventFini(&sMem->process[process].notifyEvent);
+					sharedMemory->eventFini(&sMem->process[process].callbackEvent);
 					break;
 				}
 			}
@@ -675,6 +702,7 @@ public:
 			if (!ISC_check_process_existence(processId))
 			{
 				sharedMemory->eventFini(&sMem->process[process].notifyEvent);
+				sharedMemory->eventFini(&sMem->process[process].callbackEvent);
 				break;
 			}
 		}
@@ -695,6 +723,10 @@ public:
 		{
 			(Arg::Gds(isc_random) << "Error initializing notifyEvent in mapping shared memory").raise();
 		}
+		if (sharedMemory->eventInit(&sMem->process[process].callbackEvent) != FB_SUCCESS)
+		{
+			(Arg::Gds(isc_random) << "Error initializing callbackEvent in mapping shared memory").raise();
+		}
 
 		try
 		{
@@ -710,25 +742,36 @@ public:
 private:
 	void clearDeliveryThread()
 	{
-		MappingHeader::Process* p = &sharedMemory->getHeader()->process[process];
-		while (p->flags & MappingHeader::FLAG_ACTIVE)
+		try
 		{
-			SLONG value = sharedMemory->eventClear(&p->notifyEvent);
-
-			if (p->flags & MappingHeader::FLAG_DELIVER)
+			MappingHeader::Process* p = &sharedMemory->getHeader()->process[process];
+			while (p->flags & MappingHeader::FLAG_ACTIVE)
 			{
-				resetMap(sharedMemory->getHeader()->databaseForReset);
-				if (sharedMemory->eventPost(&sharedMemory->getHeader()->callbackEvent) != FB_SUCCESS)
+				SLONG value = sharedMemory->eventClear(&p->notifyEvent);
+
+				if (p->flags & MappingHeader::FLAG_DELIVER)
 				{
-					(Arg::Gds(isc_random) << "Error posting callbackEvent in mapping shared memory").raise();
-				}
-				p->flags &= ~MappingHeader::FLAG_DELIVER;
-			}
+					resetMap(sharedMemory->getHeader()->databaseForReset);
 
-			if (sharedMemory->eventWait(&p->notifyEvent, value, 0) != FB_SUCCESS)
-			{
-				(Arg::Gds(isc_random) << "Error waiting for notifyEvent in mapping shared memory").raise();
+					MappingHeader* sMem = sharedMemory->getHeader();
+					MappingHeader::Process* cur = &sMem->process[sMem->currentProcess];
+					if (sharedMemory->eventPost(&cur->callbackEvent) != FB_SUCCESS)
+					{
+						(Arg::Gds(isc_random) << "Error posting callbackEvent in mapping shared memory").raise();
+					}
+					p->flags &= ~MappingHeader::FLAG_DELIVER;
+				}
+
+				if (sharedMemory->eventWait(&p->notifyEvent, value, 0) != FB_SUCCESS)
+				{
+					(Arg::Gds(isc_random) << "Error waiting for notifyEvent in mapping shared memory").raise();
+				}
 			}
+		}
+		catch(const Exception& ex)
+		{
+			iscLogException("Fatal error in clearDeliveryThread", ex);
+			fb_utils::logAndDie("Fatal error in clearDeliveryThread");
 		}
 	}
 
@@ -745,11 +788,7 @@ private:
 			header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
 
 			header->processes = 0;
-
-			if (sm->eventInit(&header->callbackEvent) != FB_SUCCESS)
-			{
-				return false;
-			}
+			header->currentProcess = -1;
 		}
 
 		return true;
