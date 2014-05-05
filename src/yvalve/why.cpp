@@ -215,10 +215,9 @@ private:
 	SQLDAMetadata::DataBuffer buffer;
 };
 
-SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda) : offsets(NULL), length(0), speedHackEnabled(false)
+SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda)
+	: sqlda(aSqlda), count(0), offsets(NULL), length(0), speedHackEnabled(false)
 {
-	sqlda = aSqlda;
-
 	if (sqlda && sqlda->version != SQLDA_VERSION1)
 	{
 		(Arg::Gds(isc_dsql_sqlda_err) <<
