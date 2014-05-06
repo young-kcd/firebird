@@ -3321,7 +3321,7 @@ trigger_ddl_type
 	: trigger_ddl_type_items
 	| ANY DDL STATEMENT
 		{
-			$$ = TRIGGER_TYPE_DDL | (0x7FFFFFFFFFFFFFFFULL & ~(FB_UINT64) TRIGGER_TYPE_MASK & ~1ULL);
+			$$ = TRIGGER_TYPE_DDL | DDL_TRIGGER_ANY;
 		}
 	;
 

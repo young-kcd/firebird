@@ -311,26 +311,32 @@ const string SHOW_trigger_action(SINT64 type)
 			bool first = true;
 			string buffer = Trigger_prefix_types[type & 1];
 
-			for (SINT64 pos = 1; pos < 64; ++pos)
+			if ((type & DDL_TRIGGER_ANY) == DDL_TRIGGER_ANY)
+				buffer += " ANY DDL STATEMENT";
+			else
 			{
-				if (((1LL << pos) & TRIGGER_TYPE_MASK) || (type & (1LL << pos)) == 0)
-					continue;
-
-				if (first)
-					first = false;
-				else
-					buffer += " OR";
-
-				buffer += " ";
-
-				if (pos < FB_NELEM(DDL_TRIGGER_ACTION_NAMES))
+				for (SINT64 pos = 1; pos < 64; ++pos)
 				{
-					buffer += string(DDL_TRIGGER_ACTION_NAMES[pos][0]) + " " +
-						DDL_TRIGGER_ACTION_NAMES[pos][1];
+					if (((1LL << pos) & TRIGGER_TYPE_MASK) || (type & (1LL << pos)) == 0)
+						continue;
+
+					if (first)
+						first = false;
+					else
+						buffer += " OR";
+
+					buffer += " ";
+
+					if (pos < FB_NELEM(DDL_TRIGGER_ACTION_NAMES))
+					{
+						buffer += string(DDL_TRIGGER_ACTION_NAMES[pos][0]) + " " +
+							DDL_TRIGGER_ACTION_NAMES[pos][1];
+					}
+					else
+						buffer += "<unknown>";
 				}
-				else
-					buffer += "<unknown>";
 			}
+
 			return buffer;
 		}
 
