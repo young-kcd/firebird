@@ -54,7 +54,7 @@
 #define getpid _getpid
 #endif
 
-#define MAP_DEBUG(A) A
+#define MAP_DEBUG(A)
 
 using namespace Firebird;
 
