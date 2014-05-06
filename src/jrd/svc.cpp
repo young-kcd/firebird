@@ -213,9 +213,11 @@ bool Service::SafeMutexLock::lock()
 Service::ExistenceGuard::ExistenceGuard(Service* svc, const char* from)
 	: SafeMutexLock(svc, from)
 {
-	if (!lock())
+	bool lck = lock();
+	if (!lck)
 	{
 		// could not lock service
+		jSvc->mutex.leave();
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
 }
@@ -233,29 +235,26 @@ Service::ExistenceGuard::~ExistenceGuard()
 }
 
 Service::UnlockGuard::UnlockGuard(Service* svc, const char* from)
-	: SafeMutexLock(svc, from), locked(true), doLock(true)
+	: SafeMutexLock(svc, from), locked(false), doLock(false)
 {
 	jSvc->mutex.leave();
-	locked = false;
+	doLock = true;
 }
 
 bool Service::UnlockGuard::enter()
 {
-	doLock = false;
-	if (!locked)
+	if (doLock)
 	{
-		if (!lock())
-		{
-			return false;
-		}
-		locked = true;
+		locked = lock();
+		doLock = false;
 	}
-	return true;
+
+	return locked;
 }
 
 Service::UnlockGuard::~UnlockGuard()
 {
-	if (doLock && (!locked) && (!lock()))
+	if (!enter())
 	{
 		// could not lock service
 		DtorException::devHalt();
@@ -954,6 +953,9 @@ Service::~Service()
 
 	delete svc_trace_manager;
 	svc_trace_manager = NULL;
+
+	fb_assert(jSvc->mutex.locked());
+	jSvc->svc = NULL;
 }
 
 
@@ -1983,14 +1985,18 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 	try
 	{
 		Service* svc = (Service*)arg;
+		RefPtr<JService> ref(svc->jSvc);
 		int exit_code = svc->svc_service_run->serv_thd(svc);
 
 		svc->started();
 		svc->svc_sem_full.release();
 		svc->finish(SVC_finished);
 	}
-	catch(const Exception&)
-	{ /* Not much we can do here */ }
+	catch(const Exception& ex)
+	{
+		// Not much we can do here
+		iscLogException("Exception in Service::run():", ex);
+	}
 
 	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
