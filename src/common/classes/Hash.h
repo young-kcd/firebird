@@ -145,6 +145,12 @@ namespace Firebird
 				return nextElement;
 			}
 
+			C* next(const K& key)
+			{
+				Entry* e = next();
+				return (e && e->isEqual(key)) ? e->get() : NULL;
+			}
+
 			virtual bool isEqual(const K&) const = 0;
 			virtual C* get() = 0;
 		}; // class Entry
@@ -154,11 +160,13 @@ namespace Firebird
 
 	public:
 		explicit Hash(MemoryPool&)
+			: duplicates(false)
 		{
 			clean();
 		}
 
 		Hash()
+			: duplicates(false)
 		{
 			clean();
 		}
@@ -184,8 +192,14 @@ namespace Firebird
 			}
 		}
 
+		void enableDuplicates(bool mode)
+		{
+			duplicates = mode;
+		}
+
 	private:
 		Entry* data[HASHSIZE];
+		bool duplicates;
 
 		Entry** locate(const K& key, size_t h)
 		{
@@ -213,7 +227,7 @@ namespace Firebird
 		bool add(C* value)
 		{
 			Entry** e = locate(KeyOfValue::generate(*value));
-			if (*e)
+			if ((!duplicates) && (*e))
 			{
 				return false;	// sorry, duplicate
 			}

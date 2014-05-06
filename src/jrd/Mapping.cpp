@@ -54,7 +54,7 @@
 #define getpid _getpid
 #endif
 
-#define MAP_DEBUG(A)
+#define MAP_DEBUG(A) A
 
 using namespace Firebird;
 
@@ -231,7 +231,9 @@ class Cache : public MapHash, public GlobalStorage
 public:
 	Cache(const NoCaseString& aliasDb, const NoCaseString& db)
 		: alias(getPool(), aliasDb), name(getPool(), db), dataFlag(false)
-	{ }
+	{
+		enableDuplicates(true);
+	}
 
 	void populate(IAttachment *att)
 	{
@@ -359,24 +361,23 @@ public:
 		if (!dataFlag)
 			return;
 
-		Map* to = lookup(from);
-		if (! to)
-			return;
+		for (Map* to = lookup(from); to; to = to->next(from))
+		{
+			MAP_DEBUG(fprintf(stderr, "Match!!\n"));
+			unsigned flagRole = to->toRole ? FLAG_ROLE : FLAG_USER;
+			if (info.found & flagRole)
+				continue;
+			if (info.current & flagRole)
+				(Arg::Gds(isc_map_multi) << originalUserName).raise();
 
-		MAP_DEBUG(fprintf(stderr, "Match!!\n"));
-		unsigned flagRole = to->toRole ? FLAG_ROLE : FLAG_USER;
-		if (info.found & flagRole)
-			return;
-		if (info.current & flagRole)
-			(Arg::Gds(isc_map_multi) << originalUserName).raise();
+			info.current |= flagRole;
 
-		info.current |= flagRole;
-
-		AuthReader::Info newInfo;
-		newInfo.type = to->toRole ? NM_ROLE : NM_USER;
-		newInfo.name = to->to == "*" ? originalUserName : to->to;
-        newInfo.secDb = this->name;
-		newBlock.add(newInfo);
+			AuthReader::Info newInfo;
+			newInfo.type = to->toRole ? NM_ROLE : NM_USER;
+			newInfo.name = to->to == "*" ? originalUserName : to->to;
+	        newInfo.secDb = this->name;
+			newBlock.add(newInfo);
+		}
 	}
 
 	void varPlugin(AuthReader::Info& info, Map from, AuthWriter& newBlock)
