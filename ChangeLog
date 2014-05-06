@@ -1,3 +1,16 @@
+ 2014-05-05 15:28  mapopa 
+   D lang_helpers/gds.pli
+   D lang_helpers/gds_vms.f
+cleanup VMS leftovers
+
+ 2014-05-05 14:58  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+Use separate callback event per process - should make windows happy
+
+ 2014-05-05 10:07  alexpeshkoff 
+   M src/yvalve/why.cpp
+Corrected patch from Dmitry Sibiryakov
+
  2014-05-04 07:43  dimitr 
    M src/dsql/pass1.cpp
 Fixed the issue with UNION ALL vs WITH LOCK reported by Claudio privately.
