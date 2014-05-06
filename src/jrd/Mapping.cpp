@@ -917,6 +917,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 				embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
 					strlen(SYSDBA_USER_NAME));
 				embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+				embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 				if (!iSec)
 				{
@@ -1135,6 +1136,9 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 			MAX_DPB_SIZE, isc_dpb_version1);
 		embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
 			strlen(SYSDBA_USER_NAME));
+		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
+
 		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
 		att = prov->attachDatabase(&st, dbName,
 			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
