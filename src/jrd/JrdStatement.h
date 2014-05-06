@@ -35,6 +35,7 @@ public:
 	static const unsigned FLAG_INTERNAL		= 0x02;
 	static const unsigned FLAG_IGNORE_PERM	= 0x04;
 	//static const unsigned FLAG_VERSION4		= 0x08;
+	static const unsigned FLAG_POWERFUL		= FLAG_SYS_TRIGGER | FLAG_INTERNAL | FLAG_IGNORE_PERM;
 
 	//static const unsigned MAP_LENGTH;		// CVC: Moved to dsql/Nodes.h as STREAM_MAP_LENGTH
 	static const unsigned MAX_CLONES = 1000;

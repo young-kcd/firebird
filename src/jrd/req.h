@@ -251,6 +251,11 @@ public:
 		return statement->flags & JrdStatement::FLAG_INTERNAL;
 	}
 
+	bool hasPowerfulStatement() const
+	{
+		return statement->flags & JrdStatement::FLAG_POWERFUL;
+	}
+
 	void setAttachment(Attachment* newAttachment)
 	{
 		req_attachment = newAttachment;
