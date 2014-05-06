@@ -490,7 +490,7 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 					memcpy(port->port_queue->add().getBuffer(dataSize), buffer, dataSize);
 				}
 
-				if (!(port->port_flags & PORT_busy) || !dataSize)
+				if (!(port->port_flags & PORT_busy) && !port->port_requests_queued || !dataSize)
 				{
 					// Allocate a memory block to store the request in
 					request = alloc_request();
@@ -2149,6 +2149,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 
 	if (statement->rsr_format)
 	{
+		fb_assert(statement->rsr_format == statement->rsr_bind_format);
+
 		in_msg_length = statement->rsr_format->fmt_length;
 		in_msg = statement->rsr_message->msg_address;
 	}
@@ -3395,6 +3397,7 @@ bool process_packet(rem_port* port,
 			if (port)
 			{
 				port->port_flags &= ~PORT_busy;
+				port->port_requests_queued--;
 			}
 		}
 		return res;
@@ -3402,6 +3405,7 @@ bool process_packet(rem_port* port,
 	catch(...)
 	{
 		port->port_flags &= ~PORT_busy;
+		port->port_requests_queued--;
 		throw;
 	}
 }
@@ -5508,7 +5512,6 @@ static THREAD_ENTRY_DECLARE loopThread(THREAD_ENTRY_PARAM flags)
 					}
 				}
 				else {
-					port->port_requests_queued--;
 #ifdef DEBUG_REMOTE_MEMORY
 					printf("thread    ACTIVE     request_queued %d\n",
 							  port->port_requests_queued);
