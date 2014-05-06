@@ -42,16 +42,17 @@
 namespace fb_utils
 {
 	char* copy_terminate(char* dest, const char* src, size_t bufsize);
-	char* exact_name(char* const str);
+	char* exact_name(char* const name);
 	inline void exact_name(Firebird::string& str)
 	{
 		str.rtrim();
 	}
-	char* exact_name_limit(char* const str, size_t bufsize);
+	char* exact_name_limit(char* const name, size_t bufsize);
 	bool implicit_domain(const char* domain_name);
 	bool implicit_integrity(const char* integ_name);
 	bool implicit_pk(const char* pk_name);
 	int name_length(const TEXT* const name);
+	int name_length_limit(const TEXT* const name, size_t bufsize);
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);

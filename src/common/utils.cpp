@@ -99,7 +99,7 @@ char* copy_terminate(char* dest, const char* src, size_t bufsize)
 }
 
 
-char* exact_name(char* const str)
+char* exact_name(char* const name)
 {
 /**************************************
  *
@@ -117,19 +117,19 @@ char* exact_name(char* const str)
  *	Returns:     str
  *
  **************************************/
-	char* p = str;
+	char* p = name;
 	while (*p)
 	    ++p;
 	// Now, let's go back
 	--p;
-	while (p >= str && *p == '\x20') // blank character, ASCII(32)
+	while (p >= name && *p == '\x20') // blank character, ASCII(32)
 		--p;
 	*(p + 1) = '\0';
-	return str;
+	return name;
 }
 
 
-char* exact_name_limit(char* const str, size_t bufsize)
+char* exact_name_limit(char* const name, size_t bufsize)
 {
 /**************************************
  *
@@ -149,16 +149,16 @@ char* exact_name_limit(char* const str, size_t bufsize)
  *	Returns:     str
  *
  **************************************/
-	const char* const end = str + bufsize - 1;
-	char* p = str;
+	const char* const end = name + bufsize - 1;
+	char* p = name;
 	while (*p && p < end)
 	    ++p;
 	// Now, let's go back
 	--p;
-	while (p >= str && *p == '\x20') // blank character, ASCII(32)
+	while (p >= name && *p == '\x20') // blank character, ASCII(32)
 		--p;
 	*(p + 1) = '\0';
-	return str;
+	return name;
 }
 
 
@@ -240,6 +240,20 @@ int name_length(const TEXT* const name)
 	}
 
 	return (q + 1) - name;
+}
+
+
+// *********************************
+// n a m e _ l e n g t h _ l i m i t
+// *********************************
+// Compute length without trailing blanks. The second parameter is maximum length.
+int name_length_limit(const TEXT* const name, size_t bufsize)
+{
+	const char* p = name + bufsize - 1;
+	// Now, let's go back
+	while (p >= name && *p == '\x20') // blank character, ASCII(32)
+		--p;
+	return (p + 1) - name;
 }
 
 
