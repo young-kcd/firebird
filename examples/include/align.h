@@ -22,25 +22,5 @@
  *
  */
 
-#ifdef sun
-#ifdef sparc
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
-#endif
-
-#ifdef hpux
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
-
-#ifdef _AIX
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
- 
-#if (defined(_MSC_VER) && defined(WIN32)) 
-#define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
-#endif
-
-#ifndef FB_ALIGN
-#define FB_ALIGN(n,b)          ((n+1) & ~1)
-#endif
+#define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
 
