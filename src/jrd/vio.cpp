@@ -192,8 +192,10 @@ inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation,
 // inconsistencies while restoring. Used in VIO_erase.
 inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 {
+	// For now, it will be left the same as the above, because I'm don't know
+	// how to check I'm inside DFW and DFW does deletions.
 	const ULONG uflags = tdbb->getAttachment()->att_flags;
-	if ((uflags & ATT_gbak_attachment) && relation->rel_id != rel_segments)
+	if ((uflags & ATT_gbak_attachment) && !(uflags & ATT_creator)) //relation->rel_id != rel_segments)
 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 }
 
