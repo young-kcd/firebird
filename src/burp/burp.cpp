@@ -262,7 +262,7 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 
 	try
 	{
-		Firebird::ClumpletWriter spb(Firebird::ClumpletWriter::SpbAttach, 4096, isc_spb_current_version);
+		Firebird::ClumpletWriter spb(Firebird::ClumpletWriter::spbList, MAX_DPB_SIZE);
 
 		// isc_spb_user_name
 		// isc_spb_password

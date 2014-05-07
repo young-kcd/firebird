@@ -84,7 +84,7 @@ void TraceSvcUtil::setAttachInfo(const string& service_name, const string& /*use
 {
 	ISC_STATUS_ARRAY status = {0};
 
-	ClumpletWriter spb(ClumpletWriter::SpbAttach, MAXBUF, isc_spb_current_version);
+	ClumpletWriter spb(ClumpletWriter::spbList, MAXBUF);
 
 	if (isAdmin) {
 		spb.insertTag(isc_spb_trusted_auth);

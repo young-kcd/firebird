@@ -991,7 +991,7 @@ int main(int ac, char** av)
 			av++;
 		}
 
-		ClumpletWriter spbAtt(ClumpletWriter::SpbAttach, maxbuf, isc_spb_current_version);
+		ClumpletWriter spbAtt(ClumpletWriter::spbList, maxbuf);
 		while (populateSpbFromSwitches(av, spbAtt, attSwitch, 0))
 			;
 
