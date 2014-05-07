@@ -22,10 +22,6 @@
  *
  */
 
-#ifdef VMS
-#define FB_ALIGN(n,b)              (n)
-#endif
-
 #ifdef sun
 #ifdef sparc
 #define FB_ALIGN(n,b)          ((n + b - 1) & ~(b - 1))
