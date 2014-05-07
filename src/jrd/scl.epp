@@ -171,6 +171,7 @@ void SCL_check_access(thread_db* tdbb,
 					  const Firebird::MetaName& obj_name,
 					  SecurityClass::flags_t mask,
 					  SLONG type,
+					  bool recursive,
 					  const Firebird::MetaName& name,
 					  const Firebird::MetaName& r_name)
 {
@@ -237,7 +238,7 @@ void SCL_check_access(thread_db* tdbb,
 
 	// Allow recursive procedure/function call
 
-	if (((type == SCL_object_procedure && obj_type == id_procedure) ||
+	if (recursive && ((type == SCL_object_procedure && obj_type == id_procedure) ||
 		 (type == SCL_object_function && obj_type == id_function)) && obj_name == name)
 	{
 		return;
@@ -299,7 +300,7 @@ void SCL_check_charset(thread_db* tdbb, const MetaName& name, SecurityClass::fla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_charset, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_charset, false, name);
 }
 
 
@@ -330,7 +331,7 @@ void SCL_check_collation(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_collation, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_collation, false, name);
 }
 
 
@@ -361,7 +362,7 @@ void SCL_check_domain(thread_db* tdbb, const MetaName& name, SecurityClass::flag
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_domain, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_domain, false, name);
 }
 
 
@@ -392,7 +393,7 @@ void SCL_check_exception(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_exception, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_exception, false, name);
 }
 
 
@@ -423,7 +424,7 @@ void SCL_check_generator(thread_db* tdbb, const MetaName& name, SecurityClass::f
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_generator, name);
+	SCL_check_access(tdbb, s_class, 0, 0, name, mask, SCL_object_generator, false, name);
 }
 
 
@@ -508,7 +509,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 	if (reln_name.isEmpty())
 		return;
 
-	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, reln_name);
+	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, false, reln_name);
 
 	request.reset();
 
@@ -529,7 +530,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 		s_class = (!RF.RDB$SECURITY_CLASS.NULL) ?
 			SCL_get_class(tdbb, RF.RDB$SECURITY_CLASS) : default_s_class;
 		SCL_check_access(tdbb, s_class, 0, 0, NULL, mask,
-						 SCL_object_column, RF.RDB$FIELD_NAME, reln_name);
+						 SCL_object_column, false, RF.RDB$FIELD_NAME, reln_name);
 	}
 	END_FOR
 }
@@ -570,7 +571,7 @@ void SCL_check_package(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flag
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_package, name, mask, SCL_object_package, name);
+	SCL_check_access(tdbb, s_class, 0, id_package, name, mask, SCL_object_package, false, name);
 }
 
 
@@ -610,7 +611,7 @@ void SCL_check_procedure(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fl
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_procedure, name, mask, SCL_object_procedure, name);
+	SCL_check_access(tdbb, s_class, 0, id_procedure, name, mask, SCL_object_procedure, false, name);
 }
 
 
@@ -650,7 +651,7 @@ void SCL_check_function(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, SCL_object_function, name);
+	SCL_check_access(tdbb, s_class, 0, id_function, name, mask, SCL_object_function, false, name);
 }
 
 
@@ -688,7 +689,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	}
 	END_FOR
 
-	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, name);
+	SCL_check_access(tdbb, s_class, 0, 0, NULL, mask, SCL_object_table, false, name);
 }
 
 

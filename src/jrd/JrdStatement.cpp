@@ -454,14 +454,14 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 			{
 				SCL_check_access(tdbb, sec_class, access->acc_view_id, aclType,
 					routine->getName().identifier, access->acc_mask, access->acc_type,
-					access->acc_name, access->acc_r_name);
+					true, access->acc_name, access->acc_r_name);
 			}
 			else
 			{
 				SCL_check_access(tdbb, sec_class, access->acc_view_id,
 					id_package, routine->getName().package,
 					access->acc_mask, access->acc_type,
-					access->acc_name, access->acc_r_name);
+					true, access->acc_name, access->acc_r_name);
 			}
 		}
 	}
@@ -508,7 +508,7 @@ void JrdStatement::verifyAccess(thread_db* tdbb)
 		}
 
 		SCL_check_access(tdbb, sec_class, access->acc_view_id, objType, objName,
-			access->acc_mask, access->acc_type, access->acc_name, access->acc_r_name);
+			access->acc_mask, access->acc_type, true, access->acc_name, access->acc_r_name);
 	}
 }
 
@@ -629,7 +629,7 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 			SCL_check_access(tdbb, sec_class,
 				(access->acc_view_id) ? access->acc_view_id : (view ? view->rel_id : 0),
 				id_trigger, t.statement->triggerName, access->acc_mask,
-				access->acc_type, access->acc_name, access->acc_r_name);
+				access->acc_type, true, access->acc_name, access->acc_r_name);
 		}
 	}
 }
