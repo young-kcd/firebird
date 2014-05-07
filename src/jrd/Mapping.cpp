@@ -232,7 +232,7 @@ public:
 	Cache(const NoCaseString& aliasDb, const NoCaseString& db)
 		: alias(getPool(), aliasDb), name(getPool(), db), dataFlag(false)
 	{
-		enableDuplicates(true);
+		enableDuplicates();
 	}
 
 	void populate(IAttachment *att)

@@ -192,9 +192,9 @@ namespace Firebird
 			}
 		}
 
-		void enableDuplicates(bool mode)
+		void enableDuplicates()
 		{
-			duplicates = mode;
+			duplicates = true;
 		}
 
 	private:
