@@ -1,3 +1,59 @@
+ 2014-05-06 22:41  robocop 
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+I need name_length_limit() for testing some isql functionality.
+
+ 2014-05-06 18:10  asfernandes 
+   M src/dsql/parse.y
+   M src/isql/show.epp
+   M src/jrd/constants.h
+Fixed CORE-4415 - Useless extraction of generic DDL trigger.
+
+ 2014-05-06 13:41  mapopa 
+   D generated
+Remove unused generated directory. Builds use the temporary 'gen' directory
+
+ 2014-05-06 12:37  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+Turn off db triggers for mapping connections
+
+ 2014-05-06 12:25  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+Fixed a bug, privately reported by Pavel Zotov - segfault when closing trace
+
+ 2014-05-06 10:29  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+Turn of forgotten debugging
+
+ 2014-05-06 10:07  alexpeshkoff 
+   M src/common/classes/Hash.h
+   M src/jrd/Mapping.cpp
+Fixed support of maps with same hash value
+
+ 2014-05-06 08:49  mapopa 
+   D lang_helpers/gds.vpas
+remove vax pascal 
+
+ 2014-05-06 08:34  mapopa 
+   M lang_helpers/gds.bas
+   M lang_helpers/gds.pas
+   M lang_helpers/gds.vpas
+   M lang_helpers/gds_aix.f
+   M lang_helpers/gds_hp.f
+   M lang_helpers/gds_sun.f
+remove PYXIS
+
+ 2014-05-06 07:49  mapopa 
+   M doc/emacros-cross_ref.html
+cleanup 
+
+ 2014-05-06 01:28  robocop 
+   M src/jrd/JrdStatement.h
+   M src/jrd/req.h
+   M src/jrd/vio.cpp
+Fix CORE-4418, using the property of special triggers that are marked "system" or "ignore_perm".
+
  2014-05-05 15:28  mapopa 
    D lang_helpers/gds.pli
    D lang_helpers/gds_vms.f
