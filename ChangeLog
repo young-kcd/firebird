@@ -1,3 +1,7 @@
+ 2014-05-06 14:05  hvlad 
+   M src/remote/server.cpp
+Backported fix for bug CORE-2349 : False "Invalid SQLDA" error
+
  2014-04-05 18:10  dimitr 
    M src/jrd/dfw.epp
 Simplest solution for CORE-4386: Report more details for "object in use" errors. Also, I've removed the database filename from the error message for security reasons. v3 is going to get a more complete solution.
