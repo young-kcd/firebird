@@ -919,19 +919,6 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[main () {
 AC_MSG_RESULT($ac_cv_c_double_align)
 AC_DEFINE_UNQUOTED(FB_DOUBLE_ALIGN, $ac_cv_c_double_align, [Alignment of double])
 
-dnl EKU: don't know how to convert this into an autoconf test:
-dnl      #define FB_ALIGN(n,b) ...
-dnl
-dnl      VMS           (n)                       -> no
-dnl      sun_68k       ((n+1) & ~1)              -> even
-dnl      XENIX         ((n+1) & ~1)              -> even
-dnl      netware_386   ((n+1) & ~1)              -> even
-dnl      all others    ((n + b - 1) & ~(b - 1))  -> multiple of b
-dnl
-dnl      volunters are welcome!
-
-
-
 dnl EKU: Add any platform specific tests below
 case "$PLATFORM" in
   LINUX)
