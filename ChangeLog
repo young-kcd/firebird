@@ -1,3 +1,37 @@
+ 2014-05-07 15:14  mapopa 
+   M examples/include/align.h
+FB_ALIGN is always defined in src/include/types_pub.h ((n+b-1)&~(b-1))
+
+ 2014-05-07 15:11  mapopa 
+   M configure.ac
+FB_ALIGN is always defined in src/include/types_pub.h ((n+b-1)&~(b-1))
+
+ 2014-05-07 14:51  mapopa 
+   M examples/include/align.h
+cleanup VMS FB_ALIGN define
+
+ 2014-05-07 11:21  alexpeshkoff 
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/scl.epp
+   M src/jrd/scl_proto.h
+   M src/jrd/vio.cpp
+Postfix for CORE-3242: somewhy when checking metadata access (like MODIFY or DROP) always checked that access from object itself. Strange at the first glance behavior, but let us do not change legacy (at least since FB1.0) when possible.
+
+ 2014-05-07 10:21  alexpeshkoff 
+   M src/burp/burp.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+Fixed CORE-4398: Provide ability to specify extra-long name of log when doing gbak to avoid "attempt to store 256 bytes in a clumplet" message
+
+ 2014-05-07 09:18  alexpeshkoff 
+   M src/common/classes/Hash.h
+   M src/jrd/Mapping.cpp
+Change Hash duplicates control interface to avoid unexpected use - thanks to Claudio
+
+ 2014-05-07 08:58  robocop 
+   M src/jrd/vio.cpp
+Fix the problem with gbak restoring a db and lack of rights on sys tables that Philippe detected.
+
  2014-05-06 22:41  robocop 
    M src/common/utils.cpp
    M src/common/utils_proto.h
