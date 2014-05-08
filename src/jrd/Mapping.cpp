@@ -769,7 +769,7 @@ private:
 				}
 			}
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			iscLogException("Fatal error in clearDeliveryThread", ex);
 			fb_utils::logAndDie("Fatal error in clearDeliveryThread");

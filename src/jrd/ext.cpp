@@ -277,7 +277,8 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 
 	// Create missing path components
 	ObjectsArray<PathName> paths;
-	for(;;)
+
+	for (;;)
 	{
 		PathName path, file;
 		PathUtils::splitLastComponent(path, file, name);
@@ -290,12 +291,14 @@ ExternalFile* EXT_file(jrd_rel* relation, const TEXT* file_name) //, bid* descri
 		paths.push(path);
 		name = path;
 	}
-	while(paths.hasData())
+
+	while (paths.hasData())
 	{
 		PathName path(paths.pop());
 		if (PathUtils::makeDir(path.c_str()) != 0)
 			break;
 	}
+
 	paths.clear();
 
 	ExternalFile* file = FB_NEW_RPT(*relation->rel_pool, (strlen(file_name) + 1)) ExternalFile();

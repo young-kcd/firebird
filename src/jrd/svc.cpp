@@ -228,7 +228,7 @@ Service::ExistenceGuard::~ExistenceGuard()
 	{
 		jSvc->mutex.leave();
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		DtorException::devHalt();
 	}
@@ -1992,7 +1992,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 		svc->svc_sem_full.release();
 		svc->finish(SVC_finished);
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		// Not much we can do here
 		iscLogException("Exception in Service::run():", ex);
@@ -2043,18 +2043,19 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 								Arg::Gds(isc_svc_start_failed));
 	}
 
-	if (!(svc_flags & SVC_finished)) {
+	if (!(svc_flags & SVC_finished))
 		status_exception::raise(Arg::Gds(isc_svc_in_use) << Arg::Str(serv->serv_name));
-	}
 
 	// Another service may have been started with this service block.
 	// If so, we must reset the service flags.
 	svc_switches.erase();
-/*	if (!(svc_flags & SVC_detached))
+	/***
+	if (!(svc_flags & SVC_detached))
 	{
 		svc_flags = 0;
 	}
- */
+	***/
+
 	if (!svc_perm_sw.hasData())
 	{
 		// If svc_perm_sw is not used -- call a command-line parsing utility
