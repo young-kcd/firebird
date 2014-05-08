@@ -251,7 +251,7 @@ int name_length_limit(const TEXT* const name, size_t bufsize)
 {
 	const char* p = name + bufsize - 1;
 	// Now, let's go back
-	while (p >= name && *p == '\x20') // blank character, ASCII(32)
+	while (p >= name && *p == ' ') // blank character, ASCII(32)
 		--p;
 	return (p + 1) - name;
 }

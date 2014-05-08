@@ -133,7 +133,7 @@ static void checkForeignKeyTempScope(thread_db* tdbb, jrd_tra* transaction,
 			 REL_C.RDB$RELATION_NAME EQ childRelName.c_str() AND
 			 REL_M.RDB$RELATION_NAME EQ RLC_M.RDB$RELATION_NAME
 	{
-		fb_assert(!masterRelName.hasData());
+		fb_assert(masterRelName.isEmpty());
 
 		masterRelName = REL_M.RDB$RELATION_NAME;
 		masterType = relationType(REL_M.RDB$RELATION_TYPE.NULL, REL_M.RDB$RELATION_TYPE);
@@ -177,7 +177,7 @@ static void checkRelationTempScope(thread_db* tdbb, jrd_tra* transaction,
 			 IND_M.RDB$INDEX_NAME EQ IND_C.RDB$FOREIGN_KEY AND
 			 IND_M.RDB$RELATION_NAME EQ REL_M.RDB$RELATION_NAME
 	{
-		fb_assert(!masterRelName.hasData());
+		fb_assert(masterRelName.isEmpty());
 
 		masterType = relationType(REL_M.RDB$RELATION_TYPE.NULL, REL_M.RDB$RELATION_TYPE);
 		masterRelName = REL_M.RDB$RELATION_NAME;
