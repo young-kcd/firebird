@@ -1524,7 +1524,7 @@ void BURP_print(bool err, USHORT number, const SafeArg& arg)
  *
  * Functional description
  *	Display a formatted error message
- *	in a way that VMS or civilized systems
+ *	in a way that civilized systems
  *	will accept.
  *
  **************************************/
@@ -1544,7 +1544,7 @@ void BURP_print(bool err, USHORT number, const char* str)
  *
  * Functional description
  *	Display a formatted error message
- *	in a way that VMS or civilized systems
+ *	in a way that civilized systems
  *	will accept.
  *
  **************************************/
