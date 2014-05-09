@@ -1,3 +1,18 @@
+ 2014-05-08 23:26  asfernandes 
+   M src/jrd/JrdStatement.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/scl.epp
+   M src/jrd/svc.cpp
+   M src/jrd/vio.cpp
+Misc.
+
+ 2014-05-08 02:51  asfernandes 
+   M src/common/utils.cpp
+   M src/dsql/DdlNodes.epp
+Misc.
+
  2014-05-07 15:14  mapopa 
    M examples/include/align.h
 FB_ALIGN is always defined in src/include/types_pub.h ((n+b-1)&~(b-1))
