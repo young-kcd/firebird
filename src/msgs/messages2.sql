@@ -2303,6 +2303,10 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 354, NULL, 'missing regular expression to skip tables', NULL, NULL);
 (NULL, 'burp_usage', 'burp.c', NULL, 12, 355, NULL, '    @1SKIP_D(ATA)          skip data for table', NULL, NULL);
 (NULL, NULL, 'burp.cpp', NULL, 12, 356, NULL, 'regular expression to skip tables was already set', NULL, NULL);
+(NULL, 'update_view_dbkey_lengths', 'restore.epp', NULL, 12, 357, NULL, 'fixing views dbkey length', NULL, NULL);
+(NULL, 'update_ownership', 'restore.epp', NULL, 12, 358, NULL, 'updating ownership of packages, procedures and tables', NULL, NULL);
+(NULL, 'fix_missing_privileges', 'restore.epp', NULL, 12, 359, NULL, 'adding missing privileges', NULL, NULL);
+(NULL, 'RESTORE_restore', 'restore.epp', NULL, 12, 360, NULL, 'adjusting the ONLINE and FORCED WRITES flags', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
@@ -2987,6 +2991,9 @@ Fetches = !', NULL, NULL);
 ('NO_MAP', 'SHOW_metadata', 'show.epp', NULL, 17, 184, NULL, 'There is no mapping @1 in this database', NULL, NULL)
 ('NO_MAPS', 'SHOW_metadata', 'show.epp', NULL, 17, 185, NULL, 'There are no mappings in this database', NULL, NULL)
 ('INVALID_TERM_CHARS', 'frontend_set', 'isql.epp', NULL, 17, 186, NULL, 'Invalid characters for SET TERMINATOR are @1', NULL, NULL)
+('REC_DISPLAYCOUNT', 'process_statement', 'isql.epp', NULL, 17, 187, NULL, 'Records displayed: @1', NULL, NULL)
+('COLUMNS_HIDDEN', 'process_statement', 'isql.epp', NULL, 17, 188, NULL, 'Full NULL columns hidden due to RecordBuff: @1', NULL, NULL)
+('HLP_SETRECORDBUF', 'help', 'isql.epp', NULL, 17, 189, NULL, '    SET RECORDBuf          -- toggle limited buffering and trimming of columns', NULL, NULL)
 -- GSEC
 ('GsecMsg1', 'get_line', 'gsec.e', NULL, 18, 1, NULL, 'GSEC>', NULL, NULL);
 ('GsecMsg2', 'printhelp', 'gsec.e', 'This message is used in the Help display. It should be the same as number 1 (but in lower case).', 18, 2, NULL, 'gsec', NULL, NULL);

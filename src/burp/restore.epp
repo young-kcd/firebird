@@ -92,6 +92,7 @@ enum scan_attr_t
 	AFTER_SKIP	= 2	// After skipping and after scanning next byte for valid attribute
 };
 
+void	add_access_dpb(BurpGlobals* tdgbl, Firebird::ClumpletWriter& dpb);
 void	add_files(BurpGlobals* tdgbl, const char*);
 void	bad_attribute(scan_attr_t, att_type, USHORT);
 void	create_database(BurpGlobals* tdgbl, const TEXT*);
@@ -158,6 +159,7 @@ void	store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SI
 	const ISC_QUAD* gen_desc, const char* secclass, const char* ownername, fb_sysflag sysFlag,
 	SLONG increment);
 void	update_global_field(BurpGlobals* tdgbl);
+void	update_ownership(BurpGlobals* tdgbl);
 void	update_view_dbkey_lengths(BurpGlobals* tdgbl);
 void	fix_missing_privileges(BurpGlobals* tdgbl);
 void	fix_system_generators(BurpGlobals* tdgbl);
@@ -259,8 +261,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
  *	Recreate a database from a backup.
  *
  **************************************/
-	isc_req_handle  req_handle1 = 0, req_handle2 = 0, req_handle3 = 0;
-	isc_req_handle	req_handle4 = 0, req_handle5 = 0, req_handle6 = 0;
+	isc_req_handle  req_handle1 = 0, req_handle3 = 0, req_handle5 = 0;
 	BASED_ON RDB$INDICES.RDB$INDEX_NAME index_name;
 
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
@@ -486,121 +487,7 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	//
 	update_view_dbkey_lengths(tdgbl);
 
-	// Change ownership of any packages
-	for (burp_pkg* package = tdgbl->packages; package; package = package->pkg_next)
-	{
-		fb_assert(tdgbl->runtimeODS >= DB_VERSION_DDL12);
-
-		if (package->pkg_owner[0])
-		{
-			FOR (REQUEST_HANDLE req_handle6)
-				X IN RDB$PACKAGES
-				WITH X.RDB$PACKAGE_NAME EQ package->pkg_name
-			{
-				MODIFY X
-					strcpy(X.RDB$OWNER_NAME, package->pkg_owner);
-				END_MODIFY;
-				ON_ERROR
-					MISC_release_request_silent(req_handle6);
-					general_on_error();
-				END_ERROR;
-
-				if (!X.RDB$SECURITY_CLASS.NULL)
-					restore_security_class(tdgbl, package->pkg_owner, X.RDB$SECURITY_CLASS);
-			}
-			END_FOR
-			ON_ERROR
-				MISC_release_request_silent(req_handle6);
-				general_on_error ();
-			END_ERROR
-		}
-	}
-
-	MISC_release_request_silent(req_handle6);
-
-	// Change ownership of any procedures necessary
-	for (burp_prc* procedure = tdgbl->procedures; procedure; procedure = procedure->prc_next)
-	{
-		if (procedure->prc_owner[0])
-		{
-			if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
-			{
-				FOR (REQUEST_HANDLE req_handle4)
-					X IN RDB$PROCEDURES
-					WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name AND
-						 X.RDB$PACKAGE_NAME EQUIV NULLIF(procedure->prc_package, '')
-				{
-					MODIFY X
-						strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
-					END_MODIFY;
-					ON_ERROR
-						MISC_release_request_silent(req_handle4);
-						general_on_error ();
-					END_ERROR
-
-					if (!X.RDB$SECURITY_CLASS.NULL)
-						restore_security_class(tdgbl, procedure->prc_owner, X.RDB$SECURITY_CLASS);
-				}
-				END_FOR;
-				ON_ERROR
-					MISC_release_request_silent(req_handle4);
-					general_on_error ();
-				END_ERROR
-			}
-			else
-			{
-				FOR (REQUEST_HANDLE req_handle4)
-					X IN RDB$PROCEDURES WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name
-				{
-					MODIFY X
-						strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
-					END_MODIFY;
-					ON_ERROR
-						MISC_release_request_silent(req_handle4);
-						general_on_error ();
-					END_ERROR;
-
-					restore_security_class(tdgbl, procedure->prc_owner, X.RDB$SECURITY_CLASS);
-				}
-				END_FOR
-				ON_ERROR
-					MISC_release_request_silent(req_handle4);
-					general_on_error ();
-				END_ERROR
-			}
-		}
-	}
-
-	MISC_release_request_silent(req_handle4);
-
-	// Change ownership of any relations necessary
-
-	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next)
-	{
-		if (relation->rel_owner[0])
-		{
-			FOR (REQUEST_HANDLE req_handle2)
-				X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_name
-				MODIFY X
-					strcpy (X.RDB$OWNER_NAME, relation->rel_owner);
-				END_MODIFY;
-				ON_ERROR
-					MISC_release_request_silent(req_handle2);
-					general_on_error ();
-				END_ERROR;
-
-				restore_security_class(tdgbl, relation->rel_owner, X.RDB$SECURITY_CLASS);
-				restore_security_class(tdgbl, relation->rel_owner, X.RDB$DEFAULT_CLASS);
-
-			END_FOR;
-			ON_ERROR
-				MISC_release_request_silent(req_handle2);
-				general_on_error ();
-			END_ERROR;
-		}
-	}
-
-	MISC_release_request_silent(req_handle2);
+	update_ownership(tdgbl);
 
 	// Now that changing ownership of tables is over, it is safe to
 	// update the database security class in RDB$DATABASE
@@ -657,36 +544,15 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 
 	// attach database again to put it online
 
-	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
-	tdgbl->uSvc->fillDpb(dpb);
+	BURP_verbose(360);
 
-	const UCHAR* authBlock;
-	unsigned int authSize = tdgbl->uSvc->getAuthBlock(&authBlock);
-	if (authBlock)
-	{
-		dpb.insertBytes(isc_dpb_auth_block, authBlock, authSize);
-	}
+	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	add_access_dpb(tdgbl, dpb);
 
 	if (tdgbl->flag_on_line)
 	{
 		dpb.insertTag(isc_dpb_online);
 	}
-
-	if (tdgbl->gbl_sw_user)
-	{
-		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
-	}
-	if (tdgbl->gbl_sw_password)
-	{
-		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
-	}
-	if (tdgbl->gbl_sw_tr_user)
-	{
-		dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
-	}
-
-	dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 	// set forced writes to the value which was in the header
 	dpb.insertByte(isc_dpb_force_write, tdgbl->hdr_forced_writes ? 1 : 0);
@@ -716,31 +582,9 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 		// msg 280: setting database to read-only access
 
 		dpb.reset(isc_dpb_version1);
-		tdgbl->uSvc->fillDpb(dpb);
-
-		const UCHAR* authBlock;
-		unsigned int authSize = tdgbl->uSvc->getAuthBlock(&authBlock);
-		if (authBlock)
-		{
-			dpb.insertBytes(isc_dpb_auth_block, authBlock, authSize);
-		}
-
-		if (tdgbl->gbl_sw_user)
-		{
-			dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
-		}
-		if (tdgbl->gbl_sw_password)
-		{
-			dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
-		}
-		if (tdgbl->gbl_sw_tr_user)
-		{
-			dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
-		}
+		add_access_dpb(tdgbl, dpb);
 
 		dpb.insertByte(isc_dpb_set_db_readonly, 1);
-		dpb.insertByte(isc_dpb_no_db_triggers, 1);
 
 		if (isc_attach_database(tdgbl->status_vector, 0, database_name, &db_handle,
 								dpb.getBufferLength(), reinterpret_cast<const SCHAR*>(dpb.getBuffer())))
@@ -757,6 +601,35 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 
 namespace // unnamed, private
 {
+
+// Add the common DPB params to the two attach calls in RESTORE_restore()
+void add_access_dpb(BurpGlobals* tdgbl, Firebird::ClumpletWriter& dpb)
+{
+	tdgbl->uSvc->fillDpb(dpb);
+
+	const UCHAR* authBlock;
+	unsigned int authSize = tdgbl->uSvc->getAuthBlock(&authBlock);
+	if (authBlock)
+	{
+		dpb.insertBytes(isc_dpb_auth_block, authBlock, authSize);
+	}
+
+	if (tdgbl->gbl_sw_user)
+	{
+		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+	}
+	if (tdgbl->gbl_sw_password)
+	{
+		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
+	}
+	if (tdgbl->gbl_sw_tr_user)
+	{
+		dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
+	}
+
+	dpb.insertByte(isc_dpb_no_db_triggers, 1);
+}
 
 void add_files(BurpGlobals* tdgbl, const char* file_name)
 {
@@ -10542,6 +10415,129 @@ void update_global_field(BurpGlobals* tdgbl)
 }
 
 
+void update_ownership(BurpGlobals* tdgbl)
+{
+	isc_req_handle req_handle2 = 0, req_handle4 = 0, req_handle6 = 0;
+	BURP_verbose(358);
+
+	// Change ownership of any packages
+	for (burp_pkg* package = tdgbl->packages; package; package = package->pkg_next)
+	{
+		fb_assert(tdgbl->runtimeODS >= DB_VERSION_DDL12);
+
+		if (package->pkg_owner[0])
+		{
+			FOR (REQUEST_HANDLE req_handle6)
+				X IN RDB$PACKAGES
+				WITH X.RDB$PACKAGE_NAME EQ package->pkg_name
+			{
+				MODIFY X
+					strcpy(X.RDB$OWNER_NAME, package->pkg_owner);
+				END_MODIFY;
+				ON_ERROR
+					MISC_release_request_silent(req_handle6);
+					general_on_error();
+				END_ERROR;
+
+				if (!X.RDB$SECURITY_CLASS.NULL)
+					restore_security_class(tdgbl, package->pkg_owner, X.RDB$SECURITY_CLASS);
+			}
+			END_FOR
+			ON_ERROR
+				MISC_release_request_silent(req_handle6);
+				general_on_error ();
+			END_ERROR
+		}
+	}
+
+	MISC_release_request_silent(req_handle6);
+
+	// Change ownership of any procedures necessary
+	for (burp_prc* procedure = tdgbl->procedures; procedure; procedure = procedure->prc_next)
+	{
+		if (procedure->prc_owner[0])
+		{
+			if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
+			{
+				FOR (REQUEST_HANDLE req_handle4)
+					X IN RDB$PROCEDURES
+					WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name AND
+						 X.RDB$PACKAGE_NAME EQUIV NULLIF(procedure->prc_package, '')
+				{
+					MODIFY X
+						strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
+					END_MODIFY;
+					ON_ERROR
+						MISC_release_request_silent(req_handle4);
+						general_on_error ();
+					END_ERROR
+
+					if (!X.RDB$SECURITY_CLASS.NULL)
+						restore_security_class(tdgbl, procedure->prc_owner, X.RDB$SECURITY_CLASS);
+				}
+				END_FOR;
+				ON_ERROR
+					MISC_release_request_silent(req_handle4);
+					general_on_error ();
+				END_ERROR
+			}
+			else
+			{
+				FOR (REQUEST_HANDLE req_handle4)
+					X IN RDB$PROCEDURES WITH X.RDB$PROCEDURE_NAME EQ procedure->prc_name
+				{
+					MODIFY X
+						strcpy (X.RDB$OWNER_NAME, procedure->prc_owner);
+					END_MODIFY;
+					ON_ERROR
+						MISC_release_request_silent(req_handle4);
+						general_on_error ();
+					END_ERROR;
+
+					restore_security_class(tdgbl, procedure->prc_owner, X.RDB$SECURITY_CLASS);
+				}
+				END_FOR
+				ON_ERROR
+					MISC_release_request_silent(req_handle4);
+					general_on_error ();
+				END_ERROR
+			}
+		}
+	}
+
+	MISC_release_request_silent(req_handle4);
+
+	// Change ownership of any relations necessary
+
+	for (burp_rel* relation = tdgbl->relations; relation; relation = relation->rel_next)
+	{
+		if (relation->rel_owner[0])
+		{
+			FOR (REQUEST_HANDLE req_handle2)
+				X IN RDB$RELATIONS WITH X.RDB$RELATION_NAME EQ relation->rel_name
+				MODIFY X
+					strcpy (X.RDB$OWNER_NAME, relation->rel_owner);
+				END_MODIFY;
+				ON_ERROR
+					MISC_release_request_silent(req_handle2);
+					general_on_error ();
+				END_ERROR;
+
+				restore_security_class(tdgbl, relation->rel_owner, X.RDB$SECURITY_CLASS);
+				restore_security_class(tdgbl, relation->rel_owner, X.RDB$DEFAULT_CLASS);
+
+			END_FOR;
+			ON_ERROR
+				MISC_release_request_silent(req_handle2);
+				general_on_error ();
+			END_ERROR;
+		}
+	}
+
+	MISC_release_request_silent(req_handle2);
+}
+
+
 void update_view_dbkey_lengths(BurpGlobals* tdgbl)
 {
 /**************************************
@@ -10562,6 +10558,8 @@ void update_view_dbkey_lengths(BurpGlobals* tdgbl)
  *
  **************************************/
 	isc_req_handle  req_handle2 = 0;
+
+	BURP_verbose(357);
 
 	FOR (REQUEST_HANDLE req_handle2)
 		R IN RDB$RELATIONS
@@ -10597,8 +10595,11 @@ void update_view_dbkey_lengths(BurpGlobals* tdgbl)
 	MISC_release_request_silent(req_handle2);
 }
 
+
 void fix_missing_privileges(BurpGlobals* tdgbl)
 {
+	BURP_verbose(359);
+
 	GDS_NAME owner_name;
 	isc_req_handle req_handle1 = 0, req_handle2 = 0;
 
@@ -10732,7 +10733,7 @@ void fix_system_generators(BurpGlobals* tdgbl)
  *
  **************************************/
 
-	BURP_verbose (350);
+	BURP_verbose(350);
 	// msg 350 fixing system generators
 
 	for (const FixGenerator* g = genToFix; g->name; ++g)
