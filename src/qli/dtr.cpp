@@ -496,7 +496,7 @@ static bool process_statement(bool flush_flag)
 			return false;
 		}
 
-		// Expand the statement.  It will return NULL is the statement was
+		// Expand the statement.  It will return NULL if the statement was
 		// a command.  An error will be unwound
 
 		qli_nod* expanded_tree = EXP_expand(syntax_tree);

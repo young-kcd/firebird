@@ -205,10 +205,12 @@ void EVAL_break_compute( qli_nod* node)
  **************************************/
 
 	if (node->nod_type == nod_rpt_average && node->nod_arg[e_stt_default])
+	{
 		if (node->nod_desc.dsc_dtype == dtype_long)
 			*(SLONG *) node->nod_desc.dsc_address /= (IPTR) node->nod_arg[e_stt_default];
 		else
 			*(double *) node->nod_desc.dsc_address /= (IPTR) node->nod_arg[e_stt_default];
+	}
 }
 
 
@@ -415,8 +417,10 @@ dsc* EVAL_value(qli_nod* node)
 			MOVQ_double_to_date(d1, (SLONG*) desc->dsc_address);
 		}
 		else if (desc->dsc_dtype == dtype_long)
+		{
 			*((SLONG*) desc->dsc_address) =
 				MOVQ_get_long(values[0], desc->dsc_scale) + MOVQ_get_long(values[1], desc->dsc_scale);
+		}
 		else
 			*((double*) desc->dsc_address) = MOVQ_get_double(values[0]) + MOVQ_get_double(values[1]);
 		return desc;
@@ -434,8 +438,10 @@ dsc* EVAL_value(qli_nod* node)
 				MOVQ_date_to_double(values[0]) - MOVQ_date_to_double(values[1]);
 		}
 		else if (desc->dsc_dtype == dtype_long)
+		{
 			*((SLONG*) desc->dsc_address) =
 				MOVQ_get_long(values[0], desc->dsc_scale) - MOVQ_get_long(values[1], desc->dsc_scale);
+		}
 		else
 			*((double*) desc->dsc_address) = MOVQ_get_double(values[0]) - MOVQ_get_double(values[1]);
 		return desc;
@@ -458,9 +464,11 @@ dsc* EVAL_value(qli_nod* node)
 		}
 		desc->dsc_missing = FALSE;
 		if (desc->dsc_dtype == dtype_long)
+		{
 			*((SLONG*) desc->dsc_address) =
 				MOVQ_get_long(values[0], values[0]->dsc_scale) *
 				MOVQ_get_long(values[1], values[1]->dsc_scale);
+		}
 		else
 			*((double*) desc->dsc_address) = MOVQ_get_double(values[0]) * MOVQ_get_double(values[1]);
 		return desc;
@@ -920,8 +928,10 @@ static bool matches(const TEXT* p1, SSHORT l1, const TEXT* p2, SSHORT l2)
 			if (l2 == 0)
 				return true;
 			while (l1)
+			{
 				if (matches(p1++, l1--, p2, l2))
 					return true;
+			}
 			return false;
 		}
 		if (--l1 < 0 || (c != '?' && UPPER(c) != UPPER(*p1)))
