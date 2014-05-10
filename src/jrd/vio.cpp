@@ -195,7 +195,7 @@ inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 	// TDBB_dont_post_dfw signals that we are in DFW.
 	const ULONG uflags = tdbb->getAttachment()->att_flags;
 	if ((uflags & ATT_gbak_attachment) &&
-		(!(uflags & ATT_creator)) || relation->rel_id != rel_segments && !(tdbb->tdbb_flags & TDBB_dont_post_dfw))
+		(!(uflags & ATT_creator) || relation->rel_id != rel_segments && !(tdbb->tdbb_flags & TDBB_dont_post_dfw)))
 	{
 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 	}
