@@ -1,3 +1,19 @@
+ 2014-05-09 20:26  robocop 
+   M src/jrd/vio.cpp
+It seems it's possible to restrict gbak more on deletions. Thanks Vlad for hint on TDBB_dont_post_dfw.
+
+ 2014-05-09 11:38  mapopa 
+   D lang_helpers/gds.bas
+remove vms basic
+
+ 2014-05-09 09:23  mapopa 
+   M src/burp/burp.cpp
+Misc cleanup
+
+ 2014-05-09 09:01  mapopa 
+   M src/remote/protocol.h
+Cleanup dead platforms
+
  2014-05-08 23:26  asfernandes 
    M src/jrd/JrdStatement.h
    M src/jrd/Mapping.cpp
