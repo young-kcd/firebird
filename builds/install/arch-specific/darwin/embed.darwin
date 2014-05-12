@@ -18,7 +18,7 @@ all:
 	mkdir -p $(FBE)/Contents/MacOS/firebird/bin
 	mkdir -p $(FBE)/Contents/MacOS/firebird/intl
 
-	cp ../gen/install/misc/firebird.conf $(FBE)/Contents/MacOS/firebird/firebird.edit
+	cp ../gen/install/misc/firebird.conf $(FBE)/Contents/MacOS/firebird/firebird.conf
 	cp ../gen/firebird/firebird.msg $(FBE)/Contents/MacOS/firebird/firebird.msg
 	cp ../gen/firebird/lib/libfbembed.dylib $(FBE)/Contents/MacOS/firebird/libfbembed.dylib
 	cp ../gen/firebird/lib/libicudata.dylib $(FBE)/Contents/MacOS/firebird/libicudata.dylib
@@ -64,11 +64,11 @@ all:
 	$(LIBLOC)/libicui18n.dylib
 
 	install_name_tool -change /Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicuuc.dylib \
-        ../libicuuc.dylib $(INTLOC)/fbintl.dylib
+        @loader_path/../libicuuc.dylib $(INTLOC)/fbintl.dylib
 	install_name_tool -change /Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicudata.dylib \
-        ../libicudata.dylib $(INTLOC)/fbintl.dylib
+        @loader_path/../libicudata.dylib $(INTLOC)/fbintl.dylib
 	install_name_tool -change /Library/Frameworks/Firebird.framework/Versions/A/Libraries/libicui18n.dylib \
-        ../libicui18n.dylib $(INTLOC)/fbintl.dylib
+        @loader_path/../libicui18n.dylib $(INTLOC)/fbintl.dylib
 
 	install_name_tool -id @rpath/libfbembed.dylib $(LIBLOC)/libfbembed.dylib
 	install_name_tool -id @rpath/libicudata.dylib $(LIBLOC)/libicudata.dylib 
