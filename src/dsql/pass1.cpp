@@ -2161,22 +2161,8 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 		}
 
 		FieldRemapper remapper(dsqlScratch, parent_context, true);
+
 		ExprNode::doDsqlFieldRemapper(remapper, parentRse->dsqlSelectList, rse->dsqlSelectList);
-
-		// Remap the nodes to the partition context.
-		for (size_t i = 0, mapCount = parent_context->ctx_win_maps.getCount(); i < mapCount; ++i)
-		{
-			PartitionMap* partitionMap = parent_context->ctx_win_maps[i];
-			if (partitionMap->partition)
-			{
-				partitionMap->partitionRemapped = Node::doDsqlPass(dsqlScratch, partitionMap->partition);
-
-				FieldRemapper remapper2(dsqlScratch, parent_context, true, partitionMap->partition,
-					partitionMap->order);
-				ExprNode::doDsqlFieldRemapper(remapper2, partitionMap->partitionRemapped);
-			}
-		}
-
 		rse->dsqlSelectList = NULL;
 
 		if (order)
@@ -2207,6 +2193,20 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 		{
 			ExprNode::doDsqlFieldRemapper(remapper, parentRse->dsqlDistinct, rse->dsqlDistinct);
 			rse->dsqlDistinct = NULL;
+		}
+
+		// Remap the nodes to the partition context
+		for (size_t i = 0, mapCount = parent_context->ctx_win_maps.getCount(); i < mapCount; ++i)
+		{
+			PartitionMap* partitionMap = parent_context->ctx_win_maps[i];
+			if (partitionMap->partition)
+			{
+				partitionMap->partitionRemapped = Node::doDsqlPass(dsqlScratch, partitionMap->partition);
+
+				FieldRemapper remapper2(dsqlScratch, parent_context, true, partitionMap->partition,
+					partitionMap->order);
+				ExprNode::doDsqlFieldRemapper(remapper2, partitionMap->partitionRemapped);
+			}
 		}
 
 		rse = parentRse;
