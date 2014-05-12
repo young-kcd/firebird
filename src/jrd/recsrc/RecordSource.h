@@ -392,6 +392,11 @@ namespace Jrd
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
 
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		{
+			m_next->setAnyBoolean(anyBoolean, ansiAny, ansiNot);
+		}
+
 	private:
 		NestConst<RecordSource> m_next;
 		NestConst<ValueExprNode> const m_value;
@@ -422,6 +427,11 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
+
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		{
+			m_next->setAnyBoolean(anyBoolean, ansiAny, ansiNot);
+		}
 
 	private:
 		NestConst<RecordSource> m_next;
@@ -541,6 +551,11 @@ namespace Jrd
 
 		void findUsedStreams(StreamList& streams, bool expandAll = false) const;
 		void nullRecords(thread_db* tdbb) const;
+
+		void setAnyBoolean(BoolExprNode* anyBoolean, bool ansiAny, bool ansiNot)
+		{
+			m_next->setAnyBoolean(anyBoolean, ansiAny, ansiNot);
+		}
 
 		USHORT getLength() const
 		{
