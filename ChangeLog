@@ -1,3 +1,11 @@
+ 2014-05-12 07:06  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-4422: FB crashes when using row_number()over( PARTITION BY x) in ORDER by clause. Adriano, please review.
+
+ 2014-05-12 06:04  dimitr 
+   M src/jrd/recsrc/RecordSource.h
+Fixed the issue privately reported by Claudio.
+
  2014-05-10 14:24  robocop 
    M src/qli/dtr.cpp
    M src/qli/eval.cpp
