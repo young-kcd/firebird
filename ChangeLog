@@ -1,3 +1,7 @@
+ 2014-05-12 09:44  paulbeach 
+   M builds/install/arch-specific/darwin/embed.darwin
+Correct a problem with locating intl dylibs
+
  2014-04-25 11:01  alexpeshkoff 
    M src/jrd/svc.cpp
    M src/jrd/svc.h
