@@ -3494,42 +3494,39 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
 				WITH COLL.RDB$COLLATION_NAME EQ work->dfw_name.c_str() AND
 					 COLL.RDB$CHARACTER_SET_ID EQ charSetId
 			{
-				if (COLL.RDB$SYSTEM_FLAG != 0)
+				SLONG length = 0;
+				HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+
+				if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
 				{
-					SLONG length = 0;
-					HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+					blb* blob = blb::open(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
+					length = blob->blb_length + 10;
+					length = blob->BLB_get_data(tdbb, buffer.getBuffer(length), length);
+				}
 
-					if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
-					{
-						blb* blob = blb::open(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
-						length = blob->blb_length + 10;
-						length = blob->BLB_get_data(tdbb, buffer.getBuffer(length), length);
-					}
+				const string specificAttributes((const char*) buffer.begin(), length);
+				string newSpecificAttributes;
 
-					const string specificAttributes((const char*) buffer.begin(), length);
-					string newSpecificAttributes;
-
-					// ASF: If setupCollationAttributes fail we store the original
-					// attributes. This should be what we want for new databases
-					// and restores. CREATE COLLATION will fail in DYN.
-					if (IntlManager::setupCollationAttributes(
-							fb_utils::exact_name(COLL.RDB$BASE_COLLATION_NAME.NULL ?
-								COLL.RDB$COLLATION_NAME : COLL.RDB$BASE_COLLATION_NAME),
-							fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME),
-							specificAttributes, newSpecificAttributes) &&
-						newSpecificAttributes != specificAttributes) // if nothing changed, we do nothing
-					{
-						MODIFY COLL USING
-							if (newSpecificAttributes.isEmpty())
-								COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
-							else
-							{
-								COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-								attachment->storeMetaDataBlob(tdbb, transaction,
-									&COLL.RDB$SPECIFIC_ATTRIBUTES, newSpecificAttributes);
-							}
-						END_MODIFY
-					}
+				// ASF: If setupCollationAttributes fail we store the original
+				// attributes. This should be what we want for new databases
+				// and restores. CREATE COLLATION will fail in DYN.
+				if (IntlManager::setupCollationAttributes(
+						fb_utils::exact_name(COLL.RDB$BASE_COLLATION_NAME.NULL ?
+							COLL.RDB$COLLATION_NAME : COLL.RDB$BASE_COLLATION_NAME),
+						fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME),
+						specificAttributes, newSpecificAttributes) &&
+					newSpecificAttributes != specificAttributes) // if nothing changed, we do nothing
+				{
+					MODIFY COLL USING
+						if (newSpecificAttributes.isEmpty())
+							COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
+						else
+						{
+							COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+							attachment->storeMetaDataBlob(tdbb, transaction,
+								&COLL.RDB$SPECIFIC_ATTRIBUTES, newSpecificAttributes);
+						}
+					END_MODIFY
 				}
 			}
 			END_FOR
