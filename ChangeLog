@@ -1,3 +1,7 @@
+ 2014-05-13 01:47  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-4425 - User-collations based on UNICODE are not upgrade to newer ICU version on restore.
+
  2014-05-12 07:06  dimitr 
    M src/dsql/pass1.cpp
 Fixed CORE-4422: FB crashes when using row_number()over( PARTITION BY x) in ORDER by clause. Adriano, please review.
