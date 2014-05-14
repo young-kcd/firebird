@@ -366,12 +366,10 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
 		dsc desc;
 		(*m_leader.keys)[j]->getDesc(tdbb, csb, &desc);
 
-		USHORT keyLength = desc.dsc_length;
+		USHORT keyLength = desc.isText() ? desc.getStringLength() : desc.dsc_length;
 
 		if (IS_INTL_DATA(&desc))
-			keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
-		else if (desc.dsc_dtype == dtype_varying)
-			keyLength -= sizeof(USHORT);
+			keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), keyLength);
 
 		m_leader.keyLengths->add(keyLength);
 		m_leader.totalKeyLength += keyLength;
@@ -394,12 +392,10 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
 			dsc desc;
 			(*sub.keys)[j]->getDesc(tdbb, csb, &desc);
 
-			USHORT keyLength = desc.dsc_length;
+			USHORT keyLength = desc.isText() ? desc.getStringLength() : desc.dsc_length;
 
 			if (IS_INTL_DATA(&desc))
-				keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), desc.dsc_length);
-			else if (desc.dsc_dtype == dtype_varying)
-				keyLength -= sizeof(USHORT);
+				keyLength = INTL_key_length(tdbb, INTL_INDEX_TYPE(&desc), keyLength);
 
 			sub.keyLengths->add(keyLength);
 			sub.totalKeyLength += keyLength;
@@ -641,37 +637,35 @@ void HashJoin::computeKeys(thread_db* tdbb, jrd_req* request,
 {
 	for (size_t i = 0; i < sub.keys->getCount(); i++)
 	{
-		const dsc* const desc = EVL_expr(tdbb, request, (*sub.keys)[i]);
+		dsc* const desc = EVL_expr(tdbb, request, (*sub.keys)[i]);
 		const USHORT keyLength = (*sub.keyLengths)[i];
 
 		if (desc && !(request->req_flags & req_null))
 		{
-			USHORT length = desc->dsc_length;
-			UCHAR* address = desc->dsc_address;
-
-			MoveBuffer buffer;
-
-			if (IS_INTL_DATA(desc))
+			if (desc->isText())
 			{
-				// Convert the INTL string into the binary comparable form
+				dsc to;
+				to.makeText(keyLength, ttype_binary, keyBuffer);
 
-				address = buffer.getBuffer(keyLength);
-
-				dsc temp;
-				temp.makeText(keyLength, ttype_sort_key, address);
-
-				length = INTL_string_to_key(tdbb, INTL_INDEX_TYPE(desc),
-											desc, &temp, INTL_KEY_UNIQUE);
+				if (IS_INTL_DATA(desc))
+				{
+					// Convert the INTL string into the binary comparable form
+					INTL_string_to_key(tdbb, INTL_INDEX_TYPE(desc),
+									   desc, &to, INTL_KEY_UNIQUE);
+				}
+				else
+				{
+					// This call ensures that the padding bytes are appended
+					MOV_move(tdbb, desc, &to);
+				}
 			}
-			else if (desc->dsc_dtype == dtype_varying)
+			else
 			{
-				length -= sizeof(USHORT);
-				address += sizeof(USHORT);
+				// We don't enforce proper alignments inside the key buffer,
+				// so use plain byte copying instead of MOV_move() to avoid bus errors
+				fb_assert(keyLength == desc->dsc_length);
+				memcpy(keyBuffer, desc->dsc_address, keyLength);
 			}
-
-			fb_assert(length <= keyLength);
-
-			memcpy(keyBuffer, address, length);
 		}
 
 		keyBuffer += keyLength;
