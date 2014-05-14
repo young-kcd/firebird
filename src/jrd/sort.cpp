@@ -77,14 +77,14 @@ void SortOwner::unlinkAll()
 
 // The sort buffer size should be just under a multiple of the
 // hardware memory page size to account for memory allocator
-// overhead. On most platorms, this saves 4KB to 8KB per sort
+// overhead. On most platforms, this saves 4KB to 8KB per sort
 // buffer from being allocated but not used.
 //
 // dimitr:	this comment is outdated since FB 1.5, where max buffer size
 //			of (128KB - overhead) has been replaced with exact 128KB.
 
-const ULONG MIN_SORT_BUFFER_SIZE = 1024 * 16;	// 16KB
 const ULONG MAX_SORT_BUFFER_SIZE = 1024 * 128;	// 128KB
+const ULONG MIN_RECORDS_TO_ALLOC = 8;
 
 // the size of sr_bckptr (everything before sort_record) in bytes
 #define SIZEOF_SR_BCKPTR OFFSET(sr*, sr_sort_record)
@@ -197,7 +197,12 @@ Sort::Sort(Database* dbb,
 
 		MemoryPool& pool = owner->getPool();
 
-		m_longs = ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT) >> SHIFTLONG;
+		const ULONG record_size = ROUNDUP(record_length + SIZEOF_SR_BCKPTR, FB_ALIGNMENT);
+		m_longs = record_size >> SHIFTLONG;
+
+		m_min_alloc_size = record_size * MIN_RECORDS_TO_ALLOC;
+		m_max_alloc_size = MAX(record_size * MIN_RECORDS_TO_ALLOC, MAX_SORT_BUFFER_SIZE);
+
 		m_dup_callback = call_back;
 		m_dup_callback_arg = user_arg;
 		m_max_records = max_records;
@@ -578,13 +583,12 @@ void Sort::sort(thread_db* tdbb)
 		// At first try to reuse free memory from temp space. Note that temp space
 		// itself allocated memory by at least TempSpace::getMinBlockSize chunks.
 		// As we need contiguous memory don't ask for bigger parts
-		ULONG allocSize = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
+		const ULONG rec_size = m_longs << SHIFTLONG;
+		ULONG allocSize = m_max_alloc_size * RUN_GROUP;
 		ULONG allocated = allocate(run_count, allocSize, true);
 
 		if (allocated < run_count)
 		{
-			const ULONG rec_size = m_longs << SHIFTLONG;
-			allocSize = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
 			for (run = m_runs; run; run = run->run_next)
 			{
 				if (!run->run_buffer)
@@ -597,7 +601,7 @@ void Sort::sort(thread_db* tdbb)
 					}
 					catch (const BadAlloc&)
 					{
-						mem_size = (mem_size / (2 * rec_size)) * rec_size;
+						mem_size = (mem_size / m_min_alloc_size) * rec_size;
 						if (!mem_size)
 							throw;
 						mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
@@ -633,53 +637,48 @@ void Sort::sort(thread_db* tdbb)
 
 void Sort::allocateBuffer(MemoryPool& pool)
 {
-#ifdef DEBUG_MERGE
-	// To debug the merge algorithm, force the in-memory pool to be VERY small
-	m_size_memory = 2000;
-	m_memory = FB_NEW(pool) UCHAR[m_size_memory];
-	return;
-#endif
-
-	SyncLockGuard guard(&m_dbb->dbb_sortbuf_sync, SYNC_EXCLUSIVE, "Sort::allocateBuffer");
-
-	if (m_dbb->dbb_sort_buffers.hasData())
+	if (m_dbb->dbb_sort_buffers.hasData() && m_max_alloc_size <= MAX_SORT_BUFFER_SIZE)
 	{
-		// The sort buffer cache has at least one big block, let's use it
-		m_size_memory = MAX_SORT_BUFFER_SIZE;
-		m_memory = m_dbb->dbb_sort_buffers.pop();
-	}
-	else
-	{
-		// Try to get a big chunk of memory, if we can't try smaller and
-		// smaller chunks until we can get the memory. If we get down to
-		// too small a chunk - punt and report not enough memory.
-		//
-		// At the first attempt, allocate from the permanent pool in order
-		// to have the big block being cached for later reuse. If unsuccessful,
-		// switch to the sort owner pool.
+		SyncLockGuard guard(&m_dbb->dbb_sortbuf_sync, SYNC_EXCLUSIVE, "Sort::allocateBuffer");
 
-		try
+		if (m_dbb->dbb_sort_buffers.hasData())
 		{
+			// The sort buffer cache has at least one big block, let's use it
 			m_size_memory = MAX_SORT_BUFFER_SIZE;
-			m_memory = FB_NEW(*m_dbb->dbb_permanent) UCHAR[m_size_memory];
+			m_memory = m_dbb->dbb_sort_buffers.pop();
+			return;
 		}
-		catch (const BadAlloc&)
-		{
-			// not enough memory, retry with a smaller buffer
+	}
 
-			while (true)
+	// Try to get a big chunk of memory, if we can't try smaller and
+	// smaller chunks until we can get the memory. If we get down to
+	// too small a chunk - punt and report not enough memory.
+	//
+	// At the first attempt, allocate from the permanent pool in order
+	// to have the big block being cached for later reuse. If unsuccessful,
+	// switch to the sort owner pool.
+
+	try
+	{
+		m_size_memory = m_max_alloc_size;
+		m_memory = FB_NEW(*m_dbb->dbb_permanent) UCHAR[m_size_memory];
+	}
+	catch (const BadAlloc&)
+	{
+		// not enough memory, retry with a smaller buffer
+
+		while (true)
+		{
+			try
 			{
-				try
-				{
-					m_size_memory /= 2;
-					m_memory = FB_NEW(pool) UCHAR[m_size_memory];
-					break;
-				}
-				catch (const BadAlloc&)
-				{
-					if (m_size_memory <= MIN_SORT_BUFFER_SIZE)
-						throw;
-				}
+				m_size_memory /= 2;
+				m_memory = FB_NEW(pool) UCHAR[m_size_memory];
+				break;
+			}
+			catch (const BadAlloc&)
+			{
+				if (m_size_memory <= m_min_alloc_size)
+					throw;
 			}
 		}
 	}
@@ -1262,10 +1261,10 @@ void Sort::init()
 	// At this point we already allocated some memory for temp space so
 	// growing sort buffer space is not a big compared to that
 
-	if (m_size_memory <= MAX_SORT_BUFFER_SIZE && m_runs &&
+	if (m_size_memory <= m_max_alloc_size && m_runs &&
 		m_runs->run_depth == MAX_MERGE_LEVEL)
 	{
-		const ULONG mem_size = MAX_SORT_BUFFER_SIZE * RUN_GROUP;
+		const ULONG mem_size = m_max_alloc_size * RUN_GROUP;
 
 		try
 		{
@@ -1355,7 +1354,7 @@ ULONG Sort::allocate(ULONG n, ULONG chunkSize, bool useFreeSpace)
 
 	fb_assert(n > allocated);
 	TempSpace::Segments segments(m_owner->getPool(), n - allocated);
-	allocated += (ULONG) m_space->allocateBatch(n - allocated, MAX_SORT_BUFFER_SIZE, chunkSize, segments);
+	allocated += (ULONG) m_space->allocateBatch(n - allocated, m_max_alloc_size, chunkSize, segments);
 
 	if (segments.getCount())
 	{
@@ -1423,7 +1422,7 @@ void Sort::mergeRuns(USHORT n)
 	run_control* run = m_runs;
 
 	CHECK_FILE(NULL);
-	const USHORT allocated = allocate(n, MAX_SORT_BUFFER_SIZE, (run->run_depth > 0));
+	const USHORT allocated = allocate(n, m_max_alloc_size, (run->run_depth > 0));
 	CHECK_FILE(NULL);
 
 	const USHORT buffers = m_size_memory / rec_size;

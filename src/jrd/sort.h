@@ -277,6 +277,9 @@ private:
 	void* m_dup_callback_arg;					// Duplicate handling callback arg
 	merge_control* m_merge_pool;				// ALLOC: pool of merge_control blocks
 
+	ULONG m_min_alloc_size;						// MIN and MAX values
+	ULONG m_max_alloc_size;						// for the run buffer size
+
 	Firebird::Array<sort_key_def> m_description;
 };
 
