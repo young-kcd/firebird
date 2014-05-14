@@ -557,12 +557,12 @@ namespace Jrd
 			m_next->setAnyBoolean(anyBoolean, ansiAny, ansiNot);
 		}
 
-		USHORT getLength() const
+		ULONG getLength() const
 		{
 			return m_map->length;
 		}
 
-		USHORT getKeyLength() const
+		ULONG getKeyLength() const
 		{
 			return m_map->keyLength;
 		}

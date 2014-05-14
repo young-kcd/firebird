@@ -250,31 +250,22 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 
 		MergeFile* const mfb = &tail->irsb_mrg_file;
 
-		HalfStaticArray<ULONG, 64> key;
-		const USHORT smb_key_length = sort_rsb->getKeyLength();
-		ULONG* const first_data = key.getBuffer(smb_key_length);
-		const ULONG key_length = smb_key_length * sizeof(ULONG);
+		UCharBuffer key;
+		const ULONG key_length = sort_rsb->getKeyLength();
+		UCHAR* const first_data = key.getBuffer(key_length);
 		memcpy(first_data, getData(tdbb, mfb, 0), key_length);
 
 		SLONG record;
 		while ((record = getRecord(tdbb, i)) >= 0)
 		{
-			const SLONG* p = (SLONG*) first_data;
-			const SLONG* q = (SLONG*) getData(tdbb, mfb, record);
-			bool equal = true;
+			const UCHAR* p = first_data;
+			const UCHAR* q = getData(tdbb, mfb, record);
 
-			for (USHORT count = smb_key_length; count; p++, q++, count--)
+			if (memcmp(p, q, key_length))
 			{
-				if (*p != *q)
-				{
-					tail->irsb_mrg_last_fetched = record;
-					equal = false;
-					break;
-				}
-			}
-
-			if (!equal)
+				tail->irsb_mrg_last_fetched = record;
 				break;
+			}
 
 			tail->irsb_mrg_equal_end = record;
 		}
