@@ -979,7 +979,6 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, SSHORT compute_checksum, const
 	ULONG diff_page = 0;
 	if (!isTempPage && bak_state != nbak_state_normal)
 	{
-		BackupManager::AllocReadGuard allocGuard(tdbb, dbb->dbb_backup_manager);
 		diff_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
 		NBAK_TRACE(("Reading page %d:%06d, state=%d, diff page=%d",
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
@@ -2076,16 +2075,10 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 	switch (backup_state)
 	{
 	case nbak_state_stalled:
-		{ //scope
-			BackupManager::AllocReadGuard allocGuard(tdbb, bm);
-			bdb->bdb_difference_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
-		}
+		bdb->bdb_difference_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
 		if (!bdb->bdb_difference_page)
 		{
-			{ //scope
-				BackupManager::AllocWriteGuard allocGuard(tdbb, bm);
-				bdb->bdb_difference_page = bm->allocateDifferencePage(tdbb, bdb->bdb_page.getPageNum());
-			}
+			bdb->bdb_difference_page = bm->allocateDifferencePage(tdbb, bdb->bdb_page.getPageNum());
 			if (!bdb->bdb_difference_page)
 			{
 				invalidate_and_release_buffer(tdbb, bdb);
@@ -2101,10 +2094,7 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 		}
 		break;
 	case nbak_state_merge:
-		{ //scope
-			BackupManager::AllocReadGuard allocGuard(tdbb, bm);
-			bdb->bdb_difference_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
-		}
+		bdb->bdb_difference_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
 		if (bdb->bdb_difference_page)
 		{
 			NBAK_TRACE(("Map existing difference page %d to database page %d (write_both)",

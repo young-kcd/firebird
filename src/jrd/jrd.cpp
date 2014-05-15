@@ -1125,6 +1125,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 		// Initialize backup difference subsystem. This must be done before WAL and shadowing
 		// is enabled because nbackup it is a lower level subsystem
 		dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb, dbb, nbak_state_unknown);
+		dbb->dbb_backup_manager->initializeAlloc(tdbb);
 
 		PAG_init2(tdbb, 0);
 		PAG_header(tdbb, false);
