@@ -1,3 +1,17 @@
+ 2014-05-14 09:22  dimitr 
+   M src/jrd/sort.cpp
+   M src/jrd/sort.h
+Fixed CORE-4419: Server crashes while sorting records longer than 128KB.
+
+ 2014-05-14 08:28  dimitr 
+   M src/jrd/recsrc/HashJoin.cpp
+Slightly reworked the key processing in the hash join algorithm.
+
+ 2014-05-14 08:24  dimitr 
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+Fixed the accidentally broken merge join algorithm.
+
  2014-05-13 01:47  asfernandes 
    M src/jrd/dfw.epp
 Fixed CORE-4425 - User-collations based on UNICODE are not upgrade to newer ICU version on restore.
