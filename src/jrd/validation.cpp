@@ -646,8 +646,8 @@ static const TEXT msg_table[VAL_MAX_ERROR][68] =
 	"Index %d is corrupt (missing entries)",
 	"Index %d has orphan child page at page %ld",
 	"Index %d has a circular reference at page %ld",	// 25
-	"Index %d has inconsistent left sibling pointer, page %ld level %ld",
-	"Index %d misses node on page %ld level %ld"
+	"Index %d has inconsistent left sibling pointer, page %ld level %d",
+	"Index %d misses node on page %ld level %d"
 };
 
 
