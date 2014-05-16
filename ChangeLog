@@ -1,3 +1,17 @@
+ 2014-05-15 22:06  hvlad 
+   M src/jrd/GlobalRWLock.cpp
+Fixed bug CORE-4433 : GlobalRWLock could not downgrade EX lock to SH if readers is present
+
+ 2014-05-15 22:05  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+1. Improvement CORE-4431 : Reduce contention for allocation table lock while database is in stalled physical backup state
+2. Improvement CORE-4432 : Let attachments to not block others when allocation table is read first time
+3. On Windows, file can not be deleted while system writes cached data into it, even if file is not open by anyone.
+Therefore flush delta file implicitly before closing it.
+
  2014-05-12 09:44  paulbeach 
    M builds/install/arch-specific/darwin/embed.darwin
 Correct a problem with locating intl dylibs
