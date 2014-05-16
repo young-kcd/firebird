@@ -37,9 +37,6 @@ inline void PUT_WORD(UCHAR*& ptr, USHORT value)
 
 #define PUT(ptr, value)		*(ptr)++ = value;
 
-#ifdef NOT_USED_OR_REPLACED
-static SSHORT convert(ULONG, UCHAR *);
-#endif
 static ISC_STATUS merge_setup(const UCHAR**, UCHAR**, const UCHAR* const, USHORT);
 
 
@@ -147,44 +144,6 @@ USHORT MERGE_database_info(const UCHAR* in,
 			break;
 		}
 }
-
-#ifdef NOT_USED_OR_REPLACED
-static SSHORT convert( ULONG number, UCHAR * buffer)
-{
-/**************************************
- *
- *	c o n v e r t
- *
- **************************************
- *
- * Functional description
- *	Convert a number to VAX form -- least significant bytes first.
- *	Return the length.
- *
- **************************************/
-	const UCHAR *p;
-
-#ifndef WORDS_BIGENDIAN
-	p = (UCHAR *) &number;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-	*buffer++ = *p++;
-
-#else
-
-	p = (UCHAR *) &number;
-	p += 3;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p--;
-	*buffer++ = *p;
-
-#endif
-
-	return 4;
-}
-#endif
 
 static ISC_STATUS merge_setup(const UCHAR** in, UCHAR** out, const UCHAR* const end,
 							  USHORT delta_length)
