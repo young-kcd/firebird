@@ -3018,6 +3018,14 @@ static rhd* locate_space(thread_db* tdbb,
 			if (dp_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_full) &&
 				((type == DPM_primary) ^ dp_is_secondary))
 			{
+				// hvlad: to avoid deadlocks in DPM_fetch_fragment enforce ascending
+				// order of pages for record fragments
+				if (rpb->rpb_flags & rpb_fragment && type == DPM_other &&
+					rpb->rpb_page > dp_number)
+				{
+					continue;
+				}
+
 				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
 				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
 				if (space)
