@@ -344,6 +344,15 @@ void GlobalRWLock::blockingAstHandler(thread_db* tdbb)
 		if (cachedLock->lck_physical < LCK_read)
 			invalidate(tdbb);
 	}
+	else if (!pendingLock && !currentWriter && readers && cachedLock->lck_physical > LCK_read)
+	{
+		COS_TRACE(("(%p)->Convert lock to SR ", this));
+		if (!LCK_convert(tdbb, cachedLock, LCK_read, LCK_NO_WAIT))
+		{
+			COS_TRACE(("(%p)->Set blocking", this));
+			blocking = true;
+		}
+	}
 	else
 	{
 		COS_TRACE(("(%p)->Set blocking", this));
