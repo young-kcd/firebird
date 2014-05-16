@@ -108,11 +108,7 @@ protected:
 	BackupManager* backup_manager;
 	virtual bool fetch(thread_db* tdbb);
 
-	virtual void invalidate(thread_db* tdbb)
-	{
-		GlobalRWLock::invalidate(tdbb);
-		NBAK_TRACE( ("invalidate alloc table allocLock(%p)", this) );
-	}
+	virtual void invalidate(thread_db* tdbb);
 };
 
 // Note this flags MUST correspond with backup mask in ods.h
@@ -253,52 +249,80 @@ public:
 		thread_db* m_tdbb;
 	};
 
-	class AllocWriteGuard
+private:
+	template<bool Exclusive>
+	class LocalAllocGuard
 	{
 	public:
-		AllocWriteGuard(thread_db* tdbb, BackupManager* backupManager)
-			: m_tdbb(tdbb), m_backupManager(backupManager)
+		LocalAllocGuard(BackupManager* bm) :
+			m_bm(bm)
 		{
-			backupManager->lockAllocWrite(tdbb);
+			//Database::Checkout cout(m_bm->database);
+
+			if (Exclusive)
+				m_bm->localAllocLock.beginWrite("BackupManager::LocalAllocGuard");
+			else
+				m_bm->localAllocLock.beginRead("BackupManager::LocalAllocGuard");
 		}
 
-		~AllocWriteGuard()
+		~LocalAllocGuard()
 		{
-			m_backupManager->unlockAllocWrite(m_tdbb);
+			release();
+		}
+
+		void release()
+		{
+			if (Exclusive)
+				m_bm->localAllocLock.endWrite();
+			else
+				m_bm->localAllocLock.endRead();
 		}
 
 	private:
 		// copying is prohibited
-		AllocWriteGuard(const AllocWriteGuard&);
-		AllocWriteGuard& operator=(const AllocWriteGuard&);
+		LocalAllocGuard(const LocalAllocGuard&);
+		LocalAllocGuard& operator=(const LocalAllocGuard&);
 
-		thread_db* m_tdbb;
-		BackupManager* m_backupManager;
+		BackupManager* m_bm;
 	};
 
-	class AllocReadGuard
+	typedef LocalAllocGuard<true> LocalAllocWriteGuard;
+	typedef LocalAllocGuard<false> LocalAllocReadGuard;
+
+	template<bool Exclusive>
+	class GlobalAllocGuard
 	{
 	public:
-		AllocReadGuard(thread_db* tdbb, BackupManager* backupManager)
-			: m_tdbb(tdbb), m_backupManager(backupManager)
+		GlobalAllocGuard(thread_db* _tdbb, BackupManager* _backupManager)
+			: tdbb(_tdbb), backupManager(_backupManager)
 		{
-			backupManager->lockAllocRead(tdbb);
+			if (Exclusive)
+				backupManager->lockAllocWrite(tdbb);
+			else
+				backupManager->lockAllocRead(tdbb);
 		}
 
-		~AllocReadGuard()
+		~GlobalAllocGuard()
 		{
-			m_backupManager->unlockAllocRead(m_tdbb);
+			if (Exclusive)
+				backupManager->unlockAllocWrite(tdbb);
+			else
+				backupManager->unlockAllocRead(tdbb);
 		}
 
 	private:
 		// copying is prohibited
-		AllocReadGuard(const AllocReadGuard&);
-		AllocReadGuard& operator=(const AllocReadGuard&);
+		GlobalAllocGuard(const GlobalAllocGuard&);
+		GlobalAllocGuard& operator=(const GlobalAllocGuard&);
 
-		thread_db* m_tdbb;
-		BackupManager* m_backupManager;
+		thread_db* tdbb;
+		BackupManager* backupManager;
 	};
 
+	typedef GlobalAllocGuard<true> GlobalAllocWriteGuard;
+	typedef GlobalAllocGuard<false> GlobalAllocReadGuard;
+
+public:
 	// Set when db is creating. Default = false
 	bool dbCreating;
 
@@ -382,7 +406,12 @@ public:
 	}
 
 	bool actualizeState(thread_db* tdbb);
-	bool actualizeAlloc(thread_db* tdbb);
+	bool actualizeAlloc(thread_db* tdbb, bool haveGlobalLock);
+	void initializeAlloc(thread_db* tdbb);
+	void invalidateAlloc(thread_db* tdbb)
+	{
+		allocIsValid = false;
+	}
 
 	// Return page index in difference file that can be used in
 	// writeDifference call later.
@@ -436,10 +465,13 @@ private:
 	bool explicit_diff_name;
 	bool flushInProgress;
 	bool shutDown;
+	bool allocIsValid;			// true, if alloc table cache is completely read from disk
 
 	NBackupStateLock* stateLock;
 	NBackupAllocLock* allocLock;
+	Firebird::RWLock localAllocLock;	// must be acquired before global allocLock
 
+	ULONG findPageIndex(thread_db* tdbb, ULONG db_page);
 	void generateFilename();
 
 	void lockAllocWrite(thread_db* tdbb)

@@ -129,9 +129,16 @@ NBackupAllocLock::NBackupAllocLock(thread_db* tdbb, MemoryPool& p, BackupManager
 
 bool NBackupAllocLock::fetch(thread_db* tdbb)
 {
-	if (!backup_manager->actualizeAlloc(tdbb))
+	if (!backup_manager->actualizeAlloc(tdbb, true))
 		ERR_bugcheck_msg("Can't actualize alloc table");
 	return true;
+}
+
+void NBackupAllocLock::invalidate(thread_db* tdbb)
+{
+	backup_manager->invalidateAlloc(tdbb);
+	GlobalRWLock::invalidate(tdbb);
+	NBAK_TRACE(("invalidate alloc table allocLock(%p)", this));
 }
 
 /******************************** BackupManager::StateWriteGuard ******************************/
@@ -209,6 +216,7 @@ void BackupManager::closeDelta()
 {
 	if (diff_file)
 	{
+		PIO_flush(database, diff_file);
 		PIO_close(diff_file);
 		diff_file = NULL;
 	}
@@ -458,13 +466,26 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		NBAK_TRACE(("Merge. State=%d, current_scn=%d, adjusted_scn=%d",
 			backup_state, current_scn, adjusted_scn));
 
-		actualizeAlloc(tdbb);
+		{ // scope
+			LocalAllocWriteGuard localAllocGuard(this);
+
+			// In merge mode allocation table can not be changed, so we don't
+			// need to acquire global allocLock.
+			actualizeAlloc(tdbb, true);
+		}
+
+		LocalAllocReadGuard localAllocGuard(this);
+
 		NBAK_TRACE(("Merge. Alloc table is actualized."));
 		AllocItemTree::Accessor all(alloc_table);
 
 		if (all.getFirst())
 		{
 			do {
+				if (--tdbb->tdbb_quantum < 0) {
+					JRD_reschedule(tdbb, QUANTUM, true);
+				}
+
 				WIN window2(DB_PAGE_SPACE, all.current().db_page);
 				NBAK_TRACE(("Merge page %d, diff=%d", all.current().db_page, all.current().diff_page));
 				Ods::pag* page = CCH_FETCH(tdbb, &window2, LCK_write, pag_undefined);
@@ -513,11 +534,15 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 
 		// Page allocation table cache is no longer valid
 		NBAK_TRACE(("Dropping alloc table"));
-		delete alloc_table;
-		alloc_table = NULL;
-		last_allocated_page = 0;
-		if (!allocLock->tryReleaseLock(tdbb))
-			ERR_bugcheck_msg("There are holders of alloc_lock after end_backup finish");
+		{
+			LocalAllocWriteGuard localAllocGuard(this);
+
+			delete alloc_table;
+			alloc_table = NULL;
+			last_allocated_page = 0;
+			if (!allocLock->tryReleaseLock(tdbb))
+				ERR_bugcheck_msg("There are holders of alloc_lock after end_backup finish");
+		}
 
 		closeDelta();
 		unlink(diff_name.c_str());
@@ -534,8 +559,22 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 	return;
 }
 
-bool BackupManager::actualizeAlloc(thread_db* tdbb)
+void BackupManager::initializeAlloc(thread_db* tdbb)
 {
+	StateReadGuard stateGuard(tdbb);
+	if (getState() != nbak_state_normal)
+		actualizeAlloc(tdbb, false);
+}
+
+bool BackupManager::actualizeAlloc(thread_db* tdbb, bool haveGlobalLock)
+{
+	// localAllocLock must be already locked for write here !
+
+	// Difference file pointer pages have one ULONG as number of pages allocated on the page and
+	// then go physical numbers of pages from main database file. Offsets of numbers correspond
+	// to difference file pages.
+	const size_t PAGES_PER_ALLOC_PAGE = database->dbb_page_size / sizeof(ULONG)-1;
+
 	ISC_STATUS *status_vector = tdbb->tdbb_status_vector;
 	try {
 		NBAK_TRACE(("actualize_alloc last_allocated_page=%d alloc_table=%p",
@@ -544,20 +583,25 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 		// it has exlock or when exclusive access to database is enabled
 		if (!alloc_table)
 			alloc_table = FB_NEW(*database->dbb_permanent) AllocItemTree(database->dbb_permanent);
+
 		while (true)
 		{
 			BufferDesc temp_bdb(database->dbb_bcb);
-			// Difference file pointer pages have one ULONG as number of pages allocated on the page and
-			// then go physical numbers of pages from main database file. Offsets of numbers correspond
-			// to difference file pages.
 
 			// Get offset of pointer page. We can do so because page sizes are powers of 2
-			temp_bdb.bdb_page = last_allocated_page & ~(database->dbb_page_size / sizeof(ULONG) - 1);
+			temp_bdb.bdb_page = last_allocated_page & ~PAGES_PER_ALLOC_PAGE;
 			temp_bdb.bdb_buffer = reinterpret_cast<Ods::pag*>(alloc_buffer);
 
 			if (!PIO_read(diff_file, &temp_bdb, temp_bdb.bdb_buffer, status_vector)) {
 				return false;
 			}
+
+			// If we have not acquired global allocLock, don't read last page of allocation
+			// table as it could be modified concurrently. Lets read it later when global
+			// alloc lock will be acquired.
+			if (!haveGlobalLock && (alloc_buffer[0] != PAGES_PER_ALLOC_PAGE))
+				break;
+
 			for (ULONG i = last_allocated_page - temp_bdb.bdb_page.getPageNum(); i < alloc_buffer[0]; i++)
 			{
 				NBAK_TRACE(("alloc item page=%d, diff=%d", alloc_buffer[i + 1], temp_bdb.bdb_page.getPageNum() + i + 1));
@@ -570,7 +614,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 				}
 			}
 			last_allocated_page = temp_bdb.bdb_page.getPageNum() + alloc_buffer[0];
-			if (alloc_buffer[0] == database->dbb_page_size / sizeof(ULONG) - 1)
+			if (alloc_buffer[0] == PAGES_PER_ALLOC_PAGE)
 				last_allocated_page++;	// if page is full adjust position for next pointer page
 			else
 				break;	// We finished reading allocation table
@@ -585,14 +629,18 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb)
 		last_allocated_page = 0;
 		return false;
 	}
+
+	allocIsValid = haveGlobalLock;
 	return true;
 }
 
-// Return page index in difference file that can be used in
-// writeDifference call later.
-ULONG BackupManager::getPageIndex(thread_db* /*tdbb*/, ULONG db_page)
+ULONG BackupManager::findPageIndex(thread_db* tdbb, ULONG db_page)
 {
-	NBAK_TRACE(("get_page_index"));
+	// localAllocLock must be already locked here
+
+	NBAK_TRACE(("find_page_index"));
+	if (!alloc_table)
+		return 0;
 
 	AllocItemTree::Accessor a(alloc_table);
 	ULONG diff_page = a.locate(db_page) ? a.current().diff_page : 0;
@@ -600,11 +648,39 @@ ULONG BackupManager::getPageIndex(thread_db* /*tdbb*/, ULONG db_page)
 	return diff_page;
 }
 
+// Return page index in difference file that can be used in
+// writeDifference call later.
+ULONG BackupManager::getPageIndex(thread_db* tdbb, ULONG db_page)
+{
+	NBAK_TRACE(("get_page_index"));
+
+	{
+		LocalAllocReadGuard localAllocGuard(this);
+
+		const ULONG diff_page = findPageIndex(tdbb, db_page);
+		if (diff_page || backup_state == nbak_state_merge && allocIsValid)
+			return diff_page;
+	}
+
+	LocalAllocWriteGuard localAllocGuard(this);
+	GlobalAllocReadGuard globalAllocGuard(tdbb, this);
+	return findPageIndex(tdbb, db_page);
+}
+
 // Mark next difference page as used by some database page
 ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 {
-	// This page may be allocated by other
-	if (ULONG diff_page = getPageIndex(tdbb, db_page)) {
+	LocalAllocWriteGuard localAllocGuard(this);
+
+	// This page may be allocated while we wait for a local lock above 
+	if (ULONG diff_page = findPageIndex(tdbb, db_page)) {
+		return diff_page;
+	}
+
+	GlobalAllocWriteGuard globalAllocGuard(tdbb, this);
+
+	// This page may be allocated by other process
+	if (ULONG diff_page = findPageIndex(tdbb, db_page)) {
 		return diff_page;
 	}
 
@@ -721,7 +797,7 @@ void BackupManager::setForcedWrites(const bool forceWrite, const bool notUseFSCa
 BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state) :
 	dbCreating(false), database(_database), diff_file(NULL), alloc_table(NULL),
 	last_allocated_page(0), current_scn(0), diff_name(*_database->dbb_permanent),
-	explicit_diff_name(false), flushInProgress(false), shutDown(false),
+	explicit_diff_name(false), flushInProgress(false), shutDown(false), allocIsValid(false),
 	stateLock(FB_NEW(*database->dbb_permanent) NBackupStateLock(tdbb, *database->dbb_permanent, this)),
 	allocLock(FB_NEW(*database->dbb_permanent) NBackupAllocLock(tdbb, *database->dbb_permanent, this))
 {
@@ -847,6 +923,8 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	if (new_backup_state == nbak_state_normal || missed_cycle)
 	{
 		// Page allocation table cache is no longer valid.
+		LocalAllocWriteGuard localAllocGuard(this);
+
 		if (alloc_table)
 		{
 			NBAK_TRACE(("Dropping alloc table"));
@@ -856,6 +934,8 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 			if (!allocLock->tryReleaseLock(tdbb))
 				ERR_bugcheck_msg("There are holders of alloc_lock after end_backup finish");
 		}
+
+		closeDelta();
 	}
 
 	if (new_backup_state != nbak_state_normal && !diff_file)
