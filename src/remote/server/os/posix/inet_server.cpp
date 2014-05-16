@@ -161,14 +161,6 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	{
 		RemPortPtr port;
 
-// 01 Sept 2003, Nickolay Samofatov
-// In GCC version 3.1-3.3 we need to install special error handler
-// in order to get meaningful terminate() error message on stderr.
-// In GCC 3.4 or later this is the default.
-//#if __GNUC__ == 3 && __GNUC_MINOR__ >= 1 && __GNUC_MINOR__ < 4
-//    std::set_terminate (__gnu_cxx::__verbose_terminate_handler);
-//#endif
-
 		// We should support 3 modes:
 		// 1. Standalone single-process listener (like SS).
 		// 2. Standalone listener, forking on each packet accepted (look -s switch in CS).
