@@ -1,3 +1,34 @@
+ 2014-05-16 13:21  mapopa 
+   M src/remote/merge.cpp
+Cleanup convert function NOT_USED_OR_REPLACED
+
+ 2014-05-16 13:06  mapopa 
+   M src/remote/server/os/posix/inet_server.cpp
+Cleanup 
+
+ 2014-05-16 12:59  hvlad 
+   M src/jrd/validation.cpp
+Correct format specifiers
+
+ 2014-05-16 12:10  hvlad 
+   M src/jrd/GlobalRWLock.cpp
+Front ported fix for bug CORE-4433 : GlobalRWLock could not downgrade EX lock to SH if readers is present
+
+ 2014-05-16 12:07  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Front ported:
+1. Improvement CORE-4431 : Reduce contention for allocation table lock while database is in stalled physical backup state
+2. Improvement CORE-4432 : Let attachments to not block others when allocation table is read first time
+3. On Windows, file can not be deleted while system writes cached data into it, even if file is not open by anyone.
+Therefore flush delta file implicitly before closing it.
+
+ 2014-05-16 10:53  hvlad 
+   M src/jrd/dpm.epp
+Front ported fix for bug CORE-4372 : Deadlock is possible when two data pages contains record fragments pointing to each other
+
  2014-05-14 09:22  dimitr 
    M src/jrd/sort.cpp
    M src/jrd/sort.h
