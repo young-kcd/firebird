@@ -1,3 +1,7 @@
+ 2014-05-16 13:01  hvlad 
+   M src/jrd/validation.cpp
+Correct format specifiers
+
  2014-05-15 22:06  hvlad 
    M src/jrd/GlobalRWLock.cpp
 Fixed bug CORE-4433 : GlobalRWLock could not downgrade EX lock to SH if readers is present
