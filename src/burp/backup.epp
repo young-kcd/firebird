@@ -2914,11 +2914,14 @@ void write_functions()
 			BURP_verbose (147, temp);
 			// msg 147 writing function %.*s
 			put_source_blob (att_function_description2, att_function_description, X.RDB$DESCRIPTION);
-			PUT_TEXT (att_function_module_name, X.RDB$MODULE_NAME);
-			PUT_TEXT (att_function_entrypoint, X.RDB$ENTRYPOINT);
 			put_int32 (att_function_return_arg, X.RDB$RETURN_ARGUMENT);
 			put_int32 (att_function_type, X.RDB$FUNCTION_TYPE);
 			PUT_TEXT (att_function_query_name, X.RDB$QUERY_NAME);
+
+			if (!X.RDB$MODULE_NAME.NULL)
+				PUT_TEXT(att_function_module_name, X.RDB$MODULE_NAME);
+			if (!X.RDB$ENTRYPOINT.NULL)
+				PUT_TEXT(att_function_entrypoint, X.RDB$ENTRYPOINT);
 
 			if (!X.RDB$ENGINE_NAME.NULL)
 				PUT_TEXT(att_function_engine_name, X.RDB$ENGINE_NAME);

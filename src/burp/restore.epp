@@ -4165,6 +4165,8 @@ bool get_function(BurpGlobals* tdgbl)
 			X.RDB$DEBUG_INFO.NULL = TRUE;
 			X.RDB$SECURITY_CLASS.NULL = TRUE;
 			X.RDB$OWNER_NAME.NULL = TRUE;
+			X.RDB$MODULE_NAME.NULL = TRUE;
+			X.RDB$ENTRYPOINT.NULL = TRUE;
 
 			X.RDB$SYSTEM_FLAG.NULL = FALSE;
 			X.RDB$SYSTEM_FLAG = 0;
@@ -4209,10 +4211,12 @@ bool get_function(BurpGlobals* tdgbl)
 					break;
 
 				case att_function_module_name:
+					X.RDB$MODULE_NAME.NULL = FALSE;
 					GET_TEXT(X.RDB$MODULE_NAME);
 					break;
 
 				case att_function_entrypoint:
+					X.RDB$ENTRYPOINT.NULL = FALSE;
 					GET_TEXT(X.RDB$ENTRYPOINT);
 					break;
 
