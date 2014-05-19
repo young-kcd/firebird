@@ -793,6 +793,7 @@ static const struct {
 	{"map_notable", 335545089},
 	{"miss_trusted_role", 335545090},
 	{"set_invalid_role", 335545091},
+	{"cursor_not_positioned", 335545092},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

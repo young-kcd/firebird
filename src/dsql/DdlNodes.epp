@@ -3173,7 +3173,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 			{
 				relationNode->alias = OLD_CONTEXT_NAME;
 				dsql_ctx* oldContext = PASS1_make_context(dsqlScratch, relationNode);
-				oldContext->ctx_flags |= CTX_system;
+				oldContext->ctx_flags |= CTX_system | CTX_cursor;
 			}
 			else
 				dsqlScratch->contextNumber++;
@@ -3182,7 +3182,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 			{
 				relationNode->alias = NEW_CONTEXT_NAME;
 				dsql_ctx* newContext = PASS1_make_context(dsqlScratch, relationNode);
-				newContext->ctx_flags |= CTX_system;
+				newContext->ctx_flags |= CTX_system | CTX_cursor;
 			}
 			else
 				dsqlScratch->contextNumber++;

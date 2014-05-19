@@ -35,6 +35,7 @@ namespace Jrd
 
 	class Cursor
 	{
+	public:
 		enum State { BOS, POSITIONED, EOS };
 
 		struct Impure
@@ -78,7 +79,11 @@ namespace Jrd
 			return true;
 		}
 
+	public:
 		ULONG m_impure;
+		Firebird::MetaName name;	// optional name for explicit PSQL cursors
+
+	private:
 		const RecordSource* const m_top;
 		const VarInvariantArray* const m_invariants;
 		const bool m_scrollable;

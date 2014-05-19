@@ -3077,7 +3077,7 @@ void RseNode::collectStreams(SortedStreamList& streamList) const
 RseNode* SelectExprNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	fb_assert(dsqlFlags & DFLAG_DERIVED);
-	return PASS1_derived_table(dsqlScratch, this, NULL);
+	return PASS1_derived_table(dsqlScratch, this, NULL, false);
 }
 
 
@@ -3148,7 +3148,7 @@ static RecordSourceNode* dsqlPassRelProc(DsqlCompilerScratch* dsqlScratch, Recor
 	dsqlScratch->currCtes.push(cte);
 
 	RseNode* derivedNode = PASS1_derived_table(dsqlScratch,
-		cte, (isRecursive ? relAlias.c_str() : NULL));
+		cte, (isRecursive ? relAlias.c_str() : NULL), false);
 
 	if (!isRecursive)
 		cte->alias = saveCteName;

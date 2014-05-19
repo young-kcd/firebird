@@ -277,6 +277,13 @@ AssignmentNode* AssignmentNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->asgnFrom = doDsqlPass(dsqlScratch, asgnFrom);
 	node->asgnTo = doDsqlPass(dsqlScratch, asgnTo);
 
+	DerivedFieldNode* fieldNode = node->asgnTo->as<DerivedFieldNode>();
+	if (fieldNode && fieldNode->context &&
+		(fieldNode->context->ctx_flags & (CTX_system | CTX_cursor)) == CTX_cursor)
+	{
+		ERR_post(Arg::Gds(isc_read_only_field));
+	}
+
 	// Try to force asgnFrom to be same type as asgnTo eg: ? = FIELD case
 	PASS1_set_parameter_type(dsqlScratch, node->asgnFrom, node->asgnTo, false);
 
@@ -343,29 +350,6 @@ AssignmentNode* AssignmentNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	doPass1(tdbb, csb, missing.getAddress());
 	// ASF: No idea why we do not call pass1 for missing2.
 
-	// Perform any post-processing here.
-
-	sub = asgnTo;
-
-	if ((fieldNode = sub->as<FieldNode>()))
-	{
-		stream = fieldNode->fieldStream;
-		tail = &csb->csb_rpt[stream];
-
-		// Assignments to the OLD context are prohibited for all trigger types.
-		if ((tail->csb_flags & csb_trigger) && stream == OLD_CONTEXT_VALUE)
-			ERR_post(Arg::Gds(isc_read_only_field));
-
-		// Assignments to the NEW context are prohibited for post-action triggers.
-		if ((tail->csb_flags & csb_trigger) && stream == NEW_CONTEXT_VALUE &&
-			(csb->csb_g_flags & csb_post_trigger))
-		{
-			ERR_post(Arg::Gds(isc_read_only_field));
-		}
-	}
-	else if (!(sub->is<ParameterNode>() || sub->is<VariableNode>() || sub->is<NullNode>()))
-		ERR_post(Arg::Gds(isc_read_only_field));
-
 	return this;
 }
 
@@ -375,6 +359,32 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	ExprNode::doPass2(tdbb, csb, asgnTo.getAddress());
 	ExprNode::doPass2(tdbb, csb, missing.getAddress());
 	ExprNode::doPass2(tdbb, csb, missing2.getAddress());
+
+	FieldNode* fieldNode;
+
+	if ((fieldNode = asgnTo->as<FieldNode>()))
+	{
+		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[fieldNode->fieldStream];
+
+		// Assignments to the OLD context are prohibited for all trigger types.
+		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == OLD_CONTEXT_VALUE)
+			ERR_post(Arg::Gds(isc_read_only_field));
+
+		// Assignments to the NEW context are prohibited for post-action triggers.
+		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == NEW_CONTEXT_VALUE &&
+			(csb->csb_g_flags & csb_post_trigger))
+		{
+			ERR_post(Arg::Gds(isc_read_only_field));
+		}
+
+		// Assignment to cursor fields are always prohibited.
+		// But we cannot detect FOR cursors here. They are treated in dsqlPass.
+		if (fieldNode->cursorNumber.specified)
+			ERR_post(Arg::Gds(isc_read_only_field));
+	}
+	else if (!(asgnTo->is<ParameterNode>() || asgnTo->is<VariableNode>() || asgnTo->is<NullNode>()))
+		ERR_post(Arg::Gds(isc_read_only_field));
+
 	return this;
 }
 
@@ -1010,6 +1020,8 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	// Assignment.
 
+	dsqlScratch->appendUChar(blr_begin);
+
 	if (dsqlIntoStmt)
 	{
 		ValueListNode* list = cursor->rse->dsqlSelectList;
@@ -1019,8 +1031,6 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-313) <<
 					  Arg::Gds(isc_dsql_count_mismatch));
 		}
-
-		dsqlScratch->appendUChar(blr_begin);
 
 		NestConst<ValueExprNode>* ptr = list->items.begin();
 		NestConst<ValueExprNode>* end = list->items.end();
@@ -1032,9 +1042,9 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			GEN_expr(dsqlScratch, *ptr++);
 			GEN_expr(dsqlScratch, *ptr_to++);
 		}
-
-		dsqlScratch->appendUChar(blr_end);
 	}
+
+	dsqlScratch->appendUChar(blr_end);
 }
 
 CursorStmtNode* CursorStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -1177,17 +1187,18 @@ DeclareCursorNode* DeclareCursorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// Make sure the cursor doesn't exist.
 	PASS1_cursor_name(dsqlScratch, dsqlName, CUR_TYPE_ALL, false);
 
-	// Temporarily hide unnecessary contexts and process our RSE.
-	DsqlContextStack* const baseContext = dsqlScratch->context;
-	DsqlContextStack temp;
-	dsqlScratch->context = &temp;
-	rse = PASS1_rse(dsqlScratch, dsqlSelect->dsqlExpr, dsqlSelect->dsqlWithLock);
-	dsqlScratch->context->clear();
-	dsqlScratch->context = baseContext;
+	SelectExprNode* dt = FB_NEW(getPool()) SelectExprNode(getPool());
+	dt->dsqlFlags = RecordSourceNode::DFLAG_DERIVED | RecordSourceNode::DFLAG_CURSOR;
+	dt->querySpec = dsqlSelect->dsqlExpr;
+	dt->alias = dsqlName.c_str();
+
+	rse = PASS1_derived_table(dsqlScratch, dt, NULL, dsqlSelect->dsqlWithLock);
 
 	// Assign number and store in the dsqlScratch stack.
 	cursorNumber = dsqlScratch->cursorNumber++;
 	dsqlScratch->cursors.push(this);
+
+	dsqlScratch->putDebugCursor(cursorNumber, dsqlName);
 
 	return this;
 }
@@ -1239,11 +1250,18 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 
 	cursor = FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
 		(rse->flags & RseNode::FLAG_SCROLLABLE));
+	csb->csb_dbg_info->curIndexToName.get(cursorNumber, cursor->name);
 
 	if (cursorNumber >= csb->csb_cursors.getCount())
 		csb->csb_cursors.grow(cursorNumber + 1);
 
 	csb->csb_cursors[cursorNumber] = cursor;
+
+	StreamList cursorStreams;
+	cursor->getAccessPath()->findUsedStreams(cursorStreams);
+
+	for (StreamList::const_iterator i = cursorStreams.begin(); i != cursorStreams.end(); ++i)
+		csb->csb_rpt[*i].csb_cursor_number = cursorNumber;
 
 	return this;
 }
@@ -4315,16 +4333,30 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	ForNode* node = FB_NEW(getPool()) ForNode(getPool());
 
 	node->dsqlCursor = dsqlCursor;
-	node->dsqlSelect = dsqlSelect->dsqlPass(dsqlScratch);
+
+	const DsqlContextStack::iterator base(*dsqlScratch->context);
 
 	if (dsqlCursor)
 	{
 		fb_assert(dsqlCursor->dsqlCursorType != DeclareCursorNode::CUR_TYPE_NONE);
 		PASS1_cursor_name(dsqlScratch, dsqlCursor->dsqlName, DeclareCursorNode::CUR_TYPE_ALL, false);
-		dsqlCursor->rse = node->dsqlSelect->dsqlRse;
+
+		SelectExprNode* dt = FB_NEW(getPool()) SelectExprNode(getPool());
+		dt->dsqlFlags = RecordSourceNode::DFLAG_DERIVED | RecordSourceNode::DFLAG_CURSOR;
+		dt->querySpec = dsqlSelect->dsqlExpr;
+		dt->alias = dsqlCursor->dsqlName.c_str();
+
+		node->rse = PASS1_derived_table(dsqlScratch, dt, NULL, dsqlSelect->dsqlWithLock);
+
+		dsqlCursor->rse = node->rse;
 		dsqlCursor->cursorNumber = dsqlScratch->cursorNumber++;
 		dsqlScratch->cursors.push(dsqlCursor);
+
+		// ASF: We cannot write this cursor name in debug info, as dsqlScratch->cursorNumber is
+		// decremented below. But for now we don't need it.
 	}
+	else
+		node->rse = dsqlSelect->dsqlPass(dsqlScratch)->dsqlRse;
 
 	node->dsqlInto = dsqlPassArray(dsqlScratch, dsqlInto);
 
@@ -4338,6 +4370,8 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		--dsqlScratch->loopLevel;
 		dsqlScratch->labels.pop();
 	}
+
+	dsqlScratch->context->clear(base);
 
 	if (dsqlCursor)
 	{
@@ -4370,12 +4404,12 @@ void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (!statement || dsqlForceSingular)
 		dsqlScratch->appendUChar(blr_singular);
 
-	GEN_rse(dsqlScratch, dsqlSelect->dsqlRse);
+	GEN_rse(dsqlScratch, rse);
 	dsqlScratch->appendUChar(blr_begin);
 
 	// Build body of FOR loop
 
-	ValueListNode* list = dsqlSelect->dsqlRse->dsqlSelectList;
+	ValueListNode* list = rse->dsqlSelectList;
 
 	if (dsqlInto)
 	{
@@ -4425,6 +4459,9 @@ StmtNode* ForNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	cursor = FB_NEW(*tdbb->getDefaultPool()) Cursor(csb, rsb, rse->rse_invariants,
 		(rse->flags & RseNode::FLAG_SCROLLABLE));
+	// ASF: We cannot define the name of the cursor here, but this is not a problem,
+	// as implicit cursors are always positioned in a valid record, and the name is
+	// only used to raise isc_cursor_not_positioned.
 
 	impureOffset = CMP_impure(csb, sizeof(SLONG));
 
@@ -4870,7 +4907,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		forNode->dsqlForceSingular = true;
 
 	// Get the already processed relations.
-	RseNode* processedRse = forNode->dsqlSelect->dsqlRse->dsqlStreams->items[0]->as<RseNode>();
+	RseNode* processedRse = forNode->rse->dsqlStreams->items[0]->as<RseNode>();
 	source = processedRse->dsqlStreams->items[0];
 	target = processedRse->dsqlStreams->items[1]->as<RelationSourceNode>();
 

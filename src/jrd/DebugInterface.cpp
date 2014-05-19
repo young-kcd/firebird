@@ -111,6 +111,7 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 			break;
 
 		case fb_dbg_map_varname:
+		case fb_dbg_map_curname:
 			{
 				if (data + 3 > end)
 				{
@@ -118,11 +119,11 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 					break;
 				}
 
-				// variable number
+				// variable/cursor number
 				USHORT index = *data++;
 				index |= *data++ << 8;
 
-				// variable name string length
+				// variable/cursor name string length
 				USHORT length = *data++;
 
 				if (data + length > end)
@@ -131,9 +132,12 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 					break;
 				}
 
-				dbgInfo.varIndexToName.put(index, MetaName((const TEXT*) data, length));
+				if (code == fb_dbg_map_varname)
+					dbgInfo.varIndexToName.put(index, MetaName((const TEXT*) data, length));
+				else
+					dbgInfo.curIndexToName.put(index, MetaName((const TEXT*) data, length));
 
-				// variable name string
+				// variable/cursor name string
 				data += length;
 			}
 			break;

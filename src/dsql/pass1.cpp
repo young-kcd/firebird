@@ -427,7 +427,12 @@ dsql_ctx* PASS1_make_context(DsqlCompilerScratch* dsqlScratch, RecordSourceNode*
 	context->ctx_procedure = procedure;
 
 	if (selNode)
+	{
 		context->ctx_context = USHORT(MAX_UCHAR) + 1 + dsqlScratch->derivedContextNumber++;
+
+		if (selNode->dsqlFlags & RecordSourceNode::DFLAG_CURSOR)
+			context->ctx_flags |= CTX_cursor;
+	}
 	else
 		context->ctx_context = dsqlScratch->contextNumber++;
 
@@ -951,7 +956,7 @@ static void pass1_expand_contexts(DsqlContextStack& contexts, dsql_ctx* context)
 
 // Process derived table which is part of a from clause.
 RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* input,
-	const char* cte_alias)
+	const char* cte_alias, bool updateLock)
 {
 	DEV_BLKCHK(dsqlScratch, dsql_type_req);
 
@@ -1051,7 +1056,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 			rse = pass1_union(dsqlScratch, unionExpr, NULL, NULL, false, 0);
 		}
 		else
-			rse = PASS1_rse(dsqlScratch, input, false);
+			rse = PASS1_rse(dsqlScratch, input, updateLock);
 
 		// Finish off by cleaning up contexts and put them into derivedContext
 		// so create view (ddl) can deal with it.
@@ -1213,7 +1218,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		const string* const* saveCteAlias = dsqlScratch->currCteAlias;
 		dsqlScratch->resetCTEAlias(alias);
 
-		rse = PASS1_rse(dsqlScratch, input, false);
+		rse = PASS1_rse(dsqlScratch, input, updateLock);
 
 		if (saveCteAlias)
 			dsqlScratch->resetCTEAlias(**saveCteAlias);

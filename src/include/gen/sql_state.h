@@ -792,6 +792,7 @@ static const struct {
 	{335545089, "0A000"}, // 769 map_notable
 	{335545090, "0P000"}, // 770 miss_trusted_role
 	{335545091, "0P000"}, // 771 set_invalid_role
+	{335545092, "HY109"}, // 772 cursor_not_positioned
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

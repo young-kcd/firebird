@@ -47,6 +47,7 @@ public:
 	void putDebugSrcInfo(ULONG, ULONG);
 	void putDebugVariable(USHORT, const Firebird::MetaName&);
 	void putDebugArgument(UCHAR, USHORT, const TEXT*);
+	void putDebugCursor(USHORT, const Firebird::MetaName&);
 	void putDebugSubFunction(DeclareSubFuncNode* subFuncNode);
 	void putDebugSubProcedure(DeclareSubProcNode* subProcNode);
 

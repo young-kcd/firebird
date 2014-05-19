@@ -778,6 +778,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '0A', '000', 0, 769, 'map_notable', NULL, NULL);
 (-901, '0P', '000', 0, 770, 'miss_trusted_role', NULL, NULL);
 (-901, '0P', '000', 0, 771, 'set_invalid_role', NULL, NULL);
+(-596, 'HY', '109', 0, 772, 'cursor_not_positioned', NULL, NULL)
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

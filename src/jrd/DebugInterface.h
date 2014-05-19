@@ -91,6 +91,7 @@ struct DbgInfo : public PermanentStorage
 		  blrToSrc(p),
 		  varIndexToName(p),
 		  argInfoToName(p),
+		  curIndexToName(p),
 		  subFuncs(p),
 		  subProcs(p)
 	{
@@ -106,6 +107,7 @@ struct DbgInfo : public PermanentStorage
 		blrToSrc.clear();
 		varIndexToName.clear();
 		argInfoToName.clear();
+		curIndexToName.clear();
 
 		{	// scope
 			GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subFuncs);
@@ -129,6 +131,7 @@ struct DbgInfo : public PermanentStorage
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
 	MapVarIndexToName varIndexToName;		// mapping between variable index and name
 	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
+	MapVarIndexToName curIndexToName;		// mapping between cursor index and name
 	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subFuncs;	// sub functions
 	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subProcs;	// sub procedures
 };

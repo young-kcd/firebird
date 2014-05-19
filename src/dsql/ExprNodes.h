@@ -519,6 +519,7 @@ public:
 public:
 	NestConst<ValueExprNode> arg;
 	Firebird::Array<StreamType> internalStreamList;
+	Nullable<USHORT> cursorNumber;
 };
 
 
@@ -647,6 +648,8 @@ public:
 	const Format* format;
 	const USHORT fieldId;
 	const bool byId;
+	bool dsqlCursorField;
+	Nullable<USHORT> cursorNumber;
 };
 
 

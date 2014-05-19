@@ -690,6 +690,7 @@ using namespace Firebird;
 	Jrd::MergeNode::NotMatched* mergeNotMatchedClause;
 	Jrd::MergeNode::Matched* mergeMatchedClause;
 	Jrd::SelectNode* selectNode;
+	Jrd::ForNode* forNode;
 	Jrd::SetTransactionNode* setTransactionNode;
 	Jrd::SetTransactionNode::RestrictionOption* setTransactionRestrictionClause;
 	Jrd::DeclareSubProcNode* declareSubProcNode;
@@ -2687,7 +2688,7 @@ proc_statement
 
 %type <stmtNode> simple_proc_statement
 simple_proc_statement
-	: assignment
+	: assignment_statement
 	| insert			{ $$ = $1; }
 	| merge				{ $$ = $1; }
 	| update
@@ -2709,12 +2710,18 @@ simple_proc_statement
 	| RETURN value		{ $$ = newNode<ReturnNode>($2); }
 	;
 
+%type <stmtNode> assignment_statement
+assignment_statement
+	: assignment
+	| ':' assignment	{ $$ = $2; }
+	;
+
 %type <stmtNode> complex_proc_statement
 complex_proc_statement
 	: in_autonomous_transaction
 	| if_then_else
 	| while
-	| for_select
+	| for_select					{ $$ = $1; }
 	| for_exec_into					{ $$ = $1; }
 	;
 
@@ -2743,18 +2750,46 @@ raise_statement
 	: EXCEPTION		{ $$ = newNode<ExceptionNode>(); }
 	;
 
-%type <stmtNode> for_select
+%type <forNode> for_select
 for_select
-	: label_def_opt FOR select INTO variable_list cursor_def DO proc_block
+	: label_def_opt FOR select
+			{
+				ForNode* node = newNode<ForNode>();
+				node->dsqlLabelName = $1;
+				node->dsqlSelect = $3;
+				$$ = node;
+			}
+		for_select_into_cursor($4) DO proc_block
+			{
+				ForNode* node = $4;
+				node->statement = $7;
+				$$ = node;
+			}
+	;
+
+%type for_select_into_cursor(<forNode>)
+for_select_into_cursor($forNode)
+	: into_variable_list cursor_def_opt
 		{
-			ForNode* node = newNode<ForNode>();
-			node->dsqlLabelName = $1;
-			node->dsqlSelect = $3;
-			node->dsqlInto = $5;
-			node->dsqlCursor = $6;
-			node->statement = $8;
-			$$ = node;
+			$forNode->dsqlInto = $1;
+			$forNode->dsqlCursor = $2;
 		}
+	| into_variable_list_opt cursor_def
+		{
+			$forNode->dsqlInto = $1;
+			$forNode->dsqlCursor = $2;
+		}
+	;
+
+%type <valueListNode> into_variable_list_opt
+into_variable_list_opt
+	: /* nothing */			{ $$ = NULL; }
+	| into_variable_list
+	;
+
+%type <valueListNode> into_variable_list
+into_variable_list
+	: INTO variable_list	{ $$ = $2; }
 	;
 
 %type <execStatementNode> exec_sql
@@ -2982,11 +3017,15 @@ label_use_opt
 	| symbol_label_name
 	;
 
+%type <declCursorNode> cursor_def_opt
+cursor_def_opt
+	: /* nothing */		{ $$ = NULL; }
+	| cursor_def
+	;
+
 %type <declCursorNode> cursor_def
 cursor_def
-	: // nothing
-		{ $$ = NULL; }
-	| AS CURSOR symbol_cursor_name
+	: AS CURSOR symbol_cursor_name
 		{ $$ = newNode<DeclareCursorNode>(*$3, DeclareCursorNode::CUR_TYPE_FOR); }
 	;
 
@@ -3072,15 +3111,15 @@ close_cursor
 fetch_cursor
 	: FETCH
 			{ $<cursorStmtNode>$ = newNode<CursorStmtNode>(blr_cursor_fetch_scroll); }
-			fetch_scroll($<cursorStmtNode>2) FROM symbol_cursor_name INTO variable_list
+			fetch_scroll($<cursorStmtNode>2) FROM symbol_cursor_name into_variable_list_opt
 		{
 			CursorStmtNode* cursorStmt = $<cursorStmtNode>2;
 			cursorStmt->dsqlName = *$5;
-			cursorStmt->dsqlIntoStmt = $7;
+			cursorStmt->dsqlIntoStmt = $6;
 			$$ = cursorStmt;
 		}
-	| FETCH symbol_cursor_name INTO variable_list
-		{ $$ = newNode<CursorStmtNode>(blr_cursor_fetch, *$2, $4); }
+	| FETCH symbol_cursor_name into_variable_list_opt
+		{ $$ = newNode<CursorStmtNode>(blr_cursor_fetch, *$2, $3); }
 	;
 
 %type fetch_scroll(<cursorStmtNode>)
@@ -5622,6 +5661,14 @@ column_name
 			FieldNode* fieldNode = newNode<FieldNode>();
 			fieldNode->dsqlQualifier = *$1;
 			fieldNode->dsqlName = *$3;
+			$$ = fieldNode;
+		}
+	| ':' symbol_table_alias_name '.' symbol_column_name
+		{
+			FieldNode* fieldNode = newNode<FieldNode>();
+			fieldNode->dsqlQualifier = *$2;
+			fieldNode->dsqlName = *$4;
+			fieldNode->dsqlCursorField = true;
 			$$ = fieldNode;
 		}
 	;

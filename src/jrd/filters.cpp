@@ -1377,6 +1377,24 @@ ISC_STATUS filter_debug_info(USHORT action, BlobControl* control)
 		string_put(control, "");
 	}
 
+	MapVarIndexToName::ConstAccessor cursors(&dbgInfo.curIndexToName);
+	if (cursors.getFirst())
+	{
+		string_put(control, "Cursors:");
+		str.printf("%10s %-32s", "Number", "Name");
+		string_put(control, str.c_str());
+		str.replace(str.begin(), str.end(), str.length(), '-');
+		string_put(control, str.c_str());
+
+		do
+		{
+			str.printf("%10d %-32s", cursors.current()->first, cursors.current()->second.c_str());
+			string_put(control, str.c_str());
+		} while (cursors.getNext());
+
+		string_put(control, "");
+	}
+
 	string_put(control, "BLR to Source mapping:");
 	str.printf("%10s %10s %10s", "BLR offset", "Line", "Column");
 	string_put(control, str.c_str());

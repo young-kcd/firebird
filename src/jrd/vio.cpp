@@ -1947,7 +1947,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 
 	// Allocate a garbage collect record block if all are active.
 	record_param rpb;
-	rpb.rpb_record = 0;
+	rpb.rpb_record = NULL;
 	Record* record = VIO_record(tdbb, &rpb, MET_current(tdbb, relation), dbb->dbb_permanent);
 	record->rec_flags |= REC_gc_active;
 

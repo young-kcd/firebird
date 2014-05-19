@@ -879,6 +879,7 @@ Data source : @4', NULL, NULL)
 ('map_notable', 'MappingList::getList', 'Mapping.cpp', NULL, 0, 769, NULL, 'Global mapping is not available when table RDB$MAP is not present in database @1', NULL, NULL);
 ('miss_trusted_role', 'SetRoleNode::execute', 'StmtNodes.cpp', NULL, 0, 770, NULL, 'Your attachment has no trusted role', NULL, NULL);
 ('set_invalid_role', 'SetRoleNode::execute', 'StmtNodes.cpp', NULL, 0, 771, NULL, 'Role @1 is invalid or unavailable', NULL, NULL);
+('cursor_not_positioned', NULL, NULL, NULL, 0, 772, NULL, 'Cursor @1 is not positioned in a valid record', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

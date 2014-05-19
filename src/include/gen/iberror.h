@@ -827,6 +827,7 @@ const ISC_STATUS isc_map_nodb                         = 335545088L;
 const ISC_STATUS isc_map_notable                      = 335545089L;
 const ISC_STATUS isc_miss_trusted_role                = 335545090L;
 const ISC_STATUS isc_set_invalid_role                 = 335545091L;
+const ISC_STATUS isc_cursor_not_positioned            = 335545092L;
 const ISC_STATUS isc_gfix_db_name                     = 335740929L;
 const ISC_STATUS isc_gfix_invalid_sw                  = 335740930L;
 const ISC_STATUS isc_gfix_incmp_sw                    = 335740932L;
@@ -1284,7 +1285,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1228;
+const ISC_STATUS isc_err_max                          = 1229;
 
 #else /* c definitions */
 
@@ -2081,6 +2082,7 @@ const ISC_STATUS isc_err_max                          = 1228;
 #define isc_map_notable                      335545089L
 #define isc_miss_trusted_role                335545090L
 #define isc_set_invalid_role                 335545091L
+#define isc_cursor_not_positioned            335545092L
 #define isc_gfix_db_name                     335740929L
 #define isc_gfix_invalid_sw                  335740930L
 #define isc_gfix_incmp_sw                    335740932L
@@ -2538,7 +2540,7 @@ const ISC_STATUS isc_err_max                          = 1228;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1228
+#define isc_err_max                          1229
 
 #endif
 

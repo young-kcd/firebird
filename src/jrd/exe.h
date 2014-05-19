@@ -533,6 +533,7 @@ public:
 		void activate();
 		void deactivate();
 
+		Nullable<USHORT> csb_cursor_number;	// Cursor number for this stream
 		StreamType csb_stream;			// Map user context to internal stream
 		StreamType csb_view_stream;		// stream number for view relation, below
 		USHORT csb_flags;

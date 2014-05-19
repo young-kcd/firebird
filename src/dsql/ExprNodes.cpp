@@ -33,6 +33,7 @@
 #include "../jrd/SysFunction.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/Optimizer.h"
+#include "../jrd/recsrc/Cursor.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/cvt_proto.h"
@@ -3990,6 +3991,8 @@ ValueExprNode* DerivedExprNode::copy(thread_db* tdbb, NodeCopier& copier) const
 			*i = copier.remap[*i];
 	}
 
+	fb_assert(!cursorNumber.specified);
+
 	return node;
 }
 
@@ -4032,11 +4035,33 @@ ValueExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	getDesc(tdbb, csb, &desc);
 	impureOffset = CMP_impure(csb, sizeof(impure_value));
 
+	// As all streams belongs to the same cursor, we use only the first.
+	cursorNumber = csb->csb_rpt[internalStreamList[0]].csb_cursor_number;
+
 	return this;
 }
 
 dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
+	if (cursorNumber.specified)
+	{
+		const Cursor* const cursor = request->req_cursors[cursorNumber.value];
+		const Cursor::Impure* const cursorImpure = request->getImpure<Cursor::Impure>(cursor->m_impure);
+
+		if (!cursorImpure->irsb_active)
+		{
+			// error: invalid cursor state
+			status_exception::raise(Arg::Gds(isc_cursor_not_open));
+		}
+
+		if (cursorImpure->irsb_state != Cursor::POSITIONED)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_cursor_not_positioned) <<
+				Arg::Str(cursor->name));
+		}
+	}
+
 	dsc* value = NULL;
 
 	for (const StreamType* i = internalStreamList.begin(); i != internalStreamList.end(); ++i)
@@ -4492,7 +4517,8 @@ FieldNode::FieldNode(MemoryPool& pool, dsql_ctx* context, dsql_fld* field, Value
 	  fieldStream(0),
 	  format(NULL),
 	  fieldId(0),
-	  byId(false)
+	  byId(false),
+	  dsqlCursorField(false)
 {
 }
 
@@ -4506,7 +4532,8 @@ FieldNode::FieldNode(MemoryPool& pool, StreamType stream, USHORT id, bool aById)
 	  fieldStream(stream),
 	  format(NULL),
 	  fieldId(id),
-	  byId(aById)
+	  byId(aById),
+	  dsqlCursorField(false)
 {
 }
 
@@ -4685,26 +4712,16 @@ ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		return this;
 	}
 
-	if (dsqlScratch->isPsql())
+	if (dsqlScratch->isPsql() && !dsqlQualifier.hasData())
 	{
-		if (dsqlQualifier.hasData())
-		{
-			if (dsqlScratch->flags & DsqlCompilerScratch::FLAG_TRIGGER) // triggers only
-				return internalDsqlPass(dsqlScratch, NULL);
-
-			PASS1_field_unknown(NULL, NULL, this);
-		}
-
-
 		VariableNode* node = FB_NEW(getPool()) VariableNode(getPool());
 		node->line = line;
 		node->column = column;
 		node->dsqlName = dsqlName;
-
 		return node->dsqlPass(dsqlScratch);
 	}
-
-	return internalDsqlPass(dsqlScratch, NULL);
+	else
+		return internalDsqlPass(dsqlScratch, NULL);
 }
 
 // Resolve a field name to an available context.
@@ -4781,13 +4798,14 @@ ValueExprNode* FieldNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, Rec
 
 			for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
 			{
-				// resolveContext() checks the type of the
-				// given context, so the cast to dsql_ctx* is safe.
-
 				dsql_ctx* context = stack.object();
 
-				if (context->ctx_scope_level != currentScopeLevel - 1)
+				if (context->ctx_scope_level != currentScopeLevel - 1 ||
+					((context->ctx_flags & CTX_cursor) && dsqlQualifier.isEmpty()) ||
+					(!(context->ctx_flags & CTX_cursor) && dsqlCursorField))
+				{
 					continue;
+				}
 
 				dsql_fld* field = resolveContext(dsqlScratch, dsqlQualifier, context, resolveByAlias);
 
@@ -5322,6 +5340,7 @@ ValueExprNode* FieldNode::copy(thread_db* tdbb, NodeCopier& copier) const
 		stream = copier.remap[stream];
 	}
 
+	fb_assert(!cursorNumber.specified);
 	return PAR_gen_field(tdbb, stream, fldId, byId);
 }
 
@@ -5540,6 +5559,7 @@ ValueExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		format = CMP_format(tdbb, csb, fieldStream);
 
 	impureOffset = CMP_impure(csb, sizeof(impure_value_ex));
+	cursorNumber = csb->csb_rpt[fieldStream].csb_cursor_number;
 
 	return this;
 }
@@ -5547,6 +5567,25 @@ ValueExprNode* FieldNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
+
+	if (cursorNumber.specified)
+	{
+		const Cursor* const cursor = request->req_cursors[cursorNumber.value];
+		const Cursor::Impure* const cursorImpure = request->getImpure<Cursor::Impure>(cursor->m_impure);
+
+		if (!cursorImpure->irsb_active)
+		{
+			// error: invalid cursor state
+			status_exception::raise(Arg::Gds(isc_cursor_not_open));
+		}
+
+		if (cursorImpure->irsb_state != Cursor::POSITIONED)
+		{
+			status_exception::raise(
+				Arg::Gds(isc_cursor_not_positioned) <<
+				Arg::Str(cursor->name));
+		}
+	}
 
 	record_param& rpb = request->req_rpb[fieldStream];
 	Record* record = rpb.rpb_record;

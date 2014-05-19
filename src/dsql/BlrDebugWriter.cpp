@@ -106,6 +106,19 @@ void BlrDebugWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* nam
 	debugData.add(reinterpret_cast<const UCHAR*>(name), len);
 }
 
+void BlrDebugWriter::putDebugCursor(USHORT number, const MetaName& name)
+{
+	debugData.add(fb_dbg_map_curname);
+
+	debugData.add(number);
+	debugData.add(number >> 8);
+
+	USHORT len = MIN(name.length(), MAX_UCHAR);
+	debugData.add(len);
+
+	debugData.add(reinterpret_cast<const UCHAR*>(name.c_str()), len);
+}
+
 void BlrDebugWriter::putDebugSubFunction(DeclareSubFuncNode* subFuncNode)
 {
 	debugData.add(fb_dbg_subfunc);
