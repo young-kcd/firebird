@@ -33,9 +33,7 @@
 #include "../common/gdsassert.h"
 #include "../common/MsgMetadata.h"
 
-using namespace Firebird;
-
-namespace
+namespace Firebird
 {
 
 class MetadataFromBlr : public MsgMetadata
@@ -207,11 +205,6 @@ MetadataFromBlr::MetadataFromBlr(unsigned aBlrLength, const unsigned char* aBlr,
 	}
 }
 
-}
-
-namespace Firebird
-{
-
 InternalMessageBuffer::InternalMessageBuffer(unsigned aBlrLength, const unsigned char* aBlr,
 	unsigned aBufferLength, unsigned char* aBuffer)
 {
@@ -225,4 +218,4 @@ InternalMessageBuffer::~InternalMessageBuffer()
 	metadata->release();
 }
 
-}
+}	// namespace Firebird

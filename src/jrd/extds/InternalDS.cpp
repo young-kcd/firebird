@@ -357,8 +357,8 @@ InternalStatement::~InternalStatement()
 
 void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 {
-	m_inMetadata->items.clear();
-	m_outMetadata->items.clear();
+	m_inMetadata->reset();
+	m_outMetadata->reset();
 
 	JAttachment* att = m_intConnection.getJrdAtt();
 	JTransaction* tran = getIntTransaction()->getJrdTran();
@@ -423,7 +423,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		{
 			PreparedStatement::parseDsqlMessage(statement->getSendMsg(), m_inDescs,
 				m_inMetadata, m_in_buffer);
-			m_inputs = m_inMetadata->items.getCount();
+			m_inputs = m_inMetadata->getCount();
 		}
 		catch (const Exception&)
 		{
@@ -439,7 +439,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		{
 			PreparedStatement::parseDsqlMessage(statement->getReceiveMsg(), m_outDescs,
 				m_outMetadata, m_out_buffer);
-			m_outputs = m_outMetadata->items.getCount();
+			m_outputs = m_outMetadata->getCount();
 		}
 		catch (const Exception&)
 		{
@@ -492,8 +492,8 @@ void InternalStatement::doExecute(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
-		fb_assert(m_inMetadata->length == m_in_buffer.getCount());
-		fb_assert(m_outMetadata->length == m_out_buffer.getCount());
+		fb_assert(m_inMetadata->getMessageLength() == m_in_buffer.getCount());
+		fb_assert(m_outMetadata->getMessageLength() == m_out_buffer.getCount());
 
 		m_request->execute(&status, transaction,
 			m_inMetadata, m_in_buffer.begin(), m_outMetadata, m_out_buffer.begin());
@@ -518,7 +518,7 @@ void InternalStatement::doOpen(thread_db* tdbb)
 			m_cursor = NULL;
 		}
 
-		fb_assert(m_inMetadata->length == m_in_buffer.getCount());
+		fb_assert(m_inMetadata->getMessageLength() == m_in_buffer.getCount());
 
 		m_cursor = m_request->openCursor(&status, transaction,
 			m_inMetadata, m_in_buffer.begin(), m_outMetadata);
@@ -537,7 +537,7 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
-		fb_assert(m_outMetadata->length == m_out_buffer.getCount());
+		fb_assert(m_outMetadata->getMessageLength() == m_out_buffer.getCount());
 		fb_assert(m_cursor);
 		res = m_cursor->fetchNext(&status, m_out_buffer.begin());
 	}

@@ -34,8 +34,16 @@
 
 namespace Firebird {
 
+class MetadataBuilder;
+class StatementMetadata;
+class MetadataFromBlr;
+
 class MsgMetadata : public RefCntIface<IMessageMetadata, FB_MESSAGE_METADATA_VERSION>
 {
+	friend class MetadataBuilder;
+	friend class StatementMetadata;
+	friend class MetadataFromBlr;
+
 public:
 	struct Item
 	{
@@ -102,6 +110,34 @@ public:
 		assign(from);
 	}
 
+	void setItemsCount(unsigned n)
+	{
+		items.resize(n);
+		length = 0;
+	}
+
+	Item& accessItem(unsigned n)
+	{
+		fb_assert(n < items.getCount());
+		return items[n];
+	}
+
+	unsigned getMessageLength()
+	{
+		return length;
+	}
+
+	unsigned getCount()
+	{
+		return items.getCount();
+	}
+
+	void reset()
+	{
+		setItemsCount(0);
+	}
+
+	// IMessageMetadata implementation
 	virtual int FB_CARG release();
 
 	virtual unsigned FB_CARG getCount(IStatus* /*status*/)
@@ -237,7 +273,7 @@ private:
 
 	void assign(IMessageMetadata* from);
 
-public:
+private:
 	ObjectsArray<Item> items;
 	unsigned length;
 };
