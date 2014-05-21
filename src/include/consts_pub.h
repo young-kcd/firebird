@@ -379,6 +379,7 @@
 #define isc_spb_bkp_file                 5
 #define isc_spb_bkp_factor               6
 #define isc_spb_bkp_length               7
+#define isc_spb_bkp_skip_data            8
 #define isc_spb_bkp_ignore_checksums     0x01
 #define isc_spb_bkp_ignore_limbo         0x02
 #define isc_spb_bkp_metadata_only        0x04
@@ -477,6 +478,7 @@
  * Parameters for isc_action_svc_restore *
  *****************************************/
 
+#define isc_spb_res_skip_data			isc_spb_bkp_skip_data
 #define isc_spb_res_buffers				9
 #define isc_spb_res_page_size			10
 #define isc_spb_res_length				11

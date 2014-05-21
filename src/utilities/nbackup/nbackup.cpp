@@ -343,6 +343,7 @@ private:
 	void internal_unlock_database();
 	void attach_database();
 	void detach_database();
+	string to_system(const PathName& from);
 
 	// Create/open database and backup
 	void open_database_write();
@@ -524,15 +525,25 @@ void NBackup::close_database()
 #endif
 }
 
+string NBackup::to_system(const PathName& from)
+{
+	string to = from.ToString();
+	if (uSvc->utf8FileNames())
+		ISC_utf8ToSystem(to);
+	return to;
+}
+
+
 void NBackup::open_backup_scan()
 {
+	string nm = to_system(bakname);
 #ifdef WIN_NT
-	backup = CreateFile(bakname.c_str(), GENERIC_READ, 0,
+	backup = CreateFile(nm.c_str(), GENERIC_READ, 0,
 		NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	if (backup != INVALID_HANDLE_VALUE)
 		return;
 #else
-	backup = open(bakname.c_str(), O_RDONLY | O_LARGEFILE);
+	backup = open(nm.c_str(), O_RDONLY | O_LARGEFILE);
 	if (backup >= 0)
 		return;
 #endif
@@ -542,13 +553,14 @@ void NBackup::open_backup_scan()
 
 void NBackup::create_backup()
 {
+	string nm = to_system(bakname);
 #ifdef WIN_NT
 	if (bakname == "stdout") {
 		backup = GetStdHandle(STD_OUTPUT_HANDLE);
 	}
 	else
 	{
-		backup = CreateFile(bakname.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE,
+		backup = CreateFile(nm.c_str(), GENERIC_WRITE, FILE_SHARE_DELETE,
 			NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
 	}
 	if (backup != INVALID_HANDLE_VALUE)
@@ -559,7 +571,7 @@ void NBackup::create_backup()
 		backup = 1; // Posix file handle for stdout
 		return;
 	}
-	backup = open(bakname.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
+	backup = open(nm.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 	if (backup >= 0)
 		return;
 #endif

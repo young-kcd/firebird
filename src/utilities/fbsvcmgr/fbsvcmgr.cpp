@@ -346,6 +346,7 @@ const SvcSwitches backupOptions[] =
 	{"bkp_convert", putOption, 0, isc_spb_bkp_convert, 0},
 	{"bkp_no_triggers", putOption, 0, isc_spb_bkp_no_triggers, 0},
 	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
+	{"bkp_skip_data", putStringArgument, 0, isc_spb_bkp_skip_data, 0},
 	{0, 0, 0, 0, 0}
 };
 
@@ -369,6 +370,7 @@ const SvcSwitches restoreOptions[] =
 	{"res_fix_fss_metadata", putStringArgument, 0, isc_spb_res_fix_fss_metadata, 0},
 	{"res_metadata_only", putOption, 0, isc_spb_res_metadata_only, 0},
 	{"verbint", putNumericArgument, 0, isc_spb_verbint, 0},
+	{"res_skip_data", putStringArgument, 0, isc_spb_res_skip_data, 0},
 	{0, 0, 0, 0, 0}
 };
 

@@ -688,6 +688,11 @@ void Service::fillDpb(ClumpletWriter& dpb)
 	}
 }
 
+bool Service::utf8FileNames()
+{
+	return svc_utf8;
+}
+
 void Service::need_admin_privs(Arg::StatusVector& status, const char* message)
 {
 	status << Arg::Gds(isc_insufficient_svc_privileges) << Arg::Str(message);

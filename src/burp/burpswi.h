@@ -165,7 +165,7 @@ static const Switches::in_sw_tab_t reference_burp_in_sw_table[] =
 	{IN_SW_BURP_S,	  0,						"SKIP_BAD_DATA",	0, 0, 0, false, 0,		4, NULL, boRestore},
 	{IN_SW_BURP_SE,   0,						"SERVICE",			0, 0, 0, false, 277,	2, NULL, boGeneral},
 				// msg 277: @1SE(RVICE) use services manager
-	{IN_SW_BURP_SKIP_DATA,   0,					"SKIP_DATA",		0, 0, 0, false, 355,	6, NULL, boGeneral},
+	{IN_SW_BURP_SKIP_DATA, isc_spb_res_skip_data, "SKIP_DATA",		0, 0, 0, false, 355,	6, NULL, boGeneral},
 				// msg 355: @1SKIP_DATA skip data for table
 	{IN_SW_BURP_T,	  0,						"TRANSPORTABLE",	0, 0, 0, false, 175,	1, NULL, boBackup},
 				// msg 175: @1TRANSPORTABLE transportable backup -- data in XDR format

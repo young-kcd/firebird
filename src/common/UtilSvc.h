@@ -72,6 +72,7 @@ public:
 	virtual void fillDpb(Firebird::ClumpletWriter& dpb) = 0;
 	virtual bool finished() = 0;
 	virtual unsigned int getAuthBlock(const unsigned char** bytes) = 0;
+	virtual bool utf8FileNames() = 0;
 
 	void setDataMode(bool value)
 	{

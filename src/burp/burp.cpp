@@ -1287,7 +1287,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			if (exit_code != FINI_OK &&
 				(tdgbl->action->act_action == ACT_backup_split || tdgbl->action->act_action == ACT_backup))
 			{
-				unlink_platf(file->fil_name.c_str());
+				unlink_platf(tdgbl->toSystem(file->fil_name).c_str());
 			}
 		}
 	}
@@ -1888,12 +1888,12 @@ static gbak_action open_files(const TEXT* file1,
 			}
 			else
 			{
-
+				Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-				if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_WRITE, CREATE_ALWAYS)) ==
+				if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_WRITE, CREATE_ALWAYS)) ==
 					INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_WRITE, open_mask)) == -1)
+				if ((fil->fil_fd = open(nm.c_str(), MODE_WRITE, open_mask)) == -1)
 #endif // WIN_NT
 
 				{
@@ -1996,11 +1996,12 @@ static gbak_action open_files(const TEXT* file1,
 		tdgbl->stdIoMode = false;
 
 		// open first file
+		Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-		if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_READ, OPEN_EXISTING)) ==
+		if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
 			INVALID_HANDLE_VALUE)
 #else
-		if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
+		if ((fil->fil_fd = open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif
 		{
 			BURP_error(65, true, fil->fil_name.c_str());
@@ -2044,11 +2045,12 @@ static gbak_action open_files(const TEXT* file1,
 					return QUIT;
 				}
 				tdgbl->action->act_file = fil;
+				Firebird::string nm = tdgbl->toSystem(fil->fil_name);
 #ifdef WIN_NT
-				if ((fil->fil_fd = MVOL_open(fil->fil_name.c_str(), MODE_READ, OPEN_EXISTING)) ==
+				if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
 					INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = open(fil->fil_name.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
+				if ((fil->fil_fd = open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif
 				{
 					BURP_error(65, false, fil->fil_name.c_str());
@@ -2385,7 +2387,8 @@ void BurpGlobals::setupSkipData(const Firebird::string& regexp)
 		if (regexp.hasData())
 		{
 			Firebird::string filter(regexp);
-			ISC_systemToUtf8(filter);
+			if (!uSvc->utf8FileNames())
+				ISC_systemToUtf8(filter);
 
 			skipDataMatcher.reset(new Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
@@ -2397,6 +2400,14 @@ void BurpGlobals::setupSkipData(const Firebird::string& regexp)
 		Firebird::fatal_exception::raiseFmt(
 			"error while compiling regular expression \"%s\"", regexp.c_str());
 	}
+}
+
+Firebird::string BurpGlobals::toSystem(const Firebird::PathName& from)
+{
+	Firebird::string to = from.ToString();
+	if (uSvc->utf8FileNames())
+		ISC_utf8ToSystem(to);
+	return to;
 }
 
 bool BurpGlobals::skipRelation(const char* name)
@@ -2411,11 +2422,8 @@ bool BurpGlobals::skipRelation(const char* name)
 		return false;
 	}
 
-	Firebird::string utf8(name);
-	ISC_systemToUtf8(utf8);
-
 	skipDataMatcher->reset();
-	skipDataMatcher->process((const UCHAR*) (utf8.c_str()), utf8.length());
+	skipDataMatcher->process(reinterpret_cast<const UCHAR*>(name), strlen(name));
 	return skipDataMatcher->result();
 }
 

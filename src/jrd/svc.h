@@ -147,6 +147,8 @@ public:		// utilities interface with service
 	virtual void checkService();
 	// add address path and utf8 flag (taken from spb) to dpb if present
 	virtual void fillDpb(Firebird::ClumpletWriter& dpb);
+	// encoding for string parameters passed to utility
+	virtual bool utf8FileNames();
 
 	virtual TraceManager* getTraceManager()
 	{

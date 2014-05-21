@@ -229,6 +229,7 @@ IntlParametersBlock::TagType IntlSpbStart::checkTag(UCHAR tag)
 		switch (tag)
 		{
 		case isc_spb_bkp_file:
+		case isc_spb_bkp_skip_data:
 			return TAG_STRING;
 		}
 		break;

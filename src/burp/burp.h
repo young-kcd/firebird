@@ -1084,6 +1084,9 @@ public:
 	bool stdIoMode;			// stdin or stdout is used as backup file
 	UnicodeCollationHolder unicodeCollation;
 	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > > skipDataMatcher;
+
+public:
+	Firebird::string toSystem(const Firebird::PathName& from);
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h

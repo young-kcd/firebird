@@ -140,8 +140,9 @@ public:
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
     virtual const ISC_STATUS* getStatus() { return 0; }
 	virtual void fillDpb(ClumpletWriter&) { }
-	virtual bool finished() { return false; };
+	virtual bool finished() { return false; }
 	virtual void initStatus() { }
+	virtual bool utf8FileNames() { return false; }
 };
 
 
