@@ -30,8 +30,8 @@ Implementation:
     Two columns have been inserted in RDB$RELATION_FIELDS: RDB$GENERATOR_NAME and RDB$IDENTITY_TYPE.
     RDB$GENERATOR_NAME stores the automatically created generator for the column. In RDB$GENERATORS,
     the value of RDB$SYSTEM_FLAG of that generator will be 6. RDB$IDENTITY_TYPE will currently
-    always store the value 0 (by default) for identity columns and NULL for non-identity columns.
-    In the future this column will can store the value 1 (always) when Firebird support this type
+    always store the value 1 (by default) for identity columns and NULL for non-identity columns.
+    In the future this column will can store the value 0 (always) when Firebird support this type
     of identity column.
 
 Example:
