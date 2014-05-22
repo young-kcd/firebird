@@ -1,3 +1,22 @@
+ 2014-05-21 17:11  asfernandes 
+   M doc/sql.extensions/README.identity_columns.txt
+Fixed DOC-92 - Values for rdb$identity_type not correct in release notes.
+
+ 2014-05-21 13:11  alexpeshkoff 
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/burpswi.h
+   M src/burp/mvol.cpp
+   M src/common/IntlParametersBlock.cpp
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/include/consts_pub.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/nbackup/nbackup.cpp
+Fixed issues related to encoding of switch value in gbak/nbackup - thanks to Adriano. Added support for -SKIP_DATA to services.
+
  2014-05-20 08:05  alexpeshkoff 
    M src/common/MsgMetadata.h
    M src/common/classes/InternalMessageBuffer.cpp
