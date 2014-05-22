@@ -134,6 +134,10 @@
 #define FB_CPU CpuArm
 #endif /* ARM */
 
+#ifdef ARM64
+#define FB_CPU CpuArm64
+#endif /* ARM64 */
+
 #ifdef sparc
 #define FB_CPU CpuUltraSparc
 #define RISC_ALIGNMENT
