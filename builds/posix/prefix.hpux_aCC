@@ -54,7 +54,7 @@
 # 2111, statement is unreachable (used to suppress g++ warnings)
 # 2161, unrecognized pragma (mostly FB_COMPILER_MESSAGE)
 # 2177, function declared but never referenced
-COMMON_FLAGS= -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -D_HP_ATOMIC_INLINE \
+COMMON_FLAGS= -DLIBC_CALLS_NEW -DHP11 -DHPUX -D_XOPEN_SOURCE_EXTENDED -D_HP_ATOMIC_INLINE \
     -AA +e \
     +W2830,4232,749,863,1042,2175,2111,2161,2177
 
@@ -68,7 +68,7 @@ ifeq ($(shell uname -m),ia64)
 # ...for IA-64
 PROD_FLAGS= -DNDEBUG +O2 +Onolimit +Ofltacc=strict +Ofenvaccess \
 	$(COMMON_FLAGS)
-DEV_FLAGS= -g -z -DLIBC_CALLS_NEW \
+DEV_FLAGS= -g -z \
 	$(COMMON_FLAGS)
 LINK_EMBED_LIBS+=-lstd_v2 -lCsup
 LINK_CLIENT_LIBS+=-lstd_v2 -lCsup
