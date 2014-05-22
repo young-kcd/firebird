@@ -45,7 +45,6 @@ unsigned int secDbKey = INIT_KEY;
 const unsigned int SZ_LOGIN = 31;
 const unsigned int SZ_NAME = 31;
 typedef Field<Varying> Varfield;
-typedef Field<Text> Name;
 typedef Field<ISC_QUAD> Blob;
 typedef Field<FB_BOOLEAN> Boolean;
 
@@ -247,9 +246,9 @@ public:
 
 						Meta im(stmt, false);
 						Message add(im);
-						Name login(add);
+						Varfield login(add);
 						Varfield verifier(add), slt(add);
-						Name first(add), middle(add), last(add);
+						Varfield first(add), middle(add), last(add);
 						Blob comment(add), attr(add);
 						Boolean active(add);
 
@@ -308,7 +307,7 @@ public:
 						update += "PLG$VERIFIER=?,PLG$SALT=?,";
 					}
 
-					Firebird::AutoPtr<Name> first, middle, last;
+					Firebird::AutoPtr<Varfield> first, middle, last;
 					Firebird::AutoPtr<Blob> comment, attr;
 					Firebird::AutoPtr<Boolean> active;
 					allocField(user->firstName(), update, "PLG$FIRST");
@@ -366,7 +365,7 @@ public:
 						allocField(attr, up, user->attributes());
 						allocField(active, up, user->active());
 
-						Name login(up);
+						Varfield login(up);
 
 						assignField(first, user->firstName());
 						assignField(middle, user->middleName());
@@ -410,7 +409,7 @@ public:
 
 						Meta im(stmt, false);
 						Message dl(im);
-						Name login(dl);
+						Varfield login(dl);
 						setField(login, user->userName());
 
 						stmt->execute(status, tra, dl.getMetadata(), dl.getBuffer(), NULL, NULL);
@@ -460,8 +459,8 @@ public:
 
 						Meta om(stmt, true);
 						Message di(om);
-						Name login(di);
-						Name first(di), middle(di), last(di);
+						Varfield login(di);
+						Varfield first(di), middle(di), last(di);
 						Blob comment(di), attr(di);
 						Field<SLONG> admin(di);
 						Boolean active(di);
@@ -471,7 +470,7 @@ public:
 						{
 							Meta im(stmt, false);
 							par = new Message(im);
-							Name login(*par);
+							Varfield login(*par);
 							setField(login, user->userName());
 						}
 
@@ -615,7 +614,7 @@ private:
 		}
 	}
 
-	static void setField(Name& to, Auth::ICharUserField* from)
+	static void setField(Varfield& to, Auth::ICharUserField* from)
 	{
 		if (from->entered())
 		{
@@ -670,7 +669,7 @@ private:
 		}
 	}
 
-	static void assignField(Firebird::AutoPtr<Name>& field, Auth::ICharUserField* name)
+	static void assignField(Firebird::AutoPtr<Varfield>& field, Auth::ICharUserField* name)
 	{
 		if (field.hasData())
 		{
@@ -719,7 +718,7 @@ private:
 		}
 	}
 
-	static void listField(Auth::ICharUserField* to, Name& from)
+	static void listField(Auth::ICharUserField* to, Varfield& from)
 	{
 		to->setEntered(from.null ? 0 : 1);
 		if (!from.null)

@@ -161,7 +161,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 				Meta im(stmt, false);
 				Message par(im);
-				Field<Text> login(par);
+				Field<Varying> login(par);
 				login = account.c_str();
 
 				Meta om(stmt, true);
