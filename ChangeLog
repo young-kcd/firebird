@@ -1,3 +1,17 @@
+ 2014-05-22 13:18  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/jrd/fields.h
+Fixed CORE-4430: Properties of user created in Legacy_UserManager padded with space up to 10 character
+
+ 2014-05-22 10:47  alexpeshkoff 
+   A builds/posix/prefix.linux_arm64
+   M configure.ac
+   M src/common/classes/DbImplementation.cpp
+   M src/common/common.h
+   M src/jrd/inf_pub.h
+Arm64 port
+
  2014-05-21 17:11  asfernandes 
    M doc/sql.extensions/README.identity_columns.txt
 Fixed DOC-92 - Values for rdb$identity_type not correct in release notes.
