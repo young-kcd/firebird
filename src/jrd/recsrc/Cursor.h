@@ -35,7 +35,6 @@ namespace Jrd
 
 	class Cursor
 	{
-	public:
 		enum State { BOS, POSITIONED, EOS };
 
 		struct Impure
@@ -60,6 +59,8 @@ namespace Jrd
 		bool fetchAbsolute(thread_db* tdbb, SINT64 offset) const;
 		bool fetchRelative(thread_db* tdbb, SINT64 offset) const;
 
+		void checkState(jrd_req* request) const;
+
 		const RecordSource* getAccessPath() const
 		{
 			return m_top;
@@ -80,10 +81,10 @@ namespace Jrd
 		}
 
 	public:
-		ULONG m_impure;
 		Firebird::MetaName name;	// optional name for explicit PSQL cursors
 
 	private:
+		ULONG m_impure;
 		const RecordSource* const m_top;
 		const VarInvariantArray* const m_invariants;
 		const bool m_scrollable;

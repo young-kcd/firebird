@@ -299,3 +299,22 @@ bool Cursor::fetchRelative(thread_db* tdbb, SINT64 offset) const
 
 	return true;
 }
+
+// Check if the cursor is in a good state for access a field.
+void Cursor::checkState(jrd_req* request) const
+{
+	const Impure* const impure = request->getImpure<Impure>(m_impure);
+
+	if (!impure->irsb_active)
+	{
+		// error: invalid cursor state
+		status_exception::raise(Arg::Gds(isc_cursor_not_open));
+	}
+
+	if (impure->irsb_state != Cursor::POSITIONED)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_cursor_not_positioned) <<
+			Arg::Str(name));
+	}
+}

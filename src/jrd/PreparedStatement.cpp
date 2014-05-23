@@ -403,7 +403,7 @@ void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& va
 	msgMetadata->setItemsCount(paramCount);
 
 	for (size_t i = 0; i < paramCount; ++i)
-		dscToMetaItem(&params[i]->par_desc, msgMetadata->accessItem(i));
+		dscToMetaItem(&params[i]->par_desc, msgMetadata->getItem(i));
 
 	msgMetadata->makeOffsets();
 	msg.resize(msgMetadata->getMessageLength());
@@ -414,12 +414,12 @@ void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& va
 	{
 		// value
 		*value = params[i]->par_desc;
-		value->dsc_address = msg.begin() + msgMetadata->accessItem(i).offset;
+		value->dsc_address = msg.begin() + msgMetadata->getItem(i).offset;
 		++value;
 
 		// NULL indicator
 		value->makeShort(0);
-		value->dsc_address = msg.begin() + msgMetadata->accessItem(i).nullInd;
+		value->dsc_address = msg.begin() + msgMetadata->getItem(i).nullInd;
 		// set NULL indicator value
 		*((SSHORT*) value->dsc_address) = -1;
 		++value;

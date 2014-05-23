@@ -116,7 +116,7 @@ public:
 		length = 0;
 	}
 
-	Item& accessItem(unsigned n)
+	Item& getItem(unsigned n)
 	{
 		fb_assert(n < items.getCount());
 		return items[n];

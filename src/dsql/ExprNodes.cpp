@@ -4044,23 +4044,7 @@ ValueExprNode* DerivedExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 {
 	if (cursorNumber.specified)
-	{
-		const Cursor* const cursor = request->req_cursors[cursorNumber.value];
-		const Cursor::Impure* const cursorImpure = request->getImpure<Cursor::Impure>(cursor->m_impure);
-
-		if (!cursorImpure->irsb_active)
-		{
-			// error: invalid cursor state
-			status_exception::raise(Arg::Gds(isc_cursor_not_open));
-		}
-
-		if (cursorImpure->irsb_state != Cursor::POSITIONED)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_cursor_not_positioned) <<
-				Arg::Str(cursor->name));
-		}
-	}
+		request->req_cursors[cursorNumber.value]->checkState(request);
 
 	dsc* value = NULL;
 
@@ -5569,23 +5553,7 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 	impure_value* const impure = request->getImpure<impure_value>(impureOffset);
 
 	if (cursorNumber.specified)
-	{
-		const Cursor* const cursor = request->req_cursors[cursorNumber.value];
-		const Cursor::Impure* const cursorImpure = request->getImpure<Cursor::Impure>(cursor->m_impure);
-
-		if (!cursorImpure->irsb_active)
-		{
-			// error: invalid cursor state
-			status_exception::raise(Arg::Gds(isc_cursor_not_open));
-		}
-
-		if (cursorImpure->irsb_state != Cursor::POSITIONED)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_cursor_not_positioned) <<
-				Arg::Str(cursor->name));
-		}
-	}
+		request->req_cursors[cursorNumber.value]->checkState(request);
 
 	record_param& rpb = request->req_rpb[fieldStream];
 	Record* record = rpb.rpb_record;

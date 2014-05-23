@@ -254,8 +254,8 @@ private:
 	class LocalAllocGuard
 	{
 	public:
-		LocalAllocGuard(BackupManager* bm) :
-			m_bm(bm)
+		LocalAllocGuard(BackupManager* bm)
+			: m_bm(bm)
 		{
 			//Database::Checkout cout(m_bm->database);
 
@@ -293,8 +293,8 @@ private:
 	class GlobalAllocGuard
 	{
 	public:
-		GlobalAllocGuard(thread_db* _tdbb, BackupManager* _backupManager)
-			: tdbb(_tdbb), backupManager(_backupManager)
+		GlobalAllocGuard(thread_db* aTdbb, BackupManager* aBackupManager)
+			: tdbb(aTdbb), backupManager(aBackupManager)
 		{
 			if (Exclusive)
 				backupManager->lockAllocWrite(tdbb);
@@ -408,6 +408,7 @@ public:
 	bool actualizeState(thread_db* tdbb);
 	bool actualizeAlloc(thread_db* tdbb, bool haveGlobalLock);
 	void initializeAlloc(thread_db* tdbb);
+
 	void invalidateAlloc(thread_db* tdbb)
 	{
 		allocIsValid = false;

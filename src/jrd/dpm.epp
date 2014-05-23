@@ -3020,7 +3020,7 @@ static rhd* locate_space(thread_db* tdbb,
 			{
 				// hvlad: to avoid deadlocks in DPM_fetch_fragment enforce ascending
 				// order of pages for record fragments
-				if (rpb->rpb_flags & rpb_fragment && type == DPM_other &&
+				if ((rpb->rpb_flags & rpb_fragment) && type == DPM_other &&
 					rpb->rpb_page > dp_number)
 				{
 					continue;
