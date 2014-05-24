@@ -254,7 +254,7 @@ private:
 	class LocalAllocGuard
 	{
 	public:
-		LocalAllocGuard(BackupManager* bm)
+		explicit LocalAllocGuard(BackupManager* bm)
 			: m_bm(bm)
 		{
 			//Database::Checkout cout(m_bm->database);

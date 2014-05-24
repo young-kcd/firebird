@@ -572,7 +572,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb, bool haveGlobalLock)
 	// Difference file pointer pages have one ULONG as number of pages allocated on the page and
 	// then go physical numbers of pages from main database file. Offsets of numbers correspond
 	// to difference file pages.
-	const size_t PAGES_PER_ALLOC_PAGE = database->dbb_page_size / sizeof(ULONG)-1;
+	const size_t PAGES_PER_ALLOC_PAGE = database->dbb_page_size / sizeof(ULONG) - 1;
 
 	ISC_STATUS *status_vector = tdbb->tdbb_status_vector;
 	try {
