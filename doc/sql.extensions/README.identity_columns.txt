@@ -31,7 +31,7 @@ Implementation:
     RDB$GENERATOR_NAME stores the automatically created generator for the column. In RDB$GENERATORS,
     the value of RDB$SYSTEM_FLAG of that generator will be 6. RDB$IDENTITY_TYPE will currently
     always store the value 1 (by default) for identity columns and NULL for non-identity columns.
-    In the future this column will can store the value 0 (always) when Firebird support this type
+    In the future this column will store the value 0, too (for ALWAYS) when Firebird support this type
     of identity column.
 
 Example:
