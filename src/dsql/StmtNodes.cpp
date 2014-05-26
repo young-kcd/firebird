@@ -1200,6 +1200,8 @@ DeclareCursorNode* DeclareCursorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	dsqlScratch->putDebugCursor(cursorNumber, dsqlName);
 
+	++dsqlScratch->scopeLevel;
+
 	return this;
 }
 
@@ -4362,6 +4364,8 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (statement)
 	{
+		++dsqlScratch->scopeLevel;
+
 		// CVC: Let's add the ability to BREAK the for_select same as the while,
 		// but only if the command is FOR SELECT, otherwise we have singular SELECT
 		++dsqlScratch->loopLevel;
@@ -4369,6 +4373,8 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		node->statement = statement->dsqlPass(dsqlScratch);
 		--dsqlScratch->loopLevel;
 		dsqlScratch->labels.pop();
+
+		--dsqlScratch->scopeLevel;
 	}
 
 	dsqlScratch->context->clear(base);
