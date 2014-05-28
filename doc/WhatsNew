@@ -2,6 +2,62 @@
   * v2.5.3
   **************************
 
+    * Bugfix CORE-4433
+        GlobalRWLock could not downgrade EX lock to SH if readers is present 
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4372
+        Deadlock is possible when two data pages contains record fragments pointing to each other
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4353
+        Sorting records are larger than really necessary
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4327
+        Error in QLI when copying NULL blobs between databases 
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4319
+        Engine crashes when trace config contains line "connection_id=NN" and we attempt to connect
+        to non-existent database/alias
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4303
+        Possible races while service is being destructed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4302
+        Lookup (or scan) in descending index could be very inefficient for some keys
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4300
+        Server terminates abnormally when iscDatabaseInfo() is called with buffer size = 0
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4299
+        Error "Inappropriate self-reference of column" when using "with check option" with extract(...)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4298
+        fbsvcmgr doesn't recognise sts_record_versions and other sts switches
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4297
+        GFIX crashes when description of a limbo transaction has size larger than 1KB
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-4283
         Resource temporarily unavailable errors while simultaneously registering events
       Contributor(s):
@@ -397,13 +453,28 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-3183
+        fbembed.dll does not load icuin30.dll from same folder as itself
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2912
         Exception when upper casing string with lowercase y trema (code 0xFF in ISO8859_1)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at uol.com.br>
 
+    * Bugfix CORE-2848
+        "lock conversion denied" or "lock denied" error
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-2648
         Nbackup's delta file ignored Forced Writes database setting
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-2165
+        Unnecessary 1 index read may occur when using strict inequality condition
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
@@ -412,10 +483,45 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-1475
+        Database which has active attachments can not be replaced from backup file even after database shut down
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-1295
         Bad optimization of queries with DB_KEY
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4439
+        Raise the 1024 connections limit (FD_SETSIZE) on Windows SS/SC
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
+    * Improvement CORE-4432
+        Let attachments to not block others when allocation table is read first time
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-4431
+        Reduce contention for allocation table lock while database is in stalled physical backup state
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-4386
+        Report more details for "object in use" errors 
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4252
+        Add table name to text of validation contraint error message, to help identify error context
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-4215
+        Execution of SET STATISTICS INDEX statement could block or slow execution of concurrent attachments
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-3995
         Slight problem with GBAK parameter checking
@@ -427,8 +533,23 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-3881
+        Extend the error reported for index/constraint violations to include the problematic key value
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Improvement CORE-3704
         Add new context variables to the SYSTEM namespace
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * New feature CORE-4438
+        Add support for UPDATE OR INSERT statement to Embedded SQL
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * New feature CORE-4437
+        Add support for the RETURNING clause to Embedded SQL
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
