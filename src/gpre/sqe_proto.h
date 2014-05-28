@@ -33,9 +33,10 @@ GPRE_NOD	SQE_list(pfn_SQE_list_cb, gpre_req*, bool);
 REF			SQE_parameter(gpre_req*, bool);
 void		SQE_post_field(GPRE_NOD, gpre_fld*);
 REF			SQE_post_reference(gpre_req*, gpre_fld*, gpre_ctx*, GPRE_NOD);
-bool		SQE_resolve(GPRE_NOD, gpre_req*, gpre_rse*);
+bool		SQE_resolve(GPRE_NOD*, gpre_req*, gpre_rse*);
 gpre_rse*	SQE_select(gpre_req*, bool);
 GPRE_NOD	SQE_value(gpre_req*, bool, USHORT*, bool*);
+GPRE_NOD	SQE_value_or_null(gpre_req*, bool, USHORT*, bool*);
 GPRE_NOD	SQE_variable(gpre_req*, bool, USHORT*, bool*);
 
 #endif // GPRE_SQE_PROTO_H

@@ -248,7 +248,7 @@ act* PAR_action(const TEXT* base_dir)
 				return cur_statement = par_ready();
 			case KW_RELEASE_REQUESTS:
 				return cur_statement = par_release();
-			case KW_RETURNING:
+			case KW_RETURNING_VALUES:
 				return par_returning_values();
 			case KW_START_STREAM:
 				return cur_statement = par_start_stream();
@@ -1956,7 +1956,8 @@ static act* par_end_store(bool special)
 		}
 
 		gpre_nod* const assignments = MSC_node(nod_list, (SSHORT) count);
-		request->req_node = assignments;
+		request->req_node = MSC_ternary(nod_store, (GPRE_NOD) request->req_contexts,
+										assignments, NULL);
 		count = 0;
 
 		for (reference = request->req_references; reference;
@@ -2685,7 +2686,8 @@ static act* par_returning_values()
 	}
 
 	GPRE_NOD assignments = MSC_node(nod_list, (SSHORT) count);
-	request->req_node = assignments;
+	request->req_node = MSC_ternary(nod_store, (GPRE_NOD) request->req_contexts,
+									assignments, NULL);
 	count = 0;
 
 	for (reference = request->req_references; reference;

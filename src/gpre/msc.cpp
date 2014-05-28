@@ -490,6 +490,22 @@ gpre_sym* MSC_symbol(enum sym_t type, const TEXT* string, USHORT length, gpre_ct
 
 //____________________________________________________________
 //  
+//		Make a ternary node.
+//
+
+GPRE_NOD MSC_ternary(NOD_T type, GPRE_NOD arg1, GPRE_NOD arg2, GPRE_NOD arg3)
+{
+	GPRE_NOD node = MSC_node(type, 3);
+	node->nod_arg[0] = arg1;
+	node->nod_arg[1] = arg2;
+	node->nod_arg[2] = arg3;
+
+	return node;
+}
+
+
+//____________________________________________________________
+//
 //		Make a unary node.
 //  
 

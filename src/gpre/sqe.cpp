@@ -171,7 +171,7 @@ static const ops stat_ops[] = {
 
 static const NOD_T relationals[] = {
 	nod_eq, nod_ne, nod_gt, nod_ge, nod_le, nod_lt, nod_containing,
-	nod_starting, nod_matches, nod_any, nod_missing, nod_between, nod_like,
+	nod_starting, nod_matches, nod_any, nod_missing, nod_equiv, nod_between, nod_like,
 	nod_and, nod_or, nod_not, nod_ansi_any, nod_ansi_all, (NOD_T) 0
 };
 
@@ -918,12 +918,14 @@ REF SQE_post_reference(gpre_req* request, gpre_fld* field, gpre_ctx* context,
 //		otherwise false.
 //  
 
-bool SQE_resolve(GPRE_NOD node,
+bool SQE_resolve(GPRE_NOD* node_ptr,
 				 gpre_req* request,
 				 gpre_rse* selection)
 {
 	bool result = false;
 	act* slice_action = 0;
+
+	GPRE_NOD node = *node_ptr;
 
 	assert_IS_REQ(request);
 	assert_IS_NOD(node);
@@ -942,7 +944,7 @@ bool SQE_resolve(GPRE_NOD node,
 			gpre_nod** ptr = node->nod_arg;
 			const gpre_nod* const* const end = ptr + node->nod_count;
 			for (; ptr < end; ptr++)
-				result |= SQE_resolve(*ptr, request, selection);
+				result |= SQE_resolve(ptr, request, selection);
 			return result;
 		}
 
@@ -952,7 +954,7 @@ bool SQE_resolve(GPRE_NOD node,
 	case nod_agg_average:
 	case nod_agg_count:
 		if (node->nod_arg[0]) {
-			SQE_resolve(node->nod_arg[0], request, selection);
+			SQE_resolve(&node->nod_arg[0], request, selection);
 			gpre_nod* node_arg = node->nod_arg[0];
 			const ref* reference = (REF) node_arg->nod_arg[0];
 			if (node_arg->nod_type == nod_field && reference &&
@@ -969,16 +971,16 @@ bool SQE_resolve(GPRE_NOD node,
 			gpre_nod** ptr = node->nod_arg[0]->nod_arg;
 			const gpre_nod* const* const end = ptr + node->nod_arg[0]->nod_count;
 			for (; ptr < end; ptr++)
-				result |= SQE_resolve(*ptr, request, selection);
+				result |= SQE_resolve(ptr, request, selection);
 		}
 		return result;
 
 	case nod_gen_id:
-		return SQE_resolve(node->nod_arg[0], request, selection);
+		return SQE_resolve(&node->nod_arg[0], request, selection);
 
 // ** Begin date/time/timestamp support *
 	case nod_extract:
-		result |= SQE_resolve(node->nod_arg[1], request, selection);
+		result |= SQE_resolve(&node->nod_arg[1], request, selection);
 		return result;
 // ** End date/time/timestamp support *
 
@@ -1039,13 +1041,7 @@ bool SQE_resolve(GPRE_NOD node,
 	reference->ref_context = context;
 	reference->ref_slice = (slc*) slice_action;
 
-//  donot reinit if this is a nod_deffered type 
-	if (node->nod_type != nod_deferred)
-		node->nod_count = 0;
-
-
-	node->nod_type = nod_field;
-	node->nod_arg[0] = (GPRE_NOD) reference;
+	*node_ptr = MSC_unary(nod_field, (GPRE_NOD) reference);
 
 	return false;
 }
@@ -1198,9 +1194,8 @@ GPRE_NOD SQE_value_or_null(gpre_req* request,
 						   USHORT * paren_count,
 						   bool * bool_flag)
 {
-	if (MSC_match(KW_NULL)) {
+	if (MSC_match(KW_NULL))
 		return MSC_node(nod_null, 0);
-	}
 	else
 		return SQE_value(request, aster_ok, paren_count, bool_flag);
 }
@@ -2124,7 +2119,7 @@ static GPRE_NOD par_not( gpre_req* request, USHORT * paren_count)
 		gpre_rse* selection = par_rse(request, 0, false);
 		node->nod_arg[0] = (GPRE_NOD) selection;
 		if (field) {
-			SQE_resolve(field, 0, selection);
+			SQE_resolve(&field, 0, selection);
 			gpre_nod* expr = MSC_unary(nod_missing, field);
 			selection->rse_boolean = merge(negate(expr), selection->rse_boolean);
 		}
@@ -2615,11 +2610,21 @@ static GPRE_NOD par_relational(gpre_req* request,
 	else if (MSC_match(KW_IS)) {
 		if (MSC_match(KW_NOT))
 			negation = !negation;
-		if (!MSC_match(KW_NULL))
-			CPR_s_error("NULL");
-		if (expr1->nod_type == nod_array)
-			expr1->nod_type = nod_field;
-		node = MSC_unary(nod_missing, expr1);
+		if (MSC_match(KW_NULL))
+		{
+			if (expr1->nod_type == nod_array)
+				expr1->nod_type = nod_field;
+			node = MSC_unary(nod_missing, expr1);
+		}
+		else if (MSC_match(KW_DISTINCT))
+		{
+			if (!MSC_match(KW_FROM))
+				CPR_s_error("FROM");
+			node = MSC_binary(nod_equiv, expr1, SQE_value(request, false, NULL, NULL));
+			pair(node->nod_arg[0], node->nod_arg[1]);
+		}
+		else
+			CPR_s_error("NULL or DISTINCT");
 	}
 	else {
 		node = NULL;
@@ -2679,7 +2684,7 @@ static bool resolve_fields(GPRE_NOD& fields,
 
 	for (int i = 0; i < count; i++)
 	{
-		gpre_nod* node = ptr[i];
+		gpre_nod*& node = ptr[i];
 
 		if (node->nod_type == nod_asterisk) {
 			const int old_count = count;
@@ -2689,7 +2694,7 @@ static bool resolve_fields(GPRE_NOD& fields,
 			ptr = fields->nod_arg;
 		}
 		else {
-			aggregate |= SQE_resolve(node, NULL, selection);
+			aggregate |= SQE_resolve(&node, NULL, selection);
 			pair(node, 0);
 
 			switch (node->nod_type)

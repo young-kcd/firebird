@@ -267,6 +267,7 @@ typedef enum nod_t {
 	nod_extract, nod_current_date,
 	nod_current_time, nod_current_timestamp,
 	nod_lowcase, nod_current_connection, nod_current_role, nod_current_transaction,
+	nod_equiv,
 	nod_LASTNOD					/* Leave this debugging GPRE_NOD last */
 } NOD_T;
 
@@ -1231,7 +1232,8 @@ enum req_flags_vals {
 	REQ_scroll				= 65536,	/* request is a scrollable cursor */
 	REQ_backwards			= 131072,	/* request was last scrolled backwards */
 #endif
-	REQ_blr_version4		= 262144	/* request must generate blr_version4 */
+	REQ_blr_version4		= 262144,	/* request must generate blr_version4 */
+	REQ_sql_returning		= 524288	/* RETURNING clause is present */
 };
 
 const size_t REQ_LEN = sizeof(gpre_req);
@@ -1249,7 +1251,12 @@ struct gpre_ctx {
 	TEXT *ctx_alias;			/* holds SQL alias for passing to engine */
 	gpre_prc* ctx_procedure;	/* procedure for context */
 	gpre_nod* ctx_prc_inputs;	/* procedure input parameters */
-	gpre_rse* ctx_stream;			/* stream for context */
+	gpre_rse* ctx_stream;		/* stream for context */
+	USHORT ctx_flags;			/* misc flags */
+};
+
+enum ctx_flags_vals {
+	CTX_null = 1				/* context evaluates to NULL */
 };
 
 const size_t CTX_LEN = sizeof(gpre_ctx);

@@ -92,6 +92,7 @@ const op_table operators[] =
 	{ nod_lt			, blr_lss },
 	{ nod_ne			, blr_neq },
 	{ nod_missing		, blr_missing },
+	{ nod_equiv			, blr_equiv },
 	{ nod_between		, blr_between },
 	{ nod_and			, blr_and },
 	{ nod_or			, blr_or },
@@ -1429,7 +1430,11 @@ static void cmp_field( const gpre_nod* node, gpre_req* request)
 	if (!field)
 		puts("cmp_field: symbol missing");
 
-	if (field->fld_flags & FLD_dbkey)
+	if (context->ctx_flags & CTX_null)
+	{
+		request->add_byte(blr_null);
+	}
+	else if (field->fld_flags & FLD_dbkey)
 	{
 		request->add_byte(blr_dbkey);
 		request->add_byte(context->ctx_internal);

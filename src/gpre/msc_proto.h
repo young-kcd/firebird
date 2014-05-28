@@ -46,6 +46,7 @@ REF			MSC_reference(REF*);
 gpre_req*	MSC_request(enum req_t);
 SCHAR*		MSC_string(const TEXT*);
 gpre_sym*	MSC_symbol(enum sym_t, const TEXT*, USHORT, gpre_ctx*);
+GPRE_NOD	MSC_ternary(NOD_T, GPRE_NOD, GPRE_NOD, GPRE_NOD);
 GPRE_NOD	MSC_unary(NOD_T, GPRE_NOD);
 gpre_usn*	MSC_username(SCHAR*, USHORT);
 
