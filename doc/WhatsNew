@@ -2,26 +2,6 @@
   * v2.1.6
   ***************************
 
-    * New feature CORE-4438
-        Add support for UPDATE OR INSERT statement to Embedded SQL
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * New feature CORE-4437
-        Add support for the RETURNING clause to Embedded SQL
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-4386
-        Report more details for "object in use" errors 
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
-    * Improvement CORE-3881
-        Extend the error reported for index/constraint violations to include the problematic key value
-      Contributor(s):
-        Dmitry Yemanov <dimitr at firebirdsql.org>
-
     * Bugfix CORE-4327
         Error in QLI when copying NULL blobs between databases
       Contributor(s):
@@ -155,6 +135,26 @@
         Unnecessary 1 index read may occur when using strict inequality condition
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-4386
+        Report more details for "object in use" errors 
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-3881
+        Extend the error reported for index/constraint violations to include the problematic key value
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * New feature CORE-4438
+        Add support for UPDATE OR INSERT statement to Embedded SQL
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * New feature CORE-4437
+        Add support for the RETURNING clause to Embedded SQL
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
 
   ***************************
