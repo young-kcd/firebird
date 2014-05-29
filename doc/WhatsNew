@@ -2,6 +2,11 @@
   * v2.5.3
   **************************
 
+    * Bugfix CORE-4444
+        Engine could hang and block all attachments in out of disk space condition during physical backup
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-4433
         GlobalRWLock could not downgrade EX lock to SH if readers is present 
       Contributor(s):
@@ -492,6 +497,16 @@
         Bad optimization of queries with DB_KEY
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4445
+        Extend main database file faster when physical backup state changed from stalled to merge
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-4443
+        Use fast file grow on those Linux systems which supports it
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
 
     * Improvement CORE-4439
         Raise the 1024 connections limit (FD_SETSIZE) on Windows SS/SC
