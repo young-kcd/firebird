@@ -1864,9 +1864,9 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 	if (number > trans->tra_top)
 		return state;
 
-	// If the transaction disppeared into limbo, died, for constructively
+	// If the transaction disappeared into limbo, died, for constructively
 	// died, tweak the transaction state snapshot to reflect the new state.
-	// This is guarenteed safe.
+	// This is guaranteed safe.
 
 	const ULONG byte = TRANS_OFFSET(number - (trans->tra_oldest & ~TRA_MASK));
 	const USHORT shift = TRANS_SHIFT(number);
