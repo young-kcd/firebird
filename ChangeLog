@@ -1,3 +1,28 @@
+ 2014-05-28 06:14  dimitr 
+   M doc/WhatsNew
+Fixed the items ordering.
+
+ 2014-05-28 06:12  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2014-05-28 05:57  dimitr 
+   M src/gpre/c_cxx.cpp
+   M src/gpre/cme.cpp
+   M src/gpre/cmp.cpp
+   M src/gpre/gpre.h
+   M src/gpre/hsh.h
+   M src/gpre/msc.cpp
+   M src/gpre/msc_proto.h
+   M src/gpre/par.cpp
+   M src/gpre/sqe.cpp
+   M src/gpre/sqe_proto.h
+   M src/gpre/sql.cpp
+   M src/gpre/words.h
+CORE-4437: Add support for the RETURNING clause to Embedded SQL.
+CORE-4438: Add support for UPDATE OR INSERT statement to Embedded SQL.
+Only C/C++ language support is added, other languages will be supported in trunk.
+
  2014-05-06 14:05  hvlad 
    M src/remote/server.cpp
 Backported fix for bug CORE-2349 : False "Invalid SQLDA" error
