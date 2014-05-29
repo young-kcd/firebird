@@ -360,6 +360,46 @@ ULONG BackupManager::getPageCount()
 }
 
 
+bool BackupManager::extendDatabase(thread_db* tdbb)
+{
+	ULONG maxPage = 0;
+	{
+		LocalAllocReadGuard localAllocGuard(this);
+		AllocItemTree::Accessor all(alloc_table);
+
+		if (all.getFirst()) {
+			do
+			{
+				const ULONG pg = all.current().db_page;
+				if (maxPage < pg)
+					maxPage = pg;
+			} while (all.getNext());
+		}
+	}
+
+	PageSpace *pgSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+	ULONG maxAllocPage = pgSpace->maxAlloc(database->dbb_page_size);
+	if (maxAllocPage >= maxPage)
+		return true;
+
+	if (!pgSpace->extend(tdbb, maxPage, true))
+		return false;
+
+	maxAllocPage = pgSpace->maxAlloc(database->dbb_page_size);
+	while (maxAllocPage < maxPage)
+	{
+		const USHORT ret = PIO_init_data(database, pgSpace->file, tdbb->tdbb_status_vector, 
+										 maxAllocPage, 256);
+
+		if (ret != 256)
+			return false;
+
+		maxAllocPage += ret;
+	}
+	return true;
+}
+
+
 // Merge difference file to main files (if needed) and unlink() difference
 // file then. If merge is already in progress method silently returns and
 // does nothing (so it can be used for recovery on database startup).
@@ -398,6 +438,9 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 				endLock.unlockWrite(tdbb);
 				return;
 			}
+
+			if (backup_state == nbak_state_stalled && !extendDatabase(tdbb))
+				status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
 		// Here backup state can be changed. Need to check it again after lock
@@ -410,6 +453,13 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 			endLock.unlockWrite(tdbb);
 			return;
 		}
+
+		if (!extendDatabase(tdbb))
+		{
+			stateGuard.setSuccess();
+			status_exception::raise(tdbb->tdbb_status_vector);
+		}
+
 		header = (Ods::header_page*) window.win_buffer;
 
 		NBAK_TRACE(("difference file %s, current backup state is %d", diff_name.c_str(), backup_state));
