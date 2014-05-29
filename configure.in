@@ -699,6 +699,7 @@ AC_CHECK_HEADERS(atomic.h)
 AC_CHECK_HEADERS(atomic_ops.h)
 AC_CHECK_HEADERS(utime.h)
 AC_CHECK_HEADERS(poll.h)
+AC_CHECK_HEADERS(linux/falloc.h)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)

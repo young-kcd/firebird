@@ -103,7 +103,7 @@ public:
 	static ULONG maxAlloc(const Database* dbb);
 
 	// extend page space
-	bool extend(thread_db*, const ULONG);
+	bool extend(thread_db*, const ULONG, const bool);
 
 private:
 	ULONG	maxPageNumber;

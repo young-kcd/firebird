@@ -46,6 +46,9 @@
 #ifdef HAVE_AIO_H
 #include <aio.h>
 #endif
+#ifdef HAVE_LINUX_FALLOC_H
+#include <linux/falloc.h>
+#endif
 
 #include "../jrd/jrd.h"
 #include "../jrd/os/pio.h"
@@ -281,7 +284,7 @@ bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, 
 }
 
 
-void PIO_extend(Database* dbb, jrd_file* /*main_file*/, const ULONG /*extPages*/, const USHORT /*pageSize*/)
+void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const USHORT pageSize)
 {
 /**************************************
  *
@@ -293,6 +296,56 @@ void PIO_extend(Database* dbb, jrd_file* /*main_file*/, const ULONG /*extPages*/
  *	Extend file by extPages pages of pageSize size.
  *
  **************************************/
+
+#ifdef HAVE_LINUX_FALLOC_H
+	ULONG leftPages = extPages;
+	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
+	{
+		const ULONG filePages = PIO_get_number_of_pages(file, pageSize);
+		const ULONG fileMaxPages = (file->fil_max_page == MAX_ULONG) ?
+									MAX_ULONG : file->fil_max_page - file->fil_min_page + 1;
+		if (filePages < fileMaxPages)
+		{
+			if (file->fil_flags & FIL_no_fast_extend) 
+				return;
+
+			const ULONG extendBy = MIN(fileMaxPages - filePages + file->fil_fudge, leftPages);
+
+			int r;
+			for (r = 0; r < IO_RETRY; r++)
+			{
+				int err = fallocate(file->fil_desc, 0, filePages * pageSize, extendBy * pageSize);
+				if (err == 0)
+					break;
+
+				err = errno;
+				if (SYSCALL_INTERRUPTED(err))
+					continue;
+
+				if (err == EOPNOTSUPP || err == ENOSYS)
+					file->fil_flags |= FIL_no_fast_extend;
+				else
+					unix_error("fallocate", file, isc_io_write_err);
+				return;
+			}
+
+			if (r == IO_RETRY)
+			{
+#ifdef DEV_BUILD
+				fprintf(stderr, "PIO_extend: retry count exceeded\n");
+				fflush(stderr);
+#endif
+				unix_error("fallocate_retry", file, isc_io_write_err);
+				return;
+			}
+
+			leftPages -= extendBy;
+		}
+	}
+#else
+	main_file->fil_flags |= FIL_no_fast_extend;
+#endif // HAVE_LINUX_FALLOC_H
+
 	// not implemented
 	return;
 }
