@@ -1,3 +1,24 @@
+ 2014-05-28 06:39  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2014-05-28 05:56  dimitr 
+   M src/gpre/c_cxx.cpp
+   M src/gpre/cme.cpp
+   M src/gpre/cmp.cpp
+   M src/gpre/gpre.h
+   M src/gpre/hsh.h
+   M src/gpre/msc.cpp
+   M src/gpre/msc_proto.h
+   M src/gpre/par.cpp
+   M src/gpre/sqe.cpp
+   M src/gpre/sqe_proto.h
+   M src/gpre/sql.cpp
+   M src/gpre/words.h
+CORE-4437: Add support for the RETURNING clause to Embedded SQL.
+CORE-4438: Add support for UPDATE OR INSERT statement to Embedded SQL.
+Only C/C++ language support is added, other languages will be supported in trunk.
+
  2014-05-23 01:31  robocop 
    M src/jrd/nbak.h
 Misc.
