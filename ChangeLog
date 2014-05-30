@@ -1,3 +1,7 @@
+ 2014-05-29 07:19  dimitr 
+   M src/jrd/tra.cpp
+Totally misc.
+
  2014-05-28 14:59  asfernandes 
    M src/utilities/fbsvcmgr/fbsvcmgr.cpp
 Apply patch "Removed white space before bracket" by Jiri Cincura.
