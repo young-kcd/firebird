@@ -1031,10 +1031,8 @@ static void cmp_loop( gpre_req* request)
 			break;
 		}
 	case nod_store:
-		{
-			cmp_store(request, node);
-			break;
-		}
+		cmp_store(request, node);
+		break;
 	case nod_erase:
 		if (request->req_flags & REQ_sql_returning)
 		{
