@@ -1,3 +1,29 @@
+ 2014-05-29 12:15  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2014-05-29 07:54  hvlad 
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/GlobalRWLock.h
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Fixed bug CORE-4444 : Engine could hung and block all attachments in out of disk space condition during physical backup
+Improvement CORE-4445 : Extend main database file faster when physical backup state changed from stalled to merge
+
+ 2014-05-29 07:46  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Fixed bug CORE-4444 : Engine could hung and block all attachments in out of disk space condition during physical backup
+
+ 2014-05-29 07:44  hvlad 
+   M configure.in
+   M src/jrd/os/pio.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag.h
+Implement support for fallocate() call on Linux. 
+Implement improvement CORE-4443 : Use fast file grow on those Linux systems which supports it
+
  2014-05-28 06:39  dimitr 
    M doc/WhatsNew
 Updated the docs.
