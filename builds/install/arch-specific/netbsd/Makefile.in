@@ -27,6 +27,8 @@
 #  Contributor(s): Chris Knight <chris@e-easy.com.au>
 # 
 #
+#  $Id: Makefile.in,v 1.1 2004-05-20 23:04:23 skidder Exp $
+#
 ROOT=..
 
 
@@ -44,6 +46,7 @@ FirebirdInstallPrefix=@prefix@
 FIREBIRD=$(FirebirdInstallPrefix)
 
 export -n FIREBIRD
+export -n INTERBASE
 
 .PHONY: install
 
@@ -67,5 +70,5 @@ BuildVersion=$(FirebirdVersion).$(BuildNum)
 Version=$(BuildVersion)-$(PackageVersion)
 
 install:
-	(cd $(GEN_ROOT)/; FIREBIRD= FIREBIRD_LOCK= ./install/install.netbsd.sh)
+	(cd $(GEN_ROOT)/; ./install/install.netbsd.sh)
 

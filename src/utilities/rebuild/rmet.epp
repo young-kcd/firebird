@@ -29,12 +29,12 @@
 #include "../utilities/rebuild/rebuild.h"
 #include "../utilities/rebuild/rebui_proto.h"
 #include "../utilities/rebuild/rmet_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 
 DATABASE DB = STATIC FILENAME "rebuild.fdb";
 
 
-ULONG* RMET_tips(TEXT* db_in)
+ULONG *RMET_tips(TEXT * db_in)
 {
 /**************************************
  *
@@ -76,8 +76,10 @@ ULONG* RMET_tips(TEXT* db_in)
 	ULONG* tip = tips;
 
 	FOR X IN RDB$PAGES WITH X.RDB$PAGE_TYPE = pag_transactions
-		*tip = X.RDB$PAGE_NUMBER;
-		tip++;
+		{
+			*tip = X.RDB$PAGE_NUMBER;
+			tip++;
+		}
 	END_FOR
 	ON_ERROR
 		isc_print_status(gds__status);
@@ -91,3 +93,4 @@ ULONG* RMET_tips(TEXT* db_in)
 
 	return tips;
 }
+

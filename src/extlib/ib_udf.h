@@ -18,11 +18,11 @@
  */
 
 #if defined(__cplusplus) && defined(DARWIN)
-#include "firebird.h"
+#include "../jrd/common.h"
 #define EXPORT API_ROUTINE
 #else
 #define EXPORT
-#endif
+#endif 
 #define MATHERR	matherr
 
 #include <stdarg.h>

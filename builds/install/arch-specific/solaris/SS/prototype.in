@@ -10,15 +10,16 @@ i postremove=Postremove
 i prototype=Prototype
 
 !default 755 firebird firebird
-d none  /usr         ? ? ?
-d none  /usr/lib     ? ? ?
-d none /opt          ? ? ?
+d none /usr         ? ? ?
+d none /usr/lib     ? ? ?
+d none /usr/lib/64  ? ? ?
+d none /opt         ? ? ?
 
 d none @prefix@ 0755 firebird firebird
 
 v CONFIG.prsv @prefix@/security2.fdb=$SRCDIR/security2.fdb  0660 firebird firebird
 v CONFIG.prsv @prefix@/firebird.conf=$SRCDIR/misc/firebird.conf  0644 firebird firebird
-v CONFIG.prsv @prefix@/databases.conf=$SRCDIR/../../builds/install/misc/databases.conf.in  0544 firebird firebird
+v CONFIG.prsv @prefix@/aliases.conf=$SRCDIR/../../builds/install/misc/aliases.conf.in  0544 firebird firebird
 v CONFIG.prsv @prefix@/intl/fbintl.conf=$SRCDIR/misc/fbintl.conf 0644 firebird firebird
 f none @prefix@/WhatsNew=$SRCDIR/../../doc/WhatsNew 0644 firebird firebird
 
@@ -30,8 +31,8 @@ d none @prefix@/bin  0755 firebird firebird
 
 #/usr/lib symlinks for compability with external tools
 
-s none /usr/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.2
-s none /usr/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.2
+s none /usr/lib/64/libfbembed.so.2=@prefix@/lib/libfbembed.so.2
+s none /usr/lib/64/libfbclient.so.2=@prefix@/lib/libfbclient.so.2
 
 # include
 
@@ -59,18 +60,20 @@ f none @prefix@/UDF/fbudf.sql=$SRCDIR/../../src/extlib/fbudf/fbudf.sql 0644 fire
 # bin
 
 d none @prefix@/bin 0755 firebird firebird
-#f none @prefix@/bin/fb_smp_server=$SRCDIR/bin/fb_smp_server 0451 firebird firebird
+#f none @prefix@/bin/fb_inet_server=$SRCDIR/bin/fb_inet_server 0451 firebird firebird
 f none @prefix@/bin/gfix=$SRCDIR/bin/gfix 0755 firebird firebird
 f none @prefix@/bin/gbak=$SRCDIR/bin/gbak 0755 firebird firebird
 f none @prefix@/bin/gsplit=$SRCDIR/bin/gsplit 0755 firebird firebird
 f none @prefix@/bin/gsec=$SRCDIR/bin/gsec 0755 firebird firebird
 f none @prefix@/bin/isql=$SRCDIR/bin/isql 0755 firebird firebird
 f none @prefix@/bin/gpre=$SRCDIR/bin/gpre 0755 firebird firebird
+#f none @prefix@/bin/gds_drop=$SRCDIR/bin/gds_drop 0451 firebird firebird
 f none @prefix@/bin/gstat=$SRCDIR/bin/gstat 0451 firebird firebird
 f none @prefix@/bin/fbguard=$SRCDIR/bin/fbguard 0755 firebird firebird
 f none @prefix@/bin/fbserver=$SRCDIR/bin/fbserver 0755 firebird firebird
 f none @prefix@/bin/fbmgr.bin=$SRCDIR/bin/fbmgr.bin 0755 firebird firebird
 f none @prefix@/bin/fb_lock_print=$SRCDIR/bin/fb_lock_print 0755 firebird firebird
+f none @prefix@/bin/gdef=$SRCDIR/bin/gdef 0755 firebird firebird
 f none @prefix@/bin/qli=$SRCDIR/bin/qli 6777 firebird firebird
 # from 2.0
 f none @prefix@/bin/nbackup=$SRCDIR/bin/nbackup 6777 firebird firebird
@@ -165,18 +168,33 @@ f none @prefix@/examples/functions.c=$SRCDIR/examples/functions.c 0644 firebird 
 
 
 # lib
+
 d none @prefix@/lib 0755 firebird firebird
 f none @prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbclient.so.@FIREBIRD_VERSION@  0755 firebird firebird
 s none @prefix@/lib/libfbclient.so.2=@prefix@/lib/libfbclient.so.@FIREBIRD_VERSION@
 s none @prefix@/lib/libfbclient.so=@prefix@/lib/libfbclient.so.2
 
-#f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@ 0755 firebird firebird
-#s none @prefix@/lib/libfbembed.so.2=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
-#s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2
+#f none @prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@=$SRCDIR/lib/libfbembed.so.@FIREBIRD_VERSION@ 0555 firebird firebird
+#s none @prefix@/lib/libfbembed.so.2.1=@prefix@/lib/libfbembed.so.@FIREBIRD_VERSION@
+#s none @prefix@/lib/libfbembed.so=@prefix@/lib/libfbembed.so.2.1
 
 f none @prefix@/lib/libib_util.so=$SRCDIR/lib/libib_util.so 0755 firebird firebird
 
-# help
+# ICU
+
+f none @prefix@/lib/libicudata.so.30.0=$SRCDIR/lib/libicudata.so.30.0 0755 firebird firebird
+s none @prefix@/lib/libicudata.so.30=@prefix@/lib/libicudata.so.30.0
+s none @prefix@/lib/libicudata.so=@prefix@/lib/libicudata.so.30
+
+f none @prefix@/lib/libicui18n.so.30.0=$SRCDIR/lib/libicui18n.so.30.0 0755 firebird firebird
+s none @prefix@/lib/libicui18n.so.30=@prefix@/lib/libicui18n.so.30.0
+s none @prefix@/lib/libicui18n.so=@prefix@/lib/libicui18n.so.30
+
+f none @prefix@/lib/libicuuc.so.30.0=$SRCDIR/lib/libicuuc.so.30.0 0755 firebird firebird
+s none @prefix@/lib/libicuuc.so.30=@prefix@/lib/libicuuc.so.30.0
+s none @prefix@/lib/libicuuc.so=@prefix@/lib/libicuuc.so.30
+
+# help 
 
 d none @prefix@/help 0755 firebird firebird
 f none @prefix@/help/help.fdb=$SRCDIR/help/help.fdb 0444 firebird firebird
@@ -232,12 +250,15 @@ f none @prefix@/doc/sql.extensions/README.rows=$SRCDIR/../../doc/sql.extensions/
 f none @prefix@/doc/sql.extensions/README.savepoints=$SRCDIR/../../doc/sql.extensions/README.savepoints 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.select_expressions=$SRCDIR/../../doc/sql.extensions/README.select_expressions 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.sequence_generators=$SRCDIR/../../doc/sql.extensions/README.sequence_generators 0644 firebird firebird
-f none @prefix@/doc/sql.extensions/README.set_transaction=$SRCDIR/../../doc/sql.extensions/README.set_transaction.txt
+f none @prefix@/doc/sql.extensions/README.set_transaction=$SRCDIR/../../doc/sql.extensions/README.set_transaction.txt 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.trim=$SRCDIR/../../doc/sql.extensions/README.trim 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.universal_triggers=$SRCDIR/../../doc/sql.extensions/README.universal_triggers 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.update_or_insert=$SRCDIR/../../doc/sql.extensions/README.update_or_insert 0644 firebird firebird
 f none @prefix@/doc/sql.extensions/README.view_updates=$SRCDIR/../../doc/sql.extensions/README.view_updates 0644 firebird firebird
-f none @prefix@/doc/ReleaseNotes.pdf=$SRCDIR/../../doc/ReleaseNotes.pdf 0644 firebird firebird
+f none @prefix@/doc/Firebird-2-QuickStart.pdf=$SRCDIR/../../doc/Firebird-2-QuickStart.pdf 0644 firebird firebird
+f none @prefix@/doc/Firebird-2.1-ReleaseNotes.pdf=$SRCDIR/../../doc/Firebird-2.1-ReleaseNotes.pdf 0644 firebird firebird
+f none @prefix@/doc/Firebird-2.1-Installation.pdf=$SRCDIR/../../doc/Firebird-2.1-Installation.pdf 0644 firebird firebird
+f none @prefix@/doc/Firebird-2.1-BugFixes.pdf=$SRCDIR/../../doc/Firebird-2.1-BugFixes.pdf 0644 firebird firebird
 f none @prefix@/doc/ods11-index-structure.html=$SRCDIR/../../doc/ods11-index-structure.html 0644 firebird firebird
 f none @prefix@/doc/README.build.mingw.html=$SRCDIR/../../doc/README.build.mingw.html 0644 firebird firebird
 f none @prefix@/doc/README.build.msvc.html=$SRCDIR/../../doc/README.build.msvc.html 0644 firebird firebird
@@ -266,3 +287,4 @@ f none @prefix@/doc/README.xnet=$SRCDIR/../../doc/README.xnet 0644 firebird fire
 # Service
 
 f none /@prefix@/gds_db-tcp.xml=$SRCDIR/../../builds/install/arch-specific/solaris/SS/gds_db-tcp.xml 0644 firebird firebird
+  

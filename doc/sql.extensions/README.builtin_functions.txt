@@ -11,7 +11,6 @@ Authors:
     Adriano dos Santos Fernandes <adrianosf@uol.com.br>
     Oleg Loa <loa@mail.ru>
     Alexey Karyakin <aleksey.karyakin@mail.ru>
-    Claudio Valderrama C. <cvalde at usa.net>
 
 
 ---
@@ -44,20 +43,6 @@ Notes:
 
 Example:
     select acos(x) from y;
-
-
------
-ACOSH
------
-
-Function:
-    Returns the hyperbolic arc cosine of a number (expressed in radians).
-
-Format:
-    ACOSH( <number> )
-
-Example:
-    select acosh(x) from y;
 
 
 ----------
@@ -114,20 +99,6 @@ Example:
     select asin(x) from y;
 
 
------
-ASINH
------
-
-Function:
-    Returns the hyperbolic arc sine of a number (expressed in radians).
-
-Format:
-    ASINH( <number> )
-
-Example:
-    select asinh(x) from y;
-
-
 ----
 ATAN
 ----
@@ -162,20 +133,6 @@ Example:
     select atan2(x, y) from z;
 
 
------
-ATANH
------
-
-Function:
-    Returns the hyperbolic arc tangent of a number (expressed in radians).
-
-Format:
-    ATANH( <number> )
-
-Example:
-    select atanh(x) from y;
-
-
 -------
 BIN_AND
 -------
@@ -184,24 +141,10 @@ Function:
     Returns the result of a binary AND operation performed on all arguments.
 
 Format:
-    BIN_AND( <number>, <number> [, <number> ...] )
+    BIN_AND( <number> [, <number> ...] )
 
 Example:
     select bin_and(flags, 1) from x;
-
-
--------
-BIN_NOT
--------
-
-Function:
-    Returns the result of a bitwise NOT operation performed on its argument.
-
-Format:
-    BIN_NOT( <number> )
-
-Example:
-    select bin_not(flags) from x;
 
 
 ------
@@ -212,7 +155,7 @@ Function:
     Returns the result of a binary OR operation performed on all arguments.
 
 Format:
-    BIN_OR( <number>, <number> [, <number> ...] )
+    BIN_OR( <number> [, <number> ...] )
 
 Example:
     select bin_or(flags1, flags2) from x;
@@ -254,7 +197,7 @@ Function:
     Returns the result of a binary XOR operation performed on all arguments.
 
 Format:
-    BIN_XOR( <number>, <number> [, <number> ...] )
+    BIN_XOR( <number> [, <number> ...] )
 
 Example:
     select bin_xor(flags1, flags2) from x;
@@ -276,36 +219,12 @@ Example:
     2) select ceil(2.1), ceil(-2.1) from rdb$database;  -- returns 3, -2
 
 
-------------
-CHAR_TO_UUID
-------------
-
-Function:
-    Converts the CHAR(32) ASCII representation of an UUID
-    (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX) to the CHAR(16) OCTETS
-    representation (optimized for storage).
-
-Format:
-    CHAR_TO_UUID( <string> )
-
-Important (for big-endian servers):
-    It has been discovered that before Firebird 2.5.2, CHAR_TO_UUID and UUID_TO_CHAR work
-    incorrectly in big-endian servers. In these machines, bytes/characters are swapped and go in
-    wrong positions when converting. This bug was fixed in 2.5.2 and 3.0, but that means these
-    functions now return different values (for the same input parameter) than before.
-
-Example:
-    select char_to_uuid('93519227-8D50-4E47-81AA-8F6678C096A1') from rdb$database;
-
-See also: GEN_UUID and UUID_TO_CHAR
-
-
 ---
 COS
 ---
 
 Function:
-    Returns the cosine of an angle (expressed in radians).
+    Returns the cosine of a number.
 
 Format:
     COS( <number> )
@@ -322,7 +241,7 @@ COSH
 ----
 
 Function:
-    Returns the hyperbolic cosine of an angle (expressed in radians).
+    Returns the hyperbolic cosine of a number.
 
 Format:
     COSH( <number> )
@@ -357,15 +276,12 @@ Format:
     DATEADD( <number> <timestamp_part> TO <date_time> )
     DATEADD( <timestamp_part>, <number>, <date_time> )
 
-    timestamp_part ::= { YEAR | MONTH | DAY | WEEK | HOUR | MINUTE | SECOND | MILLISECOND }
+    timestamp_part ::= { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND | MILLISECOND }
 
 Notes:
-    1) WEEKDAY and YEARDAY cannot be used. It doesn't make sense.
-    2) YEAR, MONTH and DAY could not be used with time values.
+    1) YEAR, MONTH, DAY and WEEKDAY could not be used with time values.
+    2) HOUR, MINUTE and SECOND could not be used with date values.
     3) All timestamp_part values could be used with timestamp values.
-    4) When using hour, minute, second and millisecond for DATEADD and dates, the quantity added or
-        subtracted should account at least for one day to produce effect (IE adding 23 hours to a date
-        doesn't increment it).
 
 Example:
     select dateadd(-1 day to current_date) as yesterday
@@ -384,19 +300,13 @@ Format:
     DATEDIFF( <timestamp_part> FROM <date_time> TO <date_time> )
     DATEDIFF( <timestamp_part>, <date_time>, <date_time> )
 
-    timestamp_part ::= { YEAR | MONTH | DAY | WEEK | HOUR | MINUTE | SECOND | MILLISECOND }
-
 Notes:
     1) Returns positive value if the second value is greater than the first one,
 	   negative when the first one is greater or zero when they are equal.
     2) Comparison of date with time values is invalid.
-    3) WEEKDAY and YEARDAY cannot be used. It doesn't make sense.
-    4) YEAR, MONTH and DAY could not be used with time values.
+    3) YEAR, MONTH, DAY and WEEKDAY could not be used with time values.
+    4) HOUR, MINUTE and SECOND could not be used with date values.
     5) All timestamp_part values could be used with timestamp values.
-
-Example:
-    select datediff(week from cast('yesterday' as timestamp) - 7 to current_timestamp)
-	    from rdb$database;
 
 
 ------
@@ -448,22 +358,13 @@ GEN_UUID
 --------
 
 Function:
-    Returns an universal unique number in CHAR(16) OCTETS type.
+    Returns a universal unique number.
 
 Format:
     GEN_UUID()
 
-Important:
-    Before Firebird 2.5.2, GEN_UUID was returning completely random strings. This is not compliant
-    with the RFC-4122 (UUID specification).
-    This was fixed in Firebird 2.5.2 and 3.0. Now GEN_UUID returns a compliant UUID version 4
-    string, where some bits are reserved and the others are random. The string format of a compliant
-    UUID is XXXXXXXX-XXXX-4XXX-YXXX-XXXXXXXXXXXX, where 4 is fixed (version) and Y is 8, 9, A or B.
-
 Example:
     insert into records (id) value (gen_uuid());
-
-See also: CHAR_TO_UUID and UUID_TO_CHAR
 
 
 ----
@@ -553,8 +454,6 @@ Notes:
     1) If the second string is omitted the default value is one space.
     2) The second string is truncated when the result string will
 	   become larger than length.
-    3) The first string is truncated if its length is greater than the length
-	   parameter.
 
 Example:
     select lpad(x, 10) from y;
@@ -616,9 +515,9 @@ Format:
 Notes:
     1) If <length> is not specified, CHAR_LENGTH( <string2> ) is implied.
     2) The OVERLAY function is equivalent to:
-           SUBSTRING(<string1> FROM 1 FOR <start> - 1) ||
+           SUBSTRING(<string1>, 1 FOR <start> - 1) ||
            <string2> ||
-           SUBSTRING(<string1> FROM <start> + <length>)
+           SUBSTRING(<string1>, <start> + <length>)
 
 
 --
@@ -641,7 +540,7 @@ POSITION
 
 Function:
     Returns the position of the first string inside the second string starting at
-    an offset (or from the beginning when omitted). When not found, returns 0.
+    an offset (or from the beginning when omitted).
 
 Format:
     POSITION( <string> IN <string> )
@@ -719,7 +618,6 @@ RIGHT
 -----
 
 Function:
-    RIGHT(string, length)
     Returns the substring of a specified length that appears at the end of a string.
 
 Format:
@@ -736,7 +634,6 @@ ROUND
 -----
 
 Function:
-    ROUND(number, scale)
     Returns a number rounded to the specified scale.
 
 Format:
@@ -765,8 +662,6 @@ Notes:
     1) If the second string is omitted the default value is one space.
     2) The second string is truncated when the result string will
 	   become larger than length.
-    3) The first string is truncated if its length is greater than the length
-	   parameter.
 
 Example:
     select rpad(x, 10) from y;
@@ -792,7 +687,7 @@ SIN
 ---
 
 Function:
-    Returns the sine of an angle (expressed in radians).
+    Returns the sine of a number.
 
 Format:
     SIN( <number> )
@@ -809,7 +704,7 @@ SINH
 ----
 
 Function:
-    Returns the hyperbolic sine of an angle (expressed in radians).
+    Returns the hyperbolic sine of a number.
 
 Format:
     SINH( <number> )
@@ -837,7 +732,7 @@ TAN
 ---
 
 Function:
-    Returns the tangent of an angle (expressed in radians).
+    Returns the tangent of a number.
 
 Format:
     TAN( <number> )
@@ -854,7 +749,7 @@ TANH
 ----
 
 Function:
-    Returns the hyperbolic tangent of an angle (expressed in radians).
+    Returns the hyperbolic tangent of a number.
 
 Format:
     TANH( <number> )
@@ -868,7 +763,6 @@ TRUNC
 -----
 
 Function:
-    TRUNC(number, scale)
     Returns the integral part (up to the specified scale) of a number.
 
 Format:
@@ -882,26 +776,3 @@ Example:
     1) select trunc(x) from y;
     2) select trunc(-2.8), trunc(2.8) from rdb$database;  -- returns -2, 2
     3) select trunc(987.65, 1), trunc(987.65, -1) from rdb$database;  -- returns 987.60, 980.00
-
-
-------------
-UUID_TO_CHAR
-------------
-
-Function:
-    Converts a CHAR(16) OCTETS UUID (that's returned by GEN_UUID) to the
-    CHAR(32) ASCII representation (XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX).
-
-Format:
-    UUID_TO_CHAR( <string> )
-
-Important (for big-endian servers):
-    It has been discovered that before Firebird 2.5.2, CHAR_TO_UUID and UUID_TO_CHAR work
-    incorrectly in big-endian servers. In these machines, bytes/characters are swapped and go in
-    wrong positions when converting. This bug was fixed in 2.5.2 and 3.0, but that means these
-    functions now return different values (for the same input parameter) than before.
-
-Example:
-    select uuid_to_char(gen_uuid()) from rdb$database;
-
-See also: GEN_UUID and CHAR_TO_UUID

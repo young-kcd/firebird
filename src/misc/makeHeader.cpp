@@ -1,30 +1,23 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-//#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-//#endif
 
 
-
-void ProcessFile(FILE *in, bool stripFirstComment)
+void ProcessFile(FILE *in, bool stripFirstComment) 
 {
 	char s[256];
 	bool striping = false;
-	while (fgets(s, sizeof(s), in))
-	{
-		if (stripFirstComment)
-		{
+	while (fgets(s, sizeof(s), in)) {
+		if (stripFirstComment) {
 			char *x = strstr(s, "/*");
-			if (x)
-			{
+			if (x) {
 				striping = true;
 				stripFirstComment = false;
 				continue;
 			}
 		}
-		if (striping)
-		{
+		if (striping) {
 			char *x = strstr(s, "*/");
 			if (x) {
 				striping = false;
@@ -32,14 +25,12 @@ void ProcessFile(FILE *in, bool stripFirstComment)
 			continue;
 		}
 		const char* include = "#include";
-		if (memcmp(s, include, strlen(include)))
-		{
+		if (memcmp(s, include, strlen(include))) {
 			fputs(s, stdout);
 			continue;
 		}
 		char *p = strchr(s, '<');
-		if (p)
-		{
+		if (p) {
 			fputs(s, stdout);
 			continue;
 		}

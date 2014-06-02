@@ -1,4 +1,4 @@
-/*	$NetBSD: refresh.c,v 1.37 2011/07/29 23:44:45 christos Exp $	*/
+/*	$NetBSD: refresh.c,v 1.27 2005/11/09 22:11:10 christos Exp $	*/
 
 /*-
  * Copyright (c) 1992, 1993
@@ -37,7 +37,7 @@
 #if 0
 static char sccsid[] = "@(#)refresh.c	8.1 (Berkeley) 6/4/93";
 #else
-__RCSID("$NetBSD: refresh.c,v 1.37 2011/07/29 23:44:45 christos Exp $");
+__RCSID("$NetBSD: refresh.c,v 1.27 2005/11/09 22:11:10 christos Exp $");
 #endif
 #endif /* not lint && not SCCSID */
 
@@ -51,15 +51,14 @@ __RCSID("$NetBSD: refresh.c,v 1.37 2011/07/29 23:44:45 christos Exp $");
 
 #include "el.h"
 
-private void	re_nextline(EditLine *);
-private void	re_addc(EditLine *, Int);
-private void	re_update_line(EditLine *, Char *, Char *, int);
-private void	re_insert (EditLine *, Char *, int, int, Char *, int);
-private void	re_delete(EditLine *, Char *, int, int, int);
-private void	re_fastputc(EditLine *, Int);
+private void	re_addc(EditLine *, int);
+private void	re_update_line(EditLine *, char *, char *, int);
+private void	re_insert (EditLine *, char *, int, int, char *, int);
+private void	re_delete(EditLine *, char *, int, int, int);
+private void	re_fastputc(EditLine *, int);
 private void	re_clear_eol(EditLine *, int, int, int);
-private void	re__strncopy(Char *, Char *, size_t);
-private void	re__copy_and_pad(Char *, const Char *, size_t);
+private void	re__strncopy(char *, char *, size_t);
+private void	re__copy_and_pad(char *, const char *, size_t);
 
 #ifdef DEBUG_REFRESH
 private void	re_printstr(EditLine *, const char *, char *, char *);
@@ -89,70 +88,45 @@ re_printstr(EditLine *el, const char *str, char *f, char *t)
 #define	ELRE_DEBUG(a, b)
 #endif
 
-/* re_nextline():
- *	Move to the next line or scroll
- */
-private void
-re_nextline(EditLine *el)
-{
-	el->el_refresh.r_cursor.h = 0;	/* reset it. */
-
-	/*
-	 * If we would overflow (input is longer than terminal size),
-	 * emulate scroll by dropping first line and shuffling the rest.
-	 * We do this via pointer shuffling - it's safe in this case
-	 * and we avoid memcpy().
-	 */
-	if (el->el_refresh.r_cursor.v + 1 >= el->el_terminal.t_size.v) {
-		int i, lins = el->el_terminal.t_size.v;
-		Char *firstline = el->el_vdisplay[0];
-
-		for(i = 1; i < lins; i++)
-			el->el_vdisplay[i - 1] = el->el_vdisplay[i];
-
-		firstline[0] = '\0';		/* empty the string */	
-		el->el_vdisplay[i - 1] = firstline;
-	} else
-		el->el_refresh.r_cursor.v++;
-
-	ELRE_ASSERT(el->el_refresh.r_cursor.v >= el->el_terminal.t_size.v,
-	    (__F, "\r\nre_putc: overflow! r_cursor.v == %d > %d\r\n",
-	    el->el_refresh.r_cursor.v, el->el_terminal.t_size.v),
-	    abort());
-}
 
 /* re_addc():
  *	Draw c, expanding tabs, control chars etc.
  */
 private void
-re_addc(EditLine *el, Int c)
+re_addc(EditLine *el, int c)
 {
-	switch (ct_chr_class((Char)c)) {
-	case CHTYPE_TAB:        /* expand the tab */
+
+	if (isprint(c)) {
+		re_putc(el, c, 1);
+		return;
+	}
+	if (c == '\n') {				/* expand the newline */
+		int oldv = el->el_refresh.r_cursor.v;
+		re_putc(el, '\0', 0);			/* assure end of line */
+		if (oldv == el->el_refresh.r_cursor.v) { /* XXX */
+			el->el_refresh.r_cursor.h = 0;	/* reset cursor pos */
+			el->el_refresh.r_cursor.v++;
+		}
+		return;
+	}
+	if (c == '\t') {				/* expand the tab */
 		for (;;) {
 			re_putc(el, ' ', 1);
 			if ((el->el_refresh.r_cursor.h & 07) == 0)
 				break;			/* go until tab stop */
 		}
-		break;
-	case CHTYPE_NL: {
-		int oldv = el->el_refresh.r_cursor.v;
-		re_putc(el, '\0', 0);			/* assure end of line */
-		if (oldv == el->el_refresh.r_cursor.v)	/* XXX */
-			re_nextline(el);
-		break;
-	}
-	case CHTYPE_PRINT:
-		re_putc(el, c, 1);
-		break;
-	default: {
-		Char visbuf[VISUAL_WIDTH_MAX];
-		ssize_t i, n =
-		    ct_visual_char(visbuf, VISUAL_WIDTH_MAX, (Char)c);
-		for (i = 0; n-- > 0; ++i)
-		    re_putc(el, visbuf[i], 1);
-		break;
-	}
+	} else if (iscntrl(c)) {
+		re_putc(el, '^', 1);
+		if (c == '\177')
+			re_putc(el, '?', 1);
+		else
+		    /* uncontrolify it; works only for iso8859-1 like sets */
+			re_putc(el, (c | 0100), 1);
+	} else {
+		re_putc(el, '\\', 1);
+		re_putc(el, (int) ((((unsigned int) c >> 6) & 07) + '0'), 1);
+		re_putc(el, (int) ((((unsigned int) c >> 3) & 07) + '0'), 1);
+		re_putc(el, (c & 07) + '0', 1);
 	}
 }
 
@@ -161,31 +135,43 @@ re_addc(EditLine *el, Int c)
  *	Draw the character given
  */
 protected void
-re_putc(EditLine *el, Int c, int shift)
+re_putc(EditLine *el, int c, int shift)
 {
-	int i, w = Width(c);
-	ELRE_DEBUG(1, (__F, "printing %5x '%c'\r\n", c, c));
 
-	while (shift && (el->el_refresh.r_cursor.h + w > el->el_terminal.t_size.h))
-	    re_putc(el, ' ', 1);
+	ELRE_DEBUG(1, (__F, "printing %3.3o '%c'\r\n", c, c));
 
-	el->el_vdisplay[el->el_refresh.r_cursor.v]
-	    [el->el_refresh.r_cursor.h] = c;
-	/* assumes !shift is only used for single-column chars */
-	i = w;
-	while (--i > 0)
-		el->el_vdisplay[el->el_refresh.r_cursor.v]
-		    [el->el_refresh.r_cursor.h + i] = MB_FILL_CHAR;
-
+	el->el_vdisplay[el->el_refresh.r_cursor.v][el->el_refresh.r_cursor.h] = c;
 	if (!shift)
 		return;
 
-	el->el_refresh.r_cursor.h += w;	/* advance to next place */
-	if (el->el_refresh.r_cursor.h >= el->el_terminal.t_size.h) {
+	el->el_refresh.r_cursor.h++;	/* advance to next place */
+	if (el->el_refresh.r_cursor.h >= el->el_term.t_size.h) {
+		el->el_vdisplay[el->el_refresh.r_cursor.v][el->el_term.t_size.h] = '\0';
 		/* assure end of line */
-		el->el_vdisplay[el->el_refresh.r_cursor.v][el->el_terminal.t_size.h]
-		    = '\0';
-		re_nextline(el);
+		el->el_refresh.r_cursor.h = 0;	/* reset it. */
+
+		/*
+		 * If we would overflow (input is longer than terminal size),
+		 * emulate scroll by dropping first line and shuffling the rest.
+		 * We do this via pointer shuffling - it's safe in this case
+		 * and we avoid memcpy().
+		 */
+		if (el->el_refresh.r_cursor.v + 1 >= el->el_term.t_size.v) {
+			int i, lins = el->el_term.t_size.v;
+			char *firstline = el->el_vdisplay[0];
+
+			for(i=1; i < lins; i++)
+				el->el_vdisplay[i-1] = el->el_vdisplay[i];
+
+			firstline[0] = '\0';		/* empty the string */	
+			el->el_vdisplay[i-1] = firstline;
+		} else
+			el->el_refresh.r_cursor.v++;
+
+		ELRE_ASSERT(el->el_refresh.r_cursor.v >= el->el_term.t_size.v,
+		    (__F, "\r\nre_putc: overflow! r_cursor.v == %d > %d\r\n",
+		    el->el_refresh.r_cursor.v, el->el_term.t_size.v),
+		    abort());
 	}
 }
 
@@ -200,7 +186,7 @@ protected void
 re_refresh(EditLine *el)
 {
 	int i, rhdiff;
-	Char *cp, *st;
+	char *cp, *st;
 	coord_t cur;
 #ifdef notyet
 	size_t termsz;
@@ -235,7 +221,7 @@ re_refresh(EditLine *el)
 
 	/* draw the current input buffer */
 #if notyet
-	termsz = el->el_terminal.t_size.h * el->el_terminal.t_size.v;
+	termsz = el->el_term.t_size.h * el->el_term.t_size.v;
 	if (el->el_line.lastchar - el->el_line.buffer > termsz) {
 		/*
 		 * If line is longer than terminal, process only part
@@ -244,33 +230,26 @@ re_refresh(EditLine *el)
 		size_t rem = (el->el_line.lastchar-el->el_line.buffer)%termsz;
 
 		st = el->el_line.lastchar - rem
-			- (termsz - (((rem / el->el_terminal.t_size.v) - 1)
-					* el->el_terminal.t_size.v));
+			- (termsz - (((rem / el->el_term.t_size.v) - 1)
+					* el->el_term.t_size.v));
 	} else
 #endif
 		st = el->el_line.buffer;
 
 	for (cp = st; cp < el->el_line.lastchar; cp++) {
 		if (cp == el->el_line.cursor) {
-                        int w = Width(*cp);
 			/* save for later */
 			cur.h = el->el_refresh.r_cursor.h;
 			cur.v = el->el_refresh.r_cursor.v;
-                        /* handle being at a linebroken doublewidth char */
-                        if (w > 1 && el->el_refresh.r_cursor.h + w >
-			    el->el_terminal.t_size.h) {
-				cur.h = 0;
-				cur.v++;
-                        }
 		}
-		re_addc(el, *cp);
+		re_addc(el, (unsigned char) *cp);
 	}
 
 	if (cur.h == -1) {	/* if I haven't been set yet, I'm at the end */
 		cur.h = el->el_refresh.r_cursor.h;
 		cur.v = el->el_refresh.r_cursor.v;
 	}
-	rhdiff = el->el_terminal.t_size.h - el->el_refresh.r_cursor.h -
+	rhdiff = el->el_term.t_size.h - el->el_refresh.r_cursor.h -
 	    el->el_rprompt.p_pos.h;
 	if (el->el_rprompt.p_pos.h && !el->el_rprompt.p_pos.v &&
 	    !el->el_refresh.r_cursor.v && rhdiff > 1) {
@@ -293,8 +272,8 @@ re_refresh(EditLine *el)
 
 	ELRE_DEBUG(1, (__F,
 		"term.h=%d vcur.h=%d vcur.v=%d vdisplay[0]=\r\n:%80.80s:\r\n",
-		el->el_terminal.t_size.h, el->el_refresh.r_cursor.h,
-		el->el_refresh.r_cursor.v, ct_encode_string(el->el_vdisplay[0])));
+		el->el_term.t_size.h, el->el_refresh.r_cursor.h,
+		el->el_refresh.r_cursor.v, el->el_vdisplay[0]));
 
 	ELRE_DEBUG(1, (__F, "updating %d lines.\r\n", el->el_refresh.r_newcv));
 	for (i = 0; i <= el->el_refresh.r_newcv; i++) {
@@ -309,7 +288,7 @@ re_refresh(EditLine *el)
 		 * leftover stuff.
 		 */
 		re__copy_and_pad(el->el_display[i], el->el_vdisplay[i],
-		    (size_t) el->el_terminal.t_size.h);
+		    (size_t) el->el_term.t_size.h);
 	}
 	ELRE_DEBUG(1, (__F,
 	"\r\nel->el_refresh.r_cursor.v=%d,el->el_refresh.r_oldcv=%d i=%d\r\n",
@@ -317,12 +296,11 @@ re_refresh(EditLine *el)
 
 	if (el->el_refresh.r_oldcv > el->el_refresh.r_newcv)
 		for (; i <= el->el_refresh.r_oldcv; i++) {
-			terminal_move_to_line(el, i);
-			terminal_move_to_char(el, 0);
-                        /* This Strlen should be safe even with MB_FILL_CHARs */
-			terminal_clear_EOL(el, (int) Strlen(el->el_display[i]));
+			term_move_to_line(el, i);
+			term_move_to_char(el, 0);
+			term_clear_EOL(el, (int) strlen(el->el_display[i]));
 #ifdef DEBUG_REFRESH
-			terminal_overwrite(el, "C\b", (size_t)2);
+			term_overwrite(el, "C\b", 2);
 #endif /* DEBUG_REFRESH */
 			el->el_display[i][0] = '\0';
 		}
@@ -332,8 +310,8 @@ re_refresh(EditLine *el)
 	    "\r\ncursor.h = %d, cursor.v = %d, cur.h = %d, cur.v = %d\r\n",
 	    el->el_refresh.r_cursor.h, el->el_refresh.r_cursor.v,
 	    cur.h, cur.v));
-	terminal_move_to_line(el, cur.v);	/* go to where the cursor is */
-	terminal_move_to_char(el, cur.h);
+	term_move_to_line(el, cur.v);	/* go to where the cursor is */
+	term_move_to_char(el, cur.h);
 }
 
 
@@ -344,10 +322,10 @@ protected void
 re_goto_bottom(EditLine *el)
 {
 
-	terminal_move_to_line(el, el->el_refresh.r_oldcv);
-	terminal__putc(el, '\n');
+	term_move_to_line(el, el->el_refresh.r_oldcv);
+	term__putc('\n');
 	re_clear_display(el);
-	terminal__flush(el);
+	term__flush();
 }
 
 
@@ -358,9 +336,9 @@ re_goto_bottom(EditLine *el)
 private void
 /*ARGSUSED*/
 re_insert(EditLine *el __attribute__((__unused__)),
-    Char *d, int dat, int dlen, Char *s, int num)
+    char *d, int dat, int dlen, char *s, int num)
 {
-	Char *a, *b;
+	char *a, *b;
 
 	if (num <= 0)
 		return;
@@ -369,8 +347,8 @@ re_insert(EditLine *el __attribute__((__unused__)),
 
 	ELRE_DEBUG(1,
 	    (__F, "re_insert() starting: %d at %d max %d, d == \"%s\"\n",
-	    num, dat, dlen, ct_encode_string(d)));
-	ELRE_DEBUG(1, (__F, "s == \"%s\"\n", ct_encode_string(s)));
+	    num, dat, dlen, d));
+	ELRE_DEBUG(1, (__F, "s == \"%s\"\n", s));
 
 	/* open up the space for num chars */
 	if (num > 0) {
@@ -380,24 +358,19 @@ re_insert(EditLine *el __attribute__((__unused__)),
 			*b-- = *a--;
 		d[dlen] = '\0';	/* just in case */
 	}
-
 	ELRE_DEBUG(1, (__F,
 		"re_insert() after insert: %d at %d max %d, d == \"%s\"\n",
-		num, dat, dlen, ct_encode_string(d)));
-	ELRE_DEBUG(1, (__F, "s == \"%s\"\n", ct_encode_string(s)));
+		num, dat, dlen, d));
+	ELRE_DEBUG(1, (__F, "s == \"%s\"\n", s));
 
 	/* copy the characters */
 	for (a = d + dat; (a < d + dlen) && (num > 0); num--)
 		*a++ = *s++;
 
-#ifdef notyet
-        /* ct_encode_string() uses a static buffer, so we can't conveniently
-         * encode both d & s here */
 	ELRE_DEBUG(1,
 	    (__F, "re_insert() after copy: %d at %d max %d, %s == \"%s\"\n",
 	    num, dat, dlen, d, s));
 	ELRE_DEBUG(1, (__F, "s == \"%s\"\n", s));
-#endif
 }
 
 
@@ -407,9 +380,9 @@ re_insert(EditLine *el __attribute__((__unused__)),
 private void
 /*ARGSUSED*/
 re_delete(EditLine *el __attribute__((__unused__)),
-    Char *d, int dat, int dlen, int num)
+    char *d, int dat, int dlen, int num)
 {
-	Char *a, *b;
+	char *a, *b;
 
 	if (num <= 0)
 		return;
@@ -419,7 +392,7 @@ re_delete(EditLine *el __attribute__((__unused__)),
 	}
 	ELRE_DEBUG(1,
 	    (__F, "re_delete() starting: %d at %d max %d, d == \"%s\"\n",
-	    num, dat, dlen, ct_encode_string(d)));
+	    num, dat, dlen, d));
 
 	/* open up the space for num chars */
 	if (num > 0) {
@@ -431,7 +404,7 @@ re_delete(EditLine *el __attribute__((__unused__)),
 	}
 	ELRE_DEBUG(1,
 	    (__F, "re_delete() after delete: %d at %d max %d, d == \"%s\"\n",
-	    num, dat, dlen, ct_encode_string(d)));
+	    num, dat, dlen, d));
 }
 
 
@@ -439,7 +412,7 @@ re_delete(EditLine *el __attribute__((__unused__)),
  *	Like strncpy without padding.
  */
 private void
-re__strncopy(Char *a, Char *b, size_t n)
+re__strncopy(char *a, char *b, size_t n)
 {
 
 	while (n-- && *b)
@@ -450,7 +423,7 @@ re__strncopy(Char *a, Char *b, size_t n)
  *	Find the number of characters we need to clear till the end of line
  *	in order to make sure that we have cleared the previous contents of
  *	the line. fx and sx is the number of characters inserted or deleted
- *	in the first or second diff, diff is the difference between the
+ *	int the first or second diff, diff is the difference between the
  * 	number of characters between the new and old line.
  */
 private void
@@ -470,7 +443,7 @@ re_clear_eol(EditLine *el, int fx, int sx, int diff)
 		diff = sx;
 
 	ELRE_DEBUG(1, (__F, "re_clear_eol %d\n", diff));
-	terminal_clear_EOL(el, diff);
+	term_clear_EOL(el, diff);
 }
 
 /*****************************************************************
@@ -498,13 +471,12 @@ new:	eddie> Oh, my little buggy says to me, as lurgid as
 #define	MIN_END_KEEP	4
 
 private void
-re_update_line(EditLine *el, Char *old, Char *new, int i)
+re_update_line(EditLine *el, char *old, char *new, int i)
 {
-	Char *o, *n, *p, c;
-	Char *ofd, *ols, *oe, *nfd, *nls, *ne;
-	Char *osb, *ose, *nsb, *nse;
+	char *o, *n, *p, c;
+	char *ofd, *ols, *oe, *nfd, *nls, *ne;
+	char *osb, *ose, *nsb, *nse;
 	int fx, sx;
-	size_t len;
 
 	/*
          * find first diff
@@ -631,12 +603,12 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
          * fx is the number of characters we need to insert/delete: in the
          * beginning to bring the two same begins together
          */
-	fx = (int)((nsb - nfd) - (osb - ofd));
+	fx = (nsb - nfd) - (osb - ofd);
 	/*
          * sx is the number of characters we need to insert/delete: in the
          * end to bring the two same last parts together
          */
-	sx = (int)((nls - nse) - (ols - ose));
+	sx = (nls - nse) - (ols - ose);
 
 	if (!EL_CAN_INSERT) {
 		if (fx > 0) {
@@ -685,8 +657,8 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 	/*
          * Now that we are done with pragmatics we recompute fx, sx
          */
-	fx = (int)((nsb - nfd) - (osb - ofd));
-	sx = (int)((nls - nse) - (ols - ose));
+	fx = (nsb - nfd) - (osb - ofd);
+	sx = (nls - nse) - (ols - ose);
 
 	ELRE_DEBUG(1, (__F, "fx %d, sx %d\n", fx, sx));
 	ELRE_DEBUG(1, (__F, "ofd %d, osb %d, ose %d, ols %d, oe %d\n",
@@ -717,7 +689,7 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
          * don't have to change the line, we don't move to it. el_cursor.h to
          * first diff char
          */
-	terminal_move_to_line(el, i);
+	term_move_to_line(el, i);
 
 	/*
          * at this point we have something like this:
@@ -741,7 +713,7 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
          * if we have a net insert on the first difference, AND inserting the
          * net amount ((nsb-nfd) - (osb-ofd)) won't push the last useful
          * character (which is ne if nls != ne, otherwise is nse) off the edge
-	 * of the screen (el->el_terminal.t_size.h) else we do the deletes first
+	 * of the screen (el->el_term.t_size.h) else we do the deletes first
 	 * so that we keep everything we need to.
          */
 
@@ -763,13 +735,13 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 	 *	No insert or delete
          */
 	if ((nsb != nfd) && fx > 0 &&
-	    ((p - old) + fx <= el->el_terminal.t_size.h)) {
+	    ((p - old) + fx <= el->el_term.t_size.h)) {
 		ELRE_DEBUG(1,
 		    (__F, "first diff insert at %d...\r\n", nfd - new));
 		/*
 		 * Move to the first char to insert, where the first diff is.
 		 */
-		terminal_move_to_char(el, (int)(nfd - new));
+		term_move_to_char(el, nfd - new);
 		/*
 		 * Check if we have stuff to keep at end
 		 */
@@ -781,22 +753,21 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 			if (fx > 0) {
 				ELRE_DEBUG(!EL_CAN_INSERT, (__F,
 				"ERROR: cannot insert in early first diff\n"));
-				terminal_insertwrite(el, nfd, fx);
-				re_insert(el, old, (int)(ofd - old),
-				    el->el_terminal.t_size.h, nfd, fx);
+				term_insertwrite(el, nfd, fx);
+				re_insert(el, old, ofd - old,
+				    el->el_term.t_size.h, nfd, fx);
 			}
 			/*
 		         * write (nsb-nfd) - fx chars of new starting at
 		         * (nfd + fx)
 			 */
-			len = (size_t) ((nsb - nfd) - fx);
-			terminal_overwrite(el, (nfd + fx), len);
-			re__strncopy(ofd + fx, nfd + fx, len);
+			term_overwrite(el, nfd + fx, (nsb - nfd) - fx);
+			re__strncopy(ofd + fx, nfd + fx,
+			    (size_t) ((nsb - nfd) - fx));
 		} else {
 			ELRE_DEBUG(1, (__F, "without anything to save\r\n"));
-			len = (size_t)(nsb - nfd);
-			terminal_overwrite(el, nfd, len);
-			re__strncopy(ofd, nfd, len);
+			term_overwrite(el, nfd, (nsb - nfd));
+			re__strncopy(ofd, nfd, (size_t) (nsb - nfd));
 			/*
 		         * Done
 		         */
@@ -808,7 +779,7 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 		/*
 		 * move to the first char to delete where the first diff is
 		 */
-		terminal_move_to_char(el, (int)(ofd - old));
+		term_move_to_char(el, ofd - old);
 		/*
 		 * Check if we have stuff to save
 		 */
@@ -821,16 +792,15 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 			if (fx < 0) {
 				ELRE_DEBUG(!EL_CAN_DELETE, (__F,
 				    "ERROR: cannot delete in first diff\n"));
-				terminal_deletechars(el, -fx);
-				re_delete(el, old, (int)(ofd - old),
-				    el->el_terminal.t_size.h, -fx);
+				term_deletechars(el, -fx);
+				re_delete(el, old, ofd - old,
+				    el->el_term.t_size.h, -fx);
 			}
 			/*
 		         * write (nsb-nfd) chars of new starting at nfd
 		         */
-			len = (size_t) (nsb - nfd);
-			terminal_overwrite(el, nfd, len);
-			re__strncopy(ofd, nfd, len);
+			term_overwrite(el, nfd, (nsb - nfd));
+			re__strncopy(ofd, nfd, (size_t) (nsb - nfd));
 
 		} else {
 			ELRE_DEBUG(1, (__F,
@@ -838,9 +808,8 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 			/*
 		         * write (nsb-nfd) chars of new starting at nfd
 		         */
-			terminal_overwrite(el, nfd, (size_t)(nsb - nfd));
-			re_clear_eol(el, fx, sx,
-			    (int)((oe - old) - (ne - new)));
+			term_overwrite(el, nfd, (nsb - nfd));
+			re_clear_eol(el, fx, sx, (oe - old) - (ne - new));
 			/*
 		         * Done
 		         */
@@ -849,7 +818,7 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 	} else
 		fx = 0;
 
-	if (sx < 0 && (ose - old) + fx < el->el_terminal.t_size.h) {
+	if (sx < 0 && (ose - old) + fx < el->el_term.t_size.h) {
 		ELRE_DEBUG(1, (__F,
 		    "second diff delete at %d...\r\n", (ose - old) + fx));
 		/*
@@ -859,7 +828,7 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 		 * fx is the number of characters inserted (+) or deleted (-)
 		 */
 
-		terminal_move_to_char(el, (int)((ose - old) + fx));
+		term_move_to_char(el, (ose - old) + fx);
 		/*
 		 * Check if we have stuff to save
 		 */
@@ -871,18 +840,17 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 			if (sx < 0) {
 				ELRE_DEBUG(!EL_CAN_DELETE, (__F,
 				    "ERROR: cannot delete in second diff\n"));
-				terminal_deletechars(el, -sx);
+				term_deletechars(el, -sx);
 			}
 			/*
 		         * write (nls-nse) chars of new starting at nse
 		         */
-			terminal_overwrite(el, nse, (size_t)(nls - nse));
+			term_overwrite(el, nse, (nls - nse));
 		} else {
 			ELRE_DEBUG(1, (__F,
 			    "but with nothing left to save\r\n"));
-			terminal_overwrite(el, nse, (size_t)(nls - nse));
-			re_clear_eol(el, fx, sx,
-			    (int)((oe - old) - (ne - new)));
+			term_overwrite(el, nse, (nls - nse));
+			re_clear_eol(el, fx, sx, (oe - old) - (ne - new));
 		}
 	}
 	/*
@@ -892,7 +860,7 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 		ELRE_DEBUG(1, (__F, "late first diff insert at %d...\r\n",
 		    nfd - new));
 
-		terminal_move_to_char(el, (int)(nfd - new));
+		term_move_to_char(el, nfd - new);
 		/*
 		 * Check if we have stuff to keep at the end
 		 */
@@ -903,29 +871,28 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
 		         * to zero above as a flag saying that we hadn't done
 		         * an early first insert.
 		         */
-			fx = (int)((nsb - nfd) - (osb - ofd));
+			fx = (nsb - nfd) - (osb - ofd);
 			if (fx > 0) {
 				/*
 				 * insert fx chars of new starting at nfd
 				 */
 				ELRE_DEBUG(!EL_CAN_INSERT, (__F,
 				 "ERROR: cannot insert in late first diff\n"));
-				terminal_insertwrite(el, nfd, fx);
-				re_insert(el, old, (int)(ofd - old),
-				    el->el_terminal.t_size.h, nfd, fx);
+				term_insertwrite(el, nfd, fx);
+				re_insert(el, old, ofd - old,
+				    el->el_term.t_size.h, nfd, fx);
 			}
 			/*
 		         * write (nsb-nfd) - fx chars of new starting at
 		         * (nfd + fx)
 			 */
-			len = (size_t) ((nsb - nfd) - fx);
-			terminal_overwrite(el, (nfd + fx), len);
-			re__strncopy(ofd + fx, nfd + fx, len);
+			term_overwrite(el, nfd + fx, (nsb - nfd) - fx);
+			re__strncopy(ofd + fx, nfd + fx,
+			    (size_t) ((nsb - nfd) - fx));
 		} else {
 			ELRE_DEBUG(1, (__F, "without anything to save\r\n"));
-			len = (size_t) (nsb - nfd);
-			terminal_overwrite(el, nfd, len);
-			re__strncopy(ofd, nfd, len);
+			term_overwrite(el, nfd, (nsb - nfd));
+			re__strncopy(ofd, nfd, (size_t) (nsb - nfd));
 		}
 	}
 	/*
@@ -933,25 +900,24 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
          */
 	if (sx >= 0) {
 		ELRE_DEBUG(1, (__F,
-		    "second diff insert at %d...\r\n", (int)(nse - new)));
-		terminal_move_to_char(el, (int)(nse - new));
+		    "second diff insert at %d...\r\n", nse - new));
+		term_move_to_char(el, nse - new);
 		if (ols != oe) {
 			ELRE_DEBUG(1, (__F, "with stuff to keep at end\r\n"));
 			if (sx > 0) {
 				/* insert sx chars of new starting at nse */
 				ELRE_DEBUG(!EL_CAN_INSERT, (__F,
 				    "ERROR: cannot insert in second diff\n"));
-				terminal_insertwrite(el, nse, sx);
+				term_insertwrite(el, nse, sx);
 			}
 			/*
 		         * write (nls-nse) - sx chars of new starting at
 			 * (nse + sx)
 		         */
-			terminal_overwrite(el, (nse + sx),
-			    (size_t)((nls - nse) - sx));
+			term_overwrite(el, nse + sx, (nls - nse) - sx);
 		} else {
 			ELRE_DEBUG(1, (__F, "without anything to save\r\n"));
-			terminal_overwrite(el, nse, (size_t)(nls - nse));
+			term_overwrite(el, nse, (nls - nse));
 
 			/*
 	                 * No need to do a clear-to-end here because we were
@@ -968,7 +934,7 @@ re_update_line(EditLine *el, Char *old, Char *new, int i)
  *	Copy string and pad with spaces
  */
 private void
-re__copy_and_pad(Char *dst, const Char *src, size_t width)
+re__copy_and_pad(char *dst, const char *src, size_t width)
 {
 	size_t i;
 
@@ -991,8 +957,8 @@ re__copy_and_pad(Char *dst, const Char *src, size_t width)
 protected void
 re_refresh_cursor(EditLine *el)
 {
-	Char *cp;
-	int h, v, th, w;
+	char *cp, c;
+	int h, v, th;
 
 	if (el->el_line.cursor >= el->el_line.lastchar) {
 		if (el->el_map.current == el->el_map.alt
@@ -1005,46 +971,47 @@ re_refresh_cursor(EditLine *el)
 	/* first we must find where the cursor is... */
 	h = el->el_prompt.p_pos.h;
 	v = el->el_prompt.p_pos.v;
-	th = el->el_terminal.t_size.h;	/* optimize for speed */
+	th = el->el_term.t_size.h;	/* optimize for speed */
 
 	/* do input buffer to el->el_line.cursor */
 	for (cp = el->el_line.buffer; cp < el->el_line.cursor; cp++) {
-                switch (ct_chr_class(*cp)) {
-		case CHTYPE_NL:  /* handle newline in data part too */
+		c = *cp;
+		h++;		/* all chars at least this long */
+
+		if (c == '\n') {/* handle newline in data part too */
 			h = 0;
 			v++;
-			break;
-		case CHTYPE_TAB: /* if a tab, to next tab stop */
-			while (++h & 07)
-				continue;
-			break;
-		default:
-			w = Width(*cp);
-			if (w > 1 && h + w > th) { /* won't fit on line */
-				h = 0;
-				v++;
+		} else {
+			if (c == '\t') {	/* if a tab, to next tab stop */
+				while (h & 07) {
+					h++;
+				}
+			} else if (iscntrl((unsigned char) c)) {
+						/* if control char */
+				h++;
+				if (h > th) {	/* if overflow, compensate */
+					h = 1;
+					v++;
+				}
+			} else if (!isprint((unsigned char) c)) {
+				h += 3;
+				if (h > th) {	/* if overflow, compensate */
+					h = h - th;
+					v++;
+				}
 			}
-			h += ct_visual_width(*cp);
-			break;
-                }
+		}
 
 		if (h >= th) {	/* check, extra long tabs picked up here also */
-			h -= th;
+			h = 0;
 			v++;
 		}
 	}
-        /* if we have a next character, and it's a doublewidth one, we need to
-         * check whether we need to linebreak for it to fit */
-        if (cp < el->el_line.lastchar && (w = Width(*cp)) > 1)
-                if (h + w > th) {
-                    h = 0;
-                    v++;
-                }
 
 	/* now go there */
-	terminal_move_to_line(el, v);
-	terminal_move_to_char(el, h);
-	terminal__flush(el);
+	term_move_to_line(el, v);
+	term_move_to_char(el, h);
+	term__flush();
 }
 
 
@@ -1052,19 +1019,12 @@ re_refresh_cursor(EditLine *el)
  *	Add a character fast.
  */
 private void
-re_fastputc(EditLine *el, Int c)
+re_fastputc(EditLine *el, int c)
 {
-	int w = Width((Char)c);
-	while (w > 1 && el->el_cursor.h + w > el->el_terminal.t_size.h)
-	    re_fastputc(el, ' ');
 
-	terminal__putc(el, c);
+	term__putc(c);
 	el->el_display[el->el_cursor.v][el->el_cursor.h++] = c;
-	while (--w > 0)
-		el->el_display[el->el_cursor.v][el->el_cursor.h++]
-			= MB_FILL_CHAR;
-
-	if (el->el_cursor.h >= el->el_terminal.t_size.h) {
+	if (el->el_cursor.h >= el->el_term.t_size.h) {
 		/* if we must overflow */
 		el->el_cursor.h = 0;
 
@@ -1074,27 +1034,27 @@ re_fastputc(EditLine *el, Int c)
 		 * We do this via pointer shuffling - it's safe in this case
 		 * and we avoid memcpy().
 		 */
-		if (el->el_cursor.v + 1 >= el->el_terminal.t_size.v) {
-			int i, lins = el->el_terminal.t_size.v;
-			Char *firstline = el->el_display[0];
+		if (el->el_cursor.v + 1 >= el->el_term.t_size.v) {
+			int i, lins = el->el_term.t_size.v;
+			char *firstline = el->el_display[0];
 	
-			for(i = 1; i < lins; i++)
-				el->el_display[i - 1] = el->el_display[i];
+			for(i=1; i < lins; i++)
+				el->el_display[i-1] = el->el_display[i];
 
-			re__copy_and_pad(firstline, STR(""), (size_t)0);
-			el->el_display[i - 1] = firstline;
+			re__copy_and_pad(firstline, "", 0);
+			el->el_display[i-1] = firstline;
 		} else {
 			el->el_cursor.v++;
 			el->el_refresh.r_oldcv++;
 		}
 		if (EL_HAS_AUTO_MARGINS) {
 			if (EL_HAS_MAGIC_MARGINS) {
-				terminal__putc(el, ' ');
-				terminal__putc(el, '\b');
+				term__putc(' ');
+				term__putc('\b');
 			}
 		} else {
-			terminal__putc(el, '\r');
-			terminal__putc(el, '\n');
+			term__putc('\r');
+			term__putc('\n');
 		}
 	}
 }
@@ -1107,7 +1067,7 @@ re_fastputc(EditLine *el, Int c)
 protected void
 re_fastaddc(EditLine *el)
 {
-	Char c;
+	char c;
 	int rhdiff;
 
 	c = el->el_line.cursor[-1];
@@ -1116,30 +1076,25 @@ re_fastaddc(EditLine *el)
 		re_refresh(el);	/* too hard to handle */
 		return;
 	}
-	rhdiff = el->el_terminal.t_size.h - el->el_cursor.h -
+	rhdiff = el->el_term.t_size.h - el->el_cursor.h -
 	    el->el_rprompt.p_pos.h;
 	if (el->el_rprompt.p_pos.h && rhdiff < 3) {
 		re_refresh(el);	/* clear out rprompt if less than 1 char gap */
 		return;
 	}			/* else (only do at end of line, no TAB) */
-	switch (ct_chr_class(c)) {
-	case CHTYPE_TAB: /* already handled, should never happen here */
-		break;
-	case CHTYPE_NL:
-	case CHTYPE_PRINT:
+	if (iscntrl((unsigned char) c)) {	/* if control char, do caret */
+		char mc = (c == '\177') ? '?' : (c | 0100);
+		re_fastputc(el, '^');
+		re_fastputc(el, mc);
+	} else if (isprint((unsigned char) c)) {	/* normal char */
 		re_fastputc(el, c);
-		break;
-	case CHTYPE_ASCIICTL:
-	case CHTYPE_NONPRINT: {
-		Char visbuf[VISUAL_WIDTH_MAX];
-		ssize_t i, n =
-		    ct_visual_char(visbuf, VISUAL_WIDTH_MAX, (Char)c);
-		for (i = 0; n-- > 0; ++i)
-			re_fastputc(el, visbuf[i]);
-		break;
+	} else {
+		re_fastputc(el, '\\');
+		re_fastputc(el, (int)(((((unsigned int)c) >> 6) & 3) + '0'));
+		re_fastputc(el, (int)(((((unsigned int)c) >> 3) & 7) + '0'));
+		re_fastputc(el, (c & 7) + '0');
 	}
-	}
-	terminal__flush(el);
+	term__flush();
 }
 
 
@@ -1153,7 +1108,7 @@ re_clear_display(EditLine *el)
 
 	el->el_cursor.v = 0;
 	el->el_cursor.h = 0;
-	for (i = 0; i < el->el_terminal.t_size.v; i++)
+	for (i = 0; i < el->el_term.t_size.v; i++)
 		el->el_display[i][0] = '\0';
 	el->el_refresh.r_oldcv = 0;
 }
@@ -1168,16 +1123,17 @@ re_clear_lines(EditLine *el)
 
 	if (EL_CAN_CEOL) {
 		int i;
-		for (i = el->el_refresh.r_oldcv; i >= 0; i--) {
+		term_move_to_char(el, 0);
+		for (i = 0; i <= el->el_refresh.r_oldcv; i++) {
 			/* for each line on the screen */
-			terminal_move_to_line(el, i);
-			terminal_move_to_char(el, 0);
-			terminal_clear_EOL(el, el->el_terminal.t_size.h);
+			term_move_to_line(el, i);
+			term_clear_EOL(el, el->el_term.t_size.h);
 		}
+		term_move_to_line(el, 0);
 	} else {
-		terminal_move_to_line(el, el->el_refresh.r_oldcv);
+		term_move_to_line(el, el->el_refresh.r_oldcv);
 					/* go to last line */
-		terminal__putc(el, '\r');	/* go to BOL */
-		terminal__putc(el, '\n');	/* go to new line */
+		term__putc('\r');	/* go to BOL */
+		term__putc('\n');	/* go to new line */
 	}
 }

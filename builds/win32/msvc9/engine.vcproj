@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="windows-1251"?>
+<?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="engine12"
+	Name="engine"
 	ProjectGUID="{F8798A49-9D20-451E-A7BD-FEB5237103B5}"
-	RootNamespace="engine"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -19,8 +19,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -59,16 +58,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib"
-				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
-				ModuleDefinitionFile="..\defs\plugin.def"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -80,19 +73,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -133,16 +119,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib"
-				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
-				ModuleDefinitionFile="..\defs\plugin.def"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -154,19 +134,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -209,16 +182,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib"
-				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
-				ModuleDefinitionFile="..\defs\plugin.def"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -230,19 +197,12 @@
 				Name="VCFxCopTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\plugins\"
-			ConfigurationType="2"
+			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -286,16 +246,10 @@
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib"
-				AdditionalLibraryDirectories="&quot;../../../extern/icu/$(PlatformName)/release/lib&quot;"
-				ModuleDefinitionFile="..\defs\plugin.def"
+				Name="VCLibrarianTool"
 			/>
 			<Tool
 				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -305,12 +259,6 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -324,7 +272,11 @@
 			Name="JRD files"
 			>
 			<File
-				RelativePath="..\..\..\src\jrd\Attachment.cpp"
+				RelativePath="..\..\..\src\jrd\all.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\alt.cpp"
 				>
 			</File>
 			<File
@@ -352,6 +304,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\CharSet.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\cmp.cpp"
 				>
 			</File>
@@ -360,19 +316,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\CryptoManager.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\cvt.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\cvt2.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Database.cpp"
 				>
 			</File>
 			<File
@@ -385,6 +333,46 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\DebugInterface.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dfw.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\divorce.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dpm.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dsc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_def.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_del.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_mod.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\dyn_util.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\enc.cpp"
 				>
 			</File>
 			<File
@@ -404,11 +392,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ext.cpp"
+				RelativePath="..\..\..\src\jrd\execute_statement.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ExtEngineManager.cpp"
+				RelativePath="..\..\..\src\jrd\ext.cpp"
 				>
 			</File>
 			<File
@@ -420,7 +408,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\GarbageCollector.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\fun.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\functions.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\gds.cpp"
 				>
 			</File>
 			<File
@@ -428,7 +424,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\os\win32\ibinitdll.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\grant.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\guid.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\iberr.cpp"
 				>
 			</File>
 			<File
@@ -437,6 +441,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\inf.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\ini.cpp"
 				>
 			</File>
 			<File
@@ -452,11 +460,31 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\jrd.cpp"
+				RelativePath="..\..\..\src\jrd\IntlUtil.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\JrdStatement.cpp"
+				RelativePath="..\..\..\src\jrd\inuse.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_file.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\isc_ipc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_sync.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\jrd.cpp"
 				>
 			</File>
 			<File
@@ -464,7 +492,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\log.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\met.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\mov.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\nav.cpp"
 				>
 			</File>
 			<File
@@ -496,7 +536,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\PreparedStatement.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\pcmet.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\plugin_manager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\pwd.cpp"
 				>
 			</File>
 			<File
@@ -508,15 +556,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\RecordSourceNodes.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\Relation.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ResultSet.cpp"
 				>
 			</File>
 			<File
@@ -524,11 +564,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\Routine.cpp"
+				RelativePath="..\..\..\src\jrd\rpb_chain.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\rpb_chain.cpp"
+				RelativePath="..\..\..\src\jrd\rse.cpp"
 				>
 			</File>
 			<File
@@ -536,7 +576,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\sch.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\gen\$(PlatformName)\jrd\scl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sdl.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdw.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sha.cpp"
 				>
 			</File>
 			<File
@@ -560,7 +616,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\svc_tab.cpp"
+				RelativePath="..\..\..\src\jrd\sym.cpp"
 				>
 			</File>
 			<File
@@ -572,6 +628,22 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\TextType.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\thd.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\thd_priority.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\ThreadData.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\tpc.cpp"
 				>
 			</File>
@@ -580,7 +652,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\UserManagement.cpp"
+				RelativePath="..\..\..\src\jrd\unicode_util.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\utl.cpp"
 				>
 			</File>
 			<File
@@ -596,241 +672,13 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\why.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\os\win32\winnt.cpp"
 				>
 			</File>
-			<Filter
-				Name="Data Access"
-				>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\AggregatedStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\BitmapTableScan.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\BufferedStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\ConditionalStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\Cursor.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\ExternalTableScan.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\FilteredStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\FirstRowsStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\FullOuterJoin.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\FullTableScan.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\HashJoin.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\IndexTableScan.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\LockedStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\MergeJoin.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\NestedLoopJoin.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\ProcedureScan.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\RecordSource.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\RecursiveStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\SingularStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\SkipRowsStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\SortedStream.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\Union.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\VirtualTableScan.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\recsrc\WindowedStream.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="EXTDS"
-				>
-				<File
-					RelativePath="..\..\..\src\jrd\extds\ExtDS.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\extds\InternalDS.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\extds\IscDS.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="GPRE cpp"
-				>
-				<File
-					RelativePath="..\..\..\gen\jrd\dfw.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\dpm.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\dyn_util.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\fun.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\Function.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\grant.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\ini.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\met.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\pcmet.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\jrd\scl.cpp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="GPRE files"
-				>
-				<File
-					RelativePath="..\..\..\src\jrd\dfw.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\dpm.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\dyn_util.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\fun.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\Function.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\grant.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\ini.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\met.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\pcmet.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\scl.epp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Trace"
-				>
-				<File
-					RelativePath="..\..\..\src\jrd\trace\TraceCmdLine.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\trace\TraceLog.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\trace\TraceManager.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\trace\TraceObjects.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\jrd\trace\TraceService.cpp"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<Filter
 			Name="Header files"
@@ -840,15 +688,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\AggNodes.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\align.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\Attachment.h"
+				RelativePath="..\..\..\src\jrd\all.h"
 				>
 			</File>
 			<File
@@ -864,6 +708,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\blk.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\blob_filter.h"
 				>
 			</File>
@@ -876,11 +724,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\BlrDebugWriter.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\BoolNodes.h"
+				RelativePath="..\..\..\src\include\gen\blrtable.h"
 				>
 			</File>
 			<File
@@ -908,7 +752,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\chars.h"
+				RelativePath="..\..\..\src\jrd\CharSet.h"
 				>
 			</File>
 			<File
@@ -924,15 +768,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\common.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\constants.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\CryptoManager.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\recsrc\Cursor.h"
+				RelativePath="..\..\..\src\jrd\CsConvert.h"
 				>
 			</File>
 			<File
@@ -944,10 +788,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\Database.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.h"
 				>
 			</File>
@@ -956,19 +796,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\dba_proto.h"
+				RelativePath="..\..\..\src\jrd\dbg.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\dbaswi.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\ddl_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DdlNodes.h"
+				RelativePath="..\..\..\src\jrd\dbg_proto.h"
 				>
 			</File>
 			<File
@@ -984,6 +816,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\divorce.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dmp_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dpm_proto.h"
 				>
 			</File>
@@ -992,19 +832,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\dsql.h"
+				RelativePath="..\..\..\src\jrd\dsc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\dsql_proto.h"
+				RelativePath="..\..\..\src\jrd\dsc_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\DsqlCompilerScratch.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.h"
+				RelativePath="..\..\..\src\jrd\dsc_pub.h"
 				>
 			</File>
 			<File
@@ -1012,19 +848,35 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\dyn_df_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dyn_dl_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dyn_md_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\dyn_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\dyn_ut_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\EngineInterface.h"
+				RelativePath="..\..\..\src\jrd\enc_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\entry.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\err_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\errd_proto.h"
 				>
 			</File>
 			<File
@@ -1040,10 +892,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\evl_string.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\exe.h"
 				>
 			</File>
@@ -1052,7 +900,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\ExprNodes.h"
+				RelativePath="..\..\..\src\jrd\execute_statement.h"
 				>
 			</File>
 			<File
@@ -1064,23 +912,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\extds\ExtDS.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ExtEngineManager.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\include\fb_api_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\include\fb_blk.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\fields.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\fil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\file_params.h"
 				>
 			</File>
 			<File
@@ -1104,15 +948,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\Function.h"
+				RelativePath="..\..\..\src\jrd\gds_proto.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\gen_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\GarbageCollector.h"
+				RelativePath="..\..\..\src\jrd\gdsassert.h"
 				>
 			</File>
 			<File
@@ -1124,19 +964,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsecswi.h"
+				RelativePath="..\..\..\src\jrd\os\guid.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\ibase.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\iberr.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\iberr_proto.h"
 				>
 			</File>
 			<File
@@ -1176,15 +1016,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\extds\InternalDS.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\intl.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\intl_classes.h"
 				>
 			</File>
 			<File
@@ -1196,15 +1028,47 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\intlnames.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\intlobj_new.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\IntlUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\inuse_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\irq.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\isc_version.h"
+				RelativePath="..\..\..\src\jrd\isc.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\extds\IscDS.h"
+				RelativePath="..\..\..\src\jrd\isc_f_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\isc_i_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_s_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\isc_signal.h"
 				>
 			</File>
 			<File
@@ -1216,7 +1080,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\JrdStatement.h"
+				RelativePath="..\..\..\src\jrd\jrd_pwd.h"
 				>
 			</File>
 			<File
@@ -1244,7 +1108,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\make_proto.h"
+				RelativePath="..\..\..\src\jrd\log.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log2.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\log_proto.h"
 				>
 			</File>
 			<File
@@ -1256,15 +1128,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\metd_proto.h"
+				RelativePath="..\..\..\src\jrd\misc_func_ids.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\mov_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\movd_proto.h"
 				>
 			</File>
 			<File
@@ -1288,31 +1156,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\nav_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\nbak.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\nbackup\nbk_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\nbackup\nbkswi.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\nod.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\node.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Nodes.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\ntrace.h"
 				>
 			</File>
 			<File
@@ -1336,10 +1188,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\PackageNodes.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\pag.h"
 				>
 			</File>
@@ -1352,15 +1200,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\Parser.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\pass1_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\pcmet_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\perf.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\perf_proto.h"
 				>
 			</File>
 			<File
@@ -1372,11 +1220,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg_proto.h"
+				RelativePath="..\..\..\src\jrd\quad.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\PreparedStatement.h"
+				RelativePath="..\..\..\src\jrd\quad_proto.h"
 				>
 			</File>
 			<File
@@ -1388,19 +1236,11 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\include\gen\rdb_codes.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\RecordBuffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\RecordNumber.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\recsrc\RecordSource.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\RecordSourceNodes.h"
 				>
 			</File>
 			<File
@@ -1416,15 +1256,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\ResultSet.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\rlck_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\Routine.h"
 				>
 			</File>
 			<File
@@ -1436,11 +1268,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\rse_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\RuntimeStatistics.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\sbm.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sch_proto.h"
 				>
 			</File>
 			<File
@@ -1452,6 +1292,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\scroll_cursors.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sdl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\sdl_proto.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\sdw.h"
 				>
 			</File>
@@ -1460,7 +1312,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\utilities\gsec\secur_proto.h"
+				RelativePath="..\..\..\src\jrd\sha.h"
 				>
 			</File>
 			<File
@@ -1468,11 +1320,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\SimilarToMatcher.h"
+				RelativePath="..\..\..\src\jrd\sort.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\sort.h"
+				RelativePath="..\..\..\src\jrd\sort_proto.h"
 				>
 			</File>
 			<File
@@ -1480,23 +1332,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\sqlda.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\sqlda_pub.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\sqz.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\status.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.h"
+				RelativePath="..\..\..\src\jrd\sqz_proto.h"
 				>
 			</File>
 			<File
@@ -1504,15 +1344,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\svc_tab.h"
+				RelativePath="..\..\..\src\jrd\svc_proto.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\svc_undoc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\sym.h"
 				>
 			</File>
 			<File
@@ -1524,7 +1360,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thread_proto.h"
+				RelativePath="..\..\..\src\jrd\TextType.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\thd.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\thd_priority.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\tpc.h"
 				>
 			</File>
 			<File
@@ -1540,42 +1388,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceConfigStorage.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceDSQLHelpers.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceJrdHelpers.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceLog.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceManager.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceObjects.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceService.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\TraceSession.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\trace\traceswi.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\trig.h"
 				>
 			</File>
@@ -1584,11 +1396,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\UserManagement.h"
+				RelativePath="..\..\..\src\jrd\unicode_util.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\utld_proto.h"
+				RelativePath="..\..\..\src\jrd\utl_proto.h"
 				>
 			</File>
 			<File
@@ -1612,174 +1424,10 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\dsql\Visitors.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\os\win32\win9x_nt.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\WinNodes.h"
+				RelativePath="..\..\..\src\jrd\why_proto.h"
 				>
 			</File>
 		</Filter>
-		<Filter
-			Name="DSQL"
-			>
-			<File
-				RelativePath="..\..\..\src\dsql\AggNodes.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\BlrDebugWriter.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\BoolNodes.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\ddl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\dsql.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DsqlCompilerScratch.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\DSqlDataTypeUtil.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\errd.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\ExprNodes.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\gen.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\make.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\movd.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\parse.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\parse.y"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\Parser.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\pass1.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\StmtNodes.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\utld.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\dsql\WinNodes.cpp"
-				>
-			</File>
-			<Filter
-				Name="GPRE files"
-				>
-				<File
-					RelativePath="..\..\..\src\dsql\DdlNodes.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\dsql\metd.epp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\src\dsql\PackageNodes.epp"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="GPRE cpp"
-				>
-				<File
-					RelativePath="..\..\..\gen\dsql\DdlNodes.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\dsql\metd.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\gen\dsql\PackageNodes.cpp"
-					>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="Lock"
-			>
-			<File
-				RelativePath="..\..\..\src\lock\lock.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Services"
-			>
-			<File
-				RelativePath="..\..\..\gen\utilities\gstat\dba.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gstat\dba.epp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gsec\gsec.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\nbackup\nbackup.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Resource files"
-			>
-			<File
-				RelativePath="..\..\..\src\jrd\version.rc"
-				>
-			</File>
-		</Filter>
-		<File
-			RelativePath="..\defs\plugin.def"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

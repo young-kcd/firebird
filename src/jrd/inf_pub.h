@@ -105,12 +105,12 @@ enum db_info_types
 	isc_info_tpage_errors = 60,
 
 	isc_info_set_page_buffers = 61,
-	isc_info_db_sql_dialect = 62,
+	isc_info_db_sql_dialect = 62,   
 	isc_info_db_read_only = 63,
 	isc_info_db_size_in_pages = 64,
 
 	/* Values 65 -100 unused to avoid conflict with InterBase */
-
+	
 	frb_info_att_charset = 101,
 	isc_info_db_class = 102,
 	isc_info_firebird_version = 103,
@@ -123,9 +123,6 @@ enum db_info_types
 	isc_info_active_tran_count = 110,
 	isc_info_creation_date = 111,
 	isc_info_db_file_size = 112,
-	fb_info_page_contents = 113,
-
-	fb_info_implementation = 114,
 
 	isc_info_db_last_value   /* Leave this LAST! */
 };
@@ -153,7 +150,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_sun_68k = 28,
 	isc_info_db_impl_isc_os2 = 29,
 	isc_info_db_impl_isc_sun4 = 30,	   /* 30 */
-
+	
 	isc_info_db_impl_isc_hp_ux = 31,
 	isc_info_db_impl_isc_sun_386i = 32,
 	isc_info_db_impl_isc_vms_orcl = 33,
@@ -179,7 +176,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_epson = 51,
 	isc_info_db_impl_alpha_osf = 52,
 	isc_info_db_impl_alpha_vms = 53,
-	isc_info_db_impl_netware_386 = 54,
+	isc_info_db_impl_netware_386 = 54, 
 	isc_info_db_impl_win_only = 55,
 	isc_info_db_impl_ncr_3000 = 56,
 	isc_info_db_impl_winnt_ppc = 57,
@@ -194,7 +191,7 @@ enum  info_db_implementations
 
 	isc_info_db_impl_linux_sparc = 65,
 	isc_info_db_impl_linux_amd64 = 66,
-
+	
 	isc_info_db_impl_freebsd_amd64 = 67,
 
 	isc_info_db_impl_winnt_amd64 = 68,
@@ -210,17 +207,20 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_ia64 = 76,
 
 	isc_info_db_impl_darwin_ppc64 = 77,
-	isc_info_db_impl_linux_s390x = 78,
-	isc_info_db_impl_linux_s390 = 79,
+        isc_info_db_impl_linux_s390x = 78,
+        isc_info_db_impl_linux_s390 = 79,
 
 	isc_info_db_impl_linux_sh = 80,
 	isc_info_db_impl_linux_sheb = 81,
-	isc_info_db_impl_linux_hppa = 82,
-	isc_info_db_impl_linux_alpha = 83,
-	isc_info_db_impl_linux_arm64 = 84,
 
 	isc_info_db_impl_last_value   // Leave this LAST!
 };
+
+#define isc_info_db_impl_isc_a            isc_info_db_impl_isc_apl_68K
+#define isc_info_db_impl_isc_u            isc_info_db_impl_isc_vax_ultr
+#define isc_info_db_impl_isc_v            isc_info_db_impl_isc_vms
+#define isc_info_db_impl_isc_s            isc_info_db_impl_isc_sun_68k
+
 
 enum info_db_class
 {
@@ -308,11 +308,6 @@ enum info_db_provider
 #define isc_info_rsb_skip		22
 #define isc_info_rsb_virt_sequential	23
 #define isc_info_rsb_recursive	24
-#define isc_info_rsb_window		25
-#define isc_info_rsb_singular	26
-#define isc_info_rsb_writelock	27
-#define isc_info_rsb_buffer		28
-#define isc_info_rsb_hash		29
 
 /**********************/
 /* Bitmap expressions */
@@ -350,7 +345,6 @@ enum info_db_provider
 #define isc_info_tra_isolation				8
 #define isc_info_tra_access					9
 #define isc_info_tra_lock_timeout			10
-#define fb_info_tra_dbpath					11
 
 // isc_info_tra_isolation responses
 #define isc_info_tra_consistency		1
@@ -392,8 +386,6 @@ enum info_db_provider
 #define isc_info_sql_records		  23
 #define isc_info_sql_batch_fetch	  24
 #define isc_info_sql_relation_alias		25
-#define isc_info_sql_explain_plan		26
-#define isc_info_sql_stmt_flags         27
 
 /*********************************/
 /* SQL information return values */

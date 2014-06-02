@@ -1,0 +1,248 @@
+#!/bin/sh
+#  This library is part of the FirebirdSQL project
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 2.1 of the License, or (at your option) any later version.
+#  You may obtain a copy of the Licence at
+#  http://www.gnu.org/licences/lgpl.html
+#
+#  As a special exception this file can also be included in modules
+#  with other source code as long as that source code has been 
+#  released under an Open Source Initiative certificed licence.  
+#  More information about OSI certification can be found at: 
+#  http://www.opensource.org 
+#
+#  This module is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public Licence for more details.
+#
+#  This module was created by members of the firebird development 
+#  team.  All individual contributions remain the Copyright (C) of 
+#  those individuals and all rights are reserved.  Contributors to 
+#  this file are either listed below or can be obtained from a CVS 
+#  history command.
+#
+#   Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
+#
+#   Contributor(s):
+#
+#
+#
+
+# Script to copy install files from the build/transport area
+
+
+# This script builds an image of the installed system into 
+# the gen/buildroot directory.
+
+
+# Making an assumption that this program is being run in the gen directory
+BuildRootDir=..
+BuiltFBDir=./firebird  # Where the just build fb exists.
+
+
+TargetDir=buildroot    # Where we want to build the install image
+
+RealRootDir=@prefix@   # Where it will be installed on new machine
+FBRootDir=${RealRootDir#/}   # strip off leading / 
+DestDir=$TargetDir/$FBRootDir
+SecurityDatabase=security2.fdb
+
+
+#------------------------------------------------------------------------
+#  addLibs
+# Add required libraries in the beginning of script.
+# Place it to target directory.
+
+addLibs() {
+	libSdir=$1
+	libScript=$2
+	libTdir=$3
+	libTarget=$libTdir/$libScript
+
+	rm -f $libTarget
+	touch $libTarget
+	echo "#!/bin/sh" >>$libTarget
+	for i in posixLibrary.sh superLibrary.sh linuxLibrary.sh superLinux.sh
+	do
+		echo "# $i" >>$libTarget
+		cat $libSdir/$i >>$libTarget
+		echo "" >>$libTarget	# avoid missing linefeed
+	done
+	cat $libSdir/$libScript >>$libTarget
+}
+
+
+#------------------------------------------------------------------------
+# copyIfExists
+# Copy file if it exists
+#
+
+copyIfExists() {
+   OldFile=$1
+   NewFile=$2
+
+   if [ -f $OldFile ]
+     then
+       cp $OldFile $NewFile
+   fi
+
+}
+
+
+#------------------------------------------------------------------------
+#  copyFiles
+# This function copies all the files for a super distribution into a
+# directory heirachy mirroring the installation.
+
+copyFiles() {
+# The guts of the tranfer of files and other directories
+
+    if [ -d $TargetDir ]
+      then 
+        rm -fr $TargetDir
+    fi 
+    mkdir -p $DestDir 
+    mkdir $DestDir/bin 
+    mkdir $DestDir/examples 
+    mkdir $DestDir/help 
+    mkdir $DestDir/include 
+    mkdir $DestDir/intl 
+    mkdir $DestDir/lib
+    mkdir $DestDir/doc 
+    mkdir $DestDir/doc/sql.extensions
+    mkdir $DestDir/UDF 
+    mkdir $DestDir/misc
+    mkdir $DestDir/misc/upgrade
+	for i in ib_udf metadata security; do
+		mkdir $DestDir/misc/upgrade/$i
+	done
+
+    mkdir -p $TargetDir@libdir@
+    mkdir -p $TargetDir/usr/include
+
+#    mkdir $TargetDir/var
+#    mkdir $TargetDir/var/adm
+#    mkdir $TargetDir/var/adm/fillup-templates
+#    mkdir -p $TargetDir/usr/sbin
+
+    cp -f $BuiltFBDir/bin/fbserver $DestDir/bin/fbserver 
+    cp -f $BuiltFBDir/bin/fbguard $DestDir/bin/fbguard
+    cp -f $BuiltFBDir/bin/fbmgr.bin $DestDir/bin/fbmgr.bin
+
+    cp $BuiltFBDir/bin/gbak $DestDir/bin/gbak 
+    copyIfExists $BuiltFBDir/bin/gdef $DestDir/bin/gdef 
+    copyIfExists $BuiltFBDir/bin/fb_lock_print $DestDir/bin/fb_lock_print 
+    copyIfExists $BuiltFBDir/bin/gds_pipe $DestDir/bin/gds_pipe 
+    cp $BuiltFBDir/bin/gfix $DestDir/bin/gfix 
+    cp $BuiltFBDir/bin/gpre $DestDir/bin/gpre 
+    cp $BuiltFBDir/bin/gsec $DestDir/bin/gsec 
+    copyIfExists $BuiltFBDir/bin/gsplit $DestDir/bin/gsplit 
+    cp $BuiltFBDir/bin/gstat $DestDir/bin/gstat 
+    copyIfExists $BuiltFBDir/bin/fbsvcmgr $DestDir/bin/fbsvcmgr
+    copyIfExists $BuiltFBDir/bin/security.gbak $DestDir/bin/security.gbak 
+    cp $BuiltFBDir/bin/isql $DestDir/bin/isql 
+    cp $BuiltFBDir/bin/nbackup $DestDir/bin/nbackup
+    copyIfExists $BuiltFBDir/bin/qli $DestDir/bin/qli 
+
+	# Append libraries to scripts
+    addLibs $BuildRootDir/gen/firebird/bin changeRunUser.sh $DestDir/bin
+    addLibs $BuildRootDir/gen/firebird/bin restoreRootRunUser.sh $DestDir/bin
+    addLibs $BuildRootDir/gen/firebird/bin changeDBAPassword.sh $DestDir/bin
+    addLibs $BuildRootDir/gen/firebird/bin tarMainInstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin tarinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin preinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin postinstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin preuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin postuninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin taruninstall.sh $BuildRootDir/gen/install/scripts
+    addLibs $BuildRootDir/gen/firebird/bin tarMainUninstall.sh $BuildRootDir/gen/install/scripts
+	# these scripts don't need libraries
+    cp $BuildRootDir/gen/firebird/bin/createAliasDB.sh $DestDir/bin
+    cp $BuildRootDir/gen/firebird/bin/fb_config $DestDir/bin
+
+    # Copy examples only if we have them
+
+    exampleFiles=`find $BuiltFBDir/examples/README -type f -print`
+    if [ -z "$exampleFiles" ]
+      then
+        echo "Example files have not been built!"
+      else
+		(cd $BuiltFBDir/examples; tar cf - .) | (cd $DestDir/examples; tar xf -)
+    fi
+
+    copyIfExists $BuiltFBDir/help/help.gbak $DestDir/help 
+    cp $BuiltFBDir/help/help.fdb $DestDir/help 
+    cp $BuiltFBDir/*.msg $DestDir
+    cp $BuiltFBDir/$SecurityDatabase $DestDir/$SecurityDatabase
+    cp $BuiltFBDir/include/*.h $DestDir/include 
+    cp -df $BuiltFBDir/lib/libfbclient.so* $DestDir/lib
+    cp -f $BuiltFBDir/lib/libib_util.so $DestDir/lib/libib_util.so 
+
+    cp -df $BuiltFBDir/lib/libicu*.so* $DestDir/lib/
+
+    cp $BuiltFBDir/intl/libfbintl.so $DestDir/intl/fbintl
+    cp $BuiltFBDir/UDF/ib_udf.so $DestDir/UDF/
+    cp $BuiltFBDir/UDF/fbudf.so $DestDir/UDF/
+
+#	Note that the following items copy files from outside the build tree.
+
+#   Copy the sql-declarations into the UDF-directory  
+    cp $BuildRootDir/src/extlib/ib_udf.sql $DestDir/UDF/
+    cp $BuildRootDir/src/extlib/ib_udf2.sql $DestDir/UDF/
+    cp $BuildRootDir/src/extlib/fbudf/fbudf.sql $DestDir/UDF/
+
+#   Copy various documentation
+    cp $BuildRootDir/doc/*.pdf $DestDir/doc
+    cp $BuildRootDir/doc/README.* $DestDir/doc
+    cp $BuildRootDir/doc/sql.extensions/README* $DestDir/doc/sql.extensions
+    cp $BuildRootDir/doc/WhatsNew $DestDir/WhatsNew
+    cp $BuildRootDir/doc/README.user $DestDir/README
+
+#	Copy various upgrade stuff
+    cp $BuildRootDir/src/misc/intl.sql							$DestDir/misc/
+    cp $BuildRootDir/src/misc/upgrade/v2/ib_udf*				$DestDir/misc/upgrade/ib_udf/
+    cp $BuildRootDir/src/misc/upgrade/v2/security_database*		$DestDir/misc/upgrade/security/
+    cp $BuildRootDir/src/misc/upgrade/v2.1/metadata_charset*	$DestDir/misc/upgrade/metadata/
+
+#   Miscellaneous config and startup files
+    cp $BuildRootDir/gen/install/misc/firebird.conf $DestDir/firebird.conf
+    cp $BuildRootDir/gen/install/misc/fbintl.conf $DestDir/intl/fbintl.conf
+    cp $BuildRootDir/gen/install/misc/firebird.init.d.* $DestDir/misc
+    cp $BuildRootDir/gen/install/misc/rc.config.firebird $DestDir/misc
+    cp $BuildRootDir/gen/install/misc/aliases.conf $DestDir/
+
+#	License
+	cp $BuildRootDir/builds/install/misc/*License.txt $DestDir/
+
+	originalDir=`pwd`
+
+# Create links from @libdir@ to install area.
+	cd $TargetDir@libdir@
+    for i in ../../$FBRootDir/lib/libfb*.so*
+	do 
+		ln -s $i .
+	done
+    ln -s ../../$FBRootDir/lib/libib_util.so .
+
+	cd $originalDir
+
+# link include files to /usr/include 
+	cd $TargetDir/usr/include
+	for i in ../../$FBRootDir/include/*.h
+    do
+		ln -s $i .
+    done
+
+	cd $originalDir
+}
+
+
+
+#=== MAIN ====================================================================
+
+
+copyFiles

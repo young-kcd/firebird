@@ -22,8 +22,9 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 
-int DBG_supervisor(int /*arg*/)
+int DBG_supervisor(int arg)
 {
 	return TRUE;
 }

@@ -21,10 +21,10 @@
  * Contributor(s): ______________________________________.
  */
 
-#ifndef GPRE_MOVG_PROTO_H
-#define GPRE_MOVG_PROTO_H
+#ifndef DSQL_MOVG_PROTO_H
+#define DSQL_MOVG_PROTO_H
 
 void MOVG_move(const dsc*, dsc*);
 
-#endif //  GPRE_MOVG_PROTO_H
+#endif //  DSQL_MOVG_PROTO_H
 

@@ -22,28 +22,89 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+
 #include "../dsql/dsql.h"
 #include "gen/iberror.h"
-#include "../jrd/jrd.h"
-#include "../jrd/mov_proto.h"
+#include "../jrd/iberr.h"
+#include "../dsql/errd_proto.h"
 #include "../dsql/movd_proto.h"
+#include "../jrd/cvt_proto.h"
+#include "../jrd/thd.h"
 
-using namespace Jrd;
-using namespace Firebird;
+static void post_error(ISC_STATUS, ...);
 
 
-// Move (and possible convert) something to something else.
-void MOVD_move(thread_db* tdbb, dsc* from, dsc* to)
+/**
+  
+ 	MOVD_move
+  
+    @brief	Move (and possible convert) something to something else.
+ 
+
+    @param from
+    @param to
+
+ **/
+void MOVD_move(const dsc* from, dsc* to)
 {
-	try
-	{
-		MOV_move(tdbb, from, to);
-	}
-	catch (const status_exception& ex)
-	{
-		Arg::StatusVector newVector;
-		newVector << Arg::Gds(isc_dsql_error) << Arg::Gds(isc_sqlerr) << Arg::Num(-303);
-		newVector.append(Arg::StatusVector(ex.value()));
-		status_exception::raise(newVector);
-	}
+
+	CVT_move(from, to, post_error);
 }
+
+
+/**
+  
+ 	post_error
+  
+    @brief	A conversion error occurred.  Complain.
+ 
+
+    @param status
+    @param 
+
+ **/
+static void post_error( ISC_STATUS status, ...)
+{
+	ISC_STATUS *v;
+	const ISC_STATUS* temp, *v_end;
+	ISC_STATUS_ARRAY temp_status;
+
+	tsql* tdsql = DSQL_get_thread_data();
+
+/* copy into a temporary array any other arguments which may 
+ * have been handed to us, then post the error.
+ * N.B., the last supplied error should be a 0.
+ */
+
+	STUFF_STATUS(temp_status, status);
+
+	v = tdsql->tsql_status;
+	v_end = v + ISC_STATUS_LENGTH;
+	*v++ = isc_arg_gds;
+	*v++ = isc_dsql_error;
+	*v++ = isc_arg_gds;
+	*v++ = isc_sqlerr;
+	*v++ = isc_arg_number;
+	*v++ = -303;
+
+	for (temp = temp_status; v < v_end && (*v = *temp) != isc_arg_end;
+		 v++, temp++)
+	{
+		switch (*v) {
+		case isc_arg_cstring:
+			*++v = *++temp;
+			*++v = *++temp;
+			break;
+		default:
+			*++v = *++temp;
+			break;
+		}
+	}
+
+	ERRD_punt();
+}
+

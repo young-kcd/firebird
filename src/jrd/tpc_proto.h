@@ -24,85 +24,11 @@
 #ifndef JRD_TPC_PROTO_H
 #define JRD_TPC_PROTO_H
 
-#include "../common/classes/array.h"
-#include "../common/classes/SyncObject.h"
-
-namespace Ods {
-struct tx_inv_page;
-};
-
-namespace Jrd {
-
-class Database;
-class thread_db;
-
-class TipCache
-{
-public:
-	explicit TipCache(Database* dbb);
-	~TipCache();
-
-	int cacheState(thread_db*, TraNumber number);
-	TraNumber findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber);
-	void initializeTpc(thread_db*, TraNumber number);
-	void setState(TraNumber number, SSHORT state);
-	int snapshotState(thread_db*, TraNumber number);
-	void updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence);
-
-private:
-	class TxPage : public pool_alloc_rpt<SCHAR, type_tpc>
-	{
-	public:
-		TraNumber tpc_base;			// id of first transaction in this block
-		UCHAR tpc_transactions[1];	// two bits per transaction
-
-		static const TraNumber generate(const TxPage* item)
-		{
-			return item->tpc_base;
-		}
-	};
-
-	TxPage* allocTxPage(TraNumber base);
-	TraNumber cacheTransactions(thread_db* tdbb, TraNumber oldest);
-	int extendCache(thread_db* tdbb, TraNumber number);
-	void clearCache();
-
-	Database* m_dbb;
-	Firebird::SyncObject m_sync;
-	Firebird::SortedArray<TxPage*, Firebird::EmptyStorage<TxPage*>, TraNumber, TxPage> m_cache;
-};
-
-
-inline int TPC_cache_state(thread_db* tdbb, TraNumber number)
-{
-	 return tdbb->getDatabase()->dbb_tip_cache->cacheState(tdbb, number);
-}
-
-inline TraNumber TPC_find_limbo(thread_db* tdbb, TraNumber minNumber, TraNumber maxNumber)
-{
-	 return tdbb->getDatabase()->dbb_tip_cache->findLimbo(tdbb, minNumber, maxNumber);
-}
-
-inline void TPC_initialize_tpc(thread_db* tdbb, TraNumber number)
-{
-	 tdbb->getDatabase()->dbb_tip_cache->initializeTpc(tdbb, number);
-}
-
-inline void TPC_set_state(thread_db* tdbb, TraNumber number, SSHORT state)
-{
-	 tdbb->getDatabase()->dbb_tip_cache->setState(number, state);
-}
-
-inline int TPC_snapshot_state(thread_db* tdbb, TraNumber number)
-{
-	 return tdbb->getDatabase()->dbb_tip_cache->snapshotState(tdbb, number);
-}
-
-inline void TPC_update_cache(thread_db* tdbb, const Ods::tx_inv_page* tip_page, ULONG sequence)
-{
-	 tdbb->getDatabase()->dbb_tip_cache->updateCache(tip_page, sequence);
-}
-
-} // namespace Jrd
+int		TPC_cache_state(Jrd::thread_db*, SLONG);
+void	TPC_initialize_tpc(Jrd::thread_db*, SLONG);
+void	TPC_set_state(Jrd::thread_db*, SLONG, SSHORT);
+int		TPC_snapshot_state(Jrd::thread_db*, SLONG);
+void	TPC_update_cache(Jrd::thread_db*, const Ods::tx_inv_page*, SLONG);
 
 #endif // JRD_TPC_PROTO_H
+

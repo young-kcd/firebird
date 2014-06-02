@@ -1,7 +1,7 @@
 SQL Language Extension: global temporary tables
 
 Author:
-    Vlad Khorsun <hvlad at users.sourceforge.net>
+    Vlad Horsun <hvlad@users.souceforge.net>
 
 
 Function:
@@ -74,4 +74,4 @@ Writes = OFF" setting despite of database setting.
 
 	There's no limit on number of GTT instances. If you have N transactions 
 active simultaneously and each transaction has referenced some GTT then you'll 
-have N GTTs instances.
+have N GTT's instances.

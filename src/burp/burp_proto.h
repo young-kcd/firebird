@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:	JRD Backup and Restore program
+ *	PROGRAM:	JRD Backup and Restore program  
  *	MODULE:		burp_proto.h
  *	DESCRIPTION:	Prototype header file for burp.cpp
  *
@@ -24,27 +24,28 @@
 #ifndef BURP_BURP_PROTO_H
 #define BURP_BURP_PROTO_H
 
-#include "../common/ThreadData.h"
+#include "../jrd/thd.h"
 #include "../common/classes/MsgPrint.h"
-#include "../common/UtilSvc.h"
 
-int		BURP_main(Firebird::UtilSvc*);
-int		gbak(Firebird::UtilSvc*);
+#ifdef SERVICE_THREAD
+THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM);
+#endif
 
-void	BURP_abort();
+void	BURP_abort(void);
 void	BURP_error(USHORT, bool, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_error(USHORT, bool, const char* str);
 void	BURP_error_redirect(const ISC_STATUS*, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_msg_partial(bool, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_msg_put(bool, USHORT, const MsgFormat::SafeArg& arg);
+void	BURP_msg_partial(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
+void	BURP_msg_put(USHORT, const MsgFormat::SafeArg& arg);
 const int BURP_MSG_GET_SIZE = 128; // Use it for buffers passed to this function.
 void	BURP_msg_get(USHORT, TEXT*, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_output_version(void*, const TEXT*);
-void	BURP_print(bool err, USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	BURP_print(bool err, USHORT, const char* str);
-void	BURP_print_status(bool err, const ISC_STATUS* status);
+void	BURP_print(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
+void	BURP_print(USHORT, const char* str);
+void	BURP_print_status(const ISC_STATUS*);
 void	BURP_print_warning(const ISC_STATUS*);
 void	BURP_verbose(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	BURP_verbose(USHORT, const char* str);
 
 #endif	//  BURP_BURP_PROTO_H
+

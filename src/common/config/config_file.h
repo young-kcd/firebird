@@ -23,11 +23,10 @@
 #ifndef CONFIG_CONFIG_FILE_H
 #define CONFIG_CONFIG_FILE_H
 
-#include "../common/classes/alloc.h"
-#include "../common/classes/fb_pair.h"
-#include "../common/classes/objects_array.h"
+#include "../../common/classes/alloc.h"
+#include "../../common/classes/fb_pair.h"
+#include "../../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
-#include "../common/classes/auto.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -43,103 +42,51 @@
 	hash-mark) are ignored as well.
 
 	Now this implementation is used by generic configuration manager
-	(common/config/config.cpp) and server-side alias manager (common/db_alias.cpp).
+	(common/config/config.cpp) and server-side alias manager (jrd/db_alias.cpp).
 **/
 
-class ConfigCache;
-
-class ConfigFile : public Firebird::AutoStorage, public Firebird::RefCounted
+class ConfigFile : public Firebird::AutoStorage
 {
-public:
-	// flags for config file
-	static const USHORT HAS_SUB_CONF	= 0x01;
-	static const USHORT ERROR_WHEN_MISS	= 0x02;
-	static const USHORT NATIVE_ORDER	= 0x04;
+	// config_file works with OS case-sensitivity
+	typedef Firebird::PathName string;
 
-	// enum to distinguish ctors
-	enum UseText {USE_TEXT};
+	typedef Firebird::Pair<Firebird::Full<string, string> > Parameter;
 
-	// config_file strings are mostly case sensitive
-	typedef Firebird::string String;
-	// keys are case-insensitive
-	typedef Firebird::NoCaseString KeyType;
-
-	class Stream
-	{
-	public:
-		virtual ~Stream();
-		virtual bool getLine(String&, unsigned int&) = 0;
-		virtual const char* getFileName() const = 0;
-	};
-
-	struct Parameter : public AutoStorage
-	{
-		Parameter(MemoryPool& p, const Parameter& par)
-			: AutoStorage(p), name(getPool(), par.name), value(getPool(), par.value),
-			  sub(par.sub), line(par.line)
-		{ }
-		Parameter()
-			: AutoStorage(), name(getPool()), value(getPool()), sub(0), line(0)
-		{ }
-
-		SINT64 asInteger() const;
-		bool asBoolean() const;
-
-		KeyType name;
-		String value;
-		Firebird::RefPtr<ConfigFile> sub;
-		unsigned int line;
-
-		static const KeyType* generate(const Parameter* item)
-		{
-			return &item->name;
-		}
-	};
-
-    typedef Firebird::SortedObjectsArray<Parameter, Firebird::InlineStorage<Parameter*, 100>,
-										 KeyType, Parameter> Parameters;
-	typedef Firebird::ObjectsArray<Firebird::PathName> FilesArray;
-
-	ConfigFile(const Firebird::PathName& file, USHORT fl = 0, ConfigCache* cache = NULL);
-	ConfigFile(const char* file, USHORT fl = 0, ConfigCache* cache = NULL);
-	ConfigFile(UseText, const char* configText, USHORT fl = 0);
-
-	ConfigFile(MemoryPool& p, const Firebird::PathName& file, USHORT fl = 0, ConfigCache* cache = NULL);
-
-private:
-	ConfigFile(MemoryPool& p, ConfigFile::Stream* s, USHORT fl);
+    typedef Firebird::SortedObjectsArray <Parameter, 
+		Firebird::InlineStorage<Parameter *, 100>,
+		string, Firebird::FirstPointerKey<Parameter> > mymap_t;
 
 public:
+	ConfigFile(MemoryPool& p, bool ExceptionOnError) 
+		: AutoStorage(p), isLoadedFlg(false), 
+		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
+    explicit ConfigFile(bool ExceptionOnError) 
+		: AutoStorage(), isLoadedFlg(false), 
+		  fExceptionOnError(ExceptionOnError), parameters(getPool()) {}
+
+	// configuration file management
+    const string getConfigFilePath() const { return configFile; }
+    void setConfigFilePath(const string& newFile) { configFile = newFile; }
+
+    bool isLoaded() const { return isLoadedFlg; }
+
+    void loadConfig();
+    void checkLoadConfig();
+
 	// key and value management
-	const Parameter* findParameter(const KeyType& name) const;
-	const Parameter* findParameter(const KeyType& name, const String& value) const;
-
-	// all parameters access
-	const Parameters& getParameters() const
-	{
-		return parameters;
-	}
-
-	// Substitute macro values in a string
-	bool macroParse(String& value, const char* fileName) const;
-
-private:
-	enum LineType {LINE_BAD, LINE_REGULAR, LINE_START_SUB, LINE_END_SUB, LINE_INCLUDE};
-
-    Parameters parameters;
-	USHORT flags;
-	unsigned includeLimit;
-	ConfigCache* filesCache;
-	static const unsigned INCLUDE_LIMIT = 64;
+    bool doesKeyExist(const string&);
+    string getString(const string&);
 
 	// utilities
-	void parse(Stream* stream);
-	LineType parseLine(const char* fileName, const String& input, Parameter& par);
-	bool translate(const char* fileName, const String& from, String& to) const;
-	void badLine(const char* fileName, const String& line);
-	void include(const char* currentFileName, const Firebird::PathName& path);
-	bool wildCards(const char* currentFileName, const Firebird::PathName& pathPrefix, FilesArray& components);
-	bool substituteStandardDir(const String& from, String& to) const;
+	static void stripComments(string&);
+	static string parseKeyFrom(const string&, string::size_type&);
+	static string parseValueFrom(string, string::size_type);
+
+private:
+    string configFile;
+    bool isLoadedFlg;
+	bool fExceptionOnError;
+    mymap_t parameters;
 };
 
 #endif	// CONFIG_CONFIG_FILE_H

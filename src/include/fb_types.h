@@ -32,22 +32,21 @@
 #ifndef INCLUDE_FB_TYPES_H
 #define INCLUDE_FB_TYPES_H
 
-#include <limits.h>
-
 #if SIZEOF_LONG == 8
 	/* EKU: Firebird requires (S)LONG to be 32 bit */
 	typedef int SLONG;
 	typedef unsigned int ULONG;
-	const SLONG SLONG_MIN = INT_MIN;
-	const SLONG SLONG_MAX = INT_MAX;
 #elif SIZEOF_LONG == 4
 	typedef long SLONG;
 	typedef unsigned long ULONG;
-	const SLONG SLONG_MIN = LONG_MIN;
-	const SLONG SLONG_MAX = LONG_MAX;
 #else
 #error compile_time_failure: SIZEOF_LONG not specified
 #endif
+
+typedef struct {
+	SLONG high;
+	ULONG low;
+} SQUAD;
 
 /* Basic data types */
 
@@ -61,14 +60,6 @@ typedef unsigned char UCHAR;
 typedef short SSHORT;
 typedef unsigned short USHORT;
 
-#ifdef WIN_NT
-typedef __int64 SINT64;
-typedef unsigned __int64 FB_UINT64;
-#else
-typedef long long int SINT64;
-typedef unsigned long long int FB_UINT64;
-#endif
-
 /* Substitution of API data types */
 
 typedef SCHAR ISC_SCHAR;
@@ -77,12 +68,8 @@ typedef SSHORT ISC_SHORT;
 typedef USHORT ISC_USHORT;
 typedef SLONG ISC_LONG;
 typedef ULONG ISC_ULONG;
-typedef SINT64 ISC_INT64;
-typedef FB_UINT64 ISC_UINT64;
 
-#include "types_pub.h"
-
-typedef ISC_QUAD SQUAD;
+#include <types_pub.h>
 
 /*
  * TMN: some misc data types from all over the place
@@ -102,7 +89,10 @@ struct lstring
 
 typedef unsigned char BOOLEAN;
 typedef char TEXT;				/* To be expunged over time */
+/*typedef unsigned char STEXT;	Signed text - not used
+typedef unsigned char UTEXT;	Unsigned text - not used */
 typedef unsigned char BYTE;		/* Unsigned byte - common */
+/*typedef char SBYTE;			Signed byte - not used */
 typedef intptr_t IPTR;
 typedef uintptr_t U_IPTR;
 
@@ -119,34 +109,20 @@ typedef void (*FPTR_EVENT_CALLBACK)(void*, USHORT, const UCHAR*);
 /* The type of JRD's ERR_post, DSQL's ERRD_post & post_error,
  * REMOTE's move_error & GPRE's post_error.
  */
-namespace Firebird {
-	namespace Arg {
-		class StatusVector;
-	}
-}
-typedef void (*ErrorFunction) (const Firebird::Arg::StatusVector& v);
-// kept for backward compatibility with old private API (CVT_move())
 typedef void (*FPTR_ERROR) (ISC_STATUS, ...);
 
 typedef ULONG RCRD_OFFSET;
 typedef USHORT FLD_LENGTH;
+typedef IPTR LOCK_OWNER_T; /* Data type for the Owner ID for the lock manager */
 /* CVC: internal usage. I suspect the only reason to return int is that
 vmslock.cpp:LOCK_convert() calls VMS' sys$enq that may require this signature,
 but our code never uses the return value. */
 typedef int (*lock_ast_t)(void*);
 
+typedef IPTR FB_THREAD_ID;
+
 /* Number of elements in an array */
 #define FB_NELEM(x)	((int)(sizeof(x) / sizeof(x[0])))
-
-// Intl types
-typedef SSHORT CHARSET_ID;
-typedef SSHORT COLLATE_ID;
-typedef USHORT TTYPE_ID;
-
-// Stream type, had to move it from dsql/Nodes.h due to circular dependencies.
-typedef ULONG StreamType;
-
-// The type of Jrd's transaction.
-typedef ULONG TraNumber;
+#define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
 
 #endif /* INCLUDE_FB_TYPES_H */

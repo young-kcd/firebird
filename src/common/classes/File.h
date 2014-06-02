@@ -25,14 +25,13 @@
 
 #include "../common/classes/array.h"
 
-#if !defined(SOLARIS) && !defined(AIX)
+#ifndef SOLARIS
 typedef FB_UINT64 offset_t;
 #endif
 
 namespace Firebird {
 
-class File
-{
+class File {
 public:
 	virtual ~File() {}
 
@@ -47,25 +46,19 @@ public:
 class ZeroBuffer
 {
 	static const size_t DEFAULT_SIZE = 1024 * 256;
-	static const size_t SYS_PAGE_SIZE = 1024 * 4;
 
 public:
 	explicit ZeroBuffer(MemoryPool& p, size_t size = DEFAULT_SIZE)
 		: buffer(p)
 	{
-		bufSize = size;
-		bufAligned = buffer.getBuffer(bufSize + SYS_PAGE_SIZE);
-		bufAligned = (char*) FB_ALIGN((U_IPTR) bufAligned, SYS_PAGE_SIZE);
-		memset(bufAligned, 0, size);
+		memset(buffer.getBuffer(size), 0, size);
 	}
 
-	const char* getBuffer() const { return bufAligned; }
-	size_t getSize() const { return bufSize; }
+	const char* getBuffer() const { return buffer.begin(); }
+	size_t getSize() const { return buffer.getCount(); }
 
-private:
-	Firebird::Array<char> buffer;
-	char* bufAligned;
-	size_t bufSize;
+	private:
+		Firebird::Array<char> buffer;
 };
 
 } // namespace

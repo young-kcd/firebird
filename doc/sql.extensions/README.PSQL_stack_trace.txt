@@ -13,7 +13,7 @@ Function:
 	that string is 2048 bytes. If actual trace is longer then it will be truncated to this limit.
 
 Author:
-	Vlad Khorsun <hvlad at users.sourceforge.net>
+	Vlad Horsun <horsun at kdb.dp.ua>
 
 Examples:
 

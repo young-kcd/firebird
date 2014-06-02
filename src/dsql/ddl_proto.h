@@ -20,7 +20,7 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  *
- * 2004.01.16 Vlad Horsun: added support for default parameters and
+ * 2004.01.16 Vlad Horsun: added support for default parameters and 
  *   EXECUTE BLOCK statement
  */
 
@@ -30,38 +30,18 @@
 // This is a DSQL internal file. Not to be used by anything but
 // the DSQL module itself.
 
-namespace Jrd {
-	class DsqlCompilerScratch;
-	class dsql_fld;
-};
+class dsql_req;
+class dsql_fld;
+class dsql_nod;
+class dsql_str;
 
-const USHORT blr_dtypes[] = {
-	0,
-	blr_text,					// dtype_text
-	blr_cstring,				// dtype_cstring
-	blr_varying,				// dtype_varying
-	0,
-	0,
-	0,							// dtype_packed
-	0,							// dtype_byte
-	blr_short,					// dtype_short
-	blr_long,					// dtype_long
-	blr_quad,					// dtype_quad
-	blr_float,					// dtype_real
-	blr_double,					// dtype_double
-	blr_double,					// dtype_d_float
-	blr_sql_date,				// dtype_sql_date
-	blr_sql_time,				// dtype_sql_time
-	blr_timestamp,				// dtype_timestamp
-	blr_blob,					// dtype_blob		// ASF: CAST use blr_blob2 because blr_blob doesn't fit in UCHAR
-	blr_short,					// dtype_array
-	blr_int64,					// dtype_int64
-	0,							// DB_KEY
-	blr_bool					// dtype_boolean
-};
-
-bool DDL_ids(const Jrd::DsqlCompilerScratch*);
-void DDL_resolve_intl_type(Jrd::DsqlCompilerScratch*, Jrd::dsql_fld*, const Firebird::MetaName&,
-	bool = false);
+void DDL_execute(dsql_req*);
+void DDL_generate(dsql_req*, dsql_nod*);
+bool DDL_ids(const dsql_req*);
+void DDL_put_field_dtype(dsql_req*, const dsql_fld*, bool);
+void DDL_resolve_intl_type(dsql_req*, dsql_fld*, const dsql_str*);
+void DDL_resolve_intl_type2(dsql_req*, dsql_fld*, const dsql_str*, bool);
+void DDL_gen_block(dsql_req*, dsql_nod*);
 
 #endif // DSQL_DDL_PROTO_H
+

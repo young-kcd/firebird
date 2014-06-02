@@ -27,8 +27,9 @@
 #include "../jrd/jrd.h"
 
 bool    CVT2_get_binary_comparable_desc(dsc*, const dsc*, const dsc*);
-int		CVT2_compare(const dsc*, const dsc*);
-int		CVT2_blob_compare(const dsc*, const dsc*);
-USHORT	CVT2_make_string2(const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&);
+SSHORT	CVT2_compare(const dsc*, const dsc*, FPTR_ERROR);
+SSHORT	CVT2_blob_compare(const dsc*, const dsc*, FPTR_ERROR);
+void	CVT2_get_name(const dsc*, TEXT*, FPTR_ERROR);
+USHORT	CVT2_make_string2(const dsc*, USHORT, UCHAR**, Jrd::MoveBuffer&, FPTR_ERROR);
 
 #endif // JRD_CVT2_PROTO_H

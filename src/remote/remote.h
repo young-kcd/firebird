@@ -29,34 +29,23 @@
 #ifndef REMOTE_REMOTE_H
 #define REMOTE_REMOTE_H
 
-#include "gen/iberror.h"
+#include "../jrd/common.h"
 #include "../remote/remote_def.h"
-#include "../common/ThreadData.h"
-#include "../common/ThreadStart.h"
-#include "../common/thd.h"
-#include "../common/Auth.h"
+#include "../jrd/thd.h"
 #include "../common/classes/objects_array.h"
+#include "../auth/trusted/AuthSspi.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/classes/RefMutex.h"
 #include "../common/StatusHolder.h"
-#include "../common/classes/RefCounted.h"
-#include "../common/classes/GetPlugins.h"
 
-#include "firebird/Provider.h"
-#include "firebird/Auth.h"
-#include "firebird/Crypt.h"
+/* Include some apollo include files for tasking */
 
-#ifndef WIN_NT
+#if !(defined VMS || defined WIN_NT)
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
-#ifndef INVALID_SOCKET
-#define INVALID_SOCKET  -1
-#endif
-#endif // !WIN_NT
+#endif /* !VMS || !WIN_NT */
 
 
 // Uncomment this line if you need to trace module activity
@@ -66,489 +55,349 @@
 DEFINE_TRACE_ROUTINE(remote_trace);
 #define REMOTE_TRACE(args) remote_trace args
 #else
-#define REMOTE_TRACE(args) // nothing
+#define REMOTE_TRACE(args) /* nothing */
 #endif
 
 #ifdef DEV_BUILD
-// Debug packet/XDR memory allocation
+/* Debug packet/XDR memory allocation */
 
-// Temporarily disabling DEBUG_XDR_MEMORY
-// #define DEBUG_XDR_MEMORY
+/* Temporarily disabling DEBUG_XDR_MEMORY */
+/* #define DEBUG_XDR_MEMORY	*/
 
 #endif
 
 const int BLOB_LENGTH		= 16384;
 
 #include "../remote/protocol.h"
-#include "fb_blk.h"
 
+/* Block types */
+
+struct blk;
+
+#ifndef INCLUDE_FB_BLK
+#include "../include/old_fb_blk.h"
+#endif
 
 // fwd. decl.
-namespace Firebird {
-	class Exception;
-	class IEventCallback;
-	class ICryptKeyCallback;
-}
-
 struct rem_port;
 
-typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
-
-typedef Firebird::RefPtr<Firebird::IAttachment> ServAttachment;
-typedef Firebird::RefPtr<Firebird::IBlob> ServBlob;
-typedef Firebird::RefPtr<Firebird::ITransaction> ServTransaction;
-typedef Firebird::RefPtr<Firebird::IStatement> ServStatement;
-typedef Firebird::RefPtr<Firebird::IResultSet> ServCursor;
-typedef Firebird::RefPtr<Firebird::IRequest> ServRequest;
-typedef Firebird::RefPtr<Firebird::IEvents> ServEvents;
-typedef Firebird::RefPtr<Firebird::IService> ServService;
-
-
-// this set of parameters helps using same functions
-// for both services and databases attachments
-struct ParametersSet
+typedef struct rdb
 {
-	UCHAR dummy_packet_interval, user_name, auth_block,
-		  password, password_enc, trusted_auth,
-		  plugin_name, plugin_list, specific_data,
-		  address_path, process_id, process_name,
-		  encrypt_key, client_version, remote_protocol,
-		  host_name, os_user, config_text;
-};
-
-extern const ParametersSet dpbParam, spbParam, connectParam;
-
-
-struct Svc : public Firebird::GlobalStorage
-{
-	ServService					svc_iface;		// service interface
-	Svc() :
-		svc_iface(NULL)
-	{ }
-};
-
-
-struct Rdb : public Firebird::GlobalStorage, public TypedHandle<rem_type_rdb>
-{
-	ServAttachment	rdb_iface;				// attachment interface
-	rem_port*		rdb_port;				// communication port
-	Firebird::AutoPtr<Svc>	rdb_svc;		// service-specific block
-	struct Rtr*		rdb_transactions;		// linked list of transactions
-	struct Rrq*		rdb_requests;			// compiled requests
-	struct Rvnt*	rdb_events;				// known events
-	struct Rsr*		rdb_sql_requests;		// SQL requests
-	PACKET			rdb_packet;				// Communication structure
+	blk				rdb_header;
 	USHORT			rdb_id;
+	USHORT			rdb_flags;
+	FB_API_HANDLE	rdb_handle;			/* database handle */
+	rem_port*		rdb_port;			/* communication port */
+	struct rtr*		rdb_transactions;	/* linked list of transactions */
+	struct rrq*		rdb_requests;		/* compiled requests */
+	struct rvnt*	rdb_events;			/* known events */
+	struct rsr*		rdb_sql_requests;	/* SQL requests */
+	ISC_STATUS*		rdb_status_vector;
+	PACKET			rdb_packet;			/* Communication structure */
+} *RDB;
 
-private:
-	ThreadId		rdb_async_thread_id;	// Id of async thread (when active)
+// rdb_flags
+const USHORT RDB_service	= 1;		/* structure relates to a service */
 
-public:
-	Firebird::Mutex	rdb_async_lock;			// Sync to avoid 2 async calls at once
-
-public:
-	Rdb() :
-		rdb_iface(NULL), rdb_port(0),
-		rdb_transactions(0), rdb_requests(0), rdb_events(0), rdb_sql_requests(0),
-		rdb_id(0), rdb_async_thread_id(0)
-	{
-	}
-
-	static ISC_STATUS badHandle() { return isc_bad_db_handle; }
-};
-
-
-struct Rtr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rtr>
+typedef struct rtr
 {
-	Rdb*			rtr_rdb;
-	Rtr*			rtr_next;
-	struct Rbl*		rtr_blobs;
-	ServTransaction	rtr_iface;
-	USHORT			rtr_id;
-	bool			rtr_limbo;
+	blk			rtr_header;
+	rdb*		rtr_rdb;
+	rtr*		rtr_next;
+	struct rbl*	rtr_blobs;
+	FB_API_HANDLE rtr_handle;
+	USHORT		rtr_flags;
+	USHORT		rtr_id;
+} *RTR;
 
-	Firebird::Array<Rsr*> rtr_cursors;
+// rtr_flags
+const USHORT RTR_limbo	= 1;
 
-public:
-	Rtr() :
-		rtr_rdb(0), rtr_next(0), rtr_blobs(0),
-		rtr_iface(NULL), rtr_id(0), rtr_limbo(0),
-		rtr_cursors(getPool())
-	{ }
-
-	static ISC_STATUS badHandle() { return isc_bad_trans_handle; }
-};
-
-
-struct Rbl : public Firebird::GlobalStorage, public TypedHandle<rem_type_rbl>
+typedef struct rbl
 {
-	Firebird::HalfStaticArray<UCHAR, BLOB_LENGTH> rbl_data;
-	Rdb*		rbl_rdb;
-	Rtr*		rbl_rtr;
-	Rbl*		rbl_next;
-	UCHAR*		rbl_buffer;
-	UCHAR*		rbl_ptr;
-	ServBlob	rbl_iface;
-	SLONG		rbl_offset;			// Apparent (to user) offset in blob
+	blk			rbl_header;
+	rdb*		rbl_rdb;
+	rtr*		rbl_rtr;
+	rbl*		rbl_next;
+	FB_API_HANDLE rbl_handle;
+	SLONG		rbl_offset;			/* Apparent (to user) offset in blob */
 	USHORT		rbl_id;
 	USHORT		rbl_flags;
+	UCHAR*		rbl_ptr;
+	UCHAR*		rbl_buffer;
 	USHORT		rbl_buffer_length;
 	USHORT		rbl_length;
 	USHORT		rbl_fragment_length;
-	USHORT		rbl_source_interp;	// source interp (for writing)
-	USHORT		rbl_target_interp;	// destination interp (for reading)
+	USHORT		rbl_source_interp;	/* source interp (for writing) */
+	USHORT		rbl_target_interp;	/* destination interp (for reading) */
+	UCHAR		rbl_data[1];
+} *RBL;
 
-public:
-	// Values for rbl_flags
-	enum {
-		EOF_SET = 1,
-		SEGMENT = 2,
-		EOF_PENDING = 4,
-		CREATE = 8
-	};
+// rbl_flags
+const USHORT RBL_eof		= 1;
+const USHORT RBL_segment	= 2;
+const USHORT RBL_eof_pending= 4;
+const USHORT RBL_create		= 8;
 
-public:
-	Rbl() :
-		rbl_data(getPool()), rbl_rdb(0), rbl_rtr(0), rbl_next(0),
-		rbl_buffer(rbl_data.getBuffer(BLOB_LENGTH)), rbl_ptr(rbl_buffer), rbl_iface(NULL),
-		rbl_offset(0), rbl_id(0), rbl_flags(0),
-		rbl_buffer_length(BLOB_LENGTH), rbl_length(0), rbl_fragment_length(0),
-		rbl_source_interp(0), rbl_target_interp(0)
-	{ }
-
-	static ISC_STATUS badHandle() { return isc_bad_segstr_handle; }
-};
-
-
-struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
+typedef struct rvnt
 {
-	Rvnt*		rvnt_next;
-	Rdb*		rvnt_rdb;
-	Firebird::RefPtr<Firebird::IEventCallback> rvnt_callback;
-	ServEvents	rvnt_iface;
-	rem_port*	rvnt_port;	// used to id server from whence async came
-	SLONG		rvnt_id;	// used to store client-side id
+	blk			rvnt_header;
+	rvnt*		rvnt_next;
+	rdb*		rvnt_rdb;
+	FPTR_EVENT_CALLBACK	rvnt_ast;
+	void*		rvnt_arg;
+	SLONG		rvnt_id;
+	SLONG		rvnt_rid;	/* used by server to store client-side id */
+	rem_port*	rvnt_port;	/* used to id server from whence async came */
+	const UCHAR*		rvnt_items;
 	USHORT		rvnt_length;
+} *RVNT;
 
-public:
-	Rvnt() :
-		rvnt_next(NULL), rvnt_rdb(NULL), rvnt_callback(NULL), rvnt_iface(NULL),
-		rvnt_port(NULL), rvnt_id(0), rvnt_length(0)
-	{ }
+struct rem_vec
+{
+	blk			vec_header;
+	ULONG		vec_count;
+	blk*		vec_object[1];
 };
 
+//struct rem_vcl
+//{
+//	blk			vcl_header;
+//	ULONG		vcl_count;
+//	SLONG		vcl_long[1];
+//};
 
-struct rem_str : public pool_alloc_rpt<SCHAR>
+/* Random string block -- jack of all kludges */
+
+struct rem_str
 {
+	blk			str_header;
 	USHORT		str_length;
 	SCHAR		str_data[2];
 };
 
+/* Include definition of descriptor */
 
-// Include definition of descriptor
-
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 
 
-struct rem_fmt : public Firebird::GlobalStorage
+struct rem_fmt
 {
-	ULONG		fmt_length;
-	ULONG		fmt_net_length;
-	Firebird::Array<dsc> fmt_desc;
-
-public:
-	explicit rem_fmt(size_t rpt) :
-		fmt_length(0), fmt_net_length(0),
-		fmt_desc(getPool(), rpt)
-	{
-		fmt_desc.grow(rpt);
-	}
+	blk			fmt_header;
+	USHORT		fmt_length;
+	USHORT		fmt_net_length;
+	USHORT		fmt_count;
+	USHORT		fmt_version;
+	USHORT		fmt_flags; // unused
+	struct dsc	fmt_desc[1];
 };
 
-// Windows declares a msg structure, so rename the structure
-// to avoid overlap problems.
+// fmt_flags (not used)
+//#define FMT_has_P10_specific_datatypes	0x1	/* datatypes don't exist in P9 */
 
-struct RMessage : public Firebird::GlobalStorage
+/* Windows declares a msg structure, so rename the structure 
+   to avoid overlap problems. */
+
+typedef struct message
 {
-	RMessage*	msg_next;			// Next available message
-	USHORT		msg_number;			// Message number
-	UCHAR*		msg_address;		// Address of message
-	UCharArrayAutoPtr msg_buffer;	// Allocated message
+	blk			msg_header;
+	message*	msg_next;	/* Next available message */
+#ifdef SCROLLABLE_CURSORS
+	message*	msg_prior;	/* Next available message */
+	ULONG		msg_absolute; 		/* Absolute record number in cursor result set */
+#endif
+	/* Please DO NOT re-arrange the order of following two fields.
+	   This could result in alignment problems while trying to access
+	   'msg_buffer' as a 'long', leading to "core" drops 
+		Sriram - 04-Jun-97 */
+	USHORT		msg_number;			/* Message number */
+	UCHAR*		msg_address;		/* Address of message */
+	UCHAR		msg_buffer[1];		/* Allocated message */
+} *REM_MSG;
 
-public:
-	explicit RMessage(size_t rpt) :
-		msg_next(0), msg_number(0), msg_address(0), msg_buffer(FB_NEW(getPool()) UCHAR[rpt])
-	{
-		memset(msg_buffer, 0, rpt);
-	}
-};
+/* remote stored procedure request */
 
-
-// remote stored procedure request
-struct Rpr : public Firebird::GlobalStorage
+typedef struct rpr
 {
-	Rdb*		rpr_rdb;
-	Rtr*		rpr_rtr;
-	RMessage*	rpr_in_msg;		// input message
-	RMessage*	rpr_out_msg;	// output message
-	rem_fmt*	rpr_in_format;	// Format of input message
-	rem_fmt*	rpr_out_format;	// Format of output message
+	blk			rpr_header;
+	rdb*		rpr_rdb;
+	rtr*		rpr_rtr;
+	FB_API_HANDLE rpr_handle;
+	message*	rpr_in_msg;		/* input message */
+	message*	rpr_out_msg;	/* output message */
+	rem_fmt*	rpr_in_format;	/* Format of input message */
+	rem_fmt*	rpr_out_format;	/* Format of output message */
+	USHORT		rpr_flags; // unused
+} *RPR;
 
-public:
-	Rpr() :
-		rpr_rdb(0), rpr_rtr(0),
-		rpr_in_msg(0), rpr_out_msg(0), rpr_in_format(0), rpr_out_format(0)
-	{ }
-};
+// rpr_flags (not used)
+//#define RPR_eof		1		/* End-of-stream encountered */
 
-struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
+struct rrq
 {
-	Rdb*	rrq_rdb;
-	Rtr*	rrq_rtr;
-	Rrq*	rrq_next;
-	Rrq*	rrq_levels;		// RRQ block for next level
-	ServRequest rrq_iface;
+	blk		rrq_header;
+	rdb*	rrq_rdb;
+	rtr*	rrq_rtr;
+	rrq*	rrq_next;
+	rrq*	rrq_levels;		/* RRQ block for next level */
+	FB_API_HANDLE rrq_handle;
 	USHORT		rrq_id;
 	USHORT		rrq_max_msg;
 	USHORT		rrq_level;
-	Firebird::StatusHolder	rrqStatus;
-
+	ISC_STATUS_ARRAY	rrq_status_vector;
 	struct		rrq_repeat
 	{
-		rem_fmt*	rrq_format;		// format for this message
-		RMessage*	rrq_message; 	// beginning or end of cache, depending on whether it is client or server
-		RMessage*	rrq_xdr;		// point at which cache is read or written by xdr
-		USHORT		rrq_msgs_waiting;	// count of full rrq_messages
-		USHORT		rrq_rows_pending;	// How many rows in waiting
-		USHORT		rrq_reorder_level;	// Reorder when rows_pending < this level
-		USHORT		rrq_batch_count;	// Count of batches in pipeline
+		rem_fmt*	rrq_format;		/* format for this message */
+		message*	rrq_message; 	/* beginning or end of cache, depending on whether it is client or server */
+		message*	rrq_xdr;		/* point at which cache is read or written by xdr */
+#ifdef SCROLLABLE_CURSORS
+		message*	rrq_last;		/* last message returned */
+		ULONG		rrq_absolute;	/* current offset in result set for record being read into cache */
+		USHORT		rrq_flags;
+#endif
+		USHORT		rrq_msgs_waiting;	/* count of full rrq_messages */
+		USHORT		rrq_rows_pending;	/* How many rows in waiting */
+		USHORT		rrq_reorder_level;	/* Reorder when rows_pending < this level */
+		USHORT		rrq_batch_count;	/* Count of batches in pipeline */
 
-	};
-	Firebird::Array<rrq_repeat> rrq_rpt;
-
-public:
-	explicit Rrq(size_t rpt) :
-		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0),
-		rrq_iface(NULL), rrq_id(0), rrq_max_msg(0), rrq_level(0),
-		rrqStatus(0), rrq_rpt(getPool(), rpt)
-	{
-		//memset(rrq_status_vector, 0, sizeof rrq_status_vector);
-		rrq_rpt.grow(rpt);
-	}
-
-	~Rrq();
-
-	Rrq* clone() const
-	{
-		Rrq* rc = new Rrq(rrq_rpt.getCount());
-		*rc = *this;
-		return rc;
-	}
-
-	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
-
-	void saveStatus(const Firebird::Exception& ex) throw();
-	void saveStatus(const Firebird::IStatus* ex) throw();
+	} rrq_rpt[1];
 };
 
+// rrq_flags
+#ifdef SCROLLABLE_CURSORS
+const USHORT RRQ_backward			= 1;	/* the cache was created in the backward direction */ 
+const USHORT RRQ_absolute_backward	= 2;	/* rrq_absolute is measured from the end of the stream */
+const USHORT RRQ_last_backward		= 4;	/* last time, the next level up asked for us to scroll in the backward direction */
+#endif
 
-template <typename T>
-class RFlags
+/* remote SQL request */
+
+typedef struct rsr
 {
-public:
-	RFlags() :
-		m_flags(0)
-	{
-		// Require base flags field to be unsigned.
-		// This is a compile-time assertion; it won't build if you use a signed flags field.
-		typedef int dummy[T(-1) > 0];
-	}
-	explicit RFlags(const T flags) :
-		m_flags(flags)
-	{}
-	// At least one bit in the parameter is 1 in the object.
-	bool test(const T flags) const
-	{
-		return m_flags & flags;
-	}
-	// All bits received as parameter are 1 in the object.
-	bool testAll(const T flags) const
-	{
-		return (m_flags & flags) == flags;
-	}
-	void set(const T flags)
-	{
-		m_flags |= flags;
-	}
-	void clear(const T flags)
-	{
-		m_flags &= ~flags;
-	}
-	void reset()
-	{
-		m_flags = 0;
-	}
-private:
-	T m_flags;
-};
-
-
-// remote SQL request
-struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
-{
-	Rsr*			rsr_next;
-	Rdb*			rsr_rdb;
-	Rtr*			rsr_rtr;
-	ServStatement	rsr_iface;
-	ServCursor		rsr_cursor;
-	rem_fmt*		rsr_bind_format;		// Format of bind message
-	rem_fmt*		rsr_select_format;		// Format of select message
-	rem_fmt*		rsr_user_select_format; // Format of user's select message
-	rem_fmt*		rsr_format;				// Format of current message
-	RMessage*		rsr_message;			// Next message to process
-	RMessage*		rsr_buffer;				// Next buffer to use
-	Firebird::StatusHolder* rsr_status;		// saved status for buffered errors
+	blk				rsr_header;
+	rsr*			rsr_next;
+	rdb*			rsr_rdb;
+	rtr*			rsr_rtr;
+	FB_API_HANDLE	rsr_handle;
+	rem_fmt*		rsr_bind_format;		/* Format of bind message */
+	rem_fmt*		rsr_select_format;		/* Format of select message */
+	rem_fmt*		rsr_user_select_format; /* Format of user's select message */
+	rem_fmt*		rsr_format;				/* Format of current message */
+	message*		rsr_message;			/* Next message to process */
+	message*		rsr_buffer;				/* Next buffer to use */
+	Firebird::StatusHolder* rsr_status;		/* saved status for buffered errors */
 	USHORT			rsr_id;
-	RFlags<USHORT>	rsr_flags;
-	ULONG			rsr_fmt_length;
+	USHORT			rsr_flags;
+	USHORT			rsr_fmt_length;
 
-	ULONG			rsr_rows_pending;	// How many rows are pending
-	USHORT			rsr_msgs_waiting; 	// count of full rsr_messages
-	USHORT			rsr_reorder_level; 	// Trigger pipelining at this level
-	USHORT			rsr_batch_count; 	// Count of batches in pipeline
+	ULONG			rsr_rows_pending;	/* How many rows are pending */
+	USHORT			rsr_msgs_waiting; 	/* count of full rsr_messages */
+	USHORT			rsr_reorder_level; 	/* Trigger pipelining at this level */
+	USHORT			rsr_batch_count; 	/* Count of batches in pipeline */
+} *RSR;
 
-	Firebird::string rsr_cursor_name;	// Name for cursor to be set on open
-	bool			rsr_delayed_format;	// Out format was delayed on execute, set it on fetch
+// rsr_flags
+const USHORT RSR_fetched	= 1;		/* Cleared by execute, set by fetch */
+const USHORT RSR_eof		= 2;		/* End-of-stream encountered */
+const USHORT RSR_blob		= 4;		/* Statement relates to blob op */
+const USHORT RSR_no_batch	= 8;		/* Do not batch fetch rows */
+const USHORT RSR_stream_err	= 16;		/* There is an error pending in the batched rows */
+const USHORT RSR_lazy		= 32;		/* To be allocated at the first reference */
+const USHORT RSR_defer_execute	= 64;	// op_execute can be deferred
+const USHORT RSR_past_eof	= 128;		// EOF was returned by fetch from this statement
 
-public:
-	// Values for rsr_flags.
-	enum {
-		FETCHED = 1,		// Cleared by execute, set by fetch
-		EOF_SET = 2,		// End-of-stream encountered
-		//BLOB = 4,			// Statement relates to blob op
-		NO_BATCH = 8,		// Do not batch fetch rows
-		STREAM_ERR = 16,	// There is an error pending in the batched rows
-		LAZY = 32,			// To be allocated at the first reference
-		DEFER_EXECUTE = 64,	// op_execute can be deferred
-		PAST_EOF = 128		// EOF was returned by fetch from this statement
-	};
-
-public:
-	Rsr() :
-		rsr_next(0), rsr_rdb(0), rsr_rtr(0), rsr_iface(NULL), rsr_cursor(NULL),
-		rsr_bind_format(0), rsr_select_format(0), rsr_user_select_format(0),
-		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
-		rsr_id(0), rsr_fmt_length(0),
-		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0),
-		rsr_cursor_name(getPool()), rsr_delayed_format(false)
-		{ }
-
-	void saveException(const ISC_STATUS* status, bool overwrite);
-	void saveException(const Firebird::Exception& ex, bool overwrite);
-	void clearException();
-	ISC_STATUS haveException();
-	void raiseException();
-	void releaseException();
-
-	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
-	void checkIface(ISC_STATUS code = isc_unprepared_stmt);
-	void checkCursor();
-};
-
-
-// Makes it possible to safely store all handles in single array
-class RemoteObject
+// will be methods of remote statement class
+inline void stmt_save_exception(RSR statement, const ISC_STATUS* status, bool overwrite)
 {
-private:
-	union {
-		Rdb* rdb;
-		Rtr* rtr;
-		Rbl* rbl;
-		Rrq* rrq;
-		Rsr* rsr;
-	} ptr;
+	if (!statement->rsr_status) {
+		statement->rsr_status = new Firebird::StatusHolder();
+	}
+	if (overwrite || !statement->rsr_status->getError()) {
+		statement->rsr_status->save(status);
+	}
+}
 
-public:
-	RemoteObject() { ptr.rdb = 0; }
+inline void stmt_clear_exception(RSR statement)
+{
+	if (statement->rsr_status)
+		statement->rsr_status->clear();
+}
 
-	template <typename R>
-	R* get(R* r)
+inline ISC_STATUS stmt_have_exception(RSR statement)
+{
+	return (statement->rsr_status ?	
+		statement->rsr_status->getError() : 0);
+}
+
+inline void stmt_raise_exception(RSR statement)
+{
+	if (statement->rsr_status)
+		statement->rsr_status->raise();
+}
+
+inline void stmt_release_exception(RSR statement)
+{
+	if (statement->rsr_status) 
 	{
-		if (!r || !r->checkHandle())
-		{
-			Firebird::status_exception::raise(Firebird::Arg::Gds(R::badHandle()));
-		}
-		return r;
+		delete statement->rsr_status;
+		statement->rsr_status = NULL;
 	}
+}
 
-	void operator=(Rdb* v) { ptr.rdb = v; }
-	void operator=(Rtr* v) { ptr.rtr = v; }
-	void operator=(Rbl* v) { ptr.rbl = v; }
-	void operator=(Rrq* v) { ptr.rrq = v; }
-	void operator=(Rsr* v) { ptr.rsr = v; }
-
-	operator Rdb*() { return get(ptr.rdb); }
-	operator Rtr*() { return get(ptr.rtr); }
-	operator Rbl*() { return get(ptr.rbl); }
-	operator Rrq*() { return get(ptr.rrq); }
-	operator Rsr*() { return get(ptr.rsr); }
-
-	bool isMissing() const { return ptr.rdb == NULL; }
-	void release() { ptr.rdb = 0; }
+enum blk_t
+{
+	type_MIN = 0,
+	type_vec,
+	type_rdb,
+	type_fmt,
+	type_rrq,
+	type_rtr,
+	type_str,
+	type_rbl,
+	type_port,
+	type_msg,
+	type_rsr,
+	type_rvnt,
+	type_rpr,
+	type_rmtque,
+	type_MAX
 };
 
 
+#include "../remote/xdr.h"
 
-inline void Rsr::saveException(const ISC_STATUS* status, bool overwrite)
+
+/* Generalized port definition. */
+
+enum rem_port_t
 {
-	if (!rsr_status) {
-		rsr_status = new Firebird::StatusHolder();
-	}
-	if (overwrite || !rsr_status->getError()) {
-		rsr_status->save(status);
-	}
-}
+	port_inet,			/* Internet (TCP/IP) */
+	port_pipe,			/* Windows NT named pipe connection */
+	port_xnet			/* Windows NT shared memory connection */
+};
 
-inline void Rsr::clearException()
+enum state_t
 {
-	if (rsr_status)
-		rsr_status->clear();
-}
+	state_closed,		/* no connection */
+	state_pending,		/* connection is pending */
+	state_eof,			/* other side has shut down */
+	state_broken,		/* connection is broken */
+	state_active,		/* connection is complete */
+	state_disconnected          /* port is disconnected */
+};
 
-inline ISC_STATUS Rsr::haveException()
-{
-	return (rsr_status ? rsr_status->getError() : 0);
-}
-
-inline void Rsr::raiseException()
-{
-	if (rsr_status)
-		rsr_status->raise();
-}
-
-inline void Rsr::releaseException()
-{
-	delete rsr_status;
-	rsr_status = NULL;
-}
-
-#include "../common/xdr.h"
-
-
-// Generalized port definition.
 
 #ifndef WIN_NT
-typedef int SOCKET;
-#endif
+typedef int HANDLE;
+#endif  /* WIN_NT */
 
 
 //////////////////////////////////////////////////////////////////
 // fwd. decl.
 struct p_cnct;
 struct rmtque;
-struct xcc; // defined in xnet.h
 
-// Queue of deferred packets
+/* Queue of deferred packets */
 
 struct rem_que_packet
 {
@@ -558,464 +407,132 @@ struct rem_que_packet
 
 typedef Firebird::Array<rem_que_packet> PacketQueue;
 
-class ServerAuthBase
+#ifdef TRUSTED_AUTH
+// delayed authentication block for trusted auth callback
+class ServerAuth
 {
 public:
-	enum AuthenticateFlags {
-		NO_FLAGS =			0x0,
-		CONT_AUTH =			0x1,
-		USE_COND_ACCEPT =	0x2
-	};
+	typedef void Part2(rem_port*, P_OP, const char* fName, int fLen, const UCHAR* pb, int pbLen, PACKET*);
+	Firebird::PathName fileName;
+	Firebird::HalfStaticArray<UCHAR, 128> clumplet;
+	AuthSspi* authSspi;
+	Part2* part2;
+	P_OP operation;
 
-	virtual ~ServerAuthBase();
-	virtual bool authenticate(PACKET* send, AuthenticateFlags flags = NO_FLAGS) = 0;
+	ServerAuth(const char* fName, int fLen, const Firebird::ClumpletWriter& pb, Part2* p2, P_OP op);
+	~ServerAuth();
 };
+#endif // TRUSTED_AUTH
 
-class ServerCallbackBase
+/* Port itself */
+
+class port_interface
 {
 public:
-	virtual ~ServerCallbackBase();
-	virtual void wakeup(unsigned int length, const void* data) = 0;
-	virtual Firebird::ICryptKeyCallback* getInterface() = 0;
+	virtual int		accept_(rem_port* pPort, p_cnct* pConnection) = 0;
 };
 
-// Helper class to work with public structure FbCryptKey
-class InternalCryptKey : public Firebird::FbCryptKey
+//typedef XDR_INT (*t_event_ast)();
+typedef void (*t_event_ast)(rem_port*);
+typedef rem_port* (*t_port_connect)(rem_port*, PACKET*, t_event_ast);
+
+struct rem_port
 {
-public:
-	InternalCryptKey(const char* p_type, const void* p_enc, unsigned int p_eLen,
-					 const void* p_dec = NULL, unsigned int p_dLen = 0)
-	{
-		type = p_type;
-		encryptKey = keyDup(p_enc, p_eLen);
-		encryptLength = p_eLen;
-		decryptKey = p_dec ? keyDup(p_dec, p_dLen) : NULL;
-		decryptLength = p_dLen;
-	}
+	blk				port_header;
+	enum rem_port_t	port_type;			/* type of port */
+	enum state_t	port_state;			/* state of port */
+	P_ARCH			port_client_arch;	/* so we can tell arch of client */
+	rem_port*		port_clients;		/* client ports */
+	rem_port*		port_next;			/* next client port */
+	rem_port*		port_parent;		/* parent port (for client ports) */
+	rem_port*		port_async;			/* asynchronous sibling port */
+	struct srvr*	port_server;		/* server of port */
+	USHORT			port_server_flags;	/* TRUE if server */
+	USHORT			port_protocol;		/* protocol version number */
+	USHORT			port_buff_size;		/* port buffer size (approx) */
+	USHORT			port_flags;			/* Misc flags */
+	SLONG			port_connect_timeout;   /* Connection timeout value */
+	SLONG			port_dummy_packet_interval; /* keep alive dummy packet interval */
+	SLONG			port_dummy_timeout;	/* time remaining until keepalive packet */
+	ISC_STATUS*		port_status_vector;
+	HANDLE			port_handle;		/* handle for connection (from by OS) */
+	int				port_channel;		/* handle for connection (from by OS) */
+	int				port_misc1;
+	SLONG			port_semaphore;
+	struct linger	port_linger;		/* linger value as defined by SO_LINGER */
 
-	~InternalCryptKey()
-	{
-		keyFree(decryptKey);
-		keyFree(encryptKey);
-	}
-
-private:
-	void* keyDup(const void* k, unsigned int l)
-	{
-		void* rc = FB_NEW(*getDefaultMemoryPool()) char[l];
-		memcpy(rc, k, l);
-		return rc;
-	}
-
-	void keyFree(const void* k)
-	{
-		delete[] ((char*) k);
-	}
-};
-
-
-typedef Firebird::GetPlugins<Auth::IClient> AuthClientPlugins;
-
-// Representation of authentication data, visible for plugin
-// Transfered in format, depending upon type of the packet (phase of handshake)
-class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Auth::IClientBlock, FB_AUTH_CLIENT_BLOCK_VERSION>
-{
-private:
-	Firebird::PathName pluginList;				// To be passed to server
-	Firebird::PathName serverPluginList;		// Received from server
-	Firebird::string userName, password;		// Used by plugin, taken from DPB
-	// These two are legacy encrypted password, trusted auth data and so on - what plugin needs
-	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
-	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time
-	Firebird::string dpbConfig;				// Used to recreate config with new filename
-	Firebird::RefPtr<Config> config;		// Used to get plugins list and pass to port
-	unsigned nextKey;						// First key to be analyzed
-
-	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over encrypted wire
-
-public:
-	AuthClientPlugins plugins;
-	bool authComplete;						// Set as response from client that authentication accepted
-	bool firstTime;							// Invoked first time after reset
-
-	ClntAuthBlock(const Firebird::PathName* fileName, Firebird::ClumpletReader* dpb,
-		const ParametersSet* tags);
-
-	~ClntAuthBlock()
-	{
-		releaseKeys(0);
-	}
-
-	void storeDataForPlugin(unsigned int length, const unsigned char* data);
-	void resetDataFromPlugin();
-	void extractDataFromPluginTo(Firebird::ClumpletWriter& dpb, const ParametersSet* tags, int protocol);
-	void extractDataFromPluginTo(CSTRING* to);
-	void extractDataFromPluginTo(P_AUTH_CONT* to);
-	void loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*);
-	void extractDataFromPluginTo(Firebird::ClumpletWriter& user_id);
-	void resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr = NULL);
-	bool checkPluginName(Firebird::PathName& nameToCheck);
-	Firebird::PathName getPluginName();
-	void tryNewKeys(rem_port*);
-	void releaseKeys(unsigned from);
-	Firebird::RefPtr<Config>* getConfig();
-
-	// Auth::IClientBlock implementation
-	int FB_CARG release();
-	const char* FB_CARG getLogin();
-	const char* FB_CARG getPassword();
-	const unsigned char* FB_CARG getData(unsigned int* length);
-	void FB_CARG putData(Firebird::IStatus* status, unsigned int length, const void* data);
-	void FB_CARG putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
-};
-
-// Representation of authentication data, visible for plugin
-// Transfered from client data in format, suitable for plugins access
-typedef Firebird::GetPlugins<Auth::IServer> AuthServerPlugins;
-
-class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Auth::IServerBlock, FB_AUTH_SERVER_BLOCK_VERSION>,
-	public Firebird::GlobalStorage
-{
-private:
-	rem_port* port;
-	Firebird::string userName;
-	Firebird::PathName pluginName, pluginList;
-	// These two may be legacy encrypted password, trusted auth data and so on
-	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
-	Firebird::ClumpletWriter lastExtractedKeys;
-	Firebird::ObjectsArray<Firebird::PathName> newKeys;
-	bool flComplete, firstTime;
-
-public:
-	AuthServerPlugins* plugins;
-	Auth::WriterImplementation authBlockWriter;
-
-	explicit SrvAuthBlock(rem_port* p_port)
-		: port(p_port),
-		  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
-		  dataForPlugin(getPool()), dataFromPlugin(getPool()),
-		  lastExtractedKeys(getPool(), Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE),
-		  newKeys(getPool()),
-		  flComplete(false), firstTime(true),
-		  plugins(NULL)
-	{
-	}
-
-	~SrvAuthBlock()
-	{
-		delete plugins;
-	}
-
-	void extractDataFromPluginTo(cstring* to);
-	void extractDataFromPluginTo(P_AUTH_CONT* to);
-	void extractDataFromPluginTo(P_ACPD* to);
-	bool authCompleted(bool flag = false);
-	void setLogin(const Firebird::string& user);
-	void load(Firebird::ClumpletReader& userId);
-	const char* getPluginName();
-	void setPluginList(const Firebird::string& name);
-	const char* getPluginList();
-	void setPluginName(const Firebird::string& name);
-	void extractPluginName(cstring* to);
-	void setDataForPlugin(const Firebird::UCharBuffer& data);
-	void setDataForPlugin(const cstring& data);
-	void createPluginsItr();
-	void setDataForPlugin(const p_auth_continue* data);
-	void reset();
-	bool extractNewKeys(CSTRING* to, bool flagPlugList = false);
-	bool hasDataForPlugin();
-
-	// Auth::IServerBlock implementation
-	const char* FB_CARG getLogin();
-	const unsigned char* FB_CARG getData(unsigned int* length);
-	void FB_CARG putData(Firebird::IStatus* status, unsigned int length, const void* data);
-	void FB_CARG putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
-};
-
-
-// Type of known by server key, received from it by client
-class KnownServerKey : public Firebird::AutoStorage
-{
-public:
-	Firebird::PathName type, plugins;
-
-	KnownServerKey()
-		: Firebird::AutoStorage(), type(getPool()), plugins(getPool())
-	{ }
-
-	explicit KnownServerKey(Firebird::MemoryPool& p)
-		: Firebird::AutoStorage(p), type(getPool()), plugins(getPool())
-	{ }
-
-	KnownServerKey(Firebird::MemoryPool& p, const KnownServerKey& v)
-		: Firebird::AutoStorage(p), type(getPool(), v.type), plugins(getPool(), v.plugins)
-	{ }
-
-private:
-	KnownServerKey(const KnownServerKey&);
-	KnownServerKey& operator=(const KnownServerKey&);
-};
-
-// Tags for clumplets, passed from server to client
-const UCHAR TAG_KEY_TYPE		= 0;
-const UCHAR TAG_KEY_PLUGINS		= 1;
-const UCHAR TAG_KNOWN_PLUGINS	= 2;
-
-// port_flags
-const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic
-const USHORT PORT_async			= 0x0002;	// Port is asynchronous channel for events
-const USHORT PORT_no_oob		= 0x0004;	// Don't send out of band data
-const USHORT PORT_disconnect	= 0x0008;	// Disconnect is in progress
-const USHORT PORT_dummy_pckt_set= 0x0010;	// A dummy packet interval is set
-const USHORT PORT_partial_data	= 0x0020;	// Physical packet doesn't contain all API packet
-const USHORT PORT_lazy			= 0x0040;	// Deferred operations are allowed
-const USHORT PORT_server		= 0x0080;	// Server (not client) port
-const USHORT PORT_detached		= 0x0100;	// op_detach, op_drop_database or op_service_detach was processed
-const USHORT PORT_rdb_shutdown	= 0x0200;	// Database is shut down
-const USHORT PORT_connecting	= 0x0400;	// Aux connection waits for a channel to be activated by client
-
-// Port itself
-
-typedef rem_port* (*t_port_connect)(rem_port*, PACKET*);
-
-typedef Firebird::RefPtr<rem_port> RemPortPtr;
-
-struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
-{
-#ifdef DEV_BUILD
-	static Firebird::AtomicCounter portCounter;
-#endif
-
-	// sync objects
-	Firebird::RefPtr<Firebird::RefMutex> port_sync;
-	Firebird::RefPtr<Firebird::RefMutex> port_que_sync;
-	Firebird::RefPtr<Firebird::RefMutex> port_write_sync;
-
-	// port function pointers (C "emulation" of virtual functions)
-	bool			(*port_accept)(rem_port*, const p_cnct*);
+	/* port function pointers (C "emulation" of virtual functions) */
+	int				(*port_accept)(rem_port*, p_cnct*);
 	void			(*port_disconnect)(rem_port*);
-	void			(*port_force_close)(rem_port*);
 	rem_port*		(*port_receive_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_packet)(rem_port*, PACKET*);
 	XDR_INT			(*port_send_partial)(rem_port*, PACKET*);
-	t_port_connect	port_connect;		// Establish secondary connection
-	rem_port*		(*port_request)(rem_port*, PACKET*);	// Request to establish secondary connection
-	bool			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, RemPortPtr&);	// get packet from active port
-	void			(*port_abort_aux_connection)(rem_port*);	// stop waiting for secondary connection
-
-	enum rem_port_t {
-		INET,			// Internet (TCP/IP)
-		PIPE,			// Windows NT named pipe connection
-		XNET			// Windows NT shared memory connection
-	}				port_type;
-	enum state_t {
-		PENDING,		// connection is pending
-		BROKEN,			// connection is broken
-		DISCONNECTED	// port is disconnected
-	}				port_state;
-
-	rem_port*		port_clients;		// client ports
-	rem_port*		port_next;			// next client port
-	rem_port*		port_parent;		// parent port (for client ports)
-	rem_port*		port_async;			// asynchronous sibling port
-	rem_port*		port_async_receive;	// async packets receiver
-	struct srvr*	port_server;		// server of port
-	USHORT			port_server_flags;	// TRUE if server
-	USHORT			port_protocol;		// protocol version number
-	USHORT			port_buff_size;		// port buffer size (approx)
-	USHORT			port_flags;			// Misc flags
-	SLONG			port_connect_timeout;   // Connection timeout value
-	SLONG			port_dummy_packet_interval; // keep alive dummy packet interval
-	SLONG			port_dummy_timeout;	// time remaining until keepalive packet
-	SOCKET			port_handle;		// handle for INET socket
-	SOCKET			port_channel;		// handle for connection (from by OS)
-	struct linger	port_linger;		// linger value as defined by SO_LINGER
-	Rdb*			port_context;
-	Thread::Handle	port_events_thread;	// handle of thread, handling incoming events
-	void			(*port_events_shutdown)(rem_port*);	// hack - avoid changing API at beta stage
-#ifdef WIN_NT
-	HANDLE			port_pipe;			// port pipe handle
-	HANDLE			port_event;			// event associated with a port
-#endif
+	t_port_connect	port_connect;		/* Establish secondary connection */
+	rem_port*		(*port_request)(rem_port*, PACKET*);	/* Request to establish secondary connection */
+	bool			(*port_select_multi)(rem_port*, UCHAR*, SSHORT, SSHORT*, rem_port*&);	// get packet from active port
+									
+	rdb*			port_context;
+	t_event_ast		port_ast;		/* AST for events */
 	XDR				port_receive;
 	XDR				port_send;
 #ifdef DEBUG_XDR_MEMORY
-	r e m _ v e c*	port_packet_vector;		// Vector of send/receive packets
+	rem_vec*		port_packet_vector;	/* Vector of send/receive packets */
 #endif
-	Firebird::Array<RemoteObject> port_objects;
+	rem_vec*		port_object_vector;
+	BLK*			port_objects;
 	rem_str*		port_version;
-	rem_str*		port_host;				// Our name
-	rem_str*		port_connection;		// Name of connection
-	Firebird::string port_login;
-	Firebird::PathName port_security_db;
-	Firebird::string port_user_name;
-	Firebird::string port_peer_name;
-	Firebird::string port_protocol_id;		// String containing protocol name for this port
-	Firebird::string port_address;			// Protocol-specific address string for the port
-	Rpr*			port_rpr;				// port stored procedure reference
-	Rsr*			port_statement;			// Statement for execute immediate
-	rmtque*			port_receive_rmtque;	// for client, responses waiting
-	Firebird::AtomicCounter	port_requests_queued;	// requests currently queued
-	xcc*			port_xcc;				// interprocess structure
-	PacketQueue*	port_deferred_packets;	// queue of deferred packets
-	OBJCT			port_last_object_id;	// cached last id
-	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
+	rem_str*		port_host;			/* Our name */
+	rem_str*		port_connection;	/* Name of connection */
+	rem_str*		port_user_name;
+	rem_str*		port_passwd;
+	rem_str*		port_protocol_str;	// String containing protocol name for this port
+	rem_str*		port_address_str;	// Protocol-specific address string for the port
+	rpr*			port_rpr;			/* port stored procedure reference */
+	rsr*			port_statement;		/* Statement for execute immediate */
+	rmtque*			port_receive_rmtque;	/* for client, responses waiting */
+	USHORT			port_requests_queued;	/* requests currently queued */
+#ifdef VMS
+	USHORT			port_iosb[4];
+#endif
+	void*			port_xcc;				/* interprocess structure */
+	PacketQueue*	port_deferred_packets;	/* queue of deferred packets */
+	OBJCT			port_last_object_id;	/* cached last id */
+#ifdef SUPERSERVER
+	Firebird::ObjectsArray< Firebird::Array< char > >*	port_queue;
 	size_t			port_qoffset;			// current packet in the queue
-	Firebird::RefPtr<Config> port_config;	// connection-specific configuration info
-
-	// Authentication and crypt stuff
-	ServerAuthBase*							port_srv_auth;
-	SrvAuthBlock*							port_srv_auth_block;
-	Firebird::HalfStaticArray<InternalCryptKey*, 2>	port_crypt_keys;	// available wire crypt keys
-	bool			port_need_disk_crypt;	// set when appropriate DPB/SPB item is present
-											// requires wire crypt active before attachDatabase()
-	bool			port_crypt_complete;	// wire crypt init is complete one way or another,
-											// up to being turned off in firebird.conf
-	bool			port_required_encryption;	// encryption is required on port
-	Firebird::ObjectsArray<KnownServerKey>	port_known_server_keys;	// Server sends to client
-											// keys known by it, they are stored here
-	Firebird::IWireCryptPlugin* port_crypt_plugin;		// plugin used by port, when not NULL - crypts wire data
-	Firebird::ICryptKeyCallback* port_client_crypt_callback;	// client callback to transfer database crypt key
-	ServerCallbackBase* port_server_crypt_callback;			// server callback to transfer database crypt key
-
-	UCharArrayAutoPtr	port_buffer;
-
-public:
-	rem_port(rem_port_t t, size_t rpt) :
-		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0),
-		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
-		port_type(t), port_state(PENDING), port_clients(0), port_next(0),
-		port_parent(0), port_async(0), port_async_receive(0),
-		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
-		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
-		port_dummy_timeout(0), port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET), port_context(0),
-		port_events_thread(0), port_events_shutdown(0),
-#ifdef WIN_NT
-		port_pipe(INVALID_HANDLE_VALUE), port_event(INVALID_HANDLE_VALUE),
 #endif
-#ifdef DEBUG_XDR_MEMORY
-		port_packet_vector(0),
+#ifdef TRUSTED_AUTH
+	ServerAuth*		port_trusted_auth;
 #endif
-		port_objects(getPool()), port_version(0), port_host(0),
-		port_connection(0), port_login(getPool()), port_security_db(getPool()),
-		port_user_name(getPool()), port_peer_name(getPool()),
-		port_protocol_id(getPool()), port_address(getPool()),
-		port_rpr(0), port_statement(0), port_receive_rmtque(0),
-		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0),
-		port_queue(getPool()), port_qoffset(0),
-		port_srv_auth(NULL), port_srv_auth_block(NULL),
-		port_crypt_keys(getPool()), port_need_disk_crypt(false), port_crypt_complete(false),
-		port_required_encryption(true),		// safe default
-		port_known_server_keys(getPool()), port_crypt_plugin(NULL),
-		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL),
-		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
-	{
-		addRef();
-		memset(&port_linger, 0, sizeof port_linger);
-		memset(port_buffer, 0, rpt);
-#ifdef DEV_BUILD
-		++portCounter;
-#endif
-	}
+	UCHAR			port_buffer[1];
 
-private:		// this is refCounted object
-	~rem_port();
-
-public:
-	void linkParent(rem_port* const parent);
-	void unlinkParent();
-	const Firebird::RefPtr<Config>& getPortConfig() const;
-
-	template <typename T>
-	void getHandle(T*& blk, OBJCT id)
-	{
-		if ((port_flags & PORT_lazy) && (id == INVALID_OBJECT))
-		{
-			id = port_last_object_id;
-		}
-		if (id >= port_objects.getCount() || port_objects[id].isMissing())
-		{
-			Firebird::status_exception::raise(Firebird::Arg::Gds(T::badHandle()));
-		}
-		blk = port_objects[id];
-	}
-
-	template <typename T>
-	OBJCT setHandle(T* const object, const OBJCT id)
-	{
-		if (id >= port_objects.getCount())
-		{
-			// Prevent the creation of object handles that can't be
-			// transferred by the remote protocol.
-			if (id > MAX_OBJCT_HANDLES)
-			{
-				return (OBJCT) 0;
-			}
-
-			port_objects.grow(id + 1);
-		}
-
-		port_objects[id] = object;
-		return id;
-	}
-
-	// Allocate an object slot for an object.
-	template <typename T>
-	OBJCT get_id(T* object)
-	{
-		// Reserve slot 0 so we can distinguish something from nothing.
-		// NOTE: prior to server version 4.5.0 id==0 COULD be used - so
-		// only the server side can now depend on id==0 meaning "invalid id"
-		unsigned int i = 1;
-		for (; i < port_objects.getCount(); ++i)
-		{
-			if (port_objects[i].isMissing())
-			{
-				break;
-			}
-		}
-
-		port_last_object_id = setHandle(object, static_cast<OBJCT>(i));
-		return port_last_object_id;
-	}
-
-	void releaseObject(OBJCT id)
-	{
-		if (id != INVALID_OBJECT)
-		{
-			port_objects[id].release();
-		}
-	}
-
-
-public:
-	// TMN: Beginning of C++ port
-	// TMN: ugly, but at least a start
-	bool	accept(p_cnct* cnct);
+	/* TMN: Beginning of C++ port */
+	/* TMN: ugly, but at least a start */
+	int		accept(p_cnct* cnct);
 	void	disconnect();
-	void	force_close();
 	rem_port*	receive(PACKET* pckt);
 	XDR_INT	send(PACKET* pckt);
 	XDR_INT	send_partial(PACKET* pckt);
-	rem_port*	connect(PACKET* pckt);
+	rem_port*	connect(PACKET* pckt, t_event_ast);
 	rem_port*	request(PACKET* pckt);
-	bool		select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, RemPortPtr& port);
-	void		abort_aux_connection();
+	bool	select_multi(UCHAR* buffer, SSHORT bufsize, SSHORT* length, rem_port*&);
 
-	bool haveRecvData()
+	bool haveRecvData() const
 	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
-		return ((port_receive.x_handy > 0) || (port_qoffset < port_queue.getCount()));
+		return (port_receive.x_handy > 0 
+#ifdef SUPERSERVER
+			|| port_queue && (port_qoffset < port_queue->getCount())
+#endif
+			);
 	}
 
 	void clearRecvQue()
 	{
-		Firebird::RefMutexGuard queGuard(*port_que_sync, FB_FUNCTION);
-		port_queue.clear();
-		port_qoffset = 0;
+#ifdef SUPERSERVER
+		if (port_queue)
+			port_queue->clear();
+		port_qoffset = 0; 
+#endif
 		port_receive.x_private = port_receive.x_base;
 	}
 
@@ -1024,37 +541,44 @@ public:
 	public:
 		int save_handy;
 		size_t save_private;
+#ifdef SUPERSERVER
 		size_t save_qoffset;
+#endif
 
-		RecvQueState(const rem_port* port)
-		{
+		RecvQueState(rem_port* port)
+		{ 
 			save_handy = port->port_receive.x_handy;
 			save_private = port->port_receive.x_private - port->port_receive.x_base;
+#ifdef SUPERSERVER
 			save_qoffset = port->port_qoffset;
+#endif
 		}
 	};
 
-	RecvQueState getRecvState() const
+	RecvQueState getRecvState()
 	{
 		return RecvQueState(this);
 	}
 
 	void setRecvState(const RecvQueState& rs)
 	{
+#ifdef SUPERSERVER
 		if (rs.save_qoffset > 0 && (rs.save_qoffset != port_qoffset))
 		{
-			Firebird::Array<char>& q = port_queue[rs.save_qoffset - 1];
+			Firebird::Array<char>& q = (*port_queue)[rs.save_qoffset - 1];
 			memcpy(port_receive.x_base, q.begin(), q.getCount());
 		}
 		port_qoffset = rs.save_qoffset;
+#endif
 		port_receive.x_private = port_receive.x_base + rs.save_private;
 		port_receive.x_handy = rs.save_handy;
 	}
 
-	// TMN: The following member functions are conceptually private
-	// to server.cpp and should be _made_ private in due time!
-	// That is, if we don't factor these method out.
 
+	/* TMN: The following member functions are conceptually private
+	 *      to server.cpp and should be _made_ private in due time!
+	 *      That is, if we don't factor these method out.
+	 */
 	ISC_STATUS	compile(P_CMPL*, PACKET*);
 	ISC_STATUS	ddl(P_DDL*, PACKET*);
 	void	disconnect(PACKET*, PACKET*);
@@ -1068,93 +592,100 @@ public:
 	ISC_STATUS	execute_immediate(P_OP, P_SQLST*, PACKET*);
 	ISC_STATUS	execute_statement(P_OP, P_SQLDATA*, PACKET*);
 	ISC_STATUS	fetch(P_SQLDATA*, PACKET*);
+	ISC_STATUS	fetch_blob(P_SQLDATA*, PACKET*);
+	OBJCT	get_id(BLK);
 	ISC_STATUS	get_segment(P_SGMT*, PACKET*);
 	ISC_STATUS	get_slice(P_SLC*, PACKET*);
-	void		info(P_OP, P_INFO*, PACKET*);
+	ISC_STATUS	info(P_OP, P_INFO*, PACKET*);
+	ISC_STATUS	insert(P_SQLDATA*, PACKET*);
 	ISC_STATUS	open_blob(P_OP, P_BLOB*, PACKET*);
 	ISC_STATUS	prepare(P_PREP*, PACKET*);
 	ISC_STATUS	prepare_statement(P_SQLST*, PACKET*);
 	ISC_STATUS	put_segment(P_OP, P_SGMT*, PACKET*);
 	ISC_STATUS	put_slice(P_SLC*, PACKET*);
 	ISC_STATUS	que_events(P_EVENT*, PACKET*);
-	ISC_STATUS	receive_after_start(P_DATA*, PACKET*, Firebird::IStatus*);
+	ISC_STATUS	receive_after_start(P_DATA*, PACKET*, ISC_STATUS*);
 	ISC_STATUS	receive_msg(P_DATA*, PACKET*);
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
-	ISC_STATUS	send_response(PACKET*, OBJCT, ULONG, const ISC_STATUS*, bool);
-	ISC_STATUS	send_response(PACKET* p, OBJCT obj, ULONG length, Firebird::IStatus* status, bool defer_flag)
-	{
-		return send_response(p, obj, length, status->get(), defer_flag);
-	}
-	ISC_STATUS	service_attach(const char*, Firebird::ClumpletWriter*, PACKET*);
+	ISC_STATUS	send_response(PACKET*, OBJCT, USHORT, const ISC_STATUS*, bool);
+	ISC_STATUS	service_attach(const char*, const USHORT, Firebird::ClumpletWriter&, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
-	void		service_start(P_INFO*, PACKET*);
+	ISC_STATUS	service_start(P_INFO*, PACKET*);
 	ISC_STATUS	set_cursor(P_SQLCUR*, PACKET*);
 	ISC_STATUS	start(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_and_send(P_OP, P_DATA*, PACKET*);
 	ISC_STATUS	start_transaction(P_OP, P_STTR*, PACKET*);
 	ISC_STATUS	transact_request(P_TRRQ *, PACKET*);
-	SSHORT		asyncReceive(PACKET* asyncPacket, const UCHAR* buffer, SSHORT dataSize);
-	void		start_crypt(P_CRYPT*, PACKET*);
-
-	Firebird::string getRemoteId() const;
-	void auxAcceptError(PACKET* packet);
-	void addServerKeys(CSTRING* str);
-	bool tryNewKey(InternalCryptKey* cryptKey);
-	void checkResponse(Firebird::IStatus* warning, PACKET* packet, bool checkKeys = false);
-
-private:
-	bool tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptKey);
 };
 
+// port_flags
+const USHORT PORT_symmetric		= 1;	/* Server/client archiectures are symmetic */
+const USHORT PORT_rpc			= 2;	/* Protocol is remote procedure call */
+const USHORT PORT_pend_ack		= 4;	/* An ACK is pending on the port */
+const USHORT PORT_broken		= 8;	/* Connect is broken */
+const USHORT PORT_async			= 16;	/* Port is asynchronous channel for events */
+const USHORT PORT_no_oob		= 32;	/* Don't send out of band data */
+const USHORT PORT_disconnect	= 64;	/* Disconnect is in progress */
+//const USHORT PORT_pend_rec		= 128;	// A record is pending on the port
+// This is set only in inet.cpp but never tested.
+const USHORT PORT_not_trusted	= 256;	/* Connection is from an untrusted node */
+// This is tested only in wnet.cpp but never set.
+//const USHORT PORT_impersonate	= 512;	// A remote user is being impersonated
+const USHORT PORT_dummy_pckt_set= 1024;	/* A dummy packet interval is set  */
+const USHORT PORT_partial_data	= 2048;	/* Physical packet doesn't contain all API packet */
+const USHORT PORT_lazy			= 4096;	/* Deferred operations are allowed */
+const USHORT PORT_busy			= 8192;	// disable receive - port is busy now
 
-// Queuing structure for Client batch fetches
 
-typedef void (*t_rmtque_fn)(rem_port*, rmtque*, USHORT);
+/* Misc declarations */
 
-struct rmtque : public Firebird::GlobalStorage
+#include "../remote/allr_proto.h"
+#include "../jrd/thd.h"
+
+/* Thread specific remote database block */
+
+class trdb : public ThreadData
 {
+public:
+	trdb(ISC_STATUS* status) 
+		: ThreadData(ThreadData::tddRDB), trdb_status_vector(status)
+	{
+		trdb_database = 0;
+	}
+	rdb*	trdb_database;
+	ISC_STATUS*	trdb_status_vector;
+};
+
+typedef trdb* TRDB;
+
+
+inline trdb* REM_get_thread_data() {
+	return (trdb*) ThreadData::getSpecific();
+}
+inline void REM_set_thread_data(trdb* &tdrdb, trdb* thd_context) {
+	tdrdb = thd_context;
+	tdrdb->putSpecific();
+}
+inline void REM_restore_thread_data() {
+	ThreadData::restoreSpecific();
+}
+
+/* Queuing structure for Client batch fetches */
+
+typedef bool (*t_rmtque_fn)(trdb*, rem_port*, rmtque*, ISC_STATUS*, USHORT);
+
+typedef struct rmtque
+{
+	blk					rmtque_header;	// Memory allocator header
 	rmtque*				rmtque_next;	// Next entry in queue
 	void*				rmtque_parm;	// What request has response in queue
-	Rrq::rrq_repeat*	rmtque_message;	// What message is pending
-	Rdb*				rmtque_rdb;		// What database has pending msg
+	rrq::rrq_repeat*	rmtque_message;	// What message is pending
+	rdb*				rmtque_rdb;		// What database has pending msg
 
-	// Fn that receives queued entry
+	/* Fn that receives queued entry */
 	t_rmtque_fn			rmtque_function;
-
-public:
-	rmtque() :
-		rmtque_next(0), rmtque_parm(0), rmtque_message(0), rmtque_rdb(0), rmtque_function(0)
-	{ }
-};
-
-
-// contains ports which must be closed at engine shutdown
-class PortsCleanup
-{
-public:
-	PortsCleanup() :
-	  m_ports(NULL),
-	  m_mutex()
-	{}
-
-	explicit PortsCleanup(MemoryPool&) :
-	  m_ports(NULL),
-	  m_mutex()
-	{}
-
-	~PortsCleanup()
-	{}
-
-	void registerPort(rem_port*);
-	void unRegisterPort(rem_port*);
-
-	void closePorts();
-
-private:
-	typedef Firebird::SortedArray<rem_port*> PortsArray;
-	PortsArray*		m_ports;
-	Firebird::Mutex	m_mutex;
-};
+} *RMTQUE;
 
 #endif // REMOTE_REMOTE_H
+

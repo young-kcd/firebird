@@ -24,20 +24,21 @@
 #ifndef UTILITIES_INSTALL_NT_H
 #define UTILITIES_INSTALL_NT_H
 
-static const char* const REMOTE_SERVICE			= "FirebirdServer%s";
-static const char* const REMOTE_DISPLAY_NAME	= "Firebird Server - %s";
-static const char* const REMOTE_DISPLAY_DESCR	= "Firebird Database Server - www.firebirdsql.org";
-static const char* const REMOTE_EXECUTABLE		= "firebird";
+static const char* REMOTE_SERVICE			= "FirebirdServer%s";
+static const char* REMOTE_DISPLAY_NAME		= "Firebird Server - %s";
+static const char* REMOTE_DISPLAY_DESCR		= "Firebird Database Server - www.firebirdsql.org";
+static const char* REMOTE_SS_EXECUTABLE		= "bin\\fbserver";
+static const char* REMOTE_CS_EXECUTABLE		= "bin\\fb_inet_server";
 
-static const char* const ISCGUARD_SERVICE		= "FirebirdGuardian%s";
-static const char* const ISCGUARD_DISPLAY_NAME	= "Firebird Guardian - %s";
-static const char* const ISCGUARD_DISPLAY_DESCR	= "Firebird Server Guardian - www.firebirdsql.org";
-static const char* const ISCGUARD_EXECUTABLE	= "fbguard";
+static const char* ISCGUARD_SERVICE			= "FirebirdGuardian%s";
+static const char* ISCGUARD_DISPLAY_NAME	= "Firebird Guardian - %s";
+static const char* ISCGUARD_DISPLAY_DESCR	= "Firebird Server Guardian - www.firebirdsql.org";
+static const char* ISCGUARD_EXECUTABLE		= "bin\\fbguard";
 
-static const char* const SERVER_MUTEX			= "FirebirdServerMutex%s";
-static const char* const GUARDIAN_MUTEX			= "FirebirdGuardianMutex%s";
+static const char* SERVER_MUTEX				= "FirebirdServerMutex%s";
+static const char* GUARDIAN_MUTEX			= "FirebirdGuardianMutex%s";
 
-static const char* const FB_DEFAULT_INSTANCE	= "DefaultInstance";
+static const char* FB_DEFAULT_INSTANCE		= "DefaultInstance";
 
 // Starting with 128 the service params are user defined
 const DWORD SERVICE_CREATE_GUARDIAN_MUTEX	= 128;
@@ -49,7 +50,7 @@ const USHORT COMMAND_INSTALL	= 1;
 const USHORT COMMAND_REMOVE		= 2;
 const USHORT COMMAND_START		= 3;
 const USHORT COMMAND_STOP		= 4;
-//const USHORT COMMAND_CONFIG	= 5;
+const USHORT COMMAND_CONFIG		= 5;
 const USHORT COMMAND_QUERY		= 6;
 
 // sw_startup
@@ -74,13 +75,13 @@ const USHORT CLIENT_NONE		= 0;
 const USHORT CLIENT_FB			= 1;
 const USHORT CLIENT_GDS			= 2;
 
-static const char* const GDS32_NAME			= "GDS32.DLL";
-static const char* const FBCLIENT_NAME		= "FBCLIENT.DLL";
+static const char* GDS32_NAME			= "GDS32.DLL";
+static const char* FBCLIENT_NAME		= "FBCLIENT.DLL";
 
 // instsvc status codes
 const USHORT IB_SERVICE_ALREADY_DEFINED			= 100;
 const USHORT IB_SERVICE_RUNNING					= 101;
-const USHORT FB_PRIVILEGE_ALREADY_GRANTED		= 102;
+const USHORT FB_LOGON_SRVC_RIGHT_ALREADY_DEFINED= 102;
 const USHORT FB_SERVICE_STATUS_RUNNING			= 100;
 const USHORT FB_SERVICE_STATUS_STOPPED			= 111;
 const USHORT FB_SERVICE_STATUS_PENDING			= 112;

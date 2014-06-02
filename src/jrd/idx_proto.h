@@ -28,18 +28,18 @@
 #include "../jrd/exe.h"
 #include "../jrd/req.h"
 
-namespace Jrd
-{
+namespace Jrd {
 	class jrd_rel;
 	class jrd_tra;
 	struct record_param;
 	class IndexBlock;
 	struct index_desc;
 	class CompilerScratch;
-	class thread_db;
+	class jrd_fld;
 }
 
-void IDX_check_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::jrd_rel*);
+void IDX_check_access(Jrd::thread_db*, Jrd::CompilerScratch*, Jrd::jrd_rel*, Jrd::jrd_rel*,
+							 Jrd::jrd_fld*);
 bool IDX_check_master_types (Jrd::thread_db*, Jrd::index_desc&, Jrd::jrd_rel*, int&);
 void IDX_create_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*, const TEXT*,
 					  USHORT*, Jrd::jrd_tra*, Jrd::SelectivityList&);
@@ -52,7 +52,7 @@ void IDX_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jr
 void IDX_modify_check_constraints(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 void IDX_statistics(Jrd::thread_db*, Jrd::jrd_rel*, USHORT, Jrd::SelectivityList&);
 void IDX_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
-void IDX_modify_flag_uk_modified(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 
 
 #endif // JRD_IDX_PROTO_H
+

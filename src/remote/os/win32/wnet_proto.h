@@ -31,10 +31,10 @@ extern "C" {
 #endif
 
 
-rem_port*	WNET_analyze(ClntAuthBlock*, const Firebird::PathName&, const TEXT*, bool,
-	Firebird::RefPtr<Config>*, const Firebird::PathName*);
-rem_port*	WNET_connect(const TEXT*, struct packet*, USHORT, Firebird::RefPtr<Config>*);
-rem_port*	WNET_reconnect(HANDLE);
+rem_port*	WNET_analyze(Firebird::PathName&, ISC_STATUS*, const TEXT*, const TEXT*, bool);
+rem_port*	WNET_connect(const TEXT*, struct packet*, ISC_STATUS*, USHORT);
+rem_port*	WNET_reconnect(HANDLE, ISC_STATUS*);
+rem_port*	WNET_server(void*);
 
 
 #ifdef __cplusplus
@@ -43,3 +43,4 @@ rem_port*	WNET_reconnect(HANDLE);
 
 
 #endif // REMOTE_WNET_PROTO_H
+

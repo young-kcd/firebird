@@ -93,14 +93,6 @@ if (SQLCODE)
     exit (FINI_ERROR);
     }
 
-printf ("Turning forced writes off\n");
-sprintf (cmd, "gfix -write async %s", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn forced writes off\n");
-    exit (FINI_ERROR);
-    }
-
 printf ("Creating tables\n");
 sprintf (cmd, "isql %s -q -i empddl.sql", Db_name);
 if (system (cmd))
@@ -111,27 +103,13 @@ if (system (cmd))
 
 printf ("Turning  off indices and triggers \n");
 sprintf (cmd, "isql %s -i indexoff.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn off indices and triggers \n");
-    exit (FINI_ERROR);
-    }
-
+system (cmd);
 printf ("Loading  column data\n");
 sprintf (cmd, "isql %s -i empdml.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't load column data \n");
-    exit (FINI_ERROR);
-    }
-
+system (cmd);
 printf ("Turning  on indices and triggers \n");
 sprintf (cmd, "isql %s -i indexon.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn on indices and triggers \n");
-    exit (FINI_ERROR);
-    }
+system (cmd);
 
 EXEC SQL CONNECT DB;
 if (SQLCODE)
@@ -167,7 +145,7 @@ static int addlang (void)
  *
  **************************************/
 TEXT	job_code[6], job_country[16];
-TEXT	line[100];
+TEXT	line[81];
 TEXT	lang_array[5][16];
 int	i, job_grade, rec_cnt = 0;
 
@@ -233,7 +211,7 @@ static int addjob (void)
  *
  **************************************/
 TEXT		job_code[6];
-TEXT		line[100], job_country[16];
+TEXT		line[82], job_country[16];
 int		len;
 ISC_QUAD	job_blob;
 int		job_grade, rec_cnt = 0;
@@ -310,7 +288,7 @@ static int addproj (void)
  *
  **************************************/
 TEXT		proj_id[6];
-TEXT		line[100];
+TEXT		line[82];
 int		len;
 ISC_QUAD	proj_blob;
 int		rec_cnt = 0;
@@ -385,7 +363,7 @@ static int addqtr (void)
  **************************************/
 TEXT		proj_id[6], dept_no[4];
 int		yr;
-TEXT		line[100];
+TEXT		line[81];
 int		hcnt[4];
 int		rec_cnt = 0;
 
