@@ -119,7 +119,7 @@ static jrd_nod* parse_field_blr(thread_db* tdbb, bid* blob_id, const Firebird::M
 static jrd_nod* parse_procedure_blr(thread_db*, jrd_prc*, bid*, AutoPtr<CompilerScratch>&);
 static void par_messages(thread_db*, const UCHAR* const, USHORT, jrd_prc*, AutoPtr<CompilerScratch>&);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
-static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*, bid*,
+static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, jrd_req*, blb*, blb*,
 	const TEXT*, UCHAR, bool, USHORT);
 static void store_dependencies(thread_db*, CompilerScratch*, const jrd_rel*,
 	const Firebird::MetaName&, int, jrd_tra*);
@@ -4421,7 +4421,8 @@ static void get_trigger(thread_db* tdbb, jrd_rel* relation,
 
 	Database* dbb = tdbb->getDatabase();
 	blb* blrBlob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	save_trigger_data(tdbb, ptr, relation, NULL, blrBlob, debug_blob_id,
+	blb* debugInfoBlob = BLB_open(tdbb, dbb->dbb_sys_trans, debug_blob_id);
+	save_trigger_data(tdbb, ptr, relation, NULL, blrBlob, debugInfoBlob,
 					  name, type, sys_trigger, flags);
 }
 
@@ -4894,7 +4895,7 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 
 
 static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation,
-							  jrd_req* request, blb* blrBlob, bid* dbgBlobID,
+							  jrd_req* request, blb* blrBlob, blb* debugInfoBlob,
 							  const TEXT* name, UCHAR type,
 							  bool sys_trigger, USHORT flags)
 {
@@ -4920,11 +4921,15 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	if (blrBlob)
 	{
 		const SLONG length = blrBlob->blb_length + 10;
-		UCHAR* ptr2 = t.blr.getBuffer(length);
-		t.blr.resize(BLB_get_data(tdbb, blrBlob, ptr2, length));
+		UCHAR* const data = t.blr.getBuffer(length);
+		t.blr.resize(BLB_get_data(tdbb, blrBlob, data, length));
 	}
-	if (dbgBlobID)
-		t.dbg_blob_id = *dbgBlobID;
+	if (debugInfoBlob)
+	{
+		const SLONG length = debugInfoBlob->blb_length + 10;
+		UCHAR* const data = t.debugInfo.getBuffer(length);
+		t.debugInfo.resize(BLB_get_data(tdbb, debugInfoBlob, data, length));
+	}
 	if (name) {
 		t.name = name;
 	}

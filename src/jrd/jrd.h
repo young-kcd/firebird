@@ -144,7 +144,7 @@ class Trigger
 {
 public:
 	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
-	bid			dbg_blob_id;					// RDB$DEBUG_INFO
+	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// debug info
 	jrd_req*	request;					// Compiled request. Gets filled on first invocation
 	bool		compile_in_progress;
 	bool		sys_trigger;
@@ -156,10 +156,8 @@ public:
 	void release(thread_db*);				// Try to free trigger request
 
 	explicit Trigger(MemoryPool& p)
-		: blr(p), name(p)
-	{
-		dbg_blob_id.clear();
-	}
+		: blr(p), debugInfo(p), name(p)
+	{}
 };
 
 
