@@ -1,3 +1,9 @@
+ 2014-06-03 11:02  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+Replaced debug info blob id with blob contents in cached triggers. This fixes the first part of CORE-3305 / CORE-4390, thus making the original problem visible.
+
  2014-05-29 12:15  dimitr 
    M doc/WhatsNew
 Updated the docs.
