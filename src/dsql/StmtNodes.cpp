@@ -5738,8 +5738,12 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	// AB: Mark the streams involved with UPDATE statements active.
 	// So that the optimizer can use indices for eventually used sub-selects.
-	csb->csb_rpt[orgStream].activate();
-	csb->csb_rpt[newStream].activate();
+	StreamList streams;
+	streams.add(orgStream);
+	streams.add(newStream);
+
+	StreamStateHolder stateHolder(csb, streams);
+	stateHolder.activate();
 
 	doPass2(tdbb, csb, statement.getAddress(), this);
 	doPass2(tdbb, csb, statement2.getAddress(), this);
@@ -5752,10 +5756,6 @@ ModifyNode* ModifyNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	doPass2(tdbb, csb, mapView.getAddress(), this);
-
-	// AB: Remove the previous flags
-	csb->csb_rpt[orgStream].deactivate();
-	csb->csb_rpt[newStream].deactivate();
 
 	csb->csb_rpt[orgStream].csb_flags |= csb_update;
 
@@ -6587,8 +6587,11 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// AB: Mark the streams involved with INSERT statements active.
 	// So that the optimizer can use indices for eventually used sub-selects.
 
-	const StreamType stream = relationSource->getStream();
-	csb->csb_rpt[stream].activate();
+	StreamList streams;
+	streams.add(relationSource->getStream());
+
+	StreamStateHolder stateHolder(csb, streams);
+	stateHolder.activate();
 
 	doPass2(tdbb, csb, statement.getAddress(), this);
 	doPass2(tdbb, csb, statement2.getAddress(), this);
@@ -6599,9 +6602,6 @@ StoreNode* StoreNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 		ExprNode::doPass2(tdbb, csb, i->boolean.getAddress());
 		ExprNode::doPass2(tdbb, csb, i->value.getAddress());
 	}
-
-	// AB: Remove the previous flags
-	csb->csb_rpt[stream].deactivate();
 
 	impureOffset = CMP_impure(csb, sizeof(impure_state));
 
