@@ -52,14 +52,14 @@ const char* INTERNAL_PROVIDER_NAME = "Internal";
 class RegisterInternalProvider
 {
 public:
-	RegisterInternalProvider()
+	RegisterInternalProvider(MemoryPool&)
 	{
 		InternalProvider* provider = new InternalProvider(INTERNAL_PROVIDER_NAME);
 		Manager::addProvider(provider);
 	}
 };
 
-static RegisterInternalProvider reg;
+static GlobalPtr<RegisterInternalProvider> reg;
 
 // InternalProvider
 
