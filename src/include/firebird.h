@@ -75,4 +75,7 @@
 #define TRUSTED_AUTH
 #endif
 
+// We do not use std::string
+#define U_HAVE_STD_STRING 0
+
 #endif // INCLUDE_Firebird_H
