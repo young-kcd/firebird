@@ -1,3 +1,7 @@
+ 2014-06-06 10:42  alexpeshkoff 
+   M src/jrd/extds/InternalDS.cpp
+Use GlobalPtr for static variable doing memory allocation
+
  2014-06-03 11:02  dimitr 
    M src/jrd/jrd.cpp
    M src/jrd/jrd.h
