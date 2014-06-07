@@ -1,3 +1,14 @@
+ 2014-06-06 10:41  alexpeshkoff 
+   M src/jrd/extds/InternalDS.cpp
+Use GlobalPtr for static variable doing memory allocation
+
+ 2014-06-06 10:29  alexpeshkoff 
+   M builds/posix/make.android.arme
+   M builds/posix/make.rules
+   M src/include/cross/android.arme
+   M src/include/firebird.h
+Avoid loading <string> by ICU
+
  2014-06-04 09:51  dimitr 
    M src/dsql/StmtNodes.cpp
 Fixed CORE-4447: Positioned UPDATE statement prohibits index usage for the subsequent cursor field references.
