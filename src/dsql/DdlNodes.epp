@@ -5567,7 +5567,9 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		FieldDefinition fieldDefinition(*tdbb->getDefaultPool());
 		fieldDefinition.relationName = name;
 		fieldDefinition.name = field->fld_name;
-		fieldDefinition.notNullFlag = notNullFlag;
+
+		if (notNullFlag)
+			fieldDefinition.notNullFlag = true;	// else, make it not specified
 
 		if (position >= 0)
 			fieldDefinition.position = position;
