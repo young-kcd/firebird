@@ -5569,7 +5569,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		fieldDefinition.name = field->fld_name;
 
 		if (notNullFlag)
-			fieldDefinition.notNullFlag = true;	// else, make it not specified
+			fieldDefinition.notNullFlag = true;	// else, leave it not specified
 
 		if (position >= 0)
 			fieldDefinition.position = position;
