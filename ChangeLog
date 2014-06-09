@@ -1,3 +1,11 @@
+ 2014-06-08 01:55  asfernandes 
+   M src/dsql/DdlNodes.epp
+Misc.
+
+ 2014-06-08 01:53  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4453 - Regression: NOT NULL constraint, declared in domain, does not work.
+
  2014-06-06 10:41  alexpeshkoff 
    M src/jrd/extds/InternalDS.cpp
 Use GlobalPtr for static variable doing memory allocation
