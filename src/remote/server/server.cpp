@@ -221,13 +221,14 @@ public:
 
 GlobalPtr<FailedLogins> usernameFailedLogins;
 GlobalPtr<FailedLogins> remoteFailedLogins;
+bool server_shutdown = false;
 
 void loginFail(const string& login, const string& remId)
 {
 	// do not remove variables - both functions should be called
 	bool f1 = usernameFailedLogins->loginFail(login);
 	bool f2 = remoteFailedLogins->loginFail(remId);
-	if (f1 || f2)
+	if ((f1 || f2) && !server_shutdown)
 	{
 		// Ahh, someone is too active today
 		THREAD_SLEEP(FAILURE_DELAY * 1000);
@@ -1038,7 +1039,6 @@ static int ports_pending				= 0;	// length of request_que
 static GlobalPtr<Mutex> servers_mutex;
 static srvr* servers = NULL;
 static AtomicCounter cntServers;
-static bool	server_shutdown = false;
 
 
 static const UCHAR request_info[] =
