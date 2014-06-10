@@ -256,8 +256,6 @@ namespace Jrd
 			lock->lck_length = sizeof(SLONG);
 			lock->lck_key.lck_long = space;
 			lock->lck_dbb = dbb;
-			lock->lck_ast = blockingAst;
-			lock->lck_object = counter;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
 
 			counter->curVal = 1;
@@ -267,7 +265,6 @@ namespace Jrd
 		if (counter->curVal > counter->maxVal)
 		{
 			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
-
 			counter->curVal = LCK_read_data(tdbb, counter->lock);
 
 			if (!counter->curVal)
@@ -278,29 +275,10 @@ namespace Jrd
 
 			counter->maxVal = counter->curVal + prefetch - 1;
 			LCK_write_data(tdbb, counter->lock, counter->maxVal + 1);
+			LCK_convert(tdbb, counter->lock, LCK_SR, LCK_WAIT);
 		}
 
 		return counter->curVal++;
 	}
 
-	int Database::SharedCounter::blockingAst(void* ast_object)
-	{
-		ValueCache* const counter = static_cast<ValueCache*>(ast_object);
-		fb_assert(counter && counter->lock);
-
-		Database* const dbb = counter->lock->lck_dbb;
-
-		try
-		{
-			AstContextHolder tdbb(dbb);
-
-			Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
-
-			LCK_downgrade(tdbb, counter->lock);
-		}
-		catch (const Firebird::Exception&)
-		{} // no-op
-
-		return 0;
-	}
 } // namespace

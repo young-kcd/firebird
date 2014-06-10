@@ -335,8 +335,6 @@ public:
 
 	private:
 
-		static int blockingAst(void* arg);
-
 		ValueCache m_counters[TOTAL_ITEMS];
 	};
 
