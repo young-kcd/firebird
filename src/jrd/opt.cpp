@@ -2950,6 +2950,7 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_trim:
 		case nod_sys_function:
 		case nod_derived_expr:
+		case nod_list:
 
 		case nod_like:
 		case nod_between:
@@ -3137,6 +3138,7 @@ static bool expression_contains_stream(CompilerScratch* csb,
 		case nod_trim:
 		case nod_sys_function:
 		case nod_derived_expr:
+		case nod_list:
 
 		case nod_like:
 		case nod_between:
@@ -6225,6 +6227,7 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 		case nod_trim:
 		case nod_sys_function:
 		case nod_derived_expr:
+		case nod_list:
 		{
 			// Check all sub-nodes of this node.
 			jrd_nod** ptr = node->nod_arg;
