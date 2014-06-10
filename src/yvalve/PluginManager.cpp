@@ -700,7 +700,13 @@ namespace
 	{
 		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
-		if (--refCounter == 0)
+		int x = --refCounter;
+
+#ifdef DEBUG_PLUGINS
+		fprintf(stderr, "ConfiguredPlugin::release %s %d\n", plugName.c_str(), x);
+#endif
+
+		if (x == 0)
 		{
 			delete this;
 			return 0;

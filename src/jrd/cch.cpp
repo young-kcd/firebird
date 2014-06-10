@@ -2951,8 +2951,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		user.usr_user_name = "Cache Writer";
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-		RefPtr<SysAttachment> jAtt(new SysAttachment(attachment));
-		attachment->att_interface = jAtt;
+		RefPtr<SysStableAttachment> sAtt(new SysStableAttachment(attachment));
+		attachment->setStable(sAtt);
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_user = &user;
 
@@ -2965,7 +2965,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 			PAG_attachment_id(tdbb);
 			TRA_init(attachment);
 
-			jAtt->initDone();
+			sAtt->initDone();
 
 			bcb->bcb_flags |= BCB_cache_writer;
 			bcb->bcb_flags &= ~BCB_writer_start;

@@ -366,7 +366,7 @@ private:
 #define RefDeb(c, p) FB_RefDeb(c, p, __LINE__)
 
 enum DebugEvent
-{ DEB_RLS_JATT, DEB_RLS_YATT, MaxDebugEvent };
+{ DEB_AR_JATT, DEB_RLS_JATT, DEB_RLS_YATT, MaxDebugEvent };
 
 class ReferenceCounterDebugger
 {

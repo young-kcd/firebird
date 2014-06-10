@@ -115,6 +115,72 @@ struct DdlTriggerContext
 
 struct bid;
 
+class Attachment;
+
+//
+// RefCounted part of Attachment object, placed into permanent pool
+//
+class StableAttachmentPart : public Firebird::RefCounted, public Firebird::GlobalStorage
+{
+public:
+	explicit StableAttachmentPart(Attachment* handle)
+		: att(handle), jAtt(NULL)
+	{ }
+
+	Attachment* getHandle() throw()
+	{
+		return att;
+	}
+
+	JAttachment* getInterface()
+	{
+		return jAtt;
+	}
+
+	void setInterface(JAttachment* ja)
+	{
+		jAtt = ja;
+	}
+
+	Firebird::Mutex* getMutex(bool useAsync = false, bool forceAsync = false)
+	{
+		if (useAsync && !forceAsync)
+		{
+			fb_assert(!mainMutex.locked());
+		}
+		return useAsync ? &asyncMutex : &mainMutex;
+	}
+
+	void cancel()
+	{
+		fb_assert(asyncMutex.locked());
+		fb_assert(mainMutex.locked());
+		att = NULL;
+	}
+
+	jrd_tra* getEngineTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra)
+	{
+		return getInterface()->getEngineTransaction(status, tra);
+	}
+
+	JTransaction* getTransactionInterface(Firebird::IStatus* status, Firebird::ITransaction* tra)
+	{
+		return getInterface()->getTransactionInterface(status, tra);
+	}
+
+	void manualLock(ULONG& flags);
+	void manualUnlock(ULONG& flags);
+	void manualAsyncUnlock(ULONG& flags);
+
+private:
+	Attachment* att;
+	JAttachment* jAtt;
+
+	// These mutexes guarantee attachment existence. After releasing both of them with possibly
+	// zero att_use_count one should check does attachment still exists calling getHandle().
+	Firebird::Mutex mainMutex, asyncMutex;
+};
+
 //
 // the attachment block; one is created for each attachment to a database
 //
@@ -124,22 +190,22 @@ public:
 	class SyncGuard
 	{
 	public:
-		SyncGuard(JAttachment* ja, const char* f, bool optional = false)
-			: jAtt(ja)
+		SyncGuard(StableAttachmentPart* js, const char* f, bool optional = false)
+			: jStable(js)
 		{
 			init(f, optional);
 		}
 
 		SyncGuard(Attachment* att, const char* f, bool optional = false)
-			: jAtt(att ? att->att_interface : NULL)
+			: jStable(att ? att->getStable() : NULL)
 		{
 			init(f, optional);
 		}
 
 		~SyncGuard()
 		{
-			if (jAtt)
-				jAtt->getMutex()->leave();
+			if (jStable)
+				jStable->getMutex()->leave();
 		}
 
 	private:
@@ -149,7 +215,7 @@ public:
 
 		void init(const char* f, bool optional);
 
-		Firebird::RefPtr<JAttachment> jAtt;
+		Firebird::RefPtr<StableAttachmentPart> jStable;
 	};
 
 	class Checkout
@@ -163,9 +229,9 @@ public:
 #define FB_LOCKED_FROM NULL
 #endif
 		{
-			if (att && att->att_interface)
+			if (att)
 			{
-				m_ref = att->att_interface;
+				m_ref = att->getStable();
 			}
 
 			fb_assert(optional || m_ref.hasData());
@@ -185,7 +251,7 @@ public:
 		Checkout(const Checkout&);
 		Checkout& operator=(const Checkout&);
 
-		Firebird::RefPtr<JAttachment> m_ref;
+		Firebird::RefPtr<StableAttachmentPart> m_ref;
 #ifdef DEV_BUILD
 		const char* from;
 #endif
@@ -255,6 +321,7 @@ public:
 
 private:
 	jrd_tra*	att_sys_transaction;		// system transaction
+	StableAttachmentPart* att_stable;
 
 public:
 	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
@@ -299,8 +366,6 @@ public:
 	EDS::Connection* att_ext_connection;	// external connection executed by this attachment
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
-
-	JAttachment* att_interface;
 
 	/// former Database members - start
 
@@ -366,6 +431,18 @@ public:
 	void backupStateWriteUnLock(thread_db* tdbb);
 	bool backupStateReadLock(thread_db* tdbb, SSHORT wait);
 	void backupStateReadUnLock(thread_db* tdbb);
+
+	StableAttachmentPart* getStable() throw()
+	{
+		return att_stable;
+	}
+
+	void setStable(StableAttachmentPart *js) throw()
+	{
+		att_stable = js;
+	}
+
+	JAttachment* getInterface() throw();
 
 private:
 	Attachment(MemoryPool* pool, Database* dbb);
@@ -444,7 +521,7 @@ public:
 			: m_list(list), m_index(0)
 		{}
 
-		JAttachment* operator*()
+		StableAttachmentPart* operator*()
 		{
 			if (m_index < m_list.m_attachments.getCount())
 				return m_list.m_attachments[m_index];
@@ -499,7 +576,7 @@ public:
 		}
 	}
 
-	void add(JAttachment* jAtt)
+	void add(StableAttachmentPart* jAtt)
 	{
 		if (jAtt)
 		{
@@ -518,8 +595,31 @@ private:
 
 	static void debugHelper(const char* from);
 
-	Firebird::HalfStaticArray<JAttachment*, 128> m_attachments;
+	Firebird::HalfStaticArray<StableAttachmentPart*, 128> m_attachments;
 };
+
+// Class used in system background threads
+
+class SysStableAttachment : public StableAttachmentPart
+{
+public:
+	explicit SysStableAttachment(Attachment* handle);
+
+	void initDone();
+
+	virtual ~SysStableAttachment()
+	{
+		Attachment* attachment = getHandle();
+		if (attachment)
+		{
+			destroy(attachment);
+		}
+	}
+
+private:
+	void destroy(Attachment* attachment);
+};
+
 
 } // namespace Jrd
 

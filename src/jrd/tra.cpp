@@ -3368,7 +3368,7 @@ JTransaction* jrd_tra::getInterface()
 	if (!tra_interface)
 	{
 		tra_flags |= TRA_own_interface;
-		tra_interface = new JTransaction(this, tra_attachment->att_interface);
+		tra_interface = new JTransaction(this, tra_attachment->getStable());
 		tra_interface->addRef();
 	}
 

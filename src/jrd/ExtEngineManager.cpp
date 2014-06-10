@@ -586,10 +586,10 @@ ExtEngineManager::ExternalContextImpl::ExternalContextImpl(thread_db* tdbb,
 
 	clientCharSet = INTL_charset_lookup(tdbb, internalAttachment->att_client_charset)->getName();
 
-	internalAttachment->att_interface->addRef();
+	internalAttachment->getStable()->addRef();
 
 	externalAttachment = MasterInterfacePtr()->registerAttachment(JProvider::getInstance(),
-		internalAttachment->att_interface);
+		internalAttachment->getInterface());
 }
 
 ExtEngineManager::ExternalContextImpl::~ExternalContextImpl()

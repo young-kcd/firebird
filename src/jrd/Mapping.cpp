@@ -241,8 +241,6 @@ public:
 
 		if (dataFlag)
 		{
-			if (att)
-				att->detach(&st);
 			return;
 		}
 
@@ -288,7 +286,6 @@ public:
 					// isc_dsql_relation_err when opening cursor - sooner of all table RDB$MAP
 					// is missing due to non-FB3 security DB
 					tra->release();
-					att->detach(&st);
 					dataFlag = true;
 					return;
 				}
@@ -323,10 +320,6 @@ public:
 			check("ITransaction::rollback", &st);
 			tra = NULL;
 
-			att->detach(&st);
-			check("IAttachment::detach", &st);
-			att = NULL;
-
 			dataFlag = true;
 		}
 		catch (const Exception&)
@@ -335,8 +328,6 @@ public:
 				curs->release();
 			if (tra)
 				tra->release();
-			if (att)
-				att->detach(&st);
 			throw;
 		}
 	}
@@ -904,12 +895,14 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		SyncType syncType = SYNC_SHARED;
 		IAttachment* iDb = NULL;
 		IAttachment* iSec = NULL;
+		LocalStatus st;
 
-		for (;;)
+		try
 		{
+		  for (;;)
+		  {
 			if (syncType == SYNC_EXCLUSIVE)
 			{
-				LocalStatus st;
 				DispatcherPtr prov;
 
 				ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
@@ -1016,7 +1009,33 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 			cSec->map4(true, flags & FLAG_SEC, auth, info, newBlock);
 
 			break;
-	  	}
+		  }
+
+		  if (iDb)
+		  {
+		  	iDb->detach(&st);
+		  	check("IAttachment::detach", &st);
+		  	iDb = NULL;
+		  }
+		  if (iSec)
+		  {
+		  	iSec->detach(&st);
+		  	check("IAttachment::detach", &st);
+		  	iSec = NULL;
+		  }
+		}
+		catch(const Exception&)
+		{
+		  if (iDb)
+		  {
+		  	iDb->release();
+		  }
+		  if (iSec)
+		  {
+		  	iSec->release();
+		  }
+		  throw;
+		}
 
 		for (AuthReader rdr(newBlock); rdr.getInfo(info); rdr.moveNext())
 		{

@@ -74,7 +74,7 @@ void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
 	for (ptr--; ptr >= begin; ptr--)
 	{
 		InternalConnection* conn = (InternalConnection*) *ptr;
-		if (conn->getJrdAtt() == att->att_interface)
+		if (conn->getJrdAtt() == att->getInterface())
 			releaseConnection(tdbb, *conn, false);
 	}
 }
@@ -149,7 +149,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 		(role.isEmpty() || role == attachment->att_user->usr_sql_role_name))
 	{
 		m_isCurrent = true;
-		m_attachment = attachment->att_interface;
+		m_attachment = attachment->getInterface();
 	}
 	else
 	{

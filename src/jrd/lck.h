@@ -30,7 +30,7 @@
 #include "../common/classes/SyncObject.h"
 #endif
 
-#include "../jrd/EngineInterface.h"
+#include "../jrd/Attachment.h"
 
 namespace Jrd {
 
@@ -85,7 +85,7 @@ public:
 
 	Lock* detach();
 
-	Firebird::RefPtr<JAttachment> getLockInterface()
+	Firebird::RefPtr<StableAttachmentPart> getLockStable()
 	{
 		return lck_attachment;
 	}
@@ -104,7 +104,7 @@ public:
 	Database* lck_dbb;				// Database object is contained in
 
 private:
-	Firebird::RefPtr<JAttachment> lck_attachment;		// Attachment that owns lock, set only using set_lock_attachment()
+	Firebird::RefPtr<StableAttachmentPart> lck_attachment;		// Attachment that owns lock, set only using set_lock_attachment()
 
 public:
 	void* lck_compatible;			// Enter into internal_enqueue() and treat as compatible

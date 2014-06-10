@@ -4460,8 +4460,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		user.usr_user_name = "Garbage Collector";
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-		RefPtr<SysAttachment> jAtt(new SysAttachment(attachment));
-		attachment->att_interface = jAtt;
+		RefPtr<SysStableAttachment> sAtt(new SysStableAttachment(attachment));
+		attachment->setStable(sAtt);
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_flags |= ATT_garbage_collector;
 		attachment->att_user = &user;
@@ -4491,7 +4491,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 			dbb->dbb_garbage_collector = gc;
 
-			jAtt->initDone();
+			sAtt->initDone();
 
 			// Notify our creator that we have started
 			dbb->dbb_flags |= DBB_garbage_collector;

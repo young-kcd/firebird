@@ -837,7 +837,7 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 		for (Attachment* attachment = dbb->dbb_attachments; attachment;
 			 attachment = attachment->att_next)
 		{
-			attachments.add(attachment->att_interface);
+			attachments.add(attachment->getStable());
 		}
 	}
 
@@ -847,14 +847,14 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 		for (Attachment* attachment = dbb->dbb_sys_attachments; attachment;
 			 attachment = attachment->att_next)
 		{
-			attachments.add(attachment->att_interface);
+			attachments.add(attachment->getStable());
 		}
 	}
 
 	for (AttachmentsRefHolder::Iterator iter(attachments); *iter; )
 	{
 		{ // scope
-			JAttachment* const jAtt = *iter;
+			StableAttachmentPart* const jAtt = *iter;
 			MutexLockGuard guard(*jAtt->getMutex(), FB_FUNCTION);
 
 			Attachment* const attachment = jAtt->getHandle();

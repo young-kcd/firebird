@@ -459,7 +459,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* gu
  *
  **************************************/
 	Database* const dbb = tdbb->getDatabase();
-	JAttachment* const jAtt = tdbb->getAttachment()->att_interface;
+	StableAttachmentPart* const sAtt = tdbb->getAttachment()->getStable();
 
 	shutdown_data data;
 	data.data_items.flag = flag;
@@ -469,7 +469,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* gu
 
 	{ // scope
 		// Checkout before calling AST function
-		MutexUnlockGuard uguard(*(jAtt->getMutex()), FB_FUNCTION);
+		MutexUnlockGuard uguard(*(sAtt->getMutex()), FB_FUNCTION);
 
 		// Notify local attachments
 		SHUT_blocking_ast(tdbb, true);
@@ -522,8 +522,8 @@ static void shutdown(thread_db* tdbb, SSHORT flag, bool force)
 		for (Jrd::Attachment* attachment = dbb->dbb_attachments;
 			attachment; attachment = attachment->att_next)
 		{
-			JAttachment* const jAtt = attachment->att_interface;
-			MutexLockGuard guard(*(jAtt->getMutex(true)), FB_FUNCTION);
+			StableAttachmentPart* const sAtt = attachment->getStable();
+			MutexLockGuard guard(*(sAtt->getMutex(true)), FB_FUNCTION);
 
 			if (!(attachment->att_flags & ATT_shutdown_manager))
 			{

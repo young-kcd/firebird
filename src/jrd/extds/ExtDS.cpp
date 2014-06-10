@@ -1598,7 +1598,7 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* fr
 		{
 			m_saveConnection = attachment->att_ext_connection;
 			attachment->att_ext_connection = &conn;
-			attachment->att_interface->getMutex()->leave();
+			attachment->getStable()->getMutex()->leave();
 		}
 	}
 
@@ -1619,7 +1619,7 @@ EngineCallbackGuard::~EngineCallbackGuard()
 
 		if (attachment)
 		{
-			attachment->att_interface->getMutex()->enter(FB_FUNCTION);
+			attachment->getStable()->getMutex()->enter(FB_FUNCTION);
 			attachment->att_ext_connection = m_saveConnection;
 		}
 

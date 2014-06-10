@@ -43,7 +43,7 @@ public:
 	class Parameters : public AttMetadata
 	{
 	public:
-		explicit Parameters(IAttachment* att)
+		explicit Parameters(RefCounted* att)
 			: AttMetadata(att),
 			  fetched(false)
 		{
@@ -52,7 +52,7 @@ public:
 		bool fetched;
 	};
 
-	StatementMetadata(MemoryPool& pool, IStatement* aStatement, IAttachment* att)
+	StatementMetadata(MemoryPool& pool, IStatement* aStatement, RefCounted* att)
 		: PermanentStorage(pool),
 		  statement(aStatement),
 		  legacyPlan(pool),

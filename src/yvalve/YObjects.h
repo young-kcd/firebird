@@ -95,13 +95,13 @@ public:
 			array.remove(pos);
 	}
 
-	void destroy()
+	void destroy(unsigned dstrFlags)
 	{
 		Firebird::MutexLockGuard guard(mtx, FB_FUNCTION);
 		size_t i;
 
 		while ((i = array.getCount()) > 0)
-			array[i - 1]->destroy();
+			array[i - 1]->destroy(dstrFlags);
 	}
 
 	void assign(HandleArray& from)
@@ -124,6 +124,9 @@ template <typename Impl, typename Intf, int Vers>
 class YHelper : public Firebird::StdPlugin<Intf, Vers>, public YObject
 {
 public:
+	static const unsigned DF_RELEASE =		0x1;
+	static const unsigned DF_CLEANONLY =	0x2;
+
 	explicit YHelper(Intf* aNext);
 
 	int FB_CARG release()
@@ -134,26 +137,29 @@ public:
 
 			if (next)
 			{
-				++this->refCounter;		// to be decremented in destroy()
-				++this->refCounter;		// to avoid recursion
-				next->release();		// reference normally released by detach/rollback/free etc.
-				impl->destroy();		// destroy() must call release()
-				--this->refCounter;
+				impl->destroy(0);
 			}
 
-			delete impl; // call correct destructor !
+			delete impl; 	// call correct destructor
 			return 0;
 		}
 
 		return 1;
 	}
 
-	void destroy2()
+	void destroy2(unsigned dstrFlags)
 	{
-		RefDeb(Firebird::DEB_RLS_JATT, "YValve");
-		next = NULL;
-		RefDeb(Firebird::DEB_RLS_YATT, "destroy2");
-		release();
+		RefDeb(Firebird::DEB_RLS_JATT, "YValve/destroy2");
+		if (dstrFlags & DF_CLEANONLY)
+			memset(&next, 0, sizeof next);
+		else
+			next = NULL;
+
+		if (dstrFlags & DF_RELEASE)
+		{
+			RefDeb(Firebird::DEB_RLS_YATT, "destroy2");
+			release();
+		}
 	}
 
 	typedef Intf NextInterface;
@@ -168,7 +174,7 @@ public:
 
 	YEvents(YAttachment* aAttachment, IEvents* aNext, Firebird::IEventCallback* aCallback);
 
-	void destroy();
+	void destroy(unsigned dstrFlags);
 	FB_API_HANDLE& getHandle();
 
 	// IEvents implementation
@@ -186,7 +192,7 @@ public:
 
 	YRequest(YAttachment* aAttachment, Firebird::IRequest* aNext);
 
-	void destroy();
+	void destroy(unsigned dstrFlags);
 	FB_API_HANDLE& getHandle();
 
 	// IRequest implementation
@@ -214,7 +220,7 @@ public:
 
 	YTransaction(YAttachment* aAttachment, Firebird::ITransaction* aNext);
 
-	void destroy();
+	void destroy(unsigned dstrFlags);
 	FB_API_HANDLE& getHandle();
 
 	// ITransaction implementation
@@ -266,7 +272,7 @@ public:
 
 	YBlob(YAttachment* aAttachment, YTransaction* aTransaction, Firebird::IBlob* aNext);
 
-	void destroy();
+	void destroy(unsigned dstrFlags);
 	FB_API_HANDLE& getHandle();
 
 	// IBlob implementation
@@ -292,7 +298,7 @@ public:
 	YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, YStatement* aStatement,
 		Firebird::IResultSet* aNext);
 
-	void destroy();
+	void destroy(unsigned dstrFlags);
 
 	// IResultSet implementation
 	virtual FB_BOOLEAN FB_CARG fetchNext(Firebird::IStatus* status, void* message);
@@ -336,7 +342,7 @@ public:
 
 	YStatement(YAttachment* aAttachment, Firebird::IStatement* aNext);
 
-	void destroy();
+	void destroy(unsigned dstrFlags);
 
 	// IStatement implementation
 	virtual void FB_CARG getInfo(Firebird::IStatus* status,
@@ -391,7 +397,7 @@ public:
 		const Firebird::PathName& aDbPath);
 	~YAttachment();
 
-	void destroy();
+	void destroy(unsigned dstrFlags);
 	void shutdown();
 	FB_API_HANDLE& getHandle();
 
@@ -464,7 +470,7 @@ public:
 	~YService();
 
 	void shutdown();
-	void destroy();
+	void destroy(unsigned dstrFlags);
 	FB_API_HANDLE& getHandle();
 
 	// IService implementation

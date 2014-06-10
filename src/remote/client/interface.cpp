@@ -210,7 +210,6 @@ public:
 	void clear()
 	{
 		transaction = NULL;
-		release();
 	}
 
 private:
@@ -934,10 +933,6 @@ void Blob::cancel(IStatus* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 
@@ -972,7 +967,6 @@ void Blob::close(IStatus* status)
 		release_object(status, rdb, op_close_blob, blob->rbl_id);
 		release_blob(blob);
 		blob = NULL;
-		release();
 	}
 	catch (const Exception& ex)
 	{
@@ -1032,10 +1026,6 @@ void Events::cancel(IStatus* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 
@@ -1066,7 +1056,6 @@ void Transaction::commit(IStatus* status)
 		REMOTE_cleanup_transaction(transaction);
 		release_transaction(transaction);
 		transaction = NULL;
-		release();
 	}
 	catch (const Exception& ex)
 	{
@@ -1147,7 +1136,6 @@ Transaction* FB_CARG Transaction::enterDtc(IStatus* status)
 		copy->addRef();
 
 		transaction = NULL;
-		release();
 
 		return copy;
 	}
@@ -1610,10 +1598,6 @@ void Attachment::detach(IStatus* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 
@@ -1667,7 +1651,6 @@ void Attachment::dropDatabase(IStatus* status)
 
 		disconnect(port);
 		rdb = NULL;
-		release();
 	}
 	catch (const Exception& ex)
 	{
@@ -2312,10 +2295,6 @@ void Statement::free(IStatus* status)
 
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 
@@ -3328,10 +3307,6 @@ void ResultSet::close(IStatus* status)
 
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 
@@ -4263,10 +4238,6 @@ void Request::free(IStatus* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 
@@ -4451,10 +4422,6 @@ void Transaction::rollback(IStatus* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 
@@ -4741,10 +4708,6 @@ void Service::detach(IStatus* status)
  **************************************/
 	reset(status);
 	freeClientData(status);
-	if (status->isSuccess())
-	{
-		release();
-	}
 }
 
 

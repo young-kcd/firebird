@@ -895,7 +895,7 @@ namespace Jrd {
 		AsyncContextHolder(Database* dbb, const char* f, Lock* lck = NULL)
 			: AstLockHolder(dbb, f),
 			  Jrd::Attachment::SyncGuard(lck ?
-				lck->getLockInterface() : Firebird::RefPtr<JAttachment>(), f, true),
+				lck->getLockStable() : Firebird::RefPtr<StableAttachmentPart>(), f, true),
 			  ThreadContextHolder(dbb, lck ? lck->getLockAttachment() : NULL),
 			  DatabaseContextHolder(operator thread_db*())
 		{}

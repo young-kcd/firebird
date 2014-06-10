@@ -281,7 +281,7 @@ private:
 class AttMetadata : public MsgMetadata
 {
 public:
-	explicit AttMetadata(IAttachment* att)
+	explicit AttMetadata(RefCounted* att)
 		: MsgMetadata(),
 		  attachment(att)
 	{ }
@@ -289,7 +289,7 @@ public:
 	// re-implement here release() present in MsgMetadata to call correct dtor
 	virtual int FB_CARG release();
 
-	RefPtr<IAttachment> attachment;
+	RefPtr<RefCounted> attachment;
 };
 
 class MetadataBuilder FB_FINAL : public RefCntIface<IMetadataBuilder, FB_METADATA_BUILDER_VERSION>

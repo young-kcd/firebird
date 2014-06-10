@@ -37,6 +37,7 @@ class blb;
 class jrd_tra;
 class dsql_req;
 class JrdStatement;
+class StableAttachmentPart;
 class Attachment;
 class Service;
 
@@ -60,14 +61,11 @@ public:
 	virtual int FB_CARG seek(Firebird::IStatus* status, int mode, int offset);			// returns position
 
 public:
-	JBlob(blb* handle, JAttachment* ja)
-		: blob(handle), jAtt(ja)
-	{
-	}
+	JBlob(blb* handle, StableAttachmentPart* sa);
 
-	JAttachment* getAttachment()
+	StableAttachmentPart* getAttachment()
 	{
-		return jAtt;
+		return sAtt;
 	}
 
 	blb* getHandle() throw()
@@ -77,7 +75,7 @@ public:
 
 private:
 	blb* blob;
-	Firebird::RefPtr<JAttachment> jAtt;
+	Firebird::RefPtr<StableAttachmentPart> sAtt;
 
 	void freeEngineData(Firebird::IStatus* status);
 };
@@ -102,10 +100,7 @@ public:
 	virtual JTransaction* FB_CARG enterDtc(Firebird::IStatus* status);
 
 public:
-	JTransaction(jrd_tra* handle, JAttachment* ja)
-		: transaction(handle), jAtt(ja)
-	{
-	}
+	JTransaction(jrd_tra* handle, StableAttachmentPart* sa);
 
 	jrd_tra* getHandle() throw()
 	{
@@ -117,9 +112,9 @@ public:
 		transaction = handle;
 	}
 
-	JAttachment* getAttachment()
+	StableAttachmentPart* getAttachment()
 	{
-		return jAtt;
+		return sAtt;
 	}
 
 	void clear()
@@ -130,12 +125,9 @@ public:
 
 private:
 	jrd_tra* transaction;
-	Firebird::RefPtr<JAttachment> jAtt;
+	Firebird::RefPtr<StableAttachmentPart> sAtt;
 
-	JTransaction(JTransaction* from)
-		: transaction(from->transaction), jAtt(from->jAtt)
-	{
-	}
+	JTransaction(JTransaction* from);
 
 	void freeEngineData(Firebird::IStatus* status);
 };
@@ -159,17 +151,14 @@ public:
 	virtual void FB_CARG setDelayedOutputFormat(Firebird::IStatus* status, Firebird::IMessageMetadata* format);
 
 public:
-	JResultSet(JStatement* aStatement)
-		: statement(aStatement), eof(false)
-	{
-	}
+	JResultSet(JStatement* aStatement);
 
 	JStatement* getStatement()
 	{
 		return statement;
 	}
 
-	JAttachment* getAttachment();
+	StableAttachmentPart* getAttachment();
 
 	// Change after adding separate handle for cursor in dsql
 	dsql_req* getHandle() throw();
@@ -204,11 +193,11 @@ public:
 	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
 
 public:
-	JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta);
+	JStatement(dsql_req* handle, StableAttachmentPart* sa, Firebird::Array<UCHAR>& meta);
 
-	JAttachment* getAttachment()
+	StableAttachmentPart* getAttachment()
 	{
-		return jAtt;
+		return sAtt;
 	}
 
 	dsql_req* getHandle() throw()
@@ -218,13 +207,13 @@ public:
 
 private:
 	dsql_req* statement;
-	Firebird::RefPtr<JAttachment> jAtt;
+	Firebird::RefPtr<StableAttachmentPart> sAtt;
 	Firebird::StatementMetadata metadata;
 
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-inline JAttachment* JResultSet::getAttachment()
+inline StableAttachmentPart* JResultSet::getAttachment()
 {
 	return statement->getAttachment();
 }
@@ -254,14 +243,11 @@ public:
 	virtual void FB_CARG free(Firebird::IStatus* status);
 
 public:
-	JRequest(JrdStatement* handle, JAttachment* ja)
-		: rq(handle), jAtt(ja)
-	{
-	}
+	JRequest(JrdStatement* handle, StableAttachmentPart* sa);
 
-	JAttachment* getAttachment()
+	StableAttachmentPart* getAttachment()
 	{
-		return jAtt;
+		return sAtt;
 	}
 
 	JrdStatement* getHandle() throw()
@@ -271,7 +257,7 @@ public:
 
 private:
 	JrdStatement* rq;
-	Firebird::RefPtr<JAttachment> jAtt;
+	Firebird::RefPtr<StableAttachmentPart> sAtt;
 
 	void freeEngineData(Firebird::IStatus* status);
 };
@@ -284,34 +270,33 @@ public:
 	virtual void FB_CARG cancel(Firebird::IStatus* status);
 
 public:
-	JEvents(int aId, JAttachment* ja, Firebird::IEventCallback* aCallback)
-		: id(aId), jAtt(ja), callback(aCallback)
-	{
-	}
+	JEvents(int aId, StableAttachmentPart* sa, Firebird::IEventCallback* aCallback);
 
 	JEvents* getHandle() throw()
 	{
 		return this;
 	}
 
-	JAttachment* getAttachment()
+	StableAttachmentPart* getAttachment()
 	{
-		return jAtt;
+		return sAtt;
 	}
 
 private:
 	int id;
-	Firebird::RefPtr<JAttachment> jAtt;
+	Firebird::RefPtr<StableAttachmentPart> sAtt;
 	Firebird::RefPtr<Firebird::IEventCallback> callback;
 
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JAttachment : public Firebird::RefCntIface<Firebird::IAttachment, FB_ATTACHMENT_VERSION>
+class JAttachment FB_FINAL : public Firebird::RefCntIface<Firebird::IAttachment, FB_ATTACHMENT_VERSION>
 {
 public:
 	// IAttachment implementation
 	virtual int FB_CARG release();
+	virtual void FB_CARG addRef();
+
 	virtual void FB_CARG getInfo(Firebird::IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
@@ -355,76 +340,27 @@ public:
 	virtual void FB_CARG dropDatabase(Firebird::IStatus* status);
 
 public:
-	explicit JAttachment(Attachment* handle);
+	explicit JAttachment(StableAttachmentPart* js);
 
-	Attachment* getHandle() throw()
+	StableAttachmentPart* getStable() throw()
 	{
 		return att;
 	}
 
-	JAttachment* getAttachment()
-	{
-		return this;
-	}
+	Attachment* getHandle() throw();
 
-	Firebird::Mutex* getMutex(bool useAsync = false, bool forceAsync = false)
+	StableAttachmentPart* getAttachment() throw()
 	{
-		if (useAsync && !forceAsync)
-		{
-			fb_assert(!mainMutex.locked());
-		}
-		return useAsync ? &asyncMutex : &mainMutex;
-	}
-
-	void cancel()
-	{
-		fb_assert(asyncMutex.locked());
-		fb_assert(mainMutex.locked());
-
-		att = NULL;
+		return att;
 	}
 
 	JTransaction* getTransactionInterface(Firebird::IStatus* status, Firebird::ITransaction* tra);
 	jrd_tra* getEngineTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);
 
-	void manualLock(ULONG& flags);
-	void manualUnlock(ULONG& flags);
-	void manualAsyncUnlock(ULONG& flags);
-
 private:
-	Attachment* att;
-	// These mutexes guarantee attachment existence. After releasing both of them with possibly
-	// zero att_use_count one should check does attachment still exists calling getHandle().
-	Firebird::Mutex mainMutex, asyncMutex;
+	StableAttachmentPart* att;
 
 	void freeEngineData(Firebird::IStatus* status);
-};
-
-// internal class used in system background threads
-class SysAttachment FB_FINAL : public JAttachment
-{
-public:
-	explicit SysAttachment(Attachment* handle);
-
-	void initDone();
-
-	virtual int FB_CARG release()
-	{
-		if (--refCounter != 0)
-			return 1;
-
-		Attachment* attachment = getHandle();
-		if (attachment)
-		{
-			destroy(attachment);
-		}
-
-		delete this;
-		return 0;
-	}
-
-private:
-	void destroy(Attachment* attachment);
 };
 
 class JService FB_FINAL : public Firebird::RefCntIface<Firebird::IService, FB_SERVICE_VERSION>
@@ -480,12 +416,6 @@ private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 	Firebird::IPluginConfig* pluginConfig;
 };
-
-inline JStatement::JStatement(dsql_req* handle, JAttachment* ja, Firebird::Array<UCHAR>& meta)
-	: statement(handle), jAtt(ja), metadata(getPool(), this, ja)
-{
-	metadata.parse(meta.getCount(), meta.begin());
-}
 
 } // namespace Jrd
 

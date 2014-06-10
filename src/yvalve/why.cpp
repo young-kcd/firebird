@@ -1429,7 +1429,7 @@ namespace {
 		{
 			if (transaction && !newTrans)
 			{
-				transaction->destroy();
+				transaction->destroy(YTransaction::DF_RELEASE);
 				*traHandle = 0;
 			}
 			else if (!transaction && newTrans)
@@ -3822,7 +3822,7 @@ template <typename Impl, typename Intf, int Vers>
 YHelper<Impl, Intf, Vers>::YHelper(Intf* aNext)
 {
 	MasterInterfacePtr()->upgradeInterface(aNext, Vers, upInfo);
-	next = aNext;
+	next.assignRefNoIncr(aNext);
 	this->addRef();
 }
 
@@ -3844,13 +3844,13 @@ FB_API_HANDLE& YEvents::getHandle()
 	return handle;
 }
 
-void YEvents::destroy()
+void YEvents::destroy(unsigned dstrFlags)
 {
 	attachment->childEvents.remove(this);
 
 	removeHandle(&events, handle);
 
-	destroy2();
+	destroy2(dstrFlags);
 }
 
 void YEvents::cancel(IStatus* status)
@@ -3862,7 +3862,7 @@ void YEvents::cancel(IStatus* status)
 		entry.next()->cancel(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -3889,7 +3889,7 @@ FB_API_HANDLE& YRequest::getHandle()
 	return handle;
 }
 
-void YRequest::destroy()
+void YRequest::destroy(unsigned dstrFlags)
 {
 	if (userHandle)
 	{
@@ -3901,7 +3901,7 @@ void YRequest::destroy()
 
 	removeHandle(&requests, handle);
 
-	destroy2();
+	destroy2(dstrFlags);
 }
 
 void YRequest::receive(IStatus* status, int level, unsigned int msgType,
@@ -4001,7 +4001,7 @@ void YRequest::free(IStatus* status)
 		entry.next()->free(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4029,14 +4029,14 @@ FB_API_HANDLE& YBlob::getHandle()
 	return handle;
 }
 
-void YBlob::destroy()
+void YBlob::destroy(unsigned dstrFlags)
 {
 	attachment->childBlobs.remove(this);
 	transaction->childBlobs.remove(this);
 
 	removeHandle(&blobs, handle);
 
-	destroy2();
+	destroy2(dstrFlags);
 }
 
 void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4090,7 +4090,7 @@ void YBlob::cancel(IStatus* status)
 		entry.next()->cancel(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4107,7 +4107,7 @@ void YBlob::close(IStatus* status)
 		entry.next()->close(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4141,13 +4141,13 @@ YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
 	attachment->childStatements.add(this);
 }
 
-void YStatement::destroy()
+void YStatement::destroy(unsigned dstrFlags)
 {
 	{	// scope
 		MutexLockGuard guard(statementMutex, FB_FUNCTION);
 		if (cursor)
 		{
-			cursor->destroy();
+			cursor->destroy(DF_RELEASE);
 			cursor = NULL;
 		}
 	}
@@ -4156,7 +4156,7 @@ void YStatement::destroy()
 
 	removeHandle(&statements, handle);
 
-	destroy2();
+	destroy2(dstrFlags);
 }
 
 void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4374,7 +4374,7 @@ void YStatement::free(IStatus* status)
 			return;
 		}
 
-		destroy();
+		destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4414,7 +4414,7 @@ YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction,
 	statement->cursor = this;
 }
 
-void YResultSet::destroy()
+void YResultSet::destroy(unsigned dstrFlags)
 {
 	if (statement)
 	{
@@ -4426,7 +4426,7 @@ void YResultSet::destroy()
 	fb_assert(transaction);
 	transaction->childCursors.remove(this);
 
-	destroy2();
+	destroy2(dstrFlags);
 }
 
 void YResultSet::setCursorName(IStatus* status, const char* name)
@@ -4610,7 +4610,7 @@ void YResultSet::close(IStatus* status)
 		entry.next()->close(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4640,7 +4640,7 @@ FB_API_HANDLE& YTransaction::getHandle()
 	return handle;
 }
 
-void YTransaction::destroy()
+void YTransaction::destroy(unsigned dstrFlags)
 {
 	for (CleanupCallback** handler = cleanupHandlers.begin();
 		 handler != cleanupHandlers.end();
@@ -4651,15 +4651,15 @@ void YTransaction::destroy()
 
 	cleanupHandlers.clear();
 
-	childBlobs.destroy();
-	childCursors.destroy();
+	childBlobs.destroy(dstrFlags | DF_CLEANONLY);
+	childCursors.destroy(dstrFlags | DF_CLEANONLY);
 
 	if (attachment)
 		attachment->childTransactions.remove(this);
 
 	removeHandle(&transactions, handle);
 
-	destroy2();
+	destroy2(dstrFlags);
 }
 
 void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
@@ -4705,7 +4705,7 @@ void YTransaction::commit(IStatus* status)
 		entry.next()->commit(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4738,7 +4738,7 @@ void YTransaction::rollback(IStatus* status)
 			status->init();
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4781,7 +4781,7 @@ void YTransaction::disconnect(IStatus* status)
 		}
 		***/
 
-		destroy();
+		destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -4903,7 +4903,7 @@ YAttachment::~YAttachment()
 		PluginManagerInterfacePtr()->releasePlugin(provider);
 }
 
-void YAttachment::destroy()
+void YAttachment::destroy(unsigned dstrFlags)
 {
 	for (CleanupCallback** handler = cleanupHandlers.begin();
 		 handler != cleanupHandlers.end();
@@ -4914,22 +4914,22 @@ void YAttachment::destroy()
 
 	cleanupHandlers.clear();
 
-	childRequests.destroy();
-	childStatements.destroy();
-	childBlobs.destroy();
-	childEvents.destroy();
-	childTransactions.destroy();
+	childRequests.destroy(dstrFlags | DF_CLEANONLY);
+	childStatements.destroy(dstrFlags | DF_CLEANONLY);
+	childBlobs.destroy(dstrFlags | DF_CLEANONLY);
+	childEvents.destroy(dstrFlags | DF_CLEANONLY);
+	childTransactions.destroy(dstrFlags | DF_CLEANONLY);
 
 	removeHandle(&attachments, handle);
 
-	destroy2();
+	destroy2(dstrFlags);
 }
 
 void YAttachment::shutdown()
 {
 	if (provider)
 	{
-		destroy();
+		destroy(0);
 		PluginManagerInterfacePtr()->releasePlugin(provider);
 		provider = NULL;
 	}
@@ -5240,7 +5240,7 @@ void YAttachment::execute(Firebird::IStatus* status, FB_API_HANDLE* traHandle,
 	{
 		if (transaction && !newTrans)
 		{
-			transaction->destroy();
+			transaction->destroy(DF_RELEASE);
 			*traHandle = 0;
 		}
 		else if (!transaction && newTrans)
@@ -5326,7 +5326,7 @@ void YAttachment::detach(IStatus* status)
 			entry.next()->detach(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -5343,7 +5343,7 @@ void YAttachment::dropDatabase(IStatus* status)
 		entry.next()->dropDatabase(status);
 
 		if (status->isSuccess())
-			destroy();
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -5418,19 +5418,20 @@ YService::~YService()
 		PluginManagerInterfacePtr()->releasePlugin(provider);
 }
 
-void YService::destroy()
+void YService::destroy(unsigned dstrFlags)
 {
 	removeHandle(&services, handle);
 
 	next = NULL;
-	release();
+	if (dstrFlags && DF_RELEASE)
+		release();
 }
 
 void YService::shutdown()
 {
 	if (provider)
 	{
-		destroy();
+		destroy(0);
 		PluginManagerInterfacePtr()->releasePlugin(provider);
 		provider = NULL;
 	}
@@ -5445,7 +5446,7 @@ void YService::detach(IStatus* status)
 		if (entry.next())
 			entry.next()->detach(status);
 
-		destroy();
+		destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
@@ -5509,6 +5510,7 @@ YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
 YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
 	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
 {
+	RefDeb(DEB_AR_JATT, "Dispatcher::attachOrCreateDatabase");
 	try
 	{
 		DispatcherEntry entry(status);

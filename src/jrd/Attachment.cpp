@@ -73,16 +73,15 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 	if (!attachment)
 		return;
 
-	fb_assert(attachment->att_interface);
-	if (attachment->att_interface)
+	StableAttachmentPart* sAtt = attachment->getStable();
+	fb_assert(sAtt);
+	if (sAtt)
 	{
-		JAttachment* jAtt = attachment->att_interface;
+		// break link between attachment and it's stable part
+		sAtt->cancel();
+		attachment->setStable(NULL);
 
-		// break link between attachment and interface
-		jAtt->cancel();
-		attachment->att_interface = NULL;
-
-		jAtt->manualUnlock(attachment->att_flags);
+		sAtt->manualUnlock(attachment->att_flags);
 	}
 
 	thread_db* tdbb = JRD_get_thread_data();
@@ -194,7 +193,6 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_ext_connection(NULL),
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
-	  att_interface(NULL),
 	  att_procedures(*pool),
 	  att_functions(*pool),
 	  att_internal(*pool),
@@ -566,14 +564,14 @@ void Jrd::Attachment::SyncGuard::init(const char* f, bool
 #endif
 	)
 {
-	fb_assert(optional || jAtt);
+	fb_assert(optional || jStable);
 
-	if (jAtt)
+	if (jStable)
 	{
-		jAtt->getMutex()->enter(f);
-		if (!jAtt->getHandle())
+		jStable->getMutex()->enter(f);
+		if (!jStable->getHandle())
 		{
-			jAtt->getMutex()->leave();
+			jStable->getMutex()->leave();
 			Arg::Gds(isc_att_shutdown).raise();
 		}
 	}
@@ -582,4 +580,36 @@ void Jrd::Attachment::SyncGuard::init(const char* f, bool
 void AttachmentsRefHolder::debugHelper(const char* from)
 {
 	RefDeb(DEB_RLS_JATT, from);
+}
+
+void StableAttachmentPart::manualLock(ULONG& flags)
+{
+	fb_assert(!(flags & ATT_manual_lock));
+	asyncMutex.enter(FB_FUNCTION);
+	mainMutex.enter(FB_FUNCTION);
+	flags |= (ATT_manual_lock | ATT_async_manual_lock);
+}
+
+void StableAttachmentPart::manualUnlock(ULONG& flags)
+{
+	if (flags & ATT_manual_lock)
+	{
+		flags &= ~ATT_manual_lock;
+		mainMutex.leave();
+	}
+	manualAsyncUnlock(flags);
+}
+
+void StableAttachmentPart::manualAsyncUnlock(ULONG& flags)
+{
+	if (flags & ATT_async_manual_lock)
+	{
+		flags &= ~ATT_async_manual_lock;
+		asyncMutex.leave();
+	}
+}
+
+JAttachment* Attachment::getInterface() throw()
+{
+	return att_stable->getInterface();
 }

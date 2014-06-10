@@ -1534,7 +1534,7 @@ void Lock::setLockAttachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	}
 
 	RefDeb(DEB_RLS_JATT, "setLockAttachment");
-	lck_attachment = attachment ? attachment->att_interface : NULL;
+	lck_attachment = attachment ? attachment->getStable() : NULL;
 }
 
 Lock* Lock::detach()
