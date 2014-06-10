@@ -535,6 +535,7 @@ RELATION(nam_mon_statements, rel_mon_statements, ODS_11_1, rel_virtual)
 	FIELD(f_mon_stmt_timestamp, nam_mon_timestamp, fld_time, 0, ODS_11_1)
 	FIELD(f_mon_stmt_sql_text, nam_mon_sql_text, fld_source, 0, ODS_11_1)
 	FIELD(f_mon_stmt_stat_id, nam_mon_stat_id, fld_stat_id, 0, ODS_11_1)
+	FIELD(f_mon_stmt_expl_plan, nam_mon_expl_plan, fld_source, 0, ODS_11_1)
 END_RELATION
 
 // Relation 37 (MON$CALL_STACK)

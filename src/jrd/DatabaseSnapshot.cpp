@@ -43,6 +43,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/opt_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/thread_proto.h"
@@ -364,7 +365,7 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 				// Write the data to the shared memory
 				try
 				{
-					dumpData(dbb, backup_state_unknown);
+					dumpData(tdbb, backup_state_unknown);
 				}
 				catch (const Exception& ex)
 				{
@@ -499,7 +500,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		dbb->dbb_ast_flags &= ~DBB_monitor_off;
 
 		// Dump our own data
-		dumpData(dbb, backup_state);
+		dumpData(tdbb, backup_state);
 	}
 
 	// Signal other processes to dump their data
@@ -810,8 +811,9 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 }
 
 
-void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
+void DatabaseSnapshot::dumpData(thread_db* tdbb, int backup_state)
 {
+	Database* const dbb = tdbb->getDatabase();
 	MemoryPool& pool = *dbb->dbb_permanent;
 
 	if (!dbb->dbb_monitoring_data)
@@ -860,20 +862,20 @@ void DatabaseSnapshot::dumpData(Database* dbb, int backup_state)
 			Attachment* const attachment = jAtt->getHandle();
 
 			if (attachment && attachment->att_user)
-				dumpAttachment(record, attachment, writer);
+				dumpAttachment(tdbb, record, attachment, writer);
 		}
 
 		iter.remove();
 	}
 }
 
-void DatabaseSnapshot::dumpAttachment(DumpRecord& record, const Attachment* attachment,
+void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, DumpRecord& record,
+									  const Attachment* attachment,
 									  Writer& writer)
 {
 	putAttachment(record, attachment, writer, fb_utils::genUniqueId());
 
 	jrd_tra* transaction = NULL;
-	jrd_req* request = NULL;
 
 	// Transaction information
 
@@ -888,7 +890,7 @@ void DatabaseSnapshot::dumpAttachment(DumpRecord& record, const Attachment* atta
 	for (transaction = attachment->att_transactions; transaction;
 		 transaction = transaction->tra_next)
 	{
-		for (request = transaction->tra_requests;
+		for (jrd_req* request = transaction->tra_requests;
 			 request && (request->req_flags & req_active);
 			 request = request->req_caller)
 		{
@@ -909,12 +911,13 @@ void DatabaseSnapshot::dumpAttachment(DumpRecord& record, const Attachment* atta
 		 i != attachment->att_requests.end();
 		 ++i)
 	{
-		const jrd_req* request = *i;
+		const jrd_req* const request = *i;
 
 		if (!(request->getStatement()->flags &
-				(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+			(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
 		{
-			putRequest(record, request, writer, fb_utils::genUniqueId());
+			const string plan = OPT_get_plan(tdbb, request, true);
+			putRequest(record, request, writer, fb_utils::genUniqueId(), plan);
 		}
 	}
 }
@@ -1165,7 +1168,7 @@ void DatabaseSnapshot::putTransaction(DumpRecord& record, const jrd_tra* transac
 
 
 void DatabaseSnapshot::putRequest(DumpRecord& record, const jrd_req* request,
-								  Writer& writer, int stat_id)
+								  Writer& writer, int stat_id, const string& plan)
 {
 	fb_assert(request);
 
@@ -1193,11 +1196,16 @@ void DatabaseSnapshot::putRequest(DumpRecord& record, const jrd_req* request,
 	{
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
 	}
+
+	const JrdStatement* const statement = request->getStatement();
+
 	// sql text
-	if (request->getStatement()->sqlText)
-	{
-		record.storeString(f_mon_stmt_sql_text, *request->getStatement()->sqlText);
-	}
+	if (statement->sqlText)
+		record.storeString(f_mon_stmt_sql_text, *statement->sqlText);
+
+	// explained plan
+	if (plan.hasData())
+		record.storeString(f_mon_stmt_expl_plan, plan);
 
 	// statistics
 	record.storeGlobalId(f_mon_stmt_stat_id, getGlobalId(stat_id));

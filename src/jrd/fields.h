@@ -190,3 +190,4 @@
 	FIELD(fld_map_to		, nam_map_to		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
 
 	FIELD(fld_gen_increment	, nam_gen_increment	, dtype_long	, sizeof(SLONG)				, 0							, NULL		, false)
+	FIELD(fld_plan			, nam_plan			, dtype_blob	, BLOB_SIZE					, isc_blob_text				, NULL		, true)
