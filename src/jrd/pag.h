@@ -120,7 +120,7 @@ public:
 	static ULONG lastUsedPage(const Database* dbb);
 
 	// extend page space
-	bool extend(thread_db*, const ULONG);
+	bool extend(thread_db*, const ULONG, const bool);
 
 	// get SCN's page number
 	ULONG getSCNPageNum(ULONG sequence);

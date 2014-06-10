@@ -640,7 +640,7 @@ PAG PAG_allocate(thread_db* tdbb, WIN* window)
 								// At this point we ensure database has at least "initialized" pages
 								// allocated. To avoid file growth by few pages when all this space
 								// will be used, extend file up to initialized + next_init_pages now
-								pageSpace->extend(tdbb, initialized + next_init_pages);
+								pageSpace->extend(tdbb, initialized + next_init_pages, false);
 							}
 
 							break;	// Found a page and successfully fake-ed it
@@ -2039,7 +2039,7 @@ ULONG PageSpace::lastUsedPage(const Database* dbb)
 	return pgSpace->lastUsedPage();
 }
 
-bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
+bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum, const bool forceSize)
 {
 /**************************************
  *
@@ -2051,12 +2051,16 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
  *	If "DatabaseGrowthIncrement" is less than MIN_EXTEND_BYTES then don't
  *	extend file(s)
  *
+ *  If forceSize is true, extend file up to pageNum pages (despite of value
+ *  of "DatabaseGrowthIncrement") and don't make attempts to extend by less
+ *	pages.
+ *
  **************************************/
 	fb_assert(dbb == tdbb->getDatabase());
 
 	const int MAX_EXTEND_BYTES = dbb->dbb_config->getDatabaseGrowthIncrement();
 
-	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES)
+	if (pageNum < maxPageNumber || MAX_EXTEND_BYTES < MIN_EXTEND_BYTES && !forceSize)
 		return true;
 
 	if (pageNum >= maxAlloc())
@@ -2071,6 +2075,7 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 
 		while (true)
 		{
+			const ULONG oldMaxPageNumber = maxPageNumber;
 			try
 			{
 				PIO_extend(dbb, file, extPages, dbb->dbb_page_size);
@@ -2078,10 +2083,16 @@ bool PageSpace::extend(thread_db* tdbb, const ULONG pageNum)
 			}
 			catch (const status_exception&)
 			{
-				if (extPages > reqPages)
+				if (extPages > reqPages && !forceSize)
 				{
-					extPages = MAX(reqPages, extPages / 2);
 					fb_utils::init_status(tdbb->tdbb_status_vector);
+
+					// if file was extended, return, else try to extend by less pages
+
+					if (oldMaxPageNumber < maxAlloc())
+						return true;
+
+					extPages = MAX(reqPages, extPages / 2);
 				}
 				else
 				{

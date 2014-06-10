@@ -94,6 +94,7 @@ const USHORT FIL_force_write		= 1;
 const USHORT FIL_no_fs_cache		= 2;	// not using file system cache
 const USHORT FIL_readonly			= 4;	// file opened in readonly mode
 const USHORT FIL_sh_write			= 8;	// file opened in shared write mode
+const USHORT FIL_no_fast_extend		= 16;	// file not supports fast extending
 
 // Physical IO trace events
 

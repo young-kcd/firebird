@@ -690,6 +690,7 @@ AC_CHECK_HEADERS(poll.h)
 AC_CHECK_HEADERS(langinfo.h)
 AC_CHECK_HEADERS(iconv.h)
 AC_CHECK_HEADERS(libio.h)
+AC_CHECK_HEADERS(linux/falloc.h)
 
 dnl check for ICU presence
 AC_CHECK_HEADER(unicode/ucnv.h,,AC_MSG_ERROR(ICU support not found - please install development ICU package))
