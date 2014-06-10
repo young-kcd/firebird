@@ -180,7 +180,7 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 	}
 }
 
-void GlobalRWLock::unlockWrite(thread_db* tdbb)
+void GlobalRWLock::unlockWrite(thread_db* tdbb, const bool release)
 {
 	SET_TDBB(tdbb);
 
@@ -192,13 +192,12 @@ void GlobalRWLock::unlockWrite(thread_db* tdbb)
 
 	currentWriter = false;
 
-	if (!lockCaching)
+	if (!lockCaching || release)
 		LCK_release(tdbb, cachedLock);
 	else if (blocking)
-	{
 		LCK_downgrade(tdbb, cachedLock);
-		blocking = false;
-	}
+
+	blocking = false;
 
 	if (cachedLock->lck_physical < LCK_read)
 		invalidate(tdbb);

@@ -374,7 +374,7 @@ public:
 	{
 		fb_assert(tdbb->tdbb_flags & TDBB_backup_write_locked);
 		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
-		stateLock->unlockWrite(tdbb);
+		stateLock->unlockWrite(tdbb, backup_state == nbak_state_unknown);
 	}
 
 	bool lockStateRead(thread_db* tdbb, SSHORT wait)
@@ -474,6 +474,7 @@ private:
 
 	ULONG findPageIndex(thread_db* tdbb, ULONG db_page);
 	void generateFilename();
+	bool extendDatabase(thread_db* tdbb);
 
 	void lockAllocWrite(thread_db* tdbb)
 	{

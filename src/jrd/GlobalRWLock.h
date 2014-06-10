@@ -65,7 +65,7 @@ public:
 
 	// This function returns false if it cannot take the lock
 	bool lockWrite(thread_db* tdbb, SSHORT wait);
-	void unlockWrite(thread_db* tdbb);
+	void unlockWrite(thread_db* tdbb, const bool release = false);
 	bool lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump = false);
 	void unlockRead(thread_db* tdbb);
 	bool tryReleaseLock(thread_db* tdbb);
