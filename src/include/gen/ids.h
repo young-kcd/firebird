@@ -536,6 +536,7 @@
 	const USHORT  f_mon_stmt_timestamp = 4;
 	const USHORT  f_mon_stmt_sql_text = 5;
 	const USHORT  f_mon_stmt_stat_id = 6;
+	const USHORT  f_mon_stmt_expl_plan = 7;
 
 
 // Relation 37 (MON$CALL_STACK)
