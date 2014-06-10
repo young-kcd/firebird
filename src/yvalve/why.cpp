@@ -4311,13 +4311,21 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 		ITransaction* newTrans = entry.next()->execute(status, trans, inMetadata, inBuffer,
 			outMetadata, outBuffer);
 
-		if (newTrans)
+		if (newTrans == trans)
 		{
-			if (newTrans == trans)
-				newTrans = transaction;
-			else
+			newTrans = transaction;
+		}
+		else
+		{
+			if (transaction)
 			{
+				if (trans)
+					trans->addRef();	// Will be decremented by release on next line
+				transaction->release();
 				transaction = NULL;		// Get ready for correct return in OOM case
+			}
+			if (newTrans)
+			{
 				newTrans = new YTransaction(attachment, newTrans);
 			}
 		}
@@ -5201,13 +5209,21 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 		ITransaction* newTrans = entry.next()->execute(status, trans, length, string, dialect,
 			inMetadata, inBuffer, outMetadata, outBuffer);
 
-		if (newTrans)
+		if (newTrans == trans)
 		{
-			if (newTrans == trans)
-				newTrans = transaction;
-			else
+			newTrans = transaction;
+		}
+		else
+		{
+			if (transaction)
 			{
+				if (trans)
+					trans->addRef();	// Will be decremented by release on next line
+				transaction->release();
 				transaction = NULL;		// Get ready for correct return in OOM case
+			}
+			if (newTrans)
+			{
 				newTrans = new YTransaction(this, newTrans);
 			}
 		}
