@@ -348,7 +348,15 @@ void setParamsCharToUuid(DataTypeUtilBase*, const SysFunction*, int argsCount, d
 void setParamsDateAdd(DataTypeUtilBase*, const SysFunction*, int argsCount, dsc** args)
 {
 	if (argsCount >= 1 && args[0]->isUnknown())
-		args[0]->makeInt64(0);
+	{
+		if (args[1]->dsc_address &&	// constant
+			CVT_get_long(args[1], 0, ERR_post) == blr_extract_millisecond)
+		{
+			args[0]->makeInt64(ISC_TIME_SECONDS_PRECISION_SCALE + 3);
+		}
+		else
+			args[0]->makeInt64(0);
+	}
 
 	if (argsCount >= 3 && args[2]->isUnknown())
 		args[2]->makeTimestamp();
@@ -1646,7 +1654,11 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 	}
 
-	const SINT64 quantity = MOV_get_int64(quantityDsc, 0);
+	static const SSHORT milliScale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
+	static const int milliPow = pow(10, -milliScale);
+
+	const SINT64 quantity = MOV_get_int64(quantityDsc,
+		(part == blr_extract_millisecond ? milliScale : 0));
 
 	switch (part)
 	{
@@ -1740,9 +1752,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 		case blr_extract_millisecond:
 			if (valueDsc->dsc_dtype == dtype_sql_date)
-				timestamp.value().timestamp_date += quantity / (oneDay * 1000);
+				timestamp.value().timestamp_date += quantity / milliPow / (oneDay * 1000);
 			else
-				add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000);
+				add10msec(&timestamp.value(), quantity, ISC_TIME_SECONDS_PRECISION / 1000 / milliPow);
 			break;
 
 		default:
