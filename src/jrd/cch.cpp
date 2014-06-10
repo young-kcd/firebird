@@ -148,7 +148,7 @@ static bool is_writeable(BufferDesc*, const ULONG);
 static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS* const,
 	const bool);
 static bool write_page(thread_db*, BufferDesc*, ISC_STATUS* const, const bool);
-static void set_diff_page(thread_db*, BufferDesc*);
+static bool set_diff_page(thread_db*, BufferDesc*);
 static void set_dirty_flag(thread_db*, BufferDesc*);
 static void clear_dirty_flag(thread_db*, BufferDesc*);
 
@@ -1597,7 +1597,14 @@ void CCH_mark(thread_db* tdbb, WIN* window, bool mark_system, bool must_write)
 
 	fb_assert(bdb->ourIOLock());
 
-	set_diff_page(tdbb, bdb);
+	// Allocate difference page (if in stalled mode) before mark page as dirty.
+	// It guarantees that disk space is allocated and page could be written later.
+
+	if (!set_diff_page(tdbb, bdb))
+	{
+		bdb->unLockIO(tdbb);
+		CCH_unwind(tdbb, true);
+	}
 
 	bdb->bdb_incarnation = ++bcb->bcb_page_incarnation;
 
@@ -1809,7 +1816,7 @@ bool CCH_prefetch_pages(thread_db* tdbb)
 #endif // CACHE_READER
 
 
-void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
+bool set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 {
 	Database* const dbb = tdbb->getDatabase();
 	BackupManager* const bm = dbb->dbb_backup_manager;
@@ -1833,13 +1840,13 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 	const int backup_state = bm->getState();
 
 	if (backup_state == nbak_state_normal)
-		return;
+		return true;
 
 	// Temporary pages don't write to delta
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(bdb->bdb_page.getPageSpaceID());
 	fb_assert(pageSpace);
 	if (pageSpace->isTemporary())
-		return;
+		return true;
 
 	switch (backup_state)
 	{
@@ -1848,10 +1855,8 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 		if (!bdb->bdb_difference_page)
 		{
 			bdb->bdb_difference_page = bm->allocateDifferencePage(tdbb, bdb->bdb_page.getPageNum());
-			if (!bdb->bdb_difference_page)
-			{
-				invalidate_and_release_buffer(tdbb, bdb);
-				CCH_unwind(tdbb, true);
+			if (!bdb->bdb_difference_page) {
+				return false;
 			}
 			NBAK_TRACE(("Allocate difference page %d for database page %d",
 				bdb->bdb_difference_page, bdb->bdb_page));
@@ -1872,6 +1877,8 @@ void set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 		}
 		break;
 	}
+
+	return true;
 }
 
 
@@ -1908,8 +1915,6 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 		bdb->bdb_flags |= BDB_garbage_collect;
 		window->win_flags &= ~WIN_garbage_collect;
 	}
-
-	BackupManager::StateReadGuard::unlock(tdbb);
 
 //	if (bdb->bdb_writers == 1 || bdb->bdb_use_count == 1)
 	if (bdb->bdb_writers == 1 ||
@@ -2003,6 +2008,7 @@ void CCH_release(thread_db* tdbb, WIN* window, const bool release_tail)
 		}
 	}
 
+	BackupManager::StateReadGuard::unlock(tdbb);
 	bdb->release(tdbb, true);
 	window->win_bdb = NULL;
 }
@@ -3913,6 +3919,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 					QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
 					bcbSync.unlock();
 
+					BackupManager::StateReadGuard::unlock(tdbb);
 					bdb->release(tdbb, true);
 					CCH_unwind(tdbb, true);
 				}

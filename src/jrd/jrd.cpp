@@ -6323,6 +6323,16 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	delete attachment->att_user;
 
+	{
+		jrd_tra* next = NULL;
+		for (jrd_tra* tran = attachment->att_transactions; tran; tran = next)
+		{
+			next = tran->tra_next;
+			jrd_tra::destroy(attachment, tran);
+		}
+	}
+
+
 	tdbb->setAttachment(NULL);
 	Jrd::Attachment::destroy(attachment);	// string were re-saved in the beginning of this function,
 											// keep that in sync please
