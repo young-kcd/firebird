@@ -945,7 +945,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 			d = *((float*) p);
 			eps = eps_float;
 		}
-		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
+		else // if (desc->dsc_dtype == DEFAULT_DOUBLE)
 		{
 			d = *((double*) p);
 			eps = eps_double;
@@ -2452,7 +2452,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 			d = *((float*) p);
 			eps = eps_float;
 		}
-		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
+		else // if (desc->dsc_dtype == DEFAULT_DOUBLE)
 		{
 			d = *((double*) p);
 			eps = eps_double;
