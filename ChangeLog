@@ -1,3 +1,76 @@
+ 2014-06-10 15:48  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-4457 - DATEADD should support fractional value for MILLISECOND.
+
+ 2014-06-10 15:04  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed transactions leak caused by my recent commit
+
+ 2014-06-10 13:32  dimitr 
+   M src/include/gen/ids.h
+
+ 2014-06-10 13:32  dimitr 
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/fields.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+Improvement CORE-2303: Include plan in MON$STATEMENTS.
+
+ 2014-06-10 11:33  hvlad 
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/GlobalRWLock.h
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+Front ported:
+fix for bug CORE-4444 : Engine could hung and block all attachments in out of disk space condition during physical backup,
+improvement CORE-4445 : Extend main database file faster when physical backup state changed from stalled to merge
+
+ 2014-06-10 09:31  hvlad 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Front ported fix for bug CORE-4444 : Engine could hung and block all attachments in out of disk space condition during physical backup
+
+ 2014-06-10 09:00  hvlad 
+   M configure.ac
+   M src/jrd/os/pio.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag.h
+Front ported support for fallocate() call on Linux. 
+Front ported improvement CORE-4443 : Use fast file grow on those Linux systems which supports it
+
+ 2014-06-10 07:13  alexpeshkoff 
+   M src/common/MsgMetadata.h
+   M src/common/StatementMetadata.h
+   M src/common/classes/ImplementHelper.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/shut.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/vio.cpp
+   M src/remote/client/interface.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed CORE-4435: After calling release() for attachment to database (instead detach) in embedded mode attachment remains active forever (and some cleanup re. reference counters)
+
+ 2014-06-10 07:06  alexpeshkoff 
+   M src/remote/server/server.cpp
+Avoid shutdown delay when all logins appear wrong due to closed security database
+
  2014-06-08 01:55  asfernandes 
    M src/dsql/DdlNodes.epp
 Misc.
