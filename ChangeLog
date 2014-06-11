@@ -1,3 +1,12 @@
+ 2014-06-10 20:17  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+Patch by Nickolay Samofatov: avoid an AST overhead for heavily-loaded systems with many requests. This is committed into v2.5 only, so far I doubt v3 needs that.
+
+ 2014-06-10 20:05  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4460: Expressions containing some built-in functions may be badly optimized.
+
  2014-06-06 10:42  alexpeshkoff 
    M src/jrd/extds/InternalDS.cpp
 Use GlobalPtr for static variable doing memory allocation
