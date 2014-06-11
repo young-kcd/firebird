@@ -65,6 +65,8 @@ public:
 	// Number of the first day of UNIX epoch in GDS counting
 	enum { GDS_EPOCH_START = 40617 };
 
+	static const ISC_TIME POW_10_TABLE[];
+
 	// Constructors
 	NoThrowTimeStamp()
 	{

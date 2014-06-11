@@ -1655,7 +1655,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	}
 
 	static const SSHORT milliScale = ISC_TIME_SECONDS_PRECISION_SCALE + 3;
-	static const int milliPow = pow(10, -milliScale);
+	static const int milliPow = NoThrowTimeStamp::POW_10_TABLE[-milliScale];
 
 	const SINT64 quantity = MOV_get_int64(quantityDsc,
 		(part == blr_extract_millisecond ? milliScale : 0));

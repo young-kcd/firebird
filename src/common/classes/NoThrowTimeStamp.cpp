@@ -38,6 +38,9 @@
 
 namespace Firebird {
 
+const ISC_TIME NoThrowTimeStamp::POW_10_TABLE[] =
+	{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+
 NoThrowTimeStamp NoThrowTimeStamp::getCurrentTimeStamp(const char** error) throw()
 {
 	if (error)
@@ -258,12 +261,9 @@ void NoThrowTimeStamp::round_time(ISC_TIME &ntime, const int precision)
 	if (scale <= 0)
 		return;
 
-	static const ISC_TIME pow10table[] =
-		{1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+	fb_assert(scale < FB_NELEM(POW_10_TABLE));
 
-	fb_assert(scale < FB_NELEM(pow10table));
-
-	const ISC_TIME period = pow10table[scale];
+	const ISC_TIME period = POW_10_TABLE[scale];
 
 	ntime -= (ntime % period);
 }
