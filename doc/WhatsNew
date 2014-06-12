@@ -2,6 +2,11 @@
   * v2.5.3
   **************************
 
+    * Bugfix CORE-4460
+        Expressions containing some built-in functions may be badly optimized
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-4444
         Engine could hang and block all attachments in out of disk space condition during physical backup
       Contributor(s):
@@ -451,6 +456,11 @@
         present only in the RETURNING clause
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3305
+        "BLOB not found" error after creation/altering of the invalid trigger
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-3243
         CURRENT_USER and MON$USER raise an error for trusted authentication
