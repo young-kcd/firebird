@@ -144,9 +144,7 @@ USHORT LC_NARROW_key_length(texttype* obj, USHORT inLen)
 	USHORT len = impl->texttype_bytes_per_key * MAX(inLen, 2);
 
 	if (impl->texttype_expand_table && ((const ExpandChar*) impl->texttype_expand_table)[0].Ch)
-	{
-		len += (USHORT) log10(inLen + 1.0) * 4 * impl->texttype_bytes_per_key;
-	}
+		len += (USHORT) (log10(inLen + 1.0) + 2) * 4 * impl->texttype_bytes_per_key;
 
 	return (MIN(len, LANGFAM2_MAX_KEY));
 }

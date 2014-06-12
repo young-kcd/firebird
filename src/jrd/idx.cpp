@@ -477,21 +477,23 @@ void IDX_create_index(thread_db* tdbb,
 				break;
 			}
 
-			USHORT l = key.key_length;
-
-			if (nullIndLen) {
+			if (nullIndLen)
 				*p++ = (key.key_length == 0) ? 0 : 1;
-			}
-			if (l > 0)
+
+			if (key.key_length > 0)
 			{
-				memcpy(p, key.key_data, l);
-				p += l;
+				memcpy(p, key.key_data, key.key_length);
+				p += key.key_length;
 			}
-			if ( (l = key_length - nullIndLen - key.key_length) )
+
+			int l = int(key_length) - nullIndLen - key.key_length;	// must be signed
+
+			if (l > 0)
 			{
 				memset(p, pad, l);
 				p += l;
 			}
+
 			index_sort_record* isr = (index_sort_record*) p;
 			isr->isr_record_number = primary.rpb_number.getValue();
 			isr->isr_key_length = key.key_length;
