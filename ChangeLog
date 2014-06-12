@@ -1,3 +1,13 @@
+ 2014-06-11 15:39  asfernandes 
+   M src/common/cvt.cpp
+Avoid warnings.
+
+ 2014-06-11 15:21  asfernandes 
+   M src/common/classes/NoThrowTimeStamp.cpp
+   M src/common/classes/NoThrowTimeStamp.h
+   M src/jrd/SysFunction.cpp
+Fixed the Windows build.
+
  2014-06-10 15:48  asfernandes 
    M src/jrd/SysFunction.cpp
 Fixed CORE-4457 - DATEADD should support fractional value for MILLISECOND.
