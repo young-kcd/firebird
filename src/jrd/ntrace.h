@@ -119,8 +119,9 @@ public:
 	virtual const char* FB_CARG getPlan() = 0;
 	virtual TraceParams* FB_CARG getInputs() = 0;
 	virtual const char* FB_CARG getTextUTF8() = 0;
+	virtual const char* FB_CARG getPlanExplained() = 0;
 };
-#define FB_TRACE_SQL_STATEMENT_VERSION (FB_TRACE_STATEMENT_VERSION + 4)
+#define FB_TRACE_SQL_STATEMENT_VERSION (FB_TRACE_STATEMENT_VERSION + 5)
 
 class TraceBLRStatement : public TraceStatement
 {

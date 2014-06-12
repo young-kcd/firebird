@@ -156,6 +156,7 @@ public:
 	TraceSQLStatementImpl(const dsql_req* stmt, PerformanceInfo* perf) :
 		m_stmt(stmt),
 		m_perf(perf),
+		m_planExplained(false),
 		m_inputs(*getDefaultMemoryPool(), m_stmt)
 	{}
 
@@ -166,6 +167,7 @@ public:
 	virtual const char* FB_CARG getText();
 	virtual const char* FB_CARG getPlan();
 	virtual const char* FB_CARG getTextUTF8();
+	virtual const char* FB_CARG getPlanExplained();
 
 private:
 	class DSQLParamsImpl : public Firebird::AutoIface<TraceParams, FB_TRACE_PARAMS_VERSION>
@@ -192,9 +194,12 @@ private:
 		Firebird::HalfStaticArray<dsc, 16> m_descs;
 	};
 
+	void fillPlan(bool explained);
+
 	const dsql_req* const m_stmt;
 	PerformanceInfo* const m_perf;
 	Firebird::string m_plan;
+	bool m_planExplained;
 	DSQLParamsImpl m_inputs;
 	Firebird::string m_textUTF8;
 };
@@ -214,6 +219,7 @@ public:
 	virtual const char* FB_CARG getText()		{ return m_text.c_str(); }
 	virtual const char* FB_CARG getPlan()		{ return ""; }
 	virtual const char* FB_CARG getTextUTF8();
+	virtual const char* FB_CARG getPlanExplained()	{ return ""; }
 
 private:
 	Firebird::string& m_text;

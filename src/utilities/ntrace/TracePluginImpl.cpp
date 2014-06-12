@@ -1382,7 +1382,10 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 		}
 		*stmt_data.description += temp;
 
-		const char* access_path = config.print_plan ? statement->getPlan() : NULL;
+		const char* access_path = config.print_plan ? 
+			(config.explain_plan ? statement->getPlanExplained() : statement->getPlan())
+			: NULL;
+
 		if (access_path && *access_path)
 		{
 			const size_t access_path_length = strlen(access_path);

@@ -212,12 +212,23 @@ const char* TraceSQLStatementImpl::getTextUTF8()
 
 const char* TraceSQLStatementImpl::getPlan()
 {
-	if (m_plan.isEmpty())
-	{
-		m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request, false);
-	}
-
+	fillPlan(false);
 	return m_plan.c_str();
+}
+
+const char* FB_CARG TraceSQLStatementImpl::getPlanExplained()
+{
+	fillPlan(true);
+	return m_plan.c_str();
+}
+
+void TraceSQLStatementImpl::fillPlan(bool explained)
+{
+	if (m_plan.isEmpty() || m_planExplained != explained)
+	{
+		m_planExplained = explained;
+		m_plan = OPT_get_plan(JRD_get_thread_data(), m_stmt->req_request, m_planExplained);
+	}
 }
 
 PerformanceInfo* TraceSQLStatementImpl::getPerf()
