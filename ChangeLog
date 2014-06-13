@@ -1,3 +1,12 @@
+ 2014-06-12 15:56  asfernandes 
+   M src/intl/lc_narrow.cpp
+   M src/jrd/idx.cpp
+Backported fix for CORE-4417 - gbak: cannot commit index ; primary key with german umlaut.
+
+ 2014-06-12 07:19  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
  2014-06-10 20:17  dimitr 
    M src/jrd/Database.cpp
    M src/jrd/Database.h
