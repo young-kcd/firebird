@@ -142,9 +142,9 @@ class MessageNode;
 class Trigger
 {
 public:
-	Firebird::HalfStaticArray<UCHAR, 128> blr;	// BLR code
-	bid			dbg_blob_id;					// RDB$DEBUG_INFO
-	JrdStatement* statement;			// Compiled statement
+	Firebird::HalfStaticArray<UCHAR, 128> blr;			// BLR code
+	Firebird::HalfStaticArray<UCHAR, 128> debugInfo;	// Debug info
+	JrdStatement* statement;							// Compiled statement
 	bool		compile_in_progress;
 	bool		sys_trigger;
 	FB_UINT64	type;						// Trigger type
@@ -161,14 +161,13 @@ public:
 
 	explicit Trigger(MemoryPool& p)
 		: blr(p),
+		  debugInfo(p),
 		  name(p),
 		  engine(p),
 		  entryPoint(p),
 		  extBody(p),
 		  extTrigger(NULL)
-	{
-		dbg_blob_id.clear();
-	}
+	{}
 };
 
 

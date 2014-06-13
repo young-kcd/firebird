@@ -124,7 +124,7 @@ static void make_relation_scope_name(const TEXT*, const USHORT, string& str);
 static ValueExprNode* parse_field_default_blr(thread_db* tdbb, bid* blob_id);
 static BoolExprNode* parse_field_validation_blr(thread_db* tdbb, bid* blob_id, const MetaName name);
 static bool resolve_charset_and_collation(thread_db*, USHORT*, const UCHAR*, const UCHAR*);
-static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, JrdStatement*, blb*, bid*,
+static void save_trigger_data(thread_db*, trig_vec**, jrd_rel*, JrdStatement*, blb*, blb*,
 	const TEXT*, FB_UINT64, bool, USHORT, const MetaName&, const string&,
 	const bid*);
 static void scan_partners(thread_db*, jrd_rel*);
@@ -4370,11 +4370,15 @@ static void get_trigger(thread_db* tdbb, jrd_rel* relation,
 		return;
 
 	blb* blrBlob = NULL;
+	blb* debugInfoBlob = NULL;
 
 	if (!blob_id->isEmpty())
 		blrBlob = blb::open(tdbb, attachment->getSysTransaction(), blob_id);
 
-	save_trigger_data(tdbb, ptr, relation, NULL, blrBlob, debug_blob_id,
+	if (!debug_blob_id->isEmpty())
+		debugInfoBlob = blb::open(tdbb, attachment->getSysTransaction(), debug_blob_id);
+
+	save_trigger_data(tdbb, ptr, relation, NULL, blrBlob, debugInfoBlob,
 					  name, type, sys_trigger, flags, engine, entryPoint, body);
 }
 
@@ -4739,7 +4743,7 @@ static bool resolve_charset_and_collation(thread_db* tdbb,
 
 
 static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation,
-							  JrdStatement* statement, blb* blrBlob, bid* dbgBlobID,
+							  JrdStatement* statement, blb* blrBlob, blb* debugInfoBlob,
 							  const TEXT* name, FB_UINT64 type,
 							  bool sys_trigger, USHORT flags,
 							  const MetaName& engine, const string& entryPoint,
@@ -4766,15 +4770,20 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	}
 
 	Trigger& t = vector->add();
+
 	if (blrBlob)
 	{
 		const ULONG length = blrBlob->blb_length + 10;
-		UCHAR* ptr2 = t.blr.getBuffer(length);
-		t.blr.resize(blrBlob->BLB_get_data(tdbb, ptr2, length));
+		UCHAR* const data = t.blr.getBuffer(length);
+		t.blr.resize(blrBlob->BLB_get_data(tdbb, data, length));
 	}
 
-	if (dbgBlobID)
-		t.dbg_blob_id = *dbgBlobID;
+	if (debugInfoBlob)
+	{
+		const ULONG length = debugInfoBlob->blb_length + 10;
+		UCHAR* const data = t.debugInfo.getBuffer(length);
+		t.debugInfo.resize(debugInfoBlob->BLB_get_data(tdbb, data, length));
+	}
 
 	if (name)
 		t.name = name;
