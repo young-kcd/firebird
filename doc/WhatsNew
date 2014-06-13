@@ -12,6 +12,11 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-4417
+        GBAK: cannot commit index / primary key with german umlaut
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
     * Bugfix CORE-4433
         GlobalRWLock could not downgrade EX lock to SH if readers is present 
       Contributor(s):
