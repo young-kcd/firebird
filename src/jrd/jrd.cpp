@@ -1476,13 +1476,11 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				attachment->att_flags |= ATT_no_cleanup;
 
 			if (options.dpb_gbak_attach)
-				attachment->att_flags |= ATT_gbak_attachment;
-
-			if (options.dpb_gstat_attach)
-				attachment->att_flags |= ATT_gstat_attachment;
-
-			if (options.dpb_gfix_attach)
-				attachment->att_flags |= ATT_gfix_attachment;
+				attachment->att_utility = Attachment::UTIL_GBAK;
+			else if (options.dpb_gstat_attach)
+				attachment->att_utility = Attachment::UTIL_GSTAT;
+			else if (options.dpb_gfix_attach)
+				attachment->att_utility = Attachment::UTIL_GFIX;
 
 			if (options.dpb_working_directory.hasData())
 				attachment->att_working_directory = options.dpb_working_directory;
@@ -1587,9 +1585,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			}
 
 			// Attachments to a ReadOnly database need NOT do garbage collection
-			if (dbb->readOnly()) {
+			if (dbb->readOnly())
 				attachment->att_flags |= ATT_no_cleanup;
-			}
 
 			if (options.dpb_nolinger)
 				dbb->dbb_linger_seconds = 0;
@@ -1600,14 +1597,11 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 						 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
 			}
 
-			if (options.dpb_buffers && !dbb->dbb_page_buffers) {
+			if (options.dpb_buffers && !dbb->dbb_page_buffers)
 				CCH_expand(tdbb, options.dpb_buffers);
-			}
 
 			if (!options.dpb_verify && CCH_exclusive(tdbb, LCK_PW, LCK_NO_WAIT, NULL))
-			{
 				TRA_cleanup(tdbb);
-			}
 
 			if (invalid_client_SQL_dialect)
 			{
@@ -1624,13 +1618,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			// This pair (SHUT_database/SHUT_online) checks itself for valid user name
 			if (options.dpb_shutdown)
-			{
 				SHUT_database(tdbb, options.dpb_shutdown, options.dpb_shutdown_delay, NULL);
-			}
+
 			if (options.dpb_online)
-			{
 				SHUT_online(tdbb, options.dpb_online, NULL);
-			}
 
 			// Check if another attachment has or is requesting exclusive database access.
 			// If this is an implicit attachment for the security (password) database, don't
@@ -1647,24 +1638,20 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 				if (attachment->att_flags & ATT_shutdown)
 				{
-					if (dbb->dbb_ast_flags & DBB_shutdown) {
+					if (dbb->dbb_ast_flags & DBB_shutdown)
 						ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
-					}
-					else {
+					else
 						ERR_post(Arg::Gds(isc_att_shutdown));
-					}
 				}
-				if (!attachment_succeeded) {
+
+				if (!attachment_succeeded)
 					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
-				}
 			}
 
 			// If database is shutdown then kick 'em out.
 
 			if (dbb->dbb_ast_flags & (DBB_shut_attach | DBB_shut_tran))
-			{
 				ERR_post(Arg::Gds(isc_shutinprog) << Arg::Str(org_filename));
-			}
 
 			if (dbb->dbb_ast_flags & DBB_shutdown)
 			{
@@ -1706,9 +1693,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			// database. smistry 10/5/98
 
 			if (attachment->isUtility())
-			{
 				validateAccess(attachment);
-			}
 
 			if (options.dpb_verify)
 			{
@@ -1733,7 +1718,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				ERR_post(Arg::Gds(isc_no_wal));
 			}
 
-			if (attachment->att_flags & (ATT_gfix_attachment | ATT_gstat_attachment))
+			if (attachment->att_utility == Attachment::UTIL_GFIX ||
+				attachment->att_utility == Attachment::UTIL_GSTAT)
 			{
 				options.dpb_no_db_triggers = true;
 			}
@@ -2494,13 +2480,11 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
 
-			if (options.dpb_working_directory.hasData()) {
+			if (options.dpb_working_directory.hasData())
 				attachment->att_working_directory = options.dpb_working_directory;
-			}
 
-			if (options.dpb_gbak_attach) {
-				attachment->att_flags |= ATT_gbak_attachment;
-			}
+			if (options.dpb_gbak_attach)
+				attachment->att_utility = Attachment::UTIL_GBAK;
 
 			if (options.dpb_no_db_triggers)
 				attachment->att_flags |= ATT_no_db_triggers;

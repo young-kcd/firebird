@@ -201,17 +201,13 @@ void SCL_check_access(thread_db* tdbb,
 	// Allow the database owner to back up a database even if he does not have
 	// read access to all the tables in the database
 
-	if ((attachment.att_flags & ATT_gbak_attachment) && (mask & SCL_select))
-	{
+	if (attachment.isGbak() && (mask & SCL_select))
 		return;
-	}
 
 	// Allow the locksmith any access to database
 
 	if (attachment.locksmith())
-	{
 		return;
-	}
 
 	bool denied_db = false;
 

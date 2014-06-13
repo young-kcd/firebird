@@ -915,7 +915,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	{
 		const string name = procedure->getName().toString();
 
-		if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+		if (tdbb->getAttachment()->isGbak())
 			PAR_warning(Arg::Warning(isc_illegal_prc_type) << Arg::Str(name));
 		else
 			PAR_error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(name));

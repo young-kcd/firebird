@@ -193,6 +193,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_ext_connection(NULL),
 	  att_ext_call_depth(0),
 	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
+	  att_utility(UTIL_NONE),
 	  att_procedures(*pool),
 	  att_functions(*pool),
 	  att_internal(*pool),

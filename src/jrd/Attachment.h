@@ -367,6 +367,10 @@ public:
 	ULONG att_ext_call_depth;				// external connection call depth, 0 for user attachment
 	TraceManager* att_trace_manager;		// Trace API manager
 
+	enum UtilType { UTIL_NONE, UTIL_GBAK, UTIL_GFIX, UTIL_GSTAT };
+
+	UtilType att_utility;
+
 	/// former Database members - start
 
 	vec<jrd_rel*>*					att_relations;			// relation vector
@@ -400,6 +404,8 @@ public:
 	bool locksmith() const;
 	jrd_tra* getSysTransaction();
 	void setSysTransaction(jrd_tra* trans);	// used only by TRA_init
+
+	bool isGbak() const;
 	bool isRWGbak() const;
 	bool isUtility() const; // gbak, gfix and gstat.
 
@@ -458,24 +464,18 @@ const ULONG ATT_shutdown_manager	= 0x00004L;	// attachment requesting shutdown
 const ULONG ATT_exclusive			= 0x00008L;	// attachment wants exclusive database access
 const ULONG ATT_attach_pending		= 0x00010L;	// Indicate attachment is only pending
 const ULONG ATT_exclusive_pending	= 0x00020L;	// Indicate exclusive attachment pending
-const ULONG ATT_gbak_attachment		= 0x00040L;	// Indicate GBAK attachment
-const ULONG ATT_notify_gc			= 0x00080L;	// Notify garbage collector to expunge, purge ..
-const ULONG ATT_garbage_collector	= 0x00100L;	// I'm a garbage collector
-const ULONG ATT_cancel_raise		= 0x00200L;	// Cancel currently running operation
-const ULONG ATT_cancel_disable		= 0x00400L;	// Disable cancel operations
-const ULONG ATT_gfix_attachment		= 0x00800L;	// Indicate a GFIX attachment
-const ULONG ATT_gstat_attachment	= 0x01000L;	// Indicate a GSTAT attachment
-const ULONG ATT_no_db_triggers		= 0x02000L;	// Don't execute database triggers
-const ULONG ATT_manual_lock			= 0x04000L;	// Was locked manually
-const ULONG ATT_async_manual_lock	= 0x08000L;	// Async mutex was locked manually
-const ULONG ATT_purge_started		= 0x10000L; // Purge already started - avoid 2 purges at once
-const ULONG ATT_system				= 0x20000L; // Special system attachment
-const ULONG ATT_creator				= 0x40000L; // This attachment created the DB.
+const ULONG ATT_notify_gc			= 0x00040L;	// Notify garbage collector to expunge, purge ..
+const ULONG ATT_garbage_collector	= 0x00080L;	// I'm a garbage collector
+const ULONG ATT_cancel_raise		= 0x00100L;	// Cancel currently running operation
+const ULONG ATT_cancel_disable		= 0x00200L;	// Disable cancel operations
+const ULONG ATT_no_db_triggers		= 0x00400L;	// Don't execute database triggers
+const ULONG ATT_manual_lock			= 0x00800L;	// Was locked manually
+const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
+const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
+const ULONG ATT_system				= 0x04000L; // Special system attachment
+const ULONG ATT_creator				= 0x08000L; // This attachment created the DB.
 
-// Composed flags (mixtures of the previous values).
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
-const ULONG ATT_RW_GBAK				= (ATT_gbak_attachment | ATT_creator);
-const ULONG ATT_ANY_UTILITY			= (ATT_gbak_attachment | ATT_gfix_attachment | ATT_gstat_attachment);
 
 
 inline bool Attachment::locksmith() const
@@ -493,18 +493,24 @@ inline void Attachment::setSysTransaction(jrd_tra* trans)
 	att_sys_transaction = trans;
 }
 
+// Connection is from GBAK
+inline bool Attachment::isGbak() const
+{
+	return (att_utility == UTIL_GBAK);
+}
+
 // Gbak changes objects when it's restoring (creating) a db.
 // Other attempts are fake. Gbak reconnects to change R/O status and other db-wide settings,
 // but it doesn't modify generators or tables that seconds time.
 inline bool Attachment::isRWGbak() const
 {
-	return (att_flags & ATT_RW_GBAK) == ATT_RW_GBAK;
+	return (isGbak() && (att_flags & ATT_creator));
 }
 
 // Any of the three original utilities: gbak, gfix or gstat.
 inline bool Attachment::isUtility() const
 {
-	return att_flags & ATT_ANY_UTILITY;
+	return (att_utility != UTIL_NONE);
 }
 
 // This class holds references to all attachments it contains

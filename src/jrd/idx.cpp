@@ -345,8 +345,7 @@ void IDX_create_index(thread_db* tdbb,
 	// preserving the page working sets of other attachments.
 	if (attachment && (attachment != dbb->dbb_attachments || attachment->att_next))
 	{
-		if (attachment->att_flags & ATT_gbak_attachment ||
-			DPM_data_pages(tdbb, relation) > dbb->dbb_bcb->bcb_count)
+		if (attachment->isGbak() || DPM_data_pages(tdbb, relation) > dbb->dbb_bcb->bcb_count)
 		{
 			primary.getWindow(tdbb).win_flags = secondary.getWindow(tdbb).win_flags = WIN_large_scan;
 			primary.rpb_org_scans = secondary.rpb_org_scans = relation->rel_scan_count++;

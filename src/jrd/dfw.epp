@@ -837,7 +837,7 @@ namespace
 			Jrd::Attachment* attachment = tdbb->getAttachment();
 
 			if (compile)
-				compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
+				compile = !tdbb->getAttachment()->isGbak();
 
 			bid blobId;
 			blobId.clear();
@@ -4843,7 +4843,7 @@ static void get_trigger_dependencies(DeferredWork* work, bool compile, jrd_tra* 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
 	if (compile)
-		compile = !(tdbb->getAttachment()->att_flags & ATT_gbak_attachment);
+		compile = !tdbb->getAttachment()->isGbak();
 
 	jrd_rel* relation = NULL;
 	bid blob_id;

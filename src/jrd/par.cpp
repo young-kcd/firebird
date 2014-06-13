@@ -1090,7 +1090,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 				if (idx_status == MET_object_unknown || idx_status == MET_object_inactive)
 				{
-					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+					if (tdbb->getAttachment()->isGbak())
 					{
 						PAR_warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
 																   Arg::Str(relation->rel_name));
@@ -1150,7 +1150,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 					if (idx_status == MET_object_unknown || idx_status == MET_object_inactive)
 					{
-						if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+						if (tdbb->getAttachment()->isGbak())
 						{
 							PAR_warning(Arg::Warning(isc_indexname) << Arg::Str(name) <<
 																	   Arg::Str(relation->rel_name));

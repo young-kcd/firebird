@@ -4633,7 +4633,7 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 					if (relation->rel_flags & REL_system)
 						return FB_NEW(pool) NullNode(pool);
 
- 					if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+ 					if (tdbb->getAttachment()->isGbak())
 					{
 						PAR_warning(Arg::Warning(isc_fldnotdef) << Arg::Str(name) <<
 																   Arg::Str(relation->rel_name));
@@ -5360,7 +5360,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		{
 			// ASF: Swallow the exception if we fail to load the collation here.
 			// This allows us to backup databases when the collation isn't available.
-			if (!(tdbb->getAttachment()->att_flags & ATT_gbak_attachment))
+			if (!tdbb->getAttachment()->isGbak())
 				throw;
 		}
 
@@ -10469,7 +10469,7 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	{
 		if (function->isImplemented() && !function->isDefined())
 		{
-			if (tdbb->getAttachment()->att_flags & ATT_gbak_attachment)
+			if (tdbb->getAttachment()->isGbak())
 			{
 				PAR_warning(Arg::Warning(isc_funnotdef) << Arg::Str(name.toString()) <<
 							Arg::Warning(isc_modnotfound));

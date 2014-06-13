@@ -181,10 +181,11 @@ static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, const bool, 
 // General protection against gbak impersonators, to be used for VIO_modify and VIO_store.
 inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation, const char* op)
 {
+	const Attachment* const attachment = tdbb->getAttachment();
+
 	// It doesn't matter that we use protect_system_table_upd() that's for deletions and updates
 	// but this code is for insertions and updates, because we use force = true.
-	const ULONG uflags = tdbb->getAttachment()->att_flags;
-	if ((uflags & ATT_gbak_attachment) && !(uflags & ATT_creator))
+	if (attachment->isGbak() && !(attachment->att_flags & ATT_creator))
 		protect_system_table_delupd(tdbb, relation, op, true);
 }
 
@@ -192,10 +193,12 @@ inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation,
 // inconsistencies while restoring. Used in VIO_erase.
 inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 {
+	const Attachment* const attachment = tdbb->getAttachment();
+
 	// TDBB_dont_post_dfw signals that we are in DFW.
-	const ULONG uflags = tdbb->getAttachment()->att_flags;
-	if ((uflags & ATT_gbak_attachment) &&
-		(!(uflags & ATT_creator) || relation->rel_id != rel_segments && !(tdbb->tdbb_flags & TDBB_dont_post_dfw)))
+	if (attachment->isGbak() &&
+		(!(attachment->att_flags & ATT_creator) ||
+			relation->rel_id != rel_segments && !(tdbb->tdbb_flags & TDBB_dont_post_dfw)))
 	{
 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 	}
@@ -2301,7 +2304,8 @@ void VIO_init(thread_db* tdbb)
 	// attachment notifies the garbage collector to do their dirty work.
 
 	if ((dbb->dbb_flags & DBB_garbage_collector) &&
-		!(attachment->att_flags & (ATT_no_cleanup | ATT_gbak_attachment)))
+		!(attachment->att_flags & ATT_no_cleanup) &&
+		!attachment->isGbak())
 	{
 		attachment->att_flags |= ATT_notify_gc;
 	}
@@ -5451,7 +5455,7 @@ static void protect_system_table_insert(thread_db* tdbb,
 
 	if (!force_flag)
 	{
-		if ((attachment->att_flags & ATT_gbak_attachment) || request->hasInternalStatement())
+		if (attachment->isGbak() || request->hasInternalStatement())
 			return;
 	}
 
@@ -5483,7 +5487,7 @@ static void protect_system_table_delupd(thread_db* tdbb,
 
 	if (!force_flag)
 	{
-		if ((attachment->att_flags & ATT_gbak_attachment) || request->hasPowerfulStatement())
+		if (attachment->isGbak() || request->hasPowerfulStatement())
 			return;
 	}
 

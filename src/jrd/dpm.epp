@@ -1449,11 +1449,8 @@ ULONG DPM_get_blob(thread_db* tdbb,
 			// large as the cumulative effect of scanning many small blobs is
 			// equivalent to scanning single large blobs.
 
-			if (blob->getMaxSequence() > dbb->dbb_bcb->bcb_count ||
-				(attachment->att_flags & ATT_gbak_attachment))
-			{
+			if (blob->getMaxSequence() > dbb->dbb_bcb->bcb_count || attachment->isGbak())
 				blob->blb_flags |= BLB_large_scan;
-			}
 		}
 
 		if (header->blh_flags & rhd_stream_blob) {
