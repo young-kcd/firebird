@@ -1,3 +1,19 @@
+ 2014-06-12 15:44  asfernandes 
+   M src/intl/lc_narrow.cpp
+   M src/jrd/idx.cpp
+Fixed CORE-4417 - gbak: cannot commit index ; primary key with german umlaut.
+
+ 2014-06-12 14:26  hvlad 
+   M src/jrd/ntrace.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/fbtrace.conf
+   M src/utilities/ntrace/paramtable.h
+Implement improvement CORE-4451 : Allow output to trace explain plan form
+New boolean setting was added into fbtrace.conf: explain_plan.
+See also comments at fbtrace.conf nearby explain_plan.
+
  2014-06-11 15:39  asfernandes 
    M src/common/cvt.cpp
 Avoid warnings.
