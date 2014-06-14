@@ -29,7 +29,7 @@
 #ifndef CLASSES_SEMAPHORE_H
 #define CLASSES_SEMAPHORE_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class
@@ -52,10 +52,6 @@ private:
 		if (hSemaphore == NULL)
 			system_call_failed::raise("CreateSemaphore");
 	}
-
-	// Forbid copying
-	Semaphore(const Semaphore&);
-	Semaphore& operator=(const Semaphore&);
 
 public:
 	Semaphore() { init(); }
@@ -95,8 +91,8 @@ public:
 
 #ifdef DARWIN
 
-// dispatch semaphore
-#define COMMON_CLASSES_SEMAPHORE_DISPATCH
+// Mach semaphore
+#define COMMON_CLASSES_SEMAPHORE_MACH
 #include <dispatch/dispatch.h>
 
 namespace Firebird
@@ -110,10 +106,6 @@ private:
 	dispatch_semaphore_t semaphore;
 
 	void init();
-
-	// Forbid copying
-	SignalSafeSemaphore(const SignalSafeSemaphore&);
-	SignalSafeSemaphore& operator=(const SignalSafeSemaphore&);
 
 public:
 	SignalSafeSemaphore() { init(); }
@@ -165,10 +157,6 @@ private:
 
 	void init();
 
-	// Forbid copying
-	SignalSafeSemaphore(const SignalSafeSemaphore&);
-	SignalSafeSemaphore& operator=(const SignalSafeSemaphore&);
-
 public:
 	SignalSafeSemaphore() { init(); }
 	explicit SignalSafeSemaphore(MemoryPool&) { init(); }
@@ -216,7 +204,7 @@ typedef SignalSafeSemaphore Semaphore;
 // Should implement Semaphore independent from SignalSafeSemaphore.
 // In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
 #define COMMON_CLASSES_SEMAPHORE_COND_VAR
-#include "fb_pthread.h"
+#include <pthread.h>
 #include <errno.h>
 
 namespace Firebird
@@ -232,10 +220,6 @@ private:
 	void init();
 	void mtxLock();
 	void mtxUnlock();
-
-	// Forbid copying
-	Semaphore(const Semaphore&);
-	Semaphore& operator=(const Semaphore&);
 
 public:
 	Semaphore() { init(); }

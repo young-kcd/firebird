@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../common/config/config.h"
-#include "../common/os/path_utils.h"
+#include "../jrd/common.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
@@ -44,27 +44,25 @@
 #include "../jrd/lls.h"
 #include "../jrd/blb.h"
 #include "../jrd/flu.h"
+#include "../jrd/common.h"
 #include "../jrd/ibsetjmp.h"
 #include "../jrd/irq.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
-#include "../common/dsc_proto.h"
+#include "../jrd/dsc_proto.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/evl_proto.h"
 #include "../jrd/exe_proto.h"
 #include "../jrd/flu_proto.h"
 #include "../jrd/fun_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../common/isc_s_proto.h"
+#include "../jrd/isc_s_proto.h"
 #include "../jrd/blb.h"
-#include "../jrd/ExtEngineManager.h"
 #include "../common/classes/auto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/FpeControl.h"
-#include "../jrd/Function.h"
-#include "../jrd/Attachment.h"
 
 #ifdef WIN_NT
 #define LIBNAME "ib_util"
@@ -77,17 +75,13 @@ using namespace Jrd;
 using namespace Firebird;
 
 
+#ifndef BOOT_BUILD
 namespace
 {
-	bool volatile initDone = false;
-
 	struct IbUtilStartup
 	{
-		explicit IbUtilStartup(MemoryPool& p) : libUtilPath(p)
+		IbUtilStartup(MemoryPool& p) : libUtilPath(p)
 		{
-			if (fb_utils::bootBuild())
-				return;
-
 #if defined(WIN_NT)
 			libUtilPath.assign(LIBNAME);
 #elif defined(DARWIN)
@@ -102,10 +96,11 @@ namespace
 	};
 
 	InitInstance<IbUtilStartup> ibUtilStartup;
+	bool volatile initDone = false;
 
 	bool tryLibrary(PathName libName, string& message)
 	{
-		ModuleLoader::doctorModuleExtension(libName);
+		ModuleLoader::doctorModuleExtention(libName);
 
 		ModuleLoader::Module* module = ModuleLoader::loadModule(libName);
 		if (!module)
@@ -128,25 +123,24 @@ namespace
 		return true;
 	}
 }
+#endif
 
 
 void IbUtil::initialize()
 {
-	if (initDone || fb_utils::bootBuild())
-	{
-		initDone = true;
+#ifndef BOOT_BUILD
+	if (initDone)
 		return;
-	}
 
 	string message[4];		// To suppress logs when correct library is found
 
 #ifdef WIN_NT
 	// using bin folder
-	if (tryLibrary(fb_utils::getPrefix(Firebird::DirType::FB_DIR_BIN, LIBNAME), message[1]))
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_BIN, LIBNAME), message[1]))
 		return;
 
 	// using firebird root (takes into account environment settings)
-	if (tryLibrary(fb_utils::getPrefix(Firebird::DirType::FB_DIR_CONF, LIBNAME), message[2]))
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, LIBNAME), message[2]))
 		return;
 #else
 	// using install directory
@@ -154,11 +148,11 @@ void IbUtil::initialize()
 		return;
 
 	// using firebird root (takes into an account environment settings)
-	if (tryLibrary(fb_utils::getPrefix(Firebird::DirType::FB_DIR_CONF, "lib/" LIBNAME), message[1]))
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_CONF, "lib/" LIBNAME), message[1]))
 		return;
 
 	// using libraries directory
-	if (tryLibrary(fb_utils::getPrefix(Firebird::DirType::FB_DIR_LIB, LIBNAME), message[2]))
+	if (tryLibrary(fb_utils::getPrefix(fb_utils::FB_DIR_LIB, LIBNAME), message[2]))
 		return;
 #endif // WIN_NT
 
@@ -170,6 +164,7 @@ void IbUtil::initialize()
 	gds__log("ib_util init failed, UDFs can't be used - looks like firebird misconfigured\n"
 			 "\t%s\n\t%s\n\t%s\n\t%s", message[0].c_str(), message[1].c_str(),
 									   message[2].c_str(), message[3].c_str());
+#endif	// !BOOT_BUILD
 }
 
 void* IbUtil::alloc(long size)
@@ -190,7 +185,7 @@ bool IbUtil::free(void* ptr)
 		return true;
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Attachment* attachment = tdbb->getAttachment();
 
 	size_t pos;
 	if (attachment->att_udf_pointers.find(ptr, pos))
@@ -207,9 +202,9 @@ bool IbUtil::free(void* ptr)
 typedef void* UDF_ARG;
 
 template <typename T>
-T CALL_UDF(Jrd::Attachment* att, int (*entrypoint)(), UDF_ARG* args)
+T CALL_UDF(Database* dbb, int (*entrypoint)(), UDF_ARG* args)
 {
-	Jrd::Attachment::Checkout attCout(att, FB_FUNCTION);
+	Database::Checkout dcoHolder(dbb);
 	return ((T (*)(UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG,
 		UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG, UDF_ARG))(entrypoint))
 		(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
@@ -217,6 +212,23 @@ T CALL_UDF(Jrd::Attachment* att, int (*entrypoint)(), UDF_ARG* args)
 }
 
 DATABASE DB = FILENAME "ODS.RDB";
+
+#define EXCEPTION_MESSAGE "The user defined function: \t%s\n\t   referencing entrypoint: \t%s\n\t                in module: \t%s\n\tcaused the fatal exception:"
+
+/* Blob passing structure */
+/* Updated definitions from the static functions shown below */
+
+struct udf_blob
+{
+	SSHORT (*blob_get_segment) (blb*, UCHAR*, USHORT, USHORT*);
+	void* blob_handle;
+	SLONG blob_number_segments;
+	SLONG blob_max_segment;
+	SLONG blob_total_length;
+	void (*blob_put_segment) (blb*, const UCHAR*, USHORT);
+	SLONG (*blob_seek) (blb*, USHORT, SLONG);
+};
+
 
 class OwnedBlobStack : public Stack<blb*>
 {
@@ -245,9 +257,9 @@ OwnedBlobStack::~OwnedBlobStack()
 		try
 		{
 			if (aux != m_blob_created)
-				aux->BLB_close(m_tdbb);
+				BLB_close(m_tdbb, aux);
 			else
-				aux->BLB_cancel(m_tdbb);
+				BLB_cancel(m_tdbb, aux);
 		}
 		catch (const Exception&)
 		{
@@ -269,11 +281,11 @@ void OwnedBlobStack::close()
 		if (aux != m_blob_created)
 		{
 			this->pop();
-			aux->BLB_close(m_tdbb);
+			BLB_close(m_tdbb, aux);
 		}
 		else
 		{
-			aux->BLB_close(m_tdbb);
+			BLB_close(m_tdbb, aux);
 			this->pop();
 		}
 	}
@@ -294,10 +306,10 @@ static void reRaiseExceptionFromUdf(thread_db* tdbb);
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
-static SLONG get_scalar_array(const Parameter*, DSC*, scalar_array_desc*, UCharStack&);
+static SLONG get_scalar_array(fun_repeat*, DSC*, scalar_array_desc*, UCharStack&);
 static void invoke(thread_db* tdbb,
-				   const Function* function,
-				   const Parameter* return_ptr,
+				   UserFunction* function,
+				   fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
@@ -306,8 +318,7 @@ static void invoke(thread_db* tdbb,
 static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to);
 
 
-void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArray& node,
-	impure_value* value)
+void FUN_evaluate(thread_db* tdbb, UserFunction* function, jrd_nod* node, impure_value* value)
 {
 /**************************************
  *
@@ -319,89 +330,88 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
  *	Evaluate a function.
  *
  **************************************/
+#ifndef BOOT_BUILD
 	// We may be in danger of AV in UDF if ib_util init failed
 	if (!initDone)
 	{
 		ERR_post(Arg::Gds(isc_random) << "ib_util init failed - UDF usage disabled");
 	}
+#endif
 
 	if (!function->fun_entrypoint)
 	{
 		Firebird::status_exception::raise(Arg::Gds(isc_funnotdef) <<
-										  Arg::Str(function->getName().toString()) <<
+										  Arg::Str(function->fun_name) <<
 										  Arg::Gds(isc_modnotfound));
 	}
-
-	SET_TDBB(tdbb);
-
-	Array<NestConst<Parameter> > allArgs;
-
-	{	// scope
-		const NestConst<Parameter>* end = function->getInputFields().end();
-		for (const NestConst<Parameter>* param = function->getInputFields().begin(); param != end; ++param)
-		{
-			allArgs.resize((*param)->prm_number + 1);
-			allArgs[(*param)->prm_number] = *param;
-		}
-
-		end = function->getOutputFields().end();
-		for (const NestConst<Parameter>* param = function->getOutputFields().begin(); param != end; ++param)
-		{
-			if ((*param)->prm_number != 0)
-			{
-				allArgs.resize((*param)->prm_number + 1);
-				allArgs[(*param)->prm_number] = *param;
-			}
-		}
-	}
-
-	const Parameter* return_ptr = function->getOutputFields()[0];
-
-	jrd_req* request = tdbb->getRequest();
-	// CVC: restoring the null flag seems like a Borland hack to try to
-	// patch a bug with null handling. There's no evident reason to restore it
-	// because EVL_expr() resets it every time it's called.	Kept it for now.
-	const bool null_flag = ((request->req_flags & req_null) == req_null);
-
-	UCharStack array_stack;
-
-	// Trap any potential errors
-
-	try {
 
 	UDF_ARG args[MAX_UDF_ARGUMENTS + 1];
 	HalfStaticArray<UCHAR, 800> temp;
 
+	SET_TDBB(tdbb);
+
 	// Start by constructing argument list
 	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + FB_DOUBLE_ALIGN);
 	MOVE_CLEAR(temp_ptr, temp.getCount());
-	temp_ptr = (UCHAR *) FB_ALIGN((U_IPTR) temp_ptr, FB_DOUBLE_ALIGN);
+	temp_ptr = (UCHAR*) FB_ALIGN((U_IPTR) temp_ptr, FB_DOUBLE_ALIGN);
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
 	//Stack<blb*> blob_stack;
 	//blb* blob_created = 0;
 	OwnedBlobStack blob_stack(tdbb);
+	UCharStack array_stack;
 
-	const NestConst<ValueExprNode>* ptr = node.begin();
+	jrd_req* request = tdbb->getRequest();
+	// CVC: restoring the null flag seems like a Borland hack to try to
+	// patch a bug with null handling. There's no evident reason to restore it
+	// because EVL_expr() resets it every time it's called.	Kept it for now.
+	const bool null_flag	= ((request->req_flags & req_null) == req_null);
+
+	fun_repeat*	return_ptr = function->fun_rpt + function->fun_return_arg;
+	jrd_nod** ptr = node->nod_arg;
+
+	value->vlu_desc = return_ptr->fun_desc;
+	value->vlu_desc.dsc_address = (UCHAR *) & value->vlu_misc;
+
+// Trap any potential errors
+
+	try {
+
+	// If the return data type is any of the string types,
+	// allocate space to hold value
+
+	if (value->vlu_desc.dsc_dtype <= dtype_varying)
+	{
+		const USHORT ret_length = value->vlu_desc.dsc_length;
+		VaryingString* string = value->vlu_string;
+		if (string && string->str_length < ret_length)
+		{
+			delete string;
+			string = NULL;
+		}
+		if (!string)
+		{
+			string = FB_NEW_RPT(*tdbb->getDefaultPool(), ret_length) VaryingString;
+			string->str_length = ret_length;
+			value->vlu_string = string;
+		}
+		value->vlu_desc.dsc_address = string->str_data;
+	}
 
 	// We'll use to this trick to give the UDF a way to signal
 	// "I sent a null blob" when not using descriptors.
 	udf_blob* return_blob_struct = 0;
 
 	DSC temp_desc;
-	double d;
+	double  d;
 
 	// Process arguments
-	const NestConst<Parameter>* const end = allArgs.end();
-	for (const NestConst<Parameter>* tail = allArgs.begin(); tail != end; ++tail)
+	const fun_repeat* const end = function->fun_rpt + 1 + function->fun_count;
+	for (fun_repeat* tail = function->fun_rpt + 1; tail < end; ++tail)
 	{
-		const Parameter* parameter = *tail;
-		if (!parameter)
-			continue;
-
 		DSC* input;
-		if (*tail == return_ptr)
+		if (tail == return_ptr)
 		{
 			input = &value->vlu_desc; // (DSC*) value;
 			// CVC: The return param we build for the UDF is not null!!!
@@ -409,12 +419,14 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			request->req_flags &= ~req_null;
 		}
 		else
-			input = EVL_expr(tdbb, request, *ptr++);
+		{
+			input = EVL_expr(tdbb, *ptr++);
+		}
 
 		// If we're passing data type ISC descriptor, there's
 		// nothing left to be done
 
-		if (parameter->prm_fun_mechanism == FUN_descriptor)
+		if (tail->fun_mechanism == FUN_descriptor)
 		{
 			// CVC: We have to protect the UDF from Borland's ill null signaling
 			// See EVL_expr(...), case nod_field for reference: the request may be
@@ -433,7 +445,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			continue;
 		}
 
-		temp_desc = parameter->prm_desc;
+		temp_desc = tail->fun_desc;
 		temp_desc.dsc_address = temp_ptr;
 		// CVC: There's a theoretical possibility of overflowing "length" here.
 		USHORT length = FB_ALIGN(temp_desc.dsc_length, FB_DOUBLE_ALIGN);
@@ -442,7 +454,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 		if (!input || (request->req_flags & req_null))
 		{
-			if (parameter->prm_fun_mechanism == FUN_value)
+			if (tail->fun_mechanism == FUN_value)
 			{
 				UCHAR* p = (UCHAR *) arg_ptr;
 				MOVE_CLEAR(p, (SLONG) length);
@@ -451,18 +463,18 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 				continue;
 			}
 
-			if (parameter->prm_desc.dsc_dtype == dtype_blob)
+			if (tail->fun_desc.dsc_dtype == dtype_blob)
 			{
 				length = sizeof(udf_blob);
 			}
 
-			if (parameter->prm_fun_mechanism != FUN_ref_with_null)
+			if (tail->fun_mechanism != FUN_ref_with_null)
 				MOVE_CLEAR(temp_ptr, (SLONG) length);
 			else
 			{
 				// Probably for arrays and blobs it's better to preserve the
 				// current behavior that sends a zeroed memory chunk.
-				switch (parameter->prm_desc.dsc_dtype)
+				switch (tail->fun_desc.dsc_dtype)
 				{
 				case dtype_quad:
 				case dtype_array:
@@ -475,20 +487,20 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 				}
 			}
 		}
-		else if (parameter->prm_fun_mechanism == FUN_scalar_array)
+		else if (tail->fun_mechanism == FUN_scalar_array)
 		{
-			length = get_scalar_array(parameter, input, (scalar_array_desc*)temp_ptr, array_stack);
+			length = get_scalar_array(tail, input, (scalar_array_desc*)temp_ptr, array_stack);
 		}
 		else
 		{
 			SLONG l;
 			SLONG* lp;
-			switch (parameter->prm_desc.dsc_dtype)
+			switch (tail->fun_desc.dsc_dtype)
 			{
 			case dtype_short:
 				{
-					const SSHORT s = MOV_get_long(input, (SSHORT) parameter->prm_desc.dsc_scale);
-					if (parameter->prm_fun_mechanism == FUN_value)
+					const SSHORT s = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
+					if (tail->fun_mechanism == FUN_value)
 					{
 						// For (apparent) portability reasons, SHORT by value
 						// is always passed as a LONG.  See v3.2 release notes
@@ -500,16 +512,16 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 						continue;
 					}
 
-					SSHORT* sp = (SSHORT*) temp_ptr;
+					SSHORT* sp = (SSHORT *) temp_ptr;
 					*sp = s;
 				}
 				break;
 
 			case dtype_long:
-				l = MOV_get_long(input, (SSHORT) parameter->prm_desc.dsc_scale);
-				if (parameter->prm_fun_mechanism == FUN_value)
+				l = MOV_get_long(input, (SSHORT) tail->fun_desc.dsc_scale);
+				if (tail->fun_mechanism == FUN_value)
 				{
-					*arg_ptr++ = (UDF_ARG)(IPTR) l;
+					*arg_ptr++ = (UDF_ARG)(IPTR)l;
 					continue;
 				}
 				lp = (SLONG *) temp_ptr;
@@ -518,7 +530,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 			case dtype_sql_time:
 				l = MOV_get_sql_time(input);
-				if (parameter->prm_fun_mechanism == FUN_value)
+				if (tail->fun_mechanism == FUN_value)
 				{
 					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
@@ -529,7 +541,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 			case dtype_sql_date:
 				l = MOV_get_sql_date(input);
-				if (parameter->prm_fun_mechanism == FUN_value)
+				if (tail->fun_mechanism == FUN_value)
 				{
 					*arg_ptr++ = (UDF_ARG)(IPTR) l;
 					continue;
@@ -541,16 +553,16 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_int64:
 				{
 					SINT64* pi64;
-					const SINT64 i64 = MOV_get_int64(input, (SSHORT) parameter->prm_desc.dsc_scale);
+					const SINT64 i64 = MOV_get_int64(input, (SSHORT) tail->fun_desc.dsc_scale);
 
-					if (parameter->prm_fun_mechanism == FUN_value)
+					if (tail->fun_mechanism == FUN_value)
 					{
-						pi64 = (SINT64*) arg_ptr;
+						pi64 = (SINT64 *) arg_ptr;
 						*pi64++ = i64;
 						arg_ptr = reinterpret_cast<UDF_ARG*>(pi64);
 						continue;
 					}
-					pi64 = (SINT64*) temp_ptr;
+					pi64 = (SINT64 *) temp_ptr;
 					*pi64 = i64;
 				}
 				break;
@@ -558,7 +570,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_real:
 				{
 					const float f = (float) MOV_get_double(input);
-					if (parameter->prm_fun_mechanism == FUN_value)
+					if (tail->fun_mechanism == FUN_value)
 					{
 						// For (apparent) portability reasons, FLOAT by value
 						// is always passed as a DOUBLE.  See v3.2 release notes
@@ -579,14 +591,14 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_double:
 				d = MOV_get_double(input);
 				double* dp;
-				if (parameter->prm_fun_mechanism == FUN_value)
+				if (tail->fun_mechanism == FUN_value)
 				{
-					dp = (double*) arg_ptr;
+					dp = (double *) arg_ptr;
 					*dp++ = d;
 					arg_ptr = reinterpret_cast<UDF_ARG*>(dp);
 					continue;
 				}
-				dp = (double*) temp_ptr;
+				dp = (double *) temp_ptr;
 				*dp = d;
 				break;
 
@@ -594,7 +606,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			case dtype_dbkey:
 			case dtype_cstring:
 			case dtype_varying:
-				if (*tail == return_ptr)
+				if (tail == return_ptr)
 				{
 					//temp_ptr = value->vlu_desc.dsc_address;
 					//length = 0;
@@ -609,7 +621,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			//		by value and the other way is to force the user to pass a dummy value as
 			//		an argument to keep the engine happy. So, here's the hack.
 			case dtype_timestamp:
-			    if (*tail == return_ptr)
+			    if (tail == return_ptr)
 				{
 					//temp_ptr = value->vlu_desc.dsc_address;
 					//length = sizeof(GDS_TIMESTAMP);
@@ -631,9 +643,9 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 					udf_blob* blob_desc = (udf_blob*) temp_ptr;
 					blb* blob;
 					length = sizeof(udf_blob);
-					if (*tail == return_ptr)
+					if (tail == return_ptr)
 					{
-						blob = blb::create(tdbb, tdbb->getRequest()->req_transaction,
+						blob = BLB_create(tdbb, tdbb->getRequest()->req_transaction,
 										  (bid*) &value->vlu_misc);
 						return_blob_struct = blob_desc;
 						blob_stack.setBlobCreated(blob);
@@ -654,28 +666,17 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 							}
 							blob_id = *(bid*) input->dsc_address;
 						}
-						blob = blb::open(tdbb, tdbb->getRequest()->req_transaction, &blob_id);
+						blob = BLB_open(tdbb, tdbb->getRequest()->req_transaction, &blob_id);
 					}
 					blob_stack.push(blob);
 					blob_desc->blob_get_segment = blob_get_segment;
 					blob_desc->blob_put_segment = blob_put_segment;
 					blob_desc->blob_seek = blob_lseek;
 					blob_desc->blob_handle = blob;
-					blob_desc->blob_number_segments = blob->getSegmentCount();
-					blob_desc->blob_max_segment = blob->getMaxSegment();
+					blob_desc->blob_number_segments = blob->blb_count;
+					blob_desc->blob_max_segment = blob->blb_max_segment;
 					blob_desc->blob_total_length = blob->blb_length;
 				}
-				break;
-
-			case dtype_boolean:
-				l = (SLONG) MOV_get_boolean(input);
-				if (parameter->prm_fun_mechanism == FUN_value)
-				{
-					*arg_ptr++ = (UDF_ARG)(IPTR) l;
-					continue;
-				}
-				lp = (SLONG*) temp_ptr;
-				*lp = l;
 				break;
 
 			default:
@@ -735,14 +736,12 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 			if (isinf(value->vlu_misc.vlu_double))
 			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_udf_fp_overflow) <<
-									Arg::Str(function->getName().toString()));
+									Arg::Gds(isc_udf_fp_overflow) << Arg::Str(function->fun_name));
 			}
 			else if (isnan(value->vlu_misc.vlu_double))
 			{
 				status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
-									Arg::Gds(isc_udf_fp_nan) <<
-									Arg::Str(function->getName().toString()));
+									Arg::Gds(isc_udf_fp_nan) << Arg::Str(function->fun_name));
 			}
 		}
 		request->req_flags &= ~req_null;
@@ -771,6 +770,179 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 }
 
 
+UserFunction* FUN_lookup_function(thread_db* tdbb, const MetaName& name) //, bool ShowAccessError)
+{
+/**************************************
+ *
+ *	F U N _ l o o k u p _ f u n c t i o n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Lookup function by name.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+	Database* dbb = tdbb->getDatabase();
+
+	UserFunction* function = NULL;
+	if (dbb->dbb_functions.get(name, function))
+		return function;
+
+	fun_repeat temp[MAX_UDF_ARGUMENTS + 1];
+	UserFunction* prior = NULL;
+
+	jrd_req* request_fun = CMP_find_request(tdbb, irq_l_functions, IRQ_REQUESTS);
+	jrd_req* request_arg = CMP_find_request(tdbb, irq_l_args, IRQ_REQUESTS);
+
+	FOR(REQUEST_HANDLE request_fun)
+		X IN RDB$FUNCTIONS
+		WITH X.RDB$FUNCTION_NAME EQ name.c_str()
+
+		if (!REQUEST(irq_l_functions))
+			REQUEST(irq_l_functions) = request_fun;
+
+		USHORT count = 0;
+		USHORT args = 0;
+
+		MOVE_CLEAR(temp, (SLONG) sizeof(temp));
+		ULONG length = 0;
+
+		FOR(REQUEST_HANDLE request_arg)
+			Y IN RDB$FUNCTION_ARGUMENTS
+			WITH Y.RDB$FUNCTION_NAME EQ X.RDB$FUNCTION_NAME
+			SORTED BY Y.RDB$ARGUMENT_POSITION
+
+			if (!REQUEST(irq_l_args))
+				REQUEST(irq_l_args) = request_arg;
+
+			fun_repeat* tail = temp + Y.RDB$ARGUMENT_POSITION;
+			tail->fun_mechanism = (FUN_T) Y.RDB$MECHANISM;
+			count = MAX(count, Y.RDB$ARGUMENT_POSITION);
+			DSC_make_descriptor(&tail->fun_desc, Y.RDB$FIELD_TYPE,
+								Y.RDB$FIELD_SCALE, Y.RDB$FIELD_LENGTH,
+								Y.RDB$FIELD_SUB_TYPE, Y.RDB$CHARACTER_SET_ID,
+								0);
+
+			if (tail->fun_desc.dsc_dtype == dtype_cstring)
+				tail->fun_desc.dsc_length++;
+
+			if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
+				++args;
+
+			USHORT l = FB_ALIGN(tail->fun_desc.dsc_length, FB_DOUBLE_ALIGN);
+
+			if (tail->fun_desc.dsc_dtype == dtype_blob)
+				l = sizeof(udf_blob);
+
+			length += l;
+        END_FOR;
+
+		function = FB_NEW_RPT(*dbb->dbb_permanent, count + 1) UserFunction(*dbb->dbb_permanent);
+		function->fun_name = X.RDB$FUNCTION_NAME;
+		function->fun_count = count;
+		function->fun_args = args;
+		function->fun_return_arg = X.RDB$RETURN_ARGUMENT;
+		function->fun_type = X.RDB$FUNCTION_TYPE;
+		function->fun_temp_length = length;
+		memcpy(function->fun_rpt, temp, (count + 1) * sizeof(fun_repeat));
+
+		// Prepare the exception message to be used in case this function ever
+		// causes an exception.  This is done at this time to save us from preparing
+		// (thus allocating) this message every time the function is called.
+		function->fun_exception_message.printf(EXCEPTION_MESSAGE, name.c_str(),
+			X.RDB$ENTRYPOINT, X.RDB$MODULE_NAME);
+
+		function->fun_entrypoint =
+			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
+
+		// Could not find a function with given MODULE, ENTRYPOINT.
+		// Try the list of internally implemented functions.
+		if (!function->fun_entrypoint)
+		{
+			function->fun_entrypoint = BUILTIN_entrypoint(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT);
+		}
+
+		// ASF: All the places handling fun_homonym is something that doesn't work really.
+		// Our current system table rdb$function_arguments doesn't support overloaded
+		// functions as it has a rdb$function_name column instead of an ID.
+		if (prior)
+		{
+			function->fun_homonym = prior->fun_homonym;
+			prior->fun_homonym = function;
+		}
+		else
+		{
+			prior = function;
+			dbb->dbb_functions.put(name, function);
+		}
+	END_FOR;
+
+	if (!REQUEST(irq_l_functions))
+		REQUEST(irq_l_functions) = request_fun;
+	if (!REQUEST(irq_l_args))
+		REQUEST(irq_l_args) = request_arg;
+
+	return prior;
+}
+
+
+UserFunction* FUN_resolve(thread_db* tdbb, CompilerScratch* csb, UserFunction* function, jrd_nod* args)
+{
+/**************************************
+ *
+ *	F U N _ r e s o l v e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Resolve instance of potentially overloaded function.
+ *
+ **************************************/
+	DSC arg;
+
+	SET_TDBB(tdbb);
+
+	UserFunction* best = NULL;
+	int best_score = 0;
+	const jrd_nod* const* const end = args->nod_arg + args->nod_count;
+
+	for (; function; function = function->fun_homonym)
+	{
+		if (function->fun_entrypoint && function->fun_args == args->nod_count)
+		{
+			int score = 0;
+			jrd_nod** ptr;
+			const fun_repeat* tail;
+
+			for (ptr = args->nod_arg, tail = function->fun_rpt + 1; ptr < end; ptr++, tail++)
+			{
+				CMP_get_desc(tdbb, csb, *ptr, &arg);
+				if (tail->fun_mechanism == FUN_descriptor)
+					score += 10;
+				else if (tail->fun_desc.dsc_dtype == dtype_blob || arg.dsc_dtype == dtype_blob)
+				{
+					score = 0;
+					break;
+				}
+				else if (tail->fun_desc.dsc_dtype >= arg.dsc_dtype)
+					score += 10 - (arg.dsc_dtype - tail->fun_desc.dsc_dtype);
+				else
+					score += 1;
+			}
+
+			if (!best || score > best_score)
+			{
+				best_score = score;
+				best = function;
+			}
+		}
+	}
+
+	return best;
+}
+
+
 static void handleUdfException(const Exception& ex)
 {
 /****************************************
@@ -781,7 +953,7 @@ static void handleUdfException(const Exception& ex)
  *
  * Functional description
  *	When exception happens in UDF we have
- *	no better choice than store it in
+ *	no better choice then store it in
  *	tdbb_status_vector and raise again
  *	on return from UDF.
  *
@@ -802,7 +974,7 @@ static void reRaiseExceptionFromUdf(thread_db* tdbb)
  *
  * Functional description
  *	When exception happens in UDF we have
- *	no better choice than store it in
+ *	no better choice then store it in
  *	tdbb_status_vector and raise again
  *	on return from UDF.
  *
@@ -831,9 +1003,9 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
 	try
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+		Database::SyncGuard dsGuard(tdbb->getDatabase());
 
-		return blob->BLB_lseek(mode, offset);
+		return BLB_lseek(blob, mode, offset);
 	}
 	catch (const Exception& ex)
 	{
@@ -859,9 +1031,9 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
 	try
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+		Database::SyncGuard dsGuard(tdbb->getDatabase());
 
-		blob->BLB_put_segment(tdbb, buffer, length);
+		BLB_put_segment(tdbb, blob, buffer, length);
 	}
 	catch (const Exception& ex)
 	{
@@ -890,14 +1062,14 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 	try
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+		Database::SyncGuard dsGuard(tdbb->getDatabase());
 
-		*return_length = blob->BLB_get_segment(tdbb, buffer, length);
+		*return_length = BLB_get_segment(tdbb, blob, buffer, length);
 
 		if (blob->blb_flags & BLB_eof)
 			return 0;
 
-		if (blob->getFragmentSize())
+		if (blob->blb_fragment_size)
 			return -1;
 
 		return 1;
@@ -910,7 +1082,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 }
 
 
-static SLONG get_scalar_array(const Parameter* arg,
+static SLONG get_scalar_array(fun_repeat*	arg,
 							  DSC*	value,
 							  scalar_array_desc*	scalar_desc,
 							  UCharStack&	stack)
@@ -933,24 +1105,23 @@ static SLONG get_scalar_array(const Parameter* arg,
 
 	SLONG stuff[IAD_LEN(16) / 4];
 	Ods::InternalArrayDesc* array_desc = (Ods::InternalArrayDesc*) stuff;
-	blb* blob = blb::get_array(tdbb, tdbb->getRequest()->req_transaction, (bid*)value->dsc_address,
+	blb* blob = BLB_get_array(tdbb, tdbb->getRequest()->req_transaction, (bid*)value->dsc_address,
 							  array_desc);
 
-	fb_assert(array_desc->iad_total_length >= 0); // check before upcasting to size_t
-	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(array_desc->iad_total_length)];
-	blob->BLB_get_data(tdbb, data, array_desc->iad_total_length);
+	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[array_desc->iad_total_length];
+	BLB_get_data(tdbb, blob, data, array_desc->iad_total_length);
 	const USHORT dimensions = array_desc->iad_dimensions;
 
 	// Convert array, if necessary
 
-	dsc to = arg->prm_desc;
+	dsc to = arg->fun_desc;
 	dsc from = array_desc->iad_rpt[0].iad_desc;
 
 	if (to.dsc_dtype != from.dsc_dtype ||
 		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length)
 	{
 		SLONG n = array_desc->iad_count;
-		UCHAR* const temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(to.dsc_length * n)];
+		UCHAR* const temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[(SLONG) to.dsc_length * n];
 		to.dsc_address = temp;
 		from.dsc_address = data;
 
@@ -977,7 +1148,7 @@ static SLONG get_scalar_array(const Parameter* arg,
 	// Fill out the scalar array descriptor
 
 	stack.push(data);
-	scalar_desc->sad_desc = arg->prm_desc;
+	scalar_desc->sad_desc = arg->fun_desc;
 	scalar_desc->sad_desc.dsc_address = data;
 	scalar_desc->sad_dimensions = dimensions;
 
@@ -990,13 +1161,13 @@ static SLONG get_scalar_array(const Parameter* arg,
 		tail2->sad_lower = tail1->iad_lower;
 	}
 
-	return static_cast<SLONG>(sizeof(scalar_array_desc) + (dimensions - 1u) * sizeof(scalar_array_desc::sad_repeat));
+	return sizeof(scalar_array_desc) + (dimensions - 1) * sizeof(scalar_array_desc::sad_repeat);
 }
 
 
 static void invoke(thread_db* tdbb,
-				   const Function* function,
-				   const Parameter* return_ptr,
+				   UserFunction* function,
+				   fun_repeat* return_ptr,
 				   impure_value* value,
 				   UDF_ARG* args,
 				   const udf_blob* const return_blob_struct,
@@ -1015,7 +1186,7 @@ static void invoke(thread_db* tdbb,
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* att = tdbb->getAttachment();
+	Database* dbb = tdbb->getDatabase();
 
 	// Get ready to accept exceptions from API called from UDF
 	fb_utils::init_status(tdbb->tdbb_status_vector);
@@ -1023,13 +1194,13 @@ static void invoke(thread_db* tdbb,
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
-		CALL_UDF<void>(att, function->fun_entrypoint, args);
-		result_is_null = return_ptr->prm_fun_mechanism == FUN_descriptor &&
+		CALL_UDF<void>(dbb, function->fun_entrypoint, args);
+		result_is_null = return_ptr->fun_mechanism == FUN_descriptor &&
 			(value->vlu_desc.dsc_flags & DSC_null) ||
-			return_ptr->prm_fun_mechanism == FUN_blob_struct && return_blob_struct &&
+			return_ptr->fun_mechanism == FUN_blob_struct && return_blob_struct &&
 			!return_blob_struct->blob_handle;
 	}
-	else if (return_ptr->prm_fun_mechanism == FUN_value)
+	else if (return_ptr->fun_mechanism == FUN_value)
 	{
 		result_is_null = false;
 
@@ -1038,7 +1209,7 @@ static void invoke(thread_db* tdbb,
 		case dtype_sql_time:
 		case dtype_sql_date:
 		case dtype_long:
-			value->vlu_misc.vlu_long = CALL_UDF<SLONG>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_long = CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_short:
@@ -1046,7 +1217,7 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a LONG.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_short = (SSHORT) CALL_UDF<SLONG>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_short = (SSHORT) CALL_UDF<SLONG>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_real:
@@ -1054,15 +1225,15 @@ static void invoke(thread_db* tdbb,
 			// must always be returned as a DOUBLE.  See v3.2 release notes
 			// 1994-September-28 David Schnepper
 
-			value->vlu_misc.vlu_float = (float) CALL_UDF<double>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_float = (float) CALL_UDF<double>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_int64:
-			value->vlu_misc.vlu_int64 = CALL_UDF<SINT64>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_int64 = CALL_UDF<SINT64>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_double:
-			value->vlu_misc.vlu_double = CALL_UDF<double>(att, function->fun_entrypoint, args);
+			value->vlu_misc.vlu_double = CALL_UDF<double>(dbb, function->fun_entrypoint, args);
 			break;
 
 		case dtype_timestamp:
@@ -1073,7 +1244,7 @@ static void invoke(thread_db* tdbb,
 	}
 	else
 	{
-		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(att, function->fun_entrypoint, args);
+		UCHAR* temp_ptr = CALL_UDF<UCHAR*>(dbb, function->fun_entrypoint, args);
 
 		if (temp_ptr != NULL)
 		{
@@ -1082,7 +1253,7 @@ static void invoke(thread_db* tdbb,
 			//		convert it to the declared return type of the UDF.
 			dsc* return_dsc = 0;
 			result_is_null = false;
-			if ((FUN_T) abs(return_ptr->prm_fun_mechanism) == FUN_descriptor)
+			if ((FUN_T) abs(return_ptr->fun_mechanism) == FUN_descriptor)
 			{
 				// The formal param's type is contained in value->vlu_desc.dsc_dtype
 				// but I want to know if the UDF changed it to a compatible type
@@ -1093,7 +1264,7 @@ static void invoke(thread_db* tdbb,
 					result_is_null = true;
 			}
 
-			const bool must_free = (SLONG) return_ptr->prm_fun_mechanism < 0;
+			const bool must_free = (SLONG) return_ptr->fun_mechanism < 0;
 
 			if (result_is_null)
 				; // nothing to do
@@ -1115,7 +1286,7 @@ static void invoke(thread_db* tdbb,
 					break;
 
 				case dtype_long:
-					value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
+						value->vlu_misc.vlu_long = *(SLONG *) temp_ptr;
 					break;
 
 				case dtype_short:
@@ -1146,7 +1317,7 @@ static void invoke(thread_db* tdbb,
 					// the string after the first zero octet copied.
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					temp_desc.dsc_length = static_cast<USHORT>(strlen(reinterpret_cast<char*>(temp_ptr)) + 1);
+					temp_desc.dsc_length = strlen(reinterpret_cast<char*>(temp_ptr)) + 1;
 					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
 						udfError = UeMove;
 					break;
@@ -1154,7 +1325,7 @@ static void invoke(thread_db* tdbb,
 				case dtype_varying:
 					temp_desc = value->vlu_desc;
 					temp_desc.dsc_address = temp_ptr;
-					temp_desc.dsc_length = static_cast<USHORT>(reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT));
+					temp_desc.dsc_length = reinterpret_cast<vary*>(temp_ptr)->vary_length + sizeof(USHORT);
 					if (!private_move(tdbb, &temp_desc, &value->vlu_desc))
 						udfError = UeMove;
 					break;

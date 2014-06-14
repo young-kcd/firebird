@@ -57,6 +57,8 @@ static inline DESC GBAK_STDOUT_DESC()
 	return 1;	// standard output file descriptor
 }
 
+const int INVALID_HANDLE_VALUE = -1;
+
 #endif //WIN_NT
 
 typedef DESC FILE_DESC;

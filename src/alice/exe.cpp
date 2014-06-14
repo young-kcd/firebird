@@ -37,13 +37,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 #include "../alice/alice.h"
 #include "../alice/alice_proto.h"
-#include "../common/classes/Switches.h"
 #include "../alice/aliceswi.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 
@@ -202,7 +202,7 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 	dpb.reset(isc_dpb_version1);
 	dpb.insertTag(isc_dpb_gfix_attach);
-	tdgbl->uSvc->fillDpb(dpb);
+	tdgbl->uSvc->getAddressPath(dpb);
 
 	if (switches & sw_sweep) {
 		dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
@@ -323,51 +323,35 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 		dpb.insertInt(isc_dpb_set_db_sql_dialect, tdgbl->ALICE_data.ua_db_SQL_dialect);
 	}
 
-	if (switches & sw_nolinger)
-		dpb.insertTag(isc_dpb_nolinger);
-
-	const unsigned char* authBlock;
-	unsigned int authBlockSize = tdgbl->uSvc->getAuthBlock(&authBlock);
-
-	if (authBlockSize)
+	if (tdgbl->ALICE_data.ua_user)
 	{
-		dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
+		dpb.insertString(isc_dpb_user_name,
+						 tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
 	}
-	else
+	if (tdgbl->ALICE_data.ua_password)
 	{
-		if (tdgbl->ALICE_data.ua_user)
-		{
-			dpb.insertString(isc_dpb_user_name,
-							 tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
-		}
-
-		if (tdgbl->ALICE_data.ua_password)
-		{
-			dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
-		}
-
-		if (tdgbl->ALICE_data.ua_tr_user)
-		{
-			tdgbl->uSvc->checkService();
-			dpb.insertString(isc_dpb_trusted_auth,
-							 tdgbl->ALICE_data.ua_tr_user, strlen(tdgbl->ALICE_data.ua_tr_user));
-		}
-
-		if (tdgbl->ALICE_data.ua_tr_role)
-		{
-			tdgbl->uSvc->checkService();
-			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-		}
-
+		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
+						 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
+	}
+	if (tdgbl->ALICE_data.ua_tr_user)
+	{
+		tdgbl->uSvc->checkService();
+		dpb.insertString(isc_dpb_trusted_auth,
+						 tdgbl->ALICE_data.ua_tr_user, strlen(tdgbl->ALICE_data.ua_tr_user));
+	}
+	if (tdgbl->ALICE_data.ua_tr_role)
+	{
+		tdgbl->uSvc->checkService();
+		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+	}
 #ifdef TRUSTED_AUTH
-		if (tdgbl->ALICE_data.ua_trusted)
-		{
-			if (!dpb.find(isc_dpb_trusted_auth))
-				dpb.insertTag(isc_dpb_trusted_auth);
+	if (tdgbl->ALICE_data.ua_trusted)
+	{
+		if (!dpb.find(isc_dpb_trusted_auth)) {
+			dpb.insertTag(isc_dpb_trusted_auth);
 		}
-#endif
 	}
+#endif
 }
 
 

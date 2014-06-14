@@ -80,26 +80,11 @@
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\intl\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\intl\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\intl\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\intl\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fbintl</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fbintl</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">fbintl</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">fbintl</TargetName>
+    <TargetName>fb$(ProjectName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -112,6 +97,7 @@
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>../../../src/include;../../../src/include/gen;../../../extern/icu/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -120,8 +106,8 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\$(ProjectName)\fb$(ProjectName).dll</OutputFile>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;icuuc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <TargetName>fb$(ProjectName).dll</TargetName>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/$(Configuration)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -139,6 +125,7 @@
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <AdditionalIncludeDirectories>../../../src/include;../../../src/include/gen;../../../extern/icu/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;INTL_EXPORTS;WINDOWS_ONLY;SUPERCLIENT;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -147,8 +134,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\$(ProjectName)\fb$(ProjectName).dll</OutputFile>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;icuuc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/$(Configuration)/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -164,6 +150,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../../src/include;../../../src/include/gen;../../../extern/icu/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;DEV_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -172,8 +159,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\$(ProjectName)\fb$(ProjectName).dll</OutputFile>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;icuuc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/release/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -188,6 +174,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../../src/include;../../../src/include/gen;../../../extern/icu/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;WINDOWS_ONLY;SUPERCLIENT;WIN32;DEV_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -196,8 +183,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\$(ProjectName)\fb$(ProjectName).dll</OutputFile>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;icuuc.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../../extern/icu/$(Platform)/release/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -206,6 +192,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\jrd\CharSet.cpp" />
     <ClCompile Include="..\..\..\src\intl\cs_big5.cpp" />
     <ClCompile Include="..\..\..\src\intl\cs_gb2312.cpp" />
     <ClCompile Include="..\..\..\src\intl\cs_icu.cpp" />
@@ -221,7 +208,7 @@
     <ClCompile Include="..\..\..\src\intl\cv_ksc.cpp" />
     <ClCompile Include="..\..\..\src\intl\cv_narrow.cpp" />
     <ClCompile Include="..\..\..\src\intl\cv_unicode_fss.cpp" />
-    <ClCompile Include="..\..\..\src\intl\kanji.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_ascii.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_big5.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_dos.cpp" />
@@ -235,6 +222,31 @@
     <ClCompile Include="..\..\..\src\intl\lc_narrow.cpp" />
     <ClCompile Include="..\..\..\src\intl\lc_unicode_ucs2.cpp" />
     <ClCompile Include="..\..\..\src\intl\ld.cpp" />
+    <ClCompile Include="..\..\..\src\common\dllinst.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\gds.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\IntlUtil.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\os\win32\mod_loader.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\unicode_util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\jrd\CharSet.h" />
+    <ClInclude Include="..\..\..\src\intl\charsets.h" />
+    <ClInclude Include="..\..\..\src\intl\country_codes.h" />
+    <ClInclude Include="..\..\..\src\intl\cs_icu.h" />
+    <ClInclude Include="..\..\..\src\intl\cv_icu.h" />
+    <ClInclude Include="..\..\..\src\jrd\gds_proto.h" />
+    <ClInclude Include="..\..\..\src\jrd\IntlUtil.h" />
+    <ClInclude Include="..\..\..\src\jrd\isc_proto.h" />
+    <ClInclude Include="..\..\..\src\intl\kanji.h" />
+    <ClInclude Include="..\..\..\src\intl\kanji_proto.h" />
+    <ClInclude Include="..\..\..\src\intl\lc_icu.h" />
+    <ClInclude Include="..\..\..\src\intl\ld.h" />
+    <ClInclude Include="..\..\..\src\intl\ld_proto.h" />
+    <ClInclude Include="..\..\..\src\intl\ldcommon.h" />
+    <ClInclude Include="..\..\..\src\jrd\os\mod_loader.h" />
+    <ClInclude Include="..\..\..\src\jrd\os\os_utils.h" />
+    <ClInclude Include="..\..\..\src\jrd\unicode_util.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
@@ -250,22 +262,8 @@
   <ItemGroup>
     <ProjectReference Include="common.vcxproj">
       <Project>{15605f44-bffd-444f-ad4c-55dc9d704465}</Project>
-      <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <LinkLibraryDependencies>true</LinkLibraryDependencies>
-      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
     </ProjectReference>
-    <ProjectReference Include="yvalve.vcxproj">
-      <Project>{4fe03933-98cd-4879-a135-fd9430087a6b}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\intl\charsets.h" />
-    <ClInclude Include="..\..\..\src\intl\country_codes.h" />
-    <ClInclude Include="..\..\..\src\intl\ld.h" />
-    <ClInclude Include="..\..\..\src\intl\ldcommon.h" />
-    <ClInclude Include="..\..\..\src\intl\ld_proto.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

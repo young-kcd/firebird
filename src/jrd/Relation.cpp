@@ -10,20 +10,19 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Vlad Khorsun
+ *  The Original Code was created by Vlad Horsun
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2005 Vlad Khorsun <hvlad@users.sourceforge.net>
+ *  Copyright (c) 2005 Vlad Horsun <hvlad@users.sourceforge.net>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
  *  Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
 #include "../jrd/Relation.h"
-
 #include "../jrd/tra.h"
+
 #include "../jrd/btr_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/idx_proto.h"
@@ -33,23 +32,98 @@
 
 using namespace Jrd;
 
-/// jrd_rel
+#ifdef GARBAGE_THREAD
 
-RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool allocPages)
+void RelationGarbage::clear()
+{
+	TranGarbage *item = array.begin(), *const last = array.end();
+
+	for (; item < last; item++)
+	{
+		delete item->bm;
+		item->bm = NULL;
+	}
+
+	array.clear();
+}
+
+void RelationGarbage::addPage(MemoryPool* pool, const SLONG pageno, const SLONG tranid)
+{
+	bool found = false;
+	TranGarbage const *item = array.begin(), *const last = array.end();
+
+	for (; item < last; item++)
+	{
+		if (item->tran <= tranid)
+		{
+			if (PageBitmap::test(item->bm, pageno))
+			{
+				found = true;
+				break;
+			}
+		}
+		else
+		{
+			if (item->bm->clear(pageno))
+				break;
+		}
+	}
+
+	if (!found)
+	{
+		PageBitmap *bm = NULL;
+		size_t pos = 0;
+
+		if (array.find(tranid, pos) )
+		{
+			bm = array[pos].bm;
+			PBM_SET(pool, &bm, pageno);
+		}
+		else
+		{
+			bm = NULL;
+			PBM_SET(pool, &bm, pageno);
+			array.add(TranGarbage(bm, tranid));
+		}
+	}
+}
+
+void RelationGarbage::getGarbage(const SLONG oldest_snapshot, PageBitmap **sbm)
+{
+	while (array.getCount() > 0)
+	{
+		TranGarbage& garbage = array[0];
+
+		if (garbage.tran >= oldest_snapshot)
+			break;
+
+		PageBitmap* bm_tran = garbage.bm;
+		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran);
+		if (*bm_or == garbage.bm)
+		{
+			bm_tran = *sbm;
+			*sbm = garbage.bm;
+			garbage.bm = bm_tran;
+		}
+		delete garbage.bm;
+
+		// Need to cast zero to exact type because literal zero means null pointer
+		array.remove(static_cast<size_t>(0));
+	}
+}
+
+#endif //GARBAGE_THREAD
+
+RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages)
 {
 	if (tdbb->tdbb_flags & TDBB_use_db_page_space)
 		return &rel_pages_base;
 
-	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
-
-	ULONG inst_id;
-	// Vlad asked for this compile-time check to make sure we can contain a txn number here
-	typedef int RangeCheck[sizeof(inst_id) >= sizeof(TraNumber)];
-
+	SLONG inst_id;
 	if (rel_flags & REL_temp_tran)
 	{
-		if (tran > 0 && tran != MAX_TRA_NUMBER) //if (tran > 0)
+		if (tran > 0)
 			inst_id = tran;
 		else if (tdbb->tdbb_temp_traid)
 			inst_id = tdbb->tdbb_temp_traid;
@@ -62,7 +136,10 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 		inst_id = PAG_attachment_id(tdbb);
 
 	if (!rel_pages_inst)
-		rel_pages_inst = FB_NEW(*rel_pool) RelationPagesInstances(*rel_pool);
+	{
+		MemoryPool& pool = *dbb->dbb_permanent;
+		rel_pages_inst = FB_NEW(pool) RelationPagesInstances(pool);
+	}
 
 	size_t pos;
 	if (!rel_pages_inst->find(inst_id, pos))
@@ -76,7 +153,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 			const size_t BULK_ALLOC = 8;
 
 			RelationPages* allocatedPages = newPages =
-				FB_NEW(*rel_pool) RelationPages[BULK_ALLOC];
+				FB_NEW(*dbb->dbb_permanent) RelationPages[BULK_ALLOC];
 
 			rel_pages_free = ++allocatedPages;
 			for (size_t i = 1; i < BULK_ALLOC - 1; i++, allocatedPages++)
@@ -99,25 +176,28 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 		DPM_create_relation_pages(tdbb, this, newPages);
 
 #ifdef VIO_DEBUG
-		VIO_trace(DEBUG_WRITES,
-			"jrd_rel::getPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
-			newPages->rel_instance_id,
-			newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
-			newPages->rel_index_root,
-			newPages);
+		if (debug_flag > DEBUG_WRITES)
+		{
+			printf("jrd_rel::getPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+				newPages->rel_instance_id,
+				newPages->rel_pages ? (*newPages->rel_pages)[0] : 0,
+				newPages->rel_index_root,
+				newPages);
+		}
 #endif
 
 		// create indexes
-		MemoryPool* pool = tdbb->getDefaultPool();
+		MemoryPool *pool = tdbb->getDefaultPool();
 		const bool poolCreated = !pool;
 
 		if (poolCreated)
 			pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, pool);
 
-		jrd_tra* idxTran = tdbb->getTransaction();
-		if (!idxTran)
-			idxTran = attachment->getSysTransaction();
+		jrd_tra *idx_tran = tdbb->getTransaction();
+		if (!idx_tran) {
+			idx_tran = dbb->dbb_sys_trans;
+		}
 
 		IndexDescAlloc* indices = NULL;
 		// read indices from "base" index root page
@@ -131,16 +211,18 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 
 			idx->idx_root = 0;
 			SelectivityList selectivity(*pool);
-			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, idxTran, selectivity);
+			IDX_create_index(tdbb, this, idx, idx_name.c_str(), NULL, idx_tran, selectivity);
 
 #ifdef VIO_DEBUG
-			VIO_trace(DEBUG_WRITES,
-				"jrd_rel::getPages inst %"ULONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
-				newPages->rel_instance_id,
-				newPages->rel_index_root,
-				idx->idx_id,
-				idx->idx_root,
-				newPages);
+			if (debug_flag > DEBUG_WRITES)
+			{
+				printf("jrd_rel::getPages inst %"SLONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
+					newPages->rel_instance_id,
+					newPages->rel_index_root,
+					idx->idx_id,
+					idx->idx_root,
+					newPages);
+			}
 #endif
 		}
 
@@ -156,15 +238,13 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 	return pages;
 }
 
-bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
+bool jrd_rel::delPages(thread_db* tdbb, SLONG tran, RelationPages* aPages)
 {
 	RelationPages* pages = aPages ? aPages : getPages(tdbb, tran, false);
 	if (!pages || !pages->rel_instance_id)
 		return false;
 
-	//fb_assert((tran <= 0) || ((tran > 0) && (pages->rel_instance_id == tran)));
-	fb_assert(tran == 0 || tran == MAX_TRA_NUMBER ||
-		(tran > 0 && pages->rel_instance_id == tran));
+	fb_assert((tran <= 0) || ((tran > 0) && (pages->rel_instance_id == tran)));
 
 	fb_assert(pages->useCount > 0);
 
@@ -172,12 +252,14 @@ bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
 		return false;
 
 #ifdef VIO_DEBUG
-	VIO_trace(DEBUG_WRITES,
-		"jrd_rel::delPages inst %"ULONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
-		pages->rel_instance_id,
-		pages->rel_pages ? (*pages->rel_pages)[0] : 0,
-		pages->rel_index_root,
-		pages);
+	if (debug_flag > DEBUG_WRITES)
+	{
+		printf("jrd_rel::delPages inst %"SLONGFORMAT", ppp %"SLONGFORMAT", irp %"SLONGFORMAT", addr 0x%x\n",
+			pages->rel_instance_id,
+			pages->rel_pages ? (*pages->rel_pages)[0] : 0,
+			pages->rel_index_root,
+			pages);
+	}
 #endif
 
 	size_t pos;
@@ -207,11 +289,11 @@ void jrd_rel::getRelLockKey(thread_db* tdbb, UCHAR* key)
 	memcpy(key, &val, sizeof(ULONG));
 	key += sizeof(ULONG);
 
-	const ULONG inst_id = getPages(tdbb)->rel_instance_id;
-	memcpy(key, &inst_id, sizeof(ULONG));
+	const SLONG inst_id = getPages(tdbb)->rel_instance_id;
+	memcpy(key, &inst_id, sizeof(SLONG));
 }
 
-USHORT jrd_rel::getRelLockKeyLength() const
+SSHORT jrd_rel::getRelLockKeyLength() const
 {
 	return sizeof(ULONG) + sizeof(SLONG);
 }
@@ -237,7 +319,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 				relPages->addRef();
 			}
 			else if ((rel_flags & REL_temp_conn) &&
-				(ULONG) PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id)
+				(PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id))
 			{
 				snapshot.add(relPages);
 				relPages->addRef();
@@ -273,7 +355,7 @@ void jrd_rel::RelPagesSnapshot::clear()
 		RelationPages* relPages = (*this)[i];
 		(*this)[i] = NULL;
 
-		spt_relation->delPages(spt_tdbb, MAX_TRA_NUMBER, relPages);
+		spt_relation->delPages(spt_tdbb, -1, relPages);
 	}
 
 	inherited::clear();
@@ -309,6 +391,5 @@ void RelationPages::free(RelationPages*& nextFree)
 		rel_pages->clear();
 
 	rel_index_root = rel_data_pages = 0;
-	rel_slot_space = rel_data_space = 0;
-	rel_instance_id = 0;
+	rel_slot_space = rel_data_space = rel_instance_id = 0;
 }

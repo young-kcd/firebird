@@ -33,6 +33,7 @@
 
 
 #include "firebird.h"
+#include "../../jrd/common.h"
 
 #ifdef HAVE_MATH_H
 #include <math.h>
@@ -68,7 +69,7 @@
 
 
 #ifdef HAVE_PTHREAD_H
-#include "fb_pthread.h"
+#include <pthread.h>
 #endif
 
 #include "../../jrd/ibase.h"

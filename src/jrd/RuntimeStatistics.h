@@ -27,9 +27,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/tree.h"
-
-struct TraceCounts;		// declared in ntrace.h
-struct PerformanceInfo;	// declared in ntrace.h
+#include "../jrd/ntrace.h"
 
 namespace Jrd {
 
@@ -37,39 +35,21 @@ namespace Jrd {
 // #define REL_COUNTS_TREE
 // #define REL_COUNTS_PTR
 
-class Attachment;
 class Database;
-
-//
-// Database record counters.
-//
-enum RelStatType
-{
-	DBB_read_seq_count	= 0,
-	DBB_read_idx_count,
-	DBB_update_count,
-	DBB_insert_count,
-	DBB_delete_count,
-	DBB_backout_count,
-	DBB_purge_count,
-	DBB_expunge_count,
-	DBB_lock_count,
-	DBB_max_count
-};
 
 // Performance counters for individual table
 struct RelationCounts
 {
 	SLONG rlc_relation_id;	// Relation ID
-	SINT64 rlc_counter[DBB_max_count];
+	SINT64 rlc_counter[DBB_max_rel_count];
 
 #ifdef REL_COUNTS_PTR
-	inline static const SLONG* generate(const RelationCounts* item)
+	inline static const SLONG* generate(const void* /*sender*/, const RelationCounts* item)
 	{
 		return &item->rlc_relation_id;
 	}
 #else
-	inline static const SLONG& generate(const RelationCounts& item)
+	inline static const SLONG& generate(const void* /*sender*/, const RelationCounts& item)
 	{
 		return item.rlc_relation_id;
 	}
@@ -107,7 +87,6 @@ public:
 		RECORD_BACKOUTS,
 		RECORD_PURGES,
 		RECORD_EXPUNGES,
-		RECORD_LOCKS,
 		SORTS,
 		SORT_GETS,
 		SORT_PUTS,
@@ -169,17 +148,11 @@ public:
 		++allChgNumber;
 	}
 
-	SINT64 getRelValue(const RelStatType index, SLONG relation_id) const
-	{
-		size_t pos;
-		return rel_counts.find(relation_id, pos) ? rel_counts[pos].rlc_counter[index] : 0;
-	}
-
-	void bumpRelValue(const RelStatType index, SLONG relation_id);
+	void bumpValue(const StatType index, SLONG relation_id);
 
 	// Calculate difference between counts stored in this object and current
 	// counts of given request. Counts stored in object are destroyed.
-	PerformanceInfo* computeDifference(Attachment* att, const RuntimeStatistics& new_stat,
+	PerformanceInfo* computeDifference(Database* dbb, const RuntimeStatistics& new_stat,
 		PerformanceInfo& dest, TraceCountsArray& temp);
 
 	// bool operator==(const RuntimeStatistics& other) const;
@@ -230,50 +203,6 @@ public:
 	static RuntimeStatistics* getDummy()
 	{
 		return &dummy;
-	}
-
-	class Iterator
-	{
-		friend class RuntimeStatistics;
-
-		explicit Iterator(const RelationCounts* counts)
-			: m_counts(counts)
-		{}
-
-	public:
-		bool operator==(const Iterator& other)
-		{
-			return (m_counts == other.m_counts);
-		}
-
-		bool operator!=(const Iterator& other)
-		{
-			return (m_counts != other.m_counts);
-		}
-
-		Iterator& operator++()
-		{
-			m_counts++;
-			return *this;
-		}
-
-		const RelationCounts& operator*() const
-		{
-			return *m_counts;
-		}
-
-	private:
-		const RelationCounts* m_counts;
-	};
-
-	Iterator begin() const
-	{
-		return Iterator(rel_counts.begin());
-	}
-
-	Iterator end() const
-	{
-		return Iterator(rel_counts.end());
 	}
 
 private:

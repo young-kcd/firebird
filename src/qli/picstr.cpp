@@ -34,7 +34,7 @@
 #include "../qli/mov_proto.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/VaryStr.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/classes/FpeControl.h"
 
 const int PRECISION	= 10000;
@@ -1090,7 +1090,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			*out++ = c;
 			break;
 		}
-		if ((picture->pic_flags & PIC_suppress_blanks) && out[-1] == ' ')
+		if (picture->pic_flags & PIC_suppress_blanks && out[-1] == ' ')
 			--out;
 	}
 

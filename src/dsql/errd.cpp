@@ -32,12 +32,14 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include "../jrd/common.h"
 
 #include "../dsql/dsql.h"
 #include "../dsql/sqlda.h"
 #include "gen/iberror.h"
 #include "../jrd/jrd.h"
 #include "../dsql/errd_proto.h"
+#include "../dsql/utld_proto.h"
 
 // This is the only one place in dsql code, where we need both
 // dsql.h and err_proto.h.
@@ -52,7 +54,7 @@
 //#undef BUGCHECK
 //#undef IBERROR
 
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 
 using namespace Jrd;
@@ -80,7 +82,7 @@ void ERRD_assert_msg(const char* msg, const char* file, ULONG lineno)
 	char buffer[MAXPATHLEN + 100];
 
 	fb_utils::snprintf(buffer, sizeof(buffer),
-			"Assertion failure: %s File: %s Line: %ld\n",	//dev build
+			"Assertion failure: %s File: %s Line: %ld\n",	// NTX: dev build
 			(msg ? msg : ""), (file ? file : ""), lineno);
 	ERRD_bugcheck(buffer);
 }
@@ -147,7 +149,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
     fb_assert(v.value()[0] == isc_arg_warning);
 
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
-	size_t indx = 0;
+	int indx = 0;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -162,7 +164,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 	else
 	{
 		// find end of a status vector
-		size_t warning_indx = 0;
+		int warning_indx = 0;
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx) {
 			--indx;
@@ -218,7 +220,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	// calculate length of the status
-	size_t tmp_status_len = 0, warning_indx = 0;
+	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
@@ -232,13 +234,13 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		status_vector[2] = isc_arg_end;
 	}
 
-    size_t status_len = 0;
+    int status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
 
 	// check for duplicated error code
-	size_t i;
+	int i;
 	for (i = 0; i < ISC_STATUS_LENGTH; i++)
 	{
 		if (status_vector[i] == isc_arg_end && i == status_len) {
@@ -259,16 +261,15 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	}
 
 	// if the status_vector has only warnings then adjust err_status_len
-	size_t err_status_len = i;
+	int err_status_len = i;
 	if (err_status_len == 2 && warning_indx) {
 		err_status_len = 0;
 	}
 
-	size_t warning_count = 0;
+	int warning_count = 0;
 	ISC_STATUS_ARRAY warning_status;
 
-	if (warning_indx)
-	{
+	if (warning_indx) {
 		// copy current warning(s) to a temp buffer
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
 		memcpy(warning_status, &status_vector[warning_indx],
@@ -308,12 +309,17 @@ void ERRD_punt(const ISC_STATUS* local)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	// Save any strings in a permanent location
-	if (local)
-	{
-		Firebird::makePermanentVector(tdbb->tdbb_status_vector, local);
+	// copy local status into user status
+	if (local) {
+		UTLD_copy_status(local, tdbb->tdbb_status_vector);
 	}
 
+	// Save any strings in a permanent location
+
+	UTLD_save_status_strings(tdbb->tdbb_status_vector);
+
 	// Give up whatever we were doing and return to the user.
+
 	status_exception::raise(tdbb->tdbb_status_vector);
 }
+

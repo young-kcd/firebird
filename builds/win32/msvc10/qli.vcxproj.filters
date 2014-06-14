@@ -2,23 +2,29 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="QLI files">
-      <UniqueIdentifier>{da3cf9eb-a5b6-4478-87a3-3da5fa0c95a8}</UniqueIdentifier>
+      <UniqueIdentifier>{93ef334e-cbaf-4e47-ba3e-c14f1f997ebd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="QLI files\epp files">
+      <UniqueIdentifier>{6100ae73-a2ec-4903-a629-ff8e224fa4f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="QLI files\Generated files">
+      <UniqueIdentifier>{3da0f459-0a28-4984-8f49-6ec3bbb1b297}</UniqueIdentifier>
     </Filter>
     <Filter Include="JRD files">
-      <UniqueIdentifier>{f6c663b8-6259-4bf6-b108-0d891c74d097}</UniqueIdentifier>
+      <UniqueIdentifier>{1cc8c2c2-2287-4aa0-bb3f-32a5d7d62b43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GPRE files">
+      <UniqueIdentifier>{6a93eeaf-e859-48a9-b07d-099243bc6dbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="COMMON files">
+      <UniqueIdentifier>{caad377e-6a04-4965-9a80-dfe4a0a15750}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header files">
-      <UniqueIdentifier>{ea691fcc-ce86-44c7-b53b-40b660c82329}</UniqueIdentifier>
+      <UniqueIdentifier>{215d717b-45ec-4509-ae01-a35d262943f0}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Resource files">
-      <UniqueIdentifier>{34f2b335-6604-4188-a20b-e9916b80b05c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="QLI files\GPRE epp">
-      <UniqueIdentifier>{a1a82d81-9dc5-4076-8daa-a05176116840}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="QLI files\GPRE cpp">
-      <UniqueIdentifier>{28befd96-6561-4892-8120-10fe6777523c}</UniqueIdentifier>
+      <UniqueIdentifier>{4a4b528f-5dea-4de6-aab9-56caf1a91133}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -70,49 +76,53 @@
     <ClCompile Include="..\..\..\src\qli\report.cpp">
       <Filter>QLI files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\gen\$(Platform)\qli\help.cpp">
+      <Filter>QLI files\Generated files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\gen\$(Platform)\qli\meta.cpp">
+      <Filter>QLI files\Generated files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\gen\$(Platform)\qli\proc.cpp">
+      <Filter>QLI files\Generated files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\gen\$(Platform)\qli\show.cpp">
+      <Filter>QLI files\Generated files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\dsc.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\isc.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\isc_file.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\status.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\gen\qli\help.cpp">
-      <Filter>QLI files\GPRE cpp</Filter>
+    <ClCompile Include="..\..\..\src\gpre\pretty.cpp">
+      <Filter>GPRE files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\gen\qli\proc.cpp">
-      <Filter>QLI files\GPRE cpp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gen\qli\meta.cpp">
-      <Filter>QLI files\GPRE cpp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\gen\qli\show.cpp">
-      <Filter>QLI files\GPRE cpp</Filter>
+    <ClCompile Include="..\..\..\src\common\fb_exception.cpp">
+      <Filter>COMMON files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\qli\help.epp">
-      <Filter>QLI files\GPRE epp</Filter>
+      <Filter>QLI files\epp files</Filter>
     </None>
     <None Include="..\..\..\src\qli\meta.epp">
-      <Filter>QLI files\GPRE epp</Filter>
+      <Filter>QLI files\epp files</Filter>
     </None>
     <None Include="..\..\..\src\qli\proc.epp">
-      <Filter>QLI files\GPRE epp</Filter>
+      <Filter>QLI files\epp files</Filter>
     </None>
     <None Include="..\..\..\src\qli\show.epp">
-      <Filter>QLI files\GPRE epp</Filter>
+      <Filter>QLI files\epp files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\..\src\jrd\version.rc">
-      <Filter>Resource files</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\src\qli\words.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\qli\all_proto.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\blk.h">
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\qli\comma_proto.h">
@@ -193,9 +203,6 @@
     <ClInclude Include="..\..\..\src\qli\procddl4.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\qli\qliswi.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\qli\repor_proto.h">
       <Filter>Header files</Filter>
     </ClInclude>
@@ -211,5 +218,13 @@
     <ClInclude Include="..\..\..\src\qli\symbols.h">
       <Filter>Header files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\qli\words.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\src\jrd\version.rc">
+      <Filter>Resource files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

@@ -37,8 +37,8 @@
 #include "../qli/gener_proto.h"
 #include "../qli/meta_proto.h"
 #include "../qli/mov_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef DEV_BUILD
 #include "../jrd/constants.h"
@@ -448,7 +448,7 @@ static void explain_printf(int level, const TEXT* control, const TEXT* string)
 	if (string)
 		printf(control, string);
 	else
-		printf("%s", control);
+		printf(control);
 }
 #endif
 

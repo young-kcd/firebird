@@ -35,7 +35,7 @@
 // This setting of maximum dpb size doesn't mean, that we
 // can't process larger DBPs! This is just recommended limit
 // cause it's hard to imagine sensefull DPB of even this size.
-const size_t MAX_DPB_SIZE = 1024 * 1024;
+const size_t MAX_DPB_SIZE = 1024;
 
 namespace Firebird {
 
@@ -48,30 +48,16 @@ public:
 	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, UCHAR tag = 0);
 
 	// Create writer from a given buffer
-	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag = 0);
-	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag = 0);
+	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
-	// Create writer from a given buffer with possibly different clumplet version
-	ClumpletWriter(const KindList* kl, size_t limit, const UCHAR* buffer, size_t buffLen);
-	ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit,
-				   const UCHAR* buffer, size_t buffLen);
-
-	// Create empty writer
-	ClumpletWriter(const KindList* kl, size_t limit);
-	ClumpletWriter(MemoryPool& pool, const KindList* kl, size_t limit);
-
-	// Create a copy of writer
-	ClumpletWriter(MemoryPool& pool, const ClumpletWriter& from);
-	ClumpletWriter(const ClumpletWriter& from);
-
-	void reset(UCHAR tag = 0);
+	void reset(UCHAR tag);
 	void reset(const UCHAR* buffer, const size_t buffLen);
-	void clear();
 
 	// Methods to create new clumplet at current position
 	void insertInt(UCHAR tag, const SLONG value);
 	void insertBigInt(UCHAR tag, const SINT64 value);
-	void insertBytes(UCHAR tag, const void* bytes, size_t length);
+	void insertBytes(UCHAR tag, const UCHAR* bytes, size_t length);
 	void insertString(UCHAR tag, const string& str);
 	void insertPath(UCHAR tag, const PathName& str);
 	void insertString(UCHAR tag, const char* str, size_t length);
@@ -82,7 +68,6 @@ public:
 	void insertTime(UCHAR tag, ISC_TIME value) { insertInt(tag, value); }
 	void insertDate(UCHAR tag, ISC_DATE value) { insertInt(tag, value); }
 	void insertEndMarker(UCHAR tag);
-	void insertClumplet(const SingleClumplet& clumplet);
 
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
@@ -92,26 +77,24 @@ public:
 	bool deleteWithTag(UCHAR tag);
 
 	virtual const UCHAR* getBuffer() const;
-
 protected:
 	virtual const UCHAR* getBufferEnd() const;
 	virtual void size_overflow();
-	void insertBytesLengthCheck(UCHAR tag, const void* bytes, const size_t length);
-	bool upgradeVersion();	// upgrade clumplet version - obtain newest from kindList
-
+	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, const size_t length);
 private:
-	// Assignment not implemented.
+	size_t sizeLimit;
+
+	// Assignment and copy constructor not implemented.
+	ClumpletWriter(const ClumpletWriter& from);
 	ClumpletWriter& operator=(const ClumpletWriter& from);
 
-	size_t sizeLimit;
-	const KindList* kindList;
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
 
 	void initNewBuffer(UCHAR tag);
-	void create(const UCHAR* buffer, size_t buffLen, UCHAR tag);
 	static void toVaxInteger(UCHAR* ptr, size_t length, const SINT64 value);
 };
 
 } // namespace Firebird
 
 #endif // CLUMPLETWRITER_H
+

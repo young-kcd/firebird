@@ -45,52 +45,18 @@ namespace Firebird {
 class ClumpletReader : protected AutoStorage
 {
 public:
-	enum Kind
-	{
-		EndOfList,
-		Tagged,
-		UnTagged,
-		SpbAttach,
-		SpbStart,
-		Tpb,
-		WideTagged,
-		WideUnTagged,
-		SpbSendItems,
-		SpbReceiveItems
-	};
-
-	struct KindList
-	{
-		Kind kind;
-		UCHAR tag;
-	};
-
-	struct SingleClumplet
-	{
-		UCHAR tag;
-		size_t size;
-		const UCHAR* data;
-	};
+	enum Kind {Tagged, UnTagged, SpbAttach, SpbStart, Tpb/*, SpbInfo*/, WideTagged, WideUnTagged, SpbItems};
 
 	// Constructor prepares an object from plain PB
 	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
 	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
-
-	// Different versions of clumplets may have different kinds
-	ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
-	ClumpletReader(MemoryPool& pool, const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
 	virtual ~ClumpletReader() { }
-
-	// Create a copy of reader
-	ClumpletReader(MemoryPool& pool, const ClumpletReader& from);
-	ClumpletReader(const ClumpletReader& from);
 
 	// Navigation in clumplet buffer
 	bool isEof() const { return cur_offset >= getBufferLength(); }
 	void moveNext();
 	void rewind();
 	bool find(UCHAR tag);
-	bool next(UCHAR tag);
 
     // Methods which work with currently selected clumplet
 	UCHAR getClumpTag() const;
@@ -101,26 +67,19 @@ public:
 	SINT64 getBigInt() const;
 	string& getString(string& str) const;
 	PathName& getPath(PathName& str) const;
-	void getData(UCharBuffer& data) const;
 	const UCHAR* getBytes() const;
 	double getDouble() const;
 	ISC_TIMESTAMP getTimeStamp() const;
 	ISC_TIME getTime() const { return getInt(); }
 	ISC_DATE getDate() const { return getInt(); }
 
-	// get the most generic representation of clumplet
-	SingleClumplet getClumplet() const;
-
 	// Return the tag for buffer (usually structure version)
 	UCHAR getBufferTag() const;
-	// true if buffer has tag
-	bool isTagged() const;
 	size_t getBufferLength() const
 	{
 		size_t rc = getBufferEnd() - getBuffer();
 		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
-					   kind != WideUnTagged && kind != SpbSendItems &&
-					   kind != SpbReceiveItems)
+					   kind != WideUnTagged && kind != SpbItems)
 		{
 			rc = 0;
 		}
@@ -149,7 +108,7 @@ protected:
 	void adjustSpbState();
 
 	size_t cur_offset;
-	Kind kind;
+	const Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer
 
 	// Methods are virtual so writer can override 'em
@@ -167,56 +126,17 @@ protected:
 	virtual void invalid_structure(const char* what) const;
 
 private:
-	// Assignment not implemented.
+	// Assignment and copy constructor not implemented.
+	ClumpletReader(const ClumpletReader& from);
 	ClumpletReader& operator=(const ClumpletReader& from);
 
 	const UCHAR* static_buffer;
 	const UCHAR* static_buffer_end;
 
 	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
-	void create(const KindList* kl, size_t buffLen, FPTR_VOID raise);
-
-public:
-	// Some frequently used kind lists
-	static const KindList dpbList[];
-	static const KindList spbList[];
 };
-
-class AuthReader : public ClumpletReader
-{
-public:
-	static const unsigned char AUTH_NAME = 1;		// name described by it's type
-	static const unsigned char AUTH_PLUGIN = 2;		// plugin which added a record
-	static const unsigned char AUTH_TYPE = 3;		// it can be user/group/role/etc. - what plugin sets
-	static const unsigned char AUTH_SECURE_DB = 4;	// sec. db in which context record was added
-													// missing when plugin is server-wide
-	typedef Array<UCHAR> AuthBlock;
-
-	struct Info
-	{
-		NoCaseString type, name, plugin, secDb;
-		unsigned found, current;
-
-		Info()
-			: found(0), current(0)
-		{ }
-	};
-
-	explicit AuthReader(const AuthBlock& authBlock);
-	explicit AuthReader(const ClumpletReader& rdr)
-		: ClumpletReader(rdr)
-	{ }
-
-	bool getInfo(Info& info);
-};
-
-//#define AUTH_BLOCK_DEBUG
-#ifdef AUTH_BLOCK_DEBUG
-void dumpAuthBlock(const char* text, ClumpletReader* pb, unsigned char param);
-#else
-static inline void dumpAuthBlock(const char*, ClumpletReader*, unsigned char) { }
-#endif
 
 } // namespace Firebird
 
 #endif // CLUMPLETREADER_H
+

@@ -2,18 +2,21 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="GUARD files">
-      <UniqueIdentifier>{a0bfa88f-217a-4063-8889-1ed633aec0fc}</UniqueIdentifier>
+      <UniqueIdentifier>{ac475f0b-7643-4529-b2f4-a2eb2aa7ec02}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="REMOTE files">
-      <UniqueIdentifier>{fdd05782-9e05-4326-8ff6-d9b3ea6bfa0c}</UniqueIdentifier>
+      <UniqueIdentifier>{d4bcd4a6-85dc-4085-abc0-e04fc1280e90}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header files">
-      <UniqueIdentifier>{8aefd5a8-801b-4c4f-a627-7f7ef3dea237}</UniqueIdentifier>
+      <UniqueIdentifier>{737f99e0-14a0-4082-811b-dc6dded7c0aa}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Resource files">
-      <UniqueIdentifier>{769da84e-5691-4f8f-ac8b-af4fd58d8e7a}</UniqueIdentifier>
+      <UniqueIdentifier>{1ae5b513-c32d-43d4-b663-4ef77b4d2a4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="COMMON files">
+      <UniqueIdentifier>{48f1ee46-aac3-4b76-8e8a-298fb8fed7c8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -23,8 +26,17 @@
     <ClCompile Include="..\..\..\src\iscguard\iscguard.cpp">
       <Filter>GUARD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\remote\server\os\win32\chop.cpp">
+    <ClCompile Include="..\..\..\src\remote\os\win32\chop.cpp">
       <Filter>REMOTE files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common\classes\alloc.cpp">
+      <Filter>COMMON files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\common\config\config_file.cpp">
+      <Filter>COMMON files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\os\win32\config_root.cpp">
+      <Filter>COMMON files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +44,9 @@
       <Filter>Header files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\iscguard\iscguard.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\misc\status.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

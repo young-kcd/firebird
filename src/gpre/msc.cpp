@@ -47,7 +47,7 @@
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 
 
 struct gpre_space
@@ -469,6 +469,22 @@ gpre_sym* MSC_symbol(sym_t type, const TEXT* string, USHORT length, gpre_ctx* ob
 		memcpy(p, string, length);
 
 	return symbol;
+}
+
+
+//____________________________________________________________
+//
+//		Make a ternary node.
+//
+
+gpre_nod* MSC_ternary(nod_t type, gpre_nod* arg1, gpre_nod* arg2, gpre_nod* arg3)
+{
+	gpre_nod* node = MSC_node(type, 3);
+	node->nod_arg[0] = arg1;
+	node->nod_arg[1] = arg2;
+	node->nod_arg[2] = arg3;
+
+	return node;
 }
 
 

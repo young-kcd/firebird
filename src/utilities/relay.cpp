@@ -26,6 +26,7 @@
 #include <sys/param.h>
 #include <signal.h>
 
+#include "../jrd/common.h"
 #include "../jrd/license.h"
 
 #include <stdlib.h>
@@ -83,14 +84,12 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		{
 			TEXT c;
 			while (c = *p++)
-			{
 				switch (UPPER(c))
 				{
 				case 'Z':
-					printf("Firebird relay version %s\n", FB_VERSION);
+					printf("Firebird relay version %s\n", GDS_VERSION);
 					exit(FINI_OK);
 				}
-			}
 		}
 	}
 
@@ -119,8 +118,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 			fprintf(stderr, "gds_relay received inconsistent message");
 		}
 #endif
-		if (kill(msg[0], msg[1]))
-		{
+		if (kill(msg[0], msg[1])) {
 #ifdef DEV_BUILD
 			fprintf(stderr, "gds_relay error on kill()");
 #endif

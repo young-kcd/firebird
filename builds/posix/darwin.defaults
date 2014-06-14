@@ -19,17 +19,23 @@
 
 # Options 
 #FirebirdInstallPrefix=
-LIB_BUNDLE_OPTIONS=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
-LIB_LINK_OPTIONS=$(LD_FLAGS) -dynamiclib -flat_namespace
+LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress
+LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace 
 LIB_LINK_SONAME:=-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000
-LIB_LINK_MAPFILE=-Wl,-exported_symbols_list,$(1)
+LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
+
+LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
+LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
+LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
+LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.darwin.vers
+LINK_TRACE_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.darwin.vers
+LINK_EMPTY_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/empty.darwin.vers
+LINK_FIREBIRD_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.vers
 
 LIB_LINK_RPATH:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
 LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
 LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
-FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
-
-PLATFORM_PATH=os/darwin
+FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed $(ICU_LIBS)
 PLATFORM_FALLBACK=os/posix
 
 PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
@@ -63,5 +69,3 @@ STATIC_CXX_SUPPORT = -lsupc++ $(GCCS) -lgcc_eh -lSystem
 
 LINK_EMBED = $(LIB_LINK) $(LINK_FIREBIRD_EMBED_SYMBOLS) $(LIB_LINK_OPTIONS)\
  $(LIB_EMBED_LINK_OPTIONS) $(LIB_LINK_SONAME)
-
-INLINE_EDIT_SED:= -i ""

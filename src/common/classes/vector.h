@@ -30,7 +30,7 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include <string.h>
 
 namespace Firebird {
@@ -58,7 +58,6 @@ public:
 	T* end() { return data + count; }
 	const T* begin() const { return data; }
 	const T* end() const { return data + count; }
-	bool hasData() const { return (count != 0); }
 	size_t getCount() const { return count; }
 	size_t getCapacity() const { return Capacity; }
 	void clear() { count = 0; }
@@ -140,7 +139,6 @@ class DefaultKeyValue
 {
 public:
 	static const T& generate(const void* /*sender*/, const T& item) { return item; }
-	static const T& generate(const T& item) { return item; }
 };
 
 // Fast sorted array of simple objects
@@ -155,8 +153,7 @@ public:
 	bool find(const Key& item, size_t& pos) const
 	{
 		size_t highBound = this->count, lowBound = 0;
-		while (highBound > lowBound)
-		{
+		while (highBound > lowBound) {
 			const size_t temp = (highBound + lowBound) >> 1;
 			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;
@@ -179,3 +176,4 @@ public:
 } // namespace Firebird
 
 #endif
+

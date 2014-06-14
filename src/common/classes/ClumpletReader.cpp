@@ -32,10 +32,9 @@
 #include "fb_exception.h"
 
 #include "../jrd/ibase.h"
-#include "firebird/Auth.h"
 
 #ifdef DEBUG_CLUMPLETS
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include <ctype.h>
 
 namespace Firebird {
@@ -122,62 +121,6 @@ ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, si
 	rewind();	// this will set cur_offset and spbState
 }
 
-ClumpletReader::ClumpletReader(MemoryPool& pool, const ClumpletReader& from) :
-	AutoStorage(pool), kind(from.kind),
-	static_buffer(from.getBuffer()), static_buffer_end(from.getBufferEnd())
-{
-	rewind();	// this will set cur_offset and spbState
-}
-
-ClumpletReader::ClumpletReader(const ClumpletReader& from) :
-	AutoStorage(), kind(from.kind),
-	static_buffer(from.getBuffer()), static_buffer_end(from.getBufferEnd())
-{
-	rewind();	// this will set cur_offset and spbState
-}
-
-ClumpletReader::ClumpletReader(MemoryPool& pool, const KindList* kl,
-							   const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
-	AutoStorage(pool), kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
-{
-	create(kl, buffLen, raise);
-}
-
-ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
-	kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
-{
-	create(kl, buffLen, raise);
-}
-
-void ClumpletReader::create(const KindList* kl, size_t buffLen, FPTR_VOID raise)
-{
-	cur_offset = 0;
-
-	if (buffLen)
-	{
-		while (kl->kind != EndOfList)
-		{
-			kind = kl->kind;
-			if (getBufferTag() == kl->tag)
-			{
-				break;
-			}
-			++kl;
-		}
-
-		if (kl->kind == EndOfList)
-		{
-			if (raise)
-			{
-				raise();
-			}
-			invalid_structure("Unknown tag value - missing in the list of possible");
-		}
-	}
-
-	rewind();	// this will set cur_offset and spbState
-}
-
 const UCHAR* ClumpletReader::getBuffer() const
 {
 	return static_buffer;
@@ -204,20 +147,6 @@ void ClumpletReader::invalid_structure(const char* what) const
 	fatal_exception::raiseFmt("Invalid clumplet buffer structure: %s", what);
 }
 
-bool ClumpletReader::isTagged() const
-{
-	switch (kind)
-	{
-	case Tpb:
-	case Tagged:
-	case WideTagged:
-	case SpbAttach:
-		return true;
-	}
-
-	return false;
-}
-
 UCHAR ClumpletReader::getBufferTag() const
 {
 	const UCHAR* const buffer_end = getBufferEnd();
@@ -237,8 +166,7 @@ UCHAR ClumpletReader::getBufferTag() const
 	case SpbStart:
 	case UnTagged:
 	case WideUnTagged:
-	case SpbSendItems:
-	case SpbReceiveItems:
+	case SpbItems:
 		usage_mistake("buffer is not tagged");
 		return 0;
 	case SpbAttach:
@@ -261,9 +189,6 @@ UCHAR ClumpletReader::getBufferTag() const
 				return 0;
 			}
 			return buffer_start[1];
-		case isc_spb_version3:
-			// This is wide SPB attach format - buffer's tag is the first byte.
-			return buffer_start[0];
 		default:
 			invalid_structure("spb in service attach should begin with isc_spb_version1 or isc_spb_version");
 			return 0;
@@ -294,31 +219,9 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			return TraditionalDpb;
 		}
 		return SingleTpb;
-	case SpbSendItems:
-		switch (tag)
-		{
-		case isc_info_svc_auth_block:
-			return Wide;
-		case isc_info_end:
-		case isc_info_truncated:
-		case isc_info_error:
-		case isc_info_data_not_ready:
-		case isc_info_length:
-		case isc_info_flag_end:
-			return SingleTpb;
-		}
-		return StringSpb;
-	case SpbReceiveItems:
+	case SpbItems:
 		return SingleTpb;
 	case SpbStart:
-		switch(tag)
-		{
-		case isc_spb_auth_block:
-		case isc_spb_trusted_auth:
-		case isc_spb_auth_plugin_name:
-		case isc_spb_auth_plugin_list:
-			return Wide;
-		}
 		switch (spbState)
 		{
 		case 0:
@@ -338,7 +241,6 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			case isc_spb_res_buffers:
 			case isc_spb_res_page_size:
 			case isc_spb_options:
-			case isc_spb_verbint:
 				return IntSpb;
 			case isc_spb_verbose:
 				return SingleTpb;
@@ -417,7 +319,6 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			{
 			case isc_spb_dbname:
 			case isc_spb_command_line:
-			case isc_spb_sts_table:
 				return StringSpb;
 			case isc_spb_options:
 				return IntSpb;
@@ -467,9 +368,7 @@ void ClumpletReader::adjustSpbState()
 	switch (kind)
 	{
 	case SpbStart:
-		if (spbState == 0 &&							// Just started with service start block ...
-			getClumpletSize(true, true, true) == 1)		// and this is action_XXX clumplet
-		{
+		if (spbState == 0) {	// Just started with service start block
 			spbState = getClumpTag();
 		}
 		break;
@@ -598,8 +497,7 @@ void ClumpletReader::rewind()
 	case UnTagged:
 	case WideUnTagged:
 	case SpbStart:
-	case SpbSendItems:
-	case SpbReceiveItems:
+	case SpbItems:
 		cur_offset = 0;
 		break;
 	default:
@@ -622,27 +520,6 @@ bool ClumpletReader::find(UCHAR tag)
 		}
 	}
 	setCurOffset(co);
-	return false;
-}
-
-bool ClumpletReader::next(UCHAR tag)
-{
-	if (!isEof())
-	{
-		const size_t co = getCurOffset();
-		if (tag == getClumpTag())
-		{
-			moveNext();
-		}
-		for (; !isEof(); moveNext())
-		{
-			if (tag == getClumpTag())
-			{
-				return true;
-			}
-		}
-		setCurOffset(co);
-	}
 	return false;
 }
 
@@ -783,11 +660,6 @@ PathName& ClumpletReader::getPath(PathName& str) const
 	return str;
 }
 
-void ClumpletReader::getData(UCharBuffer& data) const
-{
-	data.assign(getBytes(), getClumpLength());
-}
-
 bool ClumpletReader::getBoolean() const
 {
 	const UCHAR* ptr = getBytes();
@@ -800,106 +672,5 @@ bool ClumpletReader::getBoolean() const
 	return length && ptr[0];
 }
 
-ClumpletReader::SingleClumplet ClumpletReader::getClumplet() const
-{
-	SingleClumplet rc;
-	rc.tag = getClumpTag();
-	rc.size = getClumpletSize(false, false, true);
-	rc.data = getBytes();
-	return rc;
-}
-
-const ClumpletReader::KindList ClumpletReader::dpbList[] = {
-	{ClumpletReader::Tagged, isc_dpb_version1},
-	{ClumpletReader::WideTagged, isc_dpb_version2},
-	{ClumpletReader::EndOfList, 0}
-};
-
-const ClumpletReader::KindList ClumpletReader::spbList[] = {
-	{ClumpletReader::SpbAttach, isc_spb_current_version},
-	{ClumpletReader::SpbAttach, isc_spb_version1},
-	{ClumpletReader::WideTagged, isc_spb_version3},
-	{ClumpletReader::EndOfList, 0}
-};
-
-AuthReader::AuthReader(const AuthBlock& authBlock)
-	: ClumpletReader(ClumpletReader::WideUnTagged, authBlock.begin(), authBlock.getCount())
-{
-	rewind();
-}
-
-static inline void erase(NoCaseString& s)
-{
-	s.erase();
-}
-
-static inline void set(NoCaseString& s, const ClumpletReader& rdr)
-{
-	s.assign(rdr.getBytes(), rdr.getClumpLength());
-}
-
-bool AuthReader::getInfo(Info& info)
-{
-	if (isEof())
-	{
-		return false;
-	}
-
-	erase(info.type);
-	erase(info.name);
-	erase(info.plugin);
-	erase(info.secDb);
-
-	ClumpletReader internal(WideUnTagged, getBytes(), getClumpLength());
-	for (internal.rewind(); !internal.isEof(); internal.moveNext())
-	{
-		switch(internal.getClumpTag())
-		{
-		case AUTH_TYPE:
-			set(info.type, internal);
-			break;
-		case AUTH_NAME:
-			set(info.name, internal);
-			break;
-		case AUTH_PLUGIN:
-			set(info.plugin, internal);
-			break;
-		case AUTH_SECURE_DB:
-			set(info.secDb, internal);
-			break;
-		default:
-			break;
-		}
-	}
-
-	return true;
-}
-
-#ifdef AUTH_BLOCK_DEBUG
-void dumpAuthBlock(const char* text, ClumpletReader* pb, unsigned char param)
-{
-	fprintf(stderr, "AuthBlock in %s:", text);
-	if (pb->find(param))
-	{
-		Firebird::AuthReader::AuthBlock tmp;
-		tmp.assign(pb->getBytes(), pb->getClumpLength());
-		Firebird::AuthReader rdr(tmp);
-		string name, plugin;
-		PathName secureDb;
-		bool x = false;
-		while (rdr.getInfo(&name, &plugin, &secureDb))
-		{
-			fprintf(stderr, " %s::%s::%s", name.c_str(), plugin.c_str(), secureDb.c_str());
-			x = true;
-			rdr.moveNext();
-		}
-		fprintf(stderr, "%s\n", x ? "" : " <empty>");
-	}
-	else
-	{
-		fprintf(stderr, " <missing>\n");
-	}
-}
-#endif
-
 } // namespace
+

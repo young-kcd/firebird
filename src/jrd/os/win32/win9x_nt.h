@@ -44,7 +44,7 @@ struct LocksArrayItem {
 
 	LocksArrayItem() {}
 	LocksArrayItem(HANDLE handle, Firebird::Mutex* mutex) : first(handle), second(mutex) { }
-	static HANDLE generate(LocksArrayItem value) {
+	static HANDLE generate(const void*, LocksArrayItem value) {
 		return value.first;
 	}
 };

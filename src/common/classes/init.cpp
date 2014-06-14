@@ -31,7 +31,7 @@
 // Setting this define helps (with AV at exit time) detect globals
 // with destructors, declared not using InstanceControl.
 // The reason for AV is that process memory pool (from where globals should allocate memory)
-// is destroyed in atexit(), before destructors are called. Therefore each delete
+// is destoyed in atexit(), before destructors are called. Therefore each delete
 // operator in destructor will cause AV.
 #undef DEBUG_INIT
 
@@ -58,15 +58,6 @@ namespace
 
 	void allClean()
 	{
-#ifndef DARWIN		// Somewhy cleanup code is called more than once on MAC
-		fb_assert(initDone);
-#endif
-		if (!initDone)
-		{
-			return;
-		}
-		initDone = false;
-
 		Firebird::InstanceControl::destructors();
 
 		try
@@ -146,7 +137,7 @@ namespace Firebird
 	InstanceControl::InstanceList::InstanceList(DtorPriority p)
 		: priority(p)
 	{
-		MutexLockGuard guard(*StaticMutex::mutex, "InstanceControl::InstanceList::InstanceList");
+		MutexLockGuard guard(*StaticMutex::mutex);
 		next = instanceList;
 		instanceList = this;
 	}
@@ -232,7 +223,7 @@ namespace Firebird
 
 	void InstanceControl::registerShutdown(FPTR_VOID shutdown)
 	{
-		fb_assert(!gdsShutdown || !shutdown);
+		fb_assert(!gdsShutdown || !shutdown || gdsShutdown == shutdown);
 		gdsShutdown = shutdown;
 	}
 

@@ -34,18 +34,15 @@
 #ifndef DSQL_DSQL_H
 #define DSQL_DSQL_H
 
+#include "../jrd/common.h"
 #include "../jrd/RuntimeStatistics.h"
-#include "../jrd/ntrace.h"
 #include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
-#include "../jrd/Attachment.h"
-#include "../dsql/BlrDebugWriter.h"
-#include "../dsql/ddl_proto.h"
+#include "../jrd/Database.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/auto.h"
-#include "../common/classes/NestConst.h"
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -61,38 +58,28 @@ DEFINE_TRACE_ROUTINE(dsql_trace);
 
 #include "../dsql/sym.h"
 
-#include "../jrd/EngineInterface.h"
-
 // Context aliases used in triggers
-const char* const OLD_CONTEXT_NAME = "OLD";
-const char* const NEW_CONTEXT_NAME = "NEW";
-
-const int OLD_CONTEXT_VALUE = 0;
-const int NEW_CONTEXT_VALUE = 1;
+const char* const OLD_CONTEXT		= "OLD";
+const char* const NEW_CONTEXT		= "NEW";
+const char* const TEMP_CONTEXT		= "TEMP";
 
 namespace Jrd
 {
-	class Attachment;
 	class Database;
-	class DsqlCompilerScratch;
-	class DdlNode;
-	class RseNode;
-	class StmtNode;
-	class TransactionNode;
-	class ValueExprNode;
-	class ValueListNode;
+	class Attachment;
 	class jrd_tra;
 	class jrd_req;
 	class blb;
 	struct bid;
 
 	class dsql_ctx;
-	class dsql_msg;
-	class dsql_par;
-	class dsql_map;
+	class dsql_str;
+	class dsql_nod;
 	class dsql_intlsym;
 
 	typedef Firebird::Stack<dsql_ctx*> DsqlContextStack;
+	typedef Firebird::Stack<const dsql_str*> DsqlStrStack;
+	typedef Firebird::Stack<dsql_nod*> DsqlNodStack;
 }
 
 namespace Firebird
@@ -106,62 +93,78 @@ namespace Firebird
 
 /// Include definition of descriptor
 
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 
 namespace Jrd {
 
+//! generic data type used to store strings
+class dsql_str : public pool_alloc_rpt<char, dsql_type_str>
+{
+public:
+	enum Type
+	{
+		TYPE_SIMPLE = 0,
+		TYPE_HEXA,
+		TYPE_DELIMITED
+	};
+
+public:
+	const char* str_charset;	// ASCIIZ Character set identifier for string
+	Type	type;
+	ULONG	str_length;		// length of string in BYTES
+	char	str_data[2];	// one for ALLOC and one for the NULL
+};
+
 // blocks used to cache metadata
 
-// Database Block
+//! Database Block
+typedef Firebird::SortedArray
+	<
+		dsql_intlsym*,
+		Firebird::EmptyStorage<dsql_intlsym*>,
+		SSHORT,
+		dsql_intlsym,
+		Firebird::DefaultComparator<SSHORT>
+	> IntlSymArray;
+
 class dsql_dbb : public pool_alloc<dsql_type_dbb>
 {
 public:
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::MetaName, class dsql_rel*> > > dbb_relations;			// known relations in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::QualifiedName, class dsql_prc*> > > dbb_procedures;	// known procedures in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::QualifiedName, class dsql_udf*> > > dbb_functions;	// known functions in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::MetaName, class dsql_intlsym*> > > dbb_charsets;		// known charsets in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::MetaName, class dsql_intlsym*> > > dbb_collations;	// known collations in database
-	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<
-		SSHORT, dsql_intlsym*> > > dbb_charsets_by_id;	// charsets sorted by charset_id
-	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
-		Firebird::string, class dsql_req*> > > dbb_cursors;			// known cursors in database
-
+	class dsql_rel* dbb_relations;		// known relations in database
+	class dsql_prc*	dbb_procedures;		// known procedures in database
+	class dsql_udf*	dbb_functions;		// known functions in database
 	MemoryPool&		dbb_pool;			// The current pool for the dbb
+	Database*		dbb_database;
 	Attachment*		dbb_attachment;
-	Firebird::MetaName dbb_dfl_charset;
+	Firebird::SortedArray<dsql_req*> dbb_requests;
+	dsql_str*		dbb_dfl_charset;
+#ifdef SCROLLABLE_CURSORS
+	USHORT			dbb_base_level;		// indicates the version of the engine code itself
+#endif
 	bool			dbb_no_charset;
 	bool			dbb_read_only;
 	USHORT			dbb_db_SQL_dialect;
+	IntlSymArray	dbb_charsets_by_id;	// charsets sorted by charset_id
 	USHORT			dbb_ods_version;	// major ODS version number
 	USHORT			dbb_minor_version;	// minor ODS version number
+	Firebird::Mutex dbb_cache_mutex;	// mutex protecting the DSQL metadata cache
 
-	explicit dsql_dbb(MemoryPool& p)
-		: dbb_relations(p),
-		  dbb_procedures(p),
-		  dbb_functions(p),
-		  dbb_charsets(p),
-		  dbb_collations(p),
-		  dbb_charsets_by_id(p),
-		  dbb_cursors(p),
-		  dbb_pool(p),
-		  dbb_dfl_charset(p)
+	explicit dsql_dbb(MemoryPool& p) :
+		dbb_pool(p), 
+		dbb_requests(p),
+		dbb_charsets_by_id(p, 16)
 	{}
 
 	~dsql_dbb();
 
 	MemoryPool* createPool()
 	{
-		return dbb_attachment->createPool();
+		return dbb_database->createPool();
 	}
 
 	void deletePool(MemoryPool* pool)
 	{
-		dbb_attachment->deletePool(pool);
+		dbb_database->deletePool(pool);
 	}
 };
 
@@ -175,6 +178,8 @@ public:
 	{
 	}
 
+	dsql_rel*	rel_next;			// Next relation in database
+	dsql_sym*	rel_symbol;			// Hash symbol for relation
 	class dsql_fld*	rel_fields;		// Field block
 	//dsql_rel*	rel_base_relation;	// base relation for an updatable view
 	Firebird::MetaName rel_name;	// Name of relation
@@ -193,100 +198,45 @@ enum rel_flags_vals {
 	REL_creating		= 16 // we are creating the bare relation in memory
 };
 
-class TypeClause
-{
-public:
-	TypeClause(MemoryPool& pool, const Firebird::MetaName& aCollate)
-		: dtype(dtype_unknown),
-		  length(0),
-		  scale(0),
-		  subType(0),
-		  segLength(0),
-		  precision(0),
-		  charLength(0),
-		  charSetId(0),
-		  collationId(0),
-		  textType(0),
-		  fullDomain(false),
-		  notNull(false),
-		  fieldSource(pool),
-		  typeOfTable(pool),
-		  typeOfName(pool),
-		  collate(pool, aCollate),
-		  charSet(pool),
-		  subTypeName(pool, NULL),
-		  flags(0),
-		  elementDtype(0),
-		  elementLength(0),
-		  dimensions(0),
-		  ranges(NULL),
-		  explicitCollation(false)
-	{
-	}
-
-	virtual ~TypeClause()
-	{
-	}
-
-public:
-	virtual void print(Firebird::string& text) const
-	{
-		text.printf("typeOfTable: '%s'  typeOfName: '%s'  notNull: %d  fieldSource: '%s'",
-			typeOfTable.c_str(), typeOfName.c_str(), notNull, fieldSource.c_str());
-	}
-
-public:
-	USHORT dtype;
-	FLD_LENGTH length;
-	SSHORT scale;
-	SSHORT subType;
-	USHORT segLength;					// Segment length for blobs
-	USHORT precision;					// Precision for exact numeric types
-	USHORT charLength;					// Length of field in characters
-	SSHORT charSetId;
-	SSHORT collationId;
-	SSHORT textType;
-	bool fullDomain;					// Domain name without TYPE OF prefix
-	bool notNull;						// NOT NULL was explicit specified
-	Firebird::MetaName fieldSource;
-	Firebird::MetaName typeOfTable;		// TYPE OF table name
-	Firebird::MetaName typeOfName;		// TYPE OF
-	Firebird::MetaName collate;
-	Firebird::MetaName charSet;		// empty means not specified
-	Firebird::MetaName subTypeName;	// Subtype name for later resolution
-	USHORT flags;
-	USHORT elementDtype;			// Data type of array element
-	USHORT elementLength;			// Length of array element
-	SSHORT dimensions;				// Non-zero means array
-	ValueListNode* ranges;			// ranges for multi dimension array
-	bool explicitCollation;			// COLLATE was explicit specified
-};
-
-class dsql_fld : public TypeClause
+class dsql_fld : public pool_alloc<dsql_type_fld>
 {
 public:
 	explicit dsql_fld(MemoryPool& p)
-		: TypeClause(p, NULL),
-		  fld_next(NULL),
-		  fld_relation(NULL),
-		  fld_procedure(NULL),
-		  fld_id(0),
-		  fld_name(p)
+		: fld_type_of_name(p),
+		  fld_type_of_table(p),
+		  fld_name(p),
+		  fld_source(p)
 	{
 	}
 
-public:
-	void resolve(DsqlCompilerScratch* dsqlScratch, bool modifying = false)
-	{
-		DDL_resolve_intl_type(dsqlScratch, this, collate, modifying);
-	}
-
-public:
 	dsql_fld*	fld_next;				// Next field in relation
 	dsql_rel*	fld_relation;			// Parent relation
-	dsql_prc*	fld_procedure;			// Parent procedure
+	class dsql_prc*	fld_procedure;		// Parent procedure
+	dsql_nod*	fld_ranges;				// ranges for multi dimension array
+	dsql_nod*	fld_character_set;		// null means not specified
+	dsql_nod*	fld_sub_type_name;		// Subtype name for later resolution
+	USHORT		fld_flags;
 	USHORT		fld_id;					// Field in in database
-	Firebird::MetaName fld_name;
+	USHORT		fld_dtype;				// Data type of field
+	FLD_LENGTH	fld_length;				// Length of field
+	USHORT		fld_element_dtype;		// Data type of array element
+	USHORT		fld_element_length;		// Length of array element
+	SSHORT		fld_scale;				// Scale factor of field
+	SSHORT		fld_sub_type;			// Subtype for text & blob fields
+	USHORT		fld_precision;			// Precision for exact numeric types
+	USHORT		fld_character_length;	// length of field in characters
+	USHORT		fld_seg_length;			// Segment length for blobs
+	SSHORT		fld_dimensions;			// Non-zero means array
+	SSHORT		fld_character_set_id;	// ID of field's character set
+	SSHORT		fld_collation_id;		// ID of field's collation
+	SSHORT		fld_ttype;				// ID of field's language_driver
+	Firebird::string fld_type_of_name;	// TYPE OF
+	Firebird::string fld_type_of_table;	// TYPE OF table name
+	bool		fld_explicit_collation;	// COLLATE was explicit specified
+	bool		fld_not_nullable;		// NOT NULL was explicit specified
+	bool		fld_full_domain;		// Domain name without TYPE OF prefix
+	Firebird::string fld_name;
+	Firebird::MetaName fld_source;
 };
 
 // values used in fld_flags
@@ -296,6 +246,20 @@ enum fld_flags_vals {
 	FLD_national	= 2, // field uses NATIONAL character set
 	FLD_nullable	= 4,
 	FLD_system		= 8
+};
+
+//! database/log/cache file block
+class dsql_fil : public pool_alloc<dsql_type_fil>
+{
+public:
+	SLONG	fil_length;			// File length in pages
+	SLONG	fil_start;			// Starting page
+	dsql_str*	fil_name;			// File name
+	//dsql_fil*	fil_next;			// next file
+	//SSHORT	fil_shadow_number;	// shadow number if part of shadow
+	//SSHORT	fil_manual;			// flag to indicate manual shadow
+	//SSHORT	fil_partitions;		// number of log file partitions
+	//USHORT	fil_flags;
 };
 
 //! Stored Procedure block
@@ -308,24 +272,24 @@ public:
 	{
 	}
 
+	dsql_prc*	prc_next;		// Next relation in database
+	dsql_sym*	prc_symbol;		// Hash symbol for procedure
 	dsql_fld*	prc_inputs;		// Input parameters
 	dsql_fld*	prc_outputs;	// Output parameters
-	Firebird::QualifiedName prc_name;	// Name of procedure
+	Firebird::MetaName prc_name;	// Name of procedure
 	Firebird::MetaName prc_owner;	// Owner of procedure
 	SSHORT		prc_in_count;
 	SSHORT		prc_def_count;	// number of inputs with default values
 	SSHORT		prc_out_count;
 	USHORT		prc_id;			// Procedure id
 	USHORT		prc_flags;
-	bool		prc_private;	// Packaged private procedure
 };
 
 // prc_flags bits
 
 enum prc_flags_vals {
-	PRC_new_procedure	= 1,	// procedure is newly defined, not committed yet
-	PRC_dropped			= 2,	// procedure has been dropped
-	PRC_subproc			= 4		// Sub procedure
+	PRC_new_procedure	= 1, // procedure is newly defined, not committed yet
+	PRC_dropped			= 2  // procedure has been dropped
 };
 
 //! User defined function block
@@ -337,6 +301,8 @@ public:
 	{
 	}
 
+	dsql_udf*	udf_next;
+	dsql_sym*	udf_symbol;		// Hash symbol for udf
 	USHORT		udf_dtype;
 	SSHORT		udf_scale;
 	SSHORT		udf_sub_type;
@@ -344,51 +310,31 @@ public:
 	SSHORT		udf_character_set_id;
 	//USHORT		udf_character_length;
     USHORT      udf_flags;
-	Firebird::QualifiedName udf_name;
+	Firebird::MetaName udf_name;
 	Firebird::Array<dsc> udf_arguments;
-	bool		udf_private;	// Packaged private function
 };
 
 // udf_flags bits
 
 enum udf_flags_vals {
-	UDF_new_udf		= 1,	// udf is newly declared, not committed yet
-	UDF_dropped		= 2,	// udf has been dropped
-	UDF_subfunc		= 4		// sub function
+	UDF_new_udf		= 1, // udf is newly declared, not committed yet
+	UDF_dropped		= 2  // udf has been dropped
 };
 
 // Variables - input, output & local
 
 //! Variable block
-class dsql_var : public Firebird::PermanentStorage
+class dsql_var : public pool_alloc_rpt<SCHAR, dsql_type_var>
 {
 public:
-	enum Type
-	{
-		TYPE_INPUT,
-		TYPE_OUTPUT,
-		TYPE_LOCAL,
-		TYPE_HIDDEN
-	};
-
-public:
-	explicit dsql_var(MemoryPool& p)
-		: PermanentStorage(p),
-		  field(NULL),
-		  type(TYPE_INPUT),
-		  msgNumber(0),
-		  msgItem(0),
-		  number(0)
-	{
-		desc.clear();
-	}
-
-	dsql_fld* field;	// Field on which variable is based
-	Type type;			// Input, output, local or hidden variable
-	USHORT msgNumber;	// Message number containing variable
-	USHORT msgItem;		// Item number in message
-	USHORT number;		// Local variable number
-	dsc desc;
+	dsql_fld*	var_field;		// Field on which variable is based
+	//USHORT	var_flags;			// Reserved
+	//dsql_var_type	var_type;	// Too cumbersome to compile the right data type.
+	int		var_type;			// Input, output or local var.
+	USHORT	var_msg_number;		// Message number containing variable
+	USHORT	var_msg_item;		// Item number in message
+	USHORT	var_variable_number;	// Local variable number
+	TEXT	var_name[2];
 };
 
 
@@ -396,21 +342,22 @@ public:
 // (either collation or character set name)
 
 //! International symbol
-class dsql_intlsym : public pool_alloc<dsql_type_intlsym>
+class dsql_intlsym : public pool_alloc_rpt<SCHAR, dsql_type_intlsym>
 {
 public:
-	explicit dsql_intlsym(MemoryPool& p)
-		: intlsym_name(p)
-	{
-	}
-
-	Firebird::MetaName intlsym_name;
+	dsql_sym*	intlsym_symbol;		// Hash symbol for intlsym
 	USHORT		intlsym_type;		// what type of name
 	USHORT		intlsym_flags;
 	SSHORT		intlsym_ttype;		// id of implementation
 	SSHORT		intlsym_charset_id;
 	SSHORT		intlsym_collate_id;
 	USHORT		intlsym_bytes_per_char;
+	TEXT		intlsym_name[2];
+
+	static SSHORT generate(const void*, const dsql_intlsym* Item)
+	{
+		return Item->intlsym_charset_id;
+	}
 };
 
 // values used in intlsym_flags
@@ -420,170 +367,68 @@ enum intlsym_flags_vals {
 };
 
 
-// Compiled statement - shared by multiple requests.
-class DsqlCompiledStatement : public Firebird::PermanentStorage
+// Forward declaration.
+class dsql_par;
+
+//! Request information
+enum REQ_TYPE
 {
-public:
-	enum Type	// statement type
-	{
-		TYPE_SELECT, TYPE_SELECT_UPD, TYPE_INSERT, TYPE_DELETE, TYPE_UPDATE, TYPE_UPDATE_CURSOR,
-		TYPE_DELETE_CURSOR, TYPE_COMMIT, TYPE_ROLLBACK, TYPE_CREATE_DB, TYPE_DDL, TYPE_START_TRANS,
-		TYPE_EXEC_PROCEDURE, TYPE_COMMIT_RETAIN, TYPE_ROLLBACK_RETAIN, TYPE_SET_GENERATOR,
-		TYPE_SAVEPOINT, TYPE_EXEC_BLOCK, TYPE_SELECT_BLOCK, TYPE_SET_ROLE
-	};
-
-	// Statement flags.
-	static const unsigned FLAG_ORPHAN		= 0x01;
-	static const unsigned FLAG_NO_BATCH		= 0x02;
-	//static const unsigned FLAG_BLR_VERSION4	= 0x04;
-	//static const unsigned FLAG_BLR_VERSION5	= 0x08;
-	static const unsigned FLAG_SELECTABLE	= 0x10;
-
-public:
-	explicit DsqlCompiledStatement(MemoryPool& p)
-		: PermanentStorage(p),
-		  type(TYPE_SELECT),
-		  flags(0),
-		  blrVersion(5),
-		  sendMsg(NULL),
-		  receiveMsg(NULL),
-		  eof(NULL),
-		  dbKey(NULL),
-		  recVersion(NULL),
-		  parentRecVersion(NULL),
-		  parentDbKey(NULL),
-		  parentRequest(NULL)
-	{
-	}
-
-public:
-	MemoryPool& getPool() { return PermanentStorage::getPool(); }
-
-	Type getType() const { return type; }
-	void setType(Type value) { type = value; }
-
-	ULONG getFlags() const { return flags; }
-	void setFlags(ULONG value) { flags = value; }
-	void addFlags(ULONG value) { flags |= value; }
-
-	unsigned getBlrVersion() const { return blrVersion; }
-	void setBlrVersion(unsigned value) { blrVersion = value; }
-
-	Firebird::RefStrPtr& getSqlText() { return sqlText; }
-	const Firebird::RefStrPtr& getSqlText() const { return sqlText; }
-	void setSqlText(Firebird::RefString* value) { sqlText = value; }
-
-	dsql_msg* getSendMsg() { return sendMsg; }
-	const dsql_msg* getSendMsg() const { return sendMsg; }
-	void setSendMsg(dsql_msg* value) { sendMsg = value; }
-
-	dsql_msg* getReceiveMsg() { return receiveMsg; }
-	const dsql_msg* getReceiveMsg() const { return receiveMsg; }
-	void setReceiveMsg(dsql_msg* value) { receiveMsg = value; }
-
-	dsql_par* getEof() { return eof; }
-	const dsql_par* getEof() const { return eof; }
-	void setEof(dsql_par* value) { eof = value; }
-
-	dsql_par* getDbKey() { return dbKey; }
-	const dsql_par* getDbKey() const { return dbKey; }
-	void setDbKey(dsql_par* value) { dbKey = value; }
-
-	dsql_par* getRecVersion() { return recVersion; }
-	const dsql_par* getRecVersion() const { return recVersion; }
-	void setRecVersion(dsql_par* value) { recVersion = value; }
-
-	dsql_par* getParentRecVersion() { return parentRecVersion; }
-	const dsql_par* getParentRecVersion() const { return parentRecVersion; }
-	void setParentRecVersion(dsql_par* value) { parentRecVersion = value; }
-
-	dsql_par* getParentDbKey() { return parentDbKey; }
-	const dsql_par* getParentDbKey() const { return parentDbKey; }
-	void setParentDbKey(dsql_par* value) { parentDbKey = value; }
-
-	dsql_req* getParentRequest() const { return parentRequest; }
-	void setParentRequest(dsql_req* value) { parentRequest = value; }
-
-private:
-	Type type;					// Type of statement
-	ULONG flags;				// generic flag
-	unsigned blrVersion;
-	Firebird::RefStrPtr sqlText;
-	dsql_msg* sendMsg;			// Message to be sent to start request
-	dsql_msg* receiveMsg;		// Per record message to be received
-	dsql_par* eof;				// End of file parameter
-	dsql_par* dbKey;			// Database key for current of
-	dsql_par* recVersion;		// Record Version for current of
-	dsql_par* parentRecVersion;	// parent record version
-	dsql_par* parentDbKey;		// Parent database key for current of
-	dsql_req* parentRequest;	// Source request, if cursor update
+	REQ_SELECT, REQ_SELECT_UPD, REQ_INSERT, REQ_DELETE, REQ_UPDATE,
+	REQ_UPDATE_CURSOR, REQ_DELETE_CURSOR,
+	REQ_COMMIT, REQ_ROLLBACK, REQ_CREATE_DB, REQ_DDL, REQ_EMBED_SELECT,
+	REQ_START_TRANS, REQ_GET_SEGMENT, REQ_PUT_SEGMENT, REQ_EXEC_PROCEDURE,
+	REQ_COMMIT_RETAIN, REQ_ROLLBACK_RETAIN, REQ_SET_GENERATOR, REQ_SAVEPOINT,
+	REQ_EXEC_BLOCK, REQ_SELECT_BLOCK
 };
+
 
 class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
-	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
-
-public:
-	explicit dsql_req(MemoryPool& pool);
-
-public:
-	MemoryPool& getPool()
-	{
-		return req_pool;
-	}
-
-	jrd_tra* getTransaction()
-	{
-		return req_transaction;
-	}
-
-	const DsqlCompiledStatement* getStatement() const
-	{
-		return statement;
-	}
-
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
-		ntrace_result_t* traceResult) = 0;
-
-	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
-		bool singleton) = 0;
-
-	virtual void setCursor(thread_db* tdbb, const TEXT* name);
-
-	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
-
-	virtual void setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata);
-
-	static void destroy(thread_db* tdbb, dsql_req* request, bool drop);
-
-private:
+	dsql_req*	req_parent;		// Source request, if cursor update
+	dsql_req*	req_sibling;	// Next sibling request, if cursor update
+	dsql_req*	req_offspring;	// Cursor update requests
 	MemoryPool&	req_pool;
 
-public:
-	const DsqlCompiledStatement* statement;
-	Firebird::Array<DsqlCompiledStatement*> cursors;	// Cursor update statements
-
+	dsql_sym* req_name;			// Name of request
+	dsql_sym* req_cursor;		// Cursor symbol, if any
 	dsql_dbb* req_dbb;			// DSQL attachment
 	jrd_tra* req_transaction;	// JRD transaction
-	jrd_req* req_request;		// JRD request
+	dsql_nod* req_ddl_node;		// Store metadata request
+	class dsql_blb* req_blob;	// Blob info for blob requests
+	jrd_req*	req_request;	// JRD request
+	//dsql_str*	req_blr_string;	// String block during BLR generation
+	Firebird::HalfStaticArray<BLOB_PTR, 1024> req_blr_data;
+	class dsql_msg* req_send;		// Message to be sent to start request
+	class dsql_msg* req_receive;	// Per record message to be received
+	class dsql_msg* req_async;		// Message for sending scrolling information
+	dsql_par* req_eof;			// End of file parameter
+	dsql_par* req_dbkey;		// Database key for current of
+	dsql_par* req_rec_version;	// Record Version for current of
+	dsql_par* req_parent_rec_version;	// parent record version
+	dsql_par* req_parent_dbkey;	// Parent database key for current of
+	//BLOB_PTR* req_blr;		// Running blr address
+	//BLOB_PTR* req_blr_yellow;	// Threshold for upping blr buffer size
+	ULONG	req_inserts;		// records processed in request
+	ULONG	req_deletes;
+	ULONG	req_updates;
+	ULONG	req_selects;
+	REQ_TYPE req_type;			// Type of request
+	ULONG	req_flags;			// generic flag
 
-	unsigned req_flags;			// flags
-
-	Firebird::Array<UCHAR*>	req_msg_buffers;
-	Firebird::string req_cursor;	// Cursor name, if any
-	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
+	Firebird::RefStrPtr req_sql_text;
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time
 	SINT64 req_fetch_elapsed;		// Number of clock ticks spent while fetching rows for this request since we reported it last time
 	SINT64 req_fetch_rowcount;		// Total number of rows returned by this request
 	bool req_traced;				// request is traced via TraceAPI
 
-	JStatement* req_interface;
-
 protected:
+	dsql_req(MemoryPool& p)
+		: req_pool(p),
+		  req_blr_data(p)
+	{
+	}
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().
 	~dsql_req()
@@ -595,146 +440,285 @@ protected:
 	friend class Firebird::MemoryPool;
 };
 
-class DsqlDmlRequest : public dsql_req
+
+class CompiledStatement : public dsql_req
 {
 public:
-	explicit DsqlDmlRequest(MemoryPool& pool, StmtNode* aNode)
-		: dsql_req(pool),
-		  node(aNode),
-		  needDelayedFormat(false)
+	explicit CompiledStatement(MemoryPool& p)
+		: dsql_req(p),
+		  req_debug_data(p),
+		  req_main_context(p),
+		  req_context(&req_main_context),
+		  req_union_context(p),
+		  req_dt_context(p),
+		  req_labels(p),
+		  req_cursors(p),
+		  req_hidden_vars(p),
+		  req_curr_ctes(p),
+		  req_ctes(p),
+		  req_cte_aliases(p)
 	{
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
-		ntrace_result_t* traceResult);
+protected:
+	// Request should never be destroyed using delete.
+	// It dies together with its pool in release_request().
+	~CompiledStatement();
 
-	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
-		bool singleton);
-
-	virtual void setCursor(thread_db* tdbb, const TEXT* name);
-
-	virtual bool fetch(thread_db* tdbb, UCHAR* buffer);
-
-	virtual void setDelayedFormat(thread_db* tdbb, Firebird::IMessageMetadata* metadata);
-
-private:
-	NestConst<StmtNode> node;
-	Firebird::RefPtr<Firebird::IMessageMetadata> delayedFormat;
-	bool needDelayedFormat;
-};
-
-class DsqlDdlRequest : public dsql_req
-{
 public:
-	explicit DsqlDdlRequest(MemoryPool& pool, DdlNode* aNode)
-		: dsql_req(pool),
-		  node(aNode),
-		  internalScratch(NULL)
+	// begin - member functions that should be private
+	void append_uchar(UCHAR byte)
 	{
+		req_blr_data.add(byte);
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
-		ntrace_result_t* traceResult);
-
-	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
-		bool singleton);
-
-private:
-	// Rethrow an exception with isc_no_meta_update and prefix codes.
-	void rethrowDdlException(Firebird::status_exception& ex, bool metadataUpdate);
-
-private:
-	NestConst<DdlNode> node;
-	DsqlCompilerScratch* internalScratch;
-};
-
-class DsqlTransactionRequest : public dsql_req
-{
-public:
-	explicit DsqlTransactionRequest(MemoryPool& pool, TransactionNode* aNode)
-		: dsql_req(pool),
-		  node(aNode)
+	void append_ushort(USHORT val)
 	{
-		req_traced = false;
+		append_uchar(val);
+		append_uchar(val >> 8);
 	}
 
-	virtual void dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
-		ntrace_result_t* traceResult);
+	void append_ulong(ULONG val)
+	{
+		append_ushort(val);
+		append_ushort(val >> 16);
+	}
 
-	virtual void execute(thread_db* tdbb, jrd_tra** traHandle,
-		Firebird::IMessageMetadata* inMetadata, const UCHAR* inMsg,
-		Firebird::IMessageMetadata* outMetadata, UCHAR* outMsg,
-		bool singleton);
+	void		append_cstring(UCHAR verb, const char* string);
+	void		append_meta_string(const char* string);
+	void		append_user_string(UCHAR verb, const dsql_str* str);
+	void        append_raw_string(const char* string, USHORT len);
+	void        append_raw_string(const UCHAR* string, USHORT len);
+	void		append_string(UCHAR verb, const char* string, USHORT len);
+	void		append_string(UCHAR verb, const Firebird::MetaName& name);
+	void		append_string(UCHAR verb, const Firebird::string& name);
+	void		append_number(UCHAR verb, SSHORT number);
+	void		begin_blr(UCHAR verb);
+	void		end_blr();
+	void		append_uchars(UCHAR byte, int count);
+	void		append_ushort_with_length(USHORT val);
+	void		append_ulong_with_length(ULONG val);
+	void		append_file_length(ULONG length);
+	void		append_file_start(ULONG start);
+	void		generate_unnamed_trigger_beginning(	bool		on_update_trigger,
+													const char*	prim_rel_name,
+													const dsql_nod* prim_columns,
+													const char*	for_rel_name,
+													const dsql_nod* for_columns);
+
+	void	begin_debug();
+	void	end_debug();
+	void	put_debug_src_info(USHORT, USHORT);
+	void	put_debug_variable(USHORT, const TEXT*);
+	void	put_debug_argument(UCHAR, USHORT, const TEXT*);
+	void	append_debug_info();
+	// end - member functions that should be private
+
+	void addCTEs(dsql_nod* list);
+	dsql_nod* findCTE(const dsql_str* name);
+	void clearCTEs();
+	void checkUnusedCTEs() const;
+
+	// hvlad: each member of recursive CTE can refer to CTE itself (only once) via
+	// CTE name or via alias. We need to substitute this aliases when processing CTE
+	// member to resolve field names. Therefore we store all aliases in order of
+	// occurrence and later use it in backward order (since our parser is right-to-left).
+	// Also we put CTE name after all such aliases to distinguish aliases for 
+	// different CTE's.
+	// We also need to repeat this process if main select expression contains union with
+	// recursive CTE
+	void addCTEAlias(const dsql_str* alias)
+	{
+		req_cte_aliases.add(alias);
+	}
+	const dsql_str* getNextCTEAlias()
+	{
+		return *(--req_curr_cte_alias);
+	}
+	void resetCTEAlias(const dsql_str* alias)
+	{
+		const dsql_str* const* begin = req_cte_aliases.begin();
+
+		req_curr_cte_alias = req_cte_aliases.end() - 1;
+		fb_assert(req_curr_cte_alias >= begin);
+
+		const dsql_str* curr = *(req_curr_cte_alias);
+		while (strcmp(curr->str_data, alias->str_data)) 
+		{
+			req_curr_cte_alias--;
+			fb_assert(req_curr_cte_alias >= begin);
+
+			curr = *(req_curr_cte_alias);
+		}
+	}
+
+	bool isPsql() const
+	{
+		return psql;
+	}
+
+	void setPsql(bool value)
+	{
+		psql = value;
+	}
+
+	dsql_nod* req_blk_node;		// exec_block node
+	dsql_rel* req_relation;		// relation created by this request (for DDL)
+	dsql_prc* req_procedure;	// procedure created by this request (for DDL)
+	Firebird::HalfStaticArray<BLOB_PTR, 128> req_debug_data;
+	DsqlContextStack	req_main_context;
+	DsqlContextStack*	req_context;
+	DsqlContextStack	req_union_context;	// Save contexts for views of unions
+	DsqlContextStack	req_dt_context;		// Save contexts for views of derived tables
+	class dsql_ctx* req_outer_agg_context;	// agg context for outer ref
+	ULONG	req_base_offset;		// place to go back and stuff in blr length
+	USHORT	req_context_number;	// Next available context number
+	USHORT	req_derived_context_number;	// Next available context number for derived tables
+	USHORT	req_scope_level;		// Scope level for parsing aliases in subqueries
+	//USHORT	req_message_number;	// Next available message number
+	USHORT	req_loop_level;		// Loop level
+	DsqlStrStack	req_labels;		// Loop labels
+	USHORT	req_cursor_number;		// Cursor number
+	DsqlNodStack	req_cursors;	// Cursors
+	USHORT	req_in_select_list;		// now processing "select list"
+	USHORT	req_in_where_clause;	// processing "where clause"
+	USHORT	req_in_group_by_clause;	// processing "group by clause"
+	USHORT	req_in_having_clause;	// processing "having clause"
+	USHORT	req_in_order_by_clause;	// processing "order by clause"
+	USHORT	req_error_handlers;	// count of active error handlers
+	USHORT	req_client_dialect;	// dialect passed into the API call
+	USHORT	req_in_outer_join;	// processing inside outer-join part
+	dsql_str*		req_alias_relation_prefix;	// prefix for every relation-alias.
+	DsqlNodStack	req_hidden_vars;			// hidden variables
+	USHORT			req_hidden_vars_number;		// next hidden variable number
+
+	DsqlNodStack req_curr_ctes;			// current processing CTE's
+	class dsql_ctx* req_recursive_ctx;	// context of recursive CTE
+	USHORT req_recursive_ctx_id;		// id of recursive union stream context
+	const dsql_str* const* req_curr_cte_alias;
 
 private:
-	NestConst<TransactionNode> node;
+	Firebird::HalfStaticArray<dsql_nod*, 4> req_ctes; // common table expressions
+	Firebird::HalfStaticArray<const dsql_str*, 4> req_cte_aliases; // CTE aliases in recursive members
+
+	bool psql;
 };
+
+
+class PsqlChanger
+{
+public:
+	PsqlChanger(CompiledStatement* aStatement, bool value)
+		: statement(aStatement),
+		  oldValue(statement->isPsql())
+	{
+		statement->setPsql(value);
+	}
+
+	~PsqlChanger()
+	{
+		statement->setPsql(oldValue);
+	}
+
+private:
+	// copying is prohibited
+	PsqlChanger(const PsqlChanger&);
+	PsqlChanger& operator =(const PsqlChanger&);
+
+	CompiledStatement* statement;
+	const bool oldValue;
+};
+
+
+// values used in req_flags
+enum req_flags_vals {
+	REQ_cursor_open			= 0x00001,
+	REQ_save_metadata		= 0x00002,
+	REQ_prepared			= 0x00004, // Set in DSQL_prepare but never checked
+	REQ_procedure			= 0x00008,
+	REQ_trigger				= 0x00010,
+	REQ_orphan				= 0x00020,
+	//REQ_enforce_scope		= 0x00040, // NOT USED
+	REQ_no_batch			= 0x00080,
+#ifdef SCROLLABLE_CURSORS
+	REQ_backwards			= 0x00100,
+#endif
+	REQ_blr_version4		= 0x00200,
+	REQ_blr_version5		= 0x00400,
+	REQ_block				= 0x00800,
+	REQ_selectable			= 0x01000,
+	REQ_CTE_recursive		= 0x02000,
+	REQ_dsql_upd_or_ins		= 0x04000,
+	REQ_returning_into		= 0x08000,
+	REQ_in_auto_trans_block	= 0x10000
+};
+
+//! Blob
+class dsql_blb : public pool_alloc<dsql_type_blb>
+{
+public:
+	// blb_field is currently assigned in one place and never used
+	//dsql_nod*	blb_field;			// Related blob field
+	dsql_par*	blb_blob_id;		// Parameter to hold blob id
+	dsql_par*	blb_segment;		// Parameter for segments
+	dsql_nod*	blb_from;
+	dsql_nod*	blb_to;
+	dsql_msg*	blb_open_in_msg;	// Input message to open cursor
+	dsql_msg*	blb_open_out_msg;	// Output message from open cursor
+	dsql_msg*	blb_segment_msg;	// Segment message
+	blb*		blb_blob;			// JRD blob
+};
+
+//! Transaction block
+/* UNUSED
+class dsql_tra : public pool_alloc<dsql_type_tra>
+{
+public:
+	dsql_tra* tra_next;		// Next open transaction
+};
+*/
 
 //! Implicit (NATURAL and USING) joins
 class ImplicitJoin : public pool_alloc<dsql_type_imp_join>
 {
 public:
-	ValueExprNode* value;
+	dsql_nod* value;
 	dsql_ctx* visibleInContext;
-};
-
-struct PartitionMap
-{
-	PartitionMap(ValueListNode* aPartition, ValueListNode* aOrder)
-		: partition(aPartition),
-		  partitionRemapped(NULL),
-		  order(aOrder),
-		  map(NULL),
-		  context(0)
-	{
-	}
-
-	NestConst<ValueListNode> partition;
-	NestConst<ValueListNode> partitionRemapped;
-	NestConst<ValueListNode> order;
-	dsql_map* map;
-	USHORT context;
 };
 
 //! Context block used to create an instance of a relation reference
 class dsql_ctx : public pool_alloc<dsql_type_ctx>
 {
 public:
-	explicit dsql_ctx(MemoryPool& p)
-		: ctx_alias(p),
-		  ctx_internal_alias(p),
-		  ctx_main_derived_contexts(p),
+	explicit dsql_ctx(MemoryPool &p)
+		: ctx_main_derived_contexts(p),
 		  ctx_childs_derived_table(p),
-	      ctx_imp_join(p),
-	      ctx_win_maps(p)
+	      ctx_imp_join(p)
 	{
 	}
 
+	dsql_req*			ctx_request;		// Parent request
 	dsql_rel*			ctx_relation;		// Relation for context
 	dsql_prc*			ctx_procedure;		// Procedure for context
-	NestConst<ValueListNode> ctx_proc_inputs;	// Procedure input parameters
-	dsql_map*			ctx_map;			// Maps for aggregates and unions
-	RseNode*			ctx_rse;			// Sub-rse for aggregates
+	dsql_nod*			ctx_proc_inputs;	// Procedure input parameters
+	class dsql_map*		ctx_map;			// Map for aggregates
+	dsql_nod*			ctx_rse;			// Sub-rse for aggregates
 	dsql_ctx*			ctx_parent;			// Parent context for aggregates
+	const TEXT*			ctx_alias;			// Context alias (can include concatenated derived table alias)
+	const TEXT*			ctx_internal_alias;	// Alias as specified in query
 	USHORT				ctx_context;		// Context id
 	USHORT				ctx_recursive;		// Secondary context id for recursive UNION (nobody referred to this context)
 	USHORT				ctx_scope_level;	// Subquery level within this request
 	USHORT				ctx_flags;			// Various flag values
-	USHORT				ctx_in_outer_join;	// inOuterJoin when context was created
-	Firebird::string	ctx_alias;			// Context alias (can include concatenated derived table alias)
-	Firebird::string	ctx_internal_alias;	// Alias as specified in query
+	USHORT				ctx_in_outer_join;	// req_in_outer_join when context was created
 	DsqlContextStack	ctx_main_derived_contexts;	// contexts used for blr_derived_expr
 	DsqlContextStack	ctx_childs_derived_table;	// Childs derived table context
 	Firebird::GenericMap<Firebird::Pair<Firebird::Left<
 		Firebird::MetaName, ImplicitJoin*> > > ctx_imp_join;	// Map of USING fieldname to ImplicitJoin
-	Firebird::Array<PartitionMap*> ctx_win_maps;	// Maps for window functions
 
 	dsql_ctx& operator=(dsql_ctx& v)
 	{
+		ctx_request = v.ctx_request;
 		ctx_relation = v.ctx_relation;
 		ctx_procedure = v.ctx_procedure;
 		ctx_proc_inputs = v.ctx_proc_inputs;
@@ -750,181 +734,63 @@ public:
 		ctx_main_derived_contexts.assign(v.ctx_main_derived_contexts);
 		ctx_childs_derived_table.assign(v.ctx_childs_derived_table);
 		ctx_imp_join.assign(v.ctx_imp_join);
-		ctx_win_maps.assign(v.ctx_win_maps);
 
 		return *this;
 	}
 
-	Firebird::string getObjectName() const
-	{
-		if (ctx_relation)
-			return ctx_relation->rel_name.c_str();
-		if (ctx_procedure)
-			return ctx_procedure->prc_name.toString();
-		return "";
-	}
-
-	bool getImplicitJoinField(const Firebird::MetaName& name, NestConst<ValueExprNode>& node);
-	PartitionMap* getPartitionMap(DsqlCompilerScratch* dsqlScratch,
-		ValueListNode* partitionNode, ValueListNode* orderNode);
+	bool getImplicitJoinField(const Firebird::MetaName& name, dsql_nod*& node);
 };
 
 // Flag values for ctx_flags
 
-const USHORT CTX_outer_join 			= 0x01;	// reference is part of an outer join
-const USHORT CTX_system					= 0x02;	// Context generated by system (NEW/OLD in triggers, check-constraint, RETURNING)
-const USHORT CTX_null					= 0x04;	// Fields of the context should be resolved to NULL constant
-const USHORT CTX_returning				= 0x08;	// Context generated by RETURNING
-const USHORT CTX_recursive				= 0x10;	// Context has secondary number (ctx_recursive) generated for recursive UNION
-const USHORT CTX_view_with_check_store	= 0x20;	// Context of WITH CHECK OPTION view's store trigger
-const USHORT CTX_view_with_check_modify	= 0x40;	// Context of WITH CHECK OPTION view's modify trigger
-const USHORT CTX_cursor					= 0x80;	// Context is a cursor
+const USHORT CTX_outer_join = 0x01;	// reference is part of an outer join
+const USHORT CTX_system		= 0x02;	// Context generated by system (NEW/OLD in triggers, check-constraint, RETURNING)
+const USHORT CTX_null		= 0x04;	// Fields of the context should be resolved to NULL constant
+const USHORT CTX_returning	= 0x08;	// Context generated by RETURNING
+const USHORT CTX_recursive	= 0x10;	// Context has secondary number (ctx_recursive) generated for recursive UNION
 
 //! Aggregate/union map block to map virtual fields to their base
 //! TMN: NOTE! This datatype should definitely be renamed!
 class dsql_map : public pool_alloc<dsql_type_map>
 {
 public:
-	dsql_map* map_next;						// Next map in item
-	NestConst<ValueExprNode> map_node;		// Value for map item
-	USHORT map_position;					// Position in map
-	NestConst<PartitionMap> map_partition;	// Partition
+	dsql_map*	map_next;			// Next map in item
+	dsql_nod*	map_node;			// Value for map item
+	USHORT		map_position;		// Position in map
 };
 
-// Message block used in communicating with a running request
-class dsql_msg : public Firebird::PermanentStorage
+//! Message block used in communicating with a running request
+class dsql_msg : public pool_alloc<dsql_type_msg>
 {
 public:
-	explicit dsql_msg(MemoryPool& p)
-		: PermanentStorage(p),
-		  msg_parameters(p),
-		  msg_number(0),
-		  msg_buffer_number(0),
-		  msg_length(0),
-		  msg_parameter(0),
-		  msg_index(0)
-	{
-	}
-
-	Firebird::Array<dsql_par*> msg_parameters;	// Parameter list
+	dsql_par*	msg_parameters;	// Parameter list
+	UCHAR*		msg_buffer;		// Message buffer
 	USHORT		msg_number;		// Message number
-	USHORT		msg_buffer_number;	// Message buffer number (used instead of msg_number for blob msgs)
-	ULONG		msg_length;		// Message length
+	USHORT		msg_length;		// Message length
 	USHORT		msg_parameter;	// Next parameter number
 	USHORT		msg_index;		// Next index into SQLDA
 };
 
-// Parameter block used to describe a parameter of a message
-class dsql_par : public Firebird::PermanentStorage
+//! Parameter block used to describe a parameter of a message
+class dsql_par : public pool_alloc<dsql_type_par>
 {
 public:
-	explicit dsql_par(MemoryPool& p)
-		: PermanentStorage(p),
-		  par_message(NULL),
-		  par_null(NULL),
-		  par_node(NULL),
-		  par_dbkey_relname(p),
-		  par_rec_version_relname(p),
-		  par_name(p),
-		  par_rel_name(p),
-		  par_owner_name(p),
-		  par_rel_alias(p),
-		  par_alias(p),
-		  par_parameter(0),
-		  par_index(0),
-		  par_is_text(false)
-	{
-		par_desc.clear();
-	}
-
 	dsql_msg*	par_message;		// Parent message
+	dsql_par*	par_next;			// Next parameter in linked list
 	dsql_par*	par_null;			// Null parameter, if used
-	ValueExprNode* par_node;					// Associated value node, if any
-	Firebird::MetaName par_dbkey_relname;		// Context of internally requested dbkey
-	Firebird::MetaName par_rec_version_relname;	// Context of internally requested rec. version
-	Firebird::MetaName par_name;				// Parameter name, if any
-	Firebird::MetaName par_rel_name;			// Relation name, if any
-	Firebird::MetaName par_owner_name;			// Owner name, if any
-	Firebird::MetaName par_rel_alias;			// Relation alias, if any
-	Firebird::MetaName par_alias;				// Alias, if any
-	dsc			par_desc;			// Field data type
+	dsql_nod*	par_node;			// Associated value node, if any
+	dsql_ctx*	par_dbkey_ctx;		// Context of internally requested dbkey
+	dsql_ctx*	par_rec_version_ctx;	// Context of internally requested record version
+	const TEXT*	par_name;			// Parameter name, if any
+	const TEXT*	par_rel_name;		// Relation name, if any
+	const TEXT*	par_owner_name;		// Owner name, if any
+	const TEXT*	par_rel_alias;		// Relation alias, if any
+	const TEXT*	par_alias;			// Alias, if any
+	DSC			par_desc;			// Field data type
+	DSC			par_user_desc;		// SQLDA data type
 	USHORT		par_parameter;		// BLR parameter number
 	USHORT		par_index;			// Index into SQLDA, if appropriate
-	bool		par_is_text;		// Parameter should be dtype_text (SQL_TEXT) externaly
 };
-
-class CStrCmp
-{
-public:
-	static int greaterThan(const char* s1, const char* s2)
-	{
-		return strcmp(s1, s2) > 0;
-	}
-};
-
-typedef Firebird::SortedArray<const char*,
-			Firebird::EmptyStorage<const char*>, const char*,
-			Firebird::DefaultKeyValue<const char*>,
-			CStrCmp>
-		StrArray;
-
-class IntlString
-{
-public:
-	IntlString(Firebird::MemoryPool& p, const Firebird::string& str,
-		const Firebird::MetaName& cs = NULL)
-		: charset(p, cs),
-		  s(p, str)
-	{ }
-
-	explicit IntlString(const Firebird::string& str, const Firebird::MetaName& cs = NULL)
-		: charset(cs),
-		  s(str)
-	{ }
-
-	IntlString(Firebird::MemoryPool& p, const IntlString& o)
-		: charset(p, o.charset),
-		  s(p, o.s)
-	{ }
-
-	explicit IntlString(Firebird::MemoryPool& p)
-		: charset(p),
-		  s(p)
-	{ }
-
-	Firebird::string toUtf8(DsqlCompilerScratch*) const;
-
-	const Firebird::MetaName& getCharSet() const
-	{
-		return charset;
-	}
-
-	void setCharSet(const Firebird::MetaName& value)
-	{
-		charset = value;
-	}
-
-	const Firebird::string& getString() const
-	{
-		return s;
-	}
-
-	bool hasData() const
-	{
-		return s.hasData();
-	}
-
-	bool isEmpty() const
-	{
-		return s.isEmpty();
-	}
-
-private:
-	Firebird::MetaName charset;
-	Firebird::string s;
-};
-
-} // namespace
 
 /*! \var unsigned DSQL_debug
     \brief Debug level
@@ -940,8 +806,21 @@ private:
     > 256   Display yacc parser output level = DSQL_level>>8
 */
 
+// CVC: Enumeration used for the COMMENT command.
+enum
+{
+	ddl_database, ddl_domain, ddl_relation, ddl_view, ddl_procedure, ddl_trigger,
+	ddl_udf, ddl_blob_filter, ddl_exception, ddl_generator, ddl_index, ddl_role,
+	ddl_charset, ddl_collation//, ddl_sec_class
+};
+
+} // namespace
+
+// macros for error generation
+
 #ifdef DSQL_DEBUG
-extern unsigned DSQL_debug;
+	extern unsigned DSQL_debug;
 #endif
 
 #endif // DSQL_DSQL_H
+

@@ -38,9 +38,9 @@
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/isc_f_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -56,10 +56,10 @@ const int BUFFER_SIZE	= MAX_DATA;
 const char* PIPE_PREFIX			= "pipe"; // win32-specific
 const char* SERVER_PIPE_SUFFIX	= "server";
 const char* EVENT_PIPE_SUFFIX	= "event";
-AtomicCounter event_counter;
+Firebird::AtomicCounter event_counter;
 
-static GlobalPtr<PortsCleanup> wnet_ports;
-static GlobalPtr<Mutex> init_mutex;
+static Firebird::GlobalPtr<PortsCleanup> wnet_ports;
+static Firebird::GlobalPtr<Firebird::Mutex> init_mutex;
 static volatile bool wnet_initialized = false;
 static volatile bool wnet_shutdown = false;
 
@@ -73,17 +73,23 @@ static void		disconnect(rem_port*);
 static void		exit_handler(void*);
 #endif
 static void		force_close(rem_port*);
-static rem_str*		make_pipe_name(const RefPtr<Config>&, const TEXT*, const TEXT*, const TEXT*);
+static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
 static rem_port*	receive(rem_port*, PACKET*);
 static int		send_full(rem_port*, PACKET*);
 static int		send_partial(rem_port*, PACKET*);
 static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
 static bool_t	xdrwnet_endofrecord(XDR*);//, int);
+static int		wnet_destroy(XDR*);
 static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
-static void		wnet_gen_error(rem_port*, const Arg::StatusVector& v);
+static void		wnet_gen_error(rem_port*, const Firebird::Arg::StatusVector& v);
 static bool_t	wnet_getbytes(XDR*, SCHAR*, u_int);
+static bool_t	wnet_getlong(XDR*, SLONG*);
+static u_int	wnet_getpostn(XDR*);
+static caddr_t	wnet_inline(XDR*, u_int);
+static bool_t	wnet_putlong(XDR*, const SLONG*);
 static bool_t	wnet_putbytes(XDR*, const SCHAR*, u_int);
 static bool_t	wnet_read(XDR*);
+static bool_t	wnet_setpostn(XDR*, u_int);
 static bool_t	wnet_write(XDR*); //, int);
 #ifdef DEBUG
 static void		packet_print(const TEXT*, const UCHAR*, const int);
@@ -96,17 +102,22 @@ static int		cleanup_ports(const int, const int, void*);
 
 static xdr_t::xdr_ops wnet_ops =
 {
+	wnet_getlong,
+	wnet_putlong,
 	wnet_getbytes,
-	wnet_putbytes
+	wnet_putbytes,
+	wnet_getpostn,
+	wnet_setpostn,
+	wnet_inline,
+	wnet_destroy
 };
 
 
-rem_port* WNET_analyze(ClntAuthBlock* cBlock,
-					   const PathName& file_name,
-					   const TEXT* node_name,
-					   bool uv_flag,
-					   RefPtr<Config>* config,
-					   const Firebird::PathName* ref_db_name)
+rem_port* WNET_analyze(const Firebird::PathName& file_name,
+					ISC_STATUS*	status_vector,
+					const TEXT*	node_name,
+					//const TEXT*	user_string,
+					bool	uv_flag)
 {
 /**************************************
  *
@@ -130,21 +141,15 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
-	string buffer;
-	ClumpletWriter user_id(ClumpletReader::UnTagged, 64000);
-	if (cBlock)
-	{
-		cBlock->extractDataFromPluginTo(user_id);
-	}
+	Firebird::string buffer;
+	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
-	ISC_get_user(&buffer, 0, 0);
+	ISC_get_user(&buffer, 0, 0, 0);
 	buffer.lower();
-	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);
 	buffer.lower();
-	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_host, buffer);
 
 	if (uv_flag) {
@@ -156,43 +161,45 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	P_CNCT* const cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
-	cnct->p_cnct_cversion = CONNECT_VERSION3;
+	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
+	cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
+	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
 
-	const PathName& cnct_file(ref_db_name ? (*ref_db_name) : file_name);
-	cnct->p_cnct_file.cstr_length = (ULONG) cnct_file.length();
-	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(cnct_file.c_str());
+	// Note: prior to V3.1E a receivers could not in truth handle more
+	// than 5 protocol descriptions; however, this restriction does not
+	// apply to Windows since it was created in 4.0
 
 	// If we want user verification, we can't speak anything less than version 7
 
-	cnct->p_cnct_user_id.cstr_length = (ULONG) user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
 	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
 
-	static const p_cnct::p_cnct_repeat protocols_to_try[] =
+	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_batch_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_batch_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_batch_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_batch_send, 4)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_batch_send, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_rpc, ptype_batch_send, 5)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+#endif
 	};
-	fb_assert(FB_NELEM(protocols_to_try) <= FB_NELEM(cnct->p_cnct_versions));
-	cnct->p_cnct_count = FB_NELEM(protocols_to_try);
+	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
 	for (size_t i = 0; i < cnct->p_cnct_count; i++) {
-		cnct->p_cnct_versions[i] = protocols_to_try[i];
+		cnct->p_cnct_versions[i] = protocols_to_try1[i];
 	}
 
 	// If we can't talk to a server, punt. Let somebody else generate an error.
 
-	rem_port* port = NULL;
-	try
-	{
-		port = WNET_connect(node_name, packet, 0, config);
-	}
-	catch (const Exception&)
+	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
+	if (!port)
 	{
 		delete rdb;
-		throw;
+		return NULL;
 	}
 
 	// Get response packet from server.
@@ -201,75 +208,123 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	port->port_context = rdb;
 	port->receive(packet);
 
-	P_ACPT* accept = NULL;
-	switch (packet->p_operation)
+	if (packet->p_operation == op_reject && !uv_flag)
 	{
-	case op_accept_data:
-	case op_cond_accept:
-		accept = &packet->p_acpd;
-		if (cBlock)
-		{
-			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
-									   packet->p_acpd.p_acpt_data.cstr_address);
-			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
-			port->addServerKeys(&packet->p_acpd.p_acpt_keys);
-			cBlock->resetClnt(&file_name, &packet->p_acpd.p_acpt_keys);
-		}
-		break;
-
-	case op_accept:
-		if (cBlock)
-		{
-			cBlock->resetClnt(&file_name);
-		}
-		accept = &packet->p_acpt;
-		break;
-
-	case op_response:
-		try
-		{
-			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
-			REMOTE_check_response(&warning, rdb, packet);
-		}
-		catch(const Firebird::Exception&)
-		{
-			disconnect(port);
-			delete rdb;
-			throw;
-		}
-		// fall through - response is not a required accept
-
-	default:
 		disconnect(port);
-		delete rdb;
-		Arg::Gds(isc_connect_reject).raise();
-		break;
+		packet->p_operation = op_connect;
+		cnct->p_cnct_operation = op_attach;
+		cnct->p_cnct_cversion = CONNECT_VERSION2;
+		cnct->p_cnct_client = ARCHITECTURE;
+		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
+		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
+
+		// try again with next set of known protocols
+
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
+
+		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_rpc, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_rpc, ptype_batch_send, 2),
+		};
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
+
+		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+			cnct->p_cnct_versions[i] = protocols_to_try2[i];
+		}
+
+		port = WNET_connect(node_name, packet, status_vector, 0);
+		if (!port)
+		{
+			delete rdb;
+			return NULL;
+		}
+
+		// Get response packet from server.
+
+		rdb->rdb_port = port;
+		port->port_context = rdb;
+		port->receive(packet);
 	}
 
-	fb_assert(accept);
-	fb_assert(port);
-	port->port_protocol = accept->p_acpt_version;
+	if (packet->p_operation == op_reject && !uv_flag)
+	{
+		disconnect(port);
+		packet->p_operation = op_connect;
+		cnct->p_cnct_operation = op_attach;
+		cnct->p_cnct_cversion = CONNECT_VERSION2;
+		cnct->p_cnct_client = ARCHITECTURE;
+		cnct->p_cnct_file.cstr_length = (USHORT) file_name.length();
+		cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(file_name.c_str());
+
+		// try again with next set of known protocols
+
+		cnct->p_cnct_user_id.cstr_length = (USHORT) user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
+
+		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_rpc, ptype_batch_send, 1)
+		};
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
+
+		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+			cnct->p_cnct_versions[i] = protocols_to_try3[i];
+		}
+
+		port = WNET_connect(node_name, packet, status_vector, 0);
+		if (!port)
+		{
+			delete rdb;
+			return NULL;
+		}
+
+		// Get response packet from server.
+
+		rdb->rdb_port = port;
+		port->port_context = rdb;
+		port->receive(packet);
+	}
+
+	if (packet->p_operation != op_accept)
+	{
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_connect_reject;
+		*status_vector++ = 0;
+		delete rdb;
+		disconnect(port);
+		return NULL;
+	}
+
+	port->port_protocol = packet->p_acpt.p_acpt_version;
 
 	// once we've decided on a protocol, concatenate the version
 	// string to reflect it...
 
-	string temp;
+	Firebird::string temp;
 	temp.printf("%s/P%d", port->port_version->str_data,
 						  port->port_protocol & FB_PROTOCOL_MASK);
 	delete port->port_version;
 	port->port_version = REMOTE_make_string(temp.c_str());
 
-	if (accept->p_acpt_architecture == ARCHITECTURE)
+	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
 
-	if (accept->p_acpt_type != ptype_out_of_band)
+	if (packet->p_acpt.p_acpt_type == ptype_rpc)
+		port->port_flags |= PORT_rpc;
+
+	if (packet->p_acpt.p_acpt_type != ptype_out_of_band)
 		port->port_flags |= PORT_no_oob;
 
 	return port;
 }
 
 
-rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::RefPtr<Config>* config)
+rem_port* WNET_connect(const TEXT*		name,
+				  PACKET*	packet,
+				  ISC_STATUS*	status_vector,
+				  USHORT	flag)
 {
 /**************************************
  *
@@ -284,13 +339,13 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
  *
  **************************************/
 	rem_port* const port = alloc_port(0);
-	if (config)
-	{
-		port->port_config = *config;
-	}
+	port->port_status_vector = status_vector;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = 0;
+	status_vector[2] = isc_arg_end;
 
 	delete port->port_connection;
-	port->port_connection = make_pipe_name(port->getPortConfig(), name, SERVER_PIPE_SUFFIX, 0);
+	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
 
 	// If we're a host, just make the connection
 
@@ -352,7 +407,6 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
 			port->port_server_flags |= SRVR_server;
-			port->port_flags |= PORT_server;
 			if (flag & SRVR_multi_client)
 			{
 				port->port_server_flags |= SRVR_multi_client;
@@ -364,7 +418,7 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 		TEXT name[MAXPATHLEN];
 		GetModuleFileName(NULL, name, sizeof(name));
 
-		string cmdLine;
+		Firebird::string cmdLine;
 		cmdLine.printf("%s -w -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, port->port_pipe, GetCurrentProcessId());
 
 		STARTUPINFO start_crud;
@@ -393,22 +447,22 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 			CloseHandle(port->port_pipe);
 		}
 
-		if (wnet_shutdown)
+		if (wnet_shutdown) {
 			disconnect(port);
+		}
 	}
 
 	if (wnet_shutdown)
 	{
 		Arg::Gds temp(isc_net_server_shutdown);
 		temp << Arg::Str("WNET");
-		temp.raise();
+		temp.copyTo(status_vector);
 	}
-
 	return NULL;
 }
 
 
-rem_port* WNET_reconnect(HANDLE handle)
+rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -418,18 +472,21 @@ rem_port* WNET_reconnect(HANDLE handle)
  *
  * Functional description
  *	A communications link has been established by another
- *	process.  We have inherited the handle.  Set up
+ *	process.  We have inheritted the handle.  Set up
  *	a port block.
  *
  **************************************/
 	rem_port* const port = alloc_port(0);
+	port->port_status_vector = status_vector;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = 0;
+	status_vector[2] = isc_arg_end;
 
 	delete port->port_connection;
-	port->port_connection = make_pipe_name(port->getPortConfig(), NULL, SERVER_PIPE_SUFFIX, 0);
+	port->port_connection = make_pipe_name(NULL, SERVER_PIPE_SUFFIX, 0);
 
 	port->port_pipe = handle;
 	port->port_server_flags |= SRVR_server;
-	port->port_flags |= PORT_server;
 
 	return port;
 }
@@ -451,34 +508,31 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
  **************************************/
 	// Default account to "guest" (in theory all packets contain a name)
 
-	string user_name("guest"), host_name;
+	Firebird::string name("guest"), password;
 
-	// Pick up account and host name, if given
+	// Pick up account and password, if given. The password is ignored
 
-	ClumpletReader id(ClumpletReader::UnTagged,
-					  cnct->p_cnct_user_id.cstr_address,
-					  cnct->p_cnct_user_id.cstr_length);
+	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged,
+			cnct->p_cnct_user_id.cstr_address, cnct->p_cnct_user_id.cstr_length);
 
 	for (id.rewind(); !id.isEof(); id.moveNext())
 	{
 		switch (id.getClumpTag())
 		{
 		case CNCT_user:
-			id.getString(user_name);
+			id.getString(name);
+			port->port_user_name = REMOTE_make_string(name.c_str());
 			break;
 
-		case CNCT_host:
-			id.getString(host_name);
-			break;
-
-		default:
+		case CNCT_passwd:
+			id.getString(password);
 			break;
 		}
 	}
 
-	port->port_login = port->port_user_name = user_name;
-	port->port_peer_name = host_name;
-	port->port_protocol_id = "WNET";
+	// NS: Put in connection address. I have no good idea where to get an
+	// address of the remote end of named pipe so let's live without it for now
+	port->port_protocol_str = REMOTE_make_string("WNET");
 
 	return true;
 }
@@ -500,7 +554,7 @@ static rem_port* alloc_port( rem_port* parent)
 
 	if (!wnet_initialized)
 	{
-		MutexLockGuard guard(init_mutex, FB_FUNCTION);
+		Firebird::MutexLockGuard guard(init_mutex);
 		if (!wnet_initialized)
 		{
 			wnet_initialized = true;
@@ -579,7 +633,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 	if (response->p_resp_data.cstr_length)
 	{
 		// Avoid B.O.
-		const size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
+		size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
 		memcpy(str_pid, response->p_resp_data.cstr_address, len);
 		str_pid[len] = 0;
 		p = str_pid;
@@ -589,8 +643,7 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
 	port->port_async = new_port;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
-	new_port->port_connection = make_pipe_name(port->getPortConfig(),
-		port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
+	new_port->port_connection = make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
 	while (true)
 	{
@@ -638,8 +691,8 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 
 	TEXT str_pid[32];
 	wnet_make_file_name(str_pid, server_pid);
-	new_port->port_connection = make_pipe_name(vport->getPortConfig(),
-		vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
+	new_port->port_connection =
+		make_pipe_name(vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
 	new_port->port_pipe =
 		CreateNamedPipe(new_port->port_connection->str_data,
@@ -659,7 +712,7 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
 	}
 
 	P_RESP* response = &packet->p_resp;
-	response->p_resp_data.cstr_length = (ULONG) strlen(str_pid);
+	response->p_resp_data.cstr_length = (USHORT) strlen(str_pid);
 	memcpy(response->p_resp_data.cstr_address, str_pid, response->p_resp_data.cstr_length);
 
 	return new_port;
@@ -728,7 +781,6 @@ static void disconnect(rem_port* port)
 		disconnect(port->port_async);
 		port->port_async = NULL;
 	}
-	port->port_context = NULL;
 
 	// If this is a sub-port, unlink it from its parent
 	port->unlinkParent();
@@ -799,8 +851,7 @@ static void exit_handler(void* main_port)
 #endif
 
 
-static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect_name,
-	const TEXT* suffix_name, const TEXT* str_pid)
+static rem_str* make_pipe_name(const TEXT* connect_name, const TEXT* suffix_name,  const TEXT* str_pid)
 {
 /**************************************
  *
@@ -815,7 +866,7 @@ static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect
  *	If a server pid != 0, append it to pipe name  as <>/<pid>
  *
  **************************************/
-	string buffer("\\\\");
+	Firebird::string buffer("\\\\");
 
 	const TEXT* p = connect_name;
 
@@ -829,7 +880,7 @@ static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect
 	switch (*p)
 	{
 	case 0:
-		protocol = config->getRemoteServiceName();
+		protocol = Config::getRemoteServiceName();
 		break;
 	case '@':
 		protocol = p + 1;
@@ -845,7 +896,7 @@ static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect
 	buffer += '\\';
 	buffer += PIPE_PREFIX;
 	buffer += '\\';
-	const char *pipe_name = config->getRemotePipeName();
+	const char *pipe_name = Config::getRemotePipeName();
 	buffer += pipe_name;
 	buffer += '\\';
 	buffer += suffix_name;
@@ -877,10 +928,6 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
 
@@ -901,10 +948,6 @@ static int send_full( rem_port* port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 
@@ -924,10 +967,6 @@ static int send_partial( rem_port* port, PACKET* packet)
  *	Send a packet across a port to another process.
  *
  **************************************/
-
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
 
 	return xdr_protocol(&port->port_send, packet);
 }
@@ -975,6 +1014,23 @@ static bool_t xdrwnet_endofrecord( XDR* xdrs) //, bool_t flushnow)
 }
 
 
+static int wnet_destroy( XDR*)
+{
+/**************************************
+ *
+ *	w n e t _ d e s t r o y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Destroy a stream.  A no-op.
+ *
+ **************************************/
+
+	return 0;
+}
+
+
 static bool wnet_error(rem_port* port,
 					  const TEXT* function, ISC_STATUS operation, int status)
 {
@@ -1007,7 +1063,7 @@ static bool wnet_error(rem_port* port,
 }
 
 
-static void wnet_gen_error (rem_port* port, const Arg::StatusVector& v)
+static void wnet_gen_error (rem_port* port, const Firebird::Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -1038,7 +1094,19 @@ static void wnet_gen_error (rem_port* port, const Arg::StatusVector& v)
 
 	Arg::Gds error(isc_network_error);
 	error << Arg::Str(node_name) << v;
-	error.raise();
+
+	ISC_STATUS* status_vector = NULL;
+	if (port->port_context != NULL) {
+		status_vector = port->port_context->get_status_vector();
+	}
+	if (status_vector == NULL) {
+		status_vector = port->port_status_vector;
+	}
+	if (status_vector != NULL)
+	{
+		error.copyTo(status_vector);
+		REMOTE_save_status_strings(status_vector);
+	}
 }
 
 
@@ -1106,6 +1174,66 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 }
 
 
+static bool_t wnet_getlong( XDR* xdrs, SLONG* lp)
+{
+/**************************************
+ *
+ *	w n e t _ g e t l o n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch a longword into a memory stream if it fits.
+ *
+ **************************************/
+	SLONG l;
+
+	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<char*>(&l), 4))
+		return FALSE;
+
+	*lp = ntohl(l);
+
+	return TRUE;
+}
+
+
+static u_int wnet_getpostn( XDR* xdrs)
+{
+/**************************************
+ *
+ *	w n e t _ g e t p o s t n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get the current position (which is also current length) from stream.
+ *
+ **************************************/
+
+	return (u_int) (xdrs->x_private - xdrs->x_base);
+}
+
+
+static caddr_t wnet_inline( XDR* xdrs, u_int bytecount)
+{
+/**************************************
+ *
+ *	w n e t _  i n l i n e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a pointer to somewhere in the buffer.
+ *
+ **************************************/
+
+	if (bytecount > (u_int) xdrs->x_handy)
+		return FALSE;
+
+	return xdrs->x_base + bytecount;
+}
+
+
 static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 {
 /**************************************
@@ -1170,6 +1298,23 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
+static bool_t wnet_putlong( XDR* xdrs, const SLONG* lp)
+{
+/**************************************
+ *
+ *	w n e t _ p u t l o n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch a longword into a memory stream if it fits.
+ *
+ **************************************/
+	const SLONG l = htonl(*lp);
+	return (*xdrs->x_ops->x_putbytes) (xdrs, reinterpret_cast<const char*>(&l), 4);
+}
+
+
 static bool_t wnet_read( XDR* xdrs)
 {
 /**************************************
@@ -1216,6 +1361,28 @@ static bool_t wnet_read( XDR* xdrs)
 
 	xdrs->x_handy = (int) (p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
+
+	return TRUE;
+}
+
+
+static bool_t wnet_setpostn( XDR* xdrs, u_int bytecount)
+{
+/**************************************
+ *
+ *	w n e t _ s e t p o s t n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set the current position (which is also current length) from stream.
+ *
+ **************************************/
+
+	if (bytecount > (u_int) xdrs->x_handy)
+		return FALSE;
+
+	xdrs->x_private = xdrs->x_base + bytecount;
 
 	return TRUE;
 }
@@ -1328,17 +1495,6 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, dwError);
 	}
 
-	// decrypt
-	if (port->port_crypt_plugin)
-	{
-		LocalStatus st;
-		port->port_crypt_plugin->decrypt(&st, n, buffer, buffer);
-		if (!st.isSuccess())
-		{
-			status_exception::raise(st.get());
-		}
-	}
-
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("receive", buffer, n);
 #endif
@@ -1363,23 +1519,6 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
  **************************************/
 	const SCHAR* data = buffer;
 	const DWORD length = buffer_length;
-
-	// encrypt
-	HalfStaticArray<char, BUFFER_TINY> b;
-	if (port->port_crypt_plugin && port->port_crypt_complete)
-	{
-		LocalStatus st;
-
-		char* d = b.getBuffer(buffer_length);
-		port->port_crypt_plugin->encrypt(&st, buffer_length, data, d);
-		if (!st.isSuccess())
-		{
-			status_exception::raise(st.get());
-		}
-
-		data = d;
-	}
-
 	OVERLAPPED ovrl = {0};
 	ovrl.hEvent = port->port_event;
 

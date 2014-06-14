@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="alice"
 	ProjectGUID="{0D616380-1A5A-4230-A80B-021360E4E669}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -291,7 +292,7 @@
 				Filter="c"
 				>
 				<File
-					RelativePath="..\..\..\gen\alice\alice_meta.cpp"
+					RelativePath="..\..\..\gen\$(PlatformName)\alice\alice_meta.cpp"
 					>
 				</File>
 			</Filter>
@@ -317,7 +318,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\alice\alloc.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\alice\exe_proto.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\alice\info.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\alice\lls.h"
 				>
 			</File>
 			<File

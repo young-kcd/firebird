@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Client/Server Common Code
- *	MODULE:			semaphore.cpp
- *	DESCRIPTION:	Semaphore support
+ *	MODULE:			locks.cpp
+ *	DESCRIPTION:	Darwin specific semaphore support
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -32,9 +32,11 @@
 #ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
 #endif
+
 #ifdef HAVE_SYS_TIMEB_H
 #include <sys/timeb.h>
 #endif
+
 #if defined(TIME_WITH_SYS_TIME) || defined(HAVE_SYS_TIME_H)
 #include <sys/time.h>
 #endif
@@ -66,7 +68,7 @@ static timespec getCurrentTime()
 
 namespace Firebird {
 
-#ifdef COMMON_CLASSES_SEMAPHORE_DISPATCH
+#ifdef COMMON_CLASSES_SEMAPHORE_MACH
 
 	void SignalSafeSemaphore::init()
 	{
@@ -82,7 +84,8 @@ namespace Firebird {
 		dispatch_release(semaphore);
 	}
 
-#endif  // COMMON_CLASSES_SEMAPHORE_DISPATCH
+#endif  // COMMON_CLASSES_SEMAPHORE_MACH
+
 
 
 #ifdef COMMON_CLASSES_SEMAPHORE_POSIX_RT
@@ -221,6 +224,7 @@ static const char* semName = "/firebird_temp_sem";
 
 	Semaphore::~Semaphore()
 	{
+		fb_assert(value == 0);
 		int err = pthread_mutex_destroy(&mu);
 		if (err != 0) {
 			//gds__log("Error on semaphore.h: destructor");
@@ -342,7 +346,7 @@ static const char* semName = "/firebird_temp_sem";
 
 			if (err != 0)
 			{
-				system_call_failed::raise("pthread_cond_signal", err);
+				system_call_failed::raise("pthread_cond_broadcast", err);
 			}
 		}
 	}

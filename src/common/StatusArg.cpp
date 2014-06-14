@@ -28,26 +28,18 @@
 
 #include "firebird.h"
 #include "../common/StatusArg.h"
-#include "../common/utils_proto.h"
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/alloc.h"
 #include "fb_exception.h"
 #include "gen/iberror.h"
-#include "firebird/Interface.h"
-#include "../jrd/msg_encode.h"
 
 #ifdef WIN_NT
 #include <windows.h>
 #else
 #include <errno.h>
 #endif
-
-namespace {
-	// Didn't want to bring dyn.h and friends here.
-	const int DYN_MSG_FAC		= 8;
-}
 
 namespace Firebird {
 
@@ -96,19 +88,7 @@ void StatusVector::ImplStatusVector::clear() throw()
 bool StatusVector::ImplStatusVector::compare(const StatusVector& v) const throw()
 {
 	return m_length == v.length() &&
-		   memcmp(m_status_vector, v.value(), m_length * sizeof(ISC_STATUS)) == 0;
-}
-
-void StatusVector::ImplStatusVector::makePermanent() throw()
-{
-	makePermanentVector(m_status_vector);
-}
-
-void StatusVector::ImplStatusVector::assign(const Exception& ex) throw()
-{
-	clear();
-	ex.stuff_exception(m_status_vector);
-	m_length = fb_utils::statusLength(m_status_vector);
+		   memcmp(m_status_vector, v.value(), m_length  * sizeof(ISC_STATUS)) == 0;
 }
 
 void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
@@ -139,18 +119,34 @@ bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) thr
 	return append(v->value() + v->firstWarning(), v->length() - v->firstWarning());
 }
 
-bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const unsigned int count) throw()
+bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
 {
 	// CVC: I didn't expect count to be zero but it's, in some calls
 	fb_assert(count >= 0 && count <= ISC_STATUS_LENGTH);
 	if (!count)
 		return true; // not sure it's the best option here
 
-	unsigned int copied =
-		fb_utils::copyStatus(&m_status_vector[m_length], FB_NELEM(m_status_vector) - m_length, from, count);
-	m_length += copied;
+	unsigned int copied = 0;
 
-	return copied == count;
+	for (int i = 0; i < count; )
+	{
+		if (from[i] == isc_arg_end)
+		{
+			break;
+		}
+		i += (from[i] == isc_arg_cstring ? 3 : 2);
+		if (m_length + i > FB_NELEM(m_status_vector) - 1)
+		{
+			break;
+		}
+		copied = i;
+	}
+
+	memcpy(&m_status_vector[m_length], from, copied * sizeof(m_status_vector[0]));
+	m_length += copied;
+	m_status_vector[m_length] = isc_arg_end;
+
+	return copied == static_cast<unsigned int>(count);
 }
 
 void StatusVector::ImplStatusVector::shiftLeft(const Base& arg) throw()
@@ -210,25 +206,8 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 	return dest[1];
 }
 
-ISC_STATUS StatusVector::ImplStatusVector::copyTo(IStatus* dest) const throw()
-{
-	if (hasData())
-	{
-		dest->set(length() + 1u, value());
-	}
-	else
-	{
-		ISC_STATUS t[3] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
-		dest->set(3, t);
-	}
-	return dest->get()[1];
-}
-
 Gds::Gds(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_gds, s) { }
-
-PrivateDyn::PrivateDyn(ISC_STATUS codeWithoutFacility) throw() :
-	Gds(ENCODE_ISC_MSG(codeWithoutFacility, DYN_MSG_FAC)) { }
 
 Num::Num(ISC_STATUS s) throw() :
 	Base(isc_arg_number, s) { }
@@ -251,7 +230,6 @@ Windows::Windows(ISC_STATUS s) throw() :
 Warning::Warning(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_warning, s) { }
 
-// Str overloading.
 Str::Str(const char* text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text) { }
 
@@ -272,13 +250,6 @@ OsError::OsError() throw() :
 	Base(isc_arg_win32, GetLastError()) { }
 #else
 	Base(isc_arg_unix, errno) { }
-#endif
-
-OsError::OsError(ISC_STATUS s) throw() :
-#ifdef WIN_NT
-	Base(isc_arg_win32, s) { }
-#else
-	Base(isc_arg_unix, s) { }
 #endif
 } // namespace Arg
 

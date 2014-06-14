@@ -23,11 +23,8 @@
 #ifndef COMMON_CONFIG_H
 #define COMMON_CONFIG_H
 
-#include "../common/classes/alloc.h"
 #include "../common/classes/fb_string.h"
-#include "../common/classes/RefCounted.h"
-#include "../common/config/config_file.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../jrd/os/path_utils.h"
 
 /**
 	Since the original (isc.cpp) code wasn't able to provide powerful and
@@ -58,148 +55,86 @@
 				  position within appropriate structures)
 		3. Add member function to Config class (config.h) and implement it
 		   in config.cpp module.
-		4. For per-database configurable parameters, please use
-				type getParameterName() const;
-		   form, for world-wide parameters:
-				static type getParameterName();
-		   should be used.
 **/
 
 extern const char*	GCPolicyCooperative;
 extern const char*	GCPolicyBackground;
 extern const char*	GCPolicyCombined;
+extern const char*	GCPolicyDefault;
 
-const int WIRE_CRYPT_DISABLED = 0;
-const int WIRE_CRYPT_ENABLED = 1;
-const int WIRE_CRYPT_REQUIRED = 2;
+extern const char*	AmNative;
+extern const char*	AmTrusted;
+extern const char*	AmMixed;
 
-enum WireCryptMode {WC_CLIENT, WC_SERVER};		// Have different defaults
+enum AmCache {AM_UNKNOWN, AM_DISABLED, AM_ENABLED};
 
-const char* const CONFIG_FILE = "firebird.conf";
-
-class Config : public Firebird::RefCounted, public Firebird::GlobalStorage
+class Config
 {
-public:
-	typedef IPTR ConfigValue;
-
 	enum ConfigKey
 	{
-		KEY_TEMP_BLOCK_SIZE,
-		KEY_TEMP_CACHE_LIMIT,
-		KEY_REMOTE_FILE_OPEN_ABILITY,
-		KEY_GUARDIAN_OPTION,
-		KEY_CPU_AFFINITY_MASK,
-		KEY_TCP_REMOTE_BUFFER_SIZE,
-		KEY_TCP_NO_NAGLE,
-		KEY_DEFAULT_DB_CACHE_PAGES,
-		KEY_CONNECTION_TIMEOUT,
-		KEY_DUMMY_PACKET_INTERVAL,
-		KEY_LOCK_MEM_SIZE,
-		KEY_LOCK_HASH_SLOTS,
-		KEY_LOCK_ACQUIRE_SPINS,
-		KEY_EVENT_MEM_SIZE,
-		KEY_DEADLOCK_TIMEOUT,
-		KEY_REMOTE_SERVICE_NAME,
-		KEY_REMOTE_SERVICE_PORT,
-		KEY_REMOTE_PIPE_NAME,
-		KEY_IPC_NAME,
-		KEY_MAX_UNFLUSHED_WRITES,
-		KEY_MAX_UNFLUSHED_WRITE_TIME,
-		KEY_PROCESS_PRIORITY_LEVEL,
-		KEY_REMOTE_AUX_PORT,
-		KEY_REMOTE_BIND_ADDRESS,
-		KEY_EXTERNAL_FILE_ACCESS,
-		KEY_DATABASE_ACCESS,
-		KEY_UDF_ACCESS,
-		KEY_TEMP_DIRECTORIES,
-		KEY_BUGCHECK_ABORT,
-		KEY_TRACE_DSQL,
-		KEY_LEGACY_HASH,
-		KEY_GC_POLICY,
-		KEY_REDIRECTION,
-		KEY_DATABASE_GROWTH_INCREMENT,
-		KEY_FILESYSTEM_CACHE_THRESHOLD,
-		KEY_RELAXED_ALIAS_CHECKING,
-		KEY_TRACE_CONFIG,
-		KEY_MAX_TRACELOG_SIZE,
-		KEY_FILESYSTEM_CACHE_SIZE,
-		KEY_PLUG_PROVIDERS,
-		KEY_PLUG_AUTH_SERVER,
-		KEY_PLUG_AUTH_CLIENT,
-		KEY_PLUG_AUTH_MANAGE,
-		KEY_PLUG_TRACE,
-		KEY_SECURITY_DATABASE,
-		KEY_SHARED_CACHE,
-		KEY_SHARED_DATABASE,
-		KEY_WIRE_CRYPT,
-		KEY_PLUG_WIRE_CRYPT,
-		KEY_PLUG_KEY_HOLDER,
-		KEY_REMOTE_ACCESS,
-		MAX_CONFIG_KEY		// keep it last
+		KEY_ROOT_DIRECTORY,							// 0
+		KEY_TEMP_BLOCK_SIZE,						// 1
+		KEY_TEMP_CACHE_LIMIT,						// 2
+		KEY_REMOTE_FILE_OPEN_ABILITY,				// 3
+		KEY_GUARDIAN_OPTION,						// 4
+		KEY_CPU_AFFINITY_MASK,						// 5
+		KEY_TCP_REMOTE_BUFFER_SIZE,					// 6
+		KEY_TCP_NO_NAGLE,							// 7
+		KEY_DEFAULT_DB_CACHE_PAGES,					// 8
+		KEY_CONNECTION_TIMEOUT,						// 9
+		KEY_DUMMY_PACKET_INTERVAL,					// 10
+		KEY_LOCK_MEM_SIZE,							// 11
+		KEY_LOCK_GRANT_ORDER,						// 12
+		KEY_LOCK_HASH_SLOTS,						// 13
+		KEY_LOCK_ACQUIRE_SPINS,						// 14
+		KEY_EVENT_MEM_SIZE,							// 15
+		KEY_DEADLOCK_TIMEOUT,						// 16
+		KEY_PRIORITY_SWITCH_DELAY,					// 17
+		KEY_USE_PRIORITY_SCHEDULER,					// 18
+		KEY_PRIORITY_BOOST,							// 19
+		KEY_REMOTE_SERVICE_NAME,					// 20
+		KEY_REMOTE_SERVICE_PORT,					// 21
+		KEY_REMOTE_PIPE_NAME,						// 22
+		KEY_IPC_NAME,								// 23
+		KEY_MAX_UNFLUSHED_WRITES,					// 24
+		KEY_MAX_UNFLUSHED_WRITE_TIME,				// 25
+		KEY_PROCESS_PRIORITY_LEVEL,					// 26
+		KEY_COMPLETE_BOOLEAN_EVALUATION,			// 27
+		KEY_REMOTE_AUX_PORT,						// 28
+		KEY_REMOTE_BIND_ADDRESS,					// 29
+		KEY_EXTERNAL_FILE_ACCESS,					// 30
+		KEY_DATABASE_ACCESS,						// 31
+		KEY_UDF_ACCESS,								// 32
+		KEY_TEMP_DIRECTORIES,						// 33
+ 		KEY_BUGCHECK_ABORT,							// 34
+		KEY_LEGACY_HASH,							// 35
+		KEY_GC_POLICY,								// 36
+		KEY_REDIRECTION,							// 37
+		KEY_OLD_COLUMN_NAMING,						// 38
+		KEY_AUTH_METHOD,							// 39
+		KEY_DATABASE_GROWTH_INCREMENT,				// 40
+		KEY_FILESYSTEM_CACHE_THRESHOLD,				// 41
+		KEY_RELAXED_ALIAS_CHECKING,					// 42
+		KEY_OLD_SET_CLAUSE_SEMANTICS,				// 43
+		KEY_TRACE_CONFIG,							// 44
+		KEY_MAX_TRACELOG_SIZE,						// 45
+		KEY_FILESYSTEM_CACHE_SIZE					// 46
 	};
-
-
-private:
-	enum ConfigType
-	{
-		TYPE_BOOLEAN,
-		TYPE_INTEGER,
-		TYPE_STRING
-		//TYPE_STRING_VECTOR // CVC: Unused
-	};
-
-	typedef const char* ConfigName;
-
-	struct ConfigEntry
-	{
-		ConfigType data_type;
-		ConfigName key;
-		ConfigValue default_value;
-	};
-
-	void loadValues(const ConfigFile& file);
-
-	template <typename T> T get(Config::ConfigKey key) const
-	{
-		return (T) values[key];
-	}
-
-	static const ConfigEntry entries[MAX_CONFIG_KEY];
-
-	ConfigValue values[MAX_CONFIG_KEY];
 
 public:
-	explicit Config(const ConfigFile& file);				// use to build default config
-	Config(const ConfigFile& file, const Config& base);		// use to build db-specific config
-	~Config();
 
-	// Check for missing firebird.conf
+	// Check for errors in .conf file
 
-	static bool missFirebirdConf();
+	static const char* getMessage();
 
 	// Interface to support command line root specification.
+
 	// This ugly solution was required to make it possible to specify root
 	// in command line to load firebird.conf from that root, though in other
 	// cases firebird.conf may be also used to specify root.
 
 	static void setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot);
 	static const Firebird::PathName* getCommandLineRootDirectory();
-
-	// Master config - needed to provide per-database config
-	static const Firebird::RefPtr<Config>& getDefaultConfig();
-
-	// Merge config entries from DPB into existing config
-	static void merge(Firebird::RefPtr<Config>& config, const Firebird::string* dpbConfig);
-
-	// reports key to be used by the following functions
-	static unsigned int getKeyByName(ConfigName name);
-	// helpers to build interface for firebird.conf file
-	SINT64 getInt(unsigned int key) const;
-	const char* getString(unsigned int key) const;
-	bool getBoolean(unsigned int key) const;
-
-	// Static functions apply to instance-wide values,
-	// non-static may be specified per database.
 
 	// Installation directory
 	static const char* getInstallDirectory();
@@ -211,7 +146,7 @@ public:
 	static int getTempBlockSize();
 
 	// Caching limit for the temporary data
-	static FB_UINT64 getTempCacheLimit();
+	static int getTempCacheLimit();
 
 	// Whether remote (NFS) files can be opened
 	static bool getRemoteFileOpenAbility();
@@ -226,73 +161,85 @@ public:
 	static int getTcpRemoteBufferSize();
 
 	// Disable Nagle algorithm
-	bool getTcpNoNagle() const;
+	static bool getTcpNoNagle();
 
 	// Default database cache size
-	int getDefaultDbCachePages() const;
+	static int getDefaultDbCachePages();
 
 	// Connection timeout
-	int getConnectionTimeout() const;
+	static int getConnectionTimeout();
 
 	// Dummy packet interval
-	int getDummyPacketInterval() const;
+	static int getDummyPacketInterval();
 
 	// Lock manager memory size
-	int getLockMemSize() const;
+	static int getLockMemSize();
+
+	// Lock manager grant order
+	static bool getLockGrantOrder();
 
 	// Lock manager hash slots
-	int getLockHashSlots() const;
+	static int getLockHashSlots();
 
 	// Lock manager acquire spins
-	int getLockAcquireSpins() const;
+	static int getLockAcquireSpins();
 
 	// Event manager memory size
-	int getEventMemSize() const;
+	static int getEventMemSize();
 
 	// Deadlock timeout
-	int getDeadlockTimeout() const;
+	static int getDeadlockTimeout();
+
+	// Priority switch delay
+	static int getPrioritySwitchDelay();
+
+	// Use priority scheduler
+	static bool getUsePriorityScheduler();
+
+	// Priority boost
+	static int getPriorityBoost();
 
 	// Service name for remote protocols
-	const char* getRemoteServiceName() const;
+	static const char *getRemoteServiceName();
 
 	// Service port for INET
-	unsigned short getRemoteServicePort() const;
+	static unsigned short getRemoteServicePort();
 
 	// Pipe name for WNET
-	const char* getRemotePipeName() const;
+	static const char *getRemotePipeName();
 
 	// Name for IPC-related objects
-	const char* getIpcName() const;
+	static const char *getIpcName();
 
 	// Unflushed writes number
-	int getMaxUnflushedWrites() const;
+	static int getMaxUnflushedWrites();
 
 	// Unflushed write time
-	int getMaxUnflushedWriteTime() const;
+	static int getMaxUnflushedWriteTime();
 
 	// Process priority level
 	static int getProcessPriorityLevel();
 
+	// Complete boolean evaluation
+	static bool getCompleteBooleanEvaluation();
+
 	// Port for event processing
-	int getRemoteAuxPort() const;
+	static int getRemoteAuxPort();
 
 	// Server binding NIC address
-	static const char* getRemoteBindAddress();
+	static const char *getRemoteBindAddress();
 
 	// Directory list for external tables
-	const char* getExternalFileAccess() const;
+	static const char *getExternalFileAccess();
 
 	// Directory list for databases
-	static const char* getDatabaseAccess();
+	static const char *getDatabaseAccess();
 
 	// Directory list for UDF libraries
-	static const char* getUdfAccess();
+	static const char *getUdfAccess();
 
 	// Temporary directories list
-	static const char* getTempDirectories();
-
-	// DSQL trace bitmask
-	static int getTraceDSQL();
+	static const char *getTempDirectories();
 
 	// Abort on BUGCHECK and structured exceptions
  	static bool getBugcheckAbort();
@@ -301,57 +248,30 @@ public:
 	static bool getLegacyHash();
 
 	// GC policy
-	const char* getGCPolicy() const;
+	static const char *getGCPolicy();
 
 	// Redirection
 	static bool getRedirection();
 
-	int getDatabaseGrowthIncrement() const;
+	// Use old column naming rules (does not conform to SQL standard)
+	static bool getOldColumnNaming();
 
-	int getFileSystemCacheThreshold() const;
+	// Use native, trusted or mixed authentication
+	static const char *getAuthMethod();
 
-	static FB_UINT64 getFileSystemCacheSize();
+	static int getDatabaseGrowthIncrement();
+
+	static int getFileSystemCacheThreshold();
+
+	static int getFileSystemCacheSize();
 
 	static bool getRelaxedAliasChecking();
 
-	static const char* getAuditTraceConfigFile();
+	static bool getOldSetClauseSemantics();
 
-	static FB_UINT64 getMaxUserTraceLogSize();
+	static const char *getAuditTraceConfigFile();
 
-	static bool getSharedCache();
-
-	static bool getSharedDatabase();
-
-	const char* getPlugins(unsigned int type) const;
-
-	const char* getSecurityDatabase() const;
-
-	int getWireCrypt(WireCryptMode wcMode) const;
-
-	bool getRemoteAccess() const;
+	static int getMaxUserTraceLogSize();
 };
-
-// Implementation of interface to access master configuration file
-class FirebirdConf FB_FINAL : public Firebird::RefCntIface<Firebird::IFirebirdConf, FB_FIREBIRD_CONF_VERSION>
-{
-public:
-	FirebirdConf(Config* existingConfig)
-		: config(existingConfig)
-	{ }
-
-	// IFirebirdConf implementation
-	unsigned int FB_CARG getKey(const char* name);
-	ISC_INT64 FB_CARG asInteger(unsigned int key);
-	const char* FB_CARG asString(unsigned int key);
-	FB_BOOLEAN FB_CARG asBoolean(unsigned int key);
-
-	int FB_CARG release();
-
-private:
-	Firebird::RefPtr<Config> config;
-};
-
-// Create default instance of IFirebirdConf interface
-Firebird::IFirebirdConf* getFirebirdConfig();
 
 #endif // COMMON_CONFIG_H

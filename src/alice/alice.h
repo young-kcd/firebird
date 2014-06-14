@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 #include "../jrd/ibase.h"
-#include "../common/ThreadData.h"
+#include "../jrd/ThreadData.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -136,7 +136,7 @@ enum tdr_state_vals {
 
 // Global data
 
-class AliceGlobals : public Firebird::ThreadData
+class AliceGlobals : public ThreadData
 {
 private:
 	MemoryPool* ALICE_default_pool;

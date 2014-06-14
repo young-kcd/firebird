@@ -49,14 +49,6 @@ namespace Firebird {
 		return *this;
 	}
 
-	char* MetaName::getBuffer(const size_t l)
-	{
-		fb_assert (l < MAX_SQL_IDENTIFIER_SIZE);
-		init();
-		count = l;
-		return data;
-	}
-
 	int MetaName::compare(const char* s, size_t l) const
 	{
 		if (s)
@@ -120,17 +112,13 @@ namespace Firebird {
 		va_end(params);
 	}
 
-	size_t MetaName::copyTo(char* to, size_t toSize) const
+	char* MetaName::getBuffer(const size_t l)
 	{
-		fb_assert(to);
-		fb_assert(toSize);
-		if (--toSize > length())
-		{
-			toSize = length();
-		}
-		memcpy(to, c_str(), toSize);
-		to[toSize] = 0;
-		return toSize;
+		fb_assert (l < MAX_SQL_IDENTIFIER_SIZE);
+		init();
+		count = l;
+		return data;
 	}
 
 } // namespace Firebird
+

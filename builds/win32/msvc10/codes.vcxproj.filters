@@ -2,20 +2,20 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{05ece0fa-1062-451b-a11c-7610865be08d}</UniqueIdentifier>
+      <UniqueIdentifier>{c39196fb-d60b-47c1-8f8c-ac55e9877c1e}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{0c75fa27-3d0d-47f6-8e6b-1e1465475587}</UniqueIdentifier>
+      <UniqueIdentifier>{d02d45f2-581f-4fb3-959b-86636e0e0672}</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{87b52ce6-a829-4262-a3f9-b089abb4ced9}</UniqueIdentifier>
+      <UniqueIdentifier>{f22f8976-6c03-4d50-a15f-bf918d77e962}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\gen\misc\codes.cpp">
+    <ClCompile Include="..\..\..\gen\$(Platform)\misc\codes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -51,8 +51,13 @@ namespace Firebird
 			iterator(ObjectsArray *l, size_t p) : lst(l), pos(p) { }
 		public:
 			iterator() : lst(0), pos(0) { }
-			iterator(const iterator& it) : lst(it.lst), pos(it.pos) { }
-
+			/*
+			iterator& operator=(ObjectsArray& a)
+			{
+				lst = &a;
+				pos = 0;
+			}
+			*/
 			iterator& operator++()
 			{
 				++pos;
@@ -110,9 +115,15 @@ namespace Firebird
 			const_iterator(const ObjectsArray *l, size_t p) : lst(l), pos(p) { }
 		public:
 			const_iterator() : lst(0), pos(0) { }
-			const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) { }
-			const_iterator(const const_iterator& it) : lst(it.lst), pos(it.pos) { }
-
+			explicit const_iterator(const iterator& it) : lst(it.lst), pos(it.pos) {}
+			explicit const_iterator(iterator& it) : lst(it.lst), pos(it.pos) {}
+			/*
+			const_iterator& operator=(const ObjectsArray& a)
+			{
+				lst = &a;
+				pos = 0;
+			}
+			*/
 			const_iterator& operator++()
 			{
 				++pos;
@@ -179,12 +190,6 @@ namespace Firebird
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
-		T& insert(size_t index)
-		{
-			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
-			inherited::insert(index, dataL);
-			return *dataL;
-		}
 		size_t add(const T& item)
 		{
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
@@ -224,38 +229,6 @@ namespace Firebird
 				delete getPointer(i);
 			}
 			inherited::shrink(newCount);
-		}
-		void grow(size_t newCount)
-		{
-			size_t oldCount = getCount();
-			inherited::grow(newCount);
-			for (size_t i = oldCount; i < newCount; i++) {
-				inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool());
-			}
-		}
-		void resize(const size_t newCount, const T& val)
-		{
-			if (newCount > getCount())
-			{
-				size_t oldCount = getCount();
-				inherited::grow(newCount);
-				for (size_t i = oldCount; i < newCount; i++) {
-					inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool(), val);
-				}
-			}
-			else {
-				shrink(newCount);
-			}
-		}
-		void resize(const size_t newCount)
-		{
-			if (newCount > getCount())
-			{
-				grow(newCount);
-			}
-			else {
-				shrink(newCount);
-			}
 		}
 		iterator begin()
 		{
@@ -306,11 +279,6 @@ namespace Firebird
 		size_t getCount() const {return inherited::getCount();}
 		size_t getCapacity() const {return inherited::getCapacity();}
 
-		bool hasData() const
-		{
-			return getCount() != 0;
-		}
-
 		bool isEmpty() const
 		{
 			return getCount() == 0;
@@ -349,7 +317,7 @@ namespace Firebird
 	class ObjectKeyValue
 	{
 	public:
-		static const T& generate(const T* item) { return item; }
+		static const T& generate(const void* /*sender*/, const T* item) { return item; }
 	};
 
 	// Template for default value comparator
@@ -382,9 +350,7 @@ namespace Firebird
 		explicit SortedObjectsArray(MemoryPool& p) :
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
-				ObjectCmp> >(p)
-		{ }
-
+				ObjectCmp> >(p) { }
 		bool find(const ObjectKey& item, size_t& pos) const
 		{
 			const ObjectKey* const pItem = &item;
@@ -392,26 +358,14 @@ namespace Firebird
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,
 				ObjectCmp>*>(this)->find(pItem, pos);
 		}
-
 		bool exist(const ObjectKey& item) const
 		{
-			size_t pos;	// ignored
+			size_t pos;
 			return find(item, pos);
 		}
-
 		size_t add(const ObjectValue& item)
 		{
 			return inherited::add(item);
-		}
-
-		void setSortMode(int sm)
-		{
-			inherited::setSortMode(sm);
-		}
-
-		void sort()
-		{
-			inherited::sort();
 		}
 
 	private:

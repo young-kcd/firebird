@@ -42,7 +42,7 @@ public:
 
 	virtual void initialize() {}
 	virtual void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att);
-	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const;
+	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const;
 
 protected:
 	virtual Connection* doCreateConnection();
@@ -67,7 +67,7 @@ public:
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role);
 
-	virtual bool cancelExecution();
+	virtual bool cancelExecution(Jrd::thread_db* tdbb);
 
 	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const;
 
@@ -79,7 +79,7 @@ public:
 
 	bool isCurrent() const { return m_isCurrent; }
 
-	Jrd::JAttachment* getJrdAtt() { return m_attachment; }
+	Jrd::Attachment* getJrdAtt() { return m_attachment; }
 
 	virtual Blob* createBlob();
 
@@ -88,7 +88,7 @@ protected:
 	virtual Statement* doCreateStatement();
 	virtual void doDetach(Jrd::thread_db* tdbb);
 
-	Jrd::JAttachment* m_attachment;
+	Jrd::Attachment* m_attachment;
 	bool m_isCurrent;
 };
 
@@ -107,7 +107,7 @@ protected:
 	virtual ~InternalTransaction() {}
 
 public:
-	Jrd::JTransaction* getJrdTran() { return m_transaction; }
+	Jrd::jrd_tra* getJrdTran() { return m_transaction; }
 
 protected:
 	virtual void doStart(ISC_STATUS* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb);
@@ -116,7 +116,7 @@ protected:
 	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain);
 
 	InternalConnection& m_IntConnection;
-	Jrd::JTransaction* m_transaction;
+	Jrd::jrd_tra* m_transaction;
 };
 
 
@@ -146,9 +146,9 @@ protected:
 	InternalConnection& m_intConnection;
 	InternalTransaction* m_intTransaction;
 
-	Jrd::JStatement* m_request;
-	Jrd::JResultSet* m_cursor;
-	Firebird::RefPtr<Firebird::MsgMetadata> m_inMetadata, m_outMetadata;
+	Jrd::dsql_req* m_request;
+	Firebird::UCharBuffer m_inBlr;
+	Firebird::UCharBuffer m_outBlr;
 };
 
 
@@ -171,8 +171,8 @@ public:
 
 private:
 	InternalConnection& m_connection;
-	Jrd::JBlob* m_blob;
-	ISC_QUAD m_blob_id;
+	Jrd::blb* m_blob;
+	Jrd::bid m_blob_id;
 };
 
 } // namespace EDS

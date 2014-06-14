@@ -29,7 +29,6 @@
 #include "../common/classes/TempFile.h"
 #include "../common/config/dir_list.h"
 #include "../common/classes/init.h"
-#include "../common/classes/tree.h"
 
 class TempSpace : public Firebird::File
 {
@@ -185,8 +184,8 @@ private:
 		Segment() : position(0), size(0)
 		{}
 
-		Segment(offset_t aPosition, offset_t aSize) :
-			position(aPosition), size(aSize)
+		Segment(offset_t _position, offset_t _size) :
+			position(_position), size(_size)
 		{}
 
 		offset_t position;

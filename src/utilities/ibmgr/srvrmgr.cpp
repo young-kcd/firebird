@@ -36,9 +36,10 @@
 #endif
 
 
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/svc_undoc.h"
 #include "../common/stuff.h"
 #include "../utilities/ibmgr/ibmgr.h"
@@ -272,7 +273,7 @@ void SRVRMGR_msg_get( USHORT number, TEXT * msg)
 		rs = "can not quit now, use shut -ign";
 		break;
 	case MSG_STARTERR:
-		rs = "check "FB_LOGFILENAME" for errors";
+		rs = "check $FIREBIRD/firebird.log file for errors";
 		break;
 	case MSG_STARTFAIL:
 		rs = "can not start server";
@@ -481,7 +482,7 @@ static bool start_server( ibmgr_data_t* data)
 	// We failed to attach to service, thus server might not be running
 	// You know what? We'll try to start it.
 
-	Firebird::PathName path = fb_utils::getPrefix(Firebird::DirType::FB_DIR_SBIN, SERVER_GUARDIAN);
+	Firebird::PathName path = fb_utils::getPrefix(fb_utils::FB_DIR_SBIN, SERVER_GUARDIAN);
 
 	// CVC: Newer compilers won't accept assigning literal strings to non-const
 	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]

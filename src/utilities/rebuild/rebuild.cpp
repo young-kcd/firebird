@@ -21,6 +21,7 @@
  * Contributor(s): ______________________________________.
  */
 
+#include "../jrd/common.h"
 
 #include "firebird.h"
 #include <stdio.h>
@@ -37,7 +38,7 @@
 #include "../utilities/rebuild/rmet_proto.h"
 #include "../utilities/rebuild/rstor_proto.h"
 #include "../jrd/dmp_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h
 
 #ifndef O_RDWR
@@ -58,7 +59,7 @@ static USHORT compute_checksum(const rbdb*, PAG);
 static void db_error(int);
 static void dump(FILE*, rbdb*, ULONG, ULONG, UCHAR);
 static void dump_tips(FILE*, rbdb*);
-static void format_header(const rbdb*, header_page*, int, TraNumber, TraNumber, TraNumber, ULONG);
+static void format_header(const rbdb*, header_page*, int, ULONG, ULONG, ULONG, ULONG);
 static void format_index_root(index_root_page*, int, SSHORT, SSHORT);
 static void format_pointer(pointer_page*, int, SSHORT, SSHORT, bool, SSHORT, const SLONG*);
 static void format_pip(page_inv_page*, int, int);
@@ -593,8 +594,10 @@ static void dump_tips( FILE* file, rbdb* rbdb)
 }
 
 
-static void format_header(const rbdb* rbdb, header_page* page, int page_size,
-	TraNumber oldest, TraNumber active, TraNumber next, ULONG imp)
+static void format_header(const rbdb* rbdb,
+						  header_page* page,
+						  int page_size,
+						  ULONG oldest, ULONG active, ULONG next, ULONG imp)
 {
 /**************************************
  *
@@ -953,10 +956,10 @@ static void print_db_header( FILE* file, const header_page* header)
 		header->hdr_ods_version & ODS_TYPE_MASK);
 	fprintf(file, "    PAGES\t\t\t%d\n", header->hdr_PAGES);
 	fprintf(file, "    next page\t\t\t%d\n", header->hdr_next_page);
-	fprintf(file, "    Oldest transaction\t\t%lu\n", header->hdr_oldest_transaction);
-	fprintf(file, "    Oldest active\t\t%lu\n", header->hdr_oldest_active);
-	fprintf(file, "    Oldest snapshot\t\t%lu\n", header->hdr_oldest_snapshot);
-	fprintf(file, "    Next transaction\t\t%lu\n", header->hdr_next_transaction);
+	fprintf(file, "    Oldest transaction\t\t%ld\n", header->hdr_oldest_transaction);
+	fprintf(file, "    Oldest active\t\t%ld\n", header->hdr_oldest_active);
+	fprintf(file, "    Oldest snapshot\t\t%ld\n", header->hdr_oldest_snapshot);
+	fprintf(file, "    Next transaction\t\t%ld\n", header->hdr_next_transaction);
 
 	fprintf(file, "    Data pages per pointer page\t%ld\n", gdbb->tdbb_database->dbb_dp_per_pp);
 	fprintf(file, "    Max records per page\t%ld\n", gdbb->tdbb_database->dbb_max_records);
@@ -975,15 +978,14 @@ static void print_db_header( FILE* file, const header_page* header)
 			   FB_SHORT_MONTHS[time.tm_mon], time.tm_mday, time.tm_year + 1900,
 			   time.tm_hour, time.tm_min, time.tm_sec);
 	fprintf(file, "    Cache buffers\t\t%ld\n", header->hdr_cache_buffers);
+	fprintf(file, "    Bumped transaction\t\t%ld\n", header->hdr_bumped_transaction);
 
 	fprintf(file, "\n    Variable header data:\n");
 
 	SLONG number;
 
 	const UCHAR* p = header->hdr_data;
-	for (const UCHAR* const end = p + header->hdr_page_size;
-		 p < end && *p != HDR_end;
-		 p += 2 + p[1])
+	for (const UCHAR* const end = p + header->hdr_page_size; p < end && *p != HDR_end; p += 2 + p[1])
 	{
 		switch (*p)
 		{
@@ -1013,11 +1015,11 @@ static void print_db_header( FILE* file, const header_page* header)
 			memcpy(&number, p + 2, sizeof(number));
 			fprintf(file, "\tSweep interval: %ld\n", number);
 			break;
-/*
+
 		case HDR_log_name:
 			fprintf(file, "\tReplay logging file: %*s\n", p[1], p + 2);
 			break;
-
+/*
 		case HDR_journal_file:
 			fprintf(file, "\tJournal file: %*s\n", p[1], p + 2);
 			break;
@@ -1126,7 +1128,8 @@ static void write_headers(FILE* file, rbdb* rbdb, ULONG lower, ULONG upper)
 				fprintf(file, "data page, checksum %d\n", page->pag_checksum);
 				const data_page* data = (data_page*) page;
 				fprintf(file, "\trelation %d, sequence %ld, records on page %d\n",
-						   data->dpg_relation, data->dpg_sequence, data->dpg_count);
+						   data->dpg_relation, data->dpg_sequence,
+						   data->dpg_count);
 				fprintf(file, "\t%s%s%s%s\n",
 						   (data->pag_flags & dpg_orphan) ? "orphan " : "",
 						   (data->pag_flags & dpg_full) ? "full " : "",
@@ -1164,7 +1167,8 @@ static void write_headers(FILE* file, rbdb* rbdb, ULONG lower, ULONG upper)
 				fprintf(file, "blob page, checksum %d\n", page->pag_checksum);
 				const blob_page* blob = (blob_page*) page;
 				fprintf(file, "\tlead page: %ld, sequence: %ld, length: %d\n",
-						   blob->blp_lead_page, blob->blp_sequence, blob->blp_length);
+						   blob->blp_lead_page, blob->blp_sequence,
+						   blob->blp_length);
 				fprintf(file, "\tcontains %s\n",
 						   (blob->pag_flags & blp_pointers) ? "pointers" : "data");
 			}

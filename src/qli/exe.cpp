@@ -26,7 +26,8 @@
 #include <setjmp.h>
 
 #include "../jrd/ibase.h"
-#include "../yvalve/why_proto.h"
+#include "../jrd/common.h"
+#include "../jrd/why_proto.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/all_proto.h"
@@ -37,8 +38,8 @@
 #include "../qli/forma_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/repor_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../yvalve/utl_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/utl_proto.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
 
@@ -337,7 +338,7 @@ FILE* EXEC_open_output(qli_nod* node)
 	{
 		close(pair[1]);
 		close(0);
-		FB_UNUSED(dup(pair[0]));
+		dup(pair[0]);
 		close(pair[0]);
 		execvp(argv[0], argv);
 		ERRQ_msg_put(43, filename);	// Msg43 Couldn't run %s
@@ -668,14 +669,13 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 
 	// We've got a blob copy on our hands.
 
-	if (!from_desc || UserBlob::blobIsNull(*(ISC_QUAD*) from_desc->dsc_address) ||
-		(from_desc->dsc_missing & DSC_missing))
+	if ((!from_desc) || UserBlob::blobIsNull(*(ISC_QUAD*) from_desc->dsc_address)
+					 || (from_desc->dsc_missing & DSC_missing))
 	{
 		memset(to_desc->dsc_address, 0, sizeof(ISC_QUAD));
 		to_desc->dsc_missing |= DSC_missing;
 		return true;
 	}
-
 	to_desc->dsc_missing &= ~DSC_missing;
 
 	// Format blob parameter block for the existing blob

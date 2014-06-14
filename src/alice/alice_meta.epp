@@ -29,12 +29,13 @@
 
 #include "firebird.h"
 #include <stdio.h>
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
 //#include "../jrd/license.h"
 #include "../alice/alice.h"
 #include "../alice/alice_meta.h"
-#include "../yvalve/gds_proto.h"
-#include "fb_exception.h"
+#include "../jrd/gds_proto.h"
+#include "../include/fb_exception.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/UserBlob.h"
@@ -467,7 +468,7 @@ static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 
 	SLONG blob_size;
 	if (!getBlobSize(blob, &blob_size, NULL, NULL))
-		return false;
+		return NULL;
 
 	size_t len = blob_size;
 	TEXT* ptr = buffer.getBuffer(blob_size + 1);
@@ -489,7 +490,6 @@ static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 
 		return false;
 	}
-
 	blob.close();
 	*ptr = 0;
 
@@ -497,3 +497,4 @@ static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 
 	return true;
 }
+

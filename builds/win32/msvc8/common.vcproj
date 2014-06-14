@@ -46,7 +46,6 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../../../extern/icu/include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
 			/>
 			<Tool
@@ -62,7 +61,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -110,7 +108,6 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="../../../extern/icu/include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,SUPERSERVER"
 			/>
 			<Tool
@@ -126,7 +123,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -170,7 +166,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../extern/icu/include"
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER"
 				UsePrecompiledHeader="0"
 			/>
@@ -187,7 +182,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -232,7 +226,6 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../../extern/icu/include"
 				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,DEV_BUILD,SUPERSERVER"
 				UsePrecompiledHeader="0"
 				Detect64BitPortabilityProblems="true"
@@ -250,7 +243,6 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -273,7 +265,31 @@
 	</References>
 	<Files>
 		<Filter
-			Name="config"
+			Name="MEMORY files"
+			>
+			<File
+				RelativePath="..\..\..\src\common\classes\alloc.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\locks.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="EXCEPTION files"
+			>
+			<File
+				RelativePath="..\..\..\src\common\fb_exception.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\StatusHolder.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="CONFIG files"
 			>
 			<File
 				RelativePath="..\..\..\src\common\config\config.cpp"
@@ -284,11 +300,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\os\win32\config_root.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\config\ConfigCache.cpp"
+				RelativePath="..\..\..\src\jrd\os\win32\config_root.cpp"
 				>
 			</File>
 			<File
@@ -297,174 +309,10 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="common"
+			Name="OTHER files"
 			>
-			<File
-				RelativePath="..\..\..\src\common\Auth.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\call_service.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\CharSet.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\cvt.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\db_alias.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dllinst.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dsc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\enc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\fb_exception.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\win32\fbsyslog.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\win32\guid.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\IntlParametersBlock.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\IntlUtil.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\isc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\isc_file.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\win32\isc_ipc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\isc_sync.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\win32\mod_loader.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\MsgMetadata.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\win32\os_utils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\win32\path_utils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\pretty.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\ScanDir.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\sdl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\security.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\sha.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatementMetadata.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusArg.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatusHolder.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\TextType.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\ThreadData.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\ThreadStart.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\unicode_util.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\utils.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\UtilSvc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\xdr.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="classes"
-			>
-			<File
-				RelativePath="..\..\..\src\common\classes\alloc.cpp"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\BaseStream.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\BigInteger.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\BlrWriter.cpp"
 				>
 			</File>
 			<File
@@ -476,7 +324,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\DbImplementation.cpp"
+				RelativePath="..\..\..\src\common\cvt.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\db_alias.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\dllinst.cpp"
 				>
 			</File>
 			<File
@@ -484,7 +340,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\ImplementHelper.cpp"
+				RelativePath="..\..\..\src\jrd\os\win32\fbsyslog.cpp"
 				>
 			</File>
 			<File
@@ -492,19 +348,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\InternalMessageBuffer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\InternalMessageBuffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\mod_loader.cpp"
 				>
 			</File>
 			<File
@@ -512,7 +360,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\NoThrowTimeStamp.cpp"
+				RelativePath="..\..\..\src\jrd\os\win32\path_utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\classes\PublicHandle.cpp"
 				>
 			</File>
 			<File
@@ -520,23 +372,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\semaphore.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Switches.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Synchronize.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\SyncObject.cpp"
+				RelativePath="..\..\..\src\common\StatusArg.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\thd.cpp"
 				>
 			</File>
 			<File
@@ -547,15 +391,19 @@
 				RelativePath="..\..\..\src\common\classes\UserBlob.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\common\utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\common\UtilSvc.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header files"
 			Filter="h"
 			>
-			<File
-				RelativePath="..\..\..\src\common\classes\Aligner.h"
-				>
-			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\alloc.h"
 				>
@@ -565,43 +413,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\Auth.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\auto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\BaseStream.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\BigInteger.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\BlrReader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\BlrWriter.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\ByteChunk.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\call_service.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\cdbtable.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\CharSet.h"
 				>
 			</File>
 			<File
@@ -610,10 +422,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\classes\ClumpletWriter.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\common.h"
 				>
 			</File>
 			<File
@@ -629,15 +437,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\os\config_root.h"
+				RelativePath="..\..\..\src\common\config\config_impl.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\ConfigCache.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\CsConvert.h"
+				RelativePath="..\..\..\src\jrd\os\config_root.h"
 				>
 			</File>
 			<File
@@ -645,11 +449,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\db_alias.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\DbImplementation.h"
+				RelativePath="..\..\..\src\jrd\db_alias.h"
 				>
 			</File>
 			<File
@@ -657,67 +457,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\os\divorce.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dllinst.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dsc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dsc_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dsc_pub.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\dyntable.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\enc_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_atomic.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_pair.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_string.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\fb_tls.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\fbsyslog.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\File.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\file_params.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\FpeControl.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\gdsassert.h"
+				RelativePath="..\..\..\src\jrd\os\fbsyslog.h"
 				>
 			</File>
 			<File
@@ -725,67 +465,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\os\guid.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Hash.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\ImplementHelper.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\init.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Interlock.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\intlobj_new.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\IntlParametersBlock.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\IntlUtil.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\isc_f_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\isc_i_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\isc_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\isc_s_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\locks.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\MetaName.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\mod_loader.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\MsgMetadata.h"
 				>
 			</File>
 			<File
@@ -793,91 +473,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\classes\NestConst.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\NoThrowTimeStamp.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Nullable.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\objects_array.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\os_utils.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\os\path_utils.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\prett_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\QualifiedName.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\RefCounted.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\RefMutex.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\rwlock.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\SafeArg.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\ScanDir.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\sdl.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\sdl_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\sdltable.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\security.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\semaphore.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\sha.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\sparse_bitmap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\stack.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\StatementMetadata.h"
 				>
 			</File>
 			<File
@@ -889,55 +485,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\stuff.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Switches.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\Synchronize.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\SyncObject.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\TempFile.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\TextType.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\ThreadData.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\ThreadStart.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\classes\timestamp.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\tree.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\TriState.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\unicode_util.h"
 				>
 			</File>
 			<File
@@ -946,26 +498,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\utils_proto.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\UtilSvc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\VaryStr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\classes\vector.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\xdr.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\xdr_proto.h"
 				>
 			</File>
 		</Filter>

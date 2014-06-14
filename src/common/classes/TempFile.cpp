@@ -44,8 +44,8 @@
 #include <unistd.h>
 #endif
 
-#include "../common/gdsassert.h"
-#include "../common/os/path_utils.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/os/path_utils.h"
 #include "../common/classes/init.h"
 
 #include "../common/classes/TempFile.h"
@@ -70,7 +70,7 @@ static const size_t MAX_TRIES = 256;
 
 // we need a class here only to return memory on shutdown and avoid
 // false memory leak reports
-static InitInstance<ZeroBuffer> zeros;
+static Firebird::InitInstance<ZeroBuffer> zeros;
 
 //
 // TempFile::getTempPath
@@ -122,33 +122,6 @@ PathName TempFile::create(const PathName& prefix, const PathName& directory)
 	}
 	catch (const Exception&)
 	{} // do nothing
-
-	return filename;
-}
-
-//
-// TempFile::create
-//
-// Creates a temporary file and returns its name.
-// In error case store exception in status arg.
-//
-
-PathName TempFile::create(IStatus* status, const PathName& prefix, const PathName& directory)
-{
-	PathName filename;
-
-	try
-	{
-		TempFile file(*getDefaultMemoryPool(), prefix, directory, false);
-		filename = file.getName();
-	}
-	catch (const Exception& ex)
-	{
-		if (status)
-		{
-			ex.stuffException(status);
-		}
-	}
 
 	return filename;
 }

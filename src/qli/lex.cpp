@@ -37,8 +37,8 @@
 #include "../qli/hsh_proto.h"
 #include "../qli/lex_proto.h"
 #include "../qli/proc_proto.h"
-#include "../yvalve/utl_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/utl_proto.h"
+#include "../jrd/gdsassert.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/TempFile.h"
 

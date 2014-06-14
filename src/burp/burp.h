@@ -30,16 +30,16 @@
 #define BURP_BURP_H
 
 #include <stdio.h>
+#include "../jrd/common.h"
 #include "../jrd/ibase.h"
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 #include "../burp/misc_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/ThreadData.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/ThreadData.h"
 #include "../common/UtilSvc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_pair.h"
 #include "../common/classes/MetaName.h"
-#include "../../jrd/SimilarToMatcher.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -77,45 +77,44 @@ enum redirect_vals {
 // Record types in backup file
 
 enum rec_type {
-	rec_burp,				// Restore program attributes
-	rec_database,			// Logical database parameters
+	rec_burp,			// Restore program attributes
+	rec_database,		// Logical database parameters
 	rec_global_field,		// Global field description
-	rec_relation,			// Relation description
-	rec_field,				// Local field description
-	rec_index,				// Index description
-	rec_data,				// Data for relation
-	rec_blob,				// Blob
+	rec_relation,		// Relation description
+	rec_field,			// Local field description
+	rec_index,			// Index description
+	rec_data,			// Data for relation
+	rec_blob,			// Blob
 	rec_relation_data,		// Standalone data header
 	rec_relation_end,		// End of data for relation
-	rec_end,				// End of file
-	rec_view,				// View attributes
+	rec_end,			// End of file
+	rec_view,			// View attributes
 	rec_security_class,		// Security class acl
-	rec_trigger,			// Trigger definition
+	rec_trigger,		// Trigger definition
 	rec_physical_db,		// Physical database parameters
-	rec_function,			// Function description
+	rec_function,		// Function description
 	rec_function_arg,		// Function arguement description
-	rec_function_end,		// End of function and its args
-	rec_gen_id,				// From blr_gen_id
-	rec_system_type,		// Type of field
-	rec_filter,				// Filter
+	rec_function_end,		   // End of function and its args
+	rec_gen_id,				 // From blr_gen_id
+	rec_system_type,			// Type of field
+	rec_filter,			// Filter
 	rec_trigger_message,	// Trigger message texts
 	rec_user_privilege,		// User privilege
-	rec_array,				// Array blob (23)
+	rec_array,		// 23	// Array blob
 	rec_field_dimensions,	// Array field dimensions
-	rec_files,				// files for shadowing
-	rec_generator,			// another format for gen-ids
-	rec_procedure,			// Stored procedure
+	rec_files,			// files for shadowing
+	rec_generator,		// another format for gen-ids
+	rec_procedure,		// Stored procedure
 	rec_procedure_prm,		// Stored procedure parameters
-	rec_procedure_end,		// End of procedure and its args
-	rec_exception,			// Exception
+	rec_procedure_end,		  // End of procedure and its args
+	rec_exception,			  // Exception
 	rec_rel_constraint,		// Relation constraints
 	rec_ref_constraint,		// Referential constraints
 	rec_chk_constraint,		// Check constraints
-	rec_charset,			// Character sets
-	rec_collation,			// Collations
-	rec_sql_roles,			// SQL roles
-	rec_mapping,			// Mapping of security names
-	rec_package				// Package
+	rec_charset,		// Character sets
+	rec_collation,		// Collations
+	rec_sql_roles,		// SQL roles
+	rec_mapping			// Mapping of security names
 };
 
 
@@ -172,6 +171,10 @@ and trigger-new is:
    CAREFUL not to pull the lastest version into maint version without
    modifying the att_backup_format to be one version back
 
+   ATT_BACKUP_FORMAT has been increased to 5. It allows us to distinguish
+   backup format between IB3.3/IB4.0 and IB4.5 in case of migration
+   problem
+
 
 Version 6: IB6, FB1, FB1.5.
 			Supports SQL Time & Date columns.
@@ -194,12 +197,10 @@ Version 9: FB2.5.
 			but gbak wasn't adjusted accordingly and thus it cannot store reliably text that's
 			longer than 255 bytes.
 			We anyway tried a recovery routine in v2.5 that may be backported.
-
-Version 10: FB3.0.
-			See backup_capabilities in OdsDetection.h.
 */
 
-const int ATT_BACKUP_FORMAT		= 10;
+// ASF: when change this, change the text of the message gbak_inv_bkup_ver, too.
+const int ATT_BACKUP_FORMAT		= 9;
 
 // format version number for ranges for arrays
 
@@ -212,7 +213,6 @@ const int MAX_DIMENSION			= 16;
 const int SERIES				= 1;
 
 const USHORT MAX_UPDATE_DBKEY_RECURSION_DEPTH = 16;
-
 
 enum att_type {
 	att_end = 0,		// end of major record
@@ -245,7 +245,6 @@ enum att_type {
 	att_page_buffers,		// page buffers for buffer cache
 	att_SQL_dialect,		// SQL dialect that it speaks
 	att_db_read_only,		// Is the database ReadOnly?
-	att_database_linger,	// Disconnection timeout
 
 	// Relation attributes
 
@@ -318,14 +317,7 @@ enum att_type {
 	att_field_character_length,	// length of field in characters
 	att_field_character_set,	// Charset id of field
 	att_field_collation_id,	// Collation id of field
-	att_field_precision,	// numeric field precision of RDB$FIELDS (44)
-
-	// beware that several items are shared between rdb$fields and rdb$relation_fields,
-	// hence the new atributes for rdb$fields may be already present
-	// att_field_security_class, // already used for relation_fields
-	att_field_owner_name, // FB3.0, ODS12_0,
-	att_field_generator_name,
-	att_field_identity_type,
+	att_field_precision,	// numeric field precision of RDB$FIELDS
 
 	// Index attributes
 
@@ -359,8 +351,6 @@ enum att_type {
 	att_view_relation_name = SERIES + 7,
 	att_view_context_id,
 	att_view_context_name,
-	att_view_context_type,
-	att_view_context_package,
 
 	// Security class attributes
 
@@ -397,9 +387,6 @@ enum att_type {
 	att_trig_flags,
 	att_trig_valid_blr,
 	att_trig_debug_info,
-	att_trig_engine_name,
-	att_trig_entrypoint,
-	att_trig_type2,
 
 	// Function attributes
 
@@ -412,40 +399,18 @@ enum att_type {
 	att_function_query_name,
 	att_function_type,
 	att_function_description2,
-	att_function_engine_name, // FB3.0, ODS12_0
-	att_function_package_name,
-	att_function_private_flag,
-	att_function_blr,
-	att_function_source,
-	att_function_valid_blr,
-	att_function_debug_info,
-	att_function_security_class,
-	att_function_owner_name,
-	att_function_legacy_flag,
-	att_function_deterministic_flag,
 
 	// Function argument attributes
 
 	att_functionarg_name = SERIES,
 	att_functionarg_position,
-	att_functionarg_passing_mechanism, // by value, ref, descriptor
+	att_functionarg_mechanism,
 	att_functionarg_field_type,
 	att_functionarg_field_scale,
 	att_functionarg_field_length,
 	att_functionarg_field_sub_type,
 	att_functionarg_character_set,
 	att_functionarg_field_precision,
-	att_functionarg_package_name, // FB3.0, ODS12_0
-	att_functionarg_arg_name,
-	att_functionarg_field_source,
-	att_functionarg_default_value,
-	att_functionarg_default_source,
-	att_functionarg_collation_id,
-	att_functionarg_null_flag,
-	att_functionarg_type_mechanism, // type inheritance
-	att_functionarg_field_name,
-	att_functionarg_relation_name,
-	att_functionarg_description,
 
 	// TYPE relation attributes
 	att_type_name = SERIES,
@@ -493,11 +458,6 @@ enum att_type {
 	att_gen_value,
 	att_gen_value_int64,
 	att_gen_description,
-	att_gen_security_class, // FB3.0, ODS12_0
-	att_gen_owner_name,
-	att_gen_sysflag,
-	att_gen_init_val,
-	att_gen_id_increment,
 
 	// Stored procedure attributes
 
@@ -514,10 +474,6 @@ enum att_type {
 	att_procedure_type,
 	att_procedure_valid_blr,
 	att_procedure_debug_info,
-	att_procedure_engine_name,
-	att_procedure_entrypoint,
-	att_procedure_package_name,
-	att_procedure_private_flag,
 
 	// Stored procedure parameter attributes
 
@@ -542,8 +498,6 @@ enum att_type {
 	att_exception_description,
 	att_exception_description2,
 	att_exception_msg2,
-	att_exception_security_class, // FB3.0, ODS12_0
-	att_exception_owner_name,
 
 	// Relation constraints attributes
 
@@ -581,8 +535,6 @@ enum att_type {
 	att_charset_description,
 	att_charset_funct,
 	att_charset_bytes_char,
-	att_charset_security_class, // FB3.0, ODS12_0
-	att_charset_owner_name,
 
 	att_coll_name = SERIES,
 	att_coll_id,
@@ -594,28 +546,12 @@ enum att_type {
 	att_coll_funct,
 	att_coll_base_collation_name,
 	att_coll_specific_attr,
-	att_coll_security_class, // FB3.0, ODS12_0
-	att_coll_owner_name,
 
 	// Names mapping
-	att_map_name = SERIES,
-	att_map_using,
-	att_map_plugin,
-	att_auto_map_role,		// Keep it at pos.4 - ODS11.2 compatibility issue
-	att_map_db,
-	att_map_from_type,
-	att_map_from,
-	att_map_to_type,
-	att_map_to,
-	att_map_description,
-
-	// Package attributes
-	att_package_name = SERIES,
-	att_package_header_source,
-	att_package_body_source,
-	att_package_security_class,
-	att_package_owner_name,
-	att_package_description
+	att_map_os = SERIES,
+	att_map_user,
+	att_map_role,
+	att_auto_map_role
 };
 
 
@@ -628,8 +564,8 @@ enum trig_t {
 	trig_post_erase	   // default
 };
 
-// these types to go away when recognized by gpre as
-// <relation>.<field>.<type>  some time in the future
+/* these types to go away when recognized by gpre as
+   <relation>.<field>.<type>  some time in the future  */
 
 const int TRIG_TYPE_PRE_STORE = 1;
 const int TRIG_TYPE_PRE_MODIFY = 3;
@@ -664,15 +600,13 @@ struct burp_fld
 	TEXT		fld_base [GDS_NAME_LEN];
 	TEXT		fld_query_name [GDS_NAME_LEN];
 	TEXT		fld_security_class [GDS_NAME_LEN];
-	TEXT		fld_generator[GDS_NAME_LEN];
-	SSHORT		fld_identity_type;
 	//SSHORT	fld_edit_length;
 	SSHORT		fld_view_context;
 	SSHORT		fld_update_flag;
 	SSHORT		fld_flags;
-	// Can't do here
-	// BASED_ON RDB$RDB$RELATION_FIELDS.RDB$EDIT_STRING fld_edit_string;
-	TEXT		fld_edit_string[128]; // was [256]
+	/* Can't do here
+	   BASED_ON RDB$RDB$RELATION_FIELDS.RDB$EDIT_STRING fld_edit_string; */
+	TEXT		fld_edit_string[128]; /* was [256] */
 	ISC_QUAD	fld_description;
 	ISC_QUAD	fld_query_header;
 	TEXT		fld_complex_name [GDS_NAME_LEN];
@@ -681,6 +615,7 @@ struct burp_fld
 	SSHORT		fld_null_flag;
 	ISC_QUAD	fld_default_value;
 	ISC_QUAD	fld_default_source;
+	SSHORT		fld_character_length; // only assigned in restore.epp but never used.
 	SSHORT		fld_character_set_id;
 	SSHORT		fld_collation_id;
 };
@@ -706,19 +641,18 @@ struct burp_rel
 	SSHORT		rel_name_length;
 	GDS_NAME	rel_name;
 	GDS_NAME	rel_owner;		// relation owner, if not us
+	// These fields were used for old style relations before IB4.
+	//ISC_QUAD	rel_store_blr;		// trigger blr blob id
+	//ISC_QUAD	rel_store_source;	// trigger source blob id
+	//ISC_QUAD	rel_modify_blr;		// trigger blr blob id
+	//ISC_QUAD	rel_modify_source;	// trigger source blob id
+	//ISC_QUAD	rel_erase_blr;		// trigger blr blob id
+	//ISC_QUAD	rel_erase_source;	// trigger source blob id
 };
 
 enum burp_rel_flags_vals {
 	REL_view		= 1,
 	REL_external	= 2
-};
-
-// package definition
-struct burp_pkg
-{
-	burp_pkg*	pkg_next;
-	GDS_NAME	pkg_name;
-	GDS_NAME	pkg_owner;
 };
 
 // procedure definition - holds useful procedure type stuff
@@ -727,7 +661,6 @@ struct burp_prc
 {
 	burp_prc*	prc_next;
 	//SSHORT	prc_name_length; // Currently useless, but didn't want to delete it.
-	GDS_NAME	prc_package;
 	GDS_NAME	prc_name;
 	GDS_NAME	prc_owner;		// relation owner, if not us
 };
@@ -753,14 +686,6 @@ enum gfld_flags_vals {
 	GFLD_computed_blr		= 8,
 	GFLD_computed_source	= 16,
 	GFLD_computed_source2	= 32
-};
-
-
-struct burp_meta_obj
-{
-	burp_meta_obj*	obj_next;
-	USHORT			obj_type;
-	GDS_NAME		obj_name;
 };
 
 // CVC: Could use MAXPATHLEN, but what about restoring in a different system?
@@ -823,7 +748,7 @@ class burp_fil
 public:
 	burp_fil*	fil_next;
 	Firebird::PathName	fil_name;
-	FB_UINT64	fil_length;
+	ULONG		fil_length;
 	DESC		fil_fd;
 	USHORT		fil_seq;
 	SIZE_CODE	fil_size_code;
@@ -833,7 +758,7 @@ burp_fil(Firebird::MemoryPool& p)
 	  fil_fd(INVALID_HANDLE_VALUE), fil_seq(0), fil_size_code(size_n) { }
 };
 
-// Split & Join stuff
+/* Split & Join stuff */
 
 enum act_t {
 	ACT_unknown, // action is unknown
@@ -853,7 +778,7 @@ struct burp_act
 
 const size_t ACT_LEN = sizeof(burp_act);
 
-const ULONG MAX_LENGTH = ~FB_CONST64(0);	// Keep in sync with burp_fil.fil_length
+const ULONG MAX_LENGTH = ~0;	// Keep in sync with burp_fil.fil_length
 
 // This structure has been cloned from spit.cpp
 
@@ -870,51 +795,28 @@ struct hdr_split
 };
 
 
-// NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
-// to 18. Otherwise we will not be able to join the gbk files v5.x
+/* NOTE: size of the hdr_split_tag and HDR_SPLIT_TAG must be the same and equal
+   to 18. Otherwise we will not be able to join the gbk files v5.x */
 
 const size_t HDR_SPLIT_SIZE	= sizeof(hdr_split);
 static const char HDR_SPLIT_TAG5[]	= "InterBase/gsplit, ";
 static const char HDR_SPLIT_TAG6[]	= "InterBase/gbak,   ";
 // CVC: Don't convert to const char* or you will have to fix the sizeof()'s!!!
 #define HDR_SPLIT_TAG HDR_SPLIT_TAG6
-const FB_UINT64 MIN_SPLIT_SIZE	= FB_CONST64(2048);		// bytes
-
-
-// Copy&paste from TraceUnicodeUtils.h - fixme !!!!!!!!
-class UnicodeCollationHolder
-{
-private:
-	charset* cs;
-	texttype* tt;
-	Firebird::AutoPtr<Jrd::CharSet> charSet;
-	Firebird::AutoPtr<Jrd::TextType> textType;
-
-public:
-	explicit UnicodeCollationHolder(Firebird::MemoryPool& pool);
-	~UnicodeCollationHolder();
-
-	Jrd::TextType* getTextType()
-	{
-		return textType;
-	}
-};
-
+const unsigned int MIN_SPLIT_SIZE	= 2048;	// bytes
 
 // Global switches and data
 
-class BurpGlobals : public Firebird::ThreadData
+class BurpGlobals : public ThreadData
 {
 public:
-	explicit BurpGlobals(Firebird::UtilSvc* us)
+	BurpGlobals(Firebird::UtilSvc* us)
 		: ThreadData(ThreadData::tddGBL),
 		  defaultCollations(*getDefaultMemoryPool()),
-		  uSvc(us),
-		  verboseInterval(10000),
 		  flag_on_line(true),
+		  uSvc(us),
 		  firstMap(true),
-		  stdIoMode(false),
-		  unicodeCollation(*getDefaultMemoryPool())
+		  stdIoMode(false)
 	{
 		// this is VERY dirty hack to keep current behaviour
 		memset (&gbl_database_file_name, 0,
@@ -926,6 +828,8 @@ public:
 								// would be set to FINI_OK (==0) in exit_local
 	}
 
+	Firebird::Array<Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> > >
+		defaultCollations;
 	const TEXT*	gbl_database_file_name;
 	TEXT		gbl_backup_start_time[30];
 	bool		gbl_sw_verbose;
@@ -966,14 +870,13 @@ public:
 	UCHAR*		io_ptr;
 	int			io_cnt;
 	burp_rel*	relations;
-	burp_pkg*	packages;
 	burp_prc*	procedures;
-	burp_meta_obj*	miss_privs;
-	// ODS of the target server (not necessarily the same version as gbak)
-	int			runtimeODS;
+	SLONG		BCK_capabilities;
 	// Format of the backup being read on restore; gbak always creates it using the latest version
 	// but it can read backups created by previous versions.
 	USHORT		RESTORE_format;
+	// ODS of the target server (not necessarily the same version as gbak)
+	int			RESTORE_ods;
 	ULONG		mvol_io_buffer_size;
 	ULONG		mvol_actual_buffer_size;
 	FB_UINT64	mvol_cumul_count;
@@ -1022,7 +925,6 @@ public:
 	isc_req_handle	handles_get_index_req_handle2;
 	isc_req_handle	handles_get_index_req_handle3;
 	isc_req_handle	handles_get_index_req_handle4;
-	isc_req_handle	handles_get_package_req_handle1;
 	isc_req_handle	handles_get_procedure_prm_req_handle1;
 	isc_req_handle	handles_get_procedure_req_handle1;
 	isc_req_handle	handles_get_ranges_req_handle1;
@@ -1069,32 +971,23 @@ public:
 	{
 		ThreadData::restoreSpecific();
 	}
-	void setupSkipData(const Firebird::string& regexp);
-	bool skipRelation(const char* name);
 
 	char veryEnd;
 	//starting after this members must be initialized in constructor explicitly
 
-	Firebird::Array<Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::MetaName> > >
-		defaultCollations;
+	bool flag_on_line;	// indicates whether we will bring the database on-line
 	Firebird::UtilSvc* uSvc;
-	ULONG verboseInterval;	// How many records should be backed up or restored before we show this message
-	bool flag_on_line;		// indicates whether we will bring the database on-line
-	bool firstMap;			// this is the first time we entered get_mapping()
-	bool stdIoMode;			// stdin or stdout is used as backup file
-	UnicodeCollationHolder unicodeCollation;
-	Firebird::AutoPtr<Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> > > skipDataMatcher;
-
-public:
-	Firebird::string toSystem(const Firebird::PathName& from);
+	bool firstMap;      // this is the first time we entered get_mapping()
+	bool stdIoMode;		// stdin or stdout is used as backup file
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h
 // in other modules.
 void	BURP_exit_local(int code, BurpGlobals* tdgbl);
 
-// database is not on-line due to failure to activate one or more indices
-const int FINI_DB_NOT_ONLINE		= 2;
+const int FINI_DB_NOT_ONLINE		= 2;	/* database is not on-line due to
+											failure to activate one or more
+											indices */
 
 // I/O definitions
 const int GBAK_IO_BUFFER_SIZE = SVC_IO_BUFFER_SIZE;
@@ -1114,8 +1007,8 @@ inline static ULONG BURP_UP_TO_BLOCK(const ULONG size)
 	return (((size) + BURP_BLOCK - 1) & ~(BURP_BLOCK - 1));
 }
 
-// Move the read and write mode declarations in here from burp.cpp
-// so that other files can see them for multivolume opens
+/* Move the read and write mode declarations in here from burp.cpp
+   so that other files can see them for multivolume opens */
 
 #ifdef WIN_NT
 static const ULONG MODE_READ	= GENERIC_READ;

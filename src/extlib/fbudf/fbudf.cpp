@@ -47,7 +47,7 @@ be easy to add needed headers to stdafx.h after a makefile is built.
 #endif
 
 #include "fbudf.h"
-#include "../common/classes/NoThrowTimeStamp.h"
+#include "../common/classes/timestamp.h"
 
 #if defined(HAVE_GETTIMEOFDAY) && (!(defined (HAVE_LOCALTIME_R) && defined (HAVE_GMTIME_R)))
 #define NEED_TIME_MUTEX
@@ -396,14 +396,14 @@ FBUDF_API void sNullIf(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 
 namespace internal
 {
-	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg) throw()
+	void decode_timestamp(const GDS_TIMESTAMP* date, tm* times_arg)
 	{
-		Firebird::NoThrowTimeStamp::decode_timestamp(*date, times_arg);
+		Firebird::TimeStamp::decode_timestamp(*date, times_arg);
 	}
 
-	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date) throw()
+	void encode_timestamp(const tm* times_arg, GDS_TIMESTAMP* date)
 	{
-		*date = Firebird::NoThrowTimeStamp::encode_timestamp(times_arg);
+		*date = Firebird::TimeStamp::encode_timestamp(times_arg);
 	}
 
 	enum day_format {day_short, day_long};
@@ -506,8 +506,8 @@ FBUDF_API ISC_TIMESTAMP* addMonth(ISC_TIMESTAMP* v, const ISC_LONG& nmonths)
 		times.tm_mon += 12;
 	}
 	const int ly = times.tm_year + 1900;
-	const bool leap = (ly % 4 == 0 && ly % 100 != 0) || ly % 400 == 0;
-	const int md[] = {31, (leap ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+	const bool leap = ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0;
+	const int md[] = {31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 	if (times.tm_mday > md[times.tm_mon])
 		times.tm_mday = md[times.tm_mon];
 	internal::encode_timestamp(&times, v);
@@ -669,7 +669,7 @@ FBUDF_API ISC_LONG isLeapYear(const ISC_TIMESTAMP* v)
 	tm times;
 	internal::decode_timestamp(v, &times);
 	const int ly = times.tm_year + 1900;
-	return (ly % 4 == 0 && ly % 100 != 0) || ly % 400 == 0;
+	return ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0;
 }
 
 FBUDF_API void fbtruncate(const paramdsc* v, paramdsc* rc)
@@ -768,7 +768,7 @@ FBUDF_API void fbround(const paramdsc* v, paramdsc* rc)
 			}
  			else
  			{
- 				if (dig > 5 || (dig == 5 && check_more))
+ 				if (dig > 5 || dig == 5 && check_more)
 	 				gt = true;
  			}
 #endif
@@ -805,7 +805,7 @@ FBUDF_API void power(const paramdsc* v, const paramdsc* v2, paramdsc* rc)
 
 	// If we cause a div by zero, SS shuts down in response.
 	// The doc I read says 0^0 will produce 1, so it's not tested below.
-	if (rct < 0 || rct2 < 0 || (!d && d2 < 0))
+	if (rct < 0 || rct2 < 0 || !d && d2 < 0)
 	{
 		internal::setnull(rc);
 		return;

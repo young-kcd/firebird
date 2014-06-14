@@ -125,8 +125,6 @@ enum db_info_types
 	isc_info_db_file_size = 112,
 	fb_info_page_contents = 113,
 
-	fb_info_implementation = 114,
-
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 
@@ -222,6 +220,7 @@ enum  info_db_implementations
 	isc_info_db_impl_last_value   // Leave this LAST!
 };
 
+
 enum info_db_class
 {
 	isc_info_db_class_access = 1,
@@ -308,11 +307,6 @@ enum info_db_provider
 #define isc_info_rsb_skip		22
 #define isc_info_rsb_virt_sequential	23
 #define isc_info_rsb_recursive	24
-#define isc_info_rsb_window		25
-#define isc_info_rsb_singular	26
-#define isc_info_rsb_writelock	27
-#define isc_info_rsb_buffer		28
-#define isc_info_rsb_hash		29
 
 /**********************/
 /* Bitmap expressions */
@@ -350,7 +344,6 @@ enum info_db_provider
 #define isc_info_tra_isolation				8
 #define isc_info_tra_access					9
 #define isc_info_tra_lock_timeout			10
-#define fb_info_tra_dbpath					11
 
 // isc_info_tra_isolation responses
 #define isc_info_tra_consistency		1
@@ -392,8 +385,6 @@ enum info_db_provider
 #define isc_info_sql_records		  23
 #define isc_info_sql_batch_fetch	  24
 #define isc_info_sql_relation_alias		25
-#define isc_info_sql_explain_plan		26
-#define isc_info_sql_stmt_flags         27
 
 /*********************************/
 /* SQL information return values */

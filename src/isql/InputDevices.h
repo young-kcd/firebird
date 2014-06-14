@@ -25,10 +25,6 @@
 #ifndef FB_INPUT_DEVICES_H
 #define FB_INPUT_DEVICES_H
 
-#include "../common/classes/fb_string.h"
-#include "../common/os/path_utils.h"
-#include "../common/classes/array.h"
-
 #include <stdio.h>
 
 // This is basically a stack of input files caused by the INPUT command,
@@ -39,19 +35,22 @@
 // Do not confuse this "Ofp" with the user defined redirection of isql output to a file.
 // The logic could be simpler but changing Borland code is tricky here.
 
+#include "../common/classes/array.h"
+
 class InputDevices
 {
 public:
+
 	class indev
 	{
 	public:
 		indev();
-		indev(FILE* fp, const char* fn, const char* fn_display);
-		void init(FILE* fp, const char* fn, const char* fn_display);
+		indev(FILE* fp, const char* fn);
+		void init(FILE* fp, const char* fn);
 		void init(const indev& src);
 		//~indev();
 		void copy_from(const indev* src);
-		Firebird::PathName fileName(bool display) const;
+		const char* fileName() const;
 		void close();
 		void drop();
 		void getPos(fpos_t* out) const;
@@ -60,12 +59,8 @@ public:
 		int indev_line;
 		int indev_aux;
 		indev* indev_next;
-
 	private:
-		void makeFullFileName();
-
-		Firebird::PathName indev_fn, indev_fn_display;
-
+		char indev_fn[MAXPATHLEN];
 		void operator=(const void*); // prevent surprises.
 	};
 
@@ -76,7 +71,7 @@ public:
 	//const indev* getHead();
 	indev& Ifp();
 	indev& Ofp();
-	bool insert(FILE* fp, const char* name, const char* display);
+	bool insert(FILE* fp, const char* name);
 	bool remove();
 	bool insertIfp();
 	void removeIntoIfp();
@@ -106,9 +101,9 @@ private:
 };
 
 
-inline Firebird::PathName InputDevices::indev::fileName(bool display) const
+inline const char* InputDevices::indev::fileName() const
 {
-	return display ? indev_fn_display : indev_fn;
+	return indev_fn;
 }
 
 inline void InputDevices::indev::close()
@@ -119,12 +114,12 @@ inline void InputDevices::indev::close()
 
 
 inline InputDevices::InputDevices()
-	: m_count(0), m_head(0), m_ifp(0, "", ""), m_ofp(0, "", ""), commands(*getDefaultMemoryPool())
+	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, ""), commands(*getDefaultMemoryPool())
 {
 }
 
 inline InputDevices::InputDevices(Firebird::MemoryPool& p)
-	: m_count(0), m_head(0), m_ifp(0, "", ""), m_ofp(0, "", ""), commands(p)
+	: m_count(0), m_head(0), m_ifp(0, ""), m_ofp(0, ""), commands(p)
 {
 }
 

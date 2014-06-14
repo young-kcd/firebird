@@ -72,18 +72,6 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -141,16 +129,16 @@
     <ClCompile Include="..\..\..\src\alice\alice.cpp" />
     <ClCompile Include="..\..\..\src\alice\exe.cpp" />
     <ClCompile Include="..\..\..\src\alice\tdr.cpp" />
-    <ClCompile Include="..\..\..\gen\alice\alice_meta.cpp" />
+    <ClCompile Include="..\..\..\gen\$(Platform)\alice\alice_meta.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\alice\alice_meta.epp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\alice\alice.h" />
-    <ClInclude Include="..\..\..\src\alice\aliceswi.h" />
     <ClInclude Include="..\..\..\src\alice\alice_meta.h" />
     <ClInclude Include="..\..\..\src\alice\alice_proto.h" />
+    <ClInclude Include="..\..\..\src\alice\aliceswi.h" />
     <ClInclude Include="..\..\..\src\alice\exe_proto.h" />
     <ClInclude Include="..\..\..\src\alice\tdr_proto.h" />
   </ItemGroup>

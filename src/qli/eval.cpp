@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 #include "../qli/dtr.h"
 #include "../qli/exe.h"
 #include "../qli/parse.h"
@@ -34,11 +35,11 @@
 #include "../qli/lex_proto.h"
 #include "../qli/mov_proto.h"
 #include "../qli/picst_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../yvalve/utl_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/utl_proto.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/classes/VaryStr.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 
 static SLONG execute_any(qli_nod*);
@@ -53,7 +54,8 @@ static bool matches(const TEXT*, SSHORT, const TEXT*, SSHORT);
 static bool sleuth(qli_nod*, const dsc*, const dsc*, const dsc*);
 static bool sleuth_check(USHORT, const UCHAR*, const UCHAR* const, const UCHAR*, const UCHAR* const);
 static bool sleuth_class(const USHORT, const UCHAR*, const UCHAR* const, UCHAR);
-static int sleuth_merge(const UCHAR*, const UCHAR*, const UCHAR* const, UCHAR* const);
+static int sleuth_merge(const UCHAR*, /*const UCHAR* const,*/ const UCHAR*, const UCHAR* const,
+	UCHAR* const);
 static bool string_boolean(qli_nod*);
 static bool string_function(qli_nod*, SSHORT, const TEXT*, SSHORT, const TEXT*);
 
@@ -205,12 +207,10 @@ void EVAL_break_compute( qli_nod* node)
  **************************************/
 
 	if (node->nod_type == nod_rpt_average && node->nod_arg[e_stt_default])
-	{
 		if (node->nod_desc.dsc_dtype == dtype_long)
 			*(SLONG *) node->nod_desc.dsc_address /= (IPTR) node->nod_arg[e_stt_default];
 		else
 			*(double *) node->nod_desc.dsc_address /= (IPTR) node->nod_arg[e_stt_default];
-	}
 }
 
 
@@ -417,10 +417,8 @@ dsc* EVAL_value(qli_nod* node)
 			MOVQ_double_to_date(d1, (SLONG*) desc->dsc_address);
 		}
 		else if (desc->dsc_dtype == dtype_long)
-		{
 			*((SLONG*) desc->dsc_address) =
 				MOVQ_get_long(values[0], desc->dsc_scale) + MOVQ_get_long(values[1], desc->dsc_scale);
-		}
 		else
 			*((double*) desc->dsc_address) = MOVQ_get_double(values[0]) + MOVQ_get_double(values[1]);
 		return desc;
@@ -438,10 +436,8 @@ dsc* EVAL_value(qli_nod* node)
 				MOVQ_date_to_double(values[0]) - MOVQ_date_to_double(values[1]);
 		}
 		else if (desc->dsc_dtype == dtype_long)
-		{
 			*((SLONG*) desc->dsc_address) =
 				MOVQ_get_long(values[0], desc->dsc_scale) - MOVQ_get_long(values[1], desc->dsc_scale);
-		}
 		else
 			*((double*) desc->dsc_address) = MOVQ_get_double(values[0]) - MOVQ_get_double(values[1]);
 		return desc;
@@ -464,11 +460,9 @@ dsc* EVAL_value(qli_nod* node)
 		}
 		desc->dsc_missing = FALSE;
 		if (desc->dsc_dtype == dtype_long)
-		{
 			*((SLONG*) desc->dsc_address) =
 				MOVQ_get_long(values[0], values[0]->dsc_scale) *
 				MOVQ_get_long(values[1], values[1]->dsc_scale);
-		}
 		else
 			*((double*) desc->dsc_address) = MOVQ_get_double(values[0]) * MOVQ_get_double(values[1]);
 		return desc;
@@ -928,10 +922,8 @@ static bool matches(const TEXT* p1, SSHORT l1, const TEXT* p2, SSHORT l2)
 			if (l2 == 0)
 				return true;
 			while (l1)
-			{
 				if (matches(p1++, l1--, p2, l2))
 					return true;
-			}
 			return false;
 		}
 		if (--l1 < 0 || (c != '?' && UPPER(c) != UPPER(*p1)))
@@ -972,7 +964,9 @@ static bool sleuth( qli_nod* node, const dsc* desc1, const dsc* desc2, const dsc
 	// Merge search and control strings
 
 	UCHAR control[256];
-	l2 = sleuth_merge((const UCHAR*) p2, (const UCHAR*) p1, (const UCHAR*) (p1 + l1), control);
+	l2 = sleuth_merge((const UCHAR*) p2, //(const UCHAR*) (p2 + l2),
+					  (const UCHAR*) p1, (const UCHAR*) (p1 + l1),
+					  control);
 
 	// If source is not a blob, do a simple search
 
@@ -1182,7 +1176,7 @@ static bool sleuth_class( const USHORT flags,
 }
 
 
-static int sleuth_merge(const UCHAR* match,
+static int sleuth_merge(const UCHAR* match, //const UCHAR* const end_match,
 						const UCHAR* control, const UCHAR* const end_control,
 						UCHAR* const combined)
 {

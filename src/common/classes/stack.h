@@ -180,49 +180,6 @@ namespace Firebird {
 			}
 		}
 
-		// Push a element on the stack and pop when we go out of scope.
-		class AutoPushPop
-		{
-		public:
-			AutoPushPop(Stack<Object, Capacity>& s, Object& o)
-				: stack(s)
-			{
-				stack.push(o);
-			}
-
-			~AutoPushPop()
-			{
-				stack.pop();
-			}
-
-		private:
-			Stack<Object, Capacity>& stack;
-		};
-
-		// Restore the stack when we go out of scope.
-		class AutoRestore
-		{
-		public:
-			explicit AutoRestore(Stack<Object, Capacity>& s)
-				: stack(s),
-				  count(s.getCount())
-			{
-			}
-
-			~AutoRestore()
-			{
-				size_t currentCount = stack.getCount();
-				fb_assert(currentCount >= count);
-
-				while (currentCount-- > count)
-					stack.pop();
-			}
-
-		private:
-			Stack<Object, Capacity>& stack;
-			size_t count;
-		};
-
 		class iterator;
 		friend class iterator;
 

@@ -25,34 +25,30 @@
 
 #include "../common/classes/auto.h"
 #include "../common/classes/locks.h"
-#include "../common/classes/fb_string.h"
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/jrd.h"
 #include "../jrd/cch.h"
 #include "../jrd/ini.h"
 #include "../jrd/nbak.h"
-#include "../common/os/guid.h"
+#include "../jrd/os/guid.h"
 #include "../jrd/os/pio.h"
 #include "../jrd/req.h"
 #include "../jrd/tra.h"
 #include "../jrd/blb_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/isc_f_proto.h"
-#include "../common/isc_s_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
+#include "../jrd/isc_s_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/opt_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/thread_proto.h"
-#include "../jrd/CryptoManager.h"
 
 #include "../jrd/Relation.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/DatabaseSnapshot.h"
-#include "../jrd/Function.h"
 
 #include "../common/utils_proto.h"
 
@@ -69,70 +65,63 @@
 #include <windows.h>
 #endif
 
+#ifdef SUPERSERVER
+static const bool SHARED_DBB = true;
+#else
+static const bool SHARED_DBB = false;
+#endif
+
 
 using namespace Firebird;
 using namespace Jrd;
 
 
-const Format* MonitoringTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
-{
-	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
-	return snapshot->getData(relation)->getFormat();
-}
+// SharedData class
 
-
-bool MonitoringTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
-										 FB_UINT64 position, Record* record) const
-{
-	DatabaseSnapshot* const snapshot = DatabaseSnapshot::create(tdbb);
-	return snapshot->getData(relation)->fetch(position, record);
-}
-
-
-// MonitoringData class
-
-MonitoringData::MonitoringData(const Database* dbb)
+DatabaseSnapshot::SharedData::SharedData(const Database* dbb)
 	: process_id(getpid()), local_id(dbb->dbb_monitoring_id)
 {
 	string name;
 	name.printf(MONITOR_FILE, dbb->getUniqueFileId().c_str());
 
-	Arg::StatusVector statusVector;
-	try
+	ISC_STATUS_ARRAY statusVector;
+	base = (Header*) ISC_map_file(statusVector, name.c_str(), init, this, DEFAULT_SIZE, &handle);
+	if (!base)
 	{
-		shared_memory.reset(FB_NEW(*dbb->dbb_permanent) SharedMemory<MonitoringHeader>(
-			name.c_str(), DEFAULT_SIZE, this));
-	}
-	catch (const Exception& ex)
-	{
-		iscLogException("MonitoringData: Cannot initialize the shared memory region", ex);
-		throw;
+		iscLogStatus("Cannot initialize the shared memory region", statusVector);
+		status_exception::raise(statusVector);
 	}
 
-	fb_assert(shared_memory->getHeader()->mhb_version == MONITOR_VERSION);
+	fb_assert(base->version == MONITOR_VERSION);
 }
 
 
-MonitoringData::~MonitoringData()
+DatabaseSnapshot::SharedData::~SharedData()
 {
-	Guard guard(this);
-	cleanup();
+	{ // scope
+		DumpGuard guard(this);
+		cleanup();
 
-	if (shared_memory->getHeader()->used == sizeof(Header))
-		shared_memory->removeMapFile();
+		if (base->used == sizeof(Header))
+			ISC_remove_map_file(&handle);
+	}
+
+	ISC_mutex_fini(mutex);
+	ISC_STATUS_ARRAY statusVector;
+	ISC_unmap_file(statusVector, &handle);
 }
 
 
-void MonitoringData::acquire()
+void DatabaseSnapshot::SharedData::acquire()
 {
-	shared_memory->mutexLock();
+	checkMutex("lock", ISC_mutex_lock(mutex));
 
-	if (shared_memory->getHeader()->allocated > shared_memory->sh_mem_length_mapped)
+	if (base->allocated > handle.sh_mem_length_mapped)
 	{
-#ifdef HAVE_OBJECT_MAP
-		Arg::StatusVector statusVector;
-		shared_memory->remapFile(statusVector, shared_memory->getHeader()->allocated, false);
-		if (!shared_memory->remapFile(statusVector, shared_memory->getHeader()->allocated, false))
+#if (defined HAVE_MMAP || defined WIN_NT)
+		ISC_STATUS_ARRAY statusVector;
+		base = (Header*) ISC_remap_file(statusVector, &handle, base->allocated, false, &mutex);
+		if (!base)
 		{
 			status_exception::raise(statusVector);
 		}
@@ -143,13 +132,13 @@ void MonitoringData::acquire()
 }
 
 
-void MonitoringData::release()
+void DatabaseSnapshot::SharedData::release()
 {
-	shared_memory->mutexUnlock();
+	checkMutex("unlock", ISC_mutex_unlock(mutex));
 }
 
 
-UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
+UCHAR* DatabaseSnapshot::SharedData::read(MemoryPool& pool, ULONG& resultSize)
 {
 	ULONG self_dbb_offset = 0;
 
@@ -160,9 +149,9 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 	// and copy the data there, starting with our own dbb.
 
 	// First pass
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
+		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -178,9 +167,9 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 		}
 		else
 		{
-			fb_assert(shared_memory->getHeader()->used >= offset + length);
-			memmove(ptr, ptr + length, shared_memory->getHeader()->used - offset - length);
-			shared_memory->getHeader()->used -= length;
+			fb_assert(base->used >= offset + length);
+			memmove(ptr, ptr + length, base->used - offset - length);
+			base->used -= length;
 		}
 	}
 
@@ -190,14 +179,14 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 
 	fb_assert(self_dbb_offset);
 
-	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + self_dbb_offset;
+	UCHAR* const ptr = (UCHAR*) base + self_dbb_offset;
 	const Element* const element = (Element*) ptr;
 	memcpy(bufferPtr, ptr + sizeof(Element), element->length);
 	bufferPtr += element->length;
 
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
+		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
@@ -215,51 +204,51 @@ UCHAR* MonitoringData::read(MemoryPool& pool, ULONG& resultSize)
 }
 
 
-ULONG MonitoringData::setup()
+ULONG DatabaseSnapshot::SharedData::setup()
 {
 	ensureSpace(sizeof(Element));
 
 	// Put an up-to-date element at the tail
-	const ULONG offset = shared_memory->getHeader()->used;
-	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
+	const ULONG offset = base->used;
+	UCHAR* const ptr = (UCHAR*) base + offset;
 	Element* const element = (Element*) ptr;
 	element->processId = process_id;
 	element->localId = local_id;
 	element->length = 0;
-	shared_memory->getHeader()->used += alignOffset(sizeof(Element));
+	base->used += alignOffset(sizeof(Element));
 	return offset;
 }
 
 
-void MonitoringData::write(ULONG offset, ULONG length, const void* buffer)
+void DatabaseSnapshot::SharedData::write(ULONG offset, ULONG length, const void* buffer)
 {
 	ensureSpace(length);
 
 	// Put an up-to-date element at the tail
-	UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
+	UCHAR* const ptr = (UCHAR*) base + offset;
 	Element* const element = (Element*) ptr;
 	memcpy(ptr + sizeof(Element) + element->length, buffer, length);
 	ULONG previous = alignOffset(sizeof(Element) + element->length);
 	element->length += length;
 	ULONG current = alignOffset(sizeof(Element) + element->length);
-	shared_memory->getHeader()->used += (current - previous);
+	base->used += (current - previous);
 }
 
 
-void MonitoringData::cleanup()
+void DatabaseSnapshot::SharedData::cleanup()
 {
 	// Remove information about our dbb
-	for (ULONG offset = alignOffset(sizeof(Header)); offset < shared_memory->getHeader()->used;)
+	for (ULONG offset = alignOffset(sizeof(Header)); offset < base->used;)
 	{
-		UCHAR* const ptr = (UCHAR*) shared_memory->getHeader() + offset;
+		UCHAR* const ptr = (UCHAR*) base + offset;
 		const Element* const element = (Element*) ptr;
 		const ULONG length = alignOffset(sizeof(Element) + element->length);
 
 		if (element->processId == process_id && element->localId == local_id)
 		{
-			fb_assert(shared_memory->getHeader()->used >= offset + length);
-			memmove(ptr, ptr + length, shared_memory->getHeader()->used - offset - length);
-			shared_memory->getHeader()->used -= length;
+			fb_assert(base->used >= offset + length);
+			memmove(ptr, ptr + length, base->used - offset - length);
+			base->used -= length;
 		}
 		else
 		{
@@ -269,21 +258,22 @@ void MonitoringData::cleanup()
 }
 
 
-void MonitoringData::ensureSpace(ULONG length)
+void DatabaseSnapshot::SharedData::ensureSpace(ULONG length)
 {
-	ULONG newSize = shared_memory->getHeader()->used + length;
+	ULONG newSize = base->used + length;
 
-	if (newSize > shared_memory->getHeader()->allocated)
+	if (newSize > base->allocated)
 	{
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
-#ifdef HAVE_OBJECT_MAP
-		Arg::StatusVector statusVector;
-		if (!shared_memory->remapFile(statusVector, newSize, true))
+#if (defined HAVE_MMAP || defined WIN_NT)
+		ISC_STATUS_ARRAY statusVector;
+		base = (Header*) ISC_remap_file(statusVector, &handle, newSize, true, &mutex);
+		if (!base)
 		{
 			status_exception::raise(statusVector);
 		}
-		shared_memory->getHeader()->allocated = shared_memory->sh_mem_length_mapped;
+		base->allocated = handle.sh_mem_length_mapped;
 #else
 		status_exception::raise(Arg::Gds(isc_montabexh));
 #endif
@@ -291,38 +281,53 @@ void MonitoringData::ensureSpace(ULONG length)
 }
 
 
-void MonitoringData::mutexBug(int osErrorCode, const char* s)
+void DatabaseSnapshot::SharedData::checkMutex(const TEXT* string, int state)
 {
-	string msg;
-	msg.printf("MONITOR: mutex %s error, status = %d", s, osErrorCode);
-	fb_utils::logAndDie(msg.c_str());
+	if (state)
+	{
+		TEXT msg[BUFFER_TINY];
+
+		sprintf(msg, "MONITOR: mutex %s error, status = %d", string, state);
+		fb_utils::logAndDie(msg);
+	}
 }
 
 
-bool MonitoringData::initialize(SharedMemoryBase* sm, bool initialize)
+void DatabaseSnapshot::SharedData::init(void* arg, sh_mem* shmemData, bool initialize)
 {
-	if (initialize)
+	SharedData* const shmem = (SharedData*) arg;
+	fb_assert(shmem);
+
+#ifdef WIN_NT
+	checkMutex("init", ISC_mutex_init(&shmem->winMutex, shmemData->sh_mem_name));
+	shmem->mutex = &shmem->winMutex;
+#endif
+
+	Header* const header = (Header*) shmemData->sh_mem_address;
+
+	if (!initialize)
 	{
-		MonitoringHeader* header = reinterpret_cast<MonitoringHeader*>(sm->sh_mem_header);
-
-		// Initialize the shared data header
-		header->mhb_type = SharedMemoryBase::SRAM_DATABASE_SNAPSHOT;
-		header->mhb_version = MONITOR_VERSION;
-		header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
-
-		header->used = alignOffset(sizeof(Header));
-		header->allocated = sm->sh_mem_length_mapped;
+#ifndef WIN_NT
+		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &shmem->mutex));
+#endif
+		return;
 	}
 
-	return true;
+	// Initialize the shared data header
+	header->version = MONITOR_VERSION;
+	header->used = alignOffset(sizeof(Header));
+	header->allocated = shmemData->sh_mem_length_mapped;
+
+#ifndef WIN_NT
+	checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &shmem->mutex));
+#endif
 }
 
 
-ULONG MonitoringData::alignOffset(ULONG unaligned)
+ULONG DatabaseSnapshot::SharedData::alignOffset(ULONG unaligned)
 {
-	return (ULONG) Firebird::MEM_ALIGN(unaligned);
+	return Firebird::MEM_ALIGN(unaligned);
 }
-
 
 // DatabaseSnapshot class
 
@@ -353,29 +358,30 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 	try
 	{
 		Lock* const lock = dbb->dbb_monitor_lock;
+		AstContextHolder tdbb(dbb, lock->lck_attachment);
+
+		ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
 		if (!(dbb->dbb_ast_flags & DBB_monitor_off))
 		{
-			SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
-
-			if (!(dbb->dbb_ast_flags & DBB_monitor_off))
+			// Write the data to the shared memory
+			try
 			{
-				AsyncContextHolder tdbb(dbb, FB_FUNCTION);
-
-				// Write the data to the shared memory
-				try
-				{
-					dumpData(tdbb, backup_state_unknown);
-				}
-				catch (const Exception& ex)
-				{
-					iscLogException("Cannot dump the monitoring data", ex);
-				}
-
-				// Release the lock and mark dbb as requesting a new one
-				LCK_release(tdbb, lock);
-				dbb->dbb_ast_flags |= DBB_monitor_off;
+				dumpData(tdbb);
 			}
+			catch (const Exception& ex)
+			{
+				iscLogException("Cannot dump the monitoring data", ex);
+			}
+
+			// Release the lock, if feasible
+			if (!(dbb->dbb_flags & DBB_monitor_locking))
+			{
+				LCK_release(tdbb, lock);
+			}
+
+			// Mark dbb as requesting a new lock
+			dbb->dbb_ast_flags |= DBB_monitor_off;
 		}
 	}
 	catch (const Exception&)
@@ -385,68 +391,8 @@ int DatabaseSnapshot::blockingAst(void* ast_object)
 }
 
 
-void DatabaseSnapshot::initialize(thread_db* tdbb)
-{
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
-	if (!dbb->dbb_monitor_lock)
-	{
-		dbb->dbb_monitor_lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
-				Lock(tdbb, 0, LCK_monitor, dbb, DatabaseSnapshot::blockingAst);
-		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-	}
-}
-
-
-void DatabaseSnapshot::shutdown(thread_db* tdbb)
-{
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-
-	if (dbb->dbb_monitor_lock)
-		LCK_release(tdbb, dbb->dbb_monitor_lock);
-}
-
-
-void DatabaseSnapshot::activate(thread_db* tdbb)
-{
-	SET_TDBB(tdbb);
-	Database* const dbb = tdbb->getDatabase();
-	fb_assert(dbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
-	fb_assert(attachment);
-
-	if (dbb->dbb_ast_flags & DBB_monitor_off)
-	{
-		// Enable signal handler for the monitoring stuff
-
-		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
-											   SYNC_EXCLUSIVE, FB_FUNCTION);
-
-		if (dbb->dbb_ast_flags & DBB_monitor_off)
-		{
-			dbb->dbb_ast_flags &= ~DBB_monitor_off;
-			LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-
-			fb_assert(!(dbb->dbb_ast_flags & DBB_monitor_off));
-
-			// While waiting for return from LCK_lock call above, the blocking AST (see
-			// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag
-			// again. But it do not released lock as lck_id was unknown at that moment.
-			// Do it now to not block another process waiting for a monitoring lock.
-
-			if (dbb->dbb_ast_flags & DBB_monitor_off)
-				LCK_release(tdbb, dbb->dbb_monitor_lock);
-		}
-	}
-}
-
-
 DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
-	: DataDump(pool)
+	: snapshot(pool), idMap(pool), idCounter(0)
 {
 	SET_TDBB(tdbb);
 
@@ -455,66 +401,55 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Database* const dbb = tdbb->getDatabase();
 	fb_assert(dbb);
 
-	Attachment* const attachment = tdbb->getAttachment();
-	fb_assert(attachment);
+	const USHORT ods_version = ENCODE_ODS(dbb->dbb_ods_version, dbb->dbb_minor_original);
 
 	// Initialize record buffers
-	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
-	RecordBuffer* const att_buffer = allocBuffer(tdbb, pool, rel_mon_attachments);
-	RecordBuffer* const tra_buffer = allocBuffer(tdbb, pool, rel_mon_transactions);
-	RecordBuffer* const stmt_buffer = allocBuffer(tdbb, pool, rel_mon_statements);
-	RecordBuffer* const call_buffer = allocBuffer(tdbb, pool, rel_mon_calls);
-	RecordBuffer* const io_stat_buffer = allocBuffer(tdbb, pool, rel_mon_io_stats);
-	RecordBuffer* const rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
-	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
-	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
+	RecordBuffer* const dbb_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_database) : NULL;
+	RecordBuffer* const att_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_attachments) : NULL;
+	RecordBuffer* const tra_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_transactions) : NULL;
+	RecordBuffer* const stmt_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_statements) : NULL;
+	RecordBuffer* const call_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_calls) : NULL;
+	RecordBuffer* const io_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_io_stats) : NULL;
+	RecordBuffer* const rec_stat_buffer =
+		ods_version >= ODS_11_1 ? allocBuffer(tdbb, pool, rel_mon_rec_stats) : NULL;
+	RecordBuffer* const ctx_var_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_ctx_vars) : NULL;
+	RecordBuffer* const mem_usage_buffer =
+		ods_version >= ODS_11_2 ? allocBuffer(tdbb, pool, rel_mon_mem_usage) : NULL;
 
-	// Determine the backup state
-	int backup_state = backup_state_unknown;
+	// Release our own lock
+	LCK_release(tdbb, dbb->dbb_monitor_lock);
+	dbb->dbb_ast_flags &= ~DBB_monitor_off;
 
-	BackupManager* const bm = dbb->dbb_backup_manager;
-	if (bm && !bm->isShutDown())
-	{
+	{ // scope for the RAII object
+
+		// Ensure we'll be dealing with a valid backup state inside the call below
 		BackupManager::StateReadGuard holder(tdbb);
 
-		switch (bm->getState())
-		{
-		case nbak_state_normal:
-			backup_state = backup_state_normal;
-			break;
-		case nbak_state_stalled:
-			backup_state = backup_state_stalled;
-			break;
-		case nbak_state_merge:
-			backup_state = backup_state_merge;
-			break;
-		}
-	}
-
-	{ // scope
-		Attachment::Checkout cout(attachment, FB_FUNCTION);
-		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
-
-		// Release our own lock
-		LCK_release(tdbb, dbb->dbb_monitor_lock);
-		dbb->dbb_ast_flags &= ~DBB_monitor_off;
-
 		// Dump our own data
-		dumpData(tdbb, backup_state);
+		dumpData(tdbb);
 	}
 
 	// Signal other processes to dump their data
-	Lock temp_lock(tdbb, 0, LCK_monitor), *lock = &temp_lock;
+	Lock temp_lock, *lock = &temp_lock;
+	lock->lck_dbb = dbb;
+	lock->lck_length = sizeof(SLONG);
+	lock->lck_key.lck_long = 0;
+	lock->lck_type = LCK_monitor;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_parent = dbb->dbb_lock;
 
 	if (LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
 		LCK_release(tdbb, lock);
 
-	{ // scope
-		Attachment::CheckoutSyncGuard monGuard(attachment, dbb->dbb_mon_sync,
-											   SYNC_EXCLUSIVE, FB_FUNCTION);
-		// Mark dbb as requesting a new lock
-		dbb->dbb_ast_flags |= DBB_monitor_off;
-	}
+	// Mark dbb as requesting a new lock
+	dbb->dbb_ast_flags |= DBB_monitor_off;
 
 	// Read the shared memory
 	ULONG dataSize = 0;
@@ -522,7 +457,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	{ // scope
 		fb_assert(dbb->dbb_monitoring_data);
-		MonitoringData::Guard guard(dbb->dbb_monitoring_data);
+		DumpGuard guard(dbb->dbb_monitoring_data);
 		dataPtr = dbb->dbb_monitoring_data->read(pool, dataSize);
 	}
 
@@ -530,6 +465,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 	AutoPtr<UCHAR, ArrayDelete<UCHAR> > data(dataPtr);
 
 	Reader reader(dataSize, data);
+
+	const Attachment* const attachment = tdbb->getAttachment();
+	fb_assert(attachment);
 
 	string databaseName(dbb->dbb_database_name.c_str());
 	ISC_systemToUtf8(databaseName);
@@ -543,8 +481,9 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	bool dbb_processed = false, fields_processed = false;
 	bool dbb_allowed = false, att_allowed = false;
+	int attachment_charset = ttype_none;
 
-	DumpRecord dumpRecord(*tdbb->getDefaultPool());
+	DumpRecord dumpRecord;
 	while (reader.getRecord(dumpRecord))
 	{
 		const int rid = dumpRecord.getRelationId();
@@ -585,7 +524,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		if (buffer)
 		{
 			record = buffer->getTempRecord();
-			record->nullify();
+			clearRecord(record);
 		}
 		else
 		{
@@ -599,15 +538,17 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			const size_t length = dumpField.length;
 			const char* source = (const char*) dumpField.data;
 
-			// All the strings that may require transliteration (i.e. the target charset is not NONE)
-			// are known to be in the metadata charset or ASCII (which is binary compatible).
-			const int charset = ttype_metadata;
+			bool set_charset = false;
+			int charset = attachment_charset;
 
 			// special case for MON$DATABASE
 			if (rid == rel_mon_database)
 			{
 				if (fid == f_mon_db_name)
+				{
+					charset = ttype_metadata; // already in Unicode
 					dbb_allowed = !databaseName.compare(source, length);
+				}
 
 				if (record && dbb_allowed && !dbb_processed)
 				{
@@ -621,11 +562,23 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			else if (rid == rel_mon_attachments)
 			{
 				if (fid == f_mon_att_user)
+				{
+					attachment_charset = ttype_none;
+					charset = ttype_metadata; // already in Unicode
 					att_allowed = locksmith || !userName.compare(source, length);
+				}
+				else if (fid == f_mon_att_name || fid == f_mon_att_role || fid == f_mon_att_remote_process)
+				{
+					charset = ttype_metadata; // already in Unicode
+				}
+				else if (fid == f_mon_att_charset_id)
+				{
+					set_charset = true;
+				}
 
 				if (record && dbb_allowed && att_allowed)
 				{
-					putField(tdbb, record, dumpField, charset);
+					putField(tdbb, record, dumpField, set_charset ? attachment_charset : charset, set_charset);
 					fields_processed = true;
 					dbb_processed = true;
 				}
@@ -633,6 +586,11 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 			// generic logic that covers all other relations
 			else if (record && dbb_allowed && att_allowed)
 			{
+				if (rid == rel_mon_calls && fid == f_mon_call_name)
+				{
+					charset = ttype_metadata; // already in Unicode
+				}
+
 				putField(tdbb, record, dumpField, charset);
 				fields_processed = true;
 				dbb_processed = true;
@@ -648,27 +606,22 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 }
 
 
-void DataDump::clearSnapshot()
-{
-	for (size_t i = 0; i < snapshot.getCount(); i++)
-		delete snapshot[i].data;
-	snapshot.clear();
-}
-
-
-RecordBuffer* DataDump::getData(const jrd_rel* relation) const
-{
-	fb_assert(relation);
-
-	return getData(relation->rel_id);
-}
-
-
-RecordBuffer* DataDump::getData(int id) const
+DatabaseSnapshot::~DatabaseSnapshot()
 {
 	for (size_t i = 0; i < snapshot.getCount(); i++)
 	{
-		if (snapshot[i].rel_id == id)
+		delete snapshot[i].data;
+	}
+}
+
+
+RecordBuffer* DatabaseSnapshot::getData(const jrd_rel* relation) const
+{
+	fb_assert(relation);
+
+	for (size_t i = 0; i < snapshot.getCount(); i++)
+	{
+		if (snapshot[i].rel_id == relation->rel_id)
 			return snapshot[i].data;
 	}
 
@@ -676,7 +629,7 @@ RecordBuffer* DataDump::getData(int id) const
 }
 
 
-RecordBuffer* DataDump::allocBuffer(thread_db* tdbb, MemoryPool& pool, int rel_id)
+RecordBuffer* DatabaseSnapshot::allocBuffer(thread_db* tdbb, MemoryPool& pool, int rel_id)
 {
 	jrd_rel* const relation = MET_lookup_relation_id(tdbb, rel_id, false);
 	fb_assert(relation);
@@ -694,7 +647,19 @@ RecordBuffer* DataDump::allocBuffer(thread_db* tdbb, MemoryPool& pool, int rel_i
 }
 
 
-void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field, int charset)
+void DatabaseSnapshot::clearRecord(Record* record)
+{
+	fb_assert(record);
+
+	// Initialize all fields to NULLs
+	memset(record->rec_data, 0, record->rec_length);
+	const size_t null_bytes = (record->rec_format->fmt_count + 7u) >> 3;
+	memset(record->rec_data, 0xFF, null_bytes);
+}
+
+
+void DatabaseSnapshot::putField(thread_db* tdbb, Record* record, const DumpField& field,
+								int& charset, bool set_charset)
 {
 	fb_assert(record);
 
@@ -704,7 +669,9 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 	dsc to_desc;
 
 	if (field.id < format->fmt_count)
+	{
 		to_desc = format->fmt_desc[field.id];
+	}
 
 	if (to_desc.isUnknown())
 		return;
@@ -735,6 +702,11 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 		dsc from_desc;
 		from_desc.makeInt64(0, &value);
 		MOV_move(tdbb, &from_desc, &to_desc);
+
+		if (set_charset)
+		{
+			charset = (int) value;
+		}
 	}
 	else if (field.type == VALUE_TIMESTAMP)
 	{
@@ -769,15 +741,6 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 
 		MOV_move(tdbb, &from_desc, &to_desc);
 	}
-	else if (field.type == VALUE_BOOLEAN)
-	{
-		fb_assert(field.length == sizeof(UCHAR));
-		UCHAR value;
-		memcpy(&value, field.data, field.length);
-		dsc from_desc;
-		from_desc.makeBoolean(&value);
-		MOV_move(tdbb, &from_desc, &to_desc);
-	}
 	else
 	{
 		fb_assert(false);
@@ -791,133 +754,94 @@ void DataDump::putField(thread_db* tdbb, Record* record, const DumpField& field,
 		bid* blob_id = reinterpret_cast<bid*>(to_desc.dsc_address);
 		jrd_tra* tran = tdbb->getTransaction();
 
-		if (!tran->tra_blobs->locate(blob_id->bid_temp_id()))
-			fb_assert(false);
+		const bool traFound = tran->tra_blobs->locate(blob_id->bid_temp_id());
+		fb_assert(traFound);
 
 		BlobIndex& blobIdx = tran->tra_blobs->current();
 		fb_assert(!blobIdx.bli_materialized);
 
 		if (blobIdx.bli_request)
 		{
-			if (!blobIdx.bli_request->req_blobs.locate(blobIdx.bli_temp_id))
-				fb_assert(false);
+			const bool reqFound = blobIdx.bli_request->req_blobs.locate(blobIdx.bli_temp_id);
+			fb_assert(reqFound);
 
 			blobIdx.bli_request->req_blobs.fastRemove();
 			blobIdx.bli_request = NULL;
 		}
 	}
 
-	record->clearNull(field.id);
+	CLEAR_NULL(record, field.id);
 }
 
 
-void DatabaseSnapshot::dumpData(thread_db* tdbb, int backup_state)
+void DatabaseSnapshot::dumpData(thread_db* tdbb)
 {
+	fb_assert(tdbb);
+
 	Database* const dbb = tdbb->getDatabase();
-	MemoryPool& pool = *dbb->dbb_permanent;
+	fb_assert(dbb);
 
 	if (!dbb->dbb_monitoring_data)
-		dbb->dbb_monitoring_data = FB_NEW(pool) MonitoringData(dbb);
+	{
+		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) SharedData(dbb);
+	}
 
-	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
+	DumpGuard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup();
 
 	Writer writer(dbb->dbb_monitoring_data);
-	DumpRecord record(pool);
 
 	// Database information
 
-	putDatabase(record, dbb, writer, fb_utils::genUniqueId(), backup_state);
+	putDatabase(dbb, writer, fb_utils::genUniqueId());
 
 	// Attachment information
 
-	AttachmentsRefHolder attachments(pool);
-
-	{ // scope
-		SyncLockGuard attGuard(&dbb->dbb_sync, SYNC_SHARED, FB_FUNCTION);
-
-		for (Attachment* attachment = dbb->dbb_attachments; attachment;
-			 attachment = attachment->att_next)
-		{
-			attachments.add(attachment->getStable());
-		}
-	}
-
-	{ // scope
-		SyncLockGuard sysAttGuard(&dbb->dbb_sys_attach, SYNC_SHARED, FB_FUNCTION);
-
-		for (Attachment* attachment = dbb->dbb_sys_attachments; attachment;
-			 attachment = attachment->att_next)
-		{
-			attachments.add(attachment->getStable());
-		}
-	}
-
-	for (AttachmentsRefHolder::Iterator iter(attachments); *iter; )
+	for (Attachment* attachment = dbb->dbb_attachments; attachment; attachment = attachment->att_next)
 	{
-		{ // scope
-			StableAttachmentPart* const jAtt = *iter;
-			MutexLockGuard guard(*jAtt->getMutex(), FB_FUNCTION);
+		if (!putAttachment(attachment, writer, fb_utils::genUniqueId()))
+			continue;
 
-			Attachment* const attachment = jAtt->getHandle();
+		putContextVars(attachment->att_context_vars, writer, attachment->att_attachment_id, true);
 
-			if (attachment && attachment->att_user)
-				dumpAttachment(tdbb, record, attachment, writer);
+		jrd_tra* transaction = NULL;
+		jrd_req* request = NULL;
+
+		// Transaction information
+
+		for (transaction = attachment->att_transactions;
+			transaction; transaction = transaction->tra_next)
+		{
+			putTransaction(transaction, writer, fb_utils::genUniqueId());
+			putContextVars(transaction->tra_context_vars, writer, transaction->tra_number, false);
 		}
 
-		iter.remove();
-	}
-}
+		// Call stack information
 
-void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, DumpRecord& record,
-									  const Attachment* attachment,
-									  Writer& writer)
-{
-	putAttachment(record, attachment, writer, fb_utils::genUniqueId());
-
-	jrd_tra* transaction = NULL;
-
-	// Transaction information
-
-	for (transaction = attachment->att_transactions; transaction;
-		 transaction = transaction->tra_next)
-	{
-		putTransaction(record, transaction, writer, fb_utils::genUniqueId());
-	}
-
-	// Call stack information
-
-	for (transaction = attachment->att_transactions; transaction;
-		 transaction = transaction->tra_next)
-	{
-		for (jrd_req* request = transaction->tra_requests;
-			 request && (request->req_flags & req_active);
-			 request = request->req_caller)
+		for (transaction = attachment->att_transactions;
+			transaction; transaction = transaction->tra_next)
 		{
-			request->adjustCallerStats();
-
-			if (!(request->getStatement()->flags &
-					(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)) &&
-				request->req_caller)
+			for (request = transaction->tra_requests;
+				request && (request->req_flags & req_active);
+				request = request->req_caller)
 			{
-				putCall(record, request, writer, fb_utils::genUniqueId());
+				request->adjustCallerStats();
+
+				if (!(request->req_flags & (req_internal | req_sys_trigger)) && request->req_caller)
+				{
+					putCall(request, writer, fb_utils::genUniqueId());
+				}
 			}
 		}
-	}
 
-	// Request information
+		// Request information
 
-	for (const jrd_req* const* i = attachment->att_requests.begin();
-		 i != attachment->att_requests.end();
-		 ++i)
-	{
-		const jrd_req* const request = *i;
-
-		if (!(request->getStatement()->flags &
-			(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+		for (request = attachment->att_requests; request; request = request->req_request)
 		{
-			const string plan = OPT_get_plan(tdbb, request, true);
-			putRequest(record, request, writer, fb_utils::genUniqueId(), plan);
+			if (!(request->req_flags & (req_internal | req_sys_trigger)))
+			{
+				putRequest(request, writer, fb_utils::genUniqueId());
+			}
 		}
 	}
 }
@@ -929,14 +853,13 @@ SINT64 DatabaseSnapshot::getGlobalId(int value)
 }
 
 
-void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
-								   Writer& writer, int stat_id, int backup_state)
+void DatabaseSnapshot::putDatabase(const Database* database, Writer& writer, int stat_id)
 {
 	fb_assert(database);
 
-	record.reset(rel_mon_database);
+	DumpRecord record(rel_mon_database);
 
-	PathName databaseName(database->dbb_database_name);
+	PathName databaseName(*getDefaultMemoryPool(), database->dbb_database_name);
 	ISC_systemToUtf8(databaseName);
 
 	// database name or alias (MUST BE ALWAYS THE FIRST ITEM PASSED!)
@@ -966,19 +889,27 @@ void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
 
 	// shutdown mode
 	if (database->dbb_ast_flags & DBB_shutdown_full)
+	{
 		temp = shut_mode_full;
+	}
 	else if (database->dbb_ast_flags & DBB_shutdown_single)
+	{
 		temp = shut_mode_single;
+	}
 	else if (database->dbb_ast_flags & DBB_shutdown)
+	{
 		temp = shut_mode_multi;
+	}
 	else
+	{
 		temp = shut_mode_online;
+	}
 	record.storeInteger(f_mon_db_shut_mode, temp);
 
 	// sweep interval
 	record.storeInteger(f_mon_db_sweep_int, database->dbb_sweep_interval);
 	// read only flag
-	temp = database->readOnly() ? 1 : 0;
+	temp = (database->dbb_flags & DBB_read_only) ? 1 : 0;
 	record.storeInteger(f_mon_db_read_only, temp);
 	// forced writes flag
 	temp = (database->dbb_flags & DBB_force_write) ? 1 : 0;
@@ -990,41 +921,53 @@ void DatabaseSnapshot::putDatabase(DumpRecord& record, const Database* database,
 	record.storeTimestamp(f_mon_db_created, database->dbb_creation_date);
 	// database size
 	record.storeInteger(f_mon_db_pages, PageSpace::actAlloc(database));
-	// database backup state
-	record.storeInteger(f_mon_db_backup_state, backup_state);
 
-	// crypt thread status
-	if (database->dbb_crypto_manager)
-		record.storeInteger(f_mon_db_crypt_page, database->dbb_crypto_manager->getCurrentPage());
-
-	// database owner
-	record.storeString(f_mon_db_owner, database->dbb_owner);
+	// database state
+	switch (database->dbb_backup_manager->getState())
+	{
+		case nbak_state_normal:
+			temp = backup_state_normal;
+			break;
+		case nbak_state_stalled:
+			temp = backup_state_stalled;
+			break;
+		case nbak_state_merge:
+			temp = backup_state_merge;
+			break;
+		default:
+			temp = backup_state_unknown;
+	}
+	record.storeInteger(f_mon_db_backup_state, temp);
 
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
 
-	if (Config::getSharedCache())
+	if (SHARED_DBB)
 	{
-		putStatistics(record, database->dbb_stats, writer, stat_id, stat_database);
-		putMemoryUsage(record, database->dbb_memory_stats, writer, stat_id, stat_database);
+		putStatistics(database->dbb_stats, writer, stat_id, stat_database);
+		putMemoryUsage(database->dbb_memory_stats, writer, stat_id, stat_database);
 	}
 	else
 	{
 		RuntimeStatistics zero_rt_stats;
 		MemoryStats zero_mem_stats;
-		putStatistics(record, zero_rt_stats, writer, stat_id, stat_database);
-		putMemoryUsage(record, zero_mem_stats, writer, stat_id, stat_database);
+		putStatistics(zero_rt_stats, writer, stat_id, stat_database);
+		putMemoryUsage(zero_mem_stats, writer, stat_id, stat_database);
 	}
 }
 
 
-void DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* attachment,
-									 Writer& writer, int stat_id)
+bool DatabaseSnapshot::putAttachment(const Attachment* attachment, Writer& writer, int stat_id)
 {
-	fb_assert(attachment && attachment->att_user);
+	fb_assert(attachment);
 
-	record.reset(rel_mon_attachments);
+	if (!attachment->att_user)
+	{
+		return false;
+	}
+
+	DumpRecord record(rel_mon_attachments);
 
 	int temp = mon_state_idle;
 
@@ -1038,7 +981,7 @@ void DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* 
 		}
 	}
 
-	PathName attName(attachment->att_filename);
+	PathName attName(*getDefaultMemoryPool(), attachment->att_filename);
 	ISC_systemToUtf8(attName);
 
 	// user (MUST BE ALWAYS THE FIRST ITEM PASSED!)
@@ -1071,46 +1014,31 @@ void DatabaseSnapshot::putAttachment(DumpRecord& record, const Jrd::Attachment* 
 	// garbage collection flag
 	temp = (attachment->att_flags & ATT_no_cleanup) ? 0 : 1;
 	record.storeInteger(f_mon_att_gc, temp);
-	// client library version
-	record.storeString(f_mon_att_client_version, attachment->att_client_version);
-	// remote protocol version
-	record.storeString(f_mon_att_remote_version, attachment->att_remote_protocol);
-	// remote host name
-	record.storeString(f_mon_att_remote_host, attachment->att_remote_host);
-	// OS user name
-	record.storeString(f_mon_att_remote_os_user, attachment->att_remote_os_user);
-	// authentication method
-	record.storeString(f_mon_att_auth_method, attachment->att_user->usr_auth_method);
+
 	// statistics
 	record.storeGlobalId(f_mon_att_stat_id, getGlobalId(stat_id));
-	// system flag
-	temp = (attachment->att_flags & ATT_system) ? 1 : 0;
-	record.storeInteger(f_mon_att_sys_flag, temp);
-
 	writer.putRecord(record);
 
-	if (Config::getSharedCache())
+	if (SHARED_DBB)
 	{
-		putStatistics(record, attachment->att_stats, writer, stat_id, stat_attachment);
-		putMemoryUsage(record, attachment->att_memory_stats, writer, stat_id, stat_attachment);
+		putStatistics(attachment->att_stats, writer, stat_id, stat_attachment);
+		putMemoryUsage(attachment->att_memory_stats, writer, stat_id, stat_attachment);
 	}
 	else
 	{
-		putStatistics(record, attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
-		putMemoryUsage(record, attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
+		putStatistics(attachment->att_database->dbb_stats, writer, stat_id, stat_attachment);
+		putMemoryUsage(attachment->att_database->dbb_memory_stats, writer, stat_id, stat_attachment);
 	}
 
-	// context vars
-	putContextVars(record, attachment->att_context_vars, writer, attachment->att_attachment_id, true);
+	return true;
 }
 
 
-void DatabaseSnapshot::putTransaction(DumpRecord& record, const jrd_tra* transaction,
-									  Writer& writer, int stat_id)
+void DatabaseSnapshot::putTransaction(const jrd_tra* transaction, Writer& writer, int stat_id)
 {
 	fb_assert(transaction);
 
-	record.reset(rel_mon_transactions);
+	DumpRecord record(rel_mon_transactions);
 
 	int temp;
 
@@ -1159,20 +1087,16 @@ void DatabaseSnapshot::putTransaction(DumpRecord& record, const jrd_tra* transac
 	// statistics
 	record.storeGlobalId(f_mon_tra_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(record, transaction->tra_stats, writer, stat_id, stat_transaction);
-	putMemoryUsage(record, transaction->tra_memory_stats, writer, stat_id, stat_transaction);
-
-	// context vars
-	putContextVars(record, transaction->tra_context_vars, writer, transaction->tra_number, false);
+	putStatistics(transaction->tra_stats, writer, stat_id, stat_transaction);
+	putMemoryUsage(transaction->tra_memory_stats, writer, stat_id, stat_transaction);
 }
 
 
-void DatabaseSnapshot::putRequest(DumpRecord& record, const jrd_req* request,
-								  Writer& writer, int stat_id, const string& plan)
+void DatabaseSnapshot::putRequest(const jrd_req* request, Writer& writer, int stat_id)
 {
 	fb_assert(request);
 
-	record.reset(rel_mon_statements);
+	DumpRecord record(rel_mon_statements);
 
 	// request id
 	record.storeInteger(f_mon_stmt_id, request->req_id);
@@ -1196,64 +1120,51 @@ void DatabaseSnapshot::putRequest(DumpRecord& record, const jrd_req* request,
 	{
 		record.storeInteger(f_mon_stmt_state, mon_state_idle);
 	}
-
-	const JrdStatement* const statement = request->getStatement();
-
 	// sql text
-	if (statement->sqlText)
-		record.storeString(f_mon_stmt_sql_text, *statement->sqlText);
-
-	// explained plan
-	if (plan.hasData())
-		record.storeString(f_mon_stmt_expl_plan, plan);
+	if (request->req_sql_text)
+	{
+		record.storeString(f_mon_stmt_sql_text, *request->req_sql_text);
+	}
 
 	// statistics
 	record.storeGlobalId(f_mon_stmt_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(record, request->req_stats, writer, stat_id, stat_statement);
-	putMemoryUsage(record, request->req_memory_stats, writer, stat_id, stat_statement);
+	putStatistics(request->req_stats, writer, stat_id, stat_statement);
+	putMemoryUsage(request->req_memory_stats, writer, stat_id, stat_statement);
 }
 
 
-void DatabaseSnapshot::putCall(DumpRecord& record, const jrd_req* request,
-							   Writer& writer, int stat_id)
+void DatabaseSnapshot::putCall(const jrd_req* request, Writer& writer, int stat_id)
 {
 	fb_assert(request);
 
-	const jrd_req* initialRequest = request->req_caller;
-	while (initialRequest->req_caller)
+	const jrd_req* statement = request->req_caller;
+	while (statement->req_caller)
 	{
-		initialRequest = initialRequest->req_caller;
+		statement = statement->req_caller;
 	}
-	fb_assert(initialRequest);
+	fb_assert(statement);
 
-	record.reset(rel_mon_calls);
+	DumpRecord record(rel_mon_calls);
 
 	// call id
 	record.storeInteger(f_mon_call_id, request->req_id);
 	// statement id
-	record.storeInteger(f_mon_call_stmt_id, initialRequest->req_id);
+	record.storeInteger(f_mon_call_stmt_id, statement->req_id);
 	// caller id
-	if (initialRequest != request->req_caller)
+	if (statement != request->req_caller)
 	{
 		record.storeInteger(f_mon_call_caller_id, request->req_caller->req_id);
 	}
-
-	const JrdStatement* statement = request->getStatement();
-	const Routine* routine = statement->getRoutine();
-
 	// object name/type
-	if (routine)
+	if (request->req_procedure)
 	{
-		if (routine->getName().package.hasData())
-			record.storeString(f_mon_call_pkg_name, routine->getName().package);
-
-		record.storeString(f_mon_call_name, routine->getName().identifier);
-		record.storeInteger(f_mon_call_type, routine->getObjectType());
+		record.storeString(f_mon_call_name, request->req_procedure->prc_name);
+		record.storeInteger(f_mon_call_type, obj_procedure);
 	}
-	else if (!statement->triggerName.isEmpty())
+	else if (!request->req_trg_name.isEmpty())
 	{
-		record.storeString(f_mon_call_name, statement->triggerName);
+		record.storeString(f_mon_call_name, request->req_trg_name);
 		record.storeInteger(f_mon_call_type, obj_trigger);
 	}
 	else
@@ -1261,7 +1172,6 @@ void DatabaseSnapshot::putCall(DumpRecord& record, const jrd_req* request,
 		// we should never be here...
 		fb_assert(false);
 	}
-
 	// timestamp
 	record.storeTimestamp(f_mon_call_timestamp, request->req_timestamp);
 	// source line/column
@@ -1274,18 +1184,19 @@ void DatabaseSnapshot::putCall(DumpRecord& record, const jrd_req* request,
 	// statistics
 	record.storeGlobalId(f_mon_call_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
-	putStatistics(record, request->req_stats, writer, stat_id, stat_call);
-	putMemoryUsage(record, request->req_memory_stats, writer, stat_id, stat_call);
+	putStatistics(request->req_stats, writer, stat_id, stat_call);
+	putMemoryUsage(request->req_memory_stats, writer, stat_id, stat_call);
 }
 
-void DatabaseSnapshot::putStatistics(DumpRecord& record, const RuntimeStatistics& statistics,
-									 Writer& writer, int stat_id, int stat_group)
+void DatabaseSnapshot::putStatistics(const RuntimeStatistics& statistics,
+									 Writer& writer,
+									 int stat_id, int stat_group)
 {
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
 
 	// physical I/O statistics
-	record.reset(rel_mon_io_stats);
+	DumpRecord record(rel_mon_io_stats);
 	record.storeGlobalId(f_mon_io_stat_id, id);
 	record.storeInteger(f_mon_io_stat_group, stat_group);
 	record.storeInteger(f_mon_io_page_reads, statistics.getValue(RuntimeStatistics::PAGE_READS));
@@ -1309,14 +1220,15 @@ void DatabaseSnapshot::putStatistics(DumpRecord& record, const RuntimeStatistics
 	writer.putRecord(record);
 }
 
-void DatabaseSnapshot::putContextVars(DumpRecord& record, const StringMap& variables,
-									  Writer& writer, int object_id, bool is_attachment)
+void DatabaseSnapshot::putContextVars(const StringMap& variables,
+									  Writer& writer,
+									  int object_id, bool is_attachment)
 {
 	StringMap::ConstAccessor accessor(&variables);
 
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		record.reset(rel_mon_ctx_vars);
+		DumpRecord record(rel_mon_ctx_vars);
 
 		if (is_attachment)
 			record.storeInteger(f_mon_ctx_var_att_id, object_id);
@@ -1330,14 +1242,16 @@ void DatabaseSnapshot::putContextVars(DumpRecord& record, const StringMap& varia
 	}
 }
 
-void DatabaseSnapshot::putMemoryUsage(DumpRecord& record, const MemoryStats& stats,
-									  Writer& writer, int stat_id, int stat_group)
+void DatabaseSnapshot::putMemoryUsage(const MemoryStats& stats,
+									  Writer& writer,
+									  int stat_id,
+									  int stat_group)
 {
 	// statistics id
 	const SINT64 id = getGlobalId(stat_id);
 
 	// memory usage
-	record.reset(rel_mon_mem_usage);
+	DumpRecord record(rel_mon_mem_usage);
 	record.storeGlobalId(f_mon_mem_stat_id, id);
 	record.storeInteger(f_mon_mem_stat_group, stat_group);
 	record.storeInteger(f_mon_mem_cur_used, stats.getCurrentUsage());

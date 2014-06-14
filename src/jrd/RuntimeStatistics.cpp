@@ -21,11 +21,10 @@
  */
 
 #include "firebird.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/req.h"
 
 #include "../jrd/RuntimeStatistics.h"
-#include "../jrd/ntrace.h"
 
 using namespace Firebird;
 
@@ -35,7 +34,7 @@ GlobalPtr<RuntimeStatistics> RuntimeStatistics::dummy;
 
 #ifdef REL_COUNTS_TREE
 
-void RuntimeStatistics::bumpRelValue(const RelStatType index, SLONG relation_id)
+void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
@@ -88,7 +87,7 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 				for (int index = 0; index < FB_NELEM(src.rlc_counter); index++)
 					dst.rlc_counter[index] -= src.rlc_counter[index];
 			}
-		} while (second.getNext());
+		} while(second.getNext());
 	}
 }
 
@@ -166,7 +165,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(
 #else  // REL_COUNTS_TREE
 
 
-void RuntimeStatistics::bumpRelValue(const RelStatType index, SLONG relation_id)
+void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
@@ -227,7 +226,7 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 	}
 }
 
-PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
+PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 													  const RuntimeStatistics& new_stat,
 													  PerformanceInfo& dest,
 													  TraceCountsArray& temp)
@@ -263,8 +262,8 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 			// Point TraceCounts to counts array from baseline object
 			if (!all_zeros)
 			{
-				jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < att->att_relations->count() ?
-					(*att->att_relations)[new_cnts->rlc_relation_id] : NULL;
+				jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < dbb->dbb_relations->count() ?
+					(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;
 				TraceCounts traceCounts;
 				traceCounts.trc_relation_id = new_cnts->rlc_relation_id;
 				traceCounts.trc_counters = base_cnts->rlc_counter;
@@ -277,8 +276,8 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 		}
 		else
 		{
-			jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < att->att_relations->count() ?
-				(*att->att_relations)[new_cnts->rlc_relation_id] : NULL;
+			jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < dbb->dbb_relations->count() ?
+				(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;
 
 			// Point TraceCounts to counts array from object with updated counters
 			TraceCounts traceCounts;

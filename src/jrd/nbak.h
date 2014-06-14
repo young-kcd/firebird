@@ -36,7 +36,6 @@
 #include "../common/classes/fb_string.h"
 #include "GlobalRWLock.h"
 #include "../jrd/err_proto.h"
-#include "../jrd/Attachment.h"
 
 // Uncomment this line if you need to trace backup-related activity
 //#define NBAK_DEBUG
@@ -107,7 +106,6 @@ public:
 protected:
 	BackupManager* backup_manager;
 	virtual bool fetch(thread_db* tdbb);
-
 	virtual void invalidate(thread_db* tdbb);
 };
 
@@ -182,14 +180,13 @@ public:
 	class StateWriteGuard
 	{
 	public:
-		StateWriteGuard(thread_db* tdbb, Jrd::WIN* window);
+		StateWriteGuard(thread_db* _tdbb, WIN* wnd);
 		~StateWriteGuard();
 
 		void releaseHeader();
-
 		void setSuccess()
 		{
-			m_success = true;
+			success = true;
 		}
 
 	private:
@@ -197,30 +194,30 @@ public:
 		StateWriteGuard(const StateWriteGuard&);
 		StateWriteGuard& operator=(const StateWriteGuard&);
 
-		thread_db* m_tdbb;
-		Jrd::WIN* m_window;
-		bool m_success;
+		thread_db* tdbb;
+		WIN* window;
+		bool success;
 	};
 
 	class StateReadGuard
 	{
 	public:
-		explicit StateReadGuard(thread_db* tdbb) : m_tdbb(tdbb)
+		explicit StateReadGuard(thread_db* _tdbb) : tdbb(_tdbb)
 		{
 			lock(tdbb, LCK_WAIT);
 		}
 
 		~StateReadGuard()
 		{
-			unlock(m_tdbb);
+			unlock(tdbb);
 		}
 
 		static bool lock(thread_db* tdbb, SSHORT wait)
 		{
-			Jrd::Attachment* const att = tdbb->getAttachment();
-			Database* const dbb = tdbb->getDatabase();
+			Attachment* att = tdbb->getAttachment();
+			Database* dbb = tdbb->getDatabase();
 
-			const bool ok = att ?
+			const bool ok = att ? 
 				att->backupStateReadLock(tdbb, wait) :
 				dbb->dbb_backup_manager->lockStateRead(tdbb, wait);
 
@@ -232,8 +229,8 @@ public:
 
 		static void unlock(thread_db* tdbb)
 		{
-			Jrd::Attachment* const att = tdbb->getAttachment();
-			Database* const dbb = tdbb->getDatabase();
+			Attachment* att = tdbb->getAttachment();
+			Database* dbb = tdbb->getDatabase();
 
 			if (att)
 				att->backupStateReadUnLock(tdbb);
@@ -246,7 +243,7 @@ public:
 		StateReadGuard(const StateReadGuard&);
 		StateReadGuard& operator=(const StateReadGuard&);
 
-		thread_db* m_tdbb;
+		thread_db* tdbb;
 	};
 
 private:
@@ -254,15 +251,15 @@ private:
 	class LocalAllocGuard
 	{
 	public:
-		explicit LocalAllocGuard(BackupManager* bm)
-			: m_bm(bm)
+		explicit LocalAllocGuard(BackupManager* bm) :
+		  m_bm(bm)
 		{
-			//Database::Checkout cout(m_bm->database);
+			Database::Checkout cout(m_bm->database);
 
 			if (Exclusive)
-				m_bm->localAllocLock.beginWrite("BackupManager::LocalAllocGuard");
+				m_bm->localAllocLock.beginWrite();
 			else
-				m_bm->localAllocLock.beginRead("BackupManager::LocalAllocGuard");
+				m_bm->localAllocLock.beginRead();
 		}
 
 		~LocalAllocGuard()
@@ -293,8 +290,8 @@ private:
 	class GlobalAllocGuard
 	{
 	public:
-		GlobalAllocGuard(thread_db* aTdbb, BackupManager* aBackupManager)
-			: tdbb(aTdbb), backupManager(aBackupManager)
+		GlobalAllocGuard(thread_db* _tdbb, BackupManager* _backupManager)
+			: tdbb(_tdbb), backupManager(_backupManager)
 		{
 			if (Exclusive)
 				backupManager->lockAllocWrite(tdbb);
@@ -361,18 +358,12 @@ public:
 	// State Lock member functions
 	bool lockStateWrite(thread_db* tdbb, SSHORT wait)
 	{
-		fb_assert(!(tdbb->tdbb_flags & TDBB_backup_write_locked));
 		tdbb->tdbb_flags |= TDBB_backup_write_locked;
-		if (stateLock->lockWrite(tdbb, wait))
-			return true;
-
-		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
-		return false;
+		return stateLock->lockWrite(tdbb, wait);
 	}
 
 	void unlockStateWrite(thread_db* tdbb)
 	{
-		fb_assert(tdbb->tdbb_flags & TDBB_backup_write_locked);
 		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
 		stateLock->unlockWrite(tdbb, backup_state == nbak_state_unknown);
 	}
@@ -408,7 +399,6 @@ public:
 	bool actualizeState(thread_db* tdbb);
 	bool actualizeAlloc(thread_db* tdbb, bool haveGlobalLock);
 	void initializeAlloc(thread_db* tdbb);
-
 	void invalidateAlloc(thread_db* tdbb)
 	{
 		allocIsValid = false;
@@ -446,9 +436,9 @@ public:
 		return flushInProgress;
 	}
 
-	bool isShutDown() const
+	bool isShuttedDown() const
 	{
-		return shutDown;
+		return shuttedDown;
 	}
 
 	// Get size (in pages) of locked database file
@@ -465,7 +455,7 @@ private:
 	Firebird::PathName diff_name;
 	bool explicit_diff_name;
 	bool flushInProgress;
-	bool shutDown;
+	bool shuttedDown;
 	bool allocIsValid;			// true, if alloc table cache is completely read from disk
 
 	NBackupStateLock* stateLock;
@@ -491,6 +481,7 @@ private:
 	{
 		if (!allocLock->lockRead(tdbb, LCK_WAIT))
 			ERR_bugcheck_msg("Can't lock alloc table for reading");
+
 	}
 
 	void unlockAllocRead(thread_db* tdbb)

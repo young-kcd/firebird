@@ -241,7 +241,7 @@ act* PAR_action(const TEXT* base_dir)
 					return cur_statement = par_ready();
 				case KW_RELEASE_REQUESTS:
 					return cur_statement = par_release();
-				case KW_RETURNING:
+				case KW_RETURNING_VALUES:
 					return par_returning_values();
 				case KW_START_STREAM:
 					return cur_statement = par_start_stream();
@@ -1033,7 +1033,7 @@ TEXT* PAR_native_value(bool array_ref, bool handle_ref)
 			break;
 	}
 
-	const unsigned int length = string - buffer;
+	const int length = string - buffer;
 	fb_assert(length < sizeof(buffer));
 	string = (SCHAR*) MSC_alloc(length + 1);
 
@@ -1981,7 +1981,9 @@ static act* par_end_store(bool special)
 		}
 
 		gpre_nod* const assignments = MSC_node(nod_list, (SSHORT) count);
-		request->req_node = assignments;
+		request->req_node =
+			MSC_ternary(nod_store, (gpre_nod*) request->req_contexts, assignments, NULL);
+
 		count = 0;
 
 		for (ref* reference = request->req_references; reference; reference = reference->ref_next)
@@ -2399,6 +2401,7 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 
 	// See if we need a blob filter (do we have a subtype to subtype clause?)
 
+	bool filter_is_defined = false;
 	for (;;)
 	{
 		if (MSC_match(KW_FILTER))
@@ -2408,6 +2411,7 @@ static act* par_open_blob( act_t act_op, gpre_sym* symbol)
 			if (!MSC_match(KW_TO))
 				CPR_s_error("TO");
 			blob->blb_const_to_type = PAR_blob_subtype(request->req_database);
+			filter_is_defined = true;
 		}
 		else if (MSC_match(KW_STREAM))
 			blob->blb_type = isc_bpb_type_stream;
@@ -2723,7 +2727,9 @@ static act* par_returning_values()
 	}
 
 	gpre_nod* assignments = MSC_node(nod_list, (SSHORT) count);
-	request->req_node = assignments;
+	request->req_node =
+		MSC_ternary(nod_store, (gpre_nod*) request->req_contexts, assignments, NULL);
+
 	count = 0;
 
 	for (ref* reference = request->req_references; reference; reference = reference->ref_next)
