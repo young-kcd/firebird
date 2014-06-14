@@ -1,3 +1,7 @@
+ 2014-06-13 10:52  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
  2014-06-12 15:56  asfernandes 
    M src/intl/lc_narrow.cpp
    M src/jrd/idx.cpp
