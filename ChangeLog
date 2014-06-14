@@ -1,3 +1,28 @@
+ 2014-06-13 16:28  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/par.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/scl.epp
+   M src/jrd/vio.cpp
+Minor structure changes.
+
+ 2014-06-13 11:28  dimitr 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+Frontported CORE-3305: "BLOB not found" error after creation/altering of the invalid trigger.
+
+ 2014-06-13 11:20  hvlad 
+   M src/utilities/ntrace/fbtrace.conf
+Fixed a typo
+
  2014-06-12 15:44  asfernandes 
    M src/intl/lc_narrow.cpp
    M src/jrd/idx.cpp
