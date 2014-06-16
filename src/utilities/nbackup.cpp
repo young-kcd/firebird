@@ -84,7 +84,7 @@ namespace
 	{
 		char buffer[256];
 		fb_msg_format(NULL, nbackup_msg_fac, number, sizeof(buffer), buffer, arg);
-		printf("%s\n", buffer);
+		fprintf(stderr, "%s\n", buffer);
 	}
 
 	void printMsg(USHORT number)
@@ -608,14 +608,14 @@ void NBackup::pr_error(const ISC_STATUS* status, const char* operation) const
 	if (uSvc->isService())
 		status_exception::raise(status);
 
-	printf("[\n");
+	fprintf(stderr, "[\n");
 	printMsg(23, SafeArg() << operation); // PROBLEM ON "%s".
 
 	isc_print_status(status);
 
-	printf("SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
+	fprintf(stderr, "SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
 
-	printf("]\n");
+	fprintf(stderr, "]\n");
 
 	b_error::raise(uSvc, "Database error");
 }
@@ -1094,7 +1094,7 @@ void NBackup::restore_database(const BackupFiles& files)
 						break;
 					}
 					catch (const Exception& e) {
-						printf("%s\n", e.what());
+						fprintf(stderr, "%s\n", e.what());
 					}
 				}
 			}
@@ -1449,7 +1449,7 @@ void nbackup(UtilSvc* uSvc)
 
 	if (version)
 	{
-		printf("Physical Backup Manager version %s\n", FB_VERSION);
+		fprintf(stderr, "Physical Backup Manager version %s\n", FB_VERSION);
 	}
 	if (op == nbNone)
 	{
