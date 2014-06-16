@@ -11,8 +11,8 @@ PSQL cursors
   Syntax rules:
     DECLARE [VARIABLE] <cursor_name> [SCROLL | NO SCROLL] CURSOR FOR ( <select_statement> );
     OPEN <cursor_name>;
-    FETCH <cursor_name> INTO <var_name> [, <var_name> ...];
-    FETCH {NEXT | PRIOR | FIRST | LAST | ABSOLUTE <n> | RELATIVE <n>} FROM <cursor_name> INTO <var_name> [, <var_name> ...];
+    FETCH <cursor_name> [INTO <var_name> [, <var_name> ...]];
+    FETCH {NEXT | PRIOR | FIRST | LAST | ABSOLUTE <n> | RELATIVE <n>} FROM <cursor_name> [INTO <var_name> [, <var_name> ...]];
     CLOSE <cursor_name>;
     
   Example(s):
@@ -68,3 +68,4 @@ PSQL cursors
 
   See also:
     README.context_variables
+    README.cursor_variables.txt
