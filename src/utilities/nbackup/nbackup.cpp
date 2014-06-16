@@ -87,9 +87,9 @@ namespace
 		char buffer[256];
 		fb_msg_format(NULL, nbackup_msg_fac, number, sizeof(buffer), buffer, arg);
 		if (newLine)
-			printf("%s\n", buffer);
+			fprintf(stderr, "%s\n", buffer);
 		else
-			printf("%s", buffer);
+			fprintf(stderr, "%s", buffer);
 	}
 
 	void printMsg(USHORT number, bool newLine = true)
@@ -132,7 +132,7 @@ namespace
 				printMsg(number, SafeArg() << message);
 			else
 				printMsg(number);
-			printf("\n");
+			fprintf(stderr, "\n");
 		}
 
 		const int mainUsage[] = { 2, 3, 4, 5, 6, 0 };
@@ -617,11 +617,11 @@ void NBackup::pr_error(const ISC_STATUS* status, const char* operation)
 	if (uSvc->isService())
 		status_exception::raise(status);
 
-	printf("[\n");
+	fprintf(stderr, "[\n");
 	printMsg(23, SafeArg() << operation); // PROBLEM ON "%s".
 	isc_print_status(status);
-	printf("SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
-	printf("]\n");
+	fprintf(stderr, "SQLCODE:%"SLONGFORMAT"\n", isc_sqlcode(status));
+	fprintf(stderr, "]\n");
 
 	m_printed = true;
 
@@ -1279,7 +1279,7 @@ void NBackup::restore_database(const BackupFiles& files)
 						isc_print_status(s);
 					}
 					catch (const Exception& e) {
-						printf("%s\n", e.what());
+						fprintf(stderr, "%s\n", e.what());
 					}
 				}
 			}
@@ -1437,7 +1437,7 @@ int NBACKUP_main(UtilSvc* uSvc)
 	catch (const Exception& e)
 	{
 		if (!uSvc->isService())
-			printf("%s\n", e.what());
+			fprintf(stderr, "%s\n", e.what());
 
  		ISC_STATUS_ARRAY status;
  		e.stuff_exception(status);
