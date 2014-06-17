@@ -1251,6 +1251,7 @@ const
 	gds_nbackup_lostguid_l0bk            = 337117251;
 	gds_nbackup_switchd_parameter        = 337117255;
 	gds_nbackup_user_stop                = 337117257;
+	gds_nbackup_deco_parse               = 337117259;
 	gds_trace_conflict_acts              = 337182750;
 	gds_trace_act_notfound               = 337182751;
 	gds_trace_switch_once                = 337182752;

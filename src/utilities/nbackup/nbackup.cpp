@@ -65,6 +65,14 @@
 #include <errno.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifdef HAVE_SYS_WAIT_H
+#include <sys/wait.h>
+#endif
+
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
 #endif
@@ -266,11 +274,12 @@ class NBackup
 public:
 	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username,
 			const string& _password, bool _run_db_triggers/*, const string& _trustedUser,
-			bool _trustedRole*/, bool _direct_io)
+			bool _trustedRole*/, bool _direct_io, const PathName& _deco)
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
 		username(_username), password(_password), /*trustedUser(_trustedUser),*/
 		run_db_triggers(_run_db_triggers), /*trustedRole(_trustedRole), */direct_io(_direct_io),
-		dbase(0), backup(0), db_size_pages(0), m_odsNumber(0), m_silent(false), m_printed(false)
+		dbase(0), backup(0), decompress(_deco), childId(0), db_size_pages(0),
+		m_odsNumber(0), m_silent(false), m_printed(false)
 	{
 		// Recognition of local prefix allows to work with
 		// database using TCP/IP loopback while reading file locally.
@@ -325,6 +334,8 @@ private:
 	PathName bakname;
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
+	PathName decompress;
+	int childId;
 	ULONG db_size_pages;	// In pages
 	USHORT m_odsNumber;
 	bool m_silent;		// are we already handling an exception?
@@ -363,16 +374,35 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	DWORD bytesDone;
 	if (ReadFile(file, buffer, bufsize, &bytesDone, NULL))
 		return bytesDone;
-#else
-	const ssize_t res = read(file, buffer, bufsize);
-	if (res >= 0)
-		return res;
-#endif
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
 		(&file == &dbase ? dbname.c_str() :
 			&file == &backup ? bakname.c_str() : "unknown") <<
 		Arg::OsError());
+
+	return 0; // silence compiler
+#else
+	size_t rc = 0;
+	while (bufsize)
+	{
+		const ssize_t res = read(file, buffer, bufsize);
+		if (res < 0)
+			status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
+				(&file == &dbase ? dbname.c_str() :
+					&file == &backup ? bakname.c_str() : "unknown") <<
+				Arg::OsError());
+
+		if (!res)
+			break;
+
+		rc += res;
+		bufsize -= res;
+		buffer = &((UCHAR*) buffer)[res];
+	}
+
+	return rc;
+#endif
+
 
 	return 0; // silence compiler
 }
@@ -543,9 +573,79 @@ void NBackup::open_backup_scan()
 	if (backup != INVALID_HANDLE_VALUE)
 		return;
 #else
-	backup = open(nm.c_str(), O_RDONLY | O_LARGEFILE);
-	if (backup >= 0)
+	if (decompress.hasData())
+	{
+		PathName command = decompress;
+		PathName::size_type n = command.find('@');
+		if (n == PathName::npos)
+		{
+			command += ' ';
+			command += bakname;
+		}
+		else
+		{
+			command.replace(n, 1, bakname);
+		}
+
+		const unsigned ARGCOUNT = 20;
+		unsigned narg = 0;
+		char* args[ARGCOUNT + 1];
+		bool inStr = false;
+		for(unsigned i = 0; i < command.length(); ++i)
+		{
+			switch(command[i])
+			{
+			case ' ':
+			case '\t':
+				command[i] = '\0';
+				inStr = false;
+				break;
+			default:
+				if (!inStr)
+				{
+					if (narg >= ARGCOUNT)
+					{
+						status_exception::raise(Arg::Gds(isc_nbackup_deco_parse) << Arg::Num(ARGCOUNT));
+					}
+					inStr = true;
+					args[narg++] = &command[i];
+				}
+				break;
+			}
+		}
+		args[narg] = NULL;
+
+		int pfd[2];
+		if (pipe(pfd) < 0)
+			system_call_failed::raise("pipe");
+
+		fb_assert(!newdb);		// FB 2.5 & 3 can't fork when attached to database
+		childId = fork();
+		if (childId < 0)
+			system_call_failed::raise("fork");
+
+		if (childId == 0)
+		{
+			close(pfd[0]);
+			dup2(pfd[1], 1);
+			close(pfd[1]);
+
+			execvp(args[0], args);
+		}
+		else
+		{
+			backup = pfd[0];
+			close(pfd[1]);
+		}
+
 		return;
+	}
+	else
+	{
+		backup = open(nm.c_str(), O_RDONLY | O_LARGEFILE);
+		if (backup >= 0)
+			return;
+	}
 #endif
 
 	status_exception::raise(Arg::Gds(isc_nbackup_err_openbk) << bakname.c_str() << Arg::OsError());
@@ -587,6 +687,11 @@ void NBackup::close_backup()
 	CloseHandle(backup);
 #else
 	close(backup);
+	if (childId > 0)
+	{
+		wait(NULL);
+		childId = 0;
+	}
 #endif
 }
 
@@ -1459,7 +1564,7 @@ void nbackup(UtilSvc* uSvc)
 
 	NbOperation op = nbNone;
 	string username, password;
-	PathName database, filename;
+	PathName database, filename, decompress;
 	bool run_db_triggers = true;
 	bool direct_io =
 #ifdef WIN_NT
@@ -1539,6 +1644,13 @@ void nbackup(UtilSvc* uSvc)
  				direct_io = false;
  			else
  				usage(uSvc, isc_nbackup_switchd_parameter, onOff.c_str());
+			break;
+
+		case IN_SW_NBK_DECOMPRESS:
+ 			if (++itr >= argc)
+ 				missingParameterForSwitch(uSvc, argv[itr - 1]);
+
+ 			decompress = argv[itr];
 			break;
 
 		case IN_SW_NBK_FIXUP:
@@ -1670,7 +1782,7 @@ void nbackup(UtilSvc* uSvc)
 		usage(uSvc, isc_nbackup_size_with_lock);
 	}
 
-	NBackup nbk(uSvc, database, username, password, run_db_triggers, /*trustedUser, trustedRole, */direct_io);
+	NBackup nbk(uSvc, database, username, password, run_db_triggers, /*trustedUser, trustedRole, */direct_io, decompress);
 	try
 	{
 		switch (op)

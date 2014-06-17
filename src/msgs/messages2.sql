@@ -3301,6 +3301,8 @@ Analyzing database pages ...', NULL, NULL);
 ('nbackup_switchd_parameter', 'main', 'nbackup.cpp', NULL, 24, 71, NULL, 'Wrong parameter @1 for switch -D, need ON or OFF', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 72, NULL, 'special options are:', NULL, NULL)
 ('nbackup_user_stop', 'checkCtrlC()', 'nbackup.cpp', NULL, 24, 73, NULL, 'Terminated due to user request', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 74, NULL, '  -DE(COMPRESS) <command>                Command to extract archives during restore', NULL, NULL)
+('nbackup_deco_parse', 'NBackup::open_backup_scan', 'nbackup.cpp', NULL, 24, 75, NULL, 'Too complex decompress command (> @1 arguments)', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

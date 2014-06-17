@@ -1274,6 +1274,7 @@ const ISC_STATUS isc_nbackup_err_eofhdr_restdb        = 337117250L;
 const ISC_STATUS isc_nbackup_lostguid_l0bk            = 337117251L;
 const ISC_STATUS isc_nbackup_switchd_parameter        = 337117255L;
 const ISC_STATUS isc_nbackup_user_stop                = 337117257L;
+const ISC_STATUS isc_nbackup_deco_parse               = 337117259L;
 const ISC_STATUS isc_trace_conflict_acts              = 337182750L;
 const ISC_STATUS isc_trace_act_notfound               = 337182751L;
 const ISC_STATUS isc_trace_switch_once                = 337182752L;
@@ -1285,7 +1286,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1229;
+const ISC_STATUS isc_err_max                          = 1230;
 
 #else /* c definitions */
 
@@ -2529,6 +2530,7 @@ const ISC_STATUS isc_err_max                          = 1229;
 #define isc_nbackup_lostguid_l0bk            337117251L
 #define isc_nbackup_switchd_parameter        337117255L
 #define isc_nbackup_user_stop                337117257L
+#define isc_nbackup_deco_parse               337117259L
 #define isc_trace_conflict_acts              337182750L
 #define isc_trace_act_notfound               337182751L
 #define isc_trace_switch_once                337182752L
@@ -2540,7 +2542,7 @@ const ISC_STATUS isc_err_max                          = 1229;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1229
+#define isc_err_max                          1230
 
 #endif
 

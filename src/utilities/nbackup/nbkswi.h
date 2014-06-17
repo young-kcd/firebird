@@ -48,6 +48,7 @@ const int IN_SW_NBK_TRUSTED_USER	= 12;
 const int IN_SW_NBK_TRUSTED_ROLE	= 13;
 const int IN_SW_NBK_HELP			= 14;
 const int IN_SW_NBK_DIRECT			= 15;
+const int IN_SW_NBK_DECOMPRESS		= 16;
 
 
 static const struct Switches::in_sw_tab_t nbackup_in_sw_table [] =
@@ -61,7 +62,7 @@ enum NbakOptionType { nboGeneral, nboSpecial, nboExclusive };
 
 static const struct Switches::in_sw_tab_t nbackup_action_in_sw_table [] =
 {
-	{IN_SW_NBK_LOCK,		0,						"LOCK",				0, 0, 0, false,	8,	1,	NULL ,nboExclusive},
+	{IN_SW_NBK_LOCK,		0,						"LOCK",				0, 0, 0, false,	8,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_UNLOCK,		0,						"N",				0, 0, 0, false,	0,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_UNLOCK,		0,						"UNLOCK",			0, 0, 0, false,	9,	2,	NULL, nboExclusive},
 	{IN_SW_NBK_FIXUP,		0,						"FIXUP",			0, 0, 0, false,	10,	1,	NULL, nboExclusive},
@@ -69,6 +70,7 @@ static const struct Switches::in_sw_tab_t nbackup_action_in_sw_table [] =
 	{IN_SW_NBK_RESTORE,		isc_action_svc_nrest,	"RESTORE",			0, 0, 0, false,	12,	1,	NULL, nboExclusive},
 	{IN_SW_NBK_DIRECT,		0,						"DIRECT",			0, 0, 0, false, 70,	1,	NULL, nboSpecial},
 	{IN_SW_NBK_SIZE,		0,						"SIZE",				0, 0, 0, false,	17,	1,	NULL, nboSpecial},
+	{IN_SW_NBK_DECOMPRESS,	0,						"DECOMPRESS",		0, 0, 0, false,	74,	2,	NULL, nboSpecial},
 	{IN_SW_NBK_NODBTRIG,	0,						"T",				0, 0, 0, false,	0,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_NODBTRIG,	0,						"NODBTRIGGERS",		0, 0, 0, false,	16,	3,	NULL, nboGeneral},
 	{IN_SW_NBK_USER_NAME,	0,						"USER",				0, 0, 0, false,	13,	1,	NULL, nboGeneral},

@@ -1240,6 +1240,7 @@ static const struct {
 	{"nbackup_lostguid_l0bk", 337117251},
 	{"nbackup_switchd_parameter", 337117255},
 	{"nbackup_user_stop", 337117257},
+	{"nbackup_deco_parse", 337117259},
 	{"trace_conflict_acts", 337182750},
 	{"trace_act_notfound", 337182751},
 	{"trace_switch_once", 337182752},
