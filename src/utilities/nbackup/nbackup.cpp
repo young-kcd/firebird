@@ -1219,8 +1219,9 @@ void NBackup::backup_database(int level, const PathName& fname)
 
 	time_t finish = time(NULL);
 	double elapsed = difftime(finish, start);
-	uSvc->printf(false, "time elapsed\t%.0f sec \npage reads\t%u \npage writes\t%u\n",
-		elapsed, page_reads, page_writes);
+	if (bakname != "stdout")
+		uSvc->printf(false, "time elapsed\t%.0f sec \npage reads\t%u \npage writes\t%u\n",
+			elapsed, page_reads, page_writes);
 }
 
 void NBackup::restore_database(const BackupFiles& files)
