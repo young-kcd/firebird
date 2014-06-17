@@ -376,6 +376,37 @@ void DYN_define_collation( Global* gbl, const UCHAR** ptr)
 				// msg: 222: "Invalid collation attributes"
 			}
 
+			// ASF: User collations are created with the last number available,
+			// to minimize the possibility of conflicts with future system collations.
+			// The greater available number is 126 to avoid signed/unsigned problems.
+
+			X.RDB$COLLATION_ID.NULL = TRUE;
+			X.RDB$COLLATION_ID = 126;
+
+			jrd_req* request2 = CMP_find_request(tdbb, irq_l_colls, IRQ_REQUESTS);
+
+			FOR(REQUEST_HANDLE request2)
+				Y IN RDB$COLLATIONS
+				WITH Y.RDB$CHARACTER_SET_ID = X.RDB$CHARACTER_SET_ID
+				SORTED BY DESCENDING Y.RDB$COLLATION_ID
+
+				if (!REQUEST(irq_l_colls))
+					REQUEST(irq_l_colls) = request2;
+
+				if (Y.RDB$COLLATION_ID + 1 <= X.RDB$COLLATION_ID)
+				{
+					X.RDB$COLLATION_ID.NULL = FALSE;
+					EXE_unwind(tdbb, request2);
+					break;
+				}
+				else
+					X.RDB$COLLATION_ID = Y.RDB$COLLATION_ID - 1;
+
+			END_FOR
+
+			if (!REQUEST(irq_l_colls))
+				REQUEST(irq_l_colls) = request2;
+
 			b_ending_store = true;
 
 		END_STORE;
