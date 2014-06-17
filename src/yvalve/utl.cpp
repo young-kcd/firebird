@@ -367,6 +367,9 @@ void FB_CARG UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
 		if (!file)
 			system_error::raise("fopen");
 
+		if (!att)
+			Arg::Gds(isc_bad_db_handle).raise();
+
 		dump(status, blobId, att, tra, file);
 	}
 	catch (const Exception& ex)
@@ -397,6 +400,9 @@ void FB_CARG UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
 		if (!file)
 			system_error::raise("fopen");
 
+		if (!att)
+			Arg::Gds(isc_bad_db_handle).raise();
+
 		load(status, blobId, att, tra, file);
 	}
 	catch (const Exception& ex)
@@ -423,6 +429,9 @@ void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
  **************************************/
 	try
 	{
+		if (!att)
+			Arg::Gds(isc_bad_db_handle).raise();
+
 		UCharBuffer buffer;
 		USHORT buf_len = 256;
 		UCHAR* buf = buffer.getBuffer(buf_len);
