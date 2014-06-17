@@ -1,3 +1,7 @@
+ 2014-06-16 13:50  alexpeshkoff 
+   M src/utilities/nbackup.cpp
+Backported fix for CORE-4461: nbackup prints error messages to stdout instead stderr
+
  2014-06-13 10:52  dimitr 
    M doc/WhatsNew
 Updated the docs.
