@@ -365,8 +365,6 @@ private:
 					rwlocks->remove(getLockId());
 					delete rwcl;
 				}
-#else /* USE_FCNTL */
-				unlock();
 #endif /* USE_FCNTL */
 			}
 			else
@@ -3105,7 +3103,7 @@ int ISC_mutex_init(sh_mem* shmem_data, struct mtx* mutex, struct mtx** mapped)
 	SharedFile* sf = SharedFile::locate(mutex);
 	if (!sf)
 	{
-		gds__log("SharedFile::locate(sem) failed");
+		gds__log("SharedFile::locate(mutex) failed");
 
 #else // USE_FILELOCKS
 
@@ -4129,7 +4127,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
  *	Unmap a given file.
  *
  **************************************/
-#ifdef USE_SYS5SEMAPHORE
+#if defined(USE_SYS5SEMAPHORE)
 	// Lock init file.
 	FileLock initLock(fd_init, FileLock::OPENED);
 	if (!initLock.doLock(status_vector, FileLock::FLM_EXCLUSIVE))
@@ -4146,6 +4144,11 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 		SharedFile::remove(shmem_data->sh_mem_address);
 	}
 	--sharedCount;
+#elif defined(USE_FCNTL)
+	{
+		FileLock lock(shmem_data->sh_mem_handle, FileLock::OPENED);
+		lock.setLevel(FileLock::LCK_SHARED);
+	}
 #endif
 
 	munmap((char *) shmem_data->sh_mem_address, shmem_data->sh_mem_length_mapped);
