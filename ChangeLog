@@ -1,3 +1,26 @@
+ 2014-06-17 12:45  alexpeshkoff 
+   M src/yvalve/utl.cpp
+Fixed CORE-4440: isql crash without connect when execute command "show version"
+
+ 2014-06-17 10:27  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/nbackup/nbkswi.h
+Implemented CORE-4462 (Make it possible to restore compressed .nbk files without explicitly decompressing them) for POSIX systems
+
+ 2014-06-17 09:53  alexpeshkoff 
+   M src/utilities/nbackup/nbackup.cpp
+Postfix for CORE-4461: do not poison backup file with statistics
+
  2014-06-16 16:04  asfernandes 
    A doc/sql.extensions/README.cursor_variables.txt
    M doc/sql.extensions/README.cursors
