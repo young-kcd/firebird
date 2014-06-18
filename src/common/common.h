@@ -462,9 +462,11 @@ extern "C" int remove(const char* path);
 #define QUADFORMAT "ll"			/* TMC 081700 */
 #define QUADCONST(n) (n##LL)	/* TMC 081700 */
 
-// AIX does not pass autoconf's test for mmap() correctness,
+// Old AIX versions do not pass autoconf's test for mmap() correctness,
 // but we do not use flag (MAP_FIXED) that fails.
-#define HAVE_MMAP
+#ifndef HAVE_MMAP
+#define HAVE_MMAP 1
+#endif
 
 // autoconf test AC_SYS_LARGEFILE defines _LARGE_FILES for AIX builds.
 // But, in <standards.h>, _LARGE_FILE_API is defined, leading to conflict
