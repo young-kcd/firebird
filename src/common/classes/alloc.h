@@ -358,6 +358,9 @@ public:
 	static void init();
 	static void cleanup();
 
+	// Initialize context pool
+	static void contextPoolInit();
+
 	// Statistics
 	void increment_usage(size_t size) throw ()
 	{

@@ -1092,18 +1092,40 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 }
 
 // Declare thread-specific variable for context memory pool
+#ifndef TLS_CLASS
 TLS_DECLARE(MemoryPool*, contextPool);
+#else
+TLS_DECLARE(MemoryPool*, *contextPoolPtr);
+#endif //TLS_CLASS
 
 MemoryPool* MemoryPool::setContextPool(MemoryPool* newPool)
 {
+#ifndef TLS_CLASS
 	MemoryPool* const old = TLS_GET(contextPool);
 	TLS_SET(contextPool, newPool);
+#else
+	MemoryPool* const old = TLS_GET(*contextPoolPtr);
+	TLS_SET(*contextPoolPtr, newPool);
+#endif //TLS_CLASS
 	return old;
 }
 
 MemoryPool* MemoryPool::getContextPool()
 {
+#ifndef TLS_CLASS
 	return TLS_GET(contextPool);
+#else
+	return TLS_GET(*contextPoolPtr);
+#endif //TLS_CLASS
+}
+
+void MemoryPool::contextPoolInit()
+{
+#ifdef TLS_CLASS
+	// Allocate TLS entry for context pool
+	contextPoolPtr = FB_NEW(*getDefaultMemoryPool()) TLS_CLASS<MemoryPool*>;
+	// To be deleted by InstanceControl::InstanceList::destructors() at TLS priority
+#endif //TLS_CLASS
 }
 
 MemoryPool& AutoStorage::getAutoMemoryPool()
