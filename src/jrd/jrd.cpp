@@ -978,7 +978,7 @@ static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 
 static void			unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb);
-static JAttachment*	init(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
+static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*);
 static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
@@ -1452,7 +1452,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			// Unless we're already attached, do some initialization
 			RefMutexUnlock initGuard;
-			JAttachment* jAtt = init(tdbb, expanded_name, is_alias ? org_filename : expanded_name,
+			JAttachment* jAtt = initAttachment(tdbb, expanded_name,
+				is_alias ? org_filename : expanded_name,
 				config, true, options, initGuard, pluginConfig);
 
 			dbb = tdbb->getDatabase();
@@ -2463,7 +2464,8 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			// Unless we're already attached, do some initialization
 			RefMutexUnlock initGuard;
-			JAttachment* jAtt = init(tdbb, expanded_name, (is_alias ? org_filename : expanded_name),
+			JAttachment* jAtt = initAttachment(tdbb, expanded_name,
+				is_alias ? org_filename : expanded_name,
 				config, false, options, initGuard, pluginConfig);
 
 			dbb = tdbb->getDatabase();
@@ -5876,14 +5878,9 @@ static void handle_error(IStatus* user_status, ISC_STATUS code)
 }
 
 
-static JAttachment* init(thread_db* tdbb,
-						 const PathName& expanded_name,
-						 const PathName& alias_name,
-						 RefPtr<Config> config,
-						 bool attach_flag,		// only for shared cache
-						 const DatabaseOptions& options,
-						 RefMutexUnlock& initGuard,
-						 IPluginConfig* pConf)
+static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_name,
+	const PathName& alias_name, RefPtr<Config> config, bool attach_flag,
+	const DatabaseOptions& options, RefMutexUnlock& initGuard, IPluginConfig* pConf)
 {
 /**************************************
  *
