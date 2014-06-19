@@ -404,7 +404,7 @@ extern "C" int remove(const char* path);
 
 #if defined (__HP_aCC)
 #define FB_CC CcAcc
-#undef HAVE___THREAD	// aCC error, __thread can be used only with C-like structs
+//#undef HAVE___THREAD	// aCC error, __thread can be used only with C-like structs
 #elif defined (__GNUC__)
 #define FB_CC CcGcc
 #endif
