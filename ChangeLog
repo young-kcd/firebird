@@ -1,3 +1,7 @@
+ 2014-06-18 12:20  alexpeshkoff 
+   M src/common/common.h
+Front-ported needed AIX port changes
+
  2014-06-17 12:45  alexpeshkoff 
    M src/yvalve/utl.cpp
 Fixed CORE-4440: isql crash without connect when execute command "show version"
