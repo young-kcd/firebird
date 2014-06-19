@@ -435,6 +435,9 @@ public:
 	static void init();
 	static void cleanup();
 
+	// Initialize context pool
+	static void contextPoolInit();
+
 	friend class InternalAllocator;
 };
 

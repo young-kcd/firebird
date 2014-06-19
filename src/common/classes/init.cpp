@@ -118,6 +118,8 @@ namespace
 #endif //DEBUG_INIT
 
 		initDone = true;
+
+		Firebird::MemoryPool::contextPoolInit();
 	}
 
 	Firebird::InstanceControl::InstanceList* instanceList = 0;

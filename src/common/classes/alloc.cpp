@@ -176,7 +176,12 @@ const USHORT MIN_EXTENT = 1024;
 const int MAP_CACHE_SIZE = 16; // == 1 MB
 
 // Declare thread-specific variable for context memory pool
+#ifndef TLS_CLASS
 TLS_DECLARE(MemoryPool*, contextPool);
+#else
+TLS_DECLARE(MemoryPool*, *contextPoolPtr);
+#endif //TLS_CLASS
+
 
 // Support for memory mapping facilities
 #if defined(WIN_NT)
@@ -290,14 +295,23 @@ inline void MemoryPool::decrement_mapping(size_t size)
 
 MemoryPool* MemoryPool::setContextPool(MemoryPool* newPool)
 {
+#ifndef TLS_CLASS
 	MemoryPool* const old = TLS_GET(contextPool);
 	TLS_SET(contextPool, newPool);
+#else
+	MemoryPool* const old = TLS_GET(*contextPoolPtr);
+	TLS_SET(*contextPoolPtr, newPool);
+#endif //TLS_CLASS
 	return old;
 }
 
 MemoryPool* MemoryPool::getContextPool()
 {
+#ifndef TLS_CLASS
 	return TLS_GET(contextPool);
+#else
+	return TLS_GET(*contextPoolPtr);
+#endif //TLS_CLASS
 }
 
 // Default stats group and default pool
@@ -322,6 +336,15 @@ void MemoryPool::init()
 	// Now it's safe to actually create MemoryPool
 	processMemoryPool = MemoryPool::createPool();
 	fb_assert(processMemoryPool);
+}
+
+void MemoryPool::contextPoolInit()
+{
+#ifdef TLS_CLASS
+	// Allocate TLS entry for context pool
+	contextPoolPtr = FB_NEW(*getDefaultMemoryPool()) TLS_CLASS<MemoryPool*>;
+	// To be deleted by InstanceControl::InstanceList::destructors() at TLS priority
+#endif //TLS_CLASS
 }
 
 // Should be last routine, called by InstanceControl,
@@ -2029,7 +2052,7 @@ MemoryPool& AutoStorage::getAutoMemoryPool()
 {
 #ifndef SUPERCLIENT
 	MemoryPool* p = MemoryPool::getContextPool();
-	if (! p)
+	if (!p)
 	{
 		p = getDefaultMemoryPool();
 	}
