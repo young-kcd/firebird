@@ -167,7 +167,7 @@ public:
 	virtual const char* FB_CARG getText();
 	virtual const char* FB_CARG getPlan();
 	virtual const char* FB_CARG getTextUTF8();
-	virtual const char* FB_CARG getPlanExplained();
+	virtual const char* FB_CARG getExplainedPlan();
 
 private:
 	class DSQLParamsImpl : public Firebird::AutoIface<TraceParams, FB_TRACE_PARAMS_VERSION>
@@ -219,7 +219,7 @@ public:
 	virtual const char* FB_CARG getText()		{ return m_text.c_str(); }
 	virtual const char* FB_CARG getPlan()		{ return ""; }
 	virtual const char* FB_CARG getTextUTF8();
-	virtual const char* FB_CARG getPlanExplained()	{ return ""; }
+	virtual const char* FB_CARG getExplainedPlan()	{ return ""; }
 
 private:
 	Firebird::string& m_text;

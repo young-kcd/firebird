@@ -216,7 +216,7 @@ const char* TraceSQLStatementImpl::getPlan()
 	return m_plan.c_str();
 }
 
-const char* FB_CARG TraceSQLStatementImpl::getPlanExplained()
+const char* FB_CARG TraceSQLStatementImpl::getExplainedPlan()
 {
 	fillPlan(true);
 	return m_plan.c_str();
