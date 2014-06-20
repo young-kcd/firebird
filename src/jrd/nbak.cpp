@@ -381,7 +381,8 @@ bool BackupManager::extendDatabase(thread_db* tdbb)
 		LocalAllocReadGuard localAllocGuard(this);
 		AllocItemTree::Accessor all(alloc_table);
 
-		if (all.getFirst()) {
+		if (all.getFirst())
+		{
 			do
 			{
 				const ULONG pg = all.current().db_page;
@@ -402,7 +403,7 @@ bool BackupManager::extendDatabase(thread_db* tdbb)
 	maxAllocPage = pgSpace->maxAlloc();
 	while (maxAllocPage < maxPage)
 	{
-		const USHORT ret = PIO_init_data(database, pgSpace->file, tdbb->tdbb_status_vector, 
+		const USHORT ret = PIO_init_data(database, pgSpace->file, tdbb->tdbb_status_vector,
 										 maxAllocPage, 256);
 
 		if (ret != 256)
@@ -410,6 +411,7 @@ bool BackupManager::extendDatabase(thread_db* tdbb)
 
 		maxAllocPage += ret;
 	}
+
 	return true;
 }
 

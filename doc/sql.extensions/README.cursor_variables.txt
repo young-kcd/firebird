@@ -6,7 +6,7 @@ Cursor variables
     Allow usage of explicit or implicit cursors without needing the use of INTO clause in FETCH and
     FOR SELECT.
     An explicit cursor automatically becomes a cursor variable.
-    An implicit cursor (FOR SELECT) needs the {AS CURSOR <name>} clause.
+    An implicit cursor (FOR SELECT) needs the {AS CURSOR <name>} clause to become a cursor variable.
 
   Author:
 	Adriano dos Santos Fernandes <adrianosf@gmail.com>
@@ -20,7 +20,8 @@ Cursor variables
     3) It's allowed to use the colon prefix with trigger's NEW and OLD contexts.
     4) Cursor variables are read-only.
     5) A FOR SELECT without AS CURSOR needs the use of INTO, while with AS CURSOR it's not required,
-       but still allowed.
+       but still allowed. With FETCH, INTO is now optional.
+	6) It's allowed now to use the colon prefix when assigning to variables or NEW's fields.
 
   Examples:
     1.

@@ -914,7 +914,7 @@ void DatabaseSnapshot::dumpAttachment(thread_db* tdbb, DumpRecord& record,
 		const jrd_req* const request = *i;
 
 		if (!(request->getStatement()->flags &
-			(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
+				(JrdStatement::FLAG_INTERNAL | JrdStatement::FLAG_SYS_TRIGGER)))
 		{
 			const string plan = OPT_get_plan(tdbb, request, true);
 			putRequest(record, request, writer, fb_utils::genUniqueId(), plan);

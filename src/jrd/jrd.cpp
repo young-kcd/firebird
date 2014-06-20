@@ -6103,7 +6103,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 		sAtt->manualLock(attachment->att_flags);
 		jAtt = new JAttachment(sAtt);
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		sAtt->release();
 		throw;
@@ -7890,7 +7890,8 @@ void JRD_shutdown_attachments(Database* dbb)
 				guard.lock(SYNC_SHARED);
 
 			for (Jrd::Attachment* attachment = dbb->dbb_attachments;
-				attachment; attachment = attachment->att_next)
+				 attachment;
+				 attachment = attachment->att_next)
 			{
 				if (attachment->att_flags & ATT_shutdown)
 				{

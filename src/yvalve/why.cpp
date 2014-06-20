@@ -4312,9 +4312,7 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 			outMetadata, outBuffer);
 
 		if (newTrans == trans)
-		{
 			newTrans = transaction;
-		}
 		else
 		{
 			if (transaction)
@@ -4324,10 +4322,9 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 				transaction->release();
 				transaction = NULL;		// Get ready for correct return in OOM case
 			}
+
 			if (newTrans)
-			{
 				newTrans = new YTransaction(attachment, newTrans);
-			}
 		}
 
 		return newTrans;
@@ -5210,9 +5207,7 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 			inMetadata, inBuffer, outMetadata, outBuffer);
 
 		if (newTrans == trans)
-		{
 			newTrans = transaction;
-		}
 		else
 		{
 			if (transaction)
@@ -5222,10 +5217,9 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 				transaction->release();
 				transaction = NULL;		// Get ready for correct return in OOM case
 			}
+
 			if (newTrans)
-			{
 				newTrans = new YTransaction(this, newTrans);
-			}
 		}
 
 		return newTrans;

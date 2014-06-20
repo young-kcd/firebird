@@ -77,7 +77,7 @@ void Jrd::Attachment::destroy(Attachment* const attachment)
 	fb_assert(sAtt);
 	if (sAtt)
 	{
-		// break link between attachment and it's stable part
+		// break link between attachment and its stable part
 		sAtt->cancel();
 		attachment->setStable(NULL);
 

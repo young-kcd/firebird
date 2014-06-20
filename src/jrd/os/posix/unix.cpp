@@ -316,7 +316,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 									MAX_ULONG : file->fil_max_page - file->fil_min_page + 1;
 		if (filePages < fileMaxPages)
 		{
-			if (file->fil_flags & FIL_no_fast_extend) 
+			if (file->fil_flags & FIL_no_fast_extend)
 				return;
 
 			const ULONG extendBy = MIN(fileMaxPages - filePages + file->fil_fudge, leftPages);

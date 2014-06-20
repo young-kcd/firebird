@@ -387,10 +387,12 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	{
 		const ssize_t res = read(file, buffer, bufsize);
 		if (res < 0)
+		{
 			status_exception::raise(Arg::Gds(isc_nbackup_err_read) <<
 				(&file == &dbase ? dbname.c_str() :
 					&file == &backup ? bakname.c_str() : "unknown") <<
 				Arg::OsError());
+		}
 
 		if (!res)
 			break;
@@ -591,9 +593,9 @@ void NBackup::open_backup_scan()
 		unsigned narg = 0;
 		char* args[ARGCOUNT + 1];
 		bool inStr = false;
-		for(unsigned i = 0; i < command.length(); ++i)
+		for (unsigned i = 0; i < command.length(); ++i)
 		{
-			switch(command[i])
+			switch (command[i])
 			{
 			case ' ':
 			case '\t':
@@ -1325,8 +1327,10 @@ void NBackup::backup_database(int level, const PathName& fname)
 	time_t finish = time(NULL);
 	double elapsed = difftime(finish, start);
 	if (bakname != "stdout")
+	{
 		uSvc->printf(false, "time elapsed\t%.0f sec \npage reads\t%u \npage writes\t%u\n",
 			elapsed, page_reads, page_writes);
+	}
 }
 
 void NBackup::restore_database(const BackupFiles& files)
