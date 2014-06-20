@@ -274,7 +274,7 @@ class NBackup
 public:
 	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username,
 			const string& _password, bool _run_db_triggers/*, const string& _trustedUser,
-			bool _trustedRole*/, bool _direct_io, const PathName& _deco)
+			bool _trustedRole*/, bool _direct_io, const string& _deco)
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
 		username(_username), password(_password), /*trustedUser(_trustedUser),*/
 		run_db_triggers(_run_db_triggers), /*trustedRole(_trustedRole), */direct_io(_direct_io),
@@ -334,7 +334,7 @@ private:
 	PathName bakname;
 	FILE_HANDLE dbase;
 	FILE_HANDLE backup;
-	PathName decompress;
+	string decompress;
 	int childId;
 	ULONG db_size_pages;	// In pages
 	USHORT m_odsNumber;
@@ -577,18 +577,7 @@ void NBackup::open_backup_scan()
 #else
 	if (decompress.hasData())
 	{
-		PathName command = decompress;
-		PathName::size_type n = command.find('@');
-		if (n == PathName::npos)
-		{
-			command += ' ';
-			command += bakname;
-		}
-		else
-		{
-			command.replace(n, 1, bakname);
-		}
-
+		string command = decompress;
 		const unsigned ARGCOUNT = 20;
 		unsigned narg = 0;
 		char* args[ARGCOUNT + 1];
@@ -614,6 +603,28 @@ void NBackup::open_backup_scan()
 				}
 				break;
 			}
+		}
+
+		string expanded;
+		for (unsigned i = 0; i < narg; ++i)
+		{
+			expanded = args[i];
+			PathName::size_type n = expanded.find('@');
+			if (n != PathName::npos)
+			{
+				expanded.replace(n, 1, bakname);
+				args[i] = &expanded[0];
+				break;
+			}
+			expanded.erase();
+		}
+		if (!expanded.hasData())
+		{
+			if (narg >= ARGCOUNT)
+			{
+				status_exception::raise(Arg::Gds(isc_nbackup_deco_parse) << Arg::Num(ARGCOUNT));
+			}
+			args[narg++] = &bakname[0];
 		}
 		args[narg] = NULL;
 
@@ -1568,7 +1579,8 @@ void nbackup(UtilSvc* uSvc)
 
 	NbOperation op = nbNone;
 	string username, password;
-	PathName database, filename, decompress;
+	PathName database, filename;
+	string decompress;
 	bool run_db_triggers = true;
 	bool direct_io =
 #ifdef WIN_NT
