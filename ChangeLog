@@ -1,3 +1,18 @@
+ 2014-06-19 14:35  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Totally misc - we had too many things called "init" in jrd.cpp
+
+ 2014-06-19 12:44  alexpeshkoff 
+   M src/common/common.h
+Current HPUX reported to support __thread
+
+ 2014-06-19 12:25  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/fb_tls.h
+   M src/common/classes/init.cpp
+HPUX port - fixed assertion for RISC machines with compiler missing __thread support
+
  2014-06-18 12:20  alexpeshkoff 
    M src/common/common.h
 Front-ported needed AIX port changes
