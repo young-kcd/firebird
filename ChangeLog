@@ -1,3 +1,10 @@
+ 2014-06-19 12:24  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/fb_tls.h
+   M src/common/classes/init.cpp
+HPUX port - fixed assertion for RISC machines with compiler missing __thread support
+
  2014-06-18 10:47  alexpeshkoff 
    M src/jrd/common.h
    M src/jrd/isc_sync.cpp
