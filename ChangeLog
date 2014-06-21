@@ -1,3 +1,32 @@
+ 2014-06-20 10:06  alexpeshkoff 
+   M src/utilities/nbackup/nbackup.cpp
+Postfix for CORE-4462: enabled use of filenames with spaces (as requested by Adriano)
+
+ 2014-06-20 05:54  dimitr 
+   M src/jrd/ntrace.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Better naming.
+
+ 2014-06-20 05:20  dimitr 
+   M src/jrd/names.h
+Fixed typo.
+
+ 2014-06-20 02:28  asfernandes 
+   M doc/sql.extensions/README.cursor_variables.txt
+   M src/common/classes/alloc.cpp
+   M src/jrd/Attachment.cpp
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/why.cpp
+Misc.
+
  2014-06-19 14:35  alexpeshkoff 
    M src/jrd/jrd.cpp
 Totally misc - we had too many things called "init" in jrd.cpp
