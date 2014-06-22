@@ -1,3 +1,7 @@
+ 2014-06-21 14:07  fsg 
+   M src/isql/extract.epp
+let isql ignore packaged functions when extracting external UDF's
+
  2014-06-20 10:06  alexpeshkoff 
    M src/utilities/nbackup/nbackup.cpp
 Postfix for CORE-4462: enabled use of filenames with spaces (as requested by Adriano)
