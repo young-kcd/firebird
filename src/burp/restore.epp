@@ -4248,6 +4248,7 @@ bool get_function(BurpGlobals* tdgbl)
 						GET_TEXT(X.RDB$PACKAGE_NAME);
 						fb_utils::exact_name(X.RDB$PACKAGE_NAME);
 						X.RDB$PACKAGE_NAME.NULL = FALSE;
+						securityClass = true;	// prevent creation of security class for packaged function
 					}
 					else
 						bad_attribute(scan_next_attr, attribute, 89);
