@@ -1,3 +1,7 @@
+ 2014-06-22 02:30  asfernandes 
+   M src/burp/restore.epp
+Fixed CORE-4470 - gbak fails to restore database containing dependency between views and packaged functions.
+
  2014-06-21 14:07  fsg 
    M src/isql/extract.epp
 let isql ignore packaged functions when extracting external UDF's
