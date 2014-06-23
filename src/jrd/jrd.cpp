@@ -1585,6 +1585,9 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				dbb->dbb_crypto_manager->attach(tdbb, attachment);
 			}
 
+			// Basic DBB initialization complete
+			initGuard.leave();
+
 			// Attachments to a ReadOnly database need NOT do garbage collection
 			if (dbb->readOnly())
 				attachment->att_flags |= ATT_no_cleanup;
@@ -1782,8 +1785,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			PAG_attachment_id(tdbb);
 
 			CCH_release_exclusive(tdbb);
-
-			initGuard.leave();
 
 			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
 			{
