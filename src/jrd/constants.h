@@ -88,11 +88,6 @@ const char* const NULL_ROLE = "NONE";
 // jrd/grant.gdl (which turns into jrd/trig.h.
 const char* const SYSDBA_USER_NAME = "SYSDBA";
 
-// This temporary set of flags is needed to implement minimum form of
-// ALTER ROLE RDB$ADMIN ADD/DROP SYSTEM_NAME "Domain Admins".
-// Value 1 is skipped because rdb$system_flag = 1 is used in all other cases.
-const SSHORT ROLE_FLAG_DBO			= 4;
-
 const char* const PRIMARY_KEY		= "PRIMARY KEY";
 const char* const FOREIGN_KEY		= "FOREIGN KEY";
 const char* const UNIQUE_CNSTRT		= "UNIQUE";

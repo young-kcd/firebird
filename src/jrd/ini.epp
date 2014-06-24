@@ -333,7 +333,7 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 		else
 			PAD(SYSDBA_USER_NAME, X.RDB$OWNER_NAME);
 		X.RDB$OWNER_NAME.NULL = FALSE;
-		X.RDB$SYSTEM_FLAG = ROLE_FLAG_DBO;	// Mark it as privileged role
+		X.RDB$SYSTEM_FLAG = 1;		// We have single system role, always treat it as privileged
 		X.RDB$SYSTEM_FLAG.NULL = FALSE;
 	}
 	END_STORE

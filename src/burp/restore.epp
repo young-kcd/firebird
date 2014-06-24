@@ -8039,7 +8039,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 		Firebird::string sql;
 		sql.printf("%s ('%s', %d) %s",
 			"UPDATE OR INSERT INTO RDB$ROLES(RDB$ROLE_NAME, RDB$SYSTEM_FLAG) VALUES",
-			ADMIN_ROLE, ROLE_FLAG_DBO,
+			ADMIN_ROLE, 6,		// constant 6 turns on auto admin mapping in FB 2.5
 			"MATCHING (RDB$ROLE_NAME)");
 		isc_dsql_execute_immediate(tdgbl->status_vector, &tdgbl->db_handle, &tdgbl->tr_handle,
 								   sql.length(), sql.c_str(), 1, NULL);
