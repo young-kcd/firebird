@@ -1,3 +1,7 @@
+ 2014-06-23 11:17  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Fixed deadlock privately reported by Dmitry Yemanov
+
  2014-06-22 02:30  asfernandes 
    M src/burp/restore.epp
 Fixed CORE-4470 - gbak fails to restore database containing dependency between views and packaged functions.
