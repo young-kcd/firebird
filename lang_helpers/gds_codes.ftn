@@ -1596,6 +1596,8 @@ C --
       PARAMETER (GDS__set_invalid_role                 = 335545091)
       INTEGER*4 GDS__cursor_not_positioned           
       PARAMETER (GDS__cursor_not_positioned            = 335545092)
+      INTEGER*4 GDS__dup_attribute                   
+      PARAMETER (GDS__dup_attribute                    = 335545093)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

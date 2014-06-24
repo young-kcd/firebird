@@ -780,7 +780,7 @@ static const struct {
 	{335545077, "08004"}, // 757 server_misconfigured
 	{335545078, "0A000"}, // 758 alter_role
 	{335545079, "42S01"}, // 759 map_already_exists
-	{335545080, "42S01"}, // 760 map_not_exists
+	{335545080, "42S02"}, // 760 map_not_exists
 	{335545081, "08004"}, // 761 map_load
 	{335545082, "08004"}, // 762 map_aster
 	{335545083, "08004"}, // 763 map_multi
@@ -793,6 +793,7 @@ static const struct {
 	{335545090, "0P000"}, // 770 miss_trusted_role
 	{335545091, "0P000"}, // 771 set_invalid_role
 	{335545092, "HY109"}, // 772 cursor_not_positioned
+	{335545093, "42702"}, // 773 dup_attribute
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

@@ -766,7 +766,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '08', '004', 0, 757, 'server_misconfigured', NULL, NULL);
 (-901, '0A', '000', 0, 758, 'alter_role', NULL, NULL);
 (-901, '42', 'S01', 0, 759, 'map_already_exists', NULL, NULL);
-(-901, '42', 'S01', 0, 760, 'map_not_exists', NULL, NULL);
+(-901, '42', 'S02', 0, 760, 'map_not_exists', NULL, NULL);
 (-901, '08', '004', 0, 761, 'map_load', NULL, NULL);
 (-901, '08', '004', 0, 762, 'map_aster', NULL, NULL);
 (-901, '08', '004', 0, 763, 'map_multi', NULL, NULL);
@@ -779,6 +779,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '0P', '000', 0, 770, 'miss_trusted_role', NULL, NULL);
 (-901, '0P', '000', 0, 771, 'set_invalid_role', NULL, NULL);
 (-596, 'HY', '109', 0, 772, 'cursor_not_positioned', NULL, NULL)
+(-901, '42', '702', 0, 773, 'dup_attribute', NULL, NULL);
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

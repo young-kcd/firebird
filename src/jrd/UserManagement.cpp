@@ -257,6 +257,19 @@ void UserManagement::execute(USHORT id)
 			ConfigFile::Parameters::const_iterator cur(ccf.getParameters().begin());
 			ConfigFile::Parameters::const_iterator curEnd(ccf.getParameters().end());
 
+			// Dup check
+			ConfigFile::KeyType prev;
+			while (cur != curEnd)
+			{
+				if (cur->name == prev)
+				{
+					(Arg::Gds(isc_dup_attribute) << cur->name).raise();
+				}
+				prev = cur->name;
+				++cur;
+			}
+			cur = ccf.getParameters().begin();
+
 			string merged;
 			while (old != oldEnd && cur != curEnd)
 			{

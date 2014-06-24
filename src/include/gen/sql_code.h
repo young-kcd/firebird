@@ -793,6 +793,7 @@ static const struct {
 	{335545090, -901}, /* 770 miss_trusted_role */
 	{335545091, -901}, /* 771 set_invalid_role */
 	{335545092, -596}, /* 772 cursor_not_positioned */
+	{335545093, -901}, /* 773 dup_attribute */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */
