@@ -44,11 +44,9 @@ const int IN_SW_NBK_PASSWORD		= 8;
 const int IN_SW_NBK_SIZE			= 9;
 const int IN_SW_NBK_FETCH			= 10;
 const int IN_SW_NBK_VERSION			= 11;
-const int IN_SW_NBK_TRUSTED_USER	= 12;
-const int IN_SW_NBK_TRUSTED_ROLE	= 13;
-const int IN_SW_NBK_HELP			= 14;
-const int IN_SW_NBK_DIRECT			= 15;
-const int IN_SW_NBK_DECOMPRESS		= 16;
+const int IN_SW_NBK_HELP			= 12;
+const int IN_SW_NBK_DIRECT			= 13;
+const int IN_SW_NBK_DECOMPRESS		= 14;
 
 
 static const struct Switches::in_sw_tab_t nbackup_in_sw_table [] =
@@ -77,8 +75,6 @@ static const struct Switches::in_sw_tab_t nbackup_action_in_sw_table [] =
 	{IN_SW_NBK_PASSWORD,	0,						"PASSWORD",			0, 0, 0, false,	14,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_FETCH,		0,						"FETCH_PASSWORD",	0, 0, 0, false,	15,	2,	NULL, nboGeneral},
 	{IN_SW_NBK_VERSION, 	0,						"Z",				0, 0, 0, false,	18,	1,	NULL, nboGeneral},
-//	{IN_SW_NBK_TRUSTED_USER,	0,				TRUSTED_USER_SWITCH,	0, 0, 0, false,	0,	TRUSTED_USER_SWITCH_LEN,	NULL, nboGeneral},
-//	{IN_SW_NBK_TRUSTED_ROLE,	0, 				TRUSTED_ROLE_SWITCH,	0, 0, 0, false,	0,	TRUSTED_ROLE_SWITCH_LEN,	NULL, nboGeneral},
 	{IN_SW_NBK_HELP,		0,						"?",				0, 0, 0, false,	0,	1,	NULL, 0},
 	{IN_SW_NBK_0,			0,						NULL,				0, 0, 0, false,	0,	0,	NULL, 0}	// End of List
 };

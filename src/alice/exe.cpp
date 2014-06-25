@@ -347,19 +347,6 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 							 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
 		}
 
-		if (tdgbl->ALICE_data.ua_tr_user)
-		{
-			tdgbl->uSvc->checkService();
-			dpb.insertString(isc_dpb_trusted_auth,
-							 tdgbl->ALICE_data.ua_tr_user, strlen(tdgbl->ALICE_data.ua_tr_user));
-		}
-
-		if (tdgbl->ALICE_data.ua_tr_role)
-		{
-			tdgbl->uSvc->checkService();
-			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-		}
-
 #ifdef TRUSTED_AUTH
 		if (tdgbl->ALICE_data.ua_trusted)
 		{

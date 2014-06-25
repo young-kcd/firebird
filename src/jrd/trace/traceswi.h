@@ -36,12 +36,10 @@ const int IN_SW_TRACE_NAME			= 7;
 const int IN_SW_TRACE_ID			= 8;
 const int IN_SW_TRACE_USERNAME		= 9;
 const int IN_SW_TRACE_PASSWORD		= 10;
-const int IN_SW_TRACE_TRUSTED_USER	= 11;
-const int IN_SW_TRACE_TRUSTED_ROLE	= 12;
-const int IN_SW_TRACE_SERVICE_NAME	= 13;
-const int IN_SW_TRACE_FETCH_PWD		= 14;
-const int IN_SW_TRACE_TRUSTED_AUTH	= 15;
-const int IN_SW_TRACE_VERSION		= 16;
+const int IN_SW_TRACE_SERVICE_NAME	= 11;
+const int IN_SW_TRACE_FETCH_PWD		= 12;
+const int IN_SW_TRACE_TRUSTED_AUTH	= 13;
+const int IN_SW_TRACE_VERSION		= 14;
 
 
 // list of possible actions (services) for use with trace services
@@ -73,8 +71,6 @@ static const struct Switches::in_sw_tab_t trace_auth_in_sw_table [] =
 	{IN_SW_TRACE_PASSWORD,		0,	PASSWORD_SWITCH,		0, 0, 0, false,	0,	1, NULL},
 	{IN_SW_TRACE_SERVICE_NAME,	0,	"SERVICE",				0, 0, 0, false,	0,	2, NULL},
 	{IN_SW_TRACE_TRUSTED_AUTH,	0,	"TRUSTED",				0, 0, 0, false,	0,	1, NULL},
-//	{IN_SW_TRACE_TRUSTED_USER,	0,	TRUSTED_USER_SWITCH,	0, 0, 0, false,	0,	TRUSTED_USER_SWITCH_LEN, NULL},
-//	{IN_SW_TRACE_TRUSTED_ROLE,	0,	TRUSTED_ROLE_SWITCH,	0, 0, 0, false,	0,	TRUSTED_ROLE_SWITCH_LEN, NULL},
 	{IN_SW_TRACE_USERNAME,		0,	USERNAME_SWITCH,		0, 0, 0, false,	0,	1, NULL},
 	{0,							0,	NULL,					0, 0, 0, false, 0,	0, NULL}	// End of List
 };

@@ -691,17 +691,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 			}
 			tdgbl->setupSkipData(argv[itr]);
 			break;
-		/***
-		case IN_SW_BURP_TRUSTED_USER:
-			uSvc->checkService();
-			if (++itr >= argc)
-			{
-				BURP_error(188, true);
-				// trusted user name parameter missing
-			}
-			tdgbl->gbl_sw_tr_user = argv[itr];
-			break;
-		***/
 		case IN_SW_BURP_ROLE:
 			if (++itr >= argc)
 			{
@@ -1038,26 +1027,6 @@ int gbak(Firebird::UtilSvc* uSvc)
 				dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
 			}
 			break;
-
-		/***
-		case IN_SW_BURP_TRUSTED_USER:
-			uSvc->checkService();
-			if (!authBlock)
-			{
-				dpb.deleteWithTag(isc_dpb_trusted_auth);
-				dpb.insertString(isc_dpb_trusted_auth, tdgbl->gbl_sw_tr_user, strlen(tdgbl->gbl_sw_tr_user));
-			}
-			break;
-
-		case IN_SW_BURP_TRUSTED_ROLE:
-			uSvc->checkService();
-			if (!authBlock)
-			{
-				dpb.deleteWithTag(isc_dpb_trusted_role);
-				dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-			}
-			break;
-		***/
 
 #ifdef TRUSTED_AUTH
 		case IN_SW_BURP_TRUSTED_AUTH:

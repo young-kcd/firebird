@@ -83,8 +83,6 @@ const int IN_SW_BURP_NOD				= 39;	// do not run database triggers
 #ifdef TRUSTED_AUTH
 const int IN_SW_BURP_TRUSTED_AUTH		= 40;	// force trusted auth
 #endif
-//const int IN_SW_BURP_TRUSTED_USER		= 41;	// trusted user name to use on attach
-//const int IN_SW_BURP_TRUSTED_ROLE		= 42;	// use trusted role on attach
 
 const int IN_SW_BURP_FIX_FSS_DATA		= 43;	// fix unicode_fss data
 const int IN_SW_BURP_FIX_FSS_METADATA	= 44;	// fix unicode_fss metadata
@@ -173,8 +171,6 @@ static const Switches::in_sw_tab_t reference_burp_in_sw_table[] =
 	{IN_SW_BURP_TRUSTED_AUTH, 0,				"TRUSTED",			0, 0, 0, false, 295,	3, NULL, boGeneral},
 				// msg 295: @1TRU(STED) 		   use trusted authentication
 #endif
-//	{IN_SW_BURP_TRUSTED_USER, 0,				TRUSTED_USER_SWITCH, 0, 0, 0, false, 0,		TRUSTED_USER_SWITCH_LEN, NULL, boGeneral},
-//	{IN_SW_BURP_TRUSTED_ROLE, 0,				TRUSTED_ROLE_SWITCH, 0, 0, 0, false, 0,		TRUSTED_ROLE_SWITCH_LEN, NULL, boGeneral},
 /*
 	{IN_SW_BURP_U,	  0,						"UNPROTECTED",		0, 0, 0, false, 0,		5, NULL, boGeneral},
 */

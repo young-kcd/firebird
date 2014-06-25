@@ -356,29 +356,6 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 			adminRole = true;
 			break;
 
-		/***
-		case IN_SW_TRACE_TRUSTED_USER:
-			if (!uSvc->isService())
-				usage(uSvc, isc_trace_switch_svc_only, sw->in_sw_name);
-
-			if (!user.empty())
-				usage(uSvc, isc_trace_switch_once, sw->in_sw_name);
-
-			argv++;
-			if (argv < end && *argv)
-				user = *argv;
-			else
-				usage(uSvc, isc_trace_param_val_miss, sw->in_sw_name);
-			break;
-
-		case IN_SW_TRACE_TRUSTED_ROLE:
-			if (!uSvc->isService())
-				usage(uSvc, isc_trace_switch_svc_only, sw->in_sw_name);
-
-			adminRole = true;
-			break;
-		***/
-
 		case IN_SW_TRACE_SERVICE_NAME:
 			if (uSvc->isService())
 				continue;

@@ -953,7 +953,6 @@ public:
 	const SCHAR*	gbl_sw_sql_role;
 	const SCHAR*	gbl_sw_user;
 	const SCHAR*	gbl_sw_password;
-	const SCHAR*	gbl_sw_tr_user;
 	SLONG		gbl_sw_skip_count;
 	SLONG		gbl_sw_page_buffers;
 	burp_fil*	gbl_sw_files;

@@ -273,11 +273,10 @@ class NBackup
 {
 public:
 	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username,
-			const string& _password, bool _run_db_triggers/*, const string& _trustedUser,
-			bool _trustedRole*/, bool _direct_io, const string& _deco)
+			const string& _password, bool _run_db_triggers, bool _direct_io, const string& _deco)
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
-		username(_username), password(_password), /*trustedUser(_trustedUser),*/
-		run_db_triggers(_run_db_triggers), /*trustedRole(_trustedRole), */direct_io(_direct_io),
+		username(_username), password(_password),
+		run_db_triggers(_run_db_triggers), direct_io(_direct_io),
 		dbase(0), backup(0), decompress(_deco), childId(0), db_size_pages(0),
 		m_odsNumber(0), m_silent(false), m_printed(false)
 	{
@@ -327,8 +326,8 @@ private:
     isc_tr_handle trans; // transaction handle
 
 	PathName database;
-	string username, password/*, trustedUser*/;
-	bool run_db_triggers, /*trustedRole, */direct_io;
+	string username, password;
+	bool run_db_triggers, direct_io;
 
 	PathName dbname; // Database file name
 	PathName bakname;
@@ -770,20 +769,6 @@ void NBackup::attach_database()
 
 		if (password.hasData())
 			dpb.insertString(isc_dpb_password, password);
-
-		/***
-		if (trustedUser.hasData())
-		{
-			uSvc->checkService();
-			dpb.insertString(isc_dpb_trusted_auth, trustedUser);
-		}
-
-		if (trustedRole)
-		{
-			uSvc->checkService();
-			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-		}
-		***/
 	}
 
 	if (!run_db_triggers)
@@ -1591,8 +1576,6 @@ void nbackup(UtilSvc* uSvc)
 	NBackup::BackupFiles backup_files;
 	int level;
 	bool print_size = false, version = false;
-//	string trustedUser;
-//	bool trustedRole = false;
 	string onOff;
 
 	const Switches switches(nbackup_action_in_sw_table, FB_NELEM(nbackup_action_in_sw_table),
@@ -1615,20 +1598,6 @@ void nbackup(UtilSvc* uSvc)
 
 		switch (rc->in_sw)
 		{
-		/***
-		case IN_SW_NBK_TRUSTED_USER:
-			uSvc->checkService();
-			if (++itr >= argc)
-				missingParameterForSwitch(uSvc, argv[itr - 1]);
-
-			trustedUser = argv[itr];
-			break;
-
-		case IN_SW_NBK_TRUSTED_ROLE:
-			uSvc->checkService();
-			trustedRole = true;
-			break;
-		***/
 		case IN_SW_NBK_USER_NAME:
 			if (++itr >= argc)
 				missingParameterForSwitch(uSvc, argv[itr - 1]);
@@ -1798,7 +1767,7 @@ void nbackup(UtilSvc* uSvc)
 		usage(uSvc, isc_nbackup_size_with_lock);
 	}
 
-	NBackup nbk(uSvc, database, username, password, run_db_triggers, /*trustedUser, trustedRole, */direct_io, decompress);
+	NBackup nbk(uSvc, database, username, password, run_db_triggers, direct_io, decompress);
 	try
 	{
 		switch (op)

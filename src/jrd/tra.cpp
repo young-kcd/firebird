@@ -2526,9 +2526,9 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
-	// use trusted authentication to attach database
+	// use embedded authentication to attach database
 	const char* szAuthenticator = "sweeper";
-	dpb.insertString(isc_dpb_trusted_auth, szAuthenticator, strlen(szAuthenticator));
+	dpb.insertString(isc_dpb_user_name, szAuthenticator, strlen(szAuthenticator));
 
 	ISC_STATUS_ARRAY status_vector = {0};
 	isc_db_handle db_handle = 0;

@@ -196,18 +196,6 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
 						tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
 	}
-	if (tdgbl->ALICE_data.ua_tr_user)
-	{
-		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_auth,
-						tdgbl->ALICE_data.ua_tr_user,
-						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_tr_user)));
-	}
-	if (tdgbl->ALICE_data.ua_tr_role)
-	{
-		tdgbl->uSvc->checkService();
-		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
-	}
 
 	trans->tdr_db_handle = 0;
 
