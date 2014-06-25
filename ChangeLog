@@ -1,3 +1,25 @@
+ 2014-06-24 10:16  alexpeshkoff 
+   M src/burp/backup.epp
+   M src/burp/restore.epp
+   M src/jrd/constants.h
+   M src/jrd/ini.epp
+   M src/jrd/scl.epp
+Avoid non-standard use of RDB$ROLES.RDB$SYSTEM_FLAG
+
+ 2014-06-24 06:58  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/UserManagement.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-4464: Duplicate tags for CREATE/ALTER USER not handled correctly
+
  2014-06-23 11:17  alexpeshkoff 
    M src/jrd/jrd.cpp
 Fixed deadlock privately reported by Dmitry Yemanov
