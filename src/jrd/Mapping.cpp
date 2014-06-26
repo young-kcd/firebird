@@ -277,13 +277,13 @@ public:
 			curs = att->openCursor(&st, tra, 0,
 				"SELECT RDB$MAP_USING, RDB$MAP_PLUGIN, RDB$MAP_DB, RDB$MAP_FROM_TYPE, "
 				"	RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
-				"FROM RDB$MAP",
+				"FROM RDB$AUTH_MAPPING",
 				3, NULL, NULL, mMap.getMetadata());
 			if (!st.isSuccess())
 			{
 				if (fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))
 				{
-					// isc_dsql_relation_err when opening cursor - sooner of all table RDB$MAP
+					// isc_dsql_relation_err when opening cursor - i.e. table RDB$AUTH_MAPPING
 					// is missing due to non-FB3 security DB
 					tra->release();
 					dataFlag = true;
@@ -1124,14 +1124,14 @@ MappingList::MappingList(jrd_tra* tra)
 RecordBuffer* MappingList::makeBuffer(thread_db* tdbb)
 {
 	MemoryPool* const pool = tdbb->getTransaction()->tra_pool;
-	allocBuffer(tdbb, *pool, rel_sec_global_map);
-	return getData(rel_sec_global_map);
+	allocBuffer(tdbb, *pool, rel_global_auth_mapping);
+	return getData(rel_global_auth_mapping);
 }
 
 RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 {
 	fb_assert(relation);
-	fb_assert(relation->rel_id == rel_sec_global_map);
+	fb_assert(relation->rel_id == rel_global_auth_mapping);
 
 	RecordBuffer* buffer = getData(relation);
 	if (buffer)
@@ -1188,14 +1188,14 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		curs = att->openCursor(&st, tra, 0,
 			"SELECT RDB$MAP_NAME, RDB$MAP_USING, RDB$MAP_PLUGIN, RDB$MAP_DB, "
 			"	RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
-			"FROM RDB$MAP",
+			"FROM RDB$AUTH_MAPPING",
 			3, NULL, NULL, mMap.getMetadata());
 		if (!st.isSuccess())
 		{
 			if (!fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))
 				check("IAttachment::openCursor", &st);
 
-			// isc_dsql_relation_err when opening cursor - sooner of all table RDB$MAP
+			// isc_dsql_relation_err when opening cursor - i.e. table RDB$AUTH_MAPPING
 			// is missing due to non-FB3 security DB
 			tra->release();
 			att->detach(&st);

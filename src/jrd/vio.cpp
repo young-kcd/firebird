@@ -1366,7 +1366,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_database:
 		case rel_log:
 		case rel_backup_history:
-		case rel_sec_global_map:
+		case rel_global_auth_mapping:
 			protect_system_table_delupd(tdbb, relation, "DELETE", true);
 			break;
 
@@ -2466,7 +2466,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_refc:
 		case rel_ccon:
 		case rel_backup_history:
-		case rel_sec_global_map:
+		case rel_global_auth_mapping:
 			protect_system_table_delupd(tdbb, relation, "UPDATE", true);
 			break;
 
@@ -3081,7 +3081,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_log:
-		case rel_sec_global_map:
+		case rel_global_auth_mapping:
 			protect_system_table_insert(tdbb, request, relation, true);
 			break;
 

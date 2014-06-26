@@ -4393,7 +4393,7 @@ processing_state SHOW_maps(bool extract, const SCHAR* map_name)
 	bool first = true;
 
 	//  List all mappings
-	FOR M IN RDB$MAP WITH
+	FOR M IN RDB$AUTH_MAPPING WITH
 		(M.RDB$SYSTEM_FLAG NE 1 OR M.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY M.RDB$MAP_NAME
 
@@ -4421,7 +4421,7 @@ processing_state SHOW_maps(bool extract, const SCHAR* map_name)
 	bool firstGlobal = true;
 
 	//  List global mappings
-	FOR M IN SEC$GLOBAL_MAP
+	FOR M IN SEC$GLOBAL_AUTH_MAPPING
 		SORTED BY M.SEC$MAP_NAME
 
 		Firebird::NoCaseString nm = M.SEC$MAP_NAME;

@@ -2286,7 +2286,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else if (relation->isVirtual())
 	{
 		// Virtual table: monitoring or security
-		if (relation->rel_id == rel_sec_global_map)
+		if (relation->rel_id == rel_global_auth_mapping)
 		{
 			rsb = FB_NEW(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream);
 		}

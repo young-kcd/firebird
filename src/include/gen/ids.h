@@ -623,7 +623,7 @@
 	const USHORT  f_sec_attr_value = 2;
 
 
-// Relation 45 (RDB$MAP)
+// Relation 45 (RDB$AUTH_MAPPING)
 
 	const USHORT  f_map_name = 0;
 	const USHORT  f_map_using = 1;
@@ -637,7 +637,7 @@
 	const USHORT  f_map_desc = 9;
 
 
-// Relation 46 (SEC$GLOBAL_MAP)
+// Relation 46 (SEC$GLOBAL_AUTH_MAPPING)
 
 	const USHORT  f_sec_map_name = 0;
 	const USHORT  f_sec_map_using = 1;

@@ -622,8 +622,8 @@ RELATION(nam_sec_user_attributes, rel_sec_user_attributes, ODS_12_0, rel_virtual
 	FIELD(f_sec_attr_value, nam_sec_attr_value, fld_attr_value, 0, ODS_12_0)
 END_RELATION
 
-// Relation 45 (RDB$MAP)
-RELATION(nam_map, rel_map, ODS_12_0, rel_persistent)
+// Relation 45 (RDB$AUTH_MAPPING)
+RELATION(nam_auth_mapping, rel_auth_mapping, ODS_12_0, rel_persistent)
 	FIELD(f_map_name, nam_map_name, fld_map_name, 1, ODS_12_0)
 	FIELD(f_map_using, nam_map_using, fld_map_using, 1, ODS_12_0)
 	FIELD(f_map_plugin, nam_map_plugin, fld_map_plugin, 1, ODS_12_0)
@@ -636,8 +636,8 @@ RELATION(nam_map, rel_map, ODS_12_0, rel_persistent)
 	FIELD(f_map_desc, nam_description, fld_description, 1, ODS_12_0)
 END_RELATION
 
-// Relation 46 (SEC$GLOBAL_MAP)
-RELATION(nam_sec_global_map, rel_sec_global_map, ODS_12_0, rel_virtual)
+// Relation 46 (SEC$GLOBAL_AUTH_MAPPING)
+RELATION(nam_sec_global_auth_mapping, rel_global_auth_mapping, ODS_12_0, rel_virtual)
 	FIELD(f_sec_map_name, nam_sec_map_name, fld_map_name, 1, ODS_12_0)
 	FIELD(f_sec_map_using, nam_sec_map_using, fld_map_using, 0, ODS_12_0)
 	FIELD(f_sec_map_plugin, nam_sec_map_plugin, fld_map_plugin, 0, ODS_12_0)

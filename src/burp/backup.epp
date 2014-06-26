@@ -4085,7 +4085,7 @@ void write_mapping()
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		FOR (REQUEST_HANDLE req_handle)
-			M IN RDB$MAP
+			M IN RDB$AUTH_MAPPING
 			WITH M.RDB$SYSTEM_FLAG EQ 0
 
 			put(tdgbl, rec_mapping);

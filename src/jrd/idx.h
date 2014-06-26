@@ -279,8 +279,8 @@ static const struct ini_idx_t indices[] =
 		SEGMENT(f_arg_rname, idx_metadata),		// relation name
 		SEGMENT(f_arg_fname, idx_metadata)		// field name
 	}},
-	//	define index RDB$INDEX_52 for RDB$MAP RDB$MAP_NAME;
-	INDEX(52, rel_map, 0, 1)
+	//	define index RDB$INDEX_52 for RDB$AUTH_MAPPING RDB$MAP_NAME;
+	INDEX(52, rel_auth_mapping, 0, 1)
 		SEGMENT(f_map_name, idx_metadata)		// mapping name
 	}}
 };

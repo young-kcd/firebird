@@ -366,8 +366,8 @@ NAME("RDB$BOOLEAN", nam_bool)
 NAME("SEC$KEY", nam_sec_attr_key)
 NAME("SEC$VALUE", nam_sec_attr_value)
 
-NAME("RDB$MAP", nam_map)
-NAME("SEC$GLOBAL_MAP", nam_sec_global_map)
+NAME("RDB$AUTH_MAPPING", nam_auth_mapping)
+NAME("SEC$GLOBAL_AUTH_MAPPING", nam_sec_global_auth_mapping)
 
 NAME("RDB$MAP_NAME", nam_map_name)
 NAME("RDB$MAP_USING", nam_map_using)

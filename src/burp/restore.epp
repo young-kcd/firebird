@@ -7862,7 +7862,7 @@ bool get_mapping(BurpGlobals* tdgbl)
 	if (tdgbl->runtimeODS >= DB_VERSION_DDL12)
 	{
 		STORE (REQUEST_HANDLE tdgbl->handles_get_mapping_req_handle1)
-			M IN RDB$MAP
+			M IN RDB$AUTH_MAPPING
 
 			M.RDB$MAP_TO_TYPE.NULL = TRUE;
 			M.RDB$MAP_NAME.NULL = TRUE;

@@ -9399,7 +9399,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 
 			if (!s2.isSuccess())
 			{
-				// try direct access to rdb$map table in secure db
+				// try direct access to rdb$auth_mapping table in secure db
 
 				// check presence of such record in the table
 				Message check;
@@ -9409,7 +9409,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 				Message result;
 				Field<ISC_INT64> cnt(result);
 
-				const char* checkSql = "select count(*) from RDB$MAP where RDB$MAP_NAME = ?";
+				const char* checkSql = "select count(*) from RDB$AUTH_MAPPING where RDB$MAP_NAME = ?";
 
 				secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
 					check.getMetadata(), check.getBuffer(), result.getMetadata(), result.getBuffer());
@@ -9467,20 +9467,20 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 				switch(op)
 				{
 				case MAP_ADD:
-					sql = "insert into RDB$MAP(RDB$MAP_TO_TYPE, RDB$MAP_TO, RDB$MAP_USING, "
+					sql = "insert into RDB$AUTH_MAPPING(RDB$MAP_TO_TYPE, RDB$MAP_TO, RDB$MAP_USING, "
 						"RDB$MAP_PLUGIN, RDB$MAP_DB, RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_NAME) "
 						"values (?, ?, ?, ?, ?, ?, ?, ?)";
 					msg = &full;
 					break;
 				case MAP_MOD:
-					sql = "update RDB$MAP set RDB$MAP_TO_TYPE = ?, RDB$MAP_TO = ?, "
+					sql = "update RDB$AUTH_MAPPING set RDB$MAP_TO_TYPE = ?, RDB$MAP_TO = ?, "
 						"RDB$MAP_USING = ?, RDB$MAP_PLUGIN = ?, RDB$MAP_DB = ?, "
 						"RDB$MAP_FROM_TYPE = ?, RDB$MAP_FROM = ? "
 						"where RDB$MAP_NAME = ?";
 					msg = &full;
 					break;
 				case MAP_DROP:
-					sql = "delete from RDB$MAP where RDB$MAP_NAME = ?";
+					sql = "delete from RDBAUTH_MAPPING where RDB$MAP_NAME = ?";
 					msg = &check;
 					break;
 				}
@@ -9536,7 +9536,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 	int ddlTriggerAction = 0;
 
 	FOR(REQUEST_HANDLE request1 TRANSACTION_HANDLE transaction)
-		M IN RDB$MAP
+		M IN RDB$AUTH_MAPPING
 		WITH M.RDB$MAP_NAME EQ name.c_str()
 	{
 		found = true;
@@ -9604,7 +9604,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
 
 		STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
-		M IN RDB$MAP
+		M IN RDB$AUTH_MAPPING
 		{
 			strcpy(M.RDB$MAP_NAME, name.c_str());
 			strcpy(M.RDB$MAP_USING, usingText);
