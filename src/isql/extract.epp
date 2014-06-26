@@ -73,7 +73,6 @@ static void get_function_args_ods12(const char*, USHORT);
 static void list_all_grants();
 static processing_state list_all_grants2(bool, const SCHAR*);
 static void list_all_procs();
-static void list_all_procs();
 static void list_all_tables(LegacyTables flag, SSHORT);
 static void list_all_triggers();
 static void list_check();
@@ -88,11 +87,15 @@ static void list_filters();
 static void list_foreign();
 static void list_functions();
 static void list_functions_ods12();
+static void list_functions_ods12_headers();
+static void list_functions_ods12_bodies();
 static void list_functions_legacy();
 static void list_generators();
 static void list_indexes();
 static void list_package_bodies();
 static void list_package_headers();
+static void list_procedure_bodies();
+static void list_procedure_headers();
 static void list_views();
 
 static const char* const Procterm = "^";	// TXNN: script use only
@@ -181,9 +184,11 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		list_filters();
 		list_charsets();
 		list_collations();
-		list_generators();
 		list_domains(default_char_set_id);
-		list_functions();
+		list_generators();
+		list_functions_legacy();
+		list_functions_ods12_headers();
+		list_procedure_headers();
 		list_package_headers();
 		list_all_tables(flag, default_char_set_id);
 		list_indexes();
@@ -191,7 +196,8 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		list_views();
 		list_check();
 		list_exceptions();
-		list_all_procs();
+		list_functions_ods12_bodies();
+		list_procedure_bodies();
 		list_package_bodies();
 		listDomainConstraints();
 		list_all_triggers();
@@ -1310,8 +1316,23 @@ static void print_proc_prefix(int obj_type)
 	case obj_procedure:
 		legend = "Stored procedures";
 		break;
+	case obj_procedure_header:
+		legend = "Stored procedures headers";
+		break;
+	case obj_procedure_body:
+		legend = "Stored procedures bodies";
+		break;
+	case obj_function:
+	    legend = "Stored functions";
+		break;
+    case obj_function_header:
+		legend = "Stored functions headers";
+		break;
+	case obj_function_body:
+		legend = "Stored functions bodies";
+		break;
 	case obj_udf:
-		legend = "Stored functions";
+		legend = "User defined functions";
 		break;
 	case obj_trigger:
 		legend = "Triggers only will work for SQL triggers";
@@ -1337,7 +1358,6 @@ static void print_proc_suffix(int obj_type)
 		isqlGlob.printf("SET AUTODDL ON%s%s", isqlGlob.global_Term, NEWLINE);
 }
 
-
 static void list_all_procs()
 {
 /**************************************
@@ -1347,19 +1367,41 @@ static void list_all_procs()
  **************************************
  *
  * Functional description
- *	Shows text of a stored procedure given a name.
- *	or lists procedures if no argument.
+ *	
+ *	lists all procedures 
  *	Since procedures may reference each other, we will create all
  *	dummy procedures of the correct name, then alter these to their
  *	correct form.
  *      Add the parameter names when these procedures are created.
  *
  **************************************/
+ print_proc_prefix(obj_procedure);
+ list_procedure_headers();
+ list_procedure_bodies();
+	
+}
+
+static void list_procedure_headers()
+{
+/**************************************
+ *
+ *	l i s t _ p r o c e d u r e _ h e a d e r s
+ *
+ **************************************
+ *
+ * Functional description
+ * Create all procedure declarations
+ * with empty body. This will allow us to create objects
+ * that depend on them. The alteration to their
+ * correct form is postponed to list_procedure_bodies.
+ * Add the parameter names when these procedures are created.
+ *
+ **************************************/
 
 	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
 
 	bool header = true;
-	static const char* const create_procedure	= "CREATE PROCEDURE %s ";
+	static const char* const create_procedure	= "CREATE OR ALTER PROCEDURE %s ";
 	static const char* const body_execut_proc	= "BEGIN EXIT; END %s%s";
 	static const char* const body_select_proc	= "BEGIN SUSPEND; END %s%s";
 
@@ -1372,7 +1414,7 @@ static void list_all_procs()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			print_proc_prefix(obj_procedure);
+			print_proc_prefix(obj_procedure_header);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
@@ -1401,7 +1443,30 @@ static void list_all_procs()
 		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
+	// Only reset the terminators if there were procs to print
+	if (!header)
+		print_proc_suffix(obj_procedure);
+}
 
+
+
+static void list_procedure_bodies()
+{
+/**************************************
+ *
+ *	l i s t _  p r o c e d u r e _ b o d i e s
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fill them with life 
+ *
+ **************************************/
+
+	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
+
+	bool header = true;
+	
 	// This query gets the procedure name and the source.  We then nest a query
 	// to retrieve the parameters. Alter is used, because the procedures are already there
 	TEXT msg[MSG_LENGTH];
@@ -1410,7 +1475,11 @@ static void list_all_procs()
 		WITH (PRC.RDB$SYSTEM_FLAG NE 1 OR PRC.RDB$SYSTEM_FLAG MISSING)
 		AND PRC.RDB$PACKAGE_NAME MISSING
 		SORTED BY PRC.RDB$PROCEDURE_NAME
-
+		if (header)
+		{
+			print_proc_prefix(obj_procedure_header);
+			header = false;
+		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
@@ -1441,6 +1510,7 @@ static void list_all_procs()
 	if (!header)
 		print_proc_suffix(obj_procedure);
 }
+
 
 
 static void list_all_tables(LegacyTables flag, SSHORT default_char_set_id)
@@ -2246,10 +2316,11 @@ static void list_domains(SSHORT default_char_set_id)
 
 		isqlGlob.printf("%s%s", isqlGlob.global_Term, NEWLINE);
 	END_FOR
-	ON_ERROR
+    ON_ERROR
 		ISQL_errmsg(fbStatus);
 		return;
 	END_ERROR;
+	isqlGlob.printf("COMMIT WORK%s%s", isqlGlob.global_Term, NEWLINE);
 }
 
 
@@ -2553,8 +2624,8 @@ static void list_functions_legacy()
 		bool firstarg = true;
 
 		FOR FNA IN RDB$FUNCTION_ARGUMENTS
-			WITH FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME AND
-				 FNA.RDB$PACKAGE_NAME MISSING
+			WITH FUN.RDB$FUNCTION_NAME EQ FNA.RDB$FUNCTION_NAME
+			AND FNA.RDB$PACKAGE_NAME MISSING
 			SORTED BY FNA.RDB$ARGUMENT_POSITION
 
 			// Find parameter type
@@ -2644,9 +2715,12 @@ static void list_functions_legacy()
 				ptype = MAX_UDFPARAM_TYPES;
 
 			bool printarg = true;
+			
 
 			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
 			{
+				    
+				
 				if (FUN.RDB$RETURN_ARGUMENT)
 					sprintf (return_buffer, "RETURNS PARAMETER %d", FUN.RDB$RETURN_ARGUMENT);
 				else
@@ -2697,9 +2771,16 @@ static void list_functions_legacy()
 static void list_functions_ods12()
 {
 	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
+	list_functions_ods12_headers();
+	list_functions_ods12_bodies();
+}
+
+static void list_functions_ods12_headers()
+{
+	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
 
 	bool header = true;
-	static const char* const create_function	= "CREATE FUNCTION %s ";
+	static const char* const create_function	= "CREATE OR ALTER FUNCTION %s ";
 	static const char* const body_function		= "BEGIN END %s%s";
 
 	//  First the dummy functions (without bodies)
@@ -2712,7 +2793,7 @@ static void list_functions_ods12()
 
 		if (header)
 		{
-			print_proc_prefix(obj_udf);
+			print_proc_prefix(obj_function_header);
 			header = false;
 		}
 
@@ -2737,15 +2818,31 @@ static void list_functions_ods12()
 		return;
 	END_ERROR;
 
+	// Only reset the terminators if there were procs to print
+	if (!header)
+		print_proc_suffix(obj_udf);
+}
+
+static void list_functions_ods12_bodies()
+{
+	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
+
+	bool header = true;
+	
 	// This query gets the function name and the source.  We then nest a query
 	// to retrieve the parameters. Alter is used, because the functions are already there
 	TEXT msg[MSG_LENGTH];
-
+	
 	FOR FUN IN RDB$FUNCTIONS
 		WITH (FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING)
 		AND FUN.RDB$PACKAGE_NAME MISSING
+		AND FUN.RDB$MODULE_NAME MISSING
 		SORTED BY FUN.RDB$FUNCTION_NAME
-
+		if (header)
+		{
+			print_proc_prefix(obj_function_body);
+			header = false;
+		}
 		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
 
 		if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
