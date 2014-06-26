@@ -491,7 +491,8 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		}
 	}
 
-	{ // scope
+	try
+	{
 		Attachment::Checkout cout(attachment, FB_FUNCTION);
 		SyncLockGuard monGuard(&dbb->dbb_mon_sync, SYNC_EXCLUSIVE, FB_FUNCTION);
 
@@ -502,6 +503,13 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		// Dump our own data
 		dumpData(tdbb, backup_state);
 	}
+	// Restore attachment in tdbb, probably changed inside dumpData
+	catch(const Exception&)
+	{
+		tdbb->setAttachment(attachment);
+		throw;
+	}
+	tdbb->setAttachment(attachment);
 
 	// Signal other processes to dump their data
 	Lock temp_lock(tdbb, 0, LCK_monitor), *lock = &temp_lock;
@@ -862,7 +870,10 @@ void DatabaseSnapshot::dumpData(thread_db* tdbb, int backup_state)
 			Attachment* const attachment = jAtt->getHandle();
 
 			if (attachment && attachment->att_user)
+			{
+				tdbb->setAttachment(attachment);
 				dumpAttachment(tdbb, record, attachment, writer);
+			}
 		}
 
 		iter.remove();
