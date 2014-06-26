@@ -474,19 +474,19 @@ static UCHAR *compile(UCHAR * sdl, SDL_ARG arg)
 		return p + 4;
 
 	case gds_sdl_add:
-		operator_ = op_add;
+		operator_i = op_add;
 	case gds_sdl_subtract:
-		if (!operator_)
-			operator_ = op_subtract;
+		if (!operator_i)
+			operator_i = op_subtract;
 	case gds_sdl_multiply:
-		if (!operator_)
-			operator_ = op_multiply;
+		if (!operator_i)
+			operator_i = op_multiply;
 	case gds_sdl_divide:
-		if (!operator_)
-			operator_ = op_divide;
+		if (!operator_i)
+			operator_i = op_divide;
 		COMPILE(p, arg);
 		COMPILE(p, arg);
-		STUFF(operator_, arg);
+		STUFF(operator_i, arg);
 		return p;
 
 	case gds_sdl_scalar:
