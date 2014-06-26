@@ -28,9 +28,16 @@
 #include "../jrd/gds_proto.h"
 #include <assert.h>
 
-static void prt_que(UCHAR *, SRQ *);
+#include "../jrd/ib_stdio.h"
+#include "../jrd/ibase.h"
+#include <string.h>
+#include <stdio.h>
+
+
+static void prt_que(const char*, SRQ *);
 static void event_list(void);
 static void event_dump_list(void);
+static void event_table_dump(void);
 
 static EVH EVENT_header = NULL;
 
@@ -120,10 +127,10 @@ static void event_list(void)
 				if (!interest->rint_request)
 					ib_printf("(0)");
 				else {
-					JRD_REQ request;
+					EVT_REQ request;
 					PRB process;
 
-					request = (JRD_REQ) ABS_PTR(interest->rint_request);
+					request = (EVT_REQ) ABS_PTR(interest->rint_request);
 					process = (PRB) ABS_PTR(request->req_process);
 					ib_printf("%6d ", process->prb_process_id);
 				}
@@ -153,10 +160,10 @@ static void event_list(void)
 					if (!interest->rint_request)
 						ib_printf("(0)");
 					else {
-						JRD_REQ request;
+						EVT_REQ request;
 						PRB process;
 
-						request = (JRD_REQ) ABS_PTR(interest->rint_request);
+						request = (EVT_REQ) ABS_PTR(interest->rint_request);
 						process = (PRB) ABS_PTR(request->req_process);
 						ib_printf("%6d ", process->prb_process_id);
 					}
@@ -187,7 +194,7 @@ static void event_table_dump(void)
 	PRB process;
 	FRB free;
 	EVNT event, parent;
-	JRD_REQ request;
+	EVT_REQ request;
 	SES session;
 	RINT interest;
 	SLONG offset;
@@ -223,8 +230,8 @@ static void event_table_dump(void)
 			break;
 
 		case type_req:
-			ib_printf("JRD_REQ (%ld)\n", block->hdr_length);
-			request = (JRD_REQ) block;
+			ib_printf("EVT_REQ (%ld)\n", block->hdr_length);
+			request = (EVT_REQ) block;
 			ib_printf("\tProcess: %ld, interests: %ld, ast: %lx, arg: %lx\n",
 					  request->req_process, request->req_interests,
 					  request->req_ast, request->req_ast_arg);
@@ -281,7 +288,7 @@ static void event_table_dump(void)
 }
 
 
-static void prt_que(UCHAR * string, SRQ * que)
+static void prt_que(const char * string, SRQ * que)
 {
 /**************************************
  *
