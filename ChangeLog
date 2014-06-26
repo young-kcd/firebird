@@ -1,3 +1,25 @@
+ 2014-06-25 11:20  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/alice.h
+   M src/alice/aliceswi.h
+   M src/alice/exe.cpp
+   M src/alice/tdr.cpp
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/burpswi.h
+   M src/burp/restore.epp
+   M src/jrd/constants.h
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceCmdLine.cpp
+   M src/jrd/trace/traceswi.h
+   M src/utilities/gsec/gsecswi.h
+   M src/utilities/gstat/dba.epp
+   M src/utilities/gstat/dbaswi.h
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/nbackup/nbkswi.h
+Cleanup - removed unused any more service time only switches trusted_user & trusted_role
+
  2014-06-24 10:16  alexpeshkoff 
    M src/burp/backup.epp
    M src/burp/restore.epp
