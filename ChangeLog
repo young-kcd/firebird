@@ -1,3 +1,11 @@
+ 2014-06-26 17:23  hvlad 
+   M src/jrd/print.cpp
+Fixed compilation errors
+
+ 2014-06-26 09:11  paulbeach 
+   M src/jrd/sdl.cpp
+Correct a problem with previous commit
+
  2014-02-24 08:58  paulbeach 
    M src/gpre/gpre.cpp
    M src/jrd/sdl.cpp
