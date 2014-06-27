@@ -98,26 +98,6 @@ static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE database, FB_
 	return isc_status[1] == 0;
 }
 
-/*
-static bool storePasswd(ISC_STATUS* isc_status, FB_API_HANDLE database, FB_API_HANDLE trans,
-						ISC_QUAD& blobId, const Firebird::string& passwd)
-{
-	UserBlob blob(isc_status);
-	const UCHAR blob_desc[] = {isc_bpb_version1, isc_bpb_type, 1, isc_blob_untyped};
-
-	if (!blob.create(database, trans, blobId, sizeof(blob_desc), blob_desc))
-	{
-		return false;
-	}
-
-	if (!blob.putData(passwd.length(), passwd.c_str()))
-	{
-		return false;
-	}
-
-	return blob.close();
-}
- */
 
 const static unsigned int INIT_KEY = ((~0) - 1);
 static unsigned int secDbKey = INIT_KEY;
