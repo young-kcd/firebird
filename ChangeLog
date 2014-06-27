@@ -1,3 +1,35 @@
+ 2014-06-26 16:14  fsg 
+   M src/isql/extract.epp
+   M src/jrd/obj.h
+some more enhancements to isqls extract utility
+split extraction of functions and procedures in two parts (header and body)
+
+ 2014-06-26 09:43  alexpeshkoff 
+   M src/jrd/DatabaseSnapshot.cpp
+Fixed very frequent segfault in monitoring code (CS/SC): tdbb->attachment was not set in thread_db::getCharSet() function used to convert monitoring strings
+
+ 2014-06-26 09:37  alexpeshkoff 
+   M src/burp/backup.epp
+   M src/burp/restore.epp
+   M src/dsql/DdlNodes.epp
+   M src/include/gen/ids.h
+   M src/isql/show.epp
+   M src/jrd/Mapping.cpp
+   M src/jrd/idx.h
+   M src/jrd/names.h
+   M src/jrd/opt.cpp
+   M src/jrd/relations.h
+   M src/jrd/vio.cpp
+Renamed mapping-related tables as was discussed in devel
+
+ 2014-06-26 07:32  fsg 
+   M src/isql/extract.epp
+extract domain definitions before functions, they may need them
+
+ 2014-06-26 07:09  fsg 
+   M src/isql/extract.epp
+fixed extract of return parameter of external UDF's
+
  2014-06-25 11:20  alexpeshkoff 
    M src/alice/alice.cpp
    M src/alice/alice.h
