@@ -59,6 +59,7 @@ public:
 		: config(Firebird::REF_NO_INCR, par->getFirebirdConf()), upCount(0), delCount(0)
 	{ }
 
+private:
 	void prepareDataStructures()
 	{
 		const char* script[] = {
@@ -110,6 +111,73 @@ public:
 		}
 	}
 
+	void prepareName(Firebird::string& s)
+	{
+		for (unsigned i = 0; i < s.length(); ++i)
+		{
+			if (s[i] == '"')
+			{
+				s.insert(i++, 1, '"');
+			}
+		}
+	}
+
+	void grantRevokeAdmin(Auth::IUser* user, bool ignoreRevoke = false)
+	{
+		if (!user->admin()->entered())
+		{
+			return;
+		}
+
+		Firebird::LocalStatus s;
+
+		Firebird::string userName(user->userName()->get());
+		prepareName(userName);
+
+		Firebird::string sql;
+		if (user->admin()->get() == 0)
+		{
+			Firebird::string selGrantor;
+			selGrantor.printf("SELECT RDB$GRANTOR FROM RDB$USER_PRIVILEGES "
+				"WHERE RDB$USER = '%s' AND RDB$RELATION_NAME = '%s' AND RDB$PRIVILEGE = 'M'",
+				user->userName()->get(), ADMIN_ROLE);
+			Message out;
+			Field<Varying> grantor(out, MAX_SQL_IDENTIFIER_SIZE);
+			Firebird::IResultSet* curs = att->openCursor(&s, tra, selGrantor.length(),
+				selGrantor.c_str(), SQL_DIALECT_V6, NULL, NULL, out.getMetadata());
+			check(&s);
+
+			bool hasGrant = curs->fetchNext(&s, out.getBuffer());
+			curs->close(&s);
+			check(&s);
+
+			if (hasGrant)
+			{
+				selGrantor = grantor;
+				prepareName(selGrantor);
+
+				sql.printf("REVOKE %s FROM \"%s\" GRANTED BY \"%s\"",
+					ADMIN_ROLE, userName.c_str(), selGrantor.c_str());
+			}
+			else
+			{
+				if (ignoreRevoke)
+					return;
+
+				// no grant - let engine produce correct error message
+				sql.printf("REVOKE %s FROM \"%s\"", ADMIN_ROLE, userName.c_str());
+			}
+		}
+		else
+		{
+			sql.printf("GRANT %s TO \"%s\"", ADMIN_ROLE, userName.c_str());
+		}
+
+		att->execute(&s, tra, sql.length(), sql.c_str(), SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+		check(&s);
+	}
+
+public:
 	// IManagement implementation
 	void FB_CARG start(Firebird::IStatus* status, ILogonInfo* logonInfo)
 	{
@@ -141,6 +209,10 @@ public:
 			const unsigned char* authBlock;
 			unsigned int authBlockSize = logonInfo->authBlock(&authBlock);
 
+			const char* str = logonInfo->role();
+			if (str && str[0])
+				dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
+
 			if (authBlockSize)
 			{
 #if SRP_DEBUG > 0
@@ -150,16 +222,12 @@ public:
 			}
 			else
 			{
-				const char* str = logonInfo->name();
+				str = logonInfo->name();
 #if SRP_DEBUG > 0
 				fprintf(stderr, "SrpManagement: Using name '%s'\n", str);
 #endif
 				if (str && str[0])
 					dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
-
-				str = logonInfo->role();
-				if (str && str[0])
-					dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
 			}
 
 			Firebird::DispatcherPtr p;
@@ -285,6 +353,8 @@ public:
 
 						stmt->free(status);
 						check(status);
+
+						grantRevokeAdmin(user);
 					}
 					catch (const Firebird::Exception&)
 					{
@@ -319,6 +389,7 @@ public:
 
 					if (update[update.length() - 1] != ',')
 					{
+						grantRevokeAdmin(user);
 						return 0;
 					}
 					update.rtrim(",");
@@ -386,6 +457,8 @@ public:
 
 						stmt->free(status);
 						check(status);
+
+						grantRevokeAdmin(user);
 					}
 					catch (const Firebird::Exception&)
 					{
@@ -423,6 +496,10 @@ public:
 
 						stmt->free(status);
 						check(status);
+
+						user->admin()->set(0);
+						user->admin()->setEntered(1);
+						grantRevokeAdmin(user, true);
 					}
 					catch (const Firebird::Exception&)
 					{
