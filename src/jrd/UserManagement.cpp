@@ -376,6 +376,14 @@ void UserManagement::list(Auth::IUser* u)
 				 charset);
 	}
 
+	if (u->admin()->entered())
+	{
+		UCHAR v = u->admin()->get() ? '\1' : '\0';
+		putField(threadDbb, record,
+				 DumpField(f_sec_admin, VALUE_BOOLEAN, sizeof(v), &v),
+				 charset);
+	}
+
 	if (u->comment()->entered())
 	{
 		putField(threadDbb, record,

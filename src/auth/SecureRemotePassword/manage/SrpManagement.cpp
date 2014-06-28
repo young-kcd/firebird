@@ -516,7 +516,7 @@ public:
 			case DIS_OPER:
 				{
 					Firebird::string disp =	"SELECT PLG$USER_NAME, PLG$FIRST, PLG$MIDDLE, PLG$LAST, PLG$COMMENT, PLG$ATTRIBUTES, "
-											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN 0 ELSE 1 END, PLG$ACTIVE "
+											"	CASE WHEN RDB$RELATION_NAME IS NULL THEN FALSE ELSE TRUE END, PLG$ACTIVE "
 											"FROM PLG$SRP_VIEW LEFT JOIN RDB$USER_PRIVILEGES "
 											"	ON PLG$SRP_VIEW.PLG$USER_NAME = RDB$USER_PRIVILEGES.RDB$USER "
 											"		AND RDB$RELATION_NAME = '" ADMIN_ROLE "' "
@@ -539,8 +539,7 @@ public:
 						Varfield login(di);
 						Varfield first(di), middle(di), last(di);
 						Blob comment(di), attr(di);
-						Field<SLONG> admin(di);
-						Boolean active(di);
+						Boolean admin(di), active(di);
 
 						Firebird::AutoPtr<Message> par;
 						if (user->userName()->entered())
@@ -566,7 +565,7 @@ public:
 							listField(status, user->comment(), comment);
 							listField(status, user->attributes(), attr);
 							listField(user->active(), active);
-							user->admin()->set(admin);
+							listField(user->admin(), admin);
 
 							callback->list(user);
 						}

@@ -613,7 +613,8 @@
 	const USHORT  f_sec_middle_name = 2;
 	const USHORT  f_sec_last_name = 3;
 	const USHORT  f_sec_active = 4;
-	const USHORT  f_sec_comment = 5;
+	const USHORT  f_sec_admin = 5;
+	const USHORT  f_sec_comment = 6;
 
 
 // Relation 44 (SEC$USER_ATTRIBUTES)

@@ -273,6 +273,7 @@ NAME("SEC$MIDDLE_NAME", nam_middle_name)
 NAME("SEC$LAST_NAME", nam_last_name)
 NAME("SEC$NAME_PART", nam_name_part)
 NAME("SEC$ACTIVE", nam_sec_active)
+NAME("SEC$ADMIN", nam_sec_admin)
 NAME("SEC$DESCRIPTION", nam_sec_description)
 
 NAME("MON$ATTACHMENTS", nam_mon_attachments)
