@@ -1,3 +1,11 @@
+ 2014-06-28 09:58  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/include/gen/ids.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/names.h
+   M src/jrd/relations.h
+Fixed CORE-4469: Add field in SEC$USERS reflecting whether a user has RDB$ADMIN role in security database
+
  2014-06-27 11:58  alexpeshkoff 
    M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
 Fixed CORE-4468: CREATE USER GRANT ADMIN ROLE does not work
