@@ -46,6 +46,8 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../jrd/jrd_proto.h"
+#include "../common/os/os_utils.h"
+#include "../common/os/path_utils.h"
 
 #include "../common/classes/init.h"
 
@@ -598,3 +600,61 @@ void iscLogException(const char* text, const Firebird::Exception& e)
 	iscLogStatus(text, s);
 }
 
+
+void iscPrefixLock(TEXT* string, const TEXT* root, bool createLockDir)
+{
+/**************************************
+ *
+ *	i s c P r e f i x L o c k
+ *
+ **************************************
+ *
+ * Functional description
+ *	Find appropriate Firebird lock file prefix.
+ *
+ **************************************/
+	gds__prefix_lock(string, "");
+
+	if (createLockDir)
+		os_utils::createLockDirectory(string);
+
+	iscSafeConcatPath(string, root);
+}
+
+
+void iscSafeConcatPath(TEXT *resultString, const TEXT *appendString)
+{
+/**************************************
+ *
+ *	i s c S a f e C o n c a t P a t h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Safely appends appendString to resultString using paths rules.
+ *  resultString must be at most MAXPATHLEN size.
+ *	Thread/signal safe code.
+ *
+ **************************************/
+	size_t len = strlen(resultString);
+	fb_assert(len > 0);
+
+	if (resultString[len - 1] != PathUtils::dir_sep && len < MAXPATHLEN - 1)
+	{
+		resultString[len++] = PathUtils::dir_sep;
+		resultString[len] = 0;
+	}
+
+	size_t alen = strlen(appendString);
+	if (len + alen > MAXPATHLEN - 1)
+	{
+		alen = MAXPATHLEN - 1 - len;
+	}
+
+	fb_assert(len < MAXPATHLEN);
+	fb_assert(alen < MAXPATHLEN);
+	fb_assert(len + alen < MAXPATHLEN);
+
+	memcpy(&resultString[len], appendString, alen);
+	resultString[len + alen] = 0;
+}
