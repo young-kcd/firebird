@@ -118,7 +118,7 @@ INTL_Files2=common/utils.cpp \
 	common/classes/MsgPrint.cpp common/classes/SafeArg.cpp \
 	common/classes/BaseStream.cpp common/classes/fb_string.cpp \
 	common/classes/TempFile.cpp \
-	jrd/gds.cpp jrd/isc.cpp \
+	jrd/gds.cpp jrd/isc.cpp $(OS_SPECIFIC_Sources)\
 	jrd/os/posix/path_utils.cpp jrd/os/posix/os_utils.cpp \
 	jrd/os/posix/config_root.cpp jrd/os/posix/fbsyslog.cpp
 

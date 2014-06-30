@@ -202,8 +202,6 @@ static int		blr_print_word(gds_ctl*);
 
 static void		sanitize(Firebird::string& locale);
 
-static void		safe_concat_path(TEXT* destbuf, const TEXT* srcbuf);
-
 // New functions that try to be safe.
 static SLONG safe_interpret(char* const s, const size_t bufsize,
 	const ISC_STATUS** const vector, bool legacy = false);
@@ -1736,7 +1734,7 @@ void API_ROUTINE gds__prefix(TEXT* resultString, const TEXT* file)
 	GDS_init_prefix();
 
 	strcpy(resultString, fb_prefix);	// safe - no BO
-	safe_concat_path(resultString, file);
+	iscSafeConcatPath(resultString, file);
 }
 
 
@@ -1757,12 +1755,7 @@ void API_ROUTINE gds__prefix_lock(TEXT* string, const TEXT* root)
 	GDS_init_prefix();
 
 	strcpy(string, fb_prefix_lock);	// safe - no BO
-
-	// if someone wants to know prefix for lock files,
-	// sooner of all he wants that directory to exist
-	os_utils::createLockDirectory(string);
-
-	safe_concat_path(string, root);
+	iscSafeConcatPath(string, root);
 }
 
 
@@ -1786,7 +1779,7 @@ void API_ROUTINE gds__prefix_msg(TEXT* string, const TEXT* root)
 	GDS_init_prefix();
 
 	strcpy(string, fb_prefix_msg);	// safe - no BO
-	safe_concat_path(string, root);
+	iscSafeConcatPath(string, root);
 }
 
 
@@ -3553,43 +3546,6 @@ static void sanitize(Firebird::string& locale)
 		if (*p == '.')
 			*p = '_';
 	}
-}
-
-static void safe_concat_path(TEXT *resultString, const TEXT *appendString)
-{
-/**************************************
- *
- *	s a f e _ c o n c a t _ p a t h
- *
- **************************************
- *
- * Functional description
- *	Safely appends appendString to resultString using paths rules.
- *  resultString must be at most MAXPATHLEN size.
- *	Thread/signal safe code.
- *
- **************************************/
-	size_t len = strlen(resultString);
-	fb_assert(len > 0);
-
-	if (resultString[len - 1] != PathUtils::dir_sep && len < MAXPATHLEN - 1)
-	{
-		resultString[len++] = PathUtils::dir_sep;
-		resultString[len] = 0;
-	}
-
-	size_t alen = strlen(appendString);
-	if (len + alen > MAXPATHLEN - 1)
-	{
-		alen = MAXPATHLEN - 1 - len;
-	}
-
-	fb_assert(len < MAXPATHLEN);
-	fb_assert(alen < MAXPATHLEN);
-	fb_assert(len + alen < MAXPATHLEN);
-
-	memcpy(&resultString[len], appendString, alen);
-	resultString[len + alen] = 0;
 }
 
 

@@ -236,7 +236,7 @@ void ConfigStorage::checkFile()
 		fb_assert(m_base->cnt_uses == 0);
 
 		char dir[MAXPATHLEN];
-		gds__prefix_lock(dir, "");
+		iscPrefixLock(dir, "", true);
 
 		PathName filename = TempFile::create("fb_trace_", dir);
 		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));

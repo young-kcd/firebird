@@ -70,7 +70,7 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 	}
 
 	char dir[MAXPATHLEN];
-	gds__prefix_lock(dir, "");
+	iscPrefixLock(dir, "", true);
 	PathUtils::concatPath(m_baseFileName, dir, fileName);
 
 	TraceLogGuard guard(this);

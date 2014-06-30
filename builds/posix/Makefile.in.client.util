@@ -90,7 +90,7 @@ FBTRACEMGR_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBTRACEMG
 	$(FBCLASSES_MsgObjects) $(CLUMPLETS_Objects) $(FBCOMMON_ClientObjects)
 
 
-FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp
+FBGUARD_Other_Sources = jrd/isc.cpp jrd/divorce.cpp jrd/path_utils.cpp $(OS_SPECIFIC_Sources)
 FBGUARD_Files =  guard.cpp util.cpp
 FBGUARD_Sources = $(addprefix utilities/guard/, $(FBGUARD_Files)) $(FBGUARD_Other_Sources)
 FBGUARD_Objects = $(addprefix $(OBJ)/, $(addsuffix .o, $(basename $(FBGUARD_Sources)))) $(FBCLASSES_ClientObjects)

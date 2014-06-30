@@ -1329,7 +1329,7 @@ ISC_STATUS Service::query2(thread_db* tdbb,
 					gds__prefix(auxBuf, "");
 					break;
 				case isc_info_svc_get_env_lock:
-					gds__prefix_lock(auxBuf, "");
+					iscPrefixLock(auxBuf, "", false);
 					break;
 				case isc_info_svc_get_env_msg:
 					gds__prefix_msg(auxBuf, "");
@@ -1813,7 +1813,7 @@ void Service::query(USHORT			send_item_length,
 					gds__prefix(PathBuffer, "");
 					break;
 				case isc_info_svc_get_env_lock:
-					gds__prefix_lock(PathBuffer, "");
+					iscPrefixLock(PathBuffer, "", false);
 					break;
 				case isc_info_svc_get_env_msg:
 					gds__prefix_msg(PathBuffer, "");

@@ -2293,7 +2293,7 @@ void ISC_remove_map_file(const TEXT* filename)
 {
 #ifndef WIN_NT
 	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, filename);
+	iscPrefixLock(expanded_filename, filename, false);
 
 	// We can't do much (specially in dtors) when it fails
 	// therefore do not check for errors - at least it's just /tmp.
@@ -2329,7 +2329,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
  **************************************/
 
 	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, filename);
+	iscPrefixLock(expanded_filename, filename, true);
 
 /* make the complete filename for the init file this file is to be used as a
    master lock to eliminate possible race conditions with just a single file
@@ -2337,7 +2337,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
    lock to a LCK_SHARED lock is not atomic*/
 
 	TEXT init_filename[MAXPATHLEN];
-	gds__prefix_lock(init_filename, INIT_FILE);
+	iscPrefixLock(init_filename, INIT_FILE, true);
 
 	const bool trunc_flag = (length != 0);
 
@@ -2370,7 +2370,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	if (fdSem < 0)
 	{
 		TEXT sem_filename[MAXPATHLEN];
-		gds__prefix_lock(sem_filename, SEM_FILE);
+		iscPrefixLock(sem_filename, SEM_FILE, true);
 		const int f = openFile(sem_filename);
 		if (f == -1)
 		{
@@ -2551,7 +2551,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 	int retry_count = 0;
 
 	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, filename);
+	iscPrefixLock(expanded_filename, filename, true);
 
 	const bool trunc_flag = (length != 0);
 	bool init_flag = false;
@@ -4189,7 +4189,7 @@ void ISC_unmap_file(ISC_STATUS* status_vector, sh_mem* shmem_data)
 	CloseHandle(shmem_data->sh_mem_hdr_object);
 
 	TEXT expanded_filename[MAXPATHLEN];
-	gds__prefix_lock(expanded_filename, shmem_data->sh_mem_name);
+	iscPrefixLock(expanded_filename, shmem_data->sh_mem_name, false);
 
 	// Delete file only if it is not used by anyone else
 	HANDLE hFile = CreateFile(expanded_filename,
