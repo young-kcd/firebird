@@ -1,3 +1,18 @@
+ 2014-06-30 11:46  alexpeshkoff 
+   M builds/posix/Makefile.in.client.gfix
+   M builds/posix/Makefile.in.client.util
+   M builds/posix/Makefile.in.embed.gfix
+   M builds/posix/Makefile.in.embed.util
+   M builds/posix/prefix.aix_powerpc_xlc
+   M src/jrd/gds.cpp
+   M src/jrd/isc.cpp
+   M src/jrd/isc_proto.h
+   M src/jrd/isc_sync.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceLog.cpp
+Backported fix for CORE-4475: attempt to create lock files directory fails during cleanup
+
  2014-06-19 12:24  alexpeshkoff 
    M src/common/classes/alloc.cpp
    M src/common/classes/alloc.h
