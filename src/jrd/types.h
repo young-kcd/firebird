@@ -184,3 +184,6 @@ TYPE("LEGACY_STYLE", 1, nam_legacy_flag)
 
 TYPE("NON_DETERMINISTIC", 0, nam_deterministic_flag)
 TYPE("DETERMINISTIC", 1, nam_deterministic_flag)
+
+TYPE("USER", 0, nam_map_to_type)
+TYPE("ROLE", 1, nam_map_to_type)
