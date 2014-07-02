@@ -45,6 +45,6 @@ struct _SECURITY_ATTRIBUTES* ISC_get_security_desc();
 #endif
 
 void iscPrefixLock(TEXT* string, const TEXT* root, bool createLockDir);
-void iscSafeConcatPath(TEXT *resultString, const TEXT *appendString);
+void iscSafeConcatPath(TEXT* resultString, const TEXT* appendString);
 
 #endif // JRD_ISC_PROTO_H

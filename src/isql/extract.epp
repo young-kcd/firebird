@@ -1367,18 +1367,17 @@ static void list_all_procs()
  **************************************
  *
  * Functional description
- *	
- *	lists all procedures 
+ *
+ *	lists all procedures
  *	Since procedures may reference each other, we will create all
  *	dummy procedures of the correct name, then alter these to their
  *	correct form.
  *      Add the parameter names when these procedures are created.
  *
  **************************************/
- print_proc_prefix(obj_procedure);
- list_procedure_headers();
- list_procedure_bodies();
-	
+	print_proc_prefix(obj_procedure);
+	list_procedure_headers();
+	list_procedure_bodies();
 }
 
 static void list_procedure_headers()
@@ -1459,14 +1458,14 @@ static void list_procedure_bodies()
  **************************************
  *
  * Functional description
- *	Fill them with life 
+ *	Fill them with life
  *
  **************************************/
 
 	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
 
 	bool header = true;
-	
+
 	// This query gets the procedure name and the source.  We then nest a query
 	// to retrieve the parameters. Alter is used, because the procedures are already there
 	TEXT msg[MSG_LENGTH];
@@ -2715,12 +2714,10 @@ static void list_functions_legacy()
 				ptype = MAX_UDFPARAM_TYPES;
 
 			bool printarg = true;
-			
+
 
 			if (FUN.RDB$RETURN_ARGUMENT == FNA.RDB$ARGUMENT_POSITION)
 			{
-				    
-				
 				if (FUN.RDB$RETURN_ARGUMENT)
 					sprintf (return_buffer, "RETURNS PARAMETER %d", FUN.RDB$RETURN_ARGUMENT);
 				else
@@ -2828,11 +2825,11 @@ static void list_functions_ods12_bodies()
 	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
 
 	bool header = true;
-	
+
 	// This query gets the function name and the source.  We then nest a query
 	// to retrieve the parameters. Alter is used, because the functions are already there
 	TEXT msg[MSG_LENGTH];
-	
+
 	FOR FUN IN RDB$FUNCTIONS
 		WITH (FUN.RDB$SYSTEM_FLAG NE 1 OR FUN.RDB$SYSTEM_FLAG MISSING)
 		AND FUN.RDB$PACKAGE_NAME MISSING
