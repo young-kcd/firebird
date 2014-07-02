@@ -4289,7 +4289,7 @@ bool get_function(BurpGlobals* tdgbl)
 				case att_function_debug_info:
 					if (tdgbl->RESTORE_format >= 10)
 					{
-						get_blr_blob(tdgbl, X.RDB$DEBUG_INFO, false);
+						get_misc_blob(tdgbl, X.RDB$DEBUG_INFO, false);
 						X.RDB$DEBUG_INFO.NULL = FALSE;
 					}
 					else
