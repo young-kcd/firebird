@@ -93,6 +93,14 @@ static const char* const DEFTERM	= ";";
 static const char* const DEFCHARSET	= "NONE";
 const unsigned NULL_DISP_LEN		= 6;
 
+// some constants used by extract.epp
+const int obj_function			= 20;
+const int obj_function_body		= 21;
+const int obj_function_header	= 22;
+const int obj_procedure_body	= 23;
+const int obj_procedure_header	= 24;
+
+
 // Error codes
 
 const int MSG_LENGTH	= 1024;

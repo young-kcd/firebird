@@ -184,8 +184,8 @@ int EXTRACT_ddl(LegacyTables flag, const SCHAR* tabname)
 		list_filters();
 		list_charsets();
 		list_collations();
-		list_domains(default_char_set_id);
 		list_generators();
+		list_domains(default_char_set_id);
 		list_functions_legacy();
 		list_functions_ods12_headers();
 		list_procedure_headers();

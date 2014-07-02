@@ -47,13 +47,9 @@ const int obj_blob_filter		= 16;
 const int obj_collation			= 17;
 const int obj_package_header	= 18;
 const int obj_package_body		= 19;
-const int obj_function			= 20;
-const int obj_function_body		= 21;
-const int obj_function_header	= 22;
-const int obj_procedure_body	= 23;
-const int obj_procedure_header	= 24;
 
-const int obj_type_MAX			= 25;	// keep this last!
+
+const int obj_type_MAX			= 20;	// keep this last!
 
 // used in the parser only / no relation with obj_type_MAX
 const int obj_user_or_role		= 20;
