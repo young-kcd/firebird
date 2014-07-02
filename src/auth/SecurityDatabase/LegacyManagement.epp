@@ -40,6 +40,7 @@
 #include "../auth/SecurityDatabase/LegacyManagement.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/StatusHolder.h"
 #include "firebird/Plugin.h"
 
 static Firebird::MakeUpgradeInfo<> upInfo;
@@ -105,8 +106,12 @@ static unsigned int secDbKey = INIT_KEY;
 namespace Auth {
 
 SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IPluginConfig* par)
-	: config(Firebird::REF_NO_INCR, par->getFirebirdConf()), database(0), transaction(0)
-{ }
+	: database(0), transaction(0)
+{
+	Firebird::LocalStatus s;
+	config.assignRefNoIncr(par->getFirebirdConf(&s));
+	check(&s);
+}
 
 void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo* logonInfo)
 {
@@ -535,8 +540,10 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 			if (!ret && !found)
 				ret = GsecMsg22;	// gsec - record not found for user:
 
-			user->admin()->set(0);
-			user->admin()->setEntered(1);
+			user->admin()->set(st, 0);
+			check(st);
+			user->admin()->setEntered(st, 1);
+			check(st);
 			if (ret == 0 && !grantRevokeAdmin(isc_status, database, transaction, user))
 			{
 				ret = GsecMsg24;
@@ -550,7 +557,11 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 			found = false;
 			if (!user->userName()->entered())
 			{
+				Firebird::LocalStatus s2;
+				Firebird::IStatus* s = st;
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
+				  try
+				  {
 					{
 						Firebird::string attr, a1, a2, a3;
 
@@ -564,22 +575,37 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 							a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
 
 						attr = a1 + a2 + a3;
-						user->attributes()->set(attr.c_str());
-						user->attributes()->setEntered(attr.hasData() ? 1 : 0);
+						user->attributes()->set(s, attr.c_str());
+						check(s);
+						user->attributes()->setEntered(s, attr.hasData() ? 1 : 0);
+						check(s);
 					}
 
-					user->userName()->set(U.PLG$USER_NAME);
-					user->userName()->setEntered(U.PLG$USER_NAME.NULL ? 0 : 1);
-					user->password()->set("");
-					user->password()->setEntered(0);
-					user->firstName()->set(U.PLG$FIRST_NAME);
-					user->firstName()->setEntered(U.PLG$FIRST_NAME.NULL ? 0 : 1);
-					user->middleName()->set(U.PLG$MIDDLE_NAME);
-					user->middleName()->setEntered(U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
-					user->lastName()->set(U.PLG$LAST_NAME);
-					user->lastName()->setEntered(U.PLG$LAST_NAME.NULL ? 0 : 1);
+					user->userName()->set(s, U.PLG$USER_NAME);
+					check(s);
+					user->userName()->setEntered(s, U.PLG$USER_NAME.NULL ? 0 : 1);
+					check(s);
+					user->password()->set(s, "");
+					check(s);
+					user->password()->setEntered(s, 0);
+					check(s);
+					user->firstName()->set(s, U.PLG$FIRST_NAME);
+					check(s);
+					user->firstName()->setEntered(s, U.PLG$FIRST_NAME.NULL ? 0 : 1);
+					check(s);
+					user->middleName()->set(s, U.PLG$MIDDLE_NAME);
+					check(s);
+					user->middleName()->setEntered(s, U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
+					check(s);
+					user->lastName()->set(s, U.PLG$LAST_NAME);
+					check(s);
+					user->lastName()->setEntered(s, U.PLG$LAST_NAME.NULL ? 0 : 1);
+					check(s);
 
-					user->admin()->set(0);
+					user->admin()->set(s, 0);
+					check(s);
+					user->admin()->setEntered(s, 1);
+					check(s);
 
 					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
 						 P IN RDB$USER_PRIVILEGES
@@ -587,24 +613,39 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 							  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
 							  P.RDB$PRIVILEGE EQ 'M'
 					{
-						user->admin()->set(1);
+						user->admin()->set(s, 1);
 					}
 					END_FOR
+					check(s);
 
-					callback->list(user);
+					callback->list(s, user);
+					check(s);
 
 					found = true;
+				  }
+				  catch(const Firebird::Exception& ex)
+				  {
+				  	ex.stuffException(s);
+				  	s = &s2;
+				  }
 				END_FOR
 				ON_ERROR
 					ret = GsecMsg28;	// gsec - find/display record error
 				END_ERROR;
+
+				// real error raise - out of gpre's FOR loop
+				check(st);
 			}
 			else
 			{
 				Firebird::string attr, a1, a2, a3;
+				Firebird::LocalStatus s2;
+				Firebird::IStatus* s = st;
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 						WITH U.PLG$USER_NAME EQ user->userName()->get()
 
+				  try
+				  {
 					if (!U.PLG$UID.NULL)
 						a1.printf("Uid=%d\n", U.PLG$UID);
 
@@ -615,21 +656,37 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 						a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
 
 					attr = a1 + a2 + a3;
-					user->attributes()->set(attr.c_str());
-					user->attributes()->setEntered(attr.hasData() ? 1 : 0);
+					user->attributes()->set(s, attr.c_str());
+					check(s);
+					user->attributes()->setEntered(s, attr.hasData() ? 1 : 0);
+					check(s);
 
-					user->userName()->set(U.PLG$USER_NAME);
-					user->userName()->setEntered(U.PLG$USER_NAME.NULL ? 0 : 1);
-					user->password()->set("");
-					user->password()->setEntered(0);
-					user->firstName()->set(U.PLG$FIRST_NAME);
-					user->firstName()->setEntered(U.PLG$FIRST_NAME.NULL ? 0 : 1);
-					user->middleName()->set(U.PLG$MIDDLE_NAME);
-					user->middleName()->setEntered(U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
-					user->lastName()->set(U.PLG$LAST_NAME);
-					user->lastName()->setEntered(U.PLG$LAST_NAME.NULL ? 0 : 1);
+					user->userName()->set(s, U.PLG$USER_NAME);
+					check(s);
+					user->userName()->setEntered(s, U.PLG$USER_NAME.NULL ? 0 : 1);
+					check(s);
+					user->password()->set(s, "");
+					check(s);
+					user->password()->setEntered(s, 0);
+					check(s);
+					user->firstName()->set(s, U.PLG$FIRST_NAME);
+					check(s);
+					user->firstName()->setEntered(s, U.PLG$FIRST_NAME.NULL ? 0 : 1);
+					check(s);
+					user->middleName()->set(s, U.PLG$MIDDLE_NAME);
+					check(s);
+					user->middleName()->setEntered(s, U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
+					check(s);
+					user->lastName()->set(s, U.PLG$LAST_NAME);
+					check(s);
+					user->lastName()->setEntered(s, U.PLG$LAST_NAME.NULL ? 0 : 1);
+					check(s);
 
-					user->admin()->set(0);
+					user->admin()->set(s, 0);
+					check(s);
+					user->admin()->setEntered(s, 1);
+					check(s);
+
 
 					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
 						 P IN RDB$USER_PRIVILEGES
@@ -637,17 +694,28 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 							  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
 							  P.RDB$PRIVILEGE EQ 'M'
 					{
-						user->admin()->set(1);
+						user->admin()->set(s, 1);
 					}
 					END_FOR
+					check(s);
 
-					callback->list(user);
+					callback->list(s, user);
+					check(s);
 
 					found = true;
+				  }
+				  catch(const Firebird::Exception& ex)
+				  {
+				  	ex.stuffException(s);
+				  	s = &s2;
+				  }
 				END_FOR
 				ON_ERROR
 					ret = GsecMsg28;	// gsec - find/display record error
 				END_ERROR;
+
+				// real error raise - out of gpre's FOR loop
+				check(st);
 			}
 			break;
 

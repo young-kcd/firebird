@@ -581,18 +581,24 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 void FB_CARG ConfigStorage::TouchFile::handler()
 {
 	os_utils::touchFile(fileName);
-	TimerInterfacePtr()->start(this, TOUCH_INTERVAL * 1000 * 1000);
+	LocalStatus s;
+	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
+	// ignore error in handler
 }
 
 void ConfigStorage::TouchFile::start(const char* fName)
 {
 	fileName = fName;
-	TimerInterfacePtr()->start(this, TOUCH_INTERVAL * 1000 * 1000);
+	LocalStatus s;
+	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
+	check(&s);
 }
 
 void ConfigStorage::TouchFile::stop()
 {
-	TimerInterfacePtr()->stop(this);
+	LocalStatus s;
+	TimerInterfacePtr()->stop(&s, this);
+	// ignore error in stop timer
 }
 
 int FB_CARG ConfigStorage::TouchFile::release()

@@ -217,8 +217,10 @@ void UserManagement::execute(USHORT id)
 	{
 		Auth::StackUserData cmd;
 		cmd.op = Auth::DIS_OPER;
-		cmd.user.set(command->userName()->get());
-		cmd.user.setEntered(1);
+		cmd.user.set(&status, command->userName()->get());
+		check(&status);
+		cmd.user.setEntered(&status, 1);
+		check(&status);
 
 		class OldAttributes : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
 		{
@@ -228,10 +230,17 @@ void UserManagement::execute(USHORT id)
 			{ }
 
 			// IListUsers implementation
-			void FB_CARG list(Auth::IUser* data)
+			void FB_CARG list(IStatus* status, Auth::IUser* data)
 			{
-				value = data->attributes()->entered() ? data->attributes()->get() : "";
-				present = true;
+				try
+				{
+					value = data->attributes()->entered() ? data->attributes()->get() : "";
+					present = true;
+				}
+				catch(const Firebird::Exception& ex)
+				{
+					ex.stuffException(status);
+				}
 			}
 
 			string value;
@@ -305,13 +314,16 @@ void UserManagement::execute(USHORT id)
 
 			if (merged.hasData())
 			{
-				command->attr.set(merged.c_str());
+				command->attr.set(&status, merged.c_str());
+				check(&status);
 			}
 			else
 			{
-				command->attr.setEntered(0);
+				command->attr.setEntered(&status, 0);
+				check(&status);
 				command->attr.setSpecified(1);
-				command->attr.set("");
+				command->attr.set(&status, "");
+				check(&status);
 			}
 		}
 	}
@@ -320,8 +332,10 @@ void UserManagement::execute(USHORT id)
 	{
 		if (!command->act.entered())
 		{
-			command->act.set(1);
-			command->act.setEntered(1);
+			command->act.set(&status, 1);
+			check(&status);
+			command->act.setEntered(&status, 1);
+			check(&status);
 		}
 	}
 
@@ -447,10 +461,17 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 			{ }
 
 			// IListUsers implementation
-			void FB_CARG list(Auth::IUser* user)
+			void FB_CARG list(IStatus* status, Auth::IUser* user)
 			{
-				MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
-				userManagement->list(user);
+				try
+				{
+					MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
+					userManagement->list(user);
+				}
+				catch(const Firebird::Exception& ex)
+				{
+					ex.stuffException(status);
+				}
 			}
 
 		private:

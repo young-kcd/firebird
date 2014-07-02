@@ -33,19 +33,6 @@
 
 using namespace Firebird;
 
-namespace
-{
-
-void checkStatus(IStatus* st)
-{
-	if (!st->isSuccess())
-	{
-		status_exception::raise(st->get());
-	}
-}
-
-}
-
 namespace Remote
 {
 
@@ -79,7 +66,7 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 	LocalStatus st;
 
 	expectedMessageLength = metadata->getMessageLength(&st);
-	checkStatus(&st);
+	check(&st);
 
 	getBlrData().clear();
 
@@ -100,15 +87,15 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 	for (unsigned i = 0; i < count; ++i)
 	{
 		unsigned dtype = metadata->getType(&st, i) & ~1;
-		checkStatus(&st);
+		check(&st);
 		unsigned len = metadata->getLength(&st, i);
-		checkStatus(&st);
+		check(&st);
 		int scale = metadata->getScale(&st, i);
-		checkStatus(&st);
+		check(&st);
 		unsigned charSet = metadata->getCharSet(&st, i);
-		checkStatus(&st);
+		check(&st);
 		int subType = metadata->getSubType(&st, i);
-		checkStatus(&st);
+		check(&st);
 
 		switch (dtype)
 		{

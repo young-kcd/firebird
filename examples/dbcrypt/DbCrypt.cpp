@@ -200,9 +200,15 @@ void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlu
 	if (key != 0)
 		return;
 
-	IConfig* def = config->getDefaultConfig();
-	IConfigEntry* confEntry = def->find("Auto");
+	IConfig* def = config->getDefaultConfig(status);
+	if (!status->isSuccess())
+		return;
+
+	IConfigEntry* confEntry = def->find(status, "Auto");
 	def->release();
+	if (!status->isSuccess())
+		return;
+
 	if (confEntry)
 	{
 		char v = *(confEntry->getValue());
@@ -218,14 +224,10 @@ void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlu
 	{
 		ICryptKeyCallback* callback = sources[n]->keyHandle(status, "sample");
 		if (!status->isSuccess())
-		{
 			return;
-		}
 
 		if (callback && callback->callback(0, NULL, 1, &key) == 1)
-		{
 			return;
-		}
 	}
 
 	key = 0;
@@ -245,11 +247,19 @@ public:
 		return &module;
 	}
 
-	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
+	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
-		DbCrypt* p = new DbCrypt(factoryParameter);
-		p->addRef();
-		return p;
+		try
+		{
+			DbCrypt* p = new DbCrypt(factoryParameter);
+			p->addRef();
+			return p;
+		}
+		catch(const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+		return NULL;
 	}
 };
 

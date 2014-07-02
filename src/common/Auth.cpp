@@ -60,18 +60,25 @@ void WriterImplementation::reset()
 	sequence = 0;
 }
 
-void WriterImplementation::add(const char* name)
+void WriterImplementation::add(Firebird::IStatus* st, const char* name)
 {
-	putLevel();
-
-	current.clear();
-	current.insertString(AuthReader::AUTH_NAME, name);
-	fb_assert(plugin.hasData());
-	if (plugin.hasData())
+	try
 	{
-		current.insertString(AuthReader::AUTH_PLUGIN, plugin);
+		putLevel();
+
+		current.clear();
+		current.insertString(AuthReader::AUTH_NAME, name);
+		fb_assert(plugin.hasData());
+		if (plugin.hasData())
+		{
+			current.insertString(AuthReader::AUTH_PLUGIN, plugin);
+		}
+		type = "USER";
 	}
-	type = "USER";
+	catch(const Firebird::Exception& ex)
+	{
+		ex.stuffException(st);
+	}
 }
 
 void WriterImplementation::setPlugin(const char* m)
@@ -91,19 +98,33 @@ void WriterImplementation::putLevel()
 	result.insertBytes(sequence++, current.getBuffer(), current.getBufferLength());
 }
 
-void WriterImplementation::setType(const char* value)
+void WriterImplementation::setType(Firebird::IStatus* st, const char* value)
 {
-	if (value)
-		type = value;
+	try
+	{
+		if (value)
+			type = value;
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		ex.stuffException(st);
+	}
 }
 
-void WriterImplementation::setDb(const char* value)
+void WriterImplementation::setDb(Firebird::IStatus* st, const char* value)
 {
-	if (value)
+	try
 	{
-		PathName target;
-		expandDatabaseName(value, target, NULL);
-		current.insertPath(AuthReader::AUTH_SECURE_DB, target);
+		if (value)
+		{
+			PathName target;
+			expandDatabaseName(value, target, NULL);
+			current.insertPath(AuthReader::AUTH_SECURE_DB, target);
+		}
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		ex.stuffException(st);
 	}
 }
 

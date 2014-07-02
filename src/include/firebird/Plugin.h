@@ -90,9 +90,9 @@ class IPluginSet : public IRefCounted
 public:
 	virtual const char* FB_CARG getName() const = 0;
 	virtual const char* FB_CARG getModuleName() const = 0;
-	virtual IPluginBase* FB_CARG getPlugin() = 0;
-	virtual void FB_CARG next() = 0;
-	virtual void FB_CARG set(const char*) = 0;
+	virtual IPluginBase* FB_CARG getPlugin(IStatus* status) = 0;
+	virtual void FB_CARG next(IStatus* status) = 0;
+	virtual void FB_CARG set(IStatus* status, const char*) = 0;
 };
 #define FB_PLUGIN_SET_VERSION (FB_REFCOUNTED_VERSION + 5)
 
@@ -105,9 +105,9 @@ class IConfigEntry : public IRefCounted
 public:
 	virtual const char* FB_CARG getName() = 0;
 	virtual const char* FB_CARG getValue() = 0;
-	virtual IConfig* FB_CARG getSubConfig() = 0;
 	virtual ISC_INT64 FB_CARG getIntValue() = 0;
 	virtual FB_BOOLEAN FB_CARG getBoolValue() = 0;
+	virtual IConfig* FB_CARG getSubConfig(IStatus* status) = 0;
 };
 #define FB_CONFIG_PARAMETER_VERSION (FB_REFCOUNTED_VERSION + 5)
 
@@ -115,9 +115,9 @@ public:
 class IConfig : public IRefCounted
 {
 public:
-	virtual IConfigEntry* FB_CARG find(const char* name) = 0;
-	virtual IConfigEntry* FB_CARG findValue(const char* name, const char* value) = 0;
-	virtual IConfigEntry* FB_CARG findPos(const char* name, unsigned int pos) = 0;
+	virtual IConfigEntry* FB_CARG find(IStatus* status, const char* name) = 0;
+	virtual IConfigEntry* FB_CARG findValue(IStatus* status, const char* name, const char* value) = 0;
+	virtual IConfigEntry* FB_CARG findPos(IStatus* status, const char* name, unsigned int pos) = 0;
 };
 #define FB_CONFIG_VERSION (FB_REFCOUNTED_VERSION + 3)
 
@@ -144,9 +144,9 @@ class IPluginConfig : public IRefCounted
 {
 public:
 	virtual const char* FB_CARG getConfigFileName() = 0;
-	virtual IConfig* FB_CARG getDefaultConfig() = 0;
-	virtual IFirebirdConf* FB_CARG getFirebirdConf() = 0;
-	virtual void FB_CARG setReleaseDelay(ISC_UINT64 microSeconds) = 0;
+	virtual IConfig* FB_CARG getDefaultConfig(IStatus* status) = 0;
+	virtual IFirebirdConf* FB_CARG getFirebirdConf(IStatus* status) = 0;
+	virtual void FB_CARG setReleaseDelay(IStatus* status, ISC_UINT64 microSeconds) = 0;
 };
 #define FB_PLUGIN_CONFIG_VERSION (FB_REFCOUNTED_VERSION + 4)
 
@@ -154,7 +154,7 @@ public:
 class IPluginFactory : public IVersioned
 {
 public:
-	virtual IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter) = 0;
+	virtual IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter) = 0;
 };
 #define FB_PLUGIN_FACTORY_VERSION (FB_VERSIONED_VERSION + 1)
 
@@ -195,7 +195,7 @@ public:
 						const char* namesList, int desiredVersion,
 						UpgradeInfo* ui, IFirebirdConf* firebirdConf) = 0;
 	// Get generic config interface for given file
-	virtual IConfig* FB_CARG getConfig(const char* filename) = 0;
+	virtual IConfig* FB_CARG getConfig(IStatus* status, const char* filename) = 0;
 	// Plugins must be released using this function - use of plugin's release()
 	// will cause resources leak
 	virtual void FB_CARG releasePlugin(IPluginBase* plugin) = 0;
@@ -216,20 +216,18 @@ struct FbCryptKey
 typedef void PluginEntrypoint(IMaster* masterInterface);
 
 namespace PluginType {
-	static const unsigned int YValve = 1;
-	static const unsigned int Provider = 2;
-	// leave space for may be some more super-std plugins
-	static const unsigned int FirstNonLibPlugin = 11;
-	static const unsigned int AuthServer = 11;
-	static const unsigned int AuthClient = 12;
-	static const unsigned int AuthUserManagement = 13;
-	static const unsigned int ExternalEngine = 14;
-	static const unsigned int Trace = 15;
-	static const unsigned int WireCrypt = 16;
-	static const unsigned int DbCrypt = 17;
-	static const unsigned int KeyHolder = 18;
+	static const unsigned int Provider = 1;
+	static const unsigned int FirstNonLibPlugin = 2;
+	static const unsigned int AuthServer = 3;
+	static const unsigned int AuthClient = 4;
+	static const unsigned int AuthUserManagement = 5;
+	static const unsigned int ExternalEngine = 6;
+	static const unsigned int Trace = 7;
+	static const unsigned int WireCrypt = 8;
+	static const unsigned int DbCrypt = 9;
+	static const unsigned int KeyHolder = 10;
 
-	static const unsigned int MaxType = 19;	// keep in sync please
+	static const unsigned int MaxType = 11;	// keep in sync please
 }
 
 

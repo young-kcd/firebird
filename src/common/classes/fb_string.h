@@ -151,7 +151,7 @@ namespace Firebird
 			stringBuffer[stringLength] = 0;
 		}
 
-		void shrinkBuffer()
+		void shrinkBuffer() throw()
 		{
 			// Shrink buffer if we decide it is beneficial
 		}
@@ -200,7 +200,7 @@ namespace Firebird
 		}
 
 		// Trim the range making sure that it fits inside specified length
-		static void adjustRange(const size_type length, size_type& pos, size_type& n);
+		static void adjustRange(const size_type length, size_type& pos, size_type& n) throw();
 
 		pointer baseAssign(const size_type n);
 
@@ -208,7 +208,7 @@ namespace Firebird
 
 		pointer baseInsert(const size_type p0, const size_type n);
 
-		void baseErase(size_type p0, size_type n);
+		void baseErase(size_type p0, size_type n) throw();
 
 		enum TrimType {TrimLeft, TrimRight, TrimBoth};
 
@@ -511,17 +511,17 @@ namespace Firebird
 			insert(it - c_str(), first, last - first);
 		}
 
-		AbstractString& erase(size_type p0 = 0, size_type n = npos)
+		AbstractString& erase(size_type p0 = 0, size_type n = npos) throw()
 		{
 			baseErase(p0, n);
 			return *this;
 		}
-		iterator erase(iterator it)
+		iterator erase(iterator it) throw()
 		{
 			erase(it - c_str(), 1);
 			return it;
 		}
-		iterator erase(iterator first, iterator last)
+		iterator erase(iterator first, iterator last) throw()
 		{
 			erase(first - c_str(), last - first);
 			return first;

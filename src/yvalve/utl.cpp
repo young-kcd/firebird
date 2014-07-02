@@ -158,7 +158,7 @@ public:
 	{ }
 
 	// IVersionCallback implementation
-	void FB_CARG callback(const char* text)
+	void FB_CARG callback(IStatus*, const char* text)
 	{
 		func(arg, text);
 	}
@@ -544,7 +544,9 @@ void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
 
 			s.printf("%s (%s), version \"%.*s\"", implementation_string, class_string, l, versions);
 
-			callback->callback(s.c_str());
+			callback->callback(status, s.c_str());
+			if (!status->isSuccess())
+				return;
 			versions += l;
 		}
 
@@ -554,7 +556,7 @@ void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
 			return;
 
 		s.printf("on disk structure version %d.%d", ods_version, ods_minor_version);
-		callback->callback(s.c_str());
+		callback->callback(status, s.c_str());
 	}
 	catch (const Exception& ex)
 	{

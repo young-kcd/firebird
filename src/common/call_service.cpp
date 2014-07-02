@@ -328,13 +328,15 @@ static void setAttr(string& a, const char* nm, Auth::IIntUserField* f)
 }
 
 
-static void setAttr(Auth::UserData* u)
+static void setAttr(IStatus* status, Auth::UserData* u)
 {
 	string attr;
 	setAttr(attr, "Uid", &u->u);
 	setAttr(attr, "Gid", &u->g);
-	u->attributes()->setEntered(attr.hasData());
-	u->attributes()->set(attr.c_str());
+	u->attributes()->set(status, attr.c_str());
+	if (!status->isSuccess())
+		return;
+	u->attributes()->setEntered(status, attr.hasData());
 }
 
 
@@ -472,8 +474,11 @@ void callRemoteServiceManager(ISC_STATUS* status,
 
 		if (uData.user.get()[0] && callback)
 		{
-			setAttr(&uData);
-			callback->list(&uData);
+			LocalStatus status;
+			setAttr(&status, &uData);
+			check(&status);
+			callback->list(&status, &uData);
+			check(&status);
 		}
 	}
 	else
@@ -554,14 +559,20 @@ static void parseString2(const char*& p, Auth::CharField& f, size_t& loop)
 
 	p += sizeof(USHORT);
 	f.set(p, len);
-	f.setEntered(1);
 	p += len;
+
+	LocalStatus s;
+	f.setEntered(&s, 1);
+	check(&s);
 }
 
 static void parseLong(const char*& p, Auth::IntField& f, size_t& loop)
 {
-	f.set(isc_vax_integer(p, sizeof(ULONG)));
-	f.setEntered(1);
+	LocalStatus s;
+	f.set(&s, isc_vax_integer(p, sizeof(ULONG)));
+	check(&s);
+	f.setEntered(&s, 1);
+	check(&s);
 
 	const size_t len2 = sizeof(ULONG) + 1;
 	if (len2 > loop)
@@ -639,12 +650,16 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 			case isc_spb_sec_username:
 				if (uData.user.get()[0])
 				{
+					LocalStatus status;
 					if (callback)
 					{
-						setAttr(&uData);
-						callback->list(&uData);
+						setAttr(&status, &uData);
+						check(&status);
+						callback->list(&status, &uData);
+						check(&status);
 					}
-					uData.clear();
+					uData.clear(&status);
+					check(&status);
 				}
 				parseString2(p, uData.user, loop);
 				break;

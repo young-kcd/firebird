@@ -49,7 +49,7 @@ public:
 		return s;
 	}
 
-	void FB_CARG setEntered(int newValue)
+	void FB_CARG setEntered(Firebird::IStatus*, int newValue)
 	{
 		e = newValue;
 	}
@@ -68,20 +68,27 @@ public:
 		return value.c_str();
 	}
 
-	void FB_CARG set(const char* newValue)
+	void FB_CARG set(Firebird::IStatus* status, const char* newValue)
 	{
-		value = newValue ? newValue : "";
+		try
+		{
+			value = newValue ? newValue : "";
+		}
+		catch(const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 	}
 
-	void FB_CARG set(const char* newValue, size_t len)
+	void set(const char* newValue, size_t len)
 	{
 		value.assign(newValue, len);
 	}
 
-	void clear()
+	void clear() throw()
 	{
 		e = s = 0;
-		value = "";
+		value.erase();		// should not call allocation function - no throw
 	}
 
 private:
@@ -107,7 +114,7 @@ public:
 		return s;
 	}
 
-	void FB_CARG setEntered(int newValue)
+	void FB_CARG setEntered(Firebird::IStatus*, int newValue)
 	{
 		e = newValue;
 	}
@@ -126,12 +133,12 @@ public:
 		return value;
 	}
 
-	void FB_CARG set(int newValue)
+	void FB_CARG set(Firebird::IStatus*, int newValue)
 	{
 		value = newValue;
 	}
 
-	void clear()
+	void clear() throw()
 	{
 		e = s = 0;
 		value = 0;
@@ -200,7 +207,7 @@ public:
 		return &act;
 	}
 
-	void FB_CARG clear();
+	void FB_CARG clear(Firebird::IStatus* status);
 
 	typedef Firebird::Array<UCHAR> AuthenticationBlock;
 

@@ -49,9 +49,9 @@ class ITimerControl : public IVersioned
 {
 public:
 	// Set timer
-	virtual void FB_CARG start(ITimer* timer, TimerDelay microSeconds) = 0;
+	virtual void FB_CARG start(IStatus* status, ITimer* timer, TimerDelay microSeconds) = 0;
 	// Stop timer
-	virtual void FB_CARG stop(ITimer* timer) = 0;
+	virtual void FB_CARG stop(IStatus* status, ITimer* timer) = 0;
 };
 #define FB_TIMER_CONTROL_VERSION (FB_VERSIONED_VERSION + 2)
 

@@ -270,14 +270,6 @@ void MetadataBuilder::indexError(unsigned index, const char* functionName)
 	}
 }
 
-void check(IStatus* status)
-{
-	if (!status->isSuccess())
-	{
-		status_exception::raise(status->get());
-	}
-}
-
 
 // Add an item based on a descriptor.
 void MsgMetadata::addItem(const MetaName& name, bool nullable, const dsc& desc)

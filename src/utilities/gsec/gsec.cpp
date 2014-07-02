@@ -139,8 +139,11 @@ static void merge(IIntUserField* to, IIntUserField* from)
 		return;
 	if (from->entered())
 	{
-		to->set(from->get());
-		to->setEntered(1);
+		Firebird::LocalStatus s;
+		to->set(&s, from->get());
+		check(&s);
+		to->setEntered(&s, 1);
+		check(&s);
 	}
 }
 
@@ -223,7 +226,9 @@ int gsec(Firebird::UtilSvc* uSvc)
 	{
 		serverName = "";
 	}
-	user_data->database.set(databaseName.c_str());
+	Firebird::LocalStatus s;
+	user_data->database.set(&s, databaseName.c_str());
+	check(&s);
 
 	Firebird::RefPtr<IManagement> manager;
 	ISC_STATUS_ARRAY status;
@@ -398,8 +403,11 @@ int gsec(Firebird::UtilSvc* uSvc)
 			const Parameter* p = findParameter(name);
 			if (p)
 			{
-				field->set(p->asInteger());
-				field->setEntered(1);
+				Firebird::LocalStatus s;
+				field->set(&s, p->asInteger());
+				check(&s);
+				field->setEntered(&s, 1);
+				check(&s);
 			}
 		}
 	};
@@ -412,44 +420,51 @@ int gsec(Firebird::UtilSvc* uSvc)
 		{ }
 
 		// IListUsers implementation
-		void FB_CARG list(IUser* data)
+		void FB_CARG list(Firebird::IStatus* status, IUser* data)
 		{
-			Attributes attr(data);
+			try
+			{
+				Attributes attr(data);
 
-			if (data->active()->entered() && data->active()->get() == 0)
-			{
-				// skip inactive users
-				return;
-			}
-
-			if (tdsec->utilSvc->isService())
-			{
-				tdsec->utilSvc->putLine(isc_spb_sec_username, data->userName()->get());
-				tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->firstName()->entered() ? data->firstName()->get() : "");
-				tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middleName()->entered() ? data->middleName()->get() : "");
-				tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->lastName()->entered() ? data->lastName()->get() : "");
-				tdsec->utilSvc->putSLong(isc_spb_sec_userid, attr["uid"]);
-				tdsec->utilSvc->putSLong(isc_spb_sec_groupid, attr["gid"]);
-				if (data->operation() == DIS_OPER)
+				if (data->active()->entered() && data->active()->get() == 0)
 				{
-					tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin()->get());
-				}
-			}
-			else
-			{
-				if (first)
-				{
-					GSEC_message(GsecMsg26);
-					GSEC_message(GsecMsg27);
-					// msg26: "    user name                    uid   gid admin     full name"
-					// msg27: "-------------------------------------------------------------------------------------------------"
-					first = false;
+					// skip inactive users
+					return;
 				}
 
-				util_output(false, "%-*.*s %5d %5d %-5.5s     %s %s %s\n",
-							USERNAME_LENGTH, USERNAME_LENGTH, data->userName()->get(),
-							attr["uid"], attr["gid"], data->admin()->get() ? "admin" : "",
-							data->firstName()->get(), data->middleName()->get(), data->lastName()->get());
+				if (tdsec->utilSvc->isService())
+				{
+					tdsec->utilSvc->putLine(isc_spb_sec_username, data->userName()->get());
+					tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->firstName()->entered() ? data->firstName()->get() : "");
+					tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middleName()->entered() ? data->middleName()->get() : "");
+					tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->lastName()->entered() ? data->lastName()->get() : "");
+					tdsec->utilSvc->putSLong(isc_spb_sec_userid, attr["uid"]);
+					tdsec->utilSvc->putSLong(isc_spb_sec_groupid, attr["gid"]);
+					if (data->operation() == DIS_OPER)
+					{
+						tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin()->get());
+					}
+				}
+				else
+				{
+					if (first)
+					{
+						GSEC_message(GsecMsg26);
+						GSEC_message(GsecMsg27);
+						// msg26: "    user name                    uid   gid admin     full name"
+						// msg27: "-------------------------------------------------------------------------------------------------"
+						first = false;
+					}
+
+					util_output(false, "%-*.*s %5d %5d %-5.5s     %s %s %s\n",
+								USERNAME_LENGTH, USERNAME_LENGTH, data->userName()->get(),
+								attr["uid"], attr["gid"], data->admin()->get() ? "admin" : "",
+								data->firstName()->get(), data->middleName()->get(), data->lastName()->get());
+				}
+			}
+			catch(const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
 			}
 		}
 
@@ -467,12 +482,19 @@ int gsec(Firebird::UtilSvc* uSvc)
 		{ }
 
 		// IListUsers implementation
-		void FB_CARG list(IUser* data)
+		void FB_CARG list(Firebird::IStatus* status, IUser* data)
 		{
-			Attributes attr(data);
+			try
+			{
+				Attributes attr(data);
 
-			attr.set(&u->u, "uid");
-			attr.set(&u->g, "gid");
+				attr.set(&u->u, "uid");
+				attr.set(&u->g, "gid");
+			}
+			catch(const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
 		}
 
 	private:
@@ -498,8 +520,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				if (user_data->operation() == ADD_OPER)
 				{
-					user_data->act.set(1);
-					user_data->act.setEntered(1);
+					user_data->act.set(&s, 1);
+					check(&s);
+					user_data->act.setEntered(&s, 1);
+					check(&s);
 				}
 
 				if (user_data->operation() == MOD_OPER && user_data->userName()->entered() &&
@@ -507,8 +531,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 				{
 					StackUserData u;
 					u.op = OLD_DIS_OPER;
-					u.user.set(user_data->userName()->get());
-					u.user.setEntered(1);
+					u.user.set(&s, user_data->userName()->get());
+					check(&s);
+					u.user.setEntered(&s, 1);
+					check(&s);
 
 					Callback cb(&u);
 					ret = manager->execute(&st, &u, &cb);
@@ -539,8 +565,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 				setAttr(attr, "uid", &user_data->u);
 				setAttr(attr, "gid", &user_data->g);
 				setAttr(attr, "groupName", &user_data->group);
-				user_data->attributes()->set(attr.c_str());
-				user_data->attributes()->setEntered(attr.hasData() ? 1 : 0);
+				user_data->attributes()->set(&s, attr.c_str());
+				user_data->attributes()->setEntered(&s, attr.hasData() ? 1 : 0);
 
 				ret = manager->execute(&st, user_data, &disp);
 
@@ -581,7 +607,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		{
 			MOVE_CLEAR(status, sizeof(ISC_STATUS_ARRAY));
 			// Clear out user data each time through this loop.
-			user_data->clear();
+			user_data->clear(&s);
+			check(&s);
 			if (get_line(local_argv, stuff, sizeof(stuff)))
 				break;
 			if (local_argv.getCount() > 1)
@@ -605,10 +632,14 @@ int gsec(Firebird::UtilSvc* uSvc)
 					continue;
 				}
 
-				user_data->database.set(databaseName.c_str());
-				user_data->database.setEntered(databaseNameEntered);
-				user_data->role.set(sqlRoleName.c_str());
-				user_data->role.setEntered(sqlRoleName.hasData());
+				user_data->database.set(&s, databaseName.c_str());
+				check(&s);
+				user_data->database.setEntered(&s, databaseNameEntered);
+				check(&s);
+				user_data->role.set(&s, sqlRoleName.c_str());
+				check(&s);
+				user_data->role.setEntered(&s, sqlRoleName.hasData());
+				check(&s);
 
 				if (ret == 0)
 				{
@@ -739,6 +770,17 @@ static bool get_line(Firebird::UtilSvc::ArgvType& argv, TEXT* stuff, size_t maxs
 }
 
 
+template <typename F, typename V>
+static void setSwitch(F& field, V v)
+{
+	Firebird::LocalStatus s;
+	field.set(&s, v);
+	check(&s);
+	field.setEntered(&s, 1);
+	check(&s);
+}
+
+
 static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 						 const Switches& switches,
 						 tsec* tdsec, bool* quitflag)
@@ -804,53 +846,42 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					return false;
 				}
 				uname.upper();
-				user_data->user.set(uname.c_str());
-				user_data->user.setEntered(1);
+				setSwitch(user_data->user, uname.c_str());
 				break;
 			case IN_SW_GSEC_PASSWORD:
 				uname = string;
-				user_data->pass.set(uname.c_str());
-				user_data->pass.setEntered(1);
+				setSwitch(user_data->pass, uname.c_str());
 				break;
 			case IN_SW_GSEC_UID:
-				user_data->u.set(atoi(string));
-				user_data->u.setEntered(1);
+				setSwitch(user_data->u, atoi(string));
 				break;
 			case IN_SW_GSEC_GID:
-				user_data->g.set(atoi(string));
-				user_data->g.setEntered(1);
+				setSwitch(user_data->g, atoi(string));
 				break;
 			case IN_SW_GSEC_SYSUSER:
 				// ignore it
 				break;
 			case IN_SW_GSEC_GROUP:
-				user_data->group.set(string);
-				user_data->group.setEntered(1);
+				setSwitch(user_data->group, string);
 				break;
 			case IN_SW_GSEC_FNAME:
-				user_data->first.set(string);
-				user_data->first.setEntered(1);
+				setSwitch(user_data->first, string);
 				break;
 			case IN_SW_GSEC_MNAME:
-				user_data->middle.set(string);
-				user_data->middle.setEntered(1);
+				setSwitch(user_data->middle, string);
 				break;
 			case IN_SW_GSEC_LNAME:
-				user_data->last.set(string);
-				user_data->last.setEntered(1);
+				setSwitch(user_data->last, string);
 				break;
 			case IN_SW_GSEC_DATABASE:
-				user_data->database.set(string);
-				user_data->database.setEntered(1);
+				setSwitch(user_data->database, string);
 				break;
 			case IN_SW_GSEC_DBA_USER_NAME:
-				user_data->dba.set(string);
-				user_data->dba.setEntered(1);
+				setSwitch(user_data->dba, string);
 				break;
 			case IN_SW_GSEC_DBA_PASSWORD:
 				tdsec->utilSvc->hidePasswd(argv, argc);
-				user_data->dbaPassword.set(argv[argc]);
-				user_data->dbaPassword.setEntered(1);
+				setSwitch(user_data->dbaPassword, argv[argc]);
 				break;
 			case IN_SW_GSEC_FETCH_PASSWORD:
 				{
@@ -864,13 +895,11 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 						// error fetching password from file
 						return false;
 					}
-					user_data->dbaPassword.set(passwd);
-					user_data->dbaPassword.setEntered(1);
+					setSwitch(user_data->dbaPassword, passwd);
 					break;
 				}
 			case IN_SW_GSEC_SQL_ROLE_NAME:
-				user_data->role.set(string);
-				user_data->role.setEntered(1);
+				setSwitch(user_data->role, string);
 				break;
 			case IN_SW_GSEC_MAPPING:
 				{
@@ -896,13 +925,14 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 				{
 					Firebird::string val(string);
 					val.upper();
+					int iVal;
 
 					if (val == "YES")
 					{
-						user_data->adm.set(1);
+						iVal = 1;
 					}
 					else if (val == "NO") {
-						user_data->adm.set(0);
+						iVal = 0;
 					}
 					else
 					{
@@ -910,7 +940,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 						// invalid parameter for -ADMIN, only YES or NO is accepted
 						return false;
 					}
-					user_data->adm.setEntered(1);
+					setSwitch(user_data->adm, iVal);
 				}
 				break;
 			case IN_SW_GSEC_Z:
@@ -1360,7 +1390,9 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
  **************************************/
 	bool quitflag = false;
 	UserData* user_data = tdsec->tsec_user_data;
-	user_data->clear();
+	Firebird::LocalStatus s;
+	user_data->clear(&s);
+	check(&s);
 
 	// Call a subroutine to process the input line.
 

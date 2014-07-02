@@ -205,19 +205,22 @@ int FB_CARG CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* call
 	status->init();
 
 	if (key != 0)
-	{
 		return 1;
-	}
 
-	IConfig* def = config->getDefaultConfig();
-	IConfigEntry* confEntry = def->find("Auto");
+	IConfig* def = config->getDefaultConfig(status);
+	if (!status->isSuccess())
+		return 1;
+
+	IConfigEntry* confEntry = def->find(status, "Auto");
 	def->release();
+	if (!status->isSuccess())
+		return 1;
 
 	if (confEntry)
 	{
-		char v = *(confEntry->getValue());
+		FB_BOOLEAN b = confEntry->getBoolValue();
 		confEntry->release();
-		if (v == '1' || v == 'y' || v == 'Y' || v == 't' || v == 'T')
+		if (b)
 		{
 			key = 0x5a;
 			return 1;
@@ -256,11 +259,19 @@ public:
 		return &module;
 	}
 
-	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
+	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
-		CryptKeyHolder* p = new CryptKeyHolder(factoryParameter);
-		p->addRef();
-		return p;
+		try
+		{
+			CryptKeyHolder* p = new CryptKeyHolder(factoryParameter);
+			p->addRef();
+			return p;
+		}
+		catch(const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+		return NULL;
 	}
 };
 

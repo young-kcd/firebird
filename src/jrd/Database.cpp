@@ -339,16 +339,20 @@ namespace Jrd
 	{
 		if (active)
 		{
-			TimerInterfacePtr()->stop(this);
-			active = false;
+			Firebird::LocalStatus s;
+			TimerInterfacePtr()->stop(&s, this);
+			if (s.isSuccess())
+				active = false;
 		}
 	}
 
 	void Database::Linger::set(unsigned seconds)
 	{
-		if (dbb)
+		if (dbb && !active)
 		{
-			TimerInterfacePtr()->start(this, seconds * 1000 * 1000);
+			Firebird::LocalStatus s;
+			TimerInterfacePtr()->start(&s, this, seconds * 1000 * 1000);
+			check(&s);
 			active = true;
 		}
 	}

@@ -36,7 +36,7 @@ namespace Firebird {
 class IVersionCallback : public IVersioned
 {
 public:
-	virtual void FB_CARG callback(const char* text) = 0;
+	virtual void FB_CARG callback(IStatus* status, const char* text) = 0;
 };
 #define FB_VERSION_CALLBACK_VERSION (FB_VERSIONED_VERSION + 1)
 

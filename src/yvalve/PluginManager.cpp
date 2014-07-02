@@ -190,7 +190,7 @@ namespace
 			return par ? par->asInteger() : 0;
 		}
 
-		IConfig* FB_CARG getSubConfig();
+		IConfig* FB_CARG getSubConfig(IStatus* status);
 
 		int FB_CARG release()
 		{
@@ -214,36 +214,60 @@ namespace
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
 
 		// IConfig implementation
-		IConfigEntry* FB_CARG find(const char* name)
+		IConfigEntry* FB_CARG find(IStatus* status, const char* name)
 		{
-			return confFile.hasData() ? newParam(confFile->findParameter(name)) : NULL;
+			try
+			{
+				return confFile.hasData() ? newParam(confFile->findParameter(name)) : NULL;
+			}
+			catch(const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
+			return NULL;
 		}
 
-		IConfigEntry* FB_CARG findValue(const char* name, const char* value)
+		IConfigEntry* FB_CARG findValue(IStatus* status, const char* name, const char* value)
 		{
-			return confFile.hasData() ? newParam(confFile->findParameter(name, value)) : NULL;
+			try
+			{
+				return confFile.hasData() ? newParam(confFile->findParameter(name, value)) : NULL;
+			}
+			catch(const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
+			return NULL;
 		}
 
-		IConfigEntry* FB_CARG findPos(const char* name, unsigned int n)
+		IConfigEntry* FB_CARG findPos(IStatus* status, const char* name, unsigned int n)
 		{
-			if (!confFile.hasData())
+			try
 			{
-				return NULL;
-			}
+				if (!confFile.hasData())
+				{
+					return NULL;
+				}
 
-			const ConfigFile::Parameters& p = confFile->getParameters();
-			size_t pos;
-			if (!p.find(name, pos))
+				const ConfigFile::Parameters& p = confFile->getParameters();
+				size_t pos;
+				if (!p.find(name, pos))
+				{
+					return NULL;
+				}
+
+				if (n + pos >= p.getCount() || p[n + pos].name != name)
+				{
+					return NULL;
+				}
+
+				return newParam(&p[n + pos]);
+			}
+			catch(const Firebird::Exception& ex)
 			{
-				return NULL;
+				ex.stuffException(status);
 			}
-
-			if (n + pos >= p.getCount() || p[n + pos].name != name)
-			{
-				return NULL;
-			}
-
-			return newParam(&p[n + pos]);
+			return NULL;
 		}
 
 		int FB_CARG release()
@@ -273,13 +297,20 @@ namespace
 		}
 	};
 
-	IConfig* ConfigParameterAccess::getSubConfig()
+	IConfig* ConfigParameterAccess::getSubConfig(IStatus* status)
 	{
-		if (par && par->sub.hasData())
+		try
 		{
-			IConfig* rc = new ConfigAccess(par->sub);
-			rc->addRef();
-			return rc;
+			if (par && par->sub.hasData())
+			{
+				IConfig* rc = new ConfigAccess(par->sub);
+				rc->addRef();
+				return rc;
+			}
+		}
+		catch(const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
 		}
 
 		return NULL;
@@ -287,6 +318,7 @@ namespace
 
 	IConfig* findDefConfig(ConfigFile* defaultConfig, const PathName& confName)
 	{
+		Firebird::LocalStatus s;
 		if (defaultConfig)
 		{
 			const ConfigFile::Parameter* p = defaultConfig->findParameter("Config");
@@ -295,7 +327,8 @@ namespace
 			return rc;
 		}
 
-		IConfig* rc = PluginManagerInterfacePtr()->getConfig(confName.nullStr());
+		IConfig* rc = PluginManagerInterfacePtr()->getConfig(&s, confName.nullStr());
+		check(&s);
 		return rc;
 	}
 
@@ -362,7 +395,7 @@ namespace
 			return NULL;
 		}
 
-		const char* getName() const
+		const char* getName() const throw()
 		{
 			return name.nullStr();
 		}
@@ -491,7 +524,7 @@ namespace
 			return findDefConfig(defaultConfig, confName);
 		}
 
-		const PluginModule* getPluggedModule() const
+		const PluginModule* getPluggedModule() const throw()
 		{
 			return module;
 		}
@@ -505,7 +538,7 @@ namespace
 			return plugName.c_str();
 		}
 
-		void setReleaseDelay(ISC_UINT64 microSeconds)
+		void setReleaseDelay(ISC_UINT64 microSeconds) throw()
 		{
 #ifdef DEBUG_PLUGINS
 			fprintf(stderr, "Set delay for ConfiguredPlugin %s:%p\n", plugName.c_str(), this);
@@ -549,24 +582,40 @@ namespace
 			return configuredPlugin->getConfigFileName();
 		}
 
-		IConfig* FB_CARG getDefaultConfig()
+		IConfig* FB_CARG getDefaultConfig(IStatus* status)
 		{
-			return configuredPlugin->getDefaultConfig();
-		}
-
-		IFirebirdConf* FB_CARG getFirebirdConf()
-		{
-			if (!firebirdConf.hasData())
+			try
 			{
-				RefPtr<Config> specificConf(Config::getDefaultConfig());
-				firebirdConf = new FirebirdConf(specificConf);
+				return configuredPlugin->getDefaultConfig();
 			}
-
-			firebirdConf->addRef();
-			return firebirdConf;
+			catch(const Exception& ex)
+			{
+				ex.stuffException(status);
+				return NULL;
+			}
 		}
 
-		void FB_CARG setReleaseDelay(ISC_UINT64 microSeconds)
+		IFirebirdConf* FB_CARG getFirebirdConf(IStatus* status)
+		{
+			try
+			{
+				if (!firebirdConf.hasData())
+				{
+					RefPtr<Config> specificConf(Config::getDefaultConfig());
+					firebirdConf = new FirebirdConf(specificConf);
+				}
+
+				firebirdConf->addRef();
+				return firebirdConf;
+			}
+			catch(const Exception& ex)
+			{
+				ex.stuffException(status);
+				return NULL;
+			}
+		}
+
+		void FB_CARG setReleaseDelay(IStatus*, ISC_UINT64 microSeconds)
 		{
 			configuredPlugin->setReleaseDelay(microSeconds);
 		}
@@ -589,7 +638,9 @@ namespace
 			fprintf(stderr, "~FactoryParameter places configuredPlugin %s in unload query for %d seconds\n",
 				configuredPlugin->getPlugName(), configuredPlugin->getReleaseDelay() / 1000000);
 #endif
-			TimerInterfacePtr()->start(configuredPlugin, configuredPlugin->getReleaseDelay());
+			LocalStatus s;
+			TimerInterfacePtr()->start(&s, configuredPlugin, configuredPlugin->getReleaseDelay());
+			// errors are ignored here - configuredPlugin will be released at once
 		}
 
 		RefPtr<ConfiguredPlugin> configuredPlugin;
@@ -600,14 +651,19 @@ namespace
 	{
 		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
 		par->addRef();
-		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(par);
 
-		if (plugin)
+		Firebird::LocalStatus s;
+		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(&s, par);
+
+		if (s.isSuccess())
+		{
 			plugin->setOwner(par);
-		else
-			par->release();
+			return plugin;
+		}
 
-		return plugin;
+		par->release();
+		check(&s);
+		return NULL;
 	}
 
 
@@ -730,15 +786,22 @@ namespace
 			return currentPlugin.hasData() ? currentPlugin->getPluggedModule()->getName() : NULL;
 		}
 
-		void FB_CARG set(const char* newName)
+		void FB_CARG set(IStatus* status, const char* newName)
 		{
-			namesList = newName;
-			namesList.alltrim(" \t");
-			next();
+			try
+			{
+				namesList = newName;
+				namesList.alltrim(" \t");
+				next(status);
+			}
+			catch(const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
 		}
 
-		IPluginBase* FB_CARG getPlugin();
-		void FB_CARG next();
+		IPluginBase* FB_CARG getPlugin(IStatus* status);
+		void FB_CARG next(IStatus* status);
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
 				  int pdesiredVersion, UpgradeInfo* pui,
@@ -750,7 +813,9 @@ namespace
 		{
 			namesList.assign(pnamesList);
 			namesList.alltrim(" \t");
-			next();
+			Firebird::LocalStatus s;
+			next(&s);
+			check(&s);
 		}
 
 		int FB_CARG release()
@@ -780,7 +845,6 @@ namespace
 
 		void loadError(const Arg::StatusVector& error)
 		{
-			iscLogStatus("PluginSet", error.value());
 			error.raise();
 		}
 	};
@@ -788,53 +852,60 @@ namespace
 	// ************************************* //
 	// ** next() - core of plugin manager ** //
 	// ************************************* //
-	void FB_CARG PluginSet::next()
+	void FB_CARG PluginSet::next(IStatus* status)
 	{
-		if (currentPlugin.hasData())
+		try
 		{
-			currentPlugin = NULL;
+			if (currentPlugin.hasData())
+			{
+				currentPlugin = NULL;
+			}
+
+			MutexLockGuard g(plugins->mutex, FB_FUNCTION);
+
+			while (namesList.hasData())
+			{
+				splitWord(currentName, namesList);
+
+				// First check - may be currentName is present among already configured plugins
+				ConfiguredPlugin* tmp = NULL;
+				if (plugins->get(MapKey(interfaceType, currentName), tmp))
+				{
+					currentPlugin = tmp;
+					break;
+				}
+
+				// setup loadinfo
+				PluginLoadInfo info(currentName.c_str());
+
+				// Check if module is loaded and load it if needed
+				RefPtr<PluginModule> m(modules->findModule(info.curModule));
+				if (!m.hasData() && !flShutdown)
+				{
+					m = loadModule(info.curModule);
+				}
+				if (!m.hasData())
+				{
+					continue;
+				}
+
+				int r = m->findPlugin(interfaceType, info.regName);
+				if (r < 0)
+				{
+					gds__log("Misconfigured: module %s does not contain plugin %s type %d",
+							 info.curModule.c_str(), info.regName.c_str(), interfaceType);
+					continue;
+				}
+
+				currentPlugin = new ConfiguredPlugin(m, r, info.conf, info.plugConfigFile, currentName);
+
+				plugins->put(MapKey(interfaceType, currentName), currentPlugin);
+				return;
+			}
 		}
-
-		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
-
-		while (namesList.hasData())
+		catch(const Firebird::Exception& ex)
 		{
-			splitWord(currentName, namesList);
-
-			// First check - may be currentName is present among already configured plugins
-			ConfiguredPlugin* tmp = NULL;
-			if (plugins->get(MapKey(interfaceType, currentName), tmp))
-			{
-				currentPlugin = tmp;
-				break;
-			}
-
-			// setup loadinfo
-			PluginLoadInfo info(currentName.c_str());
-
-			// Check if module is loaded and load it if needed
-			RefPtr<PluginModule> m(modules->findModule(info.curModule));
-			if (!m.hasData() && !flShutdown)
-			{
-				m = loadModule(info.curModule);
-			}
-			if (!m.hasData())
-			{
-				continue;
-			}
-
-			int r = m->findPlugin(interfaceType, info.regName);
-			if (r < 0)
-			{
-				gds__log("Misconfigured: module %s does not contain plugin %s type %d",
-						 info.curModule.c_str(), info.regName.c_str(), interfaceType);
-				continue;
-			}
-
-			currentPlugin = new ConfiguredPlugin(m, r, info.conf, info.plugConfigFile, currentName);
-
-			plugins->put(MapKey(interfaceType, currentName), currentPlugin);
-			return;
+			ex.stuffException(status);
 		}
 	}
 
@@ -874,25 +945,32 @@ namespace
 		return RefPtr<PluginModule>(NULL);	// compiler warning silencer
 	}
 
-	IPluginBase* FB_CARG PluginSet::getPlugin()
+	IPluginBase* FB_CARG PluginSet::getPlugin(IStatus* status)
 	{
-		while (currentPlugin.hasData())
+		try
 		{
-			IPluginBase* p = currentPlugin->factory(firebirdConf);
-			if (p)
+			while (currentPlugin.hasData())
 			{
-				if (masterInterface->upgradeInterface(p, desiredVersion, ui) >= 0)
+				IPluginBase* p = currentPlugin->factory(firebirdConf);
+				if (p)
 				{
-					return p;
+					if (masterInterface->upgradeInterface(p, desiredVersion, ui) >= 0)
+					{
+						return p;
+					}
+
+					PluginManagerInterfacePtr()->releasePlugin(p);
 				}
 
-				PluginManagerInterfacePtr()->releasePlugin(p);
+				next(status);
+				if (!status->isSuccess())
+					break;
 			}
-
-			next();
 		}
-
-		//currentPlugin->addRef();
+		catch(const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
+		}
 
 		return NULL;
 	}
@@ -1027,12 +1105,20 @@ void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 }
 
 
-IConfig* FB_CARG PluginManager::getConfig(const char* filename)
+IConfig* FB_CARG PluginManager::getConfig(IStatus* status, const char* filename)
 {
-	IConfig* rc = new ConfigAccess(RefPtr<ConfigFile>(
-		FB_NEW(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename)));
-	rc->addRef();
-	return rc;
+	try
+	{
+		IConfig* rc = new ConfigAccess(RefPtr<ConfigFile>(
+			FB_NEW(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename)));
+		rc->addRef();
+		return rc;
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+	return NULL;
 }
 
 

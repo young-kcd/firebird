@@ -56,8 +56,12 @@ class SrpManagement FB_FINAL : public Firebird::StdPlugin<IManagement, FB_AUTH_M
 {
 public:
 	explicit SrpManagement(Firebird::IPluginConfig* par)
-		: config(Firebird::REF_NO_INCR, par->getFirebirdConf()), upCount(0), delCount(0)
-	{ }
+		: upCount(0), delCount(0)
+	{
+		Firebird::LocalStatus s;
+		config.assignRefNoIncr(par->getFirebirdConf(&s));
+		check(&s);
+	}
 
 private:
 	void prepareDataStructures()
@@ -497,8 +501,10 @@ public:
 						stmt->free(status);
 						check(status);
 
-						user->admin()->set(0);
-						user->admin()->setEntered(1);
+						user->admin()->set(status, 0);
+						check(status);
+						user->admin()->setEntered(status, 1);
+						check(status);
 						grantRevokeAdmin(user, true);
 					}
 					catch (const Firebird::Exception&)
@@ -556,18 +562,17 @@ public:
 
 						while (rs->fetchNext(status, di.getBuffer()))
 						{
-							check(status);
-
 							listField(user->userName(), login);
 							listField(user->firstName(), first);
 							listField(user->middleName(), middle);
 							listField(user->lastName(), last);
-							listField(status, user->comment(), comment);
-							listField(status, user->attributes(), attr);
+							listField(user->comment(), comment);
+							listField(user->attributes(), attr);
 							listField(user->active(), active);
 							listField(user->admin(), admin);
 
-							callback->list(user);
+							callback->list(status, user);
+							check(status);
 						}
 						check(status);
 
@@ -796,49 +801,58 @@ private:
 
 	static void listField(Auth::ICharUserField* to, Varfield& from)
 	{
-		to->setEntered(from.null ? 0 : 1);
+		Firebird::LocalStatus st;
+		to->setEntered(&st, from.null ? 0 : 1);
+		check(&st);
 		if (!from.null)
 		{
-			to->set(from);
+			to->set(&st, from);
+			check(&st);
 		}
 	}
 
 	static void listField(Auth::IIntUserField* to, Boolean& from)
 	{
-		to->setEntered(from.null ? 0 : 1);
+		Firebird::LocalStatus st;
+		to->setEntered(&st, from.null ? 0 : 1);
+		check(&st);
 		if (!from.null)
 		{
-			to->set(from);
+			to->set(&st, from);
+			check(&st);
 		}
 	}
 
-	void listField(Firebird::IStatus* st, Auth::ICharUserField* to, Blob& from)
+	void listField(Auth::ICharUserField* to, Blob& from)
 	{
-		to->setEntered(from.null ? 0 : 1);
+		Firebird::LocalStatus st;
+		to->setEntered(&st, from.null ? 0 : 1);
+		check(&st);
 		if (!from.null)
 		{
 			Firebird::string s;
 			Firebird::IBlob* blob = NULL;
 			try
 			{
-				blob = att->openBlob(st, tra, &from);
-				check(st);
+				blob = att->openBlob(&st, tra, &from);
+				check(&st);
 
 				char segbuf[256];
 				unsigned len;
-				while ( (len = blob->getSegment(st, sizeof(segbuf), segbuf)) )
+				while ( (len = blob->getSegment(&st, sizeof(segbuf), segbuf)) )
 				{
-					if (st->get()[1] != isc_segment)
-						check(st);
+					if (st.get()[1] != isc_segment)
+						check(&st);
 					s.append(segbuf, len);
 				}
-				if (st->get()[1] != isc_segstr_eof)
-					check(st);
+				if (st.get()[1] != isc_segstr_eof)
+					check(&st);
 
-				blob->close(st);
-				check(st);
+				blob->close(&st);
+				check(&st);
 
-				to->set(s.c_str());
+				to->set(&st, s.c_str());
+				check(&st);
 			}
 			catch (const Firebird::Exception&)
 			{

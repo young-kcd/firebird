@@ -49,12 +49,7 @@ public:
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : Config::getDefaultConfig()->getPlugins(interfaceType)),
 			desiredVersion, ui, NULL));
-
-		if (!pluginSet)
-		{
-			fb_assert(!status.isSuccess());
-			status_exception::raise(status.get());
-		}
+		check(&status);
 
 		getPlugin();
 	}
@@ -68,12 +63,7 @@ public:
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
 			desiredVersion, ui, new FirebirdConf(knownConfig)));
-
-		if (!pluginSet)
-		{
-			fb_assert(!status.isSuccess());
-			status_exception::raise(status.get());
-		}
+		check(&status);
 
 		getPlugin();
 	}
@@ -104,7 +94,10 @@ public:
 		{
 			pluginInterface->releasePlugin(currentPlugin);
 			currentPlugin = NULL;
-			pluginSet->next();
+
+			LocalStatus status;
+			pluginSet->next(&status);
+			check(&status);
 			getPlugin();
 		}
 	}
@@ -116,7 +109,10 @@ public:
 			pluginInterface->releasePlugin(currentPlugin);
 			currentPlugin = NULL;
 		}
-		pluginSet->set(newName);
+
+		LocalStatus status;
+		pluginSet->set(&status, newName);
+		check(&status);
 		getPlugin();
 	}
 
@@ -137,7 +133,9 @@ private:
 
 	void getPlugin()
 	{
-		currentPlugin = (P*) pluginSet->getPlugin();
+		LocalStatus status;
+		currentPlugin = (P*) pluginSet->getPlugin(&status);
+		check(&status);
 	}
 };
 

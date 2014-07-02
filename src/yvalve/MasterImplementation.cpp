@@ -606,51 +606,65 @@ class TimerImplementation : public AutoIface<ITimerControl, FB_TIMER_CONTROL_VER
 {
 public:
 	// ITimerControl implementation
-	void FB_CARG start(ITimer* timer, TimerDelay microSeconds)
+	void FB_CARG start(IStatus* status, ITimer* timer, TimerDelay microSeconds)
 	{
-		MutexLockGuard guard(timerAccess, FB_FUNCTION);
-
-		if (stopTimerThread.value() != 0)
+		try
 		{
-			// Ignore an attempt to start timer - anyway thread to make it fire is down
+			MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
-			// We must leave timerAccess mutex here to avoid deadlocks
-			MutexUnlockGuard ug(timerAccess, FB_FUNCTION);
+			if (stopTimerThread.value() != 0)
+			{
+				// Ignore an attempt to start timer - anyway thread to make it fire is down
 
-			timer->addRef();
-			timer->release();
-			return;
+				// We must leave timerAccess mutex here to avoid deadlocks
+				MutexUnlockGuard ug(timerAccess, FB_FUNCTION);
+
+				timer->addRef();
+				timer->release();
+				return;
+			}
+
+			timerHolder.init();
+
+			TimerEntry* curTimer = getTimer(timer);
+			if (!curTimer)
+			{
+				TimerEntry newTimer;
+
+				newTimer.timer = timer;
+				newTimer.fireTime = curTime() + microSeconds;
+				timerQueue->add(newTimer);
+				timer->addRef();
+			}
+			else
+			{
+				curTimer->fireTime = curTime() + microSeconds;
+			}
+
+			timerWakeup->release();
 		}
-
-		timerHolder.init();
-
-		TimerEntry* curTimer = getTimer(timer);
-		if (!curTimer)
+		catch(const Firebird::Exception& ex)
 		{
-			TimerEntry newTimer;
-
-			newTimer.timer = timer;
-			newTimer.fireTime = curTime() + microSeconds;
-			timerQueue->add(newTimer);
-			timer->addRef();
+			ex.stuffException(status);
 		}
-		else
-		{
-			curTimer->fireTime = curTime() + microSeconds;
-		}
-
-		timerWakeup->release();
 	}
 
-	void FB_CARG stop(ITimer* timer)
+	void FB_CARG stop(IStatus* status, ITimer* timer)
 	{
-		MutexLockGuard guard(timerAccess, FB_FUNCTION);
-
-		TimerEntry* curTimer = getTimer(timer);
-		if (curTimer)
+		try
 		{
-			curTimer->timer->release();
-			timerQueue->remove(curTimer);
+			MutexLockGuard guard(timerAccess, FB_FUNCTION);
+
+			TimerEntry* curTimer = getTimer(timer);
+			if (curTimer)
+			{
+				curTimer->timer->release();
+				timerQueue->remove(curTimer);
+			}
+		}
+		catch(const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
 		}
 	}
 };

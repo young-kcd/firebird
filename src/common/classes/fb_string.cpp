@@ -129,7 +129,7 @@ namespace Firebird
 		memset(stringBuffer, c, sizeL);
 	}
 
-	void AbstractString::adjustRange(const size_type length, size_type& pos, size_type& n)
+	void AbstractString::adjustRange(const size_type length, size_type& pos, size_type& n) throw()
 	{
 		if (pos == npos) {
 			pos = length > n ? length - n : 0;
@@ -174,7 +174,7 @@ namespace Firebird
 		return stringBuffer + p0;
 	}
 
-	void AbstractString::baseErase(size_type p0, size_type n)
+	void AbstractString::baseErase(size_type p0, size_type n) throw()
 	{
 		adjustRange(length(), p0, n);
 		memmove(stringBuffer + p0, stringBuffer + p0 + n, stringLength - (p0 + n) + 1);

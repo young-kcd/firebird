@@ -46,7 +46,7 @@ public:
 					IFirebirdConf* firebirdConf);
 	void FB_CARG registerPluginFactory(unsigned int interfaceType, const char* defaultName,
 					IPluginFactory* factory);
-	IConfig* FB_CARG getConfig(const char* filename);
+	IConfig* FB_CARG getConfig(IStatus* status, const char* filename);
 	void FB_CARG releasePlugin(IPluginBase* plugin);
 	void FB_CARG registerModule(IPluginModule* module);
 	void FB_CARG unregisterModule(IPluginModule* module);

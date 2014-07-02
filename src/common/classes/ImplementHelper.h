@@ -145,11 +145,19 @@ template <class P>
 class SimpleFactoryBase : public AutoIface<IPluginFactory, FB_PLUGIN_FACTORY_VERSION>
 {
 public:
-	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
+	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
-		P* p = new P(factoryParameter);
-		p->addRef();
-		return p;
+		try
+		{
+			P* p = new P(factoryParameter);
+			p->addRef();
+			return p;
+		}
+		catch(const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+		return NULL;
 	}
 };
 
@@ -355,6 +363,16 @@ private:
 	M missing;
 	struct UpgradeInfo ui;
 };
+
+
+// Generic status checker
+inline void check(IStatus* status)
+{
+	if (!status->isSuccess())
+	{
+		status_exception::raise(status->get());
+	}
+}
 
 
 // debugger for reference counters

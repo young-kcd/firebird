@@ -46,9 +46,9 @@ class IWriter : public Firebird::IVersioned
 {
 public:
 	virtual void FB_CARG reset() = 0;
-	virtual void FB_CARG add(const char* name) = 0;
-	virtual void FB_CARG setType(const char* value) = 0;
-	virtual void FB_CARG setDb(const char* value) = 0;
+	virtual void FB_CARG add(Firebird::IStatus* status, const char* name) = 0;
+	virtual void FB_CARG setType(Firebird::IStatus* status, const char* value) = 0;
+	virtual void FB_CARG setDb(Firebird::IStatus* status, const char* value) = 0;
 };
 #define FB_AUTH_WRITER_VERSION (FB_VERSIONED_VERSION + 4)
 
@@ -96,7 +96,7 @@ class IUserField : public Firebird::IVersioned
 public:
 	virtual int FB_CARG entered() = 0;
 	virtual int FB_CARG specified() = 0;
-	virtual void FB_CARG setEntered(int newValue) = 0;
+	virtual void FB_CARG setEntered(Firebird::IStatus* status, int newValue) = 0;
 };
 #define FB_AUTH_FIELD_VERSION (FB_VERSIONED_VERSION + 3)
 
@@ -104,7 +104,7 @@ class ICharUserField : public IUserField
 {
 public:
 	virtual const char* FB_CARG get() = 0;
-	virtual void FB_CARG set(const char* newValue) = 0;
+	virtual void FB_CARG set(Firebird::IStatus* status, const char* newValue) = 0;
 };
 #define FB_AUTH_CHAR_FIELD_VERSION (FB_AUTH_FIELD_VERSION + 2)
 
@@ -112,7 +112,7 @@ class IIntUserField : public IUserField
 {
 public:
 	virtual int FB_CARG get() = 0;
-	virtual void FB_CARG set(int newValue) = 0;
+	virtual void FB_CARG set(Firebird::IStatus* status, int newValue) = 0;
 };
 #define FB_AUTH_INT_FIELD_VERSION (FB_AUTH_FIELD_VERSION + 2)
 
@@ -134,14 +134,14 @@ public:
 
 	virtual IIntUserField* FB_CARG admin() = 0;
 
-	virtual void FB_CARG clear() = 0;
+	virtual void FB_CARG clear(Firebird::IStatus* status) = 0;
 };
 #define FB_AUTH_USER_VERSION (FB_VERSIONED_VERSION + 11)
 
 class IListUsers : public Firebird::IVersioned
 {
 public:
-	virtual void FB_CARG list(IUser* user) = 0;
+	virtual void FB_CARG list(Firebird::IStatus* status, IUser* user) = 0;
 };
 #define FB_AUTH_LIST_USERS_VERSION (FB_VERSIONED_VERSION + 1)
 

@@ -371,16 +371,24 @@ class EngineFactory : public AutoIface<IPluginFactory, FB_PLUGIN_FACTORY_VERSION
 {
 public:
 	// IPluginFactory implementation
-	IPluginBase* FB_CARG createPlugin(IPluginConfig* factoryParameter)
+	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
-		if (myModule->unloadStarted())
+		try
 		{
-			return NULL;
-		}
+			if (myModule->unloadStarted())
+			{
+				Arg::Gds(isc_shutdown).raise();
+			}
 
-		IPluginBase* p = new JProvider(factoryParameter);
-		p->addRef();
-		return p;
+			IPluginBase* p = new JProvider(factoryParameter);
+			p->addRef();
+			return p;
+		}
+		catch(const Firebird::Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+		return NULL;
 	}
 };
 
@@ -6405,7 +6413,9 @@ static void setEngineReleaseDelay(Database* dbb)
 
 	++maxLinger;	// avoid rounding errors
 	time_t t = time(NULL);
-	dbb->dbb_plugin_config->setReleaseDelay(maxLinger > t ? (maxLinger - t) * 1000 * 1000 : 0);
+	LocalStatus s;
+	dbb->dbb_plugin_config->setReleaseDelay(&s, maxLinger > t ? (maxLinger - t) * 1000 * 1000 : 0);
+	check(&s);
 }
 
 

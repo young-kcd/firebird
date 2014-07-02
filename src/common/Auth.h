@@ -49,9 +49,9 @@ public:
 
 	// IWriter implementation
 	void FB_CARG reset();
-	void FB_CARG add(const char* name);
-	void FB_CARG setType(const char* value);
-	void FB_CARG setDb(const char* value);
+	void FB_CARG add(Firebird::IStatus* st, const char* name);
+	void FB_CARG setType(Firebird::IStatus* st, const char* value);
+	void FB_CARG setDb(Firebird::IStatus* st, const char* value);
 
 private:
 	Firebird::ClumpletWriter current, result;

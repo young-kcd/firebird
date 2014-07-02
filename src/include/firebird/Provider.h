@@ -41,6 +41,8 @@ class ICryptKeyCallback;		// From Crypt.h
 class IEventCallback : public IRefCounted
 {
 public:
+	// eventCallbackFunction is missing error status cause it's always called from places
+	// where an ability to report an error to the user is missing
 	virtual void FB_CARG eventCallbackFunction(unsigned int length, const unsigned char* events) = 0;
 };
 #define FB_EVENT_CALLBACK_VERSION (FB_REFCOUNTED_VERSION + 1)

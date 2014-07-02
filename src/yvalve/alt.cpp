@@ -827,14 +827,18 @@ namespace {
 template <typename T1, typename T2>
 void copyField(T1& f, T2 from, short flag)
 {
+	Firebird::LocalStatus s;
 	if (flag && from)
 	{
-		f.set(from);
-		f.setEntered(1);
+		f.set(&s, from);
+		check(&s);
+		f.setEntered(&s, 1);
+		check(&s);
 	}
 	else
 	{
-		f.setEntered(0);
+		f.setEntered(&s, 0);
+		check(&s);
 	}
 }
 
@@ -859,6 +863,7 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 	Auth::StackUserData userInfo;
 	userInfo.op = Auth::ADD_OPER;
 	Firebird::string work;
+	Firebird::LocalStatus s;
 
 	if (input_user_data->user_name)
 	{
@@ -872,8 +877,10 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 			work.resize(l);
 		}
 
-		userInfo.user.set(work.c_str());
-		userInfo.user.setEntered(1);
+		userInfo.user.set(&s, work.c_str());
+		Firebird::check(&s);
+		userInfo.user.setEntered(&s, 1);
+		Firebird::check(&s);
 	}
 	else {
 		return user_error(status, isc_usrname_required);
@@ -892,8 +899,10 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 			work.resize(l);
 		}
 
-		userInfo.pass.set(work.c_str());
-		userInfo.pass.setEntered(1);
+		userInfo.pass.set(&s, work.c_str());
+		Firebird::check(&s);
+		userInfo.pass.setEntered(&s, 1);
+		Firebird::check(&s);
 	}
 	else {
 		return user_error(status, isc_password_required);
@@ -928,6 +937,7 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
 	Auth::StackUserData userInfo;
 	userInfo.op = Auth::DEL_OPER;
 	Firebird::string work;
+	Firebird::LocalStatus s;
 
 	if (input_user_data->user_name)
 	{
@@ -941,8 +951,10 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
 			work.resize(l);
 		}
 
-		userInfo.user.set(work.c_str());
-		userInfo.user.setEntered(1);
+		userInfo.user.set(&s, work.c_str());
+		Firebird::check(&s);
+		userInfo.user.setEntered(&s, 1);
+		Firebird::check(&s);
 	}
 	else {
 		return user_error(status, isc_usrname_required);
@@ -970,6 +982,7 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 	Auth::StackUserData userInfo;
 	userInfo.op = Auth::MOD_OPER;
 	Firebird::string work;
+	Firebird::LocalStatus s;
 
 	if (input_user_data->user_name)
 	{
@@ -983,8 +996,10 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 			work.resize(l);
 		}
 
-		userInfo.user.set(work.c_str());
-		userInfo.user.setEntered(1);
+		userInfo.user.set(&s, work.c_str());
+		check(&s);
+		userInfo.user.setEntered(&s, 1);
+		check(&s);
 	}
 	else {
 		return user_error(status, isc_usrname_required);
@@ -1003,8 +1018,10 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 			work.resize(l);
 		}
 
-		userInfo.pass.set(work.c_str());
-		userInfo.pass.setEntered(1);
+		userInfo.pass.set(&s, work.c_str());
+		check(&s);
+		userInfo.pass.setEntered(&s, 1);
+		check(&s);
 	}
 	else {
 		return user_error(status, isc_password_required);

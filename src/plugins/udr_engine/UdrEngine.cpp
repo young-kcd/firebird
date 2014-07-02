@@ -86,7 +86,9 @@ public:
 		  procedures(getPool()),
 		  triggers(getPool())
 	{
-		RefPtr<IConfig> defaultConfig(REF_NO_INCR, par->getDefaultConfig());
+		LocalStatus s;
+		RefPtr<IConfig> defaultConfig(REF_NO_INCR, par->getDefaultConfig(&s));
+		check(&s);
 
 		if (defaultConfig)
 		{
@@ -95,10 +97,11 @@ public:
 
 			RefPtr<IConfigEntry> icp;
 
-			for (int n = 0; icp.assignRefNoIncr(defaultConfig->findPos("path", n)); ++n)
+			for (int n = 0; icp.assignRefNoIncr(defaultConfig->findPos(&s, "path", n)); ++n)
 			{
-				PathName newPath(icp->getValue());
+				check(&s);
 
+				PathName newPath(icp->getValue());
 				bool found = false;
 
 				for (ObjectsArray<PathName>::iterator i = paths->begin(); i != paths->end(); ++i)

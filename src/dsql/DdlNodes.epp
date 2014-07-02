@@ -9736,6 +9736,29 @@ void CreateAlterUserNode::print(string& text) const
 		name.c_str());
 }
 
+
+static void setCharField(Auth::CharField& field, const string* value)
+{
+	if (value)
+	{
+		LocalStatus s;
+		if (value->hasData())
+		{
+			field.set(&s, value->c_str());
+			check(&s);
+			field.setEntered(&s, 1);
+			check(&s);
+		}
+		else
+		{
+			field.setEntered(&s, 0);
+			check(&s);
+			field.setSpecified(1);
+		}
+	}
+}
+
+
 void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
 	if (mode != USER_ADD && !password && !firstName && !middleName && !lastName &&
@@ -9764,10 +9787,14 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	}
 	text.upper();
 
+	Firebird::LocalStatus s;
+
 	userData->op = mode == USER_ADD ? Auth::ADD_OPER : mode == USER_MOD ?
 		Auth::MOD_OPER : Auth::ADDMOD_OPER;
-	userData->user.set(text.c_str());
-	userData->user.setEntered(1);
+	userData->user.set(&s, text.c_str());
+	check(&s);
+	userData->user.setEntered(&s, 1);
+	check(&s);
 
 	if (password)
 	{
@@ -9777,76 +9804,28 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			status_exception::raise(Arg::PrivateDyn(250));
 		}
 
-		userData->pass.set(password->c_str());
-		userData->pass.setEntered(1);
+		setCharField(userData->pass, password);
 	}
 
-	if (firstName)
-	{
-		if (firstName->hasData())
-		{
-			userData->first.set(firstName->c_str());
-			userData->first.setEntered(1);
-		}
-		else
-		{
-			userData->first.setEntered(0);
-			userData->first.setSpecified(1);
-		}
-	}
-
-	if (middleName)
-	{
-		if (middleName->hasData())
-		{
-			userData->middle.set(middleName->c_str());
-			userData->middle.setEntered(1);
-		}
-		else
-		{
-			userData->middle.setEntered(0);
-			userData->middle.setSpecified(1);
-		}
-	}
-
-	if (lastName)
-	{
-		if (lastName->hasData())
-		{
-			userData->last.set(lastName->c_str());
-			userData->last.setEntered(1);
-		}
-		else
-		{
-			userData->last.setEntered(0);
-			userData->last.setSpecified(1);
-		}
-	}
-
-	if (comment)
-	{
-		if (comment->hasData())
-		{
-			userData->com.set(comment->c_str());
-			userData->com.setEntered(1);
-		}
-		else
-		{
-			userData->com.setEntered(0);
-			userData->com.setSpecified(1);
-		}
-	}
+	setCharField(userData->first, firstName);
+	setCharField(userData->middle, middleName);
+	setCharField(userData->last, lastName);
+	setCharField(userData->com, comment);
 
 	if (adminRole.specified)
 	{
-		userData->adm.set(adminRole.value);
-		userData->adm.setEntered(1);
+		userData->adm.set(&s, adminRole.value);
+		check(&s);
+		userData->adm.setEntered(&s, 1);
+		check(&s);
 	}
 
 	if (active.specified)
 	{
-		userData->act.set((int) active.value);
-		userData->act.setEntered(1);
+		userData->act.set(&s, (int) active.value);
+		check(&s);
+		userData->act.setEntered(&s, 1);
+		check(&s);
 	}
 
 	string attributesBuffer;
@@ -9863,8 +9842,10 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	if (attributesBuffer.hasData())
 	{
-		userData->attr.set(attributesBuffer.c_str());
-		userData->attr.setEntered(1);
+		userData->attr.set(&s, attributesBuffer.c_str());
+		check(&s);
+		userData->attr.setEntered(&s, 1);
+		check(&s);
 	}
 
 	const int ddlAction = mode == USER_ADD ? DDL_TRIGGER_CREATE_USER : DDL_TRIGGER_ALTER_USER;
@@ -9901,9 +9882,11 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	string text = name.c_str();
 	text.upper();
 
+	Firebird::LocalStatus s;
 	userData->op = Auth::DEL_OPER;
-	userData->user.set(text.c_str());
-	userData->user.setEntered(1);
+	userData->user.set(&s, text.c_str());
+	userData->user.setEntered(&s, 1);
+	check(&s);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_USER,
 		userData->user.get());

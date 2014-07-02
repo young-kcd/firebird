@@ -125,7 +125,7 @@ class VersionCallback : public Firebird::AutoIface<Firebird::IVersionCallback, F
 {
 public:
 	// IVersionCallback implementation
-	void FB_CARG callback(const char* text)
+	void FB_CARG callback(Firebird::IStatus*, const char* text)
 	{
 		isqlGlob.printf("%s%s", text, NEWLINE);
 	}

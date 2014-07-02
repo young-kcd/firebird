@@ -90,7 +90,7 @@ static void		release_statement(DsqlCompiledStatement* statement);
 static void		sql_info(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
 static UCHAR*	var_info(const dsql_msg*, const UCHAR*, const UCHAR* const, UCHAR*,
 	const UCHAR* const, USHORT, bool);
-static void		check(IStatus*);
+static void		checkD(IStatus*);
 
 static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 {
@@ -1286,7 +1286,7 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 
 	LocalStatus st;
 	unsigned count = meta->getCount(&st);
-	check(&st);
+	checkD(&st);
 
 	if (count != parameters.getCount())
 	{
@@ -1303,9 +1303,9 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 	for (USHORT index = 0; index < count; index++)
 	{
 		unsigned sqlType = meta->getType(&st, index);
-		check(&st);
+		checkD(&st);
 		unsigned sqlLength = meta->getLength(&st, index);
-		check(&st);
+		checkD(&st);
 
 		dsc desc;
 		desc.dsc_flags = 0;
@@ -1317,11 +1317,11 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 		desc.dsc_length = dlength;
 
 		desc.dsc_scale = meta->getScale(&st, index);
-		check(&st);
+		checkD(&st);
 		desc.dsc_sub_type = meta->getSubType(&st, index);
-		check(&st);
+		checkD(&st);
 		unsigned textType = meta->getCharSet(&st, index);
-		check(&st);
+		checkD(&st);
 		desc.setTextType(textType);
 		desc.dsc_address = (UCHAR*)(IPTR) dataOffset;
 
@@ -1357,7 +1357,7 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 
 
 // raise error if one present
-static void check(IStatus* st)
+static void checkD(IStatus* st)
 {
 	if (!st->isSuccess())
 	{

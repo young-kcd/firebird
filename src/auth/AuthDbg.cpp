@@ -28,6 +28,7 @@
 #include "firebird.h"
 #include "../auth/AuthDbg.h"
 #include "../jrd/ibase.h"
+#include "../common/StatusHolder.h"
 
 #ifdef AUTH_DEBUG
 
@@ -55,9 +56,12 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 namespace Auth {
 
 DebugServer::DebugServer(Firebird::IPluginConfig* pConf)
-	: str(getPool()),
-	  config(Firebird::REF_NO_INCR, pConf->getDefaultConfig())
-{ }
+	: str(getPool())
+{
+	Firebird::LocalStatus s;
+	config.assignRefNoIncr(pConf->getDefaultConfig(&s));
+	check(&s);
+}
 
 int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* sb,
                                IWriter* writerInterface)
@@ -94,14 +98,19 @@ int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* s
 #ifdef AUTH_VERBOSE
 		fprintf(stderr, "DebugServer::authenticate2: %s\n", str.c_str());
 #endif
-		writerInterface->add(str.c_str());
+		Firebird::LocalStatus s;
+		writerInterface->add(&s, str.c_str());
+		check(&s);
 		str.erase();
 
-		Firebird::RefPtr<Firebird::IConfigEntry> group(Firebird::REF_NO_INCR, config->find("GROUP"));
+		Firebird::RefPtr<Firebird::IConfigEntry> group(Firebird::REF_NO_INCR, config->find(&s, "GROUP"));
+		check(&s);
 		if (group)
 		{
-			writerInterface->add(group->getValue());
-			writerInterface->setType("GROUP");
+			writerInterface->add(&s, group->getValue());
+			check(&s);
+			writerInterface->setType(&s, "GROUP");
+			check(&s);
 		}
 
 		return AUTH_SUCCESS;

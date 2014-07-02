@@ -57,8 +57,12 @@ public:
 		: server(NULL), data(getPool()), account(getPool()),
 		  clientPubKey(getPool()), serverPubKey(getPool()),
 		  verifier(getPool()), salt(getPool()), sessionKey(getPool()),
-		  config(REF_NO_INCR, par->getFirebirdConf()), secDbName(NULL)
-	{ }
+		  secDbName(NULL)
+	{
+		Firebird::LocalStatus s;
+		config.assignRefNoIncr(par->getFirebirdConf(&s));
+		check(&s);
+	}
 
 	// IServer implementation
 	int FB_CARG authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
@@ -266,8 +270,16 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 		if (clientProof == serverProof)
 		{
 			MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
-			writerInterface->add(account.c_str());
-			writerInterface->setDb(secDbName);
+			writerInterface->add(status, account.c_str());
+			if (!status->isSuccess())
+			{
+				return AUTH_FAILED;
+			}
+			writerInterface->setDb(status, secDbName);
+			if (!status->isSuccess())
+			{
+				return AUTH_FAILED;
+			}
 			return AUTH_SUCCESS;
 		}
 	}

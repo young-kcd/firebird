@@ -52,7 +52,7 @@ Get::Get(Config* firebirdConf)
 	}
 }
 
-void FB_CARG UserData::clear()
+void FB_CARG UserData::clear(Firebird::IStatus*)
 {
 	op = 0;
 

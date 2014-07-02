@@ -2864,8 +2864,13 @@ namespace
 		// IEventCallback implementation
 		virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
 		{
-			memcpy(buffer, events, length);
-			sem.release();
+			try
+			{
+				memcpy(buffer, events, length);
+				sem.release();
+			}
+			catch(const Firebird::Exception&)
+			{ }
 		}
 
 		int FB_CARG release()
@@ -2936,7 +2941,12 @@ namespace
 		// IEventCallback implementation
 		virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
 		{
-			ast(arg, length, events);
+			try
+			{
+				ast(arg, length, events);
+			}
+			catch(const Firebird::Exception&)
+			{ }
 		}
 
 		int FB_CARG release()
