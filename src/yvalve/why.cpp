@@ -5186,6 +5186,11 @@ IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 
 		rs = entry.next()->openCursor(status, trans, length, string, dialect,
 			inMetadata, inBuffer, outMetadata);
+		if (!status->isSuccess())
+		{
+			return NULL;
+		}
+		fb_assert(rs);
 
 		YTransaction* const yTra = getTransaction(status, transaction);
 
