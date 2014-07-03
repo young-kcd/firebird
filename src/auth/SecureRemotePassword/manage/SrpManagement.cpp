@@ -115,13 +115,13 @@ private:
 		}
 	}
 
-	void prepareName(Firebird::string& s)
+	void prepareName(Firebird::string& s, char c)
 	{
 		for (unsigned i = 0; i < s.length(); ++i)
 		{
-			if (s[i] == '"')
+			if (s[i] == c)
 			{
-				s.insert(i++, 1, '"');
+				s.insert(i++, 1, c);
 			}
 		}
 	}
@@ -136,15 +136,17 @@ private:
 		Firebird::LocalStatus s;
 
 		Firebird::string userName(user->userName()->get());
-		prepareName(userName);
+		prepareName(userName, '"');
 
 		Firebird::string sql;
 		if (user->admin()->get() == 0)
 		{
+			Firebird::string userName2(user->userName()->get());
+			prepareName(userName2, '\'');
 			Firebird::string selGrantor;
 			selGrantor.printf("SELECT RDB$GRANTOR FROM RDB$USER_PRIVILEGES "
 				"WHERE RDB$USER = '%s' AND RDB$RELATION_NAME = '%s' AND RDB$PRIVILEGE = 'M'",
-				user->userName()->get(), ADMIN_ROLE);
+				userName2.c_str(), ADMIN_ROLE);
 			Message out;
 			Field<Varying> grantor(out, MAX_SQL_IDENTIFIER_SIZE);
 			Firebird::IResultSet* curs = att->openCursor(&s, tra, selGrantor.length(),
@@ -158,7 +160,7 @@ private:
 			if (hasGrant)
 			{
 				selGrantor = grantor;
-				prepareName(selGrantor);
+				prepareName(selGrantor, '"');
 
 				sql.printf("REVOKE %s FROM \"%s\" GRANTED BY \"%s\"",
 					ADMIN_ROLE, userName.c_str(), selGrantor.c_str());
