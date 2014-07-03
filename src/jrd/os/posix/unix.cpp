@@ -307,7 +307,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
  *
  **************************************/
 
-#ifdef HAVE_LINUX_FALLOC_H
+#if defined(HAVE_LINUX_FALLOC_H) && defined(HAVE_FALLOCATE)
 	ULONG leftPages = extPages;
 	for (jrd_file* file = main_file; file && leftPages; file = file->fil_next)
 	{
@@ -354,7 +354,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 	}
 #else
 	main_file->fil_flags |= FIL_no_fast_extend;
-#endif // HAVE_LINUX_FALLOC_H
+#endif // fallocate present
 
 	// not implemented
 	return;

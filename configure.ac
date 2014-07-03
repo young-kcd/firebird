@@ -833,6 +833,9 @@ AC_CHECK_FUNCS(pthread_rwlockattr_setkind_np)
 AC_CHECK_FUNCS(pthread_cancel)
 AC_CHECK_FUNCS(sigset)
 
+dnl Check for fallocate() system call
+AC_CHECK_FUNCS(fallocate)
+
 dnl Semaphores
 if test "$ac_cv_header_semaphore_h" = "yes"; then
 AC_SEARCH_LIBS(sem_init, rt pthread)
