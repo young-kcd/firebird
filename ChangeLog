@@ -1,3 +1,16 @@
+ 2014-07-03 09:43  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+Fixed management for users with ' (single quote) in a name
+
+ 2014-07-03 09:37  alexpeshkoff 
+   M src/yvalve/why.cpp
+Added missing check for provider status before creating yvalve objects
+
+ 2014-07-03 07:54  alexpeshkoff 
+   M configure.ac
+   M src/jrd/os/posix/unix.cpp
+Frontported fix for linux build regression
+
  2014-07-02 19:19  dimitr 
    M src/burp/restore.epp
 Fixed CORE-4480: ISQL issues warning: "Bad debug info format" when connect to database with stored function after it's restoring.
