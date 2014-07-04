@@ -716,11 +716,11 @@ const
 	gds_eem_engine_notfound              = 335545001;
 	gds_attachment_in_use                = 335545002;
 	gds_transaction_in_use               = 335545003;
-	gds_pman_plugin_notfound             = 335545004;
-	gds_pman_cannot_load_plugin          = 335545005;
+	gds_pman_cannot_load_plugin          = 335545004;
+	gds_pman_module_notfound             = 335545005;
 	gds_pman_entrypoint_notfound         = 335545006;
-	gds_pman_bad_conf_index              = 335545007;
-	gds_pman_unknown_instance            = 335545008;
+	gds_pman_module_bad                  = 335545007;
+	gds_pman_plugin_notfound             = 335545008;
 	gds_sysf_invalid_trig_namespace      = 335545009;
 	gds_unexpected_null                  = 335545010;
 	gds_type_notcompat_blob              = 335545011;

@@ -708,11 +708,11 @@ Data source : @4"},		/* eds_statement */
 	{335545001, "External engine @1 not found"},		/* eem_engine_notfound */
 	{335545002, "Attachment is in use"},		/* attachment_in_use */
 	{335545003, "Transaction is in use"},		/* transaction_in_use */
-	{335545004, "Plugin @1 not found"},		/* pman_plugin_notfound */
-	{335545005, "Module @1 exists, but can not be loaded"},		/* pman_cannot_load_plugin */
-	{335545006, "Entrypoint of plugin @1 does not exist"},		/* pman_entrypoint_notfound */
-	{335545007, "Invalid value @1 for parameter index at PluginImpl::getConfigInfo: out of bounds"},		/* pman_bad_conf_index */
-	{335545008, "Plugin @1 does not create @2 instances"},		/* pman_unknown_instance */
+	{335545004, "Error loading plugin @1"},		/* pman_cannot_load_plugin */
+	{335545005, "Loadable module @1 not found"},		/* pman_module_notfound */
+	{335545006, "Standard plugin entrypoint does not exist in module @1"},		/* pman_entrypoint_notfound */
+	{335545007, "Module @1 exists but can not be loaded"},		/* pman_module_bad */
+	{335545008, "Module @1 does not contain plugin @2 type @3"},		/* pman_plugin_notfound */
 	{335545009, "Invalid usage of context namespace DDL_TRIGGER"},		/* sysf_invalid_trig_namespace */
 	{335545010, "Value is NULL but isNull parameter was not informed"},		/* unexpected_null */
 	{335545011, "Type @1 is incompatible with BLOB"},		/* type_notcompat_blob */

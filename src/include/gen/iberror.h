@@ -739,11 +739,11 @@ const ISC_STATUS isc_eem_bad_plugin_ver               = 335545000L;
 const ISC_STATUS isc_eem_engine_notfound              = 335545001L;
 const ISC_STATUS isc_attachment_in_use                = 335545002L;
 const ISC_STATUS isc_transaction_in_use               = 335545003L;
-const ISC_STATUS isc_pman_plugin_notfound             = 335545004L;
-const ISC_STATUS isc_pman_cannot_load_plugin          = 335545005L;
+const ISC_STATUS isc_pman_cannot_load_plugin          = 335545004L;
+const ISC_STATUS isc_pman_module_notfound             = 335545005L;
 const ISC_STATUS isc_pman_entrypoint_notfound         = 335545006L;
-const ISC_STATUS isc_pman_bad_conf_index              = 335545007L;
-const ISC_STATUS isc_pman_unknown_instance            = 335545008L;
+const ISC_STATUS isc_pman_module_bad                  = 335545007L;
+const ISC_STATUS isc_pman_plugin_notfound             = 335545008L;
 const ISC_STATUS isc_sysf_invalid_trig_namespace      = 335545009L;
 const ISC_STATUS isc_unexpected_null                  = 335545010L;
 const ISC_STATUS isc_type_notcompat_blob              = 335545011L;
@@ -1996,11 +1996,11 @@ const ISC_STATUS isc_err_max                          = 1231;
 #define isc_eem_engine_notfound              335545001L
 #define isc_attachment_in_use                335545002L
 #define isc_transaction_in_use               335545003L
-#define isc_pman_plugin_notfound             335545004L
-#define isc_pman_cannot_load_plugin          335545005L
+#define isc_pman_cannot_load_plugin          335545004L
+#define isc_pman_module_notfound             335545005L
 #define isc_pman_entrypoint_notfound         335545006L
-#define isc_pman_bad_conf_index              335545007L
-#define isc_pman_unknown_instance            335545008L
+#define isc_pman_module_bad                  335545007L
+#define isc_pman_plugin_notfound             335545008L
 #define isc_sysf_invalid_trig_namespace      335545009L
 #define isc_unexpected_null                  335545010L
 #define isc_type_notcompat_blob              335545011L

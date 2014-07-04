@@ -704,11 +704,11 @@ static const struct {
 	{335545001, "39000"}, // 681 eem_engine_notfound
 	{335545002, "08002"}, // 682 attachment_in_use
 	{335545003, "25S02"}, // 683 transaction_in_use
-	{335545004, "39000"}, // 684 pman_plugin_notfound
-	{335545005, "39000"}, // 685 pman_cannot_load_plugin
-	{335545006, "39000"}, // 686 pman_entrypoint_notfound
-	{335545007, "39000"}, // 687 pman_bad_conf_index
-	{335545008, "39000"}, // 688 pman_unknown_instance
+	{335545004, "39000"}, // 684 pman_cannot_load_plugin
+	{335545005, "00000"}, // 685 pman_module_notfound
+	{335545006, "00000"}, // 686 pman_entrypoint_notfound
+	{335545007, "00000"}, // 687 pman_module_bad
+	{335545008, "00000"}, // 688 pman_plugin_notfound
 	{335545009, "42000"}, // 689 sysf_invalid_trig_namespace
 	{335545010, "22002"}, // 690 unexpected_null
 	{335545011, "2200G"}, // 691 type_notcompat_blob

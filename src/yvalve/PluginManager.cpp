@@ -127,41 +127,6 @@ namespace
 		return RefPtr<ConfigFile>(NULL);
 	}
 
-	struct PluginLoadInfo
-	{
-		PathName curModule, regName, plugConfigFile;
-		RefPtr<ConfigFile> conf;
-
-		PluginLoadInfo(const char* pluginName)
-		{
-			// define default values for plugin ...
-			curModule = fb_utils::getPrefix(Firebird::DirType::FB_DIR_PLUGINS, pluginName);
-			regName = pluginName;
-
-			// and try to load them from conf file
-			conf = findConfig("Plugin", pluginName);
-
-			if (conf.hasData())
-			{
-				const ConfigFile::Parameter* v = conf->findParameter("RegisterName");
-				if (v)
-				{
-					regName = v->value.ToPathName();
-				}
-
-				v = conf->findParameter("Module");
-				if (v)
-				{
-					curModule = v->value.ToPathName();
-				}
-			}
-
-			plugConfigFile = curModule;
-			changeExtension(plugConfigFile, "conf");
-		}
-	};
-
-
 	bool flShutdown = false;
 
 	class ConfigParameterAccess FB_FINAL : public RefCntIface<IConfigEntry, FB_CONFIG_PARAMETER_VERSION>
@@ -771,6 +736,49 @@ namespace
 		return 1;
 	}
 
+	struct PluginLoadInfo
+	{
+		PathName curModule, regName, plugConfigFile;
+		RefPtr<ConfigFile> conf;
+		bool required;
+
+		PluginLoadInfo(const char* pluginName)
+		{
+			// define default values for plugin ...
+			curModule = fb_utils::getPrefix(Firebird::DirType::FB_DIR_PLUGINS, pluginName);
+			regName = pluginName;
+			required = false;
+
+			// and try to load them from conf file
+			conf = findConfig("Plugin", pluginName);
+
+			if (conf.hasData())
+			{
+				const ConfigFile::Parameter* v = conf->findParameter("RegisterName");
+				if (v)
+				{
+					regName = v->value.ToPathName();
+				}
+
+				v = conf->findParameter("Module");
+				if (v)
+				{
+					curModule = v->value.ToPathName();
+				}
+
+				v = conf->findParameter("Required");
+				if (v)
+				{
+					required = v->asBoolean();
+				}
+			}
+
+			plugConfigFile = curModule;
+			changeExtension(plugConfigFile, "conf");
+		}
+	};
+
+
 	// Provides access to plugins of given type / name.
 	class PluginSet FB_FINAL : public RefCntIface<IPluginSet, FB_PLUGIN_SET_VERSION>
 	{
@@ -841,11 +849,11 @@ namespace
 		RefPtr<IFirebirdConf> firebirdConf;
 		MasterInterfacePtr masterInterface;
 
-		RefPtr<PluginModule> loadModule(const PathName& modName);
+		RefPtr<PluginModule> loadModule(const PluginLoadInfo& info);
 
 		void loadError(const Arg::StatusVector& error)
 		{
-			error.raise();
+			(Arg::Gds(isc_pman_cannot_load_plugin) << currentName << error).raise();
 		}
 	};
 
@@ -882,7 +890,7 @@ namespace
 				RefPtr<PluginModule> m(modules->findModule(info.curModule));
 				if (!m.hasData() && !flShutdown)
 				{
-					m = loadModule(info.curModule);
+					m = loadModule(info);
 				}
 				if (!m.hasData())
 				{
@@ -892,9 +900,8 @@ namespace
 				int r = m->findPlugin(interfaceType, info.regName);
 				if (r < 0)
 				{
-					gds__log("Misconfigured: module %s does not contain plugin %s type %d",
-							 info.curModule.c_str(), info.regName.c_str(), interfaceType);
-					continue;
+					loadError(Arg::Gds(isc_pman_plugin_notfound) <<
+							  info.curModule << info.regName << Arg::Num(interfaceType));
 				}
 
 				currentPlugin = new ConfiguredPlugin(m, r, info.conf, info.plugConfigFile, currentName);
@@ -909,9 +916,9 @@ namespace
 		}
 	}
 
-	RefPtr<PluginModule> PluginSet::loadModule(const PathName& asIsModuleName)
+	RefPtr<PluginModule> PluginSet::loadModule(const PluginLoadInfo& info)
 	{
-		PathName fixedModuleName(asIsModuleName);
+		PathName fixedModuleName(info.curModule);
 
 		ModuleLoader::Module* module = ModuleLoader::loadModule(fixedModuleName);
 
@@ -925,13 +932,17 @@ namespace
 		{
 			if (ModuleLoader::isLoadableModule(fixedModuleName))
 			{
-				loadError(Arg::Gds(isc_pman_cannot_load_plugin) << fixedModuleName);
+				loadError(Arg::Gds(isc_pman_module_bad) << fixedModuleName);
+			}
+			if (info.required)
+			{
+				loadError(Arg::Gds(isc_pman_module_notfound) << fixedModuleName);
 			}
 
 			return RefPtr<PluginModule>(NULL);
 		}
 
-		RefPtr<PluginModule> rc(new PluginModule(module, asIsModuleName));
+		RefPtr<PluginModule> rc(new PluginModule(module, info.curModule));
 		PluginEntrypoint* startModule;
 		if (module->findSymbol(STRINGIZE(FB_PLUGIN_ENTRY_POINT), startModule))
 		{

@@ -1418,16 +1418,16 @@ C --
       PARAMETER (GDS__attachment_in_use                = 335545002)
       INTEGER*4 GDS__transaction_in_use              
       PARAMETER (GDS__transaction_in_use               = 335545003)
-      INTEGER*4 GDS__pman_plugin_notfound            
-      PARAMETER (GDS__pman_plugin_notfound             = 335545004)
       INTEGER*4 GDS__pman_cannot_load_plugin         
-      PARAMETER (GDS__pman_cannot_load_plugin          = 335545005)
+      PARAMETER (GDS__pman_cannot_load_plugin          = 335545004)
+      INTEGER*4 GDS__pman_module_notfound            
+      PARAMETER (GDS__pman_module_notfound             = 335545005)
       INTEGER*4 GDS__pman_entrypoint_notfound        
       PARAMETER (GDS__pman_entrypoint_notfound         = 335545006)
-      INTEGER*4 GDS__pman_bad_conf_index             
-      PARAMETER (GDS__pman_bad_conf_index              = 335545007)
-      INTEGER*4 GDS__pman_unknown_instance           
-      PARAMETER (GDS__pman_unknown_instance            = 335545008)
+      INTEGER*4 GDS__pman_module_bad                 
+      PARAMETER (GDS__pman_module_bad                  = 335545007)
+      INTEGER*4 GDS__pman_plugin_notfound            
+      PARAMETER (GDS__pman_plugin_notfound             = 335545008)
       INTEGER*4 GDS__sysf_invalid_trig_namespace     
       PARAMETER (GDS__sysf_invalid_trig_namespace      = 335545009)
       INTEGER*4 GDS__unexpected_null                 
