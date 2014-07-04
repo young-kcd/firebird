@@ -1316,19 +1316,19 @@ static void print_proc_prefix(int obj_type)
 	case obj_procedure:
 		legend = "Stored procedures";
 		break;
-	case obj_procedure_header:
+	case extr_procedure_header:
 		legend = "Stored procedures headers";
 		break;
-	case obj_procedure_body:
+	case extr_procedure_body:
 		legend = "Stored procedures bodies";
 		break;
-	case obj_function:
+	case extr_function:
 	    legend = "Stored functions";
 		break;
-    case obj_function_header:
+    case extr_function_header:
 		legend = "Stored functions headers";
 		break;
-	case obj_function_body:
+	case extr_function_body:
 		legend = "Stored functions bodies";
 		break;
 	case obj_udf:
@@ -1413,7 +1413,7 @@ static void list_procedure_headers()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			print_proc_prefix(obj_procedure_header);
+			print_proc_prefix(extr_procedure_header);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
@@ -1476,7 +1476,7 @@ static void list_procedure_bodies()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			print_proc_prefix(obj_procedure_header);
+			print_proc_prefix(extr_procedure_header);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
@@ -2790,7 +2790,7 @@ static void list_functions_ods12_headers()
 
 		if (header)
 		{
-			print_proc_prefix(obj_function_header);
+			print_proc_prefix(extr_function_header);
 			header = false;
 		}
 
@@ -2837,7 +2837,7 @@ static void list_functions_ods12_bodies()
 		SORTED BY FUN.RDB$FUNCTION_NAME
 		if (header)
 		{
-			print_proc_prefix(obj_function_body);
+			print_proc_prefix(extr_function_body);
 			header = false;
 		}
 		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
