@@ -1,3 +1,22 @@
+ 2014-07-04 14:43  fsg 
+   M src/isql/extract.epp
+   M src/isql/isql.h
+rename constants used by extract.epp to avoid future naming conflicts
+
+ 2014-07-04 08:25  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/config/config.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/yvalve/PluginManager.cpp
+Fixed CORE-4478: Failure to load provider/plugin not reported
+
  2014-07-03 09:43  alexpeshkoff 
    M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
 Fixed management for users with ' (single quote) in a name
