@@ -185,7 +185,7 @@ namespace
 			{
 				return confFile.hasData() ? newParam(confFile->findParameter(name)) : NULL;
 			}
-			catch(const Firebird::Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -198,7 +198,7 @@ namespace
 			{
 				return confFile.hasData() ? newParam(confFile->findParameter(name, value)) : NULL;
 			}
-			catch(const Firebird::Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -228,7 +228,7 @@ namespace
 
 				return newParam(&p[n + pos]);
 			}
-			catch(const Firebird::Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -273,7 +273,7 @@ namespace
 				return rc;
 			}
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			ex.stuffException(status);
 		}
@@ -553,7 +553,7 @@ namespace
 			{
 				return configuredPlugin->getDefaultConfig();
 			}
-			catch(const Exception& ex)
+			catch (const Exception& ex)
 			{
 				ex.stuffException(status);
 				return NULL;
@@ -573,7 +573,7 @@ namespace
 				firebirdConf->addRef();
 				return firebirdConf;
 			}
-			catch(const Exception& ex)
+			catch (const Exception& ex)
 			{
 				ex.stuffException(status);
 				return NULL;
@@ -802,7 +802,7 @@ namespace
 				namesList.alltrim(" \t");
 				next(status);
 			}
-			catch(const Firebird::Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -910,7 +910,7 @@ namespace
 				return;
 			}
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			ex.stuffException(status);
 		}
@@ -978,7 +978,7 @@ namespace
 					break;
 			}
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			ex.stuffException(status);
 		}
@@ -1125,7 +1125,7 @@ IConfig* FB_CARG PluginManager::getConfig(IStatus* status, const char* filename)
 		rc->addRef();
 		return rc;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(status);
 	}

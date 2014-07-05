@@ -237,7 +237,7 @@ void UserManagement::execute(USHORT id)
 					value = data->attributes()->entered() ? data->attributes()->get() : "";
 					present = true;
 				}
-				catch(const Firebird::Exception& ex)
+				catch (const Firebird::Exception& ex)
 				{
 					ex.stuffException(status);
 				}
@@ -468,7 +468,7 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 					MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
 					userManagement->list(user);
 				}
-				catch(const Firebird::Exception& ex)
+				catch (const Firebird::Exception& ex)
 				{
 					ex.stuffException(status);
 				}

@@ -504,7 +504,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		dumpData(tdbb, backup_state);
 	}
 	// Restore attachment in tdbb, probably changed inside dumpData
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		tdbb->setAttachment(attachment);
 		throw;

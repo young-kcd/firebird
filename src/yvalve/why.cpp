@@ -2869,7 +2869,7 @@ namespace
 				memcpy(buffer, events, length);
 				sem.release();
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{ }
 		}
 
@@ -2945,7 +2945,7 @@ namespace
 			{
 				ast(arg, length, events);
 			}
-			catch(const Firebird::Exception&)
+			catch (const Firebird::Exception&)
 			{ }
 		}
 

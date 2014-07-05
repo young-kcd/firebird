@@ -462,7 +462,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 								data->firstName()->get(), data->middleName()->get(), data->lastName()->get());
 				}
 			}
-			catch(const Firebird::Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -491,7 +491,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				attr.set(&u->u, "uid");
 				attr.set(&u->g, "gid");
 			}
-			catch(const Firebird::Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -928,12 +928,9 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 					int iVal;
 
 					if (val == "YES")
-					{
 						iVal = 1;
-					}
-					else if (val == "NO") {
+					else if (val == "NO")
 						iVal = 0;
-					}
 					else
 					{
 						GSEC_diag(GsecMsg103);

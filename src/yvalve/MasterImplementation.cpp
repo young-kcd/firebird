@@ -643,7 +643,7 @@ public:
 
 			timerWakeup->release();
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			ex.stuffException(status);
 		}
@@ -662,7 +662,7 @@ public:
 				timerQueue->remove(curTimer);
 			}
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			ex.stuffException(status);
 		}

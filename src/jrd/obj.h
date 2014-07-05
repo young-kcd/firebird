@@ -48,7 +48,6 @@ const int obj_collation			= 17;
 const int obj_package_header	= 18;
 const int obj_package_body		= 19;
 
-
 const int obj_type_MAX			= 20;	// keep this last!
 
 // used in the parser only / no relation with obj_type_MAX
