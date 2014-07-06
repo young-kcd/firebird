@@ -93,13 +93,6 @@ static const char* const DEFTERM	= ";";
 static const char* const DEFCHARSET	= "NONE";
 const unsigned NULL_DISP_LEN		= 6;
 
-// some constants used by extract.epp
-const int extr_function			= 20;
-const int extr_function_body		= 21;
-const int extr_function_header	= 22;
-const int extr_procedure_body	= 23;
-const int extr_procedure_header	= 24;
-
 
 // Error codes
 

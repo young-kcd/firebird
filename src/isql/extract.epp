@@ -72,7 +72,6 @@ static void get_procedure_args(const char*);
 static void get_function_args_ods12(const char*, USHORT);
 static void list_all_grants();
 static processing_state list_all_grants2(bool, const SCHAR*);
-static void list_all_procs();
 static void list_all_tables(LegacyTables flag, SSHORT);
 static void list_all_triggers();
 static void list_check();
@@ -85,8 +84,6 @@ static void listDomainConstraints();
 static void list_exceptions();
 static void list_filters();
 static void list_foreign();
-static void list_functions();
-static void list_functions_ods12();
 static void list_functions_ods12_headers();
 static void list_functions_ods12_bodies();
 static void list_functions_legacy();
@@ -1300,10 +1297,13 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 }
 
 
-static void print_proc_prefix(int obj_type)
+static void print_proc_prefix(int obj_type, bool headerOnly)
 {
-	if (obj_type == obj_procedure || obj_type == obj_udf)
+	if (obj_type == obj_procedure || obj_type == obj_udf ||
+		obj_type == obj_package_header || obj_type == obj_package_body)
+	{
 		isqlGlob.printf("%sCOMMIT WORK%s%s", NEWLINE, isqlGlob.global_Term, NEWLINE);
+	}
 
 	if (obj_type != obj_trigger)
 		isqlGlob.printf("SET AUTODDL OFF%s%s", isqlGlob.global_Term, NEWLINE);
@@ -1314,25 +1314,10 @@ static void print_proc_prefix(int obj_type)
 	switch (obj_type)
 	{
 	case obj_procedure:
-		legend = "Stored procedures";
-		break;
-	case extr_procedure_header:
-		legend = "Stored procedures headers";
-		break;
-	case extr_procedure_body:
-		legend = "Stored procedures bodies";
-		break;
-	case extr_function:
-	    legend = "Stored functions";
-		break;
-    case extr_function_header:
-		legend = "Stored functions headers";
-		break;
-	case extr_function_body:
-		legend = "Stored functions bodies";
+		legend = headerOnly ? "Stored procedures headers" : "Stored procedures bodies";
 		break;
 	case obj_udf:
-		legend = "User defined functions";
+		legend = headerOnly ? "Stored functions headers" : "Stored functions bodies";
 		break;
 	case obj_trigger:
 		legend = "Triggers only will work for SQL triggers";
@@ -1356,28 +1341,6 @@ static void print_proc_suffix(int obj_type)
 
 	if (obj_type != obj_trigger)
 		isqlGlob.printf("SET AUTODDL ON%s%s", isqlGlob.global_Term, NEWLINE);
-}
-
-static void list_all_procs()
-{
-/**************************************
- *
- *	l i s t _ a l l _ p r o c s
- *
- **************************************
- *
- * Functional description
- *
- *	lists all procedures
- *	Since procedures may reference each other, we will create all
- *	dummy procedures of the correct name, then alter these to their
- *	correct form.
- *      Add the parameter names when these procedures are created.
- *
- **************************************/
-	print_proc_prefix(obj_procedure);
-	list_procedure_headers();
-	list_procedure_bodies();
 }
 
 static void list_procedure_headers()
@@ -1413,7 +1376,7 @@ static void list_procedure_headers()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			print_proc_prefix(extr_procedure_header);
+			print_proc_prefix(obj_procedure, true);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
@@ -1476,7 +1439,7 @@ static void list_procedure_bodies()
 		SORTED BY PRC.RDB$PROCEDURE_NAME
 		if (header)
 		{
-			print_proc_prefix(extr_procedure_header);
+			print_proc_prefix(obj_procedure, false);
 			header = false;
 		}
 		fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
@@ -1580,7 +1543,7 @@ static void list_all_triggers()
 
 		if (header)
 		{
-			print_proc_prefix(obj_trigger);
+			print_proc_prefix(obj_trigger, false);
 			header = false;
 		}
 		fb_utils::exact_name(TRG.RDB$TRIGGER_NAME);
@@ -2554,26 +2517,6 @@ static void list_foreign()
 }
 
 
-static void list_functions()
-{
-/**************************************
- *
- *	l i s t _ f u n c t i o n s
- *
- **************************************
- *
- * Functional description
- *	List all functions
- *
- **************************************/
-
-	list_functions_legacy();
-
-	if (isqlGlob.major_ods >= ODS_VERSION12)
-		list_functions_ods12();
-}
-
-
 static void list_functions_legacy()
 {
 /**************************************
@@ -2764,14 +2707,6 @@ static void list_functions_legacy()
 	END_ERROR;
 }
 
-
-static void list_functions_ods12()
-{
-	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
-	list_functions_ods12_headers();
-	list_functions_ods12_bodies();
-}
-
 static void list_functions_ods12_headers()
 {
 	fb_assert(isqlGlob.major_ods >= ODS_VERSION12);
@@ -2790,7 +2725,7 @@ static void list_functions_ods12_headers()
 
 		if (header)
 		{
-			print_proc_prefix(extr_function_header);
+			print_proc_prefix(obj_udf, true);
 			header = false;
 		}
 
@@ -2837,7 +2772,7 @@ static void list_functions_ods12_bodies()
 		SORTED BY FUN.RDB$FUNCTION_NAME
 		if (header)
 		{
-			print_proc_prefix(extr_function_body);
+			print_proc_prefix(obj_udf, false);
 			header = false;
 		}
 		fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
@@ -3041,7 +2976,7 @@ static void list_package_bodies()
 
 		if (header)
 		{
-			print_proc_prefix(obj_package_body);
+			print_proc_prefix(obj_package_body, false);
 			header = false;
 		}
 
@@ -3101,7 +3036,7 @@ static void list_package_headers()
 
 		if (header)
 		{
-			print_proc_prefix(obj_package_header);
+			print_proc_prefix(obj_package_header, false);
 			header = false;
 		}
 
