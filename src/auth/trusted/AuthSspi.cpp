@@ -367,11 +367,11 @@ int WinSspiServer::authenticate(Firebird::IStatus* status,
 			sspi.getLogin(login, wheel);
 			MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 
-			writerInterface->add(login.c_str());
+			writerInterface->add(status, login.c_str());
 			if (wheel)
 			{
-				writerInterface->add(FB_DOMAIN_ANY_RID_ADMINS);
-				writerInterface->setType(FB_PREDEFINED_GROUP);
+				writerInterface->add(status, FB_DOMAIN_ANY_RID_ADMINS);
+				writerInterface->setType(status, FB_PREDEFINED_GROUP);
 			}
 
 			// ToDo: walk groups to which login belongs and list them using writerInterface
