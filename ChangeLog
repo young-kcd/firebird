@@ -1,3 +1,12 @@
+ 2014-07-06 21:15  hvlad 
+   M src/auth/trusted/AuthSspi.cpp
+Fixed Windows build
+
+ 2014-07-06 18:47  asfernandes 
+   M src/isql/extract.epp
+   M src/isql/isql.h
+Get rid of warnings and two set of constants chasing the same "number space".
+
  2014-07-05 18:36  asfernandes 
    M src/jrd/DatabaseSnapshot.cpp
    M src/jrd/UserManagement.cpp
