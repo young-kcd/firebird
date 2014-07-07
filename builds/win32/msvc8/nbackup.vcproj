@@ -388,6 +388,10 @@
 				RelativePath="..\..\..\src\jrd\isc.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\os\win32\os_utils.cpp"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
