@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
     <ClCompile Include="..\..\..\src\utilities\nbackup.cpp" />
     <ClCompile Include="..\..\..\src\utilities\nbackup\nbkMain.cpp" />
     <ClCompile Include="..\..\..\src\jrd\os\win32\guid.cpp" />

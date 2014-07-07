@@ -166,6 +166,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\gen\$(Platform)\utilities\gstat\dba.cpp" />
     <ClCompile Include="..\..\..\src\common\fb_exception.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gstat\gstatMain.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gstat\ppg.cpp" />
     <ClCompile Include="..\..\..\src\jrd\btn.cpp" />

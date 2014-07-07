@@ -164,6 +164,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gsec\call_service.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gsec\gsec.cpp" />
     <ClCompile Include="..\..\..\src\utilities\gsec\gsecMain.cpp" />

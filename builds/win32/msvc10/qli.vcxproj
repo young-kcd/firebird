@@ -165,6 +165,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
     <ClCompile Include="..\..\..\src\qli\all.cpp" />
     <ClCompile Include="..\..\..\src\qli\command.cpp" />
     <ClCompile Include="..\..\..\src\qli\compile.cpp" />

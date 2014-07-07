@@ -173,6 +173,7 @@
     <ClCompile Include="..\..\..\src\common\classes\alloc.cpp" />
     <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
     <ClCompile Include="..\..\..\src\common\classes\locks.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
     <ClCompile Include="..\..\..\src\jrd\ThreadData.cpp" />
   </ItemGroup>
   <ItemGroup>

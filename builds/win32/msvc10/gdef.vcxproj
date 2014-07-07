@@ -177,6 +177,7 @@
     <ClCompile Include="..\..\..\src\dudley\trn.cpp" />
     <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
     <ClCompile Include="..\..\..\src\jrd\isc_file.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
     <ClCompile Include="..\..\..\src\jrd\status.cpp" />
     <ClCompile Include="..\..\..\src\gpre\pretty.cpp" />
   </ItemGroup>

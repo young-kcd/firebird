@@ -32,6 +32,9 @@
     <ClCompile Include="..\..\..\src\jrd\isc.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
