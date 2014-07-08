@@ -411,7 +411,6 @@ public:
 
 	Firebird::PathName dbb_filename;	// filename string
 	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
-
 	Firebird::MetaName dbb_owner;		// database owner
 
 	Firebird::SyncObject			dbb_pools_sync;
@@ -494,6 +493,7 @@ private:
 		dbb_modules(*p),
 		dbb_extManager(*p),
 		dbb_filename(*p),
+		dbb_owner(*p),
 		dbb_database_name(*p),
 		dbb_pools(*p, 4),
 		dbb_sort_buffers(*p),

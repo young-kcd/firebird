@@ -48,12 +48,62 @@ const int obj_collation			= 17;
 const int obj_package_header	= 18;
 const int obj_package_body		= 19;
 
-const int obj_type_MAX			= 20;	// keep this last!
+//objects types for ddl operations
+const int obj_database			= 20;
+const int obj_relations			= 21;
+const int obj_views			= 22;
+const int obj_procedures		= 23;
+const int obj_functions			= 24;
+const int obj_packages			= 25;
+const int obj_generators		= 26;
+const int obj_domains			= 27;
+const int obj_exceptions		= 28;
+const int obj_roles			= 29;
+const int obj_shadows			= 30;
+const int obj_charsets			= 31;
+const int obj_collations		= 32;
+const int obj_filters			= 33;
+
+const int obj_type_MAX			= 34;	// keep this last!
 
 // used in the parser only / no relation with obj_type_MAX
-const int obj_user_or_role		= 20;
-const int obj_database			= 21;
-const int obj_schema			= 22;
-const int obj_parameter			= 23;
+const int obj_user_or_role		= 35;
+const int obj_schema			= 36;
+const int obj_parameter			= 37;
+
+static char* get_object_name(int object_type)
+{
+	switch (object_type)
+	{
+		case obj_relations:
+			return "OBJ$TABLES";
+		case obj_views:
+			return "OBJ$VIEWS";
+		case obj_procedures:
+			return "OBJ$PROCEDURES";
+		case obj_functions:
+			return "OBJ$FUNCTIONS";
+		case obj_packages:
+			return "OBJ$PACKAGES";
+		case obj_generators:
+			return "OBJ$GENERATORS";
+		case obj_filters:
+			return "OBJ$FILTERS";
+		case obj_domains:
+			return "OBJ$DOMAINS";
+		case obj_exceptions:
+			return "OBJ$EXCEPTIONS";
+		case obj_roles:
+			return "OBJ$ROLES";
+		case obj_shadows:
+			return "OBJ$SHADOWS";
+		case obj_charsets:
+			return "OBJ$CHARSETS";
+		case obj_collations:
+			return "OBJ$COLLATIONS";
+		default:
+			return "";
+	}
+}
 
 #endif // JRD_OBJ_H

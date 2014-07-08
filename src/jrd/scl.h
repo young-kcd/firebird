@@ -27,6 +27,7 @@
 #include "../common/classes/MetaName.h"
 #include "../common/classes/tree.h"
 #include "../common/security.h"
+#include "../jrd/obj.h"
 
 namespace Firebird {
 class ClumpletWriter;
@@ -41,7 +42,7 @@ const size_t ACL_BLOB_BUFFER_SIZE = MAX_USHORT; // used to read/write acl blob
 class SecurityClass
 {
 public:
-    typedef USHORT flags_t;
+    typedef ULONG flags_t;
 
 	SecurityClass(Firebird::MemoryPool &pool, const Firebird::MetaName& name)
 		: scl_flags(0), scl_name(pool, name)
@@ -76,7 +77,7 @@ const SecurityClass::flags_t SCL_update			= 256;		// UPDATE access
 const SecurityClass::flags_t SCL_references		= 512;		// REFERENCES access
 const SecurityClass::flags_t SCL_execute		= 1024;		// EXECUTE access
 const SecurityClass::flags_t SCL_usage			= 2048;		// USAGE access
-
+const SecurityClass::flags_t SCL_create			= 4096;
 
 
 // information about the user
@@ -158,17 +159,20 @@ public:
 
 // These numbers are arbitrary and only used at run-time. Can be changed if necessary at any moment.
 // We need to include here the new objects that accept ACLs.
-const SLONG SCL_object_database		= 1;
-const SLONG SCL_object_table		= 2;
-const SLONG SCL_object_package		= 3;
-const SLONG SCL_object_procedure	= 4;
-const SLONG SCL_object_function		= 5;
-const SLONG SCL_object_column		= 6;
-const SLONG SCL_object_collation	= 7;
-const SLONG SCL_object_exception	= 8;
-const SLONG SCL_object_generator	= 9;
-const SLONG SCL_object_charset		= 10;
-const SLONG SCL_object_domain		= 11;
+const SLONG SCL_object_column		= 1;
+const SLONG SCL_object_database		= obj_database;
+const SLONG SCL_object_table		= obj_relations;
+const SLONG SCL_object_package		= obj_packages;
+const SLONG SCL_object_procedure	= obj_procedures;
+const SLONG SCL_object_function		= obj_functions;
+const SLONG SCL_object_collation	= obj_collations;
+const SLONG SCL_object_exception	= obj_exceptions;
+const SLONG SCL_object_generator	= obj_generators;
+const SLONG SCL_object_charset		= obj_charsets;
+const SLONG SCL_object_domain		= obj_domains;
+const SLONG SCL_object_view			= obj_views;
+const SLONG SCL_object_role			= obj_roles;
+const SLONG SCL_object_filter		= obj_filters;
 
 } //namespace Jrd
 

@@ -806,6 +806,8 @@ const
 	gds_set_invalid_role                 = 335545091;
 	gds_cursor_not_positioned            = 335545092;
 	gds_dup_attribute                    = 335545093;
+	gds_dyn_no_priv                      = 335545094;
+	gds_dsql_cant_grant_option           = 335545095;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

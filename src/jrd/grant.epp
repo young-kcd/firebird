@@ -141,7 +141,11 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 			break;
 
 		default:
-			break;
+			if (id >= obj_database &&
+				id < obj_type_MAX)
+			{
+				priv = OWNER_PRIVS;
+			}
 	}
 
 	grant_user(acl, owner, obj_user, priv);
@@ -471,6 +475,20 @@ static void get_object_info(thread_db* tdbb,
 			view = false;
 		}
 		END_FOR
+	}
+	else if (obj_type == obj_database)
+	{
+		s_class = attachment->att_security_class->scl_name;
+		default_class = "";
+		owner = tdbb->getDatabase()->dbb_owner;
+		view = false;
+	}
+	else
+	{
+		s_class = get_object_name(obj_type);
+		default_class = "";
+		owner = tdbb->getDatabase()->dbb_owner;
+		view = false;
 	}
 }
 
@@ -881,6 +899,15 @@ static SecurityClass::flags_t trans_sql_priv(const TEXT* privileges)
 		break;
 	case 'G':
 		priv |= SCL_usage;
+		break;
+	case 'C':
+		priv |= SCL_create;
+		break;
+	case 'L':
+		priv |= SCL_alter;
+		break;
+	case 'O':
+		priv |= SCL_drop;
 		break;
 	}
 

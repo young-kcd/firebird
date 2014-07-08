@@ -50,7 +50,10 @@ const int priv_references	= 10;		// REFERENCES for foreign key
 const int priv_execute		= 11;		// EXECUTE (procedure, function, package)
 // New in FB3
 const int priv_usage		= 12;		// USAGE (domain, exception, sequence, collation)
-const int priv_max			= 13;
+const int priv_create		= 13;		// Create object
+const int priv_alter_any	= 14;		// Alter any object
+const int priv_drop_any		= 15;		// Drop any object
+const int priv_max		= 16;
 
 // Identification criterias
 
@@ -69,7 +72,8 @@ const int id_sql_role		= 11;		// SQL role
 // New in FB3
 const int id_package		= 12;		// Package name
 const int id_function		= 13;		// Function name
-const int id_max			= 14;
+const int id_filter			= 14;		// Filter name
+const int id_max			= 15;
 
 /* Format of access control list:
 

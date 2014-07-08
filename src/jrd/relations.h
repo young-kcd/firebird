@@ -276,6 +276,7 @@ RELATION(nam_filters, rel_filters, ODS_8_0, rel_persistent)
 	FIELD(f_flt_input, nam_in_type, fld_sub_type, 1, ODS_8_0)
 	FIELD(f_flt_output, nam_out_type, fld_sub_type, 1, ODS_8_0)
 	FIELD(f_flt_sys_flag, nam_sys_flag, fld_flag, 0, ODS_8_0)
+	FIELD(f_flt_class, nam_class, fld_class, 1, ODS_12_0)
 END_RELATION
 
 // Relation 17 (RDB$TRIGGER_MESSAGES)
@@ -448,6 +449,7 @@ RELATION(nam_roles, rel_roles, ODS_9_0, rel_persistent)
 	FIELD(f_rol_owner, nam_owner, fld_user, 1, ODS_9_0)
 	FIELD(f_rol_desc, nam_description, fld_description, 1, ODS_11_0)
 	FIELD(f_rol_sys_flag, nam_sys_flag, fld_flag, 1, ODS_11_0)
+	FIELD(f_rol_class, nam_class, fld_class, 1, ODS_12_0)
 END_RELATION
 
 // Relation 32 (RDB$BACKUP_HISTORY)

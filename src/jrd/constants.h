@@ -132,6 +132,8 @@ const char* const SQL_SECCLASS_PREFIX		= "SQL$";
 const int SQL_SECCLASS_PREFIX_LEN			= 4;
 const char* const SQL_FLD_SECCLASS_PREFIX	= "SQL$GRANT";
 const int SQL_FLD_SECCLASS_PREFIX_LEN		= 9;
+const char* const GEN_SECCLASS_PREFIX		= "GEN$";
+const int GEN_SECCLASS_PREFIX_LEN			= 4;
 
 // Automatically created check constraints for unnamed PRIMARY and UNIQUE declarations.
 const char* const IMPLICIT_INTEGRITY_PREFIX = "INTEG_";

@@ -72,6 +72,7 @@ const int FB_MAX_ACL_SIZE	= 4096;
 static void add_index_set(thread_db*);
 static void add_security_to_sys_obj(thread_db*, const MetaName&, USHORT, const MetaName&,
 	USHORT = 0, const UCHAR* = NULL);
+static void add_security_class(thread_db* tdbb, const MetaName& class_name, USHORT acl_length, const UCHAR* acl);
 static void add_security_to_sys_rel(thread_db*, const MetaName&,
 	const TEXT*, const USHORT, const UCHAR*);
 static void store_generator(thread_db*, const gen*, AutoRequest&, const MetaName&);
@@ -476,6 +477,13 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	{
 		add_security_to_sys_obj(tdbb, ownerName, obj_collation, collation->name, length, buffer);
 	}
+
+	for (int ddl_obj = obj_database + 1; ddl_obj < obj_type_MAX; ddl_obj++)
+	{
+		add_security_class(tdbb, get_object_name(ddl_obj), length, buffer);
+	}
+
+	add_security_to_sys_obj(tdbb, ownerName, obj_database, "", length, buffer);
 
 	// Add security on system tables
 
@@ -1137,6 +1145,17 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 		}
 		END_FOR
 	}
+	else if (obj_type == obj_database)
+	{
+		FOR(REQUEST_HANDLE handle) DB IN RDB$DATABASE
+		{
+			MODIFY DB USING
+				DB.RDB$SECURITY_CLASS.NULL = FALSE;
+				PAD(security_class.c_str(), DB.RDB$SECURITY_CLASS);
+			END_MODIFY
+		}
+		END_FOR
+	}
 
 	handle.reset();
 
@@ -1152,6 +1171,30 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 			PRIV.RDB$OBJECT_TYPE = obj_type;
 		END_STORE
 	}
+}
+
+
+// Add security class.
+static void add_security_class(thread_db* tdbb, const MetaName& class_name, USHORT acl_length, const UCHAR* acl)
+{
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	bid blob_id;
+	attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &blob_id,
+								ByteChunk(acl, acl_length));
+
+	AutoRequest handle;
+
+	STORE(REQUEST_HANDLE handle)
+		CLS IN RDB$SECURITY_CLASSES
+	{
+		PAD(class_name.c_str(), CLS.RDB$SECURITY_CLASS);
+		CLS.RDB$ACL = blob_id;
+	}
+	END_STORE
+
+	handle.reset();
 }
 
 

@@ -838,6 +838,14 @@ grant0($node)
 			$node->grantAdminOption = $7;
 			$node->grantor = $8;
 		}
+	| ddl_privileges(NOTRIAL(&$node->privileges)) object
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{ 
+			$node->object = $2;
+			$node->grantAdminOption = $5;
+			$node->grantor = $6;
+			$node->isDdl = true;
+		}
 	| role_name_list(NOTRIAL(&$node->roles)) TO role_grantee_list(NOTRIAL(&$node->users))
 			role_admin_option granted_by
 		{
@@ -846,6 +854,39 @@ grant0($node)
 		}
 	;
 
+%type <granteeClause> object
+object : TABLE
+		{ $$ = newNode<GranteeClause>(obj_relations, get_object_name(obj_relations)); }
+	| VIEW
+		{ $$ = newNode<GranteeClause>(obj_views, get_object_name(obj_views)); }
+	| PROCEDURE
+		{ $$ = newNode<GranteeClause>(obj_procedures, get_object_name(obj_procedures)); }
+	| FUNCTION
+		{ $$ = newNode<GranteeClause>(obj_functions, get_object_name(obj_functions)); }
+	| PACKAGE
+		{ $$ = newNode<GranteeClause>(obj_packages, get_object_name(obj_packages)); }
+	| GENERATOR 
+		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
+	| SEQUENCE 
+		{ $$ = newNode<GranteeClause>(obj_generators, get_object_name(obj_generators)); }
+	| KW_DOMAIN 
+		{ $$ = newNode<GranteeClause>(obj_domains, get_object_name(obj_domains)); }
+	| EXCEPTION
+		{ $$ = newNode<GranteeClause>(obj_exceptions, get_object_name(obj_exceptions)); }
+	| ROLE
+		{ $$ = newNode<GranteeClause>(obj_roles, get_object_name(obj_roles)); }
+	| SHADOW
+		{ $$ = newNode<GranteeClause>(obj_shadows, get_object_name(obj_shadows)); }
+	| DATABASE
+		{ $$ = newNode<GranteeClause>(obj_database, get_object_name(obj_database)); }
+	| CHARACTER SET
+		{ $$ = newNode<GranteeClause>(obj_charsets, get_object_name(obj_charsets)); }
+	| COLLATION
+		{ $$ = newNode<GranteeClause>(obj_collations, get_object_name(obj_collations)); }
+	| FILTER
+		{ $$ = newNode<GranteeClause>(obj_filters, get_object_name(obj_filters)); }
+	;
+	
 table_noise
 	: // nothing
 	| TABLE
@@ -872,7 +913,6 @@ execute_privilege($privilegeArray)
 %type usage_privilege(<privilegeArray>)
 usage_privilege($privilegeArray)
 	: USAGE							{ $privilegeArray->add(PrivilegeClause('G', NULL)); }
-	;
 
 %type privilege(<privilegeArray>)
 privilege($privilegeArray)
@@ -881,6 +921,26 @@ privilege($privilegeArray)
 	| KW_DELETE						{ $privilegeArray->add(PrivilegeClause('D', NULL)); }
 	| UPDATE column_parens_opt		{ $privilegeArray->add(PrivilegeClause('U', $2)); }
 	| REFERENCES column_parens_opt	{ $privilegeArray->add(PrivilegeClause('R', $2)); }
+	;
+
+%type ddl_privileges(<privilegeArray>)
+ddl_privileges($privilegeArray)
+	: ALL			{ $privilegeArray->add(PrivilegeClause('C', NULL)); $privilegeArray->add(PrivilegeClause('L', NULL)); $privilegeArray->add(PrivilegeClause('O', NULL)); }
+	| ALL PRIVILEGES	{ $privilegeArray->add(PrivilegeClause('C', NULL)); $privilegeArray->add(PrivilegeClause('L', NULL)); $privilegeArray->add(PrivilegeClause('O', NULL)); }
+	| ddl_privilege_list($privilegeArray)
+	;
+
+%type ddl_privilege_list(<privilegeArray>)
+ddl_privilege_list($privilegeArray)
+	: ddl_privilege($privilegeArray)
+	| ddl_privilege_list ',' ddl_privilege($privilegeArray)
+	;
+
+%type ddl_privilege(<privilegeArray>)
+ddl_privilege($privilegeArray)
+	: CREATE						{ $privilegeArray->add(PrivilegeClause('C', NULL)); }
+	| ALTER ANY						{ $privilegeArray->add(PrivilegeClause('L', NULL)); }
+	| DROP ANY						{ $privilegeArray->add(PrivilegeClause('O', NULL)); }
 	;
 
 %type <boolVal> grant_option
@@ -995,6 +1055,14 @@ revoke0($node)
 			$node->object = newNode<GranteeClause>(obj_collation, *$5);
 			$node->grantAdminOption = $1;
 			$node->grantor = $8;
+		}
+	| rev_grant_option ddl_privileges(NOTRIAL(&$node->privileges)) object
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = $3;
+			$node->grantAdminOption = $1;
+			$node->grantor = $6;
+			$node->isDdl = true;
 		}
 	| rev_admin_option role_name_list(NOTRIAL(&$node->roles))
 			FROM role_grantee_list(NOTRIAL(&$node->users)) granted_by

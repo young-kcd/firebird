@@ -798,6 +798,8 @@ Data source : @4"},		/* eds_statement */
 	{335545091, "Role @1 is invalid or unavailable"},		/* set_invalid_role */
 	{335545092, "Cursor @1 is not positioned in a valid record"},		/* cursor_not_positioned */
 	{335545093, "Duplicated user attribute @1"},		/* dup_attribute */
+	{335545094, "There is no privilege for this operation"},		/* dyn_no_priv */
+	{335545095, "Using GRANT OPTION on @1 not allowed"},		/* dsql_cant_grant_option */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

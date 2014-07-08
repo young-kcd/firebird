@@ -1396,6 +1396,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			{
 				SCL_check_relation(tdbb, &desc, SCL_drop);
 			}
+
 			if (EVL_field(0, rpb->rpb_record, f_rel_id, &desc2))
 			{
 				id = MOV_get_long(&desc2, 0);
@@ -1577,6 +1578,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				EVL_field(0, rpb->rpb_record, f_arg_fun_name, &desc);
 				SCL_check_function(tdbb, &desc, SCL_control);
 			}
+
 			break;
 
 		case rel_prc_prms:
@@ -1621,6 +1623,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_files:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			{
+				SCL_check_database(tdbb, SCL_alter);
 				const bool name_defined = EVL_field(0, rpb->rpb_record, f_file_name, &desc);
 				const USHORT file_flags = EVL_field(0, rpb->rpb_record, f_file_flags, &desc2) ?
 					MOV_get_long(&desc2, 0) : 0;
@@ -2677,6 +2680,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_files:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			{
+				SCL_check_database(tdbb, SCL_alter);
 				SSHORT new_rel_flags, old_rel_flags;
 				EVL_field(0, new_rpb->rpb_record, f_file_name, &desc1);
 				if (EVL_field(0, new_rpb->rpb_record, f_file_flags, &desc2) &&
@@ -3036,6 +3040,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	DeferredWork* work = NULL;
 	MetaName package_name;
 	USHORT object_id;
+	MetaName object_name;
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
@@ -3055,7 +3060,6 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		switch ((RIDS) relation->rel_id)
 		{
 		case rel_pages:
-		case rel_database:
 		case rel_formats:
 		case rel_trans:
 		case rel_rcon:
@@ -3083,6 +3087,10 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_log:
 		case rel_global_auth_mapping:
 			protect_system_table_insert(tdbb, request, relation, true);
+
+		case rel_database:
+			if (set_security_class(tdbb, rpb->rpb_record, f_dat_class))
+				DFW_post_work(transaction, dfw_grant, &desc, obj_database);
 			break;
 
 		case rel_relations:
@@ -3188,11 +3196,19 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_fields:
 			EVL_field(0, rpb->rpb_record, f_fld_name, &desc);
+			MOV_get_metaname(&desc, object_name);
+			SCL_check_domain(tdbb, object_name, SCL_create);
 			DFW_post_work(transaction, dfw_create_field, &desc, 0);
 			set_system_flag(tdbb, rpb->rpb_record, f_fld_sys_flag);
 			set_owner_name(tdbb, rpb->rpb_record, f_fld_owner);
 			if (set_security_class(tdbb, rpb->rpb_record, f_fld_class))
 				DFW_post_work(transaction, dfw_grant, &desc, obj_field);
+			break;
+
+		case rel_filters:
+			EVL_field(0, rpb->rpb_record, f_flt_name, &desc);
+			if (set_security_class(tdbb, rpb->rpb_record, f_flt_class))
+				DFW_post_work(transaction, dfw_grant, &desc, obj_blob_filter);
 			break;
 
 		case rel_files:

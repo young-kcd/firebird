@@ -277,6 +277,7 @@
 	const USHORT  f_flt_input = 4;
 	const USHORT  f_flt_output = 5;
 	const USHORT  f_flt_sys_flag = 6;
+	const USHORT  f_flt_class = 7;
 
 
 // Relation 17 (RDB$TRIGGER_MESSAGES)
@@ -449,6 +450,7 @@
 	const USHORT  f_rol_owner = 1;
 	const USHORT  f_rol_desc = 2;
 	const USHORT  f_rol_sys_flag = 3;
+	const USHORT  f_rol_class = 4;
 
 
 // Relation 32 (RDB$BACKUP_HISTORY)

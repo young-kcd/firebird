@@ -94,7 +94,10 @@ static const TEXT* acl_privs[priv_max] =
 	"update",
 	"references",
 	"execute",
-	"usage"
+	"usage",
+	"create",
+	"alter_any",
+	"drop_any"
 };
 
 static const TEXT* acl_ids[id_max] =

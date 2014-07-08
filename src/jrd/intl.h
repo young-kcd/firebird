@@ -70,6 +70,9 @@
 
 #define	COLLATE_NONE			0	// No special collation, use codepoint order
 
+#define INTL_ASSIGN_DSC(dsc, cs, coll)   \
+	{ (dsc)->dsc_sub_type = (SSHORT) ((coll) << 8 | (cs)); }
+
 #define INTL_GET_TTYPE(dsc)   \
 	  ((dsc)->dsc_sub_type)
 

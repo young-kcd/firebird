@@ -34,6 +34,7 @@
 #include "../dsql/pass1_proto.h"
 #include "../common/StatusArg.h"
 #include "../jrd/Attachment.h"
+#include "../jrd/scl_proto.h"
 
 
 using namespace Firebird;
@@ -458,6 +459,18 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 }
 
 
+bool CreateAlterPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+{
+	dsc dscName;
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	if (alter)
+		SCL_check_package(tdbb, &dscName, SCL_alter);
+	else
+		SCL_check_create_access(tdbb, SCL_object_package);
+	return true;
+}
+
+
 void CreateAlterPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
@@ -616,6 +629,15 @@ void DropPackageNode::print(string& text) const
 		"DropPackageNode\n"
 		"  name: '%s'\n",
 		name.c_str());
+}
+
+
+bool DropPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+{
+	dsc dscName;
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	SCL_check_package(tdbb, &dscName, SCL_drop);
+	return true;
 }
 
 
@@ -835,6 +857,13 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 
 	return DdlNode::dsqlPass(dsqlScratch);
+}
+
+
+bool CreatePackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+{
+	SCL_check_create_access(tdbb, SCL_object_package);
+	return true;
 }
 
 
@@ -1060,6 +1089,15 @@ void DropPackageBodyNode::print(string& text) const
 		"DropPackageBodyNode\n"
 		"  name: '%s'\n",
 		name.c_str());
+}
+
+
+bool DropPackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
+{
+	dsc dscName;
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	SCL_check_package(tdbb, &dscName, SCL_drop);
+	return true;
 }
 
 

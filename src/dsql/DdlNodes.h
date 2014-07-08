@@ -153,6 +153,11 @@ public:
 		text.printf("RecreateNode\n");
 	}
 
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction)
+	{
+		return dropNode.checkPermission(tdbb, transaction) && createNode->checkPermission(tdbb, transaction);
+	}
+
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 	{
 		// run all statements under savepoint control
@@ -196,6 +201,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -226,6 +232,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -275,6 +282,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -334,6 +342,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -366,6 +375,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -410,6 +420,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -467,6 +478,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -551,6 +563,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -624,6 +637,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -663,6 +677,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 	void setAttribute(USHORT attribute)
@@ -721,6 +736,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -747,6 +763,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -785,6 +802,7 @@ public:
 		const Firebird::MetaName& newFieldName);
 
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -822,6 +840,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -853,6 +872,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -889,6 +909,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -940,6 +961,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -982,6 +1004,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1335,6 +1358,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1362,6 +1386,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1392,6 +1417,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1429,6 +1455,7 @@ public:
 public:
 	virtual void print(Firebird::string& text) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1510,6 +1537,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1540,6 +1568,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1565,6 +1594,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1593,6 +1623,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1640,6 +1671,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1668,6 +1700,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1695,6 +1728,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1723,6 +1757,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1747,6 +1782,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1787,6 +1823,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1825,6 +1862,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1857,6 +1895,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1915,6 +1954,7 @@ public:
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1942,12 +1982,14 @@ public:
 		  object(NULL),
 		  users(p),
 		  grantAdminOption(false),
-		  grantor(NULL)
+		  grantor(NULL),
+		  isDdl(false)
 	{
 	}
 
 public:
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
@@ -1966,6 +2008,8 @@ private:
 		const Firebird::MetaName& fieldName, bool topLevel);
 	static void checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transaction,
 			const Firebird::MetaName& grantor, const Firebird::MetaName& roleName);
+	static void checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transaction,
+			const Firebird::MetaName& grantor, const char* privilege, const Firebird::MetaName& objName);
 	static void storePrivilege(thread_db* tdbb, jrd_tra* transaction,
 		const Firebird::MetaName& object, const Firebird::MetaName& user,
 		const Firebird::MetaName& field, const TEXT* privilege, SSHORT userType,
@@ -1987,6 +2031,10 @@ private:
 			case 'G': return "Usage";
 			case 'M': return "Role";
 			case 'R': return "Reference";
+			//ddl
+			case 'C': return "Create";
+			case 'L': return "Alter";
+			case 'O': return "DROP";
 		}
 
 		return "<Unknown>";
@@ -2000,6 +2048,8 @@ public:
 	Firebird::Array<GranteeClause> users;
 	bool grantAdminOption;
 	NestConst<Firebird::MetaName> grantor;
+	// ddl rights	
+	bool isDdl;
 };
 
 
@@ -2038,6 +2088,7 @@ public:
 	}
 
 	virtual void print(Firebird::string& text) const;
+	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 protected:
