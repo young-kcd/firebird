@@ -1,3 +1,36 @@
+ 2014-07-07 06:57  hvlad 
+   M builds/win32/msvc10/gdef.vcxproj
+   M builds/win32/msvc10/gdef.vcxproj.filters
+   M builds/win32/msvc10/gfix.vcxproj
+   M builds/win32/msvc10/gfix.vcxproj.filters
+   M builds/win32/msvc10/gsec.vcxproj
+   M builds/win32/msvc10/gsec.vcxproj.filters
+   M builds/win32/msvc10/gstat.vcxproj
+   M builds/win32/msvc10/gstat.vcxproj.filters
+   M builds/win32/msvc10/nbackup.vcxproj
+   M builds/win32/msvc10/nbackup.vcxproj.filters
+   M builds/win32/msvc10/qli.vcxproj
+   M builds/win32/msvc10/qli.vcxproj.filters
+Fixed MSVC10 build
+
+ 2014-07-07 06:45  hvlad 
+   M builds/win32/msvc9/gdef.vcproj
+   M builds/win32/msvc9/gfix.vcproj
+   M builds/win32/msvc9/gsec.vcproj
+   M builds/win32/msvc9/gstat.vcproj
+   M builds/win32/msvc9/nbackup.vcproj
+   M builds/win32/msvc9/qli.vcproj
+Fixed MSVC9 build
+
+ 2014-07-07 06:41  hvlad 
+   M builds/win32/msvc8/gdef.vcproj
+   M builds/win32/msvc8/gfix.vcproj
+   M builds/win32/msvc8/gsec.vcproj
+   M builds/win32/msvc8/gstat.vcproj
+   M builds/win32/msvc8/nbackup.vcproj
+   M builds/win32/msvc8/qli.vcproj
+Fixed MSVC8 build
+
  2014-07-03 07:48  alexpeshkoff 
    M configure.in
    M src/jrd/os/posix/unix.cpp
