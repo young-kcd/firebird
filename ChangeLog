@@ -1,3 +1,41 @@
+ 2014-07-08 07:35  roman-simakov 
+   A doc/sql.extensions/README.ddl_access.txt
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/PackageNodes.epp
+   M src/dsql/PackageNodes.h
+   M src/dsql/parse.y
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/ids.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/Database.h
+   M src/jrd/acl.h
+   M src/jrd/constants.h
+   M src/jrd/drq.h
+   M src/jrd/filters.cpp
+   M src/jrd/grant.epp
+   M src/jrd/ini.epp
+   M src/jrd/intl.h
+   M src/jrd/jrd.h
+   M src/jrd/met.epp
+   M src/jrd/obj.h
+   M src/jrd/relations.h
+   M src/jrd/scl.epp
+   M src/jrd/scl.h
+   M src/jrd/scl_proto.h
+   M src/jrd/vio.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-735: User rights for metadata changes.
+We check DDL in DDL nodes and skip at vio level. vio level still exists for direct metadata editing.
+
  2014-07-06 21:15  hvlad 
    M src/auth/trusted/AuthSspi.cpp
 Fixed Windows build
