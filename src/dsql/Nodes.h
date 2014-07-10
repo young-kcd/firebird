@@ -158,7 +158,7 @@ class SecureDdlNodeExecute
 {
 public:
 	explicit SecureDdlNodeExecute(thread_db* tdbb, DdlNode* ddlNode,
-									DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
+		DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
 	~SecureDdlNodeExecute()
 	{

@@ -75,7 +75,7 @@ void WriterImplementation::add(Firebird::IStatus* st, const char* name)
 		}
 		type = "USER";
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(st);
 	}
@@ -105,7 +105,7 @@ void WriterImplementation::setType(Firebird::IStatus* st, const char* value)
 		if (value)
 			type = value;
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(st);
 	}
@@ -122,7 +122,7 @@ void WriterImplementation::setDb(Firebird::IStatus* st, const char* value)
 			current.insertPath(AuthReader::AUTH_SECURE_DB, target);
 		}
 	}
-	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(st);
 	}

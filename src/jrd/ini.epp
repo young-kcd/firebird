@@ -478,7 +478,7 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 		add_security_to_sys_obj(tdbb, ownerName, obj_collation, collation->name, length, buffer);
 	}
 
-	for (int ddl_obj = obj_database + 1; ddl_obj < obj_type_MAX; ddl_obj++)
+	for (int ddl_obj = obj_database + 1; ddl_obj < obj_type_MAX; ++ddl_obj)
 	{
 		add_security_class(tdbb, get_object_name(ddl_obj), length, buffer);
 	}
@@ -1182,7 +1182,7 @@ static void add_security_class(thread_db* tdbb, const MetaName& class_name, USHO
 
 	bid blob_id;
 	attachment->storeBinaryBlob(tdbb, attachment->getSysTransaction(), &blob_id,
-								ByteChunk(acl, acl_length));
+		ByteChunk(acl, acl_length));
 
 	AutoRequest handle;
 
@@ -1193,8 +1193,6 @@ static void add_security_class(thread_db* tdbb, const MetaName& class_name, USHO
 		CLS.RDB$ACL = blob_id;
 	}
 	END_STORE
-
-	handle.reset();
 }
 
 

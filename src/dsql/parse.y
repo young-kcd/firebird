@@ -855,7 +855,8 @@ grant0($node)
 	;
 
 %type <granteeClause> object
-object : TABLE
+object
+	: TABLE
 		{ $$ = newNode<GranteeClause>(obj_relations, get_object_name(obj_relations)); }
 	| VIEW
 		{ $$ = newNode<GranteeClause>(obj_views, get_object_name(obj_views)); }
@@ -925,8 +926,18 @@ privilege($privilegeArray)
 
 %type ddl_privileges(<privilegeArray>)
 ddl_privileges($privilegeArray)
-	: ALL			{ $privilegeArray->add(PrivilegeClause('C', NULL)); $privilegeArray->add(PrivilegeClause('L', NULL)); $privilegeArray->add(PrivilegeClause('O', NULL)); }
-	| ALL PRIVILEGES	{ $privilegeArray->add(PrivilegeClause('C', NULL)); $privilegeArray->add(PrivilegeClause('L', NULL)); $privilegeArray->add(PrivilegeClause('O', NULL)); }
+	: ALL
+		{
+			$privilegeArray->add(PrivilegeClause('C', NULL));
+			$privilegeArray->add(PrivilegeClause('L', NULL));
+			$privilegeArray->add(PrivilegeClause('O', NULL));
+		}
+	| ALL PRIVILEGES
+		{
+			$privilegeArray->add(PrivilegeClause('C', NULL));
+			$privilegeArray->add(PrivilegeClause('L', NULL));
+			$privilegeArray->add(PrivilegeClause('O', NULL));
+		}
 	| ddl_privilege_list($privilegeArray)
 	;
 

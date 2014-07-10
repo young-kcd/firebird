@@ -2031,7 +2031,7 @@ private:
 			case 'G': return "Usage";
 			case 'M': return "Role";
 			case 'R': return "Reference";
-			//ddl
+			// ddl
 			case 'C': return "Create";
 			case 'L': return "Alter";
 			case 'O': return "DROP";
@@ -2048,7 +2048,7 @@ public:
 	Firebird::Array<GranteeClause> users;
 	bool grantAdminOption;
 	NestConst<Firebird::MetaName> grantor;
-	// ddl rights	
+	// ddl rights
 	bool isDdl;
 };
 

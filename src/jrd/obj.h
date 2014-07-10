@@ -48,17 +48,17 @@ const int obj_collation			= 17;
 const int obj_package_header	= 18;
 const int obj_package_body		= 19;
 
-//objects types for ddl operations
+// objects types for ddl operations
 const int obj_database			= 20;
 const int obj_relations			= 21;
-const int obj_views			= 22;
+const int obj_views				= 22;
 const int obj_procedures		= 23;
 const int obj_functions			= 24;
 const int obj_packages			= 25;
 const int obj_generators		= 26;
 const int obj_domains			= 27;
 const int obj_exceptions		= 28;
-const int obj_roles			= 29;
+const int obj_roles				= 29;
 const int obj_shadows			= 30;
 const int obj_charsets			= 31;
 const int obj_collations		= 32;

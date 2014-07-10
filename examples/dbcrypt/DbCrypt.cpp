@@ -255,7 +255,7 @@ public:
 			p->addRef();
 			return p;
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			ex.stuffException(status);
 		}

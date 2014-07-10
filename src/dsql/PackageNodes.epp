@@ -462,7 +462,7 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool CreateAlterPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (alter)
 		SCL_check_package(tdbb, &dscName, SCL_alter);
 	else
@@ -635,7 +635,7 @@ void DropPackageNode::print(string& text) const
 bool DropPackageNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_package(tdbb, &dscName, SCL_drop);
 	return true;
 }
@@ -1095,7 +1095,7 @@ void DropPackageBodyNode::print(string& text) const
 bool DropPackageBodyNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_package(tdbb, &dscName, SCL_drop);
 	return true;
 }

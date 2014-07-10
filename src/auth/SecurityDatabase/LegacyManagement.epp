@@ -560,74 +560,74 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 				Firebird::LocalStatus s2;
 				Firebird::IStatus* s = st;
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
-				  try
-				  {
+					try
 					{
-						Firebird::string attr, a1, a2, a3;
+						{
+							Firebird::string attr, a1, a2, a3;
 
-						if (!U.PLG$UID.NULL)
-							a1.printf("Uid=%d\n", U.PLG$UID);
+							if (!U.PLG$UID.NULL)
+								a1.printf("Uid=%d\n", U.PLG$UID);
 
-						if (!U.PLG$GID.NULL)
-							a2.printf("Gid=%d\n", U.PLG$GID);
+							if (!U.PLG$GID.NULL)
+								a2.printf("Gid=%d\n", U.PLG$GID);
 
-						if (!U.PLG$GROUP_NAME.NULL)
-							a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
+							if (!U.PLG$GROUP_NAME.NULL)
+								a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
 
-						attr = a1 + a2 + a3;
-						user->attributes()->set(s, attr.c_str());
+							attr = a1 + a2 + a3;
+							user->attributes()->set(s, attr.c_str());
+							check(s);
+							user->attributes()->setEntered(s, attr.hasData() ? 1 : 0);
+							check(s);
+						}
+
+						user->userName()->set(s, U.PLG$USER_NAME);
 						check(s);
-						user->attributes()->setEntered(s, attr.hasData() ? 1 : 0);
+						user->userName()->setEntered(s, U.PLG$USER_NAME.NULL ? 0 : 1);
 						check(s);
+						user->password()->set(s, "");
+						check(s);
+						user->password()->setEntered(s, 0);
+						check(s);
+						user->firstName()->set(s, U.PLG$FIRST_NAME);
+						check(s);
+						user->firstName()->setEntered(s, U.PLG$FIRST_NAME.NULL ? 0 : 1);
+						check(s);
+						user->middleName()->set(s, U.PLG$MIDDLE_NAME);
+						check(s);
+						user->middleName()->setEntered(s, U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
+						check(s);
+						user->lastName()->set(s, U.PLG$LAST_NAME);
+						check(s);
+						user->lastName()->setEntered(s, U.PLG$LAST_NAME.NULL ? 0 : 1);
+						check(s);
+
+						user->admin()->set(s, 0);
+						check(s);
+						user->admin()->setEntered(s, 1);
+						check(s);
+
+						FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
+							 P IN RDB$USER_PRIVILEGES
+							 WITH P.RDB$USER EQ U.PLG$USER_NAME AND
+								  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
+								  P.RDB$PRIVILEGE EQ 'M'
+						{
+							user->admin()->set(s, 1);
+						}
+						END_FOR
+						check(s);
+
+						callback->list(s, user);
+						check(s);
+
+						found = true;
 					}
-
-					user->userName()->set(s, U.PLG$USER_NAME);
-					check(s);
-					user->userName()->setEntered(s, U.PLG$USER_NAME.NULL ? 0 : 1);
-					check(s);
-					user->password()->set(s, "");
-					check(s);
-					user->password()->setEntered(s, 0);
-					check(s);
-					user->firstName()->set(s, U.PLG$FIRST_NAME);
-					check(s);
-					user->firstName()->setEntered(s, U.PLG$FIRST_NAME.NULL ? 0 : 1);
-					check(s);
-					user->middleName()->set(s, U.PLG$MIDDLE_NAME);
-					check(s);
-					user->middleName()->setEntered(s, U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
-					check(s);
-					user->lastName()->set(s, U.PLG$LAST_NAME);
-					check(s);
-					user->lastName()->setEntered(s, U.PLG$LAST_NAME.NULL ? 0 : 1);
-					check(s);
-
-					user->admin()->set(s, 0);
-					check(s);
-					user->admin()->setEntered(s, 1);
-					check(s);
-
-					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
-						 P IN RDB$USER_PRIVILEGES
-						 WITH P.RDB$USER EQ U.PLG$USER_NAME AND
-							  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
-							  P.RDB$PRIVILEGE EQ 'M'
+					catch(const Firebird::Exception& ex)
 					{
-						user->admin()->set(s, 1);
+					  	ex.stuffException(s);
+					  	s = &s2;
 					}
-					END_FOR
-					check(s);
-
-					callback->list(s, user);
-					check(s);
-
-					found = true;
-				  }
-				  catch(const Firebird::Exception& ex)
-				  {
-				  	ex.stuffException(s);
-				  	s = &s2;
-				  }
 				END_FOR
 				ON_ERROR
 					ret = GsecMsg28;	// gsec - find/display record error
@@ -644,71 +644,70 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 						WITH U.PLG$USER_NAME EQ user->userName()->get()
 
-				  try
-				  {
-					if (!U.PLG$UID.NULL)
-						a1.printf("Uid=%d\n", U.PLG$UID);
-
-					if (!U.PLG$GID.NULL)
-						a2.printf("Gid=%d\n", U.PLG$GID);
-
-					if (!U.PLG$GROUP_NAME.NULL)
-						a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
-
-					attr = a1 + a2 + a3;
-					user->attributes()->set(s, attr.c_str());
-					check(s);
-					user->attributes()->setEntered(s, attr.hasData() ? 1 : 0);
-					check(s);
-
-					user->userName()->set(s, U.PLG$USER_NAME);
-					check(s);
-					user->userName()->setEntered(s, U.PLG$USER_NAME.NULL ? 0 : 1);
-					check(s);
-					user->password()->set(s, "");
-					check(s);
-					user->password()->setEntered(s, 0);
-					check(s);
-					user->firstName()->set(s, U.PLG$FIRST_NAME);
-					check(s);
-					user->firstName()->setEntered(s, U.PLG$FIRST_NAME.NULL ? 0 : 1);
-					check(s);
-					user->middleName()->set(s, U.PLG$MIDDLE_NAME);
-					check(s);
-					user->middleName()->setEntered(s, U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
-					check(s);
-					user->lastName()->set(s, U.PLG$LAST_NAME);
-					check(s);
-					user->lastName()->setEntered(s, U.PLG$LAST_NAME.NULL ? 0 : 1);
-					check(s);
-
-					user->admin()->set(s, 0);
-					check(s);
-					user->admin()->setEntered(s, 1);
-					check(s);
-
-
-					FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
-						 P IN RDB$USER_PRIVILEGES
-						 WITH P.RDB$USER EQ U.PLG$USER_NAME AND
-							  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
-							  P.RDB$PRIVILEGE EQ 'M'
+					try
 					{
-						user->admin()->set(s, 1);
+						if (!U.PLG$UID.NULL)
+							a1.printf("Uid=%d\n", U.PLG$UID);
+
+						if (!U.PLG$GID.NULL)
+							a2.printf("Gid=%d\n", U.PLG$GID);
+
+						if (!U.PLG$GROUP_NAME.NULL)
+							a3.printf("GroupName=%s\n", U.PLG$GROUP_NAME);
+
+						attr = a1 + a2 + a3;
+						user->attributes()->set(s, attr.c_str());
+						check(s);
+						user->attributes()->setEntered(s, attr.hasData() ? 1 : 0);
+						check(s);
+
+						user->userName()->set(s, U.PLG$USER_NAME);
+						check(s);
+						user->userName()->setEntered(s, U.PLG$USER_NAME.NULL ? 0 : 1);
+						check(s);
+						user->password()->set(s, "");
+						check(s);
+						user->password()->setEntered(s, 0);
+						check(s);
+						user->firstName()->set(s, U.PLG$FIRST_NAME);
+						check(s);
+						user->firstName()->setEntered(s, U.PLG$FIRST_NAME.NULL ? 0 : 1);
+						check(s);
+						user->middleName()->set(s, U.PLG$MIDDLE_NAME);
+						check(s);
+						user->middleName()->setEntered(s, U.PLG$MIDDLE_NAME.NULL ? 0 : 1);
+						check(s);
+						user->lastName()->set(s, U.PLG$LAST_NAME);
+						check(s);
+						user->lastName()->setEntered(s, U.PLG$LAST_NAME.NULL ? 0 : 1);
+						check(s);
+
+						user->admin()->set(s, 0);
+						check(s);
+						user->admin()->setEntered(s, 1);
+						check(s);
+
+						FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request2)
+							 P IN RDB$USER_PRIVILEGES
+							 WITH P.RDB$USER EQ U.PLG$USER_NAME AND
+								  P.RDB$RELATION_NAME EQ 'RDB$ADMIN' AND
+								  P.RDB$PRIVILEGE EQ 'M'
+						{
+							user->admin()->set(s, 1);
+						}
+						END_FOR
+						check(s);
+
+						callback->list(s, user);
+						check(s);
+
+						found = true;
 					}
-					END_FOR
-					check(s);
-
-					callback->list(s, user);
-					check(s);
-
-					found = true;
-				  }
-				  catch(const Firebird::Exception& ex)
-				  {
-				  	ex.stuffException(s);
-				  	s = &s2;
-				  }
+					catch(const Firebird::Exception& ex)
+					{
+					  	ex.stuffException(s);
+					  	s = &s2;
+					}
 				END_FOR
 				ON_ERROR
 					ret = GsecMsg28;	// gsec - find/display record error

@@ -748,7 +748,8 @@ static void updateRdbFields(const TypeClause* type,
 //----------------------
 
 SecureDdlNodeExecute::SecureDdlNodeExecute(thread_db* tdbb, DdlNode* ddlNode,
-								DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction): _tdbb(tdbb)
+		DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
+	: _tdbb(tdbb)
 {
 	if (ddlNode->checkPermission(tdbb, transaction))
 		tdbb->tdbb_flags |= TDBB_trusted_ddl;
@@ -1382,7 +1383,7 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool CreateAlterFunctionNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (alter)
 		SCL_check_function(tdbb, &dscName, SCL_alter);
 	else
@@ -2011,7 +2012,7 @@ void AlterExternalFunctionNode::print(string& text) const
 bool AlterExternalFunctionNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_function(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -2136,7 +2137,7 @@ DdlNode* DropFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool DropFunctionNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_function(tdbb, &dscName, SCL_drop);
 	return true;
 }
@@ -2329,7 +2330,7 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool CreateAlterProcedureNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (alter)
 		SCL_check_procedure(tdbb, &dscName, SCL_alter);
 	else
@@ -2883,7 +2884,7 @@ DdlNode* DropProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool DropProcedureNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_procedure(tdbb, &dscName, SCL_drop);
 	return true;
 }
@@ -3146,7 +3147,7 @@ DdlNode* CreateAlterTriggerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool CreateAlterTriggerNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*)relationName.c_str());
+	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -3342,7 +3343,7 @@ bool DropTriggerNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 		status_exception::raise(Arg::PrivateDyn(48));
 	}
 
-	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*)relationName.c_str());
+	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -4859,6 +4860,7 @@ void CreateAlterExceptionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 {
 	Attachment* const attachment = transaction->getAttachment();
 	const string& userName = attachment->att_user->usr_user_name;
+
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 		DDL_TRIGGER_CREATE_EXCEPTION, name);
 
@@ -6844,7 +6846,7 @@ void AlterRelationNode::print(string& text) const
 bool AlterRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -7540,7 +7542,7 @@ void DropRelationNode::print(string& text) const
 bool DropRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (view)
 		SCL_check_view(tdbb, &dscName, SCL_drop);
 	else
@@ -7785,7 +7787,7 @@ DdlNode* CreateAlterViewNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 bool CreateAlterViewNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
-	dscName.makeText(name.length(), CS_METADATA, (UCHAR*)name.c_str());
+	dscName.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 	if (alter)
 		SCL_check_view(tdbb, &dscName, SCL_alter);
 	else
@@ -7848,6 +7850,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 				 REL.RDB$VIEW_BLR NOT MISSING
 		{
 			found = true;
+
 			MODIFY REL
 				attachment->storeMetaDataBlob(tdbb, transaction, &REL.RDB$VIEW_SOURCE, source);
 				attachment->storeBinaryBlob(tdbb, transaction, &REL.RDB$VIEW_BLR,
@@ -8918,7 +8921,7 @@ bool CreateIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
 	dsc dscName;
 	const MetaName &relationName = relation->dsqlName;
-	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*)relationName.c_str());
+	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -9003,7 +9006,7 @@ bool AlterIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 		status_exception::raise(Arg::PrivateDyn(48));
 	}
 
-	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*)relationName.c_str());
+	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -9075,7 +9078,7 @@ bool SetStatisticsNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 		status_exception::raise(Arg::PrivateDyn(48));
 	}
 
-	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*)relationName.c_str());
+	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -9166,7 +9169,7 @@ bool DropIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 		status_exception::raise(Arg::PrivateDyn(48));
 	}
 
-	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*)relationName.c_str());
+	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -10006,7 +10009,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
 			DDL_TRIGGER_DROP_ROLE, name);
 
-		
+
 
 		if (ROL.RDB$SYSTEM_FLAG != 0)
 		{
@@ -10014,7 +10017,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 			status_exception::raise(Arg::PrivateDyn(284) << name);
 		}
 
-		
+
 		AutoCacheRequest request2(tdbb, drq_del_role_1, DYN_REQUESTS);
 
 		// The first OR clause finds all members of the role.
@@ -10373,23 +10376,24 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			break;
 	}
 
-	if (options == 1) { // with grant option
-		switch (userType) {
-			case obj_procedure: {
+	if (options == 1)	// with grant option
+	{
+		switch (userType)
+		{
+			case obj_procedure:
 				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("procedures"));
 				break;
-			}
-			case obj_trigger: {
+
+			case obj_trigger:
 				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("triggers"));
 				break;
-			}
-			case obj_view: {
+
+			case obj_view:
 				ERRD_post(Arg::Gds(isc_dsql_cant_grant_option) << Arg::Str("views"));
 				break;
-			}
-			default: {
+
+			default:
 				break;
-			}
 		}
 	}
 
@@ -10531,7 +10535,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						tdbb->getAttachment()->att_user->usr_user_name.c_str(), priv, objName,
 						field, true);
 				}
-				else if (objType >= obj_database) {
+				else if (objType >= obj_database)
+				{
 					checkGrantorCanGrantDdl(tdbb, transaction,
 						tdbb->getAttachment()->att_user->usr_user_name.c_str(), priv, objName);
 				}
@@ -10872,7 +10877,7 @@ void GrantRevokeNode::checkGrantorCanGrantRole(thread_db* tdbb, jrd_tra* transac
 
 // Check if the grantor has grant option on DDL privilege
 void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transaction,
-		const Firebird::MetaName& grantor, const char* privilege, const Firebird::MetaName& objName)
+	const MetaName& grantor, const char* privilege, const MetaName& objName)
 {
 	if (tdbb->getAttachment()->locksmith())
 		return;
@@ -10880,13 +10885,13 @@ void GrantRevokeNode::checkGrantorCanGrantDdl(thread_db* tdbb, jrd_tra* transact
 	AutoCacheRequest request(tdbb, drq_l_grant_option, DYN_REQUESTS);
 	bool grantable = false;
 
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		PRV IN RDB$USER_PRIVILEGES WITH
-			PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
-			PRV.RDB$USER_TYPE = obj_user AND
-			PRV.RDB$RELATION_NAME EQ objName.c_str() AND
-			PRV.RDB$OBJECT_TYPE >= obj_database AND
-			PRV.RDB$PRIVILEGE EQ privilege
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		PRV IN RDB$USER_PRIVILEGES
+		WITH PRV.RDB$USER = UPPERCASE(grantor.c_str()) AND
+			 PRV.RDB$USER_TYPE = obj_user AND
+			 PRV.RDB$RELATION_NAME EQ objName.c_str() AND
+			 PRV.RDB$OBJECT_TYPE >= obj_database AND
+			 PRV.RDB$PRIVILEGE EQ privilege
 	{
 		grantable = PRV.RDB$GRANT_OPTION == 1;
 	}

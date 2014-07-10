@@ -141,11 +141,9 @@ void GRANT_privileges(thread_db* tdbb, const Firebird::string& name, USHORT id, 
 			break;
 
 		default:
-			if (id >= obj_database &&
-				id < obj_type_MAX)
-			{
+			if (id >= obj_database && id < obj_type_MAX)
 				priv = OWNER_PRIVS;
-			}
+			break;
 	}
 
 	grant_user(acl, owner, obj_user, priv);

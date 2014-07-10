@@ -369,7 +369,7 @@ const USHORT TDBB_use_db_page_space		= 256;	// use database (not temporary) page
 const USHORT TDBB_detaching				= 512;	// detach is in progress
 const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
 const USHORT TDBB_cache_unwound			= 2048;	// page cache was unwound
-const USHORT TDBB_trusted_ddl			= 4096;	// skip DDL permission checks. set after DDL permission check and clear after DDL execution
+const USHORT TDBB_trusted_ddl			= 4096;	// skip DDL permission checks. Set after DDL permission check and clear after DDL execution
 
 class thread_db : public Firebird::ThreadData
 {

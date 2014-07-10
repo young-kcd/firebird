@@ -153,7 +153,7 @@ public:
 			p->addRef();
 			return p;
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			ex.stuffException(status);
 		}

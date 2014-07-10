@@ -74,7 +74,7 @@ public:
 		{
 			value = newValue ? newValue : "";
 		}
-		catch(const Firebird::Exception& ex)
+		catch (const Firebird::Exception& ex)
 		{
 			ex.stuffException(status);
 		}

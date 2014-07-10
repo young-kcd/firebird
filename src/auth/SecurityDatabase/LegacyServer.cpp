@@ -511,8 +511,10 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 		LocalStatus s;
 		TimerInterfacePtr()->start(&s, instance, 10 * 1000 * 1000);
 		if (!s.isSuccess())
-#endif
 			instance->handler();
+#else
+		instance->handler();
+#endif
 		return rc;
 	}
 	catch (const Firebird::Exception& ex)
