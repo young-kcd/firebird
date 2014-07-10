@@ -71,7 +71,7 @@ const int obj_user_or_role		= 35;
 const int obj_schema			= 36;
 const int obj_parameter			= 37;
 
-static char* get_object_name(int object_type)
+inline const char* get_object_name(int object_type)
 {
 	switch (object_type)
 	{
