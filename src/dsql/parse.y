@@ -926,19 +926,18 @@ privilege($privilegeArray)
 
 %type ddl_privileges(<privilegeArray>)
 ddl_privileges($privilegeArray)
-	: ALL
-		{
-			$privilegeArray->add(PrivilegeClause('C', NULL));
-			$privilegeArray->add(PrivilegeClause('L', NULL));
-			$privilegeArray->add(PrivilegeClause('O', NULL));
-		}
-	| ALL PRIVILEGES
+	: ALL privileges_opt
 		{
 			$privilegeArray->add(PrivilegeClause('C', NULL));
 			$privilegeArray->add(PrivilegeClause('L', NULL));
 			$privilegeArray->add(PrivilegeClause('O', NULL));
 		}
 	| ddl_privilege_list($privilegeArray)
+	;
+
+privileges_opt
+	:
+	| PRIVILEGES
 	;
 
 %type ddl_privilege_list(<privilegeArray>)

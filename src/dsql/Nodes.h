@@ -154,21 +154,6 @@ public:
 
 class DdlNode;
 
-class SecureDdlNodeExecute
-{
-public:
-	explicit SecureDdlNodeExecute(thread_db* tdbb, DdlNode* ddlNode,
-		DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
-
-	~SecureDdlNodeExecute()
-	{
-		_tdbb->tdbb_flags &= ~TDBB_trusted_ddl;
-	}
-
-private:
-	thread_db* _tdbb;
-};
-
 class DdlNode : public Node
 {
 public:
@@ -197,7 +182,20 @@ public:
 		if (dsqlScratch)
 			dsqlScratch->setTransaction(transaction);
 
-		SecureDdlNodeExecute(tdbb, this, dsqlScratch, transaction);
+		try
+		{
+			if (checkPermission(tdbb, transaction))
+				tdbb->tdbb_flags |= TDBB_trusted_ddl;
+
+			execute(tdbb, dsqlScratch, transaction);
+		}
+		catch (...)
+		{
+			tdbb->tdbb_flags &= ~TDBB_trusted_ddl;
+			throw;
+		}
+
+		tdbb->tdbb_flags &= ~TDBB_trusted_ddl;
 	}
 
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)

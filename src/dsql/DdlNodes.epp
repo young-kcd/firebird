@@ -83,6 +83,8 @@ static bool fieldExists(thread_db* tdbb, jrd_tra* transaction, const MetaName& r
 	const MetaName& fieldName);
 static bool isItSqlRole(thread_db* tdbb, jrd_tra* transaction, const MetaName& inputName,
 	MetaName& outputName);
+static MetaName getIndexRelationName(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& indexName);
 static const char* getRelationScopeName(const rel_t type);
 static void makeRelationScopeName(string& to, const MetaName& name, const rel_t type);
 static void checkRelationType(const rel_t type, const MetaName& name);
@@ -468,6 +470,25 @@ static void makeRelationScopeName(string& to, const MetaName& name, const rel_t 
 	to.printf(scope, name.c_str());
 }
 
+// Get relation name of an index.
+static MetaName getIndexRelationName(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& indexName)
+{
+	AutoCacheRequest request(tdbb, drq_l_index_relname, DYN_REQUESTS);
+
+	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		IDX IN RDB$INDICES
+		WITH IDX.RDB$INDEX_NAME EQ indexName.c_str()
+	{
+		return IDX.RDB$RELATION_NAME;
+	}
+	END_FOR
+
+	// msg 48: "Index not found"
+	status_exception::raise(Arg::PrivateDyn(48));
+	return "";	// silence warning
+}
+
 // Get relation type name
 static const char* getRelationScopeName(const rel_t type)
 {
@@ -746,16 +767,6 @@ static void updateRdbFields(const TypeClause* type,
 
 
 //----------------------
-
-SecureDdlNodeExecute::SecureDdlNodeExecute(thread_db* tdbb, DdlNode* ddlNode,
-		DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
-	: _tdbb(tdbb)
-{
-	if (ddlNode->checkPermission(tdbb, transaction))
-		tdbb->tdbb_flags |= TDBB_trusted_ddl;
-
-	ddlNode->execute(tdbb, dsqlScratch, transaction);
-}
 
 
 // Delete a security class.
@@ -8987,26 +8998,11 @@ void AlterIndexNode::print(string& text) const
 
 bool AlterIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+
 	dsc dscName;
-	MetaName relationName;
-
-	AutoCacheRequest request(tdbb, drq_l_index_relname, DYN_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		IDX IN RDB$INDICES
-		WITH IDX.RDB$INDEX_NAME EQ name.c_str()
-	{
-		relationName = IDX.RDB$RELATION_NAME;
-	}
-	END_FOR
-
-	if (relationName.isEmpty())
-	{
-		// msg 48: "Index not found"
-		status_exception::raise(Arg::PrivateDyn(48));
-	}
-
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
+
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -9059,26 +9055,11 @@ void SetStatisticsNode::print(string& text) const
 
 bool SetStatisticsNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+
 	dsc dscName;
-	MetaName relationName;
-
-	AutoCacheRequest request(tdbb, drq_l_index_relname, DYN_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		IDX IN RDB$INDICES
-		WITH IDX.RDB$INDEX_NAME EQ name.c_str()
-	{
-		relationName = IDX.RDB$RELATION_NAME;
-	}
-	END_FOR
-
-	if (relationName.isEmpty())
-	{
-		// msg 48: "Index not found"
-		status_exception::raise(Arg::PrivateDyn(48));
-	}
-
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
+
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
@@ -9150,26 +9131,11 @@ void DropIndexNode::print(string& text) const
 
 bool DropIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
+	MetaName relationName = getIndexRelationName(tdbb, transaction, name);
+
 	dsc dscName;
-	MetaName relationName;
-
-	AutoCacheRequest request(tdbb, drq_l_index_relname, DYN_REQUESTS);
-
-	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		IDX IN RDB$INDICES
-		WITH IDX.RDB$INDEX_NAME EQ name.c_str()
-	{
-		relationName = IDX.RDB$RELATION_NAME;
-	}
-	END_FOR
-
-	if (relationName.isEmpty())
-	{
-		// msg 48: "Index not found"
-		status_exception::raise(Arg::PrivateDyn(48));
-	}
-
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
+
 	SCL_check_relation(tdbb, &dscName, SCL_alter);
 	return true;
 }
