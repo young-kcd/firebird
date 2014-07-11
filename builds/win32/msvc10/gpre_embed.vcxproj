@@ -201,6 +201,7 @@
     <ClCompile Include="..\..\..\gen\$(Platform)\gpre\gpre_meta.cpp" />
     <ClCompile Include="..\..\..\src\jrd\dsc.cpp" />
     <ClCompile Include="..\..\..\src\jrd\isc.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\os\win32\os_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\gpre\gpre_meta.epp" />
