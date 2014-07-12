@@ -1,3 +1,9 @@
+ 2014-07-11 11:31  dimitr 
+   M builds/win32/msvc10/gpre_embed.vcxproj
+   M builds/win32/msvc8/gpre_embed.vcproj
+   M builds/win32/msvc9/gpre_embed.vcproj
+This time really fixed the Windows builds.
+
  2014-07-07 06:57  hvlad 
    M builds/win32/msvc10/gdef.vcxproj
    M builds/win32/msvc10/gdef.vcxproj.filters
