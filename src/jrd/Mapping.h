@@ -45,8 +45,9 @@ void clearMap(const char* dbName);
 class GlobalMappingScan: public VirtualTableScan
 {
 public:
-	GlobalMappingScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream)
-		: VirtualTableScan(csb, name, stream)
+	GlobalMappingScan(CompilerScratch* csb, const Firebird::string& alias,
+					  StreamType stream, jrd_rel* relation)
+		: VirtualTableScan(csb, alias, stream, relation)
 	{}
 
 protected:

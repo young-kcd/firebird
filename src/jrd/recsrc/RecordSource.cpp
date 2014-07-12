@@ -44,10 +44,10 @@ using namespace Jrd;
 // Record source class
 // -------------------
 
-string RecordSource::printName(thread_db* tdbb, const string& name)
+string RecordSource::printName(thread_db* tdbb, const string& name, bool quote)
 {
+	const UCHAR* namePtr = (const UCHAR*) name.c_str();
 	ULONG nameLength = (ULONG) name.length();
-	const UCHAR* namePtr = (UCHAR*) name.c_str();
 
 	MoveBuffer nameBuffer;
 
@@ -63,7 +63,21 @@ string RecordSource::printName(thread_db* tdbb, const string& name)
 		namePtr = nameBuffer.begin();
 	}
 
-	return string(namePtr, nameLength);
+	const string result(namePtr, nameLength);
+	return quote ? "\"" + result + "\"" : result;
+}
+
+string RecordSource::printName(thread_db* tdbb, const string& name, const string& alias)
+{
+	if (name == alias || alias.isEmpty())
+		return printName(tdbb, name, true);
+
+	const string arg1 = printName(tdbb, name, true);
+	const string arg2 = printName(tdbb, alias, true);
+
+	string result;
+	result.printf("%s as %s", arg1.c_str(), arg2.c_str());
+	return result;
 }
 
 string RecordSource::printIndent(unsigned level)
@@ -160,12 +174,12 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 					}
 				}
 
-				plan += "Index \"" + printName(tdbb, indexName.c_str()) + "\" " +
-					(fullscan ? "Full" : unique ? "Unique" : "Range") + " Scan" + bounds;
+				plan += "Index " + printName(tdbb, indexName.c_str()) +
+					(fullscan ? " Full" : unique ? " Unique" : " Range") + " Scan" + bounds;
 			}
 			else
 			{
-				plan += (plan.hasData() ? ", " : "") + printName(tdbb, indexName.c_str());
+				plan += (plan.hasData() ? ", " : "") + printName(tdbb, indexName.c_str(), false);
 			}
 		}
 		break;

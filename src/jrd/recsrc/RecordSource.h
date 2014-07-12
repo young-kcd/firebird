@@ -99,7 +99,10 @@ namespace Jrd
 			: m_impure(0), m_recursive(false)
 		{}
 
-		static Firebird::string printName(thread_db* tdbb, const Firebird::string& name);
+		static Firebird::string printName(thread_db* tdbb, const Firebird::string& name, bool quote = true);
+		static Firebird::string printName(thread_db* tdbb, const Firebird::string& name,
+										  const Firebird::string& alias);
+
 		static Firebird::string printIndent(unsigned level);
 		static void printInversion(thread_db* tdbb, const InversionNode* inversion,
 			Firebird::string& plan, bool detailed, unsigned level, bool navigation = false);
@@ -139,7 +142,8 @@ namespace Jrd
 	class FullTableScan : public RecordStream
 	{
 	public:
-		FullTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream);
+		FullTableScan(CompilerScratch* csb, const Firebird::string& alias,
+					  StreamType stream, jrd_rel* relation);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -150,7 +154,8 @@ namespace Jrd
 				   bool detailed, unsigned level) const;
 
 	private:
-		const Firebird::string m_name;
+		const Firebird::string m_alias;
+		jrd_rel* const m_relation;
 	};
 
 	class BitmapTableScan : public RecordStream
@@ -161,8 +166,8 @@ namespace Jrd
 		};
 
 	public:
-		BitmapTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
-			InversionNode* inversion);
+		BitmapTableScan(CompilerScratch* csb, const Firebird::string& alias,
+						StreamType stream, InversionNode* inversion);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -173,7 +178,7 @@ namespace Jrd
 				   bool detailed, unsigned level) const;
 
 	private:
-		const Firebird::string m_name;
+		const Firebird::string m_alias;
 		NestConst<InversionNode> const m_inversion;
 	};
 
@@ -194,8 +199,8 @@ namespace Jrd
 		};
 
 	public:
-		IndexTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
-			InversionNode* index, USHORT keyLength);
+		IndexTableScan(CompilerScratch* csb, const Firebird::string& alias,
+					   StreamType stream, InversionNode* index, USHORT keyLength);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -222,7 +227,7 @@ namespace Jrd
 						 win* window, const UCHAR*, const temporary_key&) const;
 		bool setupBitmaps(thread_db* tdbb, Impure* impure) const;
 
-		const Firebird::string m_name;
+		const Firebird::string m_alias;
 		NestConst<InversionNode> const m_index;
 		NestConst<InversionNode> m_inversion;
 		NestConst<BoolExprNode> m_condition;
@@ -238,7 +243,8 @@ namespace Jrd
 		};
 
 	public:
-		ExternalTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream);
+		ExternalTableScan(CompilerScratch* csb, const Firebird::string& alias,
+						  StreamType stream, jrd_rel* relation);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -251,13 +257,15 @@ namespace Jrd
 				   bool detailed, unsigned level) const;
 
 	private:
-		const Firebird::string m_name;
+		jrd_rel* const m_relation;
+		const Firebird::string m_alias;
 	};
 
 	class VirtualTableScan : public RecordStream
 	{
 	public:
-		VirtualTableScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream);
+		VirtualTableScan(CompilerScratch* csb, const Firebird::string& alias,
+						 StreamType stream, jrd_rel* relation);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -275,7 +283,8 @@ namespace Jrd
 									FB_UINT64 position, Record* record) const = 0;
 
 	private:
-		const Firebird::string m_name;
+		jrd_rel* const m_relation;
+		const Firebird::string m_alias;
 	};
 
 	class ProcedureScan : public RecordStream
@@ -287,7 +296,7 @@ namespace Jrd
 		};
 
 	public:
-		ProcedureScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
+		ProcedureScan(CompilerScratch* csb, const Firebird::string& alias, StreamType stream,
 					  const jrd_prc* procedure, const ValueListNode* sourceList,
 					  const ValueListNode* targetList, MessageNode* message);
 
@@ -305,7 +314,7 @@ namespace Jrd
 		void assignParams(thread_db* tdbb, const dsc* from_desc, const dsc* flag_desc,
 						  const UCHAR* msg, const dsc* to_desc, SSHORT to_id, Record* record) const;
 
-		const Firebird::string m_name;
+		const Firebird::string m_alias;
 		const jrd_prc* const m_procedure;
 		const ValueListNode* m_sourceList;
 		const ValueListNode* m_targetList;

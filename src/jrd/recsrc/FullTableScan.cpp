@@ -35,8 +35,9 @@ using namespace Jrd;
 // Data access: sequential complete table scan
 // -------------------------------------------
 
-FullTableScan::FullTableScan(CompilerScratch* csb, const string& name, StreamType stream)
-	: RecordStream(csb, stream), m_name(csb->csb_pool, name)
+FullTableScan::FullTableScan(CompilerScratch* csb, const string& alias,
+							 StreamType stream, jrd_rel* relation)
+	: RecordStream(csb, stream), m_alias(csb->csb_pool, alias), m_relation(relation)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
@@ -70,14 +71,14 @@ void FullTableScan::open(thread_db* tdbb) const
 
 		BufferControl* const bcb = dbb->dbb_bcb;
 
-		if (attachment->isGbak() || DPM_data_pages(tdbb, rpb->rpb_relation) > bcb->bcb_count)
+		if (attachment->isGbak() || DPM_data_pages(tdbb, m_relation) > bcb->bcb_count)
 		{
 			rpb->getWindow(tdbb).win_flags = WIN_large_scan;
-			rpb->rpb_org_scans = rpb->rpb_relation->rel_scan_count++;
+			rpb->rpb_org_scans = m_relation->rel_scan_count++;
 		}
 	}
 
-	RLCK_reserve_relation(tdbb, request->req_transaction, rpb->rpb_relation, false);
+	RLCK_reserve_relation(tdbb, request->req_transaction, m_relation, false);
 
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }
@@ -96,9 +97,9 @@ void FullTableScan::close(thread_db* tdbb) const
 
 		record_param* const rpb = &request->req_rpb[m_stream];
 		if ((rpb->getWindow(tdbb).win_flags & WIN_large_scan) &&
-			rpb->rpb_relation->rel_scan_count)
+			m_relation->rel_scan_count)
 		{
-			rpb->rpb_relation->rel_scan_count--;
+			m_relation->rel_scan_count--;
 		}
 	}
 }
@@ -132,14 +133,15 @@ void FullTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Full Scan";
+		plan += printIndent(++level) + "Table " +
+			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Full Scan";
 	}
 	else
 	{
 		if (!level)
 			plan += "(";
 
-		plan += printName(tdbb, m_name) + " NATURAL";
+		plan += printName(tdbb, m_alias, false) + " NATURAL";
 
 		if (!level)
 			plan += ")";

@@ -40,9 +40,9 @@ using namespace Jrd;
 // Data access: index driven table scan
 // ------------------------------------
 
-IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& name, StreamType stream,
-			InversionNode* index, USHORT length)
-	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_index(index),
+IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& alias,
+							   StreamType stream, InversionNode* index, USHORT length)
+	: RecordStream(csb, stream), m_alias(csb->csb_pool, alias), m_index(index),
 	  m_inversion(NULL), m_condition(NULL), m_length(length), m_offset(0)
 {
 	fb_assert(m_index);
@@ -250,7 +250,10 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Access By ID";
+		const MetaName& name = m_inversion->retrieval->irb_relation->rel_name;
+
+		plan += printIndent(++level) + "Table " +
+			printName(tdbb, name.c_str(), m_alias) + " Access By ID";
 
 		printInversion(tdbb, m_index, plan, true, level, true);
 
@@ -262,7 +265,7 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		if (!level)
 			plan += "(";
 
-		plan += printName(tdbb, m_name) + " ORDER ";
+		plan += printName(tdbb, m_alias, false) + " ORDER ";
 		string index;
 		printInversion(tdbb, m_index, index, false, level);
 		plan += index;

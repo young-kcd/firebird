@@ -19,6 +19,7 @@
 
 #include "firebird.h"
 #include "../jrd/jrd.h"
+#include "../jrd/btr.h"
 #include "../jrd/req.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
@@ -34,9 +35,9 @@ using namespace Jrd;
 // Data access: Bitmap (DBKEY) driven table scan
 // ---------------------------------------------
 
-BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, StreamType stream,
-			InversionNode* inversion)
-	: RecordStream(csb, stream), m_name(csb->csb_pool, name), m_inversion(inversion)
+BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& alias,
+								 StreamType stream, InversionNode* inversion)
+	: RecordStream(csb, stream), m_alias(csb->csb_pool, alias), m_inversion(inversion)
 {
 	fb_assert(m_inversion);
 
@@ -45,7 +46,6 @@ BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& name, Strea
 
 void BitmapTableScan::open(thread_db* tdbb) const
 {
-	//Database* const dbb = tdbb->getDatabase();
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
@@ -125,7 +125,11 @@ void BitmapTableScan::print(thread_db* tdbb, string& plan,
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Table \"" + printName(tdbb, m_name) + "\" Access By ID";
+		const MetaName& name = m_inversion->retrieval->irb_relation->rel_name;
+
+		plan += printIndent(++level) + "Table " +
+			printName(tdbb, name.c_str(), m_alias) + " Access By ID";
+
 		printInversion(tdbb, m_inversion, plan, true, level);
 	}
 	else
@@ -133,7 +137,7 @@ void BitmapTableScan::print(thread_db* tdbb, string& plan,
 		if (!level)
 			plan += "(";
 
-		plan += printName(tdbb, m_name) + " INDEX (";
+		plan += printName(tdbb, m_alias, false) + " INDEX (";
 		string indices;
 		printInversion(tdbb, m_inversion, indices, false, level);
 		plan += indices + ")";

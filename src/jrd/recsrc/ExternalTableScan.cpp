@@ -38,8 +38,9 @@ using namespace Jrd;
 // Data access: external table scan
 // --------------------------------
 
-ExternalTableScan::ExternalTableScan(CompilerScratch* csb, const string& name, StreamType stream)
-	: RecordStream(csb, stream), m_name(csb->csb_pool, name)
+ExternalTableScan::ExternalTableScan(CompilerScratch* csb, const string& alias,
+									 StreamType stream, jrd_rel* relation)
+	: RecordStream(csb, stream), m_alias(csb->csb_pool, alias), m_relation(relation)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
 }
@@ -55,20 +56,9 @@ void ExternalTableScan::open(thread_db* tdbb) const
 	record_param* const rpb = &request->req_rpb[m_stream];
 	rpb->getWindow(tdbb).win_flags = 0;
 
-	jrd_rel* const relation = rpb->rpb_relation;
-	EXT_open(dbb, relation->rel_file);
+	EXT_open(dbb, m_relation->rel_file);
 
-	const Record* const record = rpb->rpb_record;
-	const Format* format = NULL;
-	if (!record || !record->rec_format)
-	{
-		format = MET_current(tdbb, relation);
-		VIO_record(tdbb, rpb, format, request->req_pool);
-	}
-	else
-	{
-		format = record->rec_format;
-	}
+	VIO_record(tdbb, rpb, MET_current(tdbb, m_relation), request->req_pool);
 
 	impure->irsb_position = 0;
 	rpb->rpb_number.setValue(BOF_NUMBER);
@@ -130,15 +120,15 @@ void ExternalTableScan::print(thread_db* tdbb, string& plan,
 {
 	if (detailed)
 	{
-		plan += printIndent(++level);
-		plan += "Table \"" + printName(tdbb, m_name) + "\" Full Scan";
+		plan += printIndent(++level) + "Table " +
+			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Full Scan";
 	}
 	else
 	{
 		if (!level)
 			plan += "(";
 
-		plan += printName(tdbb, m_name) + " NATURAL";
+		plan += printName(tdbb, m_alias, false) + " NATURAL";
 
 		if (!level)
 			plan += ")";

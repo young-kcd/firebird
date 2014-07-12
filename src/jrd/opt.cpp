@@ -2281,22 +2281,22 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	if (relation->rel_file)
 	{
 		// External table
-		rsb = FB_NEW(*tdbb->getDefaultPool()) ExternalTableScan(csb, alias, stream);
+		rsb = FB_NEW(*tdbb->getDefaultPool()) ExternalTableScan(csb, alias, stream, relation);
 	}
 	else if (relation->isVirtual())
 	{
 		// Virtual table: monitoring or security
 		if (relation->rel_id == rel_global_auth_mapping)
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream);
+			rsb = FB_NEW(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream, relation);
 		}
 		else if (relation->rel_id == rel_sec_users || relation->rel_id == rel_sec_user_attributes)
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream);
+			rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream, relation);
 		}
 		else
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) MonitoringTableScan(csb, alias, stream);
+			rsb = FB_NEW(*tdbb->getDefaultPool()) MonitoringTableScan(csb, alias, stream, relation);
 		}
 	}
 	else
@@ -2397,7 +2397,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				!condition->findStream(stream))
 			{
 				RecordSource* const rsb1 =
-					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);
+					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
 				RecordSource* const rsb2 =
 					FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
 
@@ -2405,7 +2405,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 			}
 			else
 			{
-				rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);
+				rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
 
 				if (boolean)
 					csb->csb_rpt[stream].csb_flags |= csb_unmatched;
@@ -2417,7 +2417,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		}
 		else
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream);
+			rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
 
 			if (boolean)
 				csb->csb_rpt[stream].csb_flags |= csb_unmatched;

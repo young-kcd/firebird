@@ -39,10 +39,10 @@ using namespace Jrd;
 // Data access: procedure scan
 // ---------------------------
 
-ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name, StreamType stream,
+ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& alias, StreamType stream,
 							 const jrd_prc* procedure, const ValueListNode* sourceList,
 							 const ValueListNode* targetList, MessageNode* message)
-	: RecordStream(csb, stream, procedure->prc_record_format), m_name(csb->csb_pool, name),
+	: RecordStream(csb, stream, procedure->prc_record_format), m_alias(csb->csb_pool, alias),
 	  m_procedure(procedure), m_sourceList(sourceList), m_targetList(targetList), m_message(message)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
@@ -50,9 +50,7 @@ ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& name,
 	fb_assert(!sourceList == !targetList);
 
 	if (sourceList && targetList)
-	{
 		fb_assert(sourceList->items.getCount() == targetList->items.getCount());
-	}
 }
 
 void ProcedureScan::open(thread_db* tdbb) const
@@ -246,14 +244,15 @@ void ProcedureScan::print(thread_db* tdbb, string& plan, bool detailed, unsigned
 {
 	if (detailed)
 	{
-		plan += printIndent(++level) + "Procedure \"" + printName(tdbb, m_name) + "\" Scan";
+		plan += printIndent(++level) + "Procedure " +
+			printName(tdbb, m_procedure->getName().toString(), m_alias) + " Scan";
 	}
 	else
 	{
 		if (!level)
 			plan += "(";
 
-		plan += printName(tdbb, m_name) + " NATURAL";
+		plan += printName(tdbb, m_alias, false) + " NATURAL";
 
 		if (!level)
 			plan += ")";
