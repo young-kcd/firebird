@@ -227,10 +227,12 @@ void SCL_check_access(thread_db* tdbb,
 	if (!s_class ||	(mask & s_class->scl_flags)) {
 		return;
 	}
+
 	const jrd_rel* view = NULL;
-	if (view_id) {
+
+	if (view_id)
 		view = MET_lookup_relation_id(tdbb, view_id, false);
-	}
+
 	if ((view || obj_name.hasData()) &&
 		 (compute_access(tdbb, s_class, view, obj_type, obj_name) & mask))
 	{
@@ -249,8 +251,10 @@ void SCL_check_access(thread_db* tdbb,
 
 	const P_NAMES* names;
 	for (names = p_names; names->p_names_priv; names++)
+	{
 		if (names->p_names_priv & mask)
 			break;
+	}
 
 	const char* const typeAsStr = accTypeNumToStr(type);
 	const Firebird::string fullName = r_name.hasData() ?
@@ -276,10 +280,9 @@ void SCL_check_create_access(thread_db* tdbb, int type)
 	SET_TDBB(tdbb);
 
 	const SecurityClass::flags_t obj_mask = SCL_get_object_mask(type);
-	if (SCL_create & obj_mask)
-		return;
 
-	ERR_post(Arg::Gds(isc_dyn_no_priv));
+	if (!(obj_mask & SCL_create))
+		ERR_post(Arg::Gds(isc_dyn_no_priv));
 }
 
 
@@ -1259,11 +1262,13 @@ SecurityClass::flags_t SCL_get_object_mask(const int object_type)
 
 	UserId* user = tdbb->getAttachment()->att_user;
 
-	/*if (object_type == obj_roles)
+	/***
+	if (object_type == obj_roles)
 	{
 		if (user->isSecAdmin())
 			return -1 & ~SCL_corrupt;
-	}*/
+	}
+	***/
 
 	const TEXT* object_name = get_object_name(object_type);
 	const Jrd::SecurityClass* s_class = SCL_recompute_class(tdbb, object_name);
@@ -1291,9 +1296,8 @@ void SCL_set_user(const Firebird::MetaName& user_name, UserId& user)
 
 	user.usr_user_name = user_name.c_str();
 
-	if (!user.usr_user_name.compare(dbb->dbb_owner.c_str())) {
+	if (!user.usr_user_name.compare(dbb->dbb_owner.c_str()))
 		user.usr_flags |= USR_owner;
-	}
 }
 
 static bool check_number(const UCHAR* acl, USHORT number)
