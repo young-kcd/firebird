@@ -1,3 +1,18 @@
+ 2014-07-12 08:04  dimitr 
+   M src/jrd/DatabaseSnapshot.h
+   M src/jrd/Mapping.h
+   M src/jrd/UserManagement.h
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/ExternalTableScan.cpp
+   M src/jrd/recsrc/FullTableScan.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/VirtualTableScan.cpp
+Improved the detailed plan output (report both table name and its alias).
+
  2014-07-10 15:45  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/dsql/Nodes.h
