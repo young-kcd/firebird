@@ -3087,6 +3087,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_log:
 		case rel_global_auth_mapping:
 			protect_system_table_insert(tdbb, request, relation, true);
+			break;
 
 		case rel_database:
 			if (set_security_class(tdbb, rpb->rpb_record, f_dat_class))

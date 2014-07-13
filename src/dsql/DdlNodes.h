@@ -2034,7 +2034,7 @@ private:
 			// ddl
 			case 'C': return "Create";
 			case 'L': return "Alter";
-			case 'O': return "DROP";
+			case 'O': return "Drop";
 		}
 
 		return "<Unknown>";
