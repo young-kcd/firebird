@@ -1,3 +1,16 @@
+ 2014-07-13 18:50  roman-simakov 
+   M src/dsql/DdlNodes.h
+   M src/jrd/vio.cpp
+Corrections pointed by Adriano.
+
+ 2014-07-13 01:33  asfernandes 
+   M src/jrd/scl.epp
+Misc.
+
+ 2014-07-13 01:33  asfernandes 
+   M src/msgs/facilities2.sql
+Correction.
+
  2014-07-12 08:04  dimitr 
    M src/jrd/DatabaseSnapshot.h
    M src/jrd/Mapping.h
