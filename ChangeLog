@@ -1,3 +1,13 @@
+ 2014-07-14 19:33  dimitr 
+   M builds/win32/make_all.bat
+Added the missing but required (by ICU) runtime lib.
+
+ 2014-07-14 13:12  roman-simakov 
+   M doc/sql.extensions/README.ddl_access.txt
+   M src/dsql/DdlNodes.epp
+Improved description of DDL access control operations.
+Fixed DB and DDL triggers handling. Thanks to Adriano.
+
  2014-07-13 18:50  roman-simakov 
    M src/dsql/DdlNodes.h
    M src/jrd/vio.cpp
