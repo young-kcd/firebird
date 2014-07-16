@@ -76,31 +76,31 @@ inline const char* get_object_name(int object_type)
 	switch (object_type)
 	{
 		case obj_relations:
-			return "OBJ$TABLES";
+			return "SQL$TABLES";
 		case obj_views:
-			return "OBJ$VIEWS";
+			return "SQL$VIEWS";
 		case obj_procedures:
-			return "OBJ$PROCEDURES";
+			return "SQL$PROCEDURES";
 		case obj_functions:
-			return "OBJ$FUNCTIONS";
+			return "SQL$FUNCTIONS";
 		case obj_packages:
-			return "OBJ$PACKAGES";
+			return "SQL$PACKAGES";
 		case obj_generators:
-			return "OBJ$GENERATORS";
+			return "SQL$GENERATORS";
 		case obj_filters:
-			return "OBJ$FILTERS";
+			return "SQL$FILTERS";
 		case obj_domains:
-			return "OBJ$DOMAINS";
+			return "SQL$DOMAINS";
 		case obj_exceptions:
-			return "OBJ$EXCEPTIONS";
+			return "SQL$EXCEPTIONS";
 		case obj_roles:
-			return "OBJ$ROLES";
+			return "SQL$ROLES";
 		case obj_shadows:
-			return "OBJ$SHADOWS";
+			return "SQL$SHADOWS";
 		case obj_charsets:
-			return "OBJ$CHARSETS";
+			return "SQL$CHARSETS";
 		case obj_collations:
-			return "OBJ$COLLATIONS";
+			return "SQL$COLLATIONS";
 		default:
 			return "";
 	}

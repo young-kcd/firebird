@@ -476,10 +476,17 @@ static void get_object_info(thread_db* tdbb,
 	}
 	else if (obj_type == obj_database)
 	{
-		s_class = attachment->att_security_class->scl_name;
-		default_class = "";
-		owner = tdbb->getDatabase()->dbb_owner;
-		view = false;
+		AutoCacheRequest request(tdbb, irq_grant17, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE request)
+			X IN RDB$DATABASE
+		{
+			s_class = X.RDB$SECURITY_CLASS;
+			default_class = "";
+			owner = tdbb->getDatabase()->dbb_owner;
+			view = false;
+		}
+		END_FOR
 	}
 	else
 	{
