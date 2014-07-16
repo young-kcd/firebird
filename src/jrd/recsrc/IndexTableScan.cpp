@@ -250,7 +250,12 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 {
 	if (detailed)
 	{
-		const MetaName& name = m_index->retrieval->irb_relation->rel_name;
+		NestConst<InversionNode> inversion = m_index;
+		while (inversion && !inversion->retrieval)
+			inversion = inversion->node1;
+
+		fb_assert(inversion && inversion->retrieval);
+		const MetaName& name = inversion->retrieval->irb_relation->rel_name;
 
 		plan += printIndent(++level) + "Table " +
 			printName(tdbb, name.c_str(), m_alias) + " Access By ID";
