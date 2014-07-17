@@ -43,10 +43,10 @@ namespace Firebird {
 class ClumpletDump : public ClumpletReader
 {
 public:
-	ClumpletDump(Kind k, const UCHAR* buffer, size_t buffLen)
+	ClumpletDump(Kind k, const UCHAR* buffer, FB_SIZE_T buffLen)
 		: ClumpletReader(k, buffer, buffLen)
 	{ }
-	static string hexString(const UCHAR* b, size_t len)
+	static string hexString(const UCHAR* b, FB_SIZE_T len)
 	{
 		string t1, t2;
 		for (; len > 0; --len, ++b)
@@ -97,7 +97,7 @@ void ClumpletReader::dump() const
 	catch (const fatal_exception& x)
 	{
 		gds__log("Fatal exception during clumplet dump: %s", x.what());
-		size_t l = getBufferLength() - getCurOffset();
+		FB_SIZE_T l = getBufferLength() - getCurOffset();
 		const UCHAR *p = getBuffer() + getCurOffset();
 		gds__log("Plain dump starting with offset %d: %s", getCurOffset(),
 			ClumpletDump::hexString(p, l).c_str());
@@ -110,13 +110,13 @@ void ClumpletReader::dump() const
 
 namespace Firebird {
 
-ClumpletReader::ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen) :
+ClumpletReader::ClumpletReader(Kind k, const UCHAR* buffer, FB_SIZE_T buffLen) :
 	kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen)
 {
 	rewind();	// this will set cur_offset and spbState
 }
 
-ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen) :
+ClumpletReader::ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, FB_SIZE_T buffLen) :
 	AutoStorage(pool), kind(k), static_buffer(buffer), static_buffer_end(buffer + buffLen)
 {
 	rewind();	// this will set cur_offset and spbState
@@ -137,19 +137,19 @@ ClumpletReader::ClumpletReader(const ClumpletReader& from) :
 }
 
 ClumpletReader::ClumpletReader(MemoryPool& pool, const KindList* kl,
-							   const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
+							   const UCHAR* buffer, FB_SIZE_T buffLen, FPTR_VOID raise) :
 	AutoStorage(pool), kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
 {
 	create(kl, buffLen, raise);
 }
 
-ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise) :
+ClumpletReader::ClumpletReader(const KindList* kl, const UCHAR* buffer, FB_SIZE_T buffLen, FPTR_VOID raise) :
 	kind(kl->kind), static_buffer(buffer), static_buffer_end(buffer + buffLen)
 {
 	create(kl, buffLen, raise);
 }
 
-void ClumpletReader::create(const KindList* kl, size_t buffLen, FPTR_VOID raise)
+void ClumpletReader::create(const KindList* kl, FB_SIZE_T buffLen, FPTR_VOID raise)
 {
 	cur_offset = 0;
 
@@ -478,7 +478,7 @@ void ClumpletReader::adjustSpbState()
 	}
 }
 
-size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) const
+FB_SIZE_T ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) const
 {
 	const UCHAR* clumplet = getBuffer() + cur_offset;
 	const UCHAR* const buffer_end = getBufferEnd();
@@ -490,9 +490,9 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 		return 0;
 	}
 
-	size_t rc = wTag ? 1 : 0;
-	size_t lengthSize = 0;
-	size_t dataSize = 0;
+	FB_SIZE_T rc = wTag ? 1 : 0;
+	FB_SIZE_T lengthSize = 0;
+	FB_SIZE_T dataSize = 0;
 
 	switch (getClumpletType(clumplet[0]))
 	{
@@ -556,11 +556,11 @@ size_t ClumpletReader::getClumpletSize(bool wTag, bool wLength, bool wData) cons
 		break;
 	}
 
-	const size_t total = 1 + lengthSize + dataSize;
+	const FB_SIZE_T total = 1 + lengthSize + dataSize;
 	if (clumplet + total > buffer_end)
 	{
 		invalid_structure("buffer end before end of clumplet - clumplet too long");
-		size_t delta = total - (buffer_end - clumplet);
+		FB_SIZE_T delta = total - (buffer_end - clumplet);
 		if (delta > dataSize)
 			dataSize = 0;
 		else
@@ -580,7 +580,7 @@ void ClumpletReader::moveNext()
 {
 	if (isEof())
 		return;		// no need to raise useless exceptions
-	size_t cs = getClumpletSize(true, true, true);
+	FB_SIZE_T cs = getClumpletSize(true, true, true);
 	adjustSpbState();
 	cur_offset += cs;
 }
@@ -613,7 +613,7 @@ void ClumpletReader::rewind()
 
 bool ClumpletReader::find(UCHAR tag)
 {
-	const size_t co = getCurOffset();
+	const FB_SIZE_T co = getCurOffset();
 	for (rewind(); !isEof(); moveNext())
 	{
 		if (tag == getClumpTag())
@@ -629,7 +629,7 @@ bool ClumpletReader::next(UCHAR tag)
 {
 	if (!isEof())
 	{
-		const size_t co = getCurOffset();
+		const FB_SIZE_T co = getCurOffset();
 		if (tag == getClumpTag())
 		{
 			moveNext();
@@ -662,7 +662,7 @@ UCHAR ClumpletReader::getClumpTag() const
 	return clumplet[0];
 }
 
-size_t ClumpletReader::getClumpLength() const
+FB_SIZE_T ClumpletReader::getClumpLength() const
 {
 	return getClumpletSize(false, false, true);
 }
@@ -672,7 +672,7 @@ const UCHAR* ClumpletReader::getBytes() const
 	return getBuffer() + cur_offset + getClumpletSize(true, true, false);
 }
 
-SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length)
+SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, FB_SIZE_T length)
 {
 	// We can't handle numbers bigger than int64. Some cases use length == 0.
 	fb_assert(ptr && length >= 0 && length < 9);
@@ -691,7 +691,7 @@ SINT64 ClumpletReader::fromVaxInteger(const UCHAR* ptr, size_t length)
 
 SLONG ClumpletReader::getInt() const
 {
-	const size_t length = getClumpLength();
+	const FB_SIZE_T length = getClumpLength();
 
 	if (length > 4)
 	{
@@ -746,7 +746,7 @@ ISC_TIMESTAMP ClumpletReader::getTimeStamp() const
 
 SINT64 ClumpletReader::getBigInt() const
 {
-	const size_t length = getClumpLength();
+	const FB_SIZE_T length = getClumpLength();
 
 	if (length > 8)
 	{
@@ -760,7 +760,7 @@ SINT64 ClumpletReader::getBigInt() const
 string& ClumpletReader::getString(string& str) const
 {
 	const UCHAR* ptr = getBytes();
-	const size_t length = getClumpLength();
+	const FB_SIZE_T length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
 	str.recalculate_length();
 	if (str.length() + 1 < length)
@@ -773,7 +773,7 @@ string& ClumpletReader::getString(string& str) const
 PathName& ClumpletReader::getPath(PathName& str) const
 {
 	const UCHAR* ptr = getBytes();
-	const size_t length = getClumpLength();
+	const FB_SIZE_T length = getClumpLength();
 	str.assign(reinterpret_cast<const char*>(ptr), length);
 	str.recalculate_length();
 	if (str.length() + 1 < length)
@@ -791,7 +791,7 @@ void ClumpletReader::getData(UCharBuffer& data) const
 bool ClumpletReader::getBoolean() const
 {
 	const UCHAR* ptr = getBytes();
-	const size_t length = getClumpLength();
+	const FB_SIZE_T length = getClumpLength();
 	if (length > 1)
 	{
 		invalid_structure("length of boolean exceeds 1 byte");

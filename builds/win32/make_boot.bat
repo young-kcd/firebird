@@ -69,8 +69,20 @@ if "%ERRLEV%"=="1" goto :END
 
 @findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in > %FB_BIN_DIR%\firebird.conf
 
+:: Copy ICU both to Debug and Release configurations
+
+@call set_build_target.bat %* RELEASE
+@mkdir -p %FB_BIN_DIR%
 @copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
 @copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
+
+@call set_build_target.bat %* DEBUG
+@mkdir -p %FB_BIN_DIR%
+@copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
+@copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
+
+@call set_build_target.bat %*
+
 
 ::=======
 @call :databases
@@ -105,12 +117,18 @@ goto :EOF
 
 ::===================
 :: BUILD LibTomMath
+:: NS: Note we need both debug and non-debug version as it is a static library linked to CRT
+:: and linking executable with both debug and non-debug CRT results in undefined behavior
 :LibTomMath
 @echo.
-@call set_build_target.bat %* libtommath
+@call set_build_target.bat %* RELEASE
 @echo Building LibTomMath (%FB_OBJ_DIR%)...
-@call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_TARGET_PLATFORM%.log libtommath
-if errorlevel 1 call :boot2 LibTomMath
+@call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log libtommath
+if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
+@call set_build_target.bat %* DEBUG
+@echo Building LibTomMath (%FB_OBJ_DIR%)...
+@call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log libtommath
+if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
 @call set_build_target.bat %*
 goto :EOF
 

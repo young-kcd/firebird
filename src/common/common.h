@@ -50,6 +50,8 @@
 #ifndef COMMON_COMMON_H
 #define COMMON_COMMON_H
 
+#include <string.h>
+
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
@@ -765,8 +767,8 @@ struct ISC_TIMESTAMP
 
 #define JRD_BUGCHK 15			/* facility code for bugcheck messages */
 #ifndef OFFSET
-#define OFFSET(struct, fld)      ((size_t) &((struct) NULL)->fld)
-#define OFFSETA(struct, fld)     ((size_t) ((struct) NULL)->fld)
+#define OFFSET(struct, fld)      ((FB_SIZE_T) &((struct) NULL)->fld)
+#define OFFSETA(struct, fld)     ((FB_SIZE_T) ((struct) NULL)->fld)
 #endif
 
 #ifndef ODS_ALIGNMENT
@@ -890,6 +892,7 @@ void GDS_breakpoint(int);
 #endif
 
 #define FB_UNUSED(value) do { if (value) {} } while (false)
+#define FB_UNUSED_VAR(value) (void)value;
 
 // 30 Dec 2002. Nickolay Samofatov
 // This needs to be checked for all supported platforms
@@ -975,6 +978,11 @@ static const TEXT* const FB_LONG_MONTHS_UPPER[] =
 	"DECEMBER",
 	0
 };
+
+const FB_SIZE_T FB_MAX_SIZEOF = ~FB_SIZE_T(0); // Assume FB_SIZE_T is unsigned
+
+inline FB_SIZE_T fb_strlen(const char* str) { return static_cast<FB_SIZE_T>(strlen(str)); }
+
 
 #endif /* COMMON_COMMON_H */
 

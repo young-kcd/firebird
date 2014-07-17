@@ -423,7 +423,7 @@ namespace internal
 			if (!strcmp(setlocale(LC_TIME, NULL), "C"))
 				setlocale(LC_ALL, "");
 			char* const target = reinterpret_cast<char*>(rc->vary_string);
-			name_len = strftime(target, name_len, name_fmt, &times);
+			name_len = static_cast<fb_len>(strftime(target, name_len, name_fmt, &times));
 			if (name_len)
 			{
 				// There's no clarity in the docs whether '\0' is counted or not; be safe.

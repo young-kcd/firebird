@@ -663,7 +663,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	GEN_request(scratch, node);
 
 	// Create the messages buffers
-	for (size_t i = 0; i < scratch->ports.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < scratch->ports.getCount(); ++i)
 	{
 		dsql_msg* message = scratch->ports[i];
 
@@ -719,7 +719,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	// restore warnings (if there are any)
 	if (localStatus[2] == isc_arg_warning)
 	{
-		size_t indx, len, warning;
+		FB_SIZE_T indx, len, warning;
 
 		// find end of a status vector
 		PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);
@@ -1087,7 +1087,7 @@ static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* messa
 
 	bool err = false;
 
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 
@@ -1265,7 +1265,7 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 {
 	HalfStaticArray<const dsql_par*, 16> parameters;
 
-	for (size_t i = 0; i < parameters_list.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < parameters_list.getCount(); ++i)
 	{
 		dsql_par* param = parameters_list[i];
 
@@ -1572,7 +1572,7 @@ static void release_statement(DsqlCompiledStatement* statement)
 	{
 		dsql_req* parent = statement->getParentRequest();
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (parent->cursors.find(statement, pos))
 			parent->cursors.remove(pos);
 
@@ -1630,7 +1630,7 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 
 	// If request is parent, orphan the children and release a portion of their requests
 
-	for (size_t i = 0; i < request->cursors.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < request->cursors.getCount(); ++i)
 	{
 		DsqlCompiledStatement* child = request->cursors[i];
 		child->addFlags(DsqlCompiledStatement::FLAG_ORPHAN);
@@ -1913,7 +1913,7 @@ static void sql_info(thread_db* tdbb,
 
 						while (plan.length() > max_length - 4)
 						{
-							const size_t pos = plan.find_last_of(' ');
+							const FB_SIZE_T pos = plan.find_last_of(' ');
 							if (pos == string::npos)
 								break;
 							plan.resize(pos);
@@ -2024,7 +2024,7 @@ static UCHAR* var_info(const dsql_msg* message,
 
 	HalfStaticArray<const dsql_par*, 16> parameters;
 
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		const dsql_par* param = message->msg_parameters[i];
 
@@ -2039,7 +2039,7 @@ static UCHAR* var_info(const dsql_msg* message,
 
 	UCHAR buf[128];
 
-	for (size_t i = 0; i < parameters.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < parameters.getCount(); i++)
 	{
 		const dsql_par* param = parameters[i];
 		fb_assert(param);

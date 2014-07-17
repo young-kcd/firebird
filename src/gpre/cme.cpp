@@ -229,7 +229,7 @@ void CME_expr(gpre_nod* node, gpre_req* request)
 				sprintf(s, "generator %s not found", p);
 				CPR_error(s);
 			}
-			request->add_byte(strlen(p));
+			request->add_byte(static_cast<int>(strlen(p)));
 			while (*p)
 				request->add_byte(*p++);
 			CME_expr(node->nod_arg[0], request);
@@ -969,7 +969,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 				const char* ptr = strpbrk(string, ".");
 				if (ptr)
 				{
-					scale = (string + (strlen(string) - 1)) - ptr;
+					scale = static_cast<int>((string + (strlen(string) - 1)) - ptr);
 					scale = -scale;
 				}
 
@@ -1022,7 +1022,7 @@ void CME_get_dtype(const gpre_nod* node, gpre_fld* f)
 			{
 				// subtract 2 for starting & terminating quote
 
-				f->fld_length = strlen(string) - 2;
+				f->fld_length = static_cast<FLD_LENGTH>(strlen(string) - 2);
 				if (gpreGlob.sw_cstring)
 				{
 					// add 1 back for the NULL byte
@@ -1373,11 +1373,11 @@ static void cmp_array( gpre_nod* node, gpre_req* request)
 	else
 	{
 		reference->add_byte(isc_sdl_relation);
-		reference->add_byte(strlen(field->fld_relation->rel_symbol->sym_string));
+		reference->add_byte(static_cast<int>(strlen(field->fld_relation->rel_symbol->sym_string)));
 		for (const TEXT* p = field->fld_relation->rel_symbol->sym_string; *p; p++)
 			reference->add_byte(*p);
 		reference->add_byte(isc_sdl_field);
-		reference->add_byte(strlen(field->fld_symbol->sym_string));
+		reference->add_byte(static_cast<int>(strlen(field->fld_symbol->sym_string)));
 		for (const TEXT* p = field->fld_symbol->sym_string; *p; p++)
 			reference->add_byte(*p);
 	}
@@ -1528,7 +1528,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 			string = reference->ref_value;
 
 			request->add_byte(blr_double);
-			request->add_word(strlen(string));
+			request->add_word(static_cast<int>(strlen(string)));
 			while (*string)
 				request->add_byte(*string++);
 		}
@@ -1546,7 +1546,7 @@ static void cmp_literal( const gpre_nod* node, gpre_req* request)
 			if (ptr)
 			{
 				// Aha!, there is a '.'. find the scale
-				scale = (string + (strlen(string) - 1)) - ptr;
+				scale = static_cast<int>((string + (strlen(string) - 1)) - ptr);
 				scale = -scale;
 			}
 
@@ -1884,7 +1884,7 @@ static void cmp_udf( gpre_nod* node, gpre_req* request)
 	const udf* an_udf = (udf*) node->nod_arg[1];
 	request->add_byte(blr_function);
 	const TEXT* p = an_udf->udf_function;
-	request->add_byte(strlen(p));
+	request->add_byte(static_cast<int>(strlen(p)));
 
 	while (*p)
 		request->add_byte(*p++);

@@ -81,7 +81,7 @@
 // Sector alignment of memory is necessary to use unbuffered IO on Windows.
 // Actually, sectors may be bigger than 1K, but let's be consistent with
 // JRD regarding the matter for the moment.
-const size_t SECTOR_ALIGNMENT = MIN_PAGE_SIZE;
+const FB_SIZE_T SECTOR_ALIGNMENT = MIN_PAGE_SIZE;
 
 using namespace Firebird;
 
@@ -197,7 +197,7 @@ namespace
 	// May be sometimes this function should be moved to os_util namespace.
 
 #ifdef HAVE_POSIX_FADVISE
-	int fb_fadvise(int fd, off_t offset, size_t len, int advice)
+	int fb_fadvise(int fd, off_t offset, off_t len, int advice)
 	{
 		int rc = posix_fadvise(fd, offset, len, advice);
 
@@ -214,7 +214,7 @@ namespace
 		return rc;
 	}
 #else // HAVE_POSIX_FADVISE
-	int fb_fadvise(int, off_t, size_t, int)
+	int fb_fadvise(int, off_t, off_t, int)
 	{
 		return 0;
 	}
@@ -341,8 +341,8 @@ private:
 	bool m_printed;		// pr_error() was called to print status vector
 
 	// IO functions
-	size_t read_file(FILE_HANDLE &file, void *buffer, size_t bufsize);
-	void write_file(FILE_HANDLE &file, void *buffer, size_t bufsize);
+	FB_SIZE_T read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize);
+	void write_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize);
 	void seek_file(FILE_HANDLE &file, SINT64 pos);
 
 	void pr_error(const ISC_STATUS* status, const char* operation);
@@ -367,7 +367,7 @@ private:
 };
 
 
-size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
+FB_SIZE_T NBackup::read_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 {
 #ifdef WIN_NT
 	DWORD bytesDone;
@@ -381,7 +381,7 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 
 	return 0; // silence compiler
 #else
-	size_t rc = 0;
+	FB_SIZE_T rc = 0;
 	while (bufsize)
 	{
 		const ssize_t res = read(file, buffer, bufsize);
@@ -408,7 +408,7 @@ size_t NBackup::read_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
 	return 0; // silence compiler
 }
 
-void NBackup::write_file(FILE_HANDLE &file, void *buffer, size_t bufsize)
+void NBackup::write_file(FILE_HANDLE &file, void *buffer, FB_SIZE_T bufsize)
 {
 #ifdef WIN_NT
 	DWORD bytesDone;
@@ -1181,7 +1181,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 				curPage++;
 
 
-			const size_t bytesDone = read_file(dbase, page_buff, header->hdr_page_size);
+			const FB_SIZE_T bytesDone = read_file(dbase, page_buff, header->hdr_page_size);
 			--db_size;
 			page_reads++;
 			if (bytesDone == 0)
@@ -1276,7 +1276,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		in_sqlda->sqlvar[2].sqlind = &null_flag;
 
 		char buff[256]; // RDB$FILE_NAME has length of 253
-		size_t len = bakname.length();
+		FB_SIZE_T len = bakname.length();
 		if (len > 253)
 			len = 253;
 		*(USHORT*) buff = len;
@@ -1431,7 +1431,7 @@ void NBackup::restore_database(const BackupFiles& files)
 				while (true)
 				{
 					ULONG pageNum;
-					const size_t bytesDone = read_file(backup, &pageNum, sizeof(pageNum));
+					const FB_SIZE_T bytesDone = read_file(backup, &pageNum, sizeof(pageNum));
 					if (bytesDone == 0)
 						break;
 					if (bytesDone != sizeof(pageNum) ||
@@ -1461,7 +1461,7 @@ void NBackup::restore_database(const BackupFiles& files)
 				char buffer[65536];
 				while (true)
 				{
-					const size_t bytesRead = read_file(backup, buffer, sizeof(buffer));
+					const FB_SIZE_T bytesRead = read_file(backup, buffer, sizeof(buffer));
 					if (bytesRead == 0)
 						break;
 					write_file(dbase, buffer, bytesRead);

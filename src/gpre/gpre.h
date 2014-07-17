@@ -278,7 +278,7 @@ struct gpre_nod
 	gpre_nod* nod_arg[1];		// argument
 };
 
-inline size_t NOD_LEN(const size_t cnt)
+inline FB_SIZE_T NOD_LEN(const FB_SIZE_T cnt)
 {
 	return sizeof(gpre_nod) + (cnt ? cnt - 1 : 0) * sizeof(gpre_nod*);
 }
@@ -872,7 +872,7 @@ struct tpb {
 	UCHAR tpb_string[1];		// actual TPB
 };
 
-inline size_t TPB_LEN(const size_t tpb_string_len)
+inline FB_SIZE_T TPB_LEN(const FB_SIZE_T tpb_string_len)
 {
 	return sizeof(tpb) + tpb_string_len;
 }
@@ -945,7 +945,7 @@ struct gpre_rse
 };
 
 
-inline size_t RSE_LEN(const size_t cnt)
+inline FB_SIZE_T RSE_LEN(const FB_SIZE_T cnt)
 {
 	return sizeof(gpre_rse) + (cnt ? cnt - 1 : 0) * sizeof (int*);
 	// CVC: The statement below avoids problem with cnt==0 but at the
@@ -1127,7 +1127,7 @@ struct slc
 	} slc_rpt[1];
 };
 
-inline size_t SLC_LEN(const size_t count)
+inline FB_SIZE_T SLC_LEN(const FB_SIZE_T count)
 {
 	return sizeof(slc) + sizeof(slc::slc_repeat) * (count ? count - 1 : 0);
 }
@@ -1225,7 +1225,7 @@ public:
 	}
 	inline void add_cstring(const char* string)
 	{
-		add_byte(strlen(string));
+		add_byte(static_cast<int>(strlen(string)));
 		UCHAR c;
 		while ((c = *string++))
 			add_byte(c);

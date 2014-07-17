@@ -181,7 +181,7 @@ static int		blr_print_word(gds_ctl*);
 static void		sanitize(Firebird::string& locale);
 
 // New functions that try to be safe.
-static SLONG safe_interpret(char* const s, const size_t bufsize,
+static SLONG safe_interpret(char* const s, const FB_SIZE_T bufsize,
 	const ISC_STATUS** const vector, bool legacy = false);
 static void safe_strncpy(char* target, const char* source, size_t bs);
 
@@ -743,7 +743,7 @@ safe_interpret
 	    positions the pointer on the next element of the vector.
 
 **/
-static SLONG safe_interpret(char* const s, const size_t bufsize,
+static SLONG safe_interpret(char* const s, const FB_SIZE_T bufsize,
 	const ISC_STATUS** const vector, bool legacy)
 {
 	// CVC: It doesn't make sense to provide a buffer smaller than 50 bytes.
@@ -1041,7 +1041,7 @@ void API_ROUTINE gds__trace_raw(const char* text, unsigned int length)
  *
  **************************************/
 	if (!length)
-		length = strlen(text);
+		length = static_cast<unsigned>(strlen(text));
 #ifdef WIN_NT
 	// Note: thread-safe code
 
@@ -1411,7 +1411,7 @@ SSHORT API_ROUTINE gds__msg_format(void*       handle,
 		s.copyTo(formatted, size);
 	}
 
-	const USHORT l = strlen(formatted);
+	const USHORT l = static_cast<USHORT>(strlen(formatted));
 	const TEXT* const end = buffer + length - 1;
 
 	for (const TEXT* p = formatted; *p && buffer < end;) {
@@ -1681,7 +1681,7 @@ SLONG API_ROUTINE gds__get_prefix(SSHORT arg_type, const TEXT* passed_string)
 
 	Firebird::PathName prefix(passed_string);
 	prefix.erase(MAXPATHLEN);
-	for (size_t n = 0; n < prefix.length(); ++n)
+	for (FB_SIZE_T n = 0; n < prefix.length(); ++n)
 	{
 		switch (prefix[n])
 		{

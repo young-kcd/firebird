@@ -842,7 +842,7 @@ void PortsCleanup::unRegisterPort(rem_port* port)
 
 	if (m_ports)
 	{
-		size_t i;
+		FB_SIZE_T i;
 		const bool found = m_ports->find(port, i);
 		//fb_assert(found);
 		if (found)
@@ -999,7 +999,7 @@ template <typename T>
 static void addMutliPartConnectParameter(const T& dataToAdd,
 	Firebird::ClumpletWriter& user_id, UCHAR param)
 {
-	size_t remaining = dataToAdd.getCount();
+	FB_SIZE_T remaining = dataToAdd.getCount();
 	fb_assert(remaining <= 254u * 256u); // paranoid check => 65024
 	UCHAR part = 0;
 	UCHAR buffer[255];
@@ -1007,7 +1007,7 @@ static void addMutliPartConnectParameter(const T& dataToAdd,
 
 	while (remaining > 0)
 	{
-		size_t step = remaining;
+		FB_SIZE_T step = remaining;
 		if (step > 254)
 			step = 254;
 

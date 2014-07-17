@@ -607,7 +607,7 @@ MetaName METD_get_default_charset(jrd_tra* transaction)
 	{
 		// Terminate ASCIIZ string on first trailing blank
 		fb_utils::exact_name(DBB.RDB$CHARACTER_SET_NAME);
-		const USHORT length = strlen(DBB.RDB$CHARACTER_SET_NAME);
+		const USHORT length = static_cast<USHORT>(strlen(DBB.RDB$CHARACTER_SET_NAME));
 		dbb->dbb_dfl_charset = DBB.RDB$CHARACTER_SET_NAME;
 	}
 	END_FOR

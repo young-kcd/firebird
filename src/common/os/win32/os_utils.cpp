@@ -84,7 +84,7 @@ void adjustLockDirectoryAccess(const char* pathname)
 		// In case of pathname is not local folder (i.e. \\share\folder) let
 		// GetVolumeInformation() return an error.
 		Firebird::PathName root(pathname);
-		const size_t pos = root.find(':', 0);
+		const Firebird::PathName::size_type pos = root.find(':', 0);
 		if (pos == 1)
 		{
 			root.erase(pos + 1, root.length());

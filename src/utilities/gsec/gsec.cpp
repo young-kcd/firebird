@@ -807,7 +807,7 @@ static bool get_switches(Firebird::UtilSvc::ArgvType& argv,
 	*quitflag = false;
 	USHORT last_sw = IN_SW_GSEC_0;
 	tdsec->tsec_sw_version = false;
-	for (size_t argc = 1; argc < argv.getCount(); ++argc)
+	for (FB_SIZE_T argc = 1; argc < argv.getCount(); ++argc)
 	{
 		const char* string = argv[argc];
 		if (*string == '?' || strcmp(string, "-?") == 0)

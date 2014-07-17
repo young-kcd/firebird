@@ -118,7 +118,7 @@ public:		// utilities interface with service
 	// outpur error text
 	virtual void outputError(const char* text);
 	// output some data to service
-	virtual void outputData(const void* data, size_t len);
+	virtual void outputData(const void* data, FB_SIZE_T len);
 	// printf() to svc_stdout
     virtual void printf(bool err, const SCHAR* format, ...);
 	// returns true - it's service :)
@@ -130,7 +130,7 @@ public:		// utilities interface with service
     virtual void putSLong(char tag, SLONG val);
 	virtual void putChar(char tag, char val);
 	// put raw bytes to svc_stdout
-	virtual void putBytes(const UCHAR*, size_t);
+	virtual void putBytes(const UCHAR*, FB_SIZE_T);
 	// get raw bytes from svc_stdin
 	virtual ULONG getBytes(UCHAR*, ULONG);
 	// append status_vector to service's status
@@ -209,7 +209,7 @@ private:
 	// when both (server and client) threads are finished
 	~Service();
 	// Find current service in global services list
-	bool	locateInAllServices(size_t* posPtr = NULL);
+	bool	locateInAllServices(FB_SIZE_T* posPtr = NULL);
 	// Detach self from global services list
 	void	removeFromAllServices();
 	// The only service, implemented internally

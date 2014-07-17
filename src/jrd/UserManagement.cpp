@@ -160,7 +160,7 @@ void UserManagement::commit()
 
 USHORT UserManagement::put(Auth::DynamicUserData* userData)
 {
-	const size_t ret = commands.getCount();
+	const FB_SIZE_T ret = commands.getCount();
 	if (ret > MAX_USHORT)
 	{
 		status_exception::raise(Arg::Gds(isc_random) << "Too many user management DDL per transaction)");
@@ -357,28 +357,28 @@ void UserManagement::list(Auth::IUser* u)
 	if (u->userName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_user_name, VALUE_STRING, strlen(u->userName()->get()), u->userName()->get()),
+				 DumpField(f_sec_user_name, VALUE_STRING, static_cast<USHORT>(strlen(u->userName()->get())), u->userName()->get()),
 				 charset);
 	}
 
 	if (u->firstName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_first_name, VALUE_STRING, strlen(u->firstName()->get()), u->firstName()->get()),
+				 DumpField(f_sec_first_name, VALUE_STRING, static_cast<USHORT>(strlen(u->firstName()->get())), u->firstName()->get()),
 				 charset);
 	}
 
 	if (u->middleName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_middle_name, VALUE_STRING, strlen(u->middleName()->get()), u->middleName()->get()),
+				 DumpField(f_sec_middle_name, VALUE_STRING, static_cast<USHORT>(strlen(u->middleName()->get())), u->middleName()->get()),
 				 charset);
 	}
 
 	if (u->lastName()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_last_name, VALUE_STRING, strlen(u->lastName()->get()), u->lastName()->get()),
+				 DumpField(f_sec_last_name, VALUE_STRING, static_cast<USHORT>(strlen(u->lastName()->get())), u->lastName()->get()),
 				 charset);
 	}
 
@@ -401,7 +401,7 @@ void UserManagement::list(Auth::IUser* u)
 	if (u->comment()->entered())
 	{
 		putField(threadDbb, record,
-				 DumpField(f_sec_comment, VALUE_STRING, strlen(u->comment()->get()), u->comment()->get()),
+				 DumpField(f_sec_comment, VALUE_STRING, static_cast<USHORT>(strlen(u->comment()->get())), u->comment()->get()),
 				 charset);
 	}
 
@@ -419,7 +419,7 @@ void UserManagement::list(Auth::IUser* u)
 			record->nullify();
 
 			putField(threadDbb, record,
-					 DumpField(f_sec_attr_user, VALUE_STRING, strlen(u->userName()->get()), u->userName()->get()),
+					 DumpField(f_sec_attr_user, VALUE_STRING, static_cast<USHORT>(strlen(u->userName()->get())), u->userName()->get()),
 					 charset);
 
 			putField(threadDbb, record,

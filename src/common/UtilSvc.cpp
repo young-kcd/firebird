@@ -79,7 +79,7 @@ public:
 		outputFile(stderr, text);
 	}
 
-	void outputData(const void* data, size_t size)
+	void outputData(const void* data, FB_SIZE_T size)
 	{
 		fb_assert(usvcDataMode);
 		outputFile(stdout, data, size);
@@ -134,7 +134,7 @@ public:
 	virtual void putLine(char, const char*) { }
 	virtual void putSLong(char, SLONG) { }
 	virtual void putChar(char, char) { }
-	virtual void putBytes(const UCHAR*, size_t) { }
+	virtual void putBytes(const UCHAR*, FB_SIZE_T) { }
 	virtual ULONG getBytes(UCHAR*, ULONG) { return 0; }
 	virtual void setServiceStatus(const ISC_STATUS*) { }
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }

@@ -187,7 +187,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
+				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -250,7 +250,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
+				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"

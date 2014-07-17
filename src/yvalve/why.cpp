@@ -1052,7 +1052,7 @@ namespace Why
 					case isc_arg_interpreted:
 					case isc_arg_string:
 					case isc_arg_sql_state:
-						length = strlen((const char*) *s);
+						length = static_cast<ULONG>(strlen((const char*) *s));
 						// This check is heuristic, not deterministic.
 						if (length > 1024 - 1)
 							SV_MSG("suspect length value");
@@ -1749,7 +1749,7 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 		if (!filename)
 			status_exception::raise(Arg::Gds(isc_bad_db_format) << Arg::Str(""));
 
-		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
+		PathName pathName(filename, fileLength ? fileLength : fb_strlen(filename));
 
 		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
@@ -2033,7 +2033,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 		if (!filename)
 			status_exception::raise(Arg::Gds(isc_bad_db_format) << Arg::Str(""));
 
-		PathName pathName(filename, fileLength ? fileLength : strlen(filename));
+		PathName pathName(filename, fileLength ? fileLength : fb_strlen(filename));
 
 		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
@@ -3376,7 +3376,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 		if (!serviceName)
 			status_exception::raise(Arg::Gds(isc_service_att_err) << Arg::Gds(isc_svc_name_missing));
 
-		string svcName(serviceName, serviceLength ? serviceLength : strlen(serviceName));
+		string svcName(serviceName, serviceLength ? serviceLength : fb_strlen(serviceName));
 
 		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 

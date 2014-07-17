@@ -276,7 +276,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 }
 
 
-bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
+bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, FB_SIZE_T len_expanded)
 {
 /**************************************
  *

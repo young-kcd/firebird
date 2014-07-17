@@ -2644,7 +2644,7 @@ local_declaration
 			node->dsqlBlock->localDeclList = $8;
 			node->dsqlBlock->body = $9;
 
-			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
 				node->dsqlBlock->parameters[i]->parameterExpr = make_parameter();
 
 			$$ = node;
@@ -2662,7 +2662,7 @@ local_declaration
 			node->dsqlBlock->localDeclList = $11;
 			node->dsqlBlock->body = $12;
 
-			for (size_t i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < node->dsqlBlock->parameters.getCount(); ++i)
 				node->dsqlBlock->parameters[i]->parameterExpr = make_parameter();
 
 			node->dsqlBlock->returns.add(newNode<ParameterClause>($<legacyField>7, optName($8)));
@@ -6963,7 +6963,7 @@ case_abbreviation
 			ValueListNode* conditions = newNode<ValueListNode>(list->items.getCount() / 2);
 			ValueListNode* values = newNode<ValueListNode>(list->items.getCount() / 2);
 
-			for (size_t i = 0; i < list->items.getCount(); i += 2)
+			for (FB_SIZE_T i = 0; i < list->items.getCount(); i += 2)
 			{
 				conditions->items[i / 2] = list->items[i];
 				values->items[i / 2] = list->items[i + 1];
@@ -6977,7 +6977,7 @@ case_abbreviation
 			ValueListNode* conditions = newNode<ValueListNode>(list->items.getCount() / 2);
 			ValueListNode* values = newNode<ValueListNode>(list->items.getCount() / 2 + 1);
 
-			for (size_t i = 0; i < list->items.getCount(); i += 2)
+			for (FB_SIZE_T i = 0; i < list->items.getCount(); i += 2)
 			{
 				conditions->items[i / 2] = list->items[i];
 				values->items[i / 2] = list->items[i + 1];

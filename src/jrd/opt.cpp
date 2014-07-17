@@ -264,7 +264,7 @@ namespace
 
 			// Generate record source objects
 
-			const size_t riverCount = rivers.getCount();
+			const FB_SIZE_T riverCount = rivers.getCount();
 
 			if (riverCount == 1)
 			{
@@ -308,7 +308,7 @@ namespace
 						River* const sub_river = *iter;
 						RecordSource* const sub_rsb = sub_river->getRecordSource();
 
-						const size_t pos = iter - rivers.begin();
+						const FB_SIZE_T pos = iter - rivers.begin();
 
 						if (!rsbs.exist(sub_rsb))
 							rsbs.insert(pos, sub_rsb);
@@ -465,7 +465,7 @@ string OPT_get_plan(thread_db* tdbb, const jrd_req* request, bool detailed)
 	{
 		const Array<const RecordSource*>& fors = request->getStatement()->fors;
 
-		for (size_t i = 0; i < fors.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < fors.getCount(); i++)
 		{
 			plan += detailed ? "\nSelect Expression" : "\nPLAN ";
 			fors[i]->print(tdbb, plan, detailed, 0);
@@ -1256,7 +1256,7 @@ static void check_sorts(RseNode* rse)
 						else
 						{
 							bool sortStreamFound = false;
-							for (size_t i = 0; i < new_rse->rse_relations.getCount(); i++)
+							for (FB_SIZE_T i = 0; i < new_rse->rse_relations.getCount(); i++)
 							{
 								RecordSourceNode* subNode = new_rse->rse_relations[i];
 
@@ -2150,7 +2150,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 	RecordSource* const rsb1 = FB_NEW(*tdbb->getDefaultPool())
 		NestedLoopJoin(csb, stream_o.stream_rsb, innerRsb, boolean, false, false);
 
-	for (size_t i = 0; i < opt->opt_conjuncts.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < opt->opt_conjuncts.getCount(); i++)
 	{
 		if (opt->opt_conjuncts[i].opt_conjunct_flags & opt_conjunct_used)
 		{
@@ -3456,7 +3456,7 @@ static void set_direction(SortNode* fromClause, SortNode* toClause)
 	fb_assert(toClause->expressions.getCount() == toClause->descending.getCount() &&
 		toClause->expressions.getCount() == toClause->nullOrder.getCount());
 
-	for (size_t i = 0; i < fromCount; ++i)
+	for (FB_SIZE_T i = 0; i < fromCount; ++i)
 	{
 		toClause->descending[i] = fromClause->descending[i];
 		toClause->nullOrder[i] = fromClause->nullOrder[i];

@@ -746,7 +746,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 			q = va_arg(args, char*);
 			if (q)
 			{
-				length = strlen(q);
+				length = static_cast<SSHORT>(strlen(q));
 				new_dpb_length += 2 + length;
 			}
 			break;
@@ -817,7 +817,7 @@ void API_ROUTINE_VARARG isc_expand_dpb(SCHAR** dpb, SSHORT* dpb_size, ...)
 			q = va_arg(args, char*);
 			if (q)
 			{
-				length = strlen(q);
+				length = static_cast<SSHORT>(strlen(q));
 				fb_assert(type <= CHAR_MAX);
 				*p++ = (UCHAR) type;
 				fb_assert(length <= CHAR_MAX);
@@ -1043,7 +1043,7 @@ SLONG API_ROUTINE gds__event_block(UCHAR** event_buffer, UCHAR** result_buffer, 
 	while (i--)
 	{
 		q = va_arg(ptr, SCHAR*);
-		length += strlen(q) + 5;
+		length += static_cast<SLONG>(strlen(q)) + 5;
 	}
 
 	p = *event_buffer = (UCHAR*) gds__alloc((SLONG) (sizeof(UCHAR) * length));
@@ -1325,11 +1325,10 @@ void API_ROUTINE isc_set_debug(int /*value*/)
  **************************************
  *
  * Functional description
- *	Set debugging mode, whatever that may mean.
+ *	Deprecated API function.
  *
  **************************************/
 
-#pragma FB_COMPILER_MESSAGE("Empty function?!")
 }
 
 
@@ -1511,7 +1510,7 @@ void API_ROUTINE isc_format_implementation(USHORT impl_nr,
 		else
 		{
 			strncpy(cbuf, impl_class[impl_class_nr], cbuflen - 1);
-			const int len = strlen(impl_class[impl_class_nr]);
+			const int len = static_cast<int>(strlen(impl_class[impl_class_nr]));
 			cbuf[MIN(len, cbuflen - 1)] = '\0';
 		}
 	}
@@ -2275,7 +2274,7 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 			q = va_arg(args, char*);
 			if (q)
 			{
-				length = strlen(q);
+				length = static_cast<SSHORT>(strlen(q));
 				new_dpb_length += 2 + length;
 			}
 			break;
@@ -2344,7 +2343,7 @@ static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...)
 		    q = va_arg(args, char*);
 			if (q)
 			{
-				length = strlen(q);
+				length = static_cast<SSHORT>(strlen(q));
 				fb_assert(type <= CHAR_MAX);
 				*p++ = (unsigned char) type;
 				fb_assert(length <= CHAR_MAX);

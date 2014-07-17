@@ -125,7 +125,7 @@ ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool_t
 
 		case dtype_cstring:
 			if (xdrs->x_op == XDR_ENCODE)
-				n = MIN(strlen(reinterpret_cast<const char*>(p)), length);
+				n = static_cast<SSHORT>(MIN(strlen(reinterpret_cast<const char*>(p)), length));
 			if (!xdr_short(xdrs, &n))
 				return FALSE;
 			if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(p), n))

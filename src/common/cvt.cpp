@@ -448,7 +448,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	}
 
 	// dtype_varying
-	*(USHORT*) (to->dsc_address) = q - to->dsc_address - sizeof(SSHORT);
+	*(USHORT*) (to->dsc_address) = static_cast<USHORT>(q - to->dsc_address - sizeof(SSHORT));
 }
 
 

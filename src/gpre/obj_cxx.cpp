@@ -1104,7 +1104,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 	indent = MIN(indent, 192);
 
 	bool first_line = true;
-	int length = strlen(p);
+	int length = static_cast<int>(strlen(p));
 	do {
 		const char* q;
 		if (length + indent > 255)
@@ -1278,7 +1278,7 @@ static void gen_create_database( const act* action, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
 	args.pat_database = db;
-	args.pat_value1 = strlen(db->dbb_filename);
+	args.pat_value1 = static_cast<int>(strlen(db->dbb_filename));
 	args.pat_condition = (request->req_length || (request->req_flags & REQ_extend_dpb));
 	args.pat_string1 = s1;
 	args.pat_string2 = s2;
@@ -3608,7 +3608,7 @@ static TEXT* make_name( TEXT* const string, const gpre_sym* symbol)
 		int i = 0;
 		strcpy(string, "\"\\\"");
 		const char* source = symbol->sym_string;
-		for (i = strlen(string); *source && i + 4 < MAX_CURSOR_SIZE; i++)
+		for (i = static_cast<int>(strlen(string)); *source && i + 4 < MAX_CURSOR_SIZE; i++)
 		{
 			if (*source == '\"' || *source == '\'')
 			{

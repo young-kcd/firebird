@@ -48,10 +48,10 @@ void		ISC_unescape(Firebird::AbstractString& str);
 
 // This form of ISC_expand_filename makes epp files happy
 inline bool	ISC_expand_filename(const TEXT* unexpanded, USHORT len_unexpanded,
-								TEXT* expanded, size_t len_expanded,
+								TEXT* expanded, FB_SIZE_T len_expanded,
 								bool expand_share)
 {
-	Firebird::PathName pn(unexpanded, len_unexpanded ? len_unexpanded : strlen(unexpanded));
+	Firebird::PathName pn(unexpanded, len_unexpanded ? len_unexpanded : fb_strlen(unexpanded));
 	ISC_expand_filename(pn, expand_share);
 	// What do I return here if the previous call returns false?
 	return (pn.copyTo(expanded, len_expanded) != 0);

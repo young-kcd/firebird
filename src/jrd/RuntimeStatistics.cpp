@@ -171,7 +171,7 @@ void RuntimeStatistics::bumpRelValue(const RelStatType index, SLONG relation_id)
 	fb_assert(index >= 0);
 	++relChgNumber;
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (rel_counts.find(relation_id, pos))
 		rel_counts[pos].rlc_counter[index]++;
 	else
@@ -192,11 +192,11 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 	RelCounters::const_iterator src(other.begin());
 	const RelCounters::const_iterator end(other.end());
 
-	size_t pos;
+	FB_SIZE_T pos;
 	rel_counts.find(src->rlc_relation_id, pos);
 	for (; src != end; ++src)
 	{
-		const size_t cnt = rel_counts.getCount();
+		const FB_SIZE_T cnt = rel_counts.getCount();
 
 		while (pos < cnt && rel_counts[pos].rlc_relation_id < src->rlc_relation_id)
 			pos++;
@@ -263,7 +263,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 			// Point TraceCounts to counts array from baseline object
 			if (!all_zeros)
 			{
-				jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < att->att_relations->count() ?
+				jrd_rel* relation = new_cnts->rlc_relation_id < static_cast<SLONG>(att->att_relations->count()) ?
 					(*att->att_relations)[new_cnts->rlc_relation_id] : NULL;
 				TraceCounts traceCounts;
 				traceCounts.trc_relation_id = new_cnts->rlc_relation_id;
@@ -277,7 +277,7 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 		}
 		else
 		{
-			jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < att->att_relations->count() ?
+			jrd_rel* relation = new_cnts->rlc_relation_id < static_cast<SLONG>(att->att_relations->count()) ?
 				(*att->att_relations)[new_cnts->rlc_relation_id] : NULL;
 
 			// Point TraceCounts to counts array from object with updated counters

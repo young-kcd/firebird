@@ -145,7 +145,7 @@ static CompilerScratch* par_start(thread_db* tdbb, jrd_rel* relation, CompilerSc
 	CompilerScratch* csb;
 	if (!(csb_ptr && (csb = *csb_ptr)))
 	{
-		size_t count = 5;
+		FB_SIZE_T count = 5;
 		if (view_csb)
 			count += view_csb->csb_rpt.getCapacity();
 		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
@@ -272,7 +272,7 @@ BoolExprNode* PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR
 	CompilerScratch* csb;
 	if (!(csb_ptr && (csb = *csb_ptr)))
 	{
-		size_t count = 5;
+		FB_SIZE_T count = 5;
 		if (view_csb)
 			count += view_csb->csb_rpt.getCapacity();
 		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
@@ -954,7 +954,7 @@ USHORT PAR_name(CompilerScratch* csb, Firebird::MetaName& name)
  *	Parse a counted string, returning count.
  *
  **************************************/
-	size_t l = csb->csb_blr_reader.getByte();
+	FB_SIZE_T l = csb->csb_blr_reader.getByte();
 
 	// Check for overly long identifiers at BLR parse stage to prevent unwanted
 	// surprises in deeper layers of the engine.
@@ -978,7 +978,7 @@ USHORT PAR_name(CompilerScratch* csb, Firebird::MetaName& name)
 }
 
 
-size_t PAR_name(CompilerScratch* csb, Firebird::string& name)
+FB_SIZE_T PAR_name(CompilerScratch* csb, Firebird::string& name)
 {
 /**************************************
  *
@@ -991,7 +991,7 @@ size_t PAR_name(CompilerScratch* csb, Firebird::string& name)
  *  (up to 64K, actually <= 255), returning count.
  *
  **************************************/
-	size_t l = csb->csb_blr_reader.getByte();
+	FB_SIZE_T l = csb->csb_blr_reader.getByte();
 	char* s = name.getBuffer(l);
 
 	while (l--)
@@ -1403,7 +1403,7 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 
 		case blr_writelock:
 			// PAR_parseRecordSource() called RelationSourceNode::parse() => MET_scan_relation().
-			for (size_t iter = 0; iter < rse->rse_relations.getCount(); ++iter)
+			for (FB_SIZE_T iter = 0; iter < rse->rse_relations.getCount(); ++iter)
 			{
 				const RecordSourceNode* subNode = rse->rse_relations[iter];
 				if (subNode->type != RelationSourceNode::TYPE)
@@ -1650,7 +1650,7 @@ DmlNode* PAR_parse_node(thread_db* tdbb, CompilerScratch* csb)
 		PAR_syntax_error(csb, "valid BLR code");
 
 	DmlNode* node = blr_parsers[blr_operator](tdbb, *tdbb->getDefaultPool(), csb, blr_operator);
-	size_t pos = 0;
+	FB_SIZE_T pos = 0;
 
 	if (node->kind == DmlNode::KIND_STATEMENT && csb->csb_dbg_info->blrToSrc.find(blr_offset, pos))
 	{

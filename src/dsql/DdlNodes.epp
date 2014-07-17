@@ -1311,7 +1311,7 @@ void CreateAlterFunctionNode::print(string& text) const
 
 	text += "  Parameters:\n";
 
-	for (size_t i = 0; i < parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 	{
 		const ParameterClause* parameter = parameters[i];
 
@@ -1332,7 +1332,7 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		SortedArray<MetaName> names;
 
-		for (size_t i = 0; i < parameters.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
 			names.add(parameter->name);
@@ -1719,7 +1719,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		if (returnType && returnType->type)
 			storeArgument(tdbb, dsqlScratch, transaction, returnPos, true, returnType, NULL);
 
-		for (size_t i = 0; i < parameters.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
 			bid comment;
@@ -2241,7 +2241,7 @@ void CreateAlterProcedureNode::print(string& text) const
 
 	text += "  Parameters:\n";
 
-	for (size_t i = 0; i < parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 	{
 		const ParameterClause* parameter = parameters[i];
 
@@ -2252,7 +2252,7 @@ void CreateAlterProcedureNode::print(string& text) const
 
 	text += "  Returns:\n";
 
-	for (size_t i = 0; i < returns.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
 	{
 		const ParameterClause* parameter = returns[i];
 
@@ -2273,13 +2273,13 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		SortedArray<MetaName> names;
 
-		for (size_t i = 0; i < parameters.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
 			names.add(parameter->name);
 		}
 
-		for (size_t i = 0; i < returns.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause* parameter = returns[i];
 			names.add(parameter->name);
@@ -2579,7 +2579,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 		// And insert the new ones.
 
-		for (size_t i = 0; i < parameters.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
 			bid comment;
@@ -2591,7 +2591,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 			storeParameter(tdbb, dsqlScratch, transaction, 0, i, parameter, &comment);
 		}
 
-		for (size_t i = 0; i < returns.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause* parameter = returns[i];
 			bid comment;
@@ -5735,7 +5735,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (!notNullFlag && pkCols)
 		{
 			// Let's see if the field appears in a "primary_key (a, b, c)" relation constraint.
-			for (size_t i = 0; !notNullFlag && i < pkCols->getCount(); ++i)
+			for (FB_SIZE_T i = 0; !notNullFlag && i < pkCols->getCount(); ++i)
 			{
 				if (field->fld_name == (*pkCols)[i].c_str())
 					notNullFlag = true;
@@ -8655,9 +8655,9 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 
 		request2.reset(tdbb, drq_l_lfield, DYN_REQUESTS);
 
-		for (size_t i = 0; i < definition.columns.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < definition.columns.getCount(); ++i)
 		{
-			for (size_t j = 0; j < i; ++j)
+			for (FB_SIZE_T j = 0; j < i; ++j)
 			{
 				if (definition.columns[i] == definition.columns[j])
 				{

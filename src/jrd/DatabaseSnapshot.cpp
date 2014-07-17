@@ -604,7 +604,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 		while (dumpRecord.getField(dumpField))
 		{
 			const USHORT fid = dumpField.id;
-			const size_t length = dumpField.length;
+			const FB_SIZE_T length = dumpField.length;
 			const char* source = (const char*) dumpField.data;
 
 			// All the strings that may require transliteration (i.e. the target charset is not NONE)
@@ -658,7 +658,7 @@ DatabaseSnapshot::DatabaseSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 void DataDump::clearSnapshot()
 {
-	for (size_t i = 0; i < snapshot.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < snapshot.getCount(); i++)
 		delete snapshot[i].data;
 	snapshot.clear();
 }
@@ -674,7 +674,7 @@ RecordBuffer* DataDump::getData(const jrd_rel* relation) const
 
 RecordBuffer* DataDump::getData(int id) const
 {
-	for (size_t i = 0; i < snapshot.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < snapshot.getCount(); i++)
 	{
 		if (snapshot[i].rel_id == id)
 			return snapshot[i].data;

@@ -94,7 +94,7 @@ static ULONG unicode_to_icu(csconvert* cv,
 	cIcu.ucnv_fromUnicode(conv, &target, target + dstLen, &source,
 		source + srcLen / sizeof(UChar), NULL, TRUE, &status);
 
-	*errPosition = (source - alignedSource) * sizeof(UChar);
+	*errPosition = static_cast<ULONG>((source - alignedSource) * sizeof(UChar));
 
 	if (!U_SUCCESS(status))
 	{
@@ -190,7 +190,7 @@ static ULONG icu_to_unicode(csconvert* cv,
 
 	cIcu.ucnv_close(conv);
 
-	return (target - alignedTarget) * sizeof(UChar);
+	return static_cast<ULONG>((target - alignedTarget) * sizeof(UChar));
 }
 
 

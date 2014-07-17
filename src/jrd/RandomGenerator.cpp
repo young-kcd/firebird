@@ -33,11 +33,11 @@ RandomGenerator::RandomGenerator()
 {
 }
 
-void RandomGenerator::getBytes(void* p, size_t size)
+void RandomGenerator::getBytes(void* p, FB_SIZE_T size)
 {
 	while (size > 0)
 	{
-		const size_t size2 = MIN(size, BUFFER_SIZE);
+		const FB_SIZE_T size2 = MIN(size, BUFFER_SIZE);
 
 		if (bufferPos + size2 > BUFFER_SIZE)
 		{

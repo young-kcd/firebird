@@ -563,7 +563,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 template <typename CharType, typename StrConverter>
 bool SimilarToMatcher<CharType, StrConverter>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
 {
-	const size_t pos = buffer.getCount();
+	const FB_SIZE_T pos = buffer.getCount();
 	memcpy(buffer.getBuffer(pos + dataLen) + pos, data, dataLen);
 	return true;
 }
@@ -976,7 +976,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 												   sizeof(c), c, patternPos - patternStart, 1);
 
 					rangeBuffer.push(len);
-					size_t rangeCount = rangeBuffer.getCount();
+					FB_SIZE_T rangeCount = rangeBuffer.getCount();
 					memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);
 
 					++patternPos;	// character
@@ -1781,7 +1781,7 @@ public:
 
 	bool process(const UCHAR* str, SLONG length)
 	{
-		const size_t pos = buffer.getCount();
+		const FB_SIZE_T pos = buffer.getCount();
 		memcpy(buffer.getBuffer(pos + length) + pos, str, length);
 		return true;
 	}

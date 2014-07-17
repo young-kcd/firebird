@@ -62,7 +62,7 @@ Jrd::ValueExprNode* PAR_gen_field(Jrd::thread_db* tdbb, StreamType stream, USHOR
 Jrd::ValueExprNode* PAR_make_field(Jrd::thread_db*, Jrd::CompilerScratch*, USHORT, const Firebird::MetaName&);
 Jrd::CompoundStmtNode*	PAR_make_list(Jrd::thread_db*, Jrd::StmtNodeStack&);
 USHORT			PAR_name(Jrd::CompilerScratch*, Firebird::MetaName&);
-size_t			PAR_name(Jrd::CompilerScratch* csb, Firebird::string& name);
+FB_SIZE_T			PAR_name(Jrd::CompilerScratch* csb, Firebird::string& name);
 Jrd::CompilerScratch*	PAR_parse(Jrd::thread_db*, const UCHAR* blr, ULONG blr_length,
 	bool internal_flag, ULONG = 0, const UCHAR* = NULL);
 

@@ -45,7 +45,7 @@ int SecurityDatabaseClient::authenticate(Firebird::IStatus* status, IClientBlock
 
 	TEXT pwt[Auth::MAX_LEGACY_PASSWORD_LENGTH + 2];
 	ENC_crypt(pwt, sizeof pwt, cb->getPassword(), Auth::LEGACY_PASSWORD_SALT);
-	cb->putData(status, strlen(&pwt[2]), &pwt[2]);
+	cb->putData(status, static_cast<unsigned>(strlen(&pwt[2])), &pwt[2]);
 	if (! status->isSuccess())
 	{
 		return AUTH_FAILED;

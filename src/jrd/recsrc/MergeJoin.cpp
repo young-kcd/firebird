@@ -36,7 +36,7 @@ static const char* const SCRATCH = "fb_merge_";
 // Data access: merge join
 // -----------------------
 
-MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
+MergeJoin::MergeJoin(CompilerScratch* csb, FB_SIZE_T count,
 					 SortedStream* const* args, const NestValueArray* const* keys)
 	: m_args(csb->csb_pool), m_keys(csb->csb_pool)
 {
@@ -46,7 +46,7 @@ MergeJoin::MergeJoin(CompilerScratch* csb, size_t count,
 	m_args.resize(count);
 	m_keys.resize(count);
 
-	for (size_t i = 0; i < count; i++)
+	for (FB_SIZE_T i = 0; i < count; i++)
 	{
 		fb_assert(args[i]);
 		m_args[i] = args[i];
@@ -63,7 +63,7 @@ void MergeJoin::open(thread_db* tdbb) const
 
 	impure->irsb_flags = irsb_open;
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 	{
 		Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
@@ -104,7 +104,7 @@ void MergeJoin::close(thread_db* tdbb) const
 	{
 		impure->irsb_flags &= ~irsb_open;
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		{
 			Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
 
@@ -144,9 +144,9 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 	// Assuming we are done with the current value group, advance each
 	// stream one record. If any comes up dry, we're done.
 	const NestConst<SortedStream>* highest_ptr = m_args.begin();
-	size_t highest_index = 0;
+	FB_SIZE_T highest_index = 0;
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 	{
 		const NestConst<SortedStream>* const ptr = &m_args[i];
 		const SortedStream* const sort_rsb = *ptr;
@@ -202,7 +202,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 	{
 		bool recycle = false;
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		{
 			const NestConst<SortedStream>* const ptr = &m_args[i];
 			const SortedStream* const sort_rsb = *ptr;
@@ -243,7 +243,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 
 	// finally compute equality group for each stream in sort/merge
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 	{
 		const SortedStream* const sort_rsb = m_args[i];
 		Impure::irsb_mrg_repeat* const tail = &impure->irsb_mrg_rpt[i];
@@ -343,14 +343,14 @@ void MergeJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned lev
 	{
 		plan += printIndent(++level) + "Merge Join (inner)";
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			m_args[i]->print(tdbb, plan, true, level);
 	}
 	else
 	{
 		level++;
 		plan += "MERGE (";
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
 				plan += ", ";
@@ -363,25 +363,25 @@ void MergeJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned lev
 
 void MergeJoin::markRecursive()
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->markRecursive();
 }
 
 void MergeJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->findUsedStreams(streams, expandAll);
 }
 
 void MergeJoin::invalidateRecords(jrd_req* request) const
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->invalidateRecords(request);
 }
 
 void MergeJoin::nullRecords(thread_db* tdbb) const
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->nullRecords(tdbb);
 }
 
@@ -435,7 +435,7 @@ UCHAR* MergeJoin::getData(thread_db* /*tdbb*/, MergeFile* mfb, SLONG record) con
 	return mfb->mfb_block_data + merge_offset;
 }
 
-SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index) const
+SLONG MergeJoin::getRecord(thread_db* tdbb, FB_SIZE_T index) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
@@ -473,7 +473,7 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, size_t index) const
 	return record;
 }
 
-bool MergeJoin::fetchRecord(thread_db* tdbb, size_t index) const
+bool MergeJoin::fetchRecord(thread_db* tdbb, FB_SIZE_T index) const
 {
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);

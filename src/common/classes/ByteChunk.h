@@ -32,7 +32,7 @@ namespace Firebird {
 struct ByteChunk
 {
 	// Separate pointer/length buffer.
-	ByteChunk(const UCHAR* aData, size_t aLength)
+	ByteChunk(const UCHAR* aData, FB_SIZE_T aLength)
 		: data(aData),
 		  length(aLength)
 	{
@@ -62,7 +62,7 @@ struct ByteChunk
 	}
 
 	const UCHAR* data;
-	size_t length;
+	FB_SIZE_T length;
 };
 
 }	// namespace Firebird

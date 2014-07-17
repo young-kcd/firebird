@@ -418,7 +418,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 	if (sqlda_flag && sqlda_index && sqlda_index <= message->msg_index)
 	{
 		// This parameter is possibly already here. Look for it.
-		for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 		{
 			dsql_par* temp = message->msg_parameters[i];
 

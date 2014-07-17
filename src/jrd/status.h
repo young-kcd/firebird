@@ -29,11 +29,9 @@
 #ifndef FB_MISC_STATUS_H
 #define FB_MISC_STATUS_H
 
-#include <stdlib.h>				// size_t
-
 const int MAX_ERRMSG_LEN	= 128;
 const int MAX_ERRSTR_LEN	= 1024;
 
-void PARSE_STATUS(const ISC_STATUS* status_vector, size_t& length, size_t& warning);
+void PARSE_STATUS(const ISC_STATUS* status_vector, FB_SIZE_T& length, FB_SIZE_T& warning);
 
 #endif // FB_MISC_STATUS_H

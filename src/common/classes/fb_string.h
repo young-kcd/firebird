@@ -45,8 +45,8 @@ namespace Firebird
 	{
 	public:
 		typedef char char_type;
-		typedef size_t size_type;
-		typedef ptrdiff_t difference_type;
+		typedef FB_SIZE_T size_type;
+		typedef FB_SSIZE_T difference_type;
 		typedef char* pointer;
 		typedef const char* const_pointer;
 		typedef char& reference;
@@ -98,7 +98,7 @@ namespace Firebird
 
 				// Grow buffer exponentially to prevent memory fragmentation
 				if (newSize / 2 < bufferSize)
-					newSize = size_t(bufferSize) * 2u;
+					newSize = size_type(bufferSize) * 2u;
 
 				// Do not grow buffer beyond string length limit
 				size_type max_length = getMaxLength() + 1;
@@ -254,7 +254,7 @@ namespace Firebird
 			resize(n);
 		}
 
-		pointer getBuffer(size_t l)
+		pointer getBuffer(size_type l)
 		{
 			return baseAssign(l);
 		}
@@ -286,7 +286,7 @@ namespace Firebird
 		size_type find_first_of(const_pointer s, size_type pos, size_type n) const;
 		size_type find_first_of(const_pointer s, size_type pos = 0) const
 		{
-			return find_first_of(s, pos, strlen(s));
+			return find_first_of(s, pos, static_cast<size_type>(strlen(s)));
 		}
 		size_type find_first_of(char_type c, size_type pos = 0) const
 		{
@@ -299,7 +299,7 @@ namespace Firebird
 		size_type find_last_of(const_pointer s, const size_type pos, size_type n = npos) const;
 		size_type find_last_of(const_pointer s, size_type pos = npos) const
 		{
-			return find_last_of(s, pos, strlen(s));
+			return find_last_of(s, pos, static_cast<size_type>(strlen(s)));
 		}
 		size_type find_last_of(char_type c, size_type pos = npos) const
 		{
@@ -312,7 +312,7 @@ namespace Firebird
 		size_type find_first_not_of(const_pointer s, size_type pos, size_type n) const;
 		size_type find_first_not_of(const_pointer s, size_type pos = 0) const
 		{
-			return find_first_not_of(s, pos, strlen(s));
+			return find_first_not_of(s, pos, static_cast<size_type>(strlen(s)));
 		}
 		size_type find_first_not_of(char_type c, size_type pos = 0) const
 		{
@@ -326,7 +326,7 @@ namespace Firebird
 		size_type find_last_not_of(const_pointer s, const size_type pos, size_type n = npos) const;
 		size_type find_last_not_of(const_pointer s, size_type pos = npos) const
 		{
-			return find_last_not_of(s, pos, strlen(s));
+			return find_last_not_of(s, pos, static_cast<size_type>(strlen(s)));
 		}
 		size_type find_last_not_of(char_type c, size_type pos = npos) const
 		{
@@ -457,7 +457,7 @@ namespace Firebird
 		}
 		AbstractString& append(const_pointer s)
 		{
-			return append(s, strlen(s));
+			return append(s, static_cast<size_type>(strlen(s)));
 		}
 		AbstractString& append(size_type n, char_type c)
 		{
@@ -491,7 +491,7 @@ namespace Firebird
 		}
 		AbstractString& insert(size_type p0, const_pointer s)
 		{
-			return insert(p0, s, strlen(s));
+			return insert(p0, s, static_cast<size_type>(strlen(s)));
 		}
 		AbstractString& insert(size_type p0, const size_type n, const char_type c)
 		{
@@ -547,7 +547,7 @@ namespace Firebird
 		}
 		AbstractString& replace(size_type p0, size_type n0, const_pointer s)
 		{
-			return replace(p0, n0, s, strlen(s));
+			return replace(p0, n0, s, static_cast<size_type>(strlen(s)));
 		}
 		AbstractString& replace(const size_type p0, const size_type n0, size_type n,
 			char_type c)
@@ -645,9 +645,9 @@ namespace Firebird
 		StringBase() : AbstractString(Comparator::getMaxLength()) {}
 		StringBase(const StringType& v) : AbstractString(Comparator::getMaxLength(), v) {}
 		StringBase(const void* s, size_type n) : AbstractString(Comparator::getMaxLength(), n, s) {}
-		StringBase(const_pointer s) : AbstractString(Comparator::getMaxLength(), strlen(s), s) {}
+		StringBase(const_pointer s) : AbstractString(Comparator::getMaxLength(), static_cast<size_type>(strlen(s)), s) {}
 		explicit StringBase(const unsigned char* s) :
-			AbstractString(Comparator::getMaxLength(), strlen((char*)s), (char*)s) {}
+			AbstractString(Comparator::getMaxLength(), static_cast<size_type>(strlen((char*)s)), (char*)s) {}
 		StringBase(size_type n, char_type c) : AbstractString(Comparator::getMaxLength(), n, c) {}
 		StringBase(const_iterator first, const_iterator last) :
 			AbstractString(Comparator::getMaxLength(), last - first, first) {}
@@ -679,7 +679,7 @@ namespace Firebird
 		}
 		StringType& assign(const_pointer s)
 		{
-			return assign(s, strlen(s));
+			return assign(s, static_cast<size_type>(strlen(s)));
 		}
 		StringType& assign(size_type n, char_type c)
 		{
@@ -699,7 +699,7 @@ namespace Firebird
 		}
 		StringType& operator=(const_pointer s)
 		{
-			return assign(s, strlen(s));
+			return assign(s, static_cast<size_type>(strlen(s)));
 		}
 		StringType& operator=(char_type c)
 		{
@@ -727,7 +727,7 @@ namespace Firebird
 		}
 		StringType operator+(const_pointer s) const
 		{
-			return add(s, strlen(s));
+			return add(s, static_cast<size_type>(strlen(s)));
 		}
 		StringType operator+(char_type c) const
 		{
@@ -767,7 +767,7 @@ namespace Firebird
 		}
 		int compare(const_pointer s) const
 		{
-			return compare(s, strlen(s));
+			return compare(s, static_cast<size_type>(strlen(s)));
 		}
 		int compare(size_type p0, size_type n0, const_pointer s, const size_type n) const
 		{
@@ -801,12 +801,12 @@ namespace Firebird
 		}
 		bool equals(const_pointer s) const
 		{
-			const size_type n = strlen(s);
+			const size_type n = static_cast<size_type>(strlen(s));
 			return (length() != n) ? false : (Comparator::compare(c_str(), s, n) == 0);
 		}
 		bool different(const_pointer s) const
 		{
-			const size_type n = strlen(s);
+			const size_type n = static_cast<size_type>(strlen(s));
 			return (length() != n) ? true : (Comparator::compare(c_str(), s, n) != 0);
 		}
 

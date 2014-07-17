@@ -44,7 +44,7 @@ namespace Firebird {
 // Be careful while changing this expression. N=2 must always cause merge
 
 // 2009-04 Please do not make this function static, it will break xlC build!
-inline bool NEED_MERGE(size_t current_count, size_t page_count)
+inline bool NEED_MERGE(FB_SIZE_T current_count, FB_SIZE_T page_count)
 {
 	return current_count * 4 / 3 <= page_count;
 }
@@ -110,8 +110,8 @@ template <typename Value, typename Key = Value, typename Allocator = MallocAlloc
 	typename Cmp = DefaultComparator<Key> >
 class BePlusTree
 {
-	static const size_t LeafCount = LEAF_PAGE_SIZE / sizeof(Value);
-	static const size_t NodeCount = NODE_PAGE_SIZE / sizeof(void*);
+	static const FB_SIZE_T LeafCount = LEAF_PAGE_SIZE / sizeof(Value);
+	static const FB_SIZE_T NodeCount = NODE_PAGE_SIZE / sizeof(void*);
 public:
 	explicit BePlusTree(Allocator *_pool)
 		: pool(_pool), level(0), root(NULL), defaultAccessor(this)
@@ -400,7 +400,7 @@ public:
 
 			for (int lev = tree->level; lev; lev--)
 			{
-				size_t pos;
+				FB_SIZE_T pos;
 				if (!((NodeList *)list)->find(key, pos))
 				{
 					if (pos > 0)
@@ -539,7 +539,7 @@ public:
 		}
 
 		ItemList* curr;
-  		size_t curPos;
+  		FB_SIZE_T curPos;
 
 	private:
 		const BePlusTree* tree;
@@ -677,7 +677,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, 
 	const Key& key = KeyOfValue::generate(NULL, item);
 	for (int lev = this->level; lev > 0; lev--)
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		if (!((NodeList *)vList)->find(key, pos))
 		{
 			if (pos > 0)
@@ -688,7 +688,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, 
 
 	ItemList *leaf = (ItemList *)vList;
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (leaf->find(key, pos))
 	{
 		if (accessor)
@@ -758,8 +758,8 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, 
 	// This array contains index of the element we try to add on page of each level
 	// MAP_NEW_PAGE means that element is on new page
 	// In case of low memory condition we use this data to recover to innocent state
-	size_t recovery_map[MAX_TREE_LEVEL];
-	const size_t MAP_NEW_PAGE = ~((size_t) 0);
+	FB_SIZE_T recovery_map[MAX_TREE_LEVEL];
+	const FB_SIZE_T MAP_NEW_PAGE = ~((FB_SIZE_T) 0);
 
 	if (pos == LeafCount)
 	{
@@ -962,7 +962,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::_removePage(const int n
 	}
 	else
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 #ifndef DEV_BUILD
 		list->find(NodeList::generate(list, node), pos);
 #else
@@ -990,7 +990,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::_removePage(const int n
 				// After join upper levels of the tree remain stable because join doesn't change
 				// key of the page. The same applies to lower case too.
 				temp->join(*list);
-				for (size_t i = 0; i < list->getCount(); i++)
+				for (FB_SIZE_T i = 0; i < list->getCount(); i++)
 					NodeList::setNodeParent((*list)[i], nodeLevel, temp);
 				_removePage(nodeLevel + 1, list);
 			}
@@ -998,7 +998,7 @@ void BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::_removePage(const int n
 			if ((temp = list->next) && NEED_MERGE(temp->getCount() + list->getCount(), NodeCount))
 			{
 				list->join(*temp);
-				for (size_t i = 0; i < temp->getCount(); i++)
+				for (FB_SIZE_T i = 0; i < temp->getCount(); i++)
 					NodeList::setNodeParent((*temp)[i], nodeLevel, list);
 				_removePage(nodeLevel + 1, temp);
 			}

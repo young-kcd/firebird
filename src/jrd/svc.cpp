@@ -355,7 +355,7 @@ void Service::parseSwitches()
 	}
 
 	bool inStr = false;
-	for (size_t i = 0; i < svc_parsed_sw.length(); ++i)
+	for (FB_SIZE_T i = 0; i < svc_parsed_sw.length(); ++i)
 	{
 		switch (svc_parsed_sw[i])
 		{
@@ -400,7 +400,7 @@ void Service::outputVerbose(const char* text)
 {
 	if (!usvcDataMode)
 	{
-		ULONG len = strlen(text);
+		ULONG len = static_cast<ULONG>(strlen(text));
 		enqueue(reinterpret_cast<const UCHAR*>(text), len);
 	}
 }
@@ -410,7 +410,7 @@ void Service::outputError(const char* /*text*/)
 	fb_assert(false);
 }
 
-void Service::outputData(const void* data, size_t len)
+void Service::outputData(const void* data, FB_SIZE_T len)
 {
 	fb_assert(usvcDataMode);
 	enqueue(reinterpret_cast<const UCHAR*>(data), len);
@@ -489,7 +489,7 @@ void Service::putChar(char tag, char val)
 	enqueue(buf, sizeof buf);
 }
 
-void Service::putBytes(const UCHAR* bytes, size_t len)
+void Service::putBytes(const UCHAR* bytes, FB_SIZE_T len)
 {
 	enqueue(bytes, len);
 }
@@ -565,7 +565,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
 	}
 	else
 	{
-		size_t status_len = 0, warning_indx = 0;
+		FB_SIZE_T status_len = 0, warning_indx = 0;
 		PARSE_STATUS(svc_status, status_len, warning_indx);
 		if (status_len)
 			--status_len;
@@ -601,7 +601,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
 				err_status_len = 0;
 
 			ISC_STATUS_ARRAY warning_status;
-			size_t warning_count = 0;
+			FB_SIZE_T warning_count = 0;
 			if (warning_indx)
 			{
 				// copy current warning(s) to a temp buffer
@@ -657,7 +657,7 @@ unsigned int Service::getAuthBlock(const unsigned char** bytes)
 void Service::fillDpb(ClumpletWriter& dpb)
 {
 	const char* providers = "Providers=" CURRENT_ENGINE;
-	dpb.insertString(isc_dpb_config, providers, strlen(providers));
+	dpb.insertString(isc_dpb_config, providers, fb_strlen(providers));
 	if (svc_address_path.hasData())
 	{
 		dpb.insertString(isc_dpb_address_path, svc_address_path);
@@ -956,7 +956,7 @@ void Service::removeFromAllServices()
 {
 	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (locateInAllServices(&pos))
 	{
 		allServices->remove(pos);
@@ -967,12 +967,12 @@ void Service::removeFromAllServices()
 }
 
 
-bool Service::locateInAllServices(size_t* posPtr)
+bool Service::locateInAllServices(FB_SIZE_T* posPtr)
 {
 	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
 	AllServices& all(allServices);
 
-	for (size_t pos = 0; pos < all.getCount(); ++pos)
+	for (FB_SIZE_T pos = 0; pos < all.getCount(); ++pos)
 	{
 		if (all[pos] == this)
 		{
@@ -995,7 +995,7 @@ ULONG Service::totalCount()
 	ULONG cnt = 0;
 
 	// don't count already detached services
-	for (size_t i = 0; i < all.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < all.getCount(); i++)
 	{
 		if (!(all[i]->svc_flags & SVC_detached))
 			cnt++;
@@ -1192,7 +1192,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				ADD_SPB_NUMERIC(info, num_dbs);
 
 				// Move db names into the info buffer
-				for (size_t i = 0; i < databases.getCount(); i++)
+				for (FB_SIZE_T i = 0; i < databases.getCount(); i++)
 				{
 					if (!(info = INF_put_item(isc_spb_dbname,
 											  (USHORT) databases[i].length(),
@@ -1256,7 +1256,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				// Note: it is safe to use strlen to get a length of "buffer"
 				// because gds_prefix[_lock|_msg] returns a zero-terminated
 				// string.
-				info = INF_put_item(item, strlen(auxBuf), buffer, info, end);
+				info = INF_put_item(item, static_cast<USHORT>(strlen(auxBuf)), buffer, info, end);
 				if (!info)
 				{
 					return 0;
@@ -1337,7 +1337,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 			// The version of the server engine
 			{ // scope
 				static const UCHAR* pv = reinterpret_cast<const UCHAR*>(FB_VERSION);
-				info = INF_put_item(item, strlen(FB_VERSION), pv, info, end);
+				info = INF_put_item(item, static_cast<USHORT>(strlen(FB_VERSION)), pv, info, end);
 				if (!info) {
 					return 0;
 				}
@@ -1379,7 +1379,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 				const RefPtr<Config> defConf(Config::getDefaultConfig());
 				strcpy(pb, defConf->getSecurityDatabase());
 
-				if (!(info = INF_put_item(item, strlen(pb), buffer, info, end)))
+				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
 				{
 					return 0;
 				}
@@ -1727,7 +1727,7 @@ void Service::query(USHORT			send_item_length,
 				// because gds_prefix[_lock|_msg] return a zero-terminated
 				// string.
 				const UCHAR* pb = reinterpret_cast<const UCHAR*>(PathBuffer);
-				if (!(info = INF_put_item(item, strlen(PathBuffer), pb, info, end)))
+				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(PathBuffer)), pb, info, end)))
 					return;
 			}
 			// Can not return error for service v.1 => simply ignore request
@@ -1831,7 +1831,7 @@ void Service::query(USHORT			send_item_length,
 				const RefPtr<Config> defConf(Config::getDefaultConfig());
 				strcpy(pb, defConf->getSecurityDatabase());
 
-				if (!(info = INF_put_item(item, strlen(pb), buffer, info, end)))
+				if (!(info = INF_put_item(item, static_cast<USHORT>(strlen(pb)), buffer, info, end)))
 				{
 					return;
 				}
@@ -2205,7 +2205,7 @@ void Service::readFbLog()
 			setDataMode(true);
 
 			while (fgets(buffer, sizeof(buffer), file))
-				outputData(buffer, strlen(buffer));
+				outputData(buffer, fb_strlen(buffer));
 
 			setDataMode(false);
 		}

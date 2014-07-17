@@ -224,7 +224,7 @@ bool_t xdr_datum( XDR* xdrs, const dsc* desc, UCHAR* buffer)
 			USHORT n;
 			if (xdrs->x_op == XDR_ENCODE)
 			{
-				n = MIN(strlen(reinterpret_cast<char*>(p)), (ULONG) (desc->dsc_length - 1));
+				n = MIN(static_cast<ULONG>(strlen(reinterpret_cast<char*>(p))), (ULONG)(desc->dsc_length - 1));
 			}
 			if (!xdr_short(xdrs, reinterpret_cast<SSHORT*>(&n)))
 				return FALSE;
@@ -385,13 +385,15 @@ bool_t xdr_float(XDR* xdrs, float* ip)
  *	Map from external to internal representation (or vice versa).
  *
  **************************************/
+	fb_assert(sizeof(float) == sizeof(SLONG));
+
+
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
 		return PUTLONG(xdrs, reinterpret_cast<SLONG*>(ip));
 
 	case XDR_DECODE:
-#pragma FB_COMPILER_MESSAGE("BUGBUG! No way float* and SLONG* are compatible!")
 		return GETLONG(xdrs, reinterpret_cast<SLONG*>(ip));
 
 	case XDR_FREE:
@@ -599,7 +601,7 @@ bool_t xdr_string(XDR* xdrs, SCHAR** sp, u_int maxlength)
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:
-		length = strlen(*sp);
+		length = static_cast<ULONG>(strlen(*sp));
 		if (length > maxlength ||
 			!PUTLONG(xdrs, reinterpret_cast<SLONG*>(&length)) ||
 			!PUTBYTES(xdrs, *sp, length))

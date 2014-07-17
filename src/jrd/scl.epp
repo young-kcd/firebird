@@ -1395,7 +1395,7 @@ static bool check_string(const UCHAR* acl, const Firebird::MetaName& string)
  **************************************/
 	fb_assert(acl);
 
-	const size_t length = *acl++;
+	const FB_SIZE_T length = *acl++;
 	const TEXT* const ptr = (TEXT*) acl;
 
     return (string.compare(ptr, length) != 0);

@@ -639,7 +639,7 @@ bool LEX_push_file(const TEXT* filename, const bool error_flag)
 		}
 	}
 
-	qli_line* line = (qli_line*) ALLOCPV(type_line, strlen(filename));
+	qli_line* line = (qli_line*) ALLOCPV(type_line, static_cast<int>(strlen(filename)));
 	line->line_type = line_file;
 	line->line_source_file = file;
 	line->line_size = sizeof(line->line_data);
@@ -667,7 +667,7 @@ bool LEX_push_string(const TEXT* const string)
  **************************************/
 	qli_line* line = (qli_line*) ALLOCPV(type_line, 0);
 	line->line_type = line_string;
-	line->line_size = strlen(string);
+	line->line_size = static_cast<USHORT>(strlen(string));
 	line->line_ptr = line->line_data;
 	strcpy(line->line_data, string);
 	line->line_data[line->line_size] = '\n';

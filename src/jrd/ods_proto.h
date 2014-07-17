@@ -27,15 +27,17 @@ namespace Ods {
 
 	bool isSupported(USHORT, USHORT);
 
-	size_t bytesBitPIP(size_t page_size);
-	size_t pagesPerPIP(size_t page_size);
-	size_t pagesPerSCN(size_t page_size);
-	size_t maxPagesPerSCN(size_t page_size);
-	size_t transPerTIP(size_t page_size);
-	size_t gensPerPage(size_t page_size);
-	size_t dataPagesPerPP(size_t page_size);
-	size_t maxRecsPerDP(size_t page_size);
-	size_t maxIndices(size_t page_size);
+	// NS: ODS code logic should never depend on host platform pointer size.
+	// this is why data type for these things is ULONG (32-bit unsigned integer)
+	ULONG bytesBitPIP(ULONG page_size);
+	ULONG pagesPerPIP(ULONG page_size);
+	ULONG pagesPerSCN(ULONG page_size);
+	ULONG maxPagesPerSCN(ULONG page_size);
+	ULONG transPerTIP(ULONG page_size);
+	ULONG gensPerPage(ULONG page_size);
+	ULONG dataPagesPerPP(ULONG page_size);
+	ULONG maxRecsPerDP(ULONG page_size);
+	ULONG maxIndices(ULONG page_size);
 
 } // namespace
 

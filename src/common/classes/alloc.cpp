@@ -334,7 +334,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (OOM_EXCEPTION)
 
 	if (length <= threshold)
 	{
-		unsigned int slot = length / roundingSize;
+		size_t slot = length / roundingSize;
 		MemBlock* block;
 
 		if (threadShared)
@@ -434,7 +434,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (OOM_EXCEPTION)
 
 			// Compute length (MemHeader + body) for new free block
 
-			unsigned int tail = block->length - length;
+			size_t tail = block->length - length;
 
 			// If there isn't room to split off a new free block, allocate the whole thing
 
@@ -633,7 +633,7 @@ void MemoryPool::releaseBlock(MemBlock* block) throw ()
 
 		if (threadShared)
 		{
-			for (int slot = length / roundingSize;;)
+			for (size_t slot = length / roundingSize;;)
 			{
 				block->next = freeObjects[slot];
 
@@ -642,7 +642,7 @@ void MemoryPool::releaseBlock(MemBlock* block) throw ()
 			}
 		}
 
-		int slot = length / roundingSize;
+		size_t slot = length / roundingSize;
 		void* next = freeObjects[slot];
 		block->pool = (MemoryPool*) next;
 		freeObjects[slot] = block;

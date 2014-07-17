@@ -119,7 +119,7 @@ void Jrd::Attachment::deletePool(MemoryPool* pool)
 {
 	if (pool)
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		if (att_pools.find(pool, pos))
 			att_pools.remove(pos);
 
@@ -283,7 +283,7 @@ string Jrd::Attachment::stringToMetaCharSet(thread_db* tdbb, const string& str,
 
 	if (charSet)
 	{
-		if (!MET_get_char_coll_subtype(tdbb, &charSetId, (const UCHAR*) charSet, strlen(charSet)))
+		if (!MET_get_char_coll_subtype(tdbb, &charSetId, (const UCHAR*) charSet, static_cast<USHORT>(strlen(charSet))))
 			(Arg::Gds(isc_charset_not_found) << Arg::Str(charSet)).raise();
 	}
 

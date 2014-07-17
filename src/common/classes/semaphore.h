@@ -46,14 +46,9 @@ class Semaphore
 {
 private:
 	HANDLE hSemaphore;
-	void init()
-	{
-		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, INT_MAX, NULL);
-		if (hSemaphore == NULL)
-			system_call_failed::raise("CreateSemaphore");
-	}
+	void init();
 
-	// Forbid copying
+	// Forbid copying (there is no definition of these methods)
 	Semaphore(const Semaphore&);
 	Semaphore& operator=(const Semaphore&);
 
@@ -61,32 +56,17 @@ public:
 	Semaphore() { init(); }
 	explicit Semaphore(MemoryPool&) { init(); }
 
-	~Semaphore()
-	{
-		if (hSemaphore && !CloseHandle(hSemaphore))
-			system_call_failed::raise("CloseHandle");
-	}
+	~Semaphore();
 
 #define CLASSES_SEMAPHORE_H_HAS_TRYENTER 1
-	bool tryEnter(const int seconds = 0, int milliseconds = 0)
-	{
-		milliseconds += seconds * 1000;
-		DWORD result = WaitForSingleObject(hSemaphore, milliseconds >= 0 ? milliseconds : INFINITE);
-		if (result == WAIT_FAILED)
-			system_call_failed::raise("WaitForSingleObject");
-		return result != WAIT_TIMEOUT;
-	}
+	bool tryEnter(const int seconds = 0, int milliseconds = 0);
 
 	void enter()
 	{
 		tryEnter(-1);
 	}
 
-	void release(SLONG count = 1)
-	{
-		if (!ReleaseSemaphore(hSemaphore, count, NULL))
-			system_call_failed::raise("ReleaseSemaphore");
-	}
+	void release(SLONG count = 1);
 };
 
 } // namespace Firebird

@@ -1040,7 +1040,7 @@ static gpre_nod* normalize_index( dim* dimension, gpre_nod* user_index, USHORT a
 	}
 
 	ref* reference = (ref*) MSC_alloc(REF_LEN);
-	char* tmp = (TEXT *) MSC_alloc(strlen(string));
+	char* tmp = (TEXT *) MSC_alloc(static_cast<int>(strlen(string)));
 	reference->ref_value = tmp;
 	strcpy(tmp, string);
 	gpre_nod* adjustment_node = MSC_unary(nod_literal, (gpre_nod*) reference);

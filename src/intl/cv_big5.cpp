@@ -112,7 +112,7 @@ ULONG CVBIG5_big5_to_unicode(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
+	return static_cast<ULONG>((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
@@ -191,7 +191,7 @@ ULONG CVBIG5_unicode_to_big5(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - unicode_len;
-	return ((big5_str - start) * sizeof(*big5_str));
+	return static_cast<ULONG>((big5_str - start) * sizeof(*big5_str));
 }
 
 

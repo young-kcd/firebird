@@ -217,7 +217,7 @@ public:
 
 			const char* str = logonInfo->role();
 			if (str && str[0])
-				dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
+				dpb.insertString(isc_dpb_sql_role_name, str, fb_strlen(str));
 
 			if (authBlockSize)
 			{
@@ -233,7 +233,7 @@ public:
 				fprintf(stderr, "SrpManagement: Using name '%s'\n", str);
 #endif
 				if (str && str[0])
-					dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
+					dpb.insertString(isc_dpb_trusted_auth, str, fb_strlen(str));
 			}
 
 			Firebird::DispatcherPtr p;
@@ -869,7 +869,7 @@ private:
 	{
 		to.null = FB_FALSE;
 		const char* ptr = from->get();
-		unsigned l = strlen(ptr);
+		unsigned l = static_cast<unsigned>(strlen(ptr));
 
 		Firebird::IBlob* blob = NULL;
 		try

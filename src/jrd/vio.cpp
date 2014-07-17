@@ -1959,7 +1959,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 
 	// Insert the new record block into the last slot of the vector.
 
-	size_t slot = vector->count() - 1;
+	FB_SIZE_T slot = vector->count() - 1;
 	if ((*vector)[slot]) {
 		vector->resize((++slot) + 1);
 	}
@@ -3432,7 +3432,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 	try {
 
-		for (size_t i = 1; (vector = attachment->att_relations) && i < vector->count(); i++)
+		for (FB_SIZE_T i = 1; (vector = attachment->att_relations) && i < vector->count(); i++)
 		{
 			relation = (*vector)[i];
 			if (relation)
@@ -4832,7 +4832,7 @@ static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rp
 	{
 		if (request->req_flags & req_active)
 		{
-			for (size_t i = 0; i < request->req_rpb.getCount(); i++)
+			for (FB_SIZE_T i = 0; i < request->req_rpb.getCount(); i++)
 			{
 				record_param* const org_rpb = &request->req_rpb[i];
 

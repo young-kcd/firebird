@@ -103,7 +103,7 @@ void TraceCfgReader::readConfig()
 
 	bool defDB = false, defSvc = false, exactMatch = false;
 	const ConfigFile::Parameters& params = cfgFile.getParameters();
-	for (size_t n = 0; n < params.getCount() && !exactMatch; ++n)
+	for (FB_SIZE_T n = 0; n < params.getCount() && !exactMatch; ++n)
 	{
 		const ConfigFile::Parameter* section = &params[n];
 
@@ -202,7 +202,7 @@ void TraceCfgReader::readConfig()
 			continue;
 
 		const ConfigFile::Parameters& elements = section->sub->getParameters();
-		for (size_t p = 0; p < elements.getCount(); ++p)
+		for (FB_SIZE_T p = 0; p < elements.getCount(); ++p)
 		{
 			const ConfigFile::Parameter* el = &elements[p];
 

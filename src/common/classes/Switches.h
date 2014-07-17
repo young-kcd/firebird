@@ -59,7 +59,7 @@ public:
 	// each option (in other case it checks the first letter of an option).
 	// Additionally it precalculates the options' lengths and checks that their minimal lengths
 	// are valid (cannot be bigger than the whole string).
-	Switches(const in_sw_tab_t* table, size_t count, bool copy, bool minLength);
+	Switches(const in_sw_tab_t* table, FB_SIZE_T count, bool copy, bool minLength);
 	~Switches();
 
 	// Given an argument, try to locate it in the table's in_sw_name data member. Empty strings
@@ -97,18 +97,18 @@ public:
 
 private:
 	// Auxiliar function for findSwitch, findSwitchMod and exists().
-	static bool matchSwitch(const Firebird::string& sw, const char* target, size_t n);
+	static bool matchSwitch(const Firebird::string& sw, const char* target, FB_SIZE_T n);
 	// Auxiliar function for exists().
-	const in_sw_tab_t* findByTag(const int in_sw, size_t* pos = 0, bool rejectAmbiguity = true) const;
+	const in_sw_tab_t* findByTag(const int in_sw, FB_SIZE_T* pos = 0, bool rejectAmbiguity = true) const;
 	// Shortcut to raise exceptions
 	static void complain(const char* msg);
 
 	const in_sw_tab_t* const m_base;	// pointer to the original table
-	const size_t	m_count;			// count of elements (terminator element included)
+	const FB_SIZE_T	m_count;			// count of elements (terminator element included)
 	const bool		m_copy;				// was m_base copied into m_table for modifications?
 	const bool		m_minLength;		// is the field in_sw_min_length meaningful?
 	in_sw_tab_t*	m_table;			// modifiable copy
-	size_t*			m_opLengths;		// array of in_sw_name's lengths to avoid recalculation
+	FB_SIZE_T*			m_opLengths;		// array of in_sw_name's lengths to avoid recalculation
 };
 
 #endif // CLASSES_SWITCHES

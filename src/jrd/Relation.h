@@ -42,7 +42,7 @@ public:
 	explicit ViewContext(MemoryPool& p, const TEXT* context_name,
 						 const TEXT* relation_name, USHORT context,
 						 ViewContextType type)
-	: vcx_context_name(p, context_name, strlen(context_name)),
+	: vcx_context_name(p, context_name, fb_strlen(context_name)),
 	  vcx_relation_name(relation_name),
 	  vcx_context(context),
 	  vcx_type(type)

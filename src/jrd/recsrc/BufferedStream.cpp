@@ -82,11 +82,11 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 		fields.add(desc);
 	}
 
-	const size_t count = fields.getCount();
+	const FB_SIZE_T count = fields.getCount();
 	Format* const format = Format::newFormat(csb->csb_pool, count);
 	format->fmt_length = FLAG_BYTES(count);
 
-	for (size_t i = 0; i < count; i++)
+	for (FB_SIZE_T i = 0; i < count; i++)
 	{
 		dsc& desc = format->fmt_desc[i] = fields[i];
 
@@ -160,7 +160,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 		}
 
 		// Assign the fields to the record to be stored
-		for (size_t i = 0; i < m_map.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_map.getCount(); i++)
 		{
 			const FieldMap& map = m_map[i];
 
@@ -213,7 +213,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 			return false;
 
 		// Assign fields back to their original streams
-		for (size_t i = 0; i < m_map.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_map.getCount(); i++)
 		{
 			const FieldMap& map = m_map[i];
 

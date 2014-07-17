@@ -193,7 +193,7 @@ private:
 	typedef Pair<Left<ConfigFile::String, unsigned int> > Line;
 	ObjectsArray<Line> data;
 	const char* fileName;
-	size_t cnt;
+	FB_SIZE_T cnt;
 };
 
 } // anonymous namespace
@@ -269,7 +269,7 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 	String::size_type eol = String::npos;
 	bool hasSub = false;
 	const char* include = "include";
-	const unsigned incLen = strlen(include);
+	const unsigned incLen = static_cast<unsigned>(strlen(include));
 
 	for (String::size_type n = 0; n < input.length(); ++n)
 	{
@@ -537,7 +537,7 @@ bool ConfigFile::substituteStandardDir(const String& from, String& to) const
 const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name) const
 {
 	fb_assert(!(flags & NATIVE_ORDER));
-	size_t pos;
+	FB_SIZE_T pos;
 	return parameters.find(name, pos) ? &parameters[pos] : NULL;
 }
 
@@ -549,7 +549,7 @@ const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name) cons
 const ConfigFile::Parameter* ConfigFile::findParameter(const KeyType& name, const String& value) const
 {
 	fb_assert(!(flags & NATIVE_ORDER));
-	size_t pos;
+	FB_SIZE_T pos;
 	if (!parameters.find(name, pos))
 	{
 		return NULL;
@@ -619,7 +619,7 @@ void ConfigFile::parse(Stream* stream)
 		case LINE_START_SUB:
 			if (current.name.hasData())
 			{
-				size_t n = parameters.add(current);
+				FB_SIZE_T n = parameters.add(current);
 				previous = &parameters[n];
 			}
 

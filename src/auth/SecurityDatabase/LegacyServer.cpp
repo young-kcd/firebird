@@ -271,11 +271,11 @@ void SecurityDatabase::prepare()
 	dpb.insertByte(isc_dpb_sec_attach, TRUE);
 
 	// Attach as SYSDBA
-	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
+	dpb.insertString(isc_dpb_trusted_auth, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
 
 	// Do not use other providers except current engine
 	const char* providers = "Providers=" CURRENT_ENGINE;
-	dpb.insertString(isc_dpb_config, providers, strlen(providers));
+	dpb.insertString(isc_dpb_config, providers, fb_strlen(providers));
 
 	isc_db_handle tempHandle = 0;
 	isc_attach_database(status, 0, secureDbName, &tempHandle,
@@ -549,7 +549,7 @@ void registerLegacyServer(Firebird::IPluginManager* iPlugin)
 
 #ifdef PLUG_MODULE
 
-extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	CachedMasterInterface::set(master);
 

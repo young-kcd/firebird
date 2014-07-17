@@ -118,7 +118,7 @@ ULONG CVGB_gb2312_to_unicode(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
+	return static_cast<ULONG>((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
@@ -196,7 +196,7 @@ ULONG CVGB_unicode_to_gb2312(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - unicode_len;
-	return ((gb_str - start) * sizeof(*gb_str));
+	return static_cast<ULONG>((gb_str - start) * sizeof(*gb_str));
 }
 
 

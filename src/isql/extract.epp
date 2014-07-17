@@ -2470,7 +2470,7 @@ static void list_foreign()
 		if (!RELC1.RDB$CONSTRAINT_NAME.NULL &&
 			!fb_utils::implicit_integrity(RELC1.RDB$CONSTRAINT_NAME))
 		{
-			IUTILS_truncate_term (RELC1.RDB$CONSTRAINT_NAME, strlen(RELC1.RDB$CONSTRAINT_NAME));
+			IUTILS_truncate_term (RELC1.RDB$CONSTRAINT_NAME, static_cast<USHORT>(strlen(RELC1.RDB$CONSTRAINT_NAME)));
 			if (isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 			{
 				IUTILS_copy_SQL_id (RELC1.RDB$CONSTRAINT_NAME, SQL_identifier, DBL_QUOTE);
@@ -2497,13 +2497,13 @@ static void list_foreign()
 		// Add the referential actions, if any
 		if (!REFC.RDB$UPDATE_RULE.NULL)
 		{
-			IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, strlen(REFC.RDB$UPDATE_RULE));
+			IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, static_cast<USHORT>(strlen(REFC.RDB$UPDATE_RULE)));
 			ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " ON UPDATE", true);
 		}
 
 		if (!REFC.RDB$DELETE_RULE.NULL)
 		{
-			IUTILS_truncate_term (REFC.RDB$DELETE_RULE, strlen(REFC.RDB$DELETE_RULE));
+			IUTILS_truncate_term (REFC.RDB$DELETE_RULE, static_cast<USHORT>(strlen(REFC.RDB$DELETE_RULE)));
 			ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " ON DELETE", true);
 		}
 

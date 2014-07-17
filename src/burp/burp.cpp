@@ -941,7 +941,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	// Initialize 'dpb'
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
-	dpb.insertString(isc_dpb_gbak_attach, FB_VERSION, strlen(FB_VERSION));
+	dpb.insertString(isc_dpb_gbak_attach, FB_VERSION, fb_strlen(FB_VERSION));
 	uSvc->fillDpb(dpb);
 
 	const UCHAR* authBlock;
@@ -998,7 +998,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			if (!authBlock)
 			{
 				dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-								 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
+								 tdgbl->gbl_sw_password, fb_strlen(tdgbl->gbl_sw_password));
 			}
 			break;
 
@@ -1018,13 +1018,13 @@ int gbak(Firebird::UtilSvc* uSvc)
 
 		case IN_SW_BURP_ROLE:
 			dpb.insertString(isc_dpb_sql_role_name,
-							 tdgbl->gbl_sw_sql_role, strlen(tdgbl->gbl_sw_sql_role));
+							 tdgbl->gbl_sw_sql_role, fb_strlen(tdgbl->gbl_sw_sql_role));
 			break;
 
 		case IN_SW_BURP_USER:
 			if (!authBlock)
 			{
-				dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+				dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, fb_strlen(tdgbl->gbl_sw_user));
 			}
 			break;
 
@@ -2392,7 +2392,7 @@ bool BurpGlobals::skipRelation(const char* name)
 	}
 
 	skipDataMatcher->reset();
-	skipDataMatcher->process(reinterpret_cast<const UCHAR*>(name), strlen(name));
+	skipDataMatcher->process(reinterpret_cast<const UCHAR*>(name), static_cast<SLONG>(strlen(name)));
 	return skipDataMatcher->result();
 }
 

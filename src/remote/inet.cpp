@@ -730,7 +730,7 @@ rem_port* INET_connect(const TEXT* name,
 	if (name)
 	{
 		host = name;
-		const size_t pos = host.find("/");
+		const FB_SIZE_T pos = host.find("/");
 		if (pos != string::npos)
 		{
 			protocol = host.substr(pos + 1);
@@ -1813,7 +1813,7 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 					break;
 
 				s = (*forkSockets)[0];
-				forkSockets->remove((size_t) 0);
+				forkSockets->remove((FB_SIZE_T) 0);
 			}
 			fork(s, flag);
 			SOCLOSE(s);

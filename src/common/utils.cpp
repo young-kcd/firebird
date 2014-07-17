@@ -336,7 +336,7 @@ char* cleanup_passwd(char* arg)
 		return arg;
 	}
 
-	const int lpass = strlen(arg);
+	const int lpass = static_cast<int>(strlen(arg));
 	char* savePass = (char*) gds__alloc(lpass + 1);
 	if (! savePass)
 	{
@@ -973,7 +973,7 @@ void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool a
 	if (neg)
 		buffer[--iter] = '-';
 
-	const size_t len = MAX_BUFFER - iter - 1;
+	const FB_SIZE_T len = MAX_BUFFER - iter - 1;
 
 	if (append)
 		target.append(buffer + iter, len);
@@ -1271,7 +1271,7 @@ void base64(Firebird::string& b64, const Firebird::UCharBuffer& bin)
 	}
 }
 
-void random64(Firebird::string& randomValue, size_t length)
+void random64(Firebird::string& randomValue, FB_SIZE_T length)
 {
 	Firebird::UCharBuffer binRand;
 	Firebird::GenerateRandomBytes(binRand.getBuffer(length), length);

@@ -32,7 +32,7 @@
 
 namespace Firebird {
 
-	template <typename Object, size_t Capacity = 16>
+	template <typename Object, FB_SIZE_T Capacity = 16>
 		class Stack : public AutoStorage
 	{
 	private:
@@ -75,12 +75,12 @@ namespace Firebird {
 				return this->data[--this->count];
 			}
 
-			Object getObject(size_t pos) const
+			Object getObject(FB_SIZE_T pos) const
 			{
 				return this->data[pos];
 			}
 
-			void split(size_t elem, Entry* target)
+			void split(FB_SIZE_T elem, Entry* target)
 			{
 				fb_assert(elem > 0 && elem < this->count);
 				fb_assert(target->count == 0);
@@ -96,11 +96,11 @@ namespace Firebird {
 				return rc;
 			}
 
-			bool hasMore(size_t value) const
+			bool hasMore(FB_SIZE_T value) const
 			{
 				for (const Entry* stk = this; stk; stk = stk->next)
 				{
-					size_t c = static_cast<const inherited*>(stk)->getCount();
+					FB_SIZE_T c = static_cast<const inherited*>(stk)->getCount();
 					if (value < c)
 					{
 						return true;
@@ -211,7 +211,7 @@ namespace Firebird {
 
 			~AutoRestore()
 			{
-				size_t currentCount = stack.getCount();
+				FB_SIZE_T currentCount = stack.getCount();
 				fb_assert(currentCount >= count);
 
 				while (currentCount-- > count)
@@ -220,7 +220,7 @@ namespace Firebird {
 
 		private:
 			Stack<Object, Capacity>& stack;
-			size_t count;
+			FB_SIZE_T count;
 		};
 
 		class iterator;
@@ -233,7 +233,7 @@ namespace Firebird {
 			// Merge/Split pair of functions
 			friend class ::Firebird::Stack<Object, Capacity>;
 			const Entry* stk;
-			size_t elem;
+			FB_SIZE_T elem;
 
 		public:
 			explicit iterator(Stack<Object, Capacity>& s)
@@ -260,7 +260,7 @@ namespace Firebird {
 				return *this;
 			}
 
-			bool hasMore(size_t value) const
+			bool hasMore(FB_SIZE_T value) const
 			{
 				if (elem)
 				{
@@ -337,7 +337,7 @@ namespace Firebird {
 		private:
 			friend class ::Firebird::Stack<Object, Capacity>;
 			const Entry* stk;
-			size_t elem;
+			FB_SIZE_T elem;
 
 		public:
 			explicit const_iterator(const Stack<Object, Capacity>& s)
@@ -368,7 +368,7 @@ namespace Firebird {
 				return *this;
 			}
 
-			bool hasMore(size_t value) const
+			bool hasMore(FB_SIZE_T value) const
 			{
 				if (elem)
 				{
@@ -561,9 +561,9 @@ namespace Firebird {
 			}
 		}
 
-		size_t getCount() const
+		FB_SIZE_T getCount() const
 		{
-			size_t rc = 0;
+			FB_SIZE_T rc = 0;
 			for (Entry* entry = stk; entry; entry = entry->next)
 			{
 				rc += entry->getCount();
@@ -571,7 +571,7 @@ namespace Firebird {
 			return rc;
 		}
 
-		bool hasMore(size_t value) const
+		bool hasMore(FB_SIZE_T value) const
 		{
 			return (stk && stk->hasMore(value));
 		}

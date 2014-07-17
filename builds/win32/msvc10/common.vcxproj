@@ -280,13 +280,14 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;DEV_BUILD;SUPERSERVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -323,7 +324,7 @@
       <Culture>0x041d</Culture>
     </ResourceCompile>
     <Lib>
-      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

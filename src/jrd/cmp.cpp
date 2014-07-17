@@ -386,7 +386,7 @@ void CMP_post_access(thread_db* tdbb,
 
 	AccessItem access(security_name, view_id, name, type_name, mask, r_name);
 
-	size_t i;
+	FB_SIZE_T i;
 
 	if (csb->csb_access.find(access, i))
 	{
@@ -430,7 +430,7 @@ void CMP_post_resource(	ResourceList* rsc_ptr, void* obj, Resource::rsc_s type, 
 	}
 
 	// Add it into list if not present already
-	size_t pos;
+	FB_SIZE_T pos;
 	if (!rsc_ptr->find(resource, pos))
 		rsc_ptr->insert(pos, resource);
 }
@@ -591,7 +591,7 @@ void CMP_post_procedure_access(thread_db* tdbb, CompilerScratch* csb, jrd_prc* p
 
 	// Add the procedure to list of external objects accessed
 	ExternalAccess temp(ExternalAccess::exa_procedure, procedure->getId());
-	size_t idx;
+	FB_SIZE_T idx;
 	if (!csb->csb_external.find(temp, idx))
 		csb->csb_external.insert(idx, temp);
 }

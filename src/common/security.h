@@ -80,7 +80,7 @@ public:
 		}
 	}
 
-	void set(const char* newValue, size_t len)
+	void set(const char* newValue, FB_SIZE_T len)
 	{
 		value.assign(newValue, len);
 	}

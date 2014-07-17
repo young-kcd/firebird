@@ -79,6 +79,7 @@ namespace
 
 } // namespace
 
+// NS: FIXME - Why use static hash table here??? Hash table shall support dynamic resizing
 static const size_t HASH_SIZE = 1009;
 static const size_t COLLISION_PREALLOCATE_SIZE = 32;			// 256 KB
 static const size_t KEYBUF_PREALLOCATE_SIZE = 64 * 1024; 		// 64 KB
@@ -174,12 +175,12 @@ class HashJoin::HashTable : public PermanentStorage
 			const ULONG len2 = m_itemLength;
 			const ULONG minLen = MIN(len1, len2);
 
-			size_t highBound = m_collisions.getCount(), lowBound = 0;
+			FB_SIZE_T highBound = m_collisions.getCount(), lowBound = 0;
 			const UCHAR* const baseAddress = m_keyBuffer->begin();
 
 			while (highBound > lowBound)
 			{
-				const size_t temp = (highBound + lowBound) >> 1;
+				const FB_SIZE_T temp = (highBound + lowBound) >> 1;
 				const UCHAR* const ptr2 = baseAddress + m_collisions[temp].offset;
 				const int result = memcmp(ptr1, ptr2, minLen);
 
@@ -236,7 +237,7 @@ class HashJoin::HashTable : public PermanentStorage
 		Array<Collision> m_collisions;
 		const KeyBuffer* const m_keyBuffer;
 		const ULONG m_itemLength;
-		size_t m_iterator;
+		FB_SIZE_T m_iterator;
 	};
 
 public:
@@ -347,7 +348,7 @@ private:
 };
 
 
-HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
+HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 				   RecordSource* const* args, NestValueArray* const* keys)
 	: m_args(csb->csb_pool, count - 1)
 {
@@ -361,7 +362,7 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
 		KeyLengthArray(csb->csb_pool, m_leader.keys->getCount());
 	m_leader.totalKeyLength = 0;
 
-	for (size_t j = 0; j < m_leader.keys->getCount(); j++)
+	for (FB_SIZE_T j = 0; j < m_leader.keys->getCount(); j++)
 	{
 		dsc desc;
 		(*m_leader.keys)[j]->getDesc(tdbb, csb, &desc);
@@ -387,7 +388,7 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
 			KeyLengthArray(csb->csb_pool, sub.keys->getCount());
 		sub.totalKeyLength = 0;
 
-		for (size_t j = 0; j < sub.keys->getCount(); j++)
+		for (FB_SIZE_T j = 0; j < sub.keys->getCount(); j++)
 		{
 			dsc desc;
 			(*sub.keys)[j]->getDesc(tdbb, csb, &desc);
@@ -426,7 +427,7 @@ void HashJoin::open(thread_db* tdbb) const
 	impure->irsb_leader_buffer = FB_NEW(pool) UCHAR[m_leader.totalKeyLength];
 	impure->irsb_record_counts = FB_NEW(pool) ULONG[argCount];
 
-	for (size_t i = 0; i < argCount; i++)
+	for (FB_SIZE_T i = 0; i < argCount; i++)
 	{
 		// Read and cache the inner streams. While doing that,
 		// hash the join condition values and populate hash tables.
@@ -481,7 +482,7 @@ void HashJoin::close(thread_db* tdbb) const
 		delete[] impure->irsb_record_counts;
 		impure->irsb_record_counts = NULL;
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			m_args[i].buffer->close(tdbb);
 
 		m_leader.source->close(tdbb);
@@ -532,7 +533,7 @@ bool HashJoin::getRecord(thread_db* tdbb) const
 		{
 			bool found = true;
 
-			for (size_t i = 0; i < m_args.getCount(); i++)
+			for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			{
 				if (!fetchRecord(tdbb, impure, i))
 				{
@@ -580,7 +581,7 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 
 		m_leader.source->print(tdbb, plan, true, level);
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			m_args[i].source->print(tdbb, plan, true, level);
 	}
 	else
@@ -589,7 +590,7 @@ void HashJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigned leve
 		plan += "HASH (";
 		m_leader.source->print(tdbb, plan, false, level);
 		plan += ", ";
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
 				plan += ", ";
@@ -604,7 +605,7 @@ void HashJoin::markRecursive()
 {
 	m_leader.source->markRecursive();
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i].source->markRecursive();
 }
 
@@ -612,7 +613,7 @@ void HashJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
 	m_leader.source->findUsedStreams(streams, expandAll);
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i].source->findUsedStreams(streams, expandAll);
 }
 
@@ -620,7 +621,7 @@ void HashJoin::invalidateRecords(jrd_req* request) const
 {
 	m_leader.source->invalidateRecords(request);
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i].source->invalidateRecords(request);
 }
 
@@ -628,14 +629,14 @@ void HashJoin::nullRecords(thread_db* tdbb) const
 {
 	m_leader.source->nullRecords(tdbb);
 
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i].source->nullRecords(tdbb);
 }
 
 void HashJoin::computeKeys(thread_db* tdbb, jrd_req* request,
 						   const SubStream& sub, UCHAR* keyBuffer) const
 {
-	for (size_t i = 0; i < sub.keys->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < sub.keys->getCount(); i++)
 	{
 		dsc* const desc = EVL_expr(tdbb, request, (*sub.keys)[i]);
 		const USHORT keyLength = (*sub.keyLengths)[i];
@@ -672,7 +673,7 @@ void HashJoin::computeKeys(thread_db* tdbb, jrd_req* request,
 	}
 }
 
-bool HashJoin::fetchRecord(thread_db* tdbb, Impure* impure, size_t stream) const
+bool HashJoin::fetchRecord(thread_db* tdbb, Impure* impure, FB_SIZE_T stream) const
 {
 	HashTable* const hashTable = impure->irsb_hash_table;
 

@@ -66,7 +66,7 @@ static const char* DEFAULT_PATH =
 
 static const char* const NAME_PATTERN = "XXXXXX";
 static const char* const NAME_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
-static const size_t MAX_TRIES = 256;
+static const FB_SIZE_T MAX_TRIES = 256;
 
 // we need a class here only to return memory on shutdown and avoid
 // false memory leak reports
@@ -180,7 +180,7 @@ void TempFile::init(const PathName& directory, const PathName& prefix)
 	{
 		PathName name = filename + prefix;
 		__int64 temp = randomness;
-		for (size_t i = 0; i < suffix.length(); i++)
+		for (FB_SIZE_T i = 0; i < suffix.length(); i++)
 		{
 			suffix[i] = NAME_LETTERS[temp % (strlen(NAME_LETTERS))];
 			temp /= strlen(NAME_LETTERS);
@@ -292,15 +292,15 @@ void TempFile::seek(const offset_t offset)
 // Increases the file size
 //
 
-void TempFile::extend(size_t delta)
+void TempFile::extend(offset_t delta)
 {
 	const char* const buffer = zeros().getBuffer();
-	const size_t bufferSize = zeros().getSize();
+	const FB_SIZE_T bufferSize = zeros().getSize();
 	const offset_t newSize = size + delta;
 
 	for (offset_t offset = size; offset < newSize; offset += bufferSize)
 	{
-		const size_t length = MIN(newSize - offset, bufferSize);
+		const FB_SIZE_T length = MIN(newSize - offset, bufferSize);
 		write(offset, buffer, length);
 	}
 }
@@ -311,7 +311,7 @@ void TempFile::extend(size_t delta)
 // Reads bytes from file
 //
 
-size_t TempFile::read(offset_t offset, void* buffer, size_t length)
+FB_SIZE_T TempFile::read(offset_t offset, void* buffer, FB_SIZE_T length)
 {
 	fb_assert(offset + length <= size);
 	seek(offset);
@@ -323,7 +323,7 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 	}
 #else
 	const int bytes = ::read(handle, buffer, length);
-	if (bytes < 0 || size_t(bytes) != length)
+	if (bytes < 0 || FB_SIZE_T(bytes) != length)
 	{
 		system_error::raise("read");
 	}
@@ -338,7 +338,7 @@ size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to file
 //
 
-size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
+FB_SIZE_T TempFile::write(offset_t offset, const void* buffer, FB_SIZE_T length)
 {
 	fb_assert(offset <= size);
 	seek(offset);
@@ -350,7 +350,7 @@ size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
 	}
 #else
 	const int bytes = ::write(handle, buffer, length);
-	if (bytes < 0 || size_t(bytes) != length)
+	if (bytes < 0 || FB_SIZE_T(bytes) != length)
 	{
 		system_error::raise("write");
 	}

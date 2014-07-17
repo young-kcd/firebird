@@ -2917,7 +2917,7 @@ void blb::storeToPage(USHORT* length, Firebird::Array<UCHAR>& buffer, const UCHA
 		// CVC: Sorry, but I couldn't use PageStack in blb.h without bringing several headers,
 		// so I resorted to void* for the param declaration.
 		PageStack& stack2 = *static_cast<PageStack*>(stack);
-		*length = blb_pages->count() * sizeof(ULONG);
+		*length = static_cast<USHORT>(blb_pages->count() * sizeof(ULONG));
 		*data = (UCHAR*) blb_pages->begin();
 
 		// Figure out precedence pages, if any

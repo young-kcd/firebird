@@ -1565,7 +1565,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 		err_msg = "";
 	}
 
-	TEXT* log_msg = (TEXT*) gds__alloc(strlen(err_msg) + 256);
+	TEXT* log_msg = (TEXT*) gds__alloc(static_cast<SLONG>(strlen(err_msg) + 256));
 	// NOMEM: crash!
 	log_msg[0] = '\0';
 

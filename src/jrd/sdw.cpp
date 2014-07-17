@@ -249,7 +249,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 			header->hdr_end = HDR_SIZE;
 			header->hdr_next_page = 0;
 
-			PAG_add_header_entry(tdbb, header, HDR_file, strlen(file_name),
+			PAG_add_header_entry(tdbb, header, HDR_file, static_cast<USHORT>(strlen(file_name)),
 								 reinterpret_cast<const UCHAR*>(file_name));
 			PAG_add_header_entry(tdbb, header, HDR_last_page, sizeof(start),
 								 reinterpret_cast<const UCHAR*>(&start));

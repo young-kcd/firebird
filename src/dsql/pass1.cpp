@@ -187,7 +187,7 @@ static RseNode* pass1_rse(DsqlCompilerScratch*, RecordSourceNode*, ValueListNode
 static RseNode* pass1_rse_impl(DsqlCompilerScratch*, RecordSourceNode*, ValueListNode*, RowsClause*, bool, USHORT);
 static ValueListNode* pass1_sel_list(DsqlCompilerScratch*, ValueListNode*);
 static RseNode* pass1_union(DsqlCompilerScratch*, UnionSourceNode*, ValueListNode*, RowsClause*, bool, USHORT);
-static void pass1_union_auto_cast(DsqlCompilerScratch*, ExprNode*, const dsc&, size_t position);
+static void pass1_union_auto_cast(DsqlCompilerScratch*, ExprNode*, const dsc&, FB_SIZE_T position);
 static void remap_streams_to_parent_context(ExprNode*, dsql_ctx*);
 
 
@@ -679,7 +679,7 @@ void PASS1_check_unique_fields_names(StrArray& names, const CompoundStmtNode* fi
 
 		fb_assert(name);
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (!names.find(name, pos))
 			names.insert(pos, name);
 		else
@@ -1120,7 +1120,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		}
 
 		// Generate derived fields and assign alias-name to them.
-		for (size_t count = 0; count < input->columns->getCount(); ++count)
+		for (FB_SIZE_T count = 0; count < input->columns->getCount(); ++count)
 		{
 			ValueExprNode* select_item = rse->dsqlSelectList->items[count];
 			MAKE_desc(dsqlScratch, &select_item->nodDesc, select_item);
@@ -1137,7 +1137,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 	{
 		// For those select-items where no alias is specified try
 		// to generate one from the field_name.
-		for (size_t count = 0; count < rse->dsqlSelectList->items.getCount(); ++count)
+		for (FB_SIZE_T count = 0; count < rse->dsqlSelectList->items.getCount(); ++count)
 		{
 			ValueExprNode* select_item = pass1_make_derived_field(tdbb, dsqlScratch,
 				rse->dsqlSelectList->items[count]);
@@ -1149,7 +1149,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 
 				// Construct dummy fieldname
 				char fieldname[25];
-				sprintf(fieldname, "f%"SIZEFORMAT, count);
+				sprintf(fieldname, "f%u", static_cast<unsigned>(count));
 
 				// Make new derived field node.
 
@@ -1163,7 +1163,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		}
 	}
 
-	size_t count;
+	FB_SIZE_T count;
 
 	// Check if all root select-items have a derived field else show a message.
 	for (count = 0; count < rse->dsqlSelectList->items.getCount(); ++count)
@@ -1190,7 +1190,7 @@ RseNode* PASS1_derived_table(DsqlCompilerScratch* dsqlScratch, SelectExprNode* i
 		const DerivedFieldNode* selectItem1 =
 			rse->dsqlSelectList->items[count]->as<DerivedFieldNode>();
 
-		for (size_t count2 = (count + 1); count2 < rse->dsqlSelectList->items.getCount(); ++count2)
+		for (FB_SIZE_T count2 = (count + 1); count2 < rse->dsqlSelectList->items.getCount(); ++count2)
 		{
 			const DerivedFieldNode* selectItem2 =
 				rse->dsqlSelectList->items[count2]->as<DerivedFieldNode>();
@@ -2201,7 +2201,7 @@ static RseNode* pass1_rse_impl(DsqlCompilerScratch* dsqlScratch, RecordSourceNod
 		}
 
 		// Remap the nodes to the partition context
-		for (size_t i = 0, mapCount = parent_context->ctx_win_maps.getCount(); i < mapCount; ++i)
+		for (FB_SIZE_T i = 0, mapCount = parent_context->ctx_win_maps.getCount(); i < mapCount; ++i)
 		{
 			PartitionMap* partitionMap = parent_context->ctx_win_maps[i];
 			if (partitionMap->partition)
@@ -2282,7 +2282,7 @@ ValueListNode* PASS1_sort(DsqlCompilerScratch* dsqlScratch, ValueListNode* input
 	NestConst<ValueListNode> node = FB_NEW(pool) ValueListNode(pool, input->items.getCount());
 	NestConst<ValueExprNode>* ptr2 = node->items.begin();
 
-	for (size_t sortloop = 0; sortloop < input->items.getCount(); ++sortloop)
+	for (FB_SIZE_T sortloop = 0; sortloop < input->items.getCount(); ++sortloop)
 	{
 		DEV_BLKCHK(input->items[sortloop], dsql_type_nod);
 		NestConst<OrderNode> node1 = input->items[sortloop]->as<OrderNode>();
@@ -2439,7 +2439,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 	// loop through the list nodes, checking to be sure that they have the
 	// same number of items
 
-	for (size_t i = 1; i < unionSource->dsqlClauses->items.getCount(); ++i)
+	for (FB_SIZE_T i = 1; i < unionSource->dsqlClauses->items.getCount(); ++i)
 	{
 		const ValueListNode* nod1 = unionSource->dsqlClauses->items[i]->as<RseNode>()->dsqlSelectList;
 
@@ -2468,9 +2468,9 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 	ValueListNode* tmp_list = FB_NEW(pool) ValueListNode(
 		pool, unionSource->dsqlClauses->items.getCount());
 
-	for (size_t j = 0; j < items->items.getCount(); ++j)
+	for (FB_SIZE_T j = 0; j < items->items.getCount(); ++j)
 	{
-		for (size_t i = 0; i < unionSource->dsqlClauses->items.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < unionSource->dsqlClauses->items.getCount(); ++i)
 		{
 			ValueListNode* nod1 = unionSource->dsqlClauses->items[i]->as<RseNode>()->dsqlSelectList;
 			MAKE_desc(dsqlScratch, &nod1->items[j]->nodDesc, nod1->items[j]);
@@ -2614,7 +2614,7 @@ static RseNode* pass1_union(DsqlCompilerScratch* dsqlScratch, UnionSourceNode* i
 
  **/
 static void pass1_union_auto_cast(DsqlCompilerScratch* dsqlScratch, ExprNode* input,
-	const dsc& desc, size_t position)
+	const dsc& desc, FB_SIZE_T position)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 

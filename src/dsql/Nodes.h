@@ -1189,7 +1189,7 @@ private:
 		dsqlChildNodes.clear();
 		jrdChildNodes.clear();
 
-		for (size_t i = 0; i < items.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < items.getCount(); ++i)
 			addChildNode(items[i], items[i]);
 	}
 
@@ -1242,7 +1242,7 @@ private:
 	{
 		dsqlChildNodes.clear();
 
-		for (size_t i = 0; i < items.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < items.getCount(); ++i)
 			addDsqlChildNode(items[i]);
 	}
 

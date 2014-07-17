@@ -77,12 +77,12 @@ namespace
 			return item.name;
 		}
 
-		static size_t hash(const PathName& value, size_t hashSize)
+		static FB_SIZE_T hash(const PathName& value, FB_SIZE_T hashSize)
 		{
 			return hash(value.c_str(), value.length(), hashSize);
 		}
 
-		static void upcpy(size_t* toPar, const char* from, size_t length)
+		static void upcpy(FB_SIZE_T* toPar, const char* from, FB_SIZE_T length)
 		{
 			char* to = reinterpret_cast<char*>(toPar);
 			while (length--)
@@ -98,17 +98,17 @@ namespace
 			}
 		}
 
-		static size_t hash(const char* value, size_t length, size_t hashSize)
+		static FB_SIZE_T hash(const char* value, FB_SIZE_T length, FB_SIZE_T hashSize)
 		{
-			size_t sum = 0;
-			size_t val;
+			FB_SIZE_T sum = 0;
+			FB_SIZE_T val;
 
-			while (length >= sizeof(size_t))
+			while (length >= sizeof(FB_SIZE_T))
 			{
-				upcpy(&val, value, sizeof(size_t));
+				upcpy(&val, value, sizeof(FB_SIZE_T));
 				sum += val;
-				value += sizeof(size_t);
-				length -= sizeof(size_t);
+				value += sizeof(FB_SIZE_T);
+				length -= sizeof(FB_SIZE_T);
 			}
 
 			if (length)
@@ -118,7 +118,7 @@ namespace
 				sum += val;
 			}
 
-			size_t rc = 0;
+			FB_SIZE_T rc = 0;
 			while (sum)
 			{
 				rc += (sum % hashSize);
@@ -184,7 +184,7 @@ namespace
 
 		void loadConfig()
 		{
-			size_t n;
+			FB_SIZE_T n;
 
 			// clean old data
 			for (n = 0; n < aliases.getCount(); ++n)

@@ -379,9 +379,9 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 	const TEXT* q;
 	USHORT l = variable->fld_length;
 	if (q = variable->fld_edit_string)
-		l += strlen(q);
+		l += static_cast<USHORT>(strlen(q));
 	if (q = variable->fld_query_header)
-		l += strlen(q);
+		l += static_cast<USHORT>(strlen(q));
 
 	qli_fld* new_fld = (qli_fld*) ALLOCPV(type_fld, l);
 	new_fld->fld_name = copy_symbol(variable->fld_name);

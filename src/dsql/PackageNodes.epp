@@ -967,7 +967,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	for (SortedObjectsArray<Signature>::iterator i = existingFuncs.begin();
 		 i != existingFuncs.end(); ++i)
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		bool found = newFuncs.find(Signature(getPool(), i->name), pos);
 
 		if (!found || !newFuncs[pos].defined)
@@ -985,7 +985,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	for (SortedObjectsArray<Signature>::iterator i = existingProcs.begin();
 		 i != existingProcs.end(); ++i)
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		bool found = newProcs.find(Signature(getPool(), i->name), pos);
 
 		if (!found || !newProcs[pos].defined)
@@ -1018,7 +1018,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		PRM IN RDB$PROCEDURE_PARAMETERS
 		WITH PRM.RDB$PACKAGE_NAME EQ name.c_str()
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		if (existingProcs.find(Signature(getPool(), MetaName(PRM.RDB$PROCEDURE_NAME)), pos))
 		{
 			const Signature& proc = existingProcs[pos];
@@ -1049,7 +1049,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		ARG IN RDB$FUNCTION_ARGUMENTS
 		WITH ARG.RDB$PACKAGE_NAME EQ name.c_str()
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		if (existingFuncs.find(Signature(getPool(), MetaName(ARG.RDB$FUNCTION_NAME)), pos))
 		{
 			const Signature& func = existingFuncs[pos];

@@ -161,7 +161,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 
 	ULONG offset = 0;
 
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 

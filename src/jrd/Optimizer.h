@@ -320,7 +320,7 @@ public:
 
 	~StreamStateHolder()
 	{
-		for (size_t i = 0; i < m_streams.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_streams.getCount(); i++)
 		{
 			const StreamType stream = m_streams[i];
 
@@ -348,7 +348,7 @@ private:
 	{
 		m_flags.resize(FLAG_BYTES(m_streams.getCount()));
 
-		for (size_t i = 0; i < m_streams.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_streams.getCount(); i++)
 		{
 			const StreamType stream = m_streams[i];
 

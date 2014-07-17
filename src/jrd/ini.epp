@@ -1547,7 +1547,7 @@ static void store_trigger(thread_db* tdbb, const jrd_trg* trigger, AutoRequest& 
 
 	// indicate that the relation format needs revising
 	dsc desc;
-	desc.makeText(strlen(names[trigger->trg_relation]), CS_METADATA,
+	desc.makeText(static_cast<USHORT>(strlen(names[trigger->trg_relation])), CS_METADATA,
 		(UCHAR*) names[trigger->trg_relation]);
 	DFW_post_system_work(tdbb, dfw_update_format, &desc, 0);
 

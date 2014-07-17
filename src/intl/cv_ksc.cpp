@@ -116,7 +116,7 @@ ULONG CVKSC_ksc_to_unicode(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
+	return static_cast<ULONG>((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
@@ -193,7 +193,7 @@ ULONG CVKSC_unicode_to_ksc(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - unicode_len;
-	return ((ksc_str - start) * sizeof(*ksc_str));
+	return static_cast<ULONG>((ksc_str - start) * sizeof(*ksc_str));
 }
 
 

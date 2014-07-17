@@ -175,7 +175,7 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 			introducedMarks.add(mark);
 	}
 
-	for (size_t i = 0; i < introducedMarks.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < introducedMarks.getCount(); ++i)
 	{
 		const StrMark& mark = introducedMarks[i];
 
@@ -185,8 +185,8 @@ void Parser::transformString(const char* start, unsigned length, string& dest)
 		if (!isspace(UCHAR(pos[s - pos - 1])))
 			buffer.add(' ');	// fix _charset'' becoming invalid syntax _charsetX''
 
-		const size_t count = buffer.getCount();
-		const size_t newSize = count + 2 + mark.str->getString().length() * 2 + 1;
+		const FB_SIZE_T count = buffer.getCount();
+		const FB_SIZE_T newSize = count + 2 + mark.str->getString().length() * 2 + 1;
 		buffer.grow(newSize);
 		char* p = buffer.begin() + count;
 
@@ -442,7 +442,7 @@ int Parser::yylexAux()
 		mark.pos = lex.last_token - lex.start;
 
 		char* buffer = string;
-		size_t buffer_len = sizeof(string);
+		SLONG buffer_len = sizeof(string);
 		const char* buffer_end = buffer + buffer_len - 1;
 		char* p;
 		for (p = buffer; ; ++p)

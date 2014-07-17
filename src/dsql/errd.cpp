@@ -147,7 +147,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
     fb_assert(v.value()[0] == isc_arg_warning);
 
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
-	size_t indx = 0;
+	FB_SIZE_T indx = 0;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
@@ -162,7 +162,7 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 	else
 	{
 		// find end of a status vector
-		size_t warning_indx = 0;
+		FB_SIZE_T warning_indx = 0;
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx) {
 			--indx;
@@ -218,7 +218,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	// calculate length of the status
-	size_t tmp_status_len = 0, warning_indx = 0;
+	FB_SIZE_T tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
@@ -232,7 +232,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		status_vector[2] = isc_arg_end;
 	}
 
-    size_t status_len = 0;
+    FB_SIZE_T status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
@@ -264,7 +264,7 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		err_status_len = 0;
 	}
 
-	size_t warning_count = 0;
+	FB_SIZE_T warning_count = 0;
 	ISC_STATUS_ARRAY warning_status;
 
 	if (warning_indx)

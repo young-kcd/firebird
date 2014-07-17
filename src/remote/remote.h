@@ -257,7 +257,7 @@ struct rem_fmt : public Firebird::GlobalStorage
 	Firebird::Array<dsc> fmt_desc;
 
 public:
-	explicit rem_fmt(size_t rpt) :
+	explicit rem_fmt(FB_SIZE_T rpt) :
 		fmt_length(0), fmt_net_length(0),
 		fmt_desc(getPool(), rpt)
 	{
@@ -327,7 +327,7 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 	Firebird::Array<rrq_repeat> rrq_rpt;
 
 public:
-	explicit Rrq(size_t rpt) :
+	explicit Rrq(FB_SIZE_T rpt) :
 		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0),
 		rrq_iface(NULL), rrq_id(0), rrq_max_msg(0), rrq_level(0),
 		rrqStatus(0), rrq_rpt(getPool(), rpt)
@@ -860,7 +860,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	PacketQueue*	port_deferred_packets;	// queue of deferred packets
 	OBJCT			port_last_object_id;	// cached last id
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
-	size_t			port_qoffset;			// current packet in the queue
+	FB_SIZE_T			port_qoffset;			// current packet in the queue
 	Firebird::RefPtr<Config> port_config;	// connection-specific configuration info
 
 	// Authentication and crypt stuff
@@ -1023,8 +1023,8 @@ public:
 	{
 	public:
 		int save_handy;
-		size_t save_private;
-		size_t save_qoffset;
+		FB_SIZE_T save_private;
+		FB_SIZE_T save_qoffset;
 
 		RecvQueState(const rem_port* port)
 		{

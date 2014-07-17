@@ -278,7 +278,7 @@ namespace Jrd
 
 		Firebird::MutexLockGuard lg(modulesMutex, FB_FUNCTION);
 
-		for (size_t m = 0; m < loadedModules().getCount(); m++)
+		for (FB_SIZE_T m = 0; m < loadedModules().getCount(); m++)
 		{
 			if (loadedModules()[m] == this)
 			{

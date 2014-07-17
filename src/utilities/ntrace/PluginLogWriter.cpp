@@ -104,7 +104,7 @@ void PluginLogWriter::reopen()
 		checkErrno("open");
 }
 
-size_t PluginLogWriter::write(const void* buf, size_t size)
+FB_SIZE_T PluginLogWriter::write(const void* buf, FB_SIZE_T size)
 {
 #ifdef WIN_NT
 	Guard guard(this);
@@ -127,7 +127,7 @@ size_t PluginLogWriter::write(const void* buf, size_t size)
 		stamp.decode(&times);
 
 		PathName newName;
-		const size_t last_dot_pos = m_fileName.rfind(".");
+		const FB_SIZE_T last_dot_pos = m_fileName.rfind(".");
 		if (last_dot_pos > 0)
 		{
 			PathName log_name = m_fileName.substr(0, last_dot_pos);
@@ -168,7 +168,7 @@ size_t PluginLogWriter::write(const void* buf, size_t size)
 		seekToEnd();
 	}
 
-	const size_t written = ::write(m_fileHandle, buf, size);
+	const FB_SIZE_T written = ::write(m_fileHandle, buf, size);
 	if (written != size)
 		checkErrno("write");
 

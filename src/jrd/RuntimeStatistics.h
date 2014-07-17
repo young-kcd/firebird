@@ -171,7 +171,7 @@ public:
 
 	SINT64 getRelValue(const RelStatType index, SLONG relation_id) const
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		return rel_counts.find(relation_id, pos) ? rel_counts[pos].rlc_counter[index] : 0;
 	}
 

@@ -86,7 +86,7 @@ BLK ALLQ_alloc( qli_plb* pool, UCHAR type, int count)
 
 	// Compute block length
 
-	size_t size = block_sizes[type].typ_root_length;
+	FB_SIZE_T size = block_sizes[type].typ_root_length;
 
 	SLONG tail = block_sizes[type].typ_tail_length;
 	if (tail)
@@ -102,7 +102,7 @@ BLK ALLQ_alloc( qli_plb* pool, UCHAR type, int count)
 
 	qli_frb* free;
 	qli_frb** best;
-	size_t best_tail;
+	FB_SIZE_T best_tail;
 
 	while (true)
 	{

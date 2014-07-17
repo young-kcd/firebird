@@ -758,7 +758,7 @@ USHORT CVT2_make_string2(const dsc* desc, USHORT to_interp, UCHAR** address, Jrd
 
 	case dtype_cstring:
 		from_buf = desc->dsc_address;
-		from_len = MIN(strlen((char *) desc->dsc_address), (unsigned) (desc->dsc_length - 1));
+		from_len = MIN(static_cast<USHORT>(strlen((char *) desc->dsc_address)), (unsigned) (desc->dsc_length - 1));
 		from_interp = INTL_TTYPE(desc);
 		break;
 

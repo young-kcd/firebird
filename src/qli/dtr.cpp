@@ -548,7 +548,7 @@ static bool process_statement(bool flush_flag)
 				{
 					ERRQ_msg_get(505, report, sizeof(report));
 					// Msg505 "    reads = !r writes = !w fetches = !f marks = !m\n"
-					size_t used_len = strlen(report);
+					FB_SIZE_T used_len = fb_strlen(report);
 					ERRQ_msg_get(506, report + used_len, sizeof(report) - used_len);
 					// Msg506 "    elapsed = !e cpu = !u system = !s mem = !x, buffers = !b"
 					perf64_get_info(&dbb->dbb_handle, &statistics);

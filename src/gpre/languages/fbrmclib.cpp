@@ -1655,7 +1655,7 @@ EXPORT RM_ENTRY(rmc_ctos)
 	char* dest = (char*) arg_vector[-1].a_address;
 	const int dlen = arg_vector[-1].a_length;
 	const char* src = (char*) arg_vector[0].a_address;
-	const int slen = strlen(src);
+	const int slen = static_cast<int>(strlen(src));
 
 	memset(dest, ' ', dlen);
 	int len = (slen <= dlen) ? slen : dlen;

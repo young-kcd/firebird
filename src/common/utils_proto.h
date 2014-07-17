@@ -161,7 +161,7 @@ namespace fb_utils
 	void base64(Firebird::string& b64, const Firebird::UCharBuffer& bin);
 
 	// generate random string in BASE64 representation
-	void random64(Firebird::string& randomValue, size_t length);
+	void random64(Firebird::string& randomValue, FB_SIZE_T length);
 
 	void logAndDie(const char* text);
 

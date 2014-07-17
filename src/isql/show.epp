@@ -1349,6 +1349,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
  **************************************/
 	TEXT SQL_identifier2[BUFFER_LENGTH128];
 	BASED_ON RDB$USER_PRIVILEGES.RDB$GRANTOR dummy;	// used to declare buf_grantor
+	FB_UNUSED_VAR(dummy); // Silence compiler warning about unused variable
 	SCHAR buf_grantor[sizeof(dummy) + 20];
 
 	// process role "object"
@@ -5260,13 +5261,13 @@ static processing_state show_table(const SCHAR* relation_name, bool isView)
 
 				if (!REFC.RDB$UPDATE_RULE.NULL)
 				{
-					IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, strlen(REFC.RDB$UPDATE_RULE));
+					IUTILS_truncate_term (REFC.RDB$UPDATE_RULE, static_cast<USHORT>(strlen(REFC.RDB$UPDATE_RULE)));
 					ISQL_ri_action_print (REFC.RDB$UPDATE_RULE, " On Update", false);
 				}
 
 				if (!REFC.RDB$DELETE_RULE.NULL)
 				{
-					IUTILS_truncate_term (REFC.RDB$DELETE_RULE, strlen(REFC.RDB$DELETE_RULE));
+					IUTILS_truncate_term (REFC.RDB$DELETE_RULE, static_cast<USHORT>(strlen(REFC.RDB$DELETE_RULE)));
 					ISQL_ri_action_print (REFC.RDB$DELETE_RULE, " On Delete", false);
 				}
 

@@ -49,8 +49,8 @@ public:
 
 	virtual ~TempFile();
 
-	size_t read(offset_t, void*, size_t);
-	size_t write(offset_t, const void*, size_t);
+	FB_SIZE_T read(offset_t, void*, FB_SIZE_T);
+	FB_SIZE_T write(offset_t, const void*, FB_SIZE_T);
 
 	void unlink();
 
@@ -59,7 +59,7 @@ public:
 		return size;
 	}
 
-	void extend(size_t);
+	void extend(offset_t);
 
 	const PathName& getName() const
 	{

@@ -141,7 +141,7 @@ static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 		return;
 	}
 
-	for (size_t i = 0; i < vector->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < vector->getCount(); i++)
 	{
 		(*vector)[i].release(tdbb);
 	}
@@ -152,7 +152,7 @@ static void inc_int_use_count(JrdStatement* statement)
 {
 	// Increment int_use_count for all procedures in resource list of request
 	ResourceList& list = statement->resources;
-	size_t i;
+	FB_SIZE_T i;
 
 	for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 		 i < list.getCount(); i++)
@@ -184,7 +184,7 @@ static void post_used_procedures(trig_vec* vector)
 		return;
 	}
 
-	for (size_t i = 0; i < vector->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < vector->getCount(); i++)
 	{
 		JrdStatement* stmt = (*vector)[i].statement;
 		if (stmt && !stmt->isActive())
@@ -383,7 +383,7 @@ static void adjust_dependencies(Routine* routine)
 	{
 		// Loop over procedures from resource list of request
 		ResourceList& list = routine->getStatement()->resources;
-		size_t i;
+		FB_SIZE_T i;
 
 		for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 			i < list.getCount(); i++)
@@ -507,7 +507,7 @@ void MET_verify_cache(thread_db* tdbb)
 				{
 					// Loop over procedures from resource list of request
 					const ResourceList& list = routine2->getStatement()->resources;
-					size_t i;
+					FB_SIZE_T i;
 
 					for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 					     i < list.getCount(); i++)
@@ -535,7 +535,7 @@ void MET_verify_cache(thread_db* tdbb)
 				{
 					// Loop over procedures from resource list of request
 					const ResourceList& list = routine2->getStatement()->resources;
-					size_t i;
+					FB_SIZE_T i;
 
 					for (list.find(Resource(Resource::rsc_procedure, 0, NULL, NULL, NULL), i);
 					     i < list.getCount(); i++)
@@ -582,7 +582,7 @@ void MET_verify_cache(thread_db* tdbb)
 				{
 					// Loop over procedures from resource list of request
 					const ResourceList& list = routine2->getStatement()->resources;
-					size_t i;
+					FB_SIZE_T i;
 
 					for (list.find(Resource(Resource::rsc_function, 0, NULL, NULL, NULL), i);
 					     i < list.getCount(); i++)
@@ -610,7 +610,7 @@ void MET_verify_cache(thread_db* tdbb)
 				{
 					// Loop over procedures from resource list of request
 					const ResourceList& list = routine2->getStatement()->resources;
-					size_t i;
+					FB_SIZE_T i;
 
 					for (list.find(Resource(Resource::rsc_function, 0, NULL, NULL, NULL), i);
 					     i < list.getCount(); i++)
@@ -4567,7 +4567,7 @@ void MET_release_trigger(thread_db* tdbb, trig_vec** vector_ptr, const MetaName&
 
 	SET_TDBB(tdbb);
 
-	for (size_t i = 0; i < vector.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < vector.getCount(); ++i)
 	{
 		if (vector[i].name == name)
 		{
@@ -4609,14 +4609,14 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
 
 	*vector_ptr = NULL;
 
-	for (size_t i = 0; i < vector->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < vector->getCount(); i++)
 	{
 		JrdStatement* stmt = (*vector)[i].statement;
 		if (stmt && stmt->isActive())
 			return;
 	}
 
-	for (size_t i = 0; i < vector->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < vector->getCount(); i++)
 	{
 		JrdStatement* stmt = (*vector)[i].statement;
 		if (stmt)

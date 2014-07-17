@@ -64,7 +64,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 	if (!rel_pages_inst)
 		rel_pages_inst = FB_NEW(*rel_pool) RelationPagesInstances(*rel_pool);
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (!rel_pages_inst->find(inst_id, pos))
 	{
 		if (!allocPages)
@@ -180,7 +180,7 @@ bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
 		pages);
 #endif
 
-	size_t pos;
+	FB_SIZE_T pos;
 #ifdef DEV_BUILD
 	const bool found =
 #endif
@@ -227,7 +227,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 {
 	if (rel_pages_inst)
 	{
-		for (size_t i = 0; i < rel_pages_inst->getCount(); i++)
+		for (FB_SIZE_T i = 0; i < rel_pages_inst->getCount(); i++)
 		{
 			RelationPages* relPages = (*rel_pages_inst)[i];
 
@@ -268,7 +268,7 @@ void jrd_rel::RelPagesSnapshot::clear()
 	fb_assert(tdbb == spt_tdbb);
 #endif
 
-	for (size_t i = 0; i < getCount(); i++)
+	for (FB_SIZE_T i = 0; i < getCount(); i++)
 	{
 		RelationPages* relPages = (*this)[i];
 		(*this)[i] = NULL;

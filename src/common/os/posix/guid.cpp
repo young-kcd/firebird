@@ -40,7 +40,7 @@
 namespace Firebird {
 
 
-void GenerateRandomBytes(void* buffer, size_t size)
+void GenerateRandomBytes(void* buffer, FB_SIZE_T size)
 {
 	// do not use /dev/random because it may return lesser data than we need.
 	int fd = -1;
@@ -52,7 +52,7 @@ void GenerateRandomBytes(void* buffer, size_t size)
 		if (errno != EINTR)
 			Firebird::system_call_failed::raise("open");
 	}
-	for (size_t offset = 0; offset < size; )
+	for (FB_SIZE_T offset = 0; offset < size; )
 	{
 		int rc = read(fd, static_cast<char*>(buffer) + offset, size - offset);
 		if (rc < 0)
@@ -63,7 +63,7 @@ void GenerateRandomBytes(void* buffer, size_t size)
 		}
 		if (rc == 0)
 			Firebird::system_call_failed::raise("read", EIO);
-		offset += static_cast<size_t>(rc);
+		offset += static_cast<FB_SIZE_T>(rc);
 	}
 	if (close(fd) < 0)
 	{

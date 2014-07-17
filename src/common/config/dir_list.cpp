@@ -47,12 +47,12 @@ void ParsedPath::parse(const PathName& path)
 	} while (oldpath.length() > 0);
 }
 
-PathName ParsedPath::subPath(size_t n) const
+PathName ParsedPath::subPath(FB_SIZE_T n) const
 {
 	PathName rc = (*this)[0];
 	if (PathUtils::isRelative(rc + PathUtils::dir_sep))
 		rc = PathUtils::dir_sep + rc;
-	for (size_t i = 1; i < n; i++)
+	for (FB_SIZE_T i = 1; i < n; i++)
 	{
 		PathName newpath;
 		PathUtils::concatPath(newpath, rc, (*this)[i]);
@@ -70,7 +70,7 @@ ParsedPath::operator PathName() const
 
 bool ParsedPath::contains(const ParsedPath& pPath) const
 {
-	size_t nFullElem = getCount();
+	FB_SIZE_T nFullElem = getCount();
 	if (nFullElem > 1 && (*this)[nFullElem - 1].length() == 0)
 		nFullElem--;
 
@@ -78,14 +78,14 @@ bool ParsedPath::contains(const ParsedPath& pPath) const
 		return false;
 	}
 
-	for (size_t i = 0; i < nFullElem; i++)
+	for (FB_SIZE_T i = 0; i < nFullElem; i++)
 	{
 		if (pPath[i] != (*this)[i]) {
 			return false;
 		}
 	}
 
-	for (size_t i = nFullElem + 1; i <= pPath.getCount(); i++)
+	for (FB_SIZE_T i = nFullElem + 1; i <= pPath.getCount(); i++)
 	{
 		const PathName x = pPath.subPath(i);
 		if (PathUtils::isSymLink(x)) {
@@ -155,9 +155,9 @@ void DirectoryList::initialize(bool simple_mode)
 		}
 	}
 
-	size_t last = 0;
+	FB_SIZE_T last = 0;
 	PathName root = Config::getRootDirectory();
-	size_t i;
+	FB_SIZE_T i;
 	for (i = 0; i < val.length(); i++)
 	{
 		if (val[i] == ';')
@@ -227,7 +227,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 
 	ParsedPath pPath(varpath);
 	bool rc = false;
-	for (size_t i = 0; i < getCount(); i++)
+	for (FB_SIZE_T i = 0; i < getCount(); i++)
 	{
 		if ((*this)[i].contains(pPath))
 		{
@@ -241,7 +241,7 @@ bool DirectoryList::isPathInList(const PathName& path) const
 bool DirectoryList::expandFileName(PathName& path, const PathName& name) const
 {
 	fb_assert(mode != NotInitialized);
-	for (size_t i = 0; i < getCount(); i++)
+	for (FB_SIZE_T i = 0; i < getCount(); i++)
 	{
 		PathUtils::concatPath(path, (*this)[i], name);
 		if (PathUtils::canAccess(path, 4)) {

@@ -1304,14 +1304,12 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 
 	// hvlad: in ODS11 key of descending index can be prefixed with
 	//		  one byte value. See comments in compress
-	const size_t prefix = (idx->idx_flags & idx_descending) ? 1 : 0;
+	const SLONG prefix = (idx->idx_flags & idx_descending) ? 1 : 0;
 
 	const Format* format = MET_current(tdbb, relation);
 	index_desc::idx_repeat* tail = idx->idx_rpt;
 
-	// notice "return sizeof()" above already returns size_t for this
-	// function that declared return type being USHORT.
-	size_t length;
+	SLONG length;
 
 	// If there is only a single key, the computation is straightforward.
 	if (idx->idx_count == 1)
@@ -1370,7 +1368,7 @@ USHORT BTR_key_length(thread_db* tdbb, jrd_rel* relation, index_desc* idx)
 	}
 
 	// Compute length of key for segmented indices.
-	size_t key_length = 0;
+	SLONG key_length = 0;
 
 	for (USHORT n = 0; n < idx->idx_count; n++, tail++)
 	{

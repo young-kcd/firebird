@@ -211,10 +211,10 @@ void TraceManager::update_sessions()
 	}
 
 	// remove sessions not present in storage
-	size_t i = 0;
+	FB_SIZE_T i = 0;
 	while (i < trace_sessions.getCount())
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		if (liveSessions.find(trace_sessions[i].ses_id, pos)) {
 			i++;
 		}
@@ -235,7 +235,7 @@ void TraceManager::update_sessions()
 void TraceManager::update_session(const TraceSession& session)
 {
 	// if this session is already known, nothing to do
-	size_t pos;
+	FB_SIZE_T pos;
 	if (trace_sessions.find(session.ses_id, pos)) {
 		return;
 	}
@@ -336,7 +336,7 @@ void TraceManager::event_dsql_execute(Attachment* att, jrd_tra* transaction,
 
 
 #define EXECUTE_HOOKS(METHOD, PARAMS) \
-	size_t i = 0; \
+	FB_SIZE_T i = 0; \
 	while (i < trace_sessions.getCount()) \
 	{ \
 		SessionInfo* plug_info = &trace_sessions[i]; \

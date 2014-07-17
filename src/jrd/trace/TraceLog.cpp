@@ -127,7 +127,7 @@ int TraceLog::removeFile(int fileNum)
 	return unlink(fileName.c_str());
 }
 
-size_t TraceLog::read(void* buf, size_t size)
+FB_SIZE_T TraceLog::read(void* buf, FB_SIZE_T size)
 {
 	fb_assert(m_reader);
 
@@ -141,6 +141,10 @@ size_t TraceLog::read(void* buf, size_t size)
 		{
 			// EOF reached, check the reason
 			const off_t len = lseek(m_fileHandle, 0, SEEK_CUR);
+
+			if (len == -1)
+				system_call_failed::raise("lseek", errno);
+
 			if (len >= MAX_LOG_FILE_SIZE)
 			{
 				// this file was read completely, go to next one
@@ -173,7 +177,7 @@ size_t TraceLog::read(void* buf, size_t size)
 	return (size - readLeft);
 }
 
-size_t TraceLog::write(const void* buf, size_t size)
+FB_SIZE_T TraceLog::write(const void* buf, FB_SIZE_T size)
 {
 	fb_assert(!m_reader);
 
@@ -187,9 +191,12 @@ size_t TraceLog::write(const void* buf, size_t size)
 	unsigned int writeLeft = size;
 	while (writeLeft)
 	{
-		const long len = lseek(m_fileHandle, 0, SEEK_END);
-		const unsigned int toWrite = MIN(writeLeft, MAX_LOG_FILE_SIZE - len);
-		if (!toWrite)
+		const off_t len = lseek(m_fileHandle, 0, SEEK_END);
+
+		if (len == -1)
+			system_call_failed::raise("lseek", errno);
+
+		if (len >= MAX_LOG_FILE_SIZE)
 		{
 			// While this instance of writer was idle, new log file was created.
 			// More, if current file was already read by reader, we must delete it.
@@ -207,8 +214,10 @@ size_t TraceLog::write(const void* buf, size_t size)
 			continue;
 		}
 
+		const unsigned int toWrite = MIN(writeLeft, static_cast<unsigned>(MAX_LOG_FILE_SIZE - len));
+
 		const int written = ::write(m_fileHandle, p, toWrite);
-		if (written == -1 || size_t(written) != toWrite)
+		if (written == -1 || written != toWrite)
 			system_call_failed::raise("write", errno);
 
 		p += toWrite;
@@ -224,7 +233,7 @@ size_t TraceLog::write(const void* buf, size_t size)
 	return size - writeLeft;
 }
 
-size_t TraceLog::getApproxLogSize() const
+ULONG TraceLog::getApproxLogSize() const
 {
 	return (m_sharedMemory->getHeader()->writeFileNum - m_sharedMemory->getHeader()->readFileNum + 1) *
 			(MAX_LOG_FILE_SIZE / (1024 * 1024));

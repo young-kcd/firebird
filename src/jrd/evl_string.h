@@ -81,7 +81,7 @@ public:
 
 	~StaticAllocator()
 	{
-		for (size_t i = 0; i < chunksToFree.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < chunksToFree.getCount(); i++)
 			pool.deallocate(chunksToFree[i]);
 	}
 
@@ -407,7 +407,7 @@ LikeEvaluator<CharType>::LikeEvaluator(
 	// Unescape strings, mark direct match items, pre-compile KMP tables and
 	// optimize out piSkipMore nodes
 	bool directMatch = true;
-	for (size_t i = 0; i < patternItems.getCount();)
+	for (FB_SIZE_T i = 0; i < patternItems.getCount();)
 	{
 		PatternItem *itemL = &patternItems[i];
 		switch (itemL->type)
@@ -490,7 +490,7 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 	while (data_pos < data_len)
 	{
 
-		size_t branch_number = 0;
+		FB_SIZE_T branch_number = 0;
 		while (branch_number < branches.getCount())
 		{
 			BranchItem *current_branch = &branches[branch_number];

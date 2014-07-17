@@ -47,7 +47,7 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& alias,
 {
 	fb_assert(m_index);
 
-	size_t size = sizeof(Impure) + 2u * m_length;
+	FB_SIZE_T size = sizeof(Impure) + 2u * m_length;
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	m_offset = size;
 	size += sizeof(index_desc);

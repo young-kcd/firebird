@@ -777,7 +777,7 @@ void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 		result->setNullable(value->isNullable() || length->isNullable());
 
 		result->dsc_length =
-			dataTypeUtil->fixLength(result, dataTypeUtil->convertLength(value, result)) + sizeof(USHORT);
+			dataTypeUtil->fixLength(result, dataTypeUtil->convertLength(value, result)) + static_cast<USHORT>(sizeof(USHORT));
 	}
 }
 
@@ -844,7 +844,7 @@ void makeOverlay(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 
 	if (!value->isBlob() && !placing->isBlob())
 	{
-		result->dsc_length = sizeof(USHORT) +
+		result->dsc_length = static_cast<USHORT>(sizeof(USHORT)) +
 			dataTypeUtil->convertLength(value, result) +
 			dataTypeUtil->convertLength(placing, result);
 	}
@@ -885,12 +885,12 @@ void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 	{
 		if (length->dsc_address)	// constant
 		{
-			result->dsc_length = sizeof(USHORT) + dataTypeUtil->fixLength(result,
+			result->dsc_length = static_cast<USHORT>(sizeof(USHORT)) + dataTypeUtil->fixLength(result,
 				CVT_get_long(length, 0, ERR_post) *
 					dataTypeUtil->maxBytesPerChar(result->getCharSet()));
 		}
 		else
-			result->dsc_length = sizeof(USHORT) + dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE);
+			result->dsc_length = static_cast<USHORT>(sizeof(USHORT)) + dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE);
 	}
 
 	result->setNullable(isNullable);
@@ -945,11 +945,11 @@ void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 		const int replacementLen = dataTypeUtil->convertLength(replacement, result);
 
 		if (findLen == 0)
-			result->dsc_length = dataTypeUtil->fixLength(result, searchedLen) + sizeof(USHORT);
+			result->dsc_length = dataTypeUtil->fixLength(result, searchedLen) + static_cast<USHORT>(sizeof(USHORT));
 		else
 		{
 			result->dsc_length = dataTypeUtil->fixLength(result, MAX(searchedLen,
-				searchedLen + (searchedLen / findLen) * (replacementLen - findLen))) + sizeof(USHORT);
+				searchedLen + (searchedLen / findLen) * (replacementLen - findLen))) + static_cast<USHORT>(sizeof(USHORT));
 		}
 	}
 
@@ -1316,7 +1316,7 @@ dsc* evlBin(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 
 	jrd_req* request = tdbb->getRequest();
 
-	for (size_t i = 0; i < args.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < args.getCount(); ++i)
 	{
 		const dsc* value = EVL_expr(tdbb, request, args[i]);
 		if (request->req_flags & req_null)	// return NULL if value is NULL
@@ -2564,7 +2564,7 @@ dsc* evlMaxMinValue(thread_db* tdbb, const SysFunction* function, const NestValu
 	jrd_req* request = tdbb->getRequest();
 	dsc* result = NULL;
 
-	for (size_t i = 0; i < args.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < args.getCount(); ++i)
 	{
 		dsc* value = EVL_expr(tdbb, request, args[i]);
 		if (request->req_flags & req_null)	// return NULL if value is NULL

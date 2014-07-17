@@ -316,13 +316,13 @@ USHORT PAG_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start)
 
 	if (file->fil_min_page)
 	{
-		PAG_add_header_entry(tdbb, header, HDR_file, strlen(file_name),
+		PAG_add_header_entry(tdbb, header, HDR_file, static_cast<USHORT>(strlen(file_name)),
 							 reinterpret_cast<const UCHAR*>(file_name));
 		PAG_add_header_entry(tdbb, header, HDR_last_page, sizeof(SLONG), (UCHAR*) &start);
 	}
 	else
 	{
-		add_clump(tdbb, HDR_file, strlen(file_name),
+		add_clump(tdbb, HDR_file, static_cast<USHORT>(strlen(file_name)),
 					  reinterpret_cast<const UCHAR*>(file_name), CLUMP_REPLACE);
 		add_clump(tdbb, HDR_last_page, sizeof(SLONG), (UCHAR*) &start, CLUMP_REPLACE);
 	}
@@ -2146,7 +2146,7 @@ PageSpace* PageManager::addPageSpace(const USHORT pageSpaceID)
 
 PageSpace* PageManager::findPageSpace(const USHORT pageSpace) const
 {
-	size_t pos;
+	FB_SIZE_T pos;
 	if (pageSpaces.find(pageSpace, pos)) {
 		return pageSpaces[pos];
 	}
@@ -2156,7 +2156,7 @@ PageSpace* PageManager::findPageSpace(const USHORT pageSpace) const
 
 void PageManager::delPageSpace(const USHORT pageSpace)
 {
-	size_t pos;
+	FB_SIZE_T pos;
 	if (pageSpaces.find(pageSpace, pos))
 	{
 		PageSpace* pageSpaceToDelete = pageSpaces[pos];
@@ -2167,7 +2167,7 @@ void PageManager::delPageSpace(const USHORT pageSpace)
 
 void PageManager::closeAll()
 {
-	for (size_t i = 0; i < pageSpaces.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < pageSpaces.getCount(); i++)
 	{
 		if (pageSpaces[i]->file) {
 			PIO_close(pageSpaces[i]->file);
@@ -2305,11 +2305,11 @@ namespace
 	public:
 		CheckODS()
 		{
-			for (size_t page_size = MIN_PAGE_SIZE; page_size <= MAX_PAGE_SIZE; page_size *= 2)
+			for (ULONG page_size = MIN_PAGE_SIZE; page_size <= MAX_PAGE_SIZE; page_size *= 2)
 			{
-				size_t pagesPerPIP = Ods::pagesPerPIP(page_size);
-				size_t pagesPerSCN = Ods::pagesPerSCN(page_size);
-				size_t maxPagesPerSCN = Ods::maxPagesPerSCN(page_size);
+				ULONG pagesPerPIP = Ods::pagesPerPIP(page_size);
+				ULONG pagesPerSCN = Ods::pagesPerSCN(page_size);
+				ULONG maxPagesPerSCN = Ods::maxPagesPerSCN(page_size);
 
 				fb_assert((pagesPerPIP % pagesPerSCN) == 0);
 				fb_assert(pagesPerSCN <= maxPagesPerSCN);

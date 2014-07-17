@@ -220,7 +220,7 @@ double DPM_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
 	// we assume that the records are compressed to 50%
 	// Every record has also a header and a jump section (13 + 4)
 
-	USHORT minRecordSize = sizeof(Ods::data_page::dpg_repeat) + RHD_SIZE;
+	USHORT minRecordSize = static_cast<USHORT>(sizeof(Ods::data_page::dpg_repeat) + RHD_SIZE);
 	if (!(dbb->dbb_flags & DBB_no_reserve)) {
 		minRecordSize += RHDF_SIZE;
 	}
@@ -1810,7 +1810,7 @@ void DPM_scan_pages( thread_db* tdbb)
 
 	vcl** address = &relPages->rel_pages;
 	vcl* vector = *address;
-	size_t sequence = vector->count() - 1;
+	FB_SIZE_T sequence = vector->count() - 1;
 	WIN window(relPages->rel_pg_space_id, (*vector)[sequence]);
 	pointer_page* ppage = (pointer_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_pointer);
 
@@ -2468,7 +2468,7 @@ static void fragment(thread_db* tdbb,
 	// first figuring out how much of the original record fits on the
 	// original page.
 
-	const size_t pre_header_length =
+	const FB_SIZE_T pre_header_length =
 		dcc.getPartialLength(available_space - RHDF_SIZE, rpb->rpb_address);
 
 	record_param tail_rpb = *rpb;
@@ -3229,7 +3229,7 @@ static void store_big_record(thread_db* tdbb,
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	PageNumber prior(relPages->rel_pg_space_id, 0);
 	signed char count = 0;
-	const USHORT max_data = dbb->dbb_page_size - (sizeof(data_page) + RHDF_SIZE);
+	const USHORT max_data = dbb->dbb_page_size - (static_cast<USHORT>(sizeof(data_page)) + RHDF_SIZE);
 
 	// Fill up data pages tail first until what's left fits on a single page.
 

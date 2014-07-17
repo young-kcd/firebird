@@ -80,7 +80,7 @@ SLONG API_ROUTINE_VARARG isc_event_block(UCHAR** event_buffer,
 	while (i--)
 	{
 		const char* q = va_arg(ptr, SCHAR *);
-		length += strlen(q) + 5;
+		length += static_cast<SLONG>(strlen(q)) + 5;
 	}
 	va_end(ptr);
 
@@ -872,7 +872,7 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 			return user_error(status, isc_usrname_too_long);
 		}
 
-		size_t l = work.find(' ');
+		Firebird::string::size_type l = work.find(' ');
 		if (l != Firebird::string::npos) {
 			work.resize(l);
 		}
@@ -894,7 +894,7 @@ ISC_STATUS API_ROUTINE isc_add_user(ISC_STATUS* status, const USER_SEC_DATA* inp
 		}
 		*/
 
-		size_t l = work.find(' ');
+		Firebird::string::size_type l = work.find(' ');
 		if (l != Firebird::string::npos) {
 			work.resize(l);
 		}
@@ -946,7 +946,7 @@ ISC_STATUS API_ROUTINE isc_delete_user(ISC_STATUS* status, const USER_SEC_DATA* 
 			return user_error(status, isc_usrname_too_long);
 		}
 
-		size_t l = work.find(' ');
+		Firebird::string::size_type l = work.find(' ');
 		if (l != Firebird::string::npos) {
 			work.resize(l);
 		}
@@ -991,7 +991,7 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 			return user_error(status, isc_usrname_too_long);
 		}
 
-		size_t l = work.find(' ');
+		Firebird::string::size_type l = work.find(' ');
 		if (l != Firebird::string::npos) {
 			work.resize(l);
 		}
@@ -1013,7 +1013,7 @@ ISC_STATUS API_ROUTINE isc_modify_user(ISC_STATUS* status, const USER_SEC_DATA* 
 		}
 		*/
 
-		size_t l = work.find(' ');
+		Firebird::string::size_type l = work.find(' ');
 		if (l != Firebird::string::npos) {
 			work.resize(l);
 		}

@@ -417,7 +417,7 @@ public:
 //--------------------------------------
 
 
-extern "C" void FB_DLL_EXPORT fbUdrRegFunction(const char* name, FunctionFactory* factory)
+extern "C" void FB_EXPORTED fbUdrRegFunction(const char* name, FunctionFactory* factory)
 {
 	FunctionNode* node = new FunctionNode();
 	node->name = name;
@@ -428,7 +428,7 @@ extern "C" void FB_DLL_EXPORT fbUdrRegFunction(const char* name, FunctionFactory
 }
 
 
-extern "C" void FB_DLL_EXPORT fbUdrRegProcedure(const char* name, ProcedureFactory* factory)
+extern "C" void FB_EXPORTED fbUdrRegProcedure(const char* name, ProcedureFactory* factory)
 {
 	ProcedureNode* node = new ProcedureNode();
 	node->name = name;
@@ -439,7 +439,7 @@ extern "C" void FB_DLL_EXPORT fbUdrRegProcedure(const char* name, ProcedureFacto
 }
 
 
-extern "C" void FB_DLL_EXPORT fbUdrRegTrigger(const char* name, TriggerFactory* factory)
+extern "C" void FB_EXPORTED fbUdrRegTrigger(const char* name, TriggerFactory* factory)
 {
 	TriggerNode* node = new TriggerNode();
 	node->name = name;
@@ -488,7 +488,7 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 	const string str(metadata->getEntryPoint(&status));
 	StatusException::check(status.get());
 
-	const size_t pos = str.find('!');
+	const string::size_type pos = str.find('!');
 	if (pos == string::npos)
 	{
 		static const ISC_STATUS statusVector[] = {
@@ -517,7 +517,7 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 
 	*entryPoint = str.substr(pos + 1);
 
-	size_t n = entryPoint->find('!');
+	string::size_type n = entryPoint->find('!');
 	*entryPoint = (n == string::npos ? *entryPoint : entryPoint->substr(0, n));
 
 	MutexLockGuard guard(modulesMutex, FB_FUNCTION);
@@ -727,7 +727,7 @@ class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {
 } factory;
 
-extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	CachedMasterInterface::set(master);
 

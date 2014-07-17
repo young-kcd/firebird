@@ -2632,7 +2632,7 @@ static act* act_delete()
 			{
 				// does not specify transaction clause in
 				// "delete ... where current of cursor" stmt
-				const size_t trans_nm_len = strlen(request->req_trans);
+				const int trans_nm_len = static_cast<int>(strlen(request->req_trans));
 				char* str_2 = (char*) MSC_alloc(trans_nm_len + 1);
 				memcpy(str_2, request->req_trans, trans_nm_len);
 				transaction = str_2;
@@ -4507,7 +4507,7 @@ static act* act_update()
 			{
 				// does not specify transaction clause in
 				// "update ... where cuurent of cursor" stmt
-				const USHORT trans_nm_len = strlen(request->req_trans);
+				const USHORT trans_nm_len = static_cast<USHORT>(strlen(request->req_trans));
 				char* newtrans = (SCHAR *) MSC_alloc(trans_nm_len + 1);
 				transaction = newtrans;
 				memcpy(newtrans, request->req_trans, trans_nm_len);
@@ -4764,7 +4764,7 @@ static act* act_whenever()
 
 static bool check_filename(const TEXT* name)
 {
-	const USHORT l = strlen(name);
+	const USHORT l = static_cast<USHORT>(strlen(name));
 	if (!l)
 		return true;
 

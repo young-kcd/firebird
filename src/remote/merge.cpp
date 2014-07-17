@@ -88,7 +88,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 			return out - start;
 
 		case isc_info_firebird_version:
-			l = strlen((char *) (p = version));
+			l = static_cast<SSHORT>(strlen((char *) (p = version)));
 			if (l > MAX_UCHAR)
 			    l = MAX_UCHAR;
 			if (merge_setup(&in, &out, end, l + 1))
@@ -98,7 +98,7 @@ USHORT MERGE_database_info(const UCHAR* in,
 			break;
 
 		case isc_info_db_id:
-			l = strlen((SCHAR *) (p = id));
+			l = static_cast<SSHORT>(strlen((SCHAR *) (p = id)));
 			if (l > MAX_UCHAR)
 				l = MAX_UCHAR;
 			if (merge_setup(&in, &out, end, l + 1))

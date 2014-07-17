@@ -433,7 +433,7 @@ bool IntlManager::initialize()
 				builtinConfig = s;
 
 			const ConfigFile::Parameters& params = configFile.getParameters();
-			for (size_t n = 0; n < params.getCount(); ++n)
+			for (FB_SIZE_T n = 0; n < params.getCount(); ++n)
 			{
 				const ConfigFile::Parameter* ch = &params[n];
 				if (ch->name != "charset")
@@ -512,7 +512,7 @@ bool IntlManager::initialize()
 				}
 
 				const ConfigFile::Parameters& sub = ch->sub->getParameters();
-				for (size_t coll = 0; coll < sub.getCount(); ++coll)
+				for (FB_SIZE_T coll = 0; coll < sub.getCount(); ++coll)
 				{
 					if (sub[coll].name != "collation")
 					{
@@ -521,7 +521,7 @@ bool IntlManager::initialize()
 
 					ConfigFile::String collationName = sub[coll].value;
 					ConfigFile::String externalName;
-					size_t pos = collationName.find(' ');
+					FB_SIZE_T pos = collationName.find(' ');
 					if (pos != ConfigFile::String::npos)
 					{
 						externalName = collationName.substr(pos);
@@ -718,7 +718,7 @@ string IntlManager::getConfigInfo(const ConfigFile::Parameter* confObj)
 	ConfigFile::String configInfo;
 	const ConfigFile::Parameters& all = confObj->sub->getParameters();
 
-	for (size_t n = 0; n < all.getCount(); ++n)
+	for (FB_SIZE_T n = 0; n < all.getCount(); ++n)
 	{
 		const ConfigFile::Parameter& par = all[n];
 

@@ -497,7 +497,7 @@ void MET_delete_database( qli_dbb* dbb)
 	else
 	{
 		user = QLI_default_user;
-		user_length = strlen(QLI_default_user);
+		user_length = static_cast<USHORT>(strlen(QLI_default_user));
 	}
 
 	const TEXT* password;
@@ -510,7 +510,7 @@ void MET_delete_database( qli_dbb* dbb)
 	else
 	{
 		password = QLI_default_password;
-		password_length = strlen(QLI_default_password);
+		password_length = static_cast<USHORT>(strlen(QLI_default_password));
 	}
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
@@ -537,7 +537,7 @@ void MET_delete_database( qli_dbb* dbb)
 	DB = dbb->dbb_handle;
 
 	FOR F IN DB.RDB$FILES SORTED BY F.RDB$FILE_START
-		qli_str* astring = (qli_str*) ALLOCDV(type_str, strlen(F.RDB$FILE_NAME));
+		qli_str* astring = (qli_str*) ALLOCDV(type_str, static_cast<int>(strlen(F.RDB$FILE_NAME)));
 		strcpy(astring->str_data, F.RDB$FILE_NAME);
 		ALLQ_push((blk*) astring, &stack);
 	END_FOR
@@ -1392,7 +1392,7 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 
 	SSHORT length;
 	const TEXT* lc_ctype = QLI_charset;
-	if (lc_ctype && (length = strlen(lc_ctype))) {
+	if (lc_ctype && (length = static_cast<SSHORT>(strlen(lc_ctype)))) {
 		dpb.insertString(isc_dpb_lc_ctype, lc_ctype, length);
 	}
 
@@ -1420,7 +1420,7 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 	else
 	{
 		q = QLI_default_user;
-		length = strlen(QLI_default_user);
+		length = static_cast<SSHORT>(strlen(QLI_default_user));
 	}
 	if (length) {
 		dpb.insertString(isc_dpb_user_name, q, length);
@@ -1436,7 +1436,7 @@ void MET_ready( qli_syntax* node, const bool create_flag)
 	else
 	{
 		q = QLI_default_password;
-		length = strlen(QLI_default_password);
+		length = static_cast<SSHORT>(strlen(QLI_default_password));
 	}
 	if (length) {
 		dpb.insertString(isc_dpb_password, q, length);
@@ -1905,7 +1905,7 @@ static void blob_copy( qli_rlb* rlb, qli_rel* source, ISC_QUAD& source_blob_id)
 
 	STUFF_WORD((USHORT) size);
 
-	size_t length;
+	FB_SIZE_T length;
 	while (source_blob.getSegment(buffer_length, buffer, length) && !source_blob.getCode())
 	{
 		while (rlb->rlb_data + length > rlb->rlb_limit)
@@ -2805,7 +2805,7 @@ static TEXT* get_query_header( qli_dbb* database, ISC_QUAD& blob_id)
 	{
 		if (p >= end)
 			break;
-		size_t length;
+		FB_SIZE_T length;
 		if (!blob.getSegment(sizeof(buffer), buffer, length))
 			break;
 		if (length && buffer[length - 1] == '\n')
@@ -3255,7 +3255,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 
 		case blr_varying:
 			dtype = dtype_varying;
-			length = l = gds__vax_integer(blr, 2) + sizeof(USHORT);
+			length = l = static_cast<SSHORT>(gds__vax_integer(blr, 2) + sizeof(USHORT));
 			blr += 2;
 			break;
 
@@ -3263,7 +3263,7 @@ static qli_syntax* parse_blr( UCHAR** ptr, qli_symbol* symbol)
 			dtype = dtype_varying;
 			scale = gds__vax_integer(blr, 2);
 			blr += 2;
-			length = l = gds__vax_integer(blr, 2) + sizeof(USHORT);
+			length = l = static_cast<SSHORT>(gds__vax_integer(blr, 2) + sizeof(USHORT));
 			blr += 2;
 			break;
 
@@ -3387,7 +3387,7 @@ static qli_syntax* parse_blr_blob(ISC_QUAD& blob_id, qli_symbol* symbol)
 
 	for (;;)
 	{
-		size_t length = buffer + sizeof(buffer) - ptr;
+		FB_SIZE_T length = buffer + sizeof(buffer) - ptr;
 		if (!length)
 			break;
 		// The old code considered getting a portion of a segment a bug.
@@ -3470,7 +3470,7 @@ static void put_dyn_string( qli_rlb* rlb, const TEXT* string)
  *
  **************************************/
 
-	const SSHORT l = strlen(string);
+	const SSHORT l = static_cast<SSHORT>(strlen(string));
 
 	while ((SSHORT) (rlb->rlb_limit - rlb->rlb_data) < l) {
 		rlb = GEN_rlb_extend(rlb);

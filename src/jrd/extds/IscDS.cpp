@@ -1548,7 +1548,7 @@ static bool isConnectionBrokenError(ISC_STATUS status)
 
 static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &descs)
 {
-	size_t offset = 0;
+	FB_SIZE_T offset = 0;
 	XSQLVAR* xVar = xsqlda->sqlvar;
 
     for (int i = 0; i < xsqlda->sqld; xVar++, i++)

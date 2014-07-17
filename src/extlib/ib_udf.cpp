@@ -192,7 +192,7 @@ pChar EXPORT IB_UDF_lower(const char *s)
 	if (!s)
 		return 0;
 
-	char* buf = (char *) ib_util_malloc(strlen(s) + 1);
+	char* buf = (char *) ib_util_malloc(static_cast<long>(strlen(s) + 1));
 	char* p = buf;
 	while (*s)
 	{
@@ -217,8 +217,8 @@ pChar EXPORT IB_UDF_lpad( const char *s, ISC_LONG *a, const char *c)
 	if (avalue >= 0)
 	{
 		long current = 0;
-		const long length = strlen(s);
-		const long padlength = strlen(c);
+		const long length = static_cast<long>(strlen(s));
+		const long padlength = static_cast<long>(strlen(c));
 		const long stop = avalue < length ? avalue : length;
 		char* buf = (char*) ib_util_malloc(avalue + 1);
 
@@ -251,7 +251,7 @@ pChar EXPORT IB_UDF_ltrim( const char *s)
 	while (*s == ' ')		// skip leading blanks
 		s++;
 
-	const long length = strlen(s);
+	const long length = static_cast<long>(strlen(s));
 	char* buf = (char *) ib_util_malloc(length + 1);
 	memcpy(buf, s, length);
 	buf[length] = '\0';
@@ -304,9 +304,9 @@ pChar EXPORT IB_UDF_rpad( const char *s, ISC_LONG *a, const char *c)
 
 	if (avalue >= 0)
 	{
-		const long length = strlen(s);
+		const long length = static_cast<long>(strlen(s));
 		long current = (avalue - length) < 0 ? avalue : length;
-		const long padlength = strlen(c);
+		const long padlength = static_cast<long>(strlen(c));
 		char* buf = (char*) ib_util_malloc (avalue + 1);
 		memcpy(buf, s, current);
 
@@ -378,7 +378,7 @@ pChar EXPORT IB_UDF_substr(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 
 	char* buf;
-	long length = strlen(s);
+	long length = static_cast<long>(strlen(s));
 	if (!length ||
 		*m > *n ||
 		*m < 1  ||
@@ -417,7 +417,7 @@ pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 	}
 
 	char* buf;
-	long length = strlen(s);
+	long length = static_cast<long>(strlen(s));
 	if (!length ||
 		*m < 1  ||
 		*n < 1  ||
@@ -445,7 +445,7 @@ pChar EXPORT IB_UDF_substrlen(const char* s, ISC_SHORT* m, ISC_SHORT* n)
 
 ISC_LONG EXPORT IB_UDF_strlen( const char *a)
 {
-	return (strlen(a));
+	return static_cast<ISC_LONG>(strlen(a));
 }
 
 double EXPORT IB_UDF_tan( double *a)

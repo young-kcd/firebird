@@ -71,7 +71,7 @@ namespace
 
 			m_flags.resize(m_streams.getCount());
 
-			for (size_t i = 0; i < m_streams.getCount(); i++)
+			for (FB_SIZE_T i = 0; i < m_streams.getCount(); i++)
 			{
 				const StreamType stream = m_streams[i];
 				m_flags[i] = m_csb->csb_rpt[stream].csb_flags;
@@ -81,7 +81,7 @@ namespace
 
 		~AutoActivateResetStreams()
 		{
-			for (size_t i = 0; i < m_streams.getCount(); i++)
+			for (FB_SIZE_T i = 0; i < m_streams.getCount(); i++)
 			{
 				const StreamType stream = m_streams[i];
 				m_csb->csb_rpt[stream].csb_flags = m_flags[i];
@@ -683,7 +683,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 	{
 		const ViewContexts& ctx = parentView->rel_view_contexts;
 		const USHORT key = context;
-		size_t pos;
+		FB_SIZE_T pos;
 
 		if (ctx.find(key, pos))
 		{
@@ -1126,7 +1126,7 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 	{
 		const ViewContexts& ctx = parentView->rel_view_contexts;
 		const USHORT key = context;
-		size_t pos;
+		FB_SIZE_T pos;
 
 		if (ctx.find(key, pos))
 		{
@@ -1783,7 +1783,7 @@ RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool 
 {
 	opt->beds.add(stream);
 
-	const size_t oldCount = opt->keyStreams.getCount();
+	const FB_SIZE_T oldCount = opt->keyStreams.getCount();
 	computeDbKeyStreams(opt->keyStreams);
 
 	BoolExprNodeStack conjunctStack;
@@ -1800,7 +1800,7 @@ RecordSource* UnionSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool 
 
 // Generate an union complex.
 RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, const StreamType* streams,
-	size_t nstreams, BoolExprNodeStack* parentStack, StreamType shellStream)
+	FB_SIZE_T nstreams, BoolExprNodeStack* parentStack, StreamType shellStream)
 {
 	SET_TDBB(tdbb);
 
@@ -2317,12 +2317,12 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			BoolExprNode* newBoolean = NULL;
 			StrArray usedColumns(dsqlScratch->getPool());
 
-			for (size_t i = 0; i < usingList->items.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < usingList->items.getCount(); ++i)
 			{
 				const FieldNode* field = usingList->items[i]->as<FieldNode>();
 
 				// verify if the column was already used
-				size_t pos;
+				FB_SIZE_T pos;
 				if (usedColumns.find(field->dsqlName.c_str(), pos))
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
@@ -3375,7 +3375,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 			continue;
 
 		// At least 1 mapping should be used in the arguments
-		size_t indexArg;
+		FB_SIZE_T indexArg;
 		bool mappingFound = false;
 
 		for (indexArg = 0; (indexArg < children.getCount()) && !mappingFound; ++indexArg)

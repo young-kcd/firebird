@@ -36,7 +36,7 @@ namespace Firebird
 	class DefaultHash
 	{
 	public:
-		static size_t hash(const void* value, size_t length, size_t hashSize)
+		static FB_SIZE_T hash(const void* value, FB_SIZE_T length, FB_SIZE_T hashSize)
 		{
 			size_t sum = 0;
 			size_t val;
@@ -68,17 +68,17 @@ namespace Firebird
 			return rc % hashSize;
 		}
 
-		static size_t hash(const K& value, size_t hashSize)
+		static FB_SIZE_T hash(const K& value, FB_SIZE_T hashSize)
 		{
 			return hash(&value, sizeof value, hashSize);
 		}
 
 	};
 
-	const size_t DEFAULT_HASH_SIZE = 97;			// largest prime number < 100
+	const FB_SIZE_T DEFAULT_HASH_SIZE = 97;			// largest prime number < 100
 
 	template <typename C,
-			  size_t HASHSIZE = DEFAULT_HASH_SIZE,
+			  FB_SIZE_T HASHSIZE = DEFAULT_HASH_SIZE,
 			  typename K = C,						// default key
 			  typename KeyOfValue = DefaultKeyValue<C>,	// default keygen
 			  typename F = DefaultHash<K> >			// hash function definition
@@ -180,7 +180,7 @@ namespace Firebird
 		typedef void CleanupRoutine(C* toClean);
 		void cleanup(CleanupRoutine* cleanupRoutine)
 		{
-			for (size_t n = 0; n < HASHSIZE; ++n)
+			for (FB_SIZE_T n = 0; n < HASHSIZE; ++n)
 			{
 				while (data[n])
 				{
@@ -201,7 +201,7 @@ namespace Firebird
 		Entry* data[HASHSIZE];
 		bool duplicates;
 
-		Entry** locate(const K& key, size_t h)
+		Entry** locate(const K& key, FB_SIZE_T h)
 		{
 			Entry** pointer = &data[h];
 			while (*pointer)
@@ -218,7 +218,7 @@ namespace Firebird
 
 		Entry** locate(const K& key)
 		{
-			size_t hashValue = F::hash(key, HASHSIZE);
+			FB_SIZE_T hashValue = F::hash(key, HASHSIZE);
 			fb_assert(hashValue < HASHSIZE);
 			return locate(key, hashValue % HASHSIZE);
 		}
@@ -267,7 +267,7 @@ namespace Firebird
 		{
 		private:
 			const Hash* hash;
-			size_t elem;
+			FB_SIZE_T elem;
 			Entry* current;
 
 			iterator(const iterator& i);

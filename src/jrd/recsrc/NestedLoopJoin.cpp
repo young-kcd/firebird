@@ -34,7 +34,7 @@ using namespace Jrd;
 // Data access: nested loops join
 // ------------------------------
 
-NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource* const* args)
+NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, FB_SIZE_T count, RecordSource* const* args)
 	: m_outerJoin(false), m_semiJoin(false), m_antiJoin(false), m_args(csb->csb_pool),
 	  m_boolean(NULL)
 {
@@ -42,7 +42,7 @@ NestedLoopJoin::NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource*
 
 	m_args.resize(count);
 
-	for (size_t i = 0; i < count; i++)
+	for (FB_SIZE_T i = 0; i < count; i++)
 		m_args[i] = args[i];
 }
 
@@ -79,7 +79,7 @@ void NestedLoopJoin::close(thread_db* tdbb) const
 	{
 		impure->irsb_flags &= ~irsb_open;
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			m_args[i]->close(tdbb);
 	}
 }
@@ -166,7 +166,7 @@ bool NestedLoopJoin::getRecord(thread_db* tdbb) const
 	{
 		if (impure->irsb_flags & irsb_first)
 		{
-			for (size_t i = 0; i < m_args.getCount(); i++)
+			for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			{
 				m_args[i]->open(tdbb);
 
@@ -207,14 +207,14 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 		{
 			plan += printIndent(++level) + " Nested Loop Join ";
 			plan += m_semiJoin ? "(semi)" : m_antiJoin ? "(anti)" : m_outerJoin ? "(outer)" : "(inner)";
-			for (size_t i = 0; i < m_args.getCount(); i++)
+			for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 				m_args[i]->print(tdbb, plan, true, level);
 		}
 		else
 		{
 			level++;
 			plan += "JOIN (";
-			for (size_t i = 0; i < m_args.getCount(); i++)
+			for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			{
 				if (i)
 					plan += ", ";
@@ -228,29 +228,29 @@ void NestedLoopJoin::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 
 void NestedLoopJoin::markRecursive()
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->markRecursive();
 }
 
 void NestedLoopJoin::findUsedStreams(StreamList& streams, bool expandAll) const
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->findUsedStreams(streams, expandAll);
 }
 
 void NestedLoopJoin::invalidateRecords(jrd_req* request) const
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->invalidateRecords(request);
 }
 
 void NestedLoopJoin::nullRecords(thread_db* tdbb) const
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->nullRecords(tdbb);
 }
 
-bool NestedLoopJoin::fetchRecord(thread_db* tdbb, size_t n) const
+bool NestedLoopJoin::fetchRecord(thread_db* tdbb, FB_SIZE_T n) const
 {
 	const RecordSource* const arg = m_args[n];
 

@@ -45,11 +45,11 @@ public:
 	TraceLog(Firebird::MemoryPool& pool, const Firebird::PathName& fileName, bool reader);
 	virtual ~TraceLog();
 
-	size_t read(void* buf, size_t size);
-	size_t write(const void* buf, size_t size);
+	FB_SIZE_T read(void* buf, FB_SIZE_T size);
+	FB_SIZE_T write(const void* buf, FB_SIZE_T size);
 
 	// returns approximate log size in MB
-	size_t getApproxLogSize() const;
+	ULONG getApproxLogSize() const;
 
 private:
 	void mutexBug(int osErrorCode, const char* text);

@@ -372,10 +372,10 @@ static void getVersions(const string& configInfo, ObjectsArray<string>& versions
 
 	versions.clear();
 
-	size_t start = 0;
-	size_t n;
+	FB_SIZE_T start = 0;
+	FB_SIZE_T n;
 
-	for (size_t i = versionsStr.find(' '); i != versionsStr.npos;
+	for (FB_SIZE_T i = versionsStr.find(' '); i != versionsStr.npos;
 		start = i + 1, i = versionsStr.find(' ', start))
 	{
 		if ((n = versionsStr.find_first_not_of(' ', start)) != versionsStr.npos)
@@ -622,7 +622,7 @@ ULONG UnicodeUtil::utf16ToUtf8(ULONG srcLen, const USHORT* src, ULONG dstLen, UC
 		}
 	}
 
-	return (dst - dstStart) * sizeof(*dst);
+	return static_cast<ULONG>((dst - dstStart) * sizeof(*dst));
 }
 
 
@@ -684,7 +684,7 @@ ULONG UnicodeUtil::utf8ToUtf16(ULONG srcLen, const UCHAR* src, ULONG dstLen, USH
 		}
 	}
 
-	return (dst - dstStart) * sizeof(*dst);
+	return static_cast<ULONG>((dst - dstStart) * sizeof(*dst));
 }
 
 
@@ -730,12 +730,12 @@ ULONG UnicodeUtil::utf16ToUtf32(ULONG srcLen, const USHORT* src, ULONG dstLen, U
 		*(dst++) = ch;
 	}
 
-	*err_position = (src - srcStart) * sizeof(*src);
+	*err_position = static_cast<ULONG>((src - srcStart) * sizeof(*src));
 
 	if (*err_code == 0 && src < srcEnd)
 		*err_code = CS_TRUNCATION_ERROR;
 
-	return (dst - dstStart) * sizeof(*dst);
+	return static_cast<ULONG>((dst - dstStart) * sizeof(*dst));
 }
 
 
@@ -785,12 +785,12 @@ ULONG UnicodeUtil::utf32ToUtf16(ULONG srcLen, const ULONG* src, ULONG dstLen, US
 		}
 	}
 
-	*err_position = (src - srcStart) * sizeof(*src);
+	*err_position = static_cast<ULONG>((src - srcStart) * sizeof(*src));
 
 	if (*err_code == 0 && src < srcEnd)
 		*err_code = CS_TRUNCATION_ERROR;
 
-	return (dst - dstStart) * sizeof(*dst);
+	return static_cast<ULONG>((dst - dstStart) * sizeof(*dst));
 }
 
 
@@ -867,7 +867,7 @@ ULONG UnicodeUtil::utf16Substring(ULONG srcLen, const USHORT* src, ULONG dstLen,
 		++pos;
 	}
 
-	return (dst - dstStart) * sizeof(*dst);
+	return static_cast<ULONG>((dst - dstStart) * sizeof(*dst));
 }
 
 
@@ -937,7 +937,7 @@ INTL_BOOL UnicodeUtil::utf32WellFormed(ULONG len, const ULONG* str, ULONG* offen
 		if (!U_IS_UNICODE_CHAR(*str))
 		{
 			if (offending_position)
-				*offending_position = (str - strStart) * sizeof(*str);
+				*offending_position = static_cast<ULONG>((str - strStart) * sizeof(*str));
 			return false;	// malformed
 		}
 

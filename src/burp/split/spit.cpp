@@ -584,7 +584,7 @@ static int gen_multy_bakup_files(b_fil* file_list, FILE_DESC input_file_desc, SL
 		return FB_FAILURE;
 	}
 
-	size_t pos;
+	FB_SIZE_T pos;
 	for (pos = 0; pos < header_rec_len; pos++)
 		header_str[pos] = BLANK;
 
@@ -1021,6 +1021,7 @@ static int read_and_write_for_join(FILE_DESC output_fl_desc,
 
 	TEXT num_arr[5], total_arr[5];
 	header_rec hdr_rec;
+	FB_UNUSED_VAR(hdr_rec); // Silence compiler warning
 
 	FILE_DESC input_fl_desc = open_platf(file_name, mode_read);
 
@@ -1195,7 +1196,7 @@ static int write_header(const b_fil* fl_ptr,
 	pos = sizeof(hdr_rec.name) + sizeof(hdr_rec.date_time) +
 		sizeof(hdr_rec.text1) + sizeof(hdr_rec.num) +
 		sizeof(hdr_rec.text2) + sizeof(hdr_rec.total) + sizeof(hdr_rec.text3);
-	ret_cd = set_hdr_str(header_str, file_name, pos, strlen(file_name));
+	ret_cd = set_hdr_str(header_str, file_name, pos, static_cast<SLONG>(strlen(file_name)));
 
 	SLONG end, indx;
 	SLONG write_cnt = write_platf(output_fl_desc, header_str, header_rec_len);
@@ -1206,7 +1207,7 @@ static int write_header(const b_fil* fl_ptr,
 		return FB_FAILURE;
 
 	default:
-		end = pos + strlen(file_name);
+		end = pos + fb_strlen(file_name);
 		for (indx = pos; indx < end; indx++)
 			header_str[indx] = BLANK;
 		return FB_SUCCESS;

@@ -391,18 +391,18 @@ void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& va
 	SortedArray<const dsql_par*, InlineStorage<const dsql_par*, 16>, const dsql_par*,
 		DefaultKeyValue<const dsql_par*>, ParamCmp> params;
 
-	for (size_t i = 0; i < dsqlMsg->msg_parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < dsqlMsg->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* par = dsqlMsg->msg_parameters[i];
 		if (par->par_index)
 			params.add(par);
 	}
 
-	size_t paramCount = params.getCount();
+	FB_SIZE_T paramCount = params.getCount();
 	values.resize(paramCount * 2);
 	msgMetadata->setItemsCount(paramCount);
 
-	for (size_t i = 0; i < paramCount; ++i)
+	for (FB_SIZE_T i = 0; i < paramCount; ++i)
 		dscToMetaItem(&params[i]->par_desc, msgMetadata->getItem(i));
 
 	msgMetadata->makeOffsets();
@@ -410,7 +410,7 @@ void PreparedStatement::parseDsqlMessage(const dsql_msg* dsqlMsg, Array<dsc>& va
 
 	dsc* value = values.begin();
 
-	for (size_t i = 0; i < paramCount; ++i)
+	for (FB_SIZE_T i = 0; i < paramCount; ++i)
 	{
 		// value
 		*value = params[i]->par_desc;

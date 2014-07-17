@@ -390,7 +390,7 @@ qli_nod* FMT_list(qli_nod* list)
 					value->nod_desc.dsc_address = (UCHAR*) q;
 				else
 				{
-					qli_str* header = (qli_str*) ALLOCDV(type_str, strlen(q));
+					qli_str* header = (qli_str*) ALLOCDV(type_str, static_cast<int>(strlen(q)));
 					TEXT* p = header->str_data;
 					value->nod_desc.dsc_address = (UCHAR*) p; // safe const_cast, see PIC_analyze
 					TEXT c;
@@ -403,7 +403,7 @@ qli_nod* FMT_list(qli_nod* list)
 					}
 					p[-1] = 0;
 				}
-				value->nod_desc.dsc_length = strlen((char*) value->nod_desc.dsc_address);
+				value->nod_desc.dsc_length = static_cast<USHORT>(strlen((char*) value->nod_desc.dsc_address));
 			}
 			else
 			{
@@ -793,7 +793,7 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
 	if (item->itm_query_header)
 	{
 		q = item->itm_query_header;
-		l = strlen(item->itm_query_header);
+		l = static_cast<USHORT>(strlen(item->itm_query_header));
 	}
 	else
 	{
@@ -828,7 +828,7 @@ static void format_index( qli_print_item* item, qli_nod* field, const bool print
 		case nod_constant:
 			sprintf(s, "%"SLONGFORMAT, MOVQ_get_long(&subscript->nod_desc, 0));
 			q = s;
-			l = strlen(s);
+			l = static_cast<USHORT>(strlen(s));
 			break;
 
 		case nod_variable:

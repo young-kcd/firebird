@@ -253,7 +253,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 }
 
 
-bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
+bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, FB_SIZE_T len_expanded)
 {
 /**************************************
  *
@@ -474,7 +474,7 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vect
  *
  **************************************/
 	const char* const zero_buff = zeros().getBuffer();
-	const size_t zero_buff_size = zeros().getSize();
+	const FB_SIZE_T zero_buff_size = zeros().getSize();
 
 	//Database::Checkout dcoHolder(dbb);
 	FileExtendLockGuard extLock(main_file->fil_ext_lock, false);

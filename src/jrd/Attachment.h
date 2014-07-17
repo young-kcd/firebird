@@ -556,7 +556,7 @@ public:
 		Iterator& operator=(const Iterator&);
 
 		AttachmentsRefHolder& m_list;
-		size_t m_index;
+		FB_SIZE_T m_index;
 	};
 
 	explicit AttachmentsRefHolder(MemoryPool& p)
@@ -567,7 +567,7 @@ public:
 	{
 		this->~AttachmentsRefHolder();
 
-		for (size_t i = 0; i < other.m_attachments.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < other.m_attachments.getCount(); i++)
 			add(other.m_attachments[i]);
 
 		return *this;

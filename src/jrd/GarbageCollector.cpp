@@ -140,7 +140,7 @@ GarbageCollector::~GarbageCollector()
 {
 	SyncLockGuard exGuard(&m_sync, SYNC_EXCLUSIVE, "GarbageCollector::~GarbageCollector");
 
-	for (size_t pos = 0; pos < m_relations.getCount(); pos++)
+	for (FB_SIZE_T pos = 0; pos < m_relations.getCount(); pos++)
 	{
 		Sync sync(&m_relations[pos]->m_sync, "GarbageCollector::~GarbageCollector");
 		sync.lock(SYNC_EXCLUSIVE);
@@ -175,7 +175,7 @@ bool GarbageCollector::getPageBitmap(const TraNumber oldest_snapshot, USHORT &re
 		return false;
 	}
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (!m_relations.find(m_nextRelID, pos) && (pos == m_relations.getCount()))
 		pos = 0;
 
@@ -204,7 +204,7 @@ void GarbageCollector::removeRelation(const USHORT relID)
 	Sync syncGC(&m_sync, "GarbageCollector::removeRelation");
 	syncGC.lock(SYNC_EXCLUSIVE);
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (!m_relations.find(relID, pos))
 		return;
 
@@ -255,7 +255,7 @@ TraNumber GarbageCollector::minTranID(const USHORT relID)
 GarbageCollector::RelationData* GarbageCollector::getRelData(Sync &sync, const USHORT relID,
 	bool allowCreate)
 {
-	size_t pos;
+	FB_SIZE_T pos;
 
 	sync.lock(SYNC_SHARED);
 	if (!m_relations.find(relID, pos))

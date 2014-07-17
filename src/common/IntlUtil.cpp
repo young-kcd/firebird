@@ -314,9 +314,9 @@ ULONG IntlUtil::cvtAsciiToUtf16(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	*err_position = static_cast<ULONG>((pSrc - pStart_src) * sizeof(*pSrc));
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return static_cast<ULONG>((pDest - pStart) * sizeof(*pDest));
 }
 
 
@@ -362,9 +362,9 @@ ULONG IntlUtil::cvtUtf16ToAscii(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	*err_position = static_cast<ULONG>((pSrc - pStart_src) * sizeof(*pSrc));
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return static_cast<ULONG>((pDest - pStart) * sizeof(*pDest));
 }
 
 
@@ -594,7 +594,7 @@ ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 void IntlUtil::toUpper(Jrd::CharSet* cs, string& s)
 {
 	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-	size_t len = s.length();
+	FB_SIZE_T len = s.length();
 	ULONG count = toUpper(cs, len, (const UCHAR*) s.c_str(), len * 4, buffer.getBuffer(len * 4), NULL);
 
 	if (count != INTL_BAD_STR_LENGTH)

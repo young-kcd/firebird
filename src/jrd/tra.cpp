@@ -779,7 +779,7 @@ void TRA_unlink_cursor(jrd_tra* transaction, dsql_req* cursor)
  *
  **************************************/
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (transaction->tra_open_cursors.find(cursor, pos))
 	{
 		transaction->tra_open_cursors.remove(pos);
@@ -812,7 +812,7 @@ void TRA_post_resources(thread_db* tdbb, jrd_tra* transaction, ResourceList& res
 			rsc->rsc_type == Resource::rsc_function ||
 			rsc->rsc_type == Resource::rsc_collation)
 		{
-			size_t i;
+			FB_SIZE_T i;
 			if (!transaction->tra_resources.find(*rsc, i))
 			{
 				transaction->tra_resources.insert(i, *rsc);
@@ -1158,7 +1158,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	{ // scope
 		vec<jrd_rel*>& rels = *attachment->att_relations;
 
-		for (size_t i = 0; i < rels.count(); i++)
+		for (FB_SIZE_T i = 0; i < rels.count(); i++)
 		{
 			jrd_rel* relation = rels[i];
 
@@ -2099,7 +2099,7 @@ static void expand_view_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rel
 
 	const ViewContexts& ctx = relation->rel_view_contexts;
 
-	for (size_t i = 0; i < ctx.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < ctx.getCount(); ++i)
 	{
 		if (ctx[i]->vcx_type == VCT_PROCEDURE)
 			continue;
@@ -2486,7 +2486,7 @@ static void start_sweeper(thread_db* tdbb)
 	// allocate space for the string and a null at the end
 	const char* pszFilename = tdbb->getAttachment()->att_filename.c_str();
 
-	char* database = (char*) gds__alloc(strlen(pszFilename) + 1);
+	char* database = (char*) gds__alloc(static_cast<SLONG>(strlen(pszFilename)) + 1);
 
 	if (database)
 	{
@@ -2528,7 +2528,7 @@ static THREAD_ENTRY_DECLARE sweep_database(THREAD_ENTRY_PARAM database)
 	dpb.insertByte(isc_dpb_sweep, isc_dpb_records);
 	// use embedded authentication to attach database
 	const char* szAuthenticator = "sweeper";
-	dpb.insertString(isc_dpb_user_name, szAuthenticator, strlen(szAuthenticator));
+	dpb.insertString(isc_dpb_user_name, szAuthenticator, fb_strlen(szAuthenticator));
 
 	ISC_STATUS_ARRAY status_vector = {0};
 	isc_db_handle db_handle = 0;
@@ -3085,7 +3085,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 	if (!(trans->tra_flags & TRA_read_committed))
 	{
-		const size_t length = (number - base + TRA_MASK) / 4;
+		const FB_SIZE_T length = (number - base + TRA_MASK) / 4;
 		trans->tra_transactions.resize(length);
 	}
 

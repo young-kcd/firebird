@@ -1276,7 +1276,7 @@ static void gen_blob_open( const act* action)
 		reference = blob->blb_reference;
 	}
 
-	const USHORT column = strlen(names[COLUMN]);
+	const USHORT column = static_cast<USHORT>(strlen(names[COLUMN]));
 	PAT args;
 	args.pat_condition = (action->act_type == ACT_blob_create);	// open or create blob
 	args.pat_vector1 = status_vector(action);	// status vector
@@ -1320,15 +1320,15 @@ static void gen_blob_open( const act* action)
 static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
 	const int max_line = 70, max_diff = 7;
-	const int comment = strlen(names[COMMENT]);
-	int indent = 2 * strlen(INDENT);
+	const int comment = static_cast<int>(strlen(names[COMMENT]));
+	int indent = static_cast<int>(2 * strlen(INDENT));
 	const char* p = string;
 	while (*p == ' ')
 	{
 		p++;
 		indent++;
 	}
-	int length = strlen(p);
+	int length = static_cast<int>(strlen(p));
 
 	if (comment + indent > max_line)
 		indent = max_line - comment;
@@ -1362,7 +1362,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 		if (first_line)
 		{
 			first_line = false;
-			indent += strlen(INDENT);
+			indent += static_cast<int>(strlen(INDENT));
 			if (comment + indent > max_line)
 				indent = max_line - comment;
 		}
@@ -1749,7 +1749,7 @@ static void gen_database( const act* action)
 				const TEXT* s = ready->rdy_filename;
 				if (s && ((*s == '\'') || (*s == '\"')))
 				{
-					unsigned int len = strlen(++s);
+					unsigned int len = static_cast<unsigned>(strlen(++s));
 					if (len >= sizeof(fname))
 						len = sizeof(fname);
 
@@ -2407,7 +2407,7 @@ static void gen_event_init( const act* action)
 	const gpre_nod* init = (gpre_nod*) action->act_object;
 	const gpre_nod* event_list = init->nod_arg[1];
 
-	const USHORT column = strlen(names[COLUMN]);
+	const USHORT column = static_cast<USHORT>(strlen(names[COLUMN]));
 
 	PAT args;
 	args.pat_database = (gpre_dbb*) init->nod_arg[3];
@@ -2496,7 +2496,7 @@ static void gen_event_wait( const act* action)
 		return; // silence non initialized warning
 	}
 
-	const SSHORT column = strlen(names[COLUMN]);
+	const SSHORT column = static_cast<SSHORT>(strlen(names[COLUMN]));
 
 	PAT args;
 	args.pat_database = database;
@@ -2724,7 +2724,7 @@ static void gen_get_or_put_slice(const act* action, const ref* reference, bool g
 	if (!(reference->ref_flags & REF_fetch_array))
 		return;
 
-	const int column = strlen(names[COLUMN]);
+	const int column = static_cast<int>(strlen(names[COLUMN]));
 
 	PAT args;
 	args.pat_condition = get;	// get or put slice
@@ -2896,7 +2896,7 @@ static void gen_procedure( const act* action)
 
 	// Execute the procedure
 
-	const USHORT column = strlen(names[COLUMN]);
+	const USHORT column = static_cast<USHORT>(strlen(names[COLUMN]));
 	PATTERN_expand(column, pattern, &args);
 
 	set_sqlcode(action);
@@ -3023,7 +3023,7 @@ static void gen_ready( const act* action)
 			filename = db->dbb_runtime;
 			if (filename)
 			{
-				namelength = strlen(filename);
+				namelength = static_cast<USHORT>(strlen(filename));
 				sprintf(dbname, "%s%ddb", names[isc_b_pos], dbisc->dbb_id);
 				filename = dbname;
 			}
@@ -3031,7 +3031,7 @@ static void gen_ready( const act* action)
 				namelength = 0;
 		}
 		else
-			namelength = strlen(filename);
+			namelength = static_cast<USHORT>(strlen(filename));
 
 		// string literal or user defined variable?
 
@@ -3409,7 +3409,7 @@ static void gen_slice( const act* action)
 		"CALL \"%S7\" USING %V1, %DH, %RT, %FR, %N1, %I1, %N2, %I1v, %I1s, %S5, %S6";
 	const TEXT *pattern2 = "CALL \"%S7\" USING %V1, %DH, %RT, %FR, %N1, %I1, %N2, %I1v, %I1s, %S5";
 
-	const USHORT column = strlen(names[COLUMN]);
+	const USHORT column = static_cast<USHORT>(strlen(names[COLUMN]));
 	const gpre_req* request = action->act_request;
 	const slc* slice = (slc*) action->act_object;
 	const gpre_req* parent_request = slice->slc_parent_request;
@@ -3611,7 +3611,7 @@ static void gen_t_start( const act* action)
 			if (filename || !(db->dbb_flags & DBB_sqlca))
 			{
 				printa(names[COLUMN], false, "IF %s = 0 THEN", db->dbb_name->sym_string);
-				const USHORT namelength = filename ? strlen(filename) : 0;
+				const USHORT namelength = static_cast<USHORT>(filename ? strlen(filename) : 0);
 				if (filename)
 				{
 					sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);
@@ -4233,7 +4233,7 @@ static void make_ready(const gpre_dbb* db,
 	{
 		sprintf(dbname, "%s%ddb", names[isc_b_pos], dbisc->dbb_id);
 		filename = dbname;
-		namelength = strlen(db->dbb_filename);
+		namelength = static_cast<USHORT>(strlen(db->dbb_filename));
 
 	}
 	sprintf(output_buffer, "%sCALL \"%s\" USING %s, %d, %s, %s, %s, %s\n",
@@ -4410,7 +4410,7 @@ static void t_start_auto(const gpre_req* request,
 				if (stat && buffer[0])
 					fprintf(gpreGlob.out_file, " AND %s(2) = 0", names[isc_status_pos]);
 				fprintf(gpreGlob.out_file, " THEN\n");
-				const USHORT namelength = filename ? strlen(filename) : 0;
+				const USHORT namelength = static_cast<USHORT>(filename ? strlen(filename) : 0);
 				if (filename)
 				{
 					sprintf(dbname, "%s%ddb", names[isc_b_pos], db->dbb_id);

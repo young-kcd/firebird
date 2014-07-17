@@ -108,7 +108,7 @@ private:
 	// If the path ends with a separator, remove it.
 	void fixPath()
 	{
-		size_t pos = root_dir.rfind(PathUtils::dir_sep);
+		FB_SIZE_T pos = root_dir.rfind(PathUtils::dir_sep);
 
 		if (root_dir.hasData() && pos > 0 && pos == root_dir.length() - 1)
 			root_dir.erase(pos, 1);

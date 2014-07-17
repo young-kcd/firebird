@@ -40,7 +40,7 @@ int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const Firebird::PathName&, SLO
 void	PIO_close(Jrd::jrd_file*);
 Jrd::jrd_file*	PIO_create(Jrd::Database*, const Firebird::PathName&,
 							const bool, const bool);
-bool	PIO_expand(const TEXT*, USHORT, TEXT*, size_t);
+bool	PIO_expand(const TEXT*, USHORT, TEXT*, FB_SIZE_T);
 void	PIO_extend(Jrd::Database*, Jrd::jrd_file*, const ULONG, const USHORT);
 void	PIO_flush(Jrd::Database*, Jrd::jrd_file*);
 void	PIO_force_write(Jrd::jrd_file*, const bool, const bool);

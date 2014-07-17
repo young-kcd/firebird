@@ -237,7 +237,7 @@ static ULONG internal_fss_to_unicode(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
+	return static_cast<ULONG>((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 ULONG internal_unicode_to_fss(csconvert* obj,
@@ -293,7 +293,7 @@ ULONG internal_unicode_to_fss(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - unicode_len;
-	return ((fss_str - start) * sizeof(*fss_str));
+	return static_cast<ULONG>((fss_str - start) * sizeof(*fss_str));
 }
 
 static ULONG internal_fss_length(charset* /*obj*/, ULONG srcLen, const UCHAR* src)
@@ -843,9 +843,9 @@ static ULONG wc_to_nc(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	*err_position = static_cast<ULONG>((pSrc - pStart_src) * sizeof(*pSrc));
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return static_cast<ULONG>((pDest - pStart) * sizeof(*pDest));
 }
 
 
@@ -888,9 +888,9 @@ static ULONG mb_to_wc(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	*err_position = static_cast<ULONG>((pSrc - pStart_src) * sizeof(*pSrc));
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return static_cast<ULONG>((pDest - pStart) * sizeof(*pDest));
 }
 
 
@@ -933,9 +933,9 @@ static ULONG wc_to_mb(csconvert* obj, ULONG nSrc, const UCHAR* ppSrc,
 	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	*err_position = static_cast<ULONG>((pSrc - pStart_src) * sizeof(*pSrc));
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return static_cast<ULONG>((pDest - pStart) * sizeof(*pDest));
 }
 
 static INTL_BOOL ttype_ascii_init(texttype* tt,
@@ -1270,9 +1270,9 @@ static ULONG cvt_none_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* pSrc,
 	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	*err_position = static_cast<ULONG>((pSrc - pStart_src) * sizeof(*pSrc));
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return static_cast<ULONG>((pDest - pStart) * sizeof(*pDest));
 }
 
 
@@ -1313,9 +1313,9 @@ static ULONG cvt_unicode_to_unicode(csconvert* obj, ULONG nSrc, const UCHAR* ppS
 	if (!*err_code && nSrc) {
 		*err_code = CS_TRUNCATION_ERROR;
 	}
-	*err_position = (pSrc - pStart_src) * sizeof(*pSrc);
+	*err_position = static_cast<ULONG>((pSrc - pStart_src) * sizeof(*pSrc));
 
-	return ((pDest - pStart) * sizeof(*pDest));
+	return static_cast<ULONG>((pDest - pStart) * sizeof(*pDest));
 }
 
 

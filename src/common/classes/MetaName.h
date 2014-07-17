@@ -59,23 +59,23 @@ private:
 public:
 	MetaName() { init(); count = 0; }
 	MetaName(const char* s) { assign(s); }
-	MetaName(const char* s, size_t l) { assign(s, l); }
+	MetaName(const char* s, FB_SIZE_T l) { assign(s, l); }
 	MetaName(const MetaName& m) { set(m); }
 	MetaName(const AbstractString& s) { assign(s.c_str(), s.length()); }
 	explicit MetaName(MemoryPool&) { init(); count = 0; }
 	MetaName(MemoryPool&, const char* s) { assign(s); }
-	MetaName(MemoryPool&, const char* s, size_t l) { assign(s, l); }
+	MetaName(MemoryPool&, const char* s, FB_SIZE_T l) { assign(s, l); }
 	MetaName(MemoryPool&, const MetaName& m) { set(m); }
 	MetaName(MemoryPool&, const AbstractString& s) { assign(s.c_str(), s.length()); }
 
-	MetaName& assign(const char* s, size_t l);
-	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
+	MetaName& assign(const char* s, FB_SIZE_T l);
+	MetaName& assign(const char* s) { return assign(s, s ? fb_strlen(s) : 0); }
 	MetaName& operator=(const char* s) { return assign(s); }
 	MetaName& operator=(const AbstractString& s) { return assign(s.c_str(), s.length()); }
 	MetaName& operator=(const MetaName& m) { return set(m); }
-	char* getBuffer(const size_t l);
+	char* getBuffer(const FB_SIZE_T l);
 
-	size_t length() const { return count; }
+	FB_SIZE_T length() const { return count; }
 	const char* c_str() const { return data; }
 	const char* nullStr() const { return (count == 0 ? NULL : data); }
 	bool isEmpty() const { return count == 0; }
@@ -84,8 +84,8 @@ public:
 	const char* begin() const { return data; }
 	const char* end() const { return data + count; }
 
-	int compare(const char* s, size_t l) const;
-	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
+	int compare(const char* s, FB_SIZE_T l) const;
+	int compare(const char* s) const { return compare(s, s ? fb_strlen(s) : 0); }
 	int compare(const AbstractString& s) const { return compare(s.c_str(), s.length()); }
 	int compare(const MetaName& m) const { return memcmp(data, m.data, MAX_SQL_IDENTIFIER_SIZE); }
 
@@ -103,10 +103,10 @@ public:
 	void upper7();
 	void lower7();
 	void printf(const char*, ...);
-	size_t copyTo(char* to, size_t toSize) const;
+	FB_SIZE_T copyTo(char* to, FB_SIZE_T toSize) const;
 
 protected:
-	static void adjustLength(const char* const s, size_t& l);
+	static void adjustLength(const char* const s, FB_SIZE_T& l);
 };
 
 typedef Pair<Full<MetaName, MetaName> > MetaNamePair;

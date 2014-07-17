@@ -89,7 +89,7 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
 	const ULONG base = number - number % trans_per_tip;
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
 	{
 		tip_cache = m_cache[pos];
@@ -148,7 +148,7 @@ TraNumber TipCache::findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber ma
 
 	// Scan the TIP cache and return the first (i.e. oldest) limbo transaction
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
 	{
 		for (TraNumber number = minNumber;
@@ -240,7 +240,7 @@ void TipCache::setState(TraNumber number, SSHORT state)
 
 	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::setState");
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
 	{
 		TxPage* tip_cache = m_cache[pos];
@@ -306,7 +306,7 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
 	const ULONG base = number - number % trans_per_tip;
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
 	{
 		tip_cache = m_cache[pos];
@@ -390,7 +390,7 @@ void TipCache::updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence)
 		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		if (m_dbb->dbb_oldest_transaction >= (tip_cache->tpc_base + trans_per_tip))
 		{
-			m_cache.remove((size_t) 0);
+			m_cache.remove((FB_SIZE_T) 0);
 			delete tip_cache;
 		}
 		else
@@ -400,7 +400,7 @@ void TipCache::updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence)
 	// find the appropriate page in the TIP cache and assign all transaction
 	// bits -- it's not worth figuring out which ones are actually used
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (m_cache.find(first_trans, pos))
 		tip_cache = m_cache[pos];
 	else
@@ -497,7 +497,7 @@ TraNumber TipCache::cacheTransactions(thread_db* tdbb, TraNumber oldest)
 		fb_assert(tip_cache->tpc_base < MAX_TRA_NUMBER - trans_per_tip);
 		if ((tip_cache->tpc_base + trans_per_tip) < hdr_oldest)
 		{
-			m_cache.remove((size_t) 0);
+			m_cache.remove((FB_SIZE_T) 0);
 			delete tip_cache;
 		}
 		else
@@ -563,7 +563,7 @@ int TipCache::extendCache(thread_db* tdbb, TraNumber number)
 	// find the right block for this transaction and return the state
 
 	const ULONG base = number - number % trans_per_tip;
-	size_t pos;
+	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
 	{
 		tip_cache = m_cache[pos];

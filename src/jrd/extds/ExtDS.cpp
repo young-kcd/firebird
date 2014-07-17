@@ -122,7 +122,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 	}
 	else
 	{
-		size_t pos = dataSource.find("::");
+		FB_SIZE_T pos = dataSource.find("::");
 		if (pos != string::npos)
 		{
 			prvName = dataSource.substr(0, pos);
@@ -230,7 +230,7 @@ void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool /*inPoo
 
 		conn.m_boundAtt = NULL;
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (!m_connections.find(&conn, pos))
 		{
 			fb_assert(false);
@@ -361,7 +361,7 @@ Transaction* Connection::createTransaction()
 
 void Connection::deleteTransaction(Transaction* tran)
 {
-	size_t pos;
+	FB_SIZE_T pos;
 	if (m_transactions.find(tran, pos))
 	{
 		m_transactions.remove(pos);
@@ -417,7 +417,7 @@ void Connection::releaseStatement(Jrd::thread_db* tdbb, Statement* stmt)
 	}
 	else
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		if (m_statements.find(stmt, pos))
 		{
 			m_statements.remove(pos);
@@ -1153,7 +1153,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				if (tok == ttIdent)
 					ident.upper();
 
-				size_t n = 0;
+				FB_SIZE_T n = 0;
 				for (; n < m_sqlParamNames.getCount(); n++)
 				{
 					if ((*m_sqlParamNames[n]) == ident)
@@ -1220,7 +1220,7 @@ void Statement::preprocess(const string& sql, string& ret)
 void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 	const ValueListNode* params)
 {
-	const size_t count = params ? params->items.getCount() : 0;
+	const FB_SIZE_T count = params ? params->items.getCount() : 0;
 
 	m_error = (names && (m_sqlParamNames.getCount() != count || count == 0)) ||
 		(!names && m_sqlParamNames.getCount());
@@ -1282,7 +1282,7 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaNam
 
 	jrd_req* request = tdbb->getRequest();
 
-	for (size_t i = 0; i < count; ++i, ++jrdVar)
+	for (FB_SIZE_T i = 0; i < count; ++i, ++jrdVar)
 	{
 		dsc* src = NULL;
 		dsc& dst = m_inDescs[i * 2];
@@ -1353,7 +1353,7 @@ void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 
 	const NestConst<ValueExprNode>* jrdVar = params->items.begin();
 
-	for (size_t i = 0; i < count; ++i, ++jrdVar)
+	for (FB_SIZE_T i = 0; i < count; ++i, ++jrdVar)
 	{
 		/*
 		dsc* d = EVL_assign_to(tdbb, *jrdVar);

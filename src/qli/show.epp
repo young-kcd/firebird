@@ -501,7 +501,7 @@ static void display_blob(qli_dbb* dbb,
 	const USHORT buffer_length = sizeof(buffer) - 1;
 	for (;;)
 	{
-		size_t length;
+		FB_SIZE_T length;
 		if (!blob.getSegment(buffer_length, buffer, length))
 			break;
 		buffer[length--] = 0;
@@ -1972,6 +1972,7 @@ static void show_names( const TEXT* name, USHORT width, TEXT* buffer)
  *
  **************************************/
 	BASED ON QLI$PROCEDURES.QLI$PROCEDURE_NAME padded_name;
+	FB_UNUSED_VAR(padded_name); // Silence compiler warning
 
 	TEXT* s = buffer + strlen(buffer);
 	SSHORT len = sizeof(padded_name) - 1;

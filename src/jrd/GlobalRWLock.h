@@ -59,7 +59,7 @@ class GlobalRWLock : public Firebird::PermanentStorage
 public:
 	GlobalRWLock(thread_db* tdbb, MemoryPool& p,
 				 lck_t lckType, bool lock_caching = true,
-				 size_t lockLen = 0, const UCHAR* lockStr = NULL);
+				 FB_SIZE_T lockLen = 0, const UCHAR* lockStr = NULL);
 
 	virtual ~GlobalRWLock();
 

@@ -7477,8 +7477,8 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
 		dpb.insertBytes(tags->specific_data, dataFromPlugin.begin(), dataFromPlugin.getCount());
 
 		HANDSHAKE_DEBUG(fprintf(stderr,
-			"Cli: extractDataFromPluginTo: Added %" SIZEFORMAT " bytes of spec data with tag %d\n",
-			dataFromPlugin.getCount(), tags->specific_data));
+			"Cli: extractDataFromPluginTo: Added %u bytes of spec data with tag %d\n",
+			static_cast<unsigned>(dataFromPlugin.getCount()), tags->specific_data));
 
 		return;
 	}

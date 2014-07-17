@@ -2694,7 +2694,7 @@ dsc* CastNode::execute(thread_db* tdbb, jrd_req* request) const
 		(DTYPE_IS_TEXT(impure->vlu_desc.dsc_dtype) || DTYPE_IS_BLOB(impure->vlu_desc.dsc_dtype)))
 	{
 		text = const_cast<char*>(MOV_get_boolean(value) ? "TRUE" : "FALSE");
-		desc.makeText(strlen(text), CS_ASCII, reinterpret_cast<UCHAR*>(text));
+		desc.makeText(static_cast<USHORT>(strlen(text)), CS_ASCII, reinterpret_cast<UCHAR*>(text));
 		value = &desc;
 	}
 	else if (impure->vlu_desc.dsc_dtype == dtype_boolean &&
@@ -3589,7 +3589,7 @@ dsc* CurrentRoleNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	if (curRole)
-		impure->vlu_desc.dsc_length = strlen(curRole);
+		impure->vlu_desc.dsc_length = static_cast<USHORT>(strlen(curRole));
 	else
 		impure->vlu_desc.dsc_length = 0;
 
@@ -3683,7 +3683,7 @@ dsc* CurrentUserNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	if (curUser)
-		impure->vlu_desc.dsc_length = strlen(curUser);
+		impure->vlu_desc.dsc_length = static_cast<USHORT>(strlen(curUser));
 	else
 		impure->vlu_desc.dsc_length = 0;
 
@@ -5485,7 +5485,7 @@ ValueExprNode* FieldNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		sub->collectStreams(streams);
 
 		bool view_refs = false;
-		for (size_t i = 0; i < streams.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < streams.getCount(); i++)
 		{
 			const CompilerScratch::csb_repeat* const sub_tail = &csb->csb_rpt[streams[i]];
 
@@ -6804,7 +6804,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 				}
 			}
 
-			const size_t derivedContextsCount = derivedContexts.getCount();
+			const FB_SIZE_T derivedContextsCount = derivedContexts.getCount();
 
 			if (derivedContextsCount > MAX_UCHAR)
 			{
@@ -6816,7 +6816,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			dsqlScratch->appendUChar(blr_derived_expr);
 			dsqlScratch->appendUChar(derivedContextsCount);
 
-			for (size_t i = 0; i < derivedContextsCount; i++)
+			for (FB_SIZE_T i = 0; i < derivedContextsCount; i++)
 				dsqlScratch->appendUChar(derivedContexts[i]);
 		}
 	}
@@ -8464,7 +8464,7 @@ void StrCaseNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 
 	if (desc->dsc_dtype > dtype_any_text && desc->dsc_dtype != dtype_blob)
 	{
-		desc->dsc_length = sizeof(USHORT) + DSC_string_length(desc);
+		desc->dsc_length = static_cast<int>(sizeof(USHORT)) + DSC_string_length(desc);
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
 		desc->dsc_ttype() = ttype_ascii;
@@ -10174,7 +10174,7 @@ void TrimNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	{
 		*desc = desc1;
 		desc->dsc_dtype = dtype_varying;
-		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+		desc->dsc_length = static_cast<int>(sizeof(USHORT)) + DSC_string_length(&desc1);
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 	}
 	else
@@ -10182,7 +10182,7 @@ void TrimNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 		desc->dsc_dtype = dtype_varying;
 		desc->dsc_scale = 0;
 		desc->dsc_ttype() = ttype_ascii;
-		desc->dsc_length = sizeof(USHORT) + DSC_string_length(&desc1);
+		desc->dsc_length = static_cast<int>(sizeof(USHORT)) + DSC_string_length(&desc1);
 		desc->dsc_flags = (desc1.dsc_flags | desc2.dsc_flags) & DSC_nullable;
 	}
 }
@@ -10623,7 +10623,7 @@ ValueExprNode* UdfCallNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 			}
 
 			ExternalAccess temp(ExternalAccess::exa_function, function->getId());
-			size_t idx;
+			FB_SIZE_T idx;
 			if (!csb->csb_external.find(temp, idx))
 				csb->csb_external.insert(idx, temp);
 		}

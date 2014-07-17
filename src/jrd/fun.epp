@@ -192,7 +192,7 @@ bool IbUtil::free(void* ptr)
 	thread_db* tdbb = JRD_get_thread_data();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	size_t pos;
+	FB_SIZE_T pos;
 	if (attachment->att_udf_pointers.find(ptr, pos))
 	{
 		attachment->att_udf_pointers.remove(pos);

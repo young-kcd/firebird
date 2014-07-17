@@ -54,7 +54,7 @@ public:
 	~PluginLogWriter();
 
 	// TraceLogWriter implementation
-	virtual size_t FB_CARG write(const void* buf, size_t size);
+	virtual FB_SIZE_T FB_CARG write(const void* buf, FB_SIZE_T size);
 
 	virtual int FB_CARG release()
 	{

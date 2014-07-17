@@ -160,7 +160,7 @@ public:
 		MutexLockGuard guard(fullAccess, FB_FUNCTION);
 		const time_t t = time(0);
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (find(login, pos))
 		{
 			FailedLogin& l = (*this)[pos];
@@ -211,7 +211,7 @@ public:
 
 		MutexLockGuard guard(fullAccess, FB_FUNCTION);
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (find(login, pos))
 		{
 			remove(pos);
@@ -257,7 +257,7 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 		if (id.getClumpTag() == param)
 		{
 			const UCHAR* specData = id.getBytes();
-			size_t len = id.getClumpLength();
+			FB_SIZE_T len = id.getClumpLength();
 			fb_assert(len <= 255);
 
 			if (len > 1)
@@ -286,8 +286,8 @@ static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id,
 			(Arg::Gds(isc_multi_segment) << Arg::Num(segment)).raise();
 	}
 
-	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: getMultiPartConnectParameter: loaded tag %d length %" SIZEFORMAT "\n",
-		param, putTo.getCount()));
+	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: getMultiPartConnectParameter: loaded tag %d length %u\n",
+		param, static_cast<unsigned>(putTo.getCount())));
 }
 
 
@@ -352,7 +352,7 @@ public:
 				else
 					aPb->getData(u);
 				authPort->port_srv_auth_block->setDataForPlugin(u);
-				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin data is %" SIZEFORMAT " len\n", u.getCount()));
+				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): plugin data is %u len\n", static_cast<unsigned>(u.getCount())));
 			}
 			else
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): miss data with tag %d\n", tags->specific_data));
@@ -369,7 +369,7 @@ public:
 				u.push(0);
 				ENC_crypt(pwt, sizeof pwt, reinterpret_cast<TEXT*>(u.begin()),
 					Auth::LEGACY_PASSWORD_SALT);
-				const size_t len = strlen(&pwt[2]);
+				const FB_SIZE_T len = fb_strlen(&pwt[2]);
 				memcpy(u.getBuffer(len), &pwt[2], len);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth(): CALLED des locally\n"));
 			}
@@ -2900,7 +2900,7 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
 			statement->rsr_cursor = NULL;
 			statement->rsr_cursor_name = "";
 			fb_assert(statement->rsr_rtr);
-			size_t pos;
+			FB_SIZE_T pos;
 			if (!statement->rsr_rtr->rtr_cursors.find(statement, pos))
 				fb_assert(false);
 			statement->rsr_rtr->rtr_cursors.remove(pos);
@@ -4930,7 +4930,7 @@ static void release_statement( Rsr** statement)
 		Rtr* const transaction = (*statement)->rsr_rtr;
 		fb_assert(transaction);
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (transaction->rtr_cursors.find(*statement, pos))
 			transaction->rtr_cursors.remove(pos);
 		else
@@ -6266,7 +6266,7 @@ void SrvAuthBlock::load(Firebird::ClumpletReader& id)
 	getMultiPartConnectParameter(dataForPlugin, id, CNCT_specific_data);
 	if (dataForPlugin.hasData())
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: AuthBlock: data %" SIZEFORMAT "\n", dataForPlugin.getCount()));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: AuthBlock: data %u\n", static_cast<unsigned>(dataForPlugin.getCount())));
 	}
 }
 

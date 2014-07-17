@@ -70,7 +70,7 @@ public:
 			appendUChar(byte);
 	}
 
-	void appendBytes(const UCHAR* string, size_t len)
+	void appendBytes(const UCHAR* string, FB_SIZE_T len)
 	{
 		blrData.add(string, len);
 	}

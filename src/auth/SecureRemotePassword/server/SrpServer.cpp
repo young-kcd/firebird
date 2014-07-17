@@ -129,9 +129,9 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			{
 				ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
 				dpb.insertByte(isc_dpb_sec_attach, TRUE);
-				dpb.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, strlen(SYSDBA_USER_NAME));
+				dpb.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
 				const char* providers = "Providers=" CURRENT_ENGINE;
-				dpb.insertString(isc_dpb_config, providers, strlen(providers));
+				dpb.insertString(isc_dpb_config, providers, fb_strlen(providers));
 				att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
 				if (!status->isSuccess())
 				{

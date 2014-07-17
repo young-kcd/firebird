@@ -212,7 +212,7 @@ class Sort
 {
 public:
 	Sort(Database*, SortOwner*,
-		 ULONG, size_t, size_t, const sort_key_def*,
+		 ULONG, FB_SIZE_T, FB_SIZE_T, const sort_key_def*,
 		 FPTR_REJECT_DUP_CALLBACK, void*, FB_UINT64 = 0);
 	~Sort();
 
@@ -315,7 +315,7 @@ public:
 	{
 		fb_assert(scb);
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (sorts.find(scb, pos))
 		{
 			sorts.remove(pos);

@@ -1381,13 +1381,13 @@ void DeclareSubFuncNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 {
 	BlrReader& reader = csb->csb_blr_reader;
 	USHORT count = reader.getWord();
-	size_t pos = paramArray.getCount();
+	FB_SIZE_T pos = paramArray.getCount();
 	paramArray.resize(pos + count);
 
 	if (defaultCount)
 		*defaultCount = 0;
 
-	for (size_t i = 0; i < count; ++i)
+	for (FB_SIZE_T i = 0; i < count; ++i)
 	{
 		Parameter* parameter = FB_NEW(pool) Parameter(pool);
 		parameter->prm_number = USHORT(i);
@@ -1659,7 +1659,7 @@ void DeclareSubProcNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 	if (defaultCount)
 		*defaultCount = 0;
 
-	for (size_t i = 0; i < paramArray.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < paramArray.getCount(); ++i)
 	{
 		Parameter* parameter = FB_NEW(pool) Parameter(pool);
 		parameter->prm_number = USHORT(i);
@@ -3022,14 +3022,14 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (node->inputNames)
 	{
-		const size_t count = node->inputNames->getCount();
+		const FB_SIZE_T count = node->inputNames->getCount();
 		StrArray names(*getDefaultMemoryPool(), count);
 
-		for (size_t i = 0; i != count; ++i)
+		for (FB_SIZE_T i = 0; i != count; ++i)
 		{
 			const MetaName* name = (*node->inputNames)[i];
 
-			size_t pos;
+			FB_SIZE_T pos;
 			if (names.find(name->c_str(), pos))
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
@@ -3094,7 +3094,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			else
 				dsqlScratch->appendUChar(1); // Singleton.
 
-			for (size_t i = 0; i < outputs->items.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < outputs->items.getCount(); ++i)
 				GEN_expr(dsqlScratch, outputs->items[i]);
 		}
 		else
@@ -3174,7 +3174,7 @@ void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		{
 			dsqlScratch->appendUChar(blr_exec_stmt_out_params);
 
-			for (size_t i = 0; i < outputs->items.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < outputs->items.getCount(); ++i)
 				GEN_expr(dsqlScratch, outputs->items[i]);
 		}
 
@@ -3755,7 +3755,7 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	node->returns = returns;
 
-	for (size_t i = 0; i < node->returns.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < node->returns.getCount(); ++i)
 	{
 		node->returns[i]->type->resolve(dsqlScratch);
 		node->returns[i]->type->fld_id = i;
@@ -3767,7 +3767,7 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	node->localDeclList = localDeclList;
 	node->body = body;
 
-	const size_t count = node->parameters.getCount() + node->returns.getCount() +
+	const FB_SIZE_T count = node->parameters.getCount() + node->returns.getCount() +
 		(node->localDeclList ? node->localDeclList->statements.getCount() : 0);
 
 	if (count != 0)
@@ -3779,11 +3779,11 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		Array<NestConst<ParameterClause> > params(parameters);
 		params.add(returns.begin(), returns.getCount());
 
-		for (size_t i = 0; i < params.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < params.getCount(); ++i)
 		{
 			ParameterClause* parameter = params[i];
 
-			size_t pos;
+			FB_SIZE_T pos;
 			if (!names.find(parameter->name.c_str(), pos))
 				names.insert(pos, parameter->name.c_str());
 			else
@@ -3805,7 +3805,7 @@ void ExecBlockNode::print(string& text) const
 
 	text += "  Returns:\n";
 
-	for (size_t i = 0; i < returns.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
 	{
 		const ParameterClause* parameter = returns[i];
 
@@ -3838,7 +3838,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	if (!subRoutine)
 	{
 		// Now do the input parameters.
-		for (size_t i = 0; i < parameters.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
 
@@ -3849,7 +3849,7 @@ void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		returnsPos = dsqlScratch->variables.getCount();
 
 		// Now do the output parameters.
-		for (size_t i = 0; i < returns.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause* parameter = returns[i];
 
@@ -4262,7 +4262,7 @@ void ExceptionNode::setError(thread_db* tdbb) const
 				// and will not move in paramsStr.
 
 				MsgFormat::SafeArg arg;
-				for (size_t i = 0; i < parameters->items.getCount(); ++i)
+				for (FB_SIZE_T i = 0; i < parameters->items.getCount(); ++i)
 					arg << paramsStr[i].c_str();
 
 				MsgFormat::StringRefStream stream(formattedMsg);
@@ -4270,7 +4270,7 @@ void ExceptionNode::setError(thread_db* tdbb) const
 
 				status << formattedMsg;
 
-				for (size_t i = 0; i < parameters->items.getCount(); ++i)
+				for (FB_SIZE_T i = 0; i < parameters->items.getCount(); ++i)
 					status << paramsStr[i];
 			}
 			else
@@ -4939,7 +4939,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			Array<NestConst<ValueExprNode> > orgValues, newValues;
 
 			// Separate the new and org values to process in correct contexts.
-			for (size_t i = 0; i < stmts->statements.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < stmts->statements.getCount(); ++i)
 			{
 				AssignmentNode* const assign = stmts->statements[i]->as<AssignmentNode>();
 				fb_assert(assign);
@@ -5017,7 +5017,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 			assignStatements->statements.resize(stmts->statements.getCount());
 
-			for (size_t i = 0; i < assignStatements->statements.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < assignStatements->statements.getCount(); ++i)
 			{
 				if (!PASS1_set_parameter_type(dsqlScratch, orgValues[i], newValues[i], false))
 					PASS1_set_parameter_type(dsqlScratch, newValues[i], orgValues[i], false);
@@ -5395,7 +5395,7 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 	CompoundStmtNode* assignments = statement->as<CompoundStmtNode>();
 	fb_assert(assignments);
 
-	for (size_t i = 0; i < assignments->statements.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < assignments->statements.getCount(); ++i)
 	{
 		AssignmentNode* const assign = assignments->statements[i]->as<AssignmentNode>();
 		fb_assert(assign);
@@ -5452,7 +5452,7 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 		assignStatements->statements.resize(assignments->statements.getCount());
 
-		for (size_t i = 0; i < assignStatements->statements.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < assignStatements->statements.getCount(); ++i)
 		{
 			AssignmentNode* assign = FB_NEW(pool) AssignmentNode(pool);
 			assign->asgnFrom = orgValues[i];
@@ -5534,7 +5534,7 @@ StmtNode* ModifyNode::internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool up
 
 	assignStatements->statements.resize(assignments->statements.getCount());
 
-	for (size_t j = 0; j < assignStatements->statements.getCount(); ++j)
+	for (FB_SIZE_T j = 0; j < assignStatements->statements.getCount(); ++j)
 	{
 		ValueExprNode* const sub1 = orgValues[j];
 		ValueExprNode* const sub2 = newValues[j];
@@ -6516,7 +6516,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 		{
 			bool inList = false;
 
-			for (size_t i = 0; i < compoundNode->statements.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < compoundNode->statements.getCount(); ++i)
 			{
 				const AssignmentNode* assign = StmtNode::as<AssignmentNode>(
 					compoundNode->statements[i].getObject());
@@ -7103,7 +7103,7 @@ void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 	LiteralNode::genConstant(dsqlScratch, &constant_desc, false);
 	GEN_parameter(dsqlScratch, statement->getEof());
 
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* const parameter = message->msg_parameters[i];
 
@@ -7796,7 +7796,7 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				{
 					++matchCount;
 
-					const size_t fieldPos = fieldPtr - fieldsCopy.begin();
+					const FB_SIZE_T fieldPos = fieldPtr - fieldsCopy.begin();
 					AssignmentNode* assign2 = insertStatements[fieldPos]->as<AssignmentNode>();
 					NestConst<ValueExprNode>& expr = assign2->asgnFrom;
 					ValueExprNode* var = dsqlPassHiddenVariable(dsqlScratch, expr);
@@ -7918,7 +7918,7 @@ static dsql_par* dsqlFindDbKey(const dsql_req* request, const RelationSourceNode
 	dsql_par* candidate = NULL;
 	const MetaName& relName = relation_name->dsqlName;
 
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 
@@ -7943,7 +7943,7 @@ static dsql_par* dsqlFindRecordVersion(const dsql_req* request, const RelationSo
 	dsql_par* candidate = NULL;
 	const MetaName& relName = relation_name->dsqlName;
 
-	for (size_t i = 0; i < message->msg_parameters.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
 	{
 		dsql_par* parameter = message->msg_parameters[i];
 
@@ -8119,7 +8119,7 @@ static StmtNode* dsqlNullifyReturning(DsqlCompilerScratch* dsqlScratch, StmtNode
 // Check that a field is named only once in INSERT or UPDATE statements.
 static void dsqlFieldAppearsOnce(const Array<NestConst<ValueExprNode> >& values, const char* command)
 {
-	for (size_t i = 0; i < values.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < values.getCount(); ++i)
 	{
 		const FieldNode* field1 = values[i]->as<FieldNode>();
 		if (!field1)
@@ -8127,7 +8127,7 @@ static void dsqlFieldAppearsOnce(const Array<NestConst<ValueExprNode> >& values,
 
 		const MetaName& name1 = field1->dsqlField->fld_name;
 
-		for (size_t j = i + 1; j < values.getCount(); ++j)
+		for (FB_SIZE_T j = i + 1; j < values.getCount(); ++j)
 		{
 			const FieldNode* field2 = values[j]->as<FieldNode>();
 			if (!field2)
@@ -8592,7 +8592,7 @@ static void dsqlSetParametersName(CompoundStmtNode* statements, const RecordSour
 	DEV_BLKCHK(context, dsql_type_ctx);
 	const dsql_rel* relation = context->ctx_relation;
 
-	size_t count = statements->statements.getCount();
+	FB_SIZE_T count = statements->statements.getCount();
 	NestConst<StmtNode>* ptr = statements->statements.begin();
 
 	for (NestConst<StmtNode>* const end = ptr + count; ptr != end; ++ptr)
@@ -8814,7 +8814,7 @@ static RelationSourceNode* pass1Update(thread_db* tdbb, CompilerScratch* csb, jr
 	{
 		bool userTriggers = false;
 
-		for (size_t i = 0; i < trigger->getCount(); i++)
+		for (FB_SIZE_T i = 0; i < trigger->getCount(); i++)
 		{
 			if (!(*trigger)[i].sys_trigger)
 			{
@@ -8894,7 +8894,7 @@ static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 
 	// Post trigger access
 	ExternalAccess temp(operation, ownerRelation->rel_id, view ? view->rel_id : 0);
-	size_t i;
+	FB_SIZE_T i;
 
 	if (!csb->csb_external.find(temp, i))
 		csb->csb_external.insert(i, temp);

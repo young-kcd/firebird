@@ -491,7 +491,7 @@ public:
 	virtual RecordSource* compile(thread_db* tdbb, OptimizerBlk* opt, bool innerSubStream);
 
 private:
-	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, const StreamType* streams, size_t nstreams,
+	RecordSource* generate(thread_db* tdbb, OptimizerBlk* opt, const StreamType* streams, FB_SIZE_T nstreams,
 		BoolExprNodeStack* parentStack, StreamType shellStream);
 
 public:

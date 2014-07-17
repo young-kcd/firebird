@@ -36,7 +36,7 @@ class TraceDSQLPrepare
 {
 public:
 	TraceDSQLPrepare(Attachment* attachment, jrd_tra* transaction,
-				size_t string_length, const TEXT* string)
+				FB_SIZE_T string_length, const TEXT* string)
 		: m_attachment(attachment),
 		  m_transaction(transaction),
 		  m_request(NULL),
@@ -99,7 +99,7 @@ private:
 	jrd_tra* const m_transaction;
 	dsql_req* m_request;
 	SINT64 m_start_clock;
-	size_t m_string_len;
+	FB_SIZE_T m_string_len;
 	const TEXT* m_string;
 };
 

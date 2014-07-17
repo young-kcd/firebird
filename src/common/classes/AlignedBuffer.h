@@ -29,7 +29,7 @@
 
 namespace Firebird {
 
-template <size_t N, size_t A = FB_ALIGNMENT>
+template <FB_SIZE_T N, FB_SIZE_T A = FB_ALIGNMENT>
 class AlignedBuffer
 {
 private:
@@ -44,7 +44,7 @@ public:
 		return (UCHAR*) FB_ALIGN(U_IPTR(buffer), A);
 	}
 
-	size_t size() const
+	FB_SIZE_T size() const
 	{
 		return N;
 	}

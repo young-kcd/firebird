@@ -731,7 +731,7 @@ static bool copy_blob( qli_nod* value, qli_par* parameter)
 #endif
 	}
 
-	size_t length;
+	FB_SIZE_T length;
 	while (from_blob.getSegment(buffer_length, buffer, length) && !from_blob.getCode())
 	{
 		if (!to_blob.putSegment(length, buffer))

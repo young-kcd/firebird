@@ -403,7 +403,7 @@ void registerEngine(IPluginManager* iPlugin)
 
 } // namespace Jrd
 
-extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* master)
+extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	CachedMasterInterface::set(master);
 	registerEngine(PluginManagerInterfacePtr());
@@ -1112,7 +1112,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 
 			case isc_arg_cstring:
 				{
-					size_t len = *status;
+					FB_SIZE_T len = *status;
 					const UCHAR* str = reinterpret_cast<UCHAR*>(status[1]);
 
 					try
@@ -1136,7 +1136,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 			case isc_arg_interpreted:
 				{
 					const UCHAR* str = reinterpret_cast<UCHAR*>(*status);
-					size_t len = strlen((const char*) str);
+					FB_SIZE_T len = fb_strlen((const char*) str);
 
 					try
 					{
@@ -3816,7 +3816,7 @@ void JService::query(IStatus* user_status,
 					    receiveItems, bufferLength, buffer);
 
 			// If there is a status vector from a service thread, copy it into the thread status
-			size_t len, warning;
+			FB_SIZE_T len, warning;
 			PARSE_STATUS(svc->getStatus(), len, warning);
 
 			if (len)
@@ -4169,7 +4169,7 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 				request = JrdStatement::makeRequest(tdbb, csb, false);
 				request->getStatement()->verifyAccess(tdbb);
 
-				for (size_t i = 0; i < csb->csb_rpt.getCount(); i++)
+				for (FB_SIZE_T i = 0; i < csb->csb_rpt.getCount(); i++)
 				{
 
 					const MessageNode* node = csb->csb_rpt[i].csb_message;
@@ -6235,7 +6235,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (!dbb->dbb_config->getSharedDatabase() && attachment->att_relations)
 	{
 		vec<jrd_rel*>& rels = *attachment->att_relations;
-		for (size_t i = 1; i < rels.count(); i++)
+		for (FB_SIZE_T i = 1; i < rels.count(); i++)
 		{
 			jrd_rel* relation = rels[i];
 			if (relation && (relation->rel_flags & REL_temp_conn) &&
@@ -6593,7 +6593,7 @@ static void strip_quotes(string& out)
 		const char quote = out[0];
 		out.erase(0, 1);
 		// Search for same quote
-		size_t pos = out.find(quote);
+		FB_SIZE_T pos = out.find(quote);
 		if (pos != string::npos)
 		{
 			out.erase(pos);

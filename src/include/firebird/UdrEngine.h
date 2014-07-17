@@ -74,9 +74,9 @@ public:
 };
 
 // Routine registration functions.
-extern "C" void FB_DLL_EXPORT fbUdrRegFunction(const char* name, FunctionFactory* factory);
-extern "C" void FB_DLL_EXPORT fbUdrRegProcedure(const char* name, ProcedureFactory* factory);
-extern "C" void FB_DLL_EXPORT fbUdrRegTrigger(const char* name, TriggerFactory* factory);
+extern "C" void FB_EXPORTED fbUdrRegFunction(const char* name, FunctionFactory* factory);
+extern "C" void FB_EXPORTED fbUdrRegProcedure(const char* name, ProcedureFactory* factory);
+extern "C" void FB_EXPORTED fbUdrRegTrigger(const char* name, TriggerFactory* factory);
 
 
 //------------------------------------------------------------------------------

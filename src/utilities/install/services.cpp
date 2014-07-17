@@ -462,7 +462,7 @@ USHORT SERVICES_grant_privilege(const TEXT* account, pfnSvcError err_handler, co
 		tempStr[string_buff_size - 1] = 0;
 
 		PrivilegeString.Buffer = tempStr;
-		PrivilegeString.Length = wcslen(tempStr) * sizeof(WCHAR);
+		PrivilegeString.Length = static_cast<USHORT>(wcslen(tempStr) * sizeof(WCHAR));
 		PrivilegeString.MaximumLength = sizeof(tempStr);
 		if ((lsaErr = LsaAddAccountRights(PolicyHandle, pSid, &PrivilegeString, 1)) != (NTSTATUS) 0)
 		{

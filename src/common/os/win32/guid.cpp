@@ -41,7 +41,7 @@
 namespace Firebird {
 
 
-void GenerateRandomBytes(void* buffer, size_t size)
+void GenerateRandomBytes(void* buffer, FB_SIZE_T size)
 {
 	HCRYPTPROV hProv;
 

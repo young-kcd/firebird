@@ -36,19 +36,19 @@
 namespace Firebird {
 
 // Very fast static array of simple types
-template <typename T, size_t Capacity>
+template <typename T, FB_SIZE_T Capacity>
 class Vector
 {
 public:
 	Vector() : count(0) {}
 
-	T& operator[](size_t index)
+	T& operator[](FB_SIZE_T index)
 	{
   		fb_assert(index < count);
   		return data[index];
 	}
 
-	const T& operator[](size_t index) const
+	const T& operator[](FB_SIZE_T index) const
 	{
   		fb_assert(index < count);
   		return data[index];
@@ -59,11 +59,11 @@ public:
 	const T* begin() const { return data; }
 	const T* end() const { return data + count; }
 	bool hasData() const { return (count != 0); }
-	size_t getCount() const { return count; }
-	size_t getCapacity() const { return Capacity; }
+	FB_SIZE_T getCount() const { return count; }
+	FB_SIZE_T getCapacity() const { return Capacity; }
 	void clear() { count = 0; }
 
-	void insert(size_t index, const T& item)
+	void insert(FB_SIZE_T index, const T& item)
 	{
 	  fb_assert(index <= count);
 	  fb_assert(count < Capacity);
@@ -71,21 +71,21 @@ public:
 	  data[index] = item;
 	}
 
-	size_t add(const T& item)
+	FB_SIZE_T add(const T& item)
 	{
 		fb_assert(count < Capacity);
 		data[count] = item;
   		return ++count;
 	}
 
-	T* remove(size_t index)
+	T* remove(FB_SIZE_T index)
 	{
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
 
-	void shrink(size_t newCount)
+	void shrink(FB_SIZE_T newCount)
 	{
 		fb_assert(newCount <= count);
 		count = newCount;
@@ -99,7 +99,7 @@ public:
 	}
 
 	// prepare vector to be used as a buffer of capacity items
-	T* getBuffer(size_t capacityL)
+	T* getBuffer(FB_SIZE_T capacityL)
 	{
 		fb_assert(capacityL <= Capacity);
 		count = capacityL;
@@ -119,7 +119,7 @@ public:
 	}
 
 protected:
-	size_t count;
+	FB_SIZE_T count;
 	T data[Capacity];
 };
 
@@ -145,19 +145,19 @@ public:
 
 // Fast sorted array of simple objects
 // It is used for B+ tree nodes lower, but can still be used by itself
-template <typename Value, size_t Capacity, typename Key = Value,
+template <typename Value, FB_SIZE_T Capacity, typename Key = Value,
 	typename KeyOfValue = DefaultKeyValue<Value>,
 	typename Cmp = DefaultComparator<Key> >
 class SortedVector : public Vector<Value, Capacity>
 {
 public:
 	SortedVector() : Vector<Value, Capacity>() {}
-	bool find(const Key& item, size_t& pos) const
+	bool find(const Key& item, FB_SIZE_T& pos) const
 	{
-		size_t highBound = this->count, lowBound = 0;
+		FB_SIZE_T highBound = this->count, lowBound = 0;
 		while (highBound > lowBound)
 		{
-			const size_t temp = (highBound + lowBound) >> 1;
+			const FB_SIZE_T temp = (highBound + lowBound) >> 1;
 			if (Cmp::greaterThan(item, KeyOfValue::generate(this, this->data[temp])))
 				lowBound = temp + 1;
 			else
@@ -167,9 +167,9 @@ public:
 		return highBound != this->count &&
 			!Cmp::greaterThan(KeyOfValue::generate(this, this->data[lowBound]), item);
 	}
-	size_t add(const Value& item)
+	FB_SIZE_T add(const Value& item)
 	{
-	    size_t pos;
+	    FB_SIZE_T pos;
   	    find(KeyOfValue::generate(this, item), pos);
 		this->insert(pos, item);
 		return pos;

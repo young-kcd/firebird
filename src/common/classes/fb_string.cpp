@@ -66,7 +66,7 @@ namespace {
 		{
 			memset(m, 0, sizeof(m));
 			if (l == Firebird::AbstractString::npos) {
-				l = strlen(s);
+				l = static_cast<Firebird::AbstractString::size_type>(strlen(s));
 			}
 			Firebird::AbstractString::const_pointer end = s + l;
 			while (s < end)
@@ -81,10 +81,6 @@ namespace {
 			return m[uc >> 3] & (1 << (uc & 7));
 		}
 	};
-
-#ifndef CLASSES_ARRAY_H
-	const size_t FB_MAX_SIZEOF = ~size_t(0);
-#endif
 
 } // namespace
 
@@ -208,7 +204,7 @@ namespace Firebird
 
 	AbstractString::size_type AbstractString::rfind(const_pointer s, const size_type pos) const
 	{
-		const size_type l = strlen(s);
+		const size_type l = static_cast<size_type>(strlen(s));
 		int lastpos = length() - l;
 		if (lastpos < 0) {
 			return npos;
@@ -362,9 +358,9 @@ extern "C" {
 
 	void AbstractString::baseTrim(const TrimType whereTrim, const_pointer toTrim)
 	{
-		const strBitMask sm(toTrim, strlen(toTrim));
+		const strBitMask sm(toTrim, static_cast<size_type>(strlen(toTrim)));
 		const_pointer b = c_str();
-		const_pointer e = &c_str()[length() - 1];
+		const_pointer e = c_str() + length() - 1;
 		if (whereTrim != TrimRight)
 		{
 			while (b <= e)
@@ -465,7 +461,7 @@ extern "C" {
 		}
 	}
 
-	unsigned int AbstractString::hash(const_pointer string, const size_t tableSize)
+	unsigned int AbstractString::hash(const_pointer string, const size_type tableSize)
 	{
 		unsigned int value = 0;
 		unsigned char c;

@@ -128,7 +128,7 @@ bool PREPARSE_execute(IStatus* status, Why::YAttachment** ptrAtt,
 		}
 
 		if (!stmt_length)
-			stmt_length = strlen(stmt);
+			stmt_length = static_cast<USHORT>(strlen(stmt));
 		const char* const stmt_end = stmt + stmt_length;
 		string token;
 
@@ -424,7 +424,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
 	{
 		for (; s < stmt_end && (classes(c = *s) & CHR_DIGIT); ++s); // empty body
 		fb_assert(s >= start_of_token);
-		const size_t length = (s - start_of_token);
+		const FB_SIZE_T length = static_cast<FB_SIZE_T>(s - start_of_token);
 		*stmt = s;
 		if (length > MAX_TOKEN_SIZE)
 		{

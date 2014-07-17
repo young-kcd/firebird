@@ -2146,7 +2146,7 @@ void CCH_unwind(thread_db* tdbb, const bool punt)
 	// A cache error has occurred. Scan the cache for buffers
 	// which may be in use and release them.
 
-	for (size_t n = 0; n < tdbb->tdbb_bdbs.getCount(); ++n)
+	for (FB_SIZE_T n = 0; n < tdbb->tdbb_bdbs.getCount(); ++n)
 	{
 		BufferDesc *bdb = tdbb->tdbb_bdbs[n];
 		if (bdb)
@@ -4053,7 +4053,7 @@ static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const U
 			return 0;
 
 		const SLONG lowPage = low->bdb_page.getPageNum();
-		size_t pos;
+		FB_SIZE_T pos;
 		if (!lowPages.find(lowPage, pos))
 			lowPages.insert(pos, lowPage);
 
@@ -4329,8 +4329,9 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 
 		QUE_INIT(tail->bcb_page_mod);
 
-		if (!(tail->bcb_bdb = alloc_bdb(tdbb, bcb, &memory)))
-		{
+		try {
+			tail->bcb_bdb = alloc_bdb(tdbb, bcb, &memory);
+		} catch (Firebird::BadAlloc&) {
 			// Whoops! Time to reset our expectations. Release the buffer memory
 			// but use that memory size to calculate a new number that takes into account
 			// the page buffer overhead. Reduce this number by a 25% fudge factor to
@@ -4342,7 +4343,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 			{
 				tail2->bcb_bdb = dealloc_bdb(tail2->bcb_bdb);
 			}
-			number = memory_size / PAGE_OVERHEAD;
+			number = static_cast<SLONG>(memory_size / PAGE_OVERHEAD);
 			number -= number >> 2;
 			end = old_tail + number;
 			tail = --old_tail;	// For loop continue pops tail above

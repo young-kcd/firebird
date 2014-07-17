@@ -2122,7 +2122,7 @@ static processing_state add_row(TEXT* tabname)
 				break;
 			}
 
-			unsigned length = strlen(lastInputLine);
+			unsigned length = static_cast<unsigned>(strlen(lastInputLine));
 			if (length > MAX_SQL_LENGTH)
 			{
 				IUTILS_msg_get(BUFFER_OVERFLOW, txt);
@@ -3540,7 +3540,7 @@ static void copy_str(TEXT** output_str,
 		*input_str = b1;
 		break;
 	case NO_MORE_STRING:
-		slen = strlen(temp_local_stmt_str);
+		slen = static_cast<int>(strlen(temp_local_stmt_str));
 		if (temp_str != temp_local_stmt_str)
 		{
 			strncpy(temp_str, temp_local_stmt_str, slen);
@@ -3690,9 +3690,9 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	// Disconnect from the database and cleanup
 	ISQL_disconnect_database(false);
 
-	SLONG arglength = strlen(statement) + strlen(isqlGlob.User) + strlen(Password) + 24;
+	SLONG arglength = static_cast<SLONG>(strlen(statement) + strlen(isqlGlob.User) + strlen(Password) + 24);
 	if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
-		arglength += strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' ");
+		arglength += static_cast<SLONG>(strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' "));
 	TEXT* local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
 	if (!local_statement)
 		return (FAIL);
@@ -3763,11 +3763,11 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		TEXT* new_local_statement = NULL;
 		if (cnt > 0)
 		{
-			arglength = strlen(statement) +
-				strlen(isqlGlob.User) + strlen(Password) + 24 + 2 * cnt;
+			arglength = static_cast<SLONG>(strlen(statement) +
+				strlen(isqlGlob.User) + strlen(Password) + 24 + 2 * cnt);
 
 			if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
-				arglength += strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' ");
+				arglength += static_cast<SLONG>(strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' "));
 			new_local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
 
 			if (!new_local_statement)
@@ -6263,7 +6263,7 @@ static processing_state newdb(TEXT* dbname,
 	// out.  We will restore it after the disconnect.  The save_database buffer
 	// will also be used to translate dbname to the proper character set.
 
-	const size_t len = chop_at(dbname, MAXPATHLEN);
+	const SLONG len = static_cast<SLONG>(chop_at(dbname, MAXPATHLEN));
 	SCHAR* save_database = (SCHAR*) ISQL_ALLOC(len + 1);
 	if (!save_database)
 		return ps_ERR;
@@ -6327,19 +6327,19 @@ static processing_state newdb(TEXT* dbname,
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 
 	if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)) {
-		dpb.insertString(isc_dpb_lc_ctype, setValues.ISQL_charset, strlen(setValues.ISQL_charset));
+		dpb.insertString(isc_dpb_lc_ctype, setValues.ISQL_charset, fb_strlen(setValues.ISQL_charset));
 	}
 
-    unsigned l;
-	if (l = strlen(local_usr)) {
+    FB_SIZE_T l;
+	if (l = fb_strlen(local_usr)) {
 		dpb.insertString(isc_dpb_user_name, local_usr, l);
 	}
 
-	if (l = strlen(local_psw)) {
+	if (l = fb_strlen(local_psw)) {
 		dpb.insertString(isc_dpb_password, local_psw, l);
 	}
 
-	if (l = strlen(local_sql_role))
+	if (l = fb_strlen(local_sql_role))
 	{
 		dpb.insertInt(isc_dpb_sql_dialect, isqlGlob.SQL_dialect);
 		dpb.insertString(isc_dpb_sql_role_name, local_sql_role, l);
@@ -7417,7 +7417,8 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 				isqlGlob.printf("%-*.*s%s", var->length, var->length, str2, NEWLINE);
 			else
 			{
-				IcuUtil::pad(p, var->charSet, strnlen(var->value.asChar, var->length), var->value.asChar, length, false);
+				IcuUtil::pad(p, var->charSet, 
+					static_cast<unsigned>(strnlen(var->value.asChar, var->length)), var->value.asChar, length, false);
 				strcat(p, " ");
 			}
 			break;
@@ -7931,14 +7932,14 @@ static void process_header(Firebird::IMessageMetadata* msg, const unsigned pad[]
 
 		const unsigned type = var.type;
 
-		IcuUtil::pad(p, isqlGlob.att_charset, strlen(var.alias), var.alias, pad[i],
+		IcuUtil::pad(p, isqlGlob.att_charset, static_cast<unsigned>(strlen(var.alias)), var.alias, pad[i],
 			(type != SQL_TEXT && type != SQL_VARYING));
 		strcat(p, " ");
 
 		p += strlen(p);
 
 		// Separators need not go on forever no more than a line
-		unsigned limit = IcuUtil::charLength(isqlGlob.att_charset, strlen(var.alias), var.alias);
+		unsigned limit = IcuUtil::charLength(isqlGlob.att_charset, static_cast<unsigned>(strlen(var.alias)), var.alias);
 		limit = MAX(limit, pad[i]) + 1;
 
 		for (unsigned j = 1; j < limit && j < 80; j++)
@@ -7968,7 +7969,7 @@ static void process_plan()
 	UCHAR plan_buffer[PLAN_BUFFER_LENGTH];
 	memset(plan_buffer, 0, sizeof(plan_buffer));
 	UCHAR* planPtr = plan_buffer;
-	size_t planSize = sizeof(plan_buffer);
+	unsigned planSize = sizeof(plan_buffer);
 	PtrSentry<UCHAR> planSentry;
 
 	for (int i = 0; i < 3; ++i)
@@ -8132,7 +8133,7 @@ static unsigned process_message_display(Firebird::IMessageMetadata* message, uns
 
 		unsigned data_length, disp_length, alignment;
 		data_length = disp_length = alignment = var.length;
-		unsigned namelength = IcuUtil::charLength(isqlGlob.att_charset, strlen(var.alias), var.alias);
+		unsigned namelength = IcuUtil::charLength(isqlGlob.att_charset, static_cast<unsigned>(strlen(var.alias)), var.alias);
 
 		// Minimum display length should not be less than that needed
 		// for displaying null

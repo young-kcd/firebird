@@ -231,8 +231,8 @@ namespace Jrd
 		NestConst<InversionNode> const m_index;
 		NestConst<InversionNode> m_inversion;
 		NestConst<BoolExprNode> m_condition;
-		const size_t m_length;
-		size_t m_offset;
+		const FB_SIZE_T m_length;
+		FB_SIZE_T m_offset;
 	};
 
 	class ExternalTableScan : public RecordStream
@@ -769,7 +769,7 @@ namespace Jrd
 	class NestedLoopJoin : public RecordSource
 	{
 	public:
-		NestedLoopJoin(CompilerScratch* csb, size_t count, RecordSource* const* args);
+		NestedLoopJoin(CompilerScratch* csb, FB_SIZE_T count, RecordSource* const* args);
 		NestedLoopJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
 					   BoolExprNode* boolean, bool semiJoin, bool antiJoin);
 
@@ -790,7 +790,7 @@ namespace Jrd
 		void nullRecords(thread_db* tdbb) const;
 
 	private:
-		bool fetchRecord(thread_db*, size_t) const;
+		bool fetchRecord(thread_db*, FB_SIZE_T) const;
 
 		const bool m_outerJoin;
 		const bool m_semiJoin;
@@ -854,7 +854,7 @@ namespace Jrd
 		};
 
 	public:
-		HashJoin(thread_db* tdbb, CompilerScratch* csb, size_t count,
+		HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 				 RecordSource* const* args, NestValueArray* const* keys);
 
 		void open(thread_db* tdbb) const;
@@ -876,7 +876,7 @@ namespace Jrd
 	private:
 		void computeKeys(thread_db* tdbb, jrd_req* request,
 						 const SubStream& sub, UCHAR* buffer) const;
-		bool fetchRecord(thread_db* tdbb, Impure* impure, size_t stream) const;
+		bool fetchRecord(thread_db* tdbb, Impure* impure, FB_SIZE_T stream) const;
 
 		SubStream m_leader;
 		Firebird::Array<SubStream> m_args;
@@ -910,10 +910,10 @@ namespace Jrd
 			} irsb_mrg_rpt[1];
 		};
 
-		static const size_t MERGE_BLOCK_SIZE = 65536;
+		static const FB_SIZE_T MERGE_BLOCK_SIZE = 65536;
 
 	public:
-		MergeJoin(CompilerScratch* csb, size_t count,
+		MergeJoin(CompilerScratch* csb, FB_SIZE_T count,
 				  SortedStream* const* args,
 				  const NestValueArray* const* keys);
 
@@ -937,8 +937,8 @@ namespace Jrd
 		int compare(thread_db* tdbb, const NestValueArray* node1,
 			const NestValueArray* node2) const;
 		UCHAR* getData(thread_db* tdbb, MergeFile* mfb, SLONG record) const;
-		SLONG getRecord(thread_db* tdbb, size_t index) const;
-		bool fetchRecord(thread_db* tdbb, size_t index) const;
+		SLONG getRecord(thread_db* tdbb, FB_SIZE_T index) const;
+		bool fetchRecord(thread_db* tdbb, FB_SIZE_T index) const;
 
 		Firebird::Array<NestConst<SortedStream> > m_args;
 		Firebird::Array<const NestValueArray*> m_keys;
@@ -953,8 +953,8 @@ namespace Jrd
 
 	public:
 		Union(CompilerScratch* csb, StreamType stream,
-			  size_t argCount, RecordSource* const* args, NestConst<MapNode>* maps,
-			  size_t streamCount, const StreamType* streams);
+			  FB_SIZE_T argCount, RecordSource* const* args, NestConst<MapNode>* maps,
+			  FB_SIZE_T streamCount, const StreamType* streams);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -978,7 +978,7 @@ namespace Jrd
 
 	class RecursiveStream : public RecordStream
 	{
-		static const size_t MAX_RECURSE_LEVEL = 1024;
+		static const FB_SIZE_T MAX_RECURSE_LEVEL = 1024;
 
 		enum Mode { ROOT, RECURSE };
 
@@ -994,7 +994,7 @@ namespace Jrd
 		RecursiveStream(CompilerScratch* csb, StreamType stream, StreamType mapStream,
 					    RecordSource* root, RecordSource* inner,
 					    const MapNode* rootMap, const MapNode* innerMap,
-					    size_t streamCount, const StreamType* innerStreams,
+					    FB_SIZE_T streamCount, const StreamType* innerStreams,
 					    ULONG saveOffset);
 
 		void open(thread_db* tdbb) const;
@@ -1021,7 +1021,7 @@ namespace Jrd
 		const MapNode* const m_innerMap;
 		StreamList m_innerStreams;
 		const ULONG m_saveOffset;
-		size_t m_saveSize;
+		FB_SIZE_T m_saveSize;
 	};
 
 	class ConditionalStream : public RecordSource

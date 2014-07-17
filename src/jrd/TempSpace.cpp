@@ -41,14 +41,14 @@ const size_t MIN_TEMP_BLOCK_SIZE = 64 * 1024;
 
 Firebird::GlobalPtr<Firebird::Mutex> TempSpace::initMutex;
 Firebird::TempDirectoryList* TempSpace::tempDirs = NULL;
-size_t TempSpace::minBlockSize = 0;
+FB_SIZE_T TempSpace::minBlockSize = 0;
 offset_t TempSpace::globalCacheUsage = 0;
 
 //
 // In-memory block class
 //
 
-size_t TempSpace::MemoryBlock::read(offset_t offset, void* buffer, size_t length)
+FB_SIZE_T TempSpace::MemoryBlock::read(offset_t offset, void* buffer, FB_SIZE_T length)
 {
 	if (offset + length > size)
 	{
@@ -58,7 +58,7 @@ size_t TempSpace::MemoryBlock::read(offset_t offset, void* buffer, size_t length
 	return length;
 }
 
-size_t TempSpace::MemoryBlock::write(offset_t offset, const void* buffer, size_t length)
+FB_SIZE_T TempSpace::MemoryBlock::write(offset_t offset, const void* buffer, FB_SIZE_T length)
 {
 	if (offset + length > size)
 	{
@@ -72,7 +72,7 @@ size_t TempSpace::MemoryBlock::write(offset_t offset, const void* buffer, size_t
 // On-disk block class
 //
 
-size_t TempSpace::FileBlock::read(offset_t offset, void* buffer, size_t length)
+FB_SIZE_T TempSpace::FileBlock::read(offset_t offset, void* buffer, FB_SIZE_T length)
 {
 	if (offset + length > size)
 	{
@@ -82,7 +82,7 @@ size_t TempSpace::FileBlock::read(offset_t offset, void* buffer, size_t length)
 	return file->read(offset, buffer, length);
 }
 
-size_t TempSpace::FileBlock::write(offset_t offset, const void* buffer, size_t length)
+FB_SIZE_T TempSpace::FileBlock::write(offset_t offset, const void* buffer, FB_SIZE_T length)
 {
 	if (offset + length > size)
 	{
@@ -151,7 +151,7 @@ TempSpace::~TempSpace()
 // Reads bytes from the temporary space
 //
 
-size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
+FB_SIZE_T TempSpace::read(offset_t offset, void* buffer, FB_SIZE_T length)
 {
 	fb_assert(offset + length <= logicalSize);
 
@@ -161,12 +161,12 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 		Block* block = findBlock(offset);
 
 		UCHAR* p = static_cast<UCHAR*>(buffer);
-		size_t l = length;
+		FB_SIZE_T l = length;
 
 		// read data from the block chain
 		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
 		{
-			const size_t n = itr->read(offset, p, l);
+			const FB_SIZE_T n = itr->read(offset, p, l);
 			p += n;
 			l -= n;
 		}
@@ -183,7 +183,7 @@ size_t TempSpace::read(offset_t offset, void* buffer, size_t length)
 // Writes bytes to the temporary space
 //
 
-size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
+FB_SIZE_T TempSpace::write(offset_t offset, const void* buffer, FB_SIZE_T length)
 {
 	fb_assert(offset <= logicalSize);
 
@@ -199,12 +199,12 @@ size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
 		Block* const block = findBlock(offset);
 
 		const UCHAR* p = static_cast<const UCHAR*>(buffer);
-		size_t l = length;
+		FB_SIZE_T l = length;
 
 		// write data to as many blocks as necessary
 		for (Block* itr = block; itr && l; itr = itr->next, offset = 0)
 		{
-			const size_t n = itr->write(offset, p, l);
+			const FB_SIZE_T n = itr->write(offset, p, l);
 			p += n;
 			l -= n;
 		}
@@ -221,13 +221,13 @@ size_t TempSpace::write(offset_t offset, const void* buffer, size_t length)
 // Increases size of the temporary space
 //
 
-void TempSpace::extend(size_t size)
+void TempSpace::extend(FB_SIZE_T size)
 {
 	logicalSize += size;
 
 	if (logicalSize > physicalSize)
 	{
-		const size_t initialSize = initialBuffer.getCount();
+		const FB_SIZE_T initialSize = initialBuffer.getCount();
 
 		// If the dynamic mode is specified, then we allocate new blocks
 		// by growing the same initial memory block in the specified chunks.
@@ -366,18 +366,18 @@ TempSpace::Block* TempSpace::findBlock(offset_t& offset) const
 // Allocates the required space in some temporary file
 //
 
-TempFile* TempSpace::setupFile(size_t size)
+TempFile* TempSpace::setupFile(FB_SIZE_T size)
 {
 	ISC_STATUS_ARRAY status_vector = {0};
 
-	for (size_t i = 0; i < tempDirs->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < tempDirs->getCount(); i++)
 	{
 		TempFile* file = NULL;
 
 		Firebird::PathName directory = (*tempDirs)[i];
 		PathUtils::ensureSeparator(directory);
 
-		for (size_t j = 0; j < tempFiles.getCount(); j++)
+		for (FB_SIZE_T j = 0; j < tempFiles.getCount(); j++)
 		{
 			Firebird::PathName dirname, filename;
 			PathUtils::splitLastComponent(dirname, filename, tempFiles[j]->getName());
@@ -423,7 +423,7 @@ TempFile* TempSpace::setupFile(size_t size)
 // Allocate available space in free segments. Extend file if necessary
 //
 
-offset_t TempSpace::allocateSpace(size_t size)
+offset_t TempSpace::allocateSpace(FB_SIZE_T size)
 {
 	// Find the best available space. This is defined as the smallest free space
 	// that is big enough. This preserves large blocks.
@@ -470,7 +470,7 @@ offset_t TempSpace::allocateSpace(size_t size)
 // join it with adjacent segments if found
 //
 
-void TempSpace::releaseSpace(offset_t position, size_t size)
+void TempSpace::releaseSpace(offset_t position, FB_SIZE_T size)
 {
 	fb_assert(size > 0);
 	fb_assert(position < getSize());	// Block starts in file
@@ -574,7 +574,7 @@ bool TempSpace::validate(offset_t& free) const
 	}
 
 	offset_t disk = 0;
-	for (size_t i = 0; i < tempFiles.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < tempFiles.getCount(); i++)
 		disk += tempFiles[i]->getSize();
 
 	return ((initialBuffer.getCount() + localCacheUsage + disk) == physicalSize);
@@ -590,7 +590,7 @@ bool TempSpace::validate(offset_t& free) const
 // is in memory blocks). Algorithm is very simple and can be improved in future
 //
 
-size_t TempSpace::allocateBatch(size_t count, size_t minSize, size_t maxSize, Segments& segments)
+ULONG TempSpace::allocateBatch(ULONG count, FB_SIZE_T minSize, FB_SIZE_T maxSize, Segments& segments)
 {
 	// adjust passed chunk size to amount of free memory we have and number
 	// of runs still not allocated.

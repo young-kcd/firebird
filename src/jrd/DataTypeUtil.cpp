@@ -268,7 +268,7 @@ void DataTypeUtilBase::makeConcatenate(dsc* result, const dsc* value1, const dsc
 
 		ULONG length = fixLength(result,
 			convertLength(value1, result) + convertLength(value2, result));
-		result->dsc_length = length + sizeof(USHORT);
+		result->dsc_length = length + static_cast<USHORT>(sizeof(USHORT));
 	}
 
 	result->dsc_flags = (value1->dsc_flags | value2->dsc_flags) & DSC_nullable;
@@ -312,7 +312,7 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 			len = MIN(len, MIN(MAX_COLUMN_SIZE, ULONG(constant)) * maxBytesPerChar(result->getCharSet()));
 		}
 
-		result->dsc_length = fixLength(result, len) + sizeof(USHORT);
+		result->dsc_length = fixLength(result, len) + static_cast<USHORT>(sizeof(USHORT));
 	}
 }
 
@@ -367,7 +367,7 @@ bool DataTypeUtil::convertToUTF8(const string& src, string& dst, CHARSET_ID char
 
 	if (charset == CS_NONE)
 	{
-		const size_t length = src.length();
+		const FB_SIZE_T length = src.length();
 
 		const char* s = src.c_str();
 		char* p = dst.getBuffer(length);

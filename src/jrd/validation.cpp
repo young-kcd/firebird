@@ -651,8 +651,6 @@ Vdr::Vdr()
 }
 
 
-#pragma FB_COMPILER_MESSAGE("This table goes to gds__log and it's not localized")
-
 static const TEXT msg_table[VAL_MAX_ERROR][80] =
 {
 	"Page %"ULONGFORMAT" wrong type (expected %s encountered %s)",	// 0

@@ -66,6 +66,37 @@ static timespec getCurrentTime()
 
 namespace Firebird {
 
+#ifdef WIN_NT
+	void Semaphore::init()
+	{
+		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, INT_MAX, NULL);
+		if (hSemaphore == NULL)
+			system_call_failed::raise("CreateSemaphore");
+	}
+
+	Semaphore::~Semaphore()
+	{
+		if (hSemaphore && !CloseHandle(hSemaphore))
+			system_call_failed::raise("CloseHandle");
+	}
+
+	bool Semaphore::tryEnter(const int seconds , int milliseconds)
+	{
+		milliseconds += seconds * 1000;
+		DWORD result = WaitForSingleObject(hSemaphore, milliseconds >= 0 ? milliseconds : INFINITE);
+		if (result == WAIT_FAILED)
+			system_call_failed::raise("WaitForSingleObject");
+		return result != WAIT_TIMEOUT;
+	}
+
+	void Semaphore::release(SLONG count)
+	{
+		if (!ReleaseSemaphore(hSemaphore, count, NULL))
+			system_call_failed::raise("ReleaseSemaphore");
+	}
+#endif
+
+
 #ifdef COMMON_CLASSES_SEMAPHORE_DISPATCH
 
 	void SignalSafeSemaphore::init()

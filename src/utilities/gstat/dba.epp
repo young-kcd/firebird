@@ -609,7 +609,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	ULONG page = HEADER_PAGE;
 	do {
 		if (page != HEADER_PAGE)
-			current = db_open(file_name, strlen(file_name));
+			current = db_open(file_name, static_cast<USHORT>(strlen(file_name)));
 		do {
 			header = (const header_page*) db_read(page);
 			if (current != tddba->files)
@@ -731,12 +731,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 	else
 	{
 		if (*username)
-			dpb.insertString(isc_dpb_user_name, username, strlen(username));
+			dpb.insertString(isc_dpb_user_name, username, fb_strlen(username));
 
 		if (*password)
 		{
 			dpb.insertString(uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							password, strlen(password));
+							password, fb_strlen(password));
 		}
 
 #ifdef TRUSTED_AUTH
@@ -1344,7 +1344,7 @@ static void analyze_blob(dba_rel* relation, const blh* blob, int length)
 	}
 	else
 	{
-		const int slots = (length - BLH_SIZE) / sizeof(SLONG);
+		const int slots = (length - BLH_SIZE) / static_cast<int>(sizeof(SLONG));
 		relation->rel_blob_pages += slots;
 		if (blob->blh_level == 1)
 		{
@@ -1639,7 +1639,7 @@ static USHORT get_format_length(ISC_STATUS* status_vector, isc_db_handle databas
 	p += 2;
 	const ULONG length = isc_vax_integer((const char*) p, l);
 
-	size_t return_length = 0;
+	FB_SIZE_T return_length = 0;
 	Firebird::UCharBuffer buffer;
 	if (!blob.getData(length, buffer.getBuffer(length), return_length))
 	{

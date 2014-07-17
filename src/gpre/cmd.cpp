@@ -1411,7 +1411,7 @@ static void create_database( gpre_req* request, const act* action)
 	if (db->dbb_c_user && !db->dbb_r_user)
 	{
 		request->add_byte(isc_dpb_user_name);
-		l = strlen(db->dbb_c_user);
+		l = static_cast<SSHORT>(strlen(db->dbb_c_user));
 		request->add_byte(l);
 		const char* ch = db->dbb_c_user;
 		while (*ch)
@@ -1421,7 +1421,7 @@ static void create_database( gpre_req* request, const act* action)
 	if (db->dbb_c_password && !db->dbb_r_password)
 	{
 		request->add_byte(isc_dpb_password);
-		l = strlen(db->dbb_c_password);
+		l = static_cast<SSHORT>(strlen(db->dbb_c_password));
 		request->add_byte(l);
 		const char* ch = db->dbb_c_password;
 		while (*ch)
@@ -2397,7 +2397,7 @@ static void put_cstring(gpre_req* request, USHORT ddl_operator,
 {
 	USHORT length = 0;
 	if (string != NULL)
-		length = strlen(string);
+		length = static_cast<USHORT>(strlen(string));
 
 	put_string(request, ddl_operator, string, length);
 }
@@ -2616,7 +2616,7 @@ static void put_short_cstring(gpre_req* request, USHORT ddl_operator, const TEXT
 {
 	SSHORT length = 0;
 	if (string != NULL)
-		length = strlen(string);
+		length = static_cast<SSHORT>(strlen(string));
 
 	STUFF_CHECK(request, length);
 

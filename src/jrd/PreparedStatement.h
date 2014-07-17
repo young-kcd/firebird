@@ -66,14 +66,14 @@ public:
 		// evaluation order do not interfere on the question marks / slots correspondence.
 		struct OutputParam
 		{
-			OutputParam(const char* aChunk, size_t aNumber)
+			OutputParam(const char* aChunk, FB_SIZE_T aNumber)
 				: chunk(aChunk),
 				  number(aNumber)
 			{
 			}
 
 			const char* chunk;
-			size_t number;
+			FB_SIZE_T number;
 		};
 
 		struct InputSlot

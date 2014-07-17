@@ -591,7 +591,7 @@ void JrdStatement::verifyTriggerAccess(thread_db* tdbb, jrd_rel* ownerRelation,
 
 	SET_TDBB(tdbb);
 
-	for (size_t i = 0; i < triggers->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < triggers->getCount(); i++)
 	{
 		Trigger& t = (*triggers)[i];
 		t.compile(tdbb);
@@ -641,7 +641,7 @@ inline void JrdStatement::triggersExternalAccess(thread_db* tdbb, ExternalAccess
 	if (!tvec)
 		return;
 
-	for (size_t i = 0; i < tvec->getCount(); i++)
+	for (FB_SIZE_T i = 0; i < tvec->getCount(); i++)
 	{
 		Trigger& t = (*tvec)[i];
 		t.compile(tdbb);
@@ -657,7 +657,7 @@ void JrdStatement::buildExternalAccess(thread_db* tdbb, ExternalAccessList& list
 {
 	for (ExternalAccess* item = externalList.begin(); item != externalList.end(); ++item)
 	{
-		size_t i;
+		FB_SIZE_T i;
 		if (list.find(*item, i))
 			continue;
 
@@ -754,7 +754,7 @@ template <typename T> static void makeSubRoutines(thread_db* tdbb, JrdStatement*
 			 access != subCsb->csb_external.end();
 			 ++access)
 		{
-			size_t i;
+			FB_SIZE_T i;
 			if (!csb->csb_external.find(*access, i))
 				csb->csb_external.insert(i, *access);
 		}
@@ -763,7 +763,7 @@ template <typename T> static void makeSubRoutines(thread_db* tdbb, JrdStatement*
 			 access != subCsb->csb_access.end();
 			 ++access)
 		{
-			size_t i;
+			FB_SIZE_T i;
 			if (!csb->csb_access.find(*access, i))
 				csb->csb_access.insert(i, *access);
 		}

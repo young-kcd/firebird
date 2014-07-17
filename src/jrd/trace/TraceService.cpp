@@ -278,7 +278,7 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	int flags = session.ses_flags;
 	while (!m_svc.finished() && checkAliveAndFlags(session.ses_id, flags))
 	{
-		const size_t len = log->read(buff, sizeof(buff));
+		const FB_SIZE_T len = log->read(buff, sizeof(buff));
 		if (!len)
 		{
 			if (!checkAliveAndFlags(session.ses_id, flags))

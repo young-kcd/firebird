@@ -338,13 +338,13 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 		if (tdgbl->ALICE_data.ua_user)
 		{
 			dpb.insertString(isc_dpb_user_name,
-							 tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
+							 tdgbl->ALICE_data.ua_user, fb_strlen(tdgbl->ALICE_data.ua_user));
 		}
 
 		if (tdgbl->ALICE_data.ua_password)
 		{
 			dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
+							 tdgbl->ALICE_data.ua_password, fb_strlen(tdgbl->ALICE_data.ua_password));
 		}
 
 #ifdef TRUSTED_AUTH

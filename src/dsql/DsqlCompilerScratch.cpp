@@ -455,7 +455,7 @@ void DsqlCompilerScratch::genParameters(Array<NestConst<ParameterClause> >& para
 		appendUChar(0);
 		appendUShort(2 * parameters.getCount());
 
-		for (size_t i = 0; i < parameters.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
 			putDebugArgument(fb_dbg_arg_input, i, parameter->name.c_str());
@@ -477,7 +477,7 @@ void DsqlCompilerScratch::genParameters(Array<NestConst<ParameterClause> >& para
 
 	if (returns.hasData())
 	{
-		for (size_t i = 0; i < returns.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause* parameter = returns[i];
 			putDebugArgument(fb_dbg_arg_output, i, parameter->name.c_str());
@@ -531,7 +531,7 @@ void DsqlCompilerScratch::addCTEs(WithClause* withClause)
 
 SelectExprNode* DsqlCompilerScratch::findCTE(const MetaName& name)
 {
-	for (size_t i = 0; i < ctes.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < ctes.getCount(); ++i)
 	{
 		SelectExprNode* cte = ctes[i];
 
@@ -551,7 +551,7 @@ void DsqlCompilerScratch::clearCTEs()
 
 void DsqlCompilerScratch::checkUnusedCTEs() const
 {
-	for (size_t i = 0; i < ctes.getCount(); ++i)
+	for (FB_SIZE_T i = 0; i < ctes.getCount(); ++i)
 	{
 		const SelectExprNode* cte = ctes[i];
 

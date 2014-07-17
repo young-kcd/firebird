@@ -32,9 +32,9 @@
 
 using namespace Firebird;
 
-const size_t SERVICE_SIZE = 256;
-const size_t SERVER_PART = 200;
-const size_t RESULT_BUF_SIZE = 512;
+const FB_SIZE_T SERVICE_SIZE = 256;
+const FB_SIZE_T SERVER_PART = 200;
+const FB_SIZE_T RESULT_BUF_SIZE = 512;
 
 /**
 
@@ -119,7 +119,7 @@ inline void stuffSpbLong(char*& spb, SLONG data)
 static void stuffSpb(char*& spb, char param, const TEXT* value)
 {
 	stuffSpbByte(spb, param);
-	int l = strlen(value);
+	int l = static_cast<int>(strlen(value));
 	fb_assert(l < 256);
 	stuffSpbByte(spb, char(l));
 	memcpy(spb, value, l);
@@ -129,7 +129,7 @@ static void stuffSpb(char*& spb, char param, const TEXT* value)
 static void stuffSpb2(char*& spb, char param, const TEXT* value)
 {
 	stuffSpbByte(spb, param);
-	int l = strlen(value);
+	int l = static_cast<int>(strlen(value));
 	stuffSpbShort(spb, short(l));
 	memcpy(spb, value, l);
 	spb += l;
@@ -459,7 +459,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		for (;;)
 		{
 			isc_resv_handle reserved = 0;
-			isc_service_query(local_status, &handle, &reserved, spb - spb_buffer, spb_buffer,
+			isc_service_query(local_status, &handle, &reserved, static_cast<USHORT>(spb - spb_buffer), spb_buffer,
 				sizeof(request), request, RESULT_BUF_SIZE - startQuery, &resultBuffer[startQuery]);
 			if (local_status[1])
 			{
@@ -496,7 +496,7 @@ void callRemoteServiceManager(ISC_STATUS* status,
 			char *p = resultBuffer;
 			if (*p++ == isc_info_svc_line)
 			{
-				size_t len = static_cast<size_t>(isc_vax_integer(p, sizeof(USHORT)));
+				FB_SIZE_T len = static_cast<FB_SIZE_T>(isc_vax_integer(p, sizeof(USHORT)));
 				p += sizeof(USHORT);
 				if (len > RESULT_BUF_SIZE)
 				{
@@ -546,11 +546,11 @@ void detachRemoteServiceManager(ISC_STATUS* status, isc_svc_handle handle)
 // all this spb-parsing functions should be gone
 // as soon as we create SvcClumpletReader
 
-static void parseString2(const char*& p, Auth::CharField& f, size_t& loop)
+static void parseString2(const char*& p, Auth::CharField& f, FB_SIZE_T& loop)
 {
-	const size_t len = static_cast<size_t>(isc_vax_integer(p, sizeof(USHORT)));
+	const FB_SIZE_T len = static_cast<FB_SIZE_T>(isc_vax_integer(p, sizeof(USHORT)));
 
-	size_t len2 = len + sizeof(ISC_USHORT) + 1;
+	FB_SIZE_T len2 = len + sizeof(ISC_USHORT) + 1;
 	if (len2 > loop)
 	{
 		throw loop;
@@ -566,7 +566,7 @@ static void parseString2(const char*& p, Auth::CharField& f, size_t& loop)
 	check(&s);
 }
 
-static void parseLong(const char*& p, Auth::IntField& f, size_t& loop)
+static void parseLong(const char*& p, Auth::IntField& f, FB_SIZE_T& loop)
 {
 	LocalStatus s;
 	f.set(&s, isc_vax_integer(p, sizeof(ULONG)));
@@ -574,7 +574,7 @@ static void parseLong(const char*& p, Auth::IntField& f, size_t& loop)
 	f.setEntered(&s, 1);
 	check(&s);
 
-	const size_t len2 = sizeof(ULONG) + 1;
+	const FB_SIZE_T len2 = sizeof(ULONG) + 1;
 	if (len2 > loop)
 	{
 		throw loop;
@@ -615,7 +615,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 		status[2] = isc_arg_end;
 		return -1;
 	}
-	size_t loop = static_cast<size_t>(isc_vax_integer (p, sizeof (USHORT)));
+	FB_SIZE_T loop = static_cast<FB_SIZE_T>(isc_vax_integer (p, sizeof (USHORT)));
 	p += sizeof (USHORT);
     if (p[loop] != isc_info_end)
 	{
@@ -686,7 +686,7 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 				return -1;
 			}
 		}
-		catch (size_t newOffset)
+		catch (FB_SIZE_T newOffset)
 		{
 			memmove(buf, --p, newOffset);
 			return newOffset;
@@ -740,7 +740,7 @@ static void checkServerUsersVersion(isc_svc_handle svc_handle, char& server_user
 	}
 
 	// parse version
-	size_t pos = version.find('-');
+	FB_SIZE_T pos = version.find('-');
 	if (pos == string::npos)
 	{
 		return;

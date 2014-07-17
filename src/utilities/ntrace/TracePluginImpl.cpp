@@ -503,7 +503,7 @@ void TracePluginImpl::appendTableCounts(const PerformanceInfo *info)
 	for (trc = info->pin_tables, trc_end = trc + info->pin_count; trc < trc_end; trc++)
 	{
 		record.append(trc->trc_relation_name);
-		record.append(MAX_SQL_IDENTIFIER_LEN - strlen(trc->trc_relation_name), ' ');
+		record.append(MAX_SQL_IDENTIFIER_LEN - fb_strlen(trc->trc_relation_name), ' ');
 		for (int j = 0; j < DBB_max_rel_count; j++)
 		{
 			if (trc->trc_counters[j] == 0)
@@ -546,7 +546,7 @@ void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, siz
 
 void TracePluginImpl::appendParams(TraceParams* params)
 {
-	const size_t paramcount = params->getCount();
+	const FB_SIZE_T paramcount = params->getCount();
 	if (!paramcount)
 		return;
 
@@ -555,7 +555,7 @@ void TracePluginImpl::appendParams(TraceParams* params)
 	string paramvalue;
 	string temp;
 
-	for (size_t i = 0; i < paramcount; i++)
+	for (FB_SIZE_T i = 0; i < paramcount; i++)
 	{
 		const struct dsc* parameters = params->getParam(i);
 
@@ -1340,7 +1340,7 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 	if (config.include_filter.hasData() || config.exclude_filter.hasData())
 	{
 		const char* sqlUtf8 = statement->getTextUTF8();
-		size_t utf8_length = strlen(sqlUtf8);
+		FB_SIZE_T utf8_length = fb_strlen(sqlUtf8);
 
 		if (config.include_filter.hasData())
 		{
@@ -1743,7 +1743,7 @@ bool TracePluginImpl::checkServiceFilter(TraceServiceConnection* service, bool s
 		return data->enabled;
 
 	const char* svcName = service->getServiceName();
-	const int svcNameLen = strlen(svcName);
+	const int svcNameLen = static_cast<int>(strlen(svcName));
 	bool enabled = true;
 
 	if (config.include_filter.hasData())
@@ -1830,7 +1830,7 @@ void TracePluginImpl::log_event_service_start(TraceServiceConnection* service,
 			sw.printf("\t%.*s" NEWLINE, switches_length, switches);
 
 			// Delete terminator symbols from service switches
-			for (size_t i = 0; i < sw.length(); ++i)
+			for (FB_SIZE_T i = 0; i < sw.length(); ++i)
 			{
 				if (sw[i] == Firebird::SVC_TRMNTR)
 				{

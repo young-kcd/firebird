@@ -215,7 +215,7 @@ namespace
 				}
 
 				const ConfigFile::Parameters& p = confFile->getParameters();
-				size_t pos;
+				FB_SIZE_T pos;
 				if (!p.find(name, pos))
 				{
 					return NULL;

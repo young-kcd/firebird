@@ -92,7 +92,7 @@ void HSH_init()
 	{
 		qli_symbol* symbol = (qli_symbol*) ALLOCPV(type_sym, 0);
 		symbol->sym_type = SYM_keyword;
-		symbol->sym_length = strlen(qword->keyword);
+		symbol->sym_length = static_cast<USHORT>(strlen(qword->keyword));
 		symbol->sym_string = qword->keyword;
 		symbol->sym_keyword = qword->id;
 		HSH_insert(symbol, true);

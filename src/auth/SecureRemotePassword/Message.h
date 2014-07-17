@@ -339,7 +339,7 @@ public:
 	const char* operator= (const char* newVal)
 	{
 		msg->getBuffer();
-		setStrValue(newVal, strnlen(newVal, size));
+		setStrValue(newVal, static_cast<unsigned>(strnlen(newVal, size)));
 		null = FB_FALSE;
 		return newVal;
 	}

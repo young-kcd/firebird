@@ -887,7 +887,7 @@ void BackupManager::setDifference(thread_db* tdbb, const char* filename)
 			(Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		PAG_replace_entry_first(tdbb, header, Ods::HDR_difference_file,
-			strlen(filename), reinterpret_cast<const UCHAR*>(filename));
+			static_cast<USHORT>(strlen(filename)), reinterpret_cast<const UCHAR*>(filename));
 		CCH_RELEASE(tdbb, &window);
 		diff_name = filename;
 		explicit_diff_name = true;

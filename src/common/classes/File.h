@@ -36,8 +36,8 @@ class File
 public:
 	virtual ~File() {}
 
-	virtual size_t read(offset_t, void*, size_t) = 0;
-	virtual size_t write(offset_t, const void*, size_t) = 0;
+	virtual FB_SIZE_T read(offset_t, void*, FB_SIZE_T) = 0;
+	virtual FB_SIZE_T write(offset_t, const void*, FB_SIZE_T) = 0;
 
 	virtual void unlink() = 0;
 
@@ -46,11 +46,11 @@ public:
 
 class ZeroBuffer
 {
-	static const size_t DEFAULT_SIZE = 1024 * 256;
-	static const size_t SYS_PAGE_SIZE = 1024 * 4;
+	static const FB_SIZE_T DEFAULT_SIZE = 1024 * 256;
+	static const FB_SIZE_T SYS_PAGE_SIZE = 1024 * 4;
 
 public:
-	explicit ZeroBuffer(MemoryPool& p, size_t size = DEFAULT_SIZE)
+	explicit ZeroBuffer(MemoryPool& p, FB_SIZE_T size = DEFAULT_SIZE)
 		: buffer(p)
 	{
 		bufSize = size;
@@ -60,12 +60,12 @@ public:
 	}
 
 	const char* getBuffer() const { return bufAligned; }
-	size_t getSize() const { return bufSize; }
+	FB_SIZE_T getSize() const { return bufSize; }
 
 private:
 	Firebird::Array<char> buffer;
 	char* bufAligned;
-	size_t bufSize;
+	FB_SIZE_T bufSize;
 };
 
 } // namespace

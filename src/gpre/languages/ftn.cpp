@@ -1056,8 +1056,8 @@ static void gen_blob_open(const act* action)
 
 static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 {
-	const int c_len = strlen(COMMENT);
-	const int len = strlen(string);
+	const int c_len = static_cast<int>(strlen(COMMENT));
+	const int len = static_cast<int>(strlen(string));
 	int from = 0;
 	int to = 80 - c_len;
 

@@ -56,12 +56,12 @@ public:
 	virtual void started() = 0;
 	virtual void outputVerbose(const char* text) = 0;
 	virtual void outputError(const char* text) = 0;
-	virtual void outputData(const void* text, size_t size) = 0;
+	virtual void outputData(const void* text, FB_SIZE_T size) = 0;
 	virtual void printf(bool err, const SCHAR* format, ...) = 0;
 	virtual void putLine(char, const char*) = 0;
 	virtual void putSLong(char, SLONG) = 0;
 	virtual void putChar(char, char) = 0;
-	virtual void putBytes(const UCHAR*, size_t) = 0;
+	virtual void putBytes(const UCHAR*, FB_SIZE_T) = 0;
 	virtual ULONG getBytes(UCHAR*, ULONG) = 0;
 	virtual void setServiceStatus(const ISC_STATUS*) = 0;
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) = 0;
@@ -91,7 +91,7 @@ public:
 		// SVC_TRMNTRs inside the string are duplicated.
 
 		switches += SVC_TRMNTR;
-		for (size_t i = 0; i < str.length(); ++i)
+		for (FB_SIZE_T i = 0; i < str.length(); ++i)
 		{
 			if (str[i] == SVC_TRMNTR)
 			{

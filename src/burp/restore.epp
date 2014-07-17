@@ -616,12 +616,12 @@ void add_access_dpb(BurpGlobals* tdgbl, Firebird::ClumpletWriter& dpb)
 
 	if (tdgbl->gbl_sw_user)
 	{
-		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, fb_strlen(tdgbl->gbl_sw_user));
 	}
 	if (tdgbl->gbl_sw_password)
 	{
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
+							 tdgbl->gbl_sw_password, fb_strlen(tdgbl->gbl_sw_password));
 	}
 
 	dpb.insertByte(isc_dpb_no_db_triggers, 1);
@@ -877,7 +877,7 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 	}
 
 	dpb.insertInt(isc_dpb_page_size, page_size & 0xff00);
-	dpb.insertString(isc_dpb_gbak_attach, FB_VERSION, strlen(FB_VERSION));
+	dpb.insertString(isc_dpb_gbak_attach, FB_VERSION, fb_strlen(FB_VERSION));
 
 	if (sweep_interval != MAX_ULONG)
 	{
@@ -891,12 +891,12 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 	}
 	if (tdgbl->gbl_sw_user)
 	{
-		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, strlen(tdgbl->gbl_sw_user));
+		dpb.insertString(isc_dpb_user_name, tdgbl->gbl_sw_user, fb_strlen(tdgbl->gbl_sw_user));
 	}
 	if (tdgbl->gbl_sw_password)
 	{
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-							 tdgbl->gbl_sw_password, strlen(tdgbl->gbl_sw_password));
+							 tdgbl->gbl_sw_password, fb_strlen(tdgbl->gbl_sw_password));
 	}
 	if (page_buffers)
 	{
@@ -925,7 +925,7 @@ void create_database(BurpGlobals* tdgbl, const TEXT* file_name)
 	if (tdgbl->gbl_sw_fix_fss_metadata)
 	{
 		dpb.insertString(isc_dpb_lc_ctype, tdgbl->gbl_sw_fix_fss_metadata,
-			strlen(tdgbl->gbl_sw_fix_fss_metadata));
+			fb_strlen(tdgbl->gbl_sw_fix_fss_metadata));
 	}
 
 	if (isc_create_database(status_vector, 0, file_name, &DB,
@@ -1309,7 +1309,7 @@ bool get_acl(BurpGlobals* tdgbl, const TEXT* owner_nm, ISC_QUAD* blob_id, ISC_QU
 	BlobBuffer static_buffer;
 	UCHAR* buffer = static_buffer.getBuffer(length);
 
-	size_t return_length = 0;
+	FB_SIZE_T return_length = 0;
 	if (!blob.getData(length, buffer, return_length))
 	{
 		// msg 22 gds_$get_segment failed
@@ -1344,7 +1344,7 @@ bool get_acl(BurpGlobals* tdgbl, const TEXT* owner_nm, ISC_QUAD* blob_id, ISC_QU
 	*to++ = *from++; // copy id_person
 	*to++ = UCHAR(owner_nm_len);
 
-	size_t new_len = 4; //new_len + 4; Previously, new_len was set to zero at the top
+	FB_SIZE_T new_len = 4; //new_len + 4; Previously, new_len was set to zero at the top
 	// from = buffer + id_person_len + 4; redundant, see 2nd loop below.
 	for (ULONG cnt = 0; cnt < owner_nm_len; cnt++)
 	{
@@ -2007,7 +2007,7 @@ void get_blr_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
  *
  **************************************/
 
-	size_t length = get_int32(tdgbl);
+	FB_SIZE_T length = get_int32(tdgbl);
 
 	// Create new blob
 
@@ -4179,7 +4179,7 @@ bool get_function(BurpGlobals* tdgbl)
 					SSHORT prefixLen = 0;
 					if (!X.RDB$PACKAGE_NAME.NULL)
 					{
-						prefixLen = strlen(X.RDB$PACKAGE_NAME);
+						prefixLen = static_cast<SSHORT>(strlen(X.RDB$PACKAGE_NAME));
 						memcpy(temp, X.RDB$PACKAGE_NAME, prefixLen);
 						temp[prefixLen++] = '.';
 					}
@@ -4626,7 +4626,7 @@ void get_function_arg(BurpGlobals* tdgbl, bool skip_arguments)
 						SSHORT prefixLen = 0;
 						if (!X.RDB$PACKAGE_NAME.NULL)
 						{
-							prefixLen = strlen(X.RDB$PACKAGE_NAME);
+							prefixLen = static_cast<SSHORT>(strlen(X.RDB$PACKAGE_NAME));
 							memcpy(temp, X.RDB$PACKAGE_NAME, prefixLen);
 							temp[prefixLen++] = '.';
 						}
@@ -6419,7 +6419,7 @@ void get_misc_blob(BurpGlobals* tdgbl, ISC_QUAD& blob_id, bool glb_trans)
  **************************************/
 	ISC_STATUS_ARRAY	status_vector;
 
-	const size_t length = get_int32(tdgbl);
+	const FB_SIZE_T length = get_int32(tdgbl);
 
 	// Create new blob
 
@@ -6649,7 +6649,7 @@ bool get_procedure(BurpGlobals* tdgbl)
 						SSHORT prefixLen = 0;
 						if (package_name[0])
 						{
-							prefixLen = strlen(package_name);
+							prefixLen = static_cast<SSHORT>(strlen(package_name));
 							memcpy(temp, package_name, prefixLen);
 							temp[prefixLen++] = '.';
 						}
@@ -9971,7 +9971,7 @@ bool restore(BurpGlobals* tdgbl, const TEXT* file_name, const TEXT* database_nam
 		FOR (REQUEST_HANDLE req_handle5)
 			CS IN RDB$CHARACTER_SETS
 
-			for (size_t i = 0; i < tdgbl->defaultCollations.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < tdgbl->defaultCollations.getCount(); ++i)
 			{
 				if (tdgbl->defaultCollations[i].first == CS.RDB$CHARACTER_SET_NAME)
 				{
@@ -10678,7 +10678,7 @@ void fix_generator(BurpGlobals* tdgbl, const FixGenerator* g)
  *
  **************************************/
 
-	int start = strlen(g->prefix) + 1;
+	int start = static_cast<int>(strlen(g->prefix) + 1);
 
 	Firebird::string sql;
 	sql.printf("EXECUTE BLOCK AS "

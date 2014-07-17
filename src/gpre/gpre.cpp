@@ -2515,7 +2515,7 @@ static void pass2( SLONG start_position)
 	SLONG current = 1 + start_position;
 	SLONG column = 0;
 
-	SSHORT comment_start_len = strlen(comment_start);
+	SSHORT comment_start_len = static_cast<SSHORT>(strlen(comment_start));
 	SSHORT to_skip = 0;
 
 	// Dump text until the start of the next action, then process the action.

@@ -42,7 +42,7 @@ namespace
 
 	const char* plugName = "Win_Sspi";
 
-	void makeDesc(SecBufferDesc& d, SecBuffer& b, size_t len, void* p)
+	void makeDesc(SecBufferDesc& d, SecBuffer& b, FB_SIZE_T len, void* p)
 	{
 		b.BufferType = SECBUFFER_TOKEN;
 		b.cbBuffer = len;

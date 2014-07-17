@@ -519,8 +519,8 @@ act* PAR_database(bool sql, const TEXT* base_directory)
 			if (base_directory)
 			{
 				db->dbb_filename = string =
-					(TEXT*) MSC_alloc(token.tok_length + strlen(base_directory) + 1);
-				MSC_copy_cat(base_directory, strlen(base_directory),
+					(TEXT*) MSC_alloc(token.tok_length + static_cast<int>(strlen(base_directory)) + 1);
+				MSC_copy_cat(base_directory, static_cast<int>(strlen(base_directory)),
 						 token.tok_string, token.tok_length, string);
 			}
 			else

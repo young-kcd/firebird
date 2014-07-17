@@ -164,10 +164,10 @@ bool MET_database(gpre_dbb* database, bool print_version)
 
 	const TEXT* p;
 	if ((p = database->dbb_c_user)) {
-		dpb.insertString(isc_dpb_user_name, p, strlen(p));
+		dpb.insertString(isc_dpb_user_name, p, fb_strlen(p));
 	}
 	if ((p = database->dbb_c_password)) {
-		dpb.insertString(isc_dpb_password, p, strlen(p));
+		dpb.insertString(isc_dpb_password, p, fb_strlen(p));
 	}
 #ifdef TRUSTED_AUTH
 	if (gpreGlob.trusted_auth) {
@@ -634,7 +634,7 @@ gpre_lls* MET_get_primary_key(gpre_dbb* database, const TEXT* relation_name)
 gpre_fld* MET_field(gpre_rel* relation, const char* string)
 {
 	const MetIdentifier name(string);
-	const SSHORT length = strlen(name);
+	const SSHORT length = static_cast<SSHORT>(strlen(name));
 
 	// Lookup field.  If we find it, nifty.  If not, look it up in the
 	// database.
@@ -1243,7 +1243,7 @@ gpre_index* MET_index(gpre_dbb* database, const TEXT* string)
 {
 	gpre_index* index;
 	const MetIdentifier name(string);
-	const USHORT length = strlen(name);
+	const USHORT length = static_cast<USHORT>(strlen(name));
 
 	gpre_sym* symbol;
 	for (symbol = HSH_lookup(name); symbol; symbol = symbol->sym_homonym)
@@ -1409,7 +1409,7 @@ void MET_load_hash_table(gpre_dbb* database)
 			p = FUN.RDB$QUERY_NAME;
 			p[length] = 0;
 		}
-		gpre_sym* symbol = an_udf->udf_symbol = MSC_symbol(SYM_udf, p, strlen(p), (gpre_ctx*) an_udf);
+		gpre_sym* symbol = an_udf->udf_symbol = MSC_symbol(SYM_udf, p, static_cast<USHORT>(strlen(p)), (gpre_ctx*) an_udf);
 		HSH_insert(symbol);
 
 		an_udf->udf_length = ARG.RDB$FIELD_LENGTH;
@@ -1461,7 +1461,7 @@ void MET_load_hash_table(gpre_dbb* database)
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
 		gpre_sym* symbol = iname->intlsym_symbol =
-			MSC_symbol(SYM_collate, p, strlen(p), (gpre_ctx*) iname);
+			MSC_symbol(SYM_collate, p, static_cast<USHORT>(strlen(p)), (gpre_ctx*) iname);
 		HSH_insert(symbol);
 		iname->intlsym_type = INTLSYM_collation;
 		iname->intlsym_flags = 0;
@@ -1514,7 +1514,7 @@ void MET_load_hash_table(gpre_dbb* database)
 		strcpy(iname->intlsym_name, p);
 		iname->intlsym_database = database;
 		gpre_sym* symbol = iname->intlsym_symbol =
-			MSC_symbol(SYM_charset, p, strlen(p), (gpre_ctx*) iname);
+			MSC_symbol(SYM_charset, p, static_cast<USHORT>(strlen(p)), (gpre_ctx*) iname);
 		HSH_insert(symbol);
 		iname->intlsym_type = INTLSYM_collation;
 		iname->intlsym_flags = 0;
@@ -1593,7 +1593,7 @@ void MET_load_hash_table(gpre_dbb* database)
 	if (database->dbb_c_lc_ctype)
 	{
 		if (get_intl_char_subtype(&database->dbb_char_subtype, (UCHAR*) database->dbb_c_lc_ctype,
-			 					  strlen(database->dbb_c_lc_ctype), database))
+			 					  static_cast<USHORT>(strlen(database->dbb_c_lc_ctype)), database))
 		{
 			database->dbb_know_subtype = 1;
 		}
@@ -1620,7 +1620,7 @@ gpre_fld* MET_make_field(const SCHAR* name, SSHORT dtype, SSHORT length, bool in
 	gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 	field->fld_length = length;
 	field->fld_dtype = dtype;
-	gpre_sym* symbol = MSC_symbol(SYM_field, name, strlen(name), (gpre_ctx*) field);
+	gpre_sym* symbol = MSC_symbol(SYM_field, name, static_cast<USHORT>(strlen(name)), (gpre_ctx*) field);
 	field->fld_symbol = symbol;
 	if (insert_flag)
 		HSH_insert(symbol);
@@ -1637,7 +1637,7 @@ gpre_fld* MET_make_field(const SCHAR* name, SSHORT dtype, SSHORT length, bool in
 gpre_index* MET_make_index(const SCHAR* name)
 {
 	gpre_index* index = (gpre_index*) MSC_alloc(IND_LEN);
-	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (gpre_ctx*) index);
+	index->ind_symbol = MSC_symbol(SYM_index, name, static_cast<USHORT>(strlen(name)), (gpre_ctx*) index);
 
 	return index;
 }
@@ -1651,7 +1651,7 @@ gpre_index* MET_make_index(const SCHAR* name)
 gpre_rel* MET_make_relation(const SCHAR* name)
 {
 	gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
-	relation->rel_symbol = MSC_symbol(SYM_relation, name, strlen(name), (gpre_ctx*) relation);
+	relation->rel_symbol = MSC_symbol(SYM_relation, name, static_cast<USHORT>(strlen(name)), (gpre_ctx*) relation);
 
 	return relation;
 }
@@ -1697,7 +1697,7 @@ bool MET_type(gpre_fld* field, const TEXT* string, SSHORT* ptr)
 		field_type* type = (field_type*) MSC_alloc(TYP_LEN);
 		type->typ_field = field;
 		*ptr = type->typ_value = X.RDB$TYPE;
-		type->typ_symbol = symbol = MSC_symbol(SYM_type, string, strlen(string), (gpre_ctx*) type);
+		type->typ_symbol = symbol = MSC_symbol(SYM_type, string, static_cast<USHORT>(strlen(string)), (gpre_ctx*) type);
 		HSH_insert(symbol);
 		return true;
 	END_FOR

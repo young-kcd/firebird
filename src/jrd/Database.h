@@ -98,9 +98,9 @@ public:
 	}
 	*/
 
-	size_t count() const { return v.getCount(); }
-	T& operator[](size_t index) { return v[index]; }
-	const T& operator[](size_t index) const { return v[index]; }
+	FB_SIZE_T count() const { return v.getCount(); }
+	T& operator[](FB_SIZE_T index) { return v[index]; }
+	const T& operator[](FB_SIZE_T index) const { return v[index]; }
 
 	iterator begin() { return v.begin(); }
 	iterator end() { return v.end(); }
@@ -112,7 +112,7 @@ public:
 
 	T* memPtr() { return &v[0]; }
 
-	void resize(size_t n, T val = T()) { v.resize(n, val); }
+	void resize(FB_SIZE_T n, T val = T()) { v.resize(n, val); }
 
 	void operator delete(void* mem) { MemoryPool::globalFree(mem); }
 

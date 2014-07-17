@@ -550,7 +550,7 @@ private:
 		USHORT charSetId;
 
 		if (!MET_get_char_coll_subtype(tdbb, &charSetId,
-				reinterpret_cast<const UCHAR*>(charSetName), strlen(charSetName)))
+				reinterpret_cast<const UCHAR*>(charSetName), static_cast<USHORT>(strlen(charSetName))))
 		{
 			status_exception::raise(Arg::Gds(isc_charset_not_found) << Arg::Str(charSetName));
 		}
@@ -842,7 +842,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 	{
 		GenericMap<Left<MetaName, USHORT> > fieldsMap;
 
-		for (size_t i = 0; i < relation->rel_fields->count(); ++i)
+		for (FB_SIZE_T i = 0; i < relation->rel_fields->count(); ++i)
 		{
 			jrd_fld* field = (*relation->rel_fields)[i];
 			if (field)
@@ -1286,7 +1286,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 
 		Format* relFormat = relation->rel_current_format;
 
-		for (size_t i = 0; i < relation->rel_fields->count(); ++i)
+		for (FB_SIZE_T i = 0; i < relation->rel_fields->count(); ++i)
 		{
 			jrd_fld* field = (*relation->rel_fields)[i];
 			if (field)
@@ -1485,7 +1485,7 @@ void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, ExternalEngine* engine
 
 	if (!MET_get_char_coll_subtype(tdbb, &attInfo->adminCharSet,
 			reinterpret_cast<const UCHAR*>(charSetName),
-			strlen(charSetName)))
+			static_cast<USHORT>(strlen(charSetName))))
 	{
 		status_exception::raise(
 			Arg::Gds(isc_charset_not_found) <<

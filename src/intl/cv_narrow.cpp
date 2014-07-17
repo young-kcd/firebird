@@ -151,7 +151,7 @@ ULONG CV_wc_to_wc(csconvert* obj,
 			*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
+	return static_cast<ULONG>((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 

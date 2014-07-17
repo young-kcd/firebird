@@ -144,11 +144,11 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo
 		{
 			const char* str = logonInfo->name();
 			if (str && str[0])
-				dpb.insertString(isc_dpb_trusted_auth, str, strlen(str));
+				dpb.insertString(isc_dpb_trusted_auth, str, fb_strlen(str));
 
 			str = logonInfo->role();
 			if (str && str[0])
-				dpb.insertString(isc_dpb_sql_role_name, str, strlen(str));
+				dpb.insertString(isc_dpb_sql_role_name, str, fb_strlen(str));
 		}
 
 		ISC_STATUS_ARRAY status;

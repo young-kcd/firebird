@@ -753,7 +753,7 @@ static bool ShortToLongPathName(tstring& Path)
 
 		// The file was found - replace the short name with the long.
 		const size old_len = (npos == right) ? Path.length() - left : right - left;
-		const size new_len = strlen(fd.cFileName);
+		const size new_len = static_cast<size>(strlen(fd.cFileName));
 		Path.replace(left, old_len, fd.cFileName, new_len);
 
 		// More to do?

@@ -398,11 +398,11 @@ public:
 	{ }
 
 private:
-	size_t position(ThreadId thr)
+	FB_SIZE_T position(ThreadId thr)
 	{
 		// mutex should be locked when this function is called
 
-		for (size_t i = 0; i < processBuffer.getCount(); ++i)
+		for (FB_SIZE_T i = 0; i < processBuffer.getCount(); ++i)
 		{
 			if (processBuffer[i]->thisThread(thr))
 			{
@@ -417,7 +417,7 @@ private:
 	{
 		Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 
-		size_t p = position(thr);
+		FB_SIZE_T p = position(thr);
 		if (p < processBuffer.getCount())
 		{
 			return processBuffer[p];
@@ -432,7 +432,7 @@ private:
 	{
 		Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 
-		size_t p = position(getThreadId());
+		FB_SIZE_T p = position(getThreadId());
 		if (p >= processBuffer.getCount())
 		{
 			return;
@@ -571,7 +571,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 				if (e.fireTime <= cur)
 				{
-					timerQueue->remove((size_t) 0);
+					timerQueue->remove((FB_SIZE_T) 0);
 
 					// We must leave timerAccess mutex here to avoid deadlocks
 					MutexUnlockGuard ug(timerAccess, FB_FUNCTION);

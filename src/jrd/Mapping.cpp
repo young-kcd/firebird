@@ -147,7 +147,7 @@ typedef Hash<Map, DEFAULT_HASH_SIZE, Map, DefaultKeyValue<Map>, Map> MapHash;
 class Map : public MapHash::Entry, public GlobalStorage
 {
 public:
-	static size_t hash(const Map& value, size_t hashSize)
+	static FB_SIZE_T hash(const Map& value, FB_SIZE_T hashSize)
 	{
 		NoCaseString key = value.makeHashKey();
 		return DefaultHash<Map>::hash(key.c_str(), key.length(), hashSize);
@@ -908,7 +908,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
 						MAX_DPB_SIZE, isc_dpb_version1);
 					embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
-						strlen(SYSDBA_USER_NAME));
+						fb_strlen(SYSDBA_USER_NAME));
 					embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
 					embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
@@ -929,7 +929,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					if (db && !iDb)
 					{
 						const char* conf = "Providers=" CURRENT_ENGINE;
-						embeddedSysdba.insertString(isc_dpb_config, conf, strlen(conf));
+						embeddedSysdba.insertString(isc_dpb_config, conf, fb_strlen(conf));
 
 						if (!iDb)
 						{
@@ -1095,7 +1095,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	{
 		newAuthBlock->shrink(0);
 		newAuthBlock->push(newBlock.getBuffer(), newBlock.getBufferLength());
-		MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %" SIZEFORMAT " bytes\n", newAuthBlock->getCount()));
+		MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n", static_cast<unsigned>(newAuthBlock->getCount())));
 	}
 }
 
@@ -1150,7 +1150,7 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
 			MAX_DPB_SIZE, isc_dpb_version1);
 		embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
-			strlen(SYSDBA_USER_NAME));
+			fb_strlen(SYSDBA_USER_NAME));
 		embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
 		embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 

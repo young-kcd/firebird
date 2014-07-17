@@ -250,7 +250,7 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 		return;
 
 	USHORT first_index = 0;
-	for (size_t i = 0 ; i < m_params->getCount(); ++i)
+	for (FB_SIZE_T i = 0 ; i < m_params->getCount(); ++i)
 	{
 		const dsql_par* parameter = (*m_params)[i];
 
@@ -269,7 +269,7 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 
 			dsc* desc = NULL;
 
-			const size_t idx = parameter->par_index - 1;
+			const FB_SIZE_T idx = parameter->par_index - 1;
 			if (idx >= m_descs.getCount())
 				m_descs.getBuffer(idx + 1);
 
@@ -285,13 +285,13 @@ void TraceSQLStatementImpl::DSQLParamsImpl::fillParams()
 }
 
 
-size_t TraceSQLStatementImpl::DSQLParamsImpl::getCount()
+FB_SIZE_T TraceSQLStatementImpl::DSQLParamsImpl::getCount()
 {
 	fillParams();
 	return m_descs.getCount();
 }
 
-const dsc* TraceSQLStatementImpl::DSQLParamsImpl::getParam(size_t idx)
+const dsc* TraceSQLStatementImpl::DSQLParamsImpl::getParam(FB_SIZE_T idx)
 {
 	fillParams();
 
@@ -318,12 +318,12 @@ const char* TraceFailedSQLStatement::getTextUTF8()
 
 /// TraceParamsImpl
 
-size_t TraceParamsImpl::getCount()
+FB_SIZE_T TraceParamsImpl::getCount()
 {
 	return m_descs->getCount();
 }
 
-const dsc* TraceParamsImpl::getParam(size_t idx)
+const dsc* TraceParamsImpl::getParam(FB_SIZE_T idx)
 {
 	return m_descs->getParam(idx);
 }
@@ -448,7 +448,7 @@ public:
 	}
 
 	// TraceLogWriter implementation
-	virtual size_t FB_CARG write(const void* buf, size_t size);
+	virtual FB_SIZE_T FB_CARG write(const void* buf, FB_SIZE_T size);
 
 	virtual int FB_CARG release()
 	{
@@ -463,10 +463,13 @@ public:
 private:
 	TraceLog m_log;
 	ULONG m_sesId;
-	size_t m_maxSize;
+
+	// Use the same size data type as used in configuration file
+	// to avoid truncation during assignment
+	FB_UINT64 m_maxSize;
 };
 
-size_t TraceLogWriterImpl::write(const void* buf, size_t size)
+FB_SIZE_T TraceLogWriterImpl::write(const void* buf, FB_SIZE_T size)
 {
 	// comparison is in MB
 	if (m_log.getApproxLogSize() <= m_maxSize)

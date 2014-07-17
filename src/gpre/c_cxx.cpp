@@ -1098,7 +1098,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 	indent = MIN(indent, 192);
 
 	bool first_line = true;
-	int length = strlen(p);
+	int length = static_cast<int>(strlen(p));
 	do {
 		const char* q;
 		if (length + indent > 255)
@@ -1272,7 +1272,7 @@ static void gen_create_database( const act* action, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
 	args.pat_database = db;
-	args.pat_value1 = strlen(db->dbb_filename);
+	args.pat_value1 = static_cast<int>(strlen(db->dbb_filename));
 	args.pat_condition = (request->req_length || (request->req_flags & REQ_extend_dpb));
 	args.pat_string1 = s1;
 	args.pat_string2 = s2;
@@ -3298,12 +3298,12 @@ static void gen_t_start( const act* action, int column)
 
 	// Some systems don't like infinitely long lines.  Limit them to 256.
 
-	int remaining = 256 - column - strlen(vector) -
-		strlen(trans->tra_handle ? trans->tra_handle : gpreGlob.transaction_name) - 31;
+	int remaining = static_cast<int>(256 - column - strlen(vector) -
+		strlen(trans->tra_handle ? trans->tra_handle : gpreGlob.transaction_name) - 31);
 
 	for (tpb_iterator = trans->tra_tpb; tpb_iterator; tpb_iterator = tpb_iterator->tpb_tra_next)
 	{
-		int length = strlen(tpb_iterator->tpb_database->dbb_name->sym_string) + 22;
+		int length = static_cast<int>(strlen(tpb_iterator->tpb_database->dbb_name->sym_string) + 22);
 		if (length > remaining)
 		{
 			align(column + INDENT);
@@ -3590,7 +3590,7 @@ static TEXT* make_name( TEXT* const string, const gpre_sym* symbol)
 		int i = 0;
 		strcpy(string, "\"\\\"");
 		const char* source = symbol->sym_string;
-		for (i = strlen(string); *source && i + 4 < MAX_CURSOR_SIZE; i++)
+		for (i = static_cast<int>(strlen(string)); *source && i + 4 < MAX_CURSOR_SIZE; i++)
 		{
 			if (*source == '\"' || *source == '\'')
 			{
@@ -3930,11 +3930,11 @@ static void t_start_auto(const act* action,
 
 	// Some systems don't like infinitely long lines.  Limit them to 256.
 
-	int remaining = 256 - column - strlen(vector) - strlen(trname) - 31;
+	int remaining = static_cast<int>(256 - column - strlen(vector) - strlen(trname) - 31);
 
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 	{
-		const int length = strlen(db->dbb_name->sym_string) + 17;
+		const int length = static_cast<int>(strlen(db->dbb_name->sym_string) + 17);
 		if (length > remaining)
 		{
 			align(column + INDENT);

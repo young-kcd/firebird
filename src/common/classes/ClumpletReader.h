@@ -68,17 +68,17 @@ public:
 	struct SingleClumplet
 	{
 		UCHAR tag;
-		size_t size;
+		FB_SIZE_T size;
 		const UCHAR* data;
 	};
 
 	// Constructor prepares an object from plain PB
-	ClumpletReader(Kind k, const UCHAR* buffer, size_t buffLen);
-	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, size_t buffLen);
+	ClumpletReader(Kind k, const UCHAR* buffer, FB_SIZE_T buffLen);
+	ClumpletReader(MemoryPool& pool, Kind k, const UCHAR* buffer, FB_SIZE_T buffLen);
 
 	// Different versions of clumplets may have different kinds
-	ClumpletReader(const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
-	ClumpletReader(MemoryPool& pool, const KindList* kl, const UCHAR* buffer, size_t buffLen, FPTR_VOID raise = NULL);
+	ClumpletReader(const KindList* kl, const UCHAR* buffer, FB_SIZE_T buffLen, FPTR_VOID raise = NULL);
+	ClumpletReader(MemoryPool& pool, const KindList* kl, const UCHAR* buffer, FB_SIZE_T buffLen, FPTR_VOID raise = NULL);
 	virtual ~ClumpletReader() { }
 
 	// Create a copy of reader
@@ -94,7 +94,7 @@ public:
 
     // Methods which work with currently selected clumplet
 	UCHAR getClumpTag() const;
-	size_t getClumpLength() const;
+	FB_SIZE_T getClumpLength() const;
 
 	SLONG getInt() const;
 	bool getBoolean() const;
@@ -115,9 +115,9 @@ public:
 	UCHAR getBufferTag() const;
 	// true if buffer has tag
 	bool isTagged() const;
-	size_t getBufferLength() const
+	FB_SIZE_T getBufferLength() const
 	{
-		size_t rc = getBufferEnd() - getBuffer();
+		FB_SIZE_T rc = getBufferEnd() - getBuffer();
 		if (rc == 1 && kind != UnTagged     && kind != SpbStart &&
 					   kind != WideUnTagged && kind != SpbSendItems &&
 					   kind != SpbReceiveItems)
@@ -126,8 +126,8 @@ public:
 		}
 		return rc;
 	}
-	size_t getCurOffset() const { return cur_offset; }
-	void setCurOffset(size_t newOffset) { cur_offset = newOffset; }
+	FB_SIZE_T getCurOffset() const { return cur_offset; }
+	void setCurOffset(FB_SIZE_T newOffset) { cur_offset = newOffset; }
 
 #ifdef DEBUG_CLUMPLETS
 	// Sometimes it's really useful to have it in case of errors
@@ -138,17 +138,17 @@ public:
 	// but in different order
 	bool simpleCompare(const ClumpletReader &other) const
 	{
-		const size_t len = getBufferLength();
+		const FB_SIZE_T len = getBufferLength();
 		return (len == other.getBufferLength()) && (memcmp(getBuffer(), other.getBuffer(), len) == 0);
 	}
 
 protected:
 	enum ClumpletType {TraditionalDpb, SingleTpb, StringSpb, IntSpb, ByteSpb, Wide};
 	ClumpletType getClumpletType(UCHAR tag) const;
-	size_t getClumpletSize(bool wTag, bool wLength, bool wData) const;
+	FB_SIZE_T getClumpletSize(bool wTag, bool wLength, bool wData) const;
 	void adjustSpbState();
 
-	size_t cur_offset;
+	FB_SIZE_T cur_offset;
 	Kind kind;
 	UCHAR spbState;		// Reflects state of spb parser/writer
 
@@ -173,8 +173,8 @@ private:
 	const UCHAR* static_buffer;
 	const UCHAR* static_buffer_end;
 
-	static SINT64 fromVaxInteger(const UCHAR* ptr, size_t length);
-	void create(const KindList* kl, size_t buffLen, FPTR_VOID raise);
+	static SINT64 fromVaxInteger(const UCHAR* ptr, FB_SIZE_T length);
+	void create(const KindList* kl, FB_SIZE_T buffLen, FPTR_VOID raise);
 
 public:
 	// Some frequently used kind lists

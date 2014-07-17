@@ -469,11 +469,11 @@ static bool snarf_blob(ISC_QUAD* blob_id, TextBuffer& buffer)
 	if (!getBlobSize(blob, &blob_size, NULL, NULL))
 		return false;
 
-	size_t len = blob_size;
+	FB_SIZE_T len = blob_size;
 	TEXT* ptr = buffer.getBuffer(blob_size + 1);
 	while (len)
 	{
-		size_t real_len;
+		FB_SIZE_T real_len;
 		if (len && blob.getSegment(len, ptr, real_len))
 		{
 			len -= real_len;

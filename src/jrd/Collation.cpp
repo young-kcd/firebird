@@ -710,7 +710,7 @@ private:
 
 		// YYY - need to add code watching for overflow of combined
 
-		return (comb - combined) * sizeof(CharType);
+		return static_cast<ULONG>((comb - combined) * sizeof(CharType));
 	}
 
 private:

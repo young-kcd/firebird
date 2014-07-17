@@ -473,7 +473,7 @@ void INF_database_info(thread_db* tdbb,
 				{
 					SCHAR site[256];
 					ISC_get_host(site, sizeof(site));
-					len = strlen(site);
+					len = static_cast<USHORT>(strlen(site));
 					if (p + len + 1 >= end_buf)
 						len = end_buf - p - 1;
 					*p++ = len;
@@ -573,7 +573,7 @@ void INF_database_info(thread_db* tdbb,
 				const UserId* user = tdbb->getAttachment()->att_user;
 				const char* uname = (user && user->usr_user_name.hasData()) ?
 					user->usr_user_name.c_str() : "<Unknown>";
-				const SSHORT len = strlen(uname);
+				const SSHORT len = static_cast<SSHORT>(strlen(uname));
 				*p++ = len;
 				memcpy(p, uname, len);
 				if (!(info = INF_put_item(item, len + 1, buffer, info, end)))
@@ -597,7 +597,7 @@ void INF_database_info(thread_db* tdbb,
 						const char* user_name = user->usr_user_name.hasData() ?
 							user->usr_user_name.c_str() : "(Firebird Worker Thread)";
 						p = buffer;
-						const SSHORT len = strlen(user_name);
+						const SSHORT len = static_cast<SSHORT>(strlen(user_name));
 						*p++ = len;
 						memcpy(p, user_name, len);
 
@@ -1198,7 +1198,7 @@ static USHORT get_counts(thread_db* tdbb, USHORT count_id, CountsBuffer& buffer)
 	UCHAR num_buffer[BUFFER_TINY];
 
 	buffer.clear();
-	size_t buffer_length = 0;
+	FB_SIZE_T buffer_length = 0;
 
 	for (RuntimeStatistics::Iterator iter = stats.begin(); iter != stats.end(); ++iter)
 	{
@@ -1208,7 +1208,7 @@ static USHORT get_counts(thread_db* tdbb, USHORT count_id, CountsBuffer& buffer)
 		if (n)
 		{
 			const USHORT length = INF_convert(n, num_buffer);
-			const size_t new_buffer_length = buffer_length + length + sizeof(USHORT);
+			const FB_SIZE_T new_buffer_length = buffer_length + length + sizeof(USHORT);
 			buffer.grow(new_buffer_length);
 			UCHAR* p = buffer.begin() + buffer_length;
 			STUFF_WORD(p, relation_id);

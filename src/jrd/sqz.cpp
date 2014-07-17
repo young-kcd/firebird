@@ -31,14 +31,14 @@
 using namespace Jrd;
 
 
-Compressor::Compressor(MemoryPool& pool, size_t length, const UCHAR* data)
+Compressor::Compressor(MemoryPool& pool, FB_SIZE_T length, const UCHAR* data)
 	: m_control(pool), m_length(0)
 {
 	UCHAR* control = m_control.getBuffer((length + 1) / 2, false);
 	const UCHAR* const end = data + length;
 
-	size_t count;
-	size_t max;
+	FB_SIZE_T count;
+	FB_SIZE_T max;
 	while ( (count = end - data) )
 	{
 		const UCHAR* start = data;
@@ -96,9 +96,9 @@ Compressor::Compressor(MemoryPool& pool, size_t length, const UCHAR* data)
 	m_control.shrink(control - m_control.begin());
 }
 
-size_t Compressor::applyDiff(size_t diffLength,
+FB_SIZE_T Compressor::applyDiff(FB_SIZE_T diffLength,
 							 const UCHAR* differences,
-							 size_t outLength,
+							 FB_SIZE_T outLength,
 							 UCHAR* const output)
 {
 /**************************************
@@ -140,7 +140,7 @@ size_t Compressor::applyDiff(size_t diffLength,
 		}
 	}
 
-	const size_t length = p - output;
+	const FB_SIZE_T length = p - output;
 
 	if (length > outLength || differences < end)
 	{
@@ -150,7 +150,7 @@ size_t Compressor::applyDiff(size_t diffLength,
 	return length;
 }
 
-size_t Compressor::pack(const UCHAR* input, size_t outLength, UCHAR* output) const
+FB_SIZE_T Compressor::pack(const UCHAR* input, FB_SIZE_T outLength, UCHAR* output) const
 {
 /**************************************
  *
@@ -212,7 +212,7 @@ size_t Compressor::pack(const UCHAR* input, size_t outLength, UCHAR* output) con
 	return 0;	// shut up compiler warning
 }
 
-size_t Compressor::getPartialLength(size_t inLength, const UCHAR* input) const
+FB_SIZE_T Compressor::getPartialLength(FB_SIZE_T inLength, const UCHAR* input) const
 {
 /**************************************
  *
@@ -257,9 +257,9 @@ size_t Compressor::getPartialLength(size_t inLength, const UCHAR* input) const
 	return 0;	// shut up compiler warning
 }
 
-UCHAR* Compressor::unpack(size_t inLength,
+UCHAR* Compressor::unpack(FB_SIZE_T inLength,
 						  const UCHAR* input,
-						  size_t outLength,
+						  FB_SIZE_T outLength,
 						  UCHAR* output)
 {
 /**************************************
@@ -306,7 +306,7 @@ UCHAR* Compressor::unpack(size_t inLength,
 	return output;
 }
 
-size_t Compressor::makeNoDiff(size_t outLength, UCHAR* output)
+FB_SIZE_T Compressor::makeNoDiff(FB_SIZE_T outLength, UCHAR* output)
 {
 /**************************************
  *
@@ -330,11 +330,11 @@ size_t Compressor::makeNoDiff(size_t outLength, UCHAR* output)
 	return temp - output;
 }
 
-size_t Compressor::makeDiff(size_t length1,
+FB_SIZE_T Compressor::makeDiff(FB_SIZE_T length1,
 							const UCHAR* rec1,
-							size_t length2,
+							FB_SIZE_T length2,
 							UCHAR* rec2,
-							size_t outLength,
+							FB_SIZE_T outLength,
 							UCHAR* output)
 {
 /**************************************

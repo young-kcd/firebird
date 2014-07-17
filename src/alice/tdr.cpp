@@ -189,12 +189,12 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 	dpb.insertTag(isc_dpb_gfix_attach);
 	tdgbl->uSvc->fillDpb(dpb);
 	if (tdgbl->ALICE_data.ua_user) {
-		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
+		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, fb_strlen(tdgbl->ALICE_data.ua_user));
 	}
 	if (tdgbl->ALICE_data.ua_password)
 	{
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-						tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
+						tdgbl->ALICE_data.ua_password, fb_strlen(tdgbl->ALICE_data.ua_password));
 	}
 
 	trans->tdr_db_handle = 0;
@@ -775,7 +775,7 @@ static void reattach_database(tdr* trans)
 			const size_t p_len = strlen(p);
 			alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(), p_len + 1) alice_str;
 			strcpy(reinterpret_cast<char*>(string->str_data), p);
-			string->str_length = p_len;
+			string->str_length = static_cast<USHORT>(p_len);
 			trans->tdr_fullpath = string;
 			trans->tdr_filename = (TEXT *) string->str_data;
 			return;

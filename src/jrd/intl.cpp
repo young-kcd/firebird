@@ -146,7 +146,7 @@ public:
 
 	void release(thread_db* tdbb)
 	{
-		for (size_t i = 0; i < charset_collations.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < charset_collations.getCount(); i++)
 		{
 			if (charset_collations[i])
 				charset_collations[i]->release(tdbb);
@@ -156,7 +156,7 @@ public:
 	void destroy(thread_db* tdbb)
 	{
 		cs->destroy();
-		for (size_t i = 0; i < charset_collations.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < charset_collations.getCount(); i++)
 		{
 			if (charset_collations[i])
 				charset_collations[i]->destroy(tdbb);
@@ -270,7 +270,7 @@ bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
 				if (colDef->specificAttributes)
 				{
 					info->specificAttributes.push((const UCHAR*) colDef->specificAttributes,
-						strlen(colDef->specificAttributes));
+						fb_strlen(colDef->specificAttributes));
 				}
 
 				return true;
@@ -500,7 +500,7 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 
 void Jrd::Attachment::releaseIntlObjects(thread_db* tdbb)
 {
-	for (size_t i = 0; i < att_charsets.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < att_charsets.getCount(); i++)
 	{
 		if (att_charsets[i])
 			att_charsets[i]->release(tdbb);
@@ -510,7 +510,7 @@ void Jrd::Attachment::releaseIntlObjects(thread_db* tdbb)
 
 void Jrd::Attachment::destroyIntlObjects(thread_db* tdbb)
 {
-	for (size_t i = 0; i < att_charsets.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < att_charsets.getCount(); i++)
 	{
 		if (att_charsets[i])
 		{

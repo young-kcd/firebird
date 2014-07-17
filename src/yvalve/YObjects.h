@@ -89,7 +89,7 @@ public:
 	void remove(T* obj)
 	{
 		Firebird::MutexLockGuard guard(mtx, FB_FUNCTION);
-		size_t pos;
+		FB_SIZE_T pos;
 
 		if (array.find(obj, pos))
 			array.remove(pos);
@@ -98,7 +98,7 @@ public:
 	void destroy(unsigned dstrFlags)
 	{
 		Firebird::MutexLockGuard guard(mtx, FB_FUNCTION);
-		size_t i;
+		FB_SIZE_T i;
 
 		while ((i = array.getCount()) > 0)
 			array[i - 1]->destroy(dstrFlags);

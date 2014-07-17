@@ -84,11 +84,11 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 
 	if (m_next->getRecord(tdbb))
 	{
-		const size_t streamCount = m_streams.getCount();
+		const FB_SIZE_T streamCount = m_streams.getCount();
 		MemoryPool& pool = *tdbb->getDefaultPool();
 		HalfStaticArray<record_param, 16> rpbs(pool, streamCount);
 
-		for (size_t i = 0; i < streamCount; i++)
+		for (FB_SIZE_T i = 0; i < streamCount; i++)
 		{
 			rpbs.add(request->req_rpb[m_streams[i]]);
 			record_param& rpb = rpbs.back();
@@ -107,7 +107,7 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 		if (m_next->getRecord(tdbb))
 			status_exception::raise(Arg::Gds(isc_sing_select_err));
 
-		for (size_t i = 0; i < streamCount; i++)
+		for (FB_SIZE_T i = 0; i < streamCount; i++)
 		{
 			record_param& rpb = request->req_rpb[m_streams[i]];
 			Record* orgRecord = rpb.rpb_record;

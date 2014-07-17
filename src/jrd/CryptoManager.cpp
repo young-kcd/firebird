@@ -424,7 +424,7 @@ namespace Jrd {
 						// nbackup state check
 						if (dbb.dbb_backup_manager && dbb.dbb_backup_manager->getState() != nbak_state_normal)
 						{
-							if (currentPage.exchangeAdd(-1) >= lastPage)
+							if (static_cast<ULONG>(currentPage.exchangeAdd(-1)) >= lastPage)
 							{
 								// currentPage was set to last page by thread, closing database
 								break;

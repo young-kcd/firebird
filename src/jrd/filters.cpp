@@ -323,7 +323,7 @@ ISC_STATUS filter_format(USHORT action, BlobControl* control)
 		desc.dsc_sub_type,
 		desc.dsc_flags);
 
-	length = strlen(buffer);
+	length = static_cast<USHORT>(strlen(buffer));
 	if (length > control->ctl_buffer_length)
 		length = control->ctl_buffer_length;
 
@@ -454,7 +454,7 @@ ISC_STATUS filter_runtime(USHORT action, BlobControl* control)
 		sprintf(line, "*** unknown verb %d ***", (int) buff[0]);
 	}
 
-	USHORT strLen = strlen(line);
+	USHORT strLen = static_cast<USHORT>(strlen(line));
 
 	if (strLen > control->ctl_buffer_length)
 	{
@@ -1274,7 +1274,7 @@ static void string_put(BlobControl* control, const char* line)
  *	Add a line of string to a string formatted blob.
  *
  **************************************/
-	const USHORT len = strlen(line);
+	const USHORT len = static_cast<USHORT>(strlen(line));
 	filter_tmp* string = (filter_tmp*) gds__alloc((SLONG) (sizeof(filter_tmp) + len));
 	// FREE: on isc_blob_filter_close in string_filter()
 	if (!string)

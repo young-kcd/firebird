@@ -58,6 +58,26 @@ typedef void*		FB_API_HANDLE;
 #endif
 
 /******************************************************************/
+/* Sizes of memory blocks                                         */
+/******************************************************************/
+
+#ifdef FB_USE_SIZE_T
+/* NS: This is how things were done in original Firebird port to 64-bit platforms
+   Basic classes use these quantities. However in many places in the engine and
+   external libraries 32-bit quantities are used to hold sizes of objects. 
+   This produces many warnings. This also produces incredibly dirty interfaces,
+   when functions take size_t as argument, but only handle 32 bits internally 
+   without any bounds checking.                                                    */
+typedef size_t FB_SIZE_T;
+typedef intptr_t FB_SSIZE_T;
+#else
+/* NS: This is more clean way to handle things for now. We admit that engine is not
+   prepared to handle 64-bit memory blocks in most places, and it is not necessary really. */
+typedef unsigned int FB_SIZE_T;
+typedef int FB_SSIZE_T;
+#endif
+
+/******************************************************************/
 /* Status vector                                                  */
 /******************************************************************/
 

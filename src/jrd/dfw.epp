@@ -289,7 +289,7 @@ public:
 
 	DeferredWork* get() { return this; }
 
-	static size_t hash(const DeferredWork& work, size_t hashSize)
+	static FB_SIZE_T hash(const DeferredWork& work, FB_SIZE_T hashSize)
 	{
 		const int nameLimit = 32;
 		char key[sizeof work.dfw_type + sizeof work.dfw_id + nameLimit];
@@ -2180,7 +2180,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(fields.getCount() & 0xFF);
 			blr.add(fields.getCount() >> 8);
 
-			for (size_t i = 0; i < fields.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
 			{
 				blr.add(blr_short);
 				blr.add(0);
@@ -2196,7 +2196,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(0);	// stream
 			blr.add(blr_boolean);
 
-			for (size_t i = 0; i < fields.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
 			{
 				if (i != fields.getCount() - 1)
 					blr.add(blr_or);
@@ -2214,7 +2214,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(1);
 			blr.add(blr_begin);
 
-			for (size_t i = 0; i < fields.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
 			{
 				blr.add(blr_assignment);
 
@@ -2249,7 +2249,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			blr.add(1);
 			blr.add(blr_begin);
 
-			for (size_t i = 0; i < fields.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
 			{
 				blr.add(blr_assignment);
 				blr.add(blr_literal);
@@ -2279,7 +2279,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 			Arg::Gds errs(isc_no_meta_update);
 			bool hasError = false;
 
-			for (size_t i = 0; i < fields.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
 			{
 				if (hasRecord[i])
 				{
@@ -2507,7 +2507,7 @@ static void check_computed_dependencies(thread_db* tdbb, jrd_tra* transaction,
 	sortedNames.add(fieldName);
 	names.add(fieldName);
 
-	for (size_t pos = 0; !err && pos < names.getCount(); ++pos)
+	for (FB_SIZE_T pos = 0; !err && pos < names.getCount(); ++pos)
 	{
 		AutoCacheRequest request(tdbb, irq_comp_circ_dpd, IRQ_REQUESTS);
 
@@ -3839,7 +3839,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					REDUCED TO RFL.RDB$RELATION_NAME, RFL.RDB$FIELD_ID
 				{
 					dsc desc;
-					desc.makeText(strlen(RFL.RDB$RELATION_NAME), CS_METADATA,
+					desc.makeText(static_cast<USHORT>(strlen(RFL.RDB$RELATION_NAME)), CS_METADATA,
 						(UCHAR*) RFL.RDB$RELATION_NAME);
 
 					DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc, 0);
@@ -4718,7 +4718,7 @@ static bool find_depend_in_dfw(thread_db*	tdbb,
 
 		if (work->dfw_type == dfw_type && dfw_type == dfw_delete_expression_index)
 		{
-			for (size_t i = 0; i < work->dfw_args.getCount(); ++i)
+			for (FB_SIZE_T i = 0; i < work->dfw_args.getCount(); ++i)
 			{
 				const DeferredWork* arg = work->dfw_args[i];
 				if (arg->dfw_type == dfw_arg_index_name &&
@@ -5073,7 +5073,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 
 		buffer.add((UCHAR*) odsDescs.begin(), odsDescs.getCount() * sizeof(Ods::Descriptor));
 
-		const size_t pos = buffer.getCount();
+		const FB_SIZE_T pos = buffer.getCount();
 		buffer.add(0);
 		buffer.add(0);
 
@@ -5228,7 +5228,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 										if (notNull)
 										{
 											dsc desc;
-											desc.makeText(strlen(REL.RDB$RELATION_NAME), CS_METADATA,
+											desc.makeText(static_cast<USHORT>(strlen(REL.RDB$RELATION_NAME)), CS_METADATA,
 												(UCHAR*) REL.RDB$RELATION_NAME);
 
 											DeferredWork* work = DFW_post_work(transaction,
@@ -5616,7 +5616,7 @@ static bool modify_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 							{
 								if (triggers[i])
 								{
-									for (size_t j = 0; j < triggers[i]->getCount(); ++j)
+									for (FB_SIZE_T j = 0; j < triggers[i]->getCount(); ++j)
 										(*triggers[i])[j].compile(tdbb);
 
 									MET_release_triggers(tdbb, &triggers[i]);

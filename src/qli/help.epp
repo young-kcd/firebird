@@ -136,7 +136,7 @@ static int additional_topics( const TEXT* parent, const TEXT* banner, const TEXT
 
 	TEXT* ptr = line;
 	USHORT topics = 0;
-	USHORT l = strlen(parent);
+	USHORT l = static_cast<USHORT>(strlen(parent));
 
 	FOR X IN TOPICS
 		WITH X.PARENT EQ parent SORTED BY X.TOPIC

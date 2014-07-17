@@ -98,7 +98,7 @@ void BlrDebugWriter::putDebugArgument(UCHAR type, USHORT number, const TEXT* nam
 	debugData.add(number);
 	debugData.add(number >> 8);
 
-	USHORT len = strlen(name);
+	USHORT len = static_cast<USHORT>(strlen(name));
 	if (len > MAX_UCHAR)
 		len = MAX_UCHAR;
 	debugData.add(len);

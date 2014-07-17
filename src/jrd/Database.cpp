@@ -66,7 +66,7 @@ namespace Jrd
 
 		string file_id;
 		char* s = file_id.getBuffer(2 * buffer.getCount());
-		for (size_t i = 0; i < buffer.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < buffer.getCount(); i++)
 		{
 			sprintf(s, "%02x", (int) buffer[i]);
 			s += 2;
@@ -94,7 +94,7 @@ namespace Jrd
 
 			fb_assert(dbb_pools[0] == dbb_permanent);
 
-			for (size_t i = 1; i < dbb_pools.getCount(); ++i)
+			for (FB_SIZE_T i = 1; i < dbb_pools.getCount(); ++i)
 				MemoryPool::deletePool(dbb_pools[i]);
 		}
 
@@ -122,7 +122,7 @@ namespace Jrd
 		{
 			{
 				SyncLockGuard guard(&dbb_pools_sync, SYNC_EXCLUSIVE, "Database::deletePool");
-				size_t pos;
+				FB_SIZE_T pos;
 
 				if (dbb_pools.find(pool, pos))
 					dbb_pools.remove(pos);

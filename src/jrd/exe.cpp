@@ -711,7 +711,7 @@ void EXE_release(thread_db* tdbb, jrd_req* request)
 
 	if (request->req_attachment && request->req_attachment == attachment)
 	{
-		size_t pos;
+		FB_SIZE_T pos;
 		if (request->req_attachment->att_requests.find(request, pos))
 			request->req_attachment->att_requests.remove(pos);
 

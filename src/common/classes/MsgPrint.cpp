@@ -47,7 +47,7 @@ const int MAX_RADIX = 36;
 // We don't mess with octal and the like, otherwise DECODE_BUF_* constants have to be enlarged.
 const int MIN_RADIX = 10;
 // We won't output strings of more than 64K.
-const size_t MAX_STRING = 1 << 16;
+const FB_SIZE_T MAX_STRING = 1 << 16;
 
 // Generic functions.
 int decode(uint64_t value, char* const rc, int radix = 10);
@@ -216,7 +216,7 @@ int MsgPrintHelper(BaseStream& out_stream, const safe_cell& item)
 			if (n > MAX_STRING)
 				n = MAX_STRING;
 
-			return out_stream.write(s, n);
+			return out_stream.write(s, static_cast<unsigned>(n));
 		}
 	case safe_cell::at_ptr:
 		{
@@ -257,7 +257,7 @@ int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg, boo
 			default:
 				{
 					const int pos = iter[1] - '0';
-					if (pos > 0 && static_cast<size_t>(pos) <= arg.m_count)
+					if (pos > 0 && static_cast<FB_SIZE_T>(pos) <= arg.m_count)
 						out_bytes += MsgPrintHelper(out_stream, arg.m_arguments[pos - 1]);
 					else
 					{

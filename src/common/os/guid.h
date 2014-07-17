@@ -59,7 +59,7 @@ struct Guid
 	};
 };
 
-void GenerateRandomBytes(void* buffer, size_t size);
+void GenerateRandomBytes(void* buffer, FB_SIZE_T size);
 void GenerateGuid(Guid* guid);
 
 // These functions receive buffers of at least GUID_BUFF_SIZE length.

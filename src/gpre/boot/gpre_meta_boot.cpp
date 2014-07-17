@@ -604,7 +604,7 @@ gpre_fld* MET_make_field(const SCHAR* name,
 	gpre_fld* field = (gpre_fld*) MSC_alloc(FLD_LEN);
 	field->fld_length = length;
 	field->fld_dtype = dtype;
-	gpre_sym* symbol = MSC_symbol(SYM_field, name, strlen(name), (gpre_ctx*) field);
+	gpre_sym* symbol = MSC_symbol(SYM_field, name, static_cast<USHORT>(strlen(name)), (gpre_ctx*) field);
 	field->fld_symbol = symbol;
 
 	if (insert_flag)
@@ -622,7 +622,7 @@ gpre_fld* MET_make_field(const SCHAR* name,
 gpre_index* MET_make_index(const SCHAR* name)
 {
 	gpre_index* index = (gpre_index*) MSC_alloc(IND_LEN);
-	index->ind_symbol = MSC_symbol(SYM_index, name, strlen(name), (gpre_ctx*) index);
+	index->ind_symbol = MSC_symbol(SYM_index, name, static_cast<USHORT>(strlen(name)), (gpre_ctx*) index);
 
 	return index;
 }
@@ -636,7 +636,7 @@ gpre_index* MET_make_index(const SCHAR* name)
 gpre_rel* MET_make_relation(const SCHAR* name)
 {
 	gpre_rel* relation = (gpre_rel*) MSC_alloc(REL_LEN);
-	relation->rel_symbol = MSC_symbol(SYM_relation, name, strlen(name), (gpre_ctx*) relation);
+	relation->rel_symbol = MSC_symbol(SYM_relation, name, static_cast<USHORT>(strlen(name)), (gpre_ctx*) relation);
 
 	return relation;
 }

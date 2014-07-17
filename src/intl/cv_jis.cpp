@@ -107,7 +107,7 @@ ULONG CVJIS_eucj_to_unicode(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - src_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
+	return static_cast<ULONG>((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
@@ -251,7 +251,7 @@ ULONG CVJIS_sjis_to_unicode(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - sjis_len;
-	return ((dest_ptr - start) * sizeof(*dest_ptr));
+	return static_cast<ULONG>((dest_ptr - start) * sizeof(*dest_ptr));
 }
 
 
@@ -503,7 +503,7 @@ ULONG CVJIS_unicode_to_sjis(csconvert* obj,
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - unicode_len;
-	return ((sjis_str - start) * sizeof(*sjis_str));
+	return static_cast<ULONG>((sjis_str - start) * sizeof(*sjis_str));
 }
 
 
@@ -582,7 +582,7 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* p_un
 		*err_code = CS_TRUNCATION_ERROR;
 	}
 	*err_position = src_start - unicode_len;
-	return ((eucj_str - start) * sizeof(*eucj_str));
+	return static_cast<ULONG>((eucj_str - start) * sizeof(*eucj_str));
 }
 
 

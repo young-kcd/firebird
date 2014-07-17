@@ -160,8 +160,8 @@ namespace
 Sort::Sort(Database* dbb,
 		   SortOwner* owner,
 		   ULONG record_length,
-		   size_t keys,
-		   size_t unique_keys,
+		   FB_SIZE_T keys,
+		   FB_SIZE_T unique_keys,
 		   const sort_key_def* key_description,
 		   FPTR_REJECT_DUP_CALLBACK call_back,
 		   void* user_arg,
@@ -207,7 +207,7 @@ Sort::Sort(Database* dbb,
 		m_dup_callback_arg = user_arg;
 		m_max_records = max_records;
 
-		for (size_t i = 0; i < keys; i++)
+		for (FB_SIZE_T i = 0; i < keys; i++)
 		{
 			m_description.add(key_description[i]);
 		}
@@ -1354,7 +1354,7 @@ ULONG Sort::allocate(ULONG n, ULONG chunkSize, bool useFreeSpace)
 
 	fb_assert(n > allocated);
 	TempSpace::Segments segments(m_owner->getPool(), n - allocated);
-	allocated += (ULONG) m_space->allocateBatch(n - allocated, m_max_alloc_size, chunkSize, segments);
+	allocated += m_space->allocateBatch(n - allocated, m_max_alloc_size, chunkSize, segments);
 
 	if (segments.getCount())
 	{

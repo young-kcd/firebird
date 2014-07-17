@@ -124,7 +124,7 @@ bool putFileArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 		break;
 	}
 
-	spb.insertString(tag, s, strlen(s));
+	spb.insertString(tag, s, fb_strlen(s));
 	++av;
 
 	return true;
@@ -1071,7 +1071,7 @@ int main(int ac, char** av)
 				if (stdinRequest)
 				{
 					--sendSize;
-					size_t len = sendSize;
+					FB_SIZE_T len = sendSize;
 					len += (1 + 2 + stdinRequest);
 					if (len > MAX_USHORT - 1)
 					{

@@ -1773,7 +1773,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, gpre_nod* alias_list)
 
 	USHORT alias_length = alias_list->nod_count;
 	for (arg = alias_list->nod_arg; arg < end; arg++)
-		alias_length += strlen((TEXT*) *arg);
+		alias_length += static_cast<USHORT>(strlen((TEXT*) *arg));
 
 	TEXT* alias = (TEXT*) MSC_alloc(alias_length);
 
@@ -3893,7 +3893,7 @@ static void set_ref( gpre_nod* expr, gpre_fld* field_ref)
 
 static char* upcase_string(const char* p)
 {
-	char* const s = (char *) MSC_alloc(strlen(p) + 1);
+	char* const s = (char *) MSC_alloc(static_cast<int>(strlen(p) + 1));
 	char* q = s;
 
 	USHORT l = 0;

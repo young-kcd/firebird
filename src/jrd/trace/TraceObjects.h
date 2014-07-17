@@ -183,8 +183,8 @@ private:
 				m_params = &msg->msg_parameters;
 		}
 
-		virtual size_t FB_CARG getCount();
-		virtual const dsc* FB_CARG getParam(size_t idx);
+		virtual FB_SIZE_T FB_CARG getCount();
+		virtual const dsc* FB_CARG getParam(FB_SIZE_T idx);
 
 	private:
 		void fillParams();
@@ -259,8 +259,8 @@ public:
 	{}
 
 	// TraceParams implementation
-	virtual size_t FB_CARG getCount();
-	virtual const dsc* FB_CARG getParam(size_t idx);
+	virtual FB_SIZE_T FB_CARG getCount();
+	virtual const dsc* FB_CARG getParam(FB_SIZE_T idx);
 
 private:
 	TraceDescriptors* m_descs;
@@ -276,13 +276,13 @@ public:
 	{
 	}
 
-	size_t getCount()
+	FB_SIZE_T getCount()
 	{
 		fillParams();
 		return m_descs.getCount();
 	}
 
-	const dsc* getParam(size_t idx)
+	const dsc* getParam(FB_SIZE_T idx)
 	{
 		fillParams();
 

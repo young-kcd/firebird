@@ -41,7 +41,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
 
-#pragma FB_COMPILER_MESSAGE("This file is not fit for public consumption")
+//#pragma FB_COMPILER_MESSAGE("This file is not fit for public consumption")
 // #error compiler halted, 'rogue' not found...
 // TMN: Upon converting this file to C++, it has been noted
 // that this code would never have worked because of (SEGV) bug(s),
@@ -940,7 +940,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 
 	indent = MIN(indent, 192);
 
-	int length = strlen(p);
+	int length = static_cast<int>(strlen(p));
 	while (length + indent > 255)
 	{
 		// if we did not find somewhere to break between the 200th and 256th character

@@ -1171,7 +1171,7 @@ static idx_e check_foreign_key(thread_db* tdbb,
 				jrd_rel::RelPagesSnapshot pagesSnapshot(tdbb, partner_relation);
 				partner_relation->fillPagesSnapshot(pagesSnapshot, true);
 
-				for (size_t i = 0; i < pagesSnapshot.getCount(); i++)
+				for (FB_SIZE_T i = 0; i < pagesSnapshot.getCount(); i++)
 				{
 					RelationPages* partnerPages = pagesSnapshot[i];
 					tdbb->tdbb_temp_traid = partnerPages->rel_instance_id;

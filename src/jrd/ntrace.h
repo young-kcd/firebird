@@ -99,8 +99,8 @@ typedef int ntrace_relation_t;
 class TraceParams : public Firebird::IVersioned
 {
 public:
-	virtual size_t FB_CARG getCount() = 0;
-	virtual const struct dsc* FB_CARG getParam(size_t idx) = 0;
+	virtual FB_SIZE_T FB_CARG getCount() = 0;
+	virtual const struct dsc* FB_CARG getParam(FB_SIZE_T idx) = 0;
 };
 #define FB_TRACE_PARAMS_VERSION (FB_VERSIONED_VERSION + 2)
 
@@ -282,7 +282,7 @@ struct PerformanceInfo
 class TraceLogWriter : public Firebird::IRefCounted
 {
 public:
-	virtual size_t FB_CARG write(const void* buf, size_t size) = 0;
+	virtual FB_SIZE_T FB_CARG write(const void* buf, FB_SIZE_T size) = 0;
 };
 #define FB_TRACE_LOG_WRITER_VERSION (FB_REFCOUNTED_VERSION + 1)
 

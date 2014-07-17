@@ -655,7 +655,7 @@ static ISC_STATUS stuff_string(gen_t* gen, UCHAR sdl, const SCHAR* string)
 
 	if (stuff_sdl(gen, sdl))
 		return status[1];
-	if (stuff_sdl(gen, strlen(string)))
+	if (stuff_sdl(gen, static_cast<int>(strlen(string))))
 		return status[1];
 
 	while (*string)

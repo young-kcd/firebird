@@ -258,7 +258,7 @@ void ERRQ_msg_put(USHORT number, const char* str)
 }
 
 
-int ERRQ_msg_get( USHORT number, TEXT* output_msg, size_t s_size)
+int ERRQ_msg_get( USHORT number, TEXT* output_msg, FB_SIZE_T s_size)
 {
 /**************************************
  *

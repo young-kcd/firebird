@@ -356,7 +356,7 @@ ULONG CMP_next_ident()
 
 void CMP_stuff_symbol( gpre_req* request, const gpre_sym* symbol)
 {
-	request->add_byte(strlen(symbol->sym_string));
+	request->add_byte(static_cast<int>(strlen(symbol->sym_string)));
 
 	for (const TEXT* p = symbol->sym_string; *p; p++)
 		request->add_byte(*p);
@@ -437,7 +437,7 @@ void CMP_t_start( gpre_tra* trans)
 			{
 				*p++ = lock_block->rrl_lock_mode;
 				const char* q = lock_block->rrl_relation->rel_symbol->sym_string;
-				*p++ = strlen(q);
+				*p++ = static_cast<char>(strlen(q));
 				while (*q)
 					*p++ = *q++;
 				*p++ = lock_block->rrl_lock_level;
@@ -1249,7 +1249,7 @@ static void cmp_ready( gpre_req* request)
 	if (db->dbb_c_user && !db->dbb_r_user)
 	{
 		request->add_byte(isc_dpb_user_name);
-		l = strlen(db->dbb_c_user);
+		l = static_cast<SSHORT>(strlen(db->dbb_c_user));
 		request->add_byte(l);
 		p = db->dbb_c_user;
 		while (l--)
@@ -1259,7 +1259,7 @@ static void cmp_ready( gpre_req* request)
 	if (db->dbb_c_password && !db->dbb_r_password)
 	{
 		request->add_byte(isc_dpb_password);
-		l = strlen(db->dbb_c_password);
+		l = static_cast<SSHORT>(strlen(db->dbb_c_password));
 		request->add_byte(l);
 		p = db->dbb_c_password;
 		while (l--)
@@ -1269,7 +1269,7 @@ static void cmp_ready( gpre_req* request)
 	if (db->dbb_c_sql_role && !db->dbb_r_sql_role)
 	{
 		request->add_byte(isc_dpb_sql_role_name);
-		l = strlen(db->dbb_c_sql_role);
+		l = static_cast<SSHORT>(strlen(db->dbb_c_sql_role));
 		request->add_byte(l);
 		p = db->dbb_c_sql_role;
 		while (l--)
@@ -1280,7 +1280,7 @@ static void cmp_ready( gpre_req* request)
 	{
 		// Language must be an ASCII string
 		request->add_byte(isc_dpb_lc_messages);
-		l = strlen(db->dbb_c_lc_messages);
+		l = static_cast<SSHORT>(strlen(db->dbb_c_lc_messages));
 		request->add_byte(l);
 		p = db->dbb_c_lc_messages;
 		while (l--)
@@ -1291,7 +1291,7 @@ static void cmp_ready( gpre_req* request)
 	{
 		// Character Format must be an ASCII string
 		request->add_byte(isc_dpb_lc_ctype);
-		l = strlen(db->dbb_c_lc_ctype);
+		l = static_cast<SSHORT>(strlen(db->dbb_c_lc_ctype));
 		request->add_byte(l);
 		p = db->dbb_c_lc_ctype;
 		while (l--)
@@ -1456,7 +1456,7 @@ static void cmp_set_generator( gpre_req* request)
 	const TEXT* string = setgen->sgen_name;
 	const SLONG value = setgen->sgen_value;
 	const SINT64 int64value = setgen->sgen_int64value;
-	request->add_byte(strlen(string));
+	request->add_byte(static_cast<int>(strlen(string)));
 	while (*string)
 		request->add_byte(*string++);
 	request->add_byte(blr_literal);

@@ -48,10 +48,6 @@ if errorlevel 1 call :ERROR build failed - see make_all_%FB_TARGET_PLATFORM%.log
 @mkdir %FB_OUTPUT_DIR%\system32 2>nul
 @mkdir %FB_OUTPUT_DIR%\plugins 2>nul
 
-for %%v in ( icuuc30 icudt30 icuin30 ) do (
-@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FB_OUTPUT_DIR% >nul
-)
-
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\* %FB_OUTPUT_DIR% >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\intl\* %FB_OUTPUT_DIR%\intl >nul
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\firebird\udf\* %FB_OUTPUT_DIR%\udf >nul
@@ -61,7 +57,7 @@ for %%v in ( icuuc30 icudt30 icuin30 ) do (
 @copy %FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\ib_util\ib_util.lib %FB_OUTPUT_DIR%\lib\ib_util_ms.lib >nul
 
 for %%v in (gpre_boot build_msg codes) do (
-@del %FB_OUTPUT_DIR%\%%v.exe >nul
+@del %FB_OUTPUT_DIR%\%%v.* 2>nul
 )
 
 :: Firebird.conf, etc
@@ -127,6 +123,7 @@ copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
 
 :: MSVC runtime
 if %MSVC_VERSION% == 10 (
+@copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC10CRT_DIR%\Microsoft.VC100.CRT\msvcp100.dll" %FB_OUTPUT_DIR% >nul
 @copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC10CRT_DIR%\Microsoft.VC100.CRT\msvcr100.dll" %FB_OUTPUT_DIR% >nul
 @copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC10CRT_DIR%\Microsoft.VC100.CRT\msvcp100.dll" %FB_OUTPUT_DIR% >nul
 ) else (

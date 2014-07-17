@@ -34,8 +34,8 @@ using namespace Jrd;
 // --------------------------
 
 Union::Union(CompilerScratch* csb, StreamType stream,
-			 size_t argCount, RecordSource* const* args, NestConst<MapNode>* maps,
-			 size_t streamCount, const StreamType* streams)
+			 FB_SIZE_T argCount, RecordSource* const* args, NestConst<MapNode>* maps,
+			 FB_SIZE_T streamCount, const StreamType* streams)
 	: RecordStream(csb, stream), m_args(csb->csb_pool), m_maps(csb->csb_pool),
 	  m_streams(csb->csb_pool)
 {
@@ -45,17 +45,17 @@ Union::Union(CompilerScratch* csb, StreamType stream,
 
 	m_args.resize(argCount);
 
-	for (size_t i = 0; i < argCount; i++)
+	for (FB_SIZE_T i = 0; i < argCount; i++)
 		m_args[i] = args[i];
 
 	m_maps.resize(argCount);
 
-	for (size_t i = 0; i < argCount; i++)
+	for (FB_SIZE_T i = 0; i < argCount; i++)
 		m_maps[i] = maps[i];
 
 	m_streams.resize(streamCount);
 
-	for (size_t i = 0; i < streamCount; i++)
+	for (FB_SIZE_T i = 0; i < streamCount; i++)
 		m_streams[i] = streams[i];
 }
 
@@ -71,7 +71,7 @@ void Union::open(thread_db* tdbb) const
 
 	// Initialize the record number of each stream in the union
 
-	for (size_t i = 0; i < m_streams.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_streams.getCount(); i++)
 	{
 		const StreamType stream = m_streams[i];
 		request->req_rpb[stream].rpb_number.setValue(BOF_NUMBER);
@@ -171,7 +171,7 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 	{
 		plan += printIndent(++level) + (m_args.getCount() == 1 ? "Materialize" : "Union");
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			m_args[i]->print(tdbb, plan, true, level);
 	}
 	else
@@ -179,7 +179,7 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 		if (!level)
 			plan += "(";
 
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		{
 			if (i)
 				plan += ", ";
@@ -194,13 +194,13 @@ void Union::print(thread_db* tdbb, string& plan, bool detailed, unsigned level) 
 
 void Union::markRecursive()
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->markRecursive();
 }
 
 void Union::invalidateRecords(jrd_req* request) const
 {
-	for (size_t i = 0; i < m_args.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 		m_args[i]->invalidateRecords(request);
 }
 
@@ -210,7 +210,7 @@ void Union::findUsedStreams(StreamList& streams, bool expandAll) const
 
 	if (expandAll)
 	{
-		for (size_t i = 0; i < m_args.getCount(); i++)
+		for (FB_SIZE_T i = 0; i < m_args.getCount(); i++)
 			m_args[i]->findUsedStreams(streams, true);
 	}
 }

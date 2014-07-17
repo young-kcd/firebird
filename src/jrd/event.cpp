@@ -917,8 +917,8 @@ void EventManager::deliver_request(evt_req* request)
 			//interest = (req_int*) SRQ_ABS_PTR(next); same line as in the condition above
 			evnt* const event = (evnt*) SRQ_ABS_PTR(interest->rint_event);
 
-			const size_t length = buffer.getCount();
-			const size_t extent = event->evnt_length + sizeof(UCHAR) + sizeof(SLONG);
+			const FB_SIZE_T length = buffer.getCount();
+			const FB_SIZE_T extent = event->evnt_length + sizeof(UCHAR) + sizeof(SLONG);
 
 			if (length + extent > MAX_USHORT)
 			{

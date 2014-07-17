@@ -232,7 +232,7 @@ static void explain(qli_dbb* db, const UCHAR* explain_buffer)
 				explain_printf(level, "isc_info_rsb_relation, ", 0);
 
 				buffer_length--;
-				const size_t length = *explain_buffer++;
+				const FB_SIZE_T length = *explain_buffer++;
 				fb_assert(length < MAX_SQL_IDENTIFIER_SIZE);
 				buffer_length -= length;
 
@@ -401,7 +401,7 @@ static void explain_index_tree(qli_dbb* db, int level, const TEXT* relation_name
 			explain_printf(level, "isc_info_rsb_index, ", 0);
 			(*buffer_length)--;
 
-			const size_t length = *explain_buffer++;
+			const FB_SIZE_T length = *explain_buffer++;
 			TEXT index_name[MAX_SQL_IDENTIFIER_SIZE];
 			memcpy(index_name, explain_buffer, length);
 			index_name[length] = 0;
@@ -658,7 +658,7 @@ static void gen_descriptor(const dsc* desc, qli_req* request)
 
 	case dtype_varying:
 		STUFF(blr_varying);
-		STUFF_WORD((desc->dsc_length - sizeof(SSHORT)));
+		STUFF_WORD((desc->dsc_length - static_cast<USHORT>(sizeof(SSHORT))));
 		break;
 
 	case dtype_cstring:

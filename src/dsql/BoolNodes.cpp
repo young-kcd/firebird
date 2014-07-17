@@ -400,7 +400,7 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			"DELETING"
 		};
 
-		for (size_t i = 0; i < FB_NELEM(NAMES); ++i)
+		for (int i = 0; i < FB_NELEM(NAMES); ++i)
 		{
 			if (fieldNode1->dsqlName == NAMES[i])
 			{

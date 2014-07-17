@@ -167,9 +167,9 @@ public:
 		}
 
 	private:
-		void storeField(int field_id, ValueType type, size_t length, const void* value)
+		void storeField(int field_id, ValueType type, FB_SIZE_T length, const void* value)
 		{
-			const size_t delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
+			const FB_SIZE_T delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
 			buffer.resize(offset + delta);
 
 			UCHAR* ptr = buffer.begin() + offset;

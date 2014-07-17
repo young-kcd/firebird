@@ -151,14 +151,14 @@ bool DTransaction::prepareCommit(IStatus* status, TdrBuffer& tdr)
 {
 	TEXT host[64];
 	ISC_get_host(host, sizeof(host));
-	const size_t hostlen = strlen(host);
+	const UCHAR hostlen = static_cast<UCHAR>(strlen(host));
 
 	// Build a transaction description record containing the host site and database/transaction
 	// information for the target databases.
 	tdr.clear();
 	tdr.add(TDR_VERSION);
 	tdr.add(TDR_HOST_SITE);
-	tdr.add(static_cast<UCHAR>(hostlen));
+	tdr.add(hostlen);
 	tdr.add(reinterpret_cast<UCHAR*>(host), hostlen);
 
 	// Get database and transaction stuff for each sub-transaction.
@@ -420,7 +420,7 @@ DTransaction* FB_CARG DTransaction::join(IStatus* status, ITransaction* transact
 		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
 		// reserve array element to make sure we have a place for copy of transaction
-		size_t pos = sub.add(NULL);
+		FB_SIZE_T pos = sub.add(NULL);
 
 		// Nothing throws exceptions after reserving space in sub-array up to the end of block
 		ITransaction* traCopy = transaction->enterDtc(status);
