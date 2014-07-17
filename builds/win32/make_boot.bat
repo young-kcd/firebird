@@ -72,12 +72,12 @@ if "%ERRLEV%"=="1" goto :END
 :: Copy ICU both to Debug and Release configurations
 
 @call set_build_target.bat %* RELEASE
-@mkdir -p %FB_BIN_DIR%
+@mkdir %FB_BIN_DIR%
 @copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
 @copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
 
 @call set_build_target.bat %* DEBUG
-@mkdir -p %FB_BIN_DIR%
+@mkdir %FB_BIN_DIR%
 @copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
 @copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
 
