@@ -380,6 +380,7 @@ namespace Firebird
 				ObjectCmp> > inherited;
 
 	public:
+		typedef typename inherited::size_type size_type;
 		explicit SortedObjectsArray(MemoryPool& p) :
 			ObjectsArray <ObjectValue, SortedArray<ObjectValue*,
 				ObjectStorage, const ObjectKey*, ObjectKeyOfValue,

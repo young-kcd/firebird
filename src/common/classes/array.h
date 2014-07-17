@@ -474,6 +474,7 @@ template <typename Value,
 class SortedArray : public Array<Value, Storage>
 {
 public:
+	typedef typename Array<Value, Storage>::size_type size_type;
 	SortedArray(MemoryPool& p, size_type s)
 		: Array<Value, Storage>(p, s), sortMode(FB_ARRAY_SORT_WHEN_ADD), sorted(true)
 	{ }
@@ -571,6 +572,7 @@ template <typename T, FB_SIZE_T InlineCapacity>
 class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> >
 {
 public:
+	typedef typename Array<T, InlineStorage<T, InlineCapacity> >::size_type size_type;
 	explicit HalfStaticArray(MemoryPool& p) : Array<T, InlineStorage<T, InlineCapacity> > (p) {}
 	HalfStaticArray(MemoryPool& p, size_type InitialCapacity) :
 		Array<T, InlineStorage<T, InlineCapacity> > (p, InitialCapacity) {}

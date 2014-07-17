@@ -25,15 +25,13 @@
 
 #include "./ExternalEngine.h"
 
-#ifndef FB_DLL_EXPORT
-#if defined(WIN_NT)
-#define FB_DLL_EXPORT __declspec(dllexport)
-#elif defined(DARWIN)
-#define FB_DLL_EXPORT API_ROUTINE
+#ifndef FB_EXPORTED
+#if defined(DARWIN)
+#define FB_EXPORTED API_ROUTINE
 #else
-#define FB_DLL_EXPORT
-#endif // OS choice (WIN_NT, DARWIN)
-#endif // FB_DLL_EXPORT
+#define FB_EXPORTED
+#endif // OS choice (DARWIN)
+#endif // FB_EXPORTED
 
 
 namespace Firebird
