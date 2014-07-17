@@ -1,3 +1,14 @@
+ 2014-07-16 12:51  dimitr 
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+More fixes for the explained plan output.
+
+ 2014-07-16 10:09  roman-simakov 
+   M src/jrd/grant.epp
+   M src/jrd/irq.h
+   M src/jrd/obj.h
+Fixed crash due restore from backup after DDL permissions implementation and changed prefix of SC to general SQL$ to skip backuping such classes by standard way.
+
  2014-07-15 19:41  dimitr 
    M src/jrd/recsrc/IndexTableScan.cpp
 Fixed the crash I accidentally introduced a few days ago.
