@@ -822,13 +822,13 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			a_shb->shb_insert_prior);
 
 	prt_que(outfile, LOCK_header, "\tOwners", &LOCK_header->lhb_owners,
-			OFFSET(own*, own_lhb_owners), preOwn);
+			offsetof(own, own_lhb_owners), preOwn);
 	prt_que(outfile, LOCK_header, "\tFree owners",
-			&LOCK_header->lhb_free_owners, OFFSET(own*, own_lhb_owners));
+			&LOCK_header->lhb_free_owners, offsetof(own, own_lhb_owners));
 	prt_que(outfile, LOCK_header, "\tFree locks",
-			&LOCK_header->lhb_free_locks, OFFSET(lbl*, lbl_lhb_hash));
+			&LOCK_header->lhb_free_locks, offsetof(lbl, lbl_lhb_hash));
 	prt_que(outfile, LOCK_header, "\tFree requests",
-			&LOCK_header->lhb_free_requests, OFFSET(lrq*, lrq_lbl_requests));
+			&LOCK_header->lhb_free_requests, offsetof(lrq, lrq_lbl_requests));
 
 	FPRINTF(outfile, "\n");
 
@@ -839,7 +839,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		const srq* que_inst;
 		SRQ_LOOP(LOCK_header->lhb_owners, que_inst)
 		{
-			const own* owner = (own*) ((UCHAR*) que_inst - OFFSET(own*, own_lhb_owners));
+			const own* owner = (own*) ((UCHAR*) que_inst - offsetof(own, own_lhb_owners));
 			if (!sw_pending || !SRQ_EMPTY(owner->own_pending))
 				prt_owner(outfile, LOCK_header, owner, sw_requests, sw_waitlist, sw_pending);
 		}
@@ -855,7 +855,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 			for (const srq* que_inst = (SRQ) SRQ_ABS_PTR(slot->srq_forward); que_inst != slot;
 				 que_inst = (SRQ) SRQ_ABS_PTR(que_inst->srq_forward))
 			{
-				const lbl* lock = (lbl*) ((UCHAR *) que_inst - OFFSET(lbl*, lbl_lhb_hash));
+				const lbl* lock = (lbl*) ((UCHAR *) que_inst - offsetof(lbl, lbl_lhb_hash));
 				if (!sw_pending || lock->lbl_pending_lrq_count)
 					prt_lock(outfile, LOCK_header, lock, sw_series);
 			}
@@ -1217,15 +1217,15 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, U
 	FPRINTF(outfile, " Flags: 0x%02X, Pending request count: %6d\n",
 			lock->lbl_flags, lock->lbl_pending_lrq_count);
 
-	prt_que(outfile, LOCK_header, "\tHash que", &lock->lbl_lhb_hash, OFFSET(lbl*, lbl_lhb_hash));
+	prt_que(outfile, LOCK_header, "\tHash que", &lock->lbl_lhb_hash, offsetof(lbl, lbl_lhb_hash));
 
 	prt_que(outfile, LOCK_header, "\tRequests", &lock->lbl_requests,
-			OFFSET(lrq*, lrq_lbl_requests), preRequest);
+			offsetof(lrq, lrq_lbl_requests), preRequest);
 
 	const srq* que_inst;
 	SRQ_LOOP(lock->lbl_requests, que_inst)
 	{
-		const lrq* request = (lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_lbl_requests));
+		const lrq* request = (lrq*) ((UCHAR*) que_inst - offsetof(lrq, lrq_lbl_requests));
 		FPRINTF(outfile,
 				"\t\tRequest %s, Owner: %s, State: %d (%d), Flags: 0x%02X\n",
 				(const TEXT*) HtmlLink(preRequest, SRQ_REL_PTR(request)),
@@ -1280,11 +1280,11 @@ static void prt_owner(OUTFILE outfile,
 	FPRINTF(outfile, "\n");
 
 	prt_que(outfile, LOCK_header, "\tRequests", &owner->own_requests,
-			OFFSET(lrq*, lrq_own_requests), preRequest);
+			offsetof(lrq, lrq_own_requests), preRequest);
 	prt_que(outfile, LOCK_header, "\tBlocks", &owner->own_blocks,
-			OFFSET(lrq*, lrq_own_blocks), preRequest);
+			offsetof(lrq, lrq_own_blocks), preRequest);
 	prt_que(outfile, LOCK_header, "\tPending", &owner->own_pending,
-			OFFSET(lrq*, lrq_own_pending), preRequest);
+			offsetof(lrq, lrq_own_pending), preRequest);
 
 	if (sw_waitlist)
 	{
@@ -1302,14 +1302,14 @@ static void prt_owner(OUTFILE outfile,
 			const srq* que_inst;
 			SRQ_LOOP(owner->own_pending, que_inst)
 				prt_request(outfile, LOCK_header,
-							(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_pending)));
+							(lrq*) ((UCHAR*) que_inst - offsetof(lrq, lrq_own_pending)));
 		}
 		else
 		{
 			const srq* que_inst;
 			SRQ_LOOP(owner->own_requests, que_inst)
 				prt_request(outfile, LOCK_header,
-							(lrq*) ((UCHAR*) que_inst - OFFSET(lrq*, lrq_own_requests)));
+							(lrq*) ((UCHAR*) que_inst - offsetof(lrq, lrq_own_requests)));
 		}
 	}
 }
@@ -1366,7 +1366,7 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 		waiters->waitque_entry[waiters->waitque_depth++] = SRQ_REL_PTR(owner);
 
 		FPRINTF(outfile, "\n");
-		const lrq* const owner_request = (lrq*) ((UCHAR*) lock_srq - OFFSET(lrq*, lrq_own_pending));
+		const lrq* const owner_request = (lrq*) ((UCHAR*) lock_srq - offsetof(lrq, lrq_own_pending));
 		fb_assert(owner_request->lrq_type == type_lrq);
 		const bool owner_conversion = (owner_request->lrq_state > LCK_null);
 
@@ -1385,7 +1385,7 @@ static void prt_owner_wait_cycle(OUTFILE outfile,
 				break;
 			}
 
-			const lrq* lock_request = (lrq*) ((UCHAR *) que_inst - OFFSET(lrq*, lrq_lbl_requests));
+			const lrq* lock_request = (lrq*) ((UCHAR *) que_inst - offsetof(lrq, lrq_lbl_requests));
 			fb_assert(lock_request->lrq_type == type_lrq);
 
 			if (owner_conversion)
@@ -1451,13 +1451,13 @@ static void prt_request(OUTFILE outfile, const lhb* LOCK_header, const lrq* requ
 	FPRINTF(outfile, "\tAST: 0x%p, argument: 0x%p\n",
 			request->lrq_ast_routine, request->lrq_ast_argument);
 	prt_que2(outfile, LOCK_header, "\tlrq_own_requests",
-			 &request->lrq_own_requests, OFFSET(lrq*, lrq_own_requests), preRequest);
+			 &request->lrq_own_requests, offsetof(lrq, lrq_own_requests), preRequest);
 	prt_que2(outfile, LOCK_header, "\tlrq_lbl_requests",
-			 &request->lrq_lbl_requests, OFFSET(lrq*, lrq_lbl_requests), preRequest);
+			 &request->lrq_lbl_requests, offsetof(lrq, lrq_lbl_requests), preRequest);
 	prt_que2(outfile, LOCK_header, "\tlrq_own_blocks  ",
-			 &request->lrq_own_blocks, OFFSET(lrq*, lrq_own_blocks), preRequest);
+			 &request->lrq_own_blocks, offsetof(lrq, lrq_own_blocks), preRequest);
 	prt_que2(outfile, LOCK_header, "\tlrq_own_pending ",
-			 &request->lrq_own_pending, OFFSET(lrq*, lrq_own_pending), preRequest);
+			 &request->lrq_own_pending, offsetof(lrq, lrq_own_pending), preRequest);
 	FPRINTF(outfile, "\n");
 }
 

@@ -2003,12 +2003,12 @@ RTN Vdr::walk_record(thread_db* tdbb,
 	if (header->rhd_flags & rhd_incomplete)
 	{
 		p = (SCHAR*) fragment->rhdf_data;
-		end = p + length - OFFSETA(rhdf*, rhdf_data);
+		end = p + length - offsetof(rhdf, rhdf_data[0]);
 	}
 	else
 	{
 		p = (SCHAR*) header->rhd_data;
-		end = p + length - OFFSETA(rhd*, rhd_data);
+		end = p + length - offsetof(rhd, rhd_data[0]);
 	}
 
 	ULONG record_length = 0;
@@ -2058,12 +2058,12 @@ RTN Vdr::walk_record(thread_db* tdbb,
 		if (fragment->rhdf_flags & rhd_incomplete)
 		{
 			p = (SCHAR*) fragment->rhdf_data;
-			end = p + line->dpg_length - OFFSETA(rhdf*, rhdf_data);
+			end = p + line->dpg_length - offsetof(rhdf, rhdf_data[0]);
 		}
 		else
 		{
 			p = (SCHAR*) ((rhd*) fragment)->rhd_data;
-			end = p + line->dpg_length - OFFSETA(rhd*, rhd_data);
+			end = p + line->dpg_length - offsetof(rhd, rhd_data[0]);
 		}
 		while (p < end)
 		{

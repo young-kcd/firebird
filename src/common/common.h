@@ -766,10 +766,6 @@ struct ISC_TIMESTAMP
 #define ROUNDUP_LONG(len)       ROUNDUP (len, sizeof (SLONG))
 
 #define JRD_BUGCHK 15			/* facility code for bugcheck messages */
-#ifndef OFFSET
-#define OFFSET(struct, fld)      ((FB_SIZE_T) &((struct) NULL)->fld)
-#define OFFSETA(struct, fld)     ((FB_SIZE_T) ((struct) NULL)->fld)
-#endif
 
 #ifndef ODS_ALIGNMENT
 #define ODS_ALIGNMENT           4

@@ -407,7 +407,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 		leaf_node->msgrec_length = len;
 		// Let's not store trash in flags.
 		leaf_node->msgrec_flags = X.FLAGS.NULL ? 0 : X.FLAGS;
-		//n = OFFSETA(MSGREC, msgrec_text) + len; // useless? See assignment below.
+		//n = offsetof(msgrec, msgrec_text) + len; // useless? See assignment below.
 		TEXT* p = leaf_node->msgrec_text;
 		memcpy(p, msg_text, len);
 		n = p + len - (SCHAR*) leaf; // For the next iteration.

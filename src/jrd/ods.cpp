@@ -66,7 +66,7 @@ bool isSupported(USHORT majorVersion, USHORT minorVersion)
 
 ULONG bytesBitPIP(ULONG page_size)
 {
-	return static_cast<ULONG>(page_size - OFFSETA(page_inv_page*, pip_bits));
+	return static_cast<ULONG>(page_size - offsetof(page_inv_page, pip_bits[0]));
 }
 
 ULONG pagesPerPIP(ULONG page_size)
@@ -84,17 +84,17 @@ ULONG pagesPerSCN(ULONG page_size)
 
 ULONG maxPagesPerSCN(ULONG page_size)
 {
-	return static_cast<ULONG>((page_size - OFFSETA(scns_page*, scn_pages)) / sizeof(((scns_page*)NULL)->scn_pages));
+	return static_cast<ULONG>((page_size - offsetof(scns_page, scn_pages[0])) / sizeof(((scns_page*)NULL)->scn_pages));
 }
 
 ULONG transPerTIP(ULONG page_size)
 {
-	return static_cast<ULONG>((page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4);
+	return static_cast<ULONG>((page_size - offsetof(tx_inv_page, tip_transactions[0])) * 4);
 }
 
 ULONG gensPerPage(ULONG page_size)
 {
-	return static_cast<ULONG>((page_size - OFFSETA(generator_page*, gpg_values)) /
+	return static_cast<ULONG>((page_size - offsetof(generator_page, gpg_values[0])) /
 		sizeof(((generator_page*) NULL)->gpg_values));
 }
 
@@ -103,7 +103,7 @@ ULONG dataPagesPerPP(ULONG page_size)
 	// Compute the number of data pages per pointer page.  Each data page
 	// requires a 32 bit pointer and a 4 bit control field.
 
-	return static_cast<ULONG>((page_size - OFFSETA(pointer_page*, ppg_page)) * 8 / (BITS_PER_LONG + PPG_DP_BITS_NUM));
+	return static_cast<ULONG>((page_size - offsetof(pointer_page, ppg_page[0])) * 8 / (BITS_PER_LONG + PPG_DP_BITS_NUM));
 }
 
 ULONG maxRecsPerDP(ULONG page_size)
@@ -113,7 +113,7 @@ ULONG maxRecsPerDP(ULONG page_size)
 	// gives an artificially high number, reducing the density of db_keys.
 
 	ULONG max_records =
-		static_cast<ULONG>((page_size - sizeof(data_page)) / (sizeof(data_page::dpg_repeat) + OFFSETA(rhd*, rhd_data)));
+		static_cast<ULONG>((page_size - sizeof(data_page)) / (sizeof(data_page::dpg_repeat) + offsetof(rhd, rhd_data[0])));
 
 	// Artificially reduce density of records to test high bits of record number
 	// max_records = 32000;
@@ -134,7 +134,7 @@ ULONG maxIndices(ULONG page_size)
 	// Compute the number of index roots that will fit on an index root page,
 	// assuming that each index has only one key
 
-	return static_cast<ULONG>((page_size - OFFSETA(index_root_page*, irt_rpt)) /
+	return static_cast<ULONG>((page_size - offsetof(index_root_page, irt_rpt[0])) /
 		(sizeof(index_root_page::irt_repeat) + sizeof(irtd)));
 }
 

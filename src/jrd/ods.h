@@ -240,7 +240,7 @@ struct blob_page
 	ULONG blp_page[1];			// Page number if level 1
 };
 
-#define BLP_SIZE	OFFSETA(Ods::blob_page*, blp_page)
+#define BLP_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::blob_page, blp_page[0]))
 
 // pag_flags
 const UCHAR blp_pointers	= 0x01;		// Blob pointer page, not data page
@@ -263,7 +263,10 @@ struct btree_page
 	UCHAR btr_nodes[1];
 };
 
-#define BTR_SIZE	OFFSETA(Ods::btree_page*, btr_nodes)
+// NS 2014-07-17: You can define this thing as "const FB_SIZE_t ...", and it works 
+// for standards-conforming compilers (recent GCC and MSVC will do)
+// But older versions might have a problem, so I leave #define in place for now
+#define BTR_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::btree_page, btr_nodes[0]))
 
 // pag_flags
 //const UCHAR btr_dont_gc			= 1;	// Don't garbage-collect this page
@@ -369,7 +372,7 @@ struct header_page
 	UCHAR hdr_data[1];				// Misc data
 };
 
-#define HDR_SIZE	OFFSETA (Ods::header_page*, hdr_data)
+#define HDR_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::header_page, hdr_data[0]))
 
 // Header page clumplets
 
@@ -526,7 +529,7 @@ struct rhd
 	UCHAR rhd_data[1];
 };
 
-#define RHD_SIZE	OFFSETA (Ods::rhd*, rhd_data)
+#define RHD_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::rhd, rhd_data[0]))
 
 // Record header for fragmented record
 
@@ -542,7 +545,7 @@ struct rhdf
 	UCHAR rhdf_data[1];			// Blob data
 };
 
-#define RHDF_SIZE	OFFSETA (Ods::rhdf*, rhdf_data)
+#define RHDF_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::rhdf, rhdf_data[0]))
 
 
 // Record header for blob header
@@ -562,7 +565,7 @@ struct blh
 	ULONG blh_page[1];			// Page vector for blob pages
 };
 
-#define BLH_SIZE	OFFSETA (Ods::blh*, blh_page)
+#define BLH_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::blh, blh_page[0]))
 // rhd_flags, rhdf_flags and blh_flags
 
 // record_param flags in req.h must be an exact replica of ODS record header flags

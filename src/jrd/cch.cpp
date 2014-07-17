@@ -198,7 +198,7 @@ const ULONG MIN_BUFFER_SEGMENT = 65536;
 
 // Given pointer a field in the block, find the block
 
-#define BLOCK(fld_ptr, type, fld) (type)((SCHAR*) fld_ptr - OFFSET (type, fld))
+#define BLOCK(fld_ptr, type, fld) (type*)((SCHAR*) fld_ptr - offsetof (type, fld))
 
 
 const PageNumber FREE_PAGE(DB_PAGE_SPACE, -1);
@@ -2583,7 +2583,7 @@ static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 	{
 		next_prec = que_prec->que_forward;
 
-		Precedence* precedence = BLOCK(que_prec, Precedence*, pre_higher);
+		Precedence* precedence = BLOCK(que_prec, Precedence, pre_higher);
 		if (precedence->pre_flags & PRE_cleared)
 		{
 			QUE_DELETE(precedence->pre_higher);
@@ -2618,7 +2618,7 @@ static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_o
 		for (; que_inst != &bcb->bcb_dirty; que_inst = next)
 		{
 			next = que_inst->que_forward;
-			BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_dirty);
+			BufferDesc* bdb = BLOCK(que_inst, BufferDesc, bdb_dirty);
 
 			if (!(bdb->bdb_flags & BDB_dirty))
 			{
@@ -3248,7 +3248,7 @@ static void clear_precedence(thread_db* tdbb, BufferDesc* bdb)
 	while (QUE_NOT_EMPTY(bdb->bdb_lower))
 	{
 		QUE que_inst = bdb->bdb_lower.que_forward;
-		Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
+		Precedence* precedence = BLOCK(que_inst, Precedence, pre_lower);
 		BufferDesc* low_bdb = precedence->pre_low;
 		QUE_DELETE(precedence->pre_higher);
 		QUE_DELETE(precedence->pre_lower);
@@ -3355,7 +3355,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		for (QUE que_inst = bdb->bdb_higher.que_forward; que_inst != &bdb->bdb_higher;
 			 que_inst = que_inst->que_forward)
 		{
-			Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
+			Precedence* precedence = BLOCK(que_inst, Precedence, pre_higher);
 			if (precedence->pre_flags & PRE_cleared) {
 				continue;
 			}
@@ -3436,7 +3436,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		for (QUE que_inst = bdb->bdb_lower.que_forward; que_inst != &bdb->bdb_lower;
 			 que_inst = que_inst->que_forward)
 		{
-			Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
+			Precedence* precedence = BLOCK(que_inst, Precedence, pre_lower);
 			if (precedence->pre_flags & PRE_cleared) {
 				continue;
 			}
@@ -3532,7 +3532,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 		while (QUE_NOT_EMPTY(old_tail->bcb_page_mod))
 		{
 			QUE que_inst = old_tail->bcb_page_mod.que_forward;
-			BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
+			BufferDesc* bdb = BLOCK(que_inst, BufferDesc, bdb_que);
 			QUE_DELETE(*que_inst);
 			QUE mod_que = &bcb->bcb_rpt[bdb->bdb_page.getPageNum() % bcb->bcb_count].bcb_page_mod;
 			QUE_INSERT(*mod_que, *que_inst);
@@ -3575,7 +3575,7 @@ static BufferDesc* find_buffer(BufferControl* bcb, const PageNumber page, bool f
 	QUE que_inst = mod_que->que_forward;
 	for (; que_inst != mod_que; que_inst = que_inst->que_forward)
 	{
-		BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
+		BufferDesc* bdb = BLOCK(que_inst, BufferDesc, bdb_que);
 		if (bdb->bdb_page == page)
 			return bdb;
 	}
@@ -3585,7 +3585,7 @@ static BufferDesc* find_buffer(BufferControl* bcb, const PageNumber page, bool f
 		que_inst = bcb->bcb_pending.que_forward;
 		for (; que_inst != &bcb->bcb_pending; que_inst = que_inst->que_forward)
 		{
-			BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
+			BufferDesc* bdb = BLOCK(que_inst, BufferDesc, bdb_que);
 			if (bdb->bdb_page == page || bdb->bdb_pending_page == page)
 				return bdb;
 		}
@@ -3743,7 +3743,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			for (que_inst = bcb->bcb_in_use.que_backward;
 				 que_inst != &bcb->bcb_in_use; que_inst = que_inst->que_backward)
 			{
-				BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_in_use);
+				BufferDesc* bdb = BLOCK(que_inst, BufferDesc, bdb_in_use);
 
 				if (bdb->bdb_use_count || (bdb->bdb_flags & BDB_free_pending))
 					continue;
@@ -3770,7 +3770,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 		{
 			que_inst = bcb->bcb_empty.que_forward;
 			QUE_DELETE(*que_inst);
-			BufferDesc* bdb = BLOCK(que_inst, BufferDesc*, bdb_que);
+			BufferDesc* bdb = BLOCK(que_inst, BufferDesc, bdb_que);
 
 			bcb->bcb_inuse++;
 			bdb->addRef(tdbb, SYNC_EXCLUSIVE);
@@ -3840,7 +3840,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				BUGCHECK(213);	// msg 213 insufficient cache size
 			}
 
-			BufferDesc* oldest = BLOCK(que_inst, BufferDesc*, bdb_in_use);
+			BufferDesc* oldest = BLOCK(que_inst, BufferDesc, bdb_in_use);
 
 			if (oldest->bdb_use_count || !oldest->addRefConditional(tdbb, SYNC_EXCLUSIVE))
 				continue;
@@ -3942,7 +3942,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 				while (QUE_NOT_EMPTY(bdb->bdb_higher))
 				{
 					QUE que2 = bdb->bdb_higher.que_forward;
-					Precedence* precedence = BLOCK(que2, Precedence*, pre_higher);
+					Precedence* precedence = BLOCK(que2, Precedence, pre_higher);
 					QUE_DELETE(precedence->pre_higher);
 					QUE_DELETE(precedence->pre_lower);
 					precedence->pre_hi = (BufferDesc*) bcb->bcb_free;
@@ -4041,7 +4041,7 @@ static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const U
 	for (const struct que* que_inst = base->que_forward; que_inst != base;
 		 que_inst = que_inst->que_forward)
 	{
-		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_lower);
+		const Precedence* precedence = BLOCK(que_inst, Precedence, pre_lower);
 		if (precedence->pre_flags & PRE_cleared)
 			continue;
 
@@ -4619,7 +4619,7 @@ static SSHORT related(BufferDesc* low, const BufferDesc* high, SSHORT limit, con
 		if (!--limit) {
 			return PRE_UNKNOWN;
 		}
-		const Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
+		const Precedence* precedence = BLOCK(que_inst, Precedence, pre_higher);
 		if (!(precedence->pre_flags & PRE_cleared))
 		{
 			if (precedence->pre_hi->bdb_prec_walk_mark == mark)
@@ -4700,7 +4700,7 @@ static bool is_writeable(BufferDesc* bdb, const ULONG mark)
 	for (const que* queue = bdb->bdb_higher.que_forward;
 		queue != &bdb->bdb_higher; queue = queue->que_forward)
 	{
-		const Precedence* precedence = BLOCK(queue, Precedence*, pre_higher);
+		const Precedence* precedence = BLOCK(queue, Precedence, pre_higher);
 
 		if (!(precedence->pre_flags & PRE_cleared))
 		{
@@ -4802,7 +4802,7 @@ static int write_buffer(thread_db* tdbb,
 			}
 
 			QUE que_inst = bdb->bdb_higher.que_forward;
-			Precedence* precedence = BLOCK(que_inst, Precedence*, pre_higher);
+			Precedence* precedence = BLOCK(que_inst, Precedence, pre_higher);
 			if (precedence->pre_flags & PRE_cleared)
 			{
 				QUE_DELETE(precedence->pre_higher);

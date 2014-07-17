@@ -64,7 +64,7 @@ struct msgrec
 
 typedef msgrec *MSGREC;
 #define NEXT_LEAF(leaf)	(MSGREC) \
-	((SCHAR*) leaf + FB_ALIGN(OFFSETA (MSGREC, msgrec_text) + leaf->msgrec_length, sizeof (SLONG)))
+	((SCHAR*) leaf + FB_ALIGN(offsetof(msgrec, msgrec_text[0]) + leaf->msgrec_length, sizeof (SLONG)))
 
 #endif // JRD_MSG_H
 

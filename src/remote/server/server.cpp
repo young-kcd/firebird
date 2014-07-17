@@ -6026,7 +6026,7 @@ static void zap_packet(PACKET* packet, bool new_packet)
 #ifdef DEBUG_XDR_MEMORY
 		// Don't trash debug xdr memory allocation table of recycled packets.
 
-		memset(&packet->p_operation, 0, sizeof(PACKET) - OFFSET(PACKET*, p_operation));
+		memset(&packet->p_operation, 0, sizeof(PACKET) - offsetof(PACKET, p_operation));
 #else
 		memset(packet, 0, sizeof(PACKET));
 #endif

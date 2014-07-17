@@ -1904,7 +1904,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 #if defined(HAVE_SHARED_MUTEX_SECTION) && defined(USE_MUTEX_MAP)
 
-	sh_mem_mutex = (mtx*) mapObject(statusVector, OFFSET(MemoryHeader*, mhb_mutex), sizeof(mtx));
+	sh_mem_mutex = (mtx*) mapObject(statusVector, offsetof(MemoryHeader, mhb_mutex), sizeof(mtx));
 	if (!sh_mem_mutex)
 	{
 		system_call_failed::raise("mmap");

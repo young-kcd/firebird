@@ -87,7 +87,7 @@ const ULONG MAX_SORT_BUFFER_SIZE = 1024 * 128;	// 128KB
 const ULONG MIN_RECORDS_TO_ALLOC = 8;
 
 // the size of sr_bckptr (everything before sort_record) in bytes
-#define SIZEOF_SR_BCKPTR OFFSET(sr*, sr_sort_record)
+#define SIZEOF_SR_BCKPTR offsetof(sr, sr_sort_record)
 // the size of sr_bckptr in # of 32 bit longwords
 #define SIZEOF_SR_BCKPTR_IN_LONGS static_cast<signed>(SIZEOF_SR_BCKPTR / sizeof(SLONG))
 // offset in array of pointers to back record pointer (sr_bckptr)

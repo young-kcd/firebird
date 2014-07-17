@@ -99,7 +99,7 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 				const ULONG recordSize = orgRecord->rec_length;
 				Record* const newRecord = FB_NEW_RPT(pool, recordSize) Record(pool);
 				memcpy(&newRecord->rec_format, &orgRecord->rec_format,
-					   sizeof(Record) - OFFSET(Record*, rec_format) + recordSize);
+					   sizeof(Record) - offsetof(Record, rec_format) + recordSize);
 				rpb.rpb_record = newRecord;
 			}
 		}
@@ -130,7 +130,7 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 				}
 
 				memcpy(&orgRecord->rec_format, &newRecord->rec_format,
-					   sizeof(Record) - OFFSET(Record*, rec_format) + recordSize);
+					   sizeof(Record) - offsetof(Record, rec_format) + recordSize);
 			}
 		}
 

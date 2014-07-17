@@ -92,7 +92,7 @@ static void event_list()
 
 	SRQ_LOOP(EVENT_header->evh_events, database_que)
 	{
-		const evnt* database_event = (evnt*) ((UCHAR*) database_que - OFFSET(evnt*, evnt_events));
+		const evnt* database_event = (evnt*) ((UCHAR*) database_que - offsetof(evnt, evnt_events));
 
 		// Skip non-database entries
 
@@ -116,7 +116,7 @@ static void event_list()
 
 			SRQ_LOOP(database_event->evnt_interests, interest_que)
 			{
-				const req_int* interest = (req_int*) ((UCHAR*) interest_que - OFFSET(req_int*, rint_interests));
+				const req_int* interest = (req_int*) ((UCHAR*) interest_que - offsetof(req_int, rint_interests));
 				if (!interest->rint_request)
 					printf("(0)");
 				else
@@ -134,7 +134,7 @@ static void event_list()
 		SRQ_LOOP(EVENT_header->evh_events, que_inst)
 		{
 
-			const evnt* event = (evnt*) ((UCHAR *) que_inst - OFFSET(evnt*, evnt_events));
+			const evnt* event = (evnt*) ((UCHAR *) que_inst - offsetof(evnt, evnt_events));
 			fb_assert(event->evnt_header.hdr_type == type_evnt);
 			if (event->evnt_parent != SRQ_REL_PTR(database_event))
 				continue;
@@ -146,7 +146,7 @@ static void event_list()
 
 				SRQ_LOOP(event->evnt_interests, interest_que)
 				{
-					const req_int* interest = (req_int*) ((UCHAR*) interest_que - OFFSET(req_int*, rint_interests));
+					const req_int* interest = (req_int*) ((UCHAR*) interest_que - offsetof(req_int, rint_interests));
 					if (!interest->rint_request)
 						printf("(0)");
 					else

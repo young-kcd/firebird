@@ -272,7 +272,7 @@ MemoryPool::~MemoryPool(void)
 		void* object = &block->body;
 
 		VALGRIND_DISCARD(
-            VALGRIND_MAKE_MEM_DEFINED(block, OFFSET(MemBlock*, body)));
+            VALGRIND_MAKE_MEM_DEFINED(block, offsetof(MemBlock, body)));
 		VALGRIND_DISCARD(
             VALGRIND_MAKE_WRITABLE(object, block->length));
 	}
@@ -517,7 +517,7 @@ void* MemoryPool::allocate(size_t size
 #endif
 ) throw (OOM_EXCEPTION)
 {
-	size_t length = ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + OFFSET(MemBlock*, body) + GUARD_BYTES;
+	size_t length = ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + offsetof(MemBlock, body) + GUARD_BYTES;
 	MemBlock* memory = alloc(length);
 
 #ifdef USE_VALGRIND
@@ -532,7 +532,7 @@ void* MemoryPool::allocate(size_t size
 #endif
 #ifdef MEM_DEBUG
 	memset(&memory->body, INIT_BYTE, size);
-	memset(&memory->body + size, GUARD_BYTE, memory->length - size - OFFSET(MemBlock*,body));
+	memset(&memory->body + size, GUARD_BYTE, memory->length - size - offsetof(MemBlock,body));
 #endif
 
 	++blocksAllocated;
@@ -548,7 +548,7 @@ void MemoryPool::release(void* object) throw ()
 {
 	if (object)
 	{
-		MemBlock* block = (MemBlock*) ((UCHAR*) object - OFFSET(MemBlock*, body));
+		MemBlock* block = (MemBlock*) ((UCHAR*) object - offsetof(MemBlock, body));
 		MemoryPool* pool = block->pool;
 
 #ifdef USE_VALGRIND
@@ -559,7 +559,7 @@ void MemoryPool::release(void* object) throw ()
 		VALGRIND_MEMPOOL_FREE(pool, object);
 
 		// block is placed in delayed buffer - mark as NOACCESS for that time
-		VALGRIND_DISCARD(VALGRIND_MAKE_NOACCESS(block, OFFSET(MemBlock*, body)));
+		VALGRIND_DISCARD(VALGRIND_MAKE_NOACCESS(block, offsetof(MemBlock, body)));
 
 		// Extend circular buffer if possible
 		if (pool->delayedFreeCount < FB_NELEM(pool->delayedFree))
@@ -576,7 +576,7 @@ void MemoryPool::release(void* object) throw ()
 		object = &block->body;
 
 		// Re-enable access to MemBlock
-		VALGRIND_DISCARD(VALGRIND_MAKE_MEM_DEFINED(block, OFFSET(MemBlock*, body)));
+		VALGRIND_DISCARD(VALGRIND_MAKE_MEM_DEFINED(block, offsetof(MemBlock, body)));
 
 		// Remove protection from memory block
 #ifdef VALGRIND_FIX_IT
@@ -628,7 +628,7 @@ void MemoryPool::releaseBlock(MemBlock* block) throw ()
 	if (length <= threshold)
 	{
 #ifdef MEM_DEBUG
-		memset(&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
+		memset(&block->body, DEL_BYTE, length - offsetof(MemBlock, body));
 #endif
 
 		if (threadShared)
@@ -655,7 +655,7 @@ void MemoryPool::releaseBlock(MemBlock* block) throw ()
 	MutexLockGuard guard(mutex, "MemoryPool::release");
 
 #ifdef MEM_DEBUG
-	memset(&block->body, DEL_BYTE, length - OFFSET(MemBlock*, body));
+	memset(&block->body, DEL_BYTE, length - offsetof(MemBlock, body));
 #endif
 
 	MemFreeBlock* freeBlock = (MemFreeBlock*) ((UCHAR*) block - sizeof(MemBigHeader));

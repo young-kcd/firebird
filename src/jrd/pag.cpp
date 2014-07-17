@@ -919,7 +919,7 @@ void PAG_format_pip(thread_db* tdbb, PageSpace& pageSpace)
 		pages->pip_header.pag_type = pag_pages;
 		pages->pip_used = (pageSpace.scnFirst ? pageSpace.scnFirst : pageSpace.pipFirst) + 1;
 		pages->pip_min = pages->pip_used;
-		int count = dbb->dbb_page_size - OFFSETA(page_inv_page*, pip_bits);
+		int count = dbb->dbb_page_size - static_cast<int>(offsetof(page_inv_page, pip_bits[0]));
 
 		memset(pages->pip_bits, 0xFF, count);
 

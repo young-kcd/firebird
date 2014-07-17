@@ -216,15 +216,15 @@ int main( int argc, char *argv[])
 	gdbb->tdbb_transaction = &dull;
 	dull.tra_number = header->hdr_next_transaction;
 	gdbb->tdbb_database->dbb_max_records = (rbdb->rbdb_page_size - sizeof(struct data_page)) /
-		(sizeof(data_page::dpg_repeat) + OFFSETA(RHD, rhd_data));
+		(sizeof(data_page::dpg_repeat) + offsetof(rhd, rhd_data));
 	gdbb->tdbb_database->dbb_pcontrol = &dim;
 	gdbb->tdbb_database->dbb_dp_per_pp =
-		(rbdb->rbdb_page_size - OFFSETA(pointer_page*, ppg_page)) * 8 / 34;
+		(rbdb->rbdb_page_size - offsetof(pointer_page, ppg_page[0])) * 8 / 34;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_bytes =
-		rbdb->rbdb_page_size - OFFSETA(page_inv_page*, pip_bits);
+		rbdb->rbdb_page_size - offsetof(page_inv_page, pip_bits[0]);
 	gdbb->tdbb_database->dbb_pcontrol->pgc_ppp = gdbb->tdbb_database->dbb_pcontrol->pgc_bytes * 8;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_tpt =
-		(rbdb->rbdb_page_size - OFFSETA(tx_inv_page*, tip_transactions)) * 4;
+		(rbdb->rbdb_page_size - offsetof(tx_inv_page, tip_transactions[0])) * 4;
 	gdbb->tdbb_database->dbb_pcontrol->pgc_pip = 1;
 
 	if (ascii_out)
@@ -691,7 +691,7 @@ static void format_pip( page_inv_page* page, int page_size, int last_flag)
 
 	// Set all page bits to zero, indicating RBDB_allocated
 
-	const SSHORT bytes = page_size - OFFSETA(page_inv_page*, pip_bits);
+	const SSHORT bytes = page_size - offsetof(page_inv_page, pip_bits[0]);
 	memset(page->pip_bits, 0, bytes);
 
 	// If this is the last pip, make sure the last page (which
@@ -727,7 +727,7 @@ static void format_tip( tx_inv_page* page, int page_size, SLONG next_page)
 
 	// Code for committed transaction is 3, so just fill all bytes with -1
 
-	const SSHORT bytes = page_size - OFFSETA(tx_inv_page*, tip_transactions);
+	const SSHORT bytes = page_size - offsetof(tx_inv_page, tip_transactions[0]);
 	memset(page->tip_transactions, -1, bytes);
 }
 

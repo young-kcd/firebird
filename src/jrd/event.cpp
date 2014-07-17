@@ -398,11 +398,11 @@ void EventManager::cancelEvents(SLONG request_id)
 	srq* que2;
 	SRQ_LOOP(process->prb_sessions, que2)
 	{
-		ses* const session = (ses*) ((UCHAR*) que2 - OFFSET(ses*, ses_sessions));
+		ses* const session = (ses*) ((UCHAR*) que2 - offsetof(ses, ses_sessions));
 		srq* event_srq;
 		SRQ_LOOP(session->ses_requests, event_srq)
 		{
-			evt_req* const request = (evt_req*) ((UCHAR*) event_srq - OFFSET(evt_req*, req_requests));
+			evt_req* const request = (evt_req*) ((UCHAR*) event_srq - offsetof(evt_req, req_requests));
 			if (request->req_request_id == request_id)
 			{
 				delete_request(request);
@@ -438,7 +438,7 @@ void EventManager::postEvent(USHORT length, const TEXT* string, USHORT count)
 		srq* event_srq;
 		SRQ_LOOP(event->evnt_interests, event_srq)
 		{
-			req_int* const interest = (req_int*) ((UCHAR*) event_srq - OFFSET(req_int*, rint_interests));
+			req_int* const interest = (req_int*) ((UCHAR*) event_srq - offsetof(req_int, rint_interests));
 			if (interest->rint_request)
 			{
 				evt_req* const request = (evt_req*) SRQ_ABS_PTR(interest->rint_request);
@@ -484,7 +484,7 @@ void EventManager::deliverEvents()
 		srq* event_srq;
 		SRQ_LOOP (m_sharedMemory->getHeader()->evh_processes, event_srq)
 		{
-			prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET (prb*, prb_processes));
+			prb* const process = (prb*) ((UCHAR*) event_srq - offsetof(prb, prb_processes));
 			if (process->prb_flags & PRB_wakeup)
 			{
 				if (!post_process(process))
@@ -724,7 +724,7 @@ void EventManager::delete_process(SLONG process_offset)
 
 	while (!SRQ_EMPTY(process->prb_sessions))
 	{
-		ses* const session = (ses*) ((UCHAR*) SRQ_NEXT(process->prb_sessions) - OFFSET(ses*, ses_sessions));
+		ses* const session = (ses*) ((UCHAR*) SRQ_NEXT(process->prb_sessions) - offsetof(ses, ses_sessions));
 		delete_session(SRQ_REL_PTR(session));
 	}
 
@@ -806,7 +806,7 @@ void EventManager::delete_session(SLONG session_id)
 	while (!SRQ_EMPTY(session->ses_requests))
 	{
 		srq requests = session->ses_requests;
-		evt_req* request = (evt_req*) ((UCHAR*) SRQ_NEXT(requests) - OFFSET(evt_req*, req_requests));
+		evt_req* request = (evt_req*) ((UCHAR*) SRQ_NEXT(requests) - offsetof(evt_req, req_requests));
 		delete_request(request);
 	}
 
@@ -848,7 +848,7 @@ void EventManager::deliver()
 	srq* que2 = SRQ_NEXT(process->prb_sessions);
 	while (que2 != &process->prb_sessions)
 	{
-		ses* session = (ses*) ((UCHAR*) que2 - OFFSET(ses*, ses_sessions));
+		ses* session = (ses*) ((UCHAR*) que2 - offsetof(ses, ses_sessions));
 		session->ses_flags |= SES_delivering;
 		const SLONG session_offset = SRQ_REL_PTR(session);
 		const SLONG que2_offset = SRQ_REL_PTR(que2);
@@ -858,7 +858,7 @@ void EventManager::deliver()
 			srq* event_srq;
 			SRQ_LOOP(session->ses_requests, event_srq)
 			{
-				evt_req* request = (evt_req*) ((UCHAR*) event_srq - OFFSET(evt_req*, req_requests));
+				evt_req* request = (evt_req*) ((UCHAR*) event_srq - offsetof(evt_req, req_requests));
 				if (request_completed(request))
 				{
 					deliver_request(request);
@@ -965,7 +965,7 @@ evnt* EventManager::find_event(USHORT length, const TEXT* string)
 	srq* event_srq;
 	SRQ_LOOP(m_sharedMemory->getHeader()->evh_events, event_srq)
 	{
-		evnt* const event = (evnt*) ((UCHAR*) event_srq - OFFSET(evnt*, evnt_events));
+		evnt* const event = (evnt*) ((UCHAR*) event_srq - offsetof(evnt, evnt_events));
 
 		if (event->evnt_length == length && !memcmp(string, event->evnt_name, length))
 			return event;
@@ -1205,7 +1205,7 @@ void EventManager::probe_processes()
 	srq* event_srq;
 	SRQ_LOOP(m_sharedMemory->getHeader()->evh_processes, event_srq)
 	{
-		prb* const process = (prb*) ((UCHAR*) event_srq - OFFSET(prb*, prb_processes));
+		prb* const process = (prb*) ((UCHAR*) event_srq - offsetof(prb, prb_processes));
 		const SLONG process_offset = SRQ_REL_PTR(process);
 		if (process_offset != m_processOffset &&
 			!ISC_check_process_existence(process->prb_process_id))

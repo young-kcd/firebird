@@ -4801,7 +4801,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 				VIO_record(tdbb, rpb, record->rec_format, pool);
 
 			memcpy(&rpb->rpb_record->rec_format, &record->rec_format,
-				sizeof(Record) - OFFSET(Record*, rec_format) + record->rec_length);
+				sizeof(Record) - offsetof(Record, rec_format) + record->rec_length);
 
 			rpb->rpb_flags &= ~rpb_deleted;
 			return udExists;
@@ -5080,7 +5080,7 @@ static Record* realloc_record(Record*& record, ULONG fmt_length)
 	new_record->rec_precedence.takeOwnership(record->rec_precedence);
 	// start copying at rec_format, to not mangle source->rec_precedence
 	memcpy(&new_record->rec_format, &record->rec_format,
-		sizeof(Record) - OFFSET(Record*, rec_format) + record->rec_length);
+		sizeof(Record) - offsetof(Record, rec_format) + record->rec_length);
 
 	delete record;
 	record = new_record;
