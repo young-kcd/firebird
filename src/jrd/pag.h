@@ -36,6 +36,7 @@
 
 #include "../include/fb_blk.h"
 #include "../common/classes/array.h"
+#include "../common/classes/locks.h"
 #include "../jrd/ods.h"
 #include "../jrd/lls.h"
 
@@ -144,9 +145,10 @@ public:
 		transPerTIP = 0;
 		gensPerPage = 0;
 		pagesPerSCN = 0;
+		tempPageSpaceID = 0;
+		tempFileCreated = false;
 
-		dbPageSpace = addPageSpace(DB_PAGE_SPACE);
-		// addPageSpace(TEMP_PAGE_SPACE);
+		addPageSpace(DB_PAGE_SPACE);
 	}
 
 	~PageManager()
@@ -155,10 +157,9 @@ public:
 			delete pageSpaces.pop();
 	}
 
-	PageSpace* addPageSpace(const USHORT pageSpaceID);
 	PageSpace* findPageSpace(const USHORT pageSpaceID) const;
-	void delPageSpace(const USHORT pageSpaceID);
 
+	void initTempPageSpace(thread_db* tdbb);
 	USHORT getTempPageSpaceID(thread_db* tdbb);
 
 	void closeAll();
@@ -168,15 +169,20 @@ public:
 	ULONG transPerTIP;			// Transactions per TIP
 	ULONG gensPerPage;			// Generators per generator page
 	ULONG pagesPerSCN;			// Slots per SCN's page
-	PageSpace* dbPageSpace;		// database page space
 
 private:
 	typedef Firebird::SortedArray<PageSpace*, Firebird::EmptyStorage<PageSpace*>,
 		USHORT, PageSpace> PageSpaceArray;
 
+	PageSpace* addPageSpace(const USHORT pageSpaceID);
+	void delPageSpace(const USHORT pageSpaceID);
+
 	Database* dbb;
 	PageSpaceArray pageSpaces;
 	Firebird::MemoryPool& pool;
+	Firebird::Mutex	initTmpMtx;
+	USHORT tempPageSpaceID;
+	bool tempFileCreated;
 };
 
 class PageNumber

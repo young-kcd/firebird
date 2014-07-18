@@ -1514,6 +1514,8 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 				pageSpace->file = PIO_open(dbb, expanded_name, org_filename);
 
+				dbb->dbb_page_manager.initTempPageSpace(tdbb);
+
 				// Initialize the lock manager
 				dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
 
@@ -2589,6 +2591,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 					throw;
 			}
 
+			dbb->dbb_page_manager.initTempPageSpace(tdbb);
 #ifdef WIN_NT
 			dbb->dbb_filename.assign(pageSpace->file->fil_string);	// first dbb file
 #endif

@@ -106,7 +106,6 @@ using namespace Ods;
 using namespace Firebird;
 
 static void add_clump(thread_db* tdbb, USHORT type, USHORT len, const UCHAR* entry, ClumpOper mode);
-static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID);
 static int blocking_ast_shutdown_attachment(void*);
 static int blocking_ast_cancel_attachment(void*);
 static void find_clump_space(thread_db* tdbb, WIN*, pag**, USHORT, USHORT, const UCHAR*);
@@ -403,32 +402,6 @@ bool PAG_add_header_entry(thread_db* tdbb, header_page* header,
 
 	BUGCHECK(251);
 	return false;				// Added to remove compiler warning
-}
-
-
-static void attach_temp_pages(thread_db* tdbb, USHORT pageSpaceID)
-{
-/***********************************************
- *
- *	a t t a c h _ t e m p _ p a g e s
- *
- ***********************************************
- *
- * Functional description
- *	Attach a temporary page space
- *
- **************************************/
-	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	CHECK_DBB(dbb);
-
-	PageSpace* pageSpaceTemp = dbb->dbb_page_manager.addPageSpace(pageSpaceID);
-	if (!pageSpaceTemp->file)
-	{
-		PathName file_name = TempFile::create(SCRATCH);
-		pageSpaceTemp->file = PIO_create(dbb, file_name, true, true);
-		PAG_format_pip(tdbb, *pageSpaceTemp);
-	}
 }
 
 
@@ -2175,11 +2148,12 @@ void PageManager::closeAll()
 	}
 }
 
-USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
+void PageManager::initTempPageSpace(thread_db* tdbb)
 {
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	USHORT result;
+
+	fb_assert(tempPageSpaceID == 0);
 
 	if (dbb->dbb_config->getSharedDatabase())
 	{
@@ -2203,19 +2177,35 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 			attachment->att_temp_pg_lock = lock;
 		}
 
-		result = (USHORT) attachment->att_temp_pg_lock->lck_key.lck_long;
+		tempPageSpaceID = (USHORT) attachment->att_temp_pg_lock->lck_key.lck_long;
 	}
 	else
 	{
-		result = TEMP_PAGE_SPACE;
+		tempPageSpaceID = TEMP_PAGE_SPACE;
 	}
 
-	if (!this->findPageSpace(result)) {
-		attach_temp_pages(tdbb, result);
-	}
-
-	return result;
+	addPageSpace(tempPageSpaceID);
 }
+
+USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
+{
+	fb_assert(tempPageSpaceID != 0);
+	if (!tempFileCreated)
+	{
+		Firebird::MutexLockGuard guard(initTmpMtx, FB_FUNCTION);
+		if (!tempFileCreated)
+		{
+			PageSpace* pageSpaceTemp = dbb->dbb_page_manager.findPageSpace(tempPageSpaceID);
+
+			PathName file_name = TempFile::create(SCRATCH);
+			pageSpaceTemp->file = PIO_create(dbb, file_name, true, true);
+			PAG_format_pip(tdbb, *pageSpaceTemp);
+
+			tempFileCreated = true;
+		}
+	}
+	return tempPageSpaceID;
+};
 
 ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 {
