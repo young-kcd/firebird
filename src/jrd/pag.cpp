@@ -2163,8 +2163,6 @@ void PageManager::initTempPageSpace(thread_db* tdbb)
 		{
 			Lock* lock = FB_NEW_RPT(*attachment->att_pool, 0) Lock(tdbb, sizeof(SLONG), LCK_page_space);
 
-			PAG_attachment_id(tdbb);
-
 			while (true)
 			{
 				const double tmp = rand() * (MAX_USHORT - TEMP_PAGE_SPACE - 1.0) / (RAND_MAX + 1.0);
