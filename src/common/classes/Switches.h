@@ -108,7 +108,7 @@ private:
 	const bool		m_copy;				// was m_base copied into m_table for modifications?
 	const bool		m_minLength;		// is the field in_sw_min_length meaningful?
 	in_sw_tab_t*	m_table;			// modifiable copy
-	FB_SIZE_T*			m_opLengths;		// array of in_sw_name's lengths to avoid recalculation
+	FB_SIZE_T*		m_opLengths;		// array of in_sw_name's lengths to avoid recalculation
 };
 
 #endif // CLASSES_SWITCHES

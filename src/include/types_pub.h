@@ -64,9 +64,9 @@ typedef void*		FB_API_HANDLE;
 #ifdef FB_USE_SIZE_T
 /* NS: This is how things were done in original Firebird port to 64-bit platforms
    Basic classes use these quantities. However in many places in the engine and
-   external libraries 32-bit quantities are used to hold sizes of objects. 
+   external libraries 32-bit quantities are used to hold sizes of objects.
    This produces many warnings. This also produces incredibly dirty interfaces,
-   when functions take size_t as argument, but only handle 32 bits internally 
+   when functions take size_t as argument, but only handle 32 bits internally
    without any bounds checking.                                                    */
 typedef size_t FB_SIZE_T;
 typedef intptr_t FB_SSIZE_T;

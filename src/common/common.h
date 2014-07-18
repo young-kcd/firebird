@@ -888,7 +888,7 @@ void GDS_breakpoint(int);
 #endif
 
 #define FB_UNUSED(value) do { if (value) {} } while (false)
-#define FB_UNUSED_VAR(value) (void)value;
+#define FB_UNUSED_VAR(value) (void) value
 
 // 30 Dec 2002. Nickolay Samofatov
 // This needs to be checked for all supported platforms
@@ -977,7 +977,10 @@ static const TEXT* const FB_LONG_MONTHS_UPPER[] =
 
 const FB_SIZE_T FB_MAX_SIZEOF = ~FB_SIZE_T(0); // Assume FB_SIZE_T is unsigned
 
-inline FB_SIZE_T fb_strlen(const char* str) { return static_cast<FB_SIZE_T>(strlen(str)); }
+inline FB_SIZE_T fb_strlen(const char* str)
+{
+	return static_cast<FB_SIZE_T>(strlen(str));
+}
 
 
 #endif /* COMMON_COMMON_H */

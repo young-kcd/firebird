@@ -7417,7 +7417,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 				isqlGlob.printf("%-*.*s%s", var->length, var->length, str2, NEWLINE);
 			else
 			{
-				IcuUtil::pad(p, var->charSet, 
+				IcuUtil::pad(p, var->charSet,
 					static_cast<unsigned>(strnlen(var->value.asChar, var->length)), var->value.asChar, length, false);
 				strcat(p, " ");
 			}

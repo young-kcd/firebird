@@ -387,7 +387,6 @@ bool_t xdr_float(XDR* xdrs, float* ip)
  **************************************/
 	fb_assert(sizeof(float) == sizeof(SLONG));
 
-
 	switch (xdrs->x_op)
 	{
 	case XDR_ENCODE:

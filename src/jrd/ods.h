@@ -263,7 +263,7 @@ struct btree_page
 	UCHAR btr_nodes[1];
 };
 
-// NS 2014-07-17: You can define this thing as "const FB_SIZE_t ...", and it works 
+// NS 2014-07-17: You can define this thing as "const FB_SIZE_t ...", and it works
 // for standards-conforming compilers (recent GCC and MSVC will do)
 // But older versions might have a problem, so I leave #define in place for now
 #define BTR_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::btree_page, btr_nodes[0]))

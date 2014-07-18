@@ -7,13 +7,13 @@ Author:
 
 Syntax is:
 
-GRANT CREATE <OBJECT> TO [USER | ROLE] <user/role name> [with grant option];
-GRANT ALTER ANY <OBJECT> TO [USER | ROLE] <user/role name> [with grant option];
-GRANT DROP ANY <OBJECT> TO [USER | ROLE] <user/role name> [with grant option];
+GRANT CREATE <OBJECT> TO [USER | ROLE] <user/role name> [WITH GRANT OPTION];
+GRANT ALTER ANY <OBJECT> TO [USER | ROLE] <user/role name> [WITH GRANT OPTION];
+GRANT DROP ANY <OBJECT> TO [USER | ROLE] <user/role name> [WITH GRANT OPTION];
 
-REVOKE [grant option for] CREATE <OBJECT> FROM [USER | ROLE] <user/role name>;
-REVOKE [grant option for] ALTER ANY <OBJECT> FROM [USER | ROLE] <user/role name>;
-REVOKE [grant option for] DROP ANY <OBJECT> FROM [USER | ROLE] <user/role name>;
+REVOKE [GRANT OPTION FOR] CREATE <OBJECT> FROM [USER | ROLE] <user/role name>;
+REVOKE [GRANT OPTION FOR] ALTER ANY <OBJECT> FROM [USER | ROLE] <user/role name>;
+REVOKE [GRANT OPTION FOR] DROP ANY <OBJECT> FROM [USER | ROLE] <user/role name>;
 
 Where <OBJECT> could be:
 TABLE, VIEW, PROCEDURE, FUNCTION, PACKAGE, GENERATOR, SEQUENCE, DOMAIN, 
