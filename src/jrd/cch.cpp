@@ -2106,8 +2106,8 @@ void CCH_shutdown_database(Database* dbb)
 
 	///if (!(bcb->bcb_flags & BCB_exclusive))
 	{
-		PageSpace* pageSpaceID = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		PIO_close(pageSpaceID->file);
+		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
+		PIO_close(pageSpace->file);
 		SDW_close();
 	}
 }
