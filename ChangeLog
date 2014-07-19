@@ -1,3 +1,31 @@
+ 2014-07-18 14:34  hvlad 
+   M src/jrd/pag.cpp
+Correction
+
+ 2014-07-18 12:42  hvlad 
+   M src/jrd/jrd.cpp
+Correction
+
+ 2014-07-18 12:25  hvlad 
+   M src/jrd/cch.cpp
+Misc
+
+ 2014-07-18 12:24  hvlad 
+   M src/jrd/jrd.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag.h
+Avoid races (and AV as result) when two attachments starts to use temporary page space simultaneously. 
+
+ 2014-07-18 01:52  asfernandes 
+   M doc/sql.extensions/README.ddl_access.txt
+   M src/common/classes/Switches.h
+   M src/common/common.h
+   M src/common/xdr.cpp
+   M src/include/types_pub.h
+   M src/isql/isql.epp
+   M src/jrd/ods.h
+Misc.
+
  2014-07-17 21:17  skidder 
    M src/common/classes/alloc.cpp
    M src/common/common.h
