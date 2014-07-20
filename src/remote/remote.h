@@ -860,7 +860,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	PacketQueue*	port_deferred_packets;	// queue of deferred packets
 	OBJCT			port_last_object_id;	// cached last id
 	Firebird::ObjectsArray< Firebird::Array<char> > port_queue;
-	FB_SIZE_T			port_qoffset;			// current packet in the queue
+	FB_SIZE_T		port_qoffset;			// current packet in the queue
 	Firebird::RefPtr<Config> port_config;	// connection-specific configuration info
 
 	// Authentication and crypt stuff
