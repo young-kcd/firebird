@@ -129,7 +129,7 @@ private:
 	void insert_page(thread_db*);
 	void destroy(const bool purge_flag);
 
-	FB_SIZE_T blb_temp_size;			// size stored in transaction temp space
+	FB_SIZE_T blb_temp_size;		// size stored in transaction temp space
 	offset_t blb_temp_offset;		// offset in transaction temp space
 	Attachment*	blb_attachment;		// database attachment
 	jrd_tra*	blb_transaction;	// Parent transaction block

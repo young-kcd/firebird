@@ -5228,8 +5228,8 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 										if (notNull)
 										{
 											dsc desc;
-											desc.makeText(static_cast<USHORT>(strlen(REL.RDB$RELATION_NAME)), CS_METADATA,
-												(UCHAR*) REL.RDB$RELATION_NAME);
+											desc.makeText(static_cast<USHORT>(strlen(REL.RDB$RELATION_NAME)),
+												CS_METADATA, (UCHAR*) REL.RDB$RELATION_NAME);
 
 											DeferredWork* work = DFW_post_work(transaction,
 												dfw_check_not_null, &desc, 0);

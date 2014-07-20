@@ -198,7 +198,7 @@ const ULONG MIN_BUFFER_SEGMENT = 65536;
 
 // Given pointer a field in the block, find the block
 
-#define BLOCK(fld_ptr, type, fld) (type*)((SCHAR*) fld_ptr - offsetof (type, fld))
+#define BLOCK(fld_ptr, type, fld) (type*)((SCHAR*) fld_ptr - offsetof(type, fld))
 
 
 const PageNumber FREE_PAGE(DB_PAGE_SPACE, -1);
@@ -4329,9 +4329,12 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 
 		QUE_INIT(tail->bcb_page_mod);
 
-		try {
+		try
+		{
 			tail->bcb_bdb = alloc_bdb(tdbb, bcb, &memory);
-		} catch (Firebird::BadAlloc&) {
+		}
+		catch (Firebird::BadAlloc&)
+		{
 			// Whoops! Time to reset our expectations. Release the buffer memory
 			// but use that memory size to calculate a new number that takes into account
 			// the page buffer overhead. Reduce this number by a 25% fudge factor to

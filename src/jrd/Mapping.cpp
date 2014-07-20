@@ -1095,7 +1095,8 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	{
 		newAuthBlock->shrink(0);
 		newAuthBlock->push(newBlock.getBuffer(), newBlock.getBufferLength());
-		MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n", static_cast<unsigned>(newAuthBlock->getCount())));
+		MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n",
+			static_cast<unsigned>(newAuthBlock->getCount())));
 	}
 }
 

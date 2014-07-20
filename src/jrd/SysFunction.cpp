@@ -776,8 +776,8 @@ void makeLeftRight(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, 
 		result->setTextType(value->getTextType());
 		result->setNullable(value->isNullable() || length->isNullable());
 
-		result->dsc_length =
-			dataTypeUtil->fixLength(result, dataTypeUtil->convertLength(value, result)) + static_cast<USHORT>(sizeof(USHORT));
+		result->dsc_length = dataTypeUtil->fixLength(result,
+			dataTypeUtil->convertLength(value, result)) + static_cast<USHORT>(sizeof(USHORT));
 	}
 }
 
@@ -890,7 +890,10 @@ void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 					dataTypeUtil->maxBytesPerChar(result->getCharSet()));
 		}
 		else
-			result->dsc_length = static_cast<USHORT>(sizeof(USHORT)) + dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE);
+		{
+			result->dsc_length = static_cast<USHORT>(sizeof(USHORT)) +
+				dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE);
+		}
 	}
 
 	result->setNullable(isNullable);
@@ -948,8 +951,9 @@ void makeReplace(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, ds
 			result->dsc_length = dataTypeUtil->fixLength(result, searchedLen) + static_cast<USHORT>(sizeof(USHORT));
 		else
 		{
-			result->dsc_length = dataTypeUtil->fixLength(result, MAX(searchedLen,
-				searchedLen + (searchedLen / findLen) * (replacementLen - findLen))) + static_cast<USHORT>(sizeof(USHORT));
+			result->dsc_length = dataTypeUtil->fixLength(result,
+				MAX(searchedLen, searchedLen + (searchedLen / findLen) * (replacementLen - findLen))) +
+				static_cast<USHORT>(sizeof(USHORT));
 		}
 	}
 

@@ -112,8 +112,8 @@ ULONG maxRecsPerDP(ULONG page_size)
 	// size of the record index (dpb_repeat) and a record header.  This
 	// gives an artificially high number, reducing the density of db_keys.
 
-	ULONG max_records =
-		static_cast<ULONG>((page_size - sizeof(data_page)) / (sizeof(data_page::dpg_repeat) + offsetof(rhd, rhd_data[0])));
+	ULONG max_records = static_cast<ULONG>(
+		(page_size - sizeof(data_page)) / (sizeof(data_page::dpg_repeat) + offsetof(rhd, rhd_data[0])));
 
 	// Artificially reduce density of records to test high bits of record number
 	// max_records = 32000;

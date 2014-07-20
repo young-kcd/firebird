@@ -283,8 +283,11 @@ string Jrd::Attachment::stringToMetaCharSet(thread_db* tdbb, const string& str,
 
 	if (charSet)
 	{
-		if (!MET_get_char_coll_subtype(tdbb, &charSetId, (const UCHAR*) charSet, static_cast<USHORT>(strlen(charSet))))
+		if (!MET_get_char_coll_subtype(tdbb, &charSetId, (const UCHAR*) charSet,
+				static_cast<USHORT>(strlen(charSet))))
+		{
 			(Arg::Gds(isc_charset_not_found) << Arg::Str(charSet)).raise();
+		}
 	}
 
 	if (charSetId == CS_METADATA || charSetId == CS_NONE)

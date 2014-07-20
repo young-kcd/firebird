@@ -487,9 +487,9 @@ bool LikeEvaluator<CharType>::processNextChunk(const CharType* data, SLONG data_
 
 	SLONG data_pos = 0;
 	SLONG finishCandidate = -1;
+
 	while (data_pos < data_len)
 	{
-
 		FB_SIZE_T branch_number = 0;
 		while (branch_number < branches.getCount())
 		{

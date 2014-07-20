@@ -936,7 +936,7 @@ ddl_privileges($privilegeArray)
 	;
 
 privileges_opt
-	:
+	: // nothing
 	| PRIVILEGES
 	;
 
