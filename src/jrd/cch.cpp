@@ -137,7 +137,6 @@ static BufferDesc* find_buffer(BufferControl* bcb, const PageNumber page, bool f
 static BufferDesc* get_buffer(thread_db*, const PageNumber, SyncType, int);
 static int get_related(BufferDesc*, PagesArray&, int, const ULONG);
 static ULONG get_prec_walk_mark(BufferControl*);
-static void invalidate_and_release_buffer(thread_db*, BufferDesc*);
 static LatchState latch_buffer(thread_db*, Sync&, BufferDesc*, const PageNumber, SyncType, int);
 static LockState lock_buffer(thread_db*, BufferDesc*, const SSHORT, const SCHAR);
 static ULONG memory_init(thread_db*, BufferControl*, SLONG);
@@ -4069,42 +4068,6 @@ static int get_related(BufferDesc* bdb, PagesArray &lowPages, int limit, const U
 
 	bdb->bdb_prec_walk_mark = mark;
 	return limit;
-}
-
-
-static void invalidate_and_release_buffer(thread_db* tdbb, BufferDesc* bdb)
-{
-/**************************************
- *
- *	i n v a l i d a t e _ a n d _ r e l e a s e _ b u f f e r
- *
- **************************************
- *
- * Functional description
- *  Invalidate the page buffer.
- *
- **************************************/
-	Database* dbb = tdbb->getDatabase();
-
-	bdb->bdb_flags |= BDB_not_valid;
-	bdb->bdb_flags &= ~BDB_db_dirty;
-	clear_dirty_flag(tdbb, bdb);
-	const ULONG mask = bdb->bdb_transactions;
-	bdb->bdb_transactions = 0;
-
-	// mark bdb to be re-read at next access
-	BufferControl* bcb = dbb->dbb_bcb;
-	if (bcb->bcb_flags & BCB_exclusive)
-		bdb->bdb_flags |= BDB_read_pending;
-	else
-		PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-
-	CCH_unwind(tdbb, false);
-
-	if (mask)
-		TRA_invalidate(tdbb, mask);
-
-	ERR_punt();
 }
 
 
