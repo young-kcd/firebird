@@ -1,3 +1,32 @@
+ 2014-07-20 15:44  asfernandes 
+   M src/remote/remote.h
+Misc.
+
+ 2014-07-20 02:19  asfernandes 
+   M src/dsql/metd.epp
+   M src/jrd/cch.cpp
+   M src/jrd/recsrc/VirtualTableScan.cpp
+Warnings.
+
+ 2014-07-20 02:19  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/parse.y
+   M src/gpre/std/gpre_meta.epp
+   M src/isql/isql.epp
+   M src/jrd/Attachment.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/SysFunction.cpp
+   M src/jrd/blb.h
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/dyn_util.epp
+   M src/jrd/evl_string.h
+   M src/jrd/ods.cpp
+   M src/jrd/par_proto.h
+   M src/jrd/status.cpp
+Misc.
+
  2014-07-18 14:34  hvlad 
    M src/jrd/pag.cpp
 Correction
