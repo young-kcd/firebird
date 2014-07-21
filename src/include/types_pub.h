@@ -45,7 +45,7 @@ typedef unsigned long uintptr_t;
 
 #endif
 
-#define FB_ALIGN(n, b) ((n + b - 1) & ~(b - 1))
+#define FB_ALIGN(n, b) ((n + size_t(b - 1)) & ~size_t(b - 1))
 
 /******************************************************************/
 /* API handles                                                    */
