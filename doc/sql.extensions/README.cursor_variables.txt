@@ -21,7 +21,10 @@ Cursor variables
     4) Cursor variables are read-only.
     5) A FOR SELECT without AS CURSOR needs the use of INTO, while with AS CURSOR it's not required,
        but still allowed. With FETCH, INTO is now optional.
-	6) It's allowed now to use the colon prefix when assigning to variables or NEW's fields.
+    6) It's allowed now to use the colon prefix when assigning to variables or NEW's fields.
+    7) Reading from a cursor variable returns the current field values. That means an UPDATE (with
+       WHERE CURRENT OF) also updates the fields for subsequent reads. And DELETE (with WHERE
+       CURRENT OF) makes subsequent reads to return NULL.
 
   Examples:
     1.
