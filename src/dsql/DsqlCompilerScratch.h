@@ -63,6 +63,7 @@ public:
 	static const unsigned FLAG_INTERNAL_REQUEST		= 0x0800;
 	static const unsigned FLAG_AMBIGUOUS_STMT		= 0x1000;
 	static const unsigned FLAG_DDL					= 0x2000;
+	static const unsigned FLAG_FETCH				= 0x4000;
 
 public:
 	DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,

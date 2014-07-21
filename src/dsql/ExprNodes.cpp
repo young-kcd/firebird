@@ -6820,7 +6820,10 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 				dsqlScratch->appendUChar(derivedContexts[i]);
 		}
 	}
-	else if ((context->ctx_flags & CTX_cursor) && val->is<FieldNode>())
+	else if (!(dsqlScratch->flags & DsqlCompilerScratch::FLAG_FETCH) &&
+			 !(context->ctx_flags & CTX_system) &&
+			 (context->ctx_flags & CTX_cursor) &&
+			 val->is<FieldNode>())
 	{
 		// ASF: FieldNode::execute do not verify rpb_number.isValid(), and due to system triggers
 		// and also singular queries, we cannot start to do it. So to fix CORE-4488, we introduce

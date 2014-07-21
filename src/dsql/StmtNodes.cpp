@@ -1036,12 +1036,16 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 		NestConst<ValueExprNode>* end = list->items.end();
 		NestConst<ValueExprNode>* ptr_to = dsqlIntoStmt->items.begin();
 
+		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_FETCH;
+
 		while (ptr != end)
 		{
 			dsqlScratch->appendUChar(blr_assignment);
 			GEN_expr(dsqlScratch, *ptr++);
 			GEN_expr(dsqlScratch, *ptr_to++);
 		}
+
+		dsqlScratch->flags &= ~DsqlCompilerScratch::FLAG_FETCH;
 	}
 
 	dsqlScratch->appendUChar(blr_end);
