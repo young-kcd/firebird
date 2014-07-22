@@ -1,3 +1,18 @@
+ 2014-07-21 16:13  asfernandes 
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+Tweaks to CORE-4488.
+
+ 2014-07-21 08:10  alexpeshkoff 
+   M src/include/types_pub.h
+Fixed build on linux64 - it was really bad that behavior of macro FB_ALIGN depended upon alignment parameter type
+
+ 2014-07-21 02:37  asfernandes 
+   M doc/sql.extensions/README.cursor_variables.txt
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-4488 - Wrong results of FOR SELECT <L> FROM <T> AS CURSOR <C> and table <T> is modified inside cursor's begin...end block.
+
  2014-07-20 15:44  asfernandes 
    M src/remote/remote.h
 Misc.
