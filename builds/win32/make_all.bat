@@ -123,7 +123,6 @@ copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
 
 :: MSVC runtime
 if %MSVC_VERSION% == 10 (
-@copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC10CRT_DIR%\Microsoft.VC100.CRT\msvcp100.dll" %FB_OUTPUT_DIR% >nul
 @copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC10CRT_DIR%\Microsoft.VC100.CRT\msvcr100.dll" %FB_OUTPUT_DIR% >nul
 @copy "%VS100COMNTOOLS%\..\..\VC\redist\%FB_VC10CRT_DIR%\Microsoft.VC100.CRT\msvcp100.dll" %FB_OUTPUT_DIR% >nul
 ) else (
