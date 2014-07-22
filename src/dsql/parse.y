@@ -876,8 +876,6 @@ object
 		{ $$ = newNode<GranteeClause>(obj_exceptions, get_object_name(obj_exceptions)); }
 	| ROLE
 		{ $$ = newNode<GranteeClause>(obj_roles, get_object_name(obj_roles)); }
-	| SHADOW
-		{ $$ = newNode<GranteeClause>(obj_shadows, get_object_name(obj_shadows)); }
 	| DATABASE
 		{ $$ = newNode<GranteeClause>(obj_database, get_object_name(obj_database)); }
 	| CHARACTER SET

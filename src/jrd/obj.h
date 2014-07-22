@@ -59,17 +59,16 @@ const int obj_generators		= 26;
 const int obj_domains			= 27;
 const int obj_exceptions		= 28;
 const int obj_roles				= 29;
-const int obj_shadows			= 30;
-const int obj_charsets			= 31;
-const int obj_collations		= 32;
-const int obj_filters			= 33;
+const int obj_charsets			= 30;
+const int obj_collations		= 31;
+const int obj_filters			= 32;
 
-const int obj_type_MAX			= 34;	// keep this last!
+const int obj_type_MAX			= 33;	// keep this last!
 
 // used in the parser only / no relation with obj_type_MAX
-const int obj_user_or_role		= 35;
-const int obj_schema			= 36;
-const int obj_parameter			= 37;
+const int obj_user_or_role		= 34;
+const int obj_schema			= 35;
+const int obj_parameter			= 36;
 
 inline const char* get_object_name(int object_type)
 {
@@ -95,8 +94,6 @@ inline const char* get_object_name(int object_type)
 			return "SQL$EXCEPTIONS";
 		case obj_roles:
 			return "SQL$ROLES";
-		case obj_shadows:
-			return "SQL$SHADOWS";
 		case obj_charsets:
 			return "SQL$CHARSETS";
 		case obj_collations:

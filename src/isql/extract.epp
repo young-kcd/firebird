@@ -1291,6 +1291,15 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			ISQL_errmsg(fbStatus);
 			return OBJECT_NOT_FOUND;
 		END_ERROR
+
+		// Process DDL permissions
+		for (int i = obj_database; i < obj_type_MAX; i++)
+		{
+			const processing_state rc =
+				SHOW_grants2(get_object_name(i), terminator, i, first ? banner : 0, mangle);
+			if (rc == SKIP)
+				first = false;
+		}
 	}
 
 	return first_role && first ? OBJECT_NOT_FOUND : SKIP;
