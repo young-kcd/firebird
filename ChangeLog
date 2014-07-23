@@ -1,3 +1,15 @@
+ 2014-07-22 18:44  skidder 
+   M builds/win32/make_all.bat
+Revert my change, as Dmitry fixed the same error a before me
+
+ 2014-07-22 08:31  roman-simakov 
+   M src/dsql/parse.y
+   M src/isql/extract.epp
+   M src/isql/show.epp
+   M src/jrd/obj.h
+Removed SHADOW permissions since they handled by ALTER DATABASE permission
+Added show of DDL permissions in isql
+
  2014-07-21 16:13  asfernandes 
    M src/dsql/DsqlCompilerScratch.h
    M src/dsql/ExprNodes.cpp
