@@ -2399,7 +2399,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 				RecordSource* const rsb1 =
 					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
 				RecordSource* const rsb2 =
-					FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
+					FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
 
 				rsb = FB_NEW(*tdbb->getDefaultPool()) ConditionalStream(csb, rsb1, rsb2, condition);
 			}
@@ -2413,7 +2413,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		}
 		else if (inversion)
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, inversion);
+			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
 		}
 		else
 		{

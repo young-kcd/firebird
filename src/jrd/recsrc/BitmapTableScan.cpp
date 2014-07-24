@@ -36,8 +36,10 @@ using namespace Jrd;
 // ---------------------------------------------
 
 BitmapTableScan::BitmapTableScan(CompilerScratch* csb, const string& alias,
-								 StreamType stream, InversionNode* inversion)
-	: RecordStream(csb, stream), m_alias(csb->csb_pool, alias), m_inversion(inversion)
+								 StreamType stream, jrd_rel* relation,
+								 InversionNode* inversion)
+	: RecordStream(csb, stream),
+	  m_alias(csb->csb_pool, alias), m_relation(relation), m_inversion(inversion)
 {
 	fb_assert(m_inversion);
 
@@ -53,7 +55,7 @@ void BitmapTableScan::open(thread_db* tdbb) const
 	impure->irsb_bitmap = EVL_bitmap(tdbb, m_inversion, NULL);
 
 	record_param* const rpb = &request->req_rpb[m_stream];
-	RLCK_reserve_relation(tdbb, request->req_transaction, rpb->rpb_relation, false);
+	RLCK_reserve_relation(tdbb, request->req_transaction, m_relation, false);
 
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }
@@ -125,15 +127,8 @@ void BitmapTableScan::print(thread_db* tdbb, string& plan,
 {
 	if (detailed)
 	{
-		NestConst<InversionNode> inversion = m_inversion;
-		while (inversion && !inversion->retrieval)
-			inversion = inversion->node1;
-
-		fb_assert(inversion && inversion->retrieval);
-		const MetaName& name = inversion->retrieval->irb_relation->rel_name;
-
 		plan += printIndent(++level) + "Table " +
-			printName(tdbb, name.c_str(), m_alias) + " Access By ID";
+			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Access By ID";
 
 		printInversion(tdbb, m_inversion, plan, true, level);
 	}

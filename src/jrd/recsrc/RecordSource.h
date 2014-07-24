@@ -167,7 +167,7 @@ namespace Jrd
 
 	public:
 		BitmapTableScan(CompilerScratch* csb, const Firebird::string& alias,
-						StreamType stream, InversionNode* inversion);
+						StreamType stream, jrd_rel* relation, InversionNode* inversion);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -179,6 +179,7 @@ namespace Jrd
 
 	private:
 		const Firebird::string m_alias;
+		jrd_rel* const m_relation;
 		NestConst<InversionNode> const m_inversion;
 	};
 
@@ -200,7 +201,8 @@ namespace Jrd
 
 	public:
 		IndexTableScan(CompilerScratch* csb, const Firebird::string& alias,
-					   StreamType stream, InversionNode* index, USHORT keyLength);
+					   StreamType stream, jrd_rel* relation,
+					   InversionNode* index, USHORT keyLength);
 
 		void open(thread_db* tdbb) const;
 		void close(thread_db* tdbb) const;
@@ -228,6 +230,7 @@ namespace Jrd
 		bool setupBitmaps(thread_db* tdbb, Impure* impure) const;
 
 		const Firebird::string m_alias;
+		jrd_rel* const m_relation;
 		NestConst<InversionNode> const m_index;
 		NestConst<InversionNode> m_inversion;
 		NestConst<BoolExprNode> m_condition;

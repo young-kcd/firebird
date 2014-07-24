@@ -659,7 +659,7 @@ IndexTableScan* OptimizerRetrieval::getNavigation()
 	InversionNode* const index_node = makeIndexScanNode(navigationCandidate);
 
 	return FB_NEW(*tdbb->getDefaultPool())
-		IndexTableScan(csb, getAlias(), stream, index_node, key_length);
+		IndexTableScan(csb, getAlias(), stream, relation, index_node, key_length);
 }
 
 void OptimizerRetrieval::analyzeNavigation()

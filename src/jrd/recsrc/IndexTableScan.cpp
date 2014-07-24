@@ -41,8 +41,10 @@ using namespace Jrd;
 // ------------------------------------
 
 IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& alias,
-							   StreamType stream, InversionNode* index, USHORT length)
-	: RecordStream(csb, stream), m_alias(csb->csb_pool, alias), m_index(index),
+							   StreamType stream, jrd_rel* relation,
+							   InversionNode* index, USHORT length)
+	: RecordStream(csb, stream),
+	  m_alias(csb->csb_pool, alias), m_relation(relation), m_index(index),
 	  m_inversion(NULL), m_condition(NULL), m_length(length), m_offset(0)
 {
 	fb_assert(m_index);
@@ -57,14 +59,13 @@ IndexTableScan::IndexTableScan(CompilerScratch* csb, const string& alias,
 
 void IndexTableScan::open(thread_db* tdbb) const
 {
-	//Database* const dbb = tdbb->getDatabase();
 	jrd_req* const request = tdbb->getRequest();
 	Impure* const impure = request->getImpure<Impure>(m_impure);
 
 	impure->irsb_flags = irsb_first | irsb_open;
 
 	record_param* const rpb = &request->req_rpb[m_stream];
-	RLCK_reserve_relation(tdbb, request->req_transaction, rpb->rpb_relation, false);
+	RLCK_reserve_relation(tdbb, request->req_transaction, m_relation, false);
 
 	rpb->rpb_number.setValue(BOF_NUMBER);
 }
@@ -129,7 +130,7 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 	index_desc* const idx = (index_desc*) ((SCHAR*) impure + m_offset);
 
 	// find the last fetched position from the index
-	const USHORT pageSpaceID = rpb->rpb_relation->getPages(tdbb)->rel_pg_space_id;
+	const USHORT pageSpaceID = m_relation->getPages(tdbb)->rel_pg_space_id;
 	win window(pageSpaceID, impure->irsb_nav_page);
 
 	UCHAR* nextPointer = getPosition(tdbb, impure, &window);
@@ -211,12 +212,11 @@ bool IndexTableScan::getRecord(thread_db* tdbb) const
 		{
 			temporary_key value;
 
-			const idx_e result =
-				BTR_key(tdbb, rpb->rpb_relation, rpb->rpb_record, idx, &value, false);
+			const idx_e result = BTR_key(tdbb, m_relation, rpb->rpb_record, idx, &value, false);
 
 			if (result != idx_e_ok)
 			{
-				IndexErrorContext context(rpb->rpb_relation, idx);
+				IndexErrorContext context(m_relation, idx);
 				context.raise(tdbb, result, rpb->rpb_record);
 			}
 
@@ -250,15 +250,8 @@ void IndexTableScan::print(thread_db* tdbb, string& plan, bool detailed, unsigne
 {
 	if (detailed)
 	{
-		NestConst<InversionNode> inversion = m_index;
-		while (inversion && !inversion->retrieval)
-			inversion = inversion->node1;
-
-		fb_assert(inversion && inversion->retrieval);
-		const MetaName& name = inversion->retrieval->irb_relation->rel_name;
-
 		plan += printIndent(++level) + "Table " +
-			printName(tdbb, name.c_str(), m_alias) + " Access By ID";
+			printName(tdbb, m_relation->rel_name.c_str(), m_alias) + " Access By ID";
 
 		printInversion(tdbb, m_index, plan, true, level, true);
 
