@@ -41,7 +41,7 @@ public:
 
 	operator UCHAR*()
 	{
-		return (UCHAR*) FB_ALIGN(U_IPTR(buffer), A);
+		return (UCHAR*) fbAlign(buffer, A);
 	}
 
 	FB_SIZE_T size() const

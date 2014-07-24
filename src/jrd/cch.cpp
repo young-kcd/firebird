@@ -3551,7 +3551,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 			const size_t alloc_size = dbb->dbb_page_size * (num_per_seg + 1);
 			memory = (UCHAR*) bcb->bcb_bufferpool->allocate(alloc_size);
 			bcb->bcb_memory.push(memory);
-			memory = (UCHAR *) FB_ALIGN((U_IPTR) memory, dbb->dbb_page_size);
+			memory = fbAlign(memory, dbb->dbb_page_size);
 
 			num_in_seg = num_per_seg;
 			left_to_do -= num_per_seg;
@@ -4285,7 +4285,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 			// Allocate buffers on an address that is an even multiple
 			// of the page size (rather the physical sector size.) This
 			// is a necessary condition to support raw I/O interfaces.
-			memory = (UCHAR *) FB_ALIGN((U_IPTR) memory, page_size);
+			memory = fbAlign(memory, page_size);
 			old_tail = tail;
 			old_buffers = buffers;
 		}

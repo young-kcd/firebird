@@ -170,7 +170,7 @@ void Routine::parseMessages(thread_db* tdbb, CompilerScratch* csb, BlrReader blr
 		{
 			const USHORT align = PAR_desc(tdbb, csb, &*desc);
 			if (align)
-				offset = FB_ALIGN(offset, align);
+				offset = fbAlign(offset, align);
 
 			desc->dsc_address = (UCHAR*)(IPTR) offset;
 			offset += desc->dsc_length;
@@ -178,7 +178,7 @@ void Routine::parseMessages(thread_db* tdbb, CompilerScratch* csb, BlrReader blr
 			maxAlignment = MAX(maxAlignment, align);
 
 			if (maxAlignment && shouldPad && i + 1 == padField)
-				offset = FB_ALIGN(offset, maxAlignment);
+				offset = fbAlign(offset, maxAlignment);
 		}
 
 		format->fmt_length = offset;

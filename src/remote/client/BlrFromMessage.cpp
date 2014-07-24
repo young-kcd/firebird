@@ -202,13 +202,13 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 
 		unsigned align = type_alignments[dtype];
 		if (align)
-			msgLen = FB_ALIGN(msgLen, align);
+			msgLen = fbAlign(msgLen, align);
 
 		msgLen += len;
 
 		align = type_alignments[dtype_short];
 		if (align)
-			msgLen = FB_ALIGN(msgLen, align);
+			msgLen = fbAlign(msgLen, align);
 
 		msgLen += sizeof(SSHORT);
 	}

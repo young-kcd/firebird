@@ -49,7 +49,7 @@
 #include "../common/gdsassert.h"
 
 #include "../jrd/ibase.h"
-#include "../jrd/msg.h"
+#include "../yvalve/msg.h"
 #include "../jrd/event.h"
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/utl_proto.h"

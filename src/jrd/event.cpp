@@ -576,7 +576,7 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 	frb* free;
 	SLONG best_tail = MAX_SLONG;
 
-	length = FB_ALIGN(length, FB_ALIGNMENT);
+	length = fbAlign(length, FB_ALIGNMENT);
 	SRQ_PTR* best = NULL;
 
 	for (SRQ_PTR* ptr = &m_sharedMemory->getHeader()->evh_free;

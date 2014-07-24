@@ -345,7 +345,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					parameter->prm_desc.dsc_length++;
 
 				length += (parameter->prm_desc.dsc_dtype == dtype_blob) ?
-					sizeof(udf_blob) : FB_ALIGN(parameter->prm_desc.dsc_length, FB_DOUBLE_ALIGN);
+					sizeof(udf_blob) : fbAlign(parameter->prm_desc.dsc_length, FB_DOUBLE_ALIGN);
 
 				count = MAX(count, size_t(Y.RDB$ARGUMENT_POSITION));
 			}

@@ -3302,7 +3302,7 @@ static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Form
 		const USHORT align = type_alignments[desc3->dsc_dtype];
 
 		if (align)
-			offset = FB_ALIGN(offset, align);
+			offset = fbAlign(offset, align);
 
 		desc3->dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc3->dsc_length;

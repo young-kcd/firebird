@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/ibase.h"
-#include "../jrd/msg.h"
+#include "../yvalve/msg.h"
 #include "../yvalve/gds_proto.h"
 
 #ifdef HAVE_UNISTD_H
@@ -411,7 +411,7 @@ static USHORT do_msgs( const TEXT* filename, const TEXT* locale, bool sw_warning
 		TEXT* p = leaf_node->msgrec_text;
 		memcpy(p, msg_text, len);
 		n = p + len - (SCHAR*) leaf; // For the next iteration.
-		leaf_node = NEXT_LEAF(leaf_node);
+		leaf_node = leaf_node->next();
 	END_FOR;
 
 	// Write a high water mark on leaf node

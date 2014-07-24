@@ -213,7 +213,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
 		if (align)
-			offset = FB_ALIGN(offset, align);
+			offset = fbAlign(offset, align);
 		parameter->par_desc.dsc_address = (UCHAR*)(IPTR) offset;
 		offset += parameter->par_desc.dsc_length;
 		GEN_descriptor(dsqlScratch, &parameter->par_desc, true);

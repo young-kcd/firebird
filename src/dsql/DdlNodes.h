@@ -25,7 +25,7 @@
 
 #include "../jrd/blr.h"
 #include "../jrd/dyn.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../dsql/make_proto.h"
 #include "../dsql/BlrDebugWriter.h"
 #include "../dsql/Nodes.h"

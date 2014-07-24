@@ -855,8 +855,7 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 	// Allocate various database page buffers needed for operation
 	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + MIN_PAGE_SIZE];
 	// Align it at sector boundary for faster IO (also guarantees correct alignment for ULONG later)
-	BYTE *temp_buffers = reinterpret_cast<BYTE*>(
-		FB_ALIGN(reinterpret_cast<U_IPTR>(temp_buffers_space), MIN_PAGE_SIZE));
+	BYTE *temp_buffers = reinterpret_cast<BYTE*>(fbAlign(temp_buffers_space, MIN_PAGE_SIZE));
 	memset(temp_buffers, 0, database->dbb_page_size * 3);
 
 	backup_state = ini_state;

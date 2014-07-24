@@ -60,11 +60,16 @@ struct msgrec
 	USHORT msgrec_length;		// Length of message text
 	USHORT msgrec_flags;		// Misc flags
 	TEXT msgrec_text[1];		// Text of message
+
+	inline msgrec* next() const
+	{
+		IPTR next = (IPTR) this;
+		next += fbAlign(offsetof(msgrec, msgrec_text[0]) + msgrec_length, sizeof (SLONG));
+		return (msgrec*) next;
+	}
 };
 
-typedef msgrec *MSGREC;
-#define NEXT_LEAF(leaf)	(MSGREC) \
-	((SCHAR*) leaf + FB_ALIGN(offsetof(msgrec, msgrec_text[0]) + leaf->msgrec_length, sizeof (SLONG)))
+typedef msgrec* MSGREC;
 
 #endif // JRD_MSG_H
 

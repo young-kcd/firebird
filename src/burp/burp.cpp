@@ -39,7 +39,7 @@
 #include "../jrd/ibase.h"
 #include <stdarg.h>
 #include "../jrd/ibsetjmp.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../jrd/ods.h"			// to get MAX_PAGE_SIZE
 #include "../jrd/svc.h"
 #include "../jrd/constants.h"

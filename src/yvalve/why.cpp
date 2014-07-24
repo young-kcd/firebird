@@ -69,7 +69,7 @@
 #include "../jrd/acl.h"
 #include "../jrd/align.h"
 #include "../jrd/blr.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../jrd/inf_pub.h"
 
 #ifdef HAVE_SIGNAL_H

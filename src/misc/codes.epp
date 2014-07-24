@@ -29,7 +29,7 @@
 #include <unistd.h>
 #endif
 #include "../jrd/ibase.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 
 // The MSG.GDB database is found under the /msgs component subdirectory.
 // Use links or logicals to point it there, thanks!   AMG

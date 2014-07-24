@@ -340,7 +340,7 @@ ULONG CMP_impure(CompilerScratch* csb, ULONG size)
 		return 0;
 	}
 
-	const ULONG offset = FB_ALIGN(csb->csb_impure, FB_ALIGNMENT);
+	const ULONG offset = fbAlign(csb->csb_impure, FB_ALIGNMENT);
 
 	if (offset + size > JrdStatement::MAX_REQUEST_SIZE)
 	{

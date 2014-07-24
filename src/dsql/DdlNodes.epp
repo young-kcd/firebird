@@ -30,7 +30,7 @@
 #include "../jrd/flags.h"
 #include "../jrd/intl.h"
 #include "../jrd/jrd.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../jrd/obj.h"
 #include "../jrd/ods.h"
 #include "../jrd/tra.h"

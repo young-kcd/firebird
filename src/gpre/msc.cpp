@@ -88,7 +88,7 @@ act* MSC_action( gpre_req* request, act_t type)
 
 UCHAR* MSC_alloc(int size)
 {
-	size = FB_ALIGN(size, FB_ALIGNMENT);
+	size = fbAlign(size, FB_ALIGNMENT);
 
 	if (!space || size > space->spc_remaining)
 	{
@@ -120,7 +120,7 @@ UCHAR* MSC_alloc(int size)
 
 UCHAR* MSC_alloc_permanent(int size)
 {
-	size = FB_ALIGN(size, FB_ALIGNMENT);
+	size = fbAlign(size, FB_ALIGNMENT);
 
 	if (!permanent_space || size > permanent_space->spc_remaining)
 	{

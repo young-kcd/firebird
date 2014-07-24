@@ -1506,14 +1506,14 @@ static void gen_request( qli_req* request)
 			param->par_parameter = message->msg_parameter++;
 			const USHORT alignment = type_alignments[desc->dsc_dtype];
 			if (alignment)
-				message->msg_length = FB_ALIGN(message->msg_length, alignment);
+				message->msg_length = fbAlign(message->msg_length, alignment);
 			param->par_offset = message->msg_length;
 			message->msg_length += desc->dsc_length;
 			qli_par* missing_param = param->par_missing;
 			if (missing_param)
 			{
 				missing_param->par_parameter = message->msg_parameter++;
-				message->msg_length = FB_ALIGN(message->msg_length, sizeof(USHORT));
+				message->msg_length = fbAlign(message->msg_length, sizeof(USHORT));
 				desc = &missing_param->par_desc;
 				missing_param->par_offset = message->msg_length;
 				message->msg_length += desc->dsc_length;
@@ -1525,7 +1525,7 @@ static void gen_request( qli_req* request)
 		STUFF_WORD(message->msg_parameter);
 
 		qli_str* string = (qli_str*) ALLOCDV(type_str, message->msg_length + FB_DOUBLE_ALIGN - 1);
-		message->msg_buffer = (UCHAR*) FB_ALIGN((FB_UINT64)(U_IPTR) string->str_data, FB_DOUBLE_ALIGN);
+		message->msg_buffer = (UCHAR*) fbAlign(string->str_data, FB_DOUBLE_ALIGN);
 
 		for (param = message->msg_parameters; param; param = param->par_next)
 		{

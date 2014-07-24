@@ -149,4 +149,14 @@ typedef ULONG StreamType;
 // The type of Jrd's transaction.
 typedef ULONG TraNumber;
 
+// This solution may be useful after moving to c++11
+//template <typename FROM, typename TO = FROM>
+//TO fbAlign(FROM n, size_t b)
+
+template <typename T>
+inline T fbAlign(T n, size_t b)
+{
+	return (T) FB_ALIGN((uintptr_t)n, b);
+}
+
 #endif /* INCLUDE_FB_TYPES_H */

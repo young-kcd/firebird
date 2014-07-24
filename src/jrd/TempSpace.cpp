@@ -117,7 +117,7 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynam
 			if (minBlockSize < MIN_TEMP_BLOCK_SIZE)
 				minBlockSize = MIN_TEMP_BLOCK_SIZE;
 			else
-				minBlockSize = FB_ALIGN(minBlockSize, MIN_TEMP_BLOCK_SIZE);
+				minBlockSize = fbAlign(minBlockSize, MIN_TEMP_BLOCK_SIZE);
 		}
 	}
 }
@@ -264,12 +264,12 @@ void TempSpace::extend(FB_SIZE_T size)
 			fb_assert(head == tail);
 			delete head;
 			head = tail = NULL;
-			size = FB_ALIGN(logicalSize, minBlockSize);
+			size = fbAlign(logicalSize, minBlockSize);
 			physicalSize = size;
 		}
 		else
 		{
-			size = FB_ALIGN(logicalSize - physicalSize, minBlockSize);
+			size = fbAlign(logicalSize - physicalSize, minBlockSize);
 			physicalSize += size;
 		}
 

@@ -191,7 +191,7 @@ ULONG CAN_encode_decode(burp_rel* relation, lstring* buffer, UCHAR* data, bool_t
 	{
 		if (field->fld_flags & FLD_computed)
 			continue;
-		offset = FB_ALIGN(offset, sizeof(SSHORT));
+		offset = fbAlign(offset, sizeof(SSHORT));
 		UCHAR* p = data + offset;
 		if (!xdr_short(xdrs, (SSHORT*) p))
 			return FALSE;

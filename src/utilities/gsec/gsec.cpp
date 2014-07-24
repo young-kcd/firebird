@@ -30,7 +30,7 @@
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../common/isc_f_proto.h"
 #include "../utilities/gsec/gsec.h"
 #include "../utilities/gsec/gsec_proto.h"

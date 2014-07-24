@@ -25,7 +25,7 @@
 #include "../jrd/UserManagement.h"
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../utilities/gsec/gsec.h"
 #include "../common/security.h"
 #include "../jrd/met_proto.h"

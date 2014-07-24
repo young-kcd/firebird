@@ -1032,7 +1032,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		char unaligned_header_buffer[SECTOR_ALIGNMENT * 2];
 
 		Ods::header_page *header = reinterpret_cast<Ods::header_page*>(
-			FB_ALIGN((IPTR) unaligned_header_buffer, SECTOR_ALIGNMENT));
+			fbAlign(unaligned_header_buffer, SECTOR_ALIGNMENT));
 
 		if (read_file(dbase, header, SECTOR_ALIGNMENT/*sizeof(*header)*/) != SECTOR_ALIGNMENT/*sizeof(*header)*/)
 			status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(1));
@@ -1053,7 +1053,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		Array<UCHAR> unaligned_page_buffer;
 		{ // scope
 			UCHAR* buf = unaligned_page_buffer.getBuffer(header->hdr_page_size + SECTOR_ALIGNMENT);
-			page_buff = reinterpret_cast<Ods::pag*>(FB_ALIGN((IPTR) buf, SECTOR_ALIGNMENT));
+			page_buff = reinterpret_cast<Ods::pag*>(fbAlign(buf, SECTOR_ALIGNMENT));
 		} // end scope
 
 		ULONG db_size = db_size_pages;
@@ -1114,7 +1114,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 		Ods::scns_page* scns = NULL, *scns_buf = NULL;
 		{ // scope
 			UCHAR* buf = unaligned_scns_buffer.getBuffer(header->hdr_page_size + SECTOR_ALIGNMENT);
-			scns_buf = reinterpret_cast<Ods::scns_page*>(FB_ALIGN((IPTR) buf, SECTOR_ALIGNMENT));
+			scns_buf = reinterpret_cast<Ods::scns_page*>(fbAlign(buf, SECTOR_ALIGNMENT));
 		}
 
 		while (true)

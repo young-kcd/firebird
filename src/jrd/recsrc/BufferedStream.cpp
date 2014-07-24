@@ -91,7 +91,7 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 		dsc& desc = format->fmt_desc[i] = fields[i];
 
 		if (desc.dsc_dtype >= dtype_aligned)
-			format->fmt_length = FB_ALIGN(format->fmt_length, type_alignments[desc.dsc_dtype]);
+			format->fmt_length = fbAlign(format->fmt_length, type_alignments[desc.dsc_dtype]);
 
 		desc.dsc_address = (UCHAR*)(IPTR) format->fmt_length;
 		format->fmt_length += desc.dsc_length;

@@ -42,7 +42,7 @@
 #include <string.h>
 #include "../common/gdsassert.h"
 #include "../common/file_params.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/os/path_utils.h"
 #include "../common/dsc.h"
@@ -95,7 +95,7 @@
 #include "../jrd/ibase.h"
 
 #include "../jrd/blr.h"
-#include "../jrd/msg.h"
+#include "../yvalve/msg.h"
 #include "../common/isc_proto.h"
 #include "../common/os/isc_i_proto.h"
 
@@ -1539,7 +1539,7 @@ SSHORT API_ROUTINE gds__msg_lookup(void* handle,
 		if (!status)
 		{
 			// Search the leaf
-			for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status; leaf = NEXT_LEAF(leaf))
+			for (const msgrec* leaf = (msgrec*) messageL->msg_bucket; !status; leaf = leaf->next())
 			{
 				if (leaf >= (const msgrec*) end || leaf->msgrec_code > code)
 				{

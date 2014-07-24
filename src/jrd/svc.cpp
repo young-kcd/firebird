@@ -58,7 +58,7 @@
 #include "../common/utils_proto.h"
 #include "../common/db_alias.h"
 #include "../jrd/scl.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/EngineInterface.h"

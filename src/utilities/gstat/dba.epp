@@ -43,7 +43,7 @@
 #include "../jrd/btn.h"
 #include "../jrd/svc.h"
 #include "../jrd/license.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 #include "../common/gdsassert.h"
 #include "../utilities/gstat/ppg_proto.h"
 #include "../utilities/gstat/dbaswi.h"

@@ -36,7 +36,7 @@
 #include "fb_exception.h"
 #include "gen/iberror.h"
 #include "firebird/Interface.h"
-#include "../jrd/msg_encode.h"
+#include "../common/msg_encode.h"
 
 #ifdef WIN_NT
 #include <windows.h>
