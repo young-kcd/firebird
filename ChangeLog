@@ -1,3 +1,82 @@
+ 2014-07-24 19:37  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/BitmapTableScan.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/recsrc/RecordSource.h
+Fixed CORE-4498: FB 3.0 crashes when getting an explained plan for a DBKEY based retrieval.
+
+ 2014-07-24 08:38  roman-simakov 
+   M doc/sql.extensions/README.ddl_access.txt
+Correction
+
+ 2014-07-24 06:41  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/burp/canonical.cpp
+   M src/burp/restore.epp
+   M src/common/StatusArg.cpp
+   M src/common/classes/AlignedBuffer.h
+   M src/common/classes/File.h
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/init.cpp
+   M src/common/classes/init.h
+   M src/common/isc_sync.cpp
+   A src/common/msg_encode.h (from /firebird/trunk/src/jrd/msg_encode.h:59898)
+   M src/common/utils.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/gen.cpp
+   M src/gpre/msc.cpp
+   M src/include/fb_types.h
+   M src/jrd/CryptoManager.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/Function.epp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/Routine.cpp
+   M src/jrd/SimilarToMatcher.h
+   M src/jrd/TempSpace.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/event.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   D src/jrd/msg.h
+   D src/jrd/msg_encode.h
+   M src/jrd/nbak.cpp
+   M src/jrd/ods.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/jrd/svc.cpp
+   M src/lock/lock.cpp
+   M src/misc/codes.epp
+   M src/msgs/build_file.epp
+   M src/qli/all.cpp
+   M src/qli/compile.cpp
+   M src/qli/gener.cpp
+   M src/remote/client/BlrFromMessage.cpp
+   M src/remote/parser.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/gds.cpp
+   A src/yvalve/msg.h (from /firebird/trunk/src/jrd/msg.h:59898)
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Replaced macro FB_ALIGN with function fbAlign, minor related cleanup
+
  2014-07-22 18:44  skidder 
    M builds/win32/make_all.bat
 Revert my change, as Dmitry fixed the same error a before me
