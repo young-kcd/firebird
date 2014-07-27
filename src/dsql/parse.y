@@ -619,6 +619,7 @@ using namespace Firebird;
 	Firebird::MetaName* metaNamePtr;
 	Firebird::ObjectsArray<Firebird::MetaName>* metaNameArray;
 	Firebird::PathName* pathNamePtr;
+	Firebird::QualifiedName* qualifiedNamePtr;
 	Firebird::string* stringPtr;
 	Jrd::IntlString* intlStringPtr;
 	Jrd::DbFileClause* dbFileClause;
@@ -4723,11 +4724,15 @@ set_statistics
 %type <ddlNode> comment
 comment
 	: COMMENT ON ddl_type0 IS ddl_desc
-		{ $$ = newNode<CommentOnNode>($3, "", "", *$5); }
+		{ $$ = newNode<CommentOnNode>($3, QualifiedName(""), "", *$5); }
 	| COMMENT ON ddl_type1 symbol_ddl_name IS ddl_desc
-		{ $$ = newNode<CommentOnNode>($3, *$4, "", *$6); }
+		{ $$ = newNode<CommentOnNode>($3, QualifiedName(*$4), "", *$6); }
 	| COMMENT ON ddl_type2 symbol_ddl_name ddl_subname IS ddl_desc
+		{ $$ = newNode<CommentOnNode>($3, QualifiedName(*$4), *$5, *$7); }
+	| COMMENT ON ddl_type3 ddl_qualified_name ddl_subname IS ddl_desc
 		{ $$ = newNode<CommentOnNode>($3, *$4, *$5, *$7); }
+	| COMMENT ON ddl_type4 ddl_qualified_name IS ddl_desc
+		{ $$ = newNode<CommentOnNode>($3, *$4, "", *$6); }
 	| COMMENT ON USER symbol_user_name IS ddl_desc
 		{
 			CreateAlterUserNode* node =
@@ -4748,10 +4753,7 @@ ddl_type1
 	: KW_DOMAIN				{ $$ = obj_field; }
 	| TABLE					{ $$ = obj_relation; }
 	| VIEW					{ $$ = obj_view; }
-	| PROCEDURE				{ $$ = obj_procedure; }
 	| TRIGGER				{ $$ = obj_trigger; }
-	| EXTERNAL FUNCTION		{ $$ = obj_udf; }
-	| FUNCTION				{ $$ = obj_udf; }
 	| FILTER				{ $$ = obj_blob_filter; }
 	| EXCEPTION				{ $$ = obj_exception; }
 	| GENERATOR				{ $$ = obj_generator; }
@@ -4769,19 +4771,37 @@ ddl_type1
 %type <intVal> ddl_type2
 ddl_type2
 	: COLUMN					{ $$ = obj_relation; }
-	| ddl_param_opt PARAMETER	{ $$ = $1; }
 	;
 
-%type <intVal> ddl_param_opt
-ddl_param_opt
-	:			{ $$ = obj_parameter; }
-	| PROCEDURE	{ $$ = obj_procedure; }
-	| FUNCTION	{ $$ = obj_udf; }
+%type <intVal> ddl_type3
+ddl_type3
+	: PARAMETER				{ $$ = obj_parameter; }
+	| PROCEDURE PARAMETER	{ $$ = obj_procedure; }
+	| FUNCTION PARAMETER	{ $$ = obj_udf; }
+	;
+
+%type <intVal> ddl_type4
+ddl_type4
+	: PROCEDURE				{ $$ = obj_procedure; }
+	| EXTERNAL FUNCTION		{ $$ = obj_udf; }
+	| FUNCTION				{ $$ = obj_udf; }
 	;
 
 %type <metaNamePtr> ddl_subname
 ddl_subname
 	: '.' symbol_ddl_name	{ $$ = $2; }
+	;
+
+%type <metaNamePtr> ddl_subname_opt
+ddl_subname_opt
+	: /* nothing */		{ $$ = NULL; }
+	| ddl_subname
+	;
+
+%type <qualifiedNamePtr> ddl_qualified_name
+ddl_qualified_name
+	: symbol_ddl_name						{ $$ = newNode<QualifiedName>(*$1); }
+	| symbol_ddl_name '.' symbol_ddl_name	{ $$ = newNode<QualifiedName>(*$3, *$1); }
 	;
 
 %type <stringPtr> ddl_desc

@@ -220,7 +220,7 @@ class CommentOnNode : public DdlNode
 {
 public:
 	CommentOnNode(MemoryPool& pool, int aObjType,
-				const Firebird::MetaName& aObjName, const Firebird::MetaName& aSubName,
+				const Firebird::QualifiedName& aObjName, const Firebird::MetaName& aSubName,
 				const Firebird::string aText)
 		: DdlNode(pool),
 		  objType(aObjType),
@@ -238,18 +238,21 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		/*** ASF: FIXME: When returning, str is destroyed but its pointer is recorded.
-		Firebird::string str(objName.c_str());
+		Firebird::string str(objName.toString());
+
 		if (subName.hasData())
 			str.append(".").append(subName.c_str());
-		statusVector << Firebird::Arg::Gds(isc_dsql_comment_on_failed) << str;
-		***/
-		statusVector << Firebird::Arg::Gds(isc_dsql_comment_on_failed) << objName;
+
+		//// ASF: What a hack, as StatusVector does not save the pointer content!
+		const char* p = Firebird::MasterInterfacePtr()->circularAlloc(str.c_str(), str.length(),
+			(intptr_t) getThreadId());
+
+		statusVector << Firebird::Arg::Gds(isc_dsql_comment_on_failed) << p;
 	}
 
 private:
 	int objType;
-	Firebird::MetaName objName;
+	Firebird::QualifiedName objName;
 	Firebird::MetaName subName;
 	Firebird::string text;
 };

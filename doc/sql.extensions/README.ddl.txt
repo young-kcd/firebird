@@ -136,7 +136,8 @@ Proposed syntax for testing:
 COMMENT ON DATABASE IS {'txt'|NULL};
 COMMENT ON <basic_type> name IS {'txt'|NULL};
 COMMENT ON COLUMN table_or_view_name.field_name IS {'txt'|NULL};
-COMMENT ON PARAMETER procedure_name.param_name IS {'txt'|NULL};
+COMMENT ON {PROCEDURE | FUNCTION} [<package_name> .] name.param_name IS {'txt'|NULL};
+COMMENT ON [PROCEDURE | FUNCTION] PARAMETER [<package_name> .] name.param_name IS {'txt'|NULL};
 
 An empty literal string '' will act as NULL since the internal code (DYN in this case)
 works this way with blobs.

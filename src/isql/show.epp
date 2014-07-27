@@ -85,7 +85,7 @@ static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
 static processing_state show_check(const SCHAR*);
 static processing_state show_collations(const SCHAR*, SSHORT sys_flag, const char* msg = 0, bool compact = false);
-static void show_comment(const char* objtype, char* name1, char* name2,
+static void show_comment(const char* objtype, char* packageName, char* name1, char* name2,
 	ISC_QUAD* blobfld, const commentMode showextract, const char* banner);
 static processing_state show_comments(const commentMode showextract, const char* banner);
 static void show_db();
@@ -2668,7 +2668,7 @@ static processing_state show_collations(const SCHAR* object, SSHORT sys_flag, co
 // Helper that displays in correct syntax the COMMENT ON command for each object.
 // It escapes identifiers with embedded double quotes and escapes the comment
 // itself if it contains single quotes when we are honoring script extraction.
-static void show_comment(const char* objtype, char* name1, char* name2,
+static void show_comment(const char* objtype, char* packageName, char* name1, char* name2,
 	ISC_QUAD* blobfld, const commentMode showextract, const char* banner)
 {
 	const bool escape_quotes = showextract == cmmExtract;
@@ -2676,19 +2676,30 @@ static void show_comment(const char* objtype, char* name1, char* name2,
 	if (escape_quotes && banner)
 		isqlGlob.prints(banner);
 
+	if (packageName)
+		fb_utils::exact_name(packageName);
 	if (name1)
 		fb_utils::exact_name(name1);
 	if (name2)
 		fb_utils::exact_name(name2);
 
+	char packageNameBuffer[BUFFER_LENGTH128];
 	char SQL_identifier2[BUFFER_LENGTH128];
+
 	if (escape_quotes && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
 	{
+		if (packageName)
+		{
+			IUTILS_copy_SQL_id (packageName, packageNameBuffer, DBL_QUOTE);
+			packageName = packageNameBuffer;
+		}
+
 		if (name1)
 		{
 			IUTILS_copy_SQL_id (name1, SQL_identifier, DBL_QUOTE);
 			name1 = SQL_identifier;
 		}
+
 		if (name2)
 		{
 			IUTILS_copy_SQL_id (name2, SQL_identifier2, DBL_QUOTE);
@@ -2698,12 +2709,21 @@ static void show_comment(const char* objtype, char* name1, char* name2,
 
 	const char* quot = escape_quotes ? "'" : "";
 
-	if (!name1)
-		isqlGlob.printf("COMMENT ON %-12s IS %s", objtype, quot);
-	else if (!name2)
-		isqlGlob.printf("COMMENT ON %-12s %s IS %s", objtype, name1, quot);
-	else
-		isqlGlob.printf("COMMENT ON %-12s %s.%s IS %s", objtype, name1, name2, quot);
+	isqlGlob.printf("COMMENT ON %-12s", objtype);
+
+	if (packageName || name1 || name2)
+		isqlGlob.printf(" ");
+
+	if (packageName)
+		isqlGlob.printf("%s.", packageName);
+
+	if (name1)
+		isqlGlob.printf("%s", name1);
+
+	if (name2)
+		isqlGlob.printf(".%s", name2);
+
+	isqlGlob.printf(" IS %s", quot);
 
 	SHOW_print_metadata_text_blob(isqlGlob.Out, blobfld, escape_quotes);
 	isqlGlob.printf("%s%s%s", quot, isqlGlob.global_Term, NEWLINE);
@@ -2740,7 +2760,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 	FOR FIRST 1 DT IN RDB$DATABASE
 		WITH DT.RDB$DESCRIPTION NOT MISSING
 
-		show_comment("DATABASE", 0, 0, &DT.RDB$DESCRIPTION, showextract, first ? banner : 0);
+		show_comment("DATABASE", NULL, NULL, NULL, &DT.RDB$DESCRIPTION, showextract, first ? banner : 0);
 		first = false;
 	END_FOR
 	ON_ERROR
@@ -2754,7 +2774,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND DM.RDB$DESCRIPTION NOT MISSING
 		SORTED BY DM.RDB$FIELD_NAME
 
-		show_comment("DOMAIN", DM.RDB$FIELD_NAME, 0, &DM.RDB$DESCRIPTION,
+		show_comment("DOMAIN", NULL, DM.RDB$FIELD_NAME, NULL, &DM.RDB$DESCRIPTION,
 			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
@@ -2770,7 +2790,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 
 		if (!RL.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(RL.RDB$DESCRIPTION))
 		{
-			show_comment("TABLE", RL.RDB$RELATION_NAME, 0, &RL.RDB$DESCRIPTION,
+			show_comment("TABLE", NULL, RL.RDB$RELATION_NAME, NULL, &RL.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
 			first = false;
 		}
@@ -2780,7 +2800,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			AND RF.RDB$DESCRIPTION NOT MISSING
 			SORTED BY RF.RDB$FIELD_POSITION
 
-			show_comment("   COLUMN", RL.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
+			show_comment("   COLUMN", NULL, RL.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
 				&RF.RDB$DESCRIPTION, showextract, first ? banner : 0);
 			first = false;
 		END_FOR
@@ -2802,7 +2822,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 
 		if (!VW.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(VW.RDB$DESCRIPTION))
 		{
-			show_comment("VIEW", VW.RDB$RELATION_NAME, 0 , &VW.RDB$DESCRIPTION,
+			show_comment("VIEW", NULL, VW.RDB$RELATION_NAME, NULL, &VW.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
 			first = false;
 		}
@@ -2812,7 +2832,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			AND RF.RDB$DESCRIPTION NOT MISSING
 			SORTED BY RF.RDB$FIELD_POSITION
 
-			show_comment("   COLUMN", VW.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
+			show_comment("   COLUMN", NULL, VW.RDB$RELATION_NAME, RF.RDB$FIELD_NAME,
 				&RF.RDB$DESCRIPTION, showextract, first ? banner : 0);
 			first = false;
 		END_FOR
@@ -2829,24 +2849,24 @@ static processing_state show_comments(const commentMode showextract, const char*
 
 	FOR PR IN RDB$PROCEDURES
 		WITH (PR.RDB$SYSTEM_FLAG EQ 0 OR PR.RDB$SYSTEM_FLAG MISSING)
-		AND PR.RDB$PACKAGE_NAME MISSING
 		SORTED BY PR.RDB$PROCEDURE_NAME
 
 		if (!PR.RDB$DESCRIPTION.NULL && !UserBlob::blobIsNull(PR.RDB$DESCRIPTION))
 		{
-			show_comment("PROCEDURE", PR.RDB$PROCEDURE_NAME, 0, &PR.RDB$DESCRIPTION,
-				showextract, first ? banner : 0);
+			show_comment("PROCEDURE", (PR.RDB$PACKAGE_NAME.NULL ? NULL : PR.RDB$PACKAGE_NAME),
+				PR.RDB$PROCEDURE_NAME, NULL, &PR.RDB$DESCRIPTION, showextract, first ? banner : 0);
 			first = false;
 		}
 
 		FOR PA IN RDB$PROCEDURE_PARAMETERS
 			WITH PA.RDB$PROCEDURE_NAME = PR.RDB$PROCEDURE_NAME
-			AND PA.RDB$PACKAGE_NAME MISSING
+			AND PA.RDB$PACKAGE_NAME EQUIV NULLIF(PR.RDB$PACKAGE_NAME, '')
 			AND PA.RDB$DESCRIPTION NOT MISSING
 			SORTED BY PA.RDB$PARAMETER_TYPE, PA.RDB$PARAMETER_NUMBER
 
-			show_comment("   PARAMETER", PR.RDB$PROCEDURE_NAME, PA.RDB$PARAMETER_NAME,
-				&PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
+			show_comment("   PROCEDURE PARAMETER",
+				(PR.RDB$PACKAGE_NAME.NULL ? NULL : PR.RDB$PACKAGE_NAME), PR.RDB$PROCEDURE_NAME,
+				PA.RDB$PARAMETER_NAME, &PA.RDB$DESCRIPTION, showextract, first ? banner : 0);
 			first = false;
 		END_FOR
 		ON_ERROR
@@ -2865,7 +2885,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (TR.RDB$SYSTEM_FLAG EQ 0 OR TR.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY TR.RDB$TRIGGER_NAME
 
-		show_comment("TRIGGER", TR.RDB$TRIGGER_NAME, 0, &TR.RDB$DESCRIPTION,
+		show_comment("TRIGGER", NULL, TR.RDB$TRIGGER_NAME, NULL, &TR.RDB$DESCRIPTION,
 			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
@@ -2877,7 +2897,6 @@ static processing_state show_comments(const commentMode showextract, const char*
 	FOR UD IN RDB$FUNCTIONS
 		WITH UD.RDB$DESCRIPTION NOT MISSING
 		AND (UD.RDB$SYSTEM_FLAG EQ 0 OR UD.RDB$SYSTEM_FLAG MISSING)
-		AND UD.RDB$PACKAGE_NAME MISSING
 		SORTED BY UD.RDB$FUNCTION_NAME
 
 		// Avoid syntax error when extracting scripts due to an historical bug in gbak.
@@ -2885,9 +2904,26 @@ static processing_state show_comments(const commentMode showextract, const char*
 		if (UserBlob::blobIsNull(UD.RDB$DESCRIPTION))
 			continue;
 
-		show_comment("EXTERNAL FUNCTION", UD.RDB$FUNCTION_NAME, 0,
+		show_comment("FUNCTION",
+			(UD.RDB$PACKAGE_NAME.NULL ? NULL : UD.RDB$PACKAGE_NAME), UD.RDB$FUNCTION_NAME, NULL,
 			&UD.RDB$DESCRIPTION, showextract, first ? banner : 0);
 		first = false;
+
+		FOR ARG IN RDB$FUNCTION_ARGUMENTS
+			WITH ARG.RDB$FUNCTION_NAME = UD.RDB$FUNCTION_NAME
+			AND ARG.RDB$PACKAGE_NAME EQUIV NULLIF(UD.RDB$PACKAGE_NAME, '')
+			AND ARG.RDB$DESCRIPTION NOT MISSING
+			SORTED BY ARG.RDB$ARGUMENT_POSITION
+
+			show_comment("   FUNCTION PARAMETER",
+				(ARG.RDB$PACKAGE_NAME.NULL ? NULL : ARG.RDB$PACKAGE_NAME), ARG.RDB$FUNCTION_NAME,
+				ARG.RDB$ARGUMENT_NAME, &ARG.RDB$DESCRIPTION, showextract, first ? banner : 0);
+			first = false;
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(fbStatus);
+			return ps_ERR;
+		END_ERROR
 	END_FOR
 	ON_ERROR
 		ISQL_errmsg(fbStatus);
@@ -2899,7 +2935,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (BF.RDB$SYSTEM_FLAG EQ 0 OR BF.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY BF.RDB$FUNCTION_NAME
 
-		show_comment("FILTER", BF.RDB$FUNCTION_NAME, 0, &BF.RDB$DESCRIPTION,
+		show_comment("FILTER", NULL, BF.RDB$FUNCTION_NAME, NULL, &BF.RDB$DESCRIPTION,
 			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
@@ -2913,7 +2949,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (XC.RDB$SYSTEM_FLAG EQ 0 OR XC.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY XC.RDB$EXCEPTION_NAME
 
-		show_comment("EXCEPTION", XC.RDB$EXCEPTION_NAME, 0, &XC.RDB$DESCRIPTION,
+		show_comment("EXCEPTION", NULL, XC.RDB$EXCEPTION_NAME, NULL, &XC.RDB$DESCRIPTION,
 			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
@@ -2929,7 +2965,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			AND (GR.RDB$SYSTEM_FLAG EQ 0 OR GR.RDB$SYSTEM_FLAG MISSING)
 			SORTED BY GR.RDB$GENERATOR_NAME
 
-			show_comment("GENERATOR", GR.RDB$GENERATOR_NAME, 0, &GR.RDB$DESCRIPTION,
+			show_comment("GENERATOR", NULL, GR.RDB$GENERATOR_NAME, NULL, &GR.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
 			first = false;
 		END_FOR
@@ -2944,7 +2980,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (IX.RDB$SYSTEM_FLAG EQ 0 OR IX.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY IX.RDB$INDEX_NAME
 
-		show_comment("INDEX", IX.RDB$INDEX_NAME, 0, &IX.RDB$DESCRIPTION,
+		show_comment("INDEX", NULL, IX.RDB$INDEX_NAME, NULL, &IX.RDB$DESCRIPTION,
 			showextract, first ? banner : 0);
 		first = false;
 	END_FOR
@@ -2960,7 +2996,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			AND (RO.RDB$SYSTEM_FLAG EQ 0 OR RO.RDB$SYSTEM_FLAG MISSING)
 			SORTED BY RO.RDB$ROLE_NAME
 
-			show_comment("ROLE", RO.RDB$ROLE_NAME, 0, &RO.RDB$DESCRIPTION,
+			show_comment("ROLE", NULL, RO.RDB$ROLE_NAME, NULL, &RO.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
 			first = false;
 		END_FOR
@@ -2977,7 +3013,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 			AND (PACK.RDB$SYSTEM_FLAG EQ 0 OR PACK.RDB$SYSTEM_FLAG MISSING)
 			SORTED BY PACK.RDB$PACKAGE_NAME
 
-			show_comment("PACKAGE", PACK.RDB$PACKAGE_NAME, 0, &PACK.RDB$DESCRIPTION,
+			show_comment("PACKAGE", NULL, PACK.RDB$PACKAGE_NAME, NULL, &PACK.RDB$DESCRIPTION,
 				showextract, first ? banner : 0);
 			first = false;
 		END_FOR
@@ -2992,7 +3028,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (CH.RDB$SYSTEM_FLAG EQ 0 OR CH.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY CH.RDB$CHARACTER_SET_NAME
 
-		show_comment("CHARACTER SET", CH.RDB$CHARACTER_SET_NAME, 0,
+		show_comment("CHARACTER SET", NULL, CH.RDB$CHARACTER_SET_NAME, NULL,
 			&CH.RDB$DESCRIPTION, showextract, first ? banner : 0);
 		first = false;
 	END_FOR
@@ -3006,7 +3042,7 @@ static processing_state show_comments(const commentMode showextract, const char*
 		AND (CL.RDB$SYSTEM_FLAG EQ 0 OR CL.RDB$SYSTEM_FLAG MISSING)
 		SORTED BY CL.RDB$COLLATION_NAME
 
-		show_comment("COLLATION", CL.RDB$COLLATION_NAME, 0, &CL.RDB$DESCRIPTION,
+		show_comment("COLLATION", NULL, CL.RDB$COLLATION_NAME, NULL, &CL.RDB$DESCRIPTION,
 			showextract, first ? banner : 0);
 		first = false;
 	END_FOR

@@ -1054,7 +1054,7 @@ void CommentOnNode::print(string& text) const
 		"  objType: %s\n"
 		"  objName: %s\n"
 		"  text: %s\n",
-		objType, objName.c_str(), this->text.c_str());
+		objType, objName.toString().c_str(), this->text.c_str());
 }
 
 bool CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -1078,54 +1078,52 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	const char* subColumnClause = NULL;
 	const char* addWhereClause = NULL;
 	Arg::StatusVector status;
+	string objNameStr = objName.toString();
 
 	if (objType == obj_parameter)
 	{
 		fb_assert(subName.hasData());
 
-		PreparedStatement::Builder sql;
-		sql << "select 1 from rdb$procedures p join rdb$procedure_parameters pp using (rdb$procedure_name)" <<
-			   "where p.rdb$procedure_name =" << objName <<
-			   "and p.rdb$package_name is null and pp.rdb$package_name is null" <<
-			   "and pp.rdb$parameter_name =" << subName <<
-			   "union all" <<
-			   "select 2 from rdb$functions f join rdb$function_arguments fa using (rdb$function_name)" <<
-			   "where f.rdb$function_name =" << objName <<
-			   "and f.rdb$package_name is null and fa.rdb$package_name is null" <<
-			   "and fa.rdb$argument_name =" << subName;
+		AutoRequest requestHandle;
 
-		AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, sql));
-		AutoResultSet rs(ps->executeQuery(tdbb, transaction));
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			FUN IN RDB$FUNCTIONS CROSS
+			ARG IN RDB$FUNCTION_ARGUMENTS
+			WITH FUN.RDB$FUNCTION_NAME EQ objName.identifier.c_str() AND
+				 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(objName.package.c_str(), '') AND
+				 ARG.RDB$FUNCTION_NAME EQ FUN.RDB$FUNCTION_NAME AND
+				 ARG.RDB$PACKAGE_NAME EQUIV FUN.RDB$PACKAGE_NAME AND
+				 ARG.RDB$ARGUMENT_NAME EQ subName.c_str()
+		{
+			objType = obj_udf;
+		}
+		END_FOR
 
-		if (!rs->fetch(tdbb))
+		requestHandle.reset();
+
+		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
+			PRC IN RDB$PROCEDURES CROSS
+			PRM IN RDB$PROCEDURE_PARAMETERS
+			WITH PRC.RDB$PROCEDURE_NAME EQ objName.identifier.c_str() AND
+				 PRC.RDB$PACKAGE_NAME EQUIV NULLIF(objName.package.c_str(), '') AND
+				 PRM.RDB$PROCEDURE_NAME EQ PRC.RDB$PROCEDURE_NAME AND
+				 PRM.RDB$PACKAGE_NAME EQUIV PRC.RDB$PACKAGE_NAME AND
+				 PRM.RDB$PARAMETER_NAME EQ subName.c_str()
+		{
+			if (objType == obj_parameter)
+				objType = obj_procedure;
+			else
+			{
+				status_exception::raise(Arg::Gds(isc_dyn_routine_param_ambiguous) <<
+					Arg::Str(subName) << Arg::Str(objNameStr));
+			}
+		}
+		END_FOR
+
+		if (objType == obj_parameter)
 		{
 			status_exception::raise(Arg::Gds(isc_dyn_routine_param_not_found) <<
-				Arg::Str(subName) << Arg::Str(objName));
-		}
-
-		fb_assert(!rs->isNull(1));
-		dsc& desc = rs->getDesc(1);
-		fb_assert(desc.dsc_dtype == dtype_long);
-		const SLONG result = *reinterpret_cast<SLONG*>(desc.dsc_address);
-
-		switch (result)
-		{
-			case 1:
-				objType = obj_procedure;
-				break;
-
-			case 2:
-				objType = obj_udf;
-				break;
-
-			default:
-				fb_assert(false);
-		}
-
-		if (rs->fetch(tdbb))
-		{
-			status_exception::raise(Arg::Gds(isc_dyn_routine_param_ambiguous) <<
-				Arg::Str(subName) << Arg::Str(objName));
+				Arg::Str(subName) << Arg::Str(objNameStr));
 		}
 	}
 
@@ -1147,13 +1145,13 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				tableClause = "rdb$relation_fields";
 				subColumnClause = "rdb$field_name";
 				status << Arg::Gds(isc_dyn_column_does_not_exist) <<
-					Arg::Str(subName) << Arg::Str(objName);
+					Arg::Str(subName) << Arg::Str(objNameStr);
 			}
 			else
 			{
 				tableClause = "rdb$relations";
 				addWhereClause = "rdb$view_blr is null";
-				status << Arg::Gds(isc_dyn_table_not_found) << Arg::Str(objName);
+				status << Arg::Gds(isc_dyn_table_not_found) << Arg::Str(objNameStr);
 			}
 			columnClause = "rdb$relation_name";
 			break;
@@ -1161,7 +1159,7 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		case obj_view:
 			tableClause = "rdb$relations";
 			columnClause = "rdb$relation_name";
-			status << Arg::Gds(isc_dyn_view_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_view_not_found) << Arg::Str(objNameStr);
 			addWhereClause = "rdb$view_blr is not null";
 			break;
 
@@ -1171,22 +1169,21 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				tableClause = "rdb$procedure_parameters";
 				subColumnClause = "rdb$parameter_name";
 				status << Arg::Gds(isc_dyn_proc_param_not_found) <<
-					Arg::Str(subName) << Arg::Str(objName);
+					Arg::Str(subName) << Arg::Str(objNameStr);
 			}
 			else
 			{
 				tableClause = "rdb$procedures";
-				status << Arg::Gds(isc_dyn_proc_not_found) << Arg::Str(objName);
+				status << Arg::Gds(isc_dyn_proc_not_found) << Arg::Str(objNameStr);
 			}
 
-			addWhereClause = "rdb$package_name is null";
 			columnClause = "rdb$procedure_name";
 			break;
 
 		case obj_trigger:
 			tableClause = "rdb$triggers";
 			columnClause = "rdb$trigger_name";
-			status << Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_trig_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_udf:
@@ -1195,70 +1192,69 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				tableClause = "rdb$function_arguments";
 				subColumnClause = "rdb$argument_name";
 				status << Arg::Gds(isc_dyn_func_param_not_found) <<
-					Arg::Str(subName) << Arg::Str(objName);
+					Arg::Str(subName) << Arg::Str(objNameStr);
 			}
 			else
 			{
 				tableClause = "rdb$functions";
-				status << Arg::Gds(isc_dyn_func_not_found) << Arg::Str(objName);
+				status << Arg::Gds(isc_dyn_func_not_found) << Arg::Str(objNameStr);
 			}
 
-			addWhereClause = "rdb$package_name is null";
 			columnClause = "rdb$function_name";
 			break;
 
 		case obj_blob_filter:
 			tableClause = "rdb$filters";
 			columnClause = "rdb$function_name";
-			status << Arg::Gds(isc_dyn_filter_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_filter_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_exception:
 			tableClause = "rdb$exceptions";
 			columnClause = "rdb$exception_name";
-			status << Arg::Gds(isc_dyn_exception_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_exception_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_generator:
 			tableClause = "rdb$generators";
 			columnClause = "rdb$generator_name";
-			status << Arg::Gds(isc_dyn_gen_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_gen_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_index:
 			tableClause = "rdb$indices";
 			columnClause = "rdb$index_name";
-			status << Arg::Gds(isc_dyn_index_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_index_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_sql_role:
 			tableClause = "rdb$roles";
 			columnClause = "rdb$role_name";
-			status << Arg::Gds(isc_dyn_role_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_role_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_charset:
 			tableClause = "rdb$character_sets";
 			columnClause = "rdb$character_set_name";
-			status << Arg::Gds(isc_dyn_charset_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_charset_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_collation:
 			tableClause = "rdb$collations";
 			columnClause = "rdb$collation_name";
-			status << Arg::Gds(isc_dyn_collation_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_collation_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_package_header:
 			tableClause = "rdb$packages";
 			columnClause = "rdb$package_name";
-			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_package_not_found) << Arg::Str(objNameStr);
 			break;
 
 		case obj_schema:
 			tableClause = "rdb$schemas";
 			columnClause = "rdb$schema_name";
-			status << Arg::Gds(isc_dyn_schema_not_found) << Arg::Str(objName);
+			status << Arg::Gds(isc_dyn_schema_not_found) << Arg::Str(objNameStr);
 			break;
 
 		default:
@@ -1271,15 +1267,18 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		description = text;
 
 	PreparedStatement::Builder sql;
-	sql << "update" << tableClause << "set rdb$description =" << description;
+	sql << "update" << tableClause << "set rdb$description =" << description << "where 1 = 1";
 
 	if (columnClause)
 	{
-		sql << "where" << columnClause << "=" << objName;
+		sql << "and" << columnClause << "=" << objName.identifier;
 
 		if (subColumnClause)
 			sql << "and" << subColumnClause << "=" << subName;
 	}
+
+	if (objType == obj_procedure || objType == obj_udf)
+		sql << "and rdb$package_name is not distinct from nullif(" << objName.package << ", '')";
 
 	if (addWhereClause)
 		sql << "and" << addWhereClause;
