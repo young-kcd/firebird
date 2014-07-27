@@ -1889,7 +1889,7 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 // Escape Unicode characters from a string
 void ISC_escape(AbstractString& /*str*/)
 {
-#if 0	// CORE-2929
+#ifdef NOT_USED_OR_REPLACED	// CORE-2929
 	size_t pos = 0;
 	while ((pos = str.find_first_of("#", pos)) != npos)
 	{
@@ -1900,6 +1900,7 @@ void ISC_escape(AbstractString& /*str*/)
 }
 
 
+#ifdef NOT_USED_OR_REPLACED	// CORE-2929
 // Adapted from macro in ICU headers.
 static inline void FB_U8_APPEND_UNSAFE(char* s, int& i, const int c)
 {
@@ -1926,12 +1927,13 @@ static inline void FB_U8_APPEND_UNSAFE(char* s, int& i, const int c)
 		s[i++] = (unsigned char) ((c & 0x3f) | 0x80);
 	}
 }
+#endif
 
 
 // Unescape Unicode characters from a string
 void ISC_unescape(AbstractString& /*str*/)
 {
-#if 0	// CORE-2929
+#ifdef NOT_USED_OR_REPLACED	// CORE-2929
 	size_t pos = 0;
 	while ((pos = str.find_first_of("#", pos)) != npos)
 	{

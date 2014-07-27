@@ -115,7 +115,7 @@ class HashJoin::HashTable : public PermanentStorage
 
 	class CollisionList
 	{
-		static const size_t INVALID_ITERATOR = size_t(~0);
+		static const FB_SIZE_T INVALID_ITERATOR = FB_SIZE_T(~0);
 
 	public:
 		CollisionList(MemoryPool& pool, const KeyBuffer* keyBuffer, ULONG itemLength)
