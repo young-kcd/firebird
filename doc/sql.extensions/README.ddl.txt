@@ -148,7 +148,7 @@ basic_type:
 - VIEW
 - PROCEDURE
 - TRIGGER
-- EXTERNAL FUNCTION
+- [EXTERNAL] FUNCTION
 - FILTER
 - EXCEPTION
 - GENERATOR
@@ -157,6 +157,7 @@ basic_type:
 - ROLE
 - CHARACTER SET
 - COLLATION
+- PACKAGE
 - USER (ability to store comment depends upon user management plugin)
 - SECURITY CLASS (not implemented because Borland hid them).
 
