@@ -1,3 +1,17 @@
+ 2014-07-27 23:33  asfernandes 
+   M src/common/isc_file.cpp
+   M src/jrd/recsrc/HashJoin.cpp
+Warnings.
+
+ 2014-07-27 03:05  asfernandes 
+   M doc/sql.extensions/README.ddl.txt
+   M src/common/classes/QualifiedName.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/isql/show.epp
+Improvement CORE-4484 - Description (COMMENT ON) for package procedures and functions, and its parameters.
+
  2014-07-24 19:37  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/opt.cpp
