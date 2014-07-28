@@ -1557,7 +1557,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 		xVar->sqltype |= 1;
 
 		if (type_alignments[dtype])
-			offset = fbAlign(offset, type_alignments[dtype]);
+			offset = FB_ALIGN(offset, type_alignments[dtype]);
 
         offset += xVar->sqllen;
         const int type = xVar->sqltype & (~1);
@@ -1566,7 +1566,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 		}
 
 		// null indicator
-		offset = fbAlign(offset, type_alignments[dtype_short]);
+		offset = FB_ALIGN(offset, type_alignments[dtype_short]);
 		offset += sizeof(SSHORT);
     }
 
@@ -1580,7 +1580,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 	{
 		const UCHAR dtype = sqlTypeToDscType(xVar->sqltype & ~1);
 		if (type_alignments[dtype])
-			offset = fbAlign(offset, type_alignments[dtype]);
+			offset = FB_ALIGN(offset, type_alignments[dtype]);
 
 		xVar->sqldata = (ISC_SCHAR*) (p + offset);
 
@@ -1604,7 +1604,7 @@ static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &
 		}
 
 		// null indicator
-		offset = fbAlign(offset, type_alignments[dtype_short]);
+		offset = FB_ALIGN(offset, type_alignments[dtype_short]);
 		xVar->sqlind = (SSHORT*) (p + offset);
 
 		dsc& null = descs[i * 2 + 1];

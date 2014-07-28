@@ -119,7 +119,7 @@ void CMP_alloc_temp(qli_nod* node)
 	qli_str* string = (qli_str*) ALLOCDV(type_str, node->nod_desc.dsc_length +
 					     type_alignments[node->nod_desc.dsc_dtype]);
 	node->nod_desc.dsc_address = (UCHAR*)
-		fbAlign(string->str_data, type_alignments[node->nod_desc.dsc_dtype]);
+		FB_ALIGN(string->str_data, type_alignments[node->nod_desc.dsc_dtype]);
 	QLI_validate_desc(node->nod_desc);
 }
 

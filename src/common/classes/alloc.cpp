@@ -808,7 +808,7 @@ void* MemoryPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 	}
 #endif
 
-	size = fbAlign(size, get_map_page_size());
+	size = FB_ALIGN(size, get_map_page_size());
 
 #ifdef WIN_NT
 
@@ -909,7 +909,7 @@ void MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_
 	// Set access protection for block to prevent memory from deleted pool being accessed
 	int handle = /* //VALGRIND_MAKE_NOACCESS */ VALGRIND_MAKE_MEM_DEFINED(block, size);
 
-	size = fbAlign(size, get_map_page_size());
+	size = FB_ALIGN(size, get_map_page_size());
 
 	void* unmapBlockPtr = block;
 	size_t unmapBlockSize = size;
@@ -958,7 +958,7 @@ void MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_
 	}
 #endif
 
-	size = fbAlign(size, get_map_page_size());
+	size = FB_ALIGN(size, get_map_page_size());
 #ifdef WIN_NT
 	if (!VirtualFree(block, 0, MEM_RELEASE))
 #else // WIN_NT

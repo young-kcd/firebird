@@ -670,7 +670,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 		// Allocate buffer for message
 		const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
 		UCHAR* msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
-		msgBuffer = fbAlign(msgBuffer, FB_DOUBLE_ALIGN);
+		msgBuffer = FB_ALIGN(msgBuffer, FB_DOUBLE_ALIGN);
 		message->msg_buffer_number = req_msg_buffers.add(msgBuffer);
 	}
 
@@ -805,7 +805,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			message = &temp_msg;
 			temp_msg.msg_number = 1;
 			temp_msg.msg_length = 2;
-			msgBuffer = fbAlign(temp_buffer, FB_DOUBLE_ALIGN);
+			msgBuffer = FB_ALIGN(temp_buffer, FB_DOUBLE_ALIGN);
 		}
 
 		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, msgBuffer);

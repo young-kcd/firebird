@@ -1280,7 +1280,7 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
  *	Allocate a block of given size.
  *
  **************************************/
-	size = fbAlign(size, FB_ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 	ASSERT_ACQUIRED;
 	ULONG block = m_sharedMemory->getHeader()->lhb_used;
 
@@ -1346,7 +1346,7 @@ lbl* LockManager::alloc_lock(USHORT length, Arg::StatusVector& statusVector)
  *	one.
  *
  **************************************/
-	length = fbAlign(length, 8);
+	length = FB_ALIGN(length, 8);
 
 	ASSERT_ACQUIRED;
 	srq* lock_srq;
@@ -2384,7 +2384,7 @@ bool LockManager::initialize(SharedMemoryBase* sm, bool initializeMemory)
 
 	const ULONG length = sizeof(lhb) + (hdr->lhb_hash_slots * sizeof(hdr->lhb_hash[0]));
 	hdr->lhb_length = m_sharedMemory->sh_mem_length_mapped;
-	hdr->lhb_used = fbAlign(length, FB_ALIGNMENT);
+	hdr->lhb_used = FB_ALIGN(length, FB_ALIGNMENT);
 
 	shb* secondary_header = (shb*) alloc(sizeof(shb), NULL);
 	if (!secondary_header)

@@ -1069,7 +1069,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 				desc1 = *desc_idx;
 				const USHORT idx_dsc_length = record_idx->idx_expression_desc.dsc_length;
 				desc1.dsc_address = tmp.getBuffer(idx_dsc_length + FB_DOUBLE_ALIGN);
-				desc1.dsc_address = fbAlign(desc1.dsc_address, FB_DOUBLE_ALIGN);
+				desc1.dsc_address = FB_ALIGN(desc1.dsc_address, FB_DOUBLE_ALIGN);
 				fb_assert(desc_idx->dsc_length <= idx_dsc_length);
 				memmove(desc1.dsc_address, desc_idx->dsc_address, desc_idx->dsc_length);
 

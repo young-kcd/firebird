@@ -1620,7 +1620,7 @@ void put_data(burp_rel* relation)
 			break;
 		}
 		if (alignment)
-			offset = fbAlign(offset, alignment);
+			offset = FB_ALIGN(offset, alignment);
 		field->fld_offset = offset;
 		field->fld_parameter = count++;
 		offset += length;
@@ -1634,7 +1634,7 @@ void put_data(burp_rel* relation)
 			continue;
 		add_byte(blr, blr_short);
 		add_byte(blr, 0);
-		offset = fbAlign(offset, sizeof(SSHORT));
+		offset = FB_ALIGN(offset, sizeof(SSHORT));
 		field->fld_missing_parameter = count++;
 		offset += sizeof(SSHORT);
 	}
@@ -1645,7 +1645,7 @@ void put_data(burp_rel* relation)
 	add_byte(blr, 0);					// scale for eof field
 	SSHORT eof_parameter = count++;
 	RCRD_OFFSET record_length = offset;
-	RCRD_OFFSET eof_offset = fbAlign(offset, sizeof(SSHORT));
+	RCRD_OFFSET eof_offset = FB_ALIGN(offset, sizeof(SSHORT));
 	// To be used later for the buffer size to receive data
 	const FLD_LENGTH length = (USHORT) (eof_offset + sizeof(SSHORT));
 

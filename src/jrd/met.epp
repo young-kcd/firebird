@@ -1011,7 +1011,7 @@ ULONG MET_align(const dsc* desc, ULONG value)
 
 	alignment = MIN(alignment, FORMAT_ALIGNMENT);
 
-	return fbAlign(value, alignment);
+	return FB_ALIGN(value, alignment);
 }
 
 

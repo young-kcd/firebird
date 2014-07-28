@@ -89,7 +89,7 @@ const size_t ALLOC_ALIGNMENT = FB_ALIGNMENT;
 
 static inline size_t MEM_ALIGN(size_t value)
 {
-	return fbAlign(value, ALLOC_ALIGNMENT);
+	return FB_ALIGN(value, ALLOC_ALIGNMENT);
 }
 
 static const unsigned int DEFAULT_ROUNDING = 8;

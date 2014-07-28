@@ -245,7 +245,7 @@ namespace Firebird
 		void create()
 		{
 			static char place[sizeof(Firebird::Mutex) + FB_ALIGNMENT];
-			mutex = new((void*) fbAlign(place, FB_ALIGNMENT)) Firebird::Mutex;
+			mutex = new((void*) FB_ALIGN(place, FB_ALIGNMENT)) Firebird::Mutex;
 		}
 
 		void release()

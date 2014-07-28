@@ -246,7 +246,7 @@ private:
 public:
 	Static()
 	{
-		t = new((void*) fbAlign(buf, FB_ALIGNMENT)) T();
+		t = new((void*) FB_ALIGN(buf, FB_ALIGNMENT)) T();
 	}
 
 	T* operator->()

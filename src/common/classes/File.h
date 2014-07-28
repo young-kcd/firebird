@@ -55,7 +55,7 @@ public:
 	{
 		bufSize = size;
 		bufAligned = buffer.getBuffer(bufSize + SYS_PAGE_SIZE);
-		bufAligned = fbAlign(bufAligned, SYS_PAGE_SIZE);
+		bufAligned = FB_ALIGN(bufAligned, SYS_PAGE_SIZE);
 		memset(bufAligned, 0, size);
 	}
 

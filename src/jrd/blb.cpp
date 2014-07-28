@@ -2727,7 +2727,7 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 
 		if (array_desc->dsc_dtype == dtype_varying &&
 			array_desc->dsc_address !=
-				fbAlign(array_desc->dsc_address, (MIN(sizeof(USHORT), FB_ALIGNMENT))))
+				FB_ALIGN(array_desc->dsc_address, (MIN(sizeof(USHORT), FB_ALIGNMENT))))
 		{
 			// Note: cannot remove this JRD_get_thread_data without api change
 			// to slice callback routines
@@ -2764,7 +2764,7 @@ static void slice_callback(array_slice* arg, ULONG /*count*/, DSC* descriptors)
 
 			if (array_desc->dsc_dtype == dtype_varying &&
 				array_desc->dsc_address !=
-					fbAlign(array_desc->dsc_address, (MIN(sizeof(USHORT), FB_ALIGNMENT))))
+					FB_ALIGN(array_desc->dsc_address, (MIN(sizeof(USHORT), FB_ALIGNMENT))))
 			{
 			    // temp_desc will vanish at the end of the block, but it's used
 			    // only as a way to transfer blocks of memory.

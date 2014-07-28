@@ -2579,7 +2579,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		map_length = ROUNDUP(map_length, sizeof(SLONG));
 #else
 		if (desc->dsc_dtype >= dtype_aligned)
-			map_length = fbAlign(map_length, type_alignments[desc->dsc_dtype]);
+			map_length = FB_ALIGN(map_length, type_alignments[desc->dsc_dtype]);
 #endif
 
 		sort_key->skd_offset = map_length;
@@ -2633,7 +2633,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		if (id >= format->fmt_count || desc->dsc_dtype == dtype_unknown)
 			IBERROR(157);		// msg 157 cannot sort on a field that does not exist
 		if (desc->dsc_dtype >= dtype_aligned)
-			map_length = fbAlign(map_length, type_alignments[desc->dsc_dtype]);
+			map_length = FB_ALIGN(map_length, type_alignments[desc->dsc_dtype]);
 		map_item->clear();
 		map_item->fieldId = (SSHORT) id;
 		map_item->stream = stream;

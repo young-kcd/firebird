@@ -1633,7 +1633,7 @@ DmlNode* DeclareSubProcNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 			fmtDesc = parameter->prm_desc;
 
 			if (fmtDesc.dsc_dtype >= dtype_aligned)
-				format->fmt_length = fbAlign(format->fmt_length, type_alignments[fmtDesc.dsc_dtype]);
+				format->fmt_length = FB_ALIGN(format->fmt_length, type_alignments[fmtDesc.dsc_dtype]);
 
 			fmtDesc.dsc_address = (UCHAR*)(IPTR) format->fmt_length;
 			format->fmt_length += fmtDesc.dsc_length;
@@ -2794,7 +2794,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 		format = procedure->getOutputFormat();
 		outMsgLength = format->fmt_length;
 		outMsg = tempBuffer.getBuffer(outMsgLength + FB_DOUBLE_ALIGN - 1);
-		outMsg = fbAlign(outMsg, FB_DOUBLE_ALIGN);
+		outMsg = FB_ALIGN(outMsg, FB_DOUBLE_ALIGN);
 	}
 
 	if (inputSources)
@@ -5258,7 +5258,7 @@ void MessageNode::setup(thread_db* tdbb, CompilerScratch* csb, USHORT message, U
 		ItemInfo itemInfo;
 		const USHORT alignment = setupDesc(tdbb, csb, index, &*desc, &itemInfo);
 		if (alignment)
-			offset = fbAlign(offset, alignment);
+			offset = FB_ALIGN(offset, alignment);
 
 		desc->dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc->dsc_length;
@@ -5266,7 +5266,7 @@ void MessageNode::setup(thread_db* tdbb, CompilerScratch* csb, USHORT message, U
 		maxAlignment = MAX(maxAlignment, alignment);
 
 		if (maxAlignment && shouldPad && index + 1 == padField)
-			offset = fbAlign(offset, maxAlignment);
+			offset = FB_ALIGN(offset, maxAlignment);
 
 		// ASF: Odd indexes are the nullable flag.
 		// So we only check even indexes, which is the actual parameter.
@@ -5321,7 +5321,7 @@ MessageNode* MessageNode::pass2(thread_db* /*tdbb*/, CompilerScratch* csb)
 {
 	fb_assert(format);
 
-	impureOffset = CMP_impure(csb, fbAlign(format->fmt_length, 2));
+	impureOffset = CMP_impure(csb, FB_ALIGN(format->fmt_length, 2));
 	impureFlags = CMP_impure(csb, sizeof(USHORT) * format->fmt_count);
 
 	return this;

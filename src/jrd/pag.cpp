@@ -1124,7 +1124,7 @@ void PAG_header_init(thread_db* tdbb)
 	// sector for raw disk access.
 
 	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
-	SCHAR* const temp_page = fbAlign(temp_buffer, MIN_PAGE_SIZE);
+	SCHAR* const temp_page = FB_ALIGN(temp_buffer, MIN_PAGE_SIZE);
 
 	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
 	const header_page* header = (header_page*) temp_page;
@@ -1245,7 +1245,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 
 	Array<SCHAR> temp;
 	SCHAR* const temp_page =
-		fbAlign(temp.getBuffer(dbb->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
+		FB_ALIGN(temp.getBuffer(dbb->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
 
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* file = pageSpace->file;
@@ -2221,7 +2221,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 
 	Array<UCHAR> temp;
 	page_inv_page* pip = reinterpret_cast<Ods::page_inv_page*>
-		(fbAlign(temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE));
+		(FB_ALIGN(temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE));
 
 	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);

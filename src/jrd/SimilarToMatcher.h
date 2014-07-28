@@ -277,7 +277,7 @@ private:
 				: size(INCREASE_FACTOR)
 			{
 				data = FB_NEW(*getDefaultMemoryPool()) UCHAR[(size + 1) * sizeof(T)];
-				back = (T*) fbAlign(data.get(), sizeof(T));
+				back = (T*) FB_ALIGN(data.get(), sizeof(T));
 				end = back + size;
 
 				// 'back' starts before initial element, then always points to the last pushed element.
@@ -293,7 +293,7 @@ private:
 					unsigned newSize = size + INCREASE_FACTOR;
 					UCHAR* newData = FB_NEW(*getDefaultMemoryPool()) UCHAR[(newSize + 1) * sizeof(T)];
 
-					T* p = (T*) fbAlign(newData, sizeof(T));
+					T* p = (T*) FB_ALIGN(newData, sizeof(T));
 					memcpy(p, end - size, size * sizeof(T));
 
 					back = p + size;

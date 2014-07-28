@@ -64,7 +64,7 @@ struct msgrec
 	inline msgrec* next() const
 	{
 		IPTR next = (IPTR) this;
-		next += fbAlign(offsetof(msgrec, msgrec_text[0]) + msgrec_length, sizeof (SLONG));
+		next += FB_ALIGN(offsetof(msgrec, msgrec_text[0]) + msgrec_length, sizeof (SLONG));
 		return (msgrec*) next;
 	}
 };

@@ -267,7 +267,7 @@ RMessage* PARSE_messages(const UCHAR* blr, size_t blr_length)
 			else
 				net_length += (desc->dsc_length + 3) & ~3;
 			if (align > 1)
-				offset = fbAlign(offset, align);
+				offset = FB_ALIGN(offset, align);
 			desc->dsc_address = (UCHAR*) (IPTR) offset;
 			offset += desc->dsc_length;
 		}

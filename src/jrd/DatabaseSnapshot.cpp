@@ -275,7 +275,7 @@ void MonitoringData::ensureSpace(ULONG length)
 
 	if (newSize > shared_memory->getHeader()->allocated)
 	{
-		newSize = fbAlign(newSize, DEFAULT_SIZE);
+		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
 #ifdef HAVE_OBJECT_MAP
 		Arg::StatusVector statusVector;

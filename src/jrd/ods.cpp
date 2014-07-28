@@ -124,7 +124,7 @@ ULONG maxRecsPerDP(ULONG page_size)
 	// ODS11 it doesn't matter because record numbers are 40-bit.
 	// Benefit is ~1.5 times smaller sparse bitmaps on average and faster bitmap iteration.
 
-	//max_records = fbAlign(max_records, 64);
+	//max_records = FB_ALIGN(max_records, 64);
 
 	return max_records;
 }

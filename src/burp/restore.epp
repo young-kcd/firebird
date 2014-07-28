@@ -2821,7 +2821,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 			break;
 		}
 		if (alignment)
-			offset = fbAlign(offset, alignment);
+			offset = FB_ALIGN(offset, alignment);
 		field->fld_offset = offset;
 		field->fld_parameter = count++;
 		offset += length;
@@ -2836,7 +2836,7 @@ rec_type get_data(BurpGlobals* tdgbl, burp_rel* relation, bool skip_relation)
 				continue;
 			add_byte(blr, blr_short);
 			add_byte(blr, 0);
-			offset = fbAlign(offset, sizeof(SSHORT));
+			offset = FB_ALIGN(offset, sizeof(SSHORT));
 			field->fld_missing_parameter = count++;
 			offset += sizeof(SSHORT);
 		}
@@ -9519,8 +9519,8 @@ void realign(BurpGlobals* tdgbl, UCHAR* buffer, const burp_rel* relation)
 		{
 			if (field->fld_flags & FLD_computed)
 				continue;
-			p = fbAlign(p, sizeof(SSHORT));
-			q = fbAlign(q, sizeof(SSHORT));
+			p = FB_ALIGN(p, sizeof(SSHORT));
+			q = FB_ALIGN(q, sizeof(SSHORT));
 			*p++ = *q++;
 			*p++ = *q++;
 		}
@@ -9568,7 +9568,7 @@ USHORT recompute_length(BurpGlobals* tdgbl, burp_rel* relation)
 			length += sizeof(USHORT);
 
 		if (alignment)
-			offset = fbAlign(offset, alignment);
+			offset = FB_ALIGN(offset, alignment);
 		field->fld_old_offset = offset;
 		offset += length;
 	}
@@ -9581,7 +9581,7 @@ USHORT recompute_length(BurpGlobals* tdgbl, burp_rel* relation)
 		{
 			if (field->fld_flags & FLD_computed)
 				continue;
-			offset = fbAlign(offset, sizeof(SSHORT));
+			offset = FB_ALIGN(offset, sizeof(SSHORT));
 			offset += sizeof(SSHORT);
 		}
 	}

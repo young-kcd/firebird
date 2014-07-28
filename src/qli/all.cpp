@@ -92,7 +92,7 @@ BLK ALLQ_alloc( qli_plb* pool, UCHAR type, int count)
 	if (tail)
 		size += count * tail;
 
-	size = fbAlign(size, FB_ALIGNMENT);
+	size = FB_ALIGN(size, FB_ALIGNMENT);
 
 	if (size <= 4 || size > 65535)
 		ERRQ_bugcheck(2);			// Msg2 bad block size

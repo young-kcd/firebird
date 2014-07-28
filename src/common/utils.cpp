@@ -1381,14 +1381,14 @@ unsigned sqlTypeToDsc(unsigned runOffset, unsigned sqlType, unsigned sqlLength,
 
 	unsigned align = type_alignments[dscType % FB_NELEM(type_alignments)];
 	if (align)
-		runOffset = fbAlign(runOffset, align);
+		runOffset = FB_ALIGN(runOffset, align);
 	if (offset)
 		*offset = runOffset;
 
 	runOffset += sqlLength;
 	align = type_alignments[dtype_short];
 	if (align)
-		runOffset = fbAlign(runOffset, align);
+		runOffset = FB_ALIGN(runOffset, align);
 	if (nullOffset)
 		*nullOffset = runOffset;
 

@@ -10757,8 +10757,8 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 		const ULONG inMsgLength = function->getInputFormat() ? function->getInputFormat()->fmt_length : 0;
 		const ULONG outMsgLength = function->getOutputFormat()->fmt_length;
-		UCHAR* const inMsg = fbAlign(impure + sizeof(impure_value), FB_ALIGNMENT);
-		UCHAR* const outMsg = fbAlign(inMsg + inMsgLength, FB_ALIGNMENT);
+		UCHAR* const inMsg = FB_ALIGN(impure + sizeof(impure_value), FB_ALIGNMENT);
+		UCHAR* const outMsg = FB_ALIGN(inMsg + inMsgLength, FB_ALIGNMENT);
 
 		if (function->fun_inputs != 0)
 		{

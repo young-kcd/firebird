@@ -375,7 +375,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 	// Start by constructing argument list
 	UCHAR* temp_ptr = temp.getBuffer(function->fun_temp_length + FB_DOUBLE_ALIGN);
 	MOVE_CLEAR(temp_ptr, temp.getCount());
-	temp_ptr = fbAlign(temp_ptr, FB_DOUBLE_ALIGN);
+	temp_ptr = FB_ALIGN(temp_ptr, FB_DOUBLE_ALIGN);
 
 	MOVE_CLEAR(args, sizeof(args));
 	UDF_ARG* arg_ptr = args;
@@ -436,7 +436,7 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 		temp_desc = parameter->prm_desc;
 		temp_desc.dsc_address = temp_ptr;
 		// CVC: There's a theoretical possibility of overflowing "length" here.
-		USHORT length = fbAlign(temp_desc.dsc_length, FB_DOUBLE_ALIGN);
+		USHORT length = FB_ALIGN(temp_desc.dsc_length, FB_DOUBLE_ALIGN);
 
 		// If we've got a null argument, just pass zeros (got any better ideas?)
 
