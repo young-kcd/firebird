@@ -1631,10 +1631,10 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 
 			if (header->lhb_active_owner > 0)
 			{
-				const own* const owner = (own*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_active_owner);
+				const own* const owner = (own*) SRQ_ABS_PTR(header->lhb_active_owner);
 				const prc* const process = (prc*) SRQ_ABS_PTR(owner->own_process);
 				if (process->prc_process_id == PID)
-					release_shmem(m_sharedMemory->getHeader()->lhb_active_owner);
+					release_shmem(header->lhb_active_owner);
 			}
 		}
 
