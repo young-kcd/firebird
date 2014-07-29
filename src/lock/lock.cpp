@@ -1611,26 +1611,31 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 	{
 		m_bugcheck = true;
 
-		// The lock table has some problem - copy it for later analysis
+		const lhb* const header = m_sharedMemory->getHeader();
 
-		TEXT buffer[MAXPATHLEN];
-		gds__prefix_lock(buffer, "fb_lock_table.dump");
-		const TEXT* const lock_file = buffer;
-		FILE* const fd = fopen(lock_file, "wb");
-		if (fd)
+		if (header)
 		{
-			FB_UNUSED(fwrite(m_sharedMemory->getHeader(), 1, m_sharedMemory->getHeader()->lhb_used, fd));
-			fclose(fd);
-		}
+			// The lock table has some problem - copy it for later analysis
 
-		// If the current mutex acquirer is in the same process, release the mutex
+			TEXT buffer[MAXPATHLEN];
+			gds__prefix_lock(buffer, "fb_lock_table.dump");
+			const TEXT* const lock_file = buffer;
+			FILE* const fd = fopen(lock_file, "wb");
+			if (fd)
+			{
+				FB_UNUSED(fwrite(header, 1, header->lhb_used, fd));
+				fclose(fd);
+			}
 
-		if (m_sharedMemory->getHeader() && (m_sharedMemory->getHeader()->lhb_active_owner > 0))
-		{
-			const own* const owner = (own*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_active_owner);
-			const prc* const process = (prc*) SRQ_ABS_PTR(owner->own_process);
-			if (process->prc_process_id == PID)
-				release_shmem(m_sharedMemory->getHeader()->lhb_active_owner);
+			// If the current mutex acquirer is in the same process, release the mutex
+
+			if (header->lhb_active_owner > 0)
+			{
+				const own* const owner = (own*) SRQ_ABS_PTR(m_sharedMemory->getHeader()->lhb_active_owner);
+				const prc* const process = (prc*) SRQ_ABS_PTR(owner->own_process);
+				if (process->prc_process_id == PID)
+					release_shmem(m_sharedMemory->getHeader()->lhb_active_owner);
+			}
 		}
 
 		if (statusVector)
