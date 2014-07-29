@@ -1,3 +1,62 @@
+ 2014-07-28 14:50  asfernandes 
+   M doc/sql.extensions/README.ddl.txt
+Adjustments as Simonov Denis comments in fb-devel.
+
+ 2014-07-28 13:01  alexpeshkoff 
+   M src/burp/backup.epp
+   M src/burp/canonical.cpp
+   M src/burp/restore.epp
+   M src/common/classes/AlignedBuffer.h
+   M src/common/classes/File.h
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/init.cpp
+   M src/common/classes/init.h
+   M src/common/isc_sync.cpp
+   M src/common/utils.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/gen.cpp
+   M src/gpre/msc.cpp
+   M src/include/fb_types.h
+   M src/include/types_pub.h
+   M src/jrd/CryptoManager.h
+   M src/jrd/DatabaseSnapshot.cpp
+   M src/jrd/Function.epp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/Routine.cpp
+   M src/jrd/SimilarToMatcher.h
+   M src/jrd/TempSpace.cpp
+   M src/jrd/blb.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/event.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/ods.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/IndexTableScan.cpp
+   M src/lock/lock.cpp
+   M src/qli/all.cpp
+   M src/qli/compile.cpp
+   M src/qli/gener.cpp
+   M src/remote/client/BlrFromMessage.cpp
+   M src/remote/parser.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/yvalve/msg.h
+Renamed as suggested by Nickolay and Dmitry
+
+ 2014-07-28 11:03  alexpeshkoff 
+   D src/misc/align.cpp
+Cleanup
+
  2014-07-27 23:33  asfernandes 
    M src/common/isc_file.cpp
    M src/jrd/recsrc/HashJoin.cpp
