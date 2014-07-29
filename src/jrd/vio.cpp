@@ -5043,9 +5043,7 @@ static void notify_garbage_collector(thread_db* tdbb, record_param* rpb, TraNumb
 
 	const ULONG dp_sequence = rpb->rpb_number.getValue() / dbb->dbb_max_records;
 
-	gc->addPage(relation->rel_id, dp_sequence, tranid);
-
-	const TraNumber minTranId = gc->minTranID(relation->rel_id);
+	const TraNumber minTranId = gc->addPage(relation->rel_id, dp_sequence, tranid);
 	if (tranid > minTranId)
 		tranid = minTranId;
 

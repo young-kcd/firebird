@@ -45,19 +45,23 @@ void GarbageCollector::RelationData::clear()
 }
 
 
-void GarbageCollector::RelationData::addPage(const ULONG pageno, const TraNumber tranid)
+TraNumber GarbageCollector::RelationData::addPage(const ULONG pageno, const TraNumber tranid)
 {
+	TraNumber minTraID = MAX_TRA_NUMBER;
+	TranData::ConstAccessor accessor(&m_tranData);
+	if (accessor.getFirst())
+		minTraID = accessor.current()->first;
+
 	// look if given page number is already set at given tx bitmap
 	PageBitmap* bm = NULL;
 	const bool bmExists = m_tranData.get(tranid, bm);
 	if (bm && bm->test(pageno))
-		return;
+		return minTraID;
 
 	// search for given page at other transactions bitmaps
 	// if found at older tx - we are done, just return
 	// if found at younger tx - clear it as page should be set at oldest tx (our)
-	TranData::ConstAccessor accessor(&m_tranData);
-	if (accessor.getFirst())
+	if (minTraID != MAX_TRA_NUMBER)
 	{
 		do
 		{
@@ -65,7 +69,7 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const TraNumber
 			if (item->first <= tranid)
 			{
 				if (item->second->test(pageno))
-					return;
+					return minTraID;
 			}
 			else
 			{
@@ -79,7 +83,13 @@ void GarbageCollector::RelationData::addPage(const ULONG pageno, const TraNumber
 	PBM_SET(&m_pool, &bm, pageno);
 
 	if (!bmExists)
+	{
 		m_tranData.put(tranid, bm);
+		if (minTraID > tranid)
+			minTraID = tranid;
+	}
+
+	return minTraID;
 }
 
 
@@ -142,17 +152,21 @@ GarbageCollector::~GarbageCollector()
 
 	for (FB_SIZE_T pos = 0; pos < m_relations.getCount(); pos++)
 	{
-		Sync sync(&m_relations[pos]->m_sync, "GarbageCollector::~GarbageCollector");
+		RelationData* relData = m_relations[pos];
+
+		Sync sync(&relData->m_sync, "GarbageCollector::~GarbageCollector");
 		sync.lock(SYNC_EXCLUSIVE);
+
+		m_relations.remove(pos);
 		sync.unlock();
-		delete m_relations[pos];
+		delete relData;
 	}
 
 	m_relations.clear();
 }
 
 
-void GarbageCollector::addPage(const USHORT relID, const ULONG pageno, const TraNumber tranid)
+TraNumber GarbageCollector::addPage(const USHORT relID, const ULONG pageno, const TraNumber tranid)
 {
 	Sync syncGC(&m_sync, "GarbageCollector::addPage");
 	RelationData* relData = getRelData(syncGC, relID, true);
@@ -160,7 +174,7 @@ void GarbageCollector::addPage(const USHORT relID, const ULONG pageno, const Tra
 	SyncLockGuard syncData(&relData->m_sync, SYNC_EXCLUSIVE, "GarbageCollector::addPage");
 	syncGC.unlock();
 
-	relData->addPage(pageno, tranid);
+	return relData->addPage(pageno, tranid);
 }
 
 
@@ -268,7 +282,6 @@ GarbageCollector::RelationData* GarbageCollector::getRelData(Sync &sync, const U
 		if (!m_relations.find(relID, pos))
 		{
 			m_relations.insert(pos, FB_NEW(m_pool) RelationData(m_pool, relID));
-			sync.downgrade(SYNC_SHARED);
 		}
 	}
 

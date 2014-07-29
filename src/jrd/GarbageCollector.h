@@ -44,7 +44,7 @@ public:
 
 	~GarbageCollector();
 
-	void addPage(const USHORT relID, const ULONG pageno, const TraNumber tranid);
+	TraNumber addPage(const USHORT relID, const ULONG pageno, const TraNumber tranid);
 	bool getPageBitmap(const TraNumber oldest_snapshot, USHORT &relID, PageBitmap** sbm);
 	void removeRelation(const USHORT relID);
 	void sweptRelation(const TraNumber oldest_snapshot, const USHORT relID);
@@ -67,7 +67,7 @@ private:
 			clear();
 		}
 
-		void addPage(const ULONG pageno, const TraNumber tranid);
+		TraNumber addPage(const ULONG pageno, const TraNumber tranid);
 		void getPageBitmap(const TraNumber oldest_snapshot, PageBitmap** sbm);
 		void swept(const TraNumber oldest_snapshot);
 		TraNumber minTranID() const;
