@@ -66,6 +66,7 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/RefMutex.h"
 #include "../common/classes/array.h"
+#include "../common/StatusHolder.h"
 
 static int process_id;
 
@@ -951,7 +952,7 @@ static bool make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 
 namespace {
 
-class TimerEntry : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
+class TimerEntry FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
 {
 public:
 	TimerEntry(int id, USHORT num)
@@ -1007,7 +1008,10 @@ void addTimer(Sys5Semaphore* sem, int microSeconds)
 		MutexLockGuard guard(timerAccess, FB_FUNCTION);
 		timerQueue->push(newTimer);
 	}
-	TimerInterfacePtr()->start(newTimer, microSeconds);
+
+	LocalStatus st;
+	TimerInterfacePtr()->start(&st, newTimer, microSeconds);
+	check(&st);
 }
 
 void delTimer(Sys5Semaphore* sem)
@@ -1031,7 +1035,9 @@ void delTimer(Sys5Semaphore* sem)
 
 	if (found)
 	{
-		TimerInterfacePtr()->stop(*t);
+		LocalStatus st;
+		TimerInterfacePtr()->stop(&st, *t);
+		check(&st);
 	}
 }
 
