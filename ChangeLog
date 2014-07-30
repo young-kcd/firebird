@@ -1,3 +1,7 @@
+ 2014-07-29 05:35  dimitr 
+   M src/lock/lock.cpp
+Trivial fix for CORE-4500: Firebird crashes after unsuccessful remapping of the lock table's shared memory.
+
  2014-07-11 11:31  dimitr 
    M builds/win32/msvc10/gpre_embed.vcxproj
    M builds/win32/msvc8/gpre_embed.vcproj
