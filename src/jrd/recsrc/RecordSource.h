@@ -105,7 +105,8 @@ namespace Jrd
 
 		static Firebird::string printIndent(unsigned level);
 		static void printInversion(thread_db* tdbb, const InversionNode* inversion,
-			Firebird::string& plan, bool detailed, unsigned level, bool navigation = false);
+								   Firebird::string& plan, bool detailed,
+								   unsigned level, bool navigation = false);
 
 		static void saveRecord(thread_db* tdbb, record_param* rpb);
 		static void restoreRecord(thread_db* tdbb, record_param* rpb);
