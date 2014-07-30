@@ -1289,26 +1289,17 @@ static idx_e check_partner_index(thread_db* tdbb,
 		// fill out a retrieval block for the purpose of
 		// generating a bitmap of duplicate records
 
-		IndexRetrieval retrieval;
-		MOVE_CLEAR(&retrieval, sizeof(IndexRetrieval));
-		//retrieval.blk_type = type_irb;
-		retrieval.irb_index = partner_idx.idx_id;
-		memcpy(&retrieval.irb_desc, &partner_idx, sizeof(retrieval.irb_desc));
+		IndexRetrieval retrieval(partner_relation, &partner_idx, segment, &key);
 		retrieval.irb_generic = irb_equality | (starting ? irb_starting : 0);
-		retrieval.irb_relation = partner_relation;
-		retrieval.irb_key = &key;
-		retrieval.irb_upper_count = retrieval.irb_lower_count = segment;
 
 		if (starting && segment < partner_idx.idx_count)
 			retrieval.irb_generic |= irb_partial;
 
-		if (partner_idx.idx_flags & idx_descending) {
+		if (partner_idx.idx_flags & idx_descending)
 			retrieval.irb_generic |= irb_descending;
-		}
+
 		if ((idx->idx_flags & idx_descending) != (partner_idx.idx_flags & idx_descending))
-		{
 			BTR_complement_key(&key);
-		}
 
 		RecordBitmap* bitmap = NULL;
 		BTR_evaluate(tdbb, &retrieval, &bitmap, NULL);
