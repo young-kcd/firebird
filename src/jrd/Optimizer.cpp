@@ -1073,41 +1073,6 @@ ValueExprNode* OptimizerRetrieval::findDbKey(ValueExprNode* dbkey, SLONG* positi
 }
 
 
-InversionNode* OptimizerRetrieval::makeIndexNode(const index_desc* idx) const
-{
-/**************************************
- *
- *	m a k e I n d e x N o d e
- *
- **************************************
- *
- * Functional description
- *	Make an index node and an index retrieval block.
- *
- **************************************/
-
-	// check whether this is during a compile or during
-	// a SET INDEX operation
-	if (csb)
-		CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_index, idx->idx_id);
-	else
-	{
-		CMP_post_resource(&tdbb->getRequest()->getStatement()->resources, relation,
-			Resource::rsc_index, idx->idx_id);
-	}
-
-	IndexRetrieval* retrieval = FB_NEW_RPT(pool, idx->idx_count * 2) IndexRetrieval();
-	retrieval->irb_index = idx->idx_id;
-	memcpy(&retrieval->irb_desc, idx, sizeof(retrieval->irb_desc));
-
-	InversionNode* node = FB_NEW(pool) InversionNode(retrieval);
-
-	if (csb)
-		node->impure = CMP_impure(csb, sizeof(impure_inversion));
-
-	return node;
-}
-
 InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch) const
 {
 /**************************************
@@ -1124,11 +1089,24 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	if (!createIndexScanNodes)
 		return NULL;
 
-	// Allocate both a index retrieval node and block.
-	index_desc* idx = indexScratch->idx;
-	InversionNode* node = makeIndexNode(idx);
-	IndexRetrieval* retrieval = node->retrieval;
-	retrieval->irb_relation = relation;
+	index_desc* const idx = indexScratch->idx;
+
+	// Check whether this is during a compile or during a SET INDEX operation
+	if (csb)
+		CMP_post_resource(&csb->csb_resources, relation, Resource::rsc_index, idx->idx_id);
+	else
+	{
+		CMP_post_resource(&tdbb->getRequest()->getStatement()->resources, relation,
+			Resource::rsc_index, idx->idx_id);
+	}
+
+	// For external requests, determine index name (to be reported in plans)
+	MetaName indexName;
+	if (!(csb->csb_g_flags & csb_internal))
+		MET_lookup_index(tdbb, indexName, relation->rel_name, idx->idx_id + 1);
+
+	IndexRetrieval* const retrieval =
+		FB_NEW(pool) IndexRetrieval(pool, relation, idx, indexName);
 
 	// Pick up lower bound segment values
 	ValueExprNode** lower = retrieval->irb_value;
@@ -1225,7 +1203,8 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	// mark the index as utilized for the purposes of this compile
 	idx->idx_runtime_flags |= idx_used;
 
-	return node;
+	const ULONG impure = csb ? CMP_impure(csb, sizeof(impure_inversion)) : 0;
+	return FB_NEW(pool) InversionNode(retrieval, impure);
 }
 
 InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions) const

@@ -122,8 +122,10 @@ void RecordSource::printInversion(thread_db* tdbb, const InversionNode* inversio
 			const jrd_rel* const relation = retrieval->irb_relation;
 
 			MetaName indexName;
-			MET_lookup_index(tdbb, indexName, relation->rel_name,
-							 (USHORT) (retrieval->irb_index + 1));
+			if (retrieval->irb_name && retrieval->irb_name->hasData())
+				indexName = *retrieval->irb_name;
+			else
+				indexName.printf("<index id %d>", retrieval->irb_index + 1);
 
 			if (detailed)
 			{

@@ -187,7 +187,6 @@ protected:
 	InversionCandidate* generateInversion();
 	void getInversionCandidates(InversionCandidateList* inversions,
 		IndexScratchList* indexScratches, USHORT scope) const;
-	InversionNode* makeIndexNode(const index_desc* idx) const;
 	InversionNode* makeIndexScanNode(IndexScratch* indexScratch) const;
 	InversionCandidate* makeInversion(InversionCandidateList* inversions) const;
 	bool matchBoolean(IndexScratch* indexScratch, BoolExprNode* boolean, USHORT scope) const;

@@ -188,9 +188,9 @@ public:
 	{
 	}
 
-	explicit InversionNode(IndexRetrieval* aRetrieval)
+	InversionNode(IndexRetrieval* aRetrieval, ULONG anImpure)
 		: type(TYPE_INDEX),
-		  impure(0),
+		  impure(anImpure),
 		  retrieval(aRetrieval),
 		  node1(NULL),
 		  node2(NULL),

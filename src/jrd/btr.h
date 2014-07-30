@@ -175,17 +175,42 @@ const int ISR_null		= 2;	// Record consists of NULL values only
 
 // Index retrieval block -- hold stuff for index retrieval
 
-class IndexRetrieval : public pool_alloc_rpt<ValueExprNode*, type_irb>
+class IndexRetrieval
 {
 public:
-	index_desc irb_desc;		// Index descriptor
-	USHORT irb_index;			// Index id
-	USHORT irb_generic;			// Flags for generic search
-	jrd_rel*	irb_relation;	// Relation for retrieval
-	USHORT irb_lower_count;		// Number of segments for retrieval
-	USHORT irb_upper_count;		// Number of segments for retrieval
-	temporary_key*	irb_key;	// key for equality retrieval
-	ValueExprNode* irb_value[1];
+	IndexRetrieval(jrd_rel* relation, const index_desc* idx, USHORT count, temporary_key* key)
+		: irb_relation(relation), irb_index(idx->idx_id),
+		  irb_generic(0), irb_lower_count(count), irb_upper_count(count), irb_key(key),
+		  irb_name(NULL), irb_value(NULL)
+	{
+		memcpy(&irb_desc, idx, sizeof(irb_desc));
+	}
+
+	IndexRetrieval(MemoryPool& pool, jrd_rel* relation, const index_desc* idx,
+				   const Firebird::MetaName& name)
+		: irb_relation(relation), irb_index(idx->idx_id),
+		  irb_generic(0), irb_lower_count(0), irb_upper_count(0), irb_key(NULL),
+		  irb_name(FB_NEW(pool) Firebird::MetaName(name)),
+		  irb_value(FB_NEW(pool) ValueExprNode*[idx->idx_count * 2])
+	{
+		memcpy(&irb_desc, idx, sizeof(irb_desc));
+	}
+
+	~IndexRetrieval()
+	{
+		delete irb_name;
+		delete[] irb_value;
+	}
+
+	index_desc irb_desc;			// Index descriptor
+	jrd_rel* irb_relation;			// Relation for retrieval
+	USHORT irb_index;				// Index id
+	USHORT irb_generic;				// Flags for generic search
+	USHORT irb_lower_count;			// Number of segments for retrieval
+	USHORT irb_upper_count;			// Number of segments for retrieval
+	temporary_key* irb_key;			// Key for equality retrieval
+	Firebird::MetaName* irb_name;	// Index name
+	ValueExprNode** irb_value;
 };
 
 // Flag values for irb_generic
