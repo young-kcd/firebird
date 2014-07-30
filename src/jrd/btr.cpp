@@ -475,19 +475,15 @@ bool BTR_description(thread_db* tdbb, jrd_rel* relation, index_root_page* root, 
  *  Index id's must fit in a short - formerly a UCHAR.
  *
  **************************************/
-
 	SET_TDBB(tdbb);
-	//const Database* dbb = tdbb->getDatabase();
 
-	if (id >= root->irt_count) {
+	if (id >= root->irt_count)
 		return false;
-	}
 
 	const index_root_page::irt_repeat* irt_desc = &root->irt_rpt[id];
 
-	if (irt_desc->irt_root == 0) {
+	if (irt_desc->irt_root == 0)
 		return false;
-	}
 
 	idx->idx_id = id;
 	idx->idx_root = irt_desc->irt_root;
