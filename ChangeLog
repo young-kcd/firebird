@@ -1,3 +1,17 @@
+ 2014-07-29 08:15  hvlad 
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/GarbageCollector.h
+   M src/jrd/vio.cpp
+Cleanup and optimize locking a bit (as suggested by Dmitry)
+
+ 2014-07-29 05:51  dimitr 
+   M src/lock/lock.cpp
+Follow-up.
+
+ 2014-07-29 05:50  dimitr 
+   M src/lock/lock.cpp
+Trivial fix for CORE-4500: Firebird crashes after unsuccessful remapping of the lock table's shared memory.
+
  2014-07-28 14:50  asfernandes 
    M doc/sql.extensions/README.ddl.txt
 Adjustments as Simonov Denis comments in fb-devel.
