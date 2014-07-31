@@ -533,7 +533,7 @@ void SQLDAMetadata::gatherData(DataBuffer& to)
 void SQLDAMetadata::scatterData(DataBuffer& from)
 {
 	fb_assert(sqlda);
-	fb_assert(offsets); // Not reliable, but still check that input buffer can come from this metadata
+//	fb_assert(offsets); // Not reliable, but still check that input buffer can come from this metadata
 
 	if (speedHackEnabled)
 		return; // Data is already in user's buffer
