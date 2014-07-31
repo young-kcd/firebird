@@ -64,7 +64,6 @@
     <ClCompile Include="..\..\..\src\jrd\cvt.cpp" />
     <ClCompile Include="..\..\..\src\jrd\cvt2.cpp" />
     <ClCompile Include="..\..\..\src\jrd\Database.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\DatabaseSnapshot.cpp" />
     <ClCompile Include="..\..\..\src\jrd\DataTypeUtil.cpp" />
     <ClCompile Include="..\..\..\src\jrd\DebugInterface.cpp" />
     <ClCompile Include="..\..\..\src\jrd\err.cpp" />
@@ -89,6 +88,7 @@
     <ClCompile Include="..\..\..\src\jrd\JrdStatement.cpp" />
     <ClCompile Include="..\..\..\src\jrd\lck.cpp" />
     <ClCompile Include="..\..\..\src\jrd\Mapping.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\Monitoring.cpp" />
     <ClCompile Include="..\..\..\src\jrd\mov.cpp" />
     <ClCompile Include="..\..\..\src\jrd\nbak.cpp" />
     <ClCompile Include="..\..\..\src\jrd\nodebug.cpp" />
@@ -209,7 +209,6 @@
     <ClInclude Include="..\..\..\src\jrd\cvt2_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\cvt_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\Database.h" />
-    <ClInclude Include="..\..\..\src\jrd\DatabaseSnapshot.h" />
     <ClInclude Include="..\..\..\src\jrd\DataTypeUtil.h" />
     <ClInclude Include="..\..\..\src\jrd\DebugInterface.h" />
     <ClInclude Include="..\..\..\src\jrd\dflt.h" />
@@ -264,6 +263,7 @@
     <ClInclude Include="..\..\..\src\jrd\license.h" />
     <ClInclude Include="..\..\..\src\jrd\lls.h" />
     <ClInclude Include="..\..\..\src\jrd\Mapping.h" />
+    <ClInclude Include="..\..\..\src\jrd\Monitoring.h" />
     <ClInclude Include="..\..\..\src\jrd\met.h" />
     <ClInclude Include="..\..\..\src\jrd\met_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\mov_proto.h" />

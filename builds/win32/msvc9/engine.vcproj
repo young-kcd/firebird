@@ -376,10 +376,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\DataTypeUtil.cpp"
 				>
 			</File>
@@ -465,6 +461,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\mov.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\Monitoring.cpp"
 				>
 			</File>
 			<File
@@ -945,10 +945,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\Database.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\jrd\DatabaseSnapshot.h"
 				>
 			</File>
 			<File
