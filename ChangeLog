@@ -1,3 +1,27 @@
+ 2014-07-30 13:14  alexpeshkoff 
+   M src/common/isc_sync.cpp
+Fixed parameters when using ITimer interface for SYSV-semaphores build
+
+ 2014-07-30 09:54  dimitr 
+   M src/jrd/idx.cpp
+Avoid metadata lookups while retrieving the plan (especially important in ASTs).
+
+ 2014-07-30 09:50  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/btr.h
+   M src/jrd/recsrc/RecordSource.cpp
+Avoid metadata lookups while retrieving the plan (especially important in ASTs).
+
+ 2014-07-30 09:29  dimitr 
+   M src/jrd/btr.cpp
+Misc.
+
+ 2014-07-30 09:27  dimitr 
+   M src/jrd/recsrc/RecordSource.h
+Misc.
+
  2014-07-29 08:15  hvlad 
    M src/jrd/GarbageCollector.cpp
    M src/jrd/GarbageCollector.h
