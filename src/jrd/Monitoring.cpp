@@ -50,6 +50,11 @@
 #include "../jrd/Monitoring.h"
 #include "../jrd/Function.h"
 
+#ifdef WIN_NT
+#include <process.h>
+#define getpid _getpid
+#endif
+
 const char* const SCRATCH = "fb_monitor_";
 
 using namespace Firebird;
@@ -487,7 +492,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 		while (dumpRecord.getField(dumpField))
 		{
 			const USHORT fid = dumpField.id;
-			const size_t length = dumpField.length;
+			const FB_SIZE_T length = dumpField.length;
 			const char* source = (const char*) dumpField.data;
 
 			// All the strings that may require transliteration (i.e. the target charset is not NONE)
@@ -541,7 +546,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 void SnapshotData::clearSnapshot()
 {
-	for (size_t i = 0; i < m_snapshot.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_snapshot.getCount(); i++)
 		delete m_snapshot[i].data;
 
 	m_snapshot.clear();
@@ -558,7 +563,7 @@ RecordBuffer* SnapshotData::getData(const jrd_rel* relation) const
 
 RecordBuffer* SnapshotData::getData(int id) const
 {
-	for (size_t i = 0; i < m_snapshot.getCount(); i++)
+	for (FB_SIZE_T i = 0; i < m_snapshot.getCount(); i++)
 	{
 		if (m_snapshot[i].rel_id == id)
 			return m_snapshot[i].data;

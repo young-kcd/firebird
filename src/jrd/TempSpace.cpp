@@ -264,12 +264,12 @@ void TempSpace::extend(FB_SIZE_T size)
 			fb_assert(head == tail);
 			delete head;
 			head = tail = NULL;
-			size = FB_ALIGN(logicalSize, minBlockSize);
+			size = static_cast<FB_SIZE_T>(FB_ALIGN(logicalSize, minBlockSize));
 			physicalSize = size;
 		}
 		else
 		{
-			size = FB_ALIGN(logicalSize - physicalSize, minBlockSize);
+			size = static_cast<FB_SIZE_T>(FB_ALIGN(logicalSize - physicalSize, minBlockSize));
 			physicalSize += size;
 		}
 
@@ -290,6 +290,10 @@ void TempSpace::extend(FB_SIZE_T size)
 			}
 		}
 
+		
+		// NS 2014-07-31: FIXME: missing exception handling.
+		// error thrown in block of code below will leave TempSpace in inconsistent state:
+		// logical/physical size already increased while allocation has in fact failed.
 		if (!block)
 		{
 			// allocate block in the temp file
