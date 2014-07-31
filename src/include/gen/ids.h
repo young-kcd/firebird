@@ -602,10 +602,11 @@
 	const USHORT  f_pkg_name = 0;
 	const USHORT  f_pkg_header_source = 1;
 	const USHORT  f_pkg_body_source = 2;
-	const USHORT  f_pkg_class = 3;
-	const USHORT  f_pkg_owner = 4;
-	const USHORT  f_pkg_sys_flag = 5;
-	const USHORT  f_pkg_desc = 6;
+	const USHORT  f_pkg_valid_body_flag = 3;
+	const USHORT  f_pkg_class = 4;
+	const USHORT  f_pkg_owner = 5;
+	const USHORT  f_pkg_sys_flag = 6;
+	const USHORT  f_pkg_desc = 7;
 
 
 // Relation 43 (SEC$USERS)

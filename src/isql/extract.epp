@@ -2998,16 +2998,19 @@ static void list_package_bodies()
 
 		fb_utils::exact_name(PACK.RDB$OWNER_NAME);
 
-		isqlGlob.printf("%s/* Package body: %s, Owner: %s */%s",
+		isqlGlob.printf("%s/* Package body: %s, Owner: %s%s */%s",
 				 NEWLINE,
 				 PACK.RDB$PACKAGE_NAME,
 				 PACK.RDB$OWNER_NAME,
+				 (!PACK.RDB$VALID_BODY_FLAG.NULL && PACK.RDB$VALID_BODY_FLAG != 0 ? "" : ", Invalid"),
 				 NEWLINE);
-		isqlGlob.printf("CREATE PACKAGE BODY %s AS%s", SQL_identifier, NEWLINE);
 
-		SHOW_print_metadata_text_blob(isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
-
-		isqlGlob.printf("%s%s", Procterm, NEWLINE);
+		if (!PACK.RDB$VALID_BODY_FLAG.NULL && PACK.RDB$VALID_BODY_FLAG != 0)
+		{
+			isqlGlob.printf("CREATE PACKAGE BODY %s AS%s", SQL_identifier, NEWLINE);
+			SHOW_print_metadata_text_blob(isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
+			isqlGlob.printf("%s%s", Procterm, NEWLINE);
+		}
 
 	END_FOR
 	ON_ERROR

@@ -4470,7 +4470,10 @@ static processing_state show_packages(const SCHAR* package_name)
 
 			if (!PACK.RDB$PACKAGE_BODY_SOURCE.NULL)
 			{
-				isqlGlob.printf("%s%s", "Body source:", NEWLINE);
+				isqlGlob.printf("%s%s%s:%s", NEWLINE, "Body source",
+					(!PACK.RDB$VALID_BODY_FLAG.NULL && PACK.RDB$VALID_BODY_FLAG != 0 ?
+						"" : " (invalid)"),
+					NEWLINE);
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &PACK.RDB$PACKAGE_BODY_SOURCE);
 				isqlGlob.printf(NEWLINE);
 			}

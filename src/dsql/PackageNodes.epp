@@ -606,7 +606,8 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 			attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_HEADER_SOURCE,
 				source);
 
-			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
+			if (!PKG.RDB$VALID_BODY_FLAG.NULL)
+				PKG.RDB$VALID_BODY_FLAG = FALSE;
 		END_MODIFY
 
 		owner = PKG.RDB$OWNER_NAME;
@@ -882,7 +883,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		PKG IN RDB$PACKAGES
 		WITH PKG.RDB$PACKAGE_NAME EQ name.c_str()
 	{
-		if (!PKG.RDB$PACKAGE_BODY_SOURCE.NULL)
+		if (!PKG.RDB$VALID_BODY_FLAG.NULL && PKG.RDB$VALID_BODY_FLAG != 0)
 		{
 			status_exception::raise(
 				Arg::Gds(isc_no_meta_update) <<
@@ -893,6 +894,9 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
 
 		MODIFY PKG
+			PKG.RDB$VALID_BODY_FLAG.NULL = FALSE;
+			PKG.RDB$VALID_BODY_FLAG = TRUE;
+
 			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = FALSE;
 			attachment->storeMetaDataBlob(tdbb, transaction, &PKG.RDB$PACKAGE_BODY_SOURCE, source);
 		END_MODIFY
@@ -1120,6 +1124,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			DDL_TRIGGER_DROP_PACKAGE_BODY, name);
 
 		MODIFY PKG
+			PKG.RDB$VALID_BODY_FLAG.NULL = TRUE;
 			PKG.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
 
 			dsc desc;

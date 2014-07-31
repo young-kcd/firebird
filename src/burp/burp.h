@@ -613,6 +613,7 @@ enum att_type {
 	att_package_name = SERIES,
 	att_package_header_source,
 	att_package_body_source,
+	att_package_valid_body_flag,
 	att_package_security_class,
 	att_package_owner_name,
 	att_package_description

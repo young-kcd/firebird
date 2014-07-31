@@ -6533,6 +6533,7 @@ bool get_package(BurpGlobals* tdgbl)
 	{
 		X.RDB$PACKAGE_HEADER_SOURCE.NULL = TRUE;
 		X.RDB$PACKAGE_BODY_SOURCE.NULL = TRUE;
+		X.RDB$VALID_BODY_FLAG.NULL = TRUE;
 		X.RDB$SECURITY_CLASS.NULL = TRUE;
 		X.RDB$OWNER_NAME.NULL = TRUE;
 		X.RDB$SYSTEM_FLAG = 0;
@@ -6559,6 +6560,11 @@ bool get_package(BurpGlobals* tdgbl)
 			case att_package_body_source:
 				get_source_blob(tdgbl, X.RDB$PACKAGE_BODY_SOURCE, true);
 				X.RDB$PACKAGE_BODY_SOURCE.NULL = FALSE;
+				break;
+
+			case att_package_valid_body_flag:
+				X.RDB$VALID_BODY_FLAG = (USHORT) get_int32(tdgbl);
+				X.RDB$VALID_BODY_FLAG.NULL = FALSE;
 				break;
 
 			case att_package_security_class:

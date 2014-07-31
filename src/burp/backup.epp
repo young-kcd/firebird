@@ -3509,6 +3509,9 @@ void write_packages()
 				X.RDB$PACKAGE_BODY_SOURCE);
 		}
 
+		if (!X.RDB$VALID_BODY_FLAG.NULL)
+			put_int32(att_package_valid_body_flag, X.RDB$VALID_BODY_FLAG);
+
 		if (!X.RDB$SECURITY_CLASS.NULL)
 			PUT_TEXT(att_package_security_class, X.RDB$SECURITY_CLASS);
 		if (!X.RDB$OWNER_NAME.NULL)
