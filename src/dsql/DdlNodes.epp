@@ -489,6 +489,23 @@ static MetaName getIndexRelationName(thread_db* tdbb, jrd_tra* transaction,
 	return "";	// silence warning
 }
 
+// Get relation name of an trigger.
+static MetaName getTriggerRelationName(thread_db* tdbb, jrd_tra* transaction,
+	const MetaName& triggerName)
+{
+	AutoCacheRequest request(tdbb, drq_l_trigger_relname, DYN_REQUESTS);
+
+	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+		X IN RDB$TRIGGERS
+		WITH X.RDB$TRIGGER_NAME EQ triggerName.c_str()
+	{
+		return X.RDB$RELATION_NAME;
+	}
+	END_FOR
+
+	return "";
+}
+
 // Get relation type name
 static const char* getRelationScopeName(const rel_t type)
 {
@@ -1059,24 +1076,8 @@ void CommentOnNode::print(string& text) const
 
 bool CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	//DDL_TODO
-	// Probably requires migration code from execute with caching some query results for reuse in execute later.
-	return false;
-}
-
-// select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
-// gives the list of objects that accept descriptions. At FB2 time, the only
-// subobjects with descriptions are relation's fields and procedure's parameters.
-// In FB3 we added function's arguments.
-void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction)
-{
 	Attachment* const attachment = transaction->tra_attachment;
 
-	const char* tableClause = NULL;
-	const char* columnClause = NULL;
-	const char* subColumnClause = NULL;
-	const char* addWhereClause = NULL;
 	Arg::StatusVector status;
 	string objNameStr = objName.toString();
 
@@ -1126,6 +1127,109 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				Arg::Str(subName) << Arg::Str(objNameStr));
 		}
 	}
+
+	dsc dscName;
+	MetaName relationName;
+	switch (objType)
+	{
+		case obj_schema:
+		case obj_database:
+			SCL_check_database(tdbb, SCL_alter);
+			break;
+
+		case obj_field:
+			SCL_check_domain(tdbb, objName.identifier, SCL_alter);
+			break;
+
+		case obj_relation:
+			dscName.makeText(objNameStr.length(), CS_METADATA, (UCHAR*) objName.identifier.c_str());
+			SCL_check_relation(tdbb, &dscName, SCL_alter);
+			break;
+
+		case obj_view:
+			dscName.makeText(objNameStr.length(), CS_METADATA, (UCHAR*) objName.identifier.c_str());
+			SCL_check_view(tdbb, &dscName, SCL_alter);
+			break;
+
+		case obj_procedure:
+			dscName.makeText(objNameStr.length(), CS_METADATA, (UCHAR*) objName.identifier.c_str());
+			SCL_check_procedure(tdbb, &dscName, SCL_alter);
+			break;
+
+		case obj_trigger:
+			relationName = getTriggerRelationName(tdbb, transaction, objName.identifier);
+			if (relationName.isEmpty())
+				SCL_check_database(tdbb, SCL_alter);
+			else
+			{
+				dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
+				SCL_check_relation(tdbb, &dscName, SCL_alter);
+			}
+			break;
+
+		case obj_udf:
+			dscName.makeText(objName.identifier.length(), CS_METADATA, (UCHAR*) objName.identifier.c_str());
+			SCL_check_function(tdbb, &dscName, SCL_alter);
+			break;
+
+		case obj_blob_filter:
+			SCL_check_filter(tdbb, objName.identifier, SCL_alter);
+			break;
+
+		case obj_exception:
+			SCL_check_exception(tdbb, objName.identifier, SCL_alter);
+			break;
+
+		case obj_generator:
+			SCL_check_generator(tdbb, objName.identifier, SCL_alter);
+			break;
+
+		case obj_index:
+			relationName = getIndexRelationName(tdbb, transaction, objName.identifier);
+			dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
+			SCL_check_relation(tdbb, &dscName, SCL_alter);
+			break;
+
+		case obj_sql_role:
+			SCL_check_role(tdbb, objName.identifier, SCL_alter);
+			break;
+
+		case obj_charset:
+			SCL_check_charset(tdbb, objName.identifier, SCL_alter);
+			break;
+
+		case obj_collation:
+			SCL_check_collation(tdbb, objName.identifier, SCL_alter);
+			break;
+
+		case obj_package_header:
+			dscName.makeText(objName.identifier.length(), CS_METADATA, (UCHAR*) objName.identifier.c_str());
+			SCL_check_package(tdbb, &dscName, SCL_alter);
+			break;
+
+		default:
+			fb_assert(false);
+	}
+	return true;
+}
+
+// select rdb$relation_name from rdb$relation_fields where rdb$field_name = 'RDB$DESCRIPTION';
+// gives the list of objects that accept descriptions. At FB2 time, the only
+// subobjects with descriptions are relation's fields and procedure's parameters.
+// In FB3 we added function's arguments.
+void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
+{
+	Attachment* const attachment = transaction->tra_attachment;
+
+	const char* tableClause = NULL;
+	const char* columnClause = NULL;
+	const char* subColumnClause = NULL;
+	const char* addWhereClause = NULL;
+	Arg::StatusVector status;
+	string objNameStr = objName.toString();
+
+	fb_assert(objType != obj_parameter);
 
 	switch (objType)
 	{
@@ -3340,17 +3444,7 @@ DdlNode* DropTriggerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 bool DropTriggerNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 {
-	MetaName relationName;
-
-	AutoCacheRequest request(tdbb, drq_l_trigger_relname, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-		X IN RDB$TRIGGERS
-		WITH X.RDB$TRIGGER_NAME EQ name.c_str()
-	{
-		relationName = X.RDB$RELATION_NAME;
-	}
-	END_FOR
+	MetaName relationName = getTriggerRelationName(tdbb, transaction, name);
 
 	if (relationName.isEmpty())
 		SCL_check_database(tdbb, SCL_alter);
