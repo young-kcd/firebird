@@ -150,7 +150,7 @@ private:
 			Message out;
 			Field<Varying> grantor(out, MAX_SQL_IDENTIFIER_SIZE);
 			Firebird::IResultSet* curs = att->openCursor(&s, tra, selGrantor.length(),
-				selGrantor.c_str(), SQL_DIALECT_V6, NULL, NULL, out.getMetadata());
+				selGrantor.c_str(), SQL_DIALECT_V6, NULL, NULL, out.getMetadata(), NULL);
 			check(&s);
 
 			bool hasGrant = curs->fetchNext(&s, out.getBuffer());

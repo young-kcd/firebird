@@ -141,7 +141,6 @@ public:
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status) = 0;
 	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status) = 0;
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG close(IStatus* status) = 0;
 
 	// This item is for ISC API emulation only
@@ -149,7 +148,7 @@ public:
 	// Please do not use it!
 	virtual void FB_CARG setDelayedOutputFormat(IStatus* status, IMessageMetadata* format) = 0;
 };
-#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 12)
+#define FB_RESULTSET_VERSION (FB_REFCOUNTED_VERSION + 11)
 
 class IStatement : public IRefCounted
 {
@@ -186,10 +185,11 @@ public:
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
 	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name) = 0;
 	virtual void FB_CARG free(IStatus* status) = 0;
 	virtual unsigned FB_CARG getFlags(IStatus* status) = 0;
 };
-#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 10)
+#define FB_STATEMENT_VERSION (FB_REFCOUNTED_VERSION + 11)
 
 class IRequest : public IRefCounted
 {
@@ -253,7 +253,8 @@ public:
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
 	virtual IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
-		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
+		const char* cursorName) = 0;
 	virtual IEvents* FB_CARG queEvents(IStatus* status, IEventCallback* callback,
 						   unsigned int length, const unsigned char* events) = 0;
 	virtual void FB_CARG cancelOperation(IStatus* status, int option) = 0;

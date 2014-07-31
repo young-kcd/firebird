@@ -1370,14 +1370,6 @@ namespace {
 
 		fb_assert(statement->cursor);
 
-		if (cursorName.hasData())
-		{
-			statement->cursor->setCursorName(status, cursorName.c_str());
-
-			if (status->isSuccess())
-				cursorName = "";
-		}
-
 		delayedFormat = (outMetadata == DELAYED_OUT_FORMAT);
 	}
 
@@ -1408,7 +1400,6 @@ namespace {
 				Arg::StatusVector(status->get()).raise();
 
 			statement = NULL;
-			cursorName = "";
 		}
 	}
 
@@ -2345,13 +2336,6 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 			}
 
 			fb_assert(statement->statement->cursor);
-
-			if (statement->cursorName.hasData())
-			{
-				statement->statement->cursor->setCursorName(&status, statement->cursorName.c_str());
-				if (status.isSuccess())
-					statement->cursorName = "";
-			}
 		}
 		else
 		{
@@ -2798,18 +2782,15 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 	{
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 
-		if (statement->statement && statement->statement->cursor)
-			statement->statement->cursor->setCursorName(&status, cursorName);
-		else
+		if (statement->cursorName.hasData() && statement->cursorName != cursorName)
 		{
-			if (statement->cursorName.hasData() && statement->cursorName != cursorName)
-			{
-				(Arg::Gds(isc_dsql_decl_err) <<
-				 Arg::Gds(isc_dsql_cursor_redefined) << statement->cursorName).raise();
-			}
-
-			statement->cursorName = cursorName;
+			(Arg::Gds(isc_dsql_decl_err) <<
+			 Arg::Gds(isc_dsql_cursor_redefined) << statement->cursorName).raise();
 		}
+
+		statement->cursorName = cursorName;
+		if (statement->statement)
+			statement->statement->setCursorName(&status, cursorName);
 	}
 	catch (const Exception& e)
 	{
@@ -4444,11 +4425,11 @@ void YResultSet::destroy(unsigned dstrFlags)
 	destroy2(dstrFlags);
 }
 
-void YResultSet::setCursorName(IStatus* status, const char* name)
+void YStatement::setCursorName(IStatus* status, const char* name)
 {
 	try
 	{
-		YEntry<YResultSet> entry(status, this);
+		YEntry<YStatement> entry(status, this);
 
 		entry.next()->setCursorName(status, name);
 	}
@@ -5173,7 +5154,8 @@ void YAttachment::executeDyn(IStatus* status, ITransaction* transaction, unsigne
 
 IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
+	const char* cursorName)
 {
 	IResultSet* rs = NULL;
 	try
@@ -5185,7 +5167,7 @@ IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 			getNextTransaction(status, transaction, trans);
 
 		rs = entry.next()->openCursor(status, trans, length, string, dialect,
-			inMetadata, inBuffer, outMetadata);
+			inMetadata, inBuffer, outMetadata, cursorName);
 		if (!status->isSuccess())
 		{
 			return NULL;

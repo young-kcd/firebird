@@ -426,7 +426,7 @@ void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 	const size_t MAX_CURSOR_LENGTH = 132 - 1;
 	string cursor = name;
 
-	if (cursor.hasData() && cursor[0] == '\"')
+	if (cursor[0] == '\"')
 	{
 		// Quoted cursor names eh? Strip'em.
 		// Note that "" will be replaced with ".
@@ -477,13 +477,16 @@ void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 	// If there already is a cursor and its name isn't the same, ditto.
 	// We already know there is no cursor by this name in the hash table
 
-	if (req_cursor.isEmpty())
+	if (req_cursor.isEmpty() || !(req_flags & dsql_req::FLAG_OPENED_CURSOR))
 	{
+		if (req_cursor.hasData())
+			req_dbb->dbb_cursors.remove(req_cursor);
 		req_cursor = cursor;
 		req_dbb->dbb_cursors.put(cursor, this);
 	}
 	else
 	{
+		fb_assert(!symbol);
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
 				  Arg::Gds(isc_dsql_cursor_redefined) << req_cursor);

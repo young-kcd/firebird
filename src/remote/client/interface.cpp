@@ -253,7 +253,6 @@ public:
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status);
 	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status);
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
-	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual void FB_CARG close(IStatus* status);
 	virtual void FB_CARG setDelayedOutputFormat(IStatus* status, IMessageMetadata* format);
 
@@ -308,6 +307,7 @@ public:
 		IMessageMetadata* outMetadata, void* outBuffer);
 	virtual ResultSet* FB_CARG openCursor(IStatus* status, ITransaction* tra,
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat);
+	virtual void FB_CARG setCursorName(IStatus* status, const char* name);
 	virtual void FB_CARG free(IStatus* status);
 	virtual unsigned FB_CARG getFlags(IStatus* status);
 
@@ -475,7 +475,8 @@ public:
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer);
 	virtual Firebird::IResultSet* FB_CARG openCursor(IStatus* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
-		IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata);
+		IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata,
+		const char* cursorName);
 	virtual Firebird::IEvents* FB_CARG queEvents(IStatus* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events);
 	virtual void FB_CARG cancelOperation(IStatus* status, int option);
@@ -1986,7 +1987,8 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 
 IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
-		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
+		const char* cursorName)
 {
 	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
@@ -2000,6 +2002,17 @@ IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transa
 	{
 		stmt->release();
 		return NULL;
+	}
+
+	if (cursorName)
+	{
+		stmt->setCursorName(status, cursorName);
+		if (!status->isSuccess())
+		{
+			rc->release();
+			stmt->release();
+			return NULL;
+		}
 	}
 
 	rc->tmpStatement = true;
@@ -3070,7 +3083,7 @@ FB_BOOLEAN ResultSet::fetchRelative(IStatus* user_status, int offset, void* buff
 }
 
 
-void ResultSet::setCursorName(IStatus* status, const char* cursor)
+void Statement::setCursorName(IStatus* status, const char* cursor)
 {
 /*****************************************
  *
@@ -3101,16 +3114,9 @@ void ResultSet::setCursorName(IStatus* status, const char* cursor)
 
 		// Check and validate handles, etc.
 
-		if (!stmt)
-		{
-			(Arg::Gds(isc_dsql_cursor_err) << Arg::Gds(isc_bad_req_handle)).raise();
-		}
-		Rsr* statement = stmt->getStatement();
+		Rsr* statement = getStatement();
 		CHECK_HANDLE(statement, isc_bad_req_handle);
-
 		Rdb* rdb = statement->rsr_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 

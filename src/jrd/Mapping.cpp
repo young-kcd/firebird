@@ -278,7 +278,7 @@ public:
 				"SELECT RDB$MAP_USING, RDB$MAP_PLUGIN, RDB$MAP_DB, RDB$MAP_FROM_TYPE, "
 				"	RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 				"FROM RDB$AUTH_MAPPING",
-				3, NULL, NULL, mMap.getMetadata());
+				3, NULL, NULL, mMap.getMetadata(), NULL);
 			if (!st.isSuccess())
 			{
 				if (fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))
@@ -1190,7 +1190,7 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 			"SELECT RDB$MAP_NAME, RDB$MAP_USING, RDB$MAP_PLUGIN, RDB$MAP_DB, "
 			"	RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 			"FROM RDB$AUTH_MAPPING",
-			3, NULL, NULL, mMap.getMetadata());
+			3, NULL, NULL, mMap.getMetadata(), NULL);
 		if (!st.isSuccess())
 		{
 			if (!fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))

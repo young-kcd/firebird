@@ -310,7 +310,6 @@ public:
 	virtual FB_BOOLEAN FB_CARG isEof(Firebird::IStatus* status);
 	virtual FB_BOOLEAN FB_CARG isBof(Firebird::IStatus* status);
 	virtual Firebird::IMessageMetadata* FB_CARG getMetadata(Firebird::IStatus* status);
-	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
 	virtual void FB_CARG close(Firebird::IStatus* status);
 	virtual void FB_CARG setDelayedOutputFormat(Firebird::IStatus* status, Firebird::IMessageMetadata* format);
 
@@ -358,6 +357,7 @@ public:
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	virtual Firebird::IResultSet* FB_CARG openCursor(Firebird::IStatus* status, Firebird::ITransaction* transaction,
 		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata);
+	virtual void FB_CARG setCursorName(Firebird::IStatus* status, const char* name);
 	virtual void FB_CARG free(Firebird::IStatus* status);
 	virtual unsigned FB_CARG getFlags(Firebird::IStatus* status);
 
@@ -433,7 +433,8 @@ public:
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	virtual Firebird::IResultSet* FB_CARG openCursor(Firebird::IStatus* status, Firebird::ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
-		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata);
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata,
+		const char* cursorName);
 	virtual YEvents* FB_CARG queEvents(Firebird::IStatus* status, Firebird::IEventCallback* callback,
 		unsigned int length, const unsigned char* eventsData);
 	virtual void FB_CARG cancelOperation(Firebird::IStatus* status, int option);

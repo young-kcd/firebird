@@ -4474,13 +4474,24 @@ JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* t
 
 IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
+	const char* cursorName)
 {
 	IStatement* tmpStatement = prepare(user_status, apiTra, length, string, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
 	if (!user_status->isSuccess())
 	{
 		return NULL;
+	}
+
+	if (cursorName)
+	{
+		tmpStatement->setCursorName(user_status, cursorName);
+		if (!user_status->isSuccess())
+		{
+			tmpStatement->release();
+			return NULL;
+		}
 	}
 
 	IResultSet* rs = tmpStatement->openCursor(user_status, apiTra,
@@ -5035,7 +5046,7 @@ ISC_UINT64 JStatement::getAffectedRecords(IStatus* userStatus)
 }
 
 
-void JResultSet::setCursorName(IStatus* user_status, const char* cursor)
+void JStatement::setCursorName(IStatus* user_status, const char* cursor)
 {
 	try
 	{
@@ -5044,9 +5055,7 @@ void JResultSet::setCursorName(IStatus* user_status, const char* cursor)
 
 		try
 		{
-			dsql_req* req = getStatement()->getHandle();
-			fb_assert(req);
-			req->setCursor(tdbb, cursor);
+			getHandle()->setCursor(tdbb, cursor);
 		}
 		catch (const Exception& ex)
 		{

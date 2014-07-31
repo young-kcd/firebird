@@ -93,7 +93,7 @@ int main()
 														 "or RDB$VIEW_SOURCE is not null";
 
 		// Do not use IStatement - just ask attachment to open cursor
-		curs = att->openCursor(st, tra, 0, sql, 3, NULL, NULL, NULL);
+		curs = att->openCursor(st, tra, 0, sql, 3, NULL, NULL, NULL, NULL);
 		check(st, "openCursor");
 
 		meta = curs->getMetadata(st);
