@@ -678,7 +678,7 @@ public:
 		}
 		catch (const Exception& ex)
 		{
-			iscLogException("MonitoringData: Cannot initialize the shared memory region", ex);
+			iscLogException("MappingIpc: Cannot initialize the shared memory region", ex);
 			throw;
 		}
 		fb_assert(sharedMemory->getHeader()->mhb_version == MAPPING_VERSION);
@@ -1119,7 +1119,7 @@ bool GlobalMappingScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 }
 
 MappingList::MappingList(jrd_tra* tra)
-	: DataDump(*tra->tra_pool)
+	: SnapshotData(*tra->tra_pool)
 { }
 
 RecordBuffer* MappingList::makeBuffer(thread_db* tdbb)

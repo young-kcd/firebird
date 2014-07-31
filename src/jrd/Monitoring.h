@@ -30,6 +30,7 @@
 #include "../common/classes/timestamp.h"
 #include "../jrd/val.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/TempSpace.h"
 
 namespace Jrd {
 
@@ -39,7 +40,7 @@ class Record;
 class RecordBuffer;
 class RuntimeStatistics;
 
-class DataDump
+class SnapshotData
 {
 public:
 	struct RelationData
@@ -47,23 +48,18 @@ public:
 		int rel_id;
 		RecordBuffer* data;
 	};
-	typedef Firebird::Array<RelationData> Snapshot;
 
 	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING, VALUE_BOOLEAN};
-
-	explicit DataDump(MemoryPool& pool)
-		: idMap(pool), snapshot(pool), idCounter(0) { }
-	~DataDump()
-	{
-		clearSnapshot();
-	}
 
 	struct DumpField
 	{
 		DumpField(USHORT p_id, ValueType p_type, USHORT p_length, const void* p_data)
-			: id(p_id), type(p_type), length(p_length), data(p_data) { }
+			: id(p_id), type(p_type), length(p_length), data(p_data)
+		{}
+
 		DumpField()
-			: id(0), type(VALUE_GLOBAL_ID), length(0), data(NULL) { }
+			: id(0), type(VALUE_GLOBAL_ID), length(0), data(NULL)
+		{}
 
 		USHORT id;
 		ValueType type;
@@ -167,9 +163,9 @@ public:
 		}
 
 	private:
-		void storeField(int field_id, ValueType type, FB_SIZE_T length, const void* value)
+		void storeField(int field_id, ValueType type, size_t length, const void* value)
 		{
-			const FB_SIZE_T delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
+			const size_t delta = sizeof(UCHAR) + sizeof(UCHAR) + sizeof(USHORT) + length;
 			buffer.resize(offset + delta);
 
 			UCHAR* ptr = buffer.begin() + offset;
@@ -187,6 +183,15 @@ public:
 		ULONG offset;
 	};
 
+	explicit SnapshotData(MemoryPool& pool)
+		: m_snapshot(pool), m_map(pool), m_counter(0)
+	{}
+
+	virtual ~SnapshotData()
+	{
+		clearSnapshot();
+	}
+
 	void putField(thread_db*, Record*, const DumpField&, int);
 
 	RecordBuffer* allocBuffer(thread_db*, MemoryPool&, int);
@@ -195,9 +200,9 @@ public:
 	void clearSnapshot();
 
 private:
-	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > idMap;
-	Snapshot snapshot;
-	int idCounter;
+	Firebird::Array<RelationData> m_snapshot;
+	Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<SINT64, SLONG> > > m_map;
+	int m_counter;
 };
 
 
@@ -210,15 +215,14 @@ public:
 
 class MonitoringData FB_FINAL : public Firebird::IpcObject
 {
-	static const ULONG MONITOR_VERSION = 3;
+	static const ULONG MONITOR_VERSION = 4;
 	static const ULONG DEFAULT_SIZE = 1048576;
 
 	typedef MonitoringHeader Header;
 
 	struct Element
 	{
-		SLONG processId;
-		SLONG localId;
+		SLONG attId;
 		ULONG length;
 	};
 
@@ -246,6 +250,63 @@ public:
 		MonitoringData* const data;
 	};
 
+	class Writer
+	{
+	public:
+		Writer(MonitoringData* data, SLONG att_id)
+			: dump(data)
+		{
+			fb_assert(dump);
+			offset = dump->setup(att_id);
+			fb_assert(offset);
+		}
+
+		void putRecord(const SnapshotData::DumpRecord& record)
+		{
+			const ULONG length = record.getLength();
+			dump->write(offset, sizeof(ULONG), &length);
+			dump->write(offset, length, record.getData());
+		}
+
+	private:
+		MonitoringData* dump;
+		ULONG offset;
+	};
+
+	class Reader
+	{
+	public:
+		Reader(MemoryPool& pool, TempSpace& temp)
+			: source(temp), offset(0), buffer(pool)
+		{}
+
+		bool getRecord(SnapshotData::DumpRecord& record)
+		{
+			if (offset < source.getSize())
+			{
+				ULONG length;
+				source.read(offset, &length, sizeof(ULONG));
+				offset += sizeof(ULONG);
+
+				UCHAR* const ptr = buffer.getBuffer(length);
+				source.read(offset, ptr, length);
+				offset += length;
+
+				record.assign(length, ptr);
+				return true;
+			}
+
+			return false;
+		}
+
+	private:
+		TempSpace& source;
+		offset_t offset;
+		Firebird::UCharBuffer buffer;
+	};
+
+	typedef Firebird::HalfStaticArray<SLONG, 64> SessionList;
+
 	explicit MonitoringData(const Database*);
 	~MonitoringData();
 
@@ -255,11 +316,12 @@ public:
 	void acquire();
 	void release();
 
-	UCHAR* read(MemoryPool&, ULONG&);
-	ULONG setup();
+	void read(SLONG, TempSpace&);
+	ULONG setup(SLONG);
 	void write(ULONG, ULONG, const void*);
 
-	void cleanup();
+	void cleanup(SLONG);
+	void enumerate(SessionList&);
 
 private:
 	// copying is prohibited
@@ -269,8 +331,6 @@ private:
 	void ensureSpace(ULONG);
 
 	Firebird::AutoPtr<Firebird::SharedMemory<MonitoringHeader> > shared_memory;
-	const SLONG process_id;
-	const SLONG local_id;
 };
 
 
@@ -288,85 +348,46 @@ protected:
 };
 
 
-class DatabaseSnapshot : public DataDump
+class MonitoringSnapshot : public SnapshotData
 {
-private:
-	class Writer
-	{
-	public:
-		explicit Writer(MonitoringData* data)
-			: dump(data)
-		{
-			fb_assert(dump);
-			offset = dump->setup();
-			fb_assert(offset);
-		}
-
-		void putRecord(const DumpRecord& record)
-		{
-			const ULONG length = record.getLength();
-			dump->write(offset, sizeof(ULONG), &length);
-			dump->write(offset, length, record.getData());
-		}
-
-	private:
-		MonitoringData* dump;
-		ULONG offset;
-	};
-
-	class Reader
-	{
-	public:
-		Reader(ULONG length, UCHAR* ptr)
-			: sizeLimit(length), buffer(ptr), offset(0)
-		{}
-
-		bool getRecord(DumpRecord& record)
-		{
-			if (offset < sizeLimit)
-			{
-				ULONG length;
-				memcpy(&length, buffer + offset, sizeof(ULONG));
-				offset += sizeof(ULONG);
-				record.assign(length, buffer + offset);
-				offset += length;
-				return true;
-			}
-
-			return false;
-		}
-
-	private:
-		ULONG sizeLimit;
-		const UCHAR* buffer;
-		ULONG offset;
-	};
-
 public:
-	static DatabaseSnapshot* create(thread_db*);
-	static int blockingAst(void*);
-	static void initialize(thread_db*);
-	static void shutdown(thread_db*);
-	static void activate(thread_db*);
-	static bool getRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record);
+	static MonitoringSnapshot* create(thread_db* tdbb);
 
 protected:
-	DatabaseSnapshot(thread_db*, MemoryPool&);
+	MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool);
+};
+
+
+class Monitoring
+{
+public:
+	static void checkState(thread_db* tdbb);
+	static SnapshotData* getSnapshot(thread_db* tdbb);
+
+	static void dumpAttachment(thread_db* tdbb, const Attachment* attachment, bool ast);
+
+	static void publishAttachment(thread_db* tdbb);
+	static void cleanupAttachment(thread_db* tdbb);
 
 private:
-	static void dumpData(thread_db*, int);
-	static void dumpAttachment(thread_db*, DumpRecord&, const Attachment*, Writer&);
-
 	static SINT64 getGlobalId(int);
 
-	static void putDatabase(DumpRecord&, const Database*, Writer&, int, int);
-	static void putAttachment(DumpRecord&, const Attachment*, Writer&, int);
-	static void putTransaction(DumpRecord&, const jrd_tra*, Writer&, int);
-	static void putRequest(DumpRecord&, const jrd_req*, Writer&, int, const Firebird::string&);
-	static void putCall(DumpRecord&, const jrd_req*, Writer&, int);
-	static void putStatistics(DumpRecord&, const RuntimeStatistics&, Writer&, int, int);
-	static void putContextVars(DumpRecord&, const Firebird::StringMap&, Writer&, int, bool);
-	static void putMemoryUsage(DumpRecord&, const Firebird::MemoryStats&, Writer&, int, int);
+	static void putDatabase(SnapshotData::DumpRecord&, const Database*,
+							MonitoringData::Writer&, int, int);
+	static void putAttachment(SnapshotData::DumpRecord&, const Attachment*,
+							  MonitoringData::Writer&, int);
+	static void putTransaction(SnapshotData::DumpRecord&, const jrd_tra*,
+							   MonitoringData::Writer&, int);
+	static void putRequest(SnapshotData::DumpRecord&, const jrd_req*,
+						   MonitoringData::Writer&, int, const Firebird::string&);
+	static void putCall(SnapshotData::DumpRecord&, const jrd_req*,
+						MonitoringData::Writer&, int);
+	static void putStatistics(SnapshotData::DumpRecord&, const RuntimeStatistics&,
+							  MonitoringData::Writer&, int, int);
+	static void putContextVars(SnapshotData::DumpRecord&, const Firebird::StringMap&,
+							   MonitoringData::Writer&, int, bool);
+	static void putMemoryUsage(SnapshotData::DumpRecord&, const Firebird::MemoryStats&,
+							   MonitoringData::Writer&, int, int);
 };
 
 } // namespace

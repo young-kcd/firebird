@@ -27,7 +27,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 #include "../jrd/ibase.h"
-#include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/Monitoring.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "firebird/Auth.h"
 #include "../common/security.h"
@@ -52,7 +52,7 @@ protected:
 };
 
 // User management argument for deferred work
-class UserManagement : public DataDump
+class UserManagement : public SnapshotData
 {
 public:
 	explicit UserManagement(jrd_tra* tra);

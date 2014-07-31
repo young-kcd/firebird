@@ -257,7 +257,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 			temp_bdb.bdb_page = file->fil_min_page;
 			header->hdr_header.pag_pageno = temp_bdb.bdb_page.getPageNum();
 			// It's header, never encrypted
-			if (!PIO_write(	shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
+			if (!PIO_write(shadow_file, &temp_bdb, reinterpret_cast<Ods::pag*>(header), 0))
 			{
 				delete[] spare_buffer;
 				return 0;

@@ -53,7 +53,7 @@ bool UsersTableScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
 
 
 UserManagement::UserManagement(jrd_tra* tra)
-	: DataDump(*tra->tra_pool),
+	: SnapshotData(*tra->tra_pool),
 	  threadDbb(NULL),
 	  commands(*tra->tra_pool),
 	  manager(NULL)

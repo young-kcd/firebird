@@ -41,7 +41,7 @@
 #include "../jrd/sbm.h" // For bid structure
 #include "../jrd/sort.h"
 
-#include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/Monitoring.h"
 #include "../jrd/TempSpace.h"
 #include "../jrd/obj.h"
 #include "../jrd/EngineInterface.h"
@@ -280,7 +280,7 @@ public:
 	ULONG tra_next_blob_id;     		// ID of the previous blob or array created in this transaction
 	const Firebird::TimeStamp tra_timestamp; // transaction start time
 	jrd_req* tra_requests;				// Doubly linked list of requests active in this transaction
-	DatabaseSnapshot* tra_db_snapshot;	// Database state snapshot (for monitoring purposes)
+	MonitoringSnapshot* tra_mon_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
 	Firebird::Array<dsql_req*> tra_open_cursors;
 	bool tra_in_use;					// transaction in use (can't be committed or rolled back)

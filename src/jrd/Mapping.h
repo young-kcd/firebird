@@ -33,7 +33,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/ClumpletReader.h"
 #include "../jrd/recsrc/RecordSource.h"
-#include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/Monitoring.h"
 
 namespace Jrd {
 
@@ -55,7 +55,7 @@ protected:
 	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const;
 };
 
-class MappingList : public DataDump
+class MappingList : public SnapshotData
 {
 public:
 	explicit MappingList(jrd_tra* tra);

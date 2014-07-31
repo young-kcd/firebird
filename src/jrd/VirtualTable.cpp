@@ -40,7 +40,7 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/vio_proto.h"
 
-#include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/Monitoring.h"
 #include "../jrd/RecordBuffer.h"
 #include "../jrd/VirtualTable.h"
 

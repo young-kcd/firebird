@@ -1213,7 +1213,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 	// Release the database snapshot, if any
 
-	delete transaction->tra_db_snapshot;
+	delete transaction->tra_mon_snapshot;
 
 	// Close all open DSQL cursors
 

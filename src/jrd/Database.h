@@ -228,7 +228,6 @@ const ULONG DBB_shut_tran			= 0x20L;	// no new transactions accepted
 const ULONG DBB_shut_force			= 0x40L;	// forced shutdown in progress
 const ULONG DBB_shutdown_full		= 0x80L;	// Database fully shut down
 const ULONG DBB_shutdown_single		= 0x100L;	// Database is in single-user maintenance mode
-const ULONG DBB_monitor_off			= 0x200L;	// Database has the monitoring lock released
 
 class Database : public pool_alloc<type_dbb>
 {
@@ -370,7 +369,6 @@ public:
 	Attachment* dbb_attachments;		// Active attachments
 	Attachment* dbb_sys_attachments;	// System attachments
 	BufferControl*	dbb_bcb;			// Buffer control block
-	int			dbb_monitoring_id;		// dbb monitoring identifier
 	Lock* 		dbb_lock;				// database lock
 	Lock* 		dbb_sweep_lock;			// sweep lock
 
@@ -381,13 +379,11 @@ public:
 	Lock*		dbb_shadow_lock;		// lock for synchronizing addition of shadows
 
 	Lock*		dbb_retaining_lock;		// lock for preserving commit retaining snapshot
-	Lock*		dbb_monitor_lock;		// lock for monitoring purposes
 	PageManager dbb_page_manager;
 	vcl*		dbb_t_pages;			// pages number for transactions
 	vcl*		dbb_gen_id_pages;		// known pages for gen_id
 	BlobFilter*	dbb_blob_filters;		// known blob filters
 
-	Firebird::SyncObject	dbb_mon_sync;			// synchronize operations with dbb_monitor_lock
 	MonitoringData*			dbb_monitoring_data;	// monitoring data
 
 	DatabaseModules	dbb_modules;		// external function/filter modules

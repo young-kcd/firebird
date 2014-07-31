@@ -78,7 +78,7 @@
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/VirtualTable.h"
-#include "../jrd/DatabaseSnapshot.h"
+#include "../jrd/Monitoring.h"
 #include "../jrd/UserManagement.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"

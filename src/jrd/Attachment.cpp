@@ -42,6 +42,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 #include "../common/StatusArg.h"
+#include "../common/isc_proto.h"
 
 
 using namespace Jrd;
@@ -217,10 +218,10 @@ Jrd::Attachment::~Attachment()
 	// For normal attachments that happens in release_attachment(),
 	// but for special ones like GC should be done also in dtor -
 	// they do not (and should not) call release_attachment().
-	// It's no danger calling detachLocksFromAttachment()
+	// It's no danger calling detachLocks()
 	// once more here because it nulls att_long_locks.
 	//		AP 2007
-	detachLocksFromAttachment();
+	detachLocks();
 }
 
 
@@ -378,34 +379,6 @@ void Jrd::Attachment::signalShutdown()
 }
 
 
-void Jrd::Attachment::detachLocksFromAttachment()
-{
-/**************************************
- *
- *	d e t a c h L o c k s F r o m A t t a c h m e n t
- *
- **************************************
- *
- * Functional description
- * Bug #7781, need to null out the attachment pointer of all locks which
- * were hung off this attachment block, to ensure that the attachment
- * block doesn't get dereferenced after it is released
- *
- **************************************/
-	if (!att_long_locks)
-		return;
-
-	Sync lckSync(&att_database->dbb_lck_sync, "Attachment::detachLocksFromAttachment");
-	lckSync.lock(SYNC_EXCLUSIVE);
-
-	Lock* long_lock = att_long_locks;
-	while (long_lock)
-	{
-		long_lock = long_lock->detach();
-	}
-	att_long_locks = NULL;
-}
-
 // Find an inactive incarnation of a system request. If necessary, clone it.
 jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT which)
 {
@@ -440,6 +413,37 @@ jrd_req* Jrd::Attachment::findSystemRequest(thread_db* tdbb, USHORT id, USHORT w
 			clone->req_flags |= req_reserved;
 			return clone;
 		}
+	}
+}
+
+void Jrd::Attachment::initLocks(thread_db* tdbb)
+{
+	// Take out lock on attachment id
+
+	const lock_ast_t ast = (att_flags & ATT_system) ? NULL : blockingAstShutdown;
+
+	Lock* lock = FB_NEW_RPT(*att_pool, sizeof(SLONG))
+		Lock(tdbb, sizeof(SLONG), LCK_attachment, this, ast);
+	att_id_lock = lock;
+	lock->lck_key.lck_long = lock->lck_data = att_attachment_id;
+	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
+
+	// Allocate and take the monitoring lock
+
+	lock = FB_NEW_RPT(*att_pool, sizeof(SLONG))
+		Lock(tdbb, sizeof(SLONG), LCK_monitor, this, blockingAstMonitor);
+	att_monitor_lock = lock;
+	lock->lck_key.lck_long = att_attachment_id;
+	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+
+	// Unless we're a system attachment, allocate the cancellation lock
+
+	if (!(att_flags & ATT_system))
+	{
+		lock = FB_NEW_RPT(*att_pool, sizeof(SLONG))
+			Lock(tdbb, sizeof(SLONG), LCK_cancel, this, blockingAstCancel);
+		att_cancel_lock = lock;
+		lock->lck_key.lck_long = att_attachment_id;
 	}
 }
 
@@ -532,9 +536,7 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 
 	DSqlCache::Accessor accessor(&att_dsql_cache);
 	for (bool getResult = accessor.getFirst(); getResult; getResult = accessor.getNext())
-	{
 		LCK_release(tdbb, accessor.current()->second.lock);
-	}
 
 	// Release the remaining locks
 
@@ -543,6 +545,9 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 
 	if (att_cancel_lock)
 		LCK_release(tdbb, att_cancel_lock);
+
+	if (att_monitor_lock)
+		LCK_release(tdbb, att_monitor_lock);
 
 	if (att_temp_pg_lock)
 		LCK_release(tdbb, att_temp_pg_lock);
@@ -560,6 +565,101 @@ void Jrd::Attachment::releaseLocks(thread_db* tdbb)
 		if (*itr)
 			(*itr)->release(tdbb);
 	}
+}
+
+void Jrd::Attachment::detachLocks()
+{
+/**************************************
+ *
+ *	d e t a c h L o c k s
+ *
+ **************************************
+ *
+ * Functional description
+ * Bug #7781, need to null out the attachment pointer of all locks which
+ * were hung off this attachment block, to ensure that the attachment
+ * block doesn't get dereferenced after it is released
+ *
+ **************************************/
+	if (!att_long_locks)
+		return;
+
+	Sync lckSync(&att_database->dbb_lck_sync, "Attachment::detachLocks");
+	lckSync.lock(SYNC_EXCLUSIVE);
+
+	Lock* long_lock = att_long_locks;
+	while (long_lock)
+		long_lock = long_lock->detach();
+
+	att_long_locks = NULL;
+}
+
+int Jrd::Attachment::blockingAstShutdown(void* ast_object)
+{
+	Jrd::Attachment* const attachment = static_cast<Jrd::Attachment*>(ast_object);
+
+	try
+	{
+		Database* const dbb = attachment->att_database;
+
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_id_lock);
+
+		attachment->signalShutdown();
+
+		JRD_shutdown_attachments(dbb);
+	}
+	catch (const Exception&)
+	{} // no-op
+
+	return 0;
+}
+
+int Jrd::Attachment::blockingAstCancel(void* ast_object)
+{
+	Jrd::Attachment* const attachment = static_cast<Jrd::Attachment*>(ast_object);
+
+	try
+	{
+		Database* const dbb = attachment->att_database;
+
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_cancel_lock);
+
+		attachment->signalCancel();
+
+		LCK_release(tdbb, attachment->att_cancel_lock);
+	}
+	catch (const Exception&)
+	{} // no-op
+
+	return 0;
+}
+
+int Jrd::Attachment::blockingAstMonitor(void* ast_object)
+{
+	Jrd::Attachment* const attachment = static_cast<Jrd::Attachment*>(ast_object);
+
+	try
+	{
+		Database* const dbb = attachment->att_database;
+
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_monitor_lock);
+
+		try
+		{
+			Monitoring::dumpAttachment(tdbb, attachment, true);
+		}
+		catch (const Exception& ex)
+		{
+			iscLogException("Cannot dump the monitoring data", ex);
+		}
+
+		LCK_release(tdbb, attachment->att_monitor_lock);
+		attachment->att_flags |= ATT_monitor_off;
+	}
+	catch (const Exception&)
+	{} // no-op
+
+	return 0;
 }
 
 void Jrd::Attachment::SyncGuard::init(const char* f, bool

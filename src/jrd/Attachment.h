@@ -328,6 +328,7 @@ public:
 	Lock*		att_id_lock;				// Attachment lock (if any)
 	SLONG		att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request
+	Lock*		att_monitor_lock;			// Lock for monitoring purposes
 	const ULONG	att_lock_owner_id;			// ID for the lock manager
 	SLONG		att_lock_owner_handle;		// Handle for the lock manager
 	ULONG		att_backup_state_counter;	// Counter of backup state locks for attachment
@@ -392,7 +393,13 @@ public:
 	void releaseIntlObjects(thread_db* tdbb);			// defined in intl.cpp
 	void destroyIntlObjects(thread_db* tdbb);			// defined in intl.cpp
 
+	void initLocks(thread_db* tdbb);
 	void releaseLocks(thread_db* tdbb);
+	void detachLocks();
+
+	static int blockingAstShutdown(void*);
+	static int blockingAstCancel(void*);
+	static int blockingAstMonitor(void*);
 
 	Firebird::Array<MemoryPool*>	att_pools;		// pools
 
@@ -430,8 +437,6 @@ public:
 
 	void signalCancel();
 	void signalShutdown();
-
-	void detachLocksFromAttachment();
 
 	bool backupStateWriteLock(thread_db* tdbb, SSHORT wait);
 	void backupStateWriteUnLock(thread_db* tdbb);
@@ -474,6 +479,7 @@ const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
 const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
 const ULONG ATT_system				= 0x04000L; // Special system attachment
 const ULONG ATT_creator				= 0x08000L; // This attachment created the DB.
+const ULONG ATT_monitor_off			= 0x10000L; // Monitoring lock is released
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 

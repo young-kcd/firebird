@@ -1558,9 +1558,6 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
 				dbb->dbb_crypto_manager->attach(tdbb, attachment);
 
-				// initialize monitoring
-				DatabaseSnapshot::initialize(tdbb);
-
 				// initialize shadowing as soon as the database is ready for it
 				// but before any real work is done
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
@@ -2641,9 +2638,6 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 
 			dbb->dbb_page_manager.initTempPageSpace(tdbb);
 			dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
-
-			// initialize monitoring
-			DatabaseSnapshot::initialize(tdbb);
 
 			if (options.dpb_set_page_buffers)
 				PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
@@ -5257,7 +5251,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 		}
 	}
 
-	DatabaseSnapshot::activate(tdbb);
+	Monitoring::checkState(tdbb);
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
 		(quantum ? quantum : QUANTUM) : tdbb->tdbb_quantum;
@@ -5355,7 +5349,7 @@ static void check_database(thread_db* tdbb, bool async)
 		status_exception::raise(Arg::Gds(isc_cancelled));
 	}
 
-	DatabaseSnapshot::activate(tdbb);
+	Monitoring::checkState(tdbb);
 }
 
 
@@ -6029,8 +6023,6 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 	// provide context pool for the rest stuff
 	Jrd::ContextPoolHolder context(tdbb, dbb->dbb_permanent);
 
-	dbb->dbb_monitoring_id = fb_utils::genUniqueId();
-
 	// set a garbage collection policy
 
 	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
@@ -6233,6 +6225,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	if (!attachment)
 		return;
 
+	Monitoring::cleanupAttachment(tdbb);
+
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
 
 	if (!dbb->dbb_config->getSharedDatabase() && attachment->att_relations)
@@ -6250,9 +6244,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 	}
 
 	if (dbb->dbb_event_mgr && attachment->att_event_session)
-	{
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
-	}
 
     // CMP_release() changes att_requests.
 	while (!attachment->att_requests.isEmpty())
@@ -6289,7 +6281,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	attachment->destroyIntlObjects(tdbb);
 
-	attachment->detachLocksFromAttachment();
+	attachment->detachLocks();
 
 	LCK_fini(tdbb, LCK_OWNER_attachment);
 
@@ -6513,8 +6505,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 #ifdef SUPERSERVER_V2
 	TRA_header_write(tdbb, dbb, 0);	// Update transaction info on header page.
 #endif
-
-	DatabaseSnapshot::shutdown(tdbb);
 
 	VIO_fini(tdbb);
 
