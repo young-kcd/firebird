@@ -1,3 +1,82 @@
+ 2014-07-31 21:15  skidder 
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/TempSpace.cpp
+Fix MSVC build errors and warnings
+
+ 2014-07-31 16:30  asfernandes 
+   M src/burp/backup.epp
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/dsql/PackageNodes.epp
+   M src/include/gen/ids.h
+   M src/isql/extract.epp
+   M src/isql/show.epp
+   M src/jrd/names.h
+   M src/jrd/relations.h
+Improvement CORE-4487 - Maintain package body after ALTER/RECREATE PACKAGE.
+
+ 2014-07-31 11:43  alexpeshkoff 
+   M examples/interfaces/04.print_table.cpp
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/dsql/dsql.cpp
+   M src/include/firebird/Provider.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed CORE-4505: Use of named cursor fails if statement was not executed. Should also fix CORE-4489, but I cannot check.
+
+ 2014-07-31 09:08  dimitr 
+   M src/yvalve/why.cpp
+Commented out the annoying (thus supposedly wrong?) assertion.
+
+ 2014-07-31 09:07  dimitr 
+   M src/msgs/messages2.sql
+Follow-up.
+
+ 2014-07-31 09:01  dimitr 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/engine.vcproj
+Fixed Windows builds.
+
+ 2014-07-31 08:56  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Database.h
+   D src/jrd/DatabaseSnapshot.cpp
+   D src/jrd/DatabaseSnapshot.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/Mapping.h
+   A src/jrd/Monitoring.cpp (from /firebird/trunk/src/jrd/DatabaseSnapshot.cpp:59871)
+   A src/jrd/Monitoring.h (from /firebird/trunk/src/jrd/DatabaseSnapshot.h:59871)
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Refactored database monitoring, made its handling attachment bound. This should make deadlocks impossible, as well as avoid blocking worker connections while the monitoring request is processed.
+
+ 2014-07-31 08:29  roman-simakov 
+   M src/dsql/DdlNodes.epp
+DDL permission check for COMMENT ON
+
+ 2014-07-31 07:54  hvlad 
+   M src/jrd/btr.cpp
+While i don't see how we can have positive scale, wrong code should be fixed anyway
+
  2014-07-30 13:14  alexpeshkoff 
    M src/common/isc_sync.cpp
 Fixed parameters when using ITimer interface for SYSV-semaphores build
