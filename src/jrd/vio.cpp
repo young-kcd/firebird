@@ -3132,9 +3132,10 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			} // scope
 
 			set_system_flag(tdbb, rpb->rpb_record, f_prc_sys_flag);
+			set_owner_name(tdbb, rpb->rpb_record, f_prc_owner);
+
 			if (package_name.isEmpty())
 			{
-				set_owner_name(tdbb, rpb->rpb_record, f_prc_owner);
 				if (set_security_class(tdbb, rpb->rpb_record, f_prc_class))
 					DFW_post_work(transaction, dfw_grant, &desc, obj_procedure);
 			}
@@ -3160,9 +3161,10 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			} // scope
 
 			set_system_flag(tdbb, rpb->rpb_record, f_fun_sys_flag);
+			set_owner_name(tdbb, rpb->rpb_record, f_fun_owner);
+
 			if (package_name.isEmpty())
 			{
-				set_owner_name(tdbb, rpb->rpb_record, f_fun_owner);
 				if (set_security_class(tdbb, rpb->rpb_record, f_fun_class))
 					DFW_post_work(transaction, dfw_grant, &desc, obj_udf);
 			}
