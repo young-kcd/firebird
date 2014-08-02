@@ -1,3 +1,7 @@
+ 2014-08-01 16:22  asfernandes 
+   M src/jrd/vio.cpp
+Fixed the restore of packaged routines.
+
  2014-07-31 21:15  skidder 
    M src/jrd/Monitoring.cpp
    M src/jrd/Monitoring.h
