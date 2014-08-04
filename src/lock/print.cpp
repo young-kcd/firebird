@@ -1270,7 +1270,8 @@ static void prt_owner(OUTFILE outfile,
 	FPRINTF(outfile, "\tProcess id: %6d (%s), thread id: %6"SIZEFORMAT"\n",
 			process->prc_process_id,
 			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead",
-			static_cast<size_t>(owner->own_thread_id));
+			// please keep C-cast here - own_thread_id type varies great fro OS to OS
+			(size_t)(owner->own_thread_id));
 
 	const USHORT flags = owner->own_flags;
 	FPRINTF(outfile, "\tFlags: 0x%02X ", flags);
