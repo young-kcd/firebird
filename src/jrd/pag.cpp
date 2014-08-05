@@ -1897,7 +1897,7 @@ ULONG PageSpace::lastUsedPage()
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	do
+	while (true)
 	{
 		pag* page = CCH_FETCH(tdbb, &window, LCK_read, pag_undefined);
 		if (page->pag_type == pag_pages)
@@ -1913,7 +1913,7 @@ ULONG PageSpace::lastUsedPage()
 			pipLast = pipFirst;
 
 		window.win_page = pipLast;
-	} while (pipLast > pipFirst);
+	};
 
 	page_inv_page* pip = (page_inv_page*) window.win_buffer;
 
