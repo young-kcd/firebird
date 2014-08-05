@@ -483,19 +483,21 @@ public:
 
 	SSHORT getCharSet() const;
 
-	void bumpStats(const RuntimeStatistics::StatType index)
+	void bumpStats(const RuntimeStatistics::StatType index, SINT64 delta = 1)
 	{
-		reqStat->bumpValue(index);
-		traStat->bumpValue(index);
-		attStat->bumpValue(index);
-		dbbStat->bumpValue(index);
+		reqStat->bumpValue(index, delta);
+		traStat->bumpValue(index, delta);
+		attStat->bumpValue(index, delta);
+		dbbStat->bumpValue(index, delta);
 	}
 
-	void bumpRelStats(const RelStatType index, SLONG relation_id)
+	void bumpRelStats(const RuntimeStatistics::StatType index, SLONG relation_id, SINT64 delta = 1)
 	{
-		reqStat->bumpRelValue(index, relation_id);
-		traStat->bumpRelValue(index, relation_id);
-		attStat->bumpRelValue(index, relation_id);
+		bumpStats(index, delta);
+
+		reqStat->bumpRelValue(index, relation_id, delta);
+		traStat->bumpRelValue(index, relation_id, delta);
+		attStat->bumpRelValue(index, relation_id, delta);
 		//dbbStat->bumpRelValue(index, relation_id);
 	}
 

@@ -576,6 +576,11 @@ RELATION(nam_mon_rec_stats, rel_mon_rec_stats, ODS_11_1, rel_virtual)
 	FIELD(f_mon_rec_backouts, nam_mon_rec_backouts, fld_counter, 0, ODS_11_1)
 	FIELD(f_mon_rec_purges, nam_mon_rec_purges, fld_counter, 0, ODS_11_1)
 	FIELD(f_mon_rec_expunges, nam_mon_rec_expunges, fld_counter, 0, ODS_11_1)
+	FIELD(f_mon_rec_locks, nam_mon_rec_locks, fld_counter, 0, ODS_12_0)
+	FIELD(f_mon_rec_waits, nam_mon_rec_waits, fld_counter, 0, ODS_12_0)
+	FIELD(f_mon_rec_conflicts, nam_mon_rec_conflicts, fld_counter, 0, ODS_12_0)
+	FIELD(f_mon_rec_ver_reads, nam_mon_version_reads, fld_counter, 0, ODS_12_0)
+	FIELD(f_mon_rec_frg_reads, nam_mon_fragment_reads, fld_counter, 0, ODS_12_0)
 END_RELATION
 
 // Relation 40 (MON$CONTEXT_VARIABLES)

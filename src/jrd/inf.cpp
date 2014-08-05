@@ -344,42 +344,42 @@ void INF_database_info(thread_db* tdbb,
 			break;
 
 		case isc_info_read_seq_count:
-			length = get_counts(tdbb, DBB_read_seq_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_SEQ_READS, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_read_idx_count:
-			length = get_counts(tdbb, DBB_read_idx_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_IDX_READS, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_update_count:
-			length = get_counts(tdbb, DBB_update_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_UPDATES, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_insert_count:
-			length = get_counts(tdbb, DBB_insert_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_INSERTS, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_delete_count:
-			length = get_counts(tdbb, DBB_delete_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_DELETES, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_backout_count:
-			length = get_counts(tdbb, DBB_backout_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_BACKOUTS, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_purge_count:
-			length = get_counts(tdbb, DBB_purge_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_PURGES, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
 		case isc_info_expunge_count:
-			length = get_counts(tdbb, DBB_expunge_count, counts_buffer);
+			length = get_counts(tdbb, RuntimeStatistics::RECORD_EXPUNGES, counts_buffer);
 			buffer = counts_buffer.begin();
 			break;
 
@@ -1202,8 +1202,8 @@ static USHORT get_counts(thread_db* tdbb, USHORT count_id, CountsBuffer& buffer)
 
 	for (RuntimeStatistics::Iterator iter = stats.begin(); iter != stats.end(); ++iter)
 	{
-		const USHORT relation_id = (*iter).rlc_relation_id;
-		const SINT64 n = (*iter).rlc_counter[count_id];
+		const USHORT relation_id = (*iter).getRelationId();
+		const SINT64 n = (*iter).getCounter(count_id);
 
 		if (n)
 		{

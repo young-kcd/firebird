@@ -577,6 +577,11 @@
 	const USHORT  f_mon_rec_backouts = 7;
 	const USHORT  f_mon_rec_purges = 8;
 	const USHORT  f_mon_rec_expunges = 9;
+	const USHORT  f_mon_rec_locks = 10;
+	const USHORT  f_mon_rec_waits = 11;
+	const USHORT  f_mon_rec_conflicts = 12;
+	const USHORT  f_mon_rec_ver_reads = 13;
+	const USHORT  f_mon_rec_frg_reads = 14;
 
 
 // Relation 40 (MON$CONTEXT_VARIABLES)
