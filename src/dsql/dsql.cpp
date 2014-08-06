@@ -426,7 +426,7 @@ void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 	const size_t MAX_CURSOR_LENGTH = 132 - 1;
 	string cursor = name;
 
-	if (cursor[0] == '\"')
+	if (cursor.hasData() && cursor[0] == '\"')
 	{
 		// Quoted cursor names eh? Strip'em.
 		// Note that "" will be replaced with ".
