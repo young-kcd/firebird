@@ -1,3 +1,19 @@
+ 2014-08-05 16:00  hvlad 
+   M src/jrd/pag.cpp
+Fixed bug CORE-4510 : AV in validation is possible
+
+ 2014-08-05 08:46  dimitr 
+   M src/include/gen/ids.h
+   M src/jrd/Monitoring.cpp
+   M src/jrd/RuntimeStatistics.cpp
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/jrd/vio.cpp
+Refactored RuntimeStatistics internals. Added more record-level performance counters.
+
  2014-08-04 08:13  alexpeshkoff 
    M src/lock/print.cpp
 comment
