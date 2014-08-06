@@ -1130,6 +1130,7 @@ bool CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 
 	dsc dscName;
 	MetaName relationName;
+
 	switch (objType)
 	{
 		case obj_schema:
@@ -1210,6 +1211,7 @@ bool CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 		default:
 			fb_assert(false);
 	}
+
 	return true;
 }
 

@@ -1341,7 +1341,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				{
 				case 'C':
 					priv_flags |= priv_CREATE;
-				break;
+					break;
 				case 'L':
 					priv_flags |= priv_ALTER;
 					break;
@@ -1350,6 +1350,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					break;
 				default:
 					priv_flags |= priv_UNKNOWN;
+					break;
 				}
 
 				make_priv_string (priv_flags, priv_string);

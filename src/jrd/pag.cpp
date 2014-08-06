@@ -1913,7 +1913,7 @@ ULONG PageSpace::lastUsedPage()
 			pipLast = pipFirst;
 
 		window.win_page = pipLast;
-	};
+	}
 
 	page_inv_page* pip = (page_inv_page*) window.win_buffer;
 
