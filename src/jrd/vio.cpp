@@ -3892,6 +3892,14 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		transaction->tra_flags |= TRA_perform_autocommit;
 
 	tdbb->bumpRelStats(RuntimeStatistics::RECORD_LOCKS, relation->rel_id);
+
+	// VIO_writelock
+	if ((tdbb->getDatabase()->dbb_flags & DBB_gc_background) &&
+		!org_rpb->rpb_relation->isTemporary())
+	{
+		notify_garbage_collector(tdbb, org_rpb, transaction->tra_number);
+	}
+
 	return true;
 }
 
