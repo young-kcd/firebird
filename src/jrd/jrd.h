@@ -900,7 +900,21 @@ namespace Jrd {
 				lck->getLockStable() : Firebird::RefPtr<StableAttachmentPart>(), f, true),
 			  ThreadContextHolder(dbb, lck ? lck->getLockAttachment() : NULL),
 			  DatabaseContextHolder(operator thread_db*())
-		{}
+		{
+			if (lck)
+			{
+				// The lock could be released while we were waiting on the attachment mutex.
+				// This may cause a segfault due to lck_attachment == NULL stored in tdbb.
+
+				if (!lck->lck_id)
+				{
+					// usually to be swallowed by the AST, but it allows to skip its execution
+					Firebird::status_exception::raise(Firebird::Arg::Gds(isc_unavailable));
+				}
+
+				fb_assert((operator thread_db*())->getAttachment());
+			}
+		}
 
 	private:
 		// copying is prohibited
