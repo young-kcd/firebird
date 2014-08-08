@@ -2069,6 +2069,8 @@ bool VIO_get_current(thread_db* tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
+	Attachment* const attachment = tdbb->getAttachment();
+
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE,
 		"VIO_get_current (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT", pool %p)\n",
@@ -2145,6 +2147,7 @@ bool VIO_get_current(thread_db* tdbb,
 			VIO_backout(tdbb, rpb, transaction);
 			continue;
 		case tra_precommitted:
+			Attachment::Checkout cout(attachment, FB_FUNCTION);
 			THREAD_SLEEP(100);	// milliseconds
 			continue;
 		}
@@ -2170,6 +2173,7 @@ bool VIO_get_current(thread_db* tdbb,
 
 			if (state == tra_active)
 			{
+				Attachment::Checkout cout(attachment, FB_FUNCTION);
 				THREAD_SLEEP(100);	// milliseconds
 				continue;
 			}
@@ -5090,6 +5094,8 @@ static int prepare_update(	thread_db*		tdbb,
  **************************************/
 	SET_TDBB(tdbb);
 
+	Attachment* const attachment = tdbb->getAttachment();
+
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
 		"prepare_update (transaction %"ULONGFORMAT
@@ -5369,6 +5375,7 @@ static int prepare_update(	thread_db*		tdbb,
 
 				if (state == tra_active)
 				{
+					Attachment::Checkout cout(attachment, FB_FUNCTION);
 					THREAD_SLEEP(100);	// milliseconds
 					continue;
 				}
@@ -5431,9 +5438,13 @@ static int prepare_update(	thread_db*		tdbb,
 		}
 
 		if (state == tra_precommitted)
+		{
+			Attachment::Checkout cout(attachment, FB_FUNCTION);
 			THREAD_SLEEP(100);	// milliseconds
-		else
-			VIO_backout(tdbb, rpb, transaction);
+			continue;
+		}
+
+		VIO_backout(tdbb, rpb, transaction);
 	}
 
 	return PREPARE_OK;
