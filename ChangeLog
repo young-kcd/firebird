@@ -1,3 +1,11 @@
+ 2014-08-08 15:29  dimitr 
+   M src/jrd/jrd.h
+Atempted to fix a crash when the database monitoring is used concurrently under load.
+
+ 2014-08-08 15:27  dimitr 
+   M src/jrd/vio.cpp
+Fixed possible deadlocks between a worker thread and an attachment-level AST.
+
  2014-08-06 13:46  alexpeshkoff 
    M src/dsql/dsql.cpp
 Restored a check dropped accidentially by one of my recent commits
