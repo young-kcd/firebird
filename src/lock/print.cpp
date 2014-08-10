@@ -1153,7 +1153,7 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, U
 				preLock, rel_lock, rel_lock);
 	}
 	FPRINTF(outfile,
-			"\tSeries: %d, State: %d, size: %d length: %d data: %"ULONGFORMAT"\n",
+			"\tSeries: %d, State: %d, Size: %d, Length: %d, Data: %"ULONGFORMAT"\n",
 			lock->lbl_series, lock->lbl_state, lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
 	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) &&
@@ -1264,10 +1264,10 @@ static void prt_owner(OUTFILE outfile,
 		FPRINTF(outfile, "<a name=\"%s%"SLONGFORMAT"\">OWNER BLOCK %6"SLONGFORMAT"</a>\n",
 				preOwn, rel_owner, rel_owner);
 	}
-	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, type: %1d\n",
+	FPRINTF(outfile, "\tOwner id: %6"QUADFORMAT"d, Type: %1d\n",
 			owner->own_owner_id, owner->own_owner_type);
 
-	FPRINTF(outfile, "\tProcess id: %6d (%s), thread id: %6"SIZEFORMAT"\n",
+	FPRINTF(outfile, "\tProcess id: %6d (%s), Thread id: %6"SIZEFORMAT"\n",
 			process->prc_process_id,
 			ISC_check_process_existence(process->prc_process_id) ? "Alive" : "Dead",
 			// please keep C-cast here - own_thread_id type varies great from OS to OS
