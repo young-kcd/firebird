@@ -434,7 +434,7 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 		Lock(tdbb, sizeof(SLONG), LCK_monitor, this, blockingAstMonitor);
 	att_monitor_lock = lock;
 	lock->lck_key.lck_long = att_attachment_id;
-	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
 	// Unless we're a system attachment, allocate the cancellation lock
 
@@ -644,17 +644,20 @@ int Jrd::Attachment::blockingAstMonitor(void* ast_object)
 
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION, attachment->att_monitor_lock);
 
-		try
+		if (!(attachment->att_flags & ATT_monitor_done))
 		{
-			Monitoring::dumpAttachment(tdbb, attachment, true);
-		}
-		catch (const Exception& ex)
-		{
-			iscLogException("Cannot dump the monitoring data", ex);
-		}
+			try
+			{
+				Monitoring::dumpAttachment(tdbb, attachment, true);
+			}
+			catch (const Exception& ex)
+			{
+				iscLogException("Cannot dump the monitoring data", ex);
+			}
 
-		LCK_release(tdbb, attachment->att_monitor_lock);
-		attachment->att_flags |= ATT_monitor_off;
+			LCK_downgrade(tdbb, attachment->att_monitor_lock);
+			attachment->att_flags |= ATT_monitor_done;
+		}
 	}
 	catch (const Exception&)
 	{} // no-op

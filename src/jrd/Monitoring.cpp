@@ -351,14 +351,15 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
 	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
 
-	// Release our own lock
-
-	LCK_release(tdbb, attachment->att_monitor_lock);
-	attachment->att_flags &= ~ATT_monitor_off;
-
-	// Dump our own data
+	// Dump our own data and downgrade the lock, if required
 
 	Monitoring::dumpAttachment(tdbb, attachment, false);
+
+	if (!(attachment->att_flags & ATT_monitor_done))
+	{
+		LCK_convert(tdbb, attachment->att_monitor_lock, LCK_SR, LCK_NO_WAIT);
+		attachment->att_flags |= ATT_monitor_done;
+	}
 
 	// Enumerate active sessions
 
@@ -384,7 +385,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			{
 				lock->lck_key.lck_long = *iter;
 
-				if (LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT))
+				if (LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT))
 					LCK_release(tdbb, lock);
 			}
 		}
@@ -418,10 +419,6 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 		dbb->dbb_monitoring_data->read(self_att_id, temp_space);
 	}
-
-	// Mark our attachment as requesting a new lock
-
-	attachment->att_flags |= ATT_monitor_off;
 
 	string databaseName(dbb->dbb_database_name.c_str());
 	ISC_systemToUtf8(databaseName);
@@ -1148,11 +1145,11 @@ void Monitoring::checkState(thread_db* tdbb)
 
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
-	if (attachment->att_flags & ATT_monitor_off)
+	if (attachment->att_flags & ATT_monitor_done)
 	{
 		// Enable signal handler for the monitoring stuff
-		attachment->att_flags &= ~ATT_monitor_off;
-		LCK_lock(tdbb, attachment->att_monitor_lock, LCK_SR, LCK_WAIT);
+		attachment->att_flags &= ~ATT_monitor_done;
+		LCK_convert(tdbb, attachment->att_monitor_lock, LCK_EX, LCK_WAIT);
 	}
 }
 

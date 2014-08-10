@@ -478,8 +478,8 @@ const ULONG ATT_manual_lock			= 0x00800L;	// Was locked manually
 const ULONG ATT_async_manual_lock	= 0x01000L;	// Async mutex was locked manually
 const ULONG ATT_purge_started		= 0x02000L; // Purge already started - avoid 2 purges at once
 const ULONG ATT_system				= 0x04000L; // Special system attachment
-const ULONG ATT_creator				= 0x08000L; // This attachment created the DB.
-const ULONG ATT_monitor_off			= 0x10000L; // Monitoring lock is released
+const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
+const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 
