@@ -259,8 +259,6 @@ public:
 		void shutdown(thread_db* tdbb);
 
 	private:
-		static int blockingAst(void* arg);
-
 		ValueCache m_counters[TOTAL_ITEMS];
 	};
 

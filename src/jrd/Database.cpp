@@ -270,8 +270,8 @@ namespace Jrd
 
 		if (!counter->lock)
 		{
-			Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
-				Lock(tdbb, sizeof(SLONG), LCK_shared_counter, counter, blockingAst);
+			Lock* const lock =
+				FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock(tdbb, sizeof(SLONG), LCK_shared_counter);
 			counter->lock = lock;
 			lock->lck_key.lck_long = space;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
@@ -283,7 +283,6 @@ namespace Jrd
 		if (counter->curVal > counter->maxVal)
 		{
 			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
-
 			counter->curVal = LCK_read_data(tdbb, counter->lock);
 
 			if (!counter->curVal)
@@ -294,29 +293,10 @@ namespace Jrd
 
 			counter->maxVal = counter->curVal + prefetch - 1;
 			LCK_write_data(tdbb, counter->lock, counter->maxVal + 1);
+			LCK_convert(tdbb, counter->lock, LCK_SR, LCK_WAIT);
 		}
 
 		return counter->curVal++;
-	}
-
-	int Database::SharedCounter::blockingAst(void* ast_object)
-	{
-		ValueCache* const counter = static_cast<ValueCache*>(ast_object);
-		fb_assert(counter && counter->lock);
-		Database* const dbb = counter->lock->lck_dbb;
-
-		try
-		{
-			AsyncContextHolder tdbb(dbb, FB_FUNCTION);
-
-			SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::blockingAstSharedCounter");
-
-			LCK_downgrade(tdbb, counter->lock);
-		}
-		catch (const Exception&)
-		{} // no-op
-
-		return 0;
 	}
 
 	void Database::Linger::handler()
