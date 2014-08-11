@@ -1,3 +1,18 @@
+ 2014-08-10 20:11  dimitr 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Monitoring.cpp
+Better (methinks) synchronization for the monitoring stuff. Being field tested.
+
+ 2014-08-10 20:07  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+Front-ported Nickolay's improvement for the shared counter.
+
+ 2014-08-10 15:14  dimitr 
+   M src/lock/print.cpp
+Misc.
+
  2014-08-08 15:29  dimitr 
    M src/jrd/jrd.h
 Atempted to fix a crash when the database monitoring is used concurrently under load.
