@@ -27,7 +27,7 @@
 
 #ifndef FB_EXPORTED
 #if defined(DARWIN)
-#define FB_EXPORTED API_ROUTINE
+#define FB_EXPORTED __attribute__((visibility("default")))
 #else
 #define FB_EXPORTED
 #endif // OS choice (DARWIN)
