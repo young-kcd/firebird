@@ -1,3 +1,11 @@
+ 2014-08-12 15:10  alexpeshkoff 
+   M src/include/firebird/UdrEngine.h
+Fixed Mac build
+
+ 2014-08-12 10:21  hvlad 
+   M src/jrd/Monitoring.cpp
+Avoid info duplication when statements in call stack attached to different transactions (for example: monitoring snapshot is created in autonomous transaction)
+
  2014-08-11 14:02  dimitr 
    M src/jrd/RuntimeStatistics.h
 Regression in 3.0: trace reports UPDATES in statistics when doing INSERT into <some_table>.
