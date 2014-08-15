@@ -125,7 +125,6 @@ class YHelper : public Firebird::StdPlugin<Intf, Vers>, public YObject
 {
 public:
 	static const unsigned DF_RELEASE =		0x1;
-	static const unsigned DF_CLEANONLY =	0x2;
 
 	explicit YHelper(Intf* aNext);
 
@@ -150,10 +149,7 @@ public:
 	void destroy2(unsigned dstrFlags)
 	{
 		RefDeb(Firebird::DEB_RLS_JATT, "YValve/destroy2");
-		if (dstrFlags & DF_CLEANONLY)
-			memset(&next, 0, sizeof next);
-		else
-			next = NULL;
+		next = NULL;
 
 		if (dstrFlags & DF_RELEASE)
 		{

@@ -4577,8 +4577,8 @@ void YTransaction::destroy(unsigned dstrFlags)
 
 	cleanupHandlers.clear();
 
-	childBlobs.destroy(dstrFlags | DF_CLEANONLY);
-	childCursors.destroy(dstrFlags | DF_CLEANONLY);
+	childBlobs.destroy(dstrFlags & ~DF_RELEASE);
+	childCursors.destroy(dstrFlags & ~DF_RELEASE);
 
 	if (attachment)
 		attachment->childTransactions.remove(this);
@@ -4840,11 +4840,11 @@ void YAttachment::destroy(unsigned dstrFlags)
 
 	cleanupHandlers.clear();
 
-	childRequests.destroy(dstrFlags | DF_CLEANONLY);
-	childStatements.destroy(dstrFlags | DF_CLEANONLY);
-	childBlobs.destroy(dstrFlags | DF_CLEANONLY);
-	childEvents.destroy(dstrFlags | DF_CLEANONLY);
-	childTransactions.destroy(dstrFlags | DF_CLEANONLY);
+	childRequests.destroy(dstrFlags & ~DF_RELEASE);
+	childStatements.destroy(dstrFlags & ~DF_RELEASE);
+	childBlobs.destroy(dstrFlags & ~DF_RELEASE);
+	childEvents.destroy(dstrFlags & ~DF_RELEASE);
+	childTransactions.destroy(dstrFlags & ~DF_RELEASE);
 
 	removeHandle(&attachments, handle);
 
