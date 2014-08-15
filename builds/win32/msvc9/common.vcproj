@@ -420,10 +420,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\thd.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\common\ThreadData.cpp"
 				>
 			</File>
@@ -910,10 +906,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\common\TextType.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\common\thd.h"
 				>
 			</File>
 			<File

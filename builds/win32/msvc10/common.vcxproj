@@ -77,7 +77,6 @@
     <ClCompile Include="..\..\..\src\common\StatusArg.cpp" />
     <ClCompile Include="..\..\..\src\common\StatusHolder.cpp" />
     <ClCompile Include="..\..\..\src\common\TextType.cpp" />
-    <ClCompile Include="..\..\..\src\common\thd.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadData.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadStart.cpp" />
     <ClCompile Include="..\..\..\src\common\unicode_util.cpp" />
@@ -181,7 +180,6 @@
     <ClInclude Include="..\..\..\src\common\StatusHolder.h" />
     <ClInclude Include="..\..\..\src\common\stuff.h" />
     <ClInclude Include="..\..\..\src\common\TextType.h" />
-    <ClInclude Include="..\..\..\src\common\thd.h" />
     <ClInclude Include="..\..\..\src\common\ThreadData.h" />
     <ClInclude Include="..\..\..\src\common\ThreadStart.h" />
     <ClInclude Include="..\..\..\src\common\unicode_util.h" />

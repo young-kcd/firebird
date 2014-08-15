@@ -78,9 +78,6 @@
     <ClCompile Include="..\..\..\src\common\TextType.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\thd.cpp">
-      <Filter>common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\common\ThreadData.cpp">
       <Filter>common</Filter>
     </ClCompile>
@@ -297,9 +294,6 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\TextType.h">
-      <Filter>headers</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\common\thd.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\ThreadData.h">

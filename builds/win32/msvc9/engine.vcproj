@@ -1520,10 +1520,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\jrd\thread_proto.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\src\jrd\tpc_proto.h"
 				>
 			</File>

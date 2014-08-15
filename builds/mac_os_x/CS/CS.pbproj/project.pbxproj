@@ -5373,26 +5373,6 @@
 			path = termtype.h;
 			refType = 4;
 		};
-		F616C6D30200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = thd.cpp;
-			refType = 4;
-		};
-		F616C6D40200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = thd.h;
-			refType = 4;
-		};
-		F616C6D50200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = thd_proto.h;
-			refType = 4;
-		};
-		F616C6D60200B0D001EF0ADE = {
-			isa = PBXFileReference;
-			path = thd_win32.cpp;
-			refType = 4;
-		};
 		F616C6D70200B0D001EF0ADE = {
 			isa = PBXFileReference;
 			path = thin.asm;
