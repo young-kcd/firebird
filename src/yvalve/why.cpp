@@ -880,7 +880,7 @@ private:
 			}
 		}
 	private:
-		ThreadId handle;
+		Thread::Handle handle;
 	};
 #endif // UNIX
 

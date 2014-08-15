@@ -144,7 +144,7 @@ private:
 	Firebird::AtomicCounter currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
-	ThreadId cryptThreadId;
+	Thread::Handle cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
 	Database& dbb;
 	Lock* stateLock;

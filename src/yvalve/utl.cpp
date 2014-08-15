@@ -2148,7 +2148,7 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR* entrypoint,
 	int rc = 0;
 	try
 	{
-		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (ThreadId*) thd_id);
+		Thread::start((ThreadEntryPoint*) entrypoint, arg, priority, (Thread::Handle*) thd_id);
 	}
 	catch (const status_exception& status)
 	{

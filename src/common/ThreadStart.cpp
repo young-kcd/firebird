@@ -44,6 +44,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_SYS_SYSCALL_H
+#include <sys/syscall.h>
+#endif
+
 #include "../common/classes/locks.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/Synchronize.h"
@@ -93,7 +97,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *
@@ -177,14 +181,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Threa
 	}
 }
 
-void Thread::waitForCompletion(ThreadId& thread)
+void Thread::waitForCompletion(Handle& thread)
 {
 	int state = pthread_join(thread, NULL);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_join", state);
 }
 
-void Thread::kill(ThreadId& thread)
+void Thread::kill(Handle& thread)
 {
 #ifdef HAVE_PTHREAD_CANCEL
 	int state = pthread_cancel(thread);
@@ -196,7 +200,7 @@ void Thread::kill(ThreadId& thread)
 
 ThreadId Thread::getId()
 {
-	return pthread_self();
+	return syscall(SYS_gettid);
 }
 
 void Thread::sleep(unsigned milliseconds)
@@ -243,7 +247,7 @@ void Thread::yield()
 
 #ifdef WIN_NT
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *
@@ -309,14 +313,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Threa
 	}
 }
 
-void Thread::waitForCompletion(ThreadId& handle)
+void Thread::waitForCompletion(Handle& handle)
 {
 	WaitForSingleObject(handle, 500);
 	CloseHandle(handle);
 	handle = 0;
 }
 
-void Thread::kill(ThreadId& handle)
+void Thread::kill(Handle& handle)
 {
 	TerminateThread(handle, -1);
 	CloseHandle(handle);
@@ -342,7 +346,7 @@ void Thread::yield()
 
 
 #ifndef START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
 {
 /**************************************
  *

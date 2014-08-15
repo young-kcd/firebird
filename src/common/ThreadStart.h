@@ -50,19 +50,26 @@ const int THREAD_critical		= 6;
 typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
 
 #ifdef WIN_NT
-typedef HANDLE ThreadId;
+typedef DWORD ThreadId;
 #endif
 
-#ifdef USE_POSIX_THREADS
-typedef pthread_t ThreadId;
+#ifdef LINUX
+typedef int ThreadId;
 #endif
 
 class Thread
 {
 public:
-	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle = NULL);
-	static void waitForCompletion(ThreadId& handle);
-	static void kill(ThreadId& handle);
+#ifdef WIN_NT
+	typedef HANDLE Handle;
+#endif
+#ifdef USE_POSIX_THREADS
+	typedef pthread_t Handle;
+#endif
+
+	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle = NULL);
+	static void waitForCompletion(Handle& handle);
+	static void kill(Handle& handle);
 
 	static ThreadId getId();
 
