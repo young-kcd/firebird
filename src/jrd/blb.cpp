@@ -2669,6 +2669,9 @@ void blb::destroy(const bool purge_flag)
 			// in tra_blobs
 			fb_assert(false);
 		}
+
+		if (blb_interface)
+			blb_interface->clearHandle();
 	}
 
 	delete blb_pages;

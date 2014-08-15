@@ -73,6 +73,11 @@ public:
 		return blob;
 	}
 
+	void clearHandle()
+	{
+		blob = NULL;
+	}
+
 private:
 	blb* blob;
 	Firebird::RefPtr<StableAttachmentPart> sAtt;
