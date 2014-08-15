@@ -37,7 +37,6 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/isc_s_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/err_proto.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/utils_proto.h"
@@ -527,7 +526,7 @@ void EventManager::acquire_shmem()
 			m_sharedMemory->mutexUnlock();
 			detach_shared_file();
 
-			THD_yield();
+			Thread::yield();
 
 			attach_shared_file();
 			m_sharedMemory->mutexLock();
@@ -795,7 +794,7 @@ void EventManager::delete_session(SLONG session_id)
 
 		// give a chance for delivering thread to detect SES_purge flag we just set
 		release_shmem();
-		THREAD_SLEEP(100);
+		Thread::sleep(100);
 		acquire_shmem();
 
 		return;

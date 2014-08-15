@@ -30,7 +30,7 @@
 #include "firebird.h"
 
 #include "../../common/classes/locks.h"
-#include "../../common/thd.h"
+#include "../../common/ThreadStart.h"
 
 
 namespace Firebird {

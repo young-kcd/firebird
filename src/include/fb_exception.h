@@ -43,7 +43,7 @@
 
 #include "fb_types.h"
 #include "../common/StatusArg.h"
-#include "../common/thd.h"
+#include "../common/ThreadStart.h"
 
 namespace Firebird
 {

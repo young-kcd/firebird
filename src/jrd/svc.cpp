@@ -48,7 +48,6 @@
 #include "../common/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/mov_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/alloc.h"
@@ -1046,7 +1045,7 @@ void Service::shutdownServices()
 		if (!(all[pos]->svc_flags & SVC_finished))
 		{
 			globalServicesMutex->leave();
-			THD_sleep(1);
+			Thread::sleep(1);
 			globalServicesMutex->enter(FB_FUNCTION);
 			pos = 0;
 			continue;

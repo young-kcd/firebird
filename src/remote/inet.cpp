@@ -100,7 +100,6 @@ const int INET_RETRY_CALL = 5;
 
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
-#include "../common/thd.h"
 #include "../remote/inet_proto.h"
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"

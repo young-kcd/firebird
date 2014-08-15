@@ -57,7 +57,6 @@
 #include "../jrd/mov_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/rlck_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/vio_proto.h"
@@ -1463,7 +1462,7 @@ void TRA_set_state(thread_db* tdbb, jrd_tra* transaction, TraNumber number, int 
 
 	{ //scope
 		Database::Checkout dcoHolder(dbb, FB_FUNCTION);
-		THREAD_YIELD();
+		Thread::yield();
 	}
 	tip = reinterpret_cast<tx_inv_page*>(CCH_FETCH(tdbb, &window, LCK_write, pag_transactions));
 	if (generation == tip->tip_header.pag_generation)

@@ -112,7 +112,6 @@
 #include "../jrd/rlck_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/event_proto.h"
 #include "../jrd/nbak.h"
@@ -4348,7 +4347,7 @@ static bool delete_relation(thread_db* tdbb, SSHORT phase, DeferredWork* work, j
 			}
 
 			Jrd::Attachment::Checkout attCout(attachment, FB_FUNCTION);
-			THREAD_SLEEP(1 * 1000);
+			Thread::sleep(1 * 1000);
 		}
 
 		if (relation->rel_sweep_count)

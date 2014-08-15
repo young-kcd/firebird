@@ -244,7 +244,7 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 			MutexUnlockGuard cout(counterMutex, FB_FUNCTION);
 			Attachment::Checkout attCout(att, FB_FUNCTION, true);
-			THD_yield();
+			Thread::yield();
 		}
 
 		needFetch = cachedLock->lck_physical < LCK_read;

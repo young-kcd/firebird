@@ -35,7 +35,6 @@
 #include "../jrd/err_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/scl.h"
 #include "../common/config/config.h"

@@ -49,7 +49,6 @@
 #include "../utilities/gstat/dbaswi.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_f_proto.h"
-#include "../common/thd.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../jrd/constants.h"

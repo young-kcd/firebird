@@ -39,7 +39,6 @@
 #include "err_proto.h"
 #include "cch_proto.h"
 #include "../common/isc_proto.h"
-#include "../jrd/thread_proto.h"
 #include "os/pio_proto.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"

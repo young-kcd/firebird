@@ -78,12 +78,10 @@
 
 #include "../remote/remote.h"
 #include "../jrd/license.h"
-#include "../common/thd.h"
 #include "../common/file_params.h"
 #include "../remote/inet_proto.h"
 #include "../remote/server/serve_proto.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/fb_string.h"
 

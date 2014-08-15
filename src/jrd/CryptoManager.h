@@ -30,7 +30,6 @@
 #define JRD_CRYPTO_MANAGER
 
 #include "../common/classes/alloc.h"
-#include "../common/thd.h"
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/SyncObject.h"
 #include "../common/classes/fb_string.h"
@@ -145,7 +144,7 @@ private:
 	Firebird::AtomicCounter currentPage;
 	Firebird::Mutex pluginLoadMtx, cryptThreadMtx;
 	KeyHolderPlugins keyHolderPlugins;
-	Thread::Handle cryptThreadId;
+	ThreadId cryptThreadId;
 	Firebird::IDbCryptPlugin* cryptPlugin;
 	Database& dbb;
 	Lock* stateLock;

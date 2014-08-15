@@ -829,7 +829,7 @@ private:
 
 	AutoPtr<SharedMemory<MappingHeader> > sharedMemory;
 	Mutex initMutex;
-	Thread::Handle threadHandle;
+	ThreadId threadHandle;
 	const SLONG processId;
 	unsigned process;
 };

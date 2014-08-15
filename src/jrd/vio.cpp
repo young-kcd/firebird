@@ -63,7 +63,6 @@
 #include "../jrd/scl.h"
 #include "../common/classes/alloc.h"
 #include "../common/ThreadStart.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/vio_debug.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/btr_proto.h"
@@ -2148,7 +2147,7 @@ bool VIO_get_current(thread_db* tdbb,
 			continue;
 		case tra_precommitted:
 			Attachment::Checkout cout(attachment, FB_FUNCTION);
-			THREAD_SLEEP(100);	// milliseconds
+			Thread::sleep(100);	// milliseconds
 			continue;
 		}
 
@@ -2174,7 +2173,7 @@ bool VIO_get_current(thread_db* tdbb,
 			if (state == tra_active)
 			{
 				Attachment::Checkout cout(attachment, FB_FUNCTION);
-				THREAD_SLEEP(100);	// milliseconds
+				Thread::sleep(100);	// milliseconds
 				continue;
 			}
 		}
@@ -5376,7 +5375,7 @@ static int prepare_update(	thread_db*		tdbb,
 				if (state == tra_active)
 				{
 					Attachment::Checkout cout(attachment, FB_FUNCTION);
-					THREAD_SLEEP(100);	// milliseconds
+					Thread::sleep(100);	// milliseconds
 					continue;
 				}
 			}
@@ -5440,7 +5439,7 @@ static int prepare_update(	thread_db*		tdbb,
 		if (state == tra_precommitted)
 		{
 			Attachment::Checkout cout(attachment, FB_FUNCTION);
-			THREAD_SLEEP(100);	// milliseconds
+			Thread::sleep(100);	// milliseconds
 			continue;
 		}
 

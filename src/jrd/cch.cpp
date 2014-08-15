@@ -55,7 +55,6 @@
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
 #include "../common/ThreadStart.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/ClumpletWriter.h"
@@ -470,7 +469,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 			if (remaining >= CCH_EXCLUSIVE_RETRY_INTERVAL)
 			{
 				SyncUnlockGuard unlock(exLock ? (*exGuard) : dsGuard);
-				THREAD_SLEEP(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
+				Thread::sleep(CCH_EXCLUSIVE_RETRY_INTERVAL * 1000);
 			}
 
 		} // try
@@ -1010,7 +1009,7 @@ void CCH_fini(thread_db* tdbb)
 		// Wait for cache writer startup to complete.
 		while (bcb->bcb_flags & BCB_writer_start)
 		{
-			THREAD_YIELD();
+			Thread::yield();
 		}
 
 		// Shutdown the dedicated cache writer for this database.
@@ -3557,7 +3556,7 @@ static LatchState latch_buffer(thread_db* tdbb, Sync &bcbSync, BufferDesc *bdb,
 		if (wait == 0)
 			return lsTimeout;  // go out
 
-		THD_yield();
+		Thread::yield();
 	}
 	else
 	{

@@ -31,8 +31,6 @@
 
 #include "../jrd/ibase.h"
 #include "../jrd/svc.h"
-#include "../common/thd.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../../remote/server/os/win32/window_proto.h"
 #include "../../remote/server/os/win32/propty_proto.h"

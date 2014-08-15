@@ -2124,7 +2124,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
   retry:
 	if (retry_count++ > 0)
-		THD_sleep(10);
+		Thread::sleep(10);
 
 	file_handle = CreateFile(expanded_filename,
 							 GENERIC_READ | GENERIC_WRITE,

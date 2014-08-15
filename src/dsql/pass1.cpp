@@ -165,7 +165,6 @@
 #include "../common/dsc_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/jrd_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../jrd/SysFunction.h"
 #include "../common/classes/array.h"

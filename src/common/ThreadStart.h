@@ -30,7 +30,6 @@
 #ifndef JRD_THREADSTART_H
 #define JRD_THREADSTART_H
 
-#include "../common/thd.h"
 #include "../common/ThreadData.h"
 
 // Thread priorities (may be ignored)
@@ -50,20 +49,30 @@ const int THREAD_critical		= 6;
 // The definition inside the thdd class should be replaced with the following one.
 typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
 
-class Thread
-{
-public:
 #ifdef WIN_NT
-	typedef HANDLE Handle;
+typedef HANDLE ThreadId;
 #endif
 
 #ifdef USE_POSIX_THREADS
-	typedef pthread_t Handle;
+typedef pthread_t ThreadId;
 #endif
 
-	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle = NULL);
-	static void waitForCompletion(Handle& handle);
-	static void kill(Handle& handle);
+class Thread
+{
+public:
+	static void	start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle = NULL);
+	static void waitForCompletion(ThreadId& handle);
+	static void kill(ThreadId& handle);
+
+	static ThreadId getId();
+
+	static void sleep(unsigned milliseconds);
+	static void yield();
 };
+
+inline ThreadId getThreadId()
+{
+	return Thread::getId();
+}
 
 #endif // JRD_THREADSTART_H

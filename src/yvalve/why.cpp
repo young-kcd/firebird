@@ -5700,7 +5700,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		// Close all known interfaces from providers...
 		for (bool hasThreads = true; hasThreads; )
 		{
-			THD_yield();
+			Thread::yield();
 
 			if (dispCounter.value() > 0)
 			{

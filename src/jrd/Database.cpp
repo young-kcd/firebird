@@ -41,9 +41,6 @@
 // Thread data block
 #include "../common/ThreadData.h"
 
-// recursive mutexes
-#include "../common/thd.h"
-
 using namespace Firebird;
 
 namespace Jrd

@@ -31,7 +31,7 @@
 
 #include "firebird.h"
 #include "fb_tls.h"
-#include "../thd.h"
+#include "../ThreadStart.h"
 #include "SyncObject.h"
 #include "Synchronize.h"
 

@@ -30,7 +30,6 @@
 #include "../../remote/server/os/win32/cntl_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../common/classes/init.h"
 #include "../jrd/ibase.h"

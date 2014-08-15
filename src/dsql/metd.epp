@@ -50,7 +50,6 @@
 #include "../jrd/exe_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../jrd/met_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/init.h"

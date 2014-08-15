@@ -87,7 +87,6 @@
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../common/utils_proto.h"
 
 #include "../jrd/PreparedStatement.h"

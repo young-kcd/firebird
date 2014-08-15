@@ -32,7 +32,6 @@
 #include "../remote/remot_proto.h"
 #include "../common/xdr_proto.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
 #include "../common/db_alias.h"

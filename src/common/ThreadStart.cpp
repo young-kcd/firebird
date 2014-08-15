@@ -93,7 +93,7 @@ THREAD_ENTRY_DECLARE threadStart(THREAD_ENTRY_PARAM arg)
 
 #ifdef USE_POSIX_THREADS
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle)
 {
 /**************************************
  *
@@ -177,14 +177,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	}
 }
 
-void Thread::waitForCompletion(Handle& thread)
+void Thread::waitForCompletion(ThreadId& thread)
 {
 	int state = pthread_join(thread, NULL);
 	if (state)
 		Firebird::system_call_failed::raise("pthread_join", state);
 }
 
-void Thread::kill(Handle& thread)
+void Thread::kill(ThreadId& thread)
 {
 #ifdef HAVE_PTHREAD_CANCEL
 	int state = pthread_cancel(thread);
@@ -193,12 +193,57 @@ void Thread::kill(Handle& thread)
 	waitForCompletion(thread);
 #endif
 }
-#endif /* USE_POSIX_THREADS */
+
+ThreadId Thread::getId()
+{
+	return pthread_self();
+}
+
+void Thread::sleep(unsigned milliseconds)
+{
+#if defined(HAVE_NANOSLEEP)
+	timespec timer, rem;
+	timer.tv_sec = milliseconds / 1000;
+	timer.tv_nsec = (milliseconds % 1000) * 1000000;
+
+	while (nanosleep(&timer, &rem) != 0)
+	{
+		if (errno != EINTR)
+		{
+			Firebird::system_call_failed::raise("nanosleep");
+		}
+		timer = rem;
+	}
+#else
+	Firebird::Semaphore timer;
+	timer.tryEnter(0, milliseconds);
+#endif
+}
+
+void Thread::yield()
+{
+	// use sched_yield() instead of pthread_yield(). Because pthread_yield()
+	// is not part of the (final) POSIX 1003.1c standard. Several drafts of
+	// the standard contained pthread_yield(), but then the POSIX guys
+	// discovered it was redundant with sched_yield() and dropped it.
+	// So, just use sched_yield() instead. POSIX systems on which
+	// sched_yield() is available define _POSIX_PRIORITY_SCHEDULING
+	// in <unistd.h>.  Darwin defined _POSIX_THREAD_PRIORITY_SCHEDULING
+	// instead of _POSIX_PRIORITY_SCHEDULING.
+
+#if (defined _POSIX_PRIORITY_SCHEDULING || defined _POSIX_THREAD_PRIORITY_SCHEDULING)
+	sched_yield();
+#else
+	pthread_yield();
+#endif // _POSIX_PRIORITY_SCHEDULING
+}
+
+#endif // USE_POSIX_THREADS
 
 
 #ifdef WIN_NT
 #define START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle)
 {
 /**************************************
  *
@@ -264,25 +309,40 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	}
 }
 
-void Thread::waitForCompletion(Handle& handle)
+void Thread::waitForCompletion(ThreadId& handle)
 {
 	WaitForSingleObject(handle, 500);
 	CloseHandle(handle);
 	handle = 0;
 }
 
-void Thread::kill(Handle& handle)
+void Thread::kill(ThreadId& handle)
 {
 	TerminateThread(handle, -1);
 	CloseHandle(handle);
 	handle = 0;
 }
 
+ThreadId Thread::getId()
+{
+	return GetCurrentThreadId();
+}
+
+void Thread::sleep(unsigned milliseconds)
+{
+	SleepEx(milliseconds, FALSE);
+}
+
+void Thread::yield()
+{
+	SleepEx(0, FALSE);
+}
+
 #endif  // WIN_NT
 
 
 #ifndef START_THREAD
-void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handle* p_handle)
+void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, ThreadId* p_handle)
 {
 /**************************************
  *
@@ -304,4 +364,17 @@ void Thread::waitForCompletion(Handle&)
 void Thread::kill(Handle&)
 {
 }
+
+Thread::Handle Thread::getId()
+{
+}
+
+void Thread::sleep(unsigned milliseconds)
+{
+}
+
+void Thread::yield()
+{
+}
+
 #endif  // START_THREAD

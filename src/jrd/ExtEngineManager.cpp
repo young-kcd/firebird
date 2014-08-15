@@ -43,7 +43,6 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/par_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/Function.h"
 #include "../common/isc_proto.h"
 #include "../common/classes/auto.h"

@@ -100,7 +100,6 @@
 #include "../jrd/scl_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
@@ -4048,7 +4047,7 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 		{
 			Semaphore shutdown_semaphore;
 
-			Thread::Handle h;
+			ThreadId h;
 			Thread::start(shutdown_thread, &shutdown_semaphore, THREAD_medium, &h);
 
 			if (!shutdown_semaphore.tryEnter(0, timeout))
@@ -5235,7 +5234,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	if (!tdbb->checkCancelState(false))
 	{
 		Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION);
-		THREAD_YIELD();
+		Thread::yield();
 	}
 
 	try
@@ -6790,8 +6789,8 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when ATT_purge_started / sAtt->getHandle() changes)
 
 			fb_assert(!attMutex->locked());
-			THD_yield();
-			THD_sleep(1);
+			Thread::yield();
+			Thread::sleep(1);
 		}
 
 		attachment = sAtt->getHandle();
@@ -6817,8 +6816,8 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 			// !!!!!!!!!!!!!!!!! - event? semaphore? condvar? (when --att_use_count)
 
 			fb_assert(!attMutex->locked());
-			THD_yield();
-			THD_sleep(1);
+			Thread::yield();
+			Thread::sleep(1);
 		}
 
 		attachment = sAtt->getHandle();

@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include "../../../remote/remote.h"
 #include "../../../jrd/ibase.h"
-#include "../../../common/thd.h"
 #include "../../../remote/os/win32/xnet.h"
 #include "../../../utilities/install/install_nt.h"
 #include "../../../remote/proto_proto.h"

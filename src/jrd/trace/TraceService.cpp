@@ -33,7 +33,7 @@
 #include "../../common/classes/timestamp.h"
 #include "../../common/config/config.h"
 #include "../../common/StatusArg.h"
-#include "../../common/thd.h"
+#include "../../common/ThreadStart.h"
 #include "../../jrd/svc.h"
 #include "../../common/os/guid.h"
 #include "../../jrd/trace/TraceLog.h"

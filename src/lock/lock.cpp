@@ -49,7 +49,6 @@
 #include "../common/isc_proto.h"
 #include "../common/os/isc_i_proto.h"
 #include "../common/isc_s_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
 #include "../common/classes/array.h"
 #include "../common/classes/semaphore.h"
@@ -470,7 +469,7 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
 		{ // checkout scope
 			LockTableCheckout checkout(this, FB_FUNCTION);
 			Jrd::Attachment::Checkout cout(attachment, FB_FUNCTION, true);
-			THREAD_SLEEP(10);
+			Thread::sleep(10);
 		}
 
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
@@ -1129,7 +1128,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			m_sharedMemory->mutexUnlock();
 			detach_shared_file(localStatus);
 
-			THD_yield();
+			Thread::yield();
 
 			if (!attach_shared_file(localStatus))
 				bug(&localStatus, "ISC_map_file failed (reattach shared file)");
@@ -3033,7 +3032,7 @@ void LockManager::remap_local_owners()
 	}
 
 	while (m_waitingOwners.value() > 0)
-		THREAD_SLEEP(1);
+		Thread::sleep(1);
 }
 
 

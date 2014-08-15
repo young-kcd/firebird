@@ -54,7 +54,6 @@
 #include <unistd.h>
 #endif
 #include "../common/isc_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../jrd/constants.h"
 #include "../jrd/inf_pub.h"
 #include "../common/classes/init.h"
@@ -231,7 +230,7 @@ void loginFail(const string& login, const string& remId)
 	if ((f1 || f2) && !server_shutdown)
 	{
 		// Ahh, someone is too active today
-		THREAD_SLEEP(FAILURE_DELAY * 1000);
+		Thread::sleep(FAILURE_DELAY * 1000);
 	}
 }
 
@@ -1251,7 +1250,7 @@ static server_req_t* alloc_request()
 			// request blocks that we can then use.
 
 			queGuard.leave();
-			THREAD_SLEEP(1 * 1000);
+			Thread::sleep(1 * 1000);
 			queGuard.enter();
 		}
 		zap_packet(&request->req_send, true);
@@ -6199,7 +6198,7 @@ void Worker::shutdown()
 		m_mutex->leave();	// we need CheckoutGuard here
 		try
 		{
-			THREAD_SLEEP(100);
+			Thread::sleep(100);
 		}
 		catch (const Exception&)
 		{

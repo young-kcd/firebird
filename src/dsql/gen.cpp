@@ -53,7 +53,6 @@
 #include "../dsql/make_proto.h"
 #include "../dsql/metd_proto.h"
 #include "../dsql/utld_proto.h"
-#include "../jrd/thread_proto.h"
 #include "../common/dsc_proto.h"
 #include "../yvalve/why_proto.h"
 #include "gen/iberror.h"

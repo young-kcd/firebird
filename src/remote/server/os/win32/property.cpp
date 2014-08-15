@@ -50,7 +50,6 @@
 
 #include "../common/StatusHolder.h"
 
-#include "../common/thd.h"		// get jrd_proto.h to declare the function
 #include "../jrd/jrd_proto.h"	// gds__log()
 #include <stdio.h>				// sprintf()
 

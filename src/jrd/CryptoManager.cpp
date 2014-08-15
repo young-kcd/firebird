@@ -429,7 +429,7 @@ namespace Jrd {
 								// currentPage was set to last page by thread, closing database
 								break;
 							}
-							THD_sleep(100);
+							Thread::sleep(100);
 							continue;
 						}
 
