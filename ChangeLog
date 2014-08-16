@@ -1,3 +1,102 @@
+ 2014-08-15 15:37  alexpeshkoff 
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Clear handle in JBlob when blob is destroyed
+
+ 2014-08-15 15:00  dimitr 
+   M configure.ac
+Corrections for the prior commit:Explicitly distinguish between thread handle and thread id. Return LWP as thread id on Linux.
+
+ 2014-08-15 14:59  dimitr 
+   M src/common/ThreadStart.cpp
+   M src/common/ThreadStart.h
+   M src/jrd/CryptoManager.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/jrd.cpp
+   M src/remote/remote.h
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Corrections for the prior commit:Explicitly distinguish between thread handle and thread id. Return LWP as thread id on Linux.
+
+ 2014-08-15 14:20  dimitr 
+   M builds/mac_os_x/CS/CS.pbproj/project.pbxproj
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/engine.vcproj
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/engine.vcproj
+Cleanup and small refactoring to avoid redundancy.
+
+ 2014-08-15 14:19  dimitr 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/ThreadStart.cpp
+   M src/common/ThreadStart.h
+   M src/common/classes/Synchronize.cpp
+   M src/common/classes/locks.cpp
+   M src/common/fb_exception.cpp
+   M src/common/isc_sync.cpp
+   D src/common/thd.cpp
+   D src/common/thd.h
+   M src/dsql/ddl.cpp
+   M src/dsql/gen.cpp
+   M src/dsql/make.cpp
+   M src/dsql/metd.epp
+   M src/dsql/pass1.cpp
+   M src/include/fb_exception.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/Database.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/Function.epp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/event.cpp
+   M src/jrd/fun.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/os/pio.h
+   M src/jrd/pag.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/sort.cpp
+   M src/jrd/svc.cpp
+   D src/jrd/thread_proto.h
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceService.cpp
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/cntl.cpp
+   M src/remote/server/os/win32/property.cpp
+   M src/remote/server/os/win32/window.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gstat/dba.epp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Cleanup and small refactoring to avoid redundancy.
+
+ 2014-08-15 13:14  alexpeshkoff 
+   M src/yvalve/why.cpp
+Cleanup
+
+ 2014-08-15 13:08  alexpeshkoff 
+   M src/jrd/EngineInterface.h
+   M src/jrd/blb.cpp
+Clear handle in JBlob when blob is destroyed
+
  2014-08-12 15:10  alexpeshkoff 
    M src/include/firebird/UdrEngine.h
 Fixed Mac build
