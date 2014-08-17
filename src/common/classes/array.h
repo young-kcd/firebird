@@ -432,7 +432,7 @@ protected:
 	{
 		if (newcapacity > capacity)
 		{
-			if (capacity <= FB_MAX_SIZEOF/2)
+			if (capacity <= FB_MAX_SIZEOF / 2)
 			{
 				if (newcapacity < capacity * 2)
 					newcapacity = capacity * 2;
