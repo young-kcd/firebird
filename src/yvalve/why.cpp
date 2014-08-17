@@ -5360,7 +5360,7 @@ void YService::destroy(unsigned dstrFlags)
 	removeHandle(&services, handle);
 
 	next = NULL;
-	if (dstrFlags && DF_RELEASE)
+	if (dstrFlags & DF_RELEASE)
 		release();
 }
 
