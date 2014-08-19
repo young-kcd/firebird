@@ -3024,6 +3024,9 @@ static void gen_s_start( const act* action, int column)
 {
 	gpre_req* request = action->act_request;
 
+	printa(column, "for (int retries = 0; retries < 2; ++retries)");
+	column += INDENT;
+	begin(column);
 	gen_compile(action, column);
 
 	gpre_port* port = request->req_vport;
@@ -3038,11 +3041,16 @@ static void gen_s_start( const act* action, int column)
 		make_ok_test(action, request, column);
 		column += INDENT;
 	}
-
 	gen_start(action, port, column, false);
-
 	if (action->act_error || (action->act_flags & ACT_sql))
 		column -= INDENT;
+
+	const TEXT* pattern1 = "if (%V1->get()[1] == isc_bad_req_handle) %RH = NULL;";
+	PAT args;
+	args.pat_request = action->act_request;
+	args.pat_vector1 = status_vector(action);
+	PATTERN_expand((USHORT) column, pattern1, &args);
+	printa(column, "else break;");
 
 	if (action->act_type == ACT_open)
 	{
@@ -3052,6 +3060,8 @@ static void gen_s_start( const act* action, int column)
 		column -= INDENT;
 	}
 
+	endp(column);
+	column -= INDENT;
 	set_sqlcode(action, column);
 }
 
