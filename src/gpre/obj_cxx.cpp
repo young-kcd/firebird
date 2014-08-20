@@ -3045,7 +3045,7 @@ static void gen_s_start( const act* action, int column)
 	if (action->act_error || (action->act_flags & ACT_sql))
 		column -= INDENT;
 
-	const TEXT* pattern1 = "if (%V1->get()[1] == isc_bad_req_handle) %RH = NULL;";
+	const TEXT* pattern1 = "if (%V1->get()[1] == isc_bad_req_handle) { %RH->release(); %RH = NULL; }";
 	PAT args;
 	args.pat_request = action->act_request;
 	args.pat_vector1 = status_vector(action);
