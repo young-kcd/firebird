@@ -1,3 +1,7 @@
+ 2014-08-19 09:53  alexpeshkoff 
+   M src/gpre/obj_cxx.cpp
+Fixed CORE-4506: Firebird server crashes when execute most of "show ..." commands after reconnect
+
  2014-08-17 04:17  robocop 
    M src/common/classes/array.h
 Misc.
