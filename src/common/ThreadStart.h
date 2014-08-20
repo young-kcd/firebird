@@ -49,12 +49,14 @@ const int THREAD_critical		= 6;
 // The definition inside the thdd class should be replaced with the following one.
 typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
 
-#ifdef WIN_NT
+#if defined(WIN_NT)
 typedef DWORD ThreadId;
-#endif
-
-#ifdef LINUX
+#elif defined(LINUX)
 typedef int ThreadId;
+#elif defined(USE_POSIX_THREADS)
+typedef pthread_t ThreadId;
+#else
+error - unknown ThreadId type
 #endif
 
 class Thread

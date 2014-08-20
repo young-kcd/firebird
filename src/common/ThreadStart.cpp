@@ -200,7 +200,11 @@ void Thread::kill(Handle& thread)
 
 ThreadId Thread::getId()
 {
+#ifdef LINUX
 	return syscall(SYS_gettid);
+#else
+	return pthread_self();
+#endif
 }
 
 void Thread::sleep(unsigned milliseconds)
