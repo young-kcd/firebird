@@ -68,6 +68,7 @@ const unsigned FLAG_ROLE = 2;
 
 const char* NM_ROLE = "Role";
 const char* NM_USER = "User";
+const char* TYPE_SEEN = "Seen";
 
 void check(const char* s, IStatus* st)
 {
@@ -334,6 +335,9 @@ public:
 
 	void map(bool flagWild, AuthReader::Info& info, AuthWriter& newBlock)
 	{
+		if (info.type == TYPE_SEEN)
+			return;
+
 		Map from(info);
 
 		if (from.from == "*")
@@ -1044,7 +1048,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		// mark both DBs as 'seen'
 		info.plugin = "";
 		info.name = "";
-		info.type = "Seen";
+		info.type = TYPE_SEEN;
 
 		if (!(flags & FLAG_DB))
 		{
