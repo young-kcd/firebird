@@ -1,3 +1,7 @@
+ 2014-08-21 08:00  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+Explicitly avoid processing records about already seen databases when mapping auth info
+
  2014-08-20 10:07  alexpeshkoff 
    M src/common/ThreadStart.cpp
    M src/common/ThreadStart.h
