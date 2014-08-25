@@ -1992,12 +1992,15 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	ValueExprNode* dbkey = cmpNode->arg1;
 	ValueExprNode* value = cmpNode->arg2;
-	const RecordKeyNode* keyNode;
 
-	if (!((keyNode = dbkey->as<RecordKeyNode>()) && keyNode->blrOp == blr_dbkey) &&
+	const RecordKeyNode* keyNode = dbkey->as<RecordKeyNode>();
+
+	if (!(keyNode && keyNode->blrOp == blr_dbkey && keyNode->recStream == stream) &&
 		!dbkey->is<ConcatenateNode>())
 	{
-		if (!((keyNode = value->as<RecordKeyNode>()) && keyNode->blrOp == blr_dbkey) &&
+		keyNode = value->as<RecordKeyNode>();
+
+		if (!(keyNode && keyNode->blrOp == blr_dbkey && keyNode->recStream == stream) &&
 			!value->is<ConcatenateNode>())
 		{
 			return NULL;
@@ -2025,9 +2028,8 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 	// Make sure we have the correct stream
 
 	keyNode = dbkey->as<RecordKeyNode>();
-	fb_assert(keyNode && keyNode->blrOp == blr_dbkey);
 
-	if (keyNode->recStream != stream)
+	if (!keyNode || keyNode->blrOp != blr_dbkey || keyNode->recStream != stream)
 		return NULL;
 
 	// If this is a dbkey for the appropriate stream, it's invertable
