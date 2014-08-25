@@ -163,12 +163,19 @@ namespace
 
 		bool isReferenced(const ExprNode* node) const
 		{
-			bool fieldFound = false;
+			SortedStreamList nodeStreams;
+			node->collectStreams(nodeStreams);
 
-			if (isReferenced(node, fieldFound))
-				return fieldFound;
+			if (!nodeStreams.hasData())
+				return false;
 
-			return false;
+			for (const StreamType* iter = nodeStreams.begin(); iter != nodeStreams.end(); ++iter)
+			{
+				if (!m_streams.exist(*iter))
+					return false;
+			}
+
+			return true;
 		}
 
 		bool isComputable(CompilerScratch* csb) const
@@ -218,35 +225,6 @@ namespace
 		}
 
 	protected:
-		bool isReferenced(const ExprNode* node, bool& fieldFound) const
-		{
-			const FieldNode* fieldNode;
-
-			if ((fieldNode = node->as<FieldNode>()))
-			{
-				for (const StreamType* iter = m_streams.begin(); iter != m_streams.end(); ++iter)
-				{
-					if (fieldNode->fieldStream == *iter)
-					{
-						fieldFound = true;
-						return true;
-					}
-				}
-
-				return false;
-			}
-
-			for (const NodeRef* const* i = node->jrdChildNodes.begin();
-				 i != node->jrdChildNodes.end();
-				 ++i)
-			{
-				if (**i && !isReferenced((*i)->getExpr(), fieldFound))
-					return false;
-			}
-
-			return true;
-		}
-
 		RecordSource* m_rsb;
 		HalfStaticArray<RecordSourceNode*, OPT_STATIC_ITEMS> m_nodes;
 		StreamList m_streams;
