@@ -2839,10 +2839,14 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(jrd_nod* boolean) const
 	// Find the side of the equality that is potentially a dbkey.  If
 	// neither, make the obvious deduction
 
-	if (dbkey->nod_type != nod_dbkey && dbkey->nod_type != nod_concatenate)
+	if ((dbkey->nod_type != nod_dbkey || ((USHORT)(IPTR) dbkey->nod_arg[0]) != stream) &&
+		dbkey->nod_type != nod_concatenate)
 	{
-		if (value->nod_type != nod_dbkey && value->nod_type != nod_concatenate)
+		if ((value->nod_type != nod_dbkey || ((USHORT)(IPTR) value->nod_arg[0]) != stream) &&
+			value->nod_type != nod_concatenate)
+		{
 			return NULL;
+		}
 
 		dbkey = value;
 		value = boolean->nod_arg[0];
