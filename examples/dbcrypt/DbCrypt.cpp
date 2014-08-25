@@ -170,7 +170,7 @@ void FB_CARG DbCrypt::encrypt(IStatus* status, unsigned int length, const void* 
 
 	while (length--)
 	{
-		*t++ = (*f++) + key;
+		*t++ = (*f++) ^ key;
 	}
 }
 
@@ -189,7 +189,7 @@ void FB_CARG DbCrypt::decrypt(IStatus* status, unsigned int length, const void* 
 
 	while (length--)
 	{
-		*t++ = (*f++) - key;
+		*t++ = (*f++) ^ key;
 	}
 }
 
@@ -205,9 +205,11 @@ void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlu
 		return;
 
 	IConfigEntry* confEntry = def->find(status, "Auto");
-	def->release();
 	if (!status->isSuccess())
+	{
+		def->release();
 		return;
+	}
 
 	if (confEntry)
 	{
@@ -215,9 +217,22 @@ void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlu
 		confEntry->release();
 		if (v == '1' || v == 'y' || v == 'Y' || v == 't' || v == 'T')
 		{
+			confEntry = def->find(status, "Value");
+			def->release();
+			if (confEntry)
+			{
+				v = confEntry->getIntValue();
+				confEntry->release();
+				if (v)
+				{
+					key = v;
+					return;
+				}
+			}
 			key = 0x5a;
 			return;
 		}
+		def->release();
 	}
 
 	for (unsigned n = 0; n < length; ++n)
