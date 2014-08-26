@@ -1,3 +1,17 @@
+ 2014-08-25 14:04  alexpeshkoff 
+   M examples/dbcrypt/DbCrypt.cpp
+Make a dbCrypt sample a little more interesting
+
+ 2014-08-25 13:28  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-4530: DB_KEY based join of two tables may be ineffective.
+
+ 2014-08-25 11:35  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/jrd/opt.cpp
+Attempt for CORE-4528: Allow hash/merge joins for non-field (dbkey or derived expression) equalities.
+
  2014-08-21 08:00  alexpeshkoff 
    M src/jrd/Mapping.cpp
 Explicitly avoid processing records about already seen databases when mapping auth info
