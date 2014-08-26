@@ -32,6 +32,11 @@
 
 #include "../common/ThreadData.h"
 
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+
+
 // Thread priorities (may be ignored)
 
 const int THREAD_high			= 1;
