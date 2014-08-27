@@ -452,7 +452,7 @@ MemBlock* MemoryPool::alloc(const size_t length) throw (OOM_EXCEPTION)
 			block->length = length;
 			block->pool = this;
 
-			if (freeBlock->next = newBlock->next)
+			if ( (freeBlock->next = newBlock->next) )
 				freeBlock->next->prior = freeBlock;
 
 			newBlock->next = freeBlock;
@@ -677,7 +677,7 @@ void MemoryPool::releaseBlock(MemBlock* block) throw ()
 		remove(prior);
 		prior->memHeader.length += freeBlock->memHeader.length + sizeof(MemBigHeader);
 
-		if (prior->next = freeBlock->next)
+		if ( (prior->next = freeBlock->next) )
 			prior->next->prior = prior;
 
 		freeBlock = prior;
@@ -880,13 +880,13 @@ void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 {
 	MemBigObject* neighbor;
 
-	if (neighbor = block->prior)
+	if ( (neighbor = block->prior) )
 	{
 		if ((UCHAR*) &neighbor->memHeader + neighbor->memHeader.length != (UCHAR*) block)
 			corrupt("bad neighbors");
 	}
 
-	if (neighbor = block->next)
+	if ( (neighbor = block->next) )
 	{
 		if ((UCHAR*) &block->memHeader + block->memHeader.length != (UCHAR*) neighbor)
 			corrupt("bad neighbors");
