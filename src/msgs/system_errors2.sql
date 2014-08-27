@@ -782,6 +782,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '702', 0, 773, 'dup_attribute', NULL, NULL);
 (-901, '42', '000', 0, 774, 'dyn_no_priv', NULL, NULL)
 (-901, '42', '000', 0, 775, 'dsql_cant_grant_option', NULL, NULL);
+(-904, '40', '001', 0, 776, 'read_conflict', NULL, NULL);
 -- GFIX
 (-901, '00', '000', 3, 1, 'gfix_db_name', NULL, NULL)
 (-901, '00', '000', 3, 2, 'gfix_invalid_sw', NULL, NULL)

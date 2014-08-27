@@ -883,6 +883,7 @@ Data source : @4', NULL, NULL)
 ('dup_attribute', 'UserManagement::execute', 'UserManagement.cpp', NULL, 0, 773, NULL, 'Duplicated user attribute @1', NULL, NULL);
 ('dyn_no_priv', NULL, 'scl.epp', NULL, 0, 774, NULL, 'There is no privilege for this operation', NULL, NULL);
 ('dsql_cant_grant_option', NULL, 'DdlNodes.epp', NULL, 0, 775, NULL, 'Using GRANT OPTION on @1 not allowed', NULL, NULL);
+('read_conflict', NULL, NULL, 'vio.cpp', 0, 776, NULL, 'read conflicts with concurrent update', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

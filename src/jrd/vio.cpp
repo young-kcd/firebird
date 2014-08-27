@@ -746,8 +746,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					if (!(transaction->tra_flags & TRA_ignore_limbo))
 					{
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-						ERR_post(Arg::Gds(isc_deadlock) <<
-								 Arg::Gds(isc_trainlim));
+						ERR_post(Arg::Gds(isc_deadlock) << Arg::Gds(isc_trainlim));
 					}
 
 					state = tra_limbo;
@@ -768,8 +767,11 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 				if (state == tra_active)
 				{
+					tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, relation->rel_id);
+
 					ERR_post(Arg::Gds(isc_deadlock) <<
-						Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
+							 Arg::Gds(isc_read_conflict) <<
+							 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 				}
 
 				// refetch the record and try again.  The active transaction
@@ -5405,6 +5407,8 @@ static int prepare_update(	thread_db*		tdbb,
 				// We need to loop waiting in read committed transactions only
 				if (!(transaction->tra_flags & TRA_read_committed))
 				{
+					tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, relation->rel_id);
+
 					ERR_post(Arg::Gds(isc_deadlock) <<
 							 Arg::Gds(isc_update_conflict) <<
 							 Arg::Gds(isc_concurrent_transaction) << Arg::Num(update_conflict_trans));
@@ -5413,8 +5417,7 @@ static int prepare_update(	thread_db*		tdbb,
 				return PREPARE_LOCKERR;
 
 			case tra_limbo:
-				ERR_post(Arg::Gds(isc_deadlock) <<
-						 Arg::Gds(isc_trainlim));
+				ERR_post(Arg::Gds(isc_deadlock) << Arg::Gds(isc_trainlim));
 
 			case tra_dead:
 				break;

@@ -797,6 +797,7 @@ static const struct {
 	{"dup_attribute", 335545093},
 	{"dyn_no_priv", 335545094},
 	{"dsql_cant_grant_option", 335545095},
+	{"read_conflict", 335545096},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},
