@@ -2964,6 +2964,8 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	if (!(rpb->rpb_stream_flags & RPB_s_undo_data))
 		VIO_data(tdbb, rpb, tdbb->getDefaultPool());
 
+	tdbb->bumpRelStats(RuntimeStatistics::RECORD_RPT_READS, rpb->rpb_relation->rel_id);
+
 	// If record is present, and the transaction is read committed,
 	// make sure the record has not been updated.  Also, punt after
 	// VIO_data() call which will release the page.
@@ -2973,6 +2975,8 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 		// who modified the record. Alex P, 18-Jun-03
 		(rpb->rpb_transaction_nr != transaction->tra_number))
 	{
+		tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, rpb->rpb_relation->rel_id);
+
 		ERR_post(Arg::Gds(isc_deadlock) <<
 				 Arg::Gds(isc_update_conflict) <<
 				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));

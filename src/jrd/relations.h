@@ -581,6 +581,7 @@ RELATION(nam_mon_rec_stats, rel_mon_rec_stats, ODS_11_1, rel_virtual)
 	FIELD(f_mon_rec_conflicts, nam_mon_rec_conflicts, fld_counter, 0, ODS_12_0)
 	FIELD(f_mon_rec_ver_reads, nam_mon_version_reads, fld_counter, 0, ODS_12_0)
 	FIELD(f_mon_rec_frg_reads, nam_mon_fragment_reads, fld_counter, 0, ODS_12_0)
+	FIELD(f_mon_rec_rpt_reads, nam_mon_rec_rpt_reads, fld_counter, 0, ODS_12_0)
 END_RELATION
 
 // Relation 40 (MON$CONTEXT_VARIABLES)

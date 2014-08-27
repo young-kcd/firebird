@@ -64,6 +64,7 @@ public:
 		RECORD_CONFLICTS,
 		RECORD_VERSION_READS,
 		RECORD_FRAGMENT_READS,
+		RECORD_RPT_READS,
 		SORTS,
 		SORT_GETS,
 		SORT_PUTS,
@@ -79,7 +80,7 @@ public:
 		static const size_t REL_BASE_OFFSET = RECORD_SEQ_READS;
 
 	public:
-		static const size_t REL_TOTAL_ITEMS = RECORD_FRAGMENT_READS - REL_BASE_OFFSET + 1;
+		static const size_t REL_TOTAL_ITEMS = RECORD_RPT_READS - REL_BASE_OFFSET + 1;
 
 		explicit RelationCounts(SLONG relation_id)
 			: rlc_relation_id(relation_id)

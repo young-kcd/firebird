@@ -1096,7 +1096,8 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 	record.storeInteger(f_mon_rec_conflicts, statistics.getValue(RuntimeStatistics::RECORD_CONFLICTS));
 	record.storeInteger(f_mon_rec_ver_reads, statistics.getValue(RuntimeStatistics::RECORD_VERSION_READS));
 	record.storeInteger(f_mon_rec_frg_reads, statistics.getValue(RuntimeStatistics::RECORD_FRAGMENT_READS));
-		writer.putRecord(record);
+	record.storeInteger(f_mon_rec_rpt_reads, statistics.getValue(RuntimeStatistics::RECORD_RPT_READS));
+	writer.putRecord(record);
 }
 
 void Monitoring::putContextVars(SnapshotData::DumpRecord& record, const StringMap& variables,
