@@ -1,3 +1,7 @@
+ 2014-08-26 14:16  dimitr 
+   M src/common/ThreadStart.h
+Quick fix for the Windows build.
+
  2014-08-25 14:04  alexpeshkoff 
    M examples/dbcrypt/DbCrypt.cpp
 Make a dbCrypt sample a little more interesting
