@@ -153,7 +153,7 @@ private:
 				selGrantor.c_str(), SQL_DIALECT_V6, NULL, NULL, out.getMetadata(), NULL);
 			check(&s);
 
-			bool hasGrant = curs->fetchNext(&s, out.getBuffer());
+			bool hasGrant = curs->fetchNext(&s, out.getBuffer()) == Firebird::IStatus::FB_OK;
 			curs->close(&s);
 			check(&s);
 
@@ -212,8 +212,8 @@ public:
 			Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 			dpb.insertByte(isc_dpb_sec_attach, TRUE);
 
-			const unsigned char* authBlock;
-			unsigned int authBlockSize = logonInfo->authBlock(&authBlock);
+			unsigned int authBlockSize;
+			const unsigned char* authBlock = logonInfo->authBlock(&authBlockSize);
 
 			const char* str = logonInfo->role();
 			if (str && str[0])
@@ -297,16 +297,16 @@ public:
 						for (unsigned repeat = 0; ; ++repeat)
 						{
 							stmt = att->prepare(status, tra, 0, insert, SQL_DIALECT_V6, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
-							if (status->isSuccess())
+							if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 							{
 								break;
 							}
 							else if (repeat > 0)
 							{
-								Firebird::status_exception::raise(status->get());
+								Firebird::status_exception::raise(status);
 							}
 
-							if (fb_utils::containsErrorCode(status->get(), isc_dsql_relation_err))
+							if (fb_utils::containsErrorCode(status->getErrors(), isc_dsql_relation_err))
 							{
 								prepareDataStructures();
 								tra->commit(status);
@@ -562,7 +562,7 @@ public:
 							(par ? par->getBuffer() : NULL), om);
 						check(status);
 
-						while (rs->fetchNext(status, di.getBuffer()))
+						while (rs->fetchNext(status, di.getBuffer()) == Firebird::IStatus::FB_OK)
 						{
 							listField(user->userName(), login);
 							listField(user->firstName(), first);
@@ -613,7 +613,7 @@ public:
 		if (tra)
 		{
 			tra->commit(status);
-			if (status->isSuccess())
+			if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			{
 				tra = NULL;
 			}
@@ -625,7 +625,7 @@ public:
 		if (tra)
 		{
 			tra->rollback(status);
-			if (status->isSuccess())
+			if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			{
 				tra = NULL;
 			}
@@ -641,7 +641,7 @@ public:
 			if (att)
 			{
 				att->detach(&status);
-				if (status.isSuccess())
+				if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 				{
 					att = NULL;
 				}
@@ -690,10 +690,10 @@ private:
 
 	static void check(Firebird::IStatus* status)
 	{
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
-			checkStatusVectorForMissingTable(status->get());
-			Firebird::status_exception::raise(status->get());
+			checkStatusVectorForMissingTable(status->getErrors());
+			Firebird::status_exception::raise(status);
 		}
 	}
 
@@ -841,14 +841,14 @@ private:
 
 				char segbuf[256];
 				unsigned len;
-				while ( (len = blob->getSegment(&st, sizeof(segbuf), segbuf)) )
+				for (;;)
 				{
-					if (st.get()[1] != isc_segment)
-						check(&st);
+					int cc = blob->getSegment(&st, sizeof(segbuf), segbuf, &len);
+					check(&st);
+					if (cc == Firebird::IStatus::FB_EOF)
+						break;
 					s.append(segbuf, len);
 				}
-				if (st.get()[1] != isc_segstr_eof)
-					check(&st);
 
 				blob->close(&st);
 				check(&st);

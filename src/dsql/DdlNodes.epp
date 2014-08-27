@@ -9669,15 +9669,6 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 		LocalStatus st;
 		LocalStatus s2;			// we will use it in DDL case and remember
 		IStatus* s = &st;
-		class Check
-		{
-		public:
-			static void status(IStatus* s)
-			{
-				if (!s->isSuccess())
-					status_exception::raise(s->get());
-			}
-		};
 
 		SecDbContext* secDbContext = transaction->getSecDbContext();
 		if (!secDbContext)
@@ -9688,10 +9679,10 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 				tdbb->getAttachment()->att_user->populateDpb(dpb);
 			IAttachment* att = DispatcherPtr()->attachDatabase(s, secDb,
 				dpb.getBufferLength(), dpb.getBuffer());
-			Check::status(s);
+			check(s);
 
 			ITransaction* tra = att->startTransaction(s, 0, NULL);
-			Check::status(s);
+			check(s);
 
 			secDbContext = transaction->setSecDbContext(att, tra);
 		}
@@ -9701,7 +9692,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 		savePoint.printf("GLOBALMAP%d", secDbContext->savePoint++);
 		secDbContext->att->execute(s, secDbContext->tra, 0, ("SAVEPOINT " + savePoint).c_str(),
 			SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
-		Check::status(s);
+		check(s);
 
 		try
 		{
@@ -9786,13 +9777,13 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 			secDbContext->att->execute(&s2, secDbContext->tra, 0, ddl.c_str(), SQL_DIALECT_V6,
 				NULL, NULL, NULL, NULL);
 
-			if (!s2.isSuccess())
+			if (s2.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				// try direct access to rdb$auth_mapping table in secure db
 
 				// check presence of such record in the table
-				Message check;
-				Field<Varying> nm(check, 1);
+				Message msgCheck;
+				Field<Varying> nm(msgCheck, 1);
 				nm = name.c_str();
 
 				Message result;
@@ -9801,8 +9792,8 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 				const char* checkSql = "select count(*) from RDB$AUTH_MAPPING where RDB$MAP_NAME = ?";
 
 				secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
-					check.getMetadata(), check.getBuffer(), result.getMetadata(), result.getBuffer());
-				Check::status(s);
+					msgCheck.getMetadata(), msgCheck.getBuffer(), result.getMetadata(), result.getBuffer());
+				check(s);
 
 				if (cnt > 1 && op != MAP_DROP)
 					ERRD_bugcheck("Database mapping misconfigured");
@@ -9870,7 +9861,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 					break;
 				case MAP_DROP:
 					sql = "delete from RDBAUTH_MAPPING where RDB$MAP_NAME = ?";
-					msg = &check;
+					msg = &msgCheck;
 					break;
 				}
 
@@ -9878,12 +9869,12 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 				fb_assert(sql && msg);
 				secDbContext->att->execute(s, secDbContext->tra, 0, sql, SQL_DIALECT_V6,
 					msg->getMetadata(), msg->getBuffer(), NULL, NULL);
-				Check::status(s);
+				check(s);
 
 				secDbContext->att->execute(s, secDbContext->tra, 0, ("RELEASE SAVEPOINT " + savePoint).c_str(),
 					SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 				savePoint.erase();
-				Check::status(s);
+				check(s);
 			}
 		}
 		catch (const Exception&)
@@ -9894,11 +9885,11 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 					SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 			}
 
-			if (!s2.isSuccess())
+			if (s2.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
-				const ISC_STATUS* stat2 = s2.get();
+				const ISC_STATUS* stat2 = s2.getErrors();
 				if (stat2[1] != isc_dsql_token_unk_err)
-					status_exception::raise(stat2);
+					status_exception::raise(&s2);
 			}
 
 			throw;

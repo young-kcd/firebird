@@ -90,6 +90,13 @@ ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
 	return m_status_vector[1];
 }
 
+ISC_STATUS DynamicStatusVector::save(const IStatus* status)
+{
+	ISC_STATUS_ARRAY tmp;
+	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), status);
+	return save(tmp);
+}
+
 void DynamicStatusVector::clear()
 {
 	ISC_STATUS *ptr = m_status_vector.begin();
@@ -129,7 +136,7 @@ void DynamicStatusVector::clear()
 	fb_utils::init_status(m_status_vector.begin());
 }
 
-ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
+ISC_STATUS StatusHolder::save(IStatus* status)
 {
 	fb_assert(isSuccess() || m_raised);
 	if (m_raised)
@@ -137,12 +144,15 @@ ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 		clear();
 	}
 
-	return m_status_vector.save(status);
+	m_error.save(status->getErrors());
+	m_warning.save(status->getWarnings());
+	return m_error.value()[1];
 }
 
 void StatusHolder::clear()
 {
-	m_status_vector.clear();
+	m_error.clear();
+	m_warning.clear();
 	m_raised = false;
 }
 
@@ -150,8 +160,10 @@ void StatusHolder::raise()
 {
 	if (getError())
 	{
+		Arg::StatusVector tmp(m_error.value());
+		tmp << Arg::StatusVector(m_warning.value());
 		m_raised = true;
-		status_exception::raise(m_status_vector.value());
+		tmp.raise();
 	}
 }
 

@@ -29,6 +29,8 @@
 #ifndef FB_STATUS_ARG
 #define FB_STATUS_ARG
 
+#include "fb_exception.h"
+
 namespace Firebird {
 
 class IStatus;
@@ -82,9 +84,9 @@ protected:
 		virtual ~ImplBase() { }
 	};
 
-	Base(ISC_STATUS k, ISC_STATUS c);// : implementation(new ImplBase(k, c)) { }
+	Base(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc);
 	explicit Base(ImplBase* i) throw() : implementation(i) { }
-	~Base() { delete implementation; }
+	~Base() throw() { delete implementation; }
 
 	ImplBase* const implementation;
 
@@ -130,13 +132,15 @@ protected:
 		}
 
 		explicit ImplStatusVector(const ISC_STATUS* s) throw();
+		explicit ImplStatusVector(const IStatus* s) throw();
 	};
 
-	StatusVector(ISC_STATUS k, ISC_STATUS v);
+	StatusVector(ISC_STATUS k, ISC_STATUS v) throw(Firebird::BadAlloc);
 
 public:
-	explicit StatusVector(const ISC_STATUS* s);
-	StatusVector();
+	explicit StatusVector(const ISC_STATUS* s) throw(Firebird::BadAlloc);
+	explicit StatusVector(const IStatus* s) throw(Firebird::BadAlloc);
+	StatusVector() throw(Firebird::BadAlloc);
 	~StatusVector() { }
 
 	const ISC_STATUS* value() const throw() { return implementation->value(); }

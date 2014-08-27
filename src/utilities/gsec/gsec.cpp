@@ -322,10 +322,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 					return address;
 				}
 
-				unsigned int FB_CARG authBlock(const unsigned char** bytes)
+				const unsigned char* FB_CARG authBlock(unsigned* length)
 				{
-					*bytes = authBytes;
-					return authLength;
+					*length = authLength;
+					return authBytes;
 				}
 
 			private:
@@ -357,9 +357,11 @@ int gsec(Firebird::UtilSvc* uSvc)
 				ex.stuffException(&st);
 			}
 
-			if (!st.isSuccess())
+			if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
-				GSEC_error_redirect(st.get(), GsecMsg15);
+				ISC_STATUS_ARRAY tmp;
+				fb_utils::mergeStatus(tmp, FB_NELEM(tmp), &st);
+				GSEC_error_redirect(tmp, GsecMsg15);
 			}
 		}
 	}
@@ -542,8 +544,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 					if (ret)
 					{
 						ret = setGsecCode(ret, user_data);		// user_data, not u !
-						fb_utils::copyStatus(status, FB_NELEM(status),
-											 st.get(), fb_utils::statusLength(st.get()));
+						fb_utils::mergeStatus(status, FB_NELEM(status), &st);
 						GSEC_print(ret, user_data->userName()->get());
 						if (status[1])
 						{
@@ -552,9 +553,9 @@ int gsec(Firebird::UtilSvc* uSvc)
 						get_security_error(status, ret);
 					}
 
-					if (!st.isSuccess())
+					if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 					{
-						Firebird::status_exception::raise(st.get());
+						Firebird::status_exception::raise(&st);
 					}
 
 					merge(&user_data->u, &u.u);
@@ -573,8 +574,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				if (ret)
 				{
 					ret = setGsecCode(ret, user_data);
-					fb_utils::copyStatus(status, FB_NELEM(status),
-										 st.get(), fb_utils::statusLength(st.get()));
+					fb_utils::mergeStatus(status, FB_NELEM(status), &st);
 					GSEC_print(ret, user_data->userName()->get());
 					if (status[1])
 					{
@@ -584,9 +584,9 @@ int gsec(Firebird::UtilSvc* uSvc)
 				}
 
 				manager->commit(&st);
-				if (!st.isSuccess())
+				if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				{
-					Firebird::status_exception::raise(st.get());
+					Firebird::status_exception::raise(&st);
 				}
 			}
 			else

@@ -152,7 +152,7 @@ void DbCrypt::noKeyError(IStatus* status)
 	vector[2] = isc_arg_string;
 	vector[3] = (ISC_STATUS)"Key not set";
 	vector[4] = isc_arg_end;
-	status->set(vector);
+	status->setErrors(vector);
 }
 
 void FB_CARG DbCrypt::encrypt(IStatus* status, unsigned int length, const void* from, void* to)
@@ -201,11 +201,11 @@ void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlu
 		return;
 
 	IConfig* def = config->getDefaultConfig(status);
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 
 	IConfigEntry* confEntry = def->find(status, "Auto");
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
 		def->release();
 		return;
@@ -238,7 +238,7 @@ void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlu
 	for (unsigned n = 0; n < length; ++n)
 	{
 		ICryptKeyCallback* callback = sources[n]->keyHandle(status, "sample");
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return;
 
 		if (callback && callback->callback(0, NULL, 1, &key) == 1)

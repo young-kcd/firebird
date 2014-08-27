@@ -32,6 +32,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/Hash.h"
 #include "../common/isc_f_proto.h"
+#include "../common/StatusArg.h"
 #include <ctype.h>
 
 using namespace Firebird;

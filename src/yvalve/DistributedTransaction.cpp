@@ -109,7 +109,7 @@ bool DTransaction::buildPrepareInfo(IStatus* status, TdrBuffer& tdr, ITransactio
 	// limit MAX_USHORT is chosen cause for old API it was limit of all blocks
 	UCHAR* buf = bigBuffer.getBuffer(MAX_USHORT);
 	from->getInfo(status, sizeof(PREPARE_TR_INFO), PREPARE_TR_INFO, bigBuffer.getCount(), buf);
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return false;
 
 	UCHAR* const end = bigBuffer.end();
@@ -190,7 +190,7 @@ void FB_CARG DTransaction::getInfo(IStatus* status,
 			if (sub[i])
 			{
 				sub[i]->getInfo(status, itemsLength, items, bufferLength, buffer);
-				if (!status->isSuccess())
+				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				{
 					return;
 				}
@@ -244,7 +244,7 @@ void FB_CARG DTransaction::prepare(IStatus* status,
 			{
 				sub[i]->prepare(status, msgLength, message);
 
-				if (!status->isSuccess())
+				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 					return;
 			}
 		}
@@ -264,7 +264,7 @@ void FB_CARG DTransaction::commit(IStatus* status)
 		status->init();
 
 		prepare(status, 0, NULL);
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			return;
 		}
@@ -277,7 +277,7 @@ void FB_CARG DTransaction::commit(IStatus* status)
 				if (sub[i])
 				{
 					sub[i]->commit(status);
-					if (!status->isSuccess())
+					if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 						return;
 
 					sub[i] = NULL;
@@ -309,7 +309,7 @@ void FB_CARG DTransaction::commitRetaining(IStatus* status)
 			if (sub[i])
 			{
 				sub[i]->commitRetaining(status);
-				if (!status->isSuccess())
+				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 					return;
 			}
 		}
@@ -336,7 +336,7 @@ void FB_CARG DTransaction::rollback(IStatus* status)
 				if (sub[i])
 				{
 					sub[i]->rollback(status);
-					if (!status->isSuccess())
+					if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 						return;
 
 					sub[i] = NULL;
@@ -365,7 +365,7 @@ void FB_CARG DTransaction::rollbackRetaining(IStatus* status)
 			if (sub[i])
 			{
 				sub[i]->rollbackRetaining(status);
-				if (!status->isSuccess())
+				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 					return;
 			}
 		}
@@ -394,7 +394,7 @@ void FB_CARG DTransaction::disconnect(IStatus* status)
 			if (sub[i])
 			{
 				sub[i]->disconnect(status);
-				if (!status->isSuccess())
+				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 					return;
 
 				sub[i] = NULL;
@@ -517,12 +517,12 @@ YTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* co
 			RefPtr<ITransaction> transaction(components[i].attachment->
 				startTransaction(status, components[i].tpbLength, components[i].tpb));
 
-			if (! status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				return NULL;
 
 			dtransaction->join(status, transaction);
 
-			if (! status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
 				LocalStatus tmp;
 				dtransaction->rollback(&tmp);
@@ -550,12 +550,12 @@ YTransaction* FB_CARG Dtc::join(IStatus* status, ITransaction* one, ITransaction
 		RefPtr<DTransaction> dtransaction(new DTransaction);
 
 		dtransaction->join(status, one);
-		if (! status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return NULL;
 
 		dtransaction->join(status, two);
 		/* We must not return NULL - first transaction is available only inside dtransaction
-		if (! status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return NULL;
 		*/
 

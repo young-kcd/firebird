@@ -143,7 +143,8 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length, void* buffer);	// returns real length
+	virtual int FB_CARG getSegment(IStatus* status, unsigned int bufferLength,
+								   void* buffer, unsigned int* segmentLength);
 	virtual void FB_CARG putSegment(IStatus* status, unsigned int length, const void* buffer);
 	virtual void FB_CARG cancel(IStatus* status);
 	virtual void FB_CARG close(IStatus* status);
@@ -244,12 +245,12 @@ class ResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::IResultSet, FB
 public:
 	// IResultSet implementation
 	virtual int FB_CARG release();
-	virtual FB_BOOLEAN FB_CARG fetchNext(IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchPrior(IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchFirst(IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchLast(IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchAbsolute(IStatus* status, unsigned int position, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchRelative(IStatus* status, int offset, void* message);
+	virtual int FB_CARG fetchNext(IStatus* status, void* message);
+	virtual int FB_CARG fetchPrior(IStatus* status, void* message);
+	virtual int FB_CARG fetchFirst(IStatus* status, void* message);
+	virtual int FB_CARG fetchLast(IStatus* status, void* message);
+	virtual int FB_CARG fetchAbsolute(IStatus* status, unsigned int position, void* message);
+	virtual int FB_CARG fetchRelative(IStatus* status, int offset, void* message);
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status);
 	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status);
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
@@ -1543,7 +1544,7 @@ void Attachment::freeClientData(IStatus* status, bool force)
 			// telling the user that an unrecoverable network error occurred and that
 			// if there was any uncommitted work, its gone......  Oh well....
 			ex.stuffException(status);
-			if ((status->get()[1] != isc_network_error) && (!force))
+			if ((status->getErrors()[1] != isc_network_error) && (!force))
 			{
 				return;
 			}
@@ -1568,10 +1569,10 @@ void Attachment::freeClientData(IStatus* status, bool force)
 		// free the packet and disconnect the port. Put something into firebird.log
 		// informing the user of the following.
 
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			iscLogStatus("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
-					"database.\n\tUncommitted work may have been lost.", status->get());
+					"database.\n\tUncommitted work may have been lost.", status);
 			reset(status);
 		}
 
@@ -1879,7 +1880,7 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		if (!outFormat)
 		{
 			defaultOutputFormat.assignRefNoIncr(this->getOutputMetadata(status));
-			if (!status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
 				return NULL;
 			}
@@ -1992,13 +1993,13 @@ IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transa
 {
 	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
 		return NULL;
 	}
 
 	ResultSet* rc = stmt->openCursor(status, transaction, inMetadata, inBuffer, outMetadata);
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
 		stmt->release();
 		return NULL;
@@ -2007,7 +2008,7 @@ IResultSet* FB_CARG Attachment::openCursor(IStatus* status, ITransaction* transa
 	if (cursorName)
 	{
 		stmt->setCursorName(status, cursorName);
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			rc->release();
 			stmt->release();
@@ -2483,7 +2484,7 @@ Statement* Attachment::prepare(IStatus* status, ITransaction* apiTra,
 		}
 		response->p_resp_data = temp;
 
-		if (status->isSuccess())
+		if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			return stmt;
 		}
@@ -2743,7 +2744,7 @@ void ResultSet::setDelayedOutputFormat(IStatus* status, IMessageMetadata* format
 }
 
 
-FB_BOOLEAN ResultSet::fetchNext(IStatus* status, void* buffer)
+int ResultSet::fetchNext(IStatus* status, void* buffer)
 {
 /**************************************
  *
@@ -2955,7 +2956,7 @@ FB_BOOLEAN ResultSet::fetchNext(IStatus* status, void* buffer)
 				//statement->rsr_flags.clear(Rsr::EOF_SET);
 				statement->rsr_flags.set(Rsr::PAST_EOF);
 
-				return FB_FALSE;
+				return IStatus::FB_EOF;
 			}
 
 			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
@@ -2993,17 +2994,17 @@ FB_BOOLEAN ResultSet::fetchNext(IStatus* status, void* buffer)
 		}
 
 		message->msg_address = NULL;
-		return FB_TRUE;
+		return IStatus::FB_OK;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
-	return FB_FALSE;
+	return IStatus::FB_ERROR;
 }
 
 
-FB_BOOLEAN ResultSet::fetchPrior(IStatus* user_status, void* buffer)
+int ResultSet::fetchPrior(IStatus* user_status, void* buffer)
 {
 	try
 	{
@@ -3019,7 +3020,7 @@ FB_BOOLEAN ResultSet::fetchPrior(IStatus* user_status, void* buffer)
 }
 
 
-FB_BOOLEAN ResultSet::fetchFirst(IStatus* user_status, void* buffer)
+int ResultSet::fetchFirst(IStatus* user_status, void* buffer)
 {
 	try
 	{
@@ -3035,7 +3036,7 @@ FB_BOOLEAN ResultSet::fetchFirst(IStatus* user_status, void* buffer)
 }
 
 
-FB_BOOLEAN ResultSet::fetchLast(IStatus* user_status, void* buffer)
+int ResultSet::fetchLast(IStatus* user_status, void* buffer)
 {
 	try
 	{
@@ -3051,7 +3052,7 @@ FB_BOOLEAN ResultSet::fetchLast(IStatus* user_status, void* buffer)
 }
 
 
-FB_BOOLEAN ResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buffer)
+int ResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buffer)
 {
 	try
 	{
@@ -3067,7 +3068,7 @@ FB_BOOLEAN ResultSet::fetchAbsolute(IStatus* user_status, unsigned position, voi
 }
 
 
-FB_BOOLEAN ResultSet::fetchRelative(IStatus* user_status, int offset, void* buffer)
+int ResultSet::fetchRelative(IStatus* user_status, int offset, void* buffer)
 {
 	try
 	{
@@ -3210,7 +3211,7 @@ IMessageMetadata* ResultSet::getMetadata(IStatus* status)
 {
 	if (!outputFormat)
 	{
-		status->set(Arg::Gds(isc_no_output_format).value());
+		status->setErrors(Arg::Gds(isc_no_output_format).value());
 		return NULL;
 	}
 
@@ -3326,7 +3327,8 @@ void ResultSet::releaseStatement()
 }
 
 
-unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void* buffer)
+int Blob::getSegment(IStatus* status, unsigned int bufferLength, void* buffer,
+	unsigned int* segmentLength)
 {
 /**************************************
  *
@@ -3367,11 +3369,11 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 		if (blob->rbl_flags & Rbl::CREATE)
 		{
 			packet->p_operation = op_get_segment;
-			segment->p_sgmt_length = buffer_length;
+			segment->p_sgmt_length = bufferLength;
 			segment->p_sgmt_blob = blob->rbl_id;
 			segment->p_sgmt_segment.cstr_length = 0;
 			send_packet(port, packet);
-			response->p_resp_data.cstr_allocated = buffer_length;
+			response->p_resp_data.cstr_allocated = bufferLength;
 			response->p_resp_data.cstr_address = bufferPtr;
 
 			try
@@ -3385,7 +3387,9 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 			}
 
 			response->p_resp_data = temp;
-			return response->p_resp_data.cstr_length;
+			if (segmentLength)
+				*segmentLength = response->p_resp_data.cstr_length;
+			return IStatus::FB_OK;
 		}
 
 		// New protocol -- ask for a 1K chunk of blob and
@@ -3398,14 +3402,14 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 
 		if (blob->rbl_flags & Rbl::EOF_SET)
 		{
-			Arg::Gds(isc_segstr_eof).raise();
+			return IStatus::FB_EOF;
 		}
 
 		// Here's the loop, passing out data from our basket & refilling it.
 		//   Our buffer (described by the structure blob) is counted strings
 		//   <count word> <string> <count word> <string>...
 
-		ISC_STATUS code = 0;
+		int code = IStatus::FB_OK;
 		unsigned int length = 0;
 		while (true)
 		{
@@ -3432,20 +3436,20 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 				// Now check that what we've got fits.
 				// If not, set up the fragment pointer and set the status vector
 
-				if (l > buffer_length)
+				if (l > bufferLength)
 				{
-					blob->rbl_fragment_length = l - buffer_length;
-					l = buffer_length;
-					code = isc_segment;
+					blob->rbl_fragment_length = l - bufferLength;
+					l = bufferLength;
+					code = IStatus::FB_SEGMENT;
 				}
 
 				// and, just for yucks, see if we're exactly using up the fragment
 				// part of a previous incomplete read - if so mark this as an
 				// incomplete read
 
-				if (l == buffer_length && l == blob->rbl_length && (blob->rbl_flags & Rbl::SEGMENT))
+				if (l == bufferLength && l == blob->rbl_length && (blob->rbl_flags & Rbl::SEGMENT))
 				{
-					code = isc_segment;
+					code = IStatus::FB_SEGMENT;
 				}
 
 				// finally set up the return length, decrement the current length,
@@ -3454,7 +3458,7 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 				length += l;
 				blob->rbl_length -= l;
 				blob->rbl_offset += l;
-				buffer_length -= l;
+				bufferLength -= l;
 
 				if (l) {
 					memcpy(bufferPtr, p, l);
@@ -3466,7 +3470,7 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 
 				// return if we've filled up the caller's buffer, or completed a segment
 
-				if (!buffer_length || blob->rbl_length || !(blob->rbl_flags & Rbl::SEGMENT))
+				if (!bufferLength || blob->rbl_length || !(blob->rbl_flags & Rbl::SEGMENT))
 				{
 					break;
 				}
@@ -3477,7 +3481,7 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 			if (blob->rbl_flags & Rbl::EOF_PENDING)
 			{
 				blob->rbl_flags |= Rbl::EOF_SET;
-				code = isc_segstr_eof;
+				code = IStatus::FB_EOF;
 				break;
 			}
 
@@ -3491,13 +3495,13 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 			// Do not go into this loop if we already have a buffer
 			// of size 65535 or 65534.
 
-			if (buffer_length > blob->rbl_buffer_length - sizeof(USHORT) &&
+			if (bufferLength > blob->rbl_buffer_length - sizeof(USHORT) &&
 				blob->rbl_buffer_length <= MAX_USHORT - sizeof(USHORT))
 			{
-				ULONG new_size = buffer_length + sizeof(USHORT);
+				ULONG new_size = bufferLength + sizeof(USHORT);
 
 				if (new_size > MAX_USHORT)	// Check if we've overflown
-					new_size = buffer_length;
+					new_size = bufferLength;
 				blob->rbl_ptr = blob->rbl_buffer = blob->rbl_data.getBuffer(new_size);
 				blob->rbl_buffer_length = (USHORT) new_size;
 			}
@@ -3534,19 +3538,16 @@ unsigned int Blob::getSegment(IStatus* status, unsigned int buffer_length, void*
 
 		response->p_resp_data = temp;
 
-		if (code)
-		{
-			status->set(Arg::Gds(code).value());
-		}
-
-		return length;
+		if (segmentLength)
+			*segmentLength = length;
+		return code;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
 
-	return 0;
+	return IStatus::FB_ERROR;
 }
 
 
@@ -5328,13 +5329,13 @@ static void authenticateStep0(ClntAuthBlock& cBlock)
 		case Auth::AUTH_MORE_DATA:
 			return;
 		case Auth::AUTH_FAILED:
-			if (s.get()[1] != FB_SUCCESS)
+			if (s.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
-				gds__log_status("Authentication, client plugin:", s.get());
+				iscLogStatus("Authentication, client plugin:", &s);
 			}
 			(Arg::Gds(isc_login)
 #ifdef DEV_BUILD
-								 << Arg::StatusVector(s.get())
+								 << Arg::StatusVector(&s)
 #endif
 								 ).raise();
 			break;	// compiler silencer
@@ -5361,8 +5362,8 @@ static void secureAuthentication(ClntAuthBlock& cBlock, rem_port* port)
 		LocalStatus st;
 		authReceiveResponse(true, cBlock, port, rdb, &st, packet, true);
 
-		if (!st.isSuccess())
-			status_exception::raise(st.get());
+		if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+			status_exception::raise(&st);
 	}
 }
 
@@ -5627,7 +5628,7 @@ static void batch_dsql_fetch(rem_port*	port,
 			try
 			{
 				REMOTE_check_response(&status, rdb, packet);
-				statement->saveException(status.get(), false);
+				statement->saveException(&status, false);
 			}
 			catch (const Exception& ex)
 			{
@@ -6149,7 +6150,7 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 			case Auth::AUTH_FAILED:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authFillParametersBlock: plugin %s FAILED\n",
 					cBlock.plugins.name()));
-				(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
+				(Arg::Gds(isc_login) << Arg::StatusVector(&s)).raise();
 				break;	// compiler silencer
 			}
 		}
@@ -6313,7 +6314,7 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 	}
 
 	// If we have exited from the cycle, this mean auth failed
-	(Arg::Gds(isc_login) << Arg::StatusVector(s.get())).raise();
+	(Arg::Gds(isc_login) << Arg::StatusVector(&s)).raise();
 }
 
 static void init(IStatus* status, ClntAuthBlock& cBlock, rem_port* port, P_OP op, PathName& file_name,
@@ -6689,7 +6690,7 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 				{
 					LocalStatus status;
 					REMOTE_check_response(&status, rdb, &p->packet);
-					statement->saveException(status.get(), false);
+					statement->saveException(&status, false);
 				}
 				catch (const Exception& ex)
 				{

@@ -75,7 +75,7 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 			client->genClientKey(data);
 			dumpIt("Clnt: clientPubKey", data);
 			cb->putData(status, data.length(), data.begin());
-			return status->isSuccess() ? AUTH_MORE_DATA : AUTH_FAILED;
+			return status->getStatus() & IStatus::FB_HAS_ERRORS ? AUTH_FAILED : AUTH_MORE_DATA;
 		}
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: SRP phase2\n"));
@@ -125,7 +125,7 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 		cProof.getText(data);
 
 		cb->putData(status, data.length(), data.c_str());
-		if (!status->isSuccess())
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			return AUTH_FAILED;
 		}
@@ -133,7 +133,7 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 		// output the key
 		FbCryptKey cKey = {"Symmetric", sessionKey.begin(), NULL, sessionKey.getCount(), 0};
 		cb->putKey(status, &cKey);
-		if (!status->isSuccess())
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			return AUTH_FAILED;
 		}

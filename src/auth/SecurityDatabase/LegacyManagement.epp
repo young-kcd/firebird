@@ -135,8 +135,8 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo
 		Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::dpbList, MAX_DPB_SIZE);
 		dpb.insertByte(isc_dpb_sec_attach, TRUE);
 
-		const unsigned char* authBlock;
-		unsigned int authBlockSize = logonInfo->authBlock(&authBlock);
+		unsigned int authBlockSize;
+		const unsigned char* authBlock = logonInfo->authBlock(&authBlockSize);
 
 		if (authBlockSize)
 			dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
@@ -747,7 +747,7 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 			}
 		}
 
-		st->set(isc_status);
+		fb_utils::setIStatus(st, isc_status);
 	}
 	catch (const Firebird::Exception& ex)
 	{

@@ -123,6 +123,10 @@ namespace fb_utils
 	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
 							const ISC_STATUS* const from, const unsigned int count) throw();
 
+	unsigned int mergeStatus(ISC_STATUS* to, unsigned int space, const Firebird::IStatus* from) throw();
+
+	void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw();
+
 	unsigned int statusLength(const ISC_STATUS* const status) throw();
 
 	enum FetchPassResult {

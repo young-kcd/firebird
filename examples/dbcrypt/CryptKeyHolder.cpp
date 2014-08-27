@@ -197,7 +197,7 @@ void CryptKeyHolder::noKeyError(IStatus* status)
 	vector[2] = isc_arg_string;
 	vector[3] = (ISC_STATUS) "Key not set";
 	vector[4] = isc_arg_end;
-	status->set(vector);
+	status->setErrors(vector);
 }
 
 int FB_CARG CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* callback)
@@ -208,12 +208,12 @@ int FB_CARG CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* call
 		return 1;
 
 	IConfig* def = config->getDefaultConfig(status);
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return 1;
 
 	IConfigEntry* confEntry = def->find(status, "Auto");
 	def->release();
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return 1;
 
 	if (confEntry)

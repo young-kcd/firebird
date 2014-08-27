@@ -509,7 +509,7 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 #ifdef USE_ATT_RQ_CACHE
 		LocalStatus s;
 		TimerInterfacePtr()->start(&s, instance, 10 * 1000 * 1000);
-		if (!s.isSuccess())
+		if (s.getStatus() & IStatus::FB_HAS_ERRORS)
 			instance->handler();
 #else
 		instance->handler();

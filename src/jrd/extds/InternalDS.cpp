@@ -122,10 +122,7 @@ public:
 	~IntStatus()
 	{
 		if (v)
-		{
-			const ISC_STATUS *s = get();
-			fb_utils::copyStatus(v, ISC_STATUS_LENGTH, s, fb_utils::statusLength(s));
-		}
+			fb_utils::mergeStatus(v, ISC_STATUS_LENGTH, this);
 	}
 
 private:
@@ -166,7 +163,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
 		}
 
-		if (!status.isSuccess())
+		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 			raise(status, tdbb, "JProvider::attach");
 	}
 
@@ -193,12 +190,12 @@ void InternalConnection::doDetach(thread_db* tdbb)
 			att->detach(&status);
 		}
 
-		if (status.get()[1] == isc_att_shutdown)
+		if (status.getErrors()[1] == isc_att_shutdown)
 		{
 			status.init();
 		}
 
-		if (!status.isSuccess())
+		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			m_attachment = att;
 			raise(status, tdbb, "JAttachment::detach");
@@ -215,7 +212,7 @@ bool InternalConnection::cancelExecution()
 
 	LocalStatus status;
 	m_attachment->cancelOperation(&status, fb_cancel_raise);
-	return (status.isSuccess());
+	return !(status.getStatus() & IStatus::FB_HAS_ERRORS);
 }
 
 // this internal connection instance is available for the current execution context if it
@@ -412,7 +409,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 		tran->getHandle()->tra_caller_name = save_caller_name;
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		raise(status, tdbb, "JAttachment::prepare", &sql);
 
 	const DsqlCompiledStatement* statement = m_request->getHandle()->getStatement();
@@ -465,7 +462,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	case DsqlCompiledStatement::TYPE_COMMIT_RETAIN:
 	case DsqlCompiledStatement::TYPE_ROLLBACK_RETAIN:
 	case DsqlCompiledStatement::TYPE_CREATE_DB:
-		status.set(Arg::Gds(isc_eds_expl_tran_ctrl).value());
+		Arg::Gds(isc_eds_expl_tran_ctrl).copyTo(&status);
 		raise(status, tdbb, "JAttachment::prepare", &sql);
 		break;
 
@@ -499,7 +496,7 @@ void InternalStatement::doExecute(thread_db* tdbb)
 			m_inMetadata, m_in_buffer.begin(), m_outMetadata, m_out_buffer.begin());
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		raise(status, tdbb, "JStatement::execute");
 }
 
@@ -524,7 +521,7 @@ void InternalStatement::doOpen(thread_db* tdbb)
 			m_inMetadata, m_in_buffer.begin(), m_outMetadata);
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		raise(status, tdbb, "JStatement::open");
 }
 
@@ -539,10 +536,10 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 
 		fb_assert(m_outMetadata->getMessageLength() == m_out_buffer.getCount());
 		fb_assert(m_cursor);
-		res = m_cursor->fetchNext(&status, m_out_buffer.begin());
+		res = m_cursor->fetchNext(&status, m_out_buffer.begin()) == IStatus::FB_OK;
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		raise(status, tdbb, "JResultSet::fetch");
 
 	return res;
@@ -559,7 +556,7 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 			m_cursor->close(&status);
 
 		m_cursor = NULL;
-		if (!status.isSuccess())
+		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			raise(status, tdbb, "JResultSet::close");
 		}
@@ -572,7 +569,7 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 			m_allocated = false;
 			m_request = NULL;
 
-			if (!status.isSuccess())
+			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				raise(status, tdbb, "JStatement::free");
 			}
@@ -635,7 +632,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 		m_blob = att->openBlob(&status, transaction, &m_blob_id, bpb_len, bpb_buff);
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		m_connection.raise(status, tdbb, "JAttachment::openBlob");
 
 	fb_assert(m_blob);
@@ -661,7 +658,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		m_connection.raise(status, tdbb, "JAttachment::createBlob");
 
 	fb_assert(m_blob);
@@ -671,24 +668,15 @@ USHORT InternalBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 {
 	fb_assert(m_blob);
 
-	USHORT result = 0;
+	unsigned result = 0;
 	LocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
-		result = m_blob->getSegment(&status, len, buff);
+		m_blob->getSegment(&status, len, buff, &result);
 	}
 
-	switch (status.get()[1])
-	{
-	case isc_segstr_eof:
-		fb_assert(result == 0);
-		break;
-	case isc_segment:
-	case 0:
-		break;
-	default:
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		m_connection.raise(status, tdbb, "JBlob::getSegment");
-	}
 
 	return result;
 }
@@ -703,7 +691,7 @@ void InternalBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 		m_blob->putSegment(&status, len, buff);
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		m_connection.raise(status, tdbb, "JBlob::putSegment");
 }
 
@@ -716,7 +704,7 @@ void InternalBlob::close(thread_db* tdbb)
 		m_blob->close(&status);
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		m_connection.raise(status, tdbb, "JBlob::close");
 
 	fb_assert(!m_blob);
@@ -734,7 +722,7 @@ void InternalBlob::cancel(thread_db* tdbb)
 		m_blob->cancel(&status);
 	}
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		m_connection.raise(status, tdbb, "JBlob::cancel");
 
 	fb_assert(!m_blob);

@@ -383,8 +383,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 		LocalStatus s;
 		secContext->tra->commit(&s);
 
-		if (!s.isSuccess())
-			status_exception::raise(s.get());
+		if (s.getStatus() & IStatus::FB_HAS_ERRORS)
+			status_exception::raise(&s);
 
 		secContext->tra = NULL;
 		clearMap(tdbb->getDatabase()->dbb_config->getSecurityDatabase());
@@ -982,8 +982,8 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 	{
 		LocalStatus s;
 		secContext->tra->prepare(&s, length, msg);
-		if (!s.isSuccess())
-			status_exception::raise(s.get());
+		if (s.getStatus() & IStatus::FB_HAS_ERRORS)
+			status_exception::raise(&s);
 	}
 
 	// Perform any meta data work deferred

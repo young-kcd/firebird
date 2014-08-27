@@ -1045,22 +1045,15 @@ static void successful_completion(IStatus* s, ISC_STATUS acceptCode = 0)
 {
 	fb_assert(s);
 
-	const ISC_STATUS* status = s->get();
+	const ISC_STATUS* status = s->getErrors();
 
 	// This assert validates whether we really have a successful status vector
 	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS || status[1] == acceptCode);
 
 	// Clear the status vector if it doesn't contain a warning
-	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || status[2] != isc_arg_warning)
+	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || !(s->getStatus() & IStatus::FB_HAS_WARNINGS))
 	{
-		/*if (return_code != FB_SUCCESS)
-		{
-			s->set(Arg::Gds(return_code).value());
-		}
-		else
-		{*/
-			s->init();
-		//}
+		s->init();
 	}
 }
 
@@ -1075,7 +1068,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 	if (func && attachment && attachment->att_trace_manager->needs(TRACE_EVENT_ERROR))
 	{
 		TraceConnectionImpl conn(attachment);
-		TraceStatusVectorImpl traceStatus(vector->get());
+		TraceStatusVectorImpl traceStatus(vector->getErrors());
 
 		attachment->att_trace_manager->event_error(&conn, &traceStatus, func);
 	}
@@ -1085,13 +1078,13 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 	if (!attachment || (charSet = attachment->att_client_charset) == CS_METADATA ||
 		charSet == CS_NONE)
 	{
-		return vector->get()[1];
+		return vector->getErrors()[1];
 	}
 
 	// OK as long as we do not change vectors length
 	// for current way of keeping strings in vector!
 
-	ISC_STATUS* const vectorStart = const_cast<ISC_STATUS*>(vector->get());
+	ISC_STATUS* const vectorStart = const_cast<ISC_STATUS*>(vector->getErrors());
 	ISC_STATUS* status = vectorStart;
 	Array<UCHAR*> buffers;
 
@@ -1187,7 +1180,7 @@ static void trace_warning(thread_db* tdbb, IStatus* userStatus, const char* func
 
 	if (att->att_trace_manager->needs(TRACE_EVENT_ERROR))
 	{
-		TraceStatusVectorImpl traceStatus(userStatus->get());
+		TraceStatusVectorImpl traceStatus(userStatus->getWarnings());
 
 		if (traceStatus.hasWarning())
 		{
@@ -1246,8 +1239,8 @@ JTransaction* JAttachment::getTransactionInterface(IStatus* status, ITransaction
 	// If validation is successfull, this means that this attachment and valid transaction
 	// use same provider. I.e. the following cast is safe.
 	JTransaction* jt = static_cast<JTransaction*>(tra->validate(status, this));
-	if (!status->isSuccess())
-		status_exception::raise(status->get());
+	if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+		status_exception::raise(status);
 	if (!jt)
 		Arg::Gds(isc_bad_trans_handle).raise();
 
@@ -1426,7 +1419,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, false, user_status->get());
+			trace_failed_attach(NULL, filename, options, false, user_status->getErrors());
 			throw;
 		}
 
@@ -1865,7 +1858,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			{
 				TraceManager* traceManager = attachment->att_trace_manager;
 				TraceConnectionImpl conn(attachment);
-				TraceStatusVectorImpl traceStatus(user_status->get());
+				TraceStatusVectorImpl traceStatus(user_status->getErrors());
 
 				if (traceManager->needs(TRACE_EVENT_ERROR))
 					traceManager->event_error(&conn, &traceStatus, "JProvider::attachDatabase");
@@ -1876,7 +1869,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 			else
 			{
 				trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-					filename, options, false, user_status->get());
+					filename, options, false, user_status->getErrors());
 			}
 
 			unwindAttach(tdbb, ex, user_status, attachment, dbb);
@@ -2439,7 +2432,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, true, user_status->get());
+			trace_failed_attach(NULL, filename, options, true, user_status->getErrors());
 			throw;
 		}
 
@@ -2552,7 +2545,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 					OverwriteHolder overwriteCheckHolder(dbb);
 
 					JAttachment* attachment2 = attachDatabase(user_status, filename, dpb_length, dpb);
-					if (user_status->get()[1] == isc_adm_task_denied)
+					if (user_status->getErrors()[1] == isc_adm_task_denied)
 					{
 						throw;
 					}
@@ -2721,7 +2714,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 		{
 			ex.stuffException(user_status);
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-				filename, options, true, user_status->get());
+				filename, options, true, user_status->getErrors());
 
 			unwindAttach(tdbb, ex, user_status, attachment, dbb);
 		}
@@ -2785,7 +2778,7 @@ void JAttachment::executeDyn(IStatus* status, ITransaction* /*tra*/, unsigned in
  * This function is deprecated and "removed".
  *
  **************************************/
-	status->set((Arg::Gds(isc_feature_removed) << Arg::Str("isc_ddl")).value());
+	(Arg::Gds(isc_feature_removed) << Arg::Str("isc_ddl")).copyTo(status);
 }
 
 
@@ -2995,7 +2988,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 
 				if (err)
 				{
-					user_status->set(Arg::Gds(isc_drdb_completed_with_errs).value());
+					Arg::Gds(isc_drdb_completed_with_errs).copyTo(user_status);
 				}
 			}
 		}
@@ -3015,7 +3008,8 @@ void JAttachment::dropDatabase(IStatus* user_status)
 }
 
 
-unsigned int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length, void* buffer)
+int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length, void* buffer,
+	unsigned int* segment_length)
 {
 /**************************************
  *
@@ -3028,6 +3022,7 @@ unsigned int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length,
  *
  **************************************/
 	unsigned int len = 0;
+	int cc = IStatus::FB_ERROR;
 
 	try
 	{
@@ -3041,25 +3036,26 @@ unsigned int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length,
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JBlob::getSegment");
-			return len;
+			return cc;
 		}
 
-		// Don't trace errors below as it is not real errors but kind of return value
-
 		if (getHandle()->blb_flags & BLB_eof)
-			status_exception::raise(Arg::Gds(isc_segstr_eof));
+			cc = IStatus::FB_EOF;
 		else if (getHandle()->getFragmentSize())
-			status_exception::raise(Arg::Gds(isc_segment));
+			cc = IStatus::FB_SEGMENT;
+		else
+			cc = IStatus::FB_OK;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return len;
+		return cc;
 	}
 
 	successful_completion(user_status);
-
-	return len;
+	if (segment_length)
+		*segment_length = len;
+	return cc;
 }
 
 
@@ -3817,7 +3813,7 @@ void JService::query(IStatus* user_status,
 
 			if (len)
 			{
-				user_status->set(len, svc->getStatus());
+				fb_utils::setIStatus(user_status, svc->getStatus());
 				// Empty out the service status vector
 				svc->initStatus();
 				return;
@@ -3861,7 +3857,7 @@ void JService::start(IStatus* user_status, unsigned int spbLength, const unsigne
 
 		if (svc->getStatus()[1])
 		{
-			user_status->set(svc->getStatus());
+			fb_utils::setIStatus(user_status, svc->getStatus());
 			return;
 		}
 	}
@@ -4072,7 +4068,7 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
-		gds__log_status(NULL, status->get());
+		iscLogStatus("JProvider::shutdown:", status);
 	}
 }
 
@@ -4478,7 +4474,7 @@ IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 {
 	IStatement* tmpStatement = prepare(user_status, apiTra, length, string, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
-	if (!user_status->isSuccess())
+	if (user_status->getStatus() & IStatus::FB_HAS_ERRORS)
 	{
 		return NULL;
 	}
@@ -4486,7 +4482,7 @@ IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 	if (cursorName)
 	{
 		tmpStatement->setCursorName(user_status, cursorName);
-		if (!user_status->isSuccess())
+		if (user_status->getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			tmpStatement->release();
 			return NULL;
@@ -4562,7 +4558,7 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-FB_BOOLEAN JResultSet::fetchNext(IStatus* user_status, void* buffer)
+int JResultSet::fetchNext(IStatus* user_status, void* buffer)
 {
 	bool hasMessage = false;
 
@@ -4584,22 +4580,24 @@ FB_BOOLEAN JResultSet::fetchNext(IStatus* user_status, void* buffer)
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JStatement::fetch");
-			return 0;
+			return IStatus::FB_ERROR;
 		}
 		trace_warning(tdbb, user_status, "JResultSet::fetch");
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return 0;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
 
-	return hasMessage ? FB_TRUE : FB_FALSE;
+	if (hasMessage)
+		return IStatus::FB_OK;
+	return IStatus::FB_EOF;
 }
 
-FB_BOOLEAN JResultSet::fetchPrior(IStatus* user_status, void* buffer)
+int JResultSet::fetchPrior(IStatus* user_status, void* buffer)
 {
 	try
 	{
@@ -4608,15 +4606,15 @@ FB_BOOLEAN JResultSet::fetchPrior(IStatus* user_status, void* buffer)
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return FB_FALSE;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
 
-	return FB_TRUE;
+	return IStatus::FB_OK;
 }
 
-FB_BOOLEAN JResultSet::fetchFirst(IStatus* user_status, void* buffer)
+int JResultSet::fetchFirst(IStatus* user_status, void* buffer)
 {
 	try
 	{
@@ -4625,15 +4623,15 @@ FB_BOOLEAN JResultSet::fetchFirst(IStatus* user_status, void* buffer)
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return FB_FALSE;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
 
-	return FB_TRUE;
+	return IStatus::FB_OK;
 }
 
-FB_BOOLEAN JResultSet::fetchLast(IStatus* user_status, void* buffer)
+int JResultSet::fetchLast(IStatus* user_status, void* buffer)
 {
 	try
 	{
@@ -4642,15 +4640,15 @@ FB_BOOLEAN JResultSet::fetchLast(IStatus* user_status, void* buffer)
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return FB_FALSE;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
 
-	return FB_TRUE;
+	return IStatus::FB_OK;
 }
 
-FB_BOOLEAN JResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buffer)
+int JResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buffer)
 {
 	try
 	{
@@ -4659,15 +4657,15 @@ FB_BOOLEAN JResultSet::fetchAbsolute(IStatus* user_status, unsigned position, vo
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return FB_FALSE;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
 
-	return FB_TRUE;
+	return IStatus::FB_OK;
 }
 
-FB_BOOLEAN JResultSet::fetchRelative(IStatus* user_status, int offset, void* buffer)
+int JResultSet::fetchRelative(IStatus* user_status, int offset, void* buffer)
 {
 	try
 	{
@@ -4676,12 +4674,12 @@ FB_BOOLEAN JResultSet::fetchRelative(IStatus* user_status, int offset, void* buf
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return FB_FALSE;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
 
-	return FB_TRUE;
+	return IStatus::FB_OK;
 }
 
 int JResultSet::release()
@@ -5887,7 +5885,7 @@ static void handle_error(IStatus* user_status, ISC_STATUS code)
  **************************************/
  	if (user_status)
 	{
-		user_status->set(Arg::Gds(code).value());
+		Arg::Gds(code).copyTo(user_status);
 	}
 }
 
@@ -7745,7 +7743,7 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 			{
 				LocalStatus tempStatus;
 				transliterateException(tdbb, ex, &tempStatus, "startTransaction");
-				status_exception::raise(tempStatus.get());
+				status_exception::raise(&tempStatus);
 			}
 			throw;
 		}

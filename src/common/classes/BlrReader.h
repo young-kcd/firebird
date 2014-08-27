@@ -24,6 +24,7 @@
 #define COMMON_CLASSES_BLR_READER_H
 
 #include "iberror.h"
+#include "../common/StatusArg.h"
 
 namespace Firebird {
 

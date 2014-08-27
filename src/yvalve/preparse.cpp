@@ -322,7 +322,7 @@ static void generate_error(IStatus* status, const string& token, SSHORT error, S
 		break;
 	}
 
-	status->set(temp_status);
+	status->setErrors(temp_status);
 }
 
 

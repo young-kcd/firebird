@@ -276,7 +276,7 @@ static inline bool commit_trans(Firebird::ITransaction** x)
 	if (ISQL_errmsg (fbStatus))
 	{
 		(*x)->rollback(fbStatus);
-		if (fbStatus->isSuccess())
+		if (!(fbStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			*x = NULL;
 		}
@@ -954,17 +954,19 @@ bool ISQL_errmsg(Firebird::IStatus* st)
  *	Report error conditions
  *	Simulate isc_print_status exactly, to control stderr
  **************************************/
-	const ISC_STATUS* status = st->get();
 	TEXT errbuf[MSG_LENGTH];
+	const ISC_STATUS* const status = st->getErrors();
 
-	if (Quiet && !st->isSuccess())
+	const unsigned state = st->getStatus();
+	if (Quiet && (state & Firebird::IStatus::FB_HAS_ERRORS))
 		Exit_value = FINI_ERROR;
 	//else
 	{
 		const ISC_STATUS* vec = status;
-		if (vec[0] != isc_arg_gds ||
-			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] != isc_arg_warning) ||
-			(vec[0] == isc_arg_gds && vec[1] == 0 && vec[2] == isc_arg_warning && !setValues.Warnings))
+		if (vec[0] != isc_arg_gds)
+			return false;
+
+		if ((!(state & Firebird::IStatus::FB_HAS_ERRORS)) && ((!(state & Firebird::IStatus::FB_HAS_WARNINGS)) || !setValues.Warnings))
 		{
 			return false;
 		}
@@ -972,19 +974,35 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		fb_sqlstate(sqlstate, status);
 		IUTILS_msg_get(GEN_ERR, errbuf, SafeArg() << sqlstate);
 		STDERROUT(errbuf);
-		if (fb_interpret(errbuf, sizeof(errbuf), &vec))
+		TEXT* err = errbuf;
+		unsigned es = sizeof(errbuf);
+		if (fb_interpret(err, es, &vec))
 		{
 			STDERROUT(errbuf);
 
 			// Continuation of error
-			errbuf[0] = '-';
-			while (fb_interpret(errbuf + 1, sizeof(errbuf) - 1, &vec)) {
+			*err++ = '-';
+			--es;
+			while (fb_interpret(err, es, &vec)) {
 				STDERROUT(errbuf);
 			}
 		}
+/*
+		if (state & Firebird::IStatus::FB_HAS_WARNINGS)
+		{
+			const ISC_STATUS* w = st->getWarnings();
+			while (fb_interpret(err, es, &w)) {
+				STDERROUT(errbuf);
+				if (err == errbuf)
+				{
+					*err++ = '-';
+					--es;
+				}
+			}
+		}
+ */
 		if (Input_file)
 		{
-			//const char* s = 0;
 			int linenum = -1;
 			if (status[0] == isc_arg_gds && status[1] == isc_dsql_error &&
 				status[2] == isc_arg_gds && status[3] == isc_sqlerr && vec > &status[9])
@@ -1041,7 +1059,7 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		}
 	}
 
-	return !st->isSuccess();
+	return (state & Firebird::IStatus::FB_HAS_ERRORS);
 }
 
 
@@ -1058,17 +1076,9 @@ void ISQL_warning(Firebird::IStatus* st)
  *	Simulate isc_print_status exactly, to control stderr
  **************************************/
 
-	const ISC_STATUS* vec = st->get();
-	fb_assert(vec[1] == 0);		// shouldn't be any errors
-
-	//if (!Quiet)
+	if ((st->getStatus() & Firebird::IStatus::FB_HAS_WARNINGS) && setValues.Warnings)
 	{
-		if (vec[0] != isc_arg_gds ||
-			vec[2] != isc_arg_warning ||
-			(vec[2] == isc_arg_warning && !setValues.Warnings))
-		{
-			return;
-		}
+		const ISC_STATUS* vec = st->getWarnings();
 		TEXT buf[MSG_LENGTH];
 		if (fb_interpret(buf, sizeof(buf), &vec))
 		{
@@ -1259,26 +1269,38 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 }
 
 
+inline static bool failed()
+{
+	return (fbStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS);
+}
+
+
+inline static bool succeeded()
+{
+	return !failed();
+}
+
+
 processing_state ISQL_fill_var(IsqlVar* var,
 							   Firebird::IMessageMetadata* msg,
 							   unsigned index,
 							   UCHAR* buf)
 {
-	var->field = msg->getField(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
-	var->relation = msg->getRelation(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
-	var->owner = msg->getOwner(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
-	var->alias = msg->getAlias(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
-	var->subType = msg->getSubType(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
-	var->scale = msg->getScale(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
-	var->type = msg->getType(fbStatus, index);			if (!fbStatus->isSuccess()) return ps_ERR;
-	var->length = msg->getLength(fbStatus, index);		if (!fbStatus->isSuccess()) return ps_ERR;
-	var->charSet = msg->getCharSet(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
-	var->nullable = msg->isNullable(fbStatus, index);	if (!fbStatus->isSuccess()) return ps_ERR;
+	var->field = msg->getField(fbStatus, index);		if (failed()) return ps_ERR;
+	var->relation = msg->getRelation(fbStatus, index);	if (failed()) return ps_ERR;
+	var->owner = msg->getOwner(fbStatus, index);		if (failed()) return ps_ERR;
+	var->alias = msg->getAlias(fbStatus, index);		if (failed()) return ps_ERR;
+	var->subType = msg->getSubType(fbStatus, index);	if (failed()) return ps_ERR;
+	var->scale = msg->getScale(fbStatus, index);		if (failed()) return ps_ERR;
+	var->type = msg->getType(fbStatus, index);			if (failed()) return ps_ERR;
+	var->length = msg->getLength(fbStatus, index);		if (failed()) return ps_ERR;
+	var->charSet = msg->getCharSet(fbStatus, index);	if (failed()) return ps_ERR;
+	var->nullable = msg->isNullable(fbStatus, index);	if (failed()) return ps_ERR;
 
 	if (buf)
 	{
-		var->nullInd = (short*) &buf[msg->getNullOffset(fbStatus, index)];	if (!fbStatus->isSuccess()) return ps_ERR;
-		var->value.setPtr = &buf[msg->getOffset(fbStatus, index)];			if (!fbStatus->isSuccess()) return ps_ERR;
+		var->nullInd = (short*) &buf[msg->getNullOffset(fbStatus, index)];	if (failed()) return ps_ERR;
+		var->value.setPtr = &buf[msg->getOffset(fbStatus, index)];			if (failed()) return ps_ERR;
 	}
 	else
 	{
@@ -1666,7 +1688,7 @@ void ISQL_disconnect_database(bool nQuietMode)
 	if (DB && fbTrans)
 	{
 		fbTrans->rollback(fbStatus);
-		if (fbStatus->isSuccess())
+		if (succeeded())
 			fbTrans = NULL;
 	}
 
@@ -1674,7 +1696,7 @@ void ISQL_disconnect_database(bool nQuietMode)
 	if (global_Stmt)
 	{
 		global_Stmt->free(fbStatus);
-		if (fbStatus->isSuccess())
+		if (succeeded())
 			global_Stmt = NULL;
 	}
 
@@ -1682,7 +1704,7 @@ void ISQL_disconnect_database(bool nQuietMode)
 	if (DB)
 	{
 		DB->detach(fbStatus);
-		if (fbStatus->isSuccess())
+		if (succeeded())
 			DB = NULL;
 	}
 
@@ -1854,8 +1876,9 @@ void ISQL_print_validation(FILE* fp,
 
 	do
 	{
-		size_t length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer);
-		if (!fbStatus->isSuccess() && fbStatus->get()[1] != isc_segment)
+		unsigned int length;
+		int cc = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
+		if (cc == Firebird::IStatus::FB_EOF || cc == Firebird::IStatus::FB_ERROR)
 			break;
 
 		buffer[length] = 0;
@@ -1892,7 +1915,7 @@ void ISQL_print_validation(FILE* fp,
 	if (!issql)
 		IUTILS_printf2(fp, "%s", (isComputedField ? " */" : ")"));
 
-	if ((!fbStatus->isSuccess()) && (fbStatus->get()[1] != isc_segstr_eof))
+	if (failed())
 		ISQL_errmsg(fbStatus);
 
 	blob->close(fbStatus);
@@ -2181,7 +2204,7 @@ static processing_state add_row(TEXT* tabname)
 							Firebird::UtlInterfacePtr()->loadBlob(fbStatus, blobid, DB, M__trans,
 								ftmp.c_str(), FB_TRUE);
 							unlink(ftmp.c_str());
-							res = fbStatus->isSuccess();
+							res = succeeded();
 						}
 					}
 					else	// Otherwise just load the named file
@@ -2192,7 +2215,7 @@ static processing_state add_row(TEXT* tabname)
 						// the database, not updating existing info
 						Firebird::UtlInterfacePtr()->loadBlob(fbStatus, blobid, DB, M__trans,
 							lastInputLine, FB_FALSE);
-						res = fbStatus->isSuccess();
+						res = succeeded();
 					}
 
 					if (!res)
@@ -2574,7 +2597,7 @@ static processing_state bulk_insert_hack(const char* command)
 	global_Stmt = DB->prepare(fbStatus, setValues.Autocommit ? D__trans : M__trans,  0, command,
 		isqlGlob.SQL_dialect, Firebird::IStatement::PREPARE_PREFETCH_METADATA |
 		(setValues.Plan ? Firebird::IStatement::PREPARE_PREFETCH_DETAILED_PLAN : 0));
-	if (!fbStatus->isSuccess())
+	if (failed())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
 		{
@@ -2591,8 +2614,7 @@ static processing_state bulk_insert_hack(const char* command)
 	}
 
 	// check for warnings
-	if (fbStatus->get()[2] == isc_arg_warning)
-		ISQL_warning(fbStatus);
+	ISQL_warning(fbStatus);
 
 	// Find out what kind of statement this is
 	const int statement_type = process_request_type();
@@ -2649,8 +2671,8 @@ static processing_state bulk_insert_hack(const char* command)
 	IUTILS_msg_get(CON_PROMPT, con_prompt);
 
 	TEXT msg[MSG_LENGTH];
-	bool commit_failureM = false;
-	bool commit_failureD = false;
+	bool commit_failedM = false;
+	bool commit_failedD = false;
 	bool done = false; // This is mostly "done with errors".
 	while (!done)
 	{
@@ -2677,13 +2699,13 @@ static processing_state bulk_insert_hack(const char* command)
 
 				if (!commit_trans(&M__trans))
 				{
-					commit_failureM = true;
+					commit_failedM = true;
 					break; // We failed to commit, quit the bulk insertion.
 				}
 
 				if (!M_Transaction())
 				{
-					commit_failureM = false;
+					commit_failedM = false;
 					break; // We failed to start transaction, quit the bulk insertion.
 				}
 
@@ -2692,13 +2714,13 @@ static processing_state bulk_insert_hack(const char* command)
 				{
 					if (!commit_trans(&D__trans))
 					{
-						commit_failureD = true;
+						commit_failedD = true;
 						break; // We failed to commit, quit the bulk insertion.
 					}
 
 					if (!D_Transaction())
 					{
-						commit_failureD = false;
+						commit_failedD = false;
 						break; // We failed to commit, quit the bulk insertion.
 					}
 				}
@@ -2921,7 +2943,7 @@ static processing_state bulk_insert_hack(const char* command)
 
 					{ // scope
 						Firebird::IBlob* bs = DB->createBlob(fbStatus, M__trans, blobid);
-						if (!fbStatus->isSuccess())
+						if (failed())
 						{
 							STDERROUT("Unable to create blob");
 							ISQL_errmsg(fbStatus);
@@ -2930,14 +2952,14 @@ static processing_state bulk_insert_hack(const char* command)
 						}
 
 						bs->putSegment(fbStatus, length, lastPos);
-						if (!fbStatus->isSuccess())
+						if (failed())
 						{
 							STDERROUT("Unable to write to blob");
 							ISQL_errmsg(fbStatus);
 							done = true;
 						}
 						bs->close(fbStatus);
-						if (!fbStatus->isSuccess())
+						if (failed())
 						{
 							STDERROUT("Unable to close blob");
 							ISQL_errmsg(fbStatus);
@@ -3242,20 +3264,19 @@ static processing_state bulk_insert_hack(const char* command)
 			}
 
 			// Check for warnings.
-			if (fbStatus->get()[2] == isc_arg_warning)
-				ISQL_warning(fbStatus);
+			ISQL_warning(fbStatus);
 		}
 	} // while (!done)
 
 	if (done)
 	{
-		// Save whatever we were able to pump, except when the failure was the commit itself.
+		// Save whatever we were able to pump, except when the failed was the commit itself.
 		if (M__trans)
 		{
-			if (commit_failureM)
+			if (commit_failedM)
 			{
 				M__trans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					M__trans = NULL;
 			}
 			else
@@ -3264,10 +3285,10 @@ static processing_state bulk_insert_hack(const char* command)
 
 		if (D__trans)
 		{
-			if (commit_failureD)
+			if (commit_failedD)
 			{
 				D__trans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					D__trans = NULL;
 			}
 			else
@@ -3288,7 +3309,7 @@ static processing_state bulk_insert_hack(const char* command)
 
 	// Get rid of the statement handle.
 	global_Stmt->free(fbStatus);
-	if (fbStatus->isSuccess())
+	if (succeeded())
 		global_Stmt = NULL;
 
 	// Statistics printed here upon request
@@ -4063,21 +4084,21 @@ static void do_isql()
 			if (D__trans)
 			{
 				D__trans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					D__trans = NULL;
 			}
 
 			if (M__trans)
 			{
 				M__trans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					M__trans = NULL;
 			}
 
 			if (fbTrans)
 			{
 				fbTrans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					fbTrans = NULL;
 			}
 
@@ -4085,14 +4106,14 @@ static void do_isql()
 			if (global_Stmt)
 			{
 				global_Stmt->free(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					global_Stmt = NULL;
 			}
 
 			if (DB)
 			{
 				DB->detach(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					DB = NULL;
 			}
 
@@ -4155,21 +4176,21 @@ static void do_isql()
 				if (D__trans)
 				{
 					D__trans->rollback(fbStatus);
-					if (fbStatus->isSuccess())
+					if (succeeded())
 						D__trans = NULL;
 				}
 
 				if (M__trans)
 				{
 					M__trans->rollback(fbStatus);
-					if (fbStatus->isSuccess())
+					if (succeeded())
 						M__trans = NULL;
 				}
 
 				if (fbTrans)
 				{
 					fbTrans->rollback(fbStatus);
-					if (fbStatus->isSuccess())
+					if (succeeded())
 						fbTrans = NULL;
 				}
 			}
@@ -4188,14 +4209,14 @@ static void do_isql()
 			if (global_Stmt)
 			{
 				global_Stmt->free(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					global_Stmt = NULL;
 			}
 
 			if (DB)
 			{
 				DB->detach(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					DB = NULL;
 			}
 
@@ -4206,21 +4227,21 @@ static void do_isql()
 			if (D__trans)
 			{
 				D__trans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					D__trans = NULL;
 			}
 
 			if (M__trans)
 			{
 				M__trans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					M__trans = NULL;
 			}
 
 			if (fbTrans)
 			{
 				fbTrans->rollback(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					fbTrans = NULL;
 			}
 
@@ -4228,14 +4249,14 @@ static void do_isql()
 			if (global_Stmt)
 			{
 				global_Stmt->free(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					global_Stmt = NULL;
 			}
 
 			if (DB)
 			{
 				DB->detach(fbStatus);
-				if (fbStatus->isSuccess())
+				if (succeeded())
 					DB = NULL;
 			}
 
@@ -4408,7 +4429,7 @@ static processing_state edit(const TEXT* const* cmd)
 		Ofp.close();
 		PathName tmpfile = Ofp.fileName(false);
 		gds__edit(tmpfile.c_str(), 0);
-		Ofp.init(fopen(tmpfile.c_str(), "r+"), tmpfile.c_str(), tmpfile.c_str()); // We don't check for failure.
+		Ofp.init(fopen(tmpfile.c_str(), "r+"), tmpfile.c_str(), tmpfile.c_str()); // We don't check for failed.
 		Filelist->Ifp().init(Ofp);
 		Input_file = true;
 		getColumn = -1;
@@ -4431,7 +4452,7 @@ static processing_state end_trans()
  *	either commit or rollback
  *
  *	Called by newtrans, createdb, newdb;
- *	Returns success or failure.
+ *	Returns success or failed.
  *
  **************************************/
 
@@ -7621,8 +7642,9 @@ processing_state ISQL_print_item_blob(FILE* fp, const IsqlVar* var, Firebird::IT
 
 	do
 	{
-		size_t length = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer);
-		if (!fbStatus->isSuccess() && fbStatus->get()[1] != isc_segment)
+		unsigned int length;
+		int cc  = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
+		if (cc == Firebird::IStatus::FB_EOF || cc == Firebird::IStatus::FB_ERROR)
 			break;
 
 		// Special displays for blr or acl subtypes
@@ -7646,7 +7668,7 @@ processing_state ISQL_print_item_blob(FILE* fp, const IsqlVar* var, Firebird::IT
 		}
 	} while (true);
 
-	if ((!fbStatus->isSuccess()) && (fbStatus->get()[1] != isc_segstr_eof))
+	if (failed())
 	{
 		ISQL_errmsg(fbStatus);
 		blob->close(fbStatus);
@@ -7956,7 +7978,7 @@ static void process_header(Firebird::IMessageMetadata* msg, const unsigned pad[]
 // p r o c e s s _ p l a n
 // ***********************
 // Retrieve and show the server's execution plan.
-// We don't consider critical a failure to get the plan, so we don't return
+// We don't consider critical a failed to get the plan, so we don't return
 // any result to the caller.
 static void process_plan()
 {
@@ -8088,7 +8110,7 @@ static SLONG process_record_count(const int statement_type)
 // p r o c e s s _ r e q u e s t _ t y p e
 // ***************************************
 // Retrieve the statement type according to the DSQL layer.
-// A failure is indicated by returning zero.
+// A failed is indicated by returning zero.
 static int process_request_type()
 {
 	if (!global_Stmt)
@@ -8322,7 +8344,7 @@ static processing_state process_statement(const TEXT* str2)
 
 	global_Stmt = DB->prepare(fbStatus, prepare_trans, 0, str2, isqlGlob.SQL_dialect,
 		Firebird::IStatement::PREPARE_PREFETCH_METADATA);
-	if (!fbStatus->isSuccess())
+	if (failed())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
 		{
@@ -8339,8 +8361,7 @@ static processing_state process_statement(const TEXT* str2)
 	}
 
 	// check for warnings
-	if (fbStatus->get()[2] == isc_arg_warning)
-		ISQL_warning(fbStatus);
+	ISQL_warning(fbStatus);
 
 	// Find out what kind of statement this is
 	const int statement_type = process_request_type();
@@ -8368,8 +8389,7 @@ static processing_state process_statement(const TEXT* str2)
 			}
 
 			// check for warnings
-			if (fbStatus->get()[2] == isc_arg_warning)
-				ISQL_warning(fbStatus);
+			ISQL_warning(fbStatus);
 
 			print_message(input, "IN");
 		}
@@ -8410,7 +8430,7 @@ static processing_state process_statement(const TEXT* str2)
 			{
 				ret = ps_ERR;
 			}
-			else if (fbStatus->get()[2] == isc_arg_warning)
+			else
 			{
 				// check for warnings
 				ISQL_warning(fbStatus);
@@ -8423,8 +8443,7 @@ static processing_state process_statement(const TEXT* str2)
 				ret = ps_ERR;
 
 			// check for warnings from COMMIT
-			if (fbStatus->get()[2] == isc_arg_warning)
-				ISQL_warning(fbStatus);
+			ISQL_warning(fbStatus);
 
 			if (setValues.Stats && (print_performance(perf_before) == ps_ERR))
 				ret = ps_ERR;
@@ -8457,8 +8476,7 @@ static processing_state process_statement(const TEXT* str2)
 		}
 
 		// check for warnings
-		if (fbStatus->get()[2] == isc_arg_warning)
-			ISQL_warning(fbStatus);
+		ISQL_warning(fbStatus);
 
 		// We are executing a commit or rollback, commit default trans
 
@@ -8497,8 +8515,7 @@ static processing_state process_statement(const TEXT* str2)
 	}
 
 	// check for warnings
-	if (fbStatus->get()[2] == isc_arg_warning)
-		ISQL_warning(fbStatus);
+	ISQL_warning(fbStatus);
 
 	const unsigned n_cols = message->getCount(fbStatus);
 	if (ISQL_errmsg(fbStatus))
@@ -8588,8 +8605,7 @@ static processing_state process_statement(const TEXT* str2)
 		}
 
 		// check for warnings
-		if (fbStatus->get()[2] == isc_arg_warning)
-			ISQL_warning(fbStatus);
+		ISQL_warning(fbStatus);
 
 		// Now fetch and print records until EOF
 
@@ -8617,12 +8633,9 @@ static processing_state process_statement(const TEXT* str2)
 
 			// Fetch the current cursor
 
-			if (!curs->fetchNext(fbStatus, buffer))
+			if (curs->fetchNext(fbStatus, buffer) == Firebird::IStatus::FB_EOF)
 			{
-				if (fbStatus->isSuccess())
-				{
-					break;
-				}
+				break;
 			}
 
 			// Print the header every Pagelength number of lines for
@@ -8723,7 +8736,7 @@ static int query_abort(const int reason, const int, void*)
 	{
 		Firebird::LocalStatus status;
 		DB->cancelOperation(&status, fb_cancel_raise);
-		flag = status.isSuccess();
+		flag = !(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS);
 	}
 
 	if (flag)

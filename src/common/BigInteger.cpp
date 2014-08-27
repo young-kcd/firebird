@@ -33,6 +33,7 @@
 
 #include "../common/BigInteger.h"
 #include "../common/os/guid.h"
+#include "../common/StatusArg.h"
 
 #define CHECK_MP(a) check(a, #a)
 

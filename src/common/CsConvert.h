@@ -32,6 +32,7 @@
 
 #include "iberror.h"
 #include "../common/classes/array.h"
+#include "../common/StatusArg.h"
 
 
 namespace Jrd {

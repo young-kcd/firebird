@@ -532,7 +532,9 @@ void Connection::raise(const ISC_STATUS* status, thread_db* /*tdbb*/, const char
 
 void Connection::raise(const Firebird::IStatus& status, thread_db* tdbb, const char* sWhere)
 {
-	raise(status.get(), tdbb, sWhere);
+	ISC_STATUS_ARRAY tmp;
+	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), &status);
+	raise(tmp, tdbb, sWhere);
 }
 
 
@@ -1522,11 +1524,11 @@ void Statement::raise(const Firebird::IStatus& status, thread_db* /*tdbb*/, cons
 
 	if (!m_connection.getWrapErrors())
 	{
-		ERR_post(Arg::StatusVector(status.get()));
+		ERR_post(Arg::StatusVector(&status));
 	}
 
 	string rem_err;
-	m_provider.getRemoteError(status.get(), rem_err);
+	m_provider.getRemoteError(status.getErrors(), rem_err);
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
 	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<

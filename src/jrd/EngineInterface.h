@@ -54,7 +54,8 @@ public:
 	virtual void FB_CARG getInfo(Firebird::IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer);
-	virtual unsigned int FB_CARG getSegment(Firebird::IStatus* status, unsigned int length, void* buffer);	// returns real length
+	virtual int FB_CARG getSegment(Firebird::IStatus* status, unsigned int length, void* buffer,
+								   unsigned int* segmentLength);
 	virtual void FB_CARG putSegment(Firebird::IStatus* status, unsigned int length, const void* buffer);
 	virtual void FB_CARG cancel(Firebird::IStatus* status);
 	virtual void FB_CARG close(Firebird::IStatus* status);
@@ -142,12 +143,12 @@ class JResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::IResultSet, F
 public:
 	// IResultSet implementation
 	virtual int FB_CARG release();
-	virtual FB_BOOLEAN FB_CARG fetchNext(Firebird::IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchPrior(Firebird::IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchFirst(Firebird::IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchLast(Firebird::IStatus* status, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchAbsolute(Firebird::IStatus* status, unsigned int position, void* message);
-	virtual FB_BOOLEAN FB_CARG fetchRelative(Firebird::IStatus* status, int offset, void* message);
+	virtual int FB_CARG fetchNext(Firebird::IStatus* status, void* message);
+	virtual int FB_CARG fetchPrior(Firebird::IStatus* status, void* message);
+	virtual int FB_CARG fetchFirst(Firebird::IStatus* status, void* message);
+	virtual int FB_CARG fetchLast(Firebird::IStatus* status, void* message);
+	virtual int FB_CARG fetchAbsolute(Firebird::IStatus* status, unsigned int position, void* message);
+	virtual int FB_CARG fetchRelative(Firebird::IStatus* status, int offset, void* message);
 	virtual FB_BOOLEAN FB_CARG isEof(Firebird::IStatus* status);
 	virtual FB_BOOLEAN FB_CARG isBof(Firebird::IStatus* status);
 	virtual Firebird::IMessageMetadata* FB_CARG getMetadata(Firebird::IStatus* status);

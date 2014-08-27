@@ -45,7 +45,7 @@ static IMaster* master = fb_get_master_interface();
 
 static void check(IStatus* s, const char* text)
 {
-	if (!s->isSuccess())
+	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
 		throw text;
 }
 
@@ -157,7 +157,7 @@ int main()
 		unsigned char* buffer = new unsigned char[l];
 
 		// fetch records from cursor
-		while (curs->fetchNext(st, buffer))
+		while (curs->fetchNext(st, buffer) == IStatus::FB_OK)
 		{
 			for (unsigned j = 0; j < f; ++j)
 			{
@@ -190,7 +190,7 @@ int main()
 		fflush(stdout);
 		fprintf(stderr, " %s:\n", text);
 		if (st)
-			isc_print_status(st->get());
+			isc_print_status(st->getErrors());
 	}
 
 	if (meta)
@@ -260,15 +260,14 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 			char segbuf[16];
 			unsigned len;
 			// read data segment by segment
-			while ( (len = blob->getSegment(st, sizeof(segbuf), segbuf)) )
+			for(;;)
 			{
-				// to be reviewed after A1 - need better segment/eof handling
-				if (st->get()[1] != isc_segment)
-					check(st, "getSegment");
+				int cc = blob->getSegment(st, sizeof(segbuf), segbuf, &len);
+				if (cc != IStatus::FB_OK && cc != IStatus::FB_SEGMENT)
+					break;
 				fwrite(segbuf, sizeof(char), len, stdout);
 			}
-			if (st->get()[1] != isc_segstr_eof)
-				check(st, "getSegment");
+			check(st, "getSegment");
 
 			// close BLOB after receiving all data
 			blob->close(st);

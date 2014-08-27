@@ -1471,7 +1471,7 @@ static void list_procedure_bodies()
 
 	END_FOR
 	ON_ERROR
-		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(fbStatus->get()));
+		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(fbStatus->getErrors()));
 		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
 		ISQL_errmsg(fbStatus);
 		return;
@@ -2805,7 +2805,7 @@ static void list_functions_ods12_bodies()
 
 	END_FOR
 	ON_ERROR
-		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(fbStatus->get()));
+		IUTILS_msg_get(GEN_ERR, msg, SafeArg() << isc_sqlcode(fbStatus->getErrors()));
 		STDERROUT(msg);			// Statement failed, SQLCODE = %d\n\n
 		ISQL_errmsg(fbStatus);
 		return;

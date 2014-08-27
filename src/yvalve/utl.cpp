@@ -184,7 +184,7 @@ void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 
 	// Open the blob.  If it failed, what the hell -- just return failure
 	IBlob *blob = att->createBlob(status, tra, blobId);
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 
 	// Copy data from file to blob.  Make up boundaries at end of line.
@@ -206,7 +206,7 @@ void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 		const SSHORT l = p - buffer;
 
 		blob->putSegment(status, l, buffer);
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			blob->close(&temp);
 			return;
@@ -238,7 +238,7 @@ void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 	// Open the blob.  If it failed, what the hell -- just return failure
 
 	IBlob *blob = att->openBlob(status, tra, blobId);
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 
 	// Copy data from blob to scratch file
@@ -248,12 +248,11 @@ void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 
 	for (;;)
 	{
-		USHORT l = 0;
-		l = blob->getSegment(status, short_length, buffer);
-		if (!status->isSuccess() && status->get()[1] != isc_segment)
+		unsigned l = 0;
+		switch(blob->getSegment(status, short_length, buffer, &l))
 		{
-			if (status->get()[1] == isc_segstr_eof)
-				status->init();
+		case Firebird::IStatus::FB_ERROR:
+		case Firebird::IStatus::FB_EOF:
 			break;
 		}
 
@@ -310,7 +309,7 @@ FB_BOOLEAN edit(IStatus* status, ISC_QUAD* blob_id, IAttachment* att, ITransacti
 	// Would have saved me a lot of time, if I had seen this earlier :-(
 	// FSG 15.Oct.2000
 	PathName tmpf = TempFile::create(status, buffer);
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FALSE;
 
 	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
@@ -322,9 +321,9 @@ FB_BOOLEAN edit(IStatus* status, ISC_QUAD* blob_id, IAttachment* att, ITransacti
 
 	dump(status, blob_id, att, tra, file);
 
-	if (!status->isSuccess() && status->get()[1] != isc_segstr_eof)
+	if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 	{
-		isc_print_status(status->get());
+		isc_print_status(status->getErrors());
 		fclose(file);
 		unlink(tmpf.c_str());
 		return FB_FALSE;
@@ -344,7 +343,7 @@ FB_BOOLEAN edit(IStatus* status, ISC_QUAD* blob_id, IAttachment* att, ITransacti
 		load(status, blob_id, att, tra, file);
 
 		fclose(file);
-		return status->isSuccess();
+		return status->getStatus() & IStatus::FB_HAS_ERRORS ? FB_FALSE : FB_TRUE;
 	}
 
 	unlink(tmpf.c_str());
@@ -444,7 +443,7 @@ void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
 		do
 		{
 			att->getInfo(status, sizeof(info), info, buf_len, buf);
-			if (!status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				return;
 
 			const UCHAR* p = buf;
@@ -545,14 +544,14 @@ void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
 			s.printf("%s (%s), version \"%.*s\"", implementation_string, class_string, l, versions);
 
 			callback->callback(status, s.c_str());
-			if (!status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				return;
 			versions += l;
 		}
 
 		USHORT ods_version, ods_minor_version;
 		get_ods_version(status, att, &ods_version, &ods_minor_version);
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return;
 
 		s.printf("on disk structure version %d.%d", ods_version, ods_minor_version);
@@ -582,13 +581,13 @@ YAttachment* FB_CARG UtlInterface::executeCreateDatabase(
 		if (stmtIsCreateDb)
 			*stmtIsCreateDb = FB_TRUE;
 
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return NULL;
 
 		LocalStatus tempStatus;
 		ITransaction* crdbTrans = att->startTransaction(status, 0, NULL);
 
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			att->dropDatabase(&tempStatus);
 			return NULL;
@@ -599,7 +598,7 @@ YAttachment* FB_CARG UtlInterface::executeCreateDatabase(
 		if (!stmtEaten)
 		{
 			att->execute(status, crdbTrans, stmtLength, creatDBstatement, dialect, NULL, NULL, NULL, NULL);
-			if (!status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
 				crdbTrans->rollback(&tempStatus);
 				att->dropDatabase(&tempStatus);
@@ -608,7 +607,7 @@ YAttachment* FB_CARG UtlInterface::executeCreateDatabase(
 		}
 
 		crdbTrans->commit(status);
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			crdbTrans->rollback(&tempStatus);
 			att->dropDatabase(&tempStatus);
@@ -1467,13 +1466,13 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 
 	LocalStatus st;
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, handle));
-	if (!st.isSuccess())
+	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
 	VersionCallback callback(routine, user_arg);
 	UtlInterfacePtr()->getFbVersion(&st, att, &callback);
 
-	return st.isSuccess() ? FB_SUCCESS : FB_FAILURE;
+	return st.getStatus() & IStatus::FB_HAS_ERRORS ? FB_FAILURE : FB_SUCCESS;
 }
 
 
@@ -1630,10 +1629,10 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
  **************************************/
 	LocalStatus st;
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
-	if (!st.isSuccess())
+	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
-	if (!st.isSuccess())
+	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
 	try
@@ -1645,9 +1644,9 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 		ex.stuffException(&st);
 	}
 
-	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
-		isc_print_status(st.get());
+		isc_print_status(st.getErrors());
 		return FB_FAILURE;
 	}
 
@@ -1705,17 +1704,17 @@ static int any_text_dump(ISC_QUAD* blob_id,
  **************************************/
 	LocalStatus st;
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
-	if (!st.isSuccess())
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
-	if (!st.isSuccess())
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
 	UtlInterfacePtr()->dumpBlob(&st, blob_id, att, tra, file_name, txt);
 
-	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
-		isc_print_status(st.get());
+		isc_print_status(st.getErrors());
 		return FB_FAILURE;
 	}
 
@@ -1804,10 +1803,10 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 
 	LocalStatus st;
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
-	if (!st.isSuccess())
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
-	if (!st.isSuccess())
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
 	int rc = FB_SUCCESS;
@@ -1821,8 +1820,8 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 		ex.stuffException(&st);
 	}
 
-	if (!st.isSuccess() && st.get()[1] != isc_segstr_eof)
-		isc_print_status(st.get());
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		isc_print_status(st.getErrors());
 
 	return rc;
 }
@@ -1919,17 +1918,17 @@ static int any_text_load(ISC_QUAD* blob_id,
  **************************************/
 	LocalStatus st;
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
-	if (!st.isSuccess())
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
-	if (!st.isSuccess())
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
 	UtlInterfacePtr()->loadBlob(&st, blob_id, att, tra, file_name, flag);
 
-	if (!st.isSuccess())
+	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
-		isc_print_status(st.get());
+		isc_print_status(st.getErrors());
 		return FB_FAILURE;
 	}
 
@@ -2180,7 +2179,7 @@ static void get_ods_version(IStatus* status, IAttachment* att,
 
 	att->getInfo(status, sizeof(ods_info), ods_info, sizeof(buffer), buffer);
 
-	if (!status->isSuccess())
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 
 	const UCHAR* p = buffer;

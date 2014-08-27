@@ -50,6 +50,7 @@
 #include "../common/classes/FpeControl.h"
 #include "../common/dsc_proto.h"
 #include "../common/utils_proto.h"
+#include "../common/StatusArg.h"
 
 
 #ifdef HAVE_SYS_TYPES_H

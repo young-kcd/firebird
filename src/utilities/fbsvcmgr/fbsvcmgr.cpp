@@ -40,6 +40,7 @@
 #include "../common/classes/timestamp.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
+#include "../common/StatusArg.h"
 #include "../jrd/license.h"
 
 using namespace Firebird;

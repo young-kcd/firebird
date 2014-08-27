@@ -1362,9 +1362,9 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 // raise error if one present
 static void checkD(IStatus* st)
 {
-	if (!st->isSuccess())
+	if (st->getStatus() & IStatus::FB_HAS_ERRORS)
 	{
-		ERRD_post(Arg::StatusVector(st->get()));
+		ERRD_post(Arg::StatusVector(st));
 	}
 }
 

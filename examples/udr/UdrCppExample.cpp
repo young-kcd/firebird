@@ -676,7 +676,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 
 		// This will not work if the table has computed fields.
 		stmt->execute(status, transaction, triggerMetadata, newFields, NULL, NULL);
-		StatusException::check(status->get());
+		StatusException::check(status->getErrors());
 	}
 
 	AutoRelease<IMessageMetadata> triggerMetadata;
@@ -785,7 +785,7 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		ITransaction* transaction = StatusException::check(status, context->getTransaction(status));
 
 		stmt->execute(status, transaction, triggerMetadata, newFields, NULL, NULL);
-		StatusException::check(status->get());
+		StatusException::check(status->getErrors());
 	}
 
 	AutoRelease<IMessageMetadata> triggerMetadata;

@@ -87,6 +87,7 @@ namespace Firebird {
 	class Exception;
 	class IEventCallback;
 	class ICryptKeyCallback;
+	class IStatus;
 }
 
 struct rem_port;
@@ -329,7 +330,7 @@ public:
 	explicit Rrq(FB_SIZE_T rpt) :
 		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0),
 		rrq_iface(NULL), rrq_id(0), rrq_max_msg(0), rrq_level(0),
-		rrqStatus(0), rrq_rpt(getPool(), rpt)
+		rrq_rpt(getPool(), rpt)
 	{
 		//memset(rrq_status_vector, 0, sizeof rrq_status_vector);
 		rrq_rpt.grow(rpt);
@@ -347,7 +348,7 @@ public:
 	static ISC_STATUS badHandle() { return isc_bad_req_handle; }
 
 	void saveStatus(const Firebird::Exception& ex) throw();
-	void saveStatus(const Firebird::IStatus* ex) throw();
+	void saveStatus(Firebird::IStatus* ex) throw();
 };
 
 
@@ -442,7 +443,7 @@ public:
 		rsr_cursor_name(getPool()), rsr_delayed_format(false)
 		{ }
 
-	void saveException(const ISC_STATUS* status, bool overwrite);
+	void saveException(Firebird::IStatus* status, bool overwrite);
 	void saveException(const Firebird::Exception& ex, bool overwrite);
 	void clearException();
 	ISC_STATUS haveException();
@@ -498,7 +499,7 @@ public:
 
 
 
-inline void Rsr::saveException(const ISC_STATUS* status, bool overwrite)
+inline void Rsr::saveException(Firebird::IStatus* status, bool overwrite)
 {
 	if (!rsr_status) {
 		rsr_status = new Firebird::StatusHolder();
@@ -1081,10 +1082,7 @@ public:
 	ISC_STATUS	seek_blob(P_SEEK*, PACKET*);
 	ISC_STATUS	send_msg(P_DATA*, PACKET*);
 	ISC_STATUS	send_response(PACKET*, OBJCT, ULONG, const ISC_STATUS*, bool);
-	ISC_STATUS	send_response(PACKET* p, OBJCT obj, ULONG length, Firebird::IStatus* status, bool defer_flag)
-	{
-		return send_response(p, obj, length, status->get(), defer_flag);
-	}
+	ISC_STATUS	send_response(PACKET* p, OBJCT obj, ULONG length, const Firebird::IStatus* status, bool defer_flag);
 	ISC_STATUS	service_attach(const char*, Firebird::ClumpletWriter*, PACKET*);
 	ISC_STATUS	service_end(P_RLSE*, PACKET*);
 	void		service_start(P_INFO*, PACKET*);

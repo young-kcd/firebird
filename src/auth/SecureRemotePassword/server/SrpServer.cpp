@@ -133,10 +133,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 				const char* providers = "Providers=" CURRENT_ENGINE;
 				dpb.insertString(isc_dpb_config, providers, fb_strlen(providers));
 				att = p->attachDatabase(status, secDbName, dpb.getBufferLength(), dpb.getBuffer());
-				if (!status->isSuccess())
-				{
-					status_exception::raise(status->get());
-				}
+				check(status);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv SRP: attached sec db %s\n", secDbName));
 
 				const UCHAR tpb[] =
@@ -148,19 +145,16 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 					isc_tpb_wait
 				};
 				tra = att->startTransaction(status, sizeof(tpb), tpb);
-				if (!status->isSuccess())
-				{
-					status_exception::raise(status->get());
-				}
+				check(status);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: started transaction\n"));
 
 				const char* sql =
 					"SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ? AND PLG$ACTIVE";
 				stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
-				if (!status->isSuccess())
+				if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				{
-					checkStatusVectorForMissingTable(status->get());
-					status_exception::raise(status->get());
+					checkStatusVectorForMissingTable(status->getErrors());
+					status_exception::raise(status);
 				}
 
 				Meta im(stmt, false);
@@ -170,20 +164,14 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 
 				Meta om(stmt, true);
 				Message dat(om);
-				if (!status->isSuccess())
-				{
-					status_exception::raise(status->get());
-				}
+				check(status);
 				Field<Varying> verify(dat);
 				Field<Varying> slt(dat);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Ready to run statement with login '%s'\n", account.c_str()));
 
 				stmt->execute(status, tra, par.getMetadata(), par.getBuffer(),
 					dat.getMetadata(), dat.getBuffer());
-				if (!status->isSuccess())
-				{
-					status_exception::raise(status->get());
-				}
+				check(status);
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: SRP1: Executed statement\n"));
 
 				verifier.assign(reinterpret_cast<const UCHAR*>((const char*) verify), RemotePassword::SRP_VERIFIER_SIZE);
@@ -194,24 +182,15 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 				dumpIt("Srv: salt", salt);
 
 				stmt->free(status);
-				if (!status->isSuccess())
-				{
-					status_exception::raise(status->get());
-				}
+				check(status);
 				stmt = NULL;
 
 				tra->rollback(status);
-				if (!status->isSuccess())
-				{
-					status_exception::raise(status->get());
-				}
+				check(status);
 				tra = NULL;
 
 				att->detach(status);
-				if (!status->isSuccess())
-				{
-					status_exception::raise(status->get());
-				}
+				check(status);
 				att = NULL;
 			}
 			catch(const Exception&)
@@ -241,7 +220,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			dumpIt("Srv: serverPubKey", serverPubKey);
 			dumpBin("Srv: data", data);
 			sb->putData(status, data.length(), data.c_str());
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
@@ -252,7 +231,7 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 			// output the key
 			FbCryptKey cKey = {"Symmetric", sessionKey.begin(), NULL, sessionKey.getCount(), 0};
 			sb->putKey(status, &cKey);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
@@ -271,12 +250,12 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 		{
 			MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 			writerInterface->add(status, account.c_str());
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
 			writerInterface->setDb(status, secDbName);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				return AUTH_FAILED;
 			}

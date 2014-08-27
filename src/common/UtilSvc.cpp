@@ -30,6 +30,7 @@
 #include "firebird.h"
 #include "../common/UtilSvc.h"
 #include "../common/classes/alloc.h"
+#include "../common/StatusArg.h"
 #include "iberror.h"
 
 #include <string.h>

@@ -86,7 +86,7 @@ int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* s
 			fprintf(stderr, "DebugServer::authenticate1: %s\n", str.c_str());
 #endif
 			sb->putData(status, str.length(), str.c_str());
-			if (!status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
@@ -167,7 +167,7 @@ int FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* c
 		fprintf(stderr, "DebugClient::authenticate: sending %s\n", str.c_str());
 #endif
 		cb->putData(status, str.length(), str.c_str());
-		if (! status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			return AUTH_FAILED;
 		}

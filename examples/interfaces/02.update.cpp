@@ -55,7 +55,7 @@ int Input_ptr = 0;
 
 static void check(IStatus* s, const char* text)
 {
-	if (!s->isSuccess())
+	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
 		throw text;
 }
 
@@ -152,9 +152,9 @@ int main()
 
 			// Update the budget.
 	        stmt->execute(st, tra, meta, buffer, NULL, NULL);
-	        if (!st->isSuccess())
+	        if (st->getStatus() & IStatus::FB_HAS_ERRORS)
     	    {
-		        int sqlcode = isc_sqlcode(st->get());
+		        int sqlcode = isc_sqlcode(st->getErrors());
     	        // Don't save the update, if the new budget exceeds the limit.
         	    if (sqlcode == -625)
             	{
@@ -198,7 +198,7 @@ int main()
 		rc = 1;
 		fprintf(stderr, "%s:\n", text);
 		if (st)
-			isc_print_status(st->get());
+			isc_print_status(st->getErrors());
 	}
 
 	// release interfaces after error caught

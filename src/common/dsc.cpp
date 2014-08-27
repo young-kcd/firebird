@@ -32,6 +32,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
 #include "../common/dsc_proto.h"
+#include "../common/StatusArg.h"
 
 using namespace Firebird;
 

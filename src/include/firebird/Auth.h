@@ -152,7 +152,7 @@ public:
 	virtual const char* FB_CARG role() = 0;
 	virtual const char* FB_CARG networkProtocol() = 0;
 	virtual const char* FB_CARG remoteAddress() = 0;
-	virtual unsigned int FB_CARG authBlock(const unsigned char** bytes) = 0;
+	virtual const unsigned char* FB_CARG authBlock(unsigned* length) = 0;
 };
 #define FB_AUTH_LOGON_INFO_VERSION (FB_VERSIONED_VERSION + 5)
 

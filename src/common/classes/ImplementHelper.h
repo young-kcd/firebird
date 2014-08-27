@@ -38,6 +38,7 @@
 #include "../common/classes/init.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/RefCounted.h"
+#include "../common/StatusArg.h"
 #include "consts_pub.h"
 
 namespace Firebird {
@@ -368,9 +369,9 @@ private:
 // Generic status checker
 inline void check(IStatus* status)
 {
-	if (!status->isSuccess())
+	if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 	{
-		status_exception::raise(status->get());
+		status_exception::raise(status);
 	}
 }
 

@@ -53,8 +53,8 @@ public:
 	virtual void FB_CARG getInfo(IStatus* status,
 						 unsigned int itemsLength, const unsigned char* items,
 						 unsigned int bufferLength, unsigned char* buffer) = 0;
-	virtual unsigned int FB_CARG getSegment(IStatus* status, unsigned int length,
-											void* buffer) = 0;	// returns real length
+	virtual int FB_CARG getSegment(IStatus* status, unsigned int bufferLength,
+								   void* buffer, unsigned int* segmentLength) = 0;
 	virtual void FB_CARG putSegment(IStatus* status, unsigned int length,
 									const void* buffer) = 0;
 	virtual void FB_CARG cancel(IStatus* status) = 0;
@@ -132,12 +132,12 @@ static IMessageMetadata* const DELAYED_OUT_FORMAT = (IMessageMetadata*)(1);
 class IResultSet : public IRefCounted
 {
 public:
-	virtual FB_BOOLEAN FB_CARG fetchNext(IStatus* status, void* message) = 0;
-	virtual FB_BOOLEAN FB_CARG fetchPrior(IStatus* status, void* message) = 0;
-	virtual FB_BOOLEAN FB_CARG fetchFirst(IStatus* status, void* message) = 0;
-	virtual FB_BOOLEAN FB_CARG fetchLast(IStatus* status, void* message) = 0;
-	virtual FB_BOOLEAN FB_CARG fetchAbsolute(IStatus* status, unsigned int position, void* message) = 0;
-	virtual FB_BOOLEAN FB_CARG fetchRelative(IStatus* status, int offset, void* message) = 0;
+	virtual int FB_CARG fetchNext(IStatus* status, void* message) = 0;
+	virtual int FB_CARG fetchPrior(IStatus* status, void* message) = 0;
+	virtual int FB_CARG fetchFirst(IStatus* status, void* message) = 0;
+	virtual int FB_CARG fetchLast(IStatus* status, void* message) = 0;
+	virtual int FB_CARG fetchAbsolute(IStatus* status, unsigned int position, void* message) = 0;
+	virtual int FB_CARG fetchRelative(IStatus* status, int offset, void* message) = 0;
 	virtual FB_BOOLEAN FB_CARG isEof(IStatus* status) = 0;
 	virtual FB_BOOLEAN FB_CARG isBof(IStatus* status) = 0;
 	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status) = 0;

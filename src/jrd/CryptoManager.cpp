@@ -112,7 +112,7 @@ namespace {
 	public:
 		virtual void FB_CARG noEntrypoint(IStatus* s)
 		{
-			s->set(Arg::Gds(isc_wish_list).value());
+			Arg::Gds(isc_wish_list).copyTo(s);
 		}
 	};
 
@@ -567,9 +567,9 @@ namespace Jrd {
 
 				LocalStatus status;
 				cryptPlugin->decrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &page[1], &page[1]);
-				if (!status.isSuccess())
+				if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 				{
-					memcpy(sv, status.get(), sizeof(ISC_STATUS_ARRAY));
+					fb_utils::mergeStatus(sv, FB_NELEM(sv), &status);
 					return false;
 				}
 			}
@@ -595,9 +595,9 @@ namespace Jrd {
 
 				LocalStatus status;
 				cryptPlugin->encrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &from[1], &to[1]);
-				if (!status.isSuccess())
+				if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 				{
-					memcpy(sv, status.get(), sizeof(ISC_STATUS_ARRAY));
+					fb_utils::mergeStatus(sv, FB_NELEM(sv), &status);
 					return NULL;
 				}
 
@@ -707,9 +707,9 @@ namespace Jrd {
 				ha->registerAttachment(att);
 				break;		// Do not need >1 key from attachment to single DB
 			}
-			else if (!st.isSuccess())
+			else if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
-				status_exception::raise(st.get());
+				status_exception::raise(&st);
 			}
 		}
 	}
@@ -742,9 +742,9 @@ namespace Jrd {
 
 		LocalStatus st;
 		crypt->setKey(&st, length, vector);
-		if (!st.isSuccess())
+		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
-			status_exception::raise(st.get());
+			status_exception::raise(&st);
 		}
 	}
 

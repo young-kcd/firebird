@@ -318,7 +318,7 @@ namespace Jrd
 		{
 			Firebird::LocalStatus s;
 			TimerInterfacePtr()->stop(&s, this);
-			if (s.isSuccess())
+			if (!(s.getStatus() & IStatus::FB_HAS_ERRORS))
 				active = false;
 		}
 	}

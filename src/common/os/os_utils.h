@@ -33,6 +33,7 @@
 #endif
 
 #include "../common/classes/fb_string.h"
+#include "../common/StatusArg.h"
 
 namespace os_utils
 {

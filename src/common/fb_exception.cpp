@@ -85,8 +85,7 @@ ISC_STATUS Exception::stuff_exception(ISC_STATUS* const status_vector) const thr
 {
 	LocalStatus status;
 	stuffException(&status);
-	const ISC_STATUS* s = status.get();
-	fb_utils::copyStatus(status_vector, ISC_STATUS_LENGTH, s, fb_utils::statusLength(s));
+	fb_utils::mergeStatus(status_vector, ISC_STATUS_LENGTH, &status);
 
 	return status_vector[1];
 }
@@ -129,6 +128,13 @@ void status_exception::raise(const ISC_STATUS *status_vector)
 	throw status_exception(status_vector);
 }
 
+void status_exception::raise(const IStatus* status)
+{
+	ISC_STATUS_ARRAY status_vector;
+	fb_utils::mergeStatus(status_vector, ISC_STATUS_LENGTH, status);
+	throw status_exception(status_vector);
+}
+
 void status_exception::raise(const Arg::StatusVector& statusVector)
 {
 	throw status_exception(statusVector.value());
@@ -138,7 +144,7 @@ ISC_STATUS status_exception::stuffException(IStatus* status) const throw()
 {
 	if (status)
 	{
-		status->set(value());
+		fb_utils::setIStatus(status, value());
 	}
 
 	return value()[1];
@@ -157,7 +163,7 @@ ISC_STATUS BadAlloc::stuffException(IStatus* status) const throw()
 
 	if (status)
 	{
-		status->set(FB_NELEM(sv), sv);
+		status->setErrors(FB_NELEM(sv), sv);
 	}
 
 	return sv[1];
@@ -181,7 +187,7 @@ ISC_STATUS LongJump::stuffException(IStatus* status) const throw()
 
 	if (status)
 	{
-		status->set(FB_NELEM(sv), sv);
+		status->setErrors(FB_NELEM(sv), sv);
 	}
 
 	return sv[1];

@@ -583,6 +583,14 @@ void iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector)
 }
 
 
+void iscLogStatus(const TEXT* text, Firebird::IStatus* status)
+{
+	ISC_STATUS_BIG_ARRAY tmp;
+	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), status);
+	iscLogStatus(text, tmp);
+}
+
+
 void iscLogException(const char* text, const Firebird::Exception& e)
 {
 /**************************************

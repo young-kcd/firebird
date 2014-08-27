@@ -932,17 +932,17 @@ void Rrq::saveStatus(const Firebird::Exception& ex) throw()
 {
 	if (rrqStatus.isSuccess())
 	{
-		ISC_STATUS_ARRAY tmp;
-		ex.stuff_exception(tmp);
-		rrqStatus.save(tmp);
+		Firebird::LocalStatus tmp;
+		ex.stuffException(&tmp);
+		rrqStatus.save(&tmp);
 	}
 }
 
-void Rrq::saveStatus(const Firebird::IStatus* v) throw()
+void Rrq::saveStatus(Firebird::IStatus* v) throw()
 {
 	if (rrqStatus.isSuccess())
 	{
-		rrqStatus.save(v->get());
+		rrqStatus.save(v);
 	}
 }
 
@@ -954,9 +954,9 @@ void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
 
 	if (overwrite || !rsr_status->getError())
 	{
-		ISC_STATUS_ARRAY temp;
-		ex.stuff_exception(temp);
-		rsr_status->save(temp);
+		Firebird::LocalStatus temp;
+		ex.stuffException(&temp);
+		rsr_status->save(&temp);
 	}
 }
 
@@ -1265,7 +1265,8 @@ void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool ch
 	if ((packet->p_operation == op_response || packet->p_operation == op_response_piggyback) &&
 		!vector[1])
 	{
-		warning->set(vector);
+		Firebird::Arg::StatusVector s(vector);
+		s.copyTo(warning);
 		return;
 	}
 
@@ -1366,9 +1367,9 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 
 				// Pass key to plugin
 				port_crypt_plugin->setKey(&st, cryptKey);
-				if (!st.isSuccess())
+				if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				{
-					Firebird::status_exception::raise(st.get());
+					Firebird::status_exception::raise(&st);
 				}
 
 				// Now it's time to notify server about choice done

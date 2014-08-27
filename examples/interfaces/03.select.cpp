@@ -46,7 +46,7 @@ static IMaster* master = fb_get_master_interface();
 
 static void check(IStatus* s, const char* text)
 {
-	if (!s->isSuccess())
+	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
 		throw text;
 }
 
@@ -156,7 +156,7 @@ int main()
 		unsigned char* buffer = new unsigned char[l];
 
 		// fetch records from cursor and print them
-		while (curs->fetchNext(st, buffer))
+		while (curs->fetchNext(st, buffer) == IStatus::FB_OK)
 		{
 			for (unsigned j = 0; j < cols; ++j)
 			{
@@ -196,7 +196,7 @@ int main()
 		rc = 1;
 		fprintf(stderr, "%s:\n", text);
 		if (st)
-			isc_print_status(st->get());
+			isc_print_status(st->getErrors());
 	}
 
 	// release interfaces after error caught

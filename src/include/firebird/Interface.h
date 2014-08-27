@@ -72,19 +72,29 @@ public:
 #define FB_DISPOSABLE_VERSION (FB_VERSIONED_VERSION + 1)
 
 // Interface to work with status vector
-// Created by master interface by request
-// Also may be implemented on stack by internal FB code
 class IStatus : public IDisposable
 {
 public:
-	virtual void FB_CARG set(unsigned int length, const ISC_STATUS* value) = 0;
-	virtual void FB_CARG set(const ISC_STATUS* value) = 0;
-	virtual void FB_CARG init() = 0;
+	static const unsigned FB_HAS_WARNINGS	= 0x01;
+	static const unsigned FB_HAS_ERRORS 	= 0x02;
 
-	virtual const ISC_STATUS* FB_CARG get() const = 0;
-	virtual int FB_CARG isSuccess() const = 0;
+	static const int FB_ERROR = -1;
+	static const int FB_OK = 0;
+	static const int FB_EOF = 1;
+	static const int FB_SEGMENT = 2;
+
+	virtual void FB_CARG init() = 0;
+	virtual unsigned FB_CARG getStatus() const = 0;
+
+	virtual void FB_CARG setErrors(unsigned int length, const ISC_STATUS* value) = 0;
+	virtual void FB_CARG setWarnings(unsigned int length, const ISC_STATUS* value) = 0;
+	virtual void FB_CARG setErrors(const ISC_STATUS* value) = 0;
+	virtual void FB_CARG setWarnings(const ISC_STATUS* value) = 0;
+
+	virtual const ISC_STATUS* FB_CARG getErrors() const = 0;
+	virtual const ISC_STATUS* FB_CARG getWarnings() const = 0;
 };
-#define FB_STATUS_VERSION (FB_DISPOSABLE_VERSION + 5)
+#define FB_STATUS_VERSION (FB_DISPOSABLE_VERSION + 8)
 
 class IProvider;
 class IUtl;

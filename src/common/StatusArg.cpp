@@ -53,7 +53,7 @@ namespace Firebird {
 
 namespace Arg {
 
-Base::Base(ISC_STATUS k, ISC_STATUS c) :
+Base::Base(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
 	implementation(FB_NEW(*getDefaultMemoryPool()) ImplBase(k, c))
 {
 }
@@ -70,18 +70,36 @@ StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw() : 
 	}
 }
 
-StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) :
+StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw() : Base::ImplBase(0, 0)
+{
+	fb_assert(s);
+
+	clear();
+	// special case - empty IStatus
+	if (s->getStatus() != 0)
+	{
+		append(s->getErrors(), FB_NELEM(m_status_vector) - 1);
+		append(s->getWarnings(), FB_NELEM(m_status_vector) - 1);
+	}
+}
+
+StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(k, c))
 {
 	operator<<(*(static_cast<Base*>(this)));
 }
 
-StatusVector::StatusVector(const ISC_STATUS* s) :
+StatusVector::StatusVector(const ISC_STATUS* s) throw(Firebird::BadAlloc) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s))
 {
 }
 
-StatusVector::StatusVector() :
+StatusVector::StatusVector(const IStatus* s) throw(Firebird::BadAlloc) :
+	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s))
+{
+}
+
+StatusVector::StatusVector() throw(Firebird::BadAlloc) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(0, 0))
 {
 }
@@ -150,6 +168,19 @@ bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const 
 		fb_utils::copyStatus(&m_status_vector[m_length], FB_NELEM(m_status_vector) - m_length, from, count);
 	m_length += copied;
 
+	if (!m_warning)
+	{
+		for (unsigned n = 0; n < m_length; )
+		{
+			if (m_status_vector[n] == isc_arg_warning)
+			{
+				m_warning = n;
+				break;
+			}
+			n += (m_status_vector[n] == isc_arg_cstring) ? 3 : 2;
+		}
+	}
+
 	return copied == count;
 }
 
@@ -212,16 +243,23 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 
 ISC_STATUS StatusVector::ImplStatusVector::copyTo(IStatus* dest) const throw()
 {
+	dest->init();
 	if (hasData())
 	{
-		dest->set(length() + 1u, value());
+		const ISC_STATUS* v = m_status_vector;
+		unsigned int length = m_length;
+		unsigned int warning = m_warning;
+
+		if (v[warning] == isc_arg_warning)
+		{
+			 dest->setWarnings(length - warning, &v[warning]);
+			 if (warning)
+				dest->setErrors(warning, v);
+		}
+		else
+			dest->setErrors(length, v);
 	}
-	else
-	{
-		ISC_STATUS t[3] = {isc_arg_gds, FB_SUCCESS, isc_arg_end};
-		dest->set(3, t);
-	}
-	return dest->get()[1];
+	return m_status_vector[1];
 }
 
 Gds::Gds(ISC_STATUS s) throw() :

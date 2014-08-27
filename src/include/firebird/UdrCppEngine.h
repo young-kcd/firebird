@@ -195,7 +195,7 @@ namespace Firebird
 		ISC_STATUS statusVector[] = {	\
 			isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) "Unrecognized C++ exception",	\
 			isc_arg_end};	\
-		status->set(statusVector);	\
+		status->setErrors(statusVector);	\
 	}
 
 
@@ -258,7 +258,8 @@ public:
 	template <typename T>
 	static T check(IStatus* status, T value)
 	{
-		check(status->get());
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+			StatusException::check(status->getErrors());		// !!! loose warnings!
 		return value;
 	}
 
@@ -270,7 +271,7 @@ public:
 
 	void stuff(IStatus* status) const
 	{
-		status->set(statusVector);
+		status->setErrors(statusVector);
 	}
 
 private:
@@ -282,7 +283,7 @@ class StatusImpl : public IStatus
 public:
 	StatusImpl(IMaster* master)
 		: delegate(master->getStatus()),
-		  success(true)
+		  state(0)
 	{
 	}
 
@@ -302,44 +303,61 @@ public:
 		delete this;
 	}
 
-	virtual void FB_CARG set(unsigned int length, const ISC_STATUS* value)
+	virtual void FB_CARG setErrors(const ISC_STATUS* value)
 	{
-		delegate->set(length, value);
-		success = delegate->isSuccess();
+		delegate->setErrors(value);
+		state = delegate->getStatus();
 	}
 
-	virtual void FB_CARG set(const ISC_STATUS* value)
+	virtual void FB_CARG setWarnings(const ISC_STATUS* value)
 	{
-		delegate->set(value);
-		success = delegate->isSuccess();
+		delegate->setWarnings(value);
+		state = delegate->getStatus();
+	}
+
+	virtual void FB_CARG setErrors(unsigned length, const ISC_STATUS* value)
+	{
+		delegate->setErrors(length, value);
+		state = delegate->getStatus();
+	}
+
+	virtual void FB_CARG setWarnings(unsigned length, const ISC_STATUS* value)
+	{
+		delegate->setWarnings(length, value);
+		state = delegate->getStatus();
 	}
 
 	virtual void FB_CARG init()
 	{
 		delegate->init();
-		success = true;
+		state = 0;
 	}
 
-	virtual const ISC_STATUS* FB_CARG get() const
+	virtual const ISC_STATUS* FB_CARG getErrors() const
 	{
-		return delegate->get();
+		return delegate->getErrors();
 	}
 
-	virtual int FB_CARG isSuccess() const
+	virtual const ISC_STATUS* FB_CARG getWarnings() const
 	{
-		return success;
+		return delegate->getWarnings();
+	}
+
+	virtual unsigned FB_CARG getStatus() const
+	{
+		return state;
 	}
 
 public:
 	void check()
 	{
-		if (!success)
-			StatusException::check(delegate->get());
+		if (state & IStatus::FB_HAS_ERRORS)
+			StatusException::check(delegate->getErrors());
 	}
 
 private:
 	IStatus* delegate;
-	bool success;
+	unsigned state;
 };
 
 

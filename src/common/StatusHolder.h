@@ -40,45 +40,93 @@ class BaseStatus : public IStatus
 {
 public:
 	// IStatus implementation
-	virtual void FB_CARG set(const ISC_STATUS* value)
-	{
-		set(fb_utils::statusLength(value), value);
-	}
-
-	virtual void FB_CARG set(unsigned int length, const ISC_STATUS* value)
-	{
-		fb_utils::copyStatus(vector, FB_NELEM(vector), value, length);
-	}
-
 	virtual void FB_CARG init()
 	{
-		fb_utils::init_status(vector);
+		errors.init();
+		warnings.init();
 	}
 
-	virtual const ISC_STATUS* FB_CARG get() const
+	virtual void FB_CARG setErrors(const ISC_STATUS* value)
 	{
-		return vector;
+		errors.set(fb_utils::statusLength(value), value);
 	}
 
-	virtual int FB_CARG isSuccess() const
+	virtual void FB_CARG setErrors(unsigned int length, const ISC_STATUS* value)
 	{
-		return vector[1] == 0;
+		errors.set(length, value);
+	}
+
+	virtual void FB_CARG setWarnings(const ISC_STATUS* value)
+	{
+		warnings.set(fb_utils::statusLength(value), value);
+	}
+
+	virtual void FB_CARG setWarnings(unsigned int length, const ISC_STATUS* value)
+	{
+		warnings.set(length, value);
+	}
+
+	virtual const ISC_STATUS* FB_CARG getErrors() const
+	{
+		return errors.get();
+	}
+
+	virtual const ISC_STATUS* FB_CARG getWarnings() const
+	{
+		return warnings.get();
+	}
+
+	virtual unsigned FB_CARG getStatus() const
+	{
+		return (errors.vector[1] ? FB_HAS_ERRORS : 0) |
+			   (warnings.vector[1] ? FB_HAS_WARNINGS  : 0);
 	}
 
 public:
 	BaseStatus()
-	{
-		init();
-	}
+	{ }
 
 	void check()
 	{
-		if (!isSuccess())
-			status_exception::raise(get());
+		errors.check();
 	}
 
 private:
-	ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
+	class ErrorVector
+	{
+	public:
+		ErrorVector()
+		{
+			init();
+		}
+
+		~ErrorVector() { }
+
+		void set(unsigned int length, const ISC_STATUS* value)
+		{
+			fb_utils::copyStatus(vector, FB_NELEM(vector), value, length);
+		}
+
+		virtual const ISC_STATUS* FB_CARG get() const
+		{
+			return vector;
+		}
+
+		virtual void FB_CARG init()
+		{
+			fb_utils::init_status(vector);
+		}
+
+		void check()
+		{
+			if (vector[1])
+				status_exception::raise(get());
+		}
+
+		ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
+	};
+
+	ErrorVector errors, warnings;
 };
 
 class LocalStatus : public AutoIface<BaseStatus, FB_STATUS_VERSION>
@@ -97,16 +145,11 @@ typedef HalfStaticArray<ISC_STATUS, ISC_STATUS_LENGTH> SimpleStatusVector;
 class DynamicStatusVector
 {
 public:
-	explicit DynamicStatusVector(const ISC_STATUS* status = NULL)
+	DynamicStatusVector()
 		: m_status_vector(*getDefaultMemoryPool())
 	{
 		ISC_STATUS* s = m_status_vector.getBuffer(ISC_STATUS_LENGTH);
 		fb_utils::init_status(s);
-
-		if (status)
-		{
-			save(status);
-		}
 	}
 
 	~DynamicStatusVector()
@@ -115,7 +158,9 @@ public:
 	}
 
 	ISC_STATUS save(const ISC_STATUS* status);
+	ISC_STATUS save(const IStatus* status);
 	void clear();
+
 
 	ISC_STATUS getError() const
 	{
@@ -145,25 +190,29 @@ private:
 class StatusHolder
 {
 public:
-	explicit StatusHolder(const ISC_STATUS* status = NULL)
-		: m_status_vector(status), m_raised(false)
+	StatusHolder()
+		: m_raised(false)
 	{ }
 
-	ISC_STATUS save(const ISC_STATUS* status);
+	ISC_STATUS save(IStatus* status);
 	void clear();
 	void raise();
 
 	ISC_STATUS getError()
 	{
-		return value()[1];
+		return value()->getErrors()[1];
 	}
 
-	const ISC_STATUS* value()
+	const IStatus* value()
 	{
 		if (m_raised) {
 			clear();
 		}
-		return m_status_vector.value();
+
+		m_rc.init();
+		m_rc.setErrors(m_error.value());
+		m_rc.setWarnings(m_warning.value());
+		return &m_rc;
 	}
 
 	bool isSuccess()
@@ -171,8 +220,17 @@ public:
 		return getError() == 0;
 	}
 
+	const StatusHolder& operator=(const StatusHolder& val)
+	{
+		m_error.save(val.m_error.value());
+		m_warning.save(val.m_warning.value());
+		m_raised = val.m_raised;
+		return *this;
+	}
+
 private:
-	DynamicStatusVector m_status_vector;
+	DynamicStatusVector m_error, m_warning;
+	LocalStatus m_rc;
 	bool m_raised;
 };
 

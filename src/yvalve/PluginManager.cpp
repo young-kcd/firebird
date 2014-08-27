@@ -620,7 +620,7 @@ namespace
 		Firebird::LocalStatus s;
 		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(&s, par);
 
-		if (s.isSuccess())
+		if (!(s.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			plugin->setOwner(par);
 			return plugin;
@@ -974,7 +974,7 @@ namespace
 				}
 
 				next(status);
-				if (!status->isSuccess())
+				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 					break;
 			}
 		}

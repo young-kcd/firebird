@@ -27,9 +27,9 @@ public:
 	{
 		Firebird::LocalStatus st;
 		Firebird::IMessageMetadata* m = out ? stmt->getOutputMetadata(&st) : stmt->getInputMetadata(&st);
-		if (!st.isSuccess())
+		if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
-			Firebird::status_exception::raise(st.get());
+			Firebird::status_exception::raise(&st);
 		}
 		assignRefNoIncr(m);
 	}
@@ -171,13 +171,13 @@ public:
 
 	static void check(Firebird::IStatus* status)
 	{
-		if (!status->isSuccess())
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 #ifdef INTERNAL_FIREBIRD
-			Firebird::status_exception::raise(status->get());
+			Firebird::status_exception::raise(status);
 #else
 			char s[100];
-			const ISC_STATUS* st = status->get();
+			const ISC_STATUS* st = status->getErrors();
 			fb_interpret(s, sizeof(s), &st);
 			fatalErrorHandler(s);
 #endif

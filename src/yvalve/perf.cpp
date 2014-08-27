@@ -536,7 +536,7 @@ found:		;
 		{
 			UCHAR buffer[BUFFER_LARGE];
 			att->getInfo(status, pinfo - info, info, sizeof(buffer), buffer);
-			if (!status->isSuccess())
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				return;
 
 			const UCHAR* p = buffer;

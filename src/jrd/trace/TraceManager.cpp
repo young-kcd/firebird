@@ -282,11 +282,11 @@ void TraceManager::update_session(const TraceSession& session)
 
 			trace_needs |= info->factory->trace_needs();
 		}
-		else if (!status.isSuccess())
+		else if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			string header;
 			header.printf("Trace plugin %s returned error on call trace_create.", info->name);
-			iscLogStatus(header.c_str(), status.get());
+			iscLogStatus(header.c_str(), &status);
 		}
 	}
 }

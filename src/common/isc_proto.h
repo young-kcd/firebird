@@ -25,6 +25,7 @@
 #define JRD_ISC_PROTO_H
 
 #include "../common/classes/fb_string.h"
+#include "firebird/Interface.h"
 
 bool	ISC_check_process_existence(SLONG);
 TEXT*	ISC_get_host(TEXT *, USHORT);
@@ -34,6 +35,7 @@ SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
 
 // Does not add word "Database" in the beginning like gds__log_status
 void	iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector);
+void	iscLogStatus(const TEXT* text, Firebird::IStatus* status);
 void	iscLogException(const TEXT* text, const Firebird::Exception& e);
 
 #ifdef WIN9X_SUPPORT

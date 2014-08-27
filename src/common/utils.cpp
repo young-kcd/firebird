@@ -48,6 +48,7 @@
 #include "../jrd/align.h"
 #include "../common/os/path_utils.h"
 #include "../common/os/fbsyslog.h"
+#include "../common/StatusArg.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -1127,6 +1128,47 @@ unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
 	to[copied] = isc_arg_end;
 
 	return copied;
+}
+
+unsigned int mergeStatus(ISC_STATUS* to, unsigned int space,
+						 const Firebird::IStatus* from) throw()
+{
+	const ISC_STATUS* s;
+	unsigned int copied = 0;
+	int state = from->getStatus();
+
+	if (state & Firebird::IStatus::FB_HAS_ERRORS)
+	{
+		s = from->getErrors();
+		copied = copyStatus(to, space, s, statusLength(s));
+
+		to += copied;
+		space -= copied;
+	}
+
+	if (state & Firebird::IStatus::FB_HAS_WARNINGS)
+	{
+		s = from->getWarnings();
+		copied += copyStatus(to, space, s, statusLength(s));
+	}
+
+	if (!copied)
+		init_status(to);
+
+	return copied;
+}
+
+void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw()
+{
+	try
+	{
+		Firebird::Arg::StatusVector sv(from);
+		sv.copyTo(to);
+	}
+	catch(const Firebird::BadAlloc& ex)
+	{
+		ex.stuffException(to);
+	}
 }
 
 unsigned int statusLength(const ISC_STATUS* const status) throw()

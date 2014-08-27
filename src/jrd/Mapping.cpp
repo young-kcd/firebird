@@ -72,10 +72,10 @@ const char* TYPE_SEEN = "Seen";
 
 void check(const char* s, IStatus* st)
 {
-	if (st->isSuccess())
+	if (!(st->getStatus() & IStatus::FB_HAS_ERRORS))
 		return;
 
-	Arg::StatusVector newStatus(st->get());
+	Arg::StatusVector newStatus(st);
 	newStatus << Arg::Gds(isc_map_load) << s;
 	newStatus.raise();
 }
@@ -280,9 +280,9 @@ public:
 				"	RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 				"FROM RDB$AUTH_MAPPING",
 				3, NULL, NULL, mMap.getMetadata(), NULL);
-			if (!st.isSuccess())
+			if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
-				if (fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))
+				if (fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
 				{
 					// isc_dsql_relation_err when opening cursor - i.e. table RDB$AUTH_MAPPING
 					// is missing due to non-FB3 security DB
@@ -293,7 +293,7 @@ public:
 				check("IAttachment::openCursor", &st);
 			}
 
-			while (curs->fetchNext(&st, mMap.getBuffer()))
+			while (curs->fetchNext(&st, mMap.getBuffer()) == IStatus::FB_OK)
 			{
 				const char* expandedDb = "*";
 				PathName target;
@@ -920,9 +920,9 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					{
 						iSec = prov->attachDatabase(&st, securityAlias,
 							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-						if (!st.isSuccess())
+						if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 						{
-							if (!fb_utils::containsErrorCode(st.get(), isc_io_error))
+							if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
 								check("IProvider::attachDatabase", &st);
 
 							// missing security DB is not a reason to fail mapping
@@ -941,9 +941,9 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 								embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 						}
 
-						if (!st.isSuccess())
+						if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 						{
-							if (!fb_utils::containsErrorCode(st.get(), isc_io_error))
+							if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
 								check("IProvider::attachDatabase", &st);
 
 							// missing DB is not a reason to fail mapping
@@ -1162,9 +1162,9 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
 		att = prov->attachDatabase(&st, dbName,
 			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-		if (!st.isSuccess())
+		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
-			if (!fb_utils::containsErrorCode(st.get(), isc_io_error))
+			if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
 				check("IProvider::attachDatabase", &st);
 
 			// In embedded mode we are not raising any errors - silent return
@@ -1195,9 +1195,9 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 			"	RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 			"FROM RDB$AUTH_MAPPING",
 			3, NULL, NULL, mMap.getMetadata(), NULL);
-		if (!st.isSuccess())
+		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
-			if (!fb_utils::containsErrorCode(st.get(), isc_dsql_relation_err))
+			if (!fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
 				check("IAttachment::openCursor", &st);
 
 			// isc_dsql_relation_err when opening cursor - i.e. table RDB$AUTH_MAPPING
@@ -1215,7 +1215,7 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		buffer = makeBuffer(tdbb);
 		Record* record = buffer->getTempRecord();
 
-		while (curs->fetchNext(&st, mMap.getBuffer()))
+		while (curs->fetchNext(&st, mMap.getBuffer()) == IStatus::FB_OK)
 		{
 			int charset = CS_METADATA;
 			record->nullify();

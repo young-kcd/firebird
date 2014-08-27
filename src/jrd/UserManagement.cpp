@@ -98,11 +98,11 @@ UserManagement::UserManagement(jrd_tra* tra)
 			return att->att_remote_address.c_str();
 		}
 
-		unsigned int FB_CARG authBlock(const unsigned char** bytes)
+		const unsigned char* FB_CARG authBlock(unsigned* length)
 		{
 			const Auth::UserData::AuthenticationBlock& aBlock = att->att_user->usr_auth_block;
-			*bytes = aBlock.getCount() ? aBlock.begin() : NULL;
-			return aBlock.getCount();
+			*length = aBlock.getCount();
+			return aBlock.getCount() ? aBlock.begin() : NULL;
 		}
 
 	private:
@@ -113,9 +113,9 @@ UserManagement::UserManagement(jrd_tra* tra)
 	UserIdInfo idInfo(att);
 	manager->start(&status, &idInfo);
 
-	if (!status.isSuccess())
+	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 	{
-		status_exception::raise(status.get());
+		status_exception::raise(&status);
 	}
 }
 
@@ -134,9 +134,9 @@ UserManagement::~UserManagement()
 		PluginManagerInterfacePtr()->releasePlugin(manager);
 		manager = NULL;
 
-		if (!status.isSuccess())
+		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
-			status_exception::raise(status.get());
+			status_exception::raise(&status);
 		}
 	}
 }
@@ -148,9 +148,9 @@ void UserManagement::commit()
 		LocalStatus status;
 		manager->commit(&status);
 
-		if (!status.isSuccess())
+		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
-			status_exception::raise(status.get());
+			status_exception::raise(&status);
 		}
 
 		PluginManagerInterfacePtr()->releasePlugin(manager);
@@ -183,7 +183,7 @@ void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status,
 	{
 		tmp << userName;
 	}
-	tmp.append(Arg::StatusVector(status->get()));
+	tmp.append(Arg::StatusVector(status));
 
 	tmp.raise();
 }

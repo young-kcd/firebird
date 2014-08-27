@@ -486,7 +486,7 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 {
 	LocalStatus status;
 	const string str(metadata->getEntryPoint(&status));
-	StatusException::check(status.get());
+	StatusException::check(status.getErrors());
 
 	const string::size_type pos = str.find('!');
 	if (pos == string::npos)
