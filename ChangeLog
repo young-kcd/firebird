@@ -1,3 +1,111 @@
+ 2014-08-27 14:51  dimitr 
+   M src/include/gen/ids.h
+   M src/jrd/Monitoring.cpp
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/jrd/vio.cpp
+Added counter for record refetches (aka repeated reads).
+
+ 2014-08-27 13:32  dimitr 
+   M src/common/classes/alloc.cpp
+Misc.
+
+ 2014-08-27 12:56  dimitr 
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/vio.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Added specific error code for read conflicts in RC NO_REC_VER mode. Added missing conflict counting.
+
+ 2014-08-27 09:24  alexpeshkoff 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M examples/interfaces/01.create.cpp
+   M examples/interfaces/02.update.cpp
+   M examples/interfaces/03.select.cpp
+   M examples/interfaces/04.print_table.cpp
+   M examples/udr/UdrCppExample.cpp
+   M src/auth/AuthDbg.cpp
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/BigInteger.cpp
+   M src/common/CsConvert.h
+   M src/common/MsgMetadata.h
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/StatusHolder.cpp
+   M src/common/StatusHolder.h
+   M src/common/UtilSvc.cpp
+   M src/common/call_service.cpp
+   M src/common/classes/BlrReader.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/cvt.cpp
+   M src/common/db_alias.cpp
+   M src/common/dsc.cpp
+   M src/common/fb_exception.cpp
+   M src/common/isc.cpp
+   M src/common/isc_proto.h
+   M src/common/os/os_utils.h
+   M src/common/unicode_util.cpp
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/dsql.cpp
+   M src/gpre/obj_cxx.cpp
+   M src/include/fb_exception.h
+   M src/include/fb_types.h
+   M src/include/firebird/Auth.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird/Provider.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/isql/extract.epp
+   M src/isql/isql.epp
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/perf.cpp
+   M src/yvalve/preparse.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Divide IStatus information into 3 parts: errors, warnings and completion code.
+Errors and warnings are processed in IStatus independently. Completion code
+is moved away from IStatus and returned directly by appropriate functions.
+Replaced isSuccess() with more generic function getStatus(), which sets
+appropriate bits in returned value when errors/warnings are present.
+Also use same style when returning bytes' array and it's length in different
+interfaces.
+
  2014-08-26 14:16  dimitr 
    M src/common/ThreadStart.h
 Quick fix for the Windows build.
