@@ -43,6 +43,8 @@
 #include "../common/classes/ImplementHelper.h"
 #include "firebird/Timer.h"
 
+#include "../remote/remot_proto.h"
+
 #define PLUG_MODULE 1
 
 using namespace Firebird;
@@ -514,11 +516,15 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 #else
 		instance->handler();
 #endif
+		HANDSHAKE_DEBUG(fprintf(stderr, "LegacyServer: verify=%d\n", rc));
 		return rc;
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(status);
+		HANDSHAKE_DEBUG(fprintf(stderr, "LegacyServer: exception status %d\n", status->getStatus()));
+		HANDSHAKE_DEBUG(isc_print_status(status->getErrors()));
+		HANDSHAKE_DEBUG(isc_print_status(status->getWarnings()));
 		return AUTH_FAILED;
 	}
 }

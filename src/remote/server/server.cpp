@@ -1806,6 +1806,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 						&port->port_srv_auth_block->authBlockWriter))
 					{
 					case Auth::AUTH_SUCCESS:
+						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_SUCCESS\n"));
 						loginSuccess(port->port_login, port->getRemoteId());
 						port->port_srv_auth_block->authCompleted(true);
 						send->p_acpd.p_acpt_authenticated = 1;
@@ -1813,6 +1814,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 						break;
 
 					case Auth::AUTH_CONTINUE:
+						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_CONTINUE\n"));
 						// try next plugin
 						plugins->next();
 						if (!plugins->hasData())
@@ -1828,12 +1830,14 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 						break;
 
 					case Auth::AUTH_MORE_DATA:
+						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_MORE_DATA\n"));
 						port->port_srv_auth_block->extractPluginName(&send->p_acpd.p_acpt_plugin);
 						port->port_srv_auth_block->extractDataFromPluginTo(&send->p_acpd.p_acpt_data);
 						returnData = true;
 						break;
 
 					case Auth::AUTH_FAILED:
+						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_FAILED\n"));
 						setErrorStatus(&status);
 						accepted = false;
 						loginFail(port->port_login, port->getRemoteId());
