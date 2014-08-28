@@ -9297,6 +9297,9 @@ bool CreateFilterNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 // Define a blob filter.
 void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
+	MetaName ownerName(tdbb->getAttachment()->att_user->usr_user_name);
+	ownerName.upper7();
+
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -9308,6 +9311,7 @@ void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 		X IN RDB$FILTERS
 	{
 		strcpy(X.RDB$FUNCTION_NAME, name.c_str());
+		strcpy(X.RDB$OWNER_NAME, ownerName.c_str());
 		X.RDB$SYSTEM_FLAG = 0;
 		moduleName.copyTo(X.RDB$MODULE_NAME, sizeof(X.RDB$MODULE_NAME));
 		entryPoint.copyTo(X.RDB$ENTRYPOINT, sizeof(X.RDB$ENTRYPOINT));
@@ -11044,9 +11048,6 @@ bool AlterDatabaseNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
-	if (!tdbb->getAttachment()->locksmith())
-		status_exception::raise(Arg::Gds(isc_adm_task_denied));
-
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 

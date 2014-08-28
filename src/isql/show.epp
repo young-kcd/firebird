@@ -1330,6 +1330,11 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				if (first && optional_msg)
 					isqlGlob.prints(optional_msg);
 
+				// re-initialize strings
+				priv_string[0] = '\0';
+				with_option[0] = '\0';
+				priv_flags = 0;
+
 				first = false;
 				fb_utils::exact_name(PRV.RDB$USER);
 

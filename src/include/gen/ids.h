@@ -278,6 +278,7 @@
 	const USHORT  f_flt_output = 5;
 	const USHORT  f_flt_sys_flag = 6;
 	const USHORT  f_flt_class = 7;
+	const USHORT  f_flt_owner = 8;
 
 
 // Relation 17 (RDB$TRIGGER_MESSAGES)

@@ -168,6 +168,7 @@ enum irq_type_t
 	irq_grant15,			// process grant option (generators)
 	irq_grant16,			// process grant option (domains)
 	irq_grant17,			// process grant option (database)
+	irq_grant18,			// process grant option (filters)
 	irq_l_curr_format,		// lookup table's current format
 
 	irq_linger,				// get database linger value
