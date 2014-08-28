@@ -55,7 +55,7 @@ bool	VIO_writelock(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void	VIO_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, MemoryPool*, bool);
 Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*, MemoryPool*);
-void	VIO_refetch_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
+bool	VIO_refetch_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, bool);
 void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceSweepEvent*);

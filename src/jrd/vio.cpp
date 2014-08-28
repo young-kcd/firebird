@@ -1357,7 +1357,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	if (rpb->rpb_stream_flags & RPB_s_refetch)
 	{
 		rpb->rpb_stream_flags |= RPB_s_refetch_no_undo;
-		VIO_refetch_record(tdbb, rpb, transaction);
+		VIO_refetch_record(tdbb, rpb, transaction, false);
 		rpb->rpb_stream_flags &= ~(RPB_s_refetch | RPB_s_refetch_no_undo);
 	}
 
@@ -2417,7 +2417,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	if (org_rpb->rpb_stream_flags & RPB_s_refetch)
 	{
 		org_rpb->rpb_stream_flags |= RPB_s_refetch_no_undo;
-		VIO_refetch_record(tdbb, org_rpb, transaction);
+		VIO_refetch_record(tdbb, org_rpb, transaction, false);
 		org_rpb->rpb_stream_flags &= ~(RPB_s_refetch | RPB_s_refetch_no_undo);
 	}
 
@@ -2943,7 +2943,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, Mem
 }
 
 
-void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
+bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, bool writelock)
 {
 /**************************************
  *
@@ -2965,8 +2965,11 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	const TraNumber tid_fetch = rpb->rpb_transaction_nr;
 
 	if (!DPM_get(tdbb, rpb, LCK_read) ||
-		!VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), false))
+		!VIO_chase_record_version(tdbb, rpb, transaction, tdbb->getDefaultPool(), writelock))
 	{
+		if (writelock)
+			return false;
+
 		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
 
@@ -2979,7 +2982,9 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 	// make sure the record has not been updated.  Also, punt after
 	// VIO_data() call which will release the page.
 
-	if ((transaction->tra_flags & TRA_read_committed) && (tid_fetch != rpb->rpb_transaction_nr) &&
+	if (!writelock &&
+		(transaction->tra_flags & TRA_read_committed) &&
+		(tid_fetch != rpb->rpb_transaction_nr) &&
 		// added to check that it was not current transaction,
 		// who modified the record. Alex P, 18-Jun-03
 		(rpb->rpb_transaction_nr != transaction->tra_number))
@@ -2990,6 +2995,8 @@ void VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 				 Arg::Gds(isc_update_conflict) <<
 				 Arg::Gds(isc_concurrent_transaction) << Arg::Num(rpb->rpb_transaction_nr));
 	}
+
+	return true;
 }
 
 

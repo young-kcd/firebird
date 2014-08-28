@@ -210,21 +210,14 @@ bool RecordStream::refetchRecord(thread_db* tdbb) const
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
-	record_param* const org_rpb = &request->req_rpb[m_stream];
+	record_param* const rpb = &request->req_rpb[m_stream];
 
-	if (org_rpb->rpb_stream_flags & RPB_s_refetch)
+	if (rpb->rpb_stream_flags & RPB_s_refetch)
 	{
-		if (!DPM_get(tdbb, org_rpb, LCK_read) ||
-			!VIO_chase_record_version(tdbb, org_rpb, transaction, tdbb->getDefaultPool(), true))
-		{
+		if (!VIO_refetch_record(tdbb, rpb, transaction, true))
 			return false;
-		}
 
-		VIO_data(tdbb, org_rpb, tdbb->getDefaultPool());
-
-		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
-
-		tdbb->bumpRelStats(RuntimeStatistics::RECORD_RPT_READS, org_rpb->rpb_relation->rel_id);
+		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
 	return true;
@@ -235,14 +228,14 @@ bool RecordStream::lockRecord(thread_db* tdbb) const
 	jrd_req* const request = tdbb->getRequest();
 	jrd_tra* const transaction = request->req_transaction;
 
-	record_param* const org_rpb = &request->req_rpb[m_stream];
-	jrd_rel* const relation = org_rpb->rpb_relation;
+	record_param* const rpb = &request->req_rpb[m_stream];
+	jrd_rel* const relation = rpb->rpb_relation;
 
 	fb_assert(relation && !relation->rel_view_rse);
 
 	RLCK_reserve_relation(tdbb, transaction, relation, true);
 
-	return VIO_writelock(tdbb, org_rpb, transaction);
+	return VIO_writelock(tdbb, rpb, transaction);
 }
 
 void RecordStream::markRecursive()

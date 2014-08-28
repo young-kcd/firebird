@@ -2275,7 +2275,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 	if (rpb->rpb_stream_flags & RPB_s_refetch)
 	{
-		VIO_refetch_record(tdbb, rpb, transaction);
+		VIO_refetch_record(tdbb, rpb, transaction, false);
 		rpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
@@ -5844,7 +5844,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	if (orgRpb->rpb_stream_flags & RPB_s_refetch)
 	{
-		VIO_refetch_record(tdbb, orgRpb, transaction);
+		VIO_refetch_record(tdbb, orgRpb, transaction, false);
 		orgRpb->rpb_stream_flags &= ~RPB_s_refetch;
 	}
 
