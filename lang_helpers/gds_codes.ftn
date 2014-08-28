@@ -1602,6 +1602,8 @@ C --
       PARAMETER (GDS__dyn_no_priv                      = 335545094)
       INTEGER*4 GDS__dsql_cant_grant_option          
       PARAMETER (GDS__dsql_cant_grant_option           = 335545095)
+      INTEGER*4 GDS__read_conflict                   
+      PARAMETER (GDS__read_conflict                    = 335545096)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 
