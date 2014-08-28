@@ -74,6 +74,8 @@ inline const char* get_object_name(int object_type)
 {
 	switch (object_type)
 	{
+		case obj_database:
+			return "SQL$DATABASE";
 		case obj_relations:
 			return "SQL$TABLES";
 		case obj_views:
