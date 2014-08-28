@@ -1148,6 +1148,13 @@ unsigned int mergeStatus(ISC_STATUS* to, unsigned int space,
 
 	if (state & Firebird::IStatus::FB_HAS_WARNINGS)
 	{
+		if (!copied)
+		{
+			init_status(to);
+			to += 2;
+			space -= 2;
+			copied += 2;
+		}
 		s = from->getWarnings();
 		copied += copyStatus(to, space, s, statusLength(s));
 	}
