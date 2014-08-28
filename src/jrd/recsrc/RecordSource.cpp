@@ -223,6 +223,8 @@ bool RecordStream::refetchRecord(thread_db* tdbb) const
 		VIO_data(tdbb, org_rpb, tdbb->getDefaultPool());
 
 		org_rpb->rpb_stream_flags &= ~RPB_s_refetch;
+
+		tdbb->bumpRelStats(RuntimeStatistics::RECORD_RPT_READS, org_rpb->rpb_relation->rel_id);
 	}
 
 	return true;
