@@ -398,6 +398,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 	Record* gc_rec1 = NULL;
 
+	RuntimeStatistics::Accumulator backversions(tdbb, relation,
+												RuntimeStatistics::RECORD_BACKVERSION_READS);
+
 	if (rpb->rpb_b_page)
 	{
 		temp.rpb_record = gc_rec1 = VIO_gc_record(tdbb, relation);
@@ -421,6 +424,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 				fb_utils::init_status(tdbb->tdbb_status_vector);
 				continue;
 			}
+
+			++backversions;
 
 			if (temp.rpb_flags & rpb_deleted)
 				CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
@@ -653,8 +658,6 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			rpb->rpb_flags &= ~rpb_gc_active;
 	}
 
-	RuntimeStatistics::Accumulator versions(tdbb, relation, RuntimeStatistics::RECORD_VERSION_READS);
-
 	rpb->rpb_stream_flags &= ~RPB_s_undo_data;
 	int forceBack = 0;
 
@@ -682,13 +685,15 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		if (gcPolicyBackground && rpb->rpb_b_page)
 			notify_garbage_collector(tdbb, rpb);
 
-		++versions;
 		return true;
 	}
 
 	// OK, something about the record is fishy.  Loop thru versions until a
 	// satisfactory version is found or we run into a brick wall.  Do any
 	// garbage collection that seems appropriate.
+
+	RuntimeStatistics::Accumulator backversions(tdbb, relation,
+												RuntimeStatistics::RECORD_BACKVERSION_READS);
 
 	// First, save the record indentifying information to be restored on exit
 
@@ -702,7 +707,6 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 			rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
-		++versions;
 
 		if (rpb->rpb_flags & rpb_damaged)
 		{
@@ -867,6 +871,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 					if (!DPM_get(tdbb, rpb, LCK_read))
 						return false;
 				}
+
+				++backversions;
 				break;
 			}
 
@@ -932,6 +938,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 						return false;
 				}
 
+				++backversions;
 				break;
 			}
 			else
@@ -996,6 +1003,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 						if (!DPM_get(tdbb, rpb, LCK_read))
 							return false;
 					}
+
+					++backversions;
 				}
 			}
 			break;
@@ -4867,6 +4876,9 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 	int max_depth = 0;
 	int depth = 0;
 
+	RuntimeStatistics::Accumulator backversions(tdbb, rpb->rpb_relation,
+												RuntimeStatistics::RECORD_BACKVERSION_READS);
+
 	for (;;)
 	{
 		// Each time thru the loop, start from the latest version of the record
@@ -4923,7 +4935,9 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
 				timed_out = true;
 				break;
 			}
-			depth++;
+
+			++backversions;
+			++depth;
 
 			// Don't monopolize the server while chasing long back version chains.
 			if (--tdbb->tdbb_quantum < 0)

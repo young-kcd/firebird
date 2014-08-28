@@ -581,7 +581,7 @@
 	const USHORT  f_mon_rec_locks = 10;
 	const USHORT  f_mon_rec_waits = 11;
 	const USHORT  f_mon_rec_conflicts = 12;
-	const USHORT  f_mon_rec_ver_reads = 13;
+	const USHORT  f_mon_rec_bkver_reads = 13;
 	const USHORT  f_mon_rec_frg_reads = 14;
 	const USHORT  f_mon_rec_rpt_reads = 15;
 
