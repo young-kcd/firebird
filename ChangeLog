@@ -1,3 +1,53 @@
+ 2014-08-28 15:53  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/vio.cpp
+   M src/jrd/vio_proto.h
+Minor refactoring.
+
+ 2014-08-28 15:34  dimitr 
+   M src/jrd/recsrc/RecordSource.cpp
+Fixed missing encounting for record refetches.
+
+ 2014-08-28 15:16  dimitr 
+   M src/include/gen/ids.h
+   M src/jrd/Monitoring.cpp
+   M src/jrd/RuntimeStatistics.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/jrd/vio.cpp
+Minor adjustments to the performance counters. Work in progress.
+
+ 2014-08-28 12:19  roman-simakov 
+   M src/dsql/DdlNodes.epp
+   M src/include/gen/ids.h
+   M src/isql/show.epp
+   M src/jrd/grant.epp
+   M src/jrd/irq.h
+   M src/jrd/relations.h
+Fixed CORE-4522 - DDL permission do not protect
+against removal BLOB filters. Owner was added to RDB$FILTERS. ODS is changed.
+Fixed bug when one DDL privilege could be shown several times.
+Removed unneccesary check of locksmith in alter database.
+
+ 2014-08-28 09:30  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/remote/server/server.cpp
+Minor debug enhancement
+
+ 2014-08-28 09:02  alexpeshkoff 
+   M src/common/utils.cpp
+Fixed merge of IStatus into old status vector format - thanks to Pavel
+
+ 2014-08-28 08:55  alexpeshkoff 
+   M src/jrd/obj.h
+Added missing name
+
+ 2014-08-28 07:27  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+misc
+
  2014-08-27 14:51  dimitr 
    M src/include/gen/ids.h
    M src/jrd/Monitoring.cpp
