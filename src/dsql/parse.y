@@ -847,6 +847,14 @@ grant0($node)
 			$node->grantor = $6;
 			$node->isDdl = true;
 		}
+	| db_ddl_privileges(NOTRIAL(&$node->privileges)) DATABASE
+			TO non_role_grantee_list(NOTRIAL(&$node->users)) grant_option granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_database, get_object_name(obj_database));
+			$node->grantAdminOption = $5;
+			$node->grantor = $6;
+			$node->isDdl = true;
+		}
 	| role_name_list(NOTRIAL(&$node->roles)) TO role_grantee_list(NOTRIAL(&$node->users))
 			role_admin_option granted_by
 		{
@@ -877,8 +885,6 @@ object
 		{ $$ = newNode<GranteeClause>(obj_exceptions, get_object_name(obj_exceptions)); }
 	| ROLE
 		{ $$ = newNode<GranteeClause>(obj_roles, get_object_name(obj_roles)); }
-	| DATABASE
-		{ $$ = newNode<GranteeClause>(obj_database, get_object_name(obj_database)); }
 	| CHARACTER SET
 		{ $$ = newNode<GranteeClause>(obj_charsets, get_object_name(obj_charsets)); }
 	| COLLATION
@@ -950,6 +956,28 @@ ddl_privilege($privilegeArray)
 	: CREATE						{ $privilegeArray->add(PrivilegeClause('C', NULL)); }
 	| ALTER ANY						{ $privilegeArray->add(PrivilegeClause('L', NULL)); }
 	| DROP ANY						{ $privilegeArray->add(PrivilegeClause('O', NULL)); }
+	;
+
+%type db_ddl_privileges(<privilegeArray>)
+db_ddl_privileges($privilegeArray)
+	: ALL privileges_opt
+		{
+			$privilegeArray->add(PrivilegeClause('L', NULL));
+			$privilegeArray->add(PrivilegeClause('O', NULL));
+		}
+	| db_ddl_privilege_list($privilegeArray)
+	;
+
+%type db_ddl_privilege_list(<privilegeArray>)
+db_ddl_privilege_list($privilegeArray)
+	: db_ddl_privilege($privilegeArray)
+	| db_ddl_privilege_list ',' db_ddl_privilege($privilegeArray)
+	;
+
+%type db_ddl_privilege(<privilegeArray>)
+db_ddl_privilege($privilegeArray)
+	| ALTER							{ $privilegeArray->add(PrivilegeClause('L', NULL)); }
+	| DROP							{ $privilegeArray->add(PrivilegeClause('O', NULL)); }
 	;
 
 %type <boolVal> grant_option
