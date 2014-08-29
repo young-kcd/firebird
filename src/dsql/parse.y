@@ -1101,6 +1101,14 @@ revoke0($node)
 			$node->grantor = $6;
 			$node->isDdl = true;
 		}
+	| rev_grant_option db_ddl_privileges(NOTRIAL(&$node->privileges)) DATABASE
+			FROM non_role_grantee_list(NOTRIAL(&$node->users)) granted_by
+		{
+			$node->object = newNode<GranteeClause>(obj_database, get_object_name(obj_database));
+			$node->grantAdminOption = $1;
+			$node->grantor = $6;
+			$node->isDdl = true;
+		}
 	| rev_admin_option role_name_list(NOTRIAL(&$node->roles))
 			FROM role_grantee_list(NOTRIAL(&$node->users)) granted_by
 		{
