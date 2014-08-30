@@ -1,3 +1,11 @@
+ 2014-08-29 11:15  roman-simakov 
+   M src/dsql/parse.y
+Removed ANY keyword in DDL REVOKE permission statements for DATABASE
+
+ 2014-08-29 09:05  roman-simakov 
+   M src/dsql/parse.y
+Removed ANY keyword in DDL permission statements for DATABASE
+
  2014-08-28 15:53  dimitr 
    M src/dsql/StmtNodes.cpp
    M src/jrd/recsrc/RecordSource.cpp
