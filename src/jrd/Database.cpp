@@ -248,14 +248,14 @@ namespace Jrd
 	{
 		fb_assert(space < TOTAL_ITEMS);
 		ValueCache* const counter = &m_counters[space];
-/*
+
 		if (m_localOnly)
 		{
 			SLONG result = 0;
 			while ( !(result = (SLONG) ++counter->curVal) );
 			return result;
 		}
-*/
+
 		Database* const dbb = tdbb->getDatabase();
 		SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::SharedCounter::generate");
 
