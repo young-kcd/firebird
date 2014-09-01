@@ -2090,6 +2090,8 @@ bool VIO_get_current(thread_db* tdbb,
 
 	rec_tx_active = false;
 
+	bool counted = false;
+
 	while (true)
 	{
 		// If the record doesn't exist, no problem.
@@ -2112,6 +2114,12 @@ bool VIO_get_current(thread_db* tdbb,
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 		else
 			VIO_data(tdbb, rpb, pool);
+
+		if (!counted)
+		{
+			tdbb->bumpRelStats(RuntimeStatistics::RECORD_IDX_READS, rpb->rpb_relation->rel_id);
+			counted = true;
+		}
 
 		// If we deleted the record, everything's fine, otherwise
 		// the record must be considered real.
