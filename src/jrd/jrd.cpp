@@ -1532,8 +1532,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				}
 
 				options.setBuffers(dbb->dbb_config);
-				CCH_init(tdbb, options.dpb_buffers,
-					config->getSharedCache() && !config->getSharedDatabase());
+				CCH_init(tdbb, options.dpb_buffers);
 
 				dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
 
@@ -1760,7 +1759,7 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			if (options.dpb_set_page_buffers)
 			{
-				if (dbb->dbb_config->getSharedCache())
+				if (dbb->dbb_flags & DBB_shared)
 					validateAccess(attachment);
 
 				if (attachment->locksmith())
@@ -2603,8 +2602,7 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 				dbb->dbb_page_buffers = options.dpb_page_buffers;
 
 			options.setBuffers(dbb->dbb_config);
-			CCH_init(tdbb, options.dpb_buffers,
-				config->getSharedCache() && !config->getSharedDatabase());
+			CCH_init(tdbb, options.dpb_buffers);
 
 			// NS: Use alias as database ID only if accessing database using file name is not possible.
 			//
@@ -5932,6 +5930,8 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 	Database* dbb = NULL;
 	JAttachment* jAtt;
 
+	bool shared = false;
+
 	{	// scope
 		MutexLockGuard listGuard(databases_mutex, FB_FUNCTION);
 
@@ -5943,6 +5943,8 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 					"SharedDatabase and SharedCache settings cannot be both enabled at once";
 				ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << Arg::Str(errorMsg));
 			}
+
+			shared = true;
 
 			dbb = databases;
 			while (dbb)
@@ -6002,7 +6004,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 		Config::merge(config, &options.dpb_config);
 
-		dbb = Database::create(pConf);
+		dbb = Database::create(pConf, shared);
 		dbb->dbb_config = config;
 		dbb->dbb_filename = expanded_name;
 
@@ -6033,28 +6035,24 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 	if ((dbb->dbb_flags & (DBB_gc_cooperative | DBB_gc_background)) == 0)
 	{
-		if (!dbb->dbb_config->getSharedCache()) {
-			dbb->dbb_flags |= DBB_gc_cooperative;
-		}
-		else
+		if (dbb->dbb_flags & DBB_shared)
 		{
 			string gc_policy = dbb->dbb_config->getGCPolicy();
 			gc_policy.lower();
-			if (gc_policy == GCPolicyCooperative) {
+			if (gc_policy == GCPolicyCooperative)
 				dbb->dbb_flags |= DBB_gc_cooperative;
-			}
-			else if (gc_policy == GCPolicyBackground) {
+			else if (gc_policy == GCPolicyBackground)
 				dbb->dbb_flags |= DBB_gc_background;
-			}
-			else if (gc_policy == GCPolicyCombined) {
+			else if (gc_policy == GCPolicyCombined)
 				dbb->dbb_flags |= DBB_gc_cooperative | DBB_gc_background;
-			}
 			else // config value is invalid
 			{
 				// this should not happen - means bug in config
 				fb_assert(false);
 			}
 		}
+		else
+			dbb->dbb_flags |= DBB_gc_cooperative;
 	}
 
 	return jAtt;
@@ -6476,7 +6474,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 		(!(engineShutdown || (dbb->dbb_ast_flags & DBB_shutdown))) &&
 		(dbb->dbb_linger_seconds > 0) &&
 		(MasterInterfacePtr()->serverMode(-1) == 1) &&	// multiuser server
-		dbb->dbb_config->getSharedCache())
+		(dbb->dbb_flags & DBB_shared))
 	{
 		if (!dbb->dbb_linger_timer)
 			dbb->dbb_linger_timer = new Database::Linger(dbb);

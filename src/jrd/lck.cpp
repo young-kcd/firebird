@@ -103,7 +103,7 @@ inline LOCK_OWNER_T LCK_OWNER_ID_DBB(thread_db* tdbb)
 
 inline LOCK_OWNER_T LCK_OWNER_ID_ATT(thread_db* tdbb)
 {
-	if (tdbb->getDatabase()->dbb_config->getSharedCache())
+	if (tdbb->getDatabase()->dbb_flags & DBB_shared)
 		return (LOCK_OWNER_T) getpid() << 32 | tdbb->getAttachment()->att_lock_owner_id;
 
 	return (LOCK_OWNER_T) getpid() << 32 | tdbb->getDatabase()->dbb_lock_owner_id;
@@ -116,7 +116,7 @@ inline SLONG* LCK_OWNER_HANDLE_DBB(thread_db* tdbb)
 
 inline SLONG* LCK_OWNER_HANDLE_ATT(thread_db* tdbb)
 {
-	if (tdbb->getDatabase()->dbb_config->getSharedCache())
+	if (tdbb->getDatabase()->dbb_flags & DBB_shared)
 		return &tdbb->getAttachment()->att_lock_owner_handle;
 
 	return &tdbb->getDatabase()->dbb_lock_owner_handle;

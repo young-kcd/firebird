@@ -789,7 +789,7 @@ void Monitoring::putDatabase(SnapshotData::DumpRecord& record, const Database* d
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));
 	writer.putRecord(record);
 
-	if (Config::getSharedCache())
+	if (database->dbb_flags & DBB_shared)
 	{
 		putStatistics(record, database->dbb_stats, writer, stat_id, stat_database);
 		putMemoryUsage(record, database->dbb_memory_stats, writer, stat_id, stat_database);
@@ -874,7 +874,7 @@ void Monitoring::putAttachment(SnapshotData::DumpRecord& record, const Jrd::Atta
 
 	writer.putRecord(record);
 
-	if (Config::getSharedCache())
+	if (attachment->att_database->dbb_flags & DBB_shared)
 	{
 		putStatistics(record, attachment->att_stats, writer, stat_id, stat_attachment);
 		putMemoryUsage(record, attachment->att_memory_stats, writer, stat_id, stat_attachment);

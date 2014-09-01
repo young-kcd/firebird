@@ -215,6 +215,7 @@ const ULONG DBB_gc_background			= 0x20000L;		// background garbage collection by
 const ULONG DBB_no_fs_cache				= 0x40000L;		// Not using file system cache
 const ULONG DBB_sweep_starting			= 0x80000L;		// Auto-sweep is starting
 const ULONG DBB_creating				= 0x100000L;	// Database creation is in progress
+const ULONG DBB_shared					= 0x200000L;	// Database object is shared among connections
 
 //
 // dbb_ast_flags
@@ -234,13 +235,13 @@ class Database : public pool_alloc<type_dbb>
 public:
 	class SharedCounter
 	{
-		static const ULONG DEFAULT_CACHE_SIZE = 16;
+		static const ULONG DEFAULT_CACHE_SIZE = 100;
 
 		struct ValueCache
 		{
-			Lock* lock;			// lock which holds shared counter value
-			SLONG curVal;		// current value of shared counter lock
-			SLONG maxVal;		// maximum cached value of shared counter lock
+			Lock* lock;						// lock which holds shared counter value
+			Firebird::AtomicCounter curVal;	// current value of shared counter lock
+			SLONG maxVal;					// maximum cached value of shared counter lock
 		};
 
 	public:
@@ -252,14 +253,22 @@ public:
 			TOTAL_ITEMS = 3
 		};
 
-		SharedCounter();
-		~SharedCounter();
+		explicit SharedCounter(bool localOnly)
+			: m_localOnly(localOnly)
+		{}
+
+		~SharedCounter()
+		{
+			for (size_t i = 0; i < TOTAL_ITEMS; i++)
+				delete m_counters[i].lock;
+		}
 
 		SLONG generate(thread_db* tdbb, ULONG space, ULONG prefetch = DEFAULT_CACHE_SIZE);
 		void shutdown(thread_db* tdbb);
 
 	private:
 		ValueCache m_counters[TOTAL_ITEMS];
+		bool m_localOnly;
 	};
 
 	class ExistenceRefMutex : public Firebird::RefCounted
@@ -318,11 +327,11 @@ public:
 		bool active;
 	};
 
-	static Database* create(Firebird::IPluginConfig* pConf)
+	static Database* create(Firebird::IPluginConfig* pConf, bool shared)
 	{
 		Firebird::MemoryStats temp_stats;
 		MemoryPool* const pool = MemoryPool::createPool(NULL, temp_stats);
-		Database* const dbb = FB_NEW(*pool) Database(pool, pConf);
+		Database* const dbb = FB_NEW(*pool) Database(pool, pConf, shared);
 		pool->setStatsGroup(dbb->dbb_memory_stats);
 		return dbb;
 	}
@@ -481,11 +490,12 @@ public:
 	void deletePool(MemoryPool* pool);
 
 private:
-	Database(MemoryPool* p, Firebird::IPluginConfig* pConf)
+	Database(MemoryPool* p, Firebird::IPluginConfig* pConf, bool shared)
 	:	dbb_permanent(p),
 		dbb_page_manager(this, *p),
 		dbb_modules(*p),
 		dbb_extManager(*p),
+		dbb_flags(shared ? DBB_shared : 0),
 		dbb_filename(*p),
 		dbb_database_name(*p),
 		dbb_owner(*p),
@@ -496,6 +506,7 @@ private:
 		dbb_tip_cache(NULL),
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
 		dbb_external_file_directory_list(NULL),
+		dbb_shared_counter(shared),
 		dbb_init_fini(FB_NEW(*getDefaultMemoryPool()) ExistenceRefMutex()),
 		dbb_linger_seconds(0),
 		dbb_linger_end(0),

@@ -235,19 +235,6 @@ namespace Jrd
 	}
 
 
-	Database::SharedCounter::SharedCounter()
-	{
-		memset(m_counters, 0, sizeof(m_counters));
-	}
-
-	Database::SharedCounter::~SharedCounter()
-	{
-		for (size_t i = 0; i < TOTAL_ITEMS; i++)
-		{
-			delete m_counters[i].lock;
-		}
-	}
-
 	void Database::SharedCounter::shutdown(thread_db* tdbb)
 	{
 		for (size_t i = 0; i < TOTAL_ITEMS; i++)
@@ -261,8 +248,15 @@ namespace Jrd
 	{
 		fb_assert(space < TOTAL_ITEMS);
 		ValueCache* const counter = &m_counters[space];
+/*
+		if (m_localOnly)
+		{
+			SLONG result = 0;
+			while ( !(result = (SLONG) ++counter->curVal) );
+			return result;
+		}
+*/
 		Database* const dbb = tdbb->getDatabase();
-
 		SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::SharedCounter::generate");
 
 		if (!counter->lock)
@@ -272,28 +266,26 @@ namespace Jrd
 			counter->lock = lock;
 			lock->lck_key.lck_long = space;
 			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
-
-			counter->curVal = 1;
-			counter->maxVal = 0;
 		}
 
-		if (counter->curVal > counter->maxVal)
+		SLONG result = (SLONG) ++counter->curVal;
+
+		if (result > counter->maxVal)
 		{
 			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
-			counter->curVal = LCK_read_data(tdbb, counter->lock);
+			result = LCK_read_data(tdbb, counter->lock);
 
-			if (!counter->curVal)
-			{
-				// zero IDs are somewhat special, so let's better skip them
-				counter->curVal = 1;
-			}
+			// zero IDs are somewhat special, so let's better skip them
+			if (!result)
+				result = 1;
 
-			counter->maxVal = counter->curVal + prefetch - 1;
+			counter->curVal = result;
+			counter->maxVal = result + prefetch - 1;
 			LCK_write_data(tdbb, counter->lock, counter->maxVal + 1);
 			LCK_convert(tdbb, counter->lock, LCK_SR, LCK_WAIT);
 		}
 
-		return counter->curVal++;
+		return result;
 	}
 
 	void Database::Linger::handler()

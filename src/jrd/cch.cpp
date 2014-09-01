@@ -316,7 +316,7 @@ bool CCH_exclusive(thread_db* tdbb, USHORT level, SSHORT wait_flag, Firebird::Sy
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 
-	if (dbb->dbb_config->getSharedCache() && !dbb->dbb_config->getSharedDatabase())
+	if (dbb->dbb_flags & DBB_shared)
 	{
 		if (!CCH_exclusive_attachment(tdbb, level, wait_flag, guard))
 			return false;
@@ -1414,7 +1414,7 @@ pag* CCH_handoff(thread_db*	tdbb, WIN* window, ULONG page, int lock, SCHAR page_
 }
 
 
-void CCH_init(thread_db* tdbb, ULONG number, bool shared)
+void CCH_init(thread_db* tdbb, ULONG number)
 {
 /**************************************
  *
@@ -1428,7 +1428,8 @@ void CCH_init(thread_db* tdbb, ULONG number, bool shared)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
+	const bool shared = (dbb->dbb_flags & DBB_shared);
 
 	CCH_TRACE(("INIT    %s", dbb->dbb_filename.c_str()));
 
