@@ -85,6 +85,7 @@
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Mapping.h"
+#include "../jrd/DbCreators.h"
 
 #include "../jrd/Optimizer.h"
 #include "../dsql/BoolNodes.h"
@@ -2264,17 +2265,24 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else if (relation->isVirtual())
 	{
 		// Virtual table: monitoring or security
-		if (relation->rel_id == rel_global_auth_mapping)
+		switch(relation->rel_id)
 		{
+		case rel_global_auth_mapping:
 			rsb = FB_NEW(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream, relation);
-		}
-		else if (relation->rel_id == rel_sec_users || relation->rel_id == rel_sec_user_attributes)
-		{
+			break;
+
+		case rel_sec_users:
+		case rel_sec_user_attributes:
 			rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream, relation);
-		}
-		else
-		{
+			break;
+
+		case rel_sec_db_creators:
+			rsb = FB_NEW(*tdbb->getDefaultPool()) DbCreatorsScan(csb, alias, stream, relation);
+			break;
+
+		default:
 			rsb = FB_NEW(*tdbb->getDefaultPool()) MonitoringTableScan(csb, alias, stream, relation);
+			break;
 		}
 	}
 	else

@@ -801,6 +801,9 @@ Data source : @4"},		/* eds_statement */
 	{335545094, "There is no privilege for this operation"},		/* dyn_no_priv */
 	{335545095, "Using GRANT OPTION on @1 not allowed"},		/* dsql_cant_grant_option */
 	{335545096, "read conflicts with concurrent update"},		/* read_conflict */
+	{335545097, "@1 failed when working with CREATE DATABASE grants"},		/* crdb_load */
+	{335545098, "CREATE DATABASE grants check is not possible when database @1 is not present"},		/* crdb_nodb */
+	{335545099, "CREATE DATABASE grants check is not possible when table RDB$DB_CREATORS is not present in database @1"},		/* crdb_notable */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

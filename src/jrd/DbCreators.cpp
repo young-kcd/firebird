@@ -1,0 +1,249 @@
+/*
+ *	PROGRAM:		JRD access method
+ *	MODULE:			DbCreators.cpp
+ *	DESCRIPTION:	Checks CREATE DATABASE right (in security.db)
+ *
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Alex Peshkov
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2014 Alex Peshkov <peshkoff at mail.ru>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ *
+ *
+ */
+
+#include "firebird.h"
+#include "firebird/Provider.h"
+#include "../auth/SecureRemotePassword/Message.h"
+#include "gen/iberror.h"
+
+#include "../jrd/constants.h"
+#include "../common/classes/ClumpletWriter.h"
+#include "../common/classes/init.h"
+#include "../common/classes/Hash.h"
+#include "../common/classes/GenericMap.h"
+#include "../common/classes/RefMutex.h"
+#include "../common/classes/SyncObject.h"
+#include "../common/classes/MetaName.h"
+#include "../common/isc_s_proto.h"
+#include "../common/isc_proto.h"
+#include "../common/ThreadStart.h"
+#include "../common/db_alias.h"
+
+#include "../jrd/DbCreators.h"
+#include "../jrd/tra.h"
+#include "../jrd/ini.h"
+#include "gen/ids.h"
+
+#define DBC_DEBUG(A)
+
+using namespace Firebird;
+
+namespace {
+
+void check(const char* s, IStatus* st)
+{
+	if (!(st->getStatus() & IStatus::FB_HAS_ERRORS))
+		return;
+
+	Arg::StatusVector newStatus(st);
+	newStatus << Arg::Gds(isc_crdb_load) << s;
+	newStatus.raise();
+}
+
+bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransaction>& tra)
+{
+	DispatcherPtr prov;
+
+	ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME, fb_strlen(SYSDBA_USER_NAME));
+	embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+	embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
+
+	LocalStatus st;
+	att = prov->attachDatabase(&st, securityDb,
+		embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
+	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+	{
+		if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
+			check("IProvider::attachDatabase", &st);
+
+		// missing security DB - checking granted rights not possible
+		return false;
+	}
+
+	ClumpletWriter readOnly(ClumpletWriter::Tpb, MAX_DPB_SIZE, isc_tpb_version1);
+	readOnly.insertTag(isc_tpb_read);
+	readOnly.insertTag(isc_tpb_wait);
+	tra = att->startTransaction(&st, readOnly.getBufferLength(), readOnly.getBuffer());
+	check("IAttachment::startTransaction", &st);
+
+	return true;
+}
+
+} // anonymous namespace
+
+
+namespace Jrd {
+
+bool checkCreateDatabaseGrant(Firebird::string& userName, Firebird::string& trustedRole,
+	const char* securityDb)
+{
+	if (userName == SYSDBA_USER_NAME || trustedRole == ADMIN_ROLE)
+		return true;
+
+	RefPtr<IAttachment> att;
+	RefPtr<ITransaction> tra;
+	if (!openDb(securityDb, att, tra))
+		return false;
+
+	Message gr;
+	Field<ISC_SHORT> uType(gr);
+	Field<Varying> u(gr, MAX_SQL_IDENTIFIER_LEN);
+	Field<ISC_SHORT> rType(gr);
+	Field<Varying> r(gr, MAX_SQL_IDENTIFIER_LEN);
+	uType = obj_user;
+	u = userName.c_str();
+	rType = trustedRole.hasData() ? obj_sql_role : 255;
+	r = trustedRole.c_str();
+
+	Message result;
+	Field<ISC_INT64> cnt(result);
+
+	LocalStatus st;
+	att->execute(&st, tra, 0,
+		"select count(*) from RDB$DB_CREATORS"
+		" where (RDB$USER_TYPE = ? and RDB$USER = ?) or (RDB$USER_TYPE = ? and RDB$USER = ?)",
+		SQL_DIALECT_V6, gr.getMetadata(), gr.getBuffer(), result.getMetadata(), result.getBuffer());
+	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+	{
+		if (fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
+		{
+			// isc_dsql_relation_err when exec SQL - i.e. table RDB$DB_CREATORS
+			// is missing due to non-FB3 security DB
+			return false;
+		}
+		check("IAttachment::execute", &st);
+	}
+
+	return cnt > 0;
+}
+
+
+const Format* DbCreatorsScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
+{
+	jrd_tra* const transaction = tdbb->getTransaction();
+	return transaction->getDbCreatorsList()->getList(tdbb, relation)->getFormat();
+}
+
+bool DbCreatorsScan::retrieveRecord(thread_db* tdbb, jrd_rel* relation,
+									FB_UINT64 position, Record* record) const
+{
+	jrd_tra* const transaction = tdbb->getTransaction();
+	return transaction->getDbCreatorsList()->getList(tdbb, relation)->fetch(position, record);
+}
+
+DbCreatorsList::DbCreatorsList(jrd_tra* tra)
+	: SnapshotData(*tra->tra_pool)
+{ }
+
+RecordBuffer* DbCreatorsList::makeBuffer(thread_db* tdbb)
+{
+	MemoryPool* const pool = tdbb->getTransaction()->tra_pool;
+	allocBuffer(tdbb, *pool, rel_sec_db_creators);
+	return getData(rel_sec_db_creators);
+}
+
+RecordBuffer* DbCreatorsList::getList(thread_db* tdbb, jrd_rel* relation)
+{
+	fb_assert(relation);
+	fb_assert(relation->rel_id == rel_sec_db_creators);
+
+	RecordBuffer* buffer = getData(relation);
+	if (buffer)
+	{
+		return buffer;
+	}
+
+	RefPtr<IAttachment> att;
+	RefPtr<ITransaction> tra;
+	const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
+	if (!openDb(dbName, att, tra))
+	{
+		// In embedded mode we are not raising any errors - silent return
+		if (MasterInterfacePtr()->serverMode(-1) < 0)
+			return makeBuffer(tdbb);
+
+		(Arg::Gds(isc_crdb_nodb) << dbName).raise();
+	}
+
+	Message gr;
+	Field<ISC_SHORT> uType(gr);
+	Field<Varying> u(gr, MAX_SQL_IDENTIFIER_LEN);
+
+	LocalStatus st;
+	RefPtr<IResultSet> curs(att->openCursor(&st, tra, 0,
+		"select RDB$USER_TYPE, RDB$USER from RDB$DB_CREATORS",
+		SQL_DIALECT_V6, NULL, NULL, gr.getMetadata(), NULL));
+
+	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+	{
+		if (!fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
+			check("IAttachment::openCursor", &st);
+
+		// isc_dsql_relation_err when opening cursor - i.e. table
+		// is missing due to non-FB3 security DB
+
+		// In embedded mode we are not raising any errors - silent return
+		if (MasterInterfacePtr()->serverMode(-1) < 0)
+			return makeBuffer(tdbb);
+
+		(Arg::Gds(isc_crdb_notable) << dbName).raise();
+	}
+
+	try
+	{
+		buffer = makeBuffer(tdbb);
+		while (curs->fetchNext(&st, gr.getBuffer()) == IStatus::FB_OK)
+		{
+			int charset = CS_METADATA;
+			Record* record = buffer->getTempRecord();
+			record->nullify();
+
+			putField(tdbb, record,
+					 DumpField(f_sec_crt_user, VALUE_STRING, u->len, u->data),
+					 charset);
+
+			SINT64 v = uType;
+			putField(tdbb, record,
+					 DumpField(f_sec_crt_u_type, VALUE_INTEGER, sizeof(v), &v),
+					 charset);
+
+			buffer->store(record);
+		}
+		check("IResultSet::fetchNext", &st);
+	}
+	catch (const Exception&)
+	{
+		clearSnapshot();
+		throw;
+	}
+
+	return getData(relation);
+}
+
+} // namespace Jrd

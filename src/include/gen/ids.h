@@ -660,3 +660,15 @@
 	const USHORT  f_sec_map_to = 7;
 
 
+// Relation 47 (RDB$DB_CREATORS)
+
+	const USHORT  f_crt_user = 0;
+	const USHORT  f_crt_u_type = 1;
+
+
+// Relation 48 (SEC$DB_CREATORS)
+
+	const USHORT  f_sec_crt_user = 0;
+	const USHORT  f_sec_crt_u_type = 1;
+
+

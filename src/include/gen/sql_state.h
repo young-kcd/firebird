@@ -797,6 +797,9 @@ static const struct {
 	{335545094, "42000"}, // 774 dyn_no_priv
 	{335545095, "42000"}, // 775 dsql_cant_grant_option
 	{335545096, "40001"}, // 776 read_conflict
+	{335545097, "08004"}, // 777 crdb_load
+	{335545098, "0A000"}, // 778 crdb_nodb
+	{335545099, "0A000"}, // 779 crdb_notable
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

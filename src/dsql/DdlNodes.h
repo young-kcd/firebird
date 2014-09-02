@@ -41,7 +41,7 @@ namespace Jrd {
 class CompoundStmtNode;
 class RelationSourceNode;
 class ValueListNode;
-
+class SecDbContext;
 
 struct BoolSourceClause
 {
@@ -132,6 +132,18 @@ public:
 	NestConst<ValueSourceClause> defaultClause;
 	NestConst<ValueExprNode> parameterExpr;
 	Nullable<int> udfMechanism;
+};
+
+
+class ExecInSecurityDb
+{
+public:
+	virtual ~ExecInSecurityDb() { }
+
+	void executeInSecurityDb(jrd_tra* tra);
+
+protected:
+	virtual void runInSecurityDb(SecDbContext* secDbContext) = 0;
 };
 
 
@@ -1802,7 +1814,7 @@ public:
 };
 
 
-class MappingNode : public DdlNode
+class MappingNode : public DdlNode, private ExecInSecurityDb
 {
 public:
 	enum OP {MAP_ADD, MAP_MOD, MAP_RPL, MAP_DROP};
@@ -1836,6 +1848,7 @@ protected:
 			(op == MAP_ADD ? "CREATE" : op == MAP_MOD ?
 			 "ALTER" : op == MAP_RPL ? "CREATE OR ALTER" : "DROP");
 	}
+	void runInSecurityDb(SecDbContext* secDbContext);
 
 private:
 	void addItem(Firebird::string& ddl, const char* text);
@@ -1974,11 +1987,12 @@ public:
 typedef Firebird::Pair<Firebird::NonPooled<char, ValueListNode*> > PrivilegeClause;
 typedef Firebird::Pair<Firebird::NonPooled<SSHORT, Firebird::MetaName> > GranteeClause;
 
-class GrantRevokeNode : public DdlNode
+class GrantRevokeNode : public DdlNode, private ExecInSecurityDb
 {
 public:
 	GrantRevokeNode(MemoryPool& p, bool aIsGrant)
 		: DdlNode(p),
+		  createDbJobs(p),
 		  isGrant(aIsGrant),
 		  privileges(p),
 		  roles(p),
@@ -2001,6 +2015,7 @@ protected:
 		statusVector <<
 			Firebird::Arg::Gds(isGrant ? isc_dsql_grant_failed : isc_dsql_revoke_failed);
 	}
+	void runInSecurityDb(SecDbContext* secDbContext);
 
 private:
 	void modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option, const GranteeClause* user);
@@ -2042,6 +2057,19 @@ private:
 
 		return "<Unknown>";
 	}
+
+	struct CreateDbJob
+	{
+		CreateDbJob(SSHORT a_userType, const Firebird::MetaName& a_user)
+		 : allOnAll(false), grantErased(false), badGrantor(false),
+		   userType(a_userType), user(a_user)
+		{ }
+
+		bool allOnAll, grantErased, badGrantor;
+		SSHORT userType;
+		Firebird::MetaName user, revoker;
+	};
+	Firebird::Array<CreateDbJob> createDbJobs;
 
 public:
 	bool isGrant;

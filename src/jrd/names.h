@@ -394,3 +394,8 @@ NAME("SEC$MAP_FROM_TYPE", nam_sec_map_from_type)
 NAME("SEC$MAP_FROM", nam_sec_map_from)
 NAME("SEC$MAP_TO_TYPE", nam_sec_map_to_type)
 NAME("SEC$MAP_TO", nam_sec_map_to)
+
+NAME("RDB$DB_CREATORS", nam_db_creators)
+NAME("SEC$DB_CREATORS", nam_sec_db_creators)
+NAME("SEC$USER", nam_sec_user)
+NAME("SEC$USER_TYPE", nam_sec_user_type)

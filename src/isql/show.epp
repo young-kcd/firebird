@@ -1452,6 +1452,44 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				return ps_ERR;
 			END_ERROR
 
+			if (obj_type == obj_database || obj_type == 255)
+			{
+				FOR PRV IN SEC$DB_CREATORS
+					SORTED BY PRV.SEC$USER_TYPE, PRV.SEC$USER
+
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
+
+					first = false;
+					fb_utils::exact_name(PRV.SEC$USER);
+
+					switch (PRV.SEC$USER_TYPE)
+					{
+					case obj_sql_role:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.SEC$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.SEC$USER);
+						break;
+					default:
+						fb_assert(false);
+						strcpy(SQL_identifier, PRV.SEC$USER);
+						break;
+					}
+
+					set_grantee(PRV.SEC$USER_TYPE, SQL_identifier, user_string);
+
+					isqlGlob.printf("GRANT CREATE DATABASE TO %s%s%s",
+						user_string, terminator, NEWLINE);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(fbStatus);
+					return ps_ERR;
+				END_ERROR
+			}
+
 			if (!first)
 				return (SKIP);
 		}

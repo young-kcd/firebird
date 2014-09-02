@@ -1604,6 +1604,12 @@ C --
       PARAMETER (GDS__dsql_cant_grant_option           = 335545095)
       INTEGER*4 GDS__read_conflict                   
       PARAMETER (GDS__read_conflict                    = 335545096)
+      INTEGER*4 GDS__crdb_load                       
+      PARAMETER (GDS__crdb_load                        = 335545097)
+      INTEGER*4 GDS__crdb_nodb                       
+      PARAMETER (GDS__crdb_nodb                        = 335545098)
+      INTEGER*4 GDS__crdb_notable                    
+      PARAMETER (GDS__crdb_notable                     = 335545099)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

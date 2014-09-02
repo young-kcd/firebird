@@ -71,6 +71,7 @@ class DeferredJob;
 class dsql_opn;
 class UserManagement;
 class MappingList;
+class DbCreatorsList;
 class thread_db;
 
 class SecDbContext
@@ -303,6 +304,7 @@ private:
 	UserManagement* tra_user_management;
 	SecDbContext* tra_sec_db_context;
 	MappingList* tra_mapping_list;
+	DbCreatorsList* tra_dbcreators_list;
 	MemoryPool* tra_autonomous_pool;
 	USHORT tra_autonomous_cnt;
 	static const USHORT TRA_AUTONOMOUS_PER_POOL = 64;
@@ -359,6 +361,7 @@ public:
 	SecDbContext* setSecDbContext(Firebird::IAttachment* att, Firebird::ITransaction* tra);
 	void eraseSecDbContext();
 	MappingList* getMappingList();
+	DbCreatorsList* getDbCreatorsList();
 
 	GenIdCache* getGenIdCache()
 	{

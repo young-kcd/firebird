@@ -884,6 +884,9 @@ Data source : @4', NULL, NULL)
 ('dyn_no_priv', NULL, 'scl.epp', NULL, 0, 774, NULL, 'There is no privilege for this operation', NULL, NULL);
 ('dsql_cant_grant_option', NULL, 'DdlNodes.epp', NULL, 0, 775, NULL, 'Using GRANT OPTION on @1 not allowed', NULL, NULL);
 ('read_conflict', NULL, NULL, 'vio.cpp', 0, 776, NULL, 'read conflicts with concurrent update', NULL, NULL);
+('crdb_load', 'check', 'DbCreators.cpp', NULL, 0, 777, NULL, '@1 failed when working with CREATE DATABASE grants', NULL, NULL);
+('crdb_nodb', 'DbCreatorsList::getList', 'DbCreators.cpp', NULL, 0, 778, NULL, 'CREATE DATABASE grants check is not possible when database @1 is not present', NULL, NULL);
+('crdb_notable', 'DbCreatorsList::getList', 'DbCreators.cpp', NULL, 0, 779, NULL, 'CREATE DATABASE grants check is not possible when table RDB$DB_CREATORS is not present in database @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

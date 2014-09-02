@@ -16,12 +16,12 @@ REVOKE [GRANT OPTION FOR] ALTER ANY <OBJECT> FROM [USER | ROLE] <user/role name>
 REVOKE [GRANT OPTION FOR] DROP ANY <OBJECT> FROM [USER | ROLE] <user/role name>;
 
 Where <OBJECT> could be:
-TABLE, VIEW, PROCEDURE, FUNCTION, PACKAGE, GENERATOR, SEQUENCE, DOMAIN, 
-EXCEPTION, ROLE, DATABASE, CHARACTER SET, COLLATION, FILTER
+TABLE, VIEW, PROCEDURE, FUNCTION, PACKAGE, GENERATOR, SEQUENCE, DOMAIN,
+EXCEPTION, ROLE, CHARACTER SET, COLLATION, FILTER
 
 Description:
 
-Makes it possible to grant and revoke privileges on DDL operations. 
+Makes it possible to grant and revoke privileges on DDL operations.
 
 DDL operations for managing triggers and indices re-use table privileges.
 
@@ -31,5 +31,15 @@ If ANY keyword was used due GRANT operation it also must be used in according RE
 Sample:
 
 GRANT CREATE TABLE TO Joe;
-GRANT ALTER ANY TABLE TO Joe; 
+GRANT ALTER ANY TABLE TO Joe;
 REVOKE CREATE TABLE FROM Joe;
+
+For database access special form is supported:
+
+GRANT CREATE DATABASE TO [USER | ROLE] <user/role name>;
+GRANT ALTER DATABASE TO [USER | ROLE] <user/role name> [WITH GRANT OPTION];
+GRANT DROP DATABASE TO [USER | ROLE] <user/role name> [WITH GRANT OPTION];
+
+REVOKE CREATE DATABASE FROM [USER | ROLE] <user/role name>;
+REVOKE [GRANT OPTION FOR] ALTER DATABASE FROM [USER | ROLE] <user/role name>;
+REVOKE [GRANT OPTION FOR] DROP DATABASE FROM [USER | ROLE] <user/role name>;

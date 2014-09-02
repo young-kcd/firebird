@@ -73,6 +73,7 @@
 #include "../jrd/Function.h"
 #include "../jrd/Collation.h"
 #include "../jrd/Mapping.h"
+#include "../jrd/DbCreators.h"
 
 
 const int DYN_MSG_FAC	= 8;
@@ -3399,6 +3400,15 @@ MappingList* jrd_tra::getMappingList()
 		tra_mapping_list = FB_NEW(*tra_pool) MappingList(this);
 	}
 	return tra_mapping_list;
+}
+
+DbCreatorsList* jrd_tra::getDbCreatorsList()
+{
+	if (!tra_dbcreators_list)
+	{
+		tra_dbcreators_list = FB_NEW(*tra_pool) DbCreatorsList(this);
+	}
+	return tra_dbcreators_list;
 }
 
 

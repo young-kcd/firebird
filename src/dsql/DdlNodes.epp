@@ -115,6 +115,60 @@ DATABASE DB = STATIC "ODS.RDB";
 
 //----------------------
 
+void ExecInSecurityDb::executeInSecurityDb(jrd_tra* localTransaction)
+{
+	LocalStatus st;
+
+	SecDbContext* secDbContext = localTransaction->getSecDbContext();
+	if (!secDbContext)
+	{
+		Attachment* lAtt = localTransaction->getAttachment();
+		const char* secDb = lAtt->att_database->dbb_config->getSecurityDatabase();
+		ClumpletWriter dpb(ClumpletWriter::WideTagged, MAX_DPB_SIZE, isc_dpb_version2);
+		if (lAtt->att_user)
+			lAtt->att_user->populateDpb(dpb);
+		IAttachment* att = DispatcherPtr()->attachDatabase(&st, secDb,
+			dpb.getBufferLength(), dpb.getBuffer());
+		check(&st);
+
+		ITransaction* tra = att->startTransaction(&st, 0, NULL);
+		check(&st);
+
+		secDbContext = localTransaction->setSecDbContext(att, tra);
+	}
+
+	// run all statements under savepoint control
+	string savePoint;
+	savePoint.printf("ExecInSecurityDb%d", secDbContext->savePoint++);
+	secDbContext->att->execute(&st, secDbContext->tra, 0, ("SAVEPOINT " + savePoint).c_str(),
+		SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+	check(&st);
+
+	try
+	{
+		runInSecurityDb(secDbContext);
+
+		secDbContext->att->execute(&st, secDbContext->tra, 0, ("RELEASE SAVEPOINT " + savePoint).c_str(),
+			SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+		savePoint.erase();
+		check(&st);
+	}
+	catch (const Exception&)
+	{
+		if (savePoint.hasData())
+		{
+			LocalStatus tmp;
+			secDbContext->att->execute(&tmp, secDbContext->tra, 0, ("ROLLBACK TO SAVEPOINT " + savePoint).c_str(),
+				SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
+		}
+
+		throw;
+	}
+}
+
+
+//----------------------
+
 
 // Check temporary table reference rules between given child relation and master
 // relation (owner of given PK/UK index).
@@ -9662,6 +9716,204 @@ bool MappingNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 	return false;
 }
 
+void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
+{
+	Firebird::LocalStatus st;
+	IStatus* s = &st;
+
+	// first of all try to use regenerated DDL statement
+	// that's the best way if security database is FB3 or higher fb version
+	string ddl;
+
+	switch(op)
+	{
+	case MAP_ADD:
+		ddl = "CREATE MAPPING ";
+		break;
+	case MAP_MOD:
+		ddl = "ALTER MAPPING ";
+		break;
+	case MAP_DROP:
+		ddl = "DROP MAPPING ";
+		break;
+	case MAP_RPL:
+		ddl = "CREATE OR ALTER MAPPING ";
+		break;
+	}
+
+	addItem(ddl, name.c_str());
+	if (op != MAP_DROP)
+	{
+		ddl += " USING ";
+		switch (mode)
+		{
+		case 'P':
+			if (!plugin)
+				ddl += "ANY PLUGIN ";
+			else
+			{
+				ddl += "PLUGIN ";
+				addItem(ddl, plugin->c_str());
+				ddl += ' ';
+			}
+			break;
+		case 'S':
+			ddl += "ANY PLUGIN SERVERWIDE ";
+			break;
+		case '*':
+			ddl += "* ";
+			break;
+		case 'M':
+			ddl += "MAPPING ";
+			break;
+		}
+
+		if (db)
+		{
+			ddl += "IN ";
+			addItem(ddl, db->c_str());
+			ddl += ' ';
+		}
+
+		if (fromType)
+		{
+			ddl += "FROM ";
+			if (!from)
+				ddl += "ANY ";
+			addItem(ddl, fromType->c_str());
+			ddl += ' ';
+			if (from)
+			{
+				addItem(ddl, from->getString().c_str());
+				ddl += ' ';
+			}
+		}
+
+		ddl += "TO ";
+		ddl += (role ? "ROLE" : "USER");
+		if (to)
+		{
+			ddl += ' ';
+			addItem(ddl, to->c_str());
+		}
+	}
+
+	// Now try to run DDL
+	secDbContext->att->execute(s, secDbContext->tra, 0, ddl.c_str(), SQL_DIALECT_V6,
+		NULL, NULL, NULL, NULL);
+
+	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
+	{
+		try
+		{
+			// try direct access to rdb$auth_mapping table in secure db
+			LocalStatus s2;
+			s = &s2;
+
+			// check presence of such record in the table
+			Message msgCheck;
+			Field<Varying> nm(msgCheck, 1);
+			nm = name.c_str();
+
+			Message result;
+			Field<ISC_INT64> cnt(result);
+
+			const char* checkSql = "select count(*) from RDB$AUTH_MAPPING where RDB$MAP_NAME = ?";
+
+			secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
+				msgCheck.getMetadata(), msgCheck.getBuffer(), result.getMetadata(), result.getBuffer());
+			check(s);
+
+			if (cnt > 1 && op != MAP_DROP)
+				ERRD_bugcheck("Database mapping misconfigured");
+
+			bool hasLine = cnt > 0;
+			switch(op)
+			{
+			case MAP_ADD:
+				if (hasLine)
+					(Arg::Gds(isc_map_already_exists) << name).raise();
+				break;
+
+			case MAP_MOD:
+			case MAP_DROP:
+				if (!hasLine)
+					(Arg::Gds(isc_map_not_exists) << name).raise();
+				break;
+
+			case MAP_RPL:
+				op = hasLine ? MAP_MOD : MAP_DROP;
+				break;
+			}
+
+			// Get ready to modify table
+			Message full;
+			Field<ISC_SHORT> toType(full);
+			Field<Varying> t(full, MAX_SQL_IDENTIFIER_LEN);
+			Field<Varying> usng2(full, 1);
+			Field<Varying> plug2(full, MAX_SQL_IDENTIFIER_LEN);
+			Field<Varying> d2(full, MAX_SQL_IDENTIFIER_LEN);
+			Field<Varying> type2(full, MAX_SQL_IDENTIFIER_LEN);
+			Field<Varying> f2(full, 255);
+			Field<Varying> nm2(full, MAX_SQL_IDENTIFIER_LEN);
+
+			toType = role ? 1 : 0;
+			if (to)
+				t = to->c_str();
+			usng2.set(1, &mode);
+			if (plugin)
+				plug2 = plugin->c_str();
+			if (db)
+				d2 = db->c_str();
+			if (fromType)
+				type2 = fromType->c_str();
+			if (from)
+				f2 = from->getString().c_str();
+			nm2 = name.c_str();
+
+			Message* msg = NULL;
+			const char* sql = NULL;
+			switch(op)
+			{
+			case MAP_ADD:
+				sql = "insert into RDB$AUTH_MAPPING(RDB$MAP_TO_TYPE, RDB$MAP_TO, RDB$MAP_USING, "
+					"RDB$MAP_PLUGIN, RDB$MAP_DB, RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_NAME) "
+					"values (?, ?, ?, ?, ?, ?, ?, ?)";
+				msg = &full;
+				break;
+			case MAP_MOD:
+				sql = "update RDB$AUTH_MAPPING set RDB$MAP_TO_TYPE = ?, RDB$MAP_TO = ?, "
+					"RDB$MAP_USING = ?, RDB$MAP_PLUGIN = ?, RDB$MAP_DB = ?, "
+					"RDB$MAP_FROM_TYPE = ?, RDB$MAP_FROM = ? "
+					"where RDB$MAP_NAME = ?";
+				msg = &full;
+				break;
+			case MAP_DROP:
+				sql = "delete from RDBAUTH_MAPPING where RDB$MAP_NAME = ?";
+				msg = &msgCheck;
+				break;
+			}
+
+			// Actual modification
+			fb_assert(sql && msg);
+			secDbContext->att->execute(s, secDbContext->tra, 0, sql, SQL_DIALECT_V6,
+				msg->getMetadata(), msg->getBuffer(), NULL, NULL);
+			check(s);
+		}
+		catch(const Exception& ex)
+		{
+			if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+			{
+				const ISC_STATUS* stat2 = st.getErrors();
+				if (stat2[1] != isc_dsql_token_unk_err)
+					status_exception::raise(&st);
+			}
+
+			throw;
+		}
+	}
+}
+
 // It's purpose is to add/drop mapping from any security name to DB security object.
 void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
@@ -9670,235 +9922,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 
 	if (global)
 	{
-		LocalStatus st;
-		LocalStatus s2;			// we will use it in DDL case and remember
-		IStatus* s = &st;
-
-		SecDbContext* secDbContext = transaction->getSecDbContext();
-		if (!secDbContext)
-		{
-			const char* secDb = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
-			ClumpletWriter dpb(ClumpletWriter::WideTagged, MAX_DPB_SIZE, isc_dpb_version2);
-			if (tdbb->getAttachment()->att_user)
-				tdbb->getAttachment()->att_user->populateDpb(dpb);
-			IAttachment* att = DispatcherPtr()->attachDatabase(s, secDb,
-				dpb.getBufferLength(), dpb.getBuffer());
-			check(s);
-
-			ITransaction* tra = att->startTransaction(s, 0, NULL);
-			check(s);
-
-			secDbContext = transaction->setSecDbContext(att, tra);
-		}
-
-		// run all statements under savepoint control
-		string savePoint;
-		savePoint.printf("GLOBALMAP%d", secDbContext->savePoint++);
-		secDbContext->att->execute(s, secDbContext->tra, 0, ("SAVEPOINT " + savePoint).c_str(),
-			SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
-		check(s);
-
-		try
-		{
-			// first of all try to use regenerated DDL statement
-			// that's the best way if security database is FB3 or higher fb version
-			string ddl;
-
-			switch(op)
-			{
-			case MAP_ADD:
-				ddl = "CREATE MAPPING ";
-				break;
-			case MAP_MOD:
-				ddl = "ALTER MAPPING ";
-				break;
-			case MAP_DROP:
-				ddl = "DROP MAPPING ";
-				break;
-			case MAP_RPL:
-				ddl = "CREATE OR ALTER MAPPING ";
-				break;
-			}
-
-			addItem(ddl, name.c_str());
-			if (op != MAP_DROP)
-			{
-				ddl += " USING ";
-				switch (mode)
-				{
-				case 'P':
-					if (!plugin)
-						ddl += "ANY PLUGIN ";
-					else
-					{
-						ddl += "PLUGIN ";
-						addItem(ddl, plugin->c_str());
-						ddl += ' ';
-					}
-					break;
-				case 'S':
-					ddl += "ANY PLUGIN SERVERWIDE ";
-					break;
-				case '*':
-					ddl += "* ";
-					break;
-				case 'M':
-					ddl += "MAPPING ";
-					break;
-				}
-
-				if (db)
-				{
-					ddl += "IN ";
-					addItem(ddl, db->c_str());
-					ddl += ' ';
-				}
-
-				if (fromType)
-				{
-					ddl += "FROM ";
-					if (!from)
-						ddl += "ANY ";
-					addItem(ddl, fromType->c_str());
-					ddl += ' ';
-					if (from)
-					{
-						addItem(ddl, from->getString().c_str());
-						ddl += ' ';
-					}
-				}
-
-				ddl += "TO ";
-				ddl += (role ? "ROLE" : "USER");
-				if (to)
-				{
-					ddl += ' ';
-					addItem(ddl, to->c_str());
-				}
-			}
-
-			// Now try to run DDL
-			secDbContext->att->execute(&s2, secDbContext->tra, 0, ddl.c_str(), SQL_DIALECT_V6,
-				NULL, NULL, NULL, NULL);
-
-			if (s2.getStatus() & IStatus::FB_HAS_ERRORS)
-			{
-				// try direct access to rdb$auth_mapping table in secure db
-
-				// check presence of such record in the table
-				Message msgCheck;
-				Field<Varying> nm(msgCheck, 1);
-				nm = name.c_str();
-
-				Message result;
-				Field<ISC_INT64> cnt(result);
-
-				const char* checkSql = "select count(*) from RDB$AUTH_MAPPING where RDB$MAP_NAME = ?";
-
-				secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
-					msgCheck.getMetadata(), msgCheck.getBuffer(), result.getMetadata(), result.getBuffer());
-				check(s);
-
-				if (cnt > 1 && op != MAP_DROP)
-					ERRD_bugcheck("Database mapping misconfigured");
-
-				bool hasLine = cnt > 0;
-				switch(op)
-				{
-				case MAP_ADD:
-					if (hasLine)
-						(Arg::Gds(isc_map_already_exists) << name).raise();
-					break;
-
-				case MAP_MOD:
-				case MAP_DROP:
-					if (!hasLine)
-						(Arg::Gds(isc_map_not_exists) << name).raise();
-					break;
-
-				case MAP_RPL:
-					op = hasLine ? MAP_MOD : MAP_DROP;
-					break;
-				}
-
-				// Get ready to modify table
-				Message full;
-				Field<ISC_SHORT> toType(full);
-				Field<Varying> t(full, MAX_SQL_IDENTIFIER_LEN);
-				Field<Varying> usng2(full, 1);
-				Field<Varying> plug2(full, MAX_SQL_IDENTIFIER_LEN);
-				Field<Varying> d2(full, MAX_SQL_IDENTIFIER_LEN);
-				Field<Varying> type2(full, MAX_SQL_IDENTIFIER_LEN);
-				Field<Varying> f2(full, 255);
-				Field<Varying> nm2(full, MAX_SQL_IDENTIFIER_LEN);
-
-				toType = role ? 1 : 0;
-				if (to)
-					t = to->c_str();
-				usng2.set(1, &mode);
-				if (plugin)
-					plug2 = plugin->c_str();
-				if (db)
-					d2 = db->c_str();
-				if (fromType)
-					type2 = fromType->c_str();
-				if (from)
-					f2 = from->getString().c_str();
-				nm2 = name.c_str();
-
-				Message* msg = NULL;
-				const char* sql = NULL;
-				switch(op)
-				{
-				case MAP_ADD:
-					sql = "insert into RDB$AUTH_MAPPING(RDB$MAP_TO_TYPE, RDB$MAP_TO, RDB$MAP_USING, "
-						"RDB$MAP_PLUGIN, RDB$MAP_DB, RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_NAME) "
-						"values (?, ?, ?, ?, ?, ?, ?, ?)";
-					msg = &full;
-					break;
-				case MAP_MOD:
-					sql = "update RDB$AUTH_MAPPING set RDB$MAP_TO_TYPE = ?, RDB$MAP_TO = ?, "
-						"RDB$MAP_USING = ?, RDB$MAP_PLUGIN = ?, RDB$MAP_DB = ?, "
-						"RDB$MAP_FROM_TYPE = ?, RDB$MAP_FROM = ? "
-						"where RDB$MAP_NAME = ?";
-					msg = &full;
-					break;
-				case MAP_DROP:
-					sql = "delete from RDBAUTH_MAPPING where RDB$MAP_NAME = ?";
-					msg = &msgCheck;
-					break;
-				}
-
-				// Actual modification
-				fb_assert(sql && msg);
-				secDbContext->att->execute(s, secDbContext->tra, 0, sql, SQL_DIALECT_V6,
-					msg->getMetadata(), msg->getBuffer(), NULL, NULL);
-				check(s);
-
-				secDbContext->att->execute(s, secDbContext->tra, 0, ("RELEASE SAVEPOINT " + savePoint).c_str(),
-					SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
-				savePoint.erase();
-				check(s);
-			}
-		}
-		catch (const Exception&)
-		{
-			if (savePoint.hasData())
-			{
-				secDbContext->att->execute(s, secDbContext->tra, 0, ("ROLLBACK TO SAVEPOINT " + savePoint).c_str(),
-					SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
-			}
-
-			if (s2.getStatus() & IStatus::FB_HAS_ERRORS)
-			{
-				const ISC_STATUS* stat2 = s2.getErrors();
-				if (stat2[1] != isc_dsql_token_unk_err)
-					status_exception::raise(&s2);
-			}
-
-			throw;
-		}
-
+		executeInSecurityDb(transaction);
 		return;
 	}
 
@@ -10319,6 +10343,8 @@ void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
+	createDbJobs.clear();
+
 	const GranteeClause* usersPtr;
 	const GranteeClause* usersEnd;
 
@@ -10356,7 +10382,81 @@ void GrantRevokeNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		}
 	}
 
+	if (createDbJobs.hasData())
+		executeInSecurityDb(transaction);
+
 	savePoint.release();	// everything is ok
+}
+
+void GrantRevokeNode::runInSecurityDb(SecDbContext* secDbContext)
+{
+	for (unsigned n = 0; n < createDbJobs.getCount(); ++n)
+	{
+		CreateDbJob& j = createDbJobs[n];
+		LocalStatus st;
+		IStatus* s = &st;
+
+		Message gr;
+		Field<ISC_SHORT> uType(gr);
+		Field<Varying> u(gr, MAX_SQL_IDENTIFIER_LEN);
+		uType = j.userType;
+		u = j.user.c_str();
+
+		Message result;
+		Field<ISC_INT64> cnt(result);
+
+		const char* checkSql = "select count(*) from RDB$DB_CREATORS where RDB$USER_TYPE = ? and RDB$USER = ?";
+		secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
+			gr.getMetadata(), gr.getBuffer(), result.getMetadata(), result.getBuffer());
+		check(s);
+
+		if (isGrant)
+		{
+			if (!cnt)
+			{
+				const char* insertSql = "insert into RDB$DB_CREATORS(RDB$USER_TYPE, RDB$USER) values(?, ?)";
+				secDbContext->att->execute(s, secDbContext->tra, 0, insertSql, SQL_DIALECT_V6,
+					gr.getMetadata(), gr.getBuffer(), NULL, NULL);
+				check(s);
+			}
+		}
+		else
+		{
+			if (cnt)
+			{
+				const char* deleteSql = "delete from RDB$DB_CREATORS where RDB$USER_TYPE = ? and RDB$USER = ?";
+				secDbContext->att->execute(s, secDbContext->tra, 0, deleteSql, SQL_DIALECT_V6,
+					gr.getMetadata(), gr.getBuffer(), NULL, NULL);
+
+				j.grantErased = true;
+			}
+
+			if (!j.grantErased)
+			{
+				if (j.allOnAll)
+				{
+					const char* all = "ALL";
+
+					if (j.badGrantor)
+					{
+						// msg 246: @1 is not grantor of @2 on @3 to @4.
+						(Arg::PrivateDyn(246) << j.revoker.c_str() << all << all << j.user).raise();
+					}
+
+					// msg 247: Warning: @1 on @2 is not granted to @3.
+					ERR_post_warning(
+						Arg::Warning(isc_dyn_miss_priv_warning) <<
+						all << all << j.user);
+				}
+				else
+				{
+					// msg 247: Warning: @1 on @2 is not granted to @3.
+					ERR_post_warning(Arg::Warning(isc_dyn_miss_priv_warning) <<
+						privilegeName('C') << "DATABASE" << j.user);
+				}
+			}
+		}
+	}
 }
 
 void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SSHORT option,
@@ -10467,8 +10567,9 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	if (!isGrant && !privs)	// REVOKE ALL ON ALL
 	{
 		AutoCacheRequest request(tdbb, drq_e_grant3, DYN_REQUESTS);
-		bool grantErased = false;
-		bool badGrantor = false;
+		CreateDbJob all(userType, user);
+		all.allOnAll = true;
+		all.revoker = grantorRevoker;
 
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES
@@ -10478,29 +10579,14 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			if (tdbb->getAttachment()->att_user->locksmith() || grantorRevoker == PRIV.RDB$GRANTOR)
 			{
 				ERASE PRIV;
-				grantErased = true;
+				all.grantErased = true;
 			}
 			else
-				badGrantor = true;
+				all.badGrantor = true;
 		}
 		END_FOR
 
-		const char* all = "ALL";
-
-		if (badGrantor && !grantErased)
-		{
-			// msg 246: @1 is not grantor of @2 on @3 to @4.
-			status_exception::raise(Arg::PrivateDyn(246) <<
-				grantorRevoker.c_str() << all << all << user.c_str());
-		}
-
-		if (!grantErased)
-		{
-			// msg 247: Warning: @1 on @2 is not granted to @3.
-			ERR_post_warning(
-				Arg::Warning(isc_dyn_miss_priv_warning) <<
-				all << all << Arg::Str(user));
-		}
+		createDbJobs.push(all);
 
 		return;
 	}
@@ -10525,6 +10611,30 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			///CVC: Make this a warning in the future.
 			///DYN_error_punt(false, 195, objName.c_str());
 		}
+	}
+
+	if (objType == obj_database && strchr(privileges, 'C'))
+	{
+		if (options || grantor)
+		{
+			(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+			 "GRANT/ADMIN OPTION and GRANTED BY not supported for CREATE DATABASE grants").raise();
+		}
+
+		if (userType != obj_sql_role && userType != obj_user)
+		{
+			(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+			 "Only grants to USER or ROLE are supported for CREATE DATABASE").raise();
+		}
+
+		CreateDbJob job(userType, user);
+		createDbJobs.push(job);
+
+		char* cPtr = strchr(privileges, 'C');
+		size_t len = strlen(cPtr);
+		memmove(cPtr, cPtr + 1, len);
+		if (!privileges[0])
+			return;
 	}
 
 	char priv[2];

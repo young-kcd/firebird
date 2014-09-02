@@ -649,7 +649,7 @@ END_RELATION
 
 // Relation 46 (SEC$GLOBAL_AUTH_MAPPING)
 RELATION(nam_sec_global_auth_mapping, rel_global_auth_mapping, ODS_12_0, rel_virtual)
-	FIELD(f_sec_map_name, nam_sec_map_name, fld_map_name, 1, ODS_12_0)
+	FIELD(f_sec_map_name, nam_sec_map_name, fld_map_name, 0, ODS_12_0)
 	FIELD(f_sec_map_using, nam_sec_map_using, fld_map_using, 0, ODS_12_0)
 	FIELD(f_sec_map_plugin, nam_sec_map_plugin, fld_map_plugin, 0, ODS_12_0)
 	FIELD(f_sec_map_db, nam_sec_map_db, fld_map_db, 0, ODS_12_0)
@@ -657,4 +657,16 @@ RELATION(nam_sec_global_auth_mapping, rel_global_auth_mapping, ODS_12_0, rel_vir
 	FIELD(f_sec_map_from, nam_sec_map_from, fld_map_from, 0, ODS_12_0)
 	FIELD(f_sec_map_to_type, nam_sec_map_to_type, fld_obj_type, 0, ODS_12_0)
 	FIELD(f_sec_map_to, nam_sec_map_to, fld_map_to, 0, ODS_12_0)
+END_RELATION
+
+// Relation 47 (RDB$DB_CREATORS)
+RELATION(nam_db_creators, rel_db_creators, ODS_12_0, rel_persistent)
+	FIELD(f_crt_user, nam_user, fld_user, 1, ODS_12_0)
+	FIELD(f_crt_u_type, nam_user_type, fld_obj_type, 1, ODS_12_0)
+END_RELATION
+
+// Relation 48 (SEC$DB_CREATORS)
+RELATION(nam_sec_db_creators, rel_sec_db_creators, ODS_12_0, rel_virtual)
+	FIELD(f_sec_crt_user, nam_sec_user, fld_user, 0, ODS_12_0)
+	FIELD(f_sec_crt_u_type, nam_sec_user_type, fld_obj_type, 0, ODS_12_0)
 END_RELATION
