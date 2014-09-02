@@ -1,3 +1,25 @@
+ 2014-09-01 13:22  dimitr 
+   M src/jrd/Database.cpp
+Correction.
+
+ 2014-09-01 13:19  dimitr 
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/Monitoring.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cch_proto.h
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+Refactored the shared cache checks. Optimized the shared counter for SS.
+
+ 2014-09-01 09:44  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+Misc
+
+ 2014-09-01 08:29  dimitr 
+   M src/jrd/vio.cpp
+Count record reads performed by the IDX code.
+
  2014-08-29 11:15  roman-simakov 
    M src/dsql/parse.y
 Removed ANY keyword in DDL REVOKE permission statements for DATABASE
