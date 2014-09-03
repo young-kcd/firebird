@@ -1332,9 +1332,9 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 	{
 		LocalStatus st;
 		port->port_crypt_plugin->decrypt(&st, n, buffer, buffer);
-		if (!st.isSuccess())
+		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
-			status_exception::raise(st.get());
+			status_exception::raise(&st);
 		}
 	}
 
@@ -1371,9 +1371,9 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 
 		char* d = b.getBuffer(buffer_length);
 		port->port_crypt_plugin->encrypt(&st, buffer_length, data, d);
-		if (!st.isSuccess())
+		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
-			status_exception::raise(st.get());
+			status_exception::raise(&st);
 		}
 
 		data = d;

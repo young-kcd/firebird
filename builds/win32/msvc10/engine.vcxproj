@@ -65,6 +65,7 @@
     <ClCompile Include="..\..\..\src\jrd\cvt2.cpp" />
     <ClCompile Include="..\..\..\src\jrd\Database.cpp" />
     <ClCompile Include="..\..\..\src\jrd\DataTypeUtil.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\DbCreators.cpp" />
     <ClCompile Include="..\..\..\src\jrd\DebugInterface.cpp" />
     <ClCompile Include="..\..\..\src\jrd\err.cpp" />
     <ClCompile Include="..\..\..\src\jrd\event.cpp" />
