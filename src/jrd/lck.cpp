@@ -918,7 +918,7 @@ static void enqueue(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 }
 
 
-static int external_ast(void* lock_void)
+static int external_ast(void* ast_object)
 {
 /**************************************
  *
@@ -932,21 +932,29 @@ static int external_ast(void* lock_void)
  *	we are blocking a lock from another process.
  *
  **************************************/
-	Lock* lock = static_cast<Lock*>(lock_void);
+	Lock* const lock = static_cast<Lock*>(ast_object);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	// go through the list, saving the next lock in the list
-	// in case the current one gets deleted in the ast
-
-	Lock* next;
-	for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next)
+	try
 	{
-		next = match->lck_identical;
-		if (match->lck_ast) {
-			(*match->lck_ast)(match->lck_object);
+		AstContextHolder tdbb(lock->lck_dbb, lock->lck_attachment);
+
+		// go through the list, saving the next lock in the list
+		// in case the current one gets deleted in the ast
+
+		Lock* next;
+		for (Lock* match = hash_get_lock(lock, 0, 0); match; match = next)
+		{
+			next = match->lck_identical;
+			if (match->lck_ast) {
+				(*match->lck_ast)(match->lck_object);
+			}
 		}
 	}
-	return 0; // make the compiler happy
+	catch (const Firebird::Exception&)
+	{} // no-op
+
+	return 0;
 }
 
 
