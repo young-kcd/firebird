@@ -39,6 +39,7 @@
 #include "../jrd/val.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
+#include "../jrd/lck.h"
 #include "../include/gen/iberror.h"
 
 #include "../common/classes/fb_atomic.h"
