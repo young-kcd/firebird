@@ -1,3 +1,7 @@
+ 2014-09-04 11:26  dimitr 
+   M src/jrd/lck.cpp
+Attempted to fix CORE-4532: Server crashes while reserving a table under high load.
+
  2014-08-25 13:40  dimitr 
    M src/jrd/Optimizer.cpp
 Fixed CORE-4530: DB_KEY based join of two tables may be ineffective.
