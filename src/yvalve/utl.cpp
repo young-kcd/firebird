@@ -249,7 +249,7 @@ void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 	for (;;)
 	{
 		unsigned l = 0;
-		switch(blob->getSegment(status, short_length, buffer, &l))
+		switch (blob->getSegment(status, short_length, buffer, &l))
 		{
 		case Firebird::IStatus::FB_ERROR:
 		case Firebird::IStatus::FB_EOF:

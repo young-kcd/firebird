@@ -533,7 +533,7 @@ void SQLDAMetadata::gatherData(DataBuffer& to)
 void SQLDAMetadata::scatterData(DataBuffer& from)
 {
 	fb_assert(sqlda);
-//	fb_assert(offsets); // Not reliable, but still check that input buffer can come from this metadata
+	///fb_assert(offsets); // Not reliable, but still check that input buffer can come from this metadata
 
 	if (speedHackEnabled)
 		return; // Data is already in user's buffer
@@ -2898,7 +2898,7 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 			*returnLength = length;
 
 		// Raise pseudo errors
-		switch(cc)
+		switch (cc)
 		{
 		case IStatus::FB_EOF:
 			Arg::Gds(isc_segstr_eof).raise();
@@ -3950,7 +3950,7 @@ void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
 	}
 }
 
-int YBlob::getSegment(IStatus* status, unsigned int bufferLength, void* buffer, unsigned int *segmentLength)
+int YBlob::getSegment(IStatus* status, unsigned int bufferLength, void* buffer, unsigned int* segmentLength)
 {
 	try
 	{
