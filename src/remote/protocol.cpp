@@ -42,6 +42,8 @@
 #include "../common/StatusHolder.h"
 #include "../common/classes/stack.h"
 
+using namespace Firebird;
+
 #ifdef DEBUG_XDR_MEMORY
 inline bool_t P_TRUE(XDR* xdrs, PACKET* p)
 {
@@ -102,9 +104,10 @@ static bool_t xdr_debug_packet(XDR*, enum xdr_op, PACKET*);
 #endif
 static bool_t xdr_longs(XDR*, CSTRING*);
 static bool_t xdr_message(XDR*, RMessage*, const rem_fmt*);
+static bool_t xdr_packed_message(XDR*, RMessage*, const rem_fmt*);
 static bool_t xdr_request(XDR*, USHORT, USHORT, USHORT);
 static bool_t xdr_slice(XDR*, lstring*, /*USHORT,*/ const UCHAR*);
-static bool_t xdr_status_vector(XDR*, Firebird::DynamicStatusVector*&);
+static bool_t xdr_status_vector(XDR*, DynamicStatusVector*&);
 static bool_t xdr_sql_blr(XDR*, SLONG, CSTRING*, bool, SQL_STMT_TYPE);
 static bool_t xdr_sql_message(XDR*, SLONG);
 static bool_t xdr_trrq_blr(XDR*, CSTRING*);
@@ -903,7 +906,7 @@ static bool alloc_cstring(XDR* xdrs, CSTRING* cstring)
 		try {
 			cstring->cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[cstring->cstr_length];
 		}
-		catch (const Firebird::BadAlloc&) {
+		catch (const BadAlloc&) {
 			return false;
 		}
 
@@ -1158,27 +1161,152 @@ static bool_t xdr_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
 	if (xdrs->x_op == XDR_FREE)
 		return TRUE;
 
-	const rem_port* port = (rem_port*) xdrs->x_public;
-
+	rem_port* port = (rem_port*) xdrs->x_public;
 
 	if (!message || !format)
-	{
 		return FALSE;
-	}
 
 	// If we are running a symmetric version of the protocol, just slop
 	// the bits and don't sweat the translations
 
 	if (port->port_flags & PORT_symmetric)
-	{
 		return xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(message->msg_address), format->fmt_length);
-	}
 
 	const dsc* desc = format->fmt_desc.begin();
 	for (const dsc* const end = format->fmt_desc.end(); desc < end; ++desc)
 	{
 		if (!xdr_datum(xdrs, desc, message->msg_address))
 			return FALSE;
+	}
+
+	DEBUG_PRINTSIZE(xdrs, op_void);
+	return TRUE;
+}
+
+
+static bool_t xdr_packed_message( XDR* xdrs, RMessage* message, const rem_fmt* format)
+{
+/**************************************
+ *
+ *	x d r _ p a c k e d _ m e s s a g e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Map a formatted message.
+ *
+ **************************************/
+
+	if (xdrs->x_op == XDR_FREE)
+		return TRUE;
+
+	const rem_port* const port = (rem_port*) xdrs->x_public;
+
+	if (!message || !format)
+		return FALSE;
+
+	// If we are running a symmetric version of the protocol, just slop
+	// the bits and don't sweat the translations
+
+	if (port->port_flags & PORT_symmetric)
+		return xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(message->msg_address), format->fmt_length);
+
+	// Optimize the message by transforming NULL indicators into a bitmap
+	// and then skipping the NULL items
+
+	class NullBitmap : private HalfStaticArray<UCHAR, 4>
+	{
+	public:
+		explicit NullBitmap(USHORT size)
+		{
+			resize(size);
+		}
+
+		void setNull(USHORT id)
+		{
+			data[id >> 3] |= (1 << (id & 7));
+		}
+
+		bool isNull(USHORT id) const
+		{
+			return data[id >> 3] & (1 << (id & 7));
+		}
+
+		UCHAR* getData()
+		{
+			return data;
+		}
+	};
+
+	fb_assert(format->fmt_desc.getCount() % 2 == 0);
+	const USHORT flagBytes = (format->fmt_desc.getCount() / 2 + 7) / 8;
+	NullBitmap nulls(flagBytes);
+
+	if (xdrs->x_op == XDR_ENCODE)
+	{
+		// First pass (odd elements): track NULL indicators
+
+		const dsc* desc = format->fmt_desc.begin() + 1;
+		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
+		{
+			fb_assert(desc->dsc_dtype == dtype_short);
+			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
+			const SSHORT* const flag = (SSHORT*) (message->msg_address + (IPTR) desc->dsc_address);
+
+			if (*flag)
+				nulls.setNull(index);
+		}
+
+		// Send the NULL bitmap
+
+		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(nulls.getData()), flagBytes))
+			return FALSE;
+
+		// Second pass (even elements): process non-NULL items
+
+		desc = format->fmt_desc.begin();
+		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
+		{
+			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
+
+			if (!nulls.isNull(index))
+			{
+				if (!xdr_datum(xdrs, desc, message->msg_address))
+					return FALSE;
+			}
+		}
+	}
+	else
+	{
+		// Receive the NULL bitmap
+
+		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(nulls.getData()), flagBytes))
+			return FALSE;
+
+		// First pass (odd elements): initialize NULL indicators
+
+		const dsc* desc = format->fmt_desc.begin() + 1;
+		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
+		{
+			fb_assert(desc->dsc_dtype == dtype_short);
+			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
+			SSHORT* const flag = (SSHORT*) (message->msg_address + (IPTR) desc->dsc_address);
+			*flag = nulls.isNull(index) ? -1 : 0;
+		}
+
+		// Second pass (even elements): process non-NULL items
+
+		desc = format->fmt_desc.begin();
+		for (const dsc* const end = format->fmt_desc.end(); desc < end; desc += 2)
+		{
+			const USHORT index = (USHORT) (desc - format->fmt_desc.begin()) / 2;
+
+			if (!nulls.isNull(index))
+			{
+				if (!xdr_datum(xdrs, desc, message->msg_address))
+					return FALSE;
+			}
+		}
 	}
 
 	DEBUG_PRINTSIZE(xdrs, op_void);
@@ -1214,7 +1342,7 @@ static bool_t xdr_request(XDR* xdrs,
 	{
 		request = port->port_objects[request_id];
 	}
-	catch (const Firebird::status_exception&)
+	catch (const status_exception&)
 	{
 		return FALSE;
 	}
@@ -1280,7 +1408,7 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 			try {
 				slice->lstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[slice->lstr_length];
 			}
-			catch (const Firebird::BadAlloc&) {
+			catch (const BadAlloc&) {
 				return false;
 			}
 
@@ -1373,7 +1501,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		{
 			statement = port->port_objects[statement_id];
 		}
-		catch (const Firebird::status_exception&)
+		catch (const status_exception&)
 		{
 			return FALSE;
 		}
@@ -1479,7 +1607,7 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 		{
 			statement = port->port_objects[statement_id];
 		}
-		catch (const Firebird::status_exception&)
+		catch (const status_exception&)
 		{
 			return FALSE;
 		}
@@ -1494,20 +1622,19 @@ static bool_t xdr_sql_message( XDR* xdrs, SLONG statement_id)
 
 	RMessage* message = statement->rsr_buffer;
 	if (!message)
-	{
-		// We should not call xdr_message() with NULL
 		return FALSE;
-	}
 
 	statement->rsr_buffer = message->msg_next;
 	if (!message->msg_address)
 		message->msg_address = message->msg_buffer;
 
-	return xdr_message(xdrs, message, statement->rsr_format);
+	return (port->port_protocol >= PROTOCOL_VERSION13) ?
+		xdr_packed_message(xdrs, message, statement->rsr_format) :
+		xdr_message(xdrs, message, statement->rsr_format);
 }
 
 
-static bool_t xdr_status_vector(XDR* xdrs, Firebird::DynamicStatusVector*& vector)
+static bool_t xdr_status_vector(XDR* xdrs, DynamicStatusVector*& vector)
 {
 /**************************************
  *
@@ -1531,12 +1658,12 @@ static bool_t xdr_status_vector(XDR* xdrs, Firebird::DynamicStatusVector*& vecto
 	}
 
 	if (!vector)
-		vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
+		vector = FB_NEW(*getDefaultMemoryPool()) DynamicStatusVector();
 
-	Firebird::SimpleStatusVector vectorDecode;
+	SimpleStatusVector vectorDecode;
 	const ISC_STATUS* vectorEncode = vector->value();
 
-	Firebird::Stack<SCHAR*> space;
+	Stack<SCHAR*> space;
 	bool rc = false;
 
 	SLONG vec;
@@ -1745,7 +1872,7 @@ static void reset_statement( XDR* xdrs, SSHORT statement_id)
 			statement = port->port_objects[statement_id];
 			REMOTE_reset_statement(statement);
 		}
-		catch (const Firebird::status_exception&)
+		catch (const status_exception&)
 		{} // no-op
 	}
 }

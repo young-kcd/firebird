@@ -73,6 +73,7 @@ const USHORT PROTOCOL_VERSION11	= (FB_PROTOCOL_FLAG | 11);
 const USHORT PROTOCOL_VERSION12	= (FB_PROTOCOL_FLAG | 12);
 
 // Protocol 13 has support for authentication plugins (op_cont_auth).
+// It also transfers SQL messages in the packed (null aware) format.
 
 const USHORT PROTOCOL_VERSION13	= (FB_PROTOCOL_FLAG | 13);
 
