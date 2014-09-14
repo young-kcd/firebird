@@ -642,8 +642,8 @@ namespace {
 	public:
 		const static int N_FILES = 128;
 		const static int N_SETS = 256;
-#if defined(DEV_BUILD) || defined(FREEBSD)
-		const static int SEM_PER_SET = 4;	// force multiple sets allocation || work with default freebsd kernel
+#if defined(DEV_BUILD)
+		const static int SEM_PER_SET = 4;	// force multiple sets allocation
 #else
 		const static int SEM_PER_SET = 31;	// hard limit for some old systems, might set to 32
 #endif
