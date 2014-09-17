@@ -373,7 +373,7 @@ embed_fbudf:
 .PHONY: libfbclient client_gfix client_gbak client_isql client_gpre client_util client_fbudf
 
 super_targets: $(PLAT_SUPER_PRE_TARGET) fbserver libfbclient client_gfix client_gbak client_gsec\
-			client_isql client_gpre client_util client_fbudf client_gdef client_qli $(PLAT_SUPER_POST_TRAGET) 
+			client_isql client_gpre client_util client_fbudf client_gdef client_qli $(PLAT_SUPER_POST_TARGET) 
 
 fbserver:
 	$(MAKE) $(CPU_OPTION) -f $(GEN_ROOT)/Makefile.fbserver $@
