@@ -57,6 +57,6 @@ PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
 PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework
 
 PLAT_SUPER_PRE_TARGET=darwin_setup_framework
-PLAT_SUPER_POST_TRAGET=darwin_finish_ss_framework
+PLAT_SUPER_POST_TARGET=darwin_finish_ss_framework
 
 PLATFORM_POSTBUILD_TARGET=darwin_postbuild_target
