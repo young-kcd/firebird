@@ -1,3 +1,16 @@
+ 2014-09-14 19:46  mapopa 
+   M doc/README.build.posix.html
+Update FreeBSD section for trunk in doc/README.build.posix.html
+
+ 2014-09-14 16:25  mapopa 
+   M src/common/isc_sync.cpp
+Apply patch from 2.5 branch related to #CORE-3400  http://sourceforge.net/p/firebird/mailman/message/27734396/ 
+
+ 2014-09-10 11:55  dimitr 
+   M src/remote/protocol.cpp
+   M src/remote/protocol.h
+Resolved CORE-2897: Don't send full length of field over the wire when field is null.
+
  2014-09-07 19:37  asfernandes 
    M src/jrd/TempSpace.cpp
    M src/jrd/nbak.cpp
