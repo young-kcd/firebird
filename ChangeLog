@@ -1,3 +1,11 @@
+ 2014-09-17 13:03  paulbeach 
+   M builds/posix/Makefile.in.firebird
+Fix annoying typo
+
+ 2014-09-17 12:55  paulbeach 
+   M builds/posix/darwin.defaults
+Fix typo
+
  2014-09-08 01:33  robocop 
    M src/gpre/cmp.cpp
    M src/jrd/os/pio.h
