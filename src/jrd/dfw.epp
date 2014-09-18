@@ -4619,11 +4619,20 @@ static bool delete_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				fb_assert(arg);
 
 				// ASF: arg->dfw_id is RDB$TRIGGER_TYPE truncated to USHORT
-				if (arg && (arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+				if (arg)
 				{
-					MET_release_trigger(tdbb,
-						&tdbb->getAttachment()->att_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
-						work->dfw_name);
+					if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DB)
+					{
+						MET_release_trigger(tdbb,
+							&tdbb->getAttachment()->att_triggers[arg->dfw_id & ~TRIGGER_TYPE_DB],
+							work->dfw_name);
+					}
+					else if ((arg->dfw_id & TRIGGER_TYPE_MASK) == TRIGGER_TYPE_DDL)
+					{
+						MET_release_trigger(tdbb,
+							&tdbb->getAttachment()->att_ddl_triggers,
+							work->dfw_name);
+					}
 				}
 			}
 		}
