@@ -100,10 +100,13 @@ ULONG gensPerPage(ULONG page_size)
 
 ULONG dataPagesPerPP(ULONG page_size)
 {
-	// Compute the number of data pages per pointer page.  Each data page
-	// requires a 32 bit pointer and a 4 bit control field.
+	// Compute the number of data pages per pointer page. Each data page requires
+	// a 32 bit pointer (BITS_PER_LONG) and a 8 bit control field (PPG_DP_BITS_NUM).
+	// Also, don't allow extent of data pages (8 pages) to cross PP boundary to 
+	// simplify code a bit.
 
-	return static_cast<ULONG>((page_size - offsetof(pointer_page, ppg_page[0])) * 8 / (BITS_PER_LONG + PPG_DP_BITS_NUM));
+	ULONG ret = static_cast<ULONG>((page_size - offsetof(pointer_page, ppg_page[0])) * 8 / (BITS_PER_LONG + PPG_DP_BITS_NUM));
+	return ret & (~7);
 }
 
 ULONG maxRecsPerDP(ULONG page_size)

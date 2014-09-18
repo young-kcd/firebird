@@ -657,9 +657,7 @@ ULONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 		}
 
 		CCH_RELEASE(tdbb, &window);
-#ifdef SHARED_METADATA_CACHE
 		relPages->rel_data_pages = pages;
-#endif
 	}
 
 #ifdef VIO_DEBUG
@@ -773,6 +771,9 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 		return;
 	}
 
+	if (!count) {
+		page->dpg_header.pag_flags &= ~dpg_full; // PP will be modified later
+	}
 	const UCHAR flags = page->dpg_header.pag_flags;
 	CCH_RELEASE(tdbb, window);
 
@@ -843,6 +844,85 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	// Data page is still empty and still in the relation.  Eliminate the
 	// pointer to the data page then release the page.
 
+	// here we have to look at 3 cases: 
+	//   - empty page is not a part of extent - release it as is
+	//   - empty page is a part of non-empty extent - mark it as empty at PP 
+	//   - empty page is a part of empty extent - release all pages of such extent
+
+	UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
+	HalfStaticArray<ULONG, PAGES_IN_EXTENT> pages(PAGES_IN_EXTENT);
+
+	bool extent = true; //(pp_sequence > 0 || slot >= PAGES_IN_EXTENT);
+	bool empty = true;
+
+	// make fast check if we have an extent and if all its pages are empty
+
+	const int firstSlot = slot - (slot % PAGES_IN_EXTENT);	// first slot of extent
+	int s = firstSlot;
+	int i = 0;
+	for (; i < PAGES_IN_EXTENT && s < ppage->ppg_count; i++, s++)
+	{
+		if (s != slot)
+		{
+			const bool bit_empty = PPG_DP_BIT_TEST(bits, s, ppg_dp_empty);
+			empty &= bit_empty;
+
+			if (!ppage->ppg_page[s])
+			{
+				extent = false;
+				break;
+			}
+		}
+
+		if (i > 0 && ppage->ppg_page[s] != ppage->ppg_page[s-1] + 1)
+		{
+			extent = false;
+			break;
+		}
+
+		pages.add(ppage->ppg_page[s]);
+	}
+
+	if (i < PAGES_IN_EXTENT) 
+	{
+		extent = false;
+		pages.clear();
+		pages.add(ppage->ppg_page[slot]);
+	}
+
+	if (extent && empty)
+	{
+		// make sure all data pages marked as empty at PP are still empty
+		s = firstSlot;
+		for (i = 0; i < pages.getCount() && empty; i++, s++)
+			if (s != slot)
+			{
+				WIN dp_window(relPages->rel_pg_space_id, pages[i]);
+				data_page* dpage = (data_page*) CCH_FETCH(tdbb, &dp_window, LCK_read, pag_data);
+				if (dpage->dpg_count > 0)
+				{
+					empty = false;
+					CCH_RELEASE(tdbb, &dp_window);
+				}
+				else
+					CCH_RELEASE_TAIL(tdbb, &dp_window);
+			}
+	}
+
+	if (extent && !empty)
+	{
+		CCH_RELEASE(tdbb, window);
+
+		CCH_precedence(tdbb, &pwindow, window->win_page);
+		CCH_MARK(tdbb, &pwindow);
+
+		PPG_DP_BIT_SET(bits, slot, ppg_dp_empty);
+		PPG_DP_BIT_CLEAR(bits, slot, ppg_dp_full);
+
+		CCH_RELEASE(tdbb, &pwindow);
+		return;
+	}
+
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
 		"\tDPM_delete:  page %"SLONGFORMAT
@@ -853,10 +933,18 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	// Make sure that the pointer page is written after the data page.
 	// The resulting 'must-be-written-after' graph is:
 	// pip --> pp --> deallocated page --> prior_page
-	CCH_precedence(tdbb, &pwindow, window->win_page);
+
+	for (i = 0; i < pages.getCount(); i++, s++)
+		CCH_precedence(tdbb, &pwindow, pages[i]);
 
 	CCH_MARK(tdbb, &pwindow);
-	ppage->ppg_page[slot] = 0;
+
+	s = extent ? firstSlot : slot;
+	for (i = 0; i < pages.getCount(); i++, s++)
+		ppage->ppg_page[s] = 0;
+
+	if (relPages->rel_data_pages)
+		relPages->rel_data_pages -= pages.getCount();
 
 	const ULONG* ptr;
 	for (ptr = &ppage->ppg_page[ppage->ppg_count]; ptr > ppage->ppg_page; --ptr)
@@ -870,12 +958,8 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 		count--;
 	}
 	ppage->ppg_min_space = MIN(ppage->ppg_min_space, count);
-	//jrd_rel* relation = rpb->rpb_relation;
 
 	relPages->rel_slot_space = MIN(relPages->rel_slot_space, pp_sequence);
-	if (relPages->rel_data_pages) {
-		--relPages->rel_data_pages;
-	}
 
 	CCH_RELEASE(tdbb, &pwindow);
 	CCH_RELEASE(tdbb, window);
@@ -883,7 +967,9 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	// Make sure that the page inventory page is written after the pointer page.
 	// Earlier, we make sure that the pointer page is written after the data
 	// page being released.
-	PAG_release_page(tdbb, window->win_page, pwindow.win_page);
+
+	PAG_release_pages(tdbb, relPages->rel_pg_space_id, pages.getCount(), pages.begin(), 
+		pwindow.win_page.getPageNum());
 }
 
 
@@ -936,6 +1022,8 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
 
 	// Delete all data and pointer pages
 
+	SortedArray<ULONG, InlineStorage<ULONG, 256> > pages(*relation->rel_pool);
+
 	for (USHORT sequence = 0; true; sequence++)
 	{
 		const pointer_page* ppage =
@@ -946,6 +1034,11 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
 		}
 		const ULONG* page = ppage->ppg_page;
 		const UCHAR* flags = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
+
+		// reserve buffer for data pages numbers and pointer page number
+		pages.getBuffer(ppage->ppg_count + 1, false);
+		pages.clear();
+
 		for (USHORT i = 0; i < ppage->ppg_count; i++, page++)
 		{
 			if (!*page) {
@@ -973,11 +1066,14 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
 				}
 				CCH_RELEASE_TAIL(tdbb, &data_window);
 			}
-			PAG_release_page(tdbb, PageNumber(relPages->rel_pg_space_id, *page), ZERO_PAGE_NUMBER);
+			pages.add(*page);
 		}
 		const UCHAR pag_flags = ppage->ppg_header.pag_flags;
 		CCH_RELEASE_TAIL(tdbb, &window);
-		PAG_release_page(tdbb, window.win_page, ZERO_PAGE_NUMBER);
+		
+		pages.add(window.win_page.getPageNum());
+		PAG_release_pages(tdbb, relPages->rel_pg_space_id, pages.getCount(), pages.begin(), 0);
+		
 		if (pag_flags & ppg_eof)
 		{
 			break;
@@ -1569,6 +1665,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 			const ULONG page_number = ppage->ppg_page[slot];
 			const UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 			if (page_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary) &&
+				!PPG_DP_BIT_TEST(bits, slot, ppg_dp_empty) &&
 				(!sweeper || !PPG_DP_BIT_TEST(bits, slot, ppg_dp_swept)) )
 			{
 #ifdef SUPERSERVER_V2
@@ -2550,9 +2647,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
  **************************************
  *
  * Functional description
- *	Extend a relation with a given page.  The window points to an
- *	already allocated, fetched, and marked data page to be inserted
- *	into the pointer pages for a given relation.
+ *	Extend a relation.  
  *	This routine returns a window on the datapage locked for write
  *
  **************************************/
@@ -2560,139 +2655,155 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 	RelationPages* relPages = relation->getPages(tdbb);
-	WIN pp_window(relPages->rel_pg_space_id, -1),
-		new_pp_window(relPages->rel_pg_space_id, -1);
+	WIN pp_window(relPages->rel_pg_space_id, -1);
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
 		"     extend_relation (relation %d, window)\n", relation->rel_id);
 #endif
 
-	// Release faked page before fetching pointer page to prevent deadlocks. This is only
-	// a problem for multi-threaded servers using internal latches. The faked page may be
-	// dirty from its previous incarnation and involved in a precedence relationship. This
-	// special case may need a more general solution.
-
-	CCH_RELEASE(tdbb, window);
-
-	/* Search pointer pages for an empty slot.
-	   If we run out of pointer pages, allocate another one.  Note that the code below
-	   is not careful in preventing deadlocks when it allocates a new pointer page:
-	    - the last already-existing pointer page is fetched with an exclusive latch,
-	    - allocation of a new pointer page requires the fetching of the PIP page with
-		an exlusive latch.
-	   This might cause a deadlock.  Fortunately, pointer pages don't need to be
-	   allocated often. */
+	//  Search pointer pages for an empty slot.
+	//  If we run out of pointer pages, allocate another one.  Note that the code below
+	//  is not careful in preventing deadlocks when it allocates a new pointer page:
+	//   - the last already-existing pointer page is fetched with an exclusive latch,
+	//   - allocation of a new pointer page requires the fetching of the PIP page with
+	//     an exlusive latch.
 
 	pointer_page* ppage = NULL;
 	USHORT pp_sequence, slot = 0;
-	data_page* dpage = NULL;
 
-	for (;;)
+	for (pp_sequence = relPages->rel_slot_space;; pp_sequence++)
 	{
-		for (pp_sequence = relPages->rel_slot_space;; pp_sequence++)
+		if (!(ppage = get_pointer_page(tdbb, relation, relPages, &pp_window,
+									   pp_sequence, LCK_write)))
 		{
-			if (!(ppage = get_pointer_page(tdbb, relation, relPages, &pp_window,
-										   pp_sequence, LCK_write)))
-			{
-				BUGCHECK(253);	// msg 253 pointer page vanished from extend_relation
-			}
-			ULONG* slots = ppage->ppg_page;
-			for (slot = 0; slot < ppage->ppg_count; slot++, slots++)
-			{
-				if (*slots == 0) {
-					break;
-				}
-			}
-			if (slot < ppage->ppg_count) {
+			BUGCHECK(253);	// msg 253 pointer page vanished from extend_relation
+		}
+		relPages->rel_slot_space = pp_sequence;
+
+		ULONG* slots = ppage->ppg_page;
+		for (slot = 0; slot < ppage->ppg_count; slot++, slots++)
+		{
+			if (*slots == 0) {
 				break;
 			}
-			if ((pp_sequence && ppage->ppg_count < dbb->dbb_dp_per_pp) ||
-				(ppage->ppg_count < dbb->dbb_dp_per_pp - 1))
-			{
-				slot = ppage->ppg_count;
-				break;
-			}
-			if (ppage->ppg_header.pag_flags & ppg_eof)
-			{
-				ppage = (pointer_page*) DPM_allocate(tdbb, &new_pp_window);
-				ppage->ppg_header.pag_type = pag_pointer;
-				ppage->ppg_header.pag_flags |= ppg_eof;
-				ppage->ppg_relation = relation->rel_id;
-				ppage->ppg_sequence = ++pp_sequence;
-				slot = 0;
-				CCH_must_write(tdbb, &new_pp_window);
-				CCH_RELEASE(tdbb, &new_pp_window);
-
-				vcl* vector = relPages->rel_pages =
-					vcl::newVector(*dbb->dbb_permanent, relPages->rel_pages, pp_sequence + 1);
-				(*vector)[pp_sequence] = new_pp_window.win_page.getPageNum();
-
-				// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
-				if (relation->rel_id && (relPages->rel_instance_id == 0))
-				{
-					DPM_pages(tdbb, relation->rel_id, pag_pointer,
-							  pp_sequence, new_pp_window.win_page.getPageNum());
-				}
-				relPages->rel_slot_space = pp_sequence;
-
-				ppage = (pointer_page*) pp_window.win_buffer;
-				CCH_MARK(tdbb, &pp_window);
-				ppage->ppg_header.pag_flags &= ~ppg_eof;
-				ppage->ppg_next = new_pp_window.win_page.getPageNum();
-				--pp_sequence;
-			}
-			CCH_RELEASE(tdbb, &pp_window);
 		}
-
-		// We've found a slot.  Stick in the pointer to the data page
-
-		if (ppage->ppg_page[slot])
-		{
-			CCH_RELEASE(tdbb, &pp_window);
-			CORRUPT(258);			// msg 258 page slot not empty
-		}
-
-		// Refetch newly allocated page that was released above.
-		// To prevent possible deadlocks (since we own already an exlusive latch and we
-		// are asking for another exclusive latch), time out on the latch after 1 second.
-
-		dpage = (data_page*) CCH_FETCH_TIMEOUT(tdbb, window, LCK_write, pag_undefined, -1);
-
-		// In the case of a timeout, retry the whole thing.
-
-		if (!dpage) {
-			CCH_RELEASE(tdbb, &pp_window);
-		}
-		else
+		if (slot < ppage->ppg_count) {
 			break;
+		}
+		if ((pp_sequence && ppage->ppg_count < dbb->dbb_dp_per_pp) ||
+			(ppage->ppg_count < dbb->dbb_dp_per_pp - 1))
+		{
+			slot = ppage->ppg_count;
+			break;
+		}
+		if (ppage->ppg_header.pag_flags & ppg_eof)
+		{
+			WIN new_pp_window(relPages->rel_pg_space_id, -1);
+			pointer_page* new_ppage = (pointer_page*) DPM_allocate(tdbb, &new_pp_window);
+			new_ppage->ppg_header.pag_type = pag_pointer;
+			new_ppage->ppg_header.pag_flags |= ppg_eof;
+			new_ppage->ppg_relation = relation->rel_id;
+			new_ppage->ppg_sequence = ++pp_sequence;
+			slot = 0;
+			CCH_must_write(tdbb, &new_pp_window);
+			CCH_RELEASE(tdbb, &new_pp_window);
+
+			vcl* vector = relPages->rel_pages =
+				vcl::newVector(*dbb->dbb_permanent, relPages->rel_pages, pp_sequence + 1);
+			(*vector)[pp_sequence] = new_pp_window.win_page.getPageNum();
+
+			// hvlad: temporary tables don't save their pointer pages in RDB$PAGES
+			if (relation->rel_id && (relPages->rel_instance_id == 0))
+			{
+				DPM_pages(tdbb, relation->rel_id, pag_pointer,
+						  pp_sequence, new_pp_window.win_page.getPageNum());
+			}
+			relPages->rel_slot_space = pp_sequence;
+
+			CCH_MARK(tdbb, &pp_window);
+			ppage->ppg_header.pag_flags &= ~ppg_eof;
+			ppage->ppg_next = new_pp_window.win_page.getPageNum();
+			--pp_sequence;
+		}
+		CCH_RELEASE(tdbb, &pp_window);
 	}
 
-	CCH_MARK(tdbb, window);
+	int cntAlloc = 1;
+	// allocate extent (PAGES_IN_EXTENT contiguous pages) if
+	// - relation already contains at least PAGES_IN_EXTENT pages, and
+	// - first empty slot found is at extent boundary, and
+	// - next PAGES_IN_EXTENT-1 slots also empty
+	if ((slot % PAGES_IN_EXTENT == 0) && (ppage->ppg_count >= PAGES_IN_EXTENT || pp_sequence > 0))
+	{
+		cntAlloc = PAGES_IN_EXTENT;
+		for (int i = 0; i < PAGES_IN_EXTENT; i++)
+			if(ppage->ppg_page[slot + i] != 0)
+			{
+				cntAlloc = 1;
+				break;
+			};
+	}
+
+	data_page* dpage = (data_page*) PAG_allocate_pages(tdbb, window, cntAlloc, cntAlloc != 1);
+	const PageNumber firstPage = window->win_page;
+
 	dpage->dpg_sequence = (ULONG) pp_sequence * dbb->dbb_dp_per_pp + slot;
 	dpage->dpg_relation = relation->rel_id;
 	dpage->dpg_header.pag_type = pag_data;
-	relPages->rel_data_space = pp_sequence;
 	if (type != DPM_primary) {
-		dpage->dpg_header.pag_flags |= dpg_secondary; // Who checks it?
+		dpage->dpg_header.pag_flags |= dpg_secondary;
 	}
-
 	CCH_RELEASE(tdbb, window);
 
 	CCH_precedence(tdbb, &pp_window, window->win_page);
+
+	for (int i = 1; i < cntAlloc; i++)
+	{
+		window->win_page = firstPage.getPageNum() + i;
+
+		dpage = (data_page*) CCH_fake(tdbb, window, 1);
+		dpage->dpg_sequence = (ULONG) pp_sequence * dbb->dbb_dp_per_pp + slot + i;
+		dpage->dpg_relation = relation->rel_id;
+		dpage->dpg_header.pag_type = pag_data;
+		CCH_RELEASE_TAIL(tdbb, window);
+
+		CCH_precedence(tdbb, &pp_window, window->win_page);
+	}
+
 	CCH_MARK_SYSTEM(tdbb, &pp_window);
-	ppage->ppg_page[slot] = window->win_page.getPageNum();
+	ppage->ppg_page[slot] = firstPage.getPageNum();
 	ppage->ppg_min_space = MIN(ppage->ppg_min_space, slot);
-	ppage->ppg_count = MAX(ppage->ppg_count, slot + 1);
-	UCHAR* bits = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
-	// bits[slot >> 2] &= ~(1 << ((slot & 3) << 1));
+	ppage->ppg_count = MAX(ppage->ppg_count, slot + cntAlloc);
+
+	UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 	PPG_DP_BIT_CLEAR(bits, slot, PPG_DP_ALL_BITS);
+	
 	if (type != DPM_primary) {
 		PPG_DP_BIT_SET(bits, slot, ppg_dp_secondary);
 	}
-	if (relPages->rel_data_pages) {
-		++relPages->rel_data_pages;
+
+	for (int i = 1; i < cntAlloc; i++)
+	{
+		fb_assert(ppage->ppg_page[slot + i] == 0);
+		ppage->ppg_page[slot + i] = firstPage.getPageNum() + i;
+	
+		PPG_DP_BIT_CLEAR(bits, slot + i, PPG_DP_ALL_BITS);
+		PPG_DP_BIT_SET(bits, slot + i, ppg_dp_empty);
 	}
+
+	if (type == DPM_primary)
+	{
+		relPages->rel_pri_data_space = pp_sequence;
+		relPages->rel_sec_data_space = MIN(pp_sequence, relPages->rel_sec_data_space);
+	}
+	else
+	{
+		relPages->rel_sec_data_space = pp_sequence;
+		relPages->rel_pri_data_space = MIN(pp_sequence, relPages->rel_pri_data_space);
+	}
+
+	relPages->rel_data_pages += cntAlloc;
 
 	*window = pp_window;
 	CCH_HANDOFF(tdbb, window, ppage->ppg_page[slot], LCK_write, pag_data);
@@ -2817,6 +2928,14 @@ static UCHAR* find_space(thread_db*	tdbb,
 
 	if (record) {
 		record->rec_precedence.push(PageNumber(DB_PAGE_SPACE, rpb->rpb_page));
+	}
+
+	if (page->dpg_count == 1)
+	{
+		if (type == DPM_primary) 
+			page->dpg_header.pag_flags &= ~dpg_secondary;
+		else
+			page->dpg_header.pag_flags |= dpg_secondary;
 	}
 
 	return (UCHAR*) page + space;
@@ -2990,45 +3109,111 @@ static rhd* locate_space(thread_db* tdbb,
 
 	// Look for space anywhere
 
-	for (USHORT pp_sequence = relPages->rel_data_space;; pp_sequence++)
+	// Make few tries to lock consecutive data pages without waiting. In highly
+	// concurrent environment with shared page cache it could be faster then wait 
+	// in OS for first candidate page.
+	int tries = dbb->dbb_config->getSharedCache() ? 8 : 0;
+
+	USHORT pp_sequence = 
+		(type == DPM_primary ? relPages->rel_pri_data_space : relPages->rel_sec_data_space);
+	for (;; pp_sequence++)
 	{
-		relPages->rel_data_space = pp_sequence;
-		const pointer_page* ppage =
-			 get_pointer_page(tdbb, relation, relPages, window, pp_sequence, LCK_read);
+		locklevel_t ppLock = LCK_read;
+		if (type == DPM_primary)
+			relPages->rel_pri_data_space = pp_sequence;
+		else
+			relPages->rel_sec_data_space = pp_sequence;
+
+		const pointer_page* ppage = 
+			get_pointer_page(tdbb, relation, relPages, window, pp_sequence, ppLock);
 		if (!ppage)
 		{
-				BUGCHECK(254);
-				// msg 254 pointer page vanished from relation list in locate_space
+			BUGCHECK(254);
+			// msg 254 pointer page vanished from relation list in locate_space
 		}
 		const ULONG pp_number = window->win_page.getPageNum();
-		const UCHAR* bits = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 		for (USHORT slot = ppage->ppg_min_space; slot < ppage->ppg_count; slot++)
 		{
-			const ULONG dp_number = ppage->ppg_page[slot];
+			ULONG dp_number = ppage->ppg_page[slot];
+			if (!dp_number)
+				continue;
+
+			UCHAR* bits = (UCHAR *) (ppage->ppg_page + dbb->dbb_dp_per_pp);
+			if (PPG_DP_BIT_TEST(bits, slot, ppg_dp_full))
+				continue;
 
 			// hvlad: avoid creating circle in precedence graph, if possible
 			if (type == DPM_secondary && lowPages.exist(dp_number))
 				continue;
 
-			const bool dp_is_secondary = PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary);
-			//if (dp_number && ~bits[slot >> 2] & (1 << ((slot & 3) << 1)))
-			if (dp_number && !PPG_DP_BIT_TEST(bits, slot, ppg_dp_full) &&
-				((type == DPM_primary) ^ dp_is_secondary))
+			// hvlad: to avoid deadlocks in DPM_fetch_fragment enforce ascending
+			// order of pages for record fragments
+			if ((rpb->rpb_flags & rpb_fragment) && type == DPM_other &&
+				rpb->rpb_page > dp_number)
 			{
-				// hvlad: to avoid deadlocks in DPM_fetch_fragment enforce ascending
-				// order of pages for record fragments
-				if ((rpb->rpb_flags & rpb_fragment) && type == DPM_other &&
-					rpb->rpb_page > dp_number)
+				continue;
+			}
+
+			// hvlad: if data page is empty, we could change its primary\secondary 
+			// type as needed (i.e. to be same as "type" passed). Also, we must clear
+			// ppg_dp_empty bit. To do it, we need to re-fetch PP with write lock.
+			bool dp_is_empty = PPG_DP_BIT_TEST(bits, slot, ppg_dp_empty);
+			bool dp_is_secondary = PPG_DP_BIT_TEST(bits, slot, ppg_dp_secondary);
+
+			if (dp_is_empty)
+			{
+				if (ppLock == LCK_read)
 				{
+					CCH_RELEASE(tdbb, window);
+	
+					ppLock = LCK_write;
+					ppage = get_pointer_page(tdbb, relation, relPages, window, pp_sequence, ppLock);
+					if (!ppage)
+						BUGCHECK(254);
+					
+					// retry with the same slot
+					slot--;
 					continue;
 				}
 
-				CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
-				UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
-				if (space)
-					return (rhd*) space;
+				CCH_precedence(tdbb, window, dp_number);
+				CCH_MARK(tdbb, window);
+
+				PPG_DP_BIT_CLEAR(bits, slot, ppg_dp_empty);
+				if (type == DPM_primary)
+					PPG_DP_BIT_CLEAR(bits, slot, ppg_dp_secondary);
+				else
+					PPG_DP_BIT_SET(bits, slot, ppg_dp_secondary);
+
+				dp_is_secondary = !(type == DPM_primary);
+				tries = 0;
+			}
+
+			if ((type == DPM_primary) ^ dp_is_secondary)
+			{
+				data_page* dpage = NULL;
+				if (tries && (slot + 1 < ppage->ppg_count))
+				{
+					dpage = (data_page*) CCH_HANDOFF_TIMEOUT(tdbb, window, dp_number, LCK_write, pag_data, 0);
+					tries--;
+				}
+				else
+					dpage = (data_page*) CCH_HANDOFF(tdbb, window, dp_number, LCK_write, pag_data);
+
+				if (dpage)
+				{
+					UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
+					if (space)	{
+						return (rhd*) space;
+					}
+				}
+
+				ppLock = LCK_read;
 				window->win_page = pp_number;
-				ppage = (pointer_page*) CCH_FETCH(tdbb, window, LCK_read, pag_pointer);
+				ppage = (pointer_page*) CCH_FETCH(tdbb, window, ppLock, pag_pointer);
+
+				if (!ppage)
+					BUGCHECK(254);
 			}
 		}
 		const UCHAR flags = ppage->ppg_header.pag_flags;
@@ -3045,7 +3230,6 @@ static rhd* locate_space(thread_db* tdbb,
 	int i;
 	for (i = 0; i < 20; ++i)
 	{
-		DPM_allocate(tdbb, window);
 		extend_relation(tdbb, relation, window, type);
 		space = find_space(tdbb, rpb, size, stack, record, type);
 		if (space) {
@@ -3139,7 +3323,11 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 
 
 	const UCHAR flags = dpage->dpg_header.pag_flags;
+	const bool dpEmpty = (dpage->dpg_count == 0);
 	CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+
+	// page can't be full and empty at the same time
+	fb_assert(!(flags & ppg_dp_full) || !dpEmpty);
 
 	// Check if PP flags already equal to the DP flags
 
@@ -3148,8 +3336,11 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	const UCHAR bit_full_set  = ((*byte & PPG_DP_BIT_MASK(slot, ppg_dp_full))  == 0) ? 0 : dpg_full;
 	const UCHAR bit_large_set = ((*byte & PPG_DP_BIT_MASK(slot, ppg_dp_large)) == 0) ? 0 : dpg_large;
 	const UCHAR bit_swept_set = ((*byte & PPG_DP_BIT_MASK(slot, ppg_dp_swept)) == 0) ? 0 : dpg_swept;
+	const UCHAR bit_scnd_set  = ((*byte & PPG_DP_BIT_MASK(slot, ppg_dp_secondary)) == 0) ? 0 : dpg_secondary;
+	const bool bit_empty_set  = ((*byte & PPG_DP_BIT_MASK(slot, ppg_dp_empty)) != 0);
 
-	if ((flags & (dpg_full | dpg_large | dpg_swept)) == (bit_full_set | bit_large_set | bit_swept_set))
+	if ((flags & (dpg_full | dpg_large | dpg_swept | dpg_secondary)) == (bit_full_set | bit_large_set | bit_swept_set | bit_scnd_set) &&
+		(dpEmpty == bit_empty_set))
 	{
 		CCH_RELEASE(tdbb, &pp_window);
 		return;
@@ -3158,25 +3349,25 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	CCH_precedence(tdbb, &pp_window, rpb->getWindow(tdbb).win_page);
 	CCH_MARK(tdbb, &pp_window);
 
-	//UCHAR bit = 1 << ((slot & 3) << 1);
-	//UCHAR* byte = (UCHAR *) (&ppage->ppg_page[dbb->dbb_dp_per_pp]) + (slot >> 2);
 
 	UCHAR bit = PPG_DP_BIT_MASK(slot, ppg_dp_full);
 	if (flags & dpg_full)
 	{
 		*byte |= bit;
-		ppage->ppg_min_space = MAX(slot + 1, ppage->ppg_min_space);
+		if (slot == ppage->ppg_min_space)
+			ppage->ppg_min_space++;
 	}
 	else
 	{
 		*byte &= ~bit;
 		ppage->ppg_min_space = MIN(slot, ppage->ppg_min_space);
-		relPages->rel_data_space = MIN(pp_sequence, relPages->rel_data_space);
+
+		if (flags & dpg_secondary)
+			relPages->rel_sec_data_space = MIN(pp_sequence, relPages->rel_sec_data_space);
+		else
+			relPages->rel_pri_data_space = MIN(pp_sequence, relPages->rel_pri_data_space);
 	}
 
-	// Next, handle the "large object" bit
-
-	//bit <<= 1;
 	bit = PPG_DP_BIT_MASK(slot, ppg_dp_large);
 	if (flags & dpg_large) {
 		*byte |= bit;
@@ -3188,6 +3379,26 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	bit = PPG_DP_BIT_MASK(slot, ppg_dp_swept);
 	if (flags & dpg_swept) {
 		*byte |= bit;
+	}
+	else {
+		*byte &= ~bit;
+	}
+
+	bit = PPG_DP_BIT_MASK(slot, ppg_dp_secondary);
+	if (flags & dpg_secondary) {
+		*byte |= bit;
+	}
+	else {
+		*byte &= ~bit;
+	}
+
+	bit = PPG_DP_BIT_MASK(slot, ppg_dp_empty);
+	if (dpEmpty) 
+	{
+		*byte |= bit;
+		ppage->ppg_min_space = MIN(slot, ppage->ppg_min_space);
+		relPages->rel_pri_data_space = MIN(pp_sequence, relPages->rel_pri_data_space);
+		relPages->rel_sec_data_space = MIN(pp_sequence, relPages->rel_sec_data_space);
 	}
 	else {
 		*byte &= ~bit;

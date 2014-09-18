@@ -120,6 +120,7 @@ struct dba_rel
 	ULONG rel_slots;
 	ULONG rel_pointer_pages;
 	ULONG rel_data_pages;
+	ULONG rel_empty_pages;
 	ULONG rel_full_pages;
 	ULONG rel_primary_pages;
 	ULONG rel_swept_pages;
@@ -1002,9 +1003,12 @@ int gstat(Firebird::UtilSvc* uSvc)
 			// msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s
 			uSvc->printf(false, "    Data pages: %ld, average fill: %s\n", relation->rel_data_pages, buf);
 
-			dba_print(false, 46, SafeArg() << relation->rel_primary_pages << relation->rel_full_pages <<
+			dba_print(false, 46, SafeArg() << relation->rel_primary_pages << relation->rel_data_pages - relation->rel_primary_pages <<
 											  relation->rel_swept_pages);
-			// msg 46: "    Primary pages: @1, full pages: @2, swept pages: @3
+			// msg 46: "    Primary pages: @1, secondary pages: @2, swept pages: @3
+
+			dba_print(false, 56, SafeArg() << relation->rel_empty_pages << relation->rel_full_pages);
+			// msg 56: "    Empty pages: @1, full pages: @2
 
 			if (relation->rel_bigrec_pages)
 			{
@@ -1322,6 +1326,8 @@ static bool analyze_data_page( dba_rel* relation, const data_page* page, bool sw
 	if (bucket == BUCKETS)
 		--bucket;
 
+	if (page->dpg_count == 0)
+		++relation->rel_empty_pages;
 	if (page->dpg_header.pag_flags & dpg_full)
 		++relation->rel_full_pages;
 	if (!(page->dpg_header.pag_flags & dpg_secondary))

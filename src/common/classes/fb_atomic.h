@@ -589,6 +589,21 @@ public:
 		}
 	}
 
+	// returns old value
+	counter_type exchangeLower(counter_type val)
+	{
+		while (true)
+		{
+			volatile counter_type oldVal = counter;
+
+			if (oldVal <= val)
+				return oldVal;
+
+			if (compareExchange(oldVal, val))
+				return oldVal;
+		}
+	}
+
 	operator counter_type () const
 	{
 		return value();

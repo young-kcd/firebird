@@ -73,10 +73,11 @@ public:
 	// Vlad asked for this compile-time check to make sure we can contain a txn number here
 	typedef int RangeCheck[sizeof(RP_INSTANCE_ID) >= sizeof(TraNumber)];
 
-	SLONG	rel_index_root;		// index root page number
-	SLONG	rel_data_pages;		// count of relation data pages
-	USHORT	rel_slot_space;		// lowest pointer page with slot space
-	USHORT	rel_data_space;		// lowest pointer page with data page space
+	SLONG	rel_index_root;			// index root page number
+	SLONG	rel_data_pages;			// count of relation data pages
+	USHORT	rel_slot_space;			// lowest pointer page with slot space
+	USHORT	rel_pri_data_space;		// lowest pointer page with primary data page space
+	USHORT	rel_sec_data_space;		// lowest pointer page with secondary data page space
 	USHORT	rel_pg_space_id;
 
 	RelationPages()
@@ -84,7 +85,7 @@ public:
 		rel_pages = 0;
 		rel_index_root = rel_data_pages = 0;
 		rel_instance_id = 0;
-		rel_slot_space = rel_data_space = 0;
+		rel_slot_space = rel_pri_data_space = rel_sec_data_space = 0;
 		rel_pg_space_id = DB_PAGE_SPACE;
 		rel_next_free = 0;
 		useCount = 0;

@@ -65,6 +65,8 @@ const USHORT DB_PAGE_SPACE		= 1;
 const USHORT TRANS_PAGE_SPACE	= 255;
 const USHORT TEMP_PAGE_SPACE	= 256;
 
+const USHORT PAGES_IN_EXTENT	= 8;
+
 class jrd_file;
 class Database;
 class thread_db;
@@ -77,6 +79,7 @@ public:
 	{
 		pageSpaceID = aPageSpaceID;
 		pipHighWater = 0;
+		pipWithExtent = 0;
 		pipFirst = 0;
 		scnFirst = 0;
 		file = 0;
@@ -87,9 +90,10 @@ public:
 	~PageSpace();
 
 	USHORT pageSpaceID;
-	ULONG pipHighWater;		// Lowest PIP with space
-	ULONG pipFirst;			// First pointer page
-	ULONG scnFirst;			// First SCN's page
+	Firebird::AtomicCounter pipHighWater;		// Lowest PIP with space
+	Firebird::AtomicCounter pipWithExtent;		// Lowest PIP with free extent
+	ULONG pipFirst;								// First pointer page
+	ULONG scnFirst;								// First SCN's page
 
 	jrd_file*	file;
 
@@ -309,7 +313,7 @@ private:
 	USHORT	pageSpaceID;
 };
 
-const PageNumber ZERO_PAGE_NUMBER(0, 0);
+const PageNumber ZERO_PAGE_NUMBER(DB_PAGE_SPACE, 0);
 const PageNumber HEADER_PAGE_NUMBER(DB_PAGE_SPACE, HEADER_PAGE);
 
 typedef Firebird::Stack<PageNumber> PageStack;

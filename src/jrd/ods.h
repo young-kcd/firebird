@@ -292,11 +292,11 @@ struct data_page
 #define DPG_SIZE	(sizeof (Ods::data_page) - sizeof (Ods::data_page::dpg_repeat))
 
 // pag_flags
-const UCHAR dpg_orphan	= 1;		// Data page is NOT in pointer page
-const UCHAR dpg_full	= 2;		// Pointer page is marked FULL
-const UCHAR dpg_large	= 4;		// Large object is on page
-const UCHAR dpg_swept	= 8;		// Sweep has nothing to do on this page
-const UCHAR dpg_secondary	= 16;	// Primary record versions not stored on this page
+const UCHAR dpg_orphan		= 0x01;		// Data page is NOT in pointer page
+const UCHAR dpg_full		= 0x02;		// Pointer page is marked FULL
+const UCHAR dpg_large		= 0x04;		// Large object is on page
+const UCHAR dpg_swept		= 0x08;		// Sweep has nothing to do on this page
+const UCHAR dpg_secondary	= 0x10;	// Primary record versions not stored on this page
 									// Set in dpm.epp's extend_relation() but never tested.
 
 
@@ -417,6 +417,7 @@ struct page_inv_page
 {
 	pag pip_header;
 	ULONG pip_min;				// Lowest (possible) free page
+	ULONG pip_extent;			// Lowest free extent
 	ULONG pip_used;				// Number of pages allocated from this PIP page
 	UCHAR pip_bits[1];
 };
@@ -454,12 +455,11 @@ struct scns_page
 // definitions of page_inv_page and scns_page
 //
 // PageSize  pagesPerPIP  maxPagesPerSCN    pagesPerSCN
-//     4096        32576            1019           1018
-//     8192        65344            2043           2042
-//    16384       130880            4091           4090
-//    32768       261952            8187           8186
-//    65536       524096           16379          16378
-
+//     4096        32544            1019           1017
+//     8192        65312            2043           2041
+//    16384       130848            4091           4089
+//    32768       261920            8187           8185
+//    65536       524064           16379          16377
 
 // Pointer Page
 
@@ -480,17 +480,18 @@ const UCHAR ppg_eof		= 1;	// Last pointer page in relation
 // After array of physical page numbers (ppg_page) there is also array of bit
 // flags per every data page. These flags describes state of corresponding data
 // page. Definitions below used to deal with these bits.
-const int PPG_DP_BITS_NUM	= 4;		// Number of additional flag bits per data page
+const int PPG_DP_BITS_NUM		= 8;		// Number of additional flag bits per data page
 
-const UCHAR ppg_dp_full		= 1;		// Data page is FULL
-const UCHAR ppg_dp_large	= 2;		// Large object is on data page
-const UCHAR ppg_dp_swept	= 4;		// Sweep has nothing to do on data page
-const UCHAR ppg_dp_secondary = 8;		// Primary record versions not stored on data page
+const UCHAR ppg_dp_full			= 0x01;		// Data page is FULL
+const UCHAR ppg_dp_large		= 0x02;		// Large object is on data page
+const UCHAR ppg_dp_swept		= 0x04;		// Sweep has nothing to do on data page
+const UCHAR ppg_dp_secondary	= 0x08;		// Primary record versions not stored on data page
+const UCHAR ppg_dp_empty		= 0x10;		// Data page is empty
 
 const UCHAR PPG_DP_ALL_BITS	= (1 << PPG_DP_BITS_NUM) - 1;
 
-#define PPG_DP_BIT_MASK(slot, bit)		((bit) << (((slot) & 1) << 2))
-#define PPG_DP_BITS_BYTE(bits, slot)	((bits)[(slot) >> 1])
+#define PPG_DP_BIT_MASK(slot, bit)		(bit)
+#define PPG_DP_BITS_BYTE(bits, slot)	((bits)[(slot)])
 
 #define PPG_DP_BIT_TEST(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) & PPG_DP_BIT_MASK((slot), (bit)))
 #define PPG_DP_BIT_SET(flags, slot, bit)	(PPG_DP_BITS_BYTE((flags), (slot)) |= PPG_DP_BIT_MASK((slot), (bit)))

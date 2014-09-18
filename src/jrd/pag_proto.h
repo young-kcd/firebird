@@ -44,6 +44,7 @@ bool	PAG_add_header_entry(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHOR
 //void	PAG_attach_temp_pages(Jrd::thread_db*, USHORT pageSpaceID);
 bool	PAG_replace_entry_first(Jrd::thread_db* tdbb, Ods::header_page*, USHORT, USHORT, const UCHAR*);
 Ods::pag*	PAG_allocate(Jrd::thread_db* tdbb, Jrd::win*);
+Ods::pag*	PAG_allocate_pages(Jrd::thread_db* tdbb, Jrd::win* window, int cntAlloc, bool aligned);
 SLONG	PAG_attachment_id(Jrd::thread_db*);
 bool	PAG_delete_clump_entry(Jrd::thread_db* tdbb, USHORT);
 void	PAG_format_header(Jrd::thread_db*);
@@ -57,6 +58,8 @@ void	PAG_init(Jrd::thread_db*);
 void	PAG_init2(Jrd::thread_db*, USHORT);
 SLONG	PAG_last_page(Jrd::thread_db* tdbb);
 void	PAG_release_page(Jrd::thread_db* tdbb, const Jrd::PageNumber&, const Jrd::PageNumber&);
+void	PAG_release_pages(Jrd::thread_db* tdbb, USHORT pageSpaceID, int cntRelease, 
+			const ULONG* pgNums, const ULONG prior_page);
 void	PAG_set_force_write(Jrd::thread_db* tdbb, bool);
 void	PAG_set_no_reserve(Jrd::thread_db* tdbb, bool);
 void	PAG_set_db_readonly(Jrd::thread_db* tdbb, bool);

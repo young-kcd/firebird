@@ -309,6 +309,6 @@ void RelationPages::free(RelationPages*& nextFree)
 		rel_pages->clear();
 
 	rel_index_root = rel_data_pages = 0;
-	rel_slot_space = rel_data_space = 0;
+	rel_slot_space = rel_pri_data_space = rel_sec_data_space = 0;
 	rel_instance_id = 0;
 }
