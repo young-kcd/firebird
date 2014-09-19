@@ -1,3 +1,23 @@
+ 2014-09-18 22:31  hvlad 
+   M src/common/classes/fb_atomic.h
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/dpm.epp
+   M src/jrd/ods.cpp
+   M src/jrd/ods.h
+   M src/jrd/pag.cpp
+   M src/jrd/pag.h
+   M src/jrd/pag_proto.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/utilities/gstat/dba.epp
+Implement improvement CORE-4556 : Allocate data pages in group of sequential ordered pages (extents)
+Validation code will follow
+
+ 2014-09-18 15:55  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-4555 - DDL trigger remains active after dropped.
+
  2014-09-14 19:46  mapopa 
    M doc/README.build.posix.html
 Update FreeBSD section for trunk in doc/README.build.posix.html
