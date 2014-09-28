@@ -1620,6 +1620,15 @@ COMMIT WORK;
 (NULL, 'ALICE_gfix', 'alice.cpp', NULL, 3, 119, NULL, '   -fe(tch_password)    fetch password from file', NULL, NULL);
 (NULL, 'alice', 'alice.cpp', NULL, 3, 120, NULL, 'usage: gfix [options] <database>', NULL, NULL);
 ('gfix_opt_nolinger', 'ALICE_gfix', 'alice.c', NULL, 3, 121, NULL, '   -nol(inger)          close database ignoring linger setting for it', NULL, NULL);
+('gfix_pip_err', 'ALICE_gfix', 'alice.c', NULL, 3, 122, NULL, '	Number of inventory page errors	: @1', NULL, NULL);
+('gfix_rec_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 123, NULL, '	Number of record level warnings	: @1', NULL, NULL);
+('gfix_blob_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 124, NULL, '	Number of Blob page warnings	: @1', NULL, NULL);
+('gfix_data_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 125, NULL, '	Number of data page warnings	: @1', NULL, NULL);
+('gfix_index_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 126, NULL, '	Number of index page warnings	: @1', NULL, NULL);
+('gfix_pointer_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 127, NULL, '	Number of pointer page warnings	: @1', NULL, NULL);
+('gfix_trn_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 128, NULL, '	Number of transaction page warnings	: @1', NULL, NULL);
+('gfix_db_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 129, NULL, '	Number of database page warnings	: @1', NULL, NULL);
+('gfix_pip_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 130, NULL, '	Number of inventory page warnings	: @1', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);

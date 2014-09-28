@@ -64,6 +64,7 @@
 #include "../jrd/nbak.h"
 #include "../common/StatusArg.h"
 #include "../common/classes/DbImplementation.h"
+#include "../jrd/validation.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -227,7 +228,7 @@ void INF_database_info(thread_db* tdbb,
 	CountsBuffer counts_buffer;
 	UCHAR* buffer = counts_buffer.getBuffer(BUFFER_SMALL);
 	USHORT length;
-	SLONG err_val;
+	ULONG err_val;
 	bool header_refreshed = false;
 
 	Database* const dbb = tdbb->getDatabase();
@@ -617,100 +618,22 @@ void INF_database_info(thread_db* tdbb,
 			continue;
 
 		case isc_info_page_errors:
-			if (err_att->att_val_errors)
-			{
-				err_val = (*err_att->att_val_errors)[VAL_PAG_WRONG_TYPE] +
-						  (*err_att->att_val_errors)[VAL_PAG_CHECKSUM_ERR] +
-						  (*err_att->att_val_errors)[VAL_PAG_DOUBLE_ALLOC] +
-						  (*err_att->att_val_errors)[VAL_PAG_IN_USE] +
-						  (*err_att->att_val_errors)[VAL_PAG_ORPHAN] +
-						  (*err_att->att_val_errors)[VAL_SCNS_PAGE_INCONSISTENT] +
-						  (*err_att->att_val_errors)[VAL_PAG_WRONG_SCN];
-			}
-			else
-				err_val = 0;
-
-			length = INF_convert(err_val, buffer);
-			break;
-
 		case isc_info_bpage_errors:
-			if (err_att->att_val_errors)
-			{
-				err_val = (*err_att->att_val_errors)[VAL_BLOB_INCONSISTENT] +
-						  (*err_att->att_val_errors)[VAL_BLOB_CORRUPT] +
-						  (*err_att->att_val_errors)[VAL_BLOB_TRUNCATED] +
-						  (*err_att->att_val_errors)[VAL_BLOB_UNKNOWN_LEVEL];
-			}
-			else
-				err_val = 0;
-
-			length = INF_convert(err_val, buffer);
-			break;
-
 		case isc_info_record_errors:
-			if (err_att->att_val_errors)
-			{
-				err_val = (*err_att->att_val_errors)[VAL_REC_CHAIN_BROKEN] +
-						  (*err_att->att_val_errors)[VAL_REC_DAMAGED] +
-						  (*err_att->att_val_errors)[VAL_REC_BAD_TID] +
-						  (*err_att->att_val_errors)[VAL_REC_FRAGMENT_CORRUPT] +
-						  (*err_att->att_val_errors)[VAL_REC_WRONG_LENGTH] +
-						  (*err_att->att_val_errors)[VAL_REL_CHAIN_ORPHANS];
-			}
-			else
-				err_val = 0;
-
-			length = INF_convert(err_val, buffer);
-			break;
-
 		case isc_info_dpage_errors:
-			if (err_att->att_val_errors)
-			{
-				err_val = (*err_att->att_val_errors)[VAL_DATA_PAGE_CONFUSED] +
-						  (*err_att->att_val_errors)[VAL_DATA_PAGE_LINE_ERR];
-			}
-			else
-				err_val = 0;
-
-			length = INF_convert(err_val, buffer);
-			break;
-
 		case isc_info_ipage_errors:
-			if (err_att->att_val_errors)
-			{
-				err_val = (*err_att->att_val_errors)[VAL_INDEX_PAGE_CORRUPT] +
-						  (*err_att->att_val_errors)[VAL_INDEX_ROOT_MISSING] +
-						  (*err_att->att_val_errors)[VAL_INDEX_MISSING_ROWS] +
-						  (*err_att->att_val_errors)[VAL_INDEX_ORPHAN_CHILD] +
-						  (*err_att->att_val_errors)[VAL_INDEX_CYCLE];
-			}
-			else
-				err_val = 0;
-
-			length = INF_convert(err_val, buffer);
-			break;
-
 		case isc_info_ppage_errors:
-			if (err_att->att_val_errors)
-			{
-				err_val = (*err_att->att_val_errors)[VAL_P_PAGE_LOST] +
-						  (*err_att->att_val_errors)[VAL_P_PAGE_INCONSISTENT];
-			}
-			else
-				err_val = 0;
-
-			length = INF_convert(err_val, buffer);
-			break;
-
 		case isc_info_tpage_errors:
-			if (err_att->att_val_errors)
-			{
-				err_val = (*err_att->att_val_errors)[VAL_TIP_LOST] +
-						  (*err_att->att_val_errors)[VAL_TIP_LOST_SEQUENCE] +
-						  (*err_att->att_val_errors)[VAL_TIP_CONFUSED];
-			}
-			else
-				err_val = 0;
+		case fb_info_page_warns:
+		case fb_info_record_warns:
+		case fb_info_bpage_warns:
+		case fb_info_dpage_warns:
+		case fb_info_ipage_warns: 
+		case fb_info_ppage_warns:
+		case fb_info_tpage_warns:
+		case fb_info_pip_errors:
+		case fb_info_pip_warns:
+			err_val = (err_att->att_validation) ? err_att->att_validation->getInfo(item) : 0;
 
 			length = INF_convert(err_val, buffer);
 			break;

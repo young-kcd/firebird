@@ -72,7 +72,16 @@ static const USHORT val_err_table[] =
 	58,				// msg 58: \tNumber of index page errors\t: %ld
 	59,				// msg 59: \tNumber of pointer page errors\t: %ld
 	60,				// msg 60: \tNumber of transaction page errors\t: %ld
-	61				// msg 61: \tNumber of database page errors\t: %ld
+	61,				// msg 61: \tNumber of database page errors\t: %ld
+	122,			// msg 122: \tNumber of inventory page errors\t: @1
+	123,			// msg 123: \tNumber of record level warnings\t: @1
+	124,			// msg 124: \tNumber of Blob page warnings\t: @1
+	125,			// msg 125: \tNumber of data page warnings\t: @1
+	126,			// msg 126: \tNumber of index page warnings\t: @1
+	127,			// msg 127: \tNumber of pointer page warnings\t: @1
+	128,			// msg 128: \tNumber of transaction page warnings\t: @1
+	129,			// msg 129: \tNumber of database page warnings\t: @1
+	130				// msg 130: \tNumber of inventory page warnings\t: @1
 };
 
 
@@ -499,7 +508,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	{
 		ret = EXE_action(database, flags);
 
-		const SLONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
+		const ULONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
 
 		if (!ua_val_errors[VAL_INVALID_DB_VERSION])
 		{

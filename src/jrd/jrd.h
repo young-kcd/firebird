@@ -178,44 +178,6 @@ const int IRQ_REQUESTS				= 1;
 const int DYN_REQUESTS				= 2;
 
 
-//
-// Errors during validation - will be returned on info calls
-// CVC: It seems they will be better in a header for val.cpp that's not val.h
-//
-const int VAL_PAG_WRONG_TYPE			= 0;
-const int VAL_PAG_CHECKSUM_ERR			= 1;
-const int VAL_PAG_DOUBLE_ALLOC			= 2;
-const int VAL_PAG_IN_USE				= 3;
-const int VAL_PAG_ORPHAN				= 4;
-const int VAL_BLOB_INCONSISTENT			= 5;
-const int VAL_BLOB_CORRUPT				= 6;
-const int VAL_BLOB_TRUNCATED			= 7;
-const int VAL_REC_CHAIN_BROKEN			= 8;
-const int VAL_DATA_PAGE_CONFUSED		= 9;
-const int VAL_DATA_PAGE_LINE_ERR		= 10;
-const int VAL_INDEX_PAGE_CORRUPT		= 11;
-const int VAL_P_PAGE_LOST				= 12;
-const int VAL_P_PAGE_INCONSISTENT		= 13;
-const int VAL_REC_DAMAGED				= 14;
-const int VAL_REC_BAD_TID				= 15;
-const int VAL_REC_FRAGMENT_CORRUPT		= 16;
-const int VAL_REC_WRONG_LENGTH			= 17;
-const int VAL_INDEX_ROOT_MISSING		= 18;
-const int VAL_TIP_LOST					= 19;
-const int VAL_TIP_LOST_SEQUENCE			= 20;
-const int VAL_TIP_CONFUSED				= 21;
-const int VAL_REL_CHAIN_ORPHANS			= 22;
-const int VAL_INDEX_MISSING_ROWS		= 23;
-const int VAL_INDEX_ORPHAN_CHILD		= 24;
-const int VAL_INDEX_CYCLE				= 25;
-const int VAL_SCNS_PAGE_INCONSISTENT	= 26;
-const int VAL_PAG_WRONG_SCN				= 27;
-const int VAL_BLOB_UNKNOWN_LEVEL		= 28;
-const int VAL_INDEX_BAD_LEFT_SIBLING	= 29;
-const int VAL_INDEX_MISSES_NODE			= 30;
-const int VAL_MAX_ERROR					= 31;
-
-
 // Procedure block
 
 class jrd_prc : public Routine

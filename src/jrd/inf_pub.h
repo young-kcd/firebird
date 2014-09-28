@@ -127,6 +127,16 @@ enum db_info_types
 
 	fb_info_implementation = 114,
 
+	fb_info_page_warns = 115,
+	fb_info_record_warns = 116,
+	fb_info_bpage_warns = 117,
+	fb_info_dpage_warns = 118,
+	fb_info_ipage_warns = 119,
+	fb_info_ppage_warns = 120,
+	fb_info_tpage_warns = 121,
+	fb_info_pip_errors = 122,
+	fb_info_pip_warns = 123,
+
 	isc_info_db_last_value   /* Leave this LAST! */
 };
 

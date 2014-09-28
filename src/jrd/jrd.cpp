@@ -103,6 +103,7 @@
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
+#include "../jrd/validation.h"
 #include "../jrd/vio_proto.h"
 #include "../common/file_params.h"
 #include "../jrd/event_proto.h"
@@ -6281,8 +6282,8 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	// Release any validation error vector allocated
 
-	delete attachment->att_val_errors;
-	attachment->att_val_errors = NULL;
+	delete attachment->att_validation;
+	attachment->att_validation = NULL;
 
 	attachment->destroyIntlObjects(tdbb);
 

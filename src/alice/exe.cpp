@@ -56,7 +56,11 @@ static const TEXT val_errors[] =
 {
 	isc_info_page_errors, isc_info_record_errors, isc_info_bpage_errors,
 	isc_info_dpage_errors, isc_info_ipage_errors, isc_info_ppage_errors,
-	isc_info_tpage_errors, isc_info_end
+	isc_info_tpage_errors, 
+	fb_info_page_warns, fb_info_record_warns, fb_info_bpage_warns,
+	fb_info_dpage_warns, fb_info_ipage_warns, fb_info_ppage_warns,
+	fb_info_tpage_warns, fb_info_pip_errors, fb_info_pip_warns,
+	isc_info_end
 };
 
 
@@ -411,6 +415,43 @@ static void extract_db_info(const UCHAR* db_info_buffer, size_t buf_size)
 		case isc_info_tpage_errors:
 			pos = VAL_TIP_PAGE_ERRORS;
 			break;
+
+		case fb_info_page_warns:
+			pos = VAL_PAGE_WARNS;
+			break;
+
+		case fb_info_record_warns:
+			pos = VAL_RECORD_WARNS;
+			break;
+
+		case fb_info_bpage_warns:
+			pos = VAL_BLOB_PAGE_WARNS;
+			break;
+
+		case fb_info_dpage_warns:
+			pos = VAL_DATA_PAGE_WARNS;
+			break;
+
+		case fb_info_ipage_warns:
+			pos = VAL_INDEX_PAGE_WARNS;
+			break;
+
+		case fb_info_ppage_warns:
+			pos = VAL_POINTER_PAGE_WARNS;
+			break;
+
+		case fb_info_tpage_warns:
+			pos = VAL_TIP_PAGE_WARNS;
+			break;
+
+		case fb_info_pip_errors:
+			pos = VAL_PIP_PAGE_ERRORS;
+			break;
+
+		case fb_info_pip_warns:
+			pos = VAL_PIP_PAGE_WARNS;
+			break;
+
 
 		case isc_info_error:
 			// has to be a < V4 database.

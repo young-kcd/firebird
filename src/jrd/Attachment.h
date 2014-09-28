@@ -84,6 +84,7 @@ namespace Jrd
 	typedef Firebird::ObjectsArray<Trigger> trig_vec;
 	class Function;
 	class JrdStatement;
+	class Validation;
 
 struct DSqlCacheItem
 {
@@ -342,7 +343,7 @@ public:
 	Lock*		att_long_locks;				// outstanding two phased locks
 	Lock*		att_wait_lock;				// lock at which attachment waits currently
 	vec<Lock*>*	att_compatibility_table;	// hash table of compatible locks
-	vcl*		att_val_errors;
+	Validation*	att_validation;
 	Firebird::PathName	att_working_directory;	// Current working directory is cached
 	Firebird::PathName	att_filename;			// alias used to attach the database
 	const Firebird::TimeStamp	att_timestamp;	// Connection date and time
