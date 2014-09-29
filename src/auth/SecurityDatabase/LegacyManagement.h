@@ -28,23 +28,23 @@
 #define AUTH_LEGACY_MANAGEMENT_H
 
 #include "../common/classes/ImplementHelper.h"
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 
 
 namespace Auth {
 
-class SecurityDatabaseManagement FB_FINAL : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VERSION>
+class SecurityDatabaseManagement FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ManagementImpl<SecurityDatabaseManagement> >
 {
 public:
 	explicit SecurityDatabaseManagement(Firebird::IPluginConfig* par);
 
 	// IManagement implementation
-	void FB_CARG start(Firebird::IStatus* status, ILogonInfo* logonInfo);
-	int FB_CARG execute(Firebird::IStatus* status, IUser* user, IListUsers* callback);
-	void FB_CARG commit(Firebird::IStatus* status);
-	void FB_CARG rollback(Firebird::IStatus* status);
+	void start(Firebird::IStatus* status, Firebird::ILogonInfo* logonInfo);
+	int execute(Firebird::IStatus* status, Firebird::IUser* user, Firebird::IListUsers* callback);
+	void commit(Firebird::IStatus* status);
+	void rollback(Firebird::IStatus* status);
 
-	int FB_CARG release();
+	int release();
 
 private:
 	Firebird::RefPtr<Firebird::IFirebirdConf> config;

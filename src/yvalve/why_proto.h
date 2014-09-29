@@ -24,14 +24,6 @@
 #ifndef JRD_WHY_PROTO_H
 #define JRD_WHY_PROTO_H
 
-namespace Firebird
-{
-	class ICryptKeyCallback;
-	class IStatus;
-	class IAttachment;
-	class ITransaction;
-}
-
 extern "C" {
 
 #ifndef JRD_IBASE_H
@@ -251,7 +243,7 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS*, FB_API_HANDLE*);
 
 ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS*, FB_API_HANDLE*, void*);
 ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS*, FB_API_HANDLE*, void*);
-ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS*, Firebird::ICryptKeyCallback*);
+ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS*, void*);
 
 typedef void AttachmentCleanupRoutine(FB_API_HANDLE*, void*);
 typedef void TransactionCleanupRoutine(FB_API_HANDLE, void*);
@@ -265,8 +257,5 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS*, FB_API_HANDLE*,
 												   TransactionCleanupRoutine*, void*);
 
 } /* extern "C"*/
-
-Firebird::IAttachment* handleToIAttachment(Firebird::IStatus*, FB_API_HANDLE*);
-Firebird::ITransaction* handleToITransaction(Firebird::IStatus*, FB_API_HANDLE*);
 
 #endif // JRD_WHY_PROTO_H

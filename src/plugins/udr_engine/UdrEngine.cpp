@@ -24,8 +24,7 @@
 #include "../jrd/ibase.h"
 #include "firebird/UdrEngine.h"
 #include "firebird/UdrCppEngine.h"
-#include "firebird/Plugin.h"
-#include "firebird/ExternalEngine.h"
+#include "firebird/Interface.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
 #include "../common/classes/init.h"
@@ -78,7 +77,7 @@ struct TriggerNode : public Node
 
 static GlobalPtr<ObjectsArray<PathName> > paths;
 
-class Engine : public StdPlugin<ExternalEngine, FB_EXTERNAL_ENGINE_VERSION>
+class Engine : public StdPlugin<Api::ExternalEngineImpl<Engine> >
 {
 public:
 	explicit Engine(IPluginConfig* par)
@@ -119,7 +118,7 @@ public:
 		}
 	}
 
-	int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -131,35 +130,35 @@ public:
 	}
 
 public:
-	void loadModule(const IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint);
+	void loadModule(IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint);
 	template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* getChild(
-		IStatus* status, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
-		SharedObjType* sharedObj, ExternalContext* context, NodeType* nodes,
+		IStatus* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
+		SharedObjType* sharedObj, IExternalContext* context, NodeType* nodes,
 		SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName);
 	template <typename ObjType> void deleteChildren(
-		GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children);
+		GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children);
 
 	template <typename T> T* findNode(T* nodes, const PathName& moduleName,
 		const string& entryPoint);
 
 private:
 	template <typename T, typename T2> T2* getNode(IStatus* status, T* nodes,
-		const PathName& moduleName, ExternalContext* context, const IRoutineMetadata* metadata,
+		const PathName& moduleName, IExternalContext* context, IRoutineMetadata* metadata,
 		const string& entryPoint);
 
 public:
-	virtual void FB_CARG open(IStatus* status, ExternalContext* context, Utf8* name, uint nameSize);
-	virtual void FB_CARG openAttachment(IStatus* status, ExternalContext* context);
-	virtual void FB_CARG closeAttachment(IStatus* status, ExternalContext* context);
-	virtual ExternalFunction* FB_CARG makeFunction(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
-	virtual ExternalProcedure* FB_CARG makeProcedure(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
-	virtual ExternalTrigger* FB_CARG makeTrigger(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder);
+	void open(IStatus* status, IExternalContext* context, Utf8* name, uint nameSize);
+	void openAttachment(IStatus* status, IExternalContext* context);
+	void closeAttachment(IStatus* status, IExternalContext* context);
+	IExternalFunction* makeFunction(IStatus* status, IExternalContext* context,
+		IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
+	IExternalProcedure* makeProcedure(IStatus* status, IExternalContext* context,
+		IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
+	IExternalTrigger* makeTrigger(IStatus* status, IExternalContext* context,
+		IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder);
 
 public:
-	virtual void FB_CARG dispose();
+	void dispose();
 
 private:
 	Mutex childrenMutex;
@@ -200,11 +199,11 @@ static TriggerNode* registeredTriggers = NULL;
 //--------------------------------------
 
 
-class SharedFunction : public DisposeIface<ExternalFunction, FB_EXTERNAL_FUNCTION_VERSION>
+class SharedFunction : public DisposeIface<Api::ExternalFunctionImpl<SharedFunction> >
 {
 public:
-	SharedFunction(IStatus* status, Engine* aEngine, ExternalContext* context,
-				const IRoutineMetadata* aMetadata,
+	SharedFunction(IStatus* status, Engine* aEngine, IExternalContext* context,
+				IRoutineMetadata* aMetadata,
 				IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		: engine(aEngine),
 		  metadata(aMetadata),
@@ -225,20 +224,20 @@ public:
 	}
 
 public:
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
+	void getCharSet(IStatus* status, IExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
 		try
 		{
-			ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
+			IExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
 				children, this, context, registeredFunctions, engine->functions, moduleName);
 			if (function)
 				function->getCharSet(status, context, name, nameSize);
@@ -249,9 +248,9 @@ public:
 		}
 	}
 
-	virtual void FB_CARG execute(IStatus* status, ExternalContext* context, void* inMsg, void* outMsg)
+	void execute(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg)
 	{
-		ExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
+		IExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
 			children, this, context, registeredFunctions, engine->functions, moduleName);
 		if (function)
 			function->execute(status, context, inMsg, outMsg);
@@ -259,22 +258,22 @@ public:
 
 public:
 	Engine* engine;
-	const IRoutineMetadata* metadata;
+	IRoutineMetadata* metadata;
 	PathName moduleName;
 	string entryPoint;
 	string info;
-	GenericMap<Pair<NonPooled<ExternalContext*, ExternalFunction*> > > children;
+	GenericMap<Pair<NonPooled<IExternalContext*, IExternalFunction*> > > children;
 };
 
 
 //--------------------------------------
 
 
-class SharedProcedure : public DisposeIface<ExternalProcedure, FB_EXTERNAL_PROCEDURE_VERSION>
+class SharedProcedure : public DisposeIface<Api::ExternalProcedureImpl<SharedProcedure> >
 {
 public:
-	SharedProcedure(IStatus* status, Engine* aEngine, ExternalContext* context,
-				const IRoutineMetadata* aMetadata,
+	SharedProcedure(IStatus* status, Engine* aEngine, IExternalContext* context,
+				IRoutineMetadata* aMetadata,
 				IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		: engine(aEngine),
 		  metadata(aMetadata),
@@ -295,20 +294,20 @@ public:
 	}
 
 public:
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
+	void getCharSet(IStatus* status, IExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
 		try
 		{
-			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
+			IExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
 			if (procedure)
 				procedure->getCharSet(status, context, name, nameSize);
@@ -319,12 +318,12 @@ public:
 		}
 	}
 
-	virtual ExternalResultSet* FB_CARG open(IStatus* status, ExternalContext* context,
+	IExternalResultSet* open(IStatus* status, IExternalContext* context,
 		void* inMsg, void* outMsg)
 	{
 		try
 		{
-			ExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
+			IExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
 			return procedure ? procedure->open(status, context, inMsg, outMsg) : NULL;
 		}
@@ -337,22 +336,22 @@ public:
 
 public:
 	Engine* engine;
-	const IRoutineMetadata* metadata;
+	IRoutineMetadata* metadata;
 	PathName moduleName;
 	string entryPoint;
 	string info;
-	GenericMap<Pair<NonPooled<ExternalContext*, ExternalProcedure*> > > children;
+	GenericMap<Pair<NonPooled<IExternalContext*, IExternalProcedure*> > > children;
 };
 
 
 //--------------------------------------
 
 
-class SharedTrigger : public DisposeIface<ExternalTrigger, FB_EXTERNAL_TRIGGER_VERSION>
+class SharedTrigger : public DisposeIface<Api::ExternalTriggerImpl<SharedTrigger> >
 {
 public:
-	SharedTrigger(IStatus* status, Engine* aEngine, ExternalContext* context,
-				const IRoutineMetadata* aMetadata, IMetadataBuilder* fieldsBuilder)
+	SharedTrigger(IStatus* status, Engine* aEngine, IExternalContext* context,
+				IRoutineMetadata* aMetadata, IMetadataBuilder* fieldsBuilder)
 		: engine(aEngine),
 		  metadata(aMetadata),
 		  moduleName(*getDefaultMemoryPool()),
@@ -371,20 +370,20 @@ public:
 	}
 
 public:
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delete this;
 	}
 
 public:
-	virtual void FB_CARG getCharSet(IStatus* status, ExternalContext* context,
+	void getCharSet(IStatus* status, IExternalContext* context,
 		Utf8* name, uint nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
 		try
 		{
-			ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
+			IExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
 				children, this, context, registeredTriggers, engine->triggers, moduleName);
 			if (trigger)
 				trigger->getCharSet(status, context, name, nameSize);
@@ -395,10 +394,10 @@ public:
 		}
 	}
 
-	virtual void FB_CARG execute(IStatus* status, ExternalContext* context,
-		ExternalTrigger::Action action, void* oldMsg, void* newMsg)
+	void execute(IStatus* status, IExternalContext* context,
+		unsigned action, void* oldMsg, void* newMsg)
 	{
-		ExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
+		IExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
 			children, this, context, registeredTriggers, engine->triggers, moduleName);
 		if (trigger)
 			trigger->execute(status, context, action, oldMsg, newMsg);
@@ -406,11 +405,11 @@ public:
 
 public:
 	Engine* engine;
-	const IRoutineMetadata* metadata;
+	IRoutineMetadata* metadata;
 	PathName moduleName;
 	string entryPoint;
 	string info;
-	GenericMap<Pair<NonPooled<ExternalContext*, ExternalTrigger*> > > children;
+	GenericMap<Pair<NonPooled<IExternalContext*, IExternalTrigger*> > > children;
 };
 
 
@@ -482,7 +481,7 @@ ModulesMap::~ModulesMap()
 //--------------------------------------
 
 
-void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint)
+void Engine::loadModule(IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint)
 {
 	LocalStatus status;
 	const string str(metadata->getEntryPoint(&status));
@@ -555,8 +554,8 @@ void Engine::loadModule(const IRoutineMetadata* metadata, PathName* moduleName, 
 
 
 template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* Engine::getChild(
-	IStatus* status, GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children,
-	SharedObjType* sharedObj, ExternalContext* context, NodeType* nodes,
+	IStatus* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
+	SharedObjType* sharedObj, IExternalContext* context, NodeType* nodes,
 	SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName)
 {
 	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
@@ -579,15 +578,15 @@ template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* 
 
 
 template <typename ObjType> void Engine::deleteChildren(
-	GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >& children)
+	GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children)
 {
 	// No need to lock childrenMutex as if there are more threads simultaneously accessing
 	// these children in this moment there will be a memory corruption anyway.
 
-	typedef typename GenericMap<Pair<NonPooled<ExternalContext*, ObjType*> > >::Accessor ChildrenAccessor;
+	typedef typename GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >::Accessor ChildrenAccessor;
 	ChildrenAccessor accessor(&children);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-		delete accessor.current()->second;
+		accessor.current()->second->dispose();
 }
 
 
@@ -614,7 +613,7 @@ template <typename T> T* Engine::findNode(T* nodes, const PathName& moduleName,
 
 
 template <typename T, typename T2> T2* Engine::getNode(IStatus* status, T* nodes,
-		const PathName& moduleName, ExternalContext* context, const IRoutineMetadata* metadata,
+		const PathName& moduleName, IExternalContext* context, IRoutineMetadata* metadata,
 		const string& entryPoint)
 {
 	T* node = findNode<T>(nodes, moduleName, entryPoint);
@@ -622,24 +621,24 @@ template <typename T, typename T2> T2* Engine::getNode(IStatus* status, T* nodes
 }
 
 
-void FB_CARG Engine::open(IStatus* /*status*/, ExternalContext* /*context*/, Utf8* name, uint nameSize)
+void Engine::open(IStatus* /*status*/, IExternalContext* /*context*/, Utf8* name, uint nameSize)
 {
 	strncpy(name, "UTF-8", nameSize);
 }
 
 
-void FB_CARG Engine::openAttachment(IStatus* /*status*/, ExternalContext* /*context*/)
+void Engine::openAttachment(IStatus* /*status*/, IExternalContext* /*context*/)
 {
 }
 
 
-void FB_CARG Engine::closeAttachment(IStatus* status, ExternalContext* context)
+void Engine::closeAttachment(IStatus* status, IExternalContext* context)
 {
 	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
 
 	for (SortedArray<SharedFunction*>::iterator i = functions.begin(); i != functions.end(); ++i)
 	{
-		ExternalFunction* function;
+		IExternalFunction* function;
 		if ((*i)->children.get(context, function))
 		{
 			function->dispose();
@@ -649,7 +648,7 @@ void FB_CARG Engine::closeAttachment(IStatus* status, ExternalContext* context)
 
 	for (SortedArray<SharedProcedure*>::iterator i = procedures.begin(); i != procedures.end(); ++i)
 	{
-		ExternalProcedure* procedure;
+		IExternalProcedure* procedure;
 		if ((*i)->children.get(context, procedure))
 		{
 			procedure->dispose();
@@ -659,7 +658,7 @@ void FB_CARG Engine::closeAttachment(IStatus* status, ExternalContext* context)
 
 	for (SortedArray<SharedTrigger*>::iterator i = triggers.begin(); i != triggers.end(); ++i)
 	{
-		ExternalTrigger* trigger;
+		IExternalTrigger* trigger;
 		if ((*i)->children.get(context, trigger))
 		{
 			trigger->dispose();
@@ -669,8 +668,8 @@ void FB_CARG Engine::closeAttachment(IStatus* status, ExternalContext* context)
 }
 
 
-ExternalFunction* FB_CARG Engine::makeFunction(IStatus* status, ExternalContext* context,
-	const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
+IExternalFunction* Engine::makeFunction(IStatus* status, IExternalContext* context,
+	IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
 	try
 	{
@@ -684,8 +683,8 @@ ExternalFunction* FB_CARG Engine::makeFunction(IStatus* status, ExternalContext*
 }
 
 
-ExternalProcedure* FB_CARG Engine::makeProcedure(IStatus* status, ExternalContext* context,
-	const IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
+IExternalProcedure* Engine::makeProcedure(IStatus* status, IExternalContext* context,
+	IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
 	try
 	{
@@ -699,8 +698,8 @@ ExternalProcedure* FB_CARG Engine::makeProcedure(IStatus* status, ExternalContex
 }
 
 
-ExternalTrigger* FB_CARG Engine::makeTrigger(IStatus* status, ExternalContext* context,
-	const IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
+IExternalTrigger* Engine::makeTrigger(IStatus* status, IExternalContext* context,
+	IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 {
 	try
 	{
@@ -714,7 +713,7 @@ ExternalTrigger* FB_CARG Engine::makeTrigger(IStatus* status, ExternalContext* c
 }
 
 
-void FB_CARG Engine::dispose()
+void Engine::dispose()
 {
 	delete this;
 }
@@ -723,7 +722,7 @@ void FB_CARG Engine::dispose()
 //--------------------------------------
 
 
-class ExternalEngineFactoryImpl : public SimpleFactory<Engine>
+class IExternalEngineFactoryImpl : public SimpleFactory<Engine>
 {
 } factory;
 
@@ -732,8 +731,8 @@ extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
 	CachedMasterInterface::set(master);
 
 	PluginManagerInterfacePtr pi;
-	pi->registerPluginFactory(PluginType::ExternalEngine, "UDR", &factory);
-	myModule->registerMe();
+	pi->registerPluginFactory(IPluginManager::ExternalEngine, "UDR", &factory);
+	getUnloadDetector()->registerMe();
 
 	PathName libraryName("fbclient");
 	ModuleLoader::doctorModuleExtension(libraryName);

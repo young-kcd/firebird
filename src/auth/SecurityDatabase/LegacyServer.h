@@ -34,7 +34,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/ImplementHelper.h"
 
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -43,7 +43,7 @@
 
 namespace Auth {
 
-class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
+class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ServerImpl<SecurityDatabaseServer> >
 {
 public:
 	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)
@@ -51,8 +51,8 @@ public:
 	{ }
 
 	// IServer implementation
-	int FB_CARG authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
-	int FB_CARG release();
+	int authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
+	int release();
 
 private:
 	Firebird::RefPtr<Firebird::IPluginConfig> iParameter;

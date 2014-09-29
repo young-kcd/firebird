@@ -30,7 +30,7 @@
 #ifndef FB_AUTH_H
 #define FB_AUTH_H
 
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/init.h"
 #include "../common/classes/array.h"
@@ -39,7 +39,7 @@
 
 namespace Auth {
 
-class WriterImplementation : public Firebird::AutoIface<IWriter, FB_AUTH_WRITER_VERSION>
+class WriterImplementation : public Firebird::AutoIface<Firebird::Api::WriterImpl<WriterImplementation> >
 {
 public:
 	WriterImplementation();
@@ -48,10 +48,10 @@ public:
 	void setPlugin(const char* m);
 
 	// IWriter implementation
-	void FB_CARG reset();
-	void FB_CARG add(Firebird::IStatus* st, const char* name);
-	void FB_CARG setType(Firebird::IStatus* st, const char* value);
-	void FB_CARG setDb(Firebird::IStatus* st, const char* value);
+	void reset();
+	void add(Firebird::IStatus* st, const char* name);
+	void setType(Firebird::IStatus* st, const char* value);
+	void setDb(Firebird::IStatus* st, const char* value);
 
 private:
 	Firebird::ClumpletWriter current, result;

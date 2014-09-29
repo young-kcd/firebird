@@ -35,7 +35,7 @@
 #include "../common/config/config.h"
 #include "../common/classes/init.h"
 #include "../common/db_alias.h"
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter;
@@ -115,8 +115,6 @@ const ParametersSet connectParam =
 
 const SLONG DUMMY_INTERVAL		= 60;	// seconds
 const int ATTACH_FAILURE_SPACE	= 16 * 1024;	// bytes
-
-static Firebird::MakeUpgradeInfo<> upInfo;
 
 
 void REMOTE_cleanup_transaction( Rtr* transaction)
@@ -1075,7 +1073,7 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 	firstTime = true;
 
 	config = REMOTE_get_config(fileName, &dpbConfig);
-	pluginList = config->getPlugins(Firebird::PluginType::AuthClient);
+	pluginList = config->getPlugins(Firebird::IPluginManager::AuthClient);
 
 	Firebird::PathName final;
 	if (serverPluginList.hasData())
@@ -1345,14 +1343,14 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 	// we got correct key's type pair
 	// check what about crypt plugin for it
 	Remote::ParsedList clientPlugins;
-	REMOTE_parseList(clientPlugins, getPortConfig()->getPlugins(Firebird::PluginType::WireCrypt));
+	REMOTE_parseList(clientPlugins, getPortConfig()->getPlugins(Firebird::IPluginManager::WireCrypt));
 	for (unsigned n = 0; n < clientPlugins.getCount(); ++n)
 	{
 		Firebird::PathName p(clientPlugins[n]);
 		if (srvKey.plugins.find(" " + p + " ") != Firebird::PathName::npos)
 		{
 			Firebird::GetPlugins<Firebird::IWireCryptPlugin>
-				cp(Firebird::PluginType::WireCrypt, FB_WIRECRYPT_PLUGIN_VERSION, upInfo, p.c_str());
+				cp(Firebird::IPluginManager::WireCrypt, p.c_str());
 			if (cp.hasData())
 			{
 				Firebird::LocalStatus st;

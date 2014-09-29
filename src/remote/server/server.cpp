@@ -241,8 +241,6 @@ void loginSuccess(const string& login, const string& remId)
 }
 
 
-MakeUpgradeInfo<> upInfo;
-
 template <typename T>
 static void getMultiPartConnectParameter(T& putTo, Firebird::ClumpletReader& id, UCHAR param)
 {
@@ -434,7 +432,7 @@ public:
 			const bool forceNext = (flags & CONT_AUTH) && (!authPort->port_srv_auth_block->hasDataForPlugin());
 			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: ServerAuth calls plug %s\n",
 				forceNext ? "forced-NEXT" : authItr->name()));
-			int authResult = forceNext ? Auth::AUTH_CONTINUE :
+			int authResult = forceNext ? IAuth::AUTH_CONTINUE :
 				authServer->authenticate(&st, authPort->port_srv_auth_block,
 					&authPort->port_srv_auth_block->authBlockWriter);
 			authPort->port_srv_auth_block->setPluginName(authItr->name());
@@ -443,7 +441,7 @@ public:
 
 			switch (authResult)
 			{
-			case Auth::AUTH_SUCCESS:
+			case IAuth::AUTH_SUCCESS:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: Ahh - success\n"));
 				loginSuccess(userName, authPort->getRemoteId());
 				authServer = NULL;
@@ -451,13 +449,13 @@ public:
 				accept(send, &authPort->port_srv_auth_block->authBlockWriter);
 				return true;
 
-			case Auth::AUTH_CONTINUE:
+			case IAuth::AUTH_CONTINUE:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: Next plug suggested\n"));
 				authItr->next();
 				authServer = NULL;
 				continue;
 
-			case Auth::AUTH_MORE_DATA:
+			case IAuth::AUTH_MORE_DATA:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: plugin wants more data\n"));
 				if (authPort->port_protocol < PROTOCOL_VERSION11)
 				{
@@ -506,7 +504,7 @@ public:
 				memset(&send->p_auth_cont, 0, sizeof send->p_auth_cont);
 				return false;
 
-			case Auth::AUTH_FAILED:
+			case IAuth::AUTH_FAILED:
 				HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: No luck today - status:\n"));
 				HANDSHAKE_DEBUG(isc_print_status(st.getErrors()));
 				authServer = NULL;
@@ -532,7 +530,7 @@ public:
 private:
 	AuthServerPlugins* authItr;
 	string userName;
-	Auth::IServer* authServer;
+	Firebird::IServer* authServer;
 	const ParametersSet* tags;
 	unsigned int hopsCount;
 
@@ -692,7 +690,7 @@ private:
 GlobalPtr<Mutex> GlobalPortLock::mtx;
 #endif
 
-class Callback FB_FINAL : public RefCntIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
+class Callback FB_FINAL : public RefCntIface<Api::EventCallbackImpl<Callback> >
 {
 public:
 	explicit Callback(Rvnt* aevent)
@@ -700,7 +698,7 @@ public:
 	{ }
 
 	// IEventCallback implementation
-	virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* items)
+	void eventCallbackFunction(unsigned int length, const UCHAR* items)
 	/**************************************
 	 *
 	 *	s e r v e r _ a s t
@@ -735,7 +733,7 @@ public:
 		port->send(&packet);
 	}
 
-	virtual int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -791,8 +789,7 @@ public:
 		: PermanentStorage(p), knownTypes(getPool())
 	{
 		LocalStatus st;
-		for (GetPlugins<IWireCryptPlugin> cpItr(PluginType::WireCrypt, FB_WIRECRYPT_PLUGIN_VERSION,
-												upInfo); cpItr.hasData(); cpItr.next())
+		for (GetPlugins<IWireCryptPlugin> cpItr(IPluginManager::WireCrypt); cpItr.hasData(); cpItr.next())
 		{
 			const char* list = cpItr.plugin()->getKnownTypes(&st);
 			check(&st);
@@ -844,14 +841,14 @@ private:
 
 InitInstance<CryptKeyTypeManager> knownCryptKeyTypes;
 
-class CryptKeyCallback : public VersionedIface<ICryptKeyCallback, FB_CRYPT_CALLBACK_VERSION>
+class CryptKeyCallback : public VersionedIface<Api::CryptKeyCallbackImpl<CryptKeyCallback> >
 {
 public:
 	explicit CryptKeyCallback(rem_port* prt)
 		: port(prt), l(0), d(NULL)
 	{ }
 
-	unsigned int FB_CARG callback(unsigned int dataLength, const void* data,
+	unsigned int callback(unsigned int dataLength, const void* data,
 		unsigned int bufferLength, void* buffer)
 	{
 		Reference r(*port);
@@ -929,7 +926,7 @@ static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
 static void		continue_authentication(rem_port*, const p_auth_continue*, PACKET*);
 
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
-static bool		bad_port_context(IStatus*, IRefCounted*, const ISC_STATUS);
+static bool		bad_port_context(IStatus*, IReferenceCounted*, const ISC_STATUS);
 static ISC_STATUS	cancel_events(rem_port*, P_EVENT*, PACKET*);
 static void		addClumplets(ClumpletWriter*, const ParametersSet&, const rem_port*);
 
@@ -959,7 +956,7 @@ static void		zap_packet(PACKET*, bool);
 
 inline bool bad_db(IStatus* status_vector, Rdb* rdb)
 {
-	IRefCounted* iface = NULL;
+	IReferenceCounted* iface = NULL;
 	if (rdb)
 		iface = rdb->rdb_iface;
 	return bad_port_context(status_vector, iface, isc_bad_db_handle);
@@ -967,7 +964,7 @@ inline bool bad_db(IStatus* status_vector, Rdb* rdb)
 
 inline bool bad_service(IStatus* status_vector, Rdb* rdb)
 {
-	IRefCounted* iface = NULL;
+	IReferenceCounted* iface = NULL;
 	if (rdb && rdb->rdb_svc.hasData())
 		iface = rdb->rdb_svc->svc_iface;
 
@@ -1805,7 +1802,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 					switch (plugins->plugin()->authenticate(&status, port->port_srv_auth_block,
 						&port->port_srv_auth_block->authBlockWriter))
 					{
-					case Auth::AUTH_SUCCESS:
+					case IAuth::AUTH_SUCCESS:
 						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_SUCCESS\n"));
 						loginSuccess(port->port_login, port->getRemoteId());
 						port->port_srv_auth_block->authCompleted(true);
@@ -1813,7 +1810,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 						returnData = true;
 						break;
 
-					case Auth::AUTH_CONTINUE:
+					case IAuth::AUTH_CONTINUE:
 						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_CONTINUE\n"));
 						// try next plugin
 						plugins->next();
@@ -1829,14 +1826,14 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 						port->port_srv_auth_block->extractPluginName(&send->p_acpd.p_acpt_plugin);
 						break;
 
-					case Auth::AUTH_MORE_DATA:
+					case IAuth::AUTH_MORE_DATA:
 						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_MORE_DATA\n"));
 						port->port_srv_auth_block->extractPluginName(&send->p_acpd.p_acpt_plugin);
 						port->port_srv_auth_block->extractDataFromPluginTo(&send->p_acpd.p_acpt_data);
 						returnData = true;
 						break;
 
-					case Auth::AUTH_FAILED:
+					case IAuth::AUTH_FAILED:
 						HANDSHAKE_DEBUG(fprintf(stderr, "AUTH_FAILED\n"));
 						setErrorStatus(&status);
 						accepted = false;
@@ -2290,7 +2287,7 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 }
 
 
-static bool bad_port_context(IStatus* status_vector, IRefCounted* iface, const ISC_STATUS error)
+static bool bad_port_context(IStatus* status_vector, IReferenceCounted* iface, const ISC_STATUS error)
 {
 /**************************************
  *
@@ -2979,7 +2976,7 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
 		break;
 
 	case op_prepare:
-		transaction->rtr_iface->prepare(&status_vector);
+		transaction->rtr_iface->prepare(&status_vector, 0, NULL);
 		if (!(status_vector.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			transaction->rtr_limbo = true;
 		break;
@@ -5453,7 +5450,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 		PathName plugName(crypt->p_plugin.cstr_address, crypt->p_plugin.cstr_length);
 		// Check it's availability
 		Remote::ParsedList plugins;
-		REMOTE_parseList(plugins, Config::getDefaultConfig()->getPlugins(PluginType::WireCrypt));
+		REMOTE_parseList(plugins, Config::getDefaultConfig()->getPlugins(IPluginManager::WireCrypt));
 		bool found = false;
 		for (unsigned n = 0; n < plugins.getCount(); ++n)
 		{
@@ -5468,8 +5465,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 			(Arg::Gds(isc_wirecrypt_plugin) << plugName).raise();
 		}
 
-		GetPlugins<IWireCryptPlugin> cp(PluginType::WireCrypt, FB_WIRECRYPT_PLUGIN_VERSION, upInfo,
-										plugName.c_str());
+		GetPlugins<IWireCryptPlugin> cp(IPluginManager::WireCrypt, plugName.c_str());
 		if (!cp.hasData())
 		{
 			(Arg::Gds(isc_wirecrypt_plugin) << plugName).raise();
@@ -6345,7 +6341,7 @@ void SrvAuthBlock::createPluginsItr()
 	REMOTE_parseList(fromClient, pluginList);
 
 	Remote::ParsedList onServer;
-	REMOTE_parseList(onServer, port->getPortConfig()->getPlugins(PluginType::AuthServer));
+	REMOTE_parseList(onServer, port->getPortConfig()->getPlugins(IPluginManager::AuthServer));
 
 	Remote::ParsedList final;
 	for (unsigned s = 0; s < onServer.getCount(); ++s)
@@ -6400,8 +6396,7 @@ void SrvAuthBlock::createPluginsItr()
 	REMOTE_makeList(pluginList, final);
 
 	RefPtr<Config> portConf(port->getPortConfig());
-	plugins = new AuthServerPlugins(PluginType::AuthServer, FB_AUTH_SERVER_VERSION, upInfo,
-									portConf, pluginList.c_str());
+	plugins = new AuthServerPlugins(IPluginManager::AuthServer, portConf, pluginList.c_str());
 }
 
 void SrvAuthBlock::reset()

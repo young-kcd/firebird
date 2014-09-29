@@ -33,7 +33,7 @@
 #include "../common/classes/fb_string.h"
 #include "../common/classes/array.h"
 #include "gen/iberror.h"
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 
 #ifdef SFIO
 #include <stdio.h>

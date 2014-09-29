@@ -23,7 +23,6 @@
 #ifndef FIREBIRD_UDR_CPP_ENGINE
 #define FIREBIRD_UDR_CPP_ENGINE
 
-#include "./ExternalEngine.h"
 #include "./UdrEngine.h"
 #include "./Message.h"
 #ifndef JRD_IBASE_H
@@ -57,7 +56,7 @@ namespace Firebird
 	}
 
 #define FB_UDR_EXECUTE_FUNCTION	\
-	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
+	void execute(::Firebird::IStatus* status, ::Firebird::IExternalContext* context, \
 		void* in, void* out)	\
 	{	\
 		try	\
@@ -67,7 +66,7 @@ namespace Firebird
 		FB__UDR_CATCH	\
 	}	\
 	\
-	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context, \
+	void internalExecute(::Firebird::IStatus* status, ::Firebird::IExternalContext* context, \
 		InMessage::Type* in, OutMessage::Type* out)
 
 
@@ -89,8 +88,8 @@ namespace Firebird
 	}
 
 #define FB_UDR_EXECUTE_PROCEDURE	\
-	virtual ::Firebird::ExternalResultSet* FB_CARG open(::Firebird::IStatus* status, \
-		::Firebird::ExternalContext* context, void* in, void* out)	\
+	::Firebird::IExternalResultSet* open(::Firebird::IStatus* status, \
+		::Firebird::IExternalContext* context, void* in, void* out)	\
 	{	\
 		try	\
 		{	\
@@ -104,13 +103,13 @@ namespace Firebird
 	class ResultSet : public ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage>	\
 	{	\
 	public:	\
-		ResultSet(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
+		ResultSet(::Firebird::IStatus* status, ::Firebird::IExternalContext* context,	\
 				Impl* const procedure, InMessage::Type* const in, OutMessage::Type* const out)	\
 			: ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage>(	\
 					context, procedure, in, out)
 
 #define FB_UDR_FETCH_PROCEDURE	\
-	virtual FB_BOOLEAN FB_CARG fetch(::Firebird::IStatus* status)	\
+	FB_BOOLEAN fetch(::Firebird::IStatus* status)	\
 	{	\
 		try	\
 		{	\
@@ -141,8 +140,8 @@ namespace Firebird
 	}
 
 #define FB_UDR_EXECUTE_TRIGGER	\
-	virtual void FB_CARG execute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
-		::Firebird::ExternalTrigger::Action action, void* oldFields, void* newFields)	\
+	void execute(::Firebird::IStatus* status, ::Firebird::IExternalContext* context,	\
+		unsigned int action, void* oldFields, void* newFields)	\
 	{	\
 		try	\
 		{	\
@@ -152,14 +151,14 @@ namespace Firebird
 		FB__UDR_CATCH	\
 	}	\
 	\
-	void internalExecute(::Firebird::IStatus* status, ::Firebird::ExternalContext* context,	\
-		::Firebird::ExternalTrigger::Action action, \
+	void internalExecute(::Firebird::IStatus* status, ::Firebird::IExternalContext* context,	\
+		unsigned int action, \
 		FieldsMessage::Type* oldFields, FieldsMessage::Type* newFields)
 
 
 #define FB_UDR_CONSTRUCTOR	\
-	Impl(::Firebird::IStatus* const status, ::Firebird::ExternalContext* const context,	\
-			const ::Firebird::IRoutineMetadata* const metadata__)	\
+	Impl(::Firebird::IStatus* const status, ::Firebird::IExternalContext* const context,	\
+			::Firebird::IRoutineMetadata* const metadata__)	\
 		: master(context->getMaster()),	\
 		  metadata(metadata__)
 
@@ -168,15 +167,15 @@ namespace Firebird
 
 
 #define FB__UDR_COMMON_IMPL	\
-	Impl(const void* const, ::Firebird::ExternalContext* const context,	\
-			const ::Firebird::IRoutineMetadata* const aMetadata)	\
+	Impl(const void* const, ::Firebird::IExternalContext* const context,	\
+			::Firebird::IRoutineMetadata* const aMetadata)	\
 		: master(context->getMaster()),	\
 		  metadata(aMetadata)	\
 	{	\
 	}	\
 	\
 	::Firebird::IMaster* master;	\
-	const ::Firebird::IRoutineMetadata* metadata;
+	::Firebird::IRoutineMetadata* metadata;
 
 #define FB__UDR_COMMON_TYPE(name)	\
 	struct name	\
@@ -278,7 +277,7 @@ private:
 	ISC_STATUS_ARRAY statusVector;
 };
 
-class StatusImpl : public IStatus
+class StatusImpl : public Api::StatusImpl<StatusImpl>
 {
 public:
 	StatusImpl(IMaster* master)
@@ -287,63 +286,63 @@ public:
 	{
 	}
 
-	virtual int FB_CARG getVersion()
+	int getVersion()
 	{
-		return FB_STATUS_VERSION;
+		return IStatus::VERSION;
 	}
 
-	virtual IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return NULL;
 	}
 
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delegate->dispose();
 		delete this;
 	}
 
-	virtual void FB_CARG setErrors(const ISC_STATUS* value)
+	void setErrors(const ISC_STATUS* value)
 	{
 		delegate->setErrors(value);
 		state = delegate->getStatus();
 	}
 
-	virtual void FB_CARG setWarnings(const ISC_STATUS* value)
+	void setWarnings(const ISC_STATUS* value)
 	{
 		delegate->setWarnings(value);
 		state = delegate->getStatus();
 	}
 
-	virtual void FB_CARG setErrors(unsigned length, const ISC_STATUS* value)
+	void setErrors2(unsigned length, const ISC_STATUS* value)
 	{
-		delegate->setErrors(length, value);
+		delegate->setErrors2(length, value);
 		state = delegate->getStatus();
 	}
 
-	virtual void FB_CARG setWarnings(unsigned length, const ISC_STATUS* value)
+	void setWarnings2(unsigned length, const ISC_STATUS* value)
 	{
-		delegate->setWarnings(length, value);
+		delegate->setWarnings2(length, value);
 		state = delegate->getStatus();
 	}
 
-	virtual void FB_CARG init()
+	void init()
 	{
 		delegate->init();
 		state = 0;
 	}
 
-	virtual const ISC_STATUS* FB_CARG getErrors() const
+	const ISC_STATUS* getErrors() const
 	{
 		return delegate->getErrors();
 	}
 
-	virtual const ISC_STATUS* FB_CARG getWarnings() const
+	const ISC_STATUS* getWarnings() const
 	{
 		return delegate->getWarnings();
 	}
 
-	virtual unsigned FB_CARG getStatus() const
+	unsigned getStatus() const
 	{
 		return state;
 	}
@@ -367,7 +366,7 @@ template <typename T> class Procedure;
 class Helper
 {
 public:
-	static isc_db_handle getIscDbHandle(ExternalContext* context)
+	static isc_db_handle getIscDbHandle(IExternalContext* context)
 	{
 		StatusImpl status(context->getMaster());
 
@@ -383,7 +382,7 @@ public:
 		return handle;
 	}
 
-	static isc_tr_handle getIscTrHandle(ExternalContext* context)
+	static isc_tr_handle getIscTrHandle(IExternalContext* context)
 	{
 		StatusImpl status(context->getMaster());
 
@@ -402,10 +401,10 @@ public:
 
 
 template <typename This, typename Procedure, typename InMessage, typename OutMessage>
-class ResultSet : public ExternalResultSet, public Helper
+class ResultSet : public Api::ExternalResultSetImpl<This>, public Helper
 {
 public:
-	ResultSet(ExternalContext* aContext, Procedure* aProcedure,
+	ResultSet(IExternalContext* aContext, Procedure* aProcedure,
 				typename InMessage::Type* aIn, typename OutMessage::Type* aOut)
 		: context(aContext),
 		  procedure(aProcedure),
@@ -415,23 +414,23 @@ public:
 	}
 
 public:
-	virtual int FB_CARG getVersion()
+	int getVersion()
 	{
-		return FB_EXTERNAL_RESULT_SET_VERSION;
+		return IExternalResultSet::VERSION;
 	}
 
-	virtual IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return NULL;
 	}
 
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
 protected:
-	ExternalContext* const context;
+	IExternalContext* const context;
 	Procedure* const procedure;
 	typename InMessage::Type* const in;
 	typename OutMessage::Type* const out;
@@ -439,86 +438,71 @@ protected:
 
 
 template <typename This>
-class Function : public ExternalFunction, public Helper
+class Function : public Api::ExternalFunctionImpl<This>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
 	FB__UDR_COMMON_TYPE(OutMessage);
 
-	virtual int FB_CARG getVersion()
-	{
-		return FB_EXTERNAL_FUNCTION_VERSION;
-	}
-
-	virtual IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return NULL;
 	}
 
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CARG getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
-		Utf8* /*name*/, uint /*nameSize*/)
+	void getCharSet(IStatus* /*status*/, IExternalContext* /*context*/,
+		Utf8* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
 
 
 template <typename This>
-class Procedure : public ExternalProcedure, public Helper
+class Procedure : public Api::ExternalProcedureImpl<This>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
 	FB__UDR_COMMON_TYPE(OutMessage);
 
-	virtual int FB_CARG getVersion()
-	{
-		return FB_EXTERNAL_PROCEDURE_VERSION;
-	}
-
-	virtual IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return NULL;
 	}
 
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CARG getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
-		Utf8* /*name*/, uint /*nameSize*/)
+	void getCharSet(IStatus* /*status*/, IExternalContext* /*context*/,
+		Utf8* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
 
 
 template <typename This>
-class Trigger : public ExternalTrigger, public Helper
+class Trigger : public Api::ExternalTriggerImpl<This>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(FieldsMessage);
 
-	virtual int FB_CARG getVersion()
-	{
-		return FB_EXTERNAL_TRIGGER_VERSION;
-	}
-
-	virtual IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return NULL;
 	}
 
-	virtual void FB_CARG dispose()
+	void dispose()
 	{
 		delete static_cast<This*>(this);
 	}
 
-	virtual void FB_CARG getCharSet(IStatus* /*status*/, ExternalContext* /*context*/,
-		Utf8* /*name*/, uint /*nameSize*/)
+	void getCharSet(IStatus* /*status*/, IExternalContext* /*context*/,
+		Utf8* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
@@ -532,15 +516,15 @@ public:
 		fbUdrRegFunction(name, this);
 	}
 
-	virtual void FB_CARG setup(IStatus* status, ExternalContext* /*context*/,
-		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
+	void setup(IStatus* status, IExternalContext* /*context*/,
+		IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
 		T::InMessage::setup(status, in);
 		T::OutMessage::setup(status, out);
 	}
 
-	virtual ExternalFunction* FB_CARG newItem(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata)
+	IExternalFunction* newItem(IStatus* status, IExternalContext* context,
+		IRoutineMetadata* metadata)
 	{
 		try
 		{
@@ -561,15 +545,15 @@ public:
 		fbUdrRegProcedure(name, this);
 	}
 
-	virtual void FB_CARG setup(IStatus* status, ExternalContext* /*context*/,
-		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
+	void setup(IStatus* status, IExternalContext* /*context*/,
+		IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
 		T::InMessage::setup(status, in);
 		T::OutMessage::setup(status, out);
 	}
 
-	virtual ExternalProcedure* FB_CARG newItem(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata)
+	IExternalProcedure* newItem(IStatus* status, IExternalContext* context,
+		IRoutineMetadata* metadata)
 	{
 		try
 		{
@@ -590,14 +574,14 @@ public:
 		fbUdrRegTrigger(name, this);
 	}
 
-	virtual void FB_CARG setup(IStatus* status, ExternalContext* /*context*/,
-		const IRoutineMetadata* /*metadata*/, IMetadataBuilder* fields)
+	void setup(IStatus* status, IExternalContext* /*context*/,
+		IRoutineMetadata* /*metadata*/, IMetadataBuilder* fields)
 	{
 		T::FieldsMessage::setup(status, fields);
 	}
 
-	virtual ExternalTrigger* FB_CARG newItem(IStatus* status, ExternalContext* context,
-		const IRoutineMetadata* metadata)
+	IExternalTrigger* newItem(IStatus* status, IExternalContext* context,
+		IRoutineMetadata* metadata)
 	{
 		try
 		{

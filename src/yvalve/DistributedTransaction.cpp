@@ -43,7 +43,7 @@ using namespace Why;
 
 namespace {
 
-class DTransaction FB_FINAL : public RefCntIface<ITransaction, FB_TRANSACTION_VERSION>
+class DTransaction FB_FINAL : public RefCntIface<Api::TransactionImpl<DTransaction> >
 {
 public:
 	DTransaction()
@@ -51,7 +51,7 @@ public:
 	{ }
 
 	// ITransaction implementation
-	virtual int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -62,18 +62,18 @@ public:
 		return 1;
 	}
 
-	virtual void FB_CARG getInfo(IStatus* status, unsigned int itemsLength,
+	void getInfo(IStatus* status, unsigned int itemsLength,
 		const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-	virtual void FB_CARG prepare(IStatus* status, unsigned int msgLength,
+	void prepare(IStatus* status, unsigned int msgLength,
 		const unsigned char* message);
-	virtual void FB_CARG commit(IStatus* status);
-	virtual void FB_CARG commitRetaining(IStatus* status);
-	virtual void FB_CARG rollback(IStatus* status);
-	virtual void FB_CARG rollbackRetaining(IStatus* status);
-	virtual void FB_CARG disconnect(IStatus* status);
-	virtual DTransaction* FB_CARG join(IStatus* status, ITransaction* transaction);
-	virtual ITransaction* FB_CARG validate(IStatus* status, IAttachment* attachment);
-	virtual DTransaction* FB_CARG enterDtc(IStatus* status);
+	void commit(IStatus* status);
+	void commitRetaining(IStatus* status);
+	void rollback(IStatus* status);
+	void rollbackRetaining(IStatus* status);
+	void disconnect(IStatus* status);
+	DTransaction* join(IStatus* status, ITransaction* transaction);
+	ITransaction* validate(IStatus* status, IAttachment* attachment);
+	DTransaction* enterDtc(IStatus* status);
 
 private:
 	typedef HalfStaticArray<ITransaction*, 8> SubArray;
@@ -175,7 +175,7 @@ bool DTransaction::prepareCommit(IStatus* status, TdrBuffer& tdr)
 	return true;
 }
 
-void FB_CARG DTransaction::getInfo(IStatus* status,
+void DTransaction::getInfo(IStatus* status,
 								   unsigned int itemsLength, const unsigned char* items,
 								   unsigned int bufferLength, unsigned char* buffer)
 {
@@ -216,7 +216,7 @@ void FB_CARG DTransaction::getInfo(IStatus* status,
 	}
 }
 
-void FB_CARG DTransaction::prepare(IStatus* status,
+void DTransaction::prepare(IStatus* status,
 								   unsigned int msgLength, const unsigned char* message)
 {
 	try
@@ -257,7 +257,7 @@ void FB_CARG DTransaction::prepare(IStatus* status,
 	}
 }
 
-void FB_CARG DTransaction::commit(IStatus* status)
+void DTransaction::commit(IStatus* status)
 {
 	try
 	{
@@ -296,7 +296,7 @@ void FB_CARG DTransaction::commit(IStatus* status)
 /*
  *	I see problems with this approach, but keep it 'as was' for a while
  */
-void FB_CARG DTransaction::commitRetaining(IStatus* status)
+void DTransaction::commitRetaining(IStatus* status)
 {
 	try
 	{
@@ -322,7 +322,7 @@ void FB_CARG DTransaction::commitRetaining(IStatus* status)
 	}
 }
 
-void FB_CARG DTransaction::rollback(IStatus* status)
+void DTransaction::rollback(IStatus* status)
 {
 	try
 	{
@@ -352,7 +352,7 @@ void FB_CARG DTransaction::rollback(IStatus* status)
 	}
 }
 
-void FB_CARG DTransaction::rollbackRetaining(IStatus* status)
+void DTransaction::rollbackRetaining(IStatus* status)
 {
 	try
 	{
@@ -378,7 +378,7 @@ void FB_CARG DTransaction::rollbackRetaining(IStatus* status)
 	}
 }
 
-void FB_CARG DTransaction::disconnect(IStatus* status)
+void DTransaction::disconnect(IStatus* status)
 {
 	try
 	{
@@ -411,7 +411,7 @@ void FB_CARG DTransaction::disconnect(IStatus* status)
 
 // To do: check the maximum allowed dbs in a two phase commit.
 //		  Q: what is the maximum?
-DTransaction* FB_CARG DTransaction::join(IStatus* status, ITransaction* transaction)
+DTransaction* DTransaction::join(IStatus* status, ITransaction* transaction)
 {
 	try
 	{
@@ -441,7 +441,7 @@ DTransaction* FB_CARG DTransaction::join(IStatus* status, ITransaction* transact
 	return NULL;
 }
 
-ITransaction* FB_CARG DTransaction::validate(IStatus* status, IAttachment* attachment)
+ITransaction* DTransaction::validate(IStatus* status, IAttachment* attachment)
 {
 	try
 	{
@@ -467,7 +467,7 @@ ITransaction* FB_CARG DTransaction::validate(IStatus* status, IAttachment* attac
 	return NULL;
 }
 
-DTransaction* FB_CARG DTransaction::enterDtc(IStatus* status)
+DTransaction* DTransaction::enterDtc(IStatus* status)
 {
 	try
 	{
@@ -504,7 +504,7 @@ DTransaction::~DTransaction()
 
 namespace Why {
 
-YTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* components)
+YTransaction* Dtc::start(IStatus* status, unsigned int cnt, DtcStart* components)
 {
 	try
 	{
@@ -541,7 +541,7 @@ YTransaction* FB_CARG Dtc::start(IStatus* status, unsigned int cnt, DtcStart* co
 	return NULL;
 }
 
-YTransaction* FB_CARG Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
+YTransaction* Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
 {
 	try
 	{

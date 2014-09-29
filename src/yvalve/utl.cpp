@@ -85,6 +85,9 @@
 
 using namespace Firebird;
 
+IAttachment* handleToIAttachment(IStatus*, FB_API_HANDLE*);
+ITransaction* handleToITransaction(IStatus*, FB_API_HANDLE*);
+
 // Bug 7119 - BLOB_load will open external file for read in BINARY mode.
 
 #ifdef WIN_NT
@@ -150,7 +153,7 @@ static const TEXT* const impl_class[] =
 
 namespace {
 
-class VersionCallback : public AutoIface<IVersionCallback, FB_VERSION_CALLBACK_VERSION>
+class VersionCallback : public AutoIface<Api::VersionCallbackImpl<VersionCallback> >
 {
 public:
 	VersionCallback(FPTR_VERSION_CALLBACK routine, void* user)
@@ -158,7 +161,7 @@ public:
 	{ }
 
 	// IVersionCallback implementation
-	void FB_CARG callback(IStatus*, const char* text)
+	void callback(IStatus*, const char* text)
 	{
 		func(arg, text);
 	}
@@ -183,7 +186,7 @@ void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 	LocalStatus temp;
 
 	// Open the blob.  If it failed, what the hell -- just return failure
-	IBlob *blob = att->createBlob(status, tra, blobId);
+	IBlob *blob = att->createBlob(status, tra, blobId, 0, NULL);
 	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 
@@ -237,7 +240,7 @@ void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
  **************************************/
 	// Open the blob.  If it failed, what the hell -- just return failure
 
-	IBlob *blob = att->openBlob(status, tra, blobId);
+	IBlob *blob = att->openBlob(status, tra, blobId, 0, NULL);
 	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 
@@ -357,7 +360,7 @@ namespace Why {
 
 UtlInterface utlInterface;
 
-void FB_CARG UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
+void UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
 	FILE* file = fopen(file_name, txt ? FOPEN_WRITE_TYPE_TEXT : FOPEN_WRITE_TYPE);
@@ -380,7 +383,7 @@ void FB_CARG UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
 		fclose(file);
 }
 
-void FB_CARG UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
+void UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
 /**************************************
@@ -563,7 +566,7 @@ void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
 	}
 }
 
-YAttachment* FB_CARG UtlInterface::executeCreateDatabase(
+YAttachment* UtlInterface::executeCreateDatabase(
 	Firebird::IStatus* status, unsigned stmtLength, const char* creatDBstatement,
 	unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
 {

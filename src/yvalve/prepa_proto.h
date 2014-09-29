@@ -24,9 +24,7 @@
 #ifndef DSQL_PREPA_PROTO_H
 #define DSQL_PREPA_PROTO_H
 
-namespace Firebird {
-	class IStatus;
-}
+#include "firebird/Interface.h"
 
 namespace Why {
 	class YAttachment;

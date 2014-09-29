@@ -1866,7 +1866,7 @@ void ISQL_print_validation(FILE* fp,
 	if (blobid->gds_quad_high == 0 || !DB)
 		return;
 
-	Firebird::IBlob* blob = DB->openBlob(fbStatus, trans, blobid);
+	Firebird::IBlob* blob = DB->openBlob(fbStatus, trans, blobid, 0, NULL);
 	if (ISQL_errmsg(fbStatus))
 		return;
 
@@ -2942,7 +2942,7 @@ static processing_state bulk_insert_hack(const char* command)
 					blobid = (ISC_QUAD*) datap;
 
 					{ // scope
-						Firebird::IBlob* bs = DB->createBlob(fbStatus, M__trans, blobid);
+						Firebird::IBlob* bs = DB->createBlob(fbStatus, M__trans, blobid, 0, NULL);
 						if (failed())
 						{
 							STDERROUT("Unable to create blob");
@@ -3882,7 +3882,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	unsigned dialect =
 		(isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION) ?
 			requested_SQL_dialect : isqlGlob.SQL_dialect;
-	DB = Firebird::UtlInterfacePtr()->executeCreateDatabase(fbStatus, 0, local_statement, dialect);
+	DB = Firebird::UtlInterfacePtr()->executeCreateDatabase(fbStatus, 0, local_statement, dialect, NULL);
 	if (ISQL_errmsg(fbStatus))
 	{
 		ret = FAIL;

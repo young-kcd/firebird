@@ -41,6 +41,11 @@ const ULONG ALLOC_check_each_call	= 1L << 4;	/* Check memory integrity on each a
 const ULONG ALLOC_dont_check	= 1L << 5;	/* Stop checking integrity on each call */
 
 #ifdef __cplusplus
+namespace Firebird
+{
+	class MemoryPool;
+}
+
 extern "C" {
 #endif
 

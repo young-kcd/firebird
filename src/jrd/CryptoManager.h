@@ -37,15 +37,11 @@
 #include "../common/classes/stack.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/ods.h"
+#include "firebird/Interface.h"
 
 // forward
 
 class Config;
-
-namespace Firebird {
-	class IDbCryptPlugin;
-	class IKeyHolderPlugin;
-}
 
 namespace Ods {
 	struct pag;

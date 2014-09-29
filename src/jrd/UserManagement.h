@@ -29,7 +29,7 @@
 #include "../jrd/ibase.h"
 #include "../jrd/Monitoring.h"
 #include "../jrd/recsrc/RecordSource.h"
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 #include "../common/security.h"
 
 namespace Jrd {
@@ -67,14 +67,14 @@ public:
 	// return users list for SEC$USERS
 	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
 	// callback for users display
-	void list(Auth::IUser* u);
+	void list(Firebird::IUser* u);
 
 private:
 	thread_db* threadDbb;
 	Firebird::HalfStaticArray<Auth::DynamicUserData*, 8> commands;
-	Auth::IManagement* manager;
+	Firebird::IManagement* manager;
 
-	static void checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Auth::IUser* user);
+	static void checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Firebird::IUser* user);
 };
 
 }	// namespace

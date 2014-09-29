@@ -35,7 +35,7 @@
 
 namespace Auth {
 
-int SecurityDatabaseClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
+int SecurityDatabaseClient::authenticate(Firebird::IStatus* status, Firebird::IClientBlock* cb)
 {
 	// fprintf(stderr, "Clnt: Legacy: lgn=%s pswd=%s\n", cb->getLogin(), cb->getPassword());
 	if (!(cb->getLogin() && cb->getPassword()))
@@ -43,8 +43,8 @@ int SecurityDatabaseClient::authenticate(Firebird::IStatus* status, IClientBlock
 		return AUTH_CONTINUE;
 	}
 
-	TEXT pwt[Auth::MAX_LEGACY_PASSWORD_LENGTH + 2];
-	ENC_crypt(pwt, sizeof pwt, cb->getPassword(), Auth::LEGACY_PASSWORD_SALT);
+	TEXT pwt[MAX_LEGACY_PASSWORD_LENGTH + 2];
+	ENC_crypt(pwt, sizeof pwt, cb->getPassword(), LEGACY_PASSWORD_SALT);
 	cb->putData(status, static_cast<unsigned>(strlen(&pwt[2])), &pwt[2]);
 	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
@@ -70,7 +70,7 @@ namespace {
 
 void registerLegacyClient(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, "Legacy_Auth", &factory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthClient, "Legacy_Auth", &factory);
 }
 
 } // namespace Auth

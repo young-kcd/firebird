@@ -30,10 +30,10 @@
 #define FB_STATUS_ARG
 
 #include "fb_exception.h"
+#include "firebird/Interface.h"
 
 namespace Firebird {
 
-class IStatus;
 class AbstractString;
 class MetaName;
 class Exception;

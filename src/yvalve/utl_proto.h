@@ -24,7 +24,7 @@
 #ifndef JRD_UTL_PROTO_H
 #define JRD_UTL_PROTO_H
 
-#include <firebird/Utl.h>
+#include <firebird/Interface.h>
 
 #include "fb_types.h"
 #include "../yvalve/YObjects.h"
@@ -85,19 +85,19 @@ void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag);
 namespace Why
 {
 
-class UtlInterface : public Firebird::AutoIface<Firebird::IUtl, FB_UTL_VERSION>
+class UtlInterface : public Firebird::AutoIface<Firebird::Api::UtlImpl<UtlInterface> >
 {
 	// IUtl implementation
 public:
-	void FB_CARG getFbVersion(Firebird::IStatus* status, Firebird::IAttachment* att,
+	void getFbVersion(Firebird::IStatus* status, Firebird::IAttachment* att,
 		Firebird::IVersionCallback* callback);
-	void FB_CARG loadBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
+	void loadBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
 		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
-	void FB_CARG dumpBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
+	void dumpBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
 		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
-	void FB_CARG getPerfCounters(Firebird::IStatus* status, Firebird::IAttachment* att,
+	void getPerfCounters(Firebird::IStatus* status, Firebird::IAttachment* att,
 		const char* countersSet, ISC_INT64* counters);			// in perf.cpp
-	virtual YAttachment* FB_CARG executeCreateDatabase(Firebird::IStatus* status,
+	YAttachment* executeCreateDatabase(Firebird::IStatus* status,
 		unsigned stmtLength, const char* creatDBstatement, unsigned dialect,
 		FB_BOOLEAN* stmtIsCreateDb = NULL);
 };

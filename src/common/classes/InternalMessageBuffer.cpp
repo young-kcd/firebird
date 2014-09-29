@@ -32,6 +32,8 @@
 #include "../common/classes/BlrReader.h"
 #include "../common/gdsassert.h"
 #include "../common/MsgMetadata.h"
+#include "../dsql/sqlda_pub.h"
+#include "../jrd/blr.h"
 
 namespace Firebird
 {

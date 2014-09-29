@@ -29,16 +29,16 @@
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/StatusHolder.h"
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 #include "../auth/SecureRemotePassword/srp.h"
 #include "../jrd/constants.h"
+#include "../jrd/inf_pub.h"
 #include "../utilities/gsec/gsec.h"
 #include "../auth/SecureRemotePassword/Message.h"
 #include "../common/classes/auto.h"
 
 namespace {
 
-Firebird::MakeUpgradeInfo<> upInfo;
 const unsigned int INIT_KEY = ((~0) - 1);
 unsigned int secDbKey = INIT_KEY;
 
@@ -52,7 +52,7 @@ typedef Field<FB_BOOLEAN> Boolean;
 
 namespace Auth {
 
-class SrpManagement FB_FINAL : public Firebird::StdPlugin<IManagement, FB_AUTH_MANAGE_VERSION>
+class SrpManagement FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ManagementImpl<SrpManagement> >
 {
 public:
 	explicit SrpManagement(Firebird::IPluginConfig* par)
@@ -126,7 +126,7 @@ private:
 		}
 	}
 
-	void grantRevokeAdmin(Auth::IUser* user, bool ignoreRevoke = false)
+	void grantRevokeAdmin(Firebird::IUser* user, bool ignoreRevoke = false)
 	{
 		if (!user->admin()->entered())
 		{
@@ -185,12 +185,10 @@ private:
 
 public:
 	// IManagement implementation
-	void FB_CARG start(Firebird::IStatus* status, ILogonInfo* logonInfo)
+	void start(Firebird::IStatus* status, Firebird::ILogonInfo* logonInfo)
 	{
 		try
 		{
-			Firebird::MasterInterfacePtr()->upgradeInterface(logonInfo, FB_AUTH_LOGON_INFO_VERSION, upInfo);
-
 			status->init();
 
 			if (att)
@@ -257,16 +255,10 @@ public:
 		}
 	}
 
-	int FB_CARG execute(Firebird::IStatus* status, IUser* user, IListUsers* callback)
+	int execute(Firebird::IStatus* status, Firebird::IUser* user, Firebird::IListUsers* callback)
 	{
 		try
 		{
-			if (callback)
-			{
-				Firebird::MasterInterfacePtr()->upgradeInterface(callback, FB_AUTH_LIST_USERS_VERSION, upInfo);
-			}
-			Firebird::MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
-
 			status->init();
 
 			fb_assert(att);
@@ -608,7 +600,7 @@ public:
 		return 0;
 	}
 
-	void FB_CARG commit(Firebird::IStatus* status)
+	void commit(Firebird::IStatus* status)
 	{
 		if (tra)
 		{
@@ -620,7 +612,7 @@ public:
 		}
 	}
 
-	void FB_CARG rollback(Firebird::IStatus* status)
+	void rollback(Firebird::IStatus* status)
 	{
 		if (tra)
 		{
@@ -632,7 +624,7 @@ public:
 		}
 	}
 
-	int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -697,7 +689,7 @@ private:
 		}
 	}
 
-	static void setField(Varfield& to, Auth::ICharUserField* from)
+	static void setField(Varfield& to, Firebird::ICharUserField* from)
 	{
 		if (from->entered())
 		{
@@ -709,7 +701,7 @@ private:
 		}
 	}
 
-	static void setField(Boolean& to, Auth::IIntUserField* from)
+	static void setField(Boolean& to, Firebird::IIntUserField* from)
 	{
 		if (from->entered())
 		{
@@ -721,7 +713,7 @@ private:
 		}
 	}
 
-	void setField(Firebird::IStatus* st, Blob& to, Auth::ICharUserField* from)
+	void setField(Firebird::IStatus* st, Blob& to, Firebird::ICharUserField* from)
 	{
 		if (from->entered())
 		{
@@ -733,7 +725,7 @@ private:
 		}
 	}
 
-	static void allocField(Auth::IUserField* value, Firebird::string& update, const char* name)
+	static void allocField(Firebird::IUserField* value, Firebird::string& update, const char* name)
 	{
 		if (value->entered() || value->specified())
 		{
@@ -744,7 +736,7 @@ private:
 	}
 
 	template <typename FT>
-	static void allocField(Firebird::AutoPtr<FT>& field, Message& up, Auth::IUserField* value)
+	static void allocField(Firebird::AutoPtr<FT>& field, Message& up, Firebird::IUserField* value)
 	{
 		if (value->entered() || value->specified())
 		{
@@ -752,7 +744,7 @@ private:
 		}
 	}
 
-	static void assignField(Firebird::AutoPtr<Varfield>& field, Auth::ICharUserField* name)
+	static void assignField(Firebird::AutoPtr<Varfield>& field, Firebird::ICharUserField* name)
 	{
 		if (field.hasData())
 		{
@@ -768,7 +760,7 @@ private:
 		}
 	}
 
-	static void assignField(Firebird::AutoPtr<Boolean>& field, Auth::IIntUserField* name)
+	static void assignField(Firebird::AutoPtr<Boolean>& field, Firebird::IIntUserField* name)
 	{
 		if (field.hasData())
 		{
@@ -784,7 +776,7 @@ private:
 		}
 	}
 
-	void assignField(Firebird::IStatus* st, Firebird::AutoPtr<Blob>& field, Auth::ICharUserField* name)
+	void assignField(Firebird::IStatus* st, Firebird::AutoPtr<Blob>& field, Firebird::ICharUserField* name)
 	{
 		if (field.hasData())
 		{
@@ -801,7 +793,7 @@ private:
 		}
 	}
 
-	static void listField(Auth::ICharUserField* to, Varfield& from)
+	static void listField(Firebird::ICharUserField* to, Varfield& from)
 	{
 		Firebird::LocalStatus st;
 		to->setEntered(&st, from.null ? 0 : 1);
@@ -813,7 +805,7 @@ private:
 		}
 	}
 
-	static void listField(Auth::IIntUserField* to, Boolean& from)
+	static void listField(Firebird::IIntUserField* to, Boolean& from)
 	{
 		Firebird::LocalStatus st;
 		to->setEntered(&st, from.null ? 0 : 1);
@@ -825,7 +817,7 @@ private:
 		}
 	}
 
-	void listField(Auth::ICharUserField* to, Blob& from)
+	void listField(Firebird::ICharUserField* to, Blob& from)
 	{
 		Firebird::LocalStatus st;
 		to->setEntered(&st, from.null ? 0 : 1);
@@ -836,7 +828,7 @@ private:
 			Firebird::IBlob* blob = NULL;
 			try
 			{
-				blob = att->openBlob(&st, tra, &from);
+				blob = att->openBlob(&st, tra, &from, 0, NULL);
 				check(&st);
 
 				char segbuf[256];
@@ -865,7 +857,7 @@ private:
 		}
 	}
 
-	void blobWrite(Firebird::IStatus* st, Blob& to, Auth::ICharUserField* from)
+	void blobWrite(Firebird::IStatus* st, Blob& to, Firebird::ICharUserField* from)
 	{
 		to.null = FB_FALSE;
 		const char* ptr = from->get();
@@ -874,7 +866,7 @@ private:
 		Firebird::IBlob* blob = NULL;
 		try
 		{
-			blob = att->createBlob(st, tra, &to);
+			blob = att->createBlob(st, tra, &to, 0, NULL);
 			check(st);
 
 			blob->putSegment(st, l, ptr);
@@ -900,6 +892,6 @@ static Firebird::SimpleFactory<Auth::SrpManagement> factory;
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	Firebird::CachedMasterInterface::set(master);
-	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::PluginType::AuthUserManagement, Auth::RemotePassword::plugName, &Auth::factory);
-	Firebird::myModule->registerMe();
+	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::IPluginManager::AuthUserManagement, Auth::RemotePassword::plugName, &Auth::factory);
+	Firebird::getUnloadDetector()->registerMe();
 }

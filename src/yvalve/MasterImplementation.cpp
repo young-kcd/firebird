@@ -28,7 +28,6 @@
 
 #include "firebird.h"
 #include "firebird/Interface.h"
-#include "firebird/Timer.h"
 
 #include <string.h>
 
@@ -55,11 +54,11 @@ namespace Why {
 // getStatus()
 //
 
-class UserStatus FB_FINAL : public Firebird::DisposeIface<Firebird::BaseStatus, FB_STATUS_VERSION>
+class UserStatus FB_FINAL : public Firebird::DisposeIface<Firebird::BaseStatus<UserStatus> >
 {
-private:
+public:
 	// IStatus implementation
-	void FB_CARG dispose()
+	void dispose()
 	{
 		delete this;
 	}
@@ -67,7 +66,7 @@ private:
 
 Static<Dtc> MasterImplementation::dtc;
 
-Firebird::IStatus* FB_CARG MasterImplementation::getStatus()
+Firebird::IStatus* MasterImplementation::getStatus()
 {
 	return new UserStatus;
 }
@@ -76,7 +75,7 @@ Firebird::IStatus* FB_CARG MasterImplementation::getStatus()
 // getDispatcher()
 //
 
-IProvider* FB_CARG MasterImplementation::getDispatcher()
+IProvider* MasterImplementation::getDispatcher()
 {
 	IProvider* dispatcher = new Dispatcher;
 	dispatcher->addRef();
@@ -87,7 +86,7 @@ IProvider* FB_CARG MasterImplementation::getDispatcher()
 // getDtc()
 //
 
-Dtc* FB_CARG MasterImplementation::getDtc()
+Dtc* MasterImplementation::getDtc()
 {
 	return &dtc;
 }
@@ -96,7 +95,7 @@ Dtc* FB_CARG MasterImplementation::getDtc()
 // getPluginManager()
 //
 
-IPluginManager* FB_CARG MasterImplementation::getPluginManager()
+IPluginManager* MasterImplementation::getPluginManager()
 {
 	static Static<PluginManager> manager;
 
@@ -109,27 +108,19 @@ IPluginManager* FB_CARG MasterImplementation::getPluginManager()
 
 namespace
 {
-	typedef void function();
-	typedef function* FunctionPtr;
-
-	struct CVirtualClass
-	{
-		FunctionPtr* vTab;
-	};
-
 	class UpgradeKey
 	{
 	public:
-		UpgradeKey(FunctionPtr* aFunc, IPluginModule* aModuleA, IPluginModule* aModuleB)
-			: func(aFunc), moduleA(aModuleA), moduleB(aModuleB)
+		UpgradeKey(IVersioned::VTable* aTbl, IPluginModule* aModuleA, IPluginModule* aModuleB)
+			: vt(aTbl), moduleA(aModuleA), moduleB(aModuleB)
 		{ }
 
 		UpgradeKey(const UpgradeKey& el)
-			: func(el.func), moduleA(el.moduleA), moduleB(el.moduleB)
+			: vt(el.vt), moduleA(el.moduleA), moduleB(el.moduleB)
 		{ }
 
 		UpgradeKey()
-			: func(NULL), moduleA(NULL), moduleB(NULL)
+			: vt(NULL), moduleA(NULL), moduleB(NULL)
 		{ }
 
 		bool operator<(const UpgradeKey& el) const
@@ -148,40 +139,39 @@ namespace
 		}
 
 	private:
-		FunctionPtr* func;
+		IVersioned::VTable* vt;
 		IPluginModule* moduleA;
 		IPluginModule* moduleB;
 	};
 
-	typedef Firebird::Pair<Firebird::NonPooled<UpgradeKey, FunctionPtr*> > FunctionPair;
+	typedef Firebird::Pair<Firebird::NonPooled<UpgradeKey, IVersioned::VTable*> > FunctionPair;
 	GlobalPtr<GenericMap<FunctionPair> > functionMap;
 	GlobalPtr<RWLock> mapLock;
 }
 
-int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
-												   int desiredVersion,
-												   struct UpgradeInfo* upgradeInfo)
+int MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
+	int desiredVersion, IPluginModule* clientModule, void* function)
 {
 	if (!toUpgrade)
 		return 0;
 
-	int existingVersion = toUpgrade->getVersion();
+	IVersioned::VTable* vt = toUpgrade->cloopVTable;
+
+	int existingVersion = vt->version;
 
 	if (existingVersion >= desiredVersion)
 		return 0;
 
-	FunctionPtr* newTab = NULL;
+	IVersioned::VTable* newTab = NULL;
 	try
 	{
-		CVirtualClass* target = (CVirtualClass*) toUpgrade;
-
-		UpgradeKey key(target->vTab, toUpgrade->getModule(), upgradeInfo->clientModule);
+		UpgradeKey key(vt, toUpgrade->getModule(), clientModule);
 
 		{ // sync scope
 			ReadLockGuard sync(mapLock, FB_FUNCTION);
 			if (functionMap->get(key, newTab))
 			{
-				target->vTab = newTab;
+				toUpgrade->cloopVTable = newTab;
 				return 0;
 			}
 		}
@@ -190,18 +180,18 @@ int FB_CARG MasterImplementation::upgradeInterface(IVersioned* toUpgrade,
 
 		if (!functionMap->get(key, newTab))
 		{
-			CVirtualClass* miss = (CVirtualClass*) (upgradeInfo->missingFunctionClass);
-			newTab = FB_NEW(*getDefaultMemoryPool()) FunctionPtr[desiredVersion];
+			newTab = (IVersioned::VTable*) FB_NEW(*getDefaultMemoryPool()) char[(desiredVersion + 2) * sizeof(vt->cloopDummy[0])];
 
 			for (int i = 0; i < desiredVersion; ++i)
 			{
-				newTab[i] = i < existingVersion ? target->vTab[i] : miss->vTab[0];
+				newTab->cloopDummy[i + 2] = i < existingVersion ? vt->cloopDummy[i + 2] : function;
 			}
+			newTab->version = desiredVersion;
 
 			functionMap->put(key, newTab);
 		}
 
-		target->vTab = newTab;
+		toUpgrade->cloopVTable = newTab;
 	}
 	catch (const Exception& ex)
 	{
@@ -241,11 +231,9 @@ void releaseUpgradeTabs(IPluginModule* module)
 		functionMap->remove(removeList[i]);
 }
 
-int FB_CARG MasterImplementation::same(IVersioned* first, IVersioned* second)
+int MasterImplementation::same(IVersioned* first, IVersioned* second)
 {
-	CVirtualClass* i1 = (CVirtualClass*) first;
-	CVirtualClass* i2 = (CVirtualClass*) second;
-	return i1->vTab == i2->vTab ? 1 : 0;
+	return first->cloopVTable == second->cloopVTable ? 1 : 0;
 }
 
 IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsigned fieldCount)
@@ -263,7 +251,8 @@ IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsi
 	}
 }
 
-IDebug* FB_CARG MasterImplementation::getDebug()
+/*
+IDebug* MasterImplementation::getDebug()
 {
 #ifdef DEV_BUILD
 	return getImpDebug();
@@ -271,8 +260,9 @@ IDebug* FB_CARG MasterImplementation::getDebug()
 	return NULL;
 #endif
 }
+ */
 
-int FB_CARG MasterImplementation::serverMode(int mode)
+int MasterImplementation::serverMode(int mode)
 {
 	static int currentMode = -1;
 	if (mode >= 0)
@@ -460,7 +450,7 @@ Firebird::GlobalPtr<StringsBuffer> allStrings;
 
 namespace Why {
 
-const char* FB_CARG MasterImplementation::circularAlloc(const char* s, size_t len, intptr_t thr)
+const char* MasterImplementation::circularAlloc(const char* s, unsigned len, intptr_t thr)
 {
 	return allStrings->alloc(s, len, (ThreadId) thr);
 }
@@ -489,10 +479,10 @@ Thread::Handle timerThreadHandle = 0;
 
 struct TimerEntry
 {
-	TimerDelay fireTime;
+	ISC_UINT64 fireTime;
 	ITimer* timer;
 
-	static const TimerDelay generate(const TimerEntry& item) { return item.fireTime; }
+	static const ISC_UINT64 generate(const TimerEntry& item) { return item.fireTime; }
 	static THREAD_ENTRY_DECLARE timeThread(THREAD_ENTRY_PARAM);
 
 	static void init()
@@ -503,7 +493,7 @@ struct TimerEntry
 	static void cleanup();
 };
 
-typedef SortedArray<TimerEntry, InlineStorage<TimerEntry, 64>, TimerDelay, TimerEntry> TimerQueue;
+typedef SortedArray<TimerEntry, InlineStorage<TimerEntry, 64>, ISC_UINT64, TimerEntry> TimerQueue;
 GlobalPtr<TimerQueue> timerQueue;
 
 InitMutex<TimerEntry> timerHolder("TimerHolder");
@@ -532,9 +522,12 @@ void TimerEntry::cleanup()
 	}
 }
 
-TimerDelay curTime()
+ISC_UINT64 curTime()
 {
-	return 1000000 * fb_utils::query_performance_counter() / fb_utils::query_performance_frequency();
+	ISC_UINT64 rc = fb_utils::query_performance_counter();
+	rc *= 1000000;
+	rc /= fb_utils::query_performance_frequency();
+	return rc;
 }
 
 TimerEntry* getTimer(ITimer* timer)
@@ -557,13 +550,13 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 {
 	while (stopTimerThread.value() == 0)
 	{
-		TimerDelay microSeconds = 0;
+		ISC_UINT64 microSeconds = 0;
 
 		{
 			MutexLockGuard pauseGuard(timerPause, FB_FUNCTION);
 			MutexLockGuard guard(timerAccess, FB_FUNCTION);
 
-			const TimerDelay cur = curTime();
+			const ISC_UINT64 cur = curTime();
 
 			while (timerQueue->getCount() > 0)
 			{
@@ -602,11 +595,11 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 } // namespace
 
-class TimerImplementation : public AutoIface<ITimerControl, FB_TIMER_CONTROL_VERSION>
+class TimerImplementation : public AutoIface<Api::TimerControlImpl<TimerImplementation> >
 {
 public:
 	// ITimerControl implementation
-	void FB_CARG start(IStatus* status, ITimer* timer, TimerDelay microSeconds)
+	void start(IStatus* status, ITimer* timer, ISC_UINT64 microSeconds)
 	{
 		try
 		{
@@ -649,7 +642,7 @@ public:
 		}
 	}
 
-	void FB_CARG stop(IStatus* status, ITimer* timer)
+	void stop(IStatus* status, ITimer* timer)
 	{
 		try
 		{
@@ -669,7 +662,7 @@ public:
 	}
 };
 
-ITimerControl* FB_CARG MasterImplementation::getTimerControl()
+ITimerControl* MasterImplementation::getTimerControl()
 {
 	static Static<TimerImplementation> timer;
 
@@ -697,7 +690,7 @@ namespace Why {
 
 	extern UtlInterface utlInterface;		// Implemented in utl.cpp
 
-	Firebird::IUtl* FB_CARG MasterImplementation::getUtlInterface()
+	Firebird::IUtl* MasterImplementation::getUtlInterface()
 	{
 		return &utlInterface;
 	}
@@ -717,7 +710,7 @@ namespace Firebird {
 
 namespace Why {
 
-	Firebird::IConfigManager* FB_CARG MasterImplementation::getConfigManager()
+	Firebird::IConfigManager* MasterImplementation::getConfigManager()
 	{
 		return Firebird::iConfigManager;
 	}

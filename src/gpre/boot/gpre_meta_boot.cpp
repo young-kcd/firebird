@@ -684,46 +684,41 @@ bool MET_trigger_exists(gpre_dbb* /*db*/, const TEXT* /*trigger_name*/)
 
 using namespace Firebird;
 
-class DummyMasterImpl : public IMaster
+class DummyMasterImpl : public FirebirdApi<FirebirdPolicy>::MasterImpl<DummyMasterImpl>
 {
 public:
 	// IMaster implementation (almost dummy, for boot build)
-	virtual int FB_CARG getVersion()
-	{
-		return FB_MASTER_VERSION;
-	}
-
-	virtual IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return NULL;
 	}
 
-	virtual IStatus* FB_CARG getStatus()
+	IStatus* getStatus()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IProvider* FB_CARG getDispatcher()
+	IProvider* getDispatcher()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IPluginManager* FB_CARG getPluginManager()
+	IPluginManager* getPluginManager()
 	{
 		//fb_assert(false);
 		return NULL;
 	}
 
-	virtual int FB_CARG upgradeInterface(IVersioned* /*toUpgrade*/, int /*desiredVersion*/,
-										 struct UpgradeInfo* /*upInfo*/)
+	int upgradeInterface(IVersioned* /*toUpgrade*/, int /*desiredVersion*/,
+		IPluginModule* /*destMod*/, void* /*function*/)
 	{
 		fb_assert(false);
 		return 0;
 	}
 
-	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t /*thr*/)
+	const char* circularAlloc(const char* s, unsigned len, intptr_t /*thr*/)
 	{
 		char* buf = (char*) malloc(len + 1);
 		memcpy(buf, s, len);
@@ -731,58 +726,53 @@ public:
 		return buf;
 	}
 
-	virtual ITimerControl* FB_CARG getTimerControl()
+	ITimerControl* getTimerControl()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IAttachment* FB_CARG registerAttachment(IProvider* /*provider*/, IAttachment* /*attachment*/)
+	IAttachment* registerAttachment(IProvider* /*provider*/, IAttachment* /*attachment*/)
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual ITransaction* FB_CARG registerTransaction(IAttachment* /*attachment*/, ITransaction* /*transaction*/)
+	ITransaction* registerTransaction(IAttachment* /*attachment*/, ITransaction* /*transaction*/)
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IDtc* FB_CARG getDtc()
+	IDtc* getDtc()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual int FB_CARG same(IVersioned* /*first*/, IVersioned* /*second*/)
+	int same(IVersioned* /*first*/, IVersioned* /*second*/)
 	{
 		return 0;
 	}
 
-	virtual IMetadataBuilder* FB_CARG getMetadataBuilder(IStatus* status, unsigned fieldCount)
+	IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount)
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IDebug* FB_CARG getDebug()
-	{
-		return NULL;
-	}
-
-	virtual int FB_CARG serverMode(int mode)
+	int serverMode(int mode)
 	{
 		return -1;
 	}
 
-	virtual IUtl* FB_CARG getUtlInterface()
+	IUtl* getUtlInterface()
 	{
 		fb_assert(false);
 		return NULL;
 	}
 
-	virtual IConfigManager* FB_CARG getConfigManager()
+	IConfigManager* getConfigManager()
 	{
 		fb_assert(false);
 		return NULL;

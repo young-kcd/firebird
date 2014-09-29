@@ -32,7 +32,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/File.h"
 
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/dsc.h"
 

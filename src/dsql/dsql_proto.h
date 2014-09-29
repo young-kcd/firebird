@@ -26,15 +26,12 @@
 #define DSQL_DSQL_PROTO_H
 
 #include "../common/classes/array.h"
+#include "firebird/Interface.h"
 
 namespace Jrd {
 	class Attachment;
 	class jrd_tra;
 	class dsql_req;
-}
-
-namespace Firebird {
-	class IMessageMetadata;
 }
 
 void DSQL_execute(Jrd::thread_db*, Jrd::jrd_tra**, Jrd::dsql_req*, bool,

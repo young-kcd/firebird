@@ -34,7 +34,7 @@ using namespace Firebird;
 
 namespace Auth {
 
-class SrpClient FB_FINAL : public StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
+class SrpClient FB_FINAL : public StdPlugin<Api::ClientImpl<SrpClient> >
 {
 public:
 	explicit SrpClient(IPluginConfig*)
@@ -43,8 +43,8 @@ public:
 	{ }
 
 	// IClient implementation
-	int FB_CARG authenticate(IStatus*, IClientBlock* cb);
-    int FB_CARG release();
+	int authenticate(IStatus*, IClientBlock* cb);
+    int release();
 
 private:
 	RemotePassword* client;
@@ -75,7 +75,9 @@ int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
 			client->genClientKey(data);
 			dumpIt("Clnt: clientPubKey", data);
 			cb->putData(status, data.length(), data.begin());
-			return status->getStatus() & IStatus::FB_HAS_ERRORS ? AUTH_FAILED : AUTH_MORE_DATA;
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+				return AUTH_FAILED;
+			return AUTH_MORE_DATA;
 		}
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: SRP phase2\n"));
@@ -164,7 +166,7 @@ namespace
 
 void registerSrpClient(IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(PluginType::AuthClient, RemotePassword::plugName, &factory);
+	iPlugin->registerPluginFactory(IPluginManager::AuthClient, RemotePassword::plugName, &factory);
 }
 
 } // namespace Auth

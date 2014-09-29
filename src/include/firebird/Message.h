@@ -24,7 +24,7 @@
 #define FIREBIRD_MESSAGE_H
 
 #include "ibase.h"
-#include "./Provider.h"
+#include "./Interface.h"
 #include "./impl/boost/preprocessor/seq/for_each_i.hpp"
 #include <assert.h>
 #include <time.h>

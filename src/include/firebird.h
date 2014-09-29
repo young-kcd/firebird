@@ -64,7 +64,7 @@
 
 #ifdef __cplusplus
 #include "../common/common.h"
-#include "fb_exception.h"
+//#include "fb_exception.h"
 #endif
 
 #ifndef NULL

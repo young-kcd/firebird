@@ -29,15 +29,14 @@
 #include <stdlib.h>
 
 #include <ibase.h>
-#include <firebird/Crypt.h>
-#include <firebird/Provider.h>
+#include <firebird/Interface.h>
 
 using namespace Firebird;
 
-class CryptKey : public ICryptKeyCallback
+class CryptKey : public Api::CryptKeyCallbackImpl<CryptKey>
 {
 public:
-	unsigned int FB_CARG callback(unsigned int, const void*, unsigned int length, void* buffer)
+	unsigned int callback(unsigned int, const void*, unsigned int length, void* buffer)
 	{
 		if (length > 0 && buffer)
 		{
@@ -48,12 +47,7 @@ public:
 		return 1;
 	}
 
-	int FB_CARG getVersion()
-	{
-		return FB_CRYPT_CALLBACK_VERSION;
-	}
-
-	IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return NULL;		// OK for application, not for plugin
 	}
@@ -72,7 +66,7 @@ public:
 		if (tra)
 		{
 			tra->rollback(status);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				print("rollback");
 				tra->release();
@@ -81,7 +75,7 @@ public:
 		if (att)
 		{
 			att->detach(status);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				print("detach");
 				att->release();
@@ -103,19 +97,19 @@ public:
 		p = master->getDispatcher();
 
 		p->setDbCryptCallback(status, &key);
-		if (!status->isSuccess())
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			throw "setDbCryptCallback";
 
 		char s[256];
 		sprintf(s, "localhost:%s", dbName);
 		att = p->attachDatabase(status, s, 0, NULL);
-		if (!status->isSuccess())
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			throw "attachDatabase";
 
 		if (a != NONE)
 		{
 			tra = att->startTransaction(status, 0, NULL);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "startTransaction";
 		}
 
@@ -123,20 +117,20 @@ public:
 		{
 			att->execute(status, tra, 0,
 				"ALTER DATABASE ENCRYPT WITH \"DbCrypt_example\"", 3, NULL, NULL, NULL, NULL);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "execute";
 		}
 		if (a == DEC)
 		{
 			att->execute(status, tra, 0, "ALTER DATABASE DECRYPT", 3, NULL, NULL, NULL, NULL);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "execute";
 		}
 
 		if (tra)
 		{
 			tra->commit(status);
-			if (!status->isSuccess())
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "commit";
 			tra = NULL;
 		}
@@ -145,7 +139,7 @@ public:
 		getchar();
 
 		att->detach(status);
-		if (!status->isSuccess())
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			throw "detach";
 		att = NULL;
 
@@ -156,7 +150,7 @@ public:
 	void print(const char* where)
 	{
 		fprintf(stderr, "Error in %s: ", where);
-		isc_print_status(status->get());
+		isc_print_status(status->getErrors());
 	}
 
 private:

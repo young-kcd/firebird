@@ -952,14 +952,14 @@ static bool make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 
 namespace {
 
-class TimerEntry FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
+class TimerEntry FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer>
 {
 public:
 	TimerEntry(int id, USHORT num)
 		: semId(id), semNum(num)
 	{ }
 
-	void FB_CARG handler()
+	void handler()
 	{
 		for(;;)
 		{
@@ -976,7 +976,7 @@ public:
 		}
 	}
 
-	int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{

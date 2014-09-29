@@ -30,6 +30,7 @@
 #define CLASSES_LOCKS_H
 
 #include "firebird.h"
+#include "fb_exception.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/Reasons.h"
 

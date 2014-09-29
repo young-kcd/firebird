@@ -59,7 +59,7 @@
 #include "../common/classes/ImplementHelper.h"
 #include "../isql/OptionsBase.h"
 
-#include <firebird/Utl.h>
+#include <firebird/Interface.h>
 
 #ifdef HAVE_CTYPE_H
 #include <ctype.h>
@@ -121,11 +121,11 @@ namespace {
 // Used to make sure that local calls to print stuff go to isqlGlob.Out
 // and not to stdout if IUtl::version gets called
 
-class VersionCallback : public Firebird::AutoIface<Firebird::IVersionCallback, FB_VERSION_CALLBACK_VERSION>
+class VersionCallback : public Firebird::AutoIface<Firebird::Api::VersionCallbackImpl<VersionCallback> >
 {
 public:
 	// IVersionCallback implementation
-	void FB_CARG callback(Firebird::IStatus*, const char* text)
+	void callback(Firebird::IStatus*, const char* text)
 	{
 		isqlGlob.printf("%s%s", text, NEWLINE);
 	}

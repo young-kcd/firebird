@@ -29,9 +29,7 @@
 #ifndef FB_COMMON_CLASSES_IMPLEMENT_HELPER
 #define FB_COMMON_CLASSES_IMPLEMENT_HELPER
 
-#include "firebird/Plugin.h"
-#include "firebird/Timer.h"
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include "../common/classes/alloc.h"
 #include "gen/iberror.h"
 #include "../yvalve/gds_proto.h"
@@ -43,36 +41,30 @@
 
 namespace Firebird {
 
-// If you need interface on stack, use template AutoPtr<YourInterface, AutoDisposable>
-// as second parameter to store it.
-typedef SimpleDispose<IDisposable> AutoDisposable;
-
+IPluginModule* getPluginModule();
 
 // Implement standard interface and plugin functions
 
 // Helps to implement generic versioned interfaces
-template <class C, int V>
+template <class C>
 class VersionedIface : public C
 {
 public:
 	VersionedIface() { }
 
-	int FB_CARG getVersion()
+	IPluginModule* getModule()
 	{
-		return V;
+		return getPluginModule();
 	}
-
-	IPluginModule* FB_CARG getModule();
 
 private:
 	VersionedIface(const VersionedIface&);
 	VersionedIface& operator=(const VersionedIface&);
 };
 
-
 // Helps to implement versioned interfaces on stack or static
-template <class C, int V>
-class AutoIface : public VersionedIface<C, V>
+template <class C>
+class AutoIface : public VersionedIface<C>
 {
 public:
 	AutoIface() { }
@@ -84,16 +76,16 @@ public:
 };
 
 // Helps to implement disposable interfaces
-template <class C, int V>
-class DisposeIface : public VersionedIface<C, V>, public GlobalStorage
+template <class C>
+class DisposeIface : public VersionedIface<C>, public GlobalStorage
 {
 public:
 	DisposeIface() { }
 };
 
 // Helps to implement standard interfaces
-template <class C, int V>
-class RefCntIface : public VersionedIface<C, V>, public GlobalStorage
+template <class C>
+class RefCntIface : public VersionedIface<C>, public GlobalStorage
 {
 public:
 	RefCntIface() : refCounter(0) { }
@@ -108,7 +100,7 @@ protected:
 public:
 #endif
 
-	void FB_CARG addRef()
+	void addRef()
 	{
 		++refCounter;
 	}
@@ -119,22 +111,22 @@ protected:
 
 
 // Helps to implement plugins
-template <class C, int V>
-class StdPlugin : public RefCntIface<C, V>
+template <class C>
+class StdPlugin : public RefCntIface<C>
 {
 private:
-	IRefCounted* owner;
+	IReferenceCounted* owner;
 
 public:
 	StdPlugin() : owner(NULL)
 	{ }
 
-	IRefCounted* FB_CARG getOwner()
+	IReferenceCounted* getOwner()
 	{
 		return owner;
 	}
 
-	void FB_CARG setOwner(IRefCounted* iface)
+	void setOwner(IReferenceCounted* iface)
 	{
 		owner = iface;
 	}
@@ -143,10 +135,10 @@ public:
 
 // Trivial factory
 template <class P>
-class SimpleFactoryBase : public AutoIface<IPluginFactory, FB_PLUGIN_FACTORY_VERSION>
+class SimpleFactoryBase : public AutoIface<Api::PluginFactoryImpl<SimpleFactoryBase<P> > >
 {
 public:
-	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{
@@ -274,7 +266,7 @@ public:
 // when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.
 // To avoid it this class is added - it detects spontaneous (not by PluginManager)
 // module unload and notifies PluginManager about this said fact.
-class UnloadDetectorHelper FB_FINAL : public VersionedIface<IPluginModule, FB_PLUGIN_MODULE_VERSION>
+class UnloadDetectorHelper FB_FINAL : public VersionedIface<Api::PluginModuleImpl<UnloadDetectorHelper> >
 {
 public:
 	typedef void VoidNoParam();
@@ -308,11 +300,7 @@ public:
 		cleanup = function;
 	}
 
-private:
-	VoidNoParam* cleanup;
-	bool flagOsUnload;
-
-	void FB_CARG doClean()
+	void doClean()
 	{
 		flagOsUnload = false;
 
@@ -322,49 +310,14 @@ private:
 			cleanup = NULL;
 		}
 	}
+
+private:
+	VoidNoParam* cleanup;
+	bool flagOsUnload;
 };
 
 typedef GlobalPtr<UnloadDetectorHelper, InstanceControl::PRIORITY_DETECT_UNLOAD> UnloadDetector;
-extern UnloadDetector myModule;
-
-template <class C, int V> IPluginModule* VersionedIface<C, V>::getModule()
-{
-	return &myModule;
-}
-
-
-// Default replacement for missing virtual functions
-class DefaultMissingEntrypoint
-{
-public:
-	virtual void FB_CARG noEntrypoint()
-	{
-		Arg::Gds(isc_wish_list).raise();
-	}
-};
-
-
-// Helps to create update information
-template <typename M = DefaultMissingEntrypoint>
-class MakeUpgradeInfo
-{
-public:
-	MakeUpgradeInfo()
-	{
-		ui.missingFunctionClass = &missing;
-		ui.clientModule = &myModule;
-	}
-
-	operator UpgradeInfo*()
-	{
-		return &ui;
-	}
-
-private:
-	M missing;
-	struct UpgradeInfo ui;
-};
-
+UnloadDetectorHelper* getUnloadDetector();
 
 // Generic status checker
 inline void check(IStatus* status)
@@ -378,7 +331,7 @@ inline void check(IStatus* status)
 
 // debugger for reference counters
 
-#ifdef DEV_BUILD
+#ifdef NEVERDEF
 #define FB_CAT2(a, b) a##b
 #define FB_CAT1(a, b) FB_CAT2(a, b)
 #define FB_RefDeb(c, p, l) Firebird::ReferenceCounterDebugger FB_CAT1(refCntDbg_, l)(c, p)

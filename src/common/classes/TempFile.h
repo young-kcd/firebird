@@ -26,10 +26,9 @@
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/File.h"
+#include "firebird/Interface.h"
 
 namespace Firebird {
-
-class IStatus;
 
 class TempFile : public File
 {

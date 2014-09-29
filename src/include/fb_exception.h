@@ -42,11 +42,11 @@
 #endif
 
 #include "fb_types.h"
+#include "firebird/Interface.h"
 #include "../common/ThreadStart.h"
 
 namespace Firebird
 {
-class IStatus;
 class MemoryPool;
 
 class Exception

@@ -34,15 +34,26 @@ namespace
 {
 Firebird::IMaster* cached = NULL;
 
-#ifdef DEV_BUILD
+#ifdef NEVERDEF
 typedef Firebird::ReferenceCounterDebugger* ReferenceCounterDebuggerPtr;
 TLS_DECLARE(ReferenceCounterDebuggerPtr*, debugArray);
 #endif // DEV_BUILD
+
+Firebird::UnloadDetector myModule;
 }
 
 namespace Firebird
 {
-UnloadDetector myModule;
+
+UnloadDetectorHelper* getUnloadDetector()
+{
+	return &myModule;
+}
+
+IPluginModule* getPluginModule()
+{
+	return &myModule;
+}
 
 void CachedMasterInterface::set(IMaster* master)
 {
@@ -60,7 +71,24 @@ IMaster* CachedMasterInterface::getMasterInterface()
 	return cached;
 }
 
-#ifdef DEV_BUILD
+
+void upgradeInterface(FirebirdApi<FirebirdPolicy>::Versioned* toUpgrade, int desiredVersion, void* function)
+{
+	MasterInterfacePtr()->upgradeInterface(toUpgrade, desiredVersion, getPluginModule(), function);
+}
+
+void logOldPlugin()
+{
+	gds__log("Old version of trace plugin is used - new types of events are ignored");
+}
+
+ISC_STATUS* getUpgradeError()
+{
+	static ISC_STATUS failure[2] = {isc_arg_gds, isc_wish_list};
+	return failure;
+}
+
+#ifdef NOT_USED_OR_REPLACED
 class IDebug
 {
 public:

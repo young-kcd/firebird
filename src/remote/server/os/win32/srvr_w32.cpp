@@ -107,7 +107,7 @@
 #include "../remote/os/win32/xnet_proto.h"
 #include "../yvalve/gds_proto.h"
 
-#include "firebird/Plugin.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../auth/trusted/AuthSspi.h"
 #include "../auth/SecurityDatabase/LegacyServer.h"
@@ -345,7 +345,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	// due to remote access
 
 	//gds_alloc_report(0, __FILE__, __LINE__);
-	PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, "memdebug.log");
+	PathName name = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_LOG, "memdebug.log");
 	FILE* file = fopen(name.c_str(), "w+t");
 	if (file)
 	{

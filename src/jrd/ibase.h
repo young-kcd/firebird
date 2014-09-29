@@ -235,24 +235,6 @@ typedef struct paramvary {
 
 #include "../dsql/sqlda_pub.h"
 
-/*************************************/
-/* Namespace compatibility for C/C++ */
-/*************************************/
-
-#ifdef __cplusplus
-#define FB_NAMESPACE_FORWARD(n, x) namespace n { class x; }
-#define FB_NAMESPACE_USE(n, x) n::x
-#else
-#define FB_NAMESPACE_FORWARD(n, x) struct x;
-#define FB_NAMESPACE_USE(n, x) struct x
-#endif
-
-/************************/
-/* Forward declarations */
-/************************/
-
-FB_NAMESPACE_FORWARD(Firebird, ICryptKeyCallback)
-
 /***************************/
 /* OSRI database functions */
 /***************************/
@@ -1183,8 +1165,7 @@ int  ISC_EXPORT isc_get_client_minor_version ();
 /* Set callback for database crypt plugins */
 /*******************************************/
 
-ISC_STATUS ISC_EXPORT fb_database_crypt_callback(ISC_STATUS*,
-	FB_NAMESPACE_USE(Firebird, ICryptKeyCallback*));
+ISC_STATUS ISC_EXPORT fb_database_crypt_callback(ISC_STATUS*, void*);
 
 #ifdef __cplusplus
 }	/* extern "C" */

@@ -32,114 +32,243 @@
 #include "ibase.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-#	define FB_CARG __cdecl
-#else
-#	define FB_CARG
+#define CLOOP_CARG __cdecl
 #endif
 
-namespace Firebird {
+struct dsc;
+struct PerformanceInfo;
 
-// Forward declaration - used to identify client and provider of upgraded interface
-class IPluginModule;
+namespace Firebird
+{
 
-// Versioned interface - base for all FB interfaces
-class IVersioned
+struct FbCryptKey;
+struct DtcStart;
+
+#include "IdlFbInterfaces.h"
+
+#ifdef INCLUDE_Firebird_H		// Building internal module
+
+class FirebirdPolicy;
+extern void raiseVersionError();
+extern void upgradeInterface(FirebirdApi<FirebirdPolicy>::Versioned* toUpgrade, int desiredVersion, void* function);
+extern void logOldPlugin();
+extern ISC_STATUS* getUpgradeError();
+
+namespace
+{
+	static void defaultUpgradeFunction(void*, FirebirdApi<FirebirdPolicy>::Status* status)
+	{
+		status->setErrors2(2, getUpgradeError());
+	}
+
+	// This may be used when old plugin, missing some newer events is used.
+	// Reasonable action here is to log once and ignore next times.
+	static void ignoreMissing(void*)
+	{
+		static bool flagFirst = true;
+
+		if (flagFirst)
+		{
+			flagFirst = false;
+			logOldPlugin();
+		}
+	};
+
+	template <typename T>
+	static inline void upgradeVersionedInterface(T* versioned)
+	{
+		if (versioned && versioned->cloopVTable->version < T::VERSION)
+		{
+			upgradeInterface(versioned, T::VERSION, (void*)defaultUpgradeFunction);
+		}
+	}
+
+	template <>
+	void upgradeVersionedInterface<FirebirdApi<FirebirdPolicy>::TracePlugin>
+		(FirebirdApi<FirebirdPolicy>::TracePlugin* versioned)
+	{
+		if (versioned && versioned->cloopVTable->version < FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION)
+		{
+			upgradeInterface(versioned, FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION, (void*)ignoreMissing);
+		}
+	}
+}
+
+class FirebirdPolicy
 {
 public:
-	virtual int FB_CARG getVersion() = 0;
-	virtual IPluginModule* FB_CARG getModule() = 0;
-};
-// If this is changed, types of all interfaces must be changed
-#define FB_VERSIONED_VERSION 2
+	template <unsigned V, typename T>
+	static inline void checkVersion(T* versioned)
+	{
+		if (versioned && versioned->cloopVTable->version < V)
+		{
+			raiseVersionError();
+		}
+	}
 
-// Reference counted interface - base for refCounted FB interfaces
-class IRefCounted : public IVersioned
+	template <typename T>
+	static inline T* upgrade(T* versioned)
+	{
+		upgradeVersionedInterface(versioned);
+		return versioned;
+	}
+
+	static void checkException(FirebirdApi<FirebirdPolicy>::Status* status) { }
+	static void catchException(FirebirdApi<FirebirdPolicy>::Status* status) { }
+	typedef FirebirdApi<FirebirdPolicy>::Status* Status;
+};
+
+#else // INCLUDE_Firebird_H		building external module
+
+// use empty default policy
+
+class FirebirdPolicy
 {
 public:
-	virtual void FB_CARG addRef() = 0;
-	virtual int FB_CARG release() = 0;
-};
-// If this is changed, types of refCounted interfaces must be changed
-#define FB_REFCOUNTED_VERSION (FB_VERSIONED_VERSION + 2)
+	template <unsigned V, typename T>
+	static inline void checkVersion(T* versioned) { }
 
-// Disposable interface - base for disposable FB interfaces
-class IDisposable : public IVersioned
+	template <typename T>
+	static inline T* upgrade(T* versioned)
+	{
+		return versioned;
+	}
+
+	template <typename S>
+	static void checkException(S status) { }
+
+	template <typename S>
+	static void catchException(S status) { }
+
+	typedef FirebirdApi<FirebirdPolicy>::Status* Status;
+};
+
+#endif // INCLUDE_Firebird_H
+
+//awk <FirebirdInterface.idl '($1 == "interface") {printf "\ttypedef FirebirdApi<FirebirdPolicy>::%s I%s;\n", $2, $2;}'
+
+	typedef FirebirdApi<FirebirdPolicy>::Versioned IVersioned;
+	typedef FirebirdApi<FirebirdPolicy>::ReferenceCounted IReferenceCounted;
+	typedef FirebirdApi<FirebirdPolicy>::Disposable IDisposable;
+	typedef FirebirdApi<FirebirdPolicy>::Status IStatus;
+	typedef FirebirdApi<FirebirdPolicy>::Master IMaster;
+	typedef FirebirdApi<FirebirdPolicy>::PluginBase IPluginBase;
+	typedef FirebirdApi<FirebirdPolicy>::PluginSet IPluginSet;
+	typedef FirebirdApi<FirebirdPolicy>::ConfigEntry IConfigEntry;
+	typedef FirebirdApi<FirebirdPolicy>::Config IConfig;
+	typedef FirebirdApi<FirebirdPolicy>::FirebirdConf IFirebirdConf;
+	typedef FirebirdApi<FirebirdPolicy>::PluginConfig IPluginConfig;
+	typedef FirebirdApi<FirebirdPolicy>::PluginFactory IPluginFactory;
+	typedef FirebirdApi<FirebirdPolicy>::PluginModule IPluginModule;
+	typedef FirebirdApi<FirebirdPolicy>::PluginManager IPluginManager;
+	typedef FirebirdApi<FirebirdPolicy>::ConfigManager IConfigManager;
+	typedef FirebirdApi<FirebirdPolicy>::EventCallback IEventCallback;
+	typedef FirebirdApi<FirebirdPolicy>::Blob IBlob;
+	typedef FirebirdApi<FirebirdPolicy>::Transaction ITransaction;
+	typedef FirebirdApi<FirebirdPolicy>::MessageMetadata IMessageMetadata;
+	typedef FirebirdApi<FirebirdPolicy>::MetadataBuilder IMetadataBuilder;
+	typedef FirebirdApi<FirebirdPolicy>::ResultSet IResultSet;
+	typedef FirebirdApi<FirebirdPolicy>::Statement IStatement;
+	typedef FirebirdApi<FirebirdPolicy>::Request IRequest;
+	typedef FirebirdApi<FirebirdPolicy>::Events IEvents;
+	typedef FirebirdApi<FirebirdPolicy>::Attachment IAttachment;
+	typedef FirebirdApi<FirebirdPolicy>::Service IService;
+	typedef FirebirdApi<FirebirdPolicy>::Provider IProvider;
+	typedef FirebirdApi<FirebirdPolicy>::Dtc IDtc;
+	typedef FirebirdApi<FirebirdPolicy>::Auth IAuth;
+	typedef FirebirdApi<FirebirdPolicy>::Writer IWriter;
+	typedef FirebirdApi<FirebirdPolicy>::ServerBlock IServerBlock;
+	typedef FirebirdApi<FirebirdPolicy>::ClientBlock IClientBlock;
+	typedef FirebirdApi<FirebirdPolicy>::Server IServer;
+	typedef FirebirdApi<FirebirdPolicy>::Client IClient;
+	typedef FirebirdApi<FirebirdPolicy>::UserField IUserField;
+	typedef FirebirdApi<FirebirdPolicy>::CharUserField ICharUserField;
+	typedef FirebirdApi<FirebirdPolicy>::IntUserField IIntUserField;
+	typedef FirebirdApi<FirebirdPolicy>::User IUser;
+	typedef FirebirdApi<FirebirdPolicy>::ListUsers IListUsers;
+	typedef FirebirdApi<FirebirdPolicy>::LogonInfo ILogonInfo;
+	typedef FirebirdApi<FirebirdPolicy>::Management IManagement;
+	typedef FirebirdApi<FirebirdPolicy>::WireCryptPlugin IWireCryptPlugin;
+	typedef FirebirdApi<FirebirdPolicy>::CryptKeyCallback ICryptKeyCallback;
+	typedef FirebirdApi<FirebirdPolicy>::KeyHolderPlugin IKeyHolderPlugin;
+	typedef FirebirdApi<FirebirdPolicy>::DbCryptPlugin IDbCryptPlugin;
+	typedef FirebirdApi<FirebirdPolicy>::ExternalContext IExternalContext;
+	typedef FirebirdApi<FirebirdPolicy>::ExternalResultSet IExternalResultSet;
+	typedef FirebirdApi<FirebirdPolicy>::ExternalFunction IExternalFunction;
+	typedef FirebirdApi<FirebirdPolicy>::ExternalProcedure IExternalProcedure;
+	typedef FirebirdApi<FirebirdPolicy>::ExternalTrigger IExternalTrigger;
+	typedef FirebirdApi<FirebirdPolicy>::RoutineMetadata IRoutineMetadata;
+	typedef FirebirdApi<FirebirdPolicy>::ExternalEngine IExternalEngine;
+	typedef FirebirdApi<FirebirdPolicy>::Timer ITimer;
+	typedef FirebirdApi<FirebirdPolicy>::TimerControl ITimerControl;
+	typedef FirebirdApi<FirebirdPolicy>::VersionCallback IVersionCallback;
+	typedef FirebirdApi<FirebirdPolicy>::Utl IUtl;
+	typedef FirebirdApi<FirebirdPolicy>::TraceConnection ITraceConnection;
+	typedef FirebirdApi<FirebirdPolicy>::TraceDatabaseConnection ITraceDatabaseConnection;
+	typedef FirebirdApi<FirebirdPolicy>::TraceTransaction ITraceTransaction;
+	typedef FirebirdApi<FirebirdPolicy>::TraceParams ITraceParams;
+	typedef FirebirdApi<FirebirdPolicy>::TraceStatement ITraceStatement;
+	typedef FirebirdApi<FirebirdPolicy>::TraceSQLStatement ITraceSQLStatement;
+	typedef FirebirdApi<FirebirdPolicy>::TraceBLRStatement ITraceBLRStatement;
+	typedef FirebirdApi<FirebirdPolicy>::TraceDYNRequest ITraceDYNRequest;
+	typedef FirebirdApi<FirebirdPolicy>::TraceContextVariable ITraceContextVariable;
+	typedef FirebirdApi<FirebirdPolicy>::TraceProcedure ITraceProcedure;
+	typedef FirebirdApi<FirebirdPolicy>::TraceFunction ITraceFunction;
+	typedef FirebirdApi<FirebirdPolicy>::TraceTrigger ITraceTrigger;
+	typedef FirebirdApi<FirebirdPolicy>::TraceServiceConnection ITraceServiceConnection;
+	typedef FirebirdApi<FirebirdPolicy>::TraceStatusVector ITraceStatusVector;
+	typedef FirebirdApi<FirebirdPolicy>::TraceSweepInfo ITraceSweepInfo;
+	typedef FirebirdApi<FirebirdPolicy>::TraceLogWriter ITraceLogWriter;
+	typedef FirebirdApi<FirebirdPolicy>::TraceInitInfo ITraceInitInfo;
+	typedef FirebirdApi<FirebirdPolicy>::TracePlugin ITracePlugin;
+	typedef FirebirdApi<FirebirdPolicy>::TraceFactory ITraceFactory;
+
+	typedef FirebirdApi<FirebirdPolicy> Api;
+
+struct FbCryptKey
 {
-public:
-	virtual void FB_CARG dispose() = 0;
+	const char* type;					// If NULL type is auth plugin name
+	const void* encryptKey;
+	const void* decryptKey;				// May be NULL for symmetric keys
+	unsigned encryptLength;
+	unsigned decryptLength;			// Ignored when decryptKey is NULL
 };
-// If this is changed, types of disposable interfaces must be changed
-#define FB_DISPOSABLE_VERSION (FB_VERSIONED_VERSION + 1)
 
-// Interface to work with status vector
-class IStatus : public IDisposable
+struct DtcStart
 {
-public:
-	static const unsigned FB_HAS_WARNINGS	= 0x01;
-	static const unsigned FB_HAS_ERRORS 	= 0x02;
-
-	static const int FB_ERROR = -1;
-	static const int FB_OK = 0;
-	static const int FB_EOF = 1;
-	static const int FB_SEGMENT = 2;
-
-	virtual void FB_CARG init() = 0;
-	virtual unsigned FB_CARG getStatus() const = 0;
-
-	virtual void FB_CARG setErrors(unsigned int length, const ISC_STATUS* value) = 0;
-	virtual void FB_CARG setWarnings(unsigned int length, const ISC_STATUS* value) = 0;
-	virtual void FB_CARG setErrors(const ISC_STATUS* value) = 0;
-	virtual void FB_CARG setWarnings(const ISC_STATUS* value) = 0;
-
-	virtual const ISC_STATUS* FB_CARG getErrors() const = 0;
-	virtual const ISC_STATUS* FB_CARG getWarnings() const = 0;
+	IAttachment* attachment;
+	const unsigned char* tpb;
+	unsigned tpbLength;
 };
-#define FB_STATUS_VERSION (FB_DISPOSABLE_VERSION + 8)
 
-class IProvider;
-class IUtl;
-class IPluginManager;
-class ITimerControl;
-class IAttachment;
-class ITransaction;
-class IDtc;
-class IMetadataBuilder;
-class IDebug;
-class IConfigManager;
+typedef void PluginEntrypoint(IMaster* masterInterface);
+typedef char Utf8;	// Utf8* used as nul-terminated string
 
-struct UpgradeInfo
+#ifdef INCLUDE_Firebird_H		// Building internal module
+
+// This item is for ISC API emulation only
+// It may be gone in future versions
+// Please do not use it!
+static IMessageMetadata* const DELAYED_OUT_FORMAT = (IMessageMetadata*)(1);
+
+namespace
 {
-	void* missingFunctionClass;
-	IPluginModule* clientModule;
-};
+	template <>
+	void upgradeVersionedInterface<IMessageMetadata>(IMessageMetadata* versioned)
+	{
+		if (versioned && versioned != DELAYED_OUT_FORMAT &&
+			versioned->cloopVTable->version < FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION)
+		{
+			upgradeInterface(versioned, FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION, (void*)ignoreMissing);
+		}
+	}
+}
 
-// Master interface is used to access almost all other interfaces.
-class IMaster : public IVersioned
-{
-public:
-	virtual IStatus* FB_CARG getStatus() = 0;
-	virtual IProvider* FB_CARG getDispatcher() = 0;
-	virtual IPluginManager* FB_CARG getPluginManager() = 0;
-	virtual int FB_CARG upgradeInterface(IVersioned* toUpgrade, int desiredVersion,
-										 struct UpgradeInfo* upgradeInfo) = 0;
-	virtual const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr) = 0;
-	virtual ITimerControl* FB_CARG getTimerControl() = 0;
-	virtual IDtc* FB_CARG getDtc() = 0;
-	virtual IAttachment* FB_CARG registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
-	virtual ITransaction* FB_CARG registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
-
-	// This function is required to compare interfaces based on vtables of them
-	virtual int FB_CARG same(IVersioned* first, IVersioned* second) = 0;
-
-	virtual IMetadataBuilder* FB_CARG getMetadataBuilder(IStatus* status, unsigned fieldCount) = 0;
-	virtual Firebird::IDebug* FB_CARG getDebug() = 0;
-	virtual int FB_CARG serverMode(int mode) = 0;
-	virtual IUtl* FB_CARG getUtlInterface() = 0;
-	virtual IConfigManager* FB_CARG getConfigManager() = 0;
-};
-#define FB_MASTER_VERSION (FB_VERSIONED_VERSION + 15)
+#endif //INCLUDE_Firebird_H
 
 } // namespace Firebird
+
+#define FB_PLUGIN_ENTRY_POINT firebird_plugin
 
 extern "C"
 {

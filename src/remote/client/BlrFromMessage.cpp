@@ -30,6 +30,7 @@
 #include "BlrFromMessage.h"
 #include "../common/StatusHolder.h"
 #include "../jrd/align.h"
+#include "../dsql/sqlda_pub.h"
 
 using namespace Firebird;
 

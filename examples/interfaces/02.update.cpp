@@ -40,7 +40,7 @@
 #include <string.h>
 
 #include <ibase.h>
-#include <firebird/Provider.h>
+#include <firebird/Interface.h>
 
 using namespace Firebird;
 

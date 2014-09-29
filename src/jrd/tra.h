@@ -50,11 +50,6 @@ namespace EDS {
 class Transaction;
 }
 
-namespace Firebird {
-class IAttachment;
-class ITransaction;
-};
-
 namespace Jrd {
 
 class blb;

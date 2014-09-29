@@ -1140,7 +1140,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 			EXE_start(tdbb, trigger, transaction);
 
 			const bool ok = (trigger->req_operation != jrd_req::req_unwind);
-			trace.finish(ok ? res_successful : res_failed);
+			trace.finish(ok ? Firebird::ITraceConnection::TRACE_RESULT_SUCCESS : Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 
 			EXE_unwind(tdbb, trigger);
 			trigger->req_attachment = NULL;

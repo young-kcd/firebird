@@ -100,12 +100,12 @@ int GSEC_main(Firebird::UtilSvc* uSvc)
 }
 
 
-static void setAttr(Firebird::string& attr, ICharUserField* field)
+static void setAttr(Firebird::string& attr, Firebird::ICharUserField* field)
 {
 	attr = field->get();
 }
 
-static void setAttr(Firebird::string& attr, IIntUserField* field)
+static void setAttr(Firebird::string& attr, Firebird::IIntUserField* field)
 {
 	attr.printf("%d", field->get());
 }
@@ -128,12 +128,12 @@ static void setAttr(Firebird::string& attr, const char* name, I* field)
 	attr += '\n';
 }
 
-static bool fieldSet(IUserField* field)
+static bool fieldSet(Firebird::IUserField* field)
 {
 	return field->entered() || field->specified();
 }
 
-static void merge(IIntUserField* to, IIntUserField* from)
+static void merge(Firebird::IIntUserField* to, Firebird::IIntUserField* from)
 {
 	if (fieldSet(to))
 		return;
@@ -147,6 +147,171 @@ static void merge(IIntUserField* to, IIntUserField* from)
 	}
 }
 
+namespace {
+	class GsecInfo : public Firebird::AutoIface<Firebird::Api::LogonInfoImpl<GsecInfo> >
+	{
+	public:
+		GsecInfo(const char* pDba, const char* pRole,
+				 const char* pProtocol, const char* pAddress,
+				 const AuthenticationBlock* pAuthBlock)
+			: dba(pDba), sqlRole(pRole),
+			  protocol(pProtocol), address(pAddress),
+			  authBytes(pAuthBlock->getCount() ? pAuthBlock->begin() : NULL),
+			  authLength(pAuthBlock->getCount())
+		{ }
+
+		// ILogonInfo implementation
+		const char* name()
+		{
+			return dba;
+		}
+
+		const char* role()
+		{
+			return sqlRole;
+		}
+
+		const char* networkProtocol()
+		{
+			return protocol;
+		}
+
+		const char* remoteAddress()
+		{
+			return address;
+		}
+
+		const unsigned char* authBlock(unsigned* length)
+		{
+			*length = authLength;
+			return authBytes;
+		}
+
+	private:
+		const char* dba;
+		const char* sqlRole;
+		const char* protocol;
+		const char* address;
+		const unsigned char* authBytes;
+		unsigned int authLength;
+	};
+
+	class Attributes : public ConfigFile
+	{
+	public:
+		explicit Attributes(Firebird::IUser* data)
+			: ConfigFile(USE_TEXT, data->attributes()->entered() ? data->attributes()->get() : "")
+		{ }
+
+		int operator[](const char* name)
+		{
+			const Parameter* p = findParameter(name);
+			return p ? int(p->asInteger()) : 0;
+		}
+
+		void set(Firebird::IIntUserField* field, const char* name)
+		{
+			const Parameter* p = findParameter(name);
+			if (p)
+			{
+				Firebird::LocalStatus s;
+				field->set(&s, p->asInteger());
+				check(&s);
+				field->setEntered(&s, 1);
+				check(&s);
+			}
+		}
+	};
+
+	class Display : public Firebird::AutoIface<Firebird::Api::ListUsersImpl<Display> >
+	{
+	public:
+		explicit Display(tsec* t)
+			: tdsec(t), first(true)
+		{ }
+
+		// IListUsers implementation
+		void list(Firebird::IStatus* status, Firebird::IUser* data)
+		{
+			try
+			{
+				Attributes attr(data);
+
+				if (data->active()->entered() && data->active()->get() == 0)
+				{
+					// skip inactive users
+					return;
+				}
+
+				if (tdsec->utilSvc->isService())
+				{
+					tdsec->utilSvc->putLine(isc_spb_sec_username, data->userName()->get());
+					tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->firstName()->entered() ? data->firstName()->get() : "");
+					tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middleName()->entered() ? data->middleName()->get() : "");
+					tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->lastName()->entered() ? data->lastName()->get() : "");
+					tdsec->utilSvc->putSLong(isc_spb_sec_userid, attr["uid"]);
+					tdsec->utilSvc->putSLong(isc_spb_sec_groupid, attr["gid"]);
+					if (data->operation() == DIS_OPER)
+					{
+						tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin()->get());
+					}
+				}
+				else
+				{
+					if (first)
+					{
+						GSEC_message(GsecMsg26);
+						GSEC_message(GsecMsg27);
+						// msg26: "    user name                    uid   gid admin     full name"
+						// msg27: "-------------------------------------------------------------------------------------------------"
+						first = false;
+					}
+
+					util_output(false, "%-*.*s %5d %5d %-5.5s     %s %s %s\n",
+								USERNAME_LENGTH, USERNAME_LENGTH, data->userName()->get(),
+								attr["uid"], attr["gid"], data->admin()->get() ? "admin" : "",
+								data->firstName()->get(), data->middleName()->get(), data->lastName()->get());
+				}
+			}
+			catch (const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
+		}
+
+	private:
+		tsec* tdsec;
+		bool first;
+	};
+
+
+	class Callback : public Firebird::AutoIface<Firebird::Api::ListUsersImpl<Callback> >
+	{
+	public:
+		explicit Callback(StackUserData* pu)
+			: u(pu)
+		{ }
+
+		// IListUsers implementation
+		void list(Firebird::IStatus* status, Firebird::IUser* data)
+		{
+			try
+			{
+				Attributes attr(data);
+
+				attr.set(&u->u, "uid");
+				attr.set(&u->g, "gid");
+			}
+			catch (const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
+		}
+
+	private:
+		StackUserData* u;
+	};
+} // anonymous namespace
 
 int gsec(Firebird::UtilSvc* uSvc)
 {
@@ -230,7 +395,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	user_data->database.set(&s, databaseName.c_str());
 	check(&s);
 
-	Firebird::RefPtr<IManagement> manager;
+	Firebird::RefPtr<Firebird::IManagement> manager;
 	ISC_STATUS_ARRAY status;
 
 	if (!useServices)
@@ -289,54 +454,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 		fb_assert(user_data->dba.entered() || user_data->authenticationBlock.hasData());
 		if (user_data->dba.entered() || user_data->authenticationBlock.hasData())
 		{
-			class GsecInfo : public Firebird::AutoIface<ILogonInfo, FB_AUTH_LOGON_INFO_VERSION>
-			{
-			public:
-				GsecInfo(const char* pDba, const char* pRole,
-						 const char* pProtocol, const char* pAddress,
-						 const UserData::AuthenticationBlock* pAuthBlock)
-					: dba(pDba), sqlRole(pRole),
-					  protocol(pProtocol), address(pAddress),
-					  authBytes(pAuthBlock->getCount() ? pAuthBlock->begin() : NULL),
-					  authLength(pAuthBlock->getCount())
-				{ }
-
-				// ILogonInfo implementation
-				const char* FB_CARG name()
-				{
-					return dba;
-				}
-
-				const char* FB_CARG role()
-				{
-					return sqlRole;
-				}
-
-				const char* FB_CARG networkProtocol()
-				{
-					return protocol;
-				}
-
-				const char* FB_CARG remoteAddress()
-				{
-					return address;
-				}
-
-				const unsigned char* FB_CARG authBlock(unsigned* length)
-				{
-					*length = authLength;
-					return authBytes;
-				}
-
-			private:
-				const char* dba;
-				const char* sqlRole;
-				const char* protocol;
-				const char* address;
-				const unsigned char* authBytes;
-				unsigned int authLength;
-			};
-
 			Firebird::LocalStatus st;
 			try
 			{
@@ -386,123 +503,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 			GSEC_error_redirect(status, GsecMsg15);
 		}
 	}
-
-	class Attributes : public ConfigFile
-	{
-	public:
-		explicit Attributes(IUser* data)
-			: ConfigFile(USE_TEXT, data->attributes()->entered() ? data->attributes()->get() : "")
-		{ }
-
-		int operator[](const char* name)
-		{
-			const Parameter* p = findParameter(name);
-			return p ? int(p->asInteger()) : 0;
-		}
-
-		void set(IIntUserField* field, const char* name)
-		{
-			const Parameter* p = findParameter(name);
-			if (p)
-			{
-				Firebird::LocalStatus s;
-				field->set(&s, p->asInteger());
-				check(&s);
-				field->setEntered(&s, 1);
-				check(&s);
-			}
-		}
-	};
-
-	class Display : public Firebird::AutoIface<IListUsers, FB_AUTH_LIST_USERS_VERSION>
-	{
-	public:
-		explicit Display(tsec* t)
-			: tdsec(t), first(true)
-		{ }
-
-		// IListUsers implementation
-		void FB_CARG list(Firebird::IStatus* status, IUser* data)
-		{
-			try
-			{
-				Attributes attr(data);
-
-				if (data->active()->entered() && data->active()->get() == 0)
-				{
-					// skip inactive users
-					return;
-				}
-
-				if (tdsec->utilSvc->isService())
-				{
-					tdsec->utilSvc->putLine(isc_spb_sec_username, data->userName()->get());
-					tdsec->utilSvc->putLine(isc_spb_sec_firstname, data->firstName()->entered() ? data->firstName()->get() : "");
-					tdsec->utilSvc->putLine(isc_spb_sec_middlename, data->middleName()->entered() ? data->middleName()->get() : "");
-					tdsec->utilSvc->putLine(isc_spb_sec_lastname, data->lastName()->entered() ? data->lastName()->get() : "");
-					tdsec->utilSvc->putSLong(isc_spb_sec_userid, attr["uid"]);
-					tdsec->utilSvc->putSLong(isc_spb_sec_groupid, attr["gid"]);
-					if (data->operation() == DIS_OPER)
-					{
-						tdsec->utilSvc->putSLong(isc_spb_sec_admin, data->admin()->get());
-					}
-				}
-				else
-				{
-					if (first)
-					{
-						GSEC_message(GsecMsg26);
-						GSEC_message(GsecMsg27);
-						// msg26: "    user name                    uid   gid admin     full name"
-						// msg27: "-------------------------------------------------------------------------------------------------"
-						first = false;
-					}
-
-					util_output(false, "%-*.*s %5d %5d %-5.5s     %s %s %s\n",
-								USERNAME_LENGTH, USERNAME_LENGTH, data->userName()->get(),
-								attr["uid"], attr["gid"], data->admin()->get() ? "admin" : "",
-								data->firstName()->get(), data->middleName()->get(), data->lastName()->get());
-				}
-			}
-			catch (const Firebird::Exception& ex)
-			{
-				ex.stuffException(status);
-			}
-		}
-
-	private:
-		tsec* tdsec;
-		bool first;
-	};
-
-
-	class Callback : public Firebird::AutoIface<IListUsers, FB_AUTH_LIST_USERS_VERSION>
-	{
-	public:
-		explicit Callback(StackUserData* pu)
-			: u(pu)
-		{ }
-
-		// IListUsers implementation
-		void FB_CARG list(Firebird::IStatus* status, IUser* data)
-		{
-			try
-			{
-				Attributes attr(data);
-
-				attr.set(&u->u, "uid");
-				attr.set(&u->g, "gid");
-			}
-			catch (const Firebird::Exception& ex)
-			{
-				ex.stuffException(status);
-			}
-		}
-
-	private:
-		StackUserData* u;
-	};
-
 
 	if (!tdsec->tsec_interactive)
 	{

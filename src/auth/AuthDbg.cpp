@@ -34,8 +34,6 @@
 
 //#define AUTH_VERBOSE
 
-static Firebird::MakeUpgradeInfo<> upInfo;
-
 // register plugin
 static Firebird::SimpleFactory<Auth::DebugClient> clientFactory;
 static Firebird::SimpleFactory<Auth::DebugServer> serverFactory;
@@ -48,8 +46,8 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 
 	Firebird::PluginManagerInterfacePtr iPlugin;
 
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, name, &clientFactory);
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, name, &serverFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthClient, name, &clientFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthServer, name, &serverFactory);
 }
 
 
@@ -63,8 +61,8 @@ DebugServer::DebugServer(Firebird::IPluginConfig* pConf)
 	check(&s);
 }
 
-int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* sb,
-                               IWriter* writerInterface)
+int DebugServer::authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sb,
+	Firebird::IWriter* writerInterface)
 {
 	try
 	{
@@ -123,7 +121,7 @@ int FB_CARG DebugServer::authenticate(Firebird::IStatus* status, IServerBlock* s
 	return AUTH_FAILED;
 }
 
-int FB_CARG DebugServer::release()
+int DebugServer::release()
 {
 	if (--refCounter == 0)
 	{
@@ -138,7 +136,7 @@ DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-int FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* cb)
+int DebugClient::authenticate(Firebird::IStatus* status, Firebird::IClientBlock* cb)
 {
 	try
 	{
@@ -185,7 +183,7 @@ int FB_CARG DebugClient::authenticate(Firebird::IStatus* status, IClientBlock* c
 	return AUTH_FAILED;
 }
 
-int FB_CARG DebugClient::release()
+int DebugClient::release()
 {
 	if (--refCounter == 0)
 	{

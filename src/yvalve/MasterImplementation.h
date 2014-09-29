@@ -41,41 +41,41 @@ namespace Firebird
 
 namespace Why
 {
-	class Dtc : public Firebird::AutoIface<Firebird::IDtc, FB_DTC_VERSION>
+	class Dtc : public Firebird::AutoIface<Firebird::Api::DtcImpl<Dtc> >
 	{
 	public:
 		// IDtc implementation
-		virtual YTransaction* FB_CARG start(Firebird::IStatus* status,
+		YTransaction* start(Firebird::IStatus* status,
 			unsigned int cnt, Firebird::DtcStart* components);
-		virtual YTransaction* FB_CARG join(Firebird::IStatus* status,
+		YTransaction* join(Firebird::IStatus* status,
 			Firebird::ITransaction* one, Firebird::ITransaction* two);
 	};
 
-	class MasterImplementation : public Firebird::AutoIface<Firebird::IMaster, FB_MASTER_VERSION>
+	class MasterImplementation : public Firebird::AutoIface<Firebird::Api::MasterImpl<MasterImplementation> >
 	{
 	public:
 		static Firebird::Static<Dtc> dtc;
 
 	public:
 		// IMaster implementation
-		Firebird::IStatus* FB_CARG getStatus();
-		Firebird::IProvider* FB_CARG getDispatcher();
-		Firebird::IPluginManager* FB_CARG getPluginManager();
-		int FB_CARG upgradeInterface(Firebird::IVersioned* toUpgrade, int desiredVersion,
-									 Firebird::UpgradeInfo* upgradeInfo);
-		const char* FB_CARG circularAlloc(const char* s, size_t len, intptr_t thr);
-		Firebird::ITimerControl* FB_CARG getTimerControl();
-		Firebird::IAttachment* FB_CARG registerAttachment(Firebird::IProvider* provider,
+		Firebird::IStatus* getStatus();
+		Firebird::IProvider* getDispatcher();
+		Firebird::IPluginManager* getPluginManager();
+		int upgradeInterface(Firebird::IVersioned* toUpgrade, int desiredVersion,
+			Firebird::IPluginModule* destModule, void* function);
+		const char* circularAlloc(const char* s, unsigned len, intptr_t thr);
+		Firebird::ITimerControl* getTimerControl();
+		Firebird::IAttachment* registerAttachment(Firebird::IProvider* provider,
 			Firebird::IAttachment* attachment);
-		Firebird::ITransaction* FB_CARG registerTransaction(Firebird::IAttachment* attachment,
+		Firebird::ITransaction* registerTransaction(Firebird::IAttachment* attachment,
 			Firebird::ITransaction* transaction);
-		Dtc* FB_CARG getDtc();
-		int FB_CARG same(IVersioned* first, IVersioned* second);
-		Firebird::IMetadataBuilder* FB_CARG getMetadataBuilder(Firebird::IStatus* status, unsigned fieldCount);
-		Firebird::IDebug* FB_CARG getDebug();
-		int FB_CARG serverMode(int mode);
-		Firebird::IUtl* FB_CARG getUtlInterface();
-		Firebird::IConfigManager* FB_CARG getConfigManager();
+		Dtc* getDtc();
+		int same(Firebird::IVersioned* first, Firebird::IVersioned* second);
+		Firebird::IMetadataBuilder* getMetadataBuilder(Firebird::IStatus* status, unsigned fieldCount);
+		//Firebird::IDebug* getDebug();
+		int serverMode(int mode);
+		Firebird::IUtl* getUtlInterface();
+		Firebird::IConfigManager* getConfigManager();
 	};
 
 	void shutdownTimers();

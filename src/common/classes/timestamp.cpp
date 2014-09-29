@@ -25,6 +25,7 @@
  */
 
 #include "firebird.h"
+#include "fb_exception.h"
 #include "../common/gdsassert.h"
 
 #ifdef HAVE_SYS_TIMES_H

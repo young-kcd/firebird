@@ -872,13 +872,13 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			else
 				trace_manager = FB_NEW(*getDefaultMemoryPool()) TraceManager(this);
 
-			if (trace_manager->needs(TRACE_EVENT_SERVICE_ATTACH))
+			if (trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_ATTACH))
 			{
 				const ISC_STATUS exc = ex.stuff_exception(status_vector);
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
 				TraceServiceImpl service(this);
-				trace_manager->event_service_attach(&service, no_priv ? res_unauthorized : res_failed);
+				trace_manager->event_service_attach(&service, no_priv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 			}
 
 			if (!hasTrace)
@@ -892,10 +892,10 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		throw;
 	}
 
-	if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_ATTACH))
+	if (svc_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_ATTACH))
 	{
 		TraceServiceImpl service(this);
-		svc_trace_manager->event_service_attach(&service, res_successful);
+		svc_trace_manager->event_service_attach(&service, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 	}
 }
 
@@ -926,7 +926,7 @@ void Service::detach()
 	const bool localDoShutdown = svc_do_shutdown;
 
 	TraceServiceImpl service(this);
-	svc_trace_manager->event_service_detach(&service, res_successful);
+	svc_trace_manager->event_service_detach(&service, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 
 	// Mark service as detached.
 	finish(SVC_detached);
@@ -1529,11 +1529,11 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		INF_put_item(isc_info_length, length2, buffer, start_info, end, true);
 	}
 
-	if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
+	if (svc_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_QUERY))
 	{
 		TraceServiceImpl service(this);
 		svc_trace_manager->event_service_query(&service, send_item_length, send_items,
-			recv_item_length, recv_items, res_successful);
+			recv_item_length, recv_items, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 	}
 
 	if (!requestFromPut)
@@ -1563,7 +1563,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 	{
 		ISC_STATUS_ARRAY status_vector;
 
-		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
+		if (svc_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_QUERY))
 		{
 			const ISC_STATUS exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv ||
@@ -1571,7 +1571,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
-				recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
+				recv_item_length, recv_items, (no_priv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED));
 		}
 		throw;
 	}
@@ -1945,7 +1945,7 @@ void Service::query(USHORT			send_item_length,
 	{
 		ISC_STATUS_ARRAY status_vector;
 
-		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
+		if (svc_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_QUERY))
 		{
 			const ISC_STATUS exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
@@ -1953,7 +1953,7 @@ void Service::query(USHORT			send_item_length,
 			// Report to Trace API that query failed
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
-				recv_item_length, recv_items, (no_priv ? res_unauthorized : res_failed));
+				recv_item_length, recv_items, (no_priv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED));
 		}
 		throw;
 	}
@@ -1961,11 +1961,11 @@ void Service::query(USHORT			send_item_length,
 	if (svc_flags & SVC_finished)
 	{
 		if ((svc_flags & SVC_detached) &&
-			svc_trace_manager->needs(TRACE_EVENT_SERVICE_QUERY))
+			svc_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_QUERY))
 		{
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_query(&service, send_item_length, send_items,
-				recv_item_length, recv_items, res_successful);
+				recv_item_length, recv_items, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 		}
 	}
 }
@@ -2155,7 +2155,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		if (svc_trace_manager->needs(TRACE_EVENT_SERVICE_START))
+		if (svc_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_START))
 		{
 			ISC_STATUS_ARRAY status_vector;
 			const ISC_STATUS exc = ex.stuff_exception(status_vector);
@@ -2164,17 +2164,17 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 			TraceServiceImpl service(this);
 			svc_trace_manager->event_service_start(&service,
 				this->svc_switches.length(), this->svc_switches.c_str(),
-				no_priv ? res_unauthorized : res_failed);
+				no_priv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 		}
 		throw;
 	}
 
-	if (this->svc_trace_manager->needs(TRACE_EVENT_SERVICE_START))
+	if (this->svc_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_SERVICE_START))
 	{
 		TraceServiceImpl service(this);
 		this->svc_trace_manager->event_service_start(&service,
 			this->svc_switches.length(), this->svc_switches.c_str(),
-			this->svc_status[1] ? res_failed : res_successful);
+			this->svc_status[1] ? Firebird::ITraceConnection::TRACE_RESULT_FAILED : Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 	}
 }
 
@@ -2190,7 +2190,7 @@ void Service::readFbLog()
 {
 	bool svc_started = false;
 
-	Firebird::PathName name = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, LOGFILE);
+	Firebird::PathName name = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_LOG, LOGFILE);
 	FILE* file = fopen(name.c_str(), "r");
 
 	try

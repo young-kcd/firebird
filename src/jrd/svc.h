@@ -61,7 +61,6 @@ namespace Firebird {
 	namespace Arg {
 		class StatusVector;
 	}
-	class ICryptKeyCallback;
 }
 
 namespace Jrd {

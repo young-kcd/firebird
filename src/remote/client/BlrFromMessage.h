@@ -29,7 +29,7 @@
 #ifndef FB_REMOTE_CLIENT_BLR_FROM_MESSAGE
 #define FB_REMOTE_CLIENT_BLR_FROM_MESSAGE
 
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include "../common/classes/BlrWriter.h"
 
 namespace Remote {

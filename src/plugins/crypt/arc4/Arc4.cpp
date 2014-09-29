@@ -85,7 +85,7 @@ private:
 
 namespace Crypt {
 
-class Arc4 FB_FINAL : public StdPlugin<IWireCryptPlugin, FB_WIRECRYPT_PLUGIN_VERSION>
+class Arc4 FB_FINAL : public StdPlugin<Api::WireCryptPluginImpl<Arc4> >
 {
 public:
 	explicit Arc4(IPluginConfig*)
@@ -93,11 +93,11 @@ public:
 	{ }
 
 	// ICryptPlugin implementation
-	const char* FB_CARG getKnownTypes(IStatus* status);
-	void FB_CARG setKey(IStatus* status, FbCryptKey* key);
-	void FB_CARG encrypt(IStatus* status, unsigned int length, const void* from, void* to);
-	void FB_CARG decrypt(IStatus* status, unsigned int length, const void* from, void* to);
-	int FB_CARG release();
+	const char* getKnownTypes(IStatus* status);
+	void setKey(IStatus* status, FbCryptKey* key);
+	void encrypt(IStatus* status, unsigned int length, const void* from, void* to);
+	void decrypt(IStatus* status, unsigned int length, const void* from, void* to);
+	int release();
 
 private:
 	Cypher* createCypher(unsigned int l, const void* key);
@@ -169,7 +169,7 @@ namespace
 
 void registerArc4(IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(PluginType::WireCrypt, "Arc4", &factory);
+	iPlugin->registerPluginFactory(IPluginManager::WireCrypt, "Arc4", &factory);
 }
 
 } // namespace Crypt

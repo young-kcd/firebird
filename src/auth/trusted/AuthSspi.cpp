@@ -71,8 +71,6 @@ namespace
 		*dataSize = strlen(name);
 	}
 	*/
-
-	MakeUpgradeInfo<> upInfo;
 }
 
 namespace Auth {
@@ -365,7 +363,6 @@ int WinSspiServer::authenticate(Firebird::IStatus* status,
 			bool wheel = false;
 			string login;
 			sspi.getLogin(login, wheel);
-			MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 
 			writerInterface->add(status, login.c_str());
 			if (wheel)
@@ -443,12 +440,12 @@ int WinSspiClient::release()
 
 void registerTrustedClient(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthClient, plugName, &clientFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthClient, plugName, &clientFactory);
 }
 
 void registerTrustedServer(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, plugName, &serverFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthServer, plugName, &serverFactory);
 }
 
 } // namespace Auth

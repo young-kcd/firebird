@@ -23,7 +23,7 @@
 #ifndef YVALVE_PLUGIN_MANAGER_H
 #define YVALVE_PLUGIN_MANAGER_H
 
-#include "firebird/Plugin.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 
 #include "../common/os/mod_loader.h"
@@ -37,19 +37,19 @@
 
 namespace Firebird {
 
-class PluginManager : public AutoIface<IPluginManager, FB_PLUGIN_MANAGER_VERSION>
+class PluginManager : public AutoIface<Api::PluginManagerImpl<PluginManager> >
 {
 public:
 	// IPluginManager implementation
-	IPluginSet* FB_CARG getPlugins(IStatus* status, unsigned int interfaceType,
-					const char* namesList, int desiredVersion, UpgradeInfo* ui,
+	IPluginSet* getPlugins(IStatus* status, unsigned int interfaceType,
+					const char* namesList, int desiredVersion, IPluginModule* destModule,
 					IFirebirdConf* firebirdConf);
-	void FB_CARG registerPluginFactory(unsigned int interfaceType, const char* defaultName,
+	void registerPluginFactory(unsigned int interfaceType, const char* defaultName,
 					IPluginFactory* factory);
-	IConfig* FB_CARG getConfig(IStatus* status, const char* filename);
-	void FB_CARG releasePlugin(IPluginBase* plugin);
-	void FB_CARG registerModule(IPluginModule* module);
-	void FB_CARG unregisterModule(IPluginModule* module);
+	IConfig* getConfig(IStatus* status, const char* filename);
+	void releasePlugin(IPluginBase* plugin);
+	void registerModule(IPluginModule* module);
+	void unregisterModule(IPluginModule* module);
 
 	PluginManager();
 

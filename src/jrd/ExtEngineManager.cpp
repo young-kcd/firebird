@@ -433,7 +433,7 @@ namespace
 		{
 			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				trigger->execute(tdbb, (ExternalTrigger::Action) request->req_trigger_action,
+				trigger->execute(tdbb, request->req_trigger_action,
 					getRpb(request, 0), getRpb(request, 1));
 
 				request->req_operation = jrd_req::req_return;
@@ -457,9 +457,6 @@ namespace
 
 
 namespace Jrd {
-
-static MakeUpgradeInfo<> upInfo;
-
 
 template <typename T> class ExtEngineManager::ContextManager
 {
@@ -573,7 +570,7 @@ private:
 
 
 ExtEngineManager::ExternalContextImpl::ExternalContextImpl(thread_db* tdbb,
-		ExternalEngine* aEngine)
+		IExternalEngine* aEngine)
 	: engine(aEngine),
 	  internalAttachment(tdbb->getAttachment()),
 	  internalTransaction(NULL),
@@ -638,50 +635,50 @@ IMaster* ExtEngineManager::ExternalContextImpl::getMaster()
 	return master;
 }
 
-ExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(IStatus* /*status*/)
+IExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(IStatus* /*status*/)
 {
 	return engine;
 }
 
-Firebird::IAttachment* FB_CARG ExtEngineManager::ExternalContextImpl::getAttachment(IStatus* /*status*/)
+Firebird::IAttachment* ExtEngineManager::ExternalContextImpl::getAttachment(IStatus* /*status*/)
 {
 	return externalAttachment;
 }
 
-Firebird::ITransaction* FB_CARG ExtEngineManager::ExternalContextImpl::getTransaction(IStatus* /*status*/)
+Firebird::ITransaction* ExtEngineManager::ExternalContextImpl::getTransaction(IStatus* /*status*/)
 {
 	return externalTransaction;
 }
 
-const char* FB_CARG ExtEngineManager::ExternalContextImpl::getUserName()
+const char* ExtEngineManager::ExternalContextImpl::getUserName()
 {
 	return internalAttachment->att_user->usr_user_name.c_str();
 }
 
-const char* FB_CARG ExtEngineManager::ExternalContextImpl::getDatabaseName()
+const char* ExtEngineManager::ExternalContextImpl::getDatabaseName()
 {
 	return internalAttachment->att_database->dbb_database_name.c_str();
 }
 
-const Utf8* FB_CARG ExtEngineManager::ExternalContextImpl::getClientCharSet()
+const Utf8* ExtEngineManager::ExternalContextImpl::getClientCharSet()
 {
 	return clientCharSet.c_str();
 }
 
-int FB_CARG ExtEngineManager::ExternalContextImpl::obtainInfoCode()
+int ExtEngineManager::ExternalContextImpl::obtainInfoCode()
 {
 	static AtomicCounter counter;
 	return ++counter;
 }
 
-void* FB_CARG ExtEngineManager::ExternalContextImpl::getInfo(int code)
+void* ExtEngineManager::ExternalContextImpl::getInfo(int code)
 {
 	void* value = NULL;
 	miscInfo.get(code, value);
 	return value;
 }
 
-void* FB_CARG ExtEngineManager::ExternalContextImpl::setInfo(int code, void* value)
+void* ExtEngineManager::ExternalContextImpl::setInfo(int code, void* value)
 {
 	void* oldValue = getInfo(code);
 	miscInfo.put(code, value);
@@ -693,7 +690,7 @@ void* FB_CARG ExtEngineManager::ExternalContextImpl::setInfo(int code, void* val
 
 
 ExtEngineManager::Function::Function(thread_db* tdbb, ExtEngineManager* aExtManager,
-		ExternalEngine* aEngine, RoutineMetadata* aMetadata, ExternalFunction* aFunction,
+		IExternalEngine* aEngine, RoutineMetadata* aMetadata, IExternalFunction* aFunction,
 		const Jrd::Function* aUdf)
 	: extManager(aExtManager),
 	  engine(aEngine),
@@ -715,7 +712,7 @@ ExtEngineManager::Function::~Function()
 void ExtEngineManager::Function::execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* outMsg) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
-	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, function,
+	ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, function,
 		(udf->getName().package.isEmpty() ?
 			CallerName(obj_udf, udf->getName().identifier) :
 			CallerName(obj_package_header, udf->getName().package)));
@@ -732,7 +729,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* o
 
 
 ExtEngineManager::Procedure::Procedure(thread_db* tdbb, ExtEngineManager* aExtManager,
-	    ExternalEngine* aEngine, RoutineMetadata* aMetadata, ExternalProcedure* aProcedure,
+	    IExternalEngine* aEngine, RoutineMetadata* aMetadata, IExternalProcedure* aProcedure,
 		const jrd_prc* aPrc)
 	: extManager(aExtManager),
 	  engine(aEngine),
@@ -768,7 +765,7 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, UCHAR* inMsg, UCHAR* out
 	  firstFetch(true)
 {
 	attInfo = procedure->extManager->getEngineAttachment(tdbb, procedure->engine);
-	ContextManager<ExternalProcedure> ctxManager(tdbb, attInfo, procedure->procedure,
+	ContextManager<IExternalProcedure> ctxManager(tdbb, attInfo, procedure->procedure,
 		(procedure->prc->getName().package.isEmpty() ?
 			CallerName(obj_procedure, procedure->prc->getName().identifier) :
 			CallerName(obj_package_header, procedure->prc->getName().package)));
@@ -802,7 +799,7 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 	if (!resultSet)
 		return wasFirstFetch;
 
-	ContextManager<ExternalProcedure> ctxManager(tdbb, attInfo, charSet,
+	ContextManager<IExternalProcedure> ctxManager(tdbb, attInfo, charSet,
 		(procedure->prc->getName().package.isEmpty() ?
 			CallerName(obj_procedure, procedure->prc->getName().identifier) :
 			CallerName(obj_package_header, procedure->prc->getName().package)));
@@ -822,8 +819,8 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 
 
 ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineManager* aExtManager,
-			ExternalEngine* aEngine, RoutineMetadata* aMetadata,
-			ExternalTrigger* aTrigger, const Jrd::Trigger* aTrg)
+			IExternalEngine* aEngine, RoutineMetadata* aMetadata,
+			IExternalTrigger* aTrigger, const Jrd::Trigger* aTrg)
 	: extManager(aExtManager),
 	  engine(aEngine),
 	  metadata(aMetadata),
@@ -874,11 +871,11 @@ ExtEngineManager::Trigger::~Trigger()
 }
 
 
-void ExtEngineManager::Trigger::execute(thread_db* tdbb, ExternalTrigger::Action action,
+void ExtEngineManager::Trigger::execute(thread_db* tdbb, unsigned action,
 	record_param* oldRpb, record_param* newRpb) const
 {
 	EngineAttachmentInfo* attInfo = extManager->getEngineAttachment(tdbb, engine);
-	ContextManager<ExternalTrigger> ctxManager(tdbb, attInfo, trigger,
+	ContextManager<IExternalTrigger> ctxManager(tdbb, attInfo, trigger,
 		CallerName(obj_trigger, trg->name));
 
 	// ASF: Using Array instead of HalfStaticArray to not need to do alignment hacks here.
@@ -986,7 +983,7 @@ unloaded only on program exit, causing at that moment AV if this code is active:
 	EnginesMap::Accessor accessor(&engines);
 	for (bool found = accessor.getFirst(); found; found = accessor.getNext())
 	{
-		ExternalEngine* engine = accessor.current()->second;
+		IExternalEngine* engine = accessor.current()->second;
 		pi->releasePlugin(engine);
 	}
  */
@@ -1003,7 +1000,7 @@ void ExtEngineManager::initialize()
 
 void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 {
-	Array<ExternalEngine*> enginesCopy;
+	Array<IExternalEngine*> enginesCopy;
 
 	{	// scope
 		ReadLockGuard readGuard(enginesLock, FB_FUNCTION);
@@ -1016,15 +1013,15 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 	RefDeb(DEB_RLS_JATT, "ExtEngineManager::closeAttachment");
 	Attachment::Checkout attCout(attachment, FB_FUNCTION, true);
 
-	for (Array<ExternalEngine*>::iterator i = enginesCopy.begin(); i != enginesCopy.end(); ++i)
+	for (Array<IExternalEngine*>::iterator i = enginesCopy.begin(); i != enginesCopy.end(); ++i)
 	{
-		ExternalEngine* engine = *i;
+		IExternalEngine* engine = *i;
 		EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine, true);
 
 		if (attInfo)
 		{
 			{	// scope
-				ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
+				ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 				LocalStatus status;
 				engine->closeAttachment(&status, attInfo->context);	//// FIXME: log status
 			}
@@ -1042,7 +1039,7 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 	entryPointTrimmed.trim();
 
 	EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine);
-	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
+	ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
 		(udf->getName().package.isEmpty() ?
 			CallerName(obj_udf, udf->getName().identifier) :
 			CallerName(obj_package_header, udf->getName().package)));
@@ -1066,7 +1063,7 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 	RefPtr<IMetadataBuilder> outBuilder(REF_NO_INCR, metadata->outputParameters->getBuilder(&status));
 	status.check();
 
-	ExternalFunction* externalFunction;
+	IExternalFunction* externalFunction;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
@@ -1151,7 +1148,7 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 	entryPointTrimmed.trim();
 
 	EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine);
-	ContextManager<ExternalProcedure> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
+	ContextManager<IExternalProcedure> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
 		(prc->getName().package.isEmpty() ?
 			CallerName(obj_procedure, prc->getName().identifier) :
 			CallerName(obj_package_header, prc->getName().package)));
@@ -1175,7 +1172,7 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 	RefPtr<IMetadataBuilder> outBuilder(REF_NO_INCR, metadata->outputParameters->getBuilder(&status));
 	status.check();
 
-	ExternalProcedure* externalProcedure;
+	IExternalProcedure* externalProcedure;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
@@ -1256,13 +1253,13 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 
 void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::Trigger* trg,
 	const MetaName& engine, const string& entryPoint, const string& body,
-	ExternalTrigger::Type type)
+	unsigned type)
 {
 	string entryPointTrimmed = entryPoint;
 	entryPointTrimmed.trim();
 
 	EngineAttachmentInfo* attInfo = getEngineAttachment(tdbb, engine);
-	ContextManager<ExternalTrigger> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
+	ContextManager<IExternalTrigger> ctxManager(tdbb, attInfo, attInfo->adminCharSet,
 		CallerName(obj_trigger, trg->name));
 
 	///MemoryPool& pool = *tdbb->getDefaultPool();
@@ -1302,7 +1299,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 		status.check();
 	}
 
-	ExternalTrigger* externalTrigger;
+	IExternalTrigger* externalTrigger;
 
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
@@ -1347,10 +1344,10 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 }
 
 
-ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& name)
+IExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& name)
 {
 	ReadLockGuard readGuard(enginesLock, FB_FUNCTION);
-	ExternalEngine* engine = NULL;
+	IExternalEngine* engine = NULL;
 
 	if (!engines.get(name, engine))
 	{
@@ -1359,8 +1356,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 		if (!engines.get(name, engine))
 		{
-			GetPlugins<ExternalEngine> engineControl(PluginType::ExternalEngine,
-				FB_EXTERNAL_ENGINE_VERSION, upInfo, name.c_str());
+			GetPlugins<IExternalEngine> engineControl(IPluginManager::ExternalEngine, name.c_str());
 
 			if (engineControl.hasData())
 			{
@@ -1383,7 +1379,7 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 
 						setupAdminCharSet(tdbb, engine, attInfo);
 
-						ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
+						ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 						LocalStatus status;
 						engine->openAttachment(&status, attInfo->context);	//// FIXME: log status
 					}
@@ -1421,13 +1417,13 @@ ExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& nam
 ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 	thread_db* tdbb, const MetaName& name)
 {
-	ExternalEngine* engine = getEngine(tdbb, name);
+	IExternalEngine* engine = getEngine(tdbb, name);
 	return getEngineAttachment(tdbb, engine);
 }
 
 
 ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
-	thread_db* tdbb, ExternalEngine* engine, bool closing)
+	thread_db* tdbb, IExternalEngine* engine, bool closing)
 {
 	EngineAttachment key(engine, tdbb->getAttachment());
 	EngineAttachmentInfo* attInfo = NULL;
@@ -1449,7 +1445,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 
 			enginesAttachments.put(key, attInfo);
 
-			ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
+			ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 			Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 			LocalStatus status;
 			engine->openAttachment(&status, attInfo->context);	//// FIXME: log status
@@ -1469,10 +1465,10 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 }
 
 
-void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, ExternalEngine* engine,
+void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, IExternalEngine* engine,
 	EngineAttachmentInfo* attInfo)
 {
-	ContextManager<ExternalFunction> ctxManager(tdbb, attInfo, CS_UTF8);
+	ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, CS_UTF8);
 
 	Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
 

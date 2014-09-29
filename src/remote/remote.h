@@ -42,9 +42,7 @@
 #include "../common/classes/RefCounted.h"
 #include "../common/classes/GetPlugins.h"
 
-#include "firebird/Provider.h"
-#include "firebird/Auth.h"
-#include "firebird/Crypt.h"
+#include "firebird/Interface.h"
 
 #ifndef WIN_NT
 #include <signal.h>
@@ -80,14 +78,12 @@ const int BLOB_LENGTH		= 16384;
 
 #include "../remote/protocol.h"
 #include "fb_blk.h"
+#include "firebird/Interface.h"
 
 
 // fwd. decl.
 namespace Firebird {
 	class Exception;
-	class IEventCallback;
-	class ICryptKeyCallback;
-	class IStatus;
 }
 
 struct rem_port;
@@ -648,11 +644,11 @@ private:
 };
 
 
-typedef Firebird::GetPlugins<Auth::IClient> AuthClientPlugins;
+typedef Firebird::GetPlugins<Firebird::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
 // Transfered in format, depending upon type of the packet (phase of handshake)
-class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Auth::IClientBlock, FB_AUTH_CLIENT_BLOCK_VERSION>
+class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ClientBlockImpl<ClntAuthBlock> >
 {
 private:
 	Firebird::PathName pluginList;				// To be passed to server
@@ -694,20 +690,20 @@ public:
 	void releaseKeys(unsigned from);
 	Firebird::RefPtr<Config>* getConfig();
 
-	// Auth::IClientBlock implementation
-	int FB_CARG release();
-	const char* FB_CARG getLogin();
-	const char* FB_CARG getPassword();
-	const unsigned char* FB_CARG getData(unsigned int* length);
-	void FB_CARG putData(Firebird::IStatus* status, unsigned int length, const void* data);
-	void FB_CARG putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
+	// Firebird::IClientBlock implementation
+	int release();
+	const char* getLogin();
+	const char* getPassword();
+	const unsigned char* getData(unsigned int* length);
+	void putData(Firebird::IStatus* status, unsigned int length, const void* data);
+	void putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
 };
 
 // Representation of authentication data, visible for plugin
 // Transfered from client data in format, suitable for plugins access
-typedef Firebird::GetPlugins<Auth::IServer> AuthServerPlugins;
+typedef Firebird::GetPlugins<Firebird::IServer> AuthServerPlugins;
 
-class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Auth::IServerBlock, FB_AUTH_SERVER_BLOCK_VERSION>,
+class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Firebird::Api::ServerBlockImpl<SrvAuthBlock> >,
 	public Firebird::GlobalStorage
 {
 private:
@@ -759,11 +755,11 @@ public:
 	bool extractNewKeys(CSTRING* to, bool flagPlugList = false);
 	bool hasDataForPlugin();
 
-	// Auth::IServerBlock implementation
-	const char* FB_CARG getLogin();
-	const unsigned char* FB_CARG getData(unsigned int* length);
-	void FB_CARG putData(Firebird::IStatus* status, unsigned int length, const void* data);
-	void FB_CARG putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
+	// Firebird::IServerBlock implementation
+	const char* getLogin();
+	const unsigned char* getData(unsigned int* length);
+	void putData(Firebird::IStatus* status, unsigned int length, const void* data);
+	void putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
 };
 
 

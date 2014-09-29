@@ -41,7 +41,7 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/ImplementHelper.h"
-#include "firebird/Timer.h"
+#include "firebird/Interface.h"
 
 #include "../remote/remot_proto.h"
 
@@ -50,8 +50,6 @@
 using namespace Firebird;
 
 namespace {
-
-MakeUpgradeInfo<> upInfo;
 
 // BLR to search database for user name record
 
@@ -126,7 +124,7 @@ const UCHAR TPB[4] =
 
 namespace Auth {
 
-class SecurityDatabase FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
+class SecurityDatabase FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TimerImpl<SecurityDatabase> >
 {
 public:
 	int verify(IWriter* authBlock, IServerBlock* sBlock);
@@ -151,9 +149,9 @@ public:
 	}
 
 	// ITimer implementation
-	void FB_CARG handler();
+	void handler();
 
-	int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -325,7 +323,7 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 		char pw1[MAX_LEGACY_PASSWORD_LENGTH + 1];
 		if (!lookup_user(login.c_str(), pw1))
 		{
-			return AUTH_FAILED;
+			return IAuth::AUTH_FAILED;
 		}
 		pw1[MAX_LEGACY_PASSWORD_LENGTH] = 0;
 		string storedHash(pw1, MAX_LEGACY_PASSWORD_LENGTH);
@@ -346,20 +344,19 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 			}
 			if (!legacyHash)
 			{
-				return AUTH_FAILED;
+				return IAuth::AUTH_FAILED;
 			}
 		}
 
 		LocalStatus s;
-		MasterInterfacePtr()->upgradeInterface(authBlock, FB_AUTH_WRITER_VERSION, upInfo);
 		authBlock->add(&s, login.c_str());
 		check(&s);
 		authBlock->setDb(&s, secureDbName);
 		check(&s);
-		return AUTH_SUCCESS;
+		return IAuth::AUTH_SUCCESS;
 	}
 
-	return AUTH_CONTINUE;
+	return IAuth::AUTH_CONTINUE;
 }
 
 void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
@@ -392,7 +389,7 @@ typedef HalfStaticArray<SecurityDatabase*, 4> InstancesArray;
 GlobalPtr<InstancesArray> instances;
 GlobalPtr<Mutex> instancesMutex;
 
-void FB_CARG SecurityDatabase::handler()
+void SecurityDatabase::handler()
 {
 	try
 	{
@@ -525,7 +522,7 @@ int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock
 		HANDSHAKE_DEBUG(fprintf(stderr, "LegacyServer: exception status %d\n", status->getStatus()));
 		HANDSHAKE_DEBUG(isc_print_status(status->getErrors()));
 		HANDSHAKE_DEBUG(isc_print_status(status->getWarnings()));
-		return AUTH_FAILED;
+		return IAuth::AUTH_FAILED;
 	}
 }
 
@@ -546,7 +543,7 @@ namespace {
 
 void registerLegacyServer(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::PluginType::AuthServer, "Legacy_Auth", &factory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthServer, "Legacy_Auth", &factory);
 }
 
 } // namespace Auth
@@ -558,9 +555,9 @@ extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
 {
 	CachedMasterInterface::set(master);
 
-	myModule->setCleanup(Auth::SecurityDatabase::cleanup);
+	getUnloadDetector()->setCleanup(Auth::SecurityDatabase::cleanup);
 	Auth::registerLegacyServer(PluginManagerInterfacePtr());
-	myModule->registerMe();
+	getUnloadDetector()->registerMe();
 }
 
 #endif // PLUG_MODULE

@@ -1427,7 +1427,7 @@ static void gen_database(int column)
 
 	fprintf(gpreGlob.out_file, "\n/**** GDS Preprocessor Definitions ****/\n");
 	fprintf(gpreGlob.out_file, "#ifndef JRD_IBASE_H\n#include %s\n#endif\n", GDS_INCLUDE);
-	fprintf(gpreGlob.out_file, "#include <firebird/Provider.h>\n");
+	fprintf(gpreGlob.out_file, "#include <firebird/Interface.h>\n");
 
 	fprintf(gpreGlob.out_file, "#define CAST_CONST_MSG(A) (reinterpret_cast<const unsigned char*>(A))\n");
 	fprintf(gpreGlob.out_file, "#define CAST_MSG(A) (reinterpret_cast<unsigned char*>(A))\n");

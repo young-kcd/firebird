@@ -27,7 +27,7 @@
  */
 
 #include "firebird.h"
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include "../auth/SecureRemotePassword/Message.h"
 #include "gen/iberror.h"
 

@@ -30,6 +30,7 @@
 #define CLASSES_SEMAPHORE_H
 
 #include "../common/gdsassert.h"
+#include "fb_exception.h"
 
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class

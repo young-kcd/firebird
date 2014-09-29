@@ -98,7 +98,7 @@ namespace
 	public:
 		explicit StaticConfHolder(MemoryPool& p)
 			: confFile(FB_NEW(p) ConfigFile(p,
-				fb_utils::getPrefix(Firebird::DirType::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
+				fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
 		{
 		}
 
@@ -129,35 +129,35 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess FB_FINAL : public RefCntIface<IConfigEntry, FB_CONFIG_PARAMETER_VERSION>
+	class ConfigParameterAccess FB_FINAL : public RefCntIface<Api::ConfigEntryImpl<ConfigParameterAccess> >
 	{
 	public:
-		ConfigParameterAccess(IRefCounted* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
+		ConfigParameterAccess(IReferenceCounted* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
 
 		// IConfigEntry implementation
-		const char* FB_CARG getName()
+		const char* getName()
 		{
 			return par ? par->name.c_str() : NULL;
 		}
 
-		const char* FB_CARG getValue()
+		const char* getValue()
 		{
 			return par ? par->value.nullStr() : NULL;
 		}
 
-		FB_BOOLEAN FB_CARG getBoolValue()
+		FB_BOOLEAN getBoolValue()
 		{
 			return par ? par->asBoolean() : 0;
 		}
 
-		ISC_INT64 FB_CARG getIntValue()
+		ISC_INT64 getIntValue()
 		{
 			return par ? par->asInteger() : 0;
 		}
 
-		IConfig* FB_CARG getSubConfig(IStatus* status);
+		IConfig* getSubConfig(IStatus* status);
 
-		int FB_CARG release()
+		int release()
 		{
 			if (--refCounter == 0)
 			{
@@ -169,17 +169,17 @@ namespace
 		}
 
 	private:
-		RefPtr<IRefCounted> cf;
+		RefPtr<IReferenceCounted> cf;
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess FB_FINAL : public RefCntIface<IConfig, FB_CONFIG_VERSION>
+	class ConfigAccess FB_FINAL : public RefCntIface<Api::ConfigImpl<ConfigAccess> >
 	{
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
 
 		// IConfig implementation
-		IConfigEntry* FB_CARG find(IStatus* status, const char* name)
+		IConfigEntry* find(IStatus* status, const char* name)
 		{
 			try
 			{
@@ -192,7 +192,7 @@ namespace
 			return NULL;
 		}
 
-		IConfigEntry* FB_CARG findValue(IStatus* status, const char* name, const char* value)
+		IConfigEntry* findValue(IStatus* status, const char* name, const char* value)
 		{
 			try
 			{
@@ -205,7 +205,7 @@ namespace
 			return NULL;
 		}
 
-		IConfigEntry* FB_CARG findPos(IStatus* status, const char* name, unsigned int n)
+		IConfigEntry* findPos(IStatus* status, const char* name, unsigned int n)
 		{
 			try
 			{
@@ -235,7 +235,7 @@ namespace
 			return NULL;
 		}
 
-		int FB_CARG release()
+		int release()
 		{
 			if (--refCounter == 0)
 			{
@@ -435,11 +435,11 @@ namespace
 		explicit CountByTypeArray(MemoryPool&)
 		{}
 
-		CountByType values[PluginType::MaxType];
+		CountByType values[PluginManager::MaxType];
 
 		CountByType& get(unsigned int t)
 		{
-			fb_assert(t < PluginType::MaxType);
+			fb_assert(t < PluginManager::MaxType);
 			return values[t];
 		}
 	};
@@ -450,7 +450,7 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in databases.conf
-	class ConfiguredPlugin FB_FINAL : public RefCntIface<ITimer, FB_TIMER_VERSION>
+	class ConfiguredPlugin FB_FINAL : public RefCntIface<Api::TimerImpl<ConfiguredPlugin> >
 	{
 	public:
 		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
@@ -517,10 +517,10 @@ namespace
 		}
 
 		// ITimer implementation
-		void FB_CARG handler()
+		void handler()
 		{ }
 
-		int FB_CARG release();
+		int release();
 
 	private:
 		RefPtr<PluginModule> module;
@@ -534,7 +534,7 @@ namespace
 	};
 
 	// Provides per-database configuration from databases.conf.
-	class FactoryParameter FB_FINAL : public RefCntIface<IPluginConfig, FB_PLUGIN_CONFIG_VERSION>
+	class FactoryParameter FB_FINAL : public RefCntIface<Api::PluginConfigImpl<FactoryParameter> >
 	{
 	public:
 		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)
@@ -542,12 +542,12 @@ namespace
 		{ }
 
 		// IPluginConfig implementation
-		const char* FB_CARG getConfigFileName()
+		const char* getConfigFileName()
 		{
 			return configuredPlugin->getConfigFileName();
 		}
 
-		IConfig* FB_CARG getDefaultConfig(IStatus* status)
+		IConfig* getDefaultConfig(IStatus* status)
 		{
 			try
 			{
@@ -560,7 +560,7 @@ namespace
 			}
 		}
 
-		IFirebirdConf* FB_CARG getFirebirdConf(IStatus* status)
+		IFirebirdConf* getFirebirdConf(IStatus* status)
 		{
 			try
 			{
@@ -580,12 +580,12 @@ namespace
 			}
 		}
 
-		void FB_CARG setReleaseDelay(IStatus*, ISC_UINT64 microSeconds)
+		void setReleaseDelay(IStatus*, ISC_UINT64 microSeconds)
 		{
 			configuredPlugin->setReleaseDelay(microSeconds);
 		}
 
-		int FB_CARG release()
+		int release()
 		{
 			if (--refCounter == 0)
 			{
@@ -717,7 +717,7 @@ namespace
 		*prev = this;
 	}
 
-	int FB_CARG ConfiguredPlugin::release()
+	int ConfiguredPlugin::release()
 	{
 		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
@@ -745,7 +745,7 @@ namespace
 		PluginLoadInfo(const char* pluginName)
 		{
 			// define default values for plugin ...
-			curModule = fb_utils::getPrefix(Firebird::DirType::FB_DIR_PLUGINS, pluginName);
+			curModule = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_PLUGINS, pluginName);
 			regName = pluginName;
 			required = false;
 
@@ -780,21 +780,21 @@ namespace
 
 
 	// Provides access to plugins of given type / name.
-	class PluginSet FB_FINAL : public RefCntIface<IPluginSet, FB_PLUGIN_SET_VERSION>
+	class PluginSet FB_FINAL : public RefCntIface<Api::PluginSetImpl<PluginSet> >
 	{
 	public:
 		// IPluginSet implementation
-		const char* FB_CARG getName() const
+		const char* getName() const
 		{
 			return currentPlugin.hasData() ? currentName.c_str() : NULL;
 		}
 
-		const char* FB_CARG getModuleName() const
+		const char* getModuleName() const
 		{
 			return currentPlugin.hasData() ? currentPlugin->getPluggedModule()->getName() : NULL;
 		}
 
-		void FB_CARG set(IStatus* status, const char* newName)
+		void set(IStatus* status, const char* newName)
 		{
 			try
 			{
@@ -808,14 +808,14 @@ namespace
 			}
 		}
 
-		IPluginBase* FB_CARG getPlugin(IStatus* status);
-		void FB_CARG next(IStatus* status);
+		IPluginBase* getPlugin(IStatus* status);
+		void next(IStatus* status);
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
-				  int pdesiredVersion, UpgradeInfo* pui,
+				  int pdesiredVersion, IPluginModule* pdestModule,
 				  IFirebirdConf* fbConf)
 			: interfaceType(pinterfaceType), namesList(getPool()),
-			  desiredVersion(pdesiredVersion), ui(pui),
+			  desiredVersion(pdesiredVersion), destModule(pdestModule),
 			  currentName(getPool()), currentPlugin(NULL),
 			  firebirdConf(fbConf)
 		{
@@ -826,7 +826,7 @@ namespace
 			check(&s);
 		}
 
-		int FB_CARG release()
+		int release()
 		{
 			if (--refCounter == 0)
 			{
@@ -841,7 +841,7 @@ namespace
 		unsigned int interfaceType;
 		PathName namesList;
 		int desiredVersion;
-		UpgradeInfo* ui;
+		IPluginModule* destModule;
 
 		PathName currentName;
 		RefPtr<ConfiguredPlugin> currentPlugin;		// Missing data in this field indicates EOF
@@ -855,12 +855,17 @@ namespace
 		{
 			(Arg::Gds(isc_pman_cannot_load_plugin) << currentName << error).raise();
 		}
+
+		static void CLOOP_CARG upFunction(void* /*interface*/, IStatus* status)
+		{
+			status->setErrors(Arg::Gds(isc_wish_list).value());
+		}
 	};
 
 	// ************************************* //
 	// ** next() - core of plugin manager ** //
 	// ************************************* //
-	void FB_CARG PluginSet::next(IStatus* status)
+	void PluginSet::next(IStatus* status)
 	{
 		try
 		{
@@ -956,7 +961,7 @@ namespace
 		return RefPtr<PluginModule>(NULL);	// compiler warning silencer
 	}
 
-	IPluginBase* FB_CARG PluginSet::getPlugin(IStatus* status)
+	IPluginBase* PluginSet::getPlugin(IStatus* status)
 	{
 		try
 		{
@@ -965,7 +970,7 @@ namespace
 				IPluginBase* p = currentPlugin->factory(firebirdConf);
 				if (p)
 				{
-					if (masterInterface->upgradeInterface(p, desiredVersion, ui) >= 0)
+					if (masterInterface->upgradeInterface(p, desiredVersion, destModule, (void*)upFunction) >= 0)
 					{
 						return p;
 					}
@@ -1017,7 +1022,7 @@ PluginManager::PluginManager()
 }
 
 
-void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, const char* defaultName, IPluginFactory* factory)
+void PluginManager::registerPluginFactory(unsigned int interfaceType, const char* defaultName, IPluginFactory* factory)
 {
 	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
@@ -1032,7 +1037,7 @@ void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, co
 
 	if (current == builtin)
 	{
-		PathName plugConfigFile = fb_utils::getPrefix(Firebird::DirType::FB_DIR_PLUGINS, defaultName);
+		PathName plugConfigFile = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_PLUGINS, defaultName);
 		changeExtension(plugConfigFile, "conf");
 
 		ConfiguredPlugin* p = new ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
@@ -1043,7 +1048,7 @@ void FB_CARG PluginManager::registerPluginFactory(unsigned int interfaceType, co
 }
 
 
-void FB_CARG PluginManager::registerModule(IPluginModule* cleanup)
+void PluginManager::registerModule(IPluginModule* cleanup)
 {
 	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
@@ -1057,7 +1062,7 @@ void FB_CARG PluginManager::registerModule(IPluginModule* cleanup)
 	current->setCleanup(cleanup);
 }
 
-void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
+void PluginManager::unregisterModule(IPluginModule* cleanup)
 {
 	{	// guard scope
 		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
@@ -1071,8 +1076,8 @@ void FB_CARG PluginManager::unregisterModule(IPluginModule* cleanup)
 	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 
-IPluginSet* FB_CARG PluginManager::getPlugins(IStatus* status, unsigned int interfaceType, const char* namesList,
-											  int desiredVersion, UpgradeInfo* ui,
+IPluginSet* PluginManager::getPlugins(IStatus* status, unsigned int interfaceType, const char* namesList,
+											  int desiredVersion, IPluginModule* destModule,
 											  IFirebirdConf* firebirdConf)
 {
 	try
@@ -1082,7 +1087,7 @@ IPluginSet* FB_CARG PluginManager::getPlugins(IStatus* status, unsigned int inte
 
 		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
-		IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, ui, firebirdConf);
+		IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, destModule, firebirdConf);
 		rc->addRef();
 		return rc;
 	}
@@ -1094,11 +1099,11 @@ IPluginSet* FB_CARG PluginManager::getPlugins(IStatus* status, unsigned int inte
 }
 
 
-void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
+void PluginManager::releasePlugin(IPluginBase* plugin)
 {
 	MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
-	IRefCounted* parent = plugin->getOwner();
+	IReferenceCounted* parent = plugin->getOwner();
 
 	if (plugin->release() == 0)
 	{
@@ -1116,7 +1121,7 @@ void FB_CARG PluginManager::releasePlugin(IPluginBase* plugin)
 }
 
 
-IConfig* FB_CARG PluginManager::getConfig(IStatus* status, const char* filename)
+IConfig* PluginManager::getConfig(IStatus* status, const char* filename)
 {
 	try
 	{
@@ -1140,7 +1145,7 @@ void PluginManager::shutdown()
 
 void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 {
-	fb_assert(typeThatMustGoAway < PluginType::MaxType);
+	fb_assert(typeThatMustGoAway < PluginManager::MaxType);
 
 	Semaphore sem;
 	Semaphore* semPtr = NULL;
@@ -1180,8 +1185,8 @@ public:
 	explicit DirCache(MemoryPool &p)
 		: cache(p)
 	{
-		cache.resize(DirType::FB_DIRCOUNT);
-		for (unsigned i = 0; i < DirType::FB_DIRCOUNT; ++i)
+		cache.resize(IConfigManager::FB_DIRCOUNT);
+		for (unsigned i = 0; i < IConfigManager::FB_DIRCOUNT; ++i)
 		{
 			cache[i] = fb_utils::getPrefix(i, "");
 		}
@@ -1189,7 +1194,7 @@ public:
 
 	const char* getDir(unsigned code)
 	{
-		fb_assert(code < DirType::FB_DIRCOUNT);
+		fb_assert(code < IConfigManager::FB_DIRCOUNT);
 		return cache[code].c_str();
 	}
 
@@ -1204,10 +1209,10 @@ InitInstance<DirCache> dirCache;
 namespace Firebird {
 
 // Generic access to all config interfaces
-class ConfigManager : public AutoIface<IConfigManager, FB_CONFIG_MANAGER_VERSION>
+class ConfigManager : public AutoIface<Api::ConfigManagerImpl<ConfigManager> >
 {
 public:
-	const char* FB_CARG getDirectory(unsigned code)
+	const char* getDirectory(unsigned code)
 	{
 		try
 		{
@@ -1219,7 +1224,7 @@ public:
 		}
 	}
 
-	IConfig* FB_CARG getPluginConfig(const char* pluginName)
+	IConfig* getPluginConfig(const char* pluginName)
 	{
 		try
 		{
@@ -1233,7 +1238,7 @@ public:
 		}
 	}
 
-	IFirebirdConf* FB_CARG getFirebirdConf()
+	IFirebirdConf* getFirebirdConf()
 	{
 		try
 		{
@@ -1245,7 +1250,7 @@ public:
 		}
 	}
 
-	IFirebirdConf* FB_CARG getDatabaseConf(const char* dbName)
+	IFirebirdConf* getDatabaseConf(const char* dbName)
 	{
 		try
 		{

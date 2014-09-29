@@ -24,9 +24,9 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include "firebird.h"
-#include "firebird/Crypt.h"
+#include "firebird/Interface.h"
 
+#include "firebird.h"		// Needed for atomic support
 #include "../common/classes/fb_atomic.h"
 
 using namespace Firebird;
@@ -37,7 +37,7 @@ namespace
 IMaster* master = NULL;
 IPluginManager* pluginManager = NULL;
 
-class PluginModule : public IPluginModule
+class PluginModule : public Api::PluginModuleImpl<PluginModule>
 {
 public:
 	PluginModule()
@@ -59,17 +59,12 @@ public:
 		}
 	}
 
-	int FB_CARG getVersion()
-	{
-		return FB_PLUGIN_MODULE_VERSION;
-	}
-
-	IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return this;
 	}
 
-	void FB_CARG doClean()
+	void doClean()
 	{
 		flag = false;
 	}
@@ -80,10 +75,10 @@ private:
 
 PluginModule module;
 
-class DbCrypt : public IDbCryptPlugin
+class DbCrypt : public Api::DbCryptPluginImpl<DbCrypt>
 {
 public:
-	explicit DbCrypt(IPluginConfig* cnf)
+	explicit DbCrypt(IPluginConfig* cnf) throw()
 		: config(cnf), key(0), owner(NULL)
 	{
 		config->addRef();
@@ -95,11 +90,11 @@ public:
 	}
 
 	// ICryptPlugin implementation
-	void FB_CARG encrypt(IStatus* status, unsigned int length, const void* from, void* to);
-	void FB_CARG decrypt(IStatus* status, unsigned int length, const void* from, void* to);
-	void FB_CARG setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** sources);
+	void encrypt(IStatus* status, unsigned int length, const void* from, void* to);
+	void decrypt(IStatus* status, unsigned int length, const void* from, void* to);
+	void setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** sources);
 
-	int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -109,27 +104,22 @@ public:
 		return 1;
 	}
 
-	void FB_CARG addRef()
+	void addRef()
 	{
 		++refCounter;
 	}
 
-	int FB_CARG getVersion()
-	{
-		return FB_DBCRYPT_PLUGIN_VERSION;
-	}
-
-	IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return &module;
 	}
 
-	void FB_CARG setOwner(IRefCounted* o)
+	void setOwner(IReferenceCounted* o)
 	{
 		owner = o;
 	}
 
-	IRefCounted* FB_CARG getOwner()
+	IReferenceCounted* getOwner()
 	{
 		return owner;
 	}
@@ -139,7 +129,7 @@ private:
 	UCHAR key;
 
 	AtomicCounter refCounter;
-	IRefCounted* owner;
+	IReferenceCounted* owner;
 
 	void noKeyError(IStatus* status);
 };
@@ -155,7 +145,7 @@ void DbCrypt::noKeyError(IStatus* status)
 	status->setErrors(vector);
 }
 
-void FB_CARG DbCrypt::encrypt(IStatus* status, unsigned int length, const void* from, void* to)
+void DbCrypt::encrypt(IStatus* status, unsigned int length, const void* from, void* to)
 {
 	status->init();
 
@@ -174,7 +164,7 @@ void FB_CARG DbCrypt::encrypt(IStatus* status, unsigned int length, const void* 
 	}
 }
 
-void FB_CARG DbCrypt::decrypt(IStatus* status, unsigned int length, const void* from, void* to)
+void DbCrypt::decrypt(IStatus* status, unsigned int length, const void* from, void* to)
 {
 	status->init();
 
@@ -193,7 +183,7 @@ void FB_CARG DbCrypt::decrypt(IStatus* status, unsigned int length, const void* 
 	}
 }
 
-void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** sources)
+void DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** sources)
 {
 	status->init();
 
@@ -249,20 +239,15 @@ void FB_CARG DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlu
 	noKeyError(status);
 }
 
-class Factory : public IPluginFactory
+class Factory : public Api::PluginFactoryImpl<Factory>
 {
 public:
-	int FB_CARG getVersion()
-	{
-		return FB_PLUGIN_FACTORY_VERSION;
-	}
-
-	IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return &module;
 	}
 
-	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{
@@ -270,9 +255,10 @@ public:
 			p->addRef();
 			return p;
 		}
-		catch (const Exception& ex)
+		catch (...)
 		{
-			ex.stuffException(status);
+			ISC_STATUS st[3] = {isc_arg_gds, isc_virmemexh, isc_arg_end};
+			status->setErrors(st);
 		}
 		return NULL;
 	}
@@ -288,5 +274,5 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
 	pluginManager = master->getPluginManager();
 
 	module.registerMe();
-	pluginManager->registerPluginFactory(PluginType::DbCrypt, "DbCrypt_example", &factory);
+	pluginManager->registerPluginFactory(IPluginManager::DbCrypt, "DbCrypt_example", &factory);
 }

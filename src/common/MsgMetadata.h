@@ -25,7 +25,7 @@
 #ifndef COMMON_MSG_METADATA_H
 #define COMMON_MSG_METADATA_H
 
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include "iberror.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/objects_array.h"
@@ -38,7 +38,7 @@ class MetadataBuilder;
 class StatementMetadata;
 class MetadataFromBlr;
 
-class MsgMetadata : public RefCntIface<IMessageMetadata, FB_MESSAGE_METADATA_VERSION>
+class MsgMetadata : public RefCntIface<Api::MessageMetadataImpl<MsgMetadata> >
 {
 	friend class MetadataBuilder;
 	friend class StatementMetadata;
@@ -138,14 +138,14 @@ public:
 	}
 
 	// IMessageMetadata implementation
-	virtual int FB_CARG release();
+	int release();
 
-	virtual unsigned FB_CARG getCount(IStatus* /*status*/)
+	unsigned getCount(IStatus* /*status*/)
 	{
 		return (unsigned) items.getCount();
 	}
 
-	virtual const char* FB_CARG getField(IStatus* status, unsigned index)
+	const char* getField(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].field.c_str();
@@ -154,7 +154,7 @@ public:
 		return NULL;
 	}
 
-	virtual const char* FB_CARG getRelation(IStatus* status, unsigned index)
+	const char* getRelation(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].relation.c_str();
@@ -163,7 +163,7 @@ public:
 		return NULL;
 	}
 
-	virtual const char* FB_CARG getOwner(IStatus* status, unsigned index)
+	const char* getOwner(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].owner.c_str();
@@ -172,7 +172,7 @@ public:
 		return NULL;
 	}
 
-	virtual const char* FB_CARG getAlias(IStatus* status, unsigned index)
+	const char* getAlias(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].alias.c_str();
@@ -181,7 +181,7 @@ public:
 		return NULL;
 	}
 
-	virtual unsigned FB_CARG getType(IStatus* status, unsigned index)
+	unsigned getType(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].type;
@@ -190,7 +190,7 @@ public:
 		return 0;
 	}
 
-	virtual FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index)
+	FB_BOOLEAN isNullable(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].nullable;
@@ -199,7 +199,7 @@ public:
 		return false;
 	}
 
-	virtual int FB_CARG getSubType(IStatus* status, unsigned index)
+	int getSubType(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].subType;
@@ -208,7 +208,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getLength(IStatus* status, unsigned index)
+	unsigned getLength(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].length;
@@ -217,7 +217,7 @@ public:
 		return 0;
 	}
 
-	virtual int FB_CARG getScale(IStatus* status, unsigned index)
+	int getScale(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].scale;
@@ -226,7 +226,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getCharSet(IStatus* status, unsigned index)
+	unsigned getCharSet(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].charSet;
@@ -235,7 +235,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getOffset(IStatus* status, unsigned index)
+	unsigned getOffset(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].offset;
@@ -244,7 +244,7 @@ public:
 		return 0;
 	}
 
-	virtual unsigned FB_CARG getNullOffset(IStatus* status, unsigned index)
+	unsigned getNullOffset(IStatus* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].nullInd;
@@ -253,9 +253,9 @@ public:
 		return 0;
 	}
 
-	virtual IMetadataBuilder* FB_CARG getBuilder(IStatus* status);
+	IMetadataBuilder* getBuilder(IStatus* status);
 
-	virtual unsigned FB_CARG getMessageLength(IStatus* /*status*/)
+	unsigned getMessageLength(IStatus* /*status*/)
 	{
 		return length;
 	}
@@ -278,39 +278,39 @@ private:
 	unsigned length;
 };
 
+//class AttMetadata : public Api::MessageMetadataBaseImpl<AttMetadata, MsgMetadata>
 class AttMetadata : public MsgMetadata
 {
 public:
 	explicit AttMetadata(RefCounted* att)
-		: MsgMetadata(),
-		  attachment(att)
+		: attachment(att)
 	{ }
 
 	// re-implement here release() present in MsgMetadata to call correct dtor
-	virtual int FB_CARG release();
+	//virtual int release();
 
 	RefPtr<RefCounted> attachment;
 };
 
-class MetadataBuilder FB_FINAL : public RefCntIface<IMetadataBuilder, FB_METADATA_BUILDER_VERSION>
+class MetadataBuilder FB_FINAL : public RefCntIface<Api::MetadataBuilderImpl<MetadataBuilder> >
 {
 public:
 	explicit MetadataBuilder(const MsgMetadata* from);
 	MetadataBuilder(unsigned fieldCount);
 
-	virtual int FB_CARG release();
+	int release();
 
 	// IMetadataBuilder implementation
-	virtual void FB_CARG setType(IStatus* status, unsigned index, unsigned type);
-	virtual void FB_CARG setSubType(IStatus* status, unsigned index, int subType);
-	virtual void FB_CARG setLength(IStatus* status, unsigned index, unsigned length);
-	virtual void FB_CARG setCharSet(IStatus* status, unsigned index, unsigned charSet);
-	virtual void FB_CARG setScale(IStatus* status, unsigned index, unsigned scale);
-	virtual void FB_CARG truncate(IStatus* status, unsigned count);
-	virtual void FB_CARG remove(IStatus* status, unsigned index);
-	virtual void FB_CARG moveNameToIndex(IStatus* status, const char* name, unsigned index);
-	virtual unsigned FB_CARG addField(IStatus* status);
-	virtual IMessageMetadata* FB_CARG getMetadata(IStatus* status);
+	void setType(IStatus* status, unsigned index, unsigned type);
+	void setSubType(IStatus* status, unsigned index, int subType);
+	void setLength(IStatus* status, unsigned index, unsigned length);
+	void setCharSet(IStatus* status, unsigned index, unsigned charSet);
+	void setScale(IStatus* status, unsigned index, unsigned scale);
+	void truncate(IStatus* status, unsigned count);
+	void remove(IStatus* status, unsigned index);
+	void moveNameToIndex(IStatus* status, const char* name, unsigned index);
+	unsigned addField(IStatus* status);
+	IMessageMetadata* getMetadata(IStatus* status);
 
 private:
 	RefPtr<MsgMetadata> msgMetadata;

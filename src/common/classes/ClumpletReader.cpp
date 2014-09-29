@@ -32,7 +32,7 @@
 #include "fb_exception.h"
 
 #include "../jrd/ibase.h"
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 
 #ifdef DEBUG_CLUMPLETS
 #include "../yvalve/gds_proto.h"

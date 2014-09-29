@@ -37,7 +37,7 @@
 #include <string.h>
 
 #include <ibase.h>
-#include <firebird/Provider.h>
+#include <firebird/Interface.h>
 
 using namespace Firebird;
 
@@ -254,7 +254,7 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 		try
 		{
 			// use attachment's method to access BLOB object
-			blob = att->openBlob(st, tra, (ISC_QUAD*) (buf + offset));
+			blob = att->openBlob(st, tra, (ISC_QUAD*) (buf + offset), 0, NULL);
 			check(st, "openBlob");
 
 			char segbuf[16];

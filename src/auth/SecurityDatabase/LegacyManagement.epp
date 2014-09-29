@@ -41,9 +41,7 @@
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/StatusHolder.h"
-#include "firebird/Plugin.h"
-
-static Firebird::MakeUpgradeInfo<> upInfo;
+#include "firebird/Interface.h"
 
 // Here we use version-independent symbolic link (or copy) of actual database
 DATABASE database = STATIC FILENAME "security.fdb";
@@ -51,7 +49,7 @@ DATABASE database = STATIC FILENAME "security.fdb";
 static Firebird::GlobalPtr<Firebird::Mutex> execLineMutex;	// protects various gpre generated structures
 
 static bool grantRevokeAdmin(ISC_STATUS* isc_status, FB_API_HANDLE database, FB_API_HANDLE trans,
-							 Auth::IUser* user)
+							 Firebird::IUser* user)
 {
 	if (!user->admin()->entered())
 	{
@@ -113,12 +111,10 @@ SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IPluginConfig* 
 	check(&s);
 }
 
-void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo* logonInfo)
+void SecurityDatabaseManagement::start(Firebird::IStatus* st, Firebird::ILogonInfo* logonInfo)
 {
 	try
 	{
-		Firebird::MasterInterfacePtr()->upgradeInterface(logonInfo, FB_AUTH_LOGON_INFO_VERSION, upInfo);
-
 		st->init();
 
 		if (secDbKey == INIT_KEY)
@@ -169,7 +165,7 @@ void FB_CARG SecurityDatabaseManagement::start(Firebird::IStatus* st, ILogonInfo
 	}
 }
 
-void FB_CARG SecurityDatabaseManagement::commit(Firebird::IStatus* st)
+void SecurityDatabaseManagement::commit(Firebird::IStatus* st)
 {
 	try
 	{
@@ -190,7 +186,7 @@ void FB_CARG SecurityDatabaseManagement::commit(Firebird::IStatus* st)
 	}
 }
 
-void FB_CARG SecurityDatabaseManagement::rollback(Firebird::IStatus* st)
+void SecurityDatabaseManagement::rollback(Firebird::IStatus* st)
 {
 	try
 	{
@@ -211,7 +207,7 @@ void FB_CARG SecurityDatabaseManagement::rollback(Firebird::IStatus* st)
 	}
 }
 
-int FB_CARG SecurityDatabaseManagement::release()
+int SecurityDatabaseManagement::release()
 {
 	if (--refCounter == 0)
 	{
@@ -236,7 +232,7 @@ static inline void strStore(char* to, const char* from, size_t len)
 	strncpy(to, from, len);
 }
 
-int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* user, IListUsers* callback)
+int SecurityDatabaseManagement::execute(Firebird::IStatus* st, Firebird::IUser* user, Firebird::IListUsers* callback)
 {
 /*************************************
  *
@@ -302,8 +298,6 @@ int FB_CARG SecurityDatabaseManagement::execute(Firebird::IStatus* st, IUser* us
 
 	try
 	{
-		Firebird::MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
-
 		ISC_STATUS_ARRAY isc_status;
 		fb_utils::init_status(isc_status);
 		st->init();
@@ -765,6 +759,6 @@ static Firebird::SimpleFactory<Auth::SecurityDatabaseManagement> factory;
 extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	Firebird::CachedMasterInterface::set(master);
-	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::PluginType::AuthUserManagement, "Legacy_UserManager", &factory);
-	Firebird::myModule->registerMe();
+	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::IPluginManager::AuthUserManagement, "Legacy_UserManager", &factory);
+	Firebird::getUnloadDetector()->registerMe();
 }

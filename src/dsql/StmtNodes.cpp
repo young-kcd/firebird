@@ -2844,7 +2844,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	catch (const Exception& ex)
 	{
 		const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
-		trace.finish(false, noPriv ? res_unauthorized : res_failed);
+		trace.finish(false, noPriv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : ITraceConnection::TRACE_RESULT_FAILED);
 
 		EXE_unwind(tdbb, procRequest);
 		procRequest->req_attachment = NULL;
@@ -2853,7 +2853,7 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 	}
 
 	// trace procedure execution finish
-	trace.finish(false, res_successful);
+	trace.finish(false, ITraceConnection::TRACE_RESULT_SUCCESS);
 
 	EXE_unwind(tdbb, procRequest);
 	procRequest->req_attachment = NULL;

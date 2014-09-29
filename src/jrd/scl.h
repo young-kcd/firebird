@@ -95,7 +95,7 @@ public:
 	Firebird::string	usr_project_name;	// Project name
 	Firebird::string	usr_org_name;		// Organization name
 	Firebird::string	usr_auth_method;	// Authentication method
-	Auth::UserData::AuthenticationBlock usr_auth_block;	// Authentication block after mapping
+	Auth::AuthenticationBlock usr_auth_block;	// Authentication block after mapping
 	USHORT				usr_user_id;		// User id
 	USHORT				usr_group_id;		// Group id
 	USHORT				usr_flags;			// Misc. crud

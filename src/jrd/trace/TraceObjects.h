@@ -42,6 +42,7 @@
 #include "../../jrd/RuntimeStatistics.h"
 #include "../../jrd/trace/TraceSession.h"
 #include "../../common/classes/ImplementHelper.h"
+#include "../../common/prett_proto.h"
 
 //// TODO: DDL triggers, packages and external procedures and functions support
 namespace Jrd {
@@ -50,33 +51,33 @@ class Database;
 class Attachment;
 class jrd_tra;
 
-class TraceConnectionImpl : public Firebird::AutoIface<TraceDatabaseConnection, FB_TRACE_CONNECTION_VERSION>
+class TraceConnectionImpl : public Firebird::AutoIface<Firebird::Api::TraceDatabaseConnectionImpl<TraceConnectionImpl> >
 {
 public:
 	TraceConnectionImpl(const Attachment* att) :
 		m_att(att)
 	{}
 
-	// TraceBaseConnection implementation
-	virtual ntrace_connection_kind_t FB_CARG getKind();
-	virtual int FB_CARG getProcessID();
-	virtual const char* FB_CARG getUserName();
-	virtual const char* FB_CARG getRoleName();
-	virtual const char* FB_CARG getCharSet();
-	virtual const char* FB_CARG getRemoteProtocol();
-	virtual const char* FB_CARG getRemoteAddress();
-	virtual int FB_CARG getRemoteProcessID();
-	virtual const char* FB_CARG getRemoteProcessName();
+	// TraceConnection implementation
+	unsigned getKind();
+	int getProcessID();
+	const char* getUserName();
+	const char* getRoleName();
+	const char* getCharSet();
+	const char* getRemoteProtocol();
+	const char* getRemoteAddress();
+	int getRemoteProcessID();
+	const char* getRemoteProcessName();
 
 	// TraceDatabaseConnection implementation
-	virtual int FB_CARG getConnectionID();
-	virtual const char* FB_CARG getDatabaseName();
+	int getConnectionID();
+	const char* getDatabaseName();
 private:
 	const Attachment* const m_att;
 };
 
 
-class TraceTransactionImpl : public Firebird::AutoIface<TraceTransaction, FB_TRACE_TRANSACTION_VERSION>
+class TraceTransactionImpl : public Firebird::AutoIface<Firebird::Api::TraceTransactionImpl<TraceTransactionImpl> >
 {
 public:
 	TraceTransactionImpl(const jrd_tra* tran, PerformanceInfo* perf = NULL) :
@@ -85,11 +86,11 @@ public:
 	{}
 
 	// TraceTransaction implementation
-	virtual unsigned FB_CARG getTransactionID();
-	virtual bool FB_CARG getReadOnly();
-	virtual int FB_CARG getWait();
-	virtual ntrace_tra_isolation_t FB_CARG getIsolation();
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; }
+	unsigned getTransactionID();
+	FB_BOOLEAN getReadOnly();
+	int getWait();
+	unsigned getIsolation();
+	PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
 	const jrd_tra* const m_tran;
@@ -97,7 +98,8 @@ private:
 };
 
 
-class BLRPrinter : public Firebird::AutoIface<TraceBLRStatement, FB_TRACE_BLR_STATEMENT_VERSION>
+template <class Final>
+class BLRPrinter : public Firebird::AutoIface<Firebird::Api::TraceBLRStatementImpl<Final> >
 {
 public:
 	BLRPrinter(const unsigned char* blr, size_t length) :
@@ -107,20 +109,32 @@ public:
 	{}
 
 	// TraceBLRStatement implementation
-	virtual const unsigned char* FB_CARG getData()	{ return m_blr; }
-	virtual size_t FB_CARG getDataLength()	{ return m_length; }
-	virtual const char* FB_CARG getText();
+	const unsigned char* getData()	{ return m_blr; }
+	unsigned getDataLength()		{ return m_length; }
+	const char* getText()
+	{
+		if (m_text.empty() && getDataLength())
+			fb_print_blr(getData(), (ULONG) getDataLength(), print_blr, this, 0);
+		return m_text.c_str();
+	}
 
 private:
-	static void print_blr(void* arg, SSHORT offset, const char* line);
+	static void print_blr(void* arg, SSHORT offset, const char* line)
+	{
+		BLRPrinter* blr = (BLRPrinter*) arg;
+
+		Firebird::string temp;
+		temp.printf("%4d %s\n", offset, line);
+		blr->m_text.append(temp);
+	}
 
 	const unsigned char* const m_blr;
-	const size_t m_length;
+	const unsigned m_length;
 	Firebird::string m_text;
 };
 
 
-class TraceBLRStatementImpl : public BLRPrinter
+class TraceBLRStatementImpl : public BLRPrinter<TraceBLRStatementImpl>
 {
 public:
 	TraceBLRStatementImpl(const jrd_req* stmt, PerformanceInfo* perf) :
@@ -129,8 +143,8 @@ public:
 		m_perf(perf)
 	{}
 
-	virtual int FB_CARG getStmtID()				{ return m_stmt->req_id; }
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; }
+	int getStmtID()				{ return m_stmt->req_id; }
+	PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
 	const jrd_req* const m_stmt;
@@ -138,19 +152,19 @@ private:
 };
 
 
-class TraceFailedBLRStatement : public BLRPrinter
+class TraceFailedBLRStatement : public BLRPrinter<TraceFailedBLRStatement>
 {
 public:
 	TraceFailedBLRStatement(const unsigned char* blr, size_t length) :
 		BLRPrinter(blr, length)
 	{}
 
-	virtual int FB_CARG getStmtID()				{ return 0; }
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return NULL; }
+	int getStmtID()				{ return 0; }
+	PerformanceInfo* getPerf()	{ return NULL; }
 };
 
 
-class TraceSQLStatementImpl : public Firebird::AutoIface<TraceSQLStatement, FB_TRACE_SQL_STATEMENT_VERSION>
+class TraceSQLStatementImpl : public Firebird::AutoIface<Firebird::Api::TraceSQLStatementImpl<TraceSQLStatementImpl> >
 {
 public:
 	TraceSQLStatementImpl(const dsql_req* stmt, PerformanceInfo* perf) :
@@ -161,16 +175,16 @@ public:
 	{}
 
 	// TraceSQLStatement implementation
-	virtual int FB_CARG getStmtID();
-	virtual PerformanceInfo* FB_CARG getPerf();
-	virtual TraceParams* FB_CARG getInputs();
-	virtual const char* FB_CARG getText();
-	virtual const char* FB_CARG getPlan();
-	virtual const char* FB_CARG getTextUTF8();
-	virtual const char* FB_CARG getExplainedPlan();
+	int getStmtID();
+	PerformanceInfo* getPerf();
+	Firebird::ITraceParams* getInputs();
+	const char* getText();
+	const char* getPlan();
+	const char* getTextUTF8();
+	const char* getExplainedPlan();
 
 private:
-	class DSQLParamsImpl : public Firebird::AutoIface<TraceParams, FB_TRACE_PARAMS_VERSION>
+	class DSQLParamsImpl : public Firebird::AutoIface<Firebird::Api::TraceParamsImpl<DSQLParamsImpl> >
 	{
 	public:
 		DSQLParamsImpl(Firebird::MemoryPool& pool, const dsql_req* const stmt) :
@@ -183,8 +197,8 @@ private:
 				m_params = &msg->msg_parameters;
 		}
 
-		virtual FB_SIZE_T FB_CARG getCount();
-		virtual const dsc* FB_CARG getParam(FB_SIZE_T idx);
+		FB_SIZE_T getCount();
+		const dsc* getParam(FB_SIZE_T idx);
 
 	private:
 		void fillParams();
@@ -205,7 +219,7 @@ private:
 };
 
 
-class TraceFailedSQLStatement : public Firebird::AutoIface<TraceSQLStatement, FB_TRACE_SQL_STATEMENT_VERSION>
+class TraceFailedSQLStatement : public Firebird::AutoIface<Firebird::Api::TraceSQLStatementImpl<TraceFailedSQLStatement> >
 {
 public:
 	TraceFailedSQLStatement(Firebird::string& text) :
@@ -213,13 +227,13 @@ public:
 	{}
 
 	// TraceSQLStatement implementation
-	virtual int FB_CARG getStmtID()				{ return 0; }
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return NULL; }
-	virtual TraceParams* FB_CARG getInputs()	{ return NULL; }
-	virtual const char* FB_CARG getText()		{ return m_text.c_str(); }
-	virtual const char* FB_CARG getPlan()		{ return ""; }
-	virtual const char* FB_CARG getTextUTF8();
-	virtual const char* FB_CARG getExplainedPlan()	{ return ""; }
+	int getStmtID()				{ return 0; }
+	PerformanceInfo* getPerf()	{ return NULL; }
+	Firebird::ITraceParams* getInputs()	{ return NULL; }
+	const char* getText()		{ return m_text.c_str(); }
+	const char* getPlan()		{ return ""; }
+	const char* getTextUTF8();
+	const char* getExplainedPlan()	{ return ""; }
 
 private:
 	Firebird::string& m_text;
@@ -227,7 +241,7 @@ private:
 };
 
 
-class TraceContextVarImpl : public Firebird::AutoIface<TraceContextVariable, FB_TRACE_CONTEXT_VARIABLE_VERSION>
+class TraceContextVarImpl : public Firebird::AutoIface<Firebird::Api::TraceContextVariableImpl<TraceContextVarImpl> >
 {
 public:
 	TraceContextVarImpl(const char* ns, const char* name, const char* value) :
@@ -237,9 +251,9 @@ public:
 	{}
 
 	// TraceContextVariable implementation
-	virtual const char* FB_CARG getNameSpace()	{ return m_namespace; }
-	virtual const char* FB_CARG getVarName()	{ return m_name; }
-	virtual const char* FB_CARG getVarValue()	{ return m_value; }
+	const char* getNameSpace()	{ return m_namespace; }
+	const char* getVarName()	{ return m_name; }
+	const char* getVarValue()	{ return m_value; }
 
 private:
 	const char* const m_namespace;
@@ -251,7 +265,7 @@ private:
 // forward declaration
 class TraceDescriptors;
 
-class TraceParamsImpl : public Firebird::AutoIface<TraceParams, FB_TRACE_PARAMS_VERSION>
+class TraceParamsImpl : public Firebird::AutoIface<Firebird::Api::TraceParamsImpl<TraceParamsImpl> >
 {
 public:
 	explicit TraceParamsImpl(TraceDescriptors *descs) :
@@ -259,8 +273,8 @@ public:
 	{}
 
 	// TraceParams implementation
-	virtual FB_SIZE_T FB_CARG getCount();
-	virtual const dsc* FB_CARG getParam(FB_SIZE_T idx);
+	FB_SIZE_T getCount();
+	const dsc* getParam(FB_SIZE_T idx);
 
 private:
 	TraceDescriptors* m_descs;
@@ -292,7 +306,7 @@ public:
 		return NULL;
 	}
 
-	operator TraceParams* ()
+	operator Firebird::ITraceParams* ()
 	{
 		return &m_traceParams;
 	}
@@ -317,7 +331,7 @@ public:
 	{}
 
 protected:
-	virtual void fillParams();
+	void fillParams();
 
 private:
 	jrd_req* m_request;
@@ -337,7 +351,7 @@ public:
 	{}
 
 protected:
-	virtual void fillParams();
+	void fillParams();
 
 private:
 	const Format* m_format;
@@ -362,11 +376,11 @@ public:
 	}
 
 protected:
-	virtual void fillParams() {}
+	void fillParams() {}
 };
 
 
-class TraceProcedureImpl : public Firebird::AutoIface<TraceProcedure, FB_TRACE_PROCEDURE_VERSION>
+class TraceProcedureImpl : public Firebird::AutoIface<Firebird::Api::TraceProcedureImpl<TraceProcedureImpl> >
 {
 public:
 	TraceProcedureImpl(jrd_req* request, PerformanceInfo* perf) :
@@ -378,13 +392,13 @@ public:
 	{}
 
 	// TraceProcedure implementation
-	virtual const char* FB_CARG getProcName()
+	const char* getProcName()
 	{
 		return m_name.c_str();
 	}
 
-	virtual TraceParams* FB_CARG getInputs()	{ return m_inputs; }
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; };
+	Firebird::ITraceParams* getInputs()	{ return m_inputs; }
+	PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:
 	jrd_req* const m_request;
@@ -394,10 +408,10 @@ private:
 };
 
 
-class TraceFunctionImpl : public Firebird::AutoIface<TraceFunction, FB_TRACE_FUNCTION_VERSION>
+class TraceFunctionImpl : public Firebird::AutoIface<Firebird::Api::TraceFunctionImpl<TraceFunctionImpl> >
 {
 public:
-	TraceFunctionImpl(jrd_req* request, TraceParams* inputs, PerformanceInfo* perf, const dsc* value) :
+	TraceFunctionImpl(jrd_req* request, Firebird::ITraceParams* inputs, PerformanceInfo* perf, const dsc* value) :
 		m_request(request),
 		m_perf(perf),
 		m_inputs(inputs),
@@ -406,25 +420,25 @@ public:
 	{}
 
 	// TraceFunction implementation
-	virtual const char* FB_CARG getFuncName()
+	const char* getFuncName()
 	{
 		return m_name.c_str();
 	}
 
-	virtual TraceParams* FB_CARG getInputs()	{ return m_inputs; }
-	virtual TraceParams* FB_CARG getResult()	{ return m_value; }
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; };
+	Firebird::ITraceParams* getInputs()	{ return m_inputs; }
+	Firebird::ITraceParams* getResult()	{ return m_value; }
+	PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:
 	jrd_req* const m_request;
 	PerformanceInfo* const m_perf;
-	TraceParams* m_inputs;
+	Firebird::ITraceParams* m_inputs;
 	TraceDscFromDsc m_value;
 	Firebird::string m_name;
 };
 
 
-class TraceTriggerImpl : public Firebird::AutoIface<TraceTrigger, FB_TRACE_TRIGGER_VERSION>
+class TraceTriggerImpl : public Firebird::AutoIface<Firebird::Api::TraceTriggerImpl<TraceTriggerImpl> >
 {
 public:
 	TraceTriggerImpl(const jrd_req* trig, SSHORT which, PerformanceInfo* perf) :
@@ -434,11 +448,11 @@ public:
 	{}
 
 	// TraceTrigger implementation
-	virtual const char* FB_CARG getTriggerName();
-	virtual const char* FB_CARG getRelationName();
-	virtual int FB_CARG getAction()				{ return m_trig->req_trigger_action; }
-	virtual int FB_CARG getWhich()				{ return m_which; }
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; }
+	const char* getTriggerName();
+	const char* getRelationName();
+	int getAction()				{ return m_trig->req_trigger_action; }
+	int getWhich()				{ return m_which; }
+	PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
 	const jrd_req* const m_trig;
@@ -447,28 +461,28 @@ private:
 };
 
 
-class TraceServiceImpl : public Firebird::AutoIface<TraceServiceConnection, FB_TRACE_SERVICE_VERSION>
+class TraceServiceImpl : public Firebird::AutoIface<Firebird::Api::TraceServiceConnectionImpl<TraceServiceImpl> >
 {
 public:
 	TraceServiceImpl(const Service* svc) :
 		m_svc(svc)
 	{}
 
-	// TraceBaseConnection implementation
-	virtual ntrace_connection_kind_t FB_CARG getKind();
-	virtual const char* FB_CARG getUserName();
-	virtual const char* FB_CARG getRoleName();
-	virtual const char* FB_CARG getCharSet();
-	virtual int FB_CARG getProcessID();
-	virtual const char* FB_CARG getRemoteProtocol();
-	virtual const char* FB_CARG getRemoteAddress();
-	virtual int FB_CARG getRemoteProcessID();
-	virtual const char* FB_CARG getRemoteProcessName();
+	// TraceConnection implementation
+	unsigned getKind();
+	const char* getUserName();
+	const char* getRoleName();
+	const char* getCharSet();
+	int getProcessID();
+	const char* getRemoteProtocol();
+	const char* getRemoteAddress();
+	int getRemoteProcessID();
+	const char* getRemoteProcessName();
 
 	// TraceServiceConnection implementation
-	virtual ntrace_service_t FB_CARG getServiceID();
-	virtual const char* FB_CARG getServiceMgr();
-	virtual const char* FB_CARG getServiceName();
+	void* getServiceID();
+	const char* getServiceMgr();
+	const char* getServiceName();
 private:
 	const Service* const m_svc;
 };
@@ -489,7 +503,7 @@ private:
 };
 
 
-class TraceInitInfoImpl : public Firebird::AutoIface<TraceInitInfo, FB_TRACE_INIT_INFO_VERSION>
+class TraceInitInfoImpl : public Firebird::AutoIface<Firebird::Api::TraceInitInfoImpl<TraceInitInfoImpl> >
 {
 public:
 	TraceInitInfoImpl(const Firebird::TraceSession& session, const Attachment* att,
@@ -505,14 +519,14 @@ public:
 	}
 
 	// TraceInitInfo implementation
-	virtual const char* FB_CARG getConfigText()			{ return m_session.ses_config.c_str(); }
-	virtual int FB_CARG getTraceSessionID()				{ return m_session.ses_id; }
-	virtual const char* FB_CARG getTraceSessionName()	{ return m_session.ses_name.c_str(); }
+	const char* getConfigText()			{ return m_session.ses_config.c_str(); }
+	int getTraceSessionID()				{ return m_session.ses_id; }
+	const char* getTraceSessionName()	{ return m_session.ses_name.c_str(); }
 
-	virtual const char* FB_CARG getFirebirdRootDirectory();
-	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
+	const char* getFirebirdRootDirectory();
+	const char* getDatabaseName()		{ return m_filename; }
 
-	virtual TraceDatabaseConnection* FB_CARG getConnection()
+	Firebird::ITraceDatabaseConnection* getConnection()
 	{
 		if (m_attachment)
 			return &m_trace_conn;
@@ -520,18 +534,18 @@ public:
 		return NULL;
 	}
 
-	virtual TraceLogWriter* FB_CARG getLogWriter();
+	Firebird::ITraceLogWriter* getLogWriter();
 
 private:
 	const Firebird::TraceSession& m_session;
-	Firebird::RefPtr<TraceLogWriter> m_logWriter;
+	Firebird::RefPtr<Firebird::ITraceLogWriter> m_logWriter;
 	TraceConnectionImpl m_trace_conn;
 	const char* m_filename;
 	const Attachment* const m_attachment;
 };
 
 
-class TraceStatusVectorImpl : public Firebird::AutoIface<TraceStatusVector, FB_TRACE_STATUS_VERSION>
+class TraceStatusVectorImpl : public Firebird::AutoIface<Firebird::Api::TraceStatusVectorImpl<TraceStatusVectorImpl> >
 {
 public:
 	explicit TraceStatusVectorImpl(const ISC_STATUS* status) :
@@ -539,29 +553,29 @@ public:
 	{
 	}
 
-	virtual bool FB_CARG hasError()
+	FB_BOOLEAN hasError()
 	{
 		return m_status && (m_status[1] != 0);
 	}
 
-	virtual bool FB_CARG hasWarning()
+	FB_BOOLEAN hasWarning()
 	{
 		return m_status && (m_status[1] == 0) && (m_status[2] == isc_arg_warning);
 	}
 
-	virtual const ISC_STATUS* FB_CARG getStatus()
+	const ISC_STATUS* getStatus()
 	{
 		return m_status;
 	}
 
-	virtual const char* FB_CARG getText();
+	const char* getText();
 
 private:
 	const ISC_STATUS* m_status;
 	Firebird::string m_error;
 };
 
-class TraceSweepImpl : public Firebird::AutoIface<TraceSweepInfo, FB_TRACE_SWEEP_INFO_VERSION>
+class TraceSweepImpl : public Firebird::AutoIface<Firebird::Api::TraceSweepInfoImpl<TraceSweepImpl> >
 {
 public:
 	TraceSweepImpl()
@@ -586,11 +600,11 @@ public:
 		m_perf = perf;
 	}
 
-	virtual TraNumber FB_CARG getOIT()	{ return m_oit; };
-	virtual TraNumber FB_CARG getOST()	{ return m_ost; };
-	virtual TraNumber FB_CARG getOAT()	{ return m_oat; };
-	virtual TraNumber FB_CARG getNext()	{ return m_next; };
-	virtual PerformanceInfo* FB_CARG getPerf()	{ return m_perf; };
+	ISC_UINT64 getOIT()	{ return m_oit; };
+	ISC_UINT64 getOST()	{ return m_ost; };
+	ISC_UINT64 getOAT()	{ return m_oat; };
+	ISC_UINT64 getNext()		{ return m_next; };
+	PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:
 	TraNumber m_oit;

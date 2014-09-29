@@ -324,7 +324,7 @@ public:
 
 	enum req_ta {
 		// Order should be maintained because the numbers are stored in BLR
-		// and should be in sync with ExternalTrigger::Action.
+		// and should be in sync with IExternalTrigger::ACTION_* .
 		req_trigger_insert			= 1,
 		req_trigger_update			= 2,
 		req_trigger_delete			= 3,

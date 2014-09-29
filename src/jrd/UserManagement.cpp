@@ -35,7 +35,95 @@
 using namespace Jrd;
 using namespace Firebird;
 
-static MakeUpgradeInfo<> upInfo;
+namespace {
+	class UserIdInfo : public AutoIface<Api::LogonInfoImpl<UserIdInfo> >
+	{
+	public:
+		explicit UserIdInfo(const Attachment* pAtt)
+			: att(pAtt)
+		{ }
+
+		// ILogonInfo implementation
+		const char* name()
+		{
+			return att->att_user->usr_user_name.c_str();
+		}
+
+		const char* role()
+		{
+			return att->att_user->usr_sql_role_name.c_str();
+		}
+
+		const char* networkProtocol()
+		{
+			return att->att_network_protocol.c_str();
+		}
+
+		const char* remoteAddress()
+		{
+			return att->att_remote_address.c_str();
+		}
+
+		const unsigned char* authBlock(unsigned* length)
+		{
+			const Auth::AuthenticationBlock& aBlock = att->att_user->usr_auth_block;
+			*length = aBlock.getCount();
+			return aBlock.getCount() ? aBlock.begin() : NULL;
+		}
+
+	private:
+		const Attachment* att;
+	};
+
+	class FillSnapshot : public AutoIface<Api::ListUsersImpl<FillSnapshot> >
+	{
+	public:
+		explicit FillSnapshot(UserManagement* um)
+			: userManagement(um)
+		{ }
+
+		// IListUsers implementation
+		void list(IStatus* status, Firebird::IUser* user)
+		{
+			try
+			{
+				userManagement->list(user);
+			}
+			catch (const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
+		}
+
+	private:
+		UserManagement* userManagement;
+	};
+
+	class OldAttributes : public AutoIface<Api::ListUsersImpl<OldAttributes> >
+	{
+	public:
+		OldAttributes()
+			: present(false)
+		{ }
+
+		// IListUsers implementation
+		void list(IStatus* status, Firebird::IUser* data)
+		{
+			try
+			{
+				value = data->attributes()->entered() ? data->attributes()->get() : "";
+				present = true;
+			}
+			catch (const Firebird::Exception& ex)
+			{
+				ex.stuffException(status);
+			}
+		}
+
+		string value;
+		bool present;
+	};
+} // anonymous namespace
 
 const Format* UsersTableScan::getFormat(thread_db* tdbb, jrd_rel* relation) const
 {
@@ -69,45 +157,6 @@ UserManagement::UserManagement(jrd_tra* tra)
 	manager = getPlugin.plugin();
 	fb_assert(manager);
 	manager->addRef();
-
-	class UserIdInfo : public AutoIface<Auth::ILogonInfo, FB_AUTH_LOGON_INFO_VERSION>
-	{
-	public:
-		explicit UserIdInfo(const Attachment* pAtt)
-			: att(pAtt)
-		{ }
-
-		// ILogonInfo implementation
-		const char* FB_CARG name()
-		{
-			return att->att_user->usr_user_name.c_str();
-		}
-
-		const char* FB_CARG role()
-		{
-			return att->att_user->usr_sql_role_name.c_str();
-		}
-
-		const char* FB_CARG networkProtocol()
-		{
-			return att->att_network_protocol.c_str();
-		}
-
-		const char* FB_CARG remoteAddress()
-		{
-			return att->att_remote_address.c_str();
-		}
-
-		const unsigned char* FB_CARG authBlock(unsigned* length)
-		{
-			const Auth::UserData::AuthenticationBlock& aBlock = att->att_user->usr_auth_block;
-			*length = aBlock.getCount();
-			return aBlock.getCount() ? aBlock.begin() : NULL;
-		}
-
-	private:
-		const Attachment* att;
-	};
 
 	LocalStatus status;
 	UserIdInfo idInfo(att);
@@ -169,7 +218,7 @@ USHORT UserManagement::put(Auth::DynamicUserData* userData)
 	return ret;
 }
 
-void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Auth::IUser* user)
+void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Firebird::IUser* user)
 {
 	if (!errcode)
 	{
@@ -221,31 +270,6 @@ void UserManagement::execute(USHORT id)
 		check(&status);
 		cmd.user.setEntered(&status, 1);
 		check(&status);
-
-		class OldAttributes : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
-		{
-		public:
-			OldAttributes()
-				: present(false)
-			{ }
-
-			// IListUsers implementation
-			void FB_CARG list(IStatus* status, Auth::IUser* data)
-			{
-				try
-				{
-					value = data->attributes()->entered() ? data->attributes()->get() : "";
-					present = true;
-				}
-				catch (const Firebird::Exception& ex)
-				{
-					ex.stuffException(status);
-				}
-			}
-
-			string value;
-			bool present;
-		};
 
 		OldAttributes oldAttributes;
 		int ret = manager->execute(&status, &cmd, &oldAttributes);
@@ -346,7 +370,7 @@ void UserManagement::execute(USHORT id)
 	commands[id] = NULL;
 }
 
-void UserManagement::list(Auth::IUser* u)
+void UserManagement::list(Firebird::IUser* u)
 {
 	RecordBuffer* buffer = getData(rel_sec_users);
 	Record* record = buffer->getTempRecord();
@@ -452,31 +476,6 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 		MemoryPool* const pool = threadDbb->getTransaction()->tra_pool;
 		allocBuffer(threadDbb, *pool, rel_sec_users);
 		allocBuffer(threadDbb, *pool, rel_sec_user_attributes);
-
-		class FillSnapshot : public Firebird::AutoIface<Auth::IListUsers, FB_AUTH_LIST_USERS_VERSION>
-		{
-		public:
-			explicit FillSnapshot(UserManagement* um)
-				: userManagement(um)
-			{ }
-
-			// IListUsers implementation
-			void FB_CARG list(IStatus* status, Auth::IUser* user)
-			{
-				try
-				{
-					MasterInterfacePtr()->upgradeInterface(user, FB_AUTH_USER_VERSION, upInfo);
-					userManagement->list(user);
-				}
-				catch (const Firebird::Exception& ex)
-				{
-					ex.stuffException(status);
-				}
-			}
-
-		private:
-			UserManagement* userManagement;
-		};
 
 		FillSnapshot fillSnapshot(this);
 

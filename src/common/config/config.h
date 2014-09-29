@@ -332,7 +332,7 @@ public:
 };
 
 // Implementation of interface to access master configuration file
-class FirebirdConf FB_FINAL : public Firebird::RefCntIface<Firebird::IFirebirdConf, FB_FIREBIRD_CONF_VERSION>
+class FirebirdConf FB_FINAL : public Firebird::RefCntIface<Firebird::Api::FirebirdConfImpl<FirebirdConf> >
 {
 public:
 	FirebirdConf(Config* existingConfig)
@@ -340,12 +340,12 @@ public:
 	{ }
 
 	// IFirebirdConf implementation
-	unsigned int FB_CARG getKey(const char* name);
-	ISC_INT64 FB_CARG asInteger(unsigned int key);
-	const char* FB_CARG asString(unsigned int key);
-	FB_BOOLEAN FB_CARG asBoolean(unsigned int key);
+	unsigned int getKey(const char* name);
+	SINT64 asInteger(unsigned int key);
+	const char* asString(unsigned int key);
+	FB_BOOLEAN asBoolean(unsigned int key);
 
-	int FB_CARG release();
+	int release();
 
 private:
 	Firebird::RefPtr<Config> config;

@@ -428,4 +428,6 @@ const int DDL_TRIGGER_DROP_MAPPING				= 47;
 
 const TraNumber MAX_TRA_NUMBER = ~TraNumber(0);
 
+#define CURRENT_ENGINE "Engine12"
+
 #endif // JRD_CONSTANTS_H

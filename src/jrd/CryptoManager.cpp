@@ -27,7 +27,7 @@
  */
 
 #include "firebird.h"
-#include "firebird/Crypt.h"
+#include "firebird/Interface.h"
 #include "gen/iberror.h"
 #include "../jrd/CryptoManager.h"
 
@@ -106,17 +106,6 @@ namespace {
 		Jrd::WIN window;
 		Ods::header_page* header;
 	};
-
-	class NoEntrypoint
-	{
-	public:
-		virtual void FB_CARG noEntrypoint(IStatus* s)
-		{
-			Arg::Gds(isc_wish_list).copyTo(s);
-		}
-	};
-
-	MakeUpgradeInfo<NoEntrypoint> upInfo;
 }
 
 namespace Jrd {
@@ -196,8 +185,7 @@ namespace Jrd {
 			return;
 		}
 
-		GetPlugins<IDbCryptPlugin> cryptControl(PluginType::DbCrypt, FB_DBCRYPT_PLUGIN_VERSION,
-			upInfo, dbb.dbb_config, pluginName);
+		GetPlugins<IDbCryptPlugin> cryptControl(IPluginManager::DbCrypt, dbb.dbb_config, pluginName);
 		if (!cryptControl.hasData())
 		{
 			(Arg::Gds(isc_no_crypt_plugin) << pluginName).raise();
@@ -679,8 +667,8 @@ namespace Jrd {
 	{
 		MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
-		for (GetPlugins<IKeyHolderPlugin> keyControl(PluginType::KeyHolder,
-			FB_KEYHOLDER_PLUGIN_VERSION, upInfo, config); keyControl.hasData(); keyControl.next())
+		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::KeyHolder, config);
+			keyControl.hasData(); keyControl.next())
 		{
 			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
 			LocalStatus st;

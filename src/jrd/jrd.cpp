@@ -132,8 +132,6 @@
 #include "../dsql/dsql.h"
 #include "../dsql/dsql_proto.h"
 
-#include "firebird/Crypt.h"
-
 using namespace Jrd;
 using namespace Firebird;
 
@@ -328,7 +326,7 @@ JStatement::JStatement(dsql_req* handle, StableAttachmentPart* sa, Firebird::Arr
 	metadata.parse(meta.getCount(), meta.begin());
 }
 
-JService::JService(Service* handle)
+JService::JService(Jrd::Service* handle)
 	: svc(handle)
 {
 }
@@ -368,15 +366,15 @@ static void shutdownBeforeUnload()
 	JProvider::getInstance()->shutdown(&status, 0, fb_shutrsn_exit_called);
 };
 
-class EngineFactory : public AutoIface<IPluginFactory, FB_PLUGIN_FACTORY_VERSION>
+class EngineFactory : public AutoIface<Api::PluginFactoryImpl<EngineFactory> >
 {
 public:
 	// IPluginFactory implementation
-	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{
-			if (myModule->unloadStarted())
+			if (getUnloadDetector()->unloadStarted())
 			{
 				Arg::Gds(isc_shutdown).raise();
 			}
@@ -397,9 +395,9 @@ static Static<EngineFactory> engineFactory;
 
 void registerEngine(IPluginManager* iPlugin)
 {
-	myModule->setCleanup(shutdownBeforeUnload);
-	iPlugin->registerPluginFactory(PluginType::Provider, CURRENT_ENGINE, &engineFactory);
-	myModule->registerMe();
+	getUnloadDetector()->setCleanup(shutdownBeforeUnload);
+	iPlugin->registerPluginFactory(IPluginManager::Provider, CURRENT_ENGINE, &engineFactory);
+	getUnloadDetector()->registerMe();
 }
 
 } // namespace Jrd
@@ -709,10 +707,10 @@ namespace
 	}
 
 
-	class DefaultCallback : public AutoIface<ICryptKeyCallback, FB_CRYPT_CALLBACK_VERSION>
+	class DefaultCallback : public AutoIface<Api::CryptKeyCallbackImpl<DefaultCallback> >
 	{
 	public:
-		unsigned int FB_CARG callback(unsigned int, const void*, unsigned int, void*)
+		unsigned int callback(unsigned int, const void*, unsigned int, void*)
 		{
 			return 0;
 		}
@@ -782,8 +780,8 @@ void Trigger::compile(thread_db* tdbb)
 			{
 				dbb->dbb_extManager.makeTrigger(tdbb, csb, this, engine, entryPoint, extBody.c_str(),
 					(relation ?
-						(type & 1 ? ExternalTrigger::TYPE_BEFORE : ExternalTrigger::TYPE_AFTER) :
-						Firebird::ExternalTrigger::TYPE_DATABASE));
+						(type & 1 ? IExternalTrigger::TYPE_BEFORE : IExternalTrigger::TYPE_AFTER) :
+						Firebird::IExternalTrigger::TYPE_DATABASE));
 			}
 
 			delete csb;
@@ -942,25 +940,25 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public AutoIface<TraceDatabaseConnection, FB_TRACE_CONNECTION_VERSION>
+class TraceFailedConnection : public AutoIface<Api::TraceDatabaseConnectionImpl<TraceFailedConnection> >
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
 
-	// TraceBaseConnection implementation
-	virtual ntrace_connection_kind_t FB_CARG getKind()	{ return connection_database; };
-	virtual int FB_CARG getProcessID()					{ return m_options->dpb_remote_pid; }
-	virtual const char* FB_CARG getUserName()			{ return m_id.usr_user_name.c_str(); }
-	virtual const char* FB_CARG getRoleName()			{ return m_options->dpb_role_name.c_str(); }
-	virtual const char* FB_CARG getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
-	virtual const char* FB_CARG getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
-	virtual const char* FB_CARG getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
-	virtual int FB_CARG getRemoteProcessID()			{ return m_options->dpb_remote_pid; }
-	virtual const char* FB_CARG getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
+	// TraceConnection implementation
+	unsigned getKind()					{ return TRACE_CONNECTION_DATABASE; };
+	int getProcessID()					{ return m_options->dpb_remote_pid; }
+	const char* getUserName()			{ return m_id.usr_user_name.c_str(); }
+	const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
+	const char* getCharSet()			{ return m_options->dpb_lc_ctype.c_str(); }
+	const char* getRemoteProtocol()		{ return m_options->dpb_network_protocol.c_str(); }
+	const char* getRemoteAddress()		{ return m_options->dpb_remote_address.c_str(); }
+	int getRemoteProcessID()			{ return m_options->dpb_remote_pid; }
+	const char* getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
 
 	// TraceDatabaseConnection implementation
-	virtual int FB_CARG getConnectionID()				{ return 0; }
-	virtual const char* FB_CARG getDatabaseName()		{ return m_filename; }
+	int getConnectionID()				{ return 0; }
+	const char* getDatabaseName()		{ return m_filename; }
 
 private:
 	const char* m_filename;
@@ -1067,7 +1065,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 	ex.stuffException(vector);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	if (func && attachment && attachment->att_trace_manager->needs(TRACE_EVENT_ERROR))
+	if (func && attachment && attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_ERROR))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceStatusVectorImpl traceStatus(vector->getErrors());
@@ -1180,7 +1178,7 @@ static void trace_warning(thread_db* tdbb, IStatus* userStatus, const char* func
 	if (!att)
 		return;
 
-	if (att->att_trace_manager->needs(TRACE_EVENT_ERROR))
+	if (att->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_ERROR))
 	{
 		TraceStatusVectorImpl traceStatus(userStatus->getWarnings());
 
@@ -1205,25 +1203,25 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 	TraceStatusVectorImpl traceStatus(status);
 
 	const ntrace_result_t result = (status[1] == isc_login || status[1] == isc_no_priv) ?
-									res_unauthorized : res_failed;
+									Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED;
 	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 
 	if (!traceManager)
 	{
 		TraceManager tempMgr(origFilename);
 
-		if (tempMgr.needs(TRACE_EVENT_ATTACH))
+		if (tempMgr.needs(Firebird::ITraceConnection::TRACE_EVENT_ATTACH))
 			tempMgr.event_attach(&conn, create, result);
 
-		if (tempMgr.needs(TRACE_EVENT_ERROR))
+		if (tempMgr.needs(Firebird::ITraceConnection::TRACE_EVENT_ERROR))
 			tempMgr.event_error(&conn, &traceStatus, func);
 	}
 	else
 	{
-		if (traceManager->needs(TRACE_EVENT_ATTACH))
+		if (traceManager->needs(Firebird::ITraceConnection::TRACE_EVENT_ATTACH))
 			traceManager->event_attach(&conn, create, result);
 
-		if (traceManager->needs(TRACE_EVENT_ERROR))
+		if (traceManager->needs(Firebird::ITraceConnection::TRACE_EVENT_ERROR))
 			traceManager->event_error(&conn, &traceStatus, func);
 	}
 }
@@ -1332,7 +1330,7 @@ static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& opt
 	}
 }
 
-JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char* filename,
+JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filename,
 	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
@@ -1786,10 +1784,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 
 			CCH_release_exclusive(tdbb);
 
-			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
+			if (attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
-				attachment->att_trace_manager->event_attach(&conn, false, res_successful);
+				attachment->att_trace_manager->event_attach(&conn, false, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 			}
 			attachTraced = true;
 
@@ -1861,10 +1859,10 @@ JAttachment* FB_CARG JProvider::attachDatabase(IStatus* user_status, const char*
 				TraceConnectionImpl conn(attachment);
 				TraceStatusVectorImpl traceStatus(user_status->getErrors());
 
-				if (traceManager->needs(TRACE_EVENT_ERROR))
+				if (traceManager->needs(Firebird::ITraceConnection::TRACE_EVENT_ERROR))
 					traceManager->event_error(&conn, &traceStatus, "JProvider::attachDatabase");
 
-				if (traceManager->needs(TRACE_EVENT_DETACH))
+				if (traceManager->needs(Firebird::ITraceConnection::TRACE_EVENT_DETACH))
 					traceManager->event_detach(&conn, false);
 			}
 			else
@@ -2187,7 +2185,7 @@ void JTransaction::commitRetaining(IStatus* user_status)
 }
 
 
-ITransaction* FB_CARG JTransaction::join(IStatus* user_status, ITransaction* transaction)
+ITransaction* JTransaction::join(IStatus* user_status, ITransaction* transaction)
 {
 	try
 	{
@@ -2203,7 +2201,7 @@ ITransaction* FB_CARG JTransaction::join(IStatus* user_status, ITransaction* tra
 	return NULL;
 }
 
-JTransaction* FB_CARG JTransaction::validate(IStatus* user_status, IAttachment* testAtt)
+JTransaction* JTransaction::validate(IStatus* user_status, IAttachment* testAtt)
 {
 	try
 	{
@@ -2220,7 +2218,7 @@ JTransaction* FB_CARG JTransaction::validate(IStatus* user_status, IAttachment* 
 	return NULL;
 }
 
-JTransaction* FB_CARG JTransaction::enterDtc(IStatus* user_status)
+JTransaction* JTransaction::enterDtc(IStatus* user_status)
 {
 	try
 	{
@@ -2268,13 +2266,13 @@ JRequest* JAttachment::compileRequest(IStatus* user_status,
 			JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
 			stmt = request->getStatement();
 
-			trace.finish(request, res_successful);
+			trace.finish(request, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 		}
 		catch (const Exception& ex)
 		{
 			const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JAttachment::compileRequest");
 			const bool no_priv = (exc == isc_no_priv);
-			trace.finish(NULL, no_priv ? res_unauthorized : res_failed);
+			trace.finish(NULL, no_priv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 
 			return NULL;
 		}
@@ -2342,7 +2340,7 @@ JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD
 }
 
 
-JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char* filename,
+JAttachment* JProvider::createDatabase(IStatus* user_status, const char* filename,
 	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
@@ -2700,10 +2698,10 @@ JAttachment* FB_CARG JProvider::createDatabase(IStatus* user_status, const char*
 			guardDbInit.leave();
 
 			// Report that we created attachment to Trace API
-			if (attachment->att_trace_manager->needs(TRACE_EVENT_ATTACH))
+			if (attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
-				attachment->att_trace_manager->event_attach(&conn, true, res_successful);
+				attachment->att_trace_manager->event_attach(&conn, true, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 			}
 
 			jAtt->getStable()->manualUnlock(attachment->att_flags);
@@ -2868,7 +2866,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION, AttachmentHolder::ATT_LOCK_ASYNC);
-		Attachment* attachment = getHandle();
+		Jrd::Attachment* attachment = getHandle();
 		Database* const dbb = tdbb->getDatabase();
 
 		try
@@ -2946,7 +2944,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 				CCH_RELEASE(tdbb, &window);
 
 				// Notify Trace API manager about successful drop of database
-				if (attachment->att_trace_manager->needs(TRACE_EVENT_DETACH))
+				if (attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_DETACH))
 				{
 					TraceConnectionImpl conn(attachment);
 					attachment->att_trace_manager->event_detach(&conn, true);
@@ -3904,13 +3902,13 @@ void JRequest::startAndSend(IStatus* user_status, ITransaction* tra, int level,
 				JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg);
 
 				// Notify Trace API about blr execution
-				trace.finish(res_successful);
+				trace.finish(Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 			}
 			catch (const Exception& ex)
 			{
 				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JRequest::startAndSend");
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-				trace.finish(no_priv ? res_unauthorized : res_failed);
+				trace.finish(no_priv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 
 				return;
 			}
@@ -3964,13 +3962,13 @@ void JRequest::start(IStatus* user_status, ITransaction* tra, int level)
 			try
 			{
 				JRD_start(tdbb, request, transaction);
-				trace.finish(res_successful);
+				trace.finish(Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 			}
 			catch (const Exception& ex)
 			{
 				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JRequest::start");
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-				trace.finish(no_priv ? res_unauthorized : res_failed);
+				trace.finish(no_priv ? Firebird::ITraceConnection::TRACE_RESULT_UNAUTHORIZED : Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 
 				return;
 			}
@@ -4415,7 +4413,7 @@ ITransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-JResultSet* FB_CARG JStatement::openCursor(IStatus* user_status, ITransaction* transaction,
+JResultSet* JStatement::openCursor(IStatus* user_status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
@@ -5175,7 +5173,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
  ******************************************************/
 	TEXT fname[MAXPATHLEN];
 
-	Firebird::string fname = fb_utils::getPrefix(Firebird::DirType::FB_DIR_LOG, "proc_info.log");
+	Firebird::string fname = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_LOG, "proc_info.log");
 	FILE* fptr = fopen(fname.c_str(), "a+");
 	if (!fptr)
 	{
@@ -6915,7 +6913,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	}
 
 	// Notify Trace API manager about disconnect
-	if (attachment->att_trace_manager->needs(TRACE_EVENT_DETACH))
+	if (attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_DETACH))
 	{
 		TraceConnectionImpl conn(attachment);
 		attachment->att_trace_manager->event_detach(&conn, false);

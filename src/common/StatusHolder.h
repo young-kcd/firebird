@@ -29,57 +29,58 @@
 #ifndef FB_STATUS_HOLDER
 #define FB_STATUS_HOLDER
 
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/array.h"
 
 namespace Firebird {
 
-class BaseStatus : public IStatus
+template <class Final>
+class BaseStatus : public Api::StatusImpl<Final>
 {
 public:
 	// IStatus implementation
-	virtual void FB_CARG init()
+	void init()
 	{
 		errors.init();
 		warnings.init();
 	}
 
-	virtual void FB_CARG setErrors(const ISC_STATUS* value)
+	void setErrors(const ISC_STATUS* value)
 	{
 		errors.set(fb_utils::statusLength(value), value);
 	}
 
-	virtual void FB_CARG setErrors(unsigned int length, const ISC_STATUS* value)
+	void setErrors2(unsigned int length, const ISC_STATUS* value)
 	{
 		errors.set(length, value);
 	}
 
-	virtual void FB_CARG setWarnings(const ISC_STATUS* value)
+	void setWarnings(const ISC_STATUS* value)
 	{
 		warnings.set(fb_utils::statusLength(value), value);
 	}
 
-	virtual void FB_CARG setWarnings(unsigned int length, const ISC_STATUS* value)
+	void setWarnings2(unsigned int length, const ISC_STATUS* value)
 	{
 		warnings.set(length, value);
 	}
 
-	virtual const ISC_STATUS* FB_CARG getErrors() const
+	const ISC_STATUS* getErrors() const
 	{
 		return errors.get();
 	}
 
-	virtual const ISC_STATUS* FB_CARG getWarnings() const
+	const ISC_STATUS* getWarnings() const
 	{
 		return warnings.get();
 	}
 
-	virtual unsigned FB_CARG getStatus() const
+	unsigned getStatus() const
 	{
-		return (errors.vector[1] ? FB_HAS_ERRORS : 0) |
-			   (warnings.vector[1] ? FB_HAS_WARNINGS  : 0);
+		return (errors.vector[1] ? IStatus::FB_HAS_ERRORS : 0) |
+			   (warnings.vector[1] ? IStatus::FB_HAS_WARNINGS  : 0);
 	}
 
 public:
@@ -107,12 +108,12 @@ private:
 			fb_utils::copyStatus(vector, FB_NELEM(vector), value, length);
 		}
 
-		virtual const ISC_STATUS* FB_CARG get() const
+		const ISC_STATUS* get() const
 		{
 			return vector;
 		}
 
-		virtual void FB_CARG init()
+		void init()
 		{
 			fb_utils::init_status(vector);
 		}
@@ -129,10 +130,10 @@ private:
 	ErrorVector errors, warnings;
 };
 
-class LocalStatus : public AutoIface<BaseStatus, FB_STATUS_VERSION>
+class LocalStatus : public AutoIface<BaseStatus<LocalStatus> >
 {
 public:
-	virtual void FB_CARG dispose()
+	void dispose()
 	{ }
 };
 

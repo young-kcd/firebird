@@ -47,16 +47,16 @@
 #include <sys/stat.h>
 
 
-class PluginLogWriter FB_FINAL : public Firebird::RefCntIface<TraceLogWriter, FB_TRACE_LOG_WRITER_VERSION>
+class PluginLogWriter FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TraceLogWriterImpl<PluginLogWriter> >
 {
 public:
 	PluginLogWriter(const char* fileName, size_t maxSize);
 	~PluginLogWriter();
 
 	// TraceLogWriter implementation
-	virtual FB_SIZE_T FB_CARG write(const void* buf, FB_SIZE_T size);
+	virtual FB_SIZE_T write(const void* buf, FB_SIZE_T size);
 
-	virtual int FB_CARG release()
+	virtual int release()
 	{
 		if (--refCounter == 0)
 		{

@@ -2,13 +2,14 @@
 #define INTERNAL_FIREBIRD
 #endif
 
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 
 #ifdef INTERNAL_FIREBIRD
 
 #include "../common/classes/alloc.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../dsql/sqlda_pub.h"
 
 #else // INTERNAL_FIREBIRD
 

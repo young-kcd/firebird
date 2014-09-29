@@ -32,7 +32,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../auth/SecureRemotePassword/Message.h"
 
-#include "../jrd/EngineInterface.h"
+#include "../jrd/constants.h"
 
 using namespace Firebird;
 
@@ -43,14 +43,12 @@ unsigned int secDbKey = INIT_KEY;
 
 const unsigned int SZ_LOGIN = 31;
 
-MakeUpgradeInfo<> upInfo;
-
 }
 
 
 namespace Auth {
 
-class SrpServer FB_FINAL : public StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
+class SrpServer FB_FINAL : public StdPlugin<Api::ServerImpl<SrpServer> >
 {
 public:
 	explicit SrpServer(IPluginConfig* par)
@@ -65,8 +63,8 @@ public:
 	}
 
 	// IServer implementation
-	int FB_CARG authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
-    int FB_CARG release();
+	int authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
+    int release();
 
 private:
 	RemotePassword* server;
@@ -248,7 +246,6 @@ int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerIn
 		BigInteger serverProof = server->clientProof(account.c_str(), salt.c_str(), sessionKey);
 		if (clientProof == serverProof)
 		{
-			MasterInterfacePtr()->upgradeInterface(writerInterface, FB_AUTH_WRITER_VERSION, upInfo);
 			writerInterface->add(status, account.c_str());
 			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
@@ -288,7 +285,7 @@ namespace
 
 void registerSrpServer(IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(PluginType::AuthServer, RemotePassword::plugName, &factory);
+	iPlugin->registerPluginFactory(IPluginManager::AuthServer, RemotePassword::plugName, &factory);
 }
 
 } // namespace Auth

@@ -57,7 +57,7 @@
 #include "../jrd/Routine.h"
 #include "../jrd/ExtEngineManager.h"
 #include "../jrd/Attachment.h"
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 
 #ifdef DEV_BUILD
 //#define DEBUG                   if (debug) DBG_supervisor(debug);

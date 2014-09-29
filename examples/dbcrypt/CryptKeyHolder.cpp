@@ -27,10 +27,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "firebird.h"
-#include "firebird/Crypt.h"
+#include "firebird/Interface.h"
 
+#include "firebird.h"		// Needed for atomic support
 #include "../common/classes/fb_atomic.h"
+
 
 using namespace Firebird;
 
@@ -40,7 +41,7 @@ namespace
 IMaster* master = NULL;
 IPluginManager* pluginManager = NULL;
 
-class PluginModule : public IPluginModule
+class PluginModule : public Api::PluginModuleImpl<PluginModule>
 {
 public:
 	PluginModule()
@@ -62,17 +63,12 @@ public:
 		}
 	}
 
-	int FB_CARG getVersion()
-	{
-		return FB_PLUGIN_MODULE_VERSION;
-	}
-
-	IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return this;
 	}
 
-	void FB_CARG doClean()
+	void doClean()
 	{
 		flag = false;
 	}
@@ -83,10 +79,10 @@ private:
 
 PluginModule module;
 
-class CryptKeyHolder : public IKeyHolderPlugin
+class CryptKeyHolder : public Api::KeyHolderPluginImpl<CryptKeyHolder>
 {
 public:
-	explicit CryptKeyHolder(IPluginConfig* cnf)
+	explicit CryptKeyHolder(IPluginConfig* cnf) throw()
 		: callbackInterface(this), config(cnf), key(0), owner(NULL)
 	{
 		config->addRef();
@@ -98,10 +94,10 @@ public:
 	}
 
 	// IKeyHolderPlugin implementation
-	virtual int FB_CARG keyCallback(IStatus* status, ICryptKeyCallback* callback);
-	virtual ICryptKeyCallback* FB_CARG keyHandle(IStatus* status, const char* keyName);
+	int keyCallback(IStatus* status, ICryptKeyCallback* callback);
+	ICryptKeyCallback* keyHandle(IStatus* status, const char* keyName);
 
-	int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -111,27 +107,22 @@ public:
 		return 1;
 	}
 
-	void FB_CARG addRef()
+	void addRef()
 	{
 		++refCounter;
 	}
 
-	int FB_CARG getVersion()
-	{
-		return FB_KEYHOLDER_PLUGIN_VERSION;
-	}
-
-	IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return &module;
 	}
 
-	void FB_CARG setOwner(Firebird::IRefCounted* o)
+	void setOwner(Firebird::IReferenceCounted* o)
 	{
 		owner = o;
 	}
 
-	IRefCounted* FB_CARG getOwner()
+	IReferenceCounted* getOwner()
 	{
 		return owner;
 	}
@@ -142,14 +133,14 @@ public:
 	}
 
 private:
-	class CallbackInterface : public ICryptKeyCallback
+	class CallbackInterface : public Api::CryptKeyCallbackImpl<CallbackInterface>
 	{
 	public:
 		explicit CallbackInterface(CryptKeyHolder* p)
 			: parent(p)
 		{ }
 
-		unsigned int FB_CARG callback(unsigned int, const void*, unsigned int length, void* buffer)
+		unsigned int callback(unsigned int, const void*, unsigned int length, void* buffer)
 		{
 			UCHAR k = parent->getKey();
 			if (!k)
@@ -164,12 +155,7 @@ private:
 			return 1;
 		}
 
-		int FB_CARG getVersion()
-		{
-			return FB_CRYPT_CALLBACK_VERSION;
-		}
-
-		IPluginModule* FB_CARG getModule()
+		IPluginModule* getModule()
 		{
 			return &module;
 		}
@@ -184,7 +170,7 @@ private:
 	UCHAR key;
 
 	AtomicCounter refCounter;
-	IRefCounted* owner;
+	IReferenceCounted* owner;
 
 	void noKeyError(IStatus* status);
 };
@@ -200,7 +186,7 @@ void CryptKeyHolder::noKeyError(IStatus* status)
 	status->setErrors(vector);
 }
 
-int FB_CARG CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* callback)
+int CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* callback)
 {
 	status->init();
 
@@ -236,7 +222,7 @@ int FB_CARG CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* call
 	return 1;
 }
 
-ICryptKeyCallback* FB_CARG CryptKeyHolder::keyHandle(IStatus* status, const char* keyName)
+ICryptKeyCallback* CryptKeyHolder::keyHandle(IStatus* status, const char* keyName)
 {
 	if (strcmp(keyName, "sample") != 0)
 	{
@@ -246,20 +232,15 @@ ICryptKeyCallback* FB_CARG CryptKeyHolder::keyHandle(IStatus* status, const char
 	return &callbackInterface;
 }
 
-class Factory : public IPluginFactory
+class Factory : public Api::PluginFactoryImpl<Factory>
 {
 public:
-	int FB_CARG getVersion()
-	{
-		return FB_PLUGIN_FACTORY_VERSION;
-	}
-
-	IPluginModule* FB_CARG getModule()
+	IPluginModule* getModule()
 	{
 		return &module;
 	}
 
-	IPluginBase* FB_CARG createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{
@@ -267,9 +248,10 @@ public:
 			p->addRef();
 			return p;
 		}
-		catch (const Exception& ex)
+		catch (...)
 		{
-			ex.stuffException(status);
+			ISC_STATUS st[3] = {isc_arg_gds, isc_virmemexh, isc_arg_end};
+			status->setErrors(st);
 		}
 		return NULL;
 	}
@@ -285,6 +267,6 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
 	pluginManager = master->getPluginManager();
 
 	module.registerMe();
-	pluginManager->registerPluginFactory(PluginType::KeyHolder, "CryptKeyHolder_example",
+	pluginManager->registerPluginFactory(IPluginManager::KeyHolder, "CryptKeyHolder_example",
 		&factory);
 }

@@ -27,7 +27,7 @@
 #ifndef CRYPT_ARC4_H
 #define CRYPT_ARC4_H
 
-#include "firebird/Crypt.h"
+#include "firebird/Interface.h"
 
 namespace Crypt {
 

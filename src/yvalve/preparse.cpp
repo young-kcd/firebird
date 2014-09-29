@@ -25,17 +25,14 @@
 #include "firebird.h"
 #include <stdlib.h>
 #include <string.h>
-//#include "../jrd/ibase.h"
 #include "../dsql/chars.h"
-//#include "../dsql/sqlda.h"
 #include "../yvalve/prepa_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/YObjects.h"
 #include "../common/classes/ClumpletWriter.h"
-//#include "../common/classes/ImplementHelper.h"
 #include "../common/StatusArg.h"
 
-#include <firebird/Provider.h>
+#include <firebird/Interface.h>
 
 enum pp_vals {
 	PP_CREATE = 0,

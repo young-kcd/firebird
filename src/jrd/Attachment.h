@@ -46,10 +46,6 @@ namespace EDS {
 	class Connection;
 }
 
-namespace Firebird {
-	class ICryptKeyCallback;
-}
-
 class CharSetContainer;
 
 namespace Jrd

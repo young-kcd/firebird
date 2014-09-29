@@ -252,12 +252,12 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(IStatus* dest) const throw()
 
 		if (v[warning] == isc_arg_warning)
 		{
-			 dest->setWarnings(length - warning, &v[warning]);
+			 dest->setWarnings2(length - warning, &v[warning]);
 			 if (warning)
-				dest->setErrors(warning, v);
+				dest->setErrors2(warning, v);
 		}
 		else
-			dest->setErrors(length, v);
+			dest->setErrors2(length, v);
 	}
 	return m_status_vector[1];
 }

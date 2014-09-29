@@ -30,7 +30,7 @@
 #define FB_COMPILING_WHY_CPP
 
 #include "firebird.h"
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include "memory_routines.h"
 #include "gen/iberror.h"
 #include "gen/msg_facs.h"
@@ -106,7 +106,7 @@ namespace {
 
 // Class-wrapper around external SQLDA.
 // Can be used as local variable, but do it with care
-class SQLDAMetadata FB_FINAL : public RefCntIface<IMessageMetadata, FB_MESSAGE_METADATA_VERSION>
+class SQLDAMetadata FB_FINAL : public RefCntIface<Api::MessageMetadataImpl<SQLDAMetadata> >
 {
 friend class SQLDAMetadataLauncher;
 private:
@@ -123,24 +123,24 @@ public:
 	SQLDAMetadata(const XSQLDA* aSqlda);
 	~SQLDAMetadata() { delete[] offsets; }
 
-	virtual int FB_CARG release();
+	int release();
 
-	unsigned FB_CARG getCount(IStatus* status);
-	const char* FB_CARG getField(IStatus* status, unsigned index);
-	const char* FB_CARG getRelation(IStatus* status, unsigned index);
-	const char* FB_CARG getOwner(IStatus* status, unsigned index);
-	const char* FB_CARG getAlias(IStatus* status, unsigned index);
-	unsigned FB_CARG getType(IStatus* status, unsigned index);
-	FB_BOOLEAN FB_CARG isNullable(IStatus* status, unsigned index);
-	int FB_CARG getSubType(IStatus* status, unsigned index);
-	unsigned FB_CARG getLength(IStatus* status, unsigned index);
-	int FB_CARG getScale(IStatus* status, unsigned index);
-	unsigned FB_CARG getCharSet(IStatus* status, unsigned index);
-	unsigned FB_CARG getOffset(IStatus* status, unsigned index);
-	unsigned FB_CARG getNullOffset(IStatus* status, unsigned index);
+	unsigned getCount(IStatus* status);
+	const char* getField(IStatus* status, unsigned index);
+	const char* getRelation(IStatus* status, unsigned index);
+	const char* getOwner(IStatus* status, unsigned index);
+	const char* getAlias(IStatus* status, unsigned index);
+	unsigned getType(IStatus* status, unsigned index);
+	FB_BOOLEAN isNullable(IStatus* status, unsigned index);
+	int getSubType(IStatus* status, unsigned index);
+	unsigned getLength(IStatus* status, unsigned index);
+	int getScale(IStatus* status, unsigned index);
+	unsigned getCharSet(IStatus* status, unsigned index);
+	unsigned getOffset(IStatus* status, unsigned index);
+	unsigned getNullOffset(IStatus* status, unsigned index);
 
-	IMetadataBuilder* FB_CARG getBuilder(IStatus* status);
-	unsigned FB_CARG getMessageLength(IStatus* status);
+	IMetadataBuilder* getBuilder(IStatus* status);
+	unsigned getMessageLength(IStatus* status);
 
 	void gatherData(DataBuffer& to);	// Copy data from SQLDA into target buffer.
 	void scatterData(DataBuffer& from);
@@ -227,7 +227,7 @@ SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda)
 	}
 }
 
-unsigned FB_CARG SQLDAMetadata::getCount(IStatus* status)
+unsigned SQLDAMetadata::getCount(IStatus* status)
 {
 	if (sqlda)
 		return sqlda->sqld;
@@ -235,7 +235,7 @@ unsigned FB_CARG SQLDAMetadata::getCount(IStatus* status)
 	return count;
 }
 
-const char* FB_CARG SQLDAMetadata::getField(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getField(IStatus* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -247,7 +247,7 @@ const char* FB_CARG SQLDAMetadata::getField(IStatus* status, unsigned index)
 	return "";	// Old conversion sqlda->BLR->metadata dropped them anyway
 }
 
-const char* FB_CARG SQLDAMetadata::getRelation(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getRelation(IStatus* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -258,7 +258,7 @@ const char* FB_CARG SQLDAMetadata::getRelation(IStatus* status, unsigned index)
 	return "";
 }
 
-const char* FB_CARG SQLDAMetadata::getOwner(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getOwner(IStatus* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -269,7 +269,7 @@ const char* FB_CARG SQLDAMetadata::getOwner(IStatus* status, unsigned index)
 	return "";
 }
 
-const char* FB_CARG SQLDAMetadata::getAlias(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getAlias(IStatus* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -280,7 +280,7 @@ const char* FB_CARG SQLDAMetadata::getAlias(IStatus* status, unsigned index)
 	return "";
 }
 
-unsigned FB_CARG SQLDAMetadata::getType(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getType(IStatus* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -297,7 +297,7 @@ unsigned FB_CARG SQLDAMetadata::getType(IStatus* status, unsigned index)
 	return 0;
 }
 
-FB_BOOLEAN FB_CARG SQLDAMetadata::isNullable(IStatus* status, unsigned index)
+FB_BOOLEAN SQLDAMetadata::isNullable(IStatus* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -314,7 +314,7 @@ FB_BOOLEAN FB_CARG SQLDAMetadata::isNullable(IStatus* status, unsigned index)
 	return FB_FALSE;
 }
 
-int FB_CARG SQLDAMetadata::getSubType(IStatus* status, unsigned index)
+int SQLDAMetadata::getSubType(IStatus* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -334,7 +334,7 @@ int FB_CARG SQLDAMetadata::getSubType(IStatus* status, unsigned index)
 	return 0;
 }
 
-unsigned FB_CARG SQLDAMetadata::getLength(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getLength(IStatus* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -351,7 +351,7 @@ unsigned FB_CARG SQLDAMetadata::getLength(IStatus* status, unsigned index)
 	return 0;
 }
 
-int FB_CARG SQLDAMetadata::getScale(IStatus* status, unsigned index)
+int SQLDAMetadata::getScale(IStatus* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -370,7 +370,7 @@ int FB_CARG SQLDAMetadata::getScale(IStatus* status, unsigned index)
 	return 0;
 }
 
-unsigned FB_CARG SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -396,7 +396,7 @@ unsigned FB_CARG SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
 	return 0;
 }
 
-unsigned FB_CARG SQLDAMetadata::getOffset(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getOffset(IStatus* status, unsigned index)
 {
 	if (!offsets)
 		assign();
@@ -405,7 +405,7 @@ unsigned FB_CARG SQLDAMetadata::getOffset(IStatus* status, unsigned index)
 	return offsets[index].offset;
 }
 
-unsigned FB_CARG SQLDAMetadata::getNullOffset(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getNullOffset(IStatus* status, unsigned index)
 {
 	if (!offsets)
 		assign();
@@ -460,7 +460,7 @@ void SQLDAMetadata::assign()
 	}
 }
 
-unsigned FB_CARG SQLDAMetadata::getMessageLength(IStatus* status)
+unsigned SQLDAMetadata::getMessageLength(IStatus* status)
 {
 	if (!offsets)
 		assign();
@@ -601,7 +601,7 @@ UCHAR* SQLDAMetadataLauncher::getBuffer()
 	}
 }
 
-IMetadataBuilder* FB_CARG SQLDAMetadata::getBuilder(IStatus* status)
+IMetadataBuilder* SQLDAMetadata::getBuilder(IStatus* status)
 {
 	// no way to construct SQLDA
 	fb_assert(false);
@@ -901,7 +901,7 @@ private:
 namespace Why
 {
 	// StatusVector:	Provides correct status vector for operation and init() it.
-	class StatusVector : public AutoIface<BaseStatus, FB_STATUS_VERSION>
+	class StatusVector : public AutoIface<BaseStatus<StatusVector> >
 	{
 	public:
 		explicit StatusVector(ISC_STATUS* v) throw()
@@ -923,7 +923,7 @@ namespace Why
 		}
 
 		// IStatus implementation
-		void FB_CARG dispose()
+		void dispose()
 		{ }
 
 #ifdef DEV_BUILD
@@ -1121,17 +1121,6 @@ namespace Why
 	ShutChain* ShutChain::list = NULL;
 	GlobalPtr<Mutex> ShutChain::shutdownCallbackMutex;
 
-	class NoEntrypoint
-	{
-	public:
-		virtual void FB_CARG noEntrypoint(IStatus* s)
-		{
-			s->setErrors(Arg::Gds(isc_wish_list).value());
-		}
-	};
-
-	MakeUpgradeInfo<NoEntrypoint> upInfo;
-
 	template <typename T, typename CleanupRoutine>	// T = YAttachment or YTransaction
 	class CleanupCallbackImpl : public CleanupCallback
 	{
@@ -1143,7 +1132,7 @@ namespace Why
 		{
 		}
 
-		virtual void FB_CARG cleanupCallbackFunction()
+		virtual void cleanupCallbackFunction()
 		{
 			call(routine);
 			delete this;
@@ -1564,13 +1553,13 @@ static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHand
 
 static TLS_DECLARE(ICryptKeyCallback*, legacyCryptCallback);
 
-ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, ICryptKeyCallback* cb)
+ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, void* cb)
 {
 	StatusVector status(userStatus);
 
 	try
 	{
-		TLS_SET(legacyCryptCallback, cb);
+		TLS_SET(legacyCryptCallback, (ICryptKeyCallback*)cb);
 	}
 	catch (const Exception& e)
 	{
@@ -2732,7 +2721,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 
 namespace
 {
-	class WaitCallback FB_FINAL : public RefCntIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
+	class WaitCallback FB_FINAL : public RefCntIface<Api::EventCallbackImpl<WaitCallback> >
 	{
 	public:
 		explicit WaitCallback(UCHAR* aBuffer)
@@ -2741,7 +2730,7 @@ namespace
 		}
 
 		// IEventCallback implementation
-		virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
+		virtual void eventCallbackFunction(unsigned int length, const UCHAR* events)
 		{
 			try
 			{
@@ -2752,7 +2741,7 @@ namespace
 			{ }
 		}
 
-		int FB_CARG release()
+		int release()
 		{
 			if (--refCounter == 0)
 			{
@@ -2808,7 +2797,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 namespace
 {
-	class QueCallback FB_FINAL : public RefCntIface<IEventCallback, FB_EVENT_CALLBACK_VERSION>
+	class QueCallback FB_FINAL : public RefCntIface<Api::EventCallbackImpl<QueCallback> >
 	{
 	public:
 		QueCallback(FPTR_EVENT_CALLBACK aAst, void* aArg)
@@ -2818,7 +2807,7 @@ namespace
 		}
 
 		// IEventCallback implementation
-		virtual void FB_CARG eventCallbackFunction(unsigned int length, const UCHAR* events)
+		virtual void eventCallbackFunction(unsigned int length, const UCHAR* events)
 		{
 			try
 			{
@@ -2828,7 +2817,7 @@ namespace
 			{ }
 		}
 
-		int FB_CARG release()
+		int release()
 		{
 			if (--refCounter == 0)
 			{
@@ -3715,10 +3704,9 @@ ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 	return new YTransaction(static_cast<YAttachment*>(attachment), transaction);
 }
 
-template <typename Impl, typename Intf, int Vers>
-YHelper<Impl, Intf, Vers>::YHelper(Intf* aNext)
+template <typename Impl, typename Intf>
+YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
 {
-	MasterInterfacePtr()->upgradeInterface(aNext, Vers, upInfo);
 	next.assignRefNoIncr(aNext);
 	this->addRef();
 }
@@ -3727,10 +3715,13 @@ YHelper<Impl, Intf, Vers>::YHelper(Intf* aNext)
 
 
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
-	: YHelper<YEvents, IEvents, FB_EVENTS_VERSION>(aNext),
+/*	: YHelper(aNext),
 	  attachment(aAttachment),
-	  callback(aCallback)
+	  callback(aCallback)*/
+	: YHelper(aNext)
 {
+	attachment = aAttachment;
+	callback = aCallback;
 	attachment->childEvents.add(this);
 }
 
@@ -3772,7 +3763,7 @@ void YEvents::cancel(IStatus* status)
 
 
 YRequest::YRequest(YAttachment* aAttachment, IRequest* aNext)
-	: YHelper<YRequest, IRequest, FB_REQUEST_VERSION>(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment),
 	  userHandle(NULL)
 {
@@ -3911,7 +3902,7 @@ void YRequest::free(IStatus* status)
 
 
 YBlob::YBlob(YAttachment* aAttachment, YTransaction* aTransaction, IBlob* aNext)
-	: YHelper<YBlob, IBlob, FB_BLOB_VERSION>(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment),
 	  transaction(aTransaction)
 {
@@ -4032,7 +4023,7 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
-	: YHelper<YStatement, IStatement, FB_STATEMENT_VERSION>(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment), cursor(NULL), input(true), output(false)
 {
 	attachment->childStatements.add(this);
@@ -4178,7 +4169,7 @@ IMessageMetadata* YStatement::getOutputMetadata(IStatus* status)
 	return NULL;
 }
 
-FB_UINT64 YStatement::getAffectedRecords(IStatus* status)
+ISC_UINT64 YStatement::getAffectedRecords(IStatus* status)
 {
 	try
 	{
@@ -4289,7 +4280,7 @@ void YStatement::free(IStatus* status)
 
 
 YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, IResultSet* aNext)
-	: YHelper<YResultSet, IResultSet, FB_RESULTSET_VERSION>(aNext),
+	: YHelper(aNext),
 	  attachment(anAttachment),
 	  transaction(aTransaction),
 	  statement(NULL)
@@ -4300,7 +4291,7 @@ YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, IR
 
 YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction,
 			YStatement* aStatement, IResultSet* aNext)
-	: YHelper<YResultSet, IResultSet, FB_RESULTSET_VERSION>(aNext),
+	: YHelper(aNext),
 	  attachment(anAttachment),
 	  transaction(aTransaction),
 	  statement(aStatement)
@@ -4525,7 +4516,7 @@ void YResultSet::close(IStatus* status)
 
 
 YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
-	: YHelper<YTransaction, ITransaction, FB_TRANSACTION_VERSION>(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment),
 	  childBlobs(getPool()),
 	  childCursors(getPool()),
@@ -4711,7 +4702,7 @@ void YTransaction::selfCheck()
 		Arg::Gds(isc_bad_trans_handle).raise();
 }
 
-ITransaction* FB_CARG YTransaction::join(IStatus* status, ITransaction* transaction)
+ITransaction* YTransaction::join(IStatus* status, ITransaction* transaction)
 {
 	try
 	{
@@ -4727,7 +4718,7 @@ ITransaction* FB_CARG YTransaction::join(IStatus* status, ITransaction* transact
 	return NULL;
 }
 
-ITransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testAtt)
+ITransaction* YTransaction::validate(IStatus* status, IAttachment* testAtt)
 {
 	try
 	{
@@ -4747,7 +4738,7 @@ ITransaction* FB_CARG YTransaction::validate(IStatus* status, IAttachment* testA
 	return NULL;
 }
 
-YTransaction* FB_CARG YTransaction::enterDtc(IStatus* status)
+YTransaction* YTransaction::enterDtc(IStatus* status)
 {
 	try
 	{
@@ -4779,7 +4770,7 @@ YTransaction* FB_CARG YTransaction::enterDtc(IStatus* status)
 
 
 YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
-	: YHelper<YAttachment, IAttachment, FB_ATTACHMENT_VERSION>(aNext),
+	: YHelper(aNext),
 	  provider(aProvider),
 	  dbPath(getPool(), aDbPath),
 	  childBlobs(getPool()),
@@ -5311,7 +5302,7 @@ void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTra
 
 
 YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
-	: YHelper<YService, Firebird::IService, FB_SERVICE_VERSION>(aNext),
+	: YHelper(aNext),
 	  provider(aProvider),
 	  utf8Connection(utf8)
 {
@@ -5477,8 +5468,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 		StatusVector temp(NULL);
 		IStatus* currentStatus = status;
 
-		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-				FB_PROVIDER_VERSION, upInfo, config);
+		for (GetPlugins<IProvider> providerIterator(IPluginManager::Provider, config);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -5572,8 +5562,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 			Config::merge(config, &spb_config);
 		}
 
-		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-				FB_PROVIDER_VERSION, upInfo, config);
+		for (GetPlugins<IProvider> providerIterator(IPluginManager::Provider, config);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -5660,8 +5649,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		shutdownStarted = true;
 
 		// Shutdown providers (if any present).
-		for (GetPlugins<IProvider> providerIterator(PluginType::Provider,
-				FB_PROVIDER_VERSION, upInfo);
+		for (GetPlugins<IProvider> providerIterator(IPluginManager::Provider);
 			 providerIterator.hasData();
 			 providerIterator.next())
 		{
@@ -5748,7 +5736,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 		}
 
 		// ... and wait for all providers to go away
-		PluginManager::waitForType(PluginType::Provider);
+		PluginManager::waitForType(IPluginManager::Provider);
 
 		// Shutdown clients after providers.
 		if (ShutChain::run(fb_shut_postproviders, reason) != FB_SUCCESS)

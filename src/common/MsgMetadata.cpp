@@ -44,7 +44,7 @@ MetadataBuilder::MetadataBuilder(unsigned fieldCount)
 		msgMetadata->items.grow(fieldCount);
 }
 
-int FB_CARG MetadataBuilder::release()
+int MetadataBuilder::release()
 {
 	if (--refCounter != 0)
 	{
@@ -55,7 +55,7 @@ int FB_CARG MetadataBuilder::release()
 	return 0;
 }
 
-void FB_CARG MetadataBuilder::setType(IStatus* status, unsigned index, unsigned type)
+void MetadataBuilder::setType(IStatus* status, unsigned index, unsigned type)
 {
 	try
 	{
@@ -81,7 +81,7 @@ void FB_CARG MetadataBuilder::setType(IStatus* status, unsigned index, unsigned 
 	}
 }
 
-void FB_CARG MetadataBuilder::setSubType(IStatus* status, unsigned index, int subType)
+void MetadataBuilder::setSubType(IStatus* status, unsigned index, int subType)
 {
 	try
 	{
@@ -96,7 +96,7 @@ void FB_CARG MetadataBuilder::setSubType(IStatus* status, unsigned index, int su
 	}
 }
 
-void FB_CARG MetadataBuilder::setLength(IStatus* status, unsigned index, unsigned length)
+void MetadataBuilder::setLength(IStatus* status, unsigned index, unsigned length)
 {
 	try
 	{
@@ -114,7 +114,7 @@ void FB_CARG MetadataBuilder::setLength(IStatus* status, unsigned index, unsigne
 	}
 }
 
-void FB_CARG MetadataBuilder::setCharSet(IStatus* status, unsigned index, unsigned charSet)
+void MetadataBuilder::setCharSet(IStatus* status, unsigned index, unsigned charSet)
 {
 	try
 	{
@@ -129,7 +129,7 @@ void FB_CARG MetadataBuilder::setCharSet(IStatus* status, unsigned index, unsign
 	}
 }
 
-void FB_CARG MetadataBuilder::setScale(IStatus* status, unsigned index, unsigned scale)
+void MetadataBuilder::setScale(IStatus* status, unsigned index, unsigned scale)
 {
 	try
 	{
@@ -144,7 +144,7 @@ void FB_CARG MetadataBuilder::setScale(IStatus* status, unsigned index, unsigned
 	}
 }
 
-void FB_CARG MetadataBuilder::truncate(IStatus* status, unsigned count)
+void MetadataBuilder::truncate(IStatus* status, unsigned count)
 {
 	try
 	{
@@ -161,7 +161,7 @@ void FB_CARG MetadataBuilder::truncate(IStatus* status, unsigned count)
 	}
 }
 
-void FB_CARG MetadataBuilder::remove(IStatus* status, unsigned index)
+void MetadataBuilder::remove(IStatus* status, unsigned index)
 {
 	try
 	{
@@ -177,7 +177,7 @@ void FB_CARG MetadataBuilder::remove(IStatus* status, unsigned index)
 	}
 }
 
-void FB_CARG MetadataBuilder::moveNameToIndex(IStatus* status, const char* name, unsigned index)
+void MetadataBuilder::moveNameToIndex(IStatus* status, const char* name, unsigned index)
 {
 	try
 	{
@@ -206,7 +206,7 @@ void FB_CARG MetadataBuilder::moveNameToIndex(IStatus* status, const char* name,
 	}
 }
 
-unsigned FB_CARG MetadataBuilder::addField(IStatus* status)
+unsigned MetadataBuilder::addField(IStatus* status)
 {
 	try
 	{
@@ -224,7 +224,7 @@ unsigned FB_CARG MetadataBuilder::addField(IStatus* status)
 	}
 }
 
-IMessageMetadata* FB_CARG MetadataBuilder::getMetadata(IStatus* status)
+IMessageMetadata* MetadataBuilder::getMetadata(IStatus* status)
 {
 	try
 	{
@@ -386,7 +386,7 @@ int MsgMetadata::release()
 	return 0;
 }
 
-
+/*
 int AttMetadata::release()
 {
 	if (--refCounter != 0)
@@ -396,6 +396,6 @@ int AttMetadata::release()
 
 	delete this;
 	return 0;
-}
+}*/
 
 }	// namespace Firebird

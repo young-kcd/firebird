@@ -40,21 +40,20 @@ template <typename P>
 class GetPlugins
 {
 public:
-	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion,
-			   UpgradeInfo* ui, const char* namesList = NULL)
+	GetPlugins(unsigned int interfaceType, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(),
 		  pluginSet(NULL), currentPlugin(NULL)
 	{
 		LocalStatus status;
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : Config::getDefaultConfig()->getPlugins(interfaceType)),
-			desiredVersion, ui, NULL));
+			P::VERSION, getUnloadDetector(), NULL));
 		check(&status);
 
 		getPlugin();
 	}
 
-	GetPlugins(unsigned int interfaceType, unsigned int desiredVersion, UpgradeInfo* ui,
+	GetPlugins(unsigned int interfaceType,
 			   Config* knownConfig, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(),
 		  pluginSet(NULL), currentPlugin(NULL)
@@ -62,7 +61,7 @@ public:
 		LocalStatus status;
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
-			desiredVersion, ui, new FirebirdConf(knownConfig)));
+			P::VERSION, getUnloadDetector(), new FirebirdConf(knownConfig)));
 		check(&status);
 
 		getPlugin();

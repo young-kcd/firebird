@@ -49,6 +49,7 @@
 #include "../common/os/path_utils.h"
 #include "../common/os/fbsyslog.h"
 #include "../common/StatusArg.h"
+#include "../dsql/sqlda_pub.h"
 
 #ifdef WIN_NT
 #include <direct.h>
@@ -998,8 +999,6 @@ bool bootBuild()
 	return state == FB_BOOT_SET;
 }
 
-using namespace ::Firebird::DirType;
-
 // Build full file name in specified directory
 Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 {
@@ -1012,12 +1011,12 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 		FB_GUARDDIR, FB_PLUGDIR
 	};
 
-	fb_assert(FB_NELEM(configDir) == FB_DIRCOUNT);
-	fb_assert(prefType < FB_DIRCOUNT);
+	fb_assert(FB_NELEM(configDir) == Firebird::IConfigManager::FB_DIRCOUNT);
+	fb_assert(prefType < Firebird::IConfigManager::FB_DIRCOUNT);
 
 	if (! bootBuild())
 	{
-		if (prefType != FB_DIR_CONF && prefType != FB_DIR_MSG && configDir[prefType][0])
+		if (prefType != Firebird::IConfigManager::FB_DIR_CONF && prefType != Firebird::IConfigManager::FB_DIR_MSG && configDir[prefType][0])
 		{
 			// Value is set explicitly and is not environment overridable
 			PathUtils::concatPath(s, configDir[prefType], name);
@@ -1027,8 +1026,8 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 
 	switch(prefType)
 	{
-		case FB_DIR_BIN:
-		case FB_DIR_SBIN:
+		case Firebird::IConfigManager::FB_DIR_BIN:
+		case Firebird::IConfigManager::FB_DIR_SBIN:
 #ifdef WIN_NT
 			s = "";
 #else
@@ -1036,14 +1035,14 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 #endif
 			break;
 
-		case FB_DIR_CONF:
-		case FB_DIR_LOG:
-		case FB_DIR_GUARD:
-		case FB_DIR_SECDB:
+		case Firebird::IConfigManager::FB_DIR_CONF:
+		case Firebird::IConfigManager::FB_DIR_LOG:
+		case Firebird::IConfigManager::FB_DIR_GUARD:
+		case Firebird::IConfigManager::FB_DIR_SECDB:
 			s = "";
 			break;
 
-		case FB_DIR_LIB:
+		case Firebird::IConfigManager::FB_DIR_LIB:
 #ifdef WIN_NT
 			s = "";
 #else
@@ -1051,43 +1050,43 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 #endif
 			break;
 
-		case FB_DIR_PLUGINS:
+		case Firebird::IConfigManager::FB_DIR_PLUGINS:
 			s = "plugins";
 			break;
 
-		case FB_DIR_INC:
+		case Firebird::IConfigManager::FB_DIR_INC:
 			s = "include";
 			break;
 
-		case FB_DIR_DOC:
+		case Firebird::IConfigManager::FB_DIR_DOC:
 			s = "doc";
 			break;
 
-		case FB_DIR_UDF:
+		case Firebird::IConfigManager::FB_DIR_UDF:
 			s = "UDF";
 			break;
 
-		case FB_DIR_SAMPLE:
+		case Firebird::IConfigManager::FB_DIR_SAMPLE:
 			s = "examples";
 			break;
 
-		case FB_DIR_SAMPLEDB:
+		case Firebird::IConfigManager::FB_DIR_SAMPLEDB:
 			s = "examples/empbuild";
 			break;
 
-		case FB_DIR_HELP:
+		case Firebird::IConfigManager::FB_DIR_HELP:
 			s = "help";
 			break;
 
-		case FB_DIR_INTL:
+		case Firebird::IConfigManager::FB_DIR_INTL:
 			s = "intl";
 			break;
 
-		case FB_DIR_MISC:
+		case Firebird::IConfigManager::FB_DIR_MISC:
 			s = "misc";
 			break;
 
-		case FB_DIR_MSG:
+		case Firebird::IConfigManager::FB_DIR_MSG:
 			gds__prefix_msg(tmp, name);
 			return tmp;
 

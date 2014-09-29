@@ -70,13 +70,13 @@ private:
 	void checkFile();
 	void touchFile();
 
-	class TouchFile FB_FINAL : public Firebird::RefCntIface<Firebird::ITimer, FB_TIMER_VERSION>
+	class TouchFile FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TimerImpl<TouchFile> >
 	{
 	public:
-		void FB_CARG handler();
+		void handler();
 		void start(const char* fName);
 		void stop();
-		int FB_CARG release();
+		int release();
 	private:
 		const char* fileName;
 	};

@@ -1,5 +1,5 @@
 #include "firebird.h"
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -163,7 +163,7 @@ ISC_STATUS BadAlloc::stuffException(IStatus* status) const throw()
 
 	if (status)
 	{
-		status->setErrors(FB_NELEM(sv), sv);
+		status->setErrors2(FB_NELEM(sv), sv);
 	}
 
 	return sv[1];
@@ -187,7 +187,7 @@ ISC_STATUS LongJump::stuffException(IStatus* status) const throw()
 
 	if (status)
 	{
-		status->setErrors(FB_NELEM(sv), sv);
+		status->setErrors2(FB_NELEM(sv), sv);
 	}
 
 	return sv[1];
@@ -291,6 +291,11 @@ void fatal_exception::raiseFmt(const char* format, ...)
 	buffer[sizeof(buffer) - 1] = 0;
 	va_end(args);
 	throw fatal_exception(buffer);
+}
+
+void raiseVersionError()
+{
+	fatal_exception::raise("Interface version too old");
 }
 
 }	// namespace Firebird

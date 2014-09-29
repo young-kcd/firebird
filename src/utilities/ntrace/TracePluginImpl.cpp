@@ -45,7 +45,6 @@ using namespace Firebird;
 using namespace Jrd;
 
 static const char* const DEFAULT_LOG_NAME = "default_trace.log";
-static MakeUpgradeInfo<> upInfo;
 
 #ifdef WIN_NT
 #define NEWLINE "\r\n"
@@ -78,7 +77,7 @@ const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 	return get_error_string();
 }
 
-TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceInitInfo* initInfo) :
+TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, ITraceInitInfo* initInfo) :
 	operational(false),
 	session_id(initInfo->getTraceSessionID()),
 	session_name(*getDefaultMemoryPool()),
@@ -110,10 +109,6 @@ TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, TraceIn
 
 		logWriter = new PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 		logWriter->addRef();
-	}
-	else
-	{
-		MasterInterfacePtr()->upgradeInterface(logWriter, FB_TRACE_LOG_WRITER_VERSION, upInfo);
 	}
 
 	Jrd::TextType* textType = unicodeCollation.getTextType();
@@ -226,7 +221,7 @@ void TracePluginImpl::logRecord(const char* action)
 	record = "";
 }
 
-void TracePluginImpl::logRecordConn(const char* action, TraceDatabaseConnection* connection)
+void TracePluginImpl::logRecordConn(const char* action, ITraceDatabaseConnection* connection)
 {
 	// Lookup connection description
 	const int conn_id = connection->getConnectionID();
@@ -272,8 +267,8 @@ void TracePluginImpl::logRecordConn(const char* action, TraceDatabaseConnection*
 	logRecord(action);
 }
 
-void TracePluginImpl::logRecordTrans(const char* action, TraceDatabaseConnection* connection,
-	TraceTransaction* transaction)
+void TracePluginImpl::logRecordTrans(const char* action, ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction)
 {
 	const unsigned tra_id = transaction->getTransactionID();
 	bool reg = false;
@@ -305,8 +300,8 @@ void TracePluginImpl::logRecordTrans(const char* action, TraceDatabaseConnection
 	logRecordConn(action, connection);
 }
 
-void TracePluginImpl::logRecordProcFunc(const char* action, TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, const char* obj_type, const char* obj_name)
+void TracePluginImpl::logRecordProcFunc(const char* action, ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, const char* obj_type, const char* obj_name)
 {
 	string temp;
 	temp.printf(NEWLINE "%s %s:" NEWLINE, obj_type, obj_name);
@@ -320,8 +315,8 @@ void TracePluginImpl::logRecordProcFunc(const char* action, TraceDatabaseConnect
 	}
 }
 
-void TracePluginImpl::logRecordStmt(const char* action, TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceStatement* statement, bool isSQL)
+void TracePluginImpl::logRecordStmt(const char* action, ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceStatement* statement, bool isSQL)
 {
 	const int stmt_id = statement->getStmtID();
 	bool reg = false;
@@ -356,10 +351,10 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceDatabaseConnection*
 		}
 
 		if (isSQL) {
-			register_sql_statement((TraceSQLStatement*) statement);
+			register_sql_statement((ITraceSQLStatement*) statement);
 		}
 		else {
-			register_blr_statement((TraceBLRStatement*) statement);
+			register_blr_statement((ITraceBLRStatement*) statement);
 		}
 		reg = true;
 	}
@@ -390,9 +385,9 @@ void TracePluginImpl::logRecordStmt(const char* action, TraceDatabaseConnection*
 	}
 }
 
-void TracePluginImpl::logRecordServ(const char* action, TraceServiceConnection* service)
+void TracePluginImpl::logRecordServ(const char* action, ITraceServiceConnection* service)
 {
-	const ntrace_service_t svc_id = service->getServiceID();
+	ServiceId svc_id = service->getServiceID();
 	bool reg = false;
 
 	while (true)
@@ -424,8 +419,8 @@ void TracePluginImpl::logRecordServ(const char* action, TraceServiceConnection* 
 	logRecord(action);
 }
 
-void TracePluginImpl::logRecordError(const char* action, TraceBaseConnection* connection,
-	TraceStatusVector* status)
+void TracePluginImpl::logRecordError(const char* action, ITraceConnection* connection,
+	ITraceStatusVector* status)
 {
 	const char* err = status->getText();
 
@@ -435,12 +430,12 @@ void TracePluginImpl::logRecordError(const char* action, TraceBaseConnection* co
 	{
 		switch (connection->getKind())
 		{
-		case connection_database:
-			logRecordConn(action, (TraceDatabaseConnection*) connection);
+		case ITraceConnection::TRACE_CONNECTION_DATABASE:
+			logRecordConn(action, (ITraceDatabaseConnection*) connection);
 			break;
 
-		case connection_service:
-			logRecordServ(action, (TraceServiceConnection*) connection);
+		case ITraceConnection::TRACE_CONNECTION_SERVICE:
+			logRecordServ(action, (ITraceServiceConnection*) connection);
 			break;
 
 		default:
@@ -544,7 +539,7 @@ void TracePluginImpl::formatStringArgument(string& result, const UCHAR* str, siz
 }
 
 
-void TracePluginImpl::appendParams(TraceParams* params)
+void TracePluginImpl::appendParams(ITraceParams* params)
 {
 	const FB_SIZE_T paramcount = params->getCount();
 	if (!paramcount)
@@ -940,7 +935,7 @@ void TracePluginImpl::log_finalize()
 	logWriter = NULL;
 }
 
-void TracePluginImpl::register_connection(TraceDatabaseConnection* connection)
+void TracePluginImpl::register_connection(ITraceDatabaseConnection* connection)
 {
 	ConnectionData conn_data;
 	conn_data.id = connection->getConnectionID();
@@ -998,21 +993,21 @@ void TracePluginImpl::register_connection(TraceDatabaseConnection* connection)
 	}
 }
 
-void TracePluginImpl::log_event_attach(TraceDatabaseConnection* connection,
-	ntrace_boolean_t create_db, ntrace_result_t att_result)
+void TracePluginImpl::log_event_attach(ITraceDatabaseConnection* connection,
+	FB_BOOLEAN create_db, ntrace_result_t att_result)
 {
 	if (config.log_connections)
 	{
 		const char* event_type;
 		switch (att_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = create_db ? "CREATE_DATABASE" : "ATTACH_DATABASE";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = create_db ? "FAILED CREATE_DATABASE" : "FAILED ATTACH_DATABASE";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = create_db ? "UNAUTHORIZED CREATE_DATABASE" : "UNAUTHORIZED ATTACH_DATABASE";
 				break;
 			default:
@@ -1025,7 +1020,7 @@ void TracePluginImpl::log_event_attach(TraceDatabaseConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_detach(TraceDatabaseConnection* connection, ntrace_boolean_t drop_db)
+void TracePluginImpl::log_event_detach(ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db)
 {
 	if (config.log_connections)
 	{
@@ -1041,7 +1036,7 @@ void TracePluginImpl::log_event_detach(TraceDatabaseConnection* connection, ntra
 	}
 }
 
-void TracePluginImpl::register_transaction(TraceTransaction* transaction)
+void TracePluginImpl::register_transaction(ITraceTransaction* transaction)
 {
 	TransactionData trans_data;
 	trans_data.id = transaction->getTransactionID();
@@ -1050,19 +1045,19 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 
 	switch (transaction->getIsolation())
 	{
-	case tra_iso_consistency:
+	case ITraceTransaction::TRA_ISO_CONSISTENCY:
 		trans_data.description->append("CONSISTENCY");
 		break;
 
-	case tra_iso_concurrency:
+	case ITraceTransaction::TRA_ISO_CONCURRENCY:
 		trans_data.description->append("CONCURRENCY");
 		break;
 
-	case tra_iso_read_committed_recver:
+	case ITraceTransaction::TRA_ISO_READ_COMMITTED_RECVER:
 		trans_data.description->append("READ_COMMITTED | REC_VERSION");
 		break;
 
-	case tra_iso_read_committed_norecver:
+	case ITraceTransaction::TRA_ISO_READ_COMMITTED_NORECVER:
 		trans_data.description->append("READ_COMMITTED | NO_REC_VERSION");
 		break;
 
@@ -1101,8 +1096,8 @@ void TracePluginImpl::register_transaction(TraceTransaction* transaction)
 }
 
 
-void TracePluginImpl::log_event_transaction_start(TraceDatabaseConnection* connection,
-		TraceTransaction* transaction, size_t /*tpb_length*/,
+void TracePluginImpl::log_event_transaction_start(ITraceDatabaseConnection* connection,
+		ITraceTransaction* transaction, size_t /*tpb_length*/,
 		const ntrace_byte_t* /*tpb*/, ntrace_result_t tra_result)
 {
 	if (config.log_transactions)
@@ -1110,13 +1105,13 @@ void TracePluginImpl::log_event_transaction_start(TraceDatabaseConnection* conne
 		const char* event_type;
 		switch (tra_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "START_TRANSACTION";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED START_TRANSACTION";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED START_TRANSACTION";
 				break;
 			default:
@@ -1127,9 +1122,9 @@ void TracePluginImpl::log_event_transaction_start(TraceDatabaseConnection* conne
 	}
 }
 
-void TracePluginImpl::log_event_transaction_end(TraceDatabaseConnection* connection,
-		TraceTransaction* transaction, ntrace_boolean_t commit,
-		ntrace_boolean_t retain_context, ntrace_result_t tra_result)
+void TracePluginImpl::log_event_transaction_end(ITraceDatabaseConnection* connection,
+		ITraceTransaction* transaction, FB_BOOLEAN commit,
+		FB_BOOLEAN retain_context, ntrace_result_t tra_result)
 {
 	if (config.log_transactions)
 	{
@@ -1143,17 +1138,17 @@ void TracePluginImpl::log_event_transaction_end(TraceDatabaseConnection* connect
 		const char* event_type;
 		switch (tra_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = commit ?
 					(retain_context ? "COMMIT_RETAINING"   : "COMMIT_TRANSACTION") :
 					(retain_context ? "ROLLBACK_RETAINING" : "ROLLBACK_TRANSACTION");
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = commit ?
 					(retain_context ? "FAILED COMMIT_RETAINING"   : "FAILED COMMIT_TRANSACTION") :
 					(retain_context ? "FAILED ROLLBACK_RETAINING" : "FAILED ROLLBACK_TRANSACTION");
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = commit ?
 					(retain_context ? "UNAUTHORIZED COMMIT_RETAINING"   : "UNAUTHORIZED COMMIT_TRANSACTION") :
 					(retain_context ? "UNAUTHORIZED ROLLBACK_RETAINING" : "UNAUTHORIZED ROLLBACK_TRANSACTION");
@@ -1177,8 +1172,8 @@ void TracePluginImpl::log_event_transaction_end(TraceDatabaseConnection* connect
 	}
 }
 
-void TracePluginImpl::log_event_set_context(TraceDatabaseConnection* connection,
-		TraceTransaction* transaction, TraceContextVariable* variable)
+void TracePluginImpl::log_event_set_context(ITraceDatabaseConnection* connection,
+		ITraceTransaction* transaction, ITraceContextVariable* variable)
 {
 	const char* ns = variable->getNameSpace();
 	const char* name = variable->getVarName();
@@ -1200,8 +1195,8 @@ void TracePluginImpl::log_event_set_context(TraceDatabaseConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_proc_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-		TraceProcedure* procedure, bool started, ntrace_result_t proc_result)
+void TracePluginImpl::log_event_proc_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction,
+		ITraceProcedure* procedure, bool started, ntrace_result_t proc_result)
 {
 	if (!config.log_procedure_start && started)
 		return;
@@ -1214,7 +1209,7 @@ void TracePluginImpl::log_event_proc_execute(TraceDatabaseConnection* connection
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
-	TraceParams* params = procedure->getInputs();
+	ITraceParams* params = procedure->getInputs();
 	if (params && params->getCount())
 	{
 		appendParams(params);
@@ -1236,15 +1231,15 @@ void TracePluginImpl::log_event_proc_execute(TraceDatabaseConnection* connection
 	const char* event_type;
 	switch (proc_result)
 	{
-		case res_successful:
+		case ITraceConnection::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_PROCEDURE_START" :
 								   "EXECUTE_PROCEDURE_FINISH";
 			break;
-		case res_failed:
+		case ITraceConnection::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_PROCEDURE_START" :
 								   "FAILED EXECUTE_PROCEDURE_FINISH";
 			break;
-		case res_unauthorized:
+		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_PROCEDURE_START" :
 								   "UNAUTHORIZED EXECUTE_PROCEDURE_FINISH";
 			break;
@@ -1256,8 +1251,8 @@ void TracePluginImpl::log_event_proc_execute(TraceDatabaseConnection* connection
 	logRecordProcFunc(event_type, connection, transaction, "Procedure", procedure->getProcName());
 }
 
-void TracePluginImpl::log_event_func_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction,
-		TraceFunction* function, bool started, ntrace_result_t func_result)
+void TracePluginImpl::log_event_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction,
+		ITraceFunction* function, bool started, ntrace_result_t func_result)
 {
 	if (!config.log_function_start && started)
 		return;
@@ -1270,14 +1265,14 @@ void TracePluginImpl::log_event_func_execute(TraceDatabaseConnection* connection
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
-	TraceParams* params = function->getInputs();
+	ITraceParams* params = function->getInputs();
 	if (params && params->getCount())
 	{
 		appendParams(params);
 		record.append(NEWLINE);
 	}
 
-	if (!started && func_result == res_successful)
+	if (!started && func_result == ITraceConnection::TRACE_RESULT_SUCCESS)
 	{
 		params = function->getResult();
 		{
@@ -1302,15 +1297,15 @@ void TracePluginImpl::log_event_func_execute(TraceDatabaseConnection* connection
 	const char* event_type;
 	switch (func_result)
 	{
-		case res_successful:
+		case ITraceConnection::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_FUNCTION_START" :
 								   "EXECUTE_FUNCTION_FINISH";
 			break;
-		case res_failed:
+		case ITraceConnection::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_FUNCTION_START" :
 								   "FAILED EXECUTE_FUNCTION_FINISH";
 			break;
-		case res_unauthorized:
+		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_FUNCTION_START" :
 								   "UNAUTHORIZED EXECUTE_FUNCTION_FINISH";
 			break;
@@ -1322,7 +1317,7 @@ void TracePluginImpl::log_event_func_execute(TraceDatabaseConnection* connection
 	logRecordProcFunc(event_type, connection, transaction, "Function", function->getFuncName());
 }
 
-void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
+void TracePluginImpl::register_sql_statement(ITraceSQLStatement* statement)
 {
 	StatementData stmt_data;
 	stmt_data.id = statement->getStmtID();
@@ -1412,8 +1407,8 @@ void TracePluginImpl::register_sql_statement(TraceSQLStatement* statement)
 	}
 }
 
-void TracePluginImpl::log_event_dsql_prepare(TraceDatabaseConnection* connection,
-		TraceTransaction* transaction, TraceSQLStatement* statement,
+void TracePluginImpl::log_event_dsql_prepare(ITraceDatabaseConnection* connection,
+		ITraceTransaction* transaction, ITraceSQLStatement* statement,
 		ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	if (config.log_statement_prepare)
@@ -1421,13 +1416,13 @@ void TracePluginImpl::log_event_dsql_prepare(TraceDatabaseConnection* connection
 		const char* event_type;
 		switch (req_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "PREPARE_STATEMENT";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED PREPARE_STATEMENT";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED PREPARE_STATEMENT";
 				break;
 			default:
@@ -1439,8 +1434,8 @@ void TracePluginImpl::log_event_dsql_prepare(TraceDatabaseConnection* connection
 	}
 }
 
-void TracePluginImpl::log_event_dsql_free(TraceDatabaseConnection* connection,
-		TraceSQLStatement* statement, unsigned short option)
+void TracePluginImpl::log_event_dsql_free(ITraceDatabaseConnection* connection,
+		ITraceSQLStatement* statement, unsigned short option)
 {
 	if (config.log_statement_free)
 	{
@@ -1459,8 +1454,8 @@ void TracePluginImpl::log_event_dsql_free(TraceDatabaseConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_dsql_execute(TraceDatabaseConnection* connection,
-		TraceTransaction* transaction, TraceSQLStatement* statement,
+void TracePluginImpl::log_event_dsql_execute(ITraceDatabaseConnection* connection,
+		ITraceTransaction* transaction, ITraceSQLStatement* statement,
 		bool started, ntrace_result_t req_result)
 {
 	if (started && !config.log_statement_start)
@@ -1474,7 +1469,7 @@ void TracePluginImpl::log_event_dsql_execute(TraceDatabaseConnection* connection
 	if (config.time_threshold && info && info->pin_time < config.time_threshold)
 		return;
 
-	TraceParams *params = statement->getInputs();
+	ITraceParams *params = statement->getInputs();
 	if (params && params->getCount())
 	{
 		record.append(NEWLINE);
@@ -1495,15 +1490,15 @@ void TracePluginImpl::log_event_dsql_execute(TraceDatabaseConnection* connection
 	const char* event_type;
 	switch (req_result)
 	{
-		case res_successful:
+		case ITraceConnection::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_STATEMENT_START" :
 								   "EXECUTE_STATEMENT_FINISH";
 			break;
-		case res_failed:
+		case ITraceConnection::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_STATEMENT_START" :
 								   "FAILED EXECUTE_STATEMENT_FINISH";
 			break;
-		case res_unauthorized:
+		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_STATEMENT_START" :
 								   "UNAUTHORIZED EXECUTE_STATEMENT_FINISH";
 			break;
@@ -1515,7 +1510,7 @@ void TracePluginImpl::log_event_dsql_execute(TraceDatabaseConnection* connection
 }
 
 
-void TracePluginImpl::register_blr_statement(TraceBLRStatement* statement)
+void TracePluginImpl::register_blr_statement(ITraceBLRStatement* statement)
 {
 	string* description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 
@@ -1556,8 +1551,8 @@ void TracePluginImpl::register_blr_statement(TraceBLRStatement* statement)
 	statements.add(stmt_data);
 }
 
-void TracePluginImpl::log_event_blr_compile(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceBLRStatement* statement,
+void TracePluginImpl::log_event_blr_compile(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceBLRStatement* statement,
 	ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	if (config.log_blr_requests)
@@ -1572,13 +1567,13 @@ void TracePluginImpl::log_event_blr_compile(TraceDatabaseConnection* connection,
 		const char* event_type;
 		switch (req_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "COMPILE_BLR";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED COMPILE_BLR";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED COMPILE_BLR";
 				break;
 			default:
@@ -1592,8 +1587,8 @@ void TracePluginImpl::log_event_blr_compile(TraceDatabaseConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_blr_execute(TraceDatabaseConnection* connection,
-		TraceTransaction* transaction, TraceBLRStatement* statement,
+void TracePluginImpl::log_event_blr_execute(ITraceDatabaseConnection* connection,
+		ITraceTransaction* transaction, ITraceBLRStatement* statement,
 		ntrace_result_t req_result)
 {
 	PerformanceInfo *info = statement->getPerf();
@@ -1610,13 +1605,13 @@ void TracePluginImpl::log_event_blr_execute(TraceDatabaseConnection* connection,
 		const char* event_type;
 		switch (req_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "EXECUTE_BLR";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED EXECUTE_BLR";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED EXECUTE_BLR";
 				break;
 			default:
@@ -1628,8 +1623,8 @@ void TracePluginImpl::log_event_blr_execute(TraceDatabaseConnection* connection,
 	}
 }
 
-void TracePluginImpl::log_event_dyn_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceDYNRequest* request,
+void TracePluginImpl::log_event_dyn_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceDYNRequest* request,
 	ntrace_counter_t time_millis, ntrace_result_t req_result)
 {
 	if (config.log_dyn_requests)
@@ -1665,13 +1660,13 @@ void TracePluginImpl::log_event_dyn_execute(TraceDatabaseConnection* connection,
 		const char* event_type;
 		switch (req_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "EXECUTE_DYN";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED EXECUTE_DYN";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED EXECUTE_DYN";
 				break;
 			default:
@@ -1687,7 +1682,7 @@ void TracePluginImpl::log_event_dyn_execute(TraceDatabaseConnection* connection,
 }
 
 
-void TracePluginImpl::register_service(TraceServiceConnection* service)
+void TracePluginImpl::register_service(ITraceServiceConnection* service)
 {
 	string username(service->getUserName());
 	string remote_address;
@@ -1730,7 +1725,7 @@ void TracePluginImpl::register_service(TraceServiceConnection* service)
 }
 
 
-bool TracePluginImpl::checkServiceFilter(TraceServiceConnection* service, bool started)
+bool TracePluginImpl::checkServiceFilter(ITraceServiceConnection* service, bool started)
 {
 	ReadLockGuard lock(servicesLock, FB_FUNCTION);
 
@@ -1768,7 +1763,7 @@ bool TracePluginImpl::checkServiceFilter(TraceServiceConnection* service, bool s
 }
 
 
-void TracePluginImpl::log_event_service_attach(TraceServiceConnection* service,
+void TracePluginImpl::log_event_service_attach(ITraceServiceConnection* service,
 	ntrace_result_t att_result)
 {
 	if (config.log_services)
@@ -1776,13 +1771,13 @@ void TracePluginImpl::log_event_service_attach(TraceServiceConnection* service,
 		const char* event_type;
 		switch (att_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "ATTACH_SERVICE";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED ATTACH_SERVICE";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED ATTACH_SERVICE";
 				break;
 			default:
@@ -1794,7 +1789,7 @@ void TracePluginImpl::log_event_service_attach(TraceServiceConnection* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_start(TraceServiceConnection* service,
+void TracePluginImpl::log_event_service_start(ITraceServiceConnection* service,
 	size_t switches_length, const char* switches, ntrace_result_t start_result)
 {
 	if (config.log_services)
@@ -1805,13 +1800,13 @@ void TracePluginImpl::log_event_service_start(TraceServiceConnection* service,
 		const char* event_type;
 		switch (start_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "START_SERVICE";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED START_SERVICE";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED START_SERVICE";
 				break;
 			default:
@@ -1846,7 +1841,7 @@ void TracePluginImpl::log_event_service_start(TraceServiceConnection* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_query(TraceServiceConnection* service,
+void TracePluginImpl::log_event_service_query(ITraceServiceConnection* service,
 	size_t send_item_length, const ntrace_byte_t* send_items,
 	size_t recv_item_length, const ntrace_byte_t* recv_items,
 	ntrace_result_t query_result)
@@ -1866,13 +1861,13 @@ void TracePluginImpl::log_event_service_query(TraceServiceConnection* service,
 		const char* event_type;
 		switch (query_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "QUERY_SERVICE";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED QUERY_SERVICE";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED QUERY_SERVICE";
 				break;
 			default:
@@ -1884,7 +1879,7 @@ void TracePluginImpl::log_event_service_query(TraceServiceConnection* service,
 	}
 }
 
-void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service,
+void TracePluginImpl::log_event_service_detach(ITraceServiceConnection* service,
 	ntrace_result_t detach_result)
 {
 	if (config.log_services)
@@ -1892,13 +1887,13 @@ void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service,
 		const char* event_type;
 		switch (detach_result)
 		{
-			case res_successful:
+			case ITraceConnection::TRACE_RESULT_SUCCESS:
 				event_type = "DETACH_SERVICE";
 				break;
-			case res_failed:
+			case ITraceConnection::TRACE_RESULT_FAILED:
 				event_type = "FAILED DETACH_SERVICE";
 				break;
-			case res_unauthorized:
+			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED DETACH_SERVICE";
 				break;
 			default:
@@ -1919,8 +1914,8 @@ void TracePluginImpl::log_event_service_detach(TraceServiceConnection* service,
 	}
 }
 
-void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceTrigger* trigger, bool started, ntrace_result_t trig_result)
+void TracePluginImpl::log_event_trigger_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceTrigger* trigger, bool started, ntrace_result_t trig_result)
 {
 	if (!config.log_trigger_start && started)
 		return;
@@ -1938,7 +1933,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 	if (trgname.empty())
 		trgname = "<unknown>";
 
-	if ((trigger->getWhich() != trg_all) && trigger->getRelationName())
+	if ((trigger->getWhich() != ITraceTrigger::TRACE_ALL) && trigger->getRelationName())
 	{
 		string relation;
 		relation.printf(" FOR %s", trigger->getRelationName());
@@ -1948,13 +1943,13 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 	string action;
 	switch (trigger->getWhich())
 	{
-		case trg_all:
+		case ITraceTrigger::TRACE_ALL:
 			action = "ON ";
 			break;
-		case trg_before:
+		case ITraceTrigger::TRACE_BEFORE:
 			action = "BEFORE ";
 			break;
-		case trg_after:
+		case ITraceTrigger::TRACE_AFTER:
 			action = "AFTER ";
 			break;
 		default:
@@ -2007,15 +2002,15 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 	const char* event_type;
 	switch (trig_result)
 	{
-		case res_successful:
+		case ITraceConnection::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_TRIGGER_START" :
 								   "EXECUTE_TRIGGER_FINISH";
 			break;
-		case res_failed:
+		case ITraceConnection::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_TRIGGER_START" :
 								   "FAILED EXECUTE_TRIGGER_FINISH";
 			break;
-		case res_unauthorized:
+		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_TRIGGER_START" :
 								   "UNAUTHORIZED EXECUTE_TRIGGER_FINISH";
 			break;
@@ -2027,7 +2022,7 @@ void TracePluginImpl::log_event_trigger_execute(TraceDatabaseConnection* connect
 	logRecordTrans(event_type, connection, transaction);
 }
 
-void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStatusVector* status, const char* function)
+void TracePluginImpl::log_event_error(ITraceConnection* connection, ITraceStatusVector* status, const char* function)
 {
 	if (!config.log_errors)
 		return;
@@ -2043,14 +2038,14 @@ void TracePluginImpl::log_event_error(TraceBaseConnection* connection, TraceStat
 	logRecordError(event_type.c_str(), connection, status);
 }
 
-void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep,
+void TracePluginImpl::log_event_sweep(ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep,
 	ntrace_process_state_t sweep_state)
 {
 	if (!config.log_sweep)
 		return;
 
-	if (sweep_state == process_state_started ||
-		sweep_state == process_state_finished)
+	if (sweep_state == SWEEP_STATE_STARTED ||
+		sweep_state == SWEEP_STATE_FINISHED)
 	{
 		record.printf("\nTransaction counters:\n"
 			"\tOldest interesting %10ld\n"
@@ -2074,19 +2069,19 @@ void TracePluginImpl::log_event_sweep(TraceDatabaseConnection* connection, Trace
 	const char* event_type = NULL;
 	switch (sweep_state)
 	{
-	case process_state_started:
+	case SWEEP_STATE_STARTED:
 		event_type = "SWEEP_START";
 		break;
 
-	case process_state_finished:
+	case SWEEP_STATE_FINISHED:
 		event_type = "SWEEP_FINISH";
 		break;
 
-	case process_state_failed:
+	case SWEEP_STATE_FAILED:
 		event_type = "SWEEP_FAILED";
 		break;
 
-	case process_state_progress:
+	case SWEEP_STATE_PROGRESS:
 		event_type = "SWEEP_PROGRESS";
 		break;
 
@@ -2117,13 +2112,11 @@ const char* TracePluginImpl::trace_get_error()
 }
 
 // Create/close attachment
-ntrace_boolean_t TracePluginImpl::trace_attach(TraceDatabaseConnection* connection,
-	ntrace_boolean_t create_db, ntrace_result_t att_result)
+FB_BOOLEAN TracePluginImpl::trace_attach(ITraceDatabaseConnection* connection,
+	FB_BOOLEAN create_db, ntrace_result_t att_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-
 		log_event_attach(connection, create_db, att_result);
 		return true;
 	}
@@ -2134,12 +2127,10 @@ ntrace_boolean_t TracePluginImpl::trace_attach(TraceDatabaseConnection* connecti
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_detach(TraceDatabaseConnection* connection, ntrace_boolean_t drop_db)
+FB_BOOLEAN TracePluginImpl::trace_detach(ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-
 		log_event_detach(connection, drop_db);
 		return true;
 	}
@@ -2151,16 +2142,12 @@ ntrace_boolean_t TracePluginImpl::trace_detach(TraceDatabaseConnection* connecti
 }
 
 // Start/end transaction
-ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, size_t tpb_length, const ntrace_byte_t* tpb,
+FB_BOOLEAN TracePluginImpl::trace_transaction_start(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, unsigned tpb_length, const ntrace_byte_t* tpb,
 	ntrace_result_t tra_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-
 		log_event_transaction_start(connection, transaction, tpb_length, tpb, tra_result);
 		return true;
 	}
@@ -2171,16 +2158,12 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_start(TraceDatabaseConnectio
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, ntrace_boolean_t commit, ntrace_boolean_t retain_context,
+FB_BOOLEAN TracePluginImpl::trace_transaction_end(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context,
 	ntrace_result_t tra_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-
 		log_event_transaction_end(connection, transaction, commit, retain_context, tra_result);
 		return true;
 	}
@@ -2192,16 +2175,11 @@ ntrace_boolean_t TracePluginImpl::trace_transaction_end(TraceDatabaseConnection*
 }
 
 // Assignment to context variables
-ntrace_boolean_t TracePluginImpl::trace_set_context(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceContextVariable* variable)
+FB_BOOLEAN TracePluginImpl::trace_set_context(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceContextVariable* variable)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(variable, FB_TRACE_CONTEXT_VARIABLE_VERSION, upInfo);
-
 		log_event_set_context(connection, transaction, variable);
 		return true;
 	}
@@ -2213,17 +2191,12 @@ ntrace_boolean_t TracePluginImpl::trace_set_context(TraceDatabaseConnection* con
 }
 
 // Stored procedure executing
-ntrace_boolean_t TracePluginImpl::trace_proc_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceProcedure* procedure,
-	bool started, ntrace_result_t proc_result)
+FB_BOOLEAN TracePluginImpl::trace_proc_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceProcedure* procedure,
+	FB_BOOLEAN started, ntrace_result_t proc_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(procedure, FB_TRACE_PROCEDURE_VERSION, upInfo);
-
 		log_event_proc_execute(connection, transaction, procedure, started, proc_result);
 		return true;
 	}
@@ -2235,17 +2208,12 @@ ntrace_boolean_t TracePluginImpl::trace_proc_execute(TraceDatabaseConnection* co
 }
 
 // Stored function executing
-ntrace_boolean_t TracePluginImpl::trace_func_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceFunction* function,
-	bool started, ntrace_result_t func_result)
+FB_BOOLEAN TracePluginImpl::trace_func_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceFunction* function,
+	FB_BOOLEAN started, ntrace_result_t func_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(function, FB_TRACE_FUNCTION_VERSION, upInfo);
-
 		log_event_func_execute(connection, transaction, function, started, func_result);
 		return true;
 	}
@@ -2256,17 +2224,12 @@ ntrace_boolean_t TracePluginImpl::trace_func_execute(TraceDatabaseConnection* co
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_trigger_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceTrigger* trigger,
-	bool started, ntrace_result_t trig_result)
+FB_BOOLEAN TracePluginImpl::trace_trigger_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceTrigger* trigger,
+	FB_BOOLEAN started, ntrace_result_t trig_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(trigger, FB_TRACE_TRIGGER_VERSION, upInfo);
-
 		log_event_trigger_execute(connection, transaction, trigger, started, trig_result);
 		return true;
 	}
@@ -2279,17 +2242,12 @@ ntrace_boolean_t TracePluginImpl::trace_trigger_execute(TraceDatabaseConnection*
 
 
 // DSQL statement lifecycle
-ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceSQLStatement* statement, ntrace_counter_t time_millis,
+FB_BOOLEAN TracePluginImpl::trace_dsql_prepare(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis,
 	ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
-
 		log_event_dsql_prepare(connection, transaction, statement, time_millis, req_result);
 		return true;
 	}
@@ -2300,15 +2258,11 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_prepare(TraceDatabaseConnection* co
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_dsql_free(TraceDatabaseConnection* connection,
-	TraceSQLStatement* statement, unsigned short option)
+FB_BOOLEAN TracePluginImpl::trace_dsql_free(ITraceDatabaseConnection* connection,
+	ITraceSQLStatement* statement, unsigned option)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
-
 		log_event_dsql_free(connection, statement, option);
 		return true;
 	}
@@ -2319,17 +2273,12 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_free(TraceDatabaseConnection* conne
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_dsql_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceSQLStatement* statement,
-	bool started, ntrace_result_t req_result)
+FB_BOOLEAN TracePluginImpl::trace_dsql_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceSQLStatement* statement,
+	FB_BOOLEAN started, ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_SQL_STATEMENT_VERSION, upInfo);
-
 		log_event_dsql_execute(connection, transaction, statement, started, req_result);
 		return true;
 	}
@@ -2342,18 +2291,12 @@ ntrace_boolean_t TracePluginImpl::trace_dsql_execute(TraceDatabaseConnection* co
 
 
 // BLR requests
-ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceBLRStatement* statement, ntrace_counter_t time_millis,
+FB_BOOLEAN TracePluginImpl::trace_blr_compile(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis,
 	ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		if (transaction)
-			master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_BLR_STATEMENT_VERSION, upInfo);
-
 		log_event_blr_compile(connection, transaction, statement, time_millis, req_result);
 		return true;
 	}
@@ -2364,16 +2307,11 @@ ntrace_boolean_t TracePluginImpl::trace_blr_compile(TraceDatabaseConnection* con
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceBLRStatement* statement, ntrace_result_t req_result)
+FB_BOOLEAN TracePluginImpl::trace_blr_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceBLRStatement* statement, ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(statement, FB_TRACE_BLR_STATEMENT_VERSION, upInfo);
-
 		log_event_blr_execute(connection, transaction, statement, req_result);
 		return true;
 	}
@@ -2385,17 +2323,12 @@ ntrace_boolean_t TracePluginImpl::trace_blr_execute(TraceDatabaseConnection* con
 }
 
 // DYN requests
-ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceDatabaseConnection* connection,
-	TraceTransaction* transaction, TraceDYNRequest* request, ntrace_counter_t time_millis,
+FB_BOOLEAN TracePluginImpl::trace_dyn_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis,
 	ntrace_result_t req_result)
 {
 	try
 	{
-		MasterInterfacePtr master;
-		master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		master->upgradeInterface(transaction, FB_TRACE_TRANSACTION_VERSION, upInfo);
-		master->upgradeInterface(request, FB_TRACE_DYN_REQUEST_VERSION, upInfo);
-
 		log_event_dyn_execute(connection, transaction, request, time_millis, req_result);
 		return true;
 	}
@@ -2407,12 +2340,11 @@ ntrace_boolean_t TracePluginImpl::trace_dyn_execute(TraceDatabaseConnection* con
 }
 
 // Using the services
-ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceServiceConnection* service,
+FB_BOOLEAN TracePluginImpl::trace_service_attach(ITraceServiceConnection* service,
 	ntrace_result_t att_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_attach(service, att_result);
 		return true;
 	}
@@ -2423,12 +2355,11 @@ ntrace_boolean_t TracePluginImpl::trace_service_attach(TraceServiceConnection* s
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_start(TraceServiceConnection* service,
-	size_t switches_length, const char* switches, ntrace_result_t start_result)
+FB_BOOLEAN TracePluginImpl::trace_service_start(ITraceServiceConnection* service,
+	unsigned switches_length, const char* switches, ntrace_result_t start_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_start(service, switches_length, switches, start_result);
 		return true;
 	}
@@ -2439,13 +2370,12 @@ ntrace_boolean_t TracePluginImpl::trace_service_start(TraceServiceConnection* se
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_query(TraceServiceConnection* service,
-	size_t send_item_length, const ntrace_byte_t* send_items, size_t recv_item_length,
+FB_BOOLEAN TracePluginImpl::trace_service_query(ITraceServiceConnection* service,
+	unsigned send_item_length, const ntrace_byte_t* send_items, unsigned recv_item_length,
 	const ntrace_byte_t* recv_items, ntrace_result_t query_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_query(service, send_item_length, send_items,
 								recv_item_length, recv_items, query_result);
 		return true;
@@ -2458,12 +2388,11 @@ ntrace_boolean_t TracePluginImpl::trace_service_query(TraceServiceConnection* se
 
 }
 
-ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceServiceConnection* service,
+FB_BOOLEAN TracePluginImpl::trace_service_detach(ITraceServiceConnection* service,
 	ntrace_result_t detach_result)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(service, FB_TRACE_SERVICE_VERSION, upInfo);
 		log_event_service_detach(service, detach_result);
 		return true;
 	}
@@ -2474,12 +2403,11 @@ ntrace_boolean_t TracePluginImpl::trace_service_detach(TraceServiceConnection* s
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_event_error(TraceBaseConnection* connection,
-	TraceStatusVector* status, const char* function)
+FB_BOOLEAN TracePluginImpl::trace_event_error(ITraceConnection* connection,
+	ITraceStatusVector* status, const char* function)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_BASE_CONNECTION_VERSION, upInfo);
 		log_event_error(connection, status, function);
 		return true;
 	}
@@ -2490,13 +2418,11 @@ ntrace_boolean_t TracePluginImpl::trace_event_error(TraceBaseConnection* connect
 	}
 }
 
-ntrace_boolean_t TracePluginImpl::trace_event_sweep(TraceDatabaseConnection* connection,
-	TraceSweepInfo* sweep, ntrace_process_state_t sweep_state)
+FB_BOOLEAN TracePluginImpl::trace_event_sweep(ITraceDatabaseConnection* connection,
+	ITraceSweepInfo* sweep, ntrace_process_state_t sweep_state)
 {
 	try
 	{
-		MasterInterfacePtr()->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
-		MasterInterfacePtr()->upgradeInterface(sweep, FB_TRACE_SWEEP_INFO_VERSION, upInfo);
 		log_event_sweep(connection, sweep, sweep_state);
 		return true;
 	}

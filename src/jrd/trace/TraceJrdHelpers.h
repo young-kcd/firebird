@@ -43,7 +43,7 @@ public:
 		m_baseline(NULL)
 	{
 		Attachment* attachment = m_transaction->tra_attachment;
-		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_TRANSACTION_END);
+		m_need_trace = attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_TRANSACTION_END);
 		if (!m_need_trace)
 			return;
 
@@ -54,7 +54,7 @@ public:
 
 	~TraceTransactionEnd()
 	{
-		finish(res_failed);
+		finish(Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 	}
 
 	void finish(ntrace_result_t result)
@@ -94,7 +94,7 @@ public:
 		m_request(request)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = trace_mgr->needs(TRACE_EVENT_PROC_EXECUTE);
+		m_need_trace = trace_mgr->needs(Firebird::ITraceConnection::TRACE_EVENT_PROC_EXECUTE);
 		if (!m_need_trace)
 			return;
 
@@ -106,7 +106,7 @@ public:
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
 			TraceProcedureImpl proc(m_request, NULL);
 
-			trace_mgr->event_proc_execute(&conn, &tran, &proc, true, res_successful);
+			trace_mgr->event_proc_execute(&conn, &tran, &proc, true, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();
@@ -122,7 +122,7 @@ public:
 
 	~TraceProcExecute()
 	{
-		finish(false, res_failed);
+		finish(false, Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 	}
 
 	void finish(bool have_cursor, ntrace_result_t result)
@@ -168,7 +168,7 @@ public:
 		m_request(request)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = (request->req_flags & req_proc_fetch) && trace_mgr->needs(TRACE_EVENT_PROC_EXECUTE);
+		m_need_trace = (request->req_flags & req_proc_fetch) && trace_mgr->needs(Firebird::ITraceConnection::TRACE_EVENT_PROC_EXECUTE);
 		if (!m_need_trace)
 			return;
 
@@ -177,7 +177,7 @@ public:
 
 	~TraceProcFetch()
 	{
-		fetch(true, res_failed);
+		fetch(true, Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 	}
 
 	void fetch(bool eof, ntrace_result_t result)
@@ -231,7 +231,7 @@ public:
 		m_inMsgLength(inMsgLength)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = trace_mgr->needs(TRACE_EVENT_FUNC_EXECUTE);
+		m_need_trace = trace_mgr->needs(Firebird::ITraceConnection::TRACE_EVENT_FUNC_EXECUTE);
 		if (!m_need_trace)
 			return;
 
@@ -247,7 +247,7 @@ public:
 				m_inMsg, m_inMsgLength);
 			TraceFunctionImpl func(m_request, inputs, NULL, NULL);
 
-			trace_mgr->event_func_execute(&conn, &tran, &func, true, res_successful);
+			trace_mgr->event_func_execute(&conn, &tran, &func, true, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();
@@ -263,7 +263,7 @@ public:
 
 	~TraceFuncExecute()
 	{
-		finish(res_failed);
+		finish(Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 	}
 
 	void finish(ntrace_result_t result, const dsc* value = NULL)
@@ -314,7 +314,7 @@ public:
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
 		m_need_trace = !(m_request->getStatement()->flags & JrdStatement::FLAG_SYS_TRIGGER) &&
-			trace_mgr->needs(TRACE_EVENT_TRIGGER_EXECUTE);
+			trace_mgr->needs(Firebird::ITraceConnection::TRACE_EVENT_TRIGGER_EXECUTE);
 
 		if (!m_need_trace)
 			return;
@@ -324,7 +324,7 @@ public:
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
 			TraceTriggerImpl trig(m_request, m_which_trig, NULL);
 
-			trace_mgr->event_trigger_execute(&conn, &tran, &trig, true, res_successful);
+			trace_mgr->event_trigger_execute(&conn, &tran, &trig, true, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
 		}
 
 		fb_assert(!m_request->req_fetch_baseline);
@@ -357,7 +357,7 @@ public:
 
 	~TraceTrigExecute()
 	{
-		finish(res_failed);
+		finish(Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 	}
 
 private:
@@ -379,7 +379,7 @@ public:
 	{
 		Attachment* attachment = m_tdbb->getAttachment();
 
-		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_BLR_COMPILE) &&
+		m_need_trace = attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_BLR_COMPILE) &&
 			m_blr_length && m_blr && !attachment->isUtility();
 
 		if (!m_need_trace)
@@ -418,7 +418,7 @@ public:
 
 	~TraceBlrCompile()
 	{
-		finish(NULL, res_failed);
+		finish(NULL, Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 	}
 
 private:
@@ -440,7 +440,7 @@ public:
 		Attachment* attachment = m_tdbb->getAttachment();
 		JrdStatement* statement = m_request->getStatement();
 
-		m_need_trace = attachment->att_trace_manager->needs(TRACE_EVENT_BLR_EXECUTE) &&
+		m_need_trace = attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_BLR_EXECUTE) &&
 			!statement->sqlText &&
 			!(statement->flags & JrdStatement::FLAG_INTERNAL) &&
 			!attachment->isUtility();
@@ -480,7 +480,7 @@ public:
 
 	~TraceBlrExecute()
 	{
-		finish(res_failed);
+		finish(Firebird::ITraceConnection::TRACE_RESULT_FAILED);
 	}
 
 private:
@@ -508,7 +508,7 @@ public:
 
 	void finish()
 	{
-		report(process_state_finished);
+		report(Firebird::ITracePlugin::SWEEP_STATE_FINISHED);
 	}
 
 private:

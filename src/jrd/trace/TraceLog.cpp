@@ -214,7 +214,7 @@ FB_SIZE_T TraceLog::write(const void* buf, FB_SIZE_T size)
 			continue;
 		}
 
-		const unsigned int toWrite = MIN(writeLeft, static_cast<unsigned>(MAX_LOG_FILE_SIZE - len));
+		const int toWrite = MIN(writeLeft, static_cast<unsigned>(MAX_LOG_FILE_SIZE - len));
 
 		const int written = ::write(m_fileHandle, p, toWrite);
 		if (written == -1 || written != toWrite)

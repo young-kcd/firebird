@@ -28,8 +28,8 @@
 #include "../common/classes/init.h"
 #include "../common/dllinst.h"
 #include "../common/os/fbsyslog.h"
-#include "../jrd/EngineInterface.h"
-#include "firebird/Plugin.h"
+#include "../jrd/constants.h"
+#include "firebird/Interface.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -50,7 +50,7 @@ public:
 	{
 		try
 		{
-			ConfigFile file(fb_utils::getPrefix(Firebird::DirType::FB_DIR_CONF, CONFIG_FILE),
+			ConfigFile file(fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_CONF, CONFIG_FILE),
 				ConfigFile::ERROR_WHEN_MISS);
 			defaultConfig = new Config(file);
 		}
@@ -666,19 +666,19 @@ const char* Config::getPlugins(unsigned int type) const
 {
 	switch (type)
 	{
-		case Firebird::PluginType::Provider:
+		case Firebird::IPluginManager::Provider:
 			return (const char*) values[KEY_PLUG_PROVIDERS];
-		case Firebird::PluginType::AuthServer:
+		case Firebird::IPluginManager::AuthServer:
 			return (const char*) values[KEY_PLUG_AUTH_SERVER];
-		case Firebird::PluginType::AuthClient:
+		case Firebird::IPluginManager::AuthClient:
 			return (const char*) values[KEY_PLUG_AUTH_CLIENT];
-		case Firebird::PluginType::AuthUserManagement:
+		case Firebird::IPluginManager::AuthUserManagement:
 			return (const char*) values[KEY_PLUG_AUTH_MANAGE];
-		case Firebird::PluginType::Trace:
+		case Firebird::IPluginManager::Trace:
 			return (const char*) values[KEY_PLUG_TRACE];
-		case Firebird::PluginType::WireCrypt:
+		case Firebird::IPluginManager::WireCrypt:
 			return (const char*) values[KEY_PLUG_WIRE_CRYPT];
-		case Firebird::PluginType::KeyHolder:
+		case Firebird::IPluginManager::KeyHolder:
 			return (const char*) values[KEY_PLUG_KEY_HOLDER];
 	}
 
@@ -686,27 +686,27 @@ const char* Config::getPlugins(unsigned int type) const
 	return NULL;		// compiler warning silencer
 }
 
-unsigned int FB_CARG FirebirdConf::getKey(const char* name)
+unsigned int FirebirdConf::getKey(const char* name)
 {
 	return Config::getKeyByName(name);
 }
 
-ISC_INT64 FB_CARG FirebirdConf::asInteger(unsigned int key)
+ISC_INT64 FirebirdConf::asInteger(unsigned int key)
 {
 	return config->getInt(key);
 }
 
-const char* FB_CARG FirebirdConf::asString(unsigned int key)
+const char* FirebirdConf::asString(unsigned int key)
 {
 	return config->getString(key);
 }
 
-FB_BOOLEAN FB_CARG FirebirdConf::asBoolean(unsigned int key)
+FB_BOOLEAN FirebirdConf::asBoolean(unsigned int key)
 {
 	return config->getBoolean(key);
 }
 
-int FB_CARG FirebirdConf::release()
+int FirebirdConf::release()
 {
 	if (--refCounter == 0)
 	{

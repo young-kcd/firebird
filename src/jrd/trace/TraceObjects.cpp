@@ -47,7 +47,6 @@
 #include "../../common/os/path_utils.h"
 #include "../../common/config/os/config_root.h"
 #include "../../dsql/dsql_proto.h"
-#include "../../common/prett_proto.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -62,9 +61,9 @@ namespace Jrd {
 
 /// TraceConnectionImpl
 
-ntrace_connection_kind_t TraceConnectionImpl::getKind()
+unsigned TraceConnectionImpl::getKind()
 {
-	return connection_database;
+	return TRACE_CONNECTION_DATABASE;
 }
 
 int TraceConnectionImpl::getConnectionID()
@@ -129,7 +128,7 @@ unsigned TraceTransactionImpl::getTransactionID()
 	return m_tran->tra_number;
 }
 
-bool TraceTransactionImpl::getReadOnly()
+FB_BOOLEAN TraceTransactionImpl::getReadOnly()
 {
 	return (m_tran->tra_flags & TRA_readonly);
 }
@@ -139,45 +138,26 @@ int TraceTransactionImpl::getWait()
 	return -m_tran->getLockWait();
 }
 
-ntrace_tra_isolation_t TraceTransactionImpl::getIsolation()
+unsigned TraceTransactionImpl::getIsolation()
 {
 	switch (m_tran->tra_flags & (TRA_read_committed | TRA_rec_version | TRA_degree3))
 	{
 	case TRA_degree3:
-		return tra_iso_consistency;
+		return TRA_ISO_CONSISTENCY;
 
 	case TRA_read_committed:
-		return tra_iso_read_committed_norecver;
+		return TRA_ISO_READ_COMMITTED_NORECVER;
 
 	case TRA_read_committed | TRA_rec_version:
-		return tra_iso_read_committed_recver;
+		return TRA_ISO_READ_COMMITTED_RECVER;
 
 	case 0:
-		return tra_iso_concurrency;
+		return TRA_ISO_CONCURRENCY;
 
 	default:
 		fb_assert(false);
-		return tra_iso_concurrency;
+		return TRA_ISO_CONCURRENCY;
 	}
-}
-
-
-/// BLRPrinter
-
-const char* BLRPrinter::getText()
-{
-	if (m_text.empty() && getDataLength())
-		fb_print_blr(getData(), (ULONG) getDataLength(), print_blr, this, 0);
-	return m_text.c_str();
-}
-
-void BLRPrinter::print_blr(void* arg, SSHORT offset, const char* line)
-{
-	BLRPrinter* blr = (BLRPrinter*) arg;
-
-	string temp;
-	temp.printf("%4d %s\n", offset, line);
-	blr->m_text.append(temp);
 }
 
 
@@ -216,7 +196,7 @@ const char* TraceSQLStatementImpl::getPlan()
 	return m_plan.c_str();
 }
 
-const char* FB_CARG TraceSQLStatementImpl::getExplainedPlan()
+const char* TraceSQLStatementImpl::getExplainedPlan()
 {
 	fillPlan(true);
 	return m_plan.c_str();
@@ -236,7 +216,7 @@ PerformanceInfo* TraceSQLStatementImpl::getPerf()
 	return m_perf;
 }
 
-TraceParams* TraceSQLStatementImpl::getInputs()
+ITraceParams* TraceSQLStatementImpl::getInputs()
 {
 	return &m_inputs;
 }
@@ -437,7 +417,7 @@ const char* TraceTriggerImpl::getRelationName()
 
 /// TraceLogWriterImpl
 
-class TraceLogWriterImpl FB_FINAL : public RefCntIface<TraceLogWriter, FB_TRACE_LOG_WRITER_VERSION>
+class TraceLogWriterImpl FB_FINAL : public RefCntIface<Api::TraceLogWriterImpl<TraceLogWriterImpl> >
 {
 public:
 	TraceLogWriterImpl(const TraceSession& session) :
@@ -448,9 +428,9 @@ public:
 	}
 
 	// TraceLogWriter implementation
-	virtual FB_SIZE_T FB_CARG write(const void* buf, FB_SIZE_T size);
+	FB_SIZE_T write(const void* buf, FB_SIZE_T size);
 
-	virtual int FB_CARG release()
+	int release()
 	{
 		if (--refCounter == 0)
 		{
@@ -510,7 +490,7 @@ const char* TraceInitInfoImpl::getFirebirdRootDirectory()
 	return Config::getRootDirectory();
 }
 
-TraceLogWriter* TraceInitInfoImpl::getLogWriter()
+ITraceLogWriter* TraceInitInfoImpl::getLogWriter()
 {
 	if (!m_logWriter && !m_session.ses_logfile.empty())
 	{
@@ -526,9 +506,9 @@ TraceLogWriter* TraceInitInfoImpl::getLogWriter()
 
 /// TraceServiceImpl
 
-ntrace_service_t TraceServiceImpl::getServiceID()
+void* TraceServiceImpl::getServiceID()
 {
-	return (ntrace_service_t) m_svc;
+	return (void*)m_svc;
 }
 
 const char* TraceServiceImpl::getServiceMgr()
@@ -541,9 +521,9 @@ const char* TraceServiceImpl::getServiceName()
 	return m_svc->getServiceName();
 }
 
-ntrace_connection_kind_t TraceServiceImpl::getKind()
+unsigned TraceServiceImpl::getKind()
 {
-	return connection_service;
+	return TRACE_CONNECTION_SERVICE;
 }
 
 int TraceServiceImpl::getProcessID()

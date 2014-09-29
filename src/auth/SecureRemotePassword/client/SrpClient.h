@@ -27,7 +27,7 @@
 #ifndef AUTH_SRP_CLIENT_H
 #define AUTH_SRP_CLIENT_H
 
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 
 namespace Auth {
 

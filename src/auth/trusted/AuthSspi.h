@@ -40,7 +40,7 @@
 #include <../common/classes/array.h>
 #include "../common/classes/ImplementHelper.h"
 #include <../jrd/ibase.h>
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 
 #define SECURITY_WIN32
 
@@ -100,12 +100,12 @@ public:
 	bool getLogin(Firebird::string& login, bool& wh);
 };
 
-class WinSspiServer : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
+class WinSspiServer : public Firebird::StdPlugin<Firebird::Api::ServerImpl<WinSspiServer> >
 {
 public:
 	// IServer implementation
-	int FB_CARG authenticate(Firebird::IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
-    int FB_CARG release();
+	int authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
+    int release();
 
 	WinSspiServer(Firebird::IPluginConfig*);
 
@@ -114,12 +114,12 @@ private:
 	AuthSspi sspi;
 };
 
-class WinSspiClient : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
+class WinSspiClient : public Firebird::StdPlugin<Firebird::Api::ClientImpl<WinSspiClient> >
 {
 public:
 	// IClient implementation
-	int FB_CARG authenticate(Firebird::IStatus* status, IClientBlock* sBlock);
-    int FB_CARG release();
+	int authenticate(Firebird::IStatus* status, Firebird::IClientBlock* sBlock);
+    int release();
 
 	WinSspiClient(Firebird::IPluginConfig*);
 

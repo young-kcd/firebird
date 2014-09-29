@@ -29,7 +29,7 @@
 #ifndef FB_COMMON_CLASSES_INTERNAL_MESSAGE_BUFFER
 #define FB_COMMON_CLASSES_INTERNAL_MESSAGE_BUFFER
 
-#include "firebird/Provider.h"
+#include "firebird/Interface.h"
 
 namespace Firebird {
 

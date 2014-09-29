@@ -34,8 +34,7 @@
 
 #ifdef AUTH_DEBUG
 
-#include "firebird/Auth.h"
-#include "firebird/Plugin.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/init.h"
@@ -47,13 +46,13 @@ namespace Auth {
 // The idea of debug plugin is to send some data from server to client,
 // modify them on client and return result (which becomes login name) to the server
 
-class DebugServer FB_FINAL : public Firebird::StdPlugin<IServer, FB_AUTH_SERVER_VERSION>
+class DebugServer FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ServerImpl<DebugServer> >
 {
 public:
 	explicit DebugServer(Firebird::IPluginConfig*);
 
-    int authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
-    				 IWriter* writerInterface);
+    int authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sBlock,
+    				 Firebird::IWriter* writerInterface);
     int release();
 
 private:
@@ -61,12 +60,12 @@ private:
 	Firebird::RefPtr<Firebird::IConfig> config;
 };
 
-class DebugClient FB_FINAL : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
+class DebugClient FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ClientImpl<DebugClient> >
 {
 public:
 	DebugClient(Firebird::IPluginConfig*);
 
-    int authenticate(Firebird::IStatus* status, IClientBlock* sBlock);
+    int authenticate(Firebird::IStatus* status, Firebird::IClientBlock* sBlock);
     int release();
 
 private:

@@ -32,19 +32,19 @@
 #include "TraceConfiguration.h"
 #include "TracePluginImpl.h"
 
-class TraceFactoryImpl FB_FINAL : public Firebird::StdPlugin<TraceFactory, FB_TRACE_FACTORY_VERSION>
+class TraceFactoryImpl FB_FINAL : public Firebird::StdPlugin<Firebird::Api::TraceFactoryImpl<TraceFactoryImpl> >
 {
 public:
 	explicit TraceFactoryImpl(Firebird::IPluginConfig*)
 	{ }
 
 	// TraceFactory implementation
-	ntrace_mask_t FB_CARG trace_needs();
-	TracePlugin* FB_CARG trace_create(Firebird::IStatus* status, TraceInitInfo* init_info);
-	int FB_CARG release();
+	ntrace_mask_t trace_needs();
+	Firebird::ITracePlugin* trace_create(Firebird::IStatus* status, Firebird::ITraceInitInfo* init_info);
+	int release();
 };
 
-int FB_CARG TraceFactoryImpl::release()
+int TraceFactoryImpl::release()
 {
 	if (--refCounter == 0)
 	{
@@ -54,21 +54,17 @@ int FB_CARG TraceFactoryImpl::release()
 	return 1;
 }
 
-static Firebird::MakeUpgradeInfo<> upInfo;
-
-ntrace_mask_t FB_CARG TraceFactoryImpl::trace_needs()
+ntrace_mask_t TraceFactoryImpl::trace_needs()
 {
-	return (1 << TRACE_EVENT_MAX) - 1;
+	return (1 << Firebird::ITraceConnection::TRACE_EVENT_MAX) - 1;
 }
 
-TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, TraceInitInfo* initInfo)
+Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::IStatus* status, Firebird::ITraceInitInfo* initInfo)
 {
 	Firebird::MasterInterfacePtr master;
 	const char* dbname = NULL;
 	try
 	{
-		master->upgradeInterface(initInfo, FB_TRACE_INIT_INFO_VERSION, upInfo);
-
 		dbname = initInfo->getDatabaseName();
 		if (!dbname)
 			dbname = "";
@@ -76,9 +72,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 		TracePluginConfig config;
 		TraceCfgReader::readTraceConfiguration(initInfo->getConfigText(), dbname, config);
 
-		TraceDatabaseConnection* connection = initInfo->getConnection();
-		if (connection)
-			master->upgradeInterface(connection, FB_TRACE_CONNECTION_VERSION, upInfo);
+		Firebird::ITraceDatabaseConnection* connection = initInfo->getConnection();
 
 		if (!config.enabled ||
 			(config.connection_id && connection &&
@@ -87,7 +81,7 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 			return NULL; // Plugin is not needed, no error happened.
 		}
 
-		Firebird::AutoPtr<TraceLogWriter, Firebird::SimpleRelease<TraceLogWriter> >
+		Firebird::AutoPtr<Firebird::ITraceLogWriter, Firebird::SimpleRelease<Firebird::ITraceLogWriter> >
 			logWriter(initInfo->getLogWriter());
 
 		if (logWriter)
@@ -99,10 +93,9 @@ TracePlugin* FB_CARG TraceFactoryImpl::trace_create(Firebird::IStatus* status, T
 	catch (Firebird::Exception& ex)
 	{
 		// put error into trace log
-		TraceLogWriter* logWriter = initInfo->getLogWriter();
+		Firebird::ITraceLogWriter* logWriter = initInfo->getLogWriter();
 		if (logWriter)
 		{
-			master->upgradeInterface(logWriter, FB_TRACE_LOG_WRITER_VERSION, upInfo);
 			const char* strEx = TracePluginImpl::marshal_exception(ex);
 			Firebird::string err;
 			if (dbname)
@@ -125,8 +118,8 @@ static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
 
 void registerTrace(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::PluginType::Trace, "fbtrace", &traceFactory);
-	Firebird::myModule->registerMe();
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::Trace, "fbtrace", &traceFactory);
+	Firebird::getUnloadDetector()->registerMe();
 }
 
 

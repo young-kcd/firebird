@@ -27,7 +27,7 @@
 #ifndef AUTH_LEGACY_CLIENT_H
 #define AUTH_LEGACY_CLIENT_H
 
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 
 namespace Auth {
@@ -35,7 +35,7 @@ namespace Auth {
 // Required to stop analyzing rest of plugins before first roundtrip to server
 // if legacy login is present in DPB
 
-class SecurityDatabaseClient FB_FINAL : public Firebird::StdPlugin<IClient, FB_AUTH_CLIENT_VERSION>
+class SecurityDatabaseClient FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ClientImpl<SecurityDatabaseClient> >
 {
 public:
 	explicit SecurityDatabaseClient(Firebird::IPluginConfig*)
@@ -43,8 +43,8 @@ public:
 	}
 
 	// IClient implementation
-	int FB_CARG authenticate(Firebird::IStatus*, IClientBlock* data);
-    int FB_CARG release();
+	int authenticate(Firebird::IStatus*, Firebird::IClientBlock* data);
+    int release();
 };
 
 void registerLegacyClient(Firebird::IPluginManager* iPlugin);

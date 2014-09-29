@@ -25,7 +25,7 @@
 #define ISQL_SHOW_PROTO_H
 
 #include "../common/classes/fb_string.h"
-#include <firebird/Provider.h>
+#include <firebird/Interface.h>
 
 void	SHOW_comments(bool force);
 bool	SHOW_dbb_parameters (Firebird::IAttachment*, SCHAR*, const UCHAR*, unsigned, bool, const char*);

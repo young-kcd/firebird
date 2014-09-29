@@ -24,14 +24,14 @@
 #ifndef UTILITIES_SECUR_PROTO_H
 #define UTILITIES_SECUR_PROTO_H
 
-#include "firebird/Auth.h"
+#include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/GetPlugins.h"
 #include "../common/classes/array.h"
 
 namespace Auth {
 
-class CharField : public Firebird::AutoIface<ICharUserField, FB_AUTH_CHAR_FIELD_VERSION>
+class CharField : public Firebird::AutoIface<Firebird::Api::CharUserFieldImpl<CharField> >
 {
 public:
 	CharField()
@@ -39,17 +39,17 @@ public:
 	{ }
 
 	// ICharUserField implementation
-	int FB_CARG entered()
+	int entered()
 	{
 		return e;
 	}
 
-	int FB_CARG specified()
+	int specified()
 	{
 		return s;
 	}
 
-	void FB_CARG setEntered(Firebird::IStatus*, int newValue)
+	void setEntered(Firebird::IStatus*, int newValue)
 	{
 		e = newValue;
 	}
@@ -63,12 +63,12 @@ public:
 		}
 	}
 
-	const char* FB_CARG get()
+	const char* get()
 	{
 		return value.c_str();
 	}
 
-	void FB_CARG set(Firebird::IStatus* status, const char* newValue)
+	void set(Firebird::IStatus* status, const char* newValue)
 	{
 		try
 		{
@@ -96,7 +96,7 @@ private:
 	Firebird::string value;
 };
 
-class IntField : public Firebird::AutoIface<IIntUserField, FB_AUTH_INT_FIELD_VERSION>
+class IntField : public Firebird::AutoIface<Firebird::Api::IntUserFieldImpl<IntField> >
 {
 public:
 	IntField()
@@ -104,17 +104,17 @@ public:
 	{ }
 
 	// IIntUserField implementation
-	int FB_CARG entered()
+	int entered()
 	{
 		return e;
 	}
 
-	int FB_CARG specified()
+	int specified()
 	{
 		return s;
 	}
 
-	void FB_CARG setEntered(Firebird::IStatus*, int newValue)
+	void setEntered(Firebird::IStatus*, int newValue)
 	{
 		e = newValue;
 	}
@@ -128,12 +128,12 @@ public:
 		}
 	}
 
-	int FB_CARG get()
+	int get()
 	{
 		return value;
 	}
 
-	void FB_CARG set(Firebird::IStatus*, int newValue)
+	void set(Firebird::IStatus*, int newValue)
 	{
 		value = newValue;
 	}
@@ -149,7 +149,9 @@ private:
 	int value;
 };
 
-class UserData : public IUser
+typedef Firebird::Array<UCHAR> AuthenticationBlock;
+
+class UserData : public Firebird::VersionedIface<Firebird::Api::UserImpl<UserData> >
 {
 public:
 	UserData()
@@ -157,59 +159,58 @@ public:
 	{ }
 
 	// IUser implementation
-	int FB_CARG operation()
+	int operation()
 	{
 		return op;
 	}
 
-	ICharUserField* FB_CARG userName()
+	Firebird::ICharUserField* userName()
 	{
 		return &user;
 	}
 
-	ICharUserField* FB_CARG password()
+	Firebird::ICharUserField* password()
 	{
 		return &pass;
 	}
 
-	ICharUserField* FB_CARG firstName()
+	Firebird::ICharUserField* firstName()
 	{
 		return &first;
 	}
 
-	ICharUserField* FB_CARG lastName()
+	Firebird::ICharUserField* lastName()
 	{
 		return &last;
 	}
 
-	ICharUserField* FB_CARG middleName()
+	Firebird::ICharUserField* middleName()
 	{
 		return &middle;
 	}
 
-	ICharUserField* FB_CARG comment()
+	Firebird::ICharUserField* comment()
 	{
 		return &com;
 	}
 
-	ICharUserField* FB_CARG attributes()
+	Firebird::ICharUserField* attributes()
 	{
 		return &attr;
 	}
 
-	IIntUserField* FB_CARG admin()
+	Firebird::IIntUserField* admin()
 	{
 		return &adm;
 	}
 
-	IIntUserField* FB_CARG active()
+	Firebird::IIntUserField* active()
 	{
 		return &act;
 	}
 
-	void FB_CARG clear(Firebird::IStatus* status);
+	void clear(Firebird::IStatus* status);
 
-	typedef Firebird::Array<UCHAR> AuthenticationBlock;
 
 	int op, trustedAuth;
 	CharField user, pass, first, last, middle, com, attr;
@@ -222,14 +223,18 @@ public:
 	IntField u, g;
 };
 
-class StackUserData FB_FINAL : public Firebird::AutoIface<UserData, FB_AUTH_USER_VERSION>
-{
-};
-
-class DynamicUserData FB_FINAL : public Firebird::VersionedIface<UserData, FB_AUTH_USER_VERSION>
+class StackUserData FB_FINAL : public UserData
 {
 public:
+	void* operator new(size_t, void* memory) throw()
+	{
+		return memory;
+	}
+};
 
+class DynamicUserData FB_FINAL : public UserData
+{
+public:
 #ifdef DEBUG_GDS_ALLOC
 	void* operator new(size_t size, Firebird::MemoryPool& pool, const char* fileName, int line)
 	{
@@ -243,13 +248,13 @@ public:
 #endif	// DEBUG_GDS_ALLOC
 };
 
-class Get : public Firebird::GetPlugins<Auth::IManagement>
+class Get : public Firebird::GetPlugins<Firebird::IManagement>
 {
 public:
 	Get(Config* firebirdConf);
 };
 
-int setGsecCode(int code, IUser* iUser);
+int setGsecCode(int code, Firebird::IUser* iUser);
 
 } // namespace Auth
 

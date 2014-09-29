@@ -24,7 +24,7 @@
 #ifndef ISQL_ISQL_PROTO_H
 #define ISQL_ISQL_PROTO_H
 
-#include <firebird/Provider.h>
+#include <firebird/Interface.h>
 
 struct IsqlVar;
 
