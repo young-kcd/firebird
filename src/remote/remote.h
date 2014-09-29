@@ -168,13 +168,20 @@ struct Rtr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rtr>
 	bool			rtr_limbo;
 
 	Firebird::Array<Rsr*> rtr_cursors;
+	Rtr**			rtr_self;
 
 public:
 	Rtr() :
 		rtr_rdb(0), rtr_next(0), rtr_blobs(0),
 		rtr_iface(NULL), rtr_id(0), rtr_limbo(0),
-		rtr_cursors(getPool())
+		rtr_cursors(getPool()), rtr_self(NULL)
 	{ }
+
+	~Rtr()
+	{
+		if (rtr_self && *rtr_self == this)
+			*rtr_self = NULL;
+	}
 
 	static ISC_STATUS badHandle() { return isc_bad_trans_handle; }
 };
@@ -197,6 +204,7 @@ struct Rbl : public Firebird::GlobalStorage, public TypedHandle<rem_type_rbl>
 	USHORT		rbl_fragment_length;
 	USHORT		rbl_source_interp;	// source interp (for writing)
 	USHORT		rbl_target_interp;	// destination interp (for reading)
+	Rbl**		rbl_self;
 
 public:
 	// Values for rbl_flags
@@ -213,8 +221,14 @@ public:
 		rbl_buffer(rbl_data.getBuffer(BLOB_LENGTH)), rbl_ptr(rbl_buffer), rbl_iface(NULL),
 		rbl_offset(0), rbl_id(0), rbl_flags(0),
 		rbl_buffer_length(BLOB_LENGTH), rbl_length(0), rbl_fragment_length(0),
-		rbl_source_interp(0), rbl_target_interp(0)
+		rbl_source_interp(0), rbl_target_interp(0), rbl_self(NULL)
 	{ }
+
+	~Rbl()
+	{
+		if (rbl_self && *rbl_self == this)
+			*rbl_self = NULL;
+	}
 
 	static ISC_STATUS badHandle() { return isc_bad_segstr_handle; }
 };
@@ -229,12 +243,19 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 	rem_port*	rvnt_port;	// used to id server from whence async came
 	SLONG		rvnt_id;	// used to store client-side id
 	USHORT		rvnt_length;
+	Rvnt**		rvnt_self;
 
 public:
 	Rvnt() :
 		rvnt_next(NULL), rvnt_rdb(NULL), rvnt_callback(NULL), rvnt_iface(NULL),
-		rvnt_port(NULL), rvnt_id(0), rvnt_length(0)
+		rvnt_port(NULL), rvnt_id(0), rvnt_length(0), rvnt_self(NULL)
 	{ }
+
+	~Rvnt()
+	{
+		if (rvnt_self && *rvnt_self == this)
+			*rvnt_self = NULL;
+	}
 };
 
 
@@ -325,23 +346,29 @@ struct Rrq : public Firebird::GlobalStorage, public TypedHandle<rem_type_rrq>
 
 	};
 	Firebird::Array<rrq_repeat> rrq_rpt;
+	Rrq**	rrq_self;
 
 public:
 	explicit Rrq(FB_SIZE_T rpt) :
 		rrq_rdb(0), rrq_rtr(0), rrq_next(0), rrq_levels(0),
 		rrq_iface(NULL), rrq_id(0), rrq_max_msg(0), rrq_level(0),
-		rrq_rpt(getPool(), rpt)
+		rrq_rpt(getPool(), rpt), rrq_self(NULL)
 	{
 		//memset(rrq_status_vector, 0, sizeof rrq_status_vector);
 		rrq_rpt.grow(rpt);
 	}
 
-	~Rrq();
+	~Rrq()
+	{
+		if (rrq_self && *rrq_self == this)
+			*rrq_self = NULL;
+	}
 
 	Rrq* clone() const
 	{
 		Rrq* rc = new Rrq(rrq_rpt.getCount());
 		*rc = *this;
+		rc->rrq_self = NULL;
 		return rc;
 	}
 
@@ -419,6 +446,7 @@ struct Rsr : public Firebird::GlobalStorage, public TypedHandle<rem_type_rsr>
 
 	Firebird::string rsr_cursor_name;	// Name for cursor to be set on open
 	bool			rsr_delayed_format;	// Out format was delayed on execute, set it on fetch
+	Rsr**			rsr_self;
 
 public:
 	// Values for rsr_flags.
@@ -440,8 +468,14 @@ public:
 		rsr_format(0), rsr_message(0), rsr_buffer(0), rsr_status(0),
 		rsr_id(0), rsr_fmt_length(0),
 		rsr_rows_pending(0), rsr_msgs_waiting(0), rsr_reorder_level(0), rsr_batch_count(0),
-		rsr_cursor_name(getPool()), rsr_delayed_format(false)
-		{ }
+		rsr_cursor_name(getPool()), rsr_delayed_format(false), rsr_self(NULL)
+	{ }
+
+	~Rsr()
+	{
+		if (rsr_self && *rsr_self == this)
+			*rsr_self = NULL;
+	}
 
 	void saveException(Firebird::IStatus* status, bool overwrite);
 	void saveException(const Firebird::Exception& ex, bool overwrite);

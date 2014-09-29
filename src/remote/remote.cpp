@@ -924,10 +924,6 @@ ISC_STATUS* Rdb::get_status_vector() throw()
 }
 */
 
-Rrq::~Rrq()
-{
-}
-
 void Rrq::saveStatus(const Firebird::Exception& ex) throw()
 {
 	if (rrqStatus.isSuccess())

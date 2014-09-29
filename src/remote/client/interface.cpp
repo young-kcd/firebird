@@ -153,7 +153,9 @@ public:
 public:
 	explicit Blob(Rbl* handle)
 		: blob(handle)
-	{ }
+	{
+		blob->rbl_self = &blob;
+	}
 
 private:
 	void freeClientData(IStatus* status, bool force = false);
@@ -201,7 +203,9 @@ public:
 	Transaction(Rtr* handle, Attachment* a)
 		: remAtt(a),
 		  transaction(handle)
-	{ }
+	{
+		transaction->rtr_self = &transaction;
+	}
 
 	Rtr* getTransaction()
 	{
@@ -319,6 +323,7 @@ public:
 		  statement(handle),
 		  dialect(aDialect)
 	{
+		statement->rsr_self = &statement;
 	}
 
 	Rsr* getStatement()
@@ -382,7 +387,9 @@ public:
 public:
 	Request(Rrq* handle, Attachment* a)
 		: remAtt(a), rq(handle)
-	{ }
+	{
+		rq->rrq_self = &rq;
+	}
 
 private:
 	void freeClientData(IStatus* status, bool force = false);
@@ -414,7 +421,11 @@ public:
 	virtual void FB_CARG cancel(IStatus* status);
 
 public:
-	Events(Rvnt* handle) : rvnt(handle) { }
+	Events(Rvnt* handle)
+		: rvnt(handle)
+	{
+		rvnt->rvnt_self = &rvnt;
+	}
 
 private:
 	void freeClientData(IStatus* status, bool force = false);
