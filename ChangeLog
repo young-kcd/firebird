@@ -1,3 +1,18 @@
+ 2014-09-28 09:43  hvlad 
+   M src/alice/alice.cpp
+   M src/alice/alice.h
+   M src/alice/exe.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/inf.cpp
+   M src/jrd/inf_pub.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/validation.cpp
+   A src/jrd/validation.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Improvement CORE-4562 : Split all validation messages on critical and minor ones
+
  2014-09-26 13:34  mapopa 
    M doc/README.build.msvc.html
 Update Visual Studio Expresss 20xx Download link
