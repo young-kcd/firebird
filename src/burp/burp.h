@@ -768,7 +768,7 @@ struct burp_meta_obj
 // I need to review if we tolerate different lengths for different OS's here.
 const unsigned int MAX_FILE_NAME_SIZE		= 256;
 
-#include "../jrd/svc.h"
+//#include "../jrd/svc.h"
 
 #include "../burp/std_desc.h"
 
@@ -1095,9 +1095,6 @@ void	BURP_exit_local(int code, BurpGlobals* tdgbl);
 
 // database is not on-line due to failure to activate one or more indices
 const int FINI_DB_NOT_ONLINE		= 2;
-
-// I/O definitions
-const int GBAK_IO_BUFFER_SIZE = SVC_IO_BUFFER_SIZE;
 
 /* Burp will always write a backup in multiples of the following number
  * of bytes.  The initial value is the smallest which ensures that writes

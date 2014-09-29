@@ -35,6 +35,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/perf_proto.h"
 #include "../yvalve/utl_proto.h"
+#include "../yvalve/YObjects.h"
 #include "../common/gdsassert.h"
 #include "../common/classes/fb_string.h"
 

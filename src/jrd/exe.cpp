@@ -462,7 +462,7 @@ void EXE_assignment(thread_db* tdbb, const ValueExprNode* to, dsc* from_desc, bo
 }
 
 
-void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, jrd_req::req_ta trigger_action)
+void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, TriggerAction trigger_action)
 {
 /**************************************
  *
@@ -484,23 +484,23 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, jrd_req::req
 
 	switch (trigger_action)
 	{
-		case jrd_req::req_trigger_connect:
+		case TRIGGER_CONNECT:
 			type = DB_TRIGGER_CONNECT;
 			break;
 
-		case jrd_req::req_trigger_disconnect:
+		case TRIGGER_DISCONNECT:
 			type = DB_TRIGGER_DISCONNECT;
 			break;
 
-		case jrd_req::req_trigger_trans_start:
+		case TRIGGER_TRANS_START:
 			type = DB_TRIGGER_TRANS_START;
 			break;
 
-		case jrd_req::req_trigger_trans_commit:
+		case TRIGGER_TRANS_COMMIT:
 			type = DB_TRIGGER_TRANS_COMMIT;
 			break;
 
-		case jrd_req::req_trigger_trans_rollback:
+		case TRIGGER_TRANS_ROLLBACK:
 			type = DB_TRIGGER_TRANS_ROLLBACK;
 			break;
 
@@ -557,7 +557,7 @@ void EXE_execute_ddl_triggers(thread_db* tdbb, jrd_tra* transaction, bool preTri
 				}
 			}
 
-			EXE_execute_triggers(tdbb, &triggersPtr, NULL, NULL, jrd_req::req_trigger_ddl,
+			EXE_execute_triggers(tdbb, &triggersPtr, NULL, NULL, TRIGGER_DDL,
 				StmtNode::ALL_TRIGS);
 
 			tdbb->setTransaction(oldTransaction);
@@ -1043,7 +1043,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 								trig_vec** triggers,
 								record_param* old_rpb,
 								record_param* new_rpb,
-								jrd_req::req_ta trigger_action, StmtNode::WhichTrigger which_trig)
+								TriggerAction trigger_action, StmtNode::WhichTrigger which_trig)
 {
 /**************************************
  *
@@ -1112,8 +1112,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 						trigger->req_rpb[0].rpb_number.setValid(false);
 				}
 
-				if (which_trig == StmtNode::PRE_TRIG &&
-					trigger_action == jrd_req::req_trigger_update)
+				if (which_trig == StmtNode::PRE_TRIG && trigger_action == TRIGGER_UPDATE)
 				{
 					new_rpb->rpb_number = old_rpb->rpb_number;
 				}

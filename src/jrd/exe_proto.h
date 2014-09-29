@@ -37,14 +37,14 @@ void EXE_assignment(Jrd::thread_db*, const Jrd::ValueExprNode*, const Jrd::Value
 void EXE_assignment(Jrd::thread_db* tdbb, const Jrd::ValueExprNode* to, dsc* from_desc, bool from_null,
 	const Jrd::ValueExprNode* missing_node, const Jrd::ValueExprNode* missing2_node);
 
-void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum Jrd::jrd_req::req_ta);
+void EXE_execute_db_triggers(Jrd::thread_db*, Jrd::jrd_tra*, enum TriggerAction);
 void EXE_execute_ddl_triggers(Jrd::thread_db* tdbb, Jrd::jrd_tra* transaction,
 	bool preTriggers, int action);
 const Jrd::StmtNode* EXE_looper(Jrd::thread_db* tdbb, Jrd::jrd_req* request,
 	const Jrd::StmtNode* in_node);
 
 void EXE_execute_triggers(Jrd::thread_db*, Jrd::trig_vec**, Jrd::record_param*, Jrd::record_param*,
-	Jrd::jrd_req::req_ta, Jrd::StmtNode::WhichTrigger);
+	enum TriggerAction, Jrd::StmtNode::WhichTrigger);
 
 void EXE_receive(Jrd::thread_db*, Jrd::jrd_req*, USHORT, ULONG, UCHAR*, bool = false);
 void EXE_release(Jrd::thread_db*, Jrd::jrd_req*);

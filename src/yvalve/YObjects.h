@@ -528,6 +528,22 @@ private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
+class UtlInterface FB_FINAL : public Firebird::AutoIface<Firebird::Api::UtlImpl<UtlInterface> >
+{
+	// IUtl implementation
+public:
+	void getFbVersion(Firebird::IStatus* status, Firebird::IAttachment* att,
+		Firebird::IVersionCallback* callback);
+	void loadBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
+		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
+	void dumpBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
+		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
+	void getPerfCounters(Firebird::IStatus* status, Firebird::IAttachment* att,
+		const char* countersSet, ISC_INT64* counters);			// in perf.cpp
+	YAttachment* executeCreateDatabase(Firebird::IStatus* status,
+		unsigned stmtLength, const char* creatDBstatement, unsigned dialect,
+		FB_BOOLEAN* stmtIsCreateDb = NULL);
+};
 
 }	// namespace Why
 

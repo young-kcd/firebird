@@ -61,6 +61,7 @@
 #include "../common/classes/TempFile.h"
 #include "../common/classes/FpeControl.h"
 #include "../common/os/path_utils.h"
+#include "../common/StatusHolder.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -106,7 +107,7 @@ enum literal_string_type
 #include "../jrd/constants.h"
 #include "../jrd/ods.h"
 #include "../common/file_params.h"
-//#include "../common/stuff.h"
+#include "../common/classes/ImplementHelper.h"
 #include "../isql/extra_proto.h"
 #include "../isql/isql_proto.h"
 #include "../isql/show_proto.h"

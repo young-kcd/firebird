@@ -32,13 +32,18 @@
 #include "TracePluginImpl.h"
 #include "PluginLogWriter.h"
 #include "os/platform.h"
+#include "consts_pub.h"
 #include "../../common/isc_f_proto.h"
-#include "../../jrd/req.h"
-#include "../../jrd/svc.h"
+#include "../../jrd/RuntimeStatistics.h"
+#include "../../common/dsc.h"
+#include "../../common/utils_proto.h"
+#include "../../common/UtilSvc.h"
+#include "../../jrd/svc_undoc.h"
+#include "../../jrd/constants.h"
 #include "../../common/os/path_utils.h"
 #include "../../jrd/inf_pub.h"
 #include "../../dsql/sqlda_pub.h"
-#include "../common/classes/ImplementHelper.h"
+#include "../../common/classes/ImplementHelper.h"
 
 
 using namespace Firebird;
@@ -1959,31 +1964,31 @@ void TracePluginImpl::log_event_trigger_execute(ITraceDatabaseConnection* connec
 
 	switch (trigger->getAction())
 	{
-		case jrd_req::req_trigger_insert:
+		case TRIGGER_INSERT:
 			action.append("INSERT");
 			break;
-		case jrd_req::req_trigger_update:
+		case TRIGGER_UPDATE:
 			action.append("UPDATE");
 			break;
-		case jrd_req::req_trigger_delete:
+		case TRIGGER_DELETE:
 			action.append("DELETE");
 			break;
-		case jrd_req::req_trigger_connect:
+		case TRIGGER_CONNECT:
 			action.append("CONNECT");
 			break;
-		case jrd_req::req_trigger_disconnect:
+		case TRIGGER_DISCONNECT:
 			action.append("DISCONNECT");
 			break;
-		case jrd_req::req_trigger_trans_start:
+		case TRIGGER_TRANS_START:
 			action.append("TRANSACTION_START");
 			break;
-		case jrd_req::req_trigger_trans_commit:
+		case TRIGGER_TRANS_COMMIT:
 			action.append("TRANSACTION_COMMIT");
 			break;
-		case jrd_req::req_trigger_trans_rollback:
+		case TRIGGER_TRANS_ROLLBACK:
 			action.append("TRANSACTION_ROLLBACK");
 			break;
-		case jrd_req::req_trigger_ddl:
+		case TRIGGER_DDL:
 			action.append("DDL");
 			break;
 		default:

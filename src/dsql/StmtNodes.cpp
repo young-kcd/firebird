@@ -93,7 +93,7 @@ static void pass1Validations(thread_db* tdbb, CompilerScratch* csb, Array<Valida
 static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 	ExternalAccess::exa_act operation, jrd_rel* view);
 static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
-	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, jrd_req::req_ta op);
+	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op);
 static void validateExpressions(thread_db* tdbb, const Array<ValidateInfo>& validations);
 
 }	// namespace Jrd
@@ -2283,8 +2283,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 		++transaction->tra_save_point->sav_verb_count;
 
 	// Handle pre-operation trigger.
-	preModifyEraseTriggers(tdbb, &relation->rel_pre_erase, whichTrig, rpb, NULL,
-		jrd_req::req_trigger_delete);
+	preModifyEraseTriggers(tdbb, &relation->rel_pre_erase, whichTrig, rpb, NULL, TRIGGER_DELETE);
 
 	if (relation->rel_file)
 		EXT_erase(rpb, transaction);
@@ -2296,8 +2295,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	// Handle post operation trigger.
 	if (relation->rel_post_erase && whichTrig != PRE_TRIG)
 	{
-		EXE_execute_triggers(tdbb, &relation->rel_post_erase, rpb, NULL,
-			jrd_req::req_trigger_delete, POST_TRIG);
+		EXE_execute_triggers(tdbb, &relation->rel_post_erase, rpb, NULL, TRIGGER_DELETE, POST_TRIG);
 	}
 
 	// Call IDX_erase (which checks constraints) after all post erase triggers have fired.
@@ -3499,7 +3497,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
+			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
 		}
 
 		return action;
@@ -3519,7 +3517,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 		if (!(attachment->att_flags & ATT_no_db_triggers))
 		{
 			// run ON TRANSACTION COMMIT triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_commit);
+			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_COMMIT);
 		}
 
 		if (transaction->tra_save_point &&
@@ -3544,8 +3542,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 				if (!(attachment->att_flags & ATT_no_db_triggers))
 				{
 					// run ON TRANSACTION COMMIT triggers
-					EXE_execute_db_triggers(tdbb, transaction,
-											jrd_req::req_trigger_trans_commit);
+					EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_COMMIT);
 				}
 
 				if (transaction->tra_save_point &&
@@ -3574,8 +3571,7 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 				try
 				{
 					// run ON TRANSACTION ROLLBACK triggers
-					EXE_execute_db_triggers(tdbb, transaction,
-											jrd_req::req_trigger_trans_rollback);
+					EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_ROLLBACK);
 				}
 				catch (const Exception&)
 				{
@@ -5875,7 +5871,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 					++transaction->tra_save_point->sav_verb_count;
 
 				preModifyEraseTriggers(tdbb, &relation->rel_pre_modify, whichTrig, orgRpb, newRpb,
-					jrd_req::req_trigger_update);
+					TRIGGER_UPDATE);
 
 				if (validations.hasData())
 					validateExpressions(tdbb, validations);
@@ -5896,7 +5892,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				if (relation->rel_post_modify && whichTrig != PRE_TRIG)
 				{
 					EXE_execute_triggers(tdbb, &relation->rel_post_modify, orgRpb, newRpb,
-						jrd_req::req_trigger_update, POST_TRIG);
+						TRIGGER_UPDATE, POST_TRIG);
 				}
 
 				// Now call IDX_modify_check_constrints after all post modify triggers
@@ -6687,7 +6683,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 			if (relation->rel_pre_store && whichTrig != POST_TRIG)
 			{
 				EXE_execute_triggers(tdbb, &relation->rel_pre_store, NULL, rpb,
-					jrd_req::req_trigger_insert, PRE_TRIG);
+					TRIGGER_INSERT, PRE_TRIG);
 			}
 
 			if (validations.hasData())
@@ -6717,7 +6713,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 			if (relation->rel_post_store && whichTrig != PRE_TRIG)
 			{
 				EXE_execute_triggers(tdbb, &relation->rel_post_store, NULL, rpb,
-					jrd_req::req_trigger_insert, POST_TRIG);
+					TRIGGER_INSERT, POST_TRIG);
 			}
 
 			// CVC: Increment the counter only if we called VIO/EXT_store() and we were successful.
@@ -8906,7 +8902,7 @@ static void postTriggerAccess(CompilerScratch* csb, jrd_rel* ownerRelation,
 
 // Perform operation's pre-triggers, storing active rpb in chain.
 static void preModifyEraseTriggers(thread_db* tdbb, trig_vec** trigs,
-	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, jrd_req::req_ta op)
+	StmtNode::WhichTrigger whichTrig, record_param* rpb, record_param* rec, TriggerAction op)
 {
 	if (!tdbb->getTransaction()->tra_rpblist)
 	{

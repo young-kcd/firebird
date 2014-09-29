@@ -300,6 +300,20 @@ enum TriggerType {
 	POST_ERASE_TRIGGER = 6
 };
 
+enum TriggerAction {
+	// Order should be maintained because the numbers are stored in BLR
+	// and should be in sync with IExternalTrigger::ACTION_* .
+	TRIGGER_INSERT = 1,
+	TRIGGER_UPDATE = 2,
+	TRIGGER_DELETE = 3,
+	TRIGGER_CONNECT = 4,
+	TRIGGER_DISCONNECT  = 5,
+	TRIGGER_TRANS_START = 6,
+	TRIGGER_TRANS_COMMIT = 7,
+	TRIGGER_TRANS_ROLLBACK = 8,
+	TRIGGER_DDL = 9
+};
+
 const unsigned TRIGGER_TYPE_SHIFT			= 13;
 const FB_UINT64 TRIGGER_TYPE_MASK			= (QUADCONST(3) << TRIGGER_TYPE_SHIFT);
 

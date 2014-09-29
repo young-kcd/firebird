@@ -1831,7 +1831,7 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 						attachment->att_flags = save_flags;
 
 						// run ON CONNECT triggers
-						EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_connect);
+						EXE_execute_db_triggers(tdbb, transaction, TRIGGER_CONNECT);
 
 						// and commit the transaction
 						TRA_commit(tdbb, transaction, false);
@@ -6365,7 +6365,7 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
 					tdbb->tdbb_status_vector = temp_status;
 
 					// run ON TRANSACTION ROLLBACK triggers
-					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_rollback);
+					EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_ROLLBACK);
 				}
 				catch (const Exception&)
 				{
@@ -6857,7 +6857,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 					attachment->att_flags = save_flags;
 
 					// run ON DISCONNECT triggers
-					EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_disconnect);
+					EXE_execute_db_triggers(tdbb, transaction, TRIGGER_DISCONNECT);
 
 					// and commit the transaction
 					TRA_commit(tdbb, transaction, false);
@@ -6967,8 +6967,7 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 	try
 	{
 		// run ON TRANSACTION COMMIT triggers
-		EXE_execute_db_triggers(tdbb, transaction,
-								jrd_req::req_trigger_trans_commit);
+		EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_COMMIT);
 		VIO_verb_cleanup(tdbb, transaction);
 	}
 	catch (const Exception&)
@@ -7738,7 +7737,7 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 			*tra_handle = transaction;
 
 			// run ON TRANSACTION START triggers
-			EXE_execute_db_triggers(tdbb, transaction, jrd_req::req_trigger_trans_start);
+			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_START);
 		}
 		catch (const Exception& ex)
 		{

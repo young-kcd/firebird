@@ -27,7 +27,6 @@
 #include <firebird/Interface.h>
 
 #include "fb_types.h"
-#include "../yvalve/YObjects.h"
 #include "../common/classes/ImplementHelper.h"
 
 #ifdef __cplusplus
@@ -81,28 +80,6 @@ namespace Firebird
 	class ClumpletWriter;
 }
 void setLogin(Firebird::ClumpletWriter& dpb, bool spbFlag);
-
-namespace Why
-{
-
-class UtlInterface : public Firebird::AutoIface<Firebird::Api::UtlImpl<UtlInterface> >
-{
-	// IUtl implementation
-public:
-	void getFbVersion(Firebird::IStatus* status, Firebird::IAttachment* att,
-		Firebird::IVersionCallback* callback);
-	void loadBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
-		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
-	void dumpBlob(Firebird::IStatus* status, ISC_QUAD* blobId, Firebird::IAttachment* att,
-		Firebird::ITransaction* tra, const char* file, FB_BOOLEAN txt);
-	void getPerfCounters(Firebird::IStatus* status, Firebird::IAttachment* att,
-		const char* countersSet, ISC_INT64* counters);			// in perf.cpp
-	YAttachment* executeCreateDatabase(Firebird::IStatus* status,
-		unsigned stmtLength, const char* creatDBstatement, unsigned dialect,
-		FB_BOOLEAN* stmtIsCreateDb = NULL);
-};
-
-}
 
 #endif // JRD_UTL_PROTO_H
 

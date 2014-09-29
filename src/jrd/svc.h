@@ -41,16 +41,6 @@
 #include "../common/classes/ClumpletReader.h"
 #include "../burp/split/spit.h"
 
-#ifndef IO_BUFFER_SIZE
-#ifdef BUFSIZ
-const int SVC_IO_BUFFER_SIZE = (16 * (BUFSIZ));
-#else // BUFSIZ
-const int SVC_IO_BUFFER_SIZE = (16 * (1024));
-#endif // BUFSIZ
-#else // IO_BUFFER_SIZE
-const int SVC_IO_BUFFER_SIZE = (16 * (IO_BUFFER_SIZE));
-#endif // IO_BUFFER_SIZE
-
 // forward decl.
 
 namespace Jrd {

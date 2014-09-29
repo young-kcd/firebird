@@ -32,6 +32,8 @@ const int FILE_IS_FULL			= -9;
 
 const int K_BYTES				= 1024;
 const int IO_BUFFER_SIZE		= (16 * K_BYTES);
+const int SVC_IO_BUFFER_SIZE	= (16 * (IO_BUFFER_SIZE));
+const int GBAK_IO_BUFFER_SIZE	= SVC_IO_BUFFER_SIZE;
 
 const int M_BYTES				= (K_BYTES * K_BYTES);
 const int G_BYTES				= (K_BYTES * M_BYTES);

@@ -321,20 +321,7 @@ public:
 	Firebird::Array<record_param> req_rpb;	// record parameter blocks
 	Firebird::Array<UCHAR> impureArea;		// impure area
 	USHORT charSetId;						// "client" character set of the request
-
-	enum req_ta {
-		// Order should be maintained because the numbers are stored in BLR
-		// and should be in sync with IExternalTrigger::ACTION_* .
-		req_trigger_insert			= 1,
-		req_trigger_update			= 2,
-		req_trigger_delete			= 3,
-		req_trigger_connect			= 4,
-		req_trigger_disconnect		= 5,
-		req_trigger_trans_start		= 6,
-		req_trigger_trans_commit	= 7,
-		req_trigger_trans_rollback	= 8,
-		req_trigger_ddl				= 9
-	} req_trigger_action;			// action that caused trigger to fire
+	TriggerAction req_trigger_action;		// action that caused trigger to fire
 
 	enum req_s {
 		req_evaluate,

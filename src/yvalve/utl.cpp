@@ -53,6 +53,7 @@
 #include "../jrd/event.h"
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/utl_proto.h"
+#include "../yvalve/YObjects.h"
 #include "../yvalve/why_proto.h"
 #include "../yvalve/prepa_proto.h"
 #include "../jrd/constants.h"
