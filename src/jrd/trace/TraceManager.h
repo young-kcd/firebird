@@ -70,7 +70,7 @@ public:
 
 	/* Start/end transaction */
 	void event_transaction_start(Firebird::ITraceDatabaseConnection* connection, Firebird::ITraceTransaction* transaction,
-		size_t tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
+		unsigned tpb_length, const ntrace_byte_t* tpb, ntrace_result_t tra_result);
 
 	void event_transaction_end(Firebird::ITraceDatabaseConnection* connection, Firebird::ITraceTransaction* transaction,
 		bool commit, bool retain_context, ntrace_result_t tra_result);
@@ -102,12 +102,12 @@ public:
 	void event_service_attach(Firebird::ITraceServiceConnection* service, ntrace_result_t att_result);
 
 	void event_service_start(Firebird::ITraceServiceConnection* service,
-		size_t switches_length, const char* switches,
+		unsigned switches_length, const char* switches,
 		ntrace_result_t start_result);
 
 	void event_service_query(Firebird::ITraceServiceConnection* service,
-		size_t send_item_length, const ntrace_byte_t* send_items,
-		size_t recv_item_length, const ntrace_byte_t* recv_items,
+		unsigned send_item_length, const ntrace_byte_t* send_items,
+		unsigned recv_item_length, const ntrace_byte_t* recv_items,
 		ntrace_result_t query_result);
 
 	void event_service_detach(Firebird::ITraceServiceConnection* service, ntrace_result_t detach_result);

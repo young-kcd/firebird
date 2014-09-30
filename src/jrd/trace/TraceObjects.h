@@ -102,7 +102,7 @@ template <class Final>
 class BLRPrinter : public Firebird::AutoIface<Firebird::Api::TraceBLRStatementImpl<Final> >
 {
 public:
-	BLRPrinter(const unsigned char* blr, size_t length) :
+	BLRPrinter(const unsigned char* blr, unsigned length) :
 		m_blr(blr),
 		m_length(length),
 		m_text(*getDefaultMemoryPool())
@@ -155,7 +155,7 @@ private:
 class TraceFailedBLRStatement : public BLRPrinter<TraceFailedBLRStatement>
 {
 public:
-	TraceFailedBLRStatement(const unsigned char* blr, size_t length) :
+	TraceFailedBLRStatement(const unsigned char* blr, unsigned length) :
 		BLRPrinter(blr, length)
 	{}
 

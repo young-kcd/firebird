@@ -39,7 +39,7 @@ using namespace Jrd;
 // Data access: procedure scan
 // ---------------------------
 
-ProcedureScan::ProcedureScan(CompilerScratch* csb, const Firebird::string& alias, StreamType stream,
+ProcedureScan::ProcedureScan(CompilerScratch* csb, const string& alias, StreamType stream,
 							 const jrd_prc* procedure, const ValueListNode* sourceList,
 							 const ValueListNode* targetList, MessageNode* message)
 	: RecordStream(csb, stream, procedure->prc_record_format), m_alias(csb->csb_pool, alias),
@@ -115,9 +115,9 @@ void ProcedureScan::open(thread_db* tdbb) const
 		if (iml)
 			EXE_send(tdbb, proc_request, 0, iml, im);
 
-		trace.finish(true, Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
+		trace.finish(true, ITracePlugin::TRACE_RESULT_SUCCESS);
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
 		close(tdbb);
 		throw;
@@ -205,19 +205,19 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 
 		if (!eos)
 		{
-			trace.fetch(true, Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
+			trace.fetch(true, ITracePlugin::TRACE_RESULT_SUCCESS);
 			rpb->rpb_number.setValid(false);
 			return false;
 		}
 	}
-	catch (const Firebird::Exception&)
+	catch (const Exception&)
 	{
-		trace.fetch(true, Firebird::ITracePlugin::TRACE_RESULT_FAILED);
+		trace.fetch(true, ITracePlugin::TRACE_RESULT_FAILED);
 		close(tdbb);
 		throw;
 	}
 
-	trace.fetch(false, Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
+	trace.fetch(false, ITracePlugin::TRACE_RESULT_SUCCESS);
 
 	for (unsigned i = 0; i < rec_format->fmt_count; i++)
 	{

@@ -339,7 +339,7 @@ void TraceManager::event_detach(ITraceDatabaseConnection* connection, bool drop_
 }
 
 void TraceManager::event_transaction_start(ITraceDatabaseConnection* connection,
-		ITraceTransaction* transaction, size_t tpb_length, const ntrace_byte_t* tpb,
+		ITraceTransaction* transaction, unsigned tpb_length, const ntrace_byte_t* tpb,
 		ntrace_result_t tra_result)
 {
 	EXECUTE_HOOKS(trace_transaction_start,
@@ -438,7 +438,7 @@ void TraceManager::event_service_attach(ITraceServiceConnection* service, ntrace
 }
 
 void TraceManager::event_service_start(ITraceServiceConnection* service,
-		size_t switches_length, const char* switches,
+		unsigned switches_length, const char* switches,
 		ntrace_result_t start_result)
 {
 	EXECUTE_HOOKS(trace_service_start,
@@ -446,8 +446,8 @@ void TraceManager::event_service_start(ITraceServiceConnection* service,
 }
 
 void TraceManager::event_service_query(ITraceServiceConnection* service,
-		size_t send_item_length, const ntrace_byte_t* send_items,
-		size_t recv_item_length, const ntrace_byte_t* recv_items,
+		unsigned send_item_length, const ntrace_byte_t* send_items,
+		unsigned recv_item_length, const ntrace_byte_t* recv_items,
 		ntrace_result_t query_result)
 {
 	EXECUTE_HOOKS(trace_service_query,
