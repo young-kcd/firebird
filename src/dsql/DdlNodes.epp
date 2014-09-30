@@ -9900,7 +9900,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 				msg->getMetadata(), msg->getBuffer(), NULL, NULL);
 			check(s);
 		}
-		catch(const Exception& ex)
+		catch(const Exception&)
 		{
 			if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
