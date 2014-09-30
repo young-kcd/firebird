@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include "../jrd/ibase.h"
-#include "../jrd/jrd.h"
 #include "../auth/SecurityDatabase/LegacyServer.h"
 #include "../auth/SecurityDatabase/LegacyHash.h"
 #include "../common/enc_proto.h"
@@ -123,6 +122,21 @@ const UCHAR TPB[4] =
 } // anonymous namespace
 
 namespace Auth {
+
+class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ServerImpl<SecurityDatabaseServer> >
+{
+public:
+	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)
+		: iParameter(p)
+	{ }
+
+	// IServer implementation
+	int authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
+	int release();
+
+private:
+	Firebird::RefPtr<Firebird::IPluginConfig> iParameter;
+};
 
 class SecurityDatabase FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TimerImpl<SecurityDatabase> >
 {

@@ -1178,13 +1178,13 @@ void Monitoring::dumpAttachment(thread_db* tdbb, const Attachment* attachment, b
 
 			switch (bm->getState())
 			{
-			case nbak_state_normal:
+			case Ods::hdr_nbak_normal:
 				backup_state = backup_state_normal;
 				break;
-			case nbak_state_stalled:
+			case Ods::hdr_nbak_stalled:
 				backup_state = backup_state_stalled;
 				break;
-			case nbak_state_merge:
+			case Ods::hdr_nbak_merge:
 				backup_state = backup_state_merge;
 				break;
 			}

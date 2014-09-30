@@ -43,21 +43,6 @@
 
 namespace Auth {
 
-class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ServerImpl<SecurityDatabaseServer> >
-{
-public:
-	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)
-		: iParameter(p)
-	{ }
-
-	// IServer implementation
-	int authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
-	int release();
-
-private:
-	Firebird::RefPtr<Firebird::IPluginConfig> iParameter;
-};
-
 void registerLegacyServer(Firebird::IPluginManager* iPlugin);
 
 } // namespace Auth

@@ -37,7 +37,6 @@
 
 #include "../common/db_alias.h"
 #include "../jrd/ods.h"
-#include "../jrd/nbak.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/os/path_utils.h"
 #include "../common/os/guid.h"
@@ -52,6 +51,8 @@
 #include "../common/classes/Switches.h"
 #include "../utilities/nbackup/nbkswi.h"
 #include "../common/isc_f_proto.h"
+#include "../common/StatusArg.h"
+#include "../common/classes/objects_array.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -214,7 +215,7 @@ namespace
 		return rc;
 	}
 #else // HAVE_POSIX_FADVISE
-	int fb_fadvise(int, off_t, off_t, int)
+	int fb_fadvise(int, int, int, int)
 	{
 		return 0;
 	}
@@ -715,12 +716,12 @@ void NBackup::fixup_database()
 		status_exception::raise(Arg::Gds(isc_nbackup_err_eofdb) << dbname.c_str());
 
 	const int backup_state = header.hdr_flags & Ods::hdr_backup_mask;
-	if (backup_state != Jrd::nbak_state_stalled)
+	if (backup_state != Ods::hdr_nbak_stalled)
 	{
 		status_exception::raise(Arg::Gds(isc_nbackup_fixup_wrongstate) << dbname.c_str() <<
-			Arg::Num(Jrd::nbak_state_stalled));
+			Arg::Num(Ods::hdr_nbak_stalled));
 	}
-	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | Jrd::nbak_state_normal;
+	header.hdr_flags = (header.hdr_flags & ~Ods::hdr_backup_mask) | Ods::hdr_nbak_normal;
 	seek_file(dbase, 0);
 	write_file(dbase, &header, sizeof(header));
 	close_database();
@@ -1047,7 +1048,7 @@ void NBackup::backup_database(int level, const PathName& fname)
 									Arg::Num(ODS_CURRENT));
 		}
 
-		if ((header->hdr_flags & Ods::hdr_backup_mask) != Jrd::nbak_state_stalled)
+		if ((header->hdr_flags & Ods::hdr_backup_mask) != Ods::hdr_nbak_stalled)
 			status_exception::raise(Arg::Gds(isc_nbackup_db_notlock) << Arg::Num(header->hdr_flags));
 
 		Array<UCHAR> unaligned_page_buffer;

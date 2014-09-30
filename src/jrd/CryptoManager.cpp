@@ -410,7 +410,7 @@ namespace Jrd {
 						}
 
 						// nbackup state check
-						if (dbb.dbb_backup_manager && dbb.dbb_backup_manager->getState() != nbak_state_normal)
+						if (dbb.dbb_backup_manager && dbb.dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
 						{
 							if (static_cast<ULONG>(currentPage.exchangeAdd(-1)) >= lastPage)
 							{

@@ -1935,7 +1935,7 @@ static bool add_difference(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 	case 3:
 		{
 			BackupManager::StateReadGuard stateGuard(tdbb);
-			if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
+			if (dbb->dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
 			{
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
 						 Arg::Gds(isc_wrong_backup_state));
@@ -1975,7 +1975,7 @@ static bool delete_difference(thread_db* tdbb, SSHORT phase, DeferredWork*, jrd_
 		{
 			BackupManager::StateReadGuard stateGuard(tdbb);
 
-			if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
+			if (dbb->dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
 			{
 				ERR_post(Arg::Gds(isc_no_meta_update) <<
 						 Arg::Gds(isc_wrong_backup_state));

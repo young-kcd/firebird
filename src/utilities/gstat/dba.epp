@@ -41,7 +41,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/btn.h"
-#include "../jrd/svc.h"
 #include "../jrd/license.h"
 #include "../common/msg_encode.h"
 #include "../common/gdsassert.h"

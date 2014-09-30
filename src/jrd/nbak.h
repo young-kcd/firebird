@@ -111,12 +111,6 @@ protected:
 	virtual void invalidate(thread_db* tdbb);
 };
 
-// Note this flags MUST correspond with backup mask in ods.h
-const USHORT nbak_state_normal	= 0x000;	// Normal mode. Changes are simply written to main files
-const USHORT nbak_state_stalled	= 0x400;	// 1024 Main files are locked. Changes are written to diff file
-const USHORT nbak_state_merge	= 0x800;	// 2048 Merging changes from diff file into main files
-const USHORT nbak_state_unknown	= USHORT(~0);	// State is unknown. Needs to be read from disk
-
 /*
  *  The functional responsibilities of NBAK are:
  *  1. to redirect writes to difference files when asked (ALTER DATABASE BEGIN
@@ -130,7 +124,7 @@ const USHORT nbak_state_unknown	= USHORT(~0);	// State is unknown. Needs to be r
  *  5. to increment SCN on each change of backup state
  *
  *  The backup state cycle is:
- *  nbak_state_normal -> nbak_state_stalled -> nbak_state_merge -> nbak_state_normal
+ *  hdr_nbak_normal -> hdr_nbak_stalled -> hdr_nbak_merge -> hdr_nbak_normal
  *  - In normal state writes go directly to the main database files.
  *  - In stalled state writes go to the difference file only and the main files are
  *  read-only.
@@ -169,9 +163,9 @@ const USHORT nbak_state_unknown	= USHORT(~0);	// State is unknown. Needs to be r
  *  take WRITE lock of this kind. READ lock is necessary to read the table.
  *
  *  LCK_backup_end is used to ensure reliable execution of state transition from
- *  nbak_state_merge to nbak_state_normal (MERGE process). Taking of WRITE (LCK_EX)
+ *  hdr_nbak_merge to hdr_nbak_normal (MERGE process). Taking of WRITE (LCK_EX)
  *  lock of this kind is needed to perform the MERGE. Every new attachment attempts
- *  to finalize incomplete merge if the database is in nbak_state_merge mode and
+ *  to finalize incomplete merge if the database is in hdr_nbak_merge mode and
  *  this lock is not taken.
  */
 
@@ -330,7 +324,7 @@ public:
 	~BackupManager();
 
 	// Set difference file name in header.
-	// State must be locked and equal to nbak_state_normal to call this method
+	// State must be locked and equal to hdr_nbak_normal to call this method
 	void setDifference(thread_db* tdbb, const char* filename);
 
 	// Return current backup state
@@ -374,7 +368,7 @@ public:
 	{
 		fb_assert(tdbb->tdbb_flags & TDBB_backup_write_locked);
 		tdbb->tdbb_flags &= ~TDBB_backup_write_locked;
-		stateLock->unlockWrite(tdbb, backup_state == nbak_state_unknown);
+		stateLock->unlockWrite(tdbb, backup_state == Ods::hdr_nbak_unknown);
 	}
 
 	bool lockStateRead(thread_db* tdbb, SSHORT wait)

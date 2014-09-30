@@ -435,7 +435,7 @@ static void check_backup_state(thread_db* tdbb)
 
 	BackupManager::StateReadGuard stateGuard(tdbb);
 
-	if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
+	if (dbb->dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
 	{
 		ERR_post(Arg::Gds(isc_bad_shutdown_mode) << Arg::Str(dbb->dbb_filename));
 	}

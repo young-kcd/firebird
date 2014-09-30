@@ -94,7 +94,7 @@ void NBackupStateLock::invalidate(thread_db* tdbb)
 {
 	GlobalRWLock::invalidate(tdbb);
 	NBAK_TRACE( ("invalidate state stateLock(%p)", this) );
-	backup_manager->setState(nbak_state_unknown);
+	backup_manager->setState(Ods::hdr_nbak_unknown);
 	backup_manager->closeDelta();
 }
 
@@ -175,7 +175,7 @@ BackupManager::StateWriteGuard::~StateWriteGuard()
 	if (!m_success)
 	{
 		NBAK_TRACE( ("invalidate state") );
-		dbb->dbb_backup_manager->setState(nbak_state_unknown);
+		dbb->dbb_backup_manager->setState(Ods::hdr_nbak_unknown);
 	}
 
 	releaseHeader();
@@ -239,7 +239,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 	Ods::header_page* header = (Ods::header_page*) window.win_buffer;
 
 	// Check state
-	if (backup_state != nbak_state_normal)
+	if (backup_state != Ods::hdr_nbak_normal)
 	{
 		NBAK_TRACE(("begin backup - invalid state %d", backup_state));
 		stateGuard.setSuccess();
@@ -256,7 +256,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 	{
 		// no reasons to set it to unknown if we just failed to create difference file
 		stateGuard.setSuccess();
-		backup_state = nbak_state_normal;
+		backup_state = Ods::hdr_nbak_normal;
 		throw;
 	}
 
@@ -313,7 +313,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 		GenerateGuid(&guid);
 		// Set state in database header page. All changes are written to main database file yet.
 		CCH_MARK_MUST_WRITE(tdbb, &window);
-		const int newState = nbak_state_stalled; // Should be USHORT?
+		const int newState = Ods::hdr_nbak_stalled; // Should be USHORT?
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | newState;
 		const ULONG adjusted_scn = ++header->hdr_header.pag_scn; // Generate new SCN
 		PAG_replace_entry_first(tdbb, header, Ods::HDR_backup_guid, sizeof(guid),
@@ -333,7 +333,7 @@ void BackupManager::beginBackup(thread_db* tdbb)
 // Determine actual DB size (raw devices support)
 ULONG BackupManager::getPageCount()
 {
-	if (backup_state != nbak_state_stalled)
+	if (backup_state != Ods::hdr_nbak_stalled)
 	{
 		// calculate pages only when database is locked for backup:
 		// other case such service is just dangerous
@@ -449,21 +449,21 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		{ // scope
 			StateReadGuard stateGuard(tdbb);
 			// Nobody is doing end_backup but database isn't in merge state.
-			if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) )
+			if ( (recover || backup_state != Ods::hdr_nbak_stalled) && (backup_state != Ods::hdr_nbak_merge ) )
 			{
 				NBAK_TRACE(("invalid state %d", backup_state));
 				endLock.unlockWrite(tdbb);
 				return;
 			}
 
-			if (backup_state == nbak_state_stalled && !extendDatabase(tdbb))
+			if (backup_state == Ods::hdr_nbak_stalled && !extendDatabase(tdbb))
 				status_exception::raise(tdbb->tdbb_status_vector);
 		}
 
 		// Here backup state can be changed. Need to check it again after lock
 		StateWriteGuard stateGuard(tdbb, &window);
 
-		if ( (recover || backup_state != nbak_state_stalled) && (backup_state != nbak_state_merge ) )
+		if ( (recover || backup_state != Ods::hdr_nbak_stalled) && (backup_state != Ods::hdr_nbak_merge ) )
 		{
 			stateGuard.setSuccess();
 			NBAK_TRACE(("invalid state %d", backup_state));
@@ -482,7 +482,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		NBAK_TRACE(("difference file %s, current backup state is %d", diff_name.c_str(), backup_state));
 
 		// Set state in database header
-		backup_state = nbak_state_merge;
+		backup_state = Ods::hdr_nbak_merge;
 #ifdef NBAK_DEBUG
 		adjusted_scn =
 #endif
@@ -570,7 +570,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 		header = (Ods::header_page*) window.win_buffer;
 
 		// Set state in database header
-		backup_state = nbak_state_normal;
+		backup_state = Ods::hdr_nbak_normal;
 		CCH_MARK_MUST_WRITE(tdbb, &window);
 		// Adjust state
 		header->hdr_flags = (header->hdr_flags & ~Ods::hdr_backup_mask) | backup_state;
@@ -612,7 +612,7 @@ void BackupManager::endBackup(thread_db* tdbb, bool recover)
 void BackupManager::initializeAlloc(thread_db* tdbb)
 {
 	StateReadGuard stateGuard(tdbb);
-	if (getState() != nbak_state_normal)
+	if (getState() != Ods::hdr_nbak_normal)
 		actualizeAlloc(tdbb, false);
 }
 
@@ -708,7 +708,7 @@ ULONG BackupManager::getPageIndex(thread_db* tdbb, ULONG db_page)
 		LocalAllocReadGuard localAllocGuard(this);
 
 		const ULONG diff_page = findPageIndex(tdbb, db_page);
-		if (diff_page || backup_state == nbak_state_merge && allocIsValid)
+		if (diff_page || backup_state == Ods::hdr_nbak_merge && allocIsValid)
 			return diff_page;
 	}
 
@@ -905,7 +905,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 
 	if (dbCreating)
 	{
-		backup_state = nbak_state_normal;
+		backup_state = Ods::hdr_nbak_normal;
 		return true;
 	}
 
@@ -969,7 +969,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 	if (!explicit_diff_name)
 		generateFilename();
 
-	if (new_backup_state == nbak_state_normal || missed_cycle)
+	if (new_backup_state == Ods::hdr_nbak_normal || missed_cycle)
 	{
 		// Page allocation table cache is no longer valid.
 		LocalAllocWriteGuard localAllocGuard(this);
@@ -987,7 +987,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 		closeDelta();
 	}
 
-	if (new_backup_state != nbak_state_normal && !diff_file)
+	if (new_backup_state != Ods::hdr_nbak_normal && !diff_file)
 		openDelta();
 	// Adjust state at the very and to ensure proper error handling
 	backup_state = new_backup_state;

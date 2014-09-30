@@ -750,7 +750,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 	const ULONG relative_bit = pageNum.getPageNum() - sequence * pageMgr.pagesPerPIP;
 
 	BackupManager::StateReadGuard stateGuard(tdbb);
-	const bool nbak_stalled = dbb->dbb_backup_manager->getState() == nbak_state_stalled;
+	const bool nbak_stalled = dbb->dbb_backup_manager->getState() == Ods::hdr_nbak_stalled;
 
 	USHORT next_init_pages = 1;
 	// ensure there are space on disk for faked page
@@ -1188,7 +1188,7 @@ void PAG_header(thread_db* tdbb, bool info)
 				notUseFSCache);
 		}
 
-		if (dbb->dbb_backup_manager->getState() != nbak_state_normal)
+		if (dbb->dbb_backup_manager->getState() != Ods::hdr_nbak_normal)
 			dbb->dbb_backup_manager->setForcedWrites(forceWrite, notUseFSCache);
 	}
 

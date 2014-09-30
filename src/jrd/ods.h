@@ -400,9 +400,14 @@ const USHORT hdr_no_reserve			= 0x8;		// 8	don't reserve space for versions
 const USHORT hdr_SQL_dialect_3		= 0x10;		// 16	database SQL dialect 3
 const USHORT hdr_read_only			= 0x20;		// 32	Database is ReadOnly. If not set, DB is RW
 const USHORT hdr_encrypted			= 0x40;		// 64	Database is encrypted
-// backup status mask - see bit values in nbak.h
 const USHORT hdr_backup_mask		= 0xC00;
 const USHORT hdr_shutdown_mask		= 0x1080;
+
+// Values for backup mask
+const USHORT hdr_nbak_normal		= 0x000;	// Normal mode. Changes are simply written to main files
+const USHORT hdr_nbak_stalled		= 0x400;	// 1024 Main files are locked. Changes are written to diff file
+const USHORT hdr_nbak_merge			= 0x800;	// 2048 Merging changes from diff file into main files
+const USHORT hdr_nbak_unknown		= USHORT(~0);	// State is unknown. Needs to be read from disk
 
 // Values for shutdown mask
 const USHORT hdr_shutdown_none		= 0x0;

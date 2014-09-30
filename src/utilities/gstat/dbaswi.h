@@ -24,7 +24,7 @@
 #ifndef DBA_DBASWI_H
 #define DBA_DBASWI_H
 
-//#include "../common/common.h"
+#include "../common/classes/Switches.h"
 #include "../jrd/constants.h"
 
 // Switch handling constants.  Note that the first IN_SW_DATA_ITEMS

@@ -46,7 +46,6 @@
 #include "../alice/exe_proto.h"
 #include "../common/msg_encode.h"
 #include "../yvalve/gds_proto.h"
-#include "../jrd/svc.h"
 #include "../alice/alice_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/Switches.h"

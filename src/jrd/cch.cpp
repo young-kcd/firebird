@@ -785,10 +785,10 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 
 	BackupManager* bm = dbb->dbb_backup_manager;
 	const int bak_state = bm->getState();
-	fb_assert(bak_state != nbak_state_unknown);
+	fb_assert(bak_state != Ods::hdr_nbak_unknown);
 
 	ULONG diff_page = 0;
-	if (!isTempPage && bak_state != nbak_state_normal)
+	if (!isTempPage && bak_state != Ods::hdr_nbak_normal)
 	{
 		diff_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
 		NBAK_TRACE(("Reading page %d:%06d, state=%d, diff page=%d",
@@ -797,7 +797,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 
 	// In merge mode, if we are reading past beyond old end of file and page is in .delta file
 	// then we maintain actual page in difference file. Always read it from there.
-	if (isTempPage || bak_state == nbak_state_normal || !diff_page)
+	if (isTempPage || bak_state == Ods::hdr_nbak_normal || !diff_page)
 	{
 		NBAK_TRACE(("Reading page %d:%06d, state=%d, diff page=%d from DISK",
 			bdb->bdb_page.getPageSpaceID(), bdb->bdb_page.getPageNum(), bak_state, diff_page));
@@ -1163,7 +1163,7 @@ void CCH_flush(thread_db* tdbb, USHORT flush_flag, TraNumber tra_number)
 		{
 			BackupManager::StateReadGuard stateGuard(tdbb);
 			const int backup_state = bm->getState();
-			if (backup_state == nbak_state_stalled || backup_state == nbak_state_merge)
+			if (backup_state == Ods::hdr_nbak_stalled || backup_state == Ods::hdr_nbak_merge)
 				bm->flushDifference();
 		}
 
@@ -1814,7 +1814,7 @@ bool set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 
 	const int backup_state = bm->getState();
 
-	if (backup_state == nbak_state_normal)
+	if (backup_state == Ods::hdr_nbak_normal)
 		return true;
 
 	// Temporary pages don't write to delta
@@ -1825,7 +1825,7 @@ bool set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 
 	switch (backup_state)
 	{
-	case nbak_state_stalled:
+	case Ods::hdr_nbak_stalled:
 		bdb->bdb_difference_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
 		if (!bdb->bdb_difference_page)
 		{
@@ -1843,7 +1843,7 @@ bool set_diff_page(thread_db* tdbb, BufferDesc* bdb)
 		}
 		break;
 
-	case nbak_state_merge:
+	case Ods::hdr_nbak_merge:
 		bdb->bdb_difference_page = bm->getPageIndex(tdbb, bdb->bdb_page.getPageNum());
 		if (bdb->bdb_difference_page)
 		{
@@ -4820,7 +4820,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 
 		if (bdb->bdb_page.getPageNum() >= 0)
 		{
-			fb_assert(backup_state != nbak_state_unknown);
+			fb_assert(backup_state != Ods::hdr_nbak_unknown);
 			page->pag_pageno = bdb->bdb_page.getPageNum();
 
 #ifdef NBAK_DEBUG
@@ -4855,8 +4855,8 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 			const bool isTempPage = pageSpace->isTemporary();
 
 			if (!isTempPage &&
-				(backup_state == nbak_state_stalled ||
-					(backup_state == nbak_state_merge && bdb->bdb_difference_page)))
+				(backup_state == Ods::hdr_nbak_stalled ||
+					(backup_state == Ods::hdr_nbak_merge && bdb->bdb_difference_page)))
 			{
 
 				const bool res =
@@ -4870,7 +4870,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const statu
 					return false;
 				}
 			}
-			if (!isTempPage && backup_state == nbak_state_stalled)
+			if (!isTempPage && backup_state == Ods::hdr_nbak_stalled)
 			{
 				// We finished. Adjust transaction accounting and get ready for exit
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER)

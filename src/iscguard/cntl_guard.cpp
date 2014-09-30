@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include <stdio.h>
 #include "../iscguard/cntlg_proto.h"
-#include "../remote/remote.h"
 #include "../utilities/install/install_nt.h"
 #include "../common/isc_proto.h"
 #include "../yvalve/gds_proto.h"

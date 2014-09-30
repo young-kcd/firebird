@@ -31,7 +31,6 @@
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../common/os/guid.h"
-#include "../jrd/nbak.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/classes/DbImplementation.h"
 
@@ -196,10 +195,10 @@ void PPG_print_header(const header_page* header, ULONG page,
 				uSvc->printf(false, ", ");
 			switch (flags & hdr_backup_mask)
 			{
-			case Jrd::nbak_state_stalled:
+			case Ods::hdr_nbak_stalled:
 				uSvc->printf(false, "backup lock");
 				break;
-			case Jrd::nbak_state_merge:
+			case Ods::hdr_nbak_merge:
 				uSvc->printf(false, "backup merge");
 				break;
 			default:
