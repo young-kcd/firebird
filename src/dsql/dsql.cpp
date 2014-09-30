@@ -256,14 +256,14 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 
 	if (eofReached)
 	{
-		trace.fetch(true, ITraceConnection::TRACE_RESULT_SUCCESS);
+		trace.fetch(true, ITracePlugin::TRACE_RESULT_SUCCESS);
 		return false;
 	}
 
 	map_in_out(this, true, message, delayedFormat, msgBuffer);
 	delayedFormat = NULL;
 
-	trace.fetch(false, ITraceConnection::TRACE_RESULT_SUCCESS);
+	trace.fetch(false, ITracePlugin::TRACE_RESULT_SUCCESS);
 	return true;
 }
 
@@ -549,7 +549,7 @@ static void close_cursor(thread_db* tdbb, dsql_req* request)
 			if (request->req_fetch_baseline)
 			{
 				TraceDSQLFetch trace(attachment, request);
-				trace.fetch(true, ITraceConnection::TRACE_RESULT_SUCCESS);
+				trace.fetch(true, ITracePlugin::TRACE_RESULT_SUCCESS);
 			}
 
 			if (request->req_traced && TraceManager::need_dsql_free(attachment))
@@ -716,7 +716,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	catch (const Exception&)
 	{
 		status = tdbb->tdbb_status_vector[1];
-		*traceResult = (status == isc_no_priv ? ITraceConnection::TRACE_RESULT_UNAUTHORIZED : ITraceConnection::TRACE_RESULT_FAILED);
+		*traceResult = (status == isc_no_priv ? ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED);
 	}
 
 	// restore warnings (if there are any)
@@ -886,7 +886,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 	}
 
 	const bool have_cursor = reqTypeWithCursor(statement->getType()) && !singleton;
-	trace.finish(have_cursor, ITraceConnection::TRACE_RESULT_SUCCESS);
+	trace.finish(have_cursor, ITracePlugin::TRACE_RESULT_SUCCESS);
 }
 
 void DsqlDdlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
@@ -950,7 +950,7 @@ void DsqlDdlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 
 	JRD_autocommit_ddl(tdbb, req_transaction);
 
-	trace.finish(false, ITraceConnection::TRACE_RESULT_SUCCESS);
+	trace.finish(false, ITracePlugin::TRACE_RESULT_SUCCESS);
 }
 
 // Rethrow an exception with isc_no_meta_update and prefix codes.
@@ -1499,7 +1499,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		request->req_traced = true;
 		trace.setStatement(request);
 
-		ntrace_result_t traceResult = ITraceConnection::TRACE_RESULT_SUCCESS;
+		ntrace_result_t traceResult = ITracePlugin::TRACE_RESULT_SUCCESS;
 		try
 		{
 			request->dsqlPass(tdbb, scratch, &traceResult);
@@ -1515,7 +1515,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	}
 	catch (const Firebird::Exception&)
 	{
-		trace.prepare(ITraceConnection::TRACE_RESULT_FAILED);
+		trace.prepare(ITracePlugin::TRACE_RESULT_FAILED);
 
 		if (request)
 		{

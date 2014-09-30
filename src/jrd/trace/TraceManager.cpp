@@ -268,17 +268,17 @@ void TraceManager::update_session(const TraceSession& session)
 
 bool TraceManager::need_dsql_prepare(Attachment* att)
 {
-	return att->att_trace_manager->needs(ITraceConnection::TRACE_EVENT_DSQL_PREPARE);
+	return att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DSQL_PREPARE);
 }
 
 bool TraceManager::need_dsql_free(Attachment* att)
 {
-	return att->att_trace_manager->needs(ITraceConnection::TRACE_EVENT_DSQL_FREE);
+	return att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DSQL_FREE);
 }
 
 bool TraceManager::need_dsql_execute(Attachment* att)
 {
-	return att->att_trace_manager->needs(ITraceConnection::TRACE_EVENT_DSQL_EXECUTE);
+	return att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DSQL_EXECUTE);
 }
 
 void TraceManager::event_dsql_prepare(Attachment* att, jrd_tra* transaction,

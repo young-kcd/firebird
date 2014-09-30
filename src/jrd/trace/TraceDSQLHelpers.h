@@ -59,7 +59,7 @@ public:
 
 	~TraceDSQLPrepare()
 	{
-		prepare(Firebird::ITraceConnection::TRACE_RESULT_FAILED);
+		prepare(Firebird::ITracePlugin::TRACE_RESULT_FAILED);
 	}
 
 	void setStatement(dsql_req* request)
@@ -79,7 +79,7 @@ public:
 		const SINT64 millis = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
 			fb_utils::query_performance_frequency();
 
-		if ((result == Firebird::ITraceConnection::TRACE_RESULT_SUCCESS) && m_request)
+		if ((result == Firebird::ITracePlugin::TRACE_RESULT_SUCCESS) && m_request)
 		{
 			TraceSQLStatementImpl stmt(m_request, NULL);
 			TraceManager::event_dsql_prepare(m_attachment, m_transaction, &stmt, millis, result);
@@ -117,7 +117,7 @@ public:
 
 		{	// scope
 			TraceSQLStatementImpl stmt(request, NULL);
-			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
+			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true, Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();
@@ -160,7 +160,7 @@ public:
 
 	~TraceDSQLExecute()
 	{
-		finish(false, Firebird::ITraceConnection::TRACE_RESULT_FAILED);
+		finish(false, Firebird::ITracePlugin::TRACE_RESULT_FAILED);
 	}
 
 private:
@@ -191,7 +191,7 @@ public:
 
 	~TraceDSQLFetch()
 	{
-		fetch(true, Firebird::ITraceConnection::TRACE_RESULT_FAILED);
+		fetch(true, Firebird::ITracePlugin::TRACE_RESULT_FAILED);
 	}
 
 	void fetch(bool eof, ntrace_result_t result)

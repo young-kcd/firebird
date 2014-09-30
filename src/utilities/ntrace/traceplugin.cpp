@@ -56,7 +56,7 @@ int TraceFactoryImpl::release()
 
 ntrace_mask_t TraceFactoryImpl::trace_needs()
 {
-	return (1 << Firebird::ITraceConnection::TRACE_EVENT_MAX) - 1;
+	return (1 << Firebird::ITraceFactory::TRACE_EVENT_MAX) - 1;
 }
 
 Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::IStatus* status, Firebird::ITraceInitInfo* initInfo)

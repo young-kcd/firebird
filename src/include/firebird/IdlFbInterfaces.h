@@ -3673,30 +3673,6 @@ public:
 
 		static const unsigned TRACE_CONNECTION_DATABASE = 1;
 		static const unsigned TRACE_CONNECTION_SERVICE = 2;
-		static const unsigned TRACE_EVENT_ATTACH = 0;
-		static const unsigned TRACE_EVENT_DETACH = 1;
-		static const unsigned TRACE_EVENT_TRANSACTION_START = 2;
-		static const unsigned TRACE_EVENT_TRANSACTION_END = 3;
-		static const unsigned TRACE_EVENT_SET_CONTEXT = 4;
-		static const unsigned TRACE_EVENT_PROC_EXECUTE = 5;
-		static const unsigned TRACE_EVENT_TRIGGER_EXECUTE = 6;
-		static const unsigned TRACE_EVENT_DSQL_PREPARE = 7;
-		static const unsigned TRACE_EVENT_DSQL_FREE = 8;
-		static const unsigned TRACE_EVENT_DSQL_EXECUTE = 9;
-		static const unsigned TRACE_EVENT_BLR_COMPILE = 10;
-		static const unsigned TRACE_EVENT_BLR_EXECUTE = 11;
-		static const unsigned TRACE_EVENT_DYN_EXECUTE = 12;
-		static const unsigned TRACE_EVENT_SERVICE_ATTACH = 13;
-		static const unsigned TRACE_EVENT_SERVICE_START = 14;
-		static const unsigned TRACE_EVENT_SERVICE_QUERY = 15;
-		static const unsigned TRACE_EVENT_SERVICE_DETACH = 16;
-		static const unsigned TRACE_EVENT_ERROR = 17;
-		static const unsigned TRACE_EVENT_SWEEP = 18;
-		static const unsigned TRACE_EVENT_FUNC_EXECUTE = 19;
-		static const unsigned TRACE_EVENT_MAX = 20;
-		static const unsigned TRACE_RESULT_SUCCESS = 0;
-		static const unsigned TRACE_RESULT_FAILED = 1;
-		static const unsigned TRACE_RESULT_UNAUTHORIZED = 2;
 
 		unsigned getKind()
 		{
@@ -4604,6 +4580,9 @@ public:
 	public:
 		static const unsigned int VERSION = 24;
 
+		static const unsigned TRACE_RESULT_SUCCESS = 0;
+		static const unsigned TRACE_RESULT_FAILED = 1;
+		static const unsigned TRACE_RESULT_UNAUTHORIZED = 2;
 		static const unsigned SWEEP_STATE_STARTED = 1;
 		static const unsigned SWEEP_STATE_FINISHED = 2;
 		static const unsigned SWEEP_STATE_FAILED = 3;
@@ -4778,6 +4757,28 @@ public:
 
 	public:
 		static const unsigned int VERSION = 7;
+
+		static const unsigned TRACE_EVENT_ATTACH = 0;
+		static const unsigned TRACE_EVENT_DETACH = 1;
+		static const unsigned TRACE_EVENT_TRANSACTION_START = 2;
+		static const unsigned TRACE_EVENT_TRANSACTION_END = 3;
+		static const unsigned TRACE_EVENT_SET_CONTEXT = 4;
+		static const unsigned TRACE_EVENT_PROC_EXECUTE = 5;
+		static const unsigned TRACE_EVENT_TRIGGER_EXECUTE = 6;
+		static const unsigned TRACE_EVENT_DSQL_PREPARE = 7;
+		static const unsigned TRACE_EVENT_DSQL_FREE = 8;
+		static const unsigned TRACE_EVENT_DSQL_EXECUTE = 9;
+		static const unsigned TRACE_EVENT_BLR_COMPILE = 10;
+		static const unsigned TRACE_EVENT_BLR_EXECUTE = 11;
+		static const unsigned TRACE_EVENT_DYN_EXECUTE = 12;
+		static const unsigned TRACE_EVENT_SERVICE_ATTACH = 13;
+		static const unsigned TRACE_EVENT_SERVICE_START = 14;
+		static const unsigned TRACE_EVENT_SERVICE_QUERY = 15;
+		static const unsigned TRACE_EVENT_SERVICE_DETACH = 16;
+		static const unsigned TRACE_EVENT_ERROR = 17;
+		static const unsigned TRACE_EVENT_SWEEP = 18;
+		static const unsigned TRACE_EVENT_FUNC_EXECUTE = 19;
+		static const unsigned TRACE_EVENT_MAX = 20;
 
 		ISC_UINT64 trace_needs()
 		{
@@ -15153,30 +15154,6 @@ template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::
 
 template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_CONNECTION_DATABASE;
 template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_CONNECTION_SERVICE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_ATTACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_DETACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_TRANSACTION_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_TRANSACTION_END;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_SET_CONTEXT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_PROC_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_TRIGGER_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_DSQL_PREPARE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_DSQL_FREE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_DSQL_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_BLR_COMPILE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_BLR_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_DYN_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_SERVICE_ATTACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_SERVICE_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_SERVICE_QUERY;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_SERVICE_DETACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_ERROR;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_SWEEP;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_FUNC_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_EVENT_MAX;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_RESULT_SUCCESS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_RESULT_FAILED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_RESULT_UNAUTHORIZED;
 
 template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTransaction::TRA_ISO_CONSISTENCY;
 template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTransaction::TRA_ISO_CONCURRENCY;
@@ -15187,10 +15164,35 @@ template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTrigger::TRA
 template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTrigger::TRACE_BEFORE;
 template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTrigger::TRACE_AFTER;
 
+template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::TRACE_RESULT_SUCCESS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::TRACE_RESULT_FAILED;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::TRACE_RESULT_UNAUTHORIZED;
 template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_STARTED;
 template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_FINISHED;
 template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_FAILED;
 template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_PROGRESS;
+
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_ATTACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DETACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_TRANSACTION_START;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_TRANSACTION_END;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SET_CONTEXT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_PROC_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_TRIGGER_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DSQL_PREPARE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DSQL_FREE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DSQL_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_BLR_COMPILE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_BLR_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DYN_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_ATTACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_START;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_QUERY;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_DETACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_ERROR;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SWEEP;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_FUNC_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_MAX;
 
 
 #endif	// IDL_FB_INTERFACES_H

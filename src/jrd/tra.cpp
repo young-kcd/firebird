@@ -362,7 +362,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			transaction->tra_save_point = next;
 		}
 
-		trace.finish(Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
+		trace.finish(Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
 		return;
 	}
 
@@ -412,7 +412,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (retaining_flag)
 	{
-		trace.finish(Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
+		trace.finish(Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
 		retain_context(tdbb, transaction, true, tra_committed);
 		return;
 	}
@@ -1194,7 +1194,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 		TRA_precommited(tdbb, transaction->tra_number, 0);
 
 	if (trace)
-		trace->finish(Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
+		trace->finish(Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
 
 	// Unlink the transaction from the database block
 
@@ -1382,7 +1382,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 	if (retaining_flag)
 	{
-		trace.finish(Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
+		trace.finish(Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
 		retain_context(tdbb, transaction, false, state);
 		return;
 	}
@@ -1581,12 +1581,12 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 		throw;
 	}
 
-	if (attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_TRANSACTION_START))
+	if (attachment->att_trace_manager->needs(Firebird::ITraceFactory::TRACE_EVENT_TRANSACTION_START))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(transaction);
 		attachment->att_trace_manager->event_transaction_start(&conn,
-			&tran, 0, NULL, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
+			&tran, 0, NULL, Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
 	}
 
 	return transaction;
@@ -1632,12 +1632,12 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 		throw;
 	}
 
-	if (attachment->att_trace_manager->needs(Firebird::ITraceConnection::TRACE_EVENT_TRANSACTION_START))
+	if (attachment->att_trace_manager->needs(Firebird::ITraceFactory::TRACE_EVENT_TRANSACTION_START))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(transaction);
 		attachment->att_trace_manager->event_transaction_start(&conn,
-			&tran, tpb_length, tpb, Firebird::ITraceConnection::TRACE_RESULT_SUCCESS);
+			&tran, tpb_length, tpb, Firebird::ITracePlugin::TRACE_RESULT_SUCCESS);
 	}
 
 	return transaction;
@@ -3481,7 +3481,7 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 
 	TraceManager* trace_mgr = att->att_trace_manager;
 
-	m_need_trace = trace_mgr->needs(Firebird::ITraceConnection::TRACE_EVENT_SWEEP);
+	m_need_trace = trace_mgr->needs(Firebird::ITraceFactory::TRACE_EVENT_SWEEP);
 
 	if (!m_need_trace)
 		return;

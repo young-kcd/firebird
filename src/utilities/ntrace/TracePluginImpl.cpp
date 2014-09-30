@@ -1006,13 +1006,13 @@ void TracePluginImpl::log_event_attach(ITraceDatabaseConnection* connection,
 		const char* event_type;
 		switch (att_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = create_db ? "CREATE_DATABASE" : "ATTACH_DATABASE";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = create_db ? "FAILED CREATE_DATABASE" : "FAILED ATTACH_DATABASE";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = create_db ? "UNAUTHORIZED CREATE_DATABASE" : "UNAUTHORIZED ATTACH_DATABASE";
 				break;
 			default:
@@ -1110,13 +1110,13 @@ void TracePluginImpl::log_event_transaction_start(ITraceDatabaseConnection* conn
 		const char* event_type;
 		switch (tra_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "START_TRANSACTION";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED START_TRANSACTION";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED START_TRANSACTION";
 				break;
 			default:
@@ -1143,17 +1143,17 @@ void TracePluginImpl::log_event_transaction_end(ITraceDatabaseConnection* connec
 		const char* event_type;
 		switch (tra_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = commit ?
 					(retain_context ? "COMMIT_RETAINING"   : "COMMIT_TRANSACTION") :
 					(retain_context ? "ROLLBACK_RETAINING" : "ROLLBACK_TRANSACTION");
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = commit ?
 					(retain_context ? "FAILED COMMIT_RETAINING"   : "FAILED COMMIT_TRANSACTION") :
 					(retain_context ? "FAILED ROLLBACK_RETAINING" : "FAILED ROLLBACK_TRANSACTION");
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = commit ?
 					(retain_context ? "UNAUTHORIZED COMMIT_RETAINING"   : "UNAUTHORIZED COMMIT_TRANSACTION") :
 					(retain_context ? "UNAUTHORIZED ROLLBACK_RETAINING" : "UNAUTHORIZED ROLLBACK_TRANSACTION");
@@ -1236,15 +1236,15 @@ void TracePluginImpl::log_event_proc_execute(ITraceDatabaseConnection* connectio
 	const char* event_type;
 	switch (proc_result)
 	{
-		case ITraceConnection::TRACE_RESULT_SUCCESS:
+		case ITracePlugin::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_PROCEDURE_START" :
 								   "EXECUTE_PROCEDURE_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_FAILED:
+		case ITracePlugin::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_PROCEDURE_START" :
 								   "FAILED EXECUTE_PROCEDURE_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+		case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_PROCEDURE_START" :
 								   "UNAUTHORIZED EXECUTE_PROCEDURE_FINISH";
 			break;
@@ -1277,7 +1277,7 @@ void TracePluginImpl::log_event_func_execute(ITraceDatabaseConnection* connectio
 		record.append(NEWLINE);
 	}
 
-	if (!started && func_result == ITraceConnection::TRACE_RESULT_SUCCESS)
+	if (!started && func_result == ITracePlugin::TRACE_RESULT_SUCCESS)
 	{
 		params = function->getResult();
 		{
@@ -1302,15 +1302,15 @@ void TracePluginImpl::log_event_func_execute(ITraceDatabaseConnection* connectio
 	const char* event_type;
 	switch (func_result)
 	{
-		case ITraceConnection::TRACE_RESULT_SUCCESS:
+		case ITracePlugin::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_FUNCTION_START" :
 								   "EXECUTE_FUNCTION_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_FAILED:
+		case ITracePlugin::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_FUNCTION_START" :
 								   "FAILED EXECUTE_FUNCTION_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+		case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_FUNCTION_START" :
 								   "UNAUTHORIZED EXECUTE_FUNCTION_FINISH";
 			break;
@@ -1421,13 +1421,13 @@ void TracePluginImpl::log_event_dsql_prepare(ITraceDatabaseConnection* connectio
 		const char* event_type;
 		switch (req_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "PREPARE_STATEMENT";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED PREPARE_STATEMENT";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED PREPARE_STATEMENT";
 				break;
 			default:
@@ -1495,15 +1495,15 @@ void TracePluginImpl::log_event_dsql_execute(ITraceDatabaseConnection* connectio
 	const char* event_type;
 	switch (req_result)
 	{
-		case ITraceConnection::TRACE_RESULT_SUCCESS:
+		case ITracePlugin::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_STATEMENT_START" :
 								   "EXECUTE_STATEMENT_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_FAILED:
+		case ITracePlugin::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_STATEMENT_START" :
 								   "FAILED EXECUTE_STATEMENT_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+		case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_STATEMENT_START" :
 								   "UNAUTHORIZED EXECUTE_STATEMENT_FINISH";
 			break;
@@ -1572,13 +1572,13 @@ void TracePluginImpl::log_event_blr_compile(ITraceDatabaseConnection* connection
 		const char* event_type;
 		switch (req_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "COMPILE_BLR";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED COMPILE_BLR";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED COMPILE_BLR";
 				break;
 			default:
@@ -1610,13 +1610,13 @@ void TracePluginImpl::log_event_blr_execute(ITraceDatabaseConnection* connection
 		const char* event_type;
 		switch (req_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "EXECUTE_BLR";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED EXECUTE_BLR";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED EXECUTE_BLR";
 				break;
 			default:
@@ -1665,13 +1665,13 @@ void TracePluginImpl::log_event_dyn_execute(ITraceDatabaseConnection* connection
 		const char* event_type;
 		switch (req_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "EXECUTE_DYN";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED EXECUTE_DYN";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED EXECUTE_DYN";
 				break;
 			default:
@@ -1776,13 +1776,13 @@ void TracePluginImpl::log_event_service_attach(ITraceServiceConnection* service,
 		const char* event_type;
 		switch (att_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "ATTACH_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED ATTACH_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED ATTACH_SERVICE";
 				break;
 			default:
@@ -1805,13 +1805,13 @@ void TracePluginImpl::log_event_service_start(ITraceServiceConnection* service,
 		const char* event_type;
 		switch (start_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "START_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED START_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED START_SERVICE";
 				break;
 			default:
@@ -1866,13 +1866,13 @@ void TracePluginImpl::log_event_service_query(ITraceServiceConnection* service,
 		const char* event_type;
 		switch (query_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "QUERY_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED QUERY_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED QUERY_SERVICE";
 				break;
 			default:
@@ -1892,13 +1892,13 @@ void TracePluginImpl::log_event_service_detach(ITraceServiceConnection* service,
 		const char* event_type;
 		switch (detach_result)
 		{
-			case ITraceConnection::TRACE_RESULT_SUCCESS:
+			case ITracePlugin::TRACE_RESULT_SUCCESS:
 				event_type = "DETACH_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_FAILED:
+			case ITracePlugin::TRACE_RESULT_FAILED:
 				event_type = "FAILED DETACH_SERVICE";
 				break;
-			case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+			case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 				event_type = "UNAUTHORIZED DETACH_SERVICE";
 				break;
 			default:
@@ -2007,15 +2007,15 @@ void TracePluginImpl::log_event_trigger_execute(ITraceDatabaseConnection* connec
 	const char* event_type;
 	switch (trig_result)
 	{
-		case ITraceConnection::TRACE_RESULT_SUCCESS:
+		case ITracePlugin::TRACE_RESULT_SUCCESS:
 			event_type = started ? "EXECUTE_TRIGGER_START" :
 								   "EXECUTE_TRIGGER_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_FAILED:
+		case ITracePlugin::TRACE_RESULT_FAILED:
 			event_type = started ? "FAILED EXECUTE_TRIGGER_START" :
 								   "FAILED EXECUTE_TRIGGER_FINISH";
 			break;
-		case ITraceConnection::TRACE_RESULT_UNAUTHORIZED:
+		case ITracePlugin::TRACE_RESULT_UNAUTHORIZED:
 			event_type = started ? "UNAUTHORIZED EXECUTE_TRIGGER_START" :
 								   "UNAUTHORIZED EXECUTE_TRIGGER_FINISH";
 			break;
