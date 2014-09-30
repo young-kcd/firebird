@@ -49,7 +49,16 @@ public:
 		RecordBuffer* data;
 	};
 
-	enum ValueType {VALUE_GLOBAL_ID, VALUE_INTEGER, VALUE_TIMESTAMP, VALUE_STRING, VALUE_BOOLEAN};
+	enum ValueType
+	{
+		VALUE_UNKNOWN,
+		VALUE_GLOBAL_ID,
+		VALUE_TABLE_ID,
+		VALUE_INTEGER,
+		VALUE_TIMESTAMP,
+		VALUE_STRING,
+		VALUE_BOOLEAN
+	};
 
 	struct DumpField
 	{
@@ -58,7 +67,7 @@ public:
 		{}
 
 		DumpField()
-			: id(0), type(VALUE_GLOBAL_ID), length(0), data(NULL)
+			: id(0), type(VALUE_UNKNOWN), length(0), data(NULL)
 		{}
 
 		USHORT id;
@@ -108,6 +117,11 @@ public:
 			storeField(field_id, VALUE_GLOBAL_ID, sizeof(SINT64), &value);
 		}
 
+		void storeTableId(int field_id, SLONG value)
+		{
+			storeField(field_id, VALUE_TABLE_ID, sizeof(SLONG), &value);
+		}
+
 		void storeInteger(int field_id, SINT64 value)
 		{
 			storeField(field_id, VALUE_INTEGER, sizeof(SINT64), &value);
@@ -137,6 +151,12 @@ public:
 				storeField(field_id, VALUE_STRING, value.length(), value.c_str());
 		}
 
+		void storeBoolean(int field_id, bool value)
+		{
+			const UCHAR boolean = value ? 1 : 0;
+			storeField(field_id, VALUE_BOOLEAN, sizeof(UCHAR), &boolean);
+		}
+
 		int getRelationId()
 		{
 			fb_assert(!offset);
@@ -151,7 +171,7 @@ public:
 			{
 				field.id = (USHORT) buffer[offset++];
 				field.type = (ValueType) buffer[offset++];
-				fb_assert(field.type >= VALUE_GLOBAL_ID && field.type <= VALUE_STRING);
+				fb_assert(field.type >= VALUE_GLOBAL_ID && field.type <= VALUE_BOOLEAN);
 				memcpy(&field.length, &buffer[offset], sizeof(USHORT));
 				offset += sizeof(USHORT);
 				field.data = &buffer[offset];

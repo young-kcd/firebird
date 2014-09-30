@@ -350,6 +350,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 	RecordBuffer* const rec_stat_buffer = allocBuffer(tdbb, pool, rel_mon_rec_stats);
 	RecordBuffer* const ctx_var_buffer = allocBuffer(tdbb, pool, rel_mon_ctx_vars);
 	RecordBuffer* const mem_usage_buffer = allocBuffer(tdbb, pool, rel_mon_mem_usage);
+	RecordBuffer* const tab_stat_buffer = allocBuffer(tdbb, pool, rel_mon_tab_stats);
 
 	// Dump our own data and downgrade the lock, if required
 
@@ -470,6 +471,9 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 			break;
 		case rel_mon_mem_usage:
 			buffer = mem_usage_buffer;
+			break;
+		case rel_mon_tab_stats:
+			buffer = tab_stat_buffer;
 			break;
 		default:
 			fb_assert(false);
@@ -611,14 +615,32 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 		fb_assert(field.length == sizeof(SINT64));
 		SINT64 global_id;
 		memcpy(&global_id, field.data, field.length);
+
 		SLONG local_id;
 		if (!m_map.get(global_id, local_id))
 		{
 			local_id = ++m_counter;
 			m_map.put(global_id, local_id);
 		}
+
 		dsc from_desc;
 		from_desc.makeLong(0, &local_id);
+		MOV_move(tdbb, &from_desc, &to_desc);
+	}
+	else if (field.type == VALUE_TABLE_ID)
+	{
+		// special case: translate relation ID into name
+		fb_assert(field.length == sizeof(SLONG));
+		SLONG rel_id;
+		memcpy(&rel_id, field.data, field.length);
+
+		const jrd_rel* const relation = MET_lookup_relation_id(tdbb, rel_id, false);
+		if (!relation || relation->rel_name.isEmpty())
+			return;
+
+		const MetaName& name = relation->rel_name;
+		dsc from_desc;
+		from_desc.makeText(name.length(), CS_METADATA, (UCHAR*) name.c_str());
 		MOV_move(tdbb, &from_desc, &to_desc);
 	}
 	else if (field.type == VALUE_INTEGER)
@@ -626,6 +648,7 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 		fb_assert(field.length == sizeof(SINT64));
 		SINT64 value;
 		memcpy(&value, field.data, field.length);
+
 		dsc from_desc;
 		from_desc.makeInt64(0, &value);
 		MOV_move(tdbb, &from_desc, &to_desc);
@@ -635,6 +658,7 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 		fb_assert(field.length == sizeof(ISC_TIMESTAMP));
 		ISC_TIMESTAMP value;
 		memcpy(&value, field.data, field.length);
+
 		dsc from_desc;
 		from_desc.makeTimestamp(&value);
 		MOV_move(tdbb, &from_desc, &to_desc);
@@ -1079,7 +1103,7 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 	record.storeInteger(f_mon_io_page_marks, statistics.getValue(RuntimeStatistics::PAGE_MARKS));
 	writer.putRecord(record);
 
-	// logical I/O statistics
+	// logical I/O statistics (global)
 	record.reset(rel_mon_rec_stats);
 	record.storeGlobalId(f_mon_rec_stat_id, id);
 	record.storeInteger(f_mon_rec_stat_group, stat_group);
@@ -1098,6 +1122,39 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 	record.storeInteger(f_mon_rec_frg_reads, statistics.getValue(RuntimeStatistics::RECORD_FRAGMENT_READS));
 	record.storeInteger(f_mon_rec_rpt_reads, statistics.getValue(RuntimeStatistics::RECORD_RPT_READS));
 	writer.putRecord(record);
+
+	// logical I/O statistics (table wise)
+
+	for (RuntimeStatistics::Iterator iter = statistics.begin(); iter != statistics.end(); ++iter)
+	{
+		const SINT64 rec_stat_id = getGlobalId(fb_utils::genUniqueId());
+
+		record.reset(rel_mon_tab_stats);
+		record.storeGlobalId(f_mon_tab_stat_id, id);
+		record.storeInteger(f_mon_tab_stat_group, stat_group);
+		record.storeTableId(f_mon_tab_name, (*iter).getRelationId());
+		record.storeGlobalId(f_mon_tab_rec_stat_id, rec_stat_id);
+		writer.putRecord(record);
+
+		record.reset(rel_mon_rec_stats);
+		record.storeGlobalId(f_mon_rec_stat_id, rec_stat_id);
+		record.storeInteger(f_mon_rec_stat_group, stat_group);
+		record.storeInteger(f_mon_rec_seq_reads, (*iter).getCounter(RuntimeStatistics::RECORD_SEQ_READS));
+		record.storeInteger(f_mon_rec_idx_reads, (*iter).getCounter(RuntimeStatistics::RECORD_IDX_READS));
+		record.storeInteger(f_mon_rec_inserts, (*iter).getCounter(RuntimeStatistics::RECORD_INSERTS));
+		record.storeInteger(f_mon_rec_updates, (*iter).getCounter(RuntimeStatistics::RECORD_UPDATES));
+		record.storeInteger(f_mon_rec_deletes, (*iter).getCounter(RuntimeStatistics::RECORD_DELETES));
+		record.storeInteger(f_mon_rec_backouts, (*iter).getCounter(RuntimeStatistics::RECORD_BACKOUTS));
+		record.storeInteger(f_mon_rec_purges, (*iter).getCounter(RuntimeStatistics::RECORD_PURGES));
+		record.storeInteger(f_mon_rec_expunges, (*iter).getCounter(RuntimeStatistics::RECORD_EXPUNGES));
+		record.storeInteger(f_mon_rec_locks, (*iter).getCounter(RuntimeStatistics::RECORD_LOCKS));
+		record.storeInteger(f_mon_rec_waits, (*iter).getCounter(RuntimeStatistics::RECORD_WAITS));
+		record.storeInteger(f_mon_rec_conflicts, (*iter).getCounter(RuntimeStatistics::RECORD_CONFLICTS));
+		record.storeInteger(f_mon_rec_bkver_reads, (*iter).getCounter(RuntimeStatistics::RECORD_BACKVERSION_READS));
+		record.storeInteger(f_mon_rec_frg_reads, (*iter).getCounter(RuntimeStatistics::RECORD_FRAGMENT_READS));
+		record.storeInteger(f_mon_rec_rpt_reads, (*iter).getCounter(RuntimeStatistics::RECORD_RPT_READS));
+		writer.putRecord(record);
+	}
 }
 
 void Monitoring::putContextVars(SnapshotData::DumpRecord& record, const StringMap& variables,

@@ -672,3 +672,9 @@
 	const USHORT  f_sec_crt_u_type = 1;
 
 
+// Relation 49 (MON$TABLE_STATS)
+
+	const USHORT  f_mon_tab_stat_id = 0;
+	const USHORT  f_mon_tab_stat_group = 1;
+	const USHORT  f_mon_tab_name = 2;
+	const USHORT  f_mon_tab_rec_stat_id = 3;

@@ -670,3 +670,11 @@ RELATION(nam_sec_db_creators, rel_sec_db_creators, ODS_12_0, rel_virtual)
 	FIELD(f_sec_crt_user, nam_sec_user, fld_user, 0, ODS_12_0)
 	FIELD(f_sec_crt_u_type, nam_sec_user_type, fld_obj_type, 0, ODS_12_0)
 END_RELATION
+
+// Relation 49 (MON$TABLE_STATS)
+RELATION(nam_mon_tab_stats, rel_mon_tab_stats, ODS_12_0, rel_virtual)
+	FIELD(f_mon_tab_stat_id, nam_mon_stat_id, fld_stat_id, 0, ODS_12_0)
+	FIELD(f_mon_tab_stat_group, nam_mon_stat_group, fld_stat_group, 0, ODS_12_0)
+	FIELD(f_mon_tab_name, nam_mon_tab_name, fld_r_name, 0, ODS_12_0)
+	FIELD(f_mon_tab_rec_stat_id, nam_mon_rec_stat_id, fld_stat_id, 0, ODS_12_0)
+END_RELATION
