@@ -3695,13 +3695,17 @@ namespace Why {
 
 IAttachment* MasterImplementation::registerAttachment(IProvider* provider, IAttachment* attachment)
 {
-	return new YAttachment(provider, attachment, "");
+	IAttachment* rc = new YAttachment(provider, attachment, "");
+	attachment->addRef();
+	return rc;
 }
 
 ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 	ITransaction* transaction)
 {
-	return new YTransaction(static_cast<YAttachment*>(attachment), transaction);
+	ITransaction* rc = new YTransaction(static_cast<YAttachment*>(attachment), transaction);
+	transaction->addRef();
+	return rc;
 }
 
 template <typename Impl, typename Intf>

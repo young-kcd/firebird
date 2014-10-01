@@ -185,8 +185,6 @@ public:
 //--------------------------------------
 
 
-static AutoPtr<ModuleLoader::Module> libraryModule;
-
 static GlobalPtr<Mutex> modulesMutex;
 static GlobalPtr<ModulesMap> modules;
 
@@ -733,11 +731,6 @@ extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
 	PluginManagerInterfacePtr pi;
 	pi->registerPluginFactory(IPluginManager::ExternalEngine, "UDR", &factory);
 	getUnloadDetector()->registerMe();
-
-	PathName libraryName("fbclient");
-	ModuleLoader::doctorModuleExtension(libraryName);
-
-	libraryModule.reset(ModuleLoader::loadModule(libraryName));
 }
 
 
