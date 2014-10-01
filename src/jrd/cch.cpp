@@ -4041,6 +4041,8 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
 	ISC_STATUS* const status = tdbb->tdbb_status_vector;
+	ISC_STATUS_ARRAY temp_status = {0};
+	AutoSetRestore<ISC_STATUS*> autoStatus(&tdbb->tdbb_status_vector, temp_status);
 
 	if (lock->lck_logical == LCK_none)
 	{
@@ -4085,7 +4087,6 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
 		{
-			fb_utils::init_status(status);
 			bdb->release(tdbb, false);
 			return lsLockTimeout;
 		}
@@ -4102,6 +4103,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 		// CCH_unwind releases all the BufferDesc's and calls ERR_punt()
 		// ERR_punt will longjump.
 
+		tdbb->tdbb_status_vector = status;
 		CCH_unwind(tdbb, true);
 	}
 
@@ -4113,8 +4115,6 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	if (LCK_convert_opt(tdbb, lock, lock_type))
 		return must_read;
-
-	fb_utils::init_status(status);
 
 	if (wait == LCK_NO_WAIT)
 	{
@@ -4129,7 +4129,6 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	if ((wait < 0) && (status[1] == isc_lock_timeout))
 	{
-		fb_utils::init_status(status);
 		bdb->release(tdbb, false);
 		return lsLockTimeout;
 	}
@@ -4143,6 +4142,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 	ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
 	ERR_log(JRD_BUGCHK, 215, errmsg);	// msg 215 page %ld, page type %ld lock conversion denied
 
+	tdbb->tdbb_status_vector = status;
 	CCH_unwind(tdbb, true);
 
 	return lsError;		// Added to get rid of Compiler Warning
