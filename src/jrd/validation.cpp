@@ -650,7 +650,7 @@ const Validation::MSG_ENTRY Validation::vdr_msg_table[VAL_MAX_ERROR] =
 	{true, isc_info_page_errors,	"Page %"ULONGFORMAT" doubly allocated"},
 	{true, isc_info_page_errors,	"Page %"ULONGFORMAT" is used but marked free"},
 	{false, fb_info_page_warns,		"Page %"ULONGFORMAT" is an orphan"},
-	{true, isc_info_bpage_errors,	"Warning: blob %"SQUADFORMAT" appears inconsistent"},	// 5
+	{false, fb_info_bpage_warns,	"Blob %"SQUADFORMAT" appears inconsistent"},	// 5
 	{true, isc_info_bpage_errors,	"Blob %"SQUADFORMAT" is corrupt"},
 	{true, isc_info_bpage_errors,	"Blob %"SQUADFORMAT" is truncated"},
 	{true, isc_info_record_errors,	"Chain for record %"SQUADFORMAT" is broken"},
@@ -688,6 +688,8 @@ Validation::Validation()
 	vdr_max_page = 0;
 	vdr_flags = 0;
 	vdr_errors = 0;
+	vdr_warns = 0;
+	vdr_fixed = 0;
 	vdr_max_transaction = 0;
 	vdr_rel_backversion_counter = 0;
 	vdr_rel_chain_counter = 0;
@@ -712,6 +714,7 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 	vdr_tdbb = tdbb;
 	MemoryPool* val_pool = NULL;
 	Database* dbb = tdbb->getDatabase();
+	Firebird::PathName fileName = tdbb->getAttachment()->att_filename;
 
 	try 
 	{
@@ -729,14 +732,16 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 			vdr_flags |= VDR_update;
 
 		// initialize validate errors
-		vdr_errors = 0;
+		vdr_errors = vdr_warns = vdr_fixed = 0;
 		for (USHORT i = 0; i < VAL_MAX_ERROR; i++)
 			vdr_err_counts[i] = 0;
 
 		tdbb->tdbb_flags |= TDBB_sweeper;
 
+		gds__log("Database: %s\n\tValidation started", fileName.c_str());
+
 		walk_database();
-		if (vdr_errors)
+		if (vdr_errors || vdr_warns)
 			vdr_flags &= ~VDR_update;
 
 		garbage_collect();
@@ -745,10 +750,18 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 
 		cleanup();
+
+		gds__log("Database: %s\n\tValidation finished: %d errors, %d warnings, %d fixed", 
+			fileName.c_str(), vdr_errors, vdr_warns, vdr_fixed);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(tdbb->tdbb_status_vector);
+
+		Firebird::string err;
+		err.printf("Database: %s\n\tValidation aborted", fileName.c_str());
+		gds__log_status(err.c_str(), tdbb->tdbb_status_vector);
+
 		cleanup();
 		dbb->deletePool(val_pool);
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
@@ -823,6 +836,16 @@ Validation::RTN Validation::corrupt(int err_code, const jrd_rel* relation, ...)
 			fprintf(stdout, "LOG:\tDatabase: %s\n\t%s\n", fn, s.c_str());
 	}
 #endif
+	if (vdr_msg_table[err_code].error)
+	{
+		++vdr_errors;
+		s.insert(0, "Error: ");
+	}
+	else
+	{
+		++vdr_warns;
+		s.insert(0, "Warning: ");
+	}
 
 	if (relation)
 	{
@@ -831,9 +854,6 @@ Validation::RTN Validation::corrupt(int err_code, const jrd_rel* relation, ...)
 	}
 	else
 		gds__log("Database: %s\n\t%s", fn, s.c_str());
-
-	if (vdr_msg_table[err_code].error)
-		++vdr_errors;
 
 	return rtn_corrupt;
 }
@@ -925,6 +945,7 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 				CCH_MARK(vdr_tdbb, win);
 
 				scns->scn_pages[scn_slot] = page_scn;
+				vdr_fixed++;
 			}
 		}
 
@@ -980,6 +1001,7 @@ void Validation::garbage_collect()
 						{
 							CCH_MARK(vdr_tdbb, &window);
 							p[-1] &= ~(1 << (number & 7));
+							vdr_fixed++;
 						}
 						DEBUG;
 					}
@@ -994,6 +1016,7 @@ void Validation::garbage_collect()
 					{
 						CCH_MARK(vdr_tdbb, &window);
 						p[-1] |= 1 << (number & 7);
+						vdr_fixed++;
 					}
 					DEBUG;
 				}
@@ -1276,7 +1299,6 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 
 	if (page->dpg_relation != relation->rel_id || page->dpg_sequence != sequence)
 	{
-		++vdr_errors;
 		CCH_RELEASE(vdr_tdbb, &window);
 		return corrupt(VAL_DATA_PAGE_CONFUSED, relation, page_number, sequence);
 	}
@@ -1373,6 +1395,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 				{
 					CCH_MARK(vdr_tdbb, &window);
 					header->rhd_flags |= rhd_damaged;
+					vdr_fixed++;
 				}
 			}
 		}
@@ -1921,16 +1944,43 @@ void Validation::walk_pip()
 			pipExtent = pageSpaceMgr.pagesPerPIP;
 		}
 
-		if (pipMin < page->pip_min) {
+		bool fixme = false;
+		if (pipMin < page->pip_min) 
+		{
 			corrupt(VAL_PIP_WRONG_MIN, NULL, page_number, sequence, page->pip_min, pipMin);
+			fixme = (vdr_flags & VDR_update);
 		}
 
-		if (pipExtent < page->pip_extent) {
+		if (pipExtent < page->pip_extent) 
+		{
 			corrupt(VAL_PIP_WRONG_EXTENT, NULL, page_number, sequence, page->pip_extent, pipExtent);
+			fixme = (vdr_flags & VDR_update);
 		}
 
-		if (pipUsed > page->pip_used) {
+		if (pipUsed > page->pip_used) 
+		{
 			corrupt(VAL_PIP_WRONG_USED, NULL, page_number, sequence, page->pip_used, pipUsed);
+			fixme = (vdr_flags & VDR_update);
+		}
+
+		if (fixme)
+		{
+			CCH_MARK(vdr_tdbb, &window);
+			if (pipMin < page->pip_min)
+			{
+				page->pip_min = pipMin;
+				vdr_fixed++;
+			}
+			if (pipExtent < page->pip_extent)
+			{
+				page->pip_extent = pipExtent;
+				vdr_fixed++;
+			}
+			if (pipUsed > page->pip_used)
+			{
+				page->pip_used = pipUsed;
+				vdr_fixed++;
+			}
 		}
 
 		const UCHAR byte = page->pip_bits[pageSpaceMgr.bytesBitPIP - 1];
@@ -2002,6 +2052,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 					marked = true;
 				}
 				*pages = 0;
+				vdr_fixed++;
 			}
 
 			if (*pages)
@@ -2025,6 +2076,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 							marked = true;
 						}
 						pp_bits = new_pp_bits;
+						vdr_fixed++;
 					}
 				}
 			}
@@ -2355,8 +2407,10 @@ Validation::RTN Validation::walk_tip(TraNumber transaction)
 			corrupt(VAL_TIP_LOST_SEQUENCE, 0, sequence);
 			if (!(vdr_flags & VDR_repair))
 				continue;
+
 			TRA_extend_tip(vdr_tdbb, sequence);
 			vector = dbb->dbb_t_pages;
+			vdr_fixed++;
 		}
 
 		WIN window(DB_PAGE_SPACE, -1);
@@ -2413,6 +2467,7 @@ Validation::RTN Validation::walk_scns()
 			{
 				CCH_MARK(vdr_tdbb, &scnWindow);
 				scns->scn_sequence = sequence;
+				vdr_fixed++;
 			}
 		}
 

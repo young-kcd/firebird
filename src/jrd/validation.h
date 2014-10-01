@@ -121,7 +121,9 @@ private:
 	thread_db* vdr_tdbb;
 	ULONG vdr_max_page;
 	USHORT vdr_flags;
-	USHORT vdr_errors;
+	int vdr_errors;
+	int vdr_warns;
+	int vdr_fixed;
 	TraNumber vdr_max_transaction;
 	FB_UINT64 vdr_rel_backversion_counter;	// Counts slots w/rhd_chain
 	FB_UINT64 vdr_rel_chain_counter;		// Counts chains w/rdr_chain
