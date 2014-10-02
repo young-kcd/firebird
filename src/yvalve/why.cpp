@@ -4751,6 +4751,7 @@ YTransaction* YTransaction::enterDtc(IStatus* status)
 		YTransaction* copy = new YTransaction(this);
 		// copy is created with zero handle
 		copy->addRef();
+		next->addRef();		// We use NoIncr in YTransaction ctor
 
 		if (attachment)
 			attachment->childTransactions.remove(this);

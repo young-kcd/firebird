@@ -284,8 +284,6 @@ void DTransaction::commit(IStatus* status)
 				}
 			}
 		}
-
-		release();
 	}
 	catch (const Exception& ex)
 	{
@@ -343,8 +341,6 @@ void DTransaction::rollback(IStatus* status)
 				}
 			}
 		}
-
-		release();
 	}
 	catch (const Exception& ex)
 	{
@@ -400,8 +396,6 @@ void DTransaction::disconnect(IStatus* status)
 				sub[i] = NULL;
 			}
 		}
-
-		release();
 	}
 	catch (const Exception& ex)
 	{
