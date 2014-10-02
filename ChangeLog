@@ -1,3 +1,18 @@
+ 2014-10-01 22:00  hvlad 
+   M src/jrd/validation.cpp
+   M src/jrd/validation.h
+Improvement CORE-4562 : Split all validation messages on critical and minor ones
+Additional patch, see details in tracker
+
+ 2014-10-01 18:17  hvlad 
+   M src/jrd/cch.cpp
+Fixed bug CORE-4565 : GDSCODE can have value = 0 in WHEN-section under some concurrent env., only in SC or CS (not in SS)
+
+ 2014-10-01 12:47  alexpeshkoff 
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/yvalve/why.cpp
+Fixed 2 segfaults when using UDRs
+
  2014-09-30 19:38  hvlad 
    M src/jrd/recsrc/ProcedureScan.cpp
    M src/jrd/trace/TraceDSQLHelpers.h
