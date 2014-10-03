@@ -1276,8 +1276,12 @@ static bool_t xdr_packed_message( XDR* xdrs, RMessage* message, const rem_fmt* f
 			}
 		}
 	}
-	else
+	else	// XDR_DECODE
 	{
+		// Zero-initialize the message
+
+		memset(message->msg_address, 0, format->fmt_length);
+
 		// Receive the NULL bitmap
 
 		if (!xdr_opaque(xdrs, reinterpret_cast<SCHAR*>(nulls.getData()), flagBytes))
