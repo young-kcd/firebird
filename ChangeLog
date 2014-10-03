@@ -1,3 +1,8 @@
+ 2014-10-02 14:46  alexpeshkoff 
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/why.cpp
+Fixed segfaults in DTC - thanks to Adriano
+
  2014-10-01 22:00  hvlad 
    M src/jrd/validation.cpp
    M src/jrd/validation.h
