@@ -957,109 +957,30 @@ void CCH_fini(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	BufferControl* bcb = dbb->dbb_bcb;
+	Database* const dbb = tdbb->getDatabase();
+	BufferControl* const bcb = dbb->dbb_bcb;
+
 	if (!bcb)
 		return;
 
-	bool flush_error = false;
+	bcb_repeat* tail = bcb->bcb_rpt;
+	const bcb_repeat* const end = tail + bcb->bcb_count;
 
-	// CVC: Patching a conversion error FB1->FB2 with crude logic
-	for (int i = 0; i < 2; ++i)
+	for (; tail < end; tail++)
 	{
-
-		try {
-
-		// If we've been initialized, either flush buffers
-		// or release locks, depending on where we've been
-		// bug-checked; as a defensive programming measure,
-		// make sure that the buffers were actually allocated.
-
-		bcb_repeat* tail;
-		if ((tail = bcb->bcb_rpt) && (tail->bcb_bdb))
+		if (tail->bcb_bdb)
 		{
-			if (dbb->dbb_flags & DBB_bugcheck || flush_error)
-			{
-				for (const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count; tail < end; tail++)
-				{
-					BufferDesc* bdb = tail->bcb_bdb;
-					PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
-				}
-			}
-			else
-				CCH_flush(tdbb, FLUSH_FINI, 0);
+			delete tail->bcb_bdb;
+			tail->bcb_bdb = NULL;
 		}
+	}
 
+	delete[] bcb->bcb_rpt;
+	bcb->bcb_rpt = NULL;
+	bcb->bcb_count = 0;
 
-#ifdef CACHE_READER
-
-		// Shutdown the dedicated cache reader for this database.
-
-		if ((bcb = dbb->dbb_bcb) && (bcb->bcb_flags & BCB_cache_reader))
-		{
-			bcb->bcb_flags &= ~BCB_cache_reader;
-			dbb->dbb_reader_sem.release();
-			{ // scope
-				Database::Checkout dcoHolder(dbb, FB_FUNCTION);
-				dbb->dbb_reader_fini.enter();
-			}
-		}
-#endif
-
-		// Wait for cache writer startup to complete.
-		while (bcb->bcb_flags & BCB_writer_start)
-		{
-			Thread::yield();
-		}
-
-		// Shutdown the dedicated cache writer for this database.
-
-		if (bcb->bcb_flags & BCB_cache_writer)
-		{
-			bcb->bcb_flags &= ~BCB_cache_writer;
-			bcb->bcb_writer_sem.release(); // Wake up running thread
-			bcb->bcb_writer_fini.enter();
-		}
-
-		// close the database file and all associated shadow files
-
-		dbb->dbb_page_manager.closeAll();
-		SDW_close();
-
-		tail = bcb->bcb_rpt;
-		if (tail)
-		{
-			const bcb_repeat* const end = bcb->bcb_rpt + bcb->bcb_count;
-			for (; tail < end; tail++)
-			{
-				if (tail->bcb_bdb)
-				{
-					delete tail->bcb_bdb;
-					tail->bcb_bdb = NULL;
-				}
-			}
-		}
-
-		delete[] bcb->bcb_rpt;
-		bcb->bcb_rpt = NULL; // Just in case we exit with failure
-		bcb->bcb_count = 0;
-
-		while (bcb->bcb_memory.hasData())
-			bcb->bcb_bufferpool->deallocate(bcb->bcb_memory.pop());
-
-		}	// try
-		catch (const Firebird::Exception& ex)
-		{
-			ex.stuff_exception(tdbb->tdbb_status_vector);
-			if (!flush_error)
-				flush_error = true;
-			else
-				ERR_punt();
-		}
-
-		if (!flush_error)
-			break;	// wasn't set in the catch => no failure, just exit
-	} // for
+	while (bcb->bcb_memory.hasData())
+		bcb->bcb_bufferpool->deallocate(bcb->bcb_memory.pop());
 
 	BufferControl::destroy(bcb);
 	dbb->dbb_bcb = NULL;
@@ -2045,11 +1966,11 @@ bool CCH_rollover_to_shadow(thread_db* tdbb, Database* dbb, jrd_file* file, cons
 }
 
 
-void CCH_shutdown_database(Database* dbb)
+void CCH_shutdown(thread_db* tdbb)
 {
 /**************************************
  *
- *	C C H _ s h u t d o w n _ d a t a b a s e
+ *	C C H _ s h u t d o w n
  *
  **************************************
  *
@@ -2057,28 +1978,75 @@ void CCH_shutdown_database(Database* dbb)
  *	Shutdown database physical page locks.
  *
  **************************************/
-	bcb_repeat* tail;
-	BufferControl* bcb = dbb->dbb_bcb;
-	SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, "CCH_shutdown_database");
+	Database* const dbb = tdbb->getDatabase();
+	BufferControl* const bcb = dbb->dbb_bcb;
 
-	if (bcb && (tail = bcb->bcb_rpt) && (tail->bcb_bdb))
+	if (!bcb)
+		return;
+
+	SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, "CCH_shutdown");
+
+	// Flush and release page buffers
+
+	bcb_repeat* tail = bcb->bcb_rpt;
+	const bcb_repeat* const end = tail + bcb->bcb_count;
+
+	if (tail && tail->bcb_bdb)
 	{
-		thread_db* tdbb = JRD_get_thread_data();
-		for (const bcb_repeat* const end = tail + bcb->bcb_count; tail < end; tail++)
+		try
 		{
-			BufferDesc* bdb = tail->bcb_bdb;
-			bdb->bdb_flags &= ~BDB_db_dirty;
-			clear_dirty_flag(tdbb, bdb);
-			PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
+			if (dbb->dbb_flags & DBB_bugcheck)
+				LongJump::raise();
+
+			CCH_flush(tdbb, FLUSH_FINI, 0);
+		}
+		catch (const Exception&)
+		{
+			for (; tail < end; tail++)
+			{
+				BufferDesc* const bdb = tail->bcb_bdb;
+
+				if (dbb->dbb_flags & DBB_bugcheck)
+				{
+					bdb->bdb_flags &= ~BDB_db_dirty;
+					clear_dirty_flag(tdbb, bdb);
+				}
+
+				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
+			}
 		}
 	}
 
-	///if (!(bcb->bcb_flags & BCB_exclusive))
+#ifdef CACHE_READER
+
+	// Shutdown the dedicated cache reader for this database
+
+	if (bcb->bcb_flags & BCB_cache_reader)
 	{
-		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-		PIO_close(pageSpace->file);
-		SDW_close();
+		bcb->bcb_flags &= ~BCB_cache_reader;
+		dbb->dbb_reader_sem.release();
+		dbb->dbb_reader_fini.enter();
 	}
+#endif
+
+	// Wait for cache writer startup to complete
+
+	while (bcb->bcb_flags & BCB_writer_start)
+		Thread::yield();
+
+	// Shutdown the dedicated cache writer for this database
+
+	if (bcb->bcb_flags & BCB_cache_writer)
+	{
+		bcb->bcb_flags &= ~BCB_cache_writer;
+		bcb->bcb_writer_sem.release(); // Wake up running thread
+		bcb->bcb_writer_fini.enter();
+	}
+
+	// close the database file and all associated shadow files
+
+	dbb->dbb_page_manager.closeAll();
+	SDW_close();
 }
 
 void CCH_unwind(thread_db* tdbb, const bool punt)

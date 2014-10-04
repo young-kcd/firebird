@@ -6515,7 +6515,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	if (dbb->dbb_crypto_manager)
 		dbb->dbb_crypto_manager->terminateCryptThread(tdbb);
 
-	CCH_fini(tdbb);
+	CCH_shutdown(tdbb);
 
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
@@ -6538,6 +6538,8 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 		LCK_release(tdbb, dbb->dbb_lock);
 
 	LCK_fini(tdbb, LCK_OWNER_database);
+
+	CCH_fini(tdbb);
 
 	{ // scope
 		MutexLockGuard listGuard2(databases_mutex, FB_FUNCTION);

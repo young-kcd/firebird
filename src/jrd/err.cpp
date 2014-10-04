@@ -69,10 +69,11 @@ void ERR_bugcheck(int number, const TEXT* file, int line)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB();
-	dbb->dbb_flags |= DBB_bugcheck;
+	thread_db* const tdbb = JRD_get_thread_data();
+	Database* const dbb = tdbb->getDatabase();
 
-	CCH_shutdown_database(dbb);
+	dbb->dbb_flags |= DBB_bugcheck;
+	CCH_shutdown(tdbb);
 
 	internal_error(isc_bug_check, number, file, line);
 }
@@ -90,11 +91,12 @@ void ERR_bugcheck_msg(const TEXT* msg)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	Database* dbb = GET_DBB();
+	thread_db* const tdbb = JRD_get_thread_data();
+	Database* const dbb = tdbb->getDatabase();
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;
-	CCH_shutdown_database(dbb);
+	CCH_shutdown(tdbb);
 
 	ERR_post(Arg::Gds(isc_bug_check) << Arg::Str(msg));
 }
