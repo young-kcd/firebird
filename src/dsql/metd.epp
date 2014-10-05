@@ -1383,6 +1383,9 @@ dsql_prc* METD_get_procedure(dsql_req* request, const dsql_str* name)
 			if (FLD.RDB$FIELD_TYPE == blr_blob)
 				parameter->fld_seg_length = FLD.RDB$SEGMENT_LENGTH;
 
+			if ((!FLD.RDB$SYSTEM_FLAG.NULL) && (FLD.RDB$SYSTEM_FLAG == 1))
+				parameter->fld_flags |= FLD_system;
+
 			if (type == 0 &&
 				(!pr_default_value_null ||
 				 (fb_utils::implicit_domain(FLD.RDB$FIELD_NAME) &&
