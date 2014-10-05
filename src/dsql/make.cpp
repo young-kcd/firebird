@@ -63,6 +63,22 @@ using namespace Jrd;
 using namespace Dsql;
 using namespace Firebird;
 
+
+static void adjustLength(dsc* desc)
+{
+	USHORT adjust = 0;
+
+	if (desc->dsc_dtype == dtype_varying)
+		adjust = sizeof(USHORT);
+	else if (desc->dsc_dtype == dtype_cstring)
+		adjust = 1;
+
+	desc->dsc_length -= adjust;
+	desc->dsc_length *= 3;
+	desc->dsc_length += adjust;
+}
+
+
 // Firebird provides transparent conversion from string to date in
 // contexts where it makes sense.  This macro checks a descriptor to
 // see if it is something that *could* represent a date value
@@ -1465,6 +1481,14 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 		desc->dsc_scale = static_cast<SCHAR>(field->fld_character_set_id);
 		desc->dsc_flags |= field->fld_collation_id << 8;
 	}
+
+	// UNICODE_FSS_HACK
+	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
+	if ((desc->dsc_dtype <= dtype_any_text) && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) &&
+		(field->fld_flags & FLD_system))
+	{
+		adjustLength(desc);
+	}
 }
 
 
@@ -1541,6 +1565,13 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 			// node->nod_desc.dsc_scale = field->fld_scale;
 			// node->nod_desc.dsc_sub_type = field->fld_sub_type;
 
+			// UNICODE_FSS_HACK
+			// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
+			if ((field->fld_flags & FLD_system) && node->nod_desc.dsc_dtype <= dtype_varying &&
+				INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
+			{
+				adjustLength(&node->nod_desc);
+			}
 		}
 		else
 		{
@@ -1564,22 +1595,6 @@ dsql_nod* MAKE_field(dsql_ctx* context, dsql_fld* field, dsql_nod* indices)
 	if ((field->fld_flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))
 	{
 		node->nod_desc.dsc_flags |= DSC_nullable;
-	}
-
-	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-	if ((field->fld_flags & FLD_system) && node->nod_desc.dsc_dtype <= dtype_varying &&
-		INTL_GET_CHARSET(&node->nod_desc) == CS_METADATA)
-	{
-		USHORT adjust = 0;
-
-		if (node->nod_desc.dsc_dtype == dtype_varying)
-			adjust = sizeof(USHORT);
-		else if (node->nod_desc.dsc_dtype == dtype_cstring)
-			adjust = 1;
-
-		node->nod_desc.dsc_length -= adjust;
-		node->nod_desc.dsc_length *= 3;
-		node->nod_desc.dsc_length += adjust;
 	}
 
 	return node;

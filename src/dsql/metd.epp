@@ -101,6 +101,48 @@ namespace {
 			ERR_post(Arg::Gds(isc_bad_trans_handle));
 		}
 	}
+
+	bool isSystemRelation(thread_db* tdbb, dsql_dbb* dbb, jrd_tra* transaction, const char* relName)
+	{
+		bool rc = false;
+
+		jrd_req* handle = CMP_find_request(tdbb, irq_system_relation, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+			R IN RDB$RELATIONS WITH
+			R.RDB$RELATION_NAME EQ relName AND
+			R.RDB$SYSTEM_FLAG EQUIV 1
+		{
+			rc = true;
+		}
+		END_FOR
+
+		if (!DSQL_REQUEST(irq_system_relation))
+			DSQL_REQUEST(irq_system_relation) = handle;
+
+		return rc;
+	}
+
+	bool isSystemDomain(thread_db* tdbb, dsql_dbb* dbb, jrd_tra* transaction, const char* fldName)
+	{
+		bool rc = false;
+
+		jrd_req* handle = CMP_find_request(tdbb, irq_system_domain, IRQ_REQUESTS);
+
+		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+			R IN RDB$FIELDS WITH
+			R.RDB$FIELD_NAME EQ fldName AND
+			R.RDB$SYSTEM_FLAG EQUIV 1
+		{
+			rc = true;
+		}
+		END_FOR
+
+		if (!DSQL_REQUEST(irq_system_domain))
+			DSQL_REQUEST(irq_system_domain) = handle;
+
+		return rc;
+	}
 }
 
 
@@ -1312,6 +1354,22 @@ dsql_prc* METD_get_procedure(CompiledStatement* statement, const dsql_str* name)
 			{
 				fb_utils::exact_name(PR.RDB$RELATION_NAME);
 				parameter->fld_type_of_table = PR.RDB$RELATION_NAME;
+			}
+
+			if (parameter->fld_type_of_table.hasData())
+			{
+				if (isSystemRelation(tdbb, dbb, statement->req_transaction, parameter->fld_type_of_table.c_str()))
+					parameter->fld_flags |= FLD_system;
+			}
+			else if (parameter->fld_type_of_name.hasData())
+			{
+				if (isSystemDomain(tdbb, dbb, statement->req_transaction, parameter->fld_type_of_name.c_str()))
+					parameter->fld_flags |= FLD_system;
+			}
+			else if (parameter->fld_source.hasData())
+			{
+				if (isSystemDomain(tdbb, dbb, statement->req_transaction, parameter->fld_source.c_str()))
+					parameter->fld_flags |= FLD_system;
 			}
 
 			if (type == 0 &&

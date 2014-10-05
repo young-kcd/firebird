@@ -129,6 +129,8 @@ enum irq_type_t
 	irq_l_relfield,			// lookup a relation field
 	irq_verify_trusted_role, // ensure trusted role exists
 
+	irq_system_relation,	// DSQL/METD: check is relation system or not
+	irq_system_domain,		// DSQL/METD: check is field system or not
     irq_relation,			// DSQL/METD: lookup a relation
     irq_fields,				// DSQL/METD: lookup a relation's fields
     //irq_dimensions,		// lookup a field's dimensions
