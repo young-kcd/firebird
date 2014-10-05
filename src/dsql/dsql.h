@@ -354,7 +354,8 @@ public:
 enum udf_flags_vals {
 	UDF_new_udf		= 1,	// udf is newly declared, not committed yet
 	UDF_dropped		= 2,	// udf has been dropped
-	UDF_subfunc		= 4		// sub function
+	UDF_subfunc		= 4,	// sub function
+	UDF_sys_based	= 8		// return value based on column from system table
 };
 
 // Variables - input, output & local

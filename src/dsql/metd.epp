@@ -82,6 +82,40 @@ namespace
 			ERR_post(Arg::Gds(isc_bad_trans_handle));
 		}
 	}
+
+	bool isSystemRelation(thread_db* tdbb, jrd_tra* transaction, const char* relName)
+	{
+		bool rc = false;
+
+		AutoCacheRequest handle(tdbb, irq_system_relation, IRQ_REQUESTS);
+		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+			R IN RDB$RELATIONS WITH
+			R.RDB$RELATION_NAME EQ relName AND
+			R.RDB$SYSTEM_FLAG EQUIV 1
+		{
+			rc = true;
+		}
+		END_FOR
+
+		return rc;
+	}
+
+	bool isSystemDomain(thread_db* tdbb, jrd_tra* transaction, const char* fldName)
+	{
+		bool rc = false;
+
+		AutoCacheRequest handle(tdbb, irq_system_domain, IRQ_REQUESTS);
+		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+			R IN RDB$FIELDS WITH
+			R.RDB$FIELD_NAME EQ fldName AND
+			R.RDB$SYSTEM_FLAG EQUIV 1
+		{
+			rc = true;
+		}
+		END_FOR
+
+		return rc;
+	}
 }
 
 
@@ -884,6 +918,21 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 					if (!F.RDB$CHARACTER_SET_ID.NULL) {
 						userFunc->udf_character_set_id = F.RDB$CHARACTER_SET_ID;
 					}
+
+					if ((!X.RDB$ARGUMENT_MECHANISM.NULL) && X.RDB$ARGUMENT_MECHANISM == prm_mech_type_of &&
+						(!X.RDB$FIELD_NAME.NULL) && X.RDB$FIELD_NAME[0] &&
+						(!X.RDB$RELATION_NAME.NULL) && X.RDB$RELATION_NAME[0])
+					{
+						// type of column used in declaration
+						if (isSystemRelation(tdbb, transaction, X.RDB$RELATION_NAME))
+							userFunc->udf_flags |= UDF_sys_based;
+					}
+					else if ((!X.RDB$FIELD_SOURCE.NULL) && X.RDB$FIELD_SOURCE[0])
+					{
+						// domain used in declaration
+						if (isSystemDomain(tdbb, transaction, X.RDB$FIELD_SOURCE))
+							userFunc->udf_flags |= UDF_sys_based;
+					}
 				}
 				else
 				{
@@ -1256,6 +1305,22 @@ dsql_prc* METD_get_procedure(jrd_tra* transaction, DsqlCompilerScratch* dsqlScra
 			{
 				fb_utils::exact_name(PR.RDB$RELATION_NAME);
 				parameter->typeOfTable = PR.RDB$RELATION_NAME;
+			}
+
+			if (parameter->typeOfTable.hasData())
+			{
+				if (isSystemRelation(tdbb, transaction, parameter->typeOfTable.c_str()))
+					parameter->flags |= FLD_system;
+			}
+			else if (parameter->typeOfName.hasData())
+			{
+				if (isSystemDomain(tdbb, transaction, parameter->typeOfName.c_str()))
+					parameter->flags |= FLD_system;
+			}
+			else if (parameter->fieldSource.hasData())
+			{
+				if (isSystemDomain(tdbb, transaction, parameter->fieldSource.c_str()))
+					parameter->flags |= FLD_system;
 			}
 
 			if (type == 0 &&

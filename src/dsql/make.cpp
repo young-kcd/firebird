@@ -63,6 +63,21 @@ using namespace Jrd;
 using namespace Firebird;
 
 
+static void adjustLength(dsc* desc)
+{
+	USHORT adjust = 0;
+
+	if (desc->dsc_dtype == dtype_varying)
+		adjust = sizeof(USHORT);
+	else if (desc->dsc_dtype == dtype_cstring)
+		adjust = 1;
+
+	desc->dsc_length -= adjust;
+	desc->dsc_length *= 3;
+	desc->dsc_length += adjust;
+}
+
+
 LiteralNode* MAKE_const_slong(SLONG value)
 {
 	thread_db* tdbb = JRD_get_thread_data();
@@ -257,10 +272,12 @@ void MAKE_desc_from_field(dsc* desc, const dsql_fld* field)
 	desc->dsc_flags = (field->flags & FLD_nullable) ? DSC_nullable : 0;
 
 	if (desc->isText() || desc->isBlob())
-	{
-		desc->setTextType(INTL_CS_COLL_TO_TTYPE(
-			field->charSetId, field->collationId));
-	}
+		desc->setTextType(INTL_CS_COLL_TO_TTYPE(field->charSetId, field->collationId));
+
+	// UNICODE_FSS_HACK
+	// check if the field is a system domain and CHARACTER SET is UNICODE_FSS
+	if (desc->isText() && (INTL_GET_CHARSET(desc) == CS_UNICODE_FSS) && (field->flags & FLD_system))
+		adjustLength(desc);
 }
 
 
@@ -327,6 +344,14 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 
 			// node->nodDesc.dsc_scale = field->scale;
 			// node->nodDesc.dsc_sub_type = field->subType;
+
+			// UNICODE_FSS_HACK
+			// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
+			if ((field->flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
+				INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
+			{
+				adjustLength(&node->nodDesc);
+			}
 		}
 		else
 		{
@@ -349,23 +374,6 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 
 	if ((field->flags & FLD_nullable) || (context->ctx_flags & CTX_outer_join))
 		node->nodDesc.dsc_flags |= DSC_nullable;
-
-	// UNICODE_FSS_HACK
-	// check if the field is a system domain and the type is CHAR/VARCHAR CHARACTER SET UNICODE_FSS
-	if ((field->flags & FLD_system) && node->nodDesc.dsc_dtype <= dtype_varying &&
-		INTL_GET_CHARSET(&node->nodDesc) == CS_METADATA)
-	{
-		USHORT adjust = 0;
-
-		if (node->nodDesc.dsc_dtype == dtype_varying)
-			adjust = sizeof(USHORT);
-		else if (node->nodDesc.dsc_dtype == dtype_cstring)
-			adjust = 1;
-
-		node->nodDesc.dsc_length -= adjust;
-		node->nodDesc.dsc_length *= 3;
-		node->nodDesc.dsc_length += adjust;
-	}
 
 	return node;
 }
