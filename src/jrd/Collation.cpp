@@ -124,6 +124,15 @@ static const UCHAR special[128] =
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0	// ~     (tilde)
 };
 
+template <class SLEUTHTYPE>
+bool SLEUTH_AUX(Jrd::TextType* obj, USHORT flags,
+	const SLEUTHTYPE* search, const SLEUTHTYPE* end_search,
+	const SLEUTHTYPE* match, const SLEUTHTYPE* end_match);
+template <class SLEUTHTYPE>
+bool SLEUTH_CLASS_NAME(Jrd::TextType* obj, USHORT flags,
+	const SLEUTHTYPE* char_class, const SLEUTHTYPE* const end_class,
+	SLEUTHTYPE character);
+
 template <class MATCHESTYPE>
 bool MATCHESNAME(Jrd::thread_db* tdbb, Jrd::TextType* obj,
 				 const MATCHESTYPE* p1, SLONG l1_bytes,
@@ -343,7 +352,7 @@ ULONG SLEUTH_MERGE_NAME(Jrd::thread_db* tdbb_dummy, Jrd::TextType* obj,
 
 
 template <class SLEUTHTYPE>
-static bool SLEUTH_AUX(
+bool SLEUTH_AUX(
 						  Jrd::TextType* obj,
 						  USHORT flags,
 						  const SLEUTHTYPE* search,
@@ -473,7 +482,7 @@ static bool SLEUTH_AUX(
 
 
 template <class SLEUTHTYPE>
-static bool SLEUTH_CLASS_NAME(
+bool SLEUTH_CLASS_NAME(
 								 Jrd::TextType* obj,
 								 USHORT flags,
 								 const SLEUTHTYPE* char_class,
