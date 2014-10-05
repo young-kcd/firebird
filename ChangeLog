@@ -1,3 +1,10 @@
+ 2014-10-04 20:10  dimitr 
+   M src/jrd/cch.cpp
+   M src/jrd/cch_proto.h
+   M src/jrd/err.cpp
+   M src/jrd/jrd.cpp
+Refactored cache shutdown. This should also fix CORE-4568: Server may crash while disconnecting from the database under load.
+
  2014-10-03 16:20  asfernandes 
    M src/isql/isql.epp
 Fix padding of UNICODE_FSS - complement to CORE-3431 (UTF-8) fix.
