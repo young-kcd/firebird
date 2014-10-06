@@ -1,3 +1,9 @@
+ 2014-10-05 13:16  alexpeshkoff 
+   M src/dsql/make.cpp
+   M src/dsql/metd.epp
+   M src/jrd/irq.h
+Backported fix for CORE-4566: Incorrect size of the output parameter/argument when execute block, procedure or function use system field in metadata charset
+
  2014-09-17 13:03  paulbeach 
    M builds/posix/Makefile.in.firebird
 Fix annoying typo
