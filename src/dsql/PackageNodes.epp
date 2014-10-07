@@ -611,6 +611,11 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 		END_MODIFY
 
 		owner = PKG.RDB$OWNER_NAME;
+
+		dsc desc;
+		desc.makeText(name.length(), ttype_metadata,
+			(UCHAR*) const_cast<char*>(name.c_str()));	// safe const_cast
+		DFW_post_work(transaction, dfw_drop_package_body, &desc, 0);
 	}
 	END_FOR
 
