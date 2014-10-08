@@ -235,10 +235,11 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	char* spb = spb_buffer;
 	stuffSpbByte(spb, isc_spb_version);
 	stuffSpbByte(spb, isc_spb_current_version);
-	if (username && password && username[0] && password[0])
+	if (username && username[0])
 	{
 		stuffSpb(spb, isc_spb_user_name, username);
-		stuffSpb(spb, isc_spb_password, password);
+		if (password && password[0])
+			stuffSpb(spb, isc_spb_password, password);
 	}
 	else if (trusted)
 	{
