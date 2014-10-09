@@ -851,7 +851,8 @@ namespace Jrd {
 
 void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	AuthReader::AuthBlock* newAuthBlock, const AuthReader::AuthBlock& authBlock,
-	const char* alias, const char* db, const char* securityAlias)
+	const char* alias, const char* db, const char* securityAlias,
+	ICryptKeyCallback* cryptCb)
 {
 	AuthReader::Info info;
 
@@ -908,6 +909,11 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 				if (syncType == SYNC_EXCLUSIVE)
 				{
 					DispatcherPtr prov;
+					if (cryptCb)
+					{
+						prov->setDbCryptCallback(&st, cryptCb);
+						check("IProvider::setDbCryptCallback", &st);
+					}
 
 					ClumpletWriter embeddedSysdba(ClumpletWriter::Tagged,
 						MAX_DPB_SIZE, isc_dpb_version1);
