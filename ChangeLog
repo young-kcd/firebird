@@ -1,3 +1,11 @@
+ 2014-10-08 12:19  alexpeshkoff 
+   M src/common/call_service.cpp
+Fixed CORE-4573: Avoid need in fake -pas switch when using gsec in embedded mode
+
+ 2014-10-07 14:46  asfernandes 
+   M src/dsql/PackageNodes.epp
+Fixed CORE-4570 - Wrong error at ALTER PACKAGE.
+
  2014-10-05 13:14  alexpeshkoff 
    M src/dsql/ExprNodes.cpp
    M src/dsql/dsql.h
