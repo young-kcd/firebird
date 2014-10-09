@@ -976,7 +976,7 @@ db_ddl_privilege_list($privilegeArray)
 
 %type db_ddl_privilege(<privilegeArray>)
 db_ddl_privilege($privilegeArray)
-	| CREATE						{ $privilegeArray->add(PrivilegeClause('C', NULL)); }
+	: CREATE						{ $privilegeArray->add(PrivilegeClause('C', NULL)); }
 	| ALTER							{ $privilegeArray->add(PrivilegeClause('L', NULL)); }
 	| DROP							{ $privilegeArray->add(PrivilegeClause('O', NULL)); }
 	;
