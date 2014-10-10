@@ -2166,7 +2166,7 @@ RseNode* RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
 	return this;
 }
 
-bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
+bool RseNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 {
 	const RseNode* o = other->as<RseNode>();
 
@@ -2175,7 +2175,8 @@ bool RseNode::dsqlMatch(const ExprNode* other, bool /*ignoreMapCast*/) const
 
 	// ASF: Commented-out code "Fixed assertion when subquery is used in group by" to make
 	// CORE-4084 work again.
-	return /***dsqlContext &&***/ dsqlContext == o->dsqlContext;
+	return /***dsqlContext &&***/ dsqlContext == o->dsqlContext &&
+		RecordSourceNode::dsqlMatch(other, ignoreMapCast);
 }
 
 // Make up join node and mark relations as "possibly NULL" if they are in outer joins (inOuterJoin).
