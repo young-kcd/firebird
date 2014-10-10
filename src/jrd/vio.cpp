@@ -2302,16 +2302,26 @@ void VIO_init(thread_db* tdbb)
 
 	if (!(dbb->dbb_flags & DBB_garbage_collector))
 	{
-		try
+		const ULONG old = dbb->dbb_flags.exchangeBitOr(DBB_gc_starting);
+		if (!(old & DBB_gc_starting))
 		{
-			Thread::start(garbage_collector, dbb, THREAD_medium);
-		}
-		catch (const Exception&)
-		{
-			ERR_bugcheck_msg("cannot start garbage collector thread");
-		}
+			if (old & DBB_garbage_collector)
+				dbb->dbb_flags &= ~DBB_gc_starting;
+			else
+			{
+				try
+				{
+					Thread::start(garbage_collector, dbb, THREAD_medium);
+				}
+				catch (const Exception&)
+				{
+					dbb->dbb_flags &= ~DBB_gc_starting;
+					ERR_bugcheck_msg("cannot start garbage collector thread");
+				}
 
-		dbb->dbb_gc_init.enter();
+				dbb->dbb_gc_init.enter();
+			}
+		}
 	}
 
 	// Database backups and sweeps perform their own garbage collection
@@ -4531,6 +4541,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 			// Notify our creator that we have started
 			dbb->dbb_flags |= DBB_garbage_collector;
+			dbb->dbb_flags &= ~DBB_gc_starting;
 			dbb->dbb_gc_init.release();
 
 			// The garbage collector flag is cleared to request the thread
