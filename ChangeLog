@@ -1,3 +1,14 @@
+ 2014-10-09 15:25  alexpeshkoff 
+   M src/jrd/Mapping.cpp
+   M src/jrd/Mapping.h
+   M src/jrd/jrd.cpp
+   M src/jrd/svc.cpp
+Fixed use of encrypted database for users mapping
+
+ 2014-10-09 14:32  alexpeshkoff 
+   M src/dsql/parse.y
+Fixed a warning - thanks to D.Sibiryakov
+
  2014-10-08 12:19  alexpeshkoff 
    M src/common/call_service.cpp
 Fixed CORE-4573: Avoid need in fake -pas switch when using gsec in embedded mode
