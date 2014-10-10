@@ -4829,12 +4829,6 @@ ddl_subname
 	: '.' symbol_ddl_name	{ $$ = $2; }
 	;
 
-%type <metaNamePtr> ddl_subname_opt
-ddl_subname_opt
-	: /* nothing */		{ $$ = NULL; }
-	| ddl_subname
-	;
-
 %type <qualifiedNamePtr> ddl_qualified_name
 ddl_qualified_name
 	: symbol_ddl_name						{ $$ = newNode<QualifiedName>(*$1); }
