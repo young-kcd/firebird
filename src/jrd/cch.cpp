@@ -1445,7 +1445,8 @@ void CCH_init2(thread_db* tdbb)
 	}
 #endif
 
-	if (!(dbb->dbb_flags & (DBB_read_only | DBB_security_db)))
+	const Attachment* att = tdbb->getAttachment();
+	if (!(dbb->dbb_flags & DBB_read_only) && !(att->att_flags & ATT_security_db))
 	{
 		// writer startup in progress
 		bcb->bcb_flags |= BCB_writer_start;

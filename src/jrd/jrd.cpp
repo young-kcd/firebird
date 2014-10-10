@@ -1476,6 +1476,8 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 
 			if (options.dpb_no_garbage)
 				attachment->att_flags |= ATT_no_cleanup;
+			if (options.dpb_sec_attach)
+				attachment->att_flags |= ATT_security_db;
 
 			if (options.dpb_gbak_attach)
 				attachment->att_utility = Attachment::UTIL_GBAK;
@@ -2484,6 +2486,9 @@ JAttachment* JProvider::createDatabase(IStatus* user_status, const char* filenam
 
 			if (options.dpb_working_directory.hasData())
 				attachment->att_working_directory = options.dpb_working_directory;
+
+			if (options.dpb_sec_attach)
+				attachment->att_flags |= ATT_security_db;
 
 			if (options.dpb_gbak_attach)
 				attachment->att_utility = Attachment::UTIL_GBAK;
@@ -5732,8 +5737,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_sec_attach:
 			dpb_sec_attach = rdr.getInt() != 0;
-			if (dpb_sec_attach)
-				dpb_flags |= DBB_security_db;
 			break;
 
 		case isc_dpb_gbak_attach:
@@ -6631,16 +6634,21 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 		{
 			SyncLockGuard dbbGuard(&dbb->dbb_sync, SYNC_SHARED, "JRD_enum_attachments");
 
-			if (!(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)))
+			if (!(dbb->dbb_flags & DBB_bugcheck))
 			{
-				if (!dbFiles.exist(dbb->dbb_filename))
-					dbFiles.add(dbb->dbb_filename);
-
+				bool found = false;	// look for user attachments only
 				for (const Jrd::Attachment* attach = dbb->dbb_attachments; attach;
 					 attach = attach->att_next)
 				{
-					atts++;
+					if (!(attach->att_flags & ATT_security_db))
+					{
+						atts++;
+						found = true; 
+					}
 				}
+
+				if (found && !dbFiles.exist(dbb->dbb_filename))
+					dbFiles.add(dbb->dbb_filename);
 			}
 		}
 
@@ -7327,13 +7335,16 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 			for (Database* dbb = databases; dbb; dbb = dbb->dbb_next)
 			{
-				if ( !(dbb->dbb_flags & (DBB_bugcheck | DBB_security_db)) )
+				if (!(dbb->dbb_flags & DBB_bugcheck))
 				{
 					Sync dbbGuard(&dbb->dbb_sync, FB_FUNCTION);
 					dbbGuard.lock(SYNC_EXCLUSIVE);
 
 					for (Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
-						attachments->add(att->getStable());
+					{
+						if (!(att->att_flags & ATT_security_db))
+							attachments->add(att->getStable());
+					}
 				}
 			}
 			// No need in databases_mutex any more
