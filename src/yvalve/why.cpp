@@ -5149,7 +5149,7 @@ void YAttachment::execute(Firebird::IStatus* status, FB_API_HANDLE* traHandle,
 	{
 		if (transaction && !newTrans)
 		{
-			transaction->destroy(DF_RELEASE);
+			transaction->destroy(0);
 			*traHandle = 0;
 		}
 		else if (!transaction && newTrans)
