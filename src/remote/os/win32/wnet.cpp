@@ -1342,6 +1342,9 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 	packet_print("receive", buffer, n);
 #endif
 
+	port->port_rcv_packets++;
+	port->port_rcv_bytes += n;
+
 	*length = (SSHORT) n;
 
 	return true;
@@ -1399,6 +1402,9 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("send", reinterpret_cast<const UCHAR*>(buffer), buffer_length);
 #endif
+
+	port->port_snd_packets++;
+	port->port_snd_bytes += buffer_length;
 
 	return true;
 }

@@ -80,6 +80,14 @@ const int BLOB_LENGTH		= 16384;
 #include "fb_blk.h"
 #include "firebird/Interface.h"
 
+// Prefetch constants
+
+const ULONG MAX_PACKETS_PER_BATCH = 8;
+
+const ULONG MIN_ROWS_PER_BATCH = 10;
+const ULONG MAX_ROWS_PER_BATCH = 1000;
+
+const ULONG MAX_BATCH_CACHE_SIZE = 1024 * 1024; // 1 MB
 
 // fwd. decl.
 namespace Firebird {
@@ -910,6 +918,11 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 
 	UCharArrayAutoPtr	port_buffer;
 
+	FB_UINT64 port_snd_packets;
+	FB_UINT64 port_rcv_packets;
+	FB_UINT64 port_snd_bytes;
+	FB_UINT64 port_rcv_bytes;
+
 public:
 	rem_port(rem_port_t t, size_t rpt) :
 		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
@@ -941,7 +954,8 @@ public:
 		port_required_encryption(true),		// safe default
 		port_known_server_keys(getPool()), port_crypt_plugin(NULL),
 		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL),
-		port_buffer(FB_NEW(getPool()) UCHAR[rpt])
+		port_buffer(FB_NEW(getPool()) UCHAR[rpt]),
+		port_snd_packets(0), port_rcv_packets(0), port_snd_bytes(0), port_rcv_bytes(0)
 	{
 		addRef();
 		memset(&port_linger, 0, sizeof port_linger);

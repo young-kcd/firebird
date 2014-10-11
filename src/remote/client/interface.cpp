@@ -2897,7 +2897,6 @@ int ResultSet::fetchNext(IStatus* status, void* buffer)
 			{
 				sqldata->p_sqldata_messages =
 					REMOTE_compute_batch_size(port, 0, op_fetch_response, statement->rsr_select_format);
-				sqldata->p_sqldata_messages *= 4;
 
 				// Reorder data when the local buffer is half empty
 
@@ -4076,8 +4075,7 @@ void Request::receive(IStatus* status, int level, unsigned int msg_type,
 			// could dynamically adjust batching sizes based on fetch patterns
 
 			data->p_data_messages = REMOTE_compute_batch_size(port, 0, op_send, tail->rrq_format);
-			tail->rrq_reorder_level = 2 * data->p_data_messages;
-			data->p_data_messages *= 4;
+			tail->rrq_reorder_level = data->p_data_messages / 2;
 			tail->rrq_rows_pending += data->p_data_messages;
 
 #ifdef DEBUG

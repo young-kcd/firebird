@@ -1902,7 +1902,7 @@ static bool_t xnet_read(XDR* xdrs)
  *	Read a buffer full of data.
  *
  **************************************/
-	rem_port* port = (rem_port*)xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	const bool portServer = (port->port_flags & PORT_server);
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_recv_channel;
@@ -1936,8 +1936,13 @@ static bool_t xnet_read(XDR* xdrs)
 		if (wait_result == WAIT_OBJECT_0)
 		{
 			// Client has written some data for us (server) to read
+
+			port->port_rcv_packets++;
+			port->port_rcv_bytes += xch->xch_length;
+
 			xdrs->x_handy = xch->xch_length;
 			xdrs->x_private = xdrs->x_base;
+
 			return TRUE;
 		}
 		if (wait_result == WAIT_TIMEOUT)
@@ -1981,15 +1986,19 @@ static bool_t xnet_write(XDR* xdrs)
  *  filled and ready for reading.
  *
  **************************************/
-	rem_port* port = (rem_port*)xdrs->x_public;
+	rem_port* port = (rem_port*) xdrs->x_public;
 	XCC xcc = port->port_xcc;
 	XCH xch = xcc->xcc_send_channel;
 
 	xch->xch_length = xdrs->x_private - xdrs->x_base;
 	if (SetEvent(xcc->xcc_event_send_channel_filled))
 	{
+		port->port_snd_packets++;
+		port->port_snd_bytes += xch->xch_length;
+
 		xdrs->x_private = xdrs->x_base;
 		xdrs->x_handy = xch->xch_size;
+
 		return TRUE;
 	}
 

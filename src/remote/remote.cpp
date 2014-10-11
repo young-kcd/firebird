@@ -204,33 +204,11 @@ USHORT REMOTE_compute_batch_size(rem_port* port,
  * The client calculates this number (n from the list above)
  * and sends it to the server.
  *
- * I asked why it is that the client doesn't just ask for a packet
- * full of records and let the server return however many fits in
- * a packet.  According to Sudesh, this is because of a bug in
- * Superserver which showed up in the WIN_NT 4.2.x kits.  So I
- * imagine once we up the protocol so that we can be sure we're not
- * talking to a 4.2 kit, then we can make this optimization.
- *           - Deej 2/28/97
- *
- * Note: A future optimization can look at setting the packet
- * size to optimize the transfer.
- *
- * Note: This calculation must use worst-case to determine the
- * packing.  Should the data record have VARCHAR data, it is
- * often possible to fit more than the packing specification
- * into each packet.  This is also a candidate for future
- * optimization.
- *
  * The data size is either the XDR data representation, or the
  * actual message size (rounded up) if this is a symmetric
  * architecture connection.
  *
  **************************************/
-
-	const USHORT MAX_PACKETS_PER_BATCH	= 4;	// packets    - picked by SWAG
-	const USHORT MIN_PACKETS_PER_BATCH	= 2;	// packets    - picked by SWAG
-	const USHORT DESIRED_ROWS_PER_BATCH	= 20;	// data rows  - picked by SWAG
-	const USHORT MIN_ROWS_PER_BATCH		= 10;	// data rows  - picked by SWAG
 
 	const USHORT op_overhead = (USHORT) xdr_protocol_overhead(op_code);
 
@@ -241,51 +219,21 @@ USHORT REMOTE_compute_batch_size(rem_port* port,
 			   format->fmt_length, op_overhead);
 #endif
 
-	ULONG row_size;
-	if (port->port_flags & PORT_symmetric)
-	{
-		// Same architecture connection
-		row_size = (ROUNDUP(format->fmt_length, 4) + op_overhead);
-	}
-	else
-	{
-		// Using XDR for data transfer
-		row_size = (ROUNDUP(format->fmt_net_length, 4) + op_overhead);
-	}
+	const ULONG row_size = op_overhead +
+		(port->port_flags & PORT_symmetric) ?
+			ROUNDUP(format->fmt_length, 4) : 	// Same architecture connection
+			ROUNDUP(format->fmt_net_length, 4);	// Using XDR for data transfer
 
-	USHORT num_packets = (USHORT) (((DESIRED_ROWS_PER_BATCH * row_size)	// data set
-							 + buffer_used	// used in 1st pkt
-							 + (port->port_buff_size - 1))	// to round up
-							/ port->port_buff_size);
-	if (num_packets > MAX_PACKETS_PER_BATCH)
-	{
-		num_packets = (USHORT) (((MIN_ROWS_PER_BATCH * row_size)	// data set
-								 + buffer_used	// used in 1st pkt
-								 + (port->port_buff_size - 1))	// to round up
-								/ port->port_buff_size);
-	}
-	num_packets = MAX(num_packets, MIN_PACKETS_PER_BATCH);
+	ULONG result = (port->port_protocol >= PROTOCOL_VERSION13) ?
+		MAX_ROWS_PER_BATCH : (MAX_PACKETS_PER_BATCH * port->port_buff_size - buffer_used) / row_size;
 
-	// Now that we've picked the number of packets in a batch,
-	// pack as many rows as we can into the set of packets
+	// Don't ask for more records than we can cache
 
-	ULONG result = (num_packets * port->port_buff_size - buffer_used) / row_size;
+	result = MIN(result, MAX_BATCH_CACHE_SIZE / format->fmt_length);
 
-	// Must always send some messages, even if message size is more
-	// than packet size.
+	// Must always send some messages, even if message is larger than packet
 
 	result = MAX(result, MIN_ROWS_PER_BATCH);
-
-#ifdef DEBUG
-	{
-		// CVC: I don't see the point in replacing this with fb_utils::readenv().
-		const char* p = getenv("DEBUG_BATCH_SIZE");
-		if (p)
-			result = atoi(p);
-		fprintf(stderr, "row_size = %lu num_packets = %d\n", row_size, num_packets);
-		fprintf(stderr, "result = %lu\n", result);
-	}
-#endif
 
 	fb_assert(result <= MAX_USHORT);
 	return static_cast<USHORT>(result);

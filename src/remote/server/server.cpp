@@ -3282,11 +3282,6 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
 
-	const ULONG msg_length = statement->rsr_format ? statement->rsr_format->fmt_length : 0;
-
-	USHORT count = statement->rsr_flags.test(Rsr::NO_BATCH) ? 1 : sqldata->p_sqldata_messages;
-	USHORT count2 = statement->rsr_flags.test(Rsr::NO_BATCH) ? 0 : count;
-
 	// On first fetch, clear the end-of-stream flag & reset the message buffers
 
 	if (!statement->rsr_flags.test(Rsr::FETCHED))
@@ -3311,6 +3306,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		}
 	}
 
+	const ULONG msg_length = statement->rsr_format ? statement->rsr_format->fmt_length : 0;
 
 	// If required, call setDelayedOutputFormat()
 
@@ -3329,8 +3325,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 		statement->rsr_delayed_format = false;
 	}
 
-
 	// Get ready to ship the data out
+
+	const USHORT max_records = statement->rsr_flags.test(Rsr::NO_BATCH) ? 1 : sqldata->p_sqldata_messages;
 
 	P_SQLDATA* response = &sendL->p_sqldata;
 	sendL->p_operation = op_fetch_response;
@@ -3341,17 +3338,18 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	// Check to see if any messages are already sitting around
 
+	const FB_UINT64 org_packets = this->port_snd_packets;
+
+	USHORT count = 0;
 	bool rc = true;
 
-	while (true)
+	for (; count < max_records; count++)
 	{
-
 		// Have we exhausted the cache & reached cursor EOF?
 		if (statement->rsr_flags.test(Rsr::EOF_SET) && !statement->rsr_msgs_waiting)
 		{
 			statement->rsr_flags.clear(Rsr::EOF_SET);
 			rc = false;
-			count2 = 0;
 			break;
 		}
 
@@ -3378,15 +3376,12 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			rc = statement->rsr_cursor->fetchNext(&status_vector, message->msg_buffer) == IStatus::FB_OK;
 
 			statement->rsr_flags.set(Rsr::FETCHED);
+
 			if (status_vector.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
-			{
 				return this->send_response(sendL, 0, 0, &status_vector, false);
-			}
+
 			if (!rc)
-			{
-				count2 = 0;
 				break;
-			}
 
 			message->msg_address = message->msg_buffer;
 		}
@@ -3397,8 +3392,6 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 			statement->rsr_msgs_waiting--;
 		}
 
-		count--;
-
 		// There's a buffer waiting -- send it
 
 		if (!this->send_partial(sendL))
@@ -3406,9 +3399,11 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 		message->msg_address = NULL;
 
-		// If we've sent the requested amount, break out of loop
+		// If we've hit maximum prefetch size, break out of loop
 
-		if (count <= 0)
+		const USHORT packets = this->port_snd_packets - org_packets;
+
+		if (packets >= MAX_PACKETS_PER_BATCH && count >= MIN_ROWS_PER_BATCH)
 			break;
 	}
 
@@ -3438,7 +3433,9 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 	while (message->msg_address && message->msg_next != statement->rsr_buffer)
 		message = message->msg_next;
 
-	for (; count2; --count2)
+	USHORT prefetch_count = (rc && !statement->rsr_flags.test(Rsr::NO_BATCH)) ? count : 0;
+
+	for (; prefetch_count; --prefetch_count)
 	{
 		if (message->msg_address)
 		{
