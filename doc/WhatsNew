@@ -2,6 +2,41 @@
   * v3.0 Beta 1
   *************
 
+    * Bugfix CORE-4576
+        Cache writer thread could not start
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4575
+        Server crashes in the garbage collector thread at disconnect of last attachment
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4574
+        Regression: Incorrect result in subquery with aggregate
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4570
+        Wrong error at ALTER PACKAGE
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4568
+        Server may crash while disconnecting from the database under load
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4566
+        Incorrect size of the output parameter/argument when execute block, procedure or function use system field in metadata charset
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4565
+        GDSCODE can have value = 0 in WHEN-section under some concurrent env., only in SC or CS (not in SS)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * Bugfix CORE-4555
         DDL trigger remains active after dropped
       Contributor(s):
@@ -486,7 +521,7 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Improvement CORE-2530
-        Improve even more the FB network protocol
+        Denser data stream and better prefetch logic in the network protocol
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
