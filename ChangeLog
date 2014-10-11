@@ -1,3 +1,26 @@
+ 2014-10-10 16:00  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-4574 - Incorrect result in subquery with aggregate.
+
+ 2014-10-10 12:05  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed AV caused by one of my recent commits - thanks to Vlad
+
+ 2014-10-10 10:12  hvlad 
+   M src/jrd/Attachment.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+Fixed bug CORE-4576 :  Cache Writer thread could not start
+
+ 2014-10-10 10:11  hvlad 
+   M src/jrd/Database.h
+   M src/jrd/vio.cpp
+Fixed bug CORE-4575 : AV in garbage collector thread at disconnect of last attachment
+
+ 2014-10-10 08:43  alexpeshkoff 
+   M src/dsql/parse.y
+Removed unused rule, in case it's needed later adding it once again is trivial
+
  2014-10-09 15:25  alexpeshkoff 
    M src/jrd/Mapping.cpp
    M src/jrd/Mapping.h
