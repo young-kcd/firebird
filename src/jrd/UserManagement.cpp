@@ -35,7 +35,8 @@
 using namespace Jrd;
 using namespace Firebird;
 
-namespace {
+namespace
+{
 	class UserIdInfo : public AutoIface<Api::LogonInfoImpl<UserIdInfo> >
 	{
 	public:
@@ -218,7 +219,8 @@ USHORT UserManagement::put(Auth::DynamicUserData* userData)
 	return ret;
 }
 
-void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Firebird::IUser* user)
+void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status,
+	const char* userName, Firebird::IUser* user)
 {
 	if (!errcode)
 	{

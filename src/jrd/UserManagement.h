@@ -74,7 +74,8 @@ private:
 	Firebird::HalfStaticArray<Auth::DynamicUserData*, 8> commands;
 	Firebird::IManagement* manager;
 
-	static void checkSecurityResult(int errcode, Firebird::IStatus* status, const char* userName, Firebird::IUser* user);
+	static void checkSecurityResult(int errcode, Firebird::IStatus* status,
+		const char* userName, Firebird::IUser* user);
 };
 
 }	// namespace

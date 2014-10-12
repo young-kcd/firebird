@@ -860,6 +860,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	const int firstSlot = slot - (slot % PAGES_IN_EXTENT);	// first slot of extent
 	int s = firstSlot;
 	FB_SIZE_T i = 0;
+
 	for (; i < PAGES_IN_EXTENT && s < ppage->ppg_count; i++, s++)
 	{
 		if (s != slot)
@@ -894,7 +895,9 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	{
 		// make sure all data pages marked as empty at PP are still empty
 		s = firstSlot;
+
 		for (i = 0; i < pages.getCount() && empty; i++, s++)
+		{
 			if (s != slot)
 			{
 				WIN dp_window(relPages->rel_pg_space_id, pages[i]);
@@ -907,6 +910,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 				else
 					CCH_RELEASE_TAIL(tdbb, &dp_window);
 			}
+		}
 	}
 
 	if (extent && !empty)
@@ -2737,12 +2741,15 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 	if ((slot % PAGES_IN_EXTENT == 0) && (ppage->ppg_count >= PAGES_IN_EXTENT || pp_sequence > 0))
 	{
 		cntAlloc = PAGES_IN_EXTENT;
+
 		for (int i = 0; i < PAGES_IN_EXTENT; i++)
+		{
 			if(ppage->ppg_page[slot + i] != 0)
 			{
 				cntAlloc = 1;
 				break;
-			};
+			}
+		}
 	}
 
 	data_page* dpage = (data_page*) PAG_allocate_pages(tdbb, window, cntAlloc, cntAlloc != 1);
@@ -3116,9 +3123,11 @@ static rhd* locate_space(thread_db* tdbb,
 
 	USHORT pp_sequence =
 		(type == DPM_primary ? relPages->rel_pri_data_space : relPages->rel_sec_data_space);
+
 	for (;; pp_sequence++)
 	{
 		locklevel_t ppLock = LCK_read;
+
 		if (type == DPM_primary)
 			relPages->rel_pri_data_space = pp_sequence;
 		else
@@ -3203,9 +3212,8 @@ static rhd* locate_space(thread_db* tdbb,
 				if (dpage)
 				{
 					UCHAR* space = find_space(tdbb, rpb, size, stack, record, type);
-					if (space)	{
+					if (space)
 						return (rhd*) space;
-					}
 				}
 
 				ppLock = LCK_read;
@@ -3339,7 +3347,8 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	const UCHAR bit_scnd_set  = ((*byte & PPG_DP_BIT_MASK(slot, ppg_dp_secondary)) == 0) ? 0 : dpg_secondary;
 	const bool bit_empty_set  = ((*byte & PPG_DP_BIT_MASK(slot, ppg_dp_empty)) != 0);
 
-	if ((flags & (dpg_full | dpg_large | dpg_swept | dpg_secondary)) == (bit_full_set | bit_large_set | bit_swept_set | bit_scnd_set) &&
+	if ((flags & (dpg_full | dpg_large | dpg_swept | dpg_secondary)) ==
+			(bit_full_set | bit_large_set | bit_swept_set | bit_scnd_set) &&
 		(dpEmpty == bit_empty_set))
 	{
 		CCH_RELEASE(tdbb, &pp_window);
