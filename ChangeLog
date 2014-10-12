@@ -1,3 +1,17 @@
+ 2014-10-11 19:17  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2014-10-11 09:02  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Improved the batching (prefetch) logic. This is the second part of CORE-2530.
+
  2014-10-10 16:00  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Fixed CORE-4574 - Incorrect result in subquery with aggregate.
