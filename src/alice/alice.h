@@ -35,7 +35,7 @@
 
 enum val_errors {
 	VAL_INVALID_DB_VERSION	= 0,
-	
+
 	VAL_RECORD_ERRORS		= 1,
 	VAL_BLOB_PAGE_ERRORS	= 2,
 	VAL_DATA_PAGE_ERRORS	= 3,

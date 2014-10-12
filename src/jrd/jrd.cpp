@@ -6643,7 +6643,7 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 					if (!(attach->att_flags & ATT_security_db))
 					{
 						atts++;
-						found = true; 
+						found = true;
 					}
 				}
 

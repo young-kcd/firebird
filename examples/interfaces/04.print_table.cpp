@@ -260,7 +260,7 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 			char segbuf[16];
 			unsigned len;
 			// read data segment by segment
-			for(;;)
+			for (;;)
 			{
 				int cc = blob->getSegment(st, sizeof(segbuf), segbuf, &len);
 				if (cc != IStatus::FB_OK && cc != IStatus::FB_SEGMENT)

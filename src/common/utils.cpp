@@ -1016,7 +1016,9 @@ Firebird::PathName getPrefix(unsigned int prefType, const char* name)
 
 	if (! bootBuild())
 	{
-		if (prefType != Firebird::IConfigManager::FB_DIR_CONF && prefType != Firebird::IConfigManager::FB_DIR_MSG && configDir[prefType][0])
+		if (prefType != Firebird::IConfigManager::FB_DIR_CONF &&
+			prefType != Firebird::IConfigManager::FB_DIR_MSG &&
+			configDir[prefType][0])
 		{
 			// Value is set explicitly and is not environment overridable
 			PathUtils::concatPath(s, configDir[prefType], name);
@@ -1171,7 +1173,7 @@ void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw()
 		Firebird::Arg::StatusVector sv(from);
 		sv.copyTo(to);
 	}
-	catch(const Firebird::BadAlloc& ex)
+	catch (const Firebird::BadAlloc& ex)
 	{
 		ex.stuffException(to);
 	}

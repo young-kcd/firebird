@@ -716,7 +716,8 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	catch (const Exception&)
 	{
 		status = tdbb->tdbb_status_vector[1];
-		*traceResult = (status == isc_no_priv ? ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED);
+		*traceResult = status == isc_no_priv ?
+			ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED;
 	}
 
 	// restore warnings (if there are any)

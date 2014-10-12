@@ -56,7 +56,7 @@ static const TEXT val_errors[] =
 {
 	isc_info_page_errors, isc_info_record_errors, isc_info_bpage_errors,
 	isc_info_dpage_errors, isc_info_ipage_errors, isc_info_ppage_errors,
-	isc_info_tpage_errors, 
+	isc_info_tpage_errors,
 	fb_info_page_warns, fb_info_record_warns, fb_info_bpage_warns,
 	fb_info_dpage_warns, fb_info_ipage_warns, fb_info_ppage_warns,
 	fb_info_tpage_warns, fb_info_pip_errors, fb_info_pip_warns,

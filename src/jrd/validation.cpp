@@ -589,28 +589,28 @@ static void explain_pp_bits(const UCHAR bits, Firebird::string& names)
 
 	if (bits & ppg_dp_large)
 	{
-		if (!names.empty()) 
+		if (!names.empty())
 			names.append(", ");
 		names.append("large");
 	}
 
 	if (bits & ppg_dp_swept)
 	{
-		if (!names.empty()) 
+		if (!names.empty())
 			names.append(", ");
 		names.append("swept");
 	}
 
 	if (bits & ppg_dp_secondary)
 	{
-		if (!names.empty()) 
+		if (!names.empty())
 			names.append(", ");
 		names.append("secondary");
 	}
 
-	if (bits & ppg_dp_empty) 
+	if (bits & ppg_dp_empty)
 	{
-		if (!names.empty()) 
+		if (!names.empty())
 			names.append(", ");
 		names.append("empty");
 	}
@@ -676,8 +676,8 @@ const Validation::MSG_ENTRY Validation::vdr_msg_table[VAL_MAX_ERROR] =
 	{true, isc_info_bpage_errors,	"Blob %"SQUADFORMAT" has unknown level %d instead of {0, 1, 2}"},
 	{false, fb_info_ipage_warns,	"Index %d has inconsistent left sibling pointer, page %"ULONGFORMAT" level %d at offset %"ULONGFORMAT},
 	{false, fb_info_ipage_warns,	"Index %d misses node on page %"ULONGFORMAT" level %d at offset %"ULONGFORMAT},	// 30
-	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_min (%"ULONGFORMAT"). Correct is %"ULONGFORMAT}, 
-	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_extent (%"ULONGFORMAT"). Correct is %"ULONGFORMAT}, 
+	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_min (%"ULONGFORMAT"). Correct is %"ULONGFORMAT},
+	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_extent (%"ULONGFORMAT"). Correct is %"ULONGFORMAT},
 	{false, fb_info_pip_warns,		"PIP %"ULONGFORMAT" (seq %d) have wrong pip_used (%"ULONGFORMAT"). Correct is %"ULONGFORMAT},
 	{false, fb_info_ppage_warns,	"Pointer page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} bits {0x%02X %s} are not consistent with data page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} state {0x%02X %s}"}
 };
@@ -716,7 +716,7 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 	Database* dbb = tdbb->getDatabase();
 	Firebird::PathName fileName = tdbb->getAttachment()->att_filename;
 
-	try 
+	try
 	{
 		val_pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, val_pool);
@@ -751,7 +751,7 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 
 		cleanup();
 
-		gds__log("Database: %s\n\tValidation finished: %d errors, %d warnings, %d fixed", 
+		gds__log("Database: %s\n\tValidation finished: %d errors, %d warnings, %d fixed",
 			fileName.c_str(), vdr_errors, vdr_warns, vdr_fixed);
 	}	// try
 	catch (const Firebird::Exception& ex)
@@ -858,7 +858,7 @@ Validation::RTN Validation::corrupt(int err_code, const jrd_rel* relation, ...)
 	return rtn_corrupt;
 }
 
-Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number, 
+Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 	USHORT type, WIN* window, void* apage_pointer)
 {
 /**************************************
@@ -1081,7 +1081,7 @@ static void print_rhd(USHORT length, const rhd* header)
 }
 #endif
 
-Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHORT length, 
+Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHORT length,
 	RecordNumber number)
 {
 /**************************************
@@ -1169,7 +1169,7 @@ Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHO
 	return rtn_ok;
 }
 
-Validation::RTN Validation::walk_chain(jrd_rel* relation, const rhd* header, 
+Validation::RTN Validation::walk_chain(jrd_rel* relation, const rhd* header,
 	RecordNumber head_number)
 {
 /**************************************
@@ -1268,7 +1268,7 @@ void Validation::walk_database()
 	CCH_RELEASE(vdr_tdbb, &window);
 }
 
-Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number, 
+Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 	ULONG sequence, UCHAR& pp_bits)
 {
 /**************************************
@@ -1308,7 +1308,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 
 	// Evaluate what flags should be set on PP
 
-	if (dp_flags & dpg_full) 
+	if (dp_flags & dpg_full)
 		pp_bits |= ppg_dp_full;
 
 	if (dp_flags & dpg_large)
@@ -1908,8 +1908,8 @@ void Validation::walk_pip()
 
 			if (*bytes == 0xFF && pipExtent == MAX_ULONG)
 				pipExtent = (bytes - page->pip_bits) * 8;
-			
-			if (pipMin == MAX_ULONG) 
+
+			if (pipMin == MAX_ULONG)
 			{
 				UCHAR mask = 1;
 				for (int i = 0; i < 8; i++, mask <<= 1)
@@ -1945,19 +1945,19 @@ void Validation::walk_pip()
 		}
 
 		bool fixme = false;
-		if (pipMin < page->pip_min) 
+		if (pipMin < page->pip_min)
 		{
 			corrupt(VAL_PIP_WRONG_MIN, NULL, page_number, sequence, page->pip_min, pipMin);
 			fixme = (vdr_flags & VDR_update);
 		}
 
-		if (pipExtent < page->pip_extent) 
+		if (pipExtent < page->pip_extent)
 		{
 			corrupt(VAL_PIP_WRONG_EXTENT, NULL, page_number, sequence, page->pip_extent, pipExtent);
 			fixme = (vdr_flags & VDR_update);
 		}
 
-		if (pipUsed > page->pip_used) 
+		if (pipUsed > page->pip_used)
 		{
 			corrupt(VAL_PIP_WRONG_USED, NULL, page_number, sequence, page->pip_used, pipUsed);
 			fixme = (vdr_flags & VDR_update);
@@ -2064,8 +2064,8 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 					explain_pp_bits(pp_bits, s_pp);
 					explain_pp_bits(new_pp_bits, s_dp);
 
-					corrupt(VAL_P_PAGE_WRONG_BITS, relation, 
-						page->ppg_header.pag_pageno, sequence, pp_bits, s_pp.c_str(), 
+					corrupt(VAL_P_PAGE_WRONG_BITS, relation,
+						page->ppg_header.pag_pageno, sequence, pp_bits, s_pp.c_str(),
 						*pages, seq, new_pp_bits, s_dp.c_str());
 
 					if ((vdr_flags & VDR_update))
@@ -2105,7 +2105,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 }
 
 
-Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, USHORT length, 
+Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, USHORT length,
 	RecordNumber number, bool delta_flag)
 {
 /**************************************

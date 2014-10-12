@@ -162,7 +162,6 @@ public:
 	ISC_STATUS save(const IStatus* status);
 	void clear();
 
-
 	ISC_STATUS getError() const
 	{
 		return value()[1];

@@ -488,8 +488,8 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
  **************************************
  *
  * Functional description
- *	Allocate number of consecutive pages and fake a read with a write lock for 
- *  the first allocated page. If aligned is true, ensure first allocated page 
+ *	Allocate number of consecutive pages and fake a read with a write lock for
+ *  the first allocated page. If aligned is true, ensure first allocated page
  *  is at extent boundary.
  *	This is the universal sequence when allocating pages.
  *
@@ -510,13 +510,13 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 	ULONG sequence = (cntAlloc >= PAGES_IN_EXTENT ? pageSpace->pipWithExtent : pageSpace->pipHighWater);
 	for (; toAlloc > 0; sequence++)
 	{
-		WIN pip_window(pageSpace->pageSpaceID, 
+		WIN pip_window(pageSpace->pageSpaceID,
 			(sequence == 0) ? pageSpace->pipFirst : sequence * dbb->dbb_page_manager.pagesPerPIP - 1);
 
 		page_inv_page* pip_page = (page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);
 
 		ULONG firstBit = MAX_ULONG, lastBit = MAX_ULONG;
-		
+
 		ULONG pipUsed = pip_page->pip_used;
 		ULONG pipMin = (cntAlloc >= PAGES_IN_EXTENT ? pip_page->pip_min : dbb->dbb_page_manager.pagesPerPIP);
 		ULONG pipExtent = MAX_ULONG;
@@ -622,7 +622,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 			}
 
 			if (!toAlloc)
-				break;	
+				break;
 		}
 
 		if (!toAlloc)
@@ -630,7 +630,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 			fb_assert(lastBit - firstBit + 1 == cntAlloc);
 
 			if (lastBit + 1 > pipUsed) {
-				pipUsed = ensureDiskSpace(tdbb, &pip_window, 
+				pipUsed = ensureDiskSpace(tdbb, &pip_window,
 					PageNumber(pageSpace->pageSpaceID, lastBit + sequence * pageMgr.pagesPerPIP));
 			}
 
@@ -660,11 +660,11 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 			if (pipExtent == MAX_ULONG)
 				pipExtent = pip_page->pip_extent;
 
-			// If we found free extent on the PIP page and allocated some pages of it, 
+			// If we found free extent on the PIP page and allocated some pages of it,
 			// set free extent mark after just allocated pages
 			// assume PAGES_IN_EXTENT == 8 (i.e. one byte of bits at PIP)
 			const ULONG extentByte = pipExtent / PAGES_IN_EXTENT;
-			if (extentByte >= firstBit / PAGES_IN_EXTENT && 
+			if (extentByte >= firstBit / PAGES_IN_EXTENT &&
 				extentByte <= lastBit / PAGES_IN_EXTENT)
 			{
 				pipExtent = FB_ALIGN(lastBit + 1, PAGES_IN_EXTENT);
@@ -701,7 +701,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 		if (pipExtent >= pageMgr.pagesPerPIP)
 			pageSpace->pipWithExtent.compareExchange(sequence, sequence + 1);
 
-		if (pipMin != pip_page->pip_min || pipExtent != pip_page->pip_extent || 
+		if (pipMin != pip_page->pip_min || pipExtent != pip_page->pip_extent ||
 			pipUsed != pip_page->pip_used || extraPages.getCount())
 		{
 			if (toAlloc)
@@ -719,7 +719,7 @@ PAG PAG_allocate_pages(thread_db* tdbb, WIN* window, int cntAlloc, bool aligned)
 
 #ifdef VIO_DEBUG
 				VIO_trace(DEBUG_WRITES_INFO,
-					"\tPAG_allocate:  allocated page %"SLONGFORMAT"\n", 
+					"\tPAG_allocate:  allocated page %"SLONGFORMAT"\n",
 							bit + sequence * pageMgr.pagesPerPIP);
 #endif
 			}
@@ -765,7 +765,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 			if (!(dbb->dbb_flags & DBB_no_reserve))
 			{
 				const int minExtendPages = MIN_EXTEND_BYTES / dbb->dbb_page_size;
-				
+
 				init_pages = sequence ? 64 : MIN(pip_page->pip_used / 16, 64);
 
 				// don't touch pages belongs to the next PIP
@@ -1551,8 +1551,8 @@ void PAG_release_page(thread_db* tdbb, const PageNumber& number, const PageNumbe
  *	Release a page to the free page page.
  *
  **************************************/
-	
-	fb_assert(number.getPageSpaceID() == prior_page.getPageSpaceID() || 
+
+	fb_assert(number.getPageSpaceID() == prior_page.getPageSpaceID() ||
 			  prior_page == ZERO_PAGE_NUMBER);
 
 	const ULONG pgNum = number.getPageNum();
@@ -1560,7 +1560,7 @@ void PAG_release_page(thread_db* tdbb, const PageNumber& number, const PageNumbe
 }
 
 
-void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease, 
+void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 		const ULONG* pgNums, const ULONG prior_page)
 {
 /**************************************
@@ -1573,7 +1573,7 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
  *	Release a few pages to the free page page.
  *
  **************************************/
-	
+
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
@@ -1588,7 +1588,7 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 	for (int i = 0; i < cntRelease; i++)
 	{
 #ifdef VIO_DEBUG
-		VIO_trace(DEBUG_WRITES_INFO, 
+		VIO_trace(DEBUG_WRITES_INFO,
 			"\tPAG_release_pages:  about to release page %"SLONGFORMAT"\n", pgNums[i]);
 #endif
 
@@ -1596,7 +1596,7 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 
 		if (!pages || seq != sequence)
 		{
-			if (pages) 
+			if (pages)
 			{
 				pageSpace->pipHighWater.exchangeLower(sequence);
 				if (pages->pip_extent < pageMgr.pagesPerPIP)
@@ -1606,7 +1606,7 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 			}
 
 			sequence = seq;
-			pip_window.win_page = (sequence == 0) ? 
+			pip_window.win_page = (sequence == 0) ?
 				pageSpace->pipFirst : sequence * pageMgr.pagesPerPIP - 1;
 
 			pages = (page_inv_page*) CCH_FETCH(tdbb, &pip_window, LCK_write, pag_pages);

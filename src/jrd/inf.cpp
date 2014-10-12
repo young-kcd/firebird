@@ -628,7 +628,7 @@ void INF_database_info(thread_db* tdbb,
 		case fb_info_record_warns:
 		case fb_info_bpage_warns:
 		case fb_info_dpage_warns:
-		case fb_info_ipage_warns: 
+		case fb_info_ipage_warns:
 		case fb_info_ppage_warns:
 		case fb_info_tpage_warns:
 		case fb_info_pip_errors:

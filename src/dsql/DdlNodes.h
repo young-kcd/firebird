@@ -2061,8 +2061,8 @@ private:
 	struct CreateDbJob
 	{
 		CreateDbJob(SSHORT a_userType, const Firebird::MetaName& a_user)
-		 : allOnAll(false), grantErased(false), badGrantor(false),
-		   userType(a_userType), user(a_user)
+			: allOnAll(false), grantErased(false), badGrantor(false),
+			  userType(a_userType), user(a_user)
 		{ }
 
 		bool allOnAll, grantErased, badGrantor;

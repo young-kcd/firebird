@@ -9900,7 +9900,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 				msg->getMetadata(), msg->getBuffer(), NULL, NULL);
 			check(s);
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
@@ -10624,7 +10624,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		if (userType != obj_sql_role && userType != obj_user)
 		{
 			(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
-			 "Only grants to USER or ROLE are supported for CREATE DATABASE").raise();
+				 "Only grants to USER or ROLE are supported for CREATE DATABASE").raise();
 		}
 
 		CreateDbJob job(userType, user);

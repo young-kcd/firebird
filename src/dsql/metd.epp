@@ -919,15 +919,15 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 						userFunc->udf_character_set_id = F.RDB$CHARACTER_SET_ID;
 					}
 
-					if ((!X.RDB$ARGUMENT_MECHANISM.NULL) && X.RDB$ARGUMENT_MECHANISM == prm_mech_type_of &&
-						(!X.RDB$FIELD_NAME.NULL) && X.RDB$FIELD_NAME[0] &&
-						(!X.RDB$RELATION_NAME.NULL) && X.RDB$RELATION_NAME[0])
+					if (!X.RDB$ARGUMENT_MECHANISM.NULL && X.RDB$ARGUMENT_MECHANISM == prm_mech_type_of &&
+						!X.RDB$FIELD_NAME.NULL && X.RDB$FIELD_NAME[0] &&
+						!X.RDB$RELATION_NAME.NULL && X.RDB$RELATION_NAME[0])
 					{
 						// type of column used in declaration
 						if (isSystemRelation(tdbb, transaction, X.RDB$RELATION_NAME))
 							userFunc->udf_flags |= UDF_sys_based;
 					}
-					else if ((!X.RDB$FIELD_SOURCE.NULL) && X.RDB$FIELD_SOURCE[0])
+					else if (!X.RDB$FIELD_SOURCE.NULL && X.RDB$FIELD_SOURCE[0])
 					{
 						// domain used in declaration
 						if (isSystemDomain(tdbb, transaction, X.RDB$FIELD_SOURCE))

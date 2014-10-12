@@ -844,9 +844,9 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	// Data page is still empty and still in the relation.  Eliminate the
 	// pointer to the data page then release the page.
 
-	// here we have to look at 3 cases: 
+	// here we have to look at 3 cases:
 	//   - empty page is not a part of extent - release it as is
-	//   - empty page is a part of non-empty extent - mark it as empty at PP 
+	//   - empty page is a part of non-empty extent - mark it as empty at PP
 	//   - empty page is a part of empty extent - release all pages of such extent
 
 	UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
@@ -883,7 +883,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 		pages.add(ppage->ppg_page[s]);
 	}
 
-	if (i < PAGES_IN_EXTENT) 
+	if (i < PAGES_IN_EXTENT)
 	{
 		extent = false;
 		pages.clear();
@@ -968,7 +968,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 	// Earlier, we make sure that the pointer page is written after the data
 	// page being released.
 
-	PAG_release_pages(tdbb, relPages->rel_pg_space_id, pages.getCount(), pages.begin(), 
+	PAG_release_pages(tdbb, relPages->rel_pg_space_id, pages.getCount(), pages.begin(),
 		pwindow.win_page.getPageNum());
 }
 
@@ -1070,10 +1070,10 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
 		}
 		const UCHAR pag_flags = ppage->ppg_header.pag_flags;
 		CCH_RELEASE_TAIL(tdbb, &window);
-		
+
 		pages.add(window.win_page.getPageNum());
 		PAG_release_pages(tdbb, relPages->rel_pg_space_id, pages.getCount(), pages.begin(), 0);
-		
+
 		if (pag_flags & ppg_eof)
 		{
 			break;
@@ -2647,7 +2647,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
  **************************************
  *
  * Functional description
- *	Extend a relation.  
+ *	Extend a relation.
  *	This routine returns a window on the datapage locked for write
  *
  **************************************/
@@ -2778,7 +2778,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 
 	UCHAR* bits = (UCHAR*) (ppage->ppg_page + dbb->dbb_dp_per_pp);
 	PPG_DP_BIT_CLEAR(bits, slot, PPG_DP_ALL_BITS);
-	
+
 	if (type != DPM_primary) {
 		PPG_DP_BIT_SET(bits, slot, ppg_dp_secondary);
 	}
@@ -2787,7 +2787,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 	{
 		fb_assert(ppage->ppg_page[slot + i] == 0);
 		ppage->ppg_page[slot + i] = firstPage.getPageNum() + i;
-	
+
 		PPG_DP_BIT_CLEAR(bits, slot + i, PPG_DP_ALL_BITS);
 		PPG_DP_BIT_SET(bits, slot + i, ppg_dp_empty);
 	}
@@ -2932,7 +2932,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 
 	if (page->dpg_count == 1)
 	{
-		if (type == DPM_primary) 
+		if (type == DPM_primary)
 			page->dpg_header.pag_flags &= ~dpg_secondary;
 		else
 			page->dpg_header.pag_flags |= dpg_secondary;
@@ -3110,11 +3110,11 @@ static rhd* locate_space(thread_db* tdbb,
 	// Look for space anywhere
 
 	// Make few tries to lock consecutive data pages without waiting. In highly
-	// concurrent environment with shared page cache it could be faster then wait 
+	// concurrent environment with shared page cache it could be faster then wait
 	// in OS for first candidate page.
 	int tries = dbb->dbb_config->getSharedCache() ? 8 : 0;
 
-	USHORT pp_sequence = 
+	USHORT pp_sequence =
 		(type == DPM_primary ? relPages->rel_pri_data_space : relPages->rel_sec_data_space);
 	for (;; pp_sequence++)
 	{
@@ -3124,7 +3124,7 @@ static rhd* locate_space(thread_db* tdbb,
 		else
 			relPages->rel_sec_data_space = pp_sequence;
 
-		const pointer_page* ppage = 
+		const pointer_page* ppage =
 			get_pointer_page(tdbb, relation, relPages, window, pp_sequence, ppLock);
 		if (!ppage)
 		{
@@ -3154,7 +3154,7 @@ static rhd* locate_space(thread_db* tdbb,
 				continue;
 			}
 
-			// hvlad: if data page is empty, we could change its primary\secondary 
+			// hvlad: if data page is empty, we could change its primary\secondary
 			// type as needed (i.e. to be same as "type" passed). Also, we must clear
 			// ppg_dp_empty bit. To do it, we need to re-fetch PP with write lock.
 			bool dp_is_empty = PPG_DP_BIT_TEST(bits, slot, ppg_dp_empty);
@@ -3165,12 +3165,12 @@ static rhd* locate_space(thread_db* tdbb,
 				if (ppLock == LCK_read)
 				{
 					CCH_RELEASE(tdbb, window);
-	
+
 					ppLock = LCK_write;
 					ppage = get_pointer_page(tdbb, relation, relPages, window, pp_sequence, ppLock);
 					if (!ppage)
 						BUGCHECK(254);
-					
+
 					// retry with the same slot
 					slot--;
 					continue;
@@ -3393,7 +3393,7 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	}
 
 	bit = PPG_DP_BIT_MASK(slot, ppg_dp_empty);
-	if (dpEmpty) 
+	if (dpEmpty)
 	{
 		*byte |= bit;
 		ppage->ppg_min_space = MIN(slot, ppage->ppg_min_space);

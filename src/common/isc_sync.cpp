@@ -961,7 +961,7 @@ public:
 
 	void handler()
 	{
-		for(;;)
+		for (;;)
 		{
 			union semun arg;
 			arg.val = 0;

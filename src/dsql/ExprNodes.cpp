@@ -10579,6 +10579,7 @@ void UdfCallNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 	{
 		desc->dsc_ttype() = dsqlFunction->udf_character_set_id;
 
+		// UNICODE_FSS_HACK
 		// Fix UNICODE_FSS wrong length used in system tables.
 		if ((dsqlFunction->udf_flags & UDF_sys_based) && (desc->dsc_ttype() == CS_UNICODE_FSS))
 			desc->dsc_length *= 3;
