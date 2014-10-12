@@ -120,7 +120,8 @@ public:
 
 		{	// scope
 			TraceSQLStatementImpl stmt(request, NULL);
-			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true, ITracePlugin::TRACE_RESULT_SUCCESS);
+			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true,
+				ITracePlugin::TRACE_RESULT_SUCCESS);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();

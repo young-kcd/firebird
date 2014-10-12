@@ -252,7 +252,8 @@ namespace Jrd
 		if (m_localOnly)
 		{
 			SLONG result = 0;
-			while ( !(result = (SLONG) ++counter->curVal) );
+			while ( !(result = (SLONG) ++counter->curVal) )
+				;
 			return result;
 		}
 

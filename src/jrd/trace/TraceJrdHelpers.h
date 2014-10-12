@@ -171,7 +171,9 @@ public:
 		m_request(request)
 	{
 		TraceManager* trace_mgr = m_tdbb->getAttachment()->att_trace_manager;
-		m_need_trace = (request->req_flags & req_proc_fetch) && trace_mgr->needs(ITraceFactory::TRACE_EVENT_PROC_EXECUTE);
+		m_need_trace = (request->req_flags & req_proc_fetch) &&
+			trace_mgr->needs(ITraceFactory::TRACE_EVENT_PROC_EXECUTE);
+
 		if (!m_need_trace)
 			return;
 

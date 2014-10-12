@@ -967,7 +967,8 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		if (vec[0] != isc_arg_gds)
 			return false;
 
-		if ((!(state & Firebird::IStatus::FB_HAS_ERRORS)) && ((!(state & Firebird::IStatus::FB_HAS_WARNINGS)) || !setValues.Warnings))
+		if (!(state & Firebird::IStatus::FB_HAS_ERRORS) &&
+			(!(state & Firebird::IStatus::FB_HAS_WARNINGS) || !setValues.Warnings))
 		{
 			return false;
 		}
@@ -988,7 +989,8 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 				STDERROUT(errbuf);
 			}
 		}
-/*
+
+		/*
 		if (state & Firebird::IStatus::FB_HAS_WARNINGS)
 		{
 			const ISC_STATUS* w = st->getWarnings();
@@ -1001,7 +1003,8 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 				}
 			}
 		}
- */
+		*/
+
 		if (Input_file)
 		{
 			int linenum = -1;
