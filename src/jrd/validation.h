@@ -107,7 +107,7 @@ private:
 	{
 		bool error;
 		UCHAR info_item;
-		TEXT* msg;
+		const TEXT* msg;
 	};
 
 	static const MSG_ENTRY vdr_msg_table[VAL_MAX_ERROR];
