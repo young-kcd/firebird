@@ -354,9 +354,14 @@ private:
 				if (sigsetjmp(sigenv, 1) == 0)
 				{
 					Firebird::syncSignalsSet(&sigenv);
-					if (pthread_kill(thread, 0) == ESRCH)
+#ifdef LINUX
+					int code = kill(thread, 0) < 0 ? errno : 0;
+#else
+					int code = pthread_kill(thread, 0);
+#endif
+					if (code == ESRCH)
 					{
-						// Thread does not exist any more
+						// LWP/Thread does not exist any more
 						thread = currTID;
 					}
 				}
