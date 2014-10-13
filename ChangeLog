@@ -1,3 +1,48 @@
+ 2014-10-12 19:33  asfernandes 
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/dpm.epp
+Misc.
+
+ 2014-10-12 18:47  asfernandes 
+   M src/isql/isql.epp
+   M src/jrd/Database.cpp
+   M src/jrd/trace/TraceDSQLHelpers.h
+   M src/jrd/trace/TraceJrdHelpers.h
+Misc.
+
+ 2014-10-12 18:24  dimitr 
+   M src/jrd/build_no.h
+   M src/misc/writeBuildNum.sh
+Updated the version info.
+
+ 2014-10-12 02:25  asfernandes 
+   M examples/interfaces/04.print_table.cpp
+   M src/alice/alice.h
+   M src/alice/exe.cpp
+   M src/common/StatusHolder.h
+   M src/common/isc_sync.cpp
+   M src/common/unicode_util.cpp
+   M src/common/utils.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/metd.epp
+   M src/jrd/dpm.epp
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/ods.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag_proto.h
+   M src/jrd/validation.cpp
+Misc.
+
+ 2014-10-12 02:24  asfernandes 
+   M src/common/call_service.cpp
+Correction.
+
  2014-10-11 19:17  dimitr 
    M doc/WhatsNew
 Updated the docs.
