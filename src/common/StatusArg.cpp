@@ -75,12 +75,12 @@ StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw() : Bas
 	fb_assert(s);
 
 	clear();
-	// special case - empty IStatus
-	if (s->getStatus() != 0)
-	{
+
+	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
 		append(s->getErrors(), FB_NELEM(m_status_vector) - 1);
+
+	if (s->getStatus() & IStatus::FB_HAS_WARNINGS)
 		append(s->getWarnings(), FB_NELEM(m_status_vector) - 1);
-	}
 }
 
 StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
