@@ -1,3 +1,11 @@
+ 2014-10-13 15:29  alexpeshkoff 
+   M src/jrd/validation.h
+Misc const correctness - fixed warning
+
+ 2014-10-13 09:30  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Fixed search for free circullar buffer when using LWP number as thread id
+
  2014-10-12 19:33  asfernandes 
    M src/jrd/UserManagement.cpp
    M src/jrd/UserManagement.h
