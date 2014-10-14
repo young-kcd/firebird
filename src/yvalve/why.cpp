@@ -1373,7 +1373,7 @@ namespace {
 		{
 			if (transaction && !newTrans)
 			{
-				transaction->destroy(YTransaction::DF_RELEASE);
+				transaction->destroy(0);
 				*traHandle = 0;
 			}
 			else if (!transaction && newTrans)
