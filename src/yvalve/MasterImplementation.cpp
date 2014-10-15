@@ -278,13 +278,138 @@ int MasterImplementation::serverMode(int mode)
 
 #ifdef WIN_NT
 #include <windows.h>
-#else
-#include "fb_pthread.h"
-#include <signal.h>
-#include <setjmp.h>
-#include "../common/classes/fb_tls.h"
-#include "../common/os/SyncSignals.h"
 #endif
+
+#ifdef USE_POSIX_THREADS
+namespace {
+
+class ThreadCleanup
+{
+public:
+	static void add(FPTR_VOID_PTR cleanup, void* arg);
+	static void remove(FPTR_VOID_PTR cleanup, void* arg);
+	static void destructor(void*);
+
+private:
+	FPTR_VOID_PTR function;
+	void* argument;
+	ThreadCleanup* next;
+
+	ThreadCleanup(FPTR_VOID_PTR cleanup, void* arg, ThreadCleanup* chain)
+		: function(cleanup), argument(arg), next(chain) { }
+
+	static ThreadCleanup** findCleanup(FPTR_VOID_PTR cleanup, void* arg);
+};
+
+pthread_key_t key;
+pthread_once_t keyOnce = PTHREAD_ONCE_INIT;
+bool keySet = false;
+
+void makeKey()
+{
+	int err = pthread_key_create(&key, ThreadCleanup::destructor);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_key_create", err);
+	}
+	keySet = true;
+}
+
+void initThreadCleanup()
+{
+	int err = pthread_once(&keyOnce, makeKey);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_once", err);
+	}
+
+	err = pthread_setspecific(key, &key);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_setspecific", err);
+	}
+}
+
+ThreadCleanup* chain = NULL;
+
+class FiniThreadCleanup
+{
+public:
+	FiniThreadCleanup(Firebird::MemoryPool&)
+	{ }
+
+	~FiniThreadCleanup()
+	{
+		fb_assert(!chain);
+		if (keySet)
+		{
+			int err = pthread_key_delete(key);
+			if (err)
+				Firebird::system_call_failed("pthread_key_delete", err);
+		}
+	}
+};
+
+Firebird::GlobalPtr<Firebird::Mutex> cleanupMutex;
+Firebird::GlobalPtr<FiniThreadCleanup> thrCleanup;		// needed to call dtor
+
+
+ThreadCleanup** ThreadCleanup::findCleanup(FPTR_VOID_PTR cleanup, void* arg)
+{
+	for (ThreadCleanup** ptr = &chain; *ptr; ptr = &((*ptr)->next))
+	{
+		if ((*ptr)->function == cleanup && (*ptr)->argument == arg)
+		{
+			return ptr;
+		}
+	}
+
+	return NULL;
+}
+
+void ThreadCleanup::destructor(void*)
+{
+	Firebird::MutexLockGuard guard(cleanupMutex, FB_FUNCTION);
+
+	for (ThreadCleanup* ptr = chain; ptr; ptr = ptr->next)
+	{
+		ptr->function(ptr->argument);
+	}
+
+	pthread_setspecific(key, NULL);
+}
+
+void ThreadCleanup::add(FPTR_VOID_PTR cleanup, void* arg)
+{
+	Firebird::MutexLockGuard guard(cleanupMutex, FB_FUNCTION);
+
+	initThreadCleanup();
+
+	if (findCleanup(cleanup, arg))
+	{
+		return;
+	}
+
+	chain = FB_NEW(*getDefaultMemoryPool()) ThreadCleanup(cleanup, arg, chain);
+}
+
+void ThreadCleanup::remove(FPTR_VOID_PTR cleanup, void* arg)
+{
+	Firebird::MutexLockGuard guard(cleanupMutex, FB_FUNCTION);
+
+	ThreadCleanup** ptr = findCleanup(cleanup, arg);
+	if (!ptr)
+	{
+		return;
+	}
+
+	ThreadCleanup* toDelete = *ptr;
+	*ptr = toDelete->next;
+	delete toDelete;
+}
+
+} // anonymous namespace
+#endif // USE_POSIX_THREADS
 
 namespace {
 
@@ -294,7 +419,7 @@ private:
 	class ThreadBuffer : public Firebird::GlobalStorage
 	{
 	private:
-		const static size_t BUFFER_SIZE = 4096;
+		const static size_t BUFFER_SIZE = 8192;		// make it match with call stack limit == 2048
 		char buffer[BUFFER_SIZE];
 		char* buffer_ptr;
 		ThreadId thread;
@@ -347,31 +472,6 @@ private:
 					thread = currTID;
 				}
 			}
-#else
-			if (thread != currTID)
-			{
-				sigjmp_buf sigenv;
-				if (sigsetjmp(sigenv, 1) == 0)
-				{
-					Firebird::syncSignalsSet(&sigenv);
-#ifdef LINUX
-					int code = kill(thread, 0) < 0 ? errno : 0;
-#else
-					int code = pthread_kill(thread, 0);
-#endif
-					if (code == ESRCH)
-					{
-						// LWP/Thread does not exist any more
-						thread = currTID;
-					}
-				}
-				else
-				{
-					// segfault in pthread_kill() - thread does not exist any more
-					thread = currTID;
-				}
-				Firebird::syncSignalsReset();
-			}
 #endif
 
 			return thread == currTID;
@@ -390,12 +490,16 @@ public:
 	}
 
 	~StringsBuffer()
-	{ }
+	{
+#ifdef USE_POSIX_THREADS
+		ThreadCleanup::remove(cleanupAllStrings, this);
+#endif
+	}
 
 private:
 	FB_SIZE_T position(ThreadId thr)
 	{
-		// mutex should be locked when this function is called
+		fb_assert(mutex.locked());
 
 		for (FB_SIZE_T i = 0; i < processBuffer.getCount(); ++i)
 		{
@@ -418,6 +522,9 @@ private:
 			return processBuffer[p];
 		}
 
+#ifdef USE_POSIX_THREADS
+		ThreadCleanup::add(cleanupAllStrings, this);
+#endif
 		ThreadBuffer* b = new ThreadBuffer(thr);
 		processBuffer.add(b);
 		return b;
@@ -427,6 +534,7 @@ private:
 	{
 		Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 
+//		fprintf(stderr, "Cleanup is called\n");
 		FB_SIZE_T p = position(getThreadId());
 		if (p >= processBuffer.getCount())
 		{
@@ -435,6 +543,7 @@ private:
 
 		delete processBuffer[p];
 		processBuffer.remove(p);
+//		fprintf(stderr, "Buffer removed\n");
 	}
 
 	static void cleanupAllStrings(void* toClean)
