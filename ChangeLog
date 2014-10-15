@@ -1,3 +1,15 @@
+ 2014-10-14 13:36  alexpeshkoff 
+   M src/common/isc_sync.cpp
+Fixed Mac port
+
+ 2014-10-14 10:21  alexpeshkoff 
+   M src/yvalve/why.cpp
+One more segfault in old API emulation
+
+ 2014-10-14 07:31  hvlad 
+   M src/common/StatusArg.cpp
+Fixed wrong item "unknown ISC error 0" in error messages
+
  2014-10-13 15:29  alexpeshkoff 
    M src/jrd/validation.h
 Misc const correctness - fixed warning
