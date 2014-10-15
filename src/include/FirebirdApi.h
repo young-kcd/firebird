@@ -26,36 +26,3 @@
  *  Roman Rokytskyy <roman at rokytskyy.de>
  */
 
-#ifndef FIREBIRD_API_H
-#define FIREBIRD_API_H
-
-#define FB_NULL	0L
-
-
-namespace Firebird {
-
-
-typedef unsigned int uint;
-typedef short int16;
-typedef int int32;
-
-#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__)) && !defined(__GNUC__)
-typedef __int64 int64;
-#else
-typedef long long int int64;
-#endif
-
-typedef char Utf8;		// Utf8* used as nul-terminated string
-
-// ISC compatible handle
-#if defined(_LP64) || defined(__LP64__) || defined(__arch64__) || defined(_WIN64)
-typedef unsigned int Handle;
-#else
-typedef void* Handle;
-#endif
-
-
-}	// namespace Firebird
-
-
-#endif	// FIREBIRD_API_H

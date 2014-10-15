@@ -23,7 +23,6 @@
 #ifndef JRD_EXT_ENGINE_MANAGER_H
 #define JRD_EXT_ENGINE_MANAGER_H
 
-#include "FirebirdApi.h"
 #include "firebird/Interface.h"
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"

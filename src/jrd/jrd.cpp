@@ -7409,8 +7409,7 @@ void thread_db::setDatabase(Database* val)
 	}
 }
 
-// need the Jrd:: qualifier to not clash with Attachment in FirebirdApi.h
-void thread_db::setAttachment(Jrd::Attachment* val)
+void thread_db::setAttachment(Attachment* val)
 {
 	attachment = val;
 	attStat = val ? &val->att_stats : RuntimeStatistics::getDummy();
