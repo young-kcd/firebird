@@ -24,6 +24,9 @@
  *  Contributor(s): ______________________________________.
  */
 
+#include <stdint.h>
+
+#include "ibase.h"
 #include "firebird/Interface.h"
 
 #include "firebird.h"		// Needed for atomic support
