@@ -1603,7 +1603,10 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 			}
 
 			if (options.dpb_buffers && !dbb->dbb_page_buffers)
-				CCH_expand(tdbb, options.dpb_buffers);
+			{
+				if (CCH_expand(tdbb, options.dpb_buffers))
+					dbb->dbb_linger_seconds = 0;
+			}
 
 			if (!options.dpb_verify && CCH_exclusive(tdbb, LCK_PW, LCK_NO_WAIT, NULL))
 				TRA_cleanup(tdbb);
@@ -1739,6 +1742,7 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 			{
 				validateAccess(attachment);
 				PAG_set_db_SQL_dialect(tdbb, options.dpb_set_db_sql_dialect);
+				dbb->dbb_linger_seconds = 0;
 			}
 
 			if (options.dpb_sweep_interval > -1)
@@ -1766,7 +1770,10 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 					validateAccess(attachment);
 
 				if (attachment->locksmith())
+				{
 					PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
+					dbb->dbb_linger_seconds = 0;
+				}
 			}
 
 			if (options.dpb_set_db_readonly)
@@ -1778,6 +1785,7 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 							 Arg::Gds(isc_obj_in_use) << Arg::Str(org_filename));
 				}
 				PAG_set_db_readonly(tdbb, options.dpb_db_readonly);
+				dbb->dbb_linger_seconds = 0;
 			}
 
 			CCH_init2(tdbb);

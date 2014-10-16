@@ -131,7 +131,7 @@ static void check_precedence(thread_db*, WIN*, PageNumber);
 static void clear_precedence(thread_db*, BufferDesc*);
 static BufferDesc* dealloc_bdb(BufferDesc*);
 static void down_grade(thread_db*, BufferDesc*);
-static void expand_buffers(thread_db*, ULONG);
+static bool expand_buffers(thread_db*, ULONG);
 static BufferDesc* find_buffer(BufferControl* bcb, const PageNumber page, bool findPending);
 static BufferDesc* get_buffer(thread_db*, const PageNumber, SyncType, int);
 static int get_related(BufferDesc*, PagesArray&, int, const ULONG);
@@ -485,7 +485,7 @@ bool CCH_exclusive_attachment(thread_db* tdbb, USHORT level, SSHORT wait_flag, S
 }
 
 
-void CCH_expand(thread_db* tdbb, ULONG number)
+bool CCH_expand(thread_db* tdbb, ULONG number)
 {
 /**************************************
  *
@@ -500,7 +500,7 @@ void CCH_expand(thread_db* tdbb, ULONG number)
  **************************************/
 	SET_TDBB(tdbb);
 
-	expand_buffers(tdbb, number);
+	return expand_buffers(tdbb, number);
 }
 
 
@@ -3373,7 +3373,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 }
 
 
-static void expand_buffers(thread_db* tdbb, ULONG number)
+static bool expand_buffers(thread_db* tdbb, ULONG number)
 {
 /**************************************
  *
@@ -3395,7 +3395,7 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	BufferControl* const bcb = dbb->dbb_bcb;
 
 	if (number <= bcb->bcb_count || number > MAX_PAGE_BUFFERS)
-		return;
+		return false;
 
 	Sync syncBcb(&bcb->bcb_syncObject, "expand_buffers");
 	syncBcb.lock(SYNC_EXCLUSIVE);
@@ -3469,6 +3469,8 @@ static void expand_buffers(thread_db* tdbb, ULONG number)
 	// Set up new buffer control, release old buffer control, and clean up
 
 	delete[] old_rpt;
+
+	return true;
 }
 
 static BufferDesc* find_buffer(BufferControl* bcb, const PageNumber page, bool findPending)
