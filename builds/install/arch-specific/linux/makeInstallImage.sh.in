@@ -230,9 +230,10 @@ copyFiles() {
 	#include (.h files)
     cp $BuiltFBDir/include/*.h ${TargetDir}@FB_INCDIR@
     cp $BuildRootDir/src/include/firebird/*.h ${TargetDir}@FB_INCDIR@/firebird
+    tar -C $BuildRootDir/src/include/firebird -cf - impl | tar -C ${TargetDir}@FB_INCDIR@/firebird -x
 
-	chown root:root ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*.h
-	chmod 0444 ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*.h
+	chown -R root:root ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*
+	chmod -R 0444 ${TargetDir}@FB_INCDIR@/*.h ${TargetDir}@FB_INCDIR@/firebird/*
 
 	#lib
     copyIfExists $BuiltFBDir/lib/libfbembed.so* ${TargetDir}@FB_LIBDIR@
