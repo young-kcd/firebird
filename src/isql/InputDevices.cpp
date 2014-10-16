@@ -214,9 +214,7 @@ void InputDevices::removeIntoIfp()
 // automatically with every interactive SQL command (isql commands aren't logged).
 bool InputDevices::sameInputAndOutput() const
 {
-	fb_assert(m_ifp.indev_fpointer);
-	fb_assert(m_ofp.indev_fpointer);
-	return m_ifp.indev_fpointer == m_ofp.indev_fpointer;
+	return m_ifp.indev_fpointer && (m_ifp.indev_fpointer == m_ofp.indev_fpointer);
 }
 
 // Save SQL command (not isql's own commands) to a history file only if we
