@@ -4590,7 +4590,7 @@ static processing_state escape(const TEXT* cmd)
 #ifdef WIN_NT
 	// If we are reading from the temp file, restore the read position because
 	// it's opened in r+ mode in this case, that's R/W.
-	if (Filelist->Ofp().indev_fpointer && Filelist->sameInputAndOutput())
+	if (Filelist->sameInputAndOutput())
 		Filelist->Ofp().setPos(&OfpPos);
 #endif
 
@@ -5427,7 +5427,7 @@ static processing_state get_statement(TEXT* const statement,
 
 			// If this is not tmpfile, close it
 
-			if (Filelist->Ofp().indev_fpointer && !Filelist->sameInputAndOutput())
+			if (!Filelist->sameInputAndOutput())
 				Filelist->Ifp().close();
 
 			// Reset to previous after other input
