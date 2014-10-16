@@ -1,3 +1,21 @@
+ 2014-10-15 15:45  asfernandes 
+   D src/include/FirebirdApi.h
+Really remove the file now :).
+
+ 2014-10-15 15:43  asfernandes 
+   M src/include/firebird/Interface.h
+Misc.
+
+ 2014-10-15 15:43  asfernandes 
+   M src/include/FirebirdApi.h
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/jrd.cpp
+Remove obsolete header file.
+
+ 2014-10-15 11:52  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Use thread destructor function to free string buffer after thread completion
+
  2014-10-14 13:36  alexpeshkoff 
    M src/common/isc_sync.cpp
 Fixed Mac port
