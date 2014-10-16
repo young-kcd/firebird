@@ -49,9 +49,10 @@ public:
 	enum Type
 	{
 		SQL_CODE = 1,
-		GDS_CODE = 2,
-		XCP_CODE = 3,
-		XCP_DEFAULT = 4
+		SQL_STATE = 2,
+		GDS_CODE = 3,
+		XCP_CODE = 4,
+		XCP_DEFAULT = 5
 	};
 
 	ExceptionItem(MemoryPool& pool, const ExceptionItem& o)

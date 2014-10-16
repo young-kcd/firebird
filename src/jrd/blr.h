@@ -88,6 +88,7 @@
 #define blr_raise				(unsigned char)5
 #define blr_exception_msg		(unsigned char)6
 #define blr_exception_params	(unsigned char)7
+#define blr_sql_state			(unsigned char)8
 
 #define blr_version4		(unsigned char)4
 #define blr_version5		(unsigned char)5

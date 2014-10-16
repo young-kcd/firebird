@@ -2870,6 +2870,13 @@ static void blr_print_cond(gds_ctl* control, SSHORT level)
 		blr_print_word(control);
 		break;
 
+	case blr_sql_state:
+		blr_format(control, "blr_sql_state, ");
+		n = blr_print_byte(control);
+		while (--n >= 0)
+			blr_print_char(control);
+		break;
+
 	case blr_default_code:
 		blr_format(control, "blr_default_code, ");
 		break;

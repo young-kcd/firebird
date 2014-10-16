@@ -3183,6 +3183,12 @@ err($exceptionArray)
 			item.type = ExceptionItem::SQL_CODE;
 			item.code = $2;
 		}
+	| SQLSTATE STRING
+		{
+			ExceptionItem& item = $exceptionArray->add();
+			item.type = ExceptionItem::SQL_STATE;
+			item.name = $2->getString();
+		}
 	| GDSCODE symbol_gdscode_name
 		{
 			ExceptionItem& item = $exceptionArray->add();

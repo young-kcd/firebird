@@ -669,7 +669,6 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const Excep
 		return false;
 
 	ISC_STATUS* statusVector = tdbb->tdbb_status_vector;
-	const SSHORT sqlcode = gds__sqlcode(statusVector);
 
 	bool found = false;
 
@@ -678,8 +677,20 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const Excep
 		switch (conditions[i].type)
 		{
 			case ExceptionItem::SQL_CODE:
-				if (sqlcode == conditions[i].code)
-					found = true;
+				{
+					const SSHORT sqlcode = gds__sqlcode(statusVector);
+					if (sqlcode == conditions[i].code)
+						found = true;
+				}
+				break;
+
+			case ExceptionItem::SQL_STATE:
+				{
+					FB_SQLSTATE_STRING sqlstate;
+					fb_sqlstate(sqlstate, statusVector);
+					if (conditions[i].name == sqlstate)
+						found = true;
+				}
 				break;
 
 			case ExceptionItem::GDS_CODE:
@@ -2359,6 +2370,11 @@ DmlNode* ErrorHandlerNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 				item.code = (SSHORT) csb->csb_blr_reader.getWord();
 				break;
 
+			case blr_sql_state:
+				item.type = ExceptionItem::SQL_STATE;
+				PAR_name(csb, item.name);
+				break;
+
 			case blr_gds_code:
 				item.type = ExceptionItem::GDS_CODE;
 				PAR_name(csb, item.name);
@@ -2421,6 +2437,11 @@ void ErrorHandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			case ExceptionItem::SQL_CODE:
 				dsqlScratch->appendUChar(blr_sql_code);
 				dsqlScratch->appendUShort(i->code);
+				break;
+
+			case ExceptionItem::SQL_STATE:
+				dsqlScratch->appendUChar(blr_sql_state);
+				dsqlScratch->appendNullString(i->name.c_str());
 				break;
 
 			case ExceptionItem::GDS_CODE:
@@ -4004,11 +4025,6 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 		switch (codeType)
 		{
-			case blr_sql_code:
-				item->type = ExceptionItem::SQL_CODE;
-				item->code = (SSHORT) csb->csb_blr_reader.getWord();
-				break;
-
 			case blr_gds_code:
 				item->type = ExceptionItem::GDS_CODE;
 				PAR_name(csb, item->name);
@@ -4189,9 +4205,6 @@ void ExceptionNode::setError(thread_db* tdbb) const
 
 	switch (exception->type)
 	{
-		case ExceptionItem::SQL_CODE:
-			ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(xcpCode));
-
 		case ExceptionItem::GDS_CODE:
 			if (xcpCode == isc_check_constraint)
 			{
