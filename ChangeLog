@@ -1,3 +1,8 @@
+ 2014-10-16 15:16  alexpeshkoff 
+   M src/isql/InputDevices.cpp
+   M src/isql/isql.epp
+Backported fix for CORE-4578: INPUT file not properly closed
+
  2014-10-05 13:16  alexpeshkoff 
    M src/dsql/make.cpp
    M src/dsql/metd.epp
