@@ -1,3 +1,36 @@
+ 2014-10-16 16:35  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/parse.y
+   M src/jrd/blr.h
+   M src/yvalve/gds.cpp
+Improvement CORE-3526: Support for WHEN SQLSTATE.
+
+ 2014-10-16 15:16  alexpeshkoff 
+   M src/isql/InputDevices.cpp
+   M src/isql/isql.epp
+Fixed CORE-4578: INPUT file not properly closed
+
+ 2014-10-16 12:42  alexpeshkoff 
+   M builds/install/arch-specific/linux/makeInstallImage.sh.in
+Resolved packaging issue - added boost files to linux binary package
+
+ 2014-10-16 11:31  alexpeshkoff 
+   M src/jrd/cch.cpp
+   M src/jrd/cch_proto.h
+   M src/jrd/jrd.cpp
+Fixed CORE-4582: Within linger period one can not change some database properties
+
+ 2014-10-16 10:36  alexpeshkoff 
+   M examples/dbcrypt/CryptApplication.cpp
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+Fixed build errors
+
+ 2014-10-16 07:32  dimitr 
+   M doc/WhatsNew
+Added missing parts of the docs.
+
  2014-10-15 15:45  asfernandes 
    D src/include/FirebirdApi.h
 Really remove the file now :).
