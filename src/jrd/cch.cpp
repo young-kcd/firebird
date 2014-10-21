@@ -172,7 +172,7 @@ static inline void removeDirty(BufferControl* bcb, BufferDesc* bdb)
 	if (bdb->bdb_dirty.que_forward == &bdb->bdb_dirty)
 		return;
 
-	Sync dirtySync(&bcb->bcb_syncDirtyBdbs, "insertDirty");
+	Sync dirtySync(&bcb->bcb_syncDirtyBdbs, "removeDirty");
 	dirtySync.lock(SYNC_EXCLUSIVE);
 
 	if (bdb->bdb_dirty.que_forward == &bdb->bdb_dirty)
@@ -3734,7 +3734,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			requeueRecentlyUsed(bcb);
 
 		for (que_inst = bcb->bcb_in_use.que_backward;
-			 que_inst != &bcb->bcb_in_use;					// hvlad:  || QUE_NOT_EMPTY(bcb->bcb_empty) ?
+			 que_inst != &bcb->bcb_in_use;
 			 que_inst = que_inst->que_backward)
 		{
 			// get the oldest buffer as the least recently used -- note
@@ -3745,16 +3745,13 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 
 			BufferDesc* oldest = BLOCK(que_inst, BufferDesc, bdb_in_use);
 
+			if (oldest->bdb_flags & BDB_lru_chained)
+				continue;
+
 			if (oldest->bdb_use_count || !oldest->addRefConditional(tdbb, SYNC_EXCLUSIVE))
 				continue;
 
 			if ((oldest->bdb_flags & BDB_free_pending) || !writeable(oldest))
-			{
-				oldest->release(tdbb, true);
-				continue;
-			}
-
-			if (oldest->bdb_flags & BDB_lru_chained)
 			{
 				oldest->release(tdbb, true);
 				continue;
@@ -3800,65 +3797,69 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			QUE_DELETE(bdb->bdb_in_use);
 			QUE_INSERT(bcb->bcb_in_use, bdb->bdb_in_use);
 
+			lruSync.unlock();
+
 			bdb->bdb_flags |= BDB_free_pending;
 			bdb->bdb_pending_page = page;
 
 			QUE_DELETE(bdb->bdb_que);
 			QUE_INSERT(bcb->bcb_pending, bdb->bdb_que);
 
-			lruSync.unlock();
-			bcbSync.unlock();
+			const bool needCleanup = bdb->bdb_flags & (BDB_dirty | BDB_db_dirty) ||
+				QUE_NOT_EMPTY(bdb->bdb_higher) || QUE_NOT_EMPTY(bdb->bdb_lower);
 
-			// If the buffer selected is dirty, arrange to have it written.
-
-			if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
+			if (needCleanup)
 			{
-				const bool write_thru = (bcb->bcb_flags & BCB_exclusive);
-				if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, tdbb->tdbb_status_vector, true))
+				bcbSync.unlock();
+
+				// If the buffer selected is dirty, arrange to have it written.
+
+				if (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty))
 				{
-					bcbSync.lock(SYNC_EXCLUSIVE);
-					bdb->bdb_flags &= ~BDB_free_pending;
-					QUE_DELETE(bdb->bdb_in_use);
-					QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
-					bcbSync.unlock();
+					const bool write_thru = (bcb->bcb_flags & BCB_exclusive);
+					if (!write_buffer(tdbb, bdb, bdb->bdb_page, write_thru, tdbb->tdbb_status_vector, true))
+					{
+						bcbSync.lock(SYNC_EXCLUSIVE);
+						bdb->bdb_flags &= ~BDB_free_pending;
+						QUE_DELETE(bdb->bdb_in_use);
+						QUE_APPEND(bcb->bcb_in_use, bdb->bdb_in_use);
+						bcbSync.unlock();
 
-					BackupManager::StateReadGuard::unlock(tdbb);
-					bdb->release(tdbb, true);
-					CCH_unwind(tdbb, true);
-				}
-			}
-
-			// If the buffer is still in the dirty tree, remove it.
-			// In any case, release any lock it may have.
-
-			removeDirty(bcb, bdb);
-
-			// Cleanup any residual precedence blocks.  Unless something is
-			// screwed up, the only precedence blocks that can still be hanging
-			// around are ones cleared at AST level.
-
-			if (QUE_NOT_EMPTY(bdb->bdb_higher) || QUE_NOT_EMPTY(bdb->bdb_lower))
-			{
-				Sync precSync(&bcb->bcb_syncPrecedence, "get_buffer");
-				precSync.lock(SYNC_EXCLUSIVE);
-
-				while (QUE_NOT_EMPTY(bdb->bdb_higher))
-				{
-					QUE que2 = bdb->bdb_higher.que_forward;
-					Precedence* precedence = BLOCK(que2, Precedence, pre_higher);
-					QUE_DELETE(precedence->pre_higher);
-					QUE_DELETE(precedence->pre_lower);
-					precedence->pre_hi = (BufferDesc*) bcb->bcb_free;
-					bcb->bcb_free = precedence;
+						BackupManager::StateReadGuard::unlock(tdbb);
+						bdb->release(tdbb, true);
+						CCH_unwind(tdbb, true);
+					}
 				}
 
-				clear_precedence(tdbb, bdb);
+				// If the buffer is still in the dirty tree, remove it.
+				// In any case, release any lock it may have.
+
+				removeDirty(bcb, bdb);
+
+				// Cleanup any residual precedence blocks.  Unless something is
+				// screwed up, the only precedence blocks that can still be hanging
+				// around are ones cleared at AST level.
+
+				if (QUE_NOT_EMPTY(bdb->bdb_higher) || QUE_NOT_EMPTY(bdb->bdb_lower))
+				{
+					Sync precSync(&bcb->bcb_syncPrecedence, "get_buffer");
+					precSync.lock(SYNC_EXCLUSIVE);
+
+					while (QUE_NOT_EMPTY(bdb->bdb_higher))
+					{
+						QUE que2 = bdb->bdb_higher.que_forward;
+						Precedence* precedence = BLOCK(que2, Precedence, pre_higher);
+						QUE_DELETE(precedence->pre_higher);
+						QUE_DELETE(precedence->pre_lower);
+						precedence->pre_hi = (BufferDesc*) bcb->bcb_free;
+						bcb->bcb_free = precedence;
+					}
+
+					clear_precedence(tdbb, bdb);
+				}
+
+				bcbSync.lock(SYNC_EXCLUSIVE);
 			}
-
-			// remove the buffer from the "mod" queue and place it
-			// in it's new spot, provided it's not a negative (scratch) page
-
-			bcbSync.lock(SYNC_EXCLUSIVE);
 
 			QUE_DELETE(bdb->bdb_que);	// bcb_pending
 
@@ -4526,6 +4527,9 @@ static inline bool writeable(BufferDesc* bdb)
  **************************************/
 	if (bdb->bdb_flags & BDB_marked)
 		return false;
+
+	if (QUE_EMPTY(bdb->bdb_higher))
+		return true;
 
 	BufferControl* bcb = bdb->bdb_bcb;
 
