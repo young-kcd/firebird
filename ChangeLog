@@ -1,3 +1,8 @@
+ 2014-10-21 14:53  hvlad 
+   M src/jrd/cch.cpp
+Improved page cache performance a bit. 
+The case when page buffer is evicted and re-assigned to another page.
+
  2014-10-16 16:35  dimitr 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
