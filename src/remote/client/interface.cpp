@@ -132,7 +132,7 @@ namespace Remote {
 class Attachment;
 class Statement;
 
-class Blob FB_FINAL : public Firebird::RefCntIface<Firebird::Api::BlobImpl<Blob> >
+class Blob FB_FINAL : public RefCntIface<Api::BlobImpl<Blob> >
 {
 public:
 	// IBlob implementation
@@ -177,7 +177,7 @@ int Blob::release()
 	return 0;
 }
 
-class Transaction FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TransactionImpl<Transaction> >
+class Transaction FB_FINAL : public RefCntIface<Api::TransactionImpl<Transaction> >
 {
 public:
 	// ITransaction implementation
@@ -241,7 +241,7 @@ int Transaction::release()
 	return 0;
 }
 
-class ResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ResultSetImpl<ResultSet> >
+class ResultSet FB_FINAL : public RefCntIface<Api::ResultSetImpl<ResultSet> >
 {
 public:
 	// IResultSet implementation
@@ -291,7 +291,7 @@ int ResultSet::release()
 	return 0;
 }
 
-class Statement FB_FINAL : public Firebird::RefCntIface<Firebird::Api::StatementImpl<Statement> >
+class Statement FB_FINAL : public RefCntIface<Api::StatementImpl<Statement> >
 {
 public:
 	// IStatement implementation
@@ -363,7 +363,7 @@ int Statement::release()
 	return 0;
 }
 
-class Request FB_FINAL : public Firebird::RefCntIface<Firebird::Api::RequestImpl<Request> >
+class Request FB_FINAL : public RefCntIface<Api::RequestImpl<Request> >
 {
 public:
 	// IRequest implementation
@@ -410,7 +410,7 @@ int Request::release()
 	return 0;
 }
 
-class Events FB_FINAL : public Firebird::RefCntIface<Firebird::Api::EventsImpl<Events> >
+class Events FB_FINAL : public RefCntIface<Api::EventsImpl<Events> >
 {
 public:
 	// IEvents implementation
@@ -445,7 +445,7 @@ int Events::release()
 	return 0;
 }
 
-class Attachment FB_FINAL : public Firebird::RefCntIface<Firebird::Api::AttachmentImpl<Attachment> >
+class Attachment FB_FINAL : public RefCntIface<Api::AttachmentImpl<Attachment> >
 {
 public:
 	// IAttachment implementation
@@ -532,7 +532,7 @@ int Attachment::release()
 	return 0;
 }
 
-class Service FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ServiceImpl<Service> >
+class Service FB_FINAL : public RefCntIface<Api::ServiceImpl<Service> >
 {
 public:
 	// IService implementation
@@ -542,8 +542,7 @@ public:
 					   unsigned int sendLength, const unsigned char* sendItems,
 					   unsigned int receiveLength, const unsigned char* receiveItems,
 					   unsigned int bufferLength, unsigned char* buffer);
-	void start(IStatus* status,
-					   unsigned int spbLength, const unsigned char* spb);
+	void start(IStatus* status, unsigned int spbLength, const unsigned char* spb);
 
 public:
 	Service(Rdb* handle) : rdb(handle) { }
@@ -569,7 +568,7 @@ int Service::release()
 	return 0;
 }
 
-class RProvider : public Firebird::StdPlugin<Firebird::Api::ProviderImpl<RProvider> >
+class RProvider : public StdPlugin<Api::ProviderImpl<RProvider> >
 {
 public:
 	explicit RProvider(IPluginConfig*)
@@ -623,7 +622,7 @@ void RProvider::setDbCryptCallback(IStatus* status, ICryptKeyCallback* callback)
 	cryptCallback = callback;
 }
 
-class Loopback : public Firebird::Api::ProviderBaseImpl<Loopback, RProvider>
+class Loopback : public Api::ProviderBaseImpl<Loopback, RProvider>
 {
 public:
 	explicit Loopback(IPluginConfig*)
@@ -634,19 +633,19 @@ public:
 		unsigned int dpbLength, const unsigned char* dpb);
 	IAttachment* createDatabase(IStatus* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
-	Firebird::IService* attachServiceManager(IStatus* status, const char* service,
+	IService* attachServiceManager(IStatus* status, const char* service,
 		unsigned int spbLength, const unsigned char* spb);
 };
 
 namespace {
-	Firebird::SimpleFactory<RProvider> remoteFactory;
-	Firebird::SimpleFactory<Loopback> loopbackFactory;
+	SimpleFactory<RProvider> remoteFactory;
+	SimpleFactory<Loopback> loopbackFactory;
 }
 
 void registerRedirector(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::Provider, "Remote", &remoteFactory);
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::Provider, "Loopback", &loopbackFactory);
+	iPlugin->registerPluginFactory(IPluginManager::Provider, "Remote", &remoteFactory);
+	iPlugin->registerPluginFactory(IPluginManager::Provider, "Loopback", &loopbackFactory);
 
 	Auth::registerLegacyClient(iPlugin);
 	Auth::registerSrpClient(iPlugin);

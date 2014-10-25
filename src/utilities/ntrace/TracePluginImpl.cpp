@@ -82,7 +82,7 @@ const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 	return get_error_string();
 }
 
-TracePluginImpl::TracePluginImpl(const TracePluginConfig &configuration, ITraceInitInfo* initInfo) :
+TracePluginImpl::TracePluginImpl(const TracePluginConfig& configuration, ITraceInitInfo* initInfo) :
 	operational(false),
 	session_id(initInfo->getTraceSessionID()),
 	session_name(*getDefaultMemoryPool()),
@@ -1200,8 +1200,9 @@ void TracePluginImpl::log_event_set_context(ITraceDatabaseConnection* connection
 	}
 }
 
-void TracePluginImpl::log_event_proc_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction,
-		ITraceProcedure* procedure, bool started, ntrace_result_t proc_result)
+void TracePluginImpl::log_event_proc_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceProcedure* procedure, bool started,
+	ntrace_result_t proc_result)
 {
 	if (!config.log_procedure_start && started)
 		return;
@@ -1256,8 +1257,9 @@ void TracePluginImpl::log_event_proc_execute(ITraceDatabaseConnection* connectio
 	logRecordProcFunc(event_type, connection, transaction, "Procedure", procedure->getProcName());
 }
 
-void TracePluginImpl::log_event_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction,
-		ITraceFunction* function, bool started, ntrace_result_t func_result)
+void TracePluginImpl::log_event_func_execute(ITraceDatabaseConnection* connection,
+	ITraceTransaction* transaction, ITraceFunction* function, bool started,
+	ntrace_result_t func_result)
 {
 	if (!config.log_function_start && started)
 		return;
@@ -2027,7 +2029,8 @@ void TracePluginImpl::log_event_trigger_execute(ITraceDatabaseConnection* connec
 	logRecordTrans(event_type, connection, transaction);
 }
 
-void TracePluginImpl::log_event_error(ITraceConnection* connection, ITraceStatusVector* status, const char* function)
+void TracePluginImpl::log_event_error(ITraceConnection* connection, ITraceStatusVector* status,
+	const char* function)
 {
 	if (!config.log_errors)
 		return;

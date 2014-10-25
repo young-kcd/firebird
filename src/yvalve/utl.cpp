@@ -187,7 +187,7 @@ void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 	LocalStatus temp;
 
 	// Open the blob.  If it failed, what the hell -- just return failure
-	IBlob *blob = att->createBlob(status, tra, blobId, 0, NULL);
+	IBlob* blob = att->createBlob(status, tra, blobId, 0, NULL);
 	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 
@@ -241,7 +241,7 @@ void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
  **************************************/
 	// Open the blob.  If it failed, what the hell -- just return failure
 
-	IBlob *blob = att->openBlob(status, tra, blobId, 0, NULL);
+	IBlob* blob = att->openBlob(status, tra, blobId, 0, NULL);
 	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return;
 

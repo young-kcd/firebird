@@ -1559,7 +1559,7 @@ ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, void* 
 
 	try
 	{
-		TLS_SET(legacyCryptCallback, (ICryptKeyCallback*)cb);
+		TLS_SET(legacyCryptCallback, (ICryptKeyCallback*) cb);
 	}
 	catch (const Exception& e)
 	{
@@ -3719,9 +3719,11 @@ YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
 
 
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
-/*	: YHelper(aNext),
+	/***
+	: YHelper(aNext),
 	  attachment(aAttachment),
-	  callback(aCallback)*/
+	  callback(aCallback)
+	***/
 	: YHelper(aNext)
 {
 	attachment = aAttachment;

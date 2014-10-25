@@ -530,7 +530,7 @@ public:
 private:
 	AuthServerPlugins* authItr;
 	string userName;
-	Firebird::IServer* authServer;
+	IServer* authServer;
 	const ParametersSet* tags;
 	unsigned int hopsCount;
 
@@ -3327,7 +3327,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 
 	// Get ready to ship the data out
 
-	const USHORT max_records = statement->rsr_flags.test(Rsr::NO_BATCH) ? 1 : sqldata->p_sqldata_messages;
+	const USHORT max_records = statement->rsr_flags.test(Rsr::NO_BATCH) ?
+		1 : sqldata->p_sqldata_messages;
 
 	P_SQLDATA* response = &sendL->p_sqldata;
 	sendL->p_operation = op_fetch_response;

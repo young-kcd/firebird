@@ -66,7 +66,7 @@ public:
 
 Static<Dtc> MasterImplementation::dtc;
 
-Firebird::IStatus* MasterImplementation::getStatus()
+IStatus* MasterImplementation::getStatus()
 {
 	return new UserStatus;
 }
@@ -251,7 +251,7 @@ IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsi
 	}
 }
 
-/*
+/***
 IDebug* MasterImplementation::getDebug()
 {
 #ifdef DEV_BUILD
@@ -260,7 +260,7 @@ IDebug* MasterImplementation::getDebug()
 	return NULL;
 #endif
 }
- */
+***/
 
 int MasterImplementation::serverMode(int mode)
 {
@@ -534,7 +534,7 @@ private:
 	{
 		Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 
-//		fprintf(stderr, "Cleanup is called\n");
+		///fprintf(stderr, "Cleanup is called\n");
 		FB_SIZE_T p = position(getThreadId());
 		if (p >= processBuffer.getCount())
 		{
@@ -543,7 +543,7 @@ private:
 
 		delete processBuffer[p];
 		processBuffer.remove(p);
-//		fprintf(stderr, "Buffer removed\n");
+		///fprintf(stderr, "Buffer removed\n");
 	}
 
 	static void cleanupAllStrings(void* toClean)
@@ -804,7 +804,7 @@ namespace Why {
 
 	extern UtlInterface utlInterface;		// Implemented in utl.cpp
 
-	Firebird::IUtl* MasterImplementation::getUtlInterface()
+	IUtl* MasterImplementation::getUtlInterface()
 	{
 		return &utlInterface;
 	}
@@ -824,7 +824,7 @@ namespace Firebird {
 
 namespace Why {
 
-	Firebird::IConfigManager* MasterImplementation::getConfigManager()
+	IConfigManager* MasterImplementation::getConfigManager()
 	{
 		return Firebird::iConfigManager;
 	}

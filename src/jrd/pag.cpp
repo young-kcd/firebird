@@ -1585,6 +1585,7 @@ void PAG_release_pages(thread_db* tdbb, USHORT pageSpaceID, int cntRelease,
 	WIN pip_window(pageSpaceID, -1);
 	page_inv_page* pages = NULL;
 	ULONG sequence = 0;
+
 	for (int i = 0; i < cntRelease; i++)
 	{
 #ifdef VIO_DEBUG

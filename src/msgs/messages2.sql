@@ -1622,7 +1622,7 @@ COMMIT WORK;
 ('gfix_opt_nolinger', 'ALICE_gfix', 'alice.c', NULL, 3, 121, NULL, '   -nol(inger)          close database ignoring linger setting for it', NULL, NULL);
 ('gfix_pip_err', 'ALICE_gfix', 'alice.c', NULL, 3, 122, NULL, '	Number of inventory page errors	: @1', NULL, NULL);
 ('gfix_rec_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 123, NULL, '	Number of record level warnings	: @1', NULL, NULL);
-('gfix_blob_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 124, NULL, '	Number of Blob page warnings	: @1', NULL, NULL);
+('gfix_blob_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 124, NULL, '	Number of blob page warnings	: @1', NULL, NULL);
 ('gfix_data_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 125, NULL, '	Number of data page warnings	: @1', NULL, NULL);
 ('gfix_index_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 126, NULL, '	Number of index page warnings	: @1', NULL, NULL);
 ('gfix_pointer_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 127, NULL, '	Number of pointer page warnings	: @1', NULL, NULL);

@@ -789,8 +789,10 @@ ULONG Validation::getInfo(UCHAR item)
 {
 	ULONG ret = 0;
 	for (int i = 0; i < VAL_MAX_ERROR; i++)
+	{
 		if (vdr_msg_table[i].info_item == item)
 			ret += vdr_err_counts[i];
+	}
 
 	return ret;
 }

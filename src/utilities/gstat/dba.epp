@@ -1002,8 +1002,9 @@ int gstat(Firebird::UtilSvc* uSvc)
 			// msg 12: "    Data pages: %ld, data page slots: %ld, average fill: %s
 			uSvc->printf(false, "    Data pages: %ld, average fill: %s\n", relation->rel_data_pages, buf);
 
-			dba_print(false, 46, SafeArg() << relation->rel_primary_pages << relation->rel_data_pages - relation->rel_primary_pages <<
-											  relation->rel_swept_pages);
+			dba_print(false, 46, SafeArg() << relation->rel_primary_pages <<
+				relation->rel_data_pages - relation->rel_primary_pages <<
+				relation->rel_swept_pages);
 			// msg 46: "    Primary pages: @1, secondary pages: @2, swept pages: @3
 
 			dba_print(false, 56, SafeArg() << relation->rel_empty_pages << relation->rel_full_pages);

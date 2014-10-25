@@ -98,7 +98,7 @@ namespace
 	public:
 		explicit StaticConfHolder(MemoryPool& p)
 			: confFile(FB_NEW(p) ConfigFile(p,
-				fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
+				fb_utils::getPrefix(IConfigManager::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
 		{
 		}
 
@@ -745,7 +745,7 @@ namespace
 		PluginLoadInfo(const char* pluginName)
 		{
 			// define default values for plugin ...
-			curModule = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_PLUGINS, pluginName);
+			curModule = fb_utils::getPrefix(IConfigManager::FB_DIR_PLUGINS, pluginName);
 			regName = pluginName;
 			required = false;
 
@@ -970,7 +970,7 @@ namespace
 				IPluginBase* p = currentPlugin->factory(firebirdConf);
 				if (p)
 				{
-					if (masterInterface->upgradeInterface(p, desiredVersion, destModule, (void*)upFunction) >= 0)
+					if (masterInterface->upgradeInterface(p, desiredVersion, destModule, (void*) upFunction) >= 0)
 					{
 						return p;
 					}
@@ -1037,7 +1037,7 @@ void PluginManager::registerPluginFactory(unsigned int interfaceType, const char
 
 	if (current == builtin)
 	{
-		PathName plugConfigFile = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_PLUGINS, defaultName);
+		PathName plugConfigFile = fb_utils::getPrefix(IConfigManager::FB_DIR_PLUGINS, defaultName);
 		changeExtension(plugConfigFile, "conf");
 
 		ConfiguredPlugin* p = new ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
