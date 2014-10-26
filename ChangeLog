@@ -1,3 +1,25 @@
+ 2014-10-25 18:39  asfernandes 
+   M src/jrd/exe.cpp
+   M src/jrd/fun.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/validation.cpp
+   M src/msgs/messages2.sql
+   M src/remote/client/interface.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Misc.
+
  2014-10-21 14:53  hvlad 
    M src/jrd/cch.cpp
 Improved page cache performance a bit. 
