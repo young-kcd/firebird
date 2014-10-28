@@ -1720,10 +1720,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	{
 		// Setup correct configuration for port
 		PathName dbName(connect->p_cnct_file.cstr_address, connect->p_cnct_file.cstr_length);
-		RefPtr<Config> dbConfig = REMOTE_get_config(&dbName);
-		port->port_security_db = dbConfig->getSecurityDatabase();
-		port->port_config = REMOTE_get_config(port->port_security_db.hasData() ?
-			&port->port_security_db : NULL);
+		port->port_config = REMOTE_get_config(&dbName);
 
 		// Clear accept data
 		send->p_acpd.p_acpt_plugin.cstr_length = 0;
