@@ -1016,7 +1016,7 @@ rem_port* INET_connect(const TEXT* name,
 		{
 			SOCLOSE(port->port_handle);
 			port->port_handle = s;
-			port->port_server_flags |= SRVR_server | SRVR_debug;
+			port->port_server_flags |= SRVR_server;
 			port->port_flags |= PORT_server;
 			return port;
 		}
@@ -2474,7 +2474,7 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
  *
  **************************************/
 	const rem_port* port = (rem_port*) xdrs->x_public;
-	if ((port->port_flags & PORT_server) && !(port->port_server_flags & SRVR_debug))
+	if (port->port_flags & PORT_server)
 	{
 		return REMOTE_getbytes(xdrs, buff, count);
 	}
