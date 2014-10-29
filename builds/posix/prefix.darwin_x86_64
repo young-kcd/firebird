@@ -18,8 +18,9 @@
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 #
 # Default build from 10.7
+# The following exports assume you are using MacPorts ICU, libtommath 
 # export CFLAGS='-I/opt/local/include -I/opt/local/include/libtommath'
-# export CXXFLAGS='-I/opt/local/include -I/opt/local/include/libtommath'
+# export CXXFLAGS='-I/opt/local/include -I/opt/local/include/libtommath -L/opt/local.lib'
 # export LDFLAGS='-L/opt/local/lib'
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
