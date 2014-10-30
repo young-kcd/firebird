@@ -1,3 +1,13 @@
+ 2014-10-29 17:43  mkubecek 
+   M src/remote/inet.cpp
+Fixed CORE-4586: connections to FB3 in "standaloneClassic" mode (firebird -s) hang up
+
+ 2014-10-29 09:04  paulbeach 
+   M builds/posix/darwin.defaults
+   M builds/posix/prefix.darwin_x86_64
+   M builds/posix/udr_engine.vers
+Build modifications for MacOSX/Clang
+
  2014-10-28 13:41  alexpeshkoff 
    M src/remote/remote.h
    M src/remote/server/server.cpp
