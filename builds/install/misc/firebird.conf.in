@@ -842,6 +842,11 @@
 #Redirection = 0
 
 
+# ============================
+# Settings for Architecture Configuration
+# ============================
+
+
 # Type: boolean
 #SharedCache = true
 
