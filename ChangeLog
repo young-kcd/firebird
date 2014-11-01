@@ -1,3 +1,14 @@
+ 2014-10-31 16:16  paul_reeves 
+   M builds/install/misc/firebird.conf.in
+Clearly mark the beginning of the architecture configuration section.
+
+ 2014-10-31 10:14  dimitr 
+   D B2_5_Replication
+Removed accidentally wrong commit.
+
+ 2014-10-31 10:10  dimitr 
+   A B2_5_Replication
+
  2014-10-30 08:03  paulbeach 
    M builds/posix/prefix.darwin_x86_64
 Typo
