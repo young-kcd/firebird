@@ -253,7 +253,7 @@ int UTIL_ex_lock(const TEXT* file)
 	Firebird::PathName expanded_filename = fb_utils::getPrefix(fb_utils::FB_DIR_GUARD, file);
 
 	// file fd for the opened and locked file
-	int fd_file = open(expanded_filename.c_str(), O_RDWR | O_CREAT, 0666);
+	int fd_file = open(expanded_filename.c_str(), O_RDWR | O_CREAT, 0660);
 	if (fd_file == -1)
 	{
 		fprintf(stderr, "Could not open %s for write\n", expanded_filename.c_str());

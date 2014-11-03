@@ -146,7 +146,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 	}
 
 	// get and set the umask for the current process
-	const ULONG new_mask = 0000;
+	const ULONG new_mask = 0007;
 	const ULONG old_mask = umask(new_mask);
 
 	// exclusive lock the file
