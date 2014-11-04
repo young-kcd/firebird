@@ -1,3 +1,8 @@
+ 2014-11-03 09:35  mapopa 
+   M src/utilities/guard/guard.cpp
+   M src/utilities/guard/util.cpp
+Apply CORE-4595 fbguard lock file permission patch
+
  2014-10-16 15:16  alexpeshkoff 
    M src/isql/InputDevices.cpp
    M src/isql/isql.epp
