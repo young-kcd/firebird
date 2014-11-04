@@ -1,3 +1,8 @@
+ 2014-11-03 09:17  mapopa 
+   M src/utilities/guard/guard.cpp
+   M src/utilities/guard/util.cpp
+Apply CORE-4595 fbguard lock file permission patch
+
  2014-10-31 16:16  paul_reeves 
    M builds/install/misc/firebird.conf.in
 Clearly mark the beginning of the architecture configuration section.
