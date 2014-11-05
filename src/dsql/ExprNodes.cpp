@@ -8703,13 +8703,23 @@ void StrLenNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 	dsc desc1;
 	MAKE_desc(dsqlScratch, &desc1, arg);
 
-	desc->makeLong(0);
+	if (desc1.isBlob())
+		desc->makeInt64(0);
+	else
+		desc->makeLong(0);
+
 	desc->setNullable(desc1.isNullable());
 }
 
-void StrLenNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc)
+void StrLenNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 {
-	desc->makeLong(0);
+	dsc desc1;
+	arg->getDesc(tdbb, csb, &desc1);
+
+	if (desc1.isBlob())
+		desc->makeInt64(0);
+	else
+		desc->makeLong(0);
 }
 
 ValueExprNode* StrLenNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -8760,12 +8770,12 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	const dsc* value = EVL_expr(tdbb, request, arg);
 
-	impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
+	impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
 
 	if (!value || (request->req_flags & req_null))
 		return NULL;
 
-	ULONG length;
+	FB_UINT64 length;
 
 	if (value->isBlob())
 	{
@@ -8775,17 +8785,8 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 		switch (blrSubOp)
 		{
 			case blr_strlen_bit:
-			{
-				FB_UINT64 l = (FB_UINT64) blob->blb_length * 8;
-				if (l > MAX_SINT64)
-				{
-					ERR_post(Arg::Gds(isc_arith_except) <<
-							 Arg::Gds(isc_numeric_out_of_range));
-				}
-
-				length = l;
+				length = (FB_UINT64) blob->blb_length * 8;
 				break;
-			}
 
 			case blr_strlen_octet:
 				length = blob->blb_length;
@@ -8814,7 +8815,13 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 				length = 0;
 		}
 
-		*(ULONG*) impure->vlu_desc.dsc_address = length;
+		if (length > MAX_SINT64)
+		{
+			ERR_post(Arg::Gds(isc_arith_except) <<
+					 Arg::Gds(isc_numeric_out_of_range));
+		}
+
+		*(FB_UINT64*) impure->vlu_desc.dsc_address = length;
 
 		blob->BLB_close(tdbb);
 
@@ -8830,17 +8837,8 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 	switch (blrSubOp)
 	{
 		case blr_strlen_bit:
-		{
-			FB_UINT64 l = (FB_UINT64) length * 8;
-			if (l > MAX_SINT64)
-			{
-				ERR_post(Arg::Gds(isc_arith_except) <<
-						 Arg::Gds(isc_numeric_out_of_range));
-			}
-
-			length = l;
+			length *= 8;
 			break;
-		}
 
 		case blr_strlen_octet:
 			break;
@@ -8857,7 +8855,7 @@ dsc* StrLenNode::execute(thread_db* tdbb, jrd_req* request) const
 			length = 0;
 	}
 
-	*(ULONG*) impure->vlu_desc.dsc_address = length;
+	*(FB_UINT64*) impure->vlu_desc.dsc_address = length;
 
 	return &impure->vlu_desc;
 }
