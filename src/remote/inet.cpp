@@ -1538,7 +1538,7 @@ static bool check_host(rem_port* port)
 {
 /**************************************
  *
- *	c h e c k _ h o s t 	 ( n o n - V M S )
+ *	c h e c k _ h o s t 	 ( n o n - W i n d o w s )
  *
  **************************************
  *
