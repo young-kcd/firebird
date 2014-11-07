@@ -2402,7 +2402,7 @@ static int xdrinet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT lengt
  **************************************
  *
  * Functional description
- *	Initialize an XDR stream for Apollo mailboxes.
+ *	Initialize an XDR stream.
  *
  **************************************/
 
