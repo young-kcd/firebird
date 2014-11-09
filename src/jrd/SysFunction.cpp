@@ -2939,8 +2939,17 @@ dsc* evlReplace(Jrd::thread_db* tdbb, const SysFunction*, Jrd::jrd_nod* args,
 				}
 			}
 
-			srcPos += len + lengths[1];
+			if (cs->isMultiByte())
+			{
+				buffer.getBuffer(canonicals[1].getCount() / canonicalWidth * cs->maxBytesPerChar());
+				srcPos += cs->substring(addresses[0] + lengths[0] - srcPos - len, srcPos + len,
+					buffer.getCapacity(), buffer.begin(),
+					0, canonicals[1].getCount() / canonicalWidth);
+			}
+			else
+				srcPos += lengths[1];
 
+			srcPos += len;
 			last = p + canonicals[1].getCount();
 			p += canonicals[1].getCount() - canonicalWidth;
 		}
