@@ -1,3 +1,7 @@
+ 2014-11-09 02:03  asfernandes 
+   M src/jrd/SysFunction.cpp
+Backported fix for CORE-4599 - REPLACE function works incorrectly with multibyte charsets.
+
  2014-11-03 09:35  mapopa 
    M src/utilities/guard/guard.cpp
    M src/utilities/guard/util.cpp
