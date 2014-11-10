@@ -711,13 +711,6 @@ public:
 		return NULL;
 	}
 
-	int upgradeInterface(IVersioned* /*toUpgrade*/, int /*desiredVersion*/,
-		IPluginModule* /*destMod*/, void* /*function*/)
-	{
-		fb_assert(false);
-		return 0;
-	}
-
 	const char* circularAlloc(const char* s, unsigned len, intptr_t /*thr*/)
 	{
 		char* buf = (char*) malloc(len + 1);

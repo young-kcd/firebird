@@ -812,6 +812,7 @@ const
 	gds_crdb_load                        = 335545097;
 	gds_crdb_nodb                        = 335545098;
 	gds_crdb_notable                     = 335545099;
+	gds_interface_version_too_old        = 335545100;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

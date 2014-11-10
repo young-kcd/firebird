@@ -408,7 +408,6 @@ namespace
 				MutexLockGuard timerPause(Why::pauseTimer(), FB_FUNCTION);
 
 				cleanup->doClean();
-				Why::releaseUpgradeTabs(cleanup);
 			}
 		}
 
@@ -812,10 +811,8 @@ namespace
 		void next(IStatus* status);
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
-				  int pdesiredVersion, IPluginModule* pdestModule,
 				  IFirebirdConf* fbConf)
 			: interfaceType(pinterfaceType), namesList(getPool()),
-			  desiredVersion(pdesiredVersion), destModule(pdestModule),
 			  currentName(getPool()), currentPlugin(NULL),
 			  firebirdConf(fbConf)
 		{
@@ -840,8 +837,6 @@ namespace
 	private:
 		unsigned int interfaceType;
 		PathName namesList;
-		int desiredVersion;
-		IPluginModule* destModule;
 
 		PathName currentName;
 		RefPtr<ConfiguredPlugin> currentPlugin;		// Missing data in this field indicates EOF
@@ -969,14 +964,7 @@ namespace
 			{
 				IPluginBase* p = currentPlugin->factory(firebirdConf);
 				if (p)
-				{
-					if (masterInterface->upgradeInterface(p, desiredVersion, destModule, (void*) upFunction) >= 0)
-					{
-						return p;
-					}
-
-					PluginManagerInterfacePtr()->releasePlugin(p);
-				}
+					return p;
 
 				next(status);
 				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
@@ -1076,9 +1064,8 @@ void PluginManager::unregisterModule(IPluginModule* cleanup)
 	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 
-IPluginSet* PluginManager::getPlugins(IStatus* status, unsigned int interfaceType, const char* namesList,
-											  int desiredVersion, IPluginModule* destModule,
-											  IFirebirdConf* firebirdConf)
+IPluginSet* PluginManager::getPlugins(IStatus* status, unsigned int interfaceType,
+	const char* namesList, IFirebirdConf* firebirdConf)
 {
 	try
 	{
@@ -1087,7 +1074,7 @@ IPluginSet* PluginManager::getPlugins(IStatus* status, unsigned int interfaceTyp
 
 		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
-		IPluginSet* rc = new PluginSet(interfaceType, namesList, desiredVersion, destModule, firebirdConf);
+		IPluginSet* rc = new PluginSet(interfaceType, namesList, firebirdConf);
 		rc->addRef();
 		return rc;
 	}

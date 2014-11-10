@@ -46,184 +46,124 @@ struct DtcStart;
 
 #include "IdlFbInterfaces.h"
 
+#define FB_USE_API(name, prefix)	\
+	/* awk <FirebirdInterface.idl '($1 == "interface") {printf "\t\ttypedef name::%s prefix##%s;\n", $2, $2;}' */	\
+	typedef name::Versioned prefix##Versioned;	\
+	typedef name::ReferenceCounted prefix##ReferenceCounted;	\
+	typedef name::Disposable prefix##Disposable;	\
+	typedef name::Status prefix##Status;	\
+	typedef name::Master prefix##Master;	\
+	typedef name::PluginBase prefix##PluginBase;	\
+	typedef name::PluginSet prefix##PluginSet;	\
+	typedef name::ConfigEntry prefix##ConfigEntry;	\
+	typedef name::Config prefix##Config;	\
+	typedef name::FirebirdConf prefix##FirebirdConf;	\
+	typedef name::PluginConfig prefix##PluginConfig;	\
+	typedef name::PluginFactory prefix##PluginFactory;	\
+	typedef name::PluginModule prefix##PluginModule;	\
+	typedef name::PluginManager prefix##PluginManager;	\
+	typedef name::ConfigManager prefix##ConfigManager;	\
+	typedef name::EventCallback prefix##EventCallback;	\
+	typedef name::Blob prefix##Blob;	\
+	typedef name::Transaction prefix##Transaction;	\
+	typedef name::MessageMetadata prefix##MessageMetadata;	\
+	typedef name::MetadataBuilder prefix##MetadataBuilder;	\
+	typedef name::ResultSet prefix##ResultSet;	\
+	typedef name::Statement prefix##Statement;	\
+	typedef name::Request prefix##Request;	\
+	typedef name::Events prefix##Events;	\
+	typedef name::Attachment prefix##Attachment;	\
+	typedef name::Service prefix##Service;	\
+	typedef name::Provider prefix##Provider;	\
+	typedef name::Dtc prefix##Dtc;	\
+	typedef name::Auth prefix##Auth;	\
+	typedef name::Writer prefix##Writer;	\
+	typedef name::ServerBlock prefix##ServerBlock;	\
+	typedef name::ClientBlock prefix##ClientBlock;	\
+	typedef name::Server prefix##Server;	\
+	typedef name::Client prefix##Client;	\
+	typedef name::UserField prefix##UserField;	\
+	typedef name::CharUserField prefix##CharUserField;	\
+	typedef name::IntUserField prefix##IntUserField;	\
+	typedef name::User prefix##User;	\
+	typedef name::ListUsers prefix##ListUsers;	\
+	typedef name::LogonInfo prefix##LogonInfo;	\
+	typedef name::Management prefix##Management;	\
+	typedef name::WireCryptPlugin prefix##WireCryptPlugin;	\
+	typedef name::CryptKeyCallback prefix##CryptKeyCallback;	\
+	typedef name::KeyHolderPlugin prefix##KeyHolderPlugin;	\
+	typedef name::DbCryptPlugin prefix##DbCryptPlugin;	\
+	typedef name::ExternalContext prefix##ExternalContext;	\
+	typedef name::ExternalResultSet prefix##ExternalResultSet;	\
+	typedef name::ExternalFunction prefix##ExternalFunction;	\
+	typedef name::ExternalProcedure prefix##ExternalProcedure;	\
+	typedef name::ExternalTrigger prefix##ExternalTrigger;	\
+	typedef name::RoutineMetadata prefix##RoutineMetadata;	\
+	typedef name::ExternalEngine prefix##ExternalEngine;	\
+	typedef name::Timer prefix##Timer;	\
+	typedef name::TimerControl prefix##TimerControl;	\
+	typedef name::VersionCallback prefix##VersionCallback;	\
+	typedef name::Utl prefix##Utl;	\
+	typedef name::TraceConnection prefix##TraceConnection;	\
+	typedef name::TraceDatabaseConnection prefix##TraceDatabaseConnection;	\
+	typedef name::TraceTransaction prefix##TraceTransaction;	\
+	typedef name::TraceParams prefix##TraceParams;	\
+	typedef name::TraceStatement prefix##TraceStatement;	\
+	typedef name::TraceSQLStatement prefix##TraceSQLStatement;	\
+	typedef name::TraceBLRStatement prefix##TraceBLRStatement;	\
+	typedef name::TraceDYNRequest prefix##TraceDYNRequest;	\
+	typedef name::TraceContextVariable prefix##TraceContextVariable;	\
+	typedef name::TraceProcedure prefix##TraceProcedure;	\
+	typedef name::TraceFunction prefix##TraceFunction;	\
+	typedef name::TraceTrigger prefix##TraceTrigger;	\
+	typedef name::TraceServiceConnection prefix##TraceServiceConnection;	\
+	typedef name::TraceStatusVector prefix##TraceStatusVector;	\
+	typedef name::TraceSweepInfo prefix##TraceSweepInfo;	\
+	typedef name::TraceLogWriter prefix##TraceLogWriter;	\
+	typedef name::TraceInitInfo prefix##TraceInitInfo;	\
+	typedef name::TracePlugin prefix##TracePlugin;	\
+	typedef name::TraceFactory prefix##TraceFactory;
+
 #ifdef INCLUDE_Firebird_H		// Building internal module
 
-class FirebirdPolicy;
-extern void raiseVersionError();
-extern void upgradeInterface(FirebirdApi<FirebirdPolicy>::Versioned* toUpgrade, int desiredVersion, void* function);
-extern void logOldPlugin();
-extern ISC_STATUS* getUpgradeError();
-
-namespace
-{
-	static void defaultUpgradeFunction(void*, FirebirdApi<FirebirdPolicy>::Status* status)
-	{
-		status->setErrors2(2, getUpgradeError());
-	}
-
-	// This may be used when old plugin, missing some newer events is used.
-	// Reasonable action here is to log once and ignore next times.
-	static void ignoreMissing(void*)
-	{
-		static bool flagFirst = true;
-
-		if (flagFirst)
-		{
-			flagFirst = false;
-			logOldPlugin();
-		}
-	};
-
-	template <typename T>
-	static inline void upgradeVersionedInterface(T* versioned)
-	{
-		if (versioned && versioned->cloopVTable->version < T::VERSION)
-		{
-			upgradeInterface(versioned, T::VERSION, (void*)defaultUpgradeFunction);
-		}
-	}
-
-	template <>
-	void upgradeVersionedInterface<FirebirdApi<FirebirdPolicy>::TracePlugin>
-		(FirebirdApi<FirebirdPolicy>::TracePlugin* versioned)
-	{
-		if (versioned && versioned->cloopVTable->version < FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION)
-		{
-			upgradeInterface(versioned, FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION, (void*)ignoreMissing);
-		}
-	}
-}
+typedef FirebirdApi<class FirebirdPolicy> Api;
+FB_USE_API(Api, I)
 
 class FirebirdPolicy
 {
 public:
 	template <unsigned V, typename T>
-	static inline void checkVersion(T* versioned)
+	static inline bool checkVersion(T* versioned, IStatus* status)
 	{
-		if (versioned && versioned->cloopVTable->version < V)
+		if (versioned->cloopVTable->version < V)
+			return true;
+
+		if (status)
 		{
-			raiseVersionError();
+			intptr_t codes[] = {
+				isc_arg_gds,
+				isc_interface_version_too_old,
+				isc_arg_number,
+				(intptr_t) V,
+				isc_arg_number,
+				(intptr_t) versioned->cloopVTable->version,
+				isc_arg_end
+			};
+
+			status->setErrors(codes);
 		}
+
+		return false;
 	}
 
-	template <typename T>
-	static inline T* upgrade(T* versioned)
-	{
-		upgradeVersionedInterface(versioned);
-		return versioned;
-	}
-
-	static void checkException(FirebirdApi<FirebirdPolicy>::Status* status) { }
-	static void catchException(FirebirdApi<FirebirdPolicy>::Status* status) { }
-	typedef FirebirdApi<FirebirdPolicy>::Status* Status;
+	static void checkException(Api::Status* status) { }
+	static void catchException(Api::Status* status) { }
+	typedef Api::Status* Status;
 };
 
 #else // INCLUDE_Firebird_H		building external module
 
-// use empty default policy
-
-class FirebirdPolicy
-{
-public:
-	template <unsigned V, typename T>
-	static inline void checkVersion(T* versioned) { }
-
-	template <typename T>
-	static inline T* upgrade(T* versioned)
-	{
-		return versioned;
-	}
-
-	template <typename S>
-	static void checkException(S status) { }
-
-	template <typename S>
-	static void catchException(S status) { }
-
-	typedef FirebirdApi<FirebirdPolicy>::Status* Status;
-};
-
 #endif // INCLUDE_Firebird_H
-
-	typedef FirebirdApi<FirebirdPolicy> Api;
-
-//awk <FirebirdInterface.idl '($1 == "interface") {printf "\ttypedef Api::%s I%s;\n", $2, $2;}'
-
-	typedef Api::Versioned IVersioned;
-	typedef Api::ReferenceCounted IReferenceCounted;
-	typedef Api::Disposable IDisposable;
-	typedef Api::Status IStatus;
-	typedef Api::Master IMaster;
-	typedef Api::PluginBase IPluginBase;
-	typedef Api::PluginSet IPluginSet;
-	typedef Api::ConfigEntry IConfigEntry;
-	typedef Api::Config IConfig;
-	typedef Api::FirebirdConf IFirebirdConf;
-	typedef Api::PluginConfig IPluginConfig;
-	typedef Api::PluginFactory IPluginFactory;
-	typedef Api::PluginModule IPluginModule;
-	typedef Api::PluginManager IPluginManager;
-	typedef Api::ConfigManager IConfigManager;
-	typedef Api::EventCallback IEventCallback;
-	typedef Api::Blob IBlob;
-	typedef Api::Transaction ITransaction;
-	typedef Api::MessageMetadata IMessageMetadata;
-	typedef Api::MetadataBuilder IMetadataBuilder;
-	typedef Api::ResultSet IResultSet;
-	typedef Api::Statement IStatement;
-	typedef Api::Request IRequest;
-	typedef Api::Events IEvents;
-	typedef Api::Attachment IAttachment;
-	typedef Api::Service IService;
-	typedef Api::Provider IProvider;
-	typedef Api::Dtc IDtc;
-	typedef Api::Auth IAuth;
-	typedef Api::Writer IWriter;
-	typedef Api::ServerBlock IServerBlock;
-	typedef Api::ClientBlock IClientBlock;
-	typedef Api::Server IServer;
-	typedef Api::Client IClient;
-	typedef Api::UserField IUserField;
-	typedef Api::CharUserField ICharUserField;
-	typedef Api::IntUserField IIntUserField;
-	typedef Api::User IUser;
-	typedef Api::ListUsers IListUsers;
-	typedef Api::LogonInfo ILogonInfo;
-	typedef Api::Management IManagement;
-	typedef Api::WireCryptPlugin IWireCryptPlugin;
-	typedef Api::CryptKeyCallback ICryptKeyCallback;
-	typedef Api::KeyHolderPlugin IKeyHolderPlugin;
-	typedef Api::DbCryptPlugin IDbCryptPlugin;
-	typedef Api::ExternalContext IExternalContext;
-	typedef Api::ExternalResultSet IExternalResultSet;
-	typedef Api::ExternalFunction IExternalFunction;
-	typedef Api::ExternalProcedure IExternalProcedure;
-	typedef Api::ExternalTrigger IExternalTrigger;
-	typedef Api::RoutineMetadata IRoutineMetadata;
-	typedef Api::ExternalEngine IExternalEngine;
-	typedef Api::Timer ITimer;
-	typedef Api::TimerControl ITimerControl;
-	typedef Api::VersionCallback IVersionCallback;
-	typedef Api::Utl IUtl;
-	typedef Api::TraceConnection ITraceConnection;
-	typedef Api::TraceDatabaseConnection ITraceDatabaseConnection;
-	typedef Api::TraceTransaction ITraceTransaction;
-	typedef Api::TraceParams ITraceParams;
-	typedef Api::TraceStatement ITraceStatement;
-	typedef Api::TraceSQLStatement ITraceSQLStatement;
-	typedef Api::TraceBLRStatement ITraceBLRStatement;
-	typedef Api::TraceDYNRequest ITraceDYNRequest;
-	typedef Api::TraceContextVariable ITraceContextVariable;
-	typedef Api::TraceProcedure ITraceProcedure;
-	typedef Api::TraceFunction ITraceFunction;
-	typedef Api::TraceTrigger ITraceTrigger;
-	typedef Api::TraceServiceConnection ITraceServiceConnection;
-	typedef Api::TraceStatusVector ITraceStatusVector;
-	typedef Api::TraceSweepInfo ITraceSweepInfo;
-	typedef Api::TraceLogWriter ITraceLogWriter;
-	typedef Api::TraceInitInfo ITraceInitInfo;
-	typedef Api::TracePlugin ITracePlugin;
-	typedef Api::TraceFactory ITraceFactory;
 
 struct FbCryptKey
 {
@@ -242,27 +182,13 @@ struct DtcStart
 };
 
 typedef void PluginEntrypoint(IMaster* masterInterface);
-typedef char Utf8;	// Utf8* used as nul-terminated string
 
 #ifdef INCLUDE_Firebird_H		// Building internal module
 
 // This item is for ISC API emulation only
 // It may be gone in future versions
 // Please do not use it!
-static IMessageMetadata* const DELAYED_OUT_FORMAT = (IMessageMetadata*)(1);
-
-namespace
-{
-	template <>
-	void upgradeVersionedInterface<IMessageMetadata>(IMessageMetadata* versioned)
-	{
-		if (versioned && versioned != DELAYED_OUT_FORMAT &&
-			versioned->cloopVTable->version < FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION)
-		{
-			upgradeInterface(versioned, FirebirdApi<FirebirdPolicy>::TracePlugin::VERSION, (void*)ignoreMissing);
-		}
-	}
-}
+static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMetadata*>(1);
 
 #endif //INCLUDE_Firebird_H
 

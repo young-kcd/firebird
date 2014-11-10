@@ -24,6 +24,7 @@
  *  Contributor(s): ______________________________________.
  */
 
+#include "firebird.h"	//// FIXME:
 #include <stdint.h>
 
 #include "ibase.h"

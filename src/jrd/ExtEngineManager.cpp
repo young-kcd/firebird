@@ -532,7 +532,7 @@ private:
 		if (!obj)
 			return;
 
-		Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE];
+		char charSetName[MAX_SQL_IDENTIFIER_SIZE];
 
 		{	// scope
 			Attachment::Checkout attCout(attachment, FB_FUNCTION);
@@ -660,7 +660,7 @@ const char* ExtEngineManager::ExternalContextImpl::getDatabaseName()
 	return internalAttachment->att_database->dbb_database_name.c_str();
 }
 
-const Utf8* ExtEngineManager::ExternalContextImpl::getClientCharSet()
+const char* ExtEngineManager::ExternalContextImpl::getClientCharSet()
 {
 	return clientCharSet.c_str();
 }
@@ -1470,7 +1470,7 @@ void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, IExternalEngine* engin
 {
 	ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, CS_UTF8);
 
-	Utf8 charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
+	char charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
 
 	LocalStatus status;
 	engine->open(&status, attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);

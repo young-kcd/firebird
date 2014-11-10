@@ -130,12 +130,11 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 1;
+		static const unsigned VERSION = 1;
 
 		PluginModule* getModule()
 		{
-			Policy::template checkVersion<1>(this);
-			PluginModule* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getModule(this));
+			PluginModule* ret = static_cast<VTable*>(this->cloopVTable)->getModule(this);
 			return ret;
 		}
 	};
@@ -160,17 +159,15 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 3;
+		static const unsigned VERSION = 2;
 
 		void addRef()
 		{
-			Policy::template checkVersion<2>(this);
 			static_cast<VTable*>(this->cloopVTable)->addRef(this);
 		}
 
 		int release()
 		{
-			Policy::template checkVersion<3>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->release(this);
 			return ret;
 		}
@@ -195,11 +192,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 2;
+		static const unsigned VERSION = 2;
 
 		void dispose()
 		{
-			Policy::template checkVersion<2>(this);
 			static_cast<VTable*>(this->cloopVTable)->dispose(this);
 		}
 	};
@@ -230,7 +226,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 10;
+		static const unsigned VERSION = 3;
 
 		static const unsigned FB_HAS_WARNINGS = 1;
 		static const unsigned FB_HAS_ERRORS = 2;
@@ -241,51 +237,43 @@ public:
 
 		void init()
 		{
-			Policy::template checkVersion<2>(this);
 			static_cast<VTable*>(this->cloopVTable)->init(this);
 		}
 
 		unsigned getStatus() const
 		{
-			Policy::template checkVersion<3>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
 			return ret;
 		}
 
 		void setErrors2(unsigned length, const intptr_t* value)
 		{
-			Policy::template checkVersion<4>(this);
 			static_cast<VTable*>(this->cloopVTable)->setErrors2(this, length, value);
 		}
 
 		void setWarnings2(unsigned length, const intptr_t* value)
 		{
-			Policy::template checkVersion<5>(this);
 			static_cast<VTable*>(this->cloopVTable)->setWarnings2(this, length, value);
 		}
 
 		void setErrors(const intptr_t* value)
 		{
-			Policy::template checkVersion<6>(this);
 			static_cast<VTable*>(this->cloopVTable)->setErrors(this, value);
 		}
 
 		void setWarnings(const intptr_t* value)
 		{
-			Policy::template checkVersion<7>(this);
 			static_cast<VTable*>(this->cloopVTable)->setWarnings(this, value);
 		}
 
 		const intptr_t* getErrors() const
 		{
-			Policy::template checkVersion<8>(this);
 			const intptr_t* ret = static_cast<VTable*>(this->cloopVTable)->getErrors(this);
 			return ret;
 		}
 
 		const intptr_t* getWarnings() const
 		{
-			Policy::template checkVersion<9>(this);
 			const intptr_t* ret = static_cast<VTable*>(this->cloopVTable)->getWarnings(this);
 			return ret;
 		}
@@ -299,7 +287,6 @@ public:
 			Status* (CLOOP_CARG *getStatus)(Master* self) throw();
 			Provider* (CLOOP_CARG *getDispatcher)(Master* self) throw();
 			PluginManager* (CLOOP_CARG *getPluginManager)(Master* self) throw();
-			int (CLOOP_CARG *upgradeInterface)(Master* self, Versioned* toUpgrade, int desiredVersion, PluginModule* destModule, void* function) throw();
 			const char* (CLOOP_CARG *circularAlloc)(Master* self, const char* s, unsigned len, intptr_t thr) throw();
 			TimerControl* (CLOOP_CARG *getTimerControl)(Master* self) throw();
 			Dtc* (CLOOP_CARG *getDtc)(Master* self) throw();
@@ -323,105 +310,85 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 15;
+		static const unsigned VERSION = 2;
 
 		Status* getStatus()
 		{
-			Policy::template checkVersion<2>(this);
-			Status* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getStatus(this));
+			Status* ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
 			return ret;
 		}
 
 		Provider* getDispatcher()
 		{
-			Policy::template checkVersion<3>(this);
-			Provider* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getDispatcher(this));
+			Provider* ret = static_cast<VTable*>(this->cloopVTable)->getDispatcher(this);
 			return ret;
 		}
 
 		PluginManager* getPluginManager()
 		{
-			Policy::template checkVersion<4>(this);
-			PluginManager* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getPluginManager(this));
-			return ret;
-		}
-
-		int upgradeInterface(Versioned* toUpgrade, int desiredVersion, PluginModule* destModule, void* function)
-		{
-			Policy::template checkVersion<5>(this);
-			int ret = static_cast<VTable*>(this->cloopVTable)->upgradeInterface(this, toUpgrade, desiredVersion, destModule, function);
+			PluginManager* ret = static_cast<VTable*>(this->cloopVTable)->getPluginManager(this);
 			return ret;
 		}
 
 		const char* circularAlloc(const char* s, unsigned len, intptr_t thr)
 		{
-			Policy::template checkVersion<6>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->circularAlloc(this, s, len, thr);
 			return ret;
 		}
 
 		TimerControl* getTimerControl()
 		{
-			Policy::template checkVersion<7>(this);
-			TimerControl* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getTimerControl(this));
+			TimerControl* ret = static_cast<VTable*>(this->cloopVTable)->getTimerControl(this);
 			return ret;
 		}
 
 		Dtc* getDtc()
 		{
-			Policy::template checkVersion<8>(this);
-			Dtc* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getDtc(this));
+			Dtc* ret = static_cast<VTable*>(this->cloopVTable)->getDtc(this);
 			return ret;
 		}
 
 		Attachment* registerAttachment(Provider* provider, Attachment* attachment)
 		{
-			Policy::template checkVersion<9>(this);
-			Attachment* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->registerAttachment(this, provider, attachment));
+			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->registerAttachment(this, provider, attachment);
 			return ret;
 		}
 
 		Transaction* registerTransaction(Attachment* attachment, Transaction* transaction)
 		{
-			Policy::template checkVersion<10>(this);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->registerTransaction(this, attachment, transaction));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->registerTransaction(this, attachment, transaction);
 			return ret;
 		}
 
 		int same(Versioned* first, Versioned* second)
 		{
-			Policy::template checkVersion<11>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->same(this, first, second);
 			return ret;
 		}
 
 		MetadataBuilder* getMetadataBuilder(Status* status, unsigned fieldCount)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
-			MetadataBuilder* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getMetadataBuilder(this, status2, fieldCount));
+			MetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getMetadataBuilder(this, status2, fieldCount);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		int serverMode(int mode)
 		{
-			Policy::template checkVersion<13>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->serverMode(this, mode);
 			return ret;
 		}
 
 		Utl* getUtlInterface()
 		{
-			Policy::template checkVersion<14>(this);
-			Utl* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getUtlInterface(this));
+			Utl* ret = static_cast<VTable*>(this->cloopVTable)->getUtlInterface(this);
 			return ret;
 		}
 
 		ConfigManager* getConfigManager()
 		{
-			Policy::template checkVersion<15>(this);
-			ConfigManager* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getConfigManager(this));
+			ConfigManager* ret = static_cast<VTable*>(this->cloopVTable)->getConfigManager(this);
 			return ret;
 		}
 	};
@@ -446,18 +413,16 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 5;
+		static const unsigned VERSION = 3;
 
 		void setOwner(ReferenceCounted* r)
 		{
-			Policy::template checkVersion<3>(this);
 			static_cast<VTable*>(this->cloopVTable)->setOwner(this, r);
 		}
 
 		ReferenceCounted* getOwner()
 		{
-			Policy::template checkVersion<4>(this);
-			ReferenceCounted* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getOwner(this));
+			ReferenceCounted* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this);
 			return ret;
 		}
 	};
@@ -485,34 +450,30 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 8;
+		static const unsigned VERSION = 3;
 
 		const char* getName() const
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getName(this);
 			return ret;
 		}
 
 		const char* getModuleName() const
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getModuleName(this);
 			return ret;
 		}
 
 		PluginBase* getPlugin(Status* status)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			PluginBase* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getPlugin(this, status2));
+			PluginBase* ret = static_cast<VTable*>(this->cloopVTable)->getPlugin(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void next(Status* status)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->next(this, status2);
 			Policy::checkException(status2);
@@ -520,7 +481,6 @@ public:
 
 		void set(Status* status, const char* s)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status2, s);
 			Policy::checkException(status2);
@@ -550,41 +510,36 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 8;
+		static const unsigned VERSION = 3;
 
 		const char* getName()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getName(this);
 			return ret;
 		}
 
 		const char* getValue()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getValue(this);
 			return ret;
 		}
 
 		ISC_INT64 getIntValue()
 		{
-			Policy::template checkVersion<5>(this);
 			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getIntValue(this);
 			return ret;
 		}
 
 		FB_BOOLEAN getBoolValue()
 		{
-			Policy::template checkVersion<6>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->getBoolValue(this);
 			return ret;
 		}
 
 		Config* getSubConfig(Status* status)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
-			Config* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getSubConfig(this, status2));
+			Config* ret = static_cast<VTable*>(this->cloopVTable)->getSubConfig(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -611,31 +566,28 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 3;
 
 		ConfigEntry* find(Status* status, const char* name)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
-			ConfigEntry* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->find(this, status2, name));
+			ConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->find(this, status2, name);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		ConfigEntry* findValue(Status* status, const char* name, const char* value)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			ConfigEntry* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->findValue(this, status2, name, value));
+			ConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findValue(this, status2, name, value);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		ConfigEntry* findPos(Status* status, const char* name, unsigned pos)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			ConfigEntry* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->findPos(this, status2, name, pos));
+			ConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findPos(this, status2, name, pos);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -663,32 +615,28 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 7;
+		static const unsigned VERSION = 3;
 
 		unsigned getKey(const char* name)
 		{
-			Policy::template checkVersion<3>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getKey(this, name);
 			return ret;
 		}
 
 		ISC_INT64 asInteger(unsigned key)
 		{
-			Policy::template checkVersion<4>(this);
 			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->asInteger(this, key);
 			return ret;
 		}
 
 		const char* asString(unsigned key)
 		{
-			Policy::template checkVersion<5>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->asString(this, key);
 			return ret;
 		}
 
 		FB_BOOLEAN asBoolean(unsigned key)
 		{
-			Policy::template checkVersion<6>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->asBoolean(this, key);
 			return ret;
 		}
@@ -716,36 +664,32 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 7;
+		static const unsigned VERSION = 3;
 
 		const char* getConfigFileName()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getConfigFileName(this);
 			return ret;
 		}
 
 		Config* getDefaultConfig(Status* status)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			Config* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getDefaultConfig(this, status2));
+			Config* ret = static_cast<VTable*>(this->cloopVTable)->getDefaultConfig(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		FirebirdConf* getFirebirdConf(Status* status)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			FirebirdConf* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this, status2));
+			FirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void setReleaseDelay(Status* status, ISC_UINT64 microSeconds)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setReleaseDelay(this, status2, microSeconds);
 			Policy::checkException(status2);
@@ -771,13 +715,12 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 2;
+		static const unsigned VERSION = 2;
 
 		PluginBase* createPlugin(Status* status, PluginConfig* factoryParameter)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
-			PluginBase* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createPlugin(this, status2, factoryParameter));
+			PluginBase* ret = static_cast<VTable*>(this->cloopVTable)->createPlugin(this, status2, factoryParameter);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -802,11 +745,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 2;
+		static const unsigned VERSION = 2;
 
 		void doClean()
 		{
-			Policy::template checkVersion<2>(this);
 			static_cast<VTable*>(this->cloopVTable)->doClean(this);
 		}
 	};
@@ -819,7 +761,7 @@ public:
 			void (CLOOP_CARG *registerPluginFactory)(PluginManager* self, unsigned pluginType, const char* defaultName, PluginFactory* factory) throw();
 			void (CLOOP_CARG *registerModule)(PluginManager* self, PluginModule* cleanup) throw();
 			void (CLOOP_CARG *unregisterModule)(PluginManager* self, PluginModule* cleanup) throw();
-			PluginSet* (CLOOP_CARG *getPlugins)(PluginManager* self, Status* status, unsigned pluginType, const char* namesList, int desiredVersion, PluginModule* destModule, FirebirdConf* firebirdConf) throw();
+			PluginSet* (CLOOP_CARG *getPlugins)(PluginManager* self, Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf) throw();
 			Config* (CLOOP_CARG *getConfig)(PluginManager* self, Status* status, const char* filename) throw();
 			void (CLOOP_CARG *releasePlugin)(PluginManager* self, PluginBase* plugin) throw();
 		};
@@ -835,7 +777,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 7;
+		static const unsigned VERSION = 2;
 
 		static const unsigned Provider = 1;
 		static const unsigned FirstNonLibPlugin = 2;
@@ -851,43 +793,37 @@ public:
 
 		void registerPluginFactory(unsigned pluginType, const char* defaultName, PluginFactory* factory)
 		{
-			Policy::template checkVersion<2>(this);
 			static_cast<VTable*>(this->cloopVTable)->registerPluginFactory(this, pluginType, defaultName, factory);
 		}
 
 		void registerModule(PluginModule* cleanup)
 		{
-			Policy::template checkVersion<3>(this);
 			static_cast<VTable*>(this->cloopVTable)->registerModule(this, cleanup);
 		}
 
 		void unregisterModule(PluginModule* cleanup)
 		{
-			Policy::template checkVersion<4>(this);
 			static_cast<VTable*>(this->cloopVTable)->unregisterModule(this, cleanup);
 		}
 
-		PluginSet* getPlugins(Status* status, unsigned pluginType, const char* namesList, int desiredVersion, PluginModule* destModule, FirebirdConf* firebirdConf)
+		PluginSet* getPlugins(Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			PluginSet* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getPlugins(this, status2, pluginType, namesList, desiredVersion, destModule, firebirdConf));
+			PluginSet* ret = static_cast<VTable*>(this->cloopVTable)->getPlugins(this, status2, pluginType, namesList, firebirdConf);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Config* getConfig(Status* status, const char* filename)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
-			Config* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getConfig(this, status2, filename));
+			Config* ret = static_cast<VTable*>(this->cloopVTable)->getConfig(this, status2, filename);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void releasePlugin(PluginBase* plugin)
 		{
-			Policy::template checkVersion<7>(this);
 			static_cast<VTable*>(this->cloopVTable)->releasePlugin(this, plugin);
 		}
 	};
@@ -914,7 +850,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 5;
+		static const unsigned VERSION = 2;
 
 		static const unsigned FB_DIR_BIN = 0;
 		static const unsigned FB_DIR_SBIN = 1;
@@ -937,29 +873,25 @@ public:
 
 		const char* getDirectory(unsigned code)
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getDirectory(this, code);
 			return ret;
 		}
 
 		FirebirdConf* getFirebirdConf()
 		{
-			Policy::template checkVersion<3>(this);
-			FirebirdConf* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this));
+			FirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this);
 			return ret;
 		}
 
 		FirebirdConf* getDatabaseConf(const char* dbName)
 		{
-			Policy::template checkVersion<4>(this);
-			FirebirdConf* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getDatabaseConf(this, dbName));
+			FirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseConf(this, dbName);
 			return ret;
 		}
 
 		Config* getPluginConfig(const char* configuredPlugin)
 		{
-			Policy::template checkVersion<5>(this);
-			Config* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getPluginConfig(this, configuredPlugin));
+			Config* ret = static_cast<VTable*>(this->cloopVTable)->getPluginConfig(this, configuredPlugin);
 			return ret;
 		}
 	};
@@ -983,11 +915,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		void eventCallbackFunction(unsigned length, const unsigned char* events)
 		{
-			Policy::template checkVersion<3>(this);
 			static_cast<VTable*>(this->cloopVTable)->eventCallbackFunction(this, length, events);
 		}
 	};
@@ -1016,11 +947,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 9;
+		static const unsigned VERSION = 3;
 
 		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
@@ -1028,7 +958,6 @@ public:
 
 		int getSegment(Status* status, unsigned bufferLength, void* buffer, unsigned* segmentLength)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSegment(this, status2, bufferLength, buffer, segmentLength);
 			Policy::checkException(status2);
@@ -1037,7 +966,6 @@ public:
 
 		void putSegment(Status* status, unsigned length, const void* buffer)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putSegment(this, status2, length, buffer);
 			Policy::checkException(status2);
@@ -1045,7 +973,6 @@ public:
 
 		void cancel(Status* status)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->cancel(this, status2);
 			Policy::checkException(status2);
@@ -1053,7 +980,6 @@ public:
 
 		void close(Status* status)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status2);
 			Policy::checkException(status2);
@@ -1061,7 +987,6 @@ public:
 
 		int seek(Status* status, int mode, int offset)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->seek(this, status2, mode, offset);
 			Policy::checkException(status2);
@@ -1097,11 +1022,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 13;
+		static const unsigned VERSION = 3;
 
 		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
@@ -1109,7 +1033,6 @@ public:
 
 		void prepare(Status* status, unsigned msgLength, const unsigned char* message)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, msgLength, message);
 			Policy::checkException(status2);
@@ -1117,7 +1040,6 @@ public:
 
 		void commit(Status* status)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->commit(this, status2);
 			Policy::checkException(status2);
@@ -1125,7 +1047,6 @@ public:
 
 		void commitRetaining(Status* status)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->commitRetaining(this, status2);
 			Policy::checkException(status2);
@@ -1133,7 +1054,6 @@ public:
 
 		void rollback(Status* status)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->rollback(this, status2);
 			Policy::checkException(status2);
@@ -1141,7 +1061,6 @@ public:
 
 		void rollbackRetaining(Status* status)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->rollbackRetaining(this, status2);
 			Policy::checkException(status2);
@@ -1149,7 +1068,6 @@ public:
 
 		void disconnect(Status* status)
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->disconnect(this, status2);
 			Policy::checkException(status2);
@@ -1157,27 +1075,24 @@ public:
 
 		Transaction* join(Status* status, Transaction* transaction)
 		{
-			Policy::template checkVersion<10>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->join(this, status2, transaction));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, transaction);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Transaction* validate(Status* status, Attachment* attachment)
 		{
-			Policy::template checkVersion<11>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->validate(this, status2, attachment));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->validate(this, status2, attachment);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Transaction* enterDtc(Status* status)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->enterDtc(this, status2));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->enterDtc(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -1216,11 +1131,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 18;
+		static const unsigned VERSION = 3;
 
 		unsigned getCount(Status* status)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status2);
 			Policy::checkException(status2);
@@ -1229,7 +1143,6 @@ public:
 
 		const char* getField(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getField(this, status2, index);
 			Policy::checkException(status2);
@@ -1238,7 +1151,6 @@ public:
 
 		const char* getRelation(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRelation(this, status2, index);
 			Policy::checkException(status2);
@@ -1247,7 +1159,6 @@ public:
 
 		const char* getOwner(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this, status2, index);
 			Policy::checkException(status2);
@@ -1256,7 +1167,6 @@ public:
 
 		const char* getAlias(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getAlias(this, status2, index);
 			Policy::checkException(status2);
@@ -1265,7 +1175,6 @@ public:
 
 		unsigned getType(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status2, index);
 			Policy::checkException(status2);
@@ -1274,7 +1183,6 @@ public:
 
 		FB_BOOLEAN isNullable(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isNullable(this, status2, index);
 			Policy::checkException(status2);
@@ -1283,7 +1191,6 @@ public:
 
 		int getSubType(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<10>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSubType(this, status2, index);
 			Policy::checkException(status2);
@@ -1292,7 +1199,6 @@ public:
 
 		unsigned getLength(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<11>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getLength(this, status2, index);
 			Policy::checkException(status2);
@@ -1301,7 +1207,6 @@ public:
 
 		int getScale(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getScale(this, status2, index);
 			Policy::checkException(status2);
@@ -1310,7 +1215,6 @@ public:
 
 		unsigned getCharSet(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<13>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, index);
 			Policy::checkException(status2);
@@ -1319,7 +1223,6 @@ public:
 
 		unsigned getOffset(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<14>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getOffset(this, status2, index);
 			Policy::checkException(status2);
@@ -1328,7 +1231,6 @@ public:
 
 		unsigned getNullOffset(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<15>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getNullOffset(this, status2, index);
 			Policy::checkException(status2);
@@ -1337,16 +1239,14 @@ public:
 
 		MetadataBuilder* getBuilder(Status* status)
 		{
-			Policy::template checkVersion<16>(this);
 			typename Policy::Status status2(status);
-			MetadataBuilder* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getBuilder(this, status2));
+			MetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getBuilder(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		unsigned getMessageLength(Status* status)
 		{
-			Policy::template checkVersion<17>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getMessageLength(this, status2);
 			Policy::checkException(status2);
@@ -1382,11 +1282,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 13;
+		static const unsigned VERSION = 3;
 
 		void setType(Status* status, unsigned index, unsigned type)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setType(this, status2, index, type);
 			Policy::checkException(status2);
@@ -1394,7 +1293,6 @@ public:
 
 		void setSubType(Status* status, unsigned index, int subType)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setSubType(this, status2, index, subType);
 			Policy::checkException(status2);
@@ -1402,7 +1300,6 @@ public:
 
 		void setLength(Status* status, unsigned index, unsigned length)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setLength(this, status2, index, length);
 			Policy::checkException(status2);
@@ -1410,7 +1307,6 @@ public:
 
 		void setCharSet(Status* status, unsigned index, unsigned charSet)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setCharSet(this, status2, index, charSet);
 			Policy::checkException(status2);
@@ -1418,7 +1314,6 @@ public:
 
 		void setScale(Status* status, unsigned index, unsigned scale)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setScale(this, status2, index, scale);
 			Policy::checkException(status2);
@@ -1426,7 +1321,6 @@ public:
 
 		void truncate(Status* status, unsigned count)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->truncate(this, status2, count);
 			Policy::checkException(status2);
@@ -1434,7 +1328,6 @@ public:
 
 		void moveNameToIndex(Status* status, const char* name, unsigned index)
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->moveNameToIndex(this, status2, name, index);
 			Policy::checkException(status2);
@@ -1442,7 +1335,6 @@ public:
 
 		void remove(Status* status, unsigned index)
 		{
-			Policy::template checkVersion<10>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->remove(this, status2, index);
 			Policy::checkException(status2);
@@ -1450,7 +1342,6 @@ public:
 
 		unsigned addField(Status* status)
 		{
-			Policy::template checkVersion<11>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->addField(this, status2);
 			Policy::checkException(status2);
@@ -1459,9 +1350,8 @@ public:
 
 		MessageMetadata* getMetadata(Status* status)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
-			MessageMetadata* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2));
+			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -1496,11 +1386,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 14;
+		static const unsigned VERSION = 3;
 
 		int fetchNext(Status* status, void* message)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchNext(this, status2, message);
 			Policy::checkException(status2);
@@ -1509,7 +1398,6 @@ public:
 
 		int fetchPrior(Status* status, void* message)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchPrior(this, status2, message);
 			Policy::checkException(status2);
@@ -1518,7 +1406,6 @@ public:
 
 		int fetchFirst(Status* status, void* message)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchFirst(this, status2, message);
 			Policy::checkException(status2);
@@ -1527,7 +1414,6 @@ public:
 
 		int fetchLast(Status* status, void* message)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchLast(this, status2, message);
 			Policy::checkException(status2);
@@ -1536,7 +1422,6 @@ public:
 
 		int fetchAbsolute(Status* status, unsigned position, void* message)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchAbsolute(this, status2, position, message);
 			Policy::checkException(status2);
@@ -1545,7 +1430,6 @@ public:
 
 		int fetchRelative(Status* status, int offset, void* message)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchRelative(this, status2, offset, message);
 			Policy::checkException(status2);
@@ -1554,7 +1438,6 @@ public:
 
 		FB_BOOLEAN isEof(Status* status)
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isEof(this, status2);
 			Policy::checkException(status2);
@@ -1563,7 +1446,6 @@ public:
 
 		FB_BOOLEAN isBof(Status* status)
 		{
-			Policy::template checkVersion<10>(this);
 			typename Policy::Status status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isBof(this, status2);
 			Policy::checkException(status2);
@@ -1572,16 +1454,14 @@ public:
 
 		MessageMetadata* getMetadata(Status* status)
 		{
-			Policy::template checkVersion<11>(this);
 			typename Policy::Status status2(status);
-			MessageMetadata* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2));
+			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void close(Status* status)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status2);
 			Policy::checkException(status2);
@@ -1589,7 +1469,6 @@ public:
 
 		void setDelayedOutputFormat(Status* status, MessageMetadata* format)
 		{
-			Policy::template checkVersion<13>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setDelayedOutputFormat(this, status2, format);
 			Policy::checkException(status2);
@@ -1625,7 +1504,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 14;
+		static const unsigned VERSION = 3;
 
 		static const unsigned PREPARE_PREFETCH_NONE = 0;
 		static const unsigned PREPARE_PREFETCH_TYPE = 1;
@@ -1635,14 +1514,13 @@ public:
 		static const unsigned PREPARE_PREFETCH_DETAILED_PLAN = 16;
 		static const unsigned PREPARE_PREFETCH_AFFECTED_RECORDS = 32;
 		static const unsigned PREPARE_PREFETCH_FLAGS = 64;
-		static const unsigned PREPARE_PREFETCH_METADATA = PREPARE_PREFETCH_TYPE | PREPARE_PREFETCH_FLAGS | PREPARE_PREFETCH_INPUT_PARAMETERS | PREPARE_PREFETCH_OUTPUT_PARAMETERS;
-		static const unsigned PREPARE_PREFETCH_ALL = PREPARE_PREFETCH_METADATA | PREPARE_PREFETCH_LEGACY_PLAN | PREPARE_PREFETCH_DETAILED_PLAN | PREPARE_PREFETCH_AFFECTED_RECORDS;
+		static const unsigned PREPARE_PREFETCH_METADATA = Statement::PREPARE_PREFETCH_TYPE | Statement::PREPARE_PREFETCH_FLAGS | Statement::PREPARE_PREFETCH_INPUT_PARAMETERS | Statement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
+		static const unsigned PREPARE_PREFETCH_ALL = Statement::PREPARE_PREFETCH_METADATA | Statement::PREPARE_PREFETCH_LEGACY_PLAN | Statement::PREPARE_PREFETCH_DETAILED_PLAN | Statement::PREPARE_PREFETCH_AFFECTED_RECORDS;
 		static const unsigned FLAG_HAS_CURSOR = 1;
 		static const unsigned FLAG_REPEAT_EXECUTE = 2;
 
 		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
@@ -1650,7 +1528,6 @@ public:
 
 		unsigned getType(Status* status)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status2);
 			Policy::checkException(status2);
@@ -1659,7 +1536,6 @@ public:
 
 		const char* getPlan(Status* status, FB_BOOLEAN detailed)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPlan(this, status2, detailed);
 			Policy::checkException(status2);
@@ -1668,7 +1544,6 @@ public:
 
 		ISC_UINT64 getAffectedRecords(Status* status)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getAffectedRecords(this, status2);
 			Policy::checkException(status2);
@@ -1677,43 +1552,38 @@ public:
 
 		MessageMetadata* getInputMetadata(Status* status)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
-			MessageMetadata* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2));
+			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		MessageMetadata* getOutputMetadata(Status* status)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
-			MessageMetadata* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2));
+			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Transaction* execute(Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer)
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, inMetadata, inBuffer, outMetadata, outBuffer));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		ResultSet* openCursor(Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata)
 		{
-			Policy::template checkVersion<10>(this);
 			typename Policy::Status status2(status);
-			ResultSet* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, inMetadata, inBuffer, outMetadata));
+			ResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, inMetadata, inBuffer, outMetadata);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void setCursorName(Status* status, const char* name)
 		{
-			Policy::template checkVersion<11>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setCursorName(this, status2, name);
 			Policy::checkException(status2);
@@ -1721,7 +1591,6 @@ public:
 
 		void free(Status* status)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->free(this, status2);
 			Policy::checkException(status2);
@@ -1729,7 +1598,6 @@ public:
 
 		unsigned getFlags(Status* status)
 		{
-			Policy::template checkVersion<13>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this, status2);
 			Policy::checkException(status2);
@@ -1762,11 +1630,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 10;
+		static const unsigned VERSION = 3;
 
 		void receive(Status* status, int level, unsigned msgType, unsigned length, unsigned char* message)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->receive(this, status2, level, msgType, length, message);
 			Policy::checkException(status2);
@@ -1774,7 +1641,6 @@ public:
 
 		void send(Status* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->send(this, status2, level, msgType, length, message);
 			Policy::checkException(status2);
@@ -1782,7 +1648,6 @@ public:
 
 		void getInfo(Status* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, level, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
@@ -1790,7 +1655,6 @@ public:
 
 		void start(Status* status, Transaction* tra, int level)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, tra, level);
 			Policy::checkException(status2);
@@ -1798,7 +1662,6 @@ public:
 
 		void startAndSend(Status* status, Transaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->startAndSend(this, status2, tra, level, msgType, length, message);
 			Policy::checkException(status2);
@@ -1806,7 +1669,6 @@ public:
 
 		void unwind(Status* status, int level)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->unwind(this, status2, level);
 			Policy::checkException(status2);
@@ -1814,7 +1676,6 @@ public:
 
 		void free(Status* status)
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->free(this, status2);
 			Policy::checkException(status2);
@@ -1840,11 +1701,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		void cancel(Status* status)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->cancel(this, status2);
 			Policy::checkException(status2);
@@ -1887,11 +1747,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 21;
+		static const unsigned VERSION = 3;
 
 		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
@@ -1899,34 +1758,30 @@ public:
 
 		Transaction* startTransaction(Status* status, unsigned tpbLength, const unsigned char* tpb)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->startTransaction(this, status2, tpbLength, tpb));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->startTransaction(this, status2, tpbLength, tpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Transaction* reconnectTransaction(Status* status, unsigned length, const unsigned char* id)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->reconnectTransaction(this, status2, length, id));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->reconnectTransaction(this, status2, length, id);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Request* compileRequest(Status* status, unsigned blrLength, const unsigned char* blr)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
-			Request* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->compileRequest(this, status2, blrLength, blr));
+			Request* ret = static_cast<VTable*>(this->cloopVTable)->compileRequest(this, status2, blrLength, blr);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void transactRequest(Status* status, Transaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->transactRequest(this, status2, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
 			Policy::checkException(status2);
@@ -1934,25 +1789,22 @@ public:
 
 		Blob* createBlob(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
-			Blob* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createBlob(this, status2, transaction, id, bpbLength, bpb));
+			Blob* ret = static_cast<VTable*>(this->cloopVTable)->createBlob(this, status2, transaction, id, bpbLength, bpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Blob* openBlob(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
-			Blob* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->openBlob(this, status2, transaction, id, bpbLength, bpb));
+			Blob* ret = static_cast<VTable*>(this->cloopVTable)->openBlob(this, status2, transaction, id, bpbLength, bpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		int getSlice(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
-			Policy::template checkVersion<10>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSlice(this, status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			Policy::checkException(status2);
@@ -1961,7 +1813,6 @@ public:
 
 		void putSlice(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
-			Policy::template checkVersion<11>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putSlice(this, status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			Policy::checkException(status2);
@@ -1969,7 +1820,6 @@ public:
 
 		void executeDyn(Status* status, Transaction* transaction, unsigned length, const unsigned char* dyn)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->executeDyn(this, status2, transaction, length, dyn);
 			Policy::checkException(status2);
@@ -1977,43 +1827,38 @@ public:
 
 		Statement* prepare(Status* status, Transaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags)
 		{
-			Policy::template checkVersion<13>(this);
 			typename Policy::Status status2(status);
-			Statement* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, tra, stmtLength, sqlStmt, dialect, flags));
+			Statement* ret = static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, tra, stmtLength, sqlStmt, dialect, flags);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Transaction* execute(Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer)
 		{
-			Policy::template checkVersion<14>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		ResultSet* openCursor(Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, const char* cursorName)
 		{
-			Policy::template checkVersion<15>(this);
 			typename Policy::Status status2(status);
-			ResultSet* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName));
+			ResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Events* queEvents(Status* status, EventCallback* callback, unsigned length, const unsigned char* events)
 		{
-			Policy::template checkVersion<16>(this);
 			typename Policy::Status status2(status);
-			Events* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->queEvents(this, status2, callback, length, events));
+			Events* ret = static_cast<VTable*>(this->cloopVTable)->queEvents(this, status2, callback, length, events);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void cancelOperation(Status* status, int option)
 		{
-			Policy::template checkVersion<17>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->cancelOperation(this, status2, option);
 			Policy::checkException(status2);
@@ -2021,7 +1866,6 @@ public:
 
 		void ping(Status* status)
 		{
-			Policy::template checkVersion<18>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->ping(this, status2);
 			Policy::checkException(status2);
@@ -2029,7 +1873,6 @@ public:
 
 		void detach(Status* status)
 		{
-			Policy::template checkVersion<19>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->detach(this, status2);
 			Policy::checkException(status2);
@@ -2037,7 +1880,6 @@ public:
 
 		void dropDatabase(Status* status)
 		{
-			Policy::template checkVersion<20>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status2);
 			Policy::checkException(status2);
@@ -2065,11 +1907,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 3;
 
 		void detach(Status* status)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->detach(this, status2);
 			Policy::checkException(status2);
@@ -2077,7 +1918,6 @@ public:
 
 		void query(Status* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->query(this, status2, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
 			Policy::checkException(status2);
@@ -2085,7 +1925,6 @@ public:
 
 		void start(Status* status, unsigned spbLength, const unsigned char* spb)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, spbLength, spb);
 			Policy::checkException(status2);
@@ -2115,38 +1954,34 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 10;
+		static const unsigned VERSION = 4;
 
 		Attachment* attachDatabase(Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
-			Attachment* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->attachDatabase(this, status2, fileName, dpbLength, dpb));
+			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->attachDatabase(this, status2, fileName, dpbLength, dpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Attachment* createDatabase(Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			Attachment* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->createDatabase(this, status2, fileName, dpbLength, dpb));
+			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->createDatabase(this, status2, fileName, dpbLength, dpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Service* attachServiceManager(Status* status, const char* service, unsigned spbLength, const unsigned char* spb)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			Service* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->attachServiceManager(this, status2, service, spbLength, spb));
+			Service* ret = static_cast<VTable*>(this->cloopVTable)->attachServiceManager(this, status2, service, spbLength, spb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		void shutdown(Status* status, unsigned timeout, const int reason)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->shutdown(this, status2, timeout, reason);
 			Policy::checkException(status2);
@@ -2154,7 +1989,6 @@ public:
 
 		void setDbCryptCallback(Status* status, CryptKeyCallback* cryptCallback)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setDbCryptCallback(this, status2, cryptCallback);
 			Policy::checkException(status2);
@@ -2181,22 +2015,20 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 3;
+		static const unsigned VERSION = 2;
 
 		Transaction* start(Status* status, unsigned cnt, DtcStart* components)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->start(this, status2, cnt, components));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status2, cnt, components);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Transaction* join(Status* status, Transaction* one, Transaction* two)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->join(this, status2, one, two));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, one, two);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -2220,7 +2052,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 5;
+		static const unsigned VERSION = 4;
 
 		static const int AUTH_FAILED = -1;
 		static const int AUTH_SUCCESS = 0;
@@ -2250,17 +2082,15 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 5;
+		static const unsigned VERSION = 2;
 
 		void reset()
 		{
-			Policy::template checkVersion<2>(this);
 			static_cast<VTable*>(this->cloopVTable)->reset(this);
 		}
 
 		void add(Status* status, const char* name)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->add(this, status2, name);
 			Policy::checkException(status2);
@@ -2268,7 +2098,6 @@ public:
 
 		void setType(Status* status, const char* value)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setType(this, status2, value);
 			Policy::checkException(status2);
@@ -2276,7 +2105,6 @@ public:
 
 		void setDb(Status* status, const char* value)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setDb(this, status2, value);
 			Policy::checkException(status2);
@@ -2305,25 +2133,22 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 5;
+		static const unsigned VERSION = 2;
 
 		const char* getLogin()
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getLogin(this);
 			return ret;
 		}
 
 		const unsigned char* getData(unsigned* length)
 		{
-			Policy::template checkVersion<3>(this);
 			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getData(this, length);
 			return ret;
 		}
 
 		void putData(Status* status, unsigned length, const void* data)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putData(this, status2, length, data);
 			Policy::checkException(status2);
@@ -2331,7 +2156,6 @@ public:
 
 		void putKey(Status* status, FbCryptKey* cryptKey)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putKey(this, status2, cryptKey);
 			Policy::checkException(status2);
@@ -2361,32 +2185,28 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 8;
+		static const unsigned VERSION = 3;
 
 		const char* getLogin()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getLogin(this);
 			return ret;
 		}
 
 		const char* getPassword()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPassword(this);
 			return ret;
 		}
 
 		const unsigned char* getData(unsigned* length)
 		{
-			Policy::template checkVersion<5>(this);
 			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getData(this, length);
 			return ret;
 		}
 
 		void putData(Status* status, unsigned length, const void* data)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putData(this, status2, length, data);
 			Policy::checkException(status2);
@@ -2394,7 +2214,6 @@ public:
 
 		void putKey(Status* status, FbCryptKey* cryptKey)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putKey(this, status2, cryptKey);
 			Policy::checkException(status2);
@@ -2420,11 +2239,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 5;
 
 		int authenticate(Status* status, ServerBlock* sBlock, Writer* writerInterface)
 		{
-			Policy::template checkVersion<1>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status2, sBlock, writerInterface);
 			Policy::checkException(status2);
@@ -2451,11 +2269,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 5;
 
 		int authenticate(Status* status, ClientBlock* cBlock)
 		{
-			Policy::template checkVersion<1>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status2, cBlock);
 			Policy::checkException(status2);
@@ -2484,25 +2301,22 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 2;
 
 		int entered()
 		{
-			Policy::template checkVersion<2>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->entered(this);
 			return ret;
 		}
 
 		int specified()
 		{
-			Policy::template checkVersion<3>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->specified(this);
 			return ret;
 		}
 
 		void setEntered(Status* status, int newValue)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setEntered(this, status2, newValue);
 			Policy::checkException(status2);
@@ -2529,18 +2343,16 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 3;
 
 		const char* get()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->get(this);
 			return ret;
 		}
 
 		void set(Status* status, const char* newValue)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status2, newValue);
 			Policy::checkException(status2);
@@ -2567,18 +2379,16 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 3;
 
 		int get()
 		{
-			Policy::template checkVersion<4>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->get(this);
 			return ret;
 		}
 
 		void set(Status* status, int newValue)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status2, newValue);
 			Policy::checkException(status2);
@@ -2614,81 +2424,70 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 12;
+		static const unsigned VERSION = 2;
 
 		int operation()
 		{
-			Policy::template checkVersion<2>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->operation(this);
 			return ret;
 		}
 
 		CharUserField* userName()
 		{
-			Policy::template checkVersion<3>(this);
-			CharUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->userName(this));
+			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->userName(this);
 			return ret;
 		}
 
 		CharUserField* password()
 		{
-			Policy::template checkVersion<4>(this);
-			CharUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->password(this));
+			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->password(this);
 			return ret;
 		}
 
 		CharUserField* firstName()
 		{
-			Policy::template checkVersion<5>(this);
-			CharUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->firstName(this));
+			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->firstName(this);
 			return ret;
 		}
 
 		CharUserField* lastName()
 		{
-			Policy::template checkVersion<6>(this);
-			CharUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->lastName(this));
+			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->lastName(this);
 			return ret;
 		}
 
 		CharUserField* middleName()
 		{
-			Policy::template checkVersion<7>(this);
-			CharUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->middleName(this));
+			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->middleName(this);
 			return ret;
 		}
 
 		CharUserField* comment()
 		{
-			Policy::template checkVersion<8>(this);
-			CharUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->comment(this));
+			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->comment(this);
 			return ret;
 		}
 
 		CharUserField* attributes()
 		{
-			Policy::template checkVersion<9>(this);
-			CharUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->attributes(this));
+			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->attributes(this);
 			return ret;
 		}
 
 		IntUserField* active()
 		{
-			Policy::template checkVersion<10>(this);
-			IntUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->active(this));
+			IntUserField* ret = static_cast<VTable*>(this->cloopVTable)->active(this);
 			return ret;
 		}
 
 		IntUserField* admin()
 		{
-			Policy::template checkVersion<11>(this);
-			IntUserField* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->admin(this));
+			IntUserField* ret = static_cast<VTable*>(this->cloopVTable)->admin(this);
 			return ret;
 		}
 
 		void clear(Status* status)
 		{
-			Policy::template checkVersion<12>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->clear(this, status2);
 			Policy::checkException(status2);
@@ -2714,11 +2513,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 2;
+		static const unsigned VERSION = 2;
 
 		void list(Status* status, User* user)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->list(this, status2, user);
 			Policy::checkException(status2);
@@ -2748,39 +2546,34 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 2;
 
 		const char* name()
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->name(this);
 			return ret;
 		}
 
 		const char* role()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->role(this);
 			return ret;
 		}
 
 		const char* networkProtocol()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->networkProtocol(this);
 			return ret;
 		}
 
 		const char* remoteAddress()
 		{
-			Policy::template checkVersion<5>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->remoteAddress(this);
 			return ret;
 		}
 
 		const unsigned char* authBlock(unsigned* length)
 		{
-			Policy::template checkVersion<6>(this);
 			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->authBlock(this, length);
 			return ret;
 		}
@@ -2808,11 +2601,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 9;
+		static const unsigned VERSION = 4;
 
 		void start(Status* status, LogonInfo* logonInfo)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, logonInfo);
 			Policy::checkException(status2);
@@ -2820,7 +2612,6 @@ public:
 
 		int execute(Status* status, User* user, ListUsers* callback)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, user, callback);
 			Policy::checkException(status2);
@@ -2829,7 +2620,6 @@ public:
 
 		void commit(Status* status)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->commit(this, status2);
 			Policy::checkException(status2);
@@ -2837,7 +2627,6 @@ public:
 
 		void rollback(Status* status)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->rollback(this, status2);
 			Policy::checkException(status2);
@@ -2866,11 +2655,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 9;
+		static const unsigned VERSION = 4;
 
 		const char* getKnownTypes(Status* status)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getKnownTypes(this, status2);
 			Policy::checkException(status2);
@@ -2879,7 +2667,6 @@ public:
 
 		void setKey(Status* status, FbCryptKey* key)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setKey(this, status2, key);
 			Policy::checkException(status2);
@@ -2887,7 +2674,6 @@ public:
 
 		void encrypt(Status* status, unsigned length, const void* from, void* to)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
@@ -2895,7 +2681,6 @@ public:
 
 		void decrypt(Status* status, unsigned length, const void* from, void* to)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
@@ -2921,11 +2706,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 2;
+		static const unsigned VERSION = 2;
 
 		unsigned callback(unsigned dataLength, const void* data, unsigned bufferLength, void* buffer)
 		{
-			Policy::template checkVersion<2>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->callback(this, dataLength, data, bufferLength, buffer);
 			return ret;
 		}
@@ -2951,11 +2735,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 7;
+		static const unsigned VERSION = 4;
 
 		int keyCallback(Status* status, CryptKeyCallback* callback)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->keyCallback(this, status2, callback);
 			Policy::checkException(status2);
@@ -2964,9 +2747,8 @@ public:
 
 		CryptKeyCallback* keyHandle(Status* status, const char* keyName)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			CryptKeyCallback* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status2, keyName));
+			CryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status2, keyName);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -2993,11 +2775,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 8;
+		static const unsigned VERSION = 4;
 
 		void setKey(Status* status, unsigned length, KeyHolderPlugin** sources)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setKey(this, status2, length, sources);
 			Policy::checkException(status2);
@@ -3005,7 +2786,6 @@ public:
 
 		void encrypt(Status* status, unsigned length, const void* from, void* to)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
@@ -3013,7 +2793,6 @@ public:
 
 		void decrypt(Status* status, unsigned length, const void* from, void* to)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
@@ -3048,80 +2827,70 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 11;
+		static const unsigned VERSION = 2;
 
 		Master* getMaster()
 		{
-			Policy::template checkVersion<2>(this);
-			Master* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getMaster(this));
+			Master* ret = static_cast<VTable*>(this->cloopVTable)->getMaster(this);
 			return ret;
 		}
 
 		ExternalEngine* getEngine(Status* status)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
-			ExternalEngine* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getEngine(this, status2));
+			ExternalEngine* ret = static_cast<VTable*>(this->cloopVTable)->getEngine(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Attachment* getAttachment(Status* status)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			Attachment* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2));
+			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		Transaction* getTransaction(Status* status)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
-			Transaction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getTransaction(this, status2));
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransaction(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		const char* getUserName()
 		{
-			Policy::template checkVersion<6>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getUserName(this);
 			return ret;
 		}
 
 		const char* getDatabaseName()
 		{
-			Policy::template checkVersion<7>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseName(this);
 			return ret;
 		}
 
 		const char* getClientCharSet()
 		{
-			Policy::template checkVersion<8>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getClientCharSet(this);
 			return ret;
 		}
 
 		int obtainInfoCode()
 		{
-			Policy::template checkVersion<9>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->obtainInfoCode(this);
 			return ret;
 		}
 
 		void* getInfo(int code)
 		{
-			Policy::template checkVersion<10>(this);
 			void* ret = static_cast<VTable*>(this->cloopVTable)->getInfo(this, code);
 			return ret;
 		}
 
 		void* setInfo(int code, void* value)
 		{
-			Policy::template checkVersion<11>(this);
 			void* ret = static_cast<VTable*>(this->cloopVTable)->setInfo(this, code, value);
 			return ret;
 		}
@@ -3146,11 +2915,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 3;
+		static const unsigned VERSION = 3;
 
 		FB_BOOLEAN fetch(Status* status)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->fetch(this, status2);
 			Policy::checkException(status2);
@@ -3178,11 +2946,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
 			Policy::checkException(status2);
@@ -3190,7 +2957,6 @@ public:
 
 		void execute(Status* status, ExternalContext* context, void* inMsg, void* outMsg)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->execute(this, status2, context, inMsg, outMsg);
 			Policy::checkException(status2);
@@ -3217,11 +2983,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
 			Policy::checkException(status2);
@@ -3229,9 +2994,8 @@ public:
 
 		ExternalResultSet* open(Status* status, ExternalContext* context, void* inMsg, void* outMsg)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
-			ExternalResultSet* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, inMsg, outMsg));
+			ExternalResultSet* ret = static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, inMsg, outMsg);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -3257,7 +3021,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		static const unsigned TYPE_BEFORE = 1;
 		static const unsigned TYPE_AFTER = 2;
@@ -3274,7 +3038,6 @@ public:
 
 		void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
 			Policy::checkException(status2);
@@ -3282,7 +3045,6 @@ public:
 
 		void execute(Status* status, ExternalContext* context, unsigned action, void* oldMsg, void* newMsg)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->execute(this, status2, context, action, oldMsg, newMsg);
 			Policy::checkException(status2);
@@ -3316,11 +3078,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 10;
+		static const unsigned VERSION = 2;
 
 		const char* getPackage(Status* status) const
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPackage(this, status2);
 			Policy::checkException(status2);
@@ -3329,7 +3090,6 @@ public:
 
 		const char* getName(Status* status) const
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getName(this, status2);
 			Policy::checkException(status2);
@@ -3338,7 +3098,6 @@ public:
 
 		const char* getEntryPoint(Status* status) const
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getEntryPoint(this, status2);
 			Policy::checkException(status2);
@@ -3347,7 +3106,6 @@ public:
 
 		const char* getBody(Status* status) const
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getBody(this, status2);
 			Policy::checkException(status2);
@@ -3356,34 +3114,30 @@ public:
 
 		MessageMetadata* getInputMetadata(Status* status) const
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
-			MessageMetadata* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2));
+			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		MessageMetadata* getOutputMetadata(Status* status) const
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
-			MessageMetadata* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2));
+			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		MessageMetadata* getTriggerMetadata(Status* status) const
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
-			MessageMetadata* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getTriggerMetadata(this, status2));
+			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		const char* getTriggerTable(Status* status) const
 		{
-			Policy::template checkVersion<9>(this);
 			typename Policy::Status status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerTable(this, status2);
 			Policy::checkException(status2);
@@ -3392,7 +3146,6 @@ public:
 
 		unsigned getTriggerType(Status* status) const
 		{
-			Policy::template checkVersion<10>(this);
 			typename Policy::Status status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTriggerType(this, status2);
 			Policy::checkException(status2);
@@ -3424,11 +3177,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 11;
+		static const unsigned VERSION = 4;
 
 		void open(Status* status, ExternalContext* context, char* charSet, unsigned charSetSize)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, charSet, charSetSize);
 			Policy::checkException(status2);
@@ -3436,7 +3188,6 @@ public:
 
 		void openAttachment(Status* status, ExternalContext* context)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->openAttachment(this, status2, context);
 			Policy::checkException(status2);
@@ -3444,7 +3195,6 @@ public:
 
 		void closeAttachment(Status* status, ExternalContext* context)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->closeAttachment(this, status2, context);
 			Policy::checkException(status2);
@@ -3452,27 +3202,24 @@ public:
 
 		ExternalFunction* makeFunction(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
-			ExternalFunction* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->makeFunction(this, status2, context, metadata, inBuilder, outBuilder));
+			ExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->makeFunction(this, status2, context, metadata, inBuilder, outBuilder);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		ExternalProcedure* makeProcedure(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder)
 		{
-			Policy::template checkVersion<7>(this);
 			typename Policy::Status status2(status);
-			ExternalProcedure* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->makeProcedure(this, status2, context, metadata, inBuilder, outBuilder));
+			ExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->makeProcedure(this, status2, context, metadata, inBuilder, outBuilder);
 			Policy::checkException(status2);
 			return ret;
 		}
 
 		ExternalTrigger* makeTrigger(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* fieldsBuilder)
 		{
-			Policy::template checkVersion<8>(this);
 			typename Policy::Status status2(status);
-			ExternalTrigger* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->makeTrigger(this, status2, context, metadata, fieldsBuilder));
+			ExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->makeTrigger(this, status2, context, metadata, fieldsBuilder);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -3497,11 +3244,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		void handler()
 		{
-			Policy::template checkVersion<3>(this);
 			static_cast<VTable*>(this->cloopVTable)->handler(this);
 		}
 	};
@@ -3526,11 +3272,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 3;
+		static const unsigned VERSION = 2;
 
 		void start(Status* status, Timer* timer, ISC_UINT64 microSeconds)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, timer, microSeconds);
 			Policy::checkException(status2);
@@ -3538,7 +3283,6 @@ public:
 
 		void stop(Status* status, Timer* timer)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->stop(this, status2, timer);
 			Policy::checkException(status2);
@@ -3564,11 +3308,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 2;
+		static const unsigned VERSION = 2;
 
 		void callback(Status* status, const char* text)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->callback(this, status2, text);
 			Policy::checkException(status2);
@@ -3598,11 +3341,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 2;
 
 		void getFbVersion(Status* status, Attachment* att, VersionCallback* callback)
 		{
-			Policy::template checkVersion<2>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getFbVersion(this, status2, att, callback);
 			Policy::checkException(status2);
@@ -3610,7 +3352,6 @@ public:
 
 		void loadBlob(Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt)
 		{
-			Policy::template checkVersion<3>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->loadBlob(this, status2, blobId, att, tra, file, txt);
 			Policy::checkException(status2);
@@ -3618,7 +3359,6 @@ public:
 
 		void dumpBlob(Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->dumpBlob(this, status2, blobId, att, tra, file, txt);
 			Policy::checkException(status2);
@@ -3626,7 +3366,6 @@ public:
 
 		void getPerfCounters(Status* status, Attachment* att, const char* countersSet, ISC_INT64* counters)
 		{
-			Policy::template checkVersion<5>(this);
 			typename Policy::Status status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getPerfCounters(this, status2, att, countersSet, counters);
 			Policy::checkException(status2);
@@ -3634,9 +3373,8 @@ public:
 
 		Attachment* executeCreateDatabase(Status* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
 		{
-			Policy::template checkVersion<6>(this);
 			typename Policy::Status status2(status);
-			Attachment* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status2, stmtLength, creatDBstatement, dialect, stmtIsCreateDb));
+			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status2, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -3669,70 +3407,61 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 10;
+		static const unsigned VERSION = 2;
 
 		static const unsigned TRACE_CONNECTION_DATABASE = 1;
 		static const unsigned TRACE_CONNECTION_SERVICE = 2;
 
 		unsigned getKind()
 		{
-			Policy::template checkVersion<2>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getKind(this);
 			return ret;
 		}
 
 		int getProcessID()
 		{
-			Policy::template checkVersion<3>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getProcessID(this);
 			return ret;
 		}
 
 		const char* getUserName()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getUserName(this);
 			return ret;
 		}
 
 		const char* getRoleName()
 		{
-			Policy::template checkVersion<5>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRoleName(this);
 			return ret;
 		}
 
 		const char* getCharSet()
 		{
-			Policy::template checkVersion<6>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getCharSet(this);
 			return ret;
 		}
 
 		const char* getRemoteProtocol()
 		{
-			Policy::template checkVersion<7>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRemoteProtocol(this);
 			return ret;
 		}
 
 		const char* getRemoteAddress()
 		{
-			Policy::template checkVersion<8>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRemoteAddress(this);
 			return ret;
 		}
 
 		int getRemoteProcessID()
 		{
-			Policy::template checkVersion<9>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getRemoteProcessID(this);
 			return ret;
 		}
 
 		const char* getRemoteProcessName()
 		{
-			Policy::template checkVersion<10>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRemoteProcessName(this);
 			return ret;
 		}
@@ -3758,18 +3487,16 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 12;
+		static const unsigned VERSION = 3;
 
 		int getConnectionID()
 		{
-			Policy::template checkVersion<10>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getConnectionID(this);
 			return ret;
 		}
 
 		const char* getDatabaseName()
 		{
-			Policy::template checkVersion<11>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseName(this);
 			return ret;
 		}
@@ -3798,7 +3525,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 2;
 
 		static const unsigned TRA_ISO_CONSISTENCY = 1;
 		static const unsigned TRA_ISO_CONCURRENCY = 2;
@@ -3807,35 +3534,30 @@ public:
 
 		unsigned getTransactionID()
 		{
-			Policy::template checkVersion<2>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTransactionID(this);
 			return ret;
 		}
 
 		FB_BOOLEAN getReadOnly()
 		{
-			Policy::template checkVersion<3>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->getReadOnly(this);
 			return ret;
 		}
 
 		int getWait()
 		{
-			Policy::template checkVersion<4>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getWait(this);
 			return ret;
 		}
 
 		unsigned getIsolation()
 		{
-			Policy::template checkVersion<5>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getIsolation(this);
 			return ret;
 		}
 
 		PerformanceInfo* getPerf()
 		{
-			Policy::template checkVersion<6>(this);
 			PerformanceInfo* ret = static_cast<VTable*>(this->cloopVTable)->getPerf(this);
 			return ret;
 		}
@@ -3861,18 +3583,16 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 3;
+		static const unsigned VERSION = 2;
 
 		unsigned getCount()
 		{
-			Policy::template checkVersion<2>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this);
 			return ret;
 		}
 
 		const dsc* getParam(unsigned idx)
 		{
-			Policy::template checkVersion<3>(this);
 			const dsc* ret = static_cast<VTable*>(this->cloopVTable)->getParam(this, idx);
 			return ret;
 		}
@@ -3898,18 +3618,16 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 3;
+		static const unsigned VERSION = 2;
 
 		int getStmtID()
 		{
-			Policy::template checkVersion<2>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getStmtID(this);
 			return ret;
 		}
 
 		PerformanceInfo* getPerf()
 		{
-			Policy::template checkVersion<3>(this);
 			PerformanceInfo* ret = static_cast<VTable*>(this->cloopVTable)->getPerf(this);
 			return ret;
 		}
@@ -3938,39 +3656,34 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 8;
+		static const unsigned VERSION = 3;
 
 		const char* getText()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getText(this);
 			return ret;
 		}
 
 		const char* getPlan()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPlan(this);
 			return ret;
 		}
 
 		TraceParams* getInputs()
 		{
-			Policy::template checkVersion<5>(this);
-			TraceParams* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getInputs(this));
+			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
 			return ret;
 		}
 
 		const char* getTextUTF8()
 		{
-			Policy::template checkVersion<6>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTextUTF8(this);
 			return ret;
 		}
 
 		const char* getExplainedPlan()
 		{
-			Policy::template checkVersion<7>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getExplainedPlan(this);
 			return ret;
 		}
@@ -3997,25 +3710,22 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 3;
 
 		const unsigned char* getData()
 		{
-			Policy::template checkVersion<3>(this);
 			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getData(this);
 			return ret;
 		}
 
 		unsigned getDataLength()
 		{
-			Policy::template checkVersion<4>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getDataLength(this);
 			return ret;
 		}
 
 		const char* getText()
 		{
-			Policy::template checkVersion<5>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getText(this);
 			return ret;
 		}
@@ -4042,25 +3752,22 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 2;
 
 		const unsigned char* getData()
 		{
-			Policy::template checkVersion<2>(this);
 			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getData(this);
 			return ret;
 		}
 
 		unsigned getDataLength()
 		{
-			Policy::template checkVersion<3>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getDataLength(this);
 			return ret;
 		}
 
 		const char* getText()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getText(this);
 			return ret;
 		}
@@ -4087,25 +3794,22 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 2;
 
 		const char* getNameSpace()
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getNameSpace(this);
 			return ret;
 		}
 
 		const char* getVarName()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getVarName(this);
 			return ret;
 		}
 
 		const char* getVarValue()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getVarValue(this);
 			return ret;
 		}
@@ -4132,25 +3836,22 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 2;
 
 		const char* getProcName()
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getProcName(this);
 			return ret;
 		}
 
 		TraceParams* getInputs()
 		{
-			Policy::template checkVersion<3>(this);
-			TraceParams* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getInputs(this));
+			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
 			return ret;
 		}
 
 		PerformanceInfo* getPerf()
 		{
-			Policy::template checkVersion<4>(this);
 			PerformanceInfo* ret = static_cast<VTable*>(this->cloopVTable)->getPerf(this);
 			return ret;
 		}
@@ -4178,32 +3879,28 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 5;
+		static const unsigned VERSION = 2;
 
 		const char* getFuncName()
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getFuncName(this);
 			return ret;
 		}
 
 		TraceParams* getInputs()
 		{
-			Policy::template checkVersion<3>(this);
-			TraceParams* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getInputs(this));
+			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
 			return ret;
 		}
 
 		TraceParams* getResult()
 		{
-			Policy::template checkVersion<4>(this);
-			TraceParams* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getResult(this));
+			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getResult(this);
 			return ret;
 		}
 
 		PerformanceInfo* getPerf()
 		{
-			Policy::template checkVersion<5>(this);
 			PerformanceInfo* ret = static_cast<VTable*>(this->cloopVTable)->getPerf(this);
 			return ret;
 		}
@@ -4232,7 +3929,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 2;
 
 		static const unsigned TRACE_ALL = 0;
 		static const unsigned TRACE_BEFORE = 1;
@@ -4240,35 +3937,30 @@ public:
 
 		const char* getTriggerName()
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerName(this);
 			return ret;
 		}
 
 		const char* getRelationName()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRelationName(this);
 			return ret;
 		}
 
 		int getAction()
 		{
-			Policy::template checkVersion<4>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getAction(this);
 			return ret;
 		}
 
 		int getWhich()
 		{
-			Policy::template checkVersion<5>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getWhich(this);
 			return ret;
 		}
 
 		PerformanceInfo* getPerf()
 		{
-			Policy::template checkVersion<6>(this);
 			PerformanceInfo* ret = static_cast<VTable*>(this->cloopVTable)->getPerf(this);
 			return ret;
 		}
@@ -4295,25 +3987,22 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 13;
+		static const unsigned VERSION = 3;
 
 		void* getServiceID()
 		{
-			Policy::template checkVersion<10>(this);
 			void* ret = static_cast<VTable*>(this->cloopVTable)->getServiceID(this);
 			return ret;
 		}
 
 		const char* getServiceMgr()
 		{
-			Policy::template checkVersion<11>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getServiceMgr(this);
 			return ret;
 		}
 
 		const char* getServiceName()
 		{
-			Policy::template checkVersion<12>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getServiceName(this);
 			return ret;
 		}
@@ -4341,32 +4030,28 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 5;
+		static const unsigned VERSION = 2;
 
 		FB_BOOLEAN hasError()
 		{
-			Policy::template checkVersion<2>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->hasError(this);
 			return ret;
 		}
 
 		FB_BOOLEAN hasWarning()
 		{
-			Policy::template checkVersion<3>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->hasWarning(this);
 			return ret;
 		}
 
 		const intptr_t* getStatus()
 		{
-			Policy::template checkVersion<4>(this);
 			const intptr_t* ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
 			return ret;
 		}
 
 		const char* getText()
 		{
-			Policy::template checkVersion<5>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getText(this);
 			return ret;
 		}
@@ -4395,39 +4080,34 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 6;
+		static const unsigned VERSION = 2;
 
 		ISC_UINT64 getOIT()
 		{
-			Policy::template checkVersion<2>(this);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getOIT(this);
 			return ret;
 		}
 
 		ISC_UINT64 getOST()
 		{
-			Policy::template checkVersion<3>(this);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getOST(this);
 			return ret;
 		}
 
 		ISC_UINT64 getOAT()
 		{
-			Policy::template checkVersion<4>(this);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getOAT(this);
 			return ret;
 		}
 
 		ISC_UINT64 getNext()
 		{
-			Policy::template checkVersion<5>(this);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getNext(this);
 			return ret;
 		}
 
 		PerformanceInfo* getPerf()
 		{
-			Policy::template checkVersion<6>(this);
 			PerformanceInfo* ret = static_cast<VTable*>(this->cloopVTable)->getPerf(this);
 			return ret;
 		}
@@ -4452,11 +4132,10 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 4;
+		static const unsigned VERSION = 3;
 
 		unsigned write(const void* buf, unsigned size)
 		{
-			Policy::template checkVersion<3>(this);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->write(this, buf, size);
 			return ret;
 		}
@@ -4487,54 +4166,47 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 8;
+		static const unsigned VERSION = 2;
 
 		const char* getConfigText()
 		{
-			Policy::template checkVersion<2>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getConfigText(this);
 			return ret;
 		}
 
 		int getTraceSessionID()
 		{
-			Policy::template checkVersion<3>(this);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getTraceSessionID(this);
 			return ret;
 		}
 
 		const char* getTraceSessionName()
 		{
-			Policy::template checkVersion<4>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTraceSessionName(this);
 			return ret;
 		}
 
 		const char* getFirebirdRootDirectory()
 		{
-			Policy::template checkVersion<5>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdRootDirectory(this);
 			return ret;
 		}
 
 		const char* getDatabaseName()
 		{
-			Policy::template checkVersion<6>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseName(this);
 			return ret;
 		}
 
 		TraceDatabaseConnection* getConnection()
 		{
-			Policy::template checkVersion<7>(this);
-			TraceDatabaseConnection* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getConnection(this));
+			TraceDatabaseConnection* ret = static_cast<VTable*>(this->cloopVTable)->getConnection(this);
 			return ret;
 		}
 
 		TraceLogWriter* getLogWriter()
 		{
-			Policy::template checkVersion<8>(this);
-			TraceLogWriter* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->getLogWriter(this));
+			TraceLogWriter* ret = static_cast<VTable*>(this->cloopVTable)->getLogWriter(this);
 			return ret;
 		}
 	};
@@ -4578,7 +4250,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 24;
+		static const unsigned VERSION = 3;
 
 		static const unsigned TRACE_RESULT_SUCCESS = 0;
 		static const unsigned TRACE_RESULT_FAILED = 1;
@@ -4590,147 +4262,126 @@ public:
 
 		const char* trace_get_error()
 		{
-			Policy::template checkVersion<3>(this);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->trace_get_error(this);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_attach(TraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result)
 		{
-			Policy::template checkVersion<4>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_attach(this, connection, create_db, att_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_detach(TraceDatabaseConnection* connection, FB_BOOLEAN drop_db)
 		{
-			Policy::template checkVersion<5>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_detach(this, connection, drop_db);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_transaction_start(TraceDatabaseConnection* connection, TraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result)
 		{
-			Policy::template checkVersion<6>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_transaction_start(this, connection, transaction, tpb_length, tpb, tra_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result)
 		{
-			Policy::template checkVersion<7>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_transaction_end(this, connection, transaction, commit, retain_context, tra_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_proc_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result)
 		{
-			Policy::template checkVersion<8>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_proc_execute(this, connection, transaction, procedure, started, proc_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result)
 		{
-			Policy::template checkVersion<9>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_trigger_execute(this, connection, transaction, trigger, started, trig_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_set_context(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable)
 		{
-			Policy::template checkVersion<10>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_set_context(this, connection, transaction, variable);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_dsql_prepare(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result)
 		{
-			Policy::template checkVersion<11>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_prepare(this, connection, transaction, statement, time_millis, req_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_dsql_free(TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned option)
 		{
-			Policy::template checkVersion<12>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_free(this, connection, statement, option);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_dsql_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result)
 		{
-			Policy::template checkVersion<13>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_execute(this, connection, transaction, statement, started, req_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_blr_compile(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result)
 		{
-			Policy::template checkVersion<14>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_blr_compile(this, connection, transaction, statement, time_millis, req_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_blr_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, unsigned req_result)
 		{
-			Policy::template checkVersion<15>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_blr_execute(this, connection, transaction, statement, req_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_dyn_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result)
 		{
-			Policy::template checkVersion<16>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dyn_execute(this, connection, transaction, request, time_millis, req_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_service_attach(TraceServiceConnection* service, unsigned att_result)
 		{
-			Policy::template checkVersion<17>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_attach(this, service, att_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_service_start(TraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result)
 		{
-			Policy::template checkVersion<18>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_start(this, service, switches_length, switches, start_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_service_query(TraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result)
 		{
-			Policy::template checkVersion<19>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_query(this, service, send_item_length, send_items, recv_item_length, recv_items, query_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_service_detach(TraceServiceConnection* service, unsigned detach_result)
 		{
-			Policy::template checkVersion<20>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_detach(this, service, detach_result);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_event_error(TraceConnection* connection, TraceStatusVector* status, const char* function)
 		{
-			Policy::template checkVersion<21>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_event_error(this, connection, status, function);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, unsigned sweep_state)
 		{
-			Policy::template checkVersion<22>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_event_sweep(this, connection, sweep, sweep_state);
 			return ret;
 		}
 
 		FB_BOOLEAN trace_func_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function, FB_BOOLEAN started, unsigned func_result)
 		{
-			Policy::template checkVersion<23>(this);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_func_execute(this, connection, transaction, function, started, func_result);
 			return ret;
 		}
@@ -4756,7 +4407,7 @@ public:
 		}
 
 	public:
-		static const unsigned int VERSION = 7;
+		static const unsigned VERSION = 4;
 
 		static const unsigned TRACE_EVENT_ATTACH = 0;
 		static const unsigned TRACE_EVENT_DETACH = 1;
@@ -4782,16 +4433,14 @@ public:
 
 		ISC_UINT64 trace_needs()
 		{
-			Policy::template checkVersion<3>(this);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->trace_needs(this);
 			return ret;
 		}
 
 		TracePlugin* trace_create(Status* status, TraceInitInfo* init_info)
 		{
-			Policy::template checkVersion<4>(this);
 			typename Policy::Status status2(status);
-			TracePlugin* ret = Policy::upgrade(static_cast<VTable*>(this->cloopVTable)->trace_create(this, status2, init_info));
+			TracePlugin* ret = static_cast<VTable*>(this->cloopVTable)->trace_create(this, status2, init_info);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -5184,7 +4833,6 @@ public:
 					this->getStatus = &Name::cloopgetStatusDispatcher;
 					this->getDispatcher = &Name::cloopgetDispatcherDispatcher;
 					this->getPluginManager = &Name::cloopgetPluginManagerDispatcher;
-					this->upgradeInterface = &Name::cloopupgradeInterfaceDispatcher;
 					this->circularAlloc = &Name::cloopcircularAllocDispatcher;
 					this->getTimerControl = &Name::cloopgetTimerControlDispatcher;
 					this->getDtc = &Name::cloopgetDtcDispatcher;
@@ -5240,19 +4888,6 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopupgradeInterfaceDispatcher(Master* self, Versioned* toUpgrade, int desiredVersion, PluginModule* destModule, void* function) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::upgradeInterface(Policy::upgrade(toUpgrade), desiredVersion, Policy::upgrade(destModule), function);
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<int>(0);
-			}
-		}
-
 		static const char* CLOOP_CARG cloopcircularAllocDispatcher(Master* self, const char* s, unsigned len, intptr_t thr) throw()
 		{
 			try
@@ -5296,7 +4931,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::registerAttachment(Policy::upgrade(provider), Policy::upgrade(attachment));
+				return static_cast<Name*>(self)->Name::registerAttachment(provider, attachment);
 			}
 			catch (...)
 			{
@@ -5309,7 +4944,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::registerTransaction(Policy::upgrade(attachment), Policy::upgrade(transaction));
+				return static_cast<Name*>(self)->Name::registerTransaction(attachment, transaction);
 			}
 			catch (...)
 			{
@@ -5322,7 +4957,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::same(Policy::upgrade(first), Policy::upgrade(second));
+				return static_cast<Name*>(self)->Name::same(first, second);
 			}
 			catch (...)
 			{
@@ -5335,7 +4970,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMetadataBuilder(Policy::upgrade(status), fieldCount);
+				return static_cast<Name*>(self)->Name::getMetadataBuilder(status, fieldCount);
 			}
 			catch (...)
 			{
@@ -5413,7 +5048,6 @@ public:
 		virtual Status* getStatus() = 0;
 		virtual Provider* getDispatcher() = 0;
 		virtual PluginManager* getPluginManager() = 0;
-		virtual int upgradeInterface(Versioned* toUpgrade, int desiredVersion, PluginModule* destModule, void* function) = 0;
 		virtual const char* circularAlloc(const char* s, unsigned len, intptr_t thr) = 0;
 		virtual TimerControl* getTimerControl() = 0;
 		virtual Dtc* getDtc() = 0;
@@ -5454,7 +5088,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -5588,7 +5222,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getPlugin(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getPlugin(status);
 			}
 			catch (...)
 			{
@@ -5601,7 +5235,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::next(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::next(status);
 			}
 			catch (...)
 			{
@@ -5613,7 +5247,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::set(Policy::upgrade(status), s);
+				static_cast<Name*>(self)->Name::set(status, s);
 			}
 			catch (...)
 			{
@@ -5763,7 +5397,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSubConfig(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getSubConfig(status);
 			}
 			catch (...)
 			{
@@ -5860,7 +5494,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::find(Policy::upgrade(status), name);
+				return static_cast<Name*>(self)->Name::find(status, name);
 			}
 			catch (...)
 			{
@@ -5873,7 +5507,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::findValue(Policy::upgrade(status), name, value);
+				return static_cast<Name*>(self)->Name::findValue(status, name, value);
 			}
 			catch (...)
 			{
@@ -5886,7 +5520,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::findPos(Policy::upgrade(status), name, pos);
+				return static_cast<Name*>(self)->Name::findPos(status, name, pos);
 			}
 			catch (...)
 			{
@@ -6131,7 +5765,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getDefaultConfig(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getDefaultConfig(status);
 			}
 			catch (...)
 			{
@@ -6144,7 +5778,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getFirebirdConf(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getFirebirdConf(status);
 			}
 			catch (...)
 			{
@@ -6157,7 +5791,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setReleaseDelay(Policy::upgrade(status), microSeconds);
+				static_cast<Name*>(self)->Name::setReleaseDelay(status, microSeconds);
 			}
 			catch (...)
 			{
@@ -6248,7 +5882,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::createPlugin(Policy::upgrade(status), Policy::upgrade(factoryParameter));
+				return static_cast<Name*>(self)->Name::createPlugin(status, factoryParameter);
 			}
 			catch (...)
 			{
@@ -6380,7 +6014,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::registerPluginFactory(pluginType, defaultName, Policy::upgrade(factory));
+				static_cast<Name*>(self)->Name::registerPluginFactory(pluginType, defaultName, factory);
 			}
 			catch (...)
 			{
@@ -6392,7 +6026,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::registerModule(Policy::upgrade(cleanup));
+				static_cast<Name*>(self)->Name::registerModule(cleanup);
 			}
 			catch (...)
 			{
@@ -6404,7 +6038,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::unregisterModule(Policy::upgrade(cleanup));
+				static_cast<Name*>(self)->Name::unregisterModule(cleanup);
 			}
 			catch (...)
 			{
@@ -6412,11 +6046,11 @@ public:
 			}
 		}
 
-		static PluginSet* CLOOP_CARG cloopgetPluginsDispatcher(PluginManager* self, Status* status, unsigned pluginType, const char* namesList, int desiredVersion, PluginModule* destModule, FirebirdConf* firebirdConf) throw()
+		static PluginSet* CLOOP_CARG cloopgetPluginsDispatcher(PluginManager* self, Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getPlugins(Policy::upgrade(status), pluginType, namesList, desiredVersion, Policy::upgrade(destModule), Policy::upgrade(firebirdConf));
+				return static_cast<Name*>(self)->Name::getPlugins(status, pluginType, namesList, firebirdConf);
 			}
 			catch (...)
 			{
@@ -6429,7 +6063,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getConfig(Policy::upgrade(status), filename);
+				return static_cast<Name*>(self)->Name::getConfig(status, filename);
 			}
 			catch (...)
 			{
@@ -6442,7 +6076,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::releasePlugin(Policy::upgrade(plugin));
+				static_cast<Name*>(self)->Name::releasePlugin(plugin);
 			}
 			catch (...)
 			{
@@ -6480,7 +6114,7 @@ public:
 		virtual void registerPluginFactory(unsigned pluginType, const char* defaultName, PluginFactory* factory) = 0;
 		virtual void registerModule(PluginModule* cleanup) = 0;
 		virtual void unregisterModule(PluginModule* cleanup) = 0;
-		virtual PluginSet* getPlugins(Status* status, unsigned pluginType, const char* namesList, int desiredVersion, PluginModule* destModule, FirebirdConf* firebirdConf) = 0;
+		virtual PluginSet* getPlugins(Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf) = 0;
 		virtual Config* getConfig(Status* status, const char* filename) = 0;
 		virtual void releasePlugin(PluginBase* plugin) = 0;
 	};
@@ -6716,7 +6350,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(Policy::upgrade(status), itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
@@ -6728,7 +6362,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSegment(Policy::upgrade(status), bufferLength, buffer, segmentLength);
+				return static_cast<Name*>(self)->Name::getSegment(status, bufferLength, buffer, segmentLength);
 			}
 			catch (...)
 			{
@@ -6741,7 +6375,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::putSegment(Policy::upgrade(status), length, buffer);
+				static_cast<Name*>(self)->Name::putSegment(status, length, buffer);
 			}
 			catch (...)
 			{
@@ -6753,7 +6387,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::cancel(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::cancel(status);
 			}
 			catch (...)
 			{
@@ -6765,7 +6399,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::close(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::close(status);
 			}
 			catch (...)
 			{
@@ -6777,7 +6411,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::seek(Policy::upgrade(status), mode, offset);
+				return static_cast<Name*>(self)->Name::seek(status, mode, offset);
 			}
 			catch (...)
 			{
@@ -6882,7 +6516,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(Policy::upgrade(status), itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
@@ -6894,7 +6528,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::prepare(Policy::upgrade(status), msgLength, message);
+				static_cast<Name*>(self)->Name::prepare(status, msgLength, message);
 			}
 			catch (...)
 			{
@@ -6906,7 +6540,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::commit(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::commit(status);
 			}
 			catch (...)
 			{
@@ -6918,7 +6552,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::commitRetaining(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::commitRetaining(status);
 			}
 			catch (...)
 			{
@@ -6930,7 +6564,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::rollback(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::rollback(status);
 			}
 			catch (...)
 			{
@@ -6942,7 +6576,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::rollbackRetaining(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::rollbackRetaining(status);
 			}
 			catch (...)
 			{
@@ -6954,7 +6588,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::disconnect(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::disconnect(status);
 			}
 			catch (...)
 			{
@@ -6966,7 +6600,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::join(Policy::upgrade(status), Policy::upgrade(transaction));
+				return static_cast<Name*>(self)->Name::join(status, transaction);
 			}
 			catch (...)
 			{
@@ -6979,7 +6613,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::validate(Policy::upgrade(status), Policy::upgrade(attachment));
+				return static_cast<Name*>(self)->Name::validate(status, attachment);
 			}
 			catch (...)
 			{
@@ -6992,7 +6626,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::enterDtc(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::enterDtc(status);
 			}
 			catch (...)
 			{
@@ -7106,7 +6740,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getCount(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getCount(status);
 			}
 			catch (...)
 			{
@@ -7119,7 +6753,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getField(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getField(status, index);
 			}
 			catch (...)
 			{
@@ -7132,7 +6766,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getRelation(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getRelation(status, index);
 			}
 			catch (...)
 			{
@@ -7145,7 +6779,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getOwner(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getOwner(status, index);
 			}
 			catch (...)
 			{
@@ -7158,7 +6792,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getAlias(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getAlias(status, index);
 			}
 			catch (...)
 			{
@@ -7171,7 +6805,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getType(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getType(status, index);
 			}
 			catch (...)
 			{
@@ -7184,7 +6818,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::isNullable(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::isNullable(status, index);
 			}
 			catch (...)
 			{
@@ -7197,7 +6831,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSubType(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getSubType(status, index);
 			}
 			catch (...)
 			{
@@ -7210,7 +6844,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getLength(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getLength(status, index);
 			}
 			catch (...)
 			{
@@ -7223,7 +6857,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getScale(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getScale(status, index);
 			}
 			catch (...)
 			{
@@ -7236,7 +6870,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getCharSet(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getCharSet(status, index);
 			}
 			catch (...)
 			{
@@ -7249,7 +6883,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getOffset(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getOffset(status, index);
 			}
 			catch (...)
 			{
@@ -7262,7 +6896,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getNullOffset(Policy::upgrade(status), index);
+				return static_cast<Name*>(self)->Name::getNullOffset(status, index);
 			}
 			catch (...)
 			{
@@ -7275,7 +6909,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getBuilder(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getBuilder(status);
 			}
 			catch (...)
 			{
@@ -7288,7 +6922,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMessageLength(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getMessageLength(status);
 			}
 			catch (...)
 			{
@@ -7402,7 +7036,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setType(Policy::upgrade(status), index, type);
+				static_cast<Name*>(self)->Name::setType(status, index, type);
 			}
 			catch (...)
 			{
@@ -7414,7 +7048,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setSubType(Policy::upgrade(status), index, subType);
+				static_cast<Name*>(self)->Name::setSubType(status, index, subType);
 			}
 			catch (...)
 			{
@@ -7426,7 +7060,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setLength(Policy::upgrade(status), index, length);
+				static_cast<Name*>(self)->Name::setLength(status, index, length);
 			}
 			catch (...)
 			{
@@ -7438,7 +7072,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setCharSet(Policy::upgrade(status), index, charSet);
+				static_cast<Name*>(self)->Name::setCharSet(status, index, charSet);
 			}
 			catch (...)
 			{
@@ -7450,7 +7084,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setScale(Policy::upgrade(status), index, scale);
+				static_cast<Name*>(self)->Name::setScale(status, index, scale);
 			}
 			catch (...)
 			{
@@ -7462,7 +7096,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::truncate(Policy::upgrade(status), count);
+				static_cast<Name*>(self)->Name::truncate(status, count);
 			}
 			catch (...)
 			{
@@ -7474,7 +7108,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::moveNameToIndex(Policy::upgrade(status), name, index);
+				static_cast<Name*>(self)->Name::moveNameToIndex(status, name, index);
 			}
 			catch (...)
 			{
@@ -7486,7 +7120,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::remove(Policy::upgrade(status), index);
+				static_cast<Name*>(self)->Name::remove(status, index);
 			}
 			catch (...)
 			{
@@ -7498,7 +7132,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::addField(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::addField(status);
 			}
 			catch (...)
 			{
@@ -7511,7 +7145,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMetadata(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getMetadata(status);
 			}
 			catch (...)
 			{
@@ -7621,7 +7255,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchNext(Policy::upgrade(status), message);
+				return static_cast<Name*>(self)->Name::fetchNext(status, message);
 			}
 			catch (...)
 			{
@@ -7634,7 +7268,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchPrior(Policy::upgrade(status), message);
+				return static_cast<Name*>(self)->Name::fetchPrior(status, message);
 			}
 			catch (...)
 			{
@@ -7647,7 +7281,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchFirst(Policy::upgrade(status), message);
+				return static_cast<Name*>(self)->Name::fetchFirst(status, message);
 			}
 			catch (...)
 			{
@@ -7660,7 +7294,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchLast(Policy::upgrade(status), message);
+				return static_cast<Name*>(self)->Name::fetchLast(status, message);
 			}
 			catch (...)
 			{
@@ -7673,7 +7307,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchAbsolute(Policy::upgrade(status), position, message);
+				return static_cast<Name*>(self)->Name::fetchAbsolute(status, position, message);
 			}
 			catch (...)
 			{
@@ -7686,7 +7320,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchRelative(Policy::upgrade(status), offset, message);
+				return static_cast<Name*>(self)->Name::fetchRelative(status, offset, message);
 			}
 			catch (...)
 			{
@@ -7699,7 +7333,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::isEof(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::isEof(status);
 			}
 			catch (...)
 			{
@@ -7712,7 +7346,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::isBof(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::isBof(status);
 			}
 			catch (...)
 			{
@@ -7725,7 +7359,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMetadata(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getMetadata(status);
 			}
 			catch (...)
 			{
@@ -7738,7 +7372,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::close(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::close(status);
 			}
 			catch (...)
 			{
@@ -7750,7 +7384,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setDelayedOutputFormat(Policy::upgrade(status), Policy::upgrade(format));
+				static_cast<Name*>(self)->Name::setDelayedOutputFormat(status, format);
 			}
 			catch (...)
 			{
@@ -7860,7 +7494,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(Policy::upgrade(status), itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
@@ -7872,7 +7506,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getType(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getType(status);
 			}
 			catch (...)
 			{
@@ -7885,7 +7519,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getPlan(Policy::upgrade(status), detailed);
+				return static_cast<Name*>(self)->Name::getPlan(status, detailed);
 			}
 			catch (...)
 			{
@@ -7898,7 +7532,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getAffectedRecords(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getAffectedRecords(status);
 			}
 			catch (...)
 			{
@@ -7911,7 +7545,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getInputMetadata(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getInputMetadata(status);
 			}
 			catch (...)
 			{
@@ -7924,7 +7558,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getOutputMetadata(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getOutputMetadata(status);
 			}
 			catch (...)
 			{
@@ -7937,7 +7571,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::execute(Policy::upgrade(status), Policy::upgrade(transaction), Policy::upgrade(inMetadata), inBuffer, Policy::upgrade(outMetadata), outBuffer);
+				return static_cast<Name*>(self)->Name::execute(status, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
 			}
 			catch (...)
 			{
@@ -7950,7 +7584,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::openCursor(Policy::upgrade(status), Policy::upgrade(transaction), Policy::upgrade(inMetadata), inBuffer, Policy::upgrade(outMetadata));
+				return static_cast<Name*>(self)->Name::openCursor(status, transaction, inMetadata, inBuffer, outMetadata);
 			}
 			catch (...)
 			{
@@ -7963,7 +7597,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setCursorName(Policy::upgrade(status), name);
+				static_cast<Name*>(self)->Name::setCursorName(status, name);
 			}
 			catch (...)
 			{
@@ -7975,7 +7609,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::free(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::free(status);
 			}
 			catch (...)
 			{
@@ -7987,7 +7621,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getFlags(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getFlags(status);
 			}
 			catch (...)
 			{
@@ -8094,7 +7728,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::receive(Policy::upgrade(status), level, msgType, length, message);
+				static_cast<Name*>(self)->Name::receive(status, level, msgType, length, message);
 			}
 			catch (...)
 			{
@@ -8106,7 +7740,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::send(Policy::upgrade(status), level, msgType, length, message);
+				static_cast<Name*>(self)->Name::send(status, level, msgType, length, message);
 			}
 			catch (...)
 			{
@@ -8118,7 +7752,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(Policy::upgrade(status), level, itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(status, level, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
@@ -8130,7 +7764,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::start(Policy::upgrade(status), Policy::upgrade(tra), level);
+				static_cast<Name*>(self)->Name::start(status, tra, level);
 			}
 			catch (...)
 			{
@@ -8142,7 +7776,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::startAndSend(Policy::upgrade(status), Policy::upgrade(tra), level, msgType, length, message);
+				static_cast<Name*>(self)->Name::startAndSend(status, tra, level, msgType, length, message);
 			}
 			catch (...)
 			{
@@ -8154,7 +7788,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::unwind(Policy::upgrade(status), level);
+				static_cast<Name*>(self)->Name::unwind(status, level);
 			}
 			catch (...)
 			{
@@ -8166,7 +7800,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::free(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::free(status);
 			}
 			catch (...)
 			{
@@ -8262,7 +7896,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::cancel(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::cancel(status);
 			}
 			catch (...)
 			{
@@ -8369,7 +8003,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(Policy::upgrade(status), itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
@@ -8381,7 +8015,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::startTransaction(Policy::upgrade(status), tpbLength, tpb);
+				return static_cast<Name*>(self)->Name::startTransaction(status, tpbLength, tpb);
 			}
 			catch (...)
 			{
@@ -8394,7 +8028,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::reconnectTransaction(Policy::upgrade(status), length, id);
+				return static_cast<Name*>(self)->Name::reconnectTransaction(status, length, id);
 			}
 			catch (...)
 			{
@@ -8407,7 +8041,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::compileRequest(Policy::upgrade(status), blrLength, blr);
+				return static_cast<Name*>(self)->Name::compileRequest(status, blrLength, blr);
 			}
 			catch (...)
 			{
@@ -8420,7 +8054,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::transactRequest(Policy::upgrade(status), Policy::upgrade(transaction), blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
+				static_cast<Name*>(self)->Name::transactRequest(status, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
 			}
 			catch (...)
 			{
@@ -8432,7 +8066,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::createBlob(Policy::upgrade(status), Policy::upgrade(transaction), id, bpbLength, bpb);
+				return static_cast<Name*>(self)->Name::createBlob(status, transaction, id, bpbLength, bpb);
 			}
 			catch (...)
 			{
@@ -8445,7 +8079,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::openBlob(Policy::upgrade(status), Policy::upgrade(transaction), id, bpbLength, bpb);
+				return static_cast<Name*>(self)->Name::openBlob(status, transaction, id, bpbLength, bpb);
 			}
 			catch (...)
 			{
@@ -8458,7 +8092,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSlice(Policy::upgrade(status), Policy::upgrade(transaction), id, sdlLength, sdl, paramLength, param, sliceLength, slice);
+				return static_cast<Name*>(self)->Name::getSlice(status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			}
 			catch (...)
 			{
@@ -8471,7 +8105,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::putSlice(Policy::upgrade(status), Policy::upgrade(transaction), id, sdlLength, sdl, paramLength, param, sliceLength, slice);
+				static_cast<Name*>(self)->Name::putSlice(status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			}
 			catch (...)
 			{
@@ -8483,7 +8117,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::executeDyn(Policy::upgrade(status), Policy::upgrade(transaction), length, dyn);
+				static_cast<Name*>(self)->Name::executeDyn(status, transaction, length, dyn);
 			}
 			catch (...)
 			{
@@ -8495,7 +8129,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::prepare(Policy::upgrade(status), Policy::upgrade(tra), stmtLength, sqlStmt, dialect, flags);
+				return static_cast<Name*>(self)->Name::prepare(status, tra, stmtLength, sqlStmt, dialect, flags);
 			}
 			catch (...)
 			{
@@ -8508,7 +8142,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::execute(Policy::upgrade(status), Policy::upgrade(transaction), stmtLength, sqlStmt, dialect, Policy::upgrade(inMetadata), inBuffer, Policy::upgrade(outMetadata), outBuffer);
+				return static_cast<Name*>(self)->Name::execute(status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
 			}
 			catch (...)
 			{
@@ -8521,7 +8155,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::openCursor(Policy::upgrade(status), Policy::upgrade(transaction), stmtLength, sqlStmt, dialect, Policy::upgrade(inMetadata), inBuffer, Policy::upgrade(outMetadata), cursorName);
+				return static_cast<Name*>(self)->Name::openCursor(status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
 			}
 			catch (...)
 			{
@@ -8534,7 +8168,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::queEvents(Policy::upgrade(status), Policy::upgrade(callback), length, events);
+				return static_cast<Name*>(self)->Name::queEvents(status, callback, length, events);
 			}
 			catch (...)
 			{
@@ -8547,7 +8181,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::cancelOperation(Policy::upgrade(status), option);
+				static_cast<Name*>(self)->Name::cancelOperation(status, option);
 			}
 			catch (...)
 			{
@@ -8559,7 +8193,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::ping(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::ping(status);
 			}
 			catch (...)
 			{
@@ -8571,7 +8205,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::detach(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::detach(status);
 			}
 			catch (...)
 			{
@@ -8583,7 +8217,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::dropDatabase(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::dropDatabase(status);
 			}
 			catch (...)
 			{
@@ -8692,7 +8326,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::detach(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::detach(status);
 			}
 			catch (...)
 			{
@@ -8704,7 +8338,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::query(Policy::upgrade(status), sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::query(status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
 			}
 			catch (...)
 			{
@@ -8716,7 +8350,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::start(Policy::upgrade(status), spbLength, spb);
+				static_cast<Name*>(self)->Name::start(status, spbLength, spb);
 			}
 			catch (...)
 			{
@@ -8814,7 +8448,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::attachDatabase(Policy::upgrade(status), fileName, dpbLength, dpb);
+				return static_cast<Name*>(self)->Name::attachDatabase(status, fileName, dpbLength, dpb);
 			}
 			catch (...)
 			{
@@ -8827,7 +8461,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::createDatabase(Policy::upgrade(status), fileName, dpbLength, dpb);
+				return static_cast<Name*>(self)->Name::createDatabase(status, fileName, dpbLength, dpb);
 			}
 			catch (...)
 			{
@@ -8840,7 +8474,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::attachServiceManager(Policy::upgrade(status), service, spbLength, spb);
+				return static_cast<Name*>(self)->Name::attachServiceManager(status, service, spbLength, spb);
 			}
 			catch (...)
 			{
@@ -8853,7 +8487,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::shutdown(Policy::upgrade(status), timeout, reason);
+				static_cast<Name*>(self)->Name::shutdown(status, timeout, reason);
 			}
 			catch (...)
 			{
@@ -8865,7 +8499,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setDbCryptCallback(Policy::upgrade(status), Policy::upgrade(cryptCallback));
+				static_cast<Name*>(self)->Name::setDbCryptCallback(status, cryptCallback);
 			}
 			catch (...)
 			{
@@ -8877,7 +8511,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -8983,7 +8617,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::start(Policy::upgrade(status), cnt, components);
+				return static_cast<Name*>(self)->Name::start(status, cnt, components);
 			}
 			catch (...)
 			{
@@ -8996,7 +8630,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::join(Policy::upgrade(status), Policy::upgrade(one), Policy::upgrade(two));
+				return static_cast<Name*>(self)->Name::join(status, one, two);
 			}
 			catch (...)
 			{
@@ -9064,7 +8698,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -9179,7 +8813,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::add(Policy::upgrade(status), name);
+				static_cast<Name*>(self)->Name::add(status, name);
 			}
 			catch (...)
 			{
@@ -9191,7 +8825,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setType(Policy::upgrade(status), value);
+				static_cast<Name*>(self)->Name::setType(status, value);
 			}
 			catch (...)
 			{
@@ -9203,7 +8837,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setDb(Policy::upgrade(status), value);
+				static_cast<Name*>(self)->Name::setDb(status, value);
 			}
 			catch (...)
 			{
@@ -9298,7 +8932,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::putData(Policy::upgrade(status), length, data);
+				static_cast<Name*>(self)->Name::putData(status, length, data);
 			}
 			catch (...)
 			{
@@ -9310,7 +8944,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::putKey(Policy::upgrade(status), cryptKey);
+				static_cast<Name*>(self)->Name::putKey(status, cryptKey);
 			}
 			catch (...)
 			{
@@ -9421,7 +9055,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::putData(Policy::upgrade(status), length, data);
+				static_cast<Name*>(self)->Name::putData(status, length, data);
 			}
 			catch (...)
 			{
@@ -9433,7 +9067,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::putKey(Policy::upgrade(status), cryptKey);
+				static_cast<Name*>(self)->Name::putKey(status, cryptKey);
 			}
 			catch (...)
 			{
@@ -9529,7 +9163,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::authenticate(Policy::upgrade(status), Policy::upgrade(sBlock), Policy::upgrade(writerInterface));
+				return static_cast<Name*>(self)->Name::authenticate(status, sBlock, writerInterface);
 			}
 			catch (...)
 			{
@@ -9542,7 +9176,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -9647,7 +9281,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::authenticate(Policy::upgrade(status), Policy::upgrade(cBlock));
+				return static_cast<Name*>(self)->Name::authenticate(status, cBlock);
 			}
 			catch (...)
 			{
@@ -9660,7 +9294,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -9789,7 +9423,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setEntered(Policy::upgrade(status), newValue);
+				static_cast<Name*>(self)->Name::setEntered(status, newValue);
 			}
 			catch (...)
 			{
@@ -9871,7 +9505,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::set(Policy::upgrade(status), newValue);
+				static_cast<Name*>(self)->Name::set(status, newValue);
 			}
 			catch (...)
 			{
@@ -9909,7 +9543,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setEntered(Policy::upgrade(status), newValue);
+				static_cast<Name*>(self)->Name::setEntered(status, newValue);
 			}
 			catch (...)
 			{
@@ -9990,7 +9624,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::set(Policy::upgrade(status), newValue);
+				static_cast<Name*>(self)->Name::set(status, newValue);
 			}
 			catch (...)
 			{
@@ -10028,7 +9662,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setEntered(Policy::upgrade(status), newValue);
+				static_cast<Name*>(self)->Name::setEntered(status, newValue);
 			}
 			catch (...)
 			{
@@ -10232,7 +9866,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::clear(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::clear(status);
 			}
 			catch (...)
 			{
@@ -10305,7 +9939,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::list(Policy::upgrade(status), Policy::upgrade(user));
+				static_cast<Name*>(self)->Name::list(status, user);
 			}
 			catch (...)
 			{
@@ -10499,7 +10133,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::start(Policy::upgrade(status), Policy::upgrade(logonInfo));
+				static_cast<Name*>(self)->Name::start(status, logonInfo);
 			}
 			catch (...)
 			{
@@ -10511,7 +10145,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::execute(Policy::upgrade(status), Policy::upgrade(user), Policy::upgrade(callback));
+				return static_cast<Name*>(self)->Name::execute(status, user, callback);
 			}
 			catch (...)
 			{
@@ -10524,7 +10158,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::commit(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::commit(status);
 			}
 			catch (...)
 			{
@@ -10536,7 +10170,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::rollback(Policy::upgrade(status));
+				static_cast<Name*>(self)->Name::rollback(status);
 			}
 			catch (...)
 			{
@@ -10548,7 +10182,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -10659,7 +10293,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getKnownTypes(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getKnownTypes(status);
 			}
 			catch (...)
 			{
@@ -10672,7 +10306,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setKey(Policy::upgrade(status), key);
+				static_cast<Name*>(self)->Name::setKey(status, key);
 			}
 			catch (...)
 			{
@@ -10684,7 +10318,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::encrypt(Policy::upgrade(status), length, from, to);
+				static_cast<Name*>(self)->Name::encrypt(status, length, from, to);
 			}
 			catch (...)
 			{
@@ -10696,7 +10330,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::decrypt(Policy::upgrade(status), length, from, to);
+				static_cast<Name*>(self)->Name::decrypt(status, length, from, to);
 			}
 			catch (...)
 			{
@@ -10708,7 +10342,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -10881,7 +10515,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::keyCallback(Policy::upgrade(status), Policy::upgrade(callback));
+				return static_cast<Name*>(self)->Name::keyCallback(status, callback);
 			}
 			catch (...)
 			{
@@ -10894,7 +10528,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::keyHandle(Policy::upgrade(status), keyName);
+				return static_cast<Name*>(self)->Name::keyHandle(status, keyName);
 			}
 			catch (...)
 			{
@@ -10907,7 +10541,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -11015,7 +10649,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setKey(Policy::upgrade(status), length, Policy::upgrade(sources));
+				static_cast<Name*>(self)->Name::setKey(status, length, sources);
 			}
 			catch (...)
 			{
@@ -11027,7 +10661,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::encrypt(Policy::upgrade(status), length, from, to);
+				static_cast<Name*>(self)->Name::encrypt(status, length, from, to);
 			}
 			catch (...)
 			{
@@ -11039,7 +10673,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::decrypt(Policy::upgrade(status), length, from, to);
+				static_cast<Name*>(self)->Name::decrypt(status, length, from, to);
 			}
 			catch (...)
 			{
@@ -11051,7 +10685,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -11176,7 +10810,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getEngine(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getEngine(status);
 			}
 			catch (...)
 			{
@@ -11189,7 +10823,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getAttachment(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getAttachment(status);
 			}
 			catch (...)
 			{
@@ -11202,7 +10836,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getTransaction(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::getTransaction(status);
 			}
 			catch (...)
 			{
@@ -11354,7 +10988,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetch(Policy::upgrade(status));
+				return static_cast<Name*>(self)->Name::fetch(status);
 			}
 			catch (...)
 			{
@@ -11432,7 +11066,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getCharSet(Policy::upgrade(status), Policy::upgrade(context), name, nameSize);
+				static_cast<Name*>(self)->Name::getCharSet(status, context, name, nameSize);
 			}
 			catch (...)
 			{
@@ -11444,7 +11078,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::execute(Policy::upgrade(status), Policy::upgrade(context), inMsg, outMsg);
+				static_cast<Name*>(self)->Name::execute(status, context, inMsg, outMsg);
 			}
 			catch (...)
 			{
@@ -11522,7 +11156,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getCharSet(Policy::upgrade(status), Policy::upgrade(context), name, nameSize);
+				static_cast<Name*>(self)->Name::getCharSet(status, context, name, nameSize);
 			}
 			catch (...)
 			{
@@ -11534,7 +11168,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::open(Policy::upgrade(status), Policy::upgrade(context), inMsg, outMsg);
+				return static_cast<Name*>(self)->Name::open(status, context, inMsg, outMsg);
 			}
 			catch (...)
 			{
@@ -11613,7 +11247,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getCharSet(Policy::upgrade(status), Policy::upgrade(context), name, nameSize);
+				static_cast<Name*>(self)->Name::getCharSet(status, context, name, nameSize);
 			}
 			catch (...)
 			{
@@ -11625,7 +11259,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::execute(Policy::upgrade(status), Policy::upgrade(context), action, oldMsg, newMsg);
+				static_cast<Name*>(self)->Name::execute(status, context, action, oldMsg, newMsg);
 			}
 			catch (...)
 			{
@@ -11709,7 +11343,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getPackage(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getPackage(status);
 			}
 			catch (...)
 			{
@@ -11722,7 +11356,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getName(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getName(status);
 			}
 			catch (...)
 			{
@@ -11735,7 +11369,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getEntryPoint(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getEntryPoint(status);
 			}
 			catch (...)
 			{
@@ -11748,7 +11382,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getBody(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getBody(status);
 			}
 			catch (...)
 			{
@@ -11761,7 +11395,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getInputMetadata(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getInputMetadata(status);
 			}
 			catch (...)
 			{
@@ -11774,7 +11408,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getOutputMetadata(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getOutputMetadata(status);
 			}
 			catch (...)
 			{
@@ -11787,7 +11421,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getTriggerMetadata(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getTriggerMetadata(status);
 			}
 			catch (...)
 			{
@@ -11800,7 +11434,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getTriggerTable(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getTriggerTable(status);
 			}
 			catch (...)
 			{
@@ -11813,7 +11447,7 @@ public:
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getTriggerType(Policy::upgrade(status));
+				return static_cast<const Name*>(self)->Name::getTriggerType(status);
 			}
 			catch (...)
 			{
@@ -11894,7 +11528,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::open(Policy::upgrade(status), Policy::upgrade(context), charSet, charSetSize);
+				static_cast<Name*>(self)->Name::open(status, context, charSet, charSetSize);
 			}
 			catch (...)
 			{
@@ -11906,7 +11540,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::openAttachment(Policy::upgrade(status), Policy::upgrade(context));
+				static_cast<Name*>(self)->Name::openAttachment(status, context);
 			}
 			catch (...)
 			{
@@ -11918,7 +11552,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::closeAttachment(Policy::upgrade(status), Policy::upgrade(context));
+				static_cast<Name*>(self)->Name::closeAttachment(status, context);
 			}
 			catch (...)
 			{
@@ -11930,7 +11564,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::makeFunction(Policy::upgrade(status), Policy::upgrade(context), Policy::upgrade(metadata), Policy::upgrade(inBuilder), Policy::upgrade(outBuilder));
+				return static_cast<Name*>(self)->Name::makeFunction(status, context, metadata, inBuilder, outBuilder);
 			}
 			catch (...)
 			{
@@ -11943,7 +11577,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::makeProcedure(Policy::upgrade(status), Policy::upgrade(context), Policy::upgrade(metadata), Policy::upgrade(inBuilder), Policy::upgrade(outBuilder));
+				return static_cast<Name*>(self)->Name::makeProcedure(status, context, metadata, inBuilder, outBuilder);
 			}
 			catch (...)
 			{
@@ -11956,7 +11590,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::makeTrigger(Policy::upgrade(status), Policy::upgrade(context), Policy::upgrade(metadata), Policy::upgrade(fieldsBuilder));
+				return static_cast<Name*>(self)->Name::makeTrigger(status, context, metadata, fieldsBuilder);
 			}
 			catch (...)
 			{
@@ -11969,7 +11603,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{
@@ -12166,7 +11800,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::start(Policy::upgrade(status), Policy::upgrade(timer), microSeconds);
+				static_cast<Name*>(self)->Name::start(status, timer, microSeconds);
 			}
 			catch (...)
 			{
@@ -12178,7 +11812,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::stop(Policy::upgrade(status), Policy::upgrade(timer));
+				static_cast<Name*>(self)->Name::stop(status, timer);
 			}
 			catch (...)
 			{
@@ -12242,7 +11876,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::callback(Policy::upgrade(status), text);
+				static_cast<Name*>(self)->Name::callback(status, text);
 			}
 			catch (...)
 			{
@@ -12309,7 +11943,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getFbVersion(Policy::upgrade(status), Policy::upgrade(att), Policy::upgrade(callback));
+				static_cast<Name*>(self)->Name::getFbVersion(status, att, callback);
 			}
 			catch (...)
 			{
@@ -12321,7 +11955,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::loadBlob(Policy::upgrade(status), blobId, Policy::upgrade(att), Policy::upgrade(tra), file, txt);
+				static_cast<Name*>(self)->Name::loadBlob(status, blobId, att, tra, file, txt);
 			}
 			catch (...)
 			{
@@ -12333,7 +11967,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::dumpBlob(Policy::upgrade(status), blobId, Policy::upgrade(att), Policy::upgrade(tra), file, txt);
+				static_cast<Name*>(self)->Name::dumpBlob(status, blobId, att, tra, file, txt);
 			}
 			catch (...)
 			{
@@ -12345,7 +11979,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::getPerfCounters(Policy::upgrade(status), Policy::upgrade(att), countersSet, counters);
+				static_cast<Name*>(self)->Name::getPerfCounters(status, att, countersSet, counters);
 			}
 			catch (...)
 			{
@@ -12357,7 +11991,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::executeCreateDatabase(Policy::upgrade(status), stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
+				return static_cast<Name*>(self)->Name::executeCreateDatabase(status, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
 			}
 			catch (...)
 			{
@@ -14618,7 +14252,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_attach(Policy::upgrade(connection), create_db, att_result);
+				return static_cast<Name*>(self)->Name::trace_attach(connection, create_db, att_result);
 			}
 			catch (...)
 			{
@@ -14631,7 +14265,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_detach(Policy::upgrade(connection), drop_db);
+				return static_cast<Name*>(self)->Name::trace_detach(connection, drop_db);
 			}
 			catch (...)
 			{
@@ -14644,7 +14278,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_transaction_start(Policy::upgrade(connection), Policy::upgrade(transaction), tpb_length, tpb, tra_result);
+				return static_cast<Name*>(self)->Name::trace_transaction_start(connection, transaction, tpb_length, tpb, tra_result);
 			}
 			catch (...)
 			{
@@ -14657,7 +14291,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_transaction_end(Policy::upgrade(connection), Policy::upgrade(transaction), commit, retain_context, tra_result);
+				return static_cast<Name*>(self)->Name::trace_transaction_end(connection, transaction, commit, retain_context, tra_result);
 			}
 			catch (...)
 			{
@@ -14670,7 +14304,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_proc_execute(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(procedure), started, proc_result);
+				return static_cast<Name*>(self)->Name::trace_proc_execute(connection, transaction, procedure, started, proc_result);
 			}
 			catch (...)
 			{
@@ -14683,7 +14317,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_trigger_execute(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(trigger), started, trig_result);
+				return static_cast<Name*>(self)->Name::trace_trigger_execute(connection, transaction, trigger, started, trig_result);
 			}
 			catch (...)
 			{
@@ -14696,7 +14330,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_set_context(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(variable));
+				return static_cast<Name*>(self)->Name::trace_set_context(connection, transaction, variable);
 			}
 			catch (...)
 			{
@@ -14709,7 +14343,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_dsql_prepare(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(statement), time_millis, req_result);
+				return static_cast<Name*>(self)->Name::trace_dsql_prepare(connection, transaction, statement, time_millis, req_result);
 			}
 			catch (...)
 			{
@@ -14722,7 +14356,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_dsql_free(Policy::upgrade(connection), Policy::upgrade(statement), option);
+				return static_cast<Name*>(self)->Name::trace_dsql_free(connection, statement, option);
 			}
 			catch (...)
 			{
@@ -14735,7 +14369,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_dsql_execute(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(statement), started, req_result);
+				return static_cast<Name*>(self)->Name::trace_dsql_execute(connection, transaction, statement, started, req_result);
 			}
 			catch (...)
 			{
@@ -14748,7 +14382,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_blr_compile(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(statement), time_millis, req_result);
+				return static_cast<Name*>(self)->Name::trace_blr_compile(connection, transaction, statement, time_millis, req_result);
 			}
 			catch (...)
 			{
@@ -14761,7 +14395,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_blr_execute(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(statement), req_result);
+				return static_cast<Name*>(self)->Name::trace_blr_execute(connection, transaction, statement, req_result);
 			}
 			catch (...)
 			{
@@ -14774,7 +14408,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_dyn_execute(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(request), time_millis, req_result);
+				return static_cast<Name*>(self)->Name::trace_dyn_execute(connection, transaction, request, time_millis, req_result);
 			}
 			catch (...)
 			{
@@ -14787,7 +14421,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_service_attach(Policy::upgrade(service), att_result);
+				return static_cast<Name*>(self)->Name::trace_service_attach(service, att_result);
 			}
 			catch (...)
 			{
@@ -14800,7 +14434,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_service_start(Policy::upgrade(service), switches_length, switches, start_result);
+				return static_cast<Name*>(self)->Name::trace_service_start(service, switches_length, switches, start_result);
 			}
 			catch (...)
 			{
@@ -14813,7 +14447,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_service_query(Policy::upgrade(service), send_item_length, send_items, recv_item_length, recv_items, query_result);
+				return static_cast<Name*>(self)->Name::trace_service_query(service, send_item_length, send_items, recv_item_length, recv_items, query_result);
 			}
 			catch (...)
 			{
@@ -14826,7 +14460,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_service_detach(Policy::upgrade(service), detach_result);
+				return static_cast<Name*>(self)->Name::trace_service_detach(service, detach_result);
 			}
 			catch (...)
 			{
@@ -14839,7 +14473,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_event_error(Policy::upgrade(connection), Policy::upgrade(status), function);
+				return static_cast<Name*>(self)->Name::trace_event_error(connection, status, function);
 			}
 			catch (...)
 			{
@@ -14852,7 +14486,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_event_sweep(Policy::upgrade(connection), Policy::upgrade(sweep), sweep_state);
+				return static_cast<Name*>(self)->Name::trace_event_sweep(connection, sweep, sweep_state);
 			}
 			catch (...)
 			{
@@ -14865,7 +14499,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_func_execute(Policy::upgrade(connection), Policy::upgrade(transaction), Policy::upgrade(function), started, func_result);
+				return static_cast<Name*>(self)->Name::trace_func_execute(connection, transaction, function, started, func_result);
 			}
 			catch (...)
 			{
@@ -14992,7 +14626,7 @@ public:
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_create(Policy::upgrade(status), Policy::upgrade(init_info));
+				return static_cast<Name*>(self)->Name::trace_create(status, init_info);
 			}
 			catch (...)
 			{
@@ -15005,7 +14639,7 @@ public:
 		{
 			try
 			{
-				static_cast<Name*>(self)->Name::setOwner(Policy::upgrade(r));
+				static_cast<Name*>(self)->Name::setOwner(r);
 			}
 			catch (...)
 			{

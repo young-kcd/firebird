@@ -1610,6 +1610,8 @@ C --
       PARAMETER (GDS__crdb_nodb                        = 335545098)
       INTEGER*4 GDS__crdb_notable                    
       PARAMETER (GDS__crdb_notable                     = 335545099)
+      INTEGER*4 GDS__interface_version_too_old       
+      PARAMETER (GDS__interface_version_too_old        = 335545100)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

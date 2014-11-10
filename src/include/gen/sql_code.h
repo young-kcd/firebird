@@ -800,6 +800,7 @@ static const struct {
 	{335545097, -901}, /* 777 crdb_load */
 	{335545098, -901}, /* 778 crdb_nodb */
 	{335545099, -901}, /* 779 crdb_notable */
+	{335545100, -804}, /* 780 interface_version_too_old */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

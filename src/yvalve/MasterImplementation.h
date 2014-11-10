@@ -61,8 +61,6 @@ namespace Why
 		Firebird::IStatus* getStatus();
 		Firebird::IProvider* getDispatcher();
 		Firebird::IPluginManager* getPluginManager();
-		int upgradeInterface(Firebird::IVersioned* toUpgrade, int desiredVersion,
-			Firebird::IPluginModule* destModule, void* function);
 		const char* circularAlloc(const char* s, unsigned len, intptr_t thr);
 		Firebird::ITimerControl* getTimerControl();
 		Firebird::IAttachment* registerAttachment(Firebird::IProvider* provider,
@@ -79,7 +77,6 @@ namespace Why
 	};
 
 	void shutdownTimers();
-	void releaseUpgradeTabs(Firebird::IPluginModule* module);
 
 	Firebird::Mutex& pauseTimer();
 } // namespace Why

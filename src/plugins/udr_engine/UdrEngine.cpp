@@ -147,7 +147,7 @@ private:
 		const string& entryPoint);
 
 public:
-	void open(IStatus* status, IExternalContext* context, Utf8* name, unsigned nameSize);
+	void open(IStatus* status, IExternalContext* context, char* name, unsigned nameSize);
 	void openAttachment(IStatus* status, IExternalContext* context);
 	void closeAttachment(IStatus* status, IExternalContext* context);
 	IExternalFunction* makeFunction(IStatus* status, IExternalContext* context,
@@ -229,7 +229,7 @@ public:
 
 public:
 	void getCharSet(IStatus* status, IExternalContext* context,
-		Utf8* name, unsigned nameSize)
+		char* name, unsigned nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
@@ -299,7 +299,7 @@ public:
 
 public:
 	void getCharSet(IStatus* status, IExternalContext* context,
-		Utf8* name, unsigned nameSize)
+		char* name, unsigned nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
@@ -375,7 +375,7 @@ public:
 
 public:
 	void getCharSet(IStatus* status, IExternalContext* context,
-		Utf8* name, unsigned nameSize)
+		char* name, unsigned nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
@@ -619,7 +619,7 @@ template <typename T, typename T2> T2* Engine::getNode(IStatus* status, T* nodes
 }
 
 
-void Engine::open(IStatus* /*status*/, IExternalContext* /*context*/, Utf8* name, unsigned nameSize)
+void Engine::open(IStatus* /*status*/, IExternalContext* /*context*/, char* name, unsigned nameSize)
 {
 	strncpy(name, "UTF-8", nameSize);
 }

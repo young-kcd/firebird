@@ -21,6 +21,7 @@
  */
 
 #include "ibase.h"
+#include "firebird.h"	//// FIXME:
 #include "firebird/UdrCppEngine.h"
 #include <assert.h>
 #include <stdio.h>

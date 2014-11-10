@@ -455,7 +455,7 @@ public:
 	}
 
 	void getCharSet(IStatus* /*status*/, IExternalContext* /*context*/,
-		Utf8* /*name*/, unsigned /*nameSize*/)
+		char* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
@@ -479,7 +479,7 @@ public:
 	}
 
 	void getCharSet(IStatus* /*status*/, IExternalContext* /*context*/,
-		Utf8* /*name*/, unsigned /*nameSize*/)
+		char* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
@@ -502,7 +502,7 @@ public:
 	}
 
 	void getCharSet(IStatus* /*status*/, IExternalContext* /*context*/,
-		Utf8* /*name*/, unsigned /*nameSize*/)
+		char* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };

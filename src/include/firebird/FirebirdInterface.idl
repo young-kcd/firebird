@@ -57,7 +57,7 @@ interface Status : Disposable
 	const uint FB_HAS_WARNINGS	= 0x01;
 	const uint FB_HAS_ERRORS 	= 0x02;
 
-	// completion codes - not used in IStatus, but I must have them somewhere
+	// completion codes - not used in Status, but I must have them somewhere
 	const int FB_ERROR = -1;
 	const int FB_OK = 0;
 	const int FB_EOF = 1;
@@ -81,8 +81,6 @@ interface Master : Versioned
 	Status getStatus();
 	Provider getDispatcher();
 	PluginManager getPluginManager();
-	int upgradeInterface(Versioned toUpgrade, int desiredVersion,
-		PluginModule destModule, void* function);
 	const string circularAlloc(const string s, uint len, intptr thr);
 	TimerControl getTimerControl();
 	Dtc getDtc();
@@ -90,7 +88,7 @@ interface Master : Versioned
 	Transaction registerTransaction(Attachment attachment, Transaction transaction);
 
 	// This function is required to compare interfaces based on vtables of them
-	int same(Versioned first, Versioned second);
+	int same(Versioned first, Versioned second);	//// FIXME: Should we really publish this API?
 
 	MetadataBuilder getMetadataBuilder(Status status, uint fieldCount);
 	//// FIXME: Debug getDebug();
@@ -248,13 +246,11 @@ interface PluginManager : Versioned
 	// Main function called to access plugins registered in plugins manager
 	// Has front-end in GetPlugins.h - template GetPlugins
 	// In namesList parameter comma or space separated list of names of configured plugins is passed
-	// PluginModule is a module from which interface is upgraded
 	// in case when plugin's version is less than desired
 	// If caller already has an interface for firebird.conf, it may be passed here
 	// If parameter is missing, plugins will get access to default (non database specific) config
 	PluginSet getPlugins(Status status, uint pluginType,
-						const string namesList, int desiredVersion,
-						PluginModule destModule, FirebirdConf firebirdConf);
+						const string namesList, FirebirdConf firebirdConf);
 	// Get generic config interface for given file
 	Config getConfig(Status status, const string filename);
 	// Plugins must be released using this function - use of plugin's release()
@@ -281,7 +277,7 @@ typedef void PluginEntrypoint(Master masterInterface);
 // Generic access to all config interfaces
 interface ConfigManager : Versioned
 {
-	// Codes for IConfigManager::getDirectory()
+	// Codes for ConfigManager::getDirectory()
 	const uint FB_DIR_BIN = 0;
 	const uint FB_DIR_SBIN = 1;
 	const uint FB_DIR_CONF = 2;
@@ -323,8 +319,10 @@ interface Blob : ReferenceCounted
 	void getInfo(Status status,
 						 uint itemsLength, const uchar* items,
 						 uint bufferLength, uchar* buffer);
-	int getSegment(Status status, uint bufferLength,
-								   void* buffer, uint* segmentLength);
+
+	[notImplemented(Status::FB_ERROR)]
+	int getSegment(Status status, uint bufferLength, void* buffer, uint* segmentLength);
+
 	void putSegment(Status status, uint length,
 									const void* buffer);
 	void cancel(Status status);
@@ -387,12 +385,12 @@ interface MetadataBuilder : ReferenceCounted
 
 interface ResultSet : ReferenceCounted
 {
-	int fetchNext(Status status, void* message);
-	int fetchPrior(Status status, void* message);
-	int fetchFirst(Status status, void* message);
-	int fetchLast(Status status, void* message);
-	int fetchAbsolute(Status status, uint position, void* message);
-	int fetchRelative(Status status, int offset, void* message);
+	[notImplemented(Status::FB_ERROR)] int fetchNext(Status status, void* message);
+	[notImplemented(Status::FB_ERROR)] int fetchPrior(Status status, void* message);
+	[notImplemented(Status::FB_ERROR)] int fetchFirst(Status status, void* message);
+	[notImplemented(Status::FB_ERROR)] int fetchLast(Status status, void* message);
+	[notImplemented(Status::FB_ERROR)] int fetchAbsolute(Status status, uint position, void* message);
+	[notImplemented(Status::FB_ERROR)] int fetchRelative(Status status, int offset, void* message);
 	boolean isEof(Status status);
 	boolean isBof(Status status);
 	MessageMetadata getMetadata(Status status);
@@ -591,12 +589,14 @@ interface ClientBlock : ReferenceCounted
 // server part of authentication plugin
 interface Server : Auth
 {
+	[notImplemented(Auth::AUTH_FAILED)]
 	int authenticate(Status status, ServerBlock sBlock, Writer writerInterface);
 }
 
 // .. and corresponding client
 interface Client : Auth
 {
+	[notImplemented(Auth::AUTH_FAILED)]
 	int authenticate(Status status, ClientBlock cBlock);
 }
 
@@ -715,7 +715,7 @@ interface DbCryptPlugin : PluginBase
 	// It's supposed that crypt plugin will invoke keyHandle() function from them
 	// to access callback interface for getting actual crypt key.
 	// If crypt plugin fails to find appropriate key in sources, it should raise error.
-	void setKey(Status status, uint length, KeyHolderPlugin* sources);		// Adriano - this is really ptr to ptr, a set of plugins is passed
+	void setKey(Status status, uint length, KeyHolderPlugin* sources);
 	void encrypt(Status status, uint length, const void* from, void* to);
 	void decrypt(Status status, uint length, const void* from, void* to);
 }
@@ -1080,63 +1080,103 @@ interface TracePlugin : ReferenceCounted
 	// Events supported:
 
 	// Create/close attachment
+
+	[notImplemented(true)]
 	boolean trace_attach(TraceDatabaseConnection connection, boolean create_db, uint att_result);
+
+	[notImplemented(true)]
 	boolean trace_detach(TraceDatabaseConnection connection, boolean drop_db);
 
 	// Start/end transaction
+
+	[notImplemented(true)]
 	boolean trace_transaction_start(TraceDatabaseConnection connection, TraceTransaction transaction,
 			uint tpb_length, const uchar* tpb, uint tra_result);
+
+	[notImplemented(true)]
 	boolean trace_transaction_end(TraceDatabaseConnection connection, TraceTransaction transaction,
 			boolean commit, boolean retain_context, uint tra_result);
 
 	// Stored procedures and triggers execution
+
+	[notImplemented(true)]
 	boolean trace_proc_execute (TraceDatabaseConnection connection, TraceTransaction transaction, TraceProcedure procedure,
 			boolean started, uint proc_result);
+
+	[notImplemented(true)]
 	boolean trace_trigger_execute(TraceDatabaseConnection connection, TraceTransaction transaction, TraceTrigger trigger,
 			boolean started, uint trig_result);
 
 	// Assignment to context variables
+
+	[notImplemented(true)]
 	boolean trace_set_context(TraceDatabaseConnection connection, TraceTransaction transaction, TraceContextVariable variable);
 
 	// DSQL statement lifecycle
+
+	[notImplemented(true)]
 	boolean trace_dsql_prepare(TraceDatabaseConnection connection, TraceTransaction transaction,
 			TraceSQLStatement statement, int64 time_millis, uint req_result);
+
+	[notImplemented(true)]
 	boolean trace_dsql_free(TraceDatabaseConnection connection, TraceSQLStatement statement, uint option);
+
+	[notImplemented(true)]
 	boolean trace_dsql_execute(TraceDatabaseConnection connection, TraceTransaction transaction, TraceSQLStatement statement,
 			boolean started, uint req_result);
 
 	// BLR requests
+
+	[notImplemented(true)]
 	boolean trace_blr_compile(TraceDatabaseConnection connection, TraceTransaction transaction,
 			TraceBLRStatement statement, int64 time_millis, uint req_result);
+
+	[notImplemented(true)]
 	boolean trace_blr_execute(TraceDatabaseConnection connection, TraceTransaction transaction,
 			TraceBLRStatement statement, uint req_result);
 
 	// DYN requests
+
+	[notImplemented(true)]
 	boolean trace_dyn_execute(TraceDatabaseConnection connection, TraceTransaction transaction,
 			TraceDYNRequest request, int64 time_millis, uint req_result);
 
 	// Using the services
+
+	[notImplemented(true)]
 	boolean trace_service_attach(TraceServiceConnection service, uint att_result);
+
+	[notImplemented(true)]
 	boolean trace_service_start(TraceServiceConnection service, uint switches_length, const string switches,
 			uint start_result);
+
+	[notImplemented(true)]
 	boolean trace_service_query(TraceServiceConnection service, uint send_item_length,
 			const uchar* send_items, uint recv_item_length,
 			const uchar* recv_items, uint query_result);
+
+	[notImplemented(true)]
 	boolean trace_service_detach(TraceServiceConnection service, uint detach_result);
 
 	// Errors happened
+
+	[notImplemented(true)]
 	boolean trace_event_error(TraceConnection connection, TraceStatusVector status, const string function);
 
 	// Sweep activity
+
 	const uint SWEEP_STATE_STARTED = 1;
 	const uint SWEEP_STATE_FINISHED = 2;
 	const uint SWEEP_STATE_FAILED = 3;
 	const uint SWEEP_STATE_PROGRESS = 4;
 
+	[notImplemented(true)]
 	boolean trace_event_sweep(TraceDatabaseConnection connection, TraceSweepInfo sweep,
 			uint sweep_state);
 
 	// Stored functions execution
+
+	[notImplemented(true)]
 	boolean trace_func_execute (TraceDatabaseConnection connection, TraceTransaction transaction, TraceFunction function,
 			boolean started, uint func_result);
 }

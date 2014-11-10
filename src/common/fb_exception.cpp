@@ -293,9 +293,4 @@ void fatal_exception::raiseFmt(const char* format, ...)
 	throw fatal_exception(buffer);
 }
 
-void raiseVersionError()
-{
-	fatal_exception::raise("Interface version too old");
-}
-
 }	// namespace Firebird

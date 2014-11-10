@@ -42,8 +42,7 @@ class PluginManager : public AutoIface<Api::PluginManagerImpl<PluginManager> >
 public:
 	// IPluginManager implementation
 	IPluginSet* getPlugins(IStatus* status, unsigned int interfaceType,
-					const char* namesList, int desiredVersion, IPluginModule* destModule,
-					IFirebirdConf* firebirdConf);
+					const char* namesList, IFirebirdConf* firebirdConf);
 	void registerPluginFactory(unsigned int interfaceType, const char* defaultName,
 					IPluginFactory* factory);
 	IConfig* getConfig(IStatus* status, const char* filename);

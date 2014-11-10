@@ -72,22 +72,6 @@ IMaster* CachedMasterInterface::getMasterInterface()
 }
 
 
-void upgradeInterface(FirebirdApi<FirebirdPolicy>::Versioned* toUpgrade, int desiredVersion, void* function)
-{
-	MasterInterfacePtr()->upgradeInterface(toUpgrade, desiredVersion, getPluginModule(), function);
-}
-
-void logOldPlugin()
-{
-	gds__log("Old version of trace plugin is used - new types of events are ignored");
-}
-
-ISC_STATUS* getUpgradeError()
-{
-	static ISC_STATUS failure[2] = {isc_arg_gds, isc_wish_list};
-	return failure;
-}
-
 #ifdef NOT_USED_OR_REPLACED
 class IDebug
 {

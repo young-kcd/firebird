@@ -672,7 +672,7 @@ namespace Jrd {
 		{
 			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
 			LocalStatus st;
-			if (keyPlugin->keyCallback(&st, att->att_crypt_callback) == 1)
+			if (keyPlugin->keyCallback(&st, att->att_crypt_callback) == 1)	//// FIXME: 1 ???
 			{
 				// holder accepted attachment's key
 				HolderAttachments* ha = NULL;

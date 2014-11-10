@@ -47,7 +47,7 @@ public:
 		LocalStatus status;
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : Config::getDefaultConfig()->getPlugins(interfaceType)),
-			P::VERSION, getUnloadDetector(), NULL));
+			NULL));
 		check(&status);
 
 		getPlugin();
@@ -61,7 +61,7 @@ public:
 		LocalStatus status;
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
-			P::VERSION, getUnloadDetector(), new FirebirdConf(knownConfig)));
+			new FirebirdConf(knownConfig)));
 		check(&status);
 
 		getPlugin();

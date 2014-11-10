@@ -160,7 +160,7 @@ private:
 		Firebird::ITransaction* getTransaction(Firebird::IStatus* status);
 		const char* getUserName();
 		const char* getDatabaseName();
-		const Firebird::Utf8* getClientCharSet();
+		const char* getClientCharSet();
 		int obtainInfoCode();
 		void* getInfo(int code);
 		void* setInfo(int code, void* value);
