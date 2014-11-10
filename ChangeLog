@@ -1,3 +1,11 @@
+ 2014-11-09 16:40  dimitr 
+   M src/jrd/vio.cpp
+Relaxed system tables protection for cases UPDATE ... SET RDB$*_SOURCE = NULL. So far nullification is allowed for views/packages/procedures/functions/triggers only. I'm not sure somebody really needs hiding sources for defaults and check constraints, but this can be supported later, if required. This is a temporary solution, intended to be replaced with something more clever (e.g. special permissions or new DDL command) in v4.
+
+ 2014-11-09 01:58  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-4599 - REPLACE function works incorrectly with multibyte charsets.
+
  2014-11-07 15:30  mapopa 
    M src/remote/inet.cpp
 Apollo computers are long gone
