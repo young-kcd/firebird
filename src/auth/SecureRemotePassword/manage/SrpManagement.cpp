@@ -37,6 +37,14 @@
 #include "../auth/SecureRemotePassword/Message.h"
 #include "../common/classes/auto.h"
 
+#ifndef FB_EXPORTED
+#if defined(DARWIN)
+#define FB_EXPORTED __attribute__((visibility("default")))
+#else
+#define FB_EXPORTED
+#endif // OS choice (DARWIN)
+#endif // FB_EXPORTED
+
 namespace {
 
 const unsigned int INIT_KEY = ((~0) - 1);
@@ -889,7 +897,7 @@ static Firebird::SimpleFactory<Auth::SrpManagement> factory;
 
 } // namespace Auth
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
+extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	Firebird::CachedMasterInterface::set(master);
 	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::IPluginManager::AuthUserManagement, Auth::RemotePassword::plugName, &Auth::factory);
