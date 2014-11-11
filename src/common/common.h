@@ -192,6 +192,12 @@
 #define RISC_ALIGNMENT
 #endif
 
+#ifdef PPC64EL
+#define FB_CPU CpuPowerPc64el
+#endif /* PPC64EL */
+
+
+
 #endif /* LINUX */
 
 
