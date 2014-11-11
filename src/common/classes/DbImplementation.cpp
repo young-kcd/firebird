@@ -47,6 +47,7 @@ static const UCHAR CpuSheb = 12;
 static const UCHAR CpuHppa = 13;
 static const UCHAR CpuAlpha = 14;
 static const UCHAR CpuArm64 = 15;
+static const UCHAR CpuPowerPc64el = 16;
 
 static const UCHAR OsWindows = 0;
 static const UCHAR OsLinux = 1;
@@ -85,7 +86,8 @@ const char* hardware[] = {
 	"SHEB",
 	"HPPA",
 	"Alpha",
-	"ARM64"
+	"ARM64",
+	"PowerPC64el"
 };
 
 const char* operatingSystem[] = {
@@ -112,22 +114,22 @@ const char* compiler[] = {
 // This table lists pre-fb3 implementation codes
 const UCHAR backwardTable[FB_NELEM(hardware) * FB_NELEM(operatingSystem)] =
 {
-//				Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA	Alpha	ARM64
-/* Windows */	50,		68,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
-/* Linux */		60,		66,		65,		69,		0,		71,		72,		75, 	76,		79, 	78,		80,		81,		82,		83,		84,
-/* Darwin */	70,		73,		0,		63,		77,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
-/* Solaris */	0,		0,		30,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
-/* HPUX */		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		31,		0,		0,
-/* AIX */		0,		0,		0,		35,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
-/* MVS */		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
-/* FreeBSD */	61,		67,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
-/* NetBSD */	62,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0
+//				Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA	Alpha	ARM64	PowerPC64el
+/* Windows */	50,		68,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
+/* Linux */		60,		66,		65,		69,		0,		71,		72,		75, 	76,		79, 	78,		80,		81,		82,		83,		84,		85,
+/* Darwin */	70,		73,		0,		63,		77,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
+/* Solaris */	0,		0,		30,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
+/* HPUX */		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		31,		0,		0,		0,
+/* AIX */			0,		0,		0,		35,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
+/* MVS */			0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
+/* FreeBSD */	61,		67,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
+/* NetBSD */	62,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0
 };
 
 const UCHAR backEndianess[FB_NELEM(hardware)] =
 {
-//	Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA	Alpha	ARM64
-	0,		0,		1,		1,		1,		0,		1,		0,		0,		1,		1,		0,		1,		1,		0,		0
+//	Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA	Alpha	ARM64	PowerPC64el
+	0,		0,		1,		1,		1,		0,		1,		0,		0,		1,		1,		0,		1,		1,		0,		0,		0
 };
 
 } // anonymous namespace
