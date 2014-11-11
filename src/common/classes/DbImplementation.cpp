@@ -109,7 +109,7 @@ const char* compiler[] = {
 	"icc"
 };
 
-// This table lists pre-fb3 imlementation codes
+// This table lists pre-fb3 implementation codes
 const UCHAR backwardTable[FB_NELEM(hardware) * FB_NELEM(operatingSystem)] =
 {
 //				Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA	Alpha	ARM64
