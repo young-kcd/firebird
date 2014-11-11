@@ -239,7 +239,7 @@ dnl CPU_TYPE=ppc64
     STD_EDITLINE=true
     ;;
 
-  aarch64*-*-linux*)                           // port was not tested
+  aarch64*-*-linux*)                           
     MAKEFILE_PREFIX=linux_arm64
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
@@ -249,6 +249,19 @@ dnl CPU_TYPE=ppc64
     STD_EDITLINE=true
     STD_ICU=true
     ;;
+
+  powerpc64le-*-linux*)                           
+    MAKEFILE_PREFIX=linux_ppc64el
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    STD_EDITLINE=true
+    STD_ICU=true
+    ;;
+
+  
 
   sparc*-*-linux* | sparc*-*-gnu* | sparc*-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=linux_sparc32
