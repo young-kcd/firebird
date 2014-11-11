@@ -1,3 +1,46 @@
+ 2014-11-10 14:45  asfernandes 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M examples/udr/UdrCppExample.cpp
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.cpp
+   M src/common/fb_exception.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/include/ibase.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+Get rid of upgradeInterface API method and some adjustments. To be continued.
+
+ 2014-11-10 09:32  paulbeach 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+Fix visibility problem for:
+GSEC> add sysdba -pw masterkey
+unable to open database
+Error loading plugin Srp
+Standard plugin entrypoint does not exist in module
+/Users/pbeach/firebird30/gen/Release/firebird/plugins/libSrp.dylib
+GSEC>
+
  2014-11-09 16:40  dimitr 
    M src/jrd/vio.cpp
 Relaxed system tables protection for cases UPDATE ... SET RDB$*_SOURCE = NULL. So far nullification is allowed for views/packages/procedures/functions/triggers only. I'm not sure somebody really needs hiding sources for defaults and check constraints, but this can be supported later, if required. This is a temporary solution, intended to be replaced with something more clever (e.g. special permissions or new DDL command) in v4.
