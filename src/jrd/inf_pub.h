@@ -150,7 +150,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_vms = 27,
 	isc_info_db_impl_isc_sun_68k = 28,
 	isc_info_db_impl_isc_os2 = 29,
-	isc_info_db_impl_isc_sun4 = 30,	   /* 30 */
+	isc_info_db_impl_isc_sun4 = 30,	   
 
 	isc_info_db_impl_isc_hp_ux = 31,
 	isc_info_db_impl_isc_sun_386i = 32,
@@ -161,7 +161,7 @@ enum  info_db_implementations
 	isc_info_db_impl_isc_xenix = 37,
 	isc_info_db_impl_isc_dg = 38,
 	isc_info_db_impl_isc_hp_mpexl = 39,
-	isc_info_db_impl_isc_hp_ux68K = 40,	  /* 40 */
+	isc_info_db_impl_isc_hp_ux68K = 40,	  
 
 	isc_info_db_impl_isc_sgi = 41,
 	isc_info_db_impl_isc_sco_unix = 42,
@@ -216,6 +216,7 @@ enum  info_db_implementations
 	isc_info_db_impl_linux_hppa = 82,
 	isc_info_db_impl_linux_alpha = 83,
 	isc_info_db_impl_linux_arm64 = 84,
+	isc_info_db_impl_linux_ppc64el = 85,
 
 	isc_info_db_impl_last_value   // Leave this LAST!
 };
