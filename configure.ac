@@ -251,7 +251,7 @@ dnl CPU_TYPE=ppc64
     ;;
 
   powerpc64le-*-linux*)                           
-    MAKEFILE_PREFIX=linux_ppc64el
+    MAKEFILE_PREFIX=linux_powerpc64el
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
