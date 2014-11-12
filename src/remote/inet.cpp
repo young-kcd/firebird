@@ -1285,8 +1285,6 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
-	struct sockaddr_in address;
-	socklen_t l = sizeof(address);
 
 	// If this is a server, we're got an auxiliary connection.  Accept it
 
@@ -1347,16 +1345,6 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	new_port->port_dummy_timeout = new_port->port_dummy_packet_interval;
 	P_RESP* response = &packet->p_resp;
 
-	// Set up new socket
-
-	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
-	if (n == INVALID_SOCKET)
-	{
-		int savedError = INET_ERRNO;
-		port->auxAcceptError(packet);
-		inet_error(false, port, "socket", isc_net_event_connect_err, savedError);
-	}
-
 	// NJK - Determine address and port to use.
 	//
 	// The address returned by the server may be incorrect if it is behind a NAT box
@@ -1366,24 +1354,31 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 	// The port number reported by the server is used. For NAT support the port number
 	// should be configured to be a fixed port number in the server configuration.
 
-	memset(&address, 0, sizeof(address));
-	int status = getpeername(port->port_handle, (struct sockaddr *) &address, &l);
+	SockAddr address;
+	int status = address.getpeername(port->port_handle);
 	if (status != 0)
 	{
 		int savedError = INET_ERRNO;
 		port->auxAcceptError(packet);
-		SOCLOSE(n);
 		inet_error(false, port, "socket", isc_net_event_connect_err, savedError);
 	}
-	address.sin_family = AF_INET;
-	address.sin_port = ((struct sockaddr_in *)(response->p_resp_data.cstr_address))->sin_port;
+	SockAddr resp_address(response->p_resp_data.cstr_address, response->p_resp_data.cstr_length);
+	address.setPort(resp_address.port());
+
+	// Set up new socket
+
+	SOCKET n = socket(address.family(), SOCK_STREAM, 0);
+	if (n == INVALID_SOCKET)
+	{
+		int savedError = INET_ERRNO;
+		port->auxAcceptError(packet);
+		inet_error(false, port, "socket", isc_net_event_connect_err, savedError);
+	}
 
 	int optval = 1;
 	setsockopt(n, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
 
-	status = connect(n, (struct sockaddr *) &address, sizeof(address));
-	//const int inetErrNo = INET_ERRNO;
-
+	status = address.connect(n);
 	if (status < 0)
 	{
 		int savedError = INET_ERRNO;
@@ -1410,42 +1405,47 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
  *	connection; the server calls aux_request to set up the connection.
  *
  **************************************/
-	struct sockaddr_in address;
 
-	// Set up new socket
+	// listen on (local) address of the original socket
+	SockAddr our_address;
+	if (our_address.getsockname(port->port_handle) < 0)
+	{
+		gds__log("INET/aux_request: failed to get local address of the original socket");
+		inet_error(false, port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
+	}
+	unsigned short aux_port = port->getPortConfig()->getRemoteAuxPort();
+	our_address.setPort(aux_port); // may be 0
 
-	address.sin_family = AF_INET;
-	in_addr bind_addr = get_bind_address();
-	memcpy(&address.sin_addr, &bind_addr, sizeof(address.sin_addr));
-	address.sin_port = htons(port->getPortConfig()->getRemoteAuxPort());
-
-	SOCKET n = socket(AF_INET, SOCK_STREAM, 0);
+	SOCKET n = socket(our_address.family(), SOCK_STREAM, 0);
 	if (n == INVALID_SOCKET)
 	{
 		inet_error(false, port, "socket", isc_net_event_listen_err, INET_ERRNO);
 	}
 
+	int optval;
 #ifndef WIN_NT
 	// dimitr:	on Windows, lack of SO_REUSEADDR works the same way as it was specified on POSIX,
 	//			i.e. it allows binding to a port in a TIME_WAIT/FIN_WAIT state. If this option
 	//			is turned on explicitly, then a port can be re-bound regardless of its state,
 	//			e.g. while it's listening. This is surely not what we want.
 
-	int optval = TRUE;
+	optval = TRUE;
 	if (setsockopt(n, SOL_SOCKET, SO_REUSEADDR, (SCHAR*) &optval, sizeof(optval)) < 0)
 	{
 		inet_error(false, port, "setsockopt REUSE", isc_net_event_listen_err, INET_ERRNO);
 	}
 #endif
 
-	if (bind(n, (struct sockaddr *) &address, sizeof(address)) < 0)
+	optval = port->getPortConfig()->getIPv6V6Only() ? 1 : 0;
+	// ignore failure, we already have it logged from the main listening port
+	setsockopt(n, IPPROTO_IPV6, IPV6_V6ONLY, (SCHAR*) &optval, sizeof(optval));
+
+	if (bind(n, our_address.ptr(), our_address.length()) < 0)
 	{
 		inet_error(false, port, "bind", isc_net_event_listen_err, INET_ERRNO);
 	}
 
-	socklen_t length = sizeof(address);
-
-	if (getsockname(n, (struct sockaddr *) &address, &length) < 0)
+	if (our_address.getsockname(n) < 0)
 	{
 		inet_error(false, port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 	}
@@ -1455,7 +1455,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 		inet_error(false, port, "listen", isc_net_event_listen_err, INET_ERRNO);
 	}
 
-    rem_port* const new_port = alloc_port(port->port_parent,
+	rem_port* const new_port = alloc_port(port->port_parent,
 		(port->port_flags & PORT_no_oob) | PORT_async);
 	port->port_async = new_port;
 	new_port->port_dummy_packet_interval = port->port_dummy_packet_interval;
@@ -1466,15 +1466,15 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 
 	P_RESP* response = &packet->p_resp;
 
-	struct sockaddr_in port_address;
-	if (getsockname(port->port_handle, (struct sockaddr *) &port_address, &length) < 0)
+	SockAddr port_address;
+	if (port_address.getsockname(port->port_handle) < 0)
 	{
 		inet_error(false, port, "getsockname", isc_net_event_listen_err, INET_ERRNO);
 	}
-	memcpy(&address.sin_addr, &port_address.sin_addr, sizeof(address.sin_addr));
+	port_address.setPort(our_address.port());
 
-	response->p_resp_data.cstr_length = (ULONG) sizeof(address);
-	memcpy(response->p_resp_data.cstr_address, &address, sizeof(address));
+	response->p_resp_data.cstr_length = (ULONG) port_address.length();
+	memcpy(response->p_resp_data.cstr_address, port_address.ptr(), port_address.length());
 
 	return new_port;
 }
