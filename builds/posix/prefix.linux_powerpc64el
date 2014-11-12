@@ -25,3 +25,11 @@
 
 PROD_FLAGS=-O3 -DLINUX -DPPC64EL -pipe -p -MMD -fPIC -fsigned-char -fmessage-length=0
 DEV_FLAGS=-ggdb -DLINUX -DPPC64EL -pipe -p -MMD -fPIC -Wall -fsigned-char -fmessage-length=0 -Wno-non-virtual-dtor
+
+OS_ServerFiles=inet_server.cpp
+
+EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
+CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr fbtracemgr
+
+Physical_IO_Module=os/posix/unix.cpp
+
