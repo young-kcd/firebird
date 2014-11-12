@@ -435,9 +435,6 @@ static SocketsArray* forkSockets;
 
 #endif
 
-static in_addr get_bind_address();
-static int get_host_address(const char* name, in_addr* const host_addr_arr, const int arr_size);
-
 static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
@@ -1766,66 +1763,6 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 }
 #endif
 
-namespace
-{
-	in_addr config_address;
-
-	class GetAddress
-	{
-	public:
-		static void init()
-		{
-			const char* config_option = Config::getRemoteBindAddress();
-			if (config_option)
-			{
-				int n = get_host_address(config_option, &config_address, 1);
-				if (n != 1)
-				{
-					// In case when config option is given with error,
-					// bind to loopback interface only
-					config_address.s_addr = htonl(INADDR_LOOPBACK);
-					// log warning
-					if (n == 0)
-					{
-						gds__log("Wrong RemoteBindAddress '%s' in firebird.conf - "
-								 "binding to loopback interface", config_option);
-					}
-					else
-					{
-						gds__log("Host '%s' resolves to multiple interfaces - "
-								 "binding to loopback interface", config_option);
-					}
-				}
-			}
-			else	// use default to listen all
-			{
-				config_address.s_addr = INADDR_ANY;
-			}
-		}
-
-		static void cleanup() { }
-	};
-}
-
-static in_addr get_bind_address()
-{
-/**************************************
- *
- *	g e t _ b i n d _ a d d r e s s
- *
- **************************************
- *
- * Functional description
- *	Return local address to bind sockets to.
- *
- **************************************/
-	static InitMutex<GetAddress> instance(FB_FUNCTION);
-
-	instance.init();
-
-	return config_address;
-}
-
 
 #ifdef WIN_NT
 // Windows does not have an inet_aton function.
@@ -1835,67 +1772,6 @@ bool inet_aton(const char* name, in_addr* address)
 	return address->s_addr != INADDR_NONE;
 }
 #endif
-
-
-static int get_host_address(const char* name,
-							in_addr* const host_addr_arr,
-							const int arr_size)
-{
-/**************************************
- *
- *	g e t _ h o s t _ a d d r e s s
- *
- **************************************
- *
- * Functional description
- *  Fills array with addresses up to arr_size (must be at least 1).
- *	Returns the required number of elements in array to be able to store
- *	all host addresses (may be less, equal or greater than arr_size).
- *
- **************************************/
-	if (inet_aton(name, &host_addr_arr[0]))
-	{
-		return 1;
-	}
-
-	const hostent* host = gethostbyname(name);
-
-	// On Windows NT/9x, gethostbyname can only accomodate
-	// 1 call at a time.  In this case it returns the error
-	// WSAEINPROGRESS. On UNIX systems, this call may not succeed
-	// because of a temporary error.  In this case, it returns
-	// h_error set to TRY_AGAIN.  When these errors occur,
-	// retry the operation a few times.
-	// NOTE: This still does not guarantee success, but helps.
-
-	if (!host)
-	{
-		for (int retry = 0; H_ERRNO == INET_RETRY_ERRNO && retry < INET_RETRY_CALL; retry++)
-		{
-			if ( (host = gethostbyname(name)) )
-				break;
-		}
-	}
-
-	// We can't work with other types for now. Maybe AF_NETBIOS for MS, too?
-	if (host && host->h_addrtype == AF_INET)
-	{
-		const in_addr* const* list = reinterpret_cast<in_addr**>(host->h_addr_list);
-		int i = 0;
-		while (list[i] != NULL)
-		{
-			if (i < arr_size)
-			{
-				host_addr_arr[i] = *list[i];
-			}
-			++i;
-		}
-		return i;
-	}
-
-	// give up
-	return 0;
-}
 
 
 static rem_port* receive( rem_port* main_port, PACKET * packet)
