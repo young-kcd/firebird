@@ -220,11 +220,16 @@ Firebird 3.0
 
   Added as reserved words:
 
+    BOOLEAN
     DETERMINISTIC
+    FALSE
     OVER
+    RDB$RECORD_VERSION
     RETURN
     SCROLL
     SQLSTATE
+    TRUE
+    UNKNOWN
 
   Added as non-reserved words:
 
@@ -241,15 +246,21 @@ Firebird 3.0
     ENGINE *
     FIRST_VALUE
     IDENTITY
+    INCREMENT
     LAST_VALUE
     LAG
     LEAD
+    LINGER
     NAME
     NTH_VALUE
     PACKAGE *
     PARTITION
+    PLUGIN
     PRIOR
     RANK
     RELATIVE
     ROW_NUMBER
+    SERVERWIDE
+    TAGS
+    TRUSTED
     USAGE
