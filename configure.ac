@@ -261,7 +261,16 @@ dnl CPU_TYPE=ppc64
     STD_ICU=true
     ;;
 
-  
+  powerpc64-*-linux*)                           
+    MAKEFILE_PREFIX=linux_powerpc64
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    STD_EDITLINE=true
+    STD_ICU=true
+    ;;
 
   sparc*-*-linux* | sparc*-*-gnu* | sparc*-*-k*bsd*-gnu)
     MAKEFILE_PREFIX=linux_sparc32
