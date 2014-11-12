@@ -367,6 +367,12 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		raise(status, tdbb, sWhereError, &sql);
 	}
 
+	for (int i = 0; i != m_out_xsqlda->sqld; ++i)
+	{
+		if (m_out_xsqlda->sqlvar[i].sqltype == SQL_TEXT)
+			m_out_xsqlda->sqlvar[i].sqltype = SQL_VARYING;
+	}
+
 	parseSQLDA(m_out_xsqlda, m_out_buffer, m_outDescs);
 	m_outputs = m_out_xsqlda ? m_out_xsqlda->sqld : 0;
 

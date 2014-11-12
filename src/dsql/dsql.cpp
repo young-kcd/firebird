@@ -3251,28 +3251,35 @@ static UCHAR* var_info(dsql_msg* message,
 				break;
 
 			case dtype_text:
-				if (input_message && (param->par_desc.dsc_flags & DSC_null))
+			case dtype_varying:
+				if (input_message &&
+					(param->par_desc.dsc_dtype == dtype_text || param->par_is_text) &&
+					(param->par_desc.dsc_flags & DSC_null))
 				{
 					sql_type = SQL_NULL;
 					sql_len = 0;
+					sql_sub_type = 0;
 				}
-				else
+				else if (param->par_desc.dsc_dtype == dtype_text || param->par_is_text)
 				{
 					sql_type = SQL_TEXT;
 					sql_sub_type = param->par_desc.dsc_sub_type;
+					if (param->par_desc.dsc_dtype == dtype_varying)
+						sql_len -= sizeof(USHORT);
 				}
+				else
+				{
+					sql_type = SQL_VARYING;
+					sql_len -= sizeof(USHORT);
+					sql_sub_type = param->par_desc.dsc_sub_type;
+				}
+
 				break;
 
 			case dtype_blob:
 				sql_type = SQL_BLOB;
 				sql_sub_type = param->par_desc.dsc_sub_type;
 				sql_scale = param->par_desc.dsc_scale;
-				break;
-
-			case dtype_varying:
-				sql_type = SQL_VARYING;
-				sql_len -= sizeof(USHORT);
-				sql_sub_type = param->par_desc.dsc_sub_type;
 				break;
 
 			case dtype_short:

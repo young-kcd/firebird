@@ -770,6 +770,16 @@ void GEN_port(CompiledStatement* statement, dsql_msg* message)
 				parameter->par_desc.setTextType(toCharSet);
 		}
 
+		if (parameter->par_desc.dsc_dtype == dtype_text && parameter->par_index != 0)
+		{
+			// We should convert par_desc from text to varying so the user can receive it with
+			// correct length when requesting it as varying. See CORE-2606.
+			// But we flag it to describe as text.
+			parameter->par_is_text = true;
+			parameter->par_desc.dsc_dtype = dtype_varying;
+			parameter->par_desc.dsc_length += sizeof(USHORT);
+		}
+
 		// For older clients - generate an error should they try and
 		// access data types which did not exist in the older dialect
 		if (statement->req_client_dialect <= SQL_DIALECT_V5)

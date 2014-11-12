@@ -790,6 +790,7 @@ public:
 	DSC			par_user_desc;		// SQLDA data type
 	USHORT		par_parameter;		// BLR parameter number
 	USHORT		par_index;			// Index into SQLDA, if appropriate
+	bool		par_is_text;		// Parameter should be dtype_text (SQL_TEXT) externaly
 };
 
 /*! \var unsigned DSQL_debug
