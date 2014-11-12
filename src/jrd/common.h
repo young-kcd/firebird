@@ -196,10 +196,6 @@
 #define IMPLEMENTATION  isc_info_db_impl_linux_arm64	/* 84  */
 #endif /* ARM64 */
 
-#ifdef ARM64
-#define IMPLEMENTATION  isc_info_db_impl_linux_arm64	/* 84  */
-#endif /* ARM64 */
-
 #ifdef PPC64EL
 #define IMPLEMENTATION  isc_info_db_impl_linux_ppc64el	/* 85  */
 #endif /* PPC64EL */
