@@ -1,3 +1,15 @@
+ 2014-11-12 07:57  mapopa 
+   M src/jrd/inf_pub.h
+add isc_info_db_impl_linux_ppc64el in inf_pub.h
+
+ 2014-11-12 06:22  mapopa 
+   A builds/posix/prefix.linux_powerpc64el
+add prefix file linux_powerpc64el
+
+ 2014-11-12 06:17  mapopa 
+   M configure.in
+add powerpc64le configure check
+
  2014-11-09 02:03  asfernandes 
    M src/jrd/SysFunction.cpp
 Backported fix for CORE-4599 - REPLACE function works incorrectly with multibyte charsets.
