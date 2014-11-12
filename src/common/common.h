@@ -196,7 +196,9 @@
 #define FB_CPU CpuPowerPc64el
 #endif /* PPC64EL */
 
-
+#ifdef PPC64
+#define FB_CPU CpuPowerPc64
+#endif /* PPC64 */
 
 #endif /* LINUX */
 
@@ -990,4 +992,3 @@ inline FB_SIZE_T fb_strlen(const char* str)
 
 
 #endif /* COMMON_COMMON_H */
-
