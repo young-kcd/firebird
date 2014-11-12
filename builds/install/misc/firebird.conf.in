@@ -638,6 +638,16 @@
 #TcpNoNagle = 1
 
 #
+# Allows setting of IPV6_V6ONLY socket option. If enabled, IPv6 sockets
+# allow only IPv6 communication and a separate socket must be used for
+# IPv4 and IPv6. Default is false on POSIX systems, true on Windows.
+# On Windows, "false" value can only be used since Windows Vista.
+#
+# Type: boolean
+#
+#IPv6V6Only = 0
+
+#
 # Allows incoming connections to be bound to the IP address of a
 # specific network card. It enables rejection of incoming connections
 # through any other network interface except this one. By default,

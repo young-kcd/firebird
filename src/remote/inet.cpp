@@ -864,6 +864,14 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
  **************************************/
 
 	int n;
+	int ipv6_v6only = port->getPortConfig()->getIPv6V6Only() ? 1 : 0;
+
+	n = setsockopt(port->port_handle, IPPROTO_IPV6, IPV6_V6ONLY,
+				   (SCHAR*) &ipv6_v6only, sizeof(ipv6_v6only));
+	if (n == -1)
+	{
+		gds__log("setsockopt: error setting IPV6_V6ONLY to %d", ipv6_v6only);
+	}
 
 	if (flag & SRVR_multi_client)
 	{

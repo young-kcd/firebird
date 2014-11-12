@@ -135,6 +135,7 @@ public:
 		KEY_PLUG_WIRE_CRYPT,
 		KEY_PLUG_KEY_HOLDER,
 		KEY_REMOTE_ACCESS,
+		KEY_IPV6_V6ONLY,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -227,6 +228,9 @@ public:
 
 	// Disable Nagle algorithm
 	bool getTcpNoNagle() const;
+
+	// Let IPv6 socket accept only IPv6 packets
+	bool getIPv6V6Only() const;
 
 	// Default database cache size
 	int getDefaultDbCachePages() const;

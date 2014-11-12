@@ -197,7 +197,8 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
 	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
 	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
-	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true}
+	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true},
+	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false}
 };
 
 /******************************************************************************
@@ -436,6 +437,11 @@ int Config::getTcpRemoteBufferSize()
 bool Config::getTcpNoNagle() const
 {
 	return get<bool>(KEY_TCP_NO_NAGLE);
+}
+
+bool Config::getIPv6V6Only() const
+{
+	return get<bool>(KEY_IPV6_V6ONLY);
 }
 
 int Config::getDefaultDbCachePages() const
