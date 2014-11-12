@@ -451,6 +451,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									RefPtr<Config>*,
 									const PathName*);
 static bool_t	inet_write(XDR*); //, int);
+static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai);
 
 #ifdef DEBUG
 static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
@@ -727,6 +728,11 @@ rem_port* INET_connect(const TEXT* name,
 	string host;
 	string protocol;
 
+	if ((!name || !name[0]) && !packet)
+	{
+		name = port->getPortConfig()->getRemoteBindAddress();
+	}
+
 	if (name)
 	{
 		host = name;
@@ -750,7 +756,10 @@ rem_port* INET_connect(const TEXT* name,
 		port->port_connection = REMOTE_make_string(host.c_str());
 	}
 	else {
-		host = port->port_host->str_data;
+		if (packet)
+		{
+			host = port->port_host->str_data;
+		}
 	}
 
 	if (protocol.isEmpty())
@@ -764,165 +773,104 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 
-	// Set up Inter-Net socket address
+	// Prepare hints
+	struct addrinfo gai_hints;
+	memset(&gai_hints, 0, sizeof(gai_hints));
+	gai_hints.ai_family = (packet ? AF_UNSPEC : AF_INET6);
+	gai_hints.ai_socktype = SOCK_STREAM;
+	gai_hints.ai_protocol = SOL_TCP;
+	gai_hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | (packet ? 0 : AI_PASSIVE);
 
-	struct sockaddr_in address;
-	memset(&address, 0, sizeof(address));
+	const char* host_str = (host.hasData() ? host.c_str() : NULL);
+	struct addrinfo* gai_result;
+	int n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
+	if (n && (protocol == FB_SERVICE_NAME))
+	{
+		// Try hard-wired translation of "gds_db" to "3050"
+		protocol.printf("%hu", FB_SERVICE_PORT);
+		n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
+	}
+	if (n)
+	{
+		gds__log("INET/INET_connect: getaddrinfo(%s,%s) failed: %s",
+				host.c_str(), protocol.c_str(), gai_strerror(n));
+		inet_gen_error(true, port, Arg::Gds(isc_net_lookup_err) << Arg::Gds(isc_host_unknown));
+	}
 
-	// U N I X style sockets
+	for (const addrinfo* pai = gai_result; pai; pai = pai->ai_next)
+	{
+		// Allocate a port block and initialize a socket for communications
+		port->port_handle = socket(pai->ai_family, pai->ai_socktype, pai->ai_protocol);
+		if (port->port_handle == INVALID_SOCKET)
+		{
+			gds__log("socket: error creating socket (family %d, socktype %d, protocol %d",
+					pai->ai_family, pai->ai_socktype, pai->ai_protocol);
+			continue;
+		}
 
-	address.sin_family = AF_INET;
+		if (packet)
+		{
+			// client
+			int optval = 1;
+			n = setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
+			if (n == -1)
+			{
+				gds__log("setsockopt: error setting SO_KEEPALIVE");
+			}
 
-	// define maximum numbers of addresses for a host that we can handle
-	const int MAX_HOST_ADDRESS_NUMBER = 8;
+			if (!setNoNagleOption(port))
+			{
+				gds__log("setsockopt: error setting TCP_NODELAY");
+				goto err_close;
+			}
 
-	in_addr host_addr;
-	in_addr host_addr_arr[MAX_HOST_ADDRESS_NUMBER];
-	int hostAddressNumber = 0;
+			n = connect(port->port_handle, pai->ai_addr, pai->ai_addrlen);
+			if ((n != -1) && send_full(port, packet))
+			{
+				goto exit_free;
+			}
+		} else {
+			// server
+			INET_server_socket(port, flag, pai);
+			goto exit_free;
+		}
 
+err_close:
+		SOCLOSE(port->port_handle);
+	}
+
+	// all attempts failed
 	if (packet)
 	{
-		// client connection
-		hostAddressNumber = get_host_address(host.c_str(), host_addr_arr, MAX_HOST_ADDRESS_NUMBER);
-		if (hostAddressNumber > MAX_HOST_ADDRESS_NUMBER)
-		{
-			hostAddressNumber = MAX_HOST_ADDRESS_NUMBER;
-		}
-
-		if (! hostAddressNumber)
-		{
-			gds__log("INET/INET_connect: gethostbyname (%s) failed, error code = %d",
-					 host.c_str(), H_ERRNO);
-			inet_gen_error(true, port, Arg::Gds(isc_net_lookup_err) << Arg::Gds(isc_host_unknown));
-		}
-		host_addr = host_addr_arr[0];
-	}
-	else
-	{
-		// server connection
-		host_addr = get_bind_address();
+		inet_error(true, port, "connect", isc_net_connect_err, 0);
+	} else {
+		inet_error(true, port, "listen", isc_net_connect_listen_err, 0);
 	}
 
-	const struct servent* service = getservbyname(protocol.c_str(), "tcp");
-#ifdef WIN_NT
-	// On Windows NT/9x, getservbyname can only accomodate
-	// 1 call at a time.  In this case it returns the error
-	// WSAEINPROGRESS.
-	// If this happens, retry the operation a few times.
-	// NOTE: This still does not guarantee success, but helps.
-	if (!service)
-	{
-		for (int retry = 0; H_ERRNO == INET_RETRY_ERRNO && retry < INET_RETRY_CALL; retry++)
-		{
-			if ( (service = getservbyname(protocol.c_str(), "tcp")) )
-				break;
-		}
-	}
-#endif // WIN_NT
+exit_free:
+	freeaddrinfo(gai_result);
+	return port;
+}
 
-	// Make sure getservbyname returns the protocol we searched for.
-	// See also bug CORE-3819.
+static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
+{
+/**************************************
+ *
+ *	I N E T _ s e r v e r _ s o c k e t
+ *
+ **************************************
+ *
+ * Functional description
+ *	Final part of server (listening) socket setup. Sets socket options,
+ *	binds the socket and calls listen().
+ *
+ **************************************/
 
-	if (service && fb_utils::stricmp(service->s_name, protocol.c_str()))
-		service = NULL;
-
-	// Modification by luz (slightly modified by FSG)
-	// instead of failing here, try applying hard-wired
-	// translation of "gds_db" into "3050"
-	// This way, a connection to a remote FB server
-	// works even from clients with missing "gds_db"
-	// entry in "services" file, which is important
-	// for zero-installation clients.
-
-	if (!service)
-	{
-		if (protocol == FB_SERVICE_NAME)
-		{
-			// apply hardwired translation
-			address.sin_port = htons(FB_SERVICE_PORT);
-		}
-		// modification by FSG 23.MAR.2001
-		else
-		{
-			// modification by FSG 23.MAR.2001
-			// The user has supplied something as protocol
-			// let's see whether this is a port number
-			// instead of a service name
-			address.sin_port = htons(atoi(protocol.c_str()));
-		}
-
-		if (address.sin_port == 0)
-		{
-			// end of modification by FSG
-			// this is the original code
-			gds__log("INET/INET_connect: getservbyname failed, error code = %d", H_ERRNO);
-			inet_gen_error(false, port, Arg::Gds(isc_net_lookup_err) <<
-						   Arg::Gds(isc_service_unknown) << Arg::Str(protocol) << Arg::Str("tcp"));
-		}						// else / not hardwired gds_db translation
-	}
-	else
-	{
-		// if we have got a service-struct, get port number from there
-		// (in case of hardwired gds_db to 3050 translation, address.sin_port was
-		// already set above
-		address.sin_port = service->s_port;
-	}							// else (service found)
-
-	// end of modifications by luz
-
-	// Allocate a port block and initialize a socket for communications
-
-	port->port_handle = socket(AF_INET, SOCK_STREAM, 0);
-
-	if (port->port_handle == INVALID_SOCKET)
-	{
-		inet_error(true, port, "socket", isc_net_connect_err, INET_ERRNO);
-	}
-
-	// If we're a host, just make the connection
-
-    int n;
-
-	if (packet)
-	{
-		int optval = 1;
-		n = setsockopt(port->port_handle, SOL_SOCKET, SO_KEEPALIVE, (SCHAR*) &optval, sizeof(optval));
-
-		if (n == -1)
-		{
-			gds__log("setsockopt: error setting SO_KEEPALIVE");
-		}
-
-		if (! setNoNagleOption(port))
-		{
-			inet_error(true, port, "setsockopt TCP_NODELAY", isc_net_connect_err, INET_ERRNO);
-		}
-
-		int inetErrNo = 0;
-		for (int i = 0; i < hostAddressNumber; i++)
-		{
-			address.sin_addr = host_addr_arr[i];
-
-			// If host has two addresses and the first one failed,
-			// but the second one succeeded - no need to worry
-
-			n = connect(port->port_handle, (struct sockaddr*) &address, sizeof(address));
-			inetErrNo = INET_ERRNO;
-
-			if (n != -1 && send_full(port, packet))
-				return port;
-		}
-		inet_error(true, port, "connect", isc_net_connect_err, inetErrNo);
-	}
-
-	// We're a server, so wait for a host to show up
-
-	memcpy(&address.sin_addr, &host_addr, sizeof(address.sin_addr));
+	int n;
 
 	if (flag & SRVR_multi_client)
 	{
 		struct linger lingerInfo;
-
 		lingerInfo.l_onoff = 0;
 		lingerInfo.l_linger = 0;
 
@@ -964,21 +912,15 @@ rem_port* INET_connect(const TEXT* name,
 		}
 	}
 
-	n = bind(port->port_handle, (struct sockaddr*) &address, sizeof(address));
-
-	if (n == -1)
-	{
-		// On Linux platform, when the server dies the system holds a port
-		// for some time.
-
-		for (int retry = 0; INET_ERRNO == INET_ADDR_IN_USE && retry < INET_RETRY_CALL; retry++)
-		{
+	// On Linux platform, when the server dies the system holds a port
+	// for some time (we don't set SO_REUSEADDR for standalone server).
+	int retry = -1;
+	do {
+		if (++retry)
 			sleep(10);
-			n = bind(port->port_handle, (struct sockaddr *) &address, sizeof(address));
-			if (n == 0)
-				break;
-		}
+		n = bind(port->port_handle, pai->ai_addr, pai->ai_addrlen);
 	}
+	while (n == -1 && INET_ERRNO == INET_ADDR_IN_USE && retry < INET_RETRY_CALL);
 
 	if (n == -1)
 	{
@@ -1001,8 +943,7 @@ rem_port* INET_connect(const TEXT* name,
 		port->port_dummy_packet_interval = 0;
 		port->port_dummy_timeout = 0;
 		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
-
-		return port;
+		return;
 	}
 
 	while (true)
@@ -1024,7 +965,7 @@ rem_port* INET_connect(const TEXT* name,
 			port->port_handle = s;
 			port->port_server_flags |= SRVR_server;
 			port->port_flags |= PORT_server;
-			return port;
+			return;
 		}
 
 #ifdef WIN_NT
