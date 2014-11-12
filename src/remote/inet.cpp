@@ -1006,8 +1006,7 @@ rem_port* INET_connect(const TEXT* name,
 
 	while (true)
 	{
-		socklen_t l = sizeof(address);
-		SOCKET s = accept(port->port_handle, (struct sockaddr*) &address, &l);
+		SOCKET s = accept(port->port_handle, NULL, NULL);
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET)
 		{
@@ -1384,7 +1383,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 			}
 		}
 
-		const SOCKET n = accept(port->port_channel, (struct sockaddr*) &address, &l);
+		const SOCKET n = accept(port->port_channel, NULL, NULL);
 		inetErrNo = INET_ERRNO;
 
 		if (n == INVALID_SOCKET)
@@ -2097,13 +2096,11 @@ static rem_port* select_accept( rem_port* main_port)
  *	Accept a new connection request.
  *
  **************************************/
-	struct sockaddr_in address;
 
 	rem_port* const port = alloc_port(main_port);
-	socklen_t l = sizeof(address);
 	inet_ports->registerPort(port);
 
-	port->port_handle = accept(main_port->port_handle, (struct sockaddr*) &address, &l);
+	port->port_handle = accept(main_port->port_handle, NULL, NULL);
 	if (port->port_handle == INVALID_SOCKET)
 	{
 		inet_error(true, port, "accept", isc_net_connect_err, INET_ERRNO);
