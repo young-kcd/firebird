@@ -192,9 +192,19 @@
 #define RISC_ALIGNMENT
 #endif /* alpha */
 
-//#ifdef ARM64
-//#define IMPLEMENTATION  isc_info_db_impl_linux_arm64	/* 84  */
-//#endif /* ARM64 */
+#ifdef ARM64
+#define IMPLEMENTATION  isc_info_db_impl_linux_arm64	/* 84  */
+#endif /* ARM64 */
+
+#ifdef ARM64
+#define IMPLEMENTATION  isc_info_db_impl_linux_arm64	/* 84  */
+#endif /* ARM64 */
+
+#ifdef PPC64EL
+#define IMPLEMENTATION  isc_info_db_impl_linux_ppc64el	/* 85  */
+#endif /* PPC64EL */
+
+
 
 #endif /* LINUX */
 
@@ -325,7 +335,7 @@
 */
 
 /* Update for Solaris 10. The problem still exists pre Solaris 10,
-however if you are using A version of Solaris 10 after 11/06 the 
+however if you are using A version of Solaris 10 after 11/06 the
 problem with file descriptors has been solved and this define and
 the following function can now be commented out.
 If you are using Solaris 10 from 03/05 - 11/06 you need to patch
@@ -952,4 +962,3 @@ static const TEXT* const FB_LONG_MONTHS_UPPER[] =
 };
 
 #endif /* JRD_COMMON_H */
-

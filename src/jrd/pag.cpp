@@ -164,9 +164,11 @@ static const int CLASS_LINUX_SHEB = 39;		// LINUX/SH (big-endian)
 static const int CLASS_LINUX_HPPA = 40;		// LINUX/HPPA
 static const int CLASS_LINUX_ALPHA = 41;	// LINUX/ALPHA
 static const int CLASS_LINUX_ARM64 = 42;	// LINUX/ARM64
+static const int CLASS_LINUX_PPC64EL = 43;	// LINUX/PowerPc64EL
+
 
 static const int CLASS_MAX10 = CLASS_LINUX_AMD64;	// This should not be changed, no new ports with ODS10
-static const int CLASS_MAX = CLASS_LINUX_ARM64;
+static const int CLASS_MAX = CLASS_LINUX_PPC64EL;
 
 // ARCHITECTURE COMPATIBILITY CLASSES
 
@@ -266,7 +268,9 @@ static const ArchitectureType archMatrix[CLASS_MAX + 1] =
 	archBigEndian,    // CLASS_LINUX_SHEB
 	archBigEndian,    // CLASS_LINUX_HPPA
 	archLittleEndian, // CLASS_LINUX_ALPHA
-	archLittleEndian  // CLASS_LINUX_ARM64
+	archLittleEndian, // CLASS_LINUX_ARM64
+	archLittleEndian  // CLASS_LINUX_PPC64EL
+
 };
 
 #ifdef __sun
@@ -330,8 +334,10 @@ const SSHORT CLASS		= CLASS_LINUX_SHEB;
 const SSHORT CLASS		= CLASS_LINUX_HPPA;
 #elif defined(ALPHA)
 const SSHORT CLASS		= CLASS_LINUX_ALPHA;
-//#elif defined(ARM64)
-//const SSHORT CLASS		= CLASS_LINUX_ARM64;
+#elif defined(ARM64)
+const SSHORT CLASS		= CLASS_LINUX_ARM64;
+#elif defined(PPC64EL)
+const SSHORT CLASS		= CLASS_LINUX_PPC64EL;
 #else
 #error no support on other hardware for Linux
 #endif
