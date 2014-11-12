@@ -1,3 +1,23 @@
+ 2014-11-11 16:52  mapopa 
+   A builds/posix/prefix.linux_powerpc64el
+add prefix file linux_powerpc64el 
+
+ 2014-11-11 16:44  mapopa 
+   M configure.ac
+add powerpc64le configure check , aarm64 is now packaged already in debian/ubuntu/fedora
+
+ 2014-11-11 16:17  mapopa 
+   M src/common/common.h
+add PowerPc64el
+
+ 2014-11-11 16:05  mapopa 
+   M src/common/classes/DbImplementation.cpp
+add PowerPC64el implementation 
+
+ 2014-11-11 15:08  mapopa 
+   M src/common/classes/DbImplementation.cpp
+Spell fix in comment
+
  2014-11-10 14:45  asfernandes 
    M examples/dbcrypt/CryptKeyHolder.cpp
    M examples/dbcrypt/DbCrypt.cpp
