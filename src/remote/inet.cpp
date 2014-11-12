@@ -99,6 +99,7 @@
 const int INET_RETRY_CALL = 5;
 
 #include "../remote/remote.h"
+#include "../remote/SockAddr.h"
 #include "../jrd/ibase.h"
 #include "../remote/inet_proto.h"
 #include "../remote/proto_proto.h"
@@ -1213,20 +1214,19 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	port->port_peer_name = host_name;
 	port->port_protocol_id = "TCPv4";
 
-	struct sockaddr_in address;
-	socklen_t l = sizeof(address);
-
-	memset(&address, 0, sizeof(address));
-	int status = getpeername(port->port_handle, (struct sockaddr *) &address, &l);
-	if (status == 0)
+	SockAddr address;
+	if (address.getpeername(port->port_handle) == 0)
 	{
-		const UCHAR* ip = (UCHAR*) &address.sin_addr;
-		port->port_address.printf(
-			"%d.%d.%d.%d",
-			static_cast<int>(ip[0]),
-			static_cast<int>(ip[1]),
-			static_cast<int>(ip[2]),
-			static_cast<int>(ip[3]) );
+		address.unmapV4(); // convert mapped IPv4 to regular IPv4
+		char host[40];      // 32 digits, 7 colons, 1 trailing null byte
+		int R = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
+				NULL, 0, NI_NUMERICHOST);
+		if (!R)
+		{
+			port->port_address = host;
+		}
+		if (address.family() == AF_INET6)
+			port->port_protocol_id = "TCPv6";
 	}
 
 	return true;
@@ -1551,15 +1551,12 @@ static bool check_host(rem_port* port)
  *	Check the host on the other end of the socket to see if it's localhost
  *
  **************************************/
-	struct sockaddr_in address;
 
-	socklen_t length = sizeof(address);
-
-	if (getpeername(port->port_handle, (struct sockaddr*) &address, &length) == -1)
+	SockAddr address;
+	if (address.getpeername(port->port_handle) < 0)
 		return false;
 
-	// If source address is in the loopback net - trust it
-	return (ntohl(address.sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET;
+	return address.isLocalhost();
 }
 #endif // WIN_NT
 
