@@ -116,7 +116,7 @@ const UCHAR backwardTable[FB_NELEM(hardware) * FB_NELEM(operatingSystem)] =
 {
 //				Intel	AMD		Sparc	PPC		PPC64	MIPSEL	MIPS	ARM		IA64	s390	s390x	SH		SHEB	HPPA	Alpha	ARM64	PowerPC64el
 /* Windows */	50,		68,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
-/* Linux */		60,		66,		65,		69,		0,		71,		72,		75, 	76,		79, 	78,		80,		81,		82,		83,		84,		85,
+/* Linux */		60,		66,		65,		69,		86,		71,		72,		75, 	76,		79, 	78,		80,		81,		82,		83,		84,		85,
 /* Darwin */	70,		73,		0,		63,		77,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
 /* Solaris */	0,		0,		30,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,
 /* HPUX */		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		0,		31,		0,		0,		0,
