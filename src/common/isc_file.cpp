@@ -407,7 +407,19 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 	// Scan file name looking for separator character
 
 	node_name.erase();
-	const size p = file_name.find(INET_FLAG);
+	size p = npos;
+	if (file_name[0] == '[')
+	{
+		// [host]:file or [host]/port:file
+		p = file_name.find(']');
+		if (p == npos || p == file_name.length() - 1)
+			return false;
+		p = file_name.find(INET_FLAG, p + 1);
+	}
+	else
+	{
+		p = file_name.find(INET_FLAG);
+	}
 	if (p == npos || p == 0 || p == file_name.length() - 1)
 		return false;
 
