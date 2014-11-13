@@ -3,9 +3,10 @@
 <HEAD>
 	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
 	<TITLE></TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.4.1  (Unix)">
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.1.1  (Unix)">
 	<META NAME="CREATED" CONTENT="20130417;16154700">
-	<META NAME="CHANGED" CONTENT="20130621;20102600">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
+	<META NAME="CHANGED" CONTENT="20141113;13254700">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { margin: 0.79in }
@@ -91,18 +92,22 @@ set of plugin types:</FONT></P>
 special Firebird interfaces (see README.interfaces about interfaces
 in Firebird). All plugin-specific interfaces are reference counted,
 i.e. have explicitly controlled lifetime. Interfaces are declared in
-Plugin.h include file. There is a simple example of writing plugin
-module &ndash; DbCrypt_example. It does not perform any actual
+Interfaces.h include file. There is a simple example of writing
+plugin module &ndash; DbCrypt_example. It does not perform any actual
 encryption &ndash; just a sample of how to write plugin. Complete
 instruction of how to write plugins is out of this document's scope.
 Here is provided a short list of plugin features:</FONT></P>
 <UL>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>plugin may be written
-	using any language, supporting pure virtual interfaces (you will
-	need to rewrite interfaces declarations for your language if they
-	are missing);</FONT></P>
+	using any language, supporting function pointers in a
+	structure/record (or at least arrays of function pointers);</FONT></P>
+	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>currently interfaces
+	description is available only for C++ language, at release time
+	plain-C and delphi/fpc descriptions will be present (you will need
+	to write your interfaces declarations generator for your language if
+	you need something else);</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>like with UDFs you
-	are free to add any reasonable code yo your plugin, but pay
+	are free to add any reasonable code to your plugin, but pay
 	attention to word &ldquo;reasonable&rdquo; - asking a question from
 	plugin at server's console is hardly good idea;</FONT></P>
 	<LI><P STYLE="margin-bottom: 0in"><FONT SIZE=4>it's OK to use
@@ -272,8 +277,10 @@ connect to pre-FB3 servers. (Yes &ndash; it still transfers almost
 plain passwords over the wire. Compatibility...) On server it works
 with security database from FB 2.5, and should be avoided except
 cases when you understand well what are you doing. To use Legacy_Auth
-on server you should also disable network traffic encryption in
+on server you should set lower level of network traffic encryption in
 firebird.conf:</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>WireCrypt = Enabled</I></FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT SIZE=4>or in the worst case:</FONT></P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4><I>WireCrypt = Disabled</I></FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>

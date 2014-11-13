@@ -3,11 +3,12 @@
 <HEAD>
 	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
 	<TITLE></TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice 4.0.1  (Unix)">
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.1.1  (Unix)">
 	<META NAME="AUTHOR" CONTENT="alex ">
 	<META NAME="CREATED" CONTENT="20130531;10003100">
 	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
-	<META NAME="CHANGED" CONTENT="20131106;14262300">
+	<META NAME="CHANGED" CONTENT="20141113;13173600">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { size: 8.5in 11in; margin: 0.79in }
@@ -47,11 +48,11 @@ time by BLR (binary language representation) of that request. But SQL
 operator does not contain description of message format and therefore
 decision was taken &ndash; surround each message with short BLR
 sequence (hard to call that program) describing it's format. For a
-reason they had decided to follow that rule too exactly &ndash; and
-each fetch of data from server now required sending BLR for it, i.e.
-formatting BLR was sent not only at SQL compile time. The reason for
-such strange at the first glance solution was presence of one more
-layer on top of that messages based API - familiar to you SQLDA
+reason they had decided to follow that rule too exactly &ndash; it
+was possible to send modified BLR for each fetch of data from server,
+i.e. formatting BLR was sent not only at SQL compile time. The reason
+for such strange at the first glance solution was presence of one
+more layer on top of that messages based API - familiar to you SQLDA
 (XSQLDA). Rather obvious that manually accompanying each SQL
 statement with BLR is not efficient programming style, therefore
 SQLDA was invented. But it encapsulates in same object both location
@@ -121,16 +122,17 @@ IStatus it's better to have simpler way to destroy it, i.e. dispose()
 function.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
-<P STYLE="margin-bottom: 0in"><FONT COLOR="#ff0000"><FONT SIZE=4>Careful!</FONT></FONT><FONT SIZE=4>
-An ability to upgrade interface version places one important limit on
-implementation of interfaces: it should not contain virtual functions
-(including virtual destructor) except those defined in interface
-definition. This is because interface upgrade process modifies table
-of virtual functions, and for successful upgrade, number of functions
-in interface implementation should exactly match one in its
-definition. Pointer to functions, missing in interface definition but
-added in its implementation, may be </FONT><FONT COLOR="#ff0000"><FONT SIZE=4>overwritten</FONT></FONT><FONT SIZE=4>
-with a pointer to function used to upgrade interface.</FONT></P>
+<P STYLE="margin-bottom: 0in"><FONT COLOR="#ff0000"><FONT SIZE=4>Careful!</FONT></FONT>
+<FONT SIZE=4>An ability to upgrade interface version places one
+important limit on implementation of interfaces: it should not
+contain virtual functions (including virtual destructor) except those
+defined in interface definition. This is because interface upgrade
+process modifies table of virtual functions, and for successful
+upgrade, number of functions in interface implementation should
+exactly match one in its definition. Pointer to functions, missing in
+interface definition but added in its implementation, may be
+</FONT><FONT COLOR="#ff0000"><FONT SIZE=4>overwritten</FONT></FONT>
+<FONT SIZE=4>with a pointer to function used to upgrade interface.</FONT></P>
 <P STYLE="margin-bottom: 0in"><BR>
 </P>
 <P STYLE="margin-bottom: 0in"><FONT SIZE=4>Discussing in details all

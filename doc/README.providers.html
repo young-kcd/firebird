@@ -3,9 +3,10 @@
 <HEAD>
 	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=iso-8859-1">
 	<TITLE></TITLE>
-	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.4.1  (Unix)">
+	<META NAME="GENERATOR" CONTENT="OpenOffice 4.1.1  (Unix)">
 	<META NAME="CREATED" CONTENT="0;0">
-	<META NAME="CHANGED" CONTENT="20130611;16182500">
+	<META NAME="CHANGEDBY" CONTENT="Alex Peshkoff">
+	<META NAME="CHANGED" CONTENT="20141113;13283500">
 	<STYLE TYPE="text/css">
 	<!--
 		@page { margin: 0.79in }
@@ -115,8 +116,9 @@ name or whatever else you choose). In this sample when database name
 used caching provider accepts such connection and invokes YValve once
 again with traditional database name </SPAN><I>RemoteHost:dbname</I><SPAN STYLE="font-style: normal">.
 But when user later performs any call to his database caching
-provider gets control on it before </SPAN><SPAN STYLE="font-style: normal"><B>Remote</B></SPAN><SPAN STYLE="font-style: normal">
-one and for locally cached table can avoid calls to remote server.</SPAN></FONT></P>
+provider gets control on it before </SPAN><SPAN STYLE="font-style: normal"><B>Remote</B></SPAN>
+<SPAN STYLE="font-style: normal">one and for locally cached table can
+avoid calls to remote server.</SPAN></FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
 <FONT SIZE=4>Using chaining one can implement a lot of other useful
 things like database replication without need in triggers - just
@@ -158,7 +160,8 @@ problem migrating to Firebird 3?</FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
 <FONT SIZE=4>A. Definitely no problems. Old API is supported for
 backward compatibility in Firebird 3 and will be supported in future
-versions as long as people need it.</FONT></P>
+versions as long as people need it. Moreover, since Firebird 3 one
+can access from XSQLDA API records longer than 64Kbytes.</FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
 <FONT SIZE=4>Q. And what about performance when using old API?</FONT></P>
 <P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
@@ -171,8 +174,7 @@ execute SQL operator and fetch data from it. But SQLDA and related to
 it data moves has never been the most fast place of functional API,
 it was one the reasons to have new API and logic between new and old
 API does not add much to that old overhead.</FONT></P>
-<P STYLE="text-indent: 0.39in; margin-bottom: 0in; font-style: normal">
-<BR>
+<P STYLE="text-indent: 0.39in; margin-bottom: 0in"><BR>
 </P>
 </BODY>
 </HTML>
