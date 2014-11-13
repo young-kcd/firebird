@@ -3800,11 +3800,16 @@ keyword_or_column
 	| SENSITIVE
 	| START
 	| SIMILAR				// added in FB 2.5
-	| OVER					// added in FB 3.0
-	| SCROLL
-	| RETURN
+	| KW_BOOLEAN			// added in FB 3.0
 	| DETERMINISTIC
+	| KW_FALSE
+	| OVER
+	| RETURN
+	| RDB_RECORD_VERSION
+	| SCROLL
 	| SQLSTATE
+	| KW_TRUE
+	| UNKNOWN
 	;
 
 col_opt
