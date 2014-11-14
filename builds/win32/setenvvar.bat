@@ -28,6 +28,10 @@ set FB_PROCESSOR_ARCHITECTURE=%PROCESSOR_ARCHITECTURE%
 
 :: To disable VS8/VS9/VS10 build, slightly alter the env var names in "if" conditions below
 
+if DEFINED VS120COMNTOOLS (
+@devenv /? >nul 2>nul
+@if errorlevel 9009 (call "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS120COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
+) else (
 if DEFINED VS100COMNTOOLS (
 @devenv /? >nul 2>nul
 @if errorlevel 9009 (call "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE%) else ( echo    The file: & @echo      "%VS100COMNTOOLS%\..\..\VC\vcvarsall.bat" %FB_PROCESSOR_ARCHITECTURE% & echo    has already been executed.)
@@ -45,6 +49,7 @@ if DEFINED VS71COMNTOOLS (
 @if errorlevel 9009 (call "%VS71COMNTOOLS%vsvars32.bat") else ( echo    The file: & echo      "%VS71COMNTOOLS%vsvars32.bat" & echo    has already been executed.)
 ) else (
 @goto :HELP
+)
 )
 )
 )
