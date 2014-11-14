@@ -873,7 +873,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[#include <semaphore.h>
 		}
 	]])],[AC_DEFINE(WORKING_SEM_INIT,1,[Define this if sem_init() works on the platform])
 AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
-AC_SEARCH_LIBS(sem_open, rt)],[])
+AC_SEARCH_LIBS(sem_open, rt pthread)],[])
 fi
 fi
 
