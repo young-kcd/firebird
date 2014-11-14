@@ -214,7 +214,7 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
-	libdir=/usr/lib64
+    libdir=/usr/lib64
     CPU_TYPE=amd64
     ;;
 
@@ -248,6 +248,7 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     STD_EDITLINE=true
     STD_ICU=true
+    libdir=/usr/lib64
     ;;
 
   powerpc64le-*-linux*)                           
@@ -259,6 +260,7 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     STD_EDITLINE=true
     STD_ICU=true
+    libdir=/usr/lib64
     ;;
 
   powerpc64-*-linux*)                           
@@ -270,6 +272,7 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     STD_EDITLINE=true
     STD_ICU=true
+    libdir=/usr/lib64
     ;;
 
   sparc*-*-linux* | sparc*-*-gnu* | sparc*-*-k*bsd*-gnu)
