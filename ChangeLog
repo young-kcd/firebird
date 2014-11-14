@@ -1,3 +1,28 @@
+ 2014-11-12 15:14  asfernandes 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/gen.cpp
+   M src/jrd/extds/IscDS.cpp
+Fixed CORE-4604 - EXECUTE STATEMENT rise varchar char_length() size.
+
+ 2014-11-12 13:57  mapopa 
+   M builds/posix/prefix.linux_powerpc64el
+Some parts are missing in powerpc64el , copy pasted from prefix arm64
+
+ 2014-11-12 12:27  mapopa 
+   M configure.in
+Fix missing prefix file issue
+
+ 2014-11-12 11:40  mapopa 
+   M src/jrd/common.h
+define copy pasted twice
+
+ 2014-11-12 10:28  mapopa 
+   M src/jrd/common.h
+   M src/jrd/pag.cpp
+   M src/jrd/utl.cpp
+Add the rest of PPC64EL platform support
+
  2014-11-12 07:57  mapopa 
    M src/jrd/inf_pub.h
 add isc_info_db_impl_linux_ppc64el in inf_pub.h
