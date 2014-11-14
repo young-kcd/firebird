@@ -239,6 +239,16 @@ dnl CPU_TYPE=ppc64
     STD_EDITLINE=true
     STD_ICU=true
     ATOMIC_LIBS=-latomic_ops
+    libdir=/usr/lib64
+    ;;
+
+  sparc*-*-linux* | sparc*-*-gnu* | sparc*-*-k*bsd*-gnu)
+    MAKEFILE_PREFIX=linux_sparc32
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
     ;;
 
   powerpc64le-*-linux*)
@@ -250,15 +260,17 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     STD_EDITLINE=true
     STD_ICU=true
+    libdir=/usr/lib64
     ;;
 
-  sparc*-*-linux* | sparc*-*-gnu* | sparc*-*-k*bsd*-gnu)
-    MAKEFILE_PREFIX=linux_sparc32
+  powerpc64-*-linux*)
+    MAKEFILE_PREFIX=linux_powerpc
     INSTALL_PREFIX=linux
     PLATFORM=LINUX
     AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
+    libdir=/usr/lib64
     ;;
 
   powerpc*-*-linux*)
