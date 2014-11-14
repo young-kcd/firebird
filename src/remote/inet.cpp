@@ -775,7 +775,11 @@ rem_port* INET_connect(const TEXT* name,
 	memset(&gai_hints, 0, sizeof(gai_hints));
 	gai_hints.ai_family = (packet ? AF_UNSPEC : AF_INET6);
 	gai_hints.ai_socktype = SOCK_STREAM;
+#ifndef WIN_NT
 	gai_hints.ai_protocol = SOL_TCP;
+#else
+	gai_hints.ai_protocol = IPPROTO_TCP;
+#endif
 	gai_hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | (packet ? 0 : AI_PASSIVE);
 
 	const char* host_str = (host.hasData() ? host.c_str() : NULL);

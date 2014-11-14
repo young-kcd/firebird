@@ -33,6 +33,17 @@
 #include <netinet/in.h>
 #endif
 
+#ifdef WIN_NT
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#include <Wspiapi.h>
+
+#ifndef IN_LOOPBACKNET
+#define IN_LOOPBACKNET 127
+#endif
+
+#endif
+
 #include "../remote/remote.h"
 
 
