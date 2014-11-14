@@ -14,9 +14,10 @@
 ### BEGIN INIT INFO
 # Provides: firebird
 # Required-Start: $network $remote_fs
-# Required-Stop:  
-# Default-Start:  2 3 5
-# Default-Stop:   0 1 6
+# Required-Stop:  $null
+# Default-Start:  3 5
+# Default-Stop:   0 1 2 6
+# Short-Description: Firebird SQL server
 # Description:    Start the Firebird database server.
 ### END INIT INFO
 
