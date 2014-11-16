@@ -39,4 +39,3 @@ Note: on POSIX platforms, server started in Classic mode via (x)inetd ignores
 the RemoteBindAddress, RemoteServicePort and RemoteServiceName directives as
 the listening socket is set up by (x)inetd. Listening address and/or port need
 to be set in (x)inetd configuration in this mode.
-

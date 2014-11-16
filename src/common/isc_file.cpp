@@ -417,9 +417,8 @@ bool ISC_analyze_tcp(tstring& file_name, tstring& node_name)
 		p = file_name.find(INET_FLAG, p + 1);
 	}
 	else
-	{
 		p = file_name.find(INET_FLAG);
-	}
+
 	if (p == npos || p == 0 || p == file_name.length() - 1)
 		return false;
 

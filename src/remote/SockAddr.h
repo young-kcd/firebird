@@ -31,9 +31,8 @@
 
 #ifndef WIN_NT
 #include <netinet/in.h>
-#endif
+#else
 
-#ifdef WIN_NT
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 #include <Wspiapi.h>
@@ -47,7 +46,8 @@
 #include "../remote/remote.h"
 
 
-class SockAddr {
+class SockAddr
+{
 private:
 	static const unsigned maxLen = sizeof(struct sockaddr_in6);
 	char data[maxLen];
@@ -173,18 +173,22 @@ inline void SockAddr::setPort(unsigned short x)
 inline bool SockAddr::isLocalhost() const
 {
 	const struct sockaddr* sa = (const struct sockaddr*) data;
-	switch(sa->sa_family) {
-	case AF_INET:
+
+	switch(sa->sa_family)
+	{
+		case AF_INET:
 		{
 			const struct sockaddr_in* sa4 = (const struct sockaddr_in*) data;
 			return ((ntohl(sa4->sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET);
 		}
-	case AF_INET6:
+
+		case AF_INET6:
 		{
 			const struct sockaddr_in6* sa6 = (const struct sockaddr_in6*) data;
 			return (memcmp(&sa6->sin6_addr, &in6addr_loopback, sizeof(in6_addr)) == 0);
 		}
 	}
+
 	return 0; // exception?
 }
 
@@ -197,8 +201,8 @@ inline void SockAddr::unmapV4()
 
 	const struct sockaddr_in6* sa6 = (const struct sockaddr_in6*) data;
 	// IPv6 mapped IPv4 addresses are ::ffff:0:0/32
-	static const unsigned char v4mapped_pfx[12]
-		= { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff };
+	static const unsigned char v4mapped_pfx[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
+
 	if (memcmp(sa6->sin6_addr.s6_addr, v4mapped_pfx, sizeof(v4mapped_pfx)) != 0)
 		return;
 

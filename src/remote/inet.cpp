@@ -734,15 +734,17 @@ rem_port* INET_connect(const TEXT* name,
 	{
 		host = name;
 		const FB_SIZE_T pos = host.find("/");
+
 		if (pos != string::npos)
 		{
 			protocol = host.substr(pos + 1);
 			host = host.substr(0, pos);
 		}
-		if (host.hasData() && host[0] == '[' && host[host.length()-1] == ']')
+
+		if (host.hasData() && host[0] == '[' && host[host.length() - 1] == ']')
 		{
 			// host name or address is in brackets, remove them
-			host.erase(host.length()-1);
+			host.erase(host.length() - 1);
 			host.erase(0, 1);
 		}
 	}
@@ -775,22 +777,26 @@ rem_port* INET_connect(const TEXT* name,
 	memset(&gai_hints, 0, sizeof(gai_hints));
 	gai_hints.ai_family = (packet ? AF_UNSPEC : AF_INET6);
 	gai_hints.ai_socktype = SOCK_STREAM;
+
 #ifndef WIN_NT
 	gai_hints.ai_protocol = SOL_TCP;
 #else
 	gai_hints.ai_protocol = IPPROTO_TCP;
 #endif
+
 	gai_hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | (packet ? 0 : AI_PASSIVE);
 
 	const char* host_str = (host.hasData() ? host.c_str() : NULL);
 	struct addrinfo* gai_result;
 	int n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
+
 	if (n && (protocol == FB_SERVICE_NAME))
 	{
 		// Try hard-wired translation of "gds_db" to "3050"
 		protocol.printf("%hu", FB_SERVICE_PORT);
 		n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
 	}
+
 	if (n)
 	{
 		gds__log("INET/INET_connect: getaddrinfo(%s,%s) failed: %s",
@@ -802,6 +808,7 @@ rem_port* INET_connect(const TEXT* name,
 	{
 		// Allocate a port block and initialize a socket for communications
 		port->port_handle = socket(pai->ai_family, pai->ai_socktype, pai->ai_protocol);
+
 		if (port->port_handle == INVALID_SOCKET)
 		{
 			gds__log("socket: error creating socket (family %d, socktype %d, protocol %d",
@@ -830,7 +837,9 @@ rem_port* INET_connect(const TEXT* name,
 			{
 				goto exit_free;
 			}
-		} else {
+		}
+		else
+		{
 			// server
 			INET_server_socket(port, flag, pai);
 			goto exit_free;
@@ -842,11 +851,9 @@ err_close:
 
 	// all attempts failed
 	if (packet)
-	{
 		inet_error(true, port, "connect", isc_net_connect_err, 0);
-	} else {
+	else
 		inet_error(true, port, "listen", isc_net_connect_listen_err, 0);
-	}
 
 exit_free:
 	freeaddrinfo(gai_result);
@@ -867,15 +874,13 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
  *
  **************************************/
 
-	int n;
 	int ipv6_v6only = port->getPortConfig()->getIPv6V6Only() ? 1 : 0;
 
-	n = setsockopt(port->port_handle, IPPROTO_IPV6, IPV6_V6ONLY,
+	int n = setsockopt(port->port_handle, IPPROTO_IPV6, IPV6_V6ONLY,
 				   (SCHAR*) &ipv6_v6only, sizeof(ipv6_v6only));
+
 	if (n == -1)
-	{
 		gds__log("setsockopt: error setting IPV6_V6ONLY to %d", ipv6_v6only);
-	}
 
 	if (flag & SRVR_multi_client)
 	{
@@ -924,12 +929,12 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 	// On Linux platform, when the server dies the system holds a port
 	// for some time (we don't set SO_REUSEADDR for standalone server).
 	int retry = -1;
-	do {
+	do
+	{
 		if (++retry)
 			sleep(10);
 		n = bind(port->port_handle, pai->ai_addr, pai->ai_addrlen);
-	}
-	while (n == -1 && INET_ERRNO == INET_ADDR_IN_USE && retry < INET_RETRY_CALL);
+	} while (n == -1 && INET_ERRNO == INET_ADDR_IN_USE && retry < INET_RETRY_CALL);
 
 	if (n == -1)
 	{
@@ -1169,12 +1174,12 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 	{
 		address.unmapV4(); // convert mapped IPv4 to regular IPv4
 		char host[40];      // 32 digits, 7 colons, 1 trailing null byte
-		int R = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
+		int nameinfo = getnameinfo(address.ptr(), address.length(), host, sizeof(host),
 				NULL, 0, NI_NUMERICHOST);
-		if (!R)
-		{
+
+		if (!nameinfo)
 			port->port_address = host;
-		}
+
 		if (address.family() == AF_INET6)
 			port->port_protocol_id = "TCPv6";
 	}
