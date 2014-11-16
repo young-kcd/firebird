@@ -6019,7 +6019,7 @@ static Rvnt* find_event( rem_port* port, SLONG id)
  **************************************/
 	Rdb* rdb = port->port_context;
 
-	if (!(port->port_flags & PORT_disconnect))
+	if (rdb && !(port->port_flags & PORT_disconnect))
 	{
 		for (Rvnt* event = rdb->rdb_events; event; event = event->rvnt_next)
 		{
