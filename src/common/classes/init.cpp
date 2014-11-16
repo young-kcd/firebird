@@ -54,18 +54,18 @@ namespace
 #endif
 
 	// This helps initialize globals, needed before regular ctors run
-	bool initDone = false;
+	int initDone = 0;
 
 	void allClean()
 	{
 #ifndef DARWIN		// Somewhy cleanup code is called more than once on MAC
-		fb_assert(initDone);
+		fb_assert(initDone == 1);
 #endif
-		if (!initDone)
+		if (initDone != 1)
 		{
 			return;
 		}
-		initDone = false;
+		initDone = 2;
 
 		Firebird::InstanceControl::destructors();
 
@@ -113,7 +113,7 @@ namespace
 		// are constructed (which may happen in parallel in different threads),
 		// races are prevented by StaticMutex::mutex.
 
-		if (initDone)
+		if (initDone != 0)
 		{
 			return;
 		}
@@ -126,7 +126,7 @@ namespace
 		atexit(allClean);
 #endif //DEBUG_INIT
 
-		initDone = true;
+		initDone = 1;
 
 		Firebird::MemoryPool::contextPoolInit();
 	}
