@@ -578,9 +578,10 @@ for %%v in ( doc intl udf ) do (@mkdir %FBBUILD_EMB_PACK_ROOT%\%%v 2>nul)
 
 @copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\fbembed.* %FBBUILD_EMB_PACK_ROOT% > nul
 
-for %%v in ( icuuc30 icudt30 icuin30  ) do (
-@copy %FB_ICU_SOURCE_BIN%\%%v.dll %FBBUILD_EMB_PACK_ROOT% >nul
+for %%v in ( icuuc icudt icuin  ) do (
+@copy %FB_ICU_SOURCE_BIN%\%%v*.dll %FBBUILD_EMB_PACK_ROOT% >nul
 )
+@copy %FB_ICU_SOURCE_BIN%\..\..\..\icudt??l.dat %FBBUILD_EMB_PACK_ROOT% >nul
 
 @copy /Y %FB_TEMP_DIR%\%FBBUILD_BUILDTYPE%\firebird\ib_util.dll %FBBUILD_EMB_PACK_ROOT% > nul
 @copy /Y %FB_OUTPUT_DIR%\doc\Firebird*.pdf %FBBUILD_EMB_PACK_ROOT%\doc\ > nul
