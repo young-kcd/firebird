@@ -128,7 +128,7 @@ stopSuperServerIfRunning() {
 
 generateNewDBAPassword() {
     # openssl generates random data.
-	openssl </dev/null >/dev/null 2&>/dev/null
+    openssl </dev/null >/dev/null 2>/dev/null
     if [ $? -eq 0 ]
     then
         # We generate 20 random chars, strip any '/''s and get the first 8
