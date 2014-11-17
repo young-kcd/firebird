@@ -639,9 +639,11 @@
 
 #
 # Allows setting of IPV6_V6ONLY socket option. If enabled, IPv6 sockets
-# allow only IPv6 communication and a separate socket must be used for
-# IPv4 and IPv6. Default is false on POSIX systems, true on Windows.
-# On Windows, "false" value can only be used since Windows Vista.
+# allow only IPv6 communication and separate sockets must be used for
+# IPv4 and IPv6. Default is false.
+#
+# Note: on Windows, the socket option can only be set since Windows Vista,
+# older versions have it always enabled.
 #
 # Type: boolean
 #
