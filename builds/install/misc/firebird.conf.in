@@ -842,15 +842,22 @@
 #Redirection = 0
 
 
+# =======================================
+# Settings for Architecture Configuration
+# =======================================
 # Type: boolean
 #SharedCache = true
 
 # Type: boolean
 #SharedDatabase = false
 
-
+# Possible configuration options
 # SharedCache	SharedDatabase	Mode
-# false			false			Classic with exclusive access	// single attachment only ?
-# false			true			Classic with shared access		// traditional CS/SC
-# true			false			Super with exclusive access		// traditional SS
-# true			true			Super with shared access		// 
+# false		false		Classic with exclusive access	// single attachment only ?
+# false		true		Classic with shared access	// traditional CS/SC
+# true		false		Super with exclusive access	// traditional SS
+# true		true		Super with shared access	// theoretically possible but not currently supported.
+#
+# Be sure to check the 'Execution Modes' section in the 'Changes in the Firebird Engine' chapter 
+# of the Firebird Release Notes for additional details on how to launch each firebird architecture 
+# correctly.
