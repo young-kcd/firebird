@@ -1,3 +1,25 @@
+ 2014-11-17 11:48  mkubecek 
+   M builds/install/arch-specific/aix/misc/aixLibrary.sh.in
+   M builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
+   M builds/install/arch-specific/linux/misc/linuxLibrary.sh.in
+Fix bashism/typo in utility scripts.
+
+ 2014-11-14 08:44  mkubecek 
+   M builds/posix/prefix.linux_generic
+fix build on architectures where char is unsigned (e.g. aarch64)
+
+ 2014-11-14 08:42  mkubecek 
+   M configure.in
+fix libdir on 64-bit linux platforms (powerpc64(le), aarch64)
+
+ 2014-11-14 08:39  mkubecek 
+   M builds/install/arch-specific/linux/misc/firebird.init.d.suse.in
+minor fixes of SUSE init script
+
+ 2014-11-14 08:37  mkubecek 
+   M configure.in
+look for sem_open also in libpthread
+
  2014-11-12 15:14  asfernandes 
    M src/dsql/dsql.cpp
    M src/dsql/dsql.h
