@@ -1,3 +1,240 @@
+ 2014-11-17 22:32  hvlad 
+   A builds/win32/msvc12
+   A builds/win32/msvc12/DllNoEmbedManifest.props
+   A builds/win32/msvc12/Firebird3.sln
+   A builds/win32/msvc12/Firebird3Boot.sln
+   A builds/win32/msvc12/Firebird3_Examples.sln
+   A builds/win32/msvc12/alice.vcxproj
+   A builds/win32/msvc12/alice.vcxproj.filters
+   A builds/win32/msvc12/btyacc.vcxproj
+   A builds/win32/msvc12/btyacc.vcxproj.filters
+   A builds/win32/msvc12/build_msg.vcxproj
+   A builds/win32/msvc12/build_msg.vcxproj.filters
+   A builds/win32/msvc12/burp.vcxproj
+   A builds/win32/msvc12/burp.vcxproj.filters
+   A builds/win32/msvc12/codes.vcxproj
+   A builds/win32/msvc12/codes.vcxproj.filters
+   A builds/win32/msvc12/common.vcxproj
+   A builds/win32/msvc12/common.vcxproj.filters
+   A builds/win32/msvc12/empbuild.vcxproj
+   A builds/win32/msvc12/empbuild.vcxproj.filters
+   A builds/win32/msvc12/engine.vcxproj
+   A builds/win32/msvc12/engine.vcxproj.filters
+   A builds/win32/msvc12/fb2control.vcxproj
+   A builds/win32/msvc12/fb2control.vcxproj.filters
+   A builds/win32/msvc12/fb_lock_print.vcxproj
+   A builds/win32/msvc12/fb_lock_print.vcxproj.filters
+   A builds/win32/msvc12/fbguard.vcxproj
+   A builds/win32/msvc12/fbguard.vcxproj.filters
+   A builds/win32/msvc12/fbrmclib.vcxproj
+   A builds/win32/msvc12/fbrmclib.vcxproj.filters
+   A builds/win32/msvc12/fbserver.vcxproj
+   A builds/win32/msvc12/fbserver.vcxproj.filters
+   A builds/win32/msvc12/fbsvcmgr.vcxproj
+   A builds/win32/msvc12/fbsvcmgr.vcxproj.filters
+   A builds/win32/msvc12/fbtrace.vcxproj
+   A builds/win32/msvc12/fbtrace.vcxproj.filters
+   A builds/win32/msvc12/fbtracemgr.vcxproj
+   A builds/win32/msvc12/fbtracemgr.vcxproj.filters
+   A builds/win32/msvc12/fbudf.vcxproj
+   A builds/win32/msvc12/fbudf.vcxproj.filters
+   A builds/win32/msvc12/firebird2.props
+   A builds/win32/msvc12/firebird2debug.props
+   A builds/win32/msvc12/firebird2release.props
+   A builds/win32/msvc12/gbak.vcxproj
+   A builds/win32/msvc12/gbak.vcxproj.filters
+   A builds/win32/msvc12/gfix.vcxproj
+   A builds/win32/msvc12/gfix.vcxproj.filters
+   A builds/win32/msvc12/gpre.vcxproj
+   A builds/win32/msvc12/gpre.vcxproj.filters
+   A builds/win32/msvc12/gpre_boot.vcxproj
+   A builds/win32/msvc12/gpre_boot.vcxproj.filters
+   A builds/win32/msvc12/gpre_common.vcxproj
+   A builds/win32/msvc12/gpre_common.vcxproj.filters
+   A builds/win32/msvc12/gsec.vcxproj
+   A builds/win32/msvc12/gsec.vcxproj.filters
+   A builds/win32/msvc12/gsplit.vcxproj
+   A builds/win32/msvc12/gsplit.vcxproj.filters
+   A builds/win32/msvc12/gstat.vcxproj
+   A builds/win32/msvc12/gstat.vcxproj.filters
+   A builds/win32/msvc12/ib_udf.vcxproj
+   A builds/win32/msvc12/ib_udf.vcxproj.filters
+   A builds/win32/msvc12/ib_util.vcxproj
+   A builds/win32/msvc12/ib_util.vcxproj.filters
+   A builds/win32/msvc12/instclient.vcxproj
+   A builds/win32/msvc12/instclient.vcxproj.filters
+   A builds/win32/msvc12/instreg.vcxproj
+   A builds/win32/msvc12/instreg.vcxproj.filters
+   A builds/win32/msvc12/instsvc.vcxproj
+   A builds/win32/msvc12/instsvc.vcxproj.filters
+   A builds/win32/msvc12/intl.vcxproj
+   A builds/win32/msvc12/intl.vcxproj.filters
+   A builds/win32/msvc12/intlbuild.vcxproj
+   A builds/win32/msvc12/intlbuild.vcxproj.filters
+   A builds/win32/msvc12/isql.vcxproj
+   A builds/win32/msvc12/isql.vcxproj.filters
+   A builds/win32/msvc12/legacy_auth.vcxproj
+   A builds/win32/msvc12/legacy_auth.vcxproj.filters
+   A builds/win32/msvc12/legacy_usermanager.vcxproj
+   A builds/win32/msvc12/legacy_usermanager.vcxproj.filters
+   A builds/win32/msvc12/nbackup.vcxproj
+   A builds/win32/msvc12/nbackup.vcxproj.filters
+   A builds/win32/msvc12/qli.vcxproj
+   A builds/win32/msvc12/qli.vcxproj.filters
+   A builds/win32/msvc12/remote.vcxproj
+   A builds/win32/msvc12/remote.vcxproj.filters
+   A builds/win32/msvc12/srp.vcxproj
+   A builds/win32/msvc12/srp.vcxproj.filters
+   A builds/win32/msvc12/udr_engine.vcxproj
+   A builds/win32/msvc12/udr_engine.vcxproj.filters
+   A builds/win32/msvc12/udrcpp_example.vcxproj
+   A builds/win32/msvc12/udrcpp_example.vcxproj.filters
+   A builds/win32/msvc12/yvalve.vcxproj
+   A builds/win32/msvc12/yvalve.vcxproj.filters
+MSVC12 project files
+
+ 2014-11-17 20:26  mapopa 
+   M src/common/classes/DbImplementation.cpp
+fix idpl license url
+
+ 2014-11-17 12:02  mkubecek 
+   M builds/install/misc/firebird.conf.in
+Fix IPv6V6Only comment in firebird.conf
+
+ 2014-11-17 11:55  mkubecek 
+   M builds/install/arch-specific/aix/misc/aixLibrary.sh.in
+   M builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
+Fix bashism/typo in utility scripts.
+
+ 2014-11-16 17:33  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Avoid segfault in a case when port_context is reset for broken port
+
+ 2014-11-16 17:00  alexpeshkoff 
+   M src/common/classes/init.cpp
+Avoid pool from being initialized second time during cleanup
+
+ 2014-11-16 02:41  asfernandes 
+   M doc/README.IPv6
+   M src/common/isc_file.cpp
+   M src/remote/SockAddr.h
+   M src/remote/inet.cpp
+Misc.
+
+ 2014-11-14 14:54  hvlad 
+   M src/remote/SockAddr.h
+   M src/remote/inet.cpp
+Fixed compilation errors on Windows after IPv6 patches
+
+ 2014-11-14 11:04  hvlad 
+   M builds/win32/setenvvar.bat
+   A extern/libtommath/libtommath_MSVC12.sln
+   A extern/libtommath/libtommath_MSVC12.vcxproj
+   M src/common/os/win32/mod_loader.cpp
+Support for MSVC12 (VS 2013)
+
+ 2014-11-14 08:48  mkubecek 
+   M configure.ac
+fix libdir on 64-bit linux platforms (powerpc64(le), aarch64)
+
+ 2014-11-14 08:24  alexpeshkoff 
+   A doc/sql.extensions/README.set_role
+Added doc
+
+ 2014-11-14 07:58  mkubecek 
+   M builds/install/arch-specific/linux/firebird.init.d.suse.in
+minor fixes of SUSE init script
+
+ 2014-11-14 07:57  mkubecek 
+   M configure.ac
+look for sem_open also in libpthread
+
+ 2014-11-13 14:43  asfernandes 
+   M src/dsql/parse.y
+Add new keywords to keyword_or_column as seem by Dmitry.
+
+ 2014-11-13 10:30  alexpeshkoff 
+   M doc/README.interfaces.html
+   M doc/README.plugins.html
+   M doc/README.providers.html
+Reflected API changes in beta1
+
+ 2014-11-12 17:49  mapopa 
+   M src/jrd/inf_pub.h
+add isc_info_db_impl_linux_ppc64 in inf_pub.h
+
+ 2014-11-12 17:39  mapopa 
+   A builds/posix/prefix.linux_powerpc64
+add prefix file linux_powerpc64
+
+ 2014-11-12 17:32  mkubecek 
+   A doc/README.IPv6
+Improvement CORE-3226: IPv6 support (9/9) add README.IPv6 describing IPv6 related changes
+
+ 2014-11-12 17:31  mkubecek 
+   M builds/install/misc/firebird.conf.in
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/remote/inet.cpp
+Improvement CORE-3226: IPv6 support (8/9) add config directive for IPV6_V6ONLY socket option
+
+ 2014-11-12 17:30  mkubecek 
+   M src/remote/inet.cpp
+Improvement CORE-3226: IPv6 support (7/9) remove unused functions
+
+ 2014-11-12 17:29  mkubecek 
+   M src/remote/inet.cpp
+Improvement CORE-3226: IPv6 support (6/9) implement IPv6 support for aux connection
+
+ 2014-11-12 17:28  mkubecek 
+   M src/remote/inet.cpp
+Improvement CORE-3226: IPv6 support (5/9) implement IPv6 support for main connection
+
+ 2014-11-12 17:27  mkubecek 
+   M src/remote/inet.cpp
+Improvement CORE-3226: IPv6 support (4/9) handle IPv6 addresses in utility functions
+
+ 2014-11-12 17:27  mkubecek 
+   A src/remote/SockAddr.h
+Improvement CORE-3226: IPv6 support (3/9) socket address abstraction class
+
+ 2014-11-12 17:24  mkubecek 
+   M src/remote/inet.cpp
+Improvement CORE-3226: IPv6 support (2/9) do not pass pointer to peer address to accept()
+
+ 2014-11-12 17:24  mkubecek 
+   M src/common/isc_file.cpp
+   M src/remote/inet.cpp
+Improvement CORE-3226: IPv6 support (1/9) allow square brackets around host in connection string
+
+ 2014-11-12 17:13  mapopa 
+   M configure.ac
+add powerpc64 big endian configure check
+
+ 2014-11-12 17:00  mapopa 
+   M src/common/common.h
+add PowerPc64 big endian
+
+ 2014-11-12 16:55  mapopa 
+   M src/common/classes/DbImplementation.cpp
+Reserve implementation id for big endian ppc64
+
+ 2014-11-12 15:14  asfernandes 
+   M src/jrd/extds/IscDS.cpp
+Frontport fix for CORE-4604 - EXECUTE STATEMENT rise varchar char_length() size.
+
+ 2014-11-12 15:10  mapopa 
+   M configure.ac
+Fix missing prefix file issue
+
+ 2014-11-12 09:13  mapopa 
+   M src/jrd/inf_pub.h
+add isc_info_db_impl_linux_ppc64el in inf_pub.h
+
+ 2014-11-12 07:44  dimitr 
+   M doc/sql.extensions/README.keywords
+Updated the docs.
+
  2014-11-11 16:52  mapopa 
    A builds/posix/prefix.linux_powerpc64el
 add prefix file linux_powerpc64el 
