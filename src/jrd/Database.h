@@ -174,6 +174,11 @@ class Database : public pool_alloc<type_dbb>, public Firebird::PublicHandle
 		}
 #endif
 
+		bool inAst() const
+		{
+			return isAst;
+		}
+
 	private:
 		~Sync()
 		{
@@ -272,6 +277,32 @@ public:
 		Checkout& operator=(const Checkout&);
 
 		Sync& sync;
+	};
+
+	class CheckoutIfNotInAst
+	{
+	public:
+		explicit CheckoutIfNotInAst(Database* dbb)
+			: sync(*dbb->dbb_sync)
+		{
+			inAst = sync.inAst();
+			if (!inAst)
+				sync.unlock();
+		}
+
+		~CheckoutIfNotInAst()
+		{
+			if (!inAst)
+				sync.lock();
+		}
+
+	private:
+		// copying is prohibited
+		CheckoutIfNotInAst(const CheckoutIfNotInAst&);
+		CheckoutIfNotInAst& operator=(const CheckoutIfNotInAst&);
+
+		Sync& sync;
+		bool inAst;
 	};
 
 	class CheckoutLockGuard
