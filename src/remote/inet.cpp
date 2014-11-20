@@ -796,8 +796,7 @@ rem_port* INET_connect(const TEXT* name,
 		retry_gai = false;
 		n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
 
-		if ((n == EAI_FAMILY || n == EAI_ADDRFAMILY || (!host_str && n == EAI_NONAME)) &&
-			(gai_hints.ai_family == AF_INET6))
+		if ((n == EAI_FAMILY || (!host_str && n == EAI_NONAME)) && (gai_hints.ai_family == AF_INET6))
 		{
 			// May be on a system without IPv6 support, try IPv4
 			gai_hints.ai_family = AF_UNSPEC;
