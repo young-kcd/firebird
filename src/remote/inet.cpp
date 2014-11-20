@@ -775,7 +775,7 @@ rem_port* INET_connect(const TEXT* name,
 	// Prepare hints
 	struct addrinfo gai_hints;
 	memset(&gai_hints, 0, sizeof(gai_hints));
-	gai_hints.ai_family = (packet ? AF_UNSPEC : AF_INET6);
+	gai_hints.ai_family = ((packet || host.hasData()) ? AF_UNSPEC : AF_INET6);
 	gai_hints.ai_socktype = SOCK_STREAM;
 
 #ifndef WIN_NT
@@ -788,14 +788,28 @@ rem_port* INET_connect(const TEXT* name,
 
 	const char* host_str = (host.hasData() ? host.c_str() : NULL);
 	struct addrinfo* gai_result;
-	int n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
+	bool retry_gai;
+	int n;
 
-	if (n && (protocol == FB_SERVICE_NAME))
+	do
 	{
-		// Try hard-wired translation of "gds_db" to "3050"
-		protocol.printf("%hu", FB_SERVICE_PORT);
+		retry_gai = false;
 		n = getaddrinfo(host_str, protocol.c_str(), &gai_hints, &gai_result);
-	}
+
+		if ((n == EAI_FAMILY || n == EAI_ADDRFAMILY || (!host_str && n == EAI_NONAME)) &&
+			(gai_hints.ai_family == AF_INET6))
+		{
+			// May be on a system without IPv6 support, try IPv4
+			gai_hints.ai_family = AF_UNSPEC;
+			retry_gai = true;
+		}
+		if ((n == EAI_SERVICE) && (protocol == FB_SERVICE_NAME))
+		{
+			// Try hard-wired translation of "gds_db" to "3050"
+			protocol.printf("%hu", FB_SERVICE_PORT);
+			retry_gai = (protocol != FB_SERVICE_NAME);
+		}
+	} while (retry_gai);
 
 	if (n)
 	{
