@@ -1,3 +1,11 @@
+ 2014-11-20 21:16  mkubecek 
+   M src/remote/inet.cpp
+Fix MSVC build (it does not define EAI_ADDRFAMILY)
+
+ 2014-11-20 09:41  mkubecek 
+   M src/remote/inet.cpp
+Fix server address resolution on systems with IPv6 support missing or disabled
+
  2014-11-17 22:32  hvlad 
    A builds/win32/msvc12
    A builds/win32/msvc12/DllNoEmbedManifest.props
