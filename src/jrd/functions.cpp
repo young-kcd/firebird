@@ -172,6 +172,10 @@ static vary* make_result_str(const Firebird::string& str)
 
 vary* get_context(const vary* ns_vary, const vary* name_vary)
 {
+	// Complain if namespace or variable name is null
+	if (!ns_vary || !name_vary)
+		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
+
 	thread_db* tdbb = JRD_get_thread_data();
 
 	Database* dbb;
@@ -188,15 +192,10 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 		return NULL;
 	}
 
-	Database::SyncGuard dsGuard(dbb);
-
-	// Complain if namespace or variable name is null
-	if (!ns_vary || !name_vary) {
-		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_GET_CONTEXT));
-	}
-
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
+
+	Database::SyncGuard dsGuard(dbb);
 
 	// Handle system variables
 	if (ns_str == SYSTEM_NAMESPACE)
@@ -343,22 +342,23 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 {
 	// Complain if namespace or variable name is null
 	if (!ns_vary || !name_vary)
-	{
 		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
-	}
 
 	thread_db* tdbb = JRD_get_thread_data();
+	Database* dbb = tdbb->getDatabase();
 
-	if (!tdbb)
+	// See if JRD thread data structure looks sane for occasion
+	if (!tdbb || !dbb)
 	{
-		// Something is seriously wrong
 		fb_assert(false);
 		return 0;
 	}
 
 	const Firebird::string ns_str(ns_vary->vary_string, ns_vary->vary_length);
 	const Firebird::string name_str(name_vary->vary_string, name_vary->vary_length);
-	//Database* dbb = tdbb->getDatabase();
+
+	Database::SyncGuard dsGuard(dbb);
+
 	Attachment* att = tdbb->getAttachment();
 	jrd_tra* tra = tdbb->getTransaction();
 
