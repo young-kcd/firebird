@@ -192,8 +192,6 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX)
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
-    PTHREAD_CFLAGS=-pthread
-    PTHREAD_LIBS=-lpthread
     ;;
 
   mipsel-*-linux*)
@@ -203,8 +201,6 @@ dnl CPU_TYPE=ppc64
     AC_DEFINE(LINUX)
     EDITLINE_FLG=Y
     SHRLIB_EXT=so
-    PTHREAD_CFLAGS=-pthread
-    PTHREAD_LIBS=-lpthread
     ;;
 
   x86_64*-*-linux* | x86_64*-*-gnu*)
