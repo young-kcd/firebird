@@ -111,6 +111,7 @@ const int INET_RETRY_CALL = 5;
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/os/os_utils.h"
 
 // Please review. Maybe not needed. See H_ERRNO in common.h.
 #if defined HPUX
@@ -773,9 +774,11 @@ rem_port* INET_connect(const TEXT* name,
 	}
 
 	// Prepare hints
+	const bool ipv6 = os_utils::isIPv6supported();
+
 	struct addrinfo gai_hints;
 	memset(&gai_hints, 0, sizeof(gai_hints));
-	gai_hints.ai_family = ((packet || host.hasData()) ? AF_UNSPEC : AF_INET6);
+	gai_hints.ai_family = ((packet || host.hasData() || !ipv6) ? AF_UNSPEC : AF_INET6);
 	gai_hints.ai_socktype = SOCK_STREAM;
 
 #ifndef WIN_NT

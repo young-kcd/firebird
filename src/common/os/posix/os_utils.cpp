@@ -229,4 +229,10 @@ bool touchFile(const char* pathname)
 #endif
 }
 
+// check if OS have support for IPv6 protocol
+bool isIPv6supported()
+{
+	return true;
+}
+
 } // namespace os_utils
