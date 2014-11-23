@@ -1,3 +1,11 @@
+ 2014-11-22 10:42  hvlad 
+   M src/common/os/os_utils.h
+   M src/common/os/posix/os_utils.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/remote/inet.cpp
+Add check if IPv6 is supported by OS. 
+Windows implementation is complete, while POSIX implementation should be reviewed and fixed if necessary.
+
  2014-11-21 14:22  mapopa 
    M configure.ac
 Pthread cflags already set
