@@ -297,6 +297,16 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
+  s390x-*-linux*)
+    MAKEFILE_PREFIX=linux_s390x
+    INSTALL_PREFIX=linux
+    PLATFORM=LINUX
+    AC_DEFINE(LINUX, 1, [Define this if OS is Linux])
+    EDITLINE_FLG=Y
+    SHRLIB_EXT=so
+    libdir=/usr/lib64
+    ;;
+
   s390*-*-linux*)
     MAKEFILE_PREFIX=linux_s390x
     INSTALL_PREFIX=linux
