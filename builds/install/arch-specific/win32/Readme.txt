@@ -24,6 +24,28 @@ It is not intended for production use. It is for
 test purposes only.
 
 
+Known Problems
+==============
+
+To run firebird.exe as a multi-client superserver
+it is necessary to start it with the -m parameter.
+Unfortunately for Beta 1 neither the guardian nor 
+the cpl applet know about this. 
+
+If the guardian is used to execute firebird.exe as 
+an application it will be single user only so it is
+not recommended to use the guardian when running as
+an application in this alpha release.
+
+The cpl applet cannot configure firebird as a service
+correctly and the installer will not install it for
+this alpha release.
+
+Neither of these problems are relevant to running 
+firebird as a service via instsvc.exe which works 
+correctly - with and without the guardian.
+
+
 Reporting Bugs
 ==============
 
