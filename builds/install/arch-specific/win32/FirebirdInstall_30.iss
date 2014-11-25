@@ -670,9 +670,11 @@ Var
 
 var
   AdminUserPage: TInputQueryWizardPage;
+  initWizardHeight :Integer; //In prev. version - the wizard form was resized to new size every time when go back button pressed
 
 procedure InitializeWizard;
 begin
+  initWizardHeight:=wizardform.height;
 
   { Create a page to grab the new SYSDBA password }
   AdminUserPage := CreateInputQueryPage(wpSelectTasks,
@@ -1022,7 +1024,8 @@ procedure ResizeWizardForm(Increase: Boolean);
 var
   AWidth,AHeight: Integer;
 begin
-
+  //Do resize only once!
+  if wizardform.height=initWizardHeight then begin
   AHeight := HEIGHT_INCREASE;
   AWidth := WIDTH_INCREASE;
 
@@ -1034,13 +1037,13 @@ begin
   SetupWizardFormComponentsArrays;
   ResizeWizardFormHeight(AHeight);
 //  ResizeWizardFormWidth(AWidth);
-
+  end;
 end;
 
 procedure CurPageChanged(CurPage: Integer);
 begin
   case CurPage of
-    wpWelcome:      ResizeWizardForm(True);
+    wpWelcome:      ResizeWizardForm(True); //There was a bug: every time when "go back" pressed the form was resized!
     wpInfoBefore:   WizardForm.INFOBEFOREMEMO.font.name:='Courier New';
     wpInfoAfter:    WizardForm.INFOAFTERMEMO.font.name:='Courier New';
   end;
