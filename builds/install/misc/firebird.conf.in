@@ -565,6 +565,17 @@
 #WireCrypt = Enabled (for client) / Required (for server)
 
 #
+# Should connection over the wire be compressed?
+# Client only value - server should follow client setting if connect using
+# correct protocol (>=13).
+#
+# Per-connection configurable.
+#
+# Type: boolean
+#
+#WireCompression = false
+
+#
 # Seconds to wait on a silent client connection before the server sends
 # dummy packets to request acknowledgment.
 #

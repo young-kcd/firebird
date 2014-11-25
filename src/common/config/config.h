@@ -136,6 +136,7 @@ public:
 		KEY_PLUG_KEY_HOLDER,
 		KEY_REMOTE_ACCESS,
 		KEY_IPV6_V6ONLY,
+		KEY_WIRE_COMPRESSION,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -333,6 +334,8 @@ public:
 	int getWireCrypt(WireCryptMode wcMode) const;
 
 	bool getRemoteAccess() const;
+
+	bool getWireCompression() const;
 };
 
 // Implementation of interface to access master configuration file

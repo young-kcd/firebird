@@ -105,6 +105,10 @@ enum P_ARCH
 const USHORT ptype_batch_send	= 3;	// Batch sends, no asynchrony
 const USHORT ptype_out_of_band	= 4;	// Batch sends w/ out of band notification
 const USHORT ptype_lazy_send	= 5;	// Deferred packets delivery
+const USHORT ptype_MASK			= 0xFF;	// Mask - up to 255 types of protocol
+//
+// upper byte is used for protocol flags
+const USHORT pflag_compress		= 0x100;	// Turn on compression if possible
 
 // Generic object id
 

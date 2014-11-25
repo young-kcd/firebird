@@ -198,7 +198,8 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
 	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
 	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true},
-	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false}
+	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false},
+	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false}
 };
 
 /******************************************************************************
@@ -749,4 +750,9 @@ int Config::getWireCrypt(WireCryptMode wcMode) const
 bool Config::getRemoteAccess() const
 {
 	return get<bool>(KEY_REMOTE_ACCESS);
+}
+
+bool Config::getWireCompression() const
+{
+	return get<bool>(KEY_WIRE_COMPRESSION);
 }

@@ -723,6 +723,7 @@ AC_CHECK_HEADERS(langinfo.h)
 AC_CHECK_HEADERS(iconv.h)
 AC_CHECK_HEADERS(libio.h)
 AC_CHECK_HEADERS(linux/falloc.h)
+AC_CHECK_HEADERS(zlib.h)
 
 dnl check for ICU presence
 AC_CHECK_HEADER(unicode/ucnv.h,,AC_MSG_ERROR(ICU support not found - please install development ICU package))
@@ -739,6 +740,7 @@ AC_SUBST(MATHLIB)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
+AC_CHECK_LIB(z, deflate)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
 	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \

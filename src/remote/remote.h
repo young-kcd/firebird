@@ -55,6 +55,17 @@
 #endif
 #endif // !WIN_NT
 
+#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
+#define WIRE_COMPRESS_SUPPORT 1
+#endif
+
+#ifdef WIRE_COMPRESS_SUPPORT
+#include <zlib.h>
+//#define COMPRESS_DEBUG 1
+#endif // WIRE_COMPRESS_SUPPORT
+
+#define REM_SEND_OFFSET(bs) (0)
+#define REM_RECV_OFFSET(bs) (bs)
 
 // Uncomment this line if you need to trace module activity
 //#define REMOTE_DEBUG
@@ -666,7 +677,7 @@ private:
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time
 	Firebird::string dpbConfig;				// Used to recreate config with new filename
-	Firebird::RefPtr<Config> config;		// Used to get plugins list and pass to port
+	Firebird::RefPtr<Config> clntConfig;	// Used to get plugins list and pass to port
 	unsigned nextKey;						// First key to be analyzed
 
 	bool hasCryptKey;						// DPB contains disk crypt key, may be passed only over encrypted wire
@@ -811,6 +822,7 @@ const USHORT PORT_server		= 0x0080;	// Server (not client) port
 const USHORT PORT_detached		= 0x0100;	// op_detach, op_drop_database or op_service_detach was processed
 const USHORT PORT_rdb_shutdown	= 0x0200;	// Database is shut down
 const USHORT PORT_connecting	= 0x0400;	// Aux connection waits for a channel to be activated by client
+const USHORT PORT_z_data		= 0x0800;	// Zlib incoming buffer has data left after decompression
 
 // Port itself
 
@@ -860,7 +872,7 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	struct srvr*	port_server;		// server of port
 	USHORT			port_server_flags;	// TRUE if server
 	USHORT			port_protocol;		// protocol version number
-	USHORT			port_buff_size;		// port buffer size (approx)
+	USHORT			port_buff_size;		// port buffer size
 	USHORT			port_flags;			// Misc flags
 	SLONG			port_connect_timeout;   // Connection timeout value
 	SLONG			port_dummy_packet_interval; // keep alive dummy packet interval
@@ -922,6 +934,11 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	FB_UINT64 port_snd_bytes;
 	FB_UINT64 port_rcv_bytes;
 
+#ifdef WIRE_COMPRESS_SUPPORT
+	z_stream port_send_stream, port_recv_stream;
+	UCharArrayAutoPtr	port_compressed;
+#endif
+
 public:
 	rem_port(rem_port_t t, size_t rpt) :
 		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
@@ -931,7 +948,7 @@ public:
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
 		port_type(t), port_state(PENDING), port_clients(0), port_next(0),
 		port_parent(0), port_async(0), port_async_receive(0),
-		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(0),
+		port_server(0), port_server_flags(0), port_protocol(0), port_buff_size(rpt / 2),
 		port_flags(0), port_connect_timeout(0), port_dummy_packet_interval(0),
 		port_dummy_timeout(0), port_handle(INVALID_SOCKET), port_channel(INVALID_SOCKET), port_context(0),
 		port_events_thread(0), port_events_shutdown(0),
@@ -964,10 +981,11 @@ public:
 #endif
 	}
 
-private:		// this is refCounted object
-	~rem_port();
+private:
+	~rem_port();	// this is refCounted object - private dtor is OK
 
 public:
+	void initCompression();
 	void linkParent(rem_port* const parent);
 	void unlinkParent();
 	const Firebird::RefPtr<Config>& getPortConfig() const;

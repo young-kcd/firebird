@@ -44,6 +44,9 @@ namespace Remote
 struct rem_port;
 struct rem_fmt;
 struct Rdb;
+typedef bool PacketReceive(rem_port*, UCHAR*, SSHORT, SSHORT*);
+typedef bool PacketSend(rem_port*, const SCHAR*, SSHORT);
+typedef bool ProtoWrite(XDR*);
 
 void		REMOTE_cleanup_transaction (struct Rtr *);
 USHORT		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
@@ -63,6 +66,8 @@ Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
 void		REMOTE_parseList(Remote::ParsedList&, Firebird::PathName);
 void		REMOTE_makeList(Firebird::PathName& list, const Remote::ParsedList& parsed);
 void		REMOTE_check_response(Firebird::IStatus* warning, Rdb* rdb, PACKET* packet, bool checkKeys = false);
+bool		REMOTE_inflate(rem_port*, PacketReceive*, UCHAR*, SSHORT, SSHORT*);
+bool		REMOTE_deflate(XDR*, ProtoWrite*, PacketSend*, bool flash);
 
 extern signed char wcCompatible[3][3];
 

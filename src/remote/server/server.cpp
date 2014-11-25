@@ -501,6 +501,8 @@ public:
 				}
 
 				authPort->send(send);
+				if (send->p_acpt.p_acpt_type & pflag_compress)
+					authPort->initCompression();
 				memset(&send->p_auth_cont, 0, sizeof send->p_auth_cont);
 				return false;
 
@@ -719,6 +721,7 @@ public:
 		}
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		fb_assert(!port->port_compressed);
 
 		PACKET packet;
 		packet.p_operation = op_event;
@@ -1663,6 +1666,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	P_ARCH architecture = arch_generic;
 	USHORT version = 0;
 	USHORT type = 0;
+	bool compress = false;
 	bool accepted = false;
 	USHORT weight = 0;
 	const p_cnct::p_cnct_repeat* protocol = connect->p_cnct_versions;
@@ -1682,7 +1686,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			weight = protocol->p_cnct_weight;
 			version = protocol->p_cnct_version;
 			architecture = protocol->p_cnct_architecture;
-			type = MIN(protocol->p_cnct_max_type, ptype_lazy_send);
+			type = MIN(protocol->p_cnct_max_type & ptype_MASK, ptype_lazy_send);
+			compress = protocol->p_cnct_max_type & pflag_compress;
 		}
 	}
 
@@ -1691,12 +1696,12 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	send->p_acpd.p_acpt_version = port->port_protocol = version;
 	send->p_acpd.p_acpt_architecture = architecture;
-	send->p_acpd.p_acpt_type = type;
+	send->p_acpd.p_acpt_type = type | (compress ? pflag_compress : 0);
 	send->p_acpd.p_acpt_authenticated = 0;
 
 	send->p_acpt.p_acpt_version = port->port_protocol = version;
 	send->p_acpt.p_acpt_architecture = architecture;
-	send->p_acpt.p_acpt_type = type;
+	send->p_acpt.p_acpt_type = type | (compress ? pflag_compress : 0);
 
 	// modify the version string to reflect the chosen protocol
 	string buffer;
@@ -1864,6 +1869,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	send->p_operation = returnData ? op_accept_data : op_accept;
 	port->send(send);
+	if (send->p_acpt.p_acpt_type & pflag_compress)
+		port->initCompression();
 
 	return true;
 }
@@ -1889,6 +1896,8 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 		authPort->port_srv_auth_block->extractNewKeys(s);
 		send->p_acpd.p_acpt_authenticated = 1;
 		authPort->send(send);
+		if (send->p_acpt.p_acpt_type & pflag_compress)
+			authPort->initCompression();
 	}
 }
 
@@ -2143,8 +2152,6 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 	DispatcherPtr provider;
 
 	authBlock->store(pb, isc_dpb_auth_block);
-
-	send->p_operation = op_accept;
 
 	for (pb->rewind(); !pb->isEof();)
 	{
@@ -5252,8 +5259,6 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
  *	Connect to a Firebird service.
  *
  **************************************/
-	sendL->p_operation = op_accept;
-
     // Now insert additional clumplets into spb
 	addClumplets(spb, spbParam, this);
 

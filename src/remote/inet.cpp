@@ -218,9 +218,9 @@ static ULONG inet_debug_timer()
 }
 #endif // DEBUG
 
-const SLONG MAX_DATA_LW		= 1448;		// Low  Water mark
-const SLONG MAX_DATA_HW		= 32768;	// High Water mark
-const SLONG DEF_MAX_DATA	= 8192;
+const ULONG MAX_DATA_LW		= 1448;		// Low  Water mark
+const ULONG MAX_DATA_HW		= 32768;	// High Water mark
+const ULONG DEF_MAX_DATA	= 8192;
 
 //const int MAXHOSTLEN		= 64;
 
@@ -281,6 +281,10 @@ public:
 
 	HandleState ok(const rem_port* port)
 	{
+#ifdef WIRE_COMPRESS_SUPPORT
+		if (port->port_flags & PORT_z_data)
+			return SEL_READY;
+#endif
 		SOCKET n = port->port_handle;
 #if defined(WIN_NT)
 		return FD_ISSET(n, &slct_fdset) ? SEL_READY : SEL_NO_DATA;
@@ -440,7 +444,7 @@ static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
 static bool_t	inet_getbytes(XDR*, SCHAR *, u_int);
 static void		inet_error(bool, rem_port*, const TEXT*, ISC_STATUS, int);
 static bool_t	inet_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t	inet_read(XDR*);
+static bool		inet_read(XDR*);
 static rem_port*		inet_try_connect(	PACKET*,
 									Rdb*,
 									const PathName&,
@@ -448,7 +452,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									ClumpletReader&,
 									RefPtr<Config>*,
 									const PathName*);
-static bool_t	inet_write(XDR*); //, int);
+static bool		inet_write(XDR*);
 static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai);
 
 #ifdef DEBUG
@@ -456,6 +460,7 @@ static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
 #endif
 
 static bool		packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
+static bool		packet_receive2(rem_port*, UCHAR*, SSHORT, SSHORT*);
 static bool		packet_send(rem_port*, const SCHAR*, SSHORT);
 static rem_port*		receive(rem_port*, PACKET *);
 static rem_port*		select_accept(rem_port*);
@@ -506,7 +511,7 @@ static XDR::xdr_ops inet_ops =
 
 
 
-SLONG INET_remote_buffer;
+ULONG INET_remote_buffer;
 static GlobalPtr<Mutex> init_mutex;
 static volatile bool INET_initialized = false;
 static volatile bool INET_shutting_down = false;
@@ -585,6 +590,10 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		user_id.insertBytes(CNCT_group, reinterpret_cast<UCHAR*>(&eff_gid), sizeof(eff_gid));
 	}
 
+	// Should compression be tried?
+
+	bool compression = config && (*config)->getWireCompression();
+
 	// Establish connection to server
 	// If we want user verification, we can't speak anything less than version 7
 
@@ -605,9 +614,9 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	for (size_t i = 0; i < cnct->p_cnct_count; i++) {
 		cnct->p_cnct_versions[i] = protocols_to_try[i];
+		if (compression && cnct->p_cnct_versions[i].p_cnct_version >= PROTOCOL_VERSION13)
+			cnct->p_cnct_versions[i].p_cnct_max_type |= pflag_compress;
 	}
-
-	// Try connection using first set of protocols
 
 	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config, ref_db_name);
 
@@ -671,6 +680,9 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		port->port_flags |= PORT_symmetric;
 	}
 
+	bool compress = accept->p_acpt_type & pflag_compress;
+	accept->p_acpt_type &= ptype_MASK;
+
 	if (accept->p_acpt_type != ptype_out_of_band) {
 		port->port_flags |= PORT_no_oob;
 	}
@@ -678,6 +690,9 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	if (accept->p_acpt_type == ptype_lazy_send) {
 		port->port_flags |= PORT_lazy;
 	}
+
+	if (compress)
+		port->initCompression();
 
 	return port;
 }
@@ -1275,14 +1290,14 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 	port->port_request = aux_request;
 	port->port_buff_size = (USHORT) INET_remote_buffer;
 	port->port_async_receive = inet_async_receive;
-	port->port_flags = flags;
+	port->port_flags |= flags;
 
-	xdrinet_create(	&port->port_send, port,
-					&port->port_buffer[INET_remote_buffer],
-					(USHORT) INET_remote_buffer,
-					XDR_ENCODE);
+	xdrinet_create(&port->port_send, port,
+		&port->port_buffer[REM_SEND_OFFSET(INET_remote_buffer)],
+		(USHORT) INET_remote_buffer, XDR_ENCODE);
 
-	xdrinet_create(	&port->port_receive, port, port->port_buffer, 0, XDR_DECODE);
+	xdrinet_create(&port->port_receive, port,
+		&port->port_buffer[REM_RECV_OFFSET(INET_remote_buffer)], 0, XDR_DECODE);
 
 	if (parent && !(parent->port_server_flags & SRVR_thread_per_port))
 	{
@@ -1894,7 +1909,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 			}
 			else if (port = select_accept(main_port))
 			{
-				if (!packet_receive(port, buffer, bufsize, length))
+				if (!REMOTE_inflate(port, packet_receive, buffer, bufsize, length))
 				{
 					*length = 0;
 				}
@@ -1914,7 +1929,7 @@ static bool select_multi(rem_port* main_port, UCHAR* buffer, SSHORT bufsize, SSH
 				return true;
 			}
 
-			if (!packet_receive(port, buffer, bufsize, length))
+			if (!REMOTE_inflate(port, packet_receive, buffer, bufsize, length))
 			{
 				if (port->port_flags & PORT_disconnect) {
 					continue;
@@ -2191,7 +2206,7 @@ static int send_full( rem_port* port, PACKET * packet)
 	port->port_send.x_client = !(port->port_flags & PORT_server);
 #endif
 	if (!xdr_protocol(&port->port_send, packet))
-		return FALSE;
+		return false;
 
 #ifdef DEBUG
 	{ // scope
@@ -2206,7 +2221,7 @@ static int send_full( rem_port* port, PACKET * packet)
 	} // end scope
 #endif
 
-	return inet_write(&port->port_send /*, TRUE*/);
+	return REMOTE_deflate(&port->port_send, inet_write, packet_send, true);
 }
 
 static int send_partial( rem_port* port, PACKET * packet)
@@ -2262,7 +2277,7 @@ static int xdrinet_create(XDR* xdrs, rem_port* port, UCHAR* buffer, USHORT lengt
 	xdrs->x_ops = (xdr_t::xdr_ops*) &inet_ops;
 	xdrs->x_op = x_op;
 
-	return TRUE;
+	return true;
 }
 
 #ifdef HAVE_SETITIMER
@@ -2447,8 +2462,10 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 			xdrs->x_handy = 0;
 		}
 
-		if (!inet_write(xdrs /*, 0*/))
+		if (!REMOTE_deflate(xdrs, inet_write, packet_send, false))
+		{
 			return FALSE;
+		}
 	}
 
 	// Scalar values and bulk transfer remainder fall thru
@@ -2468,7 +2485,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 
 	while (--bytecount >= 0)
 	{
-		if (xdrs->x_handy <= 0 && !inet_write(xdrs /*, 0*/))
+		if (xdrs->x_handy <= 0 && !REMOTE_deflate(xdrs, inet_write, packet_send, false))
 			return FALSE;
 		--xdrs->x_handy;
 		*xdrs->x_private++ = *buff++;
@@ -2477,7 +2494,7 @@ static bool_t inet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 	return TRUE;
 }
 
-static bool_t inet_read( XDR* xdrs)
+static bool inet_read( XDR* xdrs)
 {
 /**************************************
  *
@@ -2504,27 +2521,40 @@ static bool_t inet_read( XDR* xdrs)
 		p += xdrs->x_handy;
 	}
 
-	while (true)
-	{
-		SSHORT length = end - p;
-		if (!packet_receive(port, reinterpret_cast<UCHAR*>(p), length, &length))
-		{
-			return FALSE;
-		}
-		if (length >= 0)
-		{
-			p += length;
-			break;
-		}
-		p -= length;
-		if (!packet_send(port, 0, 0))
-			return FALSE;
-	}
+	SSHORT length = end - p;
+	port->port_flags &= ~PORT_z_data;
+	if (!REMOTE_inflate(port, packet_receive2, (UCHAR*)p, length, &length))
+		return false;
+	p += length;
 
 	xdrs->x_handy = (int) ((SCHAR *) p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
 
-	return TRUE;
+	return true;
+}
+
+static bool packet_receive2(rem_port* port, UCHAR* p, SSHORT bufSize, SSHORT* length)
+{
+	*length = 0;
+
+	while (true)
+	{
+		SSHORT l = bufSize - *length;
+		if (!packet_receive(port, p + *length, l, &l))
+			return false;
+
+		if (l >= 0)
+		{
+			*length += l;
+			break;
+		}
+
+		*length -= l;
+		if (!packet_send(port, 0, 0))
+			return false;
+	}
+
+	return true;
 }
 
 static rem_port* inet_try_connect(PACKET* packet,
@@ -2565,7 +2595,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	rem_port* port = NULL;
 	try
 	{
-		port = INET_connect(node_name, packet, FALSE, &dpb, config);
+		port = INET_connect(node_name, packet, false, &dpb, config);
 	}
 	catch (const Exception&)
 	{
@@ -2587,7 +2617,7 @@ static rem_port* inet_try_connect(PACKET* packet,
 	return port;
 }
 
-static bool_t inet_write(XDR* xdrs)
+static bool inet_write(XDR* xdrs)
 {
 /**************************************
  *
@@ -2603,7 +2633,7 @@ static bool_t inet_write(XDR* xdrs)
 
 	rem_port* port = (rem_port*) xdrs->x_public;
 	const char* p = xdrs->x_base;
-	SSHORT length = xdrs->x_private - p;
+	USHORT length = xdrs->x_private - p;
 
 	// Send data in manageable hunks.  If a packet is partial, indicate
 	// that with a negative length.  A positive length marks the end.
@@ -2613,14 +2643,14 @@ static bool_t inet_write(XDR* xdrs)
 		const SSHORT l = (SSHORT) MIN(length, INET_remote_buffer);
 		length -= l;
 		if (!packet_send(port, p, (SSHORT) (length ? -l : l)))
-			return FALSE;
+			return false;
 		p += l;
 	}
 
 	xdrs->x_private = xdrs->x_base;
 	xdrs->x_handy = INET_remote_buffer;
 
-	return TRUE;
+	return true;
 
 }
 

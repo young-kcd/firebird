@@ -994,7 +994,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	addMutliPartConnectParameter(dataFromPlugin, user_id, CNCT_specific_data);
 
 	// Client's wirecrypt requested level
-	user_id.insertInt(CNCT_client_crypt, config->getWireCrypt(WC_CLIENT));
+	user_id.insertInt(CNCT_client_crypt, clntConfig->getWireCrypt(WC_CLIENT));
 }
 
 void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING* listStr)
@@ -1020,8 +1020,8 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 	dataFromPlugin.clear();
 	firstTime = true;
 
-	config = REMOTE_get_config(fileName, &dpbConfig);
-	pluginList = config->getPlugins(Firebird::IPluginManager::AuthClient);
+	clntConfig = REMOTE_get_config(fileName, &dpbConfig);
+	pluginList = clntConfig->getPlugins(Firebird::IPluginManager::AuthClient);
 
 	Firebird::PathName final;
 	if (serverPluginList.hasData())
@@ -1064,7 +1064,7 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 
 Firebird::RefPtr<Config>* ClntAuthBlock::getConfig()
 {
-	return config.hasData() ? &config : NULL;
+	return clntConfig.hasData() ? &clntConfig : NULL;
 }
 
 void ClntAuthBlock::storeDataForPlugin(unsigned int length, const unsigned char* data)
@@ -1388,6 +1388,191 @@ void SrvAuthBlock::putKey(Firebird::IStatus* status, Firebird::FbCryptKey* crypt
 	{
 		ex.stuffException(status);
 	}
+}
+
+
+bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer, SSHORT buffer_length, SSHORT* length)
+{
+#ifdef WIRE_COMPRESS_SUPPORT
+	if (!port->port_compressed)
+		return packet_receive(port, buffer, buffer_length, length);
+
+	z_stream& strm = port->port_recv_stream;
+	strm.avail_out = buffer_length;
+	strm.next_out = buffer;
+
+	for(;;)
+	{
+		if (strm.avail_in)
+		{
+#ifdef COMPRESS_DEBUG
+			fprintf(stderr, "Data to inflate %d port %p\n", strm.avail_in, port);
+#if COMPRESS_DEBUG>1
+			for (unsigned n = 0; n < strm.avail_in; ++n) fprintf(stderr, "%02x ", strm.next_in[n]);
+			fprintf(stderr, "\n");
+#endif
+#endif
+
+			if (inflate(&strm, Z_NO_FLUSH) != Z_OK)
+			{
+#ifdef COMPRESS_DEBUG
+				fprintf(stderr, "Inflate error\n");
+#endif
+				(void)inflateEnd(&strm);
+				port->port_flags &= ~PORT_z_data;
+				return false;
+			}
+#ifdef COMPRESS_DEBUG
+			fprintf(stderr, "Inflated data %d\n", buffer_length - strm.avail_out);
+#if COMPRESS_DEBUG>1
+			for (unsigned n = 0; n < buffer_length - strm.avail_out; ++n) fprintf(stderr, "%02x ", buffer[n]);
+			fprintf(stderr, "\n");
+#endif
+#endif
+			if (strm.next_out != buffer)
+				break;
+
+			if (port->port_flags & PORT_z_data)		// Was called from select_multi() but nothing decompressed
+			{
+				port->port_flags &= ~PORT_z_data;
+				return false;
+			}
+
+			if (strm.next_in != &port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)])
+			{
+				memmove(&port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)], strm.next_in, strm.avail_in);
+				strm.next_in = &port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)];
+			}
+		}
+		else
+			strm.next_in = &port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)];
+
+		SSHORT l = (SSHORT) (port->port_buff_size - strm.avail_in);
+		if ((!packet_receive(port, strm.next_in, l, &l)) || (l <= 0))	// fixit - 2 ways to report errors in same routine
+		{
+			(void)inflateEnd(&strm);
+			port->port_flags &= ~PORT_z_data;
+			return false;
+		}
+
+		strm.avail_in += l;
+	}
+
+	*length = (SSHORT) (buffer_length - strm.avail_out);
+	if (strm.avail_in)	// Z-buffer still has some data - probably can call inflate() once more on them
+		port->port_flags |= PORT_z_data;
+	else
+		port->port_flags &= ~PORT_z_data;
+
+	return true;
+#else
+	return packet_receive(port, buffer, buffer_length, length);
+#endif
+}
+
+
+bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flash)
+{
+#ifdef WIRE_COMPRESS_SUPPORT
+	rem_port* port = (rem_port*) xdrs->x_public;
+	if (!port->port_compressed)
+		return proto_write(xdrs);
+
+	z_stream& strm = port->port_send_stream;
+	strm.avail_in = xdrs->x_private - xdrs->x_base;
+	strm.next_in = (Bytef*)xdrs->x_base;
+
+	if (!strm.next_out)
+	{
+		strm.avail_out = port->port_buff_size;
+		strm.next_out = (Bytef*)&port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)];
+	}
+
+	bool expectMoreOut = flash;
+
+	while(strm.avail_in || expectMoreOut)
+	{
+#ifdef COMPRESS_DEBUG
+		fprintf(stderr, "Data to deflate %d port %p\n", strm.avail_in, port);
+#if COMPRESS_DEBUG>1
+		for (unsigned n = 0; n < strm.avail_in; ++n) fprintf(stderr, "%02x ", strm.next_in[n]);
+		fprintf(stderr, "\n");
+#endif
+#endif
+		int ret = deflate(&strm, flash ? Z_SYNC_FLUSH : Z_NO_FLUSH);
+		if (ret == Z_BUF_ERROR)
+			ret = 0;
+		if (ret != 0)
+		{
+#ifdef COMPRESS_DEBUG
+			fprintf(stderr, "Deflate error %d\n", ret);
+#endif
+			return false;
+		}
+
+#ifdef COMPRESS_DEBUG
+		fprintf(stderr, "Deflated data %d\n", port->port_buff_size - strm.avail_out);
+#if COMPRESS_DEBUG>1
+		for (unsigned n = 0; n < port->port_buff_size - strm.avail_out; ++n)
+			fprintf(stderr, "%02x ", port->port_compressed[REM_SEND_OFFSET(port->port_buff_size) + n]);
+		fprintf(stderr, "\n");
+#endif
+#endif
+
+		expectMoreOut = !strm.avail_out;
+		if ((port->port_buff_size != strm.avail_out) && (flash || !strm.avail_out))
+		{
+			if (!packet_send(port, (SCHAR*) &port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)],
+				(SSHORT) (port->port_buff_size - strm.avail_out)))
+			{
+				return false;
+			}
+
+			strm.avail_out = port->port_buff_size;
+			strm.next_out = (Bytef*)&port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)];
+		}
+	}
+
+	xdrs->x_private = xdrs->x_base;
+	xdrs->x_handy = port->port_buff_size;
+
+	return true;
+#else
+	return proto_write(xdrs);
+#endif
+}
+
+
+void rem_port::initCompression()
+{
+#ifdef WIRE_COMPRESS_SUPPORT
+	if (port_protocol >= PROTOCOL_VERSION13 && !port_compressed)
+	{
+		port_send_stream.zalloc = Z_NULL;
+		port_send_stream.zfree = Z_NULL;
+		port_send_stream.opaque = Z_NULL;
+		int ret = deflateInit(&port_send_stream, Z_DEFAULT_COMPRESSION);
+		if (ret != Z_OK)
+			(Firebird::Arg::Gds(isc_random) << "compression stream init error").raise();		// add error code
+		port_send_stream.next_out = NULL;
+
+		port_recv_stream.zalloc = Z_NULL;
+		port_recv_stream.zfree = Z_NULL;
+		port_recv_stream.opaque = Z_NULL;
+		port_recv_stream.avail_in = 0;
+		port_recv_stream.next_in = Z_NULL;
+		ret = inflateInit(&port_recv_stream);
+		if (ret != Z_OK)
+			(Firebird::Arg::Gds(isc_random) << "decompression stream init error").raise();		// add error code
+
+		port_compressed.reset(FB_NEW(getPool()) UCHAR[port_buff_size * 2]);
+		memset(port_compressed, 0, port_buff_size * 2);
+		port_recv_stream.next_in = &port_compressed[REM_RECV_OFFSET(port_buff_size)];
+#ifdef COMPRESS_DEBUG
+		fprintf(stderr, "Completed init port %p\n", this);
+#endif
+	}
+#endif
 }
 
 

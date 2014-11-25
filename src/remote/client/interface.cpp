@@ -5952,6 +5952,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 		P_OP operation = op_void;
 		{	// scope
 			RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+			fb_assert(!port->port_compressed);
 			stuff = port->receive(&packet);
 
 			operation = packet.p_operation;
@@ -6235,6 +6236,9 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: cond_accept d=%d n=%d '%.*s' 0x%x\n",
 				d->cstr_length, n->cstr_length,
 				n->cstr_length, n->cstr_address, n->cstr_address ? n->cstr_address[0] : 0));
+			if (packet->p_acpd.p_acpt_type & pflag_compress)
+				port->initCompression();
+			packet->p_acpd.p_acpt_type &= ptype_MASK;
 			break;
 
 		case op_crypt:
