@@ -1161,6 +1161,9 @@ begin
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  res: boolean;
+  i: integer;
 begin
 
   case CurUninstallStep of
@@ -1170,33 +1173,41 @@ begin
 //    usUninstall :
 
     usPostUninstall : begin
-      // We are manually handling the share count of these files, so we must
-      // a) Decrement shared count of each one and
-      // b) If Decrement reaches 0 (ie, function returns true) then we
-      //    test if CleanUninstall has been passed.
-      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf') then
-        if CleanUninstall then
-          DeleteFile(GetAppPath+'\firebird.conf');
+        // This section is really clunky and will be re-written before backporting.
+        if CleanUninstall then begin
+          i := 0
+          while not DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.conf') 
+          do 
+            if i = 100 then break else inc(i);
+          res := DeleteFile(GetAppPath+'\firebird.conf');
 
-      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log') then
-        if CleanUninstall then
+          i := 0
+          while not DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\firebird.log')
+          do 
+            if i = 100 then break else inc(i);
           DeleteFile(GetAppPath+'\firebird.log');
 
-      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\databases.conf') then
-        if CleanUninstall then
+          i := 0
+          while not DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\databases.conf') 
+          do 
+            if i = 100 then break else inc(i);
           DeleteFile(GetAppPath+'\databases.conf');
 
-      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf') then
-        if CleanUninstall then
+          i := 0
+          while not DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf')
+          do
+            if i = 100 then break else inc(i);
           DeleteFile(GetAppPath+'\fbtrace.conf');
 
-      if DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\security3.fdb') then
-        if CleanUninstall then
+          i := 0
+          while not DecrementSharedCount(Is64BitInstallMode, GetAppPath+'\security3.fdb')
+          do
+            if i = 100 then break else inc(i);
           DeleteFile(GetAppPath+'\security3.fdb');
-
+        end;
       end;
 
-//    usDone :
+    usDone :  res := RemoveDir(GetAppPath);
 
   end;
 
