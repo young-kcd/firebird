@@ -23,7 +23,7 @@
 
 ;   Usage Notes:
 ;
-;   This script has been designed to work with Inno Setup v5.4.2 (unicode
+;   This script has been designed to work with Inno Setup v5.5.4 (unicode
 ;   version). It is available as a quick start pack from here:
 ;     http://www.jrsoftware.org/isdl.php#qsp
 ;
@@ -380,7 +380,7 @@ Name: UseClassicServerTask; Description: {cm:RunCS}; GroupDescription: {cm:Serve
 ; Let's not suport this out of the box, for the time being at least.
 ;Name: UseSuperClassicTask; Description: {cm:RunSC}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseSuperServerTask; Description: {cm:RunSS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
-Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
+;Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
 ;Name: UseGuardianTask; Description: {cm:UseGuardianTask}; GroupDescription: {cm:UseGuardianTaskDecription}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
 ;Allow user to not install cpl applet
 Name: UseSuperServerTask\InstallCPLAppletTask; Description: {cm:InstallCPLAppletTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
@@ -475,6 +475,7 @@ Source: {#FilesDir}\firebird.conf; DestDir: {app}; DestName: firebird.conf; Comp
 Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf.default; Components: ServerComponent;
 Source: {#FilesDir}\fbtrace.conf; DestDir: {app}; DestName: fbtrace.conf; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist; check: NofbtraceConfExists;
 Source: {#FilesDir}\databases.conf; DestDir: {app}; Components: ClientComponent; Flags: uninsneveruninstall onlyifdoesntexist
+Source: {#FilesDir}\security3.fdb; DestDir: {app}; Destname: security3.fdb.empty; Components: ServerComponent;
 Source: {#FilesDir}\security3.fdb; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall onlyifdoesntexist
 Source: {#FilesDir}\firebird.msg; DestDir: {app}; Components: ClientComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\firebird.log; DestDir: {app}; Components: ServerComponent; Flags: uninsneveruninstall skipifsourcedoesntexist external dontcopy
@@ -485,7 +486,7 @@ Source: {#FilesDir}\gpre.exe; DestDir: {app}; Components: DevAdminComponent; Fla
 Source: {#FilesDir}\gsec.exe; DestDir: {app}; Components: DevAdminComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\gsplit.exe; DestDir: {app}; Components: DevAdminComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\gstat.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
-Source: {#FilesDir}\fbguard.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
+;Source: {#FilesDir}\fbguard.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\firebird.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\fb_lock_print.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\ib_util.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
@@ -515,9 +516,11 @@ Source: {#FilesDir}\fbrmclib.dll; DestDir: {app}; Components: ServerComponent; F
 
 #if msvc_version >= 10
 Source: {#FilesDir}\msvcr{#msvc_version}?.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
+Source: {#FilesDir}\msvcp{#msvc_version}?.dll; DestDir: {app}; Components: ClientComponent; Flags: sharedfile;
 #if PlatformTarget == "x64"
 ;If we are installing on x64 we need some 32-bit libraries for compatibility with 32-bit applications
 Source: {#WOW64Dir}\msvcr{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
+Source: {#WOW64Dir}\msvcp{#msvc_version}?.dll; DestDir: {app}\WOW64; Components: ClientComponent; Flags: sharedfile;
 #endif
 #endif  /* if msvc_version >= 10 */
 
@@ -571,8 +574,8 @@ Source: {#FilesDir}\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf;
 ;Source: {#FilesDir}\misc\upgrade\metadata\*.*; DestDir: {app}\misc\upgrade\metadata; Components: ServerComponent; Flags: ignoreversion;
 
 ;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
-Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
-Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: ServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+;Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
+;Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: ServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 #endif /* files */
 
 #ifdef examples
@@ -711,7 +714,8 @@ begin
   if pos('FORCE',Uppercase(CommandLine)) > 0 then
     ForceInstall:=True;
 
-  if pos('NOCPL', Uppercase(CommandLine)) > 0 then
+// For now we disable insaltion of the cpl applet until it is fixed.
+//  if pos('NOCPL', Uppercase(CommandLine)) > 0 then
     NoCPL := True;
 
   if pos('NOGDS32', Uppercase(CommandLine)) > 0 then
@@ -1052,6 +1056,10 @@ begin
     ssInstall: begin
               SetupSharedFilesArray;
               GetSharedLibCountBeforeCopy;
+              if FileExists(GetAppPath+'\security3.fdb') then begin
+                if FileCopy(GetAppPath+'\security3.fdb', GetAppPath+'\security3.fdb.old', false) then
+                  DeleteFile(GetAppPath+'\security3.fdb');
+              end;
       end;
 
     ssPostInstall: begin
