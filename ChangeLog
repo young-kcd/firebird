@@ -1,3 +1,7 @@
+ 2014-11-24 16:01  mkubecek 
+   M configure.ac
+Fix libdir on s390x (S/390-64) Linux
+
  2014-11-22 10:42  hvlad 
    M src/common/os/os_utils.h
    M src/common/os/posix/os_utils.cpp
