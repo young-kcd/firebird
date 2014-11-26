@@ -721,7 +721,6 @@ public:
 		}
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-		fb_assert(!port->port_compressed);
 
 		PACKET packet;
 		packet.p_operation = op_event;
