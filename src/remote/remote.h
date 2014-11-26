@@ -55,7 +55,7 @@
 #endif
 #endif // !WIN_NT
 
-#if defined(HAVE_ZLIB_H) && defined(HAVE_LIBZ)
+#if defined(HAVE_ZLIB_H)
 #define WIRE_COMPRESS_SUPPORT 1
 #endif
 

@@ -67,10 +67,10 @@ void ModuleLoader::doctorModuleExtension(Firebird::PathName& name)
 	if (name.isEmpty())
 		return;
 
-	Firebird::PathName::size_type pos = name.rfind(".so");
+	Firebird::PathName::size_type pos = name.rfind("." SHRLIB_EXT);
 	if (pos != name.length() - 3)
 	{
-		name += ".so";
+		name += "." SHRLIB_EXT;
 	}
 	pos = name.rfind('/');
 	pos = (pos == Firebird::PathName::npos) ? 0 : pos + 1;

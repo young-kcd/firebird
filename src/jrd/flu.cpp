@@ -109,19 +109,15 @@ namespace {
 		// always try to use module "as is"
 		{MOD_SUFFIX, "", false},
 
-#ifdef HPUX
-		{MOD_SUFFIX, ".sl", true},
-#endif
-
 #ifdef DYNAMIC_SHARED_LIBRARIES
-		{MOD_SUFFIX, ".so", true},
+		{MOD_SUFFIX, "." SHRLIB_EXT, true},
 		{MOD_PREFIX, "lib", true},
 #endif
-
+/*
 #ifdef DARWIN
 		{MOD_SUFFIX, ".dylib", true},
 #endif
-
+ */
 	};
 
 	// UDF/BLOB filter verifier

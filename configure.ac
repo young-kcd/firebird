@@ -485,6 +485,7 @@ AC_SUBST(MAKEFILE_PREFIX)
 AC_SUBST(AR_OPTIONS)
 AC_SUBST(PLATFORM)
 AC_SUBST(SHRLIB_EXT)
+AC_DEFINE_UNQUOTED(SHRLIB_EXT, "$SHRLIB_EXT", [Extension for shared libraries])
 AC_DEFINE(CASE_SENSITIVITY, true, [Define this if paths are case sensitive])
 
 
@@ -653,6 +654,15 @@ AC_ARG_WITH(gpre-pascal,
    esac])
 AC_SUBST(GPRE_LANGUAGE_MODULES)
 
+dnl Compression switch
+COMPRESSION=Y
+AC_ARG_WITH(wire-compress,
+  [  --with-wire-compress    support compression of data, tarnsfered over the wire (default=yes)],
+  [case "$withval" in
+     yes) ;;
+     no)  COMPRESSION=N;;
+     *)   AC_MSG_ERROR(bad value '${withval}' for --with-wire-compress);;
+   esac])
 
 
 dnl Checks for programs.
@@ -723,7 +733,11 @@ AC_CHECK_HEADERS(langinfo.h)
 AC_CHECK_HEADERS(iconv.h)
 AC_CHECK_HEADERS(libio.h)
 AC_CHECK_HEADERS(linux/falloc.h)
-AC_CHECK_HEADERS(zlib.h)
+
+dnl check for compression
+if test "$COMPRESSION" = "Y"; then
+	AC_CHECK_HEADERS(zlib.h,,AC_MSG_ERROR(zlib header not found - please install development zlib package))
+fi
 
 dnl check for ICU presence
 AC_CHECK_HEADER(unicode/ucnv.h,,AC_MSG_ERROR(ICU support not found - please install development ICU package))
@@ -740,7 +754,6 @@ AC_SUBST(MATHLIB)
 
 dnl Check for libraries
 AC_SEARCH_LIBS(dlopen, dl)
-AC_CHECK_LIB(z, deflate)
 AC_CHECK_LIB(m, main)
 if test "$EDITLINE_FLG" = "Y"; then
 	AC_CHECK_LIB(curses, tgetent, TERMLIB=curses, \

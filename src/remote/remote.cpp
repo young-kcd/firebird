@@ -36,6 +36,7 @@
 #include "../common/classes/init.h"
 #include "../common/db_alias.h"
 #include "firebird/Interface.h"
+#include "../common/os/mod_loader.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter;
@@ -820,37 +821,6 @@ ServerCallbackBase::~ServerCallbackBase()
 {
 }
 
-rem_port::~rem_port()
-{
-	if (port_events_shutdown)
-	{
-		port_events_shutdown(this);
-	}
-
-	delete port_srv_auth;
-	delete port_srv_auth_block;
-	delete port_version;
-	delete port_connection;
-	delete port_host;
-	delete port_server_crypt_callback;
-
-#ifdef DEBUG_XDR_MEMORY
-	delete port_packet_vector;
-#endif
-
-	while (port_crypt_keys.hasData())
-	{
-		delete port_crypt_keys.pop();
-	}
-
-	if (port_crypt_plugin)
-		Firebird::PluginManagerInterfacePtr()->releasePlugin(port_crypt_plugin);
-
-#ifdef DEV_BUILD
-	--portCounter;
-#endif
-}
-
 /*
 void Rdb::set_async_vector(ISC_STATUS* userStatus) throw()
 {
@@ -1391,6 +1361,88 @@ void SrvAuthBlock::putKey(Firebird::IStatus* status, Firebird::FbCryptKey* crypt
 }
 
 
+namespace {
+	class ZLib
+	{
+	public:
+		ZLib(Firebird::MemoryPool&)
+		{
+			const char* name = "libz." SHRLIB_EXT ".1";
+			z.reset(ModuleLoader::fixAndLoadModule(name));
+			if (z)
+				symbols();
+			if (!z)
+				(Firebird::Arg::Gds(isc_random) << "Error loading zlib").raise();
+		}
+
+		int ZEXPORT (*deflateInit_)(z_stream* strm, int level, const char *version, int stream_size);
+		int ZEXPORT (*inflateInit_)(z_stream* strm, const char *version, int stream_size);
+		int ZEXPORT (*deflate)(z_stream* strm, int flush);
+		int ZEXPORT (*inflate)(z_stream* strm, int flush);
+		void ZEXPORT (*deflateEnd)(z_stream* strm);
+		void ZEXPORT (*inflateEnd)(z_stream* strm);
+
+		operator bool() {return z.hasData();}
+		bool operator!() {return !z.hasData();}
+
+	private:
+		Firebird::AutoPtr<ModuleLoader::Module> z;
+
+		void symbols()
+		{
+#define FB_ZSYMB(A) z->findSymbol(STRINGIZE(A), A); if (!A) {z.reset(NULL); return;}
+			FB_ZSYMB(deflateInit_)
+			FB_ZSYMB(inflateInit_)
+			FB_ZSYMB(deflate)
+			FB_ZSYMB(inflate)
+			FB_ZSYMB(deflateEnd)
+			FB_ZSYMB(inflateEnd)
+#undef FB_ZSYMB
+		}
+	};
+
+	Firebird::InitInstance<ZLib> zlib;
+}
+
+rem_port::~rem_port()
+{
+	if (port_events_shutdown)
+	{
+		port_events_shutdown(this);
+	}
+
+	delete port_srv_auth;
+	delete port_srv_auth_block;
+	delete port_version;
+	delete port_connection;
+	delete port_host;
+	delete port_server_crypt_callback;
+
+#ifdef DEBUG_XDR_MEMORY
+	delete port_packet_vector;
+#endif
+
+	while (port_crypt_keys.hasData())
+	{
+		delete port_crypt_keys.pop();
+	}
+
+	if (port_crypt_plugin)
+		Firebird::PluginManagerInterfacePtr()->releasePlugin(port_crypt_plugin);
+
+#ifdef DEV_BUILD
+	--portCounter;
+#endif
+
+#ifdef WIRE_COMPRESS_SUPPORT
+	if (port_compressed)
+	{
+		zlib().deflateEnd(&port_send_stream);
+		zlib().inflateEnd(&port_recv_stream);
+	}
+#endif
+}
+
 bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer, SSHORT buffer_length, SSHORT* length)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
@@ -1413,12 +1465,11 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 #endif
 #endif
 
-			if (inflate(&strm, Z_NO_FLUSH) != Z_OK)
+			if (zlib().inflate(&strm, Z_NO_FLUSH) != Z_OK)
 			{
 #ifdef COMPRESS_DEBUG
 				fprintf(stderr, "Inflate error\n");
 #endif
-				(void)inflateEnd(&strm);
 				port->port_flags &= ~PORT_z_data;
 				return false;
 			}
@@ -1450,7 +1501,6 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 		SSHORT l = (SSHORT) (port->port_buff_size - strm.avail_in);
 		if ((!packet_receive(port, strm.next_in, l, &l)) || (l <= 0))	// fixit - 2 ways to report errors in same routine
 		{
-			(void)inflateEnd(&strm);
 			port->port_flags &= ~PORT_z_data;
 			return false;
 		}
@@ -1469,7 +1519,6 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 	return packet_receive(port, buffer, buffer_length, length);
 #endif
 }
-
 
 bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send, bool flash)
 {
@@ -1499,7 +1548,7 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 		fprintf(stderr, "\n");
 #endif
 #endif
-		int ret = deflate(&strm, flash ? Z_SYNC_FLUSH : Z_NO_FLUSH);
+		int ret = zlib().deflate(&strm, flash ? Z_SYNC_FLUSH : Z_NO_FLUSH);
 		if (ret == Z_BUF_ERROR)
 			ret = 0;
 		if (ret != 0)
@@ -1542,7 +1591,6 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 #endif
 }
 
-
 void rem_port::initCompression()
 {
 #ifdef WIRE_COMPRESS_SUPPORT
@@ -1551,7 +1599,7 @@ void rem_port::initCompression()
 		port_send_stream.zalloc = Z_NULL;
 		port_send_stream.zfree = Z_NULL;
 		port_send_stream.opaque = Z_NULL;
-		int ret = deflateInit(&port_send_stream, Z_DEFAULT_COMPRESSION);
+		int ret = zlib().deflateInit(&port_send_stream, Z_DEFAULT_COMPRESSION);
 		if (ret != Z_OK)
 			(Firebird::Arg::Gds(isc_random) << "compression stream init error").raise();		// add error code
 		port_send_stream.next_out = NULL;
@@ -1561,13 +1609,25 @@ void rem_port::initCompression()
 		port_recv_stream.opaque = Z_NULL;
 		port_recv_stream.avail_in = 0;
 		port_recv_stream.next_in = Z_NULL;
-		ret = inflateInit(&port_recv_stream);
+		ret = zlib().inflateInit(&port_recv_stream);
 		if (ret != Z_OK)
+		{
+			zlib().deflateEnd(&port_send_stream);
 			(Firebird::Arg::Gds(isc_random) << "decompression stream init error").raise();		// add error code
+		}
 
-		port_compressed.reset(FB_NEW(getPool()) UCHAR[port_buff_size * 2]);
+		try
+		{
+			port_compressed.reset(FB_NEW(getPool()) UCHAR[port_buff_size * 2]);
+		}
+		catch(const Firebird::Exception&)
+		{
+			zlib().deflateEnd(&port_send_stream);
+			zlib().inflateEnd(&port_recv_stream);
+		}
 		memset(port_compressed, 0, port_buff_size * 2);
 		port_recv_stream.next_in = &port_compressed[REM_RECV_OFFSET(port_buff_size)];
+
 #ifdef COMPRESS_DEBUG
 		fprintf(stderr, "Completed init port %p\n", this);
 #endif
