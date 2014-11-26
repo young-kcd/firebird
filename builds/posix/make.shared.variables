@@ -46,7 +46,7 @@ AllObjects += $(GPRE_Common_Objects) $(GPRE_std) $(GPRE_boot)
 
 
 # Y-Valve
-YValve_Objects:= $(call dirObjects,yvalve)
+YValve_Objects:= $(call dirObjects,yvalve) $(call dirObjects,yvalve/config)
 
 AllObjects += $(YValve_Objects)
 
