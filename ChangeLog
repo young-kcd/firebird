@@ -1,3 +1,21 @@
+ 2014-11-25 15:02  asfernandes 
+   M src/dsql/ddl.cpp
+Fixed CORE-4623 - SP "Domain" and "Type Of" based variables referring BLOB with sub_type < 0 no longer work.
+
+ 2014-11-25 13:24  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+   M configure.ac
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/protocol.h
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Implemented CORE-733: Compress Data over the Network
+
  2014-11-24 16:01  mkubecek 
    M configure.ac
 Fix libdir on s390x (S/390-64) Linux
