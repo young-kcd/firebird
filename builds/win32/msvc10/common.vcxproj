@@ -49,7 +49,6 @@
     <ClCompile Include="..\..\..\src\common\config\ConfigCache.cpp" />
     <ClCompile Include="..\..\..\src\common\config\config_file.cpp" />
     <ClCompile Include="..\..\..\src\common\config\dir_list.cpp" />
-    <ClCompile Include="..\..\..\src\common\config\os\win32\config_root.cpp" />
     <ClCompile Include="..\..\..\src\common\cvt.cpp" />
     <ClCompile Include="..\..\..\src\common\db_alias.cpp" />
     <ClCompile Include="..\..\..\src\common\dllinst.cpp" />
@@ -143,7 +142,6 @@
     <ClInclude Include="..\..\..\src\common\config\ConfigCache.h" />
     <ClInclude Include="..\..\..\src\common\config\config_file.h" />
     <ClInclude Include="..\..\..\src\common\config\dir_list.h" />
-    <ClInclude Include="..\..\..\src\common\config\os\config_root.h" />
     <ClInclude Include="..\..\..\src\common\CsConvert.h" />
     <ClInclude Include="..\..\..\src\common\cvt.h" />
     <ClInclude Include="..\..\..\src\common\db_alias.h" />

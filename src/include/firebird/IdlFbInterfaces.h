@@ -837,6 +837,8 @@ public:
 			FirebirdConf* (CLOOP_CARG *getFirebirdConf)(ConfigManager* self) throw();
 			FirebirdConf* (CLOOP_CARG *getDatabaseConf)(ConfigManager* self, const char* dbName) throw();
 			Config* (CLOOP_CARG *getPluginConfig)(ConfigManager* self, const char* configuredPlugin) throw();
+			const char* (CLOOP_CARG *getInstallDirectory)(ConfigManager* self) throw();
+			const char* (CLOOP_CARG *getRootDirectory)(ConfigManager* self) throw();
 		};
 
 	protected:
@@ -892,6 +894,18 @@ public:
 		Config* getPluginConfig(const char* configuredPlugin)
 		{
 			Config* ret = static_cast<VTable*>(this->cloopVTable)->getPluginConfig(this, configuredPlugin);
+			return ret;
+		}
+
+		const char* getInstallDirectory()
+		{
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getInstallDirectory(this);
+			return ret;
+		}
+
+		const char* getRootDirectory()
+		{
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRootDirectory(this);
 			return ret;
 		}
 	};
@@ -6137,6 +6151,8 @@ public:
 					this->getFirebirdConf = &Name::cloopgetFirebirdConfDispatcher;
 					this->getDatabaseConf = &Name::cloopgetDatabaseConfDispatcher;
 					this->getPluginConfig = &Name::cloopgetPluginConfigDispatcher;
+					this->getInstallDirectory = &Name::cloopgetInstallDirectoryDispatcher;
+					this->getRootDirectory = &Name::cloopgetRootDirectoryDispatcher;
 				}
 			} vTable;
 
@@ -6195,6 +6211,32 @@ public:
 			}
 		}
 
+		static const char* CLOOP_CARG cloopgetInstallDirectoryDispatcher(ConfigManager* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getInstallDirectory();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+				return static_cast<const char*>(0);
+			}
+		}
+
+		static const char* CLOOP_CARG cloopgetRootDirectoryDispatcher(ConfigManager* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getRootDirectory();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+				return static_cast<const char*>(0);
+			}
+		}
+
 		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
 		{
 			try
@@ -6226,6 +6268,8 @@ public:
 		virtual FirebirdConf* getFirebirdConf() = 0;
 		virtual FirebirdConf* getDatabaseConf(const char* dbName) = 0;
 		virtual Config* getPluginConfig(const char* configuredPlugin) = 0;
+		virtual const char* getInstallDirectory() = 0;
+		virtual const char* getRootDirectory() = 0;
 	};
 
 	template <typename Name, typename Base>

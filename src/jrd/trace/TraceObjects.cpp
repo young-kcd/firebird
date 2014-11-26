@@ -45,7 +45,6 @@
 #include "../../jrd/opt_proto.h"
 #include "../../jrd/pag_proto.h"
 #include "../../common/os/path_utils.h"
-#include "../../common/config/os/config_root.h"
 #include "../../dsql/dsql_proto.h"
 
 #ifdef WIN_NT

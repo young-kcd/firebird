@@ -35,7 +35,6 @@
 #include "../../common/isc_s_proto.h"
 #include "../../jrd/jrd.h"
 #include "../../common/os/path_utils.h"
-#include "../../common/config/os/config_root.h"
 #include "../../common/os/os_utils.h"
 #include "../../jrd/trace/TraceConfigStorage.h"
 

@@ -24,10 +24,10 @@
 
 #include "../common/config/config.h"
 #include "../common/config/config_file.h"
-#include "../common/config/os/config_root.h"
 #include "../common/classes/init.h"
 #include "../common/dllinst.h"
 #include "../common/os/fbsyslog.h"
+#include "../common/utils_proto.h"
 #include "../jrd/constants.h"
 #include "firebird/Interface.h"
 
@@ -105,13 +105,6 @@ private:
  */
 
 Firebird::InitInstance<ConfigImpl> firebirdConf;
-
-/******************************************************************************
- *
- *	Static instance of the root and install directories detector
- */
-
-Firebird::InitInstance<ConfigRoot> rootDetector;
 
 }	// anonymous namespace
 
@@ -330,7 +323,7 @@ bool Config::missFirebirdConf()
 
 const char* Config::getInstallDirectory()
 {
-	return rootDetector().getInstallDirectory();
+	return fb_get_master_interface()->getConfigManager()->getInstallDirectory();
 }
 
 static Firebird::PathName* rootFromCommandLine = 0;
@@ -355,7 +348,7 @@ const char* Config::getRootDirectory()
 		return rootFromCommandLine->c_str();
 	}
 
-	return rootDetector().getRootDirectory();;
+	return fb_get_master_interface()->getConfigManager()->getRootDirectory();
 }
 
 

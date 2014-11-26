@@ -42,6 +42,9 @@
 #include "../common/classes/GenericMap.h"
 #include "../common/db_alias.h"
 
+#include "../yvalve/config/os/config_root.h"
+
+
 // register builtin plugins
 #include "../remote/client/interface.h"
 
@@ -1195,6 +1198,14 @@ InitInstance<DirCache> dirCache;
 
 namespace Firebird {
 
+/******************************************************************************
+*
+*	Static instance of the root and install directories detector
+*/
+
+InitInstance<ConfigRoot> rootDetector;
+
+
 // Generic access to all config interfaces
 class ConfigManager : public AutoIface<Api::ConfigManagerImpl<ConfigManager> >
 {
@@ -1253,6 +1264,16 @@ public:
 		{
 			return NULL;
 		}
+	}
+
+	const char* getInstallDirectory()
+	{
+		return rootDetector().getInstallDirectory();
+	}
+
+	const char* getRootDirectory()
+	{
+		return rootDetector().getRootDirectory();
 	}
 };
 

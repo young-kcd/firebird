@@ -301,6 +301,8 @@ interface ConfigManager : Versioned
 	FirebirdConf getFirebirdConf();
 	FirebirdConf getDatabaseConf(const string dbName);
 	Config getPluginConfig(const string configuredPlugin);
+	const string getInstallDirectory();
+	const string getRootDirectory();
 }
 
 

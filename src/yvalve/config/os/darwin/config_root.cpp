@@ -33,7 +33,7 @@
 
 #include "fb_types.h"
 #include "../common/classes/fb_string.h"
-#include "../common/config/os/config_root.h"
+#include "../yvalve/config/os/config_root.h"
 #include "../common/os/path_utils.h"
 #include "../common/file_params.h"
 

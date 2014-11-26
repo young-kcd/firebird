@@ -28,7 +28,7 @@
 #include "fb_types.h"
 #include "../../../../common/classes/fb_string.h"
 #include "../../../../common/dllinst.h"
-#include "../../../../common/config/os/config_root.h"
+#include "../../../../yvalve/config/os/config_root.h"
 
 using Firebird::PathName;
 
