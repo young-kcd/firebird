@@ -1360,7 +1360,7 @@ void SrvAuthBlock::putKey(Firebird::IStatus* status, Firebird::FbCryptKey* crypt
 	}
 }
 
-
+#ifdef WIRE_COMPRESS_SUPPORT
 namespace {
 	class ZLib
 	{
@@ -1403,6 +1403,7 @@ namespace {
 
 	Firebird::InitInstance<ZLib> zlib;
 }
+#endif // WIRE_COMPRESS_SUPPORT
 
 rem_port::~rem_port()
 {
