@@ -37,6 +37,7 @@
 #include "../common/db_alias.h"
 #include "firebird/Interface.h"
 #include "../common/os/mod_loader.h"
+#include "../jrd/license.h"
 
 #ifdef DEV_BUILD
 Firebird::AtomicCounter rem_port::portCounter;
@@ -1360,6 +1361,23 @@ void SrvAuthBlock::putKey(Firebird::IStatus* status, Firebird::FbCryptKey* crypt
 	}
 }
 
+void rem_port::versionInfo(Firebird::string& version)
+{
+	version.printf("%s/%s", FB_VERSION, port_version->str_data);
+#ifndef WIRE_COMPRESS_SUPPORT
+	if (port_crypt_plugin)
+		version += ":C";
+#else
+	if (port_crypt_plugin || port_compressed)
+		version += ':';
+	if (port_crypt_plugin)
+		version += 'C';
+	if (port_compressed)
+		version += 'Z';
+#endif
+}
+
+
 #ifdef WIRE_COMPRESS_SUPPORT
 namespace {
 	class ZLib
@@ -1402,6 +1420,16 @@ namespace {
 	};
 
 	Firebird::InitInstance<ZLib> zlib;
+
+	void* allocFunc(void*, uInt items, uInt size)
+	{
+		return MemoryPool::globalAlloc(items * size);
+	}
+
+	void freeFunc(void*, void* address)
+	{
+		MemoryPool::globalFree(address);
+	}
 }
 #endif // WIRE_COMPRESS_SUPPORT
 
@@ -1597,16 +1625,16 @@ void rem_port::initCompression()
 #ifdef WIRE_COMPRESS_SUPPORT
 	if (port_protocol >= PROTOCOL_VERSION13 && !port_compressed)
 	{
-		port_send_stream.zalloc = Z_NULL;
-		port_send_stream.zfree = Z_NULL;
+		port_send_stream.zalloc = allocFunc;
+		port_send_stream.zfree = freeFunc;
 		port_send_stream.opaque = Z_NULL;
 		int ret = zlib().deflateInit(&port_send_stream, Z_DEFAULT_COMPRESSION);
 		if (ret != Z_OK)
 			(Firebird::Arg::Gds(isc_random) << "compression stream init error").raise();		// add error code
 		port_send_stream.next_out = NULL;
 
-		port_recv_stream.zalloc = Z_NULL;
-		port_recv_stream.zfree = Z_NULL;
+		port_recv_stream.zalloc = allocFunc;
+		port_recv_stream.zfree = freeFunc;
 		port_recv_stream.opaque = Z_NULL;
 		port_recv_stream.avail_in = 0;
 		port_recv_stream.next_in = Z_NULL;

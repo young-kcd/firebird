@@ -1456,8 +1456,7 @@ void Attachment::getInfo(IStatus* status,
 			 item_length, items, 0, 0, buffer_length, temp_buffer);
 
 		string version;
-		version.printf("%s/%s%s", FB_VERSION, port->port_version->str_data,
-			port->port_crypt_complete ? ":C" : "");
+		port->versionInfo(version);
 
 		MERGE_database_info(temp_buffer, buffer, buffer_length,
 							DbImplementation::current.backwardCompatibleImplementation(), 3, 1,

@@ -39,7 +39,6 @@
 #include "../remote/remote.h"
 #include "../common/file_params.h"
 #include "../common/ThreadStart.h"
-#include "../jrd/license.h"
 #include "../common/classes/timestamp.h"
 #include "../remote/merge_proto.h"
 #include "../remote/parse_proto.h"
@@ -3746,8 +3745,7 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
 		if (!(status_vector.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			string version;
-			version.printf("%s/%s%s", FB_VERSION, this->port_version->str_data,
-				this->port_crypt_complete ? ":C" : "");
+			versionInfo(version);
 			info_db_len = MERGE_database_info(temp_buffer, //temp
 				buffer, buffer_length,
 				DbImplementation::current.backwardCompatibleImplementation(), 4, 1,
