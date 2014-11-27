@@ -1,3 +1,49 @@
+ 2014-11-26 17:43  alexpeshkoff 
+   M configure.ac
+   M src/common/os/posix/mod_loader.cpp
+   M src/jrd/flu.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+Load zlib dynamically to make it possible for the client to run without it
+Added configure switch to turn off build with compression
+Cleanup zlib streams to avoid memory leak
+Use SHRLIB_EXT instead explicit "so"
+
+ 2014-11-26 10:20  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+Remove unneeded any more assert, causing problems for a build w/o compression
+
+ 2014-11-26 10:01  alexpeshkoff 
+   M builds/posix/make.shared.variables
+Fixed posix build
+
+ 2014-11-26 09:45  hvlad 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/yvalve.vcxproj
+   M builds/win32/msvc10/yvalve.vcxproj.filters
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/common.vcxproj.filters
+   M builds/win32/msvc12/yvalve.vcxproj
+   M builds/win32/msvc12/yvalve.vcxproj.filters
+   M src/common/config/config.cpp
+   D src/common/config/os
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/yvalve/PluginManager.cpp
+   A src/yvalve/config
+   A src/yvalve/config/os (from /firebird/trunk/src/common/config/os:60291)
+   M src/yvalve/config/os/darwin/config_root.cpp
+   M src/yvalve/config/os/posix/config_root.cpp
+   M src/yvalve/config/os/win32/config_root.cpp
+Move ConfigRoot from common to the yvalve. Add its methods to the public interface ConfigManager.
+Now all plug-ins have the same root\install folders.
+It should fix CORE-4581 and related issues.
+MSVC10 and MSVC12 builds are updated, Posix and Darwin builds will follow.
+
  2014-11-25 15:02  asfernandes 
    M src/dsql/ddl.cpp
 Fixed CORE-4623 - SP "Domain" and "Type Of" based variables referring BLOB with sub_type < 0 no longer work.
