@@ -739,6 +739,10 @@ public:
 	AuthServerPlugins* plugins;
 	Auth::WriterImplementation authBlockWriter;
 
+	// extractNewKeys flags
+	static const ULONG EXTRACT_PLUGINS_LIST = 0x1;
+	static const ULONG ONLY_CLEANUP = 0x2;
+
 	explicit SrvAuthBlock(rem_port* p_port)
 		: port(p_port),
 		  userName(getPool()), pluginName(getPool()), pluginList(getPool()),
@@ -771,7 +775,7 @@ public:
 	void createPluginsItr();
 	void setDataForPlugin(const p_auth_continue* data);
 	void reset();
-	bool extractNewKeys(CSTRING* to, bool flagPlugList = false);
+	bool extractNewKeys(CSTRING* to, ULONG flags);
 	bool hasDataForPlugin();
 
 	// Firebird::IServerBlock implementation
@@ -809,6 +813,11 @@ private:
 const UCHAR TAG_KEY_TYPE		= 0;
 const UCHAR TAG_KEY_PLUGINS		= 1;
 const UCHAR TAG_KNOWN_PLUGINS	= 2;
+
+const signed char WIRECRYPT_BROKEN		= -1;
+const signed char WIRECRYPT_DISABLED	= 0;
+const signed char WIRECRYPT_ENABLED		= 1;
+const signed char WIRECRYPT_REQUIRED	= 2;
 
 // port_flags
 const USHORT PORT_symmetric		= 0x0001;	// Server/client architectures are symmetic
@@ -916,11 +925,9 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 	ServerAuthBase*							port_srv_auth;
 	SrvAuthBlock*							port_srv_auth_block;
 	Firebird::HalfStaticArray<InternalCryptKey*, 2>	port_crypt_keys;	// available wire crypt keys
-	bool			port_need_disk_crypt;	// set when appropriate DPB/SPB item is present
-											// requires wire crypt active before attachDatabase()
 	bool			port_crypt_complete;	// wire crypt init is complete one way or another,
 											// up to being turned off in firebird.conf
-	bool			port_required_encryption;	// encryption is required on port
+	signed char		port_crypt_level;		// encryption level for port
 	Firebird::ObjectsArray<KnownServerKey>	port_known_server_keys;	// Server sends to client
 											// keys known by it, they are stored here
 	Firebird::IWireCryptPlugin* port_crypt_plugin;		// plugin used by port, when not NULL - crypts wire data
@@ -966,8 +973,7 @@ public:
 		port_requests_queued(0), port_xcc(0), port_deferred_packets(0), port_last_object_id(0),
 		port_queue(getPool()), port_qoffset(0),
 		port_srv_auth(NULL), port_srv_auth_block(NULL),
-		port_crypt_keys(getPool()), port_need_disk_crypt(false), port_crypt_complete(false),
-		port_required_encryption(true),		// safe default
+		port_crypt_keys(getPool()), port_crypt_complete(false), port_crypt_level(WIRECRYPT_REQUIRED),
 		port_known_server_keys(getPool()), port_crypt_plugin(NULL),
 		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL),
 		port_buffer(FB_NEW(getPool()) UCHAR[rpt]),
@@ -990,6 +996,13 @@ public:
 	void unlinkParent();
 	const Firebird::RefPtr<Config>& getPortConfig() const;
 	void versionInfo(Firebird::string& version);
+
+	bool extractNewKeys(CSTRING* to, bool flagPlugList = false)
+	{
+		return port_srv_auth_block->extractNewKeys(to,
+			(flagPlugList ? SrvAuthBlock::EXTRACT_PLUGINS_LIST : 0) |
+			(port_crypt_level <= WIRECRYPT_DISABLED ? SrvAuthBlock::ONLY_CLEANUP : 0));
+	}
 
 	template <typename T>
 	void getHandle(T*& blk, OBJCT id)

@@ -470,14 +470,14 @@ public:
 						HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: send op_cond_accept\n"));
 						send->p_operation = op_cond_accept;
 						authPort->port_srv_auth_block->extractDataFromPluginTo(&send->p_acpd);
-						authPort->port_srv_auth_block->extractNewKeys(&send->p_acpd.p_acpt_keys);
+						authPort->extractNewKeys(&send->p_acpd.p_acpt_keys);
 					}
 					else
 					{
 						HANDSHAKE_DEBUG(fprintf(stderr, "Srv: authenticate: send op_cont_auth\n"));
 						send->p_operation = op_cont_auth;
 						authPort->port_srv_auth_block->extractDataFromPluginTo(&send->p_auth_cont);
-						authPort->port_srv_auth_block->extractNewKeys(&send->p_auth_cont.p_keys);
+						authPort->extractNewKeys(&send->p_auth_cont.p_keys);
 					}
 				}
 				else
@@ -1575,7 +1575,7 @@ bool wireEncryption(rem_port* port, ClumpletReader& id)
 {
 	if (port->port_type == rem_port::XNET)		// local connection
 	{
-		port->port_required_encryption = false;
+		port->port_crypt_level = WIRECRYPT_DISABLED;
 		return false;
 	}
 
@@ -1592,13 +1592,13 @@ bool wireEncryption(rem_port* port, ClumpletReader& id)
 	}
 
 	int serverCrypt = port->getPortConfig()->getWireCrypt(WC_SERVER);
-	if (wcCompatible[clientCrypt][serverCrypt] < 0)
+	if (wcCompatible[clientCrypt][serverCrypt] == WIRECRYPT_BROKEN)
 	{
 		Arg::Gds(isc_wirecrypt_incompatible).raise();
 	}
 
-	port->port_required_encryption = wcCompatible[clientCrypt][serverCrypt] == 2;
-	return wcCompatible[clientCrypt][serverCrypt] > 0;
+	port->port_crypt_level = wcCompatible[clientCrypt][serverCrypt];
+	return wcCompatible[clientCrypt][serverCrypt] >= WIRECRYPT_ENABLED;
 }
 
 
@@ -1748,9 +1748,9 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 			return true;
 		}
 
-		if (port->port_required_encryption)
+		if (port->port_crypt_level == WIRECRYPT_REQUIRED)
 		{
-			HANDSHAKE_DEBUG(fprintf(stderr, "port_required_encryption, reset accepted\n"));
+			HANDSHAKE_DEBUG(fprintf(stderr, "WIRECRYPT_REQUIRED, reset accepted\n"));
 			accepted = false;
 		}
 	}
@@ -1858,7 +1858,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 
 	// extractNewKeys() will also send to client list of known plugins
 	if (version >= PROTOCOL_VERSION13 &&
-		port->port_srv_auth_block->extractNewKeys(&send->p_acpd.p_acpt_keys, returnData))
+		port->extractNewKeys(&send->p_acpd.p_acpt_keys, returnData))
 	{
 		returnData = true;
 	}
@@ -1883,7 +1883,7 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 	if (useResponse)
 	{
 		CSTRING* const s = &send->p_resp.p_resp_data;
-		authPort->port_srv_auth_block->extractNewKeys(s);
+		authPort->extractNewKeys(s);
 		ISC_STATUS sv[] = {1, 0, 0};
 		authPort->send_response(send, 0, s->cstr_length, sv, false);
 	}
@@ -1891,7 +1891,7 @@ void ConnectAuth::accept(PACKET* send, Auth::WriterImplementation*)
 	{
 		send->p_operation = op_accept_data;
 		CSTRING* const s = &send->p_acpd.p_acpt_keys;
-		authPort->port_srv_auth_block->extractNewKeys(s);
+		authPort->extractNewKeys(s);
 		send->p_acpd.p_acpt_authenticated = 1;
 		authPort->send(send);
 		if (send->p_acpt.p_acpt_type & pflag_compress)
@@ -2125,7 +2125,7 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
  *
  **************************************/
 	WIRECRYPT_DEBUG(fprintf(stderr, "Line encryption %sabled on attach\n", port->port_crypt_complete ? "en" : "dis"));
-	if (port->port_required_encryption && !port->port_crypt_complete)
+	if (port->port_crypt_level == WIRECRYPT_REQUIRED && !port->port_crypt_complete)
 	{
 		Arg::Gds(isc_miss_wirecrypt).raise();
 	}
@@ -2213,7 +2213,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 	}
 
 	CSTRING* const s = &send->p_resp.p_resp_data;
-	authPort->port_srv_auth_block->extractNewKeys(s);
+	authPort->extractNewKeys(s);
 	authPort->send_response(send, 0, s->cstr_length, &status_vector, false);
 }
 
@@ -5213,7 +5213,7 @@ static void send_error(rem_port* port, PACKET* apacket, const Firebird::Arg::Sta
 static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 {
 	WIRECRYPT_DEBUG(fprintf(stderr, "Line encryption %sabled on attach svc\n", port->port_crypt_complete ? "en" : "dis"));
-	if (port->port_required_encryption && !port->port_crypt_complete)
+	if (port->port_crypt_level == WIRECRYPT_REQUIRED && !port->port_crypt_complete)
 	{
 		Arg::Gds(isc_miss_wirecrypt).raise();
 	}
@@ -5236,7 +5236,7 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 void ServiceAttachAuth::accept(PACKET* sendL, Auth::WriterImplementation* authBlock)
 {
 	authBlock->store(pb, isc_spb_auth_block);
-	authPort->port_srv_auth_block->extractNewKeys(&sendL->p_resp.p_resp_data);
+	authPort->extractNewKeys(&sendL->p_resp.p_resp_data);
 
 	authPort->service_attach(managerName.c_str(), pb, sendL);
 }
@@ -6410,23 +6410,27 @@ void SrvAuthBlock::reset()
 	plugins = NULL;
 }
 
-bool SrvAuthBlock::extractNewKeys(CSTRING* to, bool flagPluginsList)
+bool SrvAuthBlock::extractNewKeys(CSTRING* to, ULONG flags)
 {
 	lastExtractedKeys.reset();
-	for (unsigned n = 0; n < newKeys.getCount(); ++n)
-	{
-		const PathName& t = newKeys[n];
-		PathName plugins = knownCryptKeyTypes()[t];
-		if (plugins.hasData())
-		{
-			lastExtractedKeys.insertPath(TAG_KEY_TYPE, t);
-			lastExtractedKeys.insertPath(TAG_KEY_PLUGINS, plugins);
-		}
-	}
 
-	if (flagPluginsList && dataFromPlugin.getCount() == 0)
+	if (!(flags & ONLY_CLEANUP))
 	{
-		lastExtractedKeys.insertPath(TAG_KNOWN_PLUGINS, pluginList);
+		for (unsigned n = 0; n < newKeys.getCount(); ++n)
+		{
+			const PathName& t = newKeys[n];
+			PathName plugins = knownCryptKeyTypes()[t];
+			if (plugins.hasData())
+			{
+				lastExtractedKeys.insertPath(TAG_KEY_TYPE, t);
+				lastExtractedKeys.insertPath(TAG_KEY_PLUGINS, plugins);
+			}
+		}
+
+		if ((flags & EXTRACT_PLUGINS_LIST) && (dataFromPlugin.getCount() == 0))
+		{
+			lastExtractedKeys.insertPath(TAG_KNOWN_PLUGINS, pluginList);
+		}
 	}
 
 	to->cstr_length = (ULONG) lastExtractedKeys.getBufferLength();
