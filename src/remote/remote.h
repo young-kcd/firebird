@@ -992,6 +992,7 @@ private:
 
 public:
 	void initCompression();
+	static bool checkCompression();
 	void linkParent(rem_port* const parent);
 	void unlinkParent();
 	const Firebird::RefPtr<Config>& getPortConfig() const;

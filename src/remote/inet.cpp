@@ -614,8 +614,11 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 
 	for (size_t i = 0; i < cnct->p_cnct_count; i++) {
 		cnct->p_cnct_versions[i] = protocols_to_try[i];
-		if (compression && cnct->p_cnct_versions[i].p_cnct_version >= PROTOCOL_VERSION13)
+		if (compression && cnct->p_cnct_versions[i].p_cnct_version >= PROTOCOL_VERSION13 &&
+			rem_port::checkCompression())
+		{
 			cnct->p_cnct_versions[i].p_cnct_max_type |= pflag_compress;
+		}
 	}
 
 	rem_port* port = inet_try_connect(packet, rdb, file_name, node_name, dpb, config, ref_db_name);

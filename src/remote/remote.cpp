@@ -1389,8 +1389,6 @@ namespace {
 			z.reset(ModuleLoader::fixAndLoadModule(name));
 			if (z)
 				symbols();
-			if (!z)
-				(Firebird::Arg::Gds(isc_random) << "Error loading zlib").raise();
 		}
 
 		int ZEXPORT (*deflateInit_)(z_stream* strm, int level, const char *version, int stream_size);
@@ -1620,10 +1618,19 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 #endif
 }
 
+bool rem_port::checkCompression()
+{
+#ifdef WIRE_COMPRESS_SUPPORT
+	return zlib();
+#else
+	return false;
+#endif
+}
+
 void rem_port::initCompression()
 {
 #ifdef WIRE_COMPRESS_SUPPORT
-	if (port_protocol >= PROTOCOL_VERSION13 && !port_compressed)
+	if (port_protocol >= PROTOCOL_VERSION13 && !port_compressed && zlib())
 	{
 		port_send_stream.zalloc = allocFunc;
 		port_send_stream.zfree = freeFunc;
