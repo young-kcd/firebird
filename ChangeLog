@@ -1,3 +1,17 @@
+ 2014-11-27 13:51  alexpeshkoff 
+   A doc/README.wire.compression.html
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+Make zlib allocate memory from our pool
+Add Z flag in protocol version for compressed connections
+Documentation
+
+ 2014-11-27 08:15  hvlad 
+   M src/remote/remote.cpp
+Fix build errors when WIRE_COMPRESS_SUPPORT not defined
+
  2014-11-26 17:43  alexpeshkoff 
    M configure.ac
    M src/common/os/posix/mod_loader.cpp
