@@ -518,8 +518,8 @@ static const struct {
 	{335544814, "Services functionality will be supported in a later version  of the product"},		/* service_not_supported */
 	{335544815, "GENERATOR @1"},		/* generator_name */
 	{335544816, "UDF @1"},		/* udf_name */
-	{335544817, "Invalid parameter to FIRST.  Only integers >= 0 are allowed."},		/* bad_limit_param */
-	{335544818, "Invalid parameter to SKIP.  Only integers >= 0 are allowed."},		/* bad_skip_param */
+	{335544817, "Invalid parameter to FETCH or FIRST. Only integers >= 0 are allowed."},		/* bad_limit_param */
+	{335544818, "Invalid parameter to OFFSET or SKIP. Only integers >= 0 are allowed."},		/* bad_skip_param */
 	{335544819, "File exceeded maximum size of 2GB.  Add another database file or use a 64 bit I/O version of Firebird."},		/* io_32bit_exceeded_err */
 	{335544820, "Unable to find savepoint with name @1 in transaction context"},		/* invalid_savepoint */
 	{335544821, "Invalid column position used in the @1 clause"},		/* dsql_column_pos_err */
@@ -1158,7 +1158,7 @@ Data source : @4"},		/* eds_statement */
 	{336397324, "CREATE GENERATOR @1 failed"},		/* dsql_create_generator_failed */
 	{336397325, "SET GENERATOR @1 failed"},		/* dsql_set_generator_failed */
 	{336397326, "WITH LOCK can be used only with a single physical table"},		/* dsql_wlock_simple */
-	{336397327, "FIRST/SKIP cannot be used with ROWS"},		/* dsql_firstskip_rows */
+	{336397327, "FIRST/SKIP cannot be used with OFFSET/FETCH or ROWS"},		/* dsql_firstskip_rows */
 	{336397328, "WITH LOCK cannot be used with aggregates"},		/* dsql_wlock_aggregates */
 	{336397329, "WITH LOCK cannot be used with @1"},		/* dsql_wlock_conflict */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */

@@ -570,6 +570,8 @@ using namespace Firebird;
 %token <metaNamePtr> SERVERWIDE
 %token <metaNamePtr> INCREMENT
 %token <metaNamePtr> TRUSTED
+%token <metaNamePtr> ROW
+%token <metaNamePtr> OFFSET
 
 // precedence declarations for expression evaluation
 
@@ -3809,9 +3811,11 @@ keyword_or_column
 	| KW_BOOLEAN			// added in FB 3.0
 	| DETERMINISTIC
 	| KW_FALSE
+	| OFFSET
 	| OVER
 	| RETURN
 	| RDB_RECORD_VERSION
+	| ROW
 	| SCROLL
 	| SQLSTATE
 	| KW_TRUE
@@ -4898,6 +4902,21 @@ select_expr
 			node->rowsClause = $4;
 			node->withClause = $1;
 		}
+	| with_clause select_expr_body order_clause result_offset_clause fetch_first_clause
+		{
+			SelectExprNode* node = $$ = newNode<SelectExprNode>();
+			node->querySpec = $2;
+			node->orderClause = $3;
+			if ($4 || $5) {
+				RowsClause* rowsNode = newNode<RowsClause>();
+				rowsNode->skip = $4;
+				rowsNode->length = $5;
+				node->rowsClause = rowsNode;
+			} else {
+				node->rowsClause = NULL;
+			}
+			node->withClause = $1;
+		}
 	;
 
 %type <withClause> with_clause
@@ -5451,14 +5470,13 @@ nulls_placement
 	| LAST	{ $$ = OrderNode::NULLS_LAST; }
 	;
 
-// ROWS clause
+// ROWS clause - ROWS clause is a non-standard alternative to OFFSET .. FETCH ..
 
+// Non-optional - for use in select_expr (so it doesn't cause conflicts with OFFSET .. FETCH ..)
 %type <rowsClause> rows_clause
 rows_clause
-	: // nothing
-		{ $$ = NULL; }
 	// equivalent to FIRST value
-	| ROWS value
+	: ROWS value
 		{
 			$$ = newNode<RowsClause>();
 			$$->length = $2;
@@ -5473,6 +5491,45 @@ rows_clause
 		}
 	;
 
+// Optional - for use in delete_searched and update_searched
+%type <rowsClause> rows_clause_optional
+rows_clause_optional
+	: // nothing
+		{ $$ = NULL; }
+	| rows_clause
+	;
+
+// OFFSET n {ROW | ROWS}
+
+row_noise
+	: ROW
+	| ROWS
+	;
+
+%type <valueExprNode> result_offset_clause
+result_offset_clause
+	: // nothing
+		{ $$ = NULL; }
+	| OFFSET simple_value_spec row_noise
+		{ $$ = $2; }
+	;
+
+// FETCH {FIRST | NEXT} [ n ] {ROW | ROWS} ONLY
+
+first_next_noise
+	: FIRST
+	| NEXT
+	;
+
+%type <valueExprNode> fetch_first_clause
+fetch_first_clause
+	: // nothing
+		{ $$ = NULL; }
+	| FETCH first_next_noise simple_value_spec row_noise ONLY
+		{ $$ = $3; }
+	| FETCH first_next_noise row_noise ONLY
+		{ $$ = MAKE_const_slong(1); }
+	;
 
 // INSERT statement
 // IBO hack: replace column_parens_opt by ins_column_parens_opt.
@@ -5588,7 +5645,7 @@ delete
 
 %type <stmtNode> delete_searched
 delete_searched
-	: KW_DELETE FROM table_name where_clause plan_clause order_clause rows_clause returning_clause
+	: KW_DELETE FROM table_name where_clause plan_clause order_clause rows_clause_optional returning_clause
 		{
 			EraseNode* node = newNode<EraseNode>();
 			node->dsqlRelation = $3;
@@ -5625,7 +5682,7 @@ update
 %type <stmtNode> update_searched
 update_searched
 	: UPDATE table_name SET assignments where_clause plan_clause
-			order_clause rows_clause returning_clause
+			order_clause rows_clause_optional returning_clause
 		{
 			ModifyNode* node = newNode<ModifyNode>();
 			node->dsqlRelation = $2;
@@ -6342,6 +6399,14 @@ value
 value_primary
 	: nonparenthesized_value
 	| '(' value_primary ')'	{ $$ = $2; }
+	;
+
+// Matches definition of <simple value specification> in SQL standard
+%type <valueExprNode> simple_value_spec
+simple_value_spec
+	: constant
+	| variable
+	| parameter
 	;
 
 %type <valueExprNode> nonparenthesized_value
