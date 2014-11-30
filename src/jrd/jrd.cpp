@@ -649,6 +649,7 @@ namespace {
 	const unsigned CHECK_PERSISTENT_ONLY = 1;
 }
 static void			check_database(thread_db* tdbb, unsigned flags = 0);
+static void			check_monitoring(thread_db* tdbb);
 static void			commit(thread_db*, jrd_tra*, const bool);
 static bool			drop_files(const jrd_file*);
 static void			find_intl_charset(thread_db*, Attachment*, const DatabaseOptions*);
@@ -4428,20 +4429,7 @@ bool JRD_reschedule(thread_db* tdbb, SLONG quantum, bool punt)
 	// Enable signal handler for the monitoring stuff
 
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
-	{
-		dbb->dbb_ast_flags &= ~DBB_monitor_off;
-		dbb->dbb_flags |= DBB_monitor_locking;
-		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-		dbb->dbb_flags &= ~DBB_monitor_locking;
-
-		// While waiting for return from LCK_lock call above the blocking AST (see 
-		// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag 
-		// again. But it not released lock as lck_id was unknown at that moment. 
-		// Do it now to not block another process waiting for a monitoring lock.
-
-		if (dbb->dbb_ast_flags & DBB_monitor_off)
-			LCK_release(tdbb, dbb->dbb_monitor_lock);
-	}
+		check_monitoring(tdbb);
 
 	tdbb->tdbb_quantum = (tdbb->tdbb_quantum <= 0) ?
 #ifdef SUPERSERVER
@@ -4554,15 +4542,26 @@ static void check_database(thread_db* tdbb, unsigned flags)
 	// See also comments in JRD_reshedule.
 
 	if (dbb->dbb_ast_flags & DBB_monitor_off)
-	{
-		dbb->dbb_ast_flags &= ~DBB_monitor_off;
-		dbb->dbb_flags |= DBB_monitor_locking;
-		LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
-		dbb->dbb_flags &= ~DBB_monitor_locking;
+		check_monitoring(tdbb);
+}
 
-		if (dbb->dbb_ast_flags & DBB_monitor_off)
-			LCK_release(tdbb, dbb->dbb_monitor_lock);
-	}
+
+static void check_monitoring(thread_db* tdbb)
+{
+	Database* const dbb = tdbb->getDatabase();
+
+	dbb->dbb_ast_flags &= ~DBB_monitor_off;
+	dbb->dbb_flags |= DBB_monitor_locking;
+	LCK_lock(tdbb, dbb->dbb_monitor_lock, LCK_SR, LCK_WAIT);
+	dbb->dbb_flags &= ~DBB_monitor_locking;
+
+	// While waiting for return from LCK_lock call above the blocking AST (see 
+	// DatabaseSnapshot::blockingAst) was called and set DBB_monitor_off flag 
+	// again. But it not released lock as lck_id was unknown at that moment. 
+	// Do it now to not block another process waiting for a monitoring lock.
+
+	if (dbb->dbb_ast_flags & DBB_monitor_off)
+		LCK_release(tdbb, dbb->dbb_monitor_lock);
 }
 
 
@@ -5407,7 +5406,8 @@ static void init_monitoring_lock(thread_db* tdbb)
 	lock->lck_dbb = dbb;
 	lock->lck_object = dbb;
 	lock->lck_ast = DatabaseSnapshot::blockingAst;
-	LCK_lock(tdbb, lock, LCK_SR, LCK_WAIT);
+
+	check_monitoring(tdbb);
 }
 
 
