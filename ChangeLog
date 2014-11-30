@@ -1,3 +1,12 @@
+ 2014-11-29 15:39  mrotteveel 
+   A doc/sql.extensions/README.offset_fetch.txt
+   M doc/sql.extensions/README.rows
+   M src/dsql/parse.y
+   M src/include/gen/msgs.h
+   M src/msgs/messages2.sql
+   M src/yvalve/keywords.cpp
+CORE-4526 Support for SQL:2008 OFFSET and FETCH clauses
+
  2014-11-28 13:46  alexpeshkoff 
    M src/remote/inet.cpp
    M src/remote/remote.cpp
