@@ -2392,7 +2392,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
 	// We're about to modify the record. Post a refetch request
 	// to all the active cursors positioned at this record.
 
-	invalidate_cursor_records(transaction, org_rpb);
+	invalidate_cursor_records(transaction, new_rpb);
 
 	/* We're almost ready to go.  To modify the record, we must first
 	make a copy of the old record someplace else.  Then we must re-fetch
