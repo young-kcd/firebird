@@ -823,6 +823,7 @@ rem_port* INET_connect(const TEXT* name,
 			gai_hints.ai_family = AF_UNSPEC;
 			retry_gai = true;
 		}
+
 		if ((n == EAI_SERVICE) && (protocol == FB_SERVICE_NAME))
 		{
 			// Try hard-wired translation of "gds_db" to "3050"

@@ -1398,15 +1398,15 @@ namespace {
 		void ZEXPORT (*deflateEnd)(z_stream* strm);
 		void ZEXPORT (*inflateEnd)(z_stream* strm);
 
-		operator bool() {return z.hasData();}
-		bool operator!() {return !z.hasData();}
+		operator bool() { return z.hasData(); }
+		bool operator!() { return !z.hasData(); }
 
 	private:
 		Firebird::AutoPtr<ModuleLoader::Module> z;
 
 		void symbols()
 		{
-#define FB_ZSYMB(A) z->findSymbol(STRINGIZE(A), A); if (!A) {z.reset(NULL); return;}
+#define FB_ZSYMB(A) z->findSymbol(STRINGIZE(A), A); if (!A) { z.reset(NULL); return; }
 			FB_ZSYMB(deflateInit_)
 			FB_ZSYMB(inflateInit_)
 			FB_ZSYMB(deflate)
@@ -1470,7 +1470,8 @@ rem_port::~rem_port()
 #endif
 }
 
-bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer, SSHORT buffer_length, SSHORT* length)
+bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer,
+	SSHORT buffer_length, SSHORT* length)
 {
 #ifdef WIRE_COMPRESS_SUPPORT
 	if (!port->port_compressed)
@@ -1480,13 +1481,13 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 	strm.avail_out = buffer_length;
 	strm.next_out = buffer;
 
-	for(;;)
+	for (;;)
 	{
 		if (strm.avail_in)
 		{
 #ifdef COMPRESS_DEBUG
 			fprintf(stderr, "Data to inflate %d port %p\n", strm.avail_in, port);
-#if COMPRESS_DEBUG>1
+#if COMPRESS_DEBUG > 1
 			for (unsigned n = 0; n < strm.avail_in; ++n) fprintf(stderr, "%02x ", strm.next_in[n]);
 			fprintf(stderr, "\n");
 #endif
@@ -1502,7 +1503,7 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 			}
 #ifdef COMPRESS_DEBUG
 			fprintf(stderr, "Inflated data %d\n", buffer_length - strm.avail_out);
-#if COMPRESS_DEBUG>1
+#if COMPRESS_DEBUG > 1
 			for (unsigned n = 0; n < buffer_length - strm.avail_out; ++n) fprintf(stderr, "%02x ", buffer[n]);
 			fprintf(stderr, "\n");
 #endif
@@ -1561,12 +1562,12 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 	if (!strm.next_out)
 	{
 		strm.avail_out = port->port_buff_size;
-		strm.next_out = (Bytef*)&port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)];
+		strm.next_out = (Bytef*) &port->port_compressed[REM_SEND_OFFSET(port->port_buff_size)];
 	}
 
 	bool expectMoreOut = flash;
 
-	while(strm.avail_in || expectMoreOut)
+	while (strm.avail_in || expectMoreOut)
 	{
 #ifdef COMPRESS_DEBUG
 		fprintf(stderr, "Data to deflate %d port %p\n", strm.avail_in, port);
@@ -1656,7 +1657,7 @@ void rem_port::initCompression()
 		{
 			port_compressed.reset(FB_NEW(getPool()) UCHAR[port_buff_size * 2]);
 		}
-		catch(const Firebird::Exception&)
+		catch (const Firebird::Exception&)
 		{
 			zlib().deflateEnd(&port_send_stream);
 			zlib().inflateEnd(&port_recv_stream);

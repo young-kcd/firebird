@@ -117,7 +117,7 @@ namespace {
 #ifdef DARWIN
 		{MOD_SUFFIX, ".dylib", true},
 #endif
- */
+*/
 	};
 
 	// UDF/BLOB filter verifier

@@ -4907,14 +4907,15 @@ select_expr
 			SelectExprNode* node = $$ = newNode<SelectExprNode>();
 			node->querySpec = $2;
 			node->orderClause = $3;
-			if ($4 || $5) {
+
+			if ($4 || $5)
+			{
 				RowsClause* rowsNode = newNode<RowsClause>();
 				rowsNode->skip = $4;
 				rowsNode->length = $5;
 				node->rowsClause = rowsNode;
-			} else {
-				node->rowsClause = NULL;
 			}
+
 			node->withClause = $1;
 		}
 	;
@@ -5494,8 +5495,7 @@ rows_clause
 // Optional - for use in delete_searched and update_searched
 %type <rowsClause> rows_clause_optional
 rows_clause_optional
-	: // nothing
-		{ $$ = NULL; }
+	: /* nothing */	{ $$ = NULL; }
 	| rows_clause
 	;
 
@@ -5508,10 +5508,8 @@ row_noise
 
 %type <valueExprNode> result_offset_clause
 result_offset_clause
-	: // nothing
-		{ $$ = NULL; }
-	| OFFSET simple_value_spec row_noise
-		{ $$ = $2; }
+	: /* nothing */							{ $$ = NULL; }
+	| OFFSET simple_value_spec row_noise	{ $$ = $2; }
 	;
 
 // FETCH {FIRST | NEXT} [ n ] {ROW | ROWS} ONLY
@@ -5523,12 +5521,9 @@ first_next_noise
 
 %type <valueExprNode> fetch_first_clause
 fetch_first_clause
-	: // nothing
-		{ $$ = NULL; }
-	| FETCH first_next_noise simple_value_spec row_noise ONLY
-		{ $$ = $3; }
-	| FETCH first_next_noise row_noise ONLY
-		{ $$ = MAKE_const_slong(1); }
+	: /* nothing */												{ $$ = NULL; }
+	| FETCH first_next_noise simple_value_spec row_noise ONLY	{ $$ = $3; }
+	| FETCH first_next_noise row_noise ONLY						{ $$ = MAKE_const_slong(1); }
 	;
 
 // INSERT statement

@@ -278,7 +278,7 @@ bool isIPv6supported()
 	INT proto[] = {IPPROTO_TCP, 0};
 
 	Firebird::HalfStaticArray<char, sizeof(WSAPROTOCOL_INFO) * 4> buf;
-	
+
 	DWORD len = buf.getCapacity();
 	LPWSAPROTOCOL_INFO pi = (LPWSAPROTOCOL_INFO) buf.getBuffer(len);
 
@@ -294,8 +294,10 @@ bool isIPv6supported()
 		return false;
 
 	for (int i = 0; i < n; i++)
+	{
 		if (pi[i].iAddressFamily == AF_INET6 && pi[i].iProtocol == IPPROTO_TCP)
 			return true;
+	}
 
 	WSASetLastError(0);
 	return false;

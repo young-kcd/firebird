@@ -3365,7 +3365,7 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 		*byte |= bit;
 		if (slot == ppage->ppg_min_space)
 		{
-			const UCHAR* bits = (UCHAR*)&ppage->ppg_page[dbb->dbb_dp_per_pp];
+			const UCHAR* bits = (UCHAR*) &ppage->ppg_page[dbb->dbb_dp_per_pp];
 			while (ppage->ppg_min_space < ppage->ppg_count)
 			{
 				ppage->ppg_min_space++;
