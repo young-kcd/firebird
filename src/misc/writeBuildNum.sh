@@ -20,7 +20,7 @@ Root=`dirname $Root`
 
 if [ "$SPECIAL_BUILD_SUFFIX" = "" ]; then
 # Normal builds
-SuffixKind="Beta 1"
+SuffixKind="Beta 2"
 SuffixVer=""
 BuildSuffix="Firebird 3.0"
 [ "$SuffixKind" = "" ] || BuildSuffix="$BuildSuffix $SuffixKind"
