@@ -2284,10 +2284,11 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	// If the stream was sorted, the various fields in the rpb are probably junk.
 	// Just to make sure that everything is cool, refetch and release the record.
 
-	if (rpb->rpb_stream_flags & RPB_s_refetch)
+	if ((rpb->rpb_stream_flags & RPB_s_offline) ||
+		(rpb->rpb_runtime_flags & RPB_refetch))
 	{
 		VIO_refetch_record(tdbb, rpb, transaction, false);
-		rpb->rpb_stream_flags &= ~RPB_s_refetch;
+		rpb->rpb_runtime_flags &= ~RPB_refetch;
 	}
 
 	if (transaction != attachment->getSysTransaction())
@@ -5848,16 +5849,6 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	record_param* newRpb = &request->req_rpb[newStream];
 
-	// If the stream was sorted, the various fields in the rpb are
-	// probably junk.  Just to make sure that everything is cool,
-	// refetch and release the record.
-
-	if (orgRpb->rpb_stream_flags & RPB_s_refetch)
-	{
-		VIO_refetch_record(tdbb, orgRpb, transaction, false);
-		orgRpb->rpb_stream_flags &= ~RPB_s_refetch;
-	}
-
 	switch (request->req_operation)
 	{
 		case jrd_req::req_evaluate:
@@ -5964,6 +5955,17 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	impure->sta_state = 0;
 	RLCK_reserve_relation(tdbb, transaction, relation, true);
+
+	// If the stream was sorted, the various fields in the rpb are
+	// probably junk.  Just to make sure that everything is cool,
+	// refetch and release the record.
+
+	if ((orgRpb->rpb_stream_flags & RPB_s_offline) ||
+		(orgRpb->rpb_runtime_flags & RPB_refetch))
+	{
+		VIO_refetch_record(tdbb, orgRpb, transaction, false);
+		orgRpb->rpb_runtime_flags &= ~RPB_refetch;
+	}
 
 	// Fall thru on evaluate to set up for modify before executing sub-statement.
 	// This involves finding the appropriate format, making sure a record block

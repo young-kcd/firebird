@@ -659,7 +659,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			rpb->rpb_flags &= ~rpb_gc_active;
 	}
 
-	rpb->rpb_stream_flags &= ~RPB_s_undo_data;
+	rpb->rpb_runtime_flags &= ~RPB_undo_data;
 	int forceBack = 0;
 
 	if (state == tra_us && !(transaction->tra_flags & TRA_system))
@@ -1355,11 +1355,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	// If the stream was sorted, the various fields in the rpb are
 	// probably junk.  Just to make sure that everything is cool, refetch the record.
 
-	if (rpb->rpb_stream_flags & RPB_s_refetch)
+	if (rpb->rpb_runtime_flags & RPB_refetch)
 	{
-		rpb->rpb_stream_flags |= RPB_s_refetch_no_undo;
+		rpb->rpb_runtime_flags |= RPB_no_undo;
 		VIO_refetch_record(tdbb, rpb, transaction, false);
-		rpb->rpb_stream_flags &= ~(RPB_s_refetch | RPB_s_refetch_no_undo);
+		rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
 	}
 
 	// deleting tx has updated/inserted this record before
@@ -2031,12 +2031,12 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 		rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
-	if (rpb->rpb_stream_flags & RPB_s_undo_data)
+	if (rpb->rpb_runtime_flags & RPB_undo_data)
 		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
 	else
 		fb_assert(rpb->getWindow(tdbb).win_bdb != NULL);
 
-	if (pool && !(rpb->rpb_stream_flags & RPB_s_undo_data))
+	if (pool && !(rpb->rpb_runtime_flags & RPB_undo_data))
 	{
 		if (rpb->rpb_stream_flags & RPB_s_no_data)
 		{
@@ -2433,11 +2433,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	// probably junk.  Just to make sure that everything is cool,
 	// refetch and release the record.
 
-	if (org_rpb->rpb_stream_flags & RPB_s_refetch)
+	if (org_rpb->rpb_runtime_flags & RPB_refetch)
 	{
-		org_rpb->rpb_stream_flags |= RPB_s_refetch_no_undo;
+		org_rpb->rpb_runtime_flags |= RPB_no_undo;
 		VIO_refetch_record(tdbb, org_rpb, transaction, false);
-		org_rpb->rpb_stream_flags &= ~(RPB_s_refetch | RPB_s_refetch_no_undo);
+		org_rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
 	}
 
 	// If we're the system transaction, modify stuff in place.  This saves
@@ -2880,12 +2880,12 @@ bool VIO_next_record(thread_db* tdbb,
 		}
 	} while (!VIO_chase_record_version(tdbb, rpb, transaction, pool, false));
 
-	if (rpb->rpb_stream_flags & RPB_s_undo_data)
+	if (rpb->rpb_runtime_flags & RPB_undo_data)
 		fb_assert(rpb->getWindow(tdbb).win_bdb == NULL);
 	else
 		fb_assert(rpb->getWindow(tdbb).win_bdb != NULL);
 
-	if (pool && !(rpb->rpb_stream_flags & RPB_s_undo_data))
+	if (pool && !(rpb->rpb_runtime_flags & RPB_undo_data))
 	{
 		if (rpb->rpb_stream_flags & RPB_s_no_data)
 		{
@@ -2997,8 +2997,17 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 		ERR_post(Arg::Gds(isc_no_cur_rec));
 	}
 
-	if (!(rpb->rpb_stream_flags & RPB_s_undo_data))
-		VIO_data(tdbb, rpb, tdbb->getDefaultPool());
+	if (!(rpb->rpb_runtime_flags & RPB_undo_data))
+	{
+		if (rpb->rpb_stream_flags & RPB_s_no_data)
+		{
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			rpb->rpb_address = NULL;
+			rpb->rpb_length = 0;
+		}
+		else
+			VIO_data(tdbb, rpb, tdbb->getDefaultPool());
+	}
 
 	tdbb->bumpRelStats(RuntimeStatistics::RECORD_RPT_READS, rpb->rpb_relation->rel_id);
 
@@ -3910,7 +3919,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 	{
 		case PREPARE_CONFLICT:
 		case PREPARE_DELETE:
-			org_rpb->rpb_stream_flags |= RPB_s_refetch;
+			org_rpb->rpb_runtime_flags |= RPB_refetch;
 			return false;
 		case PREPARE_LOCKERR:
 			// We got some kind of locking error (deadlock, timeout or lock_conflict)
@@ -3931,9 +3940,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 	replace_record(tdbb, org_rpb, &stack, transaction);
 
 	if (!(transaction->tra_flags & TRA_system) && transaction->tra_save_point)
-	{
 		verb_post(tdbb, transaction, org_rpb, 0, false, false);
-	}
 
 	// for an autocommit transaction, mark a commit as necessary
 
@@ -4835,7 +4842,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 	if (!transaction->tra_save_point)
 		return udNone;
 
-	if (rpb->rpb_stream_flags & RPB_s_refetch_no_undo)
+	if (rpb->rpb_runtime_flags & RPB_no_undo)
 		return udNone;
 
 	VerbAction* action = transaction->tra_save_point->sav_verb_actions;
@@ -4863,7 +4870,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 				return udForceBack;
 			}
 
-			rpb->rpb_stream_flags |= RPB_s_undo_data;
+			rpb->rpb_runtime_flags |= RPB_undo_data;
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
 			Record* record = undo->setupRecord(transaction);
@@ -4912,7 +4919,7 @@ static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rp
 					org_rpb->rpb_relation->rel_id == mod_rpb->rpb_relation->rel_id &&
 					org_rpb->rpb_number == mod_rpb->rpb_number)
 				{
-					org_rpb->rpb_stream_flags |= RPB_s_refetch;
+					org_rpb->rpb_runtime_flags |= RPB_refetch;
 				}
 			}
 		}

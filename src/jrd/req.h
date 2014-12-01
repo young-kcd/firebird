@@ -94,6 +94,7 @@ struct record_param
 	ULONG rpb_length;				// length of record
 	USHORT rpb_flags;				// record ODS flags replica
 	USHORT rpb_stream_flags;		// stream flags
+	USHORT rpb_runtime_flags;		// runtime flags
 	SSHORT rpb_org_scans;			// relation scan count at stream open
 
 	inline WIN& getWindow(thread_db* tdbb)
@@ -124,12 +125,16 @@ const USHORT rpb_uk_modified= 512;		// record key field values are changed
 
 // Stream flags
 
-const USHORT RPB_s_refetch		= 0x01;	// re-fetch required due to sort
-const USHORT RPB_s_update		= 0x02;	// input stream fetched for update
-const USHORT RPB_s_no_data		= 0x04;	// nobody is going to access the data
-const USHORT RPB_s_undo_data	= 0x08;	// data got from undo log
-const USHORT RPB_s_sweeper		= 0x10;	// garbage collector - skip swept pages
-const USHORT RPB_s_refetch_no_undo	= 0x20;	// re-fetch required due to modify\erase, don't use undo data
+const USHORT RPB_s_offline	= 0x01;	// stream data may be outdated due to sorting/buffering
+const USHORT RPB_s_update	= 0x02;	// input stream fetched for update
+const USHORT RPB_s_no_data	= 0x04;	// nobody is going to access the data
+const USHORT RPB_s_sweeper	= 0x08;	// garbage collector - skip swept pages
+
+// Runtime flags
+
+const USHORT RPB_refetch	= 0x01;	// re-fetch is required
+const USHORT RPB_undo_data	= 0x02;	// data got from undo log
+const USHORT RPB_no_undo	= 0x04;	// don't use undo log when retrieving data
 
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records

@@ -212,12 +212,12 @@ bool RecordStream::refetchRecord(thread_db* tdbb) const
 
 	record_param* const rpb = &request->req_rpb[m_stream];
 
-	if (rpb->rpb_stream_flags & RPB_s_refetch)
+	if (rpb->rpb_runtime_flags & RPB_refetch)
 	{
 		if (!VIO_refetch_record(tdbb, rpb, transaction, true))
 			return false;
 
-		rpb->rpb_stream_flags &= ~RPB_s_refetch;
+		rpb->rpb_runtime_flags &= ~RPB_refetch;
 	}
 
 	return true;

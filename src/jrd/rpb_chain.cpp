@@ -54,7 +54,7 @@ int traRpbList::PushRpb(record_param* value)
 			level = prev.level;
 			fb_assert(pos >= level);
 			fb_assert((*this)[pos - level].level == 0);
-			prev.lr_rpb->rpb_stream_flags |= RPB_s_refetch;
+			prev.lr_rpb->rpb_runtime_flags |= RPB_refetch;
 		}
 	}
 	(*this)[++pos].level = ++level;
@@ -68,7 +68,7 @@ bool traRpbList::PopRpb(record_param* value, int Level)
 	}
 	FB_SIZE_T pos;
 	ExecAssert(find(traRpbListElement(value, Level), pos));
-	const bool rc = (*this)[pos].lr_rpb->rpb_stream_flags & RPB_s_refetch;
+	const bool rc = (*this)[pos].lr_rpb->rpb_runtime_flags & RPB_refetch;
 	remove(pos);
 	return rc;
 }
