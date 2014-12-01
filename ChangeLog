@@ -1,3 +1,16 @@
+ 2014-11-30 21:09  asfernandes 
+   M src/common/os/win32/os_utils.cpp
+   M src/dsql/parse.y
+   M src/jrd/dpm.epp
+   M src/jrd/flu.cpp
+   M src/remote/inet.cpp
+   M src/remote/remote.cpp
+Misc.
+
+ 2014-11-30 16:00  dimitr 
+   M src/jrd/vio.cpp
+Simplest possible fix for CORE-4618: Rollback doesn`t undo changes when MERGE statement updates the same target rows multiple times and PLAN MERGE is used. An alternative solution is being considered.
+
  2014-11-29 15:39  mrotteveel 
    A doc/sql.extensions/README.offset_fetch.txt
    M doc/sql.extensions/README.rows
