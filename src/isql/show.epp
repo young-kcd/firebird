@@ -109,6 +109,7 @@ static processing_state show_secclass(const char* object, const char* opt);
 static processing_state show_table(const SCHAR*, bool);
 static processing_state show_trigger(const SCHAR*, bool, bool);
 static processing_state show_users();
+static processing_state show_users12();
 
 const char* const spaces = "                                ";
 static TEXT Print_buffer[512];
@@ -5744,6 +5745,100 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 	return SKIP;
 }
 
+static processing_state show_users12()
+{
+/**************************************
+ *
+ *	s h o w _ u s e r s 1 2
+ *
+ **************************************
+ *
+ * Functional description
+ *	Show users logged in and/or defined for the database.
+ *
+ **************************************/
+
+	const char* getusers = "select "
+		"case when coalesce(MON$USER, SEC$USER_NAME) = current_user then '#' "
+			 "when SEC$USER_NAME is distinct from null then ' ' else '-' end, "
+		"coalesce(MON$USER, SEC$USER_NAME), count(MON$USER) "
+		"from mon$attachments m full join sec$users u on m.MON$USER = u.SEC$USER_NAME "
+		"group by MON$USER, SEC$USER_NAME order by coalesce(MON$USER, SEC$USER_NAME)";
+
+	Firebird::RefPtr<Firebird::IMetadataBuilder>
+		mb(Firebird::REF_NO_INCR, fbMaster->getMetadataBuilder(fbStatus, 3));
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	mb->setType(fbStatus, 0, SQL_TEXT);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+	mb->setLength(fbStatus, 0, 1);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	mb->setType(fbStatus, 1, SQL_VARYING);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+	mb->setLength(fbStatus, 1, MAX_SQL_IDENTIFIER_SIZE * 4);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	mb->setType(fbStatus, 2, SQL_LONG);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	Firebird::RefPtr<Firebird::IMessageMetadata>
+		outMetadata(Firebird::REF_NO_INCR, mb->getMetadata(fbStatus));
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	Firebird::AlignedBuffer<MAX_SQL_IDENTIFIER_SIZE * 4 + 32> outBuffer;
+	fb_assert(outMetadata->getMessageLength(fbStatus) <= outBuffer.size());
+
+	char* mark = (char*) &outBuffer[outMetadata->getOffset(fbStatus, 0)];
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+	vary* username = (vary*) &outBuffer[outMetadata->getOffset(fbStatus, 1)];
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+	int* cnt = (int*) &outBuffer[outMetadata->getOffset(fbStatus, 2)];
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	Firebird::IResultSet* rs = DB->openCursor(fbStatus, fbTrans, 0, getusers, isqlGlob.SQL_dialect,
+		NULL, NULL, outMetadata, NULL);
+	if (ISQL_errmsg (fbStatus))
+		return ps_ERR;
+
+	processing_state rc = OBJECT_NOT_FOUND;
+	bool newline = false;
+	while (rs->fetchNext(fbStatus, outBuffer) == Firebird::IStatus::FB_OK)
+	{
+		if (rc == OBJECT_NOT_FOUND)
+		{
+			// First time in the loop, print title.
+			TEXT msg[MSG_LENGTH]; // When messages can be translated.
+			IUTILS_msg_get(USERS_IN_DB, msg);
+			isqlGlob.printf("%s\n", msg);
+			rc = SKIP; // We found at least one user.
+		}
+
+		isqlGlob.printf("%3d %c%-34.*s", *cnt, *mark, username->vary_length, username->vary_string);
+
+		if (newline)
+			isqlGlob.printf("\n");
+		newline = !newline;
+	}
+	if (ISQL_errmsg (fbStatus))
+		rc = ps_ERR;
+	if (newline)
+		isqlGlob.printf("\n");
+
+	rs->release();
+
+	return rc;
+}
 
 static processing_state show_users()
 {
@@ -5757,6 +5852,9 @@ static processing_state show_users()
  *	Show users logged in the database (not users defined for this database).
  *
  **************************************/
+
+	if (isqlGlob.major_ods >= ODS_VERSION12)
+		return show_users12();
 
 	const UCHAR user_items[] =
 	{
