@@ -1385,7 +1385,11 @@ namespace {
 	public:
 		ZLib(Firebird::MemoryPool&)
 		{
+#ifdef WIN_NT
+			const char* name = "zlib1.dll";
+#else
 			const char* name = "libz." SHRLIB_EXT ".1";
+#endif
 			z.reset(ModuleLoader::fixAndLoadModule(name));
 			if (z)
 				symbols();

@@ -156,7 +156,7 @@
 #undef HAVE_SYS_SOCKIO_H
 #undef HAVE_WINSOCK2_H
 #define HAVE_FLOAT_H
-
+#define HAVE_ZLIB_H
 
 /* Functions */
 #undef HAVE_GETTIMEOFDAY

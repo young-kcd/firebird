@@ -42,6 +42,9 @@ if "%ERRLEV%"=="1" goto :END
 call :LibTomMath
 if "%ERRLEV%"=="1" goto :END
 
+call :zlib
+if "%ERRLEV%"=="1" goto :END
+
 @echo Generating DSQL parser...
 @call parse.bat %*
 if "%ERRLEV%"=="1" goto :END
@@ -69,17 +72,19 @@ if "%ERRLEV%"=="1" goto :END
 
 @findstr /V "@UDF_COMMENT@" %FB_ROOT_PATH%\builds\install\misc\firebird.conf.in > %FB_BIN_DIR%\firebird.conf
 
-:: Copy ICU both to Debug and Release configurations
+:: Copy ICU and zlib both to Debug and Release configurations
 
 @call set_build_target.bat %* RELEASE
 @mkdir %FB_BIN_DIR%
 @copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
 @copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
+@copy %FB_ROOT_PATH%\extern\zlib\%FB_TARGET_PLATFORM%\*.dll %FB_BIN_DIR% >nul 2>&1
 
 @call set_build_target.bat %* DEBUG
 @mkdir %FB_BIN_DIR%
 @copy %FB_ROOT_PATH%\extern\icu\icudt???.dat %FB_BIN_DIR% >nul 2>&1
 @copy %FB_ICU_SOURCE_BIN%\*.dll %FB_BIN_DIR% >nul 2>&1
+@copy %FB_ROOT_PATH%\extern\zlib\%FB_TARGET_PLATFORM%\*.dll %FB_BIN_DIR% >nul 2>&1
 
 @call set_build_target.bat %*
 
@@ -130,6 +135,18 @@ if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
 @call compile.bat %FB_ROOT_PATH%\extern\libtommath\libtommath_MSVC%MSVC_VERSION% libtommath_%FB_OBJ_DIR%_%FB_TARGET_PLATFORM%.log libtommath
 if errorlevel 1 call :boot2 libtommath_%FB_OBJ_DIR%
 @call set_build_target.bat %*
+goto :EOF
+
+::===================
+:: Extract zlib
+:zlib
+@echo Extracting pre-built zlib
+if exist %FB_ROOT_PATH%\extern\zlib\zlib.h (
+  @echo %FB_ROOT_PATH%\extern\zlib\zlib.h already extracted
+) else (
+  %FB_ROOT_PATH%\extern\zlib\zlib.exe -y > zlib_%FB_TARGET_PLATFORM%.log
+  if errorlevel 1 call :boot2 zlib
+)
 goto :EOF
 
 ::===================
