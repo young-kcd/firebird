@@ -1,3 +1,7 @@
+ 2014-12-02 10:18  alexpeshkoff 
+   M builds/make.new/config/install-sh
+Fixed CORE-4630: Segfault in server caused by bad packet
+
  2014-02-25 06:26  robocop 
    M src/qli/compile.cpp
 This bug comes from IB, maybe from the dawn of time (PVS-Studio).
