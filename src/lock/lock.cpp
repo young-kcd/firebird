@@ -541,9 +541,8 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_requests))
 	{
 		if (!(request = (lrq*) alloc(sizeof(lrq), &statusVector)))
-		{
 			return 0;
-		}
+
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
 	}
 	else
@@ -1093,6 +1092,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
  *	Acquire the lock file.  If it's busy, wait for it.
  *
  **************************************/
+	Arg::StatusVector localStatus;
 
 	// Perform a spin wait on the lock table mutex. This should only
 	// be used on SMP machines; it doesn't make much sense otherwise.
@@ -1122,8 +1122,6 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	{
 		if (!m_sharedFileCreated)
 		{
-			Arg::StatusVector localStatus;
-
 			// Someone is going to delete shared file? Reattach.
 			m_sharedMemory->mutexUnlock();
 			detach_shared_file(localStatus);
@@ -1131,7 +1129,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			Thread::yield();
 
 			if (!attach_shared_file(localStatus))
-				bug(&localStatus, "ISC_map_file failed (reattach shared file)");
+				bug(NULL, "ISC_map_file failed (reattach shared file)");
 
 			m_sharedMemory->mutexLock();
 		}
@@ -1176,7 +1174,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #ifdef USE_SHMEM_EXT
 	while (m_sharedMemory->getHeader()->lhb_length > getTotalMapped())
 	{
-		if (!createExtent())
+		if (!createExtent(localStatus))
 		{
 			bug(NULL, "map of lock file extent failed");
 		}
@@ -1197,8 +1195,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		Arg::StatusVector statusVector;
-		if (!m_sharedMemory->remapFile(statusVector, new_length, false))
+		if (!m_sharedMemory->remapFile(localStatus, new_length, false))
 #endif
 		{
 			bug(NULL, "remap failed");
@@ -1247,15 +1244,14 @@ bool LockManager::Extent::initialize(bool)
 void LockManager::Extent::mutexBug(int, const char*)
 { }
 
-bool LockManager::createExtent()
+bool LockManager::createExtent(Arg::StatusVector& statusVector)
 {
 	Firebird::PathName name;
 	get_shared_file_name(name, (ULONG) m_extents.getCount());
-	Arg::StatusVector local_status;
 
 	Extent& extent = m_extents.add();
 
-	if (!extent.mapFile(local_status, name.c_str(), m_memorySize))
+	if (!extent.mapFile(statusVector, name.c_str(), m_memorySize))
 	{
 		m_extents.pop();
 		logError("LockManager::createExtent() mapFile", local_status);
@@ -1279,6 +1275,11 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
  *	Allocate a block of given size.
  *
  **************************************/
+	Arg::StatusVector localStatus;
+
+	if (!statusVector)
+		statusVector = &localStatus;
+
 	size = FB_ALIGN(size, FB_ALIGNMENT);
 	ASSERT_ACQUIRED;
 	ULONG block = m_sharedMemory->getHeader()->lhb_used;
@@ -1290,7 +1291,7 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 #ifdef USE_SHMEM_EXT
 		// round up so next object starts at beginning of next extent
 		block = m_sharedMemory->getHeader()->lhb_used = m_sharedMemory->getHeader()->lhb_length;
-		if (createExtent())
+		if (createExtent(*statusVector))
 		{
 			m_sharedMemory->getHeader()->lhb_length += m_memorySize;
 		}
@@ -1312,8 +1313,9 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 			// Do not do abort in case if there is not enough room -- just
 			// return an error
 
-			if (statusVector)
-				*statusVector << Arg::Gds(isc_random) << "lock manager out of room";
+			Arg::Gds prefix(isc_lockmanerr);
+			prefix << Arg::Gds(isc_random) << Arg::Str("lock manager out of room");
+			statusVector->prepend(prefix);
 
 			return NULL;
 		}
@@ -1639,7 +1641,10 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 
 		if (statusVector)
 		{
-			*statusVector << Arg::Gds(isc_lockmanerr) << Arg::Gds(isc_random) << string;
+			Arg::Gds prefix(isc_lockmanerr);
+			prefix << Arg::Gds(isc_random) << Arg::Str(string);
+			statusVector->prepend(prefix);
+
 			return;
 		}
 	}
@@ -1689,9 +1694,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	if (!m_processOffset)
 	{
 		if (!create_process(statusVector))
-		{
 			return 0;
-		}
 	}
 
 	// Look for a previous instance of owner.  If we find one, get rid of it.
@@ -1713,9 +1716,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_owners))
 	{
 		if (!(owner = (own*) alloc(sizeof(own), &statusVector)))
-		{
 			return 0;
-		}
 	}
 	else
 	{
@@ -1725,9 +1726,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	}
 
 	if (!init_owner_block(statusVector, owner, owner_type, owner_id))
-	{
 		return 0;
-	}
 
 	insert_tail(&m_sharedMemory->getHeader()->lhb_owners, &owner->own_lhb_owners);
 
