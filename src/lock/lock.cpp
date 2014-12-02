@@ -1100,6 +1100,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
  *	Acquire the lock file.  If it's busy, wait for it.
  *
  **************************************/
+	ISC_STATUS_ARRAY local_status;
 
 	// Measure the impact of the lock table resource as an overall
 	// system bottleneck. This will be useful metric for lock
@@ -1141,8 +1142,6 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 	{
 		if (!m_sharedFileCreated)
 		{
-			ISC_STATUS_ARRAY local_status;
-
 			// Someone is going to delete shared file? Reattach.
 			if (ISC_mutex_unlock(MUTEX) != 0)
 			{
@@ -1153,7 +1152,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 			THD_yield();
 
 			if (!attach_shared_file(local_status)) {
-				bug(local_status, "ISC_map_file failed (reattach shared file)");
+				bug(NULL, "ISC_map_file failed (reattach shared file)");
 			}
 			if (ISC_mutex_lock(MUTEX)) {
 				bug(NULL, "ISC_mutex_lock failed (acquire_shmem)");
@@ -1198,7 +1197,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #ifdef USE_SHMEM_EXT
 	while (m_header->lhb_length > getTotalMapped())
 	{
-		if (! newExtent())
+		if (!newExtent(local_status))
 		{
 			bug(NULL, "map of lock file extent failed");
 		}
@@ -1219,9 +1218,8 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		ISC_STATUS_ARRAY status_vector;
-		lhb* const header = (lhb*) ISC_remap_file(status_vector, &m_shmem, new_length, false, 
-												  MUTEX_PTR);
+		lhb* const header =
+			(lhb*) ISC_remap_file(local_status, &m_shmem, new_length, false, MUTEX_PTR);
 		if (header)
 			m_header = header;
 		else
@@ -1269,21 +1267,24 @@ namespace {
 	void initializeExtent(void*, sh_mem*, bool) { }
 }
 
-bool LockManager::newExtent()
+bool LockManager::newExtent(ISC_STATUS* status)
 {
 	Firebird::PathName name;
 	get_shared_file_name(name, m_extents.getCount());
 	ISC_STATUS_ARRAY local_status;
 
+	if (!status)
+		status = local_status;
+
 	Extent extent;
 
-	if (!(extent.table = (lhb*) ISC_map_file(local_status, name.c_str(), initializeExtent,
-											this, m_memorySize, &extent.sh_data)))
+	if (!(extent.table = (lhb*) ISC_map_file(status, name.c_str(), initializeExtent,
+											 this, m_memorySize, &extent.sh_data)))
 	{
 		return false;
 	}
-	m_extents.add(extent);
 
+	m_extents.add(extent);
 	return true;
 }
 #endif
@@ -1312,7 +1313,7 @@ UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
 #ifdef USE_SHMEM_EXT
 		// round up so next object starts at beginning of next extent
 		block = m_header->lhb_used = m_header->lhb_length;
-		if (newExtent())
+		if (newExtent(status_vector))
 		{
 			m_header->lhb_length += m_memorySize;
 		}
@@ -1338,11 +1339,11 @@ UCHAR* LockManager::alloc(USHORT size, ISC_STATUS* status_vector)
 
 			if (status_vector)
 			{
-				*status_vector++ = isc_arg_gds;
-				*status_vector++ = isc_random;
-				*status_vector++ = isc_arg_string;
-				*status_vector++ = (ISC_STATUS) "lock manager out of room";
-				*status_vector++ = isc_arg_end;
+				Firebird::Arg::Gds result(isc_lockmanerr);
+				result << Firebird::Arg::Gds(isc_random)
+					<< Firebird::Arg::Str("lock manager out of room");
+				result.append(Firebird::Arg::StatusVector(status_vector));
+				result.copyTo(status_vector);
 			}
 
 			return NULL;
@@ -1682,13 +1683,11 @@ void LockManager::bug(ISC_STATUS* status_vector, const TEXT* string)
 
 		if (status_vector)
 		{
-			*status_vector++ = isc_arg_gds;
-			*status_vector++ = isc_lockmanerr;
-			*status_vector++ = isc_arg_gds;
-			*status_vector++ = isc_random;
-			*status_vector++ = isc_arg_string;
-			*status_vector++ = (ISC_STATUS) string;
-			*status_vector++ = isc_arg_end;
+			Firebird::Arg::Gds result(isc_lockmanerr);
+			result << Firebird::Arg::Gds(isc_random)
+				<< Firebird::Arg::Str(string);
+			result.append(Firebird::Arg::StatusVector(status_vector));
+			result.copyTo(status_vector);
 			return;
 		}
 	}
