@@ -1,3 +1,30 @@
+ 2014-11-30 15:50  dimitr 
+   M src/jrd/vio.cpp
+Simplest possible fix for CORE-4618: Rollback doesn`t undo changes when MERGE statement updates the same target rows multiple times and PLAN MERGE is used.
+
+ 2014-11-30 14:56  hvlad 
+   M src/jrd/jrd.cpp
+Fixed bug CORE-4627 : Deadlock with TIP page lock and monitoring lock
+
+ 2014-11-24 15:58  mkubecek 
+   M configure.in
+Fix libdir on s390x (S/390-64) Linux
+
+ 2014-11-21 11:30  dimitr 
+   M src/jrd/functions.cpp
+Fixed CORE-4616: Server crashes while accessing context variables concurrently.
+
+ 2014-11-21 09:47  dimitr 
+   M src/jrd/build_no.h
+   M src/misc/writeBuildNum.sh
+Bumped the snapshot version number.
+
+ 2014-11-20 22:56  hvlad 
+   M src/jrd/Database.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+Fixed bug CORE-4615 : Classic Server could hung with (near) 100% CPU load
+
  2014-11-17 11:48  mkubecek 
    M builds/install/arch-specific/aix/misc/aixLibrary.sh.in
    M builds/install/arch-specific/freebsd/freebsdLibrary.sh.in
