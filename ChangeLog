@@ -1,3 +1,37 @@
+ 2014-12-01 21:53  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/exe.h
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/rpb_chain.cpp
+   M src/jrd/vio.cpp
+Refactored the RPB flags. The new logic also provides a second-level protection against CORE-4618.
+
+ 2014-12-01 13:38  dimitr 
+   M src/misc/writeBuildNum.sh
+Updated the version info.
+
+ 2014-12-01 09:45  alexpeshkoff 
+   M src/isql/show.epp
+Fixed CORE-4503: ISQL command SHOW USERS display only me
+
+ 2014-12-01 09:04  hvlad 
+   M builds/win32/make_boot.bat
+   M builds/win32/msvc10/firebird2.props
+   M builds/win32/msvc12/firebird2.props
+   M src/include/gen/autoconfig_msvc.h
+   M src/remote/remote.cpp
+Support for zlib on Windows
+
+ 2014-12-01 09:03  hvlad 
+   A extern/zlib
+   A extern/zlib/Readme.txt
+   A extern/zlib/zlib.exe
+Add pre-built zlib library
+
  2014-11-30 21:09  asfernandes 
    M src/common/os/win32/os_utils.cpp
    M src/dsql/parse.y
