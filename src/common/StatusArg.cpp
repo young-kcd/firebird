@@ -145,6 +145,22 @@ void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
 	*this = newVector;
 }
 
+void StatusVector::ImplStatusVector::prepend(const StatusVector& v) throw()
+{
+	ImplStatusVector newVector(getKind(), getCode());
+
+	if (newVector.appendErrors(v.implementation))
+	{
+		if (newVector.appendErrors(this))
+		{
+			if (newVector.appendWarnings(v.implementation))
+				newVector.appendWarnings(this);
+		}
+	}
+
+	*this = newVector;
+}
+
 bool StatusVector::ImplStatusVector::appendErrors(const ImplBase* const v) throw()
 {
 	return append(v->value(), v->firstWarning() ? v->firstWarning() : v->length());
