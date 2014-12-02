@@ -1,4 +1,24 @@
   ***************************
+  * v2.1.7
+  ***************************
+
+    * Bugfix CORE-4630
+        Segfault in server caused by malformed network packet
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4566
+        Incorrect size of the output parameter/argument when execute block, procedure or function use system field in metadata charset
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4536
+        Server crashes when creating database on OSX 10.9 Mavericks
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
+
+  ***************************
   * v2.1.6
   ***************************
 
