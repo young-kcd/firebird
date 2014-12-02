@@ -442,6 +442,8 @@ bool_t xdr_protocol(XDR* xdrs, PACKET* p)
 			reinterpret_cast<SSHORT&>(response->p_resp_object));
 		MAP(xdr_quad, response->p_resp_blob_id);
 		MAP(xdr_cstring, response->p_resp_data);
+		if (!response->p_resp_status_vector)	// incorrectly called - packet not prepared
+			return P_FALSE(xdrs, p);
 		return xdr_status_vector(xdrs, response->p_resp_status_vector,
 								 reinterpret_cast<char**>(response->p_resp_strings))
 								 ? P_TRUE(xdrs, p) : P_FALSE(xdrs, p);
@@ -1832,7 +1834,11 @@ static bool_t xdr_status_vector(
 		return TRUE;
 	}
 
+	ISC_STATUS* const vec_end = &vector[ISC_STATUS_LENGTH];
+
 	while (true) {
+		if (vector >= vec_end)
+			return FALSE;
 		if (xdrs->x_op == XDR_ENCODE)
 			vec = (SLONG) * vector++;
 		if (!xdr_long(xdrs, &vec))
@@ -1845,6 +1851,8 @@ static bool_t xdr_status_vector(
 
 		case isc_arg_interpreted:
 		case isc_arg_string:
+			if (vector >= vec_end)
+				return FALSE;
 			if (xdrs->x_op == XDR_ENCODE) {
 				if (!xdr_wrapstring(xdrs, reinterpret_cast<SCHAR**>(vector++)))
 					return FALSE;
@@ -1873,6 +1881,8 @@ static bool_t xdr_status_vector(
 
 		case isc_arg_number:
 		default:
+			if (vector >= vec_end)
+				return FALSE;
 			if (xdrs->x_op == XDR_ENCODE)
 				vec = (SLONG) * vector++;
 			if (!xdr_long(xdrs, &vec))
