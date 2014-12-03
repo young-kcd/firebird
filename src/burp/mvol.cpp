@@ -42,8 +42,8 @@
 #include "../burp/burp.h"
 #include "../burp/burp_proto.h"
 #include "../burp/mvol_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 #include <fcntl.h>
 #include <sys/types.h>
 
@@ -117,7 +117,7 @@ FB_UINT64 MVOL_fini_read()
 
 	for (burp_fil* file = tdgbl->gbl_sw_backup_files; file; file = file->fil_next)
 	{
-		if (file->fil_fd == tdgbl->file_desc)
+		if (file->fil_fd == tdgbl->file_desc) 
 		{
 			file->fil_fd = INVALID_HANDLE_VALUE;
 		}
@@ -179,7 +179,10 @@ void MVOL_init(ULONG io_buf_size)
 //
 // Read init record from backup file
 //
-void MVOL_init_read(const char* file_name, USHORT* format, int* cnt, UCHAR** ptr)
+void MVOL_init_read(const char*	file_name,
+					USHORT*		format,
+					int*		cnt,
+					UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -222,7 +225,9 @@ void MVOL_init_read(const char* file_name, USHORT* format, int* cnt, UCHAR** ptr
 //
 // Write init record to the backup file
 //
-void MVOL_init_write(const char* file_name, int* cnt, UCHAR** ptr)
+void MVOL_init_write(const char*	file_name,
+					 int*			cnt,
+					 UCHAR**		ptr)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
@@ -531,7 +536,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	const ULONG size_to_write = BURP_UP_TO_BLOCK(*io_ptr - tdgbl->mvol_io_buffer);
-	FB_UINT64 left = size_to_write;
+	ULONG left = size_to_write;
 
 	if (tdgbl->stdIoMode && tdgbl->uSvc->isService())
 	{
@@ -570,17 +575,10 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 				}
 			}
 
-			FB_UINT64 longBytesToWrite =
+			const size_t nBytesToWrite =
 				(tdgbl->action->act_action == ACT_backup_split &&
-						tdgbl->action->act_file->fil_length < left) ?
-			 			tdgbl->action->act_file->fil_length : left;
-
-			if (longBytesToWrite > MAX_ULONG)
-			{
-				longBytesToWrite = 0xFFFF0000u;		// rounding such block to 64K appears OK
-			}
-
-			const size_t nBytesToWrite = size_t(longBytesToWrite);
+					tdgbl->action->act_file->fil_length < left) ?
+				 		tdgbl->action->act_file->fil_length : left;
 
 #ifndef WIN_NT
 			cnt = write(tdgbl->file_desc, ptr, nBytesToWrite);
@@ -630,7 +628,7 @@ UCHAR MVOL_write(const UCHAR c, int* io_cnt, UCHAR** io_ptr)
 							}
 
 							tdgbl->action->act_file->fil_fd = INVALID_HANDLE_VALUE;
-							BURP_print(true, 272, SafeArg() <<
+							BURP_print(false, 272, SafeArg() <<
 										tdgbl->action->act_file->fil_name.c_str() <<
 										tdgbl->action->act_file->fil_length <<
 										tdgbl->action->act_file->fil_next->fil_name.c_str());
@@ -819,25 +817,25 @@ static int get_text(UCHAR* text, SSHORT length)
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	ULONG len = get(tdgbl);
-	length -= len;
-	const ULONG len2 = len;
+	ULONG l = get(tdgbl);
+	length -= l;
+	const ULONG l2 = l;
 
 	if (length < 0)
 	{
 		BURP_error_redirect(0, 46);	// msg 46 string truncated
 	}
 
-	if (len)
+	if (l)
 	{
 		do {
 			*text++ = get(tdgbl);
-		} while (--len);
+		} while (--l);
 	}
 
 	*text = 0;
 
-	return len2;
+	return l2;
 }
 
 
@@ -891,8 +889,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 	{
 		// We aim to keep our descriptors clean
 
-		if (new_desc != INVALID_HANDLE_VALUE)
-		{
+		if (new_desc != INVALID_HANDLE_VALUE) {
 			close_platf(new_desc);
 			new_desc = INVALID_HANDLE_VALUE;
 		}
@@ -1028,8 +1025,8 @@ static void prompt_for_name(SCHAR* name, int length)
 				strcpy(name, tdgbl->mvol_old_file);
 				break;
 			}
-
-			continue; // reprompt
+			else				// reprompt
+				continue;
 		}
 
 		// OK, its a file name, strip the carriage return
@@ -1232,9 +1229,7 @@ static bool read_header(DESC handle, ULONG* buffer_size, USHORT* format, bool in
 		case att_backup_format:
 			temp = get_numeric();
 			if (init_flag)
-			{
 				*format = temp;
-			}
 			break;
 
 		case att_backup_transportable:
@@ -1365,10 +1360,9 @@ bool MVOL_split_hdr_write()
 
 	time_t seconds = time(NULL);
 
-	Firebird::string nm = tdgbl->toSystem(tdgbl->action->act_file->fil_name);
 	sprintf(buffer, "%s%.24s      , file No. %4d of %4d, %-27.27s",
 			HDR_SPLIT_TAG, ctime(&seconds), tdgbl->action->act_file->fil_seq,
-			tdgbl->action->act_total, nm.c_str());
+			tdgbl->action->act_total, tdgbl->action->act_file->fil_name.c_str());
 
 #ifdef WIN_NT
 	DWORD bytes_written = 0;
@@ -1394,8 +1388,6 @@ bool MVOL_split_hdr_read()
 {
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
-	fb_assert(tdgbl->action);
-	fb_assert(tdgbl->action->act_file);
 	fb_assert(tdgbl->action->act_file->fil_fd != INVALID_HANDLE_VALUE);
 
 	if (tdgbl->action && tdgbl->action->act_file &&

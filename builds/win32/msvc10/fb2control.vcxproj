@@ -75,32 +75,14 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\</OutDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkIncremental>
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AllRules.ruleset</CodeAnalysisRuleSet>
-    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Firebird2Control</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.cpl</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Firebird2Control</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.cpl</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Firebird2Control</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.cpl</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Firebird2Control</TargetName>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.cpl</TargetExt>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\system32\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\system32\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\system32\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\temp\$(PlatformName)\$(Configuration)\firebird\system32\</OutDir>
+	<TargetName>Firebird2Control</TargetName>
+	<TargetExt>.cpl</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -124,7 +106,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>shlwapi.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\Firebird2Control.cpl</OutputFile>
       <Version>1.0</Version>
       <ModuleDefinitionFile>..\..\..\src\utilities\fbcpl\FBControl.def</ModuleDefinitionFile>
       <SubSystem>Windows</SubSystem>
@@ -155,7 +136,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>shlwapi.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\Firebird2Control.cpl</OutputFile>
       <Version>1.0</Version>
       <ModuleDefinitionFile>..\..\..\src\utilities\fbcpl\FBControl.def</ModuleDefinitionFile>
       <SubSystem>Windows</SubSystem>
@@ -177,7 +157,6 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BrowseInformation>true</BrowseInformation>
       <UndefinePreprocessorDefinitions>TRACE;%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_AFXDLL;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -185,7 +164,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>shlwapi.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\Firebird2Control.cpl</OutputFile>
       <Version>1.0</Version>
       <ModuleDefinitionFile>..\..\..\src\utilities\fbcpl\FBControl.def</ModuleDefinitionFile>
       <SubSystem>Windows</SubSystem>
@@ -212,7 +190,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>shlwapi.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\system32\Firebird2Control.cpl</OutputFile>
       <Version>1.0</Version>
       <ModuleDefinitionFile>..\..\..\src\utilities\fbcpl\FBControl.def</ModuleDefinitionFile>
       <SubSystem>Windows</SubSystem>

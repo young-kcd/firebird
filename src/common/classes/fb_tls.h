@@ -39,12 +39,10 @@
 #include "../common/classes/init.h"
 
 #if defined(HAVE___THREAD)
-
 // Recent GCC supports __thread keyword. Sun compiler and HP-UX should have it too
 # define TLS_DECLARE(TYPE, NAME) __thread TYPE NAME
 # define TLS_GET(NAME) NAME
 # define TLS_SET(NAME, VALUE) NAME = (VALUE)
-
 #elif defined(WIN_NT)
 
 namespace Firebird {
@@ -88,8 +86,8 @@ private:
 };
 } // namespace Firebird
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::Win32Tls<TYPE> NAME
-# define TLS_GET(NAME) (NAME).get()
-# define TLS_SET(NAME, VALUE) (NAME).set(VALUE)
+# define TLS_GET(NAME) NAME.get()
+# define TLS_SET(NAME, VALUE) NAME.set(VALUE)
 
 // 14-Jul-2004 Nickolay Samofatov.
 //
@@ -102,12 +100,11 @@ private:
 //# define TLS_DECLARE(TYPE, NAME) __declspec(thread) TYPE NAME
 //# define TLS_GET(NAME) NAME
 //# define TLS_SET(NAME, VALUE) NAME = (VALUE)
-
 #else
 
 #include "../common/classes/init.h"
 
-#include "fb_pthread.h"
+#include <pthread.h>
 
 namespace Firebird {
 
@@ -163,10 +160,8 @@ private:
 } // namespace Firebird
 
 # define TLS_DECLARE(TYPE, NAME) ::Firebird::TlsValue<TYPE> NAME
-# define TLS_GET(NAME) (NAME).get()
-# define TLS_SET(NAME, VALUE) (NAME).set(VALUE)
-
-# define TLS_CLASS TlsValue
+# define TLS_GET(NAME) NAME.get()
+# define TLS_SET(NAME, VALUE) NAME.set(VALUE)
 
 #endif
 

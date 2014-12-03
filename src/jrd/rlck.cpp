@@ -25,6 +25,7 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "../jrd/tra.h"
 #include "../jrd/lck.h"
 #include "../jrd/err_proto.h"
@@ -34,7 +35,10 @@
 using namespace Jrd;
 using namespace Firebird;
 
-Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation, bool write_flag)
+Lock* RLCK_reserve_relation(thread_db* tdbb,
+							jrd_tra* transaction,
+							jrd_rel* relation,
+							bool write_flag)
 {
 /**************************************
  *
@@ -53,16 +57,16 @@ Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rela
 		return NULL;
 
 	// hvlad: virtual relations always writable, all kind of GTT's are writable
-	// at read-only transactions at read-write databases, GTT's with ON COMMIT
+	// at read-only transactions at read-write databases, GTT's with ON COMMIT 
 	// DELETE ROWS clause is writable at read-only databases.
 
-	if (write_flag && tdbb->getDatabase()->readOnly() &&
+	if (write_flag && (tdbb->getDatabase()->dbb_flags & DBB_read_only) && 
 		!relation->isVirtual() && !(relation->rel_flags & REL_temp_tran))
 	{
 		ERR_post(Arg::Gds(isc_read_only_database));
 	}
 
-	if (write_flag && (transaction->tra_flags & TRA_readonly) &&
+	if (write_flag && (transaction->tra_flags & TRA_readonly) && 
 		!relation->isVirtual() && !relation->isTemporary())
 	{
 		ERR_post(Arg::Gds(isc_read_only_trans));
@@ -107,7 +111,9 @@ Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rela
 }
 
 
-Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_rel* relation)
+Lock* RLCK_transaction_relation_lock(thread_db* tdbb,
+									 jrd_tra* transaction,
+									 jrd_rel* relation)
 {
 /**************************************
  *
@@ -122,21 +128,28 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_
  **************************************/
 	SET_TDBB(tdbb);
 
-	const ULONG relId = relation->rel_id;
-
 	Lock* lock;
 	vec<Lock*>* vector = transaction->tra_relation_locks;
-	if (vector && (relId < vector->count()) && (lock = (*vector)[relId]))
+	if (vector && (relation->rel_id < vector->count()) && (lock = (*vector)[relation->rel_id]))
 	{
 		return lock;
 	}
 
 	vector = transaction->tra_relation_locks =
-		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks, relId + 1);
+		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks,
+					   relation->rel_id + 1);
 
-	const USHORT relLockLen = relation->getRelLockKeyLength();
-	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock(tdbb, relLockLen, LCK_relation);
+	const SSHORT relLockLen = relation->getRelLockKeyLength();
+	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock();
+	lock->lck_dbb = tdbb->getDatabase();
+	lock->lck_length = relLockLen;
 	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
+	lock->lck_type = LCK_relation;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_parent = tdbb->getDatabase()->dbb_lock;
+	// the lck_object is used here to find the relation
+	// block from the lock block
+	lock->lck_object = relation;
 	// enter all relation locks into the intra-process lock manager and treat
 	// them as compatible within the attachment according to IPLM rules
 	lock->lck_compatible = tdbb->getAttachment();
@@ -146,7 +159,7 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_
 	// transactions, if a transaction is specified
 	lock->lck_compatible2 = transaction;
 
-	(*vector)[relId] = lock;
+	(*vector)[relation->rel_id] = lock;
 
 	return lock;
 }

@@ -24,19 +24,20 @@
 #ifndef ALICE_ALICE_PROTO_H
 #define ALICE_ALICE_PROTO_H
 
-#include "../common/ThreadData.h"
+#include "../jrd/ThreadData.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/UtilSvc.h"
 
-int		ALICE_main(Firebird::UtilSvc*);
+THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM);
 int		alice(Firebird::UtilSvc*);
 
 class AliceGlobals;
 
-void	ALICE_upper_case(const TEXT*, TEXT*, const size_t);
+void	ALICE_down_case(const TEXT*, TEXT*, const size_t);
 void	ALICE_print(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ALICE_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ALICE_print_status(bool error, const ISC_STATUS*);
 void	ALICE_exit(int, AliceGlobals*);
 
 #endif // ALICE_ALICE_PROTO_H
+

@@ -34,9 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../jrd/status.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "gen/iberror.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 
 
 /** Check that we never overrun the status vector.  The status
@@ -44,7 +44,7 @@
  * type.  So check for 17 or less
  */
 
-void PARSE_STATUS(const ISC_STATUS* status_vector, FB_SIZE_T& length, FB_SIZE_T& warning)
+void PARSE_STATUS(const ISC_STATUS* status_vector, int &length, int &warning)
 {
 	warning = 0;
 	length = 0;

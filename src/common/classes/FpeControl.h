@@ -30,7 +30,7 @@
 #define CLASSES_FPE_CONTROL_H
 
 #include <math.h>
-#if defined(_MSC_VER)
+#if defined(WIN_NT)
 #include <float.h>
 #else
 #include <fenv.h>
@@ -78,11 +78,17 @@ public:
 		}
 	}
 
-#if defined(_MSC_VER)
+#if defined(WIN_NT)
 	static void maskAll() throw()
 	{
 		_clearfp(); // always call _clearfp() before setting control word
+
+#ifdef AMD64
 		_controlfp(_CW_DEFAULT, _MCW_EM);
+#else
+		Mask cw;
+		__control87_2(_CW_DEFAULT, _MCW_EM, &cw, NULL);
+#endif
 	}
 
 private:
@@ -96,13 +102,23 @@ private:
 
 	static void getCurrentMask(Mask& m) throw()
 	{
+#ifdef AMD64
 		m = _controlfp(0, 0);
+#else
+		__control87_2(0, 0, &m, NULL);
+#endif
 	}
 
 	void restoreMask() throw()
 	{
 		_clearfp(); // always call _clearfp() before setting control word
+
+#ifdef AMD64
 		_controlfp(savedMask, _MCW_EM); // restore saved
+#else
+		Mask cw;
+		__control87_2(savedMask, _MCW_EM, &cw, NULL); // restore saved
+#endif
 	}
 
 #elif defined(HAVE_FEGETENV)
@@ -201,19 +217,19 @@ private:
 
 
 // getting a portable isinf() is harder than you would expect
-#ifndef isinf
 #ifdef WIN_NT
 inline bool isinf(double x)
 {
 	return (!_finite (x) && !isnan(x));
 }
 #else
+#ifndef isinf
 template <typename F>
 inline bool isinf(F x)
 {
 	return !isnan(x) && isnan(x - x);
 }
-#endif // WIN_NT
 #endif // isinf
+#endif // WIN_NT
 
 #endif //CLASSES_FPE_CONTROL_H

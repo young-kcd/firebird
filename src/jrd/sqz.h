@@ -27,41 +27,9 @@
 #include "../include/fb_blk.h"
 #include "../../common/classes/array.h"
 
-namespace Jrd
-{
-	class Compressor
-	{
-	public:
-		Compressor(MemoryPool& pool, FB_SIZE_T length, const UCHAR* data);
+namespace Jrd {
 
-		FB_SIZE_T getPackedLength() const
-		{
-			return m_length;
-		}
-
-		const UCHAR* getControl() const
-		{
-			return m_control.begin();
-		}
-
-		FB_SIZE_T getControlSize() const
-		{
-			return m_control.getCount();
-		}
-
-		void pack(const UCHAR*, UCHAR*) const;
-		FB_SIZE_T pack(const UCHAR*, FB_SIZE_T, UCHAR*) const;
-		FB_SIZE_T getPartialLength(FB_SIZE_T, const UCHAR*) const;
-
-		static UCHAR* unpack(FB_SIZE_T, const UCHAR*, FB_SIZE_T, UCHAR*);
-		static FB_SIZE_T applyDiff(FB_SIZE_T, const UCHAR*, FB_SIZE_T, UCHAR* const);
-		static FB_SIZE_T makeDiff(FB_SIZE_T, const UCHAR*, FB_SIZE_T, UCHAR*, FB_SIZE_T, UCHAR*);
-		static FB_SIZE_T makeNoDiff(FB_SIZE_T, UCHAR*);
-
-	private:
-		Firebird::HalfStaticArray<UCHAR, 2048> m_control;
-		FB_SIZE_T m_length;
-	};
+typedef Firebird::HalfStaticArray<SCHAR, 2048> DataComprControl;
 
 } //namespace Jrd
 

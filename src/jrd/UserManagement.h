@@ -25,57 +25,32 @@
 
 #include "firebird.h"
 #include "../common/classes/array.h"
-#include "../common/classes/fb_string.h"
 #include "../jrd/ibase.h"
-#include "../jrd/Monitoring.h"
-#include "../jrd/recsrc/RecordSource.h"
-#include "firebird/Interface.h"
-#include "../common/security.h"
+
+struct internal_user_data;
 
 namespace Jrd {
 
 class thread_db;
 class jrd_tra;
-class RecordBuffer;
-
-class UsersTableScan: public VirtualTableScan
-{
-public:
-	UsersTableScan(CompilerScratch* csb, const Firebird::string& alias,
-				   StreamType stream, jrd_rel* relation)
-		: VirtualTableScan(csb, alias, stream, relation)
-	{}
-
-protected:
-	const Format* getFormat(thread_db* tdbb, jrd_rel* relation) const;
-	bool retrieveRecord(thread_db* tdbb, jrd_rel* relation, FB_UINT64 position, Record* record) const;
-};
 
 // User management argument for deferred work
-class UserManagement : public SnapshotData
+class UserManagement
 {
 public:
 	explicit UserManagement(jrd_tra* tra);
 	~UserManagement();
 
 	// store userData for DFW-time processing
-	USHORT put(Auth::DynamicUserData* userData);
+	USHORT put(internal_user_data* userData);
 	// execute command with ID
 	void execute(USHORT id);
 	// commit transaction in security database
 	void commit();
-	// return users list for SEC$USERS
-	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
-	// callback for users display
-	void list(Firebird::IUser* u);
 
 private:
-	thread_db* threadDbb;
-	Firebird::HalfStaticArray<Auth::DynamicUserData*, 8> commands;
-	Firebird::IManagement* manager;
-
-	static void checkSecurityResult(int errcode, Firebird::IStatus* status,
-		const char* userName, Firebird::IUser* user);
+	FB_API_HANDLE database, transaction;
+	Firebird::HalfStaticArray<internal_user_data*, 8> commands;
 };
 
 }	// namespace

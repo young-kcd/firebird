@@ -32,7 +32,7 @@
 
 namespace Firebird {
 
-	template <typename Object, FB_SIZE_T Capacity = 16>
+	template <typename Object, size_t Capacity = 16>
 		class Stack : public AutoStorage
 	{
 	private:
@@ -75,12 +75,12 @@ namespace Firebird {
 				return this->data[--this->count];
 			}
 
-			Object getObject(FB_SIZE_T pos) const
+			Object getObject(size_t pos) const
 			{
 				return this->data[pos];
 			}
 
-			void split(FB_SIZE_T elem, Entry* target)
+			void split(size_t elem, Entry* target)
 			{
 				fb_assert(elem > 0 && elem < this->count);
 				fb_assert(target->count == 0);
@@ -96,11 +96,11 @@ namespace Firebird {
 				return rc;
 			}
 
-			bool hasMore(FB_SIZE_T value) const
+			bool hasMore(size_t value) const
 			{
 				for (const Entry* stk = this; stk; stk = stk->next)
 				{
-					FB_SIZE_T c = static_cast<const inherited*>(stk)->getCount();
+					size_t c = static_cast<const inherited*>(stk)->getCount();
 					if (value < c)
 					{
 						return true;
@@ -180,49 +180,6 @@ namespace Firebird {
 			}
 		}
 
-		// Push a element on the stack and pop when we go out of scope.
-		class AutoPushPop
-		{
-		public:
-			AutoPushPop(Stack<Object, Capacity>& s, Object& o)
-				: stack(s)
-			{
-				stack.push(o);
-			}
-
-			~AutoPushPop()
-			{
-				stack.pop();
-			}
-
-		private:
-			Stack<Object, Capacity>& stack;
-		};
-
-		// Restore the stack when we go out of scope.
-		class AutoRestore
-		{
-		public:
-			explicit AutoRestore(Stack<Object, Capacity>& s)
-				: stack(s),
-				  count(s.getCount())
-			{
-			}
-
-			~AutoRestore()
-			{
-				FB_SIZE_T currentCount = stack.getCount();
-				fb_assert(currentCount >= count);
-
-				while (currentCount-- > count)
-					stack.pop();
-			}
-
-		private:
-			Stack<Object, Capacity>& stack;
-			FB_SIZE_T count;
-		};
-
 		class iterator;
 		friend class iterator;
 
@@ -233,7 +190,7 @@ namespace Firebird {
 			// Merge/Split pair of functions
 			friend class ::Firebird::Stack<Object, Capacity>;
 			const Entry* stk;
-			FB_SIZE_T elem;
+			size_t elem;
 
 		public:
 			explicit iterator(Stack<Object, Capacity>& s)
@@ -260,7 +217,7 @@ namespace Firebird {
 				return *this;
 			}
 
-			bool hasMore(FB_SIZE_T value) const
+			bool hasMore(size_t value) const
 			{
 				if (elem)
 				{
@@ -337,7 +294,7 @@ namespace Firebird {
 		private:
 			friend class ::Firebird::Stack<Object, Capacity>;
 			const Entry* stk;
-			FB_SIZE_T elem;
+			size_t elem;
 
 		public:
 			explicit const_iterator(const Stack<Object, Capacity>& s)
@@ -368,7 +325,7 @@ namespace Firebird {
 				return *this;
 			}
 
-			bool hasMore(FB_SIZE_T value) const
+			bool hasMore(size_t value) const
 			{
 				if (elem)
 				{
@@ -561,9 +518,9 @@ namespace Firebird {
 			}
 		}
 
-		FB_SIZE_T getCount() const
+		size_t getCount() const
 		{
-			FB_SIZE_T rc = 0;
+			size_t rc = 0;
 			for (Entry* entry = stk; entry; entry = entry->next)
 			{
 				rc += entry->getCount();
@@ -571,7 +528,7 @@ namespace Firebird {
 			return rc;
 		}
 
-		bool hasMore(FB_SIZE_T value) const
+		bool hasMore(size_t value) const
 		{
 			return (stk && stk->hasMore(value));
 		}

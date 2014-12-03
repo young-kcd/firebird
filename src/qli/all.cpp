@@ -44,7 +44,7 @@
 #include "../qli/all_proto.h"
 #include "../qli/err_proto.h"
 #include "../qli/mov_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 
 
 #define BLKDEF(type, root, tail) { sizeof(root), tail },
@@ -86,7 +86,7 @@ BLK ALLQ_alloc( qli_plb* pool, UCHAR type, int count)
 
 	// Compute block length
 
-	FB_SIZE_T size = block_sizes[type].typ_root_length;
+	size_t size = block_sizes[type].typ_root_length;
 
 	SLONG tail = block_sizes[type].typ_tail_length;
 	if (tail)
@@ -102,7 +102,7 @@ BLK ALLQ_alloc( qli_plb* pool, UCHAR type, int count)
 
 	qli_frb* free;
 	qli_frb** best;
-	FB_SIZE_T best_tail;
+	size_t best_tail;
 
 	while (true)
 	{

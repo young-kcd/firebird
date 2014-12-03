@@ -39,8 +39,8 @@ namespace Ods {
 int		PIO_add_file(Jrd::Database*, Jrd::jrd_file*, const Firebird::PathName&, SLONG);
 void	PIO_close(Jrd::jrd_file*);
 Jrd::jrd_file*	PIO_create(Jrd::Database*, const Firebird::PathName&,
-							const bool, const bool);
-bool	PIO_expand(const TEXT*, USHORT, TEXT*, FB_SIZE_T);
+							const bool, const bool, const bool);
+bool	PIO_expand(const TEXT*, USHORT, TEXT*, size_t);
 void	PIO_extend(Jrd::Database*, Jrd::jrd_file*, const ULONG, const USHORT);
 void	PIO_flush(Jrd::Database*, Jrd::jrd_file*);
 void	PIO_force_write(Jrd::jrd_file*, const bool, const bool);
@@ -49,7 +49,7 @@ void	PIO_get_unique_file_id(const Jrd::jrd_file*, Firebird::UCharBuffer&);
 void	PIO_header(Jrd::Database*, SCHAR*, int);
 USHORT	PIO_init_data(Jrd::Database*, Jrd::jrd_file*, ISC_STATUS*, ULONG, USHORT);
 Jrd::jrd_file*	PIO_open(Jrd::Database*, const Firebird::PathName&,
-						 const Firebird::PathName&);
+						 const Firebird::PathName&, const bool);
 bool	PIO_read(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);
 
 #ifdef SUPERSERVER_V2

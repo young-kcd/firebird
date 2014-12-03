@@ -46,20 +46,6 @@ Example:
     select acos(x) from y;
 
 
------
-ACOSH
------
-
-Function:
-    Returns the hyperbolic arc cosine of a number (expressed in radians).
-
-Format:
-    ACOSH( <number> )
-
-Example:
-    select acosh(x) from y;
-
-
 ----------
 ASCII_CHAR
 ----------
@@ -114,20 +100,6 @@ Example:
     select asin(x) from y;
 
 
------
-ASINH
------
-
-Function:
-    Returns the hyperbolic arc sine of a number (expressed in radians).
-
-Format:
-    ASINH( <number> )
-
-Example:
-    select asinh(x) from y;
-
-
 ----
 ATAN
 ----
@@ -160,20 +132,6 @@ Notes:
 
 Example:
     select atan2(x, y) from z;
-
-
------
-ATANH
------
-
-Function:
-    Returns the hyperbolic arc tangent of a number (expressed in radians).
-
-Format:
-    ATANH( <number> )
-
-Example:
-    select atanh(x) from y;
 
 
 -------
@@ -553,8 +511,6 @@ Notes:
     1) If the second string is omitted the default value is one space.
     2) The second string is truncated when the result string will
 	   become larger than length.
-    3) The first string is truncated if its length is greater than the length
-	   parameter.
 
 Example:
     select lpad(x, 10) from y;
@@ -641,7 +597,7 @@ POSITION
 
 Function:
     Returns the position of the first string inside the second string starting at
-    an offset (or from the beginning when omitted). When not found, returns 0.
+    an offset (or from the beginning when omitted).
 
 Format:
     POSITION( <string> IN <string> )
@@ -765,8 +721,6 @@ Notes:
     1) If the second string is omitted the default value is one space.
     2) The second string is truncated when the result string will
 	   become larger than length.
-    3) The first string is truncated if its length is greater than the length
-	   parameter.
 
 Example:
     select rpad(x, 10) from y;

@@ -26,16 +26,17 @@
  */
 
 #include "firebird.h"
-
 #include "../../common/classes/TempFile.h"
 #include "../../common/StatusArg.h"
 #include "../../common/utils_proto.h"
+#include "../../jrd/common.h"
 #include "../../jrd/err_proto.h"
-#include "../../common/isc_proto.h"
-#include "../../common/isc_s_proto.h"
+#include "../../jrd/isc_proto.h"
+#include "../../jrd/isc_s_proto.h"
 #include "../../jrd/jrd.h"
-#include "../../common/os/path_utils.h"
-#include "../../common/os/os_utils.h"
+#include "../../jrd/os/path_utils.h"
+#include "../../jrd/os/config_root.h"
+#include "../../jrd/os/os_utils.h"
 #include "../../jrd/trace/TraceConfigStorage.h"
 
 #ifdef HAVE_UNISTD_H
@@ -58,7 +59,7 @@ using namespace Firebird;
 
 namespace Jrd {
 
-static const FB_UINT64 TOUCH_INTERVAL = 60 * 60;      // in seconds, one hour should be enough
+static const int TOUCH_INTERVAL = 60 * 60;		// in seconds, one hour should be enough
 
 void checkFileError(const char* filename, const char* operation, ISC_STATUS iscError)
 {
@@ -78,15 +79,16 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 #endif
 }
 
-ConfigStorage::ConfigStorage()
-	: m_timer(new TouchFile),
-	  m_sharedMemory(NULL),
-	  m_recursive(0),
-	  m_mutexTID(0)
+ConfigStorage::ConfigStorage() :
+	m_base(NULL),
+	m_recursive(0),
+	m_mutexTID(0),
+	m_cfg_file(-1),
+	m_dirty(false),
+	m_shutdown(true),
+	m_touchSemaphore(FB_NEW(*getDefaultMemoryPool()) AnyRef<Semaphore>),
+	m_touchSemRef(*m_touchSemaphore)
 {
-	m_cfg_file = -1;
-	m_dirty = false;
-
 	PathName filename;
 #ifdef WIN_NT
 	DWORD sesID = 0;
@@ -113,79 +115,113 @@ ConfigStorage::ConfigStorage()
 	filename.printf(TRACE_FILE); // TODO: it must be per engine instance
 #endif
 
-	try
+	ISC_STATUS_ARRAY status;
+	(void)	// errors are checked indirectly using m_base
+		ISC_map_file(status, filename.c_str(), initShMem, this, sizeof(ShMemHeader), &m_handle);
+	if (!m_base)
 	{
-		m_sharedMemory.reset(FB_NEW(getPool())
-			SharedMemory<TraceCSHeader>(filename.c_str(), sizeof(TraceCSHeader), this));
-	}
-	catch (const Exception& ex)
-	{
-		iscLogException("ConfigStorage: Cannot initialize the shared memory region", ex);
-		throw;
+		iscLogStatus("ConfigStorage: Cannot initialize the shared memory region", status);
+		status_exception::raise(status);
 	}
 
-	fb_assert(m_sharedMemory->getHeader());
-	fb_assert(m_sharedMemory->getHeader()->mhb_version == 1);
+	fb_assert(m_base->version == 1 || m_base->version == 2);
 
 	StorageGuard guard(this);
 	checkFile();
-	m_timer->start(m_sharedMemory->getHeader()->cfg_file_name);
+	++m_base->cnt_uses;
 
-	++(m_sharedMemory->getHeader()->cnt_uses);
+	if (m_base->version == 2) 
+	{
+		if (gds__thread_start(touchThread, (void*) this, THREAD_medium, 0, NULL))
+			gds__log("Trace facility: can't start touch thread");
+		else
+		{
+			m_shutdown = false;
+			m_touchStart.tryEnter(3);
+		}
+	}
 }
 
 ConfigStorage::~ConfigStorage()
 {
-	m_timer->stop();
+	shutdown();
 
 	::close(m_cfg_file);
 	m_cfg_file = -1;
 
 	{
 		StorageGuard guard(this);
-		--(m_sharedMemory->getHeader()->cnt_uses);
-		if (m_sharedMemory->getHeader()->cnt_uses == 0)
+		--m_base->cnt_uses;
+		if (m_base->cnt_uses == 0)
 		{
-			unlink(m_sharedMemory->getHeader()->cfg_file_name);
-			memset(m_sharedMemory->getHeader()->cfg_file_name, 0,
-				sizeof(m_sharedMemory->getHeader()->cfg_file_name));
+			unlink(m_base->cfg_file_name);
+			memset(m_base->cfg_file_name, 0, sizeof(m_base->cfg_file_name));
 
-			m_sharedMemory->removeMapFile();
+			ISC_remove_map_file(&m_handle);
 		}
+	}
+
+	ISC_mutex_fini(m_mutex);
+	ISC_STATUS_ARRAY status;
+	ISC_unmap_file(status, &m_handle);
+}
+
+
+void ConfigStorage::shutdown()
+{
+	if (!m_shutdown)
+	{
+		m_shutdown = true;
+		m_touchSemaphore->Semaphore::release();
+		m_touchStop.tryEnter(3);
+
+		// allow touch thread to finish its execution completely, including
+		// CRT and system cleanup code
+		THD_sleep(10);
 	}
 }
 
-void ConfigStorage::mutexBug(int state, const TEXT* string)
+void ConfigStorage::checkMutex(const TEXT* string, int state)
 {
-	TEXT msg[BUFFER_TINY];
+	if (state)
+	{
+		TEXT msg[BUFFER_TINY];
 
-	// While string is kept below length 70, all is well.
-	sprintf(msg, "ConfigStorage: mutex %s error, status = %d", string, state);
-	fb_utils::logAndDie(msg);
+		sprintf(msg, "ConfigStorage: mutex %s error, status = %d", string, state);
+		fb_utils::logAndDie(msg);
+	}
 }
 
-bool ConfigStorage::initialize(SharedMemoryBase* sm, bool init)
+void ConfigStorage::initShMem(void* arg, sh_mem* shmemData, bool initialize)
 {
-	TraceCSHeader* header = reinterpret_cast<TraceCSHeader*>(sm->sh_mem_header);
+	ConfigStorage* const storage = (ConfigStorage*) arg;
+	fb_assert(storage);
+
+#ifdef WIN_NT
+	checkMutex("init", ISC_mutex_init(&storage->m_winMutex, shmemData->sh_mem_name));
+	storage->m_mutex = &storage->m_winMutex;
+#endif
+
+	ShMemHeader* const header = (ShMemHeader*) shmemData->sh_mem_address;
+	storage->m_base = header;
 
 	// Initialize the shared data header
-	if (init)
+	if (initialize)
 	{
-		header->mhb_type = SharedMemoryBase::SRAM_TRACE_CONFIG;
-		header->mhb_version = 1;
-		header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
+		header->version = 2;
 		header->change_number = 0;
 		header->session_number = 1;
 		header->cnt_uses = 0;
+		header->touch_time = 0;
 		memset(header->cfg_file_name, 0, sizeof(header->cfg_file_name));
+#ifndef WIN_NT
+		checkMutex("init", ISC_mutex_init(shmemData, &header->mutex, &storage->m_mutex));
 	}
 	else
 	{
-		fb_assert(header->mhb_type == SharedMemoryBase::SRAM_TRACE_CONFIG);
-		fb_assert(header->mhb_version == 1);
+		checkMutex("map", ISC_map_mutex(shmemData, &header->mutex, &storage->m_mutex));
+#endif
 	}
-
-	return true;
 }
 
 void ConfigStorage::checkFile()
@@ -193,29 +229,30 @@ void ConfigStorage::checkFile()
 	if (m_cfg_file >= 0)
 		return;
 
-	char* cfg_file_name = m_sharedMemory->getHeader()->cfg_file_name;
+	char* cfg_file_name = m_base->cfg_file_name;
 
 	if (!(*cfg_file_name))
 	{
-		fb_assert(m_sharedMemory->getHeader()->cnt_uses == 0);
+		fb_assert(m_base->cnt_uses == 0);
 
 		char dir[MAXPATHLEN];
-		iscPrefixLock(dir, "", true);
+		gds__prefix_lock(dir, "");
 
 		PathName filename = TempFile::create("fb_trace_", dir);
-		filename.copyTo(cfg_file_name, sizeof(m_sharedMemory->getHeader()->cfg_file_name));
+		filename.copyTo(cfg_file_name, sizeof(m_base->cfg_file_name));
 		m_cfg_file = os_utils::openCreateSharedFile(cfg_file_name, O_BINARY);
 	}
 	else
 	{
 		m_cfg_file = ::open(cfg_file_name, O_RDWR | O_BINARY);
+	}
 
-		if (m_cfg_file < 0)
-			checkFileError(cfg_file_name, "open", isc_io_open_err);
+	if (m_cfg_file < 0) {
+		checkFileError(cfg_file_name, "open", isc_io_open_err);
 	}
 
 	// put default (audit) trace file contents into storage
-	if (m_sharedMemory->getHeader()->change_number == 0)
+	if (m_base->change_number == 0)
 	{
 		FILE* cfgFile = NULL;
 
@@ -225,7 +262,7 @@ void ConfigStorage::checkFile()
 
 			// remove quotes around path if present
 			{ // scope
-				const FB_SIZE_T pathLen = configFileName.length();
+				const size_t pathLen = configFileName.length();
 				if (pathLen > 1 && configFileName[0] == '"' &&
 					configFileName[pathLen - 1] == '"')
 				{
@@ -284,19 +321,64 @@ void ConfigStorage::checkFile()
 			fclose(cfgFile);
 		}
 	}
+
+	touchFile();
+}
+
+
+void ConfigStorage::touchFile()
+{
+	os_utils::touchFile(m_base->cfg_file_name);
+}
+
+
+THREAD_ENTRY_DECLARE ConfigStorage::touchThread(THREAD_ENTRY_PARAM arg)
+{
+	ConfigStorage* storage = (ConfigStorage*) arg;
+	storage->touchThreadFunc();
+	return 0;
+}
+
+
+void ConfigStorage::touchThreadFunc()
+{
+	{ // "semaphore" scope
+		AnyRef<Semaphore>* semaphore = m_touchSemaphore;
+		Reference semRef(*semaphore);
+
+		m_touchStart.release();
+
+		int delay = TOUCH_INTERVAL / 2;
+		while (!semaphore->tryEnter(delay))
+		{
+			StorageGuard guard(this);
+
+			time_t now;
+			time(&now);
+
+			if (!m_base->touch_time || m_base->touch_time < now)
+			{
+				touchFile();
+				m_base->touch_time = now + TOUCH_INTERVAL;
+			}
+
+			delay = difftime(m_base->touch_time, now);
+		} 
+	} // scope
+	m_touchStop.release();
 }
 
 
 void ConfigStorage::acquire()
 {
 	fb_assert(m_recursive >= 0);
-	const ThreadId currTID = getThreadId();
+	const FB_THREAD_ID currTID = getThreadId();
 
 	if (m_mutexTID == currTID)
 		m_recursive++;
 	else
 	{
-		m_sharedMemory->mutexLock();
+		checkMutex("lock", ISC_mutex_lock(m_mutex));
 
 		fb_assert(m_recursive == 0);
 		m_recursive = 1;
@@ -309,27 +391,29 @@ void ConfigStorage::acquire()
 void ConfigStorage::release()
 {
 	fb_assert(m_recursive > 0);
-	fb_assert(m_mutexTID == getThreadId());
 
+	const FB_THREAD_ID currTID = getThreadId();
+	fb_assert(m_mutexTID == currTID);
+	
 	if (--m_recursive == 0)
 	{
 		checkDirty();
 		m_mutexTID = 0;
-		m_sharedMemory->mutexUnlock();
+		checkMutex("unlock", ISC_mutex_unlock(m_mutex));
 	}
 }
 
 void ConfigStorage::addSession(TraceSession& session)
 {
 	setDirty();
-	session.ses_id = (m_sharedMemory->getHeader()->session_number)++;
+	session.ses_id = m_base->session_number++;
 	session.ses_flags |= trs_active;
 	time(&session.ses_start);
 
 	const long pos1 = lseek(m_cfg_file, 0, SEEK_END);
 	if (pos1 < 0)
 	{
-		const char* fn = m_sharedMemory->getHeader()->cfg_file_name;
+		const char* fn = m_base->cfg_file_name;
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(fn) <<
 			Arg::Gds(isc_io_read_err) << SYS_ERR(errno));
 	}
@@ -348,7 +432,7 @@ void ConfigStorage::addSession(TraceSession& session)
 	putItem(tagEnd, 0, NULL);
 
 	// const long pos2 = lseek(m_cfg_file, 0, SEEK_END);
-	// m_sharedMemory->getHeader()->used_space += pos2 - pos1;
+	// m_base->used_space += pos2 - pos1;
 }
 
 bool ConfigStorage::getNextSession(TraceSession& session)
@@ -418,12 +502,12 @@ bool ConfigStorage::getNextSession(TraceSession& session)
 		if (p)
 		{
 			if (::read(m_cfg_file, p, len) != len)
-				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "read", isc_io_read_err);
+				checkFileError(m_base->cfg_file_name, "read", isc_io_read_err);
 		}
 		else
 		{
 			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
-				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
+				checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
 
@@ -457,10 +541,10 @@ void ConfigStorage::removeSession(ULONG id)
 				// but we need a negative offset here.
 				const long local_len = len;
 				if (lseek(m_cfg_file, -local_len, SEEK_CUR) < 0)
-					checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
+					checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 
 				if (write(m_cfg_file, &currID, len) != len)
-					checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "write", isc_io_write_err);
+					checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 
 				break;
 			}
@@ -468,7 +552,7 @@ void ConfigStorage::removeSession(ULONG id)
 		else
 		{
 			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
-				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
+				checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
 }
@@ -479,7 +563,7 @@ void ConfigStorage::restart()
 	checkDirty();
 
 	if (lseek(m_cfg_file, 0, SEEK_SET) < 0)
-		checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
+		checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 }
 
 
@@ -501,7 +585,7 @@ void ConfigStorage::updateSession(TraceSession& session)
 		{
 			case tagID:
 				fb_assert(len == sizeof(currID));
-				FB_UNUSED(read(m_cfg_file, &currID, len));
+				read(m_cfg_file, &currID, len);
 				continue;
 
 			case tagFlags:
@@ -521,12 +605,12 @@ void ConfigStorage::updateSession(TraceSession& session)
 		{
 			setDirty();
 			if (write(m_cfg_file, p, len) != len)
-				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "write", isc_io_write_err);
+				checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 		}
 		else if (len)
 		{
 			if (lseek(m_cfg_file, len, SEEK_CUR) < 0)
-				checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "lseek", isc_io_read_err);
+				checkFileError(m_base->cfg_file_name, "lseek", isc_io_read_err);
 		}
 	}
 }
@@ -537,19 +621,19 @@ void ConfigStorage::putItem(ITEM tag, ULONG len, const void* data)
 	const char tag_data = (char) tag;
 	ULONG to_write = sizeof(tag_data);
 	if (write(m_cfg_file, &tag_data, to_write) != to_write)
-		checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "write", isc_io_write_err);
+		checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 
 	if (tag == tagEnd)
 		return;
 
 	to_write = sizeof(len);
 	if (write(m_cfg_file, &len, to_write) != to_write)
-		checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "write", isc_io_write_err);
+		checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 
 	if (len)
 	{
 		if (write(m_cfg_file, data, len) != len)
-			checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "write", isc_io_write_err);
+			checkFileError(m_base->cfg_file_name, "write", isc_io_write_err);
 	}
 }
 
@@ -562,7 +646,7 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 		return false;
 
 	if (cnt_read < 0)
-		checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "read", isc_io_read_err);
+		checkFileError(m_base->cfg_file_name, "read", isc_io_read_err);
 
 	tag = (ITEM) data;
 
@@ -571,44 +655,28 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 	else
 	{
 		if (read(m_cfg_file, &len, sizeof(ULONG)) != sizeof(ULONG))
-			checkFileError(m_sharedMemory->getHeader()->cfg_file_name, "read", isc_io_read_err);
+			checkFileError(m_base->cfg_file_name, "read", isc_io_read_err);
 	}
 
 	return true;
 }
 
-void ConfigStorage::TouchFile::handler()
+ConfigStorage* StorageInstance::getStorage()
 {
-	os_utils::touchFile(fileName);
-	LocalStatus s;
-	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
-	// ignore error in handler
-}
-
-void ConfigStorage::TouchFile::start(const char* fName)
-{
-	fileName = fName;
-	LocalStatus s;
-	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
-	check(&s);
-}
-
-void ConfigStorage::TouchFile::stop()
-{
-	LocalStatus s;
-	TimerInterfacePtr()->stop(&s, this);
-	// ignore error in stop timer
-}
-
-int ConfigStorage::TouchFile::release()
-{
-	if (--refCounter == 0)
+	if (!storage)
 	{
-		delete this;
-		return 0;
+		MutexLockGuard guard(initMtx);
+		if (!storage)
+		{
+			storage = new ConfigStorage;
+		}
 	}
+	return storage;
+}
 
-	return 1;
+StorageInstance::~StorageInstance()
+{
+	delete storage;
 }
 
 } // namespace Jrd

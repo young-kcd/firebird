@@ -30,6 +30,7 @@
 
 #include "../../../common/classes/fb_string.h"
 #include "../../../common/classes/locks.h"
+#include "../../../jrd/common.h"
 
 #ifdef WIN_NT
 #define NEWLINE "\r\n"

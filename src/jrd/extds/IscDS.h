@@ -50,7 +50,7 @@ public:
 	}
 
 	virtual void jrdAttachmentEnd(Jrd::thread_db* /*tdbb*/, Jrd::Attachment* /*att*/) {}
-	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const;
+	virtual void getRemoteError(ISC_STATUS* status, Firebird::string& err) const;
 
 protected:
 	ISC_STATUS notImplemented(ISC_STATUS*) const;
@@ -314,7 +314,7 @@ public:
 								 char *,
 								 const char*);
 
-	// 17 May 2001 - isc_expand_dpb is DEPRECATED
+/* 17 May 2001 - isc_expand_dpb is DEPRECATED */
 	virtual void ISC_EXPORT_VARARG isc_expand_dpb(char * *,
 									  short *, ...);
 
@@ -345,7 +345,7 @@ public:
 									ISC_LONG *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_interprete(char *,
-									 const ISC_STATUS * *);
+									 ISC_STATUS * *);
 
 	virtual ISC_STATUS ISC_EXPORT isc_open_blob(ISC_STATUS *,
 									isc_db_handle *,
@@ -514,7 +514,7 @@ public:
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role);
 
-	virtual bool cancelExecution();
+	virtual bool cancelExecution(Jrd::thread_db* tdbb);
 
 	virtual bool isAvailable(Jrd::thread_db* tdbb, TraScope traScope) const;
 
@@ -578,8 +578,8 @@ protected:
 	virtual bool doFetch(Jrd::thread_db* tdbb);
 	virtual void doClose(Jrd::thread_db* tdbb, bool drop);
 
-	virtual void doSetInParams(Jrd::thread_db* tdbb, unsigned int count,
-		const Firebird::MetaName* const* names, const NestConst<Jrd::ValueExprNode>* params);
+	virtual void doSetInParams(Jrd::thread_db* tdbb, int count, const Firebird::string* const* names,
+		Jrd::jrd_nod** params);
 
 	IscTransaction* getIscTransaction() { return (IscTransaction*) m_transaction; }
 

@@ -26,7 +26,6 @@
 #include "firebird.h"
 #include "../common/classes/fb_string.h"
 #include "../common/classes/File.h"
-#include "firebird/Interface.h"
 
 namespace Firebird {
 
@@ -48,8 +47,8 @@ public:
 
 	virtual ~TempFile();
 
-	FB_SIZE_T read(offset_t, void*, FB_SIZE_T);
-	FB_SIZE_T write(offset_t, const void*, FB_SIZE_T);
+	size_t read(offset_t, void*, size_t);
+	size_t write(offset_t, const void*, size_t);
 
 	void unlink();
 
@@ -58,7 +57,7 @@ public:
 		return size;
 	}
 
-	void extend(offset_t);
+	void extend(size_t);
 
 	const PathName& getName() const
 	{
@@ -67,7 +66,6 @@ public:
 
 	static PathName getTempPath();
 	static PathName create(const PathName& prefix, const PathName& directory = "");
-	static PathName create(IStatus* status, const PathName& prefix, const PathName& directory = "");
 
 private:
 	void init(const PathName&, const PathName&);

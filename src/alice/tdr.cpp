@@ -35,14 +35,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 #include "../alice/alice.h"
-#include "../common/classes/Switches.h"
 #include "../alice/aliceswi.h"
 #include "../alice/alice_proto.h"
 #include "../alice/alice_meta.h"
 #include "../alice/tdr_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../jrd/constants.h"
 #include "../common/classes/ClumpletWriter.h"
 
@@ -56,7 +56,12 @@ static void reattach_databases(tdr*);
 static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, SINT64);
 
 
+//const char* const NEWLINE = "\n";
+
 static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
+
+
+
 
 
 //
@@ -75,13 +80,14 @@ static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
 
 USHORT TDR_analyze(const tdr* trans)
 {
+	USHORT advice = TRA_none;
+
 	if (trans == NULL)
 		return TRA_none;
 
 	// if the tdr for the first transaction is missing,
 	// we can assume it was committed
 
-	USHORT advice = TRA_none;
 	USHORT state = trans->tdr_state;
 	if (state == TRA_none)
 		state = TRA_commit;
@@ -182,19 +188,32 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 	AliceGlobals* tdgbl = AliceGlobals::getSpecific();
 
 	if (tdgbl->ALICE_data.ua_debug)
-		ALICE_print(68, SafeArg() << pathname); // msg 68: ATTACH_DATABASE: attempted attach of %s
+		ALICE_print(68, SafeArg() << pathname);
+		// msg 68: ATTACH_DATABASE: attempted attach of %s
 
 	Firebird::ClumpletWriter dpb(Firebird::ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	dpb.insertTag(isc_dpb_no_garbage_collect);
 	dpb.insertTag(isc_dpb_gfix_attach);
-	tdgbl->uSvc->fillDpb(dpb);
+	tdgbl->uSvc->getAddressPath(dpb);
 	if (tdgbl->ALICE_data.ua_user) {
-		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, fb_strlen(tdgbl->ALICE_data.ua_user));
+		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, strlen(tdgbl->ALICE_data.ua_user));
 	}
 	if (tdgbl->ALICE_data.ua_password)
 	{
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,
-						tdgbl->ALICE_data.ua_password, fb_strlen(tdgbl->ALICE_data.ua_password));
+						tdgbl->ALICE_data.ua_password, strlen(tdgbl->ALICE_data.ua_password));
+	}
+	if (tdgbl->ALICE_data.ua_tr_user)
+	{
+		tdgbl->uSvc->checkService();
+		dpb.insertString(isc_dpb_trusted_auth,
+						tdgbl->ALICE_data.ua_tr_user,
+						strlen(reinterpret_cast<const char*>(tdgbl->ALICE_data.ua_tr_user)));
+	}
+	if (tdgbl->ALICE_data.ua_tr_role)
+	{
+		tdgbl->uSvc->checkService();
+		dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
 	}
 
 	trans->tdr_db_handle = 0;
@@ -659,16 +678,16 @@ static SINT64 ask()
 		if (p == response)
 			return ~SINT64(0);
 		*p = 0;
-		ALICE_upper_case(response, response, sizeof(response));
-		if (!strcmp(response, "N") || !strcmp(response, "C") || !strcmp(response, "R"))
+		ALICE_down_case(response, response, sizeof(response));
+		if (!strcmp(response, "n") || !strcmp(response, "c") || !strcmp(response, "r"))
 		{
 			  break;
 		}
 	}
 
-	if (response[0] == 'C')
+	if (response[0] == 'c')
 		switches |= sw_commit;
-	else if (response[0] == 'R')
+	else if (response[0] == 'r')
 		switches |= sw_rollback;
 
 	return switches;
@@ -691,66 +710,63 @@ static void reattach_database(tdr* trans)
 
 	ISC_get_host(buffer, sizeof(buffer));
 
-	if (trans->tdr_fullpath)
+	// if this is being run from the same host,
+	// try to reconnect using the same pathname
+
+	if (!strcmp(buffer, reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
 	{
-		// if this is being run from the same host,
-		// try to reconnect using the same pathname
-
-		if (!strcmp(buffer, reinterpret_cast<const char*>(trans->tdr_host_site->str_data)))
-		{
-			if (TDR_attach_database(status_vector, trans,
+		if (TDR_attach_database(status_vector, trans,
 								reinterpret_cast<char*>(trans->tdr_fullpath->str_data)))
-			{
-				return;
-			}
-		}
-		else if (trans->tdr_host_site)
 		{
-			//  try going through the previous host with all available
-			//  protocols, using chaining to try the same method of
-			//  attachment originally used from that host
-			char* p = buffer;
-			const UCHAR* q = trans->tdr_host_site->str_data;
-			while (*q && p < end)
-			*p++ = *q++;
-			*p++ = ':';
-			q = trans->tdr_fullpath->str_data;
-			while (*q && p < end)
-				*p++ = *q++;
-			*p = 0;
-			if (TDR_attach_database(status_vector, trans, buffer))
-			{
-				return;
-			}
+			return;
 		}
-
-		// attaching using the old method didn't work;
-		// try attaching to the remote node directly
-
-		if (trans->tdr_remote_site)
-		{
-			char* p = buffer;
-			const UCHAR* q = trans->tdr_remote_site->str_data;
-			while (*q && p < end)
-				*p++ = *q++;
-			*p++ = ':';
-			q = reinterpret_cast<const UCHAR*>(trans->tdr_filename);
-			while (*q && p < end)
-				*p++ = *q++;
-			*p = 0;
-			if (TDR_attach_database (status_vector, trans, buffer))
-			{
-				return;
-			}
-		}
-
 	}
+	else if (trans->tdr_host_site)
+	{
+		//  try going through the previous host with all available
+		//  protocols, using chaining to try the same method of
+		//  attachment originally used from that host
+		char* p = buffer;
+		const UCHAR* q = trans->tdr_host_site->str_data;
+		while (*q && p < end)
+			*p++ = *q++;
+		*p++ = ':';
+		q = trans->tdr_fullpath->str_data;
+		while (*q && p < end)
+			*p++ = *q++;
+		*p = 0;
+		if (TDR_attach_database(status_vector, trans, buffer))
+		{
+			return;
+		}
+	}
+
+	// attaching using the old method didn't work;
+	// try attaching to the remote node directly
+
+	if (trans->tdr_remote_site)
+	{
+		char* p = buffer;
+		const UCHAR* q = trans->tdr_remote_site->str_data;
+		while (*q && p < end)
+			*p++ = *q++;
+		*p++ = ':';
+		q = reinterpret_cast<const UCHAR*>(trans->tdr_filename);
+		while (*q && p < end)
+			*p++ = *q++;
+		*p = 0;
+		if (TDR_attach_database (status_vector, trans, buffer))
+		{
+			return;
+		}
+	}
+
 	// we have failed to reattach; notify the user
 	// and let them try to succeed where we have failed
 
 	ALICE_print(86, SafeArg() << trans->tdr_id);
 	// msg 86: Could not reattach to database for transaction %ld.
-	ALICE_print(87, SafeArg() << (trans->tdr_fullpath ? (char*)(trans->tdr_fullpath->str_data) : "is unknown"));
+	ALICE_print(87, SafeArg() << trans->tdr_fullpath->str_data);
 	// msg 87: Original path: %s
 
 	if (tdgbl->uSvc->isService())
@@ -775,7 +791,7 @@ static void reattach_database(tdr* trans)
 			const size_t p_len = strlen(p);
 			alice_str* string = FB_NEW_RPT(*tdgbl->getDefaultPool(), p_len + 1) alice_str;
 			strcpy(reinterpret_cast<char*>(string->str_data), p);
-			string->str_length = static_cast<USHORT>(p_len);
+			string->str_length = p_len;
 			trans->tdr_fullpath = string;
 			trans->tdr_filename = (TEXT *) string->str_data;
 			return;

@@ -44,8 +44,8 @@
 #include <unistd.h>
 #endif
 
-#include "../common/gdsassert.h"
-#include "../common/os/path_utils.h"
+#include "../jrd/gdsassert.h"
+#include "../jrd/os/path_utils.h"
 #include "../common/classes/init.h"
 
 #include "../common/classes/TempFile.h"
@@ -66,11 +66,11 @@ static const char* DEFAULT_PATH =
 
 static const char* const NAME_PATTERN = "XXXXXX";
 static const char* const NAME_LETTERS = "abcdefghijklmnopqrstuvwxyz0123456789";
-static const FB_SIZE_T MAX_TRIES = 256;
+static const size_t MAX_TRIES = 256;
 
 // we need a class here only to return memory on shutdown and avoid
 // false memory leak reports
-static InitInstance<ZeroBuffer> zeros;
+static Firebird::InitInstance<ZeroBuffer> zeros;
 
 //
 // TempFile::getTempPath
@@ -127,33 +127,6 @@ PathName TempFile::create(const PathName& prefix, const PathName& directory)
 }
 
 //
-// TempFile::create
-//
-// Creates a temporary file and returns its name.
-// In error case store exception in status arg.
-//
-
-PathName TempFile::create(IStatus* status, const PathName& prefix, const PathName& directory)
-{
-	PathName filename;
-
-	try
-	{
-		TempFile file(*getDefaultMemoryPool(), prefix, directory, false);
-		filename = file.getName();
-	}
-	catch (const Exception& ex)
-	{
-		if (status)
-		{
-			ex.stuffException(status);
-		}
-	}
-
-	return filename;
-}
-
-//
 // TempFile::init
 //
 // Creates temporary file with a unique filename
@@ -180,7 +153,7 @@ void TempFile::init(const PathName& directory, const PathName& prefix)
 	{
 		PathName name = filename + prefix;
 		__int64 temp = randomness;
-		for (FB_SIZE_T i = 0; i < suffix.length(); i++)
+		for (size_t i = 0; i < suffix.length(); i++)
 		{
 			suffix[i] = NAME_LETTERS[temp % (strlen(NAME_LETTERS))];
 			temp /= strlen(NAME_LETTERS);
@@ -292,15 +265,15 @@ void TempFile::seek(const offset_t offset)
 // Increases the file size
 //
 
-void TempFile::extend(offset_t delta)
+void TempFile::extend(size_t delta)
 {
 	const char* const buffer = zeros().getBuffer();
-	const FB_SIZE_T bufferSize = zeros().getSize();
+	const size_t bufferSize = zeros().getSize();
 	const offset_t newSize = size + delta;
 
 	for (offset_t offset = size; offset < newSize; offset += bufferSize)
 	{
-		const FB_SIZE_T length = MIN(newSize - offset, bufferSize);
+		const size_t length = MIN(newSize - offset, bufferSize);
 		write(offset, buffer, length);
 	}
 }
@@ -311,7 +284,7 @@ void TempFile::extend(offset_t delta)
 // Reads bytes from file
 //
 
-FB_SIZE_T TempFile::read(offset_t offset, void* buffer, FB_SIZE_T length)
+size_t TempFile::read(offset_t offset, void* buffer, size_t length)
 {
 	fb_assert(offset + length <= size);
 	seek(offset);
@@ -323,7 +296,7 @@ FB_SIZE_T TempFile::read(offset_t offset, void* buffer, FB_SIZE_T length)
 	}
 #else
 	const int bytes = ::read(handle, buffer, length);
-	if (bytes < 0 || FB_SIZE_T(bytes) != length)
+	if (bytes < 0 || size_t(bytes) != length)
 	{
 		system_error::raise("read");
 	}
@@ -338,7 +311,7 @@ FB_SIZE_T TempFile::read(offset_t offset, void* buffer, FB_SIZE_T length)
 // Writes bytes to file
 //
 
-FB_SIZE_T TempFile::write(offset_t offset, const void* buffer, FB_SIZE_T length)
+size_t TempFile::write(offset_t offset, const void* buffer, size_t length)
 {
 	fb_assert(offset <= size);
 	seek(offset);
@@ -350,7 +323,7 @@ FB_SIZE_T TempFile::write(offset_t offset, const void* buffer, FB_SIZE_T length)
 	}
 #else
 	const int bytes = ::write(handle, buffer, length);
-	if (bytes < 0 || FB_SIZE_T(bytes) != length)
+	if (bytes < 0 || size_t(bytes) != length)
 	{
 		system_error::raise("write");
 	}

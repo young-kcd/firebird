@@ -26,19 +26,6 @@
 namespace Ods {
 
 	bool isSupported(USHORT, USHORT);
-
-	// NS: ODS code logic should never depend on host platform pointer size.
-	// this is why data type for these things is ULONG (32-bit unsigned integer)
-	ULONG bytesBitPIP(ULONG page_size);
-	ULONG pagesPerPIP(ULONG page_size);
-	ULONG pagesPerSCN(ULONG page_size);
-	ULONG maxPagesPerSCN(ULONG page_size);
-	ULONG transPerTIP(ULONG page_size);
-	ULONG gensPerPage(ULONG page_size);
-	ULONG dataPagesPerPP(ULONG page_size);
-	ULONG maxRecsPerDP(ULONG page_size);
-	ULONG maxIndices(ULONG page_size);
-
-} // namespace
+}
 
 #endif //ODS_PROTO_H

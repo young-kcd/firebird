@@ -25,8 +25,7 @@
 #ifndef DSQL_DSQL_PROTO_H
 #define DSQL_DSQL_PROTO_H
 
-#include "../common/classes/array.h"
-#include "firebird/Interface.h"
+#include "../common/classes/fb_string.h"
 
 namespace Jrd {
 	class Attachment;
@@ -34,15 +33,44 @@ namespace Jrd {
 	class dsql_req;
 }
 
-void DSQL_execute(Jrd::thread_db*, Jrd::jrd_tra**, Jrd::dsql_req*, bool,
-				  Firebird::IMessageMetadata*, const UCHAR*, Firebird::IMessageMetadata*, UCHAR*);
+Jrd::dsql_req* DSQL_allocate_statement(Jrd::thread_db*, Jrd::Attachment*);
+void DSQL_execute(Jrd::thread_db*,  Jrd::jrd_tra**, Jrd::dsql_req*,
+				  USHORT, const UCHAR*,
+				  USHORT, USHORT, const UCHAR*,
+				  USHORT, UCHAR*,
+				  /*USHORT,*/ USHORT, UCHAR*);
 void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
-							ULONG, const TEXT*, USHORT, Firebird::IMessageMetadata*, const UCHAR*,
-							Firebird::IMessageMetadata*, UCHAR*, bool);
+							USHORT, const TEXT*, USHORT,
+							USHORT, const UCHAR*,
+							/*USHORT,*/ USHORT, const UCHAR*,
+							USHORT, UCHAR*,
+							/*USHORT,*/ USHORT, UCHAR*);
+#ifdef SCROLLABLE_CURSORS
+ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*,
+					  USHORT, const UCHAR*,
+					  /*USHORT,*/ USHORT, UCHAR*,
+					  USHORT, SLONG);
+#else
+ISC_STATUS DSQL_fetch(Jrd::thread_db*, Jrd::dsql_req*,
+					  USHORT, const UCHAR*,
+					  /*USHORT,*/ USHORT, UCHAR*);
+#endif // SCROLLABLE_CURSORS
 void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
-Jrd::dsql_req* DSQL_prepare(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra*, ULONG, const TEXT*,
-							USHORT, Firebird::Array<UCHAR>*, Firebird::Array<UCHAR>*, bool);
+void DSQL_insert(Jrd::thread_db*, Jrd::dsql_req*,
+				 USHORT, const UCHAR*,
+				 /*USHORT,*/ USHORT, const UCHAR*);
+void DSQL_prepare(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::dsql_req**,
+				  USHORT, const TEXT*,
+				  USHORT, USHORT, const UCHAR*,
+				  USHORT, UCHAR*);
+void DSQL_set_cursor(Jrd::thread_db*, Jrd::dsql_req*, const TEXT*); //, USHORT);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,
-				   ULONG, const UCHAR*, ULONG, UCHAR*);
+				   USHORT, const UCHAR*,
+				   ULONG, UCHAR*);
+ULONG DSQL_get_plan_info(Jrd::thread_db*,
+						  const Jrd::dsql_req*,
+						  SLONG,
+						  SCHAR**,
+						  const bool realloc = true);
 
 #endif //  DSQL_DSQL_PROTO_H

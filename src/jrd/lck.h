@@ -24,19 +24,10 @@
 #ifndef JRD_LCK_H
 #define JRD_LCK_H
 
-//#define DEBUG_LCK
-
-#ifdef DEBUG_LCK
-#include "../common/classes/SyncObject.h"
-#endif
-
-#include "../jrd/Attachment.h"
-
 namespace Jrd {
 
 class Database;
 class Attachment;
-class thread_db;
 
 // Lock types
 
@@ -50,6 +41,7 @@ enum lck_t {
 	LCK_attachment,				// Attachment lock
 	LCK_shadow,					// Lock to synchronize addition of shadows
 	LCK_sweep,					// Sweep lock for single sweeper
+	LCK_retaining,				// Youngest commit retaining transaction
 	LCK_expression,				// Expression index caching mechanism
 	LCK_prc_exist,				// Procedure existence lock
 	LCK_update_shadow,			// shadow update sync lock
@@ -64,11 +56,7 @@ enum lck_t {
 	LCK_cancel,					// Cancellation lock
 	LCK_btr_dont_gc,			// Prevent removal of b-tree page from index
 	LCK_shared_counter,			// Database-wide shared counter
-	LCK_tra_pc,					// Precommitted transaction lock
-	LCK_fun_exist,				// Function existence lock
-	LCK_rel_rescan,				// Relation forced rescan lock
-	LCK_crypt,					// Crypt lock for single crypt thread
-	LCK_crypt_status			// Notifies about changed database encryption status
+	LCK_tra_pc					// Precommitted transaction lock
 };
 
 // Lock owner types
@@ -81,51 +69,49 @@ enum lck_owner_t {
 class Lock : public pool_alloc_rpt<UCHAR, type_lck>
 {
 public:
-	Lock(thread_db* tdbb, USHORT length, lck_t type, void* object = NULL, lock_ast_t ast = NULL);
-
-	Lock* detach();
-
-	Firebird::RefPtr<StableAttachmentPart> getLockStable()
+	Lock()
+	:	lck_parent(0),
+		lck_next(0),
+		lck_prior(0),
+		lck_collision(0),
+		lck_identical(0),
+		lck_compatible(0),
+		lck_compatible2(0),
+		lck_dbb(0),
+		lck_attachment(0),
+		lck_ast(0),
+		lck_object(0),
+		lck_id(0),
+		lck_owner_handle(0),
+		lck_length(0),
+		lck_logical(0),
+		lck_physical(0),
+		lck_data(0)
 	{
-		return lck_attachment;
+		lck_key.lck_long = 0;
+		lck_tail[0] = 0;
 	}
 
-	Attachment* getLockAttachment()
-	{
-		return lck_attachment ? lck_attachment->getHandle() : NULL;
-	}
+	Lock* lck_parent;
 
-	void setLockAttachment(thread_db* tdbb, Attachment* att);
-
-#ifdef DEBUG_LCK
-	Firebird::SyncObject	lck_sync;
-#endif
-
-	Database* lck_dbb;				// Database object is contained in
-
-private:
-	Firebird::RefPtr<StableAttachmentPart> lck_attachment;		// Attachment that owns lock, set only using set_lock_attachment()
-
-public:
-	void* lck_compatible;			// Enter into internal_enqueue() and treat as compatible
-	void* lck_compatible2;			// Sub-level for internal compatibility
-
-	lock_ast_t lck_ast;				// Blocking AST routine
-	void* lck_object;				// Argument to be passed to AST
-
-//private:
 	Lock* lck_next;					// lck_next and lck_prior form a doubly linked list of locks
 	Lock* lck_prior;				// bound to attachment
 
 	Lock* lck_collision;			// Collisions in compatibility table
 	Lock* lck_identical;			// Identical locks in compatibility table
+	void* lck_compatible;			// Enter into internal_enqueue() and treat as compatible
+	void* lck_compatible2;			// Sub-level for internal compatibility
 
+	Database* lck_dbb;				// Database object is contained in
+	Attachment* lck_attachment;		// Attachment that owns lock, set only using set_lock_attachment()
+
+	lock_ast_t lck_ast;				// Blocking AST routine
+	void* lck_object;				// Argument to be passed to AST
+
+	lck_t lck_type;					// Lock type
 	SLONG lck_id;					// Lock id from the lock manager
 	SLONG lck_owner_handle;			// Lock owner handle from the lock manager's point of view
-	USHORT lck_length;				// Length of lock key string
-	lck_t lck_type;					// Lock type
-
-public:
+	SSHORT lck_length;				// Length of lock key string
 	UCHAR lck_logical;				// Logical lock level
 	UCHAR lck_physical;				// Physical lock level
 	SLONG lck_data;					// Data associated with a lock

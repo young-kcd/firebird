@@ -29,6 +29,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include "../jrd/common.h"
 #include "gen/iberror.h"
 #include <errno.h>
 #include "../jrd/jrd.h"
@@ -41,8 +42,9 @@
 #include "../jrd/tra.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/dbg_proto.h"
 #include "../jrd/err_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 
@@ -50,7 +52,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 //#define JRD_FAILURE_SPACE	2048
-//#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	// Used when buffer fails
+//#define JRD_FAILURE_UNKNOWN	"<UNKNOWN>"	/* Used when buffer fails */
 
 
 static void internal_error(ISC_STATUS status, int number, const TEXT* file = NULL, int line = 0);
@@ -69,11 +71,10 @@ void ERR_bugcheck(int number, const TEXT* file, int line)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	thread_db* const tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
-
+	Database* dbb = GET_DBB();
 	dbb->dbb_flags |= DBB_bugcheck;
-	CCH_shutdown(tdbb);
+
+	CCH_shutdown_database(dbb);
 
 	internal_error(isc_bug_check, number, file, line);
 }
@@ -91,12 +92,11 @@ void ERR_bugcheck_msg(const TEXT* msg)
  *	Things seem to be going poorly today.
  *
  **************************************/
-	thread_db* const tdbb = JRD_get_thread_data();
-	Database* const dbb = tdbb->getDatabase();
+	Database* dbb = GET_DBB();
 
 	dbb->dbb_flags |= DBB_bugcheck;
 	DEBUG;
-	CCH_shutdown(tdbb);
+	CCH_shutdown_database(dbb);
 
 	ERR_post(Arg::Gds(isc_bug_check) << Arg::Str(msg));
 }
@@ -139,6 +139,25 @@ void ERR_error(int number)
 		sprintf(errmsg, "error code %d", number);
 
 	ERR_post(Arg::Gds(isc_random) << Arg::Str(errmsg));
+}
+
+
+void ERR_error_msg(const TEXT* msg)
+{
+/**************************************
+ *
+ *	E R R _ e r r o r _ m s g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Post a user-level error.  This is a temporary mechanism
+ *	that will eventually disappear.
+ *
+ **************************************/
+
+	DEBUG;
+	ERR_post(Arg::Gds(isc_random) << Arg::Str(msg));
 }
 
 
@@ -188,26 +207,26 @@ bool ERR_post_warning(const Arg::StatusVector& v)
  **************************************/
 	fb_assert(v.value()[0] == isc_arg_warning);
 
-	FB_SIZE_T indx = 0, warning_indx = 0;
+	int indx = 0, warning_indx = 0;
 	ISC_STATUS* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
 	if (status_vector[0] != isc_arg_gds ||
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
 			status_vector[2] != isc_arg_warning))
 	{
-		// this is a blank status vector
+		/* this is a blank status vector */
 		fb_utils::init_status(status_vector);
 		indx = 2;
 	}
 	else
 	{
-		// find end of a status vector
+		/* find end of a status vector */
 		PARSE_STATUS(status_vector, indx, warning_indx);
 		if (indx)
 			--indx;
 	}
 
-	// stuff the warning
+	/* stuff the warning */
 	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
 	{
 		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
@@ -215,7 +234,7 @@ bool ERR_post_warning(const Arg::StatusVector& v)
 		return true;
 	}
 
-	// not enough free space
+	/* not enough free space */
 	return false;
 }
 
@@ -304,8 +323,8 @@ static void internal_post(const ISC_STATUS* tmp_status)
  *
  **************************************/
 
-	// calculate length of the status
-	FB_SIZE_T tmp_status_len = 0, warning_indx = 0;
+	/* calculate length of the status */
+	int tmp_status_len = 0, warning_indx = 0;
 	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
 	fb_assert(warning_indx == 0);
 
@@ -315,57 +334,58 @@ static void internal_post(const ISC_STATUS* tmp_status)
 		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
 			status_vector[2] != isc_arg_warning))
 	{
-		// this is a blank status vector just stuff the status
+		/* this is a blank status vector just stuff the status */
 		memcpy(status_vector, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
 		return;
 	}
 
-	FB_SIZE_T status_len = 0;
+	int status_len = 0;
 	PARSE_STATUS(status_vector, status_len, warning_indx);
 	if (status_len)
 		--status_len;
 
-	// check for duplicated error code
-	size_t i;
+	/* check for duplicated error code */
+	int i;
 	for (i = 0; i < ISC_STATUS_LENGTH; i++)
 	{
 		if (status_vector[i] == isc_arg_end && i == status_len)
-			break;				// end of argument list
+			break;				/* end of argument list */
 
 		if (i && i == warning_indx)
-			break;				// vector has no more errors
+			break;				/* vector has no more errors */
 
 		if (status_vector[i] == tmp_status[1] && i && status_vector[i - 1] != isc_arg_warning &&
 			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
 			(memcmp(&status_vector[i], &tmp_status[1], sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
 		{
-			// duplicate found
+			/* duplicate found */
 			return;
 		}
 	}
 
-	// if the status_vector has only warnings then adjust err_status_len
-	size_t err_status_len = i;
+/* if the status_vector has only warnings then adjust err_status_len */
+	int err_status_len = i;
 	if (err_status_len == 2 && warning_indx)
 		err_status_len = 0;
 
 	ISC_STATUS_ARRAY warning_status;
-	FB_SIZE_T warning_count = 0;
+	int warning_count = 0;
 	if (warning_indx)
 	{
-		// copy current warning(s) to a temp buffer
+		/* copy current warning(s) to a temp buffer */
 		MOVE_CLEAR(warning_status, sizeof(warning_status));
 		memcpy(warning_status, &status_vector[warning_indx],
 					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
 		PARSE_STATUS(warning_status, warning_count, warning_indx);
 	}
 
-	// add the status into a real buffer right in between last error and first warning
+/* add the status into a real buffer right in between last error
+   and first warning */
 
 	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH)
 	{
 		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
-		// copy current warning(s) to the status_vector
+		/* copy current warning(s) to the status_vector */
 		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
 			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
 		}
@@ -392,7 +412,8 @@ void ERR_punt()
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(dbb->dbb_filename.nullStr(), tdbb->tdbb_status_vector);
+		gds__log_status(dbb->dbb_filename.hasData() ? dbb->dbb_filename.c_str() : NULL,
+			tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())
 		{
 			abort();

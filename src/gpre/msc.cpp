@@ -47,7 +47,7 @@
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/msc_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 
 
 struct gpre_space
@@ -445,7 +445,7 @@ gpre_req* MSC_request(req_t type)
 
 SCHAR* MSC_string(const TEXT* input)
 {
-	TEXT* string = (TEXT*) MSC_alloc(static_cast<int>(strlen(input) + 1));
+	TEXT* string = (TEXT*) MSC_alloc(strlen(input) + 1);
 	strcpy(string, input);
 
 	return string;
@@ -474,6 +474,22 @@ gpre_sym* MSC_symbol(sym_t type, const TEXT* string, USHORT length, gpre_ctx* ob
 
 //____________________________________________________________
 //
+//		Make a ternary node.
+//
+
+gpre_nod* MSC_ternary(nod_t type, gpre_nod* arg1, gpre_nod* arg2, gpre_nod* arg3)
+{
+	gpre_nod* node = MSC_node(type, 3);
+	node->nod_arg[0] = arg1;
+	node->nod_arg[1] = arg2;
+	node->nod_arg[2] = arg3;
+
+	return node;
+}
+
+
+//____________________________________________________________
+//
 //		Make a unary node.
 //
 
@@ -494,7 +510,7 @@ gpre_nod* MSC_unary(nod_t type, gpre_nod* arg)
 gpre_usn* MSC_username(const SCHAR* name, USHORT name_dyn)
 {
 	gpre_usn* username = (gpre_usn*) MSC_alloc(USN_LEN);
-	char* newname = (char*) MSC_alloc(static_cast<int>(strlen(name) + 1));
+	char* newname = (char*) MSC_alloc(strlen(name) + 1);
 	username->usn_name = newname;
 	strcpy(newname, name);
 	username->usn_dyn = name_dyn;

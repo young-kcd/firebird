@@ -29,6 +29,8 @@
 #ifndef CLASSES_TRISTATE_H
 #define CLASSES_TRISTATE_H
 
+#include "firebird.h"
+
 
 class TriState
 {

@@ -48,10 +48,11 @@ int errno = -1;
 
 #include <time.h>
 
-#include "../common/os/divorce.h"
-#include "../common/isc_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/file_params.h"
+#include "../jrd/common.h"
+#include "../jrd/divorce.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/file_params.h"
 #include "../utilities/guard/util_proto.h"
 #include "../common/classes/fb_string.h"
 
@@ -60,7 +61,12 @@ const USHORT ONETIME	= 2;
 const USHORT IGNORE		= 3;
 const USHORT NORMAL_EXIT= 0;
 
-const char* const SERVER_BINARY			= "firebird";
+const char* const SUPER_SERVER_BINARY	= "fbserver";
+const char* const SUPER_CLASSIC_BINARY	= "fb_smp_server";
+
+const char* const INTERBASE_USER		= "interbase";
+const char* const FIREBIRD_USER			= "firebird";
+const char* const INTERBASE_USER_SHORT	= "interbas";
 
 const char* const GUARD_FILE	= "fb_guard";
 
@@ -126,8 +132,21 @@ int CLIB_ROUTINE main( int argc, char **argv)
 
 	} // while
 
+	// check user id
+	Firebird::string user_name;		// holds the user name
+	ISC_get_user(&user_name, NULL, NULL, NULL);
+
+	if (user_name != INTERBASE_USER && user_name != "root" && user_name != FIREBIRD_USER &&
+		user_name != INTERBASE_USER_SHORT)
+	{
+		// invalid user bail out
+		fprintf(stderr, "%s: Invalid user (must be %s, %s, %s or root).\n",
+				   prog_name, FIREBIRD_USER, INTERBASE_USER, INTERBASE_USER_SHORT);
+		exit(-2);
+	}
+
 	// get and set the umask for the current process
-	const ULONG new_mask = 0007;
+	const ULONG new_mask = 0000;
 	const ULONG old_mask = umask(new_mask);
 
 	// exclusive lock the file
@@ -188,7 +207,7 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		timer = time(0);
 
 		pid_t child_pid =
-			UTIL_start_process(SERVER_BINARY, server_args, prog_name);
+			UTIL_start_process(SUPER_SERVER_BINARY, SUPER_CLASSIC_BINARY, server_args, prog_name);
 		if (child_pid == -1)
 		{
 			// could not fork the server

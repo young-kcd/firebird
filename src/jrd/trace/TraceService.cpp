@@ -33,9 +33,9 @@
 #include "../../common/classes/timestamp.h"
 #include "../../common/config/config.h"
 #include "../../common/StatusArg.h"
-#include "../../common/ThreadStart.h"
+#include "../../common/thd.h"
 #include "../../jrd/svc.h"
-#include "../../common/os/guid.h"
+#include "../../jrd/os/guid.h"
 #include "../../jrd/trace/TraceLog.h"
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceService.h"
@@ -88,7 +88,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 		m_svc.printf(false, "Can not start trace session. There are no trace plugins loaded\n");
 		return;
 	}
-
+	
 	ConfigStorage* storage = TraceManager::getStorage();
 
 	{	// scope
@@ -103,7 +103,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 
 		if (interactive)
 		{
-			Guid guid;
+			FB_GUID guid;
 			GenerateGuid(&guid);
 
 			char* buff = session.ses_logfile.getBuffer(GUID_BUFF_SIZE);
@@ -278,7 +278,7 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	int flags = session.ses_flags;
 	while (!m_svc.finished() && checkAliveAndFlags(session.ses_id, flags))
 	{
-		const FB_SIZE_T len = log->read(buff, sizeof(buff));
+		const size_t len = log->read(buff, sizeof(buff));
 		if (!len)
 		{
 			if (!checkAliveAndFlags(session.ses_id, flags))
@@ -331,7 +331,7 @@ bool TraceSvcJrd::checkAliveAndFlags(ULONG sesId, int& flags)
 
 
 // service entrypoint
-int TRACE_main(UtilSvc* arg)
+THREAD_ENTRY_DECLARE TRACE_main(THREAD_ENTRY_PARAM arg)
 {
 	Service* svc = (Service*) arg;
 	int exit_code = FB_SUCCESS;
@@ -350,5 +350,8 @@ int TRACE_main(UtilSvc* arg)
 		exit_code = FB_FAILURE;
 	}
 
-	return exit_code;
+	svc->started();
+	svc->finish();
+
+	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }

@@ -174,7 +174,7 @@ static const ops stat_ops[] =
 static const nod_t relationals[] =
 {
 	nod_eq, nod_ne, nod_gt, nod_ge, nod_le, nod_lt, nod_containing,
-	nod_starting, nod_matches, nod_any, nod_missing, nod_between, nod_like,
+	nod_starting, nod_matches, nod_any, nod_missing, nod_equiv, nod_between, nod_like,
 	nod_and, nod_or, nod_not, nod_ansi_any, nod_ansi_all, nod_nothing
 };
 
@@ -712,7 +712,7 @@ gpre_nod* SQE_list(pfn_SQE_list_cb routine, gpre_req* request, bool aster_ok)
 //		Parse procedure input parameters which are constants or
 //		host variable reference and, perhaps, a missing
 //		flag reference, which may be prefaced by the noiseword,
-//		"INDICATOR".
+//       "INDICATOR".
 //
 
 ref* SQE_parameter(gpre_req* request)
@@ -929,10 +929,12 @@ ref* SQE_post_reference(gpre_req* request, gpre_fld* field, gpre_ctx* context, g
 //		otherwise false.
 //
 
-bool SQE_resolve(gpre_nod* node, gpre_req* request, gpre_rse* selection)
+bool SQE_resolve(gpre_nod** node_ptr, gpre_req* request, gpre_rse* selection)
 {
 	bool result = false;
 	act* slice_action = 0;
+
+	gpre_nod* node = *node_ptr;
 
 	assert_IS_REQ(request);
 	assert_IS_NOD(node);
@@ -968,7 +970,7 @@ bool SQE_resolve(gpre_nod* node, gpre_req* request, gpre_rse* selection)
 			gpre_nod** ptr = node->nod_arg;
 			const gpre_nod* const* const end = ptr + node->nod_count;
 			for (; ptr < end; ptr++)
-				result |= SQE_resolve(*ptr, request, selection);
+				result |= SQE_resolve(ptr, request, selection);
 			return result;
 		}
 
@@ -979,7 +981,7 @@ bool SQE_resolve(gpre_nod* node, gpre_req* request, gpre_rse* selection)
 	case nod_agg_count:
 		if (node->nod_arg[0])
 		{
-			SQE_resolve(node->nod_arg[0], request, selection);
+			SQE_resolve(&node->nod_arg[0], request, selection);
 			gpre_nod* node_arg = node->nod_arg[0];
 			const ref* reference = (ref*) node_arg->nod_arg[0];
 			if (node_arg->nod_type == nod_field && reference &&
@@ -996,22 +998,22 @@ bool SQE_resolve(gpre_nod* node, gpre_req* request, gpre_rse* selection)
 			gpre_nod** ptr = node->nod_arg[0]->nod_arg;
 			const gpre_nod* const* const end = ptr + node->nod_arg[0]->nod_count;
 			for (; ptr < end; ptr++)
-				result |= SQE_resolve(*ptr, request, selection);
+				result |= SQE_resolve(ptr, request, selection);
 		}
 		return result;
 
 	case nod_gen_id:
-		return SQE_resolve(node->nod_arg[0], request, selection);
+		return SQE_resolve(&node->nod_arg[0], request, selection);
 
 	// Begin date/time/timestamp support
 	case nod_extract:
-		result |= SQE_resolve(node->nod_arg[1], request, selection);
+		result |= SQE_resolve(&node->nod_arg[1], request, selection);
 		return result;
 	// End date/time/timestamp support
 
 	case nod_coalesce:
 		for (int i = 0; i < node->nod_count; i++)
-			result |= SQE_resolve(node->nod_arg[0]->nod_arg[i], request, selection);
+			result |= SQE_resolve(&node->nod_arg[0]->nod_arg[i], request, selection);
 		return result;
 
 	case nod_deferred:
@@ -1073,12 +1075,7 @@ bool SQE_resolve(gpre_nod* node, gpre_req* request, gpre_rse* selection)
 	reference->ref_context = context;
 	reference->ref_slice = (slc*) slice_action;
 
-	// do not reinit if this is a nod_deffered type
-	if (node->nod_type != nod_deferred)
-		node->nod_count = 0;
-
-	node->nod_type = nod_field;
-	node->nod_arg[0] = (gpre_nod*) reference;
+	*node_ptr = MSC_unary(nod_field, (gpre_nod*) reference);
 
 	return false;
 }
@@ -1239,7 +1236,7 @@ gpre_nod* SQE_value_or_null(gpre_req* request, bool aster_ok, USHORT* paren_coun
 //
 //		Parse host variable reference and, perhaps, a missing
 //		flag reference, which may be prefaced by the noiseword,
-//		"INDICATOR".
+//       "INDICATOR".
 //
 
 gpre_nod* SQE_variable(gpre_req* request, bool /*aster_ok*/, USHORT* /*paren_count*/, bool* /*bool_flag*/)
@@ -1773,7 +1770,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, gpre_nod* alias_list)
 
 	USHORT alias_length = alias_list->nod_count;
 	for (arg = alias_list->nod_arg; arg < end; arg++)
-		alias_length += static_cast<USHORT>(strlen((TEXT*) *arg));
+		alias_length += strlen((TEXT*) *arg);
 
 	TEXT* alias = (TEXT*) MSC_alloc(alias_length);
 
@@ -2230,7 +2227,7 @@ static gpre_nod* par_not( gpre_req* request, USHORT* paren_count)
 		node->nod_arg[0] = (gpre_nod*) selection;
 		if (field)
 		{
-			SQE_resolve(field, 0, selection);
+			SQE_resolve(&field, 0, selection);
 			gpre_nod* expr = MSC_unary(nod_missing, field);
 			selection->rse_boolean = merge(negate(expr), selection->rse_boolean);
 		}
@@ -2248,7 +2245,7 @@ static gpre_nod* par_not( gpre_req* request, USHORT* paren_count)
 //		Parse NULLIF built-in function.
 //
 //		NULLIF(exp1, exp2) is really just a shortcut for
-//		CASE exp1 WHEN exp2 THEN NULL ELSE exp1 END, so
+//      CASE exp1 WHEN exp2 THEN NULL ELSE exp1 END, so
 //		we generate a nod_case1 node.
 
 static gpre_nod* par_nullif(gpre_req* request)
@@ -2532,7 +2529,7 @@ static gpre_nod* par_primitive_value(gpre_req* request, bool aster_ok,
 		return par_stat(request);
 
 	if (MSC_match(KW_MINUS))
-		return MSC_unary(nod_negate, par_primitive_value(request, false, paren_count, NULL));
+		return MSC_unary(nod_negate, par_primitive_value(request, false, paren_count, false));
 
 	MSC_match(KW_PLUS);
 
@@ -2756,11 +2753,21 @@ static gpre_nod* par_relational(gpre_req* request,
 	{
 		if (MSC_match(KW_NOT))
 			negation = !negation;
-		if (!MSC_match(KW_NULL))
-			CPR_s_error("NULL");
-		if (expr1->nod_type == nod_array)
-			expr1->nod_type = nod_field;
-		node = MSC_unary(nod_missing, expr1);
+		if (MSC_match(KW_NULL))
+		{
+			if (expr1->nod_type == nod_array)
+				expr1->nod_type = nod_field;
+			node = MSC_unary(nod_missing, expr1);
+		}
+		else if (MSC_match(KW_DISTINCT))
+		{
+			if (!MSC_match(KW_FROM))
+				CPR_s_error("FROM");
+			node = MSC_binary(nod_equiv, expr1, SQE_value(request, false, NULL, NULL));
+			pair(node->nod_arg[0], node->nod_arg[1]);
+		}
+		else
+			CPR_s_error("NULL or DISTINCT");
 	}
 	else
 	{
@@ -2823,7 +2830,7 @@ static bool resolve_fields(gpre_nod*& fields, gpre_rse* selection)
 
 	for (int i = 0; i < count; i++)
 	{
-		gpre_nod* node = ptr[i];
+		gpre_nod*& node = ptr[i];
 
 		if (node->nod_type == nod_asterisk)
 		{
@@ -2835,7 +2842,7 @@ static bool resolve_fields(gpre_nod*& fields, gpre_rse* selection)
 		}
 		else
 		{
-			aggregate |= SQE_resolve(node, NULL, selection);
+			aggregate |= SQE_resolve(&node, NULL, selection);
 			pair(node, 0);
 		}
 	}
@@ -3066,7 +3073,7 @@ static gpre_nod* par_stat( gpre_req* request)
 
 //____________________________________________________________
 //
-//		Parse a subscript value.
+//       Parse a subscript value.
 //
 
 static gpre_nod* par_subscript( gpre_req* request)
@@ -3893,7 +3900,7 @@ static void set_ref( gpre_nod* expr, gpre_fld* field_ref)
 
 static char* upcase_string(const char* p)
 {
-	char* const s = (char *) MSC_alloc(static_cast<int>(strlen(p) + 1));
+	char* const s = (char *) MSC_alloc(strlen(p) + 1);
 	char* q = s;
 
 	USHORT l = 0;

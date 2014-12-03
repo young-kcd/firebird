@@ -22,12 +22,13 @@
 
 #include "firebird.h"
 #include "fb_types.h"
+#include "../common.h"
 #include "../../include/fb_blk.h"
 #include "fb_exception.h"
 #include "iberror.h"
 
 #include "../align.h"
-#include "../common/dsc.h"
+#include "../dsc.h"
 #include "../exe.h"
 #include "IscDS.h"
 #include "../tra.h"
@@ -65,18 +66,18 @@ static UCHAR sqlTypeToDscType(SSHORT sqlType);
 
 // 	IscProvider
 
-void IscProvider::getRemoteError(const ISC_STATUS* status, string& err) const
+void IscProvider::getRemoteError(ISC_STATUS* status, string& err) const
 {
 	err = "";
 
 	// We can't use safe fb_interpret here as we have no idea what implementation
 	// of ISC API is used by current provider. We can test for existence of
-	// fb_interpret and use it if present, but I don't want to complicate code.
+	// fb_interpret and use it if present, but i don't want to complicate code.
 	// So, buffer should be big enough to please old isc_interprete.
 	// Probably in next version we should use fb_interpret only.
 
 	char buff[1024];
-	const ISC_STATUS* p = status;
+	ISC_STATUS* p = status;
 	const ISC_STATUS* const end = status + ISC_STATUS_LENGTH;
 
 	while (p < end)
@@ -117,7 +118,7 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		m_iscProvider.isc_attach_database(status, m_dbName.length(), m_dbName.c_str(),
 			&m_handle, m_dpb.getBufferLength(),
 			reinterpret_cast<const char*>(m_dpb.getBuffer()));
@@ -128,7 +129,7 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 
 	char buff[16];
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 
 		const char info[] = {isc_info_db_sql_dialect, isc_info_end};
 		m_iscProvider.isc_database_info(status, &m_handle, sizeof(info), info, sizeof(buff), buff);
@@ -158,11 +159,11 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 					{
 						// Remote server don't understand isc_info_db_sql_dialect.
 						// Consider it as pre-IB6 server and use SQL dialect 1 to work with it.
-						m_sqlDialect = 1;
+						m_sqlDialect = 1;	
 						break;
 					}
 				}
-				// fall thru
+			// fall thru
 
 			case isc_info_truncated:
 				ERR_post(Arg::Gds(isc_random) << Arg::Str("Unexpected error in isc_database_info"));
@@ -180,7 +181,7 @@ void IscConnection::doDetach(thread_db* tdbb)
 	ISC_STATUS_ARRAY status = {0};
 	if (m_handle)
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 
 		FB_API_HANDLE h = m_handle;
 		m_handle = 0;
@@ -192,10 +193,9 @@ void IscConnection::doDetach(thread_db* tdbb)
 		raise(status, tdbb, "detach");
 }
 
-bool IscConnection::cancelExecution()
+bool IscConnection::cancelExecution(thread_db* /*tdbb*/)
 {
 	ISC_STATUS_ARRAY status = {0, 0, 0};
-
 	if (m_handle)
 	{
 		m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_raise);
@@ -251,7 +251,7 @@ void IscTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, Firebird::Clum
 	fb_assert(!m_handle);
 	FB_API_HANDLE& db_handle = m_iscConnection.getAPIHandle();
 
-	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+	EngineCallbackGuard guard(tdbb, *this);
 	m_iscProvider.isc_start_transaction(status, &m_handle, 1, &db_handle,
 		tpb.getBufferLength(), tpb.getBuffer());
 }
@@ -262,7 +262,7 @@ void IscTransaction::doPrepare(ISC_STATUS* /*status*/, thread_db* /*tdbb*/, int 
 
 void IscTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool retain)
 {
-	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+	EngineCallbackGuard guard(tdbb, *this);
 	if (retain)
 		m_iscProvider.isc_commit_retaining(status, &m_handle);
 	else
@@ -273,7 +273,7 @@ void IscTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool retain)
 
 void IscTransaction::doRollback(ISC_STATUS* status, thread_db* tdbb, bool retain)
 {
-	EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+	EngineCallbackGuard guard(tdbb, *this);
 	if (retain)
 		m_iscProvider.isc_rollback_retaining(status, &m_handle);
 	else
@@ -324,7 +324,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	const char* sWhereError = NULL;
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 
 		if (!m_handle)
 		{
@@ -357,7 +357,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_out_xsqlda->sqln = n;
 		m_out_xsqlda->version = 1;
 
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		if (m_iscProvider.isc_dsql_describe(status, &m_handle, 1, m_out_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe";
@@ -365,12 +365,6 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 	if (sWhereError) {
 		raise(status, tdbb, sWhereError, &sql);
-	}
-
-	for (int i = 0; i != m_out_xsqlda->sqld; ++i)
-	{
-		if (m_out_xsqlda->sqlvar[i].sqltype == SQL_TEXT)
-			m_out_xsqlda->sqlvar[i].sqltype = SQL_VARYING;
 	}
 
 	parseSQLDA(m_out_xsqlda, m_out_buffer, m_outDescs);
@@ -385,7 +379,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		if (m_iscProvider.isc_dsql_describe_bind(status, &m_handle, 1, m_in_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe_bind";
@@ -405,7 +399,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_in_xsqlda->sqln = n;
 		m_in_xsqlda->version = 1;
 
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		if (m_iscProvider.isc_dsql_describe_bind(status, &m_handle, 1, m_in_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe_bind";
@@ -422,7 +416,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	const char stmt_info[] = {isc_info_sql_stmt_type};
 	char info_buff[16];
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		if (m_iscProvider.isc_dsql_sql_info(status, &m_handle, sizeof(stmt_info), stmt_info,
 			sizeof(info_buff), info_buff))
 		{
@@ -442,7 +436,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	}
 
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		const int len = m_iscProvider.isc_vax_integer(&info_buff[1], 2);
 		const int stmt_type = m_iscProvider.isc_vax_integer(&info_buff[3], len);
 
@@ -467,7 +461,7 @@ void IscStatement::doExecute(thread_db* tdbb)
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		m_iscProvider.isc_dsql_execute2(status, &h_tran, &m_handle, 1, m_in_xsqlda, m_out_xsqlda);
 	}
 	if (status[1]) {
@@ -480,7 +474,7 @@ void IscStatement::doOpen(thread_db* tdbb)
 	FB_API_HANDLE& h_tran = getIscTransaction()->getAPIHandle();
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		m_iscProvider.isc_dsql_execute(status, &h_tran, &m_handle, 1, m_in_xsqlda);
 	}
 	if (status[1]) {
@@ -492,7 +486,7 @@ bool IscStatement::doFetch(thread_db* tdbb)
 {
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		const ISC_STATUS res = m_iscProvider.isc_dsql_fetch(status, &m_handle, 1, m_out_xsqlda);
 		if (res == 100) {
 			return false;
@@ -509,7 +503,7 @@ void IscStatement::doClose(thread_db* tdbb, bool drop)
 	fb_assert(m_handle);
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, *this);
 		m_iscProvider.isc_dsql_free_statement(status, &m_handle, drop ? DSQL_drop : DSQL_close);
 		m_allocated = (m_handle != 0);
 	}
@@ -521,15 +515,14 @@ void IscStatement::doClose(thread_db* tdbb, bool drop)
 	}
 }
 
-void IscStatement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaName* const* names,
-	const NestConst<Jrd::ValueExprNode>* params)
+void IscStatement::doSetInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
 {
 	Statement::doSetInParams(tdbb, count, names, params);
 
 	if (names)
 	{
 		XSQLVAR* xVar = m_in_xsqlda->sqlvar;
-		for (unsigned int i = 0; i < count; i++, xVar++)
+		for (int i = 0; i < count; i++, xVar++)
 		{
 			const int max_len = sizeof(xVar->sqlname);
 			const int len = MIN(names[i]->length(), max_len - 1);
@@ -568,7 +561,7 @@ void IscBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, const UC
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, m_iscConnection);
 
 		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const ISC_UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
@@ -592,7 +585,7 @@ void IscBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const UCharB
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, m_iscConnection);
 
 		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const char* bpb_buff = bpb ? reinterpret_cast<const char*>(bpb->begin()) : NULL;
@@ -614,7 +607,7 @@ USHORT IscBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 	USHORT result = 0;
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, m_iscConnection);
 		m_iscProvider.isc_get_segment(status, &m_handle, &result, len, reinterpret_cast<SCHAR*>(buff));
 	}
 	switch (status[1])
@@ -638,7 +631,7 @@ void IscBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, m_iscConnection);
 		m_iscProvider.isc_put_segment(status, &m_handle, len, reinterpret_cast<const SCHAR*>(buff));
 	}
 	if (status[1]) {
@@ -651,7 +644,7 @@ void IscBlob::close(thread_db* tdbb)
 	fb_assert(m_handle);
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, m_iscConnection);
 		m_iscProvider.isc_close_blob(status, &m_handle);
 	}
 	if (status[1]) {
@@ -668,7 +661,7 @@ void IscBlob::cancel(thread_db* tdbb)
 
 	ISC_STATUS_ARRAY status = {0};
 	{
-		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
+		EngineCallbackGuard guard(tdbb, m_iscConnection);
 		m_iscProvider.isc_cancel_blob(status, &m_handle);
 	}
 	if (status[1]) {
@@ -1126,7 +1119,7 @@ void ISC_EXPORT IscProvider::isc_event_counts(ISC_ULONG *,
 	return;
 }
 
-// 17 May 2001 - IscProvider::isc_expand_dpb is DEPRECATED
+/* 17 May 2001 - IscProvider::isc_expand_dpb is DEPRECATED */
 void ISC_EXPORT_VARARG IscProvider::isc_expand_dpb(char * *,
 								  short *, ...)
 {
@@ -1176,7 +1169,7 @@ ISC_STATUS ISC_EXPORT IscProvider::isc_get_slice(ISC_STATUS* user_status,
 }
 
 ISC_STATUS ISC_EXPORT IscProvider::isc_interprete(char *,
-								 const ISC_STATUS * *)
+								 ISC_STATUS * *)
 {
 	return isc_unavailable;
 }
@@ -1432,8 +1425,8 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_cancel_operation(ISC_STATUS* user_status,
 {
 	if (m_api.fb_cancel_operation)
 		return m_api.fb_cancel_operation(user_status, db_handle, option);
-
-	return notImplemented(user_status);
+	else
+		return notImplemented(user_status);
 }
 
 void IscProvider::loadAPI()
@@ -1554,7 +1547,7 @@ static bool isConnectionBrokenError(ISC_STATUS status)
 
 static void parseSQLDA(XSQLDA* xsqlda, UCharBuffer& buff, Firebird::Array<dsc> &descs)
 {
-	FB_SIZE_T offset = 0;
+	size_t offset = 0;
 	XSQLVAR* xVar = xsqlda->sqlvar;
 
     for (int i = 0; i < xsqlda->sqld; xVar++, i++)
@@ -1655,8 +1648,6 @@ static UCHAR sqlTypeToDscType(SSHORT sqlType)
 		return dtype_int64;
 	case SQL_QUAD:
 		return dtype_quad;
-	case SQL_BOOLEAN:
-		return dtype_boolean;
 	default:
 		return dtype_unknown;
 	}

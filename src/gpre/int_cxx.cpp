@@ -29,12 +29,13 @@
 
 #include "firebird.h"
 #include <stdio.h>
+#include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
 #include "../gpre/gpre_proto.h"
 #include "../gpre/lang_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 
 static void align(const int);
@@ -286,9 +287,10 @@ static void gen_compile( const gpre_req* request, int column)
 	column += INDENT;
 	//const gpre_dbb* db = request->req_database;
 	//const gpre_sym* symbol = db->dbb_name;
-	//align(column);
+	fprintf(gpreGlob.out_file, "if (!%s)", request->req_handle);
+	align(column);
 	fprintf(gpreGlob.out_file,
-		"%s.compile(tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"));",
+		"%s = CMP_compile2 (tdbb, (UCHAR*) jrd_%"ULONGFORMAT", sizeof(jrd_%"ULONGFORMAT"), true);",
 			   request->req_handle, request->req_ident, request->req_ident);
 }
 
@@ -582,7 +584,7 @@ static void gen_send( const gpre_req* request, const gpre_port* port, int column
 		align(column);
 		fprintf(gpreGlob.out_file, "if (ignore_perm)");
 		align(column);
-		fprintf(gpreGlob.out_file, "\trequest->getStatement()->flags |= JrdStatement::FLAG_IGNORE_PERM;");
+		fprintf(gpreGlob.out_file, "\trequest->req_flags |= req_ignore_perm;");
 	}
 	align(column);
 

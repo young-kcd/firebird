@@ -37,7 +37,7 @@
 #include "../qli/mov_proto.h"
 #include "../qli/parse_proto.h"
 #include "../qli/proc_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/constants.h"
 
 using MsgFormat::SafeArg;
@@ -3908,8 +3908,7 @@ static qli_syntax* parse_set()
 			PAR_token();
 			PAR_match(KW_SET);
 			if (value)
-			{
-				// allow for NO
+			{		// allow for NO
 				PAR_match(KW_EQUALS);
 				value = (U_IPTR) parse_name();
 			}

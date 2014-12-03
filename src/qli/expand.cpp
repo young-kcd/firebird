@@ -379,9 +379,9 @@ static void declare_global( qli_fld* variable, qli_syntax* field_node)
 	const TEXT* q;
 	USHORT l = variable->fld_length;
 	if (q = variable->fld_edit_string)
-		l += static_cast<USHORT>(strlen(q));
+		l += strlen(q);
 	if (q = variable->fld_query_header)
-		l += static_cast<USHORT>(strlen(q));
+		l += strlen(q);
 
 	qli_fld* new_fld = (qli_fld*) ALLOCPV(type_fld, l);
 	new_fld->fld_name = copy_symbol(variable->fld_name);
@@ -2116,7 +2116,7 @@ static qli_nod* expand_store( qli_syntax* input, qli_lls* right, qli_lls* left)
 			if (field->fld_flags & FLD_computed)
 				continue;
 			if ((field->fld_system_flag && field->fld_system_flag != relation->rel_system_flag) ||
-				(field->fld_flags & FLD_array))
+				field->fld_flags & FLD_array)
 			{
 				continue;
 			}
@@ -2287,7 +2287,7 @@ static int generate_fields( qli_ctx* context, qli_lls* values, qli_syntax* rse)
 	for (qli_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if ((field->fld_system_flag && field->fld_system_flag != relation->rel_system_flag) ||
-			(field->fld_flags & FLD_array))
+			field->fld_flags & FLD_array)
 		{
 			continue;
 		}
@@ -2339,7 +2339,7 @@ static int generate_items(const qli_syntax* symbol, qli_lls* right, qli_lls* ite
 	for (qli_fld* field = relation->rel_fields; field; field = field->fld_next)
 	{
 		if ((field->fld_system_flag && field->fld_system_flag != relation->rel_system_flag) ||
-			(field->fld_flags & FLD_array))
+			field->fld_flags & FLD_array)
 		{
 			continue;
 		}

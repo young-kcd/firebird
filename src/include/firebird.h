@@ -34,6 +34,19 @@
 
 #include "gen/autoconfig.h"
 
+// Vulcan definitions
+#ifdef NAMESPACE
+namespace NAMESPACE{}		// declare namespace before use
+using namespace NAMESPACE;
+#define START_NAMESPACE		namespace NAMESPACE {
+#define CLASS(cls)			namespace NAMESPACE { class cls; }
+#define END_NAMESPACE		}
+#else
+#define START_NAMESPACE
+#define CLASS(cls)			class cls;
+#define END_NAMESPACE
+#endif
+
 // Using our debugging code is pointless when we may use Valgrind features
 #if defined(DEV_BUILD) && !defined(USE_VALGRIND)
 #define DEBUG_GDS_ALLOC
@@ -63,19 +76,22 @@
 #endif
 
 #ifdef __cplusplus
-#include "../common/common.h"
-//#include "fb_exception.h"
+#include "fb_exception.h"
 #endif
 
 #ifndef NULL
 #define NULL            0L
 #endif
 
+#if defined(WIN_NT) && defined(SUPERSERVER)
+// Comment this definition to build without priority scheduler
+//	OR:
+// Uncomment this definition to build with priority scheduler
+#define THREAD_PSCHED
+#endif
+
 #if defined(WIN_NT)
 #define TRUSTED_AUTH
 #endif
 
-// We do not use std::string
-#define U_HAVE_STD_STRING 0
-
-#endif // INCLUDE_Firebird_H
+#endif /* INCLUDE_Firebird_H */

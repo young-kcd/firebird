@@ -28,8 +28,8 @@
 #include "../common/classes/timestamp.h"
 #include "../jrd/intl.h"
 #include "../qli/err_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/gdsassert.h"
 #include "../qli/mov_proto.h"
 #include "../common/utils_proto.h"
 
@@ -1256,7 +1256,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 	// string fields.
 
 	SSHORT l = p - temp;
-	const FB_SIZE_T length = l + neg + decimal + pad;
+	const size_t length = l + neg + decimal + pad;
 
 	if ((to->dsc_dtype == dtype_text && length > to->dsc_length) ||
 		(to->dsc_dtype == dtype_cstring && length >= to->dsc_length) ||
@@ -1318,7 +1318,7 @@ static void numeric_to_text(const dsc* from, dsc* to)
 		return;
 	}
 
-	*(SSHORT*) (to->dsc_address) = static_cast<SSHORT>((UCHAR*) q - to->dsc_address - sizeof(SSHORT));
+	*(SSHORT*) (to->dsc_address) = (UCHAR*) q - to->dsc_address - sizeof(SSHORT);
 }
 
 

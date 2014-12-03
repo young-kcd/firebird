@@ -33,16 +33,18 @@
 
 namespace Firebird {
 
-ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
+ISC_STATUS StatusHolder::save(const ISC_STATUS* status)
 {
-	m_status_vector.clear();
+	fb_assert(m_status_vector[1] == 0 || m_raised);
+	if (m_raised) {
+		clear();
+	}
 
-	const ISC_STATUS* from = status;
-
+	const ISC_STATUS *from = status;
+	ISC_STATUS *to = m_status_vector;
 	while (true)
 	{
-		const ISC_STATUS type = *from++;
-		m_status_vector.push(type == isc_arg_cstring ? isc_arg_string : type);
+		const ISC_STATUS type = *to++ = *from++;
 		if (type == isc_arg_end)
 			break;
 
@@ -50,14 +52,11 @@ ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
 		{
 		case isc_arg_cstring:
 			{
-				const size_t len = *from++;
-
-				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
+				const size_t len = *to++ = *from++;
+				char *string = FB_NEW(*getDefaultMemoryPool()) char[len];
 				const char *temp = reinterpret_cast<const char*>(*from++);
 				memcpy(string, temp, len);
-				string[len] = 0;
-
-				m_status_vector.push((ISC_STATUS)(IPTR) string);
+				*to++ = (ISC_STATUS)(IPTR) string;
 			}
 			break;
 
@@ -71,36 +70,21 @@ ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
 				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
 				memcpy(string, temp, len + 1);
 
-				m_status_vector.push((ISC_STATUS)(IPTR) string);
+				*to++ = (ISC_STATUS)(IPTR) string;
 			}
 			break;
 
 		default:
-			m_status_vector.push(*from++);
+			*to++ = *from++;
 			break;
 		}
 	}
-
-	// Sanity check
-	if (m_status_vector.getCount() < 3)
-	{
-		fb_utils::init_status(m_status_vector.getBuffer(3));
-	}
-
 	return m_status_vector[1];
 }
 
-ISC_STATUS DynamicStatusVector::save(const IStatus* status)
+void StatusHolder::clear()
 {
-	ISC_STATUS_ARRAY tmp;
-	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), status);
-	return save(tmp);
-}
-
-void DynamicStatusVector::clear()
-{
-	ISC_STATUS *ptr = m_status_vector.begin();
-
+	ISC_STATUS *ptr = m_status_vector;
 	while (true)
 	{
 		const ISC_STATUS type = *ptr++;
@@ -112,7 +96,6 @@ void DynamicStatusVector::clear()
 		case isc_arg_cstring:
 			ptr++;
 			delete[] reinterpret_cast<char*>(*ptr++);
-			fb_assert(false); // CVC: according to the new logic, this case cannot happen
 			break;
 
 		case isc_arg_string:
@@ -126,33 +109,7 @@ void DynamicStatusVector::clear()
 			break;
 		}
 	}
-
-	// Sanity check
-	if (m_status_vector.getCount() < 3)
-	{
-		m_status_vector.getBuffer(3);
-	}
-
-	fb_utils::init_status(m_status_vector.begin());
-}
-
-ISC_STATUS StatusHolder::save(IStatus* status)
-{
-	fb_assert(isSuccess() || m_raised);
-	if (m_raised)
-	{
-		clear();
-	}
-
-	m_error.save(status->getErrors());
-	m_warning.save(status->getWarnings());
-	return m_error.value()[1];
-}
-
-void StatusHolder::clear()
-{
-	m_error.clear();
-	m_warning.clear();
+	memset(m_status_vector, 0, sizeof(m_status_vector));
 	m_raised = false;
 }
 
@@ -160,10 +117,8 @@ void StatusHolder::raise()
 {
 	if (getError())
 	{
-		Arg::StatusVector tmp(m_error.value());
-		tmp << Arg::StatusVector(m_warning.value());
 		m_raised = true;
-		tmp.raise();
+		status_exception::raise(m_status_vector);
 	}
 }
 

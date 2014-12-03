@@ -26,7 +26,7 @@
 #define COMMON_REF_COUNTED_H
 
 #include "../common/classes/fb_atomic.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 
 namespace Firebird
 {
@@ -66,13 +66,13 @@ namespace Firebird
 		explicit Reference(RefCounted& refCounted) :
 			r(refCounted)
 		{
-			r.addRef();
+			r.RefCounted::addRef();
 		}
 
 		~Reference()
 		{
 			try {
-				r.release();
+				r.RefCounted::release();
 			}
 			catch (const Exception&)
 			{
@@ -83,8 +83,6 @@ namespace Firebird
 	private:
 		RefCounted& r;
 	};
-
-	enum NoIncrement {REF_NO_INCR};
 
 	// controls reference counter of the object where points
 	template <typename T>
@@ -102,11 +100,6 @@ namespace Firebird
 			}
 		}
 
-		// This special form of ctor is used to create refcounted ptr from interface,
-		// returned by a function (which increments counter on return)
-		RefPtr(NoIncrement x, T* p) : ptr(p)
-		{ }
-
 		RefPtr(const RefPtr& r) : ptr(r.ptr)
 		{
 			if (ptr)
@@ -121,13 +114,6 @@ namespace Firebird
 			{
 				ptr->release();
 			}
-		}
-
-		T* assignRefNoIncr(T* p)
-		{
-			assign(NULL);
-			ptr = p;
-			return ptr;
 		}
 
 		T* operator=(T* p)
@@ -188,26 +174,22 @@ namespace Firebird
 			return ptr != r.ptr;
 		}
 
-		T* getPtr()
-		{
-			return ptr;
-		}
-
 	private:
 		T* assign(T* const p)
 		{
 			if (ptr != p)
 			{
-				if (p)
-				{
-					p->addRef();
-				}
 				if (ptr)
 				{
 					ptr->release();
 				}
 
 				ptr = p;
+
+				if (ptr)
+				{
+					ptr->addRef();
+				}
 			}
 
 			return ptr;

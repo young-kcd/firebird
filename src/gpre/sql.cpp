@@ -47,7 +47,14 @@
 #include "../common/utils_proto.h"
 
 
+#ifdef FLINT_CACHE
+const int MIN_CACHE_BUFFERS	= 250;
+const int DEF_CACHE_BUFFERS	= 1000;
+#endif
 const int DEFAULT_BLOB_SEGMENT_LENGTH	= 80;	// bytes
+
+const char* const OLD_CONTEXT = "OLD";
+const char* const NEW_CONTEXT = "NEW";
 
 static act* act_alter();
 static act* act_alter_database();
@@ -95,10 +102,14 @@ static act* act_set_statistics();
 static act* act_set_transaction();
 static act* act_transaction(act_t);
 static act* act_update();
+static act* act_upsert();
 static act* act_whenever();
 
 static bool			check_filename(const TEXT *);
 static void			connect_opts(const TEXT**, const TEXT**, const TEXT**, const TEXT**, USHORT*);
+#ifdef FLINT_CACHE
+static gpre_file*	define_cache();
+#endif
 static gpre_file*	define_file();
 static gpre_file*	define_log_file();
 static gpre_dbb*	dup_dbb(const gpre_dbb*);
@@ -127,6 +138,7 @@ static cnstrt*		par_table_constraint(gpre_req*);
 static bool			par_transaction_modes(gpre_tra*, bool);
 static bool			par_using(dyn*);
 static USHORT		resolve_dtypes(kwwords_t, bool);
+static gpre_nod*	return_values(gpre_req*, gpre_nod*, gpre_nod*);
 static bool			tail_database(act_t, gpre_dbb*);
 static void			to_upcase(const TEXT*, TEXT*, int);
 
@@ -1126,8 +1138,15 @@ static act* act_alter_database()
 				; // ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
 				; // ignore DROP CASCADE database->dbb_flags |= DBB_cascade;
+#ifdef FLINT_CACHE
+			else if (MSC_match(KW_CACHE))
+				; // ignore DROP CACHE database->dbb_flags |= DBB_drop_cache;
+			else
+				PAR_error("only log or cache can be dropped");
+#else
 			else
 				PAR_error("only log file can be dropped");
+#endif // FLINT_CACHE
 		}
 		else if (MSC_match(KW_ADD))
 		{
@@ -1170,6 +1189,10 @@ static act* act_alter_database()
 					database->dbb_logfiles = define_log_file();
 				}
 			}
+#ifdef FLINT_CACHE
+			else if (MSC_match(KW_CACHE))
+				database->dbb_cache_file = define_cache();
+#endif // FLINT_CACHE
 		}
 		else if (MSC_match(KW_SET))
 		{
@@ -1953,7 +1976,7 @@ static act* act_create_shadow()
 
 	act* action = MSC_action(request, ACT_create_shadow);
 	action->act_whenever = gen_whenever();
-	const SLONG shadow_number = EXP_USHORT_ordinal(true);
+	SLONG shadow_number = EXP_USHORT_ordinal(true);
 
 	USHORT file_flags = 0;
 
@@ -2144,8 +2167,8 @@ static act* act_create_view()
 //____________________________________________________________
 //
 //		Recognize BEGIN/END DECLARE SECTION,
-//		and mark it as a good place to put miscellaneous
-//		global routine stuff.
+//     and mark it as a good place to put miscellaneous
+//     global routine stuff.
 //
 
 static act* act_d_section(act_t type)
@@ -2279,6 +2302,9 @@ static act* act_declare()
 		}
 	} // end scope
 
+#ifdef SCROLLABLE_CURSORS
+	bool scroll = false;
+#endif
 	act* action = NULL;
 	gpre_sym* symbol = PAR_symbol(SYM_cursor);
 
@@ -2287,6 +2313,13 @@ static act* act_declare()
 	case KW_TABLE:
 		return (act_declare_table(symbol, 0));
 
+#ifdef SCROLLABLE_CURSORS
+	case KW_SCROLL:
+		PAR_get_token();
+		scroll = true;
+		if (gpreGlob.token_global.tok_keyword != KW_CURSOR)
+			CPR_s_error("CURSOR");
+#endif
 	case KW_CURSOR:
 		PAR_get_token();
 		if (!MSC_match(KW_FOR))
@@ -2295,6 +2328,10 @@ static act* act_declare()
 		{
 			gpre_req* request = MSC_request(REQ_cursor);
 			request->req_flags |= REQ_sql_cursor | REQ_sql_declare_cursor;
+#ifdef SCROLLABLE_CURSORS
+			if (scroll)
+				request->req_flags |= REQ_scroll;
+#endif
 			symbol->sym_object = (gpre_ctx*) request;
 			action = MSC_action(request, ACT_cursor);
 			action->act_object = (ref*) symbol;
@@ -2632,7 +2669,7 @@ static act* act_delete()
 			{
 				// does not specify transaction clause in
 				// "delete ... where current of cursor" stmt
-				const int trans_nm_len = static_cast<int>(strlen(request->req_trans));
+				const size_t trans_nm_len = strlen(request->req_trans);
 				char* str_2 = (char*) MSC_alloc(trans_nm_len + 1);
 				memcpy(str_2, request->req_trans, trans_nm_len);
 				transaction = str_2;
@@ -2689,9 +2726,31 @@ static act* act_delete()
 	if (where)
 		selection->rse_boolean = SQE_boolean(request, 0);
 
-	request->req_node = MSC_node(nod_erase, 0);
+	gpre_nod* ret_list = NULL;
+	ref* ref_list = NULL;
+
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		ret_list = return_values(request, value_list, var_list);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		request->req_flags |= REQ_sql_returning;
+		selection->rse_flags |= RSE_singleton;
+	}
+
+	request->req_node = MSC_unary(nod_erase, ret_list);
 
 	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
 	action->act_whenever = gen_whenever();
 
 	if (hsh_rm)
@@ -3079,7 +3138,113 @@ static act* act_fetch()
 
 	// Statement is static SQL
 
+#ifdef SCROLLABLE_CURSORS
+	// parse the fetch orientation
+
+	USHORT direction = blr_forward;
+	const TEXT* direction_string = NULL;
+	gpre_nod* offset_node = NULL;
+
+	if (!MSC_match(KW_NEXT))
+	{
+		if (MSC_match(KW_PRIOR))
+		{
+			direction = blr_backward;
+			direction_string = "1";
+		}
+		else if (MSC_match(KW_FIRST))
+		{
+			direction = blr_bof_forward;
+			direction_string = "2";
+		}
+		else if (MSC_match(KW_LAST))
+		{
+			direction = blr_eof_backward;
+			direction_string = "3";
+		}
+		else if (MSC_match(KW_RELATIVE))
+		{
+			direction = blr_forward;
+			direction_string = "0";
+			offset_node = SQE_value(0, false, NULL, NULL);
+			PAR_get_token();
+		}
+		else if (MSC_match(KW_ABSOLUTE))
+		{
+			direction = blr_bof_forward;
+			direction_string = "2";
+			offset_node = SQE_value(0, false, NULL, NULL);
+			PAR_get_token();
+		}
+	}
+
+	MSC_match(KW_FROM);
+#endif
+
 	gpre_req* request = par_cursor(NULL);
+
+#ifdef SCROLLABLE_CURSORS
+	// if scrolling is required, set up the offset and direction parameters
+	// to be passed to the running request via the asynchronous message--
+	// there could be multiple FETCH statements, so we need to store multiple
+	// value blocks, one for each FETCH statement
+
+	if (direction != blr_forward)
+	{
+		if (!(request->req_flags & REQ_scroll))
+			PAR_error("Must use SCROLL modifier for DECLARE CURSOR to enable scrolling.");
+
+		// create a literal for the direction parameter
+
+		ref* reference = request->req_avalues;
+		if (!reference)
+			reference = request->req_avalues = (ref*) MSC_alloc(REF_LEN);
+
+		gpre_value* value = reference->ref_values;
+		if (!value)
+			reference->ref_values = value = (gpre_value*) MSC_alloc(VAL_LEN);
+		else
+		{
+			while (value->val_next) {
+				value = value->val_next;
+			}
+			value->val_next = (gpre_value*) MSC_alloc(VAL_LEN);
+			value = value->val_next;
+		}
+
+		TEXT* string = (TEXT*) MSC_alloc(2);
+		value->val_value = string;
+		MSC_copy(direction_string, 1, string);
+
+		// create a reference to the offset variable or literal
+
+		if (!reference->ref_next)
+			reference->ref_next = (ref*) MSC_alloc(REF_LEN);
+		reference = reference->ref_next;
+
+		value = reference->ref_values;
+		if (!value)
+			reference->ref_values = value = (gpre_value*) MSC_alloc(VAL_LEN);
+		else
+		{
+			while (value->val_next) {
+				value = value->val_next;
+			}
+			value->val_next = (gpre_value*) MSC_alloc(VAL_LEN);
+			value = value->val_next;
+		}
+
+		if (offset_node)
+			value->val_value = ((ref*) offset_node->nod_arg[0])->ref_value;
+		else
+		{
+			const TEXT* offset_string = "1";
+			string = (TEXT*) MSC_alloc(2);
+			value->val_value = string;
+			MSC_copy(offset_string, 1, string);
+		}
+	}
+#endif
 
 	if (request->req_flags & REQ_sql_blob_create)
 		PAR_error("Fetching from a blob being created is not allowed.");
@@ -3450,6 +3615,9 @@ static act* act_insert()
 		EXP_match_paren();
 	}
 
+	gpre_nod* ret_list = NULL;
+	ref* ref_list = NULL;
+
 	gpre_lls* values = NULL;
 	if (MSC_match(KW_VALUES))
 	{
@@ -3458,10 +3626,7 @@ static act* act_insert()
 		EXP_left_paren(0);
 		for (;;)
 		{
-			if (MSC_match(KW_NULL))
-				MSC_push(MSC_node(nod_null, 0), &values);
-			else
-				MSC_push(SQE_value(request, false, NULL, NULL), &values);
+			MSC_push(SQE_value_or_null(request, false, NULL, NULL), &values);
 			count2++;
 			if (!MSC_match(KW_COMMA))
 				break;
@@ -3474,7 +3639,6 @@ static act* act_insert()
 			PAR_error("count of values doesn't match count of columns");
 
 		gpre_nod* vlist = MSC_node(nod_list, (SSHORT) count);
-		request->req_node = vlist;
 		gpre_nod** ptr = &vlist->nod_arg[count];
 
 		while (values)
@@ -3486,9 +3650,30 @@ static act* act_insert()
 			*--ptr = assignment;
 		}
 
+		if (MSC_match(KW_RETURNING))
+		{
+			gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+
+			if (!MSC_match(KW_INTO))
+				CPR_s_error("INTO");
+
+			gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+			ret_list = return_values(request, value_list, var_list);
+
+			into(request, value_list, var_list);
+			ref_list = (ref*) var_list;
+
+			request->req_flags |= REQ_sql_returning;
+		}
+
+		request->req_node = MSC_ternary(nod_store, (gpre_nod*) context, vlist, ret_list);
+
 		if (context->ctx_symbol)
 			HSH_remove(context->ctx_symbol);
+
 		act* action = MSC_action(request, ACT_insert);
+		action->act_object = ref_list;
 		action->act_whenever = gen_whenever();
 		return action;
 	}
@@ -3529,13 +3714,33 @@ static act* act_insert()
 		*--ptr = assignment;
 	}
 
-	gpre_nod* store = MSC_binary(nod_store, (gpre_nod*) context, alist);
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		ret_list = return_values(request, value_list, var_list);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		request->req_flags |= REQ_sql_returning;
+		select->rse_flags |= RSE_singleton;
+	}
+
+	gpre_nod* store = MSC_ternary(nod_store, (gpre_nod*) context, alist, ret_list);
 	request->req_node = store;
 	EXP_rse_cleanup(select);
+
 	if (context->ctx_symbol)
 		HSH_remove(context->ctx_symbol);
 
 	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
 	action->act_whenever = gen_whenever();
 
 	return action;
@@ -3932,7 +4137,7 @@ static act* act_procedure()
 	gpre_lls* values = NULL;
 
 	SSHORT inputs = 0;
-	if (gpreGlob.token_global.tok_keyword != KW_RETURNING &&
+	if (gpreGlob.token_global.tok_keyword != KW_RETURNING_VALUES &&
 		gpreGlob.token_global.tok_keyword != KW_SEMI_COLON)
 	{
 		// parse input references
@@ -3960,7 +4165,7 @@ static act* act_procedure()
 	}
 
 	SSHORT outputs = 0;
-	if (MSC_match(KW_RETURNING))
+	if (MSC_match(KW_RETURNING_VALUES))
 	{
 		// parse output references
 
@@ -4423,6 +4628,9 @@ static act* act_transaction(act_t type)
 
 static act* act_update()
 {
+	if (MSC_match(KW_OR) && MSC_match(KW_INSERT))
+		return act_upsert();
+
 	const TEXT* transaction = NULL;
 
 	par_options(&transaction);
@@ -4463,10 +4671,7 @@ static act* act_update()
 		set_item->nod_arg[1] = SQE_field(NULL, false);
 		if (!MSC_match(KW_EQUALS))
 			CPR_s_error("assignment operator");
-		if (MSC_match(KW_NULL))
-			set_item->nod_arg[0] = MSC_node(nod_null, 0);
-		else
-			set_item->nod_arg[0] = SQE_value(request, false, NULL, NULL);
+		set_item->nod_arg[0] = SQE_value_or_null(request, false, NULL, NULL);
 		MSC_push(set_item, &stack);
 		count++;
 	} while (MSC_match(KW_COMMA));
@@ -4504,10 +4709,9 @@ static act* act_update()
 			if (transaction)
 				PAR_error("different transaction for select and update");
 			else
-			{
-				// does not specify transaction clause in
+			{				// does not specify transaction clause in
 				// "update ... where cuurent of cursor" stmt
-				const USHORT trans_nm_len = static_cast<USHORT>(strlen(request->req_trans));
+				const USHORT trans_nm_len = strlen(request->req_trans);
 				char* newtrans = (SCHAR *) MSC_alloc(trans_nm_len + 1);
 				transaction = newtrans;
 				memcpy(newtrans, request->req_trans, trans_nm_len);
@@ -4542,7 +4746,7 @@ static act* act_update()
 		for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 		{
 			gpre_nod* set_item = *ptr;
-			SQE_resolve(set_item->nod_arg[0], request, 0);
+			SQE_resolve(&set_item->nod_arg[0], request, 0);
 			pair(set_item->nod_arg[0], set_item->nod_arg[1]);
 		}
 
@@ -4563,7 +4767,7 @@ static act* act_update()
 		for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 		{
 			gpre_nod* set_item = *ptr;
-			SQE_resolve(set_item->nod_arg[1], request, 0);
+			SQE_resolve(&set_item->nod_arg[1], request, 0);
 			ref* field_ref = (ref*) ((set_item->nod_arg[1])->nod_arg[0]);
 
 			slc* slice = NULL;
@@ -4635,7 +4839,7 @@ static act* act_update()
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 	{
 		gpre_nod* set_item = *ptr;
-		SQE_resolve(set_item->nod_arg[0], request, select);
+		SQE_resolve(&set_item->nod_arg[0], request, select);
 	}
 
 	// Process boolean, if any
@@ -4655,7 +4859,7 @@ static act* act_update()
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 	{
 		gpre_nod* set_item = *ptr;
-		SQE_resolve(set_item->nod_arg[1], request, 0);
+		SQE_resolve(&set_item->nod_arg[1], request, 0);
 		ref* field_ref = (ref*) ((set_item->nod_arg[1])->nod_arg[0]);
 
 		act* slice_action = (act*) field_ref->ref_slice;
@@ -4687,16 +4891,329 @@ static act* act_update()
 		pair(set_item->nod_arg[0], set_item->nod_arg[1]);
 	}
 
-	gpre_nod* modify = MSC_node(nod_modify, 1);
+	gpre_nod* ret_list = NULL;
+	ref* ref_list = NULL;
+
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, NULL, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		gpre_sym* old_ctx_sym = MSC_symbol(SYM_context, OLD_CONTEXT, strlen(OLD_CONTEXT), input_context);
+		HSH_insert(old_ctx_sym);
+
+		gpre_sym* new_ctx_sym = MSC_symbol(SYM_context, NEW_CONTEXT, strlen(NEW_CONTEXT), update_context);
+		HSH_insert(new_ctx_sym);
+
+		ret_list = return_values(request, value_list, var_list);
+
+		for (int i = 0; i < value_list->nod_count; i++)
+			SQE_resolve(&value_list->nod_arg[i], request, NULL);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		HSH_remove(new_ctx_sym);
+		HSH_remove(old_ctx_sym);
+
+		request->req_flags |= REQ_sql_returning;
+		select->rse_flags |= RSE_singleton;
+	}
+
+	gpre_nod* modify = MSC_binary(nod_modify, set_list, ret_list);
 	request->req_node = modify;
-	modify->nod_arg[0] = set_list;
 
 	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
 	action->act_whenever = gen_whenever();
 
 	if (alias)
 		HSH_remove(alias);
 
+	return action;
+}
+
+
+//____________________________________________________________
+//
+//		Process SQL UPDATE OR INSERT statement.
+//
+
+static act* act_upsert(void)
+{
+	const TEXT* transaction = NULL;
+
+	par_options(&transaction);
+
+	if (!MSC_match(KW_INTO))
+		CPR_s_error("INTO");
+
+	gpre_req* request = MSC_request(REQ_mass_update);
+	request->req_trans = transaction;
+	gpre_ctx* context = SQE_context(request);
+	gpre_rel* relation = context->ctx_relation;
+
+	int count = 0;
+	gpre_lls* fields = NULL;
+
+	//  Pick up a field list
+
+	if (!MSC_match(KW_LEFT_PAREN))
+	{
+		gpre_nod* list = MET_fields(context);
+		count = list->nod_count;
+		for (int i = 0; i < count; i++)
+			MSC_push(list->nod_arg[i], &fields);
+	}
+	else
+	{
+		do
+		{
+			gpre_nod* node = SQE_field(request, false);
+
+			if (node->nod_type == nod_array)
+			{
+				node->nod_type = nod_field;
+
+				// Make sure no subscripts are specified
+
+				if (node->nod_arg[1]) {
+					PAR_error("Partial insert of arrays not permitted");
+				}
+			}
+
+			// Dialect 1 program may not insert new datatypes
+			if ((SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) &&
+				(nod_field == node->nod_type))
+			{
+				const USHORT field_dtype =
+					((ref*) (node->nod_arg[0]))->ref_field->fld_dtype;
+
+				if ((dtype_sql_date == field_dtype)
+					|| (dtype_sql_time == field_dtype)
+					|| (dtype_int64 == field_dtype))
+				{
+					SQL_dialect1_bad_type(field_dtype);
+				}
+			}
+
+			MSC_push(node, &fields);
+			count++;
+		} while (MSC_match(KW_COMMA));
+
+		EXP_match_paren();
+	}
+
+	gpre_nod* field_list = MSC_node(nod_list, (SSHORT) count);
+	gpre_nod** ptr = &field_list->nod_arg[count];
+	while (fields)
+		*--ptr = (gpre_nod*) MSC_pop(&fields);
+
+	// Now pick up a value list
+
+	if (!MSC_match(KW_VALUES))
+		CPR_s_error("VALUES");
+
+	EXP_left_paren(0);
+	gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+	EXP_match_paren();
+
+	if (count != value_list->nod_count)
+		PAR_error("count of values doesn't match count of columns");
+
+	// Pick up a matching list
+
+	nod_t cmp_op = nod_equiv;
+
+	gpre_lls* matches = NULL;
+	if (MSC_match(KW_MATCHES))
+	{
+		EXP_left_paren(0);
+		for (;;)
+		{
+			MSC_push(SQE_field(request, false), &matches);
+			if (!(MSC_match(KW_COMMA)))
+				break;
+		}
+		EXP_match_paren();
+	}
+	else
+	{
+		if (relation->rel_view_rse)
+			PAR_error("MATCHING clause is required for views");
+
+		gpre_lls* pk_fields =
+			MET_get_primary_key(relation->rel_database, relation->rel_symbol->sym_string);
+
+		while (pk_fields)
+		{
+			const TEXT* field_name = (TEXT*) MSC_pop(&pk_fields);
+			gpre_fld* field = MET_field(relation, field_name);
+			ref* reference = (ref*) MSC_alloc(REF_LEN);
+			reference->ref_field = field;
+			reference->ref_context = context;
+			MSC_push(MSC_unary(nod_field, (gpre_nod*) reference), &matches);
+		}
+
+		cmp_op = nod_eq;
+	}
+
+	if (!matches)
+		PAR_error("Either MATCHING list or primary key is required");
+
+	// Create selection
+
+	gpre_rse* select = (gpre_rse*) MSC_alloc(RSE_LEN(1));
+	request->req_rse = select;
+	select->rse_count = 1;
+	select->rse_context[0] = context;
+
+	// Introduce the update context
+
+	gpre_ctx* update_context = MSC_context(request);
+	update_context->ctx_relation = relation;
+	request->req_update = update_context;
+
+	// Introduce the insertion context
+
+	gpre_ctx* insert_context = MSC_context(request);
+	insert_context->ctx_relation = relation;
+
+	// Make assignment lists for both update and insert contexts
+
+	gpre_nod* upd_list = MSC_node(nod_list, (SSHORT) count);
+	gpre_nod* ins_list = MSC_node(nod_list, (SSHORT) count);
+
+	for (int i = 0; i < count; i++)
+	{
+		ref* org_ref = (ref*) field_list->nod_arg[i]->nod_arg[0];
+
+		ref* new_ref = (ref*) MSC_alloc(REF_LEN);
+		new_ref->ref_field = org_ref->ref_field;
+		new_ref->ref_context = update_context;
+
+		gpre_nod* assignment = MSC_node(nod_assignment, 2);
+		assignment->nod_arg[0] = value_list->nod_arg[i];
+		assignment->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) new_ref);
+		pair(assignment->nod_arg[0], assignment->nod_arg[1]);
+
+		upd_list->nod_arg[i] = assignment;
+
+		new_ref = (ref*) MSC_alloc(REF_LEN);
+		new_ref->ref_field = org_ref->ref_field;
+		new_ref->ref_context = insert_context;
+
+		assignment = MSC_node(nod_assignment, 2);
+		assignment->nod_arg[0] = value_list->nod_arg[i];
+		assignment->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) new_ref);
+		pair(assignment->nod_arg[0], assignment->nod_arg[1]);
+
+		ins_list->nod_arg[i] = assignment;
+	}
+
+	// Create boolean
+
+	gpre_nod* boolean = NULL;
+	while (matches)
+	{
+		gpre_nod* match = MSC_pop(&matches);
+		ref* match_ref = (ref*) match->nod_arg[0];
+		gpre_fld* match_field = match_ref->ref_field;
+
+		for (int i = 0; i < count; i++)
+		{
+			gpre_nod* from = value_list->nod_arg[i];
+			gpre_nod* to = field_list->nod_arg[i];
+			ref* to_ref = (ref*) to->nod_arg[0];
+			gpre_fld* to_field = to_ref->ref_field;
+
+			if (!strcmp(match_field->fld_symbol->sym_string,
+						to_field->fld_symbol->sym_string))
+			{
+				gpre_nod* eql = MSC_binary(cmp_op, match, from);
+
+				if (boolean)
+					boolean = MSC_binary(nod_and, boolean, eql);
+				else
+					boolean = eql;
+
+				break;
+			}
+		}
+	}
+
+	if (!boolean)
+		PAR_error("Invalid MATCHING list");
+
+	select->rse_boolean = boolean;
+
+	// Process a returning clause
+
+	ref* ref_list = NULL;
+	gpre_nod* upd_ret_list = NULL;
+	gpre_nod* ins_ret_list = NULL;
+
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, NULL, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		gpre_sym* old_ctx_sym = MSC_symbol(SYM_context, OLD_CONTEXT, strlen(OLD_CONTEXT), context);
+		HSH_insert(old_ctx_sym);
+
+		// temporarily hide the insertion context
+
+		fb_assert(request->req_contexts == insert_context);
+		request->req_contexts = request->req_contexts->ctx_next;
+
+		gpre_sym* new_ctx_sym = MSC_symbol(SYM_context, NEW_CONTEXT, strlen(NEW_CONTEXT), update_context);
+		HSH_insert(new_ctx_sym);
+
+		upd_ret_list = return_values(request, value_list, var_list);
+
+		// restore the insertion context back
+
+		fb_assert(request->req_contexts == update_context);
+		request->req_contexts = insert_context;
+
+		new_ctx_sym->sym_object = insert_context;
+
+		ins_ret_list = return_values(request, value_list, var_list);
+
+		for (int i = 0; i < value_list->nod_count; i++)
+			SQE_resolve(&value_list->nod_arg[i], request, NULL);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		HSH_remove(new_ctx_sym);
+		HSH_remove(old_ctx_sym);
+
+		request->req_flags |= REQ_sql_returning;
+		select->rse_flags |= RSE_singleton;
+	}
+
+	// Create the final node
+
+	gpre_nod* compound = MSC_node(nod_list, 2);
+	compound->nod_arg[0] = MSC_binary(nod_modify, upd_list, upd_ret_list);
+	compound->nod_arg[1] = MSC_ternary(nod_store, (gpre_nod*) insert_context, ins_list, ins_ret_list);
+	request->req_node = compound;
+
+	if (context->ctx_symbol)
+		HSH_remove(context->ctx_symbol);
+
+	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
+	action->act_whenever = gen_whenever();
 	return action;
 }
 
@@ -4764,7 +5281,7 @@ static act* act_whenever()
 
 static bool check_filename(const TEXT* name)
 {
-	const USHORT l = static_cast<USHORT>(strlen(name));
+	const USHORT l = strlen(name);
 	if (!l)
 		return true;
 
@@ -4773,6 +5290,13 @@ static bool check_filename(const TEXT* name)
 		if (p[0] == ':' && p[1] == ':')
 			return false;
 	}
+
+	// CVC: what's this crap? It's totally useless! Maybe a copy/paste?
+	//TEXT file_name[256];
+	//l = MIN(l, sizeof(file_name) - 1);
+	//strncpy(file_name, name, l);
+	//file_name[l] = '\0';
+
 	return true;
 }
 
@@ -4823,6 +5347,46 @@ static void connect_opts(const TEXT** user,
 	}
 
 }
+
+#ifdef FLINT_CACHE
+//____________________________________________________________
+//
+//		Add a shared cache to an existing database.
+//
+
+static gpre_file* define_cache()
+{
+	gpre_file* file = (gpre_file*) MSC_alloc(FIL_LEN);
+	if (isQuoted(gpreGlob.token_global.tok_type))
+	{
+		TEXT* string = (TEXT*) MSC_alloc(gpreGlob.token_global.tok_length + 1);
+		file->fil_name = string;
+		MSC_copy(gpreGlob.token_global.tok_string, gpreGlob.token_global.tok_length, string);
+		PAR_get_token();
+	}
+	else
+		CPR_s_error("<quoted filename>");
+	if (!check_filename(file->fil_name))
+		PAR_error("node name not permitted");	// a node name is not permitted in a shared cache file name
+
+	if (MSC_match(KW_LENGTH))
+	{
+		file->fil_length = EXP_ULONG_ordinal(true);
+		if (file->fil_length < MIN_CACHE_BUFFERS)
+		{
+			TEXT err_string[ERROR_LENGTH];
+			sprintf(err_string, "Minimum of %d cache pages required", MIN_CACHE_BUFFERS);
+			PAR_error(err_string);
+		}
+		MSC_match(KW_PAGES);
+	}
+	else
+		file->fil_length = DEF_CACHE_BUFFERS;	// default cache buffers
+
+	return file;
+}
+#endif
+
 //____________________________________________________________
 //
 //		Add a new file to an existing database.
@@ -4930,7 +5494,7 @@ static gpre_dbb* dup_dbb(const gpre_dbb* db)
 
 //____________________________________________________________
 //
-//		Report an error with parameter
+//       Report an error with parameter
 //
 
 static void error(const TEXT* format, const TEXT* string2)
@@ -4944,7 +5508,7 @@ static void error(const TEXT* format, const TEXT* string2)
 
 //____________________________________________________________
 //
-//		Extract string from "string" in
+//       Extract string from "string" in
 //		token.
 //
 
@@ -5624,7 +6188,7 @@ static cnstrt* par_field_constraint( gpre_req* request, gpre_fld* for_field)
 //____________________________________________________________
 //
 //		Parse the INTO clause for a dynamic SQL statement.
-//		Nobody uses its returned value currently.
+//      Nobody uses its returned value currently.
 
 static bool par_into( dyn* statement)
 {
@@ -6124,6 +6688,28 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 
 //____________________________________________________________
 //
+//		Generate the assignment list for the RETURNING clause
+//
+
+static gpre_nod* return_values(gpre_req* request, gpre_nod* src_list, gpre_nod* dst_list)
+{
+	gpre_nod* ret_list = MSC_node(nod_list, src_list->nod_count);
+
+	for (int i = 0; i < src_list->nod_count; i++)
+	{
+		gpre_nod* assignment = MSC_node(nod_assignment, 2);
+		assignment->nod_arg[0] = src_list->nod_arg[i];
+		SQE_resolve(&assignment->nod_arg[0], request, NULL);
+		assignment->nod_arg[1] = dst_list->nod_arg[i];
+		ret_list->nod_arg[i] = assignment;
+	}
+
+	return ret_list;
+}
+
+
+//____________________________________________________________
+//
 //		Parse the tail of a CREATE DATABASE statement.
 //
 
@@ -6239,8 +6825,15 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				; // Ignore DROP LOG database->dbb_flags |= DBB_drop_log;
 			else if (MSC_match(KW_CASCADE))
 				; // ignore DROP CASCADE database->dbb_flags |= DBB_cascade;
+#ifdef FLINT_CACHE
+			else if (MSC_match(KW_CACHE))
+				; // ignore DROP CACHE database->dbb_flags |= DBB_drop_cache;
+			else
+				PAR_error("only log files or shared cache can be dropped");	// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
+#else
 			else
 				PAR_error("only log files can be dropped");	// msg 121 only SECURITY_CLASS, DESCRIPTION and CACHE can be dropped
+#endif // FLINT_CACHE
 
 			//else if (MSC_match (KW_DESCRIP))
 			//	database->dbb_flags	|= DBB_null_description;
@@ -6315,6 +6908,10 @@ static bool tail_database(act_t action_type, gpre_dbb* database)
 				database->dbb_logfiles = define_log_file();
 			}
 		}
+#ifdef FLINT_CACHE
+		else if (MSC_match(KW_CACHE))
+			database->dbb_cache_file = define_cache();
+#endif // FLINT_CACHE
 		else
 			break;
 	}

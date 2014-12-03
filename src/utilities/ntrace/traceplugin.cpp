@@ -26,106 +26,77 @@
  *  2008 Khorsun Vladyslav
  */
 
-#include "firebird.h"
-#include "../common/classes/ImplementHelper.h"
-
 #include "TraceConfiguration.h"
 #include "TracePluginImpl.h"
 
-class TraceFactoryImpl FB_FINAL : public Firebird::StdPlugin<Firebird::Api::TraceFactoryImpl<TraceFactoryImpl> >
-{
-public:
-	explicit TraceFactoryImpl(Firebird::IPluginConfig*)
-	{ }
 
-	// TraceFactory implementation
-	ntrace_mask_t trace_needs();
-	Firebird::ITracePlugin* trace_create(Firebird::IStatus* status, Firebird::ITraceInitInfo* init_info);
-	int release();
-};
+extern "C" {
 
-int TraceFactoryImpl::release()
+FB_DLL_EXPORT ntrace_boolean_t trace_create(TraceInitInfo* initInfo, const TracePlugin** plugin)
 {
-	if (--refCounter == 0)
-	{
-		delete this;
-		return 0;
-	}
-	return 1;
-}
-
-ntrace_mask_t TraceFactoryImpl::trace_needs()
-{
-	return (1 << Firebird::ITraceFactory::TRACE_EVENT_MAX) - 1;
-}
-
-Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::IStatus* status,
-	Firebird::ITraceInitInfo* initInfo)
-{
-	Firebird::MasterInterfacePtr master;
 	const char* dbname = NULL;
 	try
 	{
 		dbname = initInfo->getDatabaseName();
-		if (!dbname)
-			dbname = "";
 
 		TracePluginConfig config;
-		TraceCfgReader::readTraceConfiguration(initInfo->getConfigText(), dbname, config);
+		TraceCfgReader::readTraceConfiguration(
+			initInfo->getConfigText(),
+			dbname ? dbname : "",
+			config);
 
-		Firebird::ITraceDatabaseConnection* connection = initInfo->getConnection();
-
+		TraceDatabaseConnection* connection = initInfo->getConnection();
 		if (!config.enabled ||
-			(config.connection_id && connection &&
-				(connection->getConnectionID() != SLONG(config.connection_id))))
+			(config.connection_id && connection && (connection->getConnectionID() != config.connection_id)))
 		{
-			return NULL; // Plugin is not needed, no error happened.
+			*plugin = NULL;
+			return true; // Plugin is not needed, no error happened.
 		}
 
-		Firebird::AutoPtr<Firebird::ITraceLogWriter, Firebird::SimpleRelease<Firebird::ITraceLogWriter> >
-			logWriter(initInfo->getLogWriter());
-
-		if (logWriter)
+		TraceLogWriter* logWriter = initInfo->getLogWriter();
+		if (logWriter) {
 			config.log_filename = "";
-
-		return new TracePluginImpl(config, initInfo);	// Everything is ok, we created a plugin
-
-	}
-	catch (Firebird::Exception& ex)
-	{
-		// put error into trace log
-		Firebird::ITraceLogWriter* logWriter = initInfo->getLogWriter();
-		if (logWriter)
-		{
-			const char* strEx = TracePluginImpl::marshal_exception(ex);
-			Firebird::string err;
-			if (dbname)
-				err.printf("Error creating trace session for database \"%s\":\n%s\n", dbname, strEx);
-			else
-				err.printf("Error creating trace session for service manager attachment:\n%s\n", strEx);
-
-			logWriter->write(err.c_str(), err.length());
-			logWriter->release();
 		}
-		else
-			ex.stuffException(status);
+
+		*plugin = TracePluginImpl::createFullPlugin(config, initInfo);
+
+		return true; // Everything is ok, we created a plugin
+
 	}
+	catch(Firebird::Exception& ex)
+	{
+		try
+		{
+			// Create skeletal plugin object in order to return error to caller
+			*plugin = TracePluginImpl::createSkeletalPlugin();
 
-	return NULL;
+			// Stuff exception to error buffer now
+			const char *strEx = TracePluginImpl::marshal_exception(ex);
+
+			// put error into trace log
+			TraceLogWriter* logWriter = initInfo->getLogWriter();
+			if (logWriter)
+			{	
+				Firebird::string err;
+				if (dbname)
+					err.printf("Error creating trace session for database \"%s\":\n%s\n", dbname, strEx);
+				else
+					err.printf("Error creating trace session for service manager attachment:\n%s\n", strEx);
+				
+				logWriter->write(err.c_str(), err.length());
+				logWriter->release();
+			}
+		}
+		catch (Firebird::Exception&)
+		{
+			// We faced total lack of luck here. Most probably this is
+			// out-of-memory error, but nothing we can tell to our caller
+			// about it.
+			*plugin = NULL;
+		}
+
+		return false;
+	}
 }
 
-
-static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
-
-void registerTrace(Firebird::IPluginManager* iPlugin)
-{
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::Trace, "fbtrace", &traceFactory);
-	Firebird::getUnloadDetector()->registerMe();
-}
-
-
-extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
-{
-	Firebird::CachedMasterInterface::set(master);
-	registerTrace(Firebird::PluginManagerInterfacePtr());
-}
+} // extern "C"
