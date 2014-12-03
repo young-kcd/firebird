@@ -1,3 +1,12 @@
+ 2014-12-02 20:37  dimitr 
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+Forgotten commit.
+
+ 2014-12-02 20:14  dimitr 
+   M src/lock/lock.cpp
+Fixed CORE-4631: Lock manager "out of room" error hides the real cause of this problem.
+
  2014-12-01 21:53  dimitr 
    M src/dsql/StmtNodes.cpp
    M src/jrd/JrdStatement.cpp
