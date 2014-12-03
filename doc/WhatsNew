@@ -1,3 +1,13 @@
+  ***************************
+  * v2.5.3 Security Update 1
+  ***************************
+
+    * Bugfix CORE-4630
+        Segfault in server caused by malformed network packet
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+
   **************************
   * v2.5.3
   **************************
