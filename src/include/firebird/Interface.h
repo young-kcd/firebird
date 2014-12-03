@@ -156,8 +156,8 @@ public:
 		return false;
 	}
 
-	static void checkException(Api::Status* status) { }
-	static void catchException(Api::Status* status) { }
+	static void checkException(Api::Status*) { }
+	static void catchException(Api::Status*) { }
 	typedef Api::Status* Status;
 };
 
