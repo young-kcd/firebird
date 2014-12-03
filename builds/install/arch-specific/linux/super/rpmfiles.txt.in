@@ -1,0 +1,11 @@
+@prefix@
+
+@libdir@/libfbclient.so.@FIREBIRD_VERSION@
+@libdir@/libfbclient.so.2
+@libdir@/libfbclient.so
+@libdir@/libib_util.so
+
+/usr/include/ibase.h
+/usr/include/iberror.h
+/usr/include/ib_util.h
+/usr/include/perf.h

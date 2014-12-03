@@ -19,8 +19,9 @@
  * All Rights Reserved.
  * Contributor(s): ______________________________________.
  */
-
+ 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "../jrd/rpb_chain.h"
 
 using namespace Jrd;
@@ -44,17 +45,16 @@ int traRpbList::PushRpb(record_param* value)
 	}
 	int pos = add(traRpbListElement(value, ~0));
 	int level = -1;
-	if (pos-- > 0)
-	{
+	if (pos-- > 0) {
 		traRpbListElement& prev = (*this)[pos];
 		if (prev.lr_rpb->rpb_relation->rel_id == value->rpb_relation->rel_id &&
-			prev.lr_rpb->rpb_number == value->rpb_number)
-		{
+			prev.lr_rpb->rpb_number == value->rpb_number) 
+		{ 
 			// we got the same record once more - mark for refetch
 			level = prev.level;
 			fb_assert(pos >= level);
 			fb_assert((*this)[pos - level].level == 0);
-			prev.lr_rpb->rpb_runtime_flags |= RPB_refetch;
+			prev.lr_rpb->rpb_stream_flags |= RPB_s_refetch;
 		}
 	}
 	(*this)[++pos].level = ++level;
@@ -66,9 +66,9 @@ bool traRpbList::PopRpb(record_param* value, int Level)
 	if (Level < 0) {
 		return false;
 	}
-	FB_SIZE_T pos;
+	size_t pos;
 	ExecAssert(find(traRpbListElement(value, Level), pos));
-	const bool rc = (*this)[pos].lr_rpb->rpb_runtime_flags & RPB_refetch;
+	const bool rc = (*this)[pos].lr_rpb->rpb_stream_flags & RPB_s_refetch;
 	remove(pos);
 	return rc;
 }

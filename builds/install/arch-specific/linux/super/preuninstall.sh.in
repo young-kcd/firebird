@@ -1,0 +1,27 @@
+#! /bin/sh
+
+#= Main PreUn ================================================================
+
+stopSuperServerIfRunning
+
+
+cd $FBRootDir
+if [ -f $SecurityDatabase ] 
+then 
+    cp $SecurityDatabase /tmp 
+    echo "Saved a copy of SecurityDatabase ($SecurityDatabase) in /tmp" 
+	chown root:root /tmp/$SecurityDatabase
+	chmod 0600 /tmp/$SecurityDatabase
+fi 
+        
+
+for i in isc_*1* firebird.log SYSDBA.password
+do
+    if [ -f $i ]
+    then
+        rm -f $i
+    fi
+done
+
+
+rm -f $FBBin/fbmgr

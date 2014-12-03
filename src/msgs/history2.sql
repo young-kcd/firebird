@@ -83,7 +83,7 @@ without specifying a character set.', NULL, 'c_pg');
 (126, 'jclear', '1994-01-07 14:25:48', 0, 311, 'Short integer expected', NULL, NULL, 'c_pg');
 (127, 'jclear', '1994-01-07 14:32:54', 0, 27, 'validation error for field %s, value "%s"', NULL, NULL, 'c_pg');
 (128, 'jclear', '1994-01-07 14:33:35', 0, 39, 'attempted update of read-only field', 'If the read-only field is in a system relation, change your
-program.  If the field is a COMPUTED field, you have to
+program.  If the field is a COMPUTED field, you have to 
 change the source fields to change its value.  If the field
 takes part in a view, update it in its source relations.', 'Your program tried to change the value of a read-only
 field in a system relation, a COMPUTED field, or a field
@@ -413,11 +413,11 @@ committing or rolling back one or more transactions.', 'c_pg');
 (444, 'jclear', '1994-02-08 17:43:04', 0, 251, 'Constant data type unknown', NULL, NULL, 'c_pg');
 (445, 'jclear', '1994-02-08 17:45:59', 0, 316, 'there is no index %s in table %s', NULL, NULL, 'c_pg');
 (446, 'jclear', '1994-02-09 10:49:37', 0, 42, 'can''t update read only view %s', 'Views that include a record select, join, or project cannot
-be updated.  If you want to perform updates, you must do so
+be updated.  If you want to perform updates, you must do so 
 through the source relations.  If you are updating join terms,
 make sure that you change them in all relations.  In any case,
- update the source relations in a single transaction so that
-you make the changes consistently.', 'Your program tried to update a view that contains a
+ update the source relations in a single transaction so that 
+you make the changes consistently.', 'Your program tried to update a view that contains a 
 record select, join, or project operation.', 'c_pg');
 (447, 'jclear', '1994-02-09 10:57:12', 0, 144, 'secondary server attachments can not start logging', NULL, NULL, 'c_pg');
 (448, 'deej', '1994-02-09 17:05:01', 0, 324, 'attempt to fetch backwards past the first record in a record stream', NULL, NULL, 'c_pg');
@@ -469,8 +469,8 @@ by calling gds_$create_blob.  If you are using GDML, open
 the blob with the create_blob statement.', 'Your program tried to write to a blob field that
 that had been opened for read access.', 'c_pg');
 (486, 'jclear', '1994-02-18 16:49:16', 0, 52, 'attempted reference to blob in unavailable database', 'Change your program so that the required database is
-available to the current transaction.', 'Your program referenced a blob field from a relation
-in a database that is not available to the current
+available to the current transaction.', 'Your program referenced a blob field from a relation 
+in a database that is not available to the current 
 transaction.', 'c_pg');
 (487, 'jclear', '1994-02-18 16:51:02', 0, 94, 'blob and array data types are not supported for %s operation', NULL, NULL, 'c_pg');
 (488, 'jclear', '1994-02-18 16:58:02', 0, 145, 'invalid blob type for operation', 'Program attempted a seek on a non-stream (i.e. segmented) blob.', 'Program attempted to a blob seek operation on a non-stream (i.e.
@@ -535,11 +535,11 @@ segmented) blob.', 'c_pg');
 (545, 'jclear', '1994-02-18 18:10:52', 0, 163, 'maximum number of Online dump files that can be specified is 16', NULL, NULL, 'c_pg');
 (546, 'jclear', '1994-02-18 18:12:09', 16, 191, 'Processing Online dump file %s.', NULL, NULL, 'c_pg');
 (547, 'jclear', '1994-02-18 18:14:27', 0, 42, 'cannot update read only view %s', 'Views that include a record select, join, or project cannot
-be updated.  If you want to perform updates, you must do so
+be updated.  If you want to perform updates, you must do so 
 through the source relations.  If you are updating join terms,
 make sure that you change them in all relations.  In any case,
- update the source relations in a single transaction so that
-you make the changes consistently.', 'Your program tried to update a view that contains a
+ update the source relations in a single transaction so that 
+you make the changes consistently.', 'Your program tried to update a view that contains a 
 record select, join, or project operation.', 'c_pg');
 (548, 'jclear', '1994-02-18 18:15:28', 0, 180, 'database does not use Write-ahead log', NULL, NULL, 'c_pg');
 (549, 'jclear', '1994-02-18 18:17:35', 0, 185, 'must specify archive file when enabling long term journal for databases with round robin log files', NULL, NULL, 'c_pg');
@@ -670,7 +670,7 @@ without specifying a character set.', NULL, 'c_pg');
 (671, 'daves', '1994-07-18 11:04:54', 12, 170, 'commiting metadata for table %s', NULL, NULL, 'c_pg');
 (672, 'daves', '1994-07-18 11:05:46', 12, 171, 'error commiting metadata for relation %s', NULL, NULL, 'c_pg');
 (673, 'daves', '1994-07-18 11:07:03', 16, 104, ' Number of archives running concurrently excceds limit.', NULL, NULL, 'c_pg');
-(674, 'daves', '1994-07-18 11:08:46', 13, 198, 'Arithmetic overflow or division by zero has occurred.', NULL, NULL, 'c_pg');
+(674, 'daves', '1994-07-18 11:08:46', 13, 198, 'Arithmetic overflow or division by zero has occured.', NULL, NULL, 'c_pg');
 (675, 'daves', '1994-07-18 11:10:26', 12, 109, '	%sY  <path>            redirect/supress status message output', NULL, NULL, 'c_pg');
 (676, 'daves', '1994-07-18 11:12:10', 13, 492, 'The cursor identifed in the update or delete statement is not positioned on a row.', NULL, NULL, 'c_pg');
 (677, 'daves', '1994-07-18 11:14:21', 0, 391, 'Attempt to execute an unprepared dynamic sql statement.', NULL, NULL, 'c_pg');
@@ -783,15 +783,15 @@ without specifying a character set.', NULL, 'c_pg');
 problem may be an obvious one, such as incorrect file name or
 a file protection problem.  If that does not eliminate the
 problem, check your program logic.  To avoid errors when
-the user enters a database name interactively,
-add an error handler to the statement that causes this
+the user enters a database name interactively, 
+add an error handler to the statement that causes this 
 message to appear.', 'Your program encountered an input or output error.', 'c_pg');
 (809, 'beck', '1995-04-07 11:50:01', 0, 24, 'I/O error for filename[D[or for file %.0s"%s"', 'Check secondary messages for more information.  The
 problem may be an obvious one, such as incorrect file name or
 a file protection problem.  If that does not eliminate the
 problem, check your program logic.  To avoid errors when
-the user enters a database name interactively,
-add an error handler to the statement that causes this
+the user enters a database name interactively, 
+add an error handler to the statement that causes this 
 message to appear.', 'Your program encountered an input or output error.', 'c_pg');
 (810, 'beck', '1995-04-07 13:51:13', 0, 413, 'Error while trying to create file.', NULL, NULL, 'c_pg');
 (811, 'beck', '1995-04-07 13:51:49', 0, 415, 'Error while trying to close file.', NULL, NULL, 'c_pg');
@@ -1190,75 +1190,7 @@ Fetches = !f', NULL, NULL, 'c_pg');
 (1185, 'cvc', '2006-10-01 03:20:51', 8, 20, 'could not find PRIMARY KEY index in specified table', NULL, NULL, 'c_pg');
 (1186, 'cvc', '2007-10-03 05:28:09', 17, 102, '               TRIGGER, VERSION, VIEW', NULL, NULL, 'c_pg');
 (1187, 'cvc', '2007-11-20 02:42:50', 0, 76, 'column @1 is not defined in table @1', NULL, 'An undefined external function was referenced in blr.', 'c_pg')
-(1188, 'alexpeshkoff', '2007-12-21 19:03:07', 12, 249, 'writing SQL role: @1', NULL, NULL, 'c_pg');
-(1189, 'alexpeshkoff', '2007-12-21 19:03:07', 12, 251, 'restoring SQL role: @1', NULL, NULL, 'c_pg');
-(1190, 'dimitr', '2008-03-12 08:02:00', 17, 0, 'Statement failed, SQLCODE = @1', NULL, NULL, 'c_pg')
-(1191, 'dimitr', '2008-03-17 12:33:42', 8, 15, 'STORE RDB$INDICES failed', NULL, NULL, 'c_pg')
-(1192, 'cvc', '2008-07-06 06:06:47', 0, 13, 'internal gds software consistency check (@1)', NULL, NULL, 'c_pg')
-(1193, 'cvc', '2008-07-06 08:47:00', 0, 227, 'internal gds software consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL, 'c_pg')
-(1194, 'cvc', '2008-07-06 08:47:21', 13, 704, 'internal gds software consistency check (invalid RDB$CONSTRAINT_TYPE)', NULL, NULL, 'c_pg')
-(1195, 'hvlad', '2008-11-07 10:55:00', 0, 601, 'Execute statement error at @1 :\n@2Data source : @3', NULL, NULL, 'c_pg')
-(1196, 'hvlad', '2008-11-07 10:55:00', 0, 606, 'Execute statement error at @1 :\n@2Statement : @3\nData source : @4', NULL, NULL, 'c_pg')
-(1197, 'asfernandes', '2009-04-21 11:18:00', 17, 38, '    <object> = CHECK, DATABASE, DOMAIN, EXCEPTION, FILTER, FUNCTION, GENERATOR,', NULL, NULL, 'c_pg')
-(1198, 'asfernandes', '2009-04-21 11:19:00', 17, 64, '               GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM, TABLE,', NULL, NULL, 'c_pg')
-(1199, 'asfernandes', '2009-04-21 11:20:00', 17, 102, '               TRIGGER, VERSION, USERS, VIEW', NULL, NULL, 'c_pg')
-(1200, 'cvc', '2009-06-22 05:53:30', 21, 27, '    -s      analyze system relations', NULL, NULL, 'c_pg')
-(1201, 'cvc', '2009-06-22 05:54:50', 21, 24, '    -h      analyze header page', NULL, NULL, 'c_pg')
-(1202, 'cvc', '2009-06-22 05:56:20', 21, 35, '    -t      tablename', NULL, NULL, 'c_pg')
-(1203, 'cvc', '2009-07-05 09:04:08', 12, 73, '	@1C(REATE_DATABASE)    create database from backup file', NULL, NULL, 'c_pg')
-(1204, 'cvc', '2009-07-05 09:05:10', 12, 112, '	@1REP(LACE_DATABASE)   replace database from backup file', NULL, NULL, 'c_pg')
-(1205, 'cvc', '2009-07-05 09:06:09', 12, 284, '	@1R(ECREATE_DATABASE) [O(VERWRITE)] create (or replace if OVERWRITE used)
-				database from backup file', NULL, NULL, 'c_pg')
-(1206, 'cvc', '2009-07-13 22:30:01', 3, 22, '
-    qualifiers show the major option in parenthesis', NULL, NULL, 'c_pg')
-(1207, 'cvc', '2009-07-13 22:30:17', 3, 25, '	-activate	activate shadow file for database usage', NULL, NULL, 'c_pg')
-(1208, 'cvc', '2009-07-13 22:30:50', 3, 26, '	-attach		shutdown new database attachments', NULL, NULL, 'c_pg')
-(1209, 'cvc', '2009-07-13 22:31:42', 3, 28, '	-buffers	set page buffers <n>', NULL, NULL, 'c_pg')
-(1210, 'cvc', '2009-07-13 22:32:12', 3, 29, '	-commit		commit transaction <tr / all>', NULL, NULL, 'c_pg')
-(1211, 'cvc', '2009-07-13 22:35:05', 3, 30, '	-cache		shutdown cache manager', NULL, NULL, 'c_pg')
-(1212, 'cvc', '2009-07-13 22:35:28', 3, 32, '	-full		validate record fragments (-v)', NULL, NULL, 'c_pg')
-(1213, 'cvc', '2009-07-13 22:35:55', 3, 33, '	-force		force database shutdown', NULL, NULL, 'c_pg')
-(1214, 'cvc', '2009-07-13 22:36:20', 3, 34, '	-housekeeping	set sweep interval <n>', NULL, NULL, 'c_pg')
-(1215, 'cvc', '2009-07-13 22:36:53', 3, 35, '	-ignore		ignore checksum errors', NULL, NULL, 'c_pg')
-(1216, 'cvc', '2009-07-13 22:37:10', 3, 36, '	-kill		kill all unavailable shadow files', NULL, NULL, 'c_pg')
-(1217, 'cvc', '2009-07-13 22:37:33', 3, 37, '	-list		show limbo transactions', NULL, NULL, 'c_pg')
-(1218, 'cvc', '2009-07-13 22:38:02', 3, 38, '	-mend		prepare corrupt database for backup', NULL, NULL, 'c_pg')
-(1219, 'cvc', '2009-07-13 22:38:15', 3, 39, '	-no_update	read-only validation (-v)', NULL, NULL, 'c_pg')
-(1220, 'cvc', '2009-07-13 22:38:28', 3, 40, '	-online		database online <single / multi / normal>', NULL, NULL, 'c_pg')
-(1221, 'cvc', '2009-07-13 22:38:50', 3, 41, '	-prompt		prompt for commit/rollback (-l)', NULL, NULL, 'c_pg')
-(1222, 'cvc', '2009-07-13 22:39:09', 3, 42, '	-password	default password', NULL, NULL, 'c_pg')
-(1223, 'cvc', '2009-07-13 22:39:40', 3, 44, '	-rollback	rollback transaction <tr / all>', NULL, NULL, 'c_pg')
-(1224, 'cvc', '2009-07-13 22:40:15', 3, 45, '	-sweep		force garbage collection', NULL, NULL, 'c_pg')
-(1225, 'cvc', '2009-07-13 22:40:40', 3, 46, '	-shut		shutdown <full / single / multi>', NULL, NULL, 'c_pg')
-(1226, 'cvc', '2009-07-13 22:40:59', 3, 47, '	-two_phase	perform automated two-phase recovery', NULL, NULL, 'c_pg')
-(1227, 'cvc', '2009-07-13 22:41:19', 3, 48, '	-tran		shutdown transaction startup', NULL, NULL, 'c_pg')
-(1228, 'cvc', '2009-07-13 22:41:38', 3, 49, '	-use		use full or reserve space for versions', NULL, NULL, 'c_pg')
-(1229, 'cvc', '2009-07-13 22:41:58', 3, 50, '	-user		default user name', NULL, NULL, 'c_pg')
-(1230, 'cvc', '2009-07-13 22:42:17', 3, 51, '	-validate	validate database structure', NULL, NULL, 'c_pg')
-(1231, 'cvc', '2009-07-13 22:42:33', 3, 52, '	-write		write synchronously or asynchronously', NULL, NULL, 'c_pg')
-(1232, 'cvc', '2009-07-13 22:42:54', 3, 53, '	-x		set debug on', NULL, NULL, 'c_pg')
-(1233, 'cvc', '2009-07-13 22:43:13', 3, 54, '	-z		print software version number', NULL, NULL, 'c_pg')
-(1234, 'cvc', '2009-07-13 22:43:29', 3, 55, '`
-	Number of record level errors	: @1', NULL, NULL, 'c_pg')
-(1235, 'cvc', '2009-07-13 22:43:55', 3, 109, '	-mode		read_only or read_write', NULL, NULL, 'c_pg')
-(1236, 'cvc', '2009-07-13 22:44:10', 3, 111, '	-sql_dialect	set database dialect n', NULL, NULL, 'c_pg')
-(1237, 'cvc', '2009-07-13 22:44:27', 3, 115, '	-trusted	use trusted authentication', NULL, NULL, 'c_pg')
-(1238, 'cvc', '2009-07-13 22:45:00', 3, 119, '	-fetch_password fetch_password from file', NULL, NULL, 'c_pg')
-(1239, 'cvc', '2009-07-16 05:26:11', 3, 22, '
-    qualifiers show the major option in parenthesis', NULL, NULL, 'c_pg')
-(1240, 'cvc', '2009-07-16 06:48:27', 17, 155, '	-tr(usted)              use Windows trusted authentication', NULL, NULL, 'c_pg')
-(1241, 'asfernandes', '2009-10-20 12:20:20', 0, 231, 'could not find table/procedure for GRANT', NULL, NULL, 'c_pg')
-(1242, 'asfernandes', '2009-10-20 12:20:40', 0, 502, 'Cannot use an aggregate function in a WHERE clause, use HAVING instead', NULL, NULL, 'c_pg')
-(1243, 'asfernandes', '2009-10-20 12:21:00', 0, 503, 'Cannot use an aggregate function in a GROUP BY clause', NULL, NULL, 'c_pg')
-(1244, 'asfernandes', '2009-10-20 12:21:20', 0, 506, 'Nested aggregate functions are not allowed', NULL, NULL, 'c_pg')
-(1245, 'cvc', '2009-11-06 08:26:40', 12, 44, 'Expected backup version 1..9.  Found @1', NULL, NULL, 'c_pg')
-(1246, 'cvc', '2009-11-13 05:37:37', 17, 64, '               GENERATOR, GRANT, INDEX, PROCEDURE, ROLE, SQL DIALECT, SYSTEM,', NULL, NULL, 'c_pg')
-(1247, 'cvc', '2009-11-13 08:37:53', 17, 102, '               TABLE, TRIGGER, VERSION, USERS, VIEW', NULL, NULL, 'c_pg')
-(1248, 'alexpeshkoff', '2009-11-13 17:49:10', 18, 26, '     user name                      uid   gid     full name', NULL, NULL, 'c_pg')
-(1249, 'alexpeshkoff', '2009-11-13 17:49:54', 18, 27, '------------------------------------------------------------------------------------------', NULL, NULL, 'c_pg')
-(1250, 'cvc', '2009-12-18 09:21:40', 12, 68, '    committing metadata', NULL, NULL, 'c_pg')
-(1251, 'cvc', '2009-12-18 08:21:50', 12, 196, 'restoring parameter @1 for stored procedure', NULL, NULL, 'c_pg')
-(1252, 'alexpeshkoff', '2012-06-23 05:40:21', 12, 266, 'standard output is not supported when using split operation', NULL, NULL, 'c_pg')
 stop
 
 COMMIT WORK;
+

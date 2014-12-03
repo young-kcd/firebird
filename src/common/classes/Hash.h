@@ -30,19 +30,18 @@
 
 #include "../common/classes/vector.h"
 
-namespace Firebird
-{
+namespace Firebird {
 	template <typename K>
 	class DefaultHash
 	{
 	public:
-		static FB_SIZE_T hash(const void* value, FB_SIZE_T length, FB_SIZE_T hashSize)
+		static size_t hash(const void* value, size_t length, size_t hashSize)
 		{
 			size_t sum = 0;
 			size_t val;
 
 			const char* data = static_cast<const char*>(value);
-
+			
 			while (length >= sizeof(size_t))
 			{
 				memcpy(&val, data, sizeof(size_t));
@@ -68,26 +67,30 @@ namespace Firebird
 			return rc % hashSize;
 		}
 
-		static FB_SIZE_T hash(const K& value, FB_SIZE_T hashSize)
+		static size_t hash(const K& value, size_t hashSize)
 		{
 			return hash(&value, sizeof value, hashSize);
 		}
 
+		const static size_t DEFAULT_SIZE = 97;		// largest prime number < 100
 	};
 
-	const FB_SIZE_T DEFAULT_HASH_SIZE = 97;			// largest prime number < 100
-
-	template <typename C,
-			  FB_SIZE_T HASHSIZE = DEFAULT_HASH_SIZE,
+	template <typename C, 
+			  size_t HASHSIZE = DefaultHash<C>::DEFAULT_SIZE,
 			  typename K = C,						// default key
 			  typename KeyOfValue = DefaultKeyValue<C>,	// default keygen
 			  typename F = DefaultHash<K> >			// hash function definition
 	class Hash
 	{
 	public:
-		// This class is supposed to be used as a BASE class for class to be hashed
+		class iterator;
+		friend class iterator;
+		class Entry;
+		friend class Entry;
+
 		class Entry
 		{
+			// This class is supposed to be used as a BASE class for class to be hashed
 		private:
 			Entry** previousElement;
 			Entry* nextElement;
@@ -99,7 +102,7 @@ namespace Firebird
 			{
 				unLink();
 			}
-
+			
 			void link(Entry** where)
 			{
 				unLink();
@@ -131,7 +134,7 @@ namespace Firebird
 					// ... and next pointer in previous element
 					*previousElement = nextElement;
 					// finally mark ourselves not linked
-					previousElement = NULL;
+					previousElement = 0;
 				}
 			}
 
@@ -145,12 +148,6 @@ namespace Firebird
 				return nextElement;
 			}
 
-			C* next(const K& key)
-			{
-				Entry* e = next();
-				return (e && e->isEqual(key)) ? e->get() : NULL;
-			}
-
 			virtual bool isEqual(const K&) const = 0;
 			virtual C* get() = 0;
 		}; // class Entry
@@ -160,48 +157,30 @@ namespace Firebird
 
 	public:
 		explicit Hash(MemoryPool&)
-			: duplicates(false)
 		{
-			clean();
+			memset(data, 0, sizeof data);
 		}
 
 		Hash()
-			: duplicates(false)
 		{
-			clean();
+			memset(data, 0, sizeof data);
 		}
 
 		~Hash()
 		{
-			// by default we let hash entries be cleaned by someone else
-			cleanup(NULL);
-		}
-
-		typedef void CleanupRoutine(C* toClean);
-		void cleanup(CleanupRoutine* cleanupRoutine)
-		{
-			for (FB_SIZE_T n = 0; n < HASHSIZE; ++n)
+			for (size_t n = 0; n < HASHSIZE; ++n)
 			{
 				while (data[n])
 				{
-					Entry* entry = data[n];
-					entry->unLink();
-					if (cleanupRoutine)
-						cleanupRoutine(entry->get());
+					 data[n]->unLink();
 				}
 			}
 		}
 
-		void enableDuplicates()
-		{
-			duplicates = true;
-		}
-
 	private:
 		Entry* data[HASHSIZE];
-		bool duplicates;
 
-		Entry** locate(const K& key, FB_SIZE_T h)
+		Entry** locate(const K& key, size_t h)
 		{
 			Entry** pointer = &data[h];
 			while (*pointer)
@@ -218,16 +197,14 @@ namespace Firebird
 
 		Entry** locate(const K& key)
 		{
-			FB_SIZE_T hashValue = F::hash(key, HASHSIZE);
-			fb_assert(hashValue < HASHSIZE);
-			return locate(key, hashValue % HASHSIZE);
+			return locate(key, F::hash(key, HASHSIZE) % HASHSIZE);
 		}
 
 	public:
 		bool add(C* value)
 		{
-			Entry** e = locate(KeyOfValue::generate(*value));
-			if ((!duplicates) && (*e))
+			Entry** e = locate(KeyOfValue::generate(this, *value));
+			if (*e)
 			{
 				return false;	// sorry, duplicate
 			}
@@ -257,17 +234,12 @@ namespace Firebird
 		// disable use of default operator=
 		Hash& operator= (const Hash&);
 
-		void clean()
-		{
-			memset(data, 0, sizeof data);
-		}
-
 	public:
 		class iterator
 		{
 		private:
 			const Hash* hash;
-			FB_SIZE_T elem;
+			size_t elem;
 			Entry* current;
 
 			iterator(const iterator& i);
@@ -275,7 +247,7 @@ namespace Firebird
 
 			void next()
 			{
-				while (!current)
+				while(!current)
 				{
 					if (++elem >= HASHSIZE)
 					{
@@ -329,6 +301,7 @@ namespace Firebird
 				return !(*this == h);
 			}
 		}; // class iterator
+
 	}; // class Hash
 
 } // namespace Firebird

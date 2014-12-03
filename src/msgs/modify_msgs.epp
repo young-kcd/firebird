@@ -24,8 +24,11 @@
 #include "firebird.h"
 #include <stdio.h>
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 
 #include <stdlib.h>
+
+
 
 
 DATABASE DB = "msg.fdb";
@@ -42,7 +45,7 @@ int main( int argc, char **argv)
  **************************************
  *
  * Functional description
- *	Top level routine.
+ *	Top level routine.  
  *
  **************************************/
 	SCHAR facility[20], newtext[256];
@@ -56,8 +59,7 @@ int main( int argc, char **argv)
 	READY;
 	START_TRANSACTION;
 
-	for (;;)
-	{
+	for (;;) {
 		printf("Facility: ");
 		if (!gets(facility))
 			break;
@@ -79,13 +81,10 @@ int main( int argc, char **argv)
 					const SCHAR* q = newtext;
 
 					/* translate scape sequences to single bytes */
-					while (*q)
-					{
-						if (*q == '\\')
-						{
+					while (*q) {
+						if (*q == '\\') {
 							*q++;
-							switch (*q)
-							{
+							switch (*q) {
 							case 'n':
 								*p++ = '\n';
 								break;
@@ -156,10 +155,8 @@ static void explicit_print( const TEXT* string)
  **************************************/
 	const TEXT* p = string;
 
-	while (*p)
-	{
-		switch (*p)
-		{
+	while (*p) {
+		switch (*p) {
 		case '\n':
 			putchar('\\');
 			putchar('n');

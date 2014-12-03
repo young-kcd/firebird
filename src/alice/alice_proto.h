@@ -1,3 +1,4 @@
+
 /*
  *	PROGRAM:	Alice (All Else) Utility
  *	MODULE:		alice_proto.h
@@ -24,19 +25,20 @@
 #ifndef ALICE_ALICE_PROTO_H
 #define ALICE_ALICE_PROTO_H
 
-#include "../common/ThreadData.h"
+#include "../jrd/thd.h"
 #include "../common/classes/MsgPrint.h"
-#include "../common/UtilSvc.h"
 
-int		ALICE_main(Firebird::UtilSvc*);
-int		alice(Firebird::UtilSvc*);
+#ifdef SERVICE_THREAD
+THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM);
+#endif
 
 class AliceGlobals;
 
-void	ALICE_upper_case(const TEXT*, TEXT*, const size_t);
+void	ALICE_down_case(const TEXT*, TEXT*, const size_t);
 void	ALICE_print(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
 void	ALICE_error(USHORT, const MsgFormat::SafeArg& arg = MsgFormat::SafeArg());
-void	ALICE_print_status(bool error, const ISC_STATUS*);
+void	ALICE_print_status(const ISC_STATUS*);
 void	ALICE_exit(int, AliceGlobals*);
 
 #endif // ALICE_ALICE_PROTO_H
+

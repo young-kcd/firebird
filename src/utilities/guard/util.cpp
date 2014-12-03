@@ -22,14 +22,18 @@
  */
 
 #include "firebird.h"
+#ifdef SOLARIS_MT
+#include <thread.h>
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>				// for open() and fcntl()
+#include <fcntl.h>				/* for open() and fcntl() */
 #include <errno.h>
 
 #ifdef HAVE_FLOCK
-#include <sys/file.h>			// for flock()
+#include <sys/file.h>			/* for flock() */
 #endif
 
 #ifdef HAVE_STRING_H
@@ -37,14 +41,14 @@
 #endif
 
 #ifdef HAVE_UNISTD_H
-#include <unistd.h>				// for fork()
+#include <unistd.h>				/* for fork() */
 #endif
 
 #ifdef HAVE_WAIT_H
-#include <wait.h>				// for waitpid()
+#include <wait.h>				/* for waitpid() */
 #endif
 
-#ifdef HAVE_SYS_WAIT_H
+#if HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #endif
 #ifndef WEXITSTATUS
@@ -55,14 +59,14 @@
 #endif
 
 
-#include "../common/gdsassert.h"
+#include "../jrd/common.h"
+#include "../jrd/gdsassert.h"
 #include "../utilities/guard/util_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/utils_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
 
 
-pid_t UTIL_start_process(const char* process, char** argv, const char* prog_name)
+pid_t UTIL_start_process(const char* process, char** argv)
 {
 /**************************************
  *
@@ -71,36 +75,35 @@ pid_t UTIL_start_process(const char* process, char** argv, const char* prog_name
  **************************************
  *
  * Functional description
- *
- *     This function is used to create the specified process,
+ *      
+ *     This function is used to create the specified process, 
  *
  * Returns Codes:
  *	-1		Process spawn failed.
- *	pid		Successful creation. PID is returned.
- *
- *     Note: Make sure that the argument list ends with a null
- *     and the first argument is large enough to hold the complete
+ *	pid		Successful creation. PID is returned. 
+ *      
+ *     Note: Make sure that the argument list ends with a null  
+ *     and the first argument is large enough to hold the complete 
  *     expanded process name. (MAXPATHLEN recommended)
  *
  **************************************/
+	TEXT string[MAXPATHLEN];
+
 	fb_assert(process != NULL);
 	fb_assert(argv != NULL);
 
-	// prepend Firebird home directory to the program name
-	Firebird::PathName string = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_SBIN, process);
+/* prepend Firebird home directory to the program name */
+	gds__prefix(string, process);
 
-	if (prog_name) {
-		gds__log("%s: guardian starting %s\n", prog_name, string.c_str());
-	}
-
-	// add place in argv for visibility to "ps"
-	strcpy(argv[0], string.c_str());
-#if (defined SOLARIS)
+/* add place in argv for visibility to "ps" */
+	strcpy(argv[0], string);
+#if (defined SOLARIS_MT)
 	pid_t pid = fork1();
-	if (!pid)
-	{
-		if (execv(string.c_str(), argv) == -1) {
-			//ib_fprintf(ib_stderr, "Could not create child process %s with args %s\n", string, argv);
+	if (!pid) {
+		if (execv(string, argv) == -1) {
+/*			ib_fprintf(ib_stderr, "Could not create child process %s with args %s\n",
+				   string, argv);
+*/
 		}
 		exit(FINI_ERROR);
 	}
@@ -108,9 +111,8 @@ pid_t UTIL_start_process(const char* process, char** argv, const char* prog_name
 #else
 
 	pid_t pid = vfork();
-	if (!pid)
-	{
-		execv(string.c_str(), argv);
+	if (!pid) {
+		execv(string, argv);
 		_exit(FINI_ERROR);
 	}
 #endif
@@ -127,7 +129,7 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
  **************************************
  *
  * Functional description
- *
+ *      
  *     This function is used to wait for the child specified by child_pid
  *
  * Return code:
@@ -141,7 +143,7 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 
 	fb_assert(child_pid != 0);
 
-	// wait for the child process with child_pid to exit
+/* wait for the child process with child_pid to exit */
 
 	while (waitpid(child_pid, &child_exit_status, 0) == -1)
 	{
@@ -149,15 +151,29 @@ int UTIL_wait_for_child(pid_t child_pid, const volatile sig_atomic_t& shutting_d
 		{
 			if (shutting_down)
 				return -2;
-			continue;
+			else
+				continue;
 		}
-		return (errno);
+		else
+			return (errno);
 	}
 
-	if (WIFEXITED(child_exit_status))
-		return WEXITSTATUS(child_exit_status);
+/* Check for very specific conditions before we assume the child
+   did a normal exit. */
 
-	return -1;
+	if (WIFEXITED(child_exit_status) && (WEXITSTATUS(child_exit_status) != 0))
+		return (WEXITSTATUS(child_exit_status));
+
+	if (
+#ifndef AIX_PPC
+		   WCOREDUMP(child_exit_status) ||
+#endif
+		   WIFSIGNALED(child_exit_status) || !WIFEXITED(child_exit_status))
+	{
+		return (-1);
+	}
+
+	return (0);
 }
 
 
@@ -168,7 +184,8 @@ void alrm_handler(int)
 }
 
 
-int UTIL_shutdown_child(pid_t child_pid, unsigned timeout_term, unsigned timeout_kill)
+int UTIL_shutdown_child(pid_t child_pid,
+	unsigned timeout_term, unsigned timeout_kill)
 {
 /**************************************
  *
@@ -177,7 +194,7 @@ int UTIL_shutdown_child(pid_t child_pid, unsigned timeout_term, unsigned timeout
  **************************************
  *
  * Functional description
- *
+ *      
  *     Terminates child using TERM signal, then KILL if it does not finish
  *     within specified timeout
  *
@@ -230,12 +247,12 @@ int UTIL_ex_lock(const TEXT* file)
 {
 /**************************************
  *
- *      U T I L _ e x _ l o c k
+ *      U T I L _ e x _ l o c k              
  *
  **************************************
  *
  * Functional description
- *
+ *  
  *     This function is used to exclusively lock a file.
  *
  * Return Codes:
@@ -245,21 +262,24 @@ int UTIL_ex_lock(const TEXT* file)
  *
  **************************************/
 
-	// get the file name and prepend the complete path etc
-	Firebird::PathName expanded_filename = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_GUARD, file);
+	TEXT expanded_filename[MAXPATHLEN], tmp[MAXPATHLEN], hostname[64];
 
-	// file fd for the opened and locked file
-	int fd_file = open(expanded_filename.c_str(), O_RDWR | O_CREAT, 0660);
-	if (fd_file == -1)
-	{
-		fprintf(stderr, "Could not open %s for write\n", expanded_filename.c_str());
+/* get the file name and prepend the complete path etc */
+	gds__prefix_lock(tmp, file);
+	sprintf(expanded_filename, tmp, ISC_get_host(hostname, sizeof(hostname)));
+
+/* file fd for the opened and locked file */
+	int fd_file = open(expanded_filename, O_RDWR | O_CREAT, 0666);
+	if (fd_file == -1) {
+		fprintf(stderr, "Could not open %s for write\n",
+				   expanded_filename);
 		return (-1);
 	}
 
 	fb_assert(fd_file != -2);
 
 #ifndef HAVE_FLOCK
-	// get an exclusive lock on the GUARD file without blocking on the call
+/* get an exclusive lock on the GUARD file without blocking on the call */
 	struct flock lock;
 	lock.l_type = F_WRLCK;
 	lock.l_whence = 0;
@@ -281,12 +301,12 @@ void UTIL_ex_unlock( int fd_file)
 {
 /**************************************
  *
- *      U T I L _ e x _ l o c k
+ *      U T I L _ e x _ l o c k              
  *
  **************************************
  *
  * Functional description
- *
+ *  
  *     This function is used to unlock the exclusive file.
  *
  **************************************/
@@ -296,7 +316,7 @@ void UTIL_ex_unlock( int fd_file)
 
 	struct flock lock;
 
-	// get an exclusive lock on the GUARD file with a block
+/* get an exclusive lock on the GUARD file with a block */
 	lock.l_type = F_UNLCK;
 	lock.l_whence = 0;
 	lock.l_start = 0;
@@ -313,12 +333,12 @@ int UTIL_set_handler(int sig, void (*handler) (int), bool restart)
 {
 /**************************************
  *
- *      U T I L _ s e t _ h a n d l e r
+ *      U T I L _ s e t _ h a n d l e r      
  *
  **************************************
  *
  * Functional description
- *
+ *  
  *     This function sets signal handler
  *
  **************************************/

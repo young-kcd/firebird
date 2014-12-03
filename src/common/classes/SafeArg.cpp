@@ -25,17 +25,18 @@
  *
  */
 
-
+ 
 // Localized messages type-safe printing facility.
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "SafeArg.h"
 
 namespace MsgFormat
 {
 
 // This is just a silly convenience in case all arguments are of type int.
-SafeArg::SafeArg(const int val[], FB_SIZE_T v_size)
+SafeArg::SafeArg(const int val[], size_t v_size)
 	: m_extras(0)
 {
 	if (v_size > SAFEARG_MAX_ARG)
@@ -43,7 +44,7 @@ SafeArg::SafeArg(const int val[], FB_SIZE_T v_size)
 
 	m_count = v_size;
 
-	for (FB_SIZE_T a_count = 0; a_count < m_count; ++a_count)
+	for (size_t a_count = 0; a_count < m_count; ++a_count)
 	{
 		m_arguments[a_count].i_value = val[a_count];
 		m_arguments[a_count].type = safe_cell::at_int64;
@@ -228,6 +229,7 @@ SafeArg& SafeArg::operator<<(const char* c)
 	if (m_count < SAFEARG_MAX_ARG)
 	{
 		m_arguments[m_count].st_value.s_string = c;
+		m_arguments[m_count].st_value.s_len = 0; // Just to clear field.
 		m_arguments[m_count].type = safe_cell::at_str;
 		++m_count;
 	}
@@ -239,7 +241,20 @@ SafeArg& SafeArg::operator<<(const unsigned char* c)
 	if (m_count < SAFEARG_MAX_ARG)
 	{
 		m_arguments[m_count].st_value.s_string = reinterpret_cast<const char*>(c);
+		m_arguments[m_count].st_value.s_len = 0; // Just to clear field.
 		m_arguments[m_count].type = safe_cell::at_str;
+		++m_count;
+	}
+	return *this;
+}
+
+SafeArg& SafeArg::operator<<(const counted_string& c)
+{
+	if (m_count < SAFEARG_MAX_ARG)
+	{
+		m_arguments[m_count].st_value.s_string = c.cs_string;
+		m_arguments[m_count].st_value.s_len = c.cs_len;
+		m_arguments[m_count].type = safe_cell::at_counted_str;
 		++m_count;
 	}
 	return *this;
@@ -262,9 +277,9 @@ SafeArg& SafeArg::operator<<(void* c)
 // converted to null pointer and void* to TEXT*. Supposedly, the caller has
 // information on the real types of the values. This can be done with a loop
 // using getCount() and getCell() and looking at the safe_cell's type data member.
-void SafeArg::dump(const TEXT* target[], FB_SIZE_T v_size) const
+void SafeArg::dump(const TEXT* target[], size_t v_size) const
 {
-	for (FB_SIZE_T i = 0; i < v_size; ++i)
+	for (size_t i = 0; i < v_size; ++i)
 	{
 		if (i >= m_count)
 		{
@@ -295,6 +310,9 @@ void SafeArg::dump(const TEXT* target[], FB_SIZE_T v_size) const
 		case safe_cell::at_str:
 			target[i] = m_arguments[i].st_value.s_string;
 			break;
+		case safe_cell::at_counted_str:
+			target[i] = 0; // We can't represent them here.
+			break;
 		case safe_cell::at_ptr:
 			target[i] = static_cast<TEXT*>(m_arguments[i].p_value);
 			break;
@@ -307,13 +325,13 @@ void SafeArg::dump(const TEXT* target[], FB_SIZE_T v_size) const
 
 // Get one specific cell. If out of range, a cell with invalid type (at_none)
 // is returned.
-const safe_cell& SafeArg::getCell(FB_SIZE_T index) const
+const safe_cell& SafeArg::getCell(size_t index) const
 {
-	static safe_cell aux_cell = {safe_cell::at_none, {0}};
-
+	static safe_cell aux_cell = {safe_cell::at_none, 0};
+	
 	if (index < m_count)
 		return m_arguments[index];
-
+		
 	return aux_cell;
 }
 

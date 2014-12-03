@@ -2,7 +2,7 @@
  *	PROGRAM:	string class definition
  *	MODULE:		fb_string.cpp
  *	DESCRIPTION:	Provides almost that same functionality,
- *			that STL::basic_string<char> does,
+ *			that STL::basic_string<char> does, 
  *			but behaves MemoryPools friendly.
  *
  *  The contents of this file are subject to the Initial
@@ -38,12 +38,9 @@
 #ifdef HAVE_STRICMP
 #define STRNCASECMP strnicmp
 #else
-namespace
-{
-	int StringIgnoreCaseCompare(const char* s1, const char* s2, unsigned int l)
-	{
-		while (l--)
-		{
+namespace {
+	int StringIgnoreCaseCompare(const char* s1, const char* s2, unsigned int l) {
+		while (l--) {
 			const int delta = toupper(*s1++) - toupper(*s2++);
 			if (delta) {
 				return delta;
@@ -57,54 +54,43 @@ namespace
 #endif // HAVE_STRCASECMP
 
 namespace {
-	class strBitMask
-	{
+	class strBitMask {
 	private:
 		char m[32];
 	public:
-		strBitMask(Firebird::AbstractString::const_pointer s, Firebird::AbstractString::size_type l)
-		{
+		strBitMask(Firebird::AbstractString::const_pointer s, Firebird::AbstractString::size_type l) {
 			memset(m, 0, sizeof(m));
 			if (l == Firebird::AbstractString::npos) {
-				l = static_cast<Firebird::AbstractString::size_type>(strlen(s));
+				l = strlen(s);
 			}
 			Firebird::AbstractString::const_pointer end = s + l;
-			while (s < end)
-			{
+			while (s < end) {
 				const unsigned char uc = static_cast<unsigned char>(*s++);
 				m[uc >> 3] |= (1 << (uc & 7));
 			}
 		}
-		inline bool Contains(const char c) const
-		{
+		inline bool Contains(const char c) const {
 			const unsigned char uc = static_cast<unsigned char>(c);
 			return m[uc >> 3] & (1 << (uc & 7));
 		}
 	};
-
 } // namespace
 
-namespace Firebird
-{
-	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(~0);
+namespace Firebird {
+	const AbstractString::size_type AbstractString::npos = (AbstractString::size_type)(-1);
 
-	AbstractString::AbstractString(const size_type limit, const AbstractString& v)
-		: max_length(static_cast<internal_size_type>(limit))
-	{
+	AbstractString::AbstractString(const AbstractString& v) {
 		initialize(v.length());
 		memcpy(stringBuffer, v.c_str(), v.length());
 	}
 
-	AbstractString::AbstractString(const size_type limit, const size_type sizeL, const void* dataL)
-		: max_length(static_cast<internal_size_type>(limit))
-	{
+	AbstractString::AbstractString(size_type sizeL, const_pointer dataL) {
 		initialize(sizeL);
 		memcpy(stringBuffer, dataL, sizeL);
 	}
 
-	AbstractString::AbstractString(const size_type limit, const_pointer p1, const size_type n1,
-				 const_pointer p2, const size_type n2)
-		: max_length(static_cast<internal_size_type>(limit))
+	AbstractString::AbstractString(const_pointer p1, size_type n1, 
+				 const_pointer p2, size_type n2)
 	{
 		// CVC: npos must be maximum size_type value for all platforms.
 		// fb_assert(n2 < npos - n1 && n1 + n2 <= max_length());
@@ -118,30 +104,25 @@ namespace Firebird
 		memcpy(stringBuffer + n1, p2, n2);
 	}
 
-	AbstractString::AbstractString(const size_type limit, const size_type sizeL, char_type c)
-		: max_length(static_cast<internal_size_type>(limit))
-	{
+	AbstractString::AbstractString(size_type sizeL, char_type c) {
 		initialize(sizeL);
 		memset(stringBuffer, c, sizeL);
 	}
-
-	void AbstractString::adjustRange(const size_type length, size_type& pos, size_type& n) throw()
-	{
+	
+	void AbstractString::AdjustRange(size_type length, size_type& pos, size_type& n) {
 		if (pos == npos) {
 			pos = length > n ? length - n : 0;
 		}
-		if (pos >= length)
-		{
+		if (pos >= length) {
 			pos = length;
 			n = 0;
 		}
-		else if (n > length || pos + n > length || n == npos) {
+		else if (pos + n > length || n == npos) {
 			n = length - pos;
 		}
 	}
 
-	AbstractString::pointer AbstractString::baseAssign(const size_type n)
-	{
+	AbstractString::pointer AbstractString::baseAssign(size_type n) {
 		reserveBuffer(n);
 		stringLength = n;
 		stringBuffer[stringLength] = 0;
@@ -149,51 +130,45 @@ namespace Firebird
 		return stringBuffer;
 	}
 
-	AbstractString::pointer AbstractString::baseAppend(const size_type n)
-	{
-		fb_assert(stringLength < FB_MAX_SIZEOF - n);
+	AbstractString::pointer AbstractString::baseAppend(size_type n) {
 		reserveBuffer(stringLength + n);
 		stringLength += n;
 		stringBuffer[stringLength] = 0; // Set null terminator inside the new buffer
 		return stringBuffer + stringLength - n;
 	}
 
-	AbstractString::pointer AbstractString::baseInsert(const size_type p0, const size_type n)
-	{
+	AbstractString::pointer AbstractString::baseInsert(size_type p0, size_type n) {
 		if (p0 >= length()) {
 			return baseAppend(n);
 		}
 		reserveBuffer(stringLength + n);
-		// Do not forget to move null terminator, too
-		memmove(stringBuffer + p0 + n, stringBuffer + p0, stringLength - p0 + 1);
+		memmove(stringBuffer + p0 + n, stringBuffer + p0, 
+				stringLength - p0 + 1); // Do not forget to move null terminator too
 		stringLength += n;
 		return stringBuffer + p0;
 	}
 
-	void AbstractString::baseErase(size_type p0, size_type n) throw()
-	{
-		adjustRange(length(), p0, n);
-		memmove(stringBuffer + p0, stringBuffer + p0 + n, stringLength - (p0 + n) + 1);
+	void AbstractString::baseErase(size_type p0, size_type n) {
+		AdjustRange(length(), p0, n);
+		memmove(stringBuffer + p0, 
+				stringBuffer + p0 + n, stringLength - (p0 + n) + 1);
 		stringLength -= n;
 		shrinkBuffer();
 	}
 
-	void AbstractString::reserve(size_type n)
-	{
+	void AbstractString::reserve(size_type n) {
 		// Do not allow to reserve huge buffers
-		if (n > getMaxLength())
-			n = getMaxLength();
+		if (n > max_length())
+			n = max_length();
 
 		reserveBuffer(n);
 	}
 
-	void AbstractString::resize(const size_type n, char_type c)
-	{
+	void AbstractString::resize(size_type n, char_type c) {
 		if (n == length()) {
 			return;
 		}
-		if (n > stringLength)
-		{
+		if (n > stringLength) {
 			reserveBuffer(n);
 			memset(stringBuffer + stringLength, c, n - stringLength);
 		}
@@ -202,9 +177,8 @@ namespace Firebird
 		shrinkBuffer();
 	}
 
-	AbstractString::size_type AbstractString::rfind(const_pointer s, const size_type pos) const
-	{
-		const size_type l = static_cast<size_type>(strlen(s));
+	AbstractString::size_type AbstractString::rfind(const_pointer s, size_type pos) const {
+		const size_type l = strlen(s);
 		int lastpos = length() - l;
 		if (lastpos < 0) {
 			return npos;
@@ -222,8 +196,7 @@ namespace Firebird
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::rfind(char_type c, const size_type pos) const
-	{
+	AbstractString::size_type AbstractString::rfind(char_type c, size_type pos) const {
 		int lastpos = length() - 1;
 		if (lastpos < 0) {
 			return npos;
@@ -241,12 +214,10 @@ namespace Firebird
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::find_first_of(const_pointer s, size_type pos, size_type n) const
-	{
+	AbstractString::size_type AbstractString::find_first_of(const_pointer s, size_type pos, size_type n) const {
 		const strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
-		while (pos < length())
-		{
+		while (pos < length()) {
 			if (sm.Contains(*p++)) {
 				return pos;
 			}
@@ -255,16 +226,14 @@ namespace Firebird
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::find_last_of(const_pointer s, const size_type pos, size_type n) const
-	{
+	AbstractString::size_type AbstractString::find_last_of(const_pointer s, size_type pos, size_type n) const {
 		const strBitMask sm(s, n);
 		int lpos = length() - 1;
 		if (static_cast<int>(pos) < lpos && pos != npos) {
 			lpos = pos;
 		}
 		const_pointer p = &c_str()[lpos];
-		while (lpos >= 0)
-		{
+		while (lpos >= 0) {
 			if (sm.Contains(*p--)) {
 				return lpos;
 			}
@@ -273,12 +242,10 @@ namespace Firebird
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::find_first_not_of(const_pointer s, size_type pos, size_type n) const
-	{
+	AbstractString::size_type AbstractString::find_first_not_of(const_pointer s, size_type pos, size_type n) const {
 		const strBitMask sm(s, n);
 		const_pointer p = &c_str()[pos];
-		while (pos < length())
-		{
+		while (pos < length()) {
 			if (! sm.Contains(*p++)) {
 				return pos;
 			}
@@ -287,16 +254,14 @@ namespace Firebird
 		return npos;
 	}
 
-	AbstractString::size_type AbstractString::find_last_not_of(const_pointer s, const size_type pos, size_type n) const
-	{
+	AbstractString::size_type AbstractString::find_last_not_of(const_pointer s, size_type pos, size_type n) const {
 		const strBitMask sm(s, n);
 		int lpos = length() - 1;
 		if (static_cast<int>(pos) < lpos && pos != npos) {
 			lpos = pos;
 		}
 		const_pointer p = &c_str()[lpos];
-		while (lpos >= 0)
-		{
+		while (lpos >= 0) {
 			if (! sm.Contains(*p--)) {
 				return lpos;
 			}
@@ -305,16 +270,13 @@ namespace Firebird
 		return npos;
 	}
 
-	bool AbstractString::LoadFromFile(FILE* file)
-	{
+	bool AbstractString::LoadFromFile(FILE *file) {
 		baseErase(0, length());
 		if (! file)
 			return false;
-
 		bool rc = false;
 		int c;
-		while ((c = getc(file)) != EOF)
-		{
+		while ((c = getc(file)) != EOF) {
 			rc = true;
 			if (c == '\n') {
 				break;
@@ -334,47 +296,40 @@ extern "C" {
 }
 #endif // WIN_NT
 
-	void AbstractString::upper()
-	{
+	void AbstractString::upper() {
 #ifdef WIN_NT
-		CharUpperBuffA(modify(), length());
+			CharUpperBuffA(Modify(), length());
 #else  // WIN_NT
-		for (pointer p = modify(); *p; p++) {
+		for (pointer p = Modify(); *p; p++) {
 			*p = toupper(*p);
 		}
 #endif // WIN_NT
 	}
 
-	void AbstractString::lower()
-	{
+	void AbstractString::lower() {
 #ifdef WIN_NT
-		CharLowerBuffA(modify(), length());
+			CharLowerBuffA(Modify(), length());
 #else  // WIN_NT
-		for (pointer p = modify(); *p; p++) {
+		for (pointer p = Modify(); *p; p++) {
 			*p = tolower(*p);
 		}
 #endif // WIN_NT
 	}
 
-	void AbstractString::baseTrim(const TrimType whereTrim, const_pointer toTrim)
-	{
-		const strBitMask sm(toTrim, static_cast<size_type>(strlen(toTrim)));
+	void AbstractString::baseTrim(TrimType WhereTrim, const_pointer ToTrim) {
+		const strBitMask sm(ToTrim, strlen(ToTrim));
 		const_pointer b = c_str();
-		const_pointer e = c_str() + length() - 1;
-		if (whereTrim != TrimRight)
-		{
-			while (b <= e)
-			{
+		const_pointer e = &c_str()[length() - 1];
+		if (WhereTrim != TrimRight) {
+			while (b <= e) {
 				if (! sm.Contains(*b)) {
 					break;
 				}
 				++b;
 			}
 		}
-		if (whereTrim != TrimLeft)
-		{
-			while (b <= e)
-			{
+		if (WhereTrim != TrimLeft) {
+			while (b <= e) {
 				if (! sm.Contains(*e)) {
 					break;
 				}
@@ -395,8 +350,7 @@ extern "C" {
 		shrinkBuffer();
 	}
 
-	void AbstractString::printf(const char* format,...)
-	{
+	void AbstractString::printf(const char* format,...) {
 		va_list params;
 		va_start(params, format);
 		vprintf(format, params);
@@ -412,48 +366,43 @@ extern "C" {
 #define FB_CLOSE_VACOPY(to)
 #endif
 
-	void AbstractString::vprintf(const char* format, va_list params)
-	{
+	void AbstractString::vprintf(const char* format, va_list params) {
 #ifndef HAVE_VSNPRINTF
 #error NS: I am lazy to implement version of this routine based on plain vsprintf.
 #error Please find an implementation of vsnprintf function for your platform.
 #error For example, consider importing library from http://www.ijs.si/software/snprintf/
 #error to Firebird extern repository
 #endif
-		enum { tempsize = 256 };
+		enum {tempsize = 256};
 		char temp[tempsize];
 		va_list paramsCopy;
 		FB_VA_COPY(paramsCopy, params);
 		int l = VSNPRINTF(temp, tempsize, format, paramsCopy);
 		FB_CLOSE_VACOPY(paramsCopy);
-		if (l < 0)
-		{
+		if (l < 0) {
 			size_type n = sizeof(temp);
-			while (true)
-			{
+			while (true) {
 				n *= 2;
-				if (n > getMaxLength())
-					n = getMaxLength();
+				if (n > max_length())
+					n = max_length();
 				FB_VA_COPY(paramsCopy, params);
 				l = VSNPRINTF(baseAssign(n), n + 1, format, paramsCopy);
 				FB_CLOSE_VACOPY(paramsCopy);
 				if (l >= 0)
 					break;
-				if (n >= getMaxLength())
-				{
-					stringBuffer[getMaxLength()] = 0;
+				if (n >= max_length()) {
+					stringBuffer[max_length()] = 0;
 					return;
 				}
 			}
 			resize(l);
-			return;
+			return;	
 		}
 		temp[tempsize - 1] = 0;
 		if (l < tempsize) {
 			memcpy(baseAssign(l), temp, l);
 		}
-		else
-		{
+		else {
 			resize(l);
 			FB_VA_COPY(paramsCopy, params);
 			VSNPRINTF(begin(), l + 1, format, paramsCopy);
@@ -461,42 +410,35 @@ extern "C" {
 		}
 	}
 
-	unsigned int AbstractString::hash(const_pointer string, const size_type tableSize)
+	void AbstractString::appendQuoted(const AbstractString& from, char_type quote)
 	{
-		unsigned int value = 0;
-		unsigned char c;
-
-		while ((c = *string++))
+		const_pointer p;
+		const_pointer end = from.c_str() + from.length();
+		size_type nQuotes = 2;	// 2 bytes for leading and trailing quotes
+		for (p = from.c_str(); p < end; ++p)
 		{
-			c = toupper(c);
-			value = value * 11 + c;
+			if (*p == quote)
+			{
+				++nQuotes;
+			}
 		}
 
-		return value % tableSize;
-	}
-
-	bool AbstractString::equalsNoCase(AbstractString::const_pointer string) const
-	{
-		size_t l = strlen(string);
-		if (l > length())
+		pointer s = baseAppend(from.length() + nQuotes);
+		*s++ = quote;
+		for (p = from.c_str(); p < end; ++p)
 		{
-			l = length();
+			if (*p == quote)
+			{
+				*s++ = quote;
+			}
+			*s++ = *p;
 		}
-		return (STRNCASECMP(c_str(), string, ++l) == 0);
+		*s++ = quote;
 	}
 
-	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2,
-		const AbstractString::size_type n)
-	{
+	int PathNameComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2, AbstractString::size_type n) {
 		if (CASE_SENSITIVITY)
 			return memcmp(s1, s2, n);
-
 		return STRNCASECMP(s1, s2, n);
-	}
-
-	int IgnoreCaseComparator::compare(AbstractString::const_pointer s1, AbstractString::const_pointer s2,
-		const AbstractString::size_type n)
-	{
-		return STRNCASECMP(s1, s2, n);
-	}
+	} 
 }	// namespace Firebird

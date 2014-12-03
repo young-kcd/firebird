@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="fbserver"
 	ProjectGUID="{23EC8DAA-6718-4EF3-979F-89F611C7D504}"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -18,7 +19,6 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
@@ -65,12 +65,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="$(OutDir)\firebird.exe"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
-				ModuleDefinitionFile=""
 				SubSystem="2"
 				StackReserveSize="2097152"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -91,15 +93,11 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2release.vsprops"
 			UseOfMFC="0"
@@ -146,12 +144,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="$(OutDir)\firebird.exe"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/$(ConfigurationName)/lib"
-				ModuleDefinitionFile=""
 				SubSystem="2"
-				StackReserveSize="4194304"
+				StackReserveSize="2097152"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -173,15 +173,11 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
@@ -225,12 +221,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="$(OutDir)\firebird.exe"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
-				ModuleDefinitionFile=""
 				SubSystem="2"
 				StackReserveSize="2097152"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -251,15 +249,11 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops;.\firebird2.vsprops;.\firebird2debug.vsprops"
 			UseOfMFC="0"
@@ -304,12 +298,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
-				OutputFile="$(OutDir)\firebird.exe"
+				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib icuuc.lib"
+				OutputFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\firebird\bin\$(ProjectName).exe"
+				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../../extern/icu/$(PlatformName)/release/lib"
-				ModuleDefinitionFile=""
 				SubSystem="2"
-				StackReserveSize="4194304"
+				StackReserveSize="2097152"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -331,9 +327,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -342,18 +335,14 @@
 	</References>
 	<Files>
 		<Filter
-			Name="AUTH files"
+			Name="UTILITIES files"
 			>
 			<File
-				RelativePath="..\..\..\src\auth\SecurityDatabase\LegacyServer.cpp"
+				RelativePath="..\..\..\gen\$(PlatformName)\utilities\gstat\dba.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\auth\SecureRemotePassword\server\SrpServer.h"
+				RelativePath="..\..\..\src\utilities\gstat\ppg.cpp"
 				>
 			</File>
 		</Filter>
@@ -362,44 +351,48 @@
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 			>
 			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\caution.ico"
+				RelativePath="..\..\..\src\remote\os\win32\caution.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\server.ico"
+				RelativePath="..\..\..\src\remote\os\win32\server.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\window.rc"
+				RelativePath="..\..\..\src\remote\os\win32\window.rc"
 				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Remote server"
-			>
-			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\chop.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\cntl.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\property.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\server\server.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\srvr_w32.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\src\remote\server\os\win32\window.cpp"
-				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories="..\..\..\src\remote;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories="..\..\..\src\remote;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories="..\..\..\src\remote;$(NoInherit)"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories="..\..\..\src\remote;$(NoInherit)"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

@@ -10,7 +10,22 @@
 
 	<?define COMMENTS = "This MSI specially created for Firebird." ?>
 
+	<!-- This is a hard-coded path but localized versions of windows use
+		 different paths. -->
 	<?define MMDIR = "C:\Program Files (x86)\Common Files\Merge Modules" ?>
+
+	<!-- This is the correct way to do it, but WiX 2.0 has a bug that
+		 doesn't recognise the CommonProgramFiles(x86) env var.
+		 It is fixed in WiX v3.0 but we are not yet ready to use v3 
+		 in production.
+	<?ifdef env.CommonProgramFiles(x86) ?>
+	<?define commonProgramFiles = $(env.CommonProgramFiles(x86)) ?>
+	<?else?>
+	<?define commonProgramFiles =  $(env.CommonProgramFiles)?>
+	<?endif?>
+	<?define MMDIR = "$(var.commonProgramFiles)\Merge Modules" ?>
+
+	-->
 
 	<?define MANUFACTURER = "The Firebird Project" ?>
 

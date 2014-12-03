@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# This runs after firebird archive is opened
+
+origDir=`pwd`
+
+
+# Update /etc/services
+newLine="@FB_SERVICE_NAME@          @FB_SERVICE_PORT@/tcp  # Firebird SQL Database Remote Protocol"
+replaceLineInFile /etc/services "$newLine" "^@FB_SERVICE_NAME@"
+
+# Update ownership of files
+if [ $RunUser = firebird ]
+then
+    # Prepare firebird user
+	addFirebirdUser
+fi
+
+# Create the fbmgr shell script.
+cat > $FBBin/fbmgr <<EOF
+#!/bin/sh
+FIREBIRD=$FBRootDir
+export FIREBIRD
+exec \$FIREBIRD/bin/fbmgr.bin \$@
+EOF
+
+# proceed with install tasks
+fixFilePermissions
+installInitdScript
+createLinksForBackCompatibility
+buildUninstallFile
+
+# start the db server so we can change the password
+startService
+
+# Change sysdba password
+cd $FBRootDir
+changeDBAPassword

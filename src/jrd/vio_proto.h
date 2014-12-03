@@ -34,71 +34,40 @@ namespace Jrd {
 	struct record_param;
 	class Savepoint;
 	class Format;
-	class TraceSweepEvent;
 }
 
 void	VIO_backout(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
-bool	VIO_chase_record_version(Jrd::thread_db*, Jrd::record_param*,
-									Jrd::jrd_tra*, MemoryPool*, bool);
-void	VIO_copy_record(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
-void	VIO_data(Jrd::thread_db*, Jrd::record_param*, MemoryPool*);
+void	VIO_bump_count(Jrd::thread_db*, USHORT, Jrd::jrd_rel*);
+bool	VIO_chase_record_version(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*,
+									Jrd::jrd_tra*, JrdMemoryPool*, bool);
+void	VIO_data(Jrd::thread_db*, Jrd::record_param*, JrdMemoryPool*);
 void	VIO_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
+#ifdef GARBAGE_THREAD
 void	VIO_fini(Jrd::thread_db*);
+#endif
 bool	VIO_garbage_collect(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
 Jrd::Record*	VIO_gc_record(Jrd::thread_db*, Jrd::jrd_rel*);
-bool	VIO_get(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, MemoryPool*);
-bool	VIO_get_current(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*,
-						MemoryPool*, bool, bool&);
+bool	VIO_get(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*, JrdMemoryPool*);
+bool	VIO_get_current(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*, JrdMemoryPool*, bool, bool&);
+#ifdef GARBAGE_THREAD
 void	VIO_init(Jrd::thread_db*);
+#endif
 void	VIO_merge_proc_sav_points(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::Savepoint**);
-bool	VIO_writelock(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
+bool	VIO_writelock(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, Jrd::jrd_tra*);
 void	VIO_modify(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*, Jrd::jrd_tra*);
-bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, MemoryPool*, bool);
-Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*, MemoryPool*);
-bool	VIO_refetch_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, bool);
+bool	VIO_next_record(Jrd::thread_db*, Jrd::record_param*, Jrd::RecordSource*, 
+						Jrd::jrd_tra*, JrdMemoryPool*, 
+#ifdef SCROLLABLE_CURSORS
+						bool, 
+#endif
+						bool);
+Jrd::Record*	VIO_record(Jrd::thread_db*, Jrd::record_param*, const Jrd::Format*, JrdMemoryPool*);
+void	VIO_refetch_record(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void	VIO_start_save_point(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_store(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
-bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceSweepEvent*);
+bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
 IPTR	VIO_savepoint_large(const Jrd::Savepoint*, IPTR);
-void	VIO_temp_cleanup(Jrd::jrd_tra*);
-
-namespace Jrd
-{
-	// Starts a savepoint and rollback it in destructor if release() is not called.
-	class AutoSavePoint
-	{
-	public:
-		AutoSavePoint(thread_db* tdbb, jrd_tra* aTransaction);
-		~AutoSavePoint();
-
-		void release()
-		{
-			released = true;
-		}
-
-	private:
-		jrd_tra* transaction;
-		bool released;
-	};
-
-	class StableCursorSavePoint
-	{
-	public:
-		StableCursorSavePoint(thread_db* tdbb, jrd_tra* transaction, bool start);
-
-		~StableCursorSavePoint()
-		{
-			release();
-		}
-
-		void release();
-
-	private:
-		thread_db* m_tdbb;
-		jrd_tra* m_tran;
-		SLONG m_number;
-	};
-}
 
 #endif // JRD_VIO_PROTO_H
+

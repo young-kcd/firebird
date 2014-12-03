@@ -24,38 +24,10 @@
 #ifndef DSQL_PASS1_PROTO_H
 #define DSQL_PASS1_PROTO_H
 
-namespace Jrd
-{
-	class CompoundStmtNode;
-	class DeclareCursorNode;
-	class DsqlMapNode;
-	class ExprNode;
-	class RecordSourceNode;
-	class RseNode;
-	class SelectExprNode;
-	class ValueExprNode;
-	class ValueListNode;
-}
-
-void PASS1_ambiguity_check(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&, const Jrd::DsqlContextStack&);
-void PASS1_check_unique_fields_names(Jrd::StrArray& names, const Jrd::CompoundStmtNode* fields);
-Jrd::BoolExprNode* PASS1_compose(Jrd::BoolExprNode*, Jrd::BoolExprNode*, UCHAR);
-Jrd::DeclareCursorNode* PASS1_cursor_name(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&, USHORT, bool);
-Jrd::RseNode* PASS1_derived_table(Jrd::DsqlCompilerScratch*, Jrd::SelectExprNode*, const char*, bool);
-void PASS1_expand_select_node(Jrd::DsqlCompilerScratch*, Jrd::ExprNode*, Jrd::ValueListNode*, bool);
-void PASS1_field_unknown(const TEXT*, const TEXT*, const Jrd::ExprNode*);
-void PASS1_limit(Jrd::DsqlCompilerScratch*, NestConst<Jrd::ValueExprNode>,
-	NestConst<Jrd::ValueExprNode>, Jrd::RseNode*);
-Jrd::ValueExprNode* PASS1_lookup_alias(Jrd::DsqlCompilerScratch*, const Firebird::MetaName&,
-	Jrd::ValueListNode*, bool);
-Jrd::dsql_ctx* PASS1_make_context(Jrd::DsqlCompilerScratch* statement, Jrd::RecordSourceNode* relationNode);
-bool PASS1_node_match(const Jrd::ExprNode*, const Jrd::ExprNode*, bool);
-Jrd::DsqlMapNode* PASS1_post_map(Jrd::DsqlCompilerScratch*, Jrd::ValueExprNode*, Jrd::dsql_ctx*,
-	Jrd::ValueListNode*, Jrd::ValueListNode*);
-Jrd::RecordSourceNode* PASS1_relation(Jrd::DsqlCompilerScratch*, Jrd::RecordSourceNode*);
-Jrd::RseNode* PASS1_rse(Jrd::DsqlCompilerScratch*, Jrd::SelectExprNode*, bool);
-bool PASS1_set_parameter_type(Jrd::DsqlCompilerScratch*, Jrd::ValueExprNode*, const dsc*, bool);
-bool PASS1_set_parameter_type(Jrd::DsqlCompilerScratch*, Jrd::ValueExprNode*, Jrd::ValueExprNode*, bool);
-Jrd::ValueListNode* PASS1_sort(Jrd::DsqlCompilerScratch*, Jrd::ValueListNode*, Jrd::ValueListNode*);
+dsql_ctx* PASS1_make_context(dsql_req* request, const dsql_nod* relation_node);
+dsql_nod* PASS1_node(dsql_req*, dsql_nod*, bool);
+dsql_nod* PASS1_rse(dsql_req*, dsql_nod*, dsql_nod*);
+dsql_nod* PASS1_statement(dsql_req*, dsql_nod*, bool);
 
 #endif // DSQL_PASS1_PROTO_H
+

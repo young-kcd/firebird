@@ -20,6 +20,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include "../jrd/common.h"
 
 typedef struct {
 	unsigned int codepoint;
@@ -61,10 +62,8 @@ main(int argc, char *argv[])
 	int usage = 0;
 	char *filename = NULL;
 
-	for (i = 1; i < argc && !usage; i++)
-	{
-		if (argv[i][0] == '-')
-		{
+	for (i = 1; i < argc && !usage; i++) {
+		if (argv[i][0] == '-') {
 			if (strcmp(argv[i], "-euc") == 0)
 				option_euc++;
 			else if (strcmp(argv[i], "-sjis") == 0)
@@ -80,16 +79,14 @@ main(int argc, char *argv[])
 			filename = argv[i];
 	}
 
-	if (usage)
-	{
+	if (usage) {
 		fprintf(stderr,
 				   "usage: mapgen4 [-condense | -euc | -sjis] <name of unicode map file>\n");
 		exit(1);
 	}
 
 	f = fopen(filename, "r");
-	if (!f)
-	{
+	if (!f) {
 		fprintf(stderr, "Unable to open file '%s'\n", filename);
 		exit(1);
 	}
@@ -110,8 +107,7 @@ main(int argc, char *argv[])
 	printf("\n");
 
 
-	while (fgets(line, sizeof(line), f))
-	{
+	while (fgets(line, sizeof(line), f)) {
 		unsigned int unicode;
 		unsigned int codepoint;
 		char *p;
@@ -131,11 +127,9 @@ main(int argc, char *argv[])
 			continue;
 		p = line;
 
-		if (option_sjis)
-		{
+		if (option_sjis) {
 			unsigned int sjis_point;
-			if (1 != sscanf(p, "0x%04x\t", &sjis_point))
-			{
+			if (1 != sscanf(p, "0x%04x\t", &sjis_point)) {
 				fprintf(stderr, "Problem in input file - line %d\n",
 						   linecount);
 				exit(1);
@@ -144,8 +138,7 @@ main(int argc, char *argv[])
 		}
 
 		codepoint = 0;
-		if (1 != sscanf(p, "0x%04x\t", &codepoint))
-		{
+		if (1 != sscanf(p, "0x%04x\t", &codepoint)) {
 			fprintf(stderr, "Problem in input file - line %d\n",
 					   linecount);
 			exit(1);
@@ -156,14 +149,12 @@ main(int argc, char *argv[])
 			codepoint += 0x8080;
 
 		unicode = 0;
-		if (0 == sscanf(p, "0x%04x\t", &unicode))
-		{
+		if (0 == sscanf(p, "0x%04x\t", &unicode)) {
 			/* Conversion is not defined */
 			codepoint_conversion.table[codepoint].not_defined++;
 			declare(codepoint, unicode, "NOT DEFINED");
 		}
-		else
-		{
+		else {
 			/* Find start of comment defining Unicode name */
 			p = strchr(p, '#');
 			if (p)
@@ -179,10 +170,8 @@ main(int argc, char *argv[])
 
 /* Declare any standard ASCII characters that didn't exist in the table */
 	for (i = 0; i <= 0x7f; i++)
-	{
 		if (!codepoint_conversion.table[i].exists)
 			declare(i, i, "ASCII");
-	}
 
 	printf("\n");
 	printf("\n");
@@ -225,8 +214,7 @@ void declare(unsigned short codepoint, unsigned short unicode, char *name)
 	if (codepoint > codepoint_conversion.high_point)
 		codepoint_conversion.high_point = codepoint;
 
-	if (codepoint_conversion.table[codepoint].exists++)
-	{
+	if (codepoint_conversion.table[codepoint].exists++) {
 		if (unicode != codepoint_conversion.table[codepoint].equivilant)
 			fprintf(stderr,
 					   "Error: duplicate unequal mappings for 0x%04x : 0x%04x and 0x%04x\n",
@@ -243,25 +231,21 @@ void declare(unsigned short codepoint, unsigned short unicode, char *name)
 	codepoint_conversion.table[codepoint].codepoint = codepoint;
 	strcpy(codepoint_conversion.table[codepoint].name, name);
 
-	if (!codepoint_conversion.table[codepoint].not_defined)
-	{
+	if (!codepoint_conversion.table[codepoint].not_defined) {
 		codepoint_conversion.table[codepoint].equivilant = unicode;
 
 		if (unicode < unicode_conversion.low_point)
 			unicode_conversion.low_point = unicode;
 		if (unicode > unicode_conversion.high_point)
 			unicode_conversion.high_point = unicode;
-		if (!unicode_conversion.table[unicode].exists++)
-		{
+		if (!unicode_conversion.table[unicode].exists++) {
 			unicode_conversion.table[unicode].codepoint = unicode;
-			if (unicode != UNICODE_REPLACEMENT_CHARACTER)
-			{
+			if (unicode != UNICODE_REPLACEMENT_CHARACTER) {
 				unicode_conversion.table[unicode].equivilant = codepoint;
 				strcpy(unicode_conversion.table[unicode].name, name);
 			}
 		}
-		else
-		{
+		else {
 			if (unicode != UNICODE_REPLACEMENT_CHARACTER)
 				fprintf(stderr,
 						   "Warning: Multiple mappings to Unicode 0x%04x : 0x%04x and 0x%04x\n",
@@ -272,13 +256,12 @@ void declare(unsigned short codepoint, unsigned short unicode, char *name)
 }
 
 
-void print_direct_table(char *name, TABLE* table)
+void print_direct_table(char *name, TABLE * table)
 {
 	int i;
 
 	printf("static const USHORT %s_map[256] = {\n", name);
-	for (i = 0; i < 256; i++)
-	{
+	for (i = 0; i < 256; i++) {
 		if (table->table[i].exists != 1 || table->table[i].not_defined)
 			printf("/* %02X */     UNICODE_REPLACEMENT_CHARACTER,\n", i);
 		else
@@ -289,7 +272,7 @@ void print_direct_table(char *name, TABLE* table)
 }
 
 
-void print_indexed_table(char *name, TABLE* table,
+void print_indexed_table(char *name, TABLE * table,
 						 unsigned short replacement)
 {
 	unsigned int index;
@@ -300,29 +283,26 @@ void print_indexed_table(char *name, TABLE* table,
 	printf("static const USHORT %s_mapping_array[] = {\n",
 			  name);
 	for (index = 0; index < 256; index++)
-	{
 		if (replacement == UNICODE_REPLACEMENT_CHARACTER)
-			printf("/* U+XX%02X */\tUNICODE_REPLACEMENT_CHARACTER,\t/* %d */\n",
+			printf
+				("/* U+XX%02X */\tUNICODE_REPLACEMENT_CHARACTER,\t/* %d */\n",
 				 index % 256, index);
 		else
 			printf("/* U+XX%02X */\tCANT_MAP_CHARACTER,\t/* %d */\n",
 					  index % 256, index);
-	}
 
 	memset(upper_byte, 0, sizeof(upper_byte));
 	codepoint = 0;
-	while (codepoint < 0xFFFF + 1)
-	{
-		if (!table->table[codepoint].exists)
-		{
+	while (codepoint < 0xFFFF + 1) {
+		if (!table->table[codepoint].exists) {
 			codepoint++;
 			continue;
 		}
 		upper_byte[codepoint / 256] = index;
-		while ((index % 256) < (codepoint % 256))
-		{
+		while ((index % 256) < (codepoint % 256)) {
 			if (replacement == UNICODE_REPLACEMENT_CHARACTER)
-				printf("/* U+%04X */\tUNICODE_REPLACEMENT_CHARACTER,\t/* %d */\n",
+				printf
+					("/* U+%04X */\tUNICODE_REPLACEMENT_CHARACTER,\t/* %d */\n",
 					 (codepoint & 0xFF00) + (index % 256), index);
 			else
 				printf("/* U+%04X */\tCANT_MAP_CHARACTER,\t/* %d */\n",
@@ -330,10 +310,10 @@ void print_indexed_table(char *name, TABLE* table,
 			index++;
 		}
 		do {
-			if (!table->table[codepoint].exists)
-			{
+			if (!table->table[codepoint].exists) {
 				if (replacement == UNICODE_REPLACEMENT_CHARACTER)
-					printf("/* U+%04X */\tUNICODE_REPLACEMENT_CHARACTER,\t/* %d */\n",
+					printf
+						("/* U+%04X */\tUNICODE_REPLACEMENT_CHARACTER,\t/* %d */\n",
 						 codepoint, index);
 				else
 					printf("/* U+%04X */\tCANT_MAP_CHARACTER,\t/* %d */\n",
@@ -345,7 +325,8 @@ void print_indexed_table(char *name, TABLE* table,
 						  table->table[codepoint].name, index);
 			index++;
 			codepoint++;
-		} while (index % 256);
+		}
+		while (index % 256);
 	}
 	printf("\t0 /* END OF MAP TABLE */\n");
 	printf("};\n");
@@ -358,8 +339,9 @@ void print_indexed_table(char *name, TABLE* table,
 }
 
 
-void print_condensed_indexed_table(char *name,
-								   TABLE* table, unsigned short replacement)
+void print_condensed_indexed_table(
+								   char *name,
+								   TABLE * table, unsigned short replacement)
 {
 	unsigned int index;
 	unsigned int codepoint;
@@ -371,8 +353,7 @@ void print_condensed_indexed_table(char *name,
 
 	printf("\n");
 	printf("/* %5d to %5d */\n", 0, 255);
-	for (index = 0; index < 256; index++)
-	{
+	for (index = 0; index < 256; index++) {
 		if (replacement)
 			printf("0x%04X,", replacement);
 		else
@@ -385,10 +366,8 @@ void print_condensed_indexed_table(char *name,
 
 	memset(upper_byte, 0, sizeof(upper_byte));
 	codepoint = 0;
-	while (codepoint < 0xFFFF + 1)
-	{
-		if (!table->table[codepoint].exists)
-		{
+	while (codepoint < 0xFFFF + 1) {
+		if (!table->table[codepoint].exists) {
 			codepoint++;
 			continue;
 		}
@@ -397,8 +376,7 @@ void print_condensed_indexed_table(char *name,
 		printf("\n");
 		printf("/* %5d to %5d */\n", index, index + 255);
 
-		while ((index % 256) < (codepoint % 256))
-		{
+		while ((index % 256) < (codepoint % 256)) {
 			if (replacement)
 				printf("0x%04X,", replacement);
 			else
@@ -410,8 +388,7 @@ void print_condensed_indexed_table(char *name,
 			index++;
 		}
 		do {
-			if (!table->table[codepoint].exists)
-			{
+			if (!table->table[codepoint].exists) {
 				if (replacement)
 					printf("0x%04X,", replacement);
 				else
@@ -425,7 +402,8 @@ void print_condensed_indexed_table(char *name,
 				printf(" ");
 			index++;
 			codepoint++;
-		} while (index % 256);
+		}
+		while (index % 256);
 	}
 	printf("\t0 /* END OF MAP TABLE */\n");
 	printf("};\n");

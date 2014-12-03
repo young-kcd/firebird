@@ -1,5 +1,5 @@
 /*
- *	PROGRAM:
+ *	PROGRAM:	
  *	MODULE:		DataTypeUtil.cpp
  *	DESCRIPTION:	Data Type Utility functions
  *
@@ -25,31 +25,24 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include "../jrd/DataTypeUtil.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/align.h"
-#include "../common/cvt.h"
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 #include "../jrd/ibase.h"
 #include "../jrd/intl.h"
-#include "../common/dsc_proto.h"
+#include "../jrd/dsc_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../common/gdsassert.h"
-#include "../jrd/err_proto.h"
+#include "../jrd/gdsassert.h"
 
 using namespace Firebird;
 
 
 SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* value2)
-{
-	const SSHORT subType1 = value1->getBlobSubType();
-	const SSHORT subType2 = value2->getBlobSubType();
-
-	if (value1->isUnknown())
-		return subType2;
-
-	if (value2->isUnknown())
-		return subType1;
+{	
+	SSHORT subType1 = value1->getBlobSubType();
+	SSHORT subType2 = value2->getBlobSubType();
 
 	if (subType2 == isc_blob_untyped)	// binary
 		return subType2;
@@ -60,11 +53,11 @@ SSHORT DataTypeUtilBase::getResultBlobSubType(const dsc* value1, const dsc* valu
 
 USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 {
-	const USHORT cs1 = value1->getCharSet();
-	const USHORT cs2 = value2->getCharSet();
+	USHORT cs1 = value1->getCharSet();
+	USHORT cs2 = value2->getCharSet();
 
-	const USHORT ttype1 = value1->getTextType();
-	const USHORT ttype2 = value2->getTextType();
+	USHORT ttype1 = value1->getTextType();
+	USHORT ttype2 = value2->getTextType();
 
 	if (cs1 == CS_NONE || cs2 == CS_BINARY)
 		return ttype2;
@@ -76,131 +69,368 @@ USHORT DataTypeUtilBase::getResultTextType(const dsc* value1, const dsc* value2)
 }
 
 
-// This function is made to determine a output descriptor from a given list
-// of expressions according to the latest SQL-standard that was available.
-// (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002).
-//
-// The output type is figured out as based on this order:
-// 1) If any datatype is blob, returns blob;
-// 2) If any datatype is a) varying or b) any text/cstring and another datatype, returns varying;
-// 3) If any datatype is text or cstring, returns text;
-// 4) If any datatype is approximate numeric then each datatype in the list shall be numeric
-//    (otherwise an error is thrown), returns approximate numeric;
-// 5) If all datatypes are exact numeric, returns exact numeric with the maximum scale and the
-//    maximum precision used.
-// 6) If any datatype is a date/time/timestamp then each datatype in the list shall be the same
-//    date/time/timestamp (otherwise an error is thrown), returns a date/time/timestamp.
-//
-// If a blob is returned, and there is a binary blob in the list, a binary blob is returned.
-//
-// If a blob/text is returned, the returned charset is figured out as based on this order:
-// 1) If there is a OCTETS blob/string, returns OCTETS;
-// 2) If there is a non-(NONE/ASCII) blob/string, returns it charset;
-// 3) If there is a ASCII blob/string, a numeric or a date/time/timestamp, returns ASCII;
-// 4) Otherwise, returns NONE.
-void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int argsCount,
-	const dsc** args)
+void DataTypeUtilBase::makeFromList(dsc* result, const char* expressionName, int argsCount, const dsc** args)
 {
-	result->clear();
+	//-------------------------------------------------------------------------- 
+	//  [Arno Brinkman] 2003-08-23
+	//  
+	//  This function is made to determine a output descriptor from a given list
+	//  of expressions according to the latest SQL-standard that was available.
+	//  (ISO/ANSI SQL:200n WG3:DRS-013 H2-2002-358 August, 2002) 
+	//  
+	//  If any datatype has a character type then :
+	//  - the output will always be a character type except unconvertable types.
+	//    (dtype_text, dtype_cstring, dtype_varying, dtype_blob sub_type TEXT)
+	//  !!  Currently engine cannot convert string to BLOB therefor BLOB isn't allowed. !!
+	//  - first character-set and collation are used as output descriptor.
+	//  - if all types have datatype CHAR then output should be CHAR else 
+	//    VARCHAR and with the maximum length used from the given list.
+	//  
+	//  If all of the datatypes are EXACT numeric then the output descriptor 
+	//  shall be EXACT numeric with the maximum scale and the maximum precision 
+	//  used. (dtype_byte, dtype_short, dtype_long, dtype_int64)
+	//  
+	//  If any of the datatypes is APPROXIMATE numeric then each datatype in the
+	//  list shall be numeric else a error is thrown and the output descriptor 
+	//  shall be APPROXIMATE numeric. (dtype_real, dtype_double, dtype_d_float)
+	//  
+	//  If any of the datatypes is a datetime type then each datatype in the
+	//  list shall be the same datetime type else a error is thrown.
+	//  numeric. (dtype_sql_date, dtype_sql_time, dtype_timestamp)
+	//  
+	//  If any of the datatypes is a BLOB datatype then :
+	//  - all types should be a BLOB else throw error.
+	//  - all types should have the same sub_type else throw error.
+	//  - when TEXT type then use first character-set and collation as output
+	//    descriptor.
+	//  (dtype_blob)
+	//  
+	//--------------------------------------------------------------------------
 
-	bool allNulls = true;
+	// Initialize values.
+	UCHAR max_dtype = 0;
+	SCHAR max_scale = 0;
+	USHORT max_length = 0, max_dtype_length = 0, maxtextlength = 0, max_significant_digits = 0;
+	SSHORT max_sub_type = 0, first_sub_type, ttype = ttype_ascii; // default type if all nodes are nod_null.
+	SSHORT max_numeric_sub_type = 0;
+	bool firstarg = true, all_same_sub_type = true, all_equal = true, all_nulls = true;
+	bool all_numeric = true, any_numeric = false, any_approx = false, any_float = false;
+	bool all_text = true, any_text = false, any_varying = false;
+	bool all_date = true, all_time = true, all_timestamp = true, any_datetime = false;
+	bool all_blob = true, any_blob = false, any_text_blob = false;
 	bool nullable = false;
-	bool anyVarying = false;
-	bool anyBlobOrText = false;
+	bool err = false;
 
+	// Walk through arguments list.
 	for (const dsc** p = args; p < args + argsCount; ++p)
 	{
 		const dsc* arg = *p;
 
-		allNulls &= arg->isNull();
+		// do we have only literal NULLs?
+		if (!arg->isNull())
+			all_nulls = false;
 
-		// Ignore NULL and parameter value from walking.
+		// ignore NULL and parameter value from walking
 		if (arg->isNull() || arg->isUnknown())
 		{
 			nullable = true;
 			continue;
 		}
 
-		nullable |= arg->isNullable();
-		anyVarying |= arg->dsc_dtype != dtype_text;
+		// Get the descriptor from current node.
+		if (!nullable)
+			nullable = arg->isNullable();
 
-		if (makeBlobOrText(result, arg, false))
-			anyBlobOrText = true;
-		else if (DTYPE_IS_NUMERIC(arg->dsc_dtype))
+		// Check if we support this datatype.
+		if (!(DTYPE_IS_TEXT(arg->dsc_dtype) || DTYPE_IS_NUMERIC(arg->dsc_dtype) ||
+				DTYPE_IS_DATE(arg->dsc_dtype) || DTYPE_IS_BLOB(arg->dsc_dtype)))
 		{
-			if (result->isUnknown() || DTYPE_IS_NUMERIC(result->dsc_dtype))
+			// ERROR !!!!
+			// Unknown datatype
+			status_exception::raise(
+				isc_sqlerr, isc_arg_number, (SLONG) - 804,
+				isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
+		}
+
+		// Initialize some values if this is the first time.
+		if (firstarg) {
+			max_scale = arg->dsc_scale;
+			max_length = max_dtype_length = arg->dsc_length;
+			max_sub_type = first_sub_type = arg->dsc_sub_type;
+			max_dtype = arg->dsc_dtype;
+			firstarg = false;
+		}
+		else {
+			if (all_equal) {
+				all_equal = 
+					(max_dtype == arg->dsc_dtype) &&
+					(max_scale == arg->dsc_scale) && 
+					(max_length == arg->dsc_length) && 
+					(max_sub_type == arg->dsc_sub_type);
+			}
+		}
+
+		// numeric datatypes :
+		if (DTYPE_IS_NUMERIC(arg->dsc_dtype)) {
+			any_numeric = true;
+			// Is there any approximate numeric?
+			if (DTYPE_IS_APPROX(arg->dsc_dtype)) {
+				any_approx = true;
+				// Dialect 1 NUMERIC and DECIMAL are stored as sub-types 
+				// 1 and 2 from float types dtype_real, dtype_double
+				if (!any_float) {
+					any_float = (arg->dsc_sub_type == 0);
+				}
+			}
+			//
+			if (arg->dsc_sub_type > max_numeric_sub_type) {
+				max_numeric_sub_type = arg->dsc_sub_type;
+			}
+		}
+		else {
+			all_numeric = false;
+		}
+
+		// Get the max scale and length (precision)
+		// scale is negative so check less than < !
+		if (arg->dsc_scale < max_scale) {
+			max_scale = arg->dsc_scale;
+		}
+		if (arg->dsc_length > max_length) {
+			max_length = arg->dsc_length;
+		}
+		// Get max significant bits
+		if (type_significant_bits[arg->dsc_dtype] > max_significant_digits) {
+			max_significant_digits = type_significant_bits[arg->dsc_dtype];
+		}
+		// Get max dtype and sub_type
+		if (arg->dsc_dtype > max_dtype) {
+			max_dtype = arg->dsc_dtype;
+			max_dtype_length = arg->dsc_length;
+		}
+		if (arg->dsc_sub_type > max_sub_type) {
+			max_sub_type = arg->dsc_sub_type;
+		}
+		if (arg->dsc_sub_type != first_sub_type) {
+			all_same_sub_type = false;
+		}
+
+		// Is this a text type?
+		if (DTYPE_IS_TEXT(arg->dsc_dtype) ||
+			(arg->dsc_dtype == dtype_blob && arg->dsc_sub_type == isc_blob_text))
+		{ 
+			const USHORT cnvlength = TEXT_LEN(arg);
+			if (cnvlength > maxtextlength) {
+				maxtextlength = cnvlength;
+			}
+			if (arg->dsc_dtype == dtype_varying) {
+				any_varying = true;
+			}
+
+			// Pick first characterset-collate from args-list  
+			// 
+			// Is there an better way to determine the         
+			// characterset / collate from the list ?          
+			// Maybe first according SQL-standard which has an order 
+			// UTF32 -> UTF16 -> UTF8 then by a Firebird specified order
+			//
+			// At least give any first charset other then ASCII/NONE precedence
+			if (!any_text) {
+				ttype = arg->getTextType();
+			}
+			else {
+				if ((ttype == ttype_none) || (ttype == ttype_ascii)) {
+					ttype = arg->getTextType();
+				}
+			}
+			any_text = true;
+		}
+		else {
+			// Get max needed-length for not text types suchs as int64,timestamp etc..
+			const USHORT cnvlength = DSC_convert_to_text_length(arg->dsc_dtype);
+			if (cnvlength > maxtextlength) {
+				maxtextlength = cnvlength;
+			}
+			all_text = false;
+		}
+
+		if (DTYPE_IS_DATE(arg->dsc_dtype)) {
+			any_datetime = true;
+			if (arg->dsc_dtype == dtype_sql_date) {
+				all_time = false;
+				all_timestamp = false;
+			} 
+			else if (arg->dsc_dtype == dtype_sql_time) { 
+				all_date = false;
+				all_timestamp = false;
+			}
+			else if (arg->dsc_dtype == dtype_timestamp) {
+				all_date = false;
+				all_time = false;
+			}
+		}
+		else {
+			all_date = false;
+			all_time = false;
+			all_timestamp = false;
+		}
+
+		if (arg->dsc_dtype == dtype_blob)
+		{
+			// When there was already another datatype raise immediately exception
+			if (!(any_text && arg->dsc_sub_type == isc_blob_text) && (!all_blob || !all_same_sub_type))
 			{
-				if (!arg->isExact() && result->isExact())
-				{
-					*result = *arg;
-					result->dsc_scale = 0;	// clear it (for dialect 1)
+				err = true;
+				break;
+			}
+
+			any_blob = true;
+			if (arg->dsc_sub_type == 1) {
+				// TEXT BLOB
+				if (!any_text_blob) {
+					// Save first characterset and collation
+					ttype = arg->getTextType();
 				}
-				else if (result->isUnknown() || result->isExact() || !arg->isExact())
-				{
-					result->dsc_dtype = MAX(result->dsc_dtype, arg->dsc_dtype);
-					result->dsc_length = MAX(result->dsc_length, arg->dsc_length);
-					result->dsc_scale = MIN(result->dsc_scale, arg->dsc_scale);	// scale is negative
-					result->dsc_sub_type = MAX(result->dsc_sub_type, arg->dsc_sub_type);
-				}
+				any_text_blob = true;
+			}
+		}
+		else {
+			all_blob = false;
+		}
+	}
+
+	// If any type is nullable then the general descriptor is nullable
+	if (nullable) {
+		result->dsc_flags |= DSC_nullable;
+	}
+	else {
+		result->dsc_flags &= ~DSC_nullable;
+	}
+
+	// If we have literal NULLs only, let the result be either
+	// CHAR(1) CHARACTER SET NONE
+	if (all_nulls)
+	{
+		result->makeNullString();
+		return;
+	}
+
+	// If we haven't had a type at all then all values are NULL and/or parameter nodes.
+	if (firstarg) {
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 804,
+			isc_arg_gds, isc_dsql_datatype_err, isc_arg_end);
+		// Dynamic SQL Error SQL error code = -804 Data type unknown
+	}
+
+	if (err) {
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_datatypes_not_comparable,
+			isc_arg_string, "",
+			isc_arg_string, expressionName, isc_arg_end);
+		// "Datatypes %sare not comparable in expression %s"
+	}
+
+	// If all the datatypes we've seen are exactly the same, we're done
+	if (all_equal) {
+		result->dsc_dtype = max_dtype;
+		result->dsc_length = max_length;
+		result->dsc_scale = max_scale;
+		result->dsc_sub_type = max_sub_type;
+		return;
+	}
+
+	// If all of the arguments are from type text use a text type.
+	// Firebird behaves a little bit different than standard here, because
+	// any datatype (except BLOB) can be converted to a character-type we
+	// allow to use numeric and datetime types together with a 
+	// character-type, but output will always be varying !
+	if (all_text || (any_text && (any_numeric || any_datetime))) {
+		if (any_text_blob)
+		{
+			result->dsc_dtype = dtype_blob;
+			result->dsc_length = sizeof(ISC_QUAD);
+			result->setBlobSubType(isc_blob_text);
+			result->setTextType(ttype);
+		}
+		else
+		{
+			if (any_varying || (any_text && (any_numeric || any_datetime)))
+			{
+				result->dsc_dtype = dtype_varying;
+				maxtextlength += sizeof(USHORT);
 			}
 			else
-				makeBlobOrText(result, arg, true);
+				result->dsc_dtype = dtype_text;
+
+			result->dsc_ttype() = ttype;  // same as dsc_subtype
+			result->dsc_length = maxtextlength;
+			result->dsc_scale = 0;
 		}
-		else if (DTYPE_IS_DATE(arg->dsc_dtype))
-		{
-			if (result->isUnknown())
-				*result = *arg;
-			else if (result->dsc_dtype != arg->dsc_dtype)
-				makeBlobOrText(result, arg, true);
-		}
-		else if (arg->dsc_dtype == dtype_boolean)
-		{
-			if (result->isUnknown())
-				*result = *arg;
-			else if (result->dsc_dtype != arg->dsc_dtype)
-			{
-				// Datatypes @1are not comparable in expression @2
-				status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-					Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") <<
-						Arg::Str(expressionName));
+		return;
+	}
+	else if (all_numeric) {
+		// If all of the arguments are a numeric datatype.
+		if (any_approx) {
+			if (max_significant_digits <= type_significant_bits[dtype_real]) {
+				result->dsc_dtype = dtype_real;
+				result->dsc_length = type_lengths[result->dsc_dtype];
+			}
+			else {
+				result->dsc_dtype = dtype_double;
+				result->dsc_length = type_lengths[result->dsc_dtype];
+			}
+			if (any_float) {
+				result->dsc_scale = 0;
+				result->dsc_sub_type = 0;
+			}
+			else {
+				result->dsc_scale = max_scale;
+				result->dsc_sub_type = max_numeric_sub_type;
 			}
 		}
-		else	// we don't support this datatype here
-		{
-			// Unknown datatype
-			status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
-				Arg::Gds(isc_dsql_datatype_err));
+		else {
+			result->dsc_dtype = max_dtype;
+			result->dsc_length = max_dtype_length;
+			result->dsc_sub_type = max_numeric_sub_type;
+			result->dsc_scale = max_scale;
 		}
+		return;
 	}
-
-	// If we didn't have any blob or text but return a blob or text, it means we have incomparable
-	// types like date and time without a blob or string.
-	if (!anyBlobOrText && (result->isText() || result->isBlob()))
-	{
-		// Datatypes @1are not comparable in expression @2
-		status_exception::raise(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
-			Arg::Gds(isc_dsql_datatypes_not_comparable) << Arg::Str("") <<
-				Arg::Str(expressionName));
+	else if (all_date || all_time || all_timestamp) {
+		// If all of the arguments are the same datetime datattype.
+		result->dsc_dtype  = max_dtype;
+		result->dsc_length = max_dtype_length;
+		result->dsc_scale = 0;
+		result->dsc_sub_type = 0;
+		return;
 	}
-
-	if (allNulls)
-		result->makeNullString();
-
-	result->setNullable(nullable);
-
-	// We'll return a string...
-	if (result->isText())
-	{
-		// So convert its character length to max. byte length of the destination charset.
-		const ULONG len = convertLength(result->dsc_length, CS_ASCII, result->getCharSet());
-
-		if (anyVarying)
-			result->dsc_dtype = dtype_varying;
-
-		result->dsc_length = fixLength(result, len);
-
-		if (anyVarying)
-			result->dsc_length += sizeof(USHORT);
+	else if (all_blob && all_same_sub_type) {
+		// If all of the arguments are the same BLOB datattype.
+		result->dsc_dtype  = max_dtype;
+		result->dsc_sub_type = max_sub_type;
+		if (max_sub_type == isc_blob_text) {
+			// TEXT BLOB
+			result->dsc_scale = ttype;
+			result->dsc_flags |= ttype & 0xFF00;	// collation
+		}
+		else {
+			result->dsc_scale = max_scale;
+		}
+		result->dsc_length = max_length;
+		return;
+	}
+	else {
+		// We couldn't do anything with this list, mostly because the
+		// datatypes aren't comparable.
+		// Let's try to give a usefull error message.
+		status_exception::raise(
+			isc_sqlerr, isc_arg_number, (SLONG) - 104,
+			isc_arg_gds, isc_dsql_datatypes_not_comparable,
+			isc_arg_string, "",
+			isc_arg_string, expressionName, isc_arg_end);
+		// "Datatypes %sare not comparable in expression %s"
 	}
 }
 
@@ -217,10 +447,6 @@ ULONG DataTypeUtilBase::convertLength(ULONG len, USHORT srcCharSet, USHORT dstCh
 ULONG DataTypeUtilBase::convertLength(const dsc* src, const dsc* dst)
 {
 	fb_assert(dst->isText());
-	if (src->dsc_dtype == dtype_dbkey)
-	{
-		return src->dsc_length;
-	}
 	return convertLength(src->getStringLength(), src->getCharSet(), dst->getCharSet());
 }
 
@@ -249,12 +475,7 @@ void DataTypeUtilBase::makeConcatenate(dsc* result, const dsc* value1, const dsc
 		return;
 	}
 
-	if (value1->dsc_dtype == dtype_dbkey && value2->dsc_dtype == dtype_dbkey)
-	{
-		result->dsc_dtype = dtype_dbkey;
-		result->dsc_length = value1->dsc_length + value2->dsc_length;
-	}
-	else if (value1->isBlob() || value2->isBlob())
+	if (value1->isBlob() || value2->isBlob())
 	{
 		result->dsc_dtype = dtype_blob;
 		result->dsc_length = sizeof(ISC_QUAD);
@@ -268,7 +489,7 @@ void DataTypeUtilBase::makeConcatenate(dsc* result, const dsc* value1, const dsc
 
 		ULONG length = fixLength(result,
 			convertLength(value1, result) + convertLength(value2, result));
-		result->dsc_length = length + static_cast<USHORT>(sizeof(USHORT));
+		result->dsc_length = length + sizeof(USHORT);
 	}
 
 	result->dsc_flags = (value1->dsc_flags | value2->dsc_flags) & DSC_nullable;
@@ -302,40 +523,19 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 	result->setNullable(value->isNullable() || offset->isNullable() || length->isNullable());
 
 	if (result->isText())
-	{
-		ULONG len = convertLength(value, result);
-
-		if (length->dsc_address)	// constant
-		{
-			SLONG constant = CVT_get_long(length, 0, ERR_post);
-			fb_assert(constant >= 0);
-			len = MIN(len, MIN(MAX_COLUMN_SIZE, ULONG(constant)) * maxBytesPerChar(result->getCharSet()));
-		}
-
-		result->dsc_length = fixLength(result, len) + static_cast<USHORT>(sizeof(USHORT));
-	}
+		result->dsc_length = fixLength(result, convertLength(value, result)) + sizeof(USHORT);
 }
 
 
-bool DataTypeUtilBase::makeBlobOrText(dsc* result, const dsc* arg, bool force)
+void DataTypeUtilBase::makeSysFunction(dsc* result, const char* name, int argsCount, const dsc** args)
 {
-	if (arg->isBlob() || result->isBlob())
+	const SysFunction* function = SysFunction::lookup(name);
+
+	if (function)
 	{
-		result->makeBlob(getResultBlobSubType(result, arg), getResultTextType(result, arg));
-		return true;
+		function->checkArgsMismatch(argsCount);
+		function->makeFunc(this, function, result, argsCount, args);
 	}
-
-	if (force || arg->isText() || result->isText())
-	{
-		USHORT argLen = convertLength(arg->getStringLength(), arg->getCharSet(), CS_ASCII);
-		USHORT resultLen = result->getStringLength();
-
-		result->makeText(MAX(argLen, resultLen), getResultTextType(result, arg));
-
-		return true;
-	}
-
-	return false;
 }
 
 
@@ -349,46 +549,6 @@ UCHAR DataTypeUtil::maxBytesPerChar(UCHAR charSet)
 USHORT DataTypeUtil::getDialect() const
 {
 	return (tdbb->getDatabase()->dbb_flags & DBB_DB_SQL_dialect_3) ? 3 : 1;
-}
-
-// Returns false if conversion is not needed.
-bool DataTypeUtil::convertToUTF8(const string& src, string& dst, CHARSET_ID charset)
-{
-	thread_db* tdbb = JRD_get_thread_data();
-
-	if (charset == CS_dynamic)
-	{
-		fb_assert(tdbb->getAttachment());
-		charset = tdbb->getAttachment()->att_charset;
-	}
-
-	if (charset == CS_UTF8 || charset == CS_UNICODE_FSS)
-		return false;
-
-	if (charset == CS_NONE)
-	{
-		const FB_SIZE_T length = src.length();
-
-		const char* s = src.c_str();
-		char* p = dst.getBuffer(length);
-
-		for (const char* end = src.end(); s < end; ++p, ++s)
-			*p = (*s < 0 ? '?' : *s);
-	}
-	else // charset != CS_UTF8
-	{
-		DataTypeUtil dtUtil(tdbb);
-		ULONG length = dtUtil.convertLength(src.length(), charset, CS_UTF8);
-
-		length = INTL_convert_bytes(tdbb,
-			CS_UTF8, (UCHAR*) dst.getBuffer(length), length,
-			charset, (const BYTE*) src.begin(), src.length(),
-			ERR_post);
-
-		dst.resize(length);
-	}
-
-	return true;
 }
 
 }	// namespace Jrd

@@ -15,7 +15,6 @@ it.UseApplicationTaskMsg=Esegui come &applicazione?
 it.TaskGroupDescription=Esegui il server Firebird come:
 it.UseServiceTask=Esegui come &servizio?
 it.AutoStartTask=Esegui &Firebird automaticamente all'avvio del sistema?
-it.SuperClassicTask="Use SuperClassic?"
 it.CopyFbClientToSysTask=Copia la libreria client di &Firebird nella cartella di sistema?
 it.CopyFbClientAsGds32Task=Usa il nome &GDS32.DLL per la libreria client, per compatibilità con precedenti versioni?
 it.InstallCPLAppletTask="Installa il &Pannello di controllo di Firebird?"
@@ -45,7 +44,7 @@ it.InstalledProducts=L'analisi preliminare ha evidenziato la presenza di %s %s d
 it.InstalledProdCountSingular=versione
 it.InstalledProdCountPlural=versioni
 
-it.FbRunning1=Risulta al momento in esecuzione un'istanza di Firebird %s Server.
+it.FbRunning1=Risulta al momento in esecuzione un'istanza di %s Server.
 it.FbRunning2=     È necessario arrestare l'applicazione o il servizio
 it.FbRunning3=                    prima di continuare.
 
@@ -71,8 +70,5 @@ it.RunISQL=Esegui Interactive SQL (ISQL) da riga di comando
 
 it.ReadmeFile=leggimi.txt
 it.InstallationReadmeFile=leggimi_installazione.txt
-
-it.RunCS=Esegui Firebird Classic server
-it.RunSC=Esegui Firebird SuperClassic server
-it.RunSS=Esegui Firebird SuperServer
+;it.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 

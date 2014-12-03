@@ -33,12 +33,12 @@ CHARSET_ENTRY(CS_ksc_5601)
 #include "../intl/charsets/cs_ksc5601.h"
 
 	csptr->charset_version = CHARSET_VERSION_1;
-	csptr->charset_name = "KSC_5601";
+	csptr->charset_name = (const ASCII*) "KSC_5601";
 	csptr->charset_flags |= CHARSET_LEGACY_SEMANTICS | CHARSET_ASCII_BASED;
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*) &space;
+	csptr->charset_space_character = (const BYTE*) & space;
 	csptr->charset_fn_well_formed = CVKSC_check_ksc;
 
 	CV_convert_init(&csptr->charset_to_unicode,

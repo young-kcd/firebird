@@ -16,25 +16,60 @@
 # Contributor(s): ______________________________________.
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
-# Use this file to create a 32bit version of Firebird for intel
-# Instructions if running MacOSX 10.6
+#
+# From MacOSX 10.6 (Snow Leopard), 32bit builds are no longer
+# the default. To build 32bit Firebird on MacOSX 10.6 you 
+# need to do the following.
+#
 # 1. edit configure.in so that MAKEFILE_PREFIX=darwin_i386
-# 2. dnl the CPU_TYPE
-# 3. edit extern/icu/source/config and set the right 32bit flags (-arch i386)
-# 4. for  CFLAGS, CXXFLAGS, LDFLAGS export '-m32 -arch i386'
-# 5. export MACOSX_DEPLOYMENT_TARGET=10.6 
+# 2. comment the CPU_TYPE
+# 3. edit extern/icu/source/config/mh-darwin and set the right 32bit flags (-m32 -arch i386)
+# for CFLAGS, CXXFLAGS & LDFLAGS
+# 4. export MACOSX_DEPLOYMENT_TARGET=10.4
+# 5. export CFLAGS='-m32 -arch i386'
+# 6. export CXXFLAGS='-m32 -arch i386'
+# 7. export LDFLAGS='-m32 -arch i386'
+
 
 DYLD_LIBRARY_PATH=$(FIREBIRD)/lib
 export DYLD_LIBRARY_PATH
 
-MACOSX_DEPLOYMENT_TARGET=10.6
+MACOSX_DEPLOYMENT_TARGET=10.4
 export MACOSX_DEPLOYMENT_TARGET
 
-PROD_FLAGS=-O1 -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch i386 -mmacosx-version-min=10.6
-DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch i386 -mmacosx-version-min=10.6 -Wno-non-virtual-dtor
-CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden -fno-weak
+OS_ServerFiles=inet_server.cpp
 
-EXE_LINK_OPTIONS:=-m32
-LD_FLAGS+=-m32 -arch i386
+PROD_FLAGS=-O3 -DNDEBUG -DDARWIN -pipe -p -MMD -fPIC -fno-common -arch i386 -mmacosx-version-min=10.4
+DEV_FLAGS=-ggdb -DDARWIN -pipe -p -MMD -fPIC -fno-common -Wall -arch i386 -mmacosx-version-min=10.4
+CXXFLAGS:=$(CXXFLAGS) -fvisibility-inlines-hidden -fvisibility=hidden
+EMBED_UTIL_TARGETS=gstat gds_drop gds_relay gsec nbackup fb_lock_print fbsvcmgr
+CLIENT_UTIL_TARGETS=gds_drop gds_relay gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr
 
-include $(ROOT)/gen/darwin.defaults
+Physical_IO_Module=os/posix/unix.cpp
+PLATFORM_PATH=os/darwin
+
+LINK_OPTS:=-m32 -arch i386
+LD_FLAGS+= -m32 -arch i386 
+LIB_BUNDLE_OPTIONS:=$(LD_FLAGS) -bundle -flat_namespace -undefined suppress -fno-weak
+LIB_LINK_OPTIONS:=$(LD_FLAGS) -dynamiclib -flat_namespace
+LIB_LINK_SONAME:=-current_version @FIREBIRD_VERSION@ -compatibility_version @FIREBIRD_VERSION@ -seg1addr 0x30000000
+LIB_LINK_MAPFILE:=-Wl,-exported_symbols_list,
+LINK_FIREBIRD_EMBED_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.embed.vers
+LINK_FIREBIRD_CLIENT_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.client.vers
+LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.darwin.vers
+LINK_EMPTY_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/empty.darwin.vers
+LINK_FIREBIRD_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/firebird.darwin.vers
+
+LIB_LINK_RPATH:=
+LIB_LINK_DYNAMIC:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Libraries/
+LIB_EMBED_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
+LIB_CLIENT_LINK_OPTIONS:=-install_name /Library/Frameworks/Firebird.framework/Versions/A/Firebird
+FBEMBED_LINK:=-F../gen/firebird -framework Firebird -L$(LIB) -lfbembed
+PLATFORM_FALLBACK=os/posix
+PLAT_CLASSIC_PRE_TARGET=darwin_setup_framework
+PLAT_CLASSIC_POST_TARGET=darwin_finish_cs_framework
+
+PLAT_SUPER_PRE_TARGET=darwin_setup_framework
+PLAT_SUPER_POST_TARGET=darwin_finish_ss_framework
+
+PLATFORM_POSTBUILD_TARGET=darwin_postbuild_target

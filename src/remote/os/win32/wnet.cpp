@@ -22,7 +22,7 @@
  */
 
 #ifdef DEBUG
-// define WNET_trace to 0 (zero) for no packet debugging
+/* define WNET_trace to 0 (zero) for no packet debugging */
 #define WNET_trace
 #endif
 
@@ -31,81 +31,85 @@
 #include <string.h>
 #include "../remote/remote.h"
 #include "../jrd/ibase.h"
+#include "../jrd/thd.h"
+#include "../jrd/iberr.h"
 
 #include "../utilities/install/install_nt.h"
 
 #include "../remote/proto_proto.h"
 #include "../remote/remot_proto.h"
 #include "../remote/os/win32/wnet_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/isc_f_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
+#include "../jrd/sch_proto.h"
+#include "../jrd/thread_proto.h"
 #include "../common/config/config.h"
-#include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/classes/init.h"
 
 #include <stdarg.h>
 
-using namespace Firebird;
-
 const int MAX_DATA		= 2048;
 const int BUFFER_SIZE	= MAX_DATA;
+const int MAX_SEQUENCE	= 256;
 
 const char* PIPE_PREFIX			= "pipe"; // win32-specific
 const char* SERVER_PIPE_SUFFIX	= "server";
 const char* EVENT_PIPE_SUFFIX	= "event";
-AtomicCounter event_counter;
 
-static GlobalPtr<PortsCleanup> wnet_ports;
-static GlobalPtr<Mutex> init_mutex;
-static volatile bool wnet_initialized = false;
-static volatile bool wnet_shutdown = false;
+int xdrmem_create();
 
-static bool		accept_connection(rem_port*, const P_CNCT*);
+static int		accept_connection(rem_port*, P_CNCT *);
 static rem_port*		alloc_port(rem_port*);
-static rem_port*		aux_connect(rem_port*, PACKET*);
+static rem_port*		aux_connect(rem_port*, PACKET*, t_event_ast);
 static rem_port*		aux_request(rem_port*, PACKET*);
-static bool		connect_client(rem_port*);
+static void		cleanup_port(rem_port*);
 static void		disconnect(rem_port*);
-#ifdef NOT_USED_OR_REPLACED
-static void		exit_handler(void*);
-#endif
-static void		force_close(rem_port*);
-static rem_str*		make_pipe_name(const RefPtr<Config>&, const TEXT*, const TEXT*, const TEXT*);
-static rem_port*	receive(rem_port*, PACKET*);
-static int		send_full(rem_port*, PACKET*);
-static int		send_partial(rem_port*, PACKET*);
-static int		xdrwnet_create(XDR*, rem_port*, UCHAR*, USHORT, xdr_op);
-static bool_t	xdrwnet_endofrecord(XDR*);//, int);
-static bool		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
-static void		wnet_gen_error(rem_port*, const Arg::StatusVector& v);
-static bool_t	wnet_getbytes(XDR*, SCHAR*, u_int);
+static void		exit_handler(rem_port*);
+static rem_str*		make_pipe_name(const TEXT*, const TEXT*, const TEXT*);
+static rem_port*		receive(rem_port*, PACKET *);
+static int		send_full(rem_port*, PACKET *);
+static int		send_partial(rem_port*, PACKET *);
+static int		xdrwnet_create(XDR *, rem_port*, UCHAR *, USHORT, enum xdr_op);
+static bool_t	xdrwnet_endofrecord(XDR *, int);
+static int		wnet_destroy(XDR *);
+static int		wnet_error(rem_port*, const TEXT*, ISC_STATUS, int);
+static void		wnet_gen_error(rem_port*, ISC_STATUS, ...);
+static bool_t	wnet_getbytes(XDR *, SCHAR *, u_int);
+static bool_t	wnet_getlong(XDR *, SLONG *);
+static u_int	wnet_getpostn(XDR *);
+static caddr_t	wnet_inline(XDR *, u_int);
+static bool_t	wnet_putlong(XDR *, const SLONG*);
 static bool_t	wnet_putbytes(XDR*, const SCHAR*, u_int);
-static bool_t	wnet_read(XDR*);
-static bool_t	wnet_write(XDR*); //, int);
+static bool_t	wnet_read(XDR *);
+static bool_t	wnet_setpostn(XDR *, u_int);
+static bool_t	wnet_write(XDR *, int);
 #ifdef DEBUG
 static void		packet_print(const TEXT*, const UCHAR*, const int);
 #endif
-static bool		packet_receive(rem_port*, UCHAR*, SSHORT, SSHORT*);
-static bool		packet_send(rem_port*, const SCHAR*, SSHORT);
-static void		wnet_make_file_name(TEXT*, DWORD);
-
-static int		cleanup_ports(const int, const int, void*);
+static int		packet_receive(rem_port*, UCHAR *, SSHORT, SSHORT *);
+static int		packet_send(rem_port*, const SCHAR*, SSHORT);
+static void		wnet_copy(const UCHAR*, SCHAR*, int);
+static void		wnet_make_file_name(TEXT *, DWORD);
 
 static xdr_t::xdr_ops wnet_ops =
 {
+	wnet_getlong,
+	wnet_putlong,
 	wnet_getbytes,
-	wnet_putbytes
+	wnet_putbytes,
+	wnet_getpostn,
+	wnet_setpostn,
+	wnet_inline,
+	wnet_destroy
 };
 
 
-rem_port* WNET_analyze(ClntAuthBlock* cBlock,
-					   const PathName& file_name,
-					   const TEXT* node_name,
-					   bool uv_flag,
-					   RefPtr<Config>* config,
-					   const Firebird::PathName* ref_db_name)
+rem_port* WNET_analyze(Firebird::PathName& file_name,
+					ISC_STATUS*	status_vector,
+					const TEXT*	node_name,
+					const TEXT*	user_string,
+					bool	uv_flag)
 {
 /**************************************
  *
@@ -122,153 +126,190 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
  *
  **************************************/
 
-	// We need to establish a connection to a remote server.  Allocate the necessary
-	// blocks and get ready to go.
+/* We need to establish a connection to a remote server.  Allocate the necessary
+   blocks and get ready to go. */
 
-	Rdb* rdb = new Rdb;
+	RDB rdb = (RDB) ALLR_block(type_rdb, 0);
 	PACKET* packet = &rdb->rdb_packet;
 
-	// Pick up some user identification information
-	string buffer;
-	ClumpletWriter user_id(ClumpletReader::UnTagged, 64000);
-	if (cBlock)
-	{
-		cBlock->extractDataFromPluginTo(user_id);
-	}
+/* Pick up some user identification information */
+	Firebird::string buffer;
+	Firebird::ClumpletWriter user_id(Firebird::ClumpletReader::UnTagged, MAX_DPB_SIZE);
 
-	ISC_get_user(&buffer, 0, 0);
+	ISC_get_user(&buffer, 0, 0, 0);
 	buffer.lower();
-	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_user, buffer);
 
 	ISC_get_host(buffer);
 	buffer.lower();
-	ISC_systemToUtf8(buffer);
 	user_id.insertString(CNCT_host, buffer);
 
 	if (uv_flag) {
 		user_id.insertTag(CNCT_user_verification);
 	}
 
-	// Establish connection to server
+/* Establish connection to server */
 
-	P_CNCT* const cnct = &packet->p_cnct;
+	P_CNCT* cnct = &packet->p_cnct;
 	packet->p_operation = op_connect;
 	cnct->p_cnct_operation = op_attach;
-	cnct->p_cnct_cversion = CONNECT_VERSION3;
+	cnct->p_cnct_cversion = CONNECT_VERSION2;
 	cnct->p_cnct_client = ARCHITECTURE;
+	cnct->p_cnct_file.cstr_length = file_name.length();
+	cnct->p_cnct_file.cstr_address = 
+			reinterpret_cast<UCHAR*>(file_name.begin());
 
-	const PathName& cnct_file(ref_db_name ? (*ref_db_name) : file_name);
-	cnct->p_cnct_file.cstr_length = (ULONG) cnct_file.length();
-	cnct->p_cnct_file.cstr_address = reinterpret_cast<const UCHAR*>(cnct_file.c_str());
+/* Note: prior to V3.1E a receivers could not in truth handle more
+   then 5 protocol descriptions; however, this restriction does not 
+   apply to Windows since it was created in 4.0 */
 
-	// If we want user verification, we can't speak anything less than version 7
+/* If we want user verification, we can't speak anything less than version 7 */
 
-	cnct->p_cnct_user_id.cstr_length = (ULONG) user_id.getBufferLength();
-	cnct->p_cnct_user_id.cstr_address = user_id.getBuffer();
+	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
 
-	static const p_cnct::p_cnct_repeat protocols_to_try[] =
+	static const p_cnct::p_cnct_repeat protocols_to_try1[] =
 	{
-		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_batch_send, 1),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_batch_send, 2),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION12, ptype_batch_send, 3),
-		REMOTE_PROTOCOL(PROTOCOL_VERSION13, ptype_batch_send, 4)
+		REMOTE_PROTOCOL(PROTOCOL_VERSION7, ptype_rpc, ptype_batch_send, 1),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION8, ptype_rpc, ptype_batch_send, 2),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION10, ptype_rpc, ptype_batch_send, 3),
+		REMOTE_PROTOCOL(PROTOCOL_VERSION11, ptype_rpc, ptype_batch_send, 4)
+#ifdef SCROLLABLE_CURSORS
+		,
+		REMOTE_PROTOCOL(PROTOCOL_SCROLLABLE_CURSORS, ptype_rpc, ptype_batch_send, 99)
+#endif
 	};
-	fb_assert(FB_NELEM(protocols_to_try) <= FB_NELEM(cnct->p_cnct_versions));
-	cnct->p_cnct_count = FB_NELEM(protocols_to_try);
+	cnct->p_cnct_count = FB_NELEM(protocols_to_try1);
 
 	for (size_t i = 0; i < cnct->p_cnct_count; i++) {
-		cnct->p_cnct_versions[i] = protocols_to_try[i];
+		cnct->p_cnct_versions[i] = protocols_to_try1[i];
 	}
 
-	// If we can't talk to a server, punt. Let somebody else generate an error.
+/* If we can't talk to a server, punt. Let somebody else generate an error. */
 
-	rem_port* port = NULL;
-	try
-	{
-		port = WNET_connect(node_name, packet, 0, config);
-	}
-	catch (const Exception&)
-	{
-		delete rdb;
-		throw;
+	rem_port* port = WNET_connect(node_name, packet, status_vector, 0);
+	if (!port) {
+		ALLR_release(rdb);
+		return NULL;
 	}
 
-	// Get response packet from server.
+/* Get response packet from server. */
 
 	rdb->rdb_port = port;
 	port->port_context = rdb;
 	port->receive(packet);
 
-	P_ACPT* accept = NULL;
-	switch (packet->p_operation)
-	{
-	case op_accept_data:
-	case op_cond_accept:
-		accept = &packet->p_acpd;
-		if (cBlock)
-		{
-			cBlock->storeDataForPlugin(packet->p_acpd.p_acpt_data.cstr_length,
-									   packet->p_acpd.p_acpt_data.cstr_address);
-			cBlock->authComplete = packet->p_acpd.p_acpt_authenticated;
-			port->addServerKeys(&packet->p_acpd.p_acpt_keys);
-			cBlock->resetClnt(&file_name, &packet->p_acpd.p_acpt_keys);
-		}
-		break;
-
-	case op_accept:
-		if (cBlock)
-		{
-			cBlock->resetClnt(&file_name);
-		}
-		accept = &packet->p_acpt;
-		break;
-
-	case op_response:
-		try
-		{
-			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
-			REMOTE_check_response(&warning, rdb, packet);
-		}
-		catch(const Firebird::Exception&)
-		{
-			disconnect(port);
-			delete rdb;
-			throw;
-		}
-		// fall through - response is not a required accept
-
-	default:
+	if (packet->p_operation == op_reject && !uv_flag) {
 		disconnect(port);
-		delete rdb;
-		Arg::Gds(isc_connect_reject).raise();
-		break;
+		packet->p_operation = op_connect;
+		cnct->p_cnct_operation = op_attach;
+		cnct->p_cnct_cversion = CONNECT_VERSION2;
+		cnct->p_cnct_client = ARCHITECTURE;
+		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
+
+		/* try again with next set of known protocols */
+
+	cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+	cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+
+		static const p_cnct::p_cnct_repeat protocols_to_try2[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION4, ptype_rpc, ptype_batch_send, 1),
+			REMOTE_PROTOCOL(PROTOCOL_VERSION6, ptype_rpc, ptype_batch_send, 2),
+		};
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try2);
+
+		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+			cnct->p_cnct_versions[i] = protocols_to_try2[i];
+		}
+
+		port = WNET_connect(node_name, packet, status_vector, 0);
+		if (!port) {
+			ALLR_release(rdb);
+			return NULL;
+		}
+
+		/* Get response packet from server. */
+
+		rdb->rdb_port = port;
+		port->port_context = rdb;
+		port->receive(packet);
 	}
 
-	fb_assert(accept);
-	fb_assert(port);
-	port->port_protocol = accept->p_acpt_version;
+	if (packet->p_operation == op_reject && !uv_flag) {
+		disconnect(port);
+		packet->p_operation = op_connect;
+		cnct->p_cnct_operation = op_attach;
+		cnct->p_cnct_cversion = CONNECT_VERSION2;
+		cnct->p_cnct_client = ARCHITECTURE;
+		cnct->p_cnct_file.cstr_length = file_name.length();
+		cnct->p_cnct_file.cstr_address = (UCHAR *) file_name.c_str();
 
-	// once we've decided on a protocol, concatenate the version
-	// string to reflect it...
+		/* try again with next set of known protocols */
 
-	string temp;
-	temp.printf("%s/P%d", port->port_version->str_data,
+		cnct->p_cnct_user_id.cstr_length = user_id.getBufferLength();
+		cnct->p_cnct_user_id.cstr_address = const_cast<UCHAR*>(user_id.getBuffer());
+
+		static const p_cnct::p_cnct_repeat protocols_to_try3[] =
+		{
+			REMOTE_PROTOCOL(PROTOCOL_VERSION3, ptype_rpc, ptype_batch_send, 1)
+		};
+		cnct->p_cnct_count = FB_NELEM(protocols_to_try3);
+
+		for (size_t i = 0; i < cnct->p_cnct_count; i++) {
+			cnct->p_cnct_versions[i] = protocols_to_try3[i];
+		}
+
+		port = WNET_connect(node_name, packet, status_vector, 0);
+		if (!port) {
+			ALLR_release(rdb);
+			return NULL;
+		}
+
+		/* Get response packet from server. */
+
+		rdb->rdb_port = port;
+		port->port_context = rdb;
+		port->receive(packet);
+	}
+
+	if (packet->p_operation != op_accept) {
+		*status_vector++ = isc_arg_gds;
+		*status_vector++ = isc_connect_reject;
+		*status_vector++ = 0;
+		disconnect(port);
+		return NULL;
+	}
+
+	port->port_protocol = packet->p_acpt.p_acpt_version;
+
+/* once we've decided on a protocol, concatenate the version 
+   string to reflect it...  */
+
+	Firebird::string temp;
+	temp.printf("%s/P%d", port->port_version->str_data, 
 						  port->port_protocol & FB_PROTOCOL_MASK);
-	delete port->port_version;
+	ALLR_free(port->port_version);
 	port->port_version = REMOTE_make_string(temp.c_str());
 
-	if (accept->p_acpt_architecture == ARCHITECTURE)
+	if (packet->p_acpt.p_acpt_architecture == ARCHITECTURE)
 		port->port_flags |= PORT_symmetric;
 
-	if (accept->p_acpt_type != ptype_out_of_band)
+	if (packet->p_acpt.p_acpt_type == ptype_rpc)
+		port->port_flags |= PORT_rpc;
+
+	if (packet->p_acpt.p_acpt_type != ptype_out_of_band)
 		port->port_flags |= PORT_no_oob;
 
 	return port;
 }
 
 
-rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::RefPtr<Config>* config)
+rem_port* WNET_connect(const TEXT*		name,
+				  PACKET*	packet,
+				  ISC_STATUS*	status_vector,
+				  USHORT	flag)
 {
 /**************************************
  *
@@ -282,89 +323,101 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
  *	connect is for a server process.
  *
  **************************************/
-	rem_port* const port = alloc_port(0);
-	if (config)
-	{
-		port->port_config = *config;
+	rem_port* port = alloc_port(0);
+	port->port_status_vector = status_vector;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = 0;
+	status_vector[2] = isc_arg_end;
+
+	if (port->port_connection) {
+		ALLR_free(port->port_connection);
 	}
+	port->port_connection = make_pipe_name(name, SERVER_PIPE_SUFFIX, 0);
 
-	delete port->port_connection;
-	port->port_connection = make_pipe_name(port->getPortConfig(), name, SERVER_PIPE_SUFFIX, 0);
-
-	// If we're a host, just make the connection
+/* If we're a host, just make the connection */
 
 	if (packet)
 	{
-		while (true)
-		{
-			port->port_pipe = CreateFile(port->port_connection->str_data,
-										 GENERIC_WRITE | GENERIC_READ,
-										 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-			if (port->port_pipe != INVALID_HANDLE_VALUE) {
+		THREAD_EXIT();
+		while (true) {
+			port->port_handle = CreateFile(port->port_connection->str_data,
+										   GENERIC_WRITE | GENERIC_READ,
+										   0, NULL, OPEN_EXISTING, 0, NULL);
+			if (port->port_handle != INVALID_HANDLE_VALUE) {
 				break;
 			}
 			const ISC_STATUS status = GetLastError();
-			if (status != ERROR_PIPE_BUSY)
-			{
+			if (status != ERROR_PIPE_BUSY) {
+				THREAD_ENTER();
 				wnet_error(port, "CreateFile", isc_net_connect_err, status);
 				disconnect(port);
 				return NULL;
 			}
 			WaitNamedPipe(port->port_connection->str_data, 3000L);
 		}
+		THREAD_ENTER();
 		send_full(port, packet);
 		return port;
 	}
 
-	// We're a server, so wait for a host to show up
+#ifndef REQUESTER
+/* We're a server, so wait for a host to show up */
 
-	wnet_ports->registerPort(port);
-	while (!wnet_shutdown)
+	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
+	THREAD_EXIT();
+
+	while (true)
 	{
-		port->port_pipe =
+		port->port_handle =
 			CreateNamedPipe(port->port_connection->str_data,
-							PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+							PIPE_ACCESS_DUPLEX,
 							PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,
 							PIPE_UNLIMITED_INSTANCES,
 							MAX_DATA,
 							MAX_DATA,
 							0,
-							ISC_get_security_desc());
-		if (port->port_pipe == INVALID_HANDLE_VALUE)
+							security_attr);
+		if (port->port_handle == INVALID_HANDLE_VALUE ||
+			GetLastError() == ERROR_CALL_NOT_IMPLEMENTED)
 		{
-			const DWORD dwError = GetLastError();
-			if (dwError == ERROR_CALL_NOT_IMPLEMENTED)
-			{
-				disconnect(port);
-				wnet_shutdown = true;
-				break;
-			}
-
-			wnet_error(port, "CreateNamedPipe", isc_net_connect_listen_err, dwError);
+			// TMN: The check for GetLastError() is redundant.
+			// This code should NEVER be called if not running on NT,
+			// since Win9x does not support the server side of named pipes!
+			THREAD_ENTER();
+			wnet_error(port, "CreateNamedPipe", isc_net_connect_listen_err,
+					   ERRNO);
 			disconnect(port);
 			return NULL;
 		}
 
-		if (!connect_client(port))
-			break;
+		if (!ConnectNamedPipe(port->port_handle, 0) &&
+			GetLastError() != ERROR_PIPE_CONNECTED)
+		{
+			THREAD_ENTER();
+			wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, ERRNO);
+			disconnect(port);
+			return NULL;
+		}
 
 		if (flag & (SRVR_debug | SRVR_multi_client))
 		{
+			THREAD_ENTER();
 			port->port_server_flags |= SRVR_server;
-			port->port_flags |= PORT_server;
 			if (flag & SRVR_multi_client)
 			{
 				port->port_server_flags |= SRVR_multi_client;
 			}
-
+			gds__register_cleanup(reinterpret_cast <
+								  void (*)(void *) >(exit_handler), port);
 			return port;
 		}
 
 		TEXT name[MAXPATHLEN];
 		GetModuleFileName(NULL, name, sizeof(name));
 
-		string cmdLine;
-		cmdLine.printf("%s -w -h %"HANDLEFORMAT"@%"ULONGFORMAT, name, port->port_pipe, GetCurrentProcessId());
+		Firebird::string cmdLine;
+		cmdLine.printf("%s -w -h %"SLONGFORMAT"@%"SLONGFORMAT, name, (SLONG) port->port_handle, 
+			GetCurrentProcessId());
 
 		STARTUPINFO start_crud;
 		PROCESS_INFORMATION pi;
@@ -389,25 +442,14 @@ rem_port* WNET_connect(const TEXT* name, PACKET* packet, USHORT flag, Firebird::
 		else
 		{
 			gds__log("WNET/inet_error: fork/CreateProcess errno = %d", GetLastError());
-			CloseHandle(port->port_pipe);
+			CloseHandle(port->port_handle);
 		}
-
-		if (wnet_shutdown)
-			disconnect(port);
 	}
-
-	if (wnet_shutdown)
-	{
-		Arg::Gds temp(isc_net_server_shutdown);
-		temp << Arg::Str("WNET");
-		temp.raise();
-	}
-
-	return NULL;
+#endif /* REQUESTER */
 }
 
 
-rem_port* WNET_reconnect(HANDLE handle)
+rem_port* WNET_reconnect(HANDLE handle, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -417,24 +459,49 @@ rem_port* WNET_reconnect(HANDLE handle)
  *
  * Functional description
  *	A communications link has been established by another
- *	process.  We have inherited the handle.  Set up
+ *	process.  We have inheritted the handle.  Set up
  *	a port block.
  *
  **************************************/
-	rem_port* const port = alloc_port(0);
+	rem_port* port = alloc_port(0);
+	port->port_status_vector = status_vector;
+	status_vector[0] = isc_arg_gds;
+	status_vector[1] = 0;
+	status_vector[2] = isc_arg_end;
 
-	delete port->port_connection;
-	port->port_connection = make_pipe_name(port->getPortConfig(), NULL, SERVER_PIPE_SUFFIX, 0);
+	if (port->port_connection)
+		ALLR_free(port->port_connection);
+	port->port_connection = make_pipe_name(NULL, SERVER_PIPE_SUFFIX, 0);
 
-	port->port_pipe = handle;
+	port->port_handle = handle;
 	port->port_server_flags |= SRVR_server;
-	port->port_flags |= PORT_server;
 
 	return port;
 }
 
 
-static bool accept_connection( rem_port* port, const P_CNCT* cnct)
+rem_port* WNET_server(void *handle)
+{
+/**************************************
+ *
+ *	W N E T _ s e r v e r
+ *
+ **************************************
+ *
+ * Functional description
+ *	We have been spawned by a master server with a connection
+ *	established.  Set up port block with the appropriate socket.
+ *
+ **************************************/
+	rem_port* port = alloc_port(0);
+	port->port_server_flags |= SRVR_server;
+	port->port_handle = (HANDLE) handle;
+
+	return port;
+}
+
+
+static int accept_connection( rem_port* port, P_CNCT * cnct)
 {
 /**************************************
  *
@@ -448,38 +515,42 @@ static bool accept_connection( rem_port* port, const P_CNCT* cnct)
  *	response for protocol selection.
  *
  **************************************/
-	// Default account to "guest" (in theory all packets contain a name)
+/* Default account to "guest" (in theory all packets contain a name) */
 
-	string user_name("guest"), host_name;
+	Firebird::string name("guest"), password;
 
-	// Pick up account and host name, if given
+/* Pick up account and password, if given */
 
-	ClumpletReader id(ClumpletReader::UnTagged,
-					  cnct->p_cnct_user_id.cstr_address,
-					  cnct->p_cnct_user_id.cstr_length);
+	Firebird::ClumpletReader id(Firebird::ClumpletReader::UnTagged, 
+			cnct->p_cnct_user_id.cstr_address, cnct->p_cnct_user_id.cstr_length);
 
 	for (id.rewind(); !id.isEof(); id.moveNext())
 	{
 		switch (id.getClumpTag())
 		{
 		case CNCT_user:
-			id.getString(user_name);
-			break;
+			{
+				id.getString(name);
+				rem_str* string= (rem_str*) ALLR_block(type_str, name.length());
+				port->port_user_name = string;
+				string->str_length = name.length();
+				strcpy(string->str_data, name.c_str());
+				break;
+			}
 
-		case CNCT_host:
-			id.getString(host_name);
-			break;
-
-		default:
-			break;
+		case CNCT_passwd:
+			{
+				id.getString(password);
+				break;
+			}
 		}
 	}
 
-	port->port_login = port->port_user_name = user_name;
-	port->port_peer_name = host_name;
-	port->port_protocol_id = "WNET";
+	// NS: Put in connection address. I have no good idea where to get an
+	// address of the remote end of named pipe so let's live without it for now
+	port->port_protocol_str = REMOTE_make_string("WNET");
 
-	return true;
+	return TRUE;
 }
 
 
@@ -496,18 +567,9 @@ static rem_port* alloc_port( rem_port* parent)
  *	and initialize input and output XDR streams.
  *
  **************************************/
-
-	if (!wnet_initialized)
-	{
-		MutexLockGuard guard(init_mutex, FB_FUNCTION);
-		if (!wnet_initialized)
-		{
-			wnet_initialized = true;
-			fb_shutdown_callback(0, cleanup_ports, fb_shut_postproviders, 0);
-		}
-	}
-
-	rem_port* port = new rem_port(rem_port::PIPE, BUFFER_SIZE * 2);
+	rem_port* port = (rem_port*) ALLR_block(type_port, BUFFER_SIZE * 2);
+	port->port_type = port_pipe;
+	port->port_state = state_pending;
 
 	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));
@@ -516,9 +578,21 @@ static rem_port* alloc_port( rem_port* parent)
 	sprintf(buffer, "WNet (%s)", port->port_host->str_data);
 	port->port_version = REMOTE_make_string(buffer);
 
+	if (parent) {
+		port->port_parent = parent;
+		port->port_next = parent->port_clients;
+		parent->port_clients = parent->port_next = port;
+		port->port_handle = parent->port_handle;
+		port->port_server = parent->port_server;
+		port->port_server_flags = parent->port_server_flags;
+		if (port->port_connection)
+			ALLR_free(port->port_connection);
+		port->port_connection =
+			REMOTE_make_string(parent->port_connection->str_data);
+	}
+
 	port->port_accept = accept_connection;
 	port->port_disconnect = disconnect;
-	port->port_force_close = force_close;
 	port->port_receive_packet = receive;
 	port->port_send_packet = send_full;
 	port->port_send_partial = send_partial;
@@ -526,25 +600,18 @@ static rem_port* alloc_port( rem_port* parent)
 	port->port_request = aux_request;
 	port->port_buff_size = BUFFER_SIZE;
 
-	port->port_event = CreateEvent(NULL, TRUE, TRUE, NULL);
+	xdrwnet_create(&port->port_send, port,
+				   &port->port_buffer[BUFFER_SIZE], BUFFER_SIZE, XDR_ENCODE);
 
-	xdrwnet_create(&port->port_send, port, &port->port_buffer[BUFFER_SIZE], BUFFER_SIZE, XDR_ENCODE);
-
-	xdrwnet_create(&port->port_receive, port, port->port_buffer, 0, XDR_DECODE);
-
-	if (parent)
-	{
-		delete port->port_connection;
-		port->port_connection = REMOTE_make_string(parent->port_connection->str_data);
-
-		port->linkParent(parent);
-	}
+	xdrwnet_create(&port->port_receive, port, port->port_buffer, 0,
+				   XDR_DECODE);
 
 	return port;
 }
 
 
-static rem_port* aux_connect( rem_port* port, PACKET* packet)
+// Third param "ast" is unused.
+static rem_port* aux_connect( rem_port* port, PACKET* packet, t_event_ast ast)
 {
 /**************************************
  *
@@ -557,55 +624,64 @@ static rem_port* aux_connect( rem_port* port, PACKET* packet)
  *	done a successfull connect request ("packet" contains the response).
  *
  **************************************/
-	// If this is a server, we're got an auxiliary connection.  Accept it
+#ifndef REQUESTER
+/* If this is a server, we're got an auxiliary connection.  Accept it */
 
-	if (port->port_server_flags)
-	{
-		if (!connect_client(port))
+	if (port->port_server_flags) {
+		if (!ConnectNamedPipe(port->port_handle, 0) &&
+			GetLastError() != ERROR_PIPE_CONNECTED)
+		{
+			wnet_error(port, "ConnectNamedPipe", isc_net_event_connect_err,
+					   ERRNO);
+			disconnect(port);
 			return NULL;
+		}
 
 		port->port_flags |= PORT_async;
 		return port;
 	}
+#endif /* REQUESTER */
 
-	// The server will be sending its process id in the packet to
-	// create a unique pipe name.
+/* The server will be sending its process id in the packet to
+ * create a unique pipe name.
+ */
 
 	P_RESP* response = &packet->p_resp;
 
 	TEXT str_pid[32];
 	const TEXT* p = 0;
-	if (response->p_resp_data.cstr_length)
-	{
+	if (response->p_resp_data.cstr_length) {
 		// Avoid B.O.
-		const size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
-		memcpy(str_pid, response->p_resp_data.cstr_address, len);
+		size_t len = MIN(response->p_resp_data.cstr_length, sizeof(str_pid) - 1);
+		wnet_copy(response->p_resp_data.cstr_address, str_pid, len);
 		str_pid[len] = 0;
 		p = str_pid;
 	}
 
-	rem_port* const new_port = alloc_port(port->port_parent);
+	rem_port* new_port = alloc_port(port->port_parent);
 	port->port_async = new_port;
 	new_port->port_flags = port->port_flags & PORT_no_oob;
 	new_port->port_flags |= PORT_async;
-	new_port->port_connection = make_pipe_name(port->getPortConfig(),
-		port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
+	new_port->port_connection =
+		make_pipe_name(port->port_connection->str_data, EVENT_PIPE_SUFFIX, p);
 
-	while (true)
-	{
-		new_port->port_pipe =
+	THREAD_EXIT();
+	while (true) {
+		new_port->port_handle =
 			CreateFile(new_port->port_connection->str_data, GENERIC_READ, 0,
-					   NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-		if (new_port->port_pipe != INVALID_HANDLE_VALUE)
+					   NULL, OPEN_EXISTING, 0, NULL);
+		if (new_port->port_handle != INVALID_HANDLE_VALUE)
 			break;
 		const ISC_STATUS status = GetLastError();
-		if (status != ERROR_PIPE_BUSY)
-		{
-			wnet_error(new_port, "CreateFile", isc_net_event_connect_err, status);
-			return NULL;
+		if (status != ERROR_PIPE_BUSY) {
+			THREAD_ENTER();
+			return (rem_port*) wnet_error(new_port, "CreateFile",
+									 isc_net_event_connect_err, status);
 		}
 		WaitNamedPipe(new_port->port_connection->str_data, 3000L);
 	}
+
+	THREAD_ENTER();
 
 	return new_port;
 }
@@ -620,92 +696,54 @@ static rem_port* aux_request( rem_port* vport, PACKET* packet)
  **************************************
  *
  * Functional description
- *	A remote interface has requested the server prepare an auxiliary
+ *	A remote interface has requested the server prepare an auxiliary 
  *	connection; the server calls aux_request to set up the connection.
  *	Send the servers process id on the packet.  If at a later time
  *	a multi client server is used, there may be a need to
  *	generate a unique id based on connection.
  *
  **************************************/
+	rem_port* new_port = NULL;  // If this is the client, we will return NULL
 
-	const DWORD server_pid = (vport->port_server_flags & SRVR_multi_client) ?
-		++event_counter : GetCurrentProcessId();
-	rem_port* const new_port = alloc_port(vport->port_parent);
-	vport->port_async = new_port;
+#ifndef REQUESTER
+	const DWORD server_pid = GetCurrentProcessId();
+	vport->port_async = new_port = alloc_port(vport->port_parent);
 	new_port->port_server_flags = vport->port_server_flags;
 	new_port->port_flags = vport->port_flags & PORT_no_oob;
 
 	TEXT str_pid[32];
 	wnet_make_file_name(str_pid, server_pid);
-	new_port->port_connection = make_pipe_name(vport->getPortConfig(),
-		vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
+	new_port->port_connection =
+		make_pipe_name(vport->port_connection->str_data, EVENT_PIPE_SUFFIX, str_pid);
 
-	new_port->port_pipe =
+	LPSECURITY_ATTRIBUTES security_attr = ISC_get_security_desc();
+	THREAD_EXIT();
+	new_port->port_handle =
 		CreateNamedPipe(new_port->port_connection->str_data,
-						PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+						PIPE_ACCESS_DUPLEX,
 						PIPE_WAIT | PIPE_TYPE_BYTE | PIPE_READMODE_BYTE,
 						PIPE_UNLIMITED_INSTANCES,
 						MAX_DATA,
 						MAX_DATA,
 						0,
-						ISC_get_security_desc());
-
-	if (new_port->port_pipe == INVALID_HANDLE_VALUE)
-	{
-		wnet_error(new_port, "CreateNamedPipe", isc_net_event_listen_err, ERRNO);
+						security_attr);
+	THREAD_ENTER();
+	if (new_port->port_handle == INVALID_HANDLE_VALUE) {
+		wnet_error(new_port, "CreateNamedPipe", isc_net_event_listen_err,
+				   ERRNO);
 		disconnect(new_port);
 		return NULL;
 	}
 
 	P_RESP* response = &packet->p_resp;
-	response->p_resp_data.cstr_length = (ULONG) strlen(str_pid);
-	memcpy(response->p_resp_data.cstr_address, str_pid, response->p_resp_data.cstr_length);
+	response->p_resp_data.cstr_length = strlen(str_pid);
+	wnet_copy(reinterpret_cast<UCHAR*>(str_pid),
+			  reinterpret_cast<char*>(response->p_resp_data.cstr_address),
+			  response->p_resp_data.cstr_length);
+
+#endif /* REQUESTER */
 
 	return new_port;
-}
-
-
-static bool connect_client(rem_port *port)
-{
-/**************************************
- *
- *	c o n n e c t _ c l i e n t
- *
- **************************************
- *
- * Functional description
- *	Wait for new client connected.
- *
- **************************************/
-
-	OVERLAPPED ovrl = {0};
-	ovrl.hEvent = port->port_event;
-	if (!ConnectNamedPipe(port->port_pipe, &ovrl))
-	{
-		DWORD err = GetLastError();
-		switch (err)
-		{
-		case ERROR_PIPE_CONNECTED:
-			break;
-
-		case ERROR_IO_PENDING:
-			if (WaitForSingleObject(port->port_event, INFINITE) == WAIT_OBJECT_0)
-			{
-				if (!wnet_shutdown)
-					break;
-			}
-			else
-				err = GetLastError(); // fall thru
-
-		default:
-			if (!wnet_shutdown) {
-				wnet_error(port, "ConnectNamedPipe", isc_net_connect_err, err);
-			}
-			disconnect(port);
-			return false;
-		}
-	}
-	return true;
 }
 
 
@@ -722,64 +760,113 @@ static void disconnect(rem_port* port)
  *
  **************************************/
 
-	if (port->port_async)
+/* If this is a sub-port, unlink it from it's parent */
+
+	rem_port* parent = port->port_parent;
+	if (parent)
 	{
+		if (port->port_async)
+		{
+			disconnect(port->port_async);
+			port->port_async = NULL;
+		}
+		for (rem_port** ptr = &parent->port_clients; *ptr; ptr = &(*ptr)->port_next)
+		{
+			if (*ptr == port)
+			{
+				*ptr = port->port_next;
+				if (ptr == &parent->port_clients) {
+					parent->port_next = *ptr;
+				}
+				break;
+			}
+		}
+	}
+	else if (port->port_async)
+	{
+/* If we're MULTI_THREAD then we cannot free the port because another
+ * thread might be using it.  If we're SUPERSERVER we must free the
+ * port to avoid a memory leak.  What we really need to know is if we
+ * have multi-threaded events, but this is transport specific.
+ */
+#if     (defined (MULTI_THREAD) && !defined (SUPERSERVER))
+		port->port_async->port_flags |= PORT_disconnect;
+#else
 		disconnect(port->port_async);
 		port->port_async = NULL;
+#endif
 	}
-	port->port_context = NULL;
 
-	// If this is a sub-port, unlink it from its parent
-	port->unlinkParent();
-
+#ifndef REQUESTER
 	if (port->port_server_flags & SRVR_server)
 	{
-		FlushFileBuffers(port->port_pipe);
-		DisconnectNamedPipe(port->port_pipe);
+		FlushFileBuffers(port->port_handle);
+		DisconnectNamedPipe(port->port_handle);
+		/* CVC: It's never set, so how could it be active?
+		if (port->port_flags & PORT_impersonate)
+		{
+			RevertToSelf();
+			port->port_flags &= ~PORT_impersonate;
+		}
+		*/
 	}
-	if (port->port_event != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(port->port_event);
-		port->port_event = INVALID_HANDLE_VALUE;
+#endif /* REQUESTER */
+	if (port->port_handle) {
+		CloseHandle(port->port_handle);
+		port->port_handle = 0;
 	}
-	if (port->port_pipe != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(port->port_pipe);
-		port->port_pipe = INVALID_HANDLE_VALUE;
-	}
-
-	wnet_ports->unRegisterPort(port);
-	port->release();
+	gds__unregister_cleanup(reinterpret_cast<void (*)(void*)>(exit_handler),
+	                        port);
+	cleanup_port(port);
 }
 
 
-static void force_close(rem_port* port)
+static void cleanup_port( rem_port* port)
 {
 /**************************************
  *
- *	f o r c e _ c l o s e
+ *      c l e a n u p _ p o r t
  *
  **************************************
  *
  * Functional description
- *	Forcibly close remote connection.
+ *      Walk through the port structure freeing
+ *      allocated memory and then free the port.
  *
  **************************************/
 
-	if (port->port_event != INVALID_HANDLE_VALUE)
-	{
-		port->port_state = rem_port::BROKEN;
+	if (port->port_version)
+		ALLR_free((UCHAR *) port->port_version);
 
-		const HANDLE handle = port->port_pipe;
-		port->port_pipe = INVALID_HANDLE_VALUE;
-		SetEvent(port->port_event);
-		CloseHandle(handle);
-	}
+	if (port->port_connection)
+		ALLR_free((UCHAR *) port->port_connection);
+
+	if (port->port_user_name)
+		ALLR_free((UCHAR *) port->port_user_name);
+
+	if (port->port_protocol_str)
+		ALLR_free((UCHAR *) port->port_protocol_str);
+
+	if (port->port_address_str)
+		ALLR_free((UCHAR *) port->port_address_str);
+
+	if (port->port_host)
+		ALLR_free((UCHAR *) port->port_host);
+
+	if (port->port_object_vector)
+		ALLR_free((UCHAR *) port->port_object_vector);
+
+#ifdef DEBUG_XDR_MEMORY
+	if (port->port_packet_vector)
+		ALLR_free((UCHAR *) port->port_packet_vector);
+#endif
+
+	ALLR_release((UCHAR *) port);
+	return;
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-static void exit_handler(void* main_port)
+static void exit_handler( rem_port* main_port)
 {
 /**************************************
  *
@@ -792,14 +879,14 @@ static void exit_handler(void* main_port)
  *	to allow restart.
  *
  **************************************/
-	for (rem_port* vport = static_cast<rem_port*>(main_port); vport; vport = vport->port_next)
-		CloseHandle(vport->port_pipe);
+	for (rem_port* vport = main_port; vport; vport = vport->port_next)
+		CloseHandle(vport->port_handle);
 }
-#endif
 
 
-static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect_name,
-	const TEXT* suffix_name, const TEXT* str_pid)
+static rem_str* make_pipe_name(const TEXT* connect_name,
+							   const TEXT* suffix_name,
+							   const TEXT* str_pid)
 {
 /**************************************
  *
@@ -814,7 +901,7 @@ static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect
  *	If a server pid != 0, append it to pipe name  as <>/<pid>
  *
  **************************************/
-	string buffer("\\\\");
+	Firebird::string buffer("\\\\");
 
 	const TEXT* p = connect_name;
 
@@ -825,34 +912,27 @@ static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect
 		buffer += *p++;
 
 	const TEXT* protocol = NULL;
-	switch (*p)
-	{
-	case 0:
-		protocol = config->getRemoteServiceName();
-		break;
-	case '@':
+	if (!*p)
+		protocol = Config::getRemoteServiceName();
+	else if (*p == '@')
 		protocol = p + 1;
-		break;
-	default:
+	else {
 		while (*p)
-		{
 			if (*p++ == '\\')
 				protocol = p;
-		}
 	}
 
 	buffer += '\\';
 	buffer += PIPE_PREFIX;
 	buffer += '\\';
-	const char *pipe_name = config->getRemotePipeName();
+	const char *pipe_name = Config::getRemotePipeName();
 	buffer += pipe_name;
 	buffer += '\\';
 	buffer += suffix_name;
 	buffer += '\\';
 	buffer += protocol;
 
-	if (str_pid)
-	{
+	if (str_pid) {
 		buffer += '\\';
 		buffer += str_pid;
 	}
@@ -861,7 +941,7 @@ static rem_str* make_pipe_name(const RefPtr<Config>& config, const TEXT* connect
 }
 
 
-static rem_port* receive( rem_port* main_port, PACKET* packet)
+static rem_port* receive( rem_port* main_port, PACKET * packet)
 {
 /**************************************
  *
@@ -876,10 +956,6 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	main_port->port_receive.x_client = !(main_port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&main_port->port_receive, packet))
 		packet->p_operation = op_exit;
 
@@ -887,7 +963,7 @@ static rem_port* receive( rem_port* main_port, PACKET* packet)
 }
 
 
-static int send_full( rem_port* port, PACKET* packet)
+static int send_full( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -900,18 +976,14 @@ static int send_full( rem_port* port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
-
 	if (!xdr_protocol(&port->port_send, packet))
 		return FALSE;
 
-	return xdrwnet_endofrecord(&port->port_send); //, TRUE);
+	return xdrwnet_endofrecord(&port->port_send, TRUE);
 }
 
 
-static int send_partial( rem_port* port, PACKET* packet)
+static int send_partial( rem_port* port, PACKET * packet)
 {
 /**************************************
  *
@@ -924,17 +996,14 @@ static int send_partial( rem_port* port, PACKET* packet)
  *
  **************************************/
 
-#ifdef DEV_BUILD
-	port->port_send.x_client = !(port->port_flags & PORT_server);
-#endif
-
 	return xdr_protocol(&port->port_send, packet);
 }
 
 
-static int xdrwnet_create(XDR* xdrs,
+static int xdrwnet_create(
+						  XDR * xdrs,
 						  rem_port* port,
-						  UCHAR* buffer, USHORT length, xdr_op x_op)
+						  UCHAR * buffer, USHORT length, enum xdr_op x_op)
 {
 /**************************************
  *
@@ -948,7 +1017,7 @@ static int xdrwnet_create(XDR* xdrs,
  **************************************/
 
 	xdrs->x_public = (caddr_t) port;
-	xdrs->x_base = xdrs->x_private = reinterpret_cast<SCHAR*>(buffer);
+	xdrs->x_base = xdrs->x_private = (SCHAR *) buffer;
 	xdrs->x_handy = length;
 	xdrs->x_ops = &wnet_ops;
 	xdrs->x_op = x_op;
@@ -957,7 +1026,7 @@ static int xdrwnet_create(XDR* xdrs,
 }
 
 
-static bool_t xdrwnet_endofrecord( XDR* xdrs) //, bool_t flushnow)
+static bool_t xdrwnet_endofrecord( XDR * xdrs, bool_t flushnow)
 {
 /**************************************
  *
@@ -970,11 +1039,29 @@ static bool_t xdrwnet_endofrecord( XDR* xdrs) //, bool_t flushnow)
  *
  **************************************/
 
-	return wnet_write(xdrs); //, flushnow);
+	return wnet_write(xdrs, flushnow);
 }
 
 
-static bool wnet_error(rem_port* port,
+static int wnet_destroy( XDR * xdrs)
+{
+/**************************************
+ *
+ *	w n e t _ d e s t r o y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Destroy a stream.  A no-op.
+ *
+ **************************************/
+
+	return 0;
+}
+
+
+static int wnet_error(
+					  rem_port* port,
 					  const TEXT* function, ISC_STATUS operation, int status)
 {
 /**************************************
@@ -989,24 +1076,36 @@ static bool wnet_error(rem_port* port,
  *	is used to indicate and error.
  *
  **************************************/
-	if (status)
-	{
-		if (port->port_state != rem_port::BROKEN) {
-			gds__log("WNET/wnet_error: %s errno = %d", function, status);
+	TEXT node_name[MAXPATHLEN];
+
+	strcpy(node_name, ((SCHAR *) port->port_connection->str_data) + 2);
+	TEXT* p = strchr(node_name, '\\');
+	if (p != NULL)
+		*p = '\0';
+
+	if (status) {
+		wnet_gen_error(port, isc_network_error,
+					   isc_arg_string, (ISC_STATUS) node_name,
+					   isc_arg_gds, operation,
+					   SYS_ERR, status,
+					   isc_arg_end);
+		if (status != ERROR_CALL_NOT_IMPLEMENTED) {
+            TEXT msg[BUFFER_TINY];
+			sprintf(msg, "WNET/wnet_error: %s errno = %d", function, status);
+			gds__log(msg, 0, 0, 0, 0);
 		}
-
-		wnet_gen_error(port, Arg::Gds(operation) << SYS_ERR(status));
 	}
-	else
-	{
-		wnet_gen_error(port, Arg::Gds(operation));
+	else {
+		wnet_gen_error(port, isc_network_error,
+					   isc_arg_string, (ISC_STATUS) node_name,
+					   isc_arg_gds, operation, isc_arg_end);
 	}
 
-	return false;
+	return 0;
 }
 
 
-static void wnet_gen_error (rem_port* port, const Arg::StatusVector& v)
+static void wnet_gen_error( rem_port* port, ISC_STATUS status, ...)
 {
 /**************************************
  *
@@ -1020,28 +1119,22 @@ static void wnet_gen_error (rem_port* port, const Arg::StatusVector& v)
  *	save the status vector strings in a permanent place.
  *
  **************************************/
-	port->port_state = rem_port::BROKEN;
+	port->port_flags |= PORT_broken;
+	port->port_state = state_broken;
 
-	TEXT node_name[MAXPATHLEN];
-	if (port->port_connection)
-	{
-		fb_utils::copy_terminate(node_name, port->port_connection->str_data + 2, sizeof(node_name));
-		TEXT* const p = strchr(node_name, '\\');
-		if (p != NULL)
-			*p = '\0';
+	ISC_STATUS* status_vector = NULL;
+	if (port->port_context != NULL)
+		status_vector = port->port_context->rdb_status_vector;
+	if (status_vector == NULL)
+		status_vector = port->port_status_vector;
+	if (status_vector != NULL) {
+		STUFF_STATUS(status_vector, status);
+		REMOTE_save_status_strings(status_vector);
 	}
-	else
-	{
-		strcpy(node_name, "(unknown)");
-	}
-
-	Arg::Gds error(isc_network_error);
-	error << Arg::Str(node_name) << v;
-	error.raise();
 }
 
 
-static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
+static bool_t wnet_getbytes( XDR * xdrs, SCHAR * buff, u_int count)
 {
 /**************************************
  *
@@ -1055,37 +1148,35 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
  **************************************/
 	SLONG bytecount = count;
 
-	// Use memcpy to optimize bulk transfers.
+/* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD))
-	{
-		if (xdrs->x_handy >= bytecount)
-		{
+	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
+		if (xdrs->x_handy >= bytecount) {
 			memcpy(buff, xdrs->x_private, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		if (xdrs->x_handy > 0)
-		{
-			memcpy(buff, xdrs->x_private, xdrs->x_handy);
-			xdrs->x_private += xdrs->x_handy;
-			buff += xdrs->x_handy;
-			bytecount -= xdrs->x_handy;
-			xdrs->x_handy = 0;
+		else {
+			if (xdrs->x_handy > 0) {
+				memcpy(buff, xdrs->x_private, xdrs->x_handy);
+				xdrs->x_private += xdrs->x_handy;
+				buff += xdrs->x_handy;
+				bytecount -= xdrs->x_handy;
+				xdrs->x_handy = 0;
+			}
+			if (!wnet_read(xdrs))
+				return FALSE;
 		}
-		if (!wnet_read(xdrs))
-			return FALSE;
 	}
 
-	// Scalar values and bulk transfer remainder fall thru
-	// to be moved byte-by-byte to avoid memcpy setup costs.
+/* Scalar values and bulk transfer remainder fall thru
+   to be moved byte-by-byte to avoid memcpy setup costs. */
 
 	if (!bytecount)
 		return TRUE;
 
-	if (xdrs->x_handy >= bytecount)
-	{
+	if (xdrs->x_handy >= bytecount) {
 		xdrs->x_handy -= bytecount;
 		do {
 			*buff++ = *xdrs->x_private++;
@@ -1093,8 +1184,7 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0)
-	{
+	while (--bytecount >= 0) {
 		if (!xdrs->x_handy && !wnet_read(xdrs))
 			return FALSE;
 		*buff++ = *xdrs->x_private++;
@@ -1102,6 +1192,66 @@ static bool_t wnet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
 	}
 
 	return TRUE;
+}
+
+
+static bool_t wnet_getlong( XDR * xdrs, SLONG * lp)
+{
+/**************************************
+ *
+ *	w n e t _ g e t l o n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch a longword into a memory stream if it fits.
+ *
+ **************************************/
+	SLONG l;
+
+	if (!(*xdrs->x_ops->x_getbytes) (xdrs, reinterpret_cast<char*>(&l), 4))
+		return FALSE;
+
+	*lp = ntohl(l);
+
+	return TRUE;
+}
+
+
+static u_int wnet_getpostn( XDR * xdrs)
+{
+/**************************************
+ *
+ *	w n e t _ g e t p o s t n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get the current position (which is also current length) from stream.
+ *
+ **************************************/
+
+	return (u_int) (xdrs->x_private - xdrs->x_base);
+}
+
+
+static caddr_t wnet_inline( XDR * xdrs, u_int bytecount)
+{
+/**************************************
+ *
+ *	w n e t _  i n l i n e
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a pointer to somewhere in the buffer.
+ *
+ **************************************/
+
+	if (bytecount > (u_int) xdrs->x_handy)
+		return FALSE;
+
+	return xdrs->x_base + bytecount;
 }
 
 
@@ -1119,37 +1269,35 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
  **************************************/
 	SLONG bytecount = count;
 
-	// Use memcpy to optimize bulk transfers.
+/* Use memcpy to optimize bulk transfers. */
 
-	while (bytecount > (SLONG) sizeof(ISC_QUAD))
-	{
-		if (xdrs->x_handy >= bytecount)
-		{
+	while (bytecount > (SLONG) sizeof(ISC_QUAD)) {
+		if (xdrs->x_handy >= bytecount) {
 			memcpy(xdrs->x_private, buff, bytecount);
 			xdrs->x_private += bytecount;
 			xdrs->x_handy -= bytecount;
 			return TRUE;
 		}
-		if (xdrs->x_handy > 0)
-		{
-			memcpy(xdrs->x_private, buff, xdrs->x_handy);
-			xdrs->x_private += xdrs->x_handy;
-			buff += xdrs->x_handy;
-			bytecount -= xdrs->x_handy;
-			xdrs->x_handy = 0;
+		else {
+			if (xdrs->x_handy > 0) {
+				memcpy(xdrs->x_private, buff, xdrs->x_handy);
+				xdrs->x_private += xdrs->x_handy;
+				buff += xdrs->x_handy;
+				bytecount -= xdrs->x_handy;
+				xdrs->x_handy = 0;
+			}
+			if (!wnet_write(xdrs, 0))
+				return FALSE;
 		}
-		if (!wnet_write(xdrs /*, 0*/))
-			return FALSE;
 	}
 
-	// Scalar values and bulk transfer remainder fall thru
-	// to be moved byte-by-byte to avoid memcpy setup costs.
+/* Scalar values and bulk transfer remainder fall thru
+   to be moved byte-by-byte to avoid memcpy setup costs. */
 
 	if (!bytecount)
 		return TRUE;
 
-	if (xdrs->x_handy >= bytecount)
-	{
+	if (xdrs->x_handy >= bytecount) {
 		xdrs->x_handy -= bytecount;
 		do {
 			*xdrs->x_private++ = *buff++;
@@ -1157,9 +1305,8 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 		return TRUE;
 	}
 
-	while (--bytecount >= 0)
-	{
-		if (xdrs->x_handy <= 0 && !wnet_write(xdrs /*, 0*/))
+	while (--bytecount >= 0) {
+		if (xdrs->x_handy <= 0 && !wnet_write(xdrs, 0))
 			return FALSE;
 		--xdrs->x_handy;
 		*xdrs->x_private++ = *buff++;
@@ -1169,7 +1316,26 @@ static bool_t wnet_putbytes( XDR* xdrs, const SCHAR* buff, u_int count)
 }
 
 
-static bool_t wnet_read( XDR* xdrs)
+static bool_t wnet_putlong( XDR * xdrs, const SLONG* lp)
+{
+/**************************************
+ *
+ *	w n e t _ p u t l o n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fetch a longword into a memory stream if it fits.
+ *
+ **************************************/
+	const SLONG l = htonl(*lp);
+	return (*xdrs->x_ops->x_putbytes) (xdrs,
+									   reinterpret_cast<const char*>(AOF32L(l)),
+									   4);
+}
+
+
+static bool_t wnet_read( XDR * xdrs)
 {
 /**************************************
  *
@@ -1188,23 +1354,34 @@ static bool_t wnet_read( XDR* xdrs)
 	SCHAR* p = xdrs->x_base;
 	const SCHAR* const end = p + BUFFER_SIZE;
 
-	// If buffer is not completely empty, slide down what what's left
+/* If buffer is not completely empty, slide down what what's left */
 
-	if (xdrs->x_handy > 0)
-	{
+	if (xdrs->x_handy > 0) {
 		memmove(p, xdrs->x_private, xdrs->x_handy);
 		p += xdrs->x_handy;
 	}
 
-	while (true)
-	{
+/* If an ACK is pending, do an ACK.  The alternative is deadlock. */
+
+/*
+if (port->port_flags & PORT_pend_ack)
+    if (!packet_send (port, 0, 0))
+	return FALSE;
+*/
+
+	while (true) {
 		SSHORT length = end - p;
-		if (!packet_receive(port, reinterpret_cast<UCHAR*>(p), length, &length))
+		if (!packet_receive
+			(port, reinterpret_cast<UCHAR*>(p), length, &length))
 		{
 			return FALSE;
+	/***
+	if (!packet_send (port, 0, 0))
+	    return FALSE;
+	continue;
+	***/
 		}
-		if (length >= 0)
-		{
+		if (length >= 0) {
 			p += length;
 			break;
 		}
@@ -1213,14 +1390,37 @@ static bool_t wnet_read( XDR* xdrs)
 			return FALSE;
 	}
 
-	xdrs->x_handy = (int) (p - xdrs->x_base);
+	port->port_flags |= PORT_pend_ack;
+	xdrs->x_handy = (int) ((SCHAR *) p - xdrs->x_base);
 	xdrs->x_private = xdrs->x_base;
 
 	return TRUE;
 }
 
 
-static bool_t wnet_write( XDR* xdrs /*, bool_t end_flag*/)
+static bool_t wnet_setpostn( XDR * xdrs, u_int bytecount)
+{
+/**************************************
+ *
+ *	w n e t _ s e t p o s t n
+ *
+ **************************************
+ *
+ * Functional description
+ *	Set the current position (which is also current length) from stream.
+ *
+ **************************************/
+
+	if (bytecount > (u_int) xdrs->x_handy)
+		return FALSE;
+
+	xdrs->x_private = xdrs->x_base + bytecount;
+
+	return TRUE;
+}
+
+
+static bool_t wnet_write( XDR * xdrs, bool_t end_flag)
 {
 /**************************************
  *
@@ -1229,23 +1429,22 @@ static bool_t wnet_write( XDR* xdrs /*, bool_t end_flag*/)
  **************************************
  *
  * Functional description
- *	Write a buffer fulll of data.
- *  Obsolete: If the end_flag isn't set, indicate
+ *	Write a buffer fulll of data.  If the end_flag isn't set, indicate
  *	that the buffer is a fragment, and reset the XDR for another buffer
  *	load.
  *
  **************************************/
-	// Encode the data portion of the packet
+/* Encode the data portion of the packet */
 
 	rem_port* vport = (rem_port*) xdrs->x_public;
 	const SCHAR* p = xdrs->x_base;
 	SSHORT length = xdrs->x_private - p;
 
-	// Send data in manageable hunks.  If a packet is partial, indicate
-	// that with a negative length.  A positive length marks the end.
+/* Send data in manageable hunks.  If a packet is partial, indicate
+   that with a negative length.  A positive length marks the end. */
 
-	while (length)
-	{
+	while (length) {
+		vport->port_misc1 = (vport->port_misc1 + 1) % MAX_SEQUENCE;
 		const SSHORT l = MIN(length, MAX_DATA);
 		length -= l;
 		if (!packet_send(vport, p, (SSHORT) (length ? -l : l)))
@@ -1261,7 +1460,8 @@ static bool_t wnet_write( XDR* xdrs /*, bool_t end_flag*/)
 
 
 #ifdef DEBUG
-static void packet_print(const TEXT* string, const UCHAR* packet, const int length)
+static void packet_print(const TEXT* string, const UCHAR* packet,
+	const int length)
 {
 /**************************************
  *
@@ -1276,8 +1476,7 @@ static void packet_print(const TEXT* string, const UCHAR* packet, const int leng
 	int sum = 0;
 	int l = length;
 
-	if (l)
-	{
+	if (l) {
 		do {
 			sum += *packet++;
 		} while (--l);
@@ -1288,7 +1487,10 @@ static void packet_print(const TEXT* string, const UCHAR* packet, const int leng
 #endif
 
 
-static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, SSHORT* length)
+static int packet_receive(
+						  rem_port* port,
+						  UCHAR * buffer,
+						  SSHORT buffer_length, SSHORT * length)
 {
 /**************************************
  *
@@ -1298,60 +1500,34 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
  *
  * Functional description
  *	Receive a packet and pass on it's goodness.  If it's good,
- *	return true and the reported length of the packet, and update
- *	the receive sequence number.  If it's bad, return false.  If it's
+ *	return TRUE and the reported length of the packet, and update
+ *	the receive sequence number.  If it's bad, return FALSE.  If it's
  *	a duplicate message, just ignore it.
  *
  **************************************/
 	DWORD n = 0;
-	OVERLAPPED ovrl = {0};
-	ovrl.hEvent = port->port_event;
 
-	BOOL status = ReadFile(port->port_pipe, buffer, buffer_length, &n, &ovrl);
-	DWORD dwError = GetLastError();
-
-	if (!status && dwError == ERROR_IO_PENDING)
-	{
-		status = GetOverlappedResult(port->port_pipe, &ovrl, &n, TRUE);
-		dwError = GetLastError();
-	}
-	if (!status && dwError != ERROR_BROKEN_PIPE) {
-		return wnet_error(port, "ReadFile", isc_net_read_err, dwError);
-	}
-
+	THREAD_EXIT();
+	const USHORT status =
+		ReadFile(port->port_handle, buffer, buffer_length, &n, NULL);
+	THREAD_ENTER();
+	if (!status && GetLastError() != ERROR_BROKEN_PIPE)
+		return wnet_error(port, "ReadFile", isc_net_read_err, ERRNO);
 	if (!n)
-	{
-		if (port->port_flags & PORT_detached)
-			return false;
-
-		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err, dwError);
-	}
-
-	// decrypt
-	if (port->port_crypt_plugin)
-	{
-		LocalStatus st;
-		port->port_crypt_plugin->decrypt(&st, n, buffer, buffer);
-		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
-		{
-			status_exception::raise(&st);
-		}
-	}
+		return wnet_error(port, "ReadFile end-of-file", isc_net_read_err,
+						  ERRNO);
 
 #if defined(DEBUG) && defined(WNET_trace)
 	packet_print("receive", buffer, n);
 #endif
 
-	port->port_rcv_packets++;
-	port->port_rcv_bytes += n;
-
 	*length = (SSHORT) n;
 
-	return true;
+	return TRUE;
 }
 
 
-static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
+static int packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_length)
 {
 /**************************************
  *
@@ -1360,53 +1536,45 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
  **************************************
  *
  * Functional description
- *	Send some data on it's way.
+ *	Send some data on it's way.  
  *
  **************************************/
 	const SCHAR* data = buffer;
 	const DWORD length = buffer_length;
 
-	// encrypt
-	HalfStaticArray<char, BUFFER_TINY> b;
-	if (port->port_crypt_plugin && port->port_crypt_complete)
-	{
-		LocalStatus st;
-
-		char* d = b.getBuffer(buffer_length);
-		port->port_crypt_plugin->encrypt(&st, buffer_length, data, d);
-		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
-		{
-			status_exception::raise(&st);
-		}
-
-		data = d;
-	}
-
-	OVERLAPPED ovrl = {0};
-	ovrl.hEvent = port->port_event;
-
+	THREAD_EXIT();
 	DWORD n;
-	BOOL status = WriteFile(port->port_pipe, data, length, &n, &ovrl);
-	DWORD dwError = GetLastError();
-
-	if (!status && dwError == ERROR_IO_PENDING)
-	{
-		status = GetOverlappedResult(port->port_pipe, &ovrl, &n, TRUE);
-		dwError = GetLastError();
-	}
+	const USHORT status = WriteFile(port->port_handle, data, length, &n, NULL);
+	THREAD_ENTER();
 	if (!status)
-		return wnet_error(port, "WriteFile", isc_net_write_err, dwError);
+		return wnet_error(port, "WriteFile", isc_net_write_err, ERRNO);
 	if (n != length)
-		return wnet_error(port, "WriteFile truncated", isc_net_write_err, dwError);
+		return wnet_error(port, "WriteFile truncated", isc_net_write_err,
+						  ERRNO);
 
 #if defined(DEBUG) && defined(WNET_trace)
-	packet_print("send", reinterpret_cast<const UCHAR*>(buffer), buffer_length);
+	packet_print("send", (UCHAR*)buffer, buffer_length);
 #endif
 
-	port->port_snd_packets++;
-	port->port_snd_bytes += buffer_length;
+	port->port_flags &= ~PORT_pend_ack;
 
-	return true;
+	return TRUE;
+}
+
+
+static void wnet_copy(const UCHAR* from, SCHAR* to, int length)
+{
+/**************************************
+ *
+ *      w n e t _ c o p y
+ *
+ **************************************
+ *
+ * Functional description
+ *      Copy a number of bytes;
+ *
+ **************************************/
+	memcpy(to, from, length);
 }
 
 
@@ -1427,9 +1595,8 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 
 	sprintf(temp, "%lu", number);
 
-	size_t length = strlen(temp);
-	if (length < 8)
-	{
+	USHORT length = strlen(temp);
+	if (length < 8) {
 		strcpy(name, temp);
 		return;
 	}
@@ -1437,13 +1604,12 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 	TEXT* p = name;
 	const TEXT* q = temp;
 
-	while (length)
-	{
-		size_t len = (length > 8) ? 8 : length;
+	while (length) {
+		USHORT len = (length > 8) ? 8 : length;
 		length -= len;
 		do {
 			*p++ = *q++;
-		} while (--len != 0);
+		} while ((--len) != 0);
 
 		if (length)
 			*p++ = '\\';
@@ -1451,21 +1617,3 @@ static void wnet_make_file_name( TEXT* name, DWORD number)
 	*p++ = 0;
 }
 
-static int cleanup_ports(const int, const int, void*)
-{
-/**************************************
- *
- *	c l e a n u p _ p o r t s
- *
- **************************************
- *
- * Functional description
- *	Shutdown all active connections
- *	to allow correct shutdown.
- *
- **************************************/
-	wnet_shutdown = true;
-
-	wnet_ports->closePorts();
-	return 0;
-}

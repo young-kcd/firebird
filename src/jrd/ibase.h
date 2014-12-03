@@ -44,7 +44,7 @@
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
 
-#define FB_API_VER 25
+#define FB_API_VER 21
 #define isc_version4
 
 #define  ISC_TRUE	1
@@ -154,12 +154,12 @@ typedef struct bstream
 	short			bstr_length;	/* Length of buffer */
 	short			bstr_cnt;		/* Characters in buffer */
 	char			bstr_mode;		/* (mode) ? OUTPUT : INPUT */
-} BSTREAM, * FB_BLOB_STREAM;
+} BSTREAM;
 
 /* Three ugly macros, one even using octal radix... sigh... */
 #define getb(p)	(--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
-#define putb(x, p) (((x) == '\n' || (!(--(p)->bstr_cnt))) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
-#define putbx(x, p) ((!(--(p)->bstr_cnt)) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
+#define putb(x,p) (((x) == '\n' || (!(--(p)->bstr_cnt))) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
+#define putbx(x,p) ((!(--(p)->bstr_cnt)) ? BLOB_put ((x),p) : ((int) (*(p)->bstr_ptr++ = (unsigned) (x))))
 
 /********************************************************************/
 /* CVC: Public blob interface definition held in val.h.             */
@@ -173,7 +173,7 @@ typedef struct bstream
 /* it's more accurate to use void* than int* as the blob pointer    */
 /********************************************************************/
 
-#if !defined(JRD_VAL_H)
+#if !defined(JRD_VAL_H) && !defined(REQUESTER)
 /* Blob passing structure */
 
 /* This enum applies to parameter "mode" in blob_lseek */
@@ -193,7 +193,7 @@ typedef struct blobcallback {
     ISC_LONG (*blob_lseek)
 		(void* hnd, ISC_USHORT mode, ISC_LONG offset);
 }  *BLOBCALLBACK;
-#endif /* !defined(JRD_VAL_H) */
+#endif /* !defined(JRD_VAL_H) && !defined(REQUESTER) */
 
 
 /********************************************************************/
@@ -225,7 +225,7 @@ typedef struct paramvary {
 } PARAMVARY;
 #endif /* !defined(JRD_VAL_H) */
 
-#include "../common/dsc_pub.h"
+#include "../jrd/dsc_pub.h"
 
 #endif /* !defined(JRD_DSC_H) */
 
@@ -415,21 +415,21 @@ ISC_STATUS ISC_EXPORT isc_dsql_exec_immed2(ISC_STATUS*,
 										   unsigned short,
 										   const ISC_SCHAR*,
 										   unsigned short,
-										   const XSQLDA*,
-										   const XSQLDA*);
+										   XSQLDA*,
+										   XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_execute(ISC_STATUS*,
 									   isc_tr_handle*,
 									   isc_stmt_handle*,
 									   unsigned short,
-									   const XSQLDA*);
+									   XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_execute2(ISC_STATUS*,
 										isc_tr_handle*,
 										isc_stmt_handle*,
 										unsigned short,
-										const XSQLDA*,
-										const XSQLDA*);
+										XSQLDA*,
+										XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate(ISC_STATUS*,
 												 isc_db_handle*,
@@ -437,12 +437,12 @@ ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate(ISC_STATUS*,
 												 unsigned short,
 												 const ISC_SCHAR*,
 												 unsigned short,
-												 const XSQLDA*);
+												 XSQLDA*);
 
 ISC_STATUS ISC_EXPORT isc_dsql_fetch(ISC_STATUS *,
 									 isc_stmt_handle *,
 									 unsigned short,
-									 const XSQLDA *);
+									 XSQLDA *);
 
 ISC_STATUS ISC_EXPORT isc_dsql_finish(isc_db_handle *);
 
@@ -493,7 +493,7 @@ ISC_LONG ISC_EXPORT_VARARG isc_event_block(ISC_UCHAR**,
 
 ISC_USHORT ISC_EXPORT isc_event_block_a(ISC_SCHAR**,
 										ISC_SCHAR**,
-										ISC_USHORT,
+										ISC_USHORT, 
 										ISC_SCHAR**);
 
 void ISC_EXPORT isc_event_block_s(ISC_SCHAR**,
@@ -594,30 +594,25 @@ ISC_STATUS ISC_EXPORT isc_que_events(ISC_STATUS*,
 									 ISC_EVENT_CALLBACK,
 									 void*);
 
-ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS*,
-											 isc_tr_handle*);
+ISC_STATUS ISC_EXPORT isc_rollback_retaining(ISC_STATUS *,
+											 isc_tr_handle *);
 
-ISC_STATUS ISC_EXPORT isc_rollback_transaction(ISC_STATUS*,
-											   isc_tr_handle*);
+ISC_STATUS ISC_EXPORT isc_rollback_transaction(ISC_STATUS *,
+											   isc_tr_handle *);
 
-ISC_STATUS ISC_EXPORT isc_start_multiple(ISC_STATUS*,
-										 isc_tr_handle*,
+ISC_STATUS ISC_EXPORT isc_start_multiple(ISC_STATUS *,
+										 isc_tr_handle *,
 										 short,
 										 void *);
 
-ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS*,
-												   isc_tr_handle*,
+ISC_STATUS ISC_EXPORT_VARARG isc_start_transaction(ISC_STATUS *,
+												   isc_tr_handle *,
 												   short, ...);
-
-ISC_STATUS ISC_EXPORT fb_disconnect_transaction(ISC_STATUS*, isc_tr_handle*);
 
 ISC_LONG ISC_EXPORT isc_sqlcode(const ISC_STATUS*);
 
 void ISC_EXPORT isc_sqlcode_s(const ISC_STATUS*,
 							  ISC_ULONG*);
-
-void ISC_EXPORT fb_sqlstate(char*,
-							const ISC_STATUS*);
 
 void ISC_EXPORT isc_sql_interprete(short,
 								   ISC_SCHAR*,
@@ -634,7 +629,7 @@ ISC_STATUS ISC_EXPORT isc_transact_request(ISC_STATUS*,
 										   isc_db_handle*,
 										   isc_tr_handle*,
 										   unsigned short,
-										   ISC_SCHAR*,
+										   const ISC_SCHAR*,
 										   unsigned short,
 										   ISC_SCHAR*,
 										   unsigned short,
@@ -704,8 +699,7 @@ ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS*,
 										   short,
 										   const ISC_SCHAR*);
 
-// This function always returns error since FB 3.0.
-ISC_STATUS FB_API_DEPRECATED ISC_EXPORT isc_ddl(ISC_STATUS*,
+ISC_STATUS ISC_EXPORT isc_ddl(ISC_STATUS*,
 							  isc_db_handle*,
 							  isc_tr_handle*,
 							  short,
@@ -819,7 +813,7 @@ ISC_STATUS ISC_EXPORT isc_prepare(ISC_STATUS*,
 								  isc_db_handle*,
 								  isc_tr_handle*,
 								  const ISC_SCHAR*,
-								  const short*,
+								  short*,
 								  const ISC_SCHAR*,
 								  XSQLDA*);
 
@@ -844,7 +838,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_execute2_m(ISC_STATUS*,
 										  const ISC_SCHAR*,
 										  unsigned short,
 										  unsigned short,
-										  ISC_SCHAR*,
+										  const ISC_SCHAR*,
 										  unsigned short,
 										  ISC_SCHAR*,
 										  unsigned short,
@@ -858,7 +852,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_execute_immediate_m(ISC_STATUS*,
 												   const ISC_SCHAR*,
 												   unsigned short,
 												   unsigned short,
-												   ISC_SCHAR*,
+												   const ISC_SCHAR*,
 												   unsigned short,
 												   unsigned short,
 												   ISC_SCHAR*);
@@ -870,10 +864,10 @@ ISC_STATUS ISC_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS*,
 											 const ISC_SCHAR*,
 											 unsigned short,
 											 unsigned short,
-											 ISC_SCHAR*,
-											 unsigned short,
-											 unsigned short,
 											 const ISC_SCHAR*,
+											 unsigned short,
+											 unsigned short,
+											 ISC_SCHAR*,
 											 unsigned short,
 											 ISC_SCHAR*,
 											 unsigned short,
@@ -883,7 +877,7 @@ ISC_STATUS ISC_EXPORT isc_dsql_exec_immed3_m(ISC_STATUS*,
 ISC_STATUS ISC_EXPORT isc_dsql_fetch_m(ISC_STATUS*,
 									   isc_stmt_handle*,
 									   unsigned short,
-									   ISC_SCHAR*,
+									   const ISC_SCHAR*,
 									   unsigned short,
 									   unsigned short,
 									   ISC_SCHAR*);
@@ -997,16 +991,16 @@ ISC_STATUS ISC_EXPORT isc_embed_dsql_release(ISC_STATUS*,
 /* Other Blob functions       */
 /******************************/
 
-FB_BLOB_STREAM ISC_EXPORT BLOB_open(isc_blob_handle,
-									ISC_SCHAR*,
-									int);
+BSTREAM* ISC_EXPORT BLOB_open(isc_blob_handle,
+									  ISC_SCHAR*,
+									  int);
 
 int ISC_EXPORT BLOB_put(ISC_SCHAR,
-						FB_BLOB_STREAM);
+						BSTREAM*);
 
-int ISC_EXPORT BLOB_close(FB_BLOB_STREAM);
+int ISC_EXPORT BLOB_close(BSTREAM*);
 
-int ISC_EXPORT BLOB_get(FB_BLOB_STREAM);
+int ISC_EXPORT BLOB_get(BSTREAM*);
 
 int ISC_EXPORT BLOB_display(ISC_QUAD*,
 							isc_db_handle,
@@ -1038,10 +1032,18 @@ int ISC_EXPORT BLOB_text_load(ISC_QUAD*,
 							  isc_tr_handle,
 							  const ISC_SCHAR*);
 
-FB_BLOB_STREAM ISC_EXPORT Bopen(ISC_QUAD*,
-								isc_db_handle,
-								isc_tr_handle,
-								const ISC_SCHAR*);
+BSTREAM* ISC_EXPORT Bopen(ISC_QUAD*,
+								  isc_db_handle,
+								  isc_tr_handle,
+								  const ISC_SCHAR*);
+
+/* Disabled, not found anywhere.
+BSTREAM* ISC_EXPORT Bopen2(ISC_QUAD*,
+								   isc_db_handle,
+								   isc_tr_handle,
+								   const ISC_SCHAR*,
+								   unsigned short);
+*/
 
 
 /******************************/
@@ -1057,12 +1059,6 @@ ISC_STATUS ISC_EXPORT isc_print_blr(const ISC_SCHAR*,
 									ISC_PRINT_CALLBACK,
 									void*,
 									short);
-
-int ISC_EXPORT fb_print_blr(const ISC_UCHAR*,
-							ISC_ULONG,
-							ISC_PRINT_CALLBACK,
-							void*,
-							short);
 
 void ISC_EXPORT isc_set_debug(int);
 
@@ -1081,7 +1077,7 @@ int ISC_EXPORT isc_version(isc_db_handle*,
 						   ISC_VERSION_CALLBACK,
 						   void*);
 
-ISC_LONG FB_API_DEPRECATED ISC_EXPORT isc_reset_fpe(ISC_USHORT);
+ISC_LONG ISC_EXPORT isc_reset_fpe(ISC_USHORT);
 
 uintptr_t	ISC_EXPORT isc_baddress(ISC_SCHAR*);
 void		ISC_EXPORT isc_baddress_s(const ISC_SCHAR*,
@@ -1094,10 +1090,10 @@ void		ISC_EXPORT isc_baddress_s(const ISC_SCHAR*,
 #define ADD_SPB_LENGTH(p, length)	{*(p)++ = (length); \
     					 *(p)++ = (length) >> 8;}
 
-#define ADD_SPB_NUMERIC(p, data)	{*(p)++ = (ISC_SCHAR) (ISC_UCHAR) (data); \
-    					 *(p)++ = (ISC_SCHAR) (ISC_UCHAR) ((data) >> 8); \
-					 *(p)++ = (ISC_SCHAR) (ISC_UCHAR) ((data) >> 16); \
-					 *(p)++ = (ISC_SCHAR) (ISC_UCHAR) ((data) >> 24);}
+#define ADD_SPB_NUMERIC(p, data)	{*(p)++ = (ISC_SCHAR) (data); \
+    					 *(p)++ = (ISC_SCHAR) ((data) >> 8); \
+					 *(p)++ = (ISC_SCHAR) ((data) >> 16); \
+					 *(p)++ = (ISC_SCHAR) ((data) >> 24);}
 
 ISC_STATUS ISC_EXPORT isc_service_attach(ISC_STATUS*,
 										 unsigned short,
@@ -1125,33 +1121,6 @@ ISC_STATUS ISC_EXPORT isc_service_start(ISC_STATUS*,
 										unsigned short,
 										const ISC_SCHAR*);
 
-/***********************/
-/* Shutdown and cancel */
-/***********************/
-
-int ISC_EXPORT fb_shutdown(unsigned int, const int);
-
-ISC_STATUS ISC_EXPORT fb_shutdown_callback(ISC_STATUS*,
-										   FB_SHUTDOWN_CALLBACK,
-										   const int,
-										   void*);
-
-ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS*,
-										  isc_db_handle*,
-										  ISC_USHORT);
-
-/***********************/
-/* Ping the connection */
-/***********************/
-
-ISC_STATUS ISC_EXPORT fb_ping(ISC_STATUS*, isc_db_handle*);
-
-/********************/
-/* Object interface */
-/********************/
-
-ISC_STATUS ISC_EXPORT fb_get_database_handle(ISC_STATUS*, isc_db_handle*, void*);
-ISC_STATUS ISC_EXPORT fb_get_transaction_handle(ISC_STATUS*, isc_tr_handle*, void*);
 
 /********************************/
 /* Client information functions */
@@ -1160,12 +1129,6 @@ ISC_STATUS ISC_EXPORT fb_get_transaction_handle(ISC_STATUS*, isc_tr_handle*, voi
 void ISC_EXPORT isc_get_client_version ( ISC_SCHAR  *);
 int  ISC_EXPORT isc_get_client_major_version ();
 int  ISC_EXPORT isc_get_client_minor_version ();
-
-/*******************************************/
-/* Set callback for database crypt plugins */
-/*******************************************/
-
-ISC_STATUS ISC_EXPORT fb_database_crypt_callback(ISC_STATUS*, void*);
 
 #ifdef __cplusplus
 }	/* extern "C" */

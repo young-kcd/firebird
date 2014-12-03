@@ -33,9 +33,9 @@
 #include "../common/classes/array.h"
 
 // This setting of maximum dpb size doesn't mean, that we
-// can't process larger DBPs! This is just recommended limit
+// can't process larger DBPs! This is just recommended limit 
 // cause it's hard to imagine sensefull DPB of even this size.
-const FB_SIZE_T MAX_DPB_SIZE = 1024 * 1024;
+const size_t MAX_DPB_SIZE = 1024;
 
 namespace Firebird {
 
@@ -44,45 +44,26 @@ class ClumpletWriter : public ClumpletReader
 {
 public:
 	// Create empty clumplet writer.
-	ClumpletWriter(Kind k, FB_SIZE_T limit, UCHAR tag = 0);
-	ClumpletWriter(MemoryPool& pool, Kind k, FB_SIZE_T limit, UCHAR tag = 0);
+	ClumpletWriter(Kind k, size_t limit, UCHAR tag = 0);
+	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, UCHAR tag = 0);
 
 	// Create writer from a given buffer
-	ClumpletWriter(Kind k, FB_SIZE_T limit, const UCHAR* buffer, FB_SIZE_T buffLen, UCHAR tag = 0);
-	ClumpletWriter(MemoryPool& pool, Kind k, FB_SIZE_T limit, const UCHAR* buffer, FB_SIZE_T buffLen, UCHAR tag = 0);
+	ClumpletWriter(Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
+	ClumpletWriter(MemoryPool& pool, Kind k, size_t limit, const UCHAR* buffer, size_t buffLen, UCHAR tag);
 
-	// Create writer from a given buffer with possibly different clumplet version
-	ClumpletWriter(const KindList* kl, FB_SIZE_T limit, const UCHAR* buffer, FB_SIZE_T buffLen);
-	ClumpletWriter(MemoryPool& pool, const KindList* kl, FB_SIZE_T limit,
-				   const UCHAR* buffer, FB_SIZE_T buffLen);
-
-	// Create empty writer
-	ClumpletWriter(const KindList* kl, FB_SIZE_T limit);
-	ClumpletWriter(MemoryPool& pool, const KindList* kl, FB_SIZE_T limit);
-
-	// Create a copy of writer
-	ClumpletWriter(MemoryPool& pool, const ClumpletWriter& from);
-	ClumpletWriter(const ClumpletWriter& from);
-
-	void reset(UCHAR tag = 0);
-	void reset(const UCHAR* buffer, const FB_SIZE_T buffLen);
-	void clear();
+	void reset(UCHAR tag);
+	void reset(const UCHAR* buffer, size_t buffLen);
 
 	// Methods to create new clumplet at current position
-	void insertInt(UCHAR tag, const SLONG value);
-	void insertBigInt(UCHAR tag, const SINT64 value);
-	void insertBytes(UCHAR tag, const void* bytes, FB_SIZE_T length);
+	void insertInt(UCHAR tag, SLONG value);
+	void insertBigInt(UCHAR tag, SINT64 value);
+	void insertBytes(UCHAR tag, const UCHAR* bytes, size_t length);
 	void insertString(UCHAR tag, const string& str);
 	void insertPath(UCHAR tag, const PathName& str);
-	void insertString(UCHAR tag, const char* str, FB_SIZE_T length);
+	void insertString(UCHAR tag, const char* str, size_t length);
 	void insertByte(UCHAR tag, const UCHAR byte);
 	void insertTag(UCHAR tag);
-	void insertDouble(UCHAR tag, const double value);
-	void insertTimeStamp(UCHAR tag, const ISC_TIMESTAMP value);
-	void insertTime(UCHAR tag, ISC_TIME value) { insertInt(tag, value); }
-	void insertDate(UCHAR tag, ISC_DATE value) { insertInt(tag, value); }
 	void insertEndMarker(UCHAR tag);
-	void insertClumplet(const SingleClumplet& clumplet);
 
     // Delete currently selected clumplet from buffer
 	void deleteClumplet();
@@ -91,27 +72,24 @@ public:
 	// Returns true if any found
 	bool deleteWithTag(UCHAR tag);
 
-	virtual const UCHAR* getBuffer() const;
-
+	virtual const UCHAR* getBuffer() const { return dynamic_buffer.begin(); }
 protected:
-	virtual const UCHAR* getBufferEnd() const;
+	virtual const UCHAR* getBufferEnd() const { return dynamic_buffer.end(); }
 	virtual void size_overflow();
-	void insertBytesLengthCheck(UCHAR tag, const void* bytes, const FB_SIZE_T length);
-	bool upgradeVersion();	// upgrade clumplet version - obtain newest from kindList
-
+	void insertBytesLengthCheck(UCHAR tag, const UCHAR* bytes, size_t length);
 private:
-	// Assignment not implemented.
+	size_t sizeLimit;
+
+	// Assignment and copy constructor not implemented.
+	ClumpletWriter(const ClumpletWriter& from);
 	ClumpletWriter& operator=(const ClumpletWriter& from);
 
-	FB_SIZE_T sizeLimit;
-	const KindList* kindList;
 	HalfStaticArray<UCHAR, 128> dynamic_buffer;
-
+	
 	void initNewBuffer(UCHAR tag);
-	void create(const UCHAR* buffer, FB_SIZE_T buffLen, UCHAR tag);
-	static void toVaxInteger(UCHAR* ptr, FB_SIZE_T length, const SINT64 value);
 };
 
 } // namespace Firebird
 
 #endif // CLUMPLETWRITER_H
+

@@ -1,54 +1,19 @@
-/*
- *	PROGRAM:		Firebird authentication
- *	MODULE:			AuthSspi.h
- *	DESCRIPTION:	Windows trusted authentication
- *
- *  The contents of this file are subject to the Initial
- *  Developer's Public License Version 1.0 (the "License");
- *  you may not use this file except in compliance with the
- *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
- *
- *  Software distributed under the License is distributed AS IS,
- *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
- *  See the License for the specific language governing rights
- *  and limitations under the License.
- *
- *  The Original Code was created by Alex Peshkov
- *  for the Firebird Open Source RDBMS project.
- *
- *  Copyright (c) 2006 Alex Peshkov <peshkoff at mail.ru>
- *  and all contributors signed below.
- *
- *  All Rights Reserved.
- *  Contributor(s): ______________________________________.
- *
- *
- */
 #ifndef AUTH_SSPI_H
 #define AUTH_SSPI_H
 
 #include <firebird.h>
 
-// This is old versions backward compatibility
-#define FB_PREDEFINED_GROUP "Predefined_Group"
-#define FB_DOMAIN_ANY_RID_ADMINS "DOMAIN_ANY_RID_ADMINS"
-
 #ifdef TRUSTED_AUTH
 
 #include <../common/classes/fb_string.h>
 #include <../common/classes/array.h>
-#include "../common/classes/ImplementHelper.h"
 #include <../jrd/ibase.h>
-#include "firebird/Interface.h"
 
 #define SECURITY_WIN32
 
 #include <windows.h>
 #include <Security.h>
 #include <stdio.h>
-
-namespace Auth {
 
 class AuthSspi
 {
@@ -60,7 +25,6 @@ private:
 	CtxtHandle ctxtHndl;
 	bool hasContext;
 	Firebird::string ctName;
-	bool wheel;
 
 	// Handle of library
 	static HINSTANCE library;
@@ -83,7 +47,7 @@ public:
 	AuthSspi();
 	~AuthSspi();
 
-	// true when has non-empty security context,
+	// true when has non-empty security context, 
 	// ready to be sent to the other side
 	bool isActive() const
 	{
@@ -92,46 +56,13 @@ public:
 
 	// prepare security context to be sent to the server (used by client)
 	bool request(DataHolder& data);
-
+	
 	// accept security context from the client (used by server)
 	bool accept(DataHolder& data);
 
 	// returns Windows user name, matching accepted security context
-	bool getLogin(Firebird::string& login, bool& wh);
+	bool getLogin(Firebird::string& login);
 };
-
-class WinSspiServer : public Firebird::StdPlugin<Firebird::Api::ServerImpl<WinSspiServer> >
-{
-public:
-	// IServer implementation
-	int authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
-    int release();
-
-	WinSspiServer(Firebird::IPluginConfig*);
-
-private:
-	AuthSspi::DataHolder sspiData;
-	AuthSspi sspi;
-};
-
-class WinSspiClient : public Firebird::StdPlugin<Firebird::Api::ClientImpl<WinSspiClient> >
-{
-public:
-	// IClient implementation
-	int authenticate(Firebird::IStatus* status, Firebird::IClientBlock* sBlock);
-    int release();
-
-	WinSspiClient(Firebird::IPluginConfig*);
-
-private:
-	AuthSspi::DataHolder sspiData;
-	AuthSspi sspi;
-};
-
-void registerTrustedClient(Firebird::IPluginManager* iPlugin);
-void registerTrustedServer(Firebird::IPluginManager* iPlugin);
-
-} // namespace Auth
 
 #endif // TRUSTED_AUTH
 #endif // AUTH_SSPI_H

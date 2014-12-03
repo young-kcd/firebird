@@ -28,7 +28,7 @@
 #define JRD_INTLMANAGER_H
 
 #include "../common/classes/fb_string.h"
-#include "../common/config/config_file.h"
+#include "../config/ConfObj.h"
 
 struct charset;
 struct texttype;
@@ -55,36 +55,8 @@ public:
 		const Firebird::string& collationName, const Firebird::string& charSetName,
 		const Firebird::string& specificAttributes, Firebird::string& newSpecificAttributes);
 
-public:
-	struct CharSetDefinition
-	{
-		const char* name;
-		UCHAR id;
-		USHORT maxBytes;
-	};
-
-	struct CharSetAliasDefinition
-	{
-		const char* name;
-		UCHAR charSetId;
-	};
-
-	struct CollationDefinition
-	{
-		UCHAR charSetId;
-		UCHAR collationId;
-		const char* name;
-		const char* baseName;
-		USHORT attributes;
-		const char* specificAttributes;
-	};
-
-	const static CharSetDefinition defaultCharSets[];
-	const static CharSetAliasDefinition defaultCharSetAliases[];
-	const static CollationDefinition defaultCollations[];
-
 private:
-	static Firebird::string getConfigInfo(const ConfigFile::Parameter* par);
+	static Firebird::string getConfigInfo(const ConfObj& confObj);
 
 	static bool registerCharSetCollation(const Firebird::string& name,
 		const Firebird::PathName& filename, const Firebird::string& externalName,

@@ -28,42 +28,25 @@
 
 #include "../dsql/sym.h"
 
-namespace Jrd {
-	class dsql_ctx;
-	class dsql_fld;
-	class dsql_msg;
-	class dsql_par;
-	class dsql_req;
-	class DsqlCompilerScratch;
-	class IntlString;
-	class ExprNode;
-	class FieldNode;
-	class LiteralNode;
-	class ValueExprNode;
-	class ValueListNode;
-	class VariableNode;
+dsql_nod* MAKE_const_slong(SLONG);
+dsql_nod* MAKE_constant(class dsql_str*, dsql_constant_type);
+dsql_nod* MAKE_str_constant(class dsql_str*, SSHORT);
+class dsql_str* MAKE_cstring(const char*);
+void MAKE_desc(dsql_req*, dsc*, dsql_nod*, dsql_nod*);
+void MAKE_desc_from_field(dsc*, const class dsql_fld*);
+void MAKE_desc_from_list(dsql_req*, dsc*, dsql_nod*, dsql_nod*, const TEXT*);
+dsql_nod* MAKE_field(class dsql_ctx*, class dsql_fld*, dsql_nod*);
+dsql_nod* MAKE_list(DsqlNodStack&);
+dsql_nod* MAKE_node(enum nod_t, int);
+class dsql_par* MAKE_parameter(class dsql_msg* , bool, bool, USHORT, const dsql_nod*);
+class dsql_str* MAKE_string(const char* , int);
+dsql_sym* MAKE_symbol(dsql_dbb*, const TEXT*, USHORT,
+						   enum sym_type, class dsql_req*);
+class dsql_str* MAKE_tagged_string(const char* str, size_t length, const char* charset);
+dsql_nod* MAKE_trigger_type(dsql_nod*, dsql_nod*);
+dsql_nod* MAKE_variable(class dsql_fld*, const TEXT*, USHORT, USHORT,
+								 USHORT, USHORT);
 
-// Parameters to MAKE_constant
-	enum dsql_constant_type {
-		CONSTANT_DOUBLE = 1,	// stored as a string
-		CONSTANT_DATE,			// stored as a SLONG
-		CONSTANT_TIME,			// stored as a ULONG
-		CONSTANT_TIMESTAMP,		// stored as a QUAD
-		CONSTANT_BOOLEAN,		// stored as a UCHAR
-	};
-}
-
-
-Jrd::LiteralNode* MAKE_const_slong(SLONG);
-Jrd::LiteralNode* MAKE_const_sint64(SINT64 value, SCHAR scale);
-Jrd::ValueExprNode* MAKE_constant(const char*, Jrd::dsql_constant_type);
-Jrd::LiteralNode* MAKE_str_constant(const Jrd::IntlString*, SSHORT);
-void MAKE_desc(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueExprNode*);
-void MAKE_desc_from_field(dsc*, const Jrd::dsql_fld*);
-void MAKE_desc_from_list(Jrd::DsqlCompilerScratch*, dsc*, Jrd::ValueListNode*, const TEXT*);
-Jrd::FieldNode* MAKE_field(Jrd::dsql_ctx*, Jrd::dsql_fld*, Jrd::ValueListNode*);
-Jrd::FieldNode* MAKE_field_name(const char*);
-Jrd::dsql_par* MAKE_parameter(Jrd::dsql_msg*, bool, bool, USHORT, const Jrd::ValueExprNode*);
-void MAKE_parameter_names(Jrd::dsql_par*, const Jrd::ValueExprNode*);
 
 #endif // DSQL_MAKE_PROTO_H
+

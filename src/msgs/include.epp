@@ -23,10 +23,11 @@
 
 #include "firebird.h"
 #include <stdio.h>
+#include "../jrd/common.h"
 
 DATABASE DB = "msg.fdb";
 
-FILE* output;
+FILE *output;
 
 static bool check_option(const SCHAR*, SSHORT *, SCHAR **);
 static void define_format(const SCHAR*, SCHAR*);
@@ -63,13 +64,10 @@ void main( int argc, char **argv)
 	const char* language = "C";
 
 	char** end;
-	for (end = argv + argc, ++argv; argv < end;)
-	{
+	for (end = argv + argc, ++argv; argv < end;) {
 		const char* p = *argv++;
 		if (*p == '-')
-		{
-			switch (UPPER(p[1]))
-			{
+			switch (UPPER(p[1])) {
 			case 'F':
 				file = *argv++;
 				continue;
@@ -86,7 +84,6 @@ void main( int argc, char **argv)
 				sw_all = true;
 				continue;
 			}
-		}
 		printf("Bad switch %s\n", *p);
 		exit(FINI_ERROR);
 	}
@@ -111,8 +108,9 @@ void main( int argc, char **argv)
 }
 
 
-static bool check_option(const SCHAR* string,
-						SSHORT* option_ptr, SCHAR ** format_ptr)
+static bool check_option(
+						const SCHAR* string,
+						SSHORT * option_ptr, SCHAR ** format_ptr)
 {
 /**************************************
  *
@@ -126,20 +124,17 @@ static bool check_option(const SCHAR* string,
  **************************************/
 	SCHAR **format;
 
-	if (!strcmp(string, "BYTE"))
-	{
+	if (!strcmp(string, "BYTE")) {
 		*option_ptr |= OPT_byte;
 		return true;
 	}
 
-	if (!strcmp(string, "SIGNED"))
-	{
+	if (!strcmp(string, "SIGNED")) {
 		*option_ptr |= OPT_signed;
 		return true;
 	}
 
-	if (!strcmp(string, "SANS_DOLLAR"))
-	{
+	if (!strcmp(string, "SANS_DOLLAR")) {
 		*option_ptr |= OPT_sans_dollar;
 		return true;
 	}
@@ -148,13 +143,10 @@ static bool check_option(const SCHAR* string,
 		return false;
 
 	for (format = formats; *format; format += 2)
-	{
-		if (!strcmp(string, *format))
-		{
+		if (!strcmp(string, *format)) {
 			*format_ptr = format[1];
 			return true;
 		}
-	}
 
 	return false;
 }
@@ -174,8 +166,7 @@ static void define_format( const SCHAR* name, SCHAR * format)
  **************************************/
 	SCHAR **ptr;
 
-	if (!name)
-	{
+	if (!name) {
 		printf("Format redefined\n");
 		return;
 	}
@@ -221,8 +212,7 @@ static void gen( const char* language, const char* filename)
 	FOR X IN TEMPLATES WITH X.LANGUAGE EQ language
 		if (!filename)
 			filename = FILE;
-		if (!(output = fopen(filename, "w")))
-		{
+		if (!(output = fopen(filename, "w"))) {
 			perror(FILE);
 			return;
 		}
@@ -257,8 +247,7 @@ static void process_line( FILE * file, const SCHAR* line_ptr)
 
 /* If the line doesn't start with a $, just copy it */
 
-	if (*line != '$')
-	{
+	if (*line != '$') {
 		fprintf(output, "%s\n", line);
 		return;
 	}
@@ -269,13 +258,11 @@ static void process_line( FILE * file, const SCHAR* line_ptr)
 	SCHAR** word = words;
 	++line;
 
-	while (*line)
-	{
+	while (*line) {
 		*word = 0;
 		while (*line == ' ' || *line == '\t')
 			line++;
-		if (*line == '"')
-		{
+		if (*line == '"') {
 			++line;
 			break;
 		}
@@ -287,30 +274,24 @@ static void process_line( FILE * file, const SCHAR* line_ptr)
 			--word;
 	}
 
-	if (!format)
-	{
+	if (!format) {
 		for (format = p, line; *line;)
-		{
 			if ((c = *line++) != '\\')
 				*p++ = c;
-			else if (*line == 'n')
-			{
+			else if (*line == 'n') {
 				*p++ = '\n';
 				++line;
 			}
-			else if (*line == 't')
-			{
+			else if (*line == 't') {
 				*p++ = '\t';
 				++line;
 			}
 			else
 				*p++ = c;
-		}
 		*p = 0;
 	}
 
-	if (!words[0])
-	{
+	if (!words[0]) {
 		printf("no class for line\n");
 		return;
 	}
@@ -329,8 +310,9 @@ static void process_line( FILE * file, const SCHAR* line_ptr)
 }
 
 
-static void put_error(FILE* file,
-					 SCHAR** words, const SCHAR* format, SSHORT options)
+static void put_error(
+					 FILE * file,
+					 SCHAR ** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *
@@ -357,7 +339,8 @@ static void put_error(FILE* file,
 }
 
 
-static void put_symbol(FILE* file,
+static void put_symbol(
+					  FILE * file,
 					  const SCHAR* format,
 					  const SCHAR* symbol, SLONG value, SSHORT options)
 {
@@ -373,14 +356,12 @@ static void put_symbol(FILE* file,
  **************************************/
 	SCHAR buffer[64];
 
-	if (!format)
-	{
+	if (!format) {
 		printf("No format for symbol\n");
 		return;
 	}
 
-	if (options & OPT_byte)
-	{
+	if (options & OPT_byte) {
 		if (value > 255)
 			return;
 		value = (UCHAR) value;
@@ -389,14 +370,11 @@ static void put_symbol(FILE* file,
 	if (options & OPT_signed)
 		value = (SCHAR) value;
 
-	if (options & OPT_sans_dollar)
-	{
+	if (options & OPT_sans_dollar) {
 		SCHAR* p;
 		for (p = buffer; *symbol; symbol++)
-		{
 			if (*symbol != '$')
 				*p++ = *symbol;
-		}
 		*p = 0;
 		symbol = buffer;
 	}
@@ -405,8 +383,9 @@ static void put_symbol(FILE* file,
 }
 
 
-static void put_symbols(FILE* file,
-					   SCHAR** words, const SCHAR* format, SSHORT options)
+static void put_symbols(
+					   FILE * file,
+					   SCHAR ** words, const SCHAR* format, SSHORT options)
 {
 /**************************************
  *
@@ -420,8 +399,7 @@ static void put_symbols(FILE* file,
  **************************************/
 	int count = 0;
 
-	if (words[1] && strcmp(words[1], "*"))
-	{
+	if (words[1] && strcmp(words[1], "*")) {
 		FOR X IN SYMBOLS WITH X.CLASS EQ words[0] AND X.TYPE EQ words[1] SORTED BY X.SEQUENCE
 			++count;
 			put_symbol(file, format, X.SYMBOL, X.VALUE, options);
@@ -429,8 +407,7 @@ static void put_symbols(FILE* file,
 		if (!count)
 			printf("No symbols found for %s/%s\n", words[0], words[1]);
 	}
-	else
-	{
+	else {
 		FOR X IN SYMBOLS WITH X.CLASS EQ words[0] SORTED BY X.SEQUENCE
 			++count;
 			put_symbol(file, format, X.SYMBOL, X.VALUE, options);

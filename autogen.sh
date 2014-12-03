@@ -3,8 +3,9 @@
 # Run this to generate all the initial makefiles, etc.
 #
 
-PKG_NAME=Firebird3
+PKG_NAME=Firebird2
 SRCDIR=`dirname $0`
+DIE=0
 
 if [ -z "$AUTORECONF" ]
 then
@@ -17,9 +18,25 @@ echo "AUTORECONF="$AUTORECONF
 AUTOMAKE=true
 export AUTOMAKE
 
-# This helps some old aclocal versions find binreloc.m4 in current directory
-ACLOCAL='aclocal -I .'
-export ACLOCAL
+VER=`$AUTORECONF --version|grep '^[Aa]utoreconf'|sed 's/^[^0-9]*//'`
+case "$VER" in
+ 0* | 1\.* | 2\.[0-9] | 2\.[0-9][a-z]* | \
+ 2\.[1-4][0-9] | 2\.5[0-5][a-z]* )
+  echo
+  echo "**Error**: You must have autoconf 2.56 or later installed."
+  echo "Download the appropriate package for your distribution/OS,"
+  echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/autoconf/"
+  DIE=1
+  ;;
+esac
+
+# Put other tests for programs here!
+
+
+# If anything failed, exit now.
+if test "$DIE" -eq 1; then
+  exit 1
+fi
 
 # Give a warning if no arguments to 'configure' have been supplied.
 if test -z "$*" -a x$NOCONFIGURE = x; then
@@ -37,7 +54,7 @@ fi
 
 # Ensure correct utilities are called by AUTORECONF
 autopath=`dirname $AUTORECONF`
-if [ "x$autopath" != "x" ]; then
+if [ "$autopath" != x. ]; then
 	PATH=$autopath:$PATH
 	export PATH
 fi
@@ -60,7 +77,6 @@ fi
 
 # If NOCONFIGURE is set, skip the call to configure
 if test "x$NOCONFIGURE" = "x"; then
-  conf_flags="$conf_flags --enable-binreloc"
   echo Running $SRCDIR/configure $conf_flags "$@" ...
   rm -f config.cache config.log
   chmod a+x $SRCDIR/configure

@@ -18,8 +18,8 @@ fi
 if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/security2.fdb"; then
 	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/security2.fdb" /tmp/fb-security-database-update2.fdb
 fi
-if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/databases.conf"; then
-	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/databases.conf" /tmp/fb-databases.conf
+if test -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf"; then
+	mv -f "$FB_FW/Versions/A/Resources/English.lproj/var/aliases.conf" /tmp/fb-aliases.conf
 fi
 
 for i in /Library/Frameworks/Firebird.framework/Resources/English.lproj/var/UDF/*;do
@@ -36,6 +36,7 @@ else
 	cp $i /tmp/UDF_save_$x
 fi
 done
+
 if [ -f /Library/StartupItems/Firebird/Firebird ]; then
 	/Library/StartupItems/Firebird/Firebird stop
 	rm -fr /Library/StartupItems/Firebird
@@ -46,7 +47,6 @@ if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
 	rm /Library/LaunchDaemons/org.firebird.gds.plist
 fi
 
-rm -fr "$FB_FW"
-rm -fr /tmp/firebird
+rm -rf "$FB_FW"
 
 exit 0

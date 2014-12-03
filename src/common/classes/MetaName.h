@@ -25,74 +25,61 @@
  *
  *
  */
-
+ 
 #ifndef METANAME_H
 #define METANAME_H
 
 #include "../common/classes/fb_string.h"
-#include "../common/classes/fb_pair.h"
 #include "../jrd/constants.h"
-
-#ifdef SFIO
-#include <stdio.h>
-#endif
 
 namespace Firebird {
 
-class MetaName
-{
+class MetaName {
 private:
 	char data[MAX_SQL_IDENTIFIER_SIZE];
 	unsigned int count;
-
+	
 	void init()
 	{
 		memset(data, 0, MAX_SQL_IDENTIFIER_SIZE);
 	}
 	MetaName& set(const MetaName& m)
 	{
-		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE);
+		memcpy(data, m.data, MAX_SQL_IDENTIFIER_SIZE); 
 		count = m.count;
-		return *this;
+		return *this; 
 	}
 
 public:
 	MetaName() { init(); count = 0; }
 	MetaName(const char* s) { assign(s); }
-	MetaName(const char* s, FB_SIZE_T l) { assign(s, l); }
+	MetaName(const char* s, size_t l) { assign(s, l); }
 	MetaName(const MetaName& m) { set(m); }
-	MetaName(const AbstractString& s) { assign(s.c_str(), s.length()); }
+	MetaName(const string& s) { assign(s.c_str(), s.length()); }
 	explicit MetaName(MemoryPool&) { init(); count = 0; }
 	MetaName(MemoryPool&, const char* s) { assign(s); }
-	MetaName(MemoryPool&, const char* s, FB_SIZE_T l) { assign(s, l); }
+	MetaName(MemoryPool&, const char* s, size_t l) { assign(s, l); }
 	MetaName(MemoryPool&, const MetaName& m) { set(m); }
-	MetaName(MemoryPool&, const AbstractString& s) { assign(s.c_str(), s.length()); }
-
-	MetaName& assign(const char* s, FB_SIZE_T l);
-	MetaName& assign(const char* s) { return assign(s, s ? fb_strlen(s) : 0); }
+	MetaName(MemoryPool&, const string& s) { assign(s.c_str(), s.length()); }
+	
+	MetaName& assign(const char* s, size_t l);
+	MetaName& assign(const char* s) { return assign(s, s ? strlen(s) : 0); }
 	MetaName& operator=(const char* s) { return assign(s); }
-	MetaName& operator=(const AbstractString& s) { return assign(s.c_str(), s.length()); }
+	MetaName& operator=(const string& s) { return assign(s.c_str(), s.length()); }
 	MetaName& operator=(const MetaName& m) { return set(m); }
-	char* getBuffer(const FB_SIZE_T l);
+	char* getBuffer(size_t l);
 
-	FB_SIZE_T length() const { return count; }
+	size_t length() const { return count; }
 	const char* c_str() const { return data; }
-	const char* nullStr() const { return (count == 0 ? NULL : data); }
 	bool isEmpty() const { return count == 0; }
 	bool hasData() const { return count != 0; }
 
-	const char* begin() const { return data; }
-	const char* end() const { return data + count; }
-
-	int compare(const char* s, FB_SIZE_T l) const;
-	int compare(const char* s) const { return compare(s, s ? fb_strlen(s) : 0); }
-	int compare(const AbstractString& s) const { return compare(s.c_str(), s.length()); }
+	int compare(const char* s, size_t l) const;
+	int compare(const char* s) const { return compare(s, s ? strlen(s) : 0); }
 	int compare(const MetaName& m) const { return memcmp(data, m.data, MAX_SQL_IDENTIFIER_SIZE); }
 
 	bool operator==(const char* s) const { return compare(s) == 0; }
 	bool operator!=(const char* s) const { return compare(s) != 0; }
-	bool operator==(const AbstractString& s) const { return compare(s) == 0; }
-	bool operator!=(const AbstractString& s) const { return compare(s) != 0; }
 	bool operator==(const MetaName& m) const { return compare(m) == 0; }
 	bool operator!=(const MetaName& m) const { return compare(m) != 0; }
 	bool operator<=(const MetaName& m) const { return compare(m) <= 0; }
@@ -103,14 +90,26 @@ public:
 	void upper7();
 	void lower7();
 	void printf(const char*, ...);
-	FB_SIZE_T copyTo(char* to, FB_SIZE_T toSize) const;
 
 protected:
-	static void adjustLength(const char* const s, FB_SIZE_T& l);
+	static void adjustLength(const char* const s, size_t& l);
 };
 
-typedef Pair<Full<MetaName, MetaName> > MetaNamePair;
+// This class & macro are used to simplify calls from GDML
+class LoopMetaName : public Firebird::MetaName
+{
+	bool flag;
+	char* target;
+public:
+	LoopMetaName(char* s) : Firebird::MetaName(s), 
+		flag(true), target(s) { }
+	~LoopMetaName() { strcpy(target, c_str()); }
+	operator bool() const { return flag; }
+	void stop() { flag = false; }
+};
+#define MetaTmp(x) for (Firebird::LoopMetaName tmp(x); tmp; tmp.stop())
 
 } // namespace Firebird
 
 #endif // METANAME_H
+

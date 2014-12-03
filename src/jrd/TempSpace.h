@@ -28,17 +28,14 @@
 #include "../common/classes/array.h"
 #include "../common/classes/TempFile.h"
 #include "../common/config/dir_list.h"
-#include "../common/classes/init.h"
-#include "../common/classes/tree.h"
 
-class TempSpace : public Firebird::File
-{
+class TempSpace : public Firebird::File {
 public:
 	TempSpace(MemoryPool& pool, const Firebird::PathName& prefix, bool dynamic = true);
 	virtual ~TempSpace();
 
-	FB_SIZE_T read(offset_t offset, void* buffer, FB_SIZE_T length);
-	FB_SIZE_T write(offset_t offset, const void* buffer, FB_SIZE_T length);
+	size_t read(offset_t offset, void* buffer, size_t length);
+	size_t write(offset_t offset, const void* buffer, size_t length);
 
 	void unlink() {}
 
@@ -47,30 +44,29 @@ public:
 		return logicalSize;
 	}
 
-	void extend(FB_SIZE_T size);
+	void extend(size_t size);
 
-	offset_t allocateSpace(FB_SIZE_T size);
-	void releaseSpace(offset_t offset, FB_SIZE_T size);
+	offset_t allocateSpace(size_t size);
+	void releaseSpace(offset_t offset, size_t size);
 
-	UCHAR* inMemory(offset_t offset, size_t size) const;
+	char* inMemory(offset_t offset, size_t size) const;
 
-	struct SegmentInMemory
-	{
-		UCHAR* memory;
+	struct SegmentInMemory {
+		char* memory;
 		offset_t position;
 		size_t size;
 	};
 
 	typedef Firebird::Array<SegmentInMemory> Segments;
 
-	ULONG allocateBatch(ULONG count, FB_SIZE_T minSize, FB_SIZE_T maxSize, Segments& segments);
+	size_t allocateBatch(size_t count, size_t minSize, size_t maxSize, 
+		Segments& segments);
 
 	bool validate(offset_t& freeSize) const;
 private:
 
 	// Generic space block
-	class Block
-	{
+	class Block {
 	public:
 		Block(Block* tail, size_t length)
 			: next(NULL), size(length)
@@ -84,21 +80,20 @@ private:
 
 		virtual ~Block() {}
 
-		virtual FB_SIZE_T read(offset_t offset, void* buffer, FB_SIZE_T length) = 0;
-		virtual FB_SIZE_T write(offset_t offset, const void* buffer, FB_SIZE_T length) = 0;
+		virtual size_t read(offset_t offset, void* buffer, size_t length) = 0;
+		virtual size_t write(offset_t offset, const void* buffer, size_t length) = 0;
 
-		virtual UCHAR* inMemory(offset_t offset, size_t size) const = 0;
-		virtual bool sameFile(const Firebird::TempFile* file) const = 0;
+		virtual char* inMemory(offset_t offset, size_t size) const = 0;
+		virtual bool sameFile(const TempFile* file) const = 0; 
 
 		Block *prev;
 		Block *next;
 		offset_t size;
 	};
 
-	class MemoryBlock : public Block
-	{
+	class MemoryBlock : public Block {
 	public:
-		MemoryBlock(UCHAR* memory, Block* tail, size_t length)
+		MemoryBlock(char* memory, Block* tail, size_t length)
 			: Block(tail, length), ptr(memory)
 		{}
 
@@ -107,30 +102,29 @@ private:
 			delete[] ptr;
 		}
 
-		FB_SIZE_T read(offset_t offset, void* buffer, FB_SIZE_T length);
-		FB_SIZE_T write(offset_t offset, const void* buffer, FB_SIZE_T length);
+		size_t read(offset_t offset, void* buffer, size_t length);
+		size_t write(offset_t offset, const void* buffer, size_t length);
 
-		UCHAR* inMemory(offset_t offset, size_t _size) const
+		char* inMemory(offset_t offset, size_t _size) const
 		{
 			if ((offset < this->size) && (offset + _size <= this->size))
 				return ptr + offset;
-
-			return NULL;
+			else
+				return NULL;
 		}
-
-		bool sameFile(const Firebird::TempFile*) const
+		
+		bool sameFile(const TempFile* file) const
 		{
 			return false;
 		}
 
 	protected:
-		UCHAR* ptr;
+		char* ptr;
 	};
 
-	class InitialBlock : public MemoryBlock
-	{
+	class InitialBlock : public MemoryBlock {
 	public:
-		InitialBlock(UCHAR* memory, size_t length)
+		InitialBlock(char* memory, size_t length)
 			: MemoryBlock(memory, NULL, length)
 		{}
 
@@ -140,14 +134,13 @@ private:
 		}
 	};
 
-	class FileBlock : public Block
-	{
+	class FileBlock : public Block {
 	public:
-		FileBlock(Firebird::TempFile* f, Block* tail, size_t length)
+		FileBlock(TempFile* f, Block* tail, size_t length)
 			: Block(tail, length), file(f)
 		{
 			fb_assert(file);
-
+			
 			// FileBlock is created after file was extended by length (look at
 			// TempSpace::extend) so this FileBlock is already inside the file
 			seek = file->getSize() - length;
@@ -155,38 +148,37 @@ private:
 
 		~FileBlock() {}
 
-		FB_SIZE_T read(offset_t offset, void* buffer, FB_SIZE_T length);
-		FB_SIZE_T write(offset_t offset, const void* buffer, FB_SIZE_T length);
+		size_t read(offset_t offset, void* buffer, size_t length);
+		size_t write(offset_t offset, const void* buffer, size_t length);
 
-		UCHAR* inMemory(offset_t /*offset*/, size_t /*a_size*/) const
+		char* inMemory(offset_t offset, size_t a_size) const
 		{
 			return NULL;
 		}
 
-		bool sameFile(const Firebird::TempFile* aFile) const
+		bool sameFile(const TempFile* aFile) const
 		{
 			return (aFile == this->file);
 		}
 
 	private:
-		Firebird::TempFile* file;
+		TempFile* file;
 		offset_t seek;
 	};
 
 	Block* findBlock(offset_t& offset) const;
-	Firebird::TempFile* setupFile(FB_SIZE_T size);
+	TempFile* setupFile(size_t size);
 
-	UCHAR* findMemory(offset_t& begin, offset_t end, size_t size) const;
+	char* findMemory(offset_t& begin, offset_t end, size_t size) const;
 
 	//  free/used segments management
-	class Segment
-	{
+	class Segment {
 	public:
 		Segment() : position(0), size(0)
 		{}
 
-		Segment(offset_t aPosition, offset_t aSize) :
-			position(aPosition), size(aSize)
+		Segment(offset_t _position, offset_t _size)
+			: position(_position), size(_size)
 		{}
 
 		offset_t position;
@@ -205,16 +197,16 @@ private:
 	offset_t localCacheUsage;
 	Block* head;
 	Block* tail;
-	Firebird::Array<Firebird::TempFile*> tempFiles;
-	Firebird::Array<UCHAR> initialBuffer;
+	Firebird::Array<TempFile*> tempFiles;
+	Firebird::Array<char> initialBuffer;
 	bool initiallyDynamic;
 
 	typedef Firebird::BePlusTree<Segment, offset_t, MemoryPool, Segment> FreeSegmentTree;
 	FreeSegmentTree freeSegments;
 
-	static Firebird::GlobalPtr<Firebird::Mutex> initMutex;
+	static Firebird::Mutex initMutex;
 	static Firebird::TempDirectoryList* tempDirs;
-	static FB_SIZE_T minBlockSize;
+	static size_t minBlockSize;
 	static offset_t globalCacheUsage;
 };
 

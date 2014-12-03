@@ -1,23 +1,5 @@
-Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha1)
-========================================================
-
-
-############## NOTE ####################################
-#                                                      #
-# The installer is in an experimental state.           #
-# This is not the definitive version for Firebird 3.0. #
-#                                                      #
-# o Layout and work sequence of the installer is not   #
-#    definitive.                                       #
-# o Options available are subject to change.           #
-# o Method of library deployment has not been          #
-#   finalized.                                         #
-# o How we will support Legacy Auth is experimental    #
-#   - Adding SYSDBA works                              #
-#   - Modifying SYSDBA from the installer doesn't      #
-# o Don't be surprised to find other anomalies.        #
-#                                                      #
-############## END NOTE ################################
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
+==================================================
 
 
 This document is a guide to installing this package of
@@ -27,10 +9,10 @@ Firebird $MAJOR.$MINOR in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
-familiar with Firebird 2.5. If you are evaluating
-Firebird $MAJOR.$MINOR as part of a migration from Fb 2.5 you are
-advised to review the Fb $MAJOR.$MINOR documentation to
-understand the changes made between 2.5 and $MAJOR.$MINOR.
+familiar with Firebird 2.0. If you are evaluating
+Firebird $MAJOR.$MINOR as part of a migration from Fb 1.5 you are
+advised to review the Fb 2.0 documentation to
+understand the changes made between 1.5 and 2.0.
 
 
 Contents
@@ -60,18 +42,18 @@ Much work has been done to ensure that the MS Visual
 C runtime libraries are correctly installed by the
 binary installer. Since v2.1.2 Firebird will work with
 locally deployed instances of the runtime libraries.
-This especially simplifies deployment of the Firebird
+This especially simplifies deployment of the firebird
 client or embedded dll with your own application.
 
 However, in case of problems it may be necessary to
 deploy the official vcredist.exe. The correct versions
 for this build of Firebird can be found here:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
+  http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
 
-  and x64 here:
+and x64 here:
 
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+  http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
 
 
 Other Known installation problems
@@ -91,13 +73,13 @@ o There are known areas of overlap between the
   32-bit and 64-bit installs:
 
   - The service installer (instsvc) uses the same
-    default instance name for 32-bit and 64-bit
-    installations. This is by design. Services exist
-    in a single name space.
+	default instance name for 32-bit and 64-bit
+	installations. This is by design. Services exist
+	in a single name space.
 
   - If the 32-bit and 64-bit control panel applets are
-    installed they will both point to the same default
-    instance.
+	installed they will both point to the same default
+	instance.
 
 o When installing under Vista be sure to install as an
   administrator. ie, if using the binary installer
@@ -130,12 +112,11 @@ o If Firebird is running as an application (instead of
   uninstall the uninstall will complete with errors.
   You will have to delete the remnants by hand.
 
-o Uninstallation leaves five files in the install
+o Uninstallation leaves four files in the install
   directory:
 
-  - databases.conf
+  - aliases.conf
   - firebird.conf
-  - fbtrace.conf
   - firebird.log
   - security2.fdb
 
@@ -164,7 +145,7 @@ Other Notes
   not found the install will fail. You can visit
   this link:
 
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
+	http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
 
   to find out how to go about upgrading.
 
@@ -175,7 +156,8 @@ Installation from a batch file
 The setup program can be run from a batch file.
 Please see this document:
 
-    installation_scripted.txt
+	installation_scripted.txt
 
 for full details.
+
 

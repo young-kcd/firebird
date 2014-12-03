@@ -47,10 +47,6 @@ typedef unsigned _int16 uint16_t;
 */
 #endif
 
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-
 // Just an emulation of 128-bit numbers for now.
 struct DoubleQuad
 {
@@ -65,7 +61,7 @@ namespace MsgFormat
 {
 
 // For now we allow 7 parameters; @1..@7 in MsgPrint.
-const FB_SIZE_T SAFEARG_MAX_ARG = 7;
+const size_t SAFEARG_MAX_ARG = 7;
 
 // This is the unit that represents one parameter in the format routines.
 // The user of the routines rarely needs to be concerned with it.
@@ -84,12 +80,14 @@ struct safe_cell
 		at_int128,
 		at_double,
 		at_str,
+		at_counted_str,
 		at_ptr
 	};
-
+	
 	struct safe_str
 	{
 		const char* s_string;
+		size_t s_len; // Optional, meaningful if type == at_counted_str.
 	};
 
 
@@ -107,16 +105,40 @@ struct safe_cell
 
 
 
+// Used to invoke the operator<< or we can't distinguish from null terminated string.
+// Construct a counted_string on the fly (anonymous object) and pass it your
+// unterminated string and its length.
+struct counted_string
+{
+	counted_string(const char* s, size_t len);
+	counted_string(const unsigned char* s, size_t len);
+	const char* const cs_string;
+	const size_t cs_len;
+};
+
+inline counted_string::counted_string(const char* s, size_t len)
+	: cs_string(s), cs_len(len)
+{
+}
+
+inline counted_string::counted_string(const unsigned char* s, size_t len)
+	: cs_string(reinterpret_cast<const char*>(s)), cs_len(len)
+{
+}
+
+
+
 class BaseStream;
 
 // This is the main class that does the magic of receiving a chain of type-safe
 // parameters. All parameters should be appended to it using the << operator.
-// Only basic data types are supported.
+// Only basic data types are supported, with the exception of length counted strings.
 // The allowed types are char, UCHAR, all lengths of signed/unsigned integral values,
-// the SINT128 fake type (a struct, really), double, strings, UCHAR strings and the
-// (non-const) void pointer. Care should be taken to not pass something by address
-// (except char* and UCHAR* types) because the compiler may route it to the overload
-// for the void pointer and it will be printed as an address in hex.
+// the SINT128 fake type (a struct, really), double, strings, UCHAR strings,
+// counted string and the (non-const) void pointer. Care should be taken to not
+// pass something by address (except char* and UCHAR* types) because the compiler
+// may route it to the overload for the void pointer and it will be printed as an
+// address in hex.
 // An object of this class can be created, filled and passed later to the printing
 // routines, cleaned with clear(), refilled and passed again to the printing routines
 // or simply constructed as an anonymous object and being filled at the same time
@@ -143,7 +165,7 @@ class SafeArg
 {
 public:
 	SafeArg();
-	SafeArg(const int val[], FB_SIZE_T v_size);
+	SafeArg(const int val[], size_t v_size);
 	SafeArg& clear();
 	SafeArg& operator<<(char c);
 	SafeArg& operator<<(unsigned char c);
@@ -162,18 +184,16 @@ public:
 	SafeArg& operator<<(double c);
 	SafeArg& operator<<(const char* c);
 	SafeArg& operator<<(const unsigned char* c);
+	SafeArg& operator<<(const counted_string& c);
 	SafeArg& operator<<(void* c);
-	void dump(const TEXT* target[], FB_SIZE_T v_size) const;
-	const safe_cell& getCell(FB_SIZE_T index) const;
-	FB_SIZE_T getCount() const;
-
+	void dump(const TEXT* target[], size_t v_size) const;
+	const safe_cell& getCell(size_t index) const;
+	size_t getCount() const;
 private:
-	FB_SIZE_T m_count;
+	size_t m_count;
 	safe_cell m_arguments[SAFEARG_MAX_ARG];
 	const void* m_extras; // Formatting, etc.
-
-	friend int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg,
-		bool userFormatting);
+	friend int MsgPrint(BaseStream& out_stream, const char* format, const SafeArg& arg);
 };
 
 inline SafeArg::SafeArg()
@@ -188,7 +208,7 @@ inline SafeArg& SafeArg::clear()
 	return *this;
 }
 
-inline FB_SIZE_T SafeArg::getCount() const
+inline size_t SafeArg::getCount() const
 {
 	return m_count;
 }
@@ -196,3 +216,4 @@ inline FB_SIZE_T SafeArg::getCount() const
 } // namespace
 
 #endif // FB_SAFEARG_H
+

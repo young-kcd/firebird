@@ -37,7 +37,7 @@ CHARSET_ENTRY(CS_gb_2312)
 	csptr->charset_min_bytes_per_char = 1;
 	csptr->charset_max_bytes_per_char = 2;
 	csptr->charset_space_length = 1;
-	csptr->charset_space_character = (const BYTE*) " ";	// 0x20
+	csptr->charset_space_character = (const BYTE*) " ";	/* 0x20 */
 	csptr->charset_fn_well_formed = CVGB_check_gb2312;
 
 	CV_convert_init(&csptr->charset_to_unicode,

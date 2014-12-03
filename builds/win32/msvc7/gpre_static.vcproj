@@ -13,6 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
+			OutputDirectory=".\..\..\..\temp\release\gpre_static"
+			IntermediateDirectory=".\..\..\..\temp\release\gpre_static"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -25,21 +27,33 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="TRUE"
 				FavorSizeOrSpeed="1"
+				OmitFramePointers="TRUE"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_"
+				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
-				BrowseInformation="1"/>
+				PrecompiledHeaderFile=".\..\..\..\temp\release\gpre_static/gpre_static.pch"
+				AssemblerListingLocation=".\..\..\..\temp\release\gpre_static/"
+				ObjectFile=".\..\..\..\temp\release\gpre_static/"
+				ProgramDataBaseFileName=".\..\..\..\temp\release\gpre_static/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\release\firebird/bin/gpre_static.exe"
 				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				ProgramDatabaseFile=".\..\..\..\temp\release\gpre_static/gpre_static.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-			/>
+				TypeLibraryName=".\..\..\..\temp\release\gpre_static/gpre_static.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -63,6 +77,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
+			OutputDirectory=".\..\..\..\temp\debug\gpre_static"
+			IntermediateDirectory=".\..\..\..\temp\debug\gpre_static"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -71,20 +87,34 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,DEV_BUILD"
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,_X86_,DEV_BUILD"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
-				BrowseInformation="1"/>
+				PrecompiledHeaderFile=".\..\..\..\temp\debug\gpre_static/gpre_static.pch"
+				AssemblerListingLocation=".\..\..\..\temp\debug\gpre_static/"
+				ObjectFile=".\..\..\..\temp\debug\gpre_static/"
+				ProgramDataBaseFileName=".\..\..\..\temp\debug\gpre_static/"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="comctl32.lib ws2_32.lib mpr.lib version.lib"
+				OutputFile="..\..\..\temp\debug\firebird/bin/gpre_static.exe"
 				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\..\..\..\temp\debug\gpre_static/gpre_static.pdb"
 				SubSystem="1"/>
 			<Tool
 				Name="VCMIDLTool"
-			/>
+				TypeLibraryName=".\..\..\..\temp\debug\gpre_static/gpre_static.tlb"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -191,7 +221,7 @@
 				Name="Generated files"
 				Filter="">
 				<File
-					RelativePath="..\..\..\gen\$(PlatformName)\gpre\gpre_meta.cpp">
+					RelativePath="..\..\..\gen\gpre\gpre_meta.cpp">
 				</File>
 			</Filter>
 		</Filter>

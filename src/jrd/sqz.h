@@ -24,44 +24,19 @@
 #ifndef JRD_SQZ_H
 #define JRD_SQZ_H
 
+#include "../jrd/all.h"
 #include "../include/fb_blk.h"
-#include "../../common/classes/array.h"
 
-namespace Jrd
+namespace Jrd {
+
+class DataComprControl : public pool_alloc<type_dcc>
 {
-	class Compressor
-	{
-	public:
-		Compressor(MemoryPool& pool, FB_SIZE_T length, const UCHAR* data);
-
-		FB_SIZE_T getPackedLength() const
-		{
-			return m_length;
-		}
-
-		const UCHAR* getControl() const
-		{
-			return m_control.begin();
-		}
-
-		FB_SIZE_T getControlSize() const
-		{
-			return m_control.getCount();
-		}
-
-		void pack(const UCHAR*, UCHAR*) const;
-		FB_SIZE_T pack(const UCHAR*, FB_SIZE_T, UCHAR*) const;
-		FB_SIZE_T getPartialLength(FB_SIZE_T, const UCHAR*) const;
-
-		static UCHAR* unpack(FB_SIZE_T, const UCHAR*, FB_SIZE_T, UCHAR*);
-		static FB_SIZE_T applyDiff(FB_SIZE_T, const UCHAR*, FB_SIZE_T, UCHAR* const);
-		static FB_SIZE_T makeDiff(FB_SIZE_T, const UCHAR*, FB_SIZE_T, UCHAR*, FB_SIZE_T, UCHAR*);
-		static FB_SIZE_T makeNoDiff(FB_SIZE_T, UCHAR*);
-
-	private:
-		Firebird::HalfStaticArray<UCHAR, 2048> m_control;
-		FB_SIZE_T m_length;
-	};
+    public:
+	JrdMemoryPool* dcc_pool;
+	DataComprControl* dcc_next;	// Next block if overflow
+	const SCHAR* dcc_end;		// End of control string
+	SCHAR dcc_string[128];
+};
 
 } //namespace Jrd
 

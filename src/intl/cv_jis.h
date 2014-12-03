@@ -37,12 +37,11 @@ ULONG CVJIS_unicode_to_eucj(csconvert* obj, ULONG unicode_len, const UCHAR* unic
 							ULONG eucj_len, UCHAR *eucj_str,
 							USHORT *err_code, ULONG *err_position);
 
-INTL_BOOL CVJIS_check_euc(charset* cs, ULONG euc_len, const UCHAR* euc_str,
-	ULONG* offending_position);
-INTL_BOOL CVJIS_check_sjis(charset* cs, ULONG sjis_len, const UCHAR* sjis_str,
-	ULONG* offending_position);
-
 /*
+static USHORT CVJIS_check_euc(UCHAR *euc_str, USHORT euc_len);
+
+static USHORT CVJIS_check_sjis(UCHAR *sjis_str, USHORT sjis_len);
+
 static USHORT CVJIS_euc2sjis(csconvert* obj, UCHAR *sjis_str, USHORT sjis_len, UCHAR *euc_str
 							, USHORT euc_len, SSHORT *err_code, USHORT *err_position);
 static USHORT CVJIS_sjis2euc(csconvert* obj, UCHAR *euc_str, USHORT euc_len, UCHAR *sjis_str
