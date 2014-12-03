@@ -47,6 +47,7 @@ struct Rdb;
 typedef bool PacketReceive(rem_port*, UCHAR*, SSHORT, SSHORT*);
 typedef bool PacketSend(rem_port*, const SCHAR*, SSHORT);
 typedef bool ProtoWrite(XDR*);
+enum LegacyPlugin {PLUGIN_NEW = 0, PLUGIN_LEGACY, PLUGIN_TRUSTED};
 
 void		REMOTE_cleanup_transaction (struct Rtr *);
 USHORT		REMOTE_compute_batch_size (rem_port*, USHORT, P_OP, const rem_fmt*);
@@ -60,7 +61,7 @@ void		REMOTE_reset_request (struct Rrq *, struct RMessage*);
 void		REMOTE_reset_statement (struct Rsr *);
 void		REMOTE_save_status_strings (ISC_STATUS *);
 bool_t		REMOTE_getbytes (XDR*, SCHAR*, u_int);
-bool		REMOTE_legacy_auth(const char* nm, int protocol);
+LegacyPlugin REMOTE_legacy_auth(const char* nm, int protocol);
 Firebird::RefPtr<Config> REMOTE_get_config(const Firebird::PathName* dbName,
 	const Firebird::string* dpb_config = NULL);
 void		REMOTE_parseList(Remote::ParsedList&, Firebird::PathName);

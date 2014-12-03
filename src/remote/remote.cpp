@@ -884,22 +884,22 @@ Firebird::string rem_port::getRemoteId() const
 	return id;
 }
 
-bool REMOTE_legacy_auth(const char* nm, int p)
+LegacyPlugin REMOTE_legacy_auth(const char* nm, int p)
 {
 	const char* legacyTrusted = "WIN_SSPI";
 	if (fb_utils::stricmp(legacyTrusted, nm) == 0 &&
 		(p == PROTOCOL_VERSION11 || p == PROTOCOL_VERSION12))
 	{
-		return true;
+		return PLUGIN_TRUSTED;
 	}
 
 	const char* legacyAuth = "LEGACY_AUTH";
 	if (fb_utils::stricmp(legacyAuth, nm) == 0 && p < PROTOCOL_VERSION13)
 	{
-		return true;
+		return PLUGIN_LEGACY;
 	}
 
-	return false;
+	return PLUGIN_NEW;
 }
 
 Firebird::PathName ClntAuthBlock::getPluginName()
@@ -1182,6 +1182,8 @@ void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool ch
 		s.copyTo(warning);
 		return;
 	}
+
+	HANDSHAKE_DEBUG(fprintf(stderr, "Raising exception %d in checkResponse\n", vector[1] ? vector[1] : isc_net_read_err));
 
 	if (!vector[1])
 	{

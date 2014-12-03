@@ -6116,6 +6116,16 @@ static void info(IStatus* status,
 	response->p_resp_data = temp;
 }
 
+static bool useLegacyAuth(const char* nm, int protocol, ClumpletWriter& dpb)
+{
+	LegacyPlugin legacyAuth = REMOTE_legacy_auth(nm, protocol);
+	if (!legacyAuth)
+		return false;
+
+	int requestedAuth = dpb.find(isc_dpb_user_name) ? PLUGIN_LEGACY : PLUGIN_TRUSTED;
+	return legacyAuth == requestedAuth;
+}
+
 // Let plugins try to add data to DPB in order to avoid extra network roundtrip
 static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 	const ParametersSet* tags, rem_port* port)
@@ -6130,7 +6140,7 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 	for (; cBlock.plugins.hasData(); cBlock.plugins.next())
 	{
 		if (port->port_protocol >= PROTOCOL_VERSION13 ||
-			REMOTE_legacy_auth(cBlock.plugins.name(), port->port_protocol))
+			useLegacyAuth(cBlock.plugins.name(), port->port_protocol, dpb))
 		{
 			// OK to use plugin
 			cBlock.resetDataFromPlugin();
