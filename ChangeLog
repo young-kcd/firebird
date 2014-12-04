@@ -1,3 +1,13 @@
+ 2014-12-03 14:27  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+Fixed CORE-4471: Legacy_Auth plugin does not connect from FB3 to FB2.5 server when tried after Win_Sspi
+
+ 2014-12-03 14:19  alexpeshkoff 
+   M src/include/firebird/Interface.h
+Misc
+
  2014-12-02 20:37  dimitr 
    M src/common/StatusArg.cpp
    M src/common/StatusArg.h
