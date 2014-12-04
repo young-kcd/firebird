@@ -4421,7 +4421,9 @@ static void get_trigger(thread_db* tdbb, jrd_rel* relation,
 
 	Database* dbb = tdbb->getDatabase();
 	blb* blrBlob = BLB_open(tdbb, dbb->dbb_sys_trans, blob_id);
-	blb* debugInfoBlob = BLB_open(tdbb, dbb->dbb_sys_trans, debug_blob_id);
+	blb* debugInfoBlob = debug_blob_id->isEmpty() ? NULL :
+		BLB_open(tdbb, dbb->dbb_sys_trans, debug_blob_id);
+
 	save_trigger_data(tdbb, ptr, relation, NULL, blrBlob, debugInfoBlob,
 					  name, type, sys_trigger, flags);
 }
