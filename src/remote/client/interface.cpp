@@ -3402,10 +3402,14 @@ int Blob::getSegment(IStatus* status, unsigned int bufferLength, void* buffer,
 		// pass it out piece by piece, then when there isn't
 		// enough left, ask for more.
 
+		unsigned int length = 0;
+
 		// if we're already done, stop now
 
 		if (blob->rbl_flags & Rbl::EOF_SET)
 		{
+			if (segmentLength)
+				*segmentLength = length;
 			return IStatus::FB_EOF;
 		}
 
@@ -3414,7 +3418,6 @@ int Blob::getSegment(IStatus* status, unsigned int bufferLength, void* buffer,
 		//   <count word> <string> <count word> <string>...
 
 		int code = IStatus::FB_OK;
-		unsigned int length = 0;
 		while (true)
 		{
 			// If there's data to be given away, give some away (p points to the local data)
