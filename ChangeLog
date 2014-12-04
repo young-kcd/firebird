@@ -1,3 +1,7 @@
+ 2014-12-04 09:27  dimitr 
+   M src/jrd/met.epp
+Minor postfix for CORE-3305: "BLOB not found" error after creation/altering of the invalid trigger.
+
  2014-12-02 20:14  dimitr 
    M src/lock/lock.cpp
 Fixed CORE-4631: Lock manager "out of room" error hides the real cause of this problem.
