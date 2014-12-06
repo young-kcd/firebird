@@ -1,3 +1,7 @@
+ 2014-12-04 18:24  dimitr 
+   M src/remote/client/interface.cpp
+Fixed missing initialization of the output variable in the case of FB_EOF.
+
  2014-12-03 14:27  alexpeshkoff 
    M src/remote/client/interface.cpp
    M src/remote/remot_proto.h
