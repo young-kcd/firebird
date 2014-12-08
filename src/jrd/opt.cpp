@@ -2297,6 +2297,14 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		{
 			inversion = candidate->inversion;
 			condition = candidate->condition;
+
+			if (inversion && condition &&
+				(!condition->computable(csb, INVALID_STREAM, false) ||
+				condition->findStream(stream)))
+			{
+				inversion = NULL;
+				condition = NULL;
+			}
 		}
 
 		IndexTableScan* const nav_rsb = optimizerRetrieval.getNavigation();
@@ -2379,23 +2387,12 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	{
 		if (inversion && condition)
 		{
-			if (condition->computable(csb, INVALID_STREAM, false) &&
-				!condition->findStream(stream))
-			{
-				RecordSource* const rsb1 =
-					FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
-				RecordSource* const rsb2 =
-					FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
+			RecordSource* const rsb1 =
+				FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
+			RecordSource* const rsb2 =
+				FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
 
-				rsb = FB_NEW(*tdbb->getDefaultPool()) ConditionalStream(csb, rsb1, rsb2, condition);
-			}
-			else
-			{
-				rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
-
-				if (boolean)
-					csb->csb_rpt[stream].csb_flags |= csb_unmatched;
-			}
+			rsb = FB_NEW(*tdbb->getDefaultPool()) ConditionalStream(csb, rsb1, rsb2, condition);
 		}
 		else if (inversion)
 		{
