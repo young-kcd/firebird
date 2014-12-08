@@ -5,7 +5,7 @@
 #"-Wl,--enable-auto-import" to your client build to avoid the auto-import warnings
 #
 #Tom St Denis
-CFLAGS  +=  -I./ -Wall -W -Wshadow -O3 -funroll-loops -mno-cygwin
+CFLAGS  +=  -I./ -Wall -W -Wshadow -O3 -funroll-loops
 
 #x86 optimizations [should be valid for any GCC install though]
 CFLAGS  += -fomit-frame-pointer 
@@ -42,7 +42,7 @@ bn_mp_to_signed_bin_n.o bn_mp_to_unsigned_bin_n.o
 
 # make a Windows DLL via Cygwin
 windll:  $(OBJECTS)
-	gcc -mno-cygwin -mdll -o libtommath.dll -Wl,--out-implib=libtommath.dll.a -Wl,--export-all-symbols *.o
+	gcc -mdll -o libtommath.dll -Wl,--out-implib=libtommath.dll.a -Wl,--export-all-symbols *.o
 	ranlib libtommath.dll.a
 
 # build the test program using the windows DLL

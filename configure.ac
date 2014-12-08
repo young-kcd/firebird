@@ -1037,7 +1037,7 @@ case "$PLATFORM" in
 #define FB_PIPE_NAME "interbas"])
     AC_DEFINE_UNQUOTED(FB_PIPE_NAME,"$FB_PIPE_NAME")
     AC_SUBST(FB_PIPE_NAME)
-    XE_PREPEND( -mno-cygwin -mthreads -lmpr -lversion -lws2_32 -lole32,LIBS)
+    XE_PREPEND( -mthreads -lmpr -lversion -lws2_32 -lole32,LIBS)
     ;;
 
   *)
