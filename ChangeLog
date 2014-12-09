@@ -1,3 +1,7 @@
+ 2014-12-09 07:10  dimitr 
+   M src/jrd/functions.cpp
+Minor corrections.
+
  2014-12-04 09:27  dimitr 
    M src/jrd/met.epp
 Minor postfix for CORE-3305: "BLOB not found" error after creation/altering of the invalid trigger.
