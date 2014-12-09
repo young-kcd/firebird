@@ -179,14 +179,14 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	thread_db* tdbb = JRD_get_thread_data();
 
 	Database* dbb;
-	Attachment* att;
+	Attachment* attachment;
 	jrd_tra* transaction;
 
 	// See if JRD thread data structure looks sane for occasion
 	if (!tdbb ||
 		!(dbb = tdbb->getDatabase()) ||
-		!(transaction = tdbb->getTransaction()) ||
-		!(att = tdbb->getAttachment()))
+		!(attachment = tdbb->getAttachment()) ||
+		!(transaction = tdbb->getTransaction()))
 	{
 		fb_assert(false);
 		return NULL;
@@ -223,52 +223,52 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 
 		if (name_str == NETWORK_PROTOCOL_NAME)
 		{
-			if (att->att_network_protocol.isEmpty())
+			if (attachment->att_network_protocol.isEmpty())
 				return NULL;
 
-			return make_result_str(att->att_network_protocol);
+			return make_result_str(attachment->att_network_protocol);
 		}
 
 		if (name_str == CLIENT_ADDRESS_NAME)
 		{
-			if (att->att_remote_address.isEmpty())
+			if (attachment->att_remote_address.isEmpty())
 				return NULL;
 
-			return make_result_str(att->att_remote_address);
+			return make_result_str(attachment->att_remote_address);
 		}
 
 		if (name_str == CLIENT_PID_NAME)
 		{
-			if (!att->att_remote_pid)
+			if (!attachment->att_remote_pid)
 				return NULL;
 
 			Firebird::string client_pid;
-			client_pid.printf("%d", att->att_remote_pid);
+			client_pid.printf("%d", attachment->att_remote_pid);
 			return make_result_str(client_pid);
 		}
 
 		if (name_str == CLIENT_PROCESS_NAME)
 		{
-			if (att->att_remote_process.isEmpty())
+			if (attachment->att_remote_process.isEmpty())
 				return NULL;
 
-			return make_result_str(att->att_remote_process.ToString());
+			return make_result_str(attachment->att_remote_process.ToString());
 		}
 
 		if (name_str == CURRENT_USER_NAME)
 		{
-			if (!att->att_user || att->att_user->usr_user_name.isEmpty())
+			if (!attachment->att_user || attachment->att_user->usr_user_name.isEmpty())
 				return NULL;
 
-			return make_result_str(att->att_user->usr_user_name);
+			return make_result_str(attachment->att_user->usr_user_name);
 		}
 
 		if (name_str == CURRENT_ROLE_NAME)
 		{
-			if (!att->att_user || att->att_user->usr_sql_role_name.isEmpty())
+			if (!attachment->att_user || attachment->att_user->usr_sql_role_name.isEmpty())
 				return NULL;
 
-			return make_result_str(att->att_user->usr_sql_role_name);
+			return make_result_str(attachment->att_user->usr_sql_role_name);
 		}
 
 		if (name_str == TRANSACTION_ID_NAME)
@@ -317,7 +317,7 @@ vary* get_context(const vary* ns_vary, const vary* name_vary)
 	{
 		Firebird::string result_str;
 
-		if (!att->att_context_vars.get(name_str, result_str))
+		if (!attachment->att_context_vars.get(name_str, result_str))
 			return NULL;
 
 		return make_result_str(result_str);
@@ -345,10 +345,16 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		ERR_post(Arg::Gds(isc_ctx_bad_argument) << Arg::Str(RDB_SET_CONTEXT));
 
 	thread_db* tdbb = JRD_get_thread_data();
-	Database* dbb = tdbb->getDatabase();
+
+	Database* dbb;
+	Attachment* attachment;
+	jrd_tra* transaction;
 
 	// See if JRD thread data structure looks sane for occasion
-	if (!tdbb || !dbb)
+	if (!tdbb ||
+		!(dbb = tdbb->getDatabase()) ||
+		!(attachment = tdbb->getAttachment()) ||
+		!(transaction = tdbb->getTransaction()))
 	{
 		fb_assert(false);
 		return 0;
@@ -359,32 +365,23 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 
 	Database::SyncGuard dsGuard(dbb);
 
-	Attachment* att = tdbb->getAttachment();
-	jrd_tra* tra = tdbb->getTransaction();
-
 	Firebird::StringMap* context_vars = NULL;
 
 	bool result = false;
 
 	if (ns_str == USER_SESSION_NAMESPACE)
 	{
-		if (!att)
-		{
-			fb_assert(false);
-			return 0;
-		}
-
-		context_vars = &att->att_context_vars;
+		context_vars = &attachment->att_context_vars;
 	}
 	else if (ns_str == USER_TRANSACTION_NAMESPACE)
 	{
-		if (!tra)
+		if (!transaction)
 		{
 			fb_assert(false);
 			return 0;
 		}
 
-		context_vars = &tra->tra_context_vars;
+		context_vars = &transaction->tra_context_vars;
 	}
 	else
 	{
@@ -411,10 +408,10 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		result = context_vars->put(name_str, Firebird::string(value_vary->vary_string, value_vary->vary_length));
 	}
 
-	if (att->att_trace_manager->needs().event_set_context)
+	if (attachment->att_trace_manager->needs().event_set_context)
 	{
-		TraceConnectionImpl conn(att);
-		TraceTransactionImpl tran(tra);
+		TraceConnectionImpl conn(attachment);
+		TraceTransactionImpl tran(transaction);
 
 		const Firebird::string* value_str = NULL;
 		if (value_vary)
@@ -423,7 +420,7 @@ static SLONG set_context(const vary* ns_vary, const vary* name_vary, const vary*
 		TraceContextVarImpl ctxvar(ns_str.c_str(), name_str.c_str(),
 			value_str ? value_str->c_str() : NULL);
 
-		att->att_trace_manager->event_set_context(&conn, &tran, &ctxvar);
+		attachment->att_trace_manager->event_set_context(&conn, &tran, &ctxvar);
 	}
 
 	return (SLONG) result;
