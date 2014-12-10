@@ -1,3 +1,7 @@
+ 2014-12-09 11:13  firebirds 
+   M mkChangeLog.sh
+Make it work faster
+
  2014-12-08 16:58  mapopa 
    M builds/posix/prefix.mingw
 Remove hardcoded march to allow 64-bit builds
