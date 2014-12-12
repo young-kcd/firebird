@@ -1630,6 +1630,7 @@ COMMIT WORK;
 ('gfix_trn_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 128, NULL, '	Number of transaction page warnings	: @1', NULL, NULL);
 ('gfix_db_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 129, NULL, '	Number of database page warnings	: @1', NULL, NULL);
 ('gfix_pip_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 130, NULL, '	Number of inventory page warnings	: @1', NULL, NULL);
+('gfix_opt_icu', 'ALICE_gfix', 'alice.c', NULL, 3, 131, NULL, '   -icu                 fix database to be usable with present ICU version', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);
