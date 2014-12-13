@@ -1,3 +1,8 @@
+ 2014-12-12 18:28  alexpeshkoff 
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+Message for new gfix version
+
  2014-12-09 11:13  firebirds 
    M mkChangeLog.sh
 Make it work faster
