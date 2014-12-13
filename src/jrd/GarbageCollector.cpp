@@ -157,7 +157,7 @@ GarbageCollector::~GarbageCollector()
 		Sync sync(&relData->m_sync, "GarbageCollector::~GarbageCollector");
 		sync.lock(SYNC_EXCLUSIVE);
 
-		m_relations.remove(pos);
+		m_relations[pos] = NULL;
 		sync.unlock();
 		delete relData;
 	}
