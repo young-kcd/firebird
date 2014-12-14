@@ -1,3 +1,7 @@
+ 2014-12-13 08:55  hvlad 
+   M src/jrd/GarbageCollector.cpp
+Fixed bug, noted by Claudio in fb-devel
+
  2014-12-12 18:28  alexpeshkoff 
    M src/msgs/facilities2.sql
    M src/msgs/messages2.sql
