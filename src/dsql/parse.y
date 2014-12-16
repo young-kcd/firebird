@@ -5362,7 +5362,7 @@ plan_type
 %type plan_item_list(<planNode>)
 plan_item_list($planNode)
 	: plan_item						{ $planNode->subNodes.add($1); }
-	| plan_item_list ',' plan_item	{ $planNode->subNodes.insert(0, $3); }
+	| plan_item_list ',' plan_item	{ $planNode->subNodes.add($3); }
 	;
 
 %type <planNode> plan_item
@@ -5416,7 +5416,7 @@ index_list($accessType)
 		}
 	| index_list ', ' symbol_index_name
 		{
-			PlanNode::AccessItem& item = $accessType->items.insert(0);
+			PlanNode::AccessItem& item = $accessType->items.add();
 			item.indexName = *$3;
 		}
 	;
