@@ -4,7 +4,7 @@
 // Applied Cryptography by Bruce Schneier
 // This code is in the public domain
 
-// Adapted and added to firebird cvs tree - A.Peshkov, 2004
+// Adapted and added to firebird svn tree - A.Peshkov, 2004
 
 #ifndef SHA_H
 #define SHA_H
@@ -52,7 +52,7 @@ void sha_final(unsigned char [SHA_DIGESTSIZE], SHA_INFO *);
 
 
 /* (PD) 2001 The Bitzi Corporation
- * Please see file COPYING or http://bitzi.com/publicdomain
+ * Please see file COPYING or http://web.archive.org/web/20120315075909/http://bitzi.com/publicdomain
  * for more info.
  *
  * NIST Secure Hash Algorithm
