@@ -121,6 +121,7 @@
 #define isc_dpb_auth_plugin_name		  86
 #define isc_dpb_config					  87
 #define isc_dpb_nolinger				  88
+#define isc_dpb_reset_icu				  89
 
 /**************************************************/
 /* clumplet tags used inside isc_dpb_address_path */
@@ -473,6 +474,7 @@
 #define isc_spb_rpr_ignore_checksum		0x20
 #define isc_spb_rpr_kill_shadows		0x40
 #define isc_spb_rpr_full				0x80
+#define isc_spb_rpr_icu				  0x0800
 
 /*****************************************
  * Parameters for isc_action_svc_restore *

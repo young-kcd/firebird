@@ -330,6 +330,9 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 	if (switches & sw_nolinger)
 		dpb.insertTag(isc_dpb_nolinger);
 
+	if (switches & sw_icu)
+		dpb.insertTag(isc_dpb_reset_icu);
+
 	const unsigned char* authBlock;
 	unsigned int authBlockSize = tdgbl->uSvc->getAuthBlock(&authBlock);
 

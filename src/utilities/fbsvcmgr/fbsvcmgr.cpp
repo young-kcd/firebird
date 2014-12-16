@@ -412,6 +412,7 @@ const SvcSwitches repairOptions[] =
 	{"rpr_full", putOption, 0, isc_spb_rpr_full, 0},
 	{"rpr_sweep_db", putOption, 0, isc_spb_rpr_sweep_db, 0},
 	{"rpr_list_limbo_trans", putOption, 0, isc_spb_rpr_list_limbo_trans, isc_info_svc_limbo_trans},
+	{"rpr_icu", putOption, 0, isc_spb_rpr_icu, 0},
 	{0, 0, 0, 0, 0}
 };
 

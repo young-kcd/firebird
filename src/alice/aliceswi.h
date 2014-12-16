@@ -62,6 +62,7 @@ const SINT64 sw_set_db_dialect	= 0x0000000080000000L;
 const SINT64 sw_trusted_auth	= QUADCONST(0x0000000100000000);	// Byte 4, Bit 0
 const SINT64 sw_fetch_password	= QUADCONST(0x0000000800000000);
 const SINT64 sw_nolinger		= QUADCONST(0x0000001000000000);
+const SINT64 sw_icu				= QUADCONST(0x0000002000000000);
 
 
 enum alice_switches
@@ -115,7 +116,8 @@ enum alice_switches
 #endif
 	IN_SW_ALICE_HIDDEN_ONLINE		=	45,
 	IN_SW_ALICE_FETCH_PASSWORD		=	46,
-	IN_SW_ALICE_NOLINGER			=	47
+	IN_SW_ALICE_NOLINGER			=	47,
+	IN_SW_ALICE_ICU					=	48
 };
 
 static const char* const ALICE_SW_ASYNC	= "ASYNC";
@@ -170,6 +172,9 @@ static const Switches::in_sw_tab_t alice_in_sw_table[] =
 	{IN_SW_ALICE_IGNORE, isc_spb_rpr_ignore_checksum, "IGNORE", sw_ignore,
 		0, 0, false, 35, 1, NULL},
 	// msg 35: \t-ignore\t\tignore checksum errors
+	{IN_SW_ALICE_ICU, isc_spb_rpr_icu, "ICU", sw_icu,
+		0, sw_shut, false, 131, 3, NULL},
+	// msg 131: \t-icu\t\tfix database to be usable with present ICU version
 	{IN_SW_ALICE_KILL, isc_spb_rpr_kill_shadows, "KILL_SHADOW", sw_kill,
 		0, 0, false, 36, 1, NULL},
 	// msg 36: \t-kill\t\tkill all unavailable shadow files

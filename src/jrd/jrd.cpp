@@ -105,6 +105,7 @@
 #include "../jrd/val_proto.h"
 #include "../jrd/validation.h"
 #include "../jrd/vio_proto.h"
+#include "../jrd/dfw_proto.h"
 #include "../common/file_params.h"
 #include "../jrd/event_proto.h"
 #include "../yvalve/why_proto.h"
@@ -874,6 +875,7 @@ public:
 	ULONG	dpb_ext_call_depth;
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 	bool	dpb_nolinger;
+	bool	dpb_reset_icu;
 
 	// here begin compound objects
 	// for constructor to work properly dpb_user_name
@@ -1718,6 +1720,9 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 				if (!VAL_validate(tdbb, options.dpb_verify))
 					ERR_punt();
 			}
+
+			if (options.dpb_reset_icu)
+				DFW_reset_icu(tdbb);
 
 			if (options.dpb_journal.hasData())
 				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_start_journal));
@@ -5744,6 +5749,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_nolinger:
 			dpb_nolinger = true;
+			break;
+
+		case isc_dpb_reset_icu:
+			dpb_reset_icu = true;
 			break;
 
 		case isc_dpb_sec_attach:

@@ -126,6 +126,7 @@
 #include "../common/classes/Hash.h"
 #include "../jrd/CryptoManager.h"
 #include "../jrd/Mapping.h"
+#include "../jrd/shut_proto.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -425,6 +426,7 @@ static Lock* protect_relation(thread_db*, jrd_tra*, jrd_rel*, bool&);
 static void release_protect_lock(thread_db*, jrd_tra*, Lock*);
 static void check_partners(thread_db*, const USHORT);
 static string get_string(const dsc* desc);
+static void setupSpecificCollationAttributes(thread_db*, jrd_tra*, const USHORT, const char*);
 
 static ISC_STATUS getErrorCodeByObjectType(int obj_type)
 {
@@ -3463,6 +3465,73 @@ static bool create_trigger(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 }
 
 
+#define DEBUG_REBUILD_INTL(A)
+
+static void setupSpecificCollationAttributes(thread_db* tdbb, jrd_tra* transaction,
+	const USHORT charSetId, const char* collationName)
+{
+/**************************************
+ *
+ *	setupSpecificCollationAttributes
+ *
+ **************************************
+ *
+ * Functional description
+ *
+ **************************************/
+
+	SET_TDBB(tdbb);
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
+	AutoRequest handle;
+
+	FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
+		COLL IN RDB$COLLATIONS
+		CROSS CS IN RDB$CHARACTER_SETS
+			OVER RDB$CHARACTER_SET_ID
+		WITH COLL.RDB$COLLATION_NAME EQ collationName AND
+			 COLL.RDB$CHARACTER_SET_ID EQ charSetId
+	{
+		SLONG length = 0;
+		HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
+
+		if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
+		{
+			blb* blob = blb::open(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
+			length = blob->blb_length + 10;
+			length = blob->BLB_get_data(tdbb, buffer.getBuffer(length), length);
+		}
+
+		const string specificAttributes((const char*) buffer.begin(), length);
+		string newSpecificAttributes;
+
+		// ASF: If setupCollationAttributes fail we store the original
+		// attributes. This should be what we want for new databases
+		// and restores. CREATE COLLATION will fail in DYN.
+		if (IntlManager::setupCollationAttributes(
+				fb_utils::exact_name(COLL.RDB$BASE_COLLATION_NAME.NULL ?
+					COLL.RDB$COLLATION_NAME : COLL.RDB$BASE_COLLATION_NAME),
+				fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME),
+				specificAttributes, newSpecificAttributes) &&
+			newSpecificAttributes != specificAttributes) // if nothing changed, we do nothing
+		{
+			DEBUG_REBUILD_INTL(fprintf(stderr, "Recreate collation %s\n", collationName));
+
+			MODIFY COLL USING
+				if (newSpecificAttributes.isEmpty())
+					COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
+				else
+				{
+					COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
+					attachment->storeMetaDataBlob(tdbb, transaction,
+						&COLL.RDB$SPECIFIC_ATTRIBUTES, newSpecificAttributes);
+				}
+			END_MODIFY
+		}
+	}
+	END_FOR
+}
+
+
 static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_tra* transaction)
 {
 /**************************************
@@ -3477,64 +3546,194 @@ static bool create_collation(thread_db* tdbb, SSHORT phase, DeferredWork* work, 
  **************************************/
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	switch (phase)
 	{
 	case 1:
-		{
-			const USHORT charSetId = TTYPE_TO_CHARSET(work->dfw_id);
-			AutoRequest handle;
-
-			FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
-				COLL IN RDB$COLLATIONS
-				CROSS CS IN RDB$CHARACTER_SETS
-					OVER RDB$CHARACTER_SET_ID
-				WITH COLL.RDB$COLLATION_NAME EQ work->dfw_name.c_str() AND
-					 COLL.RDB$CHARACTER_SET_ID EQ charSetId
-			{
-				SLONG length = 0;
-				HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-
-				if (!COLL.RDB$SPECIFIC_ATTRIBUTES.NULL)
-				{
-					blb* blob = blb::open(tdbb, transaction, &COLL.RDB$SPECIFIC_ATTRIBUTES);
-					length = blob->blb_length + 10;
-					length = blob->BLB_get_data(tdbb, buffer.getBuffer(length), length);
-				}
-
-				const string specificAttributes((const char*) buffer.begin(), length);
-				string newSpecificAttributes;
-
-				// ASF: If setupCollationAttributes fail we store the original
-				// attributes. This should be what we want for new databases
-				// and restores. CREATE COLLATION will fail in DYN.
-				if (IntlManager::setupCollationAttributes(
-						fb_utils::exact_name(COLL.RDB$BASE_COLLATION_NAME.NULL ?
-							COLL.RDB$COLLATION_NAME : COLL.RDB$BASE_COLLATION_NAME),
-						fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME),
-						specificAttributes, newSpecificAttributes) &&
-					newSpecificAttributes != specificAttributes) // if nothing changed, we do nothing
-				{
-					MODIFY COLL USING
-						if (newSpecificAttributes.isEmpty())
-							COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = TRUE;
-						else
-						{
-							COLL.RDB$SPECIFIC_ATTRIBUTES.NULL = FALSE;
-							attachment->storeMetaDataBlob(tdbb, transaction,
-								&COLL.RDB$SPECIFIC_ATTRIBUTES, newSpecificAttributes);
-						}
-					END_MODIFY
-				}
-			}
-			END_FOR
-		}
-
+		setupSpecificCollationAttributes(tdbb, transaction, TTYPE_TO_CHARSET(work->dfw_id),
+			work->dfw_name.c_str());
 		break;
 	}
 
 	return false;
+}
+
+
+namespace {
+
+struct TableLock
+{
+	jrd_rel* relation;
+	Lock* lock;
+	static const MetaName& generate(const TableLock& item) { return item.relation->rel_name; }
+};
+/*
+class LockedTables
+	: public SortedArray<TableLock, EmptyStorage<TableLock>, MetaName, TableLock>
+{
+public:
+	void unlock(thread_db* tdbb, jrd_tra* transaction)
+	{
+		for (TableLock* lock = begin(); lock != end(); ++lock)
+		{
+			if (lock->lock)
+			{
+				DEBUG_REBUILD_INTL(fprintf(stderr, "Release lock for table %s\n", lock->relation->rel_name.c_str()));
+				release_protect_lock(tdbb, transaction, lock->lock);
+				lock->lock = NULL;
+			}
+		}
+	}
+};
+ */
+}
+
+
+void DFW_reset_icu(thread_db* tdbb)
+{
+/**************************************
+ *
+ *	r e s e t I c u
+ *
+ **************************************
+ *
+ * Functional description
+ *	Fix database for use with other ICU version.
+ *	Formally has nothing to do with DFW,
+ *	but adding new .epp module is worse.
+ *	Next, it's using some DFW code.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	jrd_tra* transaction = NULL;
+	jrd_tra* oldTransaction = tdbb->getTransaction();
+	SortedArray<TableLock, EmptyStorage<TableLock>, MetaName, TableLock> tables;
+
+	try
+	{
+		Attachment* attachment = tdbb->getAttachment();
+		transaction = TRA_start(tdbb, 0, 0);
+		tdbb->setTransaction(transaction);
+
+		// Get list of affected indices & tables
+		const char* indSql =
+			"select ind.RDB$INDEX_NAME, ind.RDB$RELATION_NAME,"
+			" coalesce(coll.RDB$BASE_COLLATION_NAME, coll.RDB$COLLATION_NAME), cs.RDB$CHARACTER_SET_NAME, "
+			" coll.RDB$SPECIFIC_ATTRIBUTES "
+			"from RDB$INDICES ind "
+			"join RDB$INDEX_SEGMENTS seg on ind.RDB$INDEX_NAME = seg.RDB$INDEX_NAME "
+			"join RDB$RELATION_FIELDS rfl on rfl.RDB$RELATION_NAME = ind.RDB$RELATION_NAME "
+			" and rfl.RDB$FIELD_NAME = seg.RDB$FIELD_NAME "
+			"join RDB$FIELDS fld on rfl.RDB$FIELD_SOURCE = fld.RDB$FIELD_NAME "
+			"join RDB$COLLATIONS coll on fld.RDB$CHARACTER_SET_ID = coll.RDB$CHARACTER_SET_ID "
+			" and coalesce(rfl.RDB$COLLATION_ID, fld.RDB$COLLATION_ID) = coll.RDB$COLLATION_ID "
+			"join RDB$CHARACTER_SETS cs on coll.RDB$CHARACTER_SET_ID = cs.RDB$CHARACTER_SET_ID "
+			"where coll.RDB$SPECIFIC_ATTRIBUTES like '%COLL-VERSION=%' "
+			" and coalesce(ind.RDB$INDEX_INACTIVE, 0) = 0 "
+			"group by ind.RDB$INDEX_NAME, ind.RDB$RELATION_NAME, coll.RDB$BASE_COLLATION_NAME, "
+			" coll.RDB$COLLATION_NAME, cs.RDB$CHARACTER_SET_NAME, coll.RDB$SPECIFIC_ATTRIBUTES";
+		Array<Firebird::MetaName> indices;
+		{	// scope
+			AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, indSql));
+			AutoResultSet rs(ps->executeQuery(tdbb, transaction));
+			while(rs->fetch(tdbb))
+			{
+				const MetaName collationName(rs->getMetaName(tdbb, 3));
+				const MetaName charsetName(rs->getMetaName(tdbb, 4));
+				const string specificAttributes(rs->getString(tdbb, 5));
+				string newSpecificAttributes;
+				if (!IntlManager::setupCollationAttributes(collationName.c_str(),
+						charsetName.c_str(), specificAttributes, newSpecificAttributes))
+				{
+					DEBUG_REBUILD_INTL(fprintf(stderr, "setupCollationAttributes failed\n"));
+					continue;
+				}
+				if (newSpecificAttributes == specificAttributes)
+					continue;
+
+				indices.add(rs->getMetaName(tdbb, 1));
+				MetaName t(rs->getMetaName(tdbb, 2));
+				if (!tables.exist(t))
+				{
+					TableLock lock;
+					lock.relation = MET_lookup_relation(tdbb, t);
+					fb_assert(lock.relation);
+					lock.lock = NULL;
+					tables.add(lock);
+				}
+			}
+		}
+
+		// Lock the tables
+		for (unsigned n = 0; n < tables.getCount(); ++n)
+		{
+			bool releaseLock;
+			Lock* lock = protect_relation(tdbb, transaction, tables[n].relation, releaseLock);
+			if (releaseLock)
+				tables[n].lock = lock;
+		}
+
+		// Change collation's attributes
+		const char* collSql =
+			"select coll.RDB$COLLATION_NAME, coll.RDB$CHARACTER_SET_ID from RDB$COLLATIONS coll "
+			"where coll.RDB$SPECIFIC_ATTRIBUTES like '%COLL-VERSION=%'";
+		{	// scope
+			AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, collSql));
+			AutoResultSet rs(ps->executeQuery(tdbb, transaction));
+			while(rs->fetch(tdbb))
+			{
+				Firebird::MetaName collName(rs->getMetaName(tdbb, 1));
+				const USHORT charSetId(rs->getSmallInt(tdbb, 2));
+
+				setupSpecificCollationAttributes(tdbb, transaction, charSetId, collName.c_str());
+			}
+		}
+
+		// Reactivate indices
+		{	// scope
+			for (Firebird::MetaName* idx = indices.begin(); idx != indices.end(); ++idx)
+			{
+				AutoRequest request;
+
+				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+					IDX IN RDB$INDICES
+					WITH IDX.RDB$INDEX_NAME EQ idx->c_str()
+				{
+					MODIFY IDX
+						DEBUG_REBUILD_INTL(fprintf(stderr, "Re-activate index %s\n", idx->c_str()));
+						IDX.RDB$INDEX_INACTIVE.NULL = FALSE;
+						IDX.RDB$INDEX_INACTIVE = FALSE;
+					END_MODIFY
+				}
+				END_FOR
+			}
+		}
+
+		// Commit
+		TRA_commit(tdbb, transaction, false);
+		transaction = NULL;
+		tdbb->setTransaction(oldTransaction);
+	}
+	catch(const Firebird::Exception&)
+	{
+/*
+		// Set database to single shutdown mode
+		Database* dbb = tdbb->getDatabase();
+		const SSHORT oldMode =
+			dbb->dbb_ast_flags & (DBB_shutdown_full | DBB_shutdown_single) ? isc_dpb_shut_single :
+			dbb->dbb_ast_flags & DBB_shutdown ?	isc_dpb_shut_multi : isc_dpb_shut_normal;
+		if (oldMode != isc_dpb_shut_single)
+			SHUT_database(tdbb, isc_dpb_shut_single, 0, NULL);
+ */
+		if (transaction)
+		{
+			TRA_rollback(tdbb, transaction, false, true);
+		}
+		tdbb->setTransaction(oldTransaction);
+
+		throw;
+	}
 }
 
 
