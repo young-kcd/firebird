@@ -5414,7 +5414,7 @@ index_list($accessType)
 			PlanNode::AccessItem& item = $accessType->items.add();
 			item.indexName = *$1;
 		}
-	| index_list ', ' symbol_index_name
+	| index_list ',' symbol_index_name
 		{
 			PlanNode::AccessItem& item = $accessType->items.add();
 			item.indexName = *$3;
