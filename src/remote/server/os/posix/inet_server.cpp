@@ -103,6 +103,11 @@
 #include <sys/resource.h>
 #endif
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
+
 #include "../common/classes/semaphore.h"
 
 const char* TEMP_DIR = "/tmp";
@@ -332,6 +337,11 @@ int CLIB_ROUTINE main( int argc, char** argv)
 #endif // Unix platforms
 
 #endif // FB_RAISE_LIMITS
+
+#ifdef HAVE_LOCALE_H
+		// Pick up the system locale to allow SYSTEM<->UTF8 conversions inside the engine
+		setlocale(LC_CTYPE, "");
+#endif
 
 		if (!(debug || classic))
 		{
