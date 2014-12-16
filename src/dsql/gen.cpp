@@ -459,7 +459,9 @@ static void gen_plan(DsqlCompilerScratch* dsqlScratch, const PlanNode* planNode)
 
 		// now stuff the access method for this stream
 
-		unsigned delta = 0;
+		ObjectsArray<PlanNode::AccessItem>::const_iterator idx_iter =
+			node->accessType->items.begin();
+		FB_SIZE_T idx_count = node->accessType->items.getCount();
 
 		switch (node->accessType->type)
 		{
@@ -469,29 +471,22 @@ static void gen_plan(DsqlCompilerScratch* dsqlScratch, const PlanNode* planNode)
 
 			case PlanNode::AccessType::TYPE_NAVIGATIONAL:
 				dsqlScratch->appendUChar(blr_navigational);
-				dsqlScratch->appendNullString(node->accessType->items[0].indexName.c_str());
-				if (node->accessType->items.getCount() == 1)
+				dsqlScratch->appendNullString(idx_iter->indexName.c_str());
+				if (idx_count == 1)
 					break;
 				// dimitr: FALL INTO, if the plan item is ORDER ... INDEX (...)
 				// ASF: The first item of a TYPE_NAVIGATIONAL is not for blr_indices.
-				++delta;
+				++idx_iter;
+				--idx_count;
 
 			case PlanNode::AccessType::TYPE_INDICES:
 			{
+				fb_assert(idx_count);
 				dsqlScratch->appendUChar(blr_indices);
-				dsqlScratch->appendUChar(node->accessType->items.getCount() - delta);
+				dsqlScratch->appendUChar(idx_count);
 
-				const ObjectsArray<PlanNode::AccessItem>& items = node->accessType->items;
-
-				for (ObjectsArray<PlanNode::AccessItem>::const_iterator ptr2 = items.begin();
-					 ptr2 != items.end();
-					 ++ptr2)
-				{
-					if (delta > 0)
-						--delta;
-					else
-						dsqlScratch->appendNullString(ptr2->indexName.c_str());
-				}
+				for (; idx_iter != node->accessType->items.end(); ++idx_iter)
+					dsqlScratch->appendNullString(idx_iter->indexName.c_str());
 
 				break;
 			}
