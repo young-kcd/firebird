@@ -102,8 +102,7 @@ typedef char FB_SQLSTATE_STRING[FB_SQLSTATE_SIZE];
 
 /*
  * It is difficult to detect 64-bit long from the redistributable header
- * we do not care of 16-bit platforms anymore thus we may use plain "int"
- * which is 32-bit on all platforms we support
+ * thus we may use plain "int" which is 32-bit on all platforms we support
  *
  * We'll move to this definition in future API releases.
  *
