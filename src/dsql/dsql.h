@@ -347,6 +347,7 @@ public:
 	Firebird::QualifiedName udf_name;
 	Firebird::Array<dsc> udf_arguments;
 	bool		udf_private;	// Packaged private function
+	SSHORT		udf_def_count;	// number of inputs with default values
 };
 
 // udf_flags bits

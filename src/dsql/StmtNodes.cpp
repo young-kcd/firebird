@@ -1357,7 +1357,7 @@ DmlNode* DeclareSubFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerSc
 
 		USHORT count = subFunc->getInputFormat() ? subFunc->getInputFormat()->fmt_count : 0;
 		if (subFunc->getInputFields().getCount() * 2 != count)
-			PAR_error(csb, Arg::Gds(isc_prcmismat) << name);
+			PAR_error(csb, Arg::Gds(isc_fun_param_mismatch) << name);
 
 		for (USHORT i = 0; i < count; i += 2u)
 		{

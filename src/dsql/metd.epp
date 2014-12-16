@@ -880,6 +880,8 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 		}
 	}
 
+	SSHORT defaults = 0;
+
 	AutoCacheRequest handle2(tdbb, irq_func_return, IRQ_REQUESTS);
 
 	FOR(REQUEST_HANDLE handle2 TRANSACTION_HANDLE transaction)
@@ -971,6 +973,12 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 						d.dsc_flags = DSC_nullable;
 					}
 
+					if (!X.RDB$DEFAULT_VALUE.NULL ||
+						(fb_utils::implicit_domain(F.RDB$FIELD_NAME) && !F.RDB$DEFAULT_VALUE.NULL))
+					{
+						defaults++;
+					}
+
 					userFunc->udf_arguments.add(d);
 				}
 			}
@@ -1038,11 +1046,18 @@ dsql_udf* METD_get_function(jrd_tra* transaction, DsqlCompilerScratch* dsqlScrat
 					d.dsc_flags = DSC_nullable;
 				}
 
+				if (!X.RDB$DEFAULT_VALUE.NULL)
+				{
+					defaults++;
+				}
+
 				userFunc->udf_arguments.add(d);
 			}
 		}
 	}
 	END_FOR
+
+	userFunc->udf_def_count = defaults;
 
 	// Adjust the return type & length of the UDF to account for
 	// cstring & varying.  While a UDF can return CSTRING, we convert it

@@ -802,6 +802,7 @@ static const struct {
 	{"crdb_nodb", 335545098},
 	{"crdb_notable", 335545099},
 	{"interface_version_too_old", 335545100},
+	{"fun_param_mismatch", 335545101},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

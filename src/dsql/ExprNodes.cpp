@@ -10913,6 +10913,11 @@ ValueExprNode* UdfCallNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				  Arg::Gds(isc_random) << Arg::Str(name.toString()));
 	}
 
+	const USHORT arg_count = node->dsqlFunction->udf_arguments.getCount();
+	const USHORT count = node->args->items.getCount();
+	if (count > arg_count || count < arg_count - node->dsqlFunction->udf_def_count)
+		ERRD_post(Arg::Gds(isc_fun_param_mismatch) << Arg::Str(name.toString()));
+
 	for (NestConst<ValueExprNode>* ptr = node->args->items.begin();
 		 ptr != node->args->items.end();
 		 ++ptr)
