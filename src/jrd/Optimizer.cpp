@@ -1295,7 +1295,8 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			{
 				// If this is a unique full equal matched inversion we're done, so
 				// we can make the inversion and return it.
-				if (currentInv->unique && currentInv->dependencies && !currentInv->condition)
+				if (currentInv->unique && currentInv->dependencies && !currentInv->condition &&
+					currentInv->scratch != navigationCandidate)
 				{
 					if (!invCandidate)
 						invCandidate = FB_NEW(pool) InversionCandidate(pool);
