@@ -149,6 +149,14 @@ static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 
 static void inc_int_use_count(JrdStatement* statement)
 {
+	// Handle sub-statements
+	for (JrdStatement** subStatement = statement->subStatements.begin();
+		 subStatement != statement->subStatements.end();
+		 ++subStatement)
+	{
+		inc_int_use_count(*subStatement);
+	}
+
 	// Increment int_use_count for all procedures in resource list of request
 	ResourceList& list = statement->resources;
 	FB_SIZE_T i;
