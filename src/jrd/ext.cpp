@@ -59,6 +59,7 @@
 #include "../common/os/path_utils.h"
 #include "../common/classes/init.h"
 #include "../common/isc_f_proto.h"
+#include "../common/os/os_utils.h"
 
 #if defined _MSC_VER && _MSC_VER < 1400
 // NS: in VS2003 these only work with static CRT
@@ -135,12 +136,12 @@ namespace {
 		// RW mode. If the DB is ReadOnly, then open the external files only in
 		// ReadOnly mode, thus being consistent.
 		if (!dbb->readOnly())
-			ext_file->ext_ifi = fopen(file_name, FOPEN_TYPE);
+			ext_file->ext_ifi = os_utils::fopen(file_name, FOPEN_TYPE);
 
 		if (!ext_file->ext_ifi)
 		{
 			// could not open the file as read write attempt as read only
-			if (!(ext_file->ext_ifi = fopen(file_name, FOPEN_READ_ONLY)))
+			if (!(ext_file->ext_ifi = os_utils::fopen(file_name, FOPEN_READ_ONLY)))
 			{
 				ERR_post(Arg::Gds(isc_io_error) << Arg::Str("fopen") << Arg::Str(file_name) <<
 						 Arg::Gds(isc_io_open_err) << SYS_ERR(errno));

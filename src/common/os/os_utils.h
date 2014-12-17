@@ -28,9 +28,7 @@
 #ifndef INCLUDE_OS_FILE_UTILS_H
 #define INCLUDE_OS_FILE_UTILS_H
 
-#ifdef SFIO
 #include <stdio.h>
-#endif
 
 #include "../common/classes/fb_string.h"
 #include "../common/StatusArg.h"
@@ -47,6 +45,11 @@ namespace os_utils
 	bool touchFile(const char* pathname);
 
 	bool isIPv6supported();
+
+	// force descriptor to have O_CLOEXEC set
+	int open(const char *pathname, int flags, mode_t mode = 0666);
+	void setCloseOnExec(int fd);	// posix only
+	FILE* fopen(const char *pathname, const char *mode);
 } // namespace os_utils
 
 #endif // INCLUDE_OS_FILE_UTILS_H

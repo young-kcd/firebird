@@ -40,6 +40,7 @@
 #include "../common/classes/init.h"
 #include "../common/config/config.h"
 #include "../common/os/fbsyslog.h"
+#include "../common/os/os_utils.h"
 #include <sys/param.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -425,7 +426,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		//gds_alloc_report(0, __FILE__, __LINE__);
 		Firebird::PathName name = fb_utils::getPrefix(
 			Firebird::IConfigManager::FB_DIR_LOG, "memdebug.log");
-		FILE* file = fopen(name.c_str(), "w+t");
+		FILE* file = os_utils::fopen(name.c_str(), "w+t");
 		if (file)
 		{
 			fprintf(file, "Global memory pool allocated objects\n");

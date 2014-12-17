@@ -49,6 +49,7 @@
 #include "../common/os/path_utils.h"
 #include "../common/os/fbsyslog.h"
 #include "../common/StatusArg.h"
+#include "../common/os/os_utils.h"
 #include "../dsql/sqlda_pub.h"
 
 #ifdef WIN_NT
@@ -734,7 +735,7 @@ namespace {
 				f = stdin;
 			}
 			else {
-				f = fopen(name.c_str(), "rt");
+				f = os_utils::fopen(name.c_str(), "rt");
 			}
 			if (f && isatty(fileno(f)))
 			{

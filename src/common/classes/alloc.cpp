@@ -52,6 +52,7 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
 #include "../common/classes/vector.h"
+#include "../common/os/os_utils.h"
 #include "gen/iberror.h"
 
 #ifdef USE_VALGRIND
@@ -828,7 +829,7 @@ void* MemoryPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 #else // MAP_ANONYMOUS
 
 	if (dev_zero_fd < 0)
-		dev_zero_fd = open("/dev/zero", O_RDWR);
+		dev_zero_fd = os_utils::open("/dev/zero", O_RDWR);
 	void* result = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE, dev_zero_fd, 0);
 
 #endif // MAP_ANONYMOUS
@@ -1015,7 +1016,7 @@ void MemoryPool::validate(void) throw ()
 
 void MemoryPool::print_contents(const char* filename, bool used_only, const char* filter_path) throw ()
 {
-	FILE* out = fopen(filename, "w");
+	FILE* out = os_utils::fopen(filename, "w");
 	if (!out)
 		return;
 

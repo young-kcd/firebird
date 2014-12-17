@@ -67,6 +67,7 @@
 #include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/classes/init.h"
+#include "../common/os/os_utils.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -215,7 +216,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 #endif
 #endif
 
-	const int desc = open(file_name.c_str(), flag, 0666);
+	const int desc = os_utils::open(file_name.c_str(), flag, 0666);
 	if (desc == -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << Arg::Str(file_name) <<
@@ -891,16 +892,7 @@ static int openFile(const char* name, const bool forcedWrites,
 		flag |= O_DIRECT;
 #endif
 
-	for (int i = 0; i < IO_RETRY; i++)
-	{
-		int desc = open(name, flag);
-		if (desc != -1)
-			return desc;
-		if (!SYSCALL_INTERRUPTED(errno))
-			break;
-	}
-
-	return -1;
+	return os_utils::open(name, flag);
 }
 
 
@@ -1213,18 +1205,12 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 static int raw_devices_unlink_database(const PathName& file_name)
 {
 	char header[MIN_PAGE_SIZE];
-	int desc = -1;
 
-	for (int i = 0; i < IO_RETRY; i++)
+	int desc = os_utils::open(file_name.c_str(), O_RDWR | O_BINARY);
+	if (desc < 0)
 	{
-		if ((desc = open (file_name.c_str(), O_RDWR | O_BINARY)) != -1)
-			break;
-
-		if (!SYSCALL_INTERRUPTED(errno))
-		{
-			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
-					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
-		}
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
+				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 	}
 
 	memset(header, 0xa5, sizeof(header));

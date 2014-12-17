@@ -52,6 +52,7 @@
 #include "firebird.h"
 #include "../common/os/divorce.h"
 #include "../common/classes/semaphore.h"
+#include "../common/os/os_utils.h"
 
 #ifdef HAVE_IO_H
 #include <io.h>
@@ -123,7 +124,7 @@ void divorce_terminal(int mask)
 	// Perform terminal divorce
 	// this is in case of BSD systems
 
-	fid = open("/dev/tty", 2);
+	fid = os_utils::open("/dev/tty", 2);
 
 	if (fid >= 0) {
 		ioctl(fid, TIOCNOTTY, 0);

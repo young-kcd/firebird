@@ -82,6 +82,7 @@
 #include "../jrd/UserManagement.h"
 #include "../common/classes/array.h"
 #include "../common/classes/objects_array.h"
+#include "../common/os/os_utils.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Mapping.h"
@@ -466,7 +467,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 #ifdef OPT_DEBUG
 	if (opt_debug_flag != DEBUG_NONE && !opt_debug_file)
-		opt_debug_file = fopen("opt_debug.out", "w");
+		opt_debug_file = os_utils::fopen("opt_debug.out", "w");
 #endif
 
 	// If there is a boolean, there is some work to be done.  First,

@@ -105,6 +105,17 @@ namespace Firebird {
 	class Exception;
 }
 
+#ifndef WIN_NT
+typedef int SOCKET;
+#endif
+
+namespace os_utils
+{
+	// force descriptor to have O_CLOEXEC set
+	SOCKET socket(int domain, int type, int protocol);
+	SOCKET accept(SOCKET sockfd, sockaddr *addr, socklen_t *addrlen);
+}
+
 struct rem_port;
 
 typedef Firebird::AutoPtr<UCHAR, Firebird::ArrayDelete<UCHAR> > UCharArrayAutoPtr;
@@ -585,11 +596,6 @@ inline void Rsr::releaseException()
 
 
 // Generalized port definition.
-
-#ifndef WIN_NT
-typedef int SOCKET;
-#endif
-
 
 //////////////////////////////////////////////////////////////////
 // fwd. decl.

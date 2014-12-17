@@ -49,6 +49,7 @@
 #include "../common/classes/Switches.h"
 #include "../burp/std_desc.h"
 #include "../burp/burpswi.h"
+#include "../common/os/os_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -68,7 +69,7 @@ static DESC open_platf(const char* name, int writeFlag)
 	return CreateFile(name, (writeFlag ? GENERIC_WRITE : GENERIC_READ), 0, NULL,
 		(writeFlag ? CREATE_ALWAYS : OPEN_EXISTING), FILE_ATTRIBUTE_NORMAL, 0);
 #else
-	return open(name, (writeFlag ? mode_write : mode_read), mask);
+	return os_utils::open(name, (writeFlag ? mode_write : mode_read), mask);
 #endif
 }
 

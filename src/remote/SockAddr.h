@@ -45,7 +45,6 @@
 
 #include "../remote/remote.h"
 
-
 class SockAddr
 {
 private:
@@ -111,7 +110,7 @@ inline int SockAddr::connect(SOCKET s) const
 
 inline int SockAddr::accept(SOCKET s)
 {
-	return ::accept(s, (struct sockaddr*) data, &len);
+	return os_utils::accept(s, (struct sockaddr*) data, &len);
 }
 
 

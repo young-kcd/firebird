@@ -54,6 +54,7 @@
 #include "../common/classes/timestamp.h"
 #include "../common/classes/init.h"
 #include "../common/ThreadStart.h"
+#include "../common/os/os_utils.h"
 
 #ifdef HAVE_PWD_H
 #include <pwd.h>
@@ -111,7 +112,6 @@ const int INET_RETRY_CALL = 5;
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/os/os_utils.h"
 
 // Please review. Maybe not needed. See H_ERRNO in common.h.
 #if defined HPUX
@@ -842,7 +842,7 @@ rem_port* INET_connect(const TEXT* name,
 	for (const addrinfo* pai = gai_result; pai; pai = pai->ai_next)
 	{
 		// Allocate a port block and initialize a socket for communications
-		port->port_handle = socket(pai->ai_family, pai->ai_socktype, pai->ai_protocol);
+		port->port_handle = os_utils::socket(pai->ai_family, pai->ai_socktype, pai->ai_protocol);
 
 		if (port->port_handle == INVALID_SOCKET)
 		{
@@ -997,7 +997,7 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 
 	while (true)
 	{
-		SOCKET s = accept(port->port_handle, NULL, NULL);
+		SOCKET s = os_utils::accept(port->port_handle, NULL, NULL);
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET)
 		{
@@ -1371,7 +1371,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 			}
 		}
 
-		const SOCKET n = accept(port->port_channel, NULL, NULL);
+		const SOCKET n = os_utils::accept(port->port_channel, NULL, NULL);
 		inetErrNo = INET_ERRNO;
 
 		if (n == INVALID_SOCKET)
@@ -1416,7 +1416,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* packet)
 
 	// Set up new socket
 
-	SOCKET n = socket(address.family(), SOCK_STREAM, 0);
+	SOCKET n = os_utils::socket(address.family(), SOCK_STREAM, 0);
 	if (n == INVALID_SOCKET)
 	{
 		int savedError = INET_ERRNO;
@@ -1465,7 +1465,7 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	unsigned short aux_port = port->getPortConfig()->getRemoteAuxPort();
 	our_address.setPort(aux_port); // may be 0
 
-	SOCKET n = socket(our_address.family(), SOCK_STREAM, 0);
+	SOCKET n = os_utils::socket(our_address.family(), SOCK_STREAM, 0);
 	if (n == INVALID_SOCKET)
 	{
 		inet_error(false, port, "socket", isc_net_event_listen_err, INET_ERRNO);
@@ -1966,7 +1966,7 @@ static rem_port* select_accept( rem_port* main_port)
 	rem_port* const port = alloc_port(main_port);
 	inet_ports->registerPort(port);
 
-	port->port_handle = accept(main_port->port_handle, NULL, NULL);
+	port->port_handle = os_utils::accept(main_port->port_handle, NULL, NULL);
 	if (port->port_handle == INVALID_SOCKET)
 	{
 		inet_error(true, port, "accept", isc_net_connect_err, INET_ERRNO);
@@ -3081,3 +3081,58 @@ void setStopMainThread(FPTR_INT func)
  **************************************/
 	tryStopMainThread = func;
 }
+
+namespace os_utils
+{
+
+// force socket descriptor to have O_CLOEXEC set
+int socket(int domain, int type, int protocol)
+{
+#ifdef WIN_NT
+	return ::socket(domain, type, protocol);
+#else
+	int fd;
+	do {
+		fd = ::socket(domain, type | O_CLOEXEC, protocol);
+	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+
+	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
+	{
+		do {
+			fd = ::socket(domain, type, protocol);
+		} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+	}
+
+	setCloseOnExec(fd);
+	return fd;
+#endif
+}
+
+// force socket descriptor to have O_CLOEXEC set
+int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+{
+#ifdef WIN_NT
+	return ::accept(sockfd, addr, addrlen);
+#else
+	int fd;
+#ifdef HAVE_ACCEPT4
+	do {
+		fd = ::accept4(sockfd, addr, addrlen, O_CLOEXEC);
+	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+
+	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
+	{
+#endif
+		do {
+			fd = ::accept(sockfd, addr, addrlen);
+		} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+#ifdef HAVE_ACCEPT4
+	}
+#endif
+
+	setCloseOnExec(fd);
+	return fd;
+#endif
+}
+
+} // namespace os_utils

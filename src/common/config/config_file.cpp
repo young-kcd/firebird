@@ -28,6 +28,7 @@
 #include "../common/config/config.h"
 #include "../common/config/ConfigCache.h"
 #include "../common/os/path_utils.h"
+#include "../common/os/os_utils.h"
 #include "../common/ScanDir.h"
 #include "../common/utils_proto.h"
 #include <stdio.h>
@@ -49,7 +50,7 @@ class MainStream : public ConfigFile::Stream
 {
 public:
 	MainStream(const char* fname, bool errorWhenMissing)
-		: file(fopen(fname, "rt")), fileName(fname), l(0)
+		: file(os_utils::fopen(fname, "rt")), fileName(fname), l(0)
 	{
 		if (errorWhenMissing && !file)
 		{

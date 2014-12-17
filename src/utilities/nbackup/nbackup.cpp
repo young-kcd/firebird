@@ -53,6 +53,7 @@
 #include "../common/isc_f_proto.h"
 #include "../common/StatusArg.h"
 #include "../common/classes/objects_array.h"
+#include "../common/os/os_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -457,7 +458,7 @@ void NBackup::open_database_write()
 	if (dbase != INVALID_HANDLE_VALUE)
 		return;
 #else
-	dbase = open(dbname.c_str(), O_RDWR | O_LARGEFILE);
+	dbase = os_utils::open(dbname.c_str(), O_RDWR | O_LARGEFILE);
 	if (dbase >= 0)
 		return;
 #endif
@@ -497,11 +498,11 @@ void NBackup::open_database_scan()
 #define O_DIRECT 0
 #endif // O_DIRECT
 
-	dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
+	dbase = os_utils::open(dbname.c_str(), O_RDONLY | O_LARGEFILE | O_NOATIME | (direct_io ? O_DIRECT : 0));
 	if (dbase < 0)
 	{
 		// Non-root may fail when opening file of another user with O_NOATIME
-		dbase = open(dbname.c_str(), O_RDONLY | O_LARGEFILE | (direct_io ? O_DIRECT : 0));
+		dbase = os_utils::open(dbname.c_str(), O_RDONLY | O_LARGEFILE | (direct_io ? O_DIRECT : 0));
 	}
 	if (dbase < 0)
 	{
@@ -540,7 +541,7 @@ void NBackup::create_database()
 	if (dbase != INVALID_HANDLE_VALUE)
 		return;
 #else
-	dbase = open(dbname.c_str(), O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
+	dbase = os_utils::open(dbname.c_str(), O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 	if (dbase >= 0)
 		return;
 #endif
@@ -655,7 +656,7 @@ void NBackup::open_backup_scan()
 	}
 	else
 	{
-		backup = open(nm.c_str(), O_RDONLY | O_LARGEFILE);
+		backup = os_utils::open(nm.c_str(), O_RDONLY | O_LARGEFILE);
 		if (backup >= 0)
 			return;
 	}
@@ -684,7 +685,7 @@ void NBackup::create_backup()
 		backup = 1; // Posix file handle for stdout
 		return;
 	}
-	backup = open(nm.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
+	backup = os_utils::open(nm.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, 0660);
 	if (backup >= 0)
 		return;
 #endif

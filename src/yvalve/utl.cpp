@@ -66,6 +66,7 @@
 #include "../common/isc_f_proto.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/os/os_utils.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -316,7 +317,7 @@ FB_BOOLEAN edit(IStatus* status, ISC_QUAD* blob_id, IAttachment* att, ITransacti
 	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FALSE;
 
-	FILE* file = fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
+	FILE* file = os_utils::fopen(tmpf.c_str(), FOPEN_WRITE_TYPE_TEXT);
 	if (!file)
 	{
 		unlink(tmpf.c_str());
@@ -338,7 +339,7 @@ FB_BOOLEAN edit(IStatus* status, ISC_QUAD* blob_id, IAttachment* att, ITransacti
 	if (gds__edit(tmpf.c_str(), type))
 	{
 
-		if (!(file = fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT)))
+		if (!(file = os_utils::fopen(tmpf.c_str(), FOPEN_READ_TYPE_TEXT)))
 		{
 			unlink(tmpf.c_str());
 			system_error::raise("fopen");
@@ -364,7 +365,7 @@ UtlInterface utlInterface;
 void UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
-	FILE* file = fopen(file_name, txt ? FOPEN_WRITE_TYPE_TEXT : FOPEN_WRITE_TYPE);
+	FILE* file = os_utils::fopen(file_name, txt ? FOPEN_WRITE_TYPE_TEXT : FOPEN_WRITE_TYPE);
 	try
 	{
 		if (!file)
@@ -397,7 +398,7 @@ void UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
  *	Load a blob with the contents of a file.
  *
  **************************************/
-	FILE* file = fopen(file_name, txt ? FOPEN_READ_TYPE_TEXT : FOPEN_READ_TYPE);
+	FILE* file = os_utils::fopen(file_name, txt ? FOPEN_READ_TYPE_TEXT : FOPEN_READ_TYPE);
 	try
 	{
 		if (!file)

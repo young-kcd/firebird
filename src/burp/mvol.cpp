@@ -44,6 +44,7 @@
 #include "../burp/mvol_proto.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/gdsassert.h"
+#include "../common/os/os_utils.h"
 #include <fcntl.h>
 #include <sys/types.h>
 
@@ -905,7 +906,7 @@ static DESC next_volume( DESC handle, ULONG mode, bool full_buffer)
 		new_desc = MVOL_open(new_file, mode, OPEN_ALWAYS);
 		if (new_desc == INVALID_HANDLE_VALUE)
 #else
-		new_desc = open(new_file, mode, open_mask);
+		new_desc = os_utils::open(new_file, mode, open_mask);
 		if (new_desc < 0)
 #endif // WIN_NT
 		{
@@ -975,12 +976,12 @@ static void prompt_for_name(SCHAR* name, int length)
 	// Get a location to read from.
 	fb_assert(!tdgbl->uSvc->isService());
 
-	if (isatty(fileno(stdout)) || !(term_out = fopen(TERM_OUTPUT, "w")))
+	if (isatty(fileno(stdout)) || !(term_out = os_utils::fopen(TERM_OUTPUT, "w")))
 	{
 		term_out = stdout;
 	}
 
-	if (isatty(fileno(stdin)) || !(term_in = fopen(TERM_INPUT, "r")))
+	if (isatty(fileno(stdin)) || !(term_in = os_utils::fopen(TERM_INPUT, "r")))
 	{
 		term_in = stdin;
 	}

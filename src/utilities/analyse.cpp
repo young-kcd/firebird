@@ -329,7 +329,7 @@ static void db_open( const char* file_name, USHORT file_length)
  *
  **************************************/
 
-	if ((file = open(file_name, 2)) == -1)
+	if ((file = os_utils::open(file_name, 2)) == -1)
 		db_error(errno);
 }
 

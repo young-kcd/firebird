@@ -116,7 +116,7 @@ const char* const MTAB	= "/etc/mtab";
 #define MTAB_OPEN(path, type)	setmntent(path, "r")
 #define MTAB_CLOSE(stream)	endmntent(stream)
 #else
-#define MTAB_OPEN(path, type)	fopen(path, type)
+#define MTAB_OPEN(path, type)	os_utils::fopen(path, type)
 #define MTAB_CLOSE(stream)	fclose(stream)
 #endif
 

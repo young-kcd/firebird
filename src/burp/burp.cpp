@@ -58,6 +58,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/Switches.h"
 #include "../common/IntlUtil.h"
+#include "../common/os/os_utils.h"
 #include "../burp/burpswi.h"
 
 #ifdef HAVE_CTYPE_H
@@ -768,7 +769,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				if (tdgbl->sw_redirect == REDIRECT)		// not NOREDIRECT, and not NOOUTPUT
 				{
 					// Make sure the status file doesn't already exist
-					FILE* tmp_outfile = fopen(redirect, fopen_read_type);
+					FILE* tmp_outfile = os_utils::fopen(redirect, fopen_read_type);
 					if (tmp_outfile)
 					{
 						BURP_print(true, 66, redirect);
@@ -776,7 +777,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 						fclose(tmp_outfile);
 						BURP_exit_local(FINI_ERROR, tdgbl);
 					}
-					if (! (tdgbl->output_file = fopen(redirect, fopen_write_type)))
+					if (! (tdgbl->output_file = os_utils::fopen(redirect, fopen_write_type)))
 					{
 						BURP_print(true, 66, redirect);
 						// msg 66 can't open status and error output file %s
@@ -1862,7 +1863,7 @@ static gbak_action open_files(const TEXT* file1,
 				if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_WRITE, CREATE_ALWAYS)) ==
 					INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = open(nm.c_str(), MODE_WRITE, open_mask)) == -1)
+				if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_WRITE, open_mask)) == -1)
 #endif // WIN_NT
 
 				{
@@ -1970,7 +1971,7 @@ static gbak_action open_files(const TEXT* file1,
 		if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
 			INVALID_HANDLE_VALUE)
 #else
-		if ((fil->fil_fd = open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
+		if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif
 		{
 			BURP_error(65, true, fil->fil_name.c_str());
@@ -2019,7 +2020,7 @@ static gbak_action open_files(const TEXT* file1,
 				if ((fil->fil_fd = MVOL_open(nm.c_str(), MODE_READ, OPEN_EXISTING)) ==
 					INVALID_HANDLE_VALUE)
 #else
-				if ((fil->fil_fd = open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
+				if ((fil->fil_fd = os_utils::open(nm.c_str(), MODE_READ)) == INVALID_HANDLE_VALUE)
 #endif
 				{
 					BURP_error(65, false, fil->fil_name.c_str());

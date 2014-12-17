@@ -58,6 +58,14 @@
 #include <pwd.h>
 #endif
 
+#ifdef HAVE_ACCEPT4
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#endif
+#include <sys/types.h>
+#include <sys/socket.h>
+
 using namespace Firebird;
 
 namespace os_utils
@@ -117,6 +125,7 @@ namespace
 	}
 } // anonymous namespace
 
+
 // create directory for lock files and set appropriate access rights
 void createLockDirectory(const char* pathname)
 {
@@ -173,11 +182,7 @@ static void raiseError(int errCode, const char* filename)
 // open (or create if missing) and set appropriate access rights
 int openCreateSharedFile(const char* pathname, int flags)
 {
-	int fd;
-	do {
-		fd = ::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
-	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
-
+	int fd = os_utils::open(pathname, flags | O_RDWR | O_CREAT, S_IREAD | S_IWRITE);
 	if (fd < 0)
 		raiseError(fd, pathname);
 
@@ -233,6 +238,43 @@ bool touchFile(const char* pathname)
 bool isIPv6supported()
 {
 	return true;
+}
+
+// setting flag is not absolutely required, therefore ignore errors here
+void setCloseOnExec(int fd)
+{
+	if (fd >= 0)
+	{
+		while (fcntl(fd, F_SETFD, O_CLOEXEC) < 0 && SYSCALL_INTERRUPTED(errno))
+			;
+	}
+}
+
+// force file descriptor to have O_CLOEXEC set
+int open(const char *pathname, int flags, mode_t mode)
+{
+	int fd;
+	do {
+		fd = ::open(pathname, flags | O_CLOEXEC, mode);
+	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+
+	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
+	{
+		do {
+			fd = ::open(pathname, flags | O_CLOEXEC, mode);
+		} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
+	}
+
+	setCloseOnExec(fd);
+	return fd;
+}
+
+FILE* fopen(const char *pathname, const char *mode)
+{
+	FILE* f = ::fopen(pathname, mode);	// TODO: use open + fdopen to avoid races
+	if (f)
+		setCloseOnExec(fileno(f));
+	return f;
 }
 
 } // namespace os_utils

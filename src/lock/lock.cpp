@@ -54,6 +54,7 @@
 #include "../common/classes/semaphore.h"
 #include "../common/classes/init.h"
 #include "../common/classes/timestamp.h"
+#include "../common/os/os_utils.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -1621,7 +1622,7 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 			TEXT buffer[MAXPATHLEN];
 			gds__prefix_lock(buffer, "fb_lock_table.dump");
 			const TEXT* const lock_file = buffer;
-			FILE* const fd = fopen(lock_file, "wb");
+			FILE* const fd = os_utils::fopen(lock_file, "wb");
 			if (fd)
 			{
 				FB_UNUSED(fwrite(header, 1, header->lhb_used, fd));

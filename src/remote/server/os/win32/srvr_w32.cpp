@@ -109,6 +109,7 @@
 
 #include "firebird/Interface.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/os/os_utils.h"
 #include "../auth/trusted/AuthSspi.h"
 #include "../auth/SecurityDatabase/LegacyServer.h"
 #include "../auth/SecureRemotePassword/server/SrpServer.h"
@@ -346,7 +347,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 
 	//gds_alloc_report(0, __FILE__, __LINE__);
 	PathName name = fb_utils::getPrefix(IConfigManager::FB_DIR_LOG, "memdebug.log");
-	FILE* file = fopen(name.c_str(), "w+t");
+	FILE* file = os_utils::fopen(name.c_str(), "w+t");
 	if (file)
 	{
 		fprintf(file, "Global memory pool allocated objects\n");

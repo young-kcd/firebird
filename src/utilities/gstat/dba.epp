@@ -54,6 +54,7 @@
 #include "../jrd/ods_proto.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/UserBlob.h"
+#include "../common/os/os_utils.h"
 
 using MsgFormat::SafeArg;
 
@@ -1949,7 +1950,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 	fil->fil_fudge = 0;
 	fil->fil_max_page = 0L;
 
-	if ((fil->fil_desc = open(file_name, O_RDONLY)) == -1)
+	if ((fil->fil_desc = os_utils::open(file_name, O_RDONLY)) == -1)
 	{
 		tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 29, SafeArg() << file_name);
 		// msg 29: Can't open database file %s

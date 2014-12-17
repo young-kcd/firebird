@@ -208,7 +208,7 @@ void ConfigStorage::checkFile()
 	}
 	else
 	{
-		m_cfg_file = ::open(cfg_file_name, O_RDWR | O_BINARY);
+		m_cfg_file = os_utils::open(cfg_file_name, O_RDWR | O_BINARY);
 
 		if (m_cfg_file < 0)
 			checkFileError(cfg_file_name, "open", isc_io_open_err);
@@ -244,7 +244,7 @@ void ConfigStorage::checkFile()
 				configFileName.insert(0, root);
 			}
 
-			cfgFile = fopen(configFileName.c_str(), "rb");
+			cfgFile = os_utils::fopen(configFileName.c_str(), "rb");
 			if (!cfgFile) {
 				checkFileError(configFileName.c_str(), "fopen", isc_io_open_err);
 			}

@@ -30,6 +30,7 @@
 #include "../common/os/guid.h"
 
 #include "fb_exception.h"
+#include "../common/os/os_utils.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,15 +44,7 @@ namespace Firebird {
 void GenerateRandomBytes(void* buffer, FB_SIZE_T size)
 {
 	// do not use /dev/random because it may return lesser data than we need.
-	int fd = -1;
-	for (;;)
-	{
-		fd = open("/dev/urandom", O_RDONLY);
-		if (fd >= 0)
-			break;
-		if (errno != EINTR)
-			Firebird::system_call_failed::raise("open");
-	}
+	int fd = os_utils::open("/dev/urandom", O_RDONLY);
 	for (FB_SIZE_T offset = 0; offset < size; )
 	{
 		int rc = read(fd, static_cast<char*>(buffer) + offset, size - offset);

@@ -216,9 +216,7 @@ void TempFile::init(const PathName& directory, const PathName& prefix)
 		system_error::raise("mktemp");
 	}
 
-	do {
-		handle = open(filename.c_str(), O_RDWR | O_EXCL | O_CREAT);
-	} while (handle == -1 && errno == EINTR);
+	handle = os_utils::open(filename.c_str(), O_RDWR | O_EXCL | O_CREAT);
 #endif
 
 	if (handle == -1)

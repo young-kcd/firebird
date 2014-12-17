@@ -5196,7 +5196,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
 	TEXT fname[MAXPATHLEN];
 
 	Firebird::string fname = fb_utils::getPrefix(IConfigManager::FB_DIR_LOG, "proc_info.log");
-	FILE* fptr = fopen(fname.c_str(), "a+");
+	FILE* fptr = os_utils::fopen(fname.c_str(), "a+");
 	if (!fptr)
 	{
 		gds__log("Failed to open %s\n", fname.c_str());

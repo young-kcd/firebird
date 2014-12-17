@@ -63,6 +63,7 @@
 #include "../jrd/EngineInterface.h"
 #include "../jrd/Mapping.h"
 #include "../common/classes/RefMutex.h"
+#include "../common/os/os_utils.h"
 
 #include "../common/classes/DbImplementation.h"
 
@@ -2194,7 +2195,7 @@ void Service::readFbLog()
 	bool svc_started = false;
 
 	Firebird::PathName name = fb_utils::getPrefix(IConfigManager::FB_DIR_LOG, LOGFILE);
-	FILE* file = fopen(name.c_str(), "r");
+	FILE* file = os_utils::fopen(name.c_str(), "r");
 
 	try
 	{

@@ -2255,7 +2255,7 @@ void OptimizerRetrieval::printCandidate(const InversionCandidate* candidate) con
  *
  **************************************/
 
-	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "     cost(%1.2f), selectivity(%1.10f), indexes(%d), matched(%d, %d)",
 		candidate->cost, candidate->selectivity, candidate->indexes, candidate->matchedSegments,
 		candidate->nonFullMatchedSegments);
@@ -2289,7 +2289,7 @@ void OptimizerRetrieval::printCandidates(const InversionCandidateList* inversion
  *
  **************************************/
 
-	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "    retrieval candidates:\n");
 	fclose(opt_debug_file);
 	const InversionCandidate* const* inversion = inversions->begin();
@@ -2314,7 +2314,7 @@ void OptimizerRetrieval::printFinalCandidate(const InversionCandidate* candidate
 
 	if (candidate)
 	{
-		FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+		FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
 		fprintf(opt_debug_file, "    final candidate: ");
 		fclose(opt_debug_file);
 		printCandidate(candidate);
@@ -3037,7 +3037,7 @@ void OptimizerInnerJoin::printBestOrder() const
  *
  **************************************/
 
-	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, " best order, streams: ");
 	for (StreamType i = 0; i < optimizer->opt_best_count; i++)
 	{
@@ -3064,7 +3064,7 @@ void OptimizerInnerJoin::printFoundOrder(StreamType position, double positionCos
  *
  **************************************/
 
-	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "  position %2.2d:", position);
 	fprintf(opt_debug_file, " pos. cardinality(%10.2f) pos. cost(%10.2f)", positionCardinality, positionCost);
 	fprintf(opt_debug_file, " cardinality(%10.2f) cost(%10.2f)", cardinality, cost);
@@ -3095,7 +3095,7 @@ void OptimizerInnerJoin::printProcessList(const IndexedRelationships* processLis
  *
  **************************************/
 
-	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "   basestream %d, relationships: stream(cost)", stream);
 	const IndexRelationship* const* relationships = processList->begin();
 	for (int i = 0; i < processList->getCount(); i++)
@@ -3116,7 +3116,7 @@ void OptimizerInnerJoin::printStartOrder() const
  *
  **************************************/
 
-	FILE *opt_debug_file = fopen(OPTIMIZER_DEBUG_FILE, "a");
+	FILE *opt_debug_file = os_utils::fopen(OPTIMIZER_DEBUG_FILE, "a");
 	fprintf(opt_debug_file, "Start join order: with stream(baseCost)");
 	bool firstStream = true;
 	for (int i = 0; i < innerStreams.getCount(); i++)

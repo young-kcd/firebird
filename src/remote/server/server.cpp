@@ -73,6 +73,7 @@
 #include "../auth/SecurityDatabase/LegacyHash.h"
 #include "../common/enc_proto.h"
 #include "../common/classes/InternalMessageBuffer.h"
+#include "../common/os/os_utils.h"
 
 using namespace Firebird;
 
@@ -637,12 +638,10 @@ public:
 			firebirdPortMutex.printf(PORT_FILE, id);
 			TEXT filename[MAXPATHLEN];
 			gds__prefix_lock(filename, firebirdPortMutex.c_str());
-			while ((fd = open(filename, O_WRONLY | O_CREAT, 0666)) < 0)
+			fd = os_utils::open(filename, O_WRONLY | O_CREAT, 0666);
+			if (fd < 0)
 			{
-				if (errno != EINTR)
-				{
-					system_call_failed::raise("open");
-				}
+				system_call_failed::raise("open");
 			}
 
 			struct flock lock;
