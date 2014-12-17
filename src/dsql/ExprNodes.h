@@ -660,7 +660,8 @@ class GenIdNode : public TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>
 public:
 	GenIdNode(MemoryPool& pool, bool aDialect1,
 			  const Firebird::MetaName& name,
-			  ValueExprNode* aArg, bool aImplicit);
+			  ValueExprNode* aArg,
+			  bool aImplicit, bool aIdentity);
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
@@ -689,6 +690,7 @@ private:
 	SLONG step;
 	bool sysGen;
 	const bool implicit;
+	const bool identity;
 };
 
 

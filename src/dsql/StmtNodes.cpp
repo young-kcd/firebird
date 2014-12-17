@@ -6571,7 +6571,7 @@ void StoreNode::makeDefaults(thread_db* tdbb, CompilerScratch* csb)
 				literal->litDesc.makeLong(0, increment);
 
 				GenIdNode* const genNode = FB_NEW(csb->csb_pool)
-					GenIdNode(csb->csb_pool, (csb->blrVersion == 4), generatorName, literal, false);
+					GenIdNode(csb->csb_pool, (csb->blrVersion == 4), generatorName, literal, false, true);
 
 				bool sysGen = false;
 				if (!MET_load_generator(tdbb, genNode->generator, &sysGen))

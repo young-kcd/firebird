@@ -7217,10 +7217,13 @@ next_value_expression
 	: NEXT KW_VALUE FOR symbol_generator_name
 		{
 			$$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION),
-				*$4, ((Jrd::ValueExprNode*) NULL), true);
+				*$4, ((Jrd::ValueExprNode*) NULL), true, false);
 		}
 	| GEN_ID '(' symbol_generator_name ',' value ')'
-		{ $$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION), *$3, $5, false); }
+		{
+			$$ = newNode<GenIdNode>((client_dialect < SQL_DIALECT_V6_TRANSITION),
+				*$3, $5, false, false);
+		}
 	;
 
 

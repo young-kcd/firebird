@@ -5630,14 +5630,16 @@ static RegisterNode<GenIdNode> regGenIdNode2(blr_gen_id2);
 
 GenIdNode::GenIdNode(MemoryPool& pool, bool aDialect1,
 					 const Firebird::MetaName& name,
-					 ValueExprNode* aArg, bool aImplicit)
+					 ValueExprNode* aArg,
+					 bool aImplicit, bool aIdentity)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_GEN_ID>(pool),
 	  dialect1(aDialect1),
 	  generator(pool, name),
 	  arg(aArg),
 	  step(0),
 	  sysGen(false),
-	  implicit(aImplicit)
+	  implicit(aImplicit),
+	  identity(aIdentity)
 {
 	addChildNode(arg, arg);
 }
@@ -5650,7 +5652,7 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	ValueExprNode* explicitStep = (blrOp == blr_gen_id2) ? NULL : PAR_parse_value(tdbb, csb);
 	GenIdNode* const node =
 		FB_NEW(pool) GenIdNode(pool, (csb->blrVersion == 4), name, explicitStep,
-								(blrOp == blr_gen_id2));
+								(blrOp == blr_gen_id2), false);
 
 	// This check seems faster than ==, but assumes the special generator is named ""
 	if (name.length() == 0) //(name == MASTER_GENERATOR)
@@ -5683,7 +5685,8 @@ void GenIdNode::print(string& text) const
 ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	GenIdNode* const node = FB_NEW(getPool())
-		GenIdNode(getPool(), dialect1, generator.name, doDsqlPass(dsqlScratch, arg), implicit);
+		GenIdNode(getPool(), dialect1, generator.name,
+				  doDsqlPass(dsqlScratch, arg), implicit, identity);
 	node->generator = generator;
 	node->step = step;
 	node->sysGen = sysGen;
@@ -5742,8 +5745,9 @@ void GenIdNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* desc
 
 ValueExprNode* GenIdNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	GenIdNode* const node = FB_NEW(*tdbb->getDefaultPool()) GenIdNode(
-		*tdbb->getDefaultPool(), dialect1, generator.name, copier.copy(tdbb, arg), implicit);
+	GenIdNode* const node = FB_NEW(*tdbb->getDefaultPool())
+		GenIdNode(*tdbb->getDefaultPool(), dialect1, generator.name,
+				  copier.copy(tdbb, arg), implicit, identity);
 	node->generator = generator;
 	node->step = step;
 	node->sysGen = sysGen;
@@ -5782,8 +5786,11 @@ ValueExprNode* GenIdNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 {
 	ValueExprNode::pass1(tdbb, csb);
 
-	CMP_post_access(tdbb, csb, generator.secName, 0,
-					SCL_usage, SCL_object_generator, generator.name);
+	if (!identity)
+	{
+		CMP_post_access(tdbb, csb, generator.secName, 0,
+						SCL_usage, SCL_object_generator, generator.name);
+	}
 
 	return this;
 }
