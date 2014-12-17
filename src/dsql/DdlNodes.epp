@@ -1484,18 +1484,28 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_FUNCTION);
 
+	// check for duplicated parameter names
+
+	SortedArray<MetaName> names;
+
+	for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
+	{
+		const ParameterClause* const parameter = parameters[i];
+
+		if (names.exist(parameter->name))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter->name));
+		}
+
+		names.add(parameter->name);
+	}
+
 	const CompoundStmtNode* variables = localDeclList;
 	if (variables)
 	{
 		// insure that variable names do not duplicate parameter names
-
-		SortedArray<MetaName> names;
-
-		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
-		{
-			ParameterClause* parameter = parameters[i];
-			names.add(parameter->name);
-		}
 
 		const NestConst<StmtNode>* ptr = variables->statements.begin();
 		for (const NestConst<StmtNode>* const end = variables->statements.end(); ptr != end; ++ptr)
@@ -2425,24 +2435,42 @@ DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->flags |= (DsqlCompilerScratch::FLAG_BLOCK | DsqlCompilerScratch::FLAG_PROCEDURE);
 
+	// check for duplicated parameter names
+
+	SortedArray<MetaName> names;
+
+	for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
+	{
+		const ParameterClause* const parameter = parameters[i];
+
+		if (names.exist(parameter->name))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter->name));
+		}
+
+		names.add(parameter->name);
+	}
+
+	for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
+	{
+		const ParameterClause* const parameter = returns[i];
+
+		if (names.exist(parameter->name))
+		{
+			status_exception::raise(
+				Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter->name));
+		}
+
+		names.add(parameter->name);
+	}
+
 	const CompoundStmtNode* variables = localDeclList;
 	if (variables)
 	{
 		// insure that variable names do not duplicate parameter names
-
-		SortedArray<MetaName> names;
-
-		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
-		{
-			ParameterClause* parameter = parameters[i];
-			names.add(parameter->name);
-		}
-
-		for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
-		{
-			ParameterClause* parameter = returns[i];
-			names.add(parameter->name);
-		}
 
 		const NestConst<StmtNode>* ptr = variables->statements.begin();
 		for (const NestConst<StmtNode>* const end = variables->statements.end(); ptr != end; ++ptr)
