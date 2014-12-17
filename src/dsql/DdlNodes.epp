@@ -3480,6 +3480,12 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 		dsqlScratch->setPsql(true);
 		dsqlScratch->putLocalVariables(localDeclList, 0);
 
+		dsqlScratch->loopLevel = 0;
+		dsqlScratch->cursorNumber = 0;
+
+		StmtNode* stmtNode = body->dsqlPass(dsqlScratch);
+		GEN_hidden_variables(dsqlScratch);
+
 		dsqlScratch->scopeLevel++;
 		// dimitr: I see no reason to deny EXIT command in triggers,
 		// hence I've added zero label at the beginning.
@@ -3490,9 +3496,9 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 		// Hopefully, system triggers are never recompiled.
 		dsqlScratch->appendUChar(blr_label);
 		dsqlScratch->appendUChar(0);
-		dsqlScratch->loopLevel = 0;
-		dsqlScratch->cursorNumber = 0;
-		body->dsqlPass(dsqlScratch)->genBlr(dsqlScratch);
+
+		stmtNode->genBlr(dsqlScratch);
+
 		dsqlScratch->scopeLevel--;
 		dsqlScratch->appendUChar(blr_end);
 		dsqlScratch->appendUChar(blr_eoc);
