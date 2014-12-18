@@ -135,7 +135,7 @@ AuthSspi::~AuthSspi()
 
 bool AuthSspi::checkAdminPrivilege(PCtxtHandle phContext) const
 {
-#if defined (__GNUC__)
+#if defined (__GNUC__) && !defined(__MINGW64_VERSION_MAJOR)
 	// ASF: MinGW hack.
 	struct SecPkgContext_AccessToken
 	{
