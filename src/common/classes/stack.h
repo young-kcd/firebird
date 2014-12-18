@@ -561,7 +561,7 @@ namespace Firebird {
 			}
 		}
 
-		FB_SIZE_T getCount() const
+		FB_SIZE_T getCount() const throw()
 		{
 			FB_SIZE_T rc = 0;
 			for (Entry* entry = stk; entry; entry = entry->next)

@@ -165,7 +165,7 @@ public:
 	SafeArg& operator<<(void* c);
 	void dump(const TEXT* target[], FB_SIZE_T v_size) const;
 	const safe_cell& getCell(FB_SIZE_T index) const;
-	FB_SIZE_T getCount() const;
+	FB_SIZE_T getCount() const throw();
 
 private:
 	FB_SIZE_T m_count;
@@ -188,7 +188,7 @@ inline SafeArg& SafeArg::clear()
 	return *this;
 }
 
-inline FB_SIZE_T SafeArg::getCount() const
+inline FB_SIZE_T SafeArg::getCount() const throw()
 {
 	return m_count;
 }

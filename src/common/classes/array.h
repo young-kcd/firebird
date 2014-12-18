@@ -336,7 +336,7 @@ public:
 		memcpy(data, items, sizeof(T) * count);
 	}
 
-	size_type getCount() const { return count; }
+	size_type getCount() const throw() { return count; }
 
 	bool isEmpty() const { return count == 0; }
 

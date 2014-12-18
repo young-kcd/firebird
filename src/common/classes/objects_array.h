@@ -304,7 +304,7 @@ namespace Firebird
 			}
 		}
 
-		size_type getCount() const {return inherited::getCount();}
+		size_type getCount() const throw() {return inherited::getCount();}
 		size_type getCapacity() const {return inherited::getCapacity();}
 
 		bool hasData() const
@@ -659,7 +659,7 @@ namespace Firebird
 		PointersArray() : values(), pointers() { }
 		~PointersArray() { }
 
-		size_type getCount() const
+		size_type getCount() const throw()
 		{
 			fb_assert(values.getCount() == pointers.getCount());
 			return values.getCount();

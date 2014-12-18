@@ -228,7 +228,7 @@ namespace Firebird
 		{
 			return stringLength;
 		}
-		size_type getCount() const
+		size_type getCount() const throw()
 		{
 			return stringLength;
 		}

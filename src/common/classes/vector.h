@@ -59,7 +59,7 @@ public:
 	const T* begin() const { return data; }
 	const T* end() const { return data + count; }
 	bool hasData() const { return (count != 0); }
-	FB_SIZE_T getCount() const { return count; }
+	FB_SIZE_T getCount() const throw() { return count; }
 	FB_SIZE_T getCapacity() const { return Capacity; }
 	void clear() { count = 0; }
 
