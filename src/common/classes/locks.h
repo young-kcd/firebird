@@ -62,14 +62,13 @@ public:
 
 	static bool tryEnter(LPCRITICAL_SECTION lpCS)
 	{
-		return ((*m_funct) (lpCS) == TRUE);
+		return ((m_funct) (lpCS) == TRUE);
 	}
 
 private:
-	typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection
-		(LPCRITICAL_SECTION lpCriticalSection);
+	typedef BOOL (WINAPI *tTryEnterCriticalSection)(LPCRITICAL_SECTION lpCriticalSection);
 
-	static tTryEnterCriticalSection* m_funct;
+	static tTryEnterCriticalSection m_funct;
 };
 
 class Mutex : public Reasons

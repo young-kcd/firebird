@@ -120,8 +120,8 @@ BOOL WINAPI TryEnterCriticalSection_Win9X(CRITICAL_SECTION* cs)
 
 // On Win 98 and Win ME TryEnterCriticalSection is defined, but not implemented
 // So direct linking to it won't hurt and will signal our incompatibility with Win 95
-TryEnterCS::tTryEnterCriticalSection* TryEnterCS::m_funct =
-	reinterpret_cast<TryEnterCS::tTryEnterCriticalSection*>(&TryEnterCriticalSection);
+TryEnterCS::tTryEnterCriticalSection TryEnterCS::m_funct =
+	reinterpret_cast<TryEnterCS::tTryEnterCriticalSection>(TryEnterCriticalSection);
 
 static TryEnterCS tryEnterCS;
 
