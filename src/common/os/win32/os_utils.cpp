@@ -303,9 +303,9 @@ bool isIPv6supported()
 	return false;
 }
 
-int open(const char *pathname, int flags, mode_t mode = 0666)
+int open(const char *pathname, int flags, mode_t mode)
 {
-	return ::_open(char *pathname, flags, mode);
+	return ::_open(pathname, flags, mode);
 }
 
 FILE* fopen(const char *pathname, const char *mode)

@@ -33,6 +33,15 @@
 #include "../common/classes/fb_string.h"
 #include "../common/StatusArg.h"
 
+#ifdef WIN_NT
+#include <sys/stat.h>
+
+#define mode_t int
+#define DEFAULT_OPEN_MODE (_S_IREAD | _S_IWRITE)
+#else
+#define DEFAULT_OPEN_MODE (0666)
+#endif
+
 namespace os_utils
 {
 
@@ -47,7 +56,7 @@ namespace os_utils
 	bool isIPv6supported();
 
 	// force descriptor to have O_CLOEXEC set
-	int open(const char *pathname, int flags, mode_t mode = 0666);
+	int open(const char *pathname, int flags, mode_t mode = DEFAULT_OPEN_MODE);
 	void setCloseOnExec(int fd);	// posix only
 	FILE* fopen(const char *pathname, const char *mode);
 } // namespace os_utils

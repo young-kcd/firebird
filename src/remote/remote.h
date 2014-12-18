@@ -109,6 +109,10 @@ namespace Firebird {
 typedef int SOCKET;
 #endif
 
+#ifdef WIN_NT
+#include <WinSock2.h>
+#endif
+
 namespace os_utils
 {
 	// force descriptor to have O_CLOEXEC set

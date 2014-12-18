@@ -3086,7 +3086,7 @@ namespace os_utils
 {
 
 // force socket descriptor to have O_CLOEXEC set
-int socket(int domain, int type, int protocol)
+SOCKET socket(int domain, int type, int protocol)
 {
 #ifdef WIN_NT
 	return ::socket(domain, type, protocol);
@@ -3109,7 +3109,7 @@ int socket(int domain, int type, int protocol)
 }
 
 // force socket descriptor to have O_CLOEXEC set
-int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
+SOCKET accept(SOCKET sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
 #ifdef WIN_NT
 	return ::accept(sockfd, addr, addrlen);
