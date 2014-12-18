@@ -600,15 +600,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  *
  **************************************/
 
-	// Initialize globals
-	isqlGlob.major_ods = 0;
-	isqlGlob.minor_ods = 0;
-
-#if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
-	setlocale(LC_CTYPE, "");
-#endif
-	int rc = ISQL_main(argc, argv);
-	return rc;
+	return ISQL_main(argc, argv);
 }
 
 
@@ -626,10 +618,16 @@ int ISQL_main(int argc, char* argv[])
  *
  **************************************/
 
+#if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
 	setlocale(LC_CTYPE, "");
+#endif
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
+
+	// Initialize globals
+	isqlGlob.major_ods = 0;
+	isqlGlob.minor_ods = 0;
 	isqlGlob.db_SQL_dialect = 0;
 	isqlGlob.att_charset = 0;
 
