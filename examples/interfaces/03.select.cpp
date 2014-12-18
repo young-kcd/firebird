@@ -33,22 +33,9 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <ibase.h>
-#include <firebird/Interface.h>
-
-using namespace Firebird;
+#include "ifaceExamples.h"
 
 static IMaster* master = fb_get_master_interface();
-
-static void check(IStatus* s, const char* text)
-{
-	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
-		throw text;
-}
 
 int main()
 {

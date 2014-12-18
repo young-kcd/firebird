@@ -42,12 +42,10 @@ namespace Firebird
 {
 
 struct FbCryptKey;
-struct DtcStart;
 
 #include "IdlFbInterfaces.h"
 
 #define FB_USE_API(name, prefix)	\
-	/* awk <FirebirdInterface.idl '($1 == "interface") {printf "\t\ttypedef name::%s prefix##%s;\n", $2, $2;}' */	\
 	typedef name::Versioned prefix##Versioned;	\
 	typedef name::ReferenceCounted prefix##ReferenceCounted;	\
 	typedef name::Disposable prefix##Disposable;	\
@@ -75,6 +73,7 @@ struct DtcStart;
 	typedef name::Attachment prefix##Attachment;	\
 	typedef name::Service prefix##Service;	\
 	typedef name::Provider prefix##Provider;	\
+	typedef name::DtcStart prefix##DtcStart;	\
 	typedef name::Dtc prefix##Dtc;	\
 	typedef name::Auth prefix##Auth;	\
 	typedef name::Writer prefix##Writer;	\
@@ -174,15 +173,6 @@ struct FbCryptKey
 	unsigned decryptLength;			// Ignored when decryptKey is NULL
 };
 
-struct DtcStart
-{
-	IAttachment* attachment;
-	const unsigned char* tpb;
-	unsigned tpbLength;
-};
-
-typedef void PluginEntrypoint(IMaster* masterInterface);
-
 #ifdef INCLUDE_Firebird_H		// Building internal module
 
 // This item is for ISC API emulation only
@@ -196,12 +186,13 @@ static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMet
 
 #define FB_PLUGIN_ENTRY_POINT firebird_plugin
 
-extern "C"
-{
-	// Additional API function.
-	// Should be used only in non-plugin modules.
-	// All plugins including providers should use passed at init time interface instead.
-	Firebird::IMaster* ISC_EXPORT fb_get_master_interface();
-}
+// Additional API function.
+// Should be used only in non-plugin modules.
+// All plugins including providers should use passed at init time interface instead.
+#define DECLARE_GET_MASTER(P) extern "C" Firebird::FirebirdApi<P>::Master* ISC_EXPORT fb_get_master_interface();
+
+#ifdef INCLUDE_Firebird_H		// Building internal module
+DECLARE_GET_MASTER(Firebird::FirebirdPolicy)
+#endif //INCLUDE_Firebird_H
 
 #endif // FB_INCLUDE_INTERFACE

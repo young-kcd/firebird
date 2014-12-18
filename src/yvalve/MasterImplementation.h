@@ -45,10 +45,10 @@ namespace Why
 	{
 	public:
 		// IDtc implementation
-		YTransaction* start(Firebird::IStatus* status,
-			unsigned int cnt, Firebird::DtcStart* components);
+		YTransaction* start(Firebird::IStatus* status, Firebird::IDtcStart* components);
 		YTransaction* join(Firebird::IStatus* status,
 			Firebird::ITransaction* one, Firebird::ITransaction* two);
+		Firebird::IDtcStart* startBuilder(Firebird::IStatus* status);
 	};
 
 	class MasterImplementation : public Firebird::AutoIface<Firebird::Api::MasterImpl<MasterImplementation> >

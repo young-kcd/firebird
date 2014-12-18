@@ -533,21 +533,22 @@ interface Provider : PluginBase
 	void setDbCryptCallback(Status status, CryptKeyCallback cryptCallback);
 }
 
-/*** FIXME:
-// DtcStart - structure to start transaction over >1 attachments (former TEB)
-struct DtcStart
+// Helper to start transaction over >1 attachments (former TEB)
+interface DtcStart : Disposable
 {
-	Attachment attachment;
-	const uchar* tpb;
-	uint tpbLength;
+	void setComponent(Status status, Attachment att);
+	void setWithParam(Status status, Attachment att, uint length, const uchar* tpb);
+	uint getCount(Status status);
+	Attachment getAttachment(Status status, uint pos);
+	const uchar* getTpb(Status status, uint pos, uint* length);
 }
-***/
 
 // Distributed transactions coordinator
 interface Dtc : Versioned
 {
-	Transaction start(Status status, uint cnt, DtcStart* components);
+	Transaction start(Status status, DtcStart components);
 	Transaction join(Status status, Transaction one, Transaction two);
+	DtcStart startBuilder(Status status);
 }
 
 

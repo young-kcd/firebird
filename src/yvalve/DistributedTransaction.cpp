@@ -498,7 +498,7 @@ DTransaction::~DTransaction()
 
 namespace Why {
 
-YTransaction* Dtc::start(IStatus* status, unsigned int cnt, DtcStart* components)
+YTransaction* Dtc::start(IStatus* status, IDtcStart* components)
 {
 	try
 	{
@@ -506,26 +506,37 @@ YTransaction* Dtc::start(IStatus* status, unsigned int cnt, DtcStart* components
 
 		RefPtr<DTransaction> dtransaction(new DTransaction);
 
-		for (unsigned int i = 0; i < cnt; ++i)
+		unsigned cnt = components->getCount(status);
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+			status_exception::raise(status);
+
+		for (unsigned i = 0; i < cnt; ++i)
 		{
-			RefPtr<ITransaction> transaction(components[i].attachment->
-				startTransaction(status, components[i].tpbLength, components[i].tpb));
-
+			RefPtr<IAttachment> att(REF_NO_INCR, components->getAttachment(status, i));
 			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
-				return NULL;
+				status_exception::raise(status);
 
-			dtransaction->join(status, transaction);
+			unsigned tpbLen;
+			const unsigned char* tpb = components->getTpb(status, i, &tpbLen);
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				status_exception::raise(status);
 
+			ITransaction* started = att->startTransaction(status, tpbLen, tpb);
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				status_exception::raise(status);
+
+			dtransaction->join(status, started);
 			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
-				LocalStatus tmp;
-				dtransaction->rollback(&tmp);
-				return NULL;
+				started->release();
+				status_exception::raise(status);
 			}
 		}
 
+		YTransaction* rc = new YTransaction(NULL, dtransaction);
 		dtransaction->addRef();
-		return new YTransaction(NULL, dtransaction);
+		components->dispose();
+		return rc;
 	}
 	catch (const Exception& ex)
 	{
@@ -555,6 +566,116 @@ YTransaction* Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
 
 		dtransaction->addRef();
 		return new YTransaction(NULL, dtransaction);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+
+	return NULL;
+}
+
+class DtcStart : public DisposeIface<Api::DtcStartImpl<DtcStart> >
+{
+public:
+	DtcStart()
+		: components(getPool())
+	{ }
+
+	// IDtcStart implementation
+	void setComponent(IStatus* status, IAttachment* att)
+	{
+		this->setWithParam(status, att, 0, NULL);
+	}
+
+	void setWithParam(IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb)
+	{
+		try
+		{
+			Component toAdd;
+			toAdd.att = att;
+			toAdd.tpbLen = length;
+			toAdd.tpb = tpb;
+
+			components.add(toAdd);
+			att->addRef();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	unsigned getCount(IStatus*)
+	{
+		return components.getCount();
+	}
+
+	IAttachment* getAttachment(IStatus* status, unsigned pos)
+	{
+		try
+		{
+			errorOver(pos);
+
+			components[pos].att->addRef();
+			return components[pos].att;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+		return NULL;
+	}
+
+	const unsigned char* getTpb(IStatus* status, unsigned pos, unsigned* length)
+	{
+		try
+		{
+			errorOver(pos);
+
+			*length = components[pos].tpbLen;
+			return components[pos].tpb;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+		return NULL;
+	}
+
+	void dispose()
+	{
+		for (unsigned i = 0; i < components.getCount(); ++i)
+			components[i].att->release();
+
+		delete this;
+	}
+
+private:
+	struct Component
+	{
+		IAttachment* att;
+		unsigned tpbLen;
+		const unsigned char* tpb;
+	};
+
+	HalfStaticArray<Component, 16> components;
+
+	void errorOver(unsigned n)
+	{
+		// TODO: add component num & limit to the message
+		if (n >= components.getCount())
+			(Arg::Gds(isc_random) << "Access to invalid component number in DtcStart").raise();
+	}
+};
+
+IDtcStart* Dtc::startBuilder(IStatus* status)
+{
+	try
+	{
+		status->init();
+
+		return new DtcStart;
 	}
 	catch (const Exception& ex)
 	{

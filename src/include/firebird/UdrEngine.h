@@ -25,6 +25,34 @@
 
 #include "./Interface.h"
 
+//----------------------------------------------------------------
+// This ifdef is a dirty hack to make tests (fbstuff) to compile
+#ifndef INCLUDE_Firebird_H
+
+namespace Firebird
+{
+typedef FirebirdApi<class TempPolicy> Api;
+FB_USE_API(Api, I)
+
+class TempPolicy
+{
+public:
+	template <unsigned V, typename T>
+	static inline bool checkVersion(T* versioned, IStatus* status)
+	{ return true; }
+	static void checkException(Api::Status*) { }
+	static void catchException(Api::Status*) { }
+	typedef Api::Status* Status;
+};
+} //namespace Firebird
+
+DECLARE_GET_MASTER(Firebird::TempPolicy)
+#define INCLUDE_Firebird_H
+
+#endif
+//- END OF HACK --------------------------------------------------
+
+
 #ifndef FB_EXPORTED
 #if defined(DARWIN)
 #define FB_EXPORTED __attribute__((visibility("default")))

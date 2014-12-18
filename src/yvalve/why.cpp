@@ -3407,7 +3407,6 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 	StatusVector status(userStatus);
 	TEB* vector = (TEB*) vec;
 	YTransaction* multiTrans = NULL;
-	DtcStart* ds = NULL;
 
 	try
 	{
@@ -3429,22 +3428,20 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 			return status[1];
 		}
 
-		HalfStaticArray<DtcStart, 16> dtcStartBuffer;
-		ds = dtcStartBuffer.getBuffer(count);
-		memset(ds, 0, sizeof(DtcStart) * count);
-		DtcStart* const end = ds + count;
+		IDtcStart* ds = MasterImplementation::dtc->startBuilder(&status);
+		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+			return status[1];
 
-		for (DtcStart* p = ds; p < end; ++p, ++vector)
+		for (unsigned u = 0; u < count; ++u)
 		{
 			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
-			p->attachment = attachment;
-			attachment->addRef();
-			p->tpbLength = vector->teb_tpb_length;
-			p->tpb = reinterpret_cast<const unsigned char*>(vector->teb_tpb);
+			ds->setWithParam(&status, attachment, vector->teb_tpb_length,
+				reinterpret_cast<const unsigned char*>(vector->teb_tpb));
+			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+				return status[1];
 		}
 
-		multiTrans = MasterImplementation::dtc->start(&status, count, ds);
-
+		multiTrans = MasterImplementation::dtc->start(&status, ds);
 		if (multiTrans)
 			*traHandle = multiTrans->getHandle();
 	}
@@ -3456,17 +3453,6 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 			multiTrans->rollback(&temp);
 
 		e.stuffException(&status);
-	}
-
-	if (ds)
-	{
-		DtcStart* const end = ds + count;
-
-		for (DtcStart* p = ds; p < end; ++p)
-		{
-			if (p->attachment)
-				p->attachment->release();
-		}
 	}
 
 	return status[1];

@@ -946,6 +946,7 @@ namespace
 		}
 
 		RefPtr<PluginModule> rc(new PluginModule(module, info.curModule));
+		typedef void PluginEntrypoint(IMaster* masterInterface);
 		PluginEntrypoint* startModule;
 		if (module->findSymbol(STRINGIZE(FB_PLUGIN_ENTRY_POINT), startModule))
 		{

@@ -35,14 +35,7 @@
  *					Alex Peshkov, 2013
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <ibase.h>
-#include <firebird/Interface.h>
-
-using namespace Firebird;
+#include "ifaceExamples.h"
 
 static IMaster* master = fb_get_master_interface();
 
@@ -52,12 +45,6 @@ static const char* Dept_data[] =
 static double Percent_data[] =
     {0.05,  1.00,  0.075,  0.10, 0};
 int Input_ptr = 0;
-
-static void check(IStatus* s, const char* text)
-{
-	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
-		throw text;
-}
 
 int main()
 {

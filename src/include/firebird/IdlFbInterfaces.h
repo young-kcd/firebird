@@ -56,6 +56,7 @@ public:
 	class Attachment;
 	class Service;
 	class Provider;
+	class DtcStart;
 	class Dtc;
 	class Auth;
 	class Writer;
@@ -2009,13 +2010,78 @@ public:
 		}
 	};
 
+	class DtcStart : public Disposable
+	{
+	public:
+		struct VTable : public Disposable::VTable
+		{
+			void (CLOOP_CARG *setComponent)(DtcStart* self, Status* status, Attachment* att) throw();
+			void (CLOOP_CARG *setWithParam)(DtcStart* self, Status* status, Attachment* att, unsigned length, const unsigned char* tpb) throw();
+			unsigned (CLOOP_CARG *getCount)(DtcStart* self, Status* status) throw();
+			Attachment* (CLOOP_CARG *getAttachment)(DtcStart* self, Status* status, unsigned pos) throw();
+			const unsigned char* (CLOOP_CARG *getTpb)(DtcStart* self, Status* status, unsigned pos, unsigned* length) throw();
+		};
+
+	protected:
+		DtcStart(DoNotInherit)
+			: Disposable(DoNotInherit())
+		{
+		}
+
+		~DtcStart()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 3;
+
+		void setComponent(Status* status, Attachment* att)
+		{
+			typename Policy::Status status2(status);
+			static_cast<VTable*>(this->cloopVTable)->setComponent(this, status2, att);
+			Policy::checkException(status2);
+		}
+
+		void setWithParam(Status* status, Attachment* att, unsigned length, const unsigned char* tpb)
+		{
+			typename Policy::Status status2(status);
+			static_cast<VTable*>(this->cloopVTable)->setWithParam(this, status2, att, length, tpb);
+			Policy::checkException(status2);
+		}
+
+		unsigned getCount(Status* status)
+		{
+			typename Policy::Status status2(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status2);
+			Policy::checkException(status2);
+			return ret;
+		}
+
+		Attachment* getAttachment(Status* status, unsigned pos)
+		{
+			typename Policy::Status status2(status);
+			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2, pos);
+			Policy::checkException(status2);
+			return ret;
+		}
+
+		const unsigned char* getTpb(Status* status, unsigned pos, unsigned* length)
+		{
+			typename Policy::Status status2(status);
+			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getTpb(this, status2, pos, length);
+			Policy::checkException(status2);
+			return ret;
+		}
+	};
+
 	class Dtc : public Versioned
 	{
 	public:
 		struct VTable : public Versioned::VTable
 		{
-			Transaction* (CLOOP_CARG *start)(Dtc* self, Status* status, unsigned cnt, DtcStart* components) throw();
+			Transaction* (CLOOP_CARG *start)(Dtc* self, Status* status, DtcStart* components) throw();
 			Transaction* (CLOOP_CARG *join)(Dtc* self, Status* status, Transaction* one, Transaction* two) throw();
+			DtcStart* (CLOOP_CARG *startBuilder)(Dtc* self, Status* status) throw();
 		};
 
 	protected:
@@ -2031,10 +2097,10 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		Transaction* start(Status* status, unsigned cnt, DtcStart* components)
+		Transaction* start(Status* status, DtcStart* components)
 		{
 			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status2, cnt, components);
+			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status2, components);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -2043,6 +2109,14 @@ public:
 		{
 			typename Policy::Status status2(status);
 			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, one, two);
+			Policy::checkException(status2);
+			return ret;
+		}
+
+		DtcStart* startBuilder(Status* status)
+		{
+			typename Policy::Status status2(status);
+			DtcStart* ret = static_cast<VTable*>(this->cloopVTable)->startBuilder(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -8636,6 +8710,141 @@ public:
 	};
 
 	template <typename Name, typename Base>
+	class DtcStartBaseImpl : public Base
+	{
+	public:
+		typedef DtcStart Declaration;
+
+		DtcStartBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->getModule = &Name::cloopgetModuleDispatcher;
+					this->dispose = &Name::cloopdisposeDispatcher;
+					this->setComponent = &Name::cloopsetComponentDispatcher;
+					this->setWithParam = &Name::cloopsetWithParamDispatcher;
+					this->getCount = &Name::cloopgetCountDispatcher;
+					this->getAttachment = &Name::cloopgetAttachmentDispatcher;
+					this->getTpb = &Name::cloopgetTpbDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopsetComponentDispatcher(DtcStart* self, Status* status, Attachment* att) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::setComponent(status, att);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetWithParamDispatcher(DtcStart* self, Status* status, Attachment* att, unsigned length, const unsigned char* tpb) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::setWithParam(status, att, length, tpb);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+			}
+		}
+
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(DtcStart* self, Status* status) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getCount(status);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static Attachment* CLOOP_CARG cloopgetAttachmentDispatcher(DtcStart* self, Status* status, unsigned pos) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getAttachment(status, pos);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<Attachment*>(0);
+			}
+		}
+
+		static const unsigned char* CLOOP_CARG cloopgetTpbDispatcher(DtcStart* self, Status* status, unsigned pos, unsigned* length) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getTpb(status, pos, length);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<const unsigned char*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+			}
+		}
+
+		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getModule();
+			}
+			catch (...)
+			{
+				Policy::catchException(0);
+				return static_cast<PluginModule*>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename Base = DisposableImpl<Name, Inherit<VersionedImpl<Name, Inherit<DtcStart> > > > >
+	class DtcStartImpl : public DtcStartBaseImpl<Name, Base>
+	{
+	protected:
+		DtcStartImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~DtcStartImpl()
+		{
+		}
+
+		virtual void setComponent(Status* status, Attachment* att) = 0;
+		virtual void setWithParam(Status* status, Attachment* att, unsigned length, const unsigned char* tpb) = 0;
+		virtual unsigned getCount(Status* status) = 0;
+		virtual Attachment* getAttachment(Status* status, unsigned pos) = 0;
+		virtual const unsigned char* getTpb(Status* status, unsigned pos, unsigned* length) = 0;
+	};
+
+	template <typename Name, typename Base>
 	class DtcBaseImpl : public Base
 	{
 	public:
@@ -8651,17 +8860,18 @@ public:
 					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->start = &Name::cloopstartDispatcher;
 					this->join = &Name::cloopjoinDispatcher;
+					this->startBuilder = &Name::cloopstartBuilderDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static Transaction* CLOOP_CARG cloopstartDispatcher(Dtc* self, Status* status, unsigned cnt, DtcStart* components) throw()
+		static Transaction* CLOOP_CARG cloopstartDispatcher(Dtc* self, Status* status, DtcStart* components) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::start(status, cnt, components);
+				return static_cast<Name*>(self)->Name::start(status, components);
 			}
 			catch (...)
 			{
@@ -8680,6 +8890,19 @@ public:
 			{
 				Policy::catchException(status);
 				return static_cast<Transaction*>(0);
+			}
+		}
+
+		static DtcStart* CLOOP_CARG cloopstartBuilderDispatcher(Dtc* self, Status* status) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::startBuilder(status);
+			}
+			catch (...)
+			{
+				Policy::catchException(status);
+				return static_cast<DtcStart*>(0);
 			}
 		}
 
@@ -8710,8 +8933,9 @@ public:
 		{
 		}
 
-		virtual Transaction* start(Status* status, unsigned cnt, DtcStart* components) = 0;
+		virtual Transaction* start(Status* status, DtcStart* components) = 0;
 		virtual Transaction* join(Status* status, Transaction* one, Transaction* two) = 0;
+		virtual DtcStart* startBuilder(Status* status) = 0;
 	};
 
 	template <typename Name, typename Base>

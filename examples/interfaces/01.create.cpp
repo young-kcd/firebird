@@ -33,25 +33,11 @@
  *  Contributor(s): ______________________________________.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <ibase.h>
-#include <firebird/Interface.h>
-
-using namespace Firebird;
+#include "ifaceExamples.h"
 
 // Here we get access to master interface. This is main interface of firebird,
 // and the only one for getting which there is special function in our API.
 static IMaster* master = fb_get_master_interface();
-
-// Probably not best way of error processing, but it's OK for a sample
-static void check(IStatus* s, const char* text)
-{
-	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
-		throw text;
-}
 
 int main()
 {
