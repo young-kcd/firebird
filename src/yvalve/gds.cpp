@@ -1222,7 +1222,8 @@ void API_ROUTINE gds__log(const TEXT* text, ...)
 #endif
 }
 
-void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
+#ifdef NOT_USED_OR_REPLACED
+void gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 {
 /**************************************
  *
@@ -1272,6 +1273,7 @@ void API_ROUTINE gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 	umask(oldmask);
 
 }
+#endif //NOT_USED_OR_REPLACED
 
 
 void API_ROUTINE gds__log_status(const TEXT* database, const ISC_STATUS* status_vector)

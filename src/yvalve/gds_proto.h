@@ -136,7 +136,9 @@ void	gds__ulstr(char* buffer, FB_UINT64 value, const int minlen, const char fill
 
 void	FB_EXPORTED gds__default_printer(void*, SSHORT, const TEXT*);
 void	FB_EXPORTED gds__trace_printer(void*, SSHORT, const TEXT*);
+#ifdef NOT_USED_OR_REPLACED
 void	gds__print_pool(Firebird::MemoryPool*, const TEXT*, ...);
+#endif
 void	GDS_init_prefix();
 
 #ifdef __cplusplus
