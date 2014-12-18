@@ -26,8 +26,10 @@
  *
  */
 
+#ifndef __MINGW32__
 // minimum win32 version: win98 / winnt4 SP3
 #define _WIN32_WINNT 0x0403
+#endif
 
 #include <windows.h>
 #include <wincrypt.h>
