@@ -65,7 +65,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(_POSIX_THREADS) && _POSIX_THREADS >= 200112L
+#if defined(_POSIX_THREADS) && _POSIX_THREADS >= 200112L && !defined(WIN_NT)
 // above check is generally true. However, we use pthreads on some platforms
 // where _POSIX_THREADS is defined to "1" or not even defined at all!
 #define USE_POSIX_THREADS
