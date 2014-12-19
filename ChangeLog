@@ -1,3 +1,67 @@
+ 2014-12-18 17:54  dimitr 
+   M src/isql/isql.epp
+Simplified code and attempted a second-time solution for CORE-4259.
+
+ 2014-12-18 16:54  alexpeshkoff 
+   M examples/interfaces/01.create.cpp
+   M examples/interfaces/02.update.cpp
+   M examples/interfaces/03.select.cpp
+   M examples/interfaces/04.print_table.cpp
+   A examples/interfaces/ifaceExamples.h
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird/Message.h
+   M src/include/firebird/UdrEngine.h
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/why.cpp
+Changed struct DtcStart to interface. Make external programs build again with minimum changes.
+
+ 2014-12-18 16:23  alexpeshkoff 
+   M src/common/classes/SafeArg.h
+   M src/common/classes/array.h
+   M src/common/classes/fb_string.h
+   M src/common/classes/objects_array.h
+   M src/common/classes/stack.h
+   M src/common/classes/vector.h
+getCount() in FB classes never throws exceptions
+
+ 2014-12-18 16:20  alexpeshkoff 
+   M builds/posix/prefix.linux_amd64
+Avoid annoying warning in remote.h
+
+ 2014-12-18 10:58  hvlad 
+   M src/auth/trusted/AuthSspi.cpp
+Patch for mingw by Alexey Pavlov : Don't use hack for mingw-w64
+
+ 2014-12-18 10:56  hvlad 
+   M src/common/common.h
+Patch for mingw by Alexey Pavlov : Mingw also have posix threads library so to resolve conflict we need guard using posix threads for Windows.
+
+ 2014-12-18 10:48  hvlad 
+   M src/common/classes/locks.cpp
+   M src/common/os/win32/guid.cpp
+Patch for mingw by Alexey Pavlov : Mingw compilers don't support Win98
+
+ 2014-12-18 10:38  hvlad 
+   M src/common/classes/locks.cpp
+   M src/common/classes/locks.h
+Patch for mingw by Alexey Pavlov : Fix using function pointer
+
+ 2014-12-18 10:20  alexpeshkoff 
+   M src/yvalve/gds.cpp
+   M src/yvalve/gds_proto.h
+Patch from Alexey - marked unused function as NOT_USED_OR_REPLACED
+
+ 2014-12-18 07:24  hvlad 
+   M src/common/os/os_utils.h
+   M src/common/os/win32/os_utils.cpp
+   M src/remote/inet.cpp
+   M src/remote/remote.h
+Fix Windows build
+
  2014-12-17 14:31  alexpeshkoff 
    M configure.ac
    M src/burp/burp.cpp
