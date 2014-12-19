@@ -45,10 +45,6 @@
 #include "../jrd/ibase.h"
 
 
-#ifndef U_IPTR
-#define U_IPTR ISC_ULONG
-#endif
-
 // Firebird transaction existence block (as defined in why.cpp)
 struct ISC_TEB
 {
@@ -72,9 +68,9 @@ struct argument_entry
 
 struct entry_table
 {
-	char		*EntryPointCobolName;
+	const char	*EntryPointCobolName;
 	int			(*EntryPointAddress)(char *, int, argument_entry *, int);
-	char		*EntryPointName;
+	const char	*EntryPointName;
 };
 
 struct date_fmt
@@ -1274,7 +1270,7 @@ EXPORT RM_ENTRY(rmc_event_counts)
 EXPORT RM_ENTRY(rmc_baddress)
 {
 	U_IPTR retval = isc_baddress((char *)arg_vector[0].a_address);
-	*(ISC_ULONG *)arg_vector[-1].a_address = retval;
+	*(U_IPTR *)arg_vector[-1].a_address = retval;
 
 	return (0);
 }
@@ -1392,8 +1388,7 @@ EXPORT RM_ENTRY(rmc_status_address)
 
 	CobolToStatus(stat, &arg_vector[0]);
 	ISC_STATUS	*p = stat;
-	*(ISC_ULONG *)arg_vector[-1].a_address = (ISC_ULONG)p;
-
+	*(U_IPTR *)arg_vector[-1].a_address = (U_IPTR)p;
 
 	return (0);
 }
@@ -1664,24 +1659,24 @@ EXPORT RM_ENTRY(rmc_ctos)
 	return (0);
 }
 
-static char* banner = "Firebird Embedded SQL Interface";
+static const char* banner = "Firebird Embedded SQL Interface";
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-char* RM_AddOnBanner();
-char* RM_AddOnLoadMessage();
+const char* RM_AddOnBanner();
+const char* RM_AddOnLoadMessage();
 #ifdef __cplusplus
 }
 #endif
 
 // Return additional banner message for this module
-char* RM_AddOnBanner()
+const char* RM_AddOnBanner()
 {
 	return (banner);
 }
 
-char* RM_AddOnLoadMessage()
+const char* RM_AddOnLoadMessage()
 {
 	return (banner);
 }
