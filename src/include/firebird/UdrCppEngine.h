@@ -277,7 +277,7 @@ private:
 	ISC_STATUS_ARRAY statusVector;
 };
 
-class StatusImpl : public Api::StatusImpl<StatusImpl>
+class StatusImpl : public Api::IStatusImpl<StatusImpl>
 {
 public:
 	StatusImpl(IMaster* master)
@@ -401,7 +401,7 @@ public:
 
 
 template <typename This, typename Procedure, typename InMessage, typename OutMessage>
-class ResultSet : public Api::ExternalResultSetImpl<This>, public Helper
+class ResultSet : public Api::IExternalResultSetImpl<This>, public Helper
 {
 public:
 	ResultSet(IExternalContext* aContext, Procedure* aProcedure,
@@ -438,7 +438,7 @@ protected:
 
 
 template <typename This>
-class Function : public Api::ExternalFunctionImpl<This>, public Helper
+class Function : public Api::IExternalFunctionImpl<This>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
@@ -462,7 +462,7 @@ public:
 
 
 template <typename This>
-class Procedure : public Api::ExternalProcedureImpl<This>, public Helper
+class Procedure : public Api::IExternalProcedureImpl<This>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
@@ -486,7 +486,7 @@ public:
 
 
 template <typename This>
-class Trigger : public Api::ExternalTriggerImpl<This>, public Helper
+class Trigger : public Api::IExternalTriggerImpl<This>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(FieldsMessage);

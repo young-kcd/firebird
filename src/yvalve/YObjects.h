@@ -164,7 +164,7 @@ public:
 	Firebird::RefPtr<NextInterface> next;
 };
 
-class YEvents FB_FINAL : public YHelper<YEvents, Firebird::Api::EventsImpl<YEvents> >
+class YEvents FB_FINAL : public YHelper<YEvents, Firebird::Api::IEventsImpl<YEvents> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_events_handle;
@@ -182,7 +182,7 @@ public:
 	Firebird::RefPtr<Firebird::IEventCallback> callback;
 };
 
-class YRequest FB_FINAL : public YHelper<YRequest, Firebird::Api::RequestImpl<YRequest> >
+class YRequest FB_FINAL : public YHelper<YRequest, Firebird::Api::IRequestImpl<YRequest> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_req_handle;
@@ -210,7 +210,7 @@ public:
 	FB_API_HANDLE* userHandle;
 };
 
-class YTransaction FB_FINAL : public YHelper<YTransaction, Firebird::Api::TransactionImpl<YTransaction> >
+class YTransaction FB_FINAL : public YHelper<YTransaction, Firebird::Api::ITransactionImpl<YTransaction> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_trans_handle;
@@ -262,7 +262,7 @@ private:
 
 typedef Firebird::RefPtr<Firebird::ITransaction> NextTransaction;
 
-class YBlob FB_FINAL : public YHelper<YBlob, Firebird::Api::BlobImpl<YBlob> >
+class YBlob FB_FINAL : public YHelper<YBlob, Firebird::Api::IBlobImpl<YBlob> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_segstr_handle;
@@ -287,7 +287,7 @@ public:
 	YTransaction* transaction;
 };
 
-class YResultSet FB_FINAL : public YHelper<YResultSet, Firebird::Api::ResultSetImpl<YResultSet> >
+class YResultSet FB_FINAL : public YHelper<YResultSet, Firebird::Api::IResultSetImpl<YResultSet> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_result_set;
@@ -332,7 +332,7 @@ private:
 	bool input;
 };
 
-class YStatement FB_FINAL : public YHelper<YStatement, Firebird::Api::StatementImpl<YStatement> >
+class YStatement FB_FINAL : public YHelper<YStatement, Firebird::Api::IStatementImpl<YStatement> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_stmt_handle;
@@ -386,7 +386,7 @@ public:
 	Firebird::Mutex enterMutex;
 };
 
-class YAttachment FB_FINAL : public YHelper<YAttachment, Firebird::Api::AttachmentImpl<YAttachment> >,
+class YAttachment FB_FINAL : public YHelper<YAttachment, Firebird::Api::IAttachmentImpl<YAttachment> >,
 	public EnterCount
 {
 public:
@@ -461,7 +461,7 @@ public:
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 };
 
-class YService FB_FINAL : public YHelper<YService, Firebird::Api::ServiceImpl<YService> >,
+class YService FB_FINAL : public YHelper<YService, Firebird::Api::IServiceImpl<YService> >,
 	public EnterCount
 {
 public:
@@ -492,7 +492,7 @@ private:
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 };
 
-class Dispatcher FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ProviderImpl<Dispatcher> >
+class Dispatcher FB_FINAL : public Firebird::StdPlugin<Firebird::Api::IProviderImpl<Dispatcher> >
 {
 public:
 	Dispatcher()
@@ -528,7 +528,7 @@ private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
-class UtlInterface FB_FINAL : public Firebird::AutoIface<Firebird::Api::UtlImpl<UtlInterface> >
+class UtlInterface FB_FINAL : public Firebird::AutoIface<Firebird::Api::IUtlImpl<UtlInterface> >
 {
 	// IUtl implementation
 public:

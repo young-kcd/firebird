@@ -51,7 +51,7 @@ class Database;
 class Attachment;
 class jrd_tra;
 
-class TraceConnectionImpl : public Firebird::AutoIface<Firebird::Api::TraceDatabaseConnectionImpl<TraceConnectionImpl> >
+class TraceConnectionImpl : public Firebird::AutoIface<Firebird::Api::ITraceDatabaseConnectionImpl<TraceConnectionImpl> >
 {
 public:
 	TraceConnectionImpl(const Attachment* att) :
@@ -77,7 +77,7 @@ private:
 };
 
 
-class TraceTransactionImpl : public Firebird::AutoIface<Firebird::Api::TraceTransactionImpl<TraceTransactionImpl> >
+class TraceTransactionImpl : public Firebird::AutoIface<Firebird::Api::ITraceTransactionImpl<TraceTransactionImpl> >
 {
 public:
 	TraceTransactionImpl(const jrd_tra* tran, PerformanceInfo* perf = NULL) :
@@ -99,7 +99,7 @@ private:
 
 
 template <class Final>
-class BLRPrinter : public Firebird::AutoIface<Firebird::Api::TraceBLRStatementImpl<Final> >
+class BLRPrinter : public Firebird::AutoIface<Firebird::Api::ITraceBLRStatementImpl<Final> >
 {
 public:
 	BLRPrinter(const unsigned char* blr, unsigned length) :
@@ -164,7 +164,7 @@ public:
 };
 
 
-class TraceSQLStatementImpl : public Firebird::AutoIface<Firebird::Api::TraceSQLStatementImpl<TraceSQLStatementImpl> >
+class TraceSQLStatementImpl : public Firebird::AutoIface<Firebird::Api::ITraceSQLStatementImpl<TraceSQLStatementImpl> >
 {
 public:
 	TraceSQLStatementImpl(const dsql_req* stmt, PerformanceInfo* perf) :
@@ -184,7 +184,7 @@ public:
 	const char* getExplainedPlan();
 
 private:
-	class DSQLParamsImpl : public Firebird::AutoIface<Firebird::Api::TraceParamsImpl<DSQLParamsImpl> >
+	class DSQLParamsImpl : public Firebird::AutoIface<Firebird::Api::ITraceParamsImpl<DSQLParamsImpl> >
 	{
 	public:
 		DSQLParamsImpl(Firebird::MemoryPool& pool, const dsql_req* const stmt) :
@@ -219,7 +219,7 @@ private:
 };
 
 
-class TraceFailedSQLStatement : public Firebird::AutoIface<Firebird::Api::TraceSQLStatementImpl<TraceFailedSQLStatement> >
+class TraceFailedSQLStatement : public Firebird::AutoIface<Firebird::Api::ITraceSQLStatementImpl<TraceFailedSQLStatement> >
 {
 public:
 	TraceFailedSQLStatement(Firebird::string& text) :
@@ -241,7 +241,7 @@ private:
 };
 
 
-class TraceContextVarImpl : public Firebird::AutoIface<Firebird::Api::TraceContextVariableImpl<TraceContextVarImpl> >
+class TraceContextVarImpl : public Firebird::AutoIface<Firebird::Api::ITraceContextVariableImpl<TraceContextVarImpl> >
 {
 public:
 	TraceContextVarImpl(const char* ns, const char* name, const char* value) :
@@ -265,7 +265,7 @@ private:
 // forward declaration
 class TraceDescriptors;
 
-class TraceParamsImpl : public Firebird::AutoIface<Firebird::Api::TraceParamsImpl<TraceParamsImpl> >
+class TraceParamsImpl : public Firebird::AutoIface<Firebird::Api::ITraceParamsImpl<TraceParamsImpl> >
 {
 public:
 	explicit TraceParamsImpl(TraceDescriptors *descs) :
@@ -380,7 +380,7 @@ protected:
 };
 
 
-class TraceProcedureImpl : public Firebird::AutoIface<Firebird::Api::TraceProcedureImpl<TraceProcedureImpl> >
+class TraceProcedureImpl : public Firebird::AutoIface<Firebird::Api::ITraceProcedureImpl<TraceProcedureImpl> >
 {
 public:
 	TraceProcedureImpl(jrd_req* request, PerformanceInfo* perf) :
@@ -408,7 +408,7 @@ private:
 };
 
 
-class TraceFunctionImpl : public Firebird::AutoIface<Firebird::Api::TraceFunctionImpl<TraceFunctionImpl> >
+class TraceFunctionImpl : public Firebird::AutoIface<Firebird::Api::ITraceFunctionImpl<TraceFunctionImpl> >
 {
 public:
 	TraceFunctionImpl(jrd_req* request, Firebird::ITraceParams* inputs, PerformanceInfo* perf, const dsc* value) :
@@ -438,7 +438,7 @@ private:
 };
 
 
-class TraceTriggerImpl : public Firebird::AutoIface<Firebird::Api::TraceTriggerImpl<TraceTriggerImpl> >
+class TraceTriggerImpl : public Firebird::AutoIface<Firebird::Api::ITraceTriggerImpl<TraceTriggerImpl> >
 {
 public:
 	TraceTriggerImpl(const jrd_req* trig, SSHORT which, PerformanceInfo* perf) :
@@ -461,7 +461,7 @@ private:
 };
 
 
-class TraceServiceImpl : public Firebird::AutoIface<Firebird::Api::TraceServiceConnectionImpl<TraceServiceImpl> >
+class TraceServiceImpl : public Firebird::AutoIface<Firebird::Api::ITraceServiceConnectionImpl<TraceServiceImpl> >
 {
 public:
 	TraceServiceImpl(const Service* svc) :
@@ -503,7 +503,7 @@ private:
 };
 
 
-class TraceInitInfoImpl : public Firebird::AutoIface<Firebird::Api::TraceInitInfoImpl<TraceInitInfoImpl> >
+class TraceInitInfoImpl : public Firebird::AutoIface<Firebird::Api::ITraceInitInfoImpl<TraceInitInfoImpl> >
 {
 public:
 	TraceInitInfoImpl(const Firebird::TraceSession& session, const Attachment* att,
@@ -545,7 +545,7 @@ private:
 };
 
 
-class TraceStatusVectorImpl : public Firebird::AutoIface<Firebird::Api::TraceStatusVectorImpl<TraceStatusVectorImpl> >
+class TraceStatusVectorImpl : public Firebird::AutoIface<Firebird::Api::ITraceStatusVectorImpl<TraceStatusVectorImpl> >
 {
 public:
 	explicit TraceStatusVectorImpl(const ISC_STATUS* status) :
@@ -575,7 +575,7 @@ private:
 	Firebird::string m_error;
 };
 
-class TraceSweepImpl : public Firebird::AutoIface<Firebird::Api::TraceSweepInfoImpl<TraceSweepImpl> >
+class TraceSweepImpl : public Firebird::AutoIface<Firebird::Api::ITraceSweepInfoImpl<TraceSweepImpl> >
 {
 public:
 	TraceSweepImpl()

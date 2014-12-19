@@ -38,7 +38,7 @@ class MetadataBuilder;
 class StatementMetadata;
 class MetadataFromBlr;
 
-class MsgMetadata : public RefCntIface<Api::MessageMetadataImpl<MsgMetadata> >
+class MsgMetadata : public RefCntIface<Api::IMessageMetadataImpl<MsgMetadata> >
 {
 	friend class MetadataBuilder;
 	friend class StatementMetadata;
@@ -278,7 +278,7 @@ private:
 	unsigned length;
 };
 
-//class AttMetadata : public Api::MessageMetadataBaseImpl<AttMetadata, MsgMetadata>
+//class AttMetadata : public Api::IMessageMetadataBaseImpl<AttMetadata, MsgMetadata>
 class AttMetadata : public MsgMetadata
 {
 public:
@@ -292,7 +292,7 @@ public:
 	RefPtr<RefCounted> attachment;
 };
 
-class MetadataBuilder FB_FINAL : public RefCntIface<Api::MetadataBuilderImpl<MetadataBuilder> >
+class MetadataBuilder FB_FINAL : public RefCntIface<Api::IMetadataBuilderImpl<MetadataBuilder> >
 {
 public:
 	explicit MetadataBuilder(const MsgMetadata* from);

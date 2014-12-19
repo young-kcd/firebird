@@ -48,7 +48,7 @@ const unsigned int SZ_LOGIN = 31;
 
 namespace Auth {
 
-class SrpServer FB_FINAL : public StdPlugin<Api::ServerImpl<SrpServer> >
+class SrpServer FB_FINAL : public StdPlugin<Api::IServerImpl<SrpServer> >
 {
 public:
 	explicit SrpServer(IPluginConfig* par)

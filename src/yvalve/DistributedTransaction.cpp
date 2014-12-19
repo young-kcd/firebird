@@ -43,7 +43,7 @@ using namespace Why;
 
 namespace {
 
-class DTransaction FB_FINAL : public RefCntIface<Api::TransactionImpl<DTransaction> >
+class DTransaction FB_FINAL : public RefCntIface<Api::ITransactionImpl<DTransaction> >
 {
 public:
 	DTransaction()
@@ -575,7 +575,7 @@ YTransaction* Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
 	return NULL;
 }
 
-class DtcStart : public DisposeIface<Api::DtcStartImpl<DtcStart> >
+class DtcStart : public DisposeIface<Api::IDtcStartImpl<DtcStart> >
 {
 public:
 	DtcStart()

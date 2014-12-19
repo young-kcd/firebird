@@ -77,7 +77,7 @@ struct TriggerNode : public Node
 
 static GlobalPtr<ObjectsArray<PathName> > paths;
 
-class Engine : public StdPlugin<Api::ExternalEngineImpl<Engine> >
+class Engine : public StdPlugin<Api::IExternalEngineImpl<Engine> >
 {
 public:
 	explicit Engine(IPluginConfig* par)
@@ -197,7 +197,7 @@ static TriggerNode* registeredTriggers = NULL;
 //--------------------------------------
 
 
-class SharedFunction : public DisposeIface<Api::ExternalFunctionImpl<SharedFunction> >
+class SharedFunction : public DisposeIface<Api::IExternalFunctionImpl<SharedFunction> >
 {
 public:
 	SharedFunction(IStatus* status, Engine* aEngine, IExternalContext* context,
@@ -235,7 +235,7 @@ public:
 
 		try
 		{
-			IExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
+			IExternalFunction* function = engine->getChild<FunctionNode, IExternalFunction>(status,
 				children, this, context, registeredFunctions, engine->functions, moduleName);
 			if (function)
 				function->getCharSet(status, context, name, nameSize);
@@ -248,7 +248,7 @@ public:
 
 	void execute(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg)
 	{
-		IExternalFunction* function = engine->getChild<FunctionNode, ExternalFunction>(status,
+		IExternalFunction* function = engine->getChild<FunctionNode, IExternalFunction>(status,
 			children, this, context, registeredFunctions, engine->functions, moduleName);
 		if (function)
 			function->execute(status, context, inMsg, outMsg);
@@ -267,7 +267,7 @@ public:
 //--------------------------------------
 
 
-class SharedProcedure : public DisposeIface<Api::ExternalProcedureImpl<SharedProcedure> >
+class SharedProcedure : public DisposeIface<Api::IExternalProcedureImpl<SharedProcedure> >
 {
 public:
 	SharedProcedure(IStatus* status, Engine* aEngine, IExternalContext* context,
@@ -305,7 +305,7 @@ public:
 
 		try
 		{
-			IExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
+			IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
 			if (procedure)
 				procedure->getCharSet(status, context, name, nameSize);
@@ -321,7 +321,7 @@ public:
 	{
 		try
 		{
-			IExternalProcedure* procedure = engine->getChild<ProcedureNode, ExternalProcedure>(status,
+			IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
 				children, this, context, registeredProcedures, engine->procedures, moduleName);
 			return procedure ? procedure->open(status, context, inMsg, outMsg) : NULL;
 		}
@@ -345,7 +345,7 @@ public:
 //--------------------------------------
 
 
-class SharedTrigger : public DisposeIface<Api::ExternalTriggerImpl<SharedTrigger> >
+class SharedTrigger : public DisposeIface<Api::IExternalTriggerImpl<SharedTrigger> >
 {
 public:
 	SharedTrigger(IStatus* status, Engine* aEngine, IExternalContext* context,
@@ -381,7 +381,7 @@ public:
 
 		try
 		{
-			IExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
+			IExternalTrigger* trigger = engine->getChild<TriggerNode, IExternalTrigger>(status,
 				children, this, context, registeredTriggers, engine->triggers, moduleName);
 			if (trigger)
 				trigger->getCharSet(status, context, name, nameSize);
@@ -395,7 +395,7 @@ public:
 	void execute(IStatus* status, IExternalContext* context,
 		unsigned action, void* oldMsg, void* newMsg)
 	{
-		IExternalTrigger* trigger = engine->getChild<TriggerNode, ExternalTrigger>(status,
+		IExternalTrigger* trigger = engine->getChild<TriggerNode, IExternalTrigger>(status,
 			children, this, context, registeredTriggers, engine->triggers, moduleName);
 		if (trigger)
 			trigger->execute(status, context, action, oldMsg, newMsg);

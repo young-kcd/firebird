@@ -122,7 +122,7 @@ namespace {
 // Used to make sure that local calls to print stuff go to isqlGlob.Out
 // and not to stdout if IUtl::version gets called
 
-class VersionCallback : public Firebird::AutoIface<Firebird::Api::VersionCallbackImpl<VersionCallback> >
+class VersionCallback : public Firebird::AutoIface<Firebird::Api::IVersionCallbackImpl<VersionCallback> >
 {
 public:
 	// IVersionCallback implementation

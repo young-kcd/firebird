@@ -123,7 +123,7 @@ const UCHAR TPB[4] =
 
 namespace Auth {
 
-class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ServerImpl<SecurityDatabaseServer> >
+class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<Firebird::Api::IServerImpl<SecurityDatabaseServer> >
 {
 public:
 	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)
@@ -138,7 +138,7 @@ private:
 	Firebird::RefPtr<Firebird::IPluginConfig> iParameter;
 };
 
-class SecurityDatabase FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TimerImpl<SecurityDatabase> >
+class SecurityDatabase FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ITimerImpl<SecurityDatabase> >
 {
 public:
 	int verify(IWriter* authBlock, IServerBlock* sBlock);

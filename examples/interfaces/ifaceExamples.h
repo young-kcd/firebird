@@ -34,7 +34,7 @@
 using namespace Firebird;
 
 typedef FirebirdApi<class ExamplesPolicy> Api;
-FB_USE_API(Api, I)
+FB_USE_API(Api)
 
 // Dummy policy - to be enhanced
 class ExamplesPolicy
@@ -43,9 +43,9 @@ public:
 	template <unsigned V, typename T>
 	static inline bool checkVersion(T* versioned, IStatus* status)
 	{ return true; }
-	static void checkException(Api::Status*) { }
-	static void catchException(Api::Status*) { }
-	typedef Api::Status* Status;
+	static void checkException(Api::IStatus*) { }
+	static void catchException(Api::IStatus*) { }
+	typedef Api::IStatus* IStatus;
 };
 
 

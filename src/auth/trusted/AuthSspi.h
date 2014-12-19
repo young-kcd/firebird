@@ -100,7 +100,7 @@ public:
 	bool getLogin(Firebird::string& login, bool& wh);
 };
 
-class WinSspiServer : public Firebird::StdPlugin<Firebird::Api::ServerImpl<WinSspiServer> >
+class WinSspiServer : public Firebird::StdPlugin<Firebird::Api::IServerImpl<WinSspiServer> >
 {
 public:
 	// IServer implementation
@@ -114,7 +114,7 @@ private:
 	AuthSspi sspi;
 };
 
-class WinSspiClient : public Firebird::StdPlugin<Firebird::Api::ClientImpl<WinSspiClient> >
+class WinSspiClient : public Firebird::StdPlugin<Firebird::Api::IClientImpl<WinSspiClient> >
 {
 public:
 	// IClient implementation

@@ -41,7 +41,7 @@ namespace Firebird
 
 namespace Why
 {
-	class Dtc : public Firebird::AutoIface<Firebird::Api::DtcImpl<Dtc> >
+	class Dtc : public Firebird::AutoIface<Firebird::Api::IDtcImpl<Dtc> >
 	{
 	public:
 		// IDtc implementation
@@ -51,7 +51,7 @@ namespace Why
 		Firebird::IDtcStart* startBuilder(Firebird::IStatus* status);
 	};
 
-	class MasterImplementation : public Firebird::AutoIface<Firebird::Api::MasterImpl<MasterImplementation> >
+	class MasterImplementation : public Firebird::AutoIface<Firebird::Api::IMasterImpl<MasterImplementation> >
 	{
 	public:
 		static Firebird::Static<Dtc> dtc;

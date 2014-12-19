@@ -580,7 +580,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 } // namespace
 
-class TimerImplementation : public AutoIface<Api::TimerControlImpl<TimerImplementation> >
+class TimerImplementation : public AutoIface<Api::ITimerControlImpl<TimerImplementation> >
 {
 public:
 	// ITimerControl implementation

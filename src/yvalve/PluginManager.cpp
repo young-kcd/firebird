@@ -132,7 +132,7 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess FB_FINAL : public RefCntIface<Api::ConfigEntryImpl<ConfigParameterAccess> >
+	class ConfigParameterAccess FB_FINAL : public RefCntIface<Api::IConfigEntryImpl<ConfigParameterAccess> >
 	{
 	public:
 		ConfigParameterAccess(IReferenceCounted* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
@@ -176,7 +176,7 @@ namespace
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess FB_FINAL : public RefCntIface<Api::ConfigImpl<ConfigAccess> >
+	class ConfigAccess FB_FINAL : public RefCntIface<Api::IConfigImpl<ConfigAccess> >
 	{
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
@@ -452,7 +452,7 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in databases.conf
-	class ConfiguredPlugin FB_FINAL : public RefCntIface<Api::TimerImpl<ConfiguredPlugin> >
+	class ConfiguredPlugin FB_FINAL : public RefCntIface<Api::ITimerImpl<ConfiguredPlugin> >
 	{
 	public:
 		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
@@ -536,7 +536,7 @@ namespace
 	};
 
 	// Provides per-database configuration from databases.conf.
-	class FactoryParameter FB_FINAL : public RefCntIface<Api::PluginConfigImpl<FactoryParameter> >
+	class FactoryParameter FB_FINAL : public RefCntIface<Api::IPluginConfigImpl<FactoryParameter> >
 	{
 	public:
 		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)
@@ -782,7 +782,7 @@ namespace
 
 
 	// Provides access to plugins of given type / name.
-	class PluginSet FB_FINAL : public RefCntIface<Api::PluginSetImpl<PluginSet> >
+	class PluginSet FB_FINAL : public RefCntIface<Api::IPluginSetImpl<PluginSet> >
 	{
 	public:
 		// IPluginSet implementation
@@ -1208,7 +1208,7 @@ InitInstance<ConfigRoot> rootDetector;
 
 
 // Generic access to all config interfaces
-class ConfigManager : public AutoIface<Api::ConfigManagerImpl<ConfigManager> >
+class ConfigManager : public AutoIface<Api::IConfigManagerImpl<ConfigManager> >
 {
 public:
 	const char* getDirectory(unsigned code)

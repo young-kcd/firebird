@@ -684,7 +684,7 @@ bool MET_trigger_exists(gpre_dbb* /*db*/, const TEXT* /*trigger_name*/)
 
 using namespace Firebird;
 
-class DummyMasterImpl : public FirebirdApi<FirebirdPolicy>::MasterImpl<DummyMasterImpl>
+class DummyMasterImpl : public FirebirdApi<FirebirdPolicy>::IMasterImpl<DummyMasterImpl>
 {
 public:
 	// IMaster implementation (almost dummy, for boot build)

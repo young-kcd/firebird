@@ -135,7 +135,7 @@ public:
 
 // Trivial factory
 template <class P>
-class SimpleFactoryBase : public AutoIface<Api::PluginFactoryImpl<SimpleFactoryBase<P> > >
+class SimpleFactoryBase : public AutoIface<Api::IPluginFactoryImpl<SimpleFactoryBase<P> > >
 {
 public:
 	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
@@ -266,7 +266,7 @@ public:
 // when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.
 // To avoid it this class is added - it detects spontaneous (not by PluginManager)
 // module unload and notifies PluginManager about this said fact.
-class UnloadDetectorHelper FB_FINAL : public VersionedIface<Api::PluginModuleImpl<UnloadDetectorHelper> >
+class UnloadDetectorHelper FB_FINAL : public VersionedIface<Api::IPluginModuleImpl<UnloadDetectorHelper> >
 {
 public:
 	typedef void VoidNoParam();

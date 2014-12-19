@@ -44,7 +44,7 @@ class JStatement;
 class JAttachment;
 class JProvider;
 
-class JBlob FB_FINAL : public Firebird::RefCntIface<Firebird::Api::BlobImpl<JBlob> >
+class JBlob FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IBlobImpl<JBlob> >
 {
 public:
 	// IBlob implementation
@@ -84,7 +84,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JTransaction FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TransactionImpl<JTransaction> >
+class JTransaction FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ITransactionImpl<JTransaction> >
 {
 public:
 	// ITransaction implementation
@@ -136,7 +136,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ResultSetImpl<JResultSet> >
+class JResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IResultSetImpl<JResultSet> >
 {
 public:
 	// IResultSet implementation
@@ -173,7 +173,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JStatement FB_FINAL : public Firebird::RefCntIface<Firebird::Api::StatementImpl<JStatement> >
+class JStatement FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IStatementImpl<JStatement> >
 {
 public:
 	// IStatement implementation
@@ -228,7 +228,7 @@ inline dsql_req* JResultSet::getHandle() throw()
 	return statement->getHandle();
 }
 
-class JRequest FB_FINAL : public Firebird::RefCntIface<Firebird::Api::RequestImpl<JRequest> >
+class JRequest FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IRequestImpl<JRequest> >
 {
 public:
 	// IRequest implementation
@@ -266,7 +266,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JEvents FB_FINAL : public Firebird::RefCntIface<Firebird::Api::EventsImpl<JEvents> >
+class JEvents FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IEventsImpl<JEvents> >
 {
 public:
 	// IEvents implementation
@@ -294,7 +294,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JAttachment FB_FINAL : public Firebird::RefCntIface<Firebird::Api::AttachmentImpl<JAttachment> >
+class JAttachment FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IAttachmentImpl<JAttachment> >
 {
 public:
 	// IAttachment implementation
@@ -367,7 +367,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JService FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ServiceImpl<JService> >
+class JService FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IServiceImpl<JService> >
 {
 public:
 	// IService implementation
@@ -389,7 +389,7 @@ private:
 	void freeEngineData(Firebird::IStatus* status);
 };
 
-class JProvider FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ProviderImpl<JProvider> >
+class JProvider FB_FINAL : public Firebird::StdPlugin<Firebird::Api::IProviderImpl<JProvider> >
 {
 public:
 	explicit JProvider(Firebird::IPluginConfig* pConf)

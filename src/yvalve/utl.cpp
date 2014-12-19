@@ -155,7 +155,7 @@ static const TEXT* const impl_class[] =
 
 namespace {
 
-class VersionCallback : public AutoIface<Api::VersionCallbackImpl<VersionCallback> >
+class VersionCallback : public AutoIface<Api::IVersionCallbackImpl<VersionCallback> >
 {
 public:
 	VersionCallback(FPTR_VERSION_CALLBACK routine, void* user)

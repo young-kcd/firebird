@@ -31,7 +31,7 @@
 
 namespace Auth {
 
-class CharField : public Firebird::AutoIface<Firebird::Api::CharUserFieldImpl<CharField> >
+class CharField : public Firebird::AutoIface<Firebird::Api::ICharUserFieldImpl<CharField> >
 {
 public:
 	CharField()
@@ -96,7 +96,7 @@ private:
 	Firebird::string value;
 };
 
-class IntField : public Firebird::AutoIface<Firebird::Api::IntUserFieldImpl<IntField> >
+class IntField : public Firebird::AutoIface<Firebird::Api::IIntUserFieldImpl<IntField> >
 {
 public:
 	IntField()
@@ -151,7 +151,7 @@ private:
 
 typedef Firebird::Array<UCHAR> AuthenticationBlock;
 
-class UserData : public Firebird::VersionedIface<Firebird::Api::UserImpl<UserData> >
+class UserData : public Firebird::VersionedIface<Firebird::Api::IUserImpl<UserData> >
 {
 public:
 	UserData()

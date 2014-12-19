@@ -37,7 +37,7 @@ using namespace Firebird;
 
 namespace
 {
-	class UserIdInfo : public AutoIface<Api::LogonInfoImpl<UserIdInfo> >
+	class UserIdInfo : public AutoIface<Api::ILogonInfoImpl<UserIdInfo> >
 	{
 	public:
 		explicit UserIdInfo(const Attachment* pAtt)
@@ -76,7 +76,7 @@ namespace
 		const Attachment* att;
 	};
 
-	class FillSnapshot : public AutoIface<Api::ListUsersImpl<FillSnapshot> >
+	class FillSnapshot : public AutoIface<Api::IListUsersImpl<FillSnapshot> >
 	{
 	public:
 		explicit FillSnapshot(UserManagement* um)
@@ -100,7 +100,7 @@ namespace
 		UserManagement* userManagement;
 	};
 
-	class OldAttributes : public AutoIface<Api::ListUsersImpl<OldAttributes> >
+	class OldAttributes : public AutoIface<Api::IListUsersImpl<OldAttributes> >
 	{
 	public:
 		OldAttributes()

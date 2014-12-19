@@ -367,7 +367,7 @@ static void shutdownBeforeUnload()
 	JProvider::getInstance()->shutdown(&status, 0, fb_shutrsn_exit_called);
 };
 
-class EngineFactory : public AutoIface<Api::PluginFactoryImpl<EngineFactory> >
+class EngineFactory : public AutoIface<Api::IPluginFactoryImpl<EngineFactory> >
 {
 public:
 	// IPluginFactory implementation
@@ -708,7 +708,7 @@ namespace
 	}
 
 
-	class DefaultCallback : public AutoIface<Api::CryptKeyCallbackImpl<DefaultCallback> >
+	class DefaultCallback : public AutoIface<Api::ICryptKeyCallbackImpl<DefaultCallback> >
 	{
 	public:
 		unsigned int callback(unsigned int, const void*, unsigned int, void*)
@@ -942,7 +942,7 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public AutoIface<Api::TraceDatabaseConnectionImpl<TraceFailedConnection> >
+class TraceFailedConnection : public AutoIface<Api::ITraceDatabaseConnectionImpl<TraceFailedConnection> >
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);

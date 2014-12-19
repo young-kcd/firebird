@@ -60,7 +60,7 @@ private:
 	class TransactionImpl;
 
 	class RoutineMetadata FB_FINAL :
-		public Firebird::VersionedIface<Firebird::Api::RoutineMetadataImpl<RoutineMetadata> >,
+		public Firebird::VersionedIface<Firebird::Api::IRoutineMetadataImpl<RoutineMetadata> >,
 		public Firebird::PermanentStorage
 	{
 	public:
@@ -143,7 +143,7 @@ private:
 		}
 	};
 
-	class ExternalContextImpl : public Firebird::VersionedIface<Firebird::Api::ExternalContextImpl<ExternalContextImpl> >
+	class ExternalContextImpl : public Firebird::VersionedIface<Firebird::Api::IExternalContextImpl<ExternalContextImpl> >
 	{
 	friend class AttachmentImpl;
 

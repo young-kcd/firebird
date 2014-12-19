@@ -37,7 +37,7 @@
 namespace Firebird {
 
 template <class Final>
-class BaseStatus : public Api::StatusImpl<Final>
+class BaseStatus : public Api::IStatusImpl<Final>
 {
 public:
 	// IStatus implementation

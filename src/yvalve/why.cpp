@@ -106,7 +106,7 @@ namespace {
 
 // Class-wrapper around external SQLDA.
 // Can be used as local variable, but do it with care
-class SQLDAMetadata FB_FINAL : public RefCntIface<Api::MessageMetadataImpl<SQLDAMetadata> >
+class SQLDAMetadata FB_FINAL : public RefCntIface<Api::IMessageMetadataImpl<SQLDAMetadata> >
 {
 friend class SQLDAMetadataLauncher;
 private:
@@ -2721,7 +2721,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 
 namespace
 {
-	class WaitCallback FB_FINAL : public RefCntIface<Api::EventCallbackImpl<WaitCallback> >
+	class WaitCallback FB_FINAL : public RefCntIface<Api::IEventCallbackImpl<WaitCallback> >
 	{
 	public:
 		explicit WaitCallback(UCHAR* aBuffer)
@@ -2797,7 +2797,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 namespace
 {
-	class QueCallback FB_FINAL : public RefCntIface<Api::EventCallbackImpl<QueCallback> >
+	class QueCallback FB_FINAL : public RefCntIface<Api::IEventCallbackImpl<QueCallback> >
 	{
 	public:
 		QueCallback(FPTR_EVENT_CALLBACK aAst, void* aArg)

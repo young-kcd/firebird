@@ -41,7 +41,7 @@ namespace
 IMaster* master = NULL;
 IPluginManager* pluginManager = NULL;
 
-class PluginModule : public Api::PluginModuleImpl<PluginModule>
+class PluginModule : public Api::IPluginModuleImpl<PluginModule>
 {
 public:
 	PluginModule()
@@ -79,7 +79,7 @@ private:
 
 PluginModule module;
 
-class DbCrypt : public Api::DbCryptPluginImpl<DbCrypt>
+class DbCrypt : public Api::IDbCryptPluginImpl<DbCrypt>
 {
 public:
 	explicit DbCrypt(IPluginConfig* cnf) throw()
@@ -243,7 +243,7 @@ void DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** so
 	noKeyError(status);
 }
 
-class Factory : public Api::PluginFactoryImpl<Factory>
+class Factory : public Api::IPluginFactoryImpl<Factory>
 {
 public:
 	IPluginModule* getModule()

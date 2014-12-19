@@ -44,7 +44,7 @@ namespace
 IMaster* master = NULL;
 IPluginManager* pluginManager = NULL;
 
-class PluginModule : public Api::PluginModuleImpl<PluginModule>
+class PluginModule : public Api::IPluginModuleImpl<PluginModule>
 {
 public:
 	PluginModule()
@@ -82,7 +82,7 @@ private:
 
 PluginModule module;
 
-class CryptKeyHolder : public Api::KeyHolderPluginImpl<CryptKeyHolder>
+class CryptKeyHolder : public Api::IKeyHolderPluginImpl<CryptKeyHolder>
 {
 public:
 	explicit CryptKeyHolder(IPluginConfig* cnf) throw()
@@ -136,7 +136,7 @@ public:
 	}
 
 private:
-	class CallbackInterface : public Api::CryptKeyCallbackImpl<CallbackInterface>
+	class CallbackInterface : public Api::ICryptKeyCallbackImpl<CallbackInterface>
 	{
 	public:
 		explicit CallbackInterface(CryptKeyHolder* p)
@@ -235,7 +235,7 @@ ICryptKeyCallback* CryptKeyHolder::keyHandle(IStatus* status, const char* keyNam
 	return &callbackInterface;
 }
 
-class Factory : public Api::PluginFactoryImpl<Factory>
+class Factory : public Api::IPluginFactoryImpl<Factory>
 {
 public:
 	IPluginModule* getModule()

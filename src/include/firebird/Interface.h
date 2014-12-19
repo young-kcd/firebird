@@ -45,88 +45,88 @@ struct FbCryptKey;
 
 #include "IdlFbInterfaces.h"
 
-#define FB_USE_API(name, prefix)	\
-	typedef name::Versioned prefix##Versioned;	\
-	typedef name::ReferenceCounted prefix##ReferenceCounted;	\
-	typedef name::Disposable prefix##Disposable;	\
-	typedef name::Status prefix##Status;	\
-	typedef name::Master prefix##Master;	\
-	typedef name::PluginBase prefix##PluginBase;	\
-	typedef name::PluginSet prefix##PluginSet;	\
-	typedef name::ConfigEntry prefix##ConfigEntry;	\
-	typedef name::Config prefix##Config;	\
-	typedef name::FirebirdConf prefix##FirebirdConf;	\
-	typedef name::PluginConfig prefix##PluginConfig;	\
-	typedef name::PluginFactory prefix##PluginFactory;	\
-	typedef name::PluginModule prefix##PluginModule;	\
-	typedef name::PluginManager prefix##PluginManager;	\
-	typedef name::ConfigManager prefix##ConfigManager;	\
-	typedef name::EventCallback prefix##EventCallback;	\
-	typedef name::Blob prefix##Blob;	\
-	typedef name::Transaction prefix##Transaction;	\
-	typedef name::MessageMetadata prefix##MessageMetadata;	\
-	typedef name::MetadataBuilder prefix##MetadataBuilder;	\
-	typedef name::ResultSet prefix##ResultSet;	\
-	typedef name::Statement prefix##Statement;	\
-	typedef name::Request prefix##Request;	\
-	typedef name::Events prefix##Events;	\
-	typedef name::Attachment prefix##Attachment;	\
-	typedef name::Service prefix##Service;	\
-	typedef name::Provider prefix##Provider;	\
-	typedef name::DtcStart prefix##DtcStart;	\
-	typedef name::Dtc prefix##Dtc;	\
-	typedef name::Auth prefix##Auth;	\
-	typedef name::Writer prefix##Writer;	\
-	typedef name::ServerBlock prefix##ServerBlock;	\
-	typedef name::ClientBlock prefix##ClientBlock;	\
-	typedef name::Server prefix##Server;	\
-	typedef name::Client prefix##Client;	\
-	typedef name::UserField prefix##UserField;	\
-	typedef name::CharUserField prefix##CharUserField;	\
-	typedef name::IntUserField prefix##IntUserField;	\
-	typedef name::User prefix##User;	\
-	typedef name::ListUsers prefix##ListUsers;	\
-	typedef name::LogonInfo prefix##LogonInfo;	\
-	typedef name::Management prefix##Management;	\
-	typedef name::WireCryptPlugin prefix##WireCryptPlugin;	\
-	typedef name::CryptKeyCallback prefix##CryptKeyCallback;	\
-	typedef name::KeyHolderPlugin prefix##KeyHolderPlugin;	\
-	typedef name::DbCryptPlugin prefix##DbCryptPlugin;	\
-	typedef name::ExternalContext prefix##ExternalContext;	\
-	typedef name::ExternalResultSet prefix##ExternalResultSet;	\
-	typedef name::ExternalFunction prefix##ExternalFunction;	\
-	typedef name::ExternalProcedure prefix##ExternalProcedure;	\
-	typedef name::ExternalTrigger prefix##ExternalTrigger;	\
-	typedef name::RoutineMetadata prefix##RoutineMetadata;	\
-	typedef name::ExternalEngine prefix##ExternalEngine;	\
-	typedef name::Timer prefix##Timer;	\
-	typedef name::TimerControl prefix##TimerControl;	\
-	typedef name::VersionCallback prefix##VersionCallback;	\
-	typedef name::Utl prefix##Utl;	\
-	typedef name::TraceConnection prefix##TraceConnection;	\
-	typedef name::TraceDatabaseConnection prefix##TraceDatabaseConnection;	\
-	typedef name::TraceTransaction prefix##TraceTransaction;	\
-	typedef name::TraceParams prefix##TraceParams;	\
-	typedef name::TraceStatement prefix##TraceStatement;	\
-	typedef name::TraceSQLStatement prefix##TraceSQLStatement;	\
-	typedef name::TraceBLRStatement prefix##TraceBLRStatement;	\
-	typedef name::TraceDYNRequest prefix##TraceDYNRequest;	\
-	typedef name::TraceContextVariable prefix##TraceContextVariable;	\
-	typedef name::TraceProcedure prefix##TraceProcedure;	\
-	typedef name::TraceFunction prefix##TraceFunction;	\
-	typedef name::TraceTrigger prefix##TraceTrigger;	\
-	typedef name::TraceServiceConnection prefix##TraceServiceConnection;	\
-	typedef name::TraceStatusVector prefix##TraceStatusVector;	\
-	typedef name::TraceSweepInfo prefix##TraceSweepInfo;	\
-	typedef name::TraceLogWriter prefix##TraceLogWriter;	\
-	typedef name::TraceInitInfo prefix##TraceInitInfo;	\
-	typedef name::TracePlugin prefix##TracePlugin;	\
-	typedef name::TraceFactory prefix##TraceFactory;
+#define FB_USE_API(name)	\
+	typedef name::IVersioned IVersioned;	\
+	typedef name::IReferenceCounted IReferenceCounted;	\
+	typedef name::IDisposable IDisposable;	\
+	typedef name::IStatus IStatus;	\
+	typedef name::IMaster IMaster;	\
+	typedef name::IPluginBase IPluginBase;	\
+	typedef name::IPluginSet IPluginSet;	\
+	typedef name::IConfigEntry IConfigEntry;	\
+	typedef name::IConfig IConfig;	\
+	typedef name::IFirebirdConf IFirebirdConf;	\
+	typedef name::IPluginConfig IPluginConfig;	\
+	typedef name::IPluginFactory IPluginFactory;	\
+	typedef name::IPluginModule IPluginModule;	\
+	typedef name::IPluginManager IPluginManager;	\
+	typedef name::IConfigManager IConfigManager;	\
+	typedef name::IEventCallback IEventCallback;	\
+	typedef name::IBlob IBlob;	\
+	typedef name::ITransaction ITransaction;	\
+	typedef name::IMessageMetadata IMessageMetadata;	\
+	typedef name::IMetadataBuilder IMetadataBuilder;	\
+	typedef name::IResultSet IResultSet;	\
+	typedef name::IStatement IStatement;	\
+	typedef name::IRequest IRequest;	\
+	typedef name::IEvents IEvents;	\
+	typedef name::IAttachment IAttachment;	\
+	typedef name::IService IService;	\
+	typedef name::IProvider IProvider;	\
+	typedef name::IDtcStart IDtcStart;	\
+	typedef name::IDtc IDtc;	\
+	typedef name::IAuth IAuth;	\
+	typedef name::IWriter IWriter;	\
+	typedef name::IServerBlock IServerBlock;	\
+	typedef name::IClientBlock IClientBlock;	\
+	typedef name::IServer IServer;	\
+	typedef name::IClient IClient;	\
+	typedef name::IUserField IUserField;	\
+	typedef name::ICharUserField ICharUserField;	\
+	typedef name::IIntUserField IIntUserField;	\
+	typedef name::IUser IUser;	\
+	typedef name::IListUsers IListUsers;	\
+	typedef name::ILogonInfo ILogonInfo;	\
+	typedef name::IManagement IManagement;	\
+	typedef name::IWireCryptPlugin IWireCryptPlugin;	\
+	typedef name::ICryptKeyCallback ICryptKeyCallback;	\
+	typedef name::IKeyHolderPlugin IKeyHolderPlugin;	\
+	typedef name::IDbCryptPlugin IDbCryptPlugin;	\
+	typedef name::IExternalContext IExternalContext;	\
+	typedef name::IExternalResultSet IExternalResultSet;	\
+	typedef name::IExternalFunction IExternalFunction;	\
+	typedef name::IExternalProcedure IExternalProcedure;	\
+	typedef name::IExternalTrigger IExternalTrigger;	\
+	typedef name::IRoutineMetadata IRoutineMetadata;	\
+	typedef name::IExternalEngine IExternalEngine;	\
+	typedef name::ITimer ITimer;	\
+	typedef name::ITimerControl ITimerControl;	\
+	typedef name::IVersionCallback IVersionCallback;	\
+	typedef name::IUtl IUtl;	\
+	typedef name::ITraceConnection ITraceConnection;	\
+	typedef name::ITraceDatabaseConnection ITraceDatabaseConnection;	\
+	typedef name::ITraceTransaction ITraceTransaction;	\
+	typedef name::ITraceParams ITraceParams;	\
+	typedef name::ITraceStatement ITraceStatement;	\
+	typedef name::ITraceSQLStatement ITraceSQLStatement;	\
+	typedef name::ITraceBLRStatement ITraceBLRStatement;	\
+	typedef name::ITraceDYNRequest ITraceDYNRequest;	\
+	typedef name::ITraceContextVariable ITraceContextVariable;	\
+	typedef name::ITraceProcedure ITraceProcedure;	\
+	typedef name::ITraceFunction ITraceFunction;	\
+	typedef name::ITraceTrigger ITraceTrigger;	\
+	typedef name::ITraceServiceConnection ITraceServiceConnection;	\
+	typedef name::ITraceStatusVector ITraceStatusVector;	\
+	typedef name::ITraceSweepInfo ITraceSweepInfo;	\
+	typedef name::ITraceLogWriter ITraceLogWriter;	\
+	typedef name::ITraceInitInfo ITraceInitInfo;	\
+	typedef name::ITracePlugin ITracePlugin;	\
+	typedef name::ITraceFactory ITraceFactory;
 
 #ifdef INCLUDE_Firebird_H		// Building internal module
 
 typedef FirebirdApi<class FirebirdPolicy> Api;
-FB_USE_API(Api, I)
+FB_USE_API(Api)
 
 class FirebirdPolicy
 {
@@ -155,9 +155,9 @@ public:
 		return false;
 	}
 
-	static void checkException(Api::Status*) { }
-	static void catchException(Api::Status*) { }
-	typedef Api::Status* Status;
+	static void checkException(Api::IStatus*) { }
+	static void catchException(Api::IStatus*) { }
+	typedef Api::IStatus* IStatus;
 };
 
 #else // INCLUDE_Firebird_H		building external module
@@ -189,7 +189,7 @@ static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMet
 // Additional API function.
 // Should be used only in non-plugin modules.
 // All plugins including providers should use passed at init time interface instead.
-#define DECLARE_GET_MASTER(P) extern "C" Firebird::FirebirdApi<P>::Master* ISC_EXPORT fb_get_master_interface();
+#define DECLARE_GET_MASTER(P) extern "C" Firebird::FirebirdApi<P>::IMaster* ISC_EXPORT fb_get_master_interface();
 
 #ifdef INCLUDE_Firebird_H		// Building internal module
 DECLARE_GET_MASTER(Firebird::FirebirdPolicy)

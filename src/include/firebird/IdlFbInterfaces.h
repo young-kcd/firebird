@@ -3,6 +3,8 @@
 #ifndef IDL_FB_INTERFACES_H
 #define IDL_FB_INTERFACES_H
 
+#include <stdint.h>
+
 #ifndef CLOOP_CARG
 #define CLOOP_CARG
 #endif
@@ -29,133 +31,133 @@ private:
 public:
 	// Forward interfaces declarations
 
-	class Versioned;
-	class ReferenceCounted;
-	class Disposable;
-	class Status;
-	class Master;
-	class PluginBase;
-	class PluginSet;
-	class ConfigEntry;
-	class Config;
-	class FirebirdConf;
-	class PluginConfig;
-	class PluginFactory;
-	class PluginModule;
-	class PluginManager;
-	class ConfigManager;
-	class EventCallback;
-	class Blob;
-	class Transaction;
-	class MessageMetadata;
-	class MetadataBuilder;
-	class ResultSet;
-	class Statement;
-	class Request;
-	class Events;
-	class Attachment;
-	class Service;
-	class Provider;
-	class DtcStart;
-	class Dtc;
-	class Auth;
-	class Writer;
-	class ServerBlock;
-	class ClientBlock;
-	class Server;
-	class Client;
-	class UserField;
-	class CharUserField;
-	class IntUserField;
-	class User;
-	class ListUsers;
-	class LogonInfo;
-	class Management;
-	class WireCryptPlugin;
-	class CryptKeyCallback;
-	class KeyHolderPlugin;
-	class DbCryptPlugin;
-	class ExternalContext;
-	class ExternalResultSet;
-	class ExternalFunction;
-	class ExternalProcedure;
-	class ExternalTrigger;
-	class RoutineMetadata;
-	class ExternalEngine;
-	class Timer;
-	class TimerControl;
-	class VersionCallback;
-	class Utl;
-	class TraceConnection;
-	class TraceDatabaseConnection;
-	class TraceTransaction;
-	class TraceParams;
-	class TraceStatement;
-	class TraceSQLStatement;
-	class TraceBLRStatement;
-	class TraceDYNRequest;
-	class TraceContextVariable;
-	class TraceProcedure;
-	class TraceFunction;
-	class TraceTrigger;
-	class TraceServiceConnection;
-	class TraceStatusVector;
-	class TraceSweepInfo;
-	class TraceLogWriter;
-	class TraceInitInfo;
-	class TracePlugin;
-	class TraceFactory;
+	class IVersioned;
+	class IReferenceCounted;
+	class IDisposable;
+	class IStatus;
+	class IMaster;
+	class IPluginBase;
+	class IPluginSet;
+	class IConfigEntry;
+	class IConfig;
+	class IFirebirdConf;
+	class IPluginConfig;
+	class IPluginFactory;
+	class IPluginModule;
+	class IPluginManager;
+	class IConfigManager;
+	class IEventCallback;
+	class IBlob;
+	class ITransaction;
+	class IMessageMetadata;
+	class IMetadataBuilder;
+	class IResultSet;
+	class IStatement;
+	class IRequest;
+	class IEvents;
+	class IAttachment;
+	class IService;
+	class IProvider;
+	class IDtcStart;
+	class IDtc;
+	class IAuth;
+	class IWriter;
+	class IServerBlock;
+	class IClientBlock;
+	class IServer;
+	class IClient;
+	class IUserField;
+	class ICharUserField;
+	class IIntUserField;
+	class IUser;
+	class IListUsers;
+	class ILogonInfo;
+	class IManagement;
+	class IWireCryptPlugin;
+	class ICryptKeyCallback;
+	class IKeyHolderPlugin;
+	class IDbCryptPlugin;
+	class IExternalContext;
+	class IExternalResultSet;
+	class IExternalFunction;
+	class IExternalProcedure;
+	class IExternalTrigger;
+	class IRoutineMetadata;
+	class IExternalEngine;
+	class ITimer;
+	class ITimerControl;
+	class IVersionCallback;
+	class IUtl;
+	class ITraceConnection;
+	class ITraceDatabaseConnection;
+	class ITraceTransaction;
+	class ITraceParams;
+	class ITraceStatement;
+	class ITraceSQLStatement;
+	class ITraceBLRStatement;
+	class ITraceDYNRequest;
+	class ITraceContextVariable;
+	class ITraceProcedure;
+	class ITraceFunction;
+	class ITraceTrigger;
+	class ITraceServiceConnection;
+	class ITraceStatusVector;
+	class ITraceSweepInfo;
+	class ITraceLogWriter;
+	class ITraceInitInfo;
+	class ITracePlugin;
+	class ITraceFactory;
 
 	// Interfaces declarations
 
-	class Versioned
+	class IVersioned
 	{
 	public:
 		struct VTable
 		{
 			void* cloopDummy[1];
 			uintptr_t version;
-			PluginModule* (CLOOP_CARG *getModule)(Versioned* self) throw();
+			IPluginModule* (CLOOP_CARG *getModule)(IVersioned* self) throw();
 		};
 
 		void* cloopDummy[1];
 		VTable* cloopVTable;
 
 	protected:
-		Versioned(DoNotInherit)
+		IVersioned(DoNotInherit)
 		{
 		}
 
-		~Versioned()
+		~IVersioned()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 1;
 
-		PluginModule* getModule()
+		IPluginModule* getModule()
 		{
-			PluginModule* ret = static_cast<VTable*>(this->cloopVTable)->getModule(this);
+			IPluginModule* ret = static_cast<VTable*>(this->cloopVTable)->getModule(this);
 			return ret;
 		}
 	};
 
-	class ReferenceCounted : public Versioned
+	class IReferenceCounted : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *addRef)(ReferenceCounted* self) throw();
-			int (CLOOP_CARG *release)(ReferenceCounted* self) throw();
+			void (CLOOP_CARG *addRef)(IReferenceCounted* self) throw();
+			int (CLOOP_CARG *release)(IReferenceCounted* self) throw();
 		};
 
 	protected:
-		ReferenceCounted(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IReferenceCounted(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~ReferenceCounted()
+		~IReferenceCounted()
 		{
 		}
 
@@ -174,21 +176,21 @@ public:
 		}
 	};
 
-	class Disposable : public Versioned
+	class IDisposable : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *dispose)(Disposable* self) throw();
+			void (CLOOP_CARG *dispose)(IDisposable* self) throw();
 		};
 
 	protected:
-		Disposable(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IDisposable(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~Disposable()
+		~IDisposable()
 		{
 		}
 
@@ -201,28 +203,28 @@ public:
 		}
 	};
 
-	class Status : public Disposable
+	class IStatus : public IDisposable
 	{
 	public:
-		struct VTable : public Disposable::VTable
+		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *init)(Status* self) throw();
-			unsigned (CLOOP_CARG *getStatus)(const Status* self) throw();
-			void (CLOOP_CARG *setErrors2)(Status* self, unsigned length, const intptr_t* value) throw();
-			void (CLOOP_CARG *setWarnings2)(Status* self, unsigned length, const intptr_t* value) throw();
-			void (CLOOP_CARG *setErrors)(Status* self, const intptr_t* value) throw();
-			void (CLOOP_CARG *setWarnings)(Status* self, const intptr_t* value) throw();
-			const intptr_t* (CLOOP_CARG *getErrors)(const Status* self) throw();
-			const intptr_t* (CLOOP_CARG *getWarnings)(const Status* self) throw();
+			void (CLOOP_CARG *init)(IStatus* self) throw();
+			unsigned (CLOOP_CARG *getStatus)(const IStatus* self) throw();
+			void (CLOOP_CARG *setErrors2)(IStatus* self, unsigned length, const intptr_t* value) throw();
+			void (CLOOP_CARG *setWarnings2)(IStatus* self, unsigned length, const intptr_t* value) throw();
+			void (CLOOP_CARG *setErrors)(IStatus* self, const intptr_t* value) throw();
+			void (CLOOP_CARG *setWarnings)(IStatus* self, const intptr_t* value) throw();
+			const intptr_t* (CLOOP_CARG *getErrors)(const IStatus* self) throw();
+			const intptr_t* (CLOOP_CARG *getWarnings)(const IStatus* self) throw();
 		};
 
 	protected:
-		Status(DoNotInherit)
-			: Disposable(DoNotInherit())
+		IStatus(DoNotInherit)
+			: IDisposable(DoNotInherit())
 		{
 		}
 
-		~Status()
+		~IStatus()
 		{
 		}
 
@@ -280,54 +282,54 @@ public:
 		}
 	};
 
-	class Master : public Versioned
+	class IMaster : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			Status* (CLOOP_CARG *getStatus)(Master* self) throw();
-			Provider* (CLOOP_CARG *getDispatcher)(Master* self) throw();
-			PluginManager* (CLOOP_CARG *getPluginManager)(Master* self) throw();
-			const char* (CLOOP_CARG *circularAlloc)(Master* self, const char* s, unsigned len, intptr_t thr) throw();
-			TimerControl* (CLOOP_CARG *getTimerControl)(Master* self) throw();
-			Dtc* (CLOOP_CARG *getDtc)(Master* self) throw();
-			Attachment* (CLOOP_CARG *registerAttachment)(Master* self, Provider* provider, Attachment* attachment) throw();
-			Transaction* (CLOOP_CARG *registerTransaction)(Master* self, Attachment* attachment, Transaction* transaction) throw();
-			int (CLOOP_CARG *same)(Master* self, Versioned* first, Versioned* second) throw();
-			MetadataBuilder* (CLOOP_CARG *getMetadataBuilder)(Master* self, Status* status, unsigned fieldCount) throw();
-			int (CLOOP_CARG *serverMode)(Master* self, int mode) throw();
-			Utl* (CLOOP_CARG *getUtlInterface)(Master* self) throw();
-			ConfigManager* (CLOOP_CARG *getConfigManager)(Master* self) throw();
+			IStatus* (CLOOP_CARG *getStatus)(IMaster* self) throw();
+			IProvider* (CLOOP_CARG *getDispatcher)(IMaster* self) throw();
+			IPluginManager* (CLOOP_CARG *getPluginManager)(IMaster* self) throw();
+			const char* (CLOOP_CARG *circularAlloc)(IMaster* self, const char* s, unsigned len, intptr_t thr) throw();
+			ITimerControl* (CLOOP_CARG *getTimerControl)(IMaster* self) throw();
+			IDtc* (CLOOP_CARG *getDtc)(IMaster* self) throw();
+			IAttachment* (CLOOP_CARG *registerAttachment)(IMaster* self, IProvider* provider, IAttachment* attachment) throw();
+			ITransaction* (CLOOP_CARG *registerTransaction)(IMaster* self, IAttachment* attachment, ITransaction* transaction) throw();
+			int (CLOOP_CARG *same)(IMaster* self, IVersioned* first, IVersioned* second) throw();
+			IMetadataBuilder* (CLOOP_CARG *getMetadataBuilder)(IMaster* self, IStatus* status, unsigned fieldCount) throw();
+			int (CLOOP_CARG *serverMode)(IMaster* self, int mode) throw();
+			IUtl* (CLOOP_CARG *getUtlInterface)(IMaster* self) throw();
+			IConfigManager* (CLOOP_CARG *getConfigManager)(IMaster* self) throw();
 		};
 
 	protected:
-		Master(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IMaster(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~Master()
+		~IMaster()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		Status* getStatus()
+		IStatus* getStatus()
 		{
-			Status* ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
+			IStatus* ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
 			return ret;
 		}
 
-		Provider* getDispatcher()
+		IProvider* getDispatcher()
 		{
-			Provider* ret = static_cast<VTable*>(this->cloopVTable)->getDispatcher(this);
+			IProvider* ret = static_cast<VTable*>(this->cloopVTable)->getDispatcher(this);
 			return ret;
 		}
 
-		PluginManager* getPluginManager()
+		IPluginManager* getPluginManager()
 		{
-			PluginManager* ret = static_cast<VTable*>(this->cloopVTable)->getPluginManager(this);
+			IPluginManager* ret = static_cast<VTable*>(this->cloopVTable)->getPluginManager(this);
 			return ret;
 		}
 
@@ -337,40 +339,40 @@ public:
 			return ret;
 		}
 
-		TimerControl* getTimerControl()
+		ITimerControl* getTimerControl()
 		{
-			TimerControl* ret = static_cast<VTable*>(this->cloopVTable)->getTimerControl(this);
+			ITimerControl* ret = static_cast<VTable*>(this->cloopVTable)->getTimerControl(this);
 			return ret;
 		}
 
-		Dtc* getDtc()
+		IDtc* getDtc()
 		{
-			Dtc* ret = static_cast<VTable*>(this->cloopVTable)->getDtc(this);
+			IDtc* ret = static_cast<VTable*>(this->cloopVTable)->getDtc(this);
 			return ret;
 		}
 
-		Attachment* registerAttachment(Provider* provider, Attachment* attachment)
+		IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment)
 		{
-			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->registerAttachment(this, provider, attachment);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->registerAttachment(this, provider, attachment);
 			return ret;
 		}
 
-		Transaction* registerTransaction(Attachment* attachment, Transaction* transaction)
+		ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction)
 		{
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->registerTransaction(this, attachment, transaction);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->registerTransaction(this, attachment, transaction);
 			return ret;
 		}
 
-		int same(Versioned* first, Versioned* second)
+		int same(IVersioned* first, IVersioned* second)
 		{
 			int ret = static_cast<VTable*>(this->cloopVTable)->same(this, first, second);
 			return ret;
 		}
 
-		MetadataBuilder* getMetadataBuilder(Status* status, unsigned fieldCount)
+		IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount)
 		{
-			typename Policy::Status status2(status);
-			MetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getMetadataBuilder(this, status2, fieldCount);
+			typename Policy::IStatus status2(status);
+			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getMetadataBuilder(this, status2, fieldCount);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -381,72 +383,72 @@ public:
 			return ret;
 		}
 
-		Utl* getUtlInterface()
+		IUtl* getUtlInterface()
 		{
-			Utl* ret = static_cast<VTable*>(this->cloopVTable)->getUtlInterface(this);
+			IUtl* ret = static_cast<VTable*>(this->cloopVTable)->getUtlInterface(this);
 			return ret;
 		}
 
-		ConfigManager* getConfigManager()
+		IConfigManager* getConfigManager()
 		{
-			ConfigManager* ret = static_cast<VTable*>(this->cloopVTable)->getConfigManager(this);
+			IConfigManager* ret = static_cast<VTable*>(this->cloopVTable)->getConfigManager(this);
 			return ret;
 		}
 	};
 
-	class PluginBase : public ReferenceCounted
+	class IPluginBase : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *setOwner)(PluginBase* self, ReferenceCounted* r) throw();
-			ReferenceCounted* (CLOOP_CARG *getOwner)(PluginBase* self) throw();
+			void (CLOOP_CARG *setOwner)(IPluginBase* self, IReferenceCounted* r) throw();
+			IReferenceCounted* (CLOOP_CARG *getOwner)(IPluginBase* self) throw();
 		};
 
 	protected:
-		PluginBase(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IPluginBase(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~PluginBase()
+		~IPluginBase()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void setOwner(ReferenceCounted* r)
+		void setOwner(IReferenceCounted* r)
 		{
 			static_cast<VTable*>(this->cloopVTable)->setOwner(this, r);
 		}
 
-		ReferenceCounted* getOwner()
+		IReferenceCounted* getOwner()
 		{
-			ReferenceCounted* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this);
+			IReferenceCounted* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this);
 			return ret;
 		}
 	};
 
-	class PluginSet : public ReferenceCounted
+	class IPluginSet : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getName)(const PluginSet* self) throw();
-			const char* (CLOOP_CARG *getModuleName)(const PluginSet* self) throw();
-			PluginBase* (CLOOP_CARG *getPlugin)(PluginSet* self, Status* status) throw();
-			void (CLOOP_CARG *next)(PluginSet* self, Status* status) throw();
-			void (CLOOP_CARG *set)(PluginSet* self, Status* status, const char* s) throw();
+			const char* (CLOOP_CARG *getName)(const IPluginSet* self) throw();
+			const char* (CLOOP_CARG *getModuleName)(const IPluginSet* self) throw();
+			IPluginBase* (CLOOP_CARG *getPlugin)(IPluginSet* self, IStatus* status) throw();
+			void (CLOOP_CARG *next)(IPluginSet* self, IStatus* status) throw();
+			void (CLOOP_CARG *set)(IPluginSet* self, IStatus* status, const char* s) throw();
 		};
 
 	protected:
-		PluginSet(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IPluginSet(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~PluginSet()
+		~IPluginSet()
 		{
 		}
 
@@ -465,48 +467,48 @@ public:
 			return ret;
 		}
 
-		PluginBase* getPlugin(Status* status)
+		IPluginBase* getPlugin(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			PluginBase* ret = static_cast<VTable*>(this->cloopVTable)->getPlugin(this, status2);
+			typename Policy::IStatus status2(status);
+			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->getPlugin(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void next(Status* status)
+		void next(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->next(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void set(Status* status, const char* s)
+		void set(IStatus* status, const char* s)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status2, s);
 			Policy::checkException(status2);
 		}
 	};
 
-	class ConfigEntry : public ReferenceCounted
+	class IConfigEntry : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getName)(ConfigEntry* self) throw();
-			const char* (CLOOP_CARG *getValue)(ConfigEntry* self) throw();
-			ISC_INT64 (CLOOP_CARG *getIntValue)(ConfigEntry* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *getBoolValue)(ConfigEntry* self) throw();
-			Config* (CLOOP_CARG *getSubConfig)(ConfigEntry* self, Status* status) throw();
+			const char* (CLOOP_CARG *getName)(IConfigEntry* self) throw();
+			const char* (CLOOP_CARG *getValue)(IConfigEntry* self) throw();
+			ISC_INT64 (CLOOP_CARG *getIntValue)(IConfigEntry* self) throw();
+			FB_BOOLEAN (CLOOP_CARG *getBoolValue)(IConfigEntry* self) throw();
+			IConfig* (CLOOP_CARG *getSubConfig)(IConfigEntry* self, IStatus* status) throw();
 		};
 
 	protected:
-		ConfigEntry(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IConfigEntry(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~ConfigEntry()
+		~IConfigEntry()
 		{
 		}
 
@@ -537,81 +539,81 @@ public:
 			return ret;
 		}
 
-		Config* getSubConfig(Status* status)
+		IConfig* getSubConfig(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			Config* ret = static_cast<VTable*>(this->cloopVTable)->getSubConfig(this, status2);
+			typename Policy::IStatus status2(status);
+			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getSubConfig(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class Config : public ReferenceCounted
+	class IConfig : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			ConfigEntry* (CLOOP_CARG *find)(Config* self, Status* status, const char* name) throw();
-			ConfigEntry* (CLOOP_CARG *findValue)(Config* self, Status* status, const char* name, const char* value) throw();
-			ConfigEntry* (CLOOP_CARG *findPos)(Config* self, Status* status, const char* name, unsigned pos) throw();
+			IConfigEntry* (CLOOP_CARG *find)(IConfig* self, IStatus* status, const char* name) throw();
+			IConfigEntry* (CLOOP_CARG *findValue)(IConfig* self, IStatus* status, const char* name, const char* value) throw();
+			IConfigEntry* (CLOOP_CARG *findPos)(IConfig* self, IStatus* status, const char* name, unsigned pos) throw();
 		};
 
 	protected:
-		Config(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IConfig(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Config()
+		~IConfig()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		ConfigEntry* find(Status* status, const char* name)
+		IConfigEntry* find(IStatus* status, const char* name)
 		{
-			typename Policy::Status status2(status);
-			ConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->find(this, status2, name);
+			typename Policy::IStatus status2(status);
+			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->find(this, status2, name);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		ConfigEntry* findValue(Status* status, const char* name, const char* value)
+		IConfigEntry* findValue(IStatus* status, const char* name, const char* value)
 		{
-			typename Policy::Status status2(status);
-			ConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findValue(this, status2, name, value);
+			typename Policy::IStatus status2(status);
+			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findValue(this, status2, name, value);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		ConfigEntry* findPos(Status* status, const char* name, unsigned pos)
+		IConfigEntry* findPos(IStatus* status, const char* name, unsigned pos)
 		{
-			typename Policy::Status status2(status);
-			ConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findPos(this, status2, name, pos);
+			typename Policy::IStatus status2(status);
+			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findPos(this, status2, name, pos);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class FirebirdConf : public ReferenceCounted
+	class IFirebirdConf : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			unsigned (CLOOP_CARG *getKey)(FirebirdConf* self, const char* name) throw();
-			ISC_INT64 (CLOOP_CARG *asInteger)(FirebirdConf* self, unsigned key) throw();
-			const char* (CLOOP_CARG *asString)(FirebirdConf* self, unsigned key) throw();
-			FB_BOOLEAN (CLOOP_CARG *asBoolean)(FirebirdConf* self, unsigned key) throw();
+			unsigned (CLOOP_CARG *getKey)(IFirebirdConf* self, const char* name) throw();
+			ISC_INT64 (CLOOP_CARG *asInteger)(IFirebirdConf* self, unsigned key) throw();
+			const char* (CLOOP_CARG *asString)(IFirebirdConf* self, unsigned key) throw();
+			FB_BOOLEAN (CLOOP_CARG *asBoolean)(IFirebirdConf* self, unsigned key) throw();
 		};
 
 	protected:
-		FirebirdConf(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IFirebirdConf(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~FirebirdConf()
+		~IFirebirdConf()
 		{
 		}
 
@@ -643,24 +645,24 @@ public:
 		}
 	};
 
-	class PluginConfig : public ReferenceCounted
+	class IPluginConfig : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getConfigFileName)(PluginConfig* self) throw();
-			Config* (CLOOP_CARG *getDefaultConfig)(PluginConfig* self, Status* status) throw();
-			FirebirdConf* (CLOOP_CARG *getFirebirdConf)(PluginConfig* self, Status* status) throw();
-			void (CLOOP_CARG *setReleaseDelay)(PluginConfig* self, Status* status, ISC_UINT64 microSeconds) throw();
+			const char* (CLOOP_CARG *getConfigFileName)(IPluginConfig* self) throw();
+			IConfig* (CLOOP_CARG *getDefaultConfig)(IPluginConfig* self, IStatus* status) throw();
+			IFirebirdConf* (CLOOP_CARG *getFirebirdConf)(IPluginConfig* self, IStatus* status) throw();
+			void (CLOOP_CARG *setReleaseDelay)(IPluginConfig* self, IStatus* status, ISC_UINT64 microSeconds) throw();
 		};
 
 	protected:
-		PluginConfig(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IPluginConfig(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~PluginConfig()
+		~IPluginConfig()
 		{
 		}
 
@@ -673,75 +675,75 @@ public:
 			return ret;
 		}
 
-		Config* getDefaultConfig(Status* status)
+		IConfig* getDefaultConfig(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			Config* ret = static_cast<VTable*>(this->cloopVTable)->getDefaultConfig(this, status2);
+			typename Policy::IStatus status2(status);
+			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getDefaultConfig(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		FirebirdConf* getFirebirdConf(Status* status)
+		IFirebirdConf* getFirebirdConf(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			FirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this, status2);
+			typename Policy::IStatus status2(status);
+			IFirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void setReleaseDelay(Status* status, ISC_UINT64 microSeconds)
+		void setReleaseDelay(IStatus* status, ISC_UINT64 microSeconds)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setReleaseDelay(this, status2, microSeconds);
 			Policy::checkException(status2);
 		}
 	};
 
-	class PluginFactory : public Versioned
+	class IPluginFactory : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			PluginBase* (CLOOP_CARG *createPlugin)(PluginFactory* self, Status* status, PluginConfig* factoryParameter) throw();
+			IPluginBase* (CLOOP_CARG *createPlugin)(IPluginFactory* self, IStatus* status, IPluginConfig* factoryParameter) throw();
 		};
 
 	protected:
-		PluginFactory(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IPluginFactory(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~PluginFactory()
+		~IPluginFactory()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		PluginBase* createPlugin(Status* status, PluginConfig* factoryParameter)
+		IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
 		{
-			typename Policy::Status status2(status);
-			PluginBase* ret = static_cast<VTable*>(this->cloopVTable)->createPlugin(this, status2, factoryParameter);
+			typename Policy::IStatus status2(status);
+			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->createPlugin(this, status2, factoryParameter);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class PluginModule : public Versioned
+	class IPluginModule : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *doClean)(PluginModule* self) throw();
+			void (CLOOP_CARG *doClean)(IPluginModule* self) throw();
 		};
 
 	protected:
-		PluginModule(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IPluginModule(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~PluginModule()
+		~IPluginModule()
 		{
 		}
 
@@ -754,26 +756,26 @@ public:
 		}
 	};
 
-	class PluginManager : public Versioned
+	class IPluginManager : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *registerPluginFactory)(PluginManager* self, unsigned pluginType, const char* defaultName, PluginFactory* factory) throw();
-			void (CLOOP_CARG *registerModule)(PluginManager* self, PluginModule* cleanup) throw();
-			void (CLOOP_CARG *unregisterModule)(PluginManager* self, PluginModule* cleanup) throw();
-			PluginSet* (CLOOP_CARG *getPlugins)(PluginManager* self, Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf) throw();
-			Config* (CLOOP_CARG *getConfig)(PluginManager* self, Status* status, const char* filename) throw();
-			void (CLOOP_CARG *releasePlugin)(PluginManager* self, PluginBase* plugin) throw();
+			void (CLOOP_CARG *registerPluginFactory)(IPluginManager* self, unsigned pluginType, const char* defaultName, IPluginFactory* factory) throw();
+			void (CLOOP_CARG *registerModule)(IPluginManager* self, IPluginModule* cleanup) throw();
+			void (CLOOP_CARG *unregisterModule)(IPluginManager* self, IPluginModule* cleanup) throw();
+			IPluginSet* (CLOOP_CARG *getPlugins)(IPluginManager* self, IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) throw();
+			IConfig* (CLOOP_CARG *getConfig)(IPluginManager* self, IStatus* status, const char* filename) throw();
+			void (CLOOP_CARG *releasePlugin)(IPluginManager* self, IPluginBase* plugin) throw();
 		};
 
 	protected:
-		PluginManager(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IPluginManager(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~PluginManager()
+		~IPluginManager()
 		{
 		}
 
@@ -792,63 +794,63 @@ public:
 		static const unsigned KeyHolder = 10;
 		static const unsigned MaxType = 11;
 
-		void registerPluginFactory(unsigned pluginType, const char* defaultName, PluginFactory* factory)
+		void registerPluginFactory(unsigned pluginType, const char* defaultName, IPluginFactory* factory)
 		{
 			static_cast<VTable*>(this->cloopVTable)->registerPluginFactory(this, pluginType, defaultName, factory);
 		}
 
-		void registerModule(PluginModule* cleanup)
+		void registerModule(IPluginModule* cleanup)
 		{
 			static_cast<VTable*>(this->cloopVTable)->registerModule(this, cleanup);
 		}
 
-		void unregisterModule(PluginModule* cleanup)
+		void unregisterModule(IPluginModule* cleanup)
 		{
 			static_cast<VTable*>(this->cloopVTable)->unregisterModule(this, cleanup);
 		}
 
-		PluginSet* getPlugins(Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf)
+		IPluginSet* getPlugins(IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf)
 		{
-			typename Policy::Status status2(status);
-			PluginSet* ret = static_cast<VTable*>(this->cloopVTable)->getPlugins(this, status2, pluginType, namesList, firebirdConf);
+			typename Policy::IStatus status2(status);
+			IPluginSet* ret = static_cast<VTable*>(this->cloopVTable)->getPlugins(this, status2, pluginType, namesList, firebirdConf);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Config* getConfig(Status* status, const char* filename)
+		IConfig* getConfig(IStatus* status, const char* filename)
 		{
-			typename Policy::Status status2(status);
-			Config* ret = static_cast<VTable*>(this->cloopVTable)->getConfig(this, status2, filename);
+			typename Policy::IStatus status2(status);
+			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getConfig(this, status2, filename);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void releasePlugin(PluginBase* plugin)
+		void releasePlugin(IPluginBase* plugin)
 		{
 			static_cast<VTable*>(this->cloopVTable)->releasePlugin(this, plugin);
 		}
 	};
 
-	class ConfigManager : public Versioned
+	class IConfigManager : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getDirectory)(ConfigManager* self, unsigned code) throw();
-			FirebirdConf* (CLOOP_CARG *getFirebirdConf)(ConfigManager* self) throw();
-			FirebirdConf* (CLOOP_CARG *getDatabaseConf)(ConfigManager* self, const char* dbName) throw();
-			Config* (CLOOP_CARG *getPluginConfig)(ConfigManager* self, const char* configuredPlugin) throw();
-			const char* (CLOOP_CARG *getInstallDirectory)(ConfigManager* self) throw();
-			const char* (CLOOP_CARG *getRootDirectory)(ConfigManager* self) throw();
+			const char* (CLOOP_CARG *getDirectory)(IConfigManager* self, unsigned code) throw();
+			IFirebirdConf* (CLOOP_CARG *getFirebirdConf)(IConfigManager* self) throw();
+			IFirebirdConf* (CLOOP_CARG *getDatabaseConf)(IConfigManager* self, const char* dbName) throw();
+			IConfig* (CLOOP_CARG *getPluginConfig)(IConfigManager* self, const char* configuredPlugin) throw();
+			const char* (CLOOP_CARG *getInstallDirectory)(IConfigManager* self) throw();
+			const char* (CLOOP_CARG *getRootDirectory)(IConfigManager* self) throw();
 		};
 
 	protected:
-		ConfigManager(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IConfigManager(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~ConfigManager()
+		~IConfigManager()
 		{
 		}
 
@@ -880,21 +882,21 @@ public:
 			return ret;
 		}
 
-		FirebirdConf* getFirebirdConf()
+		IFirebirdConf* getFirebirdConf()
 		{
-			FirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this);
+			IFirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this);
 			return ret;
 		}
 
-		FirebirdConf* getDatabaseConf(const char* dbName)
+		IFirebirdConf* getDatabaseConf(const char* dbName)
 		{
-			FirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseConf(this, dbName);
+			IFirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getDatabaseConf(this, dbName);
 			return ret;
 		}
 
-		Config* getPluginConfig(const char* configuredPlugin)
+		IConfig* getPluginConfig(const char* configuredPlugin)
 		{
-			Config* ret = static_cast<VTable*>(this->cloopVTable)->getPluginConfig(this, configuredPlugin);
+			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getPluginConfig(this, configuredPlugin);
 			return ret;
 		}
 
@@ -911,21 +913,21 @@ public:
 		}
 	};
 
-	class EventCallback : public ReferenceCounted
+	class IEventCallback : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *eventCallbackFunction)(EventCallback* self, unsigned length, const unsigned char* events) throw();
+			void (CLOOP_CARG *eventCallbackFunction)(IEventCallback* self, unsigned length, const unsigned char* events) throw();
 		};
 
 	protected:
-		EventCallback(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IEventCallback(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~EventCallback()
+		~IEventCallback()
 		{
 		}
 
@@ -938,583 +940,583 @@ public:
 		}
 	};
 
-	class Blob : public ReferenceCounted
+	class IBlob : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(Blob* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			int (CLOOP_CARG *getSegment)(Blob* self, Status* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) throw();
-			void (CLOOP_CARG *putSegment)(Blob* self, Status* status, unsigned length, const void* buffer) throw();
-			void (CLOOP_CARG *cancel)(Blob* self, Status* status) throw();
-			void (CLOOP_CARG *close)(Blob* self, Status* status) throw();
-			int (CLOOP_CARG *seek)(Blob* self, Status* status, int mode, int offset) throw();
+			void (CLOOP_CARG *getInfo)(IBlob* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
+			int (CLOOP_CARG *getSegment)(IBlob* self, IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) throw();
+			void (CLOOP_CARG *putSegment)(IBlob* self, IStatus* status, unsigned length, const void* buffer) throw();
+			void (CLOOP_CARG *cancel)(IBlob* self, IStatus* status) throw();
+			void (CLOOP_CARG *close)(IBlob* self, IStatus* status) throw();
+			int (CLOOP_CARG *seek)(IBlob* self, IStatus* status, int mode, int offset) throw();
 		};
 
 	protected:
-		Blob(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IBlob(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Blob()
+		~IBlob()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
 		}
 
-		int getSegment(Status* status, unsigned bufferLength, void* buffer, unsigned* segmentLength)
+		int getSegment(IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSegment(this, status2, bufferLength, buffer, segmentLength);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void putSegment(Status* status, unsigned length, const void* buffer)
+		void putSegment(IStatus* status, unsigned length, const void* buffer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putSegment(this, status2, length, buffer);
 			Policy::checkException(status2);
 		}
 
-		void cancel(Status* status)
+		void cancel(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->cancel(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void close(Status* status)
+		void close(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status2);
 			Policy::checkException(status2);
 		}
 
-		int seek(Status* status, int mode, int offset)
+		int seek(IStatus* status, int mode, int offset)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->seek(this, status2, mode, offset);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class Transaction : public ReferenceCounted
+	class ITransaction : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(Transaction* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			void (CLOOP_CARG *prepare)(Transaction* self, Status* status, unsigned msgLength, const unsigned char* message) throw();
-			void (CLOOP_CARG *commit)(Transaction* self, Status* status) throw();
-			void (CLOOP_CARG *commitRetaining)(Transaction* self, Status* status) throw();
-			void (CLOOP_CARG *rollback)(Transaction* self, Status* status) throw();
-			void (CLOOP_CARG *rollbackRetaining)(Transaction* self, Status* status) throw();
-			void (CLOOP_CARG *disconnect)(Transaction* self, Status* status) throw();
-			Transaction* (CLOOP_CARG *join)(Transaction* self, Status* status, Transaction* transaction) throw();
-			Transaction* (CLOOP_CARG *validate)(Transaction* self, Status* status, Attachment* attachment) throw();
-			Transaction* (CLOOP_CARG *enterDtc)(Transaction* self, Status* status) throw();
+			void (CLOOP_CARG *getInfo)(ITransaction* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
+			void (CLOOP_CARG *prepare)(ITransaction* self, IStatus* status, unsigned msgLength, const unsigned char* message) throw();
+			void (CLOOP_CARG *commit)(ITransaction* self, IStatus* status) throw();
+			void (CLOOP_CARG *commitRetaining)(ITransaction* self, IStatus* status) throw();
+			void (CLOOP_CARG *rollback)(ITransaction* self, IStatus* status) throw();
+			void (CLOOP_CARG *rollbackRetaining)(ITransaction* self, IStatus* status) throw();
+			void (CLOOP_CARG *disconnect)(ITransaction* self, IStatus* status) throw();
+			ITransaction* (CLOOP_CARG *join)(ITransaction* self, IStatus* status, ITransaction* transaction) throw();
+			ITransaction* (CLOOP_CARG *validate)(ITransaction* self, IStatus* status, IAttachment* attachment) throw();
+			ITransaction* (CLOOP_CARG *enterDtc)(ITransaction* self, IStatus* status) throw();
 		};
 
 	protected:
-		Transaction(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		ITransaction(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Transaction()
+		~ITransaction()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
 		}
 
-		void prepare(Status* status, unsigned msgLength, const unsigned char* message)
+		void prepare(IStatus* status, unsigned msgLength, const unsigned char* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, msgLength, message);
 			Policy::checkException(status2);
 		}
 
-		void commit(Status* status)
+		void commit(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->commit(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void commitRetaining(Status* status)
+		void commitRetaining(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->commitRetaining(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void rollback(Status* status)
+		void rollback(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->rollback(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void rollbackRetaining(Status* status)
+		void rollbackRetaining(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->rollbackRetaining(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void disconnect(Status* status)
+		void disconnect(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->disconnect(this, status2);
 			Policy::checkException(status2);
 		}
 
-		Transaction* join(Status* status, Transaction* transaction)
+		ITransaction* join(IStatus* status, ITransaction* transaction)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, transaction);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, transaction);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Transaction* validate(Status* status, Attachment* attachment)
+		ITransaction* validate(IStatus* status, IAttachment* attachment)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->validate(this, status2, attachment);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->validate(this, status2, attachment);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Transaction* enterDtc(Status* status)
+		ITransaction* enterDtc(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->enterDtc(this, status2);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->enterDtc(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class MessageMetadata : public ReferenceCounted
+	class IMessageMetadata : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			unsigned (CLOOP_CARG *getCount)(MessageMetadata* self, Status* status) throw();
-			const char* (CLOOP_CARG *getField)(MessageMetadata* self, Status* status, unsigned index) throw();
-			const char* (CLOOP_CARG *getRelation)(MessageMetadata* self, Status* status, unsigned index) throw();
-			const char* (CLOOP_CARG *getOwner)(MessageMetadata* self, Status* status, unsigned index) throw();
-			const char* (CLOOP_CARG *getAlias)(MessageMetadata* self, Status* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getType)(MessageMetadata* self, Status* status, unsigned index) throw();
-			FB_BOOLEAN (CLOOP_CARG *isNullable)(MessageMetadata* self, Status* status, unsigned index) throw();
-			int (CLOOP_CARG *getSubType)(MessageMetadata* self, Status* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getLength)(MessageMetadata* self, Status* status, unsigned index) throw();
-			int (CLOOP_CARG *getScale)(MessageMetadata* self, Status* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getCharSet)(MessageMetadata* self, Status* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getOffset)(MessageMetadata* self, Status* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *getNullOffset)(MessageMetadata* self, Status* status, unsigned index) throw();
-			MetadataBuilder* (CLOOP_CARG *getBuilder)(MessageMetadata* self, Status* status) throw();
-			unsigned (CLOOP_CARG *getMessageLength)(MessageMetadata* self, Status* status) throw();
+			unsigned (CLOOP_CARG *getCount)(IMessageMetadata* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getField)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			const char* (CLOOP_CARG *getRelation)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			const char* (CLOOP_CARG *getOwner)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			const char* (CLOOP_CARG *getAlias)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			unsigned (CLOOP_CARG *getType)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			FB_BOOLEAN (CLOOP_CARG *isNullable)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			int (CLOOP_CARG *getSubType)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			unsigned (CLOOP_CARG *getLength)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			int (CLOOP_CARG *getScale)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			unsigned (CLOOP_CARG *getCharSet)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			unsigned (CLOOP_CARG *getOffset)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			unsigned (CLOOP_CARG *getNullOffset)(IMessageMetadata* self, IStatus* status, unsigned index) throw();
+			IMetadataBuilder* (CLOOP_CARG *getBuilder)(IMessageMetadata* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getMessageLength)(IMessageMetadata* self, IStatus* status) throw();
 		};
 
 	protected:
-		MessageMetadata(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IMessageMetadata(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~MessageMetadata()
+		~IMessageMetadata()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		unsigned getCount(Status* status)
+		unsigned getCount(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getField(Status* status, unsigned index)
+		const char* getField(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getField(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getRelation(Status* status, unsigned index)
+		const char* getRelation(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRelation(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getOwner(Status* status, unsigned index)
+		const char* getOwner(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getAlias(Status* status, unsigned index)
+		const char* getAlias(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getAlias(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		unsigned getType(Status* status, unsigned index)
+		unsigned getType(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		FB_BOOLEAN isNullable(Status* status, unsigned index)
+		FB_BOOLEAN isNullable(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isNullable(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int getSubType(Status* status, unsigned index)
+		int getSubType(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSubType(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		unsigned getLength(Status* status, unsigned index)
+		unsigned getLength(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getLength(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int getScale(Status* status, unsigned index)
+		int getScale(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getScale(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		unsigned getCharSet(Status* status, unsigned index)
+		unsigned getCharSet(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		unsigned getOffset(Status* status, unsigned index)
+		unsigned getOffset(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getOffset(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		unsigned getNullOffset(Status* status, unsigned index)
+		unsigned getNullOffset(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getNullOffset(this, status2, index);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MetadataBuilder* getBuilder(Status* status)
+		IMetadataBuilder* getBuilder(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			MetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getBuilder(this, status2);
+			typename Policy::IStatus status2(status);
+			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getBuilder(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		unsigned getMessageLength(Status* status)
+		unsigned getMessageLength(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getMessageLength(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class MetadataBuilder : public ReferenceCounted
+	class IMetadataBuilder : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *setType)(MetadataBuilder* self, Status* status, unsigned index, unsigned type) throw();
-			void (CLOOP_CARG *setSubType)(MetadataBuilder* self, Status* status, unsigned index, int subType) throw();
-			void (CLOOP_CARG *setLength)(MetadataBuilder* self, Status* status, unsigned index, unsigned length) throw();
-			void (CLOOP_CARG *setCharSet)(MetadataBuilder* self, Status* status, unsigned index, unsigned charSet) throw();
-			void (CLOOP_CARG *setScale)(MetadataBuilder* self, Status* status, unsigned index, unsigned scale) throw();
-			void (CLOOP_CARG *truncate)(MetadataBuilder* self, Status* status, unsigned count) throw();
-			void (CLOOP_CARG *moveNameToIndex)(MetadataBuilder* self, Status* status, const char* name, unsigned index) throw();
-			void (CLOOP_CARG *remove)(MetadataBuilder* self, Status* status, unsigned index) throw();
-			unsigned (CLOOP_CARG *addField)(MetadataBuilder* self, Status* status) throw();
-			MessageMetadata* (CLOOP_CARG *getMetadata)(MetadataBuilder* self, Status* status) throw();
+			void (CLOOP_CARG *setType)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned type) throw();
+			void (CLOOP_CARG *setSubType)(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) throw();
+			void (CLOOP_CARG *setLength)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) throw();
+			void (CLOOP_CARG *setCharSet)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) throw();
+			void (CLOOP_CARG *setScale)(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned scale) throw();
+			void (CLOOP_CARG *truncate)(IMetadataBuilder* self, IStatus* status, unsigned count) throw();
+			void (CLOOP_CARG *moveNameToIndex)(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) throw();
+			void (CLOOP_CARG *remove)(IMetadataBuilder* self, IStatus* status, unsigned index) throw();
+			unsigned (CLOOP_CARG *addField)(IMetadataBuilder* self, IStatus* status) throw();
+			IMessageMetadata* (CLOOP_CARG *getMetadata)(IMetadataBuilder* self, IStatus* status) throw();
 		};
 
 	protected:
-		MetadataBuilder(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IMetadataBuilder(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~MetadataBuilder()
+		~IMetadataBuilder()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void setType(Status* status, unsigned index, unsigned type)
+		void setType(IStatus* status, unsigned index, unsigned type)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setType(this, status2, index, type);
 			Policy::checkException(status2);
 		}
 
-		void setSubType(Status* status, unsigned index, int subType)
+		void setSubType(IStatus* status, unsigned index, int subType)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setSubType(this, status2, index, subType);
 			Policy::checkException(status2);
 		}
 
-		void setLength(Status* status, unsigned index, unsigned length)
+		void setLength(IStatus* status, unsigned index, unsigned length)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setLength(this, status2, index, length);
 			Policy::checkException(status2);
 		}
 
-		void setCharSet(Status* status, unsigned index, unsigned charSet)
+		void setCharSet(IStatus* status, unsigned index, unsigned charSet)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setCharSet(this, status2, index, charSet);
 			Policy::checkException(status2);
 		}
 
-		void setScale(Status* status, unsigned index, unsigned scale)
+		void setScale(IStatus* status, unsigned index, unsigned scale)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setScale(this, status2, index, scale);
 			Policy::checkException(status2);
 		}
 
-		void truncate(Status* status, unsigned count)
+		void truncate(IStatus* status, unsigned count)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->truncate(this, status2, count);
 			Policy::checkException(status2);
 		}
 
-		void moveNameToIndex(Status* status, const char* name, unsigned index)
+		void moveNameToIndex(IStatus* status, const char* name, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->moveNameToIndex(this, status2, name, index);
 			Policy::checkException(status2);
 		}
 
-		void remove(Status* status, unsigned index)
+		void remove(IStatus* status, unsigned index)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->remove(this, status2, index);
 			Policy::checkException(status2);
 		}
 
-		unsigned addField(Status* status)
+		unsigned addField(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->addField(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MessageMetadata* getMetadata(Status* status)
+		IMessageMetadata* getMetadata(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
+			typename Policy::IStatus status2(status);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class ResultSet : public ReferenceCounted
+	class IResultSet : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			int (CLOOP_CARG *fetchNext)(ResultSet* self, Status* status, void* message) throw();
-			int (CLOOP_CARG *fetchPrior)(ResultSet* self, Status* status, void* message) throw();
-			int (CLOOP_CARG *fetchFirst)(ResultSet* self, Status* status, void* message) throw();
-			int (CLOOP_CARG *fetchLast)(ResultSet* self, Status* status, void* message) throw();
-			int (CLOOP_CARG *fetchAbsolute)(ResultSet* self, Status* status, unsigned position, void* message) throw();
-			int (CLOOP_CARG *fetchRelative)(ResultSet* self, Status* status, int offset, void* message) throw();
-			FB_BOOLEAN (CLOOP_CARG *isEof)(ResultSet* self, Status* status) throw();
-			FB_BOOLEAN (CLOOP_CARG *isBof)(ResultSet* self, Status* status) throw();
-			MessageMetadata* (CLOOP_CARG *getMetadata)(ResultSet* self, Status* status) throw();
-			void (CLOOP_CARG *close)(ResultSet* self, Status* status) throw();
-			void (CLOOP_CARG *setDelayedOutputFormat)(ResultSet* self, Status* status, MessageMetadata* format) throw();
+			int (CLOOP_CARG *fetchNext)(IResultSet* self, IStatus* status, void* message) throw();
+			int (CLOOP_CARG *fetchPrior)(IResultSet* self, IStatus* status, void* message) throw();
+			int (CLOOP_CARG *fetchFirst)(IResultSet* self, IStatus* status, void* message) throw();
+			int (CLOOP_CARG *fetchLast)(IResultSet* self, IStatus* status, void* message) throw();
+			int (CLOOP_CARG *fetchAbsolute)(IResultSet* self, IStatus* status, unsigned position, void* message) throw();
+			int (CLOOP_CARG *fetchRelative)(IResultSet* self, IStatus* status, int offset, void* message) throw();
+			FB_BOOLEAN (CLOOP_CARG *isEof)(IResultSet* self, IStatus* status) throw();
+			FB_BOOLEAN (CLOOP_CARG *isBof)(IResultSet* self, IStatus* status) throw();
+			IMessageMetadata* (CLOOP_CARG *getMetadata)(IResultSet* self, IStatus* status) throw();
+			void (CLOOP_CARG *close)(IResultSet* self, IStatus* status) throw();
+			void (CLOOP_CARG *setDelayedOutputFormat)(IResultSet* self, IStatus* status, IMessageMetadata* format) throw();
 		};
 
 	protected:
-		ResultSet(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IResultSet(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~ResultSet()
+		~IResultSet()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		int fetchNext(Status* status, void* message)
+		int fetchNext(IStatus* status, void* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchNext(this, status2, message);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int fetchPrior(Status* status, void* message)
+		int fetchPrior(IStatus* status, void* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchPrior(this, status2, message);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int fetchFirst(Status* status, void* message)
+		int fetchFirst(IStatus* status, void* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchFirst(this, status2, message);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int fetchLast(Status* status, void* message)
+		int fetchLast(IStatus* status, void* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchLast(this, status2, message);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int fetchAbsolute(Status* status, unsigned position, void* message)
+		int fetchAbsolute(IStatus* status, unsigned position, void* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchAbsolute(this, status2, position, message);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int fetchRelative(Status* status, int offset, void* message)
+		int fetchRelative(IStatus* status, int offset, void* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchRelative(this, status2, offset, message);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		FB_BOOLEAN isEof(Status* status)
+		FB_BOOLEAN isEof(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isEof(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		FB_BOOLEAN isBof(Status* status)
+		FB_BOOLEAN isBof(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isBof(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MessageMetadata* getMetadata(Status* status)
+		IMessageMetadata* getMetadata(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
+			typename Policy::IStatus status2(status);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void close(Status* status)
+		void close(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void setDelayedOutputFormat(Status* status, MessageMetadata* format)
+		void setDelayedOutputFormat(IStatus* status, IMessageMetadata* format)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setDelayedOutputFormat(this, status2, format);
 			Policy::checkException(status2);
 		}
 	};
 
-	class Statement : public ReferenceCounted
+	class IStatement : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(Statement* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			unsigned (CLOOP_CARG *getType)(Statement* self, Status* status) throw();
-			const char* (CLOOP_CARG *getPlan)(Statement* self, Status* status, FB_BOOLEAN detailed) throw();
-			ISC_UINT64 (CLOOP_CARG *getAffectedRecords)(Statement* self, Status* status) throw();
-			MessageMetadata* (CLOOP_CARG *getInputMetadata)(Statement* self, Status* status) throw();
-			MessageMetadata* (CLOOP_CARG *getOutputMetadata)(Statement* self, Status* status) throw();
-			Transaction* (CLOOP_CARG *execute)(Statement* self, Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer) throw();
-			ResultSet* (CLOOP_CARG *openCursor)(Statement* self, Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata) throw();
-			void (CLOOP_CARG *setCursorName)(Statement* self, Status* status, const char* name) throw();
-			void (CLOOP_CARG *free)(Statement* self, Status* status) throw();
-			unsigned (CLOOP_CARG *getFlags)(Statement* self, Status* status) throw();
+			void (CLOOP_CARG *getInfo)(IStatement* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
+			unsigned (CLOOP_CARG *getType)(IStatement* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getPlan)(IStatement* self, IStatus* status, FB_BOOLEAN detailed) throw();
+			ISC_UINT64 (CLOOP_CARG *getAffectedRecords)(IStatement* self, IStatus* status) throw();
+			IMessageMetadata* (CLOOP_CARG *getInputMetadata)(IStatement* self, IStatus* status) throw();
+			IMessageMetadata* (CLOOP_CARG *getOutputMetadata)(IStatement* self, IStatus* status) throw();
+			ITransaction* (CLOOP_CARG *execute)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw();
+			IResultSet* (CLOOP_CARG *openCursor)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) throw();
+			void (CLOOP_CARG *setCursorName)(IStatement* self, IStatus* status, const char* name) throw();
+			void (CLOOP_CARG *free)(IStatement* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getFlags)(IStatement* self, IStatus* status) throw();
 		};
 
 	protected:
-		Statement(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IStatement(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Statement()
+		~IStatement()
 		{
 		}
 
@@ -1529,613 +1531,613 @@ public:
 		static const unsigned PREPARE_PREFETCH_DETAILED_PLAN = 16;
 		static const unsigned PREPARE_PREFETCH_AFFECTED_RECORDS = 32;
 		static const unsigned PREPARE_PREFETCH_FLAGS = 64;
-		static const unsigned PREPARE_PREFETCH_METADATA = Statement::PREPARE_PREFETCH_TYPE | Statement::PREPARE_PREFETCH_FLAGS | Statement::PREPARE_PREFETCH_INPUT_PARAMETERS | Statement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
-		static const unsigned PREPARE_PREFETCH_ALL = Statement::PREPARE_PREFETCH_METADATA | Statement::PREPARE_PREFETCH_LEGACY_PLAN | Statement::PREPARE_PREFETCH_DETAILED_PLAN | Statement::PREPARE_PREFETCH_AFFECTED_RECORDS;
+		static const unsigned PREPARE_PREFETCH_METADATA = IStatement::PREPARE_PREFETCH_TYPE | IStatement::PREPARE_PREFETCH_FLAGS | IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS | IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
+		static const unsigned PREPARE_PREFETCH_ALL = IStatement::PREPARE_PREFETCH_METADATA | IStatement::PREPARE_PREFETCH_LEGACY_PLAN | IStatement::PREPARE_PREFETCH_DETAILED_PLAN | IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
 		static const unsigned FLAG_HAS_CURSOR = 1;
 		static const unsigned FLAG_REPEAT_EXECUTE = 2;
 
-		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
 		}
 
-		unsigned getType(Status* status)
+		unsigned getType(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getPlan(Status* status, FB_BOOLEAN detailed)
+		const char* getPlan(IStatus* status, FB_BOOLEAN detailed)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPlan(this, status2, detailed);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		ISC_UINT64 getAffectedRecords(Status* status)
+		ISC_UINT64 getAffectedRecords(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getAffectedRecords(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MessageMetadata* getInputMetadata(Status* status)
+		IMessageMetadata* getInputMetadata(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
+			typename Policy::IStatus status2(status);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MessageMetadata* getOutputMetadata(Status* status)
+		IMessageMetadata* getOutputMetadata(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
+			typename Policy::IStatus status2(status);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Transaction* execute(Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer)
+		ITransaction* execute(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		ResultSet* openCursor(Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata)
+		IResultSet* openCursor(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 		{
-			typename Policy::Status status2(status);
-			ResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, inMetadata, inBuffer, outMetadata);
+			typename Policy::IStatus status2(status);
+			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, inMetadata, inBuffer, outMetadata);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void setCursorName(Status* status, const char* name)
+		void setCursorName(IStatus* status, const char* name)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setCursorName(this, status2, name);
 			Policy::checkException(status2);
 		}
 
-		void free(Status* status)
+		void free(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->free(this, status2);
 			Policy::checkException(status2);
 		}
 
-		unsigned getFlags(Status* status)
+		unsigned getFlags(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class Request : public ReferenceCounted
+	class IRequest : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *receive)(Request* self, Status* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw();
-			void (CLOOP_CARG *send)(Request* self, Status* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
-			void (CLOOP_CARG *getInfo)(Request* self, Status* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			void (CLOOP_CARG *start)(Request* self, Status* status, Transaction* tra, int level) throw();
-			void (CLOOP_CARG *startAndSend)(Request* self, Status* status, Transaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
-			void (CLOOP_CARG *unwind)(Request* self, Status* status, int level) throw();
-			void (CLOOP_CARG *free)(Request* self, Status* status) throw();
+			void (CLOOP_CARG *receive)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw();
+			void (CLOOP_CARG *send)(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
+			void (CLOOP_CARG *getInfo)(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
+			void (CLOOP_CARG *start)(IRequest* self, IStatus* status, ITransaction* tra, int level) throw();
+			void (CLOOP_CARG *startAndSend)(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw();
+			void (CLOOP_CARG *unwind)(IRequest* self, IStatus* status, int level) throw();
+			void (CLOOP_CARG *free)(IRequest* self, IStatus* status) throw();
 		};
 
 	protected:
-		Request(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IRequest(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Request()
+		~IRequest()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void receive(Status* status, int level, unsigned msgType, unsigned length, unsigned char* message)
+		void receive(IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->receive(this, status2, level, msgType, length, message);
 			Policy::checkException(status2);
 		}
 
-		void send(Status* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
+		void send(IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->send(this, status2, level, msgType, length, message);
 			Policy::checkException(status2);
 		}
 
-		void getInfo(Status* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		void getInfo(IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, level, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
 		}
 
-		void start(Status* status, Transaction* tra, int level)
+		void start(IStatus* status, ITransaction* tra, int level)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, tra, level);
 			Policy::checkException(status2);
 		}
 
-		void startAndSend(Status* status, Transaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
+		void startAndSend(IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->startAndSend(this, status2, tra, level, msgType, length, message);
 			Policy::checkException(status2);
 		}
 
-		void unwind(Status* status, int level)
+		void unwind(IStatus* status, int level)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->unwind(this, status2, level);
 			Policy::checkException(status2);
 		}
 
-		void free(Status* status)
+		void free(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->free(this, status2);
 			Policy::checkException(status2);
 		}
 	};
 
-	class Events : public ReferenceCounted
+	class IEvents : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *cancel)(Events* self, Status* status) throw();
+			void (CLOOP_CARG *cancel)(IEvents* self, IStatus* status) throw();
 		};
 
 	protected:
-		Events(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IEvents(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Events()
+		~IEvents()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void cancel(Status* status)
+		void cancel(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->cancel(this, status2);
 			Policy::checkException(status2);
 		}
 	};
 
-	class Attachment : public ReferenceCounted
+	class IAttachment : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *getInfo)(Attachment* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
-			Transaction* (CLOOP_CARG *startTransaction)(Attachment* self, Status* status, unsigned tpbLength, const unsigned char* tpb) throw();
-			Transaction* (CLOOP_CARG *reconnectTransaction)(Attachment* self, Status* status, unsigned length, const unsigned char* id) throw();
-			Request* (CLOOP_CARG *compileRequest)(Attachment* self, Status* status, unsigned blrLength, const unsigned char* blr) throw();
-			void (CLOOP_CARG *transactRequest)(Attachment* self, Status* status, Transaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) throw();
-			Blob* (CLOOP_CARG *createBlob)(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw();
-			Blob* (CLOOP_CARG *openBlob)(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw();
-			int (CLOOP_CARG *getSlice)(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw();
-			void (CLOOP_CARG *putSlice)(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw();
-			void (CLOOP_CARG *executeDyn)(Attachment* self, Status* status, Transaction* transaction, unsigned length, const unsigned char* dyn) throw();
-			Statement* (CLOOP_CARG *prepare)(Attachment* self, Status* status, Transaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw();
-			Transaction* (CLOOP_CARG *execute)(Attachment* self, Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer) throw();
-			ResultSet* (CLOOP_CARG *openCursor)(Attachment* self, Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, const char* cursorName) throw();
-			Events* (CLOOP_CARG *queEvents)(Attachment* self, Status* status, EventCallback* callback, unsigned length, const unsigned char* events) throw();
-			void (CLOOP_CARG *cancelOperation)(Attachment* self, Status* status, int option) throw();
-			void (CLOOP_CARG *ping)(Attachment* self, Status* status) throw();
-			void (CLOOP_CARG *detach)(Attachment* self, Status* status) throw();
-			void (CLOOP_CARG *dropDatabase)(Attachment* self, Status* status) throw();
+			void (CLOOP_CARG *getInfo)(IAttachment* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw();
+			ITransaction* (CLOOP_CARG *startTransaction)(IAttachment* self, IStatus* status, unsigned tpbLength, const unsigned char* tpb) throw();
+			ITransaction* (CLOOP_CARG *reconnectTransaction)(IAttachment* self, IStatus* status, unsigned length, const unsigned char* id) throw();
+			IRequest* (CLOOP_CARG *compileRequest)(IAttachment* self, IStatus* status, unsigned blrLength, const unsigned char* blr) throw();
+			void (CLOOP_CARG *transactRequest)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) throw();
+			IBlob* (CLOOP_CARG *createBlob)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw();
+			IBlob* (CLOOP_CARG *openBlob)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw();
+			int (CLOOP_CARG *getSlice)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw();
+			void (CLOOP_CARG *putSlice)(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw();
+			void (CLOOP_CARG *executeDyn)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) throw();
+			IStatement* (CLOOP_CARG *prepare)(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw();
+			ITransaction* (CLOOP_CARG *execute)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw();
+			IResultSet* (CLOOP_CARG *openCursor)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) throw();
+			IEvents* (CLOOP_CARG *queEvents)(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) throw();
+			void (CLOOP_CARG *cancelOperation)(IAttachment* self, IStatus* status, int option) throw();
+			void (CLOOP_CARG *ping)(IAttachment* self, IStatus* status) throw();
+			void (CLOOP_CARG *detach)(IAttachment* self, IStatus* status) throw();
+			void (CLOOP_CARG *dropDatabase)(IAttachment* self, IStatus* status) throw();
 		};
 
 	protected:
-		Attachment(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IAttachment(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Attachment()
+		~IAttachment()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
 			Policy::checkException(status2);
 		}
 
-		Transaction* startTransaction(Status* status, unsigned tpbLength, const unsigned char* tpb)
+		ITransaction* startTransaction(IStatus* status, unsigned tpbLength, const unsigned char* tpb)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->startTransaction(this, status2, tpbLength, tpb);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->startTransaction(this, status2, tpbLength, tpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Transaction* reconnectTransaction(Status* status, unsigned length, const unsigned char* id)
+		ITransaction* reconnectTransaction(IStatus* status, unsigned length, const unsigned char* id)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->reconnectTransaction(this, status2, length, id);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->reconnectTransaction(this, status2, length, id);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Request* compileRequest(Status* status, unsigned blrLength, const unsigned char* blr)
+		IRequest* compileRequest(IStatus* status, unsigned blrLength, const unsigned char* blr)
 		{
-			typename Policy::Status status2(status);
-			Request* ret = static_cast<VTable*>(this->cloopVTable)->compileRequest(this, status2, blrLength, blr);
+			typename Policy::IStatus status2(status);
+			IRequest* ret = static_cast<VTable*>(this->cloopVTable)->compileRequest(this, status2, blrLength, blr);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void transactRequest(Status* status, Transaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg)
+		void transactRequest(IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->transactRequest(this, status2, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
 			Policy::checkException(status2);
 		}
 
-		Blob* createBlob(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
+		IBlob* createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
-			typename Policy::Status status2(status);
-			Blob* ret = static_cast<VTable*>(this->cloopVTable)->createBlob(this, status2, transaction, id, bpbLength, bpb);
+			typename Policy::IStatus status2(status);
+			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->createBlob(this, status2, transaction, id, bpbLength, bpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Blob* openBlob(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
+		IBlob* openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
-			typename Policy::Status status2(status);
-			Blob* ret = static_cast<VTable*>(this->cloopVTable)->openBlob(this, status2, transaction, id, bpbLength, bpb);
+			typename Policy::IStatus status2(status);
+			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->openBlob(this, status2, transaction, id, bpbLength, bpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		int getSlice(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
+		int getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSlice(this, status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void putSlice(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
+		void putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putSlice(this, status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			Policy::checkException(status2);
 		}
 
-		void executeDyn(Status* status, Transaction* transaction, unsigned length, const unsigned char* dyn)
+		void executeDyn(IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->executeDyn(this, status2, transaction, length, dyn);
 			Policy::checkException(status2);
 		}
 
-		Statement* prepare(Status* status, Transaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags)
+		IStatement* prepare(IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags)
 		{
-			typename Policy::Status status2(status);
-			Statement* ret = static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, tra, stmtLength, sqlStmt, dialect, flags);
+			typename Policy::IStatus status2(status);
+			IStatement* ret = static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, tra, stmtLength, sqlStmt, dialect, flags);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Transaction* execute(Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer)
+		ITransaction* execute(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		ResultSet* openCursor(Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, const char* cursorName)
+		IResultSet* openCursor(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName)
 		{
-			typename Policy::Status status2(status);
-			ResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
+			typename Policy::IStatus status2(status);
+			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Events* queEvents(Status* status, EventCallback* callback, unsigned length, const unsigned char* events)
+		IEvents* queEvents(IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events)
 		{
-			typename Policy::Status status2(status);
-			Events* ret = static_cast<VTable*>(this->cloopVTable)->queEvents(this, status2, callback, length, events);
+			typename Policy::IStatus status2(status);
+			IEvents* ret = static_cast<VTable*>(this->cloopVTable)->queEvents(this, status2, callback, length, events);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void cancelOperation(Status* status, int option)
+		void cancelOperation(IStatus* status, int option)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->cancelOperation(this, status2, option);
 			Policy::checkException(status2);
 		}
 
-		void ping(Status* status)
+		void ping(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->ping(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void detach(Status* status)
+		void detach(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->detach(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void dropDatabase(Status* status)
+		void dropDatabase(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status2);
 			Policy::checkException(status2);
 		}
 	};
 
-	class Service : public ReferenceCounted
+	class IService : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *detach)(Service* self, Status* status) throw();
-			void (CLOOP_CARG *query)(Service* self, Status* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) throw();
-			void (CLOOP_CARG *start)(Service* self, Status* status, unsigned spbLength, const unsigned char* spb) throw();
+			void (CLOOP_CARG *detach)(IService* self, IStatus* status) throw();
+			void (CLOOP_CARG *query)(IService* self, IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) throw();
+			void (CLOOP_CARG *start)(IService* self, IStatus* status, unsigned spbLength, const unsigned char* spb) throw();
 		};
 
 	protected:
-		Service(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IService(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Service()
+		~IService()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void detach(Status* status)
+		void detach(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->detach(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void query(Status* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer)
+		void query(IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->query(this, status2, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
 			Policy::checkException(status2);
 		}
 
-		void start(Status* status, unsigned spbLength, const unsigned char* spb)
+		void start(IStatus* status, unsigned spbLength, const unsigned char* spb)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, spbLength, spb);
 			Policy::checkException(status2);
 		}
 	};
 
-	class Provider : public PluginBase
+	class IProvider : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
-			Attachment* (CLOOP_CARG *attachDatabase)(Provider* self, Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw();
-			Attachment* (CLOOP_CARG *createDatabase)(Provider* self, Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw();
-			Service* (CLOOP_CARG *attachServiceManager)(Provider* self, Status* status, const char* service, unsigned spbLength, const unsigned char* spb) throw();
-			void (CLOOP_CARG *shutdown)(Provider* self, Status* status, unsigned timeout, const int reason) throw();
-			void (CLOOP_CARG *setDbCryptCallback)(Provider* self, Status* status, CryptKeyCallback* cryptCallback) throw();
+			IAttachment* (CLOOP_CARG *attachDatabase)(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw();
+			IAttachment* (CLOOP_CARG *createDatabase)(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw();
+			IService* (CLOOP_CARG *attachServiceManager)(IProvider* self, IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) throw();
+			void (CLOOP_CARG *shutdown)(IProvider* self, IStatus* status, unsigned timeout, const int reason) throw();
+			void (CLOOP_CARG *setDbCryptCallback)(IProvider* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw();
 		};
 
 	protected:
-		Provider(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		IProvider(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~Provider()
+		~IProvider()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 4;
 
-		Attachment* attachDatabase(Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
+		IAttachment* attachDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
-			typename Policy::Status status2(status);
-			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->attachDatabase(this, status2, fileName, dpbLength, dpb);
+			typename Policy::IStatus status2(status);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->attachDatabase(this, status2, fileName, dpbLength, dpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Attachment* createDatabase(Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
+		IAttachment* createDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
-			typename Policy::Status status2(status);
-			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->createDatabase(this, status2, fileName, dpbLength, dpb);
+			typename Policy::IStatus status2(status);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->createDatabase(this, status2, fileName, dpbLength, dpb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Service* attachServiceManager(Status* status, const char* service, unsigned spbLength, const unsigned char* spb)
+		IService* attachServiceManager(IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb)
 		{
-			typename Policy::Status status2(status);
-			Service* ret = static_cast<VTable*>(this->cloopVTable)->attachServiceManager(this, status2, service, spbLength, spb);
+			typename Policy::IStatus status2(status);
+			IService* ret = static_cast<VTable*>(this->cloopVTable)->attachServiceManager(this, status2, service, spbLength, spb);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void shutdown(Status* status, unsigned timeout, const int reason)
+		void shutdown(IStatus* status, unsigned timeout, const int reason)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->shutdown(this, status2, timeout, reason);
 			Policy::checkException(status2);
 		}
 
-		void setDbCryptCallback(Status* status, CryptKeyCallback* cryptCallback)
+		void setDbCryptCallback(IStatus* status, ICryptKeyCallback* cryptCallback)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setDbCryptCallback(this, status2, cryptCallback);
 			Policy::checkException(status2);
 		}
 	};
 
-	class DtcStart : public Disposable
+	class IDtcStart : public IDisposable
 	{
 	public:
-		struct VTable : public Disposable::VTable
+		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *setComponent)(DtcStart* self, Status* status, Attachment* att) throw();
-			void (CLOOP_CARG *setWithParam)(DtcStart* self, Status* status, Attachment* att, unsigned length, const unsigned char* tpb) throw();
-			unsigned (CLOOP_CARG *getCount)(DtcStart* self, Status* status) throw();
-			Attachment* (CLOOP_CARG *getAttachment)(DtcStart* self, Status* status, unsigned pos) throw();
-			const unsigned char* (CLOOP_CARG *getTpb)(DtcStart* self, Status* status, unsigned pos, unsigned* length) throw();
+			void (CLOOP_CARG *setComponent)(IDtcStart* self, IStatus* status, IAttachment* att) throw();
+			void (CLOOP_CARG *setWithParam)(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw();
+			unsigned (CLOOP_CARG *getCount)(IDtcStart* self, IStatus* status) throw();
+			IAttachment* (CLOOP_CARG *getAttachment)(IDtcStart* self, IStatus* status, unsigned pos) throw();
+			const unsigned char* (CLOOP_CARG *getTpb)(IDtcStart* self, IStatus* status, unsigned pos, unsigned* length) throw();
 		};
 
 	protected:
-		DtcStart(DoNotInherit)
-			: Disposable(DoNotInherit())
+		IDtcStart(DoNotInherit)
+			: IDisposable(DoNotInherit())
 		{
 		}
 
-		~DtcStart()
+		~IDtcStart()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void setComponent(Status* status, Attachment* att)
+		void setComponent(IStatus* status, IAttachment* att)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setComponent(this, status2, att);
 			Policy::checkException(status2);
 		}
 
-		void setWithParam(Status* status, Attachment* att, unsigned length, const unsigned char* tpb)
+		void setWithParam(IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setWithParam(this, status2, att, length, tpb);
 			Policy::checkException(status2);
 		}
 
-		unsigned getCount(Status* status)
+		unsigned getCount(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Attachment* getAttachment(Status* status, unsigned pos)
+		IAttachment* getAttachment(IStatus* status, unsigned pos)
 		{
-			typename Policy::Status status2(status);
-			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2, pos);
+			typename Policy::IStatus status2(status);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2, pos);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const unsigned char* getTpb(Status* status, unsigned pos, unsigned* length)
+		const unsigned char* getTpb(IStatus* status, unsigned pos, unsigned* length)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getTpb(this, status2, pos, length);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class Dtc : public Versioned
+	class IDtc : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			Transaction* (CLOOP_CARG *start)(Dtc* self, Status* status, DtcStart* components) throw();
-			Transaction* (CLOOP_CARG *join)(Dtc* self, Status* status, Transaction* one, Transaction* two) throw();
-			DtcStart* (CLOOP_CARG *startBuilder)(Dtc* self, Status* status) throw();
+			ITransaction* (CLOOP_CARG *start)(IDtc* self, IStatus* status, IDtcStart* components) throw();
+			ITransaction* (CLOOP_CARG *join)(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) throw();
+			IDtcStart* (CLOOP_CARG *startBuilder)(IDtc* self, IStatus* status) throw();
 		};
 
 	protected:
-		Dtc(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IDtc(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~Dtc()
+		~IDtc()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		Transaction* start(Status* status, DtcStart* components)
+		ITransaction* start(IStatus* status, IDtcStart* components)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status2, components);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status2, components);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Transaction* join(Status* status, Transaction* one, Transaction* two)
+		ITransaction* join(IStatus* status, ITransaction* one, ITransaction* two)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, one, two);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, one, two);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		DtcStart* startBuilder(Status* status)
+		IDtcStart* startBuilder(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			DtcStart* ret = static_cast<VTable*>(this->cloopVTable)->startBuilder(this, status2);
+			typename Policy::IStatus status2(status);
+			IDtcStart* ret = static_cast<VTable*>(this->cloopVTable)->startBuilder(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class Auth : public PluginBase
+	class IAuth : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
 		};
 
 	protected:
-		Auth(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		IAuth(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~Auth()
+		~IAuth()
 		{
 		}
 
@@ -2148,24 +2150,24 @@ public:
 		static const int AUTH_CONTINUE = 2;
 	};
 
-	class Writer : public Versioned
+	class IWriter : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *reset)(Writer* self) throw();
-			void (CLOOP_CARG *add)(Writer* self, Status* status, const char* name) throw();
-			void (CLOOP_CARG *setType)(Writer* self, Status* status, const char* value) throw();
-			void (CLOOP_CARG *setDb)(Writer* self, Status* status, const char* value) throw();
+			void (CLOOP_CARG *reset)(IWriter* self) throw();
+			void (CLOOP_CARG *add)(IWriter* self, IStatus* status, const char* name) throw();
+			void (CLOOP_CARG *setType)(IWriter* self, IStatus* status, const char* value) throw();
+			void (CLOOP_CARG *setDb)(IWriter* self, IStatus* status, const char* value) throw();
 		};
 
 	protected:
-		Writer(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IWriter(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~Writer()
+		~IWriter()
 		{
 		}
 
@@ -2177,46 +2179,46 @@ public:
 			static_cast<VTable*>(this->cloopVTable)->reset(this);
 		}
 
-		void add(Status* status, const char* name)
+		void add(IStatus* status, const char* name)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->add(this, status2, name);
 			Policy::checkException(status2);
 		}
 
-		void setType(Status* status, const char* value)
+		void setType(IStatus* status, const char* value)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setType(this, status2, value);
 			Policy::checkException(status2);
 		}
 
-		void setDb(Status* status, const char* value)
+		void setDb(IStatus* status, const char* value)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setDb(this, status2, value);
 			Policy::checkException(status2);
 		}
 	};
 
-	class ServerBlock : public Versioned
+	class IServerBlock : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getLogin)(ServerBlock* self) throw();
-			const unsigned char* (CLOOP_CARG *getData)(ServerBlock* self, unsigned* length) throw();
-			void (CLOOP_CARG *putData)(ServerBlock* self, Status* status, unsigned length, const void* data) throw();
-			void (CLOOP_CARG *putKey)(ServerBlock* self, Status* status, FbCryptKey* cryptKey) throw();
+			const char* (CLOOP_CARG *getLogin)(IServerBlock* self) throw();
+			const unsigned char* (CLOOP_CARG *getData)(IServerBlock* self, unsigned* length) throw();
+			void (CLOOP_CARG *putData)(IServerBlock* self, IStatus* status, unsigned length, const void* data) throw();
+			void (CLOOP_CARG *putKey)(IServerBlock* self, IStatus* status, FbCryptKey* cryptKey) throw();
 		};
 
 	protected:
-		ServerBlock(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IServerBlock(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~ServerBlock()
+		~IServerBlock()
 		{
 		}
 
@@ -2235,40 +2237,40 @@ public:
 			return ret;
 		}
 
-		void putData(Status* status, unsigned length, const void* data)
+		void putData(IStatus* status, unsigned length, const void* data)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putData(this, status2, length, data);
 			Policy::checkException(status2);
 		}
 
-		void putKey(Status* status, FbCryptKey* cryptKey)
+		void putKey(IStatus* status, FbCryptKey* cryptKey)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putKey(this, status2, cryptKey);
 			Policy::checkException(status2);
 		}
 	};
 
-	class ClientBlock : public ReferenceCounted
+	class IClientBlock : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *getLogin)(ClientBlock* self) throw();
-			const char* (CLOOP_CARG *getPassword)(ClientBlock* self) throw();
-			const unsigned char* (CLOOP_CARG *getData)(ClientBlock* self, unsigned* length) throw();
-			void (CLOOP_CARG *putData)(ClientBlock* self, Status* status, unsigned length, const void* data) throw();
-			void (CLOOP_CARG *putKey)(ClientBlock* self, Status* status, FbCryptKey* cryptKey) throw();
+			const char* (CLOOP_CARG *getLogin)(IClientBlock* self) throw();
+			const char* (CLOOP_CARG *getPassword)(IClientBlock* self) throw();
+			const unsigned char* (CLOOP_CARG *getData)(IClientBlock* self, unsigned* length) throw();
+			void (CLOOP_CARG *putData)(IClientBlock* self, IStatus* status, unsigned length, const void* data) throw();
+			void (CLOOP_CARG *putKey)(IClientBlock* self, IStatus* status, FbCryptKey* cryptKey) throw();
 		};
 
 	protected:
-		ClientBlock(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		IClientBlock(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~ClientBlock()
+		~IClientBlock()
 		{
 		}
 
@@ -2293,98 +2295,98 @@ public:
 			return ret;
 		}
 
-		void putData(Status* status, unsigned length, const void* data)
+		void putData(IStatus* status, unsigned length, const void* data)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putData(this, status2, length, data);
 			Policy::checkException(status2);
 		}
 
-		void putKey(Status* status, FbCryptKey* cryptKey)
+		void putKey(IStatus* status, FbCryptKey* cryptKey)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->putKey(this, status2, cryptKey);
 			Policy::checkException(status2);
 		}
 	};
 
-	class Server : public Auth
+	class IServer : public IAuth
 	{
 	public:
-		struct VTable : public Auth::VTable
+		struct VTable : public IAuth::VTable
 		{
-			int (CLOOP_CARG *authenticate)(Server* self, Status* status, ServerBlock* sBlock, Writer* writerInterface) throw();
+			int (CLOOP_CARG *authenticate)(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) throw();
 		};
 
 	protected:
-		Server(DoNotInherit)
-			: Auth(DoNotInherit())
+		IServer(DoNotInherit)
+			: IAuth(DoNotInherit())
 		{
 		}
 
-		~Server()
+		~IServer()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 5;
 
-		int authenticate(Status* status, ServerBlock* sBlock, Writer* writerInterface)
+		int authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status2, sBlock, writerInterface);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class Client : public Auth
+	class IClient : public IAuth
 	{
 	public:
-		struct VTable : public Auth::VTable
+		struct VTable : public IAuth::VTable
 		{
-			int (CLOOP_CARG *authenticate)(Client* self, Status* status, ClientBlock* cBlock) throw();
+			int (CLOOP_CARG *authenticate)(IClient* self, IStatus* status, IClientBlock* cBlock) throw();
 		};
 
 	protected:
-		Client(DoNotInherit)
-			: Auth(DoNotInherit())
+		IClient(DoNotInherit)
+			: IAuth(DoNotInherit())
 		{
 		}
 
-		~Client()
+		~IClient()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 5;
 
-		int authenticate(Status* status, ClientBlock* cBlock)
+		int authenticate(IStatus* status, IClientBlock* cBlock)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status2, cBlock);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class UserField : public Versioned
+	class IUserField : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			int (CLOOP_CARG *entered)(UserField* self) throw();
-			int (CLOOP_CARG *specified)(UserField* self) throw();
-			void (CLOOP_CARG *setEntered)(UserField* self, Status* status, int newValue) throw();
+			int (CLOOP_CARG *entered)(IUserField* self) throw();
+			int (CLOOP_CARG *specified)(IUserField* self) throw();
+			void (CLOOP_CARG *setEntered)(IUserField* self, IStatus* status, int newValue) throw();
 		};
 
 	protected:
-		UserField(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IUserField(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~UserField()
+		~IUserField()
 		{
 		}
 
@@ -2403,30 +2405,30 @@ public:
 			return ret;
 		}
 
-		void setEntered(Status* status, int newValue)
+		void setEntered(IStatus* status, int newValue)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setEntered(this, status2, newValue);
 			Policy::checkException(status2);
 		}
 	};
 
-	class CharUserField : public UserField
+	class ICharUserField : public IUserField
 	{
 	public:
-		struct VTable : public UserField::VTable
+		struct VTable : public IUserField::VTable
 		{
-			const char* (CLOOP_CARG *get)(CharUserField* self) throw();
-			void (CLOOP_CARG *set)(CharUserField* self, Status* status, const char* newValue) throw();
+			const char* (CLOOP_CARG *get)(ICharUserField* self) throw();
+			void (CLOOP_CARG *set)(ICharUserField* self, IStatus* status, const char* newValue) throw();
 		};
 
 	protected:
-		CharUserField(DoNotInherit)
-			: UserField(DoNotInherit())
+		ICharUserField(DoNotInherit)
+			: IUserField(DoNotInherit())
 		{
 		}
 
-		~CharUserField()
+		~ICharUserField()
 		{
 		}
 
@@ -2439,30 +2441,30 @@ public:
 			return ret;
 		}
 
-		void set(Status* status, const char* newValue)
+		void set(IStatus* status, const char* newValue)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status2, newValue);
 			Policy::checkException(status2);
 		}
 	};
 
-	class IntUserField : public UserField
+	class IIntUserField : public IUserField
 	{
 	public:
-		struct VTable : public UserField::VTable
+		struct VTable : public IUserField::VTable
 		{
-			int (CLOOP_CARG *get)(IntUserField* self) throw();
-			void (CLOOP_CARG *set)(IntUserField* self, Status* status, int newValue) throw();
+			int (CLOOP_CARG *get)(IIntUserField* self) throw();
+			void (CLOOP_CARG *set)(IIntUserField* self, IStatus* status, int newValue) throw();
 		};
 
 	protected:
-		IntUserField(DoNotInherit)
-			: UserField(DoNotInherit())
+		IIntUserField(DoNotInherit)
+			: IUserField(DoNotInherit())
 		{
 		}
 
-		~IntUserField()
+		~IIntUserField()
 		{
 		}
 
@@ -2475,39 +2477,39 @@ public:
 			return ret;
 		}
 
-		void set(Status* status, int newValue)
+		void set(IStatus* status, int newValue)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status2, newValue);
 			Policy::checkException(status2);
 		}
 	};
 
-	class User : public Versioned
+	class IUser : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			int (CLOOP_CARG *operation)(User* self) throw();
-			CharUserField* (CLOOP_CARG *userName)(User* self) throw();
-			CharUserField* (CLOOP_CARG *password)(User* self) throw();
-			CharUserField* (CLOOP_CARG *firstName)(User* self) throw();
-			CharUserField* (CLOOP_CARG *lastName)(User* self) throw();
-			CharUserField* (CLOOP_CARG *middleName)(User* self) throw();
-			CharUserField* (CLOOP_CARG *comment)(User* self) throw();
-			CharUserField* (CLOOP_CARG *attributes)(User* self) throw();
-			IntUserField* (CLOOP_CARG *active)(User* self) throw();
-			IntUserField* (CLOOP_CARG *admin)(User* self) throw();
-			void (CLOOP_CARG *clear)(User* self, Status* status) throw();
+			int (CLOOP_CARG *operation)(IUser* self) throw();
+			ICharUserField* (CLOOP_CARG *userName)(IUser* self) throw();
+			ICharUserField* (CLOOP_CARG *password)(IUser* self) throw();
+			ICharUserField* (CLOOP_CARG *firstName)(IUser* self) throw();
+			ICharUserField* (CLOOP_CARG *lastName)(IUser* self) throw();
+			ICharUserField* (CLOOP_CARG *middleName)(IUser* self) throw();
+			ICharUserField* (CLOOP_CARG *comment)(IUser* self) throw();
+			ICharUserField* (CLOOP_CARG *attributes)(IUser* self) throw();
+			IIntUserField* (CLOOP_CARG *active)(IUser* self) throw();
+			IIntUserField* (CLOOP_CARG *admin)(IUser* self) throw();
+			void (CLOOP_CARG *clear)(IUser* self, IStatus* status) throw();
 		};
 
 	protected:
-		User(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IUser(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~User()
+		~IUser()
 		{
 		}
 
@@ -2520,116 +2522,116 @@ public:
 			return ret;
 		}
 
-		CharUserField* userName()
+		ICharUserField* userName()
 		{
-			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->userName(this);
+			ICharUserField* ret = static_cast<VTable*>(this->cloopVTable)->userName(this);
 			return ret;
 		}
 
-		CharUserField* password()
+		ICharUserField* password()
 		{
-			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->password(this);
+			ICharUserField* ret = static_cast<VTable*>(this->cloopVTable)->password(this);
 			return ret;
 		}
 
-		CharUserField* firstName()
+		ICharUserField* firstName()
 		{
-			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->firstName(this);
+			ICharUserField* ret = static_cast<VTable*>(this->cloopVTable)->firstName(this);
 			return ret;
 		}
 
-		CharUserField* lastName()
+		ICharUserField* lastName()
 		{
-			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->lastName(this);
+			ICharUserField* ret = static_cast<VTable*>(this->cloopVTable)->lastName(this);
 			return ret;
 		}
 
-		CharUserField* middleName()
+		ICharUserField* middleName()
 		{
-			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->middleName(this);
+			ICharUserField* ret = static_cast<VTable*>(this->cloopVTable)->middleName(this);
 			return ret;
 		}
 
-		CharUserField* comment()
+		ICharUserField* comment()
 		{
-			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->comment(this);
+			ICharUserField* ret = static_cast<VTable*>(this->cloopVTable)->comment(this);
 			return ret;
 		}
 
-		CharUserField* attributes()
+		ICharUserField* attributes()
 		{
-			CharUserField* ret = static_cast<VTable*>(this->cloopVTable)->attributes(this);
+			ICharUserField* ret = static_cast<VTable*>(this->cloopVTable)->attributes(this);
 			return ret;
 		}
 
-		IntUserField* active()
+		IIntUserField* active()
 		{
-			IntUserField* ret = static_cast<VTable*>(this->cloopVTable)->active(this);
+			IIntUserField* ret = static_cast<VTable*>(this->cloopVTable)->active(this);
 			return ret;
 		}
 
-		IntUserField* admin()
+		IIntUserField* admin()
 		{
-			IntUserField* ret = static_cast<VTable*>(this->cloopVTable)->admin(this);
+			IIntUserField* ret = static_cast<VTable*>(this->cloopVTable)->admin(this);
 			return ret;
 		}
 
-		void clear(Status* status)
+		void clear(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->clear(this, status2);
 			Policy::checkException(status2);
 		}
 	};
 
-	class ListUsers : public Versioned
+	class IListUsers : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *list)(ListUsers* self, Status* status, User* user) throw();
+			void (CLOOP_CARG *list)(IListUsers* self, IStatus* status, IUser* user) throw();
 		};
 
 	protected:
-		ListUsers(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IListUsers(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~ListUsers()
+		~IListUsers()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		void list(Status* status, User* user)
+		void list(IStatus* status, IUser* user)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->list(this, status2, user);
 			Policy::checkException(status2);
 		}
 	};
 
-	class LogonInfo : public Versioned
+	class ILogonInfo : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *name)(LogonInfo* self) throw();
-			const char* (CLOOP_CARG *role)(LogonInfo* self) throw();
-			const char* (CLOOP_CARG *networkProtocol)(LogonInfo* self) throw();
-			const char* (CLOOP_CARG *remoteAddress)(LogonInfo* self) throw();
-			const unsigned char* (CLOOP_CARG *authBlock)(LogonInfo* self, unsigned* length) throw();
+			const char* (CLOOP_CARG *name)(ILogonInfo* self) throw();
+			const char* (CLOOP_CARG *role)(ILogonInfo* self) throw();
+			const char* (CLOOP_CARG *networkProtocol)(ILogonInfo* self) throw();
+			const char* (CLOOP_CARG *remoteAddress)(ILogonInfo* self) throw();
+			const unsigned char* (CLOOP_CARG *authBlock)(ILogonInfo* self, unsigned* length) throw();
 		};
 
 	protected:
-		LogonInfo(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ILogonInfo(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~LogonInfo()
+		~ILogonInfo()
 		{
 		}
 
@@ -2667,129 +2669,129 @@ public:
 		}
 	};
 
-	class Management : public PluginBase
+	class IManagement : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *start)(Management* self, Status* status, LogonInfo* logonInfo) throw();
-			int (CLOOP_CARG *execute)(Management* self, Status* status, User* user, ListUsers* callback) throw();
-			void (CLOOP_CARG *commit)(Management* self, Status* status) throw();
-			void (CLOOP_CARG *rollback)(Management* self, Status* status) throw();
+			void (CLOOP_CARG *start)(IManagement* self, IStatus* status, ILogonInfo* logonInfo) throw();
+			int (CLOOP_CARG *execute)(IManagement* self, IStatus* status, IUser* user, IListUsers* callback) throw();
+			void (CLOOP_CARG *commit)(IManagement* self, IStatus* status) throw();
+			void (CLOOP_CARG *rollback)(IManagement* self, IStatus* status) throw();
 		};
 
 	protected:
-		Management(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		IManagement(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~Management()
+		~IManagement()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 4;
 
-		void start(Status* status, LogonInfo* logonInfo)
+		void start(IStatus* status, ILogonInfo* logonInfo)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, logonInfo);
 			Policy::checkException(status2);
 		}
 
-		int execute(Status* status, User* user, ListUsers* callback)
+		int execute(IStatus* status, IUser* user, IListUsers* callback)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, user, callback);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void commit(Status* status)
+		void commit(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->commit(this, status2);
 			Policy::checkException(status2);
 		}
 
-		void rollback(Status* status)
+		void rollback(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->rollback(this, status2);
 			Policy::checkException(status2);
 		}
 	};
 
-	class WireCryptPlugin : public PluginBase
+	class IWireCryptPlugin : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
-			const char* (CLOOP_CARG *getKnownTypes)(WireCryptPlugin* self, Status* status) throw();
-			void (CLOOP_CARG *setKey)(WireCryptPlugin* self, Status* status, FbCryptKey* key) throw();
-			void (CLOOP_CARG *encrypt)(WireCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw();
-			void (CLOOP_CARG *decrypt)(WireCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw();
+			const char* (CLOOP_CARG *getKnownTypes)(IWireCryptPlugin* self, IStatus* status) throw();
+			void (CLOOP_CARG *setKey)(IWireCryptPlugin* self, IStatus* status, FbCryptKey* key) throw();
+			void (CLOOP_CARG *encrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
+			void (CLOOP_CARG *decrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 		};
 
 	protected:
-		WireCryptPlugin(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		IWireCryptPlugin(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~WireCryptPlugin()
+		~IWireCryptPlugin()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 4;
 
-		const char* getKnownTypes(Status* status)
+		const char* getKnownTypes(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getKnownTypes(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		void setKey(Status* status, FbCryptKey* key)
+		void setKey(IStatus* status, FbCryptKey* key)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setKey(this, status2, key);
 			Policy::checkException(status2);
 		}
 
-		void encrypt(Status* status, unsigned length, const void* from, void* to)
+		void encrypt(IStatus* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
 		}
 
-		void decrypt(Status* status, unsigned length, const void* from, void* to)
+		void decrypt(IStatus* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
 		}
 	};
 
-	class CryptKeyCallback : public Versioned
+	class ICryptKeyCallback : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *callback)(CryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) throw();
+			unsigned (CLOOP_CARG *callback)(ICryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) throw();
 		};
 
 	protected:
-		CryptKeyCallback(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ICryptKeyCallback(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~CryptKeyCallback()
+		~ICryptKeyCallback()
 		{
 		}
 
@@ -2803,146 +2805,146 @@ public:
 		}
 	};
 
-	class KeyHolderPlugin : public PluginBase
+	class IKeyHolderPlugin : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
-			int (CLOOP_CARG *keyCallback)(KeyHolderPlugin* self, Status* status, CryptKeyCallback* callback) throw();
-			CryptKeyCallback* (CLOOP_CARG *keyHandle)(KeyHolderPlugin* self, Status* status, const char* keyName) throw();
+			int (CLOOP_CARG *keyCallback)(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) throw();
+			ICryptKeyCallback* (CLOOP_CARG *keyHandle)(IKeyHolderPlugin* self, IStatus* status, const char* keyName) throw();
 		};
 
 	protected:
-		KeyHolderPlugin(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		IKeyHolderPlugin(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~KeyHolderPlugin()
+		~IKeyHolderPlugin()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 4;
 
-		int keyCallback(Status* status, CryptKeyCallback* callback)
+		int keyCallback(IStatus* status, ICryptKeyCallback* callback)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->keyCallback(this, status2, callback);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		CryptKeyCallback* keyHandle(Status* status, const char* keyName)
+		ICryptKeyCallback* keyHandle(IStatus* status, const char* keyName)
 		{
-			typename Policy::Status status2(status);
-			CryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status2, keyName);
+			typename Policy::IStatus status2(status);
+			ICryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status2, keyName);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class DbCryptPlugin : public PluginBase
+	class IDbCryptPlugin : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *setKey)(DbCryptPlugin* self, Status* status, unsigned length, KeyHolderPlugin** sources) throw();
-			void (CLOOP_CARG *encrypt)(DbCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw();
-			void (CLOOP_CARG *decrypt)(DbCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw();
+			void (CLOOP_CARG *setKey)(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources) throw();
+			void (CLOOP_CARG *encrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
+			void (CLOOP_CARG *decrypt)(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 		};
 
 	protected:
-		DbCryptPlugin(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		IDbCryptPlugin(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~DbCryptPlugin()
+		~IDbCryptPlugin()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 4;
 
-		void setKey(Status* status, unsigned length, KeyHolderPlugin** sources)
+		void setKey(IStatus* status, unsigned length, IKeyHolderPlugin** sources)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->setKey(this, status2, length, sources);
 			Policy::checkException(status2);
 		}
 
-		void encrypt(Status* status, unsigned length, const void* from, void* to)
+		void encrypt(IStatus* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
 		}
 
-		void decrypt(Status* status, unsigned length, const void* from, void* to)
+		void decrypt(IStatus* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status2, length, from, to);
 			Policy::checkException(status2);
 		}
 	};
 
-	class ExternalContext : public Versioned
+	class IExternalContext : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			Master* (CLOOP_CARG *getMaster)(ExternalContext* self) throw();
-			ExternalEngine* (CLOOP_CARG *getEngine)(ExternalContext* self, Status* status) throw();
-			Attachment* (CLOOP_CARG *getAttachment)(ExternalContext* self, Status* status) throw();
-			Transaction* (CLOOP_CARG *getTransaction)(ExternalContext* self, Status* status) throw();
-			const char* (CLOOP_CARG *getUserName)(ExternalContext* self) throw();
-			const char* (CLOOP_CARG *getDatabaseName)(ExternalContext* self) throw();
-			const char* (CLOOP_CARG *getClientCharSet)(ExternalContext* self) throw();
-			int (CLOOP_CARG *obtainInfoCode)(ExternalContext* self) throw();
-			void* (CLOOP_CARG *getInfo)(ExternalContext* self, int code) throw();
-			void* (CLOOP_CARG *setInfo)(ExternalContext* self, int code, void* value) throw();
+			IMaster* (CLOOP_CARG *getMaster)(IExternalContext* self) throw();
+			IExternalEngine* (CLOOP_CARG *getEngine)(IExternalContext* self, IStatus* status) throw();
+			IAttachment* (CLOOP_CARG *getAttachment)(IExternalContext* self, IStatus* status) throw();
+			ITransaction* (CLOOP_CARG *getTransaction)(IExternalContext* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getUserName)(IExternalContext* self) throw();
+			const char* (CLOOP_CARG *getDatabaseName)(IExternalContext* self) throw();
+			const char* (CLOOP_CARG *getClientCharSet)(IExternalContext* self) throw();
+			int (CLOOP_CARG *obtainInfoCode)(IExternalContext* self) throw();
+			void* (CLOOP_CARG *getInfo)(IExternalContext* self, int code) throw();
+			void* (CLOOP_CARG *setInfo)(IExternalContext* self, int code, void* value) throw();
 		};
 
 	protected:
-		ExternalContext(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IExternalContext(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~ExternalContext()
+		~IExternalContext()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		Master* getMaster()
+		IMaster* getMaster()
 		{
-			Master* ret = static_cast<VTable*>(this->cloopVTable)->getMaster(this);
+			IMaster* ret = static_cast<VTable*>(this->cloopVTable)->getMaster(this);
 			return ret;
 		}
 
-		ExternalEngine* getEngine(Status* status)
+		IExternalEngine* getEngine(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			ExternalEngine* ret = static_cast<VTable*>(this->cloopVTable)->getEngine(this, status2);
+			typename Policy::IStatus status2(status);
+			IExternalEngine* ret = static_cast<VTable*>(this->cloopVTable)->getEngine(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Attachment* getAttachment(Status* status)
+		IAttachment* getAttachment(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2);
+			typename Policy::IStatus status2(status);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		Transaction* getTransaction(Status* status)
+		ITransaction* getTransaction(IStatus* status)
 		{
-			typename Policy::Status status2(status);
-			Transaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransaction(this, status2);
+			typename Policy::IStatus status2(status);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransaction(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -2984,127 +2986,127 @@ public:
 		}
 	};
 
-	class ExternalResultSet : public Disposable
+	class IExternalResultSet : public IDisposable
 	{
 	public:
-		struct VTable : public Disposable::VTable
+		struct VTable : public IDisposable::VTable
 		{
-			FB_BOOLEAN (CLOOP_CARG *fetch)(ExternalResultSet* self, Status* status) throw();
+			FB_BOOLEAN (CLOOP_CARG *fetch)(IExternalResultSet* self, IStatus* status) throw();
 		};
 
 	protected:
-		ExternalResultSet(DoNotInherit)
-			: Disposable(DoNotInherit())
+		IExternalResultSet(DoNotInherit)
+			: IDisposable(DoNotInherit())
 		{
 		}
 
-		~ExternalResultSet()
+		~IExternalResultSet()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		FB_BOOLEAN fetch(Status* status)
+		FB_BOOLEAN fetch(IStatus* status)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->fetch(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class ExternalFunction : public Disposable
+	class IExternalFunction : public IDisposable
 	{
 	public:
-		struct VTable : public Disposable::VTable
+		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *getCharSet)(ExternalFunction* self, Status* status, ExternalContext* context, char* name, unsigned nameSize) throw();
-			void (CLOOP_CARG *execute)(ExternalFunction* self, Status* status, ExternalContext* context, void* inMsg, void* outMsg) throw();
+			void (CLOOP_CARG *getCharSet)(IExternalFunction* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw();
+			void (CLOOP_CARG *execute)(IExternalFunction* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw();
 		};
 
 	protected:
-		ExternalFunction(DoNotInherit)
-			: Disposable(DoNotInherit())
+		IExternalFunction(DoNotInherit)
+			: IDisposable(DoNotInherit())
 		{
 		}
 
-		~ExternalFunction()
+		~IExternalFunction()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize)
+		void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
 			Policy::checkException(status2);
 		}
 
-		void execute(Status* status, ExternalContext* context, void* inMsg, void* outMsg)
+		void execute(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->execute(this, status2, context, inMsg, outMsg);
 			Policy::checkException(status2);
 		}
 	};
 
-	class ExternalProcedure : public Disposable
+	class IExternalProcedure : public IDisposable
 	{
 	public:
-		struct VTable : public Disposable::VTable
+		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *getCharSet)(ExternalProcedure* self, Status* status, ExternalContext* context, char* name, unsigned nameSize) throw();
-			ExternalResultSet* (CLOOP_CARG *open)(ExternalProcedure* self, Status* status, ExternalContext* context, void* inMsg, void* outMsg) throw();
+			void (CLOOP_CARG *getCharSet)(IExternalProcedure* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw();
+			IExternalResultSet* (CLOOP_CARG *open)(IExternalProcedure* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw();
 		};
 
 	protected:
-		ExternalProcedure(DoNotInherit)
-			: Disposable(DoNotInherit())
+		IExternalProcedure(DoNotInherit)
+			: IDisposable(DoNotInherit())
 		{
 		}
 
-		~ExternalProcedure()
+		~IExternalProcedure()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 3;
 
-		void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize)
+		void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
 			Policy::checkException(status2);
 		}
 
-		ExternalResultSet* open(Status* status, ExternalContext* context, void* inMsg, void* outMsg)
+		IExternalResultSet* open(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg)
 		{
-			typename Policy::Status status2(status);
-			ExternalResultSet* ret = static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, inMsg, outMsg);
+			typename Policy::IStatus status2(status);
+			IExternalResultSet* ret = static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, inMsg, outMsg);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class ExternalTrigger : public Disposable
+	class IExternalTrigger : public IDisposable
 	{
 	public:
-		struct VTable : public Disposable::VTable
+		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *getCharSet)(ExternalTrigger* self, Status* status, ExternalContext* context, char* name, unsigned nameSize) throw();
-			void (CLOOP_CARG *execute)(ExternalTrigger* self, Status* status, ExternalContext* context, unsigned action, void* oldMsg, void* newMsg) throw();
+			void (CLOOP_CARG *getCharSet)(IExternalTrigger* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw();
+			void (CLOOP_CARG *execute)(IExternalTrigger* self, IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) throw();
 		};
 
 	protected:
-		ExternalTrigger(DoNotInherit)
-			: Disposable(DoNotInherit())
+		IExternalTrigger(DoNotInherit)
+			: IDisposable(DoNotInherit())
 		{
 		}
 
-		~ExternalTrigger()
+		~IExternalTrigger()
 		{
 		}
 
@@ -3124,210 +3126,210 @@ public:
 		static const unsigned ACTION_TRANS_ROLLBACK = 8;
 		static const unsigned ACTION_DDL = 9;
 
-		void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize)
+		void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
 			Policy::checkException(status2);
 		}
 
-		void execute(Status* status, ExternalContext* context, unsigned action, void* oldMsg, void* newMsg)
+		void execute(IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->execute(this, status2, context, action, oldMsg, newMsg);
 			Policy::checkException(status2);
 		}
 	};
 
-	class RoutineMetadata : public Versioned
+	class IRoutineMetadata : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getPackage)(const RoutineMetadata* self, Status* status) throw();
-			const char* (CLOOP_CARG *getName)(const RoutineMetadata* self, Status* status) throw();
-			const char* (CLOOP_CARG *getEntryPoint)(const RoutineMetadata* self, Status* status) throw();
-			const char* (CLOOP_CARG *getBody)(const RoutineMetadata* self, Status* status) throw();
-			MessageMetadata* (CLOOP_CARG *getInputMetadata)(const RoutineMetadata* self, Status* status) throw();
-			MessageMetadata* (CLOOP_CARG *getOutputMetadata)(const RoutineMetadata* self, Status* status) throw();
-			MessageMetadata* (CLOOP_CARG *getTriggerMetadata)(const RoutineMetadata* self, Status* status) throw();
-			const char* (CLOOP_CARG *getTriggerTable)(const RoutineMetadata* self, Status* status) throw();
-			unsigned (CLOOP_CARG *getTriggerType)(const RoutineMetadata* self, Status* status) throw();
+			const char* (CLOOP_CARG *getPackage)(const IRoutineMetadata* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getName)(const IRoutineMetadata* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getEntryPoint)(const IRoutineMetadata* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getBody)(const IRoutineMetadata* self, IStatus* status) throw();
+			IMessageMetadata* (CLOOP_CARG *getInputMetadata)(const IRoutineMetadata* self, IStatus* status) throw();
+			IMessageMetadata* (CLOOP_CARG *getOutputMetadata)(const IRoutineMetadata* self, IStatus* status) throw();
+			IMessageMetadata* (CLOOP_CARG *getTriggerMetadata)(const IRoutineMetadata* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getTriggerTable)(const IRoutineMetadata* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getTriggerType)(const IRoutineMetadata* self, IStatus* status) throw();
 		};
 
 	protected:
-		RoutineMetadata(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IRoutineMetadata(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~RoutineMetadata()
+		~IRoutineMetadata()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		const char* getPackage(Status* status) const
+		const char* getPackage(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPackage(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getName(Status* status) const
+		const char* getName(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getName(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getEntryPoint(Status* status) const
+		const char* getEntryPoint(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getEntryPoint(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getBody(Status* status) const
+		const char* getBody(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getBody(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MessageMetadata* getInputMetadata(Status* status) const
+		IMessageMetadata* getInputMetadata(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
-			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
+			typename Policy::IStatus status2(status);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MessageMetadata* getOutputMetadata(Status* status) const
+		IMessageMetadata* getOutputMetadata(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
-			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
+			typename Policy::IStatus status2(status);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		MessageMetadata* getTriggerMetadata(Status* status) const
+		IMessageMetadata* getTriggerMetadata(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
-			MessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerMetadata(this, status2);
+			typename Policy::IStatus status2(status);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerMetadata(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		const char* getTriggerTable(Status* status) const
+		const char* getTriggerTable(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerTable(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		unsigned getTriggerType(Status* status) const
+		unsigned getTriggerType(IStatus* status) const
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTriggerType(this, status2);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class ExternalEngine : public PluginBase
+	class IExternalEngine : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
-			void (CLOOP_CARG *open)(ExternalEngine* self, Status* status, ExternalContext* context, char* charSet, unsigned charSetSize) throw();
-			void (CLOOP_CARG *openAttachment)(ExternalEngine* self, Status* status, ExternalContext* context) throw();
-			void (CLOOP_CARG *closeAttachment)(ExternalEngine* self, Status* status, ExternalContext* context) throw();
-			ExternalFunction* (CLOOP_CARG *makeFunction)(ExternalEngine* self, Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder) throw();
-			ExternalProcedure* (CLOOP_CARG *makeProcedure)(ExternalEngine* self, Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder) throw();
-			ExternalTrigger* (CLOOP_CARG *makeTrigger)(ExternalEngine* self, Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* fieldsBuilder) throw();
+			void (CLOOP_CARG *open)(IExternalEngine* self, IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) throw();
+			void (CLOOP_CARG *openAttachment)(IExternalEngine* self, IStatus* status, IExternalContext* context) throw();
+			void (CLOOP_CARG *closeAttachment)(IExternalEngine* self, IStatus* status, IExternalContext* context) throw();
+			IExternalFunction* (CLOOP_CARG *makeFunction)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
+			IExternalProcedure* (CLOOP_CARG *makeProcedure)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
+			IExternalTrigger* (CLOOP_CARG *makeTrigger)(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw();
 		};
 
 	protected:
-		ExternalEngine(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		IExternalEngine(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~ExternalEngine()
+		~IExternalEngine()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 4;
 
-		void open(Status* status, ExternalContext* context, char* charSet, unsigned charSetSize)
+		void open(IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, charSet, charSetSize);
 			Policy::checkException(status2);
 		}
 
-		void openAttachment(Status* status, ExternalContext* context)
+		void openAttachment(IStatus* status, IExternalContext* context)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->openAttachment(this, status2, context);
 			Policy::checkException(status2);
 		}
 
-		void closeAttachment(Status* status, ExternalContext* context)
+		void closeAttachment(IStatus* status, IExternalContext* context)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->closeAttachment(this, status2, context);
 			Policy::checkException(status2);
 		}
 
-		ExternalFunction* makeFunction(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder)
+		IExternalFunction* makeFunction(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
-			typename Policy::Status status2(status);
-			ExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->makeFunction(this, status2, context, metadata, inBuilder, outBuilder);
+			typename Policy::IStatus status2(status);
+			IExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->makeFunction(this, status2, context, metadata, inBuilder, outBuilder);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		ExternalProcedure* makeProcedure(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder)
+		IExternalProcedure* makeProcedure(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
-			typename Policy::Status status2(status);
-			ExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->makeProcedure(this, status2, context, metadata, inBuilder, outBuilder);
+			typename Policy::IStatus status2(status);
+			IExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->makeProcedure(this, status2, context, metadata, inBuilder, outBuilder);
 			Policy::checkException(status2);
 			return ret;
 		}
 
-		ExternalTrigger* makeTrigger(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* fieldsBuilder)
+		IExternalTrigger* makeTrigger(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 		{
-			typename Policy::Status status2(status);
-			ExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->makeTrigger(this, status2, context, metadata, fieldsBuilder);
+			typename Policy::IStatus status2(status);
+			IExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->makeTrigger(this, status2, context, metadata, fieldsBuilder);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class Timer : public ReferenceCounted
+	class ITimer : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			void (CLOOP_CARG *handler)(Timer* self) throw();
+			void (CLOOP_CARG *handler)(ITimer* self) throw();
 		};
 
 	protected:
-		Timer(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		ITimer(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~Timer()
+		~ITimer()
 		{
 		}
 
@@ -3340,157 +3342,157 @@ public:
 		}
 	};
 
-	class TimerControl : public Versioned
+	class ITimerControl : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *start)(TimerControl* self, Status* status, Timer* timer, ISC_UINT64 microSeconds) throw();
-			void (CLOOP_CARG *stop)(TimerControl* self, Status* status, Timer* timer) throw();
+			void (CLOOP_CARG *start)(ITimerControl* self, IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) throw();
+			void (CLOOP_CARG *stop)(ITimerControl* self, IStatus* status, ITimer* timer) throw();
 		};
 
 	protected:
-		TimerControl(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITimerControl(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TimerControl()
+		~ITimerControl()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		void start(Status* status, Timer* timer, ISC_UINT64 microSeconds)
+		void start(IStatus* status, ITimer* timer, ISC_UINT64 microSeconds)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status2, timer, microSeconds);
 			Policy::checkException(status2);
 		}
 
-		void stop(Status* status, Timer* timer)
+		void stop(IStatus* status, ITimer* timer)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->stop(this, status2, timer);
 			Policy::checkException(status2);
 		}
 	};
 
-	class VersionCallback : public Versioned
+	class IVersionCallback : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *callback)(VersionCallback* self, Status* status, const char* text) throw();
+			void (CLOOP_CARG *callback)(IVersionCallback* self, IStatus* status, const char* text) throw();
 		};
 
 	protected:
-		VersionCallback(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IVersionCallback(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~VersionCallback()
+		~IVersionCallback()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		void callback(Status* status, const char* text)
+		void callback(IStatus* status, const char* text)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->callback(this, status2, text);
 			Policy::checkException(status2);
 		}
 	};
 
-	class Utl : public Versioned
+	class IUtl : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *getFbVersion)(Utl* self, Status* status, Attachment* att, VersionCallback* callback) throw();
-			void (CLOOP_CARG *loadBlob)(Utl* self, Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt) throw();
-			void (CLOOP_CARG *dumpBlob)(Utl* self, Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt) throw();
-			void (CLOOP_CARG *getPerfCounters)(Utl* self, Status* status, Attachment* att, const char* countersSet, ISC_INT64* counters) throw();
-			Attachment* (CLOOP_CARG *executeCreateDatabase)(Utl* self, Status* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw();
+			void (CLOOP_CARG *getFbVersion)(IUtl* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw();
+			void (CLOOP_CARG *loadBlob)(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
+			void (CLOOP_CARG *dumpBlob)(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
+			void (CLOOP_CARG *getPerfCounters)(IUtl* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw();
+			IAttachment* (CLOOP_CARG *executeCreateDatabase)(IUtl* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw();
 		};
 
 	protected:
-		Utl(DoNotInherit)
-			: Versioned(DoNotInherit())
+		IUtl(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~Utl()
+		~IUtl()
 		{
 		}
 
 	public:
 		static const unsigned VERSION = 2;
 
-		void getFbVersion(Status* status, Attachment* att, VersionCallback* callback)
+		void getFbVersion(IStatus* status, IAttachment* att, IVersionCallback* callback)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getFbVersion(this, status2, att, callback);
 			Policy::checkException(status2);
 		}
 
-		void loadBlob(Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt)
+		void loadBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->loadBlob(this, status2, blobId, att, tra, file, txt);
 			Policy::checkException(status2);
 		}
 
-		void dumpBlob(Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt)
+		void dumpBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->dumpBlob(this, status2, blobId, att, tra, file, txt);
 			Policy::checkException(status2);
 		}
 
-		void getPerfCounters(Status* status, Attachment* att, const char* countersSet, ISC_INT64* counters)
+		void getPerfCounters(IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters)
 		{
-			typename Policy::Status status2(status);
+			typename Policy::IStatus status2(status);
 			static_cast<VTable*>(this->cloopVTable)->getPerfCounters(this, status2, att, countersSet, counters);
 			Policy::checkException(status2);
 		}
 
-		Attachment* executeCreateDatabase(Status* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
+		IAttachment* executeCreateDatabase(IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
 		{
-			typename Policy::Status status2(status);
-			Attachment* ret = static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status2, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
+			typename Policy::IStatus status2(status);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status2, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
 			Policy::checkException(status2);
 			return ret;
 		}
 	};
 
-	class TraceConnection : public Versioned
+	class ITraceConnection : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *getKind)(TraceConnection* self) throw();
-			int (CLOOP_CARG *getProcessID)(TraceConnection* self) throw();
-			const char* (CLOOP_CARG *getUserName)(TraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRoleName)(TraceConnection* self) throw();
-			const char* (CLOOP_CARG *getCharSet)(TraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRemoteProtocol)(TraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRemoteAddress)(TraceConnection* self) throw();
-			int (CLOOP_CARG *getRemoteProcessID)(TraceConnection* self) throw();
-			const char* (CLOOP_CARG *getRemoteProcessName)(TraceConnection* self) throw();
+			unsigned (CLOOP_CARG *getKind)(ITraceConnection* self) throw();
+			int (CLOOP_CARG *getProcessID)(ITraceConnection* self) throw();
+			const char* (CLOOP_CARG *getUserName)(ITraceConnection* self) throw();
+			const char* (CLOOP_CARG *getRoleName)(ITraceConnection* self) throw();
+			const char* (CLOOP_CARG *getCharSet)(ITraceConnection* self) throw();
+			const char* (CLOOP_CARG *getRemoteProtocol)(ITraceConnection* self) throw();
+			const char* (CLOOP_CARG *getRemoteAddress)(ITraceConnection* self) throw();
+			int (CLOOP_CARG *getRemoteProcessID)(ITraceConnection* self) throw();
+			const char* (CLOOP_CARG *getRemoteProcessName)(ITraceConnection* self) throw();
 		};
 
 	protected:
-		TraceConnection(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceConnection(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceConnection()
+		~ITraceConnection()
 		{
 		}
 
@@ -3555,22 +3557,22 @@ public:
 		}
 	};
 
-	class TraceDatabaseConnection : public TraceConnection
+	class ITraceDatabaseConnection : public ITraceConnection
 	{
 	public:
-		struct VTable : public TraceConnection::VTable
+		struct VTable : public ITraceConnection::VTable
 		{
-			int (CLOOP_CARG *getConnectionID)(TraceDatabaseConnection* self) throw();
-			const char* (CLOOP_CARG *getDatabaseName)(TraceDatabaseConnection* self) throw();
+			int (CLOOP_CARG *getConnectionID)(ITraceDatabaseConnection* self) throw();
+			const char* (CLOOP_CARG *getDatabaseName)(ITraceDatabaseConnection* self) throw();
 		};
 
 	protected:
-		TraceDatabaseConnection(DoNotInherit)
-			: TraceConnection(DoNotInherit())
+		ITraceDatabaseConnection(DoNotInherit)
+			: ITraceConnection(DoNotInherit())
 		{
 		}
 
-		~TraceDatabaseConnection()
+		~ITraceDatabaseConnection()
 		{
 		}
 
@@ -3590,25 +3592,25 @@ public:
 		}
 	};
 
-	class TraceTransaction : public Versioned
+	class ITraceTransaction : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *getTransactionID)(TraceTransaction* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *getReadOnly)(TraceTransaction* self) throw();
-			int (CLOOP_CARG *getWait)(TraceTransaction* self) throw();
-			unsigned (CLOOP_CARG *getIsolation)(TraceTransaction* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(TraceTransaction* self) throw();
+			unsigned (CLOOP_CARG *getTransactionID)(ITraceTransaction* self) throw();
+			FB_BOOLEAN (CLOOP_CARG *getReadOnly)(ITraceTransaction* self) throw();
+			int (CLOOP_CARG *getWait)(ITraceTransaction* self) throw();
+			unsigned (CLOOP_CARG *getIsolation)(ITraceTransaction* self) throw();
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceTransaction* self) throw();
 		};
 
 	protected:
-		TraceTransaction(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceTransaction(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceTransaction()
+		~ITraceTransaction()
 		{
 		}
 
@@ -3651,22 +3653,22 @@ public:
 		}
 	};
 
-	class TraceParams : public Versioned
+	class ITraceParams : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *getCount)(TraceParams* self) throw();
-			const dsc* (CLOOP_CARG *getParam)(TraceParams* self, unsigned idx) throw();
+			unsigned (CLOOP_CARG *getCount)(ITraceParams* self) throw();
+			const dsc* (CLOOP_CARG *getParam)(ITraceParams* self, unsigned idx) throw();
 		};
 
 	protected:
-		TraceParams(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceParams(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceParams()
+		~ITraceParams()
 		{
 		}
 
@@ -3686,22 +3688,22 @@ public:
 		}
 	};
 
-	class TraceStatement : public Versioned
+	class ITraceStatement : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			int (CLOOP_CARG *getStmtID)(TraceStatement* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(TraceStatement* self) throw();
+			int (CLOOP_CARG *getStmtID)(ITraceStatement* self) throw();
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceStatement* self) throw();
 		};
 
 	protected:
-		TraceStatement(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceStatement(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceStatement()
+		~ITraceStatement()
 		{
 		}
 
@@ -3721,25 +3723,25 @@ public:
 		}
 	};
 
-	class TraceSQLStatement : public TraceStatement
+	class ITraceSQLStatement : public ITraceStatement
 	{
 	public:
-		struct VTable : public TraceStatement::VTable
+		struct VTable : public ITraceStatement::VTable
 		{
-			const char* (CLOOP_CARG *getText)(TraceSQLStatement* self) throw();
-			const char* (CLOOP_CARG *getPlan)(TraceSQLStatement* self) throw();
-			TraceParams* (CLOOP_CARG *getInputs)(TraceSQLStatement* self) throw();
-			const char* (CLOOP_CARG *getTextUTF8)(TraceSQLStatement* self) throw();
-			const char* (CLOOP_CARG *getExplainedPlan)(TraceSQLStatement* self) throw();
+			const char* (CLOOP_CARG *getText)(ITraceSQLStatement* self) throw();
+			const char* (CLOOP_CARG *getPlan)(ITraceSQLStatement* self) throw();
+			ITraceParams* (CLOOP_CARG *getInputs)(ITraceSQLStatement* self) throw();
+			const char* (CLOOP_CARG *getTextUTF8)(ITraceSQLStatement* self) throw();
+			const char* (CLOOP_CARG *getExplainedPlan)(ITraceSQLStatement* self) throw();
 		};
 
 	protected:
-		TraceSQLStatement(DoNotInherit)
-			: TraceStatement(DoNotInherit())
+		ITraceSQLStatement(DoNotInherit)
+			: ITraceStatement(DoNotInherit())
 		{
 		}
 
-		~TraceSQLStatement()
+		~ITraceSQLStatement()
 		{
 		}
 
@@ -3758,9 +3760,9 @@ public:
 			return ret;
 		}
 
-		TraceParams* getInputs()
+		ITraceParams* getInputs()
 		{
-			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
+			ITraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
 			return ret;
 		}
 
@@ -3777,23 +3779,23 @@ public:
 		}
 	};
 
-	class TraceBLRStatement : public TraceStatement
+	class ITraceBLRStatement : public ITraceStatement
 	{
 	public:
-		struct VTable : public TraceStatement::VTable
+		struct VTable : public ITraceStatement::VTable
 		{
-			const unsigned char* (CLOOP_CARG *getData)(TraceBLRStatement* self) throw();
-			unsigned (CLOOP_CARG *getDataLength)(TraceBLRStatement* self) throw();
-			const char* (CLOOP_CARG *getText)(TraceBLRStatement* self) throw();
+			const unsigned char* (CLOOP_CARG *getData)(ITraceBLRStatement* self) throw();
+			unsigned (CLOOP_CARG *getDataLength)(ITraceBLRStatement* self) throw();
+			const char* (CLOOP_CARG *getText)(ITraceBLRStatement* self) throw();
 		};
 
 	protected:
-		TraceBLRStatement(DoNotInherit)
-			: TraceStatement(DoNotInherit())
+		ITraceBLRStatement(DoNotInherit)
+			: ITraceStatement(DoNotInherit())
 		{
 		}
 
-		~TraceBLRStatement()
+		~ITraceBLRStatement()
 		{
 		}
 
@@ -3819,23 +3821,23 @@ public:
 		}
 	};
 
-	class TraceDYNRequest : public Versioned
+	class ITraceDYNRequest : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const unsigned char* (CLOOP_CARG *getData)(TraceDYNRequest* self) throw();
-			unsigned (CLOOP_CARG *getDataLength)(TraceDYNRequest* self) throw();
-			const char* (CLOOP_CARG *getText)(TraceDYNRequest* self) throw();
+			const unsigned char* (CLOOP_CARG *getData)(ITraceDYNRequest* self) throw();
+			unsigned (CLOOP_CARG *getDataLength)(ITraceDYNRequest* self) throw();
+			const char* (CLOOP_CARG *getText)(ITraceDYNRequest* self) throw();
 		};
 
 	protected:
-		TraceDYNRequest(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceDYNRequest(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceDYNRequest()
+		~ITraceDYNRequest()
 		{
 		}
 
@@ -3861,23 +3863,23 @@ public:
 		}
 	};
 
-	class TraceContextVariable : public Versioned
+	class ITraceContextVariable : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getNameSpace)(TraceContextVariable* self) throw();
-			const char* (CLOOP_CARG *getVarName)(TraceContextVariable* self) throw();
-			const char* (CLOOP_CARG *getVarValue)(TraceContextVariable* self) throw();
+			const char* (CLOOP_CARG *getNameSpace)(ITraceContextVariable* self) throw();
+			const char* (CLOOP_CARG *getVarName)(ITraceContextVariable* self) throw();
+			const char* (CLOOP_CARG *getVarValue)(ITraceContextVariable* self) throw();
 		};
 
 	protected:
-		TraceContextVariable(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceContextVariable(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceContextVariable()
+		~ITraceContextVariable()
 		{
 		}
 
@@ -3903,23 +3905,23 @@ public:
 		}
 	};
 
-	class TraceProcedure : public Versioned
+	class ITraceProcedure : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getProcName)(TraceProcedure* self) throw();
-			TraceParams* (CLOOP_CARG *getInputs)(TraceProcedure* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(TraceProcedure* self) throw();
+			const char* (CLOOP_CARG *getProcName)(ITraceProcedure* self) throw();
+			ITraceParams* (CLOOP_CARG *getInputs)(ITraceProcedure* self) throw();
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceProcedure* self) throw();
 		};
 
 	protected:
-		TraceProcedure(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceProcedure(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceProcedure()
+		~ITraceProcedure()
 		{
 		}
 
@@ -3932,9 +3934,9 @@ public:
 			return ret;
 		}
 
-		TraceParams* getInputs()
+		ITraceParams* getInputs()
 		{
-			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
+			ITraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
 			return ret;
 		}
 
@@ -3945,24 +3947,24 @@ public:
 		}
 	};
 
-	class TraceFunction : public Versioned
+	class ITraceFunction : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getFuncName)(TraceFunction* self) throw();
-			TraceParams* (CLOOP_CARG *getInputs)(TraceFunction* self) throw();
-			TraceParams* (CLOOP_CARG *getResult)(TraceFunction* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(TraceFunction* self) throw();
+			const char* (CLOOP_CARG *getFuncName)(ITraceFunction* self) throw();
+			ITraceParams* (CLOOP_CARG *getInputs)(ITraceFunction* self) throw();
+			ITraceParams* (CLOOP_CARG *getResult)(ITraceFunction* self) throw();
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceFunction* self) throw();
 		};
 
 	protected:
-		TraceFunction(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceFunction(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceFunction()
+		~ITraceFunction()
 		{
 		}
 
@@ -3975,15 +3977,15 @@ public:
 			return ret;
 		}
 
-		TraceParams* getInputs()
+		ITraceParams* getInputs()
 		{
-			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
+			ITraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getInputs(this);
 			return ret;
 		}
 
-		TraceParams* getResult()
+		ITraceParams* getResult()
 		{
-			TraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getResult(this);
+			ITraceParams* ret = static_cast<VTable*>(this->cloopVTable)->getResult(this);
 			return ret;
 		}
 
@@ -3994,25 +3996,25 @@ public:
 		}
 	};
 
-	class TraceTrigger : public Versioned
+	class ITraceTrigger : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getTriggerName)(TraceTrigger* self) throw();
-			const char* (CLOOP_CARG *getRelationName)(TraceTrigger* self) throw();
-			int (CLOOP_CARG *getAction)(TraceTrigger* self) throw();
-			int (CLOOP_CARG *getWhich)(TraceTrigger* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(TraceTrigger* self) throw();
+			const char* (CLOOP_CARG *getTriggerName)(ITraceTrigger* self) throw();
+			const char* (CLOOP_CARG *getRelationName)(ITraceTrigger* self) throw();
+			int (CLOOP_CARG *getAction)(ITraceTrigger* self) throw();
+			int (CLOOP_CARG *getWhich)(ITraceTrigger* self) throw();
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceTrigger* self) throw();
 		};
 
 	protected:
-		TraceTrigger(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceTrigger(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceTrigger()
+		~ITraceTrigger()
 		{
 		}
 
@@ -4054,23 +4056,23 @@ public:
 		}
 	};
 
-	class TraceServiceConnection : public TraceConnection
+	class ITraceServiceConnection : public ITraceConnection
 	{
 	public:
-		struct VTable : public TraceConnection::VTable
+		struct VTable : public ITraceConnection::VTable
 		{
-			void* (CLOOP_CARG *getServiceID)(TraceServiceConnection* self) throw();
-			const char* (CLOOP_CARG *getServiceMgr)(TraceServiceConnection* self) throw();
-			const char* (CLOOP_CARG *getServiceName)(TraceServiceConnection* self) throw();
+			void* (CLOOP_CARG *getServiceID)(ITraceServiceConnection* self) throw();
+			const char* (CLOOP_CARG *getServiceMgr)(ITraceServiceConnection* self) throw();
+			const char* (CLOOP_CARG *getServiceName)(ITraceServiceConnection* self) throw();
 		};
 
 	protected:
-		TraceServiceConnection(DoNotInherit)
-			: TraceConnection(DoNotInherit())
+		ITraceServiceConnection(DoNotInherit)
+			: ITraceConnection(DoNotInherit())
 		{
 		}
 
-		~TraceServiceConnection()
+		~ITraceServiceConnection()
 		{
 		}
 
@@ -4096,24 +4098,24 @@ public:
 		}
 	};
 
-	class TraceStatusVector : public Versioned
+	class ITraceStatusVector : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			FB_BOOLEAN (CLOOP_CARG *hasError)(TraceStatusVector* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *hasWarning)(TraceStatusVector* self) throw();
-			const intptr_t* (CLOOP_CARG *getStatus)(TraceStatusVector* self) throw();
-			const char* (CLOOP_CARG *getText)(TraceStatusVector* self) throw();
+			FB_BOOLEAN (CLOOP_CARG *hasError)(ITraceStatusVector* self) throw();
+			FB_BOOLEAN (CLOOP_CARG *hasWarning)(ITraceStatusVector* self) throw();
+			const intptr_t* (CLOOP_CARG *getStatus)(ITraceStatusVector* self) throw();
+			const char* (CLOOP_CARG *getText)(ITraceStatusVector* self) throw();
 		};
 
 	protected:
-		TraceStatusVector(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceStatusVector(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceStatusVector()
+		~ITraceStatusVector()
 		{
 		}
 
@@ -4145,25 +4147,25 @@ public:
 		}
 	};
 
-	class TraceSweepInfo : public Versioned
+	class ITraceSweepInfo : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			ISC_UINT64 (CLOOP_CARG *getOIT)(TraceSweepInfo* self) throw();
-			ISC_UINT64 (CLOOP_CARG *getOST)(TraceSweepInfo* self) throw();
-			ISC_UINT64 (CLOOP_CARG *getOAT)(TraceSweepInfo* self) throw();
-			ISC_UINT64 (CLOOP_CARG *getNext)(TraceSweepInfo* self) throw();
-			PerformanceInfo* (CLOOP_CARG *getPerf)(TraceSweepInfo* self) throw();
+			ISC_UINT64 (CLOOP_CARG *getOIT)(ITraceSweepInfo* self) throw();
+			ISC_UINT64 (CLOOP_CARG *getOST)(ITraceSweepInfo* self) throw();
+			ISC_UINT64 (CLOOP_CARG *getOAT)(ITraceSweepInfo* self) throw();
+			ISC_UINT64 (CLOOP_CARG *getNext)(ITraceSweepInfo* self) throw();
+			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceSweepInfo* self) throw();
 		};
 
 	protected:
-		TraceSweepInfo(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceSweepInfo(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceSweepInfo()
+		~ITraceSweepInfo()
 		{
 		}
 
@@ -4201,21 +4203,21 @@ public:
 		}
 	};
 
-	class TraceLogWriter : public ReferenceCounted
+	class ITraceLogWriter : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			unsigned (CLOOP_CARG *write)(TraceLogWriter* self, const void* buf, unsigned size) throw();
+			unsigned (CLOOP_CARG *write)(ITraceLogWriter* self, const void* buf, unsigned size) throw();
 		};
 
 	protected:
-		TraceLogWriter(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		ITraceLogWriter(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~TraceLogWriter()
+		~ITraceLogWriter()
 		{
 		}
 
@@ -4229,27 +4231,27 @@ public:
 		}
 	};
 
-	class TraceInitInfo : public Versioned
+	class ITraceInitInfo : public IVersioned
 	{
 	public:
-		struct VTable : public Versioned::VTable
+		struct VTable : public IVersioned::VTable
 		{
-			const char* (CLOOP_CARG *getConfigText)(TraceInitInfo* self) throw();
-			int (CLOOP_CARG *getTraceSessionID)(TraceInitInfo* self) throw();
-			const char* (CLOOP_CARG *getTraceSessionName)(TraceInitInfo* self) throw();
-			const char* (CLOOP_CARG *getFirebirdRootDirectory)(TraceInitInfo* self) throw();
-			const char* (CLOOP_CARG *getDatabaseName)(TraceInitInfo* self) throw();
-			TraceDatabaseConnection* (CLOOP_CARG *getConnection)(TraceInitInfo* self) throw();
-			TraceLogWriter* (CLOOP_CARG *getLogWriter)(TraceInitInfo* self) throw();
+			const char* (CLOOP_CARG *getConfigText)(ITraceInitInfo* self) throw();
+			int (CLOOP_CARG *getTraceSessionID)(ITraceInitInfo* self) throw();
+			const char* (CLOOP_CARG *getTraceSessionName)(ITraceInitInfo* self) throw();
+			const char* (CLOOP_CARG *getFirebirdRootDirectory)(ITraceInitInfo* self) throw();
+			const char* (CLOOP_CARG *getDatabaseName)(ITraceInitInfo* self) throw();
+			ITraceDatabaseConnection* (CLOOP_CARG *getConnection)(ITraceInitInfo* self) throw();
+			ITraceLogWriter* (CLOOP_CARG *getLogWriter)(ITraceInitInfo* self) throw();
 		};
 
 	protected:
-		TraceInitInfo(DoNotInherit)
-			: Versioned(DoNotInherit())
+		ITraceInitInfo(DoNotInherit)
+			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~TraceInitInfo()
+		~ITraceInitInfo()
 		{
 		}
 
@@ -4286,54 +4288,54 @@ public:
 			return ret;
 		}
 
-		TraceDatabaseConnection* getConnection()
+		ITraceDatabaseConnection* getConnection()
 		{
-			TraceDatabaseConnection* ret = static_cast<VTable*>(this->cloopVTable)->getConnection(this);
+			ITraceDatabaseConnection* ret = static_cast<VTable*>(this->cloopVTable)->getConnection(this);
 			return ret;
 		}
 
-		TraceLogWriter* getLogWriter()
+		ITraceLogWriter* getLogWriter()
 		{
-			TraceLogWriter* ret = static_cast<VTable*>(this->cloopVTable)->getLogWriter(this);
+			ITraceLogWriter* ret = static_cast<VTable*>(this->cloopVTable)->getLogWriter(this);
 			return ret;
 		}
 	};
 
-	class TracePlugin : public ReferenceCounted
+	class ITracePlugin : public IReferenceCounted
 	{
 	public:
-		struct VTable : public ReferenceCounted::VTable
+		struct VTable : public IReferenceCounted::VTable
 		{
-			const char* (CLOOP_CARG *trace_get_error)(TracePlugin* self) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_attach)(TracePlugin* self, TraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_detach)(TracePlugin* self, TraceDatabaseConnection* connection, FB_BOOLEAN drop_db) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_transaction_start)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_transaction_end)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_proc_execute)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_trigger_execute)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_set_context)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dsql_prepare)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dsql_free)(TracePlugin* self, TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned option) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dsql_execute)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_blr_compile)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_blr_execute)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_dyn_execute)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_attach)(TracePlugin* self, TraceServiceConnection* service, unsigned att_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_start)(TracePlugin* self, TraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_query)(TracePlugin* self, TraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_service_detach)(TracePlugin* self, TraceServiceConnection* service, unsigned detach_result) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_event_error)(TracePlugin* self, TraceConnection* connection, TraceStatusVector* status, const char* function) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_event_sweep)(TracePlugin* self, TraceDatabaseConnection* connection, TraceSweepInfo* sweep, unsigned sweep_state) throw();
-			FB_BOOLEAN (CLOOP_CARG *trace_func_execute)(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function, FB_BOOLEAN started, unsigned func_result) throw();
+			const char* (CLOOP_CARG *trace_get_error)(ITracePlugin* self) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_attach)(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_detach)(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_transaction_start)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_transaction_end)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_proc_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_trigger_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_set_context)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_prepare)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_free)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_dsql_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_blr_compile)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_blr_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_dyn_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_service_attach)(ITracePlugin* self, ITraceServiceConnection* service, unsigned att_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_service_start)(ITracePlugin* self, ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_service_query)(ITracePlugin* self, ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_service_detach)(ITracePlugin* self, ITraceServiceConnection* service, unsigned detach_result) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_event_error)(ITracePlugin* self, ITraceConnection* connection, ITraceStatusVector* status, const char* function) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_event_sweep)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) throw();
+			FB_BOOLEAN (CLOOP_CARG *trace_func_execute)(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) throw();
 		};
 
 	protected:
-		TracePlugin(DoNotInherit)
-			: ReferenceCounted(DoNotInherit())
+		ITracePlugin(DoNotInherit)
+			: IReferenceCounted(DoNotInherit())
 		{
 		}
 
-		~TracePlugin()
+		~ITracePlugin()
 		{
 		}
 
@@ -4354,143 +4356,143 @@ public:
 			return ret;
 		}
 
-		FB_BOOLEAN trace_attach(TraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result)
+		FB_BOOLEAN trace_attach(ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_attach(this, connection, create_db, att_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_detach(TraceDatabaseConnection* connection, FB_BOOLEAN drop_db)
+		FB_BOOLEAN trace_detach(ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_detach(this, connection, drop_db);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_transaction_start(TraceDatabaseConnection* connection, TraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result)
+		FB_BOOLEAN trace_transaction_start(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_transaction_start(this, connection, transaction, tpb_length, tpb, tra_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result)
+		FB_BOOLEAN trace_transaction_end(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_transaction_end(this, connection, transaction, commit, retain_context, tra_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_proc_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result)
+		FB_BOOLEAN trace_proc_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_proc_execute(this, connection, transaction, procedure, started, proc_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result)
+		FB_BOOLEAN trace_trigger_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_trigger_execute(this, connection, transaction, trigger, started, trig_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_set_context(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable)
+		FB_BOOLEAN trace_set_context(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_set_context(this, connection, transaction, variable);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_dsql_prepare(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result)
+		FB_BOOLEAN trace_dsql_prepare(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_prepare(this, connection, transaction, statement, time_millis, req_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_dsql_free(TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned option)
+		FB_BOOLEAN trace_dsql_free(ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_free(this, connection, statement, option);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_dsql_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result)
+		FB_BOOLEAN trace_dsql_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dsql_execute(this, connection, transaction, statement, started, req_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_blr_compile(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result)
+		FB_BOOLEAN trace_blr_compile(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_blr_compile(this, connection, transaction, statement, time_millis, req_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_blr_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, unsigned req_result)
+		FB_BOOLEAN trace_blr_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_blr_execute(this, connection, transaction, statement, req_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_dyn_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result)
+		FB_BOOLEAN trace_dyn_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_dyn_execute(this, connection, transaction, request, time_millis, req_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_service_attach(TraceServiceConnection* service, unsigned att_result)
+		FB_BOOLEAN trace_service_attach(ITraceServiceConnection* service, unsigned att_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_attach(this, service, att_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_service_start(TraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result)
+		FB_BOOLEAN trace_service_start(ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_start(this, service, switches_length, switches, start_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_service_query(TraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result)
+		FB_BOOLEAN trace_service_query(ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_query(this, service, send_item_length, send_items, recv_item_length, recv_items, query_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_service_detach(TraceServiceConnection* service, unsigned detach_result)
+		FB_BOOLEAN trace_service_detach(ITraceServiceConnection* service, unsigned detach_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_service_detach(this, service, detach_result);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_event_error(TraceConnection* connection, TraceStatusVector* status, const char* function)
+		FB_BOOLEAN trace_event_error(ITraceConnection* connection, ITraceStatusVector* status, const char* function)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_event_error(this, connection, status, function);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, unsigned sweep_state)
+		FB_BOOLEAN trace_event_sweep(ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_event_sweep(this, connection, sweep, sweep_state);
 			return ret;
 		}
 
-		FB_BOOLEAN trace_func_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function, FB_BOOLEAN started, unsigned func_result)
+		FB_BOOLEAN trace_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result)
 		{
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->trace_func_execute(this, connection, transaction, function, started, func_result);
 			return ret;
 		}
 	};
 
-	class TraceFactory : public PluginBase
+	class ITraceFactory : public IPluginBase
 	{
 	public:
-		struct VTable : public PluginBase::VTable
+		struct VTable : public IPluginBase::VTable
 		{
-			ISC_UINT64 (CLOOP_CARG *trace_needs)(TraceFactory* self) throw();
-			TracePlugin* (CLOOP_CARG *trace_create)(TraceFactory* self, Status* status, TraceInitInfo* init_info) throw();
+			ISC_UINT64 (CLOOP_CARG *trace_needs)(ITraceFactory* self) throw();
+			ITracePlugin* (CLOOP_CARG *trace_create)(ITraceFactory* self, IStatus* status, ITraceInitInfo* init_info) throw();
 		};
 
 	protected:
-		TraceFactory(DoNotInherit)
-			: PluginBase(DoNotInherit())
+		ITraceFactory(DoNotInherit)
+			: IPluginBase(DoNotInherit())
 		{
 		}
 
-		~TraceFactory()
+		~ITraceFactory()
 		{
 		}
 
@@ -4525,10 +4527,10 @@ public:
 			return ret;
 		}
 
-		TracePlugin* trace_create(Status* status, TraceInitInfo* init_info)
+		ITracePlugin* trace_create(IStatus* status, ITraceInitInfo* init_info)
 		{
-			typename Policy::Status status2(status);
-			TracePlugin* ret = static_cast<VTable*>(this->cloopVTable)->trace_create(this, status2, init_info);
+			typename Policy::IStatus status2(status);
+			ITracePlugin* ret = static_cast<VTable*>(this->cloopVTable)->trace_create(this, status2, init_info);
 			Policy::checkException(status2);
 			return ret;
 		}
@@ -4537,12 +4539,12 @@ public:
 	// Interfaces implementations
 
 	template <typename Name, typename Base>
-	class VersionedBaseImpl : public Base
+	class IVersionedBaseImpl : public Base
 	{
 	public:
-		typedef Versioned Declaration;
+		typedef IVersioned Declaration;
 
-		VersionedBaseImpl(DoNotInherit = DoNotInherit())
+		IVersionedBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -4556,7 +4558,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -4565,34 +4567,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = Inherit<Versioned> >
-	class VersionedImpl : public VersionedBaseImpl<Name, Base>
+	template <typename Name, typename Base = Inherit<IVersioned> >
+	class IVersionedImpl : public IVersionedBaseImpl<Name, Base>
 	{
 	protected:
-		VersionedImpl(DoNotInherit = DoNotInherit())
+		IVersionedImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~VersionedImpl()
+		virtual ~IVersionedImpl()
 		{
 		}
 
-		virtual PluginModule* getModule() = 0;
+		virtual IPluginModule* getModule() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ReferenceCountedBaseImpl : public Base
+	class IReferenceCountedBaseImpl : public Base
 	{
 	public:
-		typedef ReferenceCounted Declaration;
+		typedef IReferenceCounted Declaration;
 
-		ReferenceCountedBaseImpl(DoNotInherit = DoNotInherit())
+		IReferenceCountedBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -4608,7 +4610,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -4620,7 +4622,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -4633,7 +4635,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -4642,21 +4644,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<ReferenceCounted> > >
-	class ReferenceCountedImpl : public ReferenceCountedBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IReferenceCounted> > >
+	class IReferenceCountedImpl : public IReferenceCountedBaseImpl<Name, Base>
 	{
 	protected:
-		ReferenceCountedImpl(DoNotInherit = DoNotInherit())
+		IReferenceCountedImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ReferenceCountedImpl()
+		virtual ~IReferenceCountedImpl()
 		{
 		}
 
@@ -4665,12 +4667,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class DisposableBaseImpl : public Base
+	class IDisposableBaseImpl : public Base
 	{
 	public:
-		typedef Disposable Declaration;
+		typedef IDisposable Declaration;
 
-		DisposableBaseImpl(DoNotInherit = DoNotInherit())
+		IDisposableBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -4685,7 +4687,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
 			{
@@ -4697,7 +4699,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -4706,21 +4708,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<Disposable> > >
-	class DisposableImpl : public DisposableBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IDisposable> > >
+	class IDisposableImpl : public IDisposableBaseImpl<Name, Base>
 	{
 	protected:
-		DisposableImpl(DoNotInherit = DoNotInherit())
+		IDisposableImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~DisposableImpl()
+		virtual ~IDisposableImpl()
 		{
 		}
 
@@ -4728,12 +4730,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class StatusBaseImpl : public Base
+	class IStatusBaseImpl : public Base
 	{
 	public:
-		typedef Status Declaration;
+		typedef IStatus Declaration;
 
-		StatusBaseImpl(DoNotInherit = DoNotInherit())
+		IStatusBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -4756,7 +4758,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopinitDispatcher(Status* self) throw()
+		static void CLOOP_CARG cloopinitDispatcher(IStatus* self) throw()
 		{
 			try
 			{
@@ -4768,7 +4770,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetStatusDispatcher(const Status* self) throw()
+		static unsigned CLOOP_CARG cloopgetStatusDispatcher(const IStatus* self) throw()
 		{
 			try
 			{
@@ -4781,7 +4783,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetErrors2Dispatcher(Status* self, unsigned length, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetErrors2Dispatcher(IStatus* self, unsigned length, const intptr_t* value) throw()
 		{
 			try
 			{
@@ -4793,7 +4795,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetWarnings2Dispatcher(Status* self, unsigned length, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetWarnings2Dispatcher(IStatus* self, unsigned length, const intptr_t* value) throw()
 		{
 			try
 			{
@@ -4805,7 +4807,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetErrorsDispatcher(Status* self, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetErrorsDispatcher(IStatus* self, const intptr_t* value) throw()
 		{
 			try
 			{
@@ -4817,7 +4819,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetWarningsDispatcher(Status* self, const intptr_t* value) throw()
+		static void CLOOP_CARG cloopsetWarningsDispatcher(IStatus* self, const intptr_t* value) throw()
 		{
 			try
 			{
@@ -4829,7 +4831,7 @@ public:
 			}
 		}
 
-		static const intptr_t* CLOOP_CARG cloopgetErrorsDispatcher(const Status* self) throw()
+		static const intptr_t* CLOOP_CARG cloopgetErrorsDispatcher(const IStatus* self) throw()
 		{
 			try
 			{
@@ -4842,7 +4844,7 @@ public:
 			}
 		}
 
-		static const intptr_t* CLOOP_CARG cloopgetWarningsDispatcher(const Status* self) throw()
+		static const intptr_t* CLOOP_CARG cloopgetWarningsDispatcher(const IStatus* self) throw()
 		{
 			try
 			{
@@ -4855,7 +4857,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
 			{
@@ -4867,7 +4869,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -4876,21 +4878,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Inherit<VersionedImpl<Name, Inherit<Status> > > > >
-	class StatusImpl : public StatusBaseImpl<Name, Base>
+	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IStatus> > > > >
+	class IStatusImpl : public IStatusBaseImpl<Name, Base>
 	{
 	protected:
-		StatusImpl(DoNotInherit = DoNotInherit())
+		IStatusImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~StatusImpl()
+		virtual ~IStatusImpl()
 		{
 		}
 
@@ -4905,12 +4907,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class MasterBaseImpl : public Base
+	class IMasterBaseImpl : public Base
 	{
 	public:
-		typedef Master Declaration;
+		typedef IMaster Declaration;
 
-		MasterBaseImpl(DoNotInherit = DoNotInherit())
+		IMasterBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -4937,7 +4939,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static Status* CLOOP_CARG cloopgetStatusDispatcher(Master* self) throw()
+		static IStatus* CLOOP_CARG cloopgetStatusDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -4946,11 +4948,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Status*>(0);
+				return static_cast<IStatus*>(0);
 			}
 		}
 
-		static Provider* CLOOP_CARG cloopgetDispatcherDispatcher(Master* self) throw()
+		static IProvider* CLOOP_CARG cloopgetDispatcherDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -4959,11 +4961,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Provider*>(0);
+				return static_cast<IProvider*>(0);
 			}
 		}
 
-		static PluginManager* CLOOP_CARG cloopgetPluginManagerDispatcher(Master* self) throw()
+		static IPluginManager* CLOOP_CARG cloopgetPluginManagerDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -4972,11 +4974,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginManager*>(0);
+				return static_cast<IPluginManager*>(0);
 			}
 		}
 
-		static const char* CLOOP_CARG cloopcircularAllocDispatcher(Master* self, const char* s, unsigned len, intptr_t thr) throw()
+		static const char* CLOOP_CARG cloopcircularAllocDispatcher(IMaster* self, const char* s, unsigned len, intptr_t thr) throw()
 		{
 			try
 			{
@@ -4989,7 +4991,7 @@ public:
 			}
 		}
 
-		static TimerControl* CLOOP_CARG cloopgetTimerControlDispatcher(Master* self) throw()
+		static ITimerControl* CLOOP_CARG cloopgetTimerControlDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -4998,11 +5000,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<TimerControl*>(0);
+				return static_cast<ITimerControl*>(0);
 			}
 		}
 
-		static Dtc* CLOOP_CARG cloopgetDtcDispatcher(Master* self) throw()
+		static IDtc* CLOOP_CARG cloopgetDtcDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -5011,11 +5013,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Dtc*>(0);
+				return static_cast<IDtc*>(0);
 			}
 		}
 
-		static Attachment* CLOOP_CARG cloopregisterAttachmentDispatcher(Master* self, Provider* provider, Attachment* attachment) throw()
+		static IAttachment* CLOOP_CARG cloopregisterAttachmentDispatcher(IMaster* self, IProvider* provider, IAttachment* attachment) throw()
 		{
 			try
 			{
@@ -5024,11 +5026,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Attachment*>(0);
+				return static_cast<IAttachment*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopregisterTransactionDispatcher(Master* self, Attachment* attachment, Transaction* transaction) throw()
+		static ITransaction* CLOOP_CARG cloopregisterTransactionDispatcher(IMaster* self, IAttachment* attachment, ITransaction* transaction) throw()
 		{
 			try
 			{
@@ -5037,11 +5039,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static int CLOOP_CARG cloopsameDispatcher(Master* self, Versioned* first, Versioned* second) throw()
+		static int CLOOP_CARG cloopsameDispatcher(IMaster* self, IVersioned* first, IVersioned* second) throw()
 		{
 			try
 			{
@@ -5054,7 +5056,7 @@ public:
 			}
 		}
 
-		static MetadataBuilder* CLOOP_CARG cloopgetMetadataBuilderDispatcher(Master* self, Status* status, unsigned fieldCount) throw()
+		static IMetadataBuilder* CLOOP_CARG cloopgetMetadataBuilderDispatcher(IMaster* self, IStatus* status, unsigned fieldCount) throw()
 		{
 			try
 			{
@@ -5063,11 +5065,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MetadataBuilder*>(0);
+				return static_cast<IMetadataBuilder*>(0);
 			}
 		}
 
-		static int CLOOP_CARG cloopserverModeDispatcher(Master* self, int mode) throw()
+		static int CLOOP_CARG cloopserverModeDispatcher(IMaster* self, int mode) throw()
 		{
 			try
 			{
@@ -5080,7 +5082,7 @@ public:
 			}
 		}
 
-		static Utl* CLOOP_CARG cloopgetUtlInterfaceDispatcher(Master* self) throw()
+		static IUtl* CLOOP_CARG cloopgetUtlInterfaceDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -5089,11 +5091,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Utl*>(0);
+				return static_cast<IUtl*>(0);
 			}
 		}
 
-		static ConfigManager* CLOOP_CARG cloopgetConfigManagerDispatcher(Master* self) throw()
+		static IConfigManager* CLOOP_CARG cloopgetConfigManagerDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -5102,11 +5104,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ConfigManager*>(0);
+				return static_cast<IConfigManager*>(0);
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5115,46 +5117,46 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<Master> > >
-	class MasterImpl : public MasterBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IMaster> > >
+	class IMasterImpl : public IMasterBaseImpl<Name, Base>
 	{
 	protected:
-		MasterImpl(DoNotInherit = DoNotInherit())
+		IMasterImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~MasterImpl()
+		virtual ~IMasterImpl()
 		{
 		}
 
-		virtual Status* getStatus() = 0;
-		virtual Provider* getDispatcher() = 0;
-		virtual PluginManager* getPluginManager() = 0;
+		virtual IStatus* getStatus() = 0;
+		virtual IProvider* getDispatcher() = 0;
+		virtual IPluginManager* getPluginManager() = 0;
 		virtual const char* circularAlloc(const char* s, unsigned len, intptr_t thr) = 0;
-		virtual TimerControl* getTimerControl() = 0;
-		virtual Dtc* getDtc() = 0;
-		virtual Attachment* registerAttachment(Provider* provider, Attachment* attachment) = 0;
-		virtual Transaction* registerTransaction(Attachment* attachment, Transaction* transaction) = 0;
-		virtual int same(Versioned* first, Versioned* second) = 0;
-		virtual MetadataBuilder* getMetadataBuilder(Status* status, unsigned fieldCount) = 0;
+		virtual ITimerControl* getTimerControl() = 0;
+		virtual IDtc* getDtc() = 0;
+		virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
+		virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
+		virtual int same(IVersioned* first, IVersioned* second) = 0;
+		virtual IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount) = 0;
 		virtual int serverMode(int mode) = 0;
-		virtual Utl* getUtlInterface() = 0;
-		virtual ConfigManager* getConfigManager() = 0;
+		virtual IUtl* getUtlInterface() = 0;
+		virtual IConfigManager* getConfigManager() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class PluginBaseBaseImpl : public Base
+	class IPluginBaseBaseImpl : public Base
 	{
 	public:
-		typedef PluginBase Declaration;
+		typedef IPluginBase Declaration;
 
-		PluginBaseBaseImpl(DoNotInherit = DoNotInherit())
+		IPluginBaseBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -5172,7 +5174,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -5184,7 +5186,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -5193,11 +5195,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5209,7 +5211,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5222,7 +5224,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5231,35 +5233,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<PluginBase> > > > >
-	class PluginBaseImpl : public PluginBaseBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IPluginBase> > > > >
+	class IPluginBaseImpl : public IPluginBaseBaseImpl<Name, Base>
 	{
 	protected:
-		PluginBaseImpl(DoNotInherit = DoNotInherit())
+		IPluginBaseImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~PluginBaseImpl()
+		virtual ~IPluginBaseImpl()
 		{
 		}
 
-		virtual void setOwner(ReferenceCounted* r) = 0;
-		virtual ReferenceCounted* getOwner() = 0;
+		virtual void setOwner(IReferenceCounted* r) = 0;
+		virtual IReferenceCounted* getOwner() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class PluginSetBaseImpl : public Base
+	class IPluginSetBaseImpl : public Base
 	{
 	public:
-		typedef PluginSet Declaration;
+		typedef IPluginSet Declaration;
 
-		PluginSetBaseImpl(DoNotInherit = DoNotInherit())
+		IPluginSetBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -5280,7 +5282,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(const PluginSet* self) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(const IPluginSet* self) throw()
 		{
 			try
 			{
@@ -5293,7 +5295,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetModuleNameDispatcher(const PluginSet* self) throw()
+		static const char* CLOOP_CARG cloopgetModuleNameDispatcher(const IPluginSet* self) throw()
 		{
 			try
 			{
@@ -5306,7 +5308,7 @@ public:
 			}
 		}
 
-		static PluginBase* CLOOP_CARG cloopgetPluginDispatcher(PluginSet* self, Status* status) throw()
+		static IPluginBase* CLOOP_CARG cloopgetPluginDispatcher(IPluginSet* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -5315,11 +5317,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<PluginBase*>(0);
+				return static_cast<IPluginBase*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopnextDispatcher(PluginSet* self, Status* status) throw()
+		static void CLOOP_CARG cloopnextDispatcher(IPluginSet* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -5331,7 +5333,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDispatcher(PluginSet* self, Status* status, const char* s) throw()
+		static void CLOOP_CARG cloopsetDispatcher(IPluginSet* self, IStatus* status, const char* s) throw()
 		{
 			try
 			{
@@ -5343,7 +5345,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5355,7 +5357,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5368,7 +5370,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5377,38 +5379,38 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<PluginSet> > > > >
-	class PluginSetImpl : public PluginSetBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IPluginSet> > > > >
+	class IPluginSetImpl : public IPluginSetBaseImpl<Name, Base>
 	{
 	protected:
-		PluginSetImpl(DoNotInherit = DoNotInherit())
+		IPluginSetImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~PluginSetImpl()
+		virtual ~IPluginSetImpl()
 		{
 		}
 
 		virtual const char* getName() const = 0;
 		virtual const char* getModuleName() const = 0;
-		virtual PluginBase* getPlugin(Status* status) = 0;
-		virtual void next(Status* status) = 0;
-		virtual void set(Status* status, const char* s) = 0;
+		virtual IPluginBase* getPlugin(IStatus* status) = 0;
+		virtual void next(IStatus* status) = 0;
+		virtual void set(IStatus* status, const char* s) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ConfigEntryBaseImpl : public Base
+	class IConfigEntryBaseImpl : public Base
 	{
 	public:
-		typedef ConfigEntry Declaration;
+		typedef IConfigEntry Declaration;
 
-		ConfigEntryBaseImpl(DoNotInherit = DoNotInherit())
+		IConfigEntryBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -5429,7 +5431,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(ConfigEntry* self) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(IConfigEntry* self) throw()
 		{
 			try
 			{
@@ -5442,7 +5444,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetValueDispatcher(ConfigEntry* self) throw()
+		static const char* CLOOP_CARG cloopgetValueDispatcher(IConfigEntry* self) throw()
 		{
 			try
 			{
@@ -5455,7 +5457,7 @@ public:
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopgetIntValueDispatcher(ConfigEntry* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetIntValueDispatcher(IConfigEntry* self) throw()
 		{
 			try
 			{
@@ -5468,7 +5470,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopgetBoolValueDispatcher(ConfigEntry* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopgetBoolValueDispatcher(IConfigEntry* self) throw()
 		{
 			try
 			{
@@ -5481,7 +5483,7 @@ public:
 			}
 		}
 
-		static Config* CLOOP_CARG cloopgetSubConfigDispatcher(ConfigEntry* self, Status* status) throw()
+		static IConfig* CLOOP_CARG cloopgetSubConfigDispatcher(IConfigEntry* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -5490,11 +5492,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Config*>(0);
+				return static_cast<IConfig*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5506,7 +5508,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5519,7 +5521,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5528,21 +5530,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<ConfigEntry> > > > >
-	class ConfigEntryImpl : public ConfigEntryBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IConfigEntry> > > > >
+	class IConfigEntryImpl : public IConfigEntryBaseImpl<Name, Base>
 	{
 	protected:
-		ConfigEntryImpl(DoNotInherit = DoNotInherit())
+		IConfigEntryImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ConfigEntryImpl()
+		virtual ~IConfigEntryImpl()
 		{
 		}
 
@@ -5550,16 +5552,16 @@ public:
 		virtual const char* getValue() = 0;
 		virtual ISC_INT64 getIntValue() = 0;
 		virtual FB_BOOLEAN getBoolValue() = 0;
-		virtual Config* getSubConfig(Status* status) = 0;
+		virtual IConfig* getSubConfig(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ConfigBaseImpl : public Base
+	class IConfigBaseImpl : public Base
 	{
 	public:
-		typedef Config Declaration;
+		typedef IConfig Declaration;
 
-		ConfigBaseImpl(DoNotInherit = DoNotInherit())
+		IConfigBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -5578,7 +5580,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static ConfigEntry* CLOOP_CARG cloopfindDispatcher(Config* self, Status* status, const char* name) throw()
+		static IConfigEntry* CLOOP_CARG cloopfindDispatcher(IConfig* self, IStatus* status, const char* name) throw()
 		{
 			try
 			{
@@ -5587,11 +5589,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ConfigEntry*>(0);
+				return static_cast<IConfigEntry*>(0);
 			}
 		}
 
-		static ConfigEntry* CLOOP_CARG cloopfindValueDispatcher(Config* self, Status* status, const char* name, const char* value) throw()
+		static IConfigEntry* CLOOP_CARG cloopfindValueDispatcher(IConfig* self, IStatus* status, const char* name, const char* value) throw()
 		{
 			try
 			{
@@ -5600,11 +5602,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ConfigEntry*>(0);
+				return static_cast<IConfigEntry*>(0);
 			}
 		}
 
-		static ConfigEntry* CLOOP_CARG cloopfindPosDispatcher(Config* self, Status* status, const char* name, unsigned pos) throw()
+		static IConfigEntry* CLOOP_CARG cloopfindPosDispatcher(IConfig* self, IStatus* status, const char* name, unsigned pos) throw()
 		{
 			try
 			{
@@ -5613,11 +5615,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ConfigEntry*>(0);
+				return static_cast<IConfigEntry*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5629,7 +5631,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5642,7 +5644,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5651,36 +5653,36 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Config> > > > >
-	class ConfigImpl : public ConfigBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IConfig> > > > >
+	class IConfigImpl : public IConfigBaseImpl<Name, Base>
 	{
 	protected:
-		ConfigImpl(DoNotInherit = DoNotInherit())
+		IConfigImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ConfigImpl()
+		virtual ~IConfigImpl()
 		{
 		}
 
-		virtual ConfigEntry* find(Status* status, const char* name) = 0;
-		virtual ConfigEntry* findValue(Status* status, const char* name, const char* value) = 0;
-		virtual ConfigEntry* findPos(Status* status, const char* name, unsigned pos) = 0;
+		virtual IConfigEntry* find(IStatus* status, const char* name) = 0;
+		virtual IConfigEntry* findValue(IStatus* status, const char* name, const char* value) = 0;
+		virtual IConfigEntry* findPos(IStatus* status, const char* name, unsigned pos) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class FirebirdConfBaseImpl : public Base
+	class IFirebirdConfBaseImpl : public Base
 	{
 	public:
-		typedef FirebirdConf Declaration;
+		typedef IFirebirdConf Declaration;
 
-		FirebirdConfBaseImpl(DoNotInherit = DoNotInherit())
+		IFirebirdConfBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -5700,7 +5702,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetKeyDispatcher(FirebirdConf* self, const char* name) throw()
+		static unsigned CLOOP_CARG cloopgetKeyDispatcher(IFirebirdConf* self, const char* name) throw()
 		{
 			try
 			{
@@ -5713,7 +5715,7 @@ public:
 			}
 		}
 
-		static ISC_INT64 CLOOP_CARG cloopasIntegerDispatcher(FirebirdConf* self, unsigned key) throw()
+		static ISC_INT64 CLOOP_CARG cloopasIntegerDispatcher(IFirebirdConf* self, unsigned key) throw()
 		{
 			try
 			{
@@ -5726,7 +5728,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopasStringDispatcher(FirebirdConf* self, unsigned key) throw()
+		static const char* CLOOP_CARG cloopasStringDispatcher(IFirebirdConf* self, unsigned key) throw()
 		{
 			try
 			{
@@ -5739,7 +5741,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopasBooleanDispatcher(FirebirdConf* self, unsigned key) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopasBooleanDispatcher(IFirebirdConf* self, unsigned key) throw()
 		{
 			try
 			{
@@ -5752,7 +5754,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5764,7 +5766,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5777,7 +5779,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5786,21 +5788,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<FirebirdConf> > > > >
-	class FirebirdConfImpl : public FirebirdConfBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IFirebirdConf> > > > >
+	class IFirebirdConfImpl : public IFirebirdConfBaseImpl<Name, Base>
 	{
 	protected:
-		FirebirdConfImpl(DoNotInherit = DoNotInherit())
+		IFirebirdConfImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~FirebirdConfImpl()
+		virtual ~IFirebirdConfImpl()
 		{
 		}
 
@@ -5811,12 +5813,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class PluginConfigBaseImpl : public Base
+	class IPluginConfigBaseImpl : public Base
 	{
 	public:
-		typedef PluginConfig Declaration;
+		typedef IPluginConfig Declaration;
 
-		PluginConfigBaseImpl(DoNotInherit = DoNotInherit())
+		IPluginConfigBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -5836,7 +5838,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetConfigFileNameDispatcher(PluginConfig* self) throw()
+		static const char* CLOOP_CARG cloopgetConfigFileNameDispatcher(IPluginConfig* self) throw()
 		{
 			try
 			{
@@ -5849,7 +5851,7 @@ public:
 			}
 		}
 
-		static Config* CLOOP_CARG cloopgetDefaultConfigDispatcher(PluginConfig* self, Status* status) throw()
+		static IConfig* CLOOP_CARG cloopgetDefaultConfigDispatcher(IPluginConfig* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -5858,11 +5860,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Config*>(0);
+				return static_cast<IConfig*>(0);
 			}
 		}
 
-		static FirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(PluginConfig* self, Status* status) throw()
+		static IFirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(IPluginConfig* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -5871,11 +5873,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<FirebirdConf*>(0);
+				return static_cast<IFirebirdConf*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopsetReleaseDelayDispatcher(PluginConfig* self, Status* status, ISC_UINT64 microSeconds) throw()
+		static void CLOOP_CARG cloopsetReleaseDelayDispatcher(IPluginConfig* self, IStatus* status, ISC_UINT64 microSeconds) throw()
 		{
 			try
 			{
@@ -5887,7 +5889,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5899,7 +5901,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -5912,7 +5914,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5921,37 +5923,37 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<PluginConfig> > > > >
-	class PluginConfigImpl : public PluginConfigBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IPluginConfig> > > > >
+	class IPluginConfigImpl : public IPluginConfigBaseImpl<Name, Base>
 	{
 	protected:
-		PluginConfigImpl(DoNotInherit = DoNotInherit())
+		IPluginConfigImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~PluginConfigImpl()
+		virtual ~IPluginConfigImpl()
 		{
 		}
 
 		virtual const char* getConfigFileName() = 0;
-		virtual Config* getDefaultConfig(Status* status) = 0;
-		virtual FirebirdConf* getFirebirdConf(Status* status) = 0;
-		virtual void setReleaseDelay(Status* status, ISC_UINT64 microSeconds) = 0;
+		virtual IConfig* getDefaultConfig(IStatus* status) = 0;
+		virtual IFirebirdConf* getFirebirdConf(IStatus* status) = 0;
+		virtual void setReleaseDelay(IStatus* status, ISC_UINT64 microSeconds) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class PluginFactoryBaseImpl : public Base
+	class IPluginFactoryBaseImpl : public Base
 	{
 	public:
-		typedef PluginFactory Declaration;
+		typedef IPluginFactory Declaration;
 
-		PluginFactoryBaseImpl(DoNotInherit = DoNotInherit())
+		IPluginFactoryBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -5966,7 +5968,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static PluginBase* CLOOP_CARG cloopcreatePluginDispatcher(PluginFactory* self, Status* status, PluginConfig* factoryParameter) throw()
+		static IPluginBase* CLOOP_CARG cloopcreatePluginDispatcher(IPluginFactory* self, IStatus* status, IPluginConfig* factoryParameter) throw()
 		{
 			try
 			{
@@ -5975,11 +5977,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<PluginBase*>(0);
+				return static_cast<IPluginBase*>(0);
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -5988,34 +5990,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<PluginFactory> > >
-	class PluginFactoryImpl : public PluginFactoryBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IPluginFactory> > >
+	class IPluginFactoryImpl : public IPluginFactoryBaseImpl<Name, Base>
 	{
 	protected:
-		PluginFactoryImpl(DoNotInherit = DoNotInherit())
+		IPluginFactoryImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~PluginFactoryImpl()
+		virtual ~IPluginFactoryImpl()
 		{
 		}
 
-		virtual PluginBase* createPlugin(Status* status, PluginConfig* factoryParameter) = 0;
+		virtual IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class PluginModuleBaseImpl : public Base
+	class IPluginModuleBaseImpl : public Base
 	{
 	public:
-		typedef PluginModule Declaration;
+		typedef IPluginModule Declaration;
 
-		PluginModuleBaseImpl(DoNotInherit = DoNotInherit())
+		IPluginModuleBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -6030,7 +6032,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopdoCleanDispatcher(PluginModule* self) throw()
+		static void CLOOP_CARG cloopdoCleanDispatcher(IPluginModule* self) throw()
 		{
 			try
 			{
@@ -6042,7 +6044,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -6051,21 +6053,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<PluginModule> > >
-	class PluginModuleImpl : public PluginModuleBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IPluginModule> > >
+	class IPluginModuleImpl : public IPluginModuleBaseImpl<Name, Base>
 	{
 	protected:
-		PluginModuleImpl(DoNotInherit = DoNotInherit())
+		IPluginModuleImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~PluginModuleImpl()
+		virtual ~IPluginModuleImpl()
 		{
 		}
 
@@ -6073,12 +6075,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class PluginManagerBaseImpl : public Base
+	class IPluginManagerBaseImpl : public Base
 	{
 	public:
-		typedef PluginManager Declaration;
+		typedef IPluginManager Declaration;
 
-		PluginManagerBaseImpl(DoNotInherit = DoNotInherit())
+		IPluginManagerBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -6098,7 +6100,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopregisterPluginFactoryDispatcher(PluginManager* self, unsigned pluginType, const char* defaultName, PluginFactory* factory) throw()
+		static void CLOOP_CARG cloopregisterPluginFactoryDispatcher(IPluginManager* self, unsigned pluginType, const char* defaultName, IPluginFactory* factory) throw()
 		{
 			try
 			{
@@ -6110,7 +6112,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopregisterModuleDispatcher(PluginManager* self, PluginModule* cleanup) throw()
+		static void CLOOP_CARG cloopregisterModuleDispatcher(IPluginManager* self, IPluginModule* cleanup) throw()
 		{
 			try
 			{
@@ -6122,7 +6124,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopunregisterModuleDispatcher(PluginManager* self, PluginModule* cleanup) throw()
+		static void CLOOP_CARG cloopunregisterModuleDispatcher(IPluginManager* self, IPluginModule* cleanup) throw()
 		{
 			try
 			{
@@ -6134,7 +6136,7 @@ public:
 			}
 		}
 
-		static PluginSet* CLOOP_CARG cloopgetPluginsDispatcher(PluginManager* self, Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf) throw()
+		static IPluginSet* CLOOP_CARG cloopgetPluginsDispatcher(IPluginManager* self, IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) throw()
 		{
 			try
 			{
@@ -6143,11 +6145,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<PluginSet*>(0);
+				return static_cast<IPluginSet*>(0);
 			}
 		}
 
-		static Config* CLOOP_CARG cloopgetConfigDispatcher(PluginManager* self, Status* status, const char* filename) throw()
+		static IConfig* CLOOP_CARG cloopgetConfigDispatcher(IPluginManager* self, IStatus* status, const char* filename) throw()
 		{
 			try
 			{
@@ -6156,11 +6158,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Config*>(0);
+				return static_cast<IConfig*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopreleasePluginDispatcher(PluginManager* self, PluginBase* plugin) throw()
+		static void CLOOP_CARG cloopreleasePluginDispatcher(IPluginManager* self, IPluginBase* plugin) throw()
 		{
 			try
 			{
@@ -6172,7 +6174,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -6181,39 +6183,39 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<PluginManager> > >
-	class PluginManagerImpl : public PluginManagerBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IPluginManager> > >
+	class IPluginManagerImpl : public IPluginManagerBaseImpl<Name, Base>
 	{
 	protected:
-		PluginManagerImpl(DoNotInherit = DoNotInherit())
+		IPluginManagerImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~PluginManagerImpl()
+		virtual ~IPluginManagerImpl()
 		{
 		}
 
-		virtual void registerPluginFactory(unsigned pluginType, const char* defaultName, PluginFactory* factory) = 0;
-		virtual void registerModule(PluginModule* cleanup) = 0;
-		virtual void unregisterModule(PluginModule* cleanup) = 0;
-		virtual PluginSet* getPlugins(Status* status, unsigned pluginType, const char* namesList, FirebirdConf* firebirdConf) = 0;
-		virtual Config* getConfig(Status* status, const char* filename) = 0;
-		virtual void releasePlugin(PluginBase* plugin) = 0;
+		virtual void registerPluginFactory(unsigned pluginType, const char* defaultName, IPluginFactory* factory) = 0;
+		virtual void registerModule(IPluginModule* cleanup) = 0;
+		virtual void unregisterModule(IPluginModule* cleanup) = 0;
+		virtual IPluginSet* getPlugins(IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) = 0;
+		virtual IConfig* getConfig(IStatus* status, const char* filename) = 0;
+		virtual void releasePlugin(IPluginBase* plugin) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ConfigManagerBaseImpl : public Base
+	class IConfigManagerBaseImpl : public Base
 	{
 	public:
-		typedef ConfigManager Declaration;
+		typedef IConfigManager Declaration;
 
-		ConfigManagerBaseImpl(DoNotInherit = DoNotInherit())
+		IConfigManagerBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -6233,7 +6235,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetDirectoryDispatcher(ConfigManager* self, unsigned code) throw()
+		static const char* CLOOP_CARG cloopgetDirectoryDispatcher(IConfigManager* self, unsigned code) throw()
 		{
 			try
 			{
@@ -6246,7 +6248,7 @@ public:
 			}
 		}
 
-		static FirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(ConfigManager* self) throw()
+		static IFirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(IConfigManager* self) throw()
 		{
 			try
 			{
@@ -6255,11 +6257,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<FirebirdConf*>(0);
+				return static_cast<IFirebirdConf*>(0);
 			}
 		}
 
-		static FirebirdConf* CLOOP_CARG cloopgetDatabaseConfDispatcher(ConfigManager* self, const char* dbName) throw()
+		static IFirebirdConf* CLOOP_CARG cloopgetDatabaseConfDispatcher(IConfigManager* self, const char* dbName) throw()
 		{
 			try
 			{
@@ -6268,11 +6270,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<FirebirdConf*>(0);
+				return static_cast<IFirebirdConf*>(0);
 			}
 		}
 
-		static Config* CLOOP_CARG cloopgetPluginConfigDispatcher(ConfigManager* self, const char* configuredPlugin) throw()
+		static IConfig* CLOOP_CARG cloopgetPluginConfigDispatcher(IConfigManager* self, const char* configuredPlugin) throw()
 		{
 			try
 			{
@@ -6281,11 +6283,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Config*>(0);
+				return static_cast<IConfig*>(0);
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetInstallDirectoryDispatcher(ConfigManager* self) throw()
+		static const char* CLOOP_CARG cloopgetInstallDirectoryDispatcher(IConfigManager* self) throw()
 		{
 			try
 			{
@@ -6298,7 +6300,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRootDirectoryDispatcher(ConfigManager* self) throw()
+		static const char* CLOOP_CARG cloopgetRootDirectoryDispatcher(IConfigManager* self) throw()
 		{
 			try
 			{
@@ -6311,7 +6313,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -6320,39 +6322,39 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<ConfigManager> > >
-	class ConfigManagerImpl : public ConfigManagerBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IConfigManager> > >
+	class IConfigManagerImpl : public IConfigManagerBaseImpl<Name, Base>
 	{
 	protected:
-		ConfigManagerImpl(DoNotInherit = DoNotInherit())
+		IConfigManagerImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ConfigManagerImpl()
+		virtual ~IConfigManagerImpl()
 		{
 		}
 
 		virtual const char* getDirectory(unsigned code) = 0;
-		virtual FirebirdConf* getFirebirdConf() = 0;
-		virtual FirebirdConf* getDatabaseConf(const char* dbName) = 0;
-		virtual Config* getPluginConfig(const char* configuredPlugin) = 0;
+		virtual IFirebirdConf* getFirebirdConf() = 0;
+		virtual IFirebirdConf* getDatabaseConf(const char* dbName) = 0;
+		virtual IConfig* getPluginConfig(const char* configuredPlugin) = 0;
 		virtual const char* getInstallDirectory() = 0;
 		virtual const char* getRootDirectory() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class EventCallbackBaseImpl : public Base
+	class IEventCallbackBaseImpl : public Base
 	{
 	public:
-		typedef EventCallback Declaration;
+		typedef IEventCallback Declaration;
 
-		EventCallbackBaseImpl(DoNotInherit = DoNotInherit())
+		IEventCallbackBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -6369,7 +6371,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopeventCallbackFunctionDispatcher(EventCallback* self, unsigned length, const unsigned char* events) throw()
+		static void CLOOP_CARG cloopeventCallbackFunctionDispatcher(IEventCallback* self, unsigned length, const unsigned char* events) throw()
 		{
 			try
 			{
@@ -6381,7 +6383,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -6393,7 +6395,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -6406,7 +6408,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -6415,21 +6417,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<EventCallback> > > > >
-	class EventCallbackImpl : public EventCallbackBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IEventCallback> > > > >
+	class IEventCallbackImpl : public IEventCallbackBaseImpl<Name, Base>
 	{
 	protected:
-		EventCallbackImpl(DoNotInherit = DoNotInherit())
+		IEventCallbackImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~EventCallbackImpl()
+		virtual ~IEventCallbackImpl()
 		{
 		}
 
@@ -6437,12 +6439,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class BlobBaseImpl : public Base
+	class IBlobBaseImpl : public Base
 	{
 	public:
-		typedef Blob Declaration;
+		typedef IBlob Declaration;
 
-		BlobBaseImpl(DoNotInherit = DoNotInherit())
+		IBlobBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -6464,7 +6466,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(Blob* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IBlob* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
 			try
 			{
@@ -6476,7 +6478,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetSegmentDispatcher(Blob* self, Status* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) throw()
+		static int CLOOP_CARG cloopgetSegmentDispatcher(IBlob* self, IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) throw()
 		{
 			try
 			{
@@ -6489,7 +6491,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopputSegmentDispatcher(Blob* self, Status* status, unsigned length, const void* buffer) throw()
+		static void CLOOP_CARG cloopputSegmentDispatcher(IBlob* self, IStatus* status, unsigned length, const void* buffer) throw()
 		{
 			try
 			{
@@ -6501,7 +6503,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopcancelDispatcher(Blob* self, Status* status) throw()
+		static void CLOOP_CARG cloopcancelDispatcher(IBlob* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6513,7 +6515,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseDispatcher(Blob* self, Status* status) throw()
+		static void CLOOP_CARG cloopcloseDispatcher(IBlob* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6525,7 +6527,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopseekDispatcher(Blob* self, Status* status, int mode, int offset) throw()
+		static int CLOOP_CARG cloopseekDispatcher(IBlob* self, IStatus* status, int mode, int offset) throw()
 		{
 			try
 			{
@@ -6538,7 +6540,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -6550,7 +6552,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -6563,7 +6565,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -6572,39 +6574,39 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Blob> > > > >
-	class BlobImpl : public BlobBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IBlob> > > > >
+	class IBlobImpl : public IBlobBaseImpl<Name, Base>
 	{
 	protected:
-		BlobImpl(DoNotInherit = DoNotInherit())
+		IBlobImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~BlobImpl()
+		virtual ~IBlobImpl()
 		{
 		}
 
-		virtual void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual int getSegment(Status* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) = 0;
-		virtual void putSegment(Status* status, unsigned length, const void* buffer) = 0;
-		virtual void cancel(Status* status) = 0;
-		virtual void close(Status* status) = 0;
-		virtual int seek(Status* status, int mode, int offset) = 0;
+		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual int getSegment(IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) = 0;
+		virtual void putSegment(IStatus* status, unsigned length, const void* buffer) = 0;
+		virtual void cancel(IStatus* status) = 0;
+		virtual void close(IStatus* status) = 0;
+		virtual int seek(IStatus* status, int mode, int offset) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TransactionBaseImpl : public Base
+	class ITransactionBaseImpl : public Base
 	{
 	public:
-		typedef Transaction Declaration;
+		typedef ITransaction Declaration;
 
-		TransactionBaseImpl(DoNotInherit = DoNotInherit())
+		ITransactionBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -6630,7 +6632,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(Transaction* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(ITransaction* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
 			try
 			{
@@ -6642,7 +6644,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopprepareDispatcher(Transaction* self, Status* status, unsigned msgLength, const unsigned char* message) throw()
+		static void CLOOP_CARG cloopprepareDispatcher(ITransaction* self, IStatus* status, unsigned msgLength, const unsigned char* message) throw()
 		{
 			try
 			{
@@ -6654,7 +6656,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopcommitDispatcher(Transaction* self, Status* status) throw()
+		static void CLOOP_CARG cloopcommitDispatcher(ITransaction* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6666,7 +6668,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopcommitRetainingDispatcher(Transaction* self, Status* status) throw()
+		static void CLOOP_CARG cloopcommitRetainingDispatcher(ITransaction* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6678,7 +6680,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackDispatcher(Transaction* self, Status* status) throw()
+		static void CLOOP_CARG clooprollbackDispatcher(ITransaction* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6690,7 +6692,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackRetainingDispatcher(Transaction* self, Status* status) throw()
+		static void CLOOP_CARG clooprollbackRetainingDispatcher(ITransaction* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6702,7 +6704,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdisconnectDispatcher(Transaction* self, Status* status) throw()
+		static void CLOOP_CARG cloopdisconnectDispatcher(ITransaction* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6714,7 +6716,7 @@ public:
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopjoinDispatcher(Transaction* self, Status* status, Transaction* transaction) throw()
+		static ITransaction* CLOOP_CARG cloopjoinDispatcher(ITransaction* self, IStatus* status, ITransaction* transaction) throw()
 		{
 			try
 			{
@@ -6723,11 +6725,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopvalidateDispatcher(Transaction* self, Status* status, Attachment* attachment) throw()
+		static ITransaction* CLOOP_CARG cloopvalidateDispatcher(ITransaction* self, IStatus* status, IAttachment* attachment) throw()
 		{
 			try
 			{
@@ -6736,11 +6738,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopenterDtcDispatcher(Transaction* self, Status* status) throw()
+		static ITransaction* CLOOP_CARG cloopenterDtcDispatcher(ITransaction* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6749,11 +6751,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -6765,7 +6767,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -6778,7 +6780,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -6787,43 +6789,43 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Transaction> > > > >
-	class TransactionImpl : public TransactionBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITransaction> > > > >
+	class ITransactionImpl : public ITransactionBaseImpl<Name, Base>
 	{
 	protected:
-		TransactionImpl(DoNotInherit = DoNotInherit())
+		ITransactionImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TransactionImpl()
+		virtual ~ITransactionImpl()
 		{
 		}
 
-		virtual void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual void prepare(Status* status, unsigned msgLength, const unsigned char* message) = 0;
-		virtual void commit(Status* status) = 0;
-		virtual void commitRetaining(Status* status) = 0;
-		virtual void rollback(Status* status) = 0;
-		virtual void rollbackRetaining(Status* status) = 0;
-		virtual void disconnect(Status* status) = 0;
-		virtual Transaction* join(Status* status, Transaction* transaction) = 0;
-		virtual Transaction* validate(Status* status, Attachment* attachment) = 0;
-		virtual Transaction* enterDtc(Status* status) = 0;
+		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual void prepare(IStatus* status, unsigned msgLength, const unsigned char* message) = 0;
+		virtual void commit(IStatus* status) = 0;
+		virtual void commitRetaining(IStatus* status) = 0;
+		virtual void rollback(IStatus* status) = 0;
+		virtual void rollbackRetaining(IStatus* status) = 0;
+		virtual void disconnect(IStatus* status) = 0;
+		virtual ITransaction* join(IStatus* status, ITransaction* transaction) = 0;
+		virtual ITransaction* validate(IStatus* status, IAttachment* attachment) = 0;
+		virtual ITransaction* enterDtc(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class MessageMetadataBaseImpl : public Base
+	class IMessageMetadataBaseImpl : public Base
 	{
 	public:
-		typedef MessageMetadata Declaration;
+		typedef IMessageMetadata Declaration;
 
-		MessageMetadataBaseImpl(DoNotInherit = DoNotInherit())
+		IMessageMetadataBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -6854,7 +6856,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetCountDispatcher(MessageMetadata* self, Status* status) throw()
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(IMessageMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -6867,7 +6869,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetFieldDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetFieldDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6880,7 +6882,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRelationDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetRelationDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6893,7 +6895,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetOwnerDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetOwnerDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6906,7 +6908,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetAliasDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static const char* CLOOP_CARG cloopgetAliasDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6919,7 +6921,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTypeDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6932,7 +6934,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopisNullableDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopisNullableDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6945,7 +6947,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetSubTypeDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static int CLOOP_CARG cloopgetSubTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6958,7 +6960,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetLengthDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6971,7 +6973,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetScaleDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static int CLOOP_CARG cloopgetScaleDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6984,7 +6986,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetCharSetDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetCharSetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -6997,7 +6999,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetOffsetDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -7010,7 +7012,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetNullOffsetDispatcher(MessageMetadata* self, Status* status, unsigned index) throw()
+		static unsigned CLOOP_CARG cloopgetNullOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -7023,7 +7025,7 @@ public:
 			}
 		}
 
-		static MetadataBuilder* CLOOP_CARG cloopgetBuilderDispatcher(MessageMetadata* self, Status* status) throw()
+		static IMetadataBuilder* CLOOP_CARG cloopgetBuilderDispatcher(IMessageMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7032,11 +7034,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MetadataBuilder*>(0);
+				return static_cast<IMetadataBuilder*>(0);
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetMessageLengthDispatcher(MessageMetadata* self, Status* status) throw()
+		static unsigned CLOOP_CARG cloopgetMessageLengthDispatcher(IMessageMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7049,7 +7051,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7061,7 +7063,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7074,7 +7076,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -7083,48 +7085,48 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<MessageMetadata> > > > >
-	class MessageMetadataImpl : public MessageMetadataBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IMessageMetadata> > > > >
+	class IMessageMetadataImpl : public IMessageMetadataBaseImpl<Name, Base>
 	{
 	protected:
-		MessageMetadataImpl(DoNotInherit = DoNotInherit())
+		IMessageMetadataImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~MessageMetadataImpl()
+		virtual ~IMessageMetadataImpl()
 		{
 		}
 
-		virtual unsigned getCount(Status* status) = 0;
-		virtual const char* getField(Status* status, unsigned index) = 0;
-		virtual const char* getRelation(Status* status, unsigned index) = 0;
-		virtual const char* getOwner(Status* status, unsigned index) = 0;
-		virtual const char* getAlias(Status* status, unsigned index) = 0;
-		virtual unsigned getType(Status* status, unsigned index) = 0;
-		virtual FB_BOOLEAN isNullable(Status* status, unsigned index) = 0;
-		virtual int getSubType(Status* status, unsigned index) = 0;
-		virtual unsigned getLength(Status* status, unsigned index) = 0;
-		virtual int getScale(Status* status, unsigned index) = 0;
-		virtual unsigned getCharSet(Status* status, unsigned index) = 0;
-		virtual unsigned getOffset(Status* status, unsigned index) = 0;
-		virtual unsigned getNullOffset(Status* status, unsigned index) = 0;
-		virtual MetadataBuilder* getBuilder(Status* status) = 0;
-		virtual unsigned getMessageLength(Status* status) = 0;
+		virtual unsigned getCount(IStatus* status) = 0;
+		virtual const char* getField(IStatus* status, unsigned index) = 0;
+		virtual const char* getRelation(IStatus* status, unsigned index) = 0;
+		virtual const char* getOwner(IStatus* status, unsigned index) = 0;
+		virtual const char* getAlias(IStatus* status, unsigned index) = 0;
+		virtual unsigned getType(IStatus* status, unsigned index) = 0;
+		virtual FB_BOOLEAN isNullable(IStatus* status, unsigned index) = 0;
+		virtual int getSubType(IStatus* status, unsigned index) = 0;
+		virtual unsigned getLength(IStatus* status, unsigned index) = 0;
+		virtual int getScale(IStatus* status, unsigned index) = 0;
+		virtual unsigned getCharSet(IStatus* status, unsigned index) = 0;
+		virtual unsigned getOffset(IStatus* status, unsigned index) = 0;
+		virtual unsigned getNullOffset(IStatus* status, unsigned index) = 0;
+		virtual IMetadataBuilder* getBuilder(IStatus* status) = 0;
+		virtual unsigned getMessageLength(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class MetadataBuilderBaseImpl : public Base
+	class IMetadataBuilderBaseImpl : public Base
 	{
 	public:
-		typedef MetadataBuilder Declaration;
+		typedef IMetadataBuilder Declaration;
 
-		MetadataBuilderBaseImpl(DoNotInherit = DoNotInherit())
+		IMetadataBuilderBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -7150,7 +7152,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetTypeDispatcher(MetadataBuilder* self, Status* status, unsigned index, unsigned type) throw()
+		static void CLOOP_CARG cloopsetTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned type) throw()
 		{
 			try
 			{
@@ -7162,7 +7164,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetSubTypeDispatcher(MetadataBuilder* self, Status* status, unsigned index, int subType) throw()
+		static void CLOOP_CARG cloopsetSubTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) throw()
 		{
 			try
 			{
@@ -7174,7 +7176,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetLengthDispatcher(MetadataBuilder* self, Status* status, unsigned index, unsigned length) throw()
+		static void CLOOP_CARG cloopsetLengthDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) throw()
 		{
 			try
 			{
@@ -7186,7 +7188,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetCharSetDispatcher(MetadataBuilder* self, Status* status, unsigned index, unsigned charSet) throw()
+		static void CLOOP_CARG cloopsetCharSetDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) throw()
 		{
 			try
 			{
@@ -7198,7 +7200,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetScaleDispatcher(MetadataBuilder* self, Status* status, unsigned index, unsigned scale) throw()
+		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned scale) throw()
 		{
 			try
 			{
@@ -7210,7 +7212,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG clooptruncateDispatcher(MetadataBuilder* self, Status* status, unsigned count) throw()
+		static void CLOOP_CARG clooptruncateDispatcher(IMetadataBuilder* self, IStatus* status, unsigned count) throw()
 		{
 			try
 			{
@@ -7222,7 +7224,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopmoveNameToIndexDispatcher(MetadataBuilder* self, Status* status, const char* name, unsigned index) throw()
+		static void CLOOP_CARG cloopmoveNameToIndexDispatcher(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) throw()
 		{
 			try
 			{
@@ -7234,7 +7236,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopremoveDispatcher(MetadataBuilder* self, Status* status, unsigned index) throw()
+		static void CLOOP_CARG cloopremoveDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index) throw()
 		{
 			try
 			{
@@ -7246,7 +7248,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopaddFieldDispatcher(MetadataBuilder* self, Status* status) throw()
+		static unsigned CLOOP_CARG cloopaddFieldDispatcher(IMetadataBuilder* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7259,7 +7261,7 @@ public:
 			}
 		}
 
-		static MessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(MetadataBuilder* self, Status* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IMetadataBuilder* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7268,11 +7270,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MessageMetadata*>(0);
+				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7284,7 +7286,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7297,7 +7299,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -7306,43 +7308,43 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<MetadataBuilder> > > > >
-	class MetadataBuilderImpl : public MetadataBuilderBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IMetadataBuilder> > > > >
+	class IMetadataBuilderImpl : public IMetadataBuilderBaseImpl<Name, Base>
 	{
 	protected:
-		MetadataBuilderImpl(DoNotInherit = DoNotInherit())
+		IMetadataBuilderImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~MetadataBuilderImpl()
+		virtual ~IMetadataBuilderImpl()
 		{
 		}
 
-		virtual void setType(Status* status, unsigned index, unsigned type) = 0;
-		virtual void setSubType(Status* status, unsigned index, int subType) = 0;
-		virtual void setLength(Status* status, unsigned index, unsigned length) = 0;
-		virtual void setCharSet(Status* status, unsigned index, unsigned charSet) = 0;
-		virtual void setScale(Status* status, unsigned index, unsigned scale) = 0;
-		virtual void truncate(Status* status, unsigned count) = 0;
-		virtual void moveNameToIndex(Status* status, const char* name, unsigned index) = 0;
-		virtual void remove(Status* status, unsigned index) = 0;
-		virtual unsigned addField(Status* status) = 0;
-		virtual MessageMetadata* getMetadata(Status* status) = 0;
+		virtual void setType(IStatus* status, unsigned index, unsigned type) = 0;
+		virtual void setSubType(IStatus* status, unsigned index, int subType) = 0;
+		virtual void setLength(IStatus* status, unsigned index, unsigned length) = 0;
+		virtual void setCharSet(IStatus* status, unsigned index, unsigned charSet) = 0;
+		virtual void setScale(IStatus* status, unsigned index, unsigned scale) = 0;
+		virtual void truncate(IStatus* status, unsigned count) = 0;
+		virtual void moveNameToIndex(IStatus* status, const char* name, unsigned index) = 0;
+		virtual void remove(IStatus* status, unsigned index) = 0;
+		virtual unsigned addField(IStatus* status) = 0;
+		virtual IMessageMetadata* getMetadata(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ResultSetBaseImpl : public Base
+	class IResultSetBaseImpl : public Base
 	{
 	public:
-		typedef ResultSet Declaration;
+		typedef IResultSet Declaration;
 
-		ResultSetBaseImpl(DoNotInherit = DoNotInherit())
+		IResultSetBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -7369,7 +7371,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopfetchNextDispatcher(ResultSet* self, Status* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchNextDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
 			try
 			{
@@ -7382,7 +7384,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchPriorDispatcher(ResultSet* self, Status* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchPriorDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
 			try
 			{
@@ -7395,7 +7397,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchFirstDispatcher(ResultSet* self, Status* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchFirstDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
 			try
 			{
@@ -7408,7 +7410,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchLastDispatcher(ResultSet* self, Status* status, void* message) throw()
+		static int CLOOP_CARG cloopfetchLastDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
 			try
 			{
@@ -7421,7 +7423,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchAbsoluteDispatcher(ResultSet* self, Status* status, unsigned position, void* message) throw()
+		static int CLOOP_CARG cloopfetchAbsoluteDispatcher(IResultSet* self, IStatus* status, unsigned position, void* message) throw()
 		{
 			try
 			{
@@ -7434,7 +7436,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchRelativeDispatcher(ResultSet* self, Status* status, int offset, void* message) throw()
+		static int CLOOP_CARG cloopfetchRelativeDispatcher(IResultSet* self, IStatus* status, int offset, void* message) throw()
 		{
 			try
 			{
@@ -7447,7 +7449,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(ResultSet* self, Status* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(IResultSet* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7460,7 +7462,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopisBofDispatcher(ResultSet* self, Status* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopisBofDispatcher(IResultSet* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7473,7 +7475,7 @@ public:
 			}
 		}
 
-		static MessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(ResultSet* self, Status* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IResultSet* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7482,11 +7484,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MessageMetadata*>(0);
+				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseDispatcher(ResultSet* self, Status* status) throw()
+		static void CLOOP_CARG cloopcloseDispatcher(IResultSet* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7498,7 +7500,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDelayedOutputFormatDispatcher(ResultSet* self, Status* status, MessageMetadata* format) throw()
+		static void CLOOP_CARG cloopsetDelayedOutputFormatDispatcher(IResultSet* self, IStatus* status, IMessageMetadata* format) throw()
 		{
 			try
 			{
@@ -7510,7 +7512,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7522,7 +7524,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7535,7 +7537,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -7544,44 +7546,44 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<ResultSet> > > > >
-	class ResultSetImpl : public ResultSetBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IResultSet> > > > >
+	class IResultSetImpl : public IResultSetBaseImpl<Name, Base>
 	{
 	protected:
-		ResultSetImpl(DoNotInherit = DoNotInherit())
+		IResultSetImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ResultSetImpl()
+		virtual ~IResultSetImpl()
 		{
 		}
 
-		virtual int fetchNext(Status* status, void* message) = 0;
-		virtual int fetchPrior(Status* status, void* message) = 0;
-		virtual int fetchFirst(Status* status, void* message) = 0;
-		virtual int fetchLast(Status* status, void* message) = 0;
-		virtual int fetchAbsolute(Status* status, unsigned position, void* message) = 0;
-		virtual int fetchRelative(Status* status, int offset, void* message) = 0;
-		virtual FB_BOOLEAN isEof(Status* status) = 0;
-		virtual FB_BOOLEAN isBof(Status* status) = 0;
-		virtual MessageMetadata* getMetadata(Status* status) = 0;
-		virtual void close(Status* status) = 0;
-		virtual void setDelayedOutputFormat(Status* status, MessageMetadata* format) = 0;
+		virtual int fetchNext(IStatus* status, void* message) = 0;
+		virtual int fetchPrior(IStatus* status, void* message) = 0;
+		virtual int fetchFirst(IStatus* status, void* message) = 0;
+		virtual int fetchLast(IStatus* status, void* message) = 0;
+		virtual int fetchAbsolute(IStatus* status, unsigned position, void* message) = 0;
+		virtual int fetchRelative(IStatus* status, int offset, void* message) = 0;
+		virtual FB_BOOLEAN isEof(IStatus* status) = 0;
+		virtual FB_BOOLEAN isBof(IStatus* status) = 0;
+		virtual IMessageMetadata* getMetadata(IStatus* status) = 0;
+		virtual void close(IStatus* status) = 0;
+		virtual void setDelayedOutputFormat(IStatus* status, IMessageMetadata* format) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class StatementBaseImpl : public Base
+	class IStatementBaseImpl : public Base
 	{
 	public:
-		typedef Statement Declaration;
+		typedef IStatement Declaration;
 
-		StatementBaseImpl(DoNotInherit = DoNotInherit())
+		IStatementBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -7608,7 +7610,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(Statement* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IStatement* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
 			try
 			{
@@ -7620,7 +7622,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTypeDispatcher(Statement* self, Status* status) throw()
+		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IStatement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7633,7 +7635,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetPlanDispatcher(Statement* self, Status* status, FB_BOOLEAN detailed) throw()
+		static const char* CLOOP_CARG cloopgetPlanDispatcher(IStatement* self, IStatus* status, FB_BOOLEAN detailed) throw()
 		{
 			try
 			{
@@ -7646,7 +7648,7 @@ public:
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetAffectedRecordsDispatcher(Statement* self, Status* status) throw()
+		static ISC_UINT64 CLOOP_CARG cloopgetAffectedRecordsDispatcher(IStatement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7659,7 +7661,7 @@ public:
 			}
 		}
 
-		static MessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(Statement* self, Status* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(IStatement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7668,11 +7670,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MessageMetadata*>(0);
+				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
-		static MessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(Statement* self, Status* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(IStatement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7681,11 +7683,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MessageMetadata*>(0);
+				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopexecuteDispatcher(Statement* self, Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer) throw()
+		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw()
 		{
 			try
 			{
@@ -7694,11 +7696,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static ResultSet* CLOOP_CARG cloopopenCursorDispatcher(Statement* self, Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata) throw()
+		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) throw()
 		{
 			try
 			{
@@ -7707,11 +7709,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ResultSet*>(0);
+				return static_cast<IResultSet*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopsetCursorNameDispatcher(Statement* self, Status* status, const char* name) throw()
+		static void CLOOP_CARG cloopsetCursorNameDispatcher(IStatement* self, IStatus* status, const char* name) throw()
 		{
 			try
 			{
@@ -7723,7 +7725,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopfreeDispatcher(Statement* self, Status* status) throw()
+		static void CLOOP_CARG cloopfreeDispatcher(IStatement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7735,7 +7737,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetFlagsDispatcher(Statement* self, Status* status) throw()
+		static unsigned CLOOP_CARG cloopgetFlagsDispatcher(IStatement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7748,7 +7750,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7760,7 +7762,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7773,7 +7775,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -7782,44 +7784,44 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Statement> > > > >
-	class StatementImpl : public StatementBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IStatement> > > > >
+	class IStatementImpl : public IStatementBaseImpl<Name, Base>
 	{
 	protected:
-		StatementImpl(DoNotInherit = DoNotInherit())
+		IStatementImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~StatementImpl()
+		virtual ~IStatementImpl()
 		{
 		}
 
-		virtual void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual unsigned getType(Status* status) = 0;
-		virtual const char* getPlan(Status* status, FB_BOOLEAN detailed) = 0;
-		virtual ISC_UINT64 getAffectedRecords(Status* status) = 0;
-		virtual MessageMetadata* getInputMetadata(Status* status) = 0;
-		virtual MessageMetadata* getOutputMetadata(Status* status) = 0;
-		virtual Transaction* execute(Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer) = 0;
-		virtual ResultSet* openCursor(Status* status, Transaction* transaction, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata) = 0;
-		virtual void setCursorName(Status* status, const char* name) = 0;
-		virtual void free(Status* status) = 0;
-		virtual unsigned getFlags(Status* status) = 0;
+		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual unsigned getType(IStatus* status) = 0;
+		virtual const char* getPlan(IStatus* status, FB_BOOLEAN detailed) = 0;
+		virtual ISC_UINT64 getAffectedRecords(IStatus* status) = 0;
+		virtual IMessageMetadata* getInputMetadata(IStatus* status) = 0;
+		virtual IMessageMetadata* getOutputMetadata(IStatus* status) = 0;
+		virtual ITransaction* execute(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
+		virtual IResultSet* openCursor(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
+		virtual void setCursorName(IStatus* status, const char* name) = 0;
+		virtual void free(IStatus* status) = 0;
+		virtual unsigned getFlags(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class RequestBaseImpl : public Base
+	class IRequestBaseImpl : public Base
 	{
 	public:
-		typedef Request Declaration;
+		typedef IRequest Declaration;
 
-		RequestBaseImpl(DoNotInherit = DoNotInherit())
+		IRequestBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -7842,7 +7844,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopreceiveDispatcher(Request* self, Status* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw()
+		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw()
 		{
 			try
 			{
@@ -7854,7 +7856,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsendDispatcher(Request* self, Status* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
+		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
 		{
 			try
 			{
@@ -7866,7 +7868,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(Request* self, Status* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
 			try
 			{
@@ -7878,7 +7880,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(Request* self, Status* status, Transaction* tra, int level) throw()
+		static void CLOOP_CARG cloopstartDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level) throw()
 		{
 			try
 			{
@@ -7890,7 +7892,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopstartAndSendDispatcher(Request* self, Status* status, Transaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
+		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
 		{
 			try
 			{
@@ -7902,7 +7904,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopunwindDispatcher(Request* self, Status* status, int level) throw()
+		static void CLOOP_CARG cloopunwindDispatcher(IRequest* self, IStatus* status, int level) throw()
 		{
 			try
 			{
@@ -7914,7 +7916,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopfreeDispatcher(Request* self, Status* status) throw()
+		static void CLOOP_CARG cloopfreeDispatcher(IRequest* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -7926,7 +7928,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7938,7 +7940,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -7951,7 +7953,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -7960,40 +7962,40 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Request> > > > >
-	class RequestImpl : public RequestBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IRequest> > > > >
+	class IRequestImpl : public IRequestBaseImpl<Name, Base>
 	{
 	protected:
-		RequestImpl(DoNotInherit = DoNotInherit())
+		IRequestImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~RequestImpl()
+		virtual ~IRequestImpl()
 		{
 		}
 
-		virtual void receive(Status* status, int level, unsigned msgType, unsigned length, unsigned char* message) = 0;
-		virtual void send(Status* status, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
-		virtual void getInfo(Status* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual void start(Status* status, Transaction* tra, int level) = 0;
-		virtual void startAndSend(Status* status, Transaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
-		virtual void unwind(Status* status, int level) = 0;
-		virtual void free(Status* status) = 0;
+		virtual void receive(IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) = 0;
+		virtual void send(IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
+		virtual void getInfo(IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual void start(IStatus* status, ITransaction* tra, int level) = 0;
+		virtual void startAndSend(IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
+		virtual void unwind(IStatus* status, int level) = 0;
+		virtual void free(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class EventsBaseImpl : public Base
+	class IEventsBaseImpl : public Base
 	{
 	public:
-		typedef Events Declaration;
+		typedef IEvents Declaration;
 
-		EventsBaseImpl(DoNotInherit = DoNotInherit())
+		IEventsBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -8010,7 +8012,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopcancelDispatcher(Events* self, Status* status) throw()
+		static void CLOOP_CARG cloopcancelDispatcher(IEvents* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -8022,7 +8024,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8034,7 +8036,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8047,7 +8049,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -8056,34 +8058,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Events> > > > >
-	class EventsImpl : public EventsBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IEvents> > > > >
+	class IEventsImpl : public IEventsBaseImpl<Name, Base>
 	{
 	protected:
-		EventsImpl(DoNotInherit = DoNotInherit())
+		IEventsImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~EventsImpl()
+		virtual ~IEventsImpl()
 		{
 		}
 
-		virtual void cancel(Status* status) = 0;
+		virtual void cancel(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class AttachmentBaseImpl : public Base
+	class IAttachmentBaseImpl : public Base
 	{
 	public:
-		typedef Attachment Declaration;
+		typedef IAttachment Declaration;
 
-		AttachmentBaseImpl(DoNotInherit = DoNotInherit())
+		IAttachmentBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -8117,7 +8119,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetInfoDispatcher(Attachment* self, Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopgetInfoDispatcher(IAttachment* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
 			try
 			{
@@ -8129,7 +8131,7 @@ public:
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopstartTransactionDispatcher(Attachment* self, Status* status, unsigned tpbLength, const unsigned char* tpb) throw()
+		static ITransaction* CLOOP_CARG cloopstartTransactionDispatcher(IAttachment* self, IStatus* status, unsigned tpbLength, const unsigned char* tpb) throw()
 		{
 			try
 			{
@@ -8138,11 +8140,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopreconnectTransactionDispatcher(Attachment* self, Status* status, unsigned length, const unsigned char* id) throw()
+		static ITransaction* CLOOP_CARG cloopreconnectTransactionDispatcher(IAttachment* self, IStatus* status, unsigned length, const unsigned char* id) throw()
 		{
 			try
 			{
@@ -8151,11 +8153,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static Request* CLOOP_CARG cloopcompileRequestDispatcher(Attachment* self, Status* status, unsigned blrLength, const unsigned char* blr) throw()
+		static IRequest* CLOOP_CARG cloopcompileRequestDispatcher(IAttachment* self, IStatus* status, unsigned blrLength, const unsigned char* blr) throw()
 		{
 			try
 			{
@@ -8164,11 +8166,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Request*>(0);
+				return static_cast<IRequest*>(0);
 			}
 		}
 
-		static void CLOOP_CARG clooptransactRequestDispatcher(Attachment* self, Status* status, Transaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) throw()
+		static void CLOOP_CARG clooptransactRequestDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) throw()
 		{
 			try
 			{
@@ -8180,7 +8182,7 @@ public:
 			}
 		}
 
-		static Blob* CLOOP_CARG cloopcreateBlobDispatcher(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
+		static IBlob* CLOOP_CARG cloopcreateBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
 		{
 			try
 			{
@@ -8189,11 +8191,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Blob*>(0);
+				return static_cast<IBlob*>(0);
 			}
 		}
 
-		static Blob* CLOOP_CARG cloopopenBlobDispatcher(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
+		static IBlob* CLOOP_CARG cloopopenBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
 		{
 			try
 			{
@@ -8202,11 +8204,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Blob*>(0);
+				return static_cast<IBlob*>(0);
 			}
 		}
 
-		static int CLOOP_CARG cloopgetSliceDispatcher(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
+		static int CLOOP_CARG cloopgetSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
 		{
 			try
 			{
@@ -8219,7 +8221,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopputSliceDispatcher(Attachment* self, Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
+		static void CLOOP_CARG cloopputSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
 		{
 			try
 			{
@@ -8231,7 +8233,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteDynDispatcher(Attachment* self, Status* status, Transaction* transaction, unsigned length, const unsigned char* dyn) throw()
+		static void CLOOP_CARG cloopexecuteDynDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) throw()
 		{
 			try
 			{
@@ -8243,7 +8245,7 @@ public:
 			}
 		}
 
-		static Statement* CLOOP_CARG cloopprepareDispatcher(Attachment* self, Status* status, Transaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw()
+		static IStatement* CLOOP_CARG cloopprepareDispatcher(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw()
 		{
 			try
 			{
@@ -8252,11 +8254,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Statement*>(0);
+				return static_cast<IStatement*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopexecuteDispatcher(Attachment* self, Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer) throw()
+		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw()
 		{
 			try
 			{
@@ -8265,11 +8267,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static ResultSet* CLOOP_CARG cloopopenCursorDispatcher(Attachment* self, Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, const char* cursorName) throw()
+		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) throw()
 		{
 			try
 			{
@@ -8278,11 +8280,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ResultSet*>(0);
+				return static_cast<IResultSet*>(0);
 			}
 		}
 
-		static Events* CLOOP_CARG cloopqueEventsDispatcher(Attachment* self, Status* status, EventCallback* callback, unsigned length, const unsigned char* events) throw()
+		static IEvents* CLOOP_CARG cloopqueEventsDispatcher(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) throw()
 		{
 			try
 			{
@@ -8291,11 +8293,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Events*>(0);
+				return static_cast<IEvents*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopcancelOperationDispatcher(Attachment* self, Status* status, int option) throw()
+		static void CLOOP_CARG cloopcancelOperationDispatcher(IAttachment* self, IStatus* status, int option) throw()
 		{
 			try
 			{
@@ -8307,7 +8309,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG clooppingDispatcher(Attachment* self, Status* status) throw()
+		static void CLOOP_CARG clooppingDispatcher(IAttachment* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -8319,7 +8321,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdetachDispatcher(Attachment* self, Status* status) throw()
+		static void CLOOP_CARG cloopdetachDispatcher(IAttachment* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -8331,7 +8333,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdropDatabaseDispatcher(Attachment* self, Status* status) throw()
+		static void CLOOP_CARG cloopdropDatabaseDispatcher(IAttachment* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -8343,7 +8345,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8355,7 +8357,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8368,7 +8370,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -8377,51 +8379,51 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Attachment> > > > >
-	class AttachmentImpl : public AttachmentBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IAttachment> > > > >
+	class IAttachmentImpl : public IAttachmentBaseImpl<Name, Base>
 	{
 	protected:
-		AttachmentImpl(DoNotInherit = DoNotInherit())
+		IAttachmentImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~AttachmentImpl()
+		virtual ~IAttachmentImpl()
 		{
 		}
 
-		virtual void getInfo(Status* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual Transaction* startTransaction(Status* status, unsigned tpbLength, const unsigned char* tpb) = 0;
-		virtual Transaction* reconnectTransaction(Status* status, unsigned length, const unsigned char* id) = 0;
-		virtual Request* compileRequest(Status* status, unsigned blrLength, const unsigned char* blr) = 0;
-		virtual void transactRequest(Status* status, Transaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) = 0;
-		virtual Blob* createBlob(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
-		virtual Blob* openBlob(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
-		virtual int getSlice(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
-		virtual void putSlice(Status* status, Transaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
-		virtual void executeDyn(Status* status, Transaction* transaction, unsigned length, const unsigned char* dyn) = 0;
-		virtual Statement* prepare(Status* status, Transaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) = 0;
-		virtual Transaction* execute(Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, void* outBuffer) = 0;
-		virtual ResultSet* openCursor(Status* status, Transaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, MessageMetadata* inMetadata, void* inBuffer, MessageMetadata* outMetadata, const char* cursorName) = 0;
-		virtual Events* queEvents(Status* status, EventCallback* callback, unsigned length, const unsigned char* events) = 0;
-		virtual void cancelOperation(Status* status, int option) = 0;
-		virtual void ping(Status* status) = 0;
-		virtual void detach(Status* status) = 0;
-		virtual void dropDatabase(Status* status) = 0;
+		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual ITransaction* startTransaction(IStatus* status, unsigned tpbLength, const unsigned char* tpb) = 0;
+		virtual ITransaction* reconnectTransaction(IStatus* status, unsigned length, const unsigned char* id) = 0;
+		virtual IRequest* compileRequest(IStatus* status, unsigned blrLength, const unsigned char* blr) = 0;
+		virtual void transactRequest(IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) = 0;
+		virtual IBlob* createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
+		virtual IBlob* openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
+		virtual int getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
+		virtual void putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
+		virtual void executeDyn(IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) = 0;
+		virtual IStatement* prepare(IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) = 0;
+		virtual ITransaction* execute(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
+		virtual IResultSet* openCursor(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) = 0;
+		virtual IEvents* queEvents(IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) = 0;
+		virtual void cancelOperation(IStatus* status, int option) = 0;
+		virtual void ping(IStatus* status) = 0;
+		virtual void detach(IStatus* status) = 0;
+		virtual void dropDatabase(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ServiceBaseImpl : public Base
+	class IServiceBaseImpl : public Base
 	{
 	public:
-		typedef Service Declaration;
+		typedef IService Declaration;
 
-		ServiceBaseImpl(DoNotInherit = DoNotInherit())
+		IServiceBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -8440,7 +8442,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopdetachDispatcher(Service* self, Status* status) throw()
+		static void CLOOP_CARG cloopdetachDispatcher(IService* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -8452,7 +8454,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopqueryDispatcher(Service* self, Status* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) throw()
+		static void CLOOP_CARG cloopqueryDispatcher(IService* self, IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) throw()
 		{
 			try
 			{
@@ -8464,7 +8466,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(Service* self, Status* status, unsigned spbLength, const unsigned char* spb) throw()
+		static void CLOOP_CARG cloopstartDispatcher(IService* self, IStatus* status, unsigned spbLength, const unsigned char* spb) throw()
 		{
 			try
 			{
@@ -8476,7 +8478,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8488,7 +8490,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8501,7 +8503,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -8510,36 +8512,36 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Service> > > > >
-	class ServiceImpl : public ServiceBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IService> > > > >
+	class IServiceImpl : public IServiceBaseImpl<Name, Base>
 	{
 	protected:
-		ServiceImpl(DoNotInherit = DoNotInherit())
+		IServiceImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ServiceImpl()
+		virtual ~IServiceImpl()
 		{
 		}
 
-		virtual void detach(Status* status) = 0;
-		virtual void query(Status* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual void start(Status* status, unsigned spbLength, const unsigned char* spb) = 0;
+		virtual void detach(IStatus* status) = 0;
+		virtual void query(IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual void start(IStatus* status, unsigned spbLength, const unsigned char* spb) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ProviderBaseImpl : public Base
+	class IProviderBaseImpl : public Base
 	{
 	public:
-		typedef Provider Declaration;
+		typedef IProvider Declaration;
 
-		ProviderBaseImpl(DoNotInherit = DoNotInherit())
+		IProviderBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -8562,7 +8564,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static Attachment* CLOOP_CARG cloopattachDatabaseDispatcher(Provider* self, Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
+		static IAttachment* CLOOP_CARG cloopattachDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
 		{
 			try
 			{
@@ -8571,11 +8573,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Attachment*>(0);
+				return static_cast<IAttachment*>(0);
 			}
 		}
 
-		static Attachment* CLOOP_CARG cloopcreateDatabaseDispatcher(Provider* self, Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
+		static IAttachment* CLOOP_CARG cloopcreateDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
 		{
 			try
 			{
@@ -8584,11 +8586,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Attachment*>(0);
+				return static_cast<IAttachment*>(0);
 			}
 		}
 
-		static Service* CLOOP_CARG cloopattachServiceManagerDispatcher(Provider* self, Status* status, const char* service, unsigned spbLength, const unsigned char* spb) throw()
+		static IService* CLOOP_CARG cloopattachServiceManagerDispatcher(IProvider* self, IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) throw()
 		{
 			try
 			{
@@ -8597,11 +8599,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Service*>(0);
+				return static_cast<IService*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopshutdownDispatcher(Provider* self, Status* status, unsigned timeout, const int reason) throw()
+		static void CLOOP_CARG cloopshutdownDispatcher(IProvider* self, IStatus* status, unsigned timeout, const int reason) throw()
 		{
 			try
 			{
@@ -8613,7 +8615,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(Provider* self, Status* status, CryptKeyCallback* cryptCallback) throw()
+		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(IProvider* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw()
 		{
 			try
 			{
@@ -8625,7 +8627,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -8637,7 +8639,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -8646,11 +8648,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8662,7 +8664,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8675,7 +8677,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -8684,38 +8686,38 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Provider> > > > > > >
-	class ProviderImpl : public ProviderBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IProvider> > > > > > >
+	class IProviderImpl : public IProviderBaseImpl<Name, Base>
 	{
 	protected:
-		ProviderImpl(DoNotInherit = DoNotInherit())
+		IProviderImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ProviderImpl()
+		virtual ~IProviderImpl()
 		{
 		}
 
-		virtual Attachment* attachDatabase(Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
-		virtual Attachment* createDatabase(Status* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
-		virtual Service* attachServiceManager(Status* status, const char* service, unsigned spbLength, const unsigned char* spb) = 0;
-		virtual void shutdown(Status* status, unsigned timeout, const int reason) = 0;
-		virtual void setDbCryptCallback(Status* status, CryptKeyCallback* cryptCallback) = 0;
+		virtual IAttachment* attachDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
+		virtual IAttachment* createDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
+		virtual IService* attachServiceManager(IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) = 0;
+		virtual void shutdown(IStatus* status, unsigned timeout, const int reason) = 0;
+		virtual void setDbCryptCallback(IStatus* status, ICryptKeyCallback* cryptCallback) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class DtcStartBaseImpl : public Base
+	class IDtcStartBaseImpl : public Base
 	{
 	public:
-		typedef DtcStart Declaration;
+		typedef IDtcStart Declaration;
 
-		DtcStartBaseImpl(DoNotInherit = DoNotInherit())
+		IDtcStartBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -8735,7 +8737,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetComponentDispatcher(DtcStart* self, Status* status, Attachment* att) throw()
+		static void CLOOP_CARG cloopsetComponentDispatcher(IDtcStart* self, IStatus* status, IAttachment* att) throw()
 		{
 			try
 			{
@@ -8747,7 +8749,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetWithParamDispatcher(DtcStart* self, Status* status, Attachment* att, unsigned length, const unsigned char* tpb) throw()
+		static void CLOOP_CARG cloopsetWithParamDispatcher(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw()
 		{
 			try
 			{
@@ -8759,7 +8761,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetCountDispatcher(DtcStart* self, Status* status) throw()
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(IDtcStart* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -8772,7 +8774,7 @@ public:
 			}
 		}
 
-		static Attachment* CLOOP_CARG cloopgetAttachmentDispatcher(DtcStart* self, Status* status, unsigned pos) throw()
+		static IAttachment* CLOOP_CARG cloopgetAttachmentDispatcher(IDtcStart* self, IStatus* status, unsigned pos) throw()
 		{
 			try
 			{
@@ -8781,11 +8783,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Attachment*>(0);
+				return static_cast<IAttachment*>(0);
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetTpbDispatcher(DtcStart* self, Status* status, unsigned pos, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopgetTpbDispatcher(IDtcStart* self, IStatus* status, unsigned pos, unsigned* length) throw()
 		{
 			try
 			{
@@ -8798,7 +8800,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
 			{
@@ -8810,7 +8812,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -8819,38 +8821,38 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Inherit<VersionedImpl<Name, Inherit<DtcStart> > > > >
-	class DtcStartImpl : public DtcStartBaseImpl<Name, Base>
+	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IDtcStart> > > > >
+	class IDtcStartImpl : public IDtcStartBaseImpl<Name, Base>
 	{
 	protected:
-		DtcStartImpl(DoNotInherit = DoNotInherit())
+		IDtcStartImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~DtcStartImpl()
+		virtual ~IDtcStartImpl()
 		{
 		}
 
-		virtual void setComponent(Status* status, Attachment* att) = 0;
-		virtual void setWithParam(Status* status, Attachment* att, unsigned length, const unsigned char* tpb) = 0;
-		virtual unsigned getCount(Status* status) = 0;
-		virtual Attachment* getAttachment(Status* status, unsigned pos) = 0;
-		virtual const unsigned char* getTpb(Status* status, unsigned pos, unsigned* length) = 0;
+		virtual void setComponent(IStatus* status, IAttachment* att) = 0;
+		virtual void setWithParam(IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) = 0;
+		virtual unsigned getCount(IStatus* status) = 0;
+		virtual IAttachment* getAttachment(IStatus* status, unsigned pos) = 0;
+		virtual const unsigned char* getTpb(IStatus* status, unsigned pos, unsigned* length) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class DtcBaseImpl : public Base
+	class IDtcBaseImpl : public Base
 	{
 	public:
-		typedef Dtc Declaration;
+		typedef IDtc Declaration;
 
-		DtcBaseImpl(DoNotInherit = DoNotInherit())
+		IDtcBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -8867,7 +8869,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static Transaction* CLOOP_CARG cloopstartDispatcher(Dtc* self, Status* status, DtcStart* components) throw()
+		static ITransaction* CLOOP_CARG cloopstartDispatcher(IDtc* self, IStatus* status, IDtcStart* components) throw()
 		{
 			try
 			{
@@ -8876,11 +8878,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopjoinDispatcher(Dtc* self, Status* status, Transaction* one, Transaction* two) throw()
+		static ITransaction* CLOOP_CARG cloopjoinDispatcher(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) throw()
 		{
 			try
 			{
@@ -8889,11 +8891,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static DtcStart* CLOOP_CARG cloopstartBuilderDispatcher(Dtc* self, Status* status) throw()
+		static IDtcStart* CLOOP_CARG cloopstartBuilderDispatcher(IDtc* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -8902,11 +8904,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<DtcStart*>(0);
+				return static_cast<IDtcStart*>(0);
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -8915,36 +8917,36 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<Dtc> > >
-	class DtcImpl : public DtcBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IDtc> > >
+	class IDtcImpl : public IDtcBaseImpl<Name, Base>
 	{
 	protected:
-		DtcImpl(DoNotInherit = DoNotInherit())
+		IDtcImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~DtcImpl()
+		virtual ~IDtcImpl()
 		{
 		}
 
-		virtual Transaction* start(Status* status, DtcStart* components) = 0;
-		virtual Transaction* join(Status* status, Transaction* one, Transaction* two) = 0;
-		virtual DtcStart* startBuilder(Status* status) = 0;
+		virtual ITransaction* start(IStatus* status, IDtcStart* components) = 0;
+		virtual ITransaction* join(IStatus* status, ITransaction* one, ITransaction* two) = 0;
+		virtual IDtcStart* startBuilder(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class AuthBaseImpl : public Base
+	class IAuthBaseImpl : public Base
 	{
 	public:
-		typedef Auth Declaration;
+		typedef IAuth Declaration;
 
-		AuthBaseImpl(DoNotInherit = DoNotInherit())
+		IAuthBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -8962,7 +8964,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -8974,7 +8976,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -8983,11 +8985,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -8999,7 +9001,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -9012,7 +9014,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9021,33 +9023,33 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Auth> > > > > > >
-	class AuthImpl : public AuthBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IAuth> > > > > > >
+	class IAuthImpl : public IAuthBaseImpl<Name, Base>
 	{
 	protected:
-		AuthImpl(DoNotInherit = DoNotInherit())
+		IAuthImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~AuthImpl()
+		virtual ~IAuthImpl()
 		{
 		}
 
 	};
 
 	template <typename Name, typename Base>
-	class WriterBaseImpl : public Base
+	class IWriterBaseImpl : public Base
 	{
 	public:
-		typedef Writer Declaration;
+		typedef IWriter Declaration;
 
-		WriterBaseImpl(DoNotInherit = DoNotInherit())
+		IWriterBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9065,7 +9067,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopresetDispatcher(Writer* self) throw()
+		static void CLOOP_CARG cloopresetDispatcher(IWriter* self) throw()
 		{
 			try
 			{
@@ -9077,7 +9079,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddDispatcher(Writer* self, Status* status, const char* name) throw()
+		static void CLOOP_CARG cloopaddDispatcher(IWriter* self, IStatus* status, const char* name) throw()
 		{
 			try
 			{
@@ -9089,7 +9091,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetTypeDispatcher(Writer* self, Status* status, const char* value) throw()
+		static void CLOOP_CARG cloopsetTypeDispatcher(IWriter* self, IStatus* status, const char* value) throw()
 		{
 			try
 			{
@@ -9101,7 +9103,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDbDispatcher(Writer* self, Status* status, const char* value) throw()
+		static void CLOOP_CARG cloopsetDbDispatcher(IWriter* self, IStatus* status, const char* value) throw()
 		{
 			try
 			{
@@ -9113,7 +9115,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9122,37 +9124,37 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<Writer> > >
-	class WriterImpl : public WriterBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IWriter> > >
+	class IWriterImpl : public IWriterBaseImpl<Name, Base>
 	{
 	protected:
-		WriterImpl(DoNotInherit = DoNotInherit())
+		IWriterImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~WriterImpl()
+		virtual ~IWriterImpl()
 		{
 		}
 
 		virtual void reset() = 0;
-		virtual void add(Status* status, const char* name) = 0;
-		virtual void setType(Status* status, const char* value) = 0;
-		virtual void setDb(Status* status, const char* value) = 0;
+		virtual void add(IStatus* status, const char* name) = 0;
+		virtual void setType(IStatus* status, const char* value) = 0;
+		virtual void setDb(IStatus* status, const char* value) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ServerBlockBaseImpl : public Base
+	class IServerBlockBaseImpl : public Base
 	{
 	public:
-		typedef ServerBlock Declaration;
+		typedef IServerBlock Declaration;
 
-		ServerBlockBaseImpl(DoNotInherit = DoNotInherit())
+		IServerBlockBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9170,7 +9172,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetLoginDispatcher(ServerBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetLoginDispatcher(IServerBlock* self) throw()
 		{
 			try
 			{
@@ -9183,7 +9185,7 @@ public:
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ServerBlock* self, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(IServerBlock* self, unsigned* length) throw()
 		{
 			try
 			{
@@ -9196,7 +9198,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopputDataDispatcher(ServerBlock* self, Status* status, unsigned length, const void* data) throw()
+		static void CLOOP_CARG cloopputDataDispatcher(IServerBlock* self, IStatus* status, unsigned length, const void* data) throw()
 		{
 			try
 			{
@@ -9208,7 +9210,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopputKeyDispatcher(ServerBlock* self, Status* status, FbCryptKey* cryptKey) throw()
+		static void CLOOP_CARG cloopputKeyDispatcher(IServerBlock* self, IStatus* status, FbCryptKey* cryptKey) throw()
 		{
 			try
 			{
@@ -9220,7 +9222,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9229,37 +9231,37 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<ServerBlock> > >
-	class ServerBlockImpl : public ServerBlockBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IServerBlock> > >
+	class IServerBlockImpl : public IServerBlockBaseImpl<Name, Base>
 	{
 	protected:
-		ServerBlockImpl(DoNotInherit = DoNotInherit())
+		IServerBlockImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ServerBlockImpl()
+		virtual ~IServerBlockImpl()
 		{
 		}
 
 		virtual const char* getLogin() = 0;
 		virtual const unsigned char* getData(unsigned* length) = 0;
-		virtual void putData(Status* status, unsigned length, const void* data) = 0;
-		virtual void putKey(Status* status, FbCryptKey* cryptKey) = 0;
+		virtual void putData(IStatus* status, unsigned length, const void* data) = 0;
+		virtual void putKey(IStatus* status, FbCryptKey* cryptKey) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ClientBlockBaseImpl : public Base
+	class IClientBlockBaseImpl : public Base
 	{
 	public:
-		typedef ClientBlock Declaration;
+		typedef IClientBlock Declaration;
 
-		ClientBlockBaseImpl(DoNotInherit = DoNotInherit())
+		IClientBlockBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9280,7 +9282,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetLoginDispatcher(ClientBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetLoginDispatcher(IClientBlock* self) throw()
 		{
 			try
 			{
@@ -9293,7 +9295,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetPasswordDispatcher(ClientBlock* self) throw()
+		static const char* CLOOP_CARG cloopgetPasswordDispatcher(IClientBlock* self) throw()
 		{
 			try
 			{
@@ -9306,7 +9308,7 @@ public:
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ClientBlock* self, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(IClientBlock* self, unsigned* length) throw()
 		{
 			try
 			{
@@ -9319,7 +9321,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopputDataDispatcher(ClientBlock* self, Status* status, unsigned length, const void* data) throw()
+		static void CLOOP_CARG cloopputDataDispatcher(IClientBlock* self, IStatus* status, unsigned length, const void* data) throw()
 		{
 			try
 			{
@@ -9331,7 +9333,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopputKeyDispatcher(ClientBlock* self, Status* status, FbCryptKey* cryptKey) throw()
+		static void CLOOP_CARG cloopputKeyDispatcher(IClientBlock* self, IStatus* status, FbCryptKey* cryptKey) throw()
 		{
 			try
 			{
@@ -9343,7 +9345,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -9355,7 +9357,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -9368,7 +9370,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9377,38 +9379,38 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<ClientBlock> > > > >
-	class ClientBlockImpl : public ClientBlockBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IClientBlock> > > > >
+	class IClientBlockImpl : public IClientBlockBaseImpl<Name, Base>
 	{
 	protected:
-		ClientBlockImpl(DoNotInherit = DoNotInherit())
+		IClientBlockImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ClientBlockImpl()
+		virtual ~IClientBlockImpl()
 		{
 		}
 
 		virtual const char* getLogin() = 0;
 		virtual const char* getPassword() = 0;
 		virtual const unsigned char* getData(unsigned* length) = 0;
-		virtual void putData(Status* status, unsigned length, const void* data) = 0;
-		virtual void putKey(Status* status, FbCryptKey* cryptKey) = 0;
+		virtual void putData(IStatus* status, unsigned length, const void* data) = 0;
+		virtual void putKey(IStatus* status, FbCryptKey* cryptKey) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ServerBaseImpl : public Base
+	class IServerBaseImpl : public Base
 	{
 	public:
-		typedef Server Declaration;
+		typedef IServer Declaration;
 
-		ServerBaseImpl(DoNotInherit = DoNotInherit())
+		IServerBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9427,7 +9429,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopauthenticateDispatcher(Server* self, Status* status, ServerBlock* sBlock, Writer* writerInterface) throw()
+		static int CLOOP_CARG cloopauthenticateDispatcher(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) throw()
 		{
 			try
 			{
@@ -9440,7 +9442,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -9452,7 +9454,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -9461,11 +9463,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -9477,7 +9479,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -9490,7 +9492,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9499,34 +9501,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = AuthImpl<Name, Inherit<PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Server> > > > > > > > >
-	class ServerImpl : public ServerBaseImpl<Name, Base>
+	template <typename Name, typename Base = IAuthImpl<Name, Inherit<IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IServer> > > > > > > > >
+	class IServerImpl : public IServerBaseImpl<Name, Base>
 	{
 	protected:
-		ServerImpl(DoNotInherit = DoNotInherit())
+		IServerImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ServerImpl()
+		virtual ~IServerImpl()
 		{
 		}
 
-		virtual int authenticate(Status* status, ServerBlock* sBlock, Writer* writerInterface) = 0;
+		virtual int authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ClientBaseImpl : public Base
+	class IClientBaseImpl : public Base
 	{
 	public:
-		typedef Client Declaration;
+		typedef IClient Declaration;
 
-		ClientBaseImpl(DoNotInherit = DoNotInherit())
+		IClientBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9545,7 +9547,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopauthenticateDispatcher(Client* self, Status* status, ClientBlock* cBlock) throw()
+		static int CLOOP_CARG cloopauthenticateDispatcher(IClient* self, IStatus* status, IClientBlock* cBlock) throw()
 		{
 			try
 			{
@@ -9558,7 +9560,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -9570,7 +9572,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -9579,11 +9581,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -9595,7 +9597,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -9608,7 +9610,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9617,34 +9619,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = AuthImpl<Name, Inherit<PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Client> > > > > > > > >
-	class ClientImpl : public ClientBaseImpl<Name, Base>
+	template <typename Name, typename Base = IAuthImpl<Name, Inherit<IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IClient> > > > > > > > >
+	class IClientImpl : public IClientBaseImpl<Name, Base>
 	{
 	protected:
-		ClientImpl(DoNotInherit = DoNotInherit())
+		IClientImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ClientImpl()
+		virtual ~IClientImpl()
 		{
 		}
 
-		virtual int authenticate(Status* status, ClientBlock* cBlock) = 0;
+		virtual int authenticate(IStatus* status, IClientBlock* cBlock) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class UserFieldBaseImpl : public Base
+	class IUserFieldBaseImpl : public Base
 	{
 	public:
-		typedef UserField Declaration;
+		typedef IUserField Declaration;
 
-		UserFieldBaseImpl(DoNotInherit = DoNotInherit())
+		IUserFieldBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9661,7 +9663,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopenteredDispatcher(UserField* self) throw()
+		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) throw()
 		{
 			try
 			{
@@ -9674,7 +9676,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopspecifiedDispatcher(UserField* self) throw()
+		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) throw()
 		{
 			try
 			{
@@ -9687,7 +9689,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetEnteredDispatcher(UserField* self, Status* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
 		{
 			try
 			{
@@ -9699,7 +9701,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9708,36 +9710,36 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<UserField> > >
-	class UserFieldImpl : public UserFieldBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IUserField> > >
+	class IUserFieldImpl : public IUserFieldBaseImpl<Name, Base>
 	{
 	protected:
-		UserFieldImpl(DoNotInherit = DoNotInherit())
+		IUserFieldImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~UserFieldImpl()
+		virtual ~IUserFieldImpl()
 		{
 		}
 
 		virtual int entered() = 0;
 		virtual int specified() = 0;
-		virtual void setEntered(Status* status, int newValue) = 0;
+		virtual void setEntered(IStatus* status, int newValue) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class CharUserFieldBaseImpl : public Base
+	class ICharUserFieldBaseImpl : public Base
 	{
 	public:
-		typedef CharUserField Declaration;
+		typedef ICharUserField Declaration;
 
-		CharUserFieldBaseImpl(DoNotInherit = DoNotInherit())
+		ICharUserFieldBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9756,7 +9758,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetDispatcher(CharUserField* self) throw()
+		static const char* CLOOP_CARG cloopgetDispatcher(ICharUserField* self) throw()
 		{
 			try
 			{
@@ -9769,7 +9771,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDispatcher(CharUserField* self, Status* status, const char* newValue) throw()
+		static void CLOOP_CARG cloopsetDispatcher(ICharUserField* self, IStatus* status, const char* newValue) throw()
 		{
 			try
 			{
@@ -9781,7 +9783,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopenteredDispatcher(UserField* self) throw()
+		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) throw()
 		{
 			try
 			{
@@ -9794,7 +9796,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopspecifiedDispatcher(UserField* self) throw()
+		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) throw()
 		{
 			try
 			{
@@ -9807,7 +9809,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetEnteredDispatcher(UserField* self, Status* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
 		{
 			try
 			{
@@ -9819,7 +9821,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9828,35 +9830,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = UserFieldImpl<Name, Inherit<VersionedImpl<Name, Inherit<CharUserField> > > > >
-	class CharUserFieldImpl : public CharUserFieldBaseImpl<Name, Base>
+	template <typename Name, typename Base = IUserFieldImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ICharUserField> > > > >
+	class ICharUserFieldImpl : public ICharUserFieldBaseImpl<Name, Base>
 	{
 	protected:
-		CharUserFieldImpl(DoNotInherit = DoNotInherit())
+		ICharUserFieldImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~CharUserFieldImpl()
+		virtual ~ICharUserFieldImpl()
 		{
 		}
 
 		virtual const char* get() = 0;
-		virtual void set(Status* status, const char* newValue) = 0;
+		virtual void set(IStatus* status, const char* newValue) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class IntUserFieldBaseImpl : public Base
+	class IIntUserFieldBaseImpl : public Base
 	{
 	public:
-		typedef IntUserField Declaration;
+		typedef IIntUserField Declaration;
 
-		IntUserFieldBaseImpl(DoNotInherit = DoNotInherit())
+		IIntUserFieldBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -9875,7 +9877,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopgetDispatcher(IntUserField* self) throw()
+		static int CLOOP_CARG cloopgetDispatcher(IIntUserField* self) throw()
 		{
 			try
 			{
@@ -9888,7 +9890,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetDispatcher(IntUserField* self, Status* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetDispatcher(IIntUserField* self, IStatus* status, int newValue) throw()
 		{
 			try
 			{
@@ -9900,7 +9902,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopenteredDispatcher(UserField* self) throw()
+		static int CLOOP_CARG cloopenteredDispatcher(IUserField* self) throw()
 		{
 			try
 			{
@@ -9913,7 +9915,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopspecifiedDispatcher(UserField* self) throw()
+		static int CLOOP_CARG cloopspecifiedDispatcher(IUserField* self) throw()
 		{
 			try
 			{
@@ -9926,7 +9928,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetEnteredDispatcher(UserField* self, Status* status, int newValue) throw()
+		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
 		{
 			try
 			{
@@ -9938,7 +9940,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -9947,35 +9949,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = UserFieldImpl<Name, Inherit<VersionedImpl<Name, Inherit<IntUserField> > > > >
-	class IntUserFieldImpl : public IntUserFieldBaseImpl<Name, Base>
+	template <typename Name, typename Base = IUserFieldImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IIntUserField> > > > >
+	class IIntUserFieldImpl : public IIntUserFieldBaseImpl<Name, Base>
 	{
 	protected:
-		IntUserFieldImpl(DoNotInherit = DoNotInherit())
+		IIntUserFieldImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~IntUserFieldImpl()
+		virtual ~IIntUserFieldImpl()
 		{
 		}
 
 		virtual int get() = 0;
-		virtual void set(Status* status, int newValue) = 0;
+		virtual void set(IStatus* status, int newValue) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class UserBaseImpl : public Base
+	class IUserBaseImpl : public Base
 	{
 	public:
-		typedef User Declaration;
+		typedef IUser Declaration;
 
-		UserBaseImpl(DoNotInherit = DoNotInherit())
+		IUserBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10000,7 +10002,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopoperationDispatcher(User* self) throw()
+		static int CLOOP_CARG cloopoperationDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10013,7 +10015,7 @@ public:
 			}
 		}
 
-		static CharUserField* CLOOP_CARG cloopuserNameDispatcher(User* self) throw()
+		static ICharUserField* CLOOP_CARG cloopuserNameDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10022,11 +10024,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<CharUserField*>(0);
+				return static_cast<ICharUserField*>(0);
 			}
 		}
 
-		static CharUserField* CLOOP_CARG clooppasswordDispatcher(User* self) throw()
+		static ICharUserField* CLOOP_CARG clooppasswordDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10035,11 +10037,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<CharUserField*>(0);
+				return static_cast<ICharUserField*>(0);
 			}
 		}
 
-		static CharUserField* CLOOP_CARG cloopfirstNameDispatcher(User* self) throw()
+		static ICharUserField* CLOOP_CARG cloopfirstNameDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10048,11 +10050,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<CharUserField*>(0);
+				return static_cast<ICharUserField*>(0);
 			}
 		}
 
-		static CharUserField* CLOOP_CARG clooplastNameDispatcher(User* self) throw()
+		static ICharUserField* CLOOP_CARG clooplastNameDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10061,11 +10063,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<CharUserField*>(0);
+				return static_cast<ICharUserField*>(0);
 			}
 		}
 
-		static CharUserField* CLOOP_CARG cloopmiddleNameDispatcher(User* self) throw()
+		static ICharUserField* CLOOP_CARG cloopmiddleNameDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10074,11 +10076,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<CharUserField*>(0);
+				return static_cast<ICharUserField*>(0);
 			}
 		}
 
-		static CharUserField* CLOOP_CARG cloopcommentDispatcher(User* self) throw()
+		static ICharUserField* CLOOP_CARG cloopcommentDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10087,11 +10089,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<CharUserField*>(0);
+				return static_cast<ICharUserField*>(0);
 			}
 		}
 
-		static CharUserField* CLOOP_CARG cloopattributesDispatcher(User* self) throw()
+		static ICharUserField* CLOOP_CARG cloopattributesDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10100,11 +10102,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<CharUserField*>(0);
+				return static_cast<ICharUserField*>(0);
 			}
 		}
 
-		static IntUserField* CLOOP_CARG cloopactiveDispatcher(User* self) throw()
+		static IIntUserField* CLOOP_CARG cloopactiveDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10113,11 +10115,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<IntUserField*>(0);
+				return static_cast<IIntUserField*>(0);
 			}
 		}
 
-		static IntUserField* CLOOP_CARG cloopadminDispatcher(User* self) throw()
+		static IIntUserField* CLOOP_CARG cloopadminDispatcher(IUser* self) throw()
 		{
 			try
 			{
@@ -10126,11 +10128,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<IntUserField*>(0);
+				return static_cast<IIntUserField*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopclearDispatcher(User* self, Status* status) throw()
+		static void CLOOP_CARG cloopclearDispatcher(IUser* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -10142,7 +10144,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -10151,44 +10153,44 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<User> > >
-	class UserImpl : public UserBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IUser> > >
+	class IUserImpl : public IUserBaseImpl<Name, Base>
 	{
 	protected:
-		UserImpl(DoNotInherit = DoNotInherit())
+		IUserImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~UserImpl()
+		virtual ~IUserImpl()
 		{
 		}
 
 		virtual int operation() = 0;
-		virtual CharUserField* userName() = 0;
-		virtual CharUserField* password() = 0;
-		virtual CharUserField* firstName() = 0;
-		virtual CharUserField* lastName() = 0;
-		virtual CharUserField* middleName() = 0;
-		virtual CharUserField* comment() = 0;
-		virtual CharUserField* attributes() = 0;
-		virtual IntUserField* active() = 0;
-		virtual IntUserField* admin() = 0;
-		virtual void clear(Status* status) = 0;
+		virtual ICharUserField* userName() = 0;
+		virtual ICharUserField* password() = 0;
+		virtual ICharUserField* firstName() = 0;
+		virtual ICharUserField* lastName() = 0;
+		virtual ICharUserField* middleName() = 0;
+		virtual ICharUserField* comment() = 0;
+		virtual ICharUserField* attributes() = 0;
+		virtual IIntUserField* active() = 0;
+		virtual IIntUserField* admin() = 0;
+		virtual void clear(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ListUsersBaseImpl : public Base
+	class IListUsersBaseImpl : public Base
 	{
 	public:
-		typedef ListUsers Declaration;
+		typedef IListUsers Declaration;
 
-		ListUsersBaseImpl(DoNotInherit = DoNotInherit())
+		IListUsersBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10203,7 +10205,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG clooplistDispatcher(ListUsers* self, Status* status, User* user) throw()
+		static void CLOOP_CARG clooplistDispatcher(IListUsers* self, IStatus* status, IUser* user) throw()
 		{
 			try
 			{
@@ -10215,7 +10217,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -10224,34 +10226,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<ListUsers> > >
-	class ListUsersImpl : public ListUsersBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IListUsers> > >
+	class IListUsersImpl : public IListUsersBaseImpl<Name, Base>
 	{
 	protected:
-		ListUsersImpl(DoNotInherit = DoNotInherit())
+		IListUsersImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ListUsersImpl()
+		virtual ~IListUsersImpl()
 		{
 		}
 
-		virtual void list(Status* status, User* user) = 0;
+		virtual void list(IStatus* status, IUser* user) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class LogonInfoBaseImpl : public Base
+	class ILogonInfoBaseImpl : public Base
 	{
 	public:
-		typedef LogonInfo Declaration;
+		typedef ILogonInfo Declaration;
 
-		LogonInfoBaseImpl(DoNotInherit = DoNotInherit())
+		ILogonInfoBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10270,7 +10272,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopnameDispatcher(LogonInfo* self) throw()
+		static const char* CLOOP_CARG cloopnameDispatcher(ILogonInfo* self) throw()
 		{
 			try
 			{
@@ -10283,7 +10285,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG clooproleDispatcher(LogonInfo* self) throw()
+		static const char* CLOOP_CARG clooproleDispatcher(ILogonInfo* self) throw()
 		{
 			try
 			{
@@ -10296,7 +10298,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopnetworkProtocolDispatcher(LogonInfo* self) throw()
+		static const char* CLOOP_CARG cloopnetworkProtocolDispatcher(ILogonInfo* self) throw()
 		{
 			try
 			{
@@ -10309,7 +10311,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopremoteAddressDispatcher(LogonInfo* self) throw()
+		static const char* CLOOP_CARG cloopremoteAddressDispatcher(ILogonInfo* self) throw()
 		{
 			try
 			{
@@ -10322,7 +10324,7 @@ public:
 			}
 		}
 
-		static const unsigned char* CLOOP_CARG cloopauthBlockDispatcher(LogonInfo* self, unsigned* length) throw()
+		static const unsigned char* CLOOP_CARG cloopauthBlockDispatcher(ILogonInfo* self, unsigned* length) throw()
 		{
 			try
 			{
@@ -10335,7 +10337,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -10344,21 +10346,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<LogonInfo> > >
-	class LogonInfoImpl : public LogonInfoBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ILogonInfo> > >
+	class ILogonInfoImpl : public ILogonInfoBaseImpl<Name, Base>
 	{
 	protected:
-		LogonInfoImpl(DoNotInherit = DoNotInherit())
+		ILogonInfoImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~LogonInfoImpl()
+		virtual ~ILogonInfoImpl()
 		{
 		}
 
@@ -10370,12 +10372,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class ManagementBaseImpl : public Base
+	class IManagementBaseImpl : public Base
 	{
 	public:
-		typedef Management Declaration;
+		typedef IManagement Declaration;
 
-		ManagementBaseImpl(DoNotInherit = DoNotInherit())
+		IManagementBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10397,7 +10399,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(Management* self, Status* status, LogonInfo* logonInfo) throw()
+		static void CLOOP_CARG cloopstartDispatcher(IManagement* self, IStatus* status, ILogonInfo* logonInfo) throw()
 		{
 			try
 			{
@@ -10409,7 +10411,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopexecuteDispatcher(Management* self, Status* status, User* user, ListUsers* callback) throw()
+		static int CLOOP_CARG cloopexecuteDispatcher(IManagement* self, IStatus* status, IUser* user, IListUsers* callback) throw()
 		{
 			try
 			{
@@ -10422,7 +10424,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopcommitDispatcher(Management* self, Status* status) throw()
+		static void CLOOP_CARG cloopcommitDispatcher(IManagement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -10434,7 +10436,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG clooprollbackDispatcher(Management* self, Status* status) throw()
+		static void CLOOP_CARG clooprollbackDispatcher(IManagement* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -10446,7 +10448,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -10458,7 +10460,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -10467,11 +10469,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10483,7 +10485,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10496,7 +10498,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -10505,37 +10507,37 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Management> > > > > > >
-	class ManagementImpl : public ManagementBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IManagement> > > > > > >
+	class IManagementImpl : public IManagementBaseImpl<Name, Base>
 	{
 	protected:
-		ManagementImpl(DoNotInherit = DoNotInherit())
+		IManagementImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ManagementImpl()
+		virtual ~IManagementImpl()
 		{
 		}
 
-		virtual void start(Status* status, LogonInfo* logonInfo) = 0;
-		virtual int execute(Status* status, User* user, ListUsers* callback) = 0;
-		virtual void commit(Status* status) = 0;
-		virtual void rollback(Status* status) = 0;
+		virtual void start(IStatus* status, ILogonInfo* logonInfo) = 0;
+		virtual int execute(IStatus* status, IUser* user, IListUsers* callback) = 0;
+		virtual void commit(IStatus* status) = 0;
+		virtual void rollback(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class WireCryptPluginBaseImpl : public Base
+	class IWireCryptPluginBaseImpl : public Base
 	{
 	public:
-		typedef WireCryptPlugin Declaration;
+		typedef IWireCryptPlugin Declaration;
 
-		WireCryptPluginBaseImpl(DoNotInherit = DoNotInherit())
+		IWireCryptPluginBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10557,7 +10559,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetKnownTypesDispatcher(WireCryptPlugin* self, Status* status) throw()
+		static const char* CLOOP_CARG cloopgetKnownTypesDispatcher(IWireCryptPlugin* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -10570,7 +10572,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetKeyDispatcher(WireCryptPlugin* self, Status* status, FbCryptKey* key) throw()
+		static void CLOOP_CARG cloopsetKeyDispatcher(IWireCryptPlugin* self, IStatus* status, FbCryptKey* key) throw()
 		{
 			try
 			{
@@ -10582,7 +10584,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopencryptDispatcher(WireCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopencryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
 			try
 			{
@@ -10594,7 +10596,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdecryptDispatcher(WireCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopdecryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
 			try
 			{
@@ -10606,7 +10608,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -10618,7 +10620,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -10627,11 +10629,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10643,7 +10645,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10656,7 +10658,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -10665,37 +10667,37 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<WireCryptPlugin> > > > > > >
-	class WireCryptPluginImpl : public WireCryptPluginBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IWireCryptPlugin> > > > > > >
+	class IWireCryptPluginImpl : public IWireCryptPluginBaseImpl<Name, Base>
 	{
 	protected:
-		WireCryptPluginImpl(DoNotInherit = DoNotInherit())
+		IWireCryptPluginImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~WireCryptPluginImpl()
+		virtual ~IWireCryptPluginImpl()
 		{
 		}
 
-		virtual const char* getKnownTypes(Status* status) = 0;
-		virtual void setKey(Status* status, FbCryptKey* key) = 0;
-		virtual void encrypt(Status* status, unsigned length, const void* from, void* to) = 0;
-		virtual void decrypt(Status* status, unsigned length, const void* from, void* to) = 0;
+		virtual const char* getKnownTypes(IStatus* status) = 0;
+		virtual void setKey(IStatus* status, FbCryptKey* key) = 0;
+		virtual void encrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
+		virtual void decrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class CryptKeyCallbackBaseImpl : public Base
+	class ICryptKeyCallbackBaseImpl : public Base
 	{
 	public:
-		typedef CryptKeyCallback Declaration;
+		typedef ICryptKeyCallback Declaration;
 
-		CryptKeyCallbackBaseImpl(DoNotInherit = DoNotInherit())
+		ICryptKeyCallbackBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10710,7 +10712,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopcallbackDispatcher(CryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) throw()
+		static unsigned CLOOP_CARG cloopcallbackDispatcher(ICryptKeyCallback* self, unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) throw()
 		{
 			try
 			{
@@ -10723,7 +10725,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -10732,21 +10734,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<CryptKeyCallback> > >
-	class CryptKeyCallbackImpl : public CryptKeyCallbackBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ICryptKeyCallback> > >
+	class ICryptKeyCallbackImpl : public ICryptKeyCallbackBaseImpl<Name, Base>
 	{
 	protected:
-		CryptKeyCallbackImpl(DoNotInherit = DoNotInherit())
+		ICryptKeyCallbackImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~CryptKeyCallbackImpl()
+		virtual ~ICryptKeyCallbackImpl()
 		{
 		}
 
@@ -10754,12 +10756,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class KeyHolderPluginBaseImpl : public Base
+	class IKeyHolderPluginBaseImpl : public Base
 	{
 	public:
-		typedef KeyHolderPlugin Declaration;
+		typedef IKeyHolderPlugin Declaration;
 
-		KeyHolderPluginBaseImpl(DoNotInherit = DoNotInherit())
+		IKeyHolderPluginBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10779,7 +10781,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopkeyCallbackDispatcher(KeyHolderPlugin* self, Status* status, CryptKeyCallback* callback) throw()
+		static int CLOOP_CARG cloopkeyCallbackDispatcher(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) throw()
 		{
 			try
 			{
@@ -10792,7 +10794,7 @@ public:
 			}
 		}
 
-		static CryptKeyCallback* CLOOP_CARG cloopkeyHandleDispatcher(KeyHolderPlugin* self, Status* status, const char* keyName) throw()
+		static ICryptKeyCallback* CLOOP_CARG cloopkeyHandleDispatcher(IKeyHolderPlugin* self, IStatus* status, const char* keyName) throw()
 		{
 			try
 			{
@@ -10801,11 +10803,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<CryptKeyCallback*>(0);
+				return static_cast<ICryptKeyCallback*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -10817,7 +10819,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -10826,11 +10828,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10842,7 +10844,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10855,7 +10857,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -10864,35 +10866,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<KeyHolderPlugin> > > > > > >
-	class KeyHolderPluginImpl : public KeyHolderPluginBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IKeyHolderPlugin> > > > > > >
+	class IKeyHolderPluginImpl : public IKeyHolderPluginBaseImpl<Name, Base>
 	{
 	protected:
-		KeyHolderPluginImpl(DoNotInherit = DoNotInherit())
+		IKeyHolderPluginImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~KeyHolderPluginImpl()
+		virtual ~IKeyHolderPluginImpl()
 		{
 		}
 
-		virtual int keyCallback(Status* status, CryptKeyCallback* callback) = 0;
-		virtual CryptKeyCallback* keyHandle(Status* status, const char* keyName) = 0;
+		virtual int keyCallback(IStatus* status, ICryptKeyCallback* callback) = 0;
+		virtual ICryptKeyCallback* keyHandle(IStatus* status, const char* keyName) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class DbCryptPluginBaseImpl : public Base
+	class IDbCryptPluginBaseImpl : public Base
 	{
 	public:
-		typedef DbCryptPlugin Declaration;
+		typedef IDbCryptPlugin Declaration;
 
-		DbCryptPluginBaseImpl(DoNotInherit = DoNotInherit())
+		IDbCryptPluginBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -10913,7 +10915,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetKeyDispatcher(DbCryptPlugin* self, Status* status, unsigned length, KeyHolderPlugin** sources) throw()
+		static void CLOOP_CARG cloopsetKeyDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources) throw()
 		{
 			try
 			{
@@ -10925,7 +10927,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopencryptDispatcher(DbCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopencryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
 			try
 			{
@@ -10937,7 +10939,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdecryptDispatcher(DbCryptPlugin* self, Status* status, unsigned length, const void* from, void* to) throw()
+		static void CLOOP_CARG cloopdecryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
 			try
 			{
@@ -10949,7 +10951,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -10961,7 +10963,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -10970,11 +10972,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10986,7 +10988,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -10999,7 +11001,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11008,36 +11010,36 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<DbCryptPlugin> > > > > > >
-	class DbCryptPluginImpl : public DbCryptPluginBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IDbCryptPlugin> > > > > > >
+	class IDbCryptPluginImpl : public IDbCryptPluginBaseImpl<Name, Base>
 	{
 	protected:
-		DbCryptPluginImpl(DoNotInherit = DoNotInherit())
+		IDbCryptPluginImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~DbCryptPluginImpl()
+		virtual ~IDbCryptPluginImpl()
 		{
 		}
 
-		virtual void setKey(Status* status, unsigned length, KeyHolderPlugin** sources) = 0;
-		virtual void encrypt(Status* status, unsigned length, const void* from, void* to) = 0;
-		virtual void decrypt(Status* status, unsigned length, const void* from, void* to) = 0;
+		virtual void setKey(IStatus* status, unsigned length, IKeyHolderPlugin** sources) = 0;
+		virtual void encrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
+		virtual void decrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ExternalContextBaseImpl : public Base
+	class IExternalContextBaseImpl : public Base
 	{
 	public:
-		typedef ExternalContext Declaration;
+		typedef IExternalContext Declaration;
 
-		ExternalContextBaseImpl(DoNotInherit = DoNotInherit())
+		IExternalContextBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11061,7 +11063,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static Master* CLOOP_CARG cloopgetMasterDispatcher(ExternalContext* self) throw()
+		static IMaster* CLOOP_CARG cloopgetMasterDispatcher(IExternalContext* self) throw()
 		{
 			try
 			{
@@ -11070,11 +11072,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<Master*>(0);
+				return static_cast<IMaster*>(0);
 			}
 		}
 
-		static ExternalEngine* CLOOP_CARG cloopgetEngineDispatcher(ExternalContext* self, Status* status) throw()
+		static IExternalEngine* CLOOP_CARG cloopgetEngineDispatcher(IExternalContext* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11083,11 +11085,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ExternalEngine*>(0);
+				return static_cast<IExternalEngine*>(0);
 			}
 		}
 
-		static Attachment* CLOOP_CARG cloopgetAttachmentDispatcher(ExternalContext* self, Status* status) throw()
+		static IAttachment* CLOOP_CARG cloopgetAttachmentDispatcher(IExternalContext* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11096,11 +11098,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Attachment*>(0);
+				return static_cast<IAttachment*>(0);
 			}
 		}
 
-		static Transaction* CLOOP_CARG cloopgetTransactionDispatcher(ExternalContext* self, Status* status) throw()
+		static ITransaction* CLOOP_CARG cloopgetTransactionDispatcher(IExternalContext* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11109,11 +11111,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Transaction*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ExternalContext* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(IExternalContext* self) throw()
 		{
 			try
 			{
@@ -11126,7 +11128,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(ExternalContext* self) throw()
+		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(IExternalContext* self) throw()
 		{
 			try
 			{
@@ -11139,7 +11141,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetClientCharSetDispatcher(ExternalContext* self) throw()
+		static const char* CLOOP_CARG cloopgetClientCharSetDispatcher(IExternalContext* self) throw()
 		{
 			try
 			{
@@ -11152,7 +11154,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopobtainInfoCodeDispatcher(ExternalContext* self) throw()
+		static int CLOOP_CARG cloopobtainInfoCodeDispatcher(IExternalContext* self) throw()
 		{
 			try
 			{
@@ -11165,7 +11167,7 @@ public:
 			}
 		}
 
-		static void* CLOOP_CARG cloopgetInfoDispatcher(ExternalContext* self, int code) throw()
+		static void* CLOOP_CARG cloopgetInfoDispatcher(IExternalContext* self, int code) throw()
 		{
 			try
 			{
@@ -11178,7 +11180,7 @@ public:
 			}
 		}
 
-		static void* CLOOP_CARG cloopsetInfoDispatcher(ExternalContext* self, int code, void* value) throw()
+		static void* CLOOP_CARG cloopsetInfoDispatcher(IExternalContext* self, int code, void* value) throw()
 		{
 			try
 			{
@@ -11191,7 +11193,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11200,28 +11202,28 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<ExternalContext> > >
-	class ExternalContextImpl : public ExternalContextBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IExternalContext> > >
+	class IExternalContextImpl : public IExternalContextBaseImpl<Name, Base>
 	{
 	protected:
-		ExternalContextImpl(DoNotInherit = DoNotInherit())
+		IExternalContextImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ExternalContextImpl()
+		virtual ~IExternalContextImpl()
 		{
 		}
 
-		virtual Master* getMaster() = 0;
-		virtual ExternalEngine* getEngine(Status* status) = 0;
-		virtual Attachment* getAttachment(Status* status) = 0;
-		virtual Transaction* getTransaction(Status* status) = 0;
+		virtual IMaster* getMaster() = 0;
+		virtual IExternalEngine* getEngine(IStatus* status) = 0;
+		virtual IAttachment* getAttachment(IStatus* status) = 0;
+		virtual ITransaction* getTransaction(IStatus* status) = 0;
 		virtual const char* getUserName() = 0;
 		virtual const char* getDatabaseName() = 0;
 		virtual const char* getClientCharSet() = 0;
@@ -11231,12 +11233,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class ExternalResultSetBaseImpl : public Base
+	class IExternalResultSetBaseImpl : public Base
 	{
 	public:
-		typedef ExternalResultSet Declaration;
+		typedef IExternalResultSet Declaration;
 
-		ExternalResultSetBaseImpl(DoNotInherit = DoNotInherit())
+		IExternalResultSetBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11252,7 +11254,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopfetchDispatcher(ExternalResultSet* self, Status* status) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopfetchDispatcher(IExternalResultSet* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11265,7 +11267,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
 			{
@@ -11277,7 +11279,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11286,34 +11288,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Inherit<VersionedImpl<Name, Inherit<ExternalResultSet> > > > >
-	class ExternalResultSetImpl : public ExternalResultSetBaseImpl<Name, Base>
+	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalResultSet> > > > >
+	class IExternalResultSetImpl : public IExternalResultSetBaseImpl<Name, Base>
 	{
 	protected:
-		ExternalResultSetImpl(DoNotInherit = DoNotInherit())
+		IExternalResultSetImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ExternalResultSetImpl()
+		virtual ~IExternalResultSetImpl()
 		{
 		}
 
-		virtual FB_BOOLEAN fetch(Status* status) = 0;
+		virtual FB_BOOLEAN fetch(IStatus* status) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ExternalFunctionBaseImpl : public Base
+	class IExternalFunctionBaseImpl : public Base
 	{
 	public:
-		typedef ExternalFunction Declaration;
+		typedef IExternalFunction Declaration;
 
-		ExternalFunctionBaseImpl(DoNotInherit = DoNotInherit())
+		IExternalFunctionBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11330,7 +11332,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetCharSetDispatcher(ExternalFunction* self, Status* status, ExternalContext* context, char* name, unsigned nameSize) throw()
+		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
 		{
 			try
 			{
@@ -11342,7 +11344,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteDispatcher(ExternalFunction* self, Status* status, ExternalContext* context, void* inMsg, void* outMsg) throw()
+		static void CLOOP_CARG cloopexecuteDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw()
 		{
 			try
 			{
@@ -11354,7 +11356,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
 			{
@@ -11366,7 +11368,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11375,35 +11377,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Inherit<VersionedImpl<Name, Inherit<ExternalFunction> > > > >
-	class ExternalFunctionImpl : public ExternalFunctionBaseImpl<Name, Base>
+	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalFunction> > > > >
+	class IExternalFunctionImpl : public IExternalFunctionBaseImpl<Name, Base>
 	{
 	protected:
-		ExternalFunctionImpl(DoNotInherit = DoNotInherit())
+		IExternalFunctionImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ExternalFunctionImpl()
+		virtual ~IExternalFunctionImpl()
 		{
 		}
 
-		virtual void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize) = 0;
-		virtual void execute(Status* status, ExternalContext* context, void* inMsg, void* outMsg) = 0;
+		virtual void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
+		virtual void execute(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ExternalProcedureBaseImpl : public Base
+	class IExternalProcedureBaseImpl : public Base
 	{
 	public:
-		typedef ExternalProcedure Declaration;
+		typedef IExternalProcedure Declaration;
 
-		ExternalProcedureBaseImpl(DoNotInherit = DoNotInherit())
+		IExternalProcedureBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11420,7 +11422,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetCharSetDispatcher(ExternalProcedure* self, Status* status, ExternalContext* context, char* name, unsigned nameSize) throw()
+		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
 		{
 			try
 			{
@@ -11432,7 +11434,7 @@ public:
 			}
 		}
 
-		static ExternalResultSet* CLOOP_CARG cloopopenDispatcher(ExternalProcedure* self, Status* status, ExternalContext* context, void* inMsg, void* outMsg) throw()
+		static IExternalResultSet* CLOOP_CARG cloopopenDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw()
 		{
 			try
 			{
@@ -11441,11 +11443,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ExternalResultSet*>(0);
+				return static_cast<IExternalResultSet*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
 			{
@@ -11457,7 +11459,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11466,35 +11468,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Inherit<VersionedImpl<Name, Inherit<ExternalProcedure> > > > >
-	class ExternalProcedureImpl : public ExternalProcedureBaseImpl<Name, Base>
+	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalProcedure> > > > >
+	class IExternalProcedureImpl : public IExternalProcedureBaseImpl<Name, Base>
 	{
 	protected:
-		ExternalProcedureImpl(DoNotInherit = DoNotInherit())
+		IExternalProcedureImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ExternalProcedureImpl()
+		virtual ~IExternalProcedureImpl()
 		{
 		}
 
-		virtual void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize) = 0;
-		virtual ExternalResultSet* open(Status* status, ExternalContext* context, void* inMsg, void* outMsg) = 0;
+		virtual void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
+		virtual IExternalResultSet* open(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ExternalTriggerBaseImpl : public Base
+	class IExternalTriggerBaseImpl : public Base
 	{
 	public:
-		typedef ExternalTrigger Declaration;
+		typedef IExternalTrigger Declaration;
 
-		ExternalTriggerBaseImpl(DoNotInherit = DoNotInherit())
+		IExternalTriggerBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11511,7 +11513,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetCharSetDispatcher(ExternalTrigger* self, Status* status, ExternalContext* context, char* name, unsigned nameSize) throw()
+		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
 		{
 			try
 			{
@@ -11523,7 +11525,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopexecuteDispatcher(ExternalTrigger* self, Status* status, ExternalContext* context, unsigned action, void* oldMsg, void* newMsg) throw()
+		static void CLOOP_CARG cloopexecuteDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) throw()
 		{
 			try
 			{
@@ -11535,7 +11537,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdisposeDispatcher(Disposable* self) throw()
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
 		{
 			try
 			{
@@ -11547,7 +11549,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11556,35 +11558,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = DisposableImpl<Name, Inherit<VersionedImpl<Name, Inherit<ExternalTrigger> > > > >
-	class ExternalTriggerImpl : public ExternalTriggerBaseImpl<Name, Base>
+	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalTrigger> > > > >
+	class IExternalTriggerImpl : public IExternalTriggerBaseImpl<Name, Base>
 	{
 	protected:
-		ExternalTriggerImpl(DoNotInherit = DoNotInherit())
+		IExternalTriggerImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ExternalTriggerImpl()
+		virtual ~IExternalTriggerImpl()
 		{
 		}
 
-		virtual void getCharSet(Status* status, ExternalContext* context, char* name, unsigned nameSize) = 0;
-		virtual void execute(Status* status, ExternalContext* context, unsigned action, void* oldMsg, void* newMsg) = 0;
+		virtual void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
+		virtual void execute(IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class RoutineMetadataBaseImpl : public Base
+	class IRoutineMetadataBaseImpl : public Base
 	{
 	public:
-		typedef RoutineMetadata Declaration;
+		typedef IRoutineMetadata Declaration;
 
-		RoutineMetadataBaseImpl(DoNotInherit = DoNotInherit())
+		IRoutineMetadataBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11607,7 +11609,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetPackageDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static const char* CLOOP_CARG cloopgetPackageDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11620,7 +11622,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetNameDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static const char* CLOOP_CARG cloopgetNameDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11633,7 +11635,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetEntryPointDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static const char* CLOOP_CARG cloopgetEntryPointDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11646,7 +11648,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetBodyDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static const char* CLOOP_CARG cloopgetBodyDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11659,7 +11661,7 @@ public:
 			}
 		}
 
-		static MessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11668,11 +11670,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MessageMetadata*>(0);
+				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
-		static MessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11681,11 +11683,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MessageMetadata*>(0);
+				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
-		static MessageMetadata* CLOOP_CARG cloopgetTriggerMetadataDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static IMessageMetadata* CLOOP_CARG cloopgetTriggerMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11694,11 +11696,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<MessageMetadata*>(0);
+				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTriggerTableDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static const char* CLOOP_CARG cloopgetTriggerTableDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11711,7 +11713,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetTriggerTypeDispatcher(const RoutineMetadata* self, Status* status) throw()
+		static unsigned CLOOP_CARG cloopgetTriggerTypeDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
 			try
 			{
@@ -11724,7 +11726,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11733,42 +11735,42 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<RoutineMetadata> > >
-	class RoutineMetadataImpl : public RoutineMetadataBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IRoutineMetadata> > >
+	class IRoutineMetadataImpl : public IRoutineMetadataBaseImpl<Name, Base>
 	{
 	protected:
-		RoutineMetadataImpl(DoNotInherit = DoNotInherit())
+		IRoutineMetadataImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~RoutineMetadataImpl()
+		virtual ~IRoutineMetadataImpl()
 		{
 		}
 
-		virtual const char* getPackage(Status* status) const = 0;
-		virtual const char* getName(Status* status) const = 0;
-		virtual const char* getEntryPoint(Status* status) const = 0;
-		virtual const char* getBody(Status* status) const = 0;
-		virtual MessageMetadata* getInputMetadata(Status* status) const = 0;
-		virtual MessageMetadata* getOutputMetadata(Status* status) const = 0;
-		virtual MessageMetadata* getTriggerMetadata(Status* status) const = 0;
-		virtual const char* getTriggerTable(Status* status) const = 0;
-		virtual unsigned getTriggerType(Status* status) const = 0;
+		virtual const char* getPackage(IStatus* status) const = 0;
+		virtual const char* getName(IStatus* status) const = 0;
+		virtual const char* getEntryPoint(IStatus* status) const = 0;
+		virtual const char* getBody(IStatus* status) const = 0;
+		virtual IMessageMetadata* getInputMetadata(IStatus* status) const = 0;
+		virtual IMessageMetadata* getOutputMetadata(IStatus* status) const = 0;
+		virtual IMessageMetadata* getTriggerMetadata(IStatus* status) const = 0;
+		virtual const char* getTriggerTable(IStatus* status) const = 0;
+		virtual unsigned getTriggerType(IStatus* status) const = 0;
 	};
 
 	template <typename Name, typename Base>
-	class ExternalEngineBaseImpl : public Base
+	class IExternalEngineBaseImpl : public Base
 	{
 	public:
-		typedef ExternalEngine Declaration;
+		typedef IExternalEngine Declaration;
 
-		ExternalEngineBaseImpl(DoNotInherit = DoNotInherit())
+		IExternalEngineBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11792,7 +11794,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopopenDispatcher(ExternalEngine* self, Status* status, ExternalContext* context, char* charSet, unsigned charSetSize) throw()
+		static void CLOOP_CARG cloopopenDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) throw()
 		{
 			try
 			{
@@ -11804,7 +11806,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopopenAttachmentDispatcher(ExternalEngine* self, Status* status, ExternalContext* context) throw()
+		static void CLOOP_CARG cloopopenAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) throw()
 		{
 			try
 			{
@@ -11816,7 +11818,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopcloseAttachmentDispatcher(ExternalEngine* self, Status* status, ExternalContext* context) throw()
+		static void CLOOP_CARG cloopcloseAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) throw()
 		{
 			try
 			{
@@ -11828,7 +11830,7 @@ public:
 			}
 		}
 
-		static ExternalFunction* CLOOP_CARG cloopmakeFunctionDispatcher(ExternalEngine* self, Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder) throw()
+		static IExternalFunction* CLOOP_CARG cloopmakeFunctionDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
 		{
 			try
 			{
@@ -11837,11 +11839,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ExternalFunction*>(0);
+				return static_cast<IExternalFunction*>(0);
 			}
 		}
 
-		static ExternalProcedure* CLOOP_CARG cloopmakeProcedureDispatcher(ExternalEngine* self, Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder) throw()
+		static IExternalProcedure* CLOOP_CARG cloopmakeProcedureDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
 		{
 			try
 			{
@@ -11850,11 +11852,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ExternalProcedure*>(0);
+				return static_cast<IExternalProcedure*>(0);
 			}
 		}
 
-		static ExternalTrigger* CLOOP_CARG cloopmakeTriggerDispatcher(ExternalEngine* self, Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* fieldsBuilder) throw()
+		static IExternalTrigger* CLOOP_CARG cloopmakeTriggerDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw()
 		{
 			try
 			{
@@ -11863,11 +11865,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<ExternalTrigger*>(0);
+				return static_cast<IExternalTrigger*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -11879,7 +11881,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -11888,11 +11890,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -11904,7 +11906,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -11917,7 +11919,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -11926,39 +11928,39 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<ExternalEngine> > > > > > >
-	class ExternalEngineImpl : public ExternalEngineBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalEngine> > > > > > >
+	class IExternalEngineImpl : public IExternalEngineBaseImpl<Name, Base>
 	{
 	protected:
-		ExternalEngineImpl(DoNotInherit = DoNotInherit())
+		IExternalEngineImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~ExternalEngineImpl()
+		virtual ~IExternalEngineImpl()
 		{
 		}
 
-		virtual void open(Status* status, ExternalContext* context, char* charSet, unsigned charSetSize) = 0;
-		virtual void openAttachment(Status* status, ExternalContext* context) = 0;
-		virtual void closeAttachment(Status* status, ExternalContext* context) = 0;
-		virtual ExternalFunction* makeFunction(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder) = 0;
-		virtual ExternalProcedure* makeProcedure(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* inBuilder, MetadataBuilder* outBuilder) = 0;
-		virtual ExternalTrigger* makeTrigger(Status* status, ExternalContext* context, RoutineMetadata* metadata, MetadataBuilder* fieldsBuilder) = 0;
+		virtual void open(IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) = 0;
+		virtual void openAttachment(IStatus* status, IExternalContext* context) = 0;
+		virtual void closeAttachment(IStatus* status, IExternalContext* context) = 0;
+		virtual IExternalFunction* makeFunction(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
+		virtual IExternalProcedure* makeProcedure(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
+		virtual IExternalTrigger* makeTrigger(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TimerBaseImpl : public Base
+	class ITimerBaseImpl : public Base
 	{
 	public:
-		typedef Timer Declaration;
+		typedef ITimer Declaration;
 
-		TimerBaseImpl(DoNotInherit = DoNotInherit())
+		ITimerBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11975,7 +11977,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloophandlerDispatcher(Timer* self) throw()
+		static void CLOOP_CARG cloophandlerDispatcher(ITimer* self) throw()
 		{
 			try
 			{
@@ -11987,7 +11989,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -11999,7 +12001,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -12012,7 +12014,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12021,21 +12023,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<Timer> > > > >
-	class TimerImpl : public TimerBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITimer> > > > >
+	class ITimerImpl : public ITimerBaseImpl<Name, Base>
 	{
 	protected:
-		TimerImpl(DoNotInherit = DoNotInherit())
+		ITimerImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TimerImpl()
+		virtual ~ITimerImpl()
 		{
 		}
 
@@ -12043,12 +12045,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TimerControlBaseImpl : public Base
+	class ITimerControlBaseImpl : public Base
 	{
 	public:
-		typedef TimerControl Declaration;
+		typedef ITimerControl Declaration;
 
-		TimerControlBaseImpl(DoNotInherit = DoNotInherit())
+		ITimerControlBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12064,7 +12066,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopstartDispatcher(TimerControl* self, Status* status, Timer* timer, ISC_UINT64 microSeconds) throw()
+		static void CLOOP_CARG cloopstartDispatcher(ITimerControl* self, IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) throw()
 		{
 			try
 			{
@@ -12076,7 +12078,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopstopDispatcher(TimerControl* self, Status* status, Timer* timer) throw()
+		static void CLOOP_CARG cloopstopDispatcher(ITimerControl* self, IStatus* status, ITimer* timer) throw()
 		{
 			try
 			{
@@ -12088,7 +12090,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12097,35 +12099,35 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TimerControl> > >
-	class TimerControlImpl : public TimerControlBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITimerControl> > >
+	class ITimerControlImpl : public ITimerControlBaseImpl<Name, Base>
 	{
 	protected:
-		TimerControlImpl(DoNotInherit = DoNotInherit())
+		ITimerControlImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TimerControlImpl()
+		virtual ~ITimerControlImpl()
 		{
 		}
 
-		virtual void start(Status* status, Timer* timer, ISC_UINT64 microSeconds) = 0;
-		virtual void stop(Status* status, Timer* timer) = 0;
+		virtual void start(IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) = 0;
+		virtual void stop(IStatus* status, ITimer* timer) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class VersionCallbackBaseImpl : public Base
+	class IVersionCallbackBaseImpl : public Base
 	{
 	public:
-		typedef VersionCallback Declaration;
+		typedef IVersionCallback Declaration;
 
-		VersionCallbackBaseImpl(DoNotInherit = DoNotInherit())
+		IVersionCallbackBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12140,7 +12142,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopcallbackDispatcher(VersionCallback* self, Status* status, const char* text) throw()
+		static void CLOOP_CARG cloopcallbackDispatcher(IVersionCallback* self, IStatus* status, const char* text) throw()
 		{
 			try
 			{
@@ -12152,7 +12154,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12161,34 +12163,34 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<VersionCallback> > >
-	class VersionCallbackImpl : public VersionCallbackBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IVersionCallback> > >
+	class IVersionCallbackImpl : public IVersionCallbackBaseImpl<Name, Base>
 	{
 	protected:
-		VersionCallbackImpl(DoNotInherit = DoNotInherit())
+		IVersionCallbackImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~VersionCallbackImpl()
+		virtual ~IVersionCallbackImpl()
 		{
 		}
 
-		virtual void callback(Status* status, const char* text) = 0;
+		virtual void callback(IStatus* status, const char* text) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class UtlBaseImpl : public Base
+	class IUtlBaseImpl : public Base
 	{
 	public:
-		typedef Utl Declaration;
+		typedef IUtl Declaration;
 
-		UtlBaseImpl(DoNotInherit = DoNotInherit())
+		IUtlBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12207,7 +12209,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetFbVersionDispatcher(Utl* self, Status* status, Attachment* att, VersionCallback* callback) throw()
+		static void CLOOP_CARG cloopgetFbVersionDispatcher(IUtl* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw()
 		{
 			try
 			{
@@ -12219,7 +12221,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG clooploadBlobDispatcher(Utl* self, Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt) throw()
+		static void CLOOP_CARG clooploadBlobDispatcher(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
 		{
 			try
 			{
@@ -12231,7 +12233,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopdumpBlobDispatcher(Utl* self, Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt) throw()
+		static void CLOOP_CARG cloopdumpBlobDispatcher(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
 		{
 			try
 			{
@@ -12243,7 +12245,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopgetPerfCountersDispatcher(Utl* self, Status* status, Attachment* att, const char* countersSet, ISC_INT64* counters) throw()
+		static void CLOOP_CARG cloopgetPerfCountersDispatcher(IUtl* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw()
 		{
 			try
 			{
@@ -12255,7 +12257,7 @@ public:
 			}
 		}
 
-		static Attachment* CLOOP_CARG cloopexecuteCreateDatabaseDispatcher(Utl* self, Status* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw()
+		static IAttachment* CLOOP_CARG cloopexecuteCreateDatabaseDispatcher(IUtl* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw()
 		{
 			try
 			{
@@ -12264,11 +12266,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<Attachment*>(0);
+				return static_cast<IAttachment*>(0);
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12277,38 +12279,38 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<Utl> > >
-	class UtlImpl : public UtlBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IUtl> > >
+	class IUtlImpl : public IUtlBaseImpl<Name, Base>
 	{
 	protected:
-		UtlImpl(DoNotInherit = DoNotInherit())
+		IUtlImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~UtlImpl()
+		virtual ~IUtlImpl()
 		{
 		}
 
-		virtual void getFbVersion(Status* status, Attachment* att, VersionCallback* callback) = 0;
-		virtual void loadBlob(Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt) = 0;
-		virtual void dumpBlob(Status* status, ISC_QUAD* blobId, Attachment* att, Transaction* tra, const char* file, FB_BOOLEAN txt) = 0;
-		virtual void getPerfCounters(Status* status, Attachment* att, const char* countersSet, ISC_INT64* counters) = 0;
-		virtual Attachment* executeCreateDatabase(Status* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) = 0;
+		virtual void getFbVersion(IStatus* status, IAttachment* att, IVersionCallback* callback) = 0;
+		virtual void loadBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
+		virtual void dumpBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
+		virtual void getPerfCounters(IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) = 0;
+		virtual IAttachment* executeCreateDatabase(IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TraceConnectionBaseImpl : public Base
+	class ITraceConnectionBaseImpl : public Base
 	{
 	public:
-		typedef TraceConnection Declaration;
+		typedef ITraceConnection Declaration;
 
-		TraceConnectionBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceConnectionBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12331,7 +12333,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetKindDispatcher(TraceConnection* self) throw()
+		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12344,7 +12346,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetProcessIDDispatcher(TraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12357,7 +12359,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12370,7 +12372,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12383,7 +12385,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetCharSetDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12396,7 +12398,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12409,7 +12411,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12422,7 +12424,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(TraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12435,7 +12437,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12448,7 +12450,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12457,21 +12459,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceConnection> > >
-	class TraceConnectionImpl : public TraceConnectionBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceConnection> > >
+	class ITraceConnectionImpl : public ITraceConnectionBaseImpl<Name, Base>
 	{
 	protected:
-		TraceConnectionImpl(DoNotInherit = DoNotInherit())
+		ITraceConnectionImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceConnectionImpl()
+		virtual ~ITraceConnectionImpl()
 		{
 		}
 
@@ -12487,12 +12489,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceDatabaseConnectionBaseImpl : public Base
+	class ITraceDatabaseConnectionBaseImpl : public Base
 	{
 	public:
-		typedef TraceDatabaseConnection Declaration;
+		typedef ITraceDatabaseConnection Declaration;
 
-		TraceDatabaseConnectionBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceDatabaseConnectionBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12517,7 +12519,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopgetConnectionIDDispatcher(TraceDatabaseConnection* self) throw()
+		static int CLOOP_CARG cloopgetConnectionIDDispatcher(ITraceDatabaseConnection* self) throw()
 		{
 			try
 			{
@@ -12530,7 +12532,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(TraceDatabaseConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(ITraceDatabaseConnection* self) throw()
 		{
 			try
 			{
@@ -12543,7 +12545,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetKindDispatcher(TraceConnection* self) throw()
+		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12556,7 +12558,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetProcessIDDispatcher(TraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12569,7 +12571,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12582,7 +12584,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12595,7 +12597,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetCharSetDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12608,7 +12610,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12621,7 +12623,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12634,7 +12636,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(TraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12647,7 +12649,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -12660,7 +12662,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12669,21 +12671,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = TraceConnectionImpl<Name, Inherit<VersionedImpl<Name, Inherit<TraceDatabaseConnection> > > > >
-	class TraceDatabaseConnectionImpl : public TraceDatabaseConnectionBaseImpl<Name, Base>
+	template <typename Name, typename Base = ITraceConnectionImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceDatabaseConnection> > > > >
+	class ITraceDatabaseConnectionImpl : public ITraceDatabaseConnectionBaseImpl<Name, Base>
 	{
 	protected:
-		TraceDatabaseConnectionImpl(DoNotInherit = DoNotInherit())
+		ITraceDatabaseConnectionImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceDatabaseConnectionImpl()
+		virtual ~ITraceDatabaseConnectionImpl()
 		{
 		}
 
@@ -12692,12 +12694,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceTransactionBaseImpl : public Base
+	class ITraceTransactionBaseImpl : public Base
 	{
 	public:
-		typedef TraceTransaction Declaration;
+		typedef ITraceTransaction Declaration;
 
-		TraceTransactionBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceTransactionBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12716,7 +12718,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetTransactionIDDispatcher(TraceTransaction* self) throw()
+		static unsigned CLOOP_CARG cloopgetTransactionIDDispatcher(ITraceTransaction* self) throw()
 		{
 			try
 			{
@@ -12729,7 +12731,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloopgetReadOnlyDispatcher(TraceTransaction* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopgetReadOnlyDispatcher(ITraceTransaction* self) throw()
 		{
 			try
 			{
@@ -12742,7 +12744,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetWaitDispatcher(TraceTransaction* self) throw()
+		static int CLOOP_CARG cloopgetWaitDispatcher(ITraceTransaction* self) throw()
 		{
 			try
 			{
@@ -12755,7 +12757,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetIsolationDispatcher(TraceTransaction* self) throw()
+		static unsigned CLOOP_CARG cloopgetIsolationDispatcher(ITraceTransaction* self) throw()
 		{
 			try
 			{
@@ -12768,7 +12770,7 @@ public:
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceTransaction* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceTransaction* self) throw()
 		{
 			try
 			{
@@ -12781,7 +12783,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12790,21 +12792,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceTransaction> > >
-	class TraceTransactionImpl : public TraceTransactionBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceTransaction> > >
+	class ITraceTransactionImpl : public ITraceTransactionBaseImpl<Name, Base>
 	{
 	protected:
-		TraceTransactionImpl(DoNotInherit = DoNotInherit())
+		ITraceTransactionImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceTransactionImpl()
+		virtual ~ITraceTransactionImpl()
 		{
 		}
 
@@ -12816,12 +12818,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceParamsBaseImpl : public Base
+	class ITraceParamsBaseImpl : public Base
 	{
 	public:
-		typedef TraceParams Declaration;
+		typedef ITraceParams Declaration;
 
-		TraceParamsBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceParamsBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12837,7 +12839,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetCountDispatcher(TraceParams* self) throw()
+		static unsigned CLOOP_CARG cloopgetCountDispatcher(ITraceParams* self) throw()
 		{
 			try
 			{
@@ -12850,7 +12852,7 @@ public:
 			}
 		}
 
-		static const dsc* CLOOP_CARG cloopgetParamDispatcher(TraceParams* self, unsigned idx) throw()
+		static const dsc* CLOOP_CARG cloopgetParamDispatcher(ITraceParams* self, unsigned idx) throw()
 		{
 			try
 			{
@@ -12863,7 +12865,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12872,21 +12874,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceParams> > >
-	class TraceParamsImpl : public TraceParamsBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceParams> > >
+	class ITraceParamsImpl : public ITraceParamsBaseImpl<Name, Base>
 	{
 	protected:
-		TraceParamsImpl(DoNotInherit = DoNotInherit())
+		ITraceParamsImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceParamsImpl()
+		virtual ~ITraceParamsImpl()
 		{
 		}
 
@@ -12895,12 +12897,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceStatementBaseImpl : public Base
+	class ITraceStatementBaseImpl : public Base
 	{
 	public:
-		typedef TraceStatement Declaration;
+		typedef ITraceStatement Declaration;
 
-		TraceStatementBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceStatementBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -12916,7 +12918,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopgetStmtIDDispatcher(TraceStatement* self) throw()
+		static int CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -12929,7 +12931,7 @@ public:
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceStatement* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -12942,7 +12944,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -12951,21 +12953,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceStatement> > >
-	class TraceStatementImpl : public TraceStatementBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceStatement> > >
+	class ITraceStatementImpl : public ITraceStatementBaseImpl<Name, Base>
 	{
 	protected:
-		TraceStatementImpl(DoNotInherit = DoNotInherit())
+		ITraceStatementImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceStatementImpl()
+		virtual ~ITraceStatementImpl()
 		{
 		}
 
@@ -12974,12 +12976,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceSQLStatementBaseImpl : public Base
+	class ITraceSQLStatementBaseImpl : public Base
 	{
 	public:
-		typedef TraceSQLStatement Declaration;
+		typedef ITraceSQLStatement Declaration;
 
-		TraceSQLStatementBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceSQLStatementBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13000,7 +13002,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(TraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceSQLStatement* self) throw()
 		{
 			try
 			{
@@ -13013,7 +13015,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetPlanDispatcher(TraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetPlanDispatcher(ITraceSQLStatement* self) throw()
 		{
 			try
 			{
@@ -13026,7 +13028,7 @@ public:
 			}
 		}
 
-		static TraceParams* CLOOP_CARG cloopgetInputsDispatcher(TraceSQLStatement* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceSQLStatement* self) throw()
 		{
 			try
 			{
@@ -13035,11 +13037,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<TraceParams*>(0);
+				return static_cast<ITraceParams*>(0);
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextUTF8Dispatcher(TraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetTextUTF8Dispatcher(ITraceSQLStatement* self) throw()
 		{
 			try
 			{
@@ -13052,7 +13054,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetExplainedPlanDispatcher(TraceSQLStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetExplainedPlanDispatcher(ITraceSQLStatement* self) throw()
 		{
 			try
 			{
@@ -13065,7 +13067,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetStmtIDDispatcher(TraceStatement* self) throw()
+		static int CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -13078,7 +13080,7 @@ public:
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceStatement* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -13091,7 +13093,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13100,38 +13102,38 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = TraceStatementImpl<Name, Inherit<VersionedImpl<Name, Inherit<TraceSQLStatement> > > > >
-	class TraceSQLStatementImpl : public TraceSQLStatementBaseImpl<Name, Base>
+	template <typename Name, typename Base = ITraceStatementImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceSQLStatement> > > > >
+	class ITraceSQLStatementImpl : public ITraceSQLStatementBaseImpl<Name, Base>
 	{
 	protected:
-		TraceSQLStatementImpl(DoNotInherit = DoNotInherit())
+		ITraceSQLStatementImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceSQLStatementImpl()
+		virtual ~ITraceSQLStatementImpl()
 		{
 		}
 
 		virtual const char* getText() = 0;
 		virtual const char* getPlan() = 0;
-		virtual TraceParams* getInputs() = 0;
+		virtual ITraceParams* getInputs() = 0;
 		virtual const char* getTextUTF8() = 0;
 		virtual const char* getExplainedPlan() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TraceBLRStatementBaseImpl : public Base
+	class ITraceBLRStatementBaseImpl : public Base
 	{
 	public:
-		typedef TraceBLRStatement Declaration;
+		typedef ITraceBLRStatement Declaration;
 
-		TraceBLRStatementBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceBLRStatementBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13150,7 +13152,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(TraceBLRStatement* self) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ITraceBLRStatement* self) throw()
 		{
 			try
 			{
@@ -13163,7 +13165,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(TraceBLRStatement* self) throw()
+		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(ITraceBLRStatement* self) throw()
 		{
 			try
 			{
@@ -13176,7 +13178,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(TraceBLRStatement* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceBLRStatement* self) throw()
 		{
 			try
 			{
@@ -13189,7 +13191,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetStmtIDDispatcher(TraceStatement* self) throw()
+		static int CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -13202,7 +13204,7 @@ public:
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceStatement* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -13215,7 +13217,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13224,21 +13226,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = TraceStatementImpl<Name, Inherit<VersionedImpl<Name, Inherit<TraceBLRStatement> > > > >
-	class TraceBLRStatementImpl : public TraceBLRStatementBaseImpl<Name, Base>
+	template <typename Name, typename Base = ITraceStatementImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceBLRStatement> > > > >
+	class ITraceBLRStatementImpl : public ITraceBLRStatementBaseImpl<Name, Base>
 	{
 	protected:
-		TraceBLRStatementImpl(DoNotInherit = DoNotInherit())
+		ITraceBLRStatementImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceBLRStatementImpl()
+		virtual ~ITraceBLRStatementImpl()
 		{
 		}
 
@@ -13248,12 +13250,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceDYNRequestBaseImpl : public Base
+	class ITraceDYNRequestBaseImpl : public Base
 	{
 	public:
-		typedef TraceDYNRequest Declaration;
+		typedef ITraceDYNRequest Declaration;
 
-		TraceDYNRequestBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceDYNRequestBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13270,7 +13272,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(TraceDYNRequest* self) throw()
+		static const unsigned char* CLOOP_CARG cloopgetDataDispatcher(ITraceDYNRequest* self) throw()
 		{
 			try
 			{
@@ -13283,7 +13285,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(TraceDYNRequest* self) throw()
+		static unsigned CLOOP_CARG cloopgetDataLengthDispatcher(ITraceDYNRequest* self) throw()
 		{
 			try
 			{
@@ -13296,7 +13298,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(TraceDYNRequest* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceDYNRequest* self) throw()
 		{
 			try
 			{
@@ -13309,7 +13311,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13318,21 +13320,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceDYNRequest> > >
-	class TraceDYNRequestImpl : public TraceDYNRequestBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceDYNRequest> > >
+	class ITraceDYNRequestImpl : public ITraceDYNRequestBaseImpl<Name, Base>
 	{
 	protected:
-		TraceDYNRequestImpl(DoNotInherit = DoNotInherit())
+		ITraceDYNRequestImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceDYNRequestImpl()
+		virtual ~ITraceDYNRequestImpl()
 		{
 		}
 
@@ -13342,12 +13344,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceContextVariableBaseImpl : public Base
+	class ITraceContextVariableBaseImpl : public Base
 	{
 	public:
-		typedef TraceContextVariable Declaration;
+		typedef ITraceContextVariable Declaration;
 
-		TraceContextVariableBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceContextVariableBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13364,7 +13366,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetNameSpaceDispatcher(TraceContextVariable* self) throw()
+		static const char* CLOOP_CARG cloopgetNameSpaceDispatcher(ITraceContextVariable* self) throw()
 		{
 			try
 			{
@@ -13377,7 +13379,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetVarNameDispatcher(TraceContextVariable* self) throw()
+		static const char* CLOOP_CARG cloopgetVarNameDispatcher(ITraceContextVariable* self) throw()
 		{
 			try
 			{
@@ -13390,7 +13392,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetVarValueDispatcher(TraceContextVariable* self) throw()
+		static const char* CLOOP_CARG cloopgetVarValueDispatcher(ITraceContextVariable* self) throw()
 		{
 			try
 			{
@@ -13403,7 +13405,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13412,21 +13414,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceContextVariable> > >
-	class TraceContextVariableImpl : public TraceContextVariableBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceContextVariable> > >
+	class ITraceContextVariableImpl : public ITraceContextVariableBaseImpl<Name, Base>
 	{
 	protected:
-		TraceContextVariableImpl(DoNotInherit = DoNotInherit())
+		ITraceContextVariableImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceContextVariableImpl()
+		virtual ~ITraceContextVariableImpl()
 		{
 		}
 
@@ -13436,12 +13438,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceProcedureBaseImpl : public Base
+	class ITraceProcedureBaseImpl : public Base
 	{
 	public:
-		typedef TraceProcedure Declaration;
+		typedef ITraceProcedure Declaration;
 
-		TraceProcedureBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceProcedureBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13458,7 +13460,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetProcNameDispatcher(TraceProcedure* self) throw()
+		static const char* CLOOP_CARG cloopgetProcNameDispatcher(ITraceProcedure* self) throw()
 		{
 			try
 			{
@@ -13471,7 +13473,7 @@ public:
 			}
 		}
 
-		static TraceParams* CLOOP_CARG cloopgetInputsDispatcher(TraceProcedure* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceProcedure* self) throw()
 		{
 			try
 			{
@@ -13480,11 +13482,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<TraceParams*>(0);
+				return static_cast<ITraceParams*>(0);
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceProcedure* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceProcedure* self) throw()
 		{
 			try
 			{
@@ -13497,7 +13499,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13506,36 +13508,36 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceProcedure> > >
-	class TraceProcedureImpl : public TraceProcedureBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceProcedure> > >
+	class ITraceProcedureImpl : public ITraceProcedureBaseImpl<Name, Base>
 	{
 	protected:
-		TraceProcedureImpl(DoNotInherit = DoNotInherit())
+		ITraceProcedureImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceProcedureImpl()
+		virtual ~ITraceProcedureImpl()
 		{
 		}
 
 		virtual const char* getProcName() = 0;
-		virtual TraceParams* getInputs() = 0;
+		virtual ITraceParams* getInputs() = 0;
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TraceFunctionBaseImpl : public Base
+	class ITraceFunctionBaseImpl : public Base
 	{
 	public:
-		typedef TraceFunction Declaration;
+		typedef ITraceFunction Declaration;
 
-		TraceFunctionBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceFunctionBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13553,7 +13555,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetFuncNameDispatcher(TraceFunction* self) throw()
+		static const char* CLOOP_CARG cloopgetFuncNameDispatcher(ITraceFunction* self) throw()
 		{
 			try
 			{
@@ -13566,7 +13568,7 @@ public:
 			}
 		}
 
-		static TraceParams* CLOOP_CARG cloopgetInputsDispatcher(TraceFunction* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetInputsDispatcher(ITraceFunction* self) throw()
 		{
 			try
 			{
@@ -13575,11 +13577,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<TraceParams*>(0);
+				return static_cast<ITraceParams*>(0);
 			}
 		}
 
-		static TraceParams* CLOOP_CARG cloopgetResultDispatcher(TraceFunction* self) throw()
+		static ITraceParams* CLOOP_CARG cloopgetResultDispatcher(ITraceFunction* self) throw()
 		{
 			try
 			{
@@ -13588,11 +13590,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<TraceParams*>(0);
+				return static_cast<ITraceParams*>(0);
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceFunction* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceFunction* self) throw()
 		{
 			try
 			{
@@ -13605,7 +13607,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13614,37 +13616,37 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceFunction> > >
-	class TraceFunctionImpl : public TraceFunctionBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceFunction> > >
+	class ITraceFunctionImpl : public ITraceFunctionBaseImpl<Name, Base>
 	{
 	protected:
-		TraceFunctionImpl(DoNotInherit = DoNotInherit())
+		ITraceFunctionImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceFunctionImpl()
+		virtual ~ITraceFunctionImpl()
 		{
 		}
 
 		virtual const char* getFuncName() = 0;
-		virtual TraceParams* getInputs() = 0;
-		virtual TraceParams* getResult() = 0;
+		virtual ITraceParams* getInputs() = 0;
+		virtual ITraceParams* getResult() = 0;
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TraceTriggerBaseImpl : public Base
+	class ITraceTriggerBaseImpl : public Base
 	{
 	public:
-		typedef TraceTrigger Declaration;
+		typedef ITraceTrigger Declaration;
 
-		TraceTriggerBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceTriggerBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13663,7 +13665,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetTriggerNameDispatcher(TraceTrigger* self) throw()
+		static const char* CLOOP_CARG cloopgetTriggerNameDispatcher(ITraceTrigger* self) throw()
 		{
 			try
 			{
@@ -13676,7 +13678,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRelationNameDispatcher(TraceTrigger* self) throw()
+		static const char* CLOOP_CARG cloopgetRelationNameDispatcher(ITraceTrigger* self) throw()
 		{
 			try
 			{
@@ -13689,7 +13691,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetActionDispatcher(TraceTrigger* self) throw()
+		static int CLOOP_CARG cloopgetActionDispatcher(ITraceTrigger* self) throw()
 		{
 			try
 			{
@@ -13702,7 +13704,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetWhichDispatcher(TraceTrigger* self) throw()
+		static int CLOOP_CARG cloopgetWhichDispatcher(ITraceTrigger* self) throw()
 		{
 			try
 			{
@@ -13715,7 +13717,7 @@ public:
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceTrigger* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceTrigger* self) throw()
 		{
 			try
 			{
@@ -13728,7 +13730,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13737,21 +13739,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceTrigger> > >
-	class TraceTriggerImpl : public TraceTriggerBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceTrigger> > >
+	class ITraceTriggerImpl : public ITraceTriggerBaseImpl<Name, Base>
 	{
 	protected:
-		TraceTriggerImpl(DoNotInherit = DoNotInherit())
+		ITraceTriggerImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceTriggerImpl()
+		virtual ~ITraceTriggerImpl()
 		{
 		}
 
@@ -13763,12 +13765,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceServiceConnectionBaseImpl : public Base
+	class ITraceServiceConnectionBaseImpl : public Base
 	{
 	public:
-		typedef TraceServiceConnection Declaration;
+		typedef ITraceServiceConnection Declaration;
 
-		TraceServiceConnectionBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceServiceConnectionBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -13794,7 +13796,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static void* CLOOP_CARG cloopgetServiceIDDispatcher(TraceServiceConnection* self) throw()
+		static void* CLOOP_CARG cloopgetServiceIDDispatcher(ITraceServiceConnection* self) throw()
 		{
 			try
 			{
@@ -13807,7 +13809,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetServiceMgrDispatcher(TraceServiceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetServiceMgrDispatcher(ITraceServiceConnection* self) throw()
 		{
 			try
 			{
@@ -13820,7 +13822,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetServiceNameDispatcher(TraceServiceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetServiceNameDispatcher(ITraceServiceConnection* self) throw()
 		{
 			try
 			{
@@ -13833,7 +13835,7 @@ public:
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetKindDispatcher(TraceConnection* self) throw()
+		static unsigned CLOOP_CARG cloopgetKindDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13846,7 +13848,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetProcessIDDispatcher(TraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetProcessIDDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13859,7 +13861,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetUserNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetUserNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13872,7 +13874,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRoleNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13885,7 +13887,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetCharSetDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetCharSetDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13898,7 +13900,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProtocolDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13911,7 +13913,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteAddressDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13924,7 +13926,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(TraceConnection* self) throw()
+		static int CLOOP_CARG cloopgetRemoteProcessIDDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13937,7 +13939,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(TraceConnection* self) throw()
+		static const char* CLOOP_CARG cloopgetRemoteProcessNameDispatcher(ITraceConnection* self) throw()
 		{
 			try
 			{
@@ -13950,7 +13952,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -13959,21 +13961,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = TraceConnectionImpl<Name, Inherit<VersionedImpl<Name, Inherit<TraceServiceConnection> > > > >
-	class TraceServiceConnectionImpl : public TraceServiceConnectionBaseImpl<Name, Base>
+	template <typename Name, typename Base = ITraceConnectionImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceServiceConnection> > > > >
+	class ITraceServiceConnectionImpl : public ITraceServiceConnectionBaseImpl<Name, Base>
 	{
 	protected:
-		TraceServiceConnectionImpl(DoNotInherit = DoNotInherit())
+		ITraceServiceConnectionImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceServiceConnectionImpl()
+		virtual ~ITraceServiceConnectionImpl()
 		{
 		}
 
@@ -13983,12 +13985,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceStatusVectorBaseImpl : public Base
+	class ITraceStatusVectorBaseImpl : public Base
 	{
 	public:
-		typedef TraceStatusVector Declaration;
+		typedef ITraceStatusVector Declaration;
 
-		TraceStatusVectorBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceStatusVectorBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -14006,7 +14008,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloophasErrorDispatcher(TraceStatusVector* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloophasErrorDispatcher(ITraceStatusVector* self) throw()
 		{
 			try
 			{
@@ -14019,7 +14021,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG cloophasWarningDispatcher(TraceStatusVector* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloophasWarningDispatcher(ITraceStatusVector* self) throw()
 		{
 			try
 			{
@@ -14032,7 +14034,7 @@ public:
 			}
 		}
 
-		static const intptr_t* CLOOP_CARG cloopgetStatusDispatcher(TraceStatusVector* self) throw()
+		static const intptr_t* CLOOP_CARG cloopgetStatusDispatcher(ITraceStatusVector* self) throw()
 		{
 			try
 			{
@@ -14045,7 +14047,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTextDispatcher(TraceStatusVector* self) throw()
+		static const char* CLOOP_CARG cloopgetTextDispatcher(ITraceStatusVector* self) throw()
 		{
 			try
 			{
@@ -14058,7 +14060,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -14067,21 +14069,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceStatusVector> > >
-	class TraceStatusVectorImpl : public TraceStatusVectorBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceStatusVector> > >
+	class ITraceStatusVectorImpl : public ITraceStatusVectorBaseImpl<Name, Base>
 	{
 	protected:
-		TraceStatusVectorImpl(DoNotInherit = DoNotInherit())
+		ITraceStatusVectorImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceStatusVectorImpl()
+		virtual ~ITraceStatusVectorImpl()
 		{
 		}
 
@@ -14092,12 +14094,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceSweepInfoBaseImpl : public Base
+	class ITraceSweepInfoBaseImpl : public Base
 	{
 	public:
-		typedef TraceSweepInfo Declaration;
+		typedef ITraceSweepInfo Declaration;
 
-		TraceSweepInfoBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceSweepInfoBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -14116,7 +14118,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetOITDispatcher(TraceSweepInfo* self) throw()
+		static ISC_UINT64 CLOOP_CARG cloopgetOITDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14129,7 +14131,7 @@ public:
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetOSTDispatcher(TraceSweepInfo* self) throw()
+		static ISC_UINT64 CLOOP_CARG cloopgetOSTDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14142,7 +14144,7 @@ public:
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetOATDispatcher(TraceSweepInfo* self) throw()
+		static ISC_UINT64 CLOOP_CARG cloopgetOATDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14155,7 +14157,7 @@ public:
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetNextDispatcher(TraceSweepInfo* self) throw()
+		static ISC_UINT64 CLOOP_CARG cloopgetNextDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14168,7 +14170,7 @@ public:
 			}
 		}
 
-		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(TraceSweepInfo* self) throw()
+		static PerformanceInfo* CLOOP_CARG cloopgetPerfDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14181,7 +14183,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -14190,21 +14192,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceSweepInfo> > >
-	class TraceSweepInfoImpl : public TraceSweepInfoBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceSweepInfo> > >
+	class ITraceSweepInfoImpl : public ITraceSweepInfoBaseImpl<Name, Base>
 	{
 	protected:
-		TraceSweepInfoImpl(DoNotInherit = DoNotInherit())
+		ITraceSweepInfoImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceSweepInfoImpl()
+		virtual ~ITraceSweepInfoImpl()
 		{
 		}
 
@@ -14216,12 +14218,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceLogWriterBaseImpl : public Base
+	class ITraceLogWriterBaseImpl : public Base
 	{
 	public:
-		typedef TraceLogWriter Declaration;
+		typedef ITraceLogWriter Declaration;
 
-		TraceLogWriterBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceLogWriterBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -14238,7 +14240,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopwriteDispatcher(TraceLogWriter* self, const void* buf, unsigned size) throw()
+		static unsigned CLOOP_CARG cloopwriteDispatcher(ITraceLogWriter* self, const void* buf, unsigned size) throw()
 		{
 			try
 			{
@@ -14251,7 +14253,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -14263,7 +14265,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -14276,7 +14278,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -14285,21 +14287,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<TraceLogWriter> > > > >
-	class TraceLogWriterImpl : public TraceLogWriterBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceLogWriter> > > > >
+	class ITraceLogWriterImpl : public ITraceLogWriterBaseImpl<Name, Base>
 	{
 	protected:
-		TraceLogWriterImpl(DoNotInherit = DoNotInherit())
+		ITraceLogWriterImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceLogWriterImpl()
+		virtual ~ITraceLogWriterImpl()
 		{
 		}
 
@@ -14307,12 +14309,12 @@ public:
 	};
 
 	template <typename Name, typename Base>
-	class TraceInitInfoBaseImpl : public Base
+	class ITraceInitInfoBaseImpl : public Base
 	{
 	public:
-		typedef TraceInitInfo Declaration;
+		typedef ITraceInitInfo Declaration;
 
-		TraceInitInfoBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceInitInfoBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -14333,7 +14335,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG cloopgetConfigTextDispatcher(TraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetConfigTextDispatcher(ITraceInitInfo* self) throw()
 		{
 			try
 			{
@@ -14346,7 +14348,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopgetTraceSessionIDDispatcher(TraceInitInfo* self) throw()
+		static int CLOOP_CARG cloopgetTraceSessionIDDispatcher(ITraceInitInfo* self) throw()
 		{
 			try
 			{
@@ -14359,7 +14361,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetTraceSessionNameDispatcher(TraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetTraceSessionNameDispatcher(ITraceInitInfo* self) throw()
 		{
 			try
 			{
@@ -14372,7 +14374,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetFirebirdRootDirectoryDispatcher(TraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetFirebirdRootDirectoryDispatcher(ITraceInitInfo* self) throw()
 		{
 			try
 			{
@@ -14385,7 +14387,7 @@ public:
 			}
 		}
 
-		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(TraceInitInfo* self) throw()
+		static const char* CLOOP_CARG cloopgetDatabaseNameDispatcher(ITraceInitInfo* self) throw()
 		{
 			try
 			{
@@ -14398,7 +14400,7 @@ public:
 			}
 		}
 
-		static TraceDatabaseConnection* CLOOP_CARG cloopgetConnectionDispatcher(TraceInitInfo* self) throw()
+		static ITraceDatabaseConnection* CLOOP_CARG cloopgetConnectionDispatcher(ITraceInitInfo* self) throw()
 		{
 			try
 			{
@@ -14407,11 +14409,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<TraceDatabaseConnection*>(0);
+				return static_cast<ITraceDatabaseConnection*>(0);
 			}
 		}
 
-		static TraceLogWriter* CLOOP_CARG cloopgetLogWriterDispatcher(TraceInitInfo* self) throw()
+		static ITraceLogWriter* CLOOP_CARG cloopgetLogWriterDispatcher(ITraceInitInfo* self) throw()
 		{
 			try
 			{
@@ -14420,11 +14422,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<TraceLogWriter*>(0);
+				return static_cast<ITraceLogWriter*>(0);
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -14433,21 +14435,21 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = VersionedImpl<Name, Inherit<TraceInitInfo> > >
-	class TraceInitInfoImpl : public TraceInitInfoBaseImpl<Name, Base>
+	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceInitInfo> > >
+	class ITraceInitInfoImpl : public ITraceInitInfoBaseImpl<Name, Base>
 	{
 	protected:
-		TraceInitInfoImpl(DoNotInherit = DoNotInherit())
+		ITraceInitInfoImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceInitInfoImpl()
+		virtual ~ITraceInitInfoImpl()
 		{
 		}
 
@@ -14456,17 +14458,17 @@ public:
 		virtual const char* getTraceSessionName() = 0;
 		virtual const char* getFirebirdRootDirectory() = 0;
 		virtual const char* getDatabaseName() = 0;
-		virtual TraceDatabaseConnection* getConnection() = 0;
-		virtual TraceLogWriter* getLogWriter() = 0;
+		virtual ITraceDatabaseConnection* getConnection() = 0;
+		virtual ITraceLogWriter* getLogWriter() = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TracePluginBaseImpl : public Base
+	class ITracePluginBaseImpl : public Base
 	{
 	public:
-		typedef TracePlugin Declaration;
+		typedef ITracePlugin Declaration;
 
-		TracePluginBaseImpl(DoNotInherit = DoNotInherit())
+		ITracePluginBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -14503,7 +14505,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static const char* CLOOP_CARG clooptrace_get_errorDispatcher(TracePlugin* self) throw()
+		static const char* CLOOP_CARG clooptrace_get_errorDispatcher(ITracePlugin* self) throw()
 		{
 			try
 			{
@@ -14516,7 +14518,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_attachDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_attachDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) throw()
 		{
 			try
 			{
@@ -14529,7 +14531,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_detachDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, FB_BOOLEAN drop_db) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_detachDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db) throw()
 		{
 			try
 			{
@@ -14542,7 +14544,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_startDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_startDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) throw()
 		{
 			try
 			{
@@ -14555,7 +14557,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_endDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_transaction_endDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) throw()
 		{
 			try
 			{
@@ -14568,7 +14570,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_proc_executeDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_proc_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) throw()
 		{
 			try
 			{
@@ -14581,7 +14583,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_trigger_executeDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_trigger_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) throw()
 		{
 			try
 			{
@@ -14594,7 +14596,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_set_contextDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_set_contextDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable) throw()
 		{
 			try
 			{
@@ -14607,7 +14609,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_prepareDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_prepareDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw()
 		{
 			try
 			{
@@ -14620,7 +14622,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_freeDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned option) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_freeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option) throw()
 		{
 			try
 			{
@@ -14633,7 +14635,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_executeDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dsql_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) throw()
 		{
 			try
 			{
@@ -14646,7 +14648,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_compileDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_compileDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) throw()
 		{
 			try
 			{
@@ -14659,7 +14661,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_executeDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_blr_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result) throw()
 		{
 			try
 			{
@@ -14672,7 +14674,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_dyn_executeDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_dyn_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) throw()
 		{
 			try
 			{
@@ -14685,7 +14687,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_attachDispatcher(TracePlugin* self, TraceServiceConnection* service, unsigned att_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_attachDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned att_result) throw()
 		{
 			try
 			{
@@ -14698,7 +14700,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_startDispatcher(TracePlugin* self, TraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_startDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) throw()
 		{
 			try
 			{
@@ -14711,7 +14713,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_queryDispatcher(TracePlugin* self, TraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_queryDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) throw()
 		{
 			try
 			{
@@ -14724,7 +14726,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_service_detachDispatcher(TracePlugin* self, TraceServiceConnection* service, unsigned detach_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_service_detachDispatcher(ITracePlugin* self, ITraceServiceConnection* service, unsigned detach_result) throw()
 		{
 			try
 			{
@@ -14737,7 +14739,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_event_errorDispatcher(TracePlugin* self, TraceConnection* connection, TraceStatusVector* status, const char* function) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_event_errorDispatcher(ITracePlugin* self, ITraceConnection* connection, ITraceStatusVector* status, const char* function) throw()
 		{
 			try
 			{
@@ -14750,7 +14752,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_event_sweepDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceSweepInfo* sweep, unsigned sweep_state) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_event_sweepDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) throw()
 		{
 			try
 			{
@@ -14763,7 +14765,7 @@ public:
 			}
 		}
 
-		static FB_BOOLEAN CLOOP_CARG clooptrace_func_executeDispatcher(TracePlugin* self, TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function, FB_BOOLEAN started, unsigned func_result) throw()
+		static FB_BOOLEAN CLOOP_CARG clooptrace_func_executeDispatcher(ITracePlugin* self, ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) throw()
 		{
 			try
 			{
@@ -14776,7 +14778,7 @@ public:
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -14788,7 +14790,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -14801,7 +14803,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -14810,54 +14812,54 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<TracePlugin> > > > >
-	class TracePluginImpl : public TracePluginBaseImpl<Name, Base>
+	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITracePlugin> > > > >
+	class ITracePluginImpl : public ITracePluginBaseImpl<Name, Base>
 	{
 	protected:
-		TracePluginImpl(DoNotInherit = DoNotInherit())
+		ITracePluginImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TracePluginImpl()
+		virtual ~ITracePluginImpl()
 		{
 		}
 
 		virtual const char* trace_get_error() = 0;
-		virtual FB_BOOLEAN trace_attach(TraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) = 0;
-		virtual FB_BOOLEAN trace_detach(TraceDatabaseConnection* connection, FB_BOOLEAN drop_db) = 0;
-		virtual FB_BOOLEAN trace_transaction_start(TraceDatabaseConnection* connection, TraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) = 0;
-		virtual FB_BOOLEAN trace_transaction_end(TraceDatabaseConnection* connection, TraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) = 0;
-		virtual FB_BOOLEAN trace_proc_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) = 0;
-		virtual FB_BOOLEAN trace_trigger_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) = 0;
-		virtual FB_BOOLEAN trace_set_context(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceContextVariable* variable) = 0;
-		virtual FB_BOOLEAN trace_dsql_prepare(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) = 0;
-		virtual FB_BOOLEAN trace_dsql_free(TraceDatabaseConnection* connection, TraceSQLStatement* statement, unsigned option) = 0;
-		virtual FB_BOOLEAN trace_dsql_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) = 0;
-		virtual FB_BOOLEAN trace_blr_compile(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) = 0;
-		virtual FB_BOOLEAN trace_blr_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceBLRStatement* statement, unsigned req_result) = 0;
-		virtual FB_BOOLEAN trace_dyn_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) = 0;
-		virtual FB_BOOLEAN trace_service_attach(TraceServiceConnection* service, unsigned att_result) = 0;
-		virtual FB_BOOLEAN trace_service_start(TraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) = 0;
-		virtual FB_BOOLEAN trace_service_query(TraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) = 0;
-		virtual FB_BOOLEAN trace_service_detach(TraceServiceConnection* service, unsigned detach_result) = 0;
-		virtual FB_BOOLEAN trace_event_error(TraceConnection* connection, TraceStatusVector* status, const char* function) = 0;
-		virtual FB_BOOLEAN trace_event_sweep(TraceDatabaseConnection* connection, TraceSweepInfo* sweep, unsigned sweep_state) = 0;
-		virtual FB_BOOLEAN trace_func_execute(TraceDatabaseConnection* connection, TraceTransaction* transaction, TraceFunction* function, FB_BOOLEAN started, unsigned func_result) = 0;
+		virtual FB_BOOLEAN trace_attach(ITraceDatabaseConnection* connection, FB_BOOLEAN create_db, unsigned att_result) = 0;
+		virtual FB_BOOLEAN trace_detach(ITraceDatabaseConnection* connection, FB_BOOLEAN drop_db) = 0;
+		virtual FB_BOOLEAN trace_transaction_start(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, unsigned tpb_length, const unsigned char* tpb, unsigned tra_result) = 0;
+		virtual FB_BOOLEAN trace_transaction_end(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, FB_BOOLEAN commit, FB_BOOLEAN retain_context, unsigned tra_result) = 0;
+		virtual FB_BOOLEAN trace_proc_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceProcedure* procedure, FB_BOOLEAN started, unsigned proc_result) = 0;
+		virtual FB_BOOLEAN trace_trigger_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceTrigger* trigger, FB_BOOLEAN started, unsigned trig_result) = 0;
+		virtual FB_BOOLEAN trace_set_context(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceContextVariable* variable) = 0;
+		virtual FB_BOOLEAN trace_dsql_prepare(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, ISC_INT64 time_millis, unsigned req_result) = 0;
+		virtual FB_BOOLEAN trace_dsql_free(ITraceDatabaseConnection* connection, ITraceSQLStatement* statement, unsigned option) = 0;
+		virtual FB_BOOLEAN trace_dsql_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceSQLStatement* statement, FB_BOOLEAN started, unsigned req_result) = 0;
+		virtual FB_BOOLEAN trace_blr_compile(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, ISC_INT64 time_millis, unsigned req_result) = 0;
+		virtual FB_BOOLEAN trace_blr_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceBLRStatement* statement, unsigned req_result) = 0;
+		virtual FB_BOOLEAN trace_dyn_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceDYNRequest* request, ISC_INT64 time_millis, unsigned req_result) = 0;
+		virtual FB_BOOLEAN trace_service_attach(ITraceServiceConnection* service, unsigned att_result) = 0;
+		virtual FB_BOOLEAN trace_service_start(ITraceServiceConnection* service, unsigned switches_length, const char* switches, unsigned start_result) = 0;
+		virtual FB_BOOLEAN trace_service_query(ITraceServiceConnection* service, unsigned send_item_length, const unsigned char* send_items, unsigned recv_item_length, const unsigned char* recv_items, unsigned query_result) = 0;
+		virtual FB_BOOLEAN trace_service_detach(ITraceServiceConnection* service, unsigned detach_result) = 0;
+		virtual FB_BOOLEAN trace_event_error(ITraceConnection* connection, ITraceStatusVector* status, const char* function) = 0;
+		virtual FB_BOOLEAN trace_event_sweep(ITraceDatabaseConnection* connection, ITraceSweepInfo* sweep, unsigned sweep_state) = 0;
+		virtual FB_BOOLEAN trace_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) = 0;
 	};
 
 	template <typename Name, typename Base>
-	class TraceFactoryBaseImpl : public Base
+	class ITraceFactoryBaseImpl : public Base
 	{
 	public:
-		typedef TraceFactory Declaration;
+		typedef ITraceFactory Declaration;
 
-		TraceFactoryBaseImpl(DoNotInherit = DoNotInherit())
+		ITraceFactoryBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -14877,7 +14879,7 @@ public:
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_UINT64 CLOOP_CARG clooptrace_needsDispatcher(TraceFactory* self) throw()
+		static ISC_UINT64 CLOOP_CARG clooptrace_needsDispatcher(ITraceFactory* self) throw()
 		{
 			try
 			{
@@ -14890,7 +14892,7 @@ public:
 			}
 		}
 
-		static TracePlugin* CLOOP_CARG clooptrace_createDispatcher(TraceFactory* self, Status* status, TraceInitInfo* init_info) throw()
+		static ITracePlugin* CLOOP_CARG clooptrace_createDispatcher(ITraceFactory* self, IStatus* status, ITraceInitInfo* init_info) throw()
 		{
 			try
 			{
@@ -14899,11 +14901,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(status);
-				return static_cast<TracePlugin*>(0);
+				return static_cast<ITracePlugin*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopsetOwnerDispatcher(PluginBase* self, ReferenceCounted* r) throw()
+		static void CLOOP_CARG cloopsetOwnerDispatcher(IPluginBase* self, IReferenceCounted* r) throw()
 		{
 			try
 			{
@@ -14915,7 +14917,7 @@ public:
 			}
 		}
 
-		static ReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(PluginBase* self) throw()
+		static IReferenceCounted* CLOOP_CARG cloopgetOwnerDispatcher(IPluginBase* self) throw()
 		{
 			try
 			{
@@ -14924,11 +14926,11 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<ReferenceCounted*>(0);
+				return static_cast<IReferenceCounted*>(0);
 			}
 		}
 
-		static void CLOOP_CARG cloopaddRefDispatcher(ReferenceCounted* self) throw()
+		static void CLOOP_CARG cloopaddRefDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -14940,7 +14942,7 @@ public:
 			}
 		}
 
-		static int CLOOP_CARG cloopreleaseDispatcher(ReferenceCounted* self) throw()
+		static int CLOOP_CARG cloopreleaseDispatcher(IReferenceCounted* self) throw()
 		{
 			try
 			{
@@ -14953,7 +14955,7 @@ public:
 			}
 		}
 
-		static PluginModule* CLOOP_CARG cloopgetModuleDispatcher(Versioned* self) throw()
+		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
 		{
 			try
 			{
@@ -14962,139 +14964,139 @@ public:
 			catch (...)
 			{
 				Policy::catchException(0);
-				return static_cast<PluginModule*>(0);
+				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = PluginBaseImpl<Name, Inherit<ReferenceCountedImpl<Name, Inherit<VersionedImpl<Name, Inherit<TraceFactory> > > > > > >
-	class TraceFactoryImpl : public TraceFactoryBaseImpl<Name, Base>
+	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceFactory> > > > > > >
+	class ITraceFactoryImpl : public ITraceFactoryBaseImpl<Name, Base>
 	{
 	protected:
-		TraceFactoryImpl(DoNotInherit = DoNotInherit())
+		ITraceFactoryImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~TraceFactoryImpl()
+		virtual ~ITraceFactoryImpl()
 		{
 		}
 
 		virtual ISC_UINT64 trace_needs() = 0;
-		virtual TracePlugin* trace_create(Status* status, TraceInitInfo* init_info) = 0;
+		virtual ITracePlugin* trace_create(IStatus* status, ITraceInitInfo* init_info) = 0;
 	};
 };
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::Status::FB_HAS_WARNINGS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Status::FB_HAS_ERRORS;
-template <typename Policy> const int FirebirdApi<Policy>::Status::FB_ERROR;
-template <typename Policy> const int FirebirdApi<Policy>::Status::FB_OK;
-template <typename Policy> const int FirebirdApi<Policy>::Status::FB_EOF;
-template <typename Policy> const int FirebirdApi<Policy>::Status::FB_SEGMENT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatus::FB_HAS_WARNINGS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatus::FB_HAS_ERRORS;
+template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_ERROR;
+template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_OK;
+template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_EOF;
+template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_SEGMENT;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::Provider;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::FirstNonLibPlugin;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::AuthServer;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::AuthClient;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::AuthUserManagement;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::ExternalEngine;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::Trace;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::WireCrypt;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::DbCrypt;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::KeyHolder;
-template <typename Policy> const unsigned FirebirdApi<Policy>::PluginManager::MaxType;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::Provider;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::FirstNonLibPlugin;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::AuthServer;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::AuthClient;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::AuthUserManagement;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::ExternalEngine;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::Trace;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::WireCrypt;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::DbCrypt;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::KeyHolder;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::MaxType;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_BIN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_SBIN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_CONF;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_LIB;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_INC;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_DOC;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_UDF;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_SAMPLE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_SAMPLEDB;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_HELP;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_INTL;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_MISC;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_SECDB;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_MSG;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_LOG;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_GUARD;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIR_PLUGINS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ConfigManager::FB_DIRCOUNT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_BIN;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SBIN;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_CONF;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_LIB;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_INC;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_DOC;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_UDF;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SAMPLE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SAMPLEDB;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_HELP;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_INTL;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_MISC;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SECDB;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_MSG;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_LOG;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_GUARD;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_PLUGINS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIRCOUNT;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_NONE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_TYPE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_INPUT_PARAMETERS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_LEGACY_PLAN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_DETAILED_PLAN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_AFFECTED_RECORDS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_FLAGS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_METADATA;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::PREPARE_PREFETCH_ALL;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::FLAG_HAS_CURSOR;
-template <typename Policy> const unsigned FirebirdApi<Policy>::Statement::FLAG_REPEAT_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_NONE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_TYPE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_LEGACY_PLAN;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_DETAILED_PLAN;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_FLAGS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_METADATA;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_ALL;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::FLAG_HAS_CURSOR;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::FLAG_REPEAT_EXECUTE;
 
-template <typename Policy> const int FirebirdApi<Policy>::Auth::AUTH_FAILED;
-template <typename Policy> const int FirebirdApi<Policy>::Auth::AUTH_SUCCESS;
-template <typename Policy> const int FirebirdApi<Policy>::Auth::AUTH_MORE_DATA;
-template <typename Policy> const int FirebirdApi<Policy>::Auth::AUTH_CONTINUE;
+template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_FAILED;
+template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_SUCCESS;
+template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_MORE_DATA;
+template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_CONTINUE;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::TYPE_BEFORE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::TYPE_AFTER;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::TYPE_DATABASE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_INSERT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_UPDATE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_DELETE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_CONNECT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_DISCONNECT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_TRANS_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_TRANS_COMMIT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_TRANS_ROLLBACK;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ExternalTrigger::ACTION_DDL;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::TYPE_BEFORE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::TYPE_AFTER;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::TYPE_DATABASE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_INSERT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_UPDATE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_DELETE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_CONNECT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_DISCONNECT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_TRANS_START;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_TRANS_COMMIT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_TRANS_ROLLBACK;
+template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_DDL;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_CONNECTION_DATABASE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceConnection::TRACE_CONNECTION_SERVICE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceConnection::TRACE_CONNECTION_DATABASE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceConnection::TRACE_CONNECTION_SERVICE;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTransaction::TRA_ISO_CONSISTENCY;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTransaction::TRA_ISO_CONCURRENCY;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTransaction::TRA_ISO_READ_COMMITTED_RECVER;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTransaction::TRA_ISO_READ_COMMITTED_NORECVER;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_CONSISTENCY;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_CONCURRENCY;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_READ_COMMITTED_RECVER;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_READ_COMMITTED_NORECVER;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTrigger::TRACE_ALL;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTrigger::TRACE_BEFORE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceTrigger::TRACE_AFTER;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTrigger::TRACE_ALL;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTrigger::TRACE_BEFORE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTrigger::TRACE_AFTER;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::TRACE_RESULT_SUCCESS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::TRACE_RESULT_FAILED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::TRACE_RESULT_UNAUTHORIZED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_STARTED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_FINISHED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_FAILED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TracePlugin::SWEEP_STATE_PROGRESS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::TRACE_RESULT_SUCCESS;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::TRACE_RESULT_FAILED;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::TRACE_RESULT_UNAUTHORIZED;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_STARTED;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_FINISHED;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_FAILED;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_PROGRESS;
 
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_ATTACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DETACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_TRANSACTION_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_TRANSACTION_END;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SET_CONTEXT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_PROC_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_TRIGGER_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DSQL_PREPARE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DSQL_FREE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DSQL_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_BLR_COMPILE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_BLR_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_DYN_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_ATTACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_QUERY;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SERVICE_DETACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_ERROR;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_SWEEP;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_FUNC_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::TraceFactory::TRACE_EVENT_MAX;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_ATTACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DETACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_TRANSACTION_START;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_TRANSACTION_END;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SET_CONTEXT;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_PROC_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_TRIGGER_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DSQL_PREPARE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DSQL_FREE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DSQL_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_BLR_COMPILE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_BLR_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DYN_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_ATTACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_START;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_QUERY;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_DETACH;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_ERROR;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SWEEP;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_FUNC_EXECUTE;
+template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_MAX;
 
 
 #endif	// IDL_FB_INTERFACES_H

@@ -34,7 +34,7 @@ using namespace Firebird;
 
 namespace Auth {
 
-class SrpClient FB_FINAL : public StdPlugin<Api::ClientImpl<SrpClient> >
+class SrpClient FB_FINAL : public StdPlugin<Api::IClientImpl<SrpClient> >
 {
 public:
 	explicit SrpClient(IPluginConfig*)

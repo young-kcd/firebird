@@ -34,7 +34,7 @@
 
 using namespace Firebird;
 
-class CryptKey : public Api::CryptKeyCallbackImpl<CryptKey>
+class CryptKey : public Api::ICryptKeyCallbackImpl<CryptKey>
 {
 public:
 	unsigned int callback(unsigned int, const void*, unsigned int length, void* buffer)

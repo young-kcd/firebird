@@ -60,7 +60,7 @@ typedef Field<FB_BOOLEAN> Boolean;
 
 namespace Auth {
 
-class SrpManagement FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ManagementImpl<SrpManagement> >
+class SrpManagement FB_FINAL : public Firebird::StdPlugin<Firebird::Api::IManagementImpl<SrpManagement> >
 {
 public:
 	explicit SrpManagement(Firebird::IPluginConfig* par)

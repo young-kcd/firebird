@@ -37,7 +37,7 @@
 
 namespace Firebird {
 
-class PluginManager : public AutoIface<Api::PluginManagerImpl<PluginManager> >
+class PluginManager : public AutoIface<Api::IPluginManagerImpl<PluginManager> >
 {
 public:
 	// IPluginManager implementation

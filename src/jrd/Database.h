@@ -308,7 +308,7 @@ public:
 		bool exist;
 	};
 
-	class Linger FB_FINAL : public Firebird::RefCntIface<Firebird::Api::TimerImpl<Linger> >
+	class Linger FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ITimerImpl<Linger> >
 	{
 	public:
 		explicit Linger(Database* a_dbb)

@@ -132,7 +132,7 @@ namespace Remote {
 class Attachment;
 class Statement;
 
-class Blob FB_FINAL : public RefCntIface<Api::BlobImpl<Blob> >
+class Blob FB_FINAL : public RefCntIface<Api::IBlobImpl<Blob> >
 {
 public:
 	// IBlob implementation
@@ -177,7 +177,7 @@ int Blob::release()
 	return 0;
 }
 
-class Transaction FB_FINAL : public RefCntIface<Api::TransactionImpl<Transaction> >
+class Transaction FB_FINAL : public RefCntIface<Api::ITransactionImpl<Transaction> >
 {
 public:
 	// ITransaction implementation
@@ -241,7 +241,7 @@ int Transaction::release()
 	return 0;
 }
 
-class ResultSet FB_FINAL : public RefCntIface<Api::ResultSetImpl<ResultSet> >
+class ResultSet FB_FINAL : public RefCntIface<Api::IResultSetImpl<ResultSet> >
 {
 public:
 	// IResultSet implementation
@@ -291,7 +291,7 @@ int ResultSet::release()
 	return 0;
 }
 
-class Statement FB_FINAL : public RefCntIface<Api::StatementImpl<Statement> >
+class Statement FB_FINAL : public RefCntIface<Api::IStatementImpl<Statement> >
 {
 public:
 	// IStatement implementation
@@ -363,7 +363,7 @@ int Statement::release()
 	return 0;
 }
 
-class Request FB_FINAL : public RefCntIface<Api::RequestImpl<Request> >
+class Request FB_FINAL : public RefCntIface<Api::IRequestImpl<Request> >
 {
 public:
 	// IRequest implementation
@@ -410,7 +410,7 @@ int Request::release()
 	return 0;
 }
 
-class Events FB_FINAL : public RefCntIface<Api::EventsImpl<Events> >
+class Events FB_FINAL : public RefCntIface<Api::IEventsImpl<Events> >
 {
 public:
 	// IEvents implementation
@@ -445,7 +445,7 @@ int Events::release()
 	return 0;
 }
 
-class Attachment FB_FINAL : public RefCntIface<Api::AttachmentImpl<Attachment> >
+class Attachment FB_FINAL : public RefCntIface<Api::IAttachmentImpl<Attachment> >
 {
 public:
 	// IAttachment implementation
@@ -532,7 +532,7 @@ int Attachment::release()
 	return 0;
 }
 
-class Service FB_FINAL : public RefCntIface<Api::ServiceImpl<Service> >
+class Service FB_FINAL : public RefCntIface<Api::IServiceImpl<Service> >
 {
 public:
 	// IService implementation
@@ -568,7 +568,7 @@ int Service::release()
 	return 0;
 }
 
-class RProvider : public StdPlugin<Api::ProviderImpl<RProvider> >
+class RProvider : public StdPlugin<Api::IProviderImpl<RProvider> >
 {
 public:
 	explicit RProvider(IPluginConfig*)
@@ -622,7 +622,7 @@ void RProvider::setDbCryptCallback(IStatus* status, ICryptKeyCallback* callback)
 	cryptCallback = callback;
 }
 
-class Loopback : public Api::ProviderBaseImpl<Loopback, RProvider>
+class Loopback : public Api::IProviderBaseImpl<Loopback, RProvider>
 {
 public:
 	explicit Loopback(IPluginConfig*)

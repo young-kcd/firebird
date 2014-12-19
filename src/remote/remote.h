@@ -677,7 +677,7 @@ typedef Firebird::GetPlugins<Firebird::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
 // Transfered in format, depending upon type of the packet (phase of handshake)
-class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ClientBlockImpl<ClntAuthBlock> >
+class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IClientBlockImpl<ClntAuthBlock> >
 {
 private:
 	Firebird::PathName pluginList;				// To be passed to server
@@ -732,7 +732,7 @@ public:
 // Transfered from client data in format, suitable for plugins access
 typedef Firebird::GetPlugins<Firebird::IServer> AuthServerPlugins;
 
-class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Firebird::Api::ServerBlockImpl<SrvAuthBlock> >,
+class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Firebird::Api::IServerBlockImpl<SrvAuthBlock> >,
 	public Firebird::GlobalStorage
 {
 private:

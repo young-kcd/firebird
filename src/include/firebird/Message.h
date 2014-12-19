@@ -45,9 +45,9 @@ public:
 	template <unsigned V, typename T>
 	static inline bool checkVersion(T* versioned, IStatus* status)
 	{ return true; }
-	static void checkException(Api::Status*) { }
-	static void catchException(Api::Status*) { }
-	typedef Api::Status* Status;
+	static void checkException(Api::IStatus*) { }
+	static void catchException(Api::IStatus*) { }
+	typedef Api::IStatus* Status;
 };
 } //namespace Firebird
 
