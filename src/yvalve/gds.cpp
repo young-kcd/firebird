@@ -2758,11 +2758,9 @@ static void blr_print_blr(gds_ctl* control, UCHAR blr_operator)
 	const char* p;
 
 	if (blr_operator >= FB_NELEM(blr_print_table) || !(p = blr_print_table[blr_operator].blr_string))
-	{
 		blr_error(control, "*** blr operator %d is undefined ***", (int) blr_operator);
-	}
-
-	blr_format(control, "blr_%s, ", p);
+	else
+		blr_format(control, "blr_%s, ", p);
 }
 
 
@@ -3042,7 +3040,7 @@ static int blr_print_dtype(gds_ctl* control)
 
 	default:
 		blr_error(control, "*** invalid data type ***");
-		break;
+		return 0;	// avoid warning
 	}
 
 	blr_format(control, "blr_%s, ", string);
@@ -3158,7 +3156,7 @@ static void blr_print_join(gds_ctl* control)
 
 	default:
 		blr_error(control, "*** invalid join type ***");
-		break;
+		return;
 	}
 
 	blr_format(control, "blr_%s, ", string);
