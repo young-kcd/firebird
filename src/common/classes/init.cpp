@@ -56,11 +56,14 @@ namespace
 	// This helps initialize globals, needed before regular ctors run
 	int initDone = 0;
 
+	void child(void)
+	{
+		// turn off dtors execution in forked process
+		initDone = 2;
+	}
+
 	void allClean()
 	{
-#ifndef DARWIN		// Somewhy cleanup code is called more than once on MAC
-		fb_assert(initDone == 1);
-#endif
 		if (initDone != 1)
 		{
 			return;
@@ -127,6 +130,7 @@ namespace
 #endif //DEBUG_INIT
 
 		initDone = 1;
+		int ret = pthread_atfork(NULL, NULL, child);
 
 		Firebird::MemoryPool::contextPoolInit();
 	}
