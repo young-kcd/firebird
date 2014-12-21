@@ -911,12 +911,13 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 
 // Prepare relation and its indices for optimization.
-void OPT_compile_relation(thread_db* tdbb, jrd_rel* relation, CompilerScratch* csb, StreamType stream)
+void OPT_compile_relation(thread_db* tdbb, jrd_rel* relation, CompilerScratch* csb,
+						  StreamType stream, bool needIndices)
 {
 	CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
 	RelationPages* const relPages = relation->getPages(tdbb);
 
-	if (!relation->rel_file && !relation->isVirtual())
+	if (needIndices && !relation->rel_file && !relation->isVirtual())
 	{
 		csb->csb_rpt[stream].csb_indices = BTR_all(tdbb, relation, &tail->csb_idx, relPages);
 
@@ -928,8 +929,8 @@ void OPT_compile_relation(thread_db* tdbb, jrd_rel* relation, CompilerScratch* c
 	else
 		csb->csb_rpt[stream].csb_indices = 0;
 
-	const Format* const format = CMP_format(tdbb, csb, stream);
-	csb->csb_rpt[stream].csb_cardinality = get_cardinality(tdbb, relation, format);
+	csb->csb_rpt[stream].csb_cardinality =
+		get_cardinality(tdbb, relation, CMP_format(tdbb, csb, stream));
 }
 
 // Add node (ValueExprNode) to stack unless node is already on stack.

@@ -816,8 +816,9 @@ RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bo
 	// use an index to optimize them; retrieve the current format of
 	// all indices at this time so we can determine if it's possible
 
-	if (opt->opt_conjuncts.getCount() || opt->rse->rse_sorted || opt->rse->rse_aggregate)
-		OPT_compile_relation(tdbb, relation, opt->opt_csb, stream);
+	const bool needIndices =
+		opt->opt_conjuncts.getCount() || opt->rse->rse_sorted || opt->rse->rse_aggregate;
+	OPT_compile_relation(tdbb, relation, opt->opt_csb, stream, needIndices);
 
 	return NULL;
 }
