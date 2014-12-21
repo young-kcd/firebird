@@ -1469,7 +1469,11 @@ static void cmp_field( const gpre_nod* node, gpre_req* request)
 	if (!field)
 		puts("cmp_field: symbol missing");
 
-	if (field->fld_flags & FLD_dbkey)
+	if (context->ctx_flags & CTX_null)
+	{
+		request->add_byte(blr_null);
+	}
+	else if (field->fld_flags & FLD_dbkey)
 	{
 		request->add_byte(blr_dbkey);
 		request->add_byte(context->ctx_internal);

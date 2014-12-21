@@ -2487,15 +2487,36 @@ static void gen_loop( const act* action, int column)
 	gen_s_start(action, column);
 	const gpre_req* request = action->act_request;
 	const gpre_port* port = request->req_primary;
+
 	printa(column, "if (!SQLCODE) ");
 	column += INDENT;
 	begin(column);
+
 	gen_receive(action, column, port);
+
+	endp(column);
+	column -= INDENT;
+
 	gen_name(name, port->por_references, true);
 	printa(column, "if (!SQLCODE && !%s)", name);
 	printa(column + INDENT, "SQLCODE = 100;");
-	endp(column);
-	column -= INDENT;
+
+	if (request->req_flags & REQ_sql_returning)
+	{
+		printa(column, "if (!SQLCODE && %s)", name);
+		column += INDENT;
+		begin(column);
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			align(column);
+			asgn_to(action, (ref*) (var_list->nod_arg[i]), column);
+		}
+
+		endp(column);
+		column -= INDENT;
+	}
 }
 
 
@@ -3023,12 +3044,43 @@ static void gen_s_start( const act* action, int column)
 	{
 		make_ok_test(action, request, column);
 		column += INDENT;
+		begin(column);
 	}
 
 	gen_start(action, port, column, false);
+	set_sqlcode(action, column);
 
 	if (action->act_error || (action->act_flags & ACT_sql))
+	{
+		endp(column);
 		column -= INDENT;
+	}
+
+	if (request->req_type == REQ_insert && (request->req_flags & REQ_sql_returning))
+	{
+		printa(column, "if (!SQLCODE) ");
+		column += INDENT;
+		begin(column);
+
+		gen_receive(action, column, request->req_primary);
+
+		endp(column);
+		column -= INDENT;
+
+		printa(column, "if (!SQLCODE) ");
+		column += INDENT;
+		begin(column);
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			align(column);
+			asgn_to(action, (ref*) (var_list->nod_arg[i]), column);
+		}
+
+		endp(column);
+		column -= INDENT;
+	}
 
 	if (action->act_type == ACT_open)
 	{
@@ -3037,8 +3089,6 @@ static void gen_s_start( const act* action, int column)
 		endp(column);
 		column -= INDENT;
 	}
-
-	set_sqlcode(action, column);
 }
 
 

@@ -1242,7 +1242,8 @@ enum req_flags_vals {
 	REQ_sql_blob_open		= 8192,		// request is SQL open blob cursor
 	REQ_sql_blob_create		= 16384,	// request is SQL create blob cursor
 	REQ_sql_database_dyn	= 32768,	// request is to generate DYN to add files o database
-	REQ_blr_version4		= 65536		// request must generate blr_version4
+	REQ_blr_version4		= 65536,	// request must generate blr_version4
+	REQ_sql_returning		= 131072	// RETURNING clause is present
 };
 
 const size_t REQ_LEN = sizeof(gpre_req);
@@ -1261,6 +1262,11 @@ struct gpre_ctx {
 	gpre_prc* ctx_procedure;	// procedure for context
 	gpre_nod* ctx_prc_inputs;	// procedure input parameters
 	gpre_rse* ctx_stream;		// stream for context
+	USHORT ctx_flags;			// misc flags
+};
+
+enum ctx_flags_vals {
+	CTX_null = 1				// context evaluates to NULL
 };
 
 const size_t CTX_LEN = sizeof(gpre_ctx);

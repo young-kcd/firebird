@@ -2149,22 +2149,40 @@ static void gen_get_segment( const act* action, int column)
 
 static void gen_loop( const act* action, int column)
 {
-	const gpre_req* request;
-	gpre_port* port;
-	TEXT name[MAX_REF_SIZE];
-
 	gen_s_start(action, column);
-	request = action->act_request;
-	port = request->req_primary;
+	const gpre_req* request = action->act_request;
+	gpre_port* port = request->req_primary;
+
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
 	begin(column);
+
 	gen_receive(action, column, port);
+
+	endp(column);
+	column -= INDENT;
+
+	TEXT name[MAX_REF_SIZE];
 	gen_name(name, port->por_references, true);
 	printa(column, "if (SQLCODE = 0) and (%s = 0)", name);
 	printa(column + INDENT, "then SQLCODE := 100;");
-	endp(column);
-	column -= INDENT;
+
+	if (request->req_flags & REQ_sql_returning)
+	{
+		printa(column, "if (SQLCODE = 0) and (%s <> 0)", name);
+		column += INDENT;
+		begin(column);
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			align(column);
+			asgn_to(action, (ref*) (var_list->nod_arg[i]), column);
+		}
+
+		endp(column);
+		column -= INDENT;
+	}
 }
 
 
@@ -2686,12 +2704,43 @@ static void gen_s_start( const act* action, int column)
 	{
 		make_ok_test(action, request, column);
 		column += INDENT;
+		begin(column);
 	}
 
 	gen_start(action, port, column);
+	set_sqlcode(action, column);
 
 	if (action->act_error || (action->act_flags & ACT_sql))
+	{
+		endp(column);
 		column -= INDENT;
+	}
+
+	if (request->req_type == REQ_insert && (request->req_flags & REQ_sql_returning))
+	{
+		printa(column, "if (SQLCODE = 0) ");
+		column += INDENT;
+		begin(column);
+
+		gen_receive(action, column, request->req_primary);
+
+		endp(column);
+		column -= INDENT;
+
+		printa(column, "if (SQLCODE = 0) ");
+		column += INDENT;
+		begin(column);
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			align(column);
+			asgn_to(action, (ref*) (var_list->nod_arg[i]), column);
+		}
+
+		endp(column);
+		column -= INDENT;
+	}
 
 	if (action->act_type == ACT_open)
 	{
@@ -2702,8 +2751,6 @@ static void gen_s_start( const act* action, int column)
 		ends(column);
 		column -= INDENT;
 	}
-
-	set_sqlcode(action, column);
 }
 
 

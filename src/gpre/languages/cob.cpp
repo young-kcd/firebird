@@ -21,7 +21,7 @@
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
-//  8-Mar-2002 FSG (Frank Schlottmann-Gödde) tiny cobol support
+//  8-Mar-2002 FSG (Frank Schlottmann-Gï¿½dde) tiny cobol support
 //             fixed Bug No. 526204*
 //
 //
@@ -2713,16 +2713,30 @@ static void gen_loop( const act* action)
 {
 	gen_s_start(action);
 	const gpre_req* request = action->act_request;
-	printa(names[COLUMN], false, "IF SQLCODE = 0 THEN");
 	const gpre_port* port = request->req_primary;
+
+	printa(names[COLUMN], false, "IF SQLCODE = 0 THEN");
 	gen_receive(action, port);
+	printa(names[COLUMN], false, "END-IF");
 
 	TEXT name[MAX_REF_SIZE];
 	gen_name(name, port->por_references, true);
 	printa(names[COLUMN], false, "IF SQLCODE = 0 AND %s = 0 THEN ", name);
 	printa(names[COLUMN], false, "MOVE 100 TO SQLCODE");
 	printa(names[COLUMN], false, "END-IF");
-	printa(names[COLUMN], false, "END-IF");
+
+	if (request->req_flags & REQ_sql_returning)
+	{
+		printa(names[COLUMN], false, "IF SQLCODE = 0 AND %s NOT = 0 THEN", name);
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			asgn_to(action, (ref*) (var_list->nod_arg[i]));
+		}
+
+		printa(names[COLUMN], false, "END-IF");
+	}
 }
 
 
@@ -3233,9 +3247,27 @@ static void gen_s_start( const act* action)
 	}
 
 	gen_start(action, port);
+	set_sqlcode(action);
 
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(names[COLUMN], false, "END-IF");
+
+	if (request->req_type == REQ_insert && (request->req_flags & REQ_sql_returning))
+	{
+		printa(names[COLUMN], false, "IF SQLCODE NOT = 0 THEN");
+		gen_receive(action, column, request->req_primary);
+		printa(names[COLUMN], false, "END-IF");
+
+		printa(names[COLUMN], false, "IF SQLCODE NOT = 0 THEN");
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			asgn_to(action, (ref*) (var_list->nod_arg[i]));
+		}
+
+		printa(names[COLUMN], false, "END-IF");
+	}
 
 	if (action->act_type == ACT_open)
 	{
@@ -3244,7 +3276,6 @@ static void gen_s_start( const act* action)
 		if (gpreGlob.sw_auto)
 			printa(names[COLUMN], false, "END-IF");
 		printa(names[COLUMN], false, "END-IF");
-		set_sqlcode(action);
 	}
 }
 

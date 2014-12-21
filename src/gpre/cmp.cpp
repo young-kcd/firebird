@@ -45,6 +45,7 @@
 
 static void cmp_any(gpre_req*);
 static void cmp_assignment(gpre_nod*, gpre_req*);
+static void cmp_assignment_list(gpre_nod*, gpre_req*);
 static void cmp_blob(blb*, bool);
 static void cmp_blr(gpre_req*);
 static void cmp_erase(act*, gpre_req*);
@@ -56,6 +57,7 @@ static void cmp_modify(act*, gpre_req*);
 static void cmp_port(gpre_port*, gpre_req*);
 static void cmp_procedure(gpre_req*);
 static void cmp_ready(gpre_req*);
+static void cmp_returning(gpre_req*, gpre_nod*);
 static void cmp_sdl_fudge(gpre_req*, SLONG);
 static bool cmp_sdl_loop(gpre_req*, USHORT, const slc*, const ary*);
 static void cmp_sdl_number(gpre_req*, SLONG);
@@ -63,7 +65,7 @@ static void cmp_sdl_subscript(gpre_req*, USHORT, const slc*);
 static void cmp_sdl_value(gpre_req*, const gpre_nod*);
 static void cmp_set_generator(gpre_req*);
 static void cmp_slice(gpre_req*);
-static void cmp_store(gpre_req*);
+static void cmp_store(gpre_req*, gpre_nod*);
 static void expand_references(ref*);
 static gpre_port* make_port(gpre_req*, ref*);
 static void make_receive(gpre_port*, gpre_req*);
@@ -227,8 +229,9 @@ void CMP_compile_request( gpre_req* request)
 	// Assume that a general port needs to be constructed.
 
 	gpre_port* port;
-	if ((request->req_type != REQ_insert) && (request->req_type != REQ_store2) &&
-		(request->req_type != REQ_set_generator))
+	if ((request->req_flags & REQ_sql_returning) ||
+		((request->req_type != REQ_insert) && (request->req_type != REQ_store2)
+		&& (request->req_type != REQ_set_generator)))
 	{
 		request->req_primary = port = make_port(request, reference);
 	}
@@ -266,6 +269,8 @@ void CMP_compile_request( gpre_req* request)
 			break;
 		case ACT_select:
 		case ACT_fetch:
+		case ACT_loop:
+		case ACT_insert:
 			cmp_fetch(action);
 			break;
 		}
@@ -530,6 +535,26 @@ static void cmp_assignment( gpre_nod* node, gpre_req* request)
 
 //____________________________________________________________
 //
+//		Compile a build assignment statement.
+//
+
+static void cmp_assignment_list( gpre_nod* list, gpre_req* request)
+{
+	request->add_byte(blr_begin);
+
+	gpre_nod** ptr = list->nod_arg;
+	for (const gpre_nod* const* const end = ptr + list->nod_count;
+		ptr < end; ptr++)
+	{
+		cmp_assignment(*ptr, request);
+	}
+
+	request->add_byte(blr_end);
+}
+
+
+//____________________________________________________________
+//
 //		Compile a blob parameter block, if required.
 //
 
@@ -639,7 +664,7 @@ static void cmp_blr( gpre_req* request)
 	case REQ_insert:
 	case REQ_store:
 	case REQ_store2:
-		cmp_store(request);
+		cmp_store(request, request->req_node);
 		break;
 
 	case REQ_mass_update:
@@ -967,7 +992,7 @@ static void cmp_for( gpre_req* request)
 
 static void cmp_loop( gpre_req* request)
 {
-	gpre_nod* node = request->req_node;
+	gpre_nod* req_node = request->req_node;
 	gpre_rse* selection = request->req_rse;
 
 	gpre_port* primary = request->req_primary;
@@ -991,41 +1016,38 @@ static void cmp_loop( gpre_req* request)
 	CME_rse(selection, request);
 	request->add_byte(blr_begin);
 
+	gpre_nod* node = (req_node->nod_type == nod_list) ? req_node->nod_arg[0] : req_node;
+
 	switch (node->nod_type)
 	{
 	case nod_modify:
 		{
-			request->add_byte(blr_modify);
+			const int blr_op = (request->req_flags & REQ_sql_returning) ? blr_modify2 : blr_modify;
+			request->add_byte(blr_op);
 			request->add_byte(for_context->ctx_internal);
 			request->add_byte(update_context->ctx_internal);
-			gpre_nod* list = node->nod_arg[0];
-			request->add_byte(blr_begin);
-			gpre_nod** ptr = list->nod_arg;
-			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-			{
-				cmp_assignment(*ptr, request);
-			}
-			request->add_byte(blr_end);
+			cmp_assignment_list(node->nod_arg[0], request);
+			if (request->req_flags & REQ_sql_returning)
+				cmp_returning(request, node->nod_arg[1]);
 		}
 		break;
 	case nod_store:
-		{
-			update_context = (gpre_ctx*) node->nod_arg[0];
-			request->add_byte(blr_store);
-			CME_relation(update_context, request);
-			gpre_nod* list = node->nod_arg[1];
-			request->add_byte(blr_begin);
-			gpre_nod** ptr = list->nod_arg;
-			for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
-			{
-				cmp_assignment(*ptr, request);
-			}
-			request->add_byte(blr_end);
-		}
+		cmp_store(request, node);
 		break;
 	case nod_erase:
-		request->add_byte(blr_erase);
-		request->add_byte(for_context->ctx_internal);
+		if (request->req_flags & REQ_sql_returning)
+		{
+			request->add_byte(blr_begin);
+			cmp_returning(request, node->nod_arg[0]);
+			request->add_byte(blr_erase);
+			request->add_byte(for_context->ctx_internal);
+			request->add_byte(blr_end);
+		}
+		else
+		{
+			request->add_byte(blr_erase);
+			request->add_byte(for_context->ctx_internal);
+		}
 		break;
 	default:
 	    fb_assert(false);
@@ -1038,6 +1060,29 @@ static void cmp_loop( gpre_req* request)
 	CME_expr(counter, request);
 
 	request->add_byte(blr_end);
+
+	if (req_node->nod_type == nod_list)
+	{
+		request->add_byte(blr_if);
+		request->add_byte(blr_eql);
+		CME_expr(counter, request);
+		CME_expr(lit0, request);
+
+		request->add_byte(blr_begin);
+
+		node = req_node->nod_arg[1];
+		for_context->ctx_flags |= CTX_null;
+		cmp_store(request, node);
+		for_context->ctx_flags &= ~CTX_null;
+
+		request->add_byte(blr_assignment);
+		CME_expr(lit1, request);
+		CME_expr(counter, request);
+
+		request->add_byte(blr_end);
+		request->add_byte(blr_end);
+	}
+
 	request->add_byte(blr_end);
 }
 
@@ -1308,6 +1353,30 @@ static void cmp_ready( gpre_req* request)
 
 //____________________________________________________________
 //
+//		Build assignments for values to be returned.
+//
+
+static void cmp_returning(gpre_req* request, gpre_nod* ret_list)
+{
+	gpre_nod* value = MSC_node(nod_value, 1);
+
+	request->add_byte(blr_begin);
+
+	for (int i = 0; i < ret_list->nod_count; i++)
+	{
+		request->add_byte(blr_assignment);
+		CME_expr(ret_list->nod_arg[i]->nod_arg[0], request);
+		ref* reference = (ref*) ret_list->nod_arg[i]->nod_arg[1];
+		value->nod_arg[0] = (gpre_nod*) reference->ref_friend;
+		CME_expr(value, request);
+	}
+
+	request->add_byte(blr_end);
+}
+
+
+//____________________________________________________________
+//
 //		Build in a fudge to bias the language specific subscript to the
 //		declared array subscript [i.e. C subscripts are zero based].
 //
@@ -1546,31 +1615,37 @@ static void cmp_slice( gpre_req* request)
 //		Generate blr for a store request.
 //
 
-static void cmp_store( gpre_req* request)
+static void cmp_store( gpre_req* request, gpre_nod* node)
 {
+	gpre_ctx* context = (gpre_ctx*) node->nod_arg[0];
+	gpre_nod* list = node->nod_arg[1];
+	gpre_nod* ret_list = node->nod_arg[2];
+
 	// Make the store statement under the receive
 
-	if (request->req_type == REQ_store2)
+	if (request->req_flags & REQ_sql_returning)
+	{
+		if (request->req_type == REQ_insert)
+			make_send(request->req_primary, request);
+
+		request->add_byte(blr_store2);
+	}
+	else if (request->req_type == REQ_store2)
 		request->add_byte(blr_store2);
 	else
 		request->add_byte(blr_store);
 
-	CME_relation(request->req_contexts, request);
+	CME_relation(context, request);
 
 	// Make an assignment list
 
-	gpre_nod* list = request->req_node;
-	request->add_byte(blr_begin);
+	cmp_assignment_list(list, request);
 
-    gpre_nod** ptr = list->nod_arg;
-	for (const gpre_nod* const* const end = ptr + list->nod_count; ptr < end; ptr++)
+	if (request->req_flags & REQ_sql_returning)
 	{
-		cmp_assignment(*ptr, request);
+		cmp_returning(request, ret_list);
 	}
-
-	request->add_byte(blr_end);
-
-	if (request->req_type == REQ_store2)
+	else if (request->req_type == REQ_store2)
 	{
 		// whip through actions to find return list
 
@@ -1584,15 +1659,7 @@ static void cmp_store( gpre_req* request)
 		upd* update = (upd*) action->act_object;
 		gpre_port* port = update->upd_port;
 		make_send(port, request);
-		list = update->upd_assignments;
-		const SSHORT count = list->nod_count;
-		if (count > 1)
-			request->add_byte(blr_begin);
-		gpre_nod** ptr2 = list->nod_arg;
-		for (const gpre_nod* const* const end = ptr2 + count; ptr2 < end; ptr2++)
-			cmp_assignment(*ptr2, request);
-		if (count > 1)
-			request->add_byte(blr_end);
+		cmp_assignment_list(update->upd_assignments, request);
 		request->add_byte(blr_end);
 	}
 }

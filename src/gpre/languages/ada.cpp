@@ -2201,17 +2201,36 @@ static void gen_loop( const act* action, int column)
 	gen_s_start(action, column);
 	gpre_req* request = action->act_request;
 	gpre_port* port = request->req_primary;
+
 	printa(column, "if SQLCODE = 0 then");
 	column += INDENT;
+
 	gen_receive(action, column, port);
+
+	column -= INDENT;
+	endif(column);
 
 	TEXT name[MAX_REF_SIZE];
 	gen_name(name, port->por_references, true);
 	printa(column, "if (SQLCODE = 0) and (%s = 0) then", name);
 	printa(column + INDENT, "SQLCODE := 100;");
 	endif(column);
-	column -= INDENT;
-	endif(column);
+
+	if (request->req_flags & REQ_sql_returning)
+	{
+		printa(column, "if (SQLCODE = 0) and (%s /= 0) then", name);
+		column += INDENT;
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			align(column);
+			asgn_to(action, (ref*) (var_list->nod_arg[i]), column);
+		}
+
+		column -= INDENT;
+		endif(column);
+	}
 }
 
 
@@ -2733,13 +2752,37 @@ static void gen_s_start( const act* action, int column)
 		asgn_from(action, port->por_references, column);
 
 	if (action->act_error || (action->act_flags & ACT_sql))
-	{
 		make_ok_test(action, request, column);
-		gen_start(action, port, column + INDENT);
+
+	gen_start(action, port, column);
+	set_sqlcode(action);
+
+	if (action->act_error || (action->act_flags & ACT_sql))
 		endif(column);
+
+	if (request->req_type == REQ_insert && (request->req_flags & REQ_sql_returning))
+	{
+		printa(column, "if (SQLCODE = 0) then");
+		column += INDENT;
+
+		gen_receive(action, column, request->req_primary);
+
+		endif(column);
+		column -= INDENT;
+
+		printa(column, "if (SQLCODE = 0) then");
+		column += INDENT;
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			align(column);
+			asgn_to(action, (ref*) (var_list->nod_arg[i]), column);
+		}
+
+		endif(column);
+		column -= INDENT;
 	}
-	else
-		gen_start(action, port, column);
 
 	if (action->act_type == ACT_open)
 	{

@@ -49,6 +49,9 @@
 
 const int DEFAULT_BLOB_SEGMENT_LENGTH	= 80;	// bytes
 
+const char* const OLD_CONTEXT = "OLD";
+const char* const NEW_CONTEXT = "NEW";
+
 static act* act_alter();
 static act* act_alter_database();
 static act* act_alter_domain();
@@ -95,6 +98,7 @@ static act* act_set_statistics();
 static act* act_set_transaction();
 static act* act_transaction(act_t);
 static act* act_update();
+static act* act_upsert();
 static act* act_whenever();
 
 static bool			check_filename(const TEXT *);
@@ -127,6 +131,7 @@ static cnstrt*		par_table_constraint(gpre_req*);
 static bool			par_transaction_modes(gpre_tra*, bool);
 static bool			par_using(dyn*);
 static USHORT		resolve_dtypes(kwwords_t, bool);
+static gpre_nod*	return_values(gpre_req*, gpre_nod*, gpre_nod*);
 static bool			tail_database(act_t, gpre_dbb*);
 static void			to_upcase(const TEXT*, TEXT*, int);
 
@@ -2689,9 +2694,31 @@ static act* act_delete()
 	if (where)
 		selection->rse_boolean = SQE_boolean(request, 0);
 
-	request->req_node = MSC_node(nod_erase, 0);
+	gpre_nod* ret_list = NULL;
+	ref* ref_list = NULL;
+
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		ret_list = return_values(request, value_list, var_list);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		request->req_flags |= REQ_sql_returning;
+		selection->rse_flags |= RSE_singleton;
+	}
+
+	request->req_node = MSC_unary(nod_erase, ret_list);
 
 	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
 	action->act_whenever = gen_whenever();
 
 	if (hsh_rm)
@@ -3450,6 +3477,9 @@ static act* act_insert()
 		EXP_match_paren();
 	}
 
+	gpre_nod* ret_list = NULL;
+	ref* ref_list = NULL;
+
 	gpre_lls* values = NULL;
 	if (MSC_match(KW_VALUES))
 	{
@@ -3458,10 +3488,7 @@ static act* act_insert()
 		EXP_left_paren(0);
 		for (;;)
 		{
-			if (MSC_match(KW_NULL))
-				MSC_push(MSC_node(nod_null, 0), &values);
-			else
-				MSC_push(SQE_value(request, false, NULL, NULL), &values);
+			MSC_push(SQE_value_or_null(request, false, NULL, NULL), &values);
 			count2++;
 			if (!MSC_match(KW_COMMA))
 				break;
@@ -3474,7 +3501,6 @@ static act* act_insert()
 			PAR_error("count of values doesn't match count of columns");
 
 		gpre_nod* vlist = MSC_node(nod_list, (SSHORT) count);
-		request->req_node = vlist;
 		gpre_nod** ptr = &vlist->nod_arg[count];
 
 		while (values)
@@ -3486,9 +3512,30 @@ static act* act_insert()
 			*--ptr = assignment;
 		}
 
+		if (MSC_match(KW_RETURNING))
+		{
+			gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+
+			if (!MSC_match(KW_INTO))
+				CPR_s_error("INTO");
+
+			gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+			ret_list = return_values(request, value_list, var_list);
+
+			into(request, value_list, var_list);
+			ref_list = (ref*) var_list;
+
+			request->req_flags |= REQ_sql_returning;
+		}
+
+		request->req_node = MSC_ternary(nod_store, (gpre_nod*) context, vlist, ret_list);
+
 		if (context->ctx_symbol)
 			HSH_remove(context->ctx_symbol);
+
 		act* action = MSC_action(request, ACT_insert);
+		action->act_object = ref_list;
 		action->act_whenever = gen_whenever();
 		return action;
 	}
@@ -3529,13 +3576,33 @@ static act* act_insert()
 		*--ptr = assignment;
 	}
 
-	gpre_nod* store = MSC_binary(nod_store, (gpre_nod*) context, alist);
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		ret_list = return_values(request, value_list, var_list);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		request->req_flags |= REQ_sql_returning;
+		select->rse_flags |= RSE_singleton;
+	}
+
+	gpre_nod* store = MSC_ternary(nod_store, (gpre_nod*) context, alist, ret_list);
 	request->req_node = store;
 	EXP_rse_cleanup(select);
+
 	if (context->ctx_symbol)
 		HSH_remove(context->ctx_symbol);
 
 	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
 	action->act_whenever = gen_whenever();
 
 	return action;
@@ -3932,7 +3999,7 @@ static act* act_procedure()
 	gpre_lls* values = NULL;
 
 	SSHORT inputs = 0;
-	if (gpreGlob.token_global.tok_keyword != KW_RETURNING &&
+	if (gpreGlob.token_global.tok_keyword != KW_RETURNING_VALUES &&
 		gpreGlob.token_global.tok_keyword != KW_SEMI_COLON)
 	{
 		// parse input references
@@ -3960,7 +4027,7 @@ static act* act_procedure()
 	}
 
 	SSHORT outputs = 0;
-	if (MSC_match(KW_RETURNING))
+	if (MSC_match(KW_RETURNING_VALUES))
 	{
 		// parse output references
 
@@ -4423,6 +4490,9 @@ static act* act_transaction(act_t type)
 
 static act* act_update()
 {
+	if (MSC_match(KW_OR) && MSC_match(KW_INSERT))
+		return act_upsert();
+
 	const TEXT* transaction = NULL;
 
 	par_options(&transaction);
@@ -4463,10 +4533,7 @@ static act* act_update()
 		set_item->nod_arg[1] = SQE_field(NULL, false);
 		if (!MSC_match(KW_EQUALS))
 			CPR_s_error("assignment operator");
-		if (MSC_match(KW_NULL))
-			set_item->nod_arg[0] = MSC_node(nod_null, 0);
-		else
-			set_item->nod_arg[0] = SQE_value(request, false, NULL, NULL);
+		set_item->nod_arg[0] = SQE_value_or_null(request, false, NULL, NULL);
 		MSC_push(set_item, &stack);
 		count++;
 	} while (MSC_match(KW_COMMA));
@@ -4542,7 +4609,7 @@ static act* act_update()
 		for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 		{
 			gpre_nod* set_item = *ptr;
-			SQE_resolve(set_item->nod_arg[0], request, 0);
+			SQE_resolve(&set_item->nod_arg[0], request, 0);
 			pair(set_item->nod_arg[0], set_item->nod_arg[1]);
 		}
 
@@ -4563,7 +4630,7 @@ static act* act_update()
 		for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 		{
 			gpre_nod* set_item = *ptr;
-			SQE_resolve(set_item->nod_arg[1], request, 0);
+			SQE_resolve(&set_item->nod_arg[1], request, 0);
 			ref* field_ref = (ref*) ((set_item->nod_arg[1])->nod_arg[0]);
 
 			slc* slice = NULL;
@@ -4635,7 +4702,7 @@ static act* act_update()
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 	{
 		gpre_nod* set_item = *ptr;
-		SQE_resolve(set_item->nod_arg[0], request, select);
+		SQE_resolve(&set_item->nod_arg[0], request, select);
 	}
 
 	// Process boolean, if any
@@ -4655,7 +4722,7 @@ static act* act_update()
 	for (ptr = set_list->nod_arg; ptr < end_list; ptr++)
 	{
 		gpre_nod* set_item = *ptr;
-		SQE_resolve(set_item->nod_arg[1], request, 0);
+		SQE_resolve(&set_item->nod_arg[1], request, 0);
 		ref* field_ref = (ref*) ((set_item->nod_arg[1])->nod_arg[0]);
 
 		act* slice_action = (act*) field_ref->ref_slice;
@@ -4687,17 +4754,330 @@ static act* act_update()
 		pair(set_item->nod_arg[0], set_item->nod_arg[1]);
 	}
 
-	gpre_nod* modify = MSC_node(nod_modify, 1);
+	gpre_nod* ret_list = NULL;
+	ref* ref_list = NULL;
+
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, NULL, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		gpre_sym* old_ctx_sym = MSC_symbol(SYM_context, OLD_CONTEXT, strlen(OLD_CONTEXT), input_context);
+		HSH_insert(old_ctx_sym);
+
+		gpre_sym* new_ctx_sym = MSC_symbol(SYM_context, NEW_CONTEXT, strlen(NEW_CONTEXT), update_context);
+		HSH_insert(new_ctx_sym);
+
+		ret_list = return_values(request, value_list, var_list);
+
+		for (int i = 0; i < value_list->nod_count; i++)
+			SQE_resolve(&value_list->nod_arg[i], request, NULL);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		HSH_remove(new_ctx_sym);
+		HSH_remove(old_ctx_sym);
+
+		request->req_flags |= REQ_sql_returning;
+		select->rse_flags |= RSE_singleton;
+	}
+
+	gpre_nod* modify = MSC_binary(nod_modify, set_list, ret_list);
 	request->req_node = modify;
-	modify->nod_arg[0] = set_list;
 
 	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
 	action->act_whenever = gen_whenever();
 
 	if (alias)
 		HSH_remove(alias);
 
 	return action;
+}
+
+
+//____________________________________________________________
+//
+//		Process SQL UPDATE OR INSERT statement.
+//
+
+static act* act_upsert(void)
+{
+	const TEXT* transaction = NULL;
+
+	par_options(&transaction);
+
+	if (!MSC_match(KW_INTO))
+		CPR_s_error("INTO");
+
+	gpre_req* request = MSC_request(REQ_mass_update);
+	request->req_trans = transaction;
+	gpre_ctx* context = SQE_context(request);
+	gpre_rel* relation = context->ctx_relation;
+
+	int count = 0;
+	gpre_lls* fields = NULL;
+
+	//  Pick up a field list
+
+	if (!MSC_match(KW_LEFT_PAREN))
+	{
+		gpre_nod* list = MET_fields(context);
+		count = list->nod_count;
+		for (int i = 0; i < count; i++)
+			MSC_push(list->nod_arg[i], &fields);
+	}
+	else
+	{
+		do
+		{
+			gpre_nod* node = SQE_field(request, false);
+
+			if (node->nod_type == nod_array)
+			{
+				node->nod_type = nod_field;
+
+				// Make sure no subscripts are specified
+
+				if (node->nod_arg[1]) {
+					PAR_error("Partial insert of arrays not permitted");
+				}
+			}
+
+			// Dialect 1 program may not insert new datatypes
+			if ((SQL_DIALECT_V5 == gpreGlob.sw_sql_dialect) &&
+				(nod_field == node->nod_type))
+			{
+				const USHORT field_dtype =
+					((ref*) (node->nod_arg[0]))->ref_field->fld_dtype;
+
+				if ((dtype_sql_date == field_dtype)
+					|| (dtype_sql_time == field_dtype)
+					|| (dtype_int64 == field_dtype))
+				{
+					SQL_dialect1_bad_type(field_dtype);
+				}
+			}
+
+			MSC_push(node, &fields);
+			count++;
+		} while (MSC_match(KW_COMMA));
+
+		EXP_match_paren();
+	}
+
+	gpre_nod* field_list = MSC_node(nod_list, (SSHORT) count);
+	gpre_nod** ptr = &field_list->nod_arg[count];
+	while (fields)
+		*--ptr = (gpre_nod*) MSC_pop(&fields);
+
+	// Now pick up a value list
+
+	if (!MSC_match(KW_VALUES))
+		CPR_s_error("VALUES");
+
+	EXP_left_paren(0);
+	gpre_nod* value_list = SQE_list(SQE_value_or_null, request, false);
+	EXP_match_paren();
+
+	if (count != value_list->nod_count)
+		PAR_error("count of values doesn't match count of columns");
+
+	// Pick up a matching list
+
+	nod_t cmp_op = nod_equiv;
+
+	gpre_lls* matches = NULL;
+	if (MSC_match(KW_MATCHES))
+	{
+		EXP_left_paren(0);
+		for (;;)
+		{
+			MSC_push(SQE_field(request, false), &matches);
+			if (!(MSC_match(KW_COMMA)))
+				break;
+		}
+		EXP_match_paren();
+	}
+	else
+	{
+		if (relation->rel_view_rse)
+			PAR_error("MATCHING clause is required for views");
+
+		gpre_lls* pk_fields =
+			MET_get_primary_key(relation->rel_database, relation->rel_symbol->sym_string);
+
+		while (pk_fields)
+		{
+			const TEXT* field_name = (TEXT*) MSC_pop(&pk_fields);
+			gpre_fld* field = MET_field(relation, field_name);
+			ref* reference = (ref*) MSC_alloc(REF_LEN);
+			reference->ref_field = field;
+			reference->ref_context = context;
+			MSC_push(MSC_unary(nod_field, (gpre_nod*) reference), &matches);
+		}
+
+		cmp_op = nod_eq;
+	}
+
+	if (!matches)
+		PAR_error("Either MATCHING list or primary key is required");
+
+	// Create selection
+
+	gpre_rse* select = (gpre_rse*) MSC_alloc(RSE_LEN(1));
+	request->req_rse = select;
+	select->rse_count = 1;
+	select->rse_context[0] = context;
+
+	// Introduce the update context
+
+	gpre_ctx* update_context = MSC_context(request);
+	update_context->ctx_relation = relation;
+	request->req_update = update_context;
+
+	// Introduce the insertion context
+
+	gpre_ctx* insert_context = MSC_context(request);
+	insert_context->ctx_relation = relation;
+
+	// Make assignment lists for both update and insert contexts
+
+	gpre_nod* upd_list = MSC_node(nod_list, (SSHORT) count);
+	gpre_nod* ins_list = MSC_node(nod_list, (SSHORT) count);
+
+	for (int i = 0; i < count; i++)
+	{
+		ref* org_ref = (ref*) field_list->nod_arg[i]->nod_arg[0];
+
+		ref* new_ref = (ref*) MSC_alloc(REF_LEN);
+		new_ref->ref_field = org_ref->ref_field;
+		new_ref->ref_context = update_context;
+
+		gpre_nod* assignment = MSC_node(nod_assignment, 2);
+		assignment->nod_arg[0] = value_list->nod_arg[i];
+		assignment->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) new_ref);
+		pair(assignment->nod_arg[0], assignment->nod_arg[1]);
+
+		upd_list->nod_arg[i] = assignment;
+
+		new_ref = (ref*) MSC_alloc(REF_LEN);
+		new_ref->ref_field = org_ref->ref_field;
+		new_ref->ref_context = insert_context;
+
+		assignment = MSC_node(nod_assignment, 2);
+		assignment->nod_arg[0] = value_list->nod_arg[i];
+		assignment->nod_arg[1] = MSC_unary(nod_field, (gpre_nod*) new_ref);
+		pair(assignment->nod_arg[0], assignment->nod_arg[1]);
+
+		ins_list->nod_arg[i] = assignment;
+	}
+
+	// Create boolean
+
+	gpre_nod* boolean = NULL;
+	while (matches)
+	{
+		gpre_nod* match = MSC_pop(&matches);
+		ref* match_ref = (ref*) match->nod_arg[0];
+		gpre_fld* match_field = match_ref->ref_field;
+
+		for (int i = 0; i < count; i++)
+		{
+			gpre_nod* from = value_list->nod_arg[i];
+			gpre_nod* to = field_list->nod_arg[i];
+			ref* to_ref = (ref*) to->nod_arg[0];
+			gpre_fld* to_field = to_ref->ref_field;
+
+			if (!strcmp(match_field->fld_symbol->sym_string,
+						to_field->fld_symbol->sym_string))
+			{
+				gpre_nod* eql = MSC_binary(cmp_op, match, from);
+
+				if (boolean)
+					boolean = MSC_binary(nod_and, boolean, eql);
+				else
+					boolean = eql;
+
+				break;
+			}
+		}
+	}
+
+	if (!boolean)
+		PAR_error("Invalid MATCHING list");
+
+	select->rse_boolean = boolean;
+
+	// Process a returning clause
+
+	ref* ref_list = NULL;
+	gpre_nod* upd_ret_list = NULL;
+	gpre_nod* ins_ret_list = NULL;
+
+	if (MSC_match(KW_RETURNING))
+	{
+		gpre_nod* value_list = SQE_list(SQE_value_or_null, NULL, false);
+
+		if (!MSC_match(KW_INTO))
+			CPR_s_error("INTO");
+
+		gpre_nod* var_list = SQE_list(SQE_variable, request, false);
+
+		gpre_sym* old_ctx_sym = MSC_symbol(SYM_context, OLD_CONTEXT, strlen(OLD_CONTEXT), context);
+		HSH_insert(old_ctx_sym);
+
+		// temporarily hide the insertion context
+
+		fb_assert(request->req_contexts == insert_context);
+		request->req_contexts = request->req_contexts->ctx_next;
+
+		gpre_sym* new_ctx_sym = MSC_symbol(SYM_context, NEW_CONTEXT, strlen(NEW_CONTEXT), update_context);
+		HSH_insert(new_ctx_sym);
+
+		upd_ret_list = return_values(request, value_list, var_list);
+
+		// restore the insertion context back
+
+		fb_assert(request->req_contexts == update_context);
+		request->req_contexts = insert_context;
+
+		new_ctx_sym->sym_object = insert_context;
+
+		ins_ret_list = return_values(request, value_list, var_list);
+
+		for (int i = 0; i < value_list->nod_count; i++)
+			SQE_resolve(&value_list->nod_arg[i], request, NULL);
+
+		into(request, value_list, var_list);
+		ref_list = (ref*) var_list;
+
+		HSH_remove(new_ctx_sym);
+		HSH_remove(old_ctx_sym);
+
+		request->req_flags |= REQ_sql_returning;
+		select->rse_flags |= RSE_singleton;
+	}
+
+	// Create the final node
+
+	gpre_nod* compound = MSC_node(nod_list, 2);
+	compound->nod_arg[0] = MSC_binary(nod_modify, upd_list, upd_ret_list);
+	compound->nod_arg[1] = MSC_ternary(nod_store, (gpre_nod*) insert_context, ins_list, ins_ret_list);
+	request->req_node = compound;
+
+	if (context->ctx_symbol)
+		HSH_remove(context->ctx_symbol);
+
+	act* action = MSC_action(request, ACT_loop);
+	action->act_object = ref_list;
+	action->act_whenever = gen_whenever();
+ 	return action;
 }
 
 
@@ -6119,6 +6499,28 @@ static USHORT resolve_dtypes(kwwords_t typ, bool sql_date)
 	// this is really a logic error we have to fix.
 
 	return dtype_unknown;
+}
+
+
+//____________________________________________________________
+//
+//		Generate the assignment list for the RETURNING clause
+//
+
+static gpre_nod* return_values(gpre_req* request, gpre_nod* src_list, gpre_nod* dst_list)
+{
+	gpre_nod* ret_list = MSC_node(nod_list, src_list->nod_count);
+
+	for (int i = 0; i < src_list->nod_count; i++)
+	{
+		gpre_nod* assignment = MSC_node(nod_assignment, 2);
+		assignment->nod_arg[0] = src_list->nod_arg[i];
+		SQE_resolve(&assignment->nod_arg[0], request, NULL);
+		assignment->nod_arg[1] = dst_list->nod_arg[i];
+		ret_list->nod_arg[i] = assignment;
+	}
+
+	return ret_list;
 }
 
 

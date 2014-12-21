@@ -2497,17 +2497,31 @@ static void gen_get_segment(const act* action)
 
 static void gen_loop(const act* action)
 {
-	TEXT name[MAX_REF_SIZE];
-
 	gen_s_start(action);
 	const gpre_req* request = action->act_request;
 	const gpre_port* port = request->req_primary;
+
 	printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
 	gen_receive(action, port);
+	printa(COLUMN, "END IF");
+
+	TEXT name[MAX_REF_SIZE];
 	gen_name(name, port->por_references, true);
 	printa(COLUMN, "IF (SQLCODE .EQ. 0 .AND. %s .EQ. 0) ", name);
 	printa(CONTINUE, "SQLCODE = 100");
-	printa(COLUMN, "END IF");
+
+	if (request->req_flags & REQ_sql_returning)
+	{
+		printa(COLUMN, "IF (SQLCODE .EQ. 0 .AND. %s .NE. 0) THEN", name);
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			asgn_to(action, (ref*) (var_list->nod_arg[i]));
+		}
+
+		printa(COLUMN, "END IF");
+	}
 }
 
 
@@ -3101,16 +3115,33 @@ static void gen_s_start(const act* action)
 		make_ok_test(action, request);
 
 	gen_start(action, port);
+	status_and_stop(action);
 
 	if (action->act_error || (action->act_flags & ACT_sql))
 		printa(COLUMN, "END IF");
+
+	if (request->req_type == REQ_insert && (request->req_flags & REQ_sql_returning))
+	{
+		printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
+		gen_receive(action, column, request->req_primary);
+		printa(COLUMN, "END IF");
+
+		printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
+
+		gpre_nod* var_list = (gpre_nod*) action->act_object;
+		for (int i = 0; var_list && i < var_list->nod_count; i++)
+		{
+			asgn_to(action, (ref*) (var_list->nod_arg[i]));
+		}
+
+		printa(COLUMN, "END IF");
+	}
 
 	if (action->act_type == ACT_open)
 	{
 		printa(COLUMN, "END IF");
 		printa(COLUMN, "END IF");
 		printa(COLUMN, "END IF");
-		status_and_stop(action);
 	}
 }
 
