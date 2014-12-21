@@ -56,9 +56,9 @@ namespace os_utils
 	bool isIPv6supported();
 
 	// force descriptor to have O_CLOEXEC set
-	int open(const char *pathname, int flags, mode_t mode = DEFAULT_OPEN_MODE);
+	int open(const char* pathname, int flags, mode_t mode = DEFAULT_OPEN_MODE);
 	void setCloseOnExec(int fd);	// posix only
-	FILE* fopen(const char *pathname, const char *mode);
+	FILE* fopen(const char* pathname, const char* mode);
 } // namespace os_utils
 
 #endif // INCLUDE_OS_FILE_UTILS_H

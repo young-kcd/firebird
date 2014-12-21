@@ -251,7 +251,7 @@ void setCloseOnExec(int fd)
 }
 
 // force file descriptor to have O_CLOEXEC set
-int open(const char *pathname, int flags, mode_t mode)
+int open(const char* pathname, int flags, mode_t mode)
 {
 	int fd;
 	do {
@@ -269,7 +269,7 @@ int open(const char *pathname, int flags, mode_t mode)
 	return fd;
 }
 
-FILE* fopen(const char *pathname, const char *mode)
+FILE* fopen(const char* pathname, const char* mode)
 {
 	FILE* f = ::fopen(pathname, mode);	// TODO: use open + fdopen to avoid races
 	if (f)

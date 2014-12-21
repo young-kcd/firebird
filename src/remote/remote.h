@@ -105,12 +105,10 @@ namespace Firebird {
 	class Exception;
 }
 
-#ifndef WIN_NT
-typedef int SOCKET;
-#endif
-
 #ifdef WIN_NT
 #include <WinSock2.h>
+#else
+typedef int SOCKET;
 #endif
 
 namespace os_utils

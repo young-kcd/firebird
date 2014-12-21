@@ -3715,9 +3715,9 @@ void DFW_reset_icu(thread_db* tdbb)
 		transaction = NULL;
 		tdbb->setTransaction(oldTransaction);
 	}
-	catch(const Firebird::Exception&)
+	catch (const Firebird::Exception&)
 	{
-/*
+		/***
 		// Set database to single shutdown mode
 		Database* dbb = tdbb->getDatabase();
 		const SSHORT oldMode =
@@ -3725,7 +3725,7 @@ void DFW_reset_icu(thread_db* tdbb)
 			dbb->dbb_ast_flags & DBB_shutdown ?	isc_dpb_shut_multi : isc_dpb_shut_normal;
 		if (oldMode != isc_dpb_shut_single)
 			SHUT_database(tdbb, isc_dpb_shut_single, 0, NULL);
- */
+		***/
 		if (transaction)
 		{
 			TRA_rollback(tdbb, transaction, false, true);
