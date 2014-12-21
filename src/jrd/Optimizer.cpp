@@ -91,39 +91,6 @@ bool checkExpressionIndex(const index_desc* idx, ValueExprNode* node, StreamType
 }
 
 
-double OPT_getRelationCardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
-{
-/**************************************
- *
- *	g e t R e l a t i o n C a r d i n a l i t y
- *
- **************************************
- *
- * Functional description
- *	Return the estimated cardinality for
- *  the given relation.
- *
- **************************************/
-	SET_TDBB(tdbb);
-
-	if (relation->isVirtual())
-	{
-		// Just a dumb estimation
-		return (double) 100;
-	}
-
-	if (relation->rel_file)
-	{
-		return EXT_cardinality(tdbb, relation);
-	}
-
-	MET_post_existence(tdbb, relation);
-	const double cardinality = DPM_cardinality(tdbb, relation, format);
-	MET_release_existence(tdbb, relation);
-	return cardinality;
-}
-
-
 string OPT_make_alias(thread_db* tdbb, const CompilerScratch* csb,
 					  const CompilerScratch::csb_repeat* base_tail)
 {
@@ -2504,7 +2471,6 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const S
 		innerStream[i]->stream = streams[i];
 	}
 
-	calculateCardinalities();
 	calculateStreamInfo();
 }
 
@@ -2526,33 +2492,6 @@ OptimizerInnerJoin::~OptimizerInnerJoin()
 			delete innerStreams[i]->indexedRelationships[j];
 
 		delete innerStreams[i];
-	}
-}
-
-void OptimizerInnerJoin::calculateCardinalities()
-{
-/**************************************
- *
- *	c a l c u l a t e C a r d i n a l i t i e s
- *
- **************************************
- *
- *  Get the cardinality for every stream.
- *
- **************************************/
-
-	for (FB_SIZE_T i = 0; i < innerStreams.getCount(); i++)
-	{
-		CompilerScratch::csb_repeat* csb_tail = &csb->csb_rpt[innerStreams[i]->stream];
-		fb_assert(csb_tail);
-		if (!csb_tail->csb_cardinality)
-		{
-			jrd_rel* relation = csb_tail->csb_relation;
-			fb_assert(relation);
-			const Format* format = CMP_format(tdbb, csb, innerStreams[i]->stream);
-			fb_assert(format);
-			csb_tail->csb_cardinality = OPT_getRelationCardinality(tdbb, relation, format);
-		}
 	}
 }
 

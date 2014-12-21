@@ -268,7 +268,6 @@ public:
 	StreamType findJoinOrder();
 
 protected:
-	void calculateCardinalities();
 	void calculateStreamInfo();
 	bool cheaperRelationship(IndexRelationship* checkRelationship,
 		IndexRelationship* withRelationship) const;

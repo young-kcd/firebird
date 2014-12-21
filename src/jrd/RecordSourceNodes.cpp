@@ -51,10 +51,8 @@ static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 static void processMap(thread_db* tdbb, CompilerScratch* csb, MapNode* map, Format** inputFormat);
 static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack, MapNode* map,
 	BoolExprNodeStack* parentStack, StreamType shellStream);
-static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
 static ValueExprNode* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
 	ValueListNode* list, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx);
-static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail);
 
 namespace
 {
@@ -819,21 +817,7 @@ RecordSource* RelationSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bo
 	// all indices at this time so we can determine if it's possible
 
 	if (opt->opt_conjuncts.getCount() || opt->rse->rse_sorted || opt->rse->rse_aggregate)
-	{
-		if (relation && !relation->rel_file && !relation->isVirtual())
-		{
-			opt->opt_csb->csb_rpt[stream].csb_indices =
-				BTR_all(tdbb, relation, &opt->opt_csb->csb_rpt[stream].csb_idx, relation->getPages(tdbb));
-			sortIndicesBySelectivity(&opt->opt_csb->csb_rpt[stream]);
-			markIndices(&opt->opt_csb->csb_rpt[stream], relation->rel_id);
-		}
-		else
-			opt->opt_csb->csb_rpt[stream].csb_indices = 0;
-
-		const Format* format = CMP_format(tdbb, opt->opt_csb, stream);
-		opt->opt_csb->csb_rpt[stream].csb_cardinality =
-			OPT_getRelationCardinality(tdbb, relation, format);
-	}
+		OPT_compile_relation(tdbb, relation, opt->opt_csb, stream);
 
 	return NULL;
 }
@@ -3194,6 +3178,7 @@ static int strcmpSpace(const char* p, const char* q)
 	return (*p > *q) ? 1 : -1;
 }
 
+
 // Process a single record source stream from an RseNode.
 // Obviously, if the source is a view, there is more work to do.
 static void processSource(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
@@ -3459,64 +3444,6 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 	}
 }
 
-// Mark indices that were not included in the user-specified access plan.
-static void markIndices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId)
-{
-	const PlanNode* plan = csbTail->csb_plan;
-
-	if (!plan || plan->type != PlanNode::TYPE_RETRIEVE)
-		return;
-
-	// Go through each of the indices and mark it unusable
-	// for indexed retrieval unless it was specifically mentioned
-	// in the plan; also mark indices for navigational access.
-
-	// If there were none indices, this is a sequential retrieval.
-
-	index_desc* idx = csbTail->csb_idx->items;
-
-	for (USHORT i = 0; i < csbTail->csb_indices; i++)
-	{
-		if (plan->accessType)
-		{
-			ObjectsArray<PlanNode::AccessItem>::iterator arg = plan->accessType->items.begin();
-			const ObjectsArray<PlanNode::AccessItem>::iterator end = plan->accessType->items.end();
-
-			for (; arg != end; ++arg)
-			{
-				if (relationId != arg->relationId)
-				{
-					// index %s cannot be used in the specified plan
-					ERR_post(Arg::Gds(isc_index_unused) << arg->indexName);
-				}
-
-				if (idx->idx_id == arg->indexId)
-				{
-					if (plan->accessType->type == PlanNode::AccessType::TYPE_NAVIGATIONAL &&
-						arg == plan->accessType->items.begin())
-					{
-						// dimitr:	navigational access can use only one index,
-						//			hence the extra check added (see the line above)
-						idx->idx_runtime_flags |= idx_plan_navigate;
-					}
-					else
-					{
-						// nod_indices
-						break;
-					}
-				}
-			}
-
-			if (arg == end)
-				idx->idx_runtime_flags |= idx_plan_dont_use;
-		}
-		else
-			idx->idx_runtime_flags |= idx_plan_dont_use;
-
-		++idx;
-	}
-}
-
 // Resolve a field for JOIN USING purposes.
 static ValueExprNode* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const MetaName& name,
 	ValueListNode* list, const FieldNode* flawedNode, const TEXT* side, dsql_ctx*& ctx)
@@ -3546,77 +3473,4 @@ static ValueExprNode* resolveUsingField(DsqlCompilerScratch* dsqlScratch, const 
 	}
 
 	return node;
-}
-
-// Sort SortedStream indices based on there selectivity. Lowest selectivy as first, highest as last.
-static void sortIndicesBySelectivity(CompilerScratch::csb_repeat* csbTail)
-{
-	if (csbTail->csb_plan)
-		return;
-
-	index_desc* selectedIdx = NULL;
-	Array<index_desc> idxSort(csbTail->csb_indices);
-	bool sameSelectivity = false;
-
-	// Walk through the indices and sort them into into idxSort
-	// where idxSort[0] contains the lowest selectivity (best) and
-	// idxSort[csbTail->csb_indices - 1] the highest (worst)
-
-	if (csbTail->csb_idx && (csbTail->csb_indices > 1))
-	{
-		for (USHORT j = 0; j < csbTail->csb_indices; j++)
-		{
-			float selectivity = 1; // Maximum selectivity is 1 (when all keys are the same)
-			index_desc* idx = csbTail->csb_idx->items;
-
-			for (USHORT i = 0; i < csbTail->csb_indices; i++)
-			{
-				// Prefer ASC indices in the case of almost the same selectivities
-				if (selectivity > idx->idx_selectivity)
-					sameSelectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
-				else
-					sameSelectivity = ((idx->idx_selectivity - selectivity) <= 0.00001);
-
-				if (!(idx->idx_runtime_flags & idx_marker) &&
-					 (idx->idx_selectivity <= selectivity) &&
-					 !((idx->idx_flags & idx_descending) && sameSelectivity))
-				{
-					selectivity = idx->idx_selectivity;
-					selectedIdx = idx;
-				}
-
-				++idx;
-			}
-
-			// If no index was found than pick the first one available out of the list
-			if ((!selectedIdx) || (selectedIdx->idx_runtime_flags & idx_marker))
-			{
-				idx = csbTail->csb_idx->items;
-
-				for (USHORT i = 0; i < csbTail->csb_indices; i++)
-				{
-					if (!(idx->idx_runtime_flags & idx_marker))
-					{
-						selectedIdx = idx;
-						break;
-					}
-
-					++idx;
-				}
-			}
-
-			selectedIdx->idx_runtime_flags |= idx_marker;
-			idxSort.add(*selectedIdx);
-		}
-
-		// Finally store the right order in cbs_tail->csb_idx
-		index_desc* idx = csbTail->csb_idx->items;
-
-		for (USHORT j = 0; j < csbTail->csb_indices; j++)
-		{
-			idx->idx_runtime_flags &= ~idx_marker;
-			memcpy(idx, &idxSort[j], sizeof(index_desc));
-			++idx;
-		}
-	}
 }

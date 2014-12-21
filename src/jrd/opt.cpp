@@ -331,8 +331,10 @@ static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, Re
 static RecordSource* gen_retrieval(thread_db* tdbb, OptimizerBlk* opt, StreamType stream,
 	SortNode** sort_ptr, bool outer_flag, bool inner_flag, BoolExprNode** return_boolean);
 static bool gen_equi_join(thread_db*, OptimizerBlk*, RiverList&);
+static double get_cardinality(thread_db*, jrd_rel*, const Format*);
 static BoolExprNode* make_inference_node(CompilerScratch*, BoolExprNode*, ValueExprNode*, ValueExprNode*);
 static bool map_equal(const ValueExprNode*, const ValueExprNode*, const MapNode*);
+static void mark_indices(CompilerScratch::csb_repeat* csbTail, SSHORT relationId);
 static bool node_equality(const ValueExprNode*, const ValueExprNode*);
 static bool node_equality(const BoolExprNode*, const BoolExprNode*);
 static ValueExprNode* optimize_like(thread_db*, CompilerScratch*, ComparativeBoolNode*);
@@ -340,6 +342,7 @@ static USHORT river_count(USHORT count, ValueExprNode** eq_class);
 static bool search_stack(const ValueExprNode*, const ValueExprNodeStack&);
 static void set_direction(SortNode*, SortNode*);
 static void set_position(const SortNode*, SortNode*, const MapNode*);
+static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* csbTail);
 
 
 // macro definitions
@@ -906,6 +909,28 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 	return rsb;
 }
 
+
+// Prepare relation and its indices for optimization.
+void OPT_compile_relation(thread_db* tdbb, jrd_rel* relation, CompilerScratch* csb, StreamType stream)
+{
+	CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
+	RelationPages* const relPages = relation->getPages(tdbb);
+
+	if (!relation->rel_file && !relation->isVirtual())
+	{
+		csb->csb_rpt[stream].csb_indices = BTR_all(tdbb, relation, &tail->csb_idx, relPages);
+
+		if (tail->csb_plan)
+			mark_indices(tail, relation->rel_id);
+		else
+			sort_indices_by_selectivity(tail);
+	}
+	else
+		csb->csb_rpt[stream].csb_indices = 0;
+
+	const Format* const format = CMP_format(tdbb, csb, stream);
+	csb->csb_rpt[stream].csb_cardinality = get_cardinality(tdbb, relation, format);
+}
 
 // Add node (ValueExprNode) to stack unless node is already on stack.
 static bool augment_stack(ValueExprNode* node, ValueExprNodeStack& stack)
@@ -3036,6 +3061,40 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 }
 
 
+static double get_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* format)
+{
+/**************************************
+ *
+ *	g e t _ c a r d i n a l i t y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return the estimated cardinality for
+ *  the given relation.
+ *
+ **************************************/
+	SET_TDBB(tdbb);
+
+	if (relation->isVirtual())
+	{
+		// Just a dumb estimation
+		return (double) 100;
+	}
+
+	if (relation->rel_file)
+	{
+		return EXT_cardinality(tdbb, relation);
+	}
+
+	MET_post_existence(tdbb, relation);
+	const double cardinality = DPM_cardinality(tdbb, relation, format);
+	MET_release_existence(tdbb, relation);
+
+	return cardinality;
+}
+
+
 static BoolExprNode* make_inference_node(CompilerScratch* csb, BoolExprNode* boolean,
 	ValueExprNode* arg1, ValueExprNode* arg2)
 {
@@ -3155,6 +3214,65 @@ static bool map_equal(const ValueExprNode* field1, const ValueExprNode* field2, 
 	}
 
 	return false;
+}
+
+
+// Mark indices that were not included in the user-specified access plan.
+static void mark_indices(CompilerScratch::csb_repeat* tail, SSHORT relationId)
+{
+	const PlanNode* const plan = tail->csb_plan;
+
+	if (plan->type != PlanNode::TYPE_RETRIEVE)
+		return;
+
+	// Go through each of the indices and mark it unusable
+	// for indexed retrieval unless it was specifically mentioned
+	// in the plan; also mark indices for navigational access.
+
+	// If there were none indices, this is a sequential retrieval.
+
+	index_desc* idx = tail->csb_idx->items;
+
+	for (USHORT i = 0; i < tail->csb_indices; i++)
+	{
+		if (plan->accessType)
+		{
+			ObjectsArray<PlanNode::AccessItem>::iterator arg = plan->accessType->items.begin();
+			const ObjectsArray<PlanNode::AccessItem>::iterator end = plan->accessType->items.end();
+
+			for (; arg != end; ++arg)
+			{
+				if (relationId != arg->relationId)
+				{
+					// index %s cannot be used in the specified plan
+					ERR_post(Arg::Gds(isc_index_unused) << arg->indexName);
+				}
+
+				if (idx->idx_id == arg->indexId)
+				{
+					if (plan->accessType->type == PlanNode::AccessType::TYPE_NAVIGATIONAL &&
+						arg == plan->accessType->items.begin())
+					{
+						// dimitr:	navigational access can use only one index,
+						//			hence the extra check added (see the line above)
+						idx->idx_runtime_flags |= idx_plan_navigate;
+					}
+					else
+					{
+						// nod_indices
+						break;
+					}
+				}
+			}
+
+			if (arg == end)
+				idx->idx_runtime_flags |= idx_plan_dont_use;
+		}
+		else
+			idx->idx_runtime_flags |= idx_plan_dont_use;
+
+		++idx;
+	}
 }
 
 
@@ -3502,4 +3620,85 @@ static void set_position(const SortNode* from_clause, SortNode* to_clause, const
 		++to_swap;
 	}
 
+}
+
+
+static void sort_indices_by_selectivity(CompilerScratch::csb_repeat* tail)
+{
+/**************************************
+ *
+ *	s o r t _ i n d i c e s _ b y _ s e l e c t i v i t y
+ *
+ **************************************
+ *
+ * Functional description
+ *	Sort indices based on their selectivity. Lowest selectivy as first, highest as last.
+ *
+ **************************************/
+
+	index_desc* selectedIdx = NULL;
+	Array<index_desc> idxSort(tail->csb_indices);
+	bool sameSelectivity = false;
+
+	// Walk through the indices and sort them into into idxSort
+	// where idxSort[0] contains the lowest selectivity (best) and
+	// idxSort[csbTail->csb_indices - 1] the highest (worst)
+
+	if (tail->csb_idx && (tail->csb_indices > 1))
+	{
+		for (USHORT j = 0; j < tail->csb_indices; j++)
+		{
+			float selectivity = 1; // Maximum selectivity is 1 (when all keys are the same)
+			index_desc* idx = tail->csb_idx->items;
+
+			for (USHORT i = 0; i < tail->csb_indices; i++)
+			{
+				// Prefer ASC indices in the case of almost the same selectivities
+				if (selectivity > idx->idx_selectivity)
+					sameSelectivity = ((selectivity - idx->idx_selectivity) <= 0.00001);
+				else
+					sameSelectivity = ((idx->idx_selectivity - selectivity) <= 0.00001);
+
+				if (!(idx->idx_runtime_flags & idx_marker) &&
+					 (idx->idx_selectivity <= selectivity) &&
+					 !((idx->idx_flags & idx_descending) && sameSelectivity))
+				{
+					selectivity = idx->idx_selectivity;
+					selectedIdx = idx;
+				}
+
+				++idx;
+			}
+
+			// If no index was found than pick the first one available out of the list
+			if ((!selectedIdx) || (selectedIdx->idx_runtime_flags & idx_marker))
+			{
+				idx = tail->csb_idx->items;
+
+				for (USHORT i = 0; i < tail->csb_indices; i++)
+				{
+					if (!(idx->idx_runtime_flags & idx_marker))
+					{
+						selectedIdx = idx;
+						break;
+					}
+
+					++idx;
+				}
+			}
+
+			selectedIdx->idx_runtime_flags |= idx_marker;
+			idxSort.add(*selectedIdx);
+		}
+
+		// Finally store the right order in cbs_tail->csb_idx
+		index_desc* idx = tail->csb_idx->items;
+
+		for (USHORT j = 0; j < tail->csb_indices; j++)
+		{
+			idx->idx_runtime_flags &= ~idx_marker;
+			memcpy(idx, &idxSort[j], sizeof(index_desc));
+			++idx;
+		}
+	}
 }
