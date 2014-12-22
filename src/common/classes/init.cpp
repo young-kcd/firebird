@@ -56,11 +56,13 @@ namespace
 	// This helps initialize globals, needed before regular ctors run
 	int initDone = 0;
 
+#ifndef WIN_NT
 	void child(void)
 	{
 		// turn off dtors execution in forked process
 		initDone = 2;
 	}
+#endif
 
 	void allClean()
 	{
@@ -130,7 +132,9 @@ namespace
 #endif //DEBUG_INIT
 
 		initDone = 1;
+#ifndef WIN_NT
 		int ret = pthread_atfork(NULL, NULL, child);
+#endif
 
 		Firebird::MemoryPool::contextPoolInit();
 	}
