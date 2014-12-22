@@ -1,3 +1,45 @@
+ 2014-12-21 19:30  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+Correction for the prior commit.
+
+ 2014-12-21 19:16  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/Optimizer.h
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/opt_proto.h
+Small refactoring.
+
+ 2014-12-21 13:45  dimitr 
+   M src/gpre/c_cxx.cpp
+   M src/gpre/cme.cpp
+   M src/gpre/cmp.cpp
+   M src/gpre/gpre.h
+   M src/gpre/hsh.h
+   M src/gpre/languages/ada.cpp
+   M src/gpre/languages/cob.cpp
+   M src/gpre/languages/ftn.cpp
+   M src/gpre/languages/pas.cpp
+   M src/gpre/languages/rmc.cpp
+   M src/gpre/msc.cpp
+   M src/gpre/msc_proto.h
+   M src/gpre/par.cpp
+   M src/gpre/sqe.cpp
+   M src/gpre/sqe_proto.h
+   M src/gpre/sql.cpp
+   M src/gpre/words.h
+Front-ported CORE-4437 and CORE-4438.
+
+ 2014-12-21 01:54  asfernandes 
+   M src/common/os/os_utils.h
+   M src/common/os/posix/os_utils.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/jrd/dfw.epp
+   M src/remote/remote.h
+Misc.
+
  2014-12-19 15:43  alexpeshkoff 
    M src/common/classes/init.cpp
 Fixed CORE-3632: Crash after calling fork in a process, using embedded firebird library
