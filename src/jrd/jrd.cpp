@@ -1722,7 +1722,10 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 			}
 
 			if (options.dpb_reset_icu)
+			{
+				validateAccess(attachment);
 				DFW_reset_icu(tdbb);
+			}
 
 			if (options.dpb_journal.hasData())
 				ERR_post(Arg::Gds(isc_bad_dpb_content) << Arg::Gds(isc_cant_start_journal));
