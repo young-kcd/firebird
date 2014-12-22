@@ -326,51 +326,55 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 		passwordEnc.assign(data, length);
 	}
 
-	if (login.hasData() && passwordEnc.hasData())
+	if (!login.hasData())
 	{
-		login.upper();
+		return IAuth::AUTH_CONTINUE;
+	}
+	if (!passwordEnc.hasData())
+	{
+		return IAuth::AUTH_MORE_DATA;
+	}
 
-		// Look up the user name in the userinfo database and use the parameters
-		// found there. This means that another database must be accessed, and
-		// that means the current context must be saved and restored.
+	login.upper();
 
-		char pw1[MAX_LEGACY_PASSWORD_LENGTH + 1];
-		if (!lookup_user(login.c_str(), pw1))
+	// Look up the user name in the userinfo database and use the parameters
+	// found there. This means that another database must be accessed, and
+	// that means the current context must be saved and restored.
+
+	char pw1[MAX_LEGACY_PASSWORD_LENGTH + 1];
+	if (!lookup_user(login.c_str(), pw1))
+	{
+		return IAuth::AUTH_FAILED;
+	}
+	pw1[MAX_LEGACY_PASSWORD_LENGTH] = 0;
+	string storedHash(pw1, MAX_LEGACY_PASSWORD_LENGTH);
+	storedHash.rtrim();
+
+	string newHash;
+	LegacyHash::hash(newHash, login, passwordEnc, storedHash);
+	if (newHash != storedHash)
+	{
+		bool legacyHash = Config::getLegacyHash();
+		if (legacyHash)
+		{
+			newHash.resize(MAX_LEGACY_PASSWORD_LENGTH + 2);
+			ENC_crypt(newHash.begin(), newHash.length(), passwordEnc.c_str(), LEGACY_PASSWORD_SALT);
+			newHash.recalculate_length();
+			newHash.erase(0, 2);
+			legacyHash = newHash == storedHash;
+		}
+		if (!legacyHash)
 		{
 			return IAuth::AUTH_FAILED;
 		}
-		pw1[MAX_LEGACY_PASSWORD_LENGTH] = 0;
-		string storedHash(pw1, MAX_LEGACY_PASSWORD_LENGTH);
-		storedHash.rtrim();
-
-		string newHash;
-		LegacyHash::hash(newHash, login, passwordEnc, storedHash);
-		if (newHash != storedHash)
-		{
-			bool legacyHash = Config::getLegacyHash();
-			if (legacyHash)
-			{
-				newHash.resize(MAX_LEGACY_PASSWORD_LENGTH + 2);
-				ENC_crypt(newHash.begin(), newHash.length(), passwordEnc.c_str(), LEGACY_PASSWORD_SALT);
-				newHash.recalculate_length();
-				newHash.erase(0, 2);
-				legacyHash = newHash == storedHash;
-			}
-			if (!legacyHash)
-			{
-				return IAuth::AUTH_FAILED;
-			}
-		}
-
-		LocalStatus s;
-		authBlock->add(&s, login.c_str());
-		check(&s);
-		authBlock->setDb(&s, secureDbName);
-		check(&s);
-		return IAuth::AUTH_SUCCESS;
 	}
 
-	return IAuth::AUTH_CONTINUE;
+	LocalStatus s;
+	authBlock->add(&s, login.c_str());
+	check(&s);
+	authBlock->setDb(&s, secureDbName);
+	check(&s);
+	return IAuth::AUTH_SUCCESS;
 }
 
 void SecurityDatabase::checkStatus(const char* callName, ISC_STATUS userError)
