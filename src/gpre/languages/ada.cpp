@@ -2755,7 +2755,7 @@ static void gen_s_start( const act* action, int column)
 		make_ok_test(action, request, column);
 
 	gen_start(action, port, column);
-	set_sqlcode(action);
+	set_sqlcode(action, column);
 
 	if (action->act_error || (action->act_flags & ACT_sql))
 		endif(column);

@@ -3123,7 +3123,7 @@ static void gen_s_start(const act* action)
 	if (request->req_type == REQ_insert && (request->req_flags & REQ_sql_returning))
 	{
 		printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
-		gen_receive(action, column, request->req_primary);
+		gen_receive(action, request->req_primary);
 		printa(COLUMN, "END IF");
 
 		printa(COLUMN, "IF (SQLCODE .EQ. 0) THEN");
