@@ -1787,7 +1787,7 @@ static int fork(SOCKET old_handle, USHORT flag)
 
 THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 {
-	const USHORT flag = (USHORT) arg;
+	const USHORT flag = (USHORT)(U_IPTR) arg;
 
 	while (!INET_shutting_down)
 	{
