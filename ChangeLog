@@ -1,3 +1,31 @@
+ 2014-12-22 16:19  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+Fixed CORE-4646: Attach failure when using LegacyAuth on server and default configuration on client
+
+ 2014-12-22 14:41  hvlad 
+   M src/include/firebird/IdlFbInterfaces.h
+Fixed compilation errors
+
+ 2014-12-22 09:47  hvlad 
+   M src/common/classes/init.cpp
+Fixed Windows build
+
+ 2014-12-22 09:45  hvlad 
+   M src/gpre/languages/ada.cpp
+   M src/gpre/languages/cob.cpp
+   M src/gpre/languages/ftn.cpp
+   M src/gpre/languages/rmc.cpp
+Fix compilation errors
+
+ 2014-12-22 09:17  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Added forgotten security check - thanks to Adriano
+
+ 2014-12-22 08:51  dimitr 
+   M src/remote/inet.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+Patches by Alexey Pavlov.
+
  2014-12-21 19:30  dimitr 
    M src/jrd/RecordSourceNodes.cpp
    M src/jrd/opt.cpp
