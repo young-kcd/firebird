@@ -10259,6 +10259,8 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	setCharField(userData->middle, middleName);
 	setCharField(userData->last, lastName);
 	setCharField(userData->com, comment);
+	if (plugin)
+		userData->plugin = *plugin;
 
 	if (adminRole.specified)
 	{
@@ -10340,6 +10342,7 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	userData->op = Auth::DEL_OPER;
 	userData->user.set(&s, text.c_str());
 	userData->user.setEntered(&s, 1);
+	userData->plugin = plugin;
 	check(&s);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_USER,

@@ -54,27 +54,6 @@ using namespace Firebird;
 
 namespace
 {
-	void splitWord(PathName& to, PathName& list)
-	{
-		list.alltrim(" \t");
-		PathName::size_type p = list.find_first_of(" \t,;");
-		if (p == PathName::npos)
-		{
-			if (list.isEmpty())
-			{
-				to = "";
-				return;
-			}
-			to = list;
-			list = "";
-			return;
-		}
-
-		to = list.substr(0, p);
-		list = list.substr(p);
-		list.ltrim(" \t,;");
-	}
-
 	void changeExtension(PathName& file, const char* newExt)
 	{
 		PathName::size_type p = file.rfind(PathUtils::dir_sep);
@@ -874,10 +853,8 @@ namespace
 
 			MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
-			while (namesList.hasData())
+			while (currentName.getWord(namesList, " \t,;"))
 			{
-				splitWord(currentName, namesList);
-
 				// First check - may be currentName is present among already configured plugins
 				ConfiguredPlugin* tmp = NULL;
 				if (plugins->get(MapKey(interfaceType, currentName), tmp))

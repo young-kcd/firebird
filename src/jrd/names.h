@@ -276,6 +276,8 @@ NAME("SEC$NAME_PART", nam_name_part)
 NAME("SEC$ACTIVE", nam_sec_active)
 NAME("SEC$ADMIN", nam_sec_admin)
 NAME("SEC$DESCRIPTION", nam_sec_description)
+NAME("RDB$PLUGIN", nam_plugin)
+NAME("SEC$PLUGIN", nam_sec_plugin)
 
 NAME("MON$ATTACHMENTS", nam_mon_attachments)
 NAME("MON$ATTACHMENT_ID", nam_mon_att_id)

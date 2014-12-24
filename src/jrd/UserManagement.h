@@ -24,7 +24,7 @@
 #define JRD_USER_MANAGEMENT_H
 
 #include "firebird.h"
-#include "../common/classes/array.h"
+#include "../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
 #include "../jrd/ibase.h"
 #include "../jrd/Monitoring.h"
@@ -67,13 +67,19 @@ public:
 	// return users list for SEC$USERS
 	RecordBuffer* getList(thread_db* tdbb, jrd_rel* relation);
 	// callback for users display
-	void list(Firebird::IUser* u);
+	void list(Firebird::IUser* u, unsigned cachePosition);
 
 private:
 	thread_db* threadDbb;
 	Firebird::HalfStaticArray<Auth::DynamicUserData*, 8> commands;
-	Firebird::IManagement* manager;
+	typedef Firebird::Pair<Firebird::NonPooled<Firebird::MetaName, Firebird::IManagement*> > Manager;
+	Firebird::ObjectsArray<Manager> managers;
+	Firebird::NoCaseString plugins;
+	Attachment* att;
 
+	Firebird::IManagement* getManager(const char* name);
+	void openAllManagers();
+	Firebird::IManagement* registerManager(Auth::Get& getPlugin, const char* plugName);
 	static void checkSecurityResult(int errcode, Firebird::IStatus* status,
 		const char* userName, Firebird::IUser* user);
 };

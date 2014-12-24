@@ -80,17 +80,17 @@ namespace
 	{
 	public:
 		explicit FillSnapshot(UserManagement* um)
-			: userManagement(um)
+			: userManagement(um), pos(0)
 		{ }
 
 		// IListUsers implementation
-		void list(IStatus* status, Firebird::IUser* user)
+		void list(IStatus* status, IUser* user)
 		{
 			try
 			{
-				userManagement->list(user);
+				userManagement->list(user, pos);
 			}
-			catch (const Firebird::Exception& ex)
+			catch (const Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -98,6 +98,9 @@ namespace
 
 	private:
 		UserManagement* userManagement;
+
+	public:
+		unsigned pos;
 	};
 
 	class OldAttributes : public AutoIface<Api::IListUsersImpl<OldAttributes> >
@@ -108,14 +111,14 @@ namespace
 		{ }
 
 		// IListUsers implementation
-		void list(IStatus* status, Firebird::IUser* data)
+		void list(IStatus* status, IUser* data)
 		{
 			try
 			{
 				value = data->attributes()->entered() ? data->attributes()->get() : "";
 				present = true;
 			}
-			catch (const Firebird::Exception& ex)
+			catch (const Exception& ex)
 			{
 				ex.stuffException(status);
 			}
@@ -145,27 +148,96 @@ UserManagement::UserManagement(jrd_tra* tra)
 	: SnapshotData(*tra->tra_pool),
 	  threadDbb(NULL),
 	  commands(*tra->tra_pool),
-	  manager(NULL)
+	  managers(*tra->tra_pool),
+	  plugins(*tra->tra_pool),
+	  att(tra->tra_attachment)
 {
-	Attachment* att = tra->tra_attachment;
 	if (!att || !att->att_user)
 	{
 		(Arg::Gds(isc_random) << "Unknown user name for given transaction").raise();
 	}
 
-	fb_assert(att->att_database && att->att_database->dbb_config.hasData());
-	Auth::Get getPlugin(att->att_database->dbb_config);
-	manager = getPlugin.plugin();
-	fb_assert(manager);
-	manager->addRef();
+	plugins = att->att_database->dbb_config->getPlugins(IPluginManager::AuthUserManagement);
+}
 
+
+IManagement* UserManagement::registerManager(Auth::Get& getPlugin, const char* plugName)
+{
+	IManagement* manager = getPlugin.plugin();
+	fb_assert(manager);
+
+	// Start new management plugin ...
 	LocalStatus status;
 	UserIdInfo idInfo(att);
 	manager->start(&status, &idInfo);
-
 	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 	{
 		status_exception::raise(&status);
+	}
+
+	// ... and store it in cache
+	Manager& m(managers.add());
+	m.first = plugName;
+	m.second = manager;
+	manager->addRef();
+
+	return manager;
+}
+
+
+IManagement* UserManagement::getManager(const char* name)
+{
+	// Determine required name
+	NoCaseString plugName;
+	NoCaseString p(plugins);
+	if (!(name && name[0]))	// Use default plugin
+		plugName.getWord(p, " \t,;");
+	else
+	{
+		while (plugName.getWord(p, " \t,;"))
+		{
+			if (plugName == name)
+				break;
+		}
+	}
+	if (!plugName.hasData())
+	{
+		(Arg::Gds(isc_random) << "Missing requested management plugin").raise();
+	}
+
+	// Search for it in cache of already loaded plugins
+	for (unsigned i = 0; i < managers.getCount(); ++i)
+	{
+		if (plugName == managers[i].first.c_str())
+			return managers[i].second;
+	}
+
+	// We have new user manager plugin
+	Auth::Get getPlugin(plugName.c_str());
+	return registerManager(getPlugin, plugName.c_str());
+}
+
+void UserManagement::openAllManagers()
+{
+	NoCaseString plugName;
+	NoCaseString p(plugins);
+	while (plugName.getWord(p, " \t,;"))
+	{
+		// Search for it in cache of already loaded plugins
+		bool flag = false;
+		for (unsigned i = 0; i < managers.getCount(); ++i)
+		{
+			if (plugName == managers[i].first.c_str())
+			{
+				flag = true;
+				break;
+			}
+		}
+		if (flag)
+			continue;
+
+		Auth::Get getPlugin(plugName.c_str());
+		registerManager(getPlugin, plugName.c_str());
 	}
 }
 
@@ -177,34 +249,37 @@ UserManagement::~UserManagement()
 	}
 	commands.clear();
 
-	if (manager)
+	for (unsigned i = 0; i < managers.getCount(); ++i)
 	{
-		LocalStatus status;
-		manager->rollback(&status);
-		PluginManagerInterfacePtr()->releasePlugin(manager);
-		manager = NULL;
-
-		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+		IManagement* manager = managers[i].second;
+		if (manager)
 		{
-			status_exception::raise(&status);
+			LocalStatus status;
+			manager->rollback(&status);
+			PluginManagerInterfacePtr()->releasePlugin(manager);
+			managers[i].second = NULL;
+
+//			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+//				status_exception::raise(&status);
 		}
 	}
 }
 
 void UserManagement::commit()
 {
-	if (manager)
+	for (unsigned i = 0; i < managers.getCount(); ++i)
 	{
-		LocalStatus status;
-		manager->commit(&status);
-
-		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+		IManagement* manager = managers[i].second;
+		if (manager)
 		{
-			status_exception::raise(&status);
-		}
+			LocalStatus status;
+			manager->commit(&status);
+			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+				status_exception::raise(&status);
 
-		PluginManagerInterfacePtr()->releasePlugin(manager);
-		manager = NULL;
+			PluginManagerInterfacePtr()->releasePlugin(manager);
+			managers[i].second = NULL;
+		}
 	}
 }
 
@@ -219,8 +294,8 @@ USHORT UserManagement::put(Auth::DynamicUserData* userData)
 	return ret;
 }
 
-void UserManagement::checkSecurityResult(int errcode, Firebird::IStatus* status,
-	const char* userName, Firebird::IUser* user)
+void UserManagement::checkSecurityResult(int errcode, IStatus* status,
+	const char* userName, IUser* user)
 {
 	if (!errcode)
 	{
@@ -256,14 +331,16 @@ void UserManagement::execute(USHORT id)
 		status_exception::raise(Arg::Gds(isc_random) << "Wrong job id passed to UserManagement::execute()");
 	}
 
-	if (!(manager && commands[id]))
-	{
-		// Already executed.
-		return;
-	}
+	if (!commands[id])
+		return;	// Already executed
+
+	Auth::UserData* command = commands[id];
+	IManagement* manager = getManager(command->plugin.c_str());
+
+	if (!manager)
+		return;	// Already commited
 
 	LocalStatus status;
-	Auth::UserData* command = commands[id];
 	if (command->attr.entered() || command->op == Auth::ADDMOD_OPER)
 	{
 		Auth::StackUserData cmd;
@@ -372,13 +449,18 @@ void UserManagement::execute(USHORT id)
 	commands[id] = NULL;
 }
 
-void UserManagement::list(Firebird::IUser* u)
+void UserManagement::list(IUser* u, unsigned cachePosition)
 {
 	RecordBuffer* buffer = getData(rel_sec_users);
 	Record* record = buffer->getTempRecord();
 	record->nullify();
 
 	int charset = CS_METADATA;
+
+	const MetaName& plugName(managers[cachePosition].first);
+	putField(threadDbb, record,
+			 DumpField(f_sec_plugin, VALUE_STRING, static_cast<USHORT>(plugName.length()), plugName.c_str()),
+			 charset);
 
 	if (u->userName()->entered())
 	{
@@ -474,18 +556,22 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 
 	try
 	{
+		openAllManagers();
+
 		threadDbb = tdbb;
 		MemoryPool* const pool = threadDbb->getTransaction()->tra_pool;
 		allocBuffer(threadDbb, *pool, rel_sec_users);
 		allocBuffer(threadDbb, *pool, rel_sec_user_attributes);
 
-		FillSnapshot fillSnapshot(this);
+		for (FillSnapshot fillSnapshot(this); fillSnapshot.pos < managers.getCount(); ++fillSnapshot.pos)
+		{
+			LocalStatus status;
+			Auth::StackUserData u;
+			u.op = Auth::DIS_OPER;
 
-		LocalStatus status;
-		Auth::StackUserData u;
-		u.op = Auth::DIS_OPER;
-		int errcode = manager->execute(&status, &u, &fillSnapshot);
-		checkSecurityResult(errcode, &status, "Unknown", &u);
+			int errcode = managers[fillSnapshot.pos].second->execute(&status, &u, &fillSnapshot);
+			checkSecurityResult(errcode, &status, "Unknown", &u);
+		}
 	}
 	catch (const Exception&)
 	{

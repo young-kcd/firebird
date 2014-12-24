@@ -50,6 +50,15 @@ Get::Get(Config* firebirdConf)
 	}
 }
 
+Get::Get(const char* plugName)
+	: GetPlugins<Firebird::IManagement>(IPluginManager::AuthUserManagement, plugName)
+{
+	if (!hasData())
+	{
+		raise();
+	}
+}
+
 void UserData::clear(Firebird::IStatus*)
 {
 	op = 0;

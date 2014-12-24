@@ -122,6 +122,7 @@
 	FIELD(fld_scn			, nam_scn			, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
 
 	FIELD(fld_specific_attr	, nam_specific_attr	, dtype_blob	, BLOB_SIZE					, isc_blob_text				, NULL		, true)
+	FIELD(fld_plugin_name	, nam_plugin		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
 
 	FIELD(fld_r_type		, nam_r_type		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 	FIELD(fld_prc_type		, nam_prc_type		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
@@ -183,7 +184,6 @@
 
 	FIELD(fld_map_name		, nam_map_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, false)
 	FIELD(fld_map_using		, nam_map_using		, dtype_text	, 1							, dsc_text_type_metadata	, NULL		, false)
-	FIELD(fld_map_plugin	, nam_map_plugin	, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_map_db		, nam_map_db		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, true)
 	FIELD(fld_map_from_type	, nam_map_from_type	, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, false)
 	FIELD(fld_map_from		, nam_map_from		, dtype_text	, 255						, dsc_text_type_metadata	, NULL		, true)

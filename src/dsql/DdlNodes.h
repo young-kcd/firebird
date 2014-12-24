@@ -1905,6 +1905,7 @@ public:
 		  firstName(NULL),
 		  middleName(NULL),
 		  lastName(NULL),
+		  plugin(NULL),
 		  comment(NULL),
 		  mode(md)
 	{ }
@@ -1940,6 +1941,7 @@ public:
 	Firebird::string* firstName;
 	Firebird::string* middleName;
 	Firebird::string* lastName;
+	Firebird::MetaName* plugin;
 	Firebird::string* comment;
 	Nullable<bool> adminRole;
 	Nullable<bool> active;
@@ -1962,10 +1964,13 @@ public:
 class DropUserNode : public DdlNode
 {
 public:
-	DropUserNode(MemoryPool& p, const Firebird::MetaName& aName)
+	DropUserNode(MemoryPool& p, const Firebird::MetaName& aName, const Firebird::MetaName* aPlugin = NULL)
 		: DdlNode(p),
-		  name(p, aName)
+		  name(p, aName),
+		  plugin(p)
 	{
+		if (aPlugin)
+			plugin = *aPlugin;
 	}
 
 public:
@@ -1981,6 +1986,7 @@ protected:
 
 public:
 	Firebird::MetaName name;
+	Firebird::MetaName plugin;
 };
 
 

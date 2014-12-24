@@ -4019,6 +4019,8 @@ drop_clause
 		{ $$ = newNode<DropSequenceNode>(*$2); }
 	| COLLATION symbol_collation_name
 		{ $$ = newNode<DropCollationNode>(*$2); }
+	| USER symbol_user_name USING PLUGIN valid_symbol_name
+		{ $$ = newNode<DropUserNode>(*$2, $5); }
 	| USER symbol_user_name
 		{ $$ = newNode<DropUserNode>(*$2); }
 	| PACKAGE symbol_package_name
@@ -6202,6 +6204,8 @@ user_fixed_opt($node)
 	| REVOKE ADMIN ROLE		{ setClause($node->adminRole, "ADMIN ROLE", Nullable<bool>(false)); }
 	| ACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<bool>(true)); }
 	| INACTIVE				{ setClause($node->active, "ACTIVE/INACTIVE", Nullable<bool>(false)); }
+	| USING PLUGIN valid_symbol_name
+							{ setClause($node->plugin, "USING PLUGIN", $3); }
 	;
 
 %type user_var_opts(<createAlterUserNode>)

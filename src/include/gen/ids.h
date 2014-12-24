@@ -625,6 +625,7 @@
 	const USHORT  f_sec_active = 4;
 	const USHORT  f_sec_admin = 5;
 	const USHORT  f_sec_comment = 6;
+	const USHORT  f_sec_plugin = 7;
 
 
 // Relation 44 (SEC$USER_ATTRIBUTES)

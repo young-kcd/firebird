@@ -823,6 +823,28 @@ namespace Firebird
 		bool operator>=(const char_type* str) const {return compare(str) >= 0;}
 		bool operator> (const char_type* str) const {return compare(str) >  0;}
 		bool operator!=(const char_type* str) const {return different(str);}
+
+		bool getWord(StringType& from, const char* sep)
+		{
+			from.alltrim(sep);
+			size_type p = from.find_first_of(sep);
+			if (p == npos)
+			{
+				if (from.isEmpty())
+				{
+					*this = "";
+					return false;
+				}
+				*this = from;
+				from = "";
+				return true;
+			}
+
+			*this = from.substr(0, p);
+			from = from.substr(p);
+			from.ltrim(sep);
+			return true;
+		}
     };
 
 	typedef StringBase<StringComparator> string;

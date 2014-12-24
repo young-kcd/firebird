@@ -28,6 +28,7 @@
 #include "../common/classes/ImplementHelper.h"
 #include "../common/classes/GetPlugins.h"
 #include "../common/classes/array.h"
+#include "../common/classes/MetaName.h"
 
 namespace Auth {
 
@@ -218,6 +219,8 @@ public:
 	CharField database, dba, dbaPassword, role;
 	AuthenticationBlock authenticationBlock;
 
+	Firebird::MetaName plugin;
+
 	// deprecated
 	CharField group;
 	IntField u, g;
@@ -252,6 +255,7 @@ class Get : public Firebird::GetPlugins<Firebird::IManagement>
 {
 public:
 	Get(Config* firebirdConf);
+	Get(const char* plugName);
 };
 
 int setGsecCode(int code, Firebird::IUser* iUser);
