@@ -1,3 +1,23 @@
+ 2014-12-24 15:23  alexpeshkoff 
+   M doc/sql.extensions/README.user_management
+Documentation changes for CORE-4607: Add support for having >1 UserManager in firebird.conf and use them from SQL
+
+ 2014-12-24 14:50  alexpeshkoff 
+   M src/common/classes/fb_string.h
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/include/gen/ids.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/jrd/fields.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+   M src/yvalve/PluginManager.cpp
+Implemented CORE-4607: Add support for having >1 UserManager in firebird.conf and use them from SQL
+
  2014-12-22 16:19  alexpeshkoff 
    M src/auth/SecurityDatabase/LegacyServer.cpp
 Fixed CORE-4646: Attach failure when using LegacyAuth on server and default configuration on client
