@@ -5763,6 +5763,7 @@ static processing_state show_users12()
 			 "when SEC$USER_NAME is distinct from null then ' ' else '-' end, "
 		"coalesce(MON$USER, SEC$USER_NAME), count(MON$USER) "
 		"from mon$attachments m full join sec$users u on m.MON$USER = u.SEC$USER_NAME "
+		"where coalesce(MON$SYSTEM_FLAG, 0) = 0 "
 		"group by MON$USER, SEC$USER_NAME order by coalesce(MON$USER, SEC$USER_NAME)";
 
 	Firebird::RefPtr<Firebird::IMetadataBuilder>
