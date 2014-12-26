@@ -342,7 +342,7 @@ static bool check_time(const tm& times);
 static bool check_timestamp(const tm& times, const int msec);
 static size_t chop_at(char target[], const size_t size);
 static void col_check(const TEXT*, unsigned*);
-static void copy_str(TEXT**, const TEXT**, bool*, const TEXT* const,
+static void copy_str(Firebird::string&, const TEXT**, bool*, const TEXT* const,
 	const TEXT* const, literal_string_type);
 static processing_state copy_table(TEXT*, TEXT*, TEXT*);
 static processing_state create_db(const TEXT*, TEXT*);
@@ -3458,7 +3458,7 @@ static void col_check(const TEXT* tabname, unsigned* colnumber)
 }
 
 
-static void copy_str(TEXT** output_str,
+static void copy_str(Firebird::string& output_str,
 					 const TEXT** input_str,
 					 bool* done,
 					 const TEXT* const str_begin,
@@ -3510,47 +3510,33 @@ static void copy_str(TEXT** output_str,
 	int slen = 0;
 	const TEXT* b1;
 
-	TEXT* temp_str = *output_str;
 	const TEXT* temp_local_stmt_str = *input_str;
 
 	switch (str_flag)
 	{
 	case SINGLE_QUOTED_STRING:
 		slen = str_end - temp_local_stmt_str;
-		if (temp_str != temp_local_stmt_str)
-		{
-			strncpy(temp_str, temp_local_stmt_str, slen);
-		}
-		*output_str = temp_str + slen;
+		output_str.append(temp_local_stmt_str, slen);
 		*input_str = str_end;
 		break;
 	case DOUBLE_QUOTED_STRING:
 		slen = str_begin - temp_local_stmt_str;
-		if (temp_str != temp_local_stmt_str)
-		{
-			strncpy(temp_str, temp_local_stmt_str, slen);
-		}
-		temp_str += slen;
-		*temp_str = SINGLE_QUOTE;
-		temp_str++;
+		output_str.append(temp_local_stmt_str, slen);
+		output_str += SINGLE_QUOTE;
 		b1 = str_begin + 1;
 		while (b1 < str_end)
 		{
-			*temp_str = *b1;
-			temp_str++;
+			output_str += *b1;
 			switch (*b1)
 			{
 			case SINGLE_QUOTE:
-				*temp_str = SINGLE_QUOTE;
-				temp_str++;
+				output_str += SINGLE_QUOTE;
 				break;
 			case DBL_QUOTE:
 				b1++;
 				if (*b1 != DBL_QUOTE)
 				{
-					temp_str--;
-					*temp_str = SINGLE_QUOTE;
-					temp_str++;
+					output_str[output_str.length() - 1] = SINGLE_QUOTE;
 					b1--;
 				}
 				break;
@@ -3559,20 +3545,12 @@ static void copy_str(TEXT** output_str,
 			}
 			b1++;
 		}
-		*output_str = temp_str;
 		*input_str = b1;
 		break;
 	case NO_MORE_STRING:
-		slen = static_cast<int>(strlen(temp_local_stmt_str));
-		if (temp_str != temp_local_stmt_str)
-		{
-			strncpy(temp_str, temp_local_stmt_str, slen);
-		}
-		temp_str += slen;
-		*temp_str = '\0';
+		output_str += temp_local_stmt_str;
 		*done = true;
-		*output_str = temp_str;
-		*input_str = temp_local_stmt_str + slen;
+		*input_str = temp_local_stmt_str + strlen(temp_local_stmt_str);
 		break;
 	default:
 		break;
@@ -3690,6 +3668,16 @@ static processing_state copy_table(TEXT* source,
 }
 
 
+static void appendClause(Firebird::string& to, const char* label, const TEXT* value)
+{
+	to += ' ';
+	to += label;
+	to += " \'";
+	to += value;
+	to += "\' ";
+}
+
+
 static processing_state create_db(const TEXT* statement, TEXT* d_name)
 {
 /**************************************
@@ -3704,8 +3692,9 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
  *
  *	Parameters:  statement == the entire statement for processing.
  *
- * Note: SQL ROLE settings are ignored - the newly created database
- *	will not have any roles defined in it.
+ * Note: SQL ROLE setting must be taken into an account no matter
+ *	that the newly created database will not have any roles defined
+ *	in it. Role may affect right to create new database.
  *
  **************************************/
 	processing_state ret = SKIP;
@@ -3713,145 +3702,80 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	// Disconnect from the database and cleanup
 	ISQL_disconnect_database(false);
 
-	SLONG arglength = static_cast<SLONG>(strlen(statement) + strlen(isqlGlob.User) + strlen(Password) + 24);
-	if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
-		arglength += static_cast<SLONG>(strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' "));
-	TEXT* local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
-	if (!local_statement)
-		return (FAIL);
-	TEXT usr[USER_LENGTH];
-	TEXT psw[PASSWORD_LENGTH];
-
-	strcpy(local_statement, statement);
-
-	TEXT quote = DBL_QUOTE;
-	const TEXT* p = NULL;
-
-	// If there is a user parameter, we will set it into the create stmt.
-	if (global_usr || global_psw ||
-		(*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)))
+	for (int createWithoutRole = 0; createWithoutRole < 2; ++createWithoutRole)
 	{
-		strip_quotes(isqlGlob.User, usr);
-		strip_quotes(Password, psw);
-		// Look for the quotes on the database name and find the close quotes.
-		// Use '"' first, if not successful try '''.
-		// CVC: Again, this is wrong with embedded quotes.
-		// Maybe IUTILS_remove_and_unescape_quotes coupled with IUTILS_copy_SQL_id could work.
-		const TEXT* q = strchr(statement, quote);
-		if (!q)
-		{
-			quote = SINGLE_QUOTE;
-			q = strchr(statement, quote);
-		}
+		ret = SKIP;
+		TEXT usr[USER_LENGTH];
+		TEXT psw[PASSWORD_LENGTH];
+		TEXT role[ROLE_LENGTH];
 
-		if (q)
+		Firebird::string local_statement(statement);
+
+		TEXT quote = DBL_QUOTE;
+		const TEXT* p = NULL;
+
+		// If there is a user parameter, we will set it into the create stmt.
+		if (global_usr || global_psw ||
+			(*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)))
 		{
-			// Set quote to match open quote
-			quote = *q;
-			q++;
-			p = strchr(q, quote);
-			if (p)
+			strip_quotes(isqlGlob.User, usr);
+			strip_quotes(Password, psw);
+			strip_quotes(isqlGlob.Role, role);
+			// Look for the quotes on the database name and find the close quotes.
+			// Use '"' first, if not successful try '''.
+			// CVC: Again, this is wrong with embedded quotes.
+			// Maybe IUTILS_remove_and_unescape_quotes coupled with IUTILS_copy_SQL_id could work.
+			const TEXT* q = strchr(statement, quote);
+			if (!q)
 			{
-				p++;
-				const ptrdiff_t slen = p - statement;
-				local_statement[slen] = '\0';
-				if (isqlGlob.SQL_dialect == 1)
+				quote = SINGLE_QUOTE;
+				q = strchr(statement, quote);
+			}
+
+			if (q)
+			{
+				// Set quote to match open quote
+				quote = *q;
+				q++;
+				p = strchr(q, quote);
+				if (p)
 				{
-					if (global_usr)
-						sprintf(local_statement + strlen(local_statement),
-								" USER \'%s\' ", usr);
-					if (global_psw)
-						sprintf(local_statement + strlen(local_statement),
-								" PASSWORD \'%s\' ", psw);
-					if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
-						sprintf(local_statement + strlen(local_statement),
-								" SET NAMES \'%s\' ", setValues.ISQL_charset);
-					sprintf(local_statement + strlen(local_statement), "%s", p);
+					p++;
+					const ptrdiff_t slen = p - statement;
+					local_statement.resize(slen);
+					if (isqlGlob.SQL_dialect == 1)
+					{
+						if (global_usr)
+							appendClause(local_statement, "USER", usr);
+						if (global_psw)
+							appendClause(local_statement, "PASSWORD", psw);
+						if (global_role && createWithoutRole == 0)
+							appendClause(local_statement, "ROLE", role);
+						if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
+							appendClause(local_statement, "SET NAMES", setValues.ISQL_charset);
+						local_statement += p;
+					}
 				}
 			}
 		}
-	}
 
-	SLONG cnt = 0;
-	if ((isqlGlob.SQL_dialect == 0) || (isqlGlob.SQL_dialect > 1))
-	{
-		const TEXT* q = strchr(statement, SINGLE_QUOTE);
-		while (q)
+		SLONG cnt = 0;
+		if ((isqlGlob.SQL_dialect == 0) || (isqlGlob.SQL_dialect > 1))
 		{
-			cnt++;
-			const TEXT* l = q + 1;
-			q = strchr(l, SINGLE_QUOTE);
-		}
-
-		TEXT* new_local_statement = NULL;
-		if (cnt > 0)
-		{
-			arglength = static_cast<SLONG>(strlen(statement) +
-				strlen(isqlGlob.User) + strlen(Password) + 24 + 2 * cnt);
-
-			if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
-				arglength += static_cast<SLONG>(strlen(setValues.ISQL_charset) + strlen(" SET NAMES \'\' "));
-			new_local_statement = (TEXT*) ISQL_ALLOC(arglength + 1);
-
-			if (!new_local_statement)
+			const TEXT* q = strchr(statement, SINGLE_QUOTE);
+			while (q)
 			{
-				ISQL_FREE(local_statement);
-				return (FAIL);
+				cnt++;
+				const TEXT* l = q + 1;
+				q = strchr(l, SINGLE_QUOTE);
 			}
-		}
 
-		TEXT errbuf[MSG_LENGTH];
+			Firebird::string new_local_statement;
+			TEXT errbuf[MSG_LENGTH];
 
-		TEXT* temp_str;
-		if (new_local_statement)
-			temp_str = new_local_statement;
-		else
-			temp_str = local_statement;
-
-		const TEXT* temp_local_stmt_str = local_statement;
-		bool done = false;
-		while (!done)
-		{
-			const TEXT* str_begin = NULL;
-			const TEXT* str_end = NULL;
-			literal_string_type str_flag = INIT_STR_FLAG;
-			get_str(temp_local_stmt_str, &str_begin, &str_end, &str_flag);
-			if (str_flag == INCOMPLETE_STRING)
-			{
-				IUTILS_msg_get(INCOMPLETE_STR, errbuf, SafeArg() << "create database statement");
-				STDERROUT(errbuf);
-				ISQL_FREE(local_statement);
-				if (new_local_statement)
-					ISQL_FREE(new_local_statement);
-				return (FAIL);
-			}
-			copy_str(&temp_str, &temp_local_stmt_str, &done, str_begin, str_end, str_flag);
-		}
-
-		if (new_local_statement)
-			temp_str = new_local_statement;
-		else
-			temp_str = local_statement;
-
-		if (global_usr)
-			sprintf(temp_str + strlen(temp_str), " USER \'%s\' ", usr);
-
-		if (global_psw)
-			sprintf(temp_str + strlen(temp_str), " PASSWORD \'%s\' ", psw);
-
-		if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
-			sprintf(temp_str + strlen(temp_str), " SET NAMES \'%s\' ", setValues.ISQL_charset);
-
-		if (new_local_statement)
-			temp_str = new_local_statement + strlen(new_local_statement);
-		else
-			temp_str = local_statement + strlen(local_statement);
-
-		if (p && strlen(p) > 0)
-		{
-			temp_local_stmt_str = p;
-			bool done2 = false;
-			while (!done2)
+			const TEXT* temp_local_stmt_str = local_statement.c_str();
+			bool done = false;
+			while (!done)
 			{
 				const TEXT* str_begin = NULL;
 				const TEXT* str_end = NULL;
@@ -3861,33 +3785,63 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 				{
 					IUTILS_msg_get(INCOMPLETE_STR, errbuf, SafeArg() << "create database statement");
 					STDERROUT(errbuf);
-					ISQL_FREE(local_statement);
-					if (new_local_statement)
-						ISQL_FREE(new_local_statement);
 					return (FAIL);
 				}
-				copy_str(&temp_str, &temp_local_stmt_str, &done2,
-					 str_begin, str_end, str_flag);
+				copy_str(new_local_statement, &temp_local_stmt_str, &done, str_begin, str_end, str_flag);
 			}
-		}
 
-		if (new_local_statement)
-		{
-			ISQL_FREE(local_statement);
+			if (global_usr)
+				appendClause(new_local_statement, "USER", usr);
+			if (global_psw)
+				appendClause(new_local_statement, "PASSWORD", psw);
+			if (global_role && createWithoutRole == 0)
+				appendClause(new_local_statement, "ROLE", role);
+			if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET))
+				appendClause(new_local_statement, "SET NAMES", setValues.ISQL_charset);
+
+			if (p && strlen(p) > 0)
+			{
+				temp_local_stmt_str = p;
+				bool done2 = false;
+				while (!done2)
+				{
+					const TEXT* str_begin = NULL;
+					const TEXT* str_end = NULL;
+					literal_string_type str_flag = INIT_STR_FLAG;
+					get_str(temp_local_stmt_str, &str_begin, &str_end, &str_flag);
+					if (str_flag == INCOMPLETE_STRING)
+					{
+						IUTILS_msg_get(INCOMPLETE_STR, errbuf, SafeArg() << "create database statement");
+						STDERROUT(errbuf);
+						return (FAIL);
+					}
+					copy_str(new_local_statement, &temp_local_stmt_str, &done2, str_begin, str_end, str_flag);
+				}
+			}
+
 			local_statement = new_local_statement;
 		}
-	}
 
-	// execute the create statement
-	// If the isqlGlob.SQL_dialect is not set or set to 2, create the database
-	// as a dialect 3 database.
-	unsigned dialect =
-		(isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION) ?
-			requested_SQL_dialect : isqlGlob.SQL_dialect;
-	DB = Firebird::UtlInterfacePtr()->executeCreateDatabase(fbStatus, 0, local_statement, dialect, NULL);
-	if (ISQL_errmsg(fbStatus))
-	{
-		ret = FAIL;
+		// execute the create statement
+		// If the isqlGlob.SQL_dialect is not set or set to 2, create the database
+		// as a dialect 3 database.
+		unsigned dialect =
+			(isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION) ?
+				requested_SQL_dialect : isqlGlob.SQL_dialect;
+		DB = Firebird::UtlInterfacePtr()->executeCreateDatabase(fbStatus, local_statement.length(),
+			local_statement.c_str(), dialect, NULL);
+
+		if ((!DB) && (createWithoutRole == 0) && (fbStatus->getErrors()[1] == isc_dsql_error))
+		{
+			// OLd server failed to parse ROLE clause
+			continue;
+		}
+
+		if (ISQL_errmsg(fbStatus))
+		{
+			ret = FAIL;
+		}
+		break;
 	}
 
 	if (DB)
@@ -4022,8 +3976,6 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 
 	}
 
-	if (local_statement)
-		ISQL_FREE(local_statement);
 	return (ret);
 }
 

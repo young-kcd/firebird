@@ -7128,7 +7128,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 
 			if (creating && config)		// when config is NULL we are in error handler
 			{
-				if (!checkCreateDatabaseGrant(name, trusted_role, (*config)->getSecurityDatabase()))
+				if (!checkCreateDatabaseGrant(name, trusted_role, options.dpb_role_name, (*config)->getSecurityDatabase()))
 					(Arg::Gds(isc_no_priv) << "CREATE" << "DATABASE" << aliasName).raise();
 			}
 		}

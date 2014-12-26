@@ -46,7 +46,8 @@ enum pp_vals {
 	PP_PAGES = 8,
 	PP_PAGE = 9,
 	PP_SET = 10,
-	PP_NAMES = 11
+	PP_NAMES = 11,
+	PP_ROLE = 12
 };
 
 
@@ -79,6 +80,7 @@ static const pp_table pp_symbols[] =
 	{"PAGE", 4, PP_PAGE},
 	{"SET", 3, PP_SET},
 	{"NAMES", 5, PP_NAMES},
+	{"ROLE", 4, PP_ROLE},
 	{"", 0, 0}
 };
 
@@ -211,6 +213,17 @@ bool PREPARSE_execute(IStatus* status, Why::YAttachment** ptrAtt,
 						}
 
 						dpb.insertString(isc_dpb_password, token);
+						matched = true;
+						break;
+
+					case PP_ROLE:
+						if (get_token(status, STRING, false, &stmt, stmt_end, token))
+						{
+							get_out = true;
+							break;
+						}
+
+						dpb.insertString(isc_dpb_sql_role_name, token);
 						matched = true;
 						break;
 

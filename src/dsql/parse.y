@@ -1841,6 +1841,7 @@ db_initial_desc($alterDatabaseNode)
 db_initial_option($alterDatabaseNode)
 	: KW_PAGE_SIZE equals pos_short_integer
 	| USER utf_string
+	| ROLE utf_string
 	| PASSWORD utf_string
 	| SET NAMES utf_string
 	| LENGTH equals long_integer page_noise

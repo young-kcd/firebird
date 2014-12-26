@@ -100,16 +100,56 @@ bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransactio
 
 namespace Jrd {
 
-bool checkCreateDatabaseGrant(Firebird::string& userName, Firebird::string& trustedRole,
-	const char* securityDb)
+bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
+	const string& sqlRole, const char* securityDb)
 {
-	if (userName == SYSDBA_USER_NAME || trustedRole == ADMIN_ROLE)
+	if (userName == SYSDBA_USER_NAME)
 		return true;
 
 	RefPtr<IAttachment> att;
 	RefPtr<ITransaction> tra;
 	if (!openDb(securityDb, att, tra))
 		return false;
+
+	string role(sqlRole);
+	if (role.hasData())
+	{
+		role.upper();
+
+		// We need to check is admin role granted to userName in security DB
+		const char* sql = "select count(*) from RDB$USER_PRIVILEGES "
+			"where RDB$USER = ? and RDB$RELATION_NAME = ? and RDB$PRIVILEGE = 'M'";
+
+		Message prm;
+		Field<Varying> u(prm, MAX_SQL_IDENTIFIER_LEN);
+		Field<Varying> r(prm, MAX_SQL_IDENTIFIER_LEN);
+		u = userName.c_str();
+		r = role.c_str();
+
+		Message result;
+		Field<ISC_INT64> cnt(result);
+
+		LocalStatus st;
+		att->execute(&st, tra, 0, sql, SQL_DIALECT_V6, prm.getMetadata(), prm.getBuffer(),
+			result.getMetadata(), result.getBuffer());
+
+		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+		{
+			// isc_dsql_relation_err when exec SQL - i.e. table RDB$USER_PRIVILEGES
+			// is missing due to non-FB security DB
+			if (!fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
+				check("IAttachment::execute", &st);
+
+			role = "";
+		}
+		else if (cnt == 0)
+			role = "";
+	}
+	else
+		role = trustedRole;
+
+	if (role == ADMIN_ROLE)
+		return true;
 
 	Message gr;
 	Field<ISC_SHORT> uType(gr);
@@ -118,8 +158,8 @@ bool checkCreateDatabaseGrant(Firebird::string& userName, Firebird::string& trus
 	Field<Varying> r(gr, MAX_SQL_IDENTIFIER_LEN);
 	uType = obj_user;
 	u = userName.c_str();
-	rType = trustedRole.hasData() ? obj_sql_role : 255;
-	r = trustedRole.c_str();
+	rType = role.hasData() ? obj_sql_role : 255;
+	r = role.c_str();
 
 	Message result;
 	Field<ISC_INT64> cnt(result);

@@ -462,3 +462,16 @@ unsuccessful metadata update
 
 Also, the name RDB$GENERATORS does not refer anymore to an invisible system
 generator. The name can be applied to an user generator.
+
+
+18) Added ROLE clause to CREATE DATABASE statement.
+(Alex Peshkov)
+
+For 3.0, setting role when creating database may affect user rights to create databases.
+This can happen if user is granted (in appropriate security database) system role RDB$ADMIN
+or some ordinary role which in turn is granted CREATE DATABASE right. When using API call
+IProvider::createDatabase (or isc_create_database) there are no problems with placing
+isc_dpb_sql_role_name tag with required value into DPB, but CREATE DATABASE statement
+missed ROLE clause before 3.0.
+
+ISQL now also takes into an account global role setting when creating databases.
