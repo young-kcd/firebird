@@ -138,14 +138,14 @@ void SecurityDatabaseManagement::start(Firebird::IStatus* st, Firebird::ILogonIn
 			dpb.insertBytes(isc_dpb_auth_block, authBlock, authBlockSize);
 		else
 		{
-			const char* str = logonInfo->name();
-			if (str && str[0])
-				dpb.insertString(isc_dpb_trusted_auth, str, fb_strlen(str));
-
-			str = logonInfo->role();
-			if (str && str[0])
-				dpb.insertString(isc_dpb_sql_role_name, str, fb_strlen(str));
+			const char* logon = logonInfo->name();
+			if (logon && logon[0])
+				dpb.insertString(isc_dpb_trusted_auth, logon, fb_strlen(logon));
 		}
+
+		const char* role = logonInfo->role();
+		if (role && role[0])
+			dpb.insertString(isc_dpb_sql_role_name, role, fb_strlen(role));
 
 		ISC_STATUS_ARRAY status;
 		if (isc_attach_database(status, 0, secDbName, &database,
