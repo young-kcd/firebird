@@ -1,3 +1,21 @@
+ 2014-12-26 15:32  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+Fixed CORE-4652: Legacy user manager ignores explicitly set SQL role
+
+ 2014-12-26 15:04  alexpeshkoff 
+   M src/isql/show.epp
+Skip system attachmnets in SHOW USERS
+
+ 2014-12-26 14:10  alexpeshkoff 
+   M doc/sql.extensions/README.ddl.txt
+   M src/dsql/parse.y
+   M src/isql/isql.epp
+   M src/jrd/DbCreators.cpp
+   M src/jrd/DbCreators.h
+   M src/jrd/jrd.cpp
+   M src/yvalve/preparse.cpp
+Fixed CORE-4651: CREATE DATABASE fails for the user having RDB$ADMIN rights in security database
+
  2014-12-24 15:23  alexpeshkoff 
    M doc/sql.extensions/README.user_management
 Documentation changes for CORE-4607: Add support for having >1 UserManager in firebird.conf and use them from SQL
