@@ -3710,7 +3710,7 @@ YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCall
 	  attachment(aAttachment),
 	  callback(aCallback)
 	***/
-	: YHelper<YEvents, Firebird::Api::IEventsImpl<YEvents> >(aNext)
+	: YHelper(aNext)
 {
 	attachment = aAttachment;
 	callback = aCallback;
@@ -3755,7 +3755,7 @@ void YEvents::cancel(IStatus* status)
 
 
 YRequest::YRequest(YAttachment* aAttachment, IRequest* aNext)
-	: YHelper<YRequest, Firebird::Api::IRequestImpl<YRequest> >(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment),
 	  userHandle(NULL)
 {
@@ -3894,7 +3894,7 @@ void YRequest::free(IStatus* status)
 
 
 YBlob::YBlob(YAttachment* aAttachment, YTransaction* aTransaction, IBlob* aNext)
-	: YHelper<YBlob, Firebird::Api::IBlobImpl<YBlob> >(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment),
 	  transaction(aTransaction)
 {
@@ -4015,7 +4015,7 @@ int YBlob::seek(IStatus* status, int mode, int offset)
 
 
 YStatement::YStatement(YAttachment* aAttachment, IStatement* aNext)
-	: YHelper<YStatement, Firebird::Api::IStatementImpl<YStatement> >(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment), cursor(NULL), input(true), output(false)
 {
 	attachment->childStatements.add(this);
@@ -4272,7 +4272,7 @@ void YStatement::free(IStatus* status)
 
 
 YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, IResultSet* aNext)
-	: YHelper<YResultSet, Firebird::Api::IResultSetImpl<YResultSet> >(aNext),
+	: YHelper(aNext),
 	  attachment(anAttachment),
 	  transaction(aTransaction),
 	  statement(NULL)
@@ -4283,7 +4283,7 @@ YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction, IR
 
 YResultSet::YResultSet(YAttachment* anAttachment, YTransaction* aTransaction,
 			YStatement* aStatement, IResultSet* aNext)
-	: YHelper<YResultSet, Firebird::Api::IResultSetImpl<YResultSet> >(aNext),
+	: YHelper(aNext),
 	  attachment(anAttachment),
 	  transaction(aTransaction),
 	  statement(aStatement)
@@ -4508,7 +4508,7 @@ void YResultSet::close(IStatus* status)
 
 
 YTransaction::YTransaction(YAttachment* aAttachment, ITransaction* aNext)
-	: YHelper<YTransaction, Firebird::Api::ITransactionImpl<YTransaction> >(aNext),
+	: YHelper(aNext),
 	  attachment(aAttachment),
 	  childBlobs(getPool()),
 	  childCursors(getPool()),
@@ -4763,7 +4763,7 @@ YTransaction* YTransaction::enterDtc(IStatus* status)
 
 
 YAttachment::YAttachment(IProvider* aProvider, IAttachment* aNext, const PathName& aDbPath)
-	: YHelper<YAttachment, Firebird::Api::IAttachmentImpl<YAttachment> >(aNext),
+	: YHelper(aNext),
 	  provider(aProvider),
 	  dbPath(getPool(), aDbPath),
 	  childBlobs(getPool()),
@@ -5295,7 +5295,7 @@ void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTra
 
 
 YService::YService(IProvider* aProvider, IService* aNext, bool utf8)
-	: YHelper<YService, Firebird::Api::IServiceImpl<YService> >(aNext),
+	: YHelper(aNext),
 	  provider(aProvider),
 	  utf8Connection(utf8)
 {

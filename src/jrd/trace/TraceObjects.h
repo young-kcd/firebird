@@ -138,7 +138,7 @@ class TraceBLRStatementImpl : public BLRPrinter<TraceBLRStatementImpl>
 {
 public:
 	TraceBLRStatementImpl(const jrd_req* stmt, PerformanceInfo* perf) :
-		BLRPrinter<TraceBLRStatementImpl>(stmt->getStatement()->blr.begin(), stmt->getStatement()->blr.getCount()),
+		BLRPrinter(stmt->getStatement()->blr.begin(), stmt->getStatement()->blr.getCount()),
 		m_stmt(stmt),
 		m_perf(perf)
 	{}
@@ -156,7 +156,7 @@ class TraceFailedBLRStatement : public BLRPrinter<TraceFailedBLRStatement>
 {
 public:
 	TraceFailedBLRStatement(const unsigned char* blr, unsigned length) :
-		BLRPrinter<TraceFailedBLRStatement>(blr, length)
+		BLRPrinter(blr, length)
 	{}
 
 	int getStmtID()				{ return 0; }
