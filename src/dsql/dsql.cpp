@@ -83,8 +83,8 @@ static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
 static void		map_in_out(dsql_req*, bool, const dsql_msg*, IMessageMetadata*, UCHAR*,
 	const UCHAR* = NULL);
 static USHORT	parse_metadata(dsql_req*, IMessageMetadata*, const Array<dsql_par*>&);
-static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
-static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, USHORT, bool);
+static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
+static dsql_req* prepareStatement(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const);
 static void		release_statement(DsqlCompiledStatement* statement);
 static void		sql_info(thread_db*, dsql_req*, ULONG, const UCHAR*, ULONG, UCHAR*);
@@ -104,6 +104,8 @@ static inline bool reqTypeWithCursor(DsqlCompiledStatement::Type type)
 
 	return false;
 }
+
+const USHORT PARSER_VERSION = 2;
 
 #ifdef DSQL_DEBUG
 unsigned DSQL_debug = 0;
@@ -349,41 +351,9 @@ dsql_req* DSQL_prepare(thread_db* tdbb,
 
 	try
 	{
-		// Figure out which parser version to use
-		// Since the API to dsql8_prepare is public and can not be changed, there needs to
-		// be a way to send the parser version to DSQL so that the parser can compare the keyword
-		// version to the parser version.  To accomplish this, the parser version is combined with
-		// the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
-		// and client dialect are separated and passed on to their final destinations.  The information
-		// is combined as follows:
-		//     Dialect * 10 + parser_version
-		//
-		// and is extracted in dsql8_prepare_statement as follows:
-		//      parser_version = ((dialect *10)+parser_version)%10
-		//      client_dialect = ((dialect *10)+parser_version)/10
-		//
-		// For example, parser_version = 1 and client dialect = 1
-		//
-		//  combined = (1 * 10) + 1 == 11
-		//
-		//  parser = (combined) %10 == 1
-		//  dialect = (combined) / 19 == 1
-		//
-		// If the parser version is not part of the dialect, then assume that the
-		// connection being made is a local classic connection.
-
-		USHORT parser_version;
-		if ((dialect / 10) == 0)
-			parser_version = 2;
-		else
-		{
-			parser_version = dialect % 10;
-			dialect /= 10;
-		}
-
 		// Allocate a new request block and then prepare the request.
 
-		request = prepareRequest(tdbb, database, transaction, length, string, dialect, parser_version,
+		request = prepareRequest(tdbb, database, transaction, length, string, dialect,
 			isInternalRequest);
 
 		// Can not prepare a CREATE DATABASE/SCHEMA statement
@@ -585,40 +555,8 @@ void DSQL_execute_immediate(thread_db* tdbb, Jrd::Attachment* attachment, jrd_tr
 
 	try
 	{
-		// Figure out which parser version to use
-		// Since the API to dsql8_execute_immediate is public and can not be changed, there needs to
-		// be a way to send the parser version to DSQL so that the parser can compare the keyword
-		// version to the parser version.  To accomplish this, the parser version is combined with
-		// the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
-		// and client dialect are separated and passed on to their final destinations.  The information
-		// is combined as follows:
-		//     Dialect * 10 + parser_version
-		//
-		// and is extracted in dsql8_execute_immediate as follows:
-		//      parser_version = ((dialect *10)+parser_version)%10
-		//      client_dialect = ((dialect *10)+parser_version)/10
-		//
-		// For example, parser_version = 1 and client dialect = 1
-		//
-		//  combined = (1 * 10) + 1 == 11
-		//
-		//  parser = (combined) % 10 == 1
-		//  dialect = (combined) / 19 == 1
-		//
-		// If the parser version is not part of the dialect, then assume that the
-		// connection being made is a local classic connection.
-
-		USHORT parser_version;
-		if ((dialect / 10) == 0)
-			parser_version = 2;
-		else
-		{
-			parser_version = dialect % 10;
-			dialect /= 10;
-		}
-
 		request = prepareRequest(tdbb, database, *tra_handle, length, string, dialect,
-			parser_version, isInternalRequest);
+			isInternalRequest);
 
 		const DsqlCompiledStatement* statement = request->getStatement();
 
@@ -1373,19 +1311,17 @@ static void checkD(IStatus* st)
 // Prepare a request for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareRequest(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG textLength, const TEXT* text, USHORT clientDialect, USHORT parserVersion,
-	bool isInternalRequest)
+	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
 {
 	return prepareStatement(tdbb, database, transaction, textLength, text, clientDialect,
-		parserVersion, isInternalRequest);
+		isInternalRequest);
 }
 
 
 // Prepare a statement for execution. Return SQL status code.
 // Note: caller is responsible for pool handling.
 static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* transaction,
-	ULONG textLength, const TEXT* text, USHORT clientDialect, USHORT parserVersion,
-	bool isInternalRequest)
+	ULONG textLength, const TEXT* text, USHORT clientDialect, bool isInternalRequest)
 {
 	if (text && textLength == 0)
 		textLength = static_cast<ULONG>(strlen(text));
@@ -1440,7 +1376,7 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 		// Parse the SQL statement.  If it croaks, return
 
 		Parser parser(*tdbb->getDefaultPool(), scratch, clientDialect,
-			scratch->getAttachment()->dbb_db_SQL_dialect, parserVersion, text, textLength,
+			scratch->getAttachment()->dbb_db_SQL_dialect, PARSER_VERSION, text, textLength,
 			tdbb->getAttachment()->att_charset);
 
 		request = parser.parse();

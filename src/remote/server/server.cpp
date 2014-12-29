@@ -105,8 +105,6 @@ public:
 
 namespace {
 
-const USHORT PARSER_VERSION = 2;
-
 // Disable attempts to brute-force logins/passwords
 class FailedLogin
 {
@@ -3100,8 +3098,9 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 	ITransaction* newTra = rdb->rdb_iface->execute(&status_vector, tra,
 		exnow->p_sqlst_SQL_str.cstr_length,
 		reinterpret_cast<const char*>(exnow->p_sqlst_SQL_str.cstr_address),
-		exnow->p_sqlst_SQL_dialect * 10 + PARSER_VERSION,
-		iMsgBuffer.metadata, iMsgBuffer.buffer, oMsgBuffer.metadata, oMsgBuffer.buffer);
+		exnow->p_sqlst_SQL_dialect,
+		iMsgBuffer.metadata, iMsgBuffer.buffer,
+		oMsgBuffer.metadata, oMsgBuffer.buffer);
 
 	if (op == op_exec_immediate2)
 	{
@@ -4026,7 +4025,7 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	statement->rsr_iface = rdb->rdb_iface->prepare(&status_vector,
 		iface, prepareL->p_sqlst_SQL_str.cstr_length,
 		reinterpret_cast<const char*>(prepareL->p_sqlst_SQL_str.cstr_address),
-		prepareL->p_sqlst_SQL_dialect * 10 + PARSER_VERSION, flags);
+		prepareL->p_sqlst_SQL_dialect, flags);
 	if (status_vector.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return this->send_response(sendL, 0, 0, &status_vector, false);
 
