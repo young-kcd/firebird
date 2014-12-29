@@ -245,7 +245,7 @@ public:
 
 private:
 	YTransaction(YTransaction* from)
-		: YHelper(from->next),
+		: YHelper<YTransaction, Firebird::Api::ITransactionImpl<YTransaction> >(from->next),
 		  attachment(from->attachment),
 		  childBlobs(getPool()),
 		  childCursors(getPool()),
