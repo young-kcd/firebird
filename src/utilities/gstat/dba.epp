@@ -1499,8 +1499,9 @@ static void analyze_index( const dba_rel* relation, dba_idx* index)
 			index->idx_packed_length += specials + node.length;
 
 			ULONG pp_sequence;
-			SSHORT slot, line;
+			USHORT slot, line;
 			node.recordNumber.decompose(tddba->max_records, tddba->dp_per_pp, line, slot, pp_sequence);
+
 			const ULONG pagno = pp_sequence * tddba->dp_per_pp + slot;
 			if (pagno != prior_pagno)
 				++index->idx_diff_pages;

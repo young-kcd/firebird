@@ -183,12 +183,12 @@ public:
 
 	inline void decompose(USHORT records_per_page, // ~400 (8k page)
 						  USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
-						  SSHORT& line,
-						  SSHORT& slot,
+						  USHORT& line,
+						  USHORT& slot,
 						  ULONG& pp_sequence) const
 	{
 		// Use explicit casts to suppress 64-bit truncation warnings
-		line = static_cast<SSHORT>(value % records_per_page);
+		line = static_cast<USHORT>(value % records_per_page);
 		const ULONG sequence = static_cast<ULONG>(value / records_per_page);
 		slot = sequence % data_pages_per_pointer_page;
 		pp_sequence = sequence / data_pages_per_pointer_page;
@@ -196,8 +196,8 @@ public:
 
 	inline void compose(USHORT records_per_page, // ~400 (8k page)
 						USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
-						SSHORT line,
-						SSHORT slot,
+						USHORT line,
+						USHORT slot,
 						ULONG pp_sequence)
 	{
 		value = (((SINT64) pp_sequence) * data_pages_per_pointer_page + slot) * records_per_page + line;
