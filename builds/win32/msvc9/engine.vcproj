@@ -380,6 +380,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\jrd\DbCreators.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\jrd\DebugInterface.cpp"
 				>
 			</File>
@@ -457,6 +461,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\jrd\lck.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\src\jrd\Mapping.cpp"
 				>
 			</File>
 			<File

@@ -428,6 +428,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\src\gpre\obj_cxx.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\src\gpre\par.cpp"
 				>
 			</File>

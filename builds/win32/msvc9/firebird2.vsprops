@@ -14,7 +14,7 @@
 		Name="VCCLCompilerTool"
 		AdditionalOptions="/EHsc-"
 		OmitFramePointers="true"
-		AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/libtommath"
+		AdditionalIncludeDirectories="../../../src/include;../../../src/include/gen;../../../extern/libtommath;../../../extern/icu/include;../../../extern/zlib"
 		ExceptionHandling="0"
 		RuntimeTypeInfo="false"
 		PrecompiledHeaderFile="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\$(ProjectName).pch"

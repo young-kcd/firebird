@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
+				AdditionalDependencies="ws2_32.lib ../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -126,7 +126,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
+				AdditionalDependencies="ws2_32.lib ../../../extern/libtommath/lib/$(PlatformName)\Release\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -187,7 +187,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib"
+				AdditionalDependencies="ws2_32.lib ../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -250,7 +250,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				AdditionalDependencies="../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib"
+				AdditionalDependencies="ws2_32.lib ../../../extern/libtommath/lib/$(PlatformName)\Debug\tommath.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -284,7 +284,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\src\common\config\os\win32\config_root.cpp"
+				RelativePath="..\..\..\src\yvalve\config\os\win32\config_root.cpp"
 				>
 			</File>
 			<File
