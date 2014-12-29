@@ -79,7 +79,7 @@ static void fragment(thread_db*, record_param*, SSHORT, const Compressor&, SSHOR
 static void extend_relation(thread_db*, jrd_rel*, WIN*, const Jrd::RecordStorageType type);
 static UCHAR* find_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, const Jrd::RecordStorageType type);
 static bool get_header(WIN*, SSHORT, record_param*);
-static pointer_page* get_pointer_page(thread_db*, jrd_rel*, RelationPages*, WIN*, USHORT, USHORT);
+static pointer_page* get_pointer_page(thread_db*, jrd_rel*, RelationPages*, WIN*, ULONG, USHORT);
 static rhd* locate_space(thread_db*, record_param*, SSHORT, PageStack&, Record*, const Jrd::RecordStorageType type);
 static void mark_full(thread_db*, record_param*);
 static void store_big_record(thread_db*, record_param*, PageStack&, const UCHAR*, ULONG, const Jrd::RecordStorageType type);
@@ -633,7 +633,7 @@ ULONG DPM_data_pages(thread_db* tdbb, jrd_rel* relation)
 	if (!pages)
 	{
 		WIN window(relPages->rel_pg_space_id, -1);
-		for (USHORT sequence = 0; true; sequence++)
+		for (ULONG sequence = 0; true; sequence++)
 		{
 			const pointer_page* ppage =
 				get_pointer_page(tdbb, relation, relPages, &window, sequence, LCK_read);
@@ -799,7 +799,7 @@ void DPM_delete( thread_db* tdbb, record_param* rpb, ULONG prior_page)
 
 	pointer_page* ppage;
 	SSHORT slot;
-	USHORT pp_sequence;
+	ULONG pp_sequence;
 
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
@@ -1028,7 +1028,7 @@ void DPM_delete_relation_pages(Jrd::thread_db* tdbb, Jrd::jrd_rel* relation,
 
 	SortedArray<ULONG, InlineStorage<ULONG, 256> > pages(*relation->rel_pool);
 
-	for (USHORT sequence = 0; true; sequence++)
+	for (ULONG sequence = 0; true; sequence++)
 	{
 		const pointer_page* ppage =
 			get_pointer_page(tdbb, relation, relPages, &window, sequence, LCK_read);
@@ -1415,7 +1415,7 @@ bool DPM_get(thread_db* tdbb, record_param* rpb, SSHORT lock_type)
 	rpb->rpb_prior = NULL;
 
 	// Find starting point
-	USHORT pp_sequence;
+	ULONG pp_sequence;
 	SSHORT slot, line;
 	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 	// Check if the record number is OK
@@ -1488,7 +1488,7 @@ ULONG DPM_get_blob(thread_db* tdbb,
 #endif
 
 	// Find starting point
-	USHORT pp_sequence;
+	ULONG pp_sequence;
 	SSHORT slot, line;
 
 	record_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
@@ -1630,7 +1630,7 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 	rpb->rpb_number.increment();
 
 	SSHORT slot, line;
-	USHORT pp_sequence;
+	ULONG pp_sequence;
 	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 
 #ifdef VIO_DEBUG
@@ -1853,7 +1853,7 @@ SLONG DPM_prefetch_bitmap(thread_db* tdbb, jrd_rel* relation, PageBitmap* bitmap
 	{
         SLONG dp_sequence;
         SSHORT line, slot;
-        USHORT pp_sequence;
+        ULONG pp_sequence;
 		DECOMPOSE(number, dbb->dbb_max_records, dp_sequence, line);
 		DECOMPOSE(dp_sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
@@ -2308,7 +2308,7 @@ static void check_swept(thread_db* tdbb, record_param* rpb)
 	WIN* window = &rpb->getWindow(tdbb);
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 
-	USHORT pp_sequence;
+	ULONG pp_sequence;
 	SSHORT slot, line;
 
 	rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp,
@@ -2674,7 +2674,8 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 	//     an exlusive latch.
 
 	pointer_page* ppage = NULL;
-	USHORT pp_sequence, slot = 0;
+	ULONG pp_sequence;
+	USHORT slot = 0;
 
 	for (pp_sequence = relPages->rel_slot_space;; pp_sequence++)
 	{
@@ -2755,7 +2756,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 	data_page* dpage = (data_page*) PAG_allocate_pages(tdbb, window, cntAlloc, cntAlloc != 1);
 	const PageNumber firstPage = window->win_page;
 
-	dpage->dpg_sequence = (ULONG) pp_sequence * dbb->dbb_dp_per_pp + slot;
+	dpage->dpg_sequence = pp_sequence * dbb->dbb_dp_per_pp + slot;
 	dpage->dpg_relation = relation->rel_id;
 	dpage->dpg_header.pag_type = pag_data;
 	if (type != DPM_primary) {
@@ -2770,7 +2771,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 		window->win_page = firstPage.getPageNum() + i;
 
 		dpage = (data_page*) CCH_fake(tdbb, window, 1);
-		dpage->dpg_sequence = (ULONG) pp_sequence * dbb->dbb_dp_per_pp + slot + i;
+		dpage->dpg_sequence = pp_sequence * dbb->dbb_dp_per_pp + slot + i;
 		dpage->dpg_relation = relation->rel_id;
 		dpage->dpg_header.pag_type = pag_data;
 		CCH_RELEASE_TAIL(tdbb, window);
@@ -3004,7 +3005,7 @@ static bool get_header(WIN* window, SSHORT line, record_param* rpb)
 
 static pointer_page* get_pointer_page(thread_db* tdbb,
 	   	 							  jrd_rel* relation, RelationPages* relPages,
-									  WIN* window, USHORT sequence, USHORT lock)
+									  WIN* window, ULONG sequence, USHORT lock)
 {
 /**************************************
  *
@@ -3090,7 +3091,7 @@ static rhd* locate_space(thread_db* tdbb,
 
 	if (type == DPM_secondary)
 	{
-		USHORT pp_sequence;
+		ULONG pp_sequence;
 		SSHORT slot, line;
 		rpb->rpb_number.decompose(dbb->dbb_max_records, dbb->dbb_dp_per_pp, line, slot, pp_sequence);
 		const pointer_page* ppage =
@@ -3121,7 +3122,7 @@ static rhd* locate_space(thread_db* tdbb,
 	// in OS for first candidate page.
 	int tries = dbb->dbb_config->getSharedCache() ? 8 : 0;
 
-	USHORT pp_sequence =
+	ULONG pp_sequence =
 		(type == DPM_primary ? relPages->rel_pri_data_space : relPages->rel_sec_data_space);
 
 	for (;; pp_sequence++)
@@ -3297,7 +3298,8 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 	RelationPages* relPages = relation->getPages(tdbb);
 	WIN pp_window(relPages->rel_pg_space_id, -1);
 
-	USHORT slot, pp_sequence;
+	USHORT slot;
+	ULONG pp_sequence;
 	DECOMPOSE(sequence, dbb->dbb_dp_per_pp, pp_sequence, slot);
 
 	// Fetch the pointer page, then the data page.  Since this is a case of

@@ -185,7 +185,7 @@ public:
 						  USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
 						  SSHORT& line,
 						  SSHORT& slot,
-						  USHORT& pp_sequence) const
+						  ULONG& pp_sequence) const
 	{
 		// Use explicit casts to suppress 64-bit truncation warnings
 		line = static_cast<SSHORT>(value % records_per_page);
@@ -198,7 +198,7 @@ public:
 						USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
 						SSHORT line,
 						SSHORT slot,
-						USHORT pp_sequence)
+						ULONG pp_sequence)
 	{
 		value = (((SINT64) pp_sequence) * data_pages_per_pointer_page + slot) * records_per_page + line;
 	}

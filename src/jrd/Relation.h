@@ -75,9 +75,9 @@ public:
 
 	SLONG	rel_index_root;			// index root page number
 	SLONG	rel_data_pages;			// count of relation data pages
-	USHORT	rel_slot_space;			// lowest pointer page with slot space
-	USHORT	rel_pri_data_space;		// lowest pointer page with primary data page space
-	USHORT	rel_sec_data_space;		// lowest pointer page with secondary data page space
+	ULONG	rel_slot_space;			// lowest pointer page with slot space
+	ULONG	rel_pri_data_space;		// lowest pointer page with primary data page space
+	ULONG	rel_sec_data_space;		// lowest pointer page with secondary data page space
 	USHORT	rel_pg_space_id;
 
 	RelationPages()
