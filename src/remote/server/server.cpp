@@ -3073,25 +3073,6 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
 		in_msg_type = 0;
 	}
 
-	// Since the API to GDS_DSQL_EXECUTE_IMMED is public and can not be changed, there needs to
-	// be a way to send the parser version to DSQL so that the parser can compare the keyword
-	// version to the parser version.  To accomplish this, the parser version is combined with
-	// the client dialect and sent across that way.  In dsql8_execute_immediate, the parser version
-	// and client dialect are separated and passed on to their final desintations.  The information
-	// is combined as follows:
-	//     Dialect * 10 + parser_version
-	//
-	// and is extracted in dsql8_execute_immediate as follows:
-	//      parser_version = ((dialect * 10) + parser_version) % 10
-	//      client_dialect = ((dialect * 10) + parser_version) / 10
-	//
-	// For example, parser_version = 1 and client dialect = 1
-	//
-	//  combined = (1 * 10) + 1 == 11
-	//
-	//  parser = (combined) % 10 == 1
-	//  dialect = (combined) / 10 == 1
-
 	InternalMessageBuffer iMsgBuffer(in_blr_length, in_blr, in_msg_length, in_msg);
 	InternalMessageBuffer oMsgBuffer(out_blr_length, out_blr, out_msg_length, out_msg);
 
@@ -3985,25 +3966,6 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	ITransaction* iface = NULL;
 	if (transaction)
 		iface = transaction->rtr_iface;
-
-	// Since the API to GDS_DSQL_PREPARE is public and can not be changed, there needs to
-	// be a way to send the parser version to DSQL so that the parser can compare the keyword
-	// version to the parser version.  To accomplish this, the parser version is combined with
-	// the client dialect and sent across that way.  In dsql8_prepare_statement, the parser version
-	// and client dialect are separated and passed on to their final desintations.  The information
-	// is combined as follows:
-	//     Dialect * 10 + parser_version
-	//
-	// and is extracted in dsql8_prepare_statement as follows:
-	//      parser_version = ((dialect * 10) + parser_version) % 10
-	//      client_dialect = ((dialect * 10) + parser_version) / 10
-	//
-	// For example, parser_version = 1 and client dialect = 1
-	//
-	//  combined = (1 * 10) + 1 == 11
-	//
-	//  parser = (combined) % 10 == 1
-	//  dialect = (combined) / 10 == 1
 
 	LocalStatus status_vector;
 
