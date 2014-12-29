@@ -3432,7 +3432,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 			return status[1];
 
-		for (unsigned u = 0; u < count; ++u)
+		for (SSHORT i = 0; i < count; ++i, ++vector)
 		{
 			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
 			ds->setWithParam(&status, attachment, vector->teb_tpb_length,
