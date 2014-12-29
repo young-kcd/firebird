@@ -68,7 +68,6 @@ public:
 	unsigned length() const { return len; }
 	unsigned short family() const;
 	unsigned short port() const;
-	bool isLocalhost() const;
 	void setPort(unsigned short x);
 	int connect(SOCKET s) const;
 	int accept(SOCKET s);
@@ -166,29 +165,6 @@ inline void SockAddr::setPort(unsigned short x)
 		return;
 	}
 	// exception?
-}
-
-
-inline bool SockAddr::isLocalhost() const
-{
-	const struct sockaddr* sa = (const struct sockaddr*) data;
-
-	switch(sa->sa_family)
-	{
-		case AF_INET:
-		{
-			const struct sockaddr_in* sa4 = (const struct sockaddr_in*) data;
-			return ((ntohl(sa4->sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET);
-		}
-
-		case AF_INET6:
-		{
-			const struct sockaddr_in6* sa6 = (const struct sockaddr_in6*) data;
-			return (memcmp(&sa6->sin6_addr, &in6addr_loopback, sizeof(in6_addr)) == 0);
-		}
-	}
-
-	return 0; // exception?
 }
 
 

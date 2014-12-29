@@ -1142,7 +1142,6 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 					  cnct->p_cnct_user_id.cstr_address,
 					  cnct->p_cnct_user_id.cstr_length);
 
-	bool user_verification = false;
 	for (id.rewind(); !id.isEof(); id.moveNext())
 	{
 		switch (id.getClumpTag())
@@ -1155,28 +1154,12 @@ static bool accept_connection(rem_port* port, const P_CNCT* cnct)
 			id.getString(host_name);
 			break;
 
-			// this case indicates that the client has requested that
-			// we force the user name/password to be verified against
-			// the security database
-		case CNCT_user_verification:
-			user_verification = true;
-			break;
-
 		default:
 			break;
 		}
 	}
 
 #ifndef WIN_NT
-	// See if user exists.  If not, reject connection
-	if (!user_verification)
-	{
-		if (!check_host(port))
-		{
-			return false;
-		}
-	}
-
 	{ // scope
 		// If the environment variable ISC_INET_SERVER_HOME is set,
 		// change the home directory to the specified directory.
@@ -1528,27 +1511,6 @@ static rem_port* aux_request( rem_port* port, PACKET* packet)
 	return new_port;
 }
 
-#ifndef WIN_NT
-static bool check_host(rem_port* port)
-{
-/**************************************
- *
- *	c h e c k _ h o s t 	 ( n o n - W i n d o w s )
- *
- **************************************
- *
- * Functional description
- *	Check the host on the other end of the socket to see if it's localhost
- *
- **************************************/
-
-	SockAddr address;
-	if (address.getpeername(port->port_handle) < 0)
-		return false;
-
-	return address.isLocalhost();
-}
-#endif // WIN_NT
 
 #if !(defined WIN_NT)
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM)
