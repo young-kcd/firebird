@@ -41,7 +41,7 @@ public:
 	enum TagType { TAG_SKIP, TAG_STRING, TAG_COMMAND_LINE };
 	typedef void ProcessString(string& s);
 
-	virtual TagType checkTag(UCHAR tag) = 0;
+	virtual TagType checkTag(UCHAR tag, const char** tagName) = 0;
 
 	void toUtf8(ClumpletWriter& pb, UCHAR utf8Tag);
 	void fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag);
@@ -53,13 +53,13 @@ private:
 class IntlDpb : public IntlParametersBlock
 {
 public:
-	TagType checkTag(UCHAR tag);
+	TagType checkTag(UCHAR tag, const char** tagName);
 };
 
 class IntlSpb : public IntlParametersBlock
 {
 public:
-	TagType checkTag(UCHAR tag);
+	TagType checkTag(UCHAR tag, const char** tagName);
 };
 
 class IntlSpbStart : public IntlParametersBlock
@@ -69,7 +69,7 @@ public:
 		: mode(0)
 	{ }
 
-	TagType checkTag(UCHAR tag);
+	TagType checkTag(UCHAR tag, const char** tagName);
 
 private:
 	UCHAR mode;
