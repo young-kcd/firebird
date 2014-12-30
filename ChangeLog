@@ -1,3 +1,60 @@
+ 2014-12-29 21:15  dimitr 
+   M src/jrd/RecordNumber.h
+   M src/jrd/dpm.epp
+   M src/utilities/gstat/dba.epp
+Type correctness (mostly signed->unsigned adjustments).
+
+ 2014-12-29 18:04  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed my severe bug in one of previous commits
+
+ 2014-12-29 17:40  dimitr 
+   M src/jrd/RecordNumber.h
+   M src/jrd/Relation.h
+   M src/jrd/dpm.epp
+   M src/utilities/gstat/dba.epp
+This commit is expected to fix CORE-4384: Problems when a table grows beyond 65535 pointer pages. Testing would be appreciated.
+
+ 2014-12-29 16:39  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+Completed fix for CORE-4605: Rename CryptPlugin parameter in config file
+
+ 2014-12-29 16:15  alexpeshkoff 
+   M src/remote/SockAddr.h
+   M src/remote/inet.cpp
+Cleanup - remove debris of pre-firebird authentication
+
+ 2014-12-29 15:48  dimitr 
+   M src/remote/server/server.cpp
+Cleanup.
+
+ 2014-12-29 15:45  dimitr 
+   M src/dsql/dsql.cpp
+   M src/remote/server/server.cpp
+Cleaned up the API from the legacy crap (fortunately, not needed these days).
+
+ 2014-12-29 12:00  starodubov 
+   M src/jrd/trace/TraceObjects.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Revert fix for CORE-4654, because it depends on unsupported compiler
+
+ 2014-12-29 11:08  starodubov 
+   M builds/win32/msvc8/common.vcproj
+   M builds/win32/msvc8/firebird2.vsprops
+   M builds/win32/msvc8/gpre_common.vcproj
+   M builds/win32/msvc9/common.vcproj
+   M builds/win32/msvc9/engine.vcproj
+   M builds/win32/msvc9/firebird2.vsprops
+   M builds/win32/msvc9/gpre_common.vcproj
+Fixed builds for msvc8 and msvc9 (CORE-4655)
+
+ 2014-12-29 10:56  starodubov 
+   M src/jrd/trace/TraceObjects.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed POSIX build (CORE-4654)
+
  2014-12-26 15:32  alexpeshkoff 
    M src/auth/SecurityDatabase/LegacyManagement.epp
 Fixed CORE-4652: Legacy user manager ignores explicitly set SQL role
