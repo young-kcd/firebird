@@ -1,3 +1,12 @@
+ 2014-12-30 15:18  alexpeshkoff 
+   M src/common/IntlParametersBlock.cpp
+   M src/common/IntlParametersBlock.h
+Fixed CORE-4610: Add a tag name to diagnostics when trasliteration errors in Parameter Block values occur
+
+ 2014-12-30 08:17  starodubov 
+   M src/jrd/vio.cpp
+Fixed CORE-4656: Server could hang during chasing dead record version
+
  2014-12-29 21:15  dimitr 
    M src/jrd/RecordNumber.h
    M src/jrd/dpm.epp
