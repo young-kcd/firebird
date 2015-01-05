@@ -1544,14 +1544,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		// setting up a format
 
 		if (blr->cstr_length)
-		{
-			RMessage* temp_msg = (RMessage*) PARSE_messages(blr->cstr_address, blr->cstr_length);
-			if (temp_msg != (RMessage*) -1)
-			{
-				*fmt_ptr = (rem_fmt*) temp_msg->msg_address;
-				delete temp_msg;
-			}
-		}
+			*fmt_ptr = PARSE_msg_format(blr->cstr_address, blr->cstr_length);
 	}
 
 	// If we know the length of the message, make sure there is a buffer
@@ -1781,38 +1774,33 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	procedure->rpr_out_format = NULL;
 
 	RMessage* message = PARSE_messages(blr->cstr_address, blr->cstr_length);
-	if (message != (RMessage*) -1)
+	while (message)
 	{
-		while (message)
+		switch (message->msg_number)
 		{
-			switch (message->msg_number)
+		case 0:
+			procedure->rpr_in_msg = message;
+			procedure->rpr_in_format = (rem_fmt*) message->msg_address;
+			message->msg_address = message->msg_buffer;
+			message = message->msg_next;
+			procedure->rpr_in_msg->msg_next = NULL;
+			break;
+		case 1:
+			procedure->rpr_out_msg = message;
+			procedure->rpr_out_format = (rem_fmt*) message->msg_address;
+			message->msg_address = message->msg_buffer;
+			message = message->msg_next;
+			procedure->rpr_out_msg->msg_next = NULL;
+			break;
+		default:
 			{
-			case 0:
-				procedure->rpr_in_msg = message;
-				procedure->rpr_in_format = (rem_fmt*) message->msg_address;
-				message->msg_address = message->msg_buffer;
+				RMessage* temp = message;
 				message = message->msg_next;
-				procedure->rpr_in_msg->msg_next = NULL;
-				break;
-			case 1:
-				procedure->rpr_out_msg = message;
-				procedure->rpr_out_format = (rem_fmt*) message->msg_address;
-				message->msg_address = message->msg_buffer;
-				message = message->msg_next;
-				procedure->rpr_out_msg->msg_next = NULL;
-				break;
-			default:
-				{
-					RMessage* temp = message;
-					message = message->msg_next;
-					delete temp;
-				}
-				break;
+				delete temp;
 			}
+			break;
 		}
 	}
-	else
-		fb_assert(FALSE);
 
 	return TRUE;
 }

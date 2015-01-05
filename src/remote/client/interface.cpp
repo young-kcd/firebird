@@ -1203,9 +1203,8 @@ Firebird::IRequest* Attachment::compileRequest(IStatus* status,
 
 		RMessage* message = PARSE_messages(blr, blr_length);
 		USHORT max_msg = 0;
-		for (next = message; next; next = next->msg_next) {
+		for (next = message; next; next = next->msg_next)
 			max_msg = MAX(max_msg, next->msg_number);
-		}
 
 		// Allocate request block
 		Rrq* request = new Rrq(max_msg + 1);
@@ -1737,14 +1736,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 		// Parse the blr describing the message, if there is any.
 
 		if (in_blr_length)
-		{
-			RMessage* message = PARSE_messages(in_blr, in_blr_length);
-			if (message != (RMessage*) - 1)
-			{
-				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
-				delete message;
-			}
-		}
+			statement->rsr_bind_format = PARSE_msg_format(in_blr, in_blr_length);
 
 		// Parse the blr describing the output message.  This is not the fetch
 		// message!  That comes later.
@@ -1754,12 +1746,7 @@ Firebird::ITransaction* Statement::execute(IStatus* status, Firebird::ITransacti
 			if (!port->port_statement)
 				port->port_statement = new Rsr;
 
-			RMessage* message = PARSE_messages(out_blr, out_blr_length);
-			if (message != (RMessage*) - 1)
-			{
-				port->port_statement->rsr_select_format = (rem_fmt*) message->msg_address;
-				delete message;
-			}
+			port->port_statement->rsr_select_format = PARSE_msg_format(out_blr, out_blr_length);
 
 			if (!port->port_statement->rsr_buffer)
 			{
@@ -1932,14 +1919,7 @@ ResultSet* Statement::openCursor(IStatus* status, Firebird::ITransaction* apiTra
 		// Parse the blr describing the message, if there is any.
 
 		if (in_blr_length)
-		{
-			RMessage* message = PARSE_messages(in_blr, in_blr_length);
-			if (message != (RMessage*) -1)
-			{
-				statement->rsr_bind_format = (rem_fmt*) message->msg_address;
-				delete message;
-			}
-		}
+			statement->rsr_bind_format = PARSE_msg_format(in_blr, in_blr_length);
 
 		RMessage* message = NULL;
 		if (!statement->rsr_buffer)
@@ -2113,23 +2093,10 @@ ITransaction* Attachment::execute(IStatus* status, ITransaction* apiTra,
 		if (in_msg_length || out_msg_length)
 		{
 			if (in_blr_length)
-			{
-				RMessage* message = PARSE_messages(in_blr, in_blr_length);
-				if (message != (RMessage*) - 1)
-				{
-					statement->rsr_bind_format = (rem_fmt*) message->msg_address;
-					delete message;
-				}
-			}
+				statement->rsr_bind_format = PARSE_msg_format(in_blr, in_blr_length);
+
 			if (out_blr_length)
-			{
-				RMessage* message = PARSE_messages(out_blr, out_blr_length);
-				if (message != (RMessage*) - 1)
-				{
-					statement->rsr_select_format = (rem_fmt*) message->msg_address;
-					delete message;
-				}
-			}
+				statement->rsr_select_format = PARSE_msg_format(out_blr, out_blr_length);
 		}
 
 		RMessage* message = 0;
@@ -2830,14 +2797,9 @@ int ResultSet::fetchNext(IStatus* status, void* buffer)
 			{
 				delete statement->rsr_user_select_format;
 			}
-			RMessage* message = PARSE_messages(blr, blr_length);
-			if (message != (RMessage*) - 1)
-			{
-				statement->rsr_user_select_format = (rem_fmt*) message->msg_address;
-				delete message;
-			}
-			else
-				statement->rsr_user_select_format = NULL;
+
+			statement->rsr_user_select_format = PARSE_msg_format(blr, blr_length);
+
 			if (statement->rsr_flags.test(Rsr::FETCHED))
 				blr_length = 0;
 			else
@@ -5034,36 +4996,31 @@ void Attachment::transactRequest(IStatus* status, ITransaction* apiTra,
 		procedure->rpr_out_format = NULL;
 
 		RMessage* message = PARSE_messages(blr, blr_length);
-		if (message != (RMessage*) - 1)
+		while (message)
 		{
-			while (message)
+			switch (message->msg_number)
 			{
-				switch (message->msg_number)
-				{
-				case 0:
-					procedure->rpr_in_msg = message;
-					procedure->rpr_in_format = (rem_fmt*) message->msg_address;
-					message->msg_address = const_cast<unsigned char*>(in_msg);
-					message = message->msg_next;
-					procedure->rpr_in_msg->msg_next = NULL;
-					break;
-				case 1:
-					procedure->rpr_out_msg = message;
-					procedure->rpr_out_format = (rem_fmt*) message->msg_address;
-					message->msg_address = out_msg;
-					message = message->msg_next;
-					procedure->rpr_out_msg->msg_next = NULL;
-					break;
-				default:
-					RMessage* temp = message;
-					message = message->msg_next;
-					delete temp;
-					break;
-				}
+			case 0:
+				procedure->rpr_in_msg = message;
+				procedure->rpr_in_format = (rem_fmt*) message->msg_address;
+				message->msg_address = const_cast<unsigned char*>(in_msg);
+				message = message->msg_next;
+				procedure->rpr_in_msg->msg_next = NULL;
+				break;
+			case 1:
+				procedure->rpr_out_msg = message;
+				procedure->rpr_out_format = (rem_fmt*) message->msg_address;
+				message->msg_address = out_msg;
+				message = message->msg_next;
+				procedure->rpr_out_msg->msg_next = NULL;
+				break;
+			default:
+				RMessage* temp = message;
+				message = message->msg_next;
+				delete temp;
+				break;
 			}
 		}
-		//else
-		//	error
 
 
 		PACKET* packet = &rdb->rdb_packet;
