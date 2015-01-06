@@ -1471,17 +1471,23 @@ DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratc
 	dsqlFunction->udf_length = returnType->length;
 	dsqlFunction->udf_character_set_id = returnType->charSetId;
 
-	// ASF: It seems not required to set dsqlFunction->udf_arguments for now.
-
 	const Array<NestConst<ParameterClause> >& paramArray = dsqlBlock->parameters;
 	bool defaultFound = false;
 
 	for (const NestConst<ParameterClause>* i = paramArray.begin(); i != paramArray.end(); ++i)
 	{
+		// ASF: dsqlFunction->udf_arguments is only checked for its count for now.
+		dsqlFunction->udf_arguments.add(dsc());
+
 		const ParameterClause* param = *i;
 
 		if (param->defaultClause)
+		{
 			defaultFound = true;
+
+			if (dsqlFunction->udf_def_count == 0)
+				dsqlFunction->udf_def_count = paramArray.end() - i;
+		}
 		else if (defaultFound)
 		{
 			// Parameter without default value after parameters with default.
