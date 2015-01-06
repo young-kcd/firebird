@@ -1499,7 +1499,8 @@ DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				Arg::Gds(isc_dsql_duplicate_spec) << Arg::Str(parameter->name));
 		}
 
-		names.add(parameter->name);
+		if (parameter->name.hasData())	// legacy UDFs has unnamed parameters
+			names.add(parameter->name);
 	}
 
 	const CompoundStmtNode* variables = localDeclList;
