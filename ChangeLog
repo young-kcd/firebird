@@ -1,3 +1,10 @@
+ 2015-01-05 16:08  dimitr 
+   M src/remote/client/interface.cpp
+   M src/remote/parse_proto.h
+   M src/remote/parser.cpp
+   M src/remote/protocol.cpp
+Slightly refactored the BLR parser routines to avoid crazy error reporting and protect against NULL pointer dereference. The error handling still sucks, but it was the case before me ;-)
+
  2014-12-30 15:18  alexpeshkoff 
    M src/common/IntlParametersBlock.cpp
    M src/common/IntlParametersBlock.h
