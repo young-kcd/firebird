@@ -236,3 +236,19 @@ database in linger state.
 
 Example:
 fbsvcmgr host:service_mgr user sysdba password xxx action_properties dbname employee prp_nolinger
+
+
+7) Services API extension - passing SQL role to services manager.
+(Alex Peshkov, peshkoff@mail.ru, 2014)
+
+Just a few actions (user-management related) were capable to pass SQL role to server in pre-3
+releases. With flexible access control in FB3 passing role to the services manager is sometimes
+useful and therefore possible. Services manager now accepts SPB item isc_spb_sql_role_name in
+start() call and passes it to invoked utilities.
+
+Example (assumimg user "leg" is granted admin rights):
+fbsvcmgr host:service_mgr user leg password leg action_restore dbname target.fdb bkp_file some.fbk
+   (fails with "no permission for CREATE access to DATABASE" error)
+fbsvcmgr host:service_mgr user leg password leg role 'rdb$admin' action_restore dbname target.fdb bkp_file some.fbk
+   (works as expected)
+
