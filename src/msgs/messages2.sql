@@ -1632,6 +1632,8 @@ COMMIT WORK;
 ('gfix_db_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 129, NULL, '	Number of database page warnings	: @1', NULL, NULL);
 ('gfix_pip_warn', 'ALICE_gfix', 'alice.c', NULL, 3, 130, NULL, '	Number of inventory page warnings	: @1', NULL, NULL);
 ('gfix_opt_icu', 'ALICE_gfix', 'alice.c', NULL, 3, 131, NULL, '   -icu                 fix database to be usable with present ICU version', NULL, NULL);
+('gfix_opt_role', 'ALICE_gfix', 'alice.c', NULL, 3, 132, NULL, '   -role                set SQL role name', NULL, NULL);
+('gfix_role_req', 'ALICE_gfix', 'alice.c', NULL, 3, 133, NULL, 'SQL role name required', NULL, NULL);
 -- DSQL
 ('dsql_dbkey_from_non_table', 'MAKE_desc', 'make.c', NULL, 7, 2, NULL, 'Cannot SELECT RDB$DB_KEY from a stored procedure.', NULL, NULL);
 ('dsql_transitional_numeric', 'dsql_yyparse', 'parse.y', NULL, 7, 3, NULL, 'Precision 10 to 18 changed from DOUBLE PRECISION in SQL dialect 1 to 64-bit scaled integer in SQL dialect 3', NULL, NULL);
@@ -3184,6 +3186,7 @@ Analyzing database pages ...', NULL, NULL);
 (NULL, 'main', 'dba.epp', NULL, 21, 54, NULL, 'Blob pages: total @1, encrypted @2, non-crypted @3', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 55, NULL, 'no encrypted database support, only -e and -h can be used', NULL, NULL)
 (NULL, 'main', 'dba.epp', NULL, 21, 56, NULL, '    Empty pages: @1, full pages: @2', NULL, NULL);
+(NULL, 'dba_in_sw_table', 'dbaswi.h', NULL, 21, 57, NULL, '    -role   SQL role name', NULL, NULL);
 -- FBSVCMGR
 -- All messages use the new format.
 ('fbsvcmgr_bad_am', 'putAccessMode', 'fbsvcmgr.cpp', NULL, 22, 1, NULL, 'Wrong value for access mode', NULL, NULL);
@@ -3323,6 +3326,7 @@ Analyzing database pages ...', NULL, NULL);
 ('nbackup_user_stop', 'checkCtrlC()', 'nbackup.cpp', NULL, 24, 73, NULL, 'Terminated due to user request', NULL, NULL)
 (NULL, 'usage', 'nbackup.cpp', NULL, 24, 74, NULL, '  -DE(COMPRESS) <command>                Command to extract archives during restore', NULL, NULL)
 ('nbackup_deco_parse', 'NBackup::open_backup_scan', 'nbackup.cpp', NULL, 24, 75, NULL, 'Too complex decompress command (> @1 arguments)', NULL, NULL)
+(NULL, 'usage', 'nbackup.cpp', NULL, 24, 76, NULL, '  -RO(LE) <role>                         SQL role name', NULL, NULL)
 -- FBTRACEMGR
 -- All messages use the new format.
 (NULL, 'usage', 'TraceCmdLine.cpp', NULL, 25, 1, NULL, 'Firebird Trace Manager version @1', NULL, NULL)

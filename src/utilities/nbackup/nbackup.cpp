@@ -274,10 +274,10 @@ struct inc_header
 class NBackup
 {
 public:
-	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username,
+	NBackup(UtilSvc* _uSvc, const PathName& _database, const string& _username, const string& _role,
 			const string& _password, bool _run_db_triggers, bool _direct_io, const string& _deco)
 	  : uSvc(_uSvc), newdb(0), trans(0), database(_database),
-		username(_username), password(_password),
+		username(_username), role(_role), password(_password),
 		run_db_triggers(_run_db_triggers), direct_io(_direct_io),
 		dbase(0), backup(0), decompress(_deco), childId(0), db_size_pages(0),
 		m_odsNumber(0), m_silent(false), m_printed(false)
@@ -328,7 +328,7 @@ private:
     isc_tr_handle trans; // transaction handle
 
 	PathName database;
-	string username, password;
+	string username, role, password;
 	bool run_db_triggers, direct_io;
 
 	PathName dbname; // Database file name
@@ -772,6 +772,8 @@ void NBackup::attach_database()
 		if (password.hasData())
 			dpb.insertString(isc_dpb_password, password);
 	}
+	if (role.hasData())
+		dpb.insertString(isc_dpb_sql_role_name, role);
 
 	if (!run_db_triggers)
 		dpb.insertByte(isc_dpb_no_db_triggers, 1);
@@ -1565,7 +1567,7 @@ void nbackup(UtilSvc* uSvc)
 	const int argc = argv.getCount();
 
 	NbOperation op = nbNone;
-	string username, password;
+	string username, role, password;
 	PathName database, filename;
 	string decompress;
 	bool run_db_triggers = true;
@@ -1605,6 +1607,13 @@ void nbackup(UtilSvc* uSvc)
 				missingParameterForSwitch(uSvc, argv[itr - 1]);
 
 			username = argv[itr];
+			break;
+
+		case IN_SW_NBK_ROLE:
+			if (++itr >= argc)
+				missingParameterForSwitch(uSvc, argv[itr - 1]);
+
+			role = argv[itr];
 			break;
 
 		case IN_SW_NBK_PASSWORD:
@@ -1769,7 +1778,7 @@ void nbackup(UtilSvc* uSvc)
 		usage(uSvc, isc_nbackup_size_with_lock);
 	}
 
-	NBackup nbk(uSvc, database, username, password, run_db_triggers, direct_io, decompress);
+	NBackup nbk(uSvc, database, username, role, password, run_db_triggers, direct_io, decompress);
 	try
 	{
 		switch (op)

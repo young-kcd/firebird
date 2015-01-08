@@ -140,6 +140,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	tdgbl->ALICE_data.ua_user = NULL;
+	tdgbl->ALICE_data.ua_role = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
 #ifdef TRUSTED_AUTH
 	tdgbl->ALICE_data.ua_trusted = false;
@@ -363,6 +364,14 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(13);	// msg 13: user name required
 			}
 			tdgbl->ALICE_data.ua_user = *argv++;
+		}
+
+		if (table->in_sw_value & sw_role)
+		{
+			if (--argc <= 0) {
+				ALICE_error(133);	// msg 133: role name required
+			}
+			tdgbl->ALICE_data.ua_role = *argv++;
 		}
 
 		if (table->in_sw_value & sw_password)

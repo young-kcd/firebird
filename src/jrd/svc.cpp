@@ -275,6 +275,10 @@ void Service::getOptions(ClumpletReader& spb)
 			svc_username.upper();
 			break;
 
+		case isc_spb_sql_role_name:
+			spb.getString(svc_sql_role);
+			break;
+
 		case isc_spb_auth_block:
 			svc_auth_block.clear();
 			svc_auth_block.add(spb.getBytes(), spb.getClumpLength());
@@ -734,7 +738,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(SVC_finished), svc_user_flag(0), svc_spb_version(0),
 	svc_do_shutdown(false), svc_shutdown_in_progress(false), svc_timeout(false),
-	svc_username(getPool()), svc_auth_block(getPool()),
+	svc_username(getPool()), svc_sql_role(getPool()), svc_auth_block(getPool()),
 	svc_expected_db(getPool()), svc_trusted_role(false), svc_utf8(false),
 	svc_switches(getPool()), svc_perm_sw(getPool()), svc_address_path(getPool()),
 	svc_command_line(getPool()),
@@ -2089,10 +2093,10 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_set_mapping ||
 		svc_id == isc_action_svc_drop_mapping;
 
-	if (flNeedUser && !svc_auth_block.hasData())
+	if (flNeedUser)
 	{
 		// add the username to the end of svc_switches if needed
-		if (svc_switches.hasData())
+		if (svc_switches.hasData() && !svc_auth_block.hasData())
 		{
 			if (svc_username.hasData())
 			{
@@ -2101,6 +2105,14 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 				auth += ' ';
 				svc_switches = auth + svc_switches;
 			}
+		}
+
+		if (svc_sql_role.hasData())
+		{
+			string auth = "-role ";
+			auth += svc_sql_role;
+			auth += ' ';
+			svc_switches = auth + svc_switches;
 		}
 	}
 

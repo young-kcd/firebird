@@ -191,6 +191,9 @@ bool TDR_attach_database(ISC_STATUS* status_vector, tdr* trans, const TEXT* path
 	if (tdgbl->ALICE_data.ua_user) {
 		dpb.insertString(isc_dpb_user_name, tdgbl->ALICE_data.ua_user, fb_strlen(tdgbl->ALICE_data.ua_user));
 	}
+	if (tdgbl->ALICE_data.ua_role) {
+		dpb.insertString(isc_dpb_sql_role_name, tdgbl->ALICE_data.ua_role, fb_strlen(tdgbl->ALICE_data.ua_role));
+	}
 	if (tdgbl->ALICE_data.ua_password)
 	{
 		dpb.insertString(tdgbl->uSvc->isService() ? isc_dpb_password_enc : isc_dpb_password,

@@ -362,6 +362,12 @@ static void buildDpb(Firebird::ClumpletWriter& dpb, const SINT64 switches)
 		}
 #endif
 	}
+
+	if (tdgbl->ALICE_data.ua_role)
+	{
+		dpb.insertString(isc_dpb_sql_role_name,
+						 tdgbl->ALICE_data.ua_role, fb_strlen(tdgbl->ALICE_data.ua_role));
+	}
 }
 
 

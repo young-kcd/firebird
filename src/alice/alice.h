@@ -69,6 +69,7 @@ struct user_action
 {
 	ULONG ua_switches;
 	const char* ua_user;
+	const char* ua_role;
 	const char* ua_password;
 #ifdef TRUSTED_AUTH
 	bool ua_trusted;

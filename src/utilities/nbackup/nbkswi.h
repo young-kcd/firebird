@@ -47,6 +47,7 @@ const int IN_SW_NBK_VERSION			= 11;
 const int IN_SW_NBK_HELP			= 12;
 const int IN_SW_NBK_DIRECT			= 13;
 const int IN_SW_NBK_DECOMPRESS		= 14;
+const int IN_SW_NBK_ROLE			= 15;
 
 
 static const struct Switches::in_sw_tab_t nbackup_in_sw_table [] =
@@ -72,6 +73,7 @@ static const struct Switches::in_sw_tab_t nbackup_action_in_sw_table [] =
 	{IN_SW_NBK_NODBTRIG,	0,						"T",				0, 0, 0, false,	0,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_NODBTRIG,	0,						"NODBTRIGGERS",		0, 0, 0, false,	16,	3,	NULL, nboGeneral},
 	{IN_SW_NBK_USER_NAME,	0,						"USER",				0, 0, 0, false,	13,	1,	NULL, nboGeneral},
+	{IN_SW_NBK_ROLE,		0,						"ROLE",				0, 0, 0, false,	76,	2,	NULL, nboGeneral},
 	{IN_SW_NBK_PASSWORD,	0,						"PASSWORD",			0, 0, 0, false,	14,	1,	NULL, nboGeneral},
 	{IN_SW_NBK_FETCH,		0,						"FETCH_PASSWORD",	0, 0, 0, false,	15,	2,	NULL, nboGeneral},
 	{IN_SW_NBK_VERSION, 	0,						"Z",				0, 0, 0, false,	18,	1,	NULL, nboGeneral},

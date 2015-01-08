@@ -310,6 +310,8 @@ const SvcSwitches attSwitch[] =
 {
 	{"user", putStringArgument, 0, isc_spb_user_name, 0},
 	{"user_name", putStringArgument, 0, isc_spb_user_name, 0},
+	{"role", putStringArgument, 0, isc_spb_sql_role_name, 0},
+	{"sql_role_name", putStringArgument, 0, isc_spb_sql_role_name, 0},
 	{"password", putStringArgument, 0, isc_spb_password, 0},
 	{"fetch_password", putFileArgument, 0, isc_spb_password, 0},
 	{"trusted_auth", putSingleTag, 0, isc_spb_trusted_auth, 0},

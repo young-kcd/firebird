@@ -357,8 +357,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 	isc_db_handle db_handle = 0;
 
 	TEXT pass_buff[128], user_buff[128], *password = pass_buff, *username = user_buff;
+	TEXT role_buff[128], *role = role_buff;
 	MOVE_CLEAR(user_buff, sizeof(user_buff));
 	MOVE_CLEAR(pass_buff, sizeof(pass_buff));
+	MOVE_CLEAR(role_buff, sizeof(role_buff));
 
 	// TEXT tr_buff[128], *tr_user = tr_buff;
 	// MOVE_CLEAR(tr_buff, sizeof(tr_buff));
@@ -436,6 +438,10 @@ int gstat(Firebird::UtilSvc* uSvc)
 		case IN_SW_DBA_USERNAME:
 			if (argv < end)
 				fb_utils::copy_terminate(username, *argv++, sizeof(user_buff));
+			break;
+		case IN_SW_DBA_ROLE:
+			if (argv < end)
+				fb_utils::copy_terminate(role, *argv++, sizeof(role_buff));
 			break;
 		case IN_SW_DBA_PASSWORD:
 			if (argv < end)
@@ -744,6 +750,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 			dpb.insertTag(isc_dpb_trusted_auth);
 #endif
 	}
+	if (*role)
+		dpb.insertString(isc_dpb_sql_role_name, role, fb_strlen(role));
 
 	isc_attach_database(status_vector, 0, connName.c_str(), &DB, dpb.getBufferLength(),
 						reinterpret_cast<const char*>(dpb.getBuffer()));
