@@ -1,3 +1,25 @@
+ 2015-01-08 14:14  alexpeshkoff 
+   M doc/README.services_extension
+Doc for CORE-4662: Make services API pass SQL role to server.
+
+ 2015-01-08 14:03  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/alice.h
+   M src/alice/aliceswi.h
+   M src/alice/exe.cpp
+   M src/alice/tdr.cpp
+   M src/burp/restore.epp
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/gstat/dbaswi.h
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/nbackup/nbkswi.h
+Fixed CORE-4662: Make services API pass SQL role to server. Also added switch -role to some utilities that missed it.
+
  2015-01-06 22:40  asfernandes 
    M src/dsql/StmtNodes.cpp
 Fixed problem with subfunction parameters related to CORE-4572.
