@@ -159,11 +159,11 @@ void IntlParametersBlock::processParametersBlock(ProcessString* processString, C
 			}
 		}
 	}
-	catch(const Firebird::status_exception& st)
+	catch (const Firebird::status_exception& st)
 	{
 		LocalStatus l;
 		st.stuffException(&l);
-		if ((l.getStatus() && IStatus::FB_HAS_ERRORS) && (l.getErrors()[1] == isc_bad_conn_str) && tagName)
+		if ((l.getStatus() & IStatus::FB_HAS_ERRORS) && (l.getErrors()[1] == isc_bad_conn_str) && tagName)
 		{
 			Arg::Gds newErrors(isc_random);
 			string message("Bad international character in tag ");
