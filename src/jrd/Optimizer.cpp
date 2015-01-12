@@ -646,7 +646,6 @@ void OptimizerRetrieval::analyzeNavigation()
 	{
 		IndexScratch* const indexScratch = &indexScratches[i];
 		const index_desc* const idx = indexScratch->idx;
-		const int equalSegments = MIN(indexScratch->lowerCount, indexScratch->upperCount);
 
 		// if the number of fields in the sort is greater than the number of
 		// fields in the index, the index will not be used to optimize the
@@ -674,6 +673,17 @@ void OptimizerRetrieval::analyzeNavigation()
 
 		// check to see if the fields in the sort match the fields in the index
 		// in the exact same order
+
+		const IndexScratchSegment* const* segment = indexScratch->segments.begin();
+		const IndexScratchSegment* const* const end_segment =
+			segment + MIN(indexScratch->lowerCount, indexScratch->upperCount);
+		int equalSegments = 0;
+
+		for (; segment < end_segment; segment++)
+		{
+			if ((*segment)->scanType != segmentScanStarting)
+				equalSegments++;
+		}
 
 		bool usableIndex = true;
 		const index_desc::idx_repeat* idx_tail = idx->idx_rpt;
