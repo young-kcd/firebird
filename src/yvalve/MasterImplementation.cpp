@@ -102,11 +102,6 @@ IPluginManager* MasterImplementation::getPluginManager()
 	return &manager;
 }
 
-int MasterImplementation::same(IVersioned* first, IVersioned* second)
-{
-	return first->cloopVTable == second->cloopVTable ? 1 : 0;
-}
-
 IMetadataBuilder* MasterImplementation::getMetadataBuilder(CheckStatusWrapper* status, unsigned fieldCount)
 {
 	try

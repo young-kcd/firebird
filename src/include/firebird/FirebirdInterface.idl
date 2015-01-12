@@ -88,11 +88,7 @@ interface Master : Versioned
 	Attachment registerAttachment(Provider provider, Attachment attachment);
 	Transaction registerTransaction(Attachment attachment, Transaction transaction);
 
-	// This function is required to compare interfaces based on vtables of them
-	int same(Versioned first, Versioned second);	//// FIXME: Should we really publish this API?
-
 	MetadataBuilder getMetadataBuilder(Status status, uint fieldCount);
-	//// FIXME: Debug getDebug();
 	int serverMode(int mode);
 	Utl getUtlInterface();
 	ConfigManager getConfigManager();

@@ -68,7 +68,6 @@ namespace Why
 		Firebird::ITransaction* registerTransaction(Firebird::IAttachment* attachment,
 			Firebird::ITransaction* transaction);
 		Dtc* getDtc();
-		int same(Firebird::IVersioned* first, Firebird::IVersioned* second);
 		Firebird::IMetadataBuilder* getMetadataBuilder(Firebird::CheckStatusWrapper* status, unsigned fieldCount);
 		//Firebird::IDebug* getDebug();
 		int serverMode(int mode);

@@ -293,7 +293,6 @@ namespace Firebird
 			IDtc* (CLOOP_CARG *getDtc)(IMaster* self) throw();
 			IAttachment* (CLOOP_CARG *registerAttachment)(IMaster* self, IProvider* provider, IAttachment* attachment) throw();
 			ITransaction* (CLOOP_CARG *registerTransaction)(IMaster* self, IAttachment* attachment, ITransaction* transaction) throw();
-			int (CLOOP_CARG *same)(IMaster* self, IVersioned* first, IVersioned* second) throw();
 			IMetadataBuilder* (CLOOP_CARG *getMetadataBuilder)(IMaster* self, IStatus* status, unsigned fieldCount) throw();
 			int (CLOOP_CARG *serverMode)(IMaster* self, int mode) throw();
 			IUtl* (CLOOP_CARG *getUtlInterface)(IMaster* self) throw();
@@ -358,12 +357,6 @@ namespace Firebird
 		ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction)
 		{
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->registerTransaction(this, attachment, transaction);
-			return ret;
-		}
-
-		int same(IVersioned* first, IVersioned* second)
-		{
-			int ret = static_cast<VTable*>(this->cloopVTable)->same(this, first, second);
 			return ret;
 		}
 
@@ -4811,7 +4804,6 @@ namespace Firebird
 					this->getDtc = &Name::cloopgetDtcDispatcher;
 					this->registerAttachment = &Name::cloopregisterAttachmentDispatcher;
 					this->registerTransaction = &Name::cloopregisterTransactionDispatcher;
-					this->same = &Name::cloopsameDispatcher;
 					this->getMetadataBuilder = &Name::cloopgetMetadataBuilderDispatcher;
 					this->serverMode = &Name::cloopserverModeDispatcher;
 					this->getUtlInterface = &Name::cloopgetUtlInterfaceDispatcher;
@@ -4926,19 +4918,6 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopsameDispatcher(IMaster* self, IVersioned* first, IVersioned* second) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::same(first, second);
-			}
-			catch (...)
-			{
-				StatusType::catchException(0);
-				return static_cast<int>(0);
-			}
-		}
-
 		static IMetadataBuilder* CLOOP_CARG cloopgetMetadataBuilderDispatcher(IMaster* self, IStatus* status, unsigned fieldCount) throw()
 		{
 			StatusType status2(status);
@@ -5015,7 +4994,6 @@ namespace Firebird
 		virtual IDtc* getDtc() = 0;
 		virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
 		virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
-		virtual int same(IVersioned* first, IVersioned* second) = 0;
 		virtual IMetadataBuilder* getMetadataBuilder(StatusType* status, unsigned fieldCount) = 0;
 		virtual int serverMode(int mode) = 0;
 		virtual IUtl* getUtlInterface() = 0;

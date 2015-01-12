@@ -660,7 +660,8 @@ namespace Jrd {
 
 	bool CryptoManager::HolderAttachments::operator==(IKeyHolderPlugin* kh) const
 	{
-		return MasterInterfacePtr()->same(keyHolder, kh) != 0;
+		// ASF: I think there should be a better way to do this.
+		return keyHolder->cloopVTable == kh->cloopVTable;
 	}
 
 	void CryptoManager::KeyHolderPlugins::attach(Attachment* att, Config* config)
