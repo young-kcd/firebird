@@ -113,7 +113,7 @@ const int BSTR_input	= 0;
 const int BSTR_output	= 1;
 const int BSTR_alloc	= 2;
 
-static void get_ods_version(IStatus*, IAttachment*, USHORT*, USHORT*);
+static void get_ods_version(CheckStatusWrapper*, IAttachment*, USHORT*, USHORT*);
 static void isc_expand_dpb_internal(const UCHAR** dpb, SSHORT* dpb_size, ...);
 
 
@@ -155,7 +155,7 @@ static const TEXT* const impl_class[] =
 
 namespace {
 
-class VersionCallback : public AutoIface<Api::IVersionCallbackImpl<VersionCallback> >
+class VersionCallback : public AutoIface<IVersionCallbackImpl<VersionCallback, CheckStatusWrapper> >
 {
 public:
 	VersionCallback(FPTR_VERSION_CALLBACK routine, void* user)
@@ -163,7 +163,7 @@ public:
 	{ }
 
 	// IVersionCallback implementation
-	void callback(IStatus*, const char* text)
+	void callback(CheckStatusWrapper*, const char* text)
 	{
 		func(arg, text);
 	}
@@ -173,7 +173,7 @@ private:
 	void* arg;
 };
 
-void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, FILE* file)
+void load(CheckStatusWrapper* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, FILE* file)
 {
 /**************************************
  *
@@ -228,7 +228,7 @@ void load(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 	return;
 }
 
-void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, FILE* file)
+void dump(CheckStatusWrapper* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, FILE* file)
 {
 /**************************************
  *
@@ -272,7 +272,7 @@ void dump(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra
 }
 
 
-FB_BOOLEAN edit(IStatus* status, ISC_QUAD* blob_id, IAttachment* att, ITransaction* tra,
+FB_BOOLEAN edit(CheckStatusWrapper* status, ISC_QUAD* blob_id, IAttachment* att, ITransaction* tra,
 	int type, const char* field_name)
 {
 /**************************************
@@ -362,7 +362,7 @@ namespace Why {
 
 UtlInterface utlInterface;
 
-void UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
+void UtlInterface::dumpBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
 	FILE* file = os_utils::fopen(file_name, txt ? FOPEN_WRITE_TYPE_TEXT : FOPEN_WRITE_TYPE);
@@ -385,7 +385,7 @@ void UtlInterface::dumpBlob(IStatus* status, ISC_QUAD* blobId,
 		fclose(file);
 }
 
-void UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
+void UtlInterface::loadBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
 /**************************************
@@ -418,7 +418,7 @@ void UtlInterface::loadBlob(IStatus* status, ISC_QUAD* blobId,
 		fclose(file);
 }
 
-void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
+void UtlInterface::getFbVersion(CheckStatusWrapper* status, IAttachment* att,
 	IVersionCallback* callback)
 {
 /**************************************
@@ -569,7 +569,7 @@ void UtlInterface::getFbVersion(IStatus* status, IAttachment* att,
 }
 
 YAttachment* UtlInterface::executeCreateDatabase(
-	Firebird::IStatus* status, unsigned stmtLength, const char* creatDBstatement,
+	Firebird::CheckStatusWrapper* status, unsigned stmtLength, const char* creatDBstatement,
 	unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
 {
 	try
@@ -590,11 +590,13 @@ YAttachment* UtlInterface::executeCreateDatabase(
 			return NULL;
 
 		LocalStatus tempStatus;
+		CheckStatusWrapper tempCheckStatusWrapper(&tempStatus);
+
 		ITransaction* crdbTrans = att->startTransaction(status, 0, NULL);
 
 		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
-			att->dropDatabase(&tempStatus);
+			att->dropDatabase(&tempCheckStatusWrapper);
 			return NULL;
 		}
 
@@ -605,8 +607,8 @@ YAttachment* UtlInterface::executeCreateDatabase(
 			att->execute(status, crdbTrans, stmtLength, creatDBstatement, dialect, NULL, NULL, NULL, NULL);
 			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
-				crdbTrans->rollback(&tempStatus);
-				att->dropDatabase(&tempStatus);
+				crdbTrans->rollback(&tempCheckStatusWrapper);
+				att->dropDatabase(&tempCheckStatusWrapper);
 				return NULL;
 			}
 		}
@@ -614,8 +616,8 @@ YAttachment* UtlInterface::executeCreateDatabase(
 		crdbTrans->commit(status);
 		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
-			crdbTrans->rollback(&tempStatus);
-			att->dropDatabase(&tempStatus);
+			crdbTrans->rollback(&tempCheckStatusWrapper);
+			att->dropDatabase(&tempCheckStatusWrapper);
 			return NULL;
 		}
 
@@ -1633,16 +1635,18 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
  *
  **************************************/
 	LocalStatus st;
-	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
+	CheckStatusWrapper statusWrapper(&st);
+
+	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&statusWrapper, &database));
 	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
-	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
+	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&statusWrapper, &transaction));
 	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
 	try
 	{
-		dump(&st, blob_id, att, tra, stdout);
+		dump(&statusWrapper, blob_id, att, tra, stdout);
 	}
 	catch (const Exception& ex)
 	{
@@ -1807,10 +1811,12 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
  **************************************/
 
 	LocalStatus st;
-	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
+	CheckStatusWrapper statusWrapper(&st);
+
+	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&statusWrapper, &database));
 	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
-	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&st, &transaction));
+	RefPtr<ITransaction> tra(REF_NO_INCR, handleToITransaction(&statusWrapper, &transaction));
 	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
@@ -1818,7 +1824,7 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 
 	try
 	{
-		rc = edit(&st, blob_id, att, tra, TRUE, field_name) ? FB_SUCCESS : FB_FAILURE;
+		rc = edit(&statusWrapper, blob_id, att, tra, TRUE, field_name) ? FB_SUCCESS : FB_FAILURE;
 	}
 	catch (const Exception& ex)
 	{
@@ -2166,7 +2172,7 @@ int API_ROUTINE gds__thread_start(FPTR_INT_VOID_PTR* entrypoint,
 #endif
 
 
-static void get_ods_version(IStatus* status, IAttachment* att,
+static void get_ods_version(CheckStatusWrapper* status, IAttachment* att,
 	USHORT* ods_version, USHORT* ods_minor_version)
 {
 /**************************************

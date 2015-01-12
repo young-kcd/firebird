@@ -1275,13 +1275,14 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 			if (cp.hasData())
 			{
 				Firebird::LocalStatus st;
+				Firebird::CheckStatusWrapper statusWrapper(&st);
 
 				// Looks like we've found correct crypt plugin and key for it
 				port_crypt_plugin = cp.plugin();
 				port_crypt_plugin->addRef();
 
 				// Pass key to plugin
-				port_crypt_plugin->setKey(&st, cryptKey);
+				port_crypt_plugin->setKey(&statusWrapper, cryptKey);
 				if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				{
 					Firebird::status_exception::raise(&st);
@@ -1299,7 +1300,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 				// Validate answer - decryptor is not affected by port_crypt_complete,
 				// therefore OK to do
 				receive(&crypt);
-				checkResponse(&st, &crypt);
+				checkResponse(&statusWrapper, &crypt);
 
 				// Complete port-crypt init
 				port_crypt_complete = true;
@@ -1326,7 +1327,7 @@ const unsigned char* SrvAuthBlock::getData(unsigned int* length)
 	return *length ? dataForPlugin.begin() : NULL;
 }
 
-void SrvAuthBlock::putData(Firebird::IStatus* status, unsigned int length, const void* data)
+void SrvAuthBlock::putData(Firebird::CheckStatusWrapper* status, unsigned int length, const void* data)
 {
 	status->init();
 	try
@@ -1339,7 +1340,7 @@ void SrvAuthBlock::putData(Firebird::IStatus* status, unsigned int length, const
 	}
 }
 
-void SrvAuthBlock::putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey)
+void SrvAuthBlock::putKey(Firebird::CheckStatusWrapper* status, Firebird::FbCryptKey* cryptKey)
 {
 	status->init();
 	try

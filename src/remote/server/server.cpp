@@ -688,7 +688,7 @@ private:
 GlobalPtr<Mutex> GlobalPortLock::mtx;
 #endif
 
-class Callback FB_FINAL : public RefCntIface<Api::IEventCallbackImpl<Callback> >
+class Callback FB_FINAL : public RefCntIface<IEventCallbackImpl<Callback, CheckStatusWrapper> >
 {
 public:
 	explicit Callback(Rvnt* aevent)
@@ -839,7 +839,7 @@ private:
 
 InitInstance<CryptKeyTypeManager> knownCryptKeyTypes;
 
-class CryptKeyCallback : public VersionedIface<Api::ICryptKeyCallbackImpl<CryptKeyCallback> >
+class CryptKeyCallback : public VersionedIface<ICryptKeyCallbackImpl<CryptKeyCallback, CheckStatusWrapper> >
 {
 public:
 	explicit CryptKeyCallback(rem_port* prt)

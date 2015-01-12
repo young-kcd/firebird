@@ -140,15 +140,17 @@ static void merge(Firebird::IIntUserField* to, Firebird::IIntUserField* from)
 	if (from->entered())
 	{
 		Firebird::LocalStatus s;
-		to->set(&s, from->get());
-		check(&s);
-		to->setEntered(&s, 1);
-		check(&s);
+		Firebird::CheckStatusWrapper statusWrapper(&s);
+
+		to->set(&statusWrapper, from->get());
+		check(&statusWrapper);
+		to->setEntered(&statusWrapper, 1);
+		check(&statusWrapper);
 	}
 }
 
 namespace {
-	class GsecInfo : public Firebird::AutoIface<Firebird::Api::ILogonInfoImpl<GsecInfo> >
+	class GsecInfo : public Firebird::AutoIface<Firebird::ILogonInfoImpl<GsecInfo, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		GsecInfo(const char* pDba, const char* pRole,
@@ -215,15 +217,17 @@ namespace {
 			if (p)
 			{
 				Firebird::LocalStatus s;
-				field->set(&s, p->asInteger());
-				check(&s);
-				field->setEntered(&s, 1);
-				check(&s);
+				Firebird::CheckStatusWrapper statusWrapper(&s);
+
+				field->set(&statusWrapper, p->asInteger());
+				check(&statusWrapper);
+				field->setEntered(&statusWrapper, 1);
+				check(&statusWrapper);
 			}
 		}
 	};
 
-	class Display : public Firebird::AutoIface<Firebird::Api::IListUsersImpl<Display> >
+	class Display : public Firebird::AutoIface<Firebird::IListUsersImpl<Display, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		explicit Display(tsec* t)
@@ -231,7 +235,7 @@ namespace {
 		{ }
 
 		// IListUsers implementation
-		void list(Firebird::IStatus* status, Firebird::IUser* data)
+		void list(Firebird::CheckStatusWrapper* status, Firebird::IUser* data)
 		{
 			try
 			{
@@ -285,7 +289,7 @@ namespace {
 	};
 
 
-	class Callback : public Firebird::AutoIface<Firebird::Api::IListUsersImpl<Callback> >
+	class Callback : public Firebird::AutoIface<Firebird::IListUsersImpl<Callback, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		explicit Callback(StackUserData* pu)
@@ -293,7 +297,7 @@ namespace {
 		{ }
 
 		// IListUsers implementation
-		void list(Firebird::IStatus* status, Firebird::IUser* data)
+		void list(Firebird::CheckStatusWrapper* status, Firebird::IUser* data)
 		{
 			try
 			{
@@ -391,9 +395,12 @@ int gsec(Firebird::UtilSvc* uSvc)
 	{
 		serverName = "";
 	}
+
 	Firebird::LocalStatus s;
-	user_data->database.set(&s, databaseName.c_str());
-	check(&s);
+	Firebird::CheckStatusWrapper statusWrapper(&s);
+
+	user_data->database.set(&statusWrapper, databaseName.c_str());
+	check(&statusWrapper);
 
 	Firebird::RefPtr<Firebird::IManagement> manager;
 	ISC_STATUS_ARRAY status;
@@ -455,6 +462,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		if (user_data->dba.entered() || user_data->authenticationBlock.hasData())
 		{
 			Firebird::LocalStatus st;
+			Firebird::CheckStatusWrapper statusWrapper2(&st);
+
 			try
 			{
 				Get getPlugin(pseudoConfig);
@@ -467,7 +476,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				GsecInfo info(user_data->dba.get(), user_data->role.get(),
 							  network_protocol.c_str(), remote_address.c_str(), &user_data->authenticationBlock);
-				manager->start(&st, &info);
+				manager->start(&statusWrapper2, &info);
 			}
 			catch (const Firebird::Exception& ex)
 			{
@@ -519,13 +528,14 @@ int gsec(Firebird::UtilSvc* uSvc)
 			if (! useServices)
 			{
 				Firebird::LocalStatus st;
+				Firebird::CheckStatusWrapper statusWrapper2(&st);
 
 				if (user_data->operation() == ADD_OPER)
 				{
-					user_data->act.set(&s, 1);
-					check(&s);
-					user_data->act.setEntered(&s, 1);
-					check(&s);
+					user_data->act.set(&statusWrapper, 1);
+					check(&statusWrapper);
+					user_data->act.setEntered(&statusWrapper, 1);
+					check(&statusWrapper);
 				}
 
 				if (user_data->operation() == MOD_OPER && user_data->userName()->entered() &&
@@ -533,13 +543,13 @@ int gsec(Firebird::UtilSvc* uSvc)
 				{
 					StackUserData u;
 					u.op = OLD_DIS_OPER;
-					u.user.set(&s, user_data->userName()->get());
-					check(&s);
-					u.user.setEntered(&s, 1);
-					check(&s);
+					u.user.set(&statusWrapper, user_data->userName()->get());
+					check(&statusWrapper);
+					u.user.setEntered(&statusWrapper, 1);
+					check(&statusWrapper);
 
 					Callback cb(&u);
-					ret = manager->execute(&st, &u, &cb);
+					ret = manager->execute(&statusWrapper2, &u, &cb);
 
 					if (ret)
 					{
@@ -566,10 +576,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 				setAttr(attr, "uid", &user_data->u);
 				setAttr(attr, "gid", &user_data->g);
 				setAttr(attr, "groupName", &user_data->group);
-				user_data->attributes()->set(&s, attr.c_str());
-				user_data->attributes()->setEntered(&s, attr.hasData() ? 1 : 0);
+				user_data->attributes()->set(&statusWrapper, attr.c_str());
+				user_data->attributes()->setEntered(&statusWrapper, attr.hasData() ? 1 : 0);
 
-				ret = manager->execute(&st, user_data, &disp);
+				ret = manager->execute(&statusWrapper2, user_data, &disp);
 
 				if (ret)
 				{
@@ -583,7 +593,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 					get_security_error(status, ret);
 				}
 
-				manager->commit(&st);
+				manager->commit(&statusWrapper2);
 				if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				{
 					Firebird::status_exception::raise(&st);
@@ -607,8 +617,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 		{
 			MOVE_CLEAR(status, sizeof(ISC_STATUS_ARRAY));
 			// Clear out user data each time through this loop.
-			user_data->clear(&s);
-			check(&s);
+			user_data->clear(&statusWrapper);
+			check(&statusWrapper);
 			if (get_line(local_argv, stuff, sizeof(stuff)))
 				break;
 			if (local_argv.getCount() > 1)
@@ -632,14 +642,14 @@ int gsec(Firebird::UtilSvc* uSvc)
 					continue;
 				}
 
-				user_data->database.set(&s, databaseName.c_str());
-				check(&s);
-				user_data->database.setEntered(&s, databaseNameEntered);
-				check(&s);
-				user_data->role.set(&s, sqlRoleName.c_str());
-				check(&s);
-				user_data->role.setEntered(&s, sqlRoleName.hasData());
-				check(&s);
+				user_data->database.set(&statusWrapper, databaseName.c_str());
+				check(&statusWrapper);
+				user_data->database.setEntered(&statusWrapper, databaseNameEntered);
+				check(&statusWrapper);
+				user_data->role.set(&statusWrapper, sqlRoleName.c_str());
+				check(&statusWrapper);
+				user_data->role.setEntered(&statusWrapper, sqlRoleName.hasData());
+				check(&statusWrapper);
 
 				if (ret == 0)
 				{
@@ -774,10 +784,12 @@ template <typename F, typename V>
 static void setSwitch(F& field, V v)
 {
 	Firebird::LocalStatus s;
-	field.set(&s, v);
-	check(&s);
-	field.setEntered(&s, 1);
-	check(&s);
+	Firebird::CheckStatusWrapper statusWrapper(&s);
+
+	field.set(&statusWrapper, v);
+	check(&statusWrapper);
+	field.setEntered(&statusWrapper, 1);
+	check(&statusWrapper);
 }
 
 
@@ -1388,8 +1400,10 @@ static SSHORT parse_cmd_line(Firebird::UtilSvc::ArgvType& argv, tsec* tdsec)
 	bool quitflag = false;
 	UserData* user_data = tdsec->tsec_user_data;
 	Firebird::LocalStatus s;
-	user_data->clear(&s);
-	check(&s);
+	Firebird::CheckStatusWrapper statusWrapper(&s);
+
+	user_data->clear(&statusWrapper);
+	check(&statusWrapper);
 
 	// Call a subroutine to process the input line.
 

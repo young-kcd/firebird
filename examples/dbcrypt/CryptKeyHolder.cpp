@@ -44,7 +44,7 @@ namespace
 IMaster* master = NULL;
 IPluginManager* pluginManager = NULL;
 
-class PluginModule : public Api::IPluginModuleImpl<PluginModule>
+class PluginModule : public IPluginModuleImpl<PluginModule, CheckStatusWrapper>
 {
 public:
 	PluginModule()
@@ -82,7 +82,7 @@ private:
 
 PluginModule module;
 
-class CryptKeyHolder : public Api::IKeyHolderPluginImpl<CryptKeyHolder>
+class CryptKeyHolder : public IKeyHolderPluginImpl<CryptKeyHolder, CheckStatusWrapper>
 {
 public:
 	explicit CryptKeyHolder(IPluginConfig* cnf) throw()
@@ -97,8 +97,8 @@ public:
 	}
 
 	// IKeyHolderPlugin implementation
-	int keyCallback(IStatus* status, ICryptKeyCallback* callback);
-	ICryptKeyCallback* keyHandle(IStatus* status, const char* keyName);
+	int keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback);
+	ICryptKeyCallback* keyHandle(CheckStatusWrapper* status, const char* keyName);
 
 	int release()
 	{
@@ -136,7 +136,7 @@ public:
 	}
 
 private:
-	class CallbackInterface : public Api::ICryptKeyCallbackImpl<CallbackInterface>
+	class CallbackInterface : public ICryptKeyCallbackImpl<CallbackInterface, CheckStatusWrapper>
 	{
 	public:
 		explicit CallbackInterface(CryptKeyHolder* p)
@@ -175,10 +175,10 @@ private:
 	AtomicCounter refCounter;
 	IReferenceCounted* owner;
 
-	void noKeyError(IStatus* status);
+	void noKeyError(CheckStatusWrapper* status);
 };
 
-void CryptKeyHolder::noKeyError(IStatus* status)
+void CryptKeyHolder::noKeyError(CheckStatusWrapper* status)
 {
 	ISC_STATUS_ARRAY vector;
 	vector[0] = isc_arg_gds;
@@ -189,7 +189,7 @@ void CryptKeyHolder::noKeyError(IStatus* status)
 	status->setErrors(vector);
 }
 
-int CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* callback)
+int CryptKeyHolder::keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
 {
 	status->init();
 
@@ -225,7 +225,7 @@ int CryptKeyHolder::keyCallback(IStatus* status, ICryptKeyCallback* callback)
 	return 1;
 }
 
-ICryptKeyCallback* CryptKeyHolder::keyHandle(IStatus* status, const char* keyName)
+ICryptKeyCallback* CryptKeyHolder::keyHandle(CheckStatusWrapper* status, const char* keyName)
 {
 	if (strcmp(keyName, "sample") != 0)
 	{
@@ -235,7 +235,7 @@ ICryptKeyCallback* CryptKeyHolder::keyHandle(IStatus* status, const char* keyNam
 	return &callbackInterface;
 }
 
-class Factory : public Api::IPluginFactoryImpl<Factory>
+class Factory : public IPluginFactoryImpl<Factory, CheckStatusWrapper>
 {
 public:
 	IPluginModule* getModule()
@@ -243,7 +243,7 @@ public:
 		return &module;
 	}
 
-	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(CheckStatusWrapper* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{

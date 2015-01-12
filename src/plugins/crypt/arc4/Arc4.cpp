@@ -85,7 +85,7 @@ private:
 
 namespace Crypt {
 
-class Arc4 FB_FINAL : public StdPlugin<Api::IWireCryptPluginImpl<Arc4> >
+class Arc4 FB_FINAL : public StdPlugin<IWireCryptPluginImpl<Arc4, CheckStatusWrapper> >
 {
 public:
 	explicit Arc4(IPluginConfig*)
@@ -93,10 +93,10 @@ public:
 	{ }
 
 	// ICryptPlugin implementation
-	const char* getKnownTypes(IStatus* status);
-	void setKey(IStatus* status, FbCryptKey* key);
-	void encrypt(IStatus* status, unsigned int length, const void* from, void* to);
-	void decrypt(IStatus* status, unsigned int length, const void* from, void* to);
+	const char* getKnownTypes(CheckStatusWrapper* status);
+	void setKey(CheckStatusWrapper* status, FbCryptKey* key);
+	void encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
+	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	int release();
 
 private:
@@ -115,7 +115,7 @@ int Arc4::release()
 	return 1;
 }
 
-void Arc4::setKey(IStatus* status, FbCryptKey* key)
+void Arc4::setKey(CheckStatusWrapper* status, FbCryptKey* key)
 {
 	status->init();
 	try
@@ -138,13 +138,13 @@ void Arc4::setKey(IStatus* status, FbCryptKey* key)
 	}
 }
 
-void Arc4::encrypt(IStatus* status, unsigned int length, const void* from, void* to)
+void Arc4::encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to)
 {
 	status->init();
 	en->transform(length, from, to);
 }
 
-void Arc4::decrypt(IStatus* status, unsigned int length, const void* from, void* to)
+void Arc4::decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to)
 {
 	status->init();
 	de->transform(length, from, to);
@@ -155,7 +155,7 @@ Cypher* Arc4::createCypher(unsigned int l, const void* key)
 	return new Cypher(l, static_cast<const unsigned char*>(key));
 }
 
-const char* Arc4::getKnownTypes(IStatus* status)
+const char* Arc4::getKnownTypes(CheckStatusWrapper* status)
 {
 	status->init();
 	return "Symmetric";

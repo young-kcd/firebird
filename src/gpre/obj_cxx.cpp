@@ -1470,14 +1470,30 @@ static void gen_database(int column)
 			   gpreGlob.transaction_name);
 
 	printa(column, "%sFirebird::IMaster* fbMaster%s;\t\t/* master interface */",
-		scope, all_extern ? "" : " = fb_get_master_interface()");
+		scope, all_extern ? "" : " = Firebird::fb_get_master_interface()");
 	printa(column, "%sFirebird::IProvider* fbProvider%s;\t\t/* provider interface */",
 		scope, all_extern ? "" : " = fbMaster->getDispatcher()");
 
-	printa(column, "%sFirebird::IStatus* %s%s;\t/* status vector */",
-		scope, global_status_name, all_extern ? "" : " = fbMaster->getStatus();");
-	printa(column, "%sFirebird::IStatus* %s2%s;\t/* status vector */",
-		scope, global_status_name, all_extern ? "" : " = fbMaster->getStatus();");
+	printa(column, "%sFirebird::CheckStatusWrapper %sObj%s;\t/* status vector */",
+		scope, global_status_name, all_extern ? "" : "(fbMaster->getStatus())");
+	printa(column, "%sFirebird::CheckStatusWrapper %s2Obj%s;\t/* status vector */",
+		scope, global_status_name, all_extern ? "" : "(fbMaster->getStatus())");
+
+	if (all_extern)
+	{
+		printa(column, "%sFirebird::CheckStatusWrapper* %s;\t/* status vector */",
+			scope, global_status_name, global_status_name);
+		printa(column, "%sFirebird::CheckStatusWrapper* %s2;\t/* status vector */",
+			scope, global_status_name, global_status_name);
+	}
+	else
+	{
+		printa(column, "%sFirebird::CheckStatusWrapper* %s = &%sObj;\t/* status vector */",
+			scope, global_status_name, global_status_name);
+		printa(column, "%sFirebird::CheckStatusWrapper* %s2 = &%s2Obj;\t/* status vector */",
+			scope, global_status_name, global_status_name);
+	}
+
 	printa(column, "%sint fbIStatus;\t/* last completion code */", scope);
 
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next)

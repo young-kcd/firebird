@@ -30,7 +30,7 @@ namespace Why {
 	class YAttachment;
 }
 
-bool PREPARSE_execute(Firebird::IStatus*, Why::YAttachment**,
+bool PREPARSE_execute(Firebird::CheckStatusWrapper*, Why::YAttachment**,
 	USHORT, const SCHAR*, bool*, USHORT);
 
 #endif //  DSQL_PREPA_PROTO_H

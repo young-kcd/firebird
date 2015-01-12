@@ -41,17 +41,17 @@ namespace Firebird
 
 namespace Why
 {
-	class Dtc : public Firebird::AutoIface<Firebird::Api::IDtcImpl<Dtc> >
+	class Dtc : public Firebird::AutoIface<Firebird::IDtcImpl<Dtc, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		// IDtc implementation
-		YTransaction* start(Firebird::IStatus* status, Firebird::IDtcStart* components);
-		YTransaction* join(Firebird::IStatus* status,
+		YTransaction* start(Firebird::CheckStatusWrapper* status, Firebird::IDtcStart* components);
+		YTransaction* join(Firebird::CheckStatusWrapper* status,
 			Firebird::ITransaction* one, Firebird::ITransaction* two);
-		Firebird::IDtcStart* startBuilder(Firebird::IStatus* status);
+		Firebird::IDtcStart* startBuilder(Firebird::CheckStatusWrapper* status);
 	};
 
-	class MasterImplementation : public Firebird::AutoIface<Firebird::Api::IMasterImpl<MasterImplementation> >
+	class MasterImplementation : public Firebird::AutoIface<Firebird::IMasterImpl<MasterImplementation, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		static Firebird::Static<Dtc> dtc;
@@ -69,7 +69,7 @@ namespace Why
 			Firebird::ITransaction* transaction);
 		Dtc* getDtc();
 		int same(Firebird::IVersioned* first, Firebird::IVersioned* second);
-		Firebird::IMetadataBuilder* getMetadataBuilder(Firebird::IStatus* status, unsigned fieldCount);
+		Firebird::IMetadataBuilder* getMetadataBuilder(Firebird::CheckStatusWrapper* status, unsigned fieldCount);
 		//Firebird::IDebug* getDebug();
 		int serverMode(int mode);
 		Firebird::IUtl* getUtlInterface();

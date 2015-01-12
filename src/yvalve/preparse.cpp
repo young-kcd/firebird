@@ -52,9 +52,9 @@ enum pp_vals {
 
 
 const size_t MAX_TOKEN_SIZE = 1024;
-static void generate_error(Firebird::IStatus*, const Firebird::string&, SSHORT, SSHORT);
+static void generate_error(Firebird::CheckStatusWrapper*, const Firebird::string&, SSHORT, SSHORT);
 static SSHORT get_next_token(const SCHAR**, const SCHAR*, Firebird::string&);
-static SSHORT get_token(Firebird::IStatus*, SSHORT, bool, const SCHAR**, const SCHAR* const,
+static SSHORT get_token(Firebird::CheckStatusWrapper*, SSHORT, bool, const SCHAR**, const SCHAR* const,
 	Firebird::string&);
 
 struct pp_table
@@ -113,7 +113,7 @@ using namespace Firebird;
     @param dialect
 
  **/
-bool PREPARSE_execute(IStatus* status, Why::YAttachment** ptrAtt,
+bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 					  USHORT stmt_length, const SCHAR* stmt, bool* stmt_eaten, USHORT dialect)
 {
 	// no use creating separate pool for a couple of strings
@@ -294,7 +294,7 @@ bool PREPARSE_execute(IStatus* status, Why::YAttachment** ptrAtt,
     @param result
 
  **/
-static void generate_error(IStatus* status, const string& token, SSHORT error, SSHORT result)
+static void generate_error(CheckStatusWrapper* status, const string& token, SSHORT error, SSHORT result)
 {
 	string err_string;
 
@@ -485,7 +485,7 @@ static SSHORT get_next_token(const SCHAR** stmt, const SCHAR* stmt_end, string& 
     @param token
 
  **/
-static SSHORT get_token(IStatus* status,
+static SSHORT get_token(CheckStatusWrapper* status,
 						SSHORT token_type,
 						bool optional,
 						const SCHAR** stmt,

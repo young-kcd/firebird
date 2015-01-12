@@ -118,6 +118,7 @@ DATABASE DB = STATIC "ODS.RDB";
 void ExecInSecurityDb::executeInSecurityDb(jrd_tra* localTransaction)
 {
 	LocalStatus st;
+	CheckStatusWrapper statusWrapper(&st);
 
 	SecDbContext* secDbContext = localTransaction->getSecDbContext();
 	if (!secDbContext)
@@ -127,12 +128,12 @@ void ExecInSecurityDb::executeInSecurityDb(jrd_tra* localTransaction)
 		ClumpletWriter dpb(ClumpletWriter::WideTagged, MAX_DPB_SIZE, isc_dpb_version2);
 		if (lAtt->att_user)
 			lAtt->att_user->populateDpb(dpb);
-		IAttachment* att = DispatcherPtr()->attachDatabase(&st, secDb,
+		IAttachment* att = DispatcherPtr()->attachDatabase(&statusWrapper, secDb,
 			dpb.getBufferLength(), dpb.getBuffer());
-		check(&st);
+		check(&statusWrapper);
 
-		ITransaction* tra = att->startTransaction(&st, 0, NULL);
-		check(&st);
+		ITransaction* tra = att->startTransaction(&statusWrapper, 0, NULL);
+		check(&statusWrapper);
 
 		secDbContext = localTransaction->setSecDbContext(att, tra);
 	}
@@ -140,25 +141,27 @@ void ExecInSecurityDb::executeInSecurityDb(jrd_tra* localTransaction)
 	// run all statements under savepoint control
 	string savePoint;
 	savePoint.printf("ExecInSecurityDb%d", secDbContext->savePoint++);
-	secDbContext->att->execute(&st, secDbContext->tra, 0, ("SAVEPOINT " + savePoint).c_str(),
+	secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, ("SAVEPOINT " + savePoint).c_str(),
 		SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
-	check(&st);
+	check(&statusWrapper);
 
 	try
 	{
 		runInSecurityDb(secDbContext);
 
-		secDbContext->att->execute(&st, secDbContext->tra, 0, ("RELEASE SAVEPOINT " + savePoint).c_str(),
+		secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, ("RELEASE SAVEPOINT " + savePoint).c_str(),
 			SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 		savePoint.erase();
-		check(&st);
+		check(&statusWrapper);
 	}
 	catch (const Exception&)
 	{
 		if (savePoint.hasData())
 		{
 			LocalStatus tmp;
-			secDbContext->att->execute(&tmp, secDbContext->tra, 0, ("ROLLBACK TO SAVEPOINT " + savePoint).c_str(),
+			CheckStatusWrapper tmpCheckStatusWrapper(&tmp);
+			secDbContext->att->execute(&tmpCheckStatusWrapper, secDbContext->tra, 0,
+				("ROLLBACK TO SAVEPOINT " + savePoint).c_str(),
 				SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 		}
 
@@ -9754,7 +9757,7 @@ bool MappingNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 {
 	Firebird::LocalStatus st;
-	IStatus* s = &st;
+	CheckStatusWrapper statusWrapper(&st);
 
 	// first of all try to use regenerated DDL statement
 	// that's the best way if security database is FB3 or higher fb version
@@ -9834,16 +9837,16 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 	}
 
 	// Now try to run DDL
-	secDbContext->att->execute(s, secDbContext->tra, 0, ddl.c_str(), SQL_DIALECT_V6,
+	secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, ddl.c_str(), SQL_DIALECT_V6,
 		NULL, NULL, NULL, NULL);
 
-	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
+	if (statusWrapper.getStatus() & IStatus::FB_HAS_ERRORS)
 	{
 		try
 		{
 			// try direct access to rdb$auth_mapping table in secure db
 			LocalStatus s2;
-			s = &s2;
+			CheckStatusWrapper statusWrapper2(&s2);
 
 			// check presence of such record in the table
 			Message msgCheck;
@@ -9855,9 +9858,9 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 
 			const char* checkSql = "select count(*) from RDB$AUTH_MAPPING where RDB$MAP_NAME = ?";
 
-			secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
+			secDbContext->att->execute(&statusWrapper2, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
 				msgCheck.getMetadata(), msgCheck.getBuffer(), result.getMetadata(), result.getBuffer());
-			check(s);
+			check(&statusWrapper2);
 
 			if (cnt > 1 && op != MAP_DROP)
 				ERRD_bugcheck("Database mapping misconfigured");
@@ -9931,9 +9934,9 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 
 			// Actual modification
 			fb_assert(sql && msg);
-			secDbContext->att->execute(s, secDbContext->tra, 0, sql, SQL_DIALECT_V6,
+			secDbContext->att->execute(&statusWrapper2, secDbContext->tra, 0, sql, SQL_DIALECT_V6,
 				msg->getMetadata(), msg->getBuffer(), NULL, NULL);
-			check(s);
+			check(&statusWrapper2);
 		}
 		catch (const Exception&)
 		{
@@ -10184,17 +10187,19 @@ static void setCharField(Auth::CharField& field, const string* value)
 	if (value)
 	{
 		LocalStatus s;
+		CheckStatusWrapper statusWrapper(&s);
+
 		if (value->hasData())
 		{
-			field.set(&s, value->c_str());
-			check(&s);
-			field.setEntered(&s, 1);
-			check(&s);
+			field.set(&statusWrapper, value->c_str());
+			check(&statusWrapper);
+			field.setEntered(&statusWrapper, 1);
+			check(&statusWrapper);
 		}
 		else
 		{
-			field.setEntered(&s, 0);
-			check(&s);
+			field.setEntered(&statusWrapper, 0);
+			check(&statusWrapper);
 			field.setSpecified(1);
 		}
 	}
@@ -10237,13 +10242,14 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	text.upper();
 
 	Firebird::LocalStatus s;
+	CheckStatusWrapper statusWrapper(&s);
 
 	userData->op = mode == USER_ADD ? Auth::ADD_OPER : mode == USER_MOD ?
 		Auth::MOD_OPER : Auth::ADDMOD_OPER;
-	userData->user.set(&s, text.c_str());
-	check(&s);
-	userData->user.setEntered(&s, 1);
-	check(&s);
+	userData->user.set(&statusWrapper, text.c_str());
+	check(&statusWrapper);
+	userData->user.setEntered(&statusWrapper, 1);
+	check(&statusWrapper);
 
 	if (password)
 	{
@@ -10265,18 +10271,18 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	if (adminRole.specified)
 	{
-		userData->adm.set(&s, adminRole.value);
-		check(&s);
-		userData->adm.setEntered(&s, 1);
-		check(&s);
+		userData->adm.set(&statusWrapper, adminRole.value);
+		check(&statusWrapper);
+		userData->adm.setEntered(&statusWrapper, 1);
+		check(&statusWrapper);
 	}
 
 	if (active.specified)
 	{
-		userData->act.set(&s, (int) active.value);
-		check(&s);
-		userData->act.setEntered(&s, 1);
-		check(&s);
+		userData->act.set(&statusWrapper, (int) active.value);
+		check(&statusWrapper);
+		userData->act.setEntered(&statusWrapper, 1);
+		check(&statusWrapper);
 	}
 
 	string attributesBuffer;
@@ -10293,10 +10299,10 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	if (attributesBuffer.hasData())
 	{
-		userData->attr.set(&s, attributesBuffer.c_str());
-		check(&s);
-		userData->attr.setEntered(&s, 1);
-		check(&s);
+		userData->attr.set(&statusWrapper, attributesBuffer.c_str());
+		check(&statusWrapper);
+		userData->attr.setEntered(&statusWrapper, 1);
+		check(&statusWrapper);
 	}
 
 	const int ddlAction = mode == USER_ADD ? DDL_TRIGGER_CREATE_USER : DDL_TRIGGER_ALTER_USER;
@@ -10340,11 +10346,13 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	text.upper();
 
 	Firebird::LocalStatus s;
+	CheckStatusWrapper statusWrapper(&s);
+
 	userData->op = Auth::DEL_OPER;
-	userData->user.set(&s, text.c_str());
-	userData->user.setEntered(&s, 1);
+	userData->user.set(&statusWrapper, text.c_str());
+	userData->user.setEntered(&statusWrapper, 1);
 	userData->plugin = plugin;
-	check(&s);
+	check(&statusWrapper);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_USER,
 		userData->user.get());
@@ -10432,7 +10440,7 @@ void GrantRevokeNode::runInSecurityDb(SecDbContext* secDbContext)
 	{
 		CreateDbJob& j = createDbJobs[n];
 		LocalStatus st;
-		IStatus* s = &st;
+		CheckStatusWrapper statusWrapper(&st);
 
 		Message gr;
 		Field<ISC_SHORT> uType(gr);
@@ -10444,18 +10452,18 @@ void GrantRevokeNode::runInSecurityDb(SecDbContext* secDbContext)
 		Field<ISC_INT64> cnt(result);
 
 		const char* checkSql = "select count(*) from RDB$DB_CREATORS where RDB$USER_TYPE = ? and RDB$USER = ?";
-		secDbContext->att->execute(s, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
+		secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
 			gr.getMetadata(), gr.getBuffer(), result.getMetadata(), result.getBuffer());
-		check(s);
+		check(&statusWrapper);
 
 		if (isGrant)
 		{
 			if (!cnt)
 			{
 				const char* insertSql = "insert into RDB$DB_CREATORS(RDB$USER_TYPE, RDB$USER) values(?, ?)";
-				secDbContext->att->execute(s, secDbContext->tra, 0, insertSql, SQL_DIALECT_V6,
+				secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, insertSql, SQL_DIALECT_V6,
 					gr.getMetadata(), gr.getBuffer(), NULL, NULL);
-				check(s);
+				check(&statusWrapper);
 			}
 		}
 		else
@@ -10463,7 +10471,7 @@ void GrantRevokeNode::runInSecurityDb(SecDbContext* secDbContext)
 			if (cnt)
 			{
 				const char* deleteSql = "delete from RDB$DB_CREATORS where RDB$USER_TYPE = ? and RDB$USER = ?";
-				secDbContext->att->execute(s, secDbContext->tra, 0, deleteSql, SQL_DIALECT_V6,
+				secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, deleteSql, SQL_DIALECT_V6,
 					gr.getMetadata(), gr.getBuffer(), NULL, NULL);
 
 				j.grantErased = true;

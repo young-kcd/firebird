@@ -55,15 +55,18 @@ class Message
 {
 public:
 	Message(Firebird::IMessageMetadata* aMeta = NULL)
-		: metadata(NULL), buffer(NULL), builder(NULL),
-		  fieldCount(0), fieldList(NULL)
-	{
 #ifdef INTERNAL_FIREBIRD
-		s = &st;
+		: s(&st),
 #else
-		s = fb_get_master_interface()->getStatus();
+		: s(fb_get_master_interface()->getStatus()),
 #endif
-
+		  metadata(NULL),
+		  buffer(NULL),
+		  builder(NULL),
+		  fieldCount(0),
+		  fieldList(NULL),
+		  statusWrapper(s)
+	{
 		try
 		{
 			if (aMeta)
@@ -80,8 +83,8 @@ public:
 #else
 					fb_get_master_interface()->
 #endif
-						getMetadataBuilder(s, 0);
-				check(s);
+						getMetadataBuilder(&statusWrapper, 0);
+				check(&statusWrapper);
 				builder = bld;
 				builder->addRef();
 			}
@@ -123,8 +126,8 @@ public:
 	{
 		if (metadata)
 		{
-			unsigned l = metadata->getCount(s);
-			check(s);
+			unsigned l = metadata->getCount(&statusWrapper);
+			check(&statusWrapper);
 			if (fieldCount >= l)
 			{
 #ifdef INTERNAL_FIREBIRD
@@ -135,10 +138,10 @@ public:
 #endif
 			}
 
-			t = metadata->getType(s, fieldCount);
-			check(s);
-			sz = metadata->getLength(s, fieldCount);
-			check(s);
+			t = metadata->getType(&statusWrapper, fieldCount);
+			check(&statusWrapper);
+			sz = metadata->getLength(&statusWrapper, fieldCount);
+			check(&statusWrapper);
 			if (!checkType<T>(t, sz))
 			{
 #ifdef INTERNAL_FIREBIRD
@@ -152,16 +155,16 @@ public:
 		{
 			fb_assert(builder);
 
-			unsigned f = builder->addField(s);
-			check(s);
+			unsigned f = builder->addField(&statusWrapper);
+			check(&statusWrapper);
 
 			fb_assert(f == fieldCount);
 
 			t = getType<T>(sz);
-			builder->setType(s, f, t);
-			check(s);
-			builder->setLength(s, f, sz);
-			check(s);
+			builder->setType(&statusWrapper, f, t);
+			check(&statusWrapper);
+			builder->setLength(&statusWrapper, f, sz);
+			check(&statusWrapper);
 
 			lnk->next = fieldList;
 			fieldList = lnk;
@@ -177,10 +180,10 @@ public:
 #ifdef INTERNAL_FIREBIRD
 			Firebird::status_exception::raise(status);
 #else
-			char s[100];
+			char msg[100];
 			const ISC_STATUS* st = status->getErrors();
-			fb_interpret(s, sizeof(s), &st);
-			fatalErrorHandler(s);
+			fb_interpret(msg, sizeof(msg), &st);
+			fatalErrorHandler(msg);
 #endif
 		}
 	}
@@ -193,8 +196,8 @@ public:
 		if (!metadata)
 		{
 			fb_assert(builder);
-			Firebird::IMessageMetadata* aMeta = builder->getMetadata(s);
-			check(s);
+			Firebird::IMessageMetadata* aMeta = builder->getMetadata(&statusWrapper);
+			check(&statusWrapper);
 			metadata = aMeta;
 			metadata->addRef();
 			builder->release();
@@ -230,8 +233,8 @@ public:
 private:
 	void createBuffer(Firebird::IMessageMetadata* aMeta)
 	{
-		unsigned l = aMeta->getMessageLength(s);
-		check(s);
+		unsigned l = aMeta->getMessageLength(&statusWrapper);
+		check(&statusWrapper);
 		buffer = new unsigned char[l];
 	}
 
@@ -239,14 +242,17 @@ public:
 	Firebird::IStatus* s;
 
 private:
-#ifdef INTERNAL_FIREBIRD
-	Firebird::LocalStatus st;
-#endif
 	Firebird::IMessageMetadata* metadata;
 	unsigned char* buffer;
 	Firebird::IMetadataBuilder* builder;
 	unsigned fieldCount;
 	FieldLink* fieldList;
+#ifdef INTERNAL_FIREBIRD
+	Firebird::LocalStatus st;
+#endif
+
+public:
+	Firebird::CheckStatusWrapper statusWrapper;
 };
 
 
@@ -360,12 +366,12 @@ private:
 
 	void setPointers(const unsigned char* buf)
 	{
-		unsigned tmp = msg->getMetadata()->getOffset(msg->s, ind);
-		Message::check(msg->s);
+		unsigned tmp = msg->getMetadata()->getOffset(&msg->statusWrapper, ind);
+		Message::check(&msg->statusWrapper);
 		ptr = (T*) (buf + tmp);
 
-		tmp = msg->getMetadata()->getNullOffset(msg->s, ind);
-		Message::check(msg->s);
+		tmp = msg->getMetadata()->getNullOffset(&msg->statusWrapper, ind);
+		Message::check(&msg->statusWrapper);
 		null.linkMessage((short*) (buf + tmp));
 	}
 

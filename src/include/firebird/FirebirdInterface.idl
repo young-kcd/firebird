@@ -33,7 +33,6 @@ struct DtcStart;
 // Versioned interface - base for all FB interfaces
 interface Versioned
 {
-	PluginModule getModule();
 }
 
 // Reference counted interface - base for refCounted FB interfaces
@@ -73,6 +72,8 @@ interface Status : Disposable
 
 	const intptr* getErrors() const;
 	const intptr* getWarnings() const;
+
+	Status clone() const;
 }
 
 // Master interface is used to access almost all other interfaces.
@@ -1215,4 +1216,28 @@ interface TraceFactory : PluginBase
 
 	// Create plugin
 	TracePlugin trace_create(Status status, TraceInitInfo init_info);
+}
+
+// UDR Factory interfaces. They should be singletons instances created by user's modules and
+// registered. When UDR engine is going to load a routine, it calls newItem.
+
+interface UdrFunctionFactory : Versioned
+{
+	void setup(Status status, ExternalContext context, RoutineMetadata metadata,
+		MetadataBuilder inBuilder, MetadataBuilder outBuilder);
+	ExternalFunction newItem(Status status, ExternalContext context, RoutineMetadata metadata);
+}
+
+interface UdrProcedureFactory : Versioned
+{
+	void setup(Status status, ExternalContext context, RoutineMetadata metadata,
+		MetadataBuilder inBuilder, MetadataBuilder outBuilder);
+	ExternalProcedure newItem(Status status, ExternalContext context, RoutineMetadata metadata);
+}
+
+interface UdrTriggerFactory : Versioned
+{
+	void setup(Status status, ExternalContext context, RoutineMetadata metadata,
+		MetadataBuilder fieldsBuilder);
+	ExternalTrigger newItem(Status status, ExternalContext context, RoutineMetadata metadata);
 }

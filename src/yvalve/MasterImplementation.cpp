@@ -107,7 +107,7 @@ int MasterImplementation::same(IVersioned* first, IVersioned* second)
 	return first->cloopVTable == second->cloopVTable ? 1 : 0;
 }
 
-IMetadataBuilder* MasterImplementation::getMetadataBuilder(IStatus* status, unsigned fieldCount)
+IMetadataBuilder* MasterImplementation::getMetadataBuilder(CheckStatusWrapper* status, unsigned fieldCount)
 {
 	try
 	{
@@ -580,11 +580,11 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 } // namespace
 
-class TimerImplementation : public AutoIface<Api::ITimerControlImpl<TimerImplementation> >
+class TimerImplementation : public AutoIface<ITimerControlImpl<TimerImplementation, CheckStatusWrapper> >
 {
 public:
 	// ITimerControl implementation
-	void start(IStatus* status, ITimer* timer, ISC_UINT64 microSeconds)
+	void start(CheckStatusWrapper* status, ITimer* timer, ISC_UINT64 microSeconds)
 	{
 		try
 		{
@@ -627,7 +627,7 @@ public:
 		}
 	}
 
-	void stop(IStatus* status, ITimer* timer)
+	void stop(CheckStatusWrapper* status, ITimer* timer)
 	{
 		try
 		{
@@ -707,9 +707,13 @@ namespace Why {
 // get master
 //
 
-typedef Firebird::IMaster* IMasterPtr;
-IMasterPtr API_ROUTINE fb_get_master_interface()
+namespace Firebird
 {
-	static Static<Why::MasterImplementation> instance;
-	return &instance;
+	typedef IMaster* IMasterPtr;
+
+	extern "C" IMasterPtr API_ROUTINE fb_get_master_interface()
+	{
+		static Static<Why::MasterImplementation> instance;
+		return &instance;
+	}
 }

@@ -323,7 +323,7 @@ bool Config::missFirebirdConf()
 
 const char* Config::getInstallDirectory()
 {
-	return fb_get_master_interface()->getConfigManager()->getInstallDirectory();
+	return Firebird::fb_get_master_interface()->getConfigManager()->getInstallDirectory();
 }
 
 static Firebird::PathName* rootFromCommandLine = 0;
@@ -348,7 +348,7 @@ const char* Config::getRootDirectory()
 		return rootFromCommandLine->c_str();
 	}
 
-	return fb_get_master_interface()->getConfigManager()->getRootDirectory();
+	return Firebird::fb_get_master_interface()->getConfigManager()->getRootDirectory();
 }
 
 

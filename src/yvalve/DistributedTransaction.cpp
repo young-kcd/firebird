@@ -43,7 +43,7 @@ using namespace Why;
 
 namespace {
 
-class DTransaction FB_FINAL : public RefCntIface<Api::ITransactionImpl<DTransaction> >
+class DTransaction FB_FINAL : public RefCntIface<ITransactionImpl<DTransaction, CheckStatusWrapper> >
 {
 public:
 	DTransaction()
@@ -62,18 +62,18 @@ public:
 		return 1;
 	}
 
-	void getInfo(IStatus* status, unsigned int itemsLength,
+	void getInfo(CheckStatusWrapper* status, unsigned int itemsLength,
 		const unsigned char* items, unsigned int bufferLength, unsigned char* buffer);
-	void prepare(IStatus* status, unsigned int msgLength,
+	void prepare(CheckStatusWrapper* status, unsigned int msgLength,
 		const unsigned char* message);
-	void commit(IStatus* status);
-	void commitRetaining(IStatus* status);
-	void rollback(IStatus* status);
-	void rollbackRetaining(IStatus* status);
-	void disconnect(IStatus* status);
-	DTransaction* join(IStatus* status, ITransaction* transaction);
-	ITransaction* validate(IStatus* status, IAttachment* attachment);
-	DTransaction* enterDtc(IStatus* status);
+	void commit(CheckStatusWrapper* status);
+	void commitRetaining(CheckStatusWrapper* status);
+	void rollback(CheckStatusWrapper* status);
+	void rollbackRetaining(CheckStatusWrapper* status);
+	void disconnect(CheckStatusWrapper* status);
+	DTransaction* join(CheckStatusWrapper* status, ITransaction* transaction);
+	ITransaction* validate(CheckStatusWrapper* status, IAttachment* attachment);
+	DTransaction* enterDtc(CheckStatusWrapper* status);
 
 private:
 	typedef HalfStaticArray<ITransaction*, 8> SubArray;
@@ -88,13 +88,13 @@ private:
 		sub.assign(aSub);
 	}
 
-	bool prepareCommit(IStatus* status, TdrBuffer& tdr);
-	bool buildPrepareInfo(IStatus* status, TdrBuffer& tdr, ITransaction* from);
+	bool prepareCommit(CheckStatusWrapper* status, TdrBuffer& tdr);
+	bool buildPrepareInfo(CheckStatusWrapper* status, TdrBuffer& tdr, ITransaction* from);
 
 	~DTransaction();
 };
 
-bool DTransaction::buildPrepareInfo(IStatus* status, TdrBuffer& tdr, ITransaction* from)
+bool DTransaction::buildPrepareInfo(CheckStatusWrapper* status, TdrBuffer& tdr, ITransaction* from)
 {
 	// Information items for two phase commit.
 	static const UCHAR PREPARE_TR_INFO[] =
@@ -147,7 +147,7 @@ bool DTransaction::buildPrepareInfo(IStatus* status, TdrBuffer& tdr, ITransactio
 	return true;
 }
 
-bool DTransaction::prepareCommit(IStatus* status, TdrBuffer& tdr)
+bool DTransaction::prepareCommit(CheckStatusWrapper* status, TdrBuffer& tdr)
 {
 	TEXT host[64];
 	ISC_get_host(host, sizeof(host));
@@ -175,7 +175,7 @@ bool DTransaction::prepareCommit(IStatus* status, TdrBuffer& tdr)
 	return true;
 }
 
-void DTransaction::getInfo(IStatus* status,
+void DTransaction::getInfo(CheckStatusWrapper* status,
 								   unsigned int itemsLength, const unsigned char* items,
 								   unsigned int bufferLength, unsigned char* buffer)
 {
@@ -216,7 +216,7 @@ void DTransaction::getInfo(IStatus* status,
 	}
 }
 
-void DTransaction::prepare(IStatus* status,
+void DTransaction::prepare(CheckStatusWrapper* status,
 								   unsigned int msgLength, const unsigned char* message)
 {
 	try
@@ -257,7 +257,7 @@ void DTransaction::prepare(IStatus* status,
 	}
 }
 
-void DTransaction::commit(IStatus* status)
+void DTransaction::commit(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -294,7 +294,7 @@ void DTransaction::commit(IStatus* status)
 /*
  *	I see problems with this approach, but keep it 'as was' for a while
  */
-void DTransaction::commitRetaining(IStatus* status)
+void DTransaction::commitRetaining(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -320,7 +320,7 @@ void DTransaction::commitRetaining(IStatus* status)
 	}
 }
 
-void DTransaction::rollback(IStatus* status)
+void DTransaction::rollback(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -348,7 +348,7 @@ void DTransaction::rollback(IStatus* status)
 	}
 }
 
-void DTransaction::rollbackRetaining(IStatus* status)
+void DTransaction::rollbackRetaining(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -374,7 +374,7 @@ void DTransaction::rollbackRetaining(IStatus* status)
 	}
 }
 
-void DTransaction::disconnect(IStatus* status)
+void DTransaction::disconnect(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -405,7 +405,7 @@ void DTransaction::disconnect(IStatus* status)
 
 // To do: check the maximum allowed dbs in a two phase commit.
 //		  Q: what is the maximum?
-DTransaction* DTransaction::join(IStatus* status, ITransaction* transaction)
+DTransaction* DTransaction::join(CheckStatusWrapper* status, ITransaction* transaction)
 {
 	try
 	{
@@ -435,7 +435,7 @@ DTransaction* DTransaction::join(IStatus* status, ITransaction* transaction)
 	return NULL;
 }
 
-ITransaction* DTransaction::validate(IStatus* status, IAttachment* attachment)
+ITransaction* DTransaction::validate(CheckStatusWrapper* status, IAttachment* attachment)
 {
 	try
 	{
@@ -461,7 +461,7 @@ ITransaction* DTransaction::validate(IStatus* status, IAttachment* attachment)
 	return NULL;
 }
 
-DTransaction* DTransaction::enterDtc(IStatus* status)
+DTransaction* DTransaction::enterDtc(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -498,7 +498,7 @@ DTransaction::~DTransaction()
 
 namespace Why {
 
-YTransaction* Dtc::start(IStatus* status, IDtcStart* components)
+YTransaction* Dtc::start(CheckStatusWrapper* status, IDtcStart* components)
 {
 	try
 	{
@@ -546,7 +546,7 @@ YTransaction* Dtc::start(IStatus* status, IDtcStart* components)
 	return NULL;
 }
 
-YTransaction* Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
+YTransaction* Dtc::join(CheckStatusWrapper* status, ITransaction* one, ITransaction* two)
 {
 	try
 	{
@@ -575,7 +575,7 @@ YTransaction* Dtc::join(IStatus* status, ITransaction* one, ITransaction* two)
 	return NULL;
 }
 
-class DtcStart : public DisposeIface<Api::IDtcStartImpl<DtcStart> >
+class DtcStart : public DisposeIface<IDtcStartImpl<DtcStart, CheckStatusWrapper> >
 {
 public:
 	DtcStart()
@@ -583,12 +583,12 @@ public:
 	{ }
 
 	// IDtcStart implementation
-	void setComponent(IStatus* status, IAttachment* att)
+	void setComponent(CheckStatusWrapper* status, IAttachment* att)
 	{
 		this->setWithParam(status, att, 0, NULL);
 	}
 
-	void setWithParam(IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb)
+	void setWithParam(CheckStatusWrapper* status, IAttachment* att, unsigned length, const unsigned char* tpb)
 	{
 		try
 		{
@@ -606,12 +606,12 @@ public:
 		}
 	}
 
-	unsigned getCount(IStatus*)
+	unsigned getCount(CheckStatusWrapper*)
 	{
 		return components.getCount();
 	}
 
-	IAttachment* getAttachment(IStatus* status, unsigned pos)
+	IAttachment* getAttachment(CheckStatusWrapper* status, unsigned pos)
 	{
 		try
 		{
@@ -627,7 +627,7 @@ public:
 		return NULL;
 	}
 
-	const unsigned char* getTpb(IStatus* status, unsigned pos, unsigned* length)
+	const unsigned char* getTpb(CheckStatusWrapper* status, unsigned pos, unsigned* length)
 	{
 		try
 		{
@@ -669,7 +669,7 @@ private:
 	}
 };
 
-IDtcStart* Dtc::startBuilder(IStatus* status)
+IDtcStart* Dtc::startBuilder(CheckStatusWrapper* status)
 {
 	try
 	{

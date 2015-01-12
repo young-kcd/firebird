@@ -37,7 +37,7 @@
 namespace Firebird {
 
 template <class Final>
-class BaseStatus : public Api::IStatusImpl<Final>
+class BaseStatus : public IStatusImpl<Final, CheckStatusWrapper>
 {
 public:
 	// IStatus implementation
@@ -81,6 +81,16 @@ public:
 	{
 		return (errors.vector[1] ? IStatus::FB_HAS_ERRORS : 0) |
 			   (warnings.vector[1] ? IStatus::FB_HAS_WARNINGS  : 0);
+	}
+
+	IStatus* clone() const
+	{
+		Final* ret = new Final();
+
+		ret->setWarnings(getWarnings());
+		ret->setErrors(getErrors());
+
+		return ret;
 	}
 
 public:
@@ -134,7 +144,25 @@ class LocalStatus : public AutoIface<BaseStatus<LocalStatus> >
 {
 public:
 	void dispose()
-	{ }
+	{
+	}
+
+public:
+	static void checkException(LocalStatus* status)
+	{
+	}
+
+	static void catchException(LocalStatus* status)
+	{
+		BaseStatusWrapper<LocalStatus>::catchException(status);
+	}
+
+	static void setVersionError(IStatus* status, const char* interfaceName,
+		unsigned currentVersion, unsigned expectedVersion)
+	{
+		BaseStatusWrapper<LocalStatus>::setVersionError(
+			status, interfaceName,currentVersion, expectedVersion);
+	}
 };
 
 

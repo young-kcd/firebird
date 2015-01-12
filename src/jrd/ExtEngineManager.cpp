@@ -635,17 +635,17 @@ IMaster* ExtEngineManager::ExternalContextImpl::getMaster()
 	return master;
 }
 
-IExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(IStatus* /*status*/)
+IExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(CheckStatusWrapper* /*status*/)
 {
 	return engine;
 }
 
-Firebird::IAttachment* ExtEngineManager::ExternalContextImpl::getAttachment(IStatus* /*status*/)
+Firebird::IAttachment* ExtEngineManager::ExternalContextImpl::getAttachment(CheckStatusWrapper* /*status*/)
 {
 	return externalAttachment;
 }
 
-Firebird::ITransaction* ExtEngineManager::ExternalContextImpl::getTransaction(IStatus* /*status*/)
+Firebird::ITransaction* ExtEngineManager::ExternalContextImpl::getTransaction(CheckStatusWrapper* /*status*/)
 {
 	return externalTransaction;
 }

@@ -35,7 +35,7 @@ namespace Auth {
 // Required to stop analyzing rest of plugins before first roundtrip to server
 // if legacy login is present in DPB
 
-class SecurityDatabaseClient FB_FINAL : public Firebird::StdPlugin<Firebird::Api::IClientImpl<SecurityDatabaseClient> >
+class SecurityDatabaseClient FB_FINAL : public Firebird::StdPlugin<Firebird::IClientImpl<SecurityDatabaseClient, Firebird::CheckStatusWrapper> >
 {
 public:
 	explicit SecurityDatabaseClient(Firebird::IPluginConfig*)
@@ -43,7 +43,7 @@ public:
 	}
 
 	// IClient implementation
-	int authenticate(Firebird::IStatus*, Firebird::IClientBlock* data);
+	int authenticate(Firebird::CheckStatusWrapper*, Firebird::IClientBlock* data);
     int release();
 };
 

@@ -37,7 +37,7 @@ using namespace Firebird;
 
 namespace
 {
-	class UserIdInfo : public AutoIface<Api::ILogonInfoImpl<UserIdInfo> >
+	class UserIdInfo : public AutoIface<ILogonInfoImpl<UserIdInfo, CheckStatusWrapper> >
 	{
 	public:
 		explicit UserIdInfo(const Attachment* pAtt)
@@ -76,7 +76,7 @@ namespace
 		const Attachment* att;
 	};
 
-	class FillSnapshot : public AutoIface<Api::IListUsersImpl<FillSnapshot> >
+	class FillSnapshot : public AutoIface<IListUsersImpl<FillSnapshot, CheckStatusWrapper> >
 	{
 	public:
 		explicit FillSnapshot(UserManagement* um)
@@ -84,7 +84,7 @@ namespace
 		{ }
 
 		// IListUsers implementation
-		void list(IStatus* status, IUser* user)
+		void list(CheckStatusWrapper* status, IUser* user)
 		{
 			try
 			{
@@ -103,7 +103,7 @@ namespace
 		unsigned pos;
 	};
 
-	class OldAttributes : public AutoIface<Api::IListUsersImpl<OldAttributes> >
+	class OldAttributes : public AutoIface<IListUsersImpl<OldAttributes, CheckStatusWrapper> >
 	{
 	public:
 		OldAttributes()
@@ -111,7 +111,7 @@ namespace
 		{ }
 
 		// IListUsers implementation
-		void list(IStatus* status, IUser* data)
+		void list(CheckStatusWrapper* status, IUser* data)
 		{
 			try
 			{
@@ -168,11 +168,13 @@ IManagement* UserManagement::registerManager(Auth::Get& getPlugin, const char* p
 
 	// Start new management plugin ...
 	LocalStatus status;
+	CheckStatusWrapper statusWrapper(&status);
+
 	UserIdInfo idInfo(att);
-	manager->start(&status, &idInfo);
+	manager->start(&statusWrapper, &idInfo);
 	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 	{
-		status_exception::raise(&status);
+		status_exception::raise(&statusWrapper);
 	}
 
 	// ... and store it in cache
@@ -255,7 +257,9 @@ UserManagement::~UserManagement()
 		if (manager)
 		{
 			LocalStatus status;
-			manager->rollback(&status);
+			CheckStatusWrapper statusWrapper(&status);
+
+			manager->rollback(&statusWrapper);
 			PluginManagerInterfacePtr()->releasePlugin(manager);
 			managers[i].second = NULL;
 
@@ -275,9 +279,11 @@ void UserManagement::commit()
 		if (manager)
 		{
 			LocalStatus status;
-			manager->commit(&status);
+			CheckStatusWrapper statusWrapper(&status);
+
+			manager->commit(&statusWrapper);
 			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
-				status_exception::raise(&status);
+				status_exception::raise(&statusWrapper);
 
 			PluginManagerInterfacePtr()->releasePlugin(manager);
 			managers[i].second = NULL;
@@ -343,17 +349,19 @@ void UserManagement::execute(USHORT id)
 		return;	// Already commited
 
 	LocalStatus status;
+	CheckStatusWrapper statusWrapper(&status);
+
 	if (command->attr.entered() || command->op == Auth::ADDMOD_OPER)
 	{
 		Auth::StackUserData cmd;
 		cmd.op = Auth::DIS_OPER;
-		cmd.user.set(&status, command->userName()->get());
-		check(&status);
-		cmd.user.setEntered(&status, 1);
-		check(&status);
+		cmd.user.set(&statusWrapper, command->userName()->get());
+		check(&statusWrapper);
+		cmd.user.setEntered(&statusWrapper, 1);
+		check(&statusWrapper);
 
 		OldAttributes oldAttributes;
-		int ret = manager->execute(&status, &cmd, &oldAttributes);
+		int ret = manager->execute(&statusWrapper, &cmd, &oldAttributes);
 		checkSecurityResult(ret, &status, command->userName()->get(), command);
 
 		if (command->op == Auth::ADDMOD_OPER)
@@ -419,16 +427,16 @@ void UserManagement::execute(USHORT id)
 
 			if (merged.hasData())
 			{
-				command->attr.set(&status, merged.c_str());
-				check(&status);
+				command->attr.set(&statusWrapper, merged.c_str());
+				check(&statusWrapper);
 			}
 			else
 			{
-				command->attr.setEntered(&status, 0);
-				check(&status);
+				command->attr.setEntered(&statusWrapper, 0);
+				check(&statusWrapper);
 				command->attr.setSpecified(1);
-				command->attr.set(&status, "");
-				check(&status);
+				command->attr.set(&statusWrapper, "");
+				check(&statusWrapper);
 			}
 		}
 	}
@@ -437,14 +445,14 @@ void UserManagement::execute(USHORT id)
 	{
 		if (!command->act.entered())
 		{
-			command->act.set(&status, 1);
-			check(&status);
-			command->act.setEntered(&status, 1);
-			check(&status);
+			command->act.set(&statusWrapper, 1);
+			check(&statusWrapper);
+			command->act.setEntered(&statusWrapper, 1);
+			check(&statusWrapper);
 		}
 	}
 
-	int errcode = manager->execute(&status, command, NULL);
+	int errcode = manager->execute(&statusWrapper, command, NULL);
 	checkSecurityResult(errcode, &status, command->userName()->get(), command);
 
 	delete commands[id];
@@ -568,10 +576,12 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 		for (FillSnapshot fillSnapshot(this); fillSnapshot.pos < managers.getCount(); ++fillSnapshot.pos)
 		{
 			LocalStatus status;
+			CheckStatusWrapper statusWrapper(&status);
+
 			Auth::StackUserData u;
 			u.op = Auth::DIS_OPER;
 
-			int errcode = managers[fillSnapshot.pos].second->execute(&status, &u, &fillSnapshot);
+			int errcode = managers[fillSnapshot.pos].second->execute(&statusWrapper, &u, &fillSnapshot);
 			checkSecurityResult(errcode, &status, "Unknown", &u);
 		}
 	}

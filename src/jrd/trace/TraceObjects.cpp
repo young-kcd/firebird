@@ -416,7 +416,7 @@ const char* TraceTriggerImpl::getRelationName()
 
 /// TraceLogWriterImpl
 
-class TraceLogWriterImpl FB_FINAL : public RefCntIface<Api::ITraceLogWriterImpl<TraceLogWriterImpl> >
+class TraceLogWriterImpl FB_FINAL : public RefCntIface<ITraceLogWriterImpl<TraceLogWriterImpl, CheckStatusWrapper> >
 {
 public:
 	TraceLogWriterImpl(const TraceSession& session) :

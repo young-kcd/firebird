@@ -47,7 +47,7 @@
 #include <sys/stat.h>
 
 
-class PluginLogWriter FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ITraceLogWriterImpl<PluginLogWriter> >
+class PluginLogWriter FB_FINAL : public Firebird::RefCntIface<Firebird::ITraceLogWriterImpl<PluginLogWriter, Firebird::CheckStatusWrapper> >
 {
 public:
 	PluginLogWriter(const char* fileName, size_t maxSize);

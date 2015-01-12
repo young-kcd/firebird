@@ -61,7 +61,7 @@ DebugServer::DebugServer(Firebird::IPluginConfig* pConf)
 	check(&s);
 }
 
-int DebugServer::authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sb,
+int DebugServer::authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sb,
 	Firebird::IWriter* writerInterface)
 {
 	try
@@ -136,7 +136,7 @@ DebugClient::DebugClient(Firebird::IPluginConfig*)
 	: str(getPool())
 { }
 
-int DebugClient::authenticate(Firebird::IStatus* status, Firebird::IClientBlock* cb)
+int DebugClient::authenticate(Firebird::CheckStatusWrapper* status, Firebird::IClientBlock* cb)
 {
 	try
 	{

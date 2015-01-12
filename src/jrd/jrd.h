@@ -581,7 +581,7 @@ public:
 		context.putSpecific();
 	}
 
-	explicit ThreadContextHolder(Firebird::IStatus* status)
+	explicit ThreadContextHolder(Firebird::CheckStatusWrapper* status)
 		: context(local_status), externStatus(status)
 	{
 		context.putSpecific();

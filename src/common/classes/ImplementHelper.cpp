@@ -50,11 +50,6 @@ UnloadDetectorHelper* getUnloadDetector()
 	return &myModule;
 }
 
-IPluginModule* getPluginModule()
-{
-	return &myModule;
-}
-
 void CachedMasterInterface::set(IMaster* master)
 {
 	fb_assert(master);

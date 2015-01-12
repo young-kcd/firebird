@@ -157,7 +157,9 @@ int JBlob::release()
 	if (blob)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (!blob)
 	{
@@ -177,7 +179,9 @@ int JTransaction::release()
 	if (transaction)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (!transaction)
 	{
@@ -195,7 +199,9 @@ int JStatement::release()
 	if (statement)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (!statement)
 	{
@@ -213,7 +219,9 @@ int JRequest::release()
 	if (rq)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (!rq)
 	{
@@ -231,7 +239,9 @@ int JEvents::release()
 	if (id >= 0)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (id < 0)
 	{
@@ -280,7 +290,9 @@ int JAttachment::release()
 	if (att)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (!att)
 	{
@@ -340,7 +352,9 @@ int JService::release()
 	if (svc)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (!svc)
 	{
@@ -364,14 +378,16 @@ int JProvider::release()
 static void shutdownBeforeUnload()
 {
 	LocalStatus status;
-	JProvider::getInstance()->shutdown(&status, 0, fb_shutrsn_exit_called);
+	CheckStatusWrapper statusWrapper(&status);
+
+	JProvider::getInstance()->shutdown(&statusWrapper, 0, fb_shutrsn_exit_called);
 };
 
-class EngineFactory : public AutoIface<Api::IPluginFactoryImpl<EngineFactory> >
+class EngineFactory : public AutoIface<IPluginFactoryImpl<EngineFactory, CheckStatusWrapper> >
 {
 public:
 	// IPluginFactory implementation
-	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(CheckStatusWrapper* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{
@@ -688,7 +704,7 @@ namespace
 	{
 	public:
 		template <typename I>
-		EngineContextHolder(IStatus* status, I* interfacePtr, const char* from,
+		EngineContextHolder(CheckStatusWrapper* status, I* interfacePtr, const char* from,
 							unsigned lockFlags = 0)
 			: ThreadContextHolder(status),
 			  AttachmentHolder(*this, interfacePtr->getAttachment(), lockFlags, from),
@@ -708,7 +724,7 @@ namespace
 	}
 
 
-	class DefaultCallback : public AutoIface<Api::ICryptKeyCallbackImpl<DefaultCallback> >
+	class DefaultCallback : public AutoIface<ICryptKeyCallbackImpl<DefaultCallback, CheckStatusWrapper> >
 	{
 	public:
 		unsigned int callback(unsigned int, const void*, unsigned int, void*)
@@ -942,7 +958,7 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public AutoIface<Api::ITraceDatabaseConnectionImpl<TraceFailedConnection> >
+class TraceFailedConnection : public AutoIface<ITraceDatabaseConnectionImpl<TraceFailedConnection, CheckStatusWrapper> >
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
@@ -978,7 +994,7 @@ static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
 static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
 
-static void 		handle_error(Firebird::IStatus*, ISC_STATUS);
+static void 		handle_error(Firebird::CheckStatusWrapper*, ISC_STATUS);
 
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK/*, VDN_SECURITY*/};
@@ -1044,7 +1060,7 @@ static void check_autocommit(jrd_req* request, thread_db* tdbb)
 }
 
 
-static void successful_completion(IStatus* s, ISC_STATUS acceptCode = 0)
+static void successful_completion(CheckStatusWrapper* s, ISC_STATUS acceptCode = 0)
 {
 	fb_assert(s);
 
@@ -1232,7 +1248,7 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 namespace Jrd {
 
-JTransaction* JAttachment::getTransactionInterface(IStatus* status, ITransaction* tra)
+JTransaction* JAttachment::getTransactionInterface(CheckStatusWrapper* status, ITransaction* tra)
 {
 	if (!tra)
 		Arg::Gds(isc_bad_trans_handle).raise();
@@ -1250,7 +1266,7 @@ JTransaction* JAttachment::getTransactionInterface(IStatus* status, ITransaction
 	return jt;
 }
 
-jrd_tra* JAttachment::getEngineTransaction(IStatus* status, ITransaction* tra)
+jrd_tra* JAttachment::getEngineTransaction(CheckStatusWrapper* status, ITransaction* tra)
 {
 	return getTransactionInterface(status, tra)->getHandle();
 }
@@ -1333,7 +1349,7 @@ static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& opt
 	}
 }
 
-JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filename,
+JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const char* filename,
 	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
@@ -1904,7 +1920,7 @@ JAttachment* JProvider::attachDatabase(IStatus* user_status, const char* filenam
 }
 
 
-void JBlob::getInfo(IStatus* user_status,
+void JBlob::getInfo(CheckStatusWrapper* user_status,
 				   unsigned int itemsLength, const unsigned char* items,
 				   unsigned int bufferLength, unsigned char* buffer)
 {
@@ -1943,7 +1959,7 @@ void JBlob::getInfo(IStatus* user_status,
 }
 
 
-void JBlob::cancel(IStatus* user_status)
+void JBlob::cancel(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -1959,7 +1975,7 @@ void JBlob::cancel(IStatus* user_status)
 }
 
 
-void JBlob::freeEngineData(IStatus* user_status)
+void JBlob::freeEngineData(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -1997,7 +2013,7 @@ void JBlob::freeEngineData(IStatus* user_status)
 }
 
 
-void JEvents::cancel(IStatus* user_status)
+void JEvents::cancel(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2013,7 +2029,7 @@ void JEvents::cancel(IStatus* user_status)
 }
 
 
-void JEvents::freeEngineData(IStatus* user_status)
+void JEvents::freeEngineData(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2057,7 +2073,7 @@ void JEvents::freeEngineData(IStatus* user_status)
 }
 
 
-void JAttachment::cancelOperation(IStatus* user_status, int option)
+void JAttachment::cancelOperation(CheckStatusWrapper* user_status, int option)
 {
 /**************************************
  *
@@ -2093,7 +2109,7 @@ void JAttachment::cancelOperation(IStatus* user_status, int option)
 }
 
 
-void JBlob::close(IStatus* user_status)
+void JBlob::close(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2131,7 +2147,7 @@ void JBlob::close(IStatus* user_status)
 }
 
 
-void JTransaction::commit(IStatus* user_status)
+void JTransaction::commit(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2169,7 +2185,7 @@ void JTransaction::commit(IStatus* user_status)
 }
 
 
-void JTransaction::commitRetaining(IStatus* user_status)
+void JTransaction::commitRetaining(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2206,7 +2222,7 @@ void JTransaction::commitRetaining(IStatus* user_status)
 }
 
 
-ITransaction* JTransaction::join(IStatus* user_status, ITransaction* transaction)
+ITransaction* JTransaction::join(CheckStatusWrapper* user_status, ITransaction* transaction)
 {
 	try
 	{
@@ -2222,7 +2238,7 @@ ITransaction* JTransaction::join(IStatus* user_status, ITransaction* transaction
 	return NULL;
 }
 
-JTransaction* JTransaction::validate(IStatus* user_status, IAttachment* testAtt)
+JTransaction* JTransaction::validate(CheckStatusWrapper* user_status, IAttachment* testAtt)
 {
 	try
 	{
@@ -2239,7 +2255,7 @@ JTransaction* JTransaction::validate(IStatus* user_status, IAttachment* testAtt)
 	return NULL;
 }
 
-JTransaction* JTransaction::enterDtc(IStatus* user_status)
+JTransaction* JTransaction::enterDtc(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -2261,7 +2277,7 @@ JTransaction* JTransaction::enterDtc(IStatus* user_status)
 	return NULL;
 }
 
-JRequest* JAttachment::compileRequest(IStatus* user_status,
+JRequest* JAttachment::compileRequest(CheckStatusWrapper* user_status,
 	unsigned int blr_length, const unsigned char* blr)
 {
 /**************************************
@@ -2313,7 +2329,7 @@ JRequest* JAttachment::compileRequest(IStatus* user_status,
 }
 
 
-JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+JBlob* JAttachment::createBlob(CheckStatusWrapper* user_status, ITransaction* tra, ISC_QUAD* blob_id,
 	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -2361,7 +2377,7 @@ JBlob* JAttachment::createBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD
 }
 
 
-JAttachment* JProvider::createDatabase(IStatus* user_status, const char* filename,
+JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const char* filename,
 	unsigned int dpb_length, const unsigned char* dpb)
 {
 /**************************************
@@ -2751,7 +2767,7 @@ JAttachment* JProvider::createDatabase(IStatus* user_status, const char* filenam
 }
 
 
-void JAttachment::getInfo(IStatus* user_status, unsigned int item_length, const unsigned char* items,
+void JAttachment::getInfo(CheckStatusWrapper* user_status, unsigned int item_length, const unsigned char* items,
 	unsigned int buffer_length, unsigned char* buffer)
 {
 /**************************************
@@ -2789,7 +2805,7 @@ void JAttachment::getInfo(IStatus* user_status, unsigned int item_length, const 
 }
 
 
-void JAttachment::executeDyn(IStatus* status, ITransaction* /*tra*/, unsigned int /*length*/,
+void JAttachment::executeDyn(CheckStatusWrapper* status, ITransaction* /*tra*/, unsigned int /*length*/,
 	const unsigned char* /*dyn*/)
 {
 /**************************************
@@ -2805,7 +2821,7 @@ void JAttachment::executeDyn(IStatus* status, ITransaction* /*tra*/, unsigned in
 }
 
 
-void JAttachment::detach(IStatus* user_status)
+void JAttachment::detach(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2822,7 +2838,7 @@ void JAttachment::detach(IStatus* user_status)
 }
 
 
-void JAttachment::freeEngineData(IStatus* user_status)
+void JAttachment::freeEngineData(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -2876,7 +2892,7 @@ void JAttachment::freeEngineData(IStatus* user_status)
 }
 
 
-void JAttachment::dropDatabase(IStatus* user_status)
+void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3031,7 +3047,7 @@ void JAttachment::dropDatabase(IStatus* user_status)
 }
 
 
-int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length, void* buffer,
+int JBlob::getSegment(CheckStatusWrapper* user_status, unsigned int buffer_length, void* buffer,
 	unsigned int* segment_length)
 {
 /**************************************
@@ -3082,7 +3098,7 @@ int JBlob::getSegment(IStatus* user_status, unsigned int buffer_length, void* bu
 }
 
 
-int JAttachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
+int JAttachment::getSlice(CheckStatusWrapper* user_status, ITransaction* tra, ISC_QUAD* array_id,
 	unsigned int /*sdl_length*/, const unsigned char* sdl, unsigned int param_length,
 	const unsigned char* param, int slice_length, unsigned char* slice)
 {
@@ -3136,7 +3152,7 @@ int JAttachment::getSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* arr
 }
 
 
-JBlob* JAttachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* blob_id,
+JBlob* JAttachment::openBlob(CheckStatusWrapper* user_status, ITransaction* tra, ISC_QUAD* blob_id,
 	unsigned int bpb_length, const unsigned char* bpb)
 {
 /**************************************
@@ -3186,7 +3202,7 @@ JBlob* JAttachment::openBlob(IStatus* user_status, ITransaction* tra, ISC_QUAD* 
 }
 
 
-void JTransaction::prepare(IStatus* user_status, unsigned int msg_length, const unsigned char* msg)
+void JTransaction::prepare(CheckStatusWrapper* user_status, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
  *
@@ -3224,7 +3240,7 @@ void JTransaction::prepare(IStatus* user_status, unsigned int msg_length, const 
 }
 
 
-void JBlob::putSegment(IStatus* user_status, unsigned int buffer_length, const void* buffer)
+void JBlob::putSegment(CheckStatusWrapper* user_status, unsigned int buffer_length, const void* buffer)
 {
 /**************************************
  *
@@ -3261,7 +3277,7 @@ void JBlob::putSegment(IStatus* user_status, unsigned int buffer_length, const v
 }
 
 
-void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* array_id,
+void JAttachment::putSlice(CheckStatusWrapper* user_status, ITransaction* tra, ISC_QUAD* array_id,
 	unsigned int /*sdlLength*/, const unsigned char* sdl, unsigned int paramLength,
 	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
@@ -3305,7 +3321,7 @@ void JAttachment::putSlice(IStatus* user_status, ITransaction* tra, ISC_QUAD* ar
 }
 
 
-JEvents* JAttachment::queEvents(IStatus* user_status, IEventCallback* callback,
+JEvents* JAttachment::queEvents(CheckStatusWrapper* user_status, IEventCallback* callback,
 	unsigned int length, const unsigned char* events)
 {
 /**************************************
@@ -3354,7 +3370,7 @@ JEvents* JAttachment::queEvents(IStatus* user_status, IEventCallback* callback,
 }
 
 
-void JRequest::receive(IStatus* user_status, int level, unsigned int msg_type,
+void JRequest::receive(CheckStatusWrapper* user_status, int level, unsigned int msg_type,
 					   unsigned int msg_length, unsigned char* msg)
 {
 /**************************************
@@ -3393,7 +3409,7 @@ void JRequest::receive(IStatus* user_status, int level, unsigned int msg_type,
 }
 
 
-JTransaction* JAttachment::reconnectTransaction(IStatus* user_status, unsigned int length,
+JTransaction* JAttachment::reconnectTransaction(CheckStatusWrapper* user_status, unsigned int length,
 	const unsigned char* id)
 {
 /**************************************
@@ -3438,7 +3454,7 @@ JTransaction* JAttachment::reconnectTransaction(IStatus* user_status, unsigned i
 }
 
 
-void JRequest::free(IStatus* user_status)
+void JRequest::free(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3454,7 +3470,7 @@ void JRequest::free(IStatus* user_status)
 }
 
 
-void JRequest::freeEngineData(IStatus* user_status)
+void JRequest::freeEngineData(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3492,7 +3508,7 @@ void JRequest::freeEngineData(IStatus* user_status)
 }
 
 
-void JRequest::getInfo(IStatus* user_status, int level, unsigned int itemsLength,
+void JRequest::getInfo(CheckStatusWrapper* user_status, int level, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 /**************************************
@@ -3532,7 +3548,7 @@ void JRequest::getInfo(IStatus* user_status, int level, unsigned int itemsLength
 }
 
 
-void JTransaction::rollbackRetaining(IStatus* user_status)
+void JTransaction::rollbackRetaining(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3569,7 +3585,7 @@ void JTransaction::rollbackRetaining(IStatus* user_status)
 }
 
 
-void JTransaction::rollback(IStatus* user_status)
+void JTransaction::rollback(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3607,7 +3623,7 @@ void JTransaction::rollback(IStatus* user_status)
 }
 
 
-void JTransaction::disconnect(IStatus* user_status)
+void JTransaction::disconnect(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -3626,7 +3642,7 @@ void JTransaction::disconnect(IStatus* user_status)
 }
 
 
-int JBlob::seek(IStatus* user_status, int mode, int offset)
+int JBlob::seek(CheckStatusWrapper* user_status, int mode, int offset)
 {
 /**************************************
  *
@@ -3667,7 +3683,7 @@ int JBlob::seek(IStatus* user_status, int mode, int offset)
 }
 
 
-void JRequest::send(IStatus* user_status, int level, unsigned int msg_type,
+void JRequest::send(CheckStatusWrapper* user_status, int level, unsigned int msg_type,
 	unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3707,7 +3723,7 @@ void JRequest::send(IStatus* user_status, int level, unsigned int msg_type,
 }
 
 
-JService* JProvider::attachServiceManager(IStatus* user_status, const char* service_name,
+JService* JProvider::attachServiceManager(CheckStatusWrapper* user_status, const char* service_name,
 	unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
@@ -3743,7 +3759,7 @@ JService* JProvider::attachServiceManager(IStatus* user_status, const char* serv
 }
 
 
-void JService::detach(IStatus* user_status)
+void JService::detach(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3759,7 +3775,7 @@ void JService::detach(IStatus* user_status)
 }
 
 
-void JService::freeEngineData(IStatus* user_status)
+void JService::freeEngineData(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -3789,7 +3805,7 @@ void JService::freeEngineData(IStatus* user_status)
 }
 
 
-void JService::query(IStatus* user_status,
+void JService::query(CheckStatusWrapper* user_status,
 				unsigned int sendLength, const unsigned char* sendItems,
 				unsigned int receiveLength, const unsigned char* receiveItems,
 				unsigned int bufferLength, unsigned char* buffer)
@@ -3853,7 +3869,7 @@ void JService::query(IStatus* user_status,
 }
 
 
-void JService::start(IStatus* user_status, unsigned int spbLength, const unsigned char* spb)
+void JService::start(CheckStatusWrapper* user_status, unsigned int spbLength, const unsigned char* spb)
 {
 /**************************************
  *
@@ -3894,7 +3910,7 @@ void JService::start(IStatus* user_status, unsigned int spbLength, const unsigne
 }
 
 
-void JRequest::startAndSend(IStatus* user_status, ITransaction* tra, int level,
+void JRequest::startAndSend(CheckStatusWrapper* user_status, ITransaction* tra, int level,
 	unsigned int msg_type, unsigned int msg_length, const unsigned char* msg)
 {
 /**************************************
@@ -3954,7 +3970,7 @@ void JRequest::startAndSend(IStatus* user_status, ITransaction* tra, int level,
 }
 
 
-void JRequest::start(IStatus* user_status, ITransaction* tra, int level)
+void JRequest::start(CheckStatusWrapper* user_status, ITransaction* tra, int level)
 {
 /**************************************
  *
@@ -4014,7 +4030,7 @@ void JRequest::start(IStatus* user_status, ITransaction* tra, int level)
 }
 
 
-void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason)
+void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const int reason)
 {
 /**************************************
  *
@@ -4096,14 +4112,14 @@ void JProvider::shutdown(IStatus* status, unsigned int timeout, const int reason
 }
 
 
-void JProvider::setDbCryptCallback(IStatus* status, ICryptKeyCallback* callback)
+void JProvider::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
 {
 	status->init();
 	cryptCallback = callback;
 }
 
 
-JTransaction* JAttachment::startTransaction(IStatus* user_status,
+JTransaction* JAttachment::startTransaction(CheckStatusWrapper* user_status,
 	unsigned int tpbLength, const unsigned char* tpb)
 {
 /**************************************
@@ -4140,7 +4156,7 @@ JTransaction* JAttachment::startTransaction(IStatus* user_status,
 }
 
 
-void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
+void JAttachment::transactRequest(CheckStatusWrapper* user_status, ITransaction* tra,
 	unsigned int blr_length, const unsigned char* blr,
 	unsigned int in_msg_length, const unsigned char* in_msg,
 	unsigned int out_msg_length, unsigned char* out_msg)
@@ -4258,7 +4274,7 @@ void JAttachment::transactRequest(IStatus* user_status, ITransaction* tra,
 }
 
 
-void JTransaction::getInfo(IStatus* user_status,
+void JTransaction::getInfo(CheckStatusWrapper* user_status,
 	unsigned int itemsLength, const unsigned char* items,
 	unsigned int bufferLength, unsigned char* buffer)
 {
@@ -4297,7 +4313,7 @@ void JTransaction::getInfo(IStatus* user_status,
 }
 
 
-void JRequest::unwind(IStatus* user_status, int level)
+void JRequest::unwind(CheckStatusWrapper* user_status, int level)
 {
 /**************************************
  *
@@ -4379,7 +4395,7 @@ void SysStableAttachment::destroy(Attachment* attachment)
 }
 
 
-ITransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
+ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction* apiTra,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 	JTransaction* jt = apiTra ? getAttachment()->getTransactionInterface(user_status, apiTra) : NULL;
@@ -4438,7 +4454,7 @@ ITransaction* JStatement::execute(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-JResultSet* JStatement::openCursor(IStatus* user_status, ITransaction* transaction,
+JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
@@ -4490,7 +4506,7 @@ JResultSet* JStatement::openCursor(IStatus* user_status, ITransaction* transacti
 }
 
 
-IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
+IResultSet* JAttachment::openCursor(CheckStatusWrapper* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
 	const char* cursorName)
@@ -4520,7 +4536,7 @@ IResultSet* JAttachment::openCursor(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
+ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
@@ -4581,7 +4597,7 @@ ITransaction* JAttachment::execute(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-int JResultSet::fetchNext(IStatus* user_status, void* buffer)
+int JResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
 {
 	bool hasMessage = false;
 
@@ -4620,7 +4636,7 @@ int JResultSet::fetchNext(IStatus* user_status, void* buffer)
 	return IStatus::FB_EOF;
 }
 
-int JResultSet::fetchPrior(IStatus* user_status, void* buffer)
+int JResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
@@ -4637,7 +4653,7 @@ int JResultSet::fetchPrior(IStatus* user_status, void* buffer)
 	return IStatus::FB_OK;
 }
 
-int JResultSet::fetchFirst(IStatus* user_status, void* buffer)
+int JResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
@@ -4654,7 +4670,7 @@ int JResultSet::fetchFirst(IStatus* user_status, void* buffer)
 	return IStatus::FB_OK;
 }
 
-int JResultSet::fetchLast(IStatus* user_status, void* buffer)
+int JResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
@@ -4671,7 +4687,7 @@ int JResultSet::fetchLast(IStatus* user_status, void* buffer)
 	return IStatus::FB_OK;
 }
 
-int JResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buffer)
+int JResultSet::fetchAbsolute(CheckStatusWrapper* user_status, unsigned position, void* buffer)
 {
 	try
 	{
@@ -4688,7 +4704,7 @@ int JResultSet::fetchAbsolute(IStatus* user_status, unsigned position, void* buf
 	return IStatus::FB_OK;
 }
 
-int JResultSet::fetchRelative(IStatus* user_status, int offset, void* buffer)
+int JResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void* buffer)
 {
 	try
 	{
@@ -4713,7 +4729,9 @@ int JResultSet::release()
 	if (statement)
 	{
 		LocalStatus status;
-		freeEngineData(&status);
+		CheckStatusWrapper statusWrapper(&status);
+
+		freeEngineData(&statusWrapper);
 	}
 	if (!statement)
 	{
@@ -4724,7 +4742,7 @@ int JResultSet::release()
 }
 
 
-void JResultSet::freeEngineData(IStatus* user_status)
+void JResultSet::freeEngineData(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -4752,13 +4770,13 @@ void JResultSet::freeEngineData(IStatus* user_status)
 }
 
 
-FB_BOOLEAN JResultSet::isEof(IStatus* user_status)
+FB_BOOLEAN JResultSet::isEof(CheckStatusWrapper* user_status)
 {
 	return eof ? FB_TRUE : FB_FALSE;
 }
 
 
-FB_BOOLEAN JResultSet::isBof(IStatus* user_status)
+FB_BOOLEAN JResultSet::isBof(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -4776,19 +4794,19 @@ FB_BOOLEAN JResultSet::isBof(IStatus* user_status)
 }
 
 
-IMessageMetadata* JResultSet::getMetadata(IStatus* user_status)
+IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 {
 	return statement->getOutputMetadata(user_status);
 }
 
 
-void JResultSet::close(IStatus* user_status)
+void JResultSet::close(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
 }
 
 
-void JStatement::freeEngineData(IStatus* user_status)
+void JStatement::freeEngineData(CheckStatusWrapper* user_status)
 {
 	try
 	{
@@ -4816,13 +4834,13 @@ void JStatement::freeEngineData(IStatus* user_status)
 }
 
 
-void JStatement::free(IStatus* user_status)
+void JStatement::free(CheckStatusWrapper* user_status)
 {
 	freeEngineData(user_status);
 }
 
 
-JStatement* JAttachment::prepare(IStatus* user_status, ITransaction* apiTra,
+JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* apiTra,
 	unsigned int stmtLength, const char* sqlStmt,
 	unsigned int dialect, unsigned int flags)
 {
@@ -4879,7 +4897,7 @@ JStatement* JAttachment::prepare(IStatus* user_status, ITransaction* apiTra,
 }
 
 
-unsigned JStatement::getType(IStatus* userStatus)
+unsigned JStatement::getType(CheckStatusWrapper* userStatus)
 {
 	unsigned ret = 0;
 
@@ -4910,7 +4928,7 @@ unsigned JStatement::getType(IStatus* userStatus)
 }
 
 
-unsigned JStatement::getFlags(IStatus* userStatus)
+unsigned JStatement::getFlags(CheckStatusWrapper* userStatus)
 {
 	unsigned ret = 0;
 
@@ -4941,7 +4959,7 @@ unsigned JStatement::getFlags(IStatus* userStatus)
 }
 
 
-const char* JStatement::getPlan(IStatus* userStatus, FB_BOOLEAN detailed)
+const char* JStatement::getPlan(CheckStatusWrapper* userStatus, FB_BOOLEAN detailed)
 {
 	const char* ret = NULL;
 
@@ -4972,7 +4990,7 @@ const char* JStatement::getPlan(IStatus* userStatus, FB_BOOLEAN detailed)
 	return ret;
 }
 
-IMessageMetadata* JStatement::getInputMetadata(IStatus* userStatus)
+IMessageMetadata* JStatement::getInputMetadata(CheckStatusWrapper* userStatus)
 {
 	IMessageMetadata* ret = NULL;
 
@@ -5004,7 +5022,7 @@ IMessageMetadata* JStatement::getInputMetadata(IStatus* userStatus)
 }
 
 
-IMessageMetadata* JStatement::getOutputMetadata(IStatus* userStatus)
+IMessageMetadata* JStatement::getOutputMetadata(CheckStatusWrapper* userStatus)
 {
 	IMessageMetadata* ret = NULL;
 
@@ -5036,7 +5054,7 @@ IMessageMetadata* JStatement::getOutputMetadata(IStatus* userStatus)
 }
 
 
-ISC_UINT64 JStatement::getAffectedRecords(IStatus* userStatus)
+ISC_UINT64 JStatement::getAffectedRecords(CheckStatusWrapper* userStatus)
 {
 	ISC_UINT64 ret = 0;
 
@@ -5066,7 +5084,7 @@ ISC_UINT64 JStatement::getAffectedRecords(IStatus* userStatus)
 }
 
 
-void JStatement::setCursorName(IStatus* user_status, const char* cursor)
+void JStatement::setCursorName(CheckStatusWrapper* user_status, const char* cursor)
 {
 	try
 	{
@@ -5094,7 +5112,7 @@ void JStatement::setCursorName(IStatus* user_status, const char* cursor)
 }
 
 
-void JResultSet::setDelayedOutputFormat(IStatus* user_status, Firebird::IMessageMetadata* outMetadata)
+void JResultSet::setDelayedOutputFormat(CheckStatusWrapper* user_status, Firebird::IMessageMetadata* outMetadata)
 {
 	try
 	{
@@ -5124,7 +5142,7 @@ void JResultSet::setDelayedOutputFormat(IStatus* user_status, Firebird::IMessage
 }
 
 
-void JStatement::getInfo(IStatus* user_status,
+void JStatement::getInfo(CheckStatusWrapper* user_status,
 	unsigned int item_length, const unsigned char* items,
 	unsigned int buffer_length, unsigned char* buffer)
 {
@@ -5153,7 +5171,7 @@ void JStatement::getInfo(IStatus* user_status,
 	successful_completion(user_status);
 }
 
-void JAttachment::ping(IStatus* user_status)
+void JAttachment::ping(CheckStatusWrapper* user_status)
 {
 /**************************************
  *
@@ -5894,7 +5912,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 }
 
 
-static void handle_error(IStatus* user_status, ISC_STATUS code)
+static void handle_error(CheckStatusWrapper* user_status, ISC_STATUS code)
 {
 /**************************************
  *
@@ -6693,7 +6711,7 @@ void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& 
 }
 
 
-void JTransaction::freeEngineData(IStatus* user_status)
+void JTransaction::freeEngineData(CheckStatusWrapper* user_status)
 {
 /**************************************
  *

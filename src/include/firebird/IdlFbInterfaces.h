@@ -8,10 +8,8 @@
 #endif
 
 
-template <typename Policy>
-class FirebirdApi
+namespace Firebird
 {
-private:
 	class DoNotInherit
 	{
 	};
@@ -26,7 +24,6 @@ private:
 		}
 	};
 
-public:
 	// Forward interfaces declarations
 
 	class IVersioned;
@@ -105,6 +102,9 @@ public:
 	class ITraceInitInfo;
 	class ITracePlugin;
 	class ITraceFactory;
+	class IUdrFunctionFactory;
+	class IUdrProcedureFactory;
+	class IUdrTriggerFactory;
 
 	// Interfaces declarations
 
@@ -115,7 +115,6 @@ public:
 		{
 			void* cloopDummy[1];
 			uintptr_t version;
-			IPluginModule* (CLOOP_CARG *getModule)(IVersioned* self) throw();
 		};
 
 		void* cloopDummy[1];
@@ -132,12 +131,6 @@ public:
 
 	public:
 		static const unsigned VERSION = 1;
-
-		IPluginModule* getModule()
-		{
-			IPluginModule* ret = static_cast<VTable*>(this->cloopVTable)->getModule(this);
-			return ret;
-		}
 	};
 
 	class IReferenceCounted : public IVersioned
@@ -214,6 +207,7 @@ public:
 			void (CLOOP_CARG *setWarnings)(IStatus* self, const intptr_t* value) throw();
 			const intptr_t* (CLOOP_CARG *getErrors)(const IStatus* self) throw();
 			const intptr_t* (CLOOP_CARG *getWarnings)(const IStatus* self) throw();
+			IStatus* (CLOOP_CARG *clone)(const IStatus* self) throw();
 		};
 
 	protected:
@@ -276,6 +270,12 @@ public:
 		const intptr_t* getWarnings() const
 		{
 			const intptr_t* ret = static_cast<VTable*>(this->cloopVTable)->getWarnings(this);
+			return ret;
+		}
+
+		IStatus* clone() const
+		{
+			IStatus* ret = static_cast<VTable*>(this->cloopVTable)->clone(this);
 			return ret;
 		}
 	};
@@ -367,11 +367,10 @@ public:
 			return ret;
 		}
 
-		IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount)
+		template <typename StatusType> IMetadataBuilder* getMetadataBuilder(StatusType* status, unsigned fieldCount)
 		{
-			typename Policy::IStatus status2(status);
-			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getMetadataBuilder(this, status2, fieldCount);
-			Policy::checkException(status2);
+			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getMetadataBuilder(this, status, fieldCount);
+			StatusType::checkException(status);
 			return ret;
 		}
 
@@ -465,26 +464,23 @@ public:
 			return ret;
 		}
 
-		IPluginBase* getPlugin(IStatus* status)
+		template <typename StatusType> IPluginBase* getPlugin(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->getPlugin(this, status2);
-			Policy::checkException(status2);
+			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->getPlugin(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void next(IStatus* status)
+		template <typename StatusType> void next(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->next(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->next(this, status);
+			StatusType::checkException(status);
 		}
 
-		void set(IStatus* status, const char* s)
+		template <typename StatusType> void set(StatusType* status, const char* s)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->set(this, status2, s);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->set(this, status, s);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -537,11 +533,10 @@ public:
 			return ret;
 		}
 
-		IConfig* getSubConfig(IStatus* status)
+		template <typename StatusType> IConfig* getSubConfig(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getSubConfig(this, status2);
-			Policy::checkException(status2);
+			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getSubConfig(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -569,27 +564,24 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		IConfigEntry* find(IStatus* status, const char* name)
+		template <typename StatusType> IConfigEntry* find(StatusType* status, const char* name)
 		{
-			typename Policy::IStatus status2(status);
-			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->find(this, status2, name);
-			Policy::checkException(status2);
+			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->find(this, status, name);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IConfigEntry* findValue(IStatus* status, const char* name, const char* value)
+		template <typename StatusType> IConfigEntry* findValue(StatusType* status, const char* name, const char* value)
 		{
-			typename Policy::IStatus status2(status);
-			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findValue(this, status2, name, value);
-			Policy::checkException(status2);
+			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findValue(this, status, name, value);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IConfigEntry* findPos(IStatus* status, const char* name, unsigned pos)
+		template <typename StatusType> IConfigEntry* findPos(StatusType* status, const char* name, unsigned pos)
 		{
-			typename Policy::IStatus status2(status);
-			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findPos(this, status2, name, pos);
-			Policy::checkException(status2);
+			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findPos(this, status, name, pos);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -673,27 +665,24 @@ public:
 			return ret;
 		}
 
-		IConfig* getDefaultConfig(IStatus* status)
+		template <typename StatusType> IConfig* getDefaultConfig(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getDefaultConfig(this, status2);
-			Policy::checkException(status2);
+			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getDefaultConfig(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IFirebirdConf* getFirebirdConf(IStatus* status)
+		template <typename StatusType> IFirebirdConf* getFirebirdConf(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IFirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this, status2);
-			Policy::checkException(status2);
+			IFirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void setReleaseDelay(IStatus* status, ISC_UINT64 microSeconds)
+		template <typename StatusType> void setReleaseDelay(StatusType* status, ISC_UINT64 microSeconds)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setReleaseDelay(this, status2, microSeconds);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setReleaseDelay(this, status, microSeconds);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -718,11 +707,10 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+		template <typename StatusType> IPluginBase* createPlugin(StatusType* status, IPluginConfig* factoryParameter)
 		{
-			typename Policy::IStatus status2(status);
-			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->createPlugin(this, status2, factoryParameter);
-			Policy::checkException(status2);
+			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->createPlugin(this, status, factoryParameter);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -807,19 +795,17 @@ public:
 			static_cast<VTable*>(this->cloopVTable)->unregisterModule(this, cleanup);
 		}
 
-		IPluginSet* getPlugins(IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf)
+		template <typename StatusType> IPluginSet* getPlugins(StatusType* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf)
 		{
-			typename Policy::IStatus status2(status);
-			IPluginSet* ret = static_cast<VTable*>(this->cloopVTable)->getPlugins(this, status2, pluginType, namesList, firebirdConf);
-			Policy::checkException(status2);
+			IPluginSet* ret = static_cast<VTable*>(this->cloopVTable)->getPlugins(this, status, pluginType, namesList, firebirdConf);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IConfig* getConfig(IStatus* status, const char* filename)
+		template <typename StatusType> IConfig* getConfig(StatusType* status, const char* filename)
 		{
-			typename Policy::IStatus status2(status);
-			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getConfig(this, status2, filename);
-			Policy::checkException(status2);
+			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getConfig(this, status, filename);
+			StatusType::checkException(status);
 			return ret;
 		}
 
@@ -964,47 +950,41 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
-		int getSegment(IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength)
+		template <typename StatusType> int getSegment(StatusType* status, unsigned bufferLength, void* buffer, unsigned* segmentLength)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->getSegment(this, status2, bufferLength, buffer, segmentLength);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->getSegment(this, status, bufferLength, buffer, segmentLength);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void putSegment(IStatus* status, unsigned length, const void* buffer)
+		template <typename StatusType> void putSegment(StatusType* status, unsigned length, const void* buffer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->putSegment(this, status2, length, buffer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->putSegment(this, status, length, buffer);
+			StatusType::checkException(status);
 		}
 
-		void cancel(IStatus* status)
+		template <typename StatusType> void cancel(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->cancel(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
+			StatusType::checkException(status);
 		}
 
-		void close(IStatus* status)
+		template <typename StatusType> void close(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->close(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->close(this, status);
+			StatusType::checkException(status);
 		}
 
-		int seek(IStatus* status, int mode, int offset)
+		template <typename StatusType> int seek(StatusType* status, int mode, int offset)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->seek(this, status2, mode, offset);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->seek(this, status, mode, offset);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -1039,76 +1019,66 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
-		void prepare(IStatus* status, unsigned msgLength, const unsigned char* message)
+		template <typename StatusType> void prepare(StatusType* status, unsigned msgLength, const unsigned char* message)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, msgLength, message);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->prepare(this, status, msgLength, message);
+			StatusType::checkException(status);
 		}
 
-		void commit(IStatus* status)
+		template <typename StatusType> void commit(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->commit(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->commit(this, status);
+			StatusType::checkException(status);
 		}
 
-		void commitRetaining(IStatus* status)
+		template <typename StatusType> void commitRetaining(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->commitRetaining(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->commitRetaining(this, status);
+			StatusType::checkException(status);
 		}
 
-		void rollback(IStatus* status)
+		template <typename StatusType> void rollback(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->rollback(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->rollback(this, status);
+			StatusType::checkException(status);
 		}
 
-		void rollbackRetaining(IStatus* status)
+		template <typename StatusType> void rollbackRetaining(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->rollbackRetaining(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->rollbackRetaining(this, status);
+			StatusType::checkException(status);
 		}
 
-		void disconnect(IStatus* status)
+		template <typename StatusType> void disconnect(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->disconnect(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->disconnect(this, status);
+			StatusType::checkException(status);
 		}
 
-		ITransaction* join(IStatus* status, ITransaction* transaction)
+		template <typename StatusType> ITransaction* join(StatusType* status, ITransaction* transaction)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, transaction);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status, transaction);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ITransaction* validate(IStatus* status, IAttachment* attachment)
+		template <typename StatusType> ITransaction* validate(StatusType* status, IAttachment* attachment)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->validate(this, status2, attachment);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->validate(this, status, attachment);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ITransaction* enterDtc(IStatus* status)
+		template <typename StatusType> ITransaction* enterDtc(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->enterDtc(this, status2);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->enterDtc(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -1148,123 +1118,108 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		unsigned getCount(IStatus* status)
+		template <typename StatusType> unsigned getCount(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status2);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getField(IStatus* status, unsigned index)
+		template <typename StatusType> const char* getField(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getField(this, status2, index);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getField(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getRelation(IStatus* status, unsigned index)
+		template <typename StatusType> const char* getRelation(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRelation(this, status2, index);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRelation(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getOwner(IStatus* status, unsigned index)
+		template <typename StatusType> const char* getOwner(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this, status2, index);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getAlias(IStatus* status, unsigned index)
+		template <typename StatusType> const char* getAlias(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getAlias(this, status2, index);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getAlias(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		unsigned getType(IStatus* status, unsigned index)
+		template <typename StatusType> unsigned getType(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status2, index);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		FB_BOOLEAN isNullable(IStatus* status, unsigned index)
+		template <typename StatusType> FB_BOOLEAN isNullable(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isNullable(this, status2, index);
-			Policy::checkException(status2);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isNullable(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int getSubType(IStatus* status, unsigned index)
+		template <typename StatusType> int getSubType(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->getSubType(this, status2, index);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->getSubType(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		unsigned getLength(IStatus* status, unsigned index)
+		template <typename StatusType> unsigned getLength(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getLength(this, status2, index);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getLength(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int getScale(IStatus* status, unsigned index)
+		template <typename StatusType> int getScale(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->getScale(this, status2, index);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->getScale(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		unsigned getCharSet(IStatus* status, unsigned index)
+		template <typename StatusType> unsigned getCharSet(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, index);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		unsigned getOffset(IStatus* status, unsigned index)
+		template <typename StatusType> unsigned getOffset(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getOffset(this, status2, index);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getOffset(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		unsigned getNullOffset(IStatus* status, unsigned index)
+		template <typename StatusType> unsigned getNullOffset(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getNullOffset(this, status2, index);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getNullOffset(this, status, index);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMetadataBuilder* getBuilder(IStatus* status)
+		template <typename StatusType> IMetadataBuilder* getBuilder(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getBuilder(this, status2);
-			Policy::checkException(status2);
+			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getBuilder(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		unsigned getMessageLength(IStatus* status)
+		template <typename StatusType> unsigned getMessageLength(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getMessageLength(this, status2);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getMessageLength(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -1299,75 +1254,65 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void setType(IStatus* status, unsigned index, unsigned type)
+		template <typename StatusType> void setType(StatusType* status, unsigned index, unsigned type)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setType(this, status2, index, type);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setType(this, status, index, type);
+			StatusType::checkException(status);
 		}
 
-		void setSubType(IStatus* status, unsigned index, int subType)
+		template <typename StatusType> void setSubType(StatusType* status, unsigned index, int subType)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setSubType(this, status2, index, subType);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setSubType(this, status, index, subType);
+			StatusType::checkException(status);
 		}
 
-		void setLength(IStatus* status, unsigned index, unsigned length)
+		template <typename StatusType> void setLength(StatusType* status, unsigned index, unsigned length)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setLength(this, status2, index, length);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setLength(this, status, index, length);
+			StatusType::checkException(status);
 		}
 
-		void setCharSet(IStatus* status, unsigned index, unsigned charSet)
+		template <typename StatusType> void setCharSet(StatusType* status, unsigned index, unsigned charSet)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setCharSet(this, status2, index, charSet);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setCharSet(this, status, index, charSet);
+			StatusType::checkException(status);
 		}
 
-		void setScale(IStatus* status, unsigned index, unsigned scale)
+		template <typename StatusType> void setScale(StatusType* status, unsigned index, unsigned scale)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setScale(this, status2, index, scale);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setScale(this, status, index, scale);
+			StatusType::checkException(status);
 		}
 
-		void truncate(IStatus* status, unsigned count)
+		template <typename StatusType> void truncate(StatusType* status, unsigned count)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->truncate(this, status2, count);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->truncate(this, status, count);
+			StatusType::checkException(status);
 		}
 
-		void moveNameToIndex(IStatus* status, const char* name, unsigned index)
+		template <typename StatusType> void moveNameToIndex(StatusType* status, const char* name, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->moveNameToIndex(this, status2, name, index);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->moveNameToIndex(this, status, name, index);
+			StatusType::checkException(status);
 		}
 
-		void remove(IStatus* status, unsigned index)
+		template <typename StatusType> void remove(StatusType* status, unsigned index)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->remove(this, status2, index);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->remove(this, status, index);
+			StatusType::checkException(status);
 		}
 
-		unsigned addField(IStatus* status)
+		template <typename StatusType> unsigned addField(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->addField(this, status2);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->addField(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMessageMetadata* getMetadata(IStatus* status)
+		template <typename StatusType> IMessageMetadata* getMetadata(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
-			Policy::checkException(status2);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -1403,90 +1348,79 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		int fetchNext(IStatus* status, void* message)
+		template <typename StatusType> int fetchNext(StatusType* status, void* message)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->fetchNext(this, status2, message);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->fetchNext(this, status, message);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int fetchPrior(IStatus* status, void* message)
+		template <typename StatusType> int fetchPrior(StatusType* status, void* message)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->fetchPrior(this, status2, message);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->fetchPrior(this, status, message);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int fetchFirst(IStatus* status, void* message)
+		template <typename StatusType> int fetchFirst(StatusType* status, void* message)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->fetchFirst(this, status2, message);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->fetchFirst(this, status, message);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int fetchLast(IStatus* status, void* message)
+		template <typename StatusType> int fetchLast(StatusType* status, void* message)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->fetchLast(this, status2, message);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->fetchLast(this, status, message);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int fetchAbsolute(IStatus* status, unsigned position, void* message)
+		template <typename StatusType> int fetchAbsolute(StatusType* status, unsigned position, void* message)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->fetchAbsolute(this, status2, position, message);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->fetchAbsolute(this, status, position, message);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int fetchRelative(IStatus* status, int offset, void* message)
+		template <typename StatusType> int fetchRelative(StatusType* status, int offset, void* message)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->fetchRelative(this, status2, offset, message);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->fetchRelative(this, status, offset, message);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		FB_BOOLEAN isEof(IStatus* status)
+		template <typename StatusType> FB_BOOLEAN isEof(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isEof(this, status2);
-			Policy::checkException(status2);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isEof(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		FB_BOOLEAN isBof(IStatus* status)
+		template <typename StatusType> FB_BOOLEAN isBof(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isBof(this, status2);
-			Policy::checkException(status2);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isBof(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMessageMetadata* getMetadata(IStatus* status)
+		template <typename StatusType> IMessageMetadata* getMetadata(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status2);
-			Policy::checkException(status2);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void close(IStatus* status)
+		template <typename StatusType> void close(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->close(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->close(this, status);
+			StatusType::checkException(status);
 		}
 
-		void setDelayedOutputFormat(IStatus* status, IMessageMetadata* format)
+		template <typename StatusType> void setDelayedOutputFormat(StatusType* status, IMessageMetadata* format)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setDelayedOutputFormat(this, status2, format);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setDelayedOutputFormat(this, status, format);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -1534,88 +1468,77 @@ public:
 		static const unsigned FLAG_HAS_CURSOR = 1;
 		static const unsigned FLAG_REPEAT_EXECUTE = 2;
 
-		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
-		unsigned getType(IStatus* status)
+		template <typename StatusType> unsigned getType(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status2);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getPlan(IStatus* status, FB_BOOLEAN detailed)
+		template <typename StatusType> const char* getPlan(StatusType* status, FB_BOOLEAN detailed)
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPlan(this, status2, detailed);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPlan(this, status, detailed);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ISC_UINT64 getAffectedRecords(IStatus* status)
+		template <typename StatusType> ISC_UINT64 getAffectedRecords(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getAffectedRecords(this, status2);
-			Policy::checkException(status2);
+			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getAffectedRecords(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMessageMetadata* getInputMetadata(IStatus* status)
+		template <typename StatusType> IMessageMetadata* getInputMetadata(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
-			Policy::checkException(status2);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMessageMetadata* getOutputMetadata(IStatus* status)
+		template <typename StatusType> IMessageMetadata* getOutputMetadata(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
-			Policy::checkException(status2);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ITransaction* execute(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
+		template <typename StatusType> ITransaction* execute(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IResultSet* openCursor(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
+		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 		{
-			typename Policy::IStatus status2(status);
-			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, inMetadata, inBuffer, outMetadata);
-			Policy::checkException(status2);
+			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, inMetadata, inBuffer, outMetadata);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void setCursorName(IStatus* status, const char* name)
+		template <typename StatusType> void setCursorName(StatusType* status, const char* name)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setCursorName(this, status2, name);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setCursorName(this, status, name);
+			StatusType::checkException(status);
 		}
 
-		void free(IStatus* status)
+		template <typename StatusType> void free(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->free(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->free(this, status);
+			StatusType::checkException(status);
 		}
 
-		unsigned getFlags(IStatus* status)
+		template <typename StatusType> unsigned getFlags(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this, status2);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -1647,53 +1570,46 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void receive(IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message)
+		template <typename StatusType> void receive(StatusType* status, int level, unsigned msgType, unsigned length, unsigned char* message)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->receive(this, status2, level, msgType, length, message);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->receive(this, status, level, msgType, length, message);
+			StatusType::checkException(status);
 		}
 
-		void send(IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
+		template <typename StatusType> void send(StatusType* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->send(this, status2, level, msgType, length, message);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->send(this, status, level, msgType, length, message);
+			StatusType::checkException(status);
 		}
 
-		void getInfo(IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		template <typename StatusType> void getInfo(StatusType* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, level, itemsLength, items, bufferLength, buffer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, level, itemsLength, items, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
-		void start(IStatus* status, ITransaction* tra, int level)
+		template <typename StatusType> void start(StatusType* status, ITransaction* tra, int level)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->start(this, status2, tra, level);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->start(this, status, tra, level);
+			StatusType::checkException(status);
 		}
 
-		void startAndSend(IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
+		template <typename StatusType> void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->startAndSend(this, status2, tra, level, msgType, length, message);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->startAndSend(this, status, tra, level, msgType, length, message);
+			StatusType::checkException(status);
 		}
 
-		void unwind(IStatus* status, int level)
+		template <typename StatusType> void unwind(StatusType* status, int level)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->unwind(this, status2, level);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->unwind(this, status, level);
+			StatusType::checkException(status);
 		}
 
-		void free(IStatus* status)
+		template <typename StatusType> void free(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->free(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->free(this, status);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -1718,11 +1634,10 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void cancel(IStatus* status)
+		template <typename StatusType> void cancel(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->cancel(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -1764,140 +1679,122 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
+		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status2, itemsLength, items, bufferLength, buffer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
-		ITransaction* startTransaction(IStatus* status, unsigned tpbLength, const unsigned char* tpb)
+		template <typename StatusType> ITransaction* startTransaction(StatusType* status, unsigned tpbLength, const unsigned char* tpb)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->startTransaction(this, status2, tpbLength, tpb);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->startTransaction(this, status, tpbLength, tpb);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ITransaction* reconnectTransaction(IStatus* status, unsigned length, const unsigned char* id)
+		template <typename StatusType> ITransaction* reconnectTransaction(StatusType* status, unsigned length, const unsigned char* id)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->reconnectTransaction(this, status2, length, id);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->reconnectTransaction(this, status, length, id);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IRequest* compileRequest(IStatus* status, unsigned blrLength, const unsigned char* blr)
+		template <typename StatusType> IRequest* compileRequest(StatusType* status, unsigned blrLength, const unsigned char* blr)
 		{
-			typename Policy::IStatus status2(status);
-			IRequest* ret = static_cast<VTable*>(this->cloopVTable)->compileRequest(this, status2, blrLength, blr);
-			Policy::checkException(status2);
+			IRequest* ret = static_cast<VTable*>(this->cloopVTable)->compileRequest(this, status, blrLength, blr);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void transactRequest(IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg)
+		template <typename StatusType> void transactRequest(StatusType* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->transactRequest(this, status2, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->transactRequest(this, status, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
+			StatusType::checkException(status);
 		}
 
-		IBlob* createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
+		template <typename StatusType> IBlob* createBlob(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
-			typename Policy::IStatus status2(status);
-			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->createBlob(this, status2, transaction, id, bpbLength, bpb);
-			Policy::checkException(status2);
+			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->createBlob(this, status, transaction, id, bpbLength, bpb);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IBlob* openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
+		template <typename StatusType> IBlob* openBlob(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
-			typename Policy::IStatus status2(status);
-			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->openBlob(this, status2, transaction, id, bpbLength, bpb);
-			Policy::checkException(status2);
+			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->openBlob(this, status, transaction, id, bpbLength, bpb);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		int getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
+		template <typename StatusType> int getSlice(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->getSlice(this, status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->getSlice(this, status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
+		template <typename StatusType> void putSlice(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->putSlice(this, status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->putSlice(this, status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
+			StatusType::checkException(status);
 		}
 
-		void executeDyn(IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn)
+		template <typename StatusType> void executeDyn(StatusType* status, ITransaction* transaction, unsigned length, const unsigned char* dyn)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->executeDyn(this, status2, transaction, length, dyn);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->executeDyn(this, status, transaction, length, dyn);
+			StatusType::checkException(status);
 		}
 
-		IStatement* prepare(IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags)
+		template <typename StatusType> IStatement* prepare(StatusType* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags)
 		{
-			typename Policy::IStatus status2(status);
-			IStatement* ret = static_cast<VTable*>(this->cloopVTable)->prepare(this, status2, tra, stmtLength, sqlStmt, dialect, flags);
-			Policy::checkException(status2);
+			IStatement* ret = static_cast<VTable*>(this->cloopVTable)->prepare(this, status, tra, stmtLength, sqlStmt, dialect, flags);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ITransaction* execute(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
+		template <typename StatusType> ITransaction* execute(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IResultSet* openCursor(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName)
+		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName)
 		{
-			typename Policy::IStatus status2(status);
-			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
-			Policy::checkException(status2);
+			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IEvents* queEvents(IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events)
+		template <typename StatusType> IEvents* queEvents(StatusType* status, IEventCallback* callback, unsigned length, const unsigned char* events)
 		{
-			typename Policy::IStatus status2(status);
-			IEvents* ret = static_cast<VTable*>(this->cloopVTable)->queEvents(this, status2, callback, length, events);
-			Policy::checkException(status2);
+			IEvents* ret = static_cast<VTable*>(this->cloopVTable)->queEvents(this, status, callback, length, events);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void cancelOperation(IStatus* status, int option)
+		template <typename StatusType> void cancelOperation(StatusType* status, int option)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->cancelOperation(this, status2, option);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->cancelOperation(this, status, option);
+			StatusType::checkException(status);
 		}
 
-		void ping(IStatus* status)
+		template <typename StatusType> void ping(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->ping(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->ping(this, status);
+			StatusType::checkException(status);
 		}
 
-		void detach(IStatus* status)
+		template <typename StatusType> void detach(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->detach(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
+			StatusType::checkException(status);
 		}
 
-		void dropDatabase(IStatus* status)
+		template <typename StatusType> void dropDatabase(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -1924,25 +1821,22 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void detach(IStatus* status)
+		template <typename StatusType> void detach(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->detach(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
+			StatusType::checkException(status);
 		}
 
-		void query(IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer)
+		template <typename StatusType> void query(StatusType* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->query(this, status2, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->query(this, status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
+			StatusType::checkException(status);
 		}
 
-		void start(IStatus* status, unsigned spbLength, const unsigned char* spb)
+		template <typename StatusType> void start(StatusType* status, unsigned spbLength, const unsigned char* spb)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->start(this, status2, spbLength, spb);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->start(this, status, spbLength, spb);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -1971,42 +1865,37 @@ public:
 	public:
 		static const unsigned VERSION = 4;
 
-		IAttachment* attachDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
+		template <typename StatusType> IAttachment* attachDatabase(StatusType* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
-			typename Policy::IStatus status2(status);
-			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->attachDatabase(this, status2, fileName, dpbLength, dpb);
-			Policy::checkException(status2);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->attachDatabase(this, status, fileName, dpbLength, dpb);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IAttachment* createDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
+		template <typename StatusType> IAttachment* createDatabase(StatusType* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
-			typename Policy::IStatus status2(status);
-			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->createDatabase(this, status2, fileName, dpbLength, dpb);
-			Policy::checkException(status2);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->createDatabase(this, status, fileName, dpbLength, dpb);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IService* attachServiceManager(IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb)
+		template <typename StatusType> IService* attachServiceManager(StatusType* status, const char* service, unsigned spbLength, const unsigned char* spb)
 		{
-			typename Policy::IStatus status2(status);
-			IService* ret = static_cast<VTable*>(this->cloopVTable)->attachServiceManager(this, status2, service, spbLength, spb);
-			Policy::checkException(status2);
+			IService* ret = static_cast<VTable*>(this->cloopVTable)->attachServiceManager(this, status, service, spbLength, spb);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void shutdown(IStatus* status, unsigned timeout, const int reason)
+		template <typename StatusType> void shutdown(StatusType* status, unsigned timeout, const int reason)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->shutdown(this, status2, timeout, reason);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->shutdown(this, status, timeout, reason);
+			StatusType::checkException(status);
 		}
 
-		void setDbCryptCallback(IStatus* status, ICryptKeyCallback* cryptCallback)
+		template <typename StatusType> void setDbCryptCallback(StatusType* status, ICryptKeyCallback* cryptCallback)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setDbCryptCallback(this, status2, cryptCallback);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setDbCryptCallback(this, status, cryptCallback);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2035,41 +1924,36 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void setComponent(IStatus* status, IAttachment* att)
+		template <typename StatusType> void setComponent(StatusType* status, IAttachment* att)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setComponent(this, status2, att);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setComponent(this, status, att);
+			StatusType::checkException(status);
 		}
 
-		void setWithParam(IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb)
+		template <typename StatusType> void setWithParam(StatusType* status, IAttachment* att, unsigned length, const unsigned char* tpb)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setWithParam(this, status2, att, length, tpb);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setWithParam(this, status, att, length, tpb);
+			StatusType::checkException(status);
 		}
 
-		unsigned getCount(IStatus* status)
+		template <typename StatusType> unsigned getCount(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status2);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IAttachment* getAttachment(IStatus* status, unsigned pos)
+		template <typename StatusType> IAttachment* getAttachment(StatusType* status, unsigned pos)
 		{
-			typename Policy::IStatus status2(status);
-			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2, pos);
-			Policy::checkException(status2);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status, pos);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const unsigned char* getTpb(IStatus* status, unsigned pos, unsigned* length)
+		template <typename StatusType> const unsigned char* getTpb(StatusType* status, unsigned pos, unsigned* length)
 		{
-			typename Policy::IStatus status2(status);
-			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getTpb(this, status2, pos, length);
-			Policy::checkException(status2);
+			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getTpb(this, status, pos, length);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -2097,27 +1981,24 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		ITransaction* start(IStatus* status, IDtcStart* components)
+		template <typename StatusType> ITransaction* start(StatusType* status, IDtcStart* components)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status2, components);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status, components);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ITransaction* join(IStatus* status, ITransaction* one, ITransaction* two)
+		template <typename StatusType> ITransaction* join(StatusType* status, ITransaction* one, ITransaction* two)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status2, one, two);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status, one, two);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IDtcStart* startBuilder(IStatus* status)
+		template <typename StatusType> IDtcStart* startBuilder(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IDtcStart* ret = static_cast<VTable*>(this->cloopVTable)->startBuilder(this, status2);
-			Policy::checkException(status2);
+			IDtcStart* ret = static_cast<VTable*>(this->cloopVTable)->startBuilder(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -2177,25 +2058,22 @@ public:
 			static_cast<VTable*>(this->cloopVTable)->reset(this);
 		}
 
-		void add(IStatus* status, const char* name)
+		template <typename StatusType> void add(StatusType* status, const char* name)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->add(this, status2, name);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->add(this, status, name);
+			StatusType::checkException(status);
 		}
 
-		void setType(IStatus* status, const char* value)
+		template <typename StatusType> void setType(StatusType* status, const char* value)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setType(this, status2, value);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setType(this, status, value);
+			StatusType::checkException(status);
 		}
 
-		void setDb(IStatus* status, const char* value)
+		template <typename StatusType> void setDb(StatusType* status, const char* value)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setDb(this, status2, value);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setDb(this, status, value);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2235,18 +2113,16 @@ public:
 			return ret;
 		}
 
-		void putData(IStatus* status, unsigned length, const void* data)
+		template <typename StatusType> void putData(StatusType* status, unsigned length, const void* data)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->putData(this, status2, length, data);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->putData(this, status, length, data);
+			StatusType::checkException(status);
 		}
 
-		void putKey(IStatus* status, FbCryptKey* cryptKey)
+		template <typename StatusType> void putKey(StatusType* status, FbCryptKey* cryptKey)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->putKey(this, status2, cryptKey);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->putKey(this, status, cryptKey);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2293,18 +2169,16 @@ public:
 			return ret;
 		}
 
-		void putData(IStatus* status, unsigned length, const void* data)
+		template <typename StatusType> void putData(StatusType* status, unsigned length, const void* data)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->putData(this, status2, length, data);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->putData(this, status, length, data);
+			StatusType::checkException(status);
 		}
 
-		void putKey(IStatus* status, FbCryptKey* cryptKey)
+		template <typename StatusType> void putKey(StatusType* status, FbCryptKey* cryptKey)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->putKey(this, status2, cryptKey);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->putKey(this, status, cryptKey);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2329,11 +2203,10 @@ public:
 	public:
 		static const unsigned VERSION = 5;
 
-		int authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface)
+		template <typename StatusType> int authenticate(StatusType* status, IServerBlock* sBlock, IWriter* writerInterface)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status2, sBlock, writerInterface);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status, sBlock, writerInterface);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -2359,11 +2232,10 @@ public:
 	public:
 		static const unsigned VERSION = 5;
 
-		int authenticate(IStatus* status, IClientBlock* cBlock)
+		template <typename StatusType> int authenticate(StatusType* status, IClientBlock* cBlock)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status2, cBlock);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status, cBlock);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -2403,11 +2275,10 @@ public:
 			return ret;
 		}
 
-		void setEntered(IStatus* status, int newValue)
+		template <typename StatusType> void setEntered(StatusType* status, int newValue)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setEntered(this, status2, newValue);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setEntered(this, status, newValue);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2439,11 +2310,10 @@ public:
 			return ret;
 		}
 
-		void set(IStatus* status, const char* newValue)
+		template <typename StatusType> void set(StatusType* status, const char* newValue)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->set(this, status2, newValue);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->set(this, status, newValue);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2475,11 +2345,10 @@ public:
 			return ret;
 		}
 
-		void set(IStatus* status, int newValue)
+		template <typename StatusType> void set(StatusType* status, int newValue)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->set(this, status2, newValue);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->set(this, status, newValue);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2574,11 +2443,10 @@ public:
 			return ret;
 		}
 
-		void clear(IStatus* status)
+		template <typename StatusType> void clear(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->clear(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->clear(this, status);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2603,11 +2471,10 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		void list(IStatus* status, IUser* user)
+		template <typename StatusType> void list(StatusType* status, IUser* user)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->list(this, status2, user);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->list(this, status, user);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2691,33 +2558,29 @@ public:
 	public:
 		static const unsigned VERSION = 4;
 
-		void start(IStatus* status, ILogonInfo* logonInfo)
+		template <typename StatusType> void start(StatusType* status, ILogonInfo* logonInfo)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->start(this, status2, logonInfo);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->start(this, status, logonInfo);
+			StatusType::checkException(status);
 		}
 
-		int execute(IStatus* status, IUser* user, IListUsers* callback)
+		template <typename StatusType> int execute(StatusType* status, IUser* user, IListUsers* callback)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status2, user, callback);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status, user, callback);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void commit(IStatus* status)
+		template <typename StatusType> void commit(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->commit(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->commit(this, status);
+			StatusType::checkException(status);
 		}
 
-		void rollback(IStatus* status)
+		template <typename StatusType> void rollback(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->rollback(this, status2);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->rollback(this, status);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2745,33 +2608,29 @@ public:
 	public:
 		static const unsigned VERSION = 4;
 
-		const char* getKnownTypes(IStatus* status)
+		template <typename StatusType> const char* getKnownTypes(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getKnownTypes(this, status2);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getKnownTypes(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		void setKey(IStatus* status, FbCryptKey* key)
+		template <typename StatusType> void setKey(StatusType* status, FbCryptKey* key)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setKey(this, status2, key);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setKey(this, status, key);
+			StatusType::checkException(status);
 		}
 
-		void encrypt(IStatus* status, unsigned length, const void* from, void* to)
+		template <typename StatusType> void encrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status2, length, from, to);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status, length, from, to);
+			StatusType::checkException(status);
 		}
 
-		void decrypt(IStatus* status, unsigned length, const void* from, void* to)
+		template <typename StatusType> void decrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status2, length, from, to);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status, length, from, to);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2825,19 +2684,17 @@ public:
 	public:
 		static const unsigned VERSION = 4;
 
-		int keyCallback(IStatus* status, ICryptKeyCallback* callback)
+		template <typename StatusType> int keyCallback(StatusType* status, ICryptKeyCallback* callback)
 		{
-			typename Policy::IStatus status2(status);
-			int ret = static_cast<VTable*>(this->cloopVTable)->keyCallback(this, status2, callback);
-			Policy::checkException(status2);
+			int ret = static_cast<VTable*>(this->cloopVTable)->keyCallback(this, status, callback);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ICryptKeyCallback* keyHandle(IStatus* status, const char* keyName)
+		template <typename StatusType> ICryptKeyCallback* keyHandle(StatusType* status, const char* keyName)
 		{
-			typename Policy::IStatus status2(status);
-			ICryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status2, keyName);
-			Policy::checkException(status2);
+			ICryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status, keyName);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -2865,25 +2722,22 @@ public:
 	public:
 		static const unsigned VERSION = 4;
 
-		void setKey(IStatus* status, unsigned length, IKeyHolderPlugin** sources)
+		template <typename StatusType> void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->setKey(this, status2, length, sources);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->setKey(this, status, length, sources);
+			StatusType::checkException(status);
 		}
 
-		void encrypt(IStatus* status, unsigned length, const void* from, void* to)
+		template <typename StatusType> void encrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status2, length, from, to);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status, length, from, to);
+			StatusType::checkException(status);
 		}
 
-		void decrypt(IStatus* status, unsigned length, const void* from, void* to)
+		template <typename StatusType> void decrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status2, length, from, to);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status, length, from, to);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -2923,27 +2777,24 @@ public:
 			return ret;
 		}
 
-		IExternalEngine* getEngine(IStatus* status)
+		template <typename StatusType> IExternalEngine* getEngine(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IExternalEngine* ret = static_cast<VTable*>(this->cloopVTable)->getEngine(this, status2);
-			Policy::checkException(status2);
+			IExternalEngine* ret = static_cast<VTable*>(this->cloopVTable)->getEngine(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IAttachment* getAttachment(IStatus* status)
+		template <typename StatusType> IAttachment* getAttachment(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status2);
-			Policy::checkException(status2);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		ITransaction* getTransaction(IStatus* status)
+		template <typename StatusType> ITransaction* getTransaction(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransaction(this, status2);
-			Policy::checkException(status2);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransaction(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
@@ -3005,11 +2856,10 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		FB_BOOLEAN fetch(IStatus* status)
+		template <typename StatusType> FB_BOOLEAN fetch(StatusType* status)
 		{
-			typename Policy::IStatus status2(status);
-			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->fetch(this, status2);
-			Policy::checkException(status2);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->fetch(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -3036,18 +2886,16 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize)
+		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, context, name, nameSize);
+			StatusType::checkException(status);
 		}
 
-		void execute(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg)
+		template <typename StatusType> void execute(StatusType* status, IExternalContext* context, void* inMsg, void* outMsg)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->execute(this, status2, context, inMsg, outMsg);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->execute(this, status, context, inMsg, outMsg);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -3073,18 +2921,16 @@ public:
 	public:
 		static const unsigned VERSION = 3;
 
-		void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize)
+		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, context, name, nameSize);
+			StatusType::checkException(status);
 		}
 
-		IExternalResultSet* open(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg)
+		template <typename StatusType> IExternalResultSet* open(StatusType* status, IExternalContext* context, void* inMsg, void* outMsg)
 		{
-			typename Policy::IStatus status2(status);
-			IExternalResultSet* ret = static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, inMsg, outMsg);
-			Policy::checkException(status2);
+			IExternalResultSet* ret = static_cast<VTable*>(this->cloopVTable)->open(this, status, context, inMsg, outMsg);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -3124,18 +2970,16 @@ public:
 		static const unsigned ACTION_TRANS_ROLLBACK = 8;
 		static const unsigned ACTION_DDL = 9;
 
-		void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize)
+		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status2, context, name, nameSize);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, context, name, nameSize);
+			StatusType::checkException(status);
 		}
 
-		void execute(IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg)
+		template <typename StatusType> void execute(StatusType* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->execute(this, status2, context, action, oldMsg, newMsg);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->execute(this, status, context, action, oldMsg, newMsg);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -3168,75 +3012,66 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		const char* getPackage(IStatus* status) const
+		template <typename StatusType> const char* getPackage(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPackage(this, status2);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPackage(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getName(IStatus* status) const
+		template <typename StatusType> const char* getName(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getName(this, status2);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getName(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getEntryPoint(IStatus* status) const
+		template <typename StatusType> const char* getEntryPoint(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getEntryPoint(this, status2);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getEntryPoint(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getBody(IStatus* status) const
+		template <typename StatusType> const char* getBody(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getBody(this, status2);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getBody(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMessageMetadata* getInputMetadata(IStatus* status) const
+		template <typename StatusType> IMessageMetadata* getInputMetadata(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status2);
-			Policy::checkException(status2);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMessageMetadata* getOutputMetadata(IStatus* status) const
+		template <typename StatusType> IMessageMetadata* getOutputMetadata(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status2);
-			Policy::checkException(status2);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IMessageMetadata* getTriggerMetadata(IStatus* status) const
+		template <typename StatusType> IMessageMetadata* getTriggerMetadata(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerMetadata(this, status2);
-			Policy::checkException(status2);
+			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerMetadata(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		const char* getTriggerTable(IStatus* status) const
+		template <typename StatusType> const char* getTriggerTable(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerTable(this, status2);
-			Policy::checkException(status2);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerTable(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		unsigned getTriggerType(IStatus* status) const
+		template <typename StatusType> unsigned getTriggerType(StatusType* status) const
 		{
-			typename Policy::IStatus status2(status);
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTriggerType(this, status2);
-			Policy::checkException(status2);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTriggerType(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -3267,48 +3102,42 @@ public:
 	public:
 		static const unsigned VERSION = 4;
 
-		void open(IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize)
+		template <typename StatusType> void open(StatusType* status, IExternalContext* context, char* charSet, unsigned charSetSize)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->open(this, status2, context, charSet, charSetSize);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->open(this, status, context, charSet, charSetSize);
+			StatusType::checkException(status);
 		}
 
-		void openAttachment(IStatus* status, IExternalContext* context)
+		template <typename StatusType> void openAttachment(StatusType* status, IExternalContext* context)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->openAttachment(this, status2, context);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->openAttachment(this, status, context);
+			StatusType::checkException(status);
 		}
 
-		void closeAttachment(IStatus* status, IExternalContext* context)
+		template <typename StatusType> void closeAttachment(StatusType* status, IExternalContext* context)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->closeAttachment(this, status2, context);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->closeAttachment(this, status, context);
+			StatusType::checkException(status);
 		}
 
-		IExternalFunction* makeFunction(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
+		template <typename StatusType> IExternalFunction* makeFunction(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
-			typename Policy::IStatus status2(status);
-			IExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->makeFunction(this, status2, context, metadata, inBuilder, outBuilder);
-			Policy::checkException(status2);
+			IExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->makeFunction(this, status, context, metadata, inBuilder, outBuilder);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IExternalProcedure* makeProcedure(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
+		template <typename StatusType> IExternalProcedure* makeProcedure(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
-			typename Policy::IStatus status2(status);
-			IExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->makeProcedure(this, status2, context, metadata, inBuilder, outBuilder);
-			Policy::checkException(status2);
+			IExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->makeProcedure(this, status, context, metadata, inBuilder, outBuilder);
+			StatusType::checkException(status);
 			return ret;
 		}
 
-		IExternalTrigger* makeTrigger(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
+		template <typename StatusType> IExternalTrigger* makeTrigger(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 		{
-			typename Policy::IStatus status2(status);
-			IExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->makeTrigger(this, status2, context, metadata, fieldsBuilder);
-			Policy::checkException(status2);
+			IExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->makeTrigger(this, status, context, metadata, fieldsBuilder);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -3362,18 +3191,16 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		void start(IStatus* status, ITimer* timer, ISC_UINT64 microSeconds)
+		template <typename StatusType> void start(StatusType* status, ITimer* timer, ISC_UINT64 microSeconds)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->start(this, status2, timer, microSeconds);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->start(this, status, timer, microSeconds);
+			StatusType::checkException(status);
 		}
 
-		void stop(IStatus* status, ITimer* timer)
+		template <typename StatusType> void stop(StatusType* status, ITimer* timer)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->stop(this, status2, timer);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->stop(this, status, timer);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -3398,11 +3225,10 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		void callback(IStatus* status, const char* text)
+		template <typename StatusType> void callback(StatusType* status, const char* text)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->callback(this, status2, text);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->callback(this, status, text);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -3431,39 +3257,34 @@ public:
 	public:
 		static const unsigned VERSION = 2;
 
-		void getFbVersion(IStatus* status, IAttachment* att, IVersionCallback* callback)
+		template <typename StatusType> void getFbVersion(StatusType* status, IAttachment* att, IVersionCallback* callback)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getFbVersion(this, status2, att, callback);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getFbVersion(this, status, att, callback);
+			StatusType::checkException(status);
 		}
 
-		void loadBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
+		template <typename StatusType> void loadBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->loadBlob(this, status2, blobId, att, tra, file, txt);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->loadBlob(this, status, blobId, att, tra, file, txt);
+			StatusType::checkException(status);
 		}
 
-		void dumpBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
+		template <typename StatusType> void dumpBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->dumpBlob(this, status2, blobId, att, tra, file, txt);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->dumpBlob(this, status, blobId, att, tra, file, txt);
+			StatusType::checkException(status);
 		}
 
-		void getPerfCounters(IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters)
+		template <typename StatusType> void getPerfCounters(StatusType* status, IAttachment* att, const char* countersSet, ISC_INT64* counters)
 		{
-			typename Policy::IStatus status2(status);
-			static_cast<VTable*>(this->cloopVTable)->getPerfCounters(this, status2, att, countersSet, counters);
-			Policy::checkException(status2);
+			static_cast<VTable*>(this->cloopVTable)->getPerfCounters(this, status, att, countersSet, counters);
+			StatusType::checkException(status);
 		}
 
-		IAttachment* executeCreateDatabase(IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
+		template <typename StatusType> IAttachment* executeCreateDatabase(StatusType* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
 		{
-			typename Policy::IStatus status2(status);
-			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status2, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
-			Policy::checkException(status2);
+			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -4525,18 +4346,125 @@ public:
 			return ret;
 		}
 
-		ITracePlugin* trace_create(IStatus* status, ITraceInitInfo* init_info)
+		template <typename StatusType> ITracePlugin* trace_create(StatusType* status, ITraceInitInfo* init_info)
 		{
-			typename Policy::IStatus status2(status);
-			ITracePlugin* ret = static_cast<VTable*>(this->cloopVTable)->trace_create(this, status2, init_info);
-			Policy::checkException(status2);
+			ITracePlugin* ret = static_cast<VTable*>(this->cloopVTable)->trace_create(this, status, init_info);
+			StatusType::checkException(status);
+			return ret;
+		}
+	};
+
+	class IUdrFunctionFactory : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *setup)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
+			IExternalFunction* (CLOOP_CARG *newItem)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
+		};
+
+	protected:
+		IUdrFunctionFactory(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IUdrFunctionFactory()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
+		{
+			static_cast<VTable*>(this->cloopVTable)->setup(this, status, context, metadata, inBuilder, outBuilder);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> IExternalFunction* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata)
+		{
+			IExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->newItem(this, status, context, metadata);
+			StatusType::checkException(status);
+			return ret;
+		}
+	};
+
+	class IUdrProcedureFactory : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *setup)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
+			IExternalProcedure* (CLOOP_CARG *newItem)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
+		};
+
+	protected:
+		IUdrProcedureFactory(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IUdrProcedureFactory()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
+		{
+			static_cast<VTable*>(this->cloopVTable)->setup(this, status, context, metadata, inBuilder, outBuilder);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> IExternalProcedure* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata)
+		{
+			IExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->newItem(this, status, context, metadata);
+			StatusType::checkException(status);
+			return ret;
+		}
+	};
+
+	class IUdrTriggerFactory : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *setup)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw();
+			IExternalTrigger* (CLOOP_CARG *newItem)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
+		};
+
+	protected:
+		IUdrTriggerFactory(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IUdrTriggerFactory()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
+		{
+			static_cast<VTable*>(this->cloopVTable)->setup(this, status, context, metadata, fieldsBuilder);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> IExternalTrigger* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata)
+		{
+			IExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->newItem(this, status, context, metadata);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
 
 	// Interfaces implementations
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IVersionedBaseImpl : public Base
 	{
 	public:
@@ -4549,29 +4477,15 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
-			}
-		}
 	};
 
-	template <typename Name, typename Base = Inherit<IVersioned> >
-	class IVersionedImpl : public IVersionedBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = Inherit<IVersioned> >
+	class IVersionedImpl : public IVersionedBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IVersionedImpl(DoNotInherit = DoNotInherit())
@@ -4583,10 +4497,9 @@ public:
 		{
 		}
 
-		virtual IPluginModule* getModule() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IReferenceCountedBaseImpl : public Base
 	{
 	public:
@@ -4599,7 +4512,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 				}
@@ -4616,7 +4528,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -4628,27 +4540,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IReferenceCounted> > >
-	class IReferenceCountedImpl : public IReferenceCountedBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IReferenceCounted> > >
+	class IReferenceCountedImpl : public IReferenceCountedBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IReferenceCountedImpl(DoNotInherit = DoNotInherit())
@@ -4664,7 +4563,7 @@ public:
 		virtual int release() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IDisposableBaseImpl : public Base
 	{
 	public:
@@ -4677,7 +4576,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->dispose = &Name::cloopdisposeDispatcher;
 				}
 			} vTable;
@@ -4693,26 +4591,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IDisposable> > >
-	class IDisposableImpl : public IDisposableBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IDisposable> > >
+	class IDisposableImpl : public IDisposableBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IDisposableImpl(DoNotInherit = DoNotInherit())
@@ -4727,7 +4612,7 @@ public:
 		virtual void dispose() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IStatusBaseImpl : public Base
 	{
 	public:
@@ -4740,7 +4625,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->init = &Name::cloopinitDispatcher;
 					this->getStatus = &Name::cloopgetStatusDispatcher;
@@ -4750,6 +4634,7 @@ public:
 					this->setWarnings = &Name::cloopsetWarningsDispatcher;
 					this->getErrors = &Name::cloopgetErrorsDispatcher;
 					this->getWarnings = &Name::cloopgetWarningsDispatcher;
+					this->clone = &Name::cloopcloneDispatcher;
 				}
 			} vTable;
 
@@ -4764,7 +4649,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -4776,7 +4661,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -4789,7 +4674,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -4801,7 +4686,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -4813,7 +4698,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -4825,7 +4710,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -4837,7 +4722,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const intptr_t*>(0);
 			}
 		}
@@ -4850,8 +4735,21 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const intptr_t*>(0);
+			}
+		}
+
+		static IStatus* CLOOP_CARG cloopcloneDispatcher(const IStatus* self) throw()
+		{
+			try
+			{
+				return static_cast<const Name*>(self)->Name::clone();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<IStatus*>(0);
 			}
 		}
 
@@ -4863,26 +4761,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IStatus> > > > >
-	class IStatusImpl : public IStatusBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IStatus> > > > >
+	class IStatusImpl : public IStatusBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IStatusImpl(DoNotInherit = DoNotInherit())
@@ -4902,9 +4787,10 @@ public:
 		virtual void setWarnings(const intptr_t* value) = 0;
 		virtual const intptr_t* getErrors() const = 0;
 		virtual const intptr_t* getWarnings() const = 0;
+		virtual IStatus* clone() const = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IMasterBaseImpl : public Base
 	{
 	public:
@@ -4917,7 +4803,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getStatus = &Name::cloopgetStatusDispatcher;
 					this->getDispatcher = &Name::cloopgetDispatcherDispatcher;
 					this->getPluginManager = &Name::cloopgetPluginManagerDispatcher;
@@ -4945,7 +4830,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IStatus*>(0);
 			}
 		}
@@ -4958,7 +4843,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IProvider*>(0);
 			}
 		}
@@ -4971,7 +4856,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IPluginManager*>(0);
 			}
 		}
@@ -4984,7 +4869,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -4997,7 +4882,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITimerControl*>(0);
 			}
 		}
@@ -5010,7 +4895,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IDtc*>(0);
 			}
 		}
@@ -5023,7 +4908,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IAttachment*>(0);
 			}
 		}
@@ -5036,7 +4921,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITransaction*>(0);
 			}
 		}
@@ -5049,20 +4934,22 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
 
 		static IMetadataBuilder* CLOOP_CARG cloopgetMetadataBuilderDispatcher(IMaster* self, IStatus* status, unsigned fieldCount) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMetadataBuilder(status, fieldCount);
+				return static_cast<Name*>(self)->Name::getMetadataBuilder(&status2, fieldCount);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMetadataBuilder*>(0);
 			}
 		}
@@ -5075,7 +4962,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -5088,7 +4975,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IUtl*>(0);
 			}
 		}
@@ -5101,27 +4988,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IConfigManager*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IMaster> > >
-	class IMasterImpl : public IMasterBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IMaster> > >
+	class IMasterImpl : public IMasterBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IMasterImpl(DoNotInherit = DoNotInherit())
@@ -5142,13 +5016,13 @@ public:
 		virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;
 		virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
 		virtual int same(IVersioned* first, IVersioned* second) = 0;
-		virtual IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount) = 0;
+		virtual IMetadataBuilder* getMetadataBuilder(StatusType* status, unsigned fieldCount) = 0;
 		virtual int serverMode(int mode) = 0;
 		virtual IUtl* getUtlInterface() = 0;
 		virtual IConfigManager* getConfigManager() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IPluginBaseBaseImpl : public Base
 	{
 	public:
@@ -5161,7 +5035,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -5180,7 +5053,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -5192,7 +5065,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -5205,7 +5078,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -5217,27 +5090,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IPluginBase> > > > >
-	class IPluginBaseImpl : public IPluginBaseBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IPluginBase> > > > >
+	class IPluginBaseImpl : public IPluginBaseBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IPluginBaseImpl(DoNotInherit = DoNotInherit())
@@ -5253,7 +5113,7 @@ public:
 		virtual IReferenceCounted* getOwner() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IPluginSetBaseImpl : public Base
 	{
 	public:
@@ -5266,7 +5126,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getName = &Name::cloopgetNameDispatcher;
@@ -5288,7 +5147,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -5301,45 +5160,51 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static IPluginBase* CLOOP_CARG cloopgetPluginDispatcher(IPluginSet* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getPlugin(status);
+				return static_cast<Name*>(self)->Name::getPlugin(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IPluginBase*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopnextDispatcher(IPluginSet* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::next(status);
+				static_cast<Name*>(self)->Name::next(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetDispatcher(IPluginSet* self, IStatus* status, const char* s) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::set(status, s);
+				static_cast<Name*>(self)->Name::set(&status2, s);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -5351,7 +5216,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -5363,27 +5228,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IPluginSet> > > > >
-	class IPluginSetImpl : public IPluginSetBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IPluginSet> > > > >
+	class IPluginSetImpl : public IPluginSetBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IPluginSetImpl(DoNotInherit = DoNotInherit())
@@ -5397,12 +5249,12 @@ public:
 
 		virtual const char* getName() const = 0;
 		virtual const char* getModuleName() const = 0;
-		virtual IPluginBase* getPlugin(IStatus* status) = 0;
-		virtual void next(IStatus* status) = 0;
-		virtual void set(IStatus* status, const char* s) = 0;
+		virtual IPluginBase* getPlugin(StatusType* status) = 0;
+		virtual void next(StatusType* status) = 0;
+		virtual void set(StatusType* status, const char* s) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IConfigEntryBaseImpl : public Base
 	{
 	public:
@@ -5415,7 +5267,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getName = &Name::cloopgetNameDispatcher;
@@ -5437,7 +5288,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -5450,7 +5301,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -5463,7 +5314,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ISC_INT64>(0);
 			}
 		}
@@ -5476,20 +5327,22 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
 
 		static IConfig* CLOOP_CARG cloopgetSubConfigDispatcher(IConfigEntry* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSubConfig(status);
+				return static_cast<Name*>(self)->Name::getSubConfig(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IConfig*>(0);
 			}
 		}
@@ -5502,7 +5355,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -5514,27 +5367,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IConfigEntry> > > > >
-	class IConfigEntryImpl : public IConfigEntryBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IConfigEntry> > > > >
+	class IConfigEntryImpl : public IConfigEntryBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IConfigEntryImpl(DoNotInherit = DoNotInherit())
@@ -5550,10 +5390,10 @@ public:
 		virtual const char* getValue() = 0;
 		virtual ISC_INT64 getIntValue() = 0;
 		virtual FB_BOOLEAN getBoolValue() = 0;
-		virtual IConfig* getSubConfig(IStatus* status) = 0;
+		virtual IConfig* getSubConfig(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IConfigBaseImpl : public Base
 	{
 	public:
@@ -5566,7 +5406,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->find = &Name::cloopfindDispatcher;
@@ -5580,39 +5419,45 @@ public:
 
 		static IConfigEntry* CLOOP_CARG cloopfindDispatcher(IConfig* self, IStatus* status, const char* name) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::find(status, name);
+				return static_cast<Name*>(self)->Name::find(&status2, name);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IConfigEntry*>(0);
 			}
 		}
 
 		static IConfigEntry* CLOOP_CARG cloopfindValueDispatcher(IConfig* self, IStatus* status, const char* name, const char* value) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::findValue(status, name, value);
+				return static_cast<Name*>(self)->Name::findValue(&status2, name, value);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IConfigEntry*>(0);
 			}
 		}
 
 		static IConfigEntry* CLOOP_CARG cloopfindPosDispatcher(IConfig* self, IStatus* status, const char* name, unsigned pos) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::findPos(status, name, pos);
+				return static_cast<Name*>(self)->Name::findPos(&status2, name, pos);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IConfigEntry*>(0);
 			}
 		}
@@ -5625,7 +5470,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -5637,27 +5482,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IConfig> > > > >
-	class IConfigImpl : public IConfigBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IConfig> > > > >
+	class IConfigImpl : public IConfigBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IConfigImpl(DoNotInherit = DoNotInherit())
@@ -5669,12 +5501,12 @@ public:
 		{
 		}
 
-		virtual IConfigEntry* find(IStatus* status, const char* name) = 0;
-		virtual IConfigEntry* findValue(IStatus* status, const char* name, const char* value) = 0;
-		virtual IConfigEntry* findPos(IStatus* status, const char* name, unsigned pos) = 0;
+		virtual IConfigEntry* find(StatusType* status, const char* name) = 0;
+		virtual IConfigEntry* findValue(StatusType* status, const char* name, const char* value) = 0;
+		virtual IConfigEntry* findPos(StatusType* status, const char* name, unsigned pos) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IFirebirdConfBaseImpl : public Base
 	{
 	public:
@@ -5687,7 +5519,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getKey = &Name::cloopgetKeyDispatcher;
@@ -5708,7 +5539,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -5721,7 +5552,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ISC_INT64>(0);
 			}
 		}
@@ -5734,7 +5565,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -5747,7 +5578,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -5760,7 +5591,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -5772,27 +5603,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IFirebirdConf> > > > >
-	class IFirebirdConfImpl : public IFirebirdConfBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IFirebirdConf> > > > >
+	class IFirebirdConfImpl : public IFirebirdConfBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IFirebirdConfImpl(DoNotInherit = DoNotInherit())
@@ -5810,7 +5628,7 @@ public:
 		virtual FB_BOOLEAN asBoolean(unsigned key) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IPluginConfigBaseImpl : public Base
 	{
 	public:
@@ -5823,7 +5641,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getConfigFileName = &Name::cloopgetConfigFileNameDispatcher;
@@ -5844,46 +5661,52 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static IConfig* CLOOP_CARG cloopgetDefaultConfigDispatcher(IPluginConfig* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getDefaultConfig(status);
+				return static_cast<Name*>(self)->Name::getDefaultConfig(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IConfig*>(0);
 			}
 		}
 
 		static IFirebirdConf* CLOOP_CARG cloopgetFirebirdConfDispatcher(IPluginConfig* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getFirebirdConf(status);
+				return static_cast<Name*>(self)->Name::getFirebirdConf(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IFirebirdConf*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetReleaseDelayDispatcher(IPluginConfig* self, IStatus* status, ISC_UINT64 microSeconds) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setReleaseDelay(status, microSeconds);
+				static_cast<Name*>(self)->Name::setReleaseDelay(&status2, microSeconds);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -5895,7 +5718,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -5907,27 +5730,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IPluginConfig> > > > >
-	class IPluginConfigImpl : public IPluginConfigBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IPluginConfig> > > > >
+	class IPluginConfigImpl : public IPluginConfigBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IPluginConfigImpl(DoNotInherit = DoNotInherit())
@@ -5940,12 +5750,12 @@ public:
 		}
 
 		virtual const char* getConfigFileName() = 0;
-		virtual IConfig* getDefaultConfig(IStatus* status) = 0;
-		virtual IFirebirdConf* getFirebirdConf(IStatus* status) = 0;
-		virtual void setReleaseDelay(IStatus* status, ISC_UINT64 microSeconds) = 0;
+		virtual IConfig* getDefaultConfig(StatusType* status) = 0;
+		virtual IFirebirdConf* getFirebirdConf(StatusType* status) = 0;
+		virtual void setReleaseDelay(StatusType* status, ISC_UINT64 microSeconds) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IPluginFactoryBaseImpl : public Base
 	{
 	public:
@@ -5958,7 +5768,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->createPlugin = &Name::cloopcreatePluginDispatcher;
 				}
 			} vTable;
@@ -5968,33 +5777,22 @@ public:
 
 		static IPluginBase* CLOOP_CARG cloopcreatePluginDispatcher(IPluginFactory* self, IStatus* status, IPluginConfig* factoryParameter) throw()
 		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::createPlugin(status, factoryParameter);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-				return static_cast<IPluginBase*>(0);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				return static_cast<Name*>(self)->Name::createPlugin(&status2, factoryParameter);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
+				return static_cast<IPluginBase*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IPluginFactory> > >
-	class IPluginFactoryImpl : public IPluginFactoryBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IPluginFactory> > >
+	class IPluginFactoryImpl : public IPluginFactoryBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IPluginFactoryImpl(DoNotInherit = DoNotInherit())
@@ -6006,10 +5804,10 @@ public:
 		{
 		}
 
-		virtual IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter) = 0;
+		virtual IPluginBase* createPlugin(StatusType* status, IPluginConfig* factoryParameter) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IPluginModuleBaseImpl : public Base
 	{
 	public:
@@ -6022,7 +5820,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->doClean = &Name::cloopdoCleanDispatcher;
 				}
 			} vTable;
@@ -6038,26 +5835,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IPluginModule> > >
-	class IPluginModuleImpl : public IPluginModuleBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IPluginModule> > >
+	class IPluginModuleImpl : public IPluginModuleBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IPluginModuleImpl(DoNotInherit = DoNotInherit())
@@ -6072,7 +5856,7 @@ public:
 		virtual void doClean() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IPluginManagerBaseImpl : public Base
 	{
 	public:
@@ -6085,7 +5869,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->registerPluginFactory = &Name::cloopregisterPluginFactoryDispatcher;
 					this->registerModule = &Name::cloopregisterModuleDispatcher;
 					this->unregisterModule = &Name::cloopunregisterModuleDispatcher;
@@ -6106,7 +5889,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -6118,7 +5901,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -6130,32 +5913,36 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
 		static IPluginSet* CLOOP_CARG cloopgetPluginsDispatcher(IPluginManager* self, IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getPlugins(status, pluginType, namesList, firebirdConf);
+				return static_cast<Name*>(self)->Name::getPlugins(&status2, pluginType, namesList, firebirdConf);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IPluginSet*>(0);
 			}
 		}
 
 		static IConfig* CLOOP_CARG cloopgetConfigDispatcher(IPluginManager* self, IStatus* status, const char* filename) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getConfig(status, filename);
+				return static_cast<Name*>(self)->Name::getConfig(&status2, filename);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IConfig*>(0);
 			}
 		}
@@ -6168,26 +5955,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IPluginManager> > >
-	class IPluginManagerImpl : public IPluginManagerBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IPluginManager> > >
+	class IPluginManagerImpl : public IPluginManagerBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IPluginManagerImpl(DoNotInherit = DoNotInherit())
@@ -6202,12 +5976,12 @@ public:
 		virtual void registerPluginFactory(unsigned pluginType, const char* defaultName, IPluginFactory* factory) = 0;
 		virtual void registerModule(IPluginModule* cleanup) = 0;
 		virtual void unregisterModule(IPluginModule* cleanup) = 0;
-		virtual IPluginSet* getPlugins(IStatus* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) = 0;
-		virtual IConfig* getConfig(IStatus* status, const char* filename) = 0;
+		virtual IPluginSet* getPlugins(StatusType* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf) = 0;
+		virtual IConfig* getConfig(StatusType* status, const char* filename) = 0;
 		virtual void releasePlugin(IPluginBase* plugin) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IConfigManagerBaseImpl : public Base
 	{
 	public:
@@ -6220,7 +5994,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getDirectory = &Name::cloopgetDirectoryDispatcher;
 					this->getFirebirdConf = &Name::cloopgetFirebirdConfDispatcher;
 					this->getDatabaseConf = &Name::cloopgetDatabaseConfDispatcher;
@@ -6241,7 +6014,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -6254,7 +6027,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IFirebirdConf*>(0);
 			}
 		}
@@ -6267,7 +6040,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IFirebirdConf*>(0);
 			}
 		}
@@ -6280,7 +6053,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IConfig*>(0);
 			}
 		}
@@ -6293,7 +6066,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -6306,27 +6079,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IConfigManager> > >
-	class IConfigManagerImpl : public IConfigManagerBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IConfigManager> > >
+	class IConfigManagerImpl : public IConfigManagerBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IConfigManagerImpl(DoNotInherit = DoNotInherit())
@@ -6346,7 +6106,7 @@ public:
 		virtual const char* getRootDirectory() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IEventCallbackBaseImpl : public Base
 	{
 	public:
@@ -6359,7 +6119,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->eventCallbackFunction = &Name::cloopeventCallbackFunctionDispatcher;
@@ -6377,7 +6136,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -6389,7 +6148,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -6401,27 +6160,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IEventCallback> > > > >
-	class IEventCallbackImpl : public IEventCallbackBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IEventCallback> > > > >
+	class IEventCallbackImpl : public IEventCallbackBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IEventCallbackImpl(DoNotInherit = DoNotInherit())
@@ -6436,7 +6182,7 @@ public:
 		virtual void eventCallbackFunction(unsigned length, const unsigned char* events) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IBlobBaseImpl : public Base
 	{
 	public:
@@ -6449,7 +6195,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getInfo = &Name::cloopgetInfoDispatcher;
@@ -6466,74 +6211,86 @@ public:
 
 		static void CLOOP_CARG cloopgetInfoDispatcher(IBlob* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(&status2, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static int CLOOP_CARG cloopgetSegmentDispatcher(IBlob* self, IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSegment(status, bufferLength, buffer, segmentLength);
+				return static_cast<Name*>(self)->Name::getSegment(&status2, bufferLength, buffer, segmentLength);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopputSegmentDispatcher(IBlob* self, IStatus* status, unsigned length, const void* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::putSegment(status, length, buffer);
+				static_cast<Name*>(self)->Name::putSegment(&status2, length, buffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopcancelDispatcher(IBlob* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::cancel(status);
+				static_cast<Name*>(self)->Name::cancel(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopcloseDispatcher(IBlob* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::close(status);
+				static_cast<Name*>(self)->Name::close(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static int CLOOP_CARG cloopseekDispatcher(IBlob* self, IStatus* status, int mode, int offset) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::seek(status, mode, offset);
+				return static_cast<Name*>(self)->Name::seek(&status2, mode, offset);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
@@ -6546,7 +6303,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -6558,27 +6315,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IBlob> > > > >
-	class IBlobImpl : public IBlobBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IBlob> > > > >
+	class IBlobImpl : public IBlobBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IBlobImpl(DoNotInherit = DoNotInherit())
@@ -6590,15 +6334,15 @@ public:
 		{
 		}
 
-		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual int getSegment(IStatus* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) = 0;
-		virtual void putSegment(IStatus* status, unsigned length, const void* buffer) = 0;
-		virtual void cancel(IStatus* status) = 0;
-		virtual void close(IStatus* status) = 0;
-		virtual int seek(IStatus* status, int mode, int offset) = 0;
+		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual int getSegment(StatusType* status, unsigned bufferLength, void* buffer, unsigned* segmentLength) = 0;
+		virtual void putSegment(StatusType* status, unsigned length, const void* buffer) = 0;
+		virtual void cancel(StatusType* status) = 0;
+		virtual void close(StatusType* status) = 0;
+		virtual int seek(StatusType* status, int mode, int offset) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITransactionBaseImpl : public Base
 	{
 	public:
@@ -6611,7 +6355,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getInfo = &Name::cloopgetInfoDispatcher;
@@ -6632,123 +6375,143 @@ public:
 
 		static void CLOOP_CARG cloopgetInfoDispatcher(ITransaction* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(&status2, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopprepareDispatcher(ITransaction* self, IStatus* status, unsigned msgLength, const unsigned char* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::prepare(status, msgLength, message);
+				static_cast<Name*>(self)->Name::prepare(&status2, msgLength, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopcommitDispatcher(ITransaction* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::commit(status);
+				static_cast<Name*>(self)->Name::commit(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopcommitRetainingDispatcher(ITransaction* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::commitRetaining(status);
+				static_cast<Name*>(self)->Name::commitRetaining(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG clooprollbackDispatcher(ITransaction* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::rollback(status);
+				static_cast<Name*>(self)->Name::rollback(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG clooprollbackRetainingDispatcher(ITransaction* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::rollbackRetaining(status);
+				static_cast<Name*>(self)->Name::rollbackRetaining(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopdisconnectDispatcher(ITransaction* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::disconnect(status);
+				static_cast<Name*>(self)->Name::disconnect(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopjoinDispatcher(ITransaction* self, IStatus* status, ITransaction* transaction) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::join(status, transaction);
+				return static_cast<Name*>(self)->Name::join(&status2, transaction);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopvalidateDispatcher(ITransaction* self, IStatus* status, IAttachment* attachment) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::validate(status, attachment);
+				return static_cast<Name*>(self)->Name::validate(&status2, attachment);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopenterDtcDispatcher(ITransaction* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::enterDtc(status);
+				return static_cast<Name*>(self)->Name::enterDtc(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
@@ -6761,7 +6524,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -6773,27 +6536,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITransaction> > > > >
-	class ITransactionImpl : public ITransactionBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITransaction> > > > >
+	class ITransactionImpl : public ITransactionBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITransactionImpl(DoNotInherit = DoNotInherit())
@@ -6805,19 +6555,19 @@ public:
 		{
 		}
 
-		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual void prepare(IStatus* status, unsigned msgLength, const unsigned char* message) = 0;
-		virtual void commit(IStatus* status) = 0;
-		virtual void commitRetaining(IStatus* status) = 0;
-		virtual void rollback(IStatus* status) = 0;
-		virtual void rollbackRetaining(IStatus* status) = 0;
-		virtual void disconnect(IStatus* status) = 0;
-		virtual ITransaction* join(IStatus* status, ITransaction* transaction) = 0;
-		virtual ITransaction* validate(IStatus* status, IAttachment* attachment) = 0;
-		virtual ITransaction* enterDtc(IStatus* status) = 0;
+		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual void prepare(StatusType* status, unsigned msgLength, const unsigned char* message) = 0;
+		virtual void commit(StatusType* status) = 0;
+		virtual void commitRetaining(StatusType* status) = 0;
+		virtual void rollback(StatusType* status) = 0;
+		virtual void rollbackRetaining(StatusType* status) = 0;
+		virtual void disconnect(StatusType* status) = 0;
+		virtual ITransaction* join(StatusType* status, ITransaction* transaction) = 0;
+		virtual ITransaction* validate(StatusType* status, IAttachment* attachment) = 0;
+		virtual ITransaction* enterDtc(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IMessageMetadataBaseImpl : public Base
 	{
 	public:
@@ -6830,7 +6580,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getCount = &Name::cloopgetCountDispatcher;
@@ -6856,195 +6605,225 @@ public:
 
 		static unsigned CLOOP_CARG cloopgetCountDispatcher(IMessageMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getCount(status);
+				return static_cast<Name*>(self)->Name::getCount(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetFieldDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getField(status, index);
+				return static_cast<Name*>(self)->Name::getField(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetRelationDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getRelation(status, index);
+				return static_cast<Name*>(self)->Name::getRelation(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetOwnerDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getOwner(status, index);
+				return static_cast<Name*>(self)->Name::getOwner(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetAliasDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getAlias(status, index);
+				return static_cast<Name*>(self)->Name::getAlias(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getType(status, index);
+				return static_cast<Name*>(self)->Name::getType(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static FB_BOOLEAN CLOOP_CARG cloopisNullableDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::isNullable(status, index);
+				return static_cast<Name*>(self)->Name::isNullable(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopgetSubTypeDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSubType(status, index);
+				return static_cast<Name*>(self)->Name::getSubType(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getLength(status, index);
+				return static_cast<Name*>(self)->Name::getLength(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopgetScaleDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getScale(status, index);
+				return static_cast<Name*>(self)->Name::getScale(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetCharSetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getCharSet(status, index);
+				return static_cast<Name*>(self)->Name::getCharSet(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getOffset(status, index);
+				return static_cast<Name*>(self)->Name::getOffset(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetNullOffsetDispatcher(IMessageMetadata* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getNullOffset(status, index);
+				return static_cast<Name*>(self)->Name::getNullOffset(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static IMetadataBuilder* CLOOP_CARG cloopgetBuilderDispatcher(IMessageMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getBuilder(status);
+				return static_cast<Name*>(self)->Name::getBuilder(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMetadataBuilder*>(0);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetMessageLengthDispatcher(IMessageMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMessageLength(status);
+				return static_cast<Name*>(self)->Name::getMessageLength(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -7057,7 +6836,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -7069,27 +6848,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IMessageMetadata> > > > >
-	class IMessageMetadataImpl : public IMessageMetadataBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IMessageMetadata> > > > >
+	class IMessageMetadataImpl : public IMessageMetadataBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IMessageMetadataImpl(DoNotInherit = DoNotInherit())
@@ -7101,24 +6867,24 @@ public:
 		{
 		}
 
-		virtual unsigned getCount(IStatus* status) = 0;
-		virtual const char* getField(IStatus* status, unsigned index) = 0;
-		virtual const char* getRelation(IStatus* status, unsigned index) = 0;
-		virtual const char* getOwner(IStatus* status, unsigned index) = 0;
-		virtual const char* getAlias(IStatus* status, unsigned index) = 0;
-		virtual unsigned getType(IStatus* status, unsigned index) = 0;
-		virtual FB_BOOLEAN isNullable(IStatus* status, unsigned index) = 0;
-		virtual int getSubType(IStatus* status, unsigned index) = 0;
-		virtual unsigned getLength(IStatus* status, unsigned index) = 0;
-		virtual int getScale(IStatus* status, unsigned index) = 0;
-		virtual unsigned getCharSet(IStatus* status, unsigned index) = 0;
-		virtual unsigned getOffset(IStatus* status, unsigned index) = 0;
-		virtual unsigned getNullOffset(IStatus* status, unsigned index) = 0;
-		virtual IMetadataBuilder* getBuilder(IStatus* status) = 0;
-		virtual unsigned getMessageLength(IStatus* status) = 0;
+		virtual unsigned getCount(StatusType* status) = 0;
+		virtual const char* getField(StatusType* status, unsigned index) = 0;
+		virtual const char* getRelation(StatusType* status, unsigned index) = 0;
+		virtual const char* getOwner(StatusType* status, unsigned index) = 0;
+		virtual const char* getAlias(StatusType* status, unsigned index) = 0;
+		virtual unsigned getType(StatusType* status, unsigned index) = 0;
+		virtual FB_BOOLEAN isNullable(StatusType* status, unsigned index) = 0;
+		virtual int getSubType(StatusType* status, unsigned index) = 0;
+		virtual unsigned getLength(StatusType* status, unsigned index) = 0;
+		virtual int getScale(StatusType* status, unsigned index) = 0;
+		virtual unsigned getCharSet(StatusType* status, unsigned index) = 0;
+		virtual unsigned getOffset(StatusType* status, unsigned index) = 0;
+		virtual unsigned getNullOffset(StatusType* status, unsigned index) = 0;
+		virtual IMetadataBuilder* getBuilder(StatusType* status) = 0;
+		virtual unsigned getMessageLength(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IMetadataBuilderBaseImpl : public Base
 	{
 	public:
@@ -7131,7 +6897,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setType = &Name::cloopsetTypeDispatcher;
@@ -7152,122 +6917,142 @@ public:
 
 		static void CLOOP_CARG cloopsetTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned type) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setType(status, index, type);
+				static_cast<Name*>(self)->Name::setType(&status2, index, type);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetSubTypeDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, int subType) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setSubType(status, index, subType);
+				static_cast<Name*>(self)->Name::setSubType(&status2, index, subType);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetLengthDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned length) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setLength(status, index, length);
+				static_cast<Name*>(self)->Name::setLength(&status2, index, length);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetCharSetDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned charSet) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setCharSet(status, index, charSet);
+				static_cast<Name*>(self)->Name::setCharSet(&status2, index, charSet);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetScaleDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index, unsigned scale) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setScale(status, index, scale);
+				static_cast<Name*>(self)->Name::setScale(&status2, index, scale);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG clooptruncateDispatcher(IMetadataBuilder* self, IStatus* status, unsigned count) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::truncate(status, count);
+				static_cast<Name*>(self)->Name::truncate(&status2, count);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopmoveNameToIndexDispatcher(IMetadataBuilder* self, IStatus* status, const char* name, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::moveNameToIndex(status, name, index);
+				static_cast<Name*>(self)->Name::moveNameToIndex(&status2, name, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopremoveDispatcher(IMetadataBuilder* self, IStatus* status, unsigned index) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::remove(status, index);
+				static_cast<Name*>(self)->Name::remove(&status2, index);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopaddFieldDispatcher(IMetadataBuilder* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::addField(status);
+				return static_cast<Name*>(self)->Name::addField(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IMetadataBuilder* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMetadata(status);
+				return static_cast<Name*>(self)->Name::getMetadata(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMessageMetadata*>(0);
 			}
 		}
@@ -7280,7 +7065,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -7292,27 +7077,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IMetadataBuilder> > > > >
-	class IMetadataBuilderImpl : public IMetadataBuilderBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IMetadataBuilder> > > > >
+	class IMetadataBuilderImpl : public IMetadataBuilderBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IMetadataBuilderImpl(DoNotInherit = DoNotInherit())
@@ -7324,19 +7096,19 @@ public:
 		{
 		}
 
-		virtual void setType(IStatus* status, unsigned index, unsigned type) = 0;
-		virtual void setSubType(IStatus* status, unsigned index, int subType) = 0;
-		virtual void setLength(IStatus* status, unsigned index, unsigned length) = 0;
-		virtual void setCharSet(IStatus* status, unsigned index, unsigned charSet) = 0;
-		virtual void setScale(IStatus* status, unsigned index, unsigned scale) = 0;
-		virtual void truncate(IStatus* status, unsigned count) = 0;
-		virtual void moveNameToIndex(IStatus* status, const char* name, unsigned index) = 0;
-		virtual void remove(IStatus* status, unsigned index) = 0;
-		virtual unsigned addField(IStatus* status) = 0;
-		virtual IMessageMetadata* getMetadata(IStatus* status) = 0;
+		virtual void setType(StatusType* status, unsigned index, unsigned type) = 0;
+		virtual void setSubType(StatusType* status, unsigned index, int subType) = 0;
+		virtual void setLength(StatusType* status, unsigned index, unsigned length) = 0;
+		virtual void setCharSet(StatusType* status, unsigned index, unsigned charSet) = 0;
+		virtual void setScale(StatusType* status, unsigned index, unsigned scale) = 0;
+		virtual void truncate(StatusType* status, unsigned count) = 0;
+		virtual void moveNameToIndex(StatusType* status, const char* name, unsigned index) = 0;
+		virtual void remove(StatusType* status, unsigned index) = 0;
+		virtual unsigned addField(StatusType* status) = 0;
+		virtual IMessageMetadata* getMetadata(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IResultSetBaseImpl : public Base
 	{
 	public:
@@ -7349,7 +7121,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->fetchNext = &Name::cloopfetchNextDispatcher;
@@ -7371,142 +7142,164 @@ public:
 
 		static int CLOOP_CARG cloopfetchNextDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchNext(status, message);
+				return static_cast<Name*>(self)->Name::fetchNext(&status2, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopfetchPriorDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchPrior(status, message);
+				return static_cast<Name*>(self)->Name::fetchPrior(&status2, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopfetchFirstDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchFirst(status, message);
+				return static_cast<Name*>(self)->Name::fetchFirst(&status2, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopfetchLastDispatcher(IResultSet* self, IStatus* status, void* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchLast(status, message);
+				return static_cast<Name*>(self)->Name::fetchLast(&status2, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopfetchAbsoluteDispatcher(IResultSet* self, IStatus* status, unsigned position, void* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchAbsolute(status, position, message);
+				return static_cast<Name*>(self)->Name::fetchAbsolute(&status2, position, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopfetchRelativeDispatcher(IResultSet* self, IStatus* status, int offset, void* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetchRelative(status, offset, message);
+				return static_cast<Name*>(self)->Name::fetchRelative(&status2, offset, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(IResultSet* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::isEof(status);
+				return static_cast<Name*>(self)->Name::isEof(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
 
 		static FB_BOOLEAN CLOOP_CARG cloopisBofDispatcher(IResultSet* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::isBof(status);
+				return static_cast<Name*>(self)->Name::isBof(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
 
 		static IMessageMetadata* CLOOP_CARG cloopgetMetadataDispatcher(IResultSet* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getMetadata(status);
+				return static_cast<Name*>(self)->Name::getMetadata(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopcloseDispatcher(IResultSet* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::close(status);
+				static_cast<Name*>(self)->Name::close(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetDelayedOutputFormatDispatcher(IResultSet* self, IStatus* status, IMessageMetadata* format) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setDelayedOutputFormat(status, format);
+				static_cast<Name*>(self)->Name::setDelayedOutputFormat(&status2, format);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -7518,7 +7311,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -7530,27 +7323,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IResultSet> > > > >
-	class IResultSetImpl : public IResultSetBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IResultSet> > > > >
+	class IResultSetImpl : public IResultSetBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IResultSetImpl(DoNotInherit = DoNotInherit())
@@ -7562,20 +7342,20 @@ public:
 		{
 		}
 
-		virtual int fetchNext(IStatus* status, void* message) = 0;
-		virtual int fetchPrior(IStatus* status, void* message) = 0;
-		virtual int fetchFirst(IStatus* status, void* message) = 0;
-		virtual int fetchLast(IStatus* status, void* message) = 0;
-		virtual int fetchAbsolute(IStatus* status, unsigned position, void* message) = 0;
-		virtual int fetchRelative(IStatus* status, int offset, void* message) = 0;
-		virtual FB_BOOLEAN isEof(IStatus* status) = 0;
-		virtual FB_BOOLEAN isBof(IStatus* status) = 0;
-		virtual IMessageMetadata* getMetadata(IStatus* status) = 0;
-		virtual void close(IStatus* status) = 0;
-		virtual void setDelayedOutputFormat(IStatus* status, IMessageMetadata* format) = 0;
+		virtual int fetchNext(StatusType* status, void* message) = 0;
+		virtual int fetchPrior(StatusType* status, void* message) = 0;
+		virtual int fetchFirst(StatusType* status, void* message) = 0;
+		virtual int fetchLast(StatusType* status, void* message) = 0;
+		virtual int fetchAbsolute(StatusType* status, unsigned position, void* message) = 0;
+		virtual int fetchRelative(StatusType* status, int offset, void* message) = 0;
+		virtual FB_BOOLEAN isEof(StatusType* status) = 0;
+		virtual FB_BOOLEAN isBof(StatusType* status) = 0;
+		virtual IMessageMetadata* getMetadata(StatusType* status) = 0;
+		virtual void close(StatusType* status) = 0;
+		virtual void setDelayedOutputFormat(StatusType* status, IMessageMetadata* format) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IStatementBaseImpl : public Base
 	{
 	public:
@@ -7588,7 +7368,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getInfo = &Name::cloopgetInfoDispatcher;
@@ -7610,140 +7389,162 @@ public:
 
 		static void CLOOP_CARG cloopgetInfoDispatcher(IStatement* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(&status2, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetTypeDispatcher(IStatement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getType(status);
+				return static_cast<Name*>(self)->Name::getType(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetPlanDispatcher(IStatement* self, IStatus* status, FB_BOOLEAN detailed) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getPlan(status, detailed);
+				return static_cast<Name*>(self)->Name::getPlan(&status2, detailed);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static ISC_UINT64 CLOOP_CARG cloopgetAffectedRecordsDispatcher(IStatement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getAffectedRecords(status);
+				return static_cast<Name*>(self)->Name::getAffectedRecords(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ISC_UINT64>(0);
 			}
 		}
 
 		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(IStatement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getInputMetadata(status);
+				return static_cast<Name*>(self)->Name::getInputMetadata(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
 		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(IStatement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getOutputMetadata(status);
+				return static_cast<Name*>(self)->Name::getOutputMetadata(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::execute(status, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
+				return static_cast<Name*>(self)->Name::execute(&status2, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::openCursor(status, transaction, inMetadata, inBuffer, outMetadata);
+				return static_cast<Name*>(self)->Name::openCursor(&status2, transaction, inMetadata, inBuffer, outMetadata);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IResultSet*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetCursorNameDispatcher(IStatement* self, IStatus* status, const char* name) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setCursorName(status, name);
+				static_cast<Name*>(self)->Name::setCursorName(&status2, name);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopfreeDispatcher(IStatement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::free(status);
+				static_cast<Name*>(self)->Name::free(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetFlagsDispatcher(IStatement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getFlags(status);
+				return static_cast<Name*>(self)->Name::getFlags(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -7756,7 +7557,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -7768,27 +7569,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IStatement> > > > >
-	class IStatementImpl : public IStatementBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IStatement> > > > >
+	class IStatementImpl : public IStatementBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IStatementImpl(DoNotInherit = DoNotInherit())
@@ -7800,20 +7588,20 @@ public:
 		{
 		}
 
-		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual unsigned getType(IStatus* status) = 0;
-		virtual const char* getPlan(IStatus* status, FB_BOOLEAN detailed) = 0;
-		virtual ISC_UINT64 getAffectedRecords(IStatus* status) = 0;
-		virtual IMessageMetadata* getInputMetadata(IStatus* status) = 0;
-		virtual IMessageMetadata* getOutputMetadata(IStatus* status) = 0;
-		virtual ITransaction* execute(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
-		virtual IResultSet* openCursor(IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
-		virtual void setCursorName(IStatus* status, const char* name) = 0;
-		virtual void free(IStatus* status) = 0;
-		virtual unsigned getFlags(IStatus* status) = 0;
+		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual unsigned getType(StatusType* status) = 0;
+		virtual const char* getPlan(StatusType* status, FB_BOOLEAN detailed) = 0;
+		virtual ISC_UINT64 getAffectedRecords(StatusType* status) = 0;
+		virtual IMessageMetadata* getInputMetadata(StatusType* status) = 0;
+		virtual IMessageMetadata* getOutputMetadata(StatusType* status) = 0;
+		virtual ITransaction* execute(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
+		virtual IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
+		virtual void setCursorName(StatusType* status, const char* name) = 0;
+		virtual void free(StatusType* status) = 0;
+		virtual unsigned getFlags(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IRequestBaseImpl : public Base
 	{
 	public:
@@ -7826,7 +7614,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->receive = &Name::cloopreceiveDispatcher;
@@ -7844,85 +7631,99 @@ public:
 
 		static void CLOOP_CARG cloopreceiveDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::receive(status, level, msgType, length, message);
+				static_cast<Name*>(self)->Name::receive(&status2, level, msgType, length, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsendDispatcher(IRequest* self, IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::send(status, level, msgType, length, message);
+				static_cast<Name*>(self)->Name::send(&status2, level, msgType, length, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopgetInfoDispatcher(IRequest* self, IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(status, level, itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(&status2, level, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopstartDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::start(status, tra, level);
+				static_cast<Name*>(self)->Name::start(&status2, tra, level);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopstartAndSendDispatcher(IRequest* self, IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::startAndSend(status, tra, level, msgType, length, message);
+				static_cast<Name*>(self)->Name::startAndSend(&status2, tra, level, msgType, length, message);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopunwindDispatcher(IRequest* self, IStatus* status, int level) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::unwind(status, level);
+				static_cast<Name*>(self)->Name::unwind(&status2, level);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopfreeDispatcher(IRequest* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::free(status);
+				static_cast<Name*>(self)->Name::free(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -7934,7 +7735,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -7946,27 +7747,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IRequest> > > > >
-	class IRequestImpl : public IRequestBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IRequest> > > > >
+	class IRequestImpl : public IRequestBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IRequestImpl(DoNotInherit = DoNotInherit())
@@ -7978,16 +7766,16 @@ public:
 		{
 		}
 
-		virtual void receive(IStatus* status, int level, unsigned msgType, unsigned length, unsigned char* message) = 0;
-		virtual void send(IStatus* status, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
-		virtual void getInfo(IStatus* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual void start(IStatus* status, ITransaction* tra, int level) = 0;
-		virtual void startAndSend(IStatus* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
-		virtual void unwind(IStatus* status, int level) = 0;
-		virtual void free(IStatus* status) = 0;
+		virtual void receive(StatusType* status, int level, unsigned msgType, unsigned length, unsigned char* message) = 0;
+		virtual void send(StatusType* status, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
+		virtual void getInfo(StatusType* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual void start(StatusType* status, ITransaction* tra, int level) = 0;
+		virtual void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message) = 0;
+		virtual void unwind(StatusType* status, int level) = 0;
+		virtual void free(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IEventsBaseImpl : public Base
 	{
 	public:
@@ -8000,7 +7788,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->cancel = &Name::cloopcancelDispatcher;
@@ -8012,13 +7799,15 @@ public:
 
 		static void CLOOP_CARG cloopcancelDispatcher(IEvents* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::cancel(status);
+				static_cast<Name*>(self)->Name::cancel(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -8030,7 +7819,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -8042,27 +7831,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IEvents> > > > >
-	class IEventsImpl : public IEventsBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IEvents> > > > >
+	class IEventsImpl : public IEventsBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IEventsImpl(DoNotInherit = DoNotInherit())
@@ -8074,10 +7850,10 @@ public:
 		{
 		}
 
-		virtual void cancel(IStatus* status) = 0;
+		virtual void cancel(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IAttachmentBaseImpl : public Base
 	{
 	public:
@@ -8090,7 +7866,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getInfo = &Name::cloopgetInfoDispatcher;
@@ -8119,227 +7894,263 @@ public:
 
 		static void CLOOP_CARG cloopgetInfoDispatcher(IAttachment* self, IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getInfo(status, itemsLength, items, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::getInfo(&status2, itemsLength, items, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopstartTransactionDispatcher(IAttachment* self, IStatus* status, unsigned tpbLength, const unsigned char* tpb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::startTransaction(status, tpbLength, tpb);
+				return static_cast<Name*>(self)->Name::startTransaction(&status2, tpbLength, tpb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopreconnectTransactionDispatcher(IAttachment* self, IStatus* status, unsigned length, const unsigned char* id) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::reconnectTransaction(status, length, id);
+				return static_cast<Name*>(self)->Name::reconnectTransaction(&status2, length, id);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static IRequest* CLOOP_CARG cloopcompileRequestDispatcher(IAttachment* self, IStatus* status, unsigned blrLength, const unsigned char* blr) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::compileRequest(status, blrLength, blr);
+				return static_cast<Name*>(self)->Name::compileRequest(&status2, blrLength, blr);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IRequest*>(0);
 			}
 		}
 
 		static void CLOOP_CARG clooptransactRequestDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::transactRequest(status, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
+				static_cast<Name*>(self)->Name::transactRequest(&status2, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static IBlob* CLOOP_CARG cloopcreateBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::createBlob(status, transaction, id, bpbLength, bpb);
+				return static_cast<Name*>(self)->Name::createBlob(&status2, transaction, id, bpbLength, bpb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IBlob*>(0);
 			}
 		}
 
 		static IBlob* CLOOP_CARG cloopopenBlobDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::openBlob(status, transaction, id, bpbLength, bpb);
+				return static_cast<Name*>(self)->Name::openBlob(&status2, transaction, id, bpbLength, bpb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IBlob*>(0);
 			}
 		}
 
 		static int CLOOP_CARG cloopgetSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getSlice(status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
+				return static_cast<Name*>(self)->Name::getSlice(&status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopputSliceDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::putSlice(status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
+				static_cast<Name*>(self)->Name::putSlice(&status2, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopexecuteDynDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::executeDyn(status, transaction, length, dyn);
+				static_cast<Name*>(self)->Name::executeDyn(&status2, transaction, length, dyn);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static IStatement* CLOOP_CARG cloopprepareDispatcher(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::prepare(status, tra, stmtLength, sqlStmt, dialect, flags);
+				return static_cast<Name*>(self)->Name::prepare(&status2, tra, stmtLength, sqlStmt, dialect, flags);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IStatement*>(0);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopexecuteDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::execute(status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
+				return static_cast<Name*>(self)->Name::execute(&status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::openCursor(status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
+				return static_cast<Name*>(self)->Name::openCursor(&status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IResultSet*>(0);
 			}
 		}
 
 		static IEvents* CLOOP_CARG cloopqueEventsDispatcher(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::queEvents(status, callback, length, events);
+				return static_cast<Name*>(self)->Name::queEvents(&status2, callback, length, events);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IEvents*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopcancelOperationDispatcher(IAttachment* self, IStatus* status, int option) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::cancelOperation(status, option);
+				static_cast<Name*>(self)->Name::cancelOperation(&status2, option);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG clooppingDispatcher(IAttachment* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::ping(status);
+				static_cast<Name*>(self)->Name::ping(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopdetachDispatcher(IAttachment* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::detach(status);
+				static_cast<Name*>(self)->Name::detach(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopdropDatabaseDispatcher(IAttachment* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::dropDatabase(status);
+				static_cast<Name*>(self)->Name::dropDatabase(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -8351,7 +8162,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -8363,27 +8174,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IAttachment> > > > >
-	class IAttachmentImpl : public IAttachmentBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IAttachment> > > > >
+	class IAttachmentImpl : public IAttachmentBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IAttachmentImpl(DoNotInherit = DoNotInherit())
@@ -8395,27 +8193,27 @@ public:
 		{
 		}
 
-		virtual void getInfo(IStatus* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual ITransaction* startTransaction(IStatus* status, unsigned tpbLength, const unsigned char* tpb) = 0;
-		virtual ITransaction* reconnectTransaction(IStatus* status, unsigned length, const unsigned char* id) = 0;
-		virtual IRequest* compileRequest(IStatus* status, unsigned blrLength, const unsigned char* blr) = 0;
-		virtual void transactRequest(IStatus* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) = 0;
-		virtual IBlob* createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
-		virtual IBlob* openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
-		virtual int getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
-		virtual void putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
-		virtual void executeDyn(IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) = 0;
-		virtual IStatement* prepare(IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) = 0;
-		virtual ITransaction* execute(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
-		virtual IResultSet* openCursor(IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) = 0;
-		virtual IEvents* queEvents(IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) = 0;
-		virtual void cancelOperation(IStatus* status, int option) = 0;
-		virtual void ping(IStatus* status) = 0;
-		virtual void detach(IStatus* status) = 0;
-		virtual void dropDatabase(IStatus* status) = 0;
+		virtual void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual ITransaction* startTransaction(StatusType* status, unsigned tpbLength, const unsigned char* tpb) = 0;
+		virtual ITransaction* reconnectTransaction(StatusType* status, unsigned length, const unsigned char* id) = 0;
+		virtual IRequest* compileRequest(StatusType* status, unsigned blrLength, const unsigned char* blr) = 0;
+		virtual void transactRequest(StatusType* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg) = 0;
+		virtual IBlob* createBlob(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
+		virtual IBlob* openBlob(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb) = 0;
+		virtual int getSlice(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
+		virtual void putSlice(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice) = 0;
+		virtual void executeDyn(StatusType* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) = 0;
+		virtual IStatement* prepare(StatusType* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) = 0;
+		virtual ITransaction* execute(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
+		virtual IResultSet* openCursor(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) = 0;
+		virtual IEvents* queEvents(StatusType* status, IEventCallback* callback, unsigned length, const unsigned char* events) = 0;
+		virtual void cancelOperation(StatusType* status, int option) = 0;
+		virtual void ping(StatusType* status) = 0;
+		virtual void detach(StatusType* status) = 0;
+		virtual void dropDatabase(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IServiceBaseImpl : public Base
 	{
 	public:
@@ -8428,7 +8226,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->detach = &Name::cloopdetachDispatcher;
@@ -8442,37 +8239,43 @@ public:
 
 		static void CLOOP_CARG cloopdetachDispatcher(IService* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::detach(status);
+				static_cast<Name*>(self)->Name::detach(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopqueryDispatcher(IService* self, IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::query(status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
+				static_cast<Name*>(self)->Name::query(&status2, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopstartDispatcher(IService* self, IStatus* status, unsigned spbLength, const unsigned char* spb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::start(status, spbLength, spb);
+				static_cast<Name*>(self)->Name::start(&status2, spbLength, spb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -8484,7 +8287,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -8496,27 +8299,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IService> > > > >
-	class IServiceImpl : public IServiceBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IService> > > > >
+	class IServiceImpl : public IServiceBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IServiceImpl(DoNotInherit = DoNotInherit())
@@ -8528,12 +8318,12 @@ public:
 		{
 		}
 
-		virtual void detach(IStatus* status) = 0;
-		virtual void query(IStatus* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) = 0;
-		virtual void start(IStatus* status, unsigned spbLength, const unsigned char* spb) = 0;
+		virtual void detach(StatusType* status) = 0;
+		virtual void query(StatusType* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer) = 0;
+		virtual void start(StatusType* status, unsigned spbLength, const unsigned char* spb) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IProviderBaseImpl : public Base
 	{
 	public:
@@ -8546,7 +8336,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -8564,64 +8353,74 @@ public:
 
 		static IAttachment* CLOOP_CARG cloopattachDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::attachDatabase(status, fileName, dpbLength, dpb);
+				return static_cast<Name*>(self)->Name::attachDatabase(&status2, fileName, dpbLength, dpb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IAttachment*>(0);
 			}
 		}
 
 		static IAttachment* CLOOP_CARG cloopcreateDatabaseDispatcher(IProvider* self, IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::createDatabase(status, fileName, dpbLength, dpb);
+				return static_cast<Name*>(self)->Name::createDatabase(&status2, fileName, dpbLength, dpb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IAttachment*>(0);
 			}
 		}
 
 		static IService* CLOOP_CARG cloopattachServiceManagerDispatcher(IProvider* self, IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::attachServiceManager(status, service, spbLength, spb);
+				return static_cast<Name*>(self)->Name::attachServiceManager(&status2, service, spbLength, spb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IService*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopshutdownDispatcher(IProvider* self, IStatus* status, unsigned timeout, const int reason) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::shutdown(status, timeout, reason);
+				static_cast<Name*>(self)->Name::shutdown(&status2, timeout, reason);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetDbCryptCallbackDispatcher(IProvider* self, IStatus* status, ICryptKeyCallback* cryptCallback) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setDbCryptCallback(status, cryptCallback);
+				static_cast<Name*>(self)->Name::setDbCryptCallback(&status2, cryptCallback);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -8633,7 +8432,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -8645,7 +8444,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -8658,7 +8457,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -8670,27 +8469,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IProvider> > > > > > >
-	class IProviderImpl : public IProviderBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IProvider> > > > > > >
+	class IProviderImpl : public IProviderBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IProviderImpl(DoNotInherit = DoNotInherit())
@@ -8702,14 +8488,14 @@ public:
 		{
 		}
 
-		virtual IAttachment* attachDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
-		virtual IAttachment* createDatabase(IStatus* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
-		virtual IService* attachServiceManager(IStatus* status, const char* service, unsigned spbLength, const unsigned char* spb) = 0;
-		virtual void shutdown(IStatus* status, unsigned timeout, const int reason) = 0;
-		virtual void setDbCryptCallback(IStatus* status, ICryptKeyCallback* cryptCallback) = 0;
+		virtual IAttachment* attachDatabase(StatusType* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
+		virtual IAttachment* createDatabase(StatusType* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb) = 0;
+		virtual IService* attachServiceManager(StatusType* status, const char* service, unsigned spbLength, const unsigned char* spb) = 0;
+		virtual void shutdown(StatusType* status, unsigned timeout, const int reason) = 0;
+		virtual void setDbCryptCallback(StatusType* status, ICryptKeyCallback* cryptCallback) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IDtcStartBaseImpl : public Base
 	{
 	public:
@@ -8722,7 +8508,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->setComponent = &Name::cloopsetComponentDispatcher;
 					this->setWithParam = &Name::cloopsetWithParamDispatcher;
@@ -8737,63 +8522,73 @@ public:
 
 		static void CLOOP_CARG cloopsetComponentDispatcher(IDtcStart* self, IStatus* status, IAttachment* att) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setComponent(status, att);
+				static_cast<Name*>(self)->Name::setComponent(&status2, att);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetWithParamDispatcher(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setWithParam(status, att, length, tpb);
+				static_cast<Name*>(self)->Name::setWithParam(&status2, att, length, tpb);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetCountDispatcher(IDtcStart* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getCount(status);
+				return static_cast<Name*>(self)->Name::getCount(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<unsigned>(0);
 			}
 		}
 
 		static IAttachment* CLOOP_CARG cloopgetAttachmentDispatcher(IDtcStart* self, IStatus* status, unsigned pos) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getAttachment(status, pos);
+				return static_cast<Name*>(self)->Name::getAttachment(&status2, pos);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IAttachment*>(0);
 			}
 		}
 
 		static const unsigned char* CLOOP_CARG cloopgetTpbDispatcher(IDtcStart* self, IStatus* status, unsigned pos, unsigned* length) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getTpb(status, pos, length);
+				return static_cast<Name*>(self)->Name::getTpb(&status2, pos, length);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const unsigned char*>(0);
 			}
 		}
@@ -8806,26 +8601,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IDtcStart> > > > >
-	class IDtcStartImpl : public IDtcStartBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IDtcStart> > > > >
+	class IDtcStartImpl : public IDtcStartBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IDtcStartImpl(DoNotInherit = DoNotInherit())
@@ -8837,14 +8619,14 @@ public:
 		{
 		}
 
-		virtual void setComponent(IStatus* status, IAttachment* att) = 0;
-		virtual void setWithParam(IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) = 0;
-		virtual unsigned getCount(IStatus* status) = 0;
-		virtual IAttachment* getAttachment(IStatus* status, unsigned pos) = 0;
-		virtual const unsigned char* getTpb(IStatus* status, unsigned pos, unsigned* length) = 0;
+		virtual void setComponent(StatusType* status, IAttachment* att) = 0;
+		virtual void setWithParam(StatusType* status, IAttachment* att, unsigned length, const unsigned char* tpb) = 0;
+		virtual unsigned getCount(StatusType* status) = 0;
+		virtual IAttachment* getAttachment(StatusType* status, unsigned pos) = 0;
+		virtual const unsigned char* getTpb(StatusType* status, unsigned pos, unsigned* length) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IDtcBaseImpl : public Base
 	{
 	public:
@@ -8857,7 +8639,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->start = &Name::cloopstartDispatcher;
 					this->join = &Name::cloopjoinDispatcher;
 					this->startBuilder = &Name::cloopstartBuilderDispatcher;
@@ -8869,59 +8650,52 @@ public:
 
 		static ITransaction* CLOOP_CARG cloopstartDispatcher(IDtc* self, IStatus* status, IDtcStart* components) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::start(status, components);
+				return static_cast<Name*>(self)->Name::start(&status2, components);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopjoinDispatcher(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::join(status, one, two);
+				return static_cast<Name*>(self)->Name::join(&status2, one, two);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
 
 		static IDtcStart* CLOOP_CARG cloopstartBuilderDispatcher(IDtc* self, IStatus* status) throw()
 		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::startBuilder(status);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-				return static_cast<IDtcStart*>(0);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				return static_cast<Name*>(self)->Name::startBuilder(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
+				return static_cast<IDtcStart*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IDtc> > >
-	class IDtcImpl : public IDtcBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IDtc> > >
+	class IDtcImpl : public IDtcBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IDtcImpl(DoNotInherit = DoNotInherit())
@@ -8933,12 +8707,12 @@ public:
 		{
 		}
 
-		virtual ITransaction* start(IStatus* status, IDtcStart* components) = 0;
-		virtual ITransaction* join(IStatus* status, ITransaction* one, ITransaction* two) = 0;
-		virtual IDtcStart* startBuilder(IStatus* status) = 0;
+		virtual ITransaction* start(StatusType* status, IDtcStart* components) = 0;
+		virtual ITransaction* join(StatusType* status, ITransaction* one, ITransaction* two) = 0;
+		virtual IDtcStart* startBuilder(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IAuthBaseImpl : public Base
 	{
 	public:
@@ -8951,7 +8725,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -8970,7 +8743,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -8982,7 +8755,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -8995,7 +8768,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -9007,27 +8780,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IAuth> > > > > > >
-	class IAuthImpl : public IAuthBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IAuth> > > > > > >
+	class IAuthImpl : public IAuthBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IAuthImpl(DoNotInherit = DoNotInherit())
@@ -9041,7 +8801,7 @@ public:
 
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IWriterBaseImpl : public Base
 	{
 	public:
@@ -9054,7 +8814,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->reset = &Name::cloopresetDispatcher;
 					this->add = &Name::cloopaddDispatcher;
 					this->setType = &Name::cloopsetTypeDispatcher;
@@ -9073,62 +8832,55 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopaddDispatcher(IWriter* self, IStatus* status, const char* name) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::add(status, name);
+				static_cast<Name*>(self)->Name::add(&status2, name);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetTypeDispatcher(IWriter* self, IStatus* status, const char* value) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setType(status, value);
+				static_cast<Name*>(self)->Name::setType(&status2, value);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetDbDispatcher(IWriter* self, IStatus* status, const char* value) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::setDb(status, value);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::setDb(&status2, value);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IWriter> > >
-	class IWriterImpl : public IWriterBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IWriter> > >
+	class IWriterImpl : public IWriterBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IWriterImpl(DoNotInherit = DoNotInherit())
@@ -9141,12 +8893,12 @@ public:
 		}
 
 		virtual void reset() = 0;
-		virtual void add(IStatus* status, const char* name) = 0;
-		virtual void setType(IStatus* status, const char* value) = 0;
-		virtual void setDb(IStatus* status, const char* value) = 0;
+		virtual void add(StatusType* status, const char* name) = 0;
+		virtual void setType(StatusType* status, const char* value) = 0;
+		virtual void setDb(StatusType* status, const char* value) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IServerBlockBaseImpl : public Base
 	{
 	public:
@@ -9159,7 +8911,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getLogin = &Name::cloopgetLoginDispatcher;
 					this->getData = &Name::cloopgetDataDispatcher;
 					this->putData = &Name::cloopputDataDispatcher;
@@ -9178,7 +8929,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -9191,51 +8942,42 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const unsigned char*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopputDataDispatcher(IServerBlock* self, IStatus* status, unsigned length, const void* data) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::putData(status, length, data);
+				static_cast<Name*>(self)->Name::putData(&status2, length, data);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopputKeyDispatcher(IServerBlock* self, IStatus* status, FbCryptKey* cryptKey) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::putKey(status, cryptKey);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::putKey(&status2, cryptKey);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IServerBlock> > >
-	class IServerBlockImpl : public IServerBlockBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IServerBlock> > >
+	class IServerBlockImpl : public IServerBlockBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IServerBlockImpl(DoNotInherit = DoNotInherit())
@@ -9249,11 +8991,11 @@ public:
 
 		virtual const char* getLogin() = 0;
 		virtual const unsigned char* getData(unsigned* length) = 0;
-		virtual void putData(IStatus* status, unsigned length, const void* data) = 0;
-		virtual void putKey(IStatus* status, FbCryptKey* cryptKey) = 0;
+		virtual void putData(StatusType* status, unsigned length, const void* data) = 0;
+		virtual void putKey(StatusType* status, FbCryptKey* cryptKey) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IClientBlockBaseImpl : public Base
 	{
 	public:
@@ -9266,7 +9008,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->getLogin = &Name::cloopgetLoginDispatcher;
@@ -9288,7 +9029,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -9301,7 +9042,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -9314,32 +9055,36 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const unsigned char*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopputDataDispatcher(IClientBlock* self, IStatus* status, unsigned length, const void* data) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::putData(status, length, data);
+				static_cast<Name*>(self)->Name::putData(&status2, length, data);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopputKeyDispatcher(IClientBlock* self, IStatus* status, FbCryptKey* cryptKey) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::putKey(status, cryptKey);
+				static_cast<Name*>(self)->Name::putKey(&status2, cryptKey);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -9351,7 +9096,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -9363,27 +9108,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IClientBlock> > > > >
-	class IClientBlockImpl : public IClientBlockBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IClientBlock> > > > >
+	class IClientBlockImpl : public IClientBlockBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IClientBlockImpl(DoNotInherit = DoNotInherit())
@@ -9398,11 +9130,11 @@ public:
 		virtual const char* getLogin() = 0;
 		virtual const char* getPassword() = 0;
 		virtual const unsigned char* getData(unsigned* length) = 0;
-		virtual void putData(IStatus* status, unsigned length, const void* data) = 0;
-		virtual void putKey(IStatus* status, FbCryptKey* cryptKey) = 0;
+		virtual void putData(StatusType* status, unsigned length, const void* data) = 0;
+		virtual void putKey(StatusType* status, FbCryptKey* cryptKey) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IServerBaseImpl : public Base
 	{
 	public:
@@ -9415,7 +9147,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -9429,13 +9160,15 @@ public:
 
 		static int CLOOP_CARG cloopauthenticateDispatcher(IServer* self, IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::authenticate(status, sBlock, writerInterface);
+				return static_cast<Name*>(self)->Name::authenticate(&status2, sBlock, writerInterface);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
@@ -9448,7 +9181,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -9460,7 +9193,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -9473,7 +9206,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -9485,27 +9218,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IAuthImpl<Name, Inherit<IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IServer> > > > > > > > >
-	class IServerImpl : public IServerBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IAuthImpl<Name, StatusType, Inherit<IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IServer> > > > > > > > >
+	class IServerImpl : public IServerBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IServerImpl(DoNotInherit = DoNotInherit())
@@ -9517,10 +9237,10 @@ public:
 		{
 		}
 
-		virtual int authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface) = 0;
+		virtual int authenticate(StatusType* status, IServerBlock* sBlock, IWriter* writerInterface) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IClientBaseImpl : public Base
 	{
 	public:
@@ -9533,7 +9253,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -9547,13 +9266,15 @@ public:
 
 		static int CLOOP_CARG cloopauthenticateDispatcher(IClient* self, IStatus* status, IClientBlock* cBlock) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::authenticate(status, cBlock);
+				return static_cast<Name*>(self)->Name::authenticate(&status2, cBlock);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
@@ -9566,7 +9287,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -9578,7 +9299,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -9591,7 +9312,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -9603,27 +9324,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IAuthImpl<Name, Inherit<IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IClient> > > > > > > > >
-	class IClientImpl : public IClientBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IAuthImpl<Name, StatusType, Inherit<IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IClient> > > > > > > > >
+	class IClientImpl : public IClientBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IClientImpl(DoNotInherit = DoNotInherit())
@@ -9635,10 +9343,10 @@ public:
 		{
 		}
 
-		virtual int authenticate(IStatus* status, IClientBlock* cBlock) = 0;
+		virtual int authenticate(StatusType* status, IClientBlock* cBlock) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IUserFieldBaseImpl : public Base
 	{
 	public:
@@ -9651,7 +9359,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->entered = &Name::cloopenteredDispatcher;
 					this->specified = &Name::cloopspecifiedDispatcher;
 					this->setEntered = &Name::cloopsetEnteredDispatcher;
@@ -9669,7 +9376,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -9682,39 +9389,28 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::setEntered(status, newValue);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::setEntered(&status2, newValue);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IUserField> > >
-	class IUserFieldImpl : public IUserFieldBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUserField> > >
+	class IUserFieldImpl : public IUserFieldBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IUserFieldImpl(DoNotInherit = DoNotInherit())
@@ -9728,10 +9424,10 @@ public:
 
 		virtual int entered() = 0;
 		virtual int specified() = 0;
-		virtual void setEntered(IStatus* status, int newValue) = 0;
+		virtual void setEntered(StatusType* status, int newValue) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ICharUserFieldBaseImpl : public Base
 	{
 	public:
@@ -9744,7 +9440,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->entered = &Name::cloopenteredDispatcher;
 					this->specified = &Name::cloopspecifiedDispatcher;
 					this->setEntered = &Name::cloopsetEnteredDispatcher;
@@ -9764,20 +9459,22 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetDispatcher(ICharUserField* self, IStatus* status, const char* newValue) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::set(status, newValue);
+				static_cast<Name*>(self)->Name::set(&status2, newValue);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -9789,7 +9486,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -9802,39 +9499,28 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::setEntered(status, newValue);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::setEntered(&status2, newValue);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IUserFieldImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ICharUserField> > > > >
-	class ICharUserFieldImpl : public ICharUserFieldBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IUserFieldImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ICharUserField> > > > >
+	class ICharUserFieldImpl : public ICharUserFieldBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ICharUserFieldImpl(DoNotInherit = DoNotInherit())
@@ -9847,10 +9533,10 @@ public:
 		}
 
 		virtual const char* get() = 0;
-		virtual void set(IStatus* status, const char* newValue) = 0;
+		virtual void set(StatusType* status, const char* newValue) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IIntUserFieldBaseImpl : public Base
 	{
 	public:
@@ -9863,7 +9549,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->entered = &Name::cloopenteredDispatcher;
 					this->specified = &Name::cloopspecifiedDispatcher;
 					this->setEntered = &Name::cloopsetEnteredDispatcher;
@@ -9883,20 +9568,22 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetDispatcher(IIntUserField* self, IStatus* status, int newValue) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::set(status, newValue);
+				static_cast<Name*>(self)->Name::set(&status2, newValue);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -9908,7 +9595,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -9921,39 +9608,28 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetEnteredDispatcher(IUserField* self, IStatus* status, int newValue) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::setEntered(status, newValue);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::setEntered(&status2, newValue);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IUserFieldImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IIntUserField> > > > >
-	class IIntUserFieldImpl : public IIntUserFieldBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IUserFieldImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IIntUserField> > > > >
+	class IIntUserFieldImpl : public IIntUserFieldBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IIntUserFieldImpl(DoNotInherit = DoNotInherit())
@@ -9966,10 +9642,10 @@ public:
 		}
 
 		virtual int get() = 0;
-		virtual void set(IStatus* status, int newValue) = 0;
+		virtual void set(StatusType* status, int newValue) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IUserBaseImpl : public Base
 	{
 	public:
@@ -9982,7 +9658,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->operation = &Name::cloopoperationDispatcher;
 					this->userName = &Name::cloopuserNameDispatcher;
 					this->password = &Name::clooppasswordDispatcher;
@@ -10008,7 +9683,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -10021,7 +9696,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ICharUserField*>(0);
 			}
 		}
@@ -10034,7 +9709,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ICharUserField*>(0);
 			}
 		}
@@ -10047,7 +9722,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ICharUserField*>(0);
 			}
 		}
@@ -10060,7 +9735,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ICharUserField*>(0);
 			}
 		}
@@ -10073,7 +9748,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ICharUserField*>(0);
 			}
 		}
@@ -10086,7 +9761,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ICharUserField*>(0);
 			}
 		}
@@ -10099,7 +9774,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ICharUserField*>(0);
 			}
 		}
@@ -10112,7 +9787,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IIntUserField*>(0);
 			}
 		}
@@ -10125,39 +9800,28 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IIntUserField*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopclearDispatcher(IUser* self, IStatus* status) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::clear(status);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::clear(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IUser> > >
-	class IUserImpl : public IUserBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUser> > >
+	class IUserImpl : public IUserBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IUserImpl(DoNotInherit = DoNotInherit())
@@ -10179,10 +9843,10 @@ public:
 		virtual ICharUserField* attributes() = 0;
 		virtual IIntUserField* active() = 0;
 		virtual IIntUserField* admin() = 0;
-		virtual void clear(IStatus* status) = 0;
+		virtual void clear(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IListUsersBaseImpl : public Base
 	{
 	public:
@@ -10195,7 +9859,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->list = &Name::clooplistDispatcher;
 				}
 			} vTable;
@@ -10205,32 +9868,21 @@ public:
 
 		static void CLOOP_CARG clooplistDispatcher(IListUsers* self, IStatus* status, IUser* user) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::list(status, user);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::list(&status2, user);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IListUsers> > >
-	class IListUsersImpl : public IListUsersBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IListUsers> > >
+	class IListUsersImpl : public IListUsersBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IListUsersImpl(DoNotInherit = DoNotInherit())
@@ -10242,10 +9894,10 @@ public:
 		{
 		}
 
-		virtual void list(IStatus* status, IUser* user) = 0;
+		virtual void list(StatusType* status, IUser* user) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ILogonInfoBaseImpl : public Base
 	{
 	public:
@@ -10258,7 +9910,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->name = &Name::cloopnameDispatcher;
 					this->role = &Name::clooproleDispatcher;
 					this->networkProtocol = &Name::cloopnetworkProtocolDispatcher;
@@ -10278,7 +9929,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -10291,7 +9942,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -10304,7 +9955,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -10317,7 +9968,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -10330,27 +9981,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const unsigned char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ILogonInfo> > >
-	class ILogonInfoImpl : public ILogonInfoBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ILogonInfo> > >
+	class ILogonInfoImpl : public ILogonInfoBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ILogonInfoImpl(DoNotInherit = DoNotInherit())
@@ -10369,7 +10007,7 @@ public:
 		virtual const unsigned char* authBlock(unsigned* length) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IManagementBaseImpl : public Base
 	{
 	public:
@@ -10382,7 +10020,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -10399,50 +10036,58 @@ public:
 
 		static void CLOOP_CARG cloopstartDispatcher(IManagement* self, IStatus* status, ILogonInfo* logonInfo) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::start(status, logonInfo);
+				static_cast<Name*>(self)->Name::start(&status2, logonInfo);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static int CLOOP_CARG cloopexecuteDispatcher(IManagement* self, IStatus* status, IUser* user, IListUsers* callback) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::execute(status, user, callback);
+				return static_cast<Name*>(self)->Name::execute(&status2, user, callback);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopcommitDispatcher(IManagement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::commit(status);
+				static_cast<Name*>(self)->Name::commit(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG clooprollbackDispatcher(IManagement* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::rollback(status);
+				static_cast<Name*>(self)->Name::rollback(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -10454,7 +10099,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10466,7 +10111,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -10479,7 +10124,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10491,27 +10136,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IManagement> > > > > > >
-	class IManagementImpl : public IManagementBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IManagement> > > > > > >
+	class IManagementImpl : public IManagementBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IManagementImpl(DoNotInherit = DoNotInherit())
@@ -10523,13 +10155,13 @@ public:
 		{
 		}
 
-		virtual void start(IStatus* status, ILogonInfo* logonInfo) = 0;
-		virtual int execute(IStatus* status, IUser* user, IListUsers* callback) = 0;
-		virtual void commit(IStatus* status) = 0;
-		virtual void rollback(IStatus* status) = 0;
+		virtual void start(StatusType* status, ILogonInfo* logonInfo) = 0;
+		virtual int execute(StatusType* status, IUser* user, IListUsers* callback) = 0;
+		virtual void commit(StatusType* status) = 0;
+		virtual void rollback(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IWireCryptPluginBaseImpl : public Base
 	{
 	public:
@@ -10542,7 +10174,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -10559,50 +10190,58 @@ public:
 
 		static const char* CLOOP_CARG cloopgetKnownTypesDispatcher(IWireCryptPlugin* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getKnownTypes(status);
+				return static_cast<Name*>(self)->Name::getKnownTypes(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static void CLOOP_CARG cloopsetKeyDispatcher(IWireCryptPlugin* self, IStatus* status, FbCryptKey* key) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setKey(status, key);
+				static_cast<Name*>(self)->Name::setKey(&status2, key);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopencryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::encrypt(status, length, from, to);
+				static_cast<Name*>(self)->Name::encrypt(&status2, length, from, to);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopdecryptDispatcher(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::decrypt(status, length, from, to);
+				static_cast<Name*>(self)->Name::decrypt(&status2, length, from, to);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -10614,7 +10253,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10626,7 +10265,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -10639,7 +10278,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10651,27 +10290,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IWireCryptPlugin> > > > > > >
-	class IWireCryptPluginImpl : public IWireCryptPluginBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IWireCryptPlugin> > > > > > >
+	class IWireCryptPluginImpl : public IWireCryptPluginBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IWireCryptPluginImpl(DoNotInherit = DoNotInherit())
@@ -10683,13 +10309,13 @@ public:
 		{
 		}
 
-		virtual const char* getKnownTypes(IStatus* status) = 0;
-		virtual void setKey(IStatus* status, FbCryptKey* key) = 0;
-		virtual void encrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
-		virtual void decrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
+		virtual const char* getKnownTypes(StatusType* status) = 0;
+		virtual void setKey(StatusType* status, FbCryptKey* key) = 0;
+		virtual void encrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
+		virtual void decrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ICryptKeyCallbackBaseImpl : public Base
 	{
 	public:
@@ -10702,7 +10328,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->callback = &Name::cloopcallbackDispatcher;
 				}
 			} vTable;
@@ -10718,27 +10343,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ICryptKeyCallback> > >
-	class ICryptKeyCallbackImpl : public ICryptKeyCallbackBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ICryptKeyCallback> > >
+	class ICryptKeyCallbackImpl : public ICryptKeyCallbackBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ICryptKeyCallbackImpl(DoNotInherit = DoNotInherit())
@@ -10753,7 +10365,7 @@ public:
 		virtual unsigned callback(unsigned dataLength, const void* data, unsigned bufferLength, void* buffer) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IKeyHolderPluginBaseImpl : public Base
 	{
 	public:
@@ -10766,7 +10378,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -10781,26 +10392,30 @@ public:
 
 		static int CLOOP_CARG cloopkeyCallbackDispatcher(IKeyHolderPlugin* self, IStatus* status, ICryptKeyCallback* callback) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::keyCallback(status, callback);
+				return static_cast<Name*>(self)->Name::keyCallback(&status2, callback);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<int>(0);
 			}
 		}
 
 		static ICryptKeyCallback* CLOOP_CARG cloopkeyHandleDispatcher(IKeyHolderPlugin* self, IStatus* status, const char* keyName) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::keyHandle(status, keyName);
+				return static_cast<Name*>(self)->Name::keyHandle(&status2, keyName);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ICryptKeyCallback*>(0);
 			}
 		}
@@ -10813,7 +10428,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10825,7 +10440,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -10838,7 +10453,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10850,27 +10465,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IKeyHolderPlugin> > > > > > >
-	class IKeyHolderPluginImpl : public IKeyHolderPluginBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IKeyHolderPlugin> > > > > > >
+	class IKeyHolderPluginImpl : public IKeyHolderPluginBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IKeyHolderPluginImpl(DoNotInherit = DoNotInherit())
@@ -10882,11 +10484,11 @@ public:
 		{
 		}
 
-		virtual int keyCallback(IStatus* status, ICryptKeyCallback* callback) = 0;
-		virtual ICryptKeyCallback* keyHandle(IStatus* status, const char* keyName) = 0;
+		virtual int keyCallback(StatusType* status, ICryptKeyCallback* callback) = 0;
+		virtual ICryptKeyCallback* keyHandle(StatusType* status, const char* keyName) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IDbCryptPluginBaseImpl : public Base
 	{
 	public:
@@ -10899,7 +10501,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -10915,37 +10516,43 @@ public:
 
 		static void CLOOP_CARG cloopsetKeyDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, IKeyHolderPlugin** sources) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::setKey(status, length, sources);
+				static_cast<Name*>(self)->Name::setKey(&status2, length, sources);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopencryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::encrypt(status, length, from, to);
+				static_cast<Name*>(self)->Name::encrypt(&status2, length, from, to);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopdecryptDispatcher(IDbCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::decrypt(status, length, from, to);
+				static_cast<Name*>(self)->Name::decrypt(&status2, length, from, to);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -10957,7 +10564,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10969,7 +10576,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -10982,7 +10589,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -10994,27 +10601,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IDbCryptPlugin> > > > > > >
-	class IDbCryptPluginImpl : public IDbCryptPluginBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IDbCryptPlugin> > > > > > >
+	class IDbCryptPluginImpl : public IDbCryptPluginBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IDbCryptPluginImpl(DoNotInherit = DoNotInherit())
@@ -11026,12 +10620,12 @@ public:
 		{
 		}
 
-		virtual void setKey(IStatus* status, unsigned length, IKeyHolderPlugin** sources) = 0;
-		virtual void encrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
-		virtual void decrypt(IStatus* status, unsigned length, const void* from, void* to) = 0;
+		virtual void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources) = 0;
+		virtual void encrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
+		virtual void decrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IExternalContextBaseImpl : public Base
 	{
 	public:
@@ -11044,7 +10638,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getMaster = &Name::cloopgetMasterDispatcher;
 					this->getEngine = &Name::cloopgetEngineDispatcher;
 					this->getAttachment = &Name::cloopgetAttachmentDispatcher;
@@ -11069,46 +10662,52 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IMaster*>(0);
 			}
 		}
 
 		static IExternalEngine* CLOOP_CARG cloopgetEngineDispatcher(IExternalContext* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getEngine(status);
+				return static_cast<Name*>(self)->Name::getEngine(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IExternalEngine*>(0);
 			}
 		}
 
 		static IAttachment* CLOOP_CARG cloopgetAttachmentDispatcher(IExternalContext* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getAttachment(status);
+				return static_cast<Name*>(self)->Name::getAttachment(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IAttachment*>(0);
 			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopgetTransactionDispatcher(IExternalContext* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::getTransaction(status);
+				return static_cast<Name*>(self)->Name::getTransaction(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITransaction*>(0);
 			}
 		}
@@ -11121,7 +10720,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -11134,7 +10733,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -11147,7 +10746,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -11160,7 +10759,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -11173,7 +10772,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<void*>(0);
 			}
 		}
@@ -11186,27 +10785,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<void*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IExternalContext> > >
-	class IExternalContextImpl : public IExternalContextBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IExternalContext> > >
+	class IExternalContextImpl : public IExternalContextBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IExternalContextImpl(DoNotInherit = DoNotInherit())
@@ -11219,9 +10805,9 @@ public:
 		}
 
 		virtual IMaster* getMaster() = 0;
-		virtual IExternalEngine* getEngine(IStatus* status) = 0;
-		virtual IAttachment* getAttachment(IStatus* status) = 0;
-		virtual ITransaction* getTransaction(IStatus* status) = 0;
+		virtual IExternalEngine* getEngine(StatusType* status) = 0;
+		virtual IAttachment* getAttachment(StatusType* status) = 0;
+		virtual ITransaction* getTransaction(StatusType* status) = 0;
 		virtual const char* getUserName() = 0;
 		virtual const char* getDatabaseName() = 0;
 		virtual const char* getClientCharSet() = 0;
@@ -11230,7 +10816,7 @@ public:
 		virtual void* setInfo(int code, void* value) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IExternalResultSetBaseImpl : public Base
 	{
 	public:
@@ -11243,7 +10829,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->fetch = &Name::cloopfetchDispatcher;
 				}
@@ -11254,13 +10839,15 @@ public:
 
 		static FB_BOOLEAN CLOOP_CARG cloopfetchDispatcher(IExternalResultSet* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::fetch(status);
+				return static_cast<Name*>(self)->Name::fetch(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -11273,26 +10860,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalResultSet> > > > >
-	class IExternalResultSetImpl : public IExternalResultSetBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IExternalResultSet> > > > >
+	class IExternalResultSetImpl : public IExternalResultSetBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IExternalResultSetImpl(DoNotInherit = DoNotInherit())
@@ -11304,10 +10878,10 @@ public:
 		{
 		}
 
-		virtual FB_BOOLEAN fetch(IStatus* status) = 0;
+		virtual FB_BOOLEAN fetch(StatusType* status) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IExternalFunctionBaseImpl : public Base
 	{
 	public:
@@ -11320,7 +10894,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->getCharSet = &Name::cloopgetCharSetDispatcher;
 					this->execute = &Name::cloopexecuteDispatcher;
@@ -11332,25 +10905,29 @@ public:
 
 		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getCharSet(status, context, name, nameSize);
+				static_cast<Name*>(self)->Name::getCharSet(&status2, context, name, nameSize);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopexecuteDispatcher(IExternalFunction* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::execute(status, context, inMsg, outMsg);
+				static_cast<Name*>(self)->Name::execute(&status2, context, inMsg, outMsg);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -11362,26 +10939,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalFunction> > > > >
-	class IExternalFunctionImpl : public IExternalFunctionBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IExternalFunction> > > > >
+	class IExternalFunctionImpl : public IExternalFunctionBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IExternalFunctionImpl(DoNotInherit = DoNotInherit())
@@ -11393,11 +10957,11 @@ public:
 		{
 		}
 
-		virtual void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
-		virtual void execute(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) = 0;
+		virtual void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
+		virtual void execute(StatusType* status, IExternalContext* context, void* inMsg, void* outMsg) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IExternalProcedureBaseImpl : public Base
 	{
 	public:
@@ -11410,7 +10974,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->getCharSet = &Name::cloopgetCharSetDispatcher;
 					this->open = &Name::cloopopenDispatcher;
@@ -11422,25 +10985,29 @@ public:
 
 		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getCharSet(status, context, name, nameSize);
+				static_cast<Name*>(self)->Name::getCharSet(&status2, context, name, nameSize);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static IExternalResultSet* CLOOP_CARG cloopopenDispatcher(IExternalProcedure* self, IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::open(status, context, inMsg, outMsg);
+				return static_cast<Name*>(self)->Name::open(&status2, context, inMsg, outMsg);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IExternalResultSet*>(0);
 			}
 		}
@@ -11453,26 +11020,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalProcedure> > > > >
-	class IExternalProcedureImpl : public IExternalProcedureBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IExternalProcedure> > > > >
+	class IExternalProcedureImpl : public IExternalProcedureBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IExternalProcedureImpl(DoNotInherit = DoNotInherit())
@@ -11484,11 +11038,11 @@ public:
 		{
 		}
 
-		virtual void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
-		virtual IExternalResultSet* open(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg) = 0;
+		virtual void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
+		virtual IExternalResultSet* open(StatusType* status, IExternalContext* context, void* inMsg, void* outMsg) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IExternalTriggerBaseImpl : public Base
 	{
 	public:
@@ -11501,7 +11055,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->getCharSet = &Name::cloopgetCharSetDispatcher;
 					this->execute = &Name::cloopexecuteDispatcher;
@@ -11513,25 +11066,29 @@ public:
 
 		static void CLOOP_CARG cloopgetCharSetDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, char* name, unsigned nameSize) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getCharSet(status, context, name, nameSize);
+				static_cast<Name*>(self)->Name::getCharSet(&status2, context, name, nameSize);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopexecuteDispatcher(IExternalTrigger* self, IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::execute(status, context, action, oldMsg, newMsg);
+				static_cast<Name*>(self)->Name::execute(&status2, context, action, oldMsg, newMsg);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
@@ -11543,26 +11100,13 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IDisposableImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalTrigger> > > > >
-	class IExternalTriggerImpl : public IExternalTriggerBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IExternalTrigger> > > > >
+	class IExternalTriggerImpl : public IExternalTriggerBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IExternalTriggerImpl(DoNotInherit = DoNotInherit())
@@ -11574,11 +11118,11 @@ public:
 		{
 		}
 
-		virtual void getCharSet(IStatus* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
-		virtual void execute(IStatus* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) = 0;
+		virtual void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize) = 0;
+		virtual void execute(StatusType* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IRoutineMetadataBaseImpl : public Base
 	{
 	public:
@@ -11591,7 +11135,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getPackage = &Name::cloopgetPackageDispatcher;
 					this->getName = &Name::cloopgetNameDispatcher;
 					this->getEntryPoint = &Name::cloopgetEntryPointDispatcher;
@@ -11609,137 +11152,142 @@ public:
 
 		static const char* CLOOP_CARG cloopgetPackageDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getPackage(status);
+				return static_cast<const Name*>(self)->Name::getPackage(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetNameDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getName(status);
+				return static_cast<const Name*>(self)->Name::getName(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetEntryPointDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getEntryPoint(status);
+				return static_cast<const Name*>(self)->Name::getEntryPoint(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetBodyDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getBody(status);
+				return static_cast<const Name*>(self)->Name::getBody(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static IMessageMetadata* CLOOP_CARG cloopgetInputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getInputMetadata(status);
+				return static_cast<const Name*>(self)->Name::getInputMetadata(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
 		static IMessageMetadata* CLOOP_CARG cloopgetOutputMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getOutputMetadata(status);
+				return static_cast<const Name*>(self)->Name::getOutputMetadata(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
 		static IMessageMetadata* CLOOP_CARG cloopgetTriggerMetadataDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getTriggerMetadata(status);
+				return static_cast<const Name*>(self)->Name::getTriggerMetadata(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IMessageMetadata*>(0);
 			}
 		}
 
 		static const char* CLOOP_CARG cloopgetTriggerTableDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getTriggerTable(status);
+				return static_cast<const Name*>(self)->Name::getTriggerTable(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<const char*>(0);
 			}
 		}
 
 		static unsigned CLOOP_CARG cloopgetTriggerTypeDispatcher(const IRoutineMetadata* self, IStatus* status) throw()
 		{
-			try
-			{
-				return static_cast<const Name*>(self)->Name::getTriggerType(status);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-				return static_cast<unsigned>(0);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				return static_cast<const Name*>(self)->Name::getTriggerType(&status2);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IRoutineMetadata> > >
-	class IRoutineMetadataImpl : public IRoutineMetadataBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IRoutineMetadata> > >
+	class IRoutineMetadataImpl : public IRoutineMetadataBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IRoutineMetadataImpl(DoNotInherit = DoNotInherit())
@@ -11751,18 +11299,18 @@ public:
 		{
 		}
 
-		virtual const char* getPackage(IStatus* status) const = 0;
-		virtual const char* getName(IStatus* status) const = 0;
-		virtual const char* getEntryPoint(IStatus* status) const = 0;
-		virtual const char* getBody(IStatus* status) const = 0;
-		virtual IMessageMetadata* getInputMetadata(IStatus* status) const = 0;
-		virtual IMessageMetadata* getOutputMetadata(IStatus* status) const = 0;
-		virtual IMessageMetadata* getTriggerMetadata(IStatus* status) const = 0;
-		virtual const char* getTriggerTable(IStatus* status) const = 0;
-		virtual unsigned getTriggerType(IStatus* status) const = 0;
+		virtual const char* getPackage(StatusType* status) const = 0;
+		virtual const char* getName(StatusType* status) const = 0;
+		virtual const char* getEntryPoint(StatusType* status) const = 0;
+		virtual const char* getBody(StatusType* status) const = 0;
+		virtual IMessageMetadata* getInputMetadata(StatusType* status) const = 0;
+		virtual IMessageMetadata* getOutputMetadata(StatusType* status) const = 0;
+		virtual IMessageMetadata* getTriggerMetadata(StatusType* status) const = 0;
+		virtual const char* getTriggerTable(StatusType* status) const = 0;
+		virtual unsigned getTriggerType(StatusType* status) const = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IExternalEngineBaseImpl : public Base
 	{
 	public:
@@ -11775,7 +11323,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -11794,75 +11341,87 @@ public:
 
 		static void CLOOP_CARG cloopopenDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::open(status, context, charSet, charSetSize);
+				static_cast<Name*>(self)->Name::open(&status2, context, charSet, charSetSize);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopopenAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::openAttachment(status, context);
+				static_cast<Name*>(self)->Name::openAttachment(&status2, context);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopcloseAttachmentDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::closeAttachment(status, context);
+				static_cast<Name*>(self)->Name::closeAttachment(&status2, context);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static IExternalFunction* CLOOP_CARG cloopmakeFunctionDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::makeFunction(status, context, metadata, inBuilder, outBuilder);
+				return static_cast<Name*>(self)->Name::makeFunction(&status2, context, metadata, inBuilder, outBuilder);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IExternalFunction*>(0);
 			}
 		}
 
 		static IExternalProcedure* CLOOP_CARG cloopmakeProcedureDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::makeProcedure(status, context, metadata, inBuilder, outBuilder);
+				return static_cast<Name*>(self)->Name::makeProcedure(&status2, context, metadata, inBuilder, outBuilder);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IExternalProcedure*>(0);
 			}
 		}
 
 		static IExternalTrigger* CLOOP_CARG cloopmakeTriggerDispatcher(IExternalEngine* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::makeTrigger(status, context, metadata, fieldsBuilder);
+				return static_cast<Name*>(self)->Name::makeTrigger(&status2, context, metadata, fieldsBuilder);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<IExternalTrigger*>(0);
 			}
 		}
@@ -11875,7 +11434,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -11887,7 +11446,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -11900,7 +11459,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -11912,27 +11471,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<IExternalEngine> > > > > > >
-	class IExternalEngineImpl : public IExternalEngineBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IExternalEngine> > > > > > >
+	class IExternalEngineImpl : public IExternalEngineBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IExternalEngineImpl(DoNotInherit = DoNotInherit())
@@ -11944,15 +11490,15 @@ public:
 		{
 		}
 
-		virtual void open(IStatus* status, IExternalContext* context, char* charSet, unsigned charSetSize) = 0;
-		virtual void openAttachment(IStatus* status, IExternalContext* context) = 0;
-		virtual void closeAttachment(IStatus* status, IExternalContext* context) = 0;
-		virtual IExternalFunction* makeFunction(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
-		virtual IExternalProcedure* makeProcedure(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
-		virtual IExternalTrigger* makeTrigger(IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) = 0;
+		virtual void open(StatusType* status, IExternalContext* context, char* charSet, unsigned charSetSize) = 0;
+		virtual void openAttachment(StatusType* status, IExternalContext* context) = 0;
+		virtual void closeAttachment(StatusType* status, IExternalContext* context) = 0;
+		virtual IExternalFunction* makeFunction(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
+		virtual IExternalProcedure* makeProcedure(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
+		virtual IExternalTrigger* makeTrigger(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITimerBaseImpl : public Base
 	{
 	public:
@@ -11965,7 +11511,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->handler = &Name::cloophandlerDispatcher;
@@ -11983,7 +11528,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -11995,7 +11540,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -12007,27 +11552,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITimer> > > > >
-	class ITimerImpl : public ITimerBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITimer> > > > >
+	class ITimerImpl : public ITimerBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITimerImpl(DoNotInherit = DoNotInherit())
@@ -12042,7 +11574,7 @@ public:
 		virtual void handler() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITimerControlBaseImpl : public Base
 	{
 	public:
@@ -12055,7 +11587,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->start = &Name::cloopstartDispatcher;
 					this->stop = &Name::cloopstopDispatcher;
 				}
@@ -12066,44 +11597,35 @@ public:
 
 		static void CLOOP_CARG cloopstartDispatcher(ITimerControl* self, IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::start(status, timer, microSeconds);
+				static_cast<Name*>(self)->Name::start(&status2, timer, microSeconds);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopstopDispatcher(ITimerControl* self, IStatus* status, ITimer* timer) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::stop(status, timer);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::stop(&status2, timer);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITimerControl> > >
-	class ITimerControlImpl : public ITimerControlBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITimerControl> > >
+	class ITimerControlImpl : public ITimerControlBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITimerControlImpl(DoNotInherit = DoNotInherit())
@@ -12115,11 +11637,11 @@ public:
 		{
 		}
 
-		virtual void start(IStatus* status, ITimer* timer, ISC_UINT64 microSeconds) = 0;
-		virtual void stop(IStatus* status, ITimer* timer) = 0;
+		virtual void start(StatusType* status, ITimer* timer, ISC_UINT64 microSeconds) = 0;
+		virtual void stop(StatusType* status, ITimer* timer) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IVersionCallbackBaseImpl : public Base
 	{
 	public:
@@ -12132,7 +11654,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->callback = &Name::cloopcallbackDispatcher;
 				}
 			} vTable;
@@ -12142,32 +11663,21 @@ public:
 
 		static void CLOOP_CARG cloopcallbackDispatcher(IVersionCallback* self, IStatus* status, const char* text) throw()
 		{
-			try
-			{
-				static_cast<Name*>(self)->Name::callback(status, text);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				static_cast<Name*>(self)->Name::callback(&status2, text);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IVersionCallback> > >
-	class IVersionCallbackImpl : public IVersionCallbackBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IVersionCallback> > >
+	class IVersionCallbackImpl : public IVersionCallbackBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IVersionCallbackImpl(DoNotInherit = DoNotInherit())
@@ -12179,10 +11689,10 @@ public:
 		{
 		}
 
-		virtual void callback(IStatus* status, const char* text) = 0;
+		virtual void callback(StatusType* status, const char* text) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class IUtlBaseImpl : public Base
 	{
 	public:
@@ -12195,7 +11705,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getFbVersion = &Name::cloopgetFbVersionDispatcher;
 					this->loadBlob = &Name::clooploadBlobDispatcher;
 					this->dumpBlob = &Name::cloopdumpBlobDispatcher;
@@ -12209,81 +11718,78 @@ public:
 
 		static void CLOOP_CARG cloopgetFbVersionDispatcher(IUtl* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getFbVersion(status, att, callback);
+				static_cast<Name*>(self)->Name::getFbVersion(&status2, att, callback);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG clooploadBlobDispatcher(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::loadBlob(status, blobId, att, tra, file, txt);
+				static_cast<Name*>(self)->Name::loadBlob(&status2, blobId, att, tra, file, txt);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopdumpBlobDispatcher(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::dumpBlob(status, blobId, att, tra, file, txt);
+				static_cast<Name*>(self)->Name::dumpBlob(&status2, blobId, att, tra, file, txt);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static void CLOOP_CARG cloopgetPerfCountersDispatcher(IUtl* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				static_cast<Name*>(self)->Name::getPerfCounters(status, att, countersSet, counters);
+				static_cast<Name*>(self)->Name::getPerfCounters(&status2, att, countersSet, counters);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 			}
 		}
 
 		static IAttachment* CLOOP_CARG cloopexecuteCreateDatabaseDispatcher(IUtl* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw()
 		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::executeCreateDatabase(status, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
-			}
-			catch (...)
-			{
-				Policy::catchException(status);
-				return static_cast<IAttachment*>(0);
-			}
-		}
+			StatusType status2(status);
 
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getModule();
+				return static_cast<Name*>(self)->Name::executeCreateDatabase(&status2, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
+				StatusType::catchException(&status2);
+				return static_cast<IAttachment*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<IUtl> > >
-	class IUtlImpl : public IUtlBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtl> > >
+	class IUtlImpl : public IUtlBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		IUtlImpl(DoNotInherit = DoNotInherit())
@@ -12295,14 +11801,14 @@ public:
 		{
 		}
 
-		virtual void getFbVersion(IStatus* status, IAttachment* att, IVersionCallback* callback) = 0;
-		virtual void loadBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
-		virtual void dumpBlob(IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
-		virtual void getPerfCounters(IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) = 0;
-		virtual IAttachment* executeCreateDatabase(IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) = 0;
+		virtual void getFbVersion(StatusType* status, IAttachment* att, IVersionCallback* callback) = 0;
+		virtual void loadBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
+		virtual void dumpBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
+		virtual void getPerfCounters(StatusType* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) = 0;
+		virtual IAttachment* executeCreateDatabase(StatusType* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceConnectionBaseImpl : public Base
 	{
 	public:
@@ -12315,7 +11821,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getKind = &Name::cloopgetKindDispatcher;
 					this->getProcessID = &Name::cloopgetProcessIDDispatcher;
 					this->getUserName = &Name::cloopgetUserNameDispatcher;
@@ -12339,7 +11844,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -12352,7 +11857,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -12365,7 +11870,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12378,7 +11883,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12391,7 +11896,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12404,7 +11909,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12417,7 +11922,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12430,7 +11935,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -12443,27 +11948,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceConnection> > >
-	class ITraceConnectionImpl : public ITraceConnectionBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceConnection> > >
+	class ITraceConnectionImpl : public ITraceConnectionBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceConnectionImpl(DoNotInherit = DoNotInherit())
@@ -12486,7 +11978,7 @@ public:
 		virtual const char* getRemoteProcessName() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceDatabaseConnectionBaseImpl : public Base
 	{
 	public:
@@ -12499,7 +11991,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getKind = &Name::cloopgetKindDispatcher;
 					this->getProcessID = &Name::cloopgetProcessIDDispatcher;
 					this->getUserName = &Name::cloopgetUserNameDispatcher;
@@ -12525,7 +12016,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -12538,7 +12029,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12551,7 +12042,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -12564,7 +12055,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -12577,7 +12068,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12590,7 +12081,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12603,7 +12094,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12616,7 +12107,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12629,7 +12120,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -12642,7 +12133,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -12655,27 +12146,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ITraceConnectionImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceDatabaseConnection> > > > >
-	class ITraceDatabaseConnectionImpl : public ITraceDatabaseConnectionBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = ITraceConnectionImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITraceDatabaseConnection> > > > >
+	class ITraceDatabaseConnectionImpl : public ITraceDatabaseConnectionBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceDatabaseConnectionImpl(DoNotInherit = DoNotInherit())
@@ -12691,7 +12169,7 @@ public:
 		virtual const char* getDatabaseName() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceTransactionBaseImpl : public Base
 	{
 	public:
@@ -12704,7 +12182,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getTransactionID = &Name::cloopgetTransactionIDDispatcher;
 					this->getReadOnly = &Name::cloopgetReadOnlyDispatcher;
 					this->getWait = &Name::cloopgetWaitDispatcher;
@@ -12724,7 +12201,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -12737,7 +12214,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -12750,7 +12227,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -12763,7 +12240,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -12776,27 +12253,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceTransaction> > >
-	class ITraceTransactionImpl : public ITraceTransactionBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceTransaction> > >
+	class ITraceTransactionImpl : public ITraceTransactionBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceTransactionImpl(DoNotInherit = DoNotInherit())
@@ -12815,7 +12279,7 @@ public:
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceParamsBaseImpl : public Base
 	{
 	public:
@@ -12828,7 +12292,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getCount = &Name::cloopgetCountDispatcher;
 					this->getParam = &Name::cloopgetParamDispatcher;
 				}
@@ -12845,7 +12308,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -12858,27 +12321,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const dsc*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceParams> > >
-	class ITraceParamsImpl : public ITraceParamsBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceParams> > >
+	class ITraceParamsImpl : public ITraceParamsBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceParamsImpl(DoNotInherit = DoNotInherit())
@@ -12894,7 +12344,7 @@ public:
 		virtual const dsc* getParam(unsigned idx) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceStatementBaseImpl : public Base
 	{
 	public:
@@ -12907,7 +12357,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getStmtID = &Name::cloopgetStmtIDDispatcher;
 					this->getPerf = &Name::cloopgetPerfDispatcher;
 				}
@@ -12924,7 +12373,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -12937,27 +12386,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceStatement> > >
-	class ITraceStatementImpl : public ITraceStatementBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceStatement> > >
+	class ITraceStatementImpl : public ITraceStatementBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceStatementImpl(DoNotInherit = DoNotInherit())
@@ -12973,7 +12409,7 @@ public:
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceSQLStatementBaseImpl : public Base
 	{
 	public:
@@ -12986,7 +12422,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getStmtID = &Name::cloopgetStmtIDDispatcher;
 					this->getPerf = &Name::cloopgetPerfDispatcher;
 					this->getText = &Name::cloopgetTextDispatcher;
@@ -13008,7 +12443,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13021,7 +12456,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13034,7 +12469,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITraceParams*>(0);
 			}
 		}
@@ -13047,7 +12482,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13060,7 +12495,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13073,7 +12508,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -13086,27 +12521,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ITraceStatementImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceSQLStatement> > > > >
-	class ITraceSQLStatementImpl : public ITraceSQLStatementBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = ITraceStatementImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITraceSQLStatement> > > > >
+	class ITraceSQLStatementImpl : public ITraceSQLStatementBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceSQLStatementImpl(DoNotInherit = DoNotInherit())
@@ -13125,7 +12547,7 @@ public:
 		virtual const char* getExplainedPlan() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceBLRStatementBaseImpl : public Base
 	{
 	public:
@@ -13138,7 +12560,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getStmtID = &Name::cloopgetStmtIDDispatcher;
 					this->getPerf = &Name::cloopgetPerfDispatcher;
 					this->getData = &Name::cloopgetDataDispatcher;
@@ -13158,7 +12579,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const unsigned char*>(0);
 			}
 		}
@@ -13171,7 +12592,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -13184,7 +12605,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13197,7 +12618,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -13210,27 +12631,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ITraceStatementImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceBLRStatement> > > > >
-	class ITraceBLRStatementImpl : public ITraceBLRStatementBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = ITraceStatementImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITraceBLRStatement> > > > >
+	class ITraceBLRStatementImpl : public ITraceBLRStatementBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceBLRStatementImpl(DoNotInherit = DoNotInherit())
@@ -13247,7 +12655,7 @@ public:
 		virtual const char* getText() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceDYNRequestBaseImpl : public Base
 	{
 	public:
@@ -13260,7 +12668,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getData = &Name::cloopgetDataDispatcher;
 					this->getDataLength = &Name::cloopgetDataLengthDispatcher;
 					this->getText = &Name::cloopgetTextDispatcher;
@@ -13278,7 +12685,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const unsigned char*>(0);
 			}
 		}
@@ -13291,7 +12698,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -13304,27 +12711,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceDYNRequest> > >
-	class ITraceDYNRequestImpl : public ITraceDYNRequestBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceDYNRequest> > >
+	class ITraceDYNRequestImpl : public ITraceDYNRequestBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceDYNRequestImpl(DoNotInherit = DoNotInherit())
@@ -13341,7 +12735,7 @@ public:
 		virtual const char* getText() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceContextVariableBaseImpl : public Base
 	{
 	public:
@@ -13354,7 +12748,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getNameSpace = &Name::cloopgetNameSpaceDispatcher;
 					this->getVarName = &Name::cloopgetVarNameDispatcher;
 					this->getVarValue = &Name::cloopgetVarValueDispatcher;
@@ -13372,7 +12765,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13385,7 +12778,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13398,27 +12791,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceContextVariable> > >
-	class ITraceContextVariableImpl : public ITraceContextVariableBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceContextVariable> > >
+	class ITraceContextVariableImpl : public ITraceContextVariableBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceContextVariableImpl(DoNotInherit = DoNotInherit())
@@ -13435,7 +12815,7 @@ public:
 		virtual const char* getVarValue() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceProcedureBaseImpl : public Base
 	{
 	public:
@@ -13448,7 +12828,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getProcName = &Name::cloopgetProcNameDispatcher;
 					this->getInputs = &Name::cloopgetInputsDispatcher;
 					this->getPerf = &Name::cloopgetPerfDispatcher;
@@ -13466,7 +12845,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13479,7 +12858,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITraceParams*>(0);
 			}
 		}
@@ -13492,27 +12871,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceProcedure> > >
-	class ITraceProcedureImpl : public ITraceProcedureBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceProcedure> > >
+	class ITraceProcedureImpl : public ITraceProcedureBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceProcedureImpl(DoNotInherit = DoNotInherit())
@@ -13529,7 +12895,7 @@ public:
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceFunctionBaseImpl : public Base
 	{
 	public:
@@ -13542,7 +12908,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getFuncName = &Name::cloopgetFuncNameDispatcher;
 					this->getInputs = &Name::cloopgetInputsDispatcher;
 					this->getResult = &Name::cloopgetResultDispatcher;
@@ -13561,7 +12926,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13574,7 +12939,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITraceParams*>(0);
 			}
 		}
@@ -13587,7 +12952,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITraceParams*>(0);
 			}
 		}
@@ -13600,27 +12965,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceFunction> > >
-	class ITraceFunctionImpl : public ITraceFunctionBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceFunction> > >
+	class ITraceFunctionImpl : public ITraceFunctionBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceFunctionImpl(DoNotInherit = DoNotInherit())
@@ -13638,7 +12990,7 @@ public:
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceTriggerBaseImpl : public Base
 	{
 	public:
@@ -13651,7 +13003,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getTriggerName = &Name::cloopgetTriggerNameDispatcher;
 					this->getRelationName = &Name::cloopgetRelationNameDispatcher;
 					this->getAction = &Name::cloopgetActionDispatcher;
@@ -13671,7 +13022,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13684,7 +13035,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13697,7 +13048,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -13710,7 +13061,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -13723,27 +13074,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceTrigger> > >
-	class ITraceTriggerImpl : public ITraceTriggerBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceTrigger> > >
+	class ITraceTriggerImpl : public ITraceTriggerBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceTriggerImpl(DoNotInherit = DoNotInherit())
@@ -13762,7 +13100,7 @@ public:
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceServiceConnectionBaseImpl : public Base
 	{
 	public:
@@ -13775,7 +13113,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getKind = &Name::cloopgetKindDispatcher;
 					this->getProcessID = &Name::cloopgetProcessIDDispatcher;
 					this->getUserName = &Name::cloopgetUserNameDispatcher;
@@ -13802,7 +13139,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<void*>(0);
 			}
 		}
@@ -13815,7 +13152,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13828,7 +13165,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13841,7 +13178,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -13854,7 +13191,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -13867,7 +13204,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13880,7 +13217,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13893,7 +13230,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13906,7 +13243,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13919,7 +13256,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -13932,7 +13269,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -13945,27 +13282,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = ITraceConnectionImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceServiceConnection> > > > >
-	class ITraceServiceConnectionImpl : public ITraceServiceConnectionBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = ITraceConnectionImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITraceServiceConnection> > > > >
+	class ITraceServiceConnectionImpl : public ITraceServiceConnectionBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceServiceConnectionImpl(DoNotInherit = DoNotInherit())
@@ -13982,7 +13306,7 @@ public:
 		virtual const char* getServiceName() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceStatusVectorBaseImpl : public Base
 	{
 	public:
@@ -13995,7 +13319,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->hasError = &Name::cloophasErrorDispatcher;
 					this->hasWarning = &Name::cloophasWarningDispatcher;
 					this->getStatus = &Name::cloopgetStatusDispatcher;
@@ -14014,7 +13337,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14027,7 +13350,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14040,7 +13363,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const intptr_t*>(0);
 			}
 		}
@@ -14053,27 +13376,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceStatusVector> > >
-	class ITraceStatusVectorImpl : public ITraceStatusVectorBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceStatusVector> > >
+	class ITraceStatusVectorImpl : public ITraceStatusVectorBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceStatusVectorImpl(DoNotInherit = DoNotInherit())
@@ -14091,7 +13401,7 @@ public:
 		virtual const char* getText() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceSweepInfoBaseImpl : public Base
 	{
 	public:
@@ -14104,7 +13414,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getOIT = &Name::cloopgetOITDispatcher;
 					this->getOST = &Name::cloopgetOSTDispatcher;
 					this->getOAT = &Name::cloopgetOATDispatcher;
@@ -14124,7 +13433,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ISC_UINT64>(0);
 			}
 		}
@@ -14137,7 +13446,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ISC_UINT64>(0);
 			}
 		}
@@ -14150,7 +13459,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ISC_UINT64>(0);
 			}
 		}
@@ -14163,7 +13472,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ISC_UINT64>(0);
 			}
 		}
@@ -14176,27 +13485,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<PerformanceInfo*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceSweepInfo> > >
-	class ITraceSweepInfoImpl : public ITraceSweepInfoBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceSweepInfo> > >
+	class ITraceSweepInfoImpl : public ITraceSweepInfoBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceSweepInfoImpl(DoNotInherit = DoNotInherit())
@@ -14215,7 +13511,7 @@ public:
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceLogWriterBaseImpl : public Base
 	{
 	public:
@@ -14228,7 +13524,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->write = &Name::cloopwriteDispatcher;
@@ -14246,7 +13541,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<unsigned>(0);
 			}
 		}
@@ -14259,7 +13554,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -14271,27 +13566,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceLogWriter> > > > >
-	class ITraceLogWriterImpl : public ITraceLogWriterBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITraceLogWriter> > > > >
+	class ITraceLogWriterImpl : public ITraceLogWriterBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceLogWriterImpl(DoNotInherit = DoNotInherit())
@@ -14306,7 +13588,7 @@ public:
 		virtual unsigned write(const void* buf, unsigned size) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceInitInfoBaseImpl : public Base
 	{
 	public:
@@ -14319,7 +13601,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->getConfigText = &Name::cloopgetConfigTextDispatcher;
 					this->getTraceSessionID = &Name::cloopgetTraceSessionIDDispatcher;
 					this->getTraceSessionName = &Name::cloopgetTraceSessionNameDispatcher;
@@ -14341,7 +13622,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -14354,7 +13635,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
 			}
 		}
@@ -14367,7 +13648,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -14380,7 +13661,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -14393,7 +13674,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -14406,7 +13687,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITraceDatabaseConnection*>(0);
 			}
 		}
@@ -14419,27 +13700,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ITraceLogWriter*>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IVersionedImpl<Name, Inherit<ITraceInitInfo> > >
-	class ITraceInitInfoImpl : public ITraceInitInfoBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ITraceInitInfo> > >
+	class ITraceInitInfoImpl : public ITraceInitInfoBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceInitInfoImpl(DoNotInherit = DoNotInherit())
@@ -14460,7 +13728,7 @@ public:
 		virtual ITraceLogWriter* getLogWriter() = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITracePluginBaseImpl : public Base
 	{
 	public:
@@ -14473,7 +13741,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->trace_get_error = &Name::clooptrace_get_errorDispatcher;
@@ -14511,7 +13778,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<const char*>(0);
 			}
 		}
@@ -14524,7 +13791,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14537,7 +13804,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14550,7 +13817,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14563,7 +13830,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14576,7 +13843,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14589,7 +13856,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14602,7 +13869,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14615,7 +13882,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14628,7 +13895,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14641,7 +13908,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14654,7 +13921,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14667,7 +13934,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14680,7 +13947,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14693,7 +13960,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14706,7 +13973,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14719,7 +13986,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14732,7 +13999,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14745,7 +14012,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14758,7 +14025,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14771,7 +14038,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
@@ -14784,7 +14051,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -14796,27 +14063,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITracePlugin> > > > >
-	class ITracePluginImpl : public ITracePluginBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITracePlugin> > > > >
+	class ITracePluginImpl : public ITracePluginBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITracePluginImpl(DoNotInherit = DoNotInherit())
@@ -14851,7 +14105,7 @@ public:
 		virtual FB_BOOLEAN trace_func_execute(ITraceDatabaseConnection* connection, ITraceTransaction* transaction, ITraceFunction* function, FB_BOOLEAN started, unsigned func_result) = 0;
 	};
 
-	template <typename Name, typename Base>
+	template <typename Name, typename StatusType, typename Base>
 	class ITraceFactoryBaseImpl : public Base
 	{
 	public:
@@ -14864,7 +14118,6 @@ public:
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->getModule = &Name::cloopgetModuleDispatcher;
 					this->addRef = &Name::cloopaddRefDispatcher;
 					this->release = &Name::cloopreleaseDispatcher;
 					this->setOwner = &Name::cloopsetOwnerDispatcher;
@@ -14885,20 +14138,22 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<ISC_UINT64>(0);
 			}
 		}
 
 		static ITracePlugin* CLOOP_CARG clooptrace_createDispatcher(ITraceFactory* self, IStatus* status, ITraceInitInfo* init_info) throw()
 		{
+			StatusType status2(status);
+
 			try
 			{
-				return static_cast<Name*>(self)->Name::trace_create(status, init_info);
+				return static_cast<Name*>(self)->Name::trace_create(&status2, init_info);
 			}
 			catch (...)
 			{
-				Policy::catchException(status);
+				StatusType::catchException(&status2);
 				return static_cast<ITracePlugin*>(0);
 			}
 		}
@@ -14911,7 +14166,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -14923,7 +14178,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<IReferenceCounted*>(0);
 			}
 		}
@@ -14936,7 +14191,7 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 			}
 		}
 
@@ -14948,27 +14203,14 @@ public:
 			}
 			catch (...)
 			{
-				Policy::catchException(0);
+				StatusType::catchException(0);
 				return static_cast<int>(0);
-			}
-		}
-
-		static IPluginModule* CLOOP_CARG cloopgetModuleDispatcher(IVersioned* self) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::getModule();
-			}
-			catch (...)
-			{
-				Policy::catchException(0);
-				return static_cast<IPluginModule*>(0);
 			}
 		}
 	};
 
-	template <typename Name, typename Base = IPluginBaseImpl<Name, Inherit<IReferenceCountedImpl<Name, Inherit<IVersionedImpl<Name, Inherit<ITraceFactory> > > > > > >
-	class ITraceFactoryImpl : public ITraceFactoryBaseImpl<Name, Base>
+	template <typename Name, typename StatusType, typename Base = IPluginBaseImpl<Name, StatusType, Inherit<IReferenceCountedImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<ITraceFactory> > > > > > >
+	class ITraceFactoryImpl : public ITraceFactoryBaseImpl<Name, StatusType, Base>
 	{
 	protected:
 		ITraceFactoryImpl(DoNotInherit = DoNotInherit())
@@ -14981,120 +14223,213 @@ public:
 		}
 
 		virtual ISC_UINT64 trace_needs() = 0;
-		virtual ITracePlugin* trace_create(IStatus* status, ITraceInitInfo* init_info) = 0;
+		virtual ITracePlugin* trace_create(StatusType* status, ITraceInitInfo* init_info) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IUdrFunctionFactoryBaseImpl : public Base
+	{
+	public:
+		typedef IUdrFunctionFactory Declaration;
+
+		IUdrFunctionFactoryBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->setup = &Name::cloopsetupDispatcher;
+					this->newItem = &Name::cloopnewItemDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopsetupDispatcher(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setup(&status2, context, metadata, inBuilder, outBuilder);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static IExternalFunction* CLOOP_CARG cloopnewItemDispatcher(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::newItem(&status2, context, metadata);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IExternalFunction*>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUdrFunctionFactory> > >
+	class IUdrFunctionFactoryImpl : public IUdrFunctionFactoryBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IUdrFunctionFactoryImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IUdrFunctionFactoryImpl()
+		{
+		}
+
+		virtual void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
+		virtual IExternalFunction* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IUdrProcedureFactoryBaseImpl : public Base
+	{
+	public:
+		typedef IUdrProcedureFactory Declaration;
+
+		IUdrProcedureFactoryBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->setup = &Name::cloopsetupDispatcher;
+					this->newItem = &Name::cloopnewItemDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopsetupDispatcher(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setup(&status2, context, metadata, inBuilder, outBuilder);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static IExternalProcedure* CLOOP_CARG cloopnewItemDispatcher(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::newItem(&status2, context, metadata);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IExternalProcedure*>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUdrProcedureFactory> > >
+	class IUdrProcedureFactoryImpl : public IUdrProcedureFactoryBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IUdrProcedureFactoryImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IUdrProcedureFactoryImpl()
+		{
+		}
+
+		virtual void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) = 0;
+		virtual IExternalProcedure* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IUdrTriggerFactoryBaseImpl : public Base
+	{
+	public:
+		typedef IUdrTriggerFactory Declaration;
+
+		IUdrTriggerFactoryBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->setup = &Name::cloopsetupDispatcher;
+					this->newItem = &Name::cloopnewItemDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopsetupDispatcher(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setup(&status2, context, metadata, fieldsBuilder);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static IExternalTrigger* CLOOP_CARG cloopnewItemDispatcher(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::newItem(&status2, context, metadata);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IExternalTrigger*>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUdrTriggerFactory> > >
+	class IUdrTriggerFactoryImpl : public IUdrTriggerFactoryBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IUdrTriggerFactoryImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IUdrTriggerFactoryImpl()
+		{
+		}
+
+		virtual void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) = 0;
+		virtual IExternalTrigger* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata) = 0;
 	};
 };
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatus::FB_HAS_WARNINGS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatus::FB_HAS_ERRORS;
-template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_ERROR;
-template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_OK;
-template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_EOF;
-template <typename Policy> const int FirebirdApi<Policy>::IStatus::FB_SEGMENT;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::Provider;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::FirstNonLibPlugin;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::AuthServer;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::AuthClient;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::AuthUserManagement;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::ExternalEngine;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::Trace;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::WireCrypt;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::DbCrypt;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::KeyHolder;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IPluginManager::MaxType;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_BIN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SBIN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_CONF;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_LIB;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_INC;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_DOC;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_UDF;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SAMPLE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SAMPLEDB;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_HELP;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_INTL;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_MISC;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_SECDB;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_MSG;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_LOG;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_GUARD;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIR_PLUGINS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IConfigManager::FB_DIRCOUNT;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_NONE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_TYPE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_INPUT_PARAMETERS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_LEGACY_PLAN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_DETAILED_PLAN;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_FLAGS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_METADATA;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::PREPARE_PREFETCH_ALL;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::FLAG_HAS_CURSOR;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IStatement::FLAG_REPEAT_EXECUTE;
-
-template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_FAILED;
-template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_SUCCESS;
-template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_MORE_DATA;
-template <typename Policy> const int FirebirdApi<Policy>::IAuth::AUTH_CONTINUE;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::TYPE_BEFORE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::TYPE_AFTER;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::TYPE_DATABASE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_INSERT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_UPDATE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_DELETE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_CONNECT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_DISCONNECT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_TRANS_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_TRANS_COMMIT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_TRANS_ROLLBACK;
-template <typename Policy> const unsigned FirebirdApi<Policy>::IExternalTrigger::ACTION_DDL;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceConnection::TRACE_CONNECTION_DATABASE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceConnection::TRACE_CONNECTION_SERVICE;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_CONSISTENCY;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_CONCURRENCY;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_READ_COMMITTED_RECVER;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTransaction::TRA_ISO_READ_COMMITTED_NORECVER;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTrigger::TRACE_ALL;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTrigger::TRACE_BEFORE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceTrigger::TRACE_AFTER;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::TRACE_RESULT_SUCCESS;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::TRACE_RESULT_FAILED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::TRACE_RESULT_UNAUTHORIZED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_STARTED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_FINISHED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_FAILED;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITracePlugin::SWEEP_STATE_PROGRESS;
-
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_ATTACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DETACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_TRANSACTION_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_TRANSACTION_END;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SET_CONTEXT;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_PROC_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_TRIGGER_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DSQL_PREPARE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DSQL_FREE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DSQL_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_BLR_COMPILE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_BLR_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_DYN_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_ATTACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_START;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_QUERY;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SERVICE_DETACH;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_ERROR;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_SWEEP;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_FUNC_EXECUTE;
-template <typename Policy> const unsigned FirebirdApi<Policy>::ITraceFactory::TRACE_EVENT_MAX;
 
 
 #endif	// IDL_FB_INTERFACES_H

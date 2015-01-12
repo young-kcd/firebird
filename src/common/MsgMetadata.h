@@ -38,7 +38,7 @@ class MetadataBuilder;
 class StatementMetadata;
 class MetadataFromBlr;
 
-class MsgMetadata : public RefCntIface<Api::IMessageMetadataImpl<MsgMetadata> >
+class MsgMetadata : public RefCntIface<IMessageMetadataImpl<MsgMetadata, CheckStatusWrapper> >
 {
 	friend class MetadataBuilder;
 	friend class StatementMetadata;
@@ -140,12 +140,12 @@ public:
 	// IMessageMetadata implementation
 	int release();
 
-	unsigned getCount(IStatus* /*status*/)
+	unsigned getCount(CheckStatusWrapper* /*status*/)
 	{
 		return (unsigned) items.getCount();
 	}
 
-	const char* getField(IStatus* status, unsigned index)
+	const char* getField(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].field.c_str();
@@ -154,7 +154,7 @@ public:
 		return NULL;
 	}
 
-	const char* getRelation(IStatus* status, unsigned index)
+	const char* getRelation(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].relation.c_str();
@@ -163,7 +163,7 @@ public:
 		return NULL;
 	}
 
-	const char* getOwner(IStatus* status, unsigned index)
+	const char* getOwner(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].owner.c_str();
@@ -172,7 +172,7 @@ public:
 		return NULL;
 	}
 
-	const char* getAlias(IStatus* status, unsigned index)
+	const char* getAlias(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].alias.c_str();
@@ -181,7 +181,7 @@ public:
 		return NULL;
 	}
 
-	unsigned getType(IStatus* status, unsigned index)
+	unsigned getType(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].type;
@@ -190,7 +190,7 @@ public:
 		return 0;
 	}
 
-	FB_BOOLEAN isNullable(IStatus* status, unsigned index)
+	FB_BOOLEAN isNullable(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].nullable;
@@ -199,7 +199,7 @@ public:
 		return false;
 	}
 
-	int getSubType(IStatus* status, unsigned index)
+	int getSubType(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].subType;
@@ -208,7 +208,7 @@ public:
 		return 0;
 	}
 
-	unsigned getLength(IStatus* status, unsigned index)
+	unsigned getLength(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].length;
@@ -217,7 +217,7 @@ public:
 		return 0;
 	}
 
-	int getScale(IStatus* status, unsigned index)
+	int getScale(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].scale;
@@ -226,7 +226,7 @@ public:
 		return 0;
 	}
 
-	unsigned getCharSet(IStatus* status, unsigned index)
+	unsigned getCharSet(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].charSet;
@@ -235,7 +235,7 @@ public:
 		return 0;
 	}
 
-	unsigned getOffset(IStatus* status, unsigned index)
+	unsigned getOffset(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].offset;
@@ -244,7 +244,7 @@ public:
 		return 0;
 	}
 
-	unsigned getNullOffset(IStatus* status, unsigned index)
+	unsigned getNullOffset(CheckStatusWrapper* status, unsigned index)
 	{
 		if (index < items.getCount())
 			return items[index].nullInd;
@@ -253,9 +253,9 @@ public:
 		return 0;
 	}
 
-	IMetadataBuilder* getBuilder(IStatus* status);
+	IMetadataBuilder* getBuilder(CheckStatusWrapper* status);
 
-	unsigned getMessageLength(IStatus* /*status*/)
+	unsigned getMessageLength(CheckStatusWrapper* /*status*/)
 	{
 		return length;
 	}
@@ -265,7 +265,7 @@ public:
 	unsigned makeOffsets();
 
 private:
-	void raiseIndexError(IStatus* status, unsigned index, const char* method) const
+	void raiseIndexError(CheckStatusWrapper* status, unsigned index, const char* method) const
 	{
 		(Arg::Gds(isc_invalid_index_val) <<
 		 Arg::Num(index) << (string("IMessageMetadata::") + method)).copyTo(status);
@@ -278,7 +278,7 @@ private:
 	unsigned length;
 };
 
-//class AttMetadata : public Api::IMessageMetadataBaseImpl<AttMetadata, MsgMetadata>
+//class AttMetadata : public IMessageMetadataBaseImpl<AttMetadata, CheckStatusWrapper, MsgMetadata>
 class AttMetadata : public MsgMetadata
 {
 public:
@@ -292,7 +292,7 @@ public:
 	RefPtr<RefCounted> attachment;
 };
 
-class MetadataBuilder FB_FINAL : public RefCntIface<Api::IMetadataBuilderImpl<MetadataBuilder> >
+class MetadataBuilder FB_FINAL : public RefCntIface<IMetadataBuilderImpl<MetadataBuilder, CheckStatusWrapper> >
 {
 public:
 	explicit MetadataBuilder(const MsgMetadata* from);
@@ -301,16 +301,16 @@ public:
 	int release();
 
 	// IMetadataBuilder implementation
-	void setType(IStatus* status, unsigned index, unsigned type);
-	void setSubType(IStatus* status, unsigned index, int subType);
-	void setLength(IStatus* status, unsigned index, unsigned length);
-	void setCharSet(IStatus* status, unsigned index, unsigned charSet);
-	void setScale(IStatus* status, unsigned index, unsigned scale);
-	void truncate(IStatus* status, unsigned count);
-	void remove(IStatus* status, unsigned index);
-	void moveNameToIndex(IStatus* status, const char* name, unsigned index);
-	unsigned addField(IStatus* status);
-	IMessageMetadata* getMetadata(IStatus* status);
+	void setType(CheckStatusWrapper* status, unsigned index, unsigned type);
+	void setSubType(CheckStatusWrapper* status, unsigned index, int subType);
+	void setLength(CheckStatusWrapper* status, unsigned index, unsigned length);
+	void setCharSet(CheckStatusWrapper* status, unsigned index, unsigned charSet);
+	void setScale(CheckStatusWrapper* status, unsigned index, unsigned scale);
+	void truncate(CheckStatusWrapper* status, unsigned count);
+	void remove(CheckStatusWrapper* status, unsigned index);
+	void moveNameToIndex(CheckStatusWrapper* status, const char* name, unsigned index);
+	unsigned addField(CheckStatusWrapper* status);
+	IMessageMetadata* getMetadata(CheckStatusWrapper* status);
 
 private:
 	RefPtr<MsgMetadata> msgMetadata;

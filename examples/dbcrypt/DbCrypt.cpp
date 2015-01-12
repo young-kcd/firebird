@@ -41,7 +41,7 @@ namespace
 IMaster* master = NULL;
 IPluginManager* pluginManager = NULL;
 
-class PluginModule : public Api::IPluginModuleImpl<PluginModule>
+class PluginModule : public IPluginModuleImpl<PluginModule, CheckStatusWrapper>
 {
 public:
 	PluginModule()
@@ -79,7 +79,7 @@ private:
 
 PluginModule module;
 
-class DbCrypt : public Api::IDbCryptPluginImpl<DbCrypt>
+class DbCrypt : public IDbCryptPluginImpl<DbCrypt, CheckStatusWrapper>
 {
 public:
 	explicit DbCrypt(IPluginConfig* cnf) throw()
@@ -94,9 +94,9 @@ public:
 	}
 
 	// ICryptPlugin implementation
-	void encrypt(IStatus* status, unsigned int length, const void* from, void* to);
-	void decrypt(IStatus* status, unsigned int length, const void* from, void* to);
-	void setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** sources);
+	void encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
+	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
+	void setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources);
 
 	int release()
 	{
@@ -135,10 +135,10 @@ private:
 	AtomicCounter refCounter;
 	IReferenceCounted* owner;
 
-	void noKeyError(IStatus* status);
+	void noKeyError(CheckStatusWrapper* status);
 };
 
-void DbCrypt::noKeyError(IStatus* status)
+void DbCrypt::noKeyError(CheckStatusWrapper* status)
 {
 	ISC_STATUS_ARRAY vector;
 	vector[0] = isc_arg_gds;
@@ -149,7 +149,7 @@ void DbCrypt::noKeyError(IStatus* status)
 	status->setErrors(vector);
 }
 
-void DbCrypt::encrypt(IStatus* status, unsigned int length, const void* from, void* to)
+void DbCrypt::encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to)
 {
 	status->init();
 
@@ -168,7 +168,7 @@ void DbCrypt::encrypt(IStatus* status, unsigned int length, const void* from, vo
 	}
 }
 
-void DbCrypt::decrypt(IStatus* status, unsigned int length, const void* from, void* to)
+void DbCrypt::decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to)
 {
 	status->init();
 
@@ -187,7 +187,7 @@ void DbCrypt::decrypt(IStatus* status, unsigned int length, const void* from, vo
 	}
 }
 
-void DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** sources)
+void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolderPlugin** sources)
 {
 	status->init();
 
@@ -243,7 +243,7 @@ void DbCrypt::setKey(IStatus* status, unsigned int length, IKeyHolderPlugin** so
 	noKeyError(status);
 }
 
-class Factory : public Api::IPluginFactoryImpl<Factory>
+class Factory : public IPluginFactoryImpl<Factory, CheckStatusWrapper>
 {
 public:
 	IPluginModule* getModule()
@@ -251,7 +251,7 @@ public:
 		return &module;
 	}
 
-	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(CheckStatusWrapper* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{

@@ -60,7 +60,7 @@ void WriterImplementation::reset()
 	sequence = 0;
 }
 
-void WriterImplementation::add(Firebird::IStatus* st, const char* name)
+void WriterImplementation::add(Firebird::CheckStatusWrapper* st, const char* name)
 {
 	try
 	{
@@ -98,7 +98,7 @@ void WriterImplementation::putLevel()
 	result.insertBytes(sequence++, current.getBuffer(), current.getBufferLength());
 }
 
-void WriterImplementation::setType(Firebird::IStatus* st, const char* value)
+void WriterImplementation::setType(Firebird::CheckStatusWrapper* st, const char* value)
 {
 	try
 	{
@@ -111,7 +111,7 @@ void WriterImplementation::setType(Firebird::IStatus* st, const char* value)
 	}
 }
 
-void WriterImplementation::setDb(Firebird::IStatus* st, const char* value)
+void WriterImplementation::setDb(Firebird::CheckStatusWrapper* st, const char* value)
 {
 	try
 	{

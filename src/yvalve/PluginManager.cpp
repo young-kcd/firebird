@@ -111,7 +111,7 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess FB_FINAL : public RefCntIface<Api::IConfigEntryImpl<ConfigParameterAccess> >
+	class ConfigParameterAccess FB_FINAL : public RefCntIface<IConfigEntryImpl<ConfigParameterAccess, CheckStatusWrapper> >
 	{
 	public:
 		ConfigParameterAccess(IReferenceCounted* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
@@ -137,7 +137,7 @@ namespace
 			return par ? par->asInteger() : 0;
 		}
 
-		IConfig* getSubConfig(IStatus* status);
+		IConfig* getSubConfig(CheckStatusWrapper* status);
 
 		int release()
 		{
@@ -155,13 +155,13 @@ namespace
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess FB_FINAL : public RefCntIface<Api::IConfigImpl<ConfigAccess> >
+	class ConfigAccess FB_FINAL : public RefCntIface<IConfigImpl<ConfigAccess, CheckStatusWrapper> >
 	{
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
 
 		// IConfig implementation
-		IConfigEntry* find(IStatus* status, const char* name)
+		IConfigEntry* find(CheckStatusWrapper* status, const char* name)
 		{
 			try
 			{
@@ -174,7 +174,7 @@ namespace
 			return NULL;
 		}
 
-		IConfigEntry* findValue(IStatus* status, const char* name, const char* value)
+		IConfigEntry* findValue(CheckStatusWrapper* status, const char* name, const char* value)
 		{
 			try
 			{
@@ -187,7 +187,7 @@ namespace
 			return NULL;
 		}
 
-		IConfigEntry* findPos(IStatus* status, const char* name, unsigned int n)
+		IConfigEntry* findPos(CheckStatusWrapper* status, const char* name, unsigned int n)
 		{
 			try
 			{
@@ -244,7 +244,7 @@ namespace
 		}
 	};
 
-	IConfig* ConfigParameterAccess::getSubConfig(IStatus* status)
+	IConfig* ConfigParameterAccess::getSubConfig(CheckStatusWrapper* status)
 	{
 		try
 		{
@@ -431,7 +431,7 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in databases.conf
-	class ConfiguredPlugin FB_FINAL : public RefCntIface<Api::ITimerImpl<ConfiguredPlugin> >
+	class ConfiguredPlugin FB_FINAL : public RefCntIface<ITimerImpl<ConfiguredPlugin, CheckStatusWrapper> >
 	{
 	public:
 		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
@@ -515,7 +515,7 @@ namespace
 	};
 
 	// Provides per-database configuration from databases.conf.
-	class FactoryParameter FB_FINAL : public RefCntIface<Api::IPluginConfigImpl<FactoryParameter> >
+	class FactoryParameter FB_FINAL : public RefCntIface<IPluginConfigImpl<FactoryParameter, CheckStatusWrapper> >
 	{
 	public:
 		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)
@@ -528,7 +528,7 @@ namespace
 			return configuredPlugin->getConfigFileName();
 		}
 
-		IConfig* getDefaultConfig(IStatus* status)
+		IConfig* getDefaultConfig(CheckStatusWrapper* status)
 		{
 			try
 			{
@@ -541,7 +541,7 @@ namespace
 			}
 		}
 
-		IFirebirdConf* getFirebirdConf(IStatus* status)
+		IFirebirdConf* getFirebirdConf(CheckStatusWrapper* status)
 		{
 			try
 			{
@@ -561,7 +561,7 @@ namespace
 			}
 		}
 
-		void setReleaseDelay(IStatus*, ISC_UINT64 microSeconds)
+		void setReleaseDelay(CheckStatusWrapper*, ISC_UINT64 microSeconds)
 		{
 			configuredPlugin->setReleaseDelay(microSeconds);
 		}
@@ -761,7 +761,7 @@ namespace
 
 
 	// Provides access to plugins of given type / name.
-	class PluginSet FB_FINAL : public RefCntIface<Api::IPluginSetImpl<PluginSet> >
+	class PluginSet FB_FINAL : public RefCntIface<IPluginSetImpl<PluginSet, CheckStatusWrapper> >
 	{
 	public:
 		// IPluginSet implementation
@@ -775,7 +775,7 @@ namespace
 			return currentPlugin.hasData() ? currentPlugin->getPluggedModule()->getName() : NULL;
 		}
 
-		void set(IStatus* status, const char* newName)
+		void set(CheckStatusWrapper* status, const char* newName)
 		{
 			try
 			{
@@ -789,8 +789,8 @@ namespace
 			}
 		}
 
-		IPluginBase* getPlugin(IStatus* status);
-		void next(IStatus* status);
+		IPluginBase* getPlugin(CheckStatusWrapper* status);
+		void next(CheckStatusWrapper* status);
 
 		PluginSet(unsigned int pinterfaceType, const char* pnamesList,
 				  IFirebirdConf* fbConf)
@@ -801,8 +801,9 @@ namespace
 			namesList.assign(pnamesList);
 			namesList.alltrim(" \t");
 			Firebird::LocalStatus s;
-			next(&s);
-			check(&s);
+			Firebird::CheckStatusWrapper statusWrapper(&s);
+			next(&statusWrapper);
+			check(&statusWrapper);
 		}
 
 		int release()
@@ -842,7 +843,7 @@ namespace
 	// ************************************* //
 	// ** next() - core of plugin manager ** //
 	// ************************************* //
-	void PluginSet::next(IStatus* status)
+	void PluginSet::next(CheckStatusWrapper* status)
 	{
 		try
 		{
@@ -937,7 +938,7 @@ namespace
 		return RefPtr<PluginModule>(NULL);	// compiler warning silencer
 	}
 
-	IPluginBase* PluginSet::getPlugin(IStatus* status)
+	IPluginBase* PluginSet::getPlugin(CheckStatusWrapper* status)
 	{
 		try
 		{
@@ -1045,7 +1046,7 @@ void PluginManager::unregisterModule(IPluginModule* cleanup)
 	fb_shutdown(5000, fb_shutrsn_exit_called);
 }
 
-IPluginSet* PluginManager::getPlugins(IStatus* status, unsigned int interfaceType,
+IPluginSet* PluginManager::getPlugins(CheckStatusWrapper* status, unsigned int interfaceType,
 	const char* namesList, IFirebirdConf* firebirdConf)
 {
 	try
@@ -1089,7 +1090,7 @@ void PluginManager::releasePlugin(IPluginBase* plugin)
 }
 
 
-IConfig* PluginManager::getConfig(IStatus* status, const char* filename)
+IConfig* PluginManager::getConfig(CheckStatusWrapper* status, const char* filename)
 {
 	try
 	{
@@ -1185,7 +1186,7 @@ InitInstance<ConfigRoot> rootDetector;
 
 
 // Generic access to all config interfaces
-class ConfigManager : public AutoIface<Api::IConfigManagerImpl<ConfigManager> >
+class ConfigManager : public AutoIface<IConfigManagerImpl<ConfigManager, CheckStatusWrapper> >
 {
 public:
 	const char* getDirectory(unsigned code)

@@ -133,7 +133,7 @@ PathName TempFile::create(const PathName& prefix, const PathName& directory)
 // In error case store exception in status arg.
 //
 
-PathName TempFile::create(IStatus* status, const PathName& prefix, const PathName& directory)
+PathName TempFile::create(CheckStatusWrapper* status, const PathName& prefix, const PathName& directory)
 {
 	PathName filename;
 

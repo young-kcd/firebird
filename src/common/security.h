@@ -32,7 +32,7 @@
 
 namespace Auth {
 
-class CharField : public Firebird::AutoIface<Firebird::Api::ICharUserFieldImpl<CharField> >
+class CharField : public Firebird::AutoIface<Firebird::ICharUserFieldImpl<CharField, Firebird::CheckStatusWrapper> >
 {
 public:
 	CharField()
@@ -50,7 +50,7 @@ public:
 		return s;
 	}
 
-	void setEntered(Firebird::IStatus*, int newValue)
+	void setEntered(Firebird::CheckStatusWrapper*, int newValue)
 	{
 		e = newValue;
 	}
@@ -69,7 +69,7 @@ public:
 		return value.c_str();
 	}
 
-	void set(Firebird::IStatus* status, const char* newValue)
+	void set(Firebird::CheckStatusWrapper* status, const char* newValue)
 	{
 		try
 		{
@@ -97,7 +97,7 @@ private:
 	Firebird::string value;
 };
 
-class IntField : public Firebird::AutoIface<Firebird::Api::IIntUserFieldImpl<IntField> >
+class IntField : public Firebird::AutoIface<Firebird::IIntUserFieldImpl<IntField, Firebird::CheckStatusWrapper> >
 {
 public:
 	IntField()
@@ -115,7 +115,7 @@ public:
 		return s;
 	}
 
-	void setEntered(Firebird::IStatus*, int newValue)
+	void setEntered(Firebird::CheckStatusWrapper*, int newValue)
 	{
 		e = newValue;
 	}
@@ -134,7 +134,7 @@ public:
 		return value;
 	}
 
-	void set(Firebird::IStatus*, int newValue)
+	void set(Firebird::CheckStatusWrapper*, int newValue)
 	{
 		value = newValue;
 	}
@@ -152,7 +152,7 @@ private:
 
 typedef Firebird::Array<UCHAR> AuthenticationBlock;
 
-class UserData : public Firebird::VersionedIface<Firebird::Api::IUserImpl<UserData> >
+class UserData : public Firebird::VersionedIface<Firebird::IUserImpl<UserData, Firebird::CheckStatusWrapper> >
 {
 public:
 	UserData()
@@ -210,7 +210,7 @@ public:
 		return &act;
 	}
 
-	void clear(Firebird::IStatus* status);
+	void clear(Firebird::CheckStatusWrapper* status);
 
 
 	int op, trustedAuth;

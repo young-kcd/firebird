@@ -60,7 +60,7 @@ private:
 	class TransactionImpl;
 
 	class RoutineMetadata FB_FINAL :
-		public Firebird::VersionedIface<Firebird::Api::IRoutineMetadataImpl<RoutineMetadata> >,
+		public Firebird::VersionedIface<Firebird::IRoutineMetadataImpl<RoutineMetadata, Firebird::CheckStatusWrapper> >,
 		public Firebird::PermanentStorage
 	{
 	public:
@@ -75,50 +75,47 @@ private:
 		{
 		}
 
-		const char* getPackage(Firebird::IStatus* /*status*/) const
+		const char* getPackage(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return package.nullStr();
 		}
 
-		const char* getName(Firebird::IStatus* /*status*/) const
+		const char* getName(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return name.c_str();
 		}
 
-		const char* getEntryPoint(Firebird::IStatus* /*status*/) const
+		const char* getEntryPoint(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return entryPoint.c_str();
 		}
 
-		const char* getBody(Firebird::IStatus* /*status*/) const
+		const char* getBody(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return body.c_str();
 		}
 
-		Firebird::IMessageMetadata* getInputMetadata(
-			Firebird::IStatus* /*status*/) const
+		Firebird::IMessageMetadata* getInputMetadata(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return getMetadata(inputParameters);
 		}
 
-		Firebird::IMessageMetadata* getOutputMetadata(
-			Firebird::IStatus* /*status*/) const
+		Firebird::IMessageMetadata* getOutputMetadata(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return getMetadata(outputParameters);
 		}
 
-		Firebird::IMessageMetadata* getTriggerMetadata(
-			Firebird::IStatus* /*status*/) const
+		Firebird::IMessageMetadata* getTriggerMetadata(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return getMetadata(triggerFields);
 		}
 
-		const char* getTriggerTable(Firebird::IStatus* /*status*/) const
+		const char* getTriggerTable(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return triggerTable.c_str();
 		}
 
-		unsigned getTriggerType(Firebird::IStatus* /*status*/) const
+		unsigned getTriggerType(Firebird::CheckStatusWrapper* /*status*/) const
 		{
 			return triggerType;
 		}
@@ -143,7 +140,7 @@ private:
 		}
 	};
 
-	class ExternalContextImpl : public Firebird::VersionedIface<Firebird::Api::IExternalContextImpl<ExternalContextImpl> >
+	class ExternalContextImpl : public Firebird::VersionedIface<Firebird::IExternalContextImpl<ExternalContextImpl, Firebird::CheckStatusWrapper> >
 	{
 	friend class AttachmentImpl;
 
@@ -155,9 +152,9 @@ private:
 		void setTransaction(thread_db* tdbb);
 
 		Firebird::IMaster* getMaster();
-		Firebird::IExternalEngine* getEngine(Firebird::IStatus* status);
-		Firebird::IAttachment* getAttachment(Firebird::IStatus* status);
-		Firebird::ITransaction* getTransaction(Firebird::IStatus* status);
+		Firebird::IExternalEngine* getEngine(Firebird::CheckStatusWrapper* status);
+		Firebird::IAttachment* getAttachment(Firebird::CheckStatusWrapper* status);
+		Firebird::ITransaction* getTransaction(Firebird::CheckStatusWrapper* status);
 		const char* getUserName();
 		const char* getDatabaseName();
 		const char* getClientCharSet();

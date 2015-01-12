@@ -21,7 +21,6 @@
  */
 
 #include "ibase.h"
-#include "firebird.h"	//// FIXME:
 #include "firebird/UdrCppEngine.h"
 #include <assert.h>
 #include <stdio.h>
@@ -216,14 +215,14 @@ FB_UDR_BEGIN_FUNCTION(wait_event)
 		delete [] s;
 
 		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(context);
+		isc_db_handle dbHandle = getIscDbHandle(status, context);
 		ISC_ULONG counter = 0;
 
-		StatusException::checkStatus(isc_wait_for_event(
-			statusVector, &dbHandle, eveLen, eveBuffer, eveResult), statusVector);
+		FbException::check(isc_wait_for_event(
+			statusVector, &dbHandle, eveLen, eveBuffer, eveResult), status, statusVector);
 		isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
-		StatusException::checkStatus(isc_wait_for_event(
-			statusVector, &dbHandle, eveLen, eveBuffer, eveResult), statusVector);
+		FbException::check(isc_wait_for_event(
+			statusVector, &dbHandle, eveLen, eveBuffer, eveResult), status, statusVector);
 		isc_event_counts(&counter, eveLen, eveBuffer, eveResult);
 
 		isc_free((char*) eveBuffer);
@@ -251,11 +250,10 @@ FB_UDR_BEGIN_FUNCTION(sum_args)
 		// , inCount(0)
 	{
 		// Get input metadata.
-		AutoRelease<IMessageMetadata> inMetadata(StatusException::check(status,
-			metadata->getInputMetadata(status)));
+		AutoRelease<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
 
 		// Get count of input parameters.
-		inCount = StatusException::check(status, inMetadata->getCount(status));
+		inCount = inMetadata->getCount(status);
 
 		inNullOffsets.reset(new unsigned[inCount]);
 		inOffsets.reset(new unsigned[inCount]);
@@ -263,21 +261,20 @@ FB_UDR_BEGIN_FUNCTION(sum_args)
 		for (unsigned i = 0; i < inCount; ++i)
 		{
 			// Get null offset of the i-th input parameter.
-			inNullOffsets[i] = StatusException::check(status, inMetadata->getNullOffset(status, i));
+			inNullOffsets[i] = inMetadata->getNullOffset(status, i);
 
 			// Get the offset of the i-th input parameter.
-			inOffsets[i] = StatusException::check(status, inMetadata->getOffset(status, i));
+			inOffsets[i] = inMetadata->getOffset(status, i);
 		}
 
 		// Get output metadata.
-		AutoRelease<IMessageMetadata> outMetadata(StatusException::check(status,
-			metadata->getOutputMetadata(status)));
+		AutoRelease<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
 
 		// Get null offset of the return value.
-		outNullOffset = StatusException::check(status, outMetadata->getNullOffset(status, 0));
+		outNullOffset = outMetadata->getNullOffset(status, 0);
 
 		// Get offset of the return value.
-		outOffset = StatusException::check(status, outMetadata->getOffset(status, 0));
+		outOffset = outMetadata->getOffset(status, 0);
 	}
 
 	// This function requires the INTEGER parameters and return value, otherwise it will crash.
@@ -333,17 +330,15 @@ FB_UDR_BEGIN_PROCEDURE(gen_rows)
 	// Get offsets once per procedure.
 	FB_UDR_CONSTRUCTOR
 	{
-		AutoRelease<IMessageMetadata> inMetadata(StatusException::check(status,
-			metadata->getInputMetadata(status)));
+		AutoRelease<IMessageMetadata> inMetadata(metadata->getInputMetadata(status));
 
-		inOffsetStart = StatusException::check(status, inMetadata->getOffset(status, 0));
-		inOffsetEnd = StatusException::check(status, inMetadata->getOffset(status, 1));
+		inOffsetStart = inMetadata->getOffset(status, 0);
+		inOffsetEnd = inMetadata->getOffset(status, 1);
 
-		AutoRelease<IMessageMetadata> outMetadata(StatusException::check(status,
-			metadata->getOutputMetadata(status)));
+		AutoRelease<IMessageMetadata> outMetadata(metadata->getOutputMetadata(status));
 
-		outNullOffset = StatusException::check(status, outMetadata->getNullOffset(status, 0));
-		outOffset = StatusException::check(status, outMetadata->getOffset(status, 0));
+		outNullOffset = outMetadata->getNullOffset(status, 0);
+		outOffset = outMetadata->getOffset(status, 0);
 	}
 
 	/*** Procedure destructor.
@@ -542,24 +537,23 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 	// Without FieldsMessage definition, messages will be byte-based.
 
 	FB_UDR_CONSTRUCTOR
-		, triggerMetadata(StatusException::check(status, metadata->getTriggerMetadata(status)))
+		, triggerMetadata(metadata->getTriggerMetadata(status))
 	{
 		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(context);
-		isc_tr_handle trHandle = getIscTrHandle(context);
+		isc_db_handle dbHandle = getIscDbHandle(status, context);
+		isc_tr_handle trHandle = getIscTrHandle(status, context);
 
 		isc_stmt_handle stmtHandle = 0;
-		StatusException::checkStatus(isc_dsql_allocate_statement(
-			statusVector, &dbHandle, &stmtHandle), statusVector);
-		StatusException::checkStatus(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
+		FbException::check(isc_dsql_allocate_statement(
+			statusVector, &dbHandle, &stmtHandle), status, statusVector);
+		FbException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 			"select data_source from replicate_config where name = ?",
-			SQL_DIALECT_CURRENT, NULL), statusVector);
+			SQL_DIALECT_CURRENT, NULL), status, statusVector);
 
-		const char* table = StatusException::check(status, metadata->getTriggerTable(status));
+		const char* table = metadata->getTriggerTable(status);
 
 		// Skip the first exclamation point, separating the module name and entry point.
-		const char* info = StatusException::check(status,
-			strchr(metadata->getEntryPoint(status), '!'));
+		const char* info = strchr(metadata->getEntryPoint(status), '!');
 
 		// Skip the second exclamation point, separating the entry point and the misc info (config).
 		if (info)
@@ -573,8 +567,8 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		XSQLDA* inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 1;
-		StatusException::checkStatus(isc_dsql_describe_bind(statusVector, &stmtHandle,
-			SQL_DIALECT_CURRENT, inSqlDa), statusVector);
+		FbException::check(isc_dsql_describe_bind(statusVector, &stmtHandle,
+			SQL_DIALECT_CURRENT, inSqlDa), status, statusVector);
 		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
 		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
 		*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
@@ -582,20 +576,20 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		outSqlDa->version = SQLDA_VERSION1;
 		outSqlDa->sqln = 1;
-		StatusException::checkStatus(isc_dsql_describe(statusVector, &stmtHandle,
-			SQL_DIALECT_CURRENT, outSqlDa), statusVector);
+		FbException::check(isc_dsql_describe(statusVector, &stmtHandle,
+			SQL_DIALECT_CURRENT, outSqlDa), status, statusVector);
 		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
 		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
 
-		StatusException::checkStatus(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle,
-			SQL_DIALECT_CURRENT, inSqlDa, outSqlDa), statusVector);
-		StatusException::checkStatus(isc_dsql_free_statement(
-			statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+		FbException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle,
+			SQL_DIALECT_CURRENT, inSqlDa, outSqlDa), status, statusVector);
+		FbException::check(isc_dsql_free_statement(
+			statusVector, &stmtHandle, DSQL_unprepare), status, statusVector);
 
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
 
-		unsigned count = StatusException::check(status, triggerMetadata->getCount(status));
+		unsigned count = triggerMetadata->getCount(status);
 
 		char buffer[65536];
 		strcpy(buffer, "execute block (\n");
@@ -605,7 +599,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			if (i > 0)
 				strcat(buffer, ",\n");
 
-			const char* name = StatusException::check(status, triggerMetadata->getField(status, i));
+			const char* name = triggerMetadata->getField(status, i);
 
 			strcat(buffer, "    p");
 			sprintf(buffer + strlen(buffer), "%d type of column \"%s\".\"%s\" = ?", i, table, name);
@@ -625,7 +619,7 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 			if (i > 0)
 				strcat(buffer, ", ");
 
-			const char* name = StatusException::check(status, triggerMetadata->getField(status, i));
+			const char* name = triggerMetadata->getField(status, i);
 
 			strcat(buffer, "\"");
 			strcat(buffer, name);
@@ -655,11 +649,10 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		IAttachment* attachment = StatusException::check(status, context->getAttachment(status));
-		ITransaction* transaction = StatusException::check(status, context->getTransaction(status));
+		IAttachment* attachment = context->getAttachment(status);
+		ITransaction* transaction = context->getTransaction(status);
 
-		stmt.reset(StatusException::check(status,
-			attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0)));
+		stmt.reset(attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0));
 
 		delete [] outSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(outSqlDa);
@@ -673,11 +666,10 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 
 	FB_UDR_EXECUTE_TRIGGER
 	{
-		ITransaction* transaction = StatusException::check(status, context->getTransaction(status));
+		ITransaction* transaction = context->getTransaction(status);
 
 		// This will not work if the table has computed fields.
 		stmt->execute(status, transaction, triggerMetadata, newFields, NULL, NULL);
-		StatusException::check(status->getErrors());
 	}
 
 	AutoRelease<IMessageMetadata> triggerMetadata;
@@ -696,24 +688,23 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	);
 
 	FB_UDR_CONSTRUCTOR
-		, triggerMetadata(StatusException::check(status, metadata->getTriggerMetadata(status)))
+		, triggerMetadata(metadata->getTriggerMetadata(status))
 	{
 		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(context);
-		isc_tr_handle trHandle = getIscTrHandle(context);
+		isc_db_handle dbHandle = getIscDbHandle(status, context);
+		isc_tr_handle trHandle = getIscTrHandle(status, context);
 
 		isc_stmt_handle stmtHandle = 0;
-		StatusException::checkStatus(isc_dsql_allocate_statement(
-			statusVector, &dbHandle, &stmtHandle), statusVector);
-		StatusException::checkStatus(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
+		FbException::check(isc_dsql_allocate_statement(
+			statusVector, &dbHandle, &stmtHandle), status, statusVector);
+		FbException::check(isc_dsql_prepare(statusVector, &trHandle, &stmtHandle, 0,
 			"select data_source from replicate_config where name = ?",
-			SQL_DIALECT_CURRENT, NULL), statusVector);
+			SQL_DIALECT_CURRENT, NULL), status, statusVector);
 
-		const char* table = StatusException::check(status, metadata->getTriggerTable(status));
+		const char* table = metadata->getTriggerTable(status);
 
 		// Skip the first exclamation point, separating the module name and entry point.
-		const char* info = StatusException::check(status,
-			strchr(metadata->getEntryPoint(status), '!'));
+		const char* info = strchr(metadata->getEntryPoint(status), '!');
 
 		// Skip the second exclamation point, separating the entry point and the misc info (config).
 		if (info)
@@ -727,8 +718,8 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		XSQLDA* inSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		inSqlDa->version = SQLDA_VERSION1;
 		inSqlDa->sqln = 1;
-		StatusException::checkStatus(isc_dsql_describe_bind(
-			statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa), statusVector);
+		FbException::check(isc_dsql_describe_bind(
+			statusVector, &stmtHandle, SQL_DIALECT_CURRENT, inSqlDa), status, statusVector);
 		inSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + inSqlDa->sqlvar[0].sqllen];
 		strncpy(inSqlDa->sqlvar[0].sqldata + sizeof(short), info, inSqlDa->sqlvar[0].sqllen);
 		*reinterpret_cast<short*>(inSqlDa->sqlvar[0].sqldata) = strlen(info);
@@ -736,15 +727,15 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		XSQLDA* outSqlDa = reinterpret_cast<XSQLDA*>(new char[(XSQLDA_LENGTH(1))]);
 		outSqlDa->version = SQLDA_VERSION1;
 		outSqlDa->sqln = 1;
-		StatusException::checkStatus(isc_dsql_describe(
-			statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa), statusVector);
+		FbException::check(isc_dsql_describe(
+			statusVector, &stmtHandle, SQL_DIALECT_CURRENT, outSqlDa), status, statusVector);
 		outSqlDa->sqlvar[0].sqldata = new char[sizeof(short) + outSqlDa->sqlvar[0].sqllen + 1];
 		outSqlDa->sqlvar[0].sqldata[sizeof(short) + outSqlDa->sqlvar[0].sqllen] = '\0';
 
-		StatusException::checkStatus(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle,
-			SQL_DIALECT_CURRENT, inSqlDa, outSqlDa), statusVector);
-		StatusException::checkStatus(isc_dsql_free_statement(
-			statusVector, &stmtHandle, DSQL_unprepare), statusVector);
+		FbException::check(isc_dsql_execute2(statusVector, &trHandle, &stmtHandle,
+			SQL_DIALECT_CURRENT, inSqlDa, outSqlDa), status, statusVector);
+		FbException::check(isc_dsql_free_statement(
+			statusVector, &stmtHandle, DSQL_unprepare), status, statusVector);
 
 		delete [] inSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(inSqlDa);
@@ -765,11 +756,10 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		strcat(buffer, outSqlDa->sqlvar[0].sqldata + sizeof(short));
 		strcat(buffer, "';\nend");
 
-		IAttachment* attachment = StatusException::check(status, context->getAttachment(status));
-		ITransaction* transaction = StatusException::check(status, context->getTransaction(status));
+		IAttachment* attachment = context->getAttachment(status);
+		ITransaction* transaction = context->getTransaction(status);
 
-		stmt.reset(StatusException::check(status,
-			attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0)));
+		stmt.reset(attachment->prepare(status, transaction, 0, buffer, SQL_DIALECT_CURRENT, 0));
 
 		delete [] outSqlDa->sqlvar[0].sqldata;
 		delete [] reinterpret_cast<char*>(outSqlDa);
@@ -783,10 +773,9 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 
 	FB_UDR_EXECUTE_TRIGGER
 	{
-		ITransaction* transaction = StatusException::check(status, context->getTransaction(status));
+		ITransaction* transaction = context->getTransaction(status);
 
 		stmt->execute(status, transaction, triggerMetadata, newFields, NULL, NULL);
-		StatusException::check(status->getErrors());
 	}
 
 	AutoRelease<IMessageMetadata> triggerMetadata;

@@ -77,11 +77,6 @@ public:
 		return hasData() ? pluginSet->getName() : NULL;
 	}
 
-	const char* module()
-	{
-		return hasData() ? pluginSet->getModule() : NULL;
-	}
-
 	P* plugin()
 	{
 		return currentPlugin;

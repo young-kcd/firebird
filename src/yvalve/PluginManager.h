@@ -37,15 +37,15 @@
 
 namespace Firebird {
 
-class PluginManager : public AutoIface<Api::IPluginManagerImpl<PluginManager> >
+class PluginManager : public AutoIface<IPluginManagerImpl<PluginManager, CheckStatusWrapper> >
 {
 public:
 	// IPluginManager implementation
-	IPluginSet* getPlugins(IStatus* status, unsigned int interfaceType,
+	IPluginSet* getPlugins(CheckStatusWrapper* status, unsigned int interfaceType,
 					const char* namesList, IFirebirdConf* firebirdConf);
 	void registerPluginFactory(unsigned int interfaceType, const char* defaultName,
 					IPluginFactory* factory);
-	IConfig* getConfig(IStatus* status, const char* filename);
+	IConfig* getConfig(CheckStatusWrapper* status, const char* filename);
 	void releasePlugin(IPluginBase* plugin);
 	void registerModule(IPluginModule* module);
 	void unregisterModule(IPluginModule* module);

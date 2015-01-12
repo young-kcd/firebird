@@ -30,33 +30,6 @@
 #include <time.h>
 #include <string.h>
 
-//----------------------------------------------------------------
-// This ifdef is a dirty hack to make tests (fbstuff) to compile
-#ifndef INCLUDE_Firebird_H
-
-namespace Firebird
-{
-typedef FirebirdApi<class TempPolicy> Api;
-FB_USE_API(Api, I)
-
-class TempPolicy
-{
-public:
-	template <unsigned V, typename T>
-	static inline bool checkVersion(T* versioned, IStatus* status)
-	{ return true; }
-	static void checkException(Api::IStatus*) { }
-	static void catchException(Api::IStatus*) { }
-	typedef Api::IStatus* Status;
-};
-} //namespace Firebird
-
-DECLARE_GET_MASTER(Firebird::TempPolicy)
-#define INCLUDE_Firebird_H
-
-#endif
-//- END OF HACK --------------------------------------------------
-
 #define FB_MESSAGE(name, fields)	\
 	FB__MESSAGE_I(name, 2, FB_BOOST_PP_CAT(FB__MESSAGE_X fields, 0), )
 
@@ -82,15 +55,17 @@ DECLARE_GET_MASTER(Firebird::TempPolicy)
 			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_FIELD, size, fields)	\
 		};	\
 		\
-		static void setup(::Firebird::IStatus* status, ::Firebird::IMetadataBuilder* builder)	\
+		template <typename StatusType>	\
+		static void setup(StatusType* status, ::Firebird::IMetadataBuilder* builder)	\
 		{	\
 			unsigned index = 0;	\
 			moveNames	\
 			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_META, size, fields)	\
 		}	\
 		\
-		name(::Firebird::IMaster* master)	\
-			: desc(master, FB_BOOST_PP_SEQ_SIZE(fields), &setup)	\
+		template <typename StatusType>	\
+		name(::Firebird::IMaster* master, StatusType* status)	\
+			: desc(master, status, FB_BOOST_PP_SEQ_SIZE(fields), &setup<StatusType>)	\
 		{	\
 		}	\
 		\
@@ -386,9 +361,10 @@ public:
 class MessageDesc
 {
 public:
-	MessageDesc(IMaster* master, unsigned count, void (*setup)(IStatus*, IMetadataBuilder*))
+	template <typename StatusType>
+	MessageDesc(IMaster* master, StatusType* status, unsigned count,
+		void (*setup)(StatusType*, IMetadataBuilder*))
 	{
-		IStatus* status = master->getStatus();
 		IMetadataBuilder* builder = master->getMetadataBuilder(status, count);
 
 		setup(status, builder);
@@ -396,7 +372,6 @@ public:
 		metadata = builder->getMetadata(status);
 
 		builder->release();
-		status->dispose();
 	}
 
 	~MessageDesc()

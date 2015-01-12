@@ -58,26 +58,26 @@ struct Node
 
 struct FunctionNode : public Node
 {
-	FunctionFactory* factory;
+	IUdrFunctionFactory* factory;
 	FunctionNode* next;
 };
 
 struct ProcedureNode : public Node
 {
-	ProcedureFactory* factory;
+	IUdrProcedureFactory* factory;
 	ProcedureNode* next;
 };
 
 struct TriggerNode : public Node
 {
-	TriggerFactory* factory;
+	IUdrTriggerFactory* factory;
 	TriggerNode* next;
 };
 
 
 static GlobalPtr<ObjectsArray<PathName> > paths;
 
-class Engine : public StdPlugin<Api::IExternalEngineImpl<Engine> >
+class Engine : public StdPlugin<IExternalEngineImpl<Engine, ThrowStatusWrapper> >
 {
 public:
 	explicit Engine(IPluginConfig* par)
@@ -130,31 +130,34 @@ public:
 	}
 
 public:
-	void loadModule(IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint);
+	void loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
+		PathName* moduleName, string* entryPoint);
+
 	template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* getChild(
-		IStatus* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
+		ThrowStatusWrapper* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
 		SharedObjType* sharedObj, IExternalContext* context, NodeType* nodes,
 		SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName);
+
 	template <typename ObjType> void deleteChildren(
 		GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children);
 
-	template <typename T> T* findNode(T* nodes, const PathName& moduleName,
-		const string& entryPoint);
+	template <typename T> T* findNode(ThrowStatusWrapper* status, T* nodes,
+		const PathName& moduleName, const string& entryPoint);
 
 private:
-	template <typename T, typename T2> T2* getNode(IStatus* status, T* nodes,
+	template <typename T, typename T2> T2* getNode(ThrowStatusWrapper* status, T* nodes,
 		const PathName& moduleName, IExternalContext* context, IRoutineMetadata* metadata,
 		const string& entryPoint);
 
 public:
-	void open(IStatus* status, IExternalContext* context, char* name, unsigned nameSize);
-	void openAttachment(IStatus* status, IExternalContext* context);
-	void closeAttachment(IStatus* status, IExternalContext* context);
-	IExternalFunction* makeFunction(IStatus* status, IExternalContext* context,
+	void open(ThrowStatusWrapper* status, IExternalContext* context, char* name, unsigned nameSize);
+	void openAttachment(ThrowStatusWrapper* status, IExternalContext* context);
+	void closeAttachment(ThrowStatusWrapper* status, IExternalContext* context);
+	IExternalFunction* makeFunction(ThrowStatusWrapper* status, IExternalContext* context,
 		IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
-	IExternalProcedure* makeProcedure(IStatus* status, IExternalContext* context,
+	IExternalProcedure* makeProcedure(ThrowStatusWrapper* status, IExternalContext* context,
 		IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder);
-	IExternalTrigger* makeTrigger(IStatus* status, IExternalContext* context,
+	IExternalTrigger* makeTrigger(ThrowStatusWrapper* status, IExternalContext* context,
 		IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder);
 
 public:
@@ -197,10 +200,10 @@ static TriggerNode* registeredTriggers = NULL;
 //--------------------------------------
 
 
-class SharedFunction : public DisposeIface<Api::IExternalFunctionImpl<SharedFunction> >
+class SharedFunction : public DisposeIface<IExternalFunctionImpl<SharedFunction, ThrowStatusWrapper> >
 {
 public:
-	SharedFunction(IStatus* status, Engine* aEngine, IExternalContext* context,
+	SharedFunction(ThrowStatusWrapper* status, Engine* aEngine, IExternalContext* context,
 				IRoutineMetadata* aMetadata,
 				IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		: engine(aEngine),
@@ -210,9 +213,9 @@ public:
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(metadata, &moduleName, &entryPoint);
+		engine->loadModule(status, metadata, &moduleName, &entryPoint);
 		FunctionNode* node = engine->findNode<FunctionNode>(
-			registeredFunctions, moduleName, entryPoint);
+			status, registeredFunctions, moduleName, entryPoint);
 		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
@@ -228,25 +231,19 @@ public:
 	}
 
 public:
-	void getCharSet(IStatus* status, IExternalContext* context,
+	void getCharSet(ThrowStatusWrapper* status, IExternalContext* context,
 		char* name, unsigned nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
-		try
-		{
-			IExternalFunction* function = engine->getChild<FunctionNode, IExternalFunction>(status,
-				children, this, context, registeredFunctions, engine->functions, moduleName);
-			if (function)
-				function->getCharSet(status, context, name, nameSize);
-		}
-		catch (const StatusException& e)
-		{
-			e.stuff(status);
-		}
+		IExternalFunction* function = engine->getChild<FunctionNode, IExternalFunction>(status,
+			children, this, context, registeredFunctions, engine->functions, moduleName);
+
+		if (function)
+			function->getCharSet(status, context, name, nameSize);
 	}
 
-	void execute(IStatus* status, IExternalContext* context, void* inMsg, void* outMsg)
+	void execute(ThrowStatusWrapper* status, IExternalContext* context, void* inMsg, void* outMsg)
 	{
 		IExternalFunction* function = engine->getChild<FunctionNode, IExternalFunction>(status,
 			children, this, context, registeredFunctions, engine->functions, moduleName);
@@ -267,10 +264,10 @@ public:
 //--------------------------------------
 
 
-class SharedProcedure : public DisposeIface<Api::IExternalProcedureImpl<SharedProcedure> >
+class SharedProcedure : public DisposeIface<IExternalProcedureImpl<SharedProcedure, ThrowStatusWrapper> >
 {
 public:
-	SharedProcedure(IStatus* status, Engine* aEngine, IExternalContext* context,
+	SharedProcedure(ThrowStatusWrapper* status, Engine* aEngine, IExternalContext* context,
 				IRoutineMetadata* aMetadata,
 				IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		: engine(aEngine),
@@ -280,9 +277,9 @@ public:
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(metadata, &moduleName, &entryPoint);
+		engine->loadModule(status, metadata, &moduleName, &entryPoint);
 		ProcedureNode* node = engine->findNode<ProcedureNode>(
-			registeredProcedures, moduleName, entryPoint);
+			status, registeredProcedures, moduleName, entryPoint);
 		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
@@ -298,38 +295,25 @@ public:
 	}
 
 public:
-	void getCharSet(IStatus* status, IExternalContext* context,
+	void getCharSet(ThrowStatusWrapper* status, IExternalContext* context,
 		char* name, unsigned nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
-		try
-		{
-			IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
-				children, this, context, registeredProcedures, engine->procedures, moduleName);
-			if (procedure)
-				procedure->getCharSet(status, context, name, nameSize);
-		}
-		catch (const StatusException& e)
-		{
-			e.stuff(status);
-		}
+		IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
+			children, this, context, registeredProcedures, engine->procedures, moduleName);
+
+		if (procedure)
+			procedure->getCharSet(status, context, name, nameSize);
 	}
 
-	IExternalResultSet* open(IStatus* status, IExternalContext* context,
+	IExternalResultSet* open(ThrowStatusWrapper* status, IExternalContext* context,
 		void* inMsg, void* outMsg)
 	{
-		try
-		{
-			IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
-				children, this, context, registeredProcedures, engine->procedures, moduleName);
-			return procedure ? procedure->open(status, context, inMsg, outMsg) : NULL;
-		}
-		catch (const StatusException& e)
-		{
-			e.stuff(status);
-			return NULL;
-		}
+		IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
+			children, this, context, registeredProcedures, engine->procedures, moduleName);
+
+		return procedure ? procedure->open(status, context, inMsg, outMsg) : NULL;
 	}
 
 public:
@@ -345,10 +329,10 @@ public:
 //--------------------------------------
 
 
-class SharedTrigger : public DisposeIface<Api::IExternalTriggerImpl<SharedTrigger> >
+class SharedTrigger : public DisposeIface<IExternalTriggerImpl<SharedTrigger, ThrowStatusWrapper> >
 {
 public:
-	SharedTrigger(IStatus* status, Engine* aEngine, IExternalContext* context,
+	SharedTrigger(ThrowStatusWrapper* status, Engine* aEngine, IExternalContext* context,
 				IRoutineMetadata* aMetadata, IMetadataBuilder* fieldsBuilder)
 		: engine(aEngine),
 		  metadata(aMetadata),
@@ -357,8 +341,11 @@ public:
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(metadata, &moduleName, &entryPoint);
-		TriggerNode* node = engine->findNode<TriggerNode>(registeredTriggers, moduleName, entryPoint);
+		engine->loadModule(status, metadata, &moduleName, &entryPoint);
+
+		TriggerNode* node = engine->findNode<TriggerNode>(status,
+			registeredTriggers, moduleName, entryPoint);
+
 		node->factory->setup(status, context, metadata, fieldsBuilder);
 	}
 
@@ -374,25 +361,19 @@ public:
 	}
 
 public:
-	void getCharSet(IStatus* status, IExternalContext* context,
+	void getCharSet(ThrowStatusWrapper* status, IExternalContext* context,
 		char* name, unsigned nameSize)
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
-		try
-		{
-			IExternalTrigger* trigger = engine->getChild<TriggerNode, IExternalTrigger>(status,
-				children, this, context, registeredTriggers, engine->triggers, moduleName);
-			if (trigger)
-				trigger->getCharSet(status, context, name, nameSize);
-		}
-		catch (const StatusException& e)
-		{
-			e.stuff(status);
-		}
+		IExternalTrigger* trigger = engine->getChild<TriggerNode, IExternalTrigger>(status,
+			children, this, context, registeredTriggers, engine->triggers, moduleName);
+
+		if (trigger)
+			trigger->getCharSet(status, context, name, nameSize);
 	}
 
-	void execute(IStatus* status, IExternalContext* context,
+	void execute(ThrowStatusWrapper* status, IExternalContext* context,
 		unsigned action, void* oldMsg, void* newMsg)
 	{
 		IExternalTrigger* trigger = engine->getChild<TriggerNode, IExternalTrigger>(status,
@@ -414,7 +395,7 @@ public:
 //--------------------------------------
 
 
-extern "C" void FB_EXPORTED fbUdrRegFunction(const char* name, FunctionFactory* factory)
+extern "C" void FB_EXPORTED fbUdrRegFunction(const char* name, IUdrFunctionFactory* factory)
 {
 	FunctionNode* node = new FunctionNode();
 	node->name = name;
@@ -425,7 +406,7 @@ extern "C" void FB_EXPORTED fbUdrRegFunction(const char* name, FunctionFactory* 
 }
 
 
-extern "C" void FB_EXPORTED fbUdrRegProcedure(const char* name, ProcedureFactory* factory)
+extern "C" void FB_EXPORTED fbUdrRegProcedure(const char* name, IUdrProcedureFactory* factory)
 {
 	ProcedureNode* node = new ProcedureNode();
 	node->name = name;
@@ -436,7 +417,7 @@ extern "C" void FB_EXPORTED fbUdrRegProcedure(const char* name, ProcedureFactory
 }
 
 
-extern "C" void FB_EXPORTED fbUdrRegTrigger(const char* name, TriggerFactory* factory)
+extern "C" void FB_EXPORTED fbUdrRegTrigger(const char* name, IUdrTriggerFactory* factory)
 {
 	TriggerNode* node = new TriggerNode();
 	node->name = name;
@@ -479,11 +460,10 @@ ModulesMap::~ModulesMap()
 //--------------------------------------
 
 
-void Engine::loadModule(IRoutineMetadata* metadata, PathName* moduleName, string* entryPoint)
+void Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
+	PathName* moduleName, string* entryPoint)
 {
-	LocalStatus status;
-	const string str(metadata->getEntryPoint(&status));
-	StatusException::check(status.getErrors());
+	const string str(metadata->getEntryPoint(status));
 
 	const string::size_type pos = str.find('!');
 	if (pos == string::npos)
@@ -495,7 +475,7 @@ void Engine::loadModule(IRoutineMetadata* metadata, PathName* moduleName, string
 			isc_arg_end
 		};
 
-		StatusException::check(statusVector);
+		throw FbException(status, statusVector);
 	}
 
 	*moduleName = PathName(str.substr(0, pos).c_str());
@@ -509,7 +489,7 @@ void Engine::loadModule(IRoutineMetadata* metadata, PathName* moduleName, string
 			isc_arg_end
 		};
 
-		StatusException::check(statusVector);
+		throw FbException(status, statusVector);
 	}
 
 	*entryPoint = str.substr(pos + 1);
@@ -545,14 +525,14 @@ void Engine::loadModule(IRoutineMetadata* metadata, PathName* moduleName, string
 				isc_arg_end
 			};
 
-			StatusException::check(statusVector);
+			throw FbException(status, statusVector);
 		}
 	}
 }
 
 
 template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* Engine::getChild(
-	IStatus* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
+	ThrowStatusWrapper* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
 	SharedObjType* sharedObj, IExternalContext* context, NodeType* nodes,
 	SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName)
 {
@@ -588,8 +568,8 @@ template <typename ObjType> void Engine::deleteChildren(
 }
 
 
-template <typename T> T* Engine::findNode(T* nodes, const PathName& moduleName,
-		const string& entryPoint)
+template <typename T> T* Engine::findNode(ThrowStatusWrapper* status, T* nodes,
+	const PathName& moduleName, const string& entryPoint)
 {
 	for (T* node = nodes; node; node = node->next)
 	{
@@ -604,33 +584,33 @@ template <typename T> T* Engine::findNode(T* nodes, const PathName& moduleName,
 		isc_arg_end
 	};
 
-	StatusException::check(statusVector);
+	throw FbException(status, statusVector);
 
 	return NULL;
 }
 
 
-template <typename T, typename T2> T2* Engine::getNode(IStatus* status, T* nodes,
+template <typename T, typename T2> T2* Engine::getNode(ThrowStatusWrapper* status, T* nodes,
 		const PathName& moduleName, IExternalContext* context, IRoutineMetadata* metadata,
 		const string& entryPoint)
 {
-	T* node = findNode<T>(nodes, moduleName, entryPoint);
+	T* node = findNode<T>(status, nodes, moduleName, entryPoint);
 	return node->factory->newItem(status, context, metadata);
 }
 
 
-void Engine::open(IStatus* /*status*/, IExternalContext* /*context*/, char* name, unsigned nameSize)
+void Engine::open(ThrowStatusWrapper* /*status*/, IExternalContext* /*context*/, char* name, unsigned nameSize)
 {
 	strncpy(name, "UTF-8", nameSize);
 }
 
 
-void Engine::openAttachment(IStatus* /*status*/, IExternalContext* /*context*/)
+void Engine::openAttachment(ThrowStatusWrapper* /*status*/, IExternalContext* /*context*/)
 {
 }
 
 
-void Engine::closeAttachment(IStatus* status, IExternalContext* context)
+void Engine::closeAttachment(ThrowStatusWrapper* status, IExternalContext* context)
 {
 	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
 
@@ -666,48 +646,24 @@ void Engine::closeAttachment(IStatus* status, IExternalContext* context)
 }
 
 
-IExternalFunction* Engine::makeFunction(IStatus* status, IExternalContext* context,
+IExternalFunction* Engine::makeFunction(ThrowStatusWrapper* status, IExternalContext* context,
 	IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
-	try
-	{
-		return new SharedFunction(status, this, context, metadata, inBuilder, outBuilder);
-	}
-	catch (const StatusException& e)
-	{
-		e.stuff(status);
-		return NULL;
-	}
+	return new SharedFunction(status, this, context, metadata, inBuilder, outBuilder);
 }
 
 
-IExternalProcedure* Engine::makeProcedure(IStatus* status, IExternalContext* context,
+IExternalProcedure* Engine::makeProcedure(ThrowStatusWrapper* status, IExternalContext* context,
 	IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
-	try
-	{
-		return new SharedProcedure(status, this, context, metadata, inBuilder, outBuilder);
-	}
-	catch (const StatusException& e)
-	{
-		e.stuff(status);
-		return NULL;
-	}
+	return new SharedProcedure(status, this, context, metadata, inBuilder, outBuilder);
 }
 
 
-IExternalTrigger* Engine::makeTrigger(IStatus* status, IExternalContext* context,
+IExternalTrigger* Engine::makeTrigger(ThrowStatusWrapper* status, IExternalContext* context,
 	IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 {
-	try
-	{
-		return new SharedTrigger(status, this, context, metadata, fieldsBuilder);
-	}
-	catch (const StatusException& e)
-	{
-		e.stuff(status);
-		return NULL;
-	}
+	return new SharedTrigger(status, this, context, metadata, fieldsBuilder);
 }
 
 

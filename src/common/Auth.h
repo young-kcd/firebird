@@ -39,7 +39,7 @@
 
 namespace Auth {
 
-class WriterImplementation : public Firebird::AutoIface<Firebird::Api::IWriterImpl<WriterImplementation> >
+class WriterImplementation : public Firebird::AutoIface<Firebird::IWriterImpl<WriterImplementation, Firebird::CheckStatusWrapper> >
 {
 public:
 	WriterImplementation();
@@ -49,9 +49,9 @@ public:
 
 	// IWriter implementation
 	void reset();
-	void add(Firebird::IStatus* st, const char* name);
-	void setType(Firebird::IStatus* st, const char* value);
-	void setDb(Firebird::IStatus* st, const char* value);
+	void add(Firebird::CheckStatusWrapper* st, const char* name);
+	void setType(Firebird::CheckStatusWrapper* st, const char* value);
+	void setDb(Firebird::CheckStatusWrapper* st, const char* value);
 
 private:
 	Firebird::ClumpletWriter current, result;

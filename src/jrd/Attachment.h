@@ -155,12 +155,12 @@ public:
 		att = NULL;
 	}
 
-	jrd_tra* getEngineTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra)
+	jrd_tra* getEngineTransaction(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra)
 	{
 		return getInterface()->getEngineTransaction(status, tra);
 	}
 
-	JTransaction* getTransactionInterface(Firebird::IStatus* status, Firebird::ITransaction* tra)
+	JTransaction* getTransactionInterface(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra)
 	{
 		return getInterface()->getTransactionInterface(status, tra);
 	}

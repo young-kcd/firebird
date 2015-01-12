@@ -59,7 +59,7 @@ Get::Get(const char* plugName)
 	}
 }
 
-void UserData::clear(Firebird::IStatus*)
+void UserData::clear(Firebird::CheckStatusWrapper*)
 {
 	op = 0;
 

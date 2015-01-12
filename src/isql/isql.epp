@@ -1065,7 +1065,7 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 }
 
 
-void ISQL_warning(Firebird::IStatus* st)
+void ISQL_warning(Firebird::CheckStatusWrapper* st)
 {
 /**************************************
  *

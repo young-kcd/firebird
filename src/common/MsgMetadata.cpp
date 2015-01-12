@@ -55,7 +55,7 @@ int MetadataBuilder::release()
 	return 0;
 }
 
-void MetadataBuilder::setType(IStatus* status, unsigned index, unsigned type)
+void MetadataBuilder::setType(CheckStatusWrapper* status, unsigned index, unsigned type)
 {
 	try
 	{
@@ -81,7 +81,7 @@ void MetadataBuilder::setType(IStatus* status, unsigned index, unsigned type)
 	}
 }
 
-void MetadataBuilder::setSubType(IStatus* status, unsigned index, int subType)
+void MetadataBuilder::setSubType(CheckStatusWrapper* status, unsigned index, int subType)
 {
 	try
 	{
@@ -96,7 +96,7 @@ void MetadataBuilder::setSubType(IStatus* status, unsigned index, int subType)
 	}
 }
 
-void MetadataBuilder::setLength(IStatus* status, unsigned index, unsigned length)
+void MetadataBuilder::setLength(CheckStatusWrapper* status, unsigned index, unsigned length)
 {
 	try
 	{
@@ -114,7 +114,7 @@ void MetadataBuilder::setLength(IStatus* status, unsigned index, unsigned length
 	}
 }
 
-void MetadataBuilder::setCharSet(IStatus* status, unsigned index, unsigned charSet)
+void MetadataBuilder::setCharSet(CheckStatusWrapper* status, unsigned index, unsigned charSet)
 {
 	try
 	{
@@ -129,7 +129,7 @@ void MetadataBuilder::setCharSet(IStatus* status, unsigned index, unsigned charS
 	}
 }
 
-void MetadataBuilder::setScale(IStatus* status, unsigned index, unsigned scale)
+void MetadataBuilder::setScale(CheckStatusWrapper* status, unsigned index, unsigned scale)
 {
 	try
 	{
@@ -144,7 +144,7 @@ void MetadataBuilder::setScale(IStatus* status, unsigned index, unsigned scale)
 	}
 }
 
-void MetadataBuilder::truncate(IStatus* status, unsigned count)
+void MetadataBuilder::truncate(CheckStatusWrapper* status, unsigned count)
 {
 	try
 	{
@@ -161,7 +161,7 @@ void MetadataBuilder::truncate(IStatus* status, unsigned count)
 	}
 }
 
-void MetadataBuilder::remove(IStatus* status, unsigned index)
+void MetadataBuilder::remove(CheckStatusWrapper* status, unsigned index)
 {
 	try
 	{
@@ -177,7 +177,7 @@ void MetadataBuilder::remove(IStatus* status, unsigned index)
 	}
 }
 
-void MetadataBuilder::moveNameToIndex(IStatus* status, const char* name, unsigned index)
+void MetadataBuilder::moveNameToIndex(CheckStatusWrapper* status, const char* name, unsigned index)
 {
 	try
 	{
@@ -206,7 +206,7 @@ void MetadataBuilder::moveNameToIndex(IStatus* status, const char* name, unsigne
 	}
 }
 
-unsigned MetadataBuilder::addField(IStatus* status)
+unsigned MetadataBuilder::addField(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -224,7 +224,7 @@ unsigned MetadataBuilder::addField(IStatus* status)
 	}
 }
 
-IMessageMetadata* MetadataBuilder::getMetadata(IStatus* status)
+IMessageMetadata* MetadataBuilder::getMetadata(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -311,7 +311,7 @@ unsigned MsgMetadata::makeOffsets()
 }
 
 
-IMetadataBuilder* MsgMetadata::getBuilder(IStatus* status)
+IMetadataBuilder* MsgMetadata::getBuilder(CheckStatusWrapper* status)
 {
 	try
 	{

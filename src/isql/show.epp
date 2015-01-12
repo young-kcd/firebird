@@ -122,11 +122,11 @@ namespace {
 // Used to make sure that local calls to print stuff go to isqlGlob.Out
 // and not to stdout if IUtl::version gets called
 
-class VersionCallback : public Firebird::AutoIface<Firebird::Api::IVersionCallbackImpl<VersionCallback> >
+class VersionCallback : public Firebird::AutoIface<Firebird::IVersionCallbackImpl<VersionCallback, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IVersionCallback implementation
-	void callback(Firebird::IStatus*, const char* text)
+	void callback(Firebird::CheckStatusWrapper*, const char* text)
 	{
 		isqlGlob.printf("%s%s", text, NEWLINE);
 	}
@@ -397,7 +397,8 @@ bool SHOW_dbb_parameters(Firebird::IAttachment* db_handle,
 
 	Firebird::AutoPtr<Firebird::IStatus, Firebird::SimpleDispose<Firebird::IStatus> >
 		status_vector(fbMaster->getStatus());
-	db_handle->getInfo(status_vector, item_length, db_itemsL, sizeof(buffer), buffer);
+	Firebird::CheckStatusWrapper statusWrapper(status_vector);
+	db_handle->getInfo(&statusWrapper, item_length, db_itemsL, sizeof(buffer), buffer);
 	if (ISQL_errmsg(status_vector))
 		return false;
 

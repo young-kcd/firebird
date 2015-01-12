@@ -34,7 +34,7 @@ using namespace Firebird;
 
 namespace Auth {
 
-class SrpClient FB_FINAL : public StdPlugin<Api::IClientImpl<SrpClient> >
+class SrpClient FB_FINAL : public StdPlugin<IClientImpl<SrpClient, CheckStatusWrapper> >
 {
 public:
 	explicit SrpClient(IPluginConfig*)
@@ -43,7 +43,7 @@ public:
 	{ }
 
 	// IClient implementation
-	int authenticate(IStatus*, IClientBlock* cb);
+	int authenticate(CheckStatusWrapper*, IClientBlock* cb);
     int release();
 
 private:
@@ -52,7 +52,7 @@ private:
 	UCharBuffer sessionKey;
 };
 
-int SrpClient::authenticate(IStatus* status, IClientBlock* cb)
+int SrpClient::authenticate(CheckStatusWrapper* status, IClientBlock* cb)
 {
 	try
 	{

@@ -123,7 +123,7 @@ const UCHAR TPB[4] =
 
 namespace Auth {
 
-class SecurityDatabaseServer FB_FINAL : public Firebird::StdPlugin<Firebird::Api::IServerImpl<SecurityDatabaseServer> >
+class SecurityDatabaseServer FB_FINAL : public StdPlugin<IServerImpl<SecurityDatabaseServer, CheckStatusWrapper> >
 {
 public:
 	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)
@@ -131,14 +131,14 @@ public:
 	{ }
 
 	// IServer implementation
-	int authenticate(Firebird::IStatus* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
+	int authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
 	int release();
 
 private:
 	Firebird::RefPtr<Firebird::IPluginConfig> iParameter;
 };
 
-class SecurityDatabase FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ITimerImpl<SecurityDatabase> >
+class SecurityDatabase FB_FINAL : public RefCntIface<ITimerImpl<SecurityDatabase, CheckStatusWrapper> >
 {
 public:
 	int verify(IWriter* authBlock, IServerBlock* sBlock);
@@ -472,7 +472,7 @@ int SecurityDatabase::shutdown()
 const static unsigned int INIT_KEY = ((~0) - 1);
 static unsigned int secDbKey = INIT_KEY;
 
-int SecurityDatabaseServer::authenticate(Firebird::IStatus* status, IServerBlock* sBlock,
+int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, IServerBlock* sBlock,
 	IWriter* writerInterface)
 {
 	status->init();

@@ -107,11 +107,12 @@ SecurityDatabaseManagement::SecurityDatabaseManagement(Firebird::IPluginConfig* 
 	: database(0), transaction(0)
 {
 	Firebird::LocalStatus s;
-	config.assignRefNoIncr(par->getFirebirdConf(&s));
+	Firebird::CheckStatusWrapper statusWrapper(&s);
+	config.assignRefNoIncr(par->getFirebirdConf(&statusWrapper));
 	check(&s);
 }
 
-void SecurityDatabaseManagement::start(Firebird::IStatus* st, Firebird::ILogonInfo* logonInfo)
+void SecurityDatabaseManagement::start(Firebird::CheckStatusWrapper* st, Firebird::ILogonInfo* logonInfo)
 {
 	try
 	{
@@ -165,7 +166,7 @@ void SecurityDatabaseManagement::start(Firebird::IStatus* st, Firebird::ILogonIn
 	}
 }
 
-void SecurityDatabaseManagement::commit(Firebird::IStatus* st)
+void SecurityDatabaseManagement::commit(Firebird::CheckStatusWrapper* st)
 {
 	try
 	{
@@ -186,7 +187,7 @@ void SecurityDatabaseManagement::commit(Firebird::IStatus* st)
 	}
 }
 
-void SecurityDatabaseManagement::rollback(Firebird::IStatus* st)
+void SecurityDatabaseManagement::rollback(Firebird::CheckStatusWrapper* st)
 {
 	try
 	{
@@ -232,7 +233,7 @@ static inline void strStore(char* to, const char* from, size_t len)
 	strncpy(to, from, len);
 }
 
-int SecurityDatabaseManagement::execute(Firebird::IStatus* st, Firebird::IUser* user, Firebird::IListUsers* callback)
+int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebird::IUser* user, Firebird::IListUsers* callback)
 {
 /*************************************
  *
@@ -552,7 +553,9 @@ int SecurityDatabaseManagement::execute(Firebird::IStatus* st, Firebird::IUser* 
 			if (!user->userName()->entered())
 			{
 				Firebird::LocalStatus s2;
-				Firebird::IStatus* s = st;
+				Firebird::CheckStatusWrapper statusWrapper2(&s2);
+				Firebird::CheckStatusWrapper* s = st;
+
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 					try
 					{
@@ -620,7 +623,7 @@ int SecurityDatabaseManagement::execute(Firebird::IStatus* st, Firebird::IUser* 
 					catch(const Firebird::Exception& ex)
 					{
 					  	ex.stuffException(s);
-					  	s = &s2;
+					  	s = &statusWrapper2;
 					}
 				END_FOR
 				ON_ERROR
@@ -634,7 +637,9 @@ int SecurityDatabaseManagement::execute(Firebird::IStatus* st, Firebird::IUser* 
 			{
 				Firebird::string attr, a1, a2, a3;
 				Firebird::LocalStatus s2;
-				Firebird::IStatus* s = st;
+				Firebird::CheckStatusWrapper statusWrapper2(&s2);
+				Firebird::CheckStatusWrapper* s = st;
+
 				FOR (TRANSACTION_HANDLE transaction REQUEST_HANDLE request) U IN PLG$VIEW_USERS
 						WITH U.PLG$USER_NAME EQ user->userName()->get()
 
@@ -700,7 +705,7 @@ int SecurityDatabaseManagement::execute(Firebird::IStatus* st, Firebird::IUser* 
 					catch(const Firebird::Exception& ex)
 					{
 					  	ex.stuffException(s);
-					  	s = &s2;
+					  	s = &statusWrapper2;
 					}
 				END_FOR
 				ON_ERROR

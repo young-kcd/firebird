@@ -675,7 +675,7 @@ typedef Firebird::GetPlugins<Firebird::IClient> AuthClientPlugins;
 
 // Representation of authentication data, visible for plugin
 // Transfered in format, depending upon type of the packet (phase of handshake)
-class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IClientBlockImpl<ClntAuthBlock> >
+class ClntAuthBlock FB_FINAL : public Firebird::RefCntIface<Firebird::IClientBlockImpl<ClntAuthBlock, Firebird::CheckStatusWrapper> >
 {
 private:
 	Firebird::PathName pluginList;				// To be passed to server
@@ -722,15 +722,15 @@ public:
 	const char* getLogin();
 	const char* getPassword();
 	const unsigned char* getData(unsigned int* length);
-	void putData(Firebird::IStatus* status, unsigned int length, const void* data);
-	void putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
+	void putData(Firebird::CheckStatusWrapper* status, unsigned int length, const void* data);
+	void putKey(Firebird::CheckStatusWrapper* status, Firebird::FbCryptKey* cryptKey);
 };
 
 // Representation of authentication data, visible for plugin
 // Transfered from client data in format, suitable for plugins access
 typedef Firebird::GetPlugins<Firebird::IServer> AuthServerPlugins;
 
-class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Firebird::Api::IServerBlockImpl<SrvAuthBlock> >,
+class SrvAuthBlock FB_FINAL : public Firebird::VersionedIface<Firebird::IServerBlockImpl<SrvAuthBlock, Firebird::CheckStatusWrapper> >,
 	public Firebird::GlobalStorage
 {
 private:
@@ -789,8 +789,8 @@ public:
 	// Firebird::IServerBlock implementation
 	const char* getLogin();
 	const unsigned char* getData(unsigned int* length);
-	void putData(Firebird::IStatus* status, unsigned int length, const void* data);
-	void putKey(Firebird::IStatus* status, Firebird::FbCryptKey* cryptKey);
+	void putData(Firebird::CheckStatusWrapper* status, unsigned int length, const void* data);
+	void putKey(Firebird::CheckStatusWrapper* status, Firebird::FbCryptKey* cryptKey);
 };
 
 

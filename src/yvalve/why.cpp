@@ -106,7 +106,7 @@ namespace {
 
 // Class-wrapper around external SQLDA.
 // Can be used as local variable, but do it with care
-class SQLDAMetadata FB_FINAL : public RefCntIface<Api::IMessageMetadataImpl<SQLDAMetadata> >
+class SQLDAMetadata FB_FINAL : public RefCntIface<IMessageMetadataImpl<SQLDAMetadata, CheckStatusWrapper> >
 {
 friend class SQLDAMetadataLauncher;
 private:
@@ -125,22 +125,22 @@ public:
 
 	int release();
 
-	unsigned getCount(IStatus* status);
-	const char* getField(IStatus* status, unsigned index);
-	const char* getRelation(IStatus* status, unsigned index);
-	const char* getOwner(IStatus* status, unsigned index);
-	const char* getAlias(IStatus* status, unsigned index);
-	unsigned getType(IStatus* status, unsigned index);
-	FB_BOOLEAN isNullable(IStatus* status, unsigned index);
-	int getSubType(IStatus* status, unsigned index);
-	unsigned getLength(IStatus* status, unsigned index);
-	int getScale(IStatus* status, unsigned index);
-	unsigned getCharSet(IStatus* status, unsigned index);
-	unsigned getOffset(IStatus* status, unsigned index);
-	unsigned getNullOffset(IStatus* status, unsigned index);
+	unsigned getCount(CheckStatusWrapper* status);
+	const char* getField(CheckStatusWrapper* status, unsigned index);
+	const char* getRelation(CheckStatusWrapper* status, unsigned index);
+	const char* getOwner(CheckStatusWrapper* status, unsigned index);
+	const char* getAlias(CheckStatusWrapper* status, unsigned index);
+	unsigned getType(CheckStatusWrapper* status, unsigned index);
+	FB_BOOLEAN isNullable(CheckStatusWrapper* status, unsigned index);
+	int getSubType(CheckStatusWrapper* status, unsigned index);
+	unsigned getLength(CheckStatusWrapper* status, unsigned index);
+	int getScale(CheckStatusWrapper* status, unsigned index);
+	unsigned getCharSet(CheckStatusWrapper* status, unsigned index);
+	unsigned getOffset(CheckStatusWrapper* status, unsigned index);
+	unsigned getNullOffset(CheckStatusWrapper* status, unsigned index);
 
-	IMetadataBuilder* getBuilder(IStatus* status);
-	unsigned getMessageLength(IStatus* status);
+	IMetadataBuilder* getBuilder(CheckStatusWrapper* status);
+	unsigned getMessageLength(CheckStatusWrapper* status);
 
 	void gatherData(DataBuffer& to);	// Copy data from SQLDA into target buffer.
 	void scatterData(DataBuffer& from);
@@ -227,7 +227,7 @@ SQLDAMetadata::SQLDAMetadata(const XSQLDA* aSqlda)
 	}
 }
 
-unsigned SQLDAMetadata::getCount(IStatus* status)
+unsigned SQLDAMetadata::getCount(CheckStatusWrapper* status)
 {
 	if (sqlda)
 		return sqlda->sqld;
@@ -235,7 +235,7 @@ unsigned SQLDAMetadata::getCount(IStatus* status)
 	return count;
 }
 
-const char* SQLDAMetadata::getField(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getField(CheckStatusWrapper* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -247,7 +247,7 @@ const char* SQLDAMetadata::getField(IStatus* status, unsigned index)
 	return "";	// Old conversion sqlda->BLR->metadata dropped them anyway
 }
 
-const char* SQLDAMetadata::getRelation(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getRelation(CheckStatusWrapper* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -258,7 +258,7 @@ const char* SQLDAMetadata::getRelation(IStatus* status, unsigned index)
 	return "";
 }
 
-const char* SQLDAMetadata::getOwner(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getOwner(CheckStatusWrapper* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -269,7 +269,7 @@ const char* SQLDAMetadata::getOwner(IStatus* status, unsigned index)
 	return "";
 }
 
-const char* SQLDAMetadata::getAlias(IStatus* status, unsigned index)
+const char* SQLDAMetadata::getAlias(CheckStatusWrapper* status, unsigned index)
 {
 	if (sqlda)
 	{
@@ -280,7 +280,7 @@ const char* SQLDAMetadata::getAlias(IStatus* status, unsigned index)
 	return "";
 }
 
-unsigned SQLDAMetadata::getType(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getType(CheckStatusWrapper* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -297,7 +297,7 @@ unsigned SQLDAMetadata::getType(IStatus* status, unsigned index)
 	return 0;
 }
 
-FB_BOOLEAN SQLDAMetadata::isNullable(IStatus* status, unsigned index)
+FB_BOOLEAN SQLDAMetadata::isNullable(CheckStatusWrapper* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -314,7 +314,7 @@ FB_BOOLEAN SQLDAMetadata::isNullable(IStatus* status, unsigned index)
 	return FB_FALSE;
 }
 
-int SQLDAMetadata::getSubType(IStatus* status, unsigned index)
+int SQLDAMetadata::getSubType(CheckStatusWrapper* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -334,7 +334,7 @@ int SQLDAMetadata::getSubType(IStatus* status, unsigned index)
 	return 0;
 }
 
-unsigned SQLDAMetadata::getLength(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getLength(CheckStatusWrapper* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -351,7 +351,7 @@ unsigned SQLDAMetadata::getLength(IStatus* status, unsigned index)
 	return 0;
 }
 
-int SQLDAMetadata::getScale(IStatus* status, unsigned index)
+int SQLDAMetadata::getScale(CheckStatusWrapper* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -370,7 +370,7 @@ int SQLDAMetadata::getScale(IStatus* status, unsigned index)
 	return 0;
 }
 
-unsigned SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getCharSet(CheckStatusWrapper* status, unsigned index)
 {
 	if (offsets)
 	{
@@ -396,7 +396,7 @@ unsigned SQLDAMetadata::getCharSet(IStatus* status, unsigned index)
 	return 0;
 }
 
-unsigned SQLDAMetadata::getOffset(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getOffset(CheckStatusWrapper* status, unsigned index)
 {
 	if (!offsets)
 		assign();
@@ -405,7 +405,7 @@ unsigned SQLDAMetadata::getOffset(IStatus* status, unsigned index)
 	return offsets[index].offset;
 }
 
-unsigned SQLDAMetadata::getNullOffset(IStatus* status, unsigned index)
+unsigned SQLDAMetadata::getNullOffset(CheckStatusWrapper* status, unsigned index)
 {
 	if (!offsets)
 		assign();
@@ -460,7 +460,7 @@ void SQLDAMetadata::assign()
 	}
 }
 
-unsigned SQLDAMetadata::getMessageLength(IStatus* status)
+unsigned SQLDAMetadata::getMessageLength(CheckStatusWrapper* status)
 {
 	if (!offsets)
 		assign();
@@ -601,7 +601,7 @@ UCHAR* SQLDAMetadataLauncher::getBuffer()
 	}
 }
 
-IMetadataBuilder* SQLDAMetadata::getBuilder(IStatus* status)
+IMetadataBuilder* SQLDAMetadata::getBuilder(CheckStatusWrapper* status)
 {
 	// no way to construct SQLDA
 	fb_assert(false);
@@ -649,14 +649,14 @@ public:
 	{ }
 
 	FB_API_HANDLE& getHandle();
-	void openCursor(IStatus* status, FB_API_HANDLE* traHandle,
+	void openCursor(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 					IMessageMetadata* inMetadata, UCHAR* buffer, IMessageMetadata* outMetadata);
-	void closeCursor(Why::StatusVector* status, bool raise);
-	void closeStatement(Why::StatusVector* status);
+	void closeCursor(CheckStatusWrapper* status, bool raise);
+	void closeStatement(CheckStatusWrapper* status);
 
-	void execute(IStatus* status, FB_API_HANDLE* traHandle,
+	void execute(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 				 IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata, UCHAR* outBuffer);
-	FB_BOOLEAN fetch(IStatus* status, IMessageMetadata* outMetadata, UCHAR* outBuffer);
+	FB_BOOLEAN fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata, UCHAR* outBuffer);
 
 	void checkPrepared(ISC_STATUS code = isc_unprepared_stmt) const
 	{
@@ -904,7 +904,7 @@ namespace Why
 	class StatusVector : public AutoIface<BaseStatus<StatusVector> >
 	{
 	public:
-		explicit StatusVector(ISC_STATUS* v) throw()
+		explicit StatusVector(ISC_STATUS* v = NULL) throw()
 			: localVector(v ? v : localStatus)
 		{ }
 
@@ -1161,7 +1161,7 @@ namespace Why
 	class YEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		YEntry(IStatus* aStatus, Y* object, int checkAttachment = 1)
+		YEntry(CheckStatusWrapper* aStatus, Y* object, int checkAttachment = 1)
 			: ref(object->attachment), nextRef(NULL)
 		{
 			aStatus->init();
@@ -1238,7 +1238,7 @@ namespace Why
 	};
 
 	template <>
-	YEntry<YAttachment>::YEntry(IStatus* aStatus, YAttachment* aAttachment, int checkAttachment)
+	YEntry<YAttachment>::YEntry(CheckStatusWrapper* aStatus, YAttachment* aAttachment, int checkAttachment)
 		: ref(aAttachment), nextRef(NULL)
 	{
 		aStatus->init();
@@ -1258,7 +1258,7 @@ namespace Why
 	}
 
 	template <>
-	YEntry<YService>::YEntry(IStatus* aStatus, YService* aService, int checkService)
+	YEntry<YService>::YEntry(CheckStatusWrapper* aStatus, YService* aService, int checkService)
 		: ref(aService), nextRef(NULL)
 	{
 		aStatus->init();
@@ -1275,7 +1275,7 @@ namespace Why
 	class DispatcherEntry : public FpeControl	//// TODO: move FpeControl to the engine
 	{
 	public:
-		explicit DispatcherEntry(IStatus* aStatus, bool p_shutdownMode = false)
+		explicit DispatcherEntry(CheckStatusWrapper* aStatus, bool p_shutdownMode = false)
 			: shutdownMode(p_shutdownMode)
 		{
 			aStatus->init();
@@ -1308,7 +1308,7 @@ namespace Why
 }	// namespace Why
 
 namespace {
-	void IscStatement::openCursor(IStatus* status, FB_API_HANDLE* traHandle,
+	void IscStatement::openCursor(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 					IMessageMetadata* inMetadata, UCHAR* buffer, IMessageMetadata* outMetadata)
 	{
 		checkCursorClosed();
@@ -1326,7 +1326,7 @@ namespace {
 		delayedFormat = (outMetadata == DELAYED_OUT_FORMAT);
 	}
 
-	void IscStatement::closeCursor(Why::StatusVector* status, bool raise)
+	void IscStatement::closeCursor(CheckStatusWrapper* status, bool raise)
 	{
 		if (statement && statement->cursor)
 		{
@@ -1344,7 +1344,7 @@ namespace {
 			Arg::Gds(isc_dsql_cursor_close_err).raise();
 	}
 
-	void IscStatement::closeStatement(Why::StatusVector* status)
+	void IscStatement::closeStatement(CheckStatusWrapper* status)
 	{
 		if (statement)
 		{
@@ -1356,7 +1356,7 @@ namespace {
 		}
 	}
 
-	void IscStatement::execute(IStatus* status, FB_API_HANDLE* traHandle,
+	void IscStatement::execute(CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 				IMessageMetadata* inMetadata, UCHAR* inBuffer, IMessageMetadata* outMetadata,
 				UCHAR* outBuffer)
 	{
@@ -1385,7 +1385,7 @@ namespace {
 		}
 	}
 
-	FB_BOOLEAN IscStatement::fetch(IStatus* status, IMessageMetadata* outMetadata, UCHAR* outBuffer)
+	FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata, UCHAR* outBuffer)
 	{
 		checkCursorOpened();
 
@@ -1465,8 +1465,9 @@ static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters)
 		error804(isc_dsql_sqlda_err);
 
 	StatusVector status(NULL);
+	CheckStatusWrapper statusWrapper(&status);
 
-	unsigned parametersCount = parameters->getCount(&status);
+	unsigned parametersCount = parameters->getCount(&statusWrapper);
 	status.check();
 	sqlda->sqld = (USHORT) parametersCount;
 
@@ -1479,38 +1480,38 @@ static void sqldaDescribeParameters(XSQLDA* sqlda, IMessageMetadata* parameters)
 		XSQLVAR* var = &sqlda->sqlvar[i];
 		const char* s;
 
-		var->sqltype = parameters->getType(&status, i);
+		var->sqltype = parameters->getType(&statusWrapper, i);
 		status.check();
 
-		var->sqltype |= (parameters->isNullable(&status, i) ? 1 : 0);
+		var->sqltype |= (parameters->isNullable(&statusWrapper, i) ? 1 : 0);
 		status.check();
 
-		var->sqlsubtype = parameters->getSubType(&status, i);
+		var->sqlsubtype = parameters->getSubType(&statusWrapper, i);
 		status.check();
 
-		var->sqllen = parameters->getLength(&status, i);
+		var->sqllen = parameters->getLength(&statusWrapper, i);
 		status.check();
 
-		var->sqlscale = parameters->getScale(&status, i);
+		var->sqlscale = parameters->getScale(&statusWrapper, i);
 		status.check();
 
-		unsigned charSet = parameters->getCharSet(&status, i);
+		unsigned charSet = parameters->getCharSet(&statusWrapper, i);
 		status.check();
 		setTextType(var, charSet);
 
-		s = parameters->getField(&status, i);
+		s = parameters->getField(&statusWrapper, i);
 		status.check();
 		var->sqlname_length = fb_utils::snprintf(var->sqlname, sizeof(var->sqlname), "%s", s);
 
-		s = parameters->getRelation(&status, i);
+		s = parameters->getRelation(&statusWrapper, i);
 		status.check();
 		var->relname_length = fb_utils::snprintf(var->relname, sizeof(var->relname), "%s", s);
 
-		s = parameters->getOwner(&status, i);
+		s = parameters->getOwner(&statusWrapper, i);
 		status.check();
 		var->ownname_length = fb_utils::snprintf(var->ownname, sizeof(var->ownname), "%s", s);
 
-		s = parameters->getAlias(&status, i);
+		s = parameters->getAlias(&statusWrapper, i);
 		status.check();
 		var->aliasname_length = fb_utils::snprintf(var->aliasname, sizeof(var->aliasname), "%s", s);
 	}
@@ -1522,6 +1523,7 @@ static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHand
 	USHORT bpbLength, const UCHAR* bpb, bool createFlag)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -1531,8 +1533,8 @@ static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHand
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
 		YBlob* blob = createFlag ?
-			attachment->createBlob(&status, transaction, blobId, bpbLength, bpb) :
-			attachment->openBlob(&status, transaction, blobId, bpbLength, bpb);
+			attachment->createBlob(&statusWrapper, transaction, blobId, bpbLength, bpb) :
+			attachment->openBlob(&statusWrapper, transaction, blobId, bpbLength, bpb);
 
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
@@ -1556,6 +1558,7 @@ static TLS_DECLARE(ICryptKeyCallback*, legacyCryptCallback);
 ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, void* cb)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -1615,6 +1618,7 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 	const TEXT* filename, FB_API_HANDLE* publicHandle, SSHORT dpbLength, const SCHAR* dpb)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -1627,11 +1631,11 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 
 		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
-		dispatcher->setDbCryptCallback(&status, TLS_GET(legacyCryptCallback));
+		dispatcher->setDbCryptCallback(&statusWrapper, TLS_GET(legacyCryptCallback));
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
 
-		YAttachment* attachment = dispatcher->attachDatabase(&status, pathName.c_str(),
+		YAttachment* attachment = dispatcher->attachDatabase(&statusWrapper, pathName.c_str(),
 			dpbLength, reinterpret_cast<const UCHAR*>(dpb));
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
@@ -1652,12 +1656,13 @@ ISC_STATUS API_ROUTINE isc_blob_info(ISC_STATUS* userStatus, FB_API_HANDLE* blob
 	SSHORT itemLength, const SCHAR* items, SSHORT bufferLength, SCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YBlob> blob(translateHandle(blobs, blobHandle));
 
-		blob->getInfo(&status, itemLength, reinterpret_cast<const UCHAR*>(items),
+		blob->getInfo(&statusWrapper, itemLength, reinterpret_cast<const UCHAR*>(items),
 			bufferLength, reinterpret_cast<UCHAR*>(buffer));
 	}
 	catch (const Exception& e)
@@ -1681,12 +1686,13 @@ ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 	}
 
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YBlob> blob(translateHandle(blobs, blobHandle));
 
-		blob->cancel(&status);
+		blob->cancel(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*blobHandle = 0;
@@ -1704,6 +1710,7 @@ ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* userStatus, FB_API_HANDLE* handle, SLONG* id)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -1714,7 +1721,7 @@ ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* userStatus, FB_API_HANDLE* 
 		if (event->attachment != attachment)
 			Arg::Gds(isc_bad_events_handle).raise();
 
-		event->cancel(&status);
+		event->cancel(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*id = 0;
@@ -1733,11 +1740,12 @@ ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS* userStatus, FB_API_HANDLE
 	USHORT option)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
-		attachment->cancelOperation(&status, option);
+		attachment->cancelOperation(&statusWrapper, option);
 	}
 	catch (const Exception& e)
 	{
@@ -1752,12 +1760,13 @@ ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS* userStatus, FB_API_HANDLE
 ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS* userStatus, FB_API_HANDLE* blobHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YBlob> blob(translateHandle(blobs, blobHandle));
 
-		blob->close(&status);
+		blob->close(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*blobHandle = 0;
@@ -1775,11 +1784,12 @@ ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS* userStatus, FB_API_HANDLE* blo
 ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS* userStatus, FB_API_HANDLE* traHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
-		transaction->commit(&status);
+		transaction->commit(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*traHandle = 0;
@@ -1799,11 +1809,12 @@ ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS* userStatus, FB_API_HAN
 ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS* userStatus, FB_API_HANDLE* traHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
-		transaction->commitRetaining(&status);
+		transaction->commitRetaining(&statusWrapper);
 	}
 	catch (const Exception& e)
 	{
@@ -1818,6 +1829,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* userStatus, FB_API_HANDLE
 	FB_API_HANDLE* reqHandle, USHORT blrLength, const SCHAR* blr)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 	YRequest* request = NULL;
 
 	try
@@ -1826,7 +1838,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* userStatus, FB_API_HANDLE
 
 		nullCheck(reqHandle, isc_bad_stmt_handle);
 
-		request = attachment->compileRequest(&status, blrLength,
+		request = attachment->compileRequest(&statusWrapper, blrLength,
 			reinterpret_cast<const UCHAR*>(blr));
 
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
@@ -1840,7 +1852,8 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* userStatus, FB_API_HANDLE
 		{
 			*reqHandle = 0;
 			StatusVector temp(NULL);
-			request->free(&temp);
+			CheckStatusWrapper tempCheckStatusWrapper(&temp);
+			request->free(&tempCheckStatusWrapper);
 		}
 
 		e.stuffException(&status);
@@ -1901,6 +1914,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 	USHORT /*db_type*/)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -1913,7 +1927,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 
 		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
-		dispatcher->setDbCryptCallback(&status, TLS_GET(legacyCryptCallback));
+		dispatcher->setDbCryptCallback(&statusWrapper, TLS_GET(legacyCryptCallback));
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
 
@@ -1925,7 +1939,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 			dpbLength = newDpb.getBufferLength();
 		}
 
-		YAttachment* attachment = dispatcher->createDatabase(&status, pathName.c_str(),
+		YAttachment* attachment = dispatcher->createDatabase(&statusWrapper, pathName.c_str(),
 			dpbLength, reinterpret_cast<const UCHAR*>(dpb));
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
@@ -1946,6 +1960,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS* userStatus, FB_API_HANDL
 	AttachmentCleanupRoutine* routine, void* arg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -1954,7 +1969,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS* userStatus, FB_API_HANDL
 		AutoPtr<CleanupCallbackImpl<YAttachment, AttachmentCleanupRoutine> > callback(
 			new CleanupCallbackImpl<YAttachment, AttachmentCleanupRoutine>(attachment, routine, arg));
 
-		attachment->addCleanupHandler(&status, callback);
+		attachment->addCleanupHandler(&statusWrapper, callback);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			callback.release();
@@ -1973,11 +1988,12 @@ ISC_STATUS API_ROUTINE isc_database_info(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	SSHORT itemLength, const SCHAR* items, SSHORT bufferLength, SCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
-		attachment->getInfo(&status, itemLength, reinterpret_cast<const UCHAR*>(items),
+		attachment->getInfo(&statusWrapper, itemLength, reinterpret_cast<const UCHAR*>(items),
 			bufferLength, reinterpret_cast<UCHAR*>(buffer));
 	}
 	catch (const Exception& e)
@@ -1994,13 +2010,14 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 	FB_API_HANDLE* traHandle, SSHORT length, const UCHAR* dyn)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		attachment->executeDyn(&status, transaction, length, dyn);
+		attachment->executeDyn(&statusWrapper, transaction, length, dyn);
 	}
 	catch (const Exception& e)
 	{
@@ -2015,11 +2032,12 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 ISC_STATUS API_ROUTINE isc_detach_database(ISC_STATUS* userStatus, FB_API_HANDLE* handle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
-		attachment->detach(&status);
+		attachment->detach(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*handle = 0;
@@ -2045,11 +2063,12 @@ int API_ROUTINE gds__disable_subsystem(TEXT* /*subsystem*/)
 ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS* userStatus, FB_API_HANDLE* handle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
-		attachment->dropDatabase(&status);
+		attachment->dropDatabase(&statusWrapper);
 
 		if ((!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)) || status[1] == isc_drdb_completed_with_errs)
 			*handle = 0;
@@ -2134,6 +2153,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	USHORT /*dialect*/, XSQLDA* sqlda)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2141,7 +2161,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		statement->checkPrepared(isc_info_unprepared_stmt);
 
-		RefPtr<IMessageMetadata> columns(REF_NO_INCR, statement->statement->next->getOutputMetadata(&status));
+		RefPtr<IMessageMetadata> columns(REF_NO_INCR,
+			statement->statement->next->getOutputMetadata(&statusWrapper));
 		status.check();
 
 		sqldaDescribeParameters(sqlda, columns);
@@ -2160,6 +2181,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* userStatus, FB_API_HAN
 	USHORT /*dialect*/, XSQLDA* sqlda)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2167,7 +2189,8 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* userStatus, FB_API_HAN
 
 		statement->checkPrepared(isc_info_unprepared_stmt);
 
-		RefPtr<IMessageMetadata> parameters(REF_NO_INCR, statement->statement->next->getInputMetadata(&status));
+		RefPtr<IMessageMetadata> parameters(REF_NO_INCR,
+			statement->statement->next->getInputMetadata(&statusWrapper));
 		status.check();
 
 		sqldaDescribeParameters(sqlda, parameters);
@@ -2194,6 +2217,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	FB_API_HANDLE* stmtHandle, USHORT dialect, const XSQLDA* inSqlda, const XSQLDA* outSqlda)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2201,7 +2225,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 
 		statement->checkPrepared();
 
-		const unsigned flags = statement->statement->getFlags(&status);
+		const unsigned flags = statement->statement->getFlags(&statusWrapper);
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			return status[1];
@@ -2215,7 +2239,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 		{
 			statement->checkCursorClosed();
 
-			statement->openCursor(&status, traHandle,
+			statement->openCursor(&statusWrapper, traHandle,
 				inMessage.metadata, inMsgBuffer.begin(), DELAYED_OUT_FORMAT);
 			if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
@@ -2228,7 +2252,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 		{
 			SQLDAMetadataLauncher outMessage(outSqlda);
 
-			statement->execute(&status, traHandle,
+			statement->execute(&statusWrapper, traHandle,
 				inMessage.metadata, inMsgBuffer.begin(), outMessage.metadata, outMessage.getBuffer());
 			if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 				outMessage.scatterData();
@@ -2260,6 +2284,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 	SCHAR* outBlr, USHORT /*outMsgType*/, USHORT outMsgLength, SCHAR* outMsg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2276,18 +2301,18 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 		InternalMessageBuffer inMsgBuffer(inBlrLength, (const UCHAR*)inBlr, inMsgLength, (UCHAR*)inMsg);
 		InternalMessageBuffer outMsgBuffer(outBlrLength, (const UCHAR*)outBlr, outMsgLength, (UCHAR*)outMsg);
 
-		const unsigned flags = statement->statement->getFlags(&status);
+		const unsigned flags = statement->statement->getFlags(&statusWrapper);
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			if ((flags & IStatement::FLAG_HAS_CURSOR) && (outMsgLength == 0))
 			{
-				statement->openCursor(&status, traHandle,
+				statement->openCursor(&statusWrapper, traHandle,
 					inMsgBuffer.metadata, inMsgBuffer.buffer,
 					(outBlrLength ? outMsgBuffer.metadata : DELAYED_OUT_FORMAT));
 			}
 			else
 			{
-				statement->execute(&status, traHandle,
+				statement->execute(&statusWrapper, traHandle,
 					inMsgBuffer.metadata, inMsgBuffer.buffer, outMsgBuffer.metadata, outMsgBuffer.buffer);
 			}
 		}
@@ -2327,6 +2352,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 	const XSQLDA* inSqlda, const XSQLDA* outSqlda)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2334,7 +2360,8 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 			Arg::Gds(isc_command_end_err).raise();
 
 		FB_BOOLEAN stmtIsCrDb = FB_FALSE;
-		YAttachment* att = utlInterface.executeCreateDatabase(&status, stmtLength, sqlStmt, dialect, &stmtIsCrDb);
+		YAttachment* att = utlInterface.executeCreateDatabase(&statusWrapper, stmtLength,
+			sqlStmt, dialect, &stmtIsCrDb);
 
 		if (stmtIsCrDb)
 		{
@@ -2352,7 +2379,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 
 		inMessage.gatherData(inMessageBuffer);
 
-		attachment->execute(&status, traHandle, stmtLength, sqlStmt,
+		attachment->execute(&statusWrapper, traHandle, stmtLength, sqlStmt,
 			dialect, inMessage.metadata, inMessageBuffer.begin(),
 			outMessage.metadata, outMessage.getBuffer());
 
@@ -2398,9 +2425,11 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* userStatus, FB_API_HAN
 	USHORT outBlrLength, SCHAR* outBlr, USHORT outMsgType, USHORT outMsgLength, SCHAR* outMsg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	FB_BOOLEAN stmtIsCrDb = FB_FALSE;
-	YAttachment* att = utlInterface.executeCreateDatabase(&status, stmtLength, sqlStmt, dialect, &stmtIsCrDb);
+	YAttachment* att = utlInterface.executeCreateDatabase(&statusWrapper, stmtLength,
+		sqlStmt, dialect, &stmtIsCrDb);
 
 	if (stmtIsCrDb)
 	{
@@ -2423,6 +2452,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 	USHORT outBlrLength, SCHAR* outBlr, USHORT /*outMsgType*/, USHORT outMsgLength, SCHAR* outMsg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2433,7 +2463,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 		InternalMessageBuffer outMsgBuffer(outBlrLength, reinterpret_cast<unsigned char*>(outBlr),
 										   outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
 
-		attachment->execute(&status, traHandle, stmtLength, sqlStmt,
+		attachment->execute(&statusWrapper, traHandle, stmtLength, sqlStmt,
 			dialect, inMsgBuffer.metadata, inMsgBuffer.buffer,
 			outMsgBuffer.metadata, outMsgBuffer.buffer);
 	}
@@ -2450,6 +2480,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 	USHORT dialect, const XSQLDA* sqlda)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2460,7 +2491,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 
 		SQLDAMetadataLauncher outMessage(sqlda);
 
-		if (statement->fetch(&status, outMessage.metadata, outMessage.getBuffer()))
+		if (statement->fetch(&statusWrapper, outMessage.metadata, outMessage.getBuffer()))
 			outMessage.scatterData();
 		else if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			return 100;
@@ -2479,6 +2510,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 	USHORT blrLength, SCHAR* blr, USHORT /*msgType*/, USHORT msgLength, SCHAR* msg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2492,7 +2524,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 				Arg::Gds(isc_dsql_cursor_open_err)).raise();
 		}
 
-		if (!statement->fetch(&status, msgBuffer.metadata, reinterpret_cast<UCHAR*>(msg)) &&
+		if (!statement->fetch(&statusWrapper, msgBuffer.metadata, reinterpret_cast<UCHAR*>(msg)) &&
 			!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			return 100;
@@ -2512,6 +2544,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 	USHORT option)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2520,21 +2553,21 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 		if (option & DSQL_drop)
 		{
 			// Release everything
-			statement->closeCursor(&status, false);
-			statement->closeStatement(&status);
+			statement->closeCursor(&statusWrapper, false);
+			statement->closeStatement(&statusWrapper);
 			statement->release();
  			*stmtHandle = 0;
 		}
 		else if (option & DSQL_unprepare)
 		{
 			// Release everything but the request itself
-			statement->closeCursor(&status, false);
-			statement->closeStatement(&status);
+			statement->closeCursor(&statusWrapper, false);
+			statement->closeStatement(&statusWrapper);
 		}
 		else if (option & DSQL_close)
 		{
 			// Only close the cursor
-			statement->closeCursor(&status, true);
+			statement->closeCursor(&statusWrapper, true);
 		}
 	}
 	catch (const Exception& e)
@@ -2571,6 +2604,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 	XSQLDA* sqlda)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2579,7 +2613,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 
 		if (statement->statement)
 		{
-			statement->closeStatement(&status);
+			statement->closeStatement(&statusWrapper);
 			if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				return status[1];
 		}
@@ -2589,15 +2623,16 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 		if (traHandle && *traHandle)
 			transaction = translateHandle(transactions, traHandle);
 
-		statement->statement = statement->attachment->prepare(&status, transaction, stmtLength,
-			sqlStmt, dialect, IStatement::PREPARE_PREFETCH_METADATA);
+		statement->statement = statement->attachment->prepare(&statusWrapper, transaction,
+			stmtLength, sqlStmt, dialect, IStatement::PREPARE_PREFETCH_METADATA);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			StatusVector tempStatus(NULL);
+			CheckStatusWrapper tempCheckStatusWrapper(&tempStatus);
 
 			RefPtr<IMessageMetadata> parameters(REF_NO_INCR,
-				statement->statement->next->getOutputMetadata(&tempStatus));
+				statement->statement->next->getOutputMetadata(&tempCheckStatusWrapper));
 			tempStatus.check();
 
 			sqldaDescribeParameters(sqlda, parameters);
@@ -2618,6 +2653,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 	USHORT itemLength, const SCHAR* items, USHORT bufferLength, SCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2626,7 +2662,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 		if (statement->statement)
 		{
-			statement->closeStatement(&status);
+			statement->closeStatement(&statusWrapper);
 			if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				return status[1];
 		}
@@ -2639,13 +2675,15 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 		unsigned flags = StatementMetadata::buildInfoFlags(
 			itemLength, reinterpret_cast<const UCHAR*>(items));
 
-		statement->statement = statement->attachment->prepare(&status, transaction, stmtLength,
-			sqlStmt, dialect, flags);
+		statement->statement = statement->attachment->prepare(&statusWrapper, transaction,
+			stmtLength, sqlStmt, dialect, flags);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			StatusVector tempStatus(NULL);
-			statement->statement->getInfo(&tempStatus, itemLength, reinterpret_cast<const UCHAR*>(items),
+			CheckStatusWrapper tempCheckStatusWrapper(&tempStatus);
+			statement->statement->getInfo(&tempCheckStatusWrapper,
+				itemLength, reinterpret_cast<const UCHAR*>(items),
 				bufferLength, reinterpret_cast<UCHAR*>(buffer));
 			tempStatus.check();
 		}
@@ -2664,6 +2702,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 	const SCHAR* cursorName, USHORT /*cursorType*/)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -2677,7 +2716,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 
 		statement->cursorName = cursorName;
 		if (statement->statement)
-			statement->statement->setCursorName(&status, cursorName);
+			statement->statement->setCursorName(&statusWrapper, cursorName);
 	}
 	catch (const Exception& e)
 	{
@@ -2693,13 +2732,15 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	SSHORT itemLength, const SCHAR* items, SSHORT bufferLength, SCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<IscStatement> statement(translateHandle(statements, stmtHandle));
 		statement->checkPrepared(isc_info_unprepared_stmt);
 
-		statement->statement->getInfo(&status, USHORT(itemLength), reinterpret_cast<const UCHAR*>(items),
+		statement->statement->getInfo(&statusWrapper,
+			USHORT(itemLength), reinterpret_cast<const UCHAR*>(items),
 			USHORT(bufferLength), reinterpret_cast<UCHAR*>(buffer));
 	}
 	catch (const Exception& e)
@@ -2721,7 +2762,7 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 
 namespace
 {
-	class WaitCallback FB_FINAL : public RefCntIface<Api::IEventCallbackImpl<WaitCallback> >
+	class WaitCallback FB_FINAL : public RefCntIface<IEventCallbackImpl<WaitCallback, CheckStatusWrapper> >
 	{
 	public:
 		explicit WaitCallback(UCHAR* aBuffer)
@@ -2763,6 +2804,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	USHORT length, const UCHAR* eventsData, UCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 	YEvents* events = NULL;
 
 	RefPtr<WaitCallback> callback(new WaitCallback(buffer));
@@ -2773,7 +2815,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 		///nullCheck(id, isc_bad_events_handle);
 
-		events = attachment->queEvents(&status, callback, length, eventsData);
+		events = attachment->queEvents(&statusWrapper, callback, length, eventsData);
 
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
@@ -2788,7 +2830,8 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	if (events)
 	{
 		StatusVector temp(NULL);
-		events->cancel(&temp);
+		CheckStatusWrapper tempCheckStatusWrapper(&temp);
+		events->cancel(&tempCheckStatusWrapper);
 	}
 
 	return status[1];
@@ -2797,7 +2840,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 
 namespace
 {
-	class QueCallback FB_FINAL : public RefCntIface<Api::IEventCallbackImpl<QueCallback> >
+	class QueCallback FB_FINAL : public RefCntIface<IEventCallbackImpl<QueCallback, CheckStatusWrapper> >
 	{
 	public:
 		QueCallback(FPTR_EVENT_CALLBACK aAst, void* aArg)
@@ -2838,6 +2881,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 	USHORT length, const UCHAR* eventsData, FPTR_EVENT_CALLBACK ast, void* arg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 	YEvents* events = NULL;
 
 	try
@@ -2848,7 +2892,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 
 		RefPtr<QueCallback> callback(new QueCallback(ast, arg));
 
-		events = attachment->queEvents(&status, callback, length, eventsData);
+		events = attachment->queEvents(&statusWrapper, callback, length, eventsData);
 
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
@@ -2861,7 +2905,8 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 		{
 			*id = 0;
 			StatusVector temp(NULL);
-			events->cancel(&temp);
+			CheckStatusWrapper tempCheckStatusWrapper(&temp);
+			events->cancel(&tempCheckStatusWrapper);
 		}
 
 		e.stuffException(&status);
@@ -2876,12 +2921,13 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 	USHORT* returnLength, USHORT bufferLength, UCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YBlob> blob(translateHandle(blobs, blobHandle));
 		unsigned int length;
-		int cc = blob->getSegment(&status, bufferLength, buffer, &length);
+		int cc = blob->getSegment(&statusWrapper, bufferLength, buffer, &length);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*returnLength = length;
@@ -2912,13 +2958,14 @@ ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS* userStatus, FB_API_HANDLE* dbHa
 	USHORT paramLength, const UCHAR* param, SLONG sliceLength, UCHAR* slice, SLONG* returnLength)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		int length = attachment->getSlice(&status, transaction, arrayId, sdlLength, sdl,
+		int length = attachment->getSlice(&statusWrapper, transaction, arrayId, sdlLength, sdl,
 			paramLength, param, sliceLength, slice);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS) && returnLength)
@@ -2937,11 +2984,12 @@ ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS* userStatus, FB_API_HANDLE* dbHa
 ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* userStatus, FB_API_HANDLE* traHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
-		transaction->disconnect(&status);
+		transaction->disconnect(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*traHandle = 0;	// ASF: Previous versions wasn't cleaning the handle.
@@ -2985,11 +3033,12 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS* userStatus, FB_API_H
 	USHORT msgLength, const UCHAR* msg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
-		transaction->prepare(&status, msgLength, msg);
+		transaction->prepare(&statusWrapper, msgLength, msg);
 	}
 	catch (const Exception& e)
 	{
@@ -3005,11 +3054,12 @@ ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 	USHORT bufferLength, const UCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YBlob> blob(translateHandle(blobs, blobHandle));
-		blob->putSegment(&status, bufferLength, buffer);
+		blob->putSegment(&statusWrapper, bufferLength, buffer);
 	}
 	catch (const Exception& e)
 	{
@@ -3026,13 +3076,14 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS* userStatus, FB_API_HANDLE* dbHa
 	USHORT paramLength, const SLONG* param, SLONG sliceLength, UCHAR* slice)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		attachment->putSlice(&status, transaction, arrayId, sdlLength, sdl,
+		attachment->putSlice(&statusWrapper, transaction, arrayId, sdlLength, sdl,
 			paramLength, reinterpret_cast<const UCHAR*>(param), sliceLength, slice);
 	}
 	catch (const Exception& e)
@@ -3049,11 +3100,12 @@ ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS* userStatus, FB_API_HANDLE* reqHan
 	USHORT msgLength, SCHAR* msg, SSHORT level)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YRequest> request(translateHandle(requests, reqHandle));
-		request->receive(&status, level, msgType, msgLength, reinterpret_cast<UCHAR*>(msg));
+		request->receive(&statusWrapper, level, msgType, msgLength, reinterpret_cast<UCHAR*>(msg));
 	}
 	catch (const Exception& e)
 	{
@@ -3069,6 +3121,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* userStatus, FB_API_
 	FB_API_HANDLE* traHandle, SSHORT length, const UCHAR* id)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -3076,7 +3129,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* userStatus, FB_API_
 
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 
-		YTransaction* transaction = attachment->reconnectTransaction(&status, length, id);
+		YTransaction* transaction = attachment->reconnectTransaction(&statusWrapper, length, id);
 
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			status_exception::raise(status);
@@ -3096,11 +3149,12 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* userStatus, FB_API_
 ISC_STATUS API_ROUTINE isc_release_request(ISC_STATUS* userStatus, FB_API_HANDLE* reqHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YRequest> request(translateHandle(requests, reqHandle));
-		request->free(&status);
+		request->free(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*reqHandle = 0;
@@ -3119,12 +3173,13 @@ ISC_STATUS API_ROUTINE isc_request_info(ISC_STATUS* userStatus, FB_API_HANDLE* r
 	SSHORT level, SSHORT itemLength, const SCHAR* items, SSHORT bufferLength, SCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YRequest> request(translateHandle(requests, reqHandle));
 
-		request->getInfo(&status, level, itemLength, reinterpret_cast<const UCHAR*>(items),
+		request->getInfo(&statusWrapper, level, itemLength, reinterpret_cast<const UCHAR*>(items),
 			bufferLength, reinterpret_cast<UCHAR*>(buffer));
 	}
 	catch (const Exception& e)
@@ -3159,11 +3214,12 @@ SLONG API_ROUTINE isc_reset_fpe(USHORT /*fpe_status*/)
 ISC_STATUS API_ROUTINE isc_rollback_retaining(ISC_STATUS* userStatus, FB_API_HANDLE* traHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
-		transaction->rollbackRetaining(&status);
+		transaction->rollbackRetaining(&statusWrapper);
 	}
 	catch (const Exception& e)
 	{
@@ -3178,11 +3234,12 @@ ISC_STATUS API_ROUTINE isc_rollback_retaining(ISC_STATUS* userStatus, FB_API_HAN
 ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS* userStatus, FB_API_HANDLE* traHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
-		transaction->rollback(&status);
+		transaction->rollback(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*traHandle = 0;
@@ -3201,11 +3258,12 @@ ISC_STATUS API_ROUTINE isc_seek_blob(ISC_STATUS* userStatus, FB_API_HANDLE* blob
 	SSHORT mode, SLONG offset, SLONG* result)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YBlob> blob(translateHandle(blobs, blobHandle));
-		unsigned int pos = blob->seek(&status, mode, offset);
+		unsigned int pos = blob->seek(&statusWrapper, mode, offset);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS) && result)
 			*result = pos;
@@ -3224,11 +3282,13 @@ ISC_STATUS API_ROUTINE isc_send(ISC_STATUS* userStatus, FB_API_HANDLE* reqHandle
 	USHORT msgLength, const SCHAR* msg, SSHORT level)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YRequest> request(translateHandle(requests, reqHandle));
-		request->send(&status, level, msgType, msgLength, reinterpret_cast<const UCHAR*>(msg));
+		request->send(&statusWrapper, level, msgType,
+			msgLength, reinterpret_cast<const UCHAR*>(msg));
 	}
 	catch (const Exception& e)
 	{
@@ -3244,6 +3304,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 	const TEXT* serviceName, FB_API_HANDLE* publicHandle, USHORT spbLength, const SCHAR* spb)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 	YService* service = NULL;
 
 	try
@@ -3257,11 +3318,11 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 
 		RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
-		dispatcher->setDbCryptCallback(&status, TLS_GET(legacyCryptCallback));
+		dispatcher->setDbCryptCallback(&statusWrapper, TLS_GET(legacyCryptCallback));
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
 
-		service = dispatcher->attachServiceManager(&status, svcName.c_str(),
+		service = dispatcher->attachServiceManager(&statusWrapper, svcName.c_str(),
 			spbLength, reinterpret_cast<const UCHAR*>(spb));
 		if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return status[1];
@@ -3273,7 +3334,8 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 		if (service)
 		{
 			StatusVector temp(NULL);
-			service->detach(&temp);
+			CheckStatusWrapper tempCheckStatusWrapper(&temp);
+			service->detach(&tempCheckStatusWrapper);
 		}
 
 		e.stuffException(&status);
@@ -3287,11 +3349,12 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 ISC_STATUS API_ROUTINE isc_service_detach(ISC_STATUS* userStatus, FB_API_HANDLE* handle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YService> service(translateHandle(services, handle));
-		service->detach(&status);
+		service->detach(&statusWrapper);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			*handle = 0;
@@ -3314,12 +3377,13 @@ ISC_STATUS API_ROUTINE isc_service_query(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	const SCHAR* recvItems, USHORT bufferLength, SCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YService> service(translateHandle(services, handle));
 
-		service->query(&status, sendItemLength, reinterpret_cast<const unsigned char*>(sendItems),
+		service->query(&statusWrapper, sendItemLength, reinterpret_cast<const unsigned char*>(sendItems),
 			recvItemLength, reinterpret_cast<const unsigned char*>(recvItems),
 			bufferLength, reinterpret_cast<unsigned char*>(buffer));
 	}
@@ -3340,11 +3404,12 @@ ISC_STATUS API_ROUTINE isc_service_start(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	ULONG* /*reserved*/, USHORT spbLength, const SCHAR* spb)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YService> service(translateHandle(services, handle));
-		service->start(&status, spbLength, reinterpret_cast<const unsigned char*>(spb));
+		service->start(&statusWrapper, spbLength, reinterpret_cast<const unsigned char*>(spb));
 	}
 	catch (const Exception& e)
 	{
@@ -3360,13 +3425,14 @@ ISC_STATUS API_ROUTINE isc_start_and_send(ISC_STATUS* userStatus, FB_API_HANDLE*
 	FB_API_HANDLE* traHandle, USHORT msgType, USHORT msgLength, const SCHAR* msg, SSHORT level)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YRequest> request(translateHandle(requests, reqHandle));
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		request->startAndSend(&status, transaction, level, msgType,
+		request->startAndSend(&statusWrapper, transaction, level, msgType,
 			msgLength, reinterpret_cast<const UCHAR*>(msg));
 	}
 	catch (const Exception& e)
@@ -3383,13 +3449,14 @@ ISC_STATUS API_ROUTINE isc_start_request(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	FB_API_HANDLE* traHandle, SSHORT level)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YRequest> request(translateHandle(requests, reqHandle));
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		request->start(&status, transaction, level);
+		request->start(&statusWrapper, transaction, level);
 	}
 	catch (const Exception& e)
 	{
@@ -3405,6 +3472,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 	SSHORT count, void* vec)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 	TEB* vector = (TEB*) vec;
 	YTransaction* multiTrans = NULL;
 
@@ -3419,7 +3487,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 		{
 			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
 
-			YTransaction* transaction = attachment->startTransaction(&status,
+			YTransaction* transaction = attachment->startTransaction(&statusWrapper,
 				vector->teb_tpb_length, vector->teb_tpb);
 
 			if (transaction)
@@ -3428,29 +3496,30 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 			return status[1];
 		}
 
-		IDtcStart* ds = MasterImplementation::dtc->startBuilder(&status);
+		IDtcStart* ds = MasterImplementation::dtc->startBuilder(&statusWrapper);
 		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 			return status[1];
 
 		for (SSHORT i = 0; i < count; ++i, ++vector)
 		{
 			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
-			ds->setWithParam(&status, attachment, vector->teb_tpb_length,
+			ds->setWithParam(&statusWrapper, attachment, vector->teb_tpb_length,
 				reinterpret_cast<const unsigned char*>(vector->teb_tpb));
 			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 				return status[1];
 		}
 
-		multiTrans = MasterImplementation::dtc->start(&status, ds);
+		multiTrans = MasterImplementation::dtc->start(&statusWrapper, ds);
 		if (multiTrans)
 			*traHandle = multiTrans->getHandle();
 	}
 	catch (const Exception& e)
 	{
 		StatusVector temp(NULL);
+		CheckStatusWrapper tempCheckStatusWrapper(&status);
 
 		if (multiTrans)
-			multiTrans->rollback(&temp);
+			multiTrans->rollback(&tempCheckStatusWrapper);
 
 		e.stuffException(&status);
 	}
@@ -3499,13 +3568,14 @@ ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS* userStatus, FB_API_HANDL
 	USHORT outMsgLength, SCHAR* outMsg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		attachment->transactRequest(&status, transaction,
+		attachment->transactRequest(&statusWrapper, transaction,
 			blrLength, reinterpret_cast<unsigned char*>(blr),
 			inMsgLength, reinterpret_cast<unsigned char*>(inMsg),
 			outMsgLength, reinterpret_cast<unsigned char*>(outMsg));
@@ -3524,6 +3594,7 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS* userStatus, FB_API_H
 	TransactionCleanupRoutine* routine, void* arg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -3532,7 +3603,7 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS* userStatus, FB_API_H
 		AutoPtr<CleanupCallbackImpl<YTransaction, TransactionCleanupRoutine> > callback(
 			new CleanupCallbackImpl<YTransaction, TransactionCleanupRoutine>(transaction, routine, arg));
 
-		transaction->addCleanupHandler(&status, callback);
+		transaction->addCleanupHandler(&statusWrapper, callback);
 
 		if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			callback.release();
@@ -3551,12 +3622,13 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS* userStatus, FB_API_HANDL
 	SSHORT itemLength, const SCHAR* items, SSHORT bufferLength, UCHAR* buffer)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
-		transaction->getInfo(&status, itemLength, reinterpret_cast<const UCHAR*>(items),
+		transaction->getInfo(&statusWrapper, itemLength, reinterpret_cast<const UCHAR*>(items),
 			bufferLength, reinterpret_cast<UCHAR*>(buffer));
 	}
 	catch (const Exception& e)
@@ -3573,11 +3645,12 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, FB_API_HANDLE*
 	SSHORT level)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YRequest> request(translateHandle(requests, reqHandle));
-		request->unwind(&status, level);
+		request->unwind(&statusWrapper, level);
 	}
 	catch (const Exception& e)
 	{
@@ -3592,9 +3665,11 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, FB_API_HANDLE*
 int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 {
 	StatusVector status(NULL);
+	CheckStatusWrapper statusWrapper(&status);
+
 	RefPtr<Dispatcher> dispatcher(new Dispatcher);
 
-	dispatcher->shutdown(&status, timeout, reason);
+	dispatcher->shutdown(&statusWrapper, timeout, reason);
 	return (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS) ? FB_FAILURE : FB_SUCCESS;
 }
 
@@ -3622,11 +3697,12 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* userStatus, FB_SHUTDOWN_
 ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
-		attachment->ping(&status);
+		attachment->ping(&statusWrapper);
 	}
 	catch (const Exception& e)
 	{
@@ -3637,6 +3713,7 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle)
 }
 
 
+//// FIXME: this function is broken!
 // Get the legacy handle of a database.
 ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle, void* obj)
 {
@@ -3656,6 +3733,7 @@ ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HAN
 }
 
 
+//// FIXME: this function is broken!
 // Get the legacy handle of a transaction.
 ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle, void* obj)
 {
@@ -3733,7 +3811,7 @@ void YEvents::destroy(unsigned dstrFlags)
 	destroy2(dstrFlags);
 }
 
-void YEvents::cancel(IStatus* status)
+void YEvents::cancel(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -3784,7 +3862,7 @@ void YRequest::destroy(unsigned dstrFlags)
 	destroy2(dstrFlags);
 }
 
-void YRequest::receive(IStatus* status, int level, unsigned int msgType,
+void YRequest::receive(CheckStatusWrapper* status, int level, unsigned int msgType,
 	unsigned int length, unsigned char* message)
 {
 	try
@@ -3798,7 +3876,7 @@ void YRequest::receive(IStatus* status, int level, unsigned int msgType,
 	}
 }
 
-void YRequest::send(IStatus* status, int level, unsigned int msgType,
+void YRequest::send(CheckStatusWrapper* status, int level, unsigned int msgType,
 	unsigned int length, const unsigned char* message)
 {
 	try
@@ -3812,7 +3890,7 @@ void YRequest::send(IStatus* status, int level, unsigned int msgType,
 	}
 }
 
-void YRequest::getInfo(IStatus* status, int level, unsigned int itemsLength,
+void YRequest::getInfo(CheckStatusWrapper* status, int level, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -3826,7 +3904,7 @@ void YRequest::getInfo(IStatus* status, int level, unsigned int itemsLength,
 	}
 }
 
-void YRequest::start(IStatus* status, ITransaction* transaction, int level)
+void YRequest::start(CheckStatusWrapper* status, ITransaction* transaction, int level)
 {
 	try
 	{
@@ -3842,7 +3920,7 @@ void YRequest::start(IStatus* status, ITransaction* transaction, int level)
 	}
 }
 
-void YRequest::startAndSend(IStatus* status, ITransaction* transaction, int level,
+void YRequest::startAndSend(CheckStatusWrapper* status, ITransaction* transaction, int level,
 	unsigned int msgType, unsigned int length, const unsigned char* message)
 {
 	try
@@ -3859,7 +3937,7 @@ void YRequest::startAndSend(IStatus* status, ITransaction* transaction, int leve
 	}
 }
 
-void YRequest::unwind(IStatus* status, int level)
+void YRequest::unwind(CheckStatusWrapper* status, int level)
 {
 	try
 	{
@@ -3872,7 +3950,7 @@ void YRequest::unwind(IStatus* status, int level)
 	}
 }
 
-void YRequest::free(IStatus* status)
+void YRequest::free(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -3919,7 +3997,7 @@ void YBlob::destroy(unsigned dstrFlags)
 	destroy2(dstrFlags);
 }
 
-void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
+void YBlob::getInfo(CheckStatusWrapper* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -3933,7 +4011,7 @@ void YBlob::getInfo(IStatus* status, unsigned int itemsLength,
 	}
 }
 
-int YBlob::getSegment(IStatus* status, unsigned int bufferLength, void* buffer, unsigned int* segmentLength)
+int YBlob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void* buffer, unsigned int* segmentLength)
 {
 	try
 	{
@@ -3948,7 +4026,7 @@ int YBlob::getSegment(IStatus* status, unsigned int bufferLength, void* buffer, 
 	return 0;
 }
 
-void YBlob::putSegment(IStatus* status, unsigned int length, const void* buffer)
+void YBlob::putSegment(CheckStatusWrapper* status, unsigned int length, const void* buffer)
 {
 	try
 	{
@@ -3961,7 +4039,7 @@ void YBlob::putSegment(IStatus* status, unsigned int length, const void* buffer)
 	}
 }
 
-void YBlob::cancel(IStatus* status)
+void YBlob::cancel(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -3978,7 +4056,7 @@ void YBlob::cancel(IStatus* status)
 	}
 }
 
-void YBlob::close(IStatus* status)
+void YBlob::close(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -3995,7 +4073,7 @@ void YBlob::close(IStatus* status)
 	}
 }
 
-int YBlob::seek(IStatus* status, int mode, int offset)
+int YBlob::seek(CheckStatusWrapper* status, int mode, int offset)
 {
 	try
 	{
@@ -4039,7 +4117,7 @@ void YStatement::destroy(unsigned dstrFlags)
 	destroy2(dstrFlags);
 }
 
-void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
+void YStatement::getInfo(CheckStatusWrapper* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -4054,7 +4132,7 @@ void YStatement::getInfo(IStatus* status, unsigned int itemsLength,
 	}
 }
 
-unsigned YStatement::getType(IStatus* status)
+unsigned YStatement::getType(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4070,7 +4148,7 @@ unsigned YStatement::getType(IStatus* status)
 	return 0;
 }
 
-unsigned YStatement::getFlags(IStatus* status)
+unsigned YStatement::getFlags(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4086,7 +4164,7 @@ unsigned YStatement::getFlags(IStatus* status)
 	return 0;
 }
 
-const char* YStatement::getPlan(IStatus* status, FB_BOOLEAN detailed)
+const char* YStatement::getPlan(CheckStatusWrapper* status, FB_BOOLEAN detailed)
 {
 	try
 	{
@@ -4123,13 +4201,17 @@ IMessageMetadata* YMetadata::get(IStatement* next, YStatement* statement)
 IMessageMetadata* YStatement::getMetadata(bool in, IStatement* next)
 {
 	LocalStatus status;
-	IMessageMetadata* rc = in ? next->getInputMetadata(&status) : next->getOutputMetadata(&status);
+	CheckStatusWrapper statusWrapper(&status);
+	IMessageMetadata* rc = in ?
+		next->getInputMetadata(&statusWrapper) : next->getOutputMetadata(&statusWrapper);
+
 	if (status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		status_exception::raise(&status);
+
 	return rc;
 }
 
-IMessageMetadata* YStatement::getInputMetadata(IStatus* status)
+IMessageMetadata* YStatement::getInputMetadata(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4145,7 +4227,7 @@ IMessageMetadata* YStatement::getInputMetadata(IStatus* status)
 	return NULL;
 }
 
-IMessageMetadata* YStatement::getOutputMetadata(IStatus* status)
+IMessageMetadata* YStatement::getOutputMetadata(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4161,7 +4243,7 @@ IMessageMetadata* YStatement::getOutputMetadata(IStatus* status)
 	return NULL;
 }
 
-ISC_UINT64 YStatement::getAffectedRecords(IStatus* status)
+ISC_UINT64 YStatement::getAffectedRecords(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4177,7 +4259,7 @@ ISC_UINT64 YStatement::getAffectedRecords(IStatus* status)
 	return 0;
 }
 
-ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
+ITransaction* YStatement::execute(CheckStatusWrapper* status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
 	try
@@ -4217,7 +4299,7 @@ ITransaction* YStatement::execute(IStatus* status, ITransaction* transaction,
 	return transaction;
 }
 
-IResultSet* YStatement::openCursor(Firebird::IStatus* status, ITransaction* transaction,
+IResultSet* YStatement::openCursor(Firebird::CheckStatusWrapper* status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
 {
 	try
@@ -4247,7 +4329,7 @@ IResultSet* YStatement::openCursor(Firebird::IStatus* status, ITransaction* tran
 	return NULL;
 }
 
-void YStatement::free(IStatus* status)
+void YStatement::free(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4314,7 +4396,7 @@ void YResultSet::destroy(unsigned dstrFlags)
 	destroy2(dstrFlags);
 }
 
-void YStatement::setCursorName(IStatus* status, const char* name)
+void YStatement::setCursorName(CheckStatusWrapper* status, const char* name)
 {
 	try
 	{
@@ -4328,7 +4410,7 @@ void YStatement::setCursorName(IStatus* status, const char* name)
 	}
 }
 
-void YResultSet::setDelayedOutputFormat(IStatus* status, IMessageMetadata* format)
+void YResultSet::setDelayedOutputFormat(CheckStatusWrapper* status, IMessageMetadata* format)
 {
 	try
 	{
@@ -4342,7 +4424,7 @@ void YResultSet::setDelayedOutputFormat(IStatus* status, IMessageMetadata* forma
 	}
 }
 
-int YResultSet::fetchNext(IStatus* status, void* buffer)
+int YResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 {
 	try
 	{
@@ -4358,7 +4440,7 @@ int YResultSet::fetchNext(IStatus* status, void* buffer)
 	return FB_FALSE;
 }
 
-int YResultSet::fetchPrior(IStatus* status, void* buffer)
+int YResultSet::fetchPrior(CheckStatusWrapper* status, void* buffer)
 {
 	try
 	{
@@ -4374,7 +4456,7 @@ int YResultSet::fetchPrior(IStatus* status, void* buffer)
 	return FB_FALSE;
 }
 
-int YResultSet::fetchFirst(IStatus* status, void* buffer)
+int YResultSet::fetchFirst(CheckStatusWrapper* status, void* buffer)
 {
 	try
 	{
@@ -4390,7 +4472,7 @@ int YResultSet::fetchFirst(IStatus* status, void* buffer)
 	return FB_FALSE;
 }
 
-int YResultSet::fetchLast(IStatus* status, void* buffer)
+int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
 {
 	try
 	{
@@ -4406,7 +4488,7 @@ int YResultSet::fetchLast(IStatus* status, void* buffer)
 	return FB_FALSE;
 }
 
-int YResultSet::fetchAbsolute(IStatus* status, unsigned int position, void* buffer)
+int YResultSet::fetchAbsolute(CheckStatusWrapper* status, unsigned int position, void* buffer)
 {
 	try
 	{
@@ -4422,7 +4504,7 @@ int YResultSet::fetchAbsolute(IStatus* status, unsigned int position, void* buff
 	return FB_FALSE;
 }
 
-int YResultSet::fetchRelative(IStatus* status, int offset, void* buffer)
+int YResultSet::fetchRelative(CheckStatusWrapper* status, int offset, void* buffer)
 {
 	try
 	{
@@ -4438,7 +4520,7 @@ int YResultSet::fetchRelative(IStatus* status, int offset, void* buffer)
 	return FB_FALSE;
 }
 
-FB_BOOLEAN YResultSet::isEof(IStatus* status)
+FB_BOOLEAN YResultSet::isEof(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4454,7 +4536,7 @@ FB_BOOLEAN YResultSet::isEof(IStatus* status)
 	return FB_FALSE;
 }
 
-FB_BOOLEAN YResultSet::isBof(IStatus* status)
+FB_BOOLEAN YResultSet::isBof(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4470,7 +4552,7 @@ FB_BOOLEAN YResultSet::isBof(IStatus* status)
 	return FB_FALSE;
 }
 
-IMessageMetadata* YResultSet::getMetadata(IStatus* status)
+IMessageMetadata* YResultSet::getMetadata(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4486,7 +4568,7 @@ IMessageMetadata* YResultSet::getMetadata(IStatus* status)
 	return NULL;
 }
 
-void YResultSet::close(IStatus* status)
+void YResultSet::close(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4547,7 +4629,7 @@ void YTransaction::destroy(unsigned dstrFlags)
 	destroy2(dstrFlags);
 }
 
-void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
+void YTransaction::getInfo(CheckStatusWrapper* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	Array<unsigned char> newItemsBuffer;
@@ -4567,7 +4649,7 @@ void YTransaction::getInfo(IStatus* status, unsigned int itemsLength,
 	}
 }
 
-void YTransaction::prepare(IStatus* status, unsigned int msgLength, const unsigned char* message)
+void YTransaction::prepare(CheckStatusWrapper* status, unsigned int msgLength, const unsigned char* message)
 {
 	try
 	{
@@ -4581,7 +4663,7 @@ void YTransaction::prepare(IStatus* status, unsigned int msgLength, const unsign
 	}
 }
 
-void YTransaction::commit(IStatus* status)
+void YTransaction::commit(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4598,7 +4680,7 @@ void YTransaction::commit(IStatus* status)
 	}
 }
 
-void YTransaction::commitRetaining(IStatus* status)
+void YTransaction::commitRetaining(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4612,7 +4694,7 @@ void YTransaction::commitRetaining(IStatus* status)
 	}
 }
 
-void YTransaction::rollback(IStatus* status)
+void YTransaction::rollback(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4631,7 +4713,7 @@ void YTransaction::rollback(IStatus* status)
 	}
 }
 
-void YTransaction::rollbackRetaining(IStatus* status)
+void YTransaction::rollbackRetaining(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4645,7 +4727,7 @@ void YTransaction::rollbackRetaining(IStatus* status)
 	}
 }
 
-void YTransaction::disconnect(IStatus* status)
+void YTransaction::disconnect(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4674,7 +4756,7 @@ void YTransaction::disconnect(IStatus* status)
 	}
 }
 
-void YTransaction::addCleanupHandler(IStatus* status, CleanupCallback* callback)
+void YTransaction::addCleanupHandler(CheckStatusWrapper* status, CleanupCallback* callback)
 {
 	try
 	{
@@ -4694,7 +4776,7 @@ void YTransaction::selfCheck()
 		Arg::Gds(isc_bad_trans_handle).raise();
 }
 
-ITransaction* YTransaction::join(IStatus* status, ITransaction* transaction)
+ITransaction* YTransaction::join(CheckStatusWrapper* status, ITransaction* transaction)
 {
 	try
 	{
@@ -4710,7 +4792,7 @@ ITransaction* YTransaction::join(IStatus* status, ITransaction* transaction)
 	return NULL;
 }
 
-ITransaction* YTransaction::validate(IStatus* status, IAttachment* testAtt)
+ITransaction* YTransaction::validate(CheckStatusWrapper* status, IAttachment* testAtt)
 {
 	try
 	{
@@ -4730,7 +4812,7 @@ ITransaction* YTransaction::validate(IStatus* status, IAttachment* testAtt)
 	return NULL;
 }
 
-YTransaction* YTransaction::enterDtc(IStatus* status)
+YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -4821,7 +4903,7 @@ void YAttachment::shutdown()
 	}
 }
 
-void YAttachment::getInfo(IStatus* status, unsigned int itemsLength,
+void YAttachment::getInfo(CheckStatusWrapper* status, unsigned int itemsLength,
 	const unsigned char* items, unsigned int bufferLength, unsigned char* buffer)
 {
 	try
@@ -4835,7 +4917,7 @@ void YAttachment::getInfo(IStatus* status, unsigned int itemsLength,
 	}
 }
 
-YStatement* YAttachment::prepare(IStatus* status, ITransaction* transaction,
+YStatement* YAttachment::prepare(CheckStatusWrapper* status, ITransaction* transaction,
 	unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags)
 {
 	try
@@ -4863,7 +4945,7 @@ YStatement* YAttachment::prepare(IStatus* status, ITransaction* transaction,
 	return NULL;
 }
 
-YTransaction* YAttachment::startTransaction(IStatus* status, unsigned int tpbLength,
+YTransaction* YAttachment::startTransaction(CheckStatusWrapper* status, unsigned int tpbLength,
 	const unsigned char* tpb)
 {
 	try
@@ -4882,7 +4964,7 @@ YTransaction* YAttachment::startTransaction(IStatus* status, unsigned int tpbLen
 	return NULL;
 }
 
-YTransaction* YAttachment::reconnectTransaction(IStatus* status, unsigned int length,
+YTransaction* YAttachment::reconnectTransaction(CheckStatusWrapper* status, unsigned int length,
 	const unsigned char* id)
 {
 	try
@@ -4902,7 +4984,7 @@ YTransaction* YAttachment::reconnectTransaction(IStatus* status, unsigned int le
 	return NULL;
 }
 
-YRequest* YAttachment::compileRequest(IStatus* status, unsigned int blrLength,
+YRequest* YAttachment::compileRequest(CheckStatusWrapper* status, unsigned int blrLength,
 	const unsigned char* blr)
 {
 	try
@@ -4920,7 +5002,7 @@ YRequest* YAttachment::compileRequest(IStatus* status, unsigned int blrLength,
 	return NULL;
 }
 
-void YAttachment::transactRequest(IStatus* status, ITransaction* transaction,
+void YAttachment::transactRequest(CheckStatusWrapper* status, ITransaction* transaction,
 	unsigned int blrLength, const unsigned char* blr,
 	unsigned int inMsgLength, const unsigned char* inMsg,
 	unsigned int outMsgLength, unsigned char* outMsg)
@@ -4941,7 +5023,7 @@ void YAttachment::transactRequest(IStatus* status, ITransaction* transaction,
 	}
 }
 
-YBlob* YAttachment::createBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
+YBlob* YAttachment::createBlob(CheckStatusWrapper* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int bpbLength, const unsigned char* bpb)
 {
 	try
@@ -4962,7 +5044,7 @@ YBlob* YAttachment::createBlob(IStatus* status, ITransaction* transaction, ISC_Q
 	return NULL;
 }
 
-YBlob* YAttachment::openBlob(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
+YBlob* YAttachment::openBlob(CheckStatusWrapper* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int bpbLength, const unsigned char* bpb)
 {
 	try
@@ -4983,7 +5065,7 @@ YBlob* YAttachment::openBlob(IStatus* status, ITransaction* transaction, ISC_QUA
 	return NULL;
 }
 
-int YAttachment::getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
+int YAttachment::getSlice(CheckStatusWrapper* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int sdlLength, const unsigned char* sdl, unsigned int paramLength,
 	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
@@ -5005,7 +5087,7 @@ int YAttachment::getSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* 
 	return 0;
 }
 
-void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD* id,
+void YAttachment::putSlice(CheckStatusWrapper* status, ITransaction* transaction, ISC_QUAD* id,
 	unsigned int sdlLength, const unsigned char* sdl, unsigned int paramLength,
 	const unsigned char* param, int sliceLength, unsigned char* slice)
 {
@@ -5024,7 +5106,7 @@ void YAttachment::putSlice(IStatus* status, ITransaction* transaction, ISC_QUAD*
 	}
 }
 
-void YAttachment::executeDyn(IStatus* status, ITransaction* transaction, unsigned int length,
+void YAttachment::executeDyn(CheckStatusWrapper* status, ITransaction* transaction, unsigned int length,
 	const unsigned char* dyn)
 {
 	try
@@ -5042,7 +5124,7 @@ void YAttachment::executeDyn(IStatus* status, ITransaction* transaction, unsigne
 	}
 }
 
-IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
+IResultSet* YAttachment::openCursor(CheckStatusWrapper* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
 	const char* cursorName)
@@ -5078,7 +5160,7 @@ IResultSet* YAttachment::openCursor(IStatus* status, ITransaction* transaction,
 	return NULL;
 }
 
-ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
+ITransaction* YAttachment::execute(CheckStatusWrapper* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
@@ -5120,7 +5202,7 @@ ITransaction* YAttachment::execute(IStatus* status, ITransaction* transaction,
 }
 
 
-void YAttachment::execute(Firebird::IStatus* status, FB_API_HANDLE* traHandle,
+void YAttachment::execute(Firebird::CheckStatusWrapper* status, FB_API_HANDLE* traHandle,
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 		Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer)
@@ -5149,7 +5231,7 @@ void YAttachment::execute(Firebird::IStatus* status, FB_API_HANDLE* traHandle,
 	}
 }
 
-YEvents* YAttachment::queEvents(IStatus* status, IEventCallback* callback,
+YEvents* YAttachment::queEvents(CheckStatusWrapper* status, IEventCallback* callback,
 	unsigned int length, const unsigned char* eventsData)
 {
 	try
@@ -5167,7 +5249,7 @@ YEvents* YAttachment::queEvents(IStatus* status, IEventCallback* callback,
 	return NULL;
 }
 
-void YAttachment::cancelOperation(IStatus* status, int option)
+void YAttachment::cancelOperation(CheckStatusWrapper* status, int option)
 {
 	try
 	{
@@ -5187,7 +5269,7 @@ void YAttachment::cancelOperation(IStatus* status, int option)
 	}
 }
 
-void YAttachment::ping(IStatus* status)
+void YAttachment::ping(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -5201,7 +5283,8 @@ void YAttachment::ping(IStatus* status)
 				savedStatus.save(status);
 
 			StatusVector temp(NULL);
-			entry.next()->detach(&temp);
+			CheckStatusWrapper tempCheckStatusWrapper(&temp);
+			entry.next()->detach(&tempCheckStatusWrapper);
 			next = NULL;
 
 			status_exception::raise(savedStatus.value());
@@ -5213,7 +5296,7 @@ void YAttachment::ping(IStatus* status)
 	}
 }
 
-void YAttachment::detach(IStatus* status)
+void YAttachment::detach(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -5231,7 +5314,7 @@ void YAttachment::detach(IStatus* status)
 	}
 }
 
-void YAttachment::dropDatabase(IStatus* status)
+void YAttachment::dropDatabase(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -5248,7 +5331,7 @@ void YAttachment::dropDatabase(IStatus* status)
 	}
 }
 
-void YAttachment::addCleanupHandler(IStatus* status, CleanupCallback* callback)
+void YAttachment::addCleanupHandler(CheckStatusWrapper* status, CleanupCallback* callback)
 {
 	try
 	{
@@ -5263,7 +5346,7 @@ void YAttachment::addCleanupHandler(IStatus* status, CleanupCallback* callback)
 }
 
 
-YTransaction* YAttachment::getTransaction(IStatus* status, ITransaction* tra)
+YTransaction* YAttachment::getTransaction(CheckStatusWrapper* status, ITransaction* tra)
 {
 	if (!tra)
 		Arg::Gds(isc_bad_trans_handle).raise();
@@ -5283,7 +5366,7 @@ YTransaction* YAttachment::getTransaction(IStatus* status, ITransaction* tra)
 }
 
 
-void YAttachment::getNextTransaction(IStatus* status, ITransaction* tra, NextTransaction& next)
+void YAttachment::getNextTransaction(CheckStatusWrapper* status, ITransaction* tra, NextTransaction& next)
 {
 	next = getTransaction(status, tra)->next;
 	if (!next.hasData())
@@ -5334,7 +5417,7 @@ void YService::shutdown()
 	}
 }
 
-void YService::detach(IStatus* status)
+void YService::detach(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -5351,7 +5434,7 @@ void YService::detach(IStatus* status)
 	}
 }
 
-void YService::query(IStatus* status, unsigned int sendLength, const unsigned char* sendItems,
+void YService::query(CheckStatusWrapper* status, unsigned int sendLength, const unsigned char* sendItems,
 	unsigned int receiveLength, const unsigned char* receiveItems,
 	unsigned int bufferLength, unsigned char* buffer)
 {
@@ -5367,7 +5450,7 @@ void YService::query(IStatus* status, unsigned int sendLength, const unsigned ch
 	}
 }
 
-void YService::start(IStatus* status, unsigned int spbLength, const unsigned char* spbItems)
+void YService::start(CheckStatusWrapper* status, unsigned int spbLength, const unsigned char* spbItems)
 {
 	try
 	{
@@ -5391,20 +5474,20 @@ void YService::start(IStatus* status, unsigned int spbLength, const unsigned cha
 
 
 // Attach a database through the first subsystem that recognizes it.
-YAttachment* Dispatcher::attachDatabase(IStatus* status, const char* filename,
+YAttachment* Dispatcher::attachDatabase(CheckStatusWrapper* status, const char* filename,
 	unsigned int dpbLength, const unsigned char* dpb)
 {
 	return attachOrCreateDatabase(status, false, filename, dpbLength, dpb);
 }
 
 // Create new database using the first subsystem that can do it.
-YAttachment* Dispatcher::createDatabase(IStatus* status, const char* filename,
+YAttachment* Dispatcher::createDatabase(CheckStatusWrapper* status, const char* filename,
 	unsigned int dpbLength, const unsigned char* dpb)
 {
 	return attachOrCreateDatabase(status, true, filename, dpbLength, dpb);
 }
 
-YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool createFlag,
+YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* status, bool createFlag,
 	const char* filename, unsigned int dpbLength, const unsigned char* dpb)
 {
 	RefDeb(DEB_AR_JATT, "Dispatcher::attachOrCreateDatabase");
@@ -5459,7 +5542,8 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 			newDpb.insertPath(isc_dpb_org_filename, orgFilename);
 
 		StatusVector temp(NULL);
-		IStatus* currentStatus = status;
+		CheckStatusWrapper tempCheckStatusWrapper(&temp);
+		CheckStatusWrapper* currentStatus = status;
 
 		for (GetPlugins<IProvider> providerIterator(IPluginManager::Provider, config);
 			 providerIterator.hasData();
@@ -5501,7 +5585,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 			}
 
 			if (currentStatus->getErrors()[1] != isc_unavailable)
-				currentStatus = &temp;
+				currentStatus = &tempCheckStatusWrapper;
 
 			currentStatus->init();
 		}
@@ -5518,7 +5602,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::IStatus* status, bool 
 }
 
 // Attach a service through the first subsystem that recognizes it.
-YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceName,
+YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const char* serviceName,
 	unsigned int spbLength, const unsigned char* spb)
 {
 	IService* service = NULL;
@@ -5586,7 +5670,8 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 		if (service)
 		{
 			StatusVector temp(NULL);
-			service->detach(&temp);
+			CheckStatusWrapper tempCheckStatusWrapper(&temp);
+			service->detach(&tempCheckStatusWrapper);
 		}
 
 		e.stuffException(status);
@@ -5595,7 +5680,7 @@ YService* Dispatcher::attachServiceManager(IStatus* status, const char* serviceN
 	return NULL;
 }
 
-void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int reason)
+void Dispatcher::shutdown(CheckStatusWrapper* userStatus, unsigned int timeout, const int reason)
 {
 	try
 	{
@@ -5608,6 +5693,8 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 			return;
 
 		StatusVector status(NULL);
+		CheckStatusWrapper statusWrapper(&status);
+
 
 #ifdef DEV_BUILD
 		// Make timeout huge in debug build: hard to debug something during 5-10 sec
@@ -5649,7 +5736,8 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 			IProvider* provider = providerIterator.plugin();
 
 			StatusVector status2(NULL);
-			provider->shutdown(&status2, timeout, reason);
+			CheckStatusWrapper statusWrapper2(&status2);
+			provider->shutdown(&statusWrapper2, timeout, reason);
 
 			if (status2[1])
 				userStatus->setErrors(error.value());
@@ -5750,7 +5838,7 @@ void Dispatcher::shutdown(IStatus* userStatus, unsigned int timeout, const int r
 	}
 }
 
-void Dispatcher::setDbCryptCallback(IStatus* status, ICryptKeyCallback* callback)
+void Dispatcher::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
 {
 	status->init();
 	cryptCallback = callback;

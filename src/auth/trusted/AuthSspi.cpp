@@ -342,7 +342,7 @@ WinSspiClient::WinSspiClient(Firebird::IPluginConfig*)
 	: sspiData(getPool())
 { }
 
-int WinSspiServer::authenticate(Firebird::IStatus* status,
+int WinSspiServer::authenticate(Firebird::CheckStatusWrapper* status,
 								IServerBlock* sBlock,
 								IWriter* writerInterface)
 {
@@ -398,7 +398,7 @@ int WinSspiServer::release()
 	return 1;
 }
 
-int WinSspiClient::authenticate(Firebird::IStatus* status,
+int WinSspiClient::authenticate(Firebird::CheckStatusWrapper* status,
 								IClientBlock* cBlock)
 {
 	try

@@ -26,159 +26,223 @@
  *
  */
 
-#ifndef FB_INCLUDE_INTERFACE
-#define FB_INCLUDE_INTERFACE
+#ifndef FB_INTERFACE_H
+#define FB_INTERFACE_H
 
 #include "ibase.h"
+#include <assert.h>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define CLOOP_CARG __cdecl
 #endif
 
+namespace Firebird
+{
+	struct FbCryptKey
+	{
+		const char* type;			// If NULL type is auth plugin name
+		const void* encryptKey;
+		const void* decryptKey;		// May be NULL for symmetric keys
+		unsigned encryptLength;
+		unsigned decryptLength;		// Ignored when decryptKey is NULL
+	};
+}
+
 struct dsc;
 struct PerformanceInfo;
 
-namespace Firebird
-{
-
-struct FbCryptKey;
-
 #include "IdlFbInterfaces.h"
 
-#define FB_USE_API(name)	\
-	typedef name::IVersioned IVersioned;	\
-	typedef name::IReferenceCounted IReferenceCounted;	\
-	typedef name::IDisposable IDisposable;	\
-	typedef name::IStatus IStatus;	\
-	typedef name::IMaster IMaster;	\
-	typedef name::IPluginBase IPluginBase;	\
-	typedef name::IPluginSet IPluginSet;	\
-	typedef name::IConfigEntry IConfigEntry;	\
-	typedef name::IConfig IConfig;	\
-	typedef name::IFirebirdConf IFirebirdConf;	\
-	typedef name::IPluginConfig IPluginConfig;	\
-	typedef name::IPluginFactory IPluginFactory;	\
-	typedef name::IPluginModule IPluginModule;	\
-	typedef name::IPluginManager IPluginManager;	\
-	typedef name::IConfigManager IConfigManager;	\
-	typedef name::IEventCallback IEventCallback;	\
-	typedef name::IBlob IBlob;	\
-	typedef name::ITransaction ITransaction;	\
-	typedef name::IMessageMetadata IMessageMetadata;	\
-	typedef name::IMetadataBuilder IMetadataBuilder;	\
-	typedef name::IResultSet IResultSet;	\
-	typedef name::IStatement IStatement;	\
-	typedef name::IRequest IRequest;	\
-	typedef name::IEvents IEvents;	\
-	typedef name::IAttachment IAttachment;	\
-	typedef name::IService IService;	\
-	typedef name::IProvider IProvider;	\
-	typedef name::IDtcStart IDtcStart;	\
-	typedef name::IDtc IDtc;	\
-	typedef name::IAuth IAuth;	\
-	typedef name::IWriter IWriter;	\
-	typedef name::IServerBlock IServerBlock;	\
-	typedef name::IClientBlock IClientBlock;	\
-	typedef name::IServer IServer;	\
-	typedef name::IClient IClient;	\
-	typedef name::IUserField IUserField;	\
-	typedef name::ICharUserField ICharUserField;	\
-	typedef name::IIntUserField IIntUserField;	\
-	typedef name::IUser IUser;	\
-	typedef name::IListUsers IListUsers;	\
-	typedef name::ILogonInfo ILogonInfo;	\
-	typedef name::IManagement IManagement;	\
-	typedef name::IWireCryptPlugin IWireCryptPlugin;	\
-	typedef name::ICryptKeyCallback ICryptKeyCallback;	\
-	typedef name::IKeyHolderPlugin IKeyHolderPlugin;	\
-	typedef name::IDbCryptPlugin IDbCryptPlugin;	\
-	typedef name::IExternalContext IExternalContext;	\
-	typedef name::IExternalResultSet IExternalResultSet;	\
-	typedef name::IExternalFunction IExternalFunction;	\
-	typedef name::IExternalProcedure IExternalProcedure;	\
-	typedef name::IExternalTrigger IExternalTrigger;	\
-	typedef name::IRoutineMetadata IRoutineMetadata;	\
-	typedef name::IExternalEngine IExternalEngine;	\
-	typedef name::ITimer ITimer;	\
-	typedef name::ITimerControl ITimerControl;	\
-	typedef name::IVersionCallback IVersionCallback;	\
-	typedef name::IUtl IUtl;	\
-	typedef name::ITraceConnection ITraceConnection;	\
-	typedef name::ITraceDatabaseConnection ITraceDatabaseConnection;	\
-	typedef name::ITraceTransaction ITraceTransaction;	\
-	typedef name::ITraceParams ITraceParams;	\
-	typedef name::ITraceStatement ITraceStatement;	\
-	typedef name::ITraceSQLStatement ITraceSQLStatement;	\
-	typedef name::ITraceBLRStatement ITraceBLRStatement;	\
-	typedef name::ITraceDYNRequest ITraceDYNRequest;	\
-	typedef name::ITraceContextVariable ITraceContextVariable;	\
-	typedef name::ITraceProcedure ITraceProcedure;	\
-	typedef name::ITraceFunction ITraceFunction;	\
-	typedef name::ITraceTrigger ITraceTrigger;	\
-	typedef name::ITraceServiceConnection ITraceServiceConnection;	\
-	typedef name::ITraceStatusVector ITraceStatusVector;	\
-	typedef name::ITraceSweepInfo ITraceSweepInfo;	\
-	typedef name::ITraceLogWriter ITraceLogWriter;	\
-	typedef name::ITraceInitInfo ITraceInitInfo;	\
-	typedef name::ITracePlugin ITracePlugin;	\
-	typedef name::ITraceFactory ITraceFactory;
-
-#ifdef INCLUDE_Firebird_H		// Building internal module
-
-typedef FirebirdApi<class FirebirdPolicy> Api;
-FB_USE_API(Api)
-
-class FirebirdPolicy
+namespace Firebird
 {
-public:
-	template <unsigned V, typename T>
-	static inline bool checkVersion(T* versioned, IStatus* status)
+	class FbException
 	{
-		if (versioned->cloopVTable->version < V)
-			return true;
-
-		if (status)
+	public:
+		FbException(IStatus* aStatus, const ISC_STATUS* vector)
 		{
+			aStatus->setErrors(vector);
+			status = aStatus->clone();
+		}
+
+		FbException(IStatus* aStatus)
+			: status(aStatus->clone())
+		{
+		}
+
+		virtual ~FbException()
+		{
+			status->dispose();
+		}
+
+	public:
+		static void check(ISC_STATUS code, IStatus* status, const ISC_STATUS* vector)
+		{
+			if (code != 0 && vector[1])
+				throw FbException(status, vector);
+		}
+
+	public:
+		IStatus* getStatus() const
+		{
+			return status;
+		}
+
+	private:
+		IStatus* status;
+	};
+
+	template <typename T>
+	class BaseStatusWrapper : public IStatusImpl<T, T>
+	{
+	public:
+		BaseStatusWrapper(IStatus* aStatus)
+			: status(aStatus),
+			  dirty(false)
+		{
+		}
+
+	public:
+		static void catchException(IStatus* status)
+		{
+			try
+			{
+				throw;
+			}
+			catch (const FbException& e)
+			{
+				status->setErrors(e.getStatus()->getErrors());
+			}
+			catch (...)
+			{
+				ISC_STATUS statusVector[] = {
+					isc_arg_gds, isc_random,
+					isc_arg_string, (ISC_STATUS) "Unrecognized C++ exception",
+					isc_arg_end};
+				status->setErrors(statusVector);
+			}
+		}
+
+		static void setVersionError(IStatus* status, const char* /*interfaceName*/,
+			unsigned currentVersion, unsigned expectedVersion)
+		{
+			//// TODO: use interfaceName
+
 			intptr_t codes[] = {
 				isc_arg_gds,
 				isc_interface_version_too_old,
 				isc_arg_number,
-				(intptr_t) V,
+				(intptr_t) expectedVersion,
 				isc_arg_number,
-				(intptr_t) versioned->cloopVTable->version,
+				(intptr_t) currentVersion,
 				isc_arg_end
 			};
 
 			status->setErrors(codes);
 		}
 
-		return false;
-	}
+	public:
+		virtual void dispose()
+		{
+			status->dispose();
+			delete this;
+		}
 
-	static void checkException(Api::IStatus*) { }
-	static void catchException(Api::IStatus*) { }
-	typedef Api::IStatus* IStatus;
-};
+		virtual void init()
+		{
+			status->init();
+		}
 
-#else // INCLUDE_Firebird_H		building external module
+		virtual unsigned getStatus() const
+		{
+			return dirty ? status->getStatus() : 0;
+		}
 
-#endif // INCLUDE_Firebird_H
+		virtual void setErrors2(unsigned length, const intptr_t* value)
+		{
+			dirty = true;
+			status->setErrors2(length, value);
+		}
 
-struct FbCryptKey
-{
-	const char* type;					// If NULL type is auth plugin name
-	const void* encryptKey;
-	const void* decryptKey;				// May be NULL for symmetric keys
-	unsigned encryptLength;
-	unsigned decryptLength;			// Ignored when decryptKey is NULL
-};
+		virtual void setWarnings2(unsigned length, const intptr_t* value)
+		{
+			dirty = true;
+			status->setWarnings2(length, value);
+		}
 
+		virtual void setErrors(const intptr_t* value)
+		{
+			dirty = true;
+			status->setErrors(value);
+		}
+
+		virtual void setWarnings(const intptr_t* value)
+		{
+			dirty = true;
+			status->setWarnings(value);
+		}
+
+		virtual const intptr_t* getErrors() const
+		{
+			return status->getErrors();
+		}
+
+		virtual const intptr_t* getWarnings() const
+		{
+			return status->getWarnings();
+		}
+
+		virtual IStatus* clone() const
+		{
+			return status->clone();
+		}
+
+	protected:
+		IStatus* status;
+		bool dirty;
+	};
+
+	class CheckStatusWrapper : public BaseStatusWrapper<CheckStatusWrapper>
+	{
+	public:
+		CheckStatusWrapper(IStatus* aStatus)
+			: BaseStatusWrapper(aStatus)
+		{
+		}
+
+	public:
+		static void checkException(CheckStatusWrapper* status)
+		{
+		}
+	};
+
+	class ThrowStatusWrapper : public BaseStatusWrapper<ThrowStatusWrapper>
+	{
+	public:
+		ThrowStatusWrapper(IStatus* aStatus)
+			: BaseStatusWrapper(aStatus)
+		{
+		}
+
+	public:
+		static void checkException(ThrowStatusWrapper* status)
+		{
+			if (status->dirty && (status->getStatus() & IStatus::FB_HAS_ERRORS))
+				throw FbException(status->status);
+		}
+	};
+
+	// Additional API function.
+	// Should be used only in non-plugin modules.
+	// All plugins including providers should use passed at init time interface instead.
+	extern "C" IMaster* ISC_EXPORT fb_get_master_interface();
+
+//// TODO: Move checks of INCLUDE_Firebird_H to out of public files.
 #ifdef INCLUDE_Firebird_H		// Building internal module
 
 // This item is for ISC API emulation only
 // It may be gone in future versions
 // Please do not use it!
-static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMetadata*>(1);
+	static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMetadata*>(1);
 
 #endif //INCLUDE_Firebird_H
 
@@ -186,13 +250,4 @@ static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMet
 
 #define FB_PLUGIN_ENTRY_POINT firebird_plugin
 
-// Additional API function.
-// Should be used only in non-plugin modules.
-// All plugins including providers should use passed at init time interface instead.
-#define DECLARE_GET_MASTER(P) extern "C" Firebird::FirebirdApi<P>::IMaster* ISC_EXPORT fb_get_master_interface();
-
-#ifdef INCLUDE_Firebird_H		// Building internal module
-DECLARE_GET_MASTER(Firebird::FirebirdPolicy)
-#endif //INCLUDE_Firebird_H
-
-#endif // FB_INCLUDE_INTERFACE
+#endif // FB_INTERFACE_H

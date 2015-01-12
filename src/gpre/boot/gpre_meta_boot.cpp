@@ -684,14 +684,10 @@ bool MET_trigger_exists(gpre_dbb* /*db*/, const TEXT* /*trigger_name*/)
 
 using namespace Firebird;
 
-class DummyMasterImpl : public FirebirdApi<FirebirdPolicy>::IMasterImpl<DummyMasterImpl>
+class DummyMasterImpl : public IMasterImpl<DummyMasterImpl, CheckStatusWrapper>
 {
 public:
 	// IMaster implementation (almost dummy, for boot build)
-	IPluginModule* getModule()
-	{
-		return NULL;
-	}
 
 	IStatus* getStatus()
 	{
@@ -748,7 +744,7 @@ public:
 		return 0;
 	}
 
-	IMetadataBuilder* getMetadataBuilder(IStatus* status, unsigned fieldCount)
+	IMetadataBuilder* getMetadataBuilder(CheckStatusWrapper* status, unsigned fieldCount)
 	{
 		fb_assert(false);
 		return NULL;
@@ -783,10 +779,13 @@ void ERR_post(ISC_STATUS, ...)
 {
 }
 
-Firebird::IMaster* API_ROUTINE fb_get_master_interface()
+namespace Firebird
 {
-	static DummyMasterImpl dummyMaster;
-	return &dummyMaster;
+	IMaster* API_ROUTINE fb_get_master_interface()
+	{
+		static DummyMasterImpl dummyMaster;
+		return &dummyMaster;
+	}
 }
 
 } // extern "C"

@@ -329,7 +329,7 @@ static void setAttr(string& a, const char* nm, Firebird::IIntUserField* f)
 }
 
 
-static void setAttr(IStatus* status, Auth::UserData* u)
+static void setAttr(CheckStatusWrapper* status, Auth::UserData* u)
 {
 	string attr;
 	setAttr(attr, "Uid", &u->u);
@@ -476,10 +476,12 @@ void callRemoteServiceManager(ISC_STATUS* status,
 		if (uData.user.get()[0] && callback)
 		{
 			LocalStatus status;
-			setAttr(&status, &uData);
-			check(&status);
-			callback->list(&status, &uData);
-			check(&status);
+			CheckStatusWrapper statusWrapper(&status);
+
+			setAttr(&statusWrapper, &uData);
+			check(&statusWrapper);
+			callback->list(&statusWrapper, &uData);
+			check(&statusWrapper);
 		}
 	}
 	else
@@ -563,17 +565,21 @@ static void parseString2(const char*& p, Auth::CharField& f, FB_SIZE_T& loop)
 	p += len;
 
 	LocalStatus s;
-	f.setEntered(&s, 1);
-	check(&s);
+	CheckStatusWrapper statusWrapper(&s);
+
+	f.setEntered(&statusWrapper, 1);
+	check(&statusWrapper);
 }
 
 static void parseLong(const char*& p, Auth::IntField& f, FB_SIZE_T& loop)
 {
 	LocalStatus s;
-	f.set(&s, isc_vax_integer(p, sizeof(ULONG)));
-	check(&s);
-	f.setEntered(&s, 1);
-	check(&s);
+	CheckStatusWrapper statusWrapper(&s);
+
+	f.set(&statusWrapper, isc_vax_integer(p, sizeof(ULONG)));
+	check(&statusWrapper);
+	f.setEntered(&statusWrapper, 1);
+	check(&statusWrapper);
 
 	const FB_SIZE_T len2 = sizeof(ULONG) + 1;
 	if (len2 > loop)
@@ -652,15 +658,17 @@ static int typeBuffer(ISC_STATUS* status, char* buf, int offset,
 				if (uData.user.get()[0])
 				{
 					LocalStatus status;
+					CheckStatusWrapper statusWrapper(&status);
+
 					if (callback)
 					{
-						setAttr(&status, &uData);
-						check(&status);
-						callback->list(&status, &uData);
-						check(&status);
+						setAttr(&statusWrapper, &uData);
+						check(&statusWrapper);
+						callback->list(&statusWrapper, &uData);
+						check(&statusWrapper);
 					}
-					uData.clear(&status);
-					check(&status);
+					uData.clear(&statusWrapper);
+					check(&statusWrapper);
 				}
 				parseString2(p, uData.user, loop);
 				break;

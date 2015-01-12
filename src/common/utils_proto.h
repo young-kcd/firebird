@@ -115,7 +115,7 @@ namespace fb_utils
 		status[2] = isc_arg_end;
 	}
 
-	void inline init_status(Firebird::IStatus* status)
+	void inline init_status(Firebird::CheckStatusWrapper* status)
 	{
 		status->init();
 	}

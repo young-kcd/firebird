@@ -48,7 +48,7 @@ const unsigned int SZ_LOGIN = 31;
 
 namespace Auth {
 
-class SrpServer FB_FINAL : public StdPlugin<Api::IServerImpl<SrpServer> >
+class SrpServer FB_FINAL : public StdPlugin<IServerImpl<SrpServer, CheckStatusWrapper> >
 {
 public:
 	explicit SrpServer(IPluginConfig* par)
@@ -63,7 +63,7 @@ public:
 	}
 
 	// IServer implementation
-	int authenticate(IStatus* status, IServerBlock* sBlock, IWriter* writerInterface);
+	int authenticate(CheckStatusWrapper* status, IServerBlock* sBlock, IWriter* writerInterface);
     int release();
 
 private:
@@ -78,7 +78,7 @@ private:
 	const char* secDbName;
 };
 
-int SrpServer::authenticate(IStatus* status, IServerBlock* sb, IWriter* writerInterface)
+int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWriter* writerInterface)
 {
 	try
 	{

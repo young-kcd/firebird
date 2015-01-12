@@ -32,7 +32,7 @@
 #include "TraceConfiguration.h"
 #include "TracePluginImpl.h"
 
-class TraceFactoryImpl FB_FINAL : public Firebird::StdPlugin<Firebird::Api::ITraceFactoryImpl<TraceFactoryImpl> >
+class TraceFactoryImpl FB_FINAL : public Firebird::StdPlugin<Firebird::ITraceFactoryImpl<TraceFactoryImpl, Firebird::CheckStatusWrapper> >
 {
 public:
 	explicit TraceFactoryImpl(Firebird::IPluginConfig*)
@@ -40,7 +40,7 @@ public:
 
 	// TraceFactory implementation
 	ntrace_mask_t trace_needs();
-	Firebird::ITracePlugin* trace_create(Firebird::IStatus* status, Firebird::ITraceInitInfo* init_info);
+	Firebird::ITracePlugin* trace_create(Firebird::CheckStatusWrapper* status, Firebird::ITraceInitInfo* init_info);
 	int release();
 };
 
@@ -59,7 +59,7 @@ ntrace_mask_t TraceFactoryImpl::trace_needs()
 	return (1 << Firebird::ITraceFactory::TRACE_EVENT_MAX) - 1;
 }
 
-Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::IStatus* status,
+Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::CheckStatusWrapper* status,
 	Firebird::ITraceInitInfo* initInfo)
 {
 	Firebird::MasterInterfacePtr master;

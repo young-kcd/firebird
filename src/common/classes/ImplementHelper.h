@@ -41,8 +41,6 @@
 
 namespace Firebird {
 
-IPluginModule* getPluginModule();
-
 // Implement standard interface and plugin functions
 
 // Helps to implement generic versioned interfaces
@@ -51,11 +49,6 @@ class VersionedIface : public C
 {
 public:
 	VersionedIface() { }
-
-	IPluginModule* getModule()
-	{
-		return getPluginModule();
-	}
 
 private:
 	VersionedIface(const VersionedIface&);
@@ -69,10 +62,12 @@ class AutoIface : public VersionedIface<C>
 public:
 	AutoIface() { }
 
+	/*** TODO: Alex, why this?
 	void* operator new(size_t, void* memory) throw()
 	{
 		return memory;
 	}
+	***/
 };
 
 // Helps to implement disposable interfaces
@@ -81,6 +76,8 @@ class DisposeIface : public VersionedIface<C>, public GlobalStorage
 {
 public:
 	DisposeIface() { }
+
+	//// TODO: can move dispose method to here, cause C has virtual destructor.
 };
 
 // Helps to implement standard interfaces
@@ -104,6 +101,8 @@ public:
 	{
 		++refCounter;
 	}
+
+	//// TODO: can move release method to here, cause C has virtual destructor.
 
 protected:
 	AtomicCounter refCounter;
@@ -135,10 +134,10 @@ public:
 
 // Trivial factory
 template <class P>
-class SimpleFactoryBase : public AutoIface<Api::IPluginFactoryImpl<SimpleFactoryBase<P> > >
+class SimpleFactoryBase : public AutoIface<IPluginFactoryImpl<SimpleFactoryBase<P>, CheckStatusWrapper> >
 {
 public:
-	IPluginBase* createPlugin(IStatus* status, IPluginConfig* factoryParameter)
+	IPluginBase* createPlugin(CheckStatusWrapper* status, IPluginConfig* factoryParameter)
 	{
 		try
 		{
@@ -266,7 +265,7 @@ public:
 // when yvalve is starting fb_shutdown(). This causes almost unavoidable segfault.
 // To avoid it this class is added - it detects spontaneous (not by PluginManager)
 // module unload and notifies PluginManager about this said fact.
-class UnloadDetectorHelper FB_FINAL : public VersionedIface<Api::IPluginModuleImpl<UnloadDetectorHelper> >
+class UnloadDetectorHelper FB_FINAL : public VersionedIface<IPluginModuleImpl<UnloadDetectorHelper, CheckStatusWrapper> >
 {
 public:
 	typedef void VoidNoParam();

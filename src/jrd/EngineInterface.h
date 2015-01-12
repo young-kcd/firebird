@@ -44,20 +44,20 @@ class JStatement;
 class JAttachment;
 class JProvider;
 
-class JBlob FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IBlobImpl<JBlob> >
+class JBlob FB_FINAL : public Firebird::RefCntIface<Firebird::IBlobImpl<JBlob, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IBlob implementation
 	int release();
-	void getInfo(Firebird::IStatus* status,
+	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
-	int getSegment(Firebird::IStatus* status, unsigned int length, void* buffer,
+	int getSegment(Firebird::CheckStatusWrapper* status, unsigned int length, void* buffer,
 		unsigned int* segmentLength);
-	void putSegment(Firebird::IStatus* status, unsigned int length, const void* buffer);
-	void cancel(Firebird::IStatus* status);
-	void close(Firebird::IStatus* status);
-	int seek(Firebird::IStatus* status, int mode, int offset);			// returns position
+	void putSegment(Firebird::CheckStatusWrapper* status, unsigned int length, const void* buffer);
+	void cancel(Firebird::CheckStatusWrapper* status);
+	void close(Firebird::CheckStatusWrapper* status);
+	int seek(Firebird::CheckStatusWrapper* status, int mode, int offset);			// returns position
 
 public:
 	JBlob(blb* handle, StableAttachmentPart* sa);
@@ -81,27 +81,27 @@ private:
 	blb* blob;
 	Firebird::RefPtr<StableAttachmentPart> sAtt;
 
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JTransaction FB_FINAL : public Firebird::RefCntIface<Firebird::Api::ITransactionImpl<JTransaction> >
+class JTransaction FB_FINAL : public Firebird::RefCntIface<Firebird::ITransactionImpl<JTransaction, Firebird::CheckStatusWrapper> >
 {
 public:
 	// ITransaction implementation
 	int release();
-	void getInfo(Firebird::IStatus* status,
+	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
-	void prepare(Firebird::IStatus* status,
+	void prepare(Firebird::CheckStatusWrapper* status,
 		unsigned int msg_length = 0, const unsigned char* message = 0);
-	void commit(Firebird::IStatus* status);
-	void commitRetaining(Firebird::IStatus* status);
-	void rollback(Firebird::IStatus* status);
-	void rollbackRetaining(Firebird::IStatus* status);
-	void disconnect(Firebird::IStatus* status);
-	Firebird::ITransaction* join(Firebird::IStatus* status, Firebird::ITransaction* transaction);
-	JTransaction* validate(Firebird::IStatus* status, Firebird::IAttachment* testAtt);
-	JTransaction* enterDtc(Firebird::IStatus* status);
+	void commit(Firebird::CheckStatusWrapper* status);
+	void commitRetaining(Firebird::CheckStatusWrapper* status);
+	void rollback(Firebird::CheckStatusWrapper* status);
+	void rollbackRetaining(Firebird::CheckStatusWrapper* status);
+	void disconnect(Firebird::CheckStatusWrapper* status);
+	Firebird::ITransaction* join(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction);
+	JTransaction* validate(Firebird::CheckStatusWrapper* status, Firebird::IAttachment* testAtt);
+	JTransaction* enterDtc(Firebird::CheckStatusWrapper* status);
 
 public:
 	JTransaction(jrd_tra* handle, StableAttachmentPart* sa);
@@ -133,25 +133,25 @@ private:
 
 	JTransaction(JTransaction* from);
 
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IResultSetImpl<JResultSet> >
+class JResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::IResultSetImpl<JResultSet, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IResultSet implementation
 	int release();
-	int fetchNext(Firebird::IStatus* status, void* message);
-	int fetchPrior(Firebird::IStatus* status, void* message);
-	int fetchFirst(Firebird::IStatus* status, void* message);
-	int fetchLast(Firebird::IStatus* status, void* message);
-	int fetchAbsolute(Firebird::IStatus* status, unsigned int position, void* message);
-	int fetchRelative(Firebird::IStatus* status, int offset, void* message);
-	FB_BOOLEAN isEof(Firebird::IStatus* status);
-	FB_BOOLEAN isBof(Firebird::IStatus* status);
-	Firebird::IMessageMetadata* getMetadata(Firebird::IStatus* status);
-	void close(Firebird::IStatus* status);
-	void setDelayedOutputFormat(Firebird::IStatus* status, Firebird::IMessageMetadata* format);
+	int fetchNext(Firebird::CheckStatusWrapper* status, void* message);
+	int fetchPrior(Firebird::CheckStatusWrapper* status, void* message);
+	int fetchFirst(Firebird::CheckStatusWrapper* status, void* message);
+	int fetchLast(Firebird::CheckStatusWrapper* status, void* message);
+	int fetchAbsolute(Firebird::CheckStatusWrapper* status, unsigned int position, void* message);
+	int fetchRelative(Firebird::CheckStatusWrapper* status, int offset, void* message);
+	FB_BOOLEAN isEof(Firebird::CheckStatusWrapper* status);
+	FB_BOOLEAN isBof(Firebird::CheckStatusWrapper* status);
+	Firebird::IMessageMetadata* getMetadata(Firebird::CheckStatusWrapper* status);
+	void close(Firebird::CheckStatusWrapper* status);
+	void setDelayedOutputFormat(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* format);
 
 public:
 	JResultSet(JStatement* aStatement);
@@ -170,31 +170,31 @@ private:
 	Firebird::RefPtr<JStatement> statement;
 	bool eof;
 
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JStatement FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IStatementImpl<JStatement> >
+class JStatement FB_FINAL : public Firebird::RefCntIface<Firebird::IStatementImpl<JStatement, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IStatement implementation
 	int release();
-	void getInfo(Firebird::IStatus* status,
+	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
-	void free(Firebird::IStatus* status);
-	ISC_UINT64 getAffectedRecords(Firebird::IStatus* userStatus);
-	Firebird::IMessageMetadata* getOutputMetadata(Firebird::IStatus* userStatus);
-	Firebird::IMessageMetadata* getInputMetadata(Firebird::IStatus* userStatus);
-	unsigned getType(Firebird::IStatus* status);
-    const char* getPlan(Firebird::IStatus* status, FB_BOOLEAN detailed);
-	Firebird::ITransaction* execute(Firebird::IStatus* status,
+	void free(Firebird::CheckStatusWrapper* status);
+	ISC_UINT64 getAffectedRecords(Firebird::CheckStatusWrapper* userStatus);
+	Firebird::IMessageMetadata* getOutputMetadata(Firebird::CheckStatusWrapper* userStatus);
+	Firebird::IMessageMetadata* getInputMetadata(Firebird::CheckStatusWrapper* userStatus);
+	unsigned getType(Firebird::CheckStatusWrapper* status);
+    const char* getPlan(Firebird::CheckStatusWrapper* status, FB_BOOLEAN detailed);
+	Firebird::ITransaction* execute(Firebird::CheckStatusWrapper* status,
 		Firebird::ITransaction* transaction, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
-	JResultSet* openCursor(Firebird::IStatus* status,
+	JResultSet* openCursor(Firebird::CheckStatusWrapper* status,
 		Firebird::ITransaction* transaction, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata);
-	void setCursorName(Firebird::IStatus* status, const char* name);
-	unsigned getFlags(Firebird::IStatus* status);
+	void setCursorName(Firebird::CheckStatusWrapper* status, const char* name);
+	unsigned getFlags(Firebird::CheckStatusWrapper* status);
 
 public:
 	JStatement(dsql_req* handle, StableAttachmentPart* sa, Firebird::Array<UCHAR>& meta);
@@ -214,7 +214,7 @@ private:
 	Firebird::RefPtr<StableAttachmentPart> sAtt;
 	Firebird::StatementMetadata metadata;
 
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
 inline StableAttachmentPart* JResultSet::getAttachment()
@@ -228,23 +228,23 @@ inline dsql_req* JResultSet::getHandle() throw()
 	return statement->getHandle();
 }
 
-class JRequest FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IRequestImpl<JRequest> >
+class JRequest FB_FINAL : public Firebird::RefCntIface<Firebird::IRequestImpl<JRequest, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IRequest implementation
 	int release();
-	void receive(Firebird::IStatus* status, int level, unsigned int msg_type,
+	void receive(Firebird::CheckStatusWrapper* status, int level, unsigned int msg_type,
 		unsigned int length, unsigned char* message);
-	void send(Firebird::IStatus* status, int level, unsigned int msg_type,
+	void send(Firebird::CheckStatusWrapper* status, int level, unsigned int msg_type,
 		unsigned int length, const unsigned char* message);
-	void getInfo(Firebird::IStatus* status, int level,
+	void getInfo(Firebird::CheckStatusWrapper* status, int level,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
-	void start(Firebird::IStatus* status, Firebird::ITransaction* tra, int level);
-	void startAndSend(Firebird::IStatus* status, Firebird::ITransaction* tra, int level,
+	void start(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra, int level);
+	void startAndSend(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra, int level,
 		unsigned int msg_type, unsigned int length, const unsigned char* message);
-	void unwind(Firebird::IStatus* status, int level);
-	void free(Firebird::IStatus* status);
+	void unwind(Firebird::CheckStatusWrapper* status, int level);
+	void free(Firebird::CheckStatusWrapper* status);
 
 public:
 	JRequest(JrdStatement* handle, StableAttachmentPart* sa);
@@ -263,15 +263,15 @@ private:
 	JrdStatement* rq;
 	Firebird::RefPtr<StableAttachmentPart> sAtt;
 
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JEvents FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IEventsImpl<JEvents> >
+class JEvents FB_FINAL : public Firebird::RefCntIface<Firebird::IEventsImpl<JEvents, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IEvents implementation
 	int release();
-	void cancel(Firebird::IStatus* status);
+	void cancel(Firebird::CheckStatusWrapper* status);
 
 public:
 	JEvents(int aId, StableAttachmentPart* sa, Firebird::IEventCallback* aCallback);
@@ -291,57 +291,57 @@ private:
 	Firebird::RefPtr<StableAttachmentPart> sAtt;
 	Firebird::RefPtr<Firebird::IEventCallback> callback;
 
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JAttachment FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IAttachmentImpl<JAttachment> >
+class JAttachment FB_FINAL : public Firebird::RefCntIface<Firebird::IAttachmentImpl<JAttachment, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IAttachment implementation
 	int release();
 	void addRef();
 
-	void getInfo(Firebird::IStatus* status,
+	void getInfo(Firebird::CheckStatusWrapper* status,
 		unsigned int itemsLength, const unsigned char* items,
 		unsigned int bufferLength, unsigned char* buffer);
-	JTransaction* startTransaction(Firebird::IStatus* status,
+	JTransaction* startTransaction(Firebird::CheckStatusWrapper* status,
 		unsigned int tpbLength, const unsigned char* tpb);
-	JTransaction* reconnectTransaction(Firebird::IStatus* status, unsigned int length, const unsigned char* id);
-	JRequest* compileRequest(Firebird::IStatus* status, unsigned int blr_length, const unsigned char* blr);
-	void transactRequest(Firebird::IStatus* status, Firebird::ITransaction* transaction,
+	JTransaction* reconnectTransaction(Firebird::CheckStatusWrapper* status, unsigned int length, const unsigned char* id);
+	JRequest* compileRequest(Firebird::CheckStatusWrapper* status, unsigned int blr_length, const unsigned char* blr);
+	void transactRequest(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		unsigned int blr_length, const unsigned char* blr,
 		unsigned int in_msg_length, const unsigned char* in_msg,
 		unsigned int out_msg_length, unsigned char* out_msg);
-	JBlob* createBlob(Firebird::IStatus* status, Firebird::ITransaction* transaction,
+	JBlob* createBlob(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
-	JBlob* openBlob(Firebird::IStatus* status, Firebird::ITransaction* transaction,
+	JBlob* openBlob(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		ISC_QUAD* id, unsigned int bpbLength = 0, const unsigned char* bpb = 0);
-	int getSlice(Firebird::IStatus* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
+	int getSlice(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
 		unsigned int sdl_length, const unsigned char* sdl,
 		unsigned int param_length, const unsigned char* param,
 		int sliceLength, unsigned char* slice);
-	void putSlice(Firebird::IStatus* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
+	void putSlice(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, ISC_QUAD* id,
 		unsigned int sdl_length, const unsigned char* sdl,
 		unsigned int param_length, const unsigned char* param,
 		int sliceLength, unsigned char* slice);
-	void executeDyn(Firebird::IStatus* status, Firebird::ITransaction* transaction, unsigned int length,
+	void executeDyn(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, unsigned int length,
 		const unsigned char* dyn);
-	JStatement* prepare(Firebird::IStatus* status, Firebird::ITransaction* tra,
+	JStatement* prepare(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra,
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags);
-	Firebird::ITransaction* execute(Firebird::IStatus* status,
+	Firebird::ITransaction* execute(Firebird::CheckStatusWrapper* status,
 		Firebird::ITransaction* transaction, unsigned int stmtLength, const char* sqlStmt,
 		unsigned int dialect, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
-	Firebird::IResultSet* openCursor(Firebird::IStatus* status,
+	Firebird::IResultSet* openCursor(Firebird::CheckStatusWrapper* status,
 		Firebird::ITransaction* transaction, unsigned int stmtLength, const char* sqlStmt,
 		unsigned int dialect, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata, const char* cursorName);
-	JEvents* queEvents(Firebird::IStatus* status, Firebird::IEventCallback* callback,
+	JEvents* queEvents(Firebird::CheckStatusWrapper* status, Firebird::IEventCallback* callback,
 		unsigned int length, const unsigned char* events);
-	void cancelOperation(Firebird::IStatus* status, int option);
-	void ping(Firebird::IStatus* status);
-	void detach(Firebird::IStatus* status);
-	void dropDatabase(Firebird::IStatus* status);
+	void cancelOperation(Firebird::CheckStatusWrapper* status, int option);
+	void ping(Firebird::CheckStatusWrapper* status);
+	void detach(Firebird::CheckStatusWrapper* status);
+	void dropDatabase(Firebird::CheckStatusWrapper* status);
 
 public:
 	explicit JAttachment(StableAttachmentPart* js);
@@ -358,26 +358,26 @@ public:
 		return att;
 	}
 
-	JTransaction* getTransactionInterface(Firebird::IStatus* status, Firebird::ITransaction* tra);
-	jrd_tra* getEngineTransaction(Firebird::IStatus* status, Firebird::ITransaction* tra);
+	JTransaction* getTransactionInterface(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra);
+	jrd_tra* getEngineTransaction(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra);
 
 private:
 	StableAttachmentPart* att;
 
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JService FB_FINAL : public Firebird::RefCntIface<Firebird::Api::IServiceImpl<JService> >
+class JService FB_FINAL : public Firebird::RefCntIface<Firebird::IServiceImpl<JService, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IService implementation
 	int release();
-	void detach(Firebird::IStatus* status);
-	void query(Firebird::IStatus* status,
+	void detach(Firebird::CheckStatusWrapper* status);
+	void query(Firebird::CheckStatusWrapper* status,
 		unsigned int sendLength, const unsigned char* sendItems,
 		unsigned int receiveLength, const unsigned char* receiveItems,
 		unsigned int bufferLength, unsigned char* buffer);
-	void start(Firebird::IStatus* status,
+	void start(Firebird::CheckStatusWrapper* status,
 		unsigned int spbLength, const unsigned char* spb);
 
 public:
@@ -386,10 +386,10 @@ public:
 	Jrd::Service* svc;
 
 private:
-	void freeEngineData(Firebird::IStatus* status);
+	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JProvider FB_FINAL : public Firebird::StdPlugin<Firebird::Api::IProviderImpl<JProvider> >
+class JProvider FB_FINAL : public Firebird::StdPlugin<Firebird::IProviderImpl<JProvider, Firebird::CheckStatusWrapper> >
 {
 public:
 	explicit JProvider(Firebird::IPluginConfig* pConf)
@@ -404,14 +404,14 @@ public:
 	}
 
 	// IProvider implementation
-	JAttachment* attachDatabase(Firebird::IStatus* status, const char* fileName,
+	JAttachment* attachDatabase(Firebird::CheckStatusWrapper* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
-	JAttachment* createDatabase(Firebird::IStatus* status, const char* fileName,
+	JAttachment* createDatabase(Firebird::CheckStatusWrapper* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
-	JService* attachServiceManager(Firebird::IStatus* status, const char* service,
+	JService* attachServiceManager(Firebird::CheckStatusWrapper* status, const char* service,
 		unsigned int spbLength, const unsigned char* spb);
-	void shutdown(Firebird::IStatus* status, unsigned int timeout, const int reason);
-	void setDbCryptCallback(Firebird::IStatus* status,
+	void shutdown(Firebird::CheckStatusWrapper* status, unsigned int timeout, const int reason);
+	void setDbCryptCallback(Firebird::CheckStatusWrapper* status,
 		Firebird::ICryptKeyCallback* cryptCallback);
 
 	int release();

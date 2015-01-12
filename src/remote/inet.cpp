@@ -651,7 +651,8 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 		try
 		{
 			LocalStatus warning;		// Ignore connect warnings for a while
-			REMOTE_check_response(&warning, rdb, packet, false);
+			CheckStatusWrapper statusWrapper(&warning);
+			REMOTE_check_response(&statusWrapper, rdb, packet, false);
 		}
 		catch(const Exception&)
 		{
