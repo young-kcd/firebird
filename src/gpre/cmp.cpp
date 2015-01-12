@@ -230,8 +230,8 @@ void CMP_compile_request( gpre_req* request)
 
 	gpre_port* port;
 	if ((request->req_flags & REQ_sql_returning) ||
-		((request->req_type != REQ_insert) && (request->req_type != REQ_store2)
-		&& (request->req_type != REQ_set_generator)))
+		((request->req_type != REQ_insert) && (request->req_type != REQ_store2) &&
+		 (request->req_type != REQ_set_generator)))
 	{
 		request->req_primary = port = make_port(request, reference);
 	}

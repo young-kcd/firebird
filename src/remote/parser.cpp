@@ -350,7 +350,7 @@ static rem_fmt* parse_format(const UCHAR*& blr, size_t& blr_length)
 		if (align > 1)
 			offset = FB_ALIGN(offset, align);
 
-		desc->dsc_address = (UCHAR*) (IPTR) offset;
+		desc->dsc_address = (UCHAR*)(IPTR) offset;
 		offset += desc->dsc_length;
 	}
 

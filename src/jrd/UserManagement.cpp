@@ -259,8 +259,10 @@ UserManagement::~UserManagement()
 			PluginManagerInterfacePtr()->releasePlugin(manager);
 			managers[i].second = NULL;
 
-//			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
-//				status_exception::raise(&status);
+			/***
+			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+				status_exception::raise(&status);
+			***/
 		}
 	}
 }

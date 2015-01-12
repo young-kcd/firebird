@@ -21,7 +21,7 @@
 //  All Rights Reserved.
 //  Contributor(s): ______________________________________.
 //  Solaris x86 changes - Konstantin Kuznetsov, Neil McCalden
-//  8-Mar-2002 FSG (Frank Schlottmann-G�dde) tiny cobol support
+//  8-Mar-2002 FSG (Frank Schlottmann-Gödde) tiny cobol support
 //             fixed Bug No. 526204*
 //
 //

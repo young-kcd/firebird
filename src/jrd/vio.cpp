@@ -842,8 +842,8 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 					if (rpb->rpb_b_page != temp.rpb_b_page || rpb->rpb_b_line != temp.rpb_b_line ||
 						rpb->rpb_f_page != temp.rpb_f_page || rpb->rpb_f_line != temp.rpb_f_line ||
-						rpb->rpb_flags != temp.rpb_flags &&
-							!(state == tra_dead && rpb->rpb_flags == (temp.rpb_flags | rpb_gc_active)) )
+						(rpb->rpb_flags != temp.rpb_flags &&
+						 !(state == tra_dead && rpb->rpb_flags == (temp.rpb_flags | rpb_gc_active)))
 					{
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
