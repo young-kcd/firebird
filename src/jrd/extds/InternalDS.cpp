@@ -330,7 +330,7 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db* tdbb, bool r
 	else
 	{
 		IntStatus s(status);
-		CheckStatusWrapper statusWrapper(&statusWrapper);
+		CheckStatusWrapper statusWrapper(&s);
 
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 		if (retain)
