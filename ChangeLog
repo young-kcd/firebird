@@ -1,3 +1,117 @@
+ 2015-01-12 14:56  asfernandes 
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/jrd/CryptoManager.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+Remove IMaster::same from the API.
+
+ 2015-01-12 11:28  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-4665: Wrong result when use "where <field_C> STARTING WITH <:value> ORDER BY <field_N>' and field_C is leading part of compound index key: { field_C, field_N }.
+
+ 2015-01-12 08:16  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+Fixed build error
+
+ 2015-01-12 00:21  asfernandes 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M examples/udr/UdrCppExample.cpp
+   M src/auth/AuthDbg.cpp
+   M src/auth/AuthDbg.h
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/common/Auth.cpp
+   M src/common/Auth.h
+   M src/common/MsgMetadata.cpp
+   M src/common/MsgMetadata.h
+   M src/common/StatusHolder.h
+   M src/common/call_service.cpp
+   M src/common/classes/GetPlugins.h
+   M src/common/classes/ImplementHelper.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/TempFile.cpp
+   M src/common/classes/TempFile.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/isc_sync.cpp
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/common/utils_proto.h
+   M src/dsql/DdlNodes.epp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/gpre/obj_cxx.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird/Message.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/include/firebird/UdrEngine.h
+   M src/isql/isql.epp
+   M src/isql/show.epp
+   M src/jrd/Attachment.h
+   M src/jrd/Database.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/plugins/crypt/arc4/Arc4.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/ntrace/PluginLogWriter.h
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/PluginManager.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/alt.cpp
+   M src/yvalve/perf.cpp
+   M src/yvalve/prepa_proto.h
+   M src/yvalve/preparse.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Make the API usable with different type of IStatus classes, throwing (what class?) or not throwing. Builtin are CheckStatusWrapper (no throw) and ThrowStatusWrapper (throws FbException).
+
+ 2015-01-12 00:21  asfernandes 
+   M src/jrd/vio.cpp
+Correction.
+
+ 2015-01-12 00:04  asfernandes 
+   M src/gpre/cmp.cpp
+   M src/gpre/languages/cob.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/vio.cpp
+   M src/remote/parser.cpp
+Misc.
+
+ 2015-01-12 00:03  asfernandes 
+   M src/common/IntlParametersBlock.cpp
+Correction.
+
  2015-01-08 14:14  alexpeshkoff 
    M doc/README.services_extension
 Doc for CORE-4662: Make services API pass SQL role to server.
