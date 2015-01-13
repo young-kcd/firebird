@@ -254,8 +254,8 @@ public:
 class Get : public Firebird::GetPlugins<Firebird::IManagement>
 {
 public:
-	Get(Config* firebirdConf);
-	Get(const char* plugName);
+	explicit Get(Config* firebirdConf);
+	Get(Config* firebirdConf, const char* plugName);
 };
 
 int setGsecCode(int code, Firebird::IUser* iUser);

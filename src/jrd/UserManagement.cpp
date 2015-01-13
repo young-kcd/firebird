@@ -215,7 +215,7 @@ IManagement* UserManagement::getManager(const char* name)
 	}
 
 	// We have new user manager plugin
-	Auth::Get getPlugin(plugName.c_str());
+	Auth::Get getPlugin(att->att_database->dbb_config, plugName.c_str());
 	return registerManager(getPlugin, plugName.c_str());
 }
 
@@ -238,7 +238,7 @@ void UserManagement::openAllManagers()
 		if (flag)
 			continue;
 
-		Auth::Get getPlugin(plugName.c_str());
+		Auth::Get getPlugin(att->att_database->dbb_config, plugName.c_str());
 		registerManager(getPlugin, plugName.c_str());
 	}
 }

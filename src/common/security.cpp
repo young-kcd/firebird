@@ -50,8 +50,8 @@ Get::Get(Config* firebirdConf)
 	}
 }
 
-Get::Get(const char* plugName)
-	: GetPlugins<Firebird::IManagement>(IPluginManager::AuthUserManagement, plugName)
+Get::Get(Config* firebirdConf, const char* plugName)
+	: GetPlugins<Firebird::IManagement>(IPluginManager::AuthUserManagement, firebirdConf, plugName)
 {
 	if (!hasData())
 	{
