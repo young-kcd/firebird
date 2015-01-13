@@ -23,7 +23,6 @@
 #include "firebird.h"
 #include "../jrd/ibase.h"
 #include "firebird/UdrEngine.h"
-#include "firebird/UdrCppEngine.h"
 #include "firebird/Interface.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"

@@ -23,6 +23,10 @@
 #ifndef FIREBIRD_UDR_CPP_ENGINE
 #define FIREBIRD_UDR_CPP_ENGINE
 
+#ifndef FB_UDR_STATUS_TYPE
+#error FB_UDR_STATUS_TYPE must be defined with the Status class before UdrCppEngine.h inclusion.
+#endif
+
 #include "./UdrEngine.h"
 #include "./Message.h"
 #ifndef JRD_IBASE_H
@@ -32,7 +36,6 @@
 #include <string.h>
 
 
-//// TODO: Make StatusType customizable.
 namespace Firebird
 {
 	namespace Udr
@@ -45,9 +48,9 @@ namespace Firebird
 	{	\
 		class Impl;	\
 		\
-		static ::Firebird::Udr::FunctionFactoryImpl<Impl> factory(#name);	\
+		static ::Firebird::Udr::FunctionFactoryImpl<Impl, FB_UDR_STATUS_TYPE> factory(#name);	\
 		\
-		class Impl : public ::Firebird::Udr::Function<Impl>	\
+		class Impl : public ::Firebird::Udr::Function<Impl, FB_UDR_STATUS_TYPE>	\
 		{	\
 		public:	\
 			FB__UDR_COMMON_IMPL
@@ -57,13 +60,13 @@ namespace Firebird
 	}
 
 #define FB_UDR_EXECUTE_FUNCTION	\
-	void execute(::Firebird::ThrowStatusWrapper* status, ::Firebird::IExternalContext* context, \
+	void execute(FB_UDR_STATUS_TYPE* status, ::Firebird::IExternalContext* context, \
 		void* in, void* out)	\
 	{	\
 		internalExecute(status, context, (InMessage::Type*) in, (OutMessage::Type*) out);	\
 	}	\
 	\
-	void internalExecute(::Firebird::ThrowStatusWrapper* status, ::Firebird::IExternalContext* context, \
+	void internalExecute(FB_UDR_STATUS_TYPE* status, ::Firebird::IExternalContext* context, \
 		InMessage::Type* in, OutMessage::Type* out)
 
 
@@ -72,9 +75,9 @@ namespace Firebird
 	{	\
 		class Impl;	\
 		\
-		static ::Firebird::Udr::ProcedureFactoryImpl<Impl> factory(#name);	\
+		static ::Firebird::Udr::ProcedureFactoryImpl<Impl, FB_UDR_STATUS_TYPE> factory(#name);	\
 		\
-		class Impl : public ::Firebird::Udr::Procedure<Impl>	\
+		class Impl : public ::Firebird::Udr::Procedure<Impl, FB_UDR_STATUS_TYPE>	\
 		{	\
 		public:	\
 			FB__UDR_COMMON_IMPL
@@ -85,27 +88,27 @@ namespace Firebird
 	}
 
 #define FB_UDR_EXECUTE_PROCEDURE	\
-	::Firebird::IExternalResultSet* open(::Firebird::ThrowStatusWrapper* status, \
+	::Firebird::IExternalResultSet* open(FB_UDR_STATUS_TYPE* status, \
 		::Firebird::IExternalContext* context, void* in, void* out)	\
 	{	\
 		return new ResultSet(status, context, this, (InMessage::Type*) in, (OutMessage::Type*) out);	\
 	}	\
 	\
-	class ResultSet : public ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage>	\
+	class ResultSet : public ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage, FB_UDR_STATUS_TYPE>	\
 	{	\
 	public:	\
-		ResultSet(::Firebird::ThrowStatusWrapper* status, ::Firebird::IExternalContext* context,	\
+		ResultSet(FB_UDR_STATUS_TYPE* status, ::Firebird::IExternalContext* context,	\
 				Impl* const procedure, InMessage::Type* const in, OutMessage::Type* const out)	\
-			: ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage>(	\
+			: ::Firebird::Udr::ResultSet<ResultSet, Impl, InMessage, OutMessage, FB_UDR_STATUS_TYPE>(	\
 					context, procedure, in, out)
 
 #define FB_UDR_FETCH_PROCEDURE	\
-	FB_BOOLEAN fetch(::Firebird::ThrowStatusWrapper* status)	\
+	FB_BOOLEAN fetch(FB_UDR_STATUS_TYPE* status)	\
 	{	\
 		return (FB_BOOLEAN) internalFetch(status);	\
 	}	\
 	\
-	bool internalFetch(::Firebird::ThrowStatusWrapper* status)
+	bool internalFetch(FB_UDR_STATUS_TYPE* status)
 
 
 #define FB_UDR_BEGIN_TRIGGER(name)	\
@@ -113,9 +116,9 @@ namespace Firebird
 	{	\
 		class Impl;	\
 		\
-		static ::Firebird::Udr::TriggerFactoryImpl<Impl> factory(#name);	\
+		static ::Firebird::Udr::TriggerFactoryImpl<Impl, FB_UDR_STATUS_TYPE> factory(#name);	\
 		\
-		class Impl : public ::Firebird::Udr::Trigger<Impl>	\
+		class Impl : public ::Firebird::Udr::Trigger<Impl, FB_UDR_STATUS_TYPE>	\
 		{	\
 		public:	\
 			FB__UDR_COMMON_IMPL
@@ -125,20 +128,20 @@ namespace Firebird
 	}
 
 #define FB_UDR_EXECUTE_TRIGGER	\
-	void execute(::Firebird::ThrowStatusWrapper* status, ::Firebird::IExternalContext* context,	\
+	void execute(FB_UDR_STATUS_TYPE* status, ::Firebird::IExternalContext* context,	\
 		unsigned int action, void* oldFields, void* newFields)	\
 	{	\
 		internalExecute(status, context, action,	\
 			(FieldsMessage::Type*) oldFields, (FieldsMessage::Type*) newFields);	\
 	}	\
 	\
-	void internalExecute(::Firebird::ThrowStatusWrapper* status, ::Firebird::IExternalContext* context,	\
+	void internalExecute(FB_UDR_STATUS_TYPE* status, ::Firebird::IExternalContext* context,	\
 		unsigned int action, \
 		FieldsMessage::Type* oldFields, FieldsMessage::Type* newFields)
 
 
 #define FB_UDR_CONSTRUCTOR	\
-	Impl(::Firebird::ThrowStatusWrapper* const status, ::Firebird::IExternalContext* const context,	\
+	Impl(FB_UDR_STATUS_TYPE* const status, ::Firebird::IExternalContext* const context,	\
 			::Firebird::IRoutineMetadata* const metadata__)	\
 		: master(context->getMaster()),	\
 		  metadata(metadata__)
@@ -162,11 +165,11 @@ namespace Firebird
 	struct name	\
 	{	\
 		typedef unsigned char Type;	\
-		static void setup(::Firebird::ThrowStatusWrapper*, ::Firebird::IMetadataBuilder*) {}	\
+		static void setup(FB_UDR_STATUS_TYPE*, ::Firebird::IMetadataBuilder*) {}	\
 	}
 
 
-template <typename T> class Procedure;
+template <typename T, typename StatusType> class Procedure;
 
 
 class Helper
@@ -218,8 +221,8 @@ public:
 };
 
 
-template <typename This, typename Procedure, typename InMessage, typename OutMessage>
-class ResultSet : public IExternalResultSetImpl<This, ThrowStatusWrapper>, public Helper
+template <typename This, typename Procedure, typename InMessage, typename OutMessage, typename StatusType>
+class ResultSet : public IExternalResultSetImpl<This, StatusType>, public Helper
 {
 public:
 	ResultSet(IExternalContext* aContext, Procedure* aProcedure,
@@ -245,8 +248,8 @@ protected:
 };
 
 
-template <typename This>
-class Function : public IExternalFunctionImpl<This, ThrowStatusWrapper>, public Helper
+template <typename This, typename StatusType>
+class Function : public IExternalFunctionImpl<This, StatusType>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
@@ -257,15 +260,15 @@ public:
 		delete static_cast<This*>(this);
 	}
 
-	void getCharSet(ThrowStatusWrapper* /*status*/, IExternalContext* /*context*/,
+	void getCharSet(StatusType* /*status*/, IExternalContext* /*context*/,
 		char* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
 
 
-template <typename This>
-class Procedure : public IExternalProcedureImpl<This, ThrowStatusWrapper>, public Helper
+template <typename This, typename StatusType>
+class Procedure : public IExternalProcedureImpl<This, StatusType>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
@@ -276,15 +279,15 @@ public:
 		delete static_cast<This*>(this);
 	}
 
-	void getCharSet(ThrowStatusWrapper* /*status*/, IExternalContext* /*context*/,
+	void getCharSet(StatusType* /*status*/, IExternalContext* /*context*/,
 		char* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
 
 
-template <typename This>
-class Trigger : public IExternalTriggerImpl<This, ThrowStatusWrapper>, public Helper
+template <typename This, typename StatusType>
+class Trigger : public IExternalTriggerImpl<This, StatusType>, public Helper
 {
 public:
 	FB__UDR_COMMON_TYPE(FieldsMessage);
@@ -294,15 +297,15 @@ public:
 		delete static_cast<This*>(this);
 	}
 
-	void getCharSet(ThrowStatusWrapper* /*status*/, IExternalContext* /*context*/,
+	void getCharSet(StatusType* /*status*/, IExternalContext* /*context*/,
 		char* /*name*/, unsigned /*nameSize*/)
 	{
 	}
 };
 
 
-template <typename T> class FunctionFactoryImpl :
-	public IUdrFunctionFactoryImpl<FunctionFactoryImpl<T>, ThrowStatusWrapper>
+template <typename T, typename StatusType> class FunctionFactoryImpl :
+	public IUdrFunctionFactoryImpl<FunctionFactoryImpl<T, StatusType>, StatusType>
 {
 public:
 	explicit FunctionFactoryImpl(const char* name)
@@ -310,14 +313,14 @@ public:
 		fbUdrRegFunction(name, this);
 	}
 
-	void setup(ThrowStatusWrapper* status, IExternalContext* /*context*/,
+	void setup(StatusType* status, IExternalContext* /*context*/,
 		IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
 		T::InMessage::setup(status, in);
 		T::OutMessage::setup(status, out);
 	}
 
-	IExternalFunction* newItem(ThrowStatusWrapper* status, IExternalContext* context,
+	IExternalFunction* newItem(StatusType* status, IExternalContext* context,
 		IRoutineMetadata* metadata)
 	{
 		return new T(status, context, metadata);
@@ -325,8 +328,8 @@ public:
 };
 
 
-template <typename T> class ProcedureFactoryImpl :
-	public IUdrProcedureFactoryImpl<ProcedureFactoryImpl<T>, ThrowStatusWrapper>
+template <typename T, typename StatusType> class ProcedureFactoryImpl :
+	public IUdrProcedureFactoryImpl<ProcedureFactoryImpl<T, StatusType>, StatusType>
 {
 public:
 	explicit ProcedureFactoryImpl(const char* name)
@@ -334,14 +337,14 @@ public:
 		fbUdrRegProcedure(name, this);
 	}
 
-	void setup(ThrowStatusWrapper* status, IExternalContext* /*context*/,
+	void setup(StatusType* status, IExternalContext* /*context*/,
 		IRoutineMetadata* /*metadata*/, IMetadataBuilder* in, IMetadataBuilder* out)
 	{
 		T::InMessage::setup(status, in);
 		T::OutMessage::setup(status, out);
 	}
 
-	IExternalProcedure* newItem(ThrowStatusWrapper* status, IExternalContext* context,
+	IExternalProcedure* newItem(StatusType* status, IExternalContext* context,
 		IRoutineMetadata* metadata)
 	{
 		return new T(status, context, metadata);
@@ -349,8 +352,8 @@ public:
 };
 
 
-template <typename T> class TriggerFactoryImpl :
-	public IUdrTriggerFactoryImpl<TriggerFactoryImpl<T>, ThrowStatusWrapper>
+template <typename T, typename StatusType> class TriggerFactoryImpl :
+	public IUdrTriggerFactoryImpl<TriggerFactoryImpl<T, StatusType>, StatusType>
 {
 public:
 	explicit TriggerFactoryImpl(const char* name)
@@ -358,13 +361,13 @@ public:
 		fbUdrRegTrigger(name, this);
 	}
 
-	void setup(ThrowStatusWrapper* status, IExternalContext* /*context*/,
+	void setup(StatusType* status, IExternalContext* /*context*/,
 		IRoutineMetadata* /*metadata*/, IMetadataBuilder* fields)
 	{
 		T::FieldsMessage::setup(status, fields);
 	}
 
-	IExternalTrigger* newItem(ThrowStatusWrapper* status, IExternalContext* context,
+	IExternalTrigger* newItem(StatusType* status, IExternalContext* context,
 		IRoutineMetadata* metadata)
 	{
 		return new T(status, context, metadata);

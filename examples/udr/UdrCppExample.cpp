@@ -20,6 +20,8 @@
  *  Contributor(s): ______________________________________.
  */
 
+#define FB_UDR_STATUS_TYPE ::Firebird::ThrowStatusWrapper
+
 #include "ibase.h"
 #include "firebird/UdrCppEngine.h"
 #include <assert.h>
