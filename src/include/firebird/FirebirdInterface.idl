@@ -28,7 +28,6 @@
 
 struct ISC_QUAD;
 struct FbCryptKey;
-struct DtcStart;
 
 // Versioned interface - base for all FB interfaces
 interface Versioned
