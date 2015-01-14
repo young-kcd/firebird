@@ -1,3 +1,15 @@
+ 2015-01-13 14:43  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/firebird/UdrCppEngine.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+Make UDR StatusType customizable.
+
+ 2015-01-13 11:24  hvlad 
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/jrd/UserManagement.cpp
+By Alex - fix for bug CORE-4659 : Error "Missing security context for .....\SECURITY3.FDB"
+
  2015-01-12 14:56  asfernandes 
    M src/include/firebird/FirebirdInterface.idl
    M src/include/firebird/IdlFbInterfaces.h
