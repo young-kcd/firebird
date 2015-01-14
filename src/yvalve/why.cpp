@@ -99,7 +99,7 @@ static const USHORT DESCRIBE_BUFFER_SIZE = 1024;	// size of buffer used in isc_d
 
 namespace Why {
 	class StatusVector;
-	extern UtilInterface utlInterface;
+	extern UtilInterface utilInterface;
 };
 
 namespace {
@@ -2360,7 +2360,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 			Arg::Gds(isc_command_end_err).raise();
 
 		FB_BOOLEAN stmtIsCrDb = FB_FALSE;
-		YAttachment* att = utlInterface.executeCreateDatabase(&statusWrapper, stmtLength,
+		YAttachment* att = utilInterface.executeCreateDatabase(&statusWrapper, stmtLength,
 			sqlStmt, dialect, &stmtIsCrDb);
 
 		if (stmtIsCrDb)
@@ -2428,7 +2428,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2_m(ISC_STATUS* userStatus, FB_API_HAN
 	CheckStatusWrapper statusWrapper(&status);
 
 	FB_BOOLEAN stmtIsCrDb = FB_FALSE;
-	YAttachment* att = utlInterface.executeCreateDatabase(&statusWrapper, stmtLength,
+	YAttachment* att = utilInterface.executeCreateDatabase(&statusWrapper, stmtLength,
 		sqlStmt, dialect, &stmtIsCrDb);
 
 	if (stmtIsCrDb)

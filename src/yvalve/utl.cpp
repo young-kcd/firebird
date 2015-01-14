@@ -360,7 +360,7 @@ FB_BOOLEAN edit(CheckStatusWrapper* status, ISC_QUAD* blob_id, IAttachment* att,
 
 namespace Why {
 
-UtilInterface utlInterface;
+UtilInterface utilInterface;
 
 void UtilInterface::dumpBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
