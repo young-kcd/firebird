@@ -71,7 +71,7 @@ namespace Why
 		Firebird::IMetadataBuilder* getMetadataBuilder(Firebird::CheckStatusWrapper* status, unsigned fieldCount);
 		//Firebird::IDebug* getDebug();
 		int serverMode(int mode);
-		Firebird::IUtl* getUtlInterface();
+		Firebird::IUtil* getUtilInterface();
 		Firebird::IConfigManager* getConfigManager();
 	};
 

@@ -82,7 +82,7 @@ namespace Firebird
 	class ITimer;
 	class ITimerControl;
 	class IVersionCallback;
-	class IUtl;
+	class IUtil;
 	class ITraceConnection;
 	class ITraceDatabaseConnection;
 	class ITraceTransaction;
@@ -295,7 +295,7 @@ namespace Firebird
 			ITransaction* (CLOOP_CARG *registerTransaction)(IMaster* self, IAttachment* attachment, ITransaction* transaction) throw();
 			IMetadataBuilder* (CLOOP_CARG *getMetadataBuilder)(IMaster* self, IStatus* status, unsigned fieldCount) throw();
 			int (CLOOP_CARG *serverMode)(IMaster* self, int mode) throw();
-			IUtl* (CLOOP_CARG *getUtlInterface)(IMaster* self) throw();
+			IUtil* (CLOOP_CARG *getUtilInterface)(IMaster* self) throw();
 			IConfigManager* (CLOOP_CARG *getConfigManager)(IMaster* self) throw();
 		};
 
@@ -373,9 +373,9 @@ namespace Firebird
 			return ret;
 		}
 
-		IUtl* getUtlInterface()
+		IUtil* getUtilInterface()
 		{
-			IUtl* ret = static_cast<VTable*>(this->cloopVTable)->getUtlInterface(this);
+			IUtil* ret = static_cast<VTable*>(this->cloopVTable)->getUtilInterface(this);
 			return ret;
 		}
 
@@ -3225,25 +3225,25 @@ namespace Firebird
 		}
 	};
 
-	class IUtl : public IVersioned
+	class IUtil : public IVersioned
 	{
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			void (CLOOP_CARG *getFbVersion)(IUtl* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw();
-			void (CLOOP_CARG *loadBlob)(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
-			void (CLOOP_CARG *dumpBlob)(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
-			void (CLOOP_CARG *getPerfCounters)(IUtl* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw();
-			IAttachment* (CLOOP_CARG *executeCreateDatabase)(IUtl* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw();
+			void (CLOOP_CARG *getFbVersion)(IUtil* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw();
+			void (CLOOP_CARG *loadBlob)(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
+			void (CLOOP_CARG *dumpBlob)(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
+			void (CLOOP_CARG *getPerfCounters)(IUtil* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw();
+			IAttachment* (CLOOP_CARG *executeCreateDatabase)(IUtil* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw();
 		};
 
 	protected:
-		IUtl(DoNotInherit)
+		IUtil(DoNotInherit)
 			: IVersioned(DoNotInherit())
 		{
 		}
 
-		~IUtl()
+		~IUtil()
 		{
 		}
 
@@ -4806,7 +4806,7 @@ namespace Firebird
 					this->registerTransaction = &Name::cloopregisterTransactionDispatcher;
 					this->getMetadataBuilder = &Name::cloopgetMetadataBuilderDispatcher;
 					this->serverMode = &Name::cloopserverModeDispatcher;
-					this->getUtlInterface = &Name::cloopgetUtlInterfaceDispatcher;
+					this->getUtilInterface = &Name::cloopgetUtilInterfaceDispatcher;
 					this->getConfigManager = &Name::cloopgetConfigManagerDispatcher;
 				}
 			} vTable;
@@ -4946,16 +4946,16 @@ namespace Firebird
 			}
 		}
 
-		static IUtl* CLOOP_CARG cloopgetUtlInterfaceDispatcher(IMaster* self) throw()
+		static IUtil* CLOOP_CARG cloopgetUtilInterfaceDispatcher(IMaster* self) throw()
 		{
 			try
 			{
-				return static_cast<Name*>(self)->Name::getUtlInterface();
+				return static_cast<Name*>(self)->Name::getUtilInterface();
 			}
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<IUtl*>(0);
+				return static_cast<IUtil*>(0);
 			}
 		}
 
@@ -4996,7 +4996,7 @@ namespace Firebird
 		virtual ITransaction* registerTransaction(IAttachment* attachment, ITransaction* transaction) = 0;
 		virtual IMetadataBuilder* getMetadataBuilder(StatusType* status, unsigned fieldCount) = 0;
 		virtual int serverMode(int mode) = 0;
-		virtual IUtl* getUtlInterface() = 0;
+		virtual IUtil* getUtilInterface() = 0;
 		virtual IConfigManager* getConfigManager() = 0;
 	};
 
@@ -11671,12 +11671,12 @@ namespace Firebird
 	};
 
 	template <typename Name, typename StatusType, typename Base>
-	class IUtlBaseImpl : public Base
+	class IUtilBaseImpl : public Base
 	{
 	public:
-		typedef IUtl Declaration;
+		typedef IUtil Declaration;
 
-		IUtlBaseImpl(DoNotInherit = DoNotInherit())
+		IUtilBaseImpl(DoNotInherit = DoNotInherit())
 		{
 			static struct VTableImpl : Base::VTable
 			{
@@ -11694,7 +11694,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopgetFbVersionDispatcher(IUtl* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw()
+		static void CLOOP_CARG cloopgetFbVersionDispatcher(IUtil* self, IStatus* status, IAttachment* att, IVersionCallback* callback) throw()
 		{
 			StatusType status2(status);
 
@@ -11708,7 +11708,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG clooploadBlobDispatcher(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
+		static void CLOOP_CARG clooploadBlobDispatcher(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
 		{
 			StatusType status2(status);
 
@@ -11722,7 +11722,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopdumpBlobDispatcher(IUtl* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
+		static void CLOOP_CARG cloopdumpBlobDispatcher(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw()
 		{
 			StatusType status2(status);
 
@@ -11736,7 +11736,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopgetPerfCountersDispatcher(IUtl* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw()
+		static void CLOOP_CARG cloopgetPerfCountersDispatcher(IUtil* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw()
 		{
 			StatusType status2(status);
 
@@ -11750,7 +11750,7 @@ namespace Firebird
 			}
 		}
 
-		static IAttachment* CLOOP_CARG cloopexecuteCreateDatabaseDispatcher(IUtl* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw()
+		static IAttachment* CLOOP_CARG cloopexecuteCreateDatabaseDispatcher(IUtil* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw()
 		{
 			StatusType status2(status);
 
@@ -11766,16 +11766,16 @@ namespace Firebird
 		}
 	};
 
-	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtl> > >
-	class IUtlImpl : public IUtlBaseImpl<Name, StatusType, Base>
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
+	class IUtilImpl : public IUtilBaseImpl<Name, StatusType, Base>
 	{
 	protected:
-		IUtlImpl(DoNotInherit = DoNotInherit())
+		IUtilImpl(DoNotInherit = DoNotInherit())
 		{
 		}
 
 	public:
-		virtual ~IUtlImpl()
+		virtual ~IUtilImpl()
 		{
 		}
 

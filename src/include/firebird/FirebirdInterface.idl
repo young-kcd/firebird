@@ -90,7 +90,7 @@ interface Master : Versioned
 
 	MetadataBuilder getMetadataBuilder(Status status, uint fieldCount);
 	int serverMode(int mode);
-	Utl getUtlInterface();
+	Util getUtilInterface();
 	ConfigManager getConfigManager();
 }
 
@@ -900,7 +900,7 @@ interface VersionCallback : Versioned
 	void callback(Status status, const string text);
 }
 
-interface Utl : Versioned
+interface Util : Versioned
 {
 	void getFbVersion(Status status, Attachment att,
 		VersionCallback callback);

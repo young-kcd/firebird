@@ -663,14 +663,14 @@ Mutex& pauseTimer()
 
 
 //
-// Utl (misc calls)
+// Util (misc calls)
 //
 
 namespace Why {
 
-	extern UtlInterface utlInterface;		// Implemented in utl.cpp
+	extern UtilInterface utlInterface;		// Implemented in utl.cpp
 
-	IUtl* MasterImplementation::getUtlInterface()
+	IUtil* MasterImplementation::getUtilInterface()
 	{
 		return &utlInterface;
 	}

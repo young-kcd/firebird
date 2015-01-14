@@ -251,11 +251,11 @@ public:
 
 
 // Misc utl access
-class UtlInterfacePtr : public AccessAutoInterface<IUtl>
+class UtilInterfacePtr : public AccessAutoInterface<IUtil>
 {
 public:
-	UtlInterfacePtr()
-		: AccessAutoInterface<IUtl>(getMasterInterface()->getUtlInterface())
+	UtilInterfacePtr()
+		: AccessAutoInterface<IUtil>(getMasterInterface()->getUtilInterface())
 	{ }
 };
 

@@ -755,7 +755,7 @@ public:
 		return -1;
 	}
 
-	IUtl* getUtlInterface()
+	IUtil* getUtilInterface()
 	{
 		fb_assert(false);
 		return NULL;

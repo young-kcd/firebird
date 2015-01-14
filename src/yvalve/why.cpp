@@ -99,7 +99,7 @@ static const USHORT DESCRIBE_BUFFER_SIZE = 1024;	// size of buffer used in isc_d
 
 namespace Why {
 	class StatusVector;
-	extern UtlInterface utlInterface;
+	extern UtilInterface utlInterface;
 };
 
 namespace {

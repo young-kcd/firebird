@@ -120,7 +120,7 @@ static bool reReadDbOwner = true;
 namespace {
 
 // Used to make sure that local calls to print stuff go to isqlGlob.Out
-// and not to stdout if IUtl::version gets called
+// and not to stdout if IUtil::version gets called
 
 class VersionCallback : public Firebird::AutoIface<Firebird::IVersionCallbackImpl<VersionCallback, Firebird::CheckStatusWrapper> >
 {
@@ -1768,7 +1768,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		isqlGlob.printf("%s%s", msg_string, NEWLINE);
 		isqlGlob.printf("Server version:%s", NEWLINE);
 		VersionCallback callback;
-		Firebird::UtlInterfacePtr()->getFbVersion(fbStatus, DB, &callback);
+		Firebird::UtilInterfacePtr()->getFbVersion(fbStatus, DB, &callback);
 		if (fbStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			IUTILS_msg_get(CANNOT_GET_SRV_VER, msg_string);

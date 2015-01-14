@@ -528,9 +528,9 @@ private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
-class UtlInterface FB_FINAL : public Firebird::AutoIface<Firebird::IUtlImpl<UtlInterface, Firebird::CheckStatusWrapper> >
+class UtilInterface FB_FINAL : public Firebird::AutoIface<Firebird::IUtilImpl<UtilInterface, Firebird::CheckStatusWrapper> >
 {
-	// IUtl implementation
+	// IUtil implementation
 public:
 	void getFbVersion(Firebird::CheckStatusWrapper* status, Firebird::IAttachment* att,
 		Firebird::IVersionCallback* callback);

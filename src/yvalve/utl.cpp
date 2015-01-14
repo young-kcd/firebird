@@ -360,9 +360,9 @@ FB_BOOLEAN edit(CheckStatusWrapper* status, ISC_QUAD* blob_id, IAttachment* att,
 
 namespace Why {
 
-UtlInterface utlInterface;
+UtilInterface utlInterface;
 
-void UtlInterface::dumpBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
+void UtilInterface::dumpBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
 	FILE* file = os_utils::fopen(file_name, txt ? FOPEN_WRITE_TYPE_TEXT : FOPEN_WRITE_TYPE);
@@ -385,7 +385,7 @@ void UtlInterface::dumpBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
 		fclose(file);
 }
 
-void UtlInterface::loadBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
+void UtilInterface::loadBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
 	IAttachment* att, ITransaction* tra, const char* file_name, FB_BOOLEAN txt)
 {
 /**************************************
@@ -418,7 +418,7 @@ void UtlInterface::loadBlob(CheckStatusWrapper* status, ISC_QUAD* blobId,
 		fclose(file);
 }
 
-void UtlInterface::getFbVersion(CheckStatusWrapper* status, IAttachment* att,
+void UtilInterface::getFbVersion(CheckStatusWrapper* status, IAttachment* att,
 	IVersionCallback* callback)
 {
 /**************************************
@@ -568,7 +568,7 @@ void UtlInterface::getFbVersion(CheckStatusWrapper* status, IAttachment* att,
 	}
 }
 
-YAttachment* UtlInterface::executeCreateDatabase(
+YAttachment* UtilInterface::executeCreateDatabase(
 	Firebird::CheckStatusWrapper* status, unsigned stmtLength, const char* creatDBstatement,
 	unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
 {
@@ -1477,7 +1477,7 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 		return FB_FAILURE;
 
 	VersionCallback callback(routine, user_arg);
-	UtlInterfacePtr()->getFbVersion(&st, att, &callback);
+	UtilInterfacePtr()->getFbVersion(&st, att, &callback);
 
 	return st.getStatus() & IStatus::FB_HAS_ERRORS ? FB_FAILURE : FB_SUCCESS;
 }
@@ -1719,7 +1719,7 @@ static int any_text_dump(ISC_QUAD* blob_id,
 	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
-	UtlInterfacePtr()->dumpBlob(&st, blob_id, att, tra, file_name, txt);
+	UtilInterfacePtr()->dumpBlob(&st, blob_id, att, tra, file_name, txt);
 
 	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
@@ -1935,7 +1935,7 @@ static int any_text_load(ISC_QUAD* blob_id,
 	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		return FB_FAILURE;
 
-	UtlInterfacePtr()->loadBlob(&st, blob_id, att, tra, file_name, flag);
+	UtilInterfacePtr()->loadBlob(&st, blob_id, att, tra, file_name, flag);
 
 	if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
