@@ -411,7 +411,6 @@ static void				abort_aux_connection(rem_port*);
 static rem_port*		aux_request(rem_port*, PACKET*);
 
 #if !defined(WIN_NT)
-static bool		check_host(rem_port*);
 static THREAD_ENTRY_DECLARE waitThread(THREAD_ENTRY_PARAM);
 
 static GlobalPtr<Mutex> waitThreadMutex;
