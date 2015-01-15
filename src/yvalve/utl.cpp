@@ -630,6 +630,63 @@ YAttachment* UtilInterface::executeCreateDatabase(
 	}
 }
 
+void UtilInterface::decodeDate(ISC_DATE date, unsigned* year, unsigned* month, unsigned* day)
+{
+	tm times;
+	isc_decode_sql_date(&date, &times);
+
+	if (year)
+		*year = times.tm_year + 1900;
+	if (month)
+		*month = times.tm_mon + 1;
+	if (day)
+		*day = times.tm_mday;
+}
+
+void UtilInterface::decodeTime(ISC_TIME time,
+	unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions)
+{
+	tm times;
+	isc_decode_sql_time(&time, &times);
+
+	if (hours)
+		*hours = times.tm_hour;
+	if (minutes)
+		*minutes = times.tm_min;
+	if (seconds)
+		*seconds = times.tm_sec;
+	if (fractions)
+		*fractions = time % ISC_TIME_SECONDS_PRECISION;
+}
+
+ISC_DATE UtilInterface::encodeDate(unsigned year, unsigned month, unsigned day)
+{
+	tm times;
+	times.tm_year = year - 1900;
+	times.tm_mon = month - 1;
+	times.tm_mday = day;
+
+	ISC_DATE date;
+	isc_encode_sql_date(&times, &date);
+
+	return date;
+}
+
+ISC_TIME UtilInterface::encodeTime(unsigned hours, unsigned minutes, unsigned seconds,
+	unsigned fractions)
+{
+	tm times;
+	times.tm_hour = hours;
+	times.tm_min = minutes;
+	times.tm_sec = seconds;
+
+	ISC_TIME time;
+	isc_encode_sql_time(&times, &time);
+	time += fractions;
+
+	return time;
+}
+
 } // namespace Why
 
 

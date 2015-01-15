@@ -26,7 +26,9 @@
  *
  */
 
+struct ISC_DATE;
 struct ISC_QUAD;
+struct ISC_TIME;
 struct FbCryptKey;
 
 // Versioned interface - base for all FB interfaces
@@ -912,6 +914,10 @@ interface Util : Versioned
 	Attachment executeCreateDatabase(Status status,
 		uint stmtLength, const string creatDBstatement, uint dialect,
 		boolean* stmtIsCreateDb);
+	void decodeDate(ISC_DATE date, uint* year, uint* month, uint* day);
+	void decodeTime(ISC_TIME time, uint* hours, uint* minutes, uint* seconds, uint* fractions);
+	ISC_DATE encodeDate(uint year, uint month, uint day);
+	ISC_TIME encodeTime(uint hours, uint minutes, uint seconds, uint fractions);
 }
 
 // Database trace objects

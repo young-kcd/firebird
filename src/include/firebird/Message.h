@@ -27,7 +27,6 @@
 #include "./Interface.h"
 #include "./impl/boost/preprocessor/seq/for_each_i.hpp"
 #include <assert.h>
-#include <time.h>
 #include <string.h>
 
 #define FB_MESSAGE(name, fields)	\
@@ -240,48 +239,35 @@ struct FbVarChar
 class FbDate
 {
 public:
-	void decode(unsigned* year, unsigned* month, unsigned* day) const
+	void decode(IUtil* util, unsigned* year, unsigned* month, unsigned* day) const
 	{
-		tm times;
-		isc_decode_sql_date(&value, &times);
-
-		if (year)
-			*year = times.tm_year + 1900;
-		if (month)
-			*month = times.tm_mon + 1;
-		if (day)
-			*day = times.tm_mday;
+		util->decodeDate(value, year, month, day);
 	}
 
-	unsigned getYear() const
+	unsigned getYear(IUtil* util) const
 	{
 		unsigned year;
-		decode(&year, NULL, NULL);
+		decode(util, &year, NULL, NULL);
 		return year;
 	}
 
-	unsigned getMonth() const
+	unsigned getMonth(IUtil* util) const
 	{
 		unsigned month;
-		decode(NULL, &month, NULL);
+		decode(util, NULL, &month, NULL);
 		return month;
 	}
 
-	unsigned getDay() const
+	unsigned getDay(IUtil* util) const
 	{
 		unsigned day;
-		decode(NULL, NULL, &day);
+		decode(util, NULL, NULL, &day);
 		return day;
 	}
 
-	void encode(unsigned year, unsigned month, unsigned day)
+	void encode(IUtil* util, unsigned year, unsigned month, unsigned day)
 	{
-		tm times;
-		times.tm_year = year - 1900;
-		times.tm_mon = month - 1;
-		times.tm_mday = day;
-
-		isc_encode_sql_date(&times, &value);
+		value = util->encodeDate(year, month, day);
 	}
 
 public:
@@ -292,58 +278,43 @@ public:
 class FbTime
 {
 public:
-	void decode(unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) const
+	void decode(IUtil* util, unsigned* hours, unsigned* minutes, unsigned* seconds,
+		unsigned* fractions) const
 	{
-		tm times;
-		isc_decode_sql_time(&value, &times);
-
-		if (hours)
-			*hours = times.tm_hour;
-		if (minutes)
-			*minutes = times.tm_min;
-		if (seconds)
-			*seconds = times.tm_sec;
-		if (fractions)
-			*fractions = value % ISC_TIME_SECONDS_PRECISION;
+		util->decodeTime(value, hours, minutes, seconds, fractions);
 	}
 
-	unsigned getHours() const
+	unsigned getHours(IUtil* util) const
 	{
 		unsigned hours;
-		decode(&hours, NULL, NULL, NULL);
+		decode(util, &hours, NULL, NULL, NULL);
 		return hours;
 	}
 
-	unsigned getMinutes() const
+	unsigned getMinutes(IUtil* util) const
 	{
 		unsigned minutes;
-		decode(NULL, &minutes, NULL, NULL);
+		decode(util, NULL, &minutes, NULL, NULL);
 		return minutes;
 	}
 
-	unsigned getSeconds() const
+	unsigned getSeconds(IUtil* util) const
 	{
 		unsigned seconds;
-		decode(NULL, NULL, &seconds, NULL);
+		decode(util, NULL, NULL, &seconds, NULL);
 		return seconds;
 	}
 
-	unsigned getFractions() const
+	unsigned getFractions(IUtil* util) const
 	{
 		unsigned fractions;
-		decode(NULL, NULL, NULL, &fractions);
+		decode(util, NULL, NULL, NULL, &fractions);
 		return fractions;
 	}
 
-	void encode(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
+	void encode(IUtil* util, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
 	{
-		tm times;
-		times.tm_hour = hours;
-		times.tm_min = minutes;
-		times.tm_sec = seconds;
-
-		isc_encode_sql_time(&times, &value);
-		value += fractions;
+		value = util->encodeTime(hours, minutes, seconds, fractions);
 	}
 
 public:

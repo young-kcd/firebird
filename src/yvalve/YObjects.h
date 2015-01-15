@@ -552,6 +552,11 @@ public:
 	YAttachment* executeCreateDatabase(Firebird::CheckStatusWrapper* status,
 		unsigned stmtLength, const char* creatDBstatement, unsigned dialect,
 		FB_BOOLEAN* stmtIsCreateDb = NULL);
+	void decodeDate(ISC_DATE date, unsigned* year, unsigned* month, unsigned* day);
+	void decodeTime(ISC_TIME time,
+		unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions);
+	ISC_DATE encodeDate(unsigned year, unsigned month, unsigned day);
+	ISC_TIME encodeTime(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions);
 };
 
 }	// namespace Why

@@ -3235,6 +3235,10 @@ namespace Firebird
 			void (CLOOP_CARG *dumpBlob)(IUtil* self, IStatus* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) throw();
 			void (CLOOP_CARG *getPerfCounters)(IUtil* self, IStatus* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) throw();
 			IAttachment* (CLOOP_CARG *executeCreateDatabase)(IUtil* self, IStatus* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) throw();
+			void (CLOOP_CARG *decodeDate)(IUtil* self, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day) throw();
+			void (CLOOP_CARG *decodeTime)(IUtil* self, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) throw();
+			ISC_DATE (CLOOP_CARG *encodeDate)(IUtil* self, unsigned year, unsigned month, unsigned day) throw();
+			ISC_TIME (CLOOP_CARG *encodeTime)(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) throw();
 		};
 
 	protected:
@@ -3278,6 +3282,28 @@ namespace Firebird
 		{
 			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
 			StatusType::checkException(status);
+			return ret;
+		}
+
+		void decodeDate(ISC_DATE date, unsigned* year, unsigned* month, unsigned* day)
+		{
+			static_cast<VTable*>(this->cloopVTable)->decodeDate(this, date, year, month, day);
+		}
+
+		void decodeTime(ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions)
+		{
+			static_cast<VTable*>(this->cloopVTable)->decodeTime(this, time, hours, minutes, seconds, fractions);
+		}
+
+		ISC_DATE encodeDate(unsigned year, unsigned month, unsigned day)
+		{
+			ISC_DATE ret = static_cast<VTable*>(this->cloopVTable)->encodeDate(this, year, month, day);
+			return ret;
+		}
+
+		ISC_TIME encodeTime(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
+		{
+			ISC_TIME ret = static_cast<VTable*>(this->cloopVTable)->encodeTime(this, hours, minutes, seconds, fractions);
 			return ret;
 		}
 	};
@@ -11688,6 +11714,10 @@ namespace Firebird
 					this->dumpBlob = &Name::cloopdumpBlobDispatcher;
 					this->getPerfCounters = &Name::cloopgetPerfCountersDispatcher;
 					this->executeCreateDatabase = &Name::cloopexecuteCreateDatabaseDispatcher;
+					this->decodeDate = &Name::cloopdecodeDateDispatcher;
+					this->decodeTime = &Name::cloopdecodeTimeDispatcher;
+					this->encodeDate = &Name::cloopencodeDateDispatcher;
+					this->encodeTime = &Name::cloopencodeTimeDispatcher;
 				}
 			} vTable;
 
@@ -11764,6 +11794,56 @@ namespace Firebird
 				return static_cast<IAttachment*>(0);
 			}
 		}
+
+		static void CLOOP_CARG cloopdecodeDateDispatcher(IUtil* self, ISC_DATE date, unsigned* year, unsigned* month, unsigned* day) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::decodeDate(date, year, month, day);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopdecodeTimeDispatcher(IUtil* self, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::decodeTime(time, hours, minutes, seconds, fractions);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+
+		static ISC_DATE CLOOP_CARG cloopencodeDateDispatcher(IUtil* self, unsigned year, unsigned month, unsigned day) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::encodeDate(year, month, day);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<ISC_DATE>(0);
+			}
+		}
+
+		static ISC_TIME CLOOP_CARG cloopencodeTimeDispatcher(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::encodeTime(hours, minutes, seconds, fractions);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<ISC_TIME>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -11784,6 +11864,10 @@ namespace Firebird
 		virtual void dumpBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt) = 0;
 		virtual void getPerfCounters(StatusType* status, IAttachment* att, const char* countersSet, ISC_INT64* counters) = 0;
 		virtual IAttachment* executeCreateDatabase(StatusType* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb) = 0;
+		virtual void decodeDate(ISC_DATE date, unsigned* year, unsigned* month, unsigned* day) = 0;
+		virtual void decodeTime(ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) = 0;
+		virtual ISC_DATE encodeDate(unsigned year, unsigned month, unsigned day) = 0;
+		virtual ISC_TIME encodeTime(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
