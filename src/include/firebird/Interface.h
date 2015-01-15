@@ -69,6 +69,18 @@ namespace Firebird
 		{
 		}
 
+		FbException(const FbException& copy)
+			: status(copy.status->clone())
+		{
+		}
+
+		FbException& operator =(const FbException& copy)
+		{
+			status->dispose();
+			status = copy.status->clone();
+			return *this;
+		}
+
 		virtual ~FbException()
 		{
 			status->dispose();
