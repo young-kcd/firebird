@@ -1,3 +1,28 @@
+ 2015-01-14 14:43  asfernandes 
+   M src/include/firebird/FirebirdInterface.idl
+Correction.
+
+ 2015-01-14 14:38  asfernandes 
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2015-01-14 14:21  asfernandes 
+   M src/common/classes/ImplementHelper.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/isql/isql.epp
+   M src/isql/show.epp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/perf.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Renamed "Utl" API to "Util".
+
  2015-01-13 14:43  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M src/include/firebird/UdrCppEngine.h
