@@ -150,7 +150,8 @@ static void merge(Firebird::IIntUserField* to, Firebird::IIntUserField* from)
 }
 
 namespace {
-	class GsecInfo : public Firebird::AutoIface<Firebird::ILogonInfoImpl<GsecInfo, Firebird::CheckStatusWrapper> >
+	class GsecInfo :
+		public Firebird::AutoIface<Firebird::ILogonInfoImpl<GsecInfo, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		GsecInfo(const char* pDba, const char* pRole,
@@ -227,7 +228,8 @@ namespace {
 		}
 	};
 
-	class Display : public Firebird::AutoIface<Firebird::IListUsersImpl<Display, Firebird::CheckStatusWrapper> >
+	class Display :
+		public Firebird::AutoIface<Firebird::IListUsersImpl<Display, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		explicit Display(tsec* t)
@@ -289,7 +291,8 @@ namespace {
 	};
 
 
-	class Callback : public Firebird::AutoIface<Firebird::IListUsersImpl<Callback, Firebird::CheckStatusWrapper> >
+	class Callback :
+		public Firebird::AutoIface<Firebird::IListUsersImpl<Callback, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		explicit Callback(StackUserData* pu)

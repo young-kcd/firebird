@@ -292,7 +292,8 @@ public:
 	RefPtr<RefCounted> attachment;
 };
 
-class MetadataBuilder FB_FINAL : public RefCntIface<IMetadataBuilderImpl<MetadataBuilder, CheckStatusWrapper> >
+class MetadataBuilder FB_FINAL :
+	public RefCntIface<IMetadataBuilderImpl<MetadataBuilder, CheckStatusWrapper> >
 {
 public:
 	explicit MetadataBuilder(const MsgMetadata* from);

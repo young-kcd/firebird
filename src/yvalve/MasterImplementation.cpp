@@ -575,7 +575,8 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 } // namespace
 
-class TimerImplementation : public AutoIface<ITimerControlImpl<TimerImplementation, CheckStatusWrapper> >
+class TimerImplementation :
+	public AutoIface<ITimerControlImpl<TimerImplementation, CheckStatusWrapper> >
 {
 public:
 	// ITimerControl implementation

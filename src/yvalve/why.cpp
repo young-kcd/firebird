@@ -106,7 +106,8 @@ namespace {
 
 // Class-wrapper around external SQLDA.
 // Can be used as local variable, but do it with care
-class SQLDAMetadata FB_FINAL : public RefCntIface<IMessageMetadataImpl<SQLDAMetadata, CheckStatusWrapper> >
+class SQLDAMetadata FB_FINAL :
+	public RefCntIface<IMessageMetadataImpl<SQLDAMetadata, CheckStatusWrapper> >
 {
 friend class SQLDAMetadataLauncher;
 private:
@@ -1385,7 +1386,8 @@ namespace {
 		}
 	}
 
-	FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata, UCHAR* outBuffer)
+	FB_BOOLEAN IscStatement::fetch(CheckStatusWrapper* status, IMessageMetadata* outMetadata,
+		UCHAR* outBuffer)
 	{
 		checkCursorOpened();
 
@@ -2762,7 +2764,8 @@ int API_ROUTINE gds__enable_subsystem(TEXT* /*subsystem*/)
 
 namespace
 {
-	class WaitCallback FB_FINAL : public RefCntIface<IEventCallbackImpl<WaitCallback, CheckStatusWrapper> >
+	class WaitCallback FB_FINAL :
+		public RefCntIface<IEventCallbackImpl<WaitCallback, CheckStatusWrapper> >
 	{
 	public:
 		explicit WaitCallback(UCHAR* aBuffer)
@@ -4011,7 +4014,8 @@ void YBlob::getInfo(CheckStatusWrapper* status, unsigned int itemsLength,
 	}
 }
 
-int YBlob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void* buffer, unsigned int* segmentLength)
+int YBlob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength,
+	void* buffer, unsigned int* segmentLength)
 {
 	try
 	{
@@ -4649,7 +4653,8 @@ void YTransaction::getInfo(CheckStatusWrapper* status, unsigned int itemsLength,
 	}
 }
 
-void YTransaction::prepare(CheckStatusWrapper* status, unsigned int msgLength, const unsigned char* message)
+void YTransaction::prepare(CheckStatusWrapper* status, unsigned int msgLength,
+	const unsigned char* message)
 {
 	try
 	{
@@ -5366,7 +5371,8 @@ YTransaction* YAttachment::getTransaction(CheckStatusWrapper* status, ITransacti
 }
 
 
-void YAttachment::getNextTransaction(CheckStatusWrapper* status, ITransaction* tra, NextTransaction& next)
+void YAttachment::getNextTransaction(CheckStatusWrapper* status, ITransaction* tra,
+	NextTransaction& next)
 {
 	next = getTransaction(status, tra)->next;
 	if (!next.hasData())
@@ -5694,7 +5700,6 @@ void Dispatcher::shutdown(CheckStatusWrapper* userStatus, unsigned int timeout, 
 
 		StatusVector status(NULL);
 		CheckStatusWrapper statusWrapper(&status);
-
 
 #ifdef DEV_BUILD
 		// Make timeout huge in debug build: hard to debug something during 5-10 sec

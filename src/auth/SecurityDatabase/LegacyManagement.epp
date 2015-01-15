@@ -233,7 +233,8 @@ static inline void strStore(char* to, const char* from, size_t len)
 	strncpy(to, from, len);
 }
 
-int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebird::IUser* user, Firebird::IListUsers* callback)
+int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebird::IUser* user,
+	Firebird::IListUsers* callback)
 {
 /*************************************
  *

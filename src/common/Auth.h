@@ -39,7 +39,8 @@
 
 namespace Auth {
 
-class WriterImplementation : public Firebird::AutoIface<Firebird::IWriterImpl<WriterImplementation, Firebird::CheckStatusWrapper> >
+class WriterImplementation :
+	public Firebird::AutoIface<Firebird::IWriterImpl<WriterImplementation, Firebird::CheckStatusWrapper> >
 {
 public:
 	WriterImplementation();

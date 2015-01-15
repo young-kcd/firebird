@@ -44,7 +44,8 @@ class JStatement;
 class JAttachment;
 class JProvider;
 
-class JBlob FB_FINAL : public Firebird::RefCntIface<Firebird::IBlobImpl<JBlob, Firebird::CheckStatusWrapper> >
+class JBlob FB_FINAL :
+	public Firebird::RefCntIface<Firebird::IBlobImpl<JBlob, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IBlob implementation
@@ -84,7 +85,8 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JTransaction FB_FINAL : public Firebird::RefCntIface<Firebird::ITransactionImpl<JTransaction, Firebird::CheckStatusWrapper> >
+class JTransaction FB_FINAL :
+	public Firebird::RefCntIface<Firebird::ITransactionImpl<JTransaction, Firebird::CheckStatusWrapper> >
 {
 public:
 	// ITransaction implementation
@@ -136,7 +138,8 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JResultSet FB_FINAL : public Firebird::RefCntIface<Firebird::IResultSetImpl<JResultSet, Firebird::CheckStatusWrapper> >
+class JResultSet FB_FINAL :
+	public Firebird::RefCntIface<Firebird::IResultSetImpl<JResultSet, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IResultSet implementation
@@ -173,7 +176,8 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JStatement FB_FINAL : public Firebird::RefCntIface<Firebird::IStatementImpl<JStatement, Firebird::CheckStatusWrapper> >
+class JStatement FB_FINAL :
+	public Firebird::RefCntIface<Firebird::IStatementImpl<JStatement, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IStatement implementation
@@ -228,7 +232,8 @@ inline dsql_req* JResultSet::getHandle() throw()
 	return statement->getHandle();
 }
 
-class JRequest FB_FINAL : public Firebird::RefCntIface<Firebird::IRequestImpl<JRequest, Firebird::CheckStatusWrapper> >
+class JRequest FB_FINAL :
+	public Firebird::RefCntIface<Firebird::IRequestImpl<JRequest, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IRequest implementation
@@ -294,7 +299,8 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JAttachment FB_FINAL : public Firebird::RefCntIface<Firebird::IAttachmentImpl<JAttachment, Firebird::CheckStatusWrapper> >
+class JAttachment FB_FINAL :
+	public Firebird::RefCntIface<Firebird::IAttachmentImpl<JAttachment, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IAttachment implementation
@@ -306,8 +312,10 @@ public:
 		unsigned int bufferLength, unsigned char* buffer);
 	JTransaction* startTransaction(Firebird::CheckStatusWrapper* status,
 		unsigned int tpbLength, const unsigned char* tpb);
-	JTransaction* reconnectTransaction(Firebird::CheckStatusWrapper* status, unsigned int length, const unsigned char* id);
-	JRequest* compileRequest(Firebird::CheckStatusWrapper* status, unsigned int blr_length, const unsigned char* blr);
+	JTransaction* reconnectTransaction(Firebird::CheckStatusWrapper* status,
+		unsigned int length, const unsigned char* id);
+	JRequest* compileRequest(Firebird::CheckStatusWrapper* status,
+		unsigned int blr_length, const unsigned char* blr);
 	void transactRequest(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		unsigned int blr_length, const unsigned char* blr,
 		unsigned int in_msg_length, const unsigned char* in_msg,
@@ -324,8 +332,8 @@ public:
 		unsigned int sdl_length, const unsigned char* sdl,
 		unsigned int param_length, const unsigned char* param,
 		int sliceLength, unsigned char* slice);
-	void executeDyn(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction, unsigned int length,
-		const unsigned char* dyn);
+	void executeDyn(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
+		unsigned int length, const unsigned char* dyn);
 	JStatement* prepare(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* tra,
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect, unsigned int flags);
 	Firebird::ITransaction* execute(Firebird::CheckStatusWrapper* status,
@@ -367,7 +375,8 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JService FB_FINAL : public Firebird::RefCntIface<Firebird::IServiceImpl<JService, Firebird::CheckStatusWrapper> >
+class JService FB_FINAL :
+	public Firebird::RefCntIface<Firebird::IServiceImpl<JService, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IService implementation
@@ -389,7 +398,8 @@ private:
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
 
-class JProvider FB_FINAL : public Firebird::StdPlugin<Firebird::IProviderImpl<JProvider, Firebird::CheckStatusWrapper> >
+class JProvider FB_FINAL :
+	public Firebird::StdPlugin<Firebird::IProviderImpl<JProvider, Firebird::CheckStatusWrapper> >
 {
 public:
 	explicit JProvider(Firebird::IPluginConfig* pConf)

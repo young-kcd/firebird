@@ -51,7 +51,8 @@ namespace Why
 		Firebird::IDtcStart* startBuilder(Firebird::CheckStatusWrapper* status);
 	};
 
-	class MasterImplementation : public Firebird::AutoIface<Firebird::IMasterImpl<MasterImplementation, Firebird::CheckStatusWrapper> >
+	class MasterImplementation :
+		public Firebird::AutoIface<Firebird::IMasterImpl<MasterImplementation, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		static Firebird::Static<Dtc> dtc;

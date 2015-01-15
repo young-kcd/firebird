@@ -140,7 +140,8 @@ private:
 		}
 	};
 
-	class ExternalContextImpl : public Firebird::VersionedIface<Firebird::IExternalContextImpl<ExternalContextImpl, Firebird::CheckStatusWrapper> >
+	class ExternalContextImpl :
+		public Firebird::VersionedIface<Firebird::IExternalContextImpl<ExternalContextImpl, Firebird::CheckStatusWrapper> >
 	{
 	friend class AttachmentImpl;
 

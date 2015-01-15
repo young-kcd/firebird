@@ -149,7 +149,8 @@ void ExecInSecurityDb::executeInSecurityDb(jrd_tra* localTransaction)
 	{
 		runInSecurityDb(secDbContext);
 
-		secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, ("RELEASE SAVEPOINT " + savePoint).c_str(),
+		secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0,
+			("RELEASE SAVEPOINT " + savePoint).c_str(),
 			SQL_DIALECT_V6, NULL, NULL, NULL, NULL);
 		savePoint.erase();
 		check(&statusWrapper);

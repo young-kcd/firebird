@@ -609,7 +609,7 @@ void Engine::openAttachment(ThrowStatusWrapper* /*status*/, IExternalContext* /*
 }
 
 
-void Engine::closeAttachment(ThrowStatusWrapper* status, IExternalContext* context)
+void Engine::closeAttachment(ThrowStatusWrapper* /*status*/, IExternalContext* context)
 {
 	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
 

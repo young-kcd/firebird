@@ -164,7 +164,8 @@ public:
 	Firebird::RefPtr<NextInterface> next;
 };
 
-class YEvents FB_FINAL : public YHelper<YEvents, Firebird::IEventsImpl<YEvents, Firebird::CheckStatusWrapper> >
+class YEvents FB_FINAL :
+	public YHelper<YEvents, Firebird::IEventsImpl<YEvents, Firebird::CheckStatusWrapper> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_events_handle;
@@ -182,7 +183,8 @@ public:
 	Firebird::RefPtr<Firebird::IEventCallback> callback;
 };
 
-class YRequest FB_FINAL : public YHelper<YRequest, Firebird::IRequestImpl<YRequest, Firebird::CheckStatusWrapper> >
+class YRequest FB_FINAL :
+	public YHelper<YRequest, Firebird::IRequestImpl<YRequest, Firebird::CheckStatusWrapper> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_req_handle;
@@ -210,7 +212,8 @@ public:
 	FB_API_HANDLE* userHandle;
 };
 
-class YTransaction FB_FINAL : public YHelper<YTransaction, Firebird::ITransactionImpl<YTransaction, Firebird::CheckStatusWrapper> >
+class YTransaction FB_FINAL :
+	public YHelper<YTransaction, Firebird::ITransactionImpl<YTransaction, Firebird::CheckStatusWrapper> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_trans_handle;
@@ -287,7 +290,8 @@ public:
 	YTransaction* transaction;
 };
 
-class YResultSet FB_FINAL : public YHelper<YResultSet, Firebird::IResultSetImpl<YResultSet, Firebird::CheckStatusWrapper> >
+class YResultSet FB_FINAL :
+	public YHelper<YResultSet, Firebird::IResultSetImpl<YResultSet, Firebird::CheckStatusWrapper> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_result_set;
@@ -332,7 +336,8 @@ private:
 	bool input;
 };
 
-class YStatement FB_FINAL : public YHelper<YStatement, Firebird::IStatementImpl<YStatement, Firebird::CheckStatusWrapper> >
+class YStatement FB_FINAL :
+	public YHelper<YStatement, Firebird::IStatementImpl<YStatement, Firebird::CheckStatusWrapper> >
 {
 public:
 	static const ISC_STATUS ERROR_CODE = isc_bad_stmt_handle;
@@ -386,7 +391,8 @@ public:
 	Firebird::Mutex enterMutex;
 };
 
-class YAttachment FB_FINAL : public YHelper<YAttachment, Firebird::IAttachmentImpl<YAttachment, Firebird::CheckStatusWrapper> >,
+class YAttachment FB_FINAL :
+	public YHelper<YAttachment, Firebird::IAttachmentImpl<YAttachment, Firebird::CheckStatusWrapper> >,
 	public EnterCount
 {
 public:
@@ -461,7 +467,8 @@ public:
 	Firebird::StatusHolder savedStatus;	// Do not use raise() method of this class in yValve.
 };
 
-class YService FB_FINAL : public YHelper<YService, Firebird::IServiceImpl<YService, Firebird::CheckStatusWrapper> >,
+class YService FB_FINAL :
+	public YHelper<YService, Firebird::IServiceImpl<YService, Firebird::CheckStatusWrapper> >,
 	public EnterCount
 {
 public:
@@ -492,7 +499,8 @@ private:
 	bool utf8Connection;		// Client talks to us using UTF8, else - system default charset
 };
 
-class Dispatcher FB_FINAL : public Firebird::StdPlugin<Firebird::IProviderImpl<Dispatcher, Firebird::CheckStatusWrapper> >
+class Dispatcher FB_FINAL :
+	public Firebird::StdPlugin<Firebird::IProviderImpl<Dispatcher, Firebird::CheckStatusWrapper> >
 {
 public:
 	Dispatcher()
@@ -528,7 +536,8 @@ private:
 	Firebird::ICryptKeyCallback* cryptCallback;
 };
 
-class UtilInterface FB_FINAL : public Firebird::AutoIface<Firebird::IUtilImpl<UtilInterface, Firebird::CheckStatusWrapper> >
+class UtilInterface FB_FINAL :
+	public Firebird::AutoIface<Firebird::IUtilImpl<UtilInterface, Firebird::CheckStatusWrapper> >
 {
 	// IUtil implementation
 public:

@@ -39,6 +39,7 @@ namespace Firebird
 //------------------------------------------------------------------------------
 
 
+//// TODO: review
 // Routine registration functions.
 extern "C" void FB_EXPORTED fbUdrRegFunction(const char* name, IUdrFunctionFactory* factory);
 extern "C" void FB_EXPORTED fbUdrRegProcedure(const char* name, IUdrProcedureFactory* factory);

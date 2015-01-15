@@ -375,7 +375,6 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 	LocalStatus status;
 	CheckStatusWrapper statusWrapper(&status);
 
-
 	if (m_request)
 	{
 		doClose(tdbb, true);
@@ -417,7 +416,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 				tran->getHandle()->tra_caller_name = CallerName();
 		}
 
-		m_request = att->prepare(&statusWrapper, tran, sql.length(), sql.c_str(), m_connection.getSqlDialect(), 0);
+		m_request = att->prepare(&statusWrapper, tran, sql.length(), sql.c_str(),
+			m_connection.getSqlDialect(), 0);
 		m_allocated = (m_request != NULL);
 
 		tran->getHandle()->tra_caller_name = save_caller_name;

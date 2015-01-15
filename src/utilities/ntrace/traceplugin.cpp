@@ -32,7 +32,8 @@
 #include "TraceConfiguration.h"
 #include "TracePluginImpl.h"
 
-class TraceFactoryImpl FB_FINAL : public Firebird::StdPlugin<Firebird::ITraceFactoryImpl<TraceFactoryImpl, Firebird::CheckStatusWrapper> >
+class TraceFactoryImpl FB_FINAL :
+	public Firebird::StdPlugin<Firebird::ITraceFactoryImpl<TraceFactoryImpl, Firebird::CheckStatusWrapper> >
 {
 public:
 	explicit TraceFactoryImpl(Firebird::IPluginConfig*)
@@ -40,7 +41,8 @@ public:
 
 	// TraceFactory implementation
 	ntrace_mask_t trace_needs();
-	Firebird::ITracePlugin* trace_create(Firebird::CheckStatusWrapper* status, Firebird::ITraceInitInfo* init_info);
+	Firebird::ITracePlugin* trace_create(Firebird::CheckStatusWrapper* status,
+		Firebird::ITraceInitInfo* init_info);
 	int release();
 };
 

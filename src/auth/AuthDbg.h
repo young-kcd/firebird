@@ -46,7 +46,8 @@ namespace Auth {
 // The idea of debug plugin is to send some data from server to client,
 // modify them on client and return result (which becomes login name) to the server
 
-class DebugServer FB_FINAL : public Firebird::StdPlugin<Firebird::IServerImpl<DebugServer, Firebird::CheckStatusWrapper> >
+class DebugServer FB_FINAL :
+	public Firebird::StdPlugin<Firebird::IServerImpl<DebugServer, Firebird::CheckStatusWrapper> >
 {
 public:
 	explicit DebugServer(Firebird::IPluginConfig*);
@@ -60,7 +61,8 @@ private:
 	Firebird::RefPtr<Firebird::IConfig> config;
 };
 
-class DebugClient FB_FINAL : public Firebird::StdPlugin<Firebird::IClientImpl<DebugClient, Firebird::CheckStatusWrapper> >
+class DebugClient FB_FINAL :
+	public Firebird::StdPlugin<Firebird::IClientImpl<DebugClient, Firebird::CheckStatusWrapper> >
 {
 public:
 	DebugClient(Firebird::IPluginConfig*);

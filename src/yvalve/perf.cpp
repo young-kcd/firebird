@@ -443,8 +443,8 @@ KnownCounters knownCounters[TOTAL_COUNTERS] = {
 
 } // anonymous namespace
 
-void Why::UtilInterface::getPerfCounters(Firebird::CheckStatusWrapper* status, Firebird::IAttachment* att,
-		const char* countersSet, ISC_INT64* counters)
+void Why::UtilInterface::getPerfCounters(Firebird::CheckStatusWrapper* status,
+	Firebird::IAttachment* att, const char* countersSet, ISC_INT64* counters)
 {
 	try
 	{

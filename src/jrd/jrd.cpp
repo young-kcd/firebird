@@ -958,7 +958,8 @@ private:
 
 /// trace manager support
 
-class TraceFailedConnection : public AutoIface<ITraceDatabaseConnectionImpl<TraceFailedConnection, CheckStatusWrapper> >
+class TraceFailedConnection :
+	public AutoIface<ITraceDatabaseConnectionImpl<TraceFailedConnection, CheckStatusWrapper> >
 {
 public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);

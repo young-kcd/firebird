@@ -70,7 +70,8 @@ private:
 	void checkFile();
 	void touchFile();
 
-	class TouchFile FB_FINAL : public Firebird::RefCntIface<Firebird::ITimerImpl<TouchFile, Firebird::CheckStatusWrapper> >
+	class TouchFile FB_FINAL :
+		public Firebird::RefCntIface<Firebird::ITimerImpl<TouchFile, Firebird::CheckStatusWrapper> >
 	{
 	public:
 		void handler();

@@ -111,7 +111,8 @@ namespace
 
 	bool flShutdown = false;
 
-	class ConfigParameterAccess FB_FINAL : public RefCntIface<IConfigEntryImpl<ConfigParameterAccess, CheckStatusWrapper> >
+	class ConfigParameterAccess FB_FINAL :
+		public RefCntIface<IConfigEntryImpl<ConfigParameterAccess, CheckStatusWrapper> >
 	{
 	public:
 		ConfigParameterAccess(IReferenceCounted* c, const ConfigFile::Parameter* p) : cf(c), par(p) { }
@@ -155,7 +156,8 @@ namespace
 		const ConfigFile::Parameter* par;
 	};
 
-	class ConfigAccess FB_FINAL : public RefCntIface<IConfigImpl<ConfigAccess, CheckStatusWrapper> >
+	class ConfigAccess FB_FINAL :
+		public RefCntIface<IConfigImpl<ConfigAccess, CheckStatusWrapper> >
 	{
 	public:
 		ConfigAccess(RefPtr<ConfigFile> c) : confFile(c) { }
@@ -431,7 +433,8 @@ namespace
 
 	// Provides most of configuration services for plugins,
 	// except per-database configuration in databases.conf
-	class ConfiguredPlugin FB_FINAL : public RefCntIface<ITimerImpl<ConfiguredPlugin, CheckStatusWrapper> >
+	class ConfiguredPlugin FB_FINAL :
+		public RefCntIface<ITimerImpl<ConfiguredPlugin, CheckStatusWrapper> >
 	{
 	public:
 		ConfiguredPlugin(RefPtr<PluginModule> pmodule, unsigned int preg,
@@ -515,7 +518,8 @@ namespace
 	};
 
 	// Provides per-database configuration from databases.conf.
-	class FactoryParameter FB_FINAL : public RefCntIface<IPluginConfigImpl<FactoryParameter, CheckStatusWrapper> >
+	class FactoryParameter FB_FINAL :
+		public RefCntIface<IPluginConfigImpl<FactoryParameter, CheckStatusWrapper> >
 	{
 	public:
 		FactoryParameter(ConfiguredPlugin* cp, IFirebirdConf* fc)

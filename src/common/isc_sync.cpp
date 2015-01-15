@@ -952,7 +952,8 @@ static bool make_object_name(TEXT*, size_t, const TEXT*, const TEXT*);
 
 namespace {
 
-class TimerEntry FB_FINAL : public Firebird::RefCntIface<Firebird::ITimerImpl<TimerEntry, CheckStatusWrapper> >
+class TimerEntry FB_FINAL :
+	public Firebird::RefCntIface<Firebird::ITimerImpl<TimerEntry, CheckStatusWrapper> >
 {
 public:
 	TimerEntry(int id, USHORT num)

@@ -123,7 +123,8 @@ const UCHAR TPB[4] =
 
 namespace Auth {
 
-class SecurityDatabaseServer FB_FINAL : public StdPlugin<IServerImpl<SecurityDatabaseServer, CheckStatusWrapper> >
+class SecurityDatabaseServer FB_FINAL :
+	public StdPlugin<IServerImpl<SecurityDatabaseServer, CheckStatusWrapper> >
 {
 public:
 	explicit SecurityDatabaseServer(Firebird::IPluginConfig* p)
@@ -131,7 +132,8 @@ public:
 	{ }
 
 	// IServer implementation
-	int authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
+	int authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sBlock,
+		Firebird::IWriter* writerInterface);
 	int release();
 
 private:

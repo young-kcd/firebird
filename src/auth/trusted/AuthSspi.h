@@ -100,11 +100,13 @@ public:
 	bool getLogin(Firebird::string& login, bool& wh);
 };
 
-class WinSspiServer : public Firebird::StdPlugin<Firebird::IServerImpl<WinSspiServer, Firebird::CheckStatusWrapper> >
+class WinSspiServer :
+	public Firebird::StdPlugin<Firebird::IServerImpl<WinSspiServer, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IServer implementation
-	int authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sBlock, Firebird::IWriter* writerInterface);
+	int authenticate(Firebird::CheckStatusWrapper* status, Firebird::IServerBlock* sBlock,
+		Firebird::IWriter* writerInterface);
     int release();
 
 	WinSspiServer(Firebird::IPluginConfig*);
@@ -114,7 +116,8 @@ private:
 	AuthSspi sspi;
 };
 
-class WinSspiClient : public Firebird::StdPlugin<Firebird::IClientImpl<WinSspiClient, Firebird::CheckStatusWrapper> >
+class WinSspiClient :
+	public Firebird::StdPlugin<Firebird::IClientImpl<WinSspiClient, Firebird::CheckStatusWrapper> >
 {
 public:
 	// IClient implementation
