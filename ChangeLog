@@ -1,3 +1,63 @@
+ 2015-01-15 14:55  asfernandes 
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Message.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+Added encode/decode date/time methods to IUtil interface.
+
+ 2015-01-15 01:17  asfernandes 
+   M src/auth/AuthDbg.h
+   M src/auth/SecurityDatabase/LegacyClient.h
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyManagement.h
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/trusted/AuthSspi.h
+   M src/common/Auth.h
+   M src/common/MsgMetadata.h
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/TempFile.h
+   M src/common/config/config.h
+   M src/common/isc_sync.cpp
+   M src/common/security.h
+   M src/dsql/DdlNodes.epp
+   M src/include/firebird/UdrEngine.h
+   M src/isql/show.epp
+   M src/jrd/Database.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/ExtEngineManager.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/remote.h
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/ntrace/PluginLogWriter.h
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/perf.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2015-01-15 01:16  asfernandes 
+   M src/remote/inet.cpp
+Warning.
+
+ 2015-01-15 01:16  asfernandes 
+   M src/include/firebird/Interface.h
+Implement FbException copying.
+
+ 2015-01-15 01:16  asfernandes 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+Remove old hacks.
+
  2015-01-14 14:43  asfernandes 
    M src/include/firebird/FirebirdInterface.idl
 Correction.
