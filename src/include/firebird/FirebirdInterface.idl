@@ -29,7 +29,6 @@
 struct ISC_DATE;
 struct ISC_QUAD;
 struct ISC_TIME;
-struct FbCryptKey;
 
 // Versioned interface - base for all FB interfaces
 interface Versioned
@@ -214,7 +213,6 @@ interface PluginModule : Versioned
 	void doClean();
 }
 
-
 // Interface to deal with plugins here and there, returned by master interface
 interface PluginManager : Versioned
 {
@@ -257,19 +255,17 @@ interface PluginManager : Versioned
 }
 
 
-/*** FIXME:
-struct FbCryptKey
+// Helper interface to pass wire crypt key from authentication to crypt plugin
+interface CryptKey : Versioned
 {
-	const string type;					// If NULL type is auth plugin name
-	const void* encryptKey;
-	const void* decryptKey;				// May be NULL for symmetric keys
-	uint encryptLength;
-	uint decryptLength;			// Ignored when decryptKey is NULL
+	// In 2 following methods NULL type means auth plugin's name is used as key type
+	void setSymmetric(Status status, const string type, uint keyLength, const void* key);
+	void setAsymmetric(Status status, const string type, uint encryptKeyLength,
+		const void* encryptKey, uint decryptKeyLength, const void* decryptKey);
+
+	const void* getEncryptKey(uint* length);
+	const void* getDecryptKey(uint* length);
 }
-
-
-typedef void PluginEntrypoint(Master masterInterface);
-***/
 
 
 // Generic access to all config interfaces
@@ -534,17 +530,14 @@ interface Provider : PluginBase
 // Helper to start transaction over >1 attachments (former TEB)
 interface DtcStart : Disposable
 {
-	void setComponent(Status status, Attachment att);
-	void setWithParam(Status status, Attachment att, uint length, const uchar* tpb);
-	uint getCount(Status status);
-	Attachment getAttachment(Status status, uint pos);
-	const uchar* getTpb(Status status, uint pos, uint* length);
+	void addAttachment(Status status, Attachment att);
+	void addWithTpb(Status status, Attachment att, uint length, const uchar* tpb);
+	Transaction start(Status status);	// successfull call disposes interfaces
 }
 
 // Distributed transactions coordinator
 interface Dtc : Versioned
 {
-	Transaction start(Status status, DtcStart components);
 	Transaction join(Status status, Transaction one, Transaction two);
 	DtcStart startBuilder(Status status);
 }
@@ -574,7 +567,8 @@ interface ServerBlock : Versioned
 	const string getLogin();
 	const uchar* getData(uint* length);
 	void putData(Status status, uint length, const void* data);
-	void putKey(Status status, FbCryptKey* cryptKey);
+	// In 2 next methods NULL type means type is auth plugin name
+	CryptKey newKey(Status status);
 }
 
 // Representation of auth-related data, passed to/from client auth plugin
@@ -584,7 +578,7 @@ interface ClientBlock : ReferenceCounted
 	const string getPassword();
 	const uchar* getData(uint* length);
 	void putData(Status status, uint length, const void* data);
-	void putKey(Status status, FbCryptKey* cryptKey);
+	CryptKey newKey(Status status);
 }
 
 // server part of authentication plugin
@@ -676,7 +670,7 @@ interface WireCryptPlugin : PluginBase
 	// getKnownTypes() function must return list of acceptable keys' types
 	// special type 'builtin' means that crypt plugin knows itself where to get the key from
 	const string getKnownTypes(Status status);
-	void setKey(Status status, FbCryptKey* key);
+	void setKey(Status status, CryptKey key);
 	void encrypt(Status status, uint length, const void* from, void* to);
 	void decrypt(Status status, uint length, const void* from, void* to);
 }

@@ -636,38 +636,48 @@ public:
 	virtual Firebird::ICryptKeyCallback* getInterface() = 0;
 };
 
-// Helper class to work with public structure FbCryptKey
-class InternalCryptKey : public Firebird::FbCryptKey
+// CryptKey implementation
+class InternalCryptKey FB_FINAL : public Firebird::VersionedIface<Firebird::ICryptKeyImpl<InternalCryptKey, Firebird::CheckStatusWrapper> >,
+	public Firebird::GlobalStorage
 {
 public:
-	InternalCryptKey(const char* p_type, const void* p_enc, unsigned int p_eLen,
-					 const void* p_dec = NULL, unsigned int p_dLen = 0)
-	{
-		type = p_type;
-		encryptKey = keyDup(p_enc, p_eLen);
-		encryptLength = p_eLen;
-		decryptKey = p_dec ? keyDup(p_dec, p_dLen) : NULL;
-		decryptLength = p_dLen;
-	}
+	InternalCryptKey()
+		: t(getPool())
+	{ }
 
-	~InternalCryptKey()
-	{
-		keyFree(decryptKey);
-		keyFree(encryptKey);
-	}
+	// ICryptKey implementation
+	void setSymmetric(Firebird::CheckStatusWrapper* status, const char* type, unsigned keyLength, const void* key);
+	void setAsymmetric(Firebird::CheckStatusWrapper* status, const char* type, unsigned encryptKeyLength,
+		const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey);
+	const void* getEncryptKey(unsigned* length);
+	const void* getDecryptKey(unsigned* length);
 
-private:
-	void* keyDup(const void* k, unsigned int l)
+	class Key : public Firebird::UCharBuffer
 	{
-		void* rc = FB_NEW(*getDefaultMemoryPool()) char[l];
-		memcpy(rc, k, l);
-		return rc;
-	}
+	public:
+		Key()
+			: Firebird::UCharBuffer(getPool())
+		{ }
 
-	void keyFree(const void* k)
-	{
-		delete[] ((char*) k);
-	}
+		void set(unsigned keyLength, const void* key)
+		{
+			assign(reinterpret_cast<const UCHAR*>(key), keyLength);
+		}
+
+		const void* get(unsigned* length)
+		{
+			if (getCount() > 0)
+			{
+				if (length)
+					*length = getCount();
+				return begin();
+			}
+			return NULL;
+		}
+	};
+
+	Key encrypt, decrypt;
+	Firebird::PathName t;
 };
 
 
@@ -724,7 +734,7 @@ public:
 	const char* getPassword();
 	const unsigned char* getData(unsigned int* length);
 	void putData(Firebird::CheckStatusWrapper* status, unsigned int length, const void* data);
-	void putKey(Firebird::CheckStatusWrapper* status, Firebird::FbCryptKey* cryptKey);
+	Firebird::ICryptKey* newKey(Firebird::CheckStatusWrapper* status);
 };
 
 // Representation of authentication data, visible for plugin
@@ -742,7 +752,7 @@ private:
 	// These two may be legacy encrypted password, trusted auth data and so on
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 	Firebird::ClumpletWriter lastExtractedKeys;
-	Firebird::ObjectsArray<Firebird::PathName> newKeys;
+	Firebird::HalfStaticArray<InternalCryptKey*, 8> newKeys;
 	bool flComplete, firstTime;
 
 public:
@@ -792,7 +802,7 @@ public:
 	const char* getLogin();
 	const unsigned char* getData(unsigned int* length);
 	void putData(Firebird::CheckStatusWrapper* status, unsigned int length, const void* data);
-	void putKey(Firebird::CheckStatusWrapper* status, Firebird::FbCryptKey* cryptKey);
+	Firebird::ICryptKey* newKey(Firebird::CheckStatusWrapper* status);
 };
 
 

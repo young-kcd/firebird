@@ -36,18 +36,6 @@
 #define CLOOP_CARG __cdecl
 #endif
 
-namespace Firebird
-{
-	struct FbCryptKey
-	{
-		const char* type;			// If NULL type is auth plugin name
-		const void* encryptKey;
-		const void* decryptKey;		// May be NULL for symmetric keys
-		unsigned encryptLength;
-		unsigned decryptLength;		// Ignored when decryptKey is NULL
-	};
-}
-
 struct dsc;
 struct PerformanceInfo;
 

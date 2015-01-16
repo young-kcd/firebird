@@ -3499,30 +3499,36 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 			return status[1];
 		}
 
-		IDtcStart* ds = MasterImplementation::dtc->startBuilder(&statusWrapper);
-		if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+		DtcStart* ds = MasterImplementation::dtc->startBuilder(&statusWrapper);
+		if (statusWrapper.getStatus() & IStatus::FB_HAS_ERRORS)
 			return status[1];
 
 		for (SSHORT i = 0; i < count; ++i, ++vector)
 		{
 			RefPtr<YAttachment> attachment(translateHandle(attachments, vector->teb_database));
-			ds->setWithParam(&statusWrapper, attachment, vector->teb_tpb_length,
+			ds->addWithTpb(&statusWrapper, attachment, vector->teb_tpb_length,
 				reinterpret_cast<const unsigned char*>(vector->teb_tpb));
-			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+
+			if (statusWrapper.getStatus() & IStatus::FB_HAS_ERRORS)
+			{
+				ds->dispose();
 				return status[1];
+			}
 		}
 
-		multiTrans = MasterImplementation::dtc->start(&statusWrapper, ds);
-		if (multiTrans)
-			*traHandle = multiTrans->getHandle();
+		multiTrans = ds->start(&statusWrapper);
+		if (!multiTrans)
+		{
+			ds->dispose();
+			return status[1];
+		}
+
+		*traHandle = multiTrans->getHandle();
 	}
 	catch (const Exception& e)
 	{
-		StatusVector temp(NULL);
-		CheckStatusWrapper tempCheckStatusWrapper(&status);
-
 		if (multiTrans)
-			multiTrans->rollback(&tempCheckStatusWrapper);
+			multiTrans->release();
 
 		e.stuffException(&status);
 	}

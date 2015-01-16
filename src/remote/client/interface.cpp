@@ -7607,27 +7607,24 @@ bool ClntAuthBlock::checkPluginName(Firebird::PathName& nameToCheck)
 	return false;
 }
 
-void ClntAuthBlock::putKey(CheckStatusWrapper* status, FbCryptKey* cryptKey)
+Firebird::ICryptKey* ClntAuthBlock::newKey(CheckStatusWrapper* status)
 {
 	status->init();
 	try
 	{
-		const char* t = cryptKey->type;
-		if (!t)
-		{
-			fb_assert(plugins.hasData());
-			t = plugins.name();
-		}
+		InternalCryptKey* k = new InternalCryptKey;
 
-		InternalCryptKey* k = FB_NEW(*getDefaultMemoryPool())
-			InternalCryptKey(t, cryptKey->encryptKey, cryptKey->encryptLength,
-								cryptKey->decryptKey, cryptKey->decryptLength);
+		fb_assert(plugins.hasData());
+		k->t = plugins.name();
 		cryptKeys.add(k);
+
+		return k;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
+	return NULL;
 }
 
 void ClntAuthBlock::tryNewKeys(rem_port* port)

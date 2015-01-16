@@ -64,12 +64,11 @@ public:
 	}
 };
 
-Static<Dtc> MasterImplementation::dtc;
-
 IStatus* MasterImplementation::getStatus()
 {
 	return new UserStatus;
 }
+
 
 //
 // getDispatcher()
@@ -85,6 +84,8 @@ IProvider* MasterImplementation::getDispatcher()
 //
 // getDtc()
 //
+
+Static<Dtc> MasterImplementation::dtc;
 
 Dtc* MasterImplementation::getDtc()
 {

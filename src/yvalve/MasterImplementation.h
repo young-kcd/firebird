@@ -32,6 +32,7 @@
 #include "firebird.h"
 #include "firebird/Interface.h"
 #include "../yvalve/YObjects.h"
+#include "../yvalve/DistributedTransaction.h"
 #include "../common/classes/ImplementHelper.h"
 
 namespace Firebird
@@ -41,16 +42,6 @@ namespace Firebird
 
 namespace Why
 {
-	class Dtc : public Firebird::AutoIface<Firebird::IDtcImpl<Dtc, Firebird::CheckStatusWrapper> >
-	{
-	public:
-		// IDtc implementation
-		YTransaction* start(Firebird::CheckStatusWrapper* status, Firebird::IDtcStart* components);
-		YTransaction* join(Firebird::CheckStatusWrapper* status,
-			Firebird::ITransaction* one, Firebird::ITransaction* two);
-		Firebird::IDtcStart* startBuilder(Firebird::CheckStatusWrapper* status);
-	};
-
 	class MasterImplementation :
 		public Firebird::AutoIface<Firebird::IMasterImpl<MasterImplementation, Firebird::CheckStatusWrapper> >
 	{

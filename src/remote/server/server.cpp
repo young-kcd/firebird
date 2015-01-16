@@ -5388,11 +5388,11 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 {
 	try
 	{
-		FbCryptKey* key = NULL;
+		ICryptKey* key = NULL;
 		PathName keyName(crypt->p_key.cstr_address, crypt->p_key.cstr_length);
 		for (unsigned k = 0; k < port_crypt_keys.getCount(); ++k)
 		{
-			if (keyName == port_crypt_keys[k]->type)
+			if (keyName == port_crypt_keys[k]->t)
 			{
 				key = port_crypt_keys[k];
 				break;
@@ -6378,7 +6378,7 @@ bool SrvAuthBlock::extractNewKeys(CSTRING* to, ULONG flags)
 	{
 		for (unsigned n = 0; n < newKeys.getCount(); ++n)
 		{
-			const PathName& t = newKeys[n];
+			const PathName& t = newKeys[n]->t;
 			PathName plugins = knownCryptKeyTypes()[t];
 			if (plugins.hasData())
 			{

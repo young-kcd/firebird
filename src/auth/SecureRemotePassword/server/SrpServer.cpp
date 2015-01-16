@@ -227,8 +227,12 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 			dumpIt("Srv: sessionKey", sessionKey);
 
 			// output the key
-			FbCryptKey cKey = {"Symmetric", sessionKey.begin(), NULL, sessionKey.getCount(), 0};
-			sb->putKey(status, &cKey);
+			ICryptKey* cKey = sb->newKey(status);
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			{
+				return AUTH_FAILED;
+			}
+			cKey->setSymmetric(status, "Symmetric", sessionKey.getCount(), sessionKey.begin());
 			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				return AUTH_FAILED;

@@ -1250,7 +1250,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 		return true;
 	}
 
-	if (srvKey.type != cryptKey->type)
+	if (srvKey.type != cryptKey->t)
 	{
 		return false;
 	}
@@ -1293,7 +1293,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 				// therefore sent packet will be not encrypted
 				PACKET crypt;
 				crypt.p_operation = op_crypt;
-				setCStr(crypt.p_crypt.p_key, cryptKey->type);
+				setCStr(crypt.p_crypt.p_key, cryptKey->t.c_str());
 				setCStr(crypt.p_crypt.p_plugin, p.c_str());
 				send(&crypt);
 
@@ -1340,28 +1340,24 @@ void SrvAuthBlock::putData(Firebird::CheckStatusWrapper* status, unsigned int le
 	}
 }
 
-void SrvAuthBlock::putKey(Firebird::CheckStatusWrapper* status, Firebird::FbCryptKey* cryptKey)
+Firebird::ICryptKey* SrvAuthBlock::newKey(Firebird::CheckStatusWrapper* status)
 {
 	status->init();
 	try
 	{
-		const char* t = cryptKey->type;
-		if (!t)
-		{
-			fb_assert(pluginName.hasData());
-			t = pluginName.c_str();
-		}
+		InternalCryptKey* k = new InternalCryptKey;
 
-		InternalCryptKey* k = FB_NEW(*getDefaultMemoryPool())
-			InternalCryptKey(t, cryptKey->encryptKey, cryptKey->encryptLength,
-							 cryptKey->decryptKey, cryptKey->decryptLength);
+		k->t = pluginName.c_str();
 		port->port_crypt_keys.push(k);
-		newKeys.push(k->type);
+		newKeys.push(k);
+
+		return k;
 	}
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(status);
 	}
+	return NULL;
 }
 
 void rem_port::versionInfo(Firebird::string& version)
@@ -1677,6 +1673,48 @@ void rem_port::initCompression()
 #endif
 	}
 #endif
+}
+
+
+void InternalCryptKey::setSymmetric(Firebird::CheckStatusWrapper* status, const char* type, unsigned keyLength, const void* key)
+{
+	try
+	{
+		if (type)
+			t = type;
+		encrypt.set(keyLength, key);
+		decrypt.clear();
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+void InternalCryptKey::setAsymmetric(Firebird::CheckStatusWrapper* status, const char* type, unsigned encryptKeyLength,
+	const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey)
+{
+	try
+	{
+		if (type)
+			t = type;
+		encrypt.set(encryptKeyLength, encryptKey);
+		decrypt.set(decryptKeyLength, decryptKey);
+	}
+	catch(const Firebird::Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+const void* InternalCryptKey::getEncryptKey(unsigned* length)
+{
+	return encrypt.get(length);
+}
+
+const void* InternalCryptKey::getDecryptKey(unsigned* length)
+{
+	return decrypt.getCount() > 0 ? decrypt.get(length) : encrypt.get(length);
 }
 
 

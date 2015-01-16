@@ -28,12 +28,10 @@
 
 #include "firebird.h"
 
+#include "../yvalve/DistributedTransaction.h"
+
 #include "../yvalve/MasterImplementation.h"
-#include "../yvalve/YObjects.h"
-#include "../common/classes/ImplementHelper.h"
 #include "../common/classes/rwlock.h"
-#include "../common/classes/array.h"
-#include "../common/StatusHolder.h"
 #include "../jrd/inf_pub.h"
 #include "../common/isc_proto.h"
 #include "../jrd/acl.h"
@@ -498,7 +496,39 @@ DTransaction::~DTransaction()
 
 namespace Why {
 
-YTransaction* Dtc::start(CheckStatusWrapper* status, IDtcStart* components)
+
+void DtcStart::addAttachment(CheckStatusWrapper* status, IAttachment* att)
+{
+	this->addWithTpb(status, att, 0, NULL);
+}
+
+void DtcStart::addWithTpb(CheckStatusWrapper* status, IAttachment* att, unsigned length, const unsigned char* tpb)
+{
+	try
+	{
+		Component toAdd;
+		toAdd.att = att;
+		toAdd.tpbLen = length;
+		toAdd.tpb = tpb;
+
+		components.add(toAdd);
+		att->addRef();
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+	}
+}
+
+void DtcStart::dispose()
+{
+	for (unsigned i = 0; i < components.getCount(); ++i)
+		components[i].att->release();
+
+	delete this;
+}
+
+YTransaction* DtcStart::start(CheckStatusWrapper* status)
 {
 	try
 	{
@@ -506,22 +536,15 @@ YTransaction* Dtc::start(CheckStatusWrapper* status, IDtcStart* components)
 
 		RefPtr<DTransaction> dtransaction(new DTransaction);
 
-		unsigned cnt = components->getCount(status);
+		unsigned cnt = components.getCount();
 		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			status_exception::raise(status);
+		if (cnt == 0)
+			(Arg::Gds(isc_random) << "No attachments to start distributed transaction provided").raise();
 
 		for (unsigned i = 0; i < cnt; ++i)
 		{
-			RefPtr<IAttachment> att(REF_NO_INCR, components->getAttachment(status, i));
-			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
-				status_exception::raise(status);
-
-			unsigned tpbLen;
-			const unsigned char* tpb = components->getTpb(status, i, &tpbLen);
-			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
-				status_exception::raise(status);
-
-			ITransaction* started = att->startTransaction(status, tpbLen, tpb);
+			ITransaction* started = components[i].att->startTransaction(status, components[i].tpbLen, components[i].tpb);
 			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 				status_exception::raise(status);
 
@@ -535,7 +558,7 @@ YTransaction* Dtc::start(CheckStatusWrapper* status, IDtcStart* components)
 
 		YTransaction* rc = new YTransaction(NULL, dtransaction);
 		dtransaction->addRef();
-		components->dispose();
+		this->dispose();
 		return rc;
 	}
 	catch (const Exception& ex)
@@ -575,101 +598,7 @@ YTransaction* Dtc::join(CheckStatusWrapper* status, ITransaction* one, ITransact
 	return NULL;
 }
 
-class DtcStart : public DisposeIface<IDtcStartImpl<DtcStart, CheckStatusWrapper> >
-{
-public:
-	DtcStart()
-		: components(getPool())
-	{ }
-
-	// IDtcStart implementation
-	void setComponent(CheckStatusWrapper* status, IAttachment* att)
-	{
-		this->setWithParam(status, att, 0, NULL);
-	}
-
-	void setWithParam(CheckStatusWrapper* status, IAttachment* att, unsigned length, const unsigned char* tpb)
-	{
-		try
-		{
-			Component toAdd;
-			toAdd.att = att;
-			toAdd.tpbLen = length;
-			toAdd.tpb = tpb;
-
-			components.add(toAdd);
-			att->addRef();
-		}
-		catch (const Exception& ex)
-		{
-			ex.stuffException(status);
-		}
-	}
-
-	unsigned getCount(CheckStatusWrapper*)
-	{
-		return components.getCount();
-	}
-
-	IAttachment* getAttachment(CheckStatusWrapper* status, unsigned pos)
-	{
-		try
-		{
-			errorOver(pos);
-
-			components[pos].att->addRef();
-			return components[pos].att;
-		}
-		catch (const Exception& ex)
-		{
-			ex.stuffException(status);
-		}
-		return NULL;
-	}
-
-	const unsigned char* getTpb(CheckStatusWrapper* status, unsigned pos, unsigned* length)
-	{
-		try
-		{
-			errorOver(pos);
-
-			*length = components[pos].tpbLen;
-			return components[pos].tpb;
-		}
-		catch (const Exception& ex)
-		{
-			ex.stuffException(status);
-		}
-		return NULL;
-	}
-
-	void dispose()
-	{
-		for (unsigned i = 0; i < components.getCount(); ++i)
-			components[i].att->release();
-
-		delete this;
-	}
-
-private:
-	struct Component
-	{
-		IAttachment* att;
-		unsigned tpbLen;
-		const unsigned char* tpb;
-	};
-
-	HalfStaticArray<Component, 16> components;
-
-	void errorOver(unsigned n)
-	{
-		// TODO: add component num & limit to the message
-		if (n >= components.getCount())
-			(Arg::Gds(isc_random) << "Access to invalid component number in DtcStart").raise();
-	}
-};
-
-IDtcStart* Dtc::startBuilder(CheckStatusWrapper* status)
+DtcStart* Dtc::startBuilder(CheckStatusWrapper* status)
 {
 	try
 	{

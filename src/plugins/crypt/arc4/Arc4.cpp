@@ -94,7 +94,7 @@ public:
 
 	// ICryptPlugin implementation
 	const char* getKnownTypes(CheckStatusWrapper* status);
-	void setKey(CheckStatusWrapper* status, FbCryptKey* key);
+	void setKey(CheckStatusWrapper* status, ICryptKey* key);
 	void encrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	void decrypt(CheckStatusWrapper* status, unsigned int length, const void* from, void* to);
 	int release();
@@ -115,21 +115,16 @@ int Arc4::release()
 	return 1;
 }
 
-void Arc4::setKey(CheckStatusWrapper* status, FbCryptKey* key)
+void Arc4::setKey(CheckStatusWrapper* status, ICryptKey* key)
 {
 	status->init();
 	try
 	{
-		en = createCypher(key->encryptLength, key->encryptKey);
+    	unsigned int l;
+		const void* k = key->getEncryptKey(&l);
+		en = createCypher(l, k);
 
-		const void* k = key->decryptKey;
-    	unsigned int l = key->decryptLength;
-	    if (!k)
-    	{
-    		k = key->encryptKey;
-	    	l = key->encryptLength;
-    	}
-
+	    k = key->getDecryptKey(&l);
 		de = createCypher(l, k);
 	}
 	catch(const Exception& ex)

@@ -40,6 +40,7 @@ namespace Firebird
 	class IPluginFactory;
 	class IPluginModule;
 	class IPluginManager;
+	class ICryptKey;
 	class IConfigManager;
 	class IEventCallback;
 	class IBlob;
@@ -805,6 +806,55 @@ namespace Firebird
 		void releasePlugin(IPluginBase* plugin)
 		{
 			static_cast<VTable*>(this->cloopVTable)->releasePlugin(this, plugin);
+		}
+	};
+
+	class ICryptKey : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			void (CLOOP_CARG *setSymmetric)(ICryptKey* self, IStatus* status, const char* type, unsigned keyLength, const void* key) throw();
+			void (CLOOP_CARG *setAsymmetric)(ICryptKey* self, IStatus* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey) throw();
+			const void* (CLOOP_CARG *getEncryptKey)(ICryptKey* self, unsigned* length) throw();
+			const void* (CLOOP_CARG *getDecryptKey)(ICryptKey* self, unsigned* length) throw();
+		};
+
+	protected:
+		ICryptKey(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~ICryptKey()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		template <typename StatusType> void setSymmetric(StatusType* status, const char* type, unsigned keyLength, const void* key)
+		{
+			static_cast<VTable*>(this->cloopVTable)->setSymmetric(this, status, type, keyLength, key);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void setAsymmetric(StatusType* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey)
+		{
+			static_cast<VTable*>(this->cloopVTable)->setAsymmetric(this, status, type, encryptKeyLength, encryptKey, decryptKeyLength, decryptKey);
+			StatusType::checkException(status);
+		}
+
+		const void* getEncryptKey(unsigned* length)
+		{
+			const void* ret = static_cast<VTable*>(this->cloopVTable)->getEncryptKey(this, length);
+			return ret;
+		}
+
+		const void* getDecryptKey(unsigned* length)
+		{
+			const void* ret = static_cast<VTable*>(this->cloopVTable)->getDecryptKey(this, length);
+			return ret;
 		}
 	};
 
@@ -1897,11 +1947,9 @@ namespace Firebird
 	public:
 		struct VTable : public IDisposable::VTable
 		{
-			void (CLOOP_CARG *setComponent)(IDtcStart* self, IStatus* status, IAttachment* att) throw();
-			void (CLOOP_CARG *setWithParam)(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw();
-			unsigned (CLOOP_CARG *getCount)(IDtcStart* self, IStatus* status) throw();
-			IAttachment* (CLOOP_CARG *getAttachment)(IDtcStart* self, IStatus* status, unsigned pos) throw();
-			const unsigned char* (CLOOP_CARG *getTpb)(IDtcStart* self, IStatus* status, unsigned pos, unsigned* length) throw();
+			void (CLOOP_CARG *addAttachment)(IDtcStart* self, IStatus* status, IAttachment* att) throw();
+			void (CLOOP_CARG *addWithTpb)(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw();
+			ITransaction* (CLOOP_CARG *start)(IDtcStart* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -1917,35 +1965,21 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 3;
 
-		template <typename StatusType> void setComponent(StatusType* status, IAttachment* att)
+		template <typename StatusType> void addAttachment(StatusType* status, IAttachment* att)
 		{
-			static_cast<VTable*>(this->cloopVTable)->setComponent(this, status, att);
+			static_cast<VTable*>(this->cloopVTable)->addAttachment(this, status, att);
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void setWithParam(StatusType* status, IAttachment* att, unsigned length, const unsigned char* tpb)
+		template <typename StatusType> void addWithTpb(StatusType* status, IAttachment* att, unsigned length, const unsigned char* tpb)
 		{
-			static_cast<VTable*>(this->cloopVTable)->setWithParam(this, status, att, length, tpb);
+			static_cast<VTable*>(this->cloopVTable)->addWithTpb(this, status, att, length, tpb);
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> unsigned getCount(StatusType* status)
+		template <typename StatusType> ITransaction* start(StatusType* status)
 		{
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status);
-			StatusType::checkException(status);
-			return ret;
-		}
-
-		template <typename StatusType> IAttachment* getAttachment(StatusType* status, unsigned pos)
-		{
-			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status, pos);
-			StatusType::checkException(status);
-			return ret;
-		}
-
-		template <typename StatusType> const unsigned char* getTpb(StatusType* status, unsigned pos, unsigned* length)
-		{
-			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getTpb(this, status, pos, length);
+			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -1956,7 +1990,6 @@ namespace Firebird
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			ITransaction* (CLOOP_CARG *start)(IDtc* self, IStatus* status, IDtcStart* components) throw();
 			ITransaction* (CLOOP_CARG *join)(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) throw();
 			IDtcStart* (CLOOP_CARG *startBuilder)(IDtc* self, IStatus* status) throw();
 		};
@@ -1973,13 +2006,6 @@ namespace Firebird
 
 	public:
 		static const unsigned VERSION = 2;
-
-		template <typename StatusType> ITransaction* start(StatusType* status, IDtcStart* components)
-		{
-			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status, components);
-			StatusType::checkException(status);
-			return ret;
-		}
 
 		template <typename StatusType> ITransaction* join(StatusType* status, ITransaction* one, ITransaction* two)
 		{
@@ -2078,7 +2104,7 @@ namespace Firebird
 			const char* (CLOOP_CARG *getLogin)(IServerBlock* self) throw();
 			const unsigned char* (CLOOP_CARG *getData)(IServerBlock* self, unsigned* length) throw();
 			void (CLOOP_CARG *putData)(IServerBlock* self, IStatus* status, unsigned length, const void* data) throw();
-			void (CLOOP_CARG *putKey)(IServerBlock* self, IStatus* status, FbCryptKey* cryptKey) throw();
+			ICryptKey* (CLOOP_CARG *newKey)(IServerBlock* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -2112,10 +2138,11 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void putKey(StatusType* status, FbCryptKey* cryptKey)
+		template <typename StatusType> ICryptKey* newKey(StatusType* status)
 		{
-			static_cast<VTable*>(this->cloopVTable)->putKey(this, status, cryptKey);
+			ICryptKey* ret = static_cast<VTable*>(this->cloopVTable)->newKey(this, status);
 			StatusType::checkException(status);
+			return ret;
 		}
 	};
 
@@ -2128,7 +2155,7 @@ namespace Firebird
 			const char* (CLOOP_CARG *getPassword)(IClientBlock* self) throw();
 			const unsigned char* (CLOOP_CARG *getData)(IClientBlock* self, unsigned* length) throw();
 			void (CLOOP_CARG *putData)(IClientBlock* self, IStatus* status, unsigned length, const void* data) throw();
-			void (CLOOP_CARG *putKey)(IClientBlock* self, IStatus* status, FbCryptKey* cryptKey) throw();
+			ICryptKey* (CLOOP_CARG *newKey)(IClientBlock* self, IStatus* status) throw();
 		};
 
 	protected:
@@ -2168,10 +2195,11 @@ namespace Firebird
 			StatusType::checkException(status);
 		}
 
-		template <typename StatusType> void putKey(StatusType* status, FbCryptKey* cryptKey)
+		template <typename StatusType> ICryptKey* newKey(StatusType* status)
 		{
-			static_cast<VTable*>(this->cloopVTable)->putKey(this, status, cryptKey);
+			ICryptKey* ret = static_cast<VTable*>(this->cloopVTable)->newKey(this, status);
 			StatusType::checkException(status);
+			return ret;
 		}
 	};
 
@@ -2583,7 +2611,7 @@ namespace Firebird
 		struct VTable : public IPluginBase::VTable
 		{
 			const char* (CLOOP_CARG *getKnownTypes)(IWireCryptPlugin* self, IStatus* status) throw();
-			void (CLOOP_CARG *setKey)(IWireCryptPlugin* self, IStatus* status, FbCryptKey* key) throw();
+			void (CLOOP_CARG *setKey)(IWireCryptPlugin* self, IStatus* status, ICryptKey* key) throw();
 			void (CLOOP_CARG *encrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 			void (CLOOP_CARG *decrypt)(IWireCryptPlugin* self, IStatus* status, unsigned length, const void* from, void* to) throw();
 		};
@@ -2608,7 +2636,7 @@ namespace Firebird
 			return ret;
 		}
 
-		template <typename StatusType> void setKey(StatusType* status, FbCryptKey* key)
+		template <typename StatusType> void setKey(StatusType* status, ICryptKey* key)
 		{
 			static_cast<VTable*>(this->cloopVTable)->setKey(this, status, key);
 			StatusType::checkException(status);
@@ -5986,6 +6014,103 @@ namespace Firebird
 	};
 
 	template <typename Name, typename StatusType, typename Base>
+	class ICryptKeyBaseImpl : public Base
+	{
+	public:
+		typedef ICryptKey Declaration;
+
+		ICryptKeyBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->setSymmetric = &Name::cloopsetSymmetricDispatcher;
+					this->setAsymmetric = &Name::cloopsetAsymmetricDispatcher;
+					this->getEncryptKey = &Name::cloopgetEncryptKeyDispatcher;
+					this->getDecryptKey = &Name::cloopgetDecryptKeyDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopsetSymmetricDispatcher(ICryptKey* self, IStatus* status, const char* type, unsigned keyLength, const void* key) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setSymmetric(&status2, type, keyLength, key);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopsetAsymmetricDispatcher(ICryptKey* self, IStatus* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::setAsymmetric(&status2, type, encryptKeyLength, encryptKey, decryptKeyLength, decryptKey);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static const void* CLOOP_CARG cloopgetEncryptKeyDispatcher(ICryptKey* self, unsigned* length) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getEncryptKey(length);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<const void*>(0);
+			}
+		}
+
+		static const void* CLOOP_CARG cloopgetDecryptKeyDispatcher(ICryptKey* self, unsigned* length) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getDecryptKey(length);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<const void*>(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<ICryptKey> > >
+	class ICryptKeyImpl : public ICryptKeyBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		ICryptKeyImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~ICryptKeyImpl()
+		{
+		}
+
+		virtual void setSymmetric(StatusType* status, const char* type, unsigned keyLength, const void* key) = 0;
+		virtual void setAsymmetric(StatusType* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey) = 0;
+		virtual const void* getEncryptKey(unsigned* length) = 0;
+		virtual const void* getDecryptKey(unsigned* length) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
 	class IConfigManagerBaseImpl : public Base
 	{
 	public:
@@ -8513,24 +8638,22 @@ namespace Firebird
 				{
 					this->version = Base::VERSION;
 					this->dispose = &Name::cloopdisposeDispatcher;
-					this->setComponent = &Name::cloopsetComponentDispatcher;
-					this->setWithParam = &Name::cloopsetWithParamDispatcher;
-					this->getCount = &Name::cloopgetCountDispatcher;
-					this->getAttachment = &Name::cloopgetAttachmentDispatcher;
-					this->getTpb = &Name::cloopgetTpbDispatcher;
+					this->addAttachment = &Name::cloopaddAttachmentDispatcher;
+					this->addWithTpb = &Name::cloopaddWithTpbDispatcher;
+					this->start = &Name::cloopstartDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
 		}
 
-		static void CLOOP_CARG cloopsetComponentDispatcher(IDtcStart* self, IStatus* status, IAttachment* att) throw()
+		static void CLOOP_CARG cloopaddAttachmentDispatcher(IDtcStart* self, IStatus* status, IAttachment* att) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::setComponent(&status2, att);
+				static_cast<Name*>(self)->Name::addAttachment(&status2, att);
 			}
 			catch (...)
 			{
@@ -8538,13 +8661,13 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetWithParamDispatcher(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw()
+		static void CLOOP_CARG cloopaddWithTpbDispatcher(IDtcStart* self, IStatus* status, IAttachment* att, unsigned length, const unsigned char* tpb) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::setWithParam(&status2, att, length, tpb);
+				static_cast<Name*>(self)->Name::addWithTpb(&status2, att, length, tpb);
 			}
 			catch (...)
 			{
@@ -8552,48 +8675,18 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetCountDispatcher(IDtcStart* self, IStatus* status) throw()
+		static ITransaction* CLOOP_CARG cloopstartDispatcher(IDtcStart* self, IStatus* status) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				return static_cast<Name*>(self)->Name::getCount(&status2);
+				return static_cast<Name*>(self)->Name::start(&status2);
 			}
 			catch (...)
 			{
 				StatusType::catchException(&status2);
-				return static_cast<unsigned>(0);
-			}
-		}
-
-		static IAttachment* CLOOP_CARG cloopgetAttachmentDispatcher(IDtcStart* self, IStatus* status, unsigned pos) throw()
-		{
-			StatusType status2(status);
-
-			try
-			{
-				return static_cast<Name*>(self)->Name::getAttachment(&status2, pos);
-			}
-			catch (...)
-			{
-				StatusType::catchException(&status2);
-				return static_cast<IAttachment*>(0);
-			}
-		}
-
-		static const unsigned char* CLOOP_CARG cloopgetTpbDispatcher(IDtcStart* self, IStatus* status, unsigned pos, unsigned* length) throw()
-		{
-			StatusType status2(status);
-
-			try
-			{
-				return static_cast<Name*>(self)->Name::getTpb(&status2, pos, length);
-			}
-			catch (...)
-			{
-				StatusType::catchException(&status2);
-				return static_cast<const unsigned char*>(0);
+				return static_cast<ITransaction*>(0);
 			}
 		}
 
@@ -8623,11 +8716,9 @@ namespace Firebird
 		{
 		}
 
-		virtual void setComponent(StatusType* status, IAttachment* att) = 0;
-		virtual void setWithParam(StatusType* status, IAttachment* att, unsigned length, const unsigned char* tpb) = 0;
-		virtual unsigned getCount(StatusType* status) = 0;
-		virtual IAttachment* getAttachment(StatusType* status, unsigned pos) = 0;
-		virtual const unsigned char* getTpb(StatusType* status, unsigned pos, unsigned* length) = 0;
+		virtual void addAttachment(StatusType* status, IAttachment* att) = 0;
+		virtual void addWithTpb(StatusType* status, IAttachment* att, unsigned length, const unsigned char* tpb) = 0;
+		virtual ITransaction* start(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -8643,28 +8734,12 @@ namespace Firebird
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
-					this->start = &Name::cloopstartDispatcher;
 					this->join = &Name::cloopjoinDispatcher;
 					this->startBuilder = &Name::cloopstartBuilderDispatcher;
 				}
 			} vTable;
 
 			this->cloopVTable = &vTable;
-		}
-
-		static ITransaction* CLOOP_CARG cloopstartDispatcher(IDtc* self, IStatus* status, IDtcStart* components) throw()
-		{
-			StatusType status2(status);
-
-			try
-			{
-				return static_cast<Name*>(self)->Name::start(&status2, components);
-			}
-			catch (...)
-			{
-				StatusType::catchException(&status2);
-				return static_cast<ITransaction*>(0);
-			}
 		}
 
 		static ITransaction* CLOOP_CARG cloopjoinDispatcher(IDtc* self, IStatus* status, ITransaction* one, ITransaction* two) throw()
@@ -8711,7 +8786,6 @@ namespace Firebird
 		{
 		}
 
-		virtual ITransaction* start(StatusType* status, IDtcStart* components) = 0;
 		virtual ITransaction* join(StatusType* status, ITransaction* one, ITransaction* two) = 0;
 		virtual IDtcStart* startBuilder(StatusType* status) = 0;
 	};
@@ -8918,7 +8992,7 @@ namespace Firebird
 					this->getLogin = &Name::cloopgetLoginDispatcher;
 					this->getData = &Name::cloopgetDataDispatcher;
 					this->putData = &Name::cloopputDataDispatcher;
-					this->putKey = &Name::cloopputKeyDispatcher;
+					this->newKey = &Name::cloopnewKeyDispatcher;
 				}
 			} vTable;
 
@@ -8965,17 +9039,18 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopputKeyDispatcher(IServerBlock* self, IStatus* status, FbCryptKey* cryptKey) throw()
+		static ICryptKey* CLOOP_CARG cloopnewKeyDispatcher(IServerBlock* self, IStatus* status) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::putKey(&status2, cryptKey);
+				return static_cast<Name*>(self)->Name::newKey(&status2);
 			}
 			catch (...)
 			{
 				StatusType::catchException(&status2);
+				return static_cast<ICryptKey*>(0);
 			}
 		}
 	};
@@ -8996,7 +9071,7 @@ namespace Firebird
 		virtual const char* getLogin() = 0;
 		virtual const unsigned char* getData(unsigned* length) = 0;
 		virtual void putData(StatusType* status, unsigned length, const void* data) = 0;
-		virtual void putKey(StatusType* status, FbCryptKey* cryptKey) = 0;
+		virtual ICryptKey* newKey(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -9018,7 +9093,7 @@ namespace Firebird
 					this->getPassword = &Name::cloopgetPasswordDispatcher;
 					this->getData = &Name::cloopgetDataDispatcher;
 					this->putData = &Name::cloopputDataDispatcher;
-					this->putKey = &Name::cloopputKeyDispatcher;
+					this->newKey = &Name::cloopnewKeyDispatcher;
 				}
 			} vTable;
 
@@ -9078,17 +9153,18 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopputKeyDispatcher(IClientBlock* self, IStatus* status, FbCryptKey* cryptKey) throw()
+		static ICryptKey* CLOOP_CARG cloopnewKeyDispatcher(IClientBlock* self, IStatus* status) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				static_cast<Name*>(self)->Name::putKey(&status2, cryptKey);
+				return static_cast<Name*>(self)->Name::newKey(&status2);
 			}
 			catch (...)
 			{
 				StatusType::catchException(&status2);
+				return static_cast<ICryptKey*>(0);
 			}
 		}
 
@@ -9135,7 +9211,7 @@ namespace Firebird
 		virtual const char* getPassword() = 0;
 		virtual const unsigned char* getData(unsigned* length) = 0;
 		virtual void putData(StatusType* status, unsigned length, const void* data) = 0;
-		virtual void putKey(StatusType* status, FbCryptKey* cryptKey) = 0;
+		virtual ICryptKey* newKey(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
@@ -10207,7 +10283,7 @@ namespace Firebird
 			}
 		}
 
-		static void CLOOP_CARG cloopsetKeyDispatcher(IWireCryptPlugin* self, IStatus* status, FbCryptKey* key) throw()
+		static void CLOOP_CARG cloopsetKeyDispatcher(IWireCryptPlugin* self, IStatus* status, ICryptKey* key) throw()
 		{
 			StatusType status2(status);
 
@@ -10314,7 +10390,7 @@ namespace Firebird
 		}
 
 		virtual const char* getKnownTypes(StatusType* status) = 0;
-		virtual void setKey(StatusType* status, FbCryptKey* key) = 0;
+		virtual void setKey(StatusType* status, ICryptKey* key) = 0;
 		virtual void encrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 		virtual void decrypt(StatusType* status, unsigned length, const void* from, void* to) = 0;
 	};
