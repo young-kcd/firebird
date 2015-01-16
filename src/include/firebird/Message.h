@@ -63,7 +63,7 @@
 		}	\
 		\
 		template <typename StatusType>	\
-		name(::Firebird::IMaster* master, StatusType* status)	\
+		name(StatusType* status, ::Firebird::IMaster* master)	\
 			: desc(master, status, FB_BOOST_PP_SEQ_SIZE(fields), &setup<StatusType>)	\
 		{	\
 		}	\

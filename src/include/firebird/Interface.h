@@ -155,8 +155,8 @@ namespace Firebird
 	public:
 		virtual void dispose()
 		{
+			// Disposes only the delegated status. Let the user destroy this instance.
 			status->dispose();
-			delete this;
 		}
 
 		virtual void init()
