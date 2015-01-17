@@ -5477,9 +5477,12 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 #endif
 
 	if (dbb->dbb_event_mgr && attachment->att_event_session)
-	{
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
-	}
+
+    // CMP_release() advances the pointer before the deallocation.
+	jrd_req* request;
+	while ( (request = attachment->att_requests) )
+		CMP_release(tdbb, request);
 
 	if (attachment->att_id_lock)
 		LCK_release(tdbb, attachment->att_id_lock);
@@ -5493,10 +5496,16 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 
 	DSqlCache::Accessor accessor(&attachment->att_dsql_cache);
 	for (bool getResult = accessor.getFirst(); getResult; getResult = accessor.getNext())
-	{
 		LCK_release(tdbb, accessor.current()->second.lock);
-	}
 #endif
+
+	detachLocksFromAttachment(attachment);
+
+	if (attachment->att_flags & ATT_lck_init_done)
+	{
+		LCK_fini(tdbb, LCK_OWNER_attachment);
+		attachment->att_flags &= ~ATT_lck_init_done;
+	}
 
 	for (vcl** vector = attachment->att_counts; vector < attachment->att_counts + DBB_max_count;
 		++vector)
@@ -5510,14 +5519,6 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 	delete attachment->att_val_errors;
 	attachment->att_val_errors = NULL;
 
-	detachLocksFromAttachment(attachment);
-
-	if (attachment->att_flags & ATT_lck_init_done)
-	{
-		LCK_fini(tdbb, LCK_OWNER_attachment);
-		attachment->att_flags &= ~ATT_lck_init_done;
-	}
-
 	delete attachment->att_compatibility_table;
 
 	if (attachment->att_dsql_instance)
@@ -5525,12 +5526,6 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
 		delete attachment->att_dsql_instance;
 		dbb->deletePool(pool);
-	}
-
-    // CMP_release() advances the pointer before the deallocation.
-	jrd_req* request;
-	while ( (request = attachment->att_requests) ) {
-		CMP_release(tdbb, request);
 	}
 
 	SCL_release_all(attachment->att_security_classes);
