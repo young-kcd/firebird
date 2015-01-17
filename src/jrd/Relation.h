@@ -113,8 +113,8 @@ public:
 	SLONG	rel_instance_id;	// 0 or att_attachment_id or tra_number
 	SLONG	rel_index_root;		// index root page number
 	SLONG	rel_data_pages;		// count of relation data pages
-	USHORT	rel_slot_space;		// lowest pointer page with slot space
-	USHORT	rel_data_space;		// lowest pointer page with data page space
+	ULONG	rel_slot_space;		// lowest pointer page with slot space
+	ULONG	rel_data_space;		// lowest pointer page with data page space
 	USHORT	rel_pg_space_id;
 
 	RelationPages()
