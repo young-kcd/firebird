@@ -1,3 +1,26 @@
+ 2015-01-16 17:53  alexpeshkoff 
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/plugins/crypt/arc4/Arc4.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   A src/yvalve/DistributedTransaction.h
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/why.cpp
+Avoid use of plain structures, missing in previous FB versions, in public API
+
+ 2015-01-16 15:12  asfernandes 
+   M src/include/firebird/Interface.h
+   M src/include/firebird/Message.h
+Adjustments after fix and test of fbstuff repository.
+
  2015-01-15 14:55  asfernandes 
    M src/include/firebird/FirebirdInterface.idl
    M src/include/firebird/IdlFbInterfaces.h
