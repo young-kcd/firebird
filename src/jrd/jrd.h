@@ -460,7 +460,7 @@ public:
 		reqStat->bumpRelValue(index, relation_id, delta);
 		traStat->bumpRelValue(index, relation_id, delta);
 		attStat->bumpRelValue(index, relation_id, delta);
-		//dbbStat->bumpRelValue(index, relation_id);
+		dbbStat->bumpRelValue(index, relation_id, delta);
 	}
 
 	bool checkCancelState(bool punt);
