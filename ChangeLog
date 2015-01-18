@@ -1,3 +1,13 @@
+ 2015-01-17 18:49  dimitr 
+   M src/jrd/RecordNumber.h
+   M src/jrd/Relation.h
+   M src/jrd/dpm.epp
+Backported CORE-4384: Problems when a table grows beyond 65535 pointer pages.
+
+ 2015-01-17 18:15  dimitr 
+   M src/jrd/jrd.cpp
+This should fix CORE-4558: SuperServer dies when client is disconnected abnormally during the index navigational scan.
+
  2014-12-09 07:10  dimitr 
    M src/jrd/functions.cpp
 Minor corrections.
