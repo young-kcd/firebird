@@ -39,6 +39,7 @@ enum idx_e {
 	idx_e_duplicate,
 	idx_e_keytoobig,
 	idx_e_conversion,
+	idx_e_interrupt,
 	idx_e_foreign_target_doesnt_exist,
 	idx_e_foreign_references_present
 };

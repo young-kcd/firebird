@@ -252,7 +252,7 @@ void IndexErrorContext::raise(thread_db* tdbb, idx_e result, Record* record)
 {
 	fb_assert(result != idx_e_ok);
 
-	if (result == idx_e_conversion)
+	if (result == idx_e_conversion || result == idx_e_interrupt)
 		ERR_punt();
 
 	const MetaName& relationName = isLocationDefined ? m_location.relation->rel_name : m_relation->rel_name;
@@ -1277,7 +1277,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	{
 		ex.stuff_exception(tdbb->tdbb_status_vector);
 		key->key_length = 0;
-		return idx_e_conversion;
+		return (tdbb->tdbb_flags & TDBB_sys_error) ? idx_e_interrupt : idx_e_conversion;
 	}
 
 	return idx_e_ok;
