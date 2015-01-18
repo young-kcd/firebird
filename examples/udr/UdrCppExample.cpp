@@ -196,11 +196,11 @@ create function wait_event (
     engine udr;
 ***/
 FB_UDR_BEGIN_FUNCTION(wait_event)
-	FB_MESSAGE(InMessage,
+	FB_UDR_MESSAGE(InMessage,
 		(FB_VARCHAR(31 * 4), name)
 	);
 
-	FB_MESSAGE(OutMessage,
+	FB_UDR_MESSAGE(OutMessage,
 		(FB_INTEGER, result)
 	);
 
@@ -391,12 +391,12 @@ create procedure gen_rows2 (
     engine udr;
 ***/
 FB_UDR_BEGIN_PROCEDURE(gen_rows2)
-	FB_MESSAGE(InMessage,
+	FB_UDR_MESSAGE(InMessage,
 		(FB_INTEGER, start)
 		(FB_INTEGER, end)
 	);
 
-	FB_MESSAGE(OutMessage,
+	FB_UDR_MESSAGE(OutMessage,
 		(FB_INTEGER, result)
 	);
 
@@ -431,11 +431,11 @@ create procedure inc (
 // metadata object.
 // n3 and n4 are on the ResultSet scope, i.e., each procedure execution have they own instances.
 FB_UDR_BEGIN_PROCEDURE(inc)
-	FB_MESSAGE(InMessage,
+	FB_UDR_MESSAGE(InMessage,
 		(FB_INTEGER, count)
 	);
 
-	FB_MESSAGE(OutMessage,
+	FB_UDR_MESSAGE(OutMessage,
 		(FB_INTEGER, n0)
 		(FB_INTEGER, n1)
 		(FB_INTEGER, n2)
@@ -682,7 +682,7 @@ FB_UDR_END_TRIGGER
 FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	// Order of fields does not need to match the fields order in the table, but it should match
 	// the order of fields in the SQL command constructed in the initialization.
-	FB_TRIGGER_MESSAGE(FieldsMessage,
+	FB_UDR_TRIGGER_MESSAGE(FieldsMessage,
 		(FB_INTEGER, id, "ID")
 		(FB_BLOB, info, "INFO")
 		///(FB_VARCHAR(60 * 4), address, "ADDRESS")

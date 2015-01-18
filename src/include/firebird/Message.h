@@ -29,16 +29,16 @@
 #include <assert.h>
 #include <string.h>
 
-#define FB_MESSAGE(name, fields)	\
-	FB__MESSAGE_I(name, 2, FB_BOOST_PP_CAT(FB__MESSAGE_X fields, 0), )
+#define FB_MESSAGE(name, statusType, fields)	\
+	FB__MESSAGE_I(name, statusType, 2, FB_BOOST_PP_CAT(FB__MESSAGE_X fields, 0), )
 
 #define FB__MESSAGE_X(x, y) ((x, y)) FB__MESSAGE_Y
 #define FB__MESSAGE_Y(x, y) ((x, y)) FB__MESSAGE_X
 #define FB__MESSAGE_X0
 #define FB__MESSAGE_Y0
 
-#define FB_TRIGGER_MESSAGE(name, fields)	\
-	FB__MESSAGE_I(name, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_X fields, 0), \
+#define FB_TRIGGER_MESSAGE(name, statusType, fields)	\
+	FB__MESSAGE_I(name, statusType, 3, FB_BOOST_PP_CAT(FB_TRIGGER_MESSAGE_X fields, 0), \
 		FB_TRIGGER_MESSAGE_MOVE_NAMES(name, fields))
 
 #define FB_TRIGGER_MESSAGE_X(x, y, z) ((x, y, z)) FB_TRIGGER_MESSAGE_Y
@@ -46,7 +46,7 @@
 #define FB_TRIGGER_MESSAGE_X0
 #define FB_TRIGGER_MESSAGE_Y0
 
-#define FB__MESSAGE_I(name, size, fields, moveNames)	\
+#define FB__MESSAGE_I(name, statusType, size, fields, moveNames)	\
 	struct name	\
 	{	\
 		struct Type	\
@@ -54,17 +54,15 @@
 			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_FIELD, size, fields)	\
 		};	\
 		\
-		template <typename StatusType>	\
-		static void setup(StatusType* status, ::Firebird::IMetadataBuilder* builder)	\
+		static void setup(statusType* status, ::Firebird::IMetadataBuilder* builder)	\
 		{	\
 			unsigned index = 0;	\
 			moveNames	\
 			FB_BOOST_PP_SEQ_FOR_EACH_I(FB__MESSAGE_META, size, fields)	\
 		}	\
 		\
-		template <typename StatusType>	\
-		name(StatusType* status, ::Firebird::IMaster* master)	\
-			: desc(master, status, FB_BOOST_PP_SEQ_SIZE(fields), &setup<StatusType>)	\
+		name(statusType* status, ::Firebird::IMaster* master)	\
+			: desc(master, status, FB_BOOST_PP_SEQ_SIZE(fields), setup)	\
 		{	\
 		}	\
 		\

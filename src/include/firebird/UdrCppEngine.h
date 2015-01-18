@@ -150,6 +150,13 @@ namespace Firebird
 	~Impl()
 
 
+#define FB_UDR_MESSAGE(name, fields)	\
+	FB_MESSAGE(name, FB_UDR_STATUS_TYPE, fields)
+
+#define FB_UDR_TRIGGER_MESSAGE(name, fields)	\
+	FB_TRIGGER_MESSAGE(name, FB_UDR_STATUS_TYPE, fields)
+
+
 #define FB__UDR_COMMON_IMPL	\
 	Impl(const void* const, ::Firebird::IExternalContext* const context,	\
 			::Firebird::IRoutineMetadata* const aMetadata)	\
