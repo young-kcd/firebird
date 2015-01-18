@@ -1,3 +1,7 @@
+ 2015-01-17 18:05  dimitr 
+   M src/jrd/jrd.h
+Fixed CORE-4668: Select from mon$table_stats doesn`t work on SC and CS.
+
  2015-01-16 17:53  alexpeshkoff 
    M src/auth/SecureRemotePassword/client/SrpClient.cpp
    M src/auth/SecureRemotePassword/server/SrpServer.cpp
