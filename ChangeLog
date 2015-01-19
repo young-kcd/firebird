@@ -1,3 +1,18 @@
+ 2015-01-18 14:53  asfernandes 
+   M examples/udr/UdrCppExample.cpp
+   M src/include/firebird/Message.h
+   M src/include/firebird/UdrCppEngine.h
+Fixed problem of local templates being not allowed in pre-C++-11 code.
+
+ 2015-01-18 14:52  asfernandes 
+   A src/include/iberror.h
+Add iberror.h in the place so that external code may point to the development tree include files.
+
+ 2015-01-18 09:05  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/err_proto.h
+Better diagnostics.
+
  2015-01-17 18:05  dimitr 
    M src/jrd/jrd.h
 Fixed CORE-4668: Select from mon$table_stats doesn`t work on SC and CS.
