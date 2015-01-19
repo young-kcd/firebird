@@ -1,3 +1,8 @@
+ 2015-01-18 09:01  dimitr 
+   M src/jrd/btr.cpp
+   M src/jrd/err_proto.h
+Better diagnostics.
+
  2015-01-17 18:49  dimitr 
    M src/jrd/RecordNumber.h
    M src/jrd/Relation.h
