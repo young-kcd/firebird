@@ -990,5 +990,10 @@ inline FB_SIZE_T fb_strlen(const char* str)
 	return static_cast<FB_SIZE_T>(strlen(str));
 }
 
+namespace Firebird {
+	// ISC API emulation
+	class IMessageMetadata;
+	static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMetadata*>(1);
+}
 
 #endif /* COMMON_COMMON_H */

@@ -236,16 +236,6 @@ namespace Firebird
 	// All plugins including providers should use passed at init time interface instead.
 	extern "C" IMaster* ISC_EXPORT fb_get_master_interface();
 
-//// TODO: Move checks of INCLUDE_Firebird_H to out of public files.
-#ifdef INCLUDE_Firebird_H		// Building internal module
-
-// This item is for ISC API emulation only
-// It may be gone in future versions
-// Please do not use it!
-	static IMessageMetadata* const DELAYED_OUT_FORMAT = reinterpret_cast<IMessageMetadata*>(1);
-
-#endif //INCLUDE_Firebird_H
-
 } // namespace Firebird
 
 #define FB_PLUGIN_ENTRY_POINT firebird_plugin
