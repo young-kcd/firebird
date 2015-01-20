@@ -95,6 +95,9 @@ const char* const PROTOCOL_INET = "inet";
 const char* const PROTOCOL_WNET = "wnet";
 const char* const PROTOCOL_XNET = "xnet";
 
+const char* const INET_SEPARATOR = "/";
+const char* const WNET_SEPARATOR = "@";
+
 const char* const INET_LOCALHOST = "localhost";
 const char* const WNET_LOCALHOST = "\\\\.";
 
@@ -5357,11 +5360,10 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	cBlock.loadClnt(pb, &parSet);
 	authenticateStep0(cBlock);
 
-
 #ifdef WIN_NT
-	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name))
+	if (ISC_analyze_protocol(PROTOCOL_XNET, attach_name, node_name, NULL))
 		port = XNET_analyze(&cBlock, attach_name, flags & ANALYZE_UV, cBlock.getConfig(), ref_db_name);
-	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name) ||
+	else if (ISC_analyze_protocol(PROTOCOL_WNET, attach_name, node_name, WNET_SEPARATOR) ||
 		ISC_analyze_pclan(attach_name, node_name))
 	{
 		if (node_name.isEmpty())
@@ -5378,7 +5380,7 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	else
 #endif
 
-	if (ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name) ||
+	if (ISC_analyze_protocol(PROTOCOL_INET, attach_name, node_name, INET_SEPARATOR) ||
 		ISC_analyze_tcp(attach_name, node_name))
 	{
 		if (node_name.isEmpty())

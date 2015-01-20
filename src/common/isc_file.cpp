@@ -299,7 +299,8 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 #endif
 
 
-bool ISC_analyze_protocol(const char* protocol, tstring& expanded_name, tstring& node_name)
+bool ISC_analyze_protocol(const char* protocol, tstring& expanded_name, tstring& node_name,
+						  const char* separator)
 {
 /**************************************
  *
@@ -317,16 +318,22 @@ bool ISC_analyze_protocol(const char* protocol, tstring& expanded_name, tstring&
 
 	const PathName prefix = PathName(protocol) + "://";
 	if (expanded_name.find(prefix) != 0)
-	{
 		return false;
-	}
 
 	expanded_name.erase(0, prefix.length());
-	const size p = expanded_name.find_first_of('/');
-	if (p != npos)
+
+	if (separator) // this implies node name is expected!
 	{
-		node_name = expanded_name.substr(0, p);
-		expanded_name.erase(0, node_name.length() + 1);
+		size p = expanded_name.find_first_of('/');
+		if (p != npos)
+		{
+			node_name = expanded_name.substr(0, p);
+			expanded_name.erase(0, node_name.length() + 1);
+
+			p = node_name.find_first_of(':');
+			if (p != npos)
+				node_name[p] = *separator;
+		}
 	}
 
 	return true;
