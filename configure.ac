@@ -854,6 +854,7 @@ AC_CHECK_FUNCS(fchmod)
 AC_CHECK_FUNCS(semtimedop)
 AC_CHECK_FUNCS(fegetenv)
 AC_CHECK_FUNCS(strerror_r)
+AC_CHECK_FUNCS(qsort_r)
 case $host in
 	*-darwin*)
 		ac_cv_func_fdatasync=no

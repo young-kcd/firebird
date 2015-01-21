@@ -65,7 +65,11 @@ namespace
 	void qsort_ctx(void* base, size_t count, size_t width, qsort_compare_callback compare, void* arg)
 	{
 #if defined(LINUX)
+#ifdef HAVE_QSORT_R
 		qsort_r(base, count, width, compare, arg);
+#else
+#undef USE_QSORT_CTX
+#endif
 #elif defined(WIN_NT)
 		struct qsort_ctx_data tmp = {arg, compare};
 		qsort_s(base, count, width, &qsort_ctx_arg_swap, &tmp);

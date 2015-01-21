@@ -28,6 +28,13 @@
 #include "PluginLogWriter.h"
 #include "../common/classes/init.h"
 
+#ifndef S_IREAD
+#define S_IREAD S_IRUSR
+#endif
+#ifndef S_IWRITE
+#define S_IWRITE S_IWUSR
+#endif
+
 using namespace Firebird;
 
 // seems to only be Solaris 9 that doesn't have strerror_r,

@@ -112,11 +112,13 @@ static int process_id;
 #include <sys/param.h>
 #endif
 
+#ifndef WIN_NT
 #ifndef HAVE_GETPAGESIZE
 static size_t getpagesize()
 {
 	return PAGESIZE;
 }
+#endif
 #endif
 
 //#define DEBUG_IPC

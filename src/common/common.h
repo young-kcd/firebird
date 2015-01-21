@@ -220,6 +220,9 @@
 
 #define UNIX
 #define FB_OS OsDarwin
+#ifdef ARM
+#define FB_CPU CpuArm
+#endif /* ARM */
 #ifdef __ppc__
 #define powerpc
 #define FB_CPU CpuPowerPc

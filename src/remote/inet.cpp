@@ -799,7 +799,7 @@ rem_port* INET_connect(const TEXT* name,
 	gai_hints.ai_family = ((packet || host.hasData() || !ipv6) ? AF_UNSPEC : AF_INET6);
 	gai_hints.ai_socktype = SOCK_STREAM;
 
-#ifndef WIN_NT
+#if !defined(WIN_NT) && !defined(__clang__)
 	gai_hints.ai_protocol = SOL_TCP;
 #else
 	gai_hints.ai_protocol = IPPROTO_TCP;
