@@ -4057,7 +4057,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 		// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
+		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (temp_status[1] == isc_lock_timeout)))
 		{
 			bdb->release(tdbb, false);
 			return lsLockTimeout;
@@ -4099,7 +4099,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-	if ((wait < 0) && (status[1] == isc_lock_timeout))
+	if ((wait < 0) && (temp_status[1] == isc_lock_timeout))
 	{
 		bdb->release(tdbb, false);
 		return lsLockTimeout;
