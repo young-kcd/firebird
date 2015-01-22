@@ -804,7 +804,7 @@ Data source : @4"},		/* eds_statement */
 	{335545097, "@1 failed when working with CREATE DATABASE grants"},		/* crdb_load */
 	{335545098, "CREATE DATABASE grants check is not possible when database @1 is not present"},		/* crdb_nodb */
 	{335545099, "CREATE DATABASE grants check is not possible when table RDB$DB_CREATORS is not present in database @1"},		/* crdb_notable */
-	{335545100, "Interface version too old: expected @1, found @2"},		/* interface_version_too_old */
+	{335545100, "Interface @3 version too old: expected @1, found @2"},		/* interface_version_too_old */
 	{335545101, "Input parameter mismatch for function @1"},		/* fun_param_mismatch */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */

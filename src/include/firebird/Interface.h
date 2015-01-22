@@ -122,11 +122,9 @@ namespace Firebird
 			}
 		}
 
-		static void setVersionError(IStatus* status, const char* /*interfaceName*/,
+		static void setVersionError(IStatus* status, const char* interfaceName,
 			unsigned currentVersion, unsigned expectedVersion)
 		{
-			//// TODO: use interfaceName
-
 			intptr_t codes[] = {
 				isc_arg_gds,
 				isc_interface_version_too_old,
@@ -134,6 +132,8 @@ namespace Firebird
 				(intptr_t) expectedVersion,
 				isc_arg_number,
 				(intptr_t) currentVersion,
+				isc_arg_string,
+				(intptr_t) interfaceName,
 				isc_arg_end
 			};
 

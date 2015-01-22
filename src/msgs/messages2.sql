@@ -887,7 +887,7 @@ Data source : @4', NULL, NULL)
 ('crdb_load', 'check', 'DbCreators.cpp', NULL, 0, 777, NULL, '@1 failed when working with CREATE DATABASE grants', NULL, NULL);
 ('crdb_nodb', 'DbCreatorsList::getList', 'DbCreators.cpp', NULL, 0, 778, NULL, 'CREATE DATABASE grants check is not possible when database @1 is not present', NULL, NULL);
 ('crdb_notable', 'DbCreatorsList::getList', 'DbCreators.cpp', NULL, 0, 779, NULL, 'CREATE DATABASE grants check is not possible when table RDB$DB_CREATORS is not present in database @1', NULL, NULL);
-('interface_version_too_old', NULL, 'Interface.h', NULL, 0, 780, NULL, 'Interface version too old: expected @1, found @2', NULL, NULL);
+('interface_version_too_old', NULL, 'Interface.h', NULL, 0, 780, NULL, 'Interface @3 version too old: expected @1, found @2', NULL, NULL);
 ('fun_param_mismatch', 'UdfCallNode::dsqlPass', 'ExprNode.cpp', NULL, 0, 781, NULL, 'Input parameter mismatch for function @1', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
