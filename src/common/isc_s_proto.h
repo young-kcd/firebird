@@ -178,12 +178,31 @@ struct event_t
 class MemoryHeader
 {
 public:
-	USHORT mhb_type;
-	USHORT mhb_version;
-	GDS_TIMESTAMP mhb_timestamp;
+	static const USHORT HEADER_VERSION = 1;
+
+	void init(USHORT type, USHORT version)
+	{
+		mhb_type = type;
+		mhb_header_version = HEADER_VERSION;
+		mhb_version = version;
+		mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
 #ifdef HAVE_SHARED_MUTEX_SECTION
-	struct mtx mhb_mutex;
+		fb_assert(sizeof(mhb_mutex) <= sizeof(dummy));
 #endif
+	}
+
+	USHORT mhb_type;
+	USHORT mhb_header_version;
+	USHORT mhb_version;
+	USHORT reserve;					// not used
+	GDS_TIMESTAMP mhb_timestamp;
+	union
+	{
+#ifdef HAVE_SHARED_MUTEX_SECTION
+		struct mtx mhb_mutex;
+#endif
+		FB_UINT64 dummy[8];			// make sizeof(MemoryHeader) OS-independent
+	};
 };
 
 

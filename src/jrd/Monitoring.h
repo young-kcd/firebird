@@ -235,7 +235,7 @@ public:
 
 class MonitoringData FB_FINAL : public Firebird::IpcObject
 {
-	static const ULONG MONITOR_VERSION = 4;
+	static const USHORT MONITOR_VERSION = 4;
 	static const ULONG DEFAULT_SIZE = 1048576;
 
 	typedef MonitoringHeader Header;

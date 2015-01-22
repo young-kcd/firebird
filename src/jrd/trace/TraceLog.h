@@ -35,6 +35,8 @@ namespace Jrd {
 
 struct TraceLogHeader : public Firebird::MemoryHeader
 {
+	static const USHORT TRACE_LOG_VERSION = 1;
+
 	volatile unsigned int readFileNum;
 	volatile unsigned int writeFileNum;
 };

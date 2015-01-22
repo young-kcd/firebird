@@ -350,6 +350,7 @@ bool LockManager::attach_shared_file(Arg::StatusVector& statusVector)
 	}
 
 	fb_assert(m_sharedMemory->getHeader()->mhb_type == SharedMemoryBase::SRAM_LOCK_MANAGER);
+	fb_assert(m_sharedMemory->getHeader()->mhb_header_version == MemoryHeader::HEADER_VERSION);
 	fb_assert(m_sharedMemory->getHeader()->mhb_version == LHB_VERSION);
 
 #ifdef USE_SHMEM_EXT
@@ -1680,12 +1681,15 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
  *
  **************************************/
 	if (m_sharedMemory->getHeader()->mhb_type != SharedMemoryBase::SRAM_LOCK_MANAGER ||
+		m_sharedMemory->getHeader()->mhb_header_version != MemoryHeader::HEADER_VERSION ||
 		m_sharedMemory->getHeader()->mhb_version != LHB_VERSION)
 	{
 		TEXT bug_buffer[BUFFER_TINY];
-		sprintf(bug_buffer, "inconsistent lock table type/version; found %d/%d, expected %d/%d",
-			m_sharedMemory->getHeader()->mhb_type, m_sharedMemory->getHeader()->mhb_version,
-			SharedMemoryBase::SRAM_LOCK_MANAGER, LHB_VERSION);
+		sprintf(bug_buffer, "inconsistent lock table type/version; found %d/%d:%d, expected %d/%d:%d",
+			m_sharedMemory->getHeader()->mhb_type, 
+			m_sharedMemory->getHeader()->mhb_header_version, 
+			m_sharedMemory->getHeader()->mhb_version,
+			SharedMemoryBase::SRAM_LOCK_MANAGER, MemoryHeader::HEADER_VERSION, LHB_VERSION);
 		bug(&statusVector, bug_buffer);
 		return 0;
 	}
@@ -2345,9 +2349,7 @@ bool LockManager::initialize(SharedMemoryBase* sm, bool initializeMemory)
 
 	lhb* hdr = m_sharedMemory->getHeader();
 	memset(hdr, 0, sizeof(lhb));
-	hdr->mhb_type = SharedMemoryBase::SRAM_LOCK_MANAGER;
-	hdr->mhb_version = LHB_VERSION;
-	hdr->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
+	hdr->init(SharedMemoryBase::SRAM_LOCK_MANAGER, LHB_VERSION);
 
 	hdr->lhb_type = type_lhb;
 
@@ -3329,6 +3331,7 @@ void LockManager::validate_lhb(const lhb* alhb)
 
 	CHECK(alhb != NULL);
 	CHECK(alhb->mhb_type == SharedMemoryBase::SRAM_LOCK_MANAGER);
+	CHECK(alhb->mhb_header_version == MemoryHeader::HEADER_VERSION);
 	CHECK(alhb->mhb_version == LHB_VERSION);
 
 	CHECK(alhb->lhb_type == type_lhb);

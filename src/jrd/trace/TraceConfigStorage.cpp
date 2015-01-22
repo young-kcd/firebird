@@ -171,9 +171,8 @@ bool ConfigStorage::initialize(SharedMemoryBase* sm, bool init)
 	// Initialize the shared data header
 	if (init)
 	{
-		header->mhb_type = SharedMemoryBase::SRAM_TRACE_CONFIG;
-		header->mhb_version = 1;
-		header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
+		header->init(SharedMemoryBase::SRAM_TRACE_CONFIG, TraceCSHeader::TRACE_STORAGE_VERSION);
+
 		header->change_number = 0;
 		header->session_number = 1;
 		header->cnt_uses = 0;
@@ -182,7 +181,8 @@ bool ConfigStorage::initialize(SharedMemoryBase* sm, bool init)
 	else
 	{
 		fb_assert(header->mhb_type == SharedMemoryBase::SRAM_TRACE_CONFIG);
-		fb_assert(header->mhb_version == 1);
+		fb_assert(header->mhb_header_version == MemoryHeader::HEADER_VERSION);
+		fb_assert(header->mhb_version == TraceCSHeader::TRACE_STORAGE_VERSION);
 	}
 
 	return true;

@@ -33,7 +33,7 @@
 
 // Global section header
 
-const int EVENT_VERSION = 4;
+const USHORT EVENT_VERSION = 4;
 
 class evh : public Firebird::MemoryHeader
 {

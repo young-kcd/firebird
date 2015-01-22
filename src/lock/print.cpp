@@ -762,16 +762,17 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	// if we can't read this version - admit there's nothing to say and return.
 
-	if (LOCK_header->mhb_version != LHB_VERSION)
+	if (LOCK_header->mhb_header_version != MemoryHeader::HEADER_VERSION || 
+		LOCK_header->mhb_version != LHB_VERSION)
 	{
-		if (LOCK_header->mhb_type == 0 && LOCK_header->mhb_version == 0)
+		if (LOCK_header->mhb_type == 0 && LOCK_header->mhb_header_version == 0 && LOCK_header->mhb_version == 0)
 		{
 			FPRINTF(outfile, "\tLock table is empty.\n");
 		}
 		else
 		{
-			FPRINTF(outfile, "\tUnable to read lock table version %d.\n",
-				LOCK_header->mhb_version);
+			FPRINTF(outfile, "\tUnable to read lock table version %d:%d.\n",
+				LOCK_header->mhb_header_version, LOCK_header->mhb_version);
 		}
 		exit(FINI_OK);
 	}

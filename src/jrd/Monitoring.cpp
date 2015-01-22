@@ -95,6 +95,7 @@ MonitoringData::MonitoringData(const Database* dbb)
 		throw;
 	}
 
+	fb_assert(shared_memory->getHeader()->mhb_header_version == MemoryHeader::HEADER_VERSION);
 	fb_assert(shared_memory->getHeader()->mhb_version == MONITOR_VERSION);
 }
 
@@ -285,9 +286,7 @@ bool MonitoringData::initialize(SharedMemoryBase* sm, bool initialize)
 		MonitoringHeader* header = reinterpret_cast<MonitoringHeader*>(sm->sh_mem_header);
 
 		// Initialize the shared data header
-		header->mhb_type = SharedMemoryBase::SRAM_DATABASE_SNAPSHOT;
-		header->mhb_version = MONITOR_VERSION;
-		header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
+		header->init(SharedMemoryBase::SRAM_DATABASE_SNAPSHOT, MONITOR_VERSION);
 
 		header->used = alignOffset(sizeof(Header));
 		header->allocated = sm->sh_mem_length_mapped;

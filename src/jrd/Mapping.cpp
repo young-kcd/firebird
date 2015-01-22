@@ -566,7 +566,7 @@ public:
 
 class MappingIpc FB_FINAL : public Firebird::IpcObject
 {
-	static const ULONG MAPPING_VERSION = 1;
+	static const USHORT MAPPING_VERSION = 1;
 	static const size_t DEFAULT_SIZE = 1024 * 1024;
 
 public:
@@ -685,6 +685,7 @@ public:
 			iscLogException("MappingIpc: Cannot initialize the shared memory region", ex);
 			throw;
 		}
+		fb_assert(sharedMemory->getHeader()->mhb_header_version == MemoryHeader::HEADER_VERSION);
 		fb_assert(sharedMemory->getHeader()->mhb_version == MAPPING_VERSION);
 
 		Guard gShared(this);
@@ -779,9 +780,7 @@ private:
 			MappingHeader* header = reinterpret_cast<MappingHeader*>(sm->sh_mem_header);
 
 			// Initialize the shared data header
-			header->mhb_type = SharedMemoryBase::SRAM_MAPPING_RESET;
-			header->mhb_version = MAPPING_VERSION;
-			header->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
+			header->init(SharedMemoryBase::SRAM_MAPPING_RESET, MAPPING_VERSION);
 
 			header->processes = 0;
 			header->currentProcess = -1;

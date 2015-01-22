@@ -39,6 +39,8 @@ namespace Jrd {
 
 struct TraceCSHeader : public Firebird::MemoryHeader
 {
+	static const USHORT TRACE_STORAGE_VERSION = 1;
+
 	volatile ULONG change_number;
 	volatile ULONG session_number;
 	ULONG cnt_uses;

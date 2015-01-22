@@ -100,15 +100,15 @@ const UCHAR type_lpr	= 7;
 
 // Version number of the lock table.
 // Must be increased every time the shmem layout is changed.
-const UCHAR BASE_LHB_VERSION = 18;
+const USHORT BASE_LHB_VERSION = 18;
 
 #if SIZEOF_VOID_P == 8
-const UCHAR PLATFORM_LHB_VERSION	= 128;	// 64-bit target
+const USHORT PLATFORM_LHB_VERSION = 128;	// 64-bit target
 #else
-const UCHAR PLATFORM_LHB_VERSION	= 0;	// 32-bit target
+const USHORT PLATFORM_LHB_VERSION	= 0;	// 32-bit target
 #endif
 
-const UCHAR LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
+const USHORT LHB_VERSION	= PLATFORM_LHB_VERSION + BASE_LHB_VERSION;
 
 // Lock header block -- one per lock file, lives up front
 

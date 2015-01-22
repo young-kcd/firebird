@@ -253,16 +253,16 @@ bool TraceLog::initialize(SharedMemoryBase* sm, bool initialize)
 	TraceLogHeader* hdr = reinterpret_cast<TraceLogHeader*>(sm->sh_mem_header);
 	if (initialize)
 	{
-		hdr->mhb_type = SharedMemoryBase::SRAM_TRACE_LOG;
-		hdr->mhb_version = 1;
-		hdr->mhb_timestamp = TimeStamp::getCurrentTimeStamp().value();
+		hdr->init(SharedMemoryBase::SRAM_TRACE_LOG, TraceLogHeader::TRACE_LOG_VERSION);
+
 		hdr->readFileNum = 0;
 		hdr->writeFileNum = 0;
 	}
 	else
 	{
 		fb_assert(hdr->mhb_type == SharedMemoryBase::SRAM_TRACE_LOG);
-		fb_assert(hdr->mhb_version == 1);
+		fb_assert(hdr->mhb_header_version == MemoryHeader::HEADER_VERSION);
+		fb_assert(hdr->mhb_version == TraceLogHeader::TRACE_LOG_VERSION);
 	}
 
 	return true;
