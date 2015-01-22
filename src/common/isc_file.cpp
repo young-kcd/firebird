@@ -139,47 +139,46 @@ namespace {
 	const size npos = tstring::npos;
 
 #ifndef NO_NFS
-	class osMtab
+	const char* NFS_TYPE = "nfs";
+
+	class Mnt
 	{
+#ifdef DARWIN
+	private:
+		struct statfs* mnt_info;
+		int mnt_cnt;
+		int mnt_i;
+
 	public:
+		Mnt::Mnt()
+			: mnt_info(NULL), mnt_cnt(getmntinfo(&mnt_info, MNT_NOWAIT)), mnt_i(0)
+		{ }
+
+		bool ok() const { return this->mnt_cnt > 0; }
+#else
+	private:
 		FILE* mtab;
 
-		osMtab()
+	public:
+		Mnt()
 			: mtab(MTAB_OPEN(MTAB, "r"))
 		{ }
 
-		~osMtab()
+		~Mnt()
 		{
 			if (mtab)
 				MTAB_CLOSE(mtab);
 		}
 
 		bool ok() const { return mtab; }
-	};
+#endif
 
-	class Mnt
-	{
-	private:
-#ifdef DARWIN
-		struct statfs* mnt_info;
-		int mnt_cnt;
-		int mnt_i;
-#else
-		osMtab mtab;
-#endif // DARWIN
 	public:
-/*		Mnt() : AutoMemory(), mtab(), node(getPool()),
-				mount(getPool()), path(getPool()) { } */
-#ifdef DARWIN
-		Mnt();
-		bool ok() const { return this->mnt_cnt > 0; }
-#else
-		bool ok() const { return mtab.ok(); }
-#endif // DARWIN
 		bool get();
-		tstring node,  // remote server name
-			mount, // local mount point
-			path;  // path on remote server
+		tstring
+			mount,		// local mount point
+			special,	// mounted
+			type;		// mount type
 	};
 #endif //NO_NFS
 } // anonymous namespace
@@ -233,8 +232,23 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 	{
 		return false;
 	}
+
 	while (mount.get())
 	{
+		tstring node, path;
+
+		// Include non-NFS (local) mounts - some may be longer than
+		// NFS mount points, therefore ignore mnt_type
+		if (mount.type == NFS_TYPE)
+		{
+			size colon = mount.special.find(':');
+			if (colon != tstring::npos)
+			{
+				node = mount.special.substr(0, colon);
+				path = mount.special.substr(colon + 1);
+			}
+		}
+
 		// first, expand any symbolic links in the mount point
 		ISC_expand_filename(mount.mount, false);
 
@@ -245,10 +259,10 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 			expanded_filename.compare(0, mount.mount.length(), mount.mount) != 0 ||
 			expanded_filename[mount.mount.length()] != '/')
 		{
-			if (mount.mount == "/" && mount.path.hasData())
+			if (mount.mount == "/" && path.hasData())
 			{
 				// root mount point = diskless client case
-				mount.path += '/';
+				path += '/';
 			}
 			else
 			{
@@ -260,10 +274,10 @@ bool ISC_analyze_nfs(tstring& expanded_filename, tstring& node_name)
 		if (mount.mount.length() >= len)
 		{
 			len = mount.mount.length();
-			if (mount.node.hasData())
+			if (node.hasData())
 			{
-				max_node = mount.node;
-				max_path = mount.path;
+				max_node = node;
+				max_path = path;
 			}
 			else
 			{
@@ -1312,7 +1326,6 @@ namespace {
 #ifndef NO_NFS
 #if defined(HAVE_GETMNTENT) && !defined(SOLARIS)
 #define GET_MOUNTS
-#if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) // SYSV stylish
 bool Mnt::get()
 {
 /**************************************
@@ -1328,76 +1341,28 @@ bool Mnt::get()
  *	Get ALL mount points.
  *
  **************************************/
-	struct mnttab *mptr, mnttab;
+	fb_assert(mtab);
 
-	// Start by finding a mount point.
-
-	TEXT* p = buffer;
-
-	mptr = &mnttab;
-	if (getmntent(file, mptr) == 0)
-	{
-		// Include non-NFS (local) mounts - some may be longer than NFS mount points
-
-		mount->mnt_node = p;
-		const TEXT* q = mptr->mnt_special;
-		while (*q && *q != ':')
-			*p++ = *q++;
-		*p++ = 0;
-		if (*q != ':')
-			mount->mnt_node = NULL;
-		if (*q)
-			q++;
-		mount->mnt_path = p;
-	    while ((*p++ = *q++) != 0); // empty loop's body.
-		mount->mnt_mount = mptr->mnt_mountp;
-		return true;
-	}
-
-	return false;
-}
-
-#else // !GETMNTENT_TAKES_TWO_ARGUMENTS
-
-bool Mnt::get()
-{
-/**************************************
- *
- *	g e t _ m o u n t s	( M N T E N T )
- *
- **************************************
- *
- * Functional description
- *	Get ALL mount points.
- *
- **************************************/
-	// Start by finding a mount point. */
-	fb_assert(mtab.mtab);
-	struct mntent* mptr = getmntent(mtab.mtab);
-	if (!mptr)
-	{
+#if defined(GETMNTENT_TAKES_TWO_ARGUMENTS) // SYSV stylish
+	struct mnttab mnttab, *mptr = &mnttab;
+	if (getmntent(mtab, mptr) != 0)
 		return false;
-	}
 
-	// Include non-NFS (local) mounts - some may be longer than
-	// NFS mount points, therefore ignore mnt_type
+	mount = mptr->mnt_mountp;
+	type = mptr->mnt_fstype;
+	special = mptr->mnt_special;
+#else // !GETMNTENT_TAKES_TWO_ARGUMENTS
+	struct mntent* mptr = getmntent(mtab);
+	if (!mptr)
+		return false;
 
-	const char* iflag = strchr(mptr->mnt_fsname, ':');
-
-	if (iflag)
-	{
-		node = tstring(mptr->mnt_fsname, iflag - mptr->mnt_fsname);
-		path = tstring(++iflag);
-	}
-	else
-	{
-		node.erase();
-		path.erase();
-	}
 	mount = mptr->mnt_dir;
+	type = mptr->mnt_type;
+	special = mptr->mnt_fsname;
+#endif
+
 	return true;
 }
-#endif // GETMNTENT_TAKES_TWO_ARGUMENTS
 #endif // HAVE_GETMNTENT && !SOLARIS
 
 
@@ -1416,67 +1381,56 @@ bool Mnt::get()
  *
  **************************************/
 
+	/* Solaris uses this because:
+	Since we had to substitute an alternative for the stdio supplied
+	with Solaris, we cannot use the getmntent() library call which
+	wants a Solaris stdio FILE* as an argument, so we parse the text-
+	type /etc/mnttab file ourselves.     - from FB1
+
+	This will still apply with SFIO on FB2.  nmcc Dec2002
+	*/
+
 	//  This code is tested on Solaris 2.6 IA
-	TEXT device[128], mount_point[128], type[16], opts[256], ftime[128];
+	TEXT device[128], mount_point[128], m_type[16], opts[256], ftime[128];
 
-	const int n = fscanf(mtab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts, ftime);
-	const char* start = device;
-
+	const int n = fscanf(mnt_tab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts, ftime);
 	if (n<5)
-	{
 		return false;
-	}
 
-	const char* iflag = strchr(device, ':');
-	if (iflag)
-	{
-		node = tstring( start , size_t(iflag - start) );
-		path = tstring( ++iflag );
-	}
-	else
-	{
-		node.erase();
-		path.erase();
-	}
 	mount = mount_point;
+	type = m_type;
+	special = device;
+
 	return true;
-
-
 }
 #endif //Solaris
 
 #ifdef DARWIN
 #define GET_MOUNTS
-Mnt::Mnt() : mnt_i(0)
-{
-	this->mnt_info = NULL;
-	this->mnt_cnt = getmntinfo(&this->mnt_info, MNT_NOWAIT);
-}
-
 bool Mnt::get()
 {
-	if (this->mnt_i >= this->mnt_cnt) {
+/**************************************
+ *
+ *	g e t _ m o u n t s	( D A R W I N )
+ *
+ **************************************
+ *
+ * Functional description
+ *	Get ALL mount points.
+ *
+ **************************************/
+	if (this->mnt_i >= this->mnt_cnt)
 		return false;
-	}
 
-	const char* start = this->mnt_info[this->mnt_i].f_mntfromname;
-	const char* iflag = strchr(this->mnt_info[this->mnt_i].f_mntfromname, ':');
+	this->mount = this->mnt_info[this->mnt_i].f_mntonname;
+	this->type = this->mnt_info[this->mnt_i].f_fstypename;
+	this->special = this->mnt_info[this->mnt_i].f_mntfromname;
 
-	if (iflag)
-	{
-		node = tstring(start, size_t(iflag - start));
-		path = tstring(++iflag);
-	}
-	else
-	{
-		node.erase();
-		path.erase();
-	}
-	mount = this->mnt_info[this->mnt_i].f_mntonname;
 	this->mnt_i++;
 	return true;
 }
 #endif // DARWIN
+
 #ifndef GET_MOUNTS
 bool Mnt::get()
 {
@@ -1491,56 +1445,18 @@ bool Mnt::get()
  *
  **************************************/
 
-	/* Solaris uses this because:
-	Since we had to substitute an alternative for the stdio supplied
-	with Solaris, we cannot use the getmntent() library call which
-	wants a Solaris stdio FILE* as an argument, so we parse the text-
-	type /etc/mnttab file ourselves.     - from FB1
-
-	This will still apply with SFIO on FB2.  nmcc Dec2002
-	*/
 
 	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16];
 
-	// Start by finding a mount point.
+	const int n = fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
+	if (n < 0)
+		return false;
 
-	TEXT* p = buffer;
+	mount = mount_point;
+	type = m_type;
+	special = device;
 
-	for (;;)
-	{
-		const int n = fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
-#ifdef SOLARIS
-		if (n != 5)
-#else
-		if (n < 0)
-#endif
-			break;
-
-		// Include non-NFS (local) mounts - some may be longer than NFS mount points
-
-		/****
-		if (strcmp (type, "nfs"))
-			continue;
-		****/
-
-		mount->mnt_node = p;
-		const TEXT* q = device;
-		while (*q && *q != ':')
-			*p++ = *q++;
-		*p++ = 0;
-		if (*q != ':')
-			mount->mnt_node = NULL;
-		if (*q)
-			q++;
-		mount->mnt_path = p;
-		while (*p++ = *q++); // empty loop's body
-		mount->mnt_mount = p;
-		q = mount_point;
-		while (*p++ = *q++); // empty loop's body
-		return true;
-	}
-
-	return false;
+	return true;
 }
 #endif // GET_MOUNTS
 
