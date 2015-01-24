@@ -130,7 +130,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM);
 static void check_precedence(thread_db*, WIN*, PageNumber);
 static void clear_precedence(thread_db*, BufferDesc*);
 static BufferDesc* dealloc_bdb(BufferDesc*);
-static void down_grade(thread_db*, BufferDesc*);
+static void down_grade(thread_db*, BufferDesc*, int high = 0);
 static bool expand_buffers(thread_db*, ULONG);
 static BufferDesc* find_buffer(BufferControl* bcb, const PageNumber page, bool findPending);
 static BufferDesc* get_buffer(thread_db*, const PageNumber, SyncType, int);
@@ -3200,7 +3200,7 @@ static BufferDesc* dealloc_bdb(BufferDesc* bdb)
 }
 
 
-static void down_grade(thread_db* tdbb, BufferDesc* bdb)
+static void down_grade(thread_db* tdbb, BufferDesc* bdb, int high)
 {
 /**************************************
  *
@@ -3217,7 +3217,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
  **************************************/
 	SET_TDBB(tdbb);
 
-	bdb->bdb_ast_flags |= BDB_blocking;
+	const bool oldBlocking = (bdb->bdb_ast_flags.exchangeBitOr(BDB_blocking) & BDB_blocking);
 	Lock* lock = bdb->bdb_lock;
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = bdb->bdb_bcb;
@@ -3234,8 +3234,32 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	// If the BufferDesc is in use and, being written or already
 	// downgraded to read, mark it as blocking and exit.
 
+	bool justWrite = false;
+
 	if (bdb->isLocked() || !bdb->addRefConditional(tdbb, SYNC_EXCLUSIVE))
-		return; // false;
+	{
+		if (!high)
+			return; // false;
+
+		// hvlad: buffer is in use and we can't downgrade its lock. But if this
+		// buffer blocks some lower precedence buffer, it is enough to just write 
+		// our (high) buffer to clear precedence and thus allow blocked (low) 
+		// buffer to be downgraded. IO lock guarantees that there is no buffer
+		// modification in progress currently and it is safe to write it right now.
+		// No need to mark our buffer as blocking nor to change state of our lock.
+
+		bdb->lockIO(tdbb);
+		if (!(bdb->bdb_flags & BDB_dirty))
+		{
+			bdb->unLockIO(tdbb);
+			return; // true
+		}
+
+		if (!oldBlocking) {
+			bdb->bdb_ast_flags &= ~BDB_blocking;
+		}
+		justWrite = true;
+	}
 
 	// If the page isn't dirty, the lock can be quietly downgraded.
 
@@ -3278,7 +3302,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 			{
 				found = true;
 				syncPrec.unlock();
-				down_grade(tdbb, blocking_bdb);
+				down_grade(tdbb, blocking_bdb, high + 1);
 
 				if (blocking_bdb->bdb_flags & BDB_dirty && !(precedence->pre_flags & PRE_cleared))
 					in_use = true;
@@ -3298,7 +3322,11 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 		if (in_use)
 		{
-			bdb->release(tdbb, false);
+			if (justWrite)
+				bdb->unLockIO(tdbb);
+			else
+				bdb->release(tdbb, false);
+
 			return; // false;
 		}
 
@@ -3308,12 +3336,14 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 
 	// Everything is clear to write this buffer.  Do so and reduce the lock
 
-	bdb->lockIO(tdbb);
+	if (!justWrite)
+		bdb->lockIO(tdbb);
 
 	const bool written = !(bdb->bdb_flags & BDB_dirty) ||
 		write_page(tdbb, bdb, tdbb->tdbb_status_vector, true);
 
-	bdb->unLockIO(tdbb);
+	if (!justWrite)
+		bdb->unLockIO(tdbb);
 
 	if (invalid || !written)
 	{
@@ -3324,7 +3354,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 		bdb->bdb_transactions = 0;
 		PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 	}
-	else
+	else if (!justWrite)
 	{
 		bdb->bdb_ast_flags &= ~BDB_blocking;
 		LCK_downgrade(tdbb, lock);
@@ -3367,7 +3397,10 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb)
 	} // syncPrec scope
 
 	bdb->bdb_flags &= ~BDB_not_valid;
-	bdb->release(tdbb, false);
+	if (justWrite)
+		bdb->unLockIO(tdbb);
+	else
+		bdb->release(tdbb, false);
 
 	return; // true;
 }
