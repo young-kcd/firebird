@@ -1,3 +1,76 @@
+ 2015-01-22 12:50  alexpeshkoff 
+   M src/common/isc_file.cpp
+Fixed static area corruption in ISC_expand_nfs, should fix CORE-4644: Get both "335545060 : Missing security context " and "335544344 : I/O error during "open" operation" for existing database under heavy concurrent DML
+
+ 2015-01-22 10:35  hvlad 
+   M src/common/isc_s_proto.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/event.cpp
+   M src/jrd/event.h
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceLog.cpp
+   M src/jrd/trace/TraceLog.h
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+Make shared memory header same size independent on OS. 
+Introduce shared memory header version.
+
+ 2015-01-22 10:32  alexpeshkoff 
+   M src/common/isc_file.cpp
+Fixed CORE-4624: Firebird won't start under Docker
+
+ 2015-01-22 10:23  alexpeshkoff 
+   M src/include/firebird/Interface.h
+   M src/include/gen/msgs.h
+   M src/msgs/messages2.sql
+Enhance diags
+
+ 2015-01-21 11:21  egorpugin 
+   A CMakeLists.txt
+   A builds/cmake
+   A builds/cmake/BuildFunctions.cmake
+   A builds/cmake/Configure.cmake
+   A builds/cmake/SourceGroups.cmake
+   A examples/CMakeLists.txt
+   A src/CMakeLists.txt
+   A src/gpre/CMakeLists.txt
+   A src/include/gen/autoconfig.h.in
+   A src/remote/CMakeLists.txt
+   A src/utilities/CMakeLists.txt
+[build] [cmake] Initial CMake build system commit.
+
+ 2015-01-21 11:11  egorpugin 
+   M configure.ac
+   M src/common/common.h
+   M src/common/isc_sync.cpp
+   M src/jrd/license.h
+   M src/jrd/recsrc/HashJoin.cpp
+   M src/remote/inet.cpp
+   M src/remote/protocol.h
+   M src/remote/remote_def.h
+   M src/utilities/ntrace/PluginLogWriter.cpp
+[build] [cmake] Prepare sources for CMake building. Add clang preprocessor defs, ARM architecture defs, some Android-related defs. Add 'qsort_r' function search to configure.ac.
+
+ 2015-01-21 09:18  hvlad 
+   M src/jrd/cch.cpp
+Fixed my error at patch for CORE-4565. It was the reason of false "lock denied" errors.
+
+ 2015-01-20 18:59  dimitr 
+   M src/common/isc_f_proto.h
+   M src/common/isc_file.cpp
+   M src/remote/client/interface.cpp
+1) Make xnet://db connection strings useful with forward slashes
+2) Unified port numbers / protocol names syntax (thus allowing custom ports in inet://host/db connection strings)
+
+ 2015-01-19 12:58  alexpeshkoff 
+   M src/common/common.h
+   M src/include/firebird/Interface.h
+Public header cleanup
+
  2015-01-18 14:53  asfernandes 
    M examples/udr/UdrCppExample.cpp
    M src/include/firebird/Message.h
