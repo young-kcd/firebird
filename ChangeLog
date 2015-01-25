@@ -1,3 +1,7 @@
+ 2015-01-24 11:49  hvlad 
+   M src/jrd/cch.cpp
+Frontportred fix for bug CORE-2848 : "lock conversion denied" or "lock denied" error
+
  2015-01-22 12:50  alexpeshkoff 
    M src/common/isc_file.cpp
 Fixed static area corruption in ISC_expand_nfs, should fix CORE-4644: Get both "335545060 : Missing security context " and "335544344 : I/O error during "open" operation" for existing database under heavy concurrent DML
