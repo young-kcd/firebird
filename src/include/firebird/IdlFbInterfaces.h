@@ -3,8 +3,6 @@
 #ifndef IDL_FB_INTERFACES_H
 #define IDL_FB_INTERFACES_H
 
-#include <stdint.h>
-
 #ifndef CLOOP_CARG
 #define CLOOP_CARG
 #endif
