@@ -783,3 +783,6 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 	AutoRelease<IMessageMetadata> triggerMetadata;
 	AutoRelease<IStatement> stmt;
 FB_UDR_END_TRIGGER
+
+
+FB_UDR_IMPLEMENT_ENTRY_POINT

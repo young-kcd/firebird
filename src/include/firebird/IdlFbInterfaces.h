@@ -3,6 +3,8 @@
 #ifndef IDL_FB_INTERFACES_H
 #define IDL_FB_INTERFACES_H
 
+#include <stdint.h>
+
 #ifndef CLOOP_CARG
 #define CLOOP_CARG
 #endif
@@ -106,6 +108,7 @@ namespace Firebird
 	class IUdrFunctionFactory;
 	class IUdrProcedureFactory;
 	class IUdrTriggerFactory;
+	class IUdrPlugin;
 
 	// Interfaces declarations
 
@@ -4401,10 +4404,10 @@ namespace Firebird
 		}
 	};
 
-	class IUdrFunctionFactory : public IVersioned
+	class IUdrFunctionFactory : public IDisposable
 	{
 	public:
-		struct VTable : public IVersioned::VTable
+		struct VTable : public IDisposable::VTable
 		{
 			void (CLOOP_CARG *setup)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
 			IExternalFunction* (CLOOP_CARG *newItem)(IUdrFunctionFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
@@ -4412,7 +4415,7 @@ namespace Firebird
 
 	protected:
 		IUdrFunctionFactory(DoNotInherit)
-			: IVersioned(DoNotInherit())
+			: IDisposable(DoNotInherit())
 		{
 		}
 
@@ -4421,7 +4424,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
@@ -4437,10 +4440,10 @@ namespace Firebird
 		}
 	};
 
-	class IUdrProcedureFactory : public IVersioned
+	class IUdrProcedureFactory : public IDisposable
 	{
 	public:
-		struct VTable : public IVersioned::VTable
+		struct VTable : public IDisposable::VTable
 		{
 			void (CLOOP_CARG *setup)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder) throw();
 			IExternalProcedure* (CLOOP_CARG *newItem)(IUdrProcedureFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
@@ -4448,7 +4451,7 @@ namespace Firebird
 
 	protected:
 		IUdrProcedureFactory(DoNotInherit)
-			: IVersioned(DoNotInherit())
+			: IDisposable(DoNotInherit())
 		{
 		}
 
@@ -4457,7 +4460,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
@@ -4473,10 +4476,10 @@ namespace Firebird
 		}
 	};
 
-	class IUdrTriggerFactory : public IVersioned
+	class IUdrTriggerFactory : public IDisposable
 	{
 	public:
-		struct VTable : public IVersioned::VTable
+		struct VTable : public IDisposable::VTable
 		{
 			void (CLOOP_CARG *setup)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) throw();
 			IExternalTrigger* (CLOOP_CARG *newItem)(IUdrTriggerFactory* self, IStatus* status, IExternalContext* context, IRoutineMetadata* metadata) throw();
@@ -4484,7 +4487,7 @@ namespace Firebird
 
 	protected:
 		IUdrTriggerFactory(DoNotInherit)
-			: IVersioned(DoNotInherit())
+			: IDisposable(DoNotInherit())
 		{
 		}
 
@@ -4493,7 +4496,7 @@ namespace Firebird
 		}
 
 	public:
-		static const unsigned VERSION = 2;
+		static const unsigned VERSION = 3;
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 		{
@@ -4506,6 +4509,55 @@ namespace Firebird
 			IExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->newItem(this, status, context, metadata);
 			StatusType::checkException(status);
 			return ret;
+		}
+	};
+
+	class IUdrPlugin : public IVersioned
+	{
+	public:
+		struct VTable : public IVersioned::VTable
+		{
+			IMaster* (CLOOP_CARG *getMaster)(IUdrPlugin* self) throw();
+			void (CLOOP_CARG *registerFunction)(IUdrPlugin* self, IStatus* status, const char* name, IUdrFunctionFactory* factory) throw();
+			void (CLOOP_CARG *registerProcedure)(IUdrPlugin* self, IStatus* status, const char* name, IUdrProcedureFactory* factory) throw();
+			void (CLOOP_CARG *registerTrigger)(IUdrPlugin* self, IStatus* status, const char* name, IUdrTriggerFactory* factory) throw();
+		};
+
+	protected:
+		IUdrPlugin(DoNotInherit)
+			: IVersioned(DoNotInherit())
+		{
+		}
+
+		~IUdrPlugin()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 2;
+
+		IMaster* getMaster()
+		{
+			IMaster* ret = static_cast<VTable*>(this->cloopVTable)->getMaster(this);
+			return ret;
+		}
+
+		template <typename StatusType> void registerFunction(StatusType* status, const char* name, IUdrFunctionFactory* factory)
+		{
+			static_cast<VTable*>(this->cloopVTable)->registerFunction(this, status, name, factory);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void registerProcedure(StatusType* status, const char* name, IUdrProcedureFactory* factory)
+		{
+			static_cast<VTable*>(this->cloopVTable)->registerProcedure(this, status, name, factory);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void registerTrigger(StatusType* status, const char* name, IUdrTriggerFactory* factory)
+		{
+			static_cast<VTable*>(this->cloopVTable)->registerTrigger(this, status, name, factory);
+			StatusType::checkException(status);
 		}
 	};
 
@@ -14377,6 +14429,7 @@ namespace Firebird
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
 					this->setup = &Name::cloopsetupDispatcher;
 					this->newItem = &Name::cloopnewItemDispatcher;
 				}
@@ -14413,9 +14466,21 @@ namespace Firebird
 				return static_cast<IExternalFunction*>(0);
 			}
 		}
+
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
 	};
 
-	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUdrFunctionFactory> > >
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IUdrFunctionFactory> > > > >
 	class IUdrFunctionFactoryImpl : public IUdrFunctionFactoryBaseImpl<Name, StatusType, Base>
 	{
 	protected:
@@ -14445,6 +14510,7 @@ namespace Firebird
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
 					this->setup = &Name::cloopsetupDispatcher;
 					this->newItem = &Name::cloopnewItemDispatcher;
 				}
@@ -14481,9 +14547,21 @@ namespace Firebird
 				return static_cast<IExternalProcedure*>(0);
 			}
 		}
+
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
 	};
 
-	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUdrProcedureFactory> > >
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IUdrProcedureFactory> > > > >
 	class IUdrProcedureFactoryImpl : public IUdrProcedureFactoryBaseImpl<Name, StatusType, Base>
 	{
 	protected:
@@ -14513,6 +14591,7 @@ namespace Firebird
 				VTableImpl()
 				{
 					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
 					this->setup = &Name::cloopsetupDispatcher;
 					this->newItem = &Name::cloopnewItemDispatcher;
 				}
@@ -14549,9 +14628,21 @@ namespace Firebird
 				return static_cast<IExternalTrigger*>(0);
 			}
 		}
+
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
 	};
 
-	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUdrTriggerFactory> > >
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IUdrTriggerFactory> > > > >
 	class IUdrTriggerFactoryImpl : public IUdrTriggerFactoryBaseImpl<Name, StatusType, Base>
 	{
 	protected:
@@ -14566,6 +14657,104 @@ namespace Firebird
 
 		virtual void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder) = 0;
 		virtual IExternalTrigger* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IUdrPluginBaseImpl : public Base
+	{
+	public:
+		typedef IUdrPlugin Declaration;
+
+		IUdrPluginBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->getMaster = &Name::cloopgetMasterDispatcher;
+					this->registerFunction = &Name::cloopregisterFunctionDispatcher;
+					this->registerProcedure = &Name::cloopregisterProcedureDispatcher;
+					this->registerTrigger = &Name::cloopregisterTriggerDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static IMaster* CLOOP_CARG cloopgetMasterDispatcher(IUdrPlugin* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getMaster();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<IMaster*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopregisterFunctionDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrFunctionFactory* factory) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::registerFunction(&status2, name, factory);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopregisterProcedureDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrProcedureFactory* factory) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::registerProcedure(&status2, name, factory);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopregisterTriggerDispatcher(IUdrPlugin* self, IStatus* status, const char* name, IUdrTriggerFactory* factory) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::registerTrigger(&status2, name, factory);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUdrPlugin> > >
+	class IUdrPluginImpl : public IUdrPluginBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IUdrPluginImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IUdrPluginImpl()
+		{
+		}
+
+		virtual IMaster* getMaster() = 0;
+		virtual void registerFunction(StatusType* status, const char* name, IUdrFunctionFactory* factory) = 0;
+		virtual void registerProcedure(StatusType* status, const char* name, IUdrProcedureFactory* factory) = 0;
+		virtual void registerTrigger(StatusType* status, const char* name, IUdrTriggerFactory* factory) = 0;
 	};
 };
 

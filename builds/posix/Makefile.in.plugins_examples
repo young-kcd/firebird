@@ -67,7 +67,7 @@ ifeq ($(PLATFORM),DARWIN)
 		$(FIREBIRD_LIBRARY_LINK)
 else
 	$(LIB_LINK) $(LIB_LINK_OPTIONS) $(LIB_LINK_SONAME)udrcpp_example.$(SHRLIB_EXT) \
-		$(LIB_PATH_OPTS) -o $@ $^ $(THR_LIBS) $(PLUGINS)/$(LIB_PREFIX)udr_engine.$(SHRLIB_EXT) \
+		$(LIB_PATH_OPTS) -o $@ $^ $(THR_LIBS) \
 		$(FIREBIRD_LIBRARY_LINK)
 endif
 

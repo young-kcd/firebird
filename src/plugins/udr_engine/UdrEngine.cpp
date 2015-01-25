@@ -22,7 +22,6 @@
 
 #include "firebird.h"
 #include "../jrd/ibase.h"
-#include "firebird/UdrEngine.h"
 #include "firebird/Interface.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -43,35 +42,7 @@ namespace Firebird
 //------------------------------------------------------------------------------
 
 
-struct Node
-{
-	Node()
-		: name(*getDefaultMemoryPool()),
-		  module(*getDefaultMemoryPool())
-	{
-	}
-
-	string name;
-	PathName module;
-};
-
-struct FunctionNode : public Node
-{
-	IUdrFunctionFactory* factory;
-	FunctionNode* next;
-};
-
-struct ProcedureNode : public Node
-{
-	IUdrProcedureFactory* factory;
-	ProcedureNode* next;
-};
-
-struct TriggerNode : public Node
-{
-	IUdrTriggerFactory* factory;
-	TriggerNode* next;
-};
+class UdrPluginImpl;
 
 
 static GlobalPtr<ObjectsArray<PathName> > paths;
@@ -129,24 +100,20 @@ public:
 	}
 
 public:
-	void loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
+	UdrPluginImpl* loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
 		PathName* moduleName, string* entryPoint);
 
 	template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* getChild(
-		ThrowStatusWrapper* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
-		SharedObjType* sharedObj, IExternalContext* context, NodeType* nodes,
+		ThrowStatusWrapper* status,
+		GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
+		SharedObjType* sharedObj, IExternalContext* context,
 		SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName);
 
 	template <typename ObjType> void deleteChildren(
 		GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children);
 
-	template <typename T> T* findNode(ThrowStatusWrapper* status, T* nodes,
-		const PathName& moduleName, const string& entryPoint);
-
-private:
-	template <typename T, typename T2> T2* getNode(ThrowStatusWrapper* status, T* nodes,
-		const PathName& moduleName, IExternalContext* context, IRoutineMetadata* metadata,
-		const string& entryPoint);
+	template <typename T> T* findNode(ThrowStatusWrapper* status,
+		const GenericMap<Pair<Left<string, T*> > >& nodes, const string& entryPoint);
 
 public:
 	void open(ThrowStatusWrapper* status, IExternalContext* context, char* name, unsigned nameSize);
@@ -172,11 +139,11 @@ public:
 };
 
 
-class ModulesMap : public GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >
+class ModulesMap : public GenericMap<Pair<Left<PathName, UdrPluginImpl*> > >
 {
 public:
 	explicit ModulesMap(MemoryPool& p)
-		: GenericMap<Pair<Left<PathName, ModuleLoader::Module*> > >(p)
+		: GenericMap<Pair<Left<PathName, UdrPluginImpl*> > >(p)
 	{
 	}
 
@@ -190,13 +157,123 @@ public:
 static GlobalPtr<Mutex> modulesMutex;
 static GlobalPtr<ModulesMap> modules;
 
-static InitInstance<PathName> loadingModule;
-static FunctionNode* registeredFunctions = NULL;
-static ProcedureNode* registeredProcedures = NULL;
-static TriggerNode* registeredTriggers = NULL;
-
 
 //--------------------------------------
+
+
+class UdrPluginImpl : public VersionedIface<IUdrPluginImpl<UdrPluginImpl, ThrowStatusWrapper> >
+{
+public:
+	UdrPluginImpl(const PathName& aModuleName, ModuleLoader::Module* aModule)
+		: moduleName(*getDefaultMemoryPool(), aModuleName),
+		  module(aModule),
+		  myUnloadFlag(FB_FALSE),
+		  theirUnloadFlag(NULL),
+		  functionsMap(*getDefaultMemoryPool()),
+		  proceduresMap(*getDefaultMemoryPool()),
+		  triggersMap(*getDefaultMemoryPool())
+	{
+	}
+
+	~UdrPluginImpl()
+	{
+		if (myUnloadFlag)
+			return;
+
+		*theirUnloadFlag = FB_TRUE;
+
+		{
+			GenericMap<Pair<Left<string, IUdrFunctionFactory*> > >::Accessor accessor(&functionsMap);
+			for (bool cont = accessor.getFirst(); cont; cont = accessor.getNext())
+				accessor.current()->second->dispose();
+		}
+
+		{
+			GenericMap<Pair<Left<string, IUdrProcedureFactory*> > >::Accessor accessor(&proceduresMap);
+			for (bool cont = accessor.getFirst(); cont; cont = accessor.getNext())
+				accessor.current()->second->dispose();
+		}
+
+		{
+			GenericMap<Pair<Left<string, IUdrTriggerFactory*> > >::Accessor accessor(&triggersMap);
+			for (bool cont = accessor.getFirst(); cont; cont = accessor.getNext())
+				accessor.current()->second->dispose();
+		}
+
+		delete module;
+	}
+
+public:
+	IMaster* getMaster()
+	{
+		return MasterInterfacePtr();
+	}
+
+	void registerFunction(ThrowStatusWrapper* status, const char* name,
+		IUdrFunctionFactory* factory)
+	{
+		if (functionsMap.exist(name))
+		{
+			static const ISC_STATUS statusVector[] = {
+				isc_arg_gds, isc_random,
+				isc_arg_string, (ISC_STATUS) "Duplicate UDR function",
+				//// TODO: isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) name,
+				isc_arg_end
+			};
+
+			throw FbException(status, statusVector);
+		}
+
+		functionsMap.put(name, factory);
+	}
+
+	void registerProcedure(ThrowStatusWrapper* status, const char* name,
+		IUdrProcedureFactory* factory)
+	{
+		if (proceduresMap.exist(name))
+		{
+			static const ISC_STATUS statusVector[] = {
+				isc_arg_gds, isc_random,
+				isc_arg_string, (ISC_STATUS) "Duplicate UDR procedure",
+				//// TODO: isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) name,
+				isc_arg_end
+			};
+
+			throw FbException(status, statusVector);
+		}
+
+		proceduresMap.put(name, factory);
+	}
+
+	void registerTrigger(ThrowStatusWrapper* status, const char* name,
+		IUdrTriggerFactory* factory)
+	{
+		if (triggersMap.exist(name))
+		{
+			static const ISC_STATUS statusVector[] = {
+				isc_arg_gds, isc_random,
+				isc_arg_string, (ISC_STATUS) "Duplicate UDR trigger",
+				//// TODO: isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) name,
+				isc_arg_end
+			};
+
+			throw FbException(status, statusVector);
+		}
+
+		triggersMap.put(name, factory);
+	}
+
+private:
+	PathName moduleName;
+	ModuleLoader::Module* module;
+
+public:
+	FB_BOOLEAN myUnloadFlag;
+	FB_BOOLEAN* theirUnloadFlag;
+	GenericMap<Pair<Left<string, IUdrFunctionFactory*> > > functionsMap;
+	GenericMap<Pair<Left<string, IUdrProcedureFactory*> > > proceduresMap;
+	GenericMap<Pair<Left<string, IUdrTriggerFactory*> > > triggersMap;
+};
 
 
 class SharedFunction : public DisposeIface<IExternalFunctionImpl<SharedFunction, ThrowStatusWrapper> >
@@ -212,10 +289,12 @@ public:
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(status, metadata, &moduleName, &entryPoint);
-		FunctionNode* node = engine->findNode<FunctionNode>(
-			status, registeredFunctions, moduleName, entryPoint);
-		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
+		module = engine->loadModule(status, metadata, &moduleName, &entryPoint);
+
+		IUdrFunctionFactory* factory = engine->findNode<IUdrFunctionFactory>(
+			status, module->functionsMap, entryPoint);
+
+		factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
 	~SharedFunction()
@@ -235,8 +314,8 @@ public:
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
-		IExternalFunction* function = engine->getChild<FunctionNode, IExternalFunction>(status,
-			children, this, context, registeredFunctions, engine->functions, moduleName);
+		IExternalFunction* function = engine->getChild<IUdrFunctionFactory, IExternalFunction>(
+			status, children, this, context, engine->functions, moduleName);
 
 		if (function)
 			function->getCharSet(status, context, name, nameSize);
@@ -244,8 +323,9 @@ public:
 
 	void execute(ThrowStatusWrapper* status, IExternalContext* context, void* inMsg, void* outMsg)
 	{
-		IExternalFunction* function = engine->getChild<FunctionNode, IExternalFunction>(status,
-			children, this, context, registeredFunctions, engine->functions, moduleName);
+		IExternalFunction* function = engine->getChild<IUdrFunctionFactory, IExternalFunction>(
+			status, children, this, context, engine->functions, moduleName);
+
 		if (function)
 			function->execute(status, context, inMsg, outMsg);
 	}
@@ -257,6 +337,7 @@ public:
 	string entryPoint;
 	string info;
 	GenericMap<Pair<NonPooled<IExternalContext*, IExternalFunction*> > > children;
+	UdrPluginImpl* module;
 };
 
 
@@ -276,10 +357,12 @@ public:
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(status, metadata, &moduleName, &entryPoint);
-		ProcedureNode* node = engine->findNode<ProcedureNode>(
-			status, registeredProcedures, moduleName, entryPoint);
-		node->factory->setup(status, context, metadata, inBuilder, outBuilder);
+		module = engine->loadModule(status, metadata, &moduleName, &entryPoint);
+
+		IUdrProcedureFactory* factory = engine->findNode<IUdrProcedureFactory>(
+			status, module->proceduresMap, entryPoint);
+
+		factory->setup(status, context, metadata, inBuilder, outBuilder);
 	}
 
 	~SharedProcedure()
@@ -299,8 +382,8 @@ public:
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
-		IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
-			children, this, context, registeredProcedures, engine->procedures, moduleName);
+		IExternalProcedure* procedure = engine->getChild<IUdrProcedureFactory, IExternalProcedure>(
+			status, children, this, context, engine->procedures, moduleName);
 
 		if (procedure)
 			procedure->getCharSet(status, context, name, nameSize);
@@ -309,8 +392,8 @@ public:
 	IExternalResultSet* open(ThrowStatusWrapper* status, IExternalContext* context,
 		void* inMsg, void* outMsg)
 	{
-		IExternalProcedure* procedure = engine->getChild<ProcedureNode, IExternalProcedure>(status,
-			children, this, context, registeredProcedures, engine->procedures, moduleName);
+		IExternalProcedure* procedure = engine->getChild<IUdrProcedureFactory, IExternalProcedure>(
+			status, children, this, context, engine->procedures, moduleName);
 
 		return procedure ? procedure->open(status, context, inMsg, outMsg) : NULL;
 	}
@@ -322,6 +405,7 @@ public:
 	string entryPoint;
 	string info;
 	GenericMap<Pair<NonPooled<IExternalContext*, IExternalProcedure*> > > children;
+	UdrPluginImpl* module;
 };
 
 
@@ -340,12 +424,12 @@ public:
 		  info(*getDefaultMemoryPool()),
 		  children(*getDefaultMemoryPool())
 	{
-		engine->loadModule(status, metadata, &moduleName, &entryPoint);
+		module = engine->loadModule(status, metadata, &moduleName, &entryPoint);
 
-		TriggerNode* node = engine->findNode<TriggerNode>(status,
-			registeredTriggers, moduleName, entryPoint);
+		IUdrTriggerFactory* factory = engine->findNode<IUdrTriggerFactory>(
+			status, module->triggersMap, entryPoint);
 
-		node->factory->setup(status, context, metadata, fieldsBuilder);
+		factory->setup(status, context, metadata, fieldsBuilder);
 	}
 
 	~SharedTrigger()
@@ -365,8 +449,8 @@ public:
 	{
 		strncpy(name, context->getClientCharSet(), nameSize);
 
-		IExternalTrigger* trigger = engine->getChild<TriggerNode, IExternalTrigger>(status,
-			children, this, context, registeredTriggers, engine->triggers, moduleName);
+		IExternalTrigger* trigger = engine->getChild<IUdrTriggerFactory, IExternalTrigger>(
+			status, children, this, context, engine->triggers, moduleName);
 
 		if (trigger)
 			trigger->getCharSet(status, context, name, nameSize);
@@ -375,8 +459,9 @@ public:
 	void execute(ThrowStatusWrapper* status, IExternalContext* context,
 		unsigned action, void* oldMsg, void* newMsg)
 	{
-		IExternalTrigger* trigger = engine->getChild<TriggerNode, IExternalTrigger>(status,
-			children, this, context, registeredTriggers, engine->triggers, moduleName);
+		IExternalTrigger* trigger = engine->getChild<IUdrTriggerFactory, IExternalTrigger>(
+			status, children, this, context, engine->triggers, moduleName);
+
 		if (trigger)
 			trigger->execute(status, context, action, oldMsg, newMsg);
 	}
@@ -388,68 +473,43 @@ public:
 	string entryPoint;
 	string info;
 	GenericMap<Pair<NonPooled<IExternalContext*, IExternalTrigger*> > > children;
+	UdrPluginImpl* module;
 };
 
 
 //--------------------------------------
 
 
-extern "C" void FB_EXPORTED fbUdrRegFunction(const char* name, IUdrFunctionFactory* factory)
+template <typename FactoryType> GenericMap<Pair<Left<string, FactoryType*> > >& getFactoryMap(
+	UdrPluginImpl* udrPlugin)
 {
-	FunctionNode* node = new FunctionNode();
-	node->name = name;
-	node->module = loadingModule();
-	node->factory = factory;
-	node->next = registeredFunctions;
-	registeredFunctions = node;
+	fb_assert(false);
+}
+
+template <> GenericMap<Pair<Left<string, IUdrFunctionFactory*> > >& getFactoryMap(
+	UdrPluginImpl* udrPlugin)
+{
+	return udrPlugin->functionsMap;
+}
+
+template <> GenericMap<Pair<Left<string, IUdrProcedureFactory*> > >& getFactoryMap(
+	UdrPluginImpl* udrPlugin)
+{
+	return udrPlugin->proceduresMap;
+}
+
+template <> GenericMap<Pair<Left<string, IUdrTriggerFactory*> > >& getFactoryMap(
+	UdrPluginImpl* udrPlugin)
+{
+	return udrPlugin->triggersMap;
 }
 
 
-extern "C" void FB_EXPORTED fbUdrRegProcedure(const char* name, IUdrProcedureFactory* factory)
-{
-	ProcedureNode* node = new ProcedureNode();
-	node->name = name;
-	node->module = loadingModule();
-	node->factory = factory;
-	node->next = registeredProcedures;
-	registeredProcedures = node;
-}
-
-
-extern "C" void FB_EXPORTED fbUdrRegTrigger(const char* name, IUdrTriggerFactory* factory)
-{
-	TriggerNode* node = new TriggerNode();
-	node->name = name;
-	node->module = loadingModule();
-	node->factory = factory;
-	node->next = registeredTriggers;
-	registeredTriggers = node;
-}
+//--------------------------------------
 
 
 ModulesMap::~ModulesMap()
 {
-	while (registeredFunctions)
-	{
-		FunctionNode* del = registeredFunctions;
-		registeredFunctions = registeredFunctions->next;
-		delete del;
-	}
-
-	while (registeredProcedures)
-	{
-		ProcedureNode* del = registeredProcedures;
-		registeredProcedures = registeredProcedures->next;
-		delete del;
-	}
-
-	while (registeredTriggers)
-	{
-		TriggerNode* del = registeredTriggers;
-		registeredTriggers = registeredTriggers->next;
-		delete del;
-	}
-
 	Accessor accessor(this);
 	for (bool cont = accessor.getFirst(); cont; cont = accessor.getNext())
 		delete accessor.current()->second;
@@ -459,7 +519,7 @@ ModulesMap::~ModulesMap()
 //--------------------------------------
 
 
-void Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
+UdrPluginImpl* Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
 	PathName* moduleName, string* entryPoint)
 {
 	const string str(metadata->getEntryPoint(status));
@@ -468,9 +528,9 @@ void Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
 	if (pos == string::npos)
 	{
 		static const ISC_STATUS statusVector[] = {
-			isc_arg_gds,
-			isc_random,
+			isc_arg_gds, isc_random,
 			isc_arg_string, (ISC_STATUS) "Invalid entry point",
+			//// TODO: isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) entryPoint.c_str(),
 			isc_arg_end
 		};
 
@@ -482,9 +542,9 @@ void Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
 	if (moduleName->find_first_of("/\\") != string::npos)
 	{
 		static const ISC_STATUS statusVector[] = {
-			isc_arg_gds,
-			isc_random,
+			isc_arg_gds, isc_random,
 			isc_arg_string, (ISC_STATUS) "Invalid module name",
+			//// TODO: isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) moduleName->c_str(),
 			isc_arg_end
 		};
 
@@ -498,10 +558,10 @@ void Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
 
 	MutexLockGuard guard(modulesMutex, FB_FUNCTION);
 
-	if (modules->exist(*moduleName))
-		return;
+	UdrPluginImpl* ret;
 
-	loadingModule() = *moduleName;
+	if (modules->get(*moduleName, ret))
+		return ret;
 
 	for (ObjectsArray<PathName>::iterator i = paths->begin(); i != paths->end(); ++i)
 	{
@@ -512,27 +572,59 @@ void Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* metadata,
 
 		if (module)
 		{
-			modules->put(*moduleName, module);
-			break;
+			FB_BOOLEAN* (*entryPoint)(IStatus*, FB_BOOLEAN*, IUdrPlugin*);
+
+			if (!module->findSymbol(STRINGIZE(FB_UDR_PLUGIN_ENTRY_POINT), entryPoint))
+			{
+				static const ISC_STATUS statusVector[] = {
+					isc_arg_gds, isc_random,
+					isc_arg_string, (ISC_STATUS) "UDR plugin entry point not found",
+					isc_arg_end
+				};
+
+				throw FbException(status, statusVector);
+			}
+
+			UdrPluginImpl* udrPlugin = new UdrPluginImpl(*moduleName, module);
+			udrPlugin->theirUnloadFlag = entryPoint(status, &udrPlugin->myUnloadFlag, udrPlugin);
+
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			{
+				delete udrPlugin;
+				ThrowStatusWrapper::checkException(status);
+			}
+
+			modules->put(*moduleName, udrPlugin);
+
+			return udrPlugin;
 		}
 		else
 		{
 			static const ISC_STATUS statusVector[] = {
-				isc_arg_gds,
-				isc_random,
+				isc_arg_gds, isc_random,
 				isc_arg_string, (ISC_STATUS) "Module not found",
+				//// TODO: isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) moduleName->c_str(),
 				isc_arg_end
 			};
 
 			throw FbException(status, statusVector);
 		}
 	}
+
+	static const ISC_STATUS statusVector[] = {
+		isc_arg_gds, isc_random,
+		isc_arg_string, (ISC_STATUS) "No UDR module path was configured",
+		isc_arg_end
+	};
+
+	throw FbException(status, statusVector);
 }
 
 
 template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* Engine::getChild(
-	ThrowStatusWrapper* status, GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children,
-	SharedObjType* sharedObj, IExternalContext* context, NodeType* nodes,
+	ThrowStatusWrapper* status,
+	GenericMap<Pair<NonPooled<IExternalContext*, ObjType*> > >& children, SharedObjType* sharedObj,
+	IExternalContext* context,
 	SortedArray<SharedObjType*>& sharedObjs, const PathName& moduleName)
 {
 	MutexLockGuard guard(childrenMutex, FB_FUNCTION);
@@ -543,8 +635,11 @@ template <typename NodeType, typename ObjType, typename SharedObjType> ObjType* 
 	ObjType* obj;
 	if (!children.get(context, obj))
 	{
-		obj = getNode<NodeType, ObjType>(status, nodes, moduleName, context, sharedObj->metadata,
-			sharedObj->entryPoint);
+		GenericMap<Pair<Left<string, NodeType*> > >& nodes = getFactoryMap<NodeType>(
+			sharedObj->module);
+
+		NodeType* factory = findNode<NodeType>(status, nodes, sharedObj->entryPoint);
+		obj = factory->newItem(status, context, sharedObj->metadata);
 
 		if (obj)
 			children.put(context, obj);
@@ -567,34 +662,24 @@ template <typename ObjType> void Engine::deleteChildren(
 }
 
 
-template <typename T> T* Engine::findNode(ThrowStatusWrapper* status, T* nodes,
-	const PathName& moduleName, const string& entryPoint)
+template <typename T> T* Engine::findNode(ThrowStatusWrapper* status,
+	const GenericMap<Pair<Left<string, T*> > >& nodes, const string& entryPoint)
 {
-	for (T* node = nodes; node; node = node->next)
-	{
-		if (node->module == moduleName && entryPoint == node->name)
-			return node;
-	}
+	T* factory;
+
+	if (nodes.get(entryPoint, factory))
+		return factory;
 
 	static const ISC_STATUS statusVector[] = {
-		isc_arg_gds,
-		isc_random,
+		isc_arg_gds, isc_random,
 		isc_arg_string, (ISC_STATUS) "Entry point not found",
+		//// TODO: isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS) entryPoint.c_str(),
 		isc_arg_end
 	};
 
 	throw FbException(status, statusVector);
 
 	return NULL;
-}
-
-
-template <typename T, typename T2> T2* Engine::getNode(ThrowStatusWrapper* status, T* nodes,
-		const PathName& moduleName, IExternalContext* context, IRoutineMetadata* metadata,
-		const string& entryPoint)
-{
-	T* node = findNode<T>(status, nodes, moduleName, entryPoint);
-	return node->factory->newItem(status, context, metadata);
 }
 
 

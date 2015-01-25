@@ -239,5 +239,6 @@ namespace Firebird
 } // namespace Firebird
 
 #define FB_PLUGIN_ENTRY_POINT firebird_plugin
+#define FB_UDR_PLUGIN_ENTRY_POINT firebird_udr_plugin
 
 #endif // FB_INTERFACE_H

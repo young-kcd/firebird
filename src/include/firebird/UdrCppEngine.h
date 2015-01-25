@@ -27,20 +27,51 @@
 #error FB_UDR_STATUS_TYPE must be defined with the Status class before UdrCppEngine.h inclusion.
 #endif
 
-#include "./UdrEngine.h"
 #include "./Message.h"
-#ifndef JRD_IBASE_H
-#include "ibase.h"
-#include "iberror.h"
-#endif
 #include <string.h>
 
 
-namespace Firebird
-{
-	namespace Udr
-	{
-//------------------------------------------------------------------------------
+#define FB_UDR_IMPLEMENT_ENTRY_POINT	\
+	namespace Firebird	\
+	{	\
+		namespace Udr	\
+		{	\
+			RegistrationNode<IUdrFunctionFactory>* regFunctions = NULL;	\
+			RegistrationNode<IUdrProcedureFactory>* regProcedures = NULL;	\
+			RegistrationNode<IUdrTriggerFactory>* regTriggers = NULL;	\
+		}	\
+	}	\
+	\
+	extern "C" FB_BOOLEAN* FB_UDR_PLUGIN_ENTRY_POINT(IStatus* status, FB_BOOLEAN* theirUnloadFlag,	\
+		IUdrPlugin* udrPlugin)	\
+	{	\
+		::Firebird::Udr::FactoryRegistration::finish(status, udrPlugin);	\
+		\
+		class UnloadDetector	\
+		{	\
+		public:	\
+			UnloadDetector(FB_BOOLEAN* aTheirUnloadFlag, IUdrPlugin* aUdrPlugin)	\
+				: myUnloadFlag(FB_FALSE),	\
+				  theirUnloadFlag(aTheirUnloadFlag),	\
+				  udrPlugin(aUdrPlugin)	\
+			{	\
+			}	\
+			\
+			~UnloadDetector()	\
+			{	\
+				if (!myUnloadFlag)	\
+					*theirUnloadFlag = FB_TRUE;	\
+			}	\
+		\
+			FB_BOOLEAN myUnloadFlag;	\
+			FB_BOOLEAN* theirUnloadFlag;	\
+			IUdrPlugin* udrPlugin;	\
+		};	\
+		\
+		static UnloadDetector unloadDetector(theirUnloadFlag, udrPlugin);	\
+		\
+		return &unloadDetector.myUnloadFlag;	\
+	}
 
 
 #define FB_UDR_BEGIN_FUNCTION(name)	\
@@ -174,6 +205,13 @@ namespace Firebird
 		typedef unsigned char Type;	\
 		static void setup(FB_UDR_STATUS_TYPE*, ::Firebird::IMetadataBuilder*) {}	\
 	}
+
+
+namespace Firebird
+{
+	namespace Udr
+	{
+//------------------------------------------------------------------------------
 
 
 template <typename T, typename StatusType> class Procedure;
@@ -311,13 +349,76 @@ public:
 };
 
 
+template <typename T> struct RegistrationNode
+{
+	const char* name;
+	T* factory;
+	RegistrationNode<T>* next;
+};
+
+extern RegistrationNode<IUdrFunctionFactory>* regFunctions;
+extern RegistrationNode<IUdrProcedureFactory>* regProcedures;
+extern RegistrationNode<IUdrTriggerFactory>* regTriggers;
+
+class FactoryRegistration
+{
+public:
+	template <typename T> static void schedule(const char* name, T* factory,
+		RegistrationNode<T>** list)
+	{
+		RegistrationNode<T>* node = new RegistrationNode<T>();
+		node->name = name;
+		node->factory = factory;
+		node->next = *list;
+
+		*list = node;
+	}
+
+	static void finish(IStatus* status, IUdrPlugin* plugin)
+	{
+		CheckStatusWrapper statusWrapper(status);
+
+		if (!run(&statusWrapper, plugin, &IUdrPlugin::registerFunction, regFunctions))
+			return;
+
+		if (!run(&statusWrapper, plugin, &IUdrPlugin::registerProcedure, regProcedures))
+			return;
+
+		if (!run(&statusWrapper, plugin, &IUdrPlugin::registerTrigger, regTriggers))
+			return;
+	}
+
+private:
+	template <typename T>
+	static bool run(CheckStatusWrapper* statusWrapper, IUdrPlugin* plugin,
+		void (IUdrPlugin::*routine)(CheckStatusWrapper* status, const char* name, T* factory),
+		RegistrationNode<T>* list)
+	{
+		for (RegistrationNode<T>* node = list; node; node = node->next)
+		{
+			(plugin->*routine)(statusWrapper, node->name, node->factory);
+
+			if (statusWrapper->getStatus() & IStatus::FB_HAS_ERRORS)
+				return false;
+		}
+
+		return true;
+	}
+};
+
+
 template <typename T, typename StatusType> class FunctionFactoryImpl :
 	public IUdrFunctionFactoryImpl<FunctionFactoryImpl<T, StatusType>, StatusType>
 {
 public:
 	explicit FunctionFactoryImpl(const char* name)
 	{
-		fbUdrRegFunction(name, this);
+		FactoryRegistration::schedule<IUdrFunctionFactory>(name, this, &regFunctions);
+	}
+
+	void dispose()
+	{
+		// Do not delete this. The instances are statically allocated.
 	}
 
 	void setup(StatusType* status, IExternalContext* /*context*/,
@@ -341,7 +442,12 @@ template <typename T, typename StatusType> class ProcedureFactoryImpl :
 public:
 	explicit ProcedureFactoryImpl(const char* name)
 	{
-		fbUdrRegProcedure(name, this);
+		FactoryRegistration::schedule<IUdrProcedureFactory>(name, this, &regProcedures);
+	}
+
+	void dispose()
+	{
+		// Do not delete this. The instances are statically allocated.
 	}
 
 	void setup(StatusType* status, IExternalContext* /*context*/,
@@ -365,7 +471,12 @@ template <typename T, typename StatusType> class TriggerFactoryImpl :
 public:
 	explicit TriggerFactoryImpl(const char* name)
 	{
-		fbUdrRegTrigger(name, this);
+		FactoryRegistration::schedule<IUdrTriggerFactory>(name, this, &regTriggers);
+	}
+
+	void dispose()
+	{
+		// Do not delete this. The instances are statically allocated.
 	}
 
 	void setup(StatusType* status, IExternalContext* /*context*/,

@@ -1216,23 +1216,32 @@ interface TraceFactory : PluginBase
 // UDR Factory interfaces. They should be singletons instances created by user's modules and
 // registered. When UDR engine is going to load a routine, it calls newItem.
 
-interface UdrFunctionFactory : Versioned
+interface UdrFunctionFactory : Disposable
 {
 	void setup(Status status, ExternalContext context, RoutineMetadata metadata,
 		MetadataBuilder inBuilder, MetadataBuilder outBuilder);
 	ExternalFunction newItem(Status status, ExternalContext context, RoutineMetadata metadata);
 }
 
-interface UdrProcedureFactory : Versioned
+interface UdrProcedureFactory : Disposable
 {
 	void setup(Status status, ExternalContext context, RoutineMetadata metadata,
 		MetadataBuilder inBuilder, MetadataBuilder outBuilder);
 	ExternalProcedure newItem(Status status, ExternalContext context, RoutineMetadata metadata);
 }
 
-interface UdrTriggerFactory : Versioned
+interface UdrTriggerFactory : Disposable
 {
 	void setup(Status status, ExternalContext context, RoutineMetadata metadata,
 		MetadataBuilder fieldsBuilder);
 	ExternalTrigger newItem(Status status, ExternalContext context, RoutineMetadata metadata);
+}
+
+interface UdrPlugin : Versioned
+{
+	Master getMaster();
+
+	void registerFunction(Status status, const string name, UdrFunctionFactory factory);
+	void registerProcedure(Status status, const string name, UdrProcedureFactory factory);
+	void registerTrigger(Status status, const string name, UdrTriggerFactory factory);
 }

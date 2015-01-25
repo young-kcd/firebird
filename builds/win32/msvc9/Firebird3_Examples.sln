@@ -12,7 +12,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "intlbuild", "intlbuild.vcpr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udrcpp_example", "udrcpp_example.vcproj", "{FF0FD8DF-1E5C-486E-B395-A620376A4633}"
 	ProjectSection(ProjectDependencies) = postProject
-		{20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B} = {20DEBF08-EF0A-4C94-ADEB-FE9BBA14588B}
 		{4FE03933-98CD-4879-A135-FD9430087A6B} = {4FE03933-98CD-4879-A135-FD9430087A6B}
 	EndProjectSection
 EndProject
