@@ -217,9 +217,9 @@ public:
 	}
 
 	// Returns true if value is found
-	bool get(const KeyType& key, ValueType& value)
+	bool get(const KeyType& key, ValueType& value) const
 	{
-		TreeAccessor treeAccessor(&tree);
+		ConstTreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key))
 		{
@@ -231,9 +231,9 @@ public:
 	}
 
 	// Returns pointer to the found value or null otherwise
-	ValueType* get(const KeyType& key)
+	ValueType* get(const KeyType& key) const
 	{
-		TreeAccessor treeAccessor(&tree);
+		ConstTreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key)) {
 			return &treeAccessor.current()->second;
@@ -242,9 +242,9 @@ public:
 		return NULL;
 	}
 
-	bool exist(const KeyType& key)
+	bool exist(const KeyType& key) const
 	{
-		return TreeAccessor(&tree).locate(key);
+		return ConstTreeAccessor(&tree).locate(key);
 	}
 
 	size_t count() const { return mCount; }
