@@ -1940,7 +1940,7 @@ ISC_STATUS GDS_CREATE_BLOB2(ISC_STATUS* user_status,
 
 			jrd_tra* const transaction = find_transaction(tdbb, isc_segstr_wrong_db);
 
-			*blob_handle = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb);
+			*blob_handle = BLB_create2(tdbb, transaction, blob_id, bpb_length, bpb, true);
 		}
 		catch (const Exception& ex)
 		{
