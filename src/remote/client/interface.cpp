@@ -1000,8 +1000,15 @@ void Events::freeClientData(IStatus* status, bool force)
  **************************************/
 	try
 	{
+		if (!rvnt)
+		{
+			return;
+		}
+
 		CHECK_HANDLE(rvnt, isc_bad_events_handle);
+
 		Rdb* rdb = rvnt->rvnt_rdb;
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
@@ -1015,6 +1022,8 @@ void Events::freeClientData(IStatus* status, bool force)
 			if (!force)
 				throw;
 		}
+
+		rvnt = NULL;
 	}
 	catch (const Exception& ex)
 	{
@@ -3952,7 +3961,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 		receive_response(status, rdb, packet);
 
 		Firebird::IEvents* rc = new Events(rem_event);
-		rc->addRef();
+		rem_event->rvnt_iface = rc;
 		return rc;
 	}
 	catch (const Exception& ex)
@@ -5955,6 +5964,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				//Therefore simply ignore such bad packet.
 
 				event->rvnt_id = 0;
+				event->rvnt_iface = NULL;
 			}
 
 		}						// end of event handling for op_event
@@ -6859,6 +6869,8 @@ static void release_event( Rvnt* event)
 		}
 	}
 
+	event->rvnt_iface = NULL;
+
 	delete event;
 }
 
@@ -7117,6 +7129,7 @@ static void send_cancel_event(Rvnt* event)
 	{
 		event->rvnt_callback->eventCallbackFunction(0, NULL);
 		event->rvnt_id = 0;
+		event->rvnt_iface = NULL;
 	}
 }
 
@@ -7239,6 +7252,7 @@ static void server_death(rem_port* port)
 			{
 				event->rvnt_callback->eventCallbackFunction(0, NULL);
 				event->rvnt_id = 0;
+				event->rvnt_iface = NULL;
 			}
 		}
 	}
