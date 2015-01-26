@@ -34,7 +34,7 @@ add_custom_command(
 add_executable          (empbuild empbuild.c empbuild.fdb ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e)
 target_link_libraries   (empbuild yvalve)
 set_output_directory    (empbuild . FORCE)
-add_dependencies        (empbuild gfix engine12 fbtrace)
+add_dependencies_cc     (empbuild gfix engine12 fbtrace)
 project_group           (empbuild Examples)
 
 file(GLOB files

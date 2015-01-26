@@ -504,7 +504,7 @@ set(udr_engine_src
 add_library                 (udr_engine SHARED ${udr_engine_src} ${VERSION_RC})
 target_link_libraries       (udr_engine common yvalve)
 set_output_directory        (udr_engine plugins)
-set_exported_symbols        (udr_engine plugin)
+set_exported_symbols        (udr_engine fbplugin)
 
 
 ########################################

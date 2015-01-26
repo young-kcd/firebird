@@ -122,6 +122,24 @@ if (MINGW)
 endif()
 
 if (UNIX)
+    if (CMAKE_CROSSCOMPILING)
+        find_path(ICU_INCLUDE_DIR unicode/ucnv.h
+            PATHS
+                /usr/include
+                /usr/include/x86_64-linux-gnu
+                /usr/local/include
+                /opt/local/include
+            CMAKE_FIND_ROOT_PATH_BOTH
+        )
+        if (ICU_INCLUDE_DIR)
+            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${ICU_INCLUDE_DIR}/unicode
+                ${CMAKE_BINARY_DIR}/unicode
+            )
+            include_directories(${CMAKE_BINARY_DIR})
+        endif()
+    endif()
+
     set(OS_DIR posix)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
