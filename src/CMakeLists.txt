@@ -247,9 +247,9 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 #
 ################################################################################
 
-###############################################################################
+########################################
 # LIBRARY boot_alice
-###############################################################################
+########################################
 
 file(GLOB alice_src "alice/*.cpp" "alice/*.h")
 
@@ -267,16 +267,16 @@ project_group               (boot_alice Boot)
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 
-###############################################################################
+########################################
 # LIBRARY alice
-###############################################################################
+########################################
 
 add_library                 (alice ${alice_src} ${alice_generated_src_master})
 
 
-###############################################################################
+########################################
 # LIBRARY boot_burp
-###############################################################################
+########################################
 
 file(GLOB burp_src "burp/*.cpp" "burp/*.h")
 
@@ -296,16 +296,16 @@ project_group               (boot_burp Boot)
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 
-###############################################################################
+########################################
 # LIBRARY burp
-###############################################################################
+########################################
 
 add_library                 (burp ${burp_src} ${burp_generated_src_master})
 
 
-###############################################################################
+########################################
 # LIBRARY common
-###############################################################################
+########################################
 
 file(GLOB common_src "common/*.cpp" "common/classes/*.cpp" "common/config/*.cpp" "common/os/${OS_DIR}/*.cpp")
 file(GLOB_RECURSE common_include "common/*.h")
@@ -502,7 +502,7 @@ set(udr_engine_src
 add_library                 (udr_engine SHARED ${udr_engine_src} ${VERSION_RC})
 target_link_libraries       (udr_engine common yvalve)
 set_output_directory        (udr_engine plugins)
-set_exported_symbols        (udr_engine udr_engine)
+set_exported_symbols        (udr_engine plugin)
 
 
 ########################################
@@ -567,6 +567,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (gpre_boot ${gpre_boot_src} ${VERSION_RC})
 target_link_libraries       (gpre_boot gpre_common common ${LIB_Ws2_32})
+project_group               (gpre_boot Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
@@ -611,6 +612,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (build_msg ${build_msg_generated_src_master} ${VERSION_RC})
 target_link_libraries       (build_msg common yvalve)
+project_group               (build_msg Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
@@ -628,6 +630,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (codes ${codes_generated_src_master} ${VERSION_RC})
 target_link_libraries       (codes yvalve)
+project_group               (codes Boot)
 add_custom_command(
     TARGET codes
     POST_BUILD
@@ -697,17 +700,17 @@ add_executable              (fbtracemgr ${fbtracemgr_src} ${VERSION_RC})
 target_link_libraries       (fbtracemgr common yvalve)
 
 
-###############################################################################
+########################################
 # EXECUTABLE gfix
-###############################################################################
+########################################
 
 add_executable              (gfix alice/main/aliceMain.cpp ${VERSION_RC})
 target_link_libraries       (gfix alice common yvalve)
 
 
-###############################################################################
+########################################
 # EXECUTABLE boot_gbak
-###############################################################################
+########################################
 
 file(GLOB gbak_include "burp/*.h")
 
@@ -720,25 +723,25 @@ project_group               (boot_gbak Boot)
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 
-###############################################################################
+########################################
 # EXECUTABLE gbak
-###############################################################################
+########################################
 
 add_executable              (gbak burp/main/burpMain.cpp ${gbak_include} ${VERSION_RC})
 target_link_libraries       (gbak burp yvalve common)
 
 
-###############################################################################
+########################################
 # EXECUTABLE gsplit
-###############################################################################
+########################################
 
 add_executable              (gsplit burp/split/spit.cpp burp/split/spit.h ${VERSION_RC})
 target_link_libraries       (gsplit burp common yvalve)
 
 
-###############################################################################
+########################################
 # EXECUTABLE boot_isql
-###############################################################################
+########################################
 
 file(GLOB isql_src "isql/*.cpp" "isql/*.h")
 
@@ -792,17 +795,17 @@ if (WIN32)
 endif()
 
 
-###############################################################################
+########################################
 # EXECUTABLE isql
-###############################################################################
+########################################
 
 add_executable              (isql ${isql_src} ${isql_generated_src_master} ${VERSION_RC})
 target_link_libraries       (isql common yvalve)
 
 
-###############################################################################
+########################################
 # EXECUTABLE qli
-###############################################################################
+########################################
 
 file(GLOB qli_src "qli/*.cpp" "qli/*.h")
 set(qli_generated_src
