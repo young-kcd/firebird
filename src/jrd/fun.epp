@@ -288,8 +288,6 @@ enum UdfError
 };
 
 
-static void handleUdfException(const Exception& ex);
-static void reRaiseExceptionFromUdf(thread_db* tdbb);
 static SSHORT blob_get_segment(blb*, UCHAR*, USHORT, USHORT*);
 static void blob_put_segment(blb*, const UCHAR*, USHORT);
 static SLONG blob_lseek(blb*, USHORT, SLONG);
@@ -770,50 +768,6 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 }
 
 
-static void handleUdfException(const Exception& ex)
-{
-/****************************************
- *
- *	h a n d l e U d f E x c e p t i o n
- *
- ****************************************
- *
- * Functional description
- *	When exception happens in UDF we have
- *	no better choice than store it in
- *	tdbb_status_vector and raise again
- *	on return from UDF.
- *
- ****************************************/
-	thread_db* tdbb = JRD_get_thread_data();
-	fb_utils::init_status(tdbb->tdbb_status_vector);
-	ex.stuff_exception(tdbb->tdbb_status_vector);
-}
-
-
-static void reRaiseExceptionFromUdf(thread_db* tdbb)
-{
-/*************************************************
- *
- *	r e R a i s e E x c e p t i o n F r o m U d f
- *
- *************************************************
- *
- * Functional description
- *	When exception happens in UDF we have
- *	no better choice than store it in
- *	tdbb_status_vector and raise again
- *	on return from UDF.
- *
- *************************************************/
-	ISC_STATUS* st = tdbb->tdbb_status_vector;
-	if (st[0] == 1 && st[1] != 0)
-	{
-		ERR_punt();
-	}
-}
-
-
 static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
 {
 /**************************************
@@ -827,18 +781,25 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
  *
  **************************************/
 	// As this is a call-back from a UDF, must put it under try/catch and reacquire the engine mutex
+
 	try
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
-		return blob->BLB_lseek(mode, offset);
+		try
+		{
+			Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+			return blob->BLB_lseek(mode, offset);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuff_exception(tdbb->tdbb_status_vector);
+		}
 	}
-	catch (const Exception& ex)
-	{
-		handleUdfException(ex);
-		return -1;
-	}
+	catch (const Exception&)
+	{} // no-op
+
+	return -1; // error
 }
 
 
@@ -855,17 +816,23 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
  *
  **************************************/
 	// As this is a call-back from a UDF, must put it under try/catch and reacquire the engine mutex
+
 	try
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
-		blob->BLB_put_segment(tdbb, buffer, length);
+		try
+		{
+			Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
+			blob->BLB_put_segment(tdbb, buffer, length);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuff_exception(tdbb->tdbb_status_vector);
+		}
 	}
-	catch (const Exception& ex)
-	{
-		handleUdfException(ex);
-	}
+	catch (const Exception&)
+	{} // no-op
 }
 
 
@@ -886,26 +853,34 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
  *
  **************************************/
 	// As this is a call-back from a UDF, must put it under try/catch and reacquire the engine mutex
+
 	try
 	{
 		thread_db* tdbb = JRD_get_thread_data();
-		Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
-		*return_length = blob->BLB_get_segment(tdbb, buffer, length);
+		try
+		{
+			Jrd::Attachment::SyncGuard guard(tdbb->getAttachment(), FB_FUNCTION);
 
-		if (blob->blb_flags & BLB_eof)
-			return 0;
+			*return_length = blob->BLB_get_segment(tdbb, buffer, length);
 
-		if (blob->getFragmentSize())
-			return -1;
+			if (blob->blb_flags & BLB_eof)
+				return 0;
 
-		return 1;
+			if (blob->getFragmentSize())
+				return -1;
+
+			return 1;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuff_exception(tdbb->tdbb_status_vector);
+		}
 	}
-	catch (const Exception& ex)
-	{
-		handleUdfException(ex);
-		return 0;
-	}
+	catch (const Exception&)
+	{} // no-op
+
+	return 0; // error
 }
 
 
@@ -1016,8 +991,7 @@ static void invoke(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Jrd::Attachment* att = tdbb->getAttachment();
 
-	// Get ready to accept exceptions from API called from UDF
-	fb_utils::init_status(tdbb->tdbb_status_vector);
+	ThreadStatusGuard tempStatus(tdbb);
 
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
@@ -1189,7 +1163,11 @@ static void invoke(thread_db* tdbb,
 	}
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 
-	reRaiseExceptionFromUdf(tdbb);
+	// When exception happens inside UDF we have no better choice than storing it in
+	// tdbb_status_vector and raising again on return from UDF
+
+	if (tempStatus[0] == isc_arg_gds && tempStatus[1] != FB_SUCCESS)
+		ERR_post(Arg::StatusVector(tempStatus));
 }
 
 
