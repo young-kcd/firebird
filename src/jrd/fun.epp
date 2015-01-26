@@ -704,7 +704,19 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 	// Did the udf send an ill-formed descriptor back?
 	UdfError udfError = UeNone;
 
-	invoke(tdbb, function, return_ptr, value, args, return_blob_struct, result_was_null, udfError);
+	// When exception happens inside UDF we have no better choice than storing it in
+	// tdbb_status_vector and raising again on return from UDF.
+	//
+	// This code could be inside invoke() but Windows SEH rules play against us.
+
+	{ // scope
+		ThreadStatusGuard tempStatus(tdbb);
+
+		invoke(tdbb, function, return_ptr, value, args, return_blob_struct, result_was_null, udfError);
+
+		if (tempStatus[0] == isc_arg_gds && tempStatus[1] != FB_SUCCESS)
+			ERR_post(Arg::StatusVector(tempStatus));
+	}
 
 	switch (udfError)
 	{
@@ -991,8 +1003,6 @@ static void invoke(thread_db* tdbb,
 	SET_TDBB(tdbb);
 	Jrd::Attachment* att = tdbb->getAttachment();
 
-	ThreadStatusGuard tempStatus(tdbb);
-
 	START_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
 	if (function->fun_return_arg)
 	{
@@ -1162,12 +1172,6 @@ static void invoke(thread_db* tdbb,
 			result_is_null = true;
 	}
 	END_CHECK_FOR_EXCEPTIONS(function->fun_exception_message.c_str());
-
-	// When exception happens inside UDF we have no better choice than storing it in
-	// tdbb_status_vector and raising again on return from UDF
-
-	if (tempStatus[0] == isc_arg_gds && tempStatus[1] != FB_SUCCESS)
-		ERR_post(Arg::StatusVector(tempStatus));
 }
 
 
