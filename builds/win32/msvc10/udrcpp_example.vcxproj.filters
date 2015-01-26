@@ -14,14 +14,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\examples\udr\UdrCppExample.cpp">
+    <ClCompile Include="..\..\..\examples\udr\Functions.cpp">
       <Filter>Source files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\includeFirebirdUdr.h">
-      <Filter>Header files</Filter>
-    </ClInclude>
+    <ClCompile Include="..\..\..\examples\udr\Procedures.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\examples\udr\Triggers.cpp">
+      <Filter>Source files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">

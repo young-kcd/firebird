@@ -198,10 +198,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\examples\udr\UdrCppExample.cpp" />
+    <ClCompile Include="..\..\..\examples\udr\Functions.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\includeFirebirdUdr.h" />
+    <ClCompile Include="..\..\..\examples\udr\Procedures.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\examples\udr\Triggers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\..\src\jrd\version.rc">
