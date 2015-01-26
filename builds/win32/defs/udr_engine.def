@@ -20,6 +20,3 @@
 
 EXPORTS
 	firebird_plugin
-	fbUdrRegFunction
-	fbUdrRegProcedure
-	fbUdrRegTrigger
