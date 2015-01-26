@@ -2355,7 +2355,7 @@ JBlob* JAttachment::createBlob(CheckStatusWrapper* user_status, ITransaction* tr
 		try
 		{
 			jrd_tra* const transaction = find_transaction(tdbb);
-			blob = blb::create2(tdbb, transaction, reinterpret_cast<bid*>(blob_id), bpb_length, bpb);
+			blob = blb::create2(tdbb, transaction, reinterpret_cast<bid*>(blob_id), bpb_length, bpb, true);
 		}
 		catch (const Exception& ex)
 		{

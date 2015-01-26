@@ -246,7 +246,8 @@ blb* blb::create(thread_db* tdbb, jrd_tra* transaction, bid* blob_id)
 
 blb* blb::create2(thread_db* tdbb,
 				jrd_tra* transaction, bid* blob_id,
-				USHORT bpb_length, const UCHAR* bpb)
+				USHORT bpb_length, const UCHAR* bpb,
+				bool userBlob)
 {
 /**************************************
  *
@@ -340,6 +341,22 @@ blb* blb::create2(thread_db* tdbb,
 	memset(page, 0, BLP_SIZE);	// initialize page header with NULLs
 	page->blp_header.pag_type = pag_blob;
 	blob->blb_segment = (UCHAR*) page->blp_page;
+
+	// Bind non-user blob to the request
+
+	jrd_req* request = tdbb->getRequest();
+	if (!userBlob && request)
+	{
+		transaction->tra_blobs->locate(blob->blb_temp_id);
+		BlobIndex* current = &transaction->tra_blobs->current();
+
+		jrd_req* blob_request = request;
+		while (blob_request->req_caller)
+			blob_request = blob_request->req_caller;
+
+		current->bli_request = blob_request;
+		current->bli_request->req_blobs.add(blob->blb_temp_id);
+	}
 
 	// Format blob id and return blob handle
 
