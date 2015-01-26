@@ -181,8 +181,10 @@ add_custom_command(
 add_custom_target(databases
     DEPENDS
         boot_engine12
-        msg.fdb
         help.fdb
+        metadata.fdb
+        msg.fdb
+        security.fdb
     SOURCES
         ${databases_src}
 )

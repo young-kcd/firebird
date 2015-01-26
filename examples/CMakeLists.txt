@@ -31,9 +31,9 @@ add_custom_command(
     COMMAND gpre -r -m -n -z ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e empbuild.c
 )
 
-add_executable          (empbuild empbuild.c ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e)
+add_executable          (empbuild empbuild.c empbuild.fdb ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e)
 target_link_libraries   (empbuild yvalve)
-set_output_directory    (empbuild empbuild FORCE)
+set_output_directory    (empbuild . FORCE)
 add_dependencies        (empbuild gfix engine12 fbtrace)
 project_group           (empbuild Examples)
 
@@ -47,21 +47,19 @@ foreach(F ${files})
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${name})
 endforeach()
 
-set_unix (CMD PATH=${output_dir}/bin)
-set_apple(CMD DYLD_LIBRARY_PATH=${output_dir}/plugins:${output_dir}/lib ${CMD})
+set(EMPBUILD_CMD empbuild employe2.fdb)
+set_win32(EMPBUILD_CMD set PATH=%PATH%\\\\;${output_dir} COMMAND ${EMPBUILD_CMD})
+set_unix (EMPBUILD_CMD PATH=${output_dir}/bin ${EMPBUILD_CMD})
+set_apple(EMPBUILD_CMD DYLD_LIBRARY_PATH=${output_dir}/plugins:${output_dir}/lib ${EMPBUILD_CMD})
 
-if (WIN32)
-    add_custom_command(OUTPUT employe2.fdb DEPENDS empbuild ${files}
-        COMMAND ${CMAKE_COMMAND} -E remove employe2.fdb
-        COMMAND set PATH=%PATH%\;${output_dir}
-        COMMAND ${CMD} $<TARGET_FILE:empbuild> employe2.fdb
-    )
-else()
-    add_custom_command(OUTPUT employe2.fdb DEPENDS empbuild ${files}
-        COMMAND ${CMAKE_COMMAND} -E remove employe2.fdb
-        COMMAND ${CMD} $<TARGET_FILE:empbuild> employe2.fdb
-    )
-endif()
+add_custom_command(
+    OUTPUT employe2.fdb
+    DEPENDS
+        empbuild
+        ${files}
+    COMMAND ${CMAKE_COMMAND} -E remove employe2.fdb
+    COMMAND ${EMPBUILD_CMD}
+)
 add_custom_target       (employee_db DEPENDS employe2.fdb SOURCES ${files})
 project_group           (employee_db Examples)
 
@@ -71,7 +69,9 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 # SHARED LIBRARY udrcpp_example
 ########################################
 
-add_library             (udrcpp_example SHARED udr/UdrCppExample.cpp)
+file(GLOB udrcpp_example_src "udr/*")
+
+add_library             (udrcpp_example SHARED ${udrcpp_example_src})
 target_link_libraries   (udrcpp_example udr_engine)
 set_output_directory    (udrcpp_example plugins/udr)
 project_group           (udrcpp_example Examples)

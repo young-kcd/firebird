@@ -136,7 +136,7 @@ endfunction(add_epp_suffix)
 #######################################
 function(set_win32 var)
     if (WIN32)
-        set(${var} ${ARGN} PARENT_SCOPE)
+        set(${var} "${ARGN}" PARENT_SCOPE)
     endif()
 endfunction(set_win32)
 
@@ -145,7 +145,7 @@ endfunction(set_win32)
 #######################################
 function(set_unix var)
     if (UNIX)
-        set(${var} ${ARGN} PARENT_SCOPE)
+        set(${var} "${ARGN}" PARENT_SCOPE)
     endif()
 endfunction(set_unix)
 
@@ -154,7 +154,7 @@ endfunction(set_unix)
 #######################################
 function(set_apple var)
     if (APPLE)
-        set(${var} ${ARGN} PARENT_SCOPE)
+        set(${var} "${ARGN}" PARENT_SCOPE)
     endif()
 endfunction(set_apple)
 

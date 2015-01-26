@@ -238,8 +238,9 @@ file(GLOB btyacc_src "extern/btyacc/*.c" "extern/btyacc/*.h")
 
 if (NOT CMAKE_CROSSCOMPILING)
 
-add_executable      (btyacc ${btyacc_src})
-project_group       (btyacc Extern)
+add_executable          (btyacc ${btyacc_src})
+project_group           (btyacc Extern)
+set_output_directory    (btyacc . FORCE)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
@@ -250,8 +251,8 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 file(GLOB libtommath_src "extern/libtommath/*.c" "extern/libtommath/*.h")
 
-add_library     (libtommath ${libtommath_src})
-project_group   (libtommath Extern)
+add_library             (libtommath ${libtommath_src})
+project_group           (libtommath Extern)
 
 ########################################
 
