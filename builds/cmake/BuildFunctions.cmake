@@ -27,7 +27,7 @@ function(set_output_directory target dir)
             set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${conf2} ${out}/${conf}/${dir})
         endforeach()
     else() # single configuration
-        execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${out}/${dir})
+        add_custom_command(TARGET ${target} PRE_BUILD COMMAND ${CMAKE_COMMAND} -E make_directory ${out}/${dir})
         set_target_properties(${target} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${out}/${dir})
         set_target_properties(${target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${out}/${dir})
     endif()
@@ -103,7 +103,7 @@ function(epp_process type files)
             )
         elseif ("${type}" STREQUAL "master")
             get_filename_component(file ${out} NAME)
-            set(dir ${dir}/${file}.d)                        
+            set(dir ${dir}/${file}.d)
             add_custom_command(
                 OUTPUT ${out}
                 DEPENDS ${in} databases

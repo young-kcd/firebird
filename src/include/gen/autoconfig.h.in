@@ -45,6 +45,9 @@
 /* Define this if OS is AIX */
 #cmakedefine AIX 1
 
+/* Define this if OS is ANDROID */
+#cmakedefine ANDROID 1
+
 /* Define this if OS is DARWIN */
 #cmakedefine DARWIN 1
 
@@ -53,6 +56,9 @@
 
 /* Define this if OS is HP-UX */
 #cmakedefine HPUX 1
+
+/* Define this if OS is iOS */
+#cmakedefine IOS 1
 
 /* Define this if OS is Linux */
 #cmakedefine LINUX 1

@@ -2,18 +2,18 @@
 # firebird (trunk)
 #
 
-###############################################################################
+################################################################################
 #
 # cmake settings
 #
-###############################################################################
+################################################################################
 
 cmake_minimum_required(VERSION 2.8.8)
 
 # In-source builds are not possible and so disabled.
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR
-        "CMake generation for firebird is not possible within the source directory!"
+        "CMake generation for Firebird is not possible within the source directory!"
         "\n Remove the CMakeCache.txt file and try again from another folder, e.g.:"
         "\n "
         "\n rm CMakeCache.txt"
@@ -35,15 +35,36 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMake Targets")
 
-###############################################################################
+################################################################################
 #
 # project settings
 #
-###############################################################################
+################################################################################
 
 project("firebird" C CXX)
 
-#######################################
+########################################
+# build type settings
+########################################
+
+# Define build mode
+if (NOT DEFINED CMAKE_BUILD_TYPE OR "${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build.")
+endif()
+
+# Qt with MSVC does not have multiconfiguration option by default,
+#  so we create it.
+set(DEFAULT_CONFIGURATION)
+
+# Set build types if none was specified
+if (NOT DEFINED CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_CONFIGURATION_TYPES Debug Release MinSizeRel RelWithDebInfo)
+    set(DEFAULT_CONFIGURATION ${CMAKE_BUILD_TYPE})
+endif()
+
+########################################
+# Output directory settings
+########################################
 
 set(output_dir ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
 
@@ -52,6 +73,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${output_dir})
 
 if (MSVC OR XCODE)
     set(output_dir ${output_dir}/$<CONFIG>)
+endif()
+
+if (MSVC AND DEFAULT_CONFIGURATION)
+    foreach(conf ${CMAKE_CONFIGURATION_TYPES})
+        string(TOUPPER ${conf} conf2)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${conf2} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${DEFAULT_CONFIGURATION})
+    endforeach()
 endif()
 
 if (XCODE)
@@ -64,11 +92,11 @@ elseif (UNIX)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${output_dir}/bin)
 endif()
 
-###############################################################################
+################################################################################
 #
 # configure
 #
-###############################################################################
+################################################################################
 
 include(Configure)
 
@@ -93,11 +121,11 @@ set(AUTOCONFIG_SRC ${CMAKE_SOURCE_DIR}/src/include/gen/autoconfig.h.in)
 set(AUTOCONFIG ${CMAKE_BINARY_DIR}/src/include/gen/autoconfig.h)
 configure_file(${AUTOCONFIG_SRC} ${AUTOCONFIG} @ONLY)
 
-###############################################################################
+################################################################################
 #
 # compiler & linker
 #
-###############################################################################
+################################################################################
 
 add_definitions(-DDEV_BUILD)
 
@@ -175,11 +203,11 @@ elseif (UNIX)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
 endif()
 
-###############################################################################
+################################################################################
 #
 # pre build
 #
-###############################################################################
+################################################################################
 
 if (WIN32)
     # icu
@@ -228,12 +256,11 @@ if (UNIX)
     endforeach()
 endif()
 
-
-###############################################################################
+################################################################################
 #
 # build
 #
-###############################################################################
+################################################################################
 
 include(BuildFunctions)
 
@@ -273,9 +300,11 @@ add_library             (libtommath ${libtommath_src})
 project_group           (libtommath Extern)
 
 ########################################
+# subdirectories
+########################################
 
 add_subdirectory("examples")
 add_subdirectory("src")
 
-###############################################################################
+################################################################################
 

@@ -92,17 +92,21 @@ epp_process(master  epp_master_files        boot_gpre -n -m)
 # BUILD STEP databases
 ########################################
 
-set(databases_src
-    ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
+set(msgs_src
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/facilities2.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/history2.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/locales.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/messages2.sql
+    ${CMAKE_CURRENT_SOURCE_DIR}/msgs/msg.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/sqlstates.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/symbols2.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/system_errors2.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/transmsgs.de_DE2.sql
     ${CMAKE_CURRENT_SOURCE_DIR}/msgs/transmsgs.fr_FR2.sql
+)
+set(databases_src
+    ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
+    ${msgs_src}
 )
 add_custom_command(
     OUTPUT security.fdb
@@ -112,8 +116,8 @@ add_custom_command(
     VERBATIM
     #
     COMMAND ${CMAKE_COMMAND} -E remove security3.fdb
-    COMMAND ${CMAKE_COMMAND} -E echo "create database 'security3.fdb';" > create_db.sql
-    COMMAND boot_isql -q -i create_db.sql
+    COMMAND ${CMAKE_COMMAND} -E echo "create database 'security3.fdb';" > create_db_security3.sql
+    COMMAND boot_isql -q -i create_db_security3.sql
     COMMAND boot_isql -q security3.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
     COMMAND ${CMAKE_COMMAND} -E copy_if_different security3.fdb security.fdb
 )
@@ -132,21 +136,11 @@ add_custom_command(
     VERBATIM
     DEPENDS
         boot_isql
-        metadata.fdb
-        security.fdb
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/facilities2.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/history2.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/locales.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/messages2.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/sqlstates.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/symbols2.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/system_errors2.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/transmsgs.de_DE2.sql
-        ${CMAKE_CURRENT_SOURCE_DIR}/msgs/transmsgs.fr_FR2.sql
+        ${msgs_src}
     #
     COMMAND ${CMAKE_COMMAND} -E remove msg.fdb
-    COMMAND ${CMAKE_COMMAND} -E echo "create database 'msg.fdb';" > create_db.sql
-    COMMAND boot_isql -q -i create_db.sql
+    COMMAND ${CMAKE_COMMAND} -E echo "create database 'msg.fdb';" > create_db_msg.sql
+    COMMAND boot_isql -q -i create_db_msg.sql
     COMMAND ${isql_exec_msg}/msg.sql
     #
     COMMAND echo loading facilities
@@ -774,7 +768,7 @@ if (WIN32)
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/extern/icu/icudt52l_empty.dat ${output_dir}/icudt52l_empty.dat
     )
 
-    string(FIND ${CMAKE_EXE_LINKER_FLAGS} "/machine:x64" arch)
+    string(FIND "${CMAKE_EXE_LINKER_FLAGS}" "/machine:x64" arch)
     if (NOT ${arch} EQUAL -1)
         set(arch "x64")
     else()
