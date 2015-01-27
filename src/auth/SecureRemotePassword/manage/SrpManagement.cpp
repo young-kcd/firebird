@@ -161,7 +161,7 @@ private:
 			Message out;
 			Field<Varying> grantor(out, MAX_SQL_IDENTIFIER_SIZE);
 			Firebird::IResultSet* curs = att->openCursor(&statusWrapper, tra, selGrantor.length(),
-				selGrantor.c_str(), SQL_DIALECT_V6, NULL, NULL, out.getMetadata(), NULL);
+				selGrantor.c_str(), SQL_DIALECT_V6, NULL, NULL, out.getMetadata(), NULL, 0);
 			check(&statusWrapper);
 
 			bool hasGrant = curs->fetchNext(&statusWrapper, out.getBuffer()) == Firebird::IStatus::FB_OK;
@@ -563,7 +563,7 @@ public:
 						}
 
 						rs = stmt->openCursor(status, tra, (par ? par->getMetadata() : NULL),
-							(par ? par->getBuffer() : NULL), om);
+							(par ? par->getBuffer() : NULL), om, 0);
 						check(status);
 
 						while (rs->fetchNext(status, di.getBuffer()) == Firebird::IStatus::FB_OK)
@@ -853,7 +853,7 @@ private:
 				{
 					int cc = blob->getSegment(&statusWrapper, sizeof(segbuf), segbuf, &len);
 					check(&statusWrapper);
-					if (cc == Firebird::IStatus::FB_EOF)
+					if (cc == Firebird::IStatus::FB_NO_DATA)
 						break;
 					s.append(segbuf, len);
 				}

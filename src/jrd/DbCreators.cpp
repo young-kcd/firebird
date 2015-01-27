@@ -238,7 +238,7 @@ RecordBuffer* DbCreatorsList::getList(thread_db* tdbb, jrd_rel* relation)
 	LocalStatus st;
 	RefPtr<IResultSet> curs(att->openCursor(&st, tra, 0,
 		"select RDB$USER_TYPE, RDB$USER from RDB$DB_CREATORS",
-		SQL_DIALECT_V6, NULL, NULL, gr.getMetadata(), NULL));
+		SQL_DIALECT_V6, NULL, NULL, gr.getMetadata(), NULL, 0));
 
 	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 	{

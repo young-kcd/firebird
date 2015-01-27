@@ -307,7 +307,7 @@ public:
 	int fetchPrior(Firebird::CheckStatusWrapper* status, void* message);
 	int fetchFirst(Firebird::CheckStatusWrapper* status, void* message);
 	int fetchLast(Firebird::CheckStatusWrapper* status, void* message);
-	int fetchAbsolute(Firebird::CheckStatusWrapper* status, unsigned int position, void* message);
+	int fetchAbsolute(Firebird::CheckStatusWrapper* status, int position, void* message);
 	int fetchRelative(Firebird::CheckStatusWrapper* status, int offset, void* message);
 	FB_BOOLEAN isEof(Firebird::CheckStatusWrapper* status);
 	FB_BOOLEAN isBof(Firebird::CheckStatusWrapper* status);
@@ -359,7 +359,8 @@ public:
 		Firebird::IMessageMetadata* inMetadata, void* inBuffer,
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	Firebird::IResultSet* openCursor(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
-		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata);
+		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata,
+		unsigned int flags);
 	void setCursorName(Firebird::CheckStatusWrapper* status, const char* name);
 	void free(Firebird::CheckStatusWrapper* status);
 	unsigned getFlags(Firebird::CheckStatusWrapper* status);
@@ -439,7 +440,7 @@ public:
 	Firebird::IResultSet* openCursor(Firebird::CheckStatusWrapper* status, Firebird::ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned int dialect,
 		Firebird::IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata,
-		const char* cursorName);
+		const char* cursorName, unsigned int cursorFlags);
 	YEvents* queEvents(Firebird::CheckStatusWrapper* status, Firebird::IEventCallback* callback,
 		unsigned int length, const unsigned char* eventsData);
 	void cancelOperation(Firebird::CheckStatusWrapper* status, int option);

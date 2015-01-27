@@ -748,7 +748,7 @@ void TRA_invalidate(thread_db* tdbb, ULONG mask)
 }
 
 
-void TRA_link_cursor(jrd_tra* transaction, dsql_req* cursor)
+void TRA_link_cursor(jrd_tra* transaction, DsqlCursor* cursor)
 {
 /**************************************
  *
@@ -766,7 +766,7 @@ void TRA_link_cursor(jrd_tra* transaction, dsql_req* cursor)
 }
 
 
-void TRA_unlink_cursor(jrd_tra* transaction, dsql_req* cursor)
+void TRA_unlink_cursor(jrd_tra* transaction, DsqlCursor* cursor)
 {
 /**************************************
  *
@@ -781,9 +781,7 @@ void TRA_unlink_cursor(jrd_tra* transaction, dsql_req* cursor)
 
 	FB_SIZE_T pos;
 	if (transaction->tra_open_cursors.find(cursor, pos))
-	{
 		transaction->tra_open_cursors.remove(pos);
-	}
 }
 
 
@@ -1217,10 +1215,8 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 
 	// Close all open DSQL cursors
 
-	while (transaction->tra_open_cursors.getCount())
-	{
-		DSQL_free_statement(tdbb, transaction->tra_open_cursors.pop(), DSQL_close);
-	}
+	while (transaction->tra_open_cursors.hasData())
+		DsqlCursor::close(tdbb, transaction->tra_open_cursors.pop());
 
 	// Release the transaction and its pool
 

@@ -33,6 +33,7 @@ namespace Jrd {
 // Engine objects used by interface objects
 class blb;
 class jrd_tra;
+class DsqlCursor;
 class dsql_req;
 class JrdStatement;
 class StableAttachmentPart;
@@ -148,7 +149,7 @@ public:
 	int fetchPrior(Firebird::CheckStatusWrapper* status, void* message);
 	int fetchFirst(Firebird::CheckStatusWrapper* status, void* message);
 	int fetchLast(Firebird::CheckStatusWrapper* status, void* message);
-	int fetchAbsolute(Firebird::CheckStatusWrapper* status, unsigned int position, void* message);
+	int fetchAbsolute(Firebird::CheckStatusWrapper* status, int position, void* message);
 	int fetchRelative(Firebird::CheckStatusWrapper* status, int offset, void* message);
 	FB_BOOLEAN isEof(Firebird::CheckStatusWrapper* status);
 	FB_BOOLEAN isBof(Firebird::CheckStatusWrapper* status);
@@ -157,21 +158,22 @@ public:
 	void setDelayedOutputFormat(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* format);
 
 public:
-	JResultSet(JStatement* aStatement);
+	JResultSet(DsqlCursor* handle, StableAttachmentPart* sa);
 
-	JStatement* getStatement()
+	StableAttachmentPart* getAttachment()
 	{
-		return statement;
+		return sAtt;
 	}
 
-	StableAttachmentPart* getAttachment();
-
-	// Change after adding separate handle for cursor in dsql
-	dsql_req* getHandle() throw();
+	DsqlCursor* getHandle() throw()
+	{
+		return cursor;
+	}
 
 private:
-	Firebird::RefPtr<JStatement> statement;
-	bool eof;
+	DsqlCursor* cursor;
+	Firebird::RefPtr<StableAttachmentPart> sAtt;
+	int state;
 
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
@@ -196,7 +198,7 @@ public:
 		Firebird::IMessageMetadata* outMetadata, void* outBuffer);
 	JResultSet* openCursor(Firebird::CheckStatusWrapper* status,
 		Firebird::ITransaction* transaction, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
-		Firebird::IMessageMetadata* outMetadata);
+		Firebird::IMessageMetadata* outMetadata, unsigned int flags);
 	void setCursorName(Firebird::CheckStatusWrapper* status, const char* name);
 	unsigned getFlags(Firebird::CheckStatusWrapper* status);
 
@@ -220,17 +222,6 @@ private:
 
 	void freeEngineData(Firebird::CheckStatusWrapper* status);
 };
-
-inline StableAttachmentPart* JResultSet::getAttachment()
-{
-	return statement->getAttachment();
-}
-
-// Change after adding separate handle for cursor in dsql
-inline dsql_req* JResultSet::getHandle() throw()
-{
-	return statement->getHandle();
-}
 
 class JRequest FB_FINAL :
 	public Firebird::RefCntIface<Firebird::IRequestImpl<JRequest, Firebird::CheckStatusWrapper> >
@@ -343,7 +334,7 @@ public:
 	Firebird::IResultSet* openCursor(Firebird::CheckStatusWrapper* status,
 		Firebird::ITransaction* transaction, unsigned int stmtLength, const char* sqlStmt,
 		unsigned int dialect, Firebird::IMessageMetadata* inMetadata, void* inBuffer,
-		Firebird::IMessageMetadata* outMetadata, const char* cursorName);
+		Firebird::IMessageMetadata* outMetadata, const char* cursorName, unsigned int cursorFlags);
 	JEvents* queEvents(Firebird::CheckStatusWrapper* status, Firebird::IEventCallback* callback,
 		unsigned int length, const unsigned char* events);
 	void cancelOperation(Firebird::CheckStatusWrapper* status, int option);

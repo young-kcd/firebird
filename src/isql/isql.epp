@@ -1880,7 +1880,7 @@ void ISQL_print_validation(FILE* fp,
 	{
 		unsigned int length;
 		int cc = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
-		if (cc == Firebird::IStatus::FB_EOF || cc == Firebird::IStatus::FB_ERROR)
+		if (cc == Firebird::IStatus::FB_NO_DATA || cc == Firebird::IStatus::FB_ERROR)
 			break;
 
 		buffer[length] = 0;
@@ -7598,7 +7598,7 @@ processing_state ISQL_print_item_blob(FILE* fp, const IsqlVar* var, Firebird::IT
 	{
 		unsigned int length;
 		int cc  = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
-		if (cc == Firebird::IStatus::FB_EOF || cc == Firebird::IStatus::FB_ERROR)
+		if (cc == Firebird::IStatus::FB_NO_DATA || cc == Firebird::IStatus::FB_ERROR)
 			break;
 
 		// Special displays for blr or acl subtypes
@@ -8556,7 +8556,7 @@ static processing_state process_statement(const TEXT* str2)
 		// Otherwise, open the cursor to start things up
 
 		Firebird::IResultSet* curs = global_Stmt->openCursor(fbStatus, M__trans,
-			NULL, NULL, message);
+			NULL, NULL, message, Firebird::IStatement::CURSOR_TYPE_SCROLLABLE);
 		if (ISQL_errmsg(fbStatus))
 		{
 			return ps_ERR;
@@ -8591,10 +8591,8 @@ static processing_state process_statement(const TEXT* str2)
 
 			// Fetch the current cursor
 
-			if (curs->fetchNext(fbStatus, buffer) == Firebird::IStatus::FB_EOF)
-			{
+			if (curs->fetchNext(fbStatus, buffer) == Firebird::IStatus::FB_NO_DATA)
 				break;
-			}
 
 			// Print the header every Pagelength number of lines for
 			// command-line ISQL only.

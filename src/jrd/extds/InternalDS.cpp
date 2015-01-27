@@ -536,7 +536,7 @@ void InternalStatement::doOpen(thread_db* tdbb)
 		fb_assert(m_inMetadata->getMessageLength() == m_in_buffer.getCount());
 
 		m_cursor = m_request->openCursor(&statusWrapper, transaction,
-			m_inMetadata, m_in_buffer.begin(), m_outMetadata);
+			m_inMetadata, m_in_buffer.begin(), m_outMetadata, 0);
 	}
 
 	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
@@ -560,7 +560,7 @@ bool InternalStatement::doFetch(thread_db* tdbb)
 	}
 
 	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
-		raise(status, tdbb, "JResultSet::fetch");
+		raise(status, tdbb, "JResultSet::fetchNext");
 
 	return res;
 }

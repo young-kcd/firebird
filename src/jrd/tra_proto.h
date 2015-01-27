@@ -45,8 +45,8 @@ void	TRA_header_write(Jrd::thread_db* tdbb, Jrd::Database* dbb, TraNumber number
 #endif
 void	TRA_init(Jrd::Attachment*);
 void	TRA_invalidate(Jrd::thread_db* tdbb, ULONG);
-void	TRA_link_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);
-void	TRA_unlink_cursor(Jrd::jrd_tra*, Jrd::dsql_req*);
+void	TRA_link_cursor(Jrd::jrd_tra*, Jrd::DsqlCursor*);
+void	TRA_unlink_cursor(Jrd::jrd_tra*, Jrd::DsqlCursor*);
 void	TRA_post_resources(Jrd::thread_db* tdbb, Jrd::jrd_tra*, Jrd::ResourceList&);
 bool	TRA_pc_active(Jrd::thread_db*, TraNumber);
 bool	TRA_precommited(Jrd::thread_db* tdbb, TraNumber old_number, TraNumber new_number);

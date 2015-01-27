@@ -59,7 +59,7 @@ interface Status : Disposable
 	// completion codes - not used in Status, but I must have them somewhere
 	const int FB_ERROR = -1;
 	const int FB_OK = 0;
-	const int FB_EOF = 1;
+	const int FB_NO_DATA = 1;
 	const int FB_SEGMENT = 2;
 
 	void init();
@@ -385,7 +385,7 @@ interface ResultSet : ReferenceCounted
 	[notImplemented(Status::FB_ERROR)] int fetchPrior(Status status, void* message);
 	[notImplemented(Status::FB_ERROR)] int fetchFirst(Status status, void* message);
 	[notImplemented(Status::FB_ERROR)] int fetchLast(Status status, void* message);
-	[notImplemented(Status::FB_ERROR)] int fetchAbsolute(Status status, uint position, void* message);
+	[notImplemented(Status::FB_ERROR)] int fetchAbsolute(Status status, int position, void* message);
 	[notImplemented(Status::FB_ERROR)] int fetchRelative(Status status, int offset, void* message);
 	boolean isEof(Status status);
 	boolean isBof(Status status);
@@ -420,6 +420,9 @@ interface Statement : ReferenceCounted
 	const uint FLAG_HAS_CURSOR	 					= 0x01;
 	const uint FLAG_REPEAT_EXECUTE				 	= 0x02;
 
+	// Cursor flags.
+	const uint CURSOR_TYPE_SCROLLABLE 				= 0x01;
+
 	void getInfo(Status status,
 								 uint itemsLength, const uchar* items,
 								 uint bufferLength, uchar* buffer);
@@ -431,7 +434,7 @@ interface Statement : ReferenceCounted
 	Transaction execute(Status status, Transaction transaction,
 		MessageMetadata inMetadata, void* inBuffer, MessageMetadata outMetadata, void* outBuffer);
 	ResultSet openCursor(Status status, Transaction transaction,
-		MessageMetadata inMetadata, void* inBuffer, MessageMetadata outMetadata);
+		MessageMetadata inMetadata, void* inBuffer, MessageMetadata outMetadata, uint flags);
 	void setCursorName(Status status, const string name);
 	void free(Status status);
 	uint getFlags(Status status);
@@ -495,7 +498,7 @@ interface Attachment : ReferenceCounted
 	ResultSet openCursor(Status status, Transaction transaction,
 		uint stmtLength, const string sqlStmt, uint dialect,
 		MessageMetadata inMetadata, void* inBuffer, MessageMetadata outMetadata,
-		const string cursorName);
+		const string cursorName, uint cursorFlags);
 	Events queEvents(Status status, EventCallback callback,
 						   uint length, const uchar* events);
 	void cancelOperation(Status status, int option);

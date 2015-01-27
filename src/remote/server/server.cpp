@@ -3201,7 +3201,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		statement->rsr_cursor =
 			statement->rsr_iface->openCursor(&status_vector, tra,
 											 iMsgBuffer.metadata, iMsgBuffer.buffer,
-											 (out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT));
+											 (out_blr_length ? oMsgBuffer.metadata : DELAYED_OUT_FORMAT),
+											 0);
 		if (!(status_vector.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			transaction->rtr_cursors.add(statement);
@@ -3558,9 +3559,9 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 		p += 2;
 		unsigned length;
 		int cc = blob->rbl_iface->getSegment(&status_vector, buffer_length, p, &length);
-		if (cc == IStatus::FB_EOF || cc == IStatus::FB_ERROR)
+		if (cc == IStatus::FB_NO_DATA || cc == IStatus::FB_ERROR)
 		{
-			if (cc == IStatus::FB_EOF)
+			if (cc == IStatus::FB_NO_DATA)
 				state = 2;
 			p -= 2;
 			break;

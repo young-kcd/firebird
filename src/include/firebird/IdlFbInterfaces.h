@@ -229,7 +229,7 @@ namespace Firebird
 		static const unsigned FB_HAS_ERRORS = 2;
 		static const int FB_ERROR = -1;
 		static const int FB_OK = 0;
-		static const int FB_EOF = 1;
+		static const int FB_NO_DATA = 1;
 		static const int FB_SEGMENT = 2;
 
 		void init()
@@ -1370,7 +1370,7 @@ namespace Firebird
 			int (CLOOP_CARG *fetchPrior)(IResultSet* self, IStatus* status, void* message) throw();
 			int (CLOOP_CARG *fetchFirst)(IResultSet* self, IStatus* status, void* message) throw();
 			int (CLOOP_CARG *fetchLast)(IResultSet* self, IStatus* status, void* message) throw();
-			int (CLOOP_CARG *fetchAbsolute)(IResultSet* self, IStatus* status, unsigned position, void* message) throw();
+			int (CLOOP_CARG *fetchAbsolute)(IResultSet* self, IStatus* status, int position, void* message) throw();
 			int (CLOOP_CARG *fetchRelative)(IResultSet* self, IStatus* status, int offset, void* message) throw();
 			FB_BOOLEAN (CLOOP_CARG *isEof)(IResultSet* self, IStatus* status) throw();
 			FB_BOOLEAN (CLOOP_CARG *isBof)(IResultSet* self, IStatus* status) throw();
@@ -1420,7 +1420,7 @@ namespace Firebird
 			return ret;
 		}
 
-		template <typename StatusType> int fetchAbsolute(StatusType* status, unsigned position, void* message)
+		template <typename StatusType> int fetchAbsolute(StatusType* status, int position, void* message)
 		{
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchAbsolute(this, status, position, message);
 			StatusType::checkException(status);
@@ -1480,7 +1480,7 @@ namespace Firebird
 			IMessageMetadata* (CLOOP_CARG *getInputMetadata)(IStatement* self, IStatus* status) throw();
 			IMessageMetadata* (CLOOP_CARG *getOutputMetadata)(IStatement* self, IStatus* status) throw();
 			ITransaction* (CLOOP_CARG *execute)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw();
-			IResultSet* (CLOOP_CARG *openCursor)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) throw();
+			IResultSet* (CLOOP_CARG *openCursor)(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) throw();
 			void (CLOOP_CARG *setCursorName)(IStatement* self, IStatus* status, const char* name) throw();
 			void (CLOOP_CARG *free)(IStatement* self, IStatus* status) throw();
 			unsigned (CLOOP_CARG *getFlags)(IStatement* self, IStatus* status) throw();
@@ -1511,6 +1511,8 @@ namespace Firebird
 		static const unsigned PREPARE_PREFETCH_ALL = IStatement::PREPARE_PREFETCH_METADATA | IStatement::PREPARE_PREFETCH_LEGACY_PLAN | IStatement::PREPARE_PREFETCH_DETAILED_PLAN | IStatement::PREPARE_PREFETCH_AFFECTED_RECORDS;
 		static const unsigned FLAG_HAS_CURSOR = 1;
 		static const unsigned FLAG_REPEAT_EXECUTE = 2;
+		static const unsigned CURSOR_TYPE_SCROLLABLE = 1;
+
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -1560,9 +1562,9 @@ namespace Firebird
 			return ret;
 		}
 
-		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
+		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags)
 		{
-			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, inMetadata, inBuffer, outMetadata);
+			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, inMetadata, inBuffer, outMetadata, flags);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -1702,7 +1704,7 @@ namespace Firebird
 			void (CLOOP_CARG *executeDyn)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) throw();
 			IStatement* (CLOOP_CARG *prepare)(IAttachment* self, IStatus* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) throw();
 			ITransaction* (CLOOP_CARG *execute)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) throw();
-			IResultSet* (CLOOP_CARG *openCursor)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) throw();
+			IResultSet* (CLOOP_CARG *openCursor)(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags) throw();
 			IEvents* (CLOOP_CARG *queEvents)(IAttachment* self, IStatus* status, IEventCallback* callback, unsigned length, const unsigned char* events) throw();
 			void (CLOOP_CARG *cancelOperation)(IAttachment* self, IStatus* status, int option) throw();
 			void (CLOOP_CARG *ping)(IAttachment* self, IStatus* status) throw();
@@ -1803,9 +1805,9 @@ namespace Firebird
 			return ret;
 		}
 
-		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName)
+		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags)
 		{
-			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
+			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName, cursorFlags);
 			StatusType::checkException(status);
 			return ret;
 		}
@@ -7379,7 +7381,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopfetchAbsoluteDispatcher(IResultSet* self, IStatus* status, unsigned position, void* message) throw()
+		static int CLOOP_CARG cloopfetchAbsoluteDispatcher(IResultSet* self, IStatus* status, int position, void* message) throw()
 		{
 			StatusType status2(status);
 
@@ -7525,7 +7527,7 @@ namespace Firebird
 		virtual int fetchPrior(StatusType* status, void* message) = 0;
 		virtual int fetchFirst(StatusType* status, void* message) = 0;
 		virtual int fetchLast(StatusType* status, void* message) = 0;
-		virtual int fetchAbsolute(StatusType* status, unsigned position, void* message) = 0;
+		virtual int fetchAbsolute(StatusType* status, int position, void* message) = 0;
 		virtual int fetchRelative(StatusType* status, int offset, void* message) = 0;
 		virtual FB_BOOLEAN isEof(StatusType* status) = 0;
 		virtual FB_BOOLEAN isBof(StatusType* status) = 0;
@@ -7670,13 +7672,13 @@ namespace Firebird
 			}
 		}
 
-		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) throw()
+		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IStatement* self, IStatus* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				return static_cast<Name*>(self)->Name::openCursor(&status2, transaction, inMetadata, inBuffer, outMetadata);
+				return static_cast<Name*>(self)->Name::openCursor(&status2, transaction, inMetadata, inBuffer, outMetadata, flags);
 			}
 			catch (...)
 			{
@@ -7774,7 +7776,7 @@ namespace Firebird
 		virtual IMessageMetadata* getInputMetadata(StatusType* status) = 0;
 		virtual IMessageMetadata* getOutputMetadata(StatusType* status) = 0;
 		virtual ITransaction* execute(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
-		virtual IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata) = 0;
+		virtual IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags) = 0;
 		virtual void setCursorName(StatusType* status, const char* name) = 0;
 		virtual void free(StatusType* status) = 0;
 		virtual unsigned getFlags(StatusType* status) = 0;
@@ -8247,13 +8249,13 @@ namespace Firebird
 			}
 		}
 
-		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) throw()
+		static IResultSet* CLOOP_CARG cloopopenCursorDispatcher(IAttachment* self, IStatus* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags) throw()
 		{
 			StatusType status2(status);
 
 			try
 			{
-				return static_cast<Name*>(self)->Name::openCursor(&status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName);
+				return static_cast<Name*>(self)->Name::openCursor(&status2, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName, cursorFlags);
 			}
 			catch (...)
 			{
@@ -8384,7 +8386,7 @@ namespace Firebird
 		virtual void executeDyn(StatusType* status, ITransaction* transaction, unsigned length, const unsigned char* dyn) = 0;
 		virtual IStatement* prepare(StatusType* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags) = 0;
 		virtual ITransaction* execute(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer) = 0;
-		virtual IResultSet* openCursor(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName) = 0;
+		virtual IResultSet* openCursor(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags) = 0;
 		virtual IEvents* queEvents(StatusType* status, IEventCallback* callback, unsigned length, const unsigned char* events) = 0;
 		virtual void cancelOperation(StatusType* status, int option) = 0;
 		virtual void ping(StatusType* status) = 0;

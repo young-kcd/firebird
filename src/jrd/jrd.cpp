@@ -49,6 +49,7 @@
 #include <errno.h>
 
 #include "../jrd/ibase.h"
+#include "../jrd/EngineInterface.h"
 #include "../jrd/jrd.h"
 #include "../jrd/irq.h"
 #include "../jrd/drq.h"
@@ -126,7 +127,6 @@
 #include "../common/classes/RefMutex.h"
 #include "../common/utils_proto.h"
 #include "../jrd/DebugInterface.h"
-#include "../jrd/EngineInterface.h"
 #include "../jrd/CryptoManager.h"
 #include "../jrd/DbCreators.h"
 
@@ -318,8 +318,8 @@ JTransaction::JTransaction(JTransaction* from)
 }
 
 
-JResultSet::JResultSet(JStatement* aStatement)
-	: statement(aStatement), eof(false)
+JResultSet::JResultSet(DsqlCursor* handle, StableAttachmentPart* sa)
+	: cursor(handle), sAtt(sa), state(-1)
 {
 }
 
@@ -633,6 +633,15 @@ namespace
 	inline void validateHandle(thread_db* tdbb, JEvents* const events)
 	{
 		validateHandle(tdbb, events->getAttachment()->getHandle());
+	}
+
+	inline void validateHandle(thread_db* tdbb, DsqlCursor* const cursor)
+	{
+		if (!cursor)
+			status_exception::raise(Arg::Gds(isc_bad_req_handle));
+
+		validateHandle(tdbb, cursor->getTransaction());
+		validateHandle(tdbb, cursor->getAttachment());
 	}
 
 	class AttachmentHolder
@@ -3080,7 +3089,7 @@ int JBlob::getSegment(CheckStatusWrapper* user_status, unsigned int buffer_lengt
 		}
 
 		if (getHandle()->blb_flags & BLB_eof)
-			cc = IStatus::FB_EOF;
+			cc = IStatus::FB_NO_DATA;
 		else if (getHandle()->getFragmentSize())
 			cc = IStatus::FB_SEGMENT;
 		else
@@ -4413,7 +4422,7 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 
 		try
 		{
-			DSQL_execute(tdbb, &tra, getHandle(), false,
+			DSQL_execute(tdbb, &tra, getHandle(),
 				inMetadata, static_cast<UCHAR*>(inBuffer),
 				outMetadata, static_cast<UCHAR*>(outBuffer));
 
@@ -4456,7 +4465,7 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 
 
 JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction* transaction,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned int flags)
 {
 	JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
 	jrd_tra* tra = jt ? jt->getHandle() : NULL;
@@ -4483,10 +4492,12 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 				}
 			}
 
-			DSQL_execute(tdbb, &tra, getHandle(), true,
-				inMetadata, static_cast<UCHAR*>(inBuffer), outMetadata, NULL);
+			DsqlCursor* const cursor =
+				DSQL_open(tdbb, &tra, getHandle(),
+						  inMetadata, static_cast<UCHAR*>(inBuffer),
+						  outMetadata, flags);
 
-			rs = new JResultSet(this);
+			rs = new JResultSet(cursor, getAttachment());
 			rs->addRef();
 		}
 		catch (const Exception& ex)
@@ -4510,7 +4521,7 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 IResultSet* JAttachment::openCursor(CheckStatusWrapper* user_status, ITransaction* apiTra,
 	unsigned int length, const char* string, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
-	const char* cursorName)
+	const char* cursorName, unsigned int cursorFlags)
 {
 	IStatement* tmpStatement = prepare(user_status, apiTra, length, string, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
@@ -4530,7 +4541,7 @@ IResultSet* JAttachment::openCursor(CheckStatusWrapper* user_status, ITransactio
 	}
 
 	IResultSet* rs = tmpStatement->openCursor(user_status, apiTra,
-		inMetadata, inBuffer, outMetadata);
+		inMetadata, inBuffer, outMetadata, cursorFlags);
 
 	tmpStatement->release();
 	return rs;
@@ -4593,36 +4604,28 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 	}
 
 	successful_completion(user_status);
-
 	return jt;
 }
 
 
 int JResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
 {
-	bool hasMessage = false;
-
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
-		dsql_req* req = getStatement()->getHandle();
-		validateHandle(tdbb, req->req_transaction);
 		check_database(tdbb);
 
 		try
 		{
-			hasMessage = req->fetch(tdbb, static_cast<UCHAR*>(buffer));
-			if (!hasMessage)
-			{
-				eof = true;
-			}
+			state = cursor->fetchNext(tdbb, static_cast<UCHAR*>(buffer));
 		}
 		catch (const Exception& ex)
 		{
-			transliterateException(tdbb, ex, user_status, "JStatement::fetch");
+			transliterateException(tdbb, ex, user_status, "JResultSet::fetchNext");
 			return IStatus::FB_ERROR;
 		}
-		trace_warning(tdbb, user_status, "JResultSet::fetch");
+
+		trace_warning(tdbb, user_status, "JResultSet::fetchNext");
 	}
 	catch (const Exception& ex)
 	{
@@ -4631,17 +4634,27 @@ int JResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
 	}
 
 	successful_completion(user_status);
-
-	if (hasMessage)
-		return IStatus::FB_OK;
-	return IStatus::FB_EOF;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
 int JResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			state = cursor->fetchPrior(tdbb, static_cast<UCHAR*>(buffer));
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JResultSet::fetchPrior");
+			return IStatus::FB_ERROR;
+		}
+
+		trace_warning(tdbb, user_status, "JResultSet::fetchPrior");
 	}
 	catch (const Exception& ex)
 	{
@@ -4650,15 +4663,28 @@ int JResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
 	}
 
 	successful_completion(user_status);
-
-	return IStatus::FB_OK;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
+
 
 int JResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			state = cursor->fetchFirst(tdbb, static_cast<UCHAR*>(buffer));
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JResultSet::fetchFirst");
+			return IStatus::FB_ERROR;
+		}
+
+		trace_warning(tdbb, user_status, "JResultSet::fetchFirst");
 	}
 	catch (const Exception& ex)
 	{
@@ -4667,15 +4693,28 @@ int JResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
 	}
 
 	successful_completion(user_status);
-
-	return IStatus::FB_OK;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
+
 
 int JResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
 {
 	try
 	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			state = cursor->fetchLast(tdbb, static_cast<UCHAR*>(buffer));
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JResultSet::fetchLast");
+			return IStatus::FB_ERROR;
+		}
+
+		trace_warning(tdbb, user_status, "JResultSet::fetchLast");
 	}
 	catch (const Exception& ex)
 	{
@@ -4684,15 +4723,28 @@ int JResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
 	}
 
 	successful_completion(user_status);
-
-	return IStatus::FB_OK;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
-int JResultSet::fetchAbsolute(CheckStatusWrapper* user_status, unsigned position, void* buffer)
+
+int JResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, void* buffer)
 {
 	try
 	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			state = cursor->fetchAbsolute(tdbb, static_cast<UCHAR*>(buffer), position);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JResultSet::fetchAbsolute");
+			return IStatus::FB_ERROR;
+		}
+
+		trace_warning(tdbb, user_status, "JResultSet::fetchAbsolute");
 	}
 	catch (const Exception& ex)
 	{
@@ -4701,15 +4753,28 @@ int JResultSet::fetchAbsolute(CheckStatusWrapper* user_status, unsigned position
 	}
 
 	successful_completion(user_status);
-
-	return IStatus::FB_OK;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
+
 
 int JResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void* buffer)
 {
 	try
 	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
+		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+		check_database(tdbb);
+
+		try
+		{
+			state = cursor->fetchRelative(tdbb, static_cast<UCHAR*>(buffer), offset);
+		}
+		catch (const Exception& ex)
+		{
+			transliterateException(tdbb, ex, user_status, "JResultSet::fetchRelative");
+			return IStatus::FB_ERROR;
+		}
+
+		trace_warning(tdbb, user_status, "JResultSet::fetchRelative");
 	}
 	catch (const Exception& ex)
 	{
@@ -4718,26 +4783,37 @@ int JResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void*
 	}
 
 	successful_completion(user_status);
-
-	return IStatus::FB_OK;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
+
+
+FB_BOOLEAN JResultSet::isEof(CheckStatusWrapper* user_status)
+{
+	return (state > 0);
+}
+
+
+FB_BOOLEAN JResultSet::isBof(CheckStatusWrapper* user_status)
+{
+	return (state < 0);
+}
+
 
 int JResultSet::release()
 {
 	if (--refCounter != 0)
 		return 1;
 
-	if (statement)
+	if (cursor)
 	{
 		LocalStatus status;
 		CheckStatusWrapper statusWrapper(&status);
 
 		freeEngineData(&statusWrapper);
 	}
-	if (!statement)
-	{
+
+	if (!cursor)
 		delete this;
-	}
 
 	return 0;
 }
@@ -4752,8 +4828,8 @@ void JResultSet::freeEngineData(CheckStatusWrapper* user_status)
 
 		try
 		{
-			DSQL_free_statement(tdbb, getHandle(), DSQL_close);
-			statement = NULL;
+			DsqlCursor::close(tdbb, cursor);
+			cursor = NULL;
 		}
 		catch (const Exception& ex)
 		{
@@ -4771,33 +4847,9 @@ void JResultSet::freeEngineData(CheckStatusWrapper* user_status)
 }
 
 
-FB_BOOLEAN JResultSet::isEof(CheckStatusWrapper* user_status)
-{
-	return eof ? FB_TRUE : FB_FALSE;
-}
-
-
-FB_BOOLEAN JResultSet::isBof(CheckStatusWrapper* user_status)
-{
-	try
-	{
-		status_exception::raise(Arg::Gds(isc_wish_list));
-	}
-	catch (const Exception& ex)
-	{
-		ex.stuffException(user_status);
-		return FB_FALSE;
-	}
-
-	successful_completion(user_status);
-
-	return FB_TRUE;
-}
-
-
 IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 {
-	return statement->getOutputMetadata(user_status);
+	return NULL;//statement->getOutputMetadata(user_status);
 }
 
 
@@ -5122,9 +5174,11 @@ void JResultSet::setDelayedOutputFormat(CheckStatusWrapper* user_status, Firebir
 
 		try
 		{
+/*
 			dsql_req* req = getStatement()->getHandle();
 			fb_assert(req);
 			req->setDelayedFormat(tdbb, outMetadata);
+*/
 		}
 		catch (const Exception& ex)
 		{
@@ -6297,7 +6351,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
 
     // CMP_release() changes att_requests.
-	while (!attachment->att_requests.isEmpty())
+	while (attachment->att_requests.hasData())
 		CMP_release(tdbb, attachment->att_requests.back());
 
 	MET_clear_cache(tdbb);

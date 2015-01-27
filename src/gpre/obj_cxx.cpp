@@ -1002,7 +1002,7 @@ static void gen_blob_for( const act* action, USHORT column)
 	column += INDENT;
 	gen_get_segment(action, column);
 	printa(column, "if (fbIStatus == Firebird::IStatus::FB_ERROR || "
-				   "fbIStatus == Firebird::IStatus::FB_EOF) break;");
+				   "fbIStatus == Firebird::IStatus::FB_NO_DATA) break;");
 }
 
 

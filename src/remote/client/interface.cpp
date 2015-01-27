@@ -253,7 +253,7 @@ public:
 	int fetchPrior(CheckStatusWrapper* status, void* message);
 	int fetchFirst(CheckStatusWrapper* status, void* message);
 	int fetchLast(CheckStatusWrapper* status, void* message);
-	int fetchAbsolute(CheckStatusWrapper* status, unsigned int position, void* message);
+	int fetchAbsolute(CheckStatusWrapper* status, int position, void* message);
 	int fetchRelative(CheckStatusWrapper* status, int offset, void* message);
 	FB_BOOLEAN isEof(CheckStatusWrapper* status);
 	FB_BOOLEAN isBof(CheckStatusWrapper* status);
@@ -311,7 +311,8 @@ public:
 		IMessageMetadata* inMetadata, void* inBuffer,
 		IMessageMetadata* outMetadata, void* outBuffer);
 	ResultSet* openCursor(CheckStatusWrapper* status, ITransaction* tra,
-		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat);
+		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat,
+		unsigned int flags);
 	void setCursorName(CheckStatusWrapper* status, const char* name);
 	void free(CheckStatusWrapper* status);
 	unsigned getFlags(CheckStatusWrapper* status);
@@ -486,7 +487,7 @@ public:
 	Firebird::IResultSet* openCursor(CheckStatusWrapper* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
 		IMessageMetadata* inMetadata, void* inBuffer, Firebird::IMessageMetadata* outMetadata,
-		const char* cursorName);
+		const char* cursorName, unsigned int cursorFlags);
 	Firebird::IEvents* queEvents(CheckStatusWrapper* status, Firebird::IEventCallback* callback,
 									 unsigned int length, const unsigned char* events);
 	void cancelOperation(CheckStatusWrapper* status, int option);
@@ -1850,7 +1851,7 @@ Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird:
 
 
 ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransaction* apiTra,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat, unsigned int flags)
 {
 /**************************************
  *
@@ -1986,7 +1987,7 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 IResultSet* Attachment::openCursor(CheckStatusWrapper* status, ITransaction* transaction,
 		unsigned int stmtLength, const char* sqlStmt, unsigned dialect,
 		IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
-		const char* cursorName)
+		const char* cursorName, unsigned int cursorFlags)
 {
 	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
@@ -1995,7 +1996,7 @@ IResultSet* Attachment::openCursor(CheckStatusWrapper* status, ITransaction* tra
 		return NULL;
 	}
 
-	ResultSet* rc = stmt->openCursor(status, transaction, inMetadata, inBuffer, outMetadata);
+	ResultSet* rc = stmt->openCursor(status, transaction, inMetadata, inBuffer, outMetadata, cursorFlags);
 	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
 		stmt->release();
@@ -2934,7 +2935,7 @@ int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 				//statement->rsr_flags.clear(Rsr::EOF_SET);
 				statement->rsr_flags.set(Rsr::PAST_EOF);
 
-				return IStatus::FB_EOF;
+				return IStatus::FB_NO_DATA;
 			}
 
 			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
@@ -3030,7 +3031,7 @@ int ResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
 }
 
 
-int ResultSet::fetchAbsolute(CheckStatusWrapper* user_status, unsigned position, void* buffer)
+int ResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, void* buffer)
 {
 	try
 	{
@@ -3384,7 +3385,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 		{
 			if (segmentLength)
 				*segmentLength = length;
-			return IStatus::FB_EOF;
+			return IStatus::FB_NO_DATA;
 		}
 
 		// Here's the loop, passing out data from our basket & refilling it.
@@ -3462,7 +3463,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 			if (blob->rbl_flags & Rbl::EOF_PENDING)
 			{
 				blob->rbl_flags |= Rbl::EOF_SET;
-				code = IStatus::FB_EOF;
+				code = IStatus::FB_NO_DATA;
 				break;
 			}
 

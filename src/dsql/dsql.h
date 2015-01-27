@@ -34,18 +34,21 @@
 #ifndef DSQL_DSQL_H
 #define DSQL_DSQL_H
 
-#include "../jrd/RuntimeStatistics.h"
-#include "../jrd/ntrace.h"
-#include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
-#include "../jrd/Attachment.h"
-#include "../dsql/BlrDebugWriter.h"
-#include "../dsql/ddl_proto.h"
 #include "../common/classes/array.h"
 #include "../common/classes/GenericMap.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/stack.h"
 #include "../common/classes/auto.h"
 #include "../common/classes/NestConst.h"
+#include "../jrd/EngineInterface.h"
+#include "../jrd/RuntimeStatistics.h"
+#include "../jrd/ntrace.h"
+#include "../jrd/val.h"  // Get rid of duplicated FUN_T enum.
+#include "../jrd/Attachment.h"
+#include "../dsql/BlrDebugWriter.h"
+#include "../dsql/ddl_proto.h"
+#include "../dsql/DsqlCursor.h"
+
 
 #ifdef DEV_BUILD
 // This macro enables DSQL tracing code
@@ -60,8 +63,6 @@ DEFINE_TRACE_ROUTINE(dsql_trace);
 #include "../include/fb_blk.h"
 
 #include "../dsql/sym.h"
-
-#include "../jrd/EngineInterface.h"
 
 // Context aliases used in triggers
 const char* const OLD_CONTEXT_NAME = "OLD";
@@ -524,9 +525,6 @@ private:
 class dsql_req : public pool_alloc<dsql_type_req>
 {
 public:
-	static const unsigned FLAG_OPENED_CURSOR	= 0x01;
-
-public:
 	explicit dsql_req(MemoryPool& pool);
 
 public:
@@ -572,10 +570,9 @@ public:
 	jrd_tra* req_transaction;	// JRD transaction
 	jrd_req* req_request;		// JRD request
 
-	unsigned req_flags;			// flags
-
 	Firebird::Array<UCHAR*>	req_msg_buffers;
-	Firebird::string req_cursor;	// Cursor name, if any
+	Firebird::string req_cursor_name;	// Cursor name, if any
+	DsqlCursor* req_cursor;		// Open cursor, if any
 	Firebird::GenericMap<Firebird::NonPooled<const dsql_par*, dsc> > req_user_descs; // SQLDA data type
 
 	Firebird::AutoPtr<Jrd::RuntimeStatistics> req_fetch_baseline; // State of request performance counters when we reported it last time

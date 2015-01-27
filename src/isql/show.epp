@@ -1611,7 +1611,7 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	{
 		unsigned int length;
 		int cc = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
-		if (cc == Firebird::IStatus::FB_EOF || cc == Firebird::IStatus::FB_ERROR)
+		if (cc == Firebird::IStatus::FB_NO_DATA || cc == Firebird::IStatus::FB_ERROR)
 			break;
 
 		// ASF: In Windows, \n characters are printed as \r\n in text mode.
@@ -5810,7 +5810,7 @@ static processing_state show_users12()
 		return ps_ERR;
 
 	Firebird::IResultSet* rs = DB->openCursor(fbStatus, fbTrans, 0, getusers, isqlGlob.SQL_dialect,
-		NULL, NULL, outMetadata, NULL);
+		NULL, NULL, outMetadata, NULL, 0);
 	if (ISQL_errmsg (fbStatus))
 		return ps_ERR;
 

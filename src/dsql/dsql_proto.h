@@ -34,12 +34,15 @@ namespace Jrd {
 	class dsql_req;
 }
 
-void DSQL_execute(Jrd::thread_db*, Jrd::jrd_tra**, Jrd::dsql_req*, bool,
-				  Firebird::IMessageMetadata*, const UCHAR*, Firebird::IMessageMetadata*, UCHAR*);
+void DSQL_execute(Jrd::thread_db*, Jrd::jrd_tra**, Jrd::dsql_req*,
+	  	  	 	  Firebird::IMessageMetadata*, const UCHAR*, Firebird::IMessageMetadata*, UCHAR*);
 void DSQL_execute_immediate(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra**,
 							ULONG, const TEXT*, USHORT, Firebird::IMessageMetadata*, const UCHAR*,
 							Firebird::IMessageMetadata*, UCHAR*, bool);
 void DSQL_free_statement(Jrd::thread_db*, Jrd::dsql_req*, USHORT);
+Jrd::DsqlCursor* DSQL_open(Jrd::thread_db*, Jrd::jrd_tra**, Jrd::dsql_req*,
+	  	  	 	  	  	   Firebird::IMessageMetadata*, const UCHAR*,
+	  	  	 	  	  	   Firebird::IMessageMetadata*, ULONG);
 Jrd::dsql_req* DSQL_prepare(Jrd::thread_db*, Jrd::Attachment*, Jrd::jrd_tra*, ULONG, const TEXT*,
 							USHORT, Firebird::Array<UCHAR>*, Firebird::Array<UCHAR>*, bool);
 void DSQL_sql_info(Jrd::thread_db*, Jrd::dsql_req*,

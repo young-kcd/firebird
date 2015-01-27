@@ -77,7 +77,6 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-static void		close_cursor(thread_db*, dsql_req*);
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
 static void		map_in_out(dsql_req*, bool, const dsql_msg*, IMessageMetadata*, UCHAR*,
@@ -130,11 +129,10 @@ dsql_dbb::~dsql_dbb()
 }
 
 
-// Execute a non-SELECT dynamic SQL statement.
+// Execute a dynamic SQL statement.
 void DSQL_execute(thread_db* tdbb,
-				  jrd_tra** tra_handle,
+			  	  jrd_tra** tra_handle,
 				  dsql_req* request,
-				  bool flOpenCursor,
 				  IMessageMetadata* in_meta, const UCHAR* in_msg,
 				  IMessageMetadata* out_meta, UCHAR* out_msg)
 {
@@ -166,44 +164,66 @@ void DSQL_execute(thread_db* tdbb,
 
 	if (reqTypeWithCursor(statement->getType()))
 	{
-		if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
+		if (request->req_cursor)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 					  Arg::Gds(isc_dsql_cursor_open_err));
 		}
-		if (!(flOpenCursor || singleton))
-		{
-			(Arg::Gds(isc_random) << "Can not execute select statement").raise();
-		}
-	}
-	else if (flOpenCursor)
-	{
-		if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
-		{
-			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
-					  Arg::Gds(isc_dsql_cursor_open_err));
-		}
+
+		if (!singleton)
+			(Arg::Gds(isc_random) << "Cannot execute SELECT statement").raise();
 	}
 
 	request->req_transaction = *tra_handle;
 	request->execute(tdbb, tra_handle, in_meta, in_msg, out_meta, out_msg, singleton);
+}
 
-	// If the output message length is zero on a TYPE_SELECT then we must
-	// be doing an OPEN cursor operation.
-	// If we do have an output message length, then we're doing
-	// a singleton SELECT.  In that event, we don't add the cursor
-	// to the list of open cursors (it's not really open).
 
-	if (reqTypeWithCursor(statement->getType()) && !singleton)
+// Open a dynamic SQL cursor.
+DsqlCursor* DSQL_open(thread_db* tdbb,
+			   	   	  jrd_tra** tra_handle,
+			   	   	  dsql_req* request,
+			   	   	  IMessageMetadata* in_meta, const UCHAR* in_msg,
+			   	   	  IMessageMetadata* out_meta, ULONG flags)
+{
+	SET_TDBB(tdbb);
+
+	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
+
+	const DsqlCompiledStatement* statement = request->getStatement();
+
+	if (statement->getFlags() & DsqlCompiledStatement::FLAG_ORPHAN)
 	{
-		fb_assert(flOpenCursor);
-		request->req_flags |= dsql_req::FLAG_OPENED_CURSOR;
-		TRA_link_cursor(request->req_transaction, request);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+		          Arg::Gds(isc_bad_req_handle));
 	}
-	else
+
+	// Validate transaction handle
+
+	if (!*tra_handle)
 	{
-		///fb_assert(!flOpenCursor);
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_bad_trans_handle));
 	}
+
+	// Validate statement type
+
+	if (!reqTypeWithCursor(statement->getType()))
+		(Arg::Gds(isc_random) << "Cannot open non-SELECT statement").raise();
+
+	// Validate cursor being not already open
+
+	if (request->req_cursor)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
+				  Arg::Gds(isc_dsql_cursor_open_err));
+	}
+
+	request->req_transaction = *tra_handle;
+	request->execute(tdbb, tra_handle, in_meta, in_msg, out_meta, NULL, false);
+
+	request->req_cursor = FB_NEW(request->getPool()) DsqlCursor(request, flags);
+	return request->req_cursor;
 }
 
 
@@ -235,7 +255,7 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 	// if the cursor isn't open, we've got a problem
 	if (reqTypeWithCursor(statement->getType()))
 	{
-		if (!(req_flags & dsql_req::FLAG_OPENED_CURSOR))
+		if (!req_cursor)
 		{
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-504) <<
 					  Arg::Gds(isc_dsql_cursor_err) <<
@@ -307,13 +327,13 @@ void DSQL_free_statement(thread_db* tdbb, dsql_req* request, USHORT option)
 		// Just close the cursor associated with the request
 		if (reqTypeWithCursor(statement->getType()))
 		{
-			if (!(request->req_flags & dsql_req::FLAG_OPENED_CURSOR))
+			if (!request->req_cursor)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-501) <<
 						  Arg::Gds(isc_dsql_cursor_close_err));
 			}
 
-			close_cursor(tdbb, request);
+			DsqlCursor::close(tdbb, request->req_cursor);
 		}
 	}
 }
@@ -419,7 +439,7 @@ void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 
 	USHORT length = (USHORT) fb_utils::name_length(cursor.c_str());
 
-	if (length == 0)
+	if (!length)
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
@@ -447,20 +467,18 @@ void DsqlDmlRequest::setCursor(thread_db* tdbb, const TEXT* name)
 	// If there already is a cursor and its name isn't the same, ditto.
 	// We already know there is no cursor by this name in the hash table
 
-	if (req_cursor.isEmpty() || !(req_flags & dsql_req::FLAG_OPENED_CURSOR))
-	{
-		if (req_cursor.hasData())
-			req_dbb->dbb_cursors.remove(req_cursor);
-		req_cursor = cursor;
-		req_dbb->dbb_cursors.put(cursor, this);
-	}
-	else
+	if (req_cursor && req_cursor_name.hasData())
 	{
 		fb_assert(!symbol);
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-502) <<
 				  Arg::Gds(isc_dsql_decl_err) <<
-				  Arg::Gds(isc_dsql_cursor_redefined) << req_cursor);
+				  Arg::Gds(isc_dsql_cursor_redefined) << req_cursor_name);
 	}
+
+	if (req_cursor_name.hasData())
+		req_dbb->dbb_cursors.remove(req_cursor_name);
+	req_cursor_name = cursor;
+	req_dbb->dbb_cursors.put(cursor, this);
 }
 
 
@@ -489,55 +507,6 @@ void DSQL_sql_info(thread_db* tdbb,
 	Jrd::ContextPoolHolder context(tdbb, &request->getPool());
 
 	sql_info(tdbb, request, item_length, items, info_length, info);
-}
-
-
-/**
-
- 	close_cursor
-
-    @brief	Close an open cursor.
-
-
-    @param request
-    @param tdbb
-
- **/
-static void close_cursor(thread_db* tdbb, dsql_req* request)
-{
-	SET_TDBB(tdbb);
-
-	Jrd::Attachment* attachment = request->req_dbb->dbb_attachment;
-	const DsqlCompiledStatement* statement = request->getStatement();
-
-	if (request->req_request)
-	{
-		ThreadStatusGuard status_vector(tdbb);
-		try
-		{
-			// Report some remaining fetches if any
-			if (request->req_fetch_baseline)
-			{
-				TraceDSQLFetch trace(attachment, request);
-				trace.fetch(true, ITracePlugin::TRACE_RESULT_SUCCESS);
-			}
-
-			if (request->req_traced && TraceManager::need_dsql_free(attachment))
-			{
-				TraceSQLStatementImpl stmt(request, NULL);
-
-				TraceManager::event_dsql_free(attachment, &stmt, DSQL_close);
-			}
-
-			JRD_unwind_request(tdbb, request->req_request);
-		}
-		catch (Firebird::Exception&)
-		{
-		}
-	}
-
-	request->req_flags &= ~dsql_req::FLAG_OPENED_CURSOR;
-	TRA_unlink_cursor(request->req_transaction, request);
 }
 
 
@@ -1530,7 +1499,8 @@ dsql_req::dsql_req(MemoryPool& pool)
 	  req_dbb(NULL),
 	  req_transaction(NULL),
 	  req_msg_buffers(req_pool),
-	  req_cursor(req_pool),
+	  req_cursor_name(req_pool),
+	  req_cursor(NULL),
 	  req_user_descs(req_pool),
 	  req_traced(false),
 	  req_interface(NULL)
@@ -1588,8 +1558,8 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 
 	// If the request had an open cursor, close it
 
-	if (request->req_flags & dsql_req::FLAG_OPENED_CURSOR)
-		close_cursor(tdbb, request);
+	if (request->req_cursor)
+		DsqlCursor::close(tdbb, request->req_cursor);
 
 	Jrd::Attachment* att = request->req_dbb->dbb_attachment;
 	const bool need_trace_free = request->req_traced && TraceManager::need_dsql_free(att);
@@ -1600,10 +1570,10 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 	}
 	request->req_traced = false;
 
-	if (request->req_cursor.hasData())
+	if (request->req_cursor_name.hasData())
 	{
-		request->req_dbb->dbb_cursors.remove(request->req_cursor);
-		request->req_cursor = "";
+		request->req_dbb->dbb_cursors.remove(request->req_cursor_name);
+		request->req_cursor_name = "";
 	}
 
 	// If a request has been compiled, release it now
@@ -1618,8 +1588,7 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 			request->req_request = NULL;
 		}
 		catch (Firebird::Exception&)
-		{
-		}
+		{} // no-op
 	}
 
 	const DsqlCompiledStatement* statement = request->getStatement();
@@ -1628,9 +1597,7 @@ void dsql_req::destroy(thread_db* tdbb, dsql_req* request, bool drop)
 	// Release the entire request if explicitly asked for
 
 	if (drop)
-	{
 		request->req_dbb->deletePool(&request->getPool());
-	}
 }
 
 

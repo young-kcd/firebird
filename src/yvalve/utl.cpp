@@ -257,7 +257,7 @@ void dump(CheckStatusWrapper* status, ISC_QUAD* blobId, IAttachment* att, ITrans
 		switch (blob->getSegment(status, short_length, buffer, &l))
 		{
 		case Firebird::IStatus::FB_ERROR:
-		case Firebird::IStatus::FB_EOF:
+		case Firebird::IStatus::FB_NO_DATA:
 			break;
 		}
 

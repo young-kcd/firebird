@@ -1317,7 +1317,7 @@ namespace {
 		// Transaction is not optional for statement returning result set
 		RefPtr<YTransaction> transaction = translateHandle(transactions, traHandle);;
 
-		statement->openCursor(status, transaction, inMetadata, buffer, outMetadata);
+		statement->openCursor(status, transaction, inMetadata, buffer, outMetadata, 0);
 
 		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			return;
@@ -2938,7 +2938,7 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 		// Raise pseudo errors
 		switch (cc)
 		{
-		case IStatus::FB_EOF:
+		case IStatus::FB_NO_DATA:
 			Arg::Gds(isc_segstr_eof).raise();
 			break;
 		case IStatus::FB_SEGMENT:
@@ -4310,7 +4310,7 @@ ITransaction* YStatement::execute(CheckStatusWrapper* status, ITransaction* tran
 }
 
 IResultSet* YStatement::openCursor(Firebird::CheckStatusWrapper* status, ITransaction* transaction,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned int flags)
 {
 	try
 	{
@@ -4320,7 +4320,7 @@ IResultSet* YStatement::openCursor(Firebird::CheckStatusWrapper* status, ITransa
 		if (transaction)
 			attachment->getNextTransaction(status, transaction, trans);
 
-		IResultSet* rs = entry.next()->openCursor(status, trans, inMetadata, inBuffer, outMetadata);
+		IResultSet* rs = entry.next()->openCursor(status, trans, inMetadata, inBuffer, outMetadata, flags);
 		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			return NULL;
@@ -4498,7 +4498,7 @@ int YResultSet::fetchLast(CheckStatusWrapper* status, void* buffer)
 	return FB_FALSE;
 }
 
-int YResultSet::fetchAbsolute(CheckStatusWrapper* status, unsigned int position, void* buffer)
+int YResultSet::fetchAbsolute(CheckStatusWrapper* status, int position, void* buffer)
 {
 	try
 	{
@@ -5138,7 +5138,7 @@ void YAttachment::executeDyn(CheckStatusWrapper* status, ITransaction* transacti
 IResultSet* YAttachment::openCursor(CheckStatusWrapper* status, ITransaction* transaction,
 	unsigned int length, const char* string, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata,
-	const char* cursorName)
+	const char* cursorName, unsigned int cursorFlags)
 {
 	IResultSet* rs = NULL;
 	try
@@ -5150,7 +5150,7 @@ IResultSet* YAttachment::openCursor(CheckStatusWrapper* status, ITransaction* tr
 			getNextTransaction(status, transaction, trans);
 
 		rs = entry.next()->openCursor(status, trans, length, string, dialect,
-			inMetadata, inBuffer, outMetadata, cursorName);
+			inMetadata, inBuffer, outMetadata, cursorName, cursorFlags);
 		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			return NULL;

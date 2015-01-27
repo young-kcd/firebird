@@ -278,7 +278,7 @@ public:
 	jrd_req* tra_requests;				// Doubly linked list of requests active in this transaction
 	MonitoringSnapshot* tra_mon_snapshot;	// Database state snapshot (for monitoring purposes)
 	RuntimeStatistics tra_stats;
-	Firebird::Array<dsql_req*> tra_open_cursors;
+	Firebird::Array<DsqlCursor*> tra_open_cursors;
 	bool tra_in_use;					// transaction in use (can't be committed or rolled back)
 	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
 	CallerName tra_caller_name;			// caller object name

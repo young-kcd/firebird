@@ -337,7 +337,7 @@ void PreparedStatement::execute(thread_db* tdbb, jrd_tra* transaction)
 	if (builder)
 		builder->moveToStatement(tdbb, this);
 
-	DSQL_execute(tdbb, &transaction, request, false, inMetadata, inMessage.begin(), NULL, NULL);
+	DSQL_execute(tdbb, &transaction, request, inMetadata, inMessage.begin(), NULL, NULL);
 }
 
 
@@ -348,7 +348,7 @@ void PreparedStatement::open(thread_db* tdbb, jrd_tra* transaction)
 	if (builder)
 		builder->moveToStatement(tdbb, this);
 
-	DSQL_execute(tdbb, &transaction, request, true, inMetadata, inMessage.begin(), outMetadata, NULL);
+	DSQL_open(tdbb, &transaction, request, inMetadata, inMessage.begin(), outMetadata, 0);
 }
 
 
