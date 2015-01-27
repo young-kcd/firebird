@@ -524,6 +524,10 @@ XE_RESTORE_ENV()
 
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
+dnl Later we always build threaded binaries
+CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
+LIBS="$LIBS $PTHREAD_LIBS"
 
 AC_ARG_ENABLE(raw-devices,
   [  --enable-raw-devices    enable databases on raw devices (default on POSIX)],
@@ -879,6 +883,7 @@ AC_CHECK_FUNCS(pthread_mutexattr_setrobust_np)
 AC_CHECK_FUNCS(pthread_mutex_consistent_np)
 AC_CHECK_FUNCS(pthread_rwlockattr_setkind_np)
 AC_CHECK_FUNCS(pthread_cancel)
+AC_CHECK_FUNCS(pthread_atfork)
 AC_CHECK_FUNCS(sigset)
 
 dnl Check for fallocate() system call
