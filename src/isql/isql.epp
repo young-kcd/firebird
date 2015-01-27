@@ -8556,7 +8556,7 @@ static processing_state process_statement(const TEXT* str2)
 		// Otherwise, open the cursor to start things up
 
 		Firebird::IResultSet* curs = global_Stmt->openCursor(fbStatus, M__trans,
-			NULL, NULL, message, Firebird::IStatement::CURSOR_TYPE_SCROLLABLE);
+			NULL, NULL, message, 0);
 		if (ISQL_errmsg(fbStatus))
 		{
 			return ps_ERR;
