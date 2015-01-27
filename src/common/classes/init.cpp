@@ -56,7 +56,7 @@ namespace
 	// This helps initialize globals, needed before regular ctors run
 	int initDone = 0;
 
-#ifndef WIN_NT
+#ifdef HAVE_PTHREAD_ATFORK
 	void child(void)
 	{
 		// turn off dtors execution in forked process
@@ -132,7 +132,7 @@ namespace
 #endif //DEBUG_INIT
 
 		initDone = 1;
-#ifndef WIN_NT
+#ifdef HAVE_PTHREAD_ATFORK
 		int ret = pthread_atfork(NULL, NULL, child);
 #endif
 

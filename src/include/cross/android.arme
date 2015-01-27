@@ -125,7 +125,7 @@
 /* #undef GPRE_PASCAL */
 
 /* Define to 1 if you have the <aio.h> header file. */
-#define HAVE_AIO_H 1
+/* #undef HAVE_AIO_H */
 
 /* Define this if AO_compare_and_swap_full() is defined in atomic_ops.h */
 /* #undef HAVE_AO_COMPARE_AND_SWAP_FULL */
@@ -162,7 +162,7 @@
 #define HAVE_DLFCN_H 1
 
 /* Define this if editline is in use */
-#define HAVE_EDITLINE_H 1
+/* #undef HAVE_EDITLINE_H */
 
 /* Define to 1 if you have the <errno.h> header file. */
 #define HAVE_ERRNO_H 1
@@ -291,7 +291,7 @@
 #define HAVE_POLL_H 1
 
 /* Define this if posix_fadvise() is present on the platform */
-#define HAVE_POSIX_FADVISE 1
+/* #undef HAVE_POSIX_FADVISE */
 
 /* Define to 1 if you have the `pread' function. */
 #define HAVE_PREAD 1
@@ -369,7 +369,7 @@
 #define HAVE_SIGNAL_H 1
 
 /* Define to 1 if you have the `sigset' function. */
-#define HAVE_SIGSET 1
+/* #undef HAVE_SIGSET */
 
 /* Define to 1 if you have the `snprintf' function. */
 #define HAVE_SNPRINTF 1
@@ -586,6 +586,9 @@
 
 /* Architecture is big-edian sh4 */
 /* #undef SHEB */
+
+/* Extension for shared libraries */
+#define SHRLIB_EXT "so"
 
 /* The size of `long', as computed by sizeof. */
 #define SIZEOF_LONG 4

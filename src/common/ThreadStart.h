@@ -56,7 +56,7 @@ typedef THREAD_ENTRY_DECLARE ThreadEntryPoint(THREAD_ENTRY_PARAM);
 
 #if defined(WIN_NT)
 typedef DWORD ThreadId;
-#elif defined(LINUX)
+#elif defined(LINUX) && !defined(ANDROID)
 typedef int ThreadId;
 #elif defined(USE_POSIX_THREADS)
 typedef pthread_t ThreadId;

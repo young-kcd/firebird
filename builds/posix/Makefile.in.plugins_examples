@@ -39,7 +39,11 @@ endif
 CPPFLAGS+= -I$(FB_BUILD)/include
 
 include     $(ROOT)/gen/make.defaults
+ifeq ($(CROSS_OUT), Y)
+include     $(ROOT)/gen/make.crossPlatform
+else
 include     $(ROOT)/gen/make.platform
+endif
 include     $(ROOT)/gen/make.rules
 include     $(ROOT)/gen/make.shared.variables
 

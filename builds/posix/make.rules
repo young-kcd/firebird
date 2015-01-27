@@ -104,3 +104,13 @@ $(OBJ)/%.o: $(SRC_ROOT)/%.cpp
 
 $(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
 	windres --output-format=coff --include-dir=$(<D) $< $@
+
+# Rule for making gbak files when cross-compiling
+
+.SUFFIXES: .gbak .fdb
+
+$(GEN_ROOT)/$(TARGET)/%.gbak:	$(GEN_ROOT)/Native/%.fdb
+	$(RUN_GBAK) -b $(firstword $<) $(firstword $@)
+
+$(GEN_ROOT)/%.gbak:	$(GEN_ROOT)/%.fdb
+	$(RUN_GBAK) -b $(firstword $<) $(firstword $@)

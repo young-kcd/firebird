@@ -297,8 +297,8 @@ FB_DAEMON = $(BIN)/firebird$(EXEC_EXT)
 
 # Per-library link rules
 LINK_UDF = $(LIB_LINK) $(LIB_LINK_OPTIONS) $(call LIB_LINK_SONAME,$(1).$(SHRLIB_EXT)) $(UNDEF_FLAGS)\
- $(call LIB_LINK_RPATH,lib) $(SO_LINK_LIBS)
-LINK_UDF_LIBS = $(THR_LIBS) -L$(LIB) -lib_util
+ $(call LIB_LINK_RPATH,lib)
+LINK_UDF_LIBS = $(THR_LIBS) -L$(LIB) -lib_util $(SO_LINK_LIBS)
 
 LINK_IB_UTIL = $(LIB_LINK) $(LINK_IBUTIL_SYMBOLS) $(LIB_LINK_OPTIONS) $(UNDEF_FLAGS)\
  $(call LIB_LINK_SONAME,$(IbUtilLibraryName)) $(call LIB_LINK_RPATH,lib)
@@ -375,7 +375,6 @@ GPRE_CURRENT    = $(RBIN)/gpre_current$(EXEC_EXT)
 # From msgs
 CHECK_MESSAGES  = $(BIN)/check_messages$(EXEC_EXT)
 BUILD_FILE      = $(BIN)/build_file$(EXEC_EXT)
-RUN_BUILD_FILE  = $(RBIN)/build_file$(EXEC_EXT)
 FIREBIRD_MSG    = $(FIREBIRD)/firebird.msg
 
 ENTER_MESSAGES  = $(BIN)/enter_messages$(EXEC_EXT)

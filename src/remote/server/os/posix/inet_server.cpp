@@ -92,12 +92,10 @@
 #include "../auth/trusted/AuthSspi.h"
 #include "../auth/SecureRemotePassword/server/SrpServer.h"
 
-#ifdef UNIX
-#ifdef NETBSD
-#include <signal.h>
-#else
+#ifdef HAVE_SYS_SIGNAL_H
 #include <sys/signal.h>
-#endif
+#else
+#include <signal.h>
 #endif
 
 #ifdef HAVE_SYS_RESOURCE_H

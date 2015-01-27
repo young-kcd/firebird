@@ -130,7 +130,7 @@ $(TOMLIB):	$(TOM_Objs)
 # main build target for both debug abd release builds
 #
 
-.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes ids examples
+.PHONY:	cross1 cross2 boot yvalve engine fbintl gpre utilities plugins rest codes ids examples cross_rest
 
 master_process:
 	ln -sf $(SRC_ROOT)/include/gen/autoconfig.auto $(SRC_ROOT)/include/gen/autoconfig.h
@@ -187,12 +187,21 @@ endif
 # even if gpre itself was not rebuilt
 	-$(RM) $(GPRE_CURRENT)
 	(cd $(BIN); $(LN) $(notdir $(RUN_GPRE)) $(notdir $(GPRE_CURRENT)))
+	$(MAKE) include_generic
+	$(MAKE) -f Makefile.examples -C $(GEN_ROOT)/examples/
 
 cross2:
 	ln -sf $(SRC_ROOT)/include/cross/$(CROSS_CONFIG) $(SRC_ROOT)/include/gen/autoconfig.h
+	$(MAKE) prerequisites
 	$(MAKE) tommath
 	$(MAKE) yvalve
-
+	$(MAKE) engine
+	$(MAKE) fbintl
+	$(MAKE) utilities
+	$(MAKE) $(GPRE)
+	$(MAKE) plugins
+	$(MAKE) -f Makefile.plugins_examples -C $(GEN_ROOT)/examples/
+	$(MAKE) cross_rest
 
 #___________________________________________________________________________
 # static library - various common code, used in different FB projects
@@ -493,9 +502,16 @@ $(IDS):		$(SRC_ROOT)/misc/ids.m $(SRC_ROOT)/jrd/relations.h
 # all the rest we need to build
 #
 
-.PHONY:	qli message_file
+.PHONY:	qli message_file gbak_files
+
+FDB_FILES := $(HELP_FDB) $(ROOT)/gen/msg.fdb $(SECURITY_FDB) $(FIREBIRD)/examples/empbuild/employee.fdb
+GBAK_FILES := $(FDB_FILES:.fdb=.gbak) $(FIREBIRD)/msg.gbak
+GBAK_FILES := $(subst Native,$(TARGET),$(GBAK_FILES))
 
 rest:	qli message_file
+
+cross_rest:	qli gbak_files
+	$(MAKE) $(BUILD_FILE)
 
 qli:		$(QLI)
 
@@ -508,13 +524,17 @@ examples: include_generic
 
 message_file:	$(FIREBIRD_MSG)
 
-$(FIREBIRD_MSG):	$(RUN_BUILD_FILE) msg.timestamp
-	$(RUN_BUILD_FILE) -d msg.fdb -f $@
+$(FIREBIRD_MSG):	$(BUILD_FILE) msg.timestamp
+	$(BUILD_FILE) -d msg.fdb -f $@
 	$(CHMOD_6) $@
 
 $(BUILD_FILE):	$(BUILD_Objects) $(COMMON_LIB)
 	$(EXE_LINK) $(EXE_LINK_OPTIONS) $^ -o $@ $(FIREBIRD_LIBRARY_LINK) $(LINK_LIBS)
 
+gbak_files: $(GBAK_FILES)
+
+$(GEN_ROOT)/$(TARGET)/firebird/msg.gbak:	$(ROOT)/gen/msg.gbak
+	cp $^ $@
 
 #---------------------------------------------------------------------------
 
