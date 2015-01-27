@@ -29,6 +29,9 @@
 #define SRQ_REL_PTR(x) REL_PTR(x)
 #endif
 
+#include <stdio.h>
+#include <sys/types.h>
+
 #include "../common/classes/semaphore.h"
 #include "../common/classes/rwlock.h"
 #include "../common/classes/GenericMap.h"
@@ -42,17 +45,6 @@
 #ifdef USE_SHMEM_EXT
 #include "../common/classes/objects_array.h"
 #endif
-
-#include <stdio.h>
-#include <sys/types.h>
-
-#if !defined(WIN_NT)
-#include <signal.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <sys/sem.h>
-#endif
-
 #include "../common/file_params.h"
 #include "../jrd/que.h"
 
