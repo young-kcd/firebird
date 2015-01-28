@@ -29,6 +29,7 @@
 #include "firebird.h"
 #include <signal.h>
 #ifdef WIN_NT
+#include <fcntl.h>
 #include <io.h>
 #endif
 #include <stdio.h>
@@ -554,7 +555,7 @@ bool printData(const char*& p)
 	{
 #ifdef WIN_NT
 		binout = fileno(stdout);
-		setmode(binout, 0);
+		_setmode(binout, _O_BINARY);
 #else
 		binout = 1;
 #endif
@@ -1090,7 +1091,7 @@ int main(int ac, char** av)
 					{
 #ifdef WIN_NT
 						binIn = fileno(stdin);
-						setmode(binIn, 0);
+						_setmode(binIn, _O_BINARY);
 #else
 						binIn = 0;
 #endif
