@@ -413,13 +413,13 @@ add_epp_suffix(engine12_generated_src master)
 
 file(GLOB_RECURSE engine12_include "dsql/*.h" "jrd/*.h" include/gen/iberror.h)
 
-add_library                 (engine12_common ${engine12_src} ${engine12_include})
+add_library                 (engine12_common OBJECT ${engine12_src} ${engine12_include} ${parse_src})
 add_dependencies_cc         (engine12_common parse)
 
 if (NOT CMAKE_CROSSCOMPILING)
 
-add_library                 (boot_engine12 SHARED ${engine12_generated_src_boot} ${parse_src} ${VERSION_RC})
-target_link_libraries       (boot_engine12 engine12_common boot_alice boot_burp common boot_yvalve)
+add_library                 (boot_engine12 SHARED $<TARGET_OBJECTS:engine12_common> ${engine12_generated_src_boot} ${VERSION_RC})
+target_link_libraries       (boot_engine12 boot_alice boot_burp common boot_yvalve)
 set_output_directory        (boot_engine12 plugins)
 set_exported_symbols        (boot_engine12 fbplugin)
 copy_and_rename_lib         (boot_engine12 Engine12)
@@ -432,8 +432,8 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 # SHARED LIBRARY engine12
 ########################################
 
-add_library                 (engine12 SHARED ${engine12_generated_src_master} ${parse_src} ${VERSION_RC})
-target_link_libraries       (engine12 engine12_common alice burp common yvalve)
+add_library                 (engine12 SHARED $<TARGET_OBJECTS:engine12_common> ${engine12_generated_src_master} ${VERSION_RC})
+target_link_libraries       (engine12 alice burp common yvalve)
 add_dependencies_cc         (engine12 messages) # possible build during build_msg or codes run
 set_target_properties       (engine12 PROPERTIES OUTPUT_NAME Engine12)
 set_output_directory        (engine12 plugins)
