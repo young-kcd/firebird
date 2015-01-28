@@ -158,12 +158,9 @@ public:
 	void setDelayedOutputFormat(Firebird::CheckStatusWrapper* status, Firebird::IMessageMetadata* format);
 
 public:
-	JResultSet(DsqlCursor* handle, StableAttachmentPart* sa);
+	JResultSet(DsqlCursor* handle, JStatement* aStatement);
 
-	StableAttachmentPart* getAttachment()
-	{
-		return sAtt;
-	}
+	StableAttachmentPart* getAttachment();
 
 	DsqlCursor* getHandle() throw()
 	{
@@ -172,7 +169,7 @@ public:
 
 private:
 	DsqlCursor* cursor;
-	Firebird::RefPtr<StableAttachmentPart> sAtt;
+	Firebird::RefPtr<JStatement> statement;
 	int state;
 
 	void freeEngineData(Firebird::CheckStatusWrapper* status);

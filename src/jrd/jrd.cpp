@@ -318,8 +318,8 @@ JTransaction::JTransaction(JTransaction* from)
 }
 
 
-JResultSet::JResultSet(DsqlCursor* handle, StableAttachmentPart* sa)
-	: cursor(handle), sAtt(sa), state(-1)
+JResultSet::JResultSet(DsqlCursor* handle, JStatement* aStatement)
+	: cursor(handle), statement(aStatement), state(-1)
 {
 }
 
@@ -4497,7 +4497,7 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 						  inMetadata, static_cast<UCHAR*>(inBuffer),
 						  outMetadata, flags);
 
-			rs = new JResultSet(cursor, getAttachment());
+			rs = new JResultSet(cursor, this);
 			rs->addRef();
 		}
 		catch (const Exception& ex)
@@ -4846,6 +4846,10 @@ void JResultSet::freeEngineData(CheckStatusWrapper* user_status)
 	successful_completion(user_status);
 }
 
+StableAttachmentPart* JResultSet::getAttachment()
+{
+	return statement->getAttachment();
+}
 
 IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 {
