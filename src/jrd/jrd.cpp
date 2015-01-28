@@ -4853,7 +4853,7 @@ StableAttachmentPart* JResultSet::getAttachment()
 
 IMessageMetadata* JResultSet::getMetadata(CheckStatusWrapper* user_status)
 {
-	return NULL;//statement->getOutputMetadata(user_status);
+	return statement->getOutputMetadata(user_status);
 }
 
 
@@ -5178,11 +5178,9 @@ void JResultSet::setDelayedOutputFormat(CheckStatusWrapper* user_status, Firebir
 
 		try
 		{
-/*
-			dsql_req* req = getStatement()->getHandle();
+			dsql_req* req = statement->getHandle();
 			fb_assert(req);
 			req->setDelayedFormat(tdbb, outMetadata);
-*/
 		}
 		catch (const Exception& ex)
 		{
