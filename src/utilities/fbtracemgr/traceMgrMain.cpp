@@ -79,13 +79,19 @@ TraceSvcUtil::~TraceSvcUtil()
 	}
 }
 
-void TraceSvcUtil::setAttachInfo(const string& service_name, const string& /*user*/,
-	const string& /*pwd*/, bool isAdmin)
+void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
+	const string& pwd, bool isAdmin)
 {
 	ISC_STATUS_ARRAY status = {0};
 
 	ClumpletWriter spb(ClumpletWriter::spbList, MAXBUF);
 
+	if (user.hasData()) {
+		spb.insertString(isc_spb_user_name, user);
+	}
+	if (pwd.hasData()) {
+		spb.insertString(isc_spb_password, pwd);
+	}
 	if (isAdmin) {
 		spb.insertTag(isc_spb_trusted_auth);
 	}
