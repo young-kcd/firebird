@@ -771,6 +771,9 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				idx_e result = BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, 0, false);
 				if (result != idx_e_ok)
 				{
+					if (result == idx_e_conversion)
+						continue;
+
 					CCH_RELEASE(tdbb, &window);
 					context.raise(tdbb, result, rec1);
 				}
@@ -785,6 +788,9 @@ void IDX_garbage_collect(thread_db*			tdbb,
 					result = BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, 0, false);
 					if (result != idx_e_ok)
 					{
+						if (result == idx_e_conversion)
+							continue;
+
 						CCH_RELEASE(tdbb, &window);
 						context.raise(tdbb, result, rec2);
 					}
@@ -805,6 +811,9 @@ void IDX_garbage_collect(thread_db*			tdbb,
 					result = BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, 0, false);
 					if (result != idx_e_ok)
 					{
+						if (result == idx_e_conversion)
+							continue;
+
 						CCH_RELEASE(tdbb, &window);
 						context.raise(tdbb, result, rec3);
 					}
@@ -820,9 +829,7 @@ void IDX_garbage_collect(thread_db*			tdbb,
 				BTR_remove(tdbb, &window, &insertion);
 				root = (index_root_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_root);
 				if (stack1.hasMore(1))
-				{
 					BTR_description(tdbb, rpb->rpb_relation, root, &idx, i);
-				}
 			}
 		}
 	}
