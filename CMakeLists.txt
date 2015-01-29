@@ -211,14 +211,20 @@ endif()
 
 if (WIN32)
     # icu
-    set(ICU_EXTRACT ${CMAKE_CURRENT_SOURCE_DIR}/extern/icu/icu.exe -y)
-    #message("Extracting pre-built ICU")
-    execute_process(COMMAND ${ICU_EXTRACT})
+    if (NOT ICU_EXTRACT)
+        message(STATUS "Extracting pre-built ICU")
+        set(ICU_EXTRACT ${CMAKE_CURRENT_SOURCE_DIR}/extern/icu/icu.exe -y
+            CACHE STRING "ICU extraction variable")
+        execute_process(COMMAND ${ICU_EXTRACT})
+    endif()
 
     # zlib
-    set(ZLIB_EXTRACT ${CMAKE_CURRENT_SOURCE_DIR}/extern/zlib/zlib.exe -y)
-    #message("Extracting pre-built zlib")
-    execute_process(COMMAND ${ZLIB_EXTRACT})
+    if (NOT ZLIB_EXTRACT)
+        message(STATUS "Extracting pre-built zlib")
+        set(ZLIB_EXTRACT ${CMAKE_CURRENT_SOURCE_DIR}/extern/zlib/zlib.exe -y
+            CACHE STRING "zlib extraction variable")
+        execute_process(COMMAND ${ZLIB_EXTRACT})
+    endif()
 endif()
 
 if (UNIX)    
