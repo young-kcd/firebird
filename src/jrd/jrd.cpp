@@ -5479,6 +5479,13 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 	if (dbb->dbb_event_mgr && attachment->att_event_session)
 		dbb->dbb_event_mgr->deleteSession(attachment->att_event_session);
 
+	if (attachment->att_dsql_instance)
+	{
+		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
+		delete attachment->att_dsql_instance;
+		dbb->deletePool(pool);
+	}
+
     // CMP_release() advances the pointer before the deallocation.
 	jrd_req* request;
 	while ( (request = attachment->att_requests) )
@@ -5520,13 +5527,6 @@ static void release_attachment(thread_db* tdbb, Attachment* attachment)
 	attachment->att_val_errors = NULL;
 
 	delete attachment->att_compatibility_table;
-
-	if (attachment->att_dsql_instance)
-	{
-		MemoryPool* const pool = &attachment->att_dsql_instance->dbb_pool;
-		delete attachment->att_dsql_instance;
-		dbb->deletePool(pool);
-	}
 
 	SCL_release_all(attachment->att_security_classes);
 
