@@ -1271,9 +1271,6 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 		csb->csb_rpt[*i].activate();
 	}
 
-	const Cursor* const cursor = csb->csb_cursors[cursorNumber];
-	fb_assert(cursor);
-
 	return this;
 }
 
