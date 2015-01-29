@@ -538,6 +538,8 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	fb_assert(expr_request->req_transaction);
 
 	expr_request->req_rpb[0].rpb_record = record;
+	expr_request->req_rpb[0].rpb_number.setValue(BOF_NUMBER);
+	expr_request->req_rpb[0].rpb_number.setValid(true);
 	expr_request->req_flags &= ~req_null;
 
 	DSC* result = NULL;
