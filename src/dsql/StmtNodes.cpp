@@ -1072,22 +1072,7 @@ CursorStmtNode* CursorStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 CursorStmtNode* CursorStmtNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 {
 	ExprNode::doPass2(tdbb, csb, scrollExpr.getAddress());
-
-	// Find streams used by the cursor and temporarily activate them,
-	// so that pass2(intoStmt) could use indices for nodes referring to the base tables
-	// (useful for correlated sub-queries in the select list, see CORE-4379 for example)
-
-	const Cursor* const cursor = csb->csb_cursors[cursorNumber];
-	fb_assert(cursor);
-
-	StreamList cursorStreams;
-	cursor->getAccessPath()->findUsedStreams(cursorStreams);
-
-	StreamStateHolder stateHolder(csb, cursorStreams);
-	stateHolder.activate();
-
 	doPass2(tdbb, csb, intoStmt.getAddress(), this);
-
 	return this;
 }
 
@@ -1277,8 +1262,17 @@ DeclareCursorNode* DeclareCursorNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	StreamList cursorStreams;
 	cursor->getAccessPath()->findUsedStreams(cursorStreams);
 
+	// Activate cursor streams to allow index usage for <cursor>.<field> references, see CORE-4675.
+	// It's also useful for correlated sub-queries in the select list, see CORE-4379.
+
 	for (StreamList::const_iterator i = cursorStreams.begin(); i != cursorStreams.end(); ++i)
+	{
 		csb->csb_rpt[*i].csb_cursor_number = cursorNumber;
+		csb->csb_rpt[*i].activate();
+	}
+
+	const Cursor* const cursor = csb->csb_cursors[cursorNumber];
+	fb_assert(cursor);
 
 	return this;
 }
