@@ -350,7 +350,17 @@ add_dependencies_cc         (yvalve_common parse)
 if (NOT CMAKE_CROSSCOMPILING)
 
 add_library                 (boot_yvalve SHARED $<TARGET_OBJECTS:yvalve_common> ${yvalve_generated_src_boot} ${VERSION_RC})
-target_link_libraries       (boot_yvalve remote common libtommath ${LIB_Ws2_32} ${LIB_mpr} ${LIB_readline} ${LIB_dl} ${LIB_iconv} ${LIB_CoreFoundation})
+target_link_libraries       (boot_yvalve
+    PRIVATE remote
+    PRIVATE common
+    PUBLIC libtommath
+    PUBLIC ${LIB_Ws2_32}
+    PUBLIC ${LIB_mpr}
+    PUBLIC ${LIB_readline}
+    PUBLIC ${LIB_dl}
+    PUBLIC ${LIB_iconv}
+    PUBLIC ${LIB_CoreFoundation}
+)
 set_exported_symbols        (boot_yvalve firebird)
 set_output_directory_unix   (boot_yvalve lib)
 project_group               (boot_yvalve Boot)
@@ -363,7 +373,17 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 ########################################
 
 add_library                 (yvalve SHARED $<TARGET_OBJECTS:yvalve_common> ${yvalve_generated_src_master} ${VERSION_RC})
-target_link_libraries       (yvalve remote common libtommath ${LIB_Ws2_32} ${LIB_mpr} ${LIB_readline} ${LIB_dl} ${LIB_iconv} ${LIB_CoreFoundation})
+target_link_libraries       (yvalve
+    PRIVATE remote
+    PRIVATE common
+    PUBLIC libtommath
+    PUBLIC ${LIB_Ws2_32}
+    PUBLIC ${LIB_mpr}
+    PUBLIC ${LIB_readline}
+    PUBLIC ${LIB_dl}
+    PUBLIC ${LIB_iconv}
+    PUBLIC ${LIB_CoreFoundation}
+)
 set_exported_symbols        (yvalve firebird)
 set_output_directory_unix   (yvalve lib)
 set_target_properties       (yvalve PROPERTIES OUTPUT_NAME fbclient)
@@ -448,6 +468,7 @@ file(GLOB intl_src "intl/*.cpp" "intl/*.h")
 
 add_library                 (intl SHARED ${intl_src} ${VERSION_RC})
 target_link_libraries       (intl common yvalve)
+add_dependencies_cc         (intl messages) # possible build during build_msg or codes run
 set_target_properties       (intl PROPERTIES OUTPUT_NAME fbintl)
 set_output_directory        (intl intl)
 
@@ -527,7 +548,7 @@ set_output_directory        (fbudf UDF)
 ########################################
 
 add_library                 (srp SHARED auth/SecureRemotePassword/manage/SrpManagement.cpp ${VERSION_RC})
-target_link_libraries       (srp common yvalve)
+target_link_libraries       (srp remote common yvalve)
 set_target_properties       (srp PROPERTIES OUTPUT_NAME Srp)
 set_output_directory        (srp plugins)
 set_exported_symbols        (srp fbplugin)
