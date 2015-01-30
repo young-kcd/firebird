@@ -68,6 +68,9 @@ const char* const ucTemplate = "libicuuc.dylib";
 #elif defined(HPUX)
 const char* const inTemplate = "libicui18n.sl.%s";
 const char* const ucTemplate = "libicuuc.sl.%s";
+#elif defined(ANDROID)
+const char* const inTemplate = "libicui18n.so";
+const char* const ucTemplate = "libicuuc.so";
 #else
 const char* const inTemplate = "libicui18n.so.%s";
 const char* const ucTemplate = "libicuuc.so.%s";
