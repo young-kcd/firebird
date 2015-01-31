@@ -1,3 +1,197 @@
+ 2015-01-30 20:23  egorpugin 
+   M examples/CMakeLists.txt
+   M src/CMakeLists.txt
+   M src/remote/CMakeLists.txt
+[build] [cmake] Make 'remote' and 'common' targets private for 'yvalve' target.
+
+ 2015-01-30 17:25  alexpeshkoff 
+   M src/common/unicode_util.cpp
+WIP on CORE-3885: Firebird for Android, fix ICU load
+
+ 2015-01-29 15:16  dimitr 
+   M src/jrd/btr.cpp
+Simplest possible fix for regression CORE-4673: Computed index based on a computed column stores NULL for all its keys.
+
+ 2015-01-29 10:47  dimitr 
+   M src/dsql/StmtNodes.cpp
+Removed the redundant code (accidental copy-paste remaining), thanks to Adriano.
+
+ 2015-01-29 10:26  dimitr 
+   M src/dsql/StmtNodes.cpp
+Fixed CORE-4675: Conditions like WHERE <field> = <cursor>.<field> don't use existing index.
+
+ 2015-01-29 07:10  egorpugin 
+   M CMakeLists.txt
+   M src/CMakeLists.txt
+[build] [cmake] Extract ICU and zlib only once.
+
+ 2015-01-28 17:12  hvlad 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Correct use of CRT.
+
+ 2015-01-28 17:00  alexpeshkoff 
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+Fixed a bug introduced by me when working on CORE-3658 3 years ago
+
+ 2015-01-28 14:52  egorpugin 
+   M src/CMakeLists.txt
+[build] [cmake] Set engine12_common target's type to OBJECT (library).
+
+ 2015-01-28 09:01  dimitr 
+   M src/jrd/jrd.cpp
+Fixed my yesterday's commit (forgotten part).
+
+ 2015-01-28 08:15  dimitr 
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+Fixed my yesterday's commit.
+
+ 2015-01-27 14:37  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/BuildFunctions.cmake
+   M builds/cmake/Configure.cmake
+   M src/CMakeLists.txt
+   M src/include/gen/autoconfig.h.in
+Improve Qt+MSVC build. Fix some messages. Crosscompiling improvements (add some defines).
+
+ 2015-01-27 10:46  alexpeshkoff 
+   M builds/posix/Makefile.in
+   M builds/posix/Makefile.in.plugins_examples
+   M builds/posix/make.android.arme
+   M builds/posix/make.defaults
+   M builds/posix/make.rules
+   M configure.ac
+   M src/common/ThreadStart.cpp
+   M src/common/ThreadStart.h
+   M src/common/classes/init.cpp
+   M src/include/cross/android.arme
+   M src/remote/server/os/posix/inet_server.cpp
+Work in progress on CORE-3885: Firebird for Android, build is complete
+
+ 2015-01-27 10:33  dimitr 
+   M src/isql/isql.epp
+Removed debugging option.
+
+ 2015-01-27 10:31  dimitr 
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc12/engine.vcxproj
+Fixed Windows builds.
+
+ 2015-01-27 10:29  dimitr 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   A src/dsql/DsqlCursor.cpp
+   A src/dsql/DsqlCursor.h
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/dsql/dsql_proto.h
+   M src/gpre/obj_cxx.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/isql/isql.epp
+   M src/isql/show.epp
+   M src/jrd/DbCreators.cpp
+   M src/jrd/EngineInterface.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/PreparedStatement.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/tra_proto.h
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Core (engine-level) support for scrollable DSQL cursors. Fixed the IResultSet API to match the JDBC spec. Renamed FB_EOF to FB_NO_DATA. Refactored some DSQL internals.
+
+ 2015-01-27 10:21  alexpeshkoff 
+   M src/lock/lock_proto.h
+cleanup
+
+ 2015-01-27 08:48  alexpeshkoff 
+   M configure.ac
+Fixed running thread specific tests
+
+ 2015-01-26 21:33  dimitr 
+   M src/remote/client/interface.cpp
+Attempted to fix the incorrect events wrapping, causing hangs/crashes and memory leaks.
+
+ 2015-01-26 19:20  egorpugin 
+   M CMakeLists.txt
+   M examples/CMakeLists.txt
+   M src/CMakeLists.txt
+   M src/utilities/CMakeLists.txt
+[build] [cmake] Fix crosscompiling for android on linux.
+
+ 2015-01-26 15:23  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/BuildFunctions.cmake
+   M examples/CMakeLists.txt
+   M src/CMakeLists.txt
+[build] [cmake] Update build according to the last changes.
+
+ 2015-01-26 15:00  hvlad 
+   M builds/win32/defs/udr_engine.def
+Fix Windows build
+
+ 2015-01-26 14:52  asfernandes 
+   M builds/posix/Makefile.in.plugins_examples
+   M builds/win32/msvc10/udrcpp_example.vcxproj
+   M builds/win32/msvc10/udrcpp_example.vcxproj.filters
+   M builds/win32/msvc12/udrcpp_example.vcxproj
+   M builds/win32/msvc12/udrcpp_example.vcxproj.filters
+   M builds/win32/msvc8/udrcpp_example.vcproj
+   M builds/win32/msvc9/udrcpp_example.vcproj
+   A examples/udr/Functions.cpp
+   A examples/udr/Procedures.cpp
+   A examples/udr/Triggers.cpp (from /firebird/trunk/examples/udr/UdrCppExample.cpp:60555)
+   D examples/udr/UdrCppExample.cpp
+   A examples/udr/UdrCppExample.h
+Split the UDR examples in multiple files to demonstrate how it should be done.
+
+ 2015-01-26 14:39  dimitr 
+   M src/jrd/fun.epp
+This should fix the Windows build.
+
+ 2015-01-26 14:15  hvlad 
+   M src/jrd/blb.cpp
+   M src/jrd/blb.h
+   M src/jrd/jrd.cpp
+Improvement CORE-4671 : Release internal temporary blobs early to free some memory\disk space
+
+ 2015-01-26 10:51  dimitr 
+   M src/jrd/fun.epp
+Fixed CORE-4670: Constraint violation error may be swallowed in some cases.
+
+ 2015-01-26 07:56  egorpugin 
+   M builds/cmake/Configure.cmake
+   M examples/CMakeLists.txt
+   M src/CMakeLists.txt
+[build] [cmake] Fix build, typos. Move some projects to 'Boot' dir.
+
+ 2015-01-25 22:24  asfernandes 
+   M src/include/firebird/IdlFbInterfaces.h
+Fix.
+
+ 2015-01-25 20:27  asfernandes 
+   M builds/posix/Makefile.in.plugins_examples
+   M builds/win32/msvc10/udrcpp_example.vcxproj
+   M builds/win32/msvc12/udrcpp_example.vcxproj
+   M builds/win32/msvc9/Firebird3_Examples.sln
+   M examples/udr/UdrCppExample.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird/UdrCppEngine.h
+   D src/include/firebird/UdrEngine.h
+   M src/plugins/udr_engine/UdrEngine.cpp
+Improvements to the UDR plugin.
+
+ 2015-01-25 20:27  asfernandes 
+   M src/common/classes/GenericMap.h
+Make methods const.
+
  2015-01-24 11:49  hvlad 
    M src/jrd/cch.cpp
 Frontportred fix for bug CORE-2848 : "lock conversion denied" or "lock denied" error
