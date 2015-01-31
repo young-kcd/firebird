@@ -152,7 +152,7 @@ namespace {
 		int mnt_i;
 
 	public:
-		Mnt::Mnt()
+		Mnt()
 			: Firebird::MutexLockGuard(mntinfoMutex, FB_FUNCTION),
 			  mnt_info(NULL), mnt_cnt(getmntinfo(&mnt_info, MNT_NOWAIT)), mnt_i(0)
 		{ }
