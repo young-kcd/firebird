@@ -1,3 +1,29 @@
+ 2015-01-29 19:17  dimitr 
+   M src/jrd/idx.cpp
+Fixed CORE-4075: Server bugchecks or crashes on exception in calculated index. More advanced solution is considered for the trunk.
+
+ 2015-01-29 15:35  dimitr 
+   M src/jrd/jrd.cpp
+This should fix CORE-4676: Crash on unexpected client disconnection with opened transaction.
+
+ 2015-01-29 15:15  dimitr 
+   M src/jrd/btr.cpp
+Simplest possible fix for regression CORE-4673: Computed index based on a computed column stores NULL for all its keys.
+
+ 2015-01-26 14:54  dimitr 
+   M src/jrd/fun.epp
+This should fix the Windows build.
+
+ 2015-01-26 13:54  hvlad 
+   M src/jrd/blb.cpp
+   M src/jrd/blb_proto.h
+   M src/jrd/jrd.cpp
+Improvement CORE-4671 : Release internal temporary blobs early to free some memory\disk space
+
+ 2015-01-26 10:42  dimitr 
+   M src/jrd/fun.epp
+Fixed CORE-4670: Constraint violation error may be swallowed in some cases.
+
  2015-01-18 09:01  dimitr 
    M src/jrd/btr.cpp
    M src/jrd/err_proto.h
