@@ -1,3 +1,7 @@
+ 2015-01-31 15:04  egorpugin 
+   M src/common/isc_file.cpp
+[build] Fix OS X build: removed extra qualification on member Mnt().
+
  2015-01-30 20:23  egorpugin 
    M examples/CMakeLists.txt
    M src/CMakeLists.txt
