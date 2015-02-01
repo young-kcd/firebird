@@ -19,6 +19,9 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbld.sql
     COMMAND ${CMAKE_COMMAND} -E remove empbuild.fdb
     COMMAND isql -q -i ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbld.sql
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different empbuild.fdb empbuild_.fdb
+    COMMAND ${CMAKE_COMMAND} -E remove empbuild.fdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different empbuild_.fdb empbuild.fdb
 )
 add_custom_command(
     OUTPUT empbuild.c
@@ -47,7 +50,7 @@ foreach(F ${files})
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${name})
 endforeach()
 
-set(EMPBUILD_CMD empbuild employe2.fdb)
+set(EMPBUILD_CMD empbuild employe2_.fdb)
 set_win32(EMPBUILD_CMD set PATH=%PATH%\\\\;${output_dir} COMMAND ${EMPBUILD_CMD})
 set_unix (EMPBUILD_CMD PATH=${output_dir}/bin ${EMPBUILD_CMD})
 set_apple(EMPBUILD_CMD DYLD_LIBRARY_PATH=${output_dir}/plugins:${output_dir}/lib ${EMPBUILD_CMD})
@@ -58,9 +61,12 @@ add_custom_command(
         empbuild
         ${files}
     COMMAND ${CMAKE_COMMAND} -E remove employe2.fdb
+    COMMAND ${CMAKE_COMMAND} -E remove employe2_.fdb
     COMMAND ${EMPBUILD_CMD}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different employe2_.fdb employe2.fdb
 )
 add_custom_target       (employee_db DEPENDS employe2.fdb SOURCES ${files})
+add_dependencies_cc     (employee_db engine12)
 project_group           (employee_db Examples)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)

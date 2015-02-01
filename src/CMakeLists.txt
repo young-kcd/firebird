@@ -115,11 +115,12 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
     VERBATIM
     #
-    COMMAND ${CMAKE_COMMAND} -E remove security3.fdb
-    COMMAND ${CMAKE_COMMAND} -E echo "create database 'security3.fdb';" > create_db_security3.sql
-    COMMAND boot_isql -q -i create_db_security3.sql
-    COMMAND boot_isql -q security3.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different security3.fdb security.fdb
+    COMMAND ${CMAKE_COMMAND} -E remove security.fdb
+    COMMAND ${CMAKE_COMMAND} -E remove security_.fdb
+    COMMAND ${CMAKE_COMMAND} -E echo "create database 'security_.fdb';" > create_db_security.sql
+    COMMAND boot_isql -q -i create_db_security.sql
+    COMMAND boot_isql -q security_.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different security_.fdb security.fdb
 )
 add_custom_command(
     OUTPUT metadata.fdb
@@ -128,9 +129,71 @@ add_custom_command(
         ${CMAKE_SOURCE_DIR}/builds/misc/metadata.gbak
     #
     COMMAND ${CMAKE_COMMAND} -E remove metadata.fdb
-    COMMAND boot_gbak -r ${CMAKE_SOURCE_DIR}/builds/misc/metadata.gbak metadata.fdb
+    COMMAND ${CMAKE_COMMAND} -E remove metadata_.fdb
+    COMMAND boot_gbak -r ${CMAKE_SOURCE_DIR}/builds/misc/metadata.gbak metadata_.fdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different metadata_.fdb metadata.fdb
 )
-set(isql_exec_msg boot_isql -q msg.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/msgs)
+add_custom_command(
+    OUTPUT help.fdb
+    DEPENDS
+        boot_gbak
+        metadata.fdb
+        ${CMAKE_SOURCE_DIR}/builds/misc/help.gbak
+    #
+    COMMAND ${CMAKE_COMMAND} -E remove help.fdb
+    COMMAND ${CMAKE_COMMAND} -E remove help_.fdb
+    COMMAND boot_gbak -r ${CMAKE_SOURCE_DIR}/builds/misc/help.gbak help_.fdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different help_.fdb help.fdb
+)
+add_custom_target(databases
+    DEPENDS
+        boot_engine12
+        help.fdb
+        metadata.fdb
+        security.fdb
+    SOURCES
+        ${databases_src}
+)
+add_dependencies_cc(databases msg_fdb)
+project_group(databases "Boot/Custom build steps")
+
+
+########################################
+# BUILD STEP messages
+########################################
+
+add_custom_command(
+    OUTPUT firebird.msg
+    DEPENDS
+        build_msg
+        msg_fdb
+    #
+    COMMAND ${CMAKE_COMMAND} -E remove firebird.msg
+    COMMAND build_msg -D msg.fdb -P ./ -F firebird.msg -L all
+    COMMAND build_msg -D msg.fdb -P ./ -F firebird.msg
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different firebird.msg ${output_dir}/firebird.msg
+)
+add_custom_command(
+    OUTPUT codes_headers.dummy
+    DEPENDS
+        codes
+        msg_fdb
+    COMMENT ""
+    #
+    COMMAND ${CMAKE_COMMAND} -E echo "" > codes_headers.dummy
+    COMMAND ${CMAKE_COMMAND} -E echo Building codes header...
+    COMMAND codes ${CMAKE_CURRENT_SOURCE_DIR}/include/gen ${CMAKE_SOURCE_DIR}/lang_helpers
+)
+add_custom_target(messages DEPENDS firebird.msg codes_headers.dummy)
+project_group(messages "Boot/Custom build steps")
+
+
+########################################
+# BUILD STEP msg_fdb
+########################################
+
+set(isql_exec_msg boot_isql -q msg_.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/msgs)
+
 add_custom_command(
     OUTPUT msg.fdb
     VERBATIM
@@ -139,7 +202,8 @@ add_custom_command(
         ${msgs_src}
     #
     COMMAND ${CMAKE_COMMAND} -E remove msg.fdb
-    COMMAND ${CMAKE_COMMAND} -E echo "create database 'msg.fdb';" > create_db_msg.sql
+    COMMAND ${CMAKE_COMMAND} -E remove msg_.fdb
+    COMMAND ${CMAKE_COMMAND} -E echo "create database 'msg_.fdb';" > create_db_msg.sql
     COMMAND boot_isql -q -i create_db_msg.sql
     COMMAND ${isql_exec_msg}/msg.sql
     #
@@ -161,49 +225,15 @@ add_custom_command(
     COMMAND ${isql_exec_msg}/transmsgs.fr_FR2.sql
     COMMAND echo loading German translation
     COMMAND ${isql_exec_msg}/transmsgs.de_DE2.sql
-)
-add_custom_command(
-    OUTPUT help.fdb
-    DEPENDS
-        boot_gbak
-        metadata.fdb
-        ${CMAKE_SOURCE_DIR}/builds/misc/help.gbak
     #
-    COMMAND ${CMAKE_COMMAND} -E remove help.fdb
-    COMMAND boot_gbak -r ${CMAKE_SOURCE_DIR}/builds/misc/help.gbak help.fdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different msg_.fdb msg.fdb
 )
-add_custom_target(databases
+add_custom_target(msg_fdb
     DEPENDS
         boot_engine12
-        help.fdb
-        metadata.fdb
         msg.fdb
-        security.fdb
-    SOURCES
-        ${databases_src}
 )
-project_group(databases "Custom build steps")
-
-
-########################################
-# BUILD STEP messages
-########################################
-
-add_custom_command(
-    OUTPUT firebird.msg
-    DEPENDS build_msg codes
-    #
-    COMMAND ${CMAKE_COMMAND} -E remove firebird.msg
-    COMMAND build_msg -D msg.fdb -P ./ -F firebird.msg -L all
-    COMMAND build_msg -D msg.fdb -P ./ -F firebird.msg
-)
-add_custom_target(messages DEPENDS firebird.msg)
-project_group(messages "Custom build steps")
-add_custom_command(
-    TARGET messages
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different firebird.msg ${output_dir}/firebird.msg
-)
+project_group(msg_fdb "Boot/Custom build steps")
 
 
 ########################################
@@ -231,7 +261,7 @@ add_custom_target(parse
     DEPENDS y_tab.h y_tab.c
     SOURCES ${parse_src}
 )
-project_group(parse "Custom build steps")
+project_group(parse "Boot/Custom build steps")
 set_source_files_properties(dsql/parse.cpp include/gen/parse.h PROPERTIES GENERATED TRUE)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -384,6 +414,7 @@ target_link_libraries       (yvalve
     PUBLIC ${LIB_iconv}
     PUBLIC ${LIB_CoreFoundation}
 )
+add_dependencies_cc         (yvalve databases)
 set_exported_symbols        (yvalve firebird)
 set_output_directory_unix   (yvalve lib)
 set_target_properties       (yvalve PROPERTIES OUTPUT_NAME fbclient)
@@ -454,7 +485,7 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 add_library                 (engine12 SHARED ${engine12_generated_src_master} ${VERSION_RC})
 target_link_libraries       (engine12 engine12_common alice burp common yvalve)
-add_dependencies_cc         (engine12 messages) # possible build during build_msg or codes run
+add_dependencies_cc         (engine12 messages)
 set_target_properties       (engine12 PROPERTIES OUTPUT_NAME Engine12)
 set_output_directory        (engine12 plugins)
 set_exported_symbols        (engine12 fbplugin)
@@ -468,7 +499,7 @@ file(GLOB intl_src "intl/*.cpp" "intl/*.h")
 
 add_library                 (intl SHARED ${intl_src} ${VERSION_RC})
 target_link_libraries       (intl common yvalve)
-add_dependencies_cc         (intl messages) # possible build during build_msg or codes run
+add_dependencies_cc         (intl messages)
 set_target_properties       (intl PROPERTIES OUTPUT_NAME fbintl)
 set_output_directory        (intl intl)
 
@@ -648,11 +679,6 @@ if (NOT CMAKE_CROSSCOMPILING)
 add_executable              (codes ${codes_generated_src_master} ${VERSION_RC})
 target_link_libraries       (codes yvalve)
 project_group               (codes Boot)
-add_custom_command(
-    TARGET codes
-    POST_BUILD
-    COMMAND codes ${CMAKE_CURRENT_SOURCE_DIR}/include/gen ${CMAKE_SOURCE_DIR}/lang_helpers
-)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
@@ -674,6 +700,7 @@ add_epp_suffix(gstat_generated_src master)
 
 add_executable              (gstat ${gstat_src} ${gstat_generated_src_master} ${VERSION_RC})
 target_link_libraries       (gstat common yvalve)
+add_dependencies_cc         (gstat engine12 messages)
 
 
 ########################################
@@ -856,7 +883,7 @@ add_subdirectory("utilities")
 add_custom_target(copy_files
     #ALL # uncomment this to copy files every build
     # databases
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GENERATED_DIR}/security3.fdb ${output_dir}/security3.fdb
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GENERATED_DIR}/security.fdb ${output_dir}/security3.fdb
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GENERATED_DIR}/help.fdb ${output_dir}/help/help.fdb
     # configs, text files
     COMMAND sed "/@UDF_COMMENT@/d" < ${CMAKE_SOURCE_DIR}/builds/install/misc/firebird.conf.in > ${output_dir}/firebird.conf    
