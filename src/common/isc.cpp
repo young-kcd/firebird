@@ -355,7 +355,9 @@ bool ISC_get_user(Firebird::string* name, int* id, int* group)
 		p = password->pw_name;
 	else
 		p = "";
+#ifndef ANDROID		// Why do they print silly unimplemted message for this function?
 	endpwent();
+#endif
 
 	if (name)
 		*name = p;

@@ -58,6 +58,8 @@ static const char* ENV_VAR = "FIREBIRD_TMP";
 static const char* DEFAULT_PATH =
 #if defined(UNIX)
 	"/tmp/";
+#elif defined(ANDROID)
+	"/data/local/tmp/";
 #elif defined(WIN_NT)
 	"c:\\temp\\";
 #else

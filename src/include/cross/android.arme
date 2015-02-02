@@ -26,7 +26,7 @@
 /* #undef DARWIN */
 
 /* Use binary relocation? */
-/* #undef ENABLE_BINRELOC */
+#define ENABLE_BINRELOC
 
 /* Alignment of long */
 #define FB_ALIGNMENT 8

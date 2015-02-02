@@ -59,9 +59,12 @@ static const char* const PORT_FILE		= "fb_port_%d";
 #endif
 
 // keep MSG_FILE_LANG in sync with build_file.epp
-#ifdef WIN_NT
+#if defined(WIN_NT)
 static const char* const WORKFILE	= "c:\\temp\\";
 static const char MSG_FILE_LANG[]	= "intl\\%.10s.msg";
+#elif defined(ANDROID)
+static const char* const WORKFILE	= "/data/local/tmp/";
+static const char MSG_FILE_LANG[]	= "intl/%.10s.msg";
 #else
 static const char* const WORKFILE	= "/tmp/";
 static const char MSG_FILE_LANG[]	= "intl/%.10s.msg";
