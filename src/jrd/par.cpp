@@ -217,8 +217,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 
 	getBlrVersion(csb);
 
-	DmlNode* node = PAR_parse_node(tdbb, csb);
-	csb->csb_node = node;
+	csb->csb_node = PAR_parse_node(tdbb, csb);
 
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
 		PAR_syntax_error(csb, "end_of_command");
@@ -231,7 +230,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	else
 		delete csb;
 
-	return node;
+	return csb->csb_node;
 }
 
 
