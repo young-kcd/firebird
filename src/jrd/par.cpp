@@ -198,8 +198,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 				   Arg::Gds(isc_wroblrver) << Arg::Num(blr_version4) << Arg::Num(version));
 	}
 
-	jrd_nod* node = PAR_parse_node(tdbb, csb, OTHER);
-	csb->csb_node = node;
+	csb->csb_node = PAR_parse_node(tdbb, csb, OTHER);
 
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
 		PAR_syntax_error(csb, "end_of_command");
@@ -207,7 +206,7 @@ jrd_nod* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	if (request_ptr)
 		*request_ptr = CMP_make_request(tdbb, csb, true);
 
-	return node;
+	return csb->csb_node;
 }
 
 
