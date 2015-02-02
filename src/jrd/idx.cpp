@@ -730,6 +730,9 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 				idx_e result = BTR_key(tdbb, rpb->rpb_relation, rec1, &idx, &key1, false);
 				if (result != idx_e_ok)
 				{
+					if (result == idx_e_conversion)
+						continue;
+
 					CCH_RELEASE(tdbb, &window);
 					context.raise(tdbb, result, rec1);
 				}
@@ -744,6 +747,9 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 					result = BTR_key(tdbb, rpb->rpb_relation, rec2, &idx, &key2, false);
 					if (result != idx_e_ok)
 					{
+						if (result == idx_e_conversion)
+							continue;
+
 						CCH_RELEASE(tdbb, &window);
 						context.raise(tdbb, result, rec2);
 					}
@@ -764,6 +770,9 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 					result = BTR_key(tdbb, rpb->rpb_relation, rec3, &idx, &key2, false);
 					if (result != idx_e_ok)
 					{
+						if (result == idx_e_conversion)
+							continue;
+
 						CCH_RELEASE(tdbb, &window);
 						context.raise(tdbb, result, rec3);
 					}
