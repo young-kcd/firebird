@@ -145,6 +145,9 @@ static const char* semName = "/firebird_temp_sem";
 	{
 #ifdef WORKING_SEM_INIT
 		if (sem_destroy(sem) == -1) {
+#ifdef ANDROID
+		  if (errno != EBUSY)
+#endif
 			system_call_failed::raise("sem_destroy");
 		}
 #else
