@@ -1,3 +1,7 @@
+ 2015-02-02 08:48  dimitr 
+   M src/jrd/par.cpp
+Additional fix for CORE-4673: Computed index based on a computed column stores NULL for all its keys.
+
  2015-01-29 19:17  dimitr 
    M src/jrd/idx.cpp
 Fixed CORE-4075: Server bugchecks or crashes on exception in calculated index. More advanced solution is considered for the trunk.
