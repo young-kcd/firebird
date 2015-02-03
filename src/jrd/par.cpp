@@ -225,12 +225,14 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	if (statementPtr)
 		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
 
+	DmlNode* const node = csb->csb_node;
+
 	if (csb_ptr)
 		*csb_ptr = csb;
 	else
 		delete csb;
 
-	return csb->csb_node;
+	return node;
 }
 
 
