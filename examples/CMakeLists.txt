@@ -79,6 +79,7 @@ file(GLOB udrcpp_example_src "udr/*")
 
 add_library             (udrcpp_example SHARED ${udrcpp_example_src})
 target_link_libraries   (udrcpp_example yvalve)
+set_exported_symbols    (udrcpp_example udr_plugin)
 set_output_directory    (udrcpp_example plugins/udr)
 project_group           (udrcpp_example Examples)
 

@@ -157,4 +157,5 @@ FB_UDR_END_FUNCTION
 
 
 // This should be used in only one of the UDR library files.
+// Build must export firebird_udr_plugin function.
 FB_UDR_IMPLEMENT_ENTRY_POINT

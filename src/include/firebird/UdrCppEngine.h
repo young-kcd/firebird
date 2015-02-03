@@ -31,6 +31,7 @@
 #include <string.h>
 
 
+// Build must export firebird_udr_plugin function.
 #define FB_UDR_IMPLEMENT_ENTRY_POINT	\
 	namespace Firebird	\
 	{	\
