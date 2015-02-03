@@ -181,7 +181,7 @@ if (UNIX)
     endif()
 endif()
 
-if (CLANG OR IOS)
+if (NOT LINUX AND (CLANG OR IOS))
     set(LIB_iconv iconv)
 endif()
 

@@ -119,8 +119,10 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E remove security_.fdb
     COMMAND ${CMAKE_COMMAND} -E echo "create database 'security_.fdb';" > create_db_security.sql
     COMMAND boot_isql -q -i create_db_security.sql
+    COMMAND boot_gfix -write async security_.fdb
     COMMAND boot_isql -q security_.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
     COMMAND ${CMAKE_COMMAND} -E copy_if_different security_.fdb security.fdb
+    COMMAND boot_gfix -write sync security.fdb
 )
 add_custom_command(
     OUTPUT metadata.fdb
@@ -205,6 +207,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E remove msg_.fdb
     COMMAND ${CMAKE_COMMAND} -E echo "create database 'msg_.fdb';" > create_db_msg.sql
     COMMAND boot_isql -q -i create_db_msg.sql
+    COMMAND boot_gfix -write async msg_.fdb
     COMMAND ${isql_exec_msg}/msg.sql
     #
     COMMAND echo loading facilities
@@ -742,6 +745,15 @@ set(fbtracemgr_src
 
 add_executable              (fbtracemgr ${fbtracemgr_src} ${VERSION_RC})
 target_link_libraries       (fbtracemgr common yvalve)
+
+
+########################################
+# EXECUTABLE boot_gfix
+########################################
+
+add_executable              (boot_gfix alice/main/aliceMain.cpp ${VERSION_RC})
+target_link_libraries       (boot_gfix boot_alice common boot_yvalve)
+project_group               (boot_gfix Boot)
 
 
 ########################################
