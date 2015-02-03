@@ -1,3 +1,22 @@
+ 2015-02-02 17:14  alexpeshkoff 
+   M src/common/classes/TempFile.cpp
+   M src/common/file_params.h
+   M src/common/isc.cpp
+   M src/include/cross/android.arme
+WIP on CORE-3885: Firebird for Android, databases may be created, trivial requests run in embedded mode
+
+ 2015-02-02 15:25  alexpeshkoff 
+   M src/common/classes/semaphore.cpp
+WIP on CORE-3885: Firebird for Android, ignore pseudo-error caused by Google bug
+
+ 2015-02-02 09:27  dimitr 
+   M src/jrd/idx.cpp
+Fixed CORE-4075: Server bugchecks or crashes on exception in calculated index. First part of the fix.
+
+ 2015-02-02 08:53  dimitr 
+   M src/jrd/par.cpp
+Additional fix for CORE-4673: Computed index based on a computed column stores NULL for all its keys.
+
  2015-02-01 16:43  egorpugin 
    M examples/CMakeLists.txt
    M src/CMakeLists.txt
