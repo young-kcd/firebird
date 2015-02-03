@@ -805,7 +805,11 @@ rem_port* INET_connect(const TEXT* name,
 	gai_hints.ai_protocol = IPPROTO_TCP;
 #endif
 
-	gai_hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | (packet ? 0 : AI_PASSIVE);
+	gai_hints.ai_flags =
+#ifndef ANDROID
+		AI_V4MAPPED |
+#endif
+			AI_ADDRCONFIG | (packet ? 0 : AI_PASSIVE);
 
 	const char* host_str = (host.hasData() ? host.c_str() : NULL);
 	struct addrinfo* gai_result;

@@ -237,7 +237,11 @@ bool touchFile(const char* pathname)
 // check if OS have support for IPv6 protocol
 bool isIPv6supported()
 {
+#ifdef ANDROID
+	return false;
+#else
 	return true;
+#endif
 }
 
 // setting flag is not absolutely required, therefore ignore errors here
