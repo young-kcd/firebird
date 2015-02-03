@@ -3632,7 +3632,8 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 	// Cleanup/merge deferred work/event post
 
-	if (sav_point->sav_verb_actions || sav_point->sav_verb_count ||
+	if (sav_point->sav_verb_actions ||
+		sav_point->sav_verb_count ||
 		(sav_point->sav_flags & SAV_force_dfw))
 	{
 		if (sav_point->sav_verb_count)
@@ -3650,9 +3651,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 		if (sav_point->sav_flags & SAV_force_dfw)
 		{
 			if (transaction->tra_save_point && !sav_point->sav_verb_count)
-			{
 				transaction->tra_save_point->sav_flags |= SAV_force_dfw;
-			}
 
 			sav_point->sav_flags &= ~SAV_force_dfw;
 		}
@@ -3661,7 +3660,9 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 	record_param rpb;
 	VerbAction* action;
 	jrd_tra* old_tran = tdbb->getTransaction();
-	try {
+
+	try
+	{
 		tdbb->tdbb_flags |= TDBB_verb_cleanup;
 		tdbb->setTransaction(transaction);
 
@@ -3797,7 +3798,9 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 				delete rpb.rpb_record;
 			}
+
 			RecordBitmap::reset(action->vct_records);
+
 			if (action->vct_undo)
 			{
 				if (action->vct_undo->getFirst())
@@ -3806,20 +3809,26 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 						action->vct_undo->current().release(transaction);
 					} while (action->vct_undo->getNext());
 				}
+
 				delete action->vct_undo;
 				action->vct_undo = NULL;
 			}
+
 			action->vct_next = sav_point->sav_verb_free;
 			sav_point->sav_verb_free = action;
 		}
+
 		tdbb->setTransaction(old_tran);
 		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
 	}
-	catch (...)
+	catch (const Exception& ex)
 	{
+		Arg::StatusVector error(ex);
 		tdbb->setTransaction(old_tran);
 		tdbb->tdbb_flags &= ~TDBB_verb_cleanup;
-		throw;
+		transaction->tra_flags |= TRA_invalidated;
+		error.prepend(Arg::Gds(isc_savepoint_backout_err));
+		error.raise();
 	}
 
 	sav_point->sav_verb_count = 0;

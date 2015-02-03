@@ -1280,80 +1280,79 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 	while (node && !(request->req_flags & req_stall))
 	{
-	try {
-		if (request->req_operation == jrd_req::req_evaluate)
+		try
 		{
-			if (--tdbb->tdbb_quantum < 0)
-				JRD_reschedule(tdbb, 0, true);
-
-			if (node->hasLineColumn)
+			if (request->req_operation == jrd_req::req_evaluate)
 			{
-				request->req_src_line = node->line;
-				request->req_src_column = node->column;
-			}
-		}
+				if (--tdbb->tdbb_quantum < 0)
+					JRD_reschedule(tdbb, 0, true);
 
-		node = node->execute(tdbb, request, &exeState);
-
-		if (exeState.exit)
-			return node;
-	}	// try
-	catch (const Firebird::Exception& ex)
-	{
-
-		ex.stuff_exception(tdbb->tdbb_status_vector);
-
-		request->adjustCallerStats();
-
-		// Ensure the transaction hasn't disappeared in the meantime
-		fb_assert(request->req_transaction);
-
-		// Skip this handling for errors coming from the nested looper calls,
-		// as they're already handled properly. The only need is to undo
-		// our own savepoints.
-		if (exeState.catchDisabled)
-		{
-			tdbb->setTransaction(exeState.oldTransaction);
-			tdbb->setRequest(exeState.oldRequest);
-
-			if (request->req_transaction != sysTransaction)
-			{
-				for (const Savepoint* save_point = request->req_transaction->tra_save_point;
-					((save_point) && (save_point_number <= save_point->sav_number));
-					save_point = request->req_transaction->tra_save_point)
+				if (node->hasLineColumn)
 				{
-					++request->req_transaction->tra_save_point->sav_verb_count;
-					EXE_verb_cleanup(tdbb, request->req_transaction);
+					request->req_src_line = node->line;
+					request->req_src_column = node->column;
 				}
 			}
 
-			ERR_punt();
-		}
+			node = node->execute(tdbb, request, &exeState);
 
-		// If the database is already bug-checked, then get out
-		if (dbb->dbb_flags & DBB_bugcheck) {
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		}
-
-		// Since an error happened, the current savepoint needs to be undone
-		if (request->req_transaction != sysTransaction &&
-			request->req_transaction->tra_save_point)
+			if (exeState.exit)
+				return node;
+		}	// try
+		catch (const Firebird::Exception& ex)
 		{
-			++request->req_transaction->tra_save_point->sav_verb_count;
-			EXE_verb_cleanup(tdbb, request->req_transaction);
-		}
+			ex.stuff_exception(tdbb->tdbb_status_vector);
 
-		exeState.errorPending = true;
-		exeState.catchDisabled = true;
-		request->req_operation = jrd_req::req_unwind;
-		request->req_label = 0;
+			request->adjustCallerStats();
 
-		if (!(tdbb->tdbb_flags & TDBB_stack_trace_done) && !(tdbb->tdbb_flags & TDBB_sys_error))
-		{
-			stuff_stack_trace(request);
-			tdbb->tdbb_flags |= TDBB_stack_trace_done;
+			// Ensure the transaction hasn't disappeared in the meantime
+			fb_assert(request->req_transaction);
+
+			// Skip this handling for errors coming from the nested looper calls,
+			// as they're already handled properly. The only need is to undo
+			// our own savepoints.
+			if (exeState.catchDisabled)
+			{
+				tdbb->setTransaction(exeState.oldTransaction);
+				tdbb->setRequest(exeState.oldRequest);
+
+				if (request->req_transaction != sysTransaction)
+				{
+					for (const Savepoint* save_point = request->req_transaction->tra_save_point;
+						((save_point) && (save_point_number <= save_point->sav_number));
+						save_point = request->req_transaction->tra_save_point)
+					{
+						++request->req_transaction->tra_save_point->sav_verb_count;
+						VIO_verb_cleanup(tdbb, request->req_transaction);
+					}
+				}
+
+				ERR_punt();
+			}
+
+			// If the database is already bug-checked, then get out
+			if (dbb->dbb_flags & DBB_bugcheck)
+				Firebird::status_exception::raise(tdbb->tdbb_status_vector);
+
+			// Since an error happened, the current savepoint needs to be undone
+			if (request->req_transaction != sysTransaction &&
+				request->req_transaction->tra_save_point)
+			{
+				++request->req_transaction->tra_save_point->sav_verb_count;
+				VIO_verb_cleanup(tdbb, request->req_transaction);
+			}
+
+			exeState.errorPending = true;
+			exeState.catchDisabled = true;
+			request->req_operation = jrd_req::req_unwind;
+			request->req_label = 0;
+
+			if (!(tdbb->tdbb_flags & TDBB_stack_trace_done) && !(tdbb->tdbb_flags & TDBB_sys_error))
+			{
+				stuff_stack_trace(request);
+				tdbb->tdbb_flags |= TDBB_stack_trace_done;
+			}
 		}
-	}
 	} // while()
 
 	request->adjustCallerStats();
@@ -1402,7 +1401,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 				 save_point = request->req_transaction->tra_save_point)
 			{
 				++request->req_transaction->tra_save_point->sav_verb_count;
-				EXE_verb_cleanup(tdbb, request->req_transaction);
+				VIO_verb_cleanup(tdbb, request->req_transaction);
 			}
 		}
 
@@ -1588,33 +1587,5 @@ static void trigger_failure(thread_db* tdbb, jrd_req* trigger)
 	else
 	{
 		ERR_punt();
-	}
-}
-
-
-void EXE_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
-{
-/**************************************
- *
- *	E X E _ v e r b _ c l e a n u p
- *
- **************************************
- *
- * Functional description
- *  If an error happens during the backout of a savepoint, then the transaction
- *  must be marked 'dead' because that is the only way to clean up after a
- *  failed backout. The easiest way to do this is to kill the application
- *  by calling bugcheck.
- *
- **************************************/
-	try
-	{
-		VIO_verb_cleanup(tdbb, transaction);
-	}
-	catch (const Firebird::Exception&)
-	{
-		if (tdbb->getDatabase()->dbb_flags & DBB_bugcheck)
-			Firebird::status_exception::raise(tdbb->tdbb_status_vector);
-		BUGCHECK(290); // msg 290 error during savepoint backout
 	}
 }

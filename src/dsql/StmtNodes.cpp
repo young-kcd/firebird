@@ -522,7 +522,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 						 save_point && count <= save_point->sav_number;
 						 save_point = transaction->tra_save_point)
 					{
-						EXE_verb_cleanup(tdbb, transaction);
+						VIO_verb_cleanup(tdbb, transaction);
 					}
 				}
 
@@ -542,7 +542,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					 save_point = transaction->tra_save_point)
 				{
 					++transaction->tra_save_point->sav_verb_count;
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 			}
 
@@ -614,7 +614,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 								 save_point && count <= save_point->sav_number;
 								 save_point = transaction->tra_save_point)
 							{
-								EXE_verb_cleanup(tdbb, transaction);
+								VIO_verb_cleanup(tdbb, transaction);
 							}
 						}
 					}
@@ -634,7 +634,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					 save_point = transaction->tra_save_point)
 				{
 					++transaction->tra_save_point->sav_verb_count;
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 			}
 
@@ -650,7 +650,7 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 					 save_point && count <= save_point->sav_number;
 					 save_point = transaction->tra_save_point)
 				{
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 			}
 
@@ -4544,7 +4544,7 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 					 save_point && sav_number <= save_point->sav_number;
 					 save_point = transaction->tra_save_point)
 				{
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 			}
 			cursor->close(tdbb);
@@ -6876,7 +6876,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				{
 					Savepoint* const current = transaction->tra_save_point;
 					transaction->tra_save_point = savepoint;
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 					previous->sav_next = transaction->tra_save_point;
 					transaction->tra_save_point = current;
 				}
@@ -6891,7 +6891,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				// Release the savepoint
 				Savepoint* const current = transaction->tra_save_point;
 				transaction->tra_save_point = savepoint;
-				EXE_verb_cleanup(tdbb, transaction);
+				VIO_verb_cleanup(tdbb, transaction);
 				previous->sav_next = transaction->tra_save_point;
 				transaction->tra_save_point = current;
 				break;
@@ -6905,7 +6905,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				while (transaction->tra_save_point &&
 					transaction->tra_save_point->sav_number >= sav_number)
 				{
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 
 				// Restore the savepoint initially created by EXE_start
@@ -6922,7 +6922,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 					transaction->tra_save_point->sav_number >= sav_number)
 				{
 					transaction->tra_save_point->sav_verb_count++;
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 
 				// Now set the savepoint again to allow to return to it later
@@ -7529,7 +7529,7 @@ const StmtNode* SavePointNode::execute(thread_db* tdbb, jrd_req* request, ExeSta
 					// application didn't handle the error and the savepoint should be undone.
 					if (exeState->errorPending)
 						++transaction->tra_save_point->sav_verb_count;
-					EXE_verb_cleanup(tdbb, transaction);
+					VIO_verb_cleanup(tdbb, transaction);
 				}
 
 				if (request->req_operation == jrd_req::req_evaluate)
