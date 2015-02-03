@@ -169,7 +169,7 @@ static const struct {
 	{335544466, "violation of FOREIGN KEY constraint \"@1\" on table \"@2\""},		/* foreign_key */
 	{335544467, "minor version too high found @1 expected @2"},		/* high_minor */
 	{335544468, "transaction @1 is @2"},		/* tra_state */
-	{335544469, "transaction marked invalid by I/O error"},		/* trans_invalid */
+	{335544469, "transaction marked invalid and cannot be committed"},		/* trans_invalid */
 	{335544470, "cache buffer for page @1 invalid"},		/* buf_invalid */
 	{335544471, "there is no index in table @1 with id @2"},		/* indexnotdefined */
 	{335544472, "Your user name and password are not defined. Ask your database administrator to set up a Firebird login."},		/* login */
@@ -806,6 +806,7 @@ Data source : @4"},		/* eds_statement */
 	{335545099, "CREATE DATABASE grants check is not possible when table RDB$DB_CREATORS is not present in database @1"},		/* crdb_notable */
 	{335545100, "Interface @3 version too old: expected @1, found @2"},		/* interface_version_too_old */
 	{335545101, "Input parameter mismatch for function @1"},		/* fun_param_mismatch */
+	{335545102, "Error during savepoint backout - transaction invalidated"},		/* savepoint_backout_err */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

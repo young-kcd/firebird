@@ -243,7 +243,7 @@ segmented) blob.');
 ('foreign_key', 'check_partner_index', 'IDX.C', NULL, 0, 146, NULL, 'violation of FOREIGN KEY constraint "@1" on table "@2"', NULL, NULL);
 ('high_minor', 'PAG_header', 'PAG', NULL, 0, 147, NULL, 'minor version too high found @1 expected @2', NULL, NULL);
 ('tra_state', 'TRA_reconnect', 'TRA', NULL, 0, 148, NULL, 'transaction @1 is @2', NULL, NULL);
-('trans_invalid', 'TRA_invalidate', 'tra.c', NULL, 0, 149, NULL, 'transaction marked invalid by I/O error', NULL, NULL);
+('trans_invalid', 'TRA_invalidate', 'tra.c', NULL, 0, 149, NULL, 'transaction marked invalid and cannot be committed', NULL, NULL);
 ('buf_invalid', 'write_page', 'cch.c', NULL, 0, 150, NULL, 'cache buffer for page @1 invalid', NULL, NULL);
 ('indexnotdefined', 'set_index', 'exe.c', NULL, 0, 151, NULL, 'there is no index in table @1 with id @2', NULL, NULL);
 ('login', 'ServerAuth::authenticate', 'server.cpp', NULL, 0, 152, NULL, 'Your user name and password are not defined. Ask your database administrator to set up a Firebird login.', NULL, NULL);
@@ -889,6 +889,7 @@ Data source : @4', NULL, NULL)
 ('crdb_notable', 'DbCreatorsList::getList', 'DbCreators.cpp', NULL, 0, 779, NULL, 'CREATE DATABASE grants check is not possible when table RDB$DB_CREATORS is not present in database @1', NULL, NULL);
 ('interface_version_too_old', NULL, 'Interface.h', NULL, 0, 780, NULL, 'Interface @3 version too old: expected @1, found @2', NULL, NULL);
 ('fun_param_mismatch', 'UdfCallNode::dsqlPass', 'ExprNode.cpp', NULL, 0, 781, NULL, 'Input parameter mismatch for function @1', NULL, NULL);
+('savepoint_backout_err', 'VIO_verb_cleanup', 'vio.cpp', NULL, 0, 782, NULL, 'Error during savepoint backout - transaction invalidated', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);

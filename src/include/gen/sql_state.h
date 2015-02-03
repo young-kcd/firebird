@@ -802,6 +802,7 @@ static const struct {
 	{335545099, "0A000"}, // 779 crdb_notable
 	{335545100, "HY000"}, // 780 interface_version_too_old
 	{335545101, "07001"}, // 781 fun_param_mismatch
+	{335545102, "HY000"}, // 782 savepoint_backout_err
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw
