@@ -137,7 +137,9 @@ namespace {
 #ifndef NO_NFS
 	const char* NFS_TYPE = "nfs";
 
-	class Mnt
+	Firebird::GlobalPtr<Firebird::Mutex> mntinfoMutex;
+
+	class Mnt : public Firebird::MutexLockGuard		// Protect static values returned by getmntinfo()/getmntent()
 	{
 #ifdef DARWIN
 	private:
@@ -147,7 +149,8 @@ namespace {
 
 	public:
 		Mnt()
-			: mnt_info(NULL), mnt_cnt(getmntinfo(&mnt_info, MNT_NOWAIT)), mnt_i(0)
+			: Firebird::MutexLockGuard(mntinfoMutex),
+			  mnt_info(NULL), mnt_cnt(getmntinfo(&mnt_info, MNT_NOWAIT)), mnt_i(0)
 		{ }
 
 		bool ok() const { return this->mnt_cnt > 0; }
@@ -157,7 +160,8 @@ namespace {
 
 	public:
 		Mnt()
-			: mtab(MTAB_OPEN(MTAB, "r"))
+			: Firebird::MutexLockGuard(mntinfoMutex),
+			  mtab(MTAB_OPEN(MTAB, "r"))
 		{ }
 
 		~Mnt()
