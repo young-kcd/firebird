@@ -88,6 +88,87 @@ static void getBlrVersion(CompilerScratch* csb);
 
 namespace
 {
+	class BlrParseWrapper
+	{
+	public:
+		BlrParseWrapper(MemoryPool& pool, jrd_rel* relation, CompilerScratch* view_csb,
+						CompilerScratch** csb_ptr, const bool trigger, USHORT flags)
+			: m_csbPtr(csb_ptr)
+		{
+			if (!(csb_ptr && (m_csb = *csb_ptr)))
+			{
+				FB_SIZE_T count = 5;
+				if (view_csb)
+					count += view_csb->csb_rpt.getCapacity();
+				m_csb = CompilerScratch::newCsb(pool, count);
+				m_csb->csb_g_flags |= flags;
+			}
+
+			// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
+			// the target relation
+
+			if (trigger)
+			{
+				StreamType stream = m_csb->nextStream();
+				CompilerScratch::csb_repeat* t1 = CMP_csb_element(m_csb, 0);
+				t1->csb_flags |= csb_used | csb_active | csb_trigger;
+				t1->csb_relation = relation;
+				t1->csb_stream = stream;
+
+				stream = m_csb->nextStream();
+				t1 = CMP_csb_element(m_csb, 1);
+				t1->csb_flags |= csb_used | csb_active | csb_trigger;
+				t1->csb_relation = relation;
+				t1->csb_stream = stream;
+			}
+			else if (relation)
+			{
+				CompilerScratch::csb_repeat* t1 = CMP_csb_element(m_csb, 0);
+				t1->csb_stream = m_csb->nextStream();
+				t1->csb_relation = relation;
+				t1->csb_flags = csb_used | csb_active;
+			}
+
+			if (view_csb)
+			{
+				CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
+				// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
+				// be more then just csb_n_stream-numbers that hold data.
+				// Certainly csb_stream (see PAR_context where the context is retrieved)
+				const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
+				for (StreamType stream = 0; ptr != end; ++ptr, ++stream)
+				{
+					CompilerScratch::csb_repeat* t2 = CMP_csb_element(m_csb, stream);
+					t2->csb_relation = ptr->csb_relation;
+					t2->csb_procedure = ptr->csb_procedure;
+					t2->csb_stream = ptr->csb_stream;
+					t2->csb_flags = ptr->csb_flags & csb_used;
+				}
+				m_csb->csb_n_stream = view_csb->csb_n_stream;
+			}
+		}
+
+		operator CompilerScratch*()
+		{
+			return m_csb;
+		}
+
+		CompilerScratch* operator->()
+		{
+			return m_csb;
+		}
+
+		~BlrParseWrapper()
+		{
+			if (m_csbPtr)
+				*m_csbPtr = m_csb.release();
+		}
+
+	private:
+		AutoPtr<CompilerScratch> m_csb;
+		CompilerScratch** const m_csbPtr;
+	};
+
 	class FetchNode
 	{
 	public:
@@ -136,69 +217,6 @@ namespace
 }	// namespace
 
 
-// Common start for PAR_blr and PAR_preparsed_node. Returns the possibly created csb.
-static CompilerScratch* par_start(thread_db* tdbb, jrd_rel* relation, CompilerScratch* view_csb,
-	CompilerScratch** csb_ptr, const bool trigger, USHORT flags)
-{
-	SET_TDBB(tdbb);
-
-	CompilerScratch* csb;
-	if (!(csb_ptr && (csb = *csb_ptr)))
-	{
-		FB_SIZE_T count = 5;
-		if (view_csb)
-			count += view_csb->csb_rpt.getCapacity();
-		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
-		csb->csb_g_flags |= flags;
-	}
-
-	// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
-	// the target relation
-
-	if (trigger)
-	{
-		StreamType stream = csb->nextStream();
-		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
-		t1->csb_flags |= csb_used | csb_active | csb_trigger;
-		t1->csb_relation = relation;
-		t1->csb_stream = stream;
-
-		stream = csb->nextStream();
-		t1 = CMP_csb_element(csb, 1);
-		t1->csb_flags |= csb_used | csb_active | csb_trigger;
-		t1->csb_relation = relation;
-		t1->csb_stream = stream;
-	}
-	else if (relation)
-	{
-		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
-		t1->csb_stream = csb->nextStream();
-		t1->csb_relation = relation;
-		t1->csb_flags = csb_used | csb_active;
-	}
-
-	if (view_csb)
-	{
-		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
-		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
-		// be more then just csb_n_stream-numbers that hold data.
-		// Certainly csb_stream (see PAR_context where the context is retrieved)
-		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
-		for (StreamType stream = 0; ptr != end; ++ptr, ++stream)
-		{
-			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
-			t2->csb_relation = ptr->csb_relation;
-			t2->csb_procedure = ptr->csb_procedure;
-			t2->csb_stream = ptr->csb_stream;
-			t2->csb_flags = ptr->csb_flags & csb_used;
-		}
-		csb->csb_n_stream = view_csb->csb_n_stream;
-	}
-
-	return csb;
-}
-
-
 // Parse blr, returning a compiler scratch block with the results.
 // Caller must do pool handling.
 DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr_length,
@@ -211,7 +229,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
 #endif
 
-	CompilerScratch* csb = par_start(tdbb, relation, view_csb, csb_ptr, trigger, flags);
+	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
 
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
 
@@ -225,14 +243,7 @@ DmlNode* PAR_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR* blr, ULONG blr
 	if (statementPtr)
 		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
 
-	DmlNode* const node = csb->csb_node;
-
-	if (csb_ptr)
-		*csb_ptr = csb;
-	else
-		delete csb;
-
-	return node;
+	return csb->csb_node;
 }
 
 
@@ -242,18 +253,13 @@ void PAR_preparsed_node(thread_db* tdbb, jrd_rel* relation, DmlNode* node,
 	CompilerScratch* view_csb, CompilerScratch** csb_ptr, JrdStatement** statementPtr,
 	const bool trigger, USHORT flags)
 {
-	CompilerScratch* csb = par_start(tdbb, relation, view_csb, csb_ptr, trigger, flags);
+	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, trigger, flags);
 
 	csb->blrVersion = 5;	// blr_version5
 	csb->csb_node = node;
 
 	if (statementPtr)
 		*statementPtr = JrdStatement::makeStatement(tdbb, csb, false);
-
-	if (csb_ptr)
-		*csb_ptr = csb;
-	else
-		delete csb;
 }
 
 
@@ -270,46 +276,9 @@ BoolExprNode* PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR
 	fb_print_blr(blr, blr_length, gds__trace_printer, 0, 0);
 #endif
 
-	CompilerScratch* csb;
-	if (!(csb_ptr && (csb = *csb_ptr)))
-	{
-		FB_SIZE_T count = 5;
-		if (view_csb)
-			count += view_csb->csb_rpt.getCapacity();
-		csb = CompilerScratch::newCsb(*tdbb->getDefaultPool(), count);
-		csb->csb_g_flags |= flags;
-	}
-
-	// If there is a request ptr, this is a trigger.  Set up contexts 0 and 1 for
-	// the target relation
-
-	if (relation)
-	{
-		CompilerScratch::csb_repeat* t1 = CMP_csb_element(csb, 0);
-		t1->csb_stream = csb->nextStream();
-		t1->csb_relation = relation;
-		t1->csb_flags = csb_used | csb_active;
-	}
+	BlrParseWrapper csb(*tdbb->getDefaultPool(), relation, view_csb, csb_ptr, false, flags);
 
 	csb->csb_blr_reader = BlrReader(blr, blr_length);
-
-	if (view_csb)
-	{
-		CompilerScratch::rpt_itr ptr = view_csb->csb_rpt.begin();
-		// AB: csb_n_stream replaced by view_csb->csb_rpt.getCount(), because there could
-		// be more then just csb_n_stream-numbers that hold data.
-		// Certainly csb_stream (see PAR_context where the context is retrieved)
-		const CompilerScratch::rpt_const_itr end = view_csb->csb_rpt.end();
-		for (StreamType stream = 0; ptr != end; ++ptr, ++stream)
-		{
-			CompilerScratch::csb_repeat* t2 = CMP_csb_element(csb, stream);
-			t2->csb_relation = ptr->csb_relation;
-			t2->csb_procedure = ptr->csb_procedure;
-			t2->csb_stream = ptr->csb_stream;
-			t2->csb_flags = ptr->csb_flags & csb_used;
-		}
-		csb->csb_n_stream = view_csb->csb_n_stream;
-	}
 
 	getBlrVersion(csb);
 
@@ -320,15 +289,10 @@ BoolExprNode* PAR_validation_blr(thread_db* tdbb, jrd_rel* relation, const UCHAR
 		PAR_parse_stmt(tdbb, csb);
 	}
 
-	BoolExprNode* expr = PAR_parse_boolean(tdbb, csb);
+	BoolExprNode* const expr = PAR_parse_boolean(tdbb, csb);
 
 	if (csb->csb_blr_reader.getByte() != (UCHAR) blr_eoc)
 		PAR_syntax_error(csb, "end_of_command");
-
-	if (csb_ptr)
-		*csb_ptr = csb;
-	else
-		delete csb;
 
 	return expr;
 }
