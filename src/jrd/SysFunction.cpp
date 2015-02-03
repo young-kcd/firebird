@@ -1710,7 +1710,7 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 
 				const int ly = times.tm_year + 1900;
 
-				if (ly % 4 == 0 && ly % 100 != 0 || ly % 400 == 0)
+				if ((ly % 4 == 0 && ly % 100 != 0) || (ly % 400 == 0))
 					md[1]++;
 
 				if (y >= 0 && m >= 0 && times.tm_mday > md[lm])
@@ -1915,15 +1915,15 @@ dsc* evlDateDiff(thread_db* tdbb, const SysFunction* function, const NestValueAr
 				// CVC: Or if one value is DATE and the other is TIME.
 				const int type1 = value1Dsc->dsc_dtype;
 				const int type2 = value2Dsc->dsc_dtype;
-				if (type1 == dtype_timestamp && type2 == dtype_sql_time ||
-					type1 == dtype_sql_time && type2 == dtype_timestamp)
+				if ((type1 == dtype_timestamp && type2 == dtype_sql_time) ||
+					(type1 == dtype_sql_time && type2 == dtype_timestamp))
 				{
 					status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 												Arg::Gds(isc_sysf_invalid_tstamptimediff) <<
 													Arg::Str(function->name));
 				}
-				if (type1 == dtype_sql_date && type2 == dtype_sql_time ||
-					type1 == dtype_sql_time && type2 == dtype_sql_date)
+				if ((type1 == dtype_sql_date && type2 == dtype_sql_time) ||
+					(type1 == dtype_sql_time && type2 == dtype_sql_date))
 				{
 					status_exception::raise(Arg::Gds(isc_expression_eval_err) <<
 												Arg::Gds(isc_sysf_invalid_datetimediff) <<

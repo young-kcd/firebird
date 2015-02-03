@@ -280,7 +280,7 @@ public:
 		fb_assert(pageSpaceID != INVALID_PAGE_SPACE);
 		fb_assert(other.pageSpaceID != INVALID_PAGE_SPACE);
 		return (pageSpaceID > other.pageSpaceID) ||
-			(pageSpaceID == other.pageSpaceID) && (pageNum > other.pageNum);
+			((pageSpaceID == other.pageSpaceID) && (pageNum > other.pageNum));
 	}
 
 	inline bool operator>=(const PageNumber& other) const
@@ -288,7 +288,7 @@ public:
 		fb_assert(pageSpaceID != INVALID_PAGE_SPACE);
 		fb_assert(other.pageSpaceID != INVALID_PAGE_SPACE);
 		return (pageSpaceID > other.pageSpaceID) ||
-			(pageSpaceID == other.pageSpaceID) && (pageNum >= other.pageNum);
+			((pageSpaceID == other.pageSpaceID) && (pageNum >= other.pageNum));
 	}
 
 	inline bool operator<(const PageNumber& other) const
