@@ -135,6 +135,7 @@ protected:
 
 		explicit ImplStatusVector(const ISC_STATUS* s) throw();
 		explicit ImplStatusVector(const IStatus* s) throw();
+		explicit ImplStatusVector(const Exception& ex) throw();
 	};
 
 	StatusVector(ISC_STATUS k, ISC_STATUS v) throw(Firebird::BadAlloc);
@@ -142,6 +143,7 @@ protected:
 public:
 	explicit StatusVector(const ISC_STATUS* s) throw(Firebird::BadAlloc);
 	explicit StatusVector(const IStatus* s) throw(Firebird::BadAlloc);
+	explicit StatusVector(const Exception& ex) throw(Firebird::BadAlloc);
 	StatusVector() throw(Firebird::BadAlloc);
 	~StatusVector() { }
 

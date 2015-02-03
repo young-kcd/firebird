@@ -63,6 +63,7 @@ StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw() : 
 	fb_assert(s);
 
 	clear();
+
 	// special case - empty initialized status vector, no warnings
 	if (s[0] != isc_arg_gds || s[1] != 0 || s[2] != 0)
 	{
@@ -83,6 +84,11 @@ StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw() : Bas
 		append(s->getWarnings(), FB_NELEM(m_status_vector) - 1);
 }
 
+StatusVector::ImplStatusVector::ImplStatusVector(const Exception& ex) throw() : Base::ImplBase(0, 0)
+{
+	assign(ex);
+}
+
 StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(k, c))
 {
@@ -96,6 +102,11 @@ StatusVector::StatusVector(const ISC_STATUS* s) throw(Firebird::BadAlloc) :
 
 StatusVector::StatusVector(const IStatus* s) throw(Firebird::BadAlloc) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s))
+{
+}
+
+StatusVector::StatusVector(const Exception& ex) throw(Firebird::BadAlloc) :
+	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(ex))
 {
 }
 
