@@ -153,7 +153,7 @@ public:
 	void clear() throw() { implementation->clear(); }
 	void makePermanent() throw() { implementation->makePermanent(); }
 	void append(const StatusVector& v) throw() { implementation->append(v); }
-	void prepend(const StatusVector& v) throw() { implementation->append(v); }
+	void prepend(const StatusVector& v) throw() { implementation->prepend(v); }
 	void assign(const Exception& ex) throw() { implementation->assign(ex); }
 	void raise() const;
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }
