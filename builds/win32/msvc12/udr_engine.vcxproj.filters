@@ -24,6 +24,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\defs\udr_engine.def" />
+    <None Include="..\defs\plugin.def" />
   </ItemGroup>
 </Project>
