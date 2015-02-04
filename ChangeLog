@@ -1,3 +1,11 @@
+ 2015-02-03 11:58  alexpeshkoff 
+   M src/jrd/isc_file.cpp
+Backported fix for CORE-4644: Get open database errors under heavy concurrent load
+
+ 2015-02-03 11:43  alexpeshkoff 
+   M src/jrd/isc_file.cpp
+Backported fix for CORE-4624: Firebird handles ':' characters in mount table entries invalid
+
  2015-02-02 08:48  dimitr 
    M src/jrd/par.cpp
 Additional fix for CORE-4673: Computed index based on a computed column stores NULL for all its keys.
