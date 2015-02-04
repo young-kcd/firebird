@@ -1450,14 +1450,14 @@ bool Mnt::get()
  **************************************/
 
 
-	TEXT device[128], mount_point[128], type[16], rw[128], foo1[16];
+	TEXT device[128], mount_point[128], mount_type[16], rw[128], foo1[16];
 
-	const int n = fscanf(file, "%s %s %s %s %s %s", device, mount_point, type, rw, foo1, foo1);
+	const int n = fscanf(mtab, "%s %s %s %s %s %s", device, mount_point, mount_type, rw, foo1, foo1);
 	if (n < 0)
 		return false;
 
 	mount = mount_point;
-	type = m_type;
+	type = mount_type;
 	special = device;
 
 	return true;
