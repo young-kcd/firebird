@@ -133,6 +133,12 @@ void StatusVector::ImplStatusVector::makePermanent() throw()
 	makePermanentVector(m_status_vector);
 }
 
+void StatusVector::ImplStatusVector::assign(const StatusVector& v) throw()
+{
+	clear();
+	append(v);
+}
+
 void StatusVector::ImplStatusVector::assign(const Exception& ex) throw()
 {
 	clear();
