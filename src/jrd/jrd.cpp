@@ -1145,8 +1145,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 						str = p;
 					}
 					catch (const Exception&)
-					{
-					}
+					{} // no-op
 
 					*status++ = (ISC_STATUS) len;
 					*status++ = (ISC_STATUS)(IPTR) str;
@@ -1168,8 +1167,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 						str = p;
 					}
 					catch (const Exception&)
-					{
-					}
+					{} // no-op
 
 					*status++ = (ISC_STATUS)(IPTR) str;
 				}
@@ -6446,55 +6444,30 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
  *
  **************************************/
 	if (transaction->tra_in_use)
-		status_exception::raise(Arg::Gds(isc_transaction_in_use));
+		Arg::Gds(isc_transaction_in_use).raise();
 
-	ISC_STATUS_ARRAY user_status = {0};
-	ISC_STATUS_ARRAY local_status = {0};
-	ISC_STATUS* const orig_status = tdbb->tdbb_status_vector;
+	ThreadStatusGuard tempStatus(tdbb);
 
-	try
+	const Database* const dbb = tdbb->getDatabase();
+	const Jrd::Attachment* const attachment = tdbb->getAttachment();
+
+	if (!(attachment->att_flags & ATT_no_db_triggers))
 	{
 		try
 		{
-			const Database* const dbb = tdbb->getDatabase();
-			const Jrd::Attachment* const attachment = tdbb->getAttachment();
-
-			if (!(attachment->att_flags & ATT_no_db_triggers))
-			{
-				try
-				{
-					ISC_STATUS_ARRAY temp_status = {0};
-					tdbb->tdbb_status_vector = temp_status;
-
-					// run ON TRANSACTION ROLLBACK triggers
-					EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_ROLLBACK);
-				}
-				catch (const Exception&)
-				{
-					if (dbb->dbb_flags & DBB_bugcheck)
-						throw;
-				}
-			}
-
-			tdbb->tdbb_status_vector = user_status;
-			tdbb->setTransaction(transaction);
-			TRA_rollback(tdbb, transaction, retaining_flag, false);
+			ThreadStatusGuard tempStatus2(tdbb);
+			// run ON TRANSACTION ROLLBACK triggers
+			EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_ROLLBACK);
 		}
-		catch (const Exception& ex)
+		catch (const Exception&)
 		{
-			ex.stuff_exception(user_status);
-			tdbb->tdbb_status_vector = local_status;
+			if (dbb->dbb_flags & DBB_bugcheck)
+				throw;
 		}
 	}
-	catch (const Exception& ex)
-	{
-		ex.stuff_exception(user_status);
-	}
 
-	tdbb->tdbb_status_vector = orig_status;
-
-	if (user_status[1] != FB_SUCCESS)
-		status_exception::raise(user_status);
+	tdbb->setTransaction(transaction);
+	TRA_rollback(tdbb, transaction, retaining_flag, false);
 }
 
 
@@ -7393,10 +7366,8 @@ namespace
 
 			shutdownAttachments(static_cast<AttachmentsRefHolder*>(arg));
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
-			ISC_STATUS_ARRAY st;
-			ex.stuff_exception(st);
 			iscLogException("attachmentShutdownThread", ex);
 		}
 
