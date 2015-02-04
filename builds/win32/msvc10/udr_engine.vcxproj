@@ -115,7 +115,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\plugins\$(ProjectName).dll</OutputFile>
-      <ModuleDefinitionFile>..\defs\udr_engine.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -138,7 +138,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\plugins\$(ProjectName).dll</OutputFile>
-      <ModuleDefinitionFile>..\defs\udr_engine.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -165,7 +165,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\plugins\$(ProjectName).dll</OutputFile>
-      <ModuleDefinitionFile>..\defs\udr_engine.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -191,7 +191,7 @@
     <Link>
       <AdditionalDependencies>comctl32.lib;ws2_32.lib;mpr.lib;version.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\..\..\temp\$(Platform)\$(Configuration)\firebird\plugins\$(ProjectName).dll</OutputFile>
-      <ModuleDefinitionFile>..\defs\udr_engine.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -210,7 +210,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\defs\udr_engine.def" />
+    <None Include="..\defs\plugin.def" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="common.vcxproj">
