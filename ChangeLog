@@ -1,3 +1,65 @@
+ 2015-02-03 16:31  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/exe_proto.h
+   M src/jrd/vio.cpp
+Replace a verb-cleanup bugcheck with regular error + transaction invalidation.
+
+ 2015-02-03 16:16  dimitr 
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Added new error message.
+
+ 2015-02-03 16:12  dimitr 
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+Minor improvements to Arg::StatusVector.
+
+ 2015-02-03 14:56  asfernandes 
+   M builds/posix/make.defaults
+   D builds/posix/udr_engine.vers
+   A builds/posix/udr_plugin.vers (from /firebird/trunk/builds/posix/udr_engine.vers:60611)
+   D builds/win32/defs/udr_engine.def
+   A builds/win32/defs/udr_plugin.def (from /firebird/trunk/builds/win32/defs/udr_engine.def:60611)
+   M examples/CMakeLists.txt
+   M examples/udr/Functions.cpp
+   M src/include/firebird/UdrCppEngine.h
+Fix Windows (cmake only) build. Linux build currently is not using udr_plugin.vers when linking examples/udr.
+
+ 2015-02-03 14:24  alexpeshkoff 
+   M src/common/os/posix/os_utils.cpp
+   M src/remote/inet.cpp
+WIP on CORE-3885: Firebird for Android, AI_V4MAPPED flag not supported, now server startup succeeds
+
+ 2015-02-03 11:03  dimitr 
+   M src/common/StatusArg.h
+Fixed a mistake.
+
+ 2015-02-03 10:33  dimitr 
+   M src/jrd/par.cpp
+Small refactoring.
+
+ 2015-02-03 07:10  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/BuildFunctions.cmake
+   M src/CMakeLists.txt
+[build] [cmake] Add 'gfix -write async' command on databases during build. Fix clang+linux build.
+
+ 2015-02-03 06:48  dimitr 
+   M src/jrd/par.cpp
+Fixed one of my last commits, thanks to Adriano.
+
+ 2015-02-03 00:43  asfernandes 
+   M src/jrd/SysFunction.cpp
+   M src/jrd/pag.h
+Warnings.
+
  2015-02-02 17:14  alexpeshkoff 
    M src/common/classes/TempFile.cpp
    M src/common/file_params.h
