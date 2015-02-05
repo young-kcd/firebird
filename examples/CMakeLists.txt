@@ -59,6 +59,7 @@ add_custom_command(
     OUTPUT employe2.fdb
     DEPENDS
         empbuild
+        gfix
         ${files}
     COMMAND ${CMAKE_COMMAND} -E remove employe2.fdb
     COMMAND ${CMAKE_COMMAND} -E remove employe2_.fdb
