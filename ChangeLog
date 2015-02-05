@@ -1,3 +1,72 @@
+ 2015-02-04 14:03  hvlad 
+   M builds/win32/msvc12/Firebird3.sln
+   M builds/win32/msvc12/alice.vcxproj
+   M builds/win32/msvc12/btyacc.vcxproj
+   M builds/win32/msvc12/build_msg.vcxproj
+   M builds/win32/msvc12/burp.vcxproj
+   M builds/win32/msvc12/codes.vcxproj
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/empbuild.vcxproj
+   M builds/win32/msvc12/engine.vcxproj
+   M builds/win32/msvc12/engine.vcxproj.filters
+   M builds/win32/msvc12/fb2control.vcxproj
+   M builds/win32/msvc12/fb_lock_print.vcxproj
+   M builds/win32/msvc12/fbguard.vcxproj
+   M builds/win32/msvc12/fbrmclib.vcxproj
+   M builds/win32/msvc12/fbserver.vcxproj
+   M builds/win32/msvc12/fbsvcmgr.vcxproj
+   M builds/win32/msvc12/fbtrace.vcxproj
+   M builds/win32/msvc12/fbtracemgr.vcxproj
+   M builds/win32/msvc12/fbudf.vcxproj
+   M builds/win32/msvc12/gbak.vcxproj
+   M builds/win32/msvc12/gfix.vcxproj
+   M builds/win32/msvc12/gpre.vcxproj
+   M builds/win32/msvc12/gpre_boot.vcxproj
+   M builds/win32/msvc12/gpre_common.vcxproj
+   M builds/win32/msvc12/gsec.vcxproj
+   M builds/win32/msvc12/gsplit.vcxproj
+   M builds/win32/msvc12/gstat.vcxproj
+   M builds/win32/msvc12/ib_udf.vcxproj
+   M builds/win32/msvc12/ib_util.vcxproj
+   M builds/win32/msvc12/instclient.vcxproj
+   M builds/win32/msvc12/instreg.vcxproj
+   M builds/win32/msvc12/instsvc.vcxproj
+   M builds/win32/msvc12/intl.vcxproj
+   M builds/win32/msvc12/intlbuild.vcxproj
+   M builds/win32/msvc12/isql.vcxproj
+   M builds/win32/msvc12/legacy_auth.vcxproj
+   M builds/win32/msvc12/legacy_usermanager.vcxproj
+   M builds/win32/msvc12/nbackup.vcxproj
+   M builds/win32/msvc12/qli.vcxproj
+   M builds/win32/msvc12/remote.vcxproj
+   M builds/win32/msvc12/srp.vcxproj
+   M builds/win32/msvc12/udr_engine.vcxproj
+   M builds/win32/msvc12/udr_engine.vcxproj.filters
+   M builds/win32/msvc12/udrcpp_example.vcxproj
+   M builds/win32/msvc12/udrcpp_example.vcxproj.filters
+   M builds/win32/msvc12/yvalve.vcxproj
+MSVC12 build system:
+- use XP-compatible toolset for 32-bit builds
+- set linker option "Subsystem" where it was missing
+- misc
+
+ 2015-02-04 13:37  smirnoffjr 
+   M src/common/isc_file.cpp
+Small fix for generic UNIX Mnt::get() implementation
+
+ 2015-02-04 12:53  dimitr 
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+Misc improvements.
+
+ 2015-02-04 12:43  dimitr 
+   M src/jrd/jrd.cpp
+Cleanup and simplification.
+
+ 2015-02-04 11:51  hvlad 
+   M builds/win32/msvc10/udr_engine.vcxproj
+This should fix MSVC10 build
+
  2015-02-03 16:31  dimitr 
    M src/dsql/StmtNodes.cpp
    M src/jrd/exe.cpp
