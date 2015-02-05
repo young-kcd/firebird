@@ -84,61 +84,69 @@ bool SingularStream::getRecord(thread_db* tdbb) const
 
 	if (m_next->getRecord(tdbb))
 	{
-		const FB_SIZE_T streamCount = m_streams.getCount();
-		MemoryPool& pool = *tdbb->getDefaultPool();
-		HalfStaticArray<record_param, 16> rpbs(pool, streamCount);
-
-		for (FB_SIZE_T i = 0; i < streamCount; i++)
-		{
-			rpbs.add(request->req_rpb[m_streams[i]]);
-			record_param& rpb = rpbs.back();
-			Record* const orgRecord = rpb.rpb_record;
-
-			if (orgRecord)
-			{
-				const ULONG recordSize = orgRecord->rec_length;
-				Record* const newRecord = FB_NEW_RPT(pool, recordSize) Record(pool);
-				memcpy(&newRecord->rec_format, &orgRecord->rec_format,
-					   sizeof(Record) - offsetof(Record, rec_format) + recordSize);
-				rpb.rpb_record = newRecord;
-			}
-		}
-
-		if (m_next->getRecord(tdbb))
-			status_exception::raise(Arg::Gds(isc_sing_select_err));
-
-		for (FB_SIZE_T i = 0; i < streamCount; i++)
-		{
-			record_param& rpb = request->req_rpb[m_streams[i]];
-			Record* orgRecord = rpb.rpb_record;
-			rpb = rpbs[i];
-			const AutoPtr<Record> newRecord(rpb.rpb_record);
-
-			if (newRecord)
-			{
-				if (!orgRecord)
-					BUGCHECK(284);	// msg 284 cannot restore singleton select data
-
-				rpb.rpb_record = orgRecord;
-
-				const ULONG recordSize = newRecord->rec_length;
-				if (recordSize > orgRecord->rec_length)
-				{
-					// hvlad: saved copy of record has longer format, reallocate
-					// given record to make enough space for saved data
-					orgRecord = VIO_record(tdbb, &rpb, newRecord->rec_format, &pool);
-				}
-
-				memcpy(&orgRecord->rec_format, &newRecord->rec_format,
-					   sizeof(Record) - offsetof(Record, rec_format) + recordSize);
-			}
-		}
-
-		impure->irsb_flags |= irsb_singular_processed;
+		doGetRecord(tdbb);
 		return true;
 	}
 
 	return false;
+}
+
+void SingularStream::doGetRecord(thread_db* tdbb) const
+{
+	jrd_req* const request = tdbb->getRequest();
+	Impure* const impure = request->getImpure<Impure>(m_impure);
+
+	const FB_SIZE_T streamCount = m_streams.getCount();
+	MemoryPool& pool = *tdbb->getDefaultPool();
+	HalfStaticArray<record_param, 16> rpbs(pool, streamCount);
+
+	for (FB_SIZE_T i = 0; i < streamCount; i++)
+	{
+		rpbs.add(request->req_rpb[m_streams[i]]);
+		record_param& rpb = rpbs.back();
+		Record* const orgRecord = rpb.rpb_record;
+
+		if (orgRecord)
+		{
+			const ULONG recordSize = orgRecord->rec_length;
+			Record* const newRecord = FB_NEW_RPT(pool, recordSize) Record(pool);
+			memcpy(&newRecord->rec_format, &orgRecord->rec_format,
+				sizeof(Record) - offsetof(Record, rec_format) + recordSize);
+			rpb.rpb_record = newRecord;
+		}
+	}
+
+	if (m_next->getRecord(tdbb))
+		status_exception::raise(Arg::Gds(isc_sing_select_err));
+
+	for (FB_SIZE_T i = 0; i < streamCount; i++)
+	{
+		record_param& rpb = request->req_rpb[m_streams[i]];
+		Record* orgRecord = rpb.rpb_record;
+		rpb = rpbs[i];
+		const AutoPtr<Record> newRecord(rpb.rpb_record);
+
+		if (newRecord)
+		{
+			if (!orgRecord)
+				BUGCHECK(284);	// msg 284 cannot restore singleton select data
+
+			rpb.rpb_record = orgRecord;
+
+			const ULONG recordSize = newRecord->rec_length;
+			if (recordSize > orgRecord->rec_length)
+			{
+				// hvlad: saved copy of record has longer format, reallocate
+				// given record to make enough space for saved data
+				orgRecord = VIO_record(tdbb, &rpb, newRecord->rec_format, &pool);
+			}
+
+			memcpy(&orgRecord->rec_format, &newRecord->rec_format,
+				sizeof(Record) - offsetof(Record, rec_format) + recordSize);
+		}
+	}
+
+	impure->irsb_flags |= irsb_singular_processed;
 }
 
 bool SingularStream::refetchRecord(thread_db* tdbb) const

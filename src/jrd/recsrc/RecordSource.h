@@ -350,6 +350,8 @@ namespace Jrd
 		void nullRecords(thread_db* tdbb) const;
 
 	private:
+		void doGetRecord(thread_db* tdbb) const;
+
 		NestConst<RecordSource> m_next;
 		StreamList m_streams;
 	};
