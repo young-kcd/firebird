@@ -1,6 +1,14 @@
 #
 # firebird (trunk)
 #
+#  This file has following organization:
+#  1. cmake settings
+#  2. project settings
+#  3. configure
+#  4. compiler & linker settings
+#  5. pre-build
+#  6. build
+#
 
 ################################################################################
 #
@@ -123,7 +131,7 @@ configure_file(${AUTOCONFIG_SRC} ${AUTOCONFIG} @ONLY)
 
 ################################################################################
 #
-# compiler & linker
+# compiler & linker settings
 #
 ################################################################################
 
@@ -205,7 +213,7 @@ endif()
 
 ################################################################################
 #
-# pre build
+# pre-build
 #
 ################################################################################
 
@@ -291,7 +299,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable          (btyacc ${btyacc_src})
 project_group           (btyacc Extern)
-set_output_directory    (btyacc . FORCE)
+set_output_directory    (btyacc . CURRENT_DIR)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
@@ -313,4 +321,3 @@ add_subdirectory("examples")
 add_subdirectory("src")
 
 ################################################################################
-

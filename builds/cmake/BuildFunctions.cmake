@@ -12,12 +12,10 @@ function(set_output_directory target dir)
     if (MSVC OR XCODE) # multiconfiguration builds
         set(out ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
     endif()
-    if ("${ARGV2}" STREQUAL "FORCE")
-        if (MSVC OR XCODE)
-            set(out ${dir})
-            set(dir)
-        else()
-            set(out .)
+    if ("${ARGV2}" STREQUAL "CURRENT_DIR")
+        set(out .)
+        if (UNIX AND "${dir}" STREQUAL ".")
+            set(dir bin)
         endif()
     endif()
     if (MSVC OR XCODE)
@@ -98,6 +96,7 @@ function(epp_process type files)
                 OUTPUT ${out}
                 DEPENDS gpre_boot ${in}
                 COMMENT "Calling GPRE boot for ${F}"
+                #
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${dir}
                 COMMAND ${ARGN} ${in} ${out}
             )
@@ -106,14 +105,14 @@ function(epp_process type files)
             set(dir ${dir}/${file}.d)
             add_custom_command(
                 OUTPUT ${out}
-                DEPENDS ${in} databases
+                DEPENDS databases ${in}
                 COMMENT "Calling GPRE master for ${F}"
+                #
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${dir}
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different metadata.fdb ${dir}/yachts.lnk
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different security.fdb ${dir}/security.fdb
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different msg.fdb ${dir}/msg.fdb
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different help.fdb ${dir}/help.fdb
-                COMMAND boot_gfix -write async ${dir}/security.fdb
                 COMMAND ${ARGN} -b ${dir}/ ${in} ${out}
             )
         endif()
@@ -217,7 +216,7 @@ endfunction(project_group)
 #######################################
 # FUNCTION set_generated_directory
 #######################################
-function(set_generated_directory)    
+function(set_generated_directory)
     if (NOT CMAKE_CROSSCOMPILING)
         set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)
     else()
@@ -229,7 +228,7 @@ endfunction(set_generated_directory)
 #######################################
 # FUNCTION add_dependencies_cc (cross compile)
 #######################################
-function(add_dependencies_cc target)    
+function(add_dependencies_cc target)
     if (NOT CMAKE_CROSSCOMPILING)
         add_dependencies(${target} ${ARGN})
     endif()
@@ -238,7 +237,7 @@ endfunction(add_dependencies_cc)
 #######################################
 # FUNCTION add_dependencies_unix_cc (cross compile)
 #######################################
-function(add_dependencies_unix_cc target)    
+function(add_dependencies_unix_cc target)
     if (UNIX)
         add_dependencies_cc(${target} ${ARGN})
     endif()
@@ -247,10 +246,21 @@ endfunction(add_dependencies_unix_cc)
 #######################################
 # FUNCTION crosscompile_prebuild_steps
 #######################################
-function(crosscompile_prebuild_steps)    
+function(crosscompile_prebuild_steps)
     if (CMAKE_CROSSCOMPILING)
         execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${NATIVE_BUILD_DIR}/src/include/gen/parse.h ${CMAKE_BINARY_DIR}/src/include/gen/parse.h)
     endif()
 endfunction(crosscompile_prebuild_steps)
+
+#######################################
+# FUNCTION wrap_command_with_path
+#######################################
+function(wrap_command_with_path command)
+    set(cmd ${ARGN})
+    set_win32(cmd set PATH=%PATH%\\\\;${output_dir} COMMAND ${cmd})
+    set_unix (cmd PATH=${output_dir}/bin ${cmd})
+    set_apple(cmd DYLD_LIBRARY_PATH=${output_dir}/plugins:${output_dir}/lib ${cmd})
+    set(${command} "${cmd}" PARENT_SCOPE)
+endfunction(wrap_command_with_path)
 
 ###############################################################################

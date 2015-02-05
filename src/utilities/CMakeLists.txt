@@ -57,7 +57,6 @@ file(GLOB fbtrace_include "ntrace/*.h")
 
 add_library             (fbtrace SHARED ${fbtrace_src} ${fbtrace_os_src} ${fbtrace_include} ${VERSION_RC})
 target_link_libraries   (fbtrace common yvalve)
-add_dependencies_cc     (fbtrace engine12 build_msg codes) # try to wait all generators stop
 set_output_directory    (fbtrace plugins)
 set_exported_symbols    (fbtrace fbplugin)
 

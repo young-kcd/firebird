@@ -27,7 +27,6 @@ add_custom_command(
     OUTPUT empbuild.c
     DEPENDS
         gpre
-        messages
         ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e
         empbuild.fdb
     COMMENT "Calling GPRE for empbuild.e"
@@ -36,8 +35,8 @@ add_custom_command(
 
 add_executable          (empbuild empbuild.c empbuild.fdb ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e)
 target_link_libraries   (empbuild yvalve)
-set_output_directory    (empbuild . FORCE)
-add_dependencies_cc     (empbuild gfix engine12 fbtrace)
+set_output_directory    (empbuild . CURRENT_DIR)
+add_dependencies_cc     (empbuild engine12)
 project_group           (empbuild Examples)
 
 file(GLOB files
@@ -50,11 +49,12 @@ foreach(F ${files})
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${F} ${name})
 endforeach()
 
-set(EMPBUILD_CMD empbuild employe2_.fdb)
-set_win32(EMPBUILD_CMD set PATH=%PATH%\\\\;${output_dir} COMMAND ${EMPBUILD_CMD})
-set_unix (EMPBUILD_CMD PATH=${output_dir}/bin ${EMPBUILD_CMD})
-set_apple(EMPBUILD_CMD DYLD_LIBRARY_PATH=${output_dir}/plugins:${output_dir}/lib ${EMPBUILD_CMD})
 
+########################################
+# BUILD STEP employee_db
+########################################
+
+wrap_command_with_path(EMPBUILD_CMD $<TARGET_FILE:empbuild> employe2_.fdb)
 add_custom_command(
     OUTPUT employe2.fdb
     DEPENDS
@@ -65,11 +65,11 @@ add_custom_command(
     COMMAND ${EMPBUILD_CMD}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different employe2_.fdb employe2.fdb
 )
-add_custom_target       (employee_db DEPENDS employe2.fdb SOURCES ${files})
-add_dependencies_cc     (employee_db engine12)
-project_group           (employee_db Examples)
+add_custom_target       (employee_db ALL DEPENDS employe2.fdb SOURCES ${files})
+project_group           (employee_db "Examples/Custom build steps")
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
+
 
 ########################################
 # SHARED LIBRARY udrcpp_example

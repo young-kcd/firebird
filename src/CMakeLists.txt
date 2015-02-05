@@ -171,8 +171,8 @@ add_custom_command(
         msg_fdb
     #
     COMMAND ${CMAKE_COMMAND} -E remove firebird.msg
-    COMMAND build_msg -D msg.fdb -P ./ -F firebird.msg -L all
-    COMMAND build_msg -D msg.fdb -P ./ -F firebird.msg
+    COMMAND build_msg -D msg.fdb -P ${CMAKE_CURRENT_BINARY_DIR}/ -F firebird.msg -L all
+    COMMAND build_msg -D msg.fdb -P ${CMAKE_CURRENT_BINARY_DIR}/ -F firebird.msg
     COMMAND ${CMAKE_COMMAND} -E copy_if_different firebird.msg ${output_dir}/firebird.msg
 )
 add_custom_command(
@@ -186,7 +186,7 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E echo Building codes header...
     COMMAND codes ${CMAKE_CURRENT_SOURCE_DIR}/include/gen ${CMAKE_SOURCE_DIR}/lang_helpers
 )
-add_custom_target(messages DEPENDS firebird.msg codes_headers.dummy)
+add_custom_target(messages ALL DEPENDS firebird.msg codes_headers.dummy)
 project_group(messages "Boot/Custom build steps")
 
 
@@ -395,7 +395,8 @@ target_link_libraries       (boot_yvalve
     PUBLIC ${LIB_CoreFoundation}
 )
 set_exported_symbols        (boot_yvalve firebird)
-set_output_directory_unix   (boot_yvalve lib)
+set_output_directory        (boot_yvalve . CURRENT_DIR)
+set_output_directory_unix   (boot_yvalve lib CURRENT_DIR)
 project_group               (boot_yvalve Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -474,7 +475,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_library                 (boot_engine12 SHARED ${engine12_generated_src_boot} ${VERSION_RC})
 target_link_libraries       (boot_engine12 engine12_common boot_alice boot_burp common boot_yvalve)
-set_output_directory        (boot_engine12 plugins)
+set_output_directory        (boot_engine12 plugins CURRENT_DIR)
 set_exported_symbols        (boot_engine12 fbplugin)
 copy_and_rename_lib         (boot_engine12 Engine12)
 project_group               (boot_engine12 Boot)
@@ -488,7 +489,6 @@ endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 add_library                 (engine12 SHARED ${engine12_generated_src_master} ${VERSION_RC})
 target_link_libraries       (engine12 engine12_common alice burp common yvalve)
-add_dependencies_cc         (engine12 messages)
 set_target_properties       (engine12 PROPERTIES OUTPUT_NAME Engine12)
 set_output_directory        (engine12 plugins)
 set_exported_symbols        (engine12 fbplugin)
@@ -502,7 +502,6 @@ file(GLOB intl_src "intl/*.cpp" "intl/*.h")
 
 add_library                 (intl SHARED ${intl_src} ${VERSION_RC})
 target_link_libraries       (intl common yvalve)
-add_dependencies_cc         (intl messages)
 set_target_properties       (intl PROPERTIES OUTPUT_NAME fbintl)
 set_output_directory        (intl intl)
 
@@ -618,6 +617,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (gpre_boot ${gpre_boot_src} ${VERSION_RC})
 target_link_libraries       (gpre_boot gpre_common common ${LIB_Ws2_32})
+set_output_directory        (gpre_boot . CURRENT_DIR)
 project_group               (gpre_boot Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -637,6 +637,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (boot_gpre ${gpre_generated_src_boot} ${VERSION_RC})
 target_link_libraries       (boot_gpre gpre_common common boot_yvalve)
+set_output_directory        (boot_gpre . CURRENT_DIR)
 project_group               (boot_gpre Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -662,7 +663,8 @@ add_epp_suffix(build_msg_generated_src master)
 if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (build_msg ${build_msg_generated_src_master} ${VERSION_RC})
-target_link_libraries       (build_msg common yvalve)
+target_link_libraries       (build_msg boot_yvalve)
+set_output_directory        (build_msg . CURRENT_DIR)
 project_group               (build_msg Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -680,7 +682,8 @@ add_epp_suffix(codes_generated_src master)
 if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (codes ${codes_generated_src_master} ${VERSION_RC})
-target_link_libraries       (codes yvalve)
+target_link_libraries       (codes boot_yvalve)
+set_output_directory        (codes . CURRENT_DIR)
 project_group               (codes Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -703,7 +706,7 @@ add_epp_suffix(gstat_generated_src master)
 
 add_executable              (gstat ${gstat_src} ${gstat_generated_src_master} ${VERSION_RC})
 target_link_libraries       (gstat common yvalve)
-add_dependencies_cc         (gstat engine12 messages)
+add_dependencies_cc         (gstat engine12)
 
 
 ########################################
@@ -751,9 +754,14 @@ target_link_libraries       (fbtracemgr common yvalve)
 # EXECUTABLE boot_gfix
 ########################################
 
+if (NOT CMAKE_CROSSCOMPILING)
+
 add_executable              (boot_gfix alice/main/aliceMain.cpp ${VERSION_RC})
 target_link_libraries       (boot_gfix boot_alice common boot_yvalve)
+set_output_directory        (boot_gfix . CURRENT_DIR)
 project_group               (boot_gfix Boot)
+
+endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 
 ########################################
@@ -774,6 +782,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (boot_gbak burp/main/burpMain.cpp ${gbak_include} ${VERSION_RC})
 target_link_libraries       (boot_gbak boot_burp common boot_yvalve)
+set_output_directory        (boot_gbak . CURRENT_DIR)
 project_group               (boot_gbak Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -813,6 +822,7 @@ if (NOT CMAKE_CROSSCOMPILING)
 
 add_executable              (boot_isql ${isql_src} ${isql_generated_src_boot} ${VERSION_RC})
 target_link_libraries       (boot_isql common boot_yvalve)
+set_output_directory        (boot_isql . CURRENT_DIR)
 project_group               (boot_isql Boot)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
@@ -821,11 +831,13 @@ if (WIN32)
     add_custom_command(
         TARGET boot_isql
         POST_BUILD
-        # remove
-        COMMAND ${CMAKE_COMMAND} -E remove ${output_dir}/icudt52l.dat ${output_dir}/icudt52l_empty.dat
         #
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/extern/icu/icudt52l.dat ${output_dir}/icudt52l.dat
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/extern/icu/icudt52l_empty.dat ${output_dir}/icudt52l_empty.dat
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/icudt52l.dat ${output_dir}/icudt52l.dat
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/icudt52l_empty.dat ${output_dir}/icudt52l_empty.dat
+        #
+        # one copy to boot directory
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/icudt52l.dat $<TARGET_FILE_DIR:boot_isql>/icudt52l.dat
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/icudt52l_empty.dat $<TARGET_FILE_DIR:boot_isql>/icudt52l_empty.dat
     )
 
     string(FIND "${CMAKE_EXE_LINKER_FLAGS}" "/machine:x64" arch)
@@ -838,15 +850,19 @@ if (WIN32)
         TARGET boot_isql
         POST_BUILD
         # icu
-        # remove
-        COMMAND ${CMAKE_COMMAND} -E remove ${output_dir}/icudt52.dll ${output_dir}/icuin52.dll ${output_dir}/icuuc52.dll
-        #
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icudt52.dll ${output_dir}/icudt52.dll
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icuin52.dll ${output_dir}/icuin52.dll
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icuuc52.dll ${output_dir}/icuuc52.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icudt52.dll ${output_dir}/icudt52.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icuin52.dll ${output_dir}/icuin52.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icuuc52.dll ${output_dir}/icuuc52.dll
         # zlib
-        COMMAND ${CMAKE_COMMAND} -E remove ${output_dir}/zlib1.dll
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/extern/zlib/${arch}/zlib1.dll ${output_dir}/zlib1.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/zlib/${arch}/zlib1.dll ${output_dir}/zlib1.dll
+        #
+        # one copy to boot directory
+        # icu
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icudt52.dll $<TARGET_FILE_DIR:boot_isql>/icudt52.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icuin52.dll $<TARGET_FILE_DIR:boot_isql>/icuin52.dll
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/icu/${arch}/Release/bin/icuuc52.dll $<TARGET_FILE_DIR:boot_isql>/icuuc52.dll
+        # zlib
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/extern/zlib/${arch}/zlib1.dll $<TARGET_FILE_DIR:boot_isql>/zlib1.dll
     )
 endif()
 
@@ -931,7 +947,7 @@ add_custom_target(copy_files
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/include/gen/iberror.h ${output_dir}/include/iberror.h
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/yvalve/perf.h ${output_dir}/include/perf.h
 )
-add_dependencies_cc     (copy_files databases employee_db)
+add_dependencies_cc     (copy_files databases)
 add_dependencies_unix_cc(copy_files makeHeader)
 project_group(copy_files "Custom build steps")
 
@@ -1020,7 +1036,7 @@ if (UNIX)
     if (NOT CMAKE_CROSSCOMPILING)
 
     add_executable          (makeHeader misc/makeHeader.cpp)
-    set_output_directory    (makeHeader . FORCE)
+    set_output_directory    (makeHeader . CURRENT_DIR)
     set(files
         ${CMAKE_SOURCE_DIR}/src/include/types_pub.h
         ${CMAKE_SOURCE_DIR}/src/include/consts_pub.h
