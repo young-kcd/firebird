@@ -1,3 +1,7 @@
+ 2015-02-04 14:52  smirnoffjr 
+   M src/jrd/isc_file.cpp
+Backported from trunk: small fix for generic UNIX Mnt::get() implementation
+
  2015-02-03 11:58  alexpeshkoff 
    M src/jrd/isc_file.cpp
 Backported fix for CORE-4644: Get open database errors under heavy concurrent load
