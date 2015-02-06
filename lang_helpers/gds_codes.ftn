@@ -1614,6 +1614,8 @@ C --
       PARAMETER (GDS__interface_version_too_old        = 335545100)
       INTEGER*4 GDS__fun_param_mismatch              
       PARAMETER (GDS__fun_param_mismatch               = 335545101)
+      INTEGER*4 GDS__savepoint_backout_err           
+      PARAMETER (GDS__savepoint_backout_err            = 335545102)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

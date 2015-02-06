@@ -814,6 +814,7 @@ const
 	gds_crdb_notable                     = 335545099;
 	gds_interface_version_too_old        = 335545100;
 	gds_fun_param_mismatch               = 335545101;
+	gds_savepoint_backout_err            = 335545102;
 	gds_gfix_db_name                     = 335740929;
 	gds_gfix_invalid_sw                  = 335740930;
 	gds_gfix_incmp_sw                    = 335740932;

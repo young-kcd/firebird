@@ -79,8 +79,6 @@ using namespace Firebird;
 static NodeParseFunc blr_parsers[256] = {NULL};
 
 
-static CompilerScratch* par_start(thread_db* tdbb, jrd_rel* relation, CompilerScratch* view_csb,
-	CompilerScratch** csb_ptr, const bool trigger, USHORT flags);
 static void par_error(BlrReader& blrReader, const Arg::StatusVector& v, bool isSyntaxError = true);
 static PlanNode* par_plan(thread_db*, CompilerScratch*);
 static void getBlrVersion(CompilerScratch* csb);
