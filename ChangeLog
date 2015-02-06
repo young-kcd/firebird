@@ -1,3 +1,21 @@
+ 2015-02-05 23:04  hvlad 
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/SingularStream.cpp
+It should fix regression CORE-4653 : Crash on infinite mutual SP calls (instead of "Too many concurrent executions of the same request.")
+
+ 2015-02-05 17:10  egorpugin 
+   M CMakeLists.txt
+   M examples/CMakeLists.txt
+[build] [cmake] Bump minimal cmake version. Add missed dependency.
+
+ 2015-02-05 06:36  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/BuildFunctions.cmake
+   M examples/CMakeLists.txt
+   M src/CMakeLists.txt
+   M src/utilities/CMakeLists.txt
+[build] [cmake] Do not place boot targets into output directory.
+
  2015-02-04 14:03  hvlad 
    M builds/win32/msvc12/Firebird3.sln
    M builds/win32/msvc12/alice.vcxproj
