@@ -75,12 +75,14 @@ endif()
 ########################################
 
 set(output_dir ${CMAKE_BINARY_DIR}/${PROJECT_NAME})
+set(boot_dir ${CMAKE_BINARY_DIR}/src)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${output_dir})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${output_dir})
 
 if (MSVC OR XCODE)
     set(output_dir ${output_dir}/$<CONFIG>)
+    set(boot_dir ${boot_dir}/$<CONFIG>)
 endif()
 
 if (MSVC AND DEFAULT_CONFIGURATION)
@@ -277,6 +279,13 @@ endif()
 ################################################################################
 
 include(BuildFunctions)
+
+if (NOT CMAKE_CROSSCOMPILING)
+
+create_boot_commands()
+create_master_commands()
+
+endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 crosscompile_prebuild_steps()
 

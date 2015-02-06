@@ -90,7 +90,10 @@ function(epp_process type files)
         set(out ${CMAKE_CURRENT_BINARY_DIR}/${F}${epp_suffix})
         
         get_filename_component(dir ${out} PATH)
-        
+        if (MSVC OR XCODE)
+            set(dir ${dir}/$<CONFIG>)
+        endif()
+
         if ("${type}" STREQUAL "boot")
             add_custom_command(
                 OUTPUT ${out}
@@ -253,14 +256,89 @@ function(crosscompile_prebuild_steps)
 endfunction(crosscompile_prebuild_steps)
 
 #######################################
-# FUNCTION wrap_command_with_path
+# FUNCTION create_command
 #######################################
-function(wrap_command_with_path command)
-    set(cmd ${ARGN})
-    set_win32(cmd set PATH=%PATH%\\\\;${output_dir} COMMAND ${cmd})
-    set_unix (cmd PATH=${output_dir}/bin ${cmd})
-    set_apple(cmd DYLD_LIBRARY_PATH=${output_dir}/plugins:${output_dir}/lib ${cmd})
-    set(${command} "${cmd}" PARENT_SCOPE)
-endfunction(wrap_command_with_path)
+function(create_command command type out)
+    set(dir ${output_dir})
+    if ("${type}" STREQUAL "boot")
+        set(dir ${boot_dir})
+    endif()
+    
+    set_win32(env "PATH=%PATH%\;${dir}")
+    set_unix (env "PATH=$PATH:${dir}/bin")
+    set(env "${env}"
+        FIREBIRD=${dir}
+    )
+    
+    set(cmd_name ${command})
+    if (MSVC OR XCODE)
+        set(conf _$<CONFIG>)
+    endif()
+
+    set(pre_cmd)
+    set(ext .sh)
+    set(export export)
+    set(options $*)
+    set(perm)
+    if (WIN32)
+        set(pre_cmd @)
+        set(ext .bat)
+        set(export set)
+        set(options %*)
+    endif()
+    set(cmd_name ${cmd_name}${conf}${ext})
+    set(cmd_name ${CMAKE_BINARY_DIR}/src/${cmd_name})
+    
+    set(content)
+    foreach(e ${env})
+        set(content "${content}${pre_cmd}${export} ${e}\n")
+    endforeach()
+    
+    set(cmd $<TARGET_FILE:${cmd}>)
+    set(content "${content}${pre_cmd}${cmd} ${options}")
+    file(GENERATE OUTPUT ${cmd_name} CONTENT "${content}")
+    
+    if (UNIX)
+        set(cmd_name chmod u+x ${cmd_name} COMMAND ${cmd_name})
+    endif()
+
+    string(TOUPPER ${command} CMD)
+    set(${CMD}_CMD ${cmd_name} PARENT_SCOPE)
+    set(${out} ${CMD}_CMD PARENT_SCOPE)
+endfunction(create_command)
+
+#######################################
+# FUNCTION create_boot_commands
+#######################################
+function(create_boot_commands)
+    set(cmd_list
+        boot_isql
+        boot_gpre
+        boot_gbak
+        boot_gfix
+        build_msg
+        codes
+        gpre_boot
+    )
+    foreach(cmd ${cmd_list})
+        create_command(${cmd} boot out)
+        set(${out} ${${out}} PARENT_SCOPE)
+    endforeach()
+endfunction(create_boot_commands)
+
+#######################################
+# FUNCTION create_master_commands
+#######################################
+function(create_master_commands)
+    set(cmd_list
+        isql
+        gpre
+        empbuild
+    )
+    foreach(cmd ${cmd_list})
+        create_command(${cmd} master out)
+        set(${out} ${${out}} PARENT_SCOPE)
+    endforeach()
+endfunction(create_master_commands)
 
 ###############################################################################

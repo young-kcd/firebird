@@ -18,7 +18,7 @@ add_custom_command(
         isql
         ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbld.sql
     COMMAND ${CMAKE_COMMAND} -E remove empbuild.fdb
-    COMMAND isql -q -i ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbld.sql
+    COMMAND ${ISQL_CMD} -q -i ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbld.sql
     COMMAND ${CMAKE_COMMAND} -E copy_if_different empbuild.fdb empbuild_.fdb
     COMMAND ${CMAKE_COMMAND} -E remove empbuild.fdb
     COMMAND ${CMAKE_COMMAND} -E copy_if_different empbuild_.fdb empbuild.fdb
@@ -30,7 +30,7 @@ add_custom_command(
         ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e
         empbuild.fdb
     COMMENT "Calling GPRE for empbuild.e"
-    COMMAND gpre -r -m -n -z ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e empbuild.c
+    COMMAND ${GPRE_CMD} -r -m -n ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e empbuild.c
 )
 
 add_executable          (empbuild empbuild.c empbuild.fdb ${CMAKE_CURRENT_SOURCE_DIR}/empbuild/empbuild.e)
@@ -54,7 +54,6 @@ endforeach()
 # BUILD STEP employee_db
 ########################################
 
-wrap_command_with_path(EMPBUILD_CMD $<TARGET_FILE:empbuild> employe2_.fdb)
 add_custom_command(
     OUTPUT employe2.fdb
     DEPENDS
@@ -63,7 +62,7 @@ add_custom_command(
         ${files}
     COMMAND ${CMAKE_COMMAND} -E remove employe2.fdb
     COMMAND ${CMAKE_COMMAND} -E remove employe2_.fdb
-    COMMAND ${EMPBUILD_CMD}
+    COMMAND ${EMPBUILD_CMD} employe2_.fdb
     COMMAND ${CMAKE_COMMAND} -E copy_if_different employe2_.fdb employe2.fdb
 )
 add_custom_target       (employee_db ALL DEPENDS employe2.fdb SOURCES ${files})

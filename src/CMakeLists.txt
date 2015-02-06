@@ -70,16 +70,16 @@ set(epp_master_files
 
 if (NOT CMAKE_CROSSCOMPILING)
 
-epp_process(boot    epp_boot_internal_files gpre_boot -lang_internal -n -m)
-epp_process(boot    epp_boot_ocxx_files     gpre_boot -lang_internal -n -ids -ocxx)
-epp_process(boot    epp_boot_files          gpre_boot -n -m)
-epp_process(boot    epp_boot_gds_files      gpre_boot -n -ids -gds_cxx)
+epp_process(boot    epp_boot_internal_files ${GPRE_BOOT_CMD} -lang_internal -n -m)
+epp_process(boot    epp_boot_ocxx_files     ${GPRE_BOOT_CMD} -lang_internal -n -ids -ocxx)
+epp_process(boot    epp_boot_files          ${GPRE_BOOT_CMD} -n -m)
+epp_process(boot    epp_boot_gds_files      ${GPRE_BOOT_CMD} -n -ids -gds_cxx)
 
-epp_process(master  epp_boot_internal_files boot_gpre -n -m)
-epp_process(master  epp_boot_ocxx_files     boot_gpre -n -ids -ocxx)
-epp_process(master  epp_boot_files          boot_gpre -n -m)
-epp_process(master  epp_boot_gds_files      boot_gpre -n -ids -gds_cxx)
-epp_process(master  epp_master_files        boot_gpre -n -m)
+epp_process(master  epp_boot_internal_files ${BOOT_GPRE_CMD} -n -m)
+epp_process(master  epp_boot_ocxx_files     ${BOOT_GPRE_CMD} -n -ids -ocxx)
+epp_process(master  epp_boot_files          ${BOOT_GPRE_CMD} -n -m)
+epp_process(master  epp_boot_gds_files      ${BOOT_GPRE_CMD} -n -ids -gds_cxx)
+epp_process(master  epp_master_files        ${BOOT_GPRE_CMD} -n -m)
 
 
 ################################################################################
@@ -118,11 +118,11 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E remove security.fdb
     COMMAND ${CMAKE_COMMAND} -E remove security_.fdb
     COMMAND ${CMAKE_COMMAND} -E echo "create database 'security_.fdb';" > create_db_security.sql
-    COMMAND boot_isql -q -i create_db_security.sql
-    COMMAND boot_gfix -write async security_.fdb
-    COMMAND boot_isql -q security_.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
+    COMMAND ${BOOT_ISQL_CMD} -q -i create_db_security.sql
+    COMMAND ${BOOT_GFIX_CMD} -write async security_.fdb
+    COMMAND ${BOOT_ISQL_CMD} -q security_.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
     COMMAND ${CMAKE_COMMAND} -E copy_if_different security_.fdb security.fdb
-    COMMAND boot_gfix -write sync security.fdb
+    COMMAND ${BOOT_GFIX_CMD} -write sync security.fdb
 )
 add_custom_command(
     OUTPUT metadata.fdb
@@ -132,7 +132,7 @@ add_custom_command(
     #
     COMMAND ${CMAKE_COMMAND} -E remove metadata.fdb
     COMMAND ${CMAKE_COMMAND} -E remove metadata_.fdb
-    COMMAND boot_gbak -r ${CMAKE_SOURCE_DIR}/builds/misc/metadata.gbak metadata_.fdb
+    COMMAND ${BOOT_GBAK_CMD} -r ${CMAKE_SOURCE_DIR}/builds/misc/metadata.gbak metadata_.fdb
     COMMAND ${CMAKE_COMMAND} -E copy_if_different metadata_.fdb metadata.fdb
 )
 add_custom_command(
@@ -144,7 +144,7 @@ add_custom_command(
     #
     COMMAND ${CMAKE_COMMAND} -E remove help.fdb
     COMMAND ${CMAKE_COMMAND} -E remove help_.fdb
-    COMMAND boot_gbak -r ${CMAKE_SOURCE_DIR}/builds/misc/help.gbak help_.fdb
+    COMMAND ${BOOT_GBAK_CMD} -r ${CMAKE_SOURCE_DIR}/builds/misc/help.gbak help_.fdb
     COMMAND ${CMAKE_COMMAND} -E copy_if_different help_.fdb help.fdb
 )
 add_custom_target(databases
@@ -171,8 +171,8 @@ add_custom_command(
         msg_fdb
     #
     COMMAND ${CMAKE_COMMAND} -E remove firebird.msg
-    COMMAND build_msg -D msg.fdb -P ${CMAKE_CURRENT_BINARY_DIR}/ -F firebird.msg -L all
-    COMMAND build_msg -D msg.fdb -P ${CMAKE_CURRENT_BINARY_DIR}/ -F firebird.msg
+    COMMAND ${BUILD_MSG_CMD} -D msg.fdb -P ${CMAKE_CURRENT_BINARY_DIR}/ -F firebird.msg -L all
+    COMMAND ${BUILD_MSG_CMD} -D msg.fdb -P ${CMAKE_CURRENT_BINARY_DIR}/ -F firebird.msg
     COMMAND ${CMAKE_COMMAND} -E copy_if_different firebird.msg ${output_dir}/firebird.msg
 )
 add_custom_command(
@@ -184,7 +184,7 @@ add_custom_command(
     #
     COMMAND ${CMAKE_COMMAND} -E echo "" > codes_headers.dummy
     COMMAND ${CMAKE_COMMAND} -E echo Building codes header...
-    COMMAND codes ${CMAKE_CURRENT_SOURCE_DIR}/include/gen ${CMAKE_SOURCE_DIR}/lang_helpers
+    COMMAND ${CODES_CMD} ${CMAKE_CURRENT_SOURCE_DIR}/include/gen ${CMAKE_SOURCE_DIR}/lang_helpers
 )
 add_custom_target(messages ALL DEPENDS firebird.msg codes_headers.dummy)
 project_group(messages "Boot/Custom build steps")
@@ -194,7 +194,7 @@ project_group(messages "Boot/Custom build steps")
 # BUILD STEP msg_fdb
 ########################################
 
-set(isql_exec_msg boot_isql -q msg_.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/msgs)
+set(isql_exec_msg ${BOOT_ISQL_CMD} -q msg_.fdb -i ${CMAKE_CURRENT_SOURCE_DIR}/msgs)
 
 add_custom_command(
     OUTPUT msg.fdb
@@ -206,8 +206,8 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E remove msg.fdb
     COMMAND ${CMAKE_COMMAND} -E remove msg_.fdb
     COMMAND ${CMAKE_COMMAND} -E echo "create database 'msg_.fdb';" > create_db_msg.sql
-    COMMAND boot_isql -q -i create_db_msg.sql
-    COMMAND boot_gfix -write async msg_.fdb
+    COMMAND ${BOOT_ISQL_CMD} -q -i create_db_msg.sql
+    COMMAND ${BOOT_GFIX_CMD} -write async msg_.fdb
     COMMAND ${isql_exec_msg}/msg.sql
     #
     COMMAND echo loading facilities
