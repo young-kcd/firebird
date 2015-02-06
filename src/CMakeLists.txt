@@ -112,6 +112,7 @@ add_custom_command(
     OUTPUT security.fdb
     DEPENDS
         boot_isql
+        boot_gfix
         ${CMAKE_CURRENT_SOURCE_DIR}/dbs/security.sql
     VERBATIM
     #
@@ -201,6 +202,7 @@ add_custom_command(
     VERBATIM
     DEPENDS
         boot_isql
+        boot_gfix
         ${msgs_src}
     #
     COMMAND ${CMAKE_COMMAND} -E remove msg.fdb
