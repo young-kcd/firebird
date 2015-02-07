@@ -1,3 +1,20 @@
+ 2015-02-06 14:39  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/jrd/par.cpp
+Warning.
+
+ 2015-02-06 14:28  egorpugin 
+   M src/CMakeLists.txt
+[build] [cmake] Add missed dependencies.
+
+ 2015-02-06 12:58  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/BuildFunctions.cmake
+   M examples/CMakeLists.txt
+   M src/CMakeLists.txt
+[build] [cmake] Call custom commands via scripts.
+
  2015-02-05 23:04  hvlad 
    M src/jrd/recsrc/RecordSource.h
    M src/jrd/recsrc/SingularStream.cpp
