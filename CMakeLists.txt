@@ -4,10 +4,11 @@
 #  This file has following organization:
 #  1. cmake settings
 #  2. project settings
-#  3. configure
-#  4. compiler & linker settings
-#  5. pre-build
-#  6. build
+#  3. packages
+#  4. configure
+#  5. compiler & linker settings
+#  6. pre-build
+#  7. build
 #
 
 ################################################################################
@@ -104,6 +105,41 @@ endif()
 
 ################################################################################
 #
+# packages
+#
+################################################################################
+
+########################################
+# icu
+########################################
+
+if (UNIX)
+    if (NOT ICU_INCLUDE_DIR)
+        find_path(ICU_INCLUDE_DIR unicode/ucnv.h
+            PATHS
+                /usr/include
+                /usr/include/x86_64-linux-gnu
+                /usr/local/include
+                /opt/local/include
+            CMAKE_FIND_ROOT_PATH_BOTH
+        )
+        if ("${ICU_INCLUDE_DIR}" STREQUAL "ICU_INCLUDE_DIR-NOTFOUND")
+            message(FATAL_ERROR "ICU headers not found!")
+        endif()
+    endif()
+    if (CMAKE_CROSSCOMPILING)
+        execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${ICU_INCLUDE_DIR}/unicode
+            ${CMAKE_BINARY_DIR}/unicode
+        )
+        set(ICU_INCLUDE_DIR ${CMAKE_BINARY_DIR})
+    endif()
+    set(ICU_INCLUDE_DIRS ${ICU_INCLUDE_DIR})
+    include_directories(${ICU_INCLUDE_DIRS})
+endif()
+
+################################################################################
+#
 # configure
 #
 ################################################################################
@@ -160,24 +196,6 @@ if (MINGW)
 endif()
 
 if (UNIX)
-    if (CMAKE_CROSSCOMPILING)
-        find_path(ICU_INCLUDE_DIR unicode/ucnv.h
-            PATHS
-                /usr/include
-                /usr/include/x86_64-linux-gnu
-                /usr/local/include
-                /opt/local/include
-            CMAKE_FIND_ROOT_PATH_BOTH
-        )
-        if (ICU_INCLUDE_DIR)
-            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${ICU_INCLUDE_DIR}/unicode
-                ${CMAKE_BINARY_DIR}/unicode
-            )
-            include_directories(${CMAKE_BINARY_DIR})
-        endif()
-    endif()
-
     set(OS_DIR posix)
 
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")

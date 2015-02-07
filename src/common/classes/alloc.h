@@ -48,7 +48,7 @@
 
 #include <stdio.h>
 
-#if defined(MVS) || defined (DARWIN)
+#if defined(MVS) || defined(DARWIN) || defined(__clang__)
 #include <stdlib.h>
 #else
 #include <malloc.h>
