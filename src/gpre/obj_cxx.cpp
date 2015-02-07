@@ -1482,9 +1482,9 @@ static void gen_database(int column)
 	if (all_extern)
 	{
 		printa(column, "%sFirebird::CheckStatusWrapper* %s;\t/* status vector */",
-			scope, global_status_name, global_status_name);
+			scope, global_status_name);
 		printa(column, "%sFirebird::CheckStatusWrapper* %s2;\t/* status vector */",
-			scope, global_status_name, global_status_name);
+			scope, global_status_name);
 	}
 	else
 	{
