@@ -691,20 +691,25 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 	if (!recursiveStack.hasData())
 		return input;
 
-	// Merge two anchor parts into a single UNION ALL node
+	// Merge anchor parts into a single node
 
 	if (anchorStack.hasData())
 	{
-		RecordSourceNode* const firstNode = anchorRse ? anchorRse : anchorStack.pop();
-		UnionSourceNode* const rse = FB_NEW(pool) UnionSourceNode(pool);
-		rse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, firstNode);
-		rse->dsqlAll = true;
-		rse->recursive = false;
+		if (anchorStack.getCount() > 1)
+		{
+			RecordSourceNode* const firstNode = anchorRse ? anchorRse : anchorStack.pop();
+			UnionSourceNode* const rse = FB_NEW(pool) UnionSourceNode(pool);
+			rse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, firstNode);
+			rse->dsqlAll = true;
+			rse->recursive = false;
 
-		while (anchorStack.hasData())
-			rse->dsqlClauses->add(anchorStack.pop());
+			while (anchorStack.hasData())
+				rse->dsqlClauses->add(anchorStack.pop());
 
-		anchorRse = rse;
+			anchorRse = rse;
+		}
+		else
+			anchorRse = anchorStack.pop();
 	}
 	else if (!anchorRse)
 	{
@@ -713,19 +718,28 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 			Arg::Gds(isc_dsql_cte_miss_nonrecursive) << input->alias);
 	}
 
-	// Create the recursive UNION ALL node
+	// Merge recursive parts into a single node
 
-	UnionSourceNode* const recursiveRse = FB_NEW(pool) UnionSourceNode(pool);
-	recursiveRse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, (unsigned) 0);
-	recursiveRse->dsqlAll = true;
-	recursiveRse->recursive = false;
+	RecordSourceNode* recursiveRse = NULL;
 
-	while (recursiveStack.hasData())
+	if (recursiveStack.getCount() > 1)
 	{
-		RseNode* const rse = recursiveStack.pop();
-		rse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
-		recursiveRse->dsqlClauses->add(rse);
+		UnionSourceNode* const rse = FB_NEW(pool) UnionSourceNode(pool);
+		rse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, (unsigned) 0);
+		rse->dsqlAll = true;
+		rse->recursive = false;
+
+		while (recursiveStack.hasData())
+		{
+			RseNode* const sub_rse = recursiveStack.pop();
+			sub_rse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
+			rse->dsqlClauses->add(sub_rse);
+		}
+
+		recursiveRse = rse;
 	}
+	else
+		recursiveRse = recursiveStack.pop();
 
 	// Create and return the final node
 
