@@ -43,6 +43,16 @@ int CLIB_ROUTINE main( int argc, char* argv[])
  *	Invoke real gbak main function
  *
  **************************************/
-	Firebird::AutoPtr<Firebird::UtilSvc> uSvc(Firebird::UtilSvc::createStandalone(argc, argv));
- 	return gbak(uSvc);
+	try
+	{
+		Firebird::AutoPtr<Firebird::UtilSvc> uSvc(Firebird::UtilSvc::createStandalone(argc, argv));
+ 		return gbak(uSvc);
+ 	}
+ 	catch(const Firebird::Exception& ex)
+ 	{
+ 		ISC_STATUS_ARRAY st;
+ 		ex.stuff_exception(st);
+ 		isc_print_status(st);
+ 	}
+ 	return 1;
 }
