@@ -1,3 +1,27 @@
+ 2015-02-07 16:07  egorpugin 
+   M CMakeLists.txt
+   M src/common/classes/alloc.h
+[build] [cmake] Add ICU setup section. Add clang ifdef.
+
+ 2015-02-07 14:57  alexpeshkoff 
+   M src/gpre/obj_cxx.cpp
+warnings
+
+ 2015-02-07 14:52  alexpeshkoff 
+   M configure.ac
+misc
+
+ 2015-02-07 12:57  alexpeshkoff 
+   M src/alice/main/aliceMain.cpp
+   M src/burp/main/burpMain.cpp
+   M src/utilities/gsec/main/gsecMain.cpp
+   M src/utilities/gstat/main/gstatMain.cpp
+Use last chance to catch exceptions in utilities - sometimes it may be useful
+
+ 2015-02-07 10:57  dimitr 
+   M src/dsql/DsqlCompilerScratch.cpp
+Fixed CORE-4684: Error while preparing a complex query ("Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256").
+
  2015-02-06 14:39  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
