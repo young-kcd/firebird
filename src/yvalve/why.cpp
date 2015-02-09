@@ -3724,13 +3724,18 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle)
 
 //// FIXME: this function is broken!
 // Get the legacy handle of a database.
-ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle, void* obj)
+ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle,
+	void* obj)
 {
 	StatusVector status(userStatus);
 
 	try
 	{
-		YAttachment* yObject = static_cast<YAttachment*>(obj);
+		if (!obj)
+			status_exception::raise(Arg::Gds(isc_bad_db_handle));
+
+		// Must first cast to the base interface.
+		YAttachment* yObject = static_cast<YAttachment*>(static_cast<IAttachment*>(obj));
 		*handle = yObject->getHandle();
 	}
 	catch (const Exception& e)
@@ -3744,13 +3749,18 @@ ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HAN
 
 //// FIXME: this function is broken!
 // Get the legacy handle of a transaction.
-ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle, void* obj)
+ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle,
+	void* obj)
 {
 	StatusVector status(userStatus);
 
 	try
 	{
-		YTransaction* yObject = static_cast<YTransaction*>(obj);
+		if (!obj)
+			status_exception::raise(Arg::Gds(isc_bad_trans_handle));
+
+		// Must first cast to the base interface.
+		YTransaction* yObject = static_cast<YTransaction*>(static_cast<ITransaction*>(obj));
 		*handle = yObject->getHandle();
 	}
 	catch (const Exception& e)
