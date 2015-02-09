@@ -3722,7 +3722,6 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle)
 }
 
 
-//// FIXME: this function is broken!
 // Get the legacy handle of a database.
 ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle,
 	void* obj)
@@ -3747,7 +3746,6 @@ ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HAN
 }
 
 
-//// FIXME: this function is broken!
 // Get the legacy handle of a transaction.
 ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_HANDLE* handle,
 	void* obj)
