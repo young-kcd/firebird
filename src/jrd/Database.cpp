@@ -37,6 +37,7 @@
 #include "../jrd/lck_proto.h"
 #include "../jrd/CryptoManager.h"
 #include "../jrd/os/pio_proto.h"
+#include "../common/os/os_utils.h"
 
 // Thread data block
 #include "../common/ThreadData.h"
@@ -59,7 +60,7 @@ namespace Jrd
 		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 
 		UCharBuffer buffer;
-		PIO_get_unique_file_id(pageSpace->file, buffer);
+		os_utils::getUniqueFileId(pageSpace->file->fil_desc, buffer);
 
 		string file_id;
 		char* s = file_id.getBuffer(2 * buffer.getCount());

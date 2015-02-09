@@ -488,32 +488,6 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 }
 
 
-void PIO_get_unique_file_id(const Jrd::jrd_file* file, UCharBuffer& id)
-{
-/**************************************
- *
- *	P I O _ g e t _ u n i q u e _ f i l e _ i d
- *
- **************************************
- *
- * Functional description
- *	Return a binary string that uniquely identifies the file.
- *
- **************************************/
-	struct stat statistics;
-	fstat(file->fil_desc, &statistics);
-
-	const size_t len1 = sizeof(statistics.st_dev);
-	const size_t len2 = sizeof(statistics.st_ino);
-
-	UCHAR* p = id.getBuffer(len1 + len2);
-
-	memcpy(p, &statistics.st_dev, len1);
-	p += len1;
-	memcpy(p, &statistics.st_ino, len2);
-}
-
-
 void PIO_header(Database* dbb, SCHAR* address, int length)
 {
 /**************************************

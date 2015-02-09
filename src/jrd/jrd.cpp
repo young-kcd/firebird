@@ -2630,6 +2630,9 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 #ifdef WIN_NT
 			dbb->dbb_filename.assign(pageSpace->file->fil_string);	// first dbb file
 #endif
+#ifdef HAVE_ID_BY_NAME
+			os_utils::getUniqueFileId(dbb->dbb_filename.c_str(), dbb->dbb_id);
+#endif
 
 			// Initialize the lock manager
 			dbb->dbb_lock_mgr = LockManager::create(dbb->getUniqueFileId(), dbb->dbb_config);
@@ -2741,6 +2744,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				PAG_set_force_write(tdbb, true);
 
 			dbb->dbb_backup_manager->dbCreating = false;
+
+			config->notify();
 
 			// Init complete - we can release dbInitMutex
 			dbb->dbb_flags &= ~(DBB_new | DBB_creating);
@@ -6024,6 +6029,11 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 	first_rand = false;
 
+#ifdef HAVE_ID_BY_NAME
+	UCharBuffer db_id;
+	os_utils::getUniqueFileId(expanded_name.c_str(), db_id);
+#endif
+
 	engineStartup.init();
 
 	// Check to see if the database is already attached
@@ -6049,7 +6059,11 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 			dbb = databases;
 			while (dbb)
 			{
-				if (!(dbb->dbb_flags & DBB_bugcheck) && dbb->dbb_filename == expanded_name)
+				if (!(dbb->dbb_flags & DBB_bugcheck) && (dbb->dbb_filename == expanded_name
+#ifdef HAVE_ID_BY_NAME
+															|| dbb->dbb_id == db_id
+#endif
+																					))
 				{
 					if (attach_flag)
 					{
@@ -6107,6 +6121,9 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 		dbb = Database::create(pConf, shared);
 		dbb->dbb_config = config;
 		dbb->dbb_filename = expanded_name;
+#ifdef HAVE_ID_BY_NAME
+		dbb->dbb_id = db_id;		// will be reassigned in create database after PIO operation
+#endif
 
 		// safely take init lock on just created database
 		initGuard.linkWith(dbb->dbb_init_fini);

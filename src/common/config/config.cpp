@@ -30,6 +30,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/constants.h"
 #include "firebird/Interface.h"
+#include "../common/db_alias.h"
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -201,6 +202,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
  */
 
 Config::Config(const ConfigFile& file)
+	: notifyDatabase(*getDefaultMemoryPool())
 {
 	// Array to save string temporarily
 	// Will be finally saved by loadValues() in the end of ctor
@@ -226,6 +228,7 @@ Config::Config(const ConfigFile& file)
 }
 
 Config::Config(const ConfigFile& file, const Config& base)
+	: notifyDatabase(*getDefaultMemoryPool())
 {
 	// Iterate through the known configuration entries
 
@@ -235,6 +238,29 @@ Config::Config(const ConfigFile& file, const Config& base)
 	}
 
 	loadValues(file);
+}
+
+Config::Config(const ConfigFile& file, const Config& base, const Firebird::PathName& notify)
+	: notifyDatabase(*getDefaultMemoryPool())
+{
+	// Iterate through the known configuration entries
+
+	for (unsigned int i = 0; i < MAX_CONFIG_KEY; i++)
+	{
+		values[i] = base.values[i];
+	}
+
+	loadValues(file);
+
+	notifyDatabase = notify;
+}
+
+void Config::notify()
+{
+	if (!notifyDatabase.hasData())
+		return;
+	if (notifyDatabaseName(notifyDatabase))
+		notifyDatabase.erase();
 }
 
 void Config::merge(Firebird::RefPtr<Config>& config, const Firebird::string* dpbConfig)

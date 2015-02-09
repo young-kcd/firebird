@@ -55,6 +55,7 @@
 #include "../common/utils_proto.h"
 #include "../jrd/RandomGenerator.h"
 #include "../common/os/guid.h"
+#include "../common/os/os_utils.h"
 #include "../jrd/sbm.h"
 #include "../jrd/flu.h"
 #include "../jrd/RuntimeStatistics.h"
@@ -415,7 +416,10 @@ public:
 #endif
 
 	Firebird::PathName dbb_filename;	// filename string
-	Firebird::PathName dbb_database_name;	// database ID (file name or alias)
+	Firebird::PathName dbb_database_name;	// database visible name (file name or alias)
+#ifdef HAVE_ID_BY_NAME
+	Firebird::UCharBuffer dbb_id;
+#endif
 	Firebird::MetaName dbb_owner;		// database owner
 
 	Firebird::SyncObject			dbb_pools_sync;
@@ -500,6 +504,9 @@ private:
 		dbb_flags(shared ? DBB_shared : 0),
 		dbb_filename(*p),
 		dbb_database_name(*p),
+#ifdef HAVE_ID_BY_NAME
+		dbb_id(*p),
+#endif
 		dbb_owner(*p),
 		dbb_pools(*p, 4),
 		dbb_sort_buffers(*p),

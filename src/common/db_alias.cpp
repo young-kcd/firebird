@@ -33,6 +33,8 @@
 #include "../common/classes/Hash.h"
 #include "../common/isc_f_proto.h"
 #include "../common/StatusArg.h"
+#include "../common/os/os_utils.h"
+#include "../common/classes/array.h"
 #include <ctype.h>
 
 using namespace Firebird;
@@ -70,8 +72,24 @@ namespace
 		}
 	}
 
+	struct CalcHash
+	{
+		static FB_SIZE_T chash(FB_SIZE_T sum, FB_SIZE_T hashSize)
+		{
+			FB_SIZE_T rc = 0;
+			while (sum)
+			{
+				rc += (sum % hashSize);
+				sum /= hashSize;
+			}
+
+			return rc % hashSize;
+		}
+	};
+
+
 	template <typename T>
-	struct PathHash
+	struct PathHash : public CalcHash
 	{
 		static const PathName& generate(const T& item)
 		{
@@ -119,23 +137,83 @@ namespace
 				sum += val;
 			}
 
-			FB_SIZE_T rc = 0;
-			while (sum)
-			{
-				rc += (sum % hashSize);
-				sum /= hashSize;
-			}
-
-			return rc % hashSize;
+			return chash(sum, hashSize);
 		}
 	};
 
+#ifdef HAVE_ID_BY_NAME
+	template <typename T>
+	struct BinHash : public CalcHash
+	{
+		static const UCharBuffer& generate(const T& item)
+		{
+			return item.id;
+		}
+
+		static FB_SIZE_T hash(const UCharBuffer& value, FB_SIZE_T hashSize)
+		{
+			return hash(value.begin(), value.getCount(), hashSize);
+		}
+
+		static FB_SIZE_T hash(const UCHAR* value, FB_SIZE_T length, FB_SIZE_T hashSize)
+		{
+			FB_SIZE_T sum = 0;
+			FB_SIZE_T val;
+
+			while (length >= sizeof(FB_SIZE_T))
+			{
+				memcpy(&val, value, sizeof(FB_SIZE_T));
+				sum += val;
+				value += sizeof(FB_SIZE_T);
+				length -= sizeof(FB_SIZE_T);
+			}
+
+			if (length)
+			{
+				val = 0;
+				memcpy(&val, value, length);
+				sum += val;
+			}
+
+			return chash(sum, hashSize);
+		}
+	};
+#endif
+
 	struct DbName;
+#ifdef HAVE_ID_BY_NAME
+	struct Id;
+	typedef Hash<Id, 127, UCharBuffer, BinHash<Id>, BinHash<Id> > IdHash;
+
+	struct Id : public IdHash::Entry
+	{
+		Id(MemoryPool& p, const UCharBuffer& x, DbName* d)
+			: id(p, x), db(d)
+		{ }
+
+		Id* get()
+		{
+			return this;
+		}
+
+		bool isEqual(const UCharBuffer& val) const
+		{
+			return val == id;
+		}
+
+		UCharBuffer id;
+		DbName* db;
+	};
+#endif
+
 	typedef Hash<DbName, 127, PathName, PathHash<DbName>, PathHash<DbName> > DbHash;
 	struct DbName : public DbHash::Entry
 	{
 		DbName(MemoryPool& p, const PathName& db)
 			: name(p, db)
+#ifdef HAVE_ID_BY_NAME
+			  , id(NULL)
+#endif
 		{ }
 
 		DbName* get()
@@ -150,6 +228,9 @@ namespace
 
 		PathName name;
 		RefPtr<Config> config;
+#ifdef HAVE_ID_BY_NAME
+		Id* id;
+#endif
 	};
 
 	struct AliasName;
@@ -181,28 +262,24 @@ namespace
 		explicit AliasesConf(MemoryPool& p)
 			: ConfigCache(p, fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_CONF, ALIAS_FILE)),
 			  databases(getPool()), aliases(getPool())
+#ifdef HAVE_ID_BY_NAME
+			  , ids(getPool())
+#endif
 		{ }
+
+		~AliasesConf()
+		{
+			clear();
+		}
 
 		void loadConfig()
 		{
-			FB_SIZE_T n;
-
-			// clean old data
-			for (n = 0; n < aliases.getCount(); ++n)
-			{
-				delete aliases[n];
-			}
-			aliases.clear();
-			for (n = 0; n < databases.getCount(); ++n)
-			{
-				delete databases[n];
-			}
-			databases.clear();
+			clear();
 
 			ConfigFile aliasConfig(getFileName(), ConfigFile::HAS_SUB_CONF, this);
 			const ConfigFile::Parameters& params = aliasConfig.getParameters();
 
-			for (n = 0; n < params.getCount(); ++n)
+			for (FB_SIZE_T n = 0; n < params.getCount(); ++n)
 			{
 				const ConfigFile::Parameter* par = &params[n];
 
@@ -219,6 +296,22 @@ namespace
 				if (! db)
 				{
 					db = FB_NEW(getPool()) DbName(getPool(), file);
+#ifdef HAVE_ID_BY_NAME
+					UCharBuffer id;
+					os_utils::getUniqueFileId(db->name.c_str(), id);
+					if (id.hasData())
+					{
+						Id* i = idHash.lookup(id);
+						if (i)
+						{
+							delete db;
+							fatal_exception::raiseFmt("Same ID for databases %s and %s\n",
+													  file.c_str(), i->db->name.c_str());
+						}
+
+						linkId(db, id);
+					}
+#endif
 					databases.add(db);
 					dbHash.add(db);
 				}
@@ -234,7 +327,12 @@ namespace
 				if (par->sub)
 				{
 					// load per-database configuration
-					db->config = new Config(*par->sub, *Config::getDefaultConfig());
+					db->config =
+#ifdef HAVE_ID_BY_NAME
+						(!db->id) ?
+							new Config(*par->sub, *Config::getDefaultConfig(), db->name) :
+#endif
+							new Config(*par->sub, *Config::getDefaultConfig());
 				}
 
 				PathName correctedAlias(par->name.ToPathName());
@@ -250,13 +348,57 @@ namespace
 			}
 		}
 
+#ifdef HAVE_ID_BY_NAME
+		void linkId(DbName* db, const UCharBuffer& id)
+		{
+			fb_assert(!db->id);
+
+			Id* i = FB_NEW(getPool()) Id(getPool(), id, db);
+			ids.add(i);
+			idHash.add(i);
+			db->id = i;
+		}
+#endif
+
 	private:
+		void clear()
+		{
+			FB_SIZE_T n;
+
+			// clean old data
+			for (n = 0; n < aliases.getCount(); ++n)
+			{
+				delete aliases[n];
+			}
+			aliases.clear();
+
+			for (n = 0; n < databases.getCount(); ++n)
+			{
+				delete databases[n];
+			}
+			databases.clear();
+
+#ifdef HAVE_ID_BY_NAME
+			for (n = 0; n < ids.getCount(); ++n)
+			{
+				delete ids[n];
+			}
+			ids.clear();
+#endif
+		}
+
 		HalfStaticArray<DbName*, 100> databases;
 		HalfStaticArray<AliasName*, 200> aliases;
+#ifdef HAVE_ID_BY_NAME
+		HalfStaticArray<Id*, 100> ids;
+#endif
 
 	public:
 		DbHash dbHash;
 		AliasHash aliasHash;
+#ifdef HAVE_ID_BY_NAME
+		IdHash idHash;
+#endif
 	};
 
 	InitInstance<AliasesConf> aliasesConf;
@@ -398,8 +540,48 @@ bool expandDatabaseName(Firebird::PathName alias,
 	if (config)
 	{
 		DbName* db = aliasesConf().dbHash.lookup(file);
+#ifdef HAVE_ID_BY_NAME
+		if (!db)
+		{
+			UCharBuffer id;
+			os_utils::getUniqueFileId(file.c_str(), id);
+			if (id.hasData())
+			{
+				Id* i = aliasesConf().idHash.lookup(id);
+				if (i)
+					db = i->db;
+			}
+		}
+#endif
 		*config = (db && db->config.hasData()) ? db->config : Config::getDefaultConfig();
 	}
+
+	return false;
+}
+
+// Probably file arrived on the disk
+bool notifyDatabaseName(const Firebird::PathName& file)
+{
+#ifdef HAVE_ID_BY_NAME
+	// notifyDatabaseName typically causes changes in aliasesConf()
+	// cause it's called only from Config created for missing database.
+	// Therefore always take write lock at once.
+	WriteLockGuard guard(aliasesConf().rwLock, "notifyDatabaseName");
+
+	DbName* db = aliasesConf().dbHash.lookup(file);
+	if (!db)
+		return true;
+	if (db->id)
+		return true;
+
+	UCharBuffer id;
+	os_utils::getUniqueFileId(file.c_str(), id);
+	if (id.hasData())
+	{
+		aliasesConf().linkId(db, id);
+		return true;
+	}
+#endif
 
 	return false;
 }

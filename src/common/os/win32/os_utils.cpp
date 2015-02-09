@@ -313,4 +313,27 @@ FILE* fopen(const char* pathname, const char* mode)
 	return ::fopen(pathname, mode);
 }
 
+void getUniqueFileId(int fd, Firebird::UCharBuffer& id)
+{
+	BY_HANDLE_FILE_INFORMATION file_info;
+	GetFileInformationByHandle(file->fil_desc, &file_info);
+
+	// The identifier is [nFileIndexHigh, nFileIndexLow]
+	// MSDN says: After a process opens a file, the identifier is constant until
+	// the file is closed. An application can use this identifier and the
+	// volume serial number to determine whether two handles refer to the same file.
+	const size_t len1 = sizeof(file_info.dwVolumeSerialNumber);
+	const size_t len2 = sizeof(file_info.nFileIndexHigh);
+	const size_t len3 = sizeof(file_info.nFileIndexLow);
+
+	UCHAR* p = id.getBuffer(len1 + len2 + len3);
+
+	memcpy(p, &file_info.dwVolumeSerialNumber, len1);
+	p += len1;
+	memcpy(p, &file_info.nFileIndexHigh, len2);
+	p += len2;
+	memcpy(p, &file_info.nFileIndexLow, len3);
+}
+
+
 } // namespace os_utils

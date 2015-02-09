@@ -32,6 +32,7 @@
 
 #include "../common/classes/fb_string.h"
 #include "../common/StatusArg.h"
+#include "../common/classes/array.h"
 
 #ifdef WIN_NT
 #include <sys/stat.h>
@@ -59,6 +60,13 @@ namespace os_utils
 	int open(const char* pathname, int flags, mode_t mode = DEFAULT_OPEN_MODE);
 	void setCloseOnExec(int fd);	// posix only
 	FILE* fopen(const char* pathname, const char* mode);
+
+	// return a binary string that uniquely identifies the file
+	void getUniqueFileId(int fd, Firebird::UCharBuffer& id);
+#ifndef WIN_NT
+#define HAVE_ID_BY_NAME
+	void getUniqueFileId(const char* name, Firebird::UCharBuffer& id);
+#endif
 } // namespace os_utils
 
 #endif // INCLUDE_OS_FILE_UTILS_H

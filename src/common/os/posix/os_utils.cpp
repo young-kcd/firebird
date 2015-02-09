@@ -281,4 +281,49 @@ FILE* fopen(const char* pathname, const char* mode)
 	return f;
 }
 
+static void makeUniqueFileId(struct stat& statistics, UCharBuffer& id)
+{
+	const size_t len1 = sizeof(statistics.st_dev);
+	const size_t len2 = sizeof(statistics.st_ino);
+
+	UCHAR* p = id.getBuffer(len1 + len2);
+
+	memcpy(p, &statistics.st_dev, len1);
+	p += len1;
+	memcpy(p, &statistics.st_ino, len2);
+}
+
+
+void getUniqueFileId(int fd, UCharBuffer& id)
+{
+	struct stat statistics;
+	while (fstat(fd, &statistics) != 0)
+	{
+		if (errno == EINTR)
+			continue;
+		system_call_failed::raise("fstat");
+	}
+
+	makeUniqueFileId(statistics, id);
+}
+
+
+void getUniqueFileId(const char* name, UCharBuffer& id)
+{
+	struct stat statistics;
+	while (stat(name, &statistics) != 0)
+	{
+		if (errno == EINTR)
+			continue;
+		if (errno == ENOENT)
+		{
+			id.clear();
+			return;
+		}
+		system_call_failed::raise("fstat");
+	}
+
+	makeUniqueFileId(statistics, id);
+}
+
 } // namespace os_utils

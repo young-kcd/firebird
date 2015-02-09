@@ -169,11 +169,17 @@ private:
 	static const ConfigEntry entries[MAX_CONFIG_KEY];
 
 	ConfigValue values[MAX_CONFIG_KEY];
+	Firebird::PathName notifyDatabase;
 
 public:
 	explicit Config(const ConfigFile& file);				// use to build default config
 	Config(const ConfigFile& file, const Config& base);		// use to build db-specific config
+	Config(const ConfigFile& file, const Config& base, const Firebird::PathName& notify);	// use to build db-specific config with notifucation
 	~Config();
+
+	// Call it when database with given config is created
+
+	void notify();
 
 	// Check for missing firebird.conf
 

@@ -852,39 +852,6 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 }
 
 
-void PIO_get_unique_file_id(const Jrd::jrd_file* file, Firebird::UCharBuffer& id)
-{
-/**************************************
- *
- *	P I O _ g e t _ u n i q u e _ f i l e _ i d
- *
- **************************************
- *
- * Functional description
- *	Return a binary string that uniquely identifies the file.
- *
- **************************************/
-	BY_HANDLE_FILE_INFORMATION file_info;
-	GetFileInformationByHandle(file->fil_desc, &file_info);
-
-	// The identifier is [nFileIndexHigh, nFileIndexLow]
-	// MSDN says: After a process opens a file, the identifier is constant until
-	// the file is closed. An application can use this identifier and the
-	// volume serial number to determine whether two handles refer to the same file.
-	const size_t len1 = sizeof(file_info.dwVolumeSerialNumber);
-	const size_t len2 = sizeof(file_info.nFileIndexHigh);
-	const size_t len3 = sizeof(file_info.nFileIndexLow);
-
-	UCHAR* p = id.getBuffer(len1 + len2 + len3);
-
-	memcpy(p, &file_info.dwVolumeSerialNumber, len1);
-	p += len1;
-	memcpy(p, &file_info.nFileIndexHigh, len2);
-	p += len2;
-	memcpy(p, &file_info.nFileIndexLow, len3);
-}
-
-
 #ifdef SUPERSERVER_V2
 static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 {

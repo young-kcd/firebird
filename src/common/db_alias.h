@@ -32,4 +32,6 @@ bool expandDatabaseName(Firebird::PathName alias,
 						Firebird::PathName& file,
 						Firebird::RefPtr<Config>* config);
 
+bool notifyDatabaseName(const Firebird::PathName& file);
+
 #endif // JRD_DB_ALIAS_H

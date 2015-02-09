@@ -5578,9 +5578,10 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 
 			if (!(currentStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 			{
-#ifdef WIN_NT
 				if (createFlag)
 				{
+					config->notify();
+#ifdef WIN_NT
 	            	// Now we can expand, the file exists
 					ISC_utf8ToSystem(orgFilename);
 					if (expandDatabaseName(orgFilename, expandedFilename, NULL))
@@ -5588,8 +5589,8 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 						expandedFilename = orgFilename;
 					}
 					ISC_systemToUtf8(expandedFilename);
-				}
 #endif
+				}
 
 				status->setErrors(currentStatus->getErrors());
 				status->setWarnings(currentStatus->getWarnings());

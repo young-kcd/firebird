@@ -94,8 +94,15 @@ public:
 		ensureCapacity(InitialCapacity);
 	}
 
+	Array(MemoryPool& p, const Array<T, Storage>& source)
+		: Storage(p), count(0), capacity(this->getStorageSize()), data(this->getStorage())
+	{
+		copyFrom(source);
+	}
+
 	Array() : count(0),
 		capacity(this->getStorageSize()), data(this->getStorage()) { }
+
 	explicit Array(const size_type InitialCapacity)
 		: Storage(), count(0), capacity(this->getStorageSize()), data(this->getStorage())
 	{
@@ -412,6 +419,13 @@ public:
 		return find(item, pos);
 	}
 
+	bool operator==(const Array& op) const
+	{
+		if (count != op.count)
+			return false;
+		return memcmp(data, op.data, count) == 0;
+	}
+
 	// Member function only for some debugging tests. Hope nobody is bothered.
 	void swapElems()
 	{
@@ -573,12 +587,19 @@ class HalfStaticArray : public Array<T, InlineStorage<T, InlineCapacity> >
 {
 public:
 	typedef typename Array<T, InlineStorage<T, InlineCapacity> >::size_type size_type;
-	explicit HalfStaticArray(MemoryPool& p) : Array<T, InlineStorage<T, InlineCapacity> > (p) {}
+
+	explicit HalfStaticArray(MemoryPool& p) : Array<T, InlineStorage<T, InlineCapacity> >(p) {}
+
 	HalfStaticArray(MemoryPool& p, size_type InitialCapacity) :
-		Array<T, InlineStorage<T, InlineCapacity> > (p, InitialCapacity) {}
+		Array<T, InlineStorage<T, InlineCapacity> >(p, InitialCapacity) {}
+
 	HalfStaticArray() : Array<T, InlineStorage<T, InlineCapacity> > () {}
+
 	explicit HalfStaticArray(size_type InitialCapacity) :
-		Array<T, InlineStorage<T, InlineCapacity> > (InitialCapacity) {}
+		Array<T, InlineStorage<T, InlineCapacity> >(InitialCapacity) {}
+
+	HalfStaticArray(MemoryPool& p, const HalfStaticArray& src) :
+		Array<T, InlineStorage<T, InlineCapacity> >(p, src) {}
 };
 
 typedef HalfStaticArray<UCHAR, BUFFER_TINY> UCharBuffer;
