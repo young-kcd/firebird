@@ -1466,7 +1466,7 @@ int SharedMemoryBase::eventPost(event_t* event)
 
 
 #ifdef UNIX
-ULONG ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
+ULONG ISC_exception_post(ULONG sig_num, const TEXT* err_msg, ISC_STATUS& /*isc_error*/)
 {
 /**************************************
  *
@@ -1549,7 +1549,7 @@ ULONG ISC_exception_post(ULONG sig_num, const TEXT* err_msg)
 
 
 #ifdef WIN_NT
-ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
+ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg, ISC_STATUS& isc_error)
 {
 /**************************************
  *
@@ -1568,6 +1568,7 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
  **************************************/
 	ULONG result = 0;
 	bool is_critical = true;
+	isc_error = 0;
 
 	if (!err_msg)
 	{
@@ -1666,9 +1667,8 @@ ULONG ISC_exception_post(ULONG except_code, const TEXT* err_msg)
 				"\tto terminate abnormally.", err_msg);
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
-		status_exception::raise(Arg::Gds(isc_exception_stack_overflow));
-		// This will never be called, but to be safe it's here
-		result = (ULONG) EXCEPTION_CONTINUE_EXECUTION;
+		isc_error = isc_exception_stack_overflow;
+		result = (ULONG) EXCEPTION_EXECUTE_HANDLER;
 		is_critical = false;
 		break;
 

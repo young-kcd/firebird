@@ -332,6 +332,7 @@ const USHORT TDBB_detaching				= 512;	// detach is in progress
 const USHORT TDBB_wait_cancel_disable	= 1024;	// don't cancel current waiting operation
 const USHORT TDBB_cache_unwound			= 2048;	// page cache was unwound
 const USHORT TDBB_trusted_ddl			= 4096;	// skip DDL permission checks. Set after DDL permission check and clear after DDL execution
+const USHORT TDBB_reset_stack			= 8192;	// stack should be reset after stack overflow exception
 
 class thread_db : public Firebird::ThreadData
 {
@@ -372,6 +373,8 @@ public:
 
 	~thread_db()
 	{
+		resetStack();
+
 #ifdef DEV_BUILD
 		for (FB_SIZE_T n = 0; n < tdbb_bdbs.getCount(); ++n)
 		{
@@ -568,6 +571,17 @@ public:
 		}
 
 		priorThread = nextThread = NULL;
+	}
+
+	void resetStack()
+	{
+		if (tdbb_flags & TDBB_reset_stack)
+		{
+			tdbb_flags &= ~TDBB_reset_stack;
+#ifdef WIN_NT
+			_resetstkoflw();
+#endif
+		}
 	}
 };
 

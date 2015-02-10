@@ -399,6 +399,6 @@ int		ISC_mutex_lock(struct Firebird::mtx*);
 int		ISC_mutex_unlock(struct Firebird::mtx*);
 #endif
 
-ULONG	ISC_exception_post(ULONG, const TEXT*);
+ULONG	ISC_exception_post(ULONG, const TEXT*, ISC_STATUS&);
 
 #endif // JRD_ISC_S_PROTO_H
