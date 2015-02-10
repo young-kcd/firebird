@@ -1,3 +1,29 @@
+ 2015-02-09 14:39  asfernandes 
+   M src/yvalve/why.cpp
+Misc.
+
+ 2015-02-09 14:24  asfernandes 
+   M src/yvalve/why.cpp
+Fixed fb_get_database_handle and fb_get_transaction_handle.
+
+ 2015-02-09 14:08  alexpeshkoff 
+   M src/common/classes/array.h
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/common/db_alias.cpp
+   M src/common/db_alias.h
+   M src/common/os/os_utils.h
+   M src/common/os/posix/os_utils.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/jrd.cpp
+   M src/jrd/os/pio_proto.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/yvalve/why.cpp
+Fixed CORE-4685: Accessing DB in invalid manner when links (hard or symbolic) are used for it
+
  2015-02-07 16:07  egorpugin 
    M CMakeLists.txt
    M src/common/classes/alloc.h
