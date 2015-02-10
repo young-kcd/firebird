@@ -4,7 +4,8 @@
  *	DESCRIPTION:	Run once prepared statement with parameters
  *					a few times, committing transaction after each run.
  *					Learns how to prepare statement, manually define parameters
- *					for it and execute that statement with different parameters.
+ *					for it, execute that statement with different parameters
+ *					and perform non-default error processing.
  *
  *					Example for the following interfaces:
  *					IAttachment - database attachment
@@ -76,59 +77,47 @@ int main()
 	{
 		// status vector and main dispatcher
 		st = master->getStatus();
+		ThrowStatusWrapper status(st);
 		prov = master->getDispatcher();
 
 		// attach employee db
-		att = prov->attachDatabase(st, "employee", 0, NULL);
-		check(st, "attachDatabase");
+		att = prov->attachDatabase(&status, "employee", 0, NULL);
 
 		// start transaction
-		tra = att->startTransaction(st, 0, NULL);
-		check(st, "startTransaction");
+		tra = att->startTransaction(&status, 0, NULL);
 
 		// prepare statement
-		stmt = att->prepare(st, tra, 0, updstr, 3, 0);
-		check(st, "prepare");
+		stmt = att->prepare(&status, tra, 0, updstr, 3, 0);
 
 		// build metadata
 		// IMaster creates empty new metadata in builder
-		builder = master->getMetadataBuilder(st, 2);
-		check(st, "getMetadataBuilder");
+		builder = master->getMetadataBuilder(&status, 2);
 		// set required info on fields
-		builder->setType(st, 0, SQL_DOUBLE + 1);
-		check(st, "setType");
-		builder->setType(st, 1, SQL_TEXT + 1);
-		check(st, "setType");
-		builder->setLength(st, 1, 3);
-		check(st, "setLength");
+		builder->setType(&status, 0, SQL_DOUBLE + 1);
+		builder->setType(&status, 1, SQL_TEXT + 1);
+		builder->setLength(&status, 1, 3);
 		// IMetadata should be ready
-		meta = builder->getMetadata(st);
-		check(st, "getMetadata");
+		meta = builder->getMetadata(&status);
 		// no need in builder any more
 		builder->release();
 		builder = NULL;
 
-		// allocate buffer
+		// allocate buffer on stack
 		char buffer[256];
-		unsigned len = meta->getMessageLength(st);
-		check(st, "getMessageLength");
-		if (len > 256)
+		unsigned len = meta->getMessageLength(&status);
+		if (len > sizeof(buffer))
 		{
 			throw "Input message length too big - can't continue";
 		}
 
 		// locations of parameters in input message
-		char* dept_no = &buffer[meta->getOffset(st, 1)];
-		check(st, "getOffset");
- 		double* percent_inc = (double*) &buffer[meta->getOffset(st, 0)];
-		check(st, "getOffset");
+		char* dept_no = &buffer[meta->getOffset(&status, 1)];
+ 		double* percent_inc = (double*) &buffer[meta->getOffset(&status, 0)];
 
 		// null IDs (set to NOT NULL)
- 		short* flag = (short*)&buffer[meta->getNullOffset(st, 0)];
-		check(st, "getNullOffset");
+ 		short* flag = (short*)&buffer[meta->getNullOffset(&status, 0)];
  		*flag = 0;
- 		flag = (short*) &buffer[meta->getNullOffset(st, 1)];
-		check(st, "getNullOffset");
+ 		flag = (short*) &buffer[meta->getNullOffset(&status, 1)];
  		*flag = 0;
 
 		// Get the next department-percent increase input pair.
@@ -138,54 +127,51 @@ int main()
     	           dept_no, *percent_inc);
 
 			// Update the budget.
-	        stmt->execute(st, tra, meta, buffer, NULL, NULL);
-	        if (st->getStatus() & IStatus::FB_HAS_ERRORS)
-    	    {
-		        int sqlcode = isc_sqlcode(st->getErrors());
-    	        // Don't save the update, if the new budget exceeds the limit.
-        	    if (sqlcode == -625)
-            	{
-	                printf("\tExceeded budget limit -- not updated.\n");
+			try
+			{
+			    stmt->execute(&status, tra, meta, buffer, NULL, NULL);
+			}
+			catch(const FbException& error)
+			{
+				// Handle exception raised during statement execution
+				int sqlcode = isc_sqlcode(error.getStatus()->getErrors());
+				// Don't save the update, if the new budget exceeds the limit.
+				if (sqlcode == -625)
+				{
+					printf("\tExceeded budget limit -- not updated.\n");
 
-    	            tra->rollbackRetaining(st);
-    	            check(st, "rollback");
-	                continue;
-    	        }
+					tra->rollbackRetaining(&status);
+					continue;
+				}
 
-    	        // use default handler
-    	        check(st, "execute");
-            }
+				// Another error - use default handler
+				throw;
+			}
 
 			// Save each department's update independently.
 			// *** Change to commitRetaining() to see changes
-			// *** tra->commitRetaining(st);
-			tra->rollbackRetaining(st);
-			check(st, "rollback");
+			// *** tra->commitRetaining(&status);
+			tra->rollbackRetaining(&status);
         }
 
 		// close interfaces
-		stmt->free(st);
-		check(st, "free");
+		stmt->free(&status);
 		stmt = NULL;
 
 		meta->release();
 		meta = NULL;
 
-		tra->commit(st);
-		check(st, "commit");
+		tra->commit(&status);
 		tra = NULL;
 
-		att->detach(st);
-		check(st, "detach");
+		att->detach(&status);
 		att = NULL;
 	}
-	catch (const char* text)
+	catch (const FbException& error)
 	{
 		// handle error
 		rc = 1;
-		fprintf(stderr, "%s:\n", text);
-		if (st)
-			isc_print_status(st->getErrors());
+		isc_print_status(error.getStatus()->getErrors());
 	}
 
 	// release interfaces after error caught

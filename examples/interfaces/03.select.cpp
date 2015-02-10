@@ -61,29 +61,24 @@ int main()
 	{
 		// status vector and main dispatcher
 		st = master->getStatus();
+		ThrowStatusWrapper status(st);
 		prov = master->getDispatcher();
 
 		// attach employee db
-		att = prov->attachDatabase(st, "employee", 0, NULL);
-		check(st, "attachDatabase");
+		att = prov->attachDatabase(&status, "employee", 0, NULL);
 
 		// start default transaction
-		tra = att->startTransaction(st, 0, NULL);
-		check(st, "startTransaction");
+		tra = att->startTransaction(&status, 0, NULL);
 
 		// prepare statement
-		stmt = att->prepare(st, tra, 0, "select last_name, first_name, phone_ext from phone_list "
+		stmt = att->prepare(&status, tra, 0, "select last_name, first_name, phone_ext from phone_list "
 										"where location = 'Monterey' order by last_name, first_name",
 			3, IStatement::PREPARE_PREFETCH_METADATA);
-		check(st, "prepare");
 
 		// get list of columns
-		meta = stmt->getOutputMetadata(st);
-		check(st, "getOutputMetadata");
-		builder = meta->getBuilder(st);
-		check(st, "getBuilder");
-		unsigned cols = meta->getCount(st);
-		check(st, "getCount");
+		meta = stmt->getOutputMetadata(&status);
+		builder = meta->getBuilder(&status);
+		unsigned cols = meta->getCount(&status);
 
 		// struct to cache received metadata
 		struct MyField
@@ -97,15 +92,12 @@ int main()
 		// parse columns list & coerce datatype(s)
 		for (unsigned j = 0; j < cols; ++j)
 		{
-			unsigned t = meta->getType(st, j);
-			check(st, "getType");
+			unsigned t = meta->getType(&status, j);
 
 			if (t == SQL_VARYING || t == SQL_TEXT)
 			{
-				builder->setType(st, j, SQL_TEXT);
-				check(st, "setType");
-				fields[j].name = meta->getField(st, j);
-				check(st, "getField");
+				builder->setType(&status, j, SQL_TEXT);
+				fields[j].name = meta->getField(&status, j);
 			}
 		}
 
@@ -114,8 +106,7 @@ int main()
 		meta->release();
 
 		// get metadata with coerced datatypes
-		meta = builder->getMetadata(st);
-		check(st, "getMetadata");
+		meta = builder->getMetadata(&status);
 
 		// builder not needed any more
 		builder->release();
@@ -126,64 +117,66 @@ int main()
 		{
 			if (fields[j].name)
 			{
-				fields[j].length = meta->getLength(st, j);
-				check(st, "getLength");
-				fields[j].offset = meta->getOffset(st, j);
-				check(st, "getOffset");
+				fields[j].length = meta->getLength(&status, j);
+				fields[j].offset = meta->getOffset(&status, j);
 			}
 		}
 
 		// open cursor
-		curs = stmt->openCursor(st, tra, NULL, NULL, meta);
-		check(st, "openCursor");
+		curs = stmt->openCursor(&status, tra, NULL, NULL, meta, 0);
 
 		// allocate output buffer
-		unsigned l = meta->getMessageLength(st);
-		check(st, "getMessageLength");
+		unsigned l = meta->getMessageLength(&status);
 		unsigned char* buffer = new unsigned char[l];
 
 		// fetch records from cursor and print them
-		while (curs->fetchNext(st, buffer) == IStatus::FB_OK)
+		for (int line = 0; curs->fetchNext(&status, buffer) == IStatus::FB_OK; ++line)
 		{
+			if (line % 10 == 0)
+			{
+				printf("\n");
+				for (unsigned j = 0; j < cols; ++j)
+				{
+					if (fields[j].name)
+					{
+						printf("%-*.*s ", fields[j].length, fields[j].length, fields[j].name);
+					}
+				}
+				printf("\n");
+			}
+
 			for (unsigned j = 0; j < cols; ++j)
 			{
 				if (fields[j].name)
 				{
-					printf("%s: %*.*s\n", fields[j].name, fields[j].length, fields[j].length,
-						buffer + fields[j].offset);
+					printf("%*.*s ", fields[j].length, fields[j].length, buffer + fields[j].offset);
 				}
 			}
 			printf("\n");
 		}
-		check(st, "fetchNext");
+		printf("\n");
 
 		// close interfaces
-		curs->close(st);
-		check(st, "close");
+		curs->close(&status);
 		curs = NULL;
 
-		stmt->free(st);
-		check(st, "free");
+		stmt->free(&status);
 		stmt = NULL;
 
 		meta->release();
 		meta = NULL;
 
-		tra->commit(st);
-		check(st, "commit");
+		tra->commit(&status);
 		tra = NULL;
 
-		att->detach(st);
-		check(st, "detach");
+		att->detach(&status);
 		att = NULL;
 	}
-	catch (const char* text)
+	catch (const FbException& error)
 	{
 		// handle error
 		rc = 1;
-		fprintf(stderr, "%s:\n", text);
-		if (st)
-			isc_print_status(st->getErrors());
+		isc_print_status(error.getStatus()->getErrors());
 	}
 
 	// release interfaces after error caught

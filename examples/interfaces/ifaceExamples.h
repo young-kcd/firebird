@@ -32,29 +32,3 @@
 #include <firebird/Interface.h>
 
 using namespace Firebird;
-
-typedef FirebirdApi<class ExamplesPolicy> Api;
-FB_USE_API(Api)
-
-// Dummy policy - to be enhanced
-class ExamplesPolicy
-{
-public:
-	template <unsigned V, typename T>
-	static inline bool checkVersion(T* versioned, IStatus* status)
-	{ return true; }
-	static void checkException(Api::IStatus*) { }
-	static void catchException(Api::IStatus*) { }
-	typedef Api::IStatus* IStatus;
-};
-
-
-// Declare function to get access to master interface.
-DECLARE_GET_MASTER(ExamplesPolicy);
-
-// Probably not best way of error processing, but it's OK for a sample
-static void check(IStatus* s, const char* text)
-{
-	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
-		throw text;
-}

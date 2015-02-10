@@ -2,6 +2,8 @@
  *	PROGRAM:	Object oriented API samples.
  *	MODULE:		01.create.cpp
  *	DESCRIPTION:	A sample of creating new database and new table in it.
+ *					Run second time (whene database already exists) to see
+ *					how FbException is caught and handled by thid code.
  *
  *					Example for the following interfaces:
  *					IMaster - main inteface to access all the rest
@@ -66,6 +68,10 @@ int main()
 		st = master->getStatus();
 		prov = master->getDispatcher();
 
+		// status wrapper - will be used later in all calls where status interface is needed
+		// With ThrowStatusWrapper passed as status interface FbException will be thrown on error
+		ThrowStatusWrapper status(st);
+
 		// create DPB (to be replaced with IPBWriter)
 		unsigned char dpbBuf[32];
 		unsigned char *dpb = dpbBuf;
@@ -76,58 +82,47 @@ int main()
 		*dpb++ = (8 * 1024) >> 8;
 
 		// create empty database
-		att = prov->createDatabase(st, "fbtests.fdb", dpb - dpbBuf, dpbBuf);
-		check(st, "createDatabase");
+		att = prov->createDatabase(&status, "fbtests.fdb", dpb - dpbBuf, dpbBuf);
 		printf("Database fbtests.fdb created\n");
 
 		// detach from database
-		att->detach(st);
-		check(st, "detach");
+		att->detach(&status);
 		att = NULL;
 
 		// attach it once again
-		att = prov->attachDatabase(st, "fbtests.fdb", 0, NULL);
-		check(st, "attachDatabase");
+		att = prov->attachDatabase(&status, "fbtests.fdb", 0, NULL);
 		printf("Re-attached database fbtests.fdb\n");
 
 		// start transaction
-		tra = att->startTransaction(st, 0, NULL);
-		check(st, "startTransaction");
+		tra = att->startTransaction(&status, 0, NULL);
 
 		// create table
-		att->execute(st, tra, 0, "create table dates_table (d1 date)", 3,
+		att->execute(&status, tra, 0, "create table dates_table (d1 date)", 3,
 			NULL, NULL, NULL, NULL);	// Input parameters and output data not used
-		check(st, "execute");
 
 		// commit transaction retaining
-		tra->commitRetaining(st);
-		check(st, "commitRetaining");
+		tra->commitRetaining(&status);
 		printf("Table dates_table created\n");
 
 		// insert a record into dates_table
-		att->execute(st, tra, 0, "insert into dates_table values (CURRENT_DATE)", 3,
+		att->execute(&status, tra, 0, "insert into dates_table values (CURRENT_DATE)", 3,
 			NULL, NULL, NULL, NULL);	// Input parameters and output data not used
-		check(st, "execute");
 
 		// commit transaction (will close interface)
-		tra->commit(st);
-		check(st, "commit");
+		tra->commit(&status);
 		tra = NULL;
 
 		printf("Record inserted into dates_table\n");
 
 		// detach from database (will close interface)
-		att->detach(st);
-		check(st, "detach");
+		att->detach(&status);
 		att = NULL;
 	}
-	catch (const char* text)
+	catch (const FbException& error)
 	{
 		// handle error
 		rc = 1;
-		fprintf(stderr, "%s:\n", text);
-		if (st)
-			isc_print_status(st->getErrors());
+		isc_print_status(error.getStatus()->getErrors());
 	}
 
 	// release interfaces after error caught

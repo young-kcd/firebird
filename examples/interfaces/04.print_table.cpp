@@ -42,7 +42,7 @@ struct MyField
 	const char* name;
 	unsigned type, length, offset, null;
 
-	void print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned char* buf);
+	void print(ThrowStatusWrapper* st, IAttachment* att, ITransaction* tra, unsigned char* buf);
 };
 
 int main()
@@ -54,6 +54,7 @@ int main()
 	setenv("ISC_PASSWORD", "masterkey", 0);
 
 	IStatus* st = master->getStatus();
+	ThrowStatusWrapper status(st);
 	IProvider* prov = master->getDispatcher();
 
 	IAttachment* att = NULL;
@@ -63,11 +64,8 @@ int main()
 
 	try
 	{
-		att = prov->attachDatabase(st, "employee", 0, NULL);
-		check(st, "attachDatabase");
-
-		tra = att->startTransaction(st, 0, NULL);
-		check(st, "startTransaction");
+		att = prov->attachDatabase(&status, "employee", 0, NULL);
+		tra = att->startTransaction(&status, 0, NULL);
 
 		// If we are not going to run same SELECT query many times we may do not prepare it,
 		// opening cursor instead with single API call.
@@ -81,14 +79,9 @@ int main()
 														 "or RDB$VIEW_SOURCE is not null";
 
 		// Do not use IStatement - just ask attachment to open cursor
-		curs = att->openCursor(st, tra, 0, sql, 3, NULL, NULL, NULL, NULL);
-		check(st, "openCursor");
-
-		meta = curs->getMetadata(st);
-		check(st, "getMetadata");
-
-		unsigned cols = meta->getCount(st);
-		check(st, "getCount");
+		curs = att->openCursor(&status, tra, 0, sql, 3, NULL, NULL, NULL, NULL, 0);
+		meta = curs->getMetadata(&status);
+		unsigned cols = meta->getCount(&status);
 
 		MyField* fields = new MyField[cols];
 		memset(fields, 0, sizeof(MyField) * cols);
@@ -96,10 +89,8 @@ int main()
 		unsigned f = 0;
 		for (unsigned j = 0; j < cols; ++j)
 		{
-			unsigned t = meta->getType(st, j) & ~1;
-			check(st, "getType");
-			unsigned sub = meta->getSubType(st, j);
-			check(st, "getSubType");
+			unsigned t = meta->getType(&status, j) & ~1;
+			unsigned sub = meta->getSubType(&status, j);
 
 			switch (t)
 			{
@@ -116,7 +107,7 @@ int main()
 
 			default:
 				{
-					sprintf(s, "Unknown type %d for %s", t, meta->getField(st, j));
+					sprintf(s, "Unknown type %d for %s", t, meta->getField(&status, j));
 					throw s;
 				}
 				continue;
@@ -124,51 +115,37 @@ int main()
 
 			// we can work with this field - cache metadata info for fast access
 			fields[f].type = t;
-
-			fields[f].name = meta->getField(st, j);
-			check(st, "getField");
-
-			fields[f].length = meta->getLength(st, j);
-			check(st, "getLength");
-
-			fields[f].offset = meta->getOffset(st, j);
-			check(st, "getLength");
-
-			fields[f].null = meta->getNullOffset(st, j);
-			check(st, "getNullOffset");
-
+			fields[f].name = meta->getField(&status, j);
+			fields[f].length = meta->getLength(&status, j);
+			fields[f].offset = meta->getOffset(&status, j);
+			fields[f].null = meta->getNullOffset(&status, j);
 			++f;
 		}
 
-		unsigned l = meta->getMessageLength(st);
-		check(st, "getMessageLength");
+		unsigned l = meta->getMessageLength(&status);
 		unsigned char* buffer = new unsigned char[l];
 
 		// fetch records from cursor
-		while (curs->fetchNext(st, buffer) == IStatus::FB_OK)
+		while (curs->fetchNext(&status, buffer) == IStatus::FB_OK)
 		{
 			for (unsigned j = 0; j < f; ++j)
 			{
 				// call field's function to print it
-				fields[j].print(st, att, tra, buffer);
+				fields[j].print(&status, att, tra, buffer);
 			}
 			printf("\n");
 		}
-		check(st, "fetch");
 
-		curs->close(st);
-		check(st, "close");
+		curs->close(&status);
 		curs = NULL;
 
 		meta->release();
 		meta = NULL;
 
-		tra->commit(st);
-		check(st, "commit");
+		tra->commit(&status);
 		tra = NULL;
 
-		att->detach(st);
-		check(st, "detach");
+		att->detach(&status);
 		att = NULL;
 	}
 	catch (const char* text)
@@ -203,7 +180,7 @@ T as(unsigned char* ptr)
 	return *((T*) ptr);
 }
 
-void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned char* buf)
+void MyField::print(ThrowStatusWrapper* st, IAttachment* att, ITransaction* tra, unsigned char* buf)
 {
 	printf("%s: ", name);
 	if (as<short>(buf + null))
@@ -243,7 +220,6 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 		{
 			// use attachment's method to access BLOB object
 			blob = att->openBlob(st, tra, (ISC_QUAD*) (buf + offset), 0, NULL);
-			check(st, "openBlob");
 
 			char segbuf[16];
 			unsigned len;
@@ -255,11 +231,9 @@ void MyField::print(IStatus* st, IAttachment* att, ITransaction* tra, unsigned c
 					break;
 				fwrite(segbuf, sizeof(char), len, stdout);
 			}
-			check(st, "getSegment");
 
 			// close BLOB after receiving all data
 			blob->close(st);
-			check(st, "close");
 			blob = NULL;
 			printf("\n");
 		}
