@@ -62,8 +62,10 @@ namespace os_utils
 	FILE* fopen(const char* pathname, const char* mode);
 
 	// return a binary string that uniquely identifies the file
+#ifdef WIN_NT
+	void getUniqueFileId(HANDLE fd, Firebird::UCharBuffer& id);
+#else
 	void getUniqueFileId(int fd, Firebird::UCharBuffer& id);
-#ifndef WIN_NT
 #define HAVE_ID_BY_NAME
 	void getUniqueFileId(const char* name, Firebird::UCharBuffer& id);
 #endif

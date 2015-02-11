@@ -313,7 +313,7 @@ FILE* fopen(const char* pathname, const char* mode)
 	return ::fopen(pathname, mode);
 }
 
-void getUniqueFileId(int fd, Firebird::UCharBuffer& id)
+void getUniqueFileId(HANDLE fd, Firebird::UCharBuffer& id)
 {
 	BY_HANDLE_FILE_INFORMATION file_info;
 	GetFileInformationByHandle(fd, &file_info);
