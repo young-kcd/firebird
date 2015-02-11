@@ -4045,9 +4045,8 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 		return lsLockedHavePage;
 
 	TEXT errmsg[MAX_ERRMSG_LEN + 1];
-	ISC_STATUS* const status = tdbb->tdbb_status_vector;
-	ISC_STATUS_ARRAY temp_status = {0};
-	AutoSetRestore<ISC_STATUS*> autoStatus(&tdbb->tdbb_status_vector, temp_status);
+
+	ThreadStatusGuard tempStatus(tdbb);
 
 	if (lock->lck_logical == LCK_none)
 	{
@@ -4079,8 +4078,10 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 				lock->lck_object = bdb;
 				bdb->bdb_flags |= BDB_no_blocking_ast;
 			}
+
 			return lsLocked;
 		}
+
 		if (!lock->lck_ast)
 		{
 			fb_assert(page_type == pag_header || page_type == pag_transactions);
@@ -4090,7 +4091,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 		// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (temp_status[1] == isc_lock_timeout)))
+		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (tempStatus[1] == isc_lock_timeout)))
 		{
 			bdb->release(tdbb, false);
 			return lsLockTimeout;
@@ -4100,6 +4101,8 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 		// BufferDesc's in an unfortunate order.  Nothing we can do about it, return the
 		// error, and log it to firebird.log.
 
+		ISC_STATUS* const status = tempStatus.restore();
+
 		fb_msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 			MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
 		ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
@@ -4108,7 +4111,6 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 		// CCH_unwind releases all the BufferDesc's and calls ERR_punt()
 		// ERR_punt will longjump.
 
-		tdbb->tdbb_status_vector = status;
 		CCH_unwind(tdbb, true);
 	}
 
@@ -4132,7 +4134,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-	if ((wait < 0) && (temp_status[1] == isc_lock_timeout))
+	if ((wait < 0) && (tempStatus[1] == isc_lock_timeout))
 	{
 		bdb->release(tdbb, false);
 		return lsLockTimeout;
@@ -4142,12 +4144,13 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 	// BufferDesc's in an unfortunate order.  Nothing we can do about it, return the
 	// error, and log it to firebird.log.
 
+	ISC_STATUS* const status = tempStatus.restore();
+
 	fb_msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 					MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
 	ERR_append_status(status, Arg::Gds(isc_random) << Arg::Str(errmsg));
 	ERR_log(JRD_BUGCHK, 215, errmsg);	// msg 215 page %ld, page type %ld lock conversion denied
 
-	tdbb->tdbb_status_vector = status;
 	CCH_unwind(tdbb, true);
 
 	return lsError;		// Added to get rid of Compiler Warning

@@ -659,10 +659,11 @@ public:
 		m_tdbb->tdbb_status_vector = m_old_status;
 	}
 
-	//ISC_STATUS* restore()
-	//{
-	//	return m_tdbb->tdbb_status_vector = m_old_status; // copy, not comparison
-	//}
+	ISC_STATUS* restore()
+	{
+		m_tdbb->tdbb_status_vector = m_old_status;
+		return m_old_status;
+	}
 
 	operator ISC_STATUS*() { return m_local_status; }
 
