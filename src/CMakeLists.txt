@@ -346,7 +346,8 @@ if (APPLE)
     list(REMOVE_ITEM common_os_src ${CMAKE_CURRENT_BINARY_DIR}/common/os/posix/mod_loader.cpp)
 endif()
 
-add_library(common ${common_src} ${common_os_src} ${common_include})
+add_library                 (common ${common_src} ${common_os_src} ${common_include})
+target_link_libraries       (common PRIVATE ${LIB_mpr})
 
 
 ################################################################################
@@ -390,7 +391,6 @@ target_link_libraries       (boot_yvalve
     PRIVATE common
     PUBLIC libtommath
     PUBLIC ${LIB_Ws2_32}
-    PUBLIC ${LIB_mpr}
     PUBLIC ${LIB_readline}
     PUBLIC ${LIB_dl}
     PUBLIC ${LIB_iconv}
@@ -414,7 +414,6 @@ target_link_libraries       (yvalve
     PRIVATE common
     PUBLIC libtommath
     PUBLIC ${LIB_Ws2_32}
-    PUBLIC ${LIB_mpr}
     PUBLIC ${LIB_readline}
     PUBLIC ${LIB_dl}
     PUBLIC ${LIB_iconv}
