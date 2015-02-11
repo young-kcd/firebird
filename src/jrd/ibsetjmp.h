@@ -39,7 +39,7 @@
 #define START_CHECK_FOR_EXCEPTIONS(err)	{ \
 					sigjmp_buf sigenv; \
 					int sig; \
-					ISC_STATUS __isc_error_code;
+					ISC_STATUS __isc_error_code; \
 					if (!Config::getBugcheckAbort()) \
 					{ \
 						if (sig = sigsetjmp(sigenv, 1)) \
