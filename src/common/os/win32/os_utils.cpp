@@ -316,7 +316,7 @@ FILE* fopen(const char* pathname, const char* mode)
 void getUniqueFileId(int fd, Firebird::UCharBuffer& id)
 {
 	BY_HANDLE_FILE_INFORMATION file_info;
-	GetFileInformationByHandle(file->fil_desc, &file_info);
+	GetFileInformationByHandle(fd, &file_info);
 
 	// The identifier is [nFileIndexHigh, nFileIndexLow]
 	// MSDN says: After a process opens a file, the identifier is constant until
