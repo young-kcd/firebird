@@ -231,6 +231,94 @@ namespace Firebird
 		}
 	};
 
+#ifdef FB_API_VER	// internal hack
+	class Helper
+	{
+	public:
+		template <typename StatusType>
+		static isc_db_handle getIscDbHandle(StatusType* status, IAttachment* attachment)
+		{
+			if (!attachment)
+				return 0;
+
+			ISC_STATUS_ARRAY statusVector = {0};
+			isc_db_handle handle = 0;
+
+			fb_get_database_handle(statusVector, &handle, attachment);
+
+			if (!handle)
+			{
+				status->setErrors(statusVector);
+				StatusType::checkException(status);
+			}
+
+			return handle;
+		}
+
+		template <typename StatusType>
+		static isc_db_handle getIscDbHandle(StatusType* status, IExternalContext* context)
+		{
+			IAttachment* attachment = context->getAttachment(status);
+
+			if (!attachment)
+				return 0;
+
+			try
+			{
+				isc_db_handle handle = getIscDbHandle(status, attachment);
+				attachment->release();
+				return handle;
+			}
+			catch (...)
+			{
+				attachment->release();
+				throw;
+			}
+		}
+
+		template <typename StatusType>
+		static isc_tr_handle getIscTrHandle(StatusType* status, ITransaction* transaction)
+		{
+			if (!transaction)
+				return 0;
+
+			ISC_STATUS_ARRAY statusVector = {0};
+			isc_tr_handle handle = 0;
+
+			fb_get_transaction_handle(statusVector, &handle, transaction);
+
+			if (!handle)
+			{
+				status->setErrors(statusVector);
+				StatusType::checkException(status);
+			}
+
+			return handle;
+		}
+
+		template <typename StatusType>
+		static isc_tr_handle getIscTrHandle(StatusType* status, IExternalContext* context)
+		{
+			ITransaction* transaction = context->getTransaction(status);
+
+			if (!transaction)
+				return 0;
+
+			try
+			{
+				isc_tr_handle handle = getIscTrHandle(status, transaction);
+				transaction->release();
+				return handle;
+			}
+			catch (...)
+			{
+				transaction->release();
+				throw;
+			}
+		}
+	};
+#endif	// FB_API_VER
+
 	// Additional API function.
 	// Should be used only in non-plugin modules.
 	// All plugins including providers should use passed at init time interface instead.

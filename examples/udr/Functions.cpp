@@ -57,7 +57,7 @@ FB_UDR_BEGIN_FUNCTION(wait_event)
 		delete [] s;
 
 		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(status, context);
+		isc_db_handle dbHandle = Helper::getIscDbHandle(status, context);
 		ISC_ULONG counter = 0;
 
 		FbException::check(isc_wait_for_event(

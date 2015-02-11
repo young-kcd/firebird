@@ -218,57 +218,8 @@ namespace Firebird
 template <typename T, typename StatusType> class Procedure;
 
 
-class Helper
-{
-public:
-	template <typename StatusType>
-	static isc_db_handle getIscDbHandle(StatusType* status, IExternalContext* context)
-	{
-		IAttachment* attachment = context->getAttachment(status);
-
-		if (!attachment)
-			return 0;
-
-		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle handle = 0;
-
-		fb_get_database_handle(statusVector, &handle, attachment);
-
-		if (!handle)
-		{
-			status->setErrors(statusVector);
-			StatusType::checkException(status);
-		}
-
-		return handle;
-	}
-
-	template <typename StatusType>
-	static isc_tr_handle getIscTrHandle(StatusType* status, IExternalContext* context)
-	{
-		ITransaction* transaction = context->getTransaction(status);
-
-		if (!transaction)
-			return 0;
-
-		ISC_STATUS_ARRAY statusVector = {0};
-		isc_tr_handle handle = 0;
-
-		fb_get_transaction_handle(statusVector, &handle, transaction);
-
-		if (!handle)
-		{
-			status->setErrors(statusVector);
-			StatusType::checkException(status);
-		}
-
-		return handle;
-	}
-};
-
-
 template <typename This, typename Procedure, typename InMessage, typename OutMessage, typename StatusType>
-class ResultSet : public IExternalResultSetImpl<This, StatusType>, public Helper
+class ResultSet : public IExternalResultSetImpl<This, StatusType>
 {
 public:
 	ResultSet(IExternalContext* aContext, Procedure* aProcedure,
@@ -295,7 +246,7 @@ protected:
 
 
 template <typename This, typename StatusType>
-class Function : public IExternalFunctionImpl<This, StatusType>, public Helper
+class Function : public IExternalFunctionImpl<This, StatusType>
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
@@ -314,7 +265,7 @@ public:
 
 
 template <typename This, typename StatusType>
-class Procedure : public IExternalProcedureImpl<This, StatusType>, public Helper
+class Procedure : public IExternalProcedureImpl<This, StatusType>
 {
 public:
 	FB__UDR_COMMON_TYPE(InMessage);
@@ -333,7 +284,7 @@ public:
 
 
 template <typename This, typename StatusType>
-class Trigger : public IExternalTriggerImpl<This, StatusType>, public Helper
+class Trigger : public IExternalTriggerImpl<This, StatusType>
 {
 public:
 	FB__UDR_COMMON_TYPE(FieldsMessage);

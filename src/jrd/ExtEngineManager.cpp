@@ -640,13 +640,17 @@ IExternalEngine* ExtEngineManager::ExternalContextImpl::getEngine(CheckStatusWra
 	return engine;
 }
 
-Firebird::IAttachment* ExtEngineManager::ExternalContextImpl::getAttachment(CheckStatusWrapper* /*status*/)
+Firebird::IAttachment* ExtEngineManager::ExternalContextImpl::getAttachment(
+	CheckStatusWrapper* /*status*/)
 {
+	externalAttachment->addRef();
 	return externalAttachment;
 }
 
-Firebird::ITransaction* ExtEngineManager::ExternalContextImpl::getTransaction(CheckStatusWrapper* /*status*/)
+Firebird::ITransaction* ExtEngineManager::ExternalContextImpl::getTransaction(
+	CheckStatusWrapper* /*status*/)
 {
+	externalTransaction->addRef();
 	return externalTransaction;
 }
 

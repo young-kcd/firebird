@@ -73,8 +73,8 @@ FB_UDR_BEGIN_TRIGGER(replicate)
 		, triggerMetadata(metadata->getTriggerMetadata(status))
 	{
 		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(status, context);
-		isc_tr_handle trHandle = getIscTrHandle(status, context);
+		isc_db_handle dbHandle = Helper::getIscDbHandle(status, context);
+		isc_tr_handle trHandle = Helper::getIscTrHandle(status, context);
 
 		isc_stmt_handle stmtHandle = 0;
 		FbException::check(isc_dsql_allocate_statement(
@@ -224,8 +224,8 @@ FB_UDR_BEGIN_TRIGGER(replicate_persons)
 		, triggerMetadata(metadata->getTriggerMetadata(status))
 	{
 		ISC_STATUS_ARRAY statusVector = {0};
-		isc_db_handle dbHandle = getIscDbHandle(status, context);
-		isc_tr_handle trHandle = getIscTrHandle(status, context);
+		isc_db_handle dbHandle = Helper::getIscDbHandle(status, context);
+		isc_tr_handle trHandle = Helper::getIscTrHandle(status, context);
 
 		isc_stmt_handle stmtHandle = 0;
 		FbException::check(isc_dsql_allocate_statement(
