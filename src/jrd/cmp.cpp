@@ -4242,21 +4242,26 @@ jrd_nod* CMP_pass1(thread_db* tdbb, CompilerScratch* csb, jrd_nod* node)
 		// fall into
 
 	case nod_ansi_any:
-		if (node->nod_flags & nod_deoptimize)
 		{
-			node->nod_flags &= ~nod_deoptimize;
-			// Deoptimize the conjunct, not the ALL node itself
+			bool deoptimize = false;
+
+			if (node->nod_flags & nod_deoptimize)
+			{
+				node->nod_flags &= ~nod_deoptimize;
+				deoptimize = true;
+			}
+
+			// Deoptimize the conjunct, not the node itself
 			jrd_nod* boolean = ((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
 			if (boolean)
 			{
 				if (boolean->nod_type == nod_and)
-				{
 					boolean = boolean->nod_arg[1];
-				}
+
 				// Deoptimize the injected boolean of a quantified predicate
 				// when it's necessary. ALL predicate does not require an index scan.
 				// This fixes bug SF #543106.
-				boolean->nod_flags |= nod_deoptimize;
+				boolean->nod_flags |= nod_residual | (deoptimize ? nod_deoptimize : 0);
 			}
 		}
 		// fall into

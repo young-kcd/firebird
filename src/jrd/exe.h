@@ -124,6 +124,7 @@ const int nod_agg_dbkey		= 64;		// dbkey of an aggregate
 const int nod_invariant		= 128;		// node is recognized as being invariant
 const int nod_recurse		= 256;		// union node is a recursive union
 const int nod_unique_sort	= 512;		// sorts using unique key - for distinct and group by
+const int nod_residual		= 1024;		// boolean which must remain residual
 
 // Special RecordSelExpr node
 

@@ -626,21 +626,27 @@ bool EVL_boolean(thread_db* tdbb, jrd_nod* node)
 			   the unoptimized boolean expression must be used, since the
 			   processing of these clauses is order dependant (see rse.cpp) */
 
-			RecordSource* select = (RecordSource*) (node->nod_arg[e_any_rsb]);
+			RecordSource* select = (RecordSource*) node->nod_arg[e_any_rsb];
+			RecordSelExpr* const rse = (RecordSelExpr*) node->nod_arg[e_any_rse];
+
 			if (node->nod_type != nod_any)
 			{
-				select->rsb_any_boolean = ((RecordSelExpr*) (node->nod_arg[e_any_rse]))->rse_boolean;
-				if (node->nod_type == nod_ansi_any) {
+				while (select->rsb_type == rsb_first ||
+					select->rsb_type == rsb_skip ||
+					select->rsb_type == rsb_sort)
+				{
+					select = select->rsb_next;
+				}
+
+				fb_assert(select->rsb_type == rsb_boolean);
+				select->rsb_any_boolean = rse->rse_boolean;
+
+				if (node->nod_type == nod_ansi_any)
 					request->req_flags |= req_ansi_any;
-				}
-				else {
+				else
 					request->req_flags |= req_ansi_all;
-					// dimitr:	Even if we can evaluate ANY without a residual
-					//			boolean (what I still doubt), it's impossible
-					//			for ALL. Hence this assertion.
-					fb_assert(select->rsb_type == rsb_boolean);
-				}
 			}
+
 			RSE_open(tdbb, select);
 			value = RSE_get_record(tdbb, select, g_RSE_get_mode);
 			RSE_close(tdbb, select);
