@@ -1,3 +1,53 @@
+ 2015-02-11 17:00  egorpugin 
+   M src/CMakeLists.txt
+[build] [cmake] Fix Windows build.
+
+ 2015-02-11 16:31  alexpeshkoff 
+   M src/common/os/os_utils.h
+   M src/common/os/win32/os_utils.cpp
+One more attempt to fix windows build
+
+ 2015-02-11 15:30  alexpeshkoff 
+   M src/common/os/win32/os_utils.cpp
+This should fix windows build
+
+ 2015-02-11 15:12  asfernandes 
+   M examples/udr/Functions.cpp
+   M examples/udr/Triggers.cpp
+   M src/include/firebird/Interface.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/jrd/ExtEngineManager.cpp
+Move Helper class from UDR to the main interface header. Use proper (argh) ref. counting in the ExternalContext::get* methods.
+
+ 2015-02-11 15:11  asfernandes 
+   M src/jrd/ibase.h
+Increase FB_API_VER to 30.
+
+ 2015-02-11 10:19  alexpeshkoff 
+   M src/jrd/ibsetjmp.h
+Fixed posix build
+
+ 2015-02-11 09:20  dimitr 
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.h
+Change the status handling a little.
+
+ 2015-02-10 14:17  hvlad 
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+   M src/jrd/blob_filter.cpp
+   M src/jrd/ibsetjmp.h
+   M src/jrd/jrd.h
+Fixed bug CORE-4688 : Recovery after stack overflow exception is not complete
+
+ 2015-02-10 13:32  alexpeshkoff 
+   M examples/interfaces/01.create.cpp
+   M examples/interfaces/02.update.cpp
+   M examples/interfaces/03.select.cpp
+   M examples/interfaces/04.print_table.cpp
+   M examples/interfaces/ifaceExamples.h
+Bring examples up-to-date, use ThrowStatusWrapper in them
+
  2015-02-09 14:39  asfernandes 
    M src/yvalve/why.cpp
 Misc.
