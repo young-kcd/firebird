@@ -264,8 +264,8 @@ function(create_command command type out)
         set(dir ${boot_dir})
     endif()
     
-    set_win32(env "PATH=%PATH%\;${dir}")
-    set_unix (env "PATH=$PATH:${dir}/bin")
+    set_win32(env "PATH=${dir}\;%PATH%")
+    set_unix (env "PATH=${dir}/bin:$PATH")
     set(env "${env}"
         FIREBIRD=${dir}
     )

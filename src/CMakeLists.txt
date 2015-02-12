@@ -347,7 +347,7 @@ if (APPLE)
 endif()
 
 add_library                 (common ${common_src} ${common_os_src} ${common_include})
-target_link_libraries       (common PRIVATE ${LIB_mpr})
+target_link_libraries       (common ${LIB_mpr})
 
 
 ################################################################################
