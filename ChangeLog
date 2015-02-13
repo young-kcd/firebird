@@ -1,3 +1,8 @@
+ 2015-02-12 15:50  egorpugin 
+   M builds/cmake/BuildFunctions.cmake
+   M src/CMakeLists.txt
+[build] [cmake] Fix issue with PATH on linux.
+
  2015-02-11 17:00  egorpugin 
    M src/CMakeLists.txt
 [build] [cmake] Fix Windows build.
