@@ -1,3 +1,10 @@
+ 2015-02-12 19:56  dimitr 
+   M src/jrd/Optimizer.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.h
+Backported improved ANY/ALL handling from trunk. This should fix CORE-4690: DISTINCT vs non-DISTINCT affects the result of IN subquery.
+
  2015-02-04 14:52  smirnoffjr 
    M src/jrd/isc_file.cpp
 Backported from trunk: small fix for generic UNIX Mnt::get() implementation
