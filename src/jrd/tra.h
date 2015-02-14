@@ -102,6 +102,9 @@ const char* const TRA_UNDO_SPACE = "fb_undo_";
 
 class jrd_tra : public pool_alloc<type_tra>
 {
+	static const size_t MAX_UNDO_RECORDS = 2;
+	typedef Firebird::HalfStaticArray<Record*, MAX_UNDO_RECORDS> UndoRecordList;
+
 public:
 	enum wait_t {
 		tra_no_wait,
@@ -129,7 +132,7 @@ public:
 		tra_sorts(*p),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
-		tra_undo_record(NULL),
+		tra_undo_records(*p),
 		tra_user_management(NULL),
 		tra_autonomous_pool(NULL),
 		tra_autonomous_cnt(0)
@@ -220,7 +223,7 @@ private:
 	TempSpace* tra_blob_space;	// temp blob storage
 	TempSpace* tra_undo_space;	// undo log storage
 
-	Record* tra_undo_record;	// temporary record used for the undo purposes
+	UndoRecordList tra_undo_records;	// temporary records used for the undo purposes
 	UserManagement* tra_user_management;
 	MemoryPool* tra_autonomous_pool;
 	USHORT tra_autonomous_cnt;
@@ -258,17 +261,47 @@ public:
 		return tra_undo_space;
 	}
 
-	Record* getUndoRecord(USHORT length)
+	Record* getUndoRecord(USHORT length, SINT64 number, const Format* format, UCHAR flags)
 	{
-		if (!tra_undo_record || tra_undo_record->rec_length < length)
+		Record** recordPtr = NULL;
+
+		for (Record** iter = tra_undo_records.begin(); iter != tra_undo_records.end(); ++iter)
 		{
-			delete tra_undo_record;
-			tra_undo_record = FB_NEW_RPT(*tra_pool, length) Record(*tra_pool);
+			fb_assert(*iter);
+
+			if (!((*iter)->rec_flags & REC_undo_active))
+			{
+				recordPtr = iter;
+				break;
+			}
 		}
 
-		memset(tra_undo_record, 0, sizeof(Record) + length);
+		Record* record = NULL;
 
-		return tra_undo_record;
+		if (recordPtr)
+		{
+			record = *recordPtr;
+
+			if (record->rec_length < length)
+			{
+				delete record;
+				*recordPtr = record = FB_NEW_RPT(*tra_pool, length) Record(*tra_pool);
+			}
+			else
+				memset(record, 0, sizeof(Record) + length);
+		}
+		else
+		{
+			fb_assert(tra_undo_records.getCount() < MAX_UNDO_RECORDS);
+			record = FB_NEW_RPT(*tra_pool, length) Record(*tra_pool);
+			tra_undo_records.add(record);
+		}
+
+		record->rec_number.setValue(number);
+		record->rec_length = length;
+		record->rec_format = format;
+		record->rec_flags = (flags | REC_undo_active);
+		return record;
 	}
 
 	UserManagement* getUserManagement();
@@ -466,16 +499,10 @@ public:
 	{
 		flags |= newFlags;
 
-		Record* const record = transaction->getUndoRecord(length);
-		record->rec_number.setValue(number);
-		record->rec_flags = flags;
-		record->rec_length = length;
-		record->rec_format = format;
+		Record* const record = transaction->getUndoRecord(length, number, format, flags);
 
 		if (length)
-		{
 			transaction->getUndoSpace()->read(offset, record->rec_data, length);
-		}
 
 		return record;
 	}
@@ -524,6 +551,36 @@ inline void Savepoint::deleteActions(VerbAction* list)
 		delete list;
 		list = next;
 	}
+};
+
+class AutoUndoRecord
+{
+public:
+	AutoUndoRecord(jrd_tra* transaction, UndoItem* undo, USHORT flags = 0)
+		: m_record(undo ? undo->setupRecord(transaction, flags) : NULL)
+	{}
+
+	~AutoUndoRecord()
+	{
+		if (m_record)
+		{
+			fb_assert(m_record->rec_flags & REC_undo_active);
+			m_record->rec_flags &= ~REC_undo_active;
+		}
+	}
+
+	operator Record*()
+	{
+		return m_record;
+	}
+
+	Record* operator->()
+	{
+		return m_record;
+	}
+
+private:
+	Record* const m_record;
 };
 
 } //namespace Jrd

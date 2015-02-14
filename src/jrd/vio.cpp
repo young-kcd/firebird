@@ -3180,7 +3180,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 							}
 							else
 							{
-								Record* const record = action->vct_undo->current().setupRecord(transaction);
+								AutoUndoRecord record(transaction, &action->vct_undo->current());
 								const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
 
 								// Have we done BOTH an update and delete to this record
@@ -3209,6 +3209,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 										VIO_backout(tdbb, &rpb, transaction);
 									}
 								}
+
 								if (record->rec_length != 0)
 								{
 									Record* dead_record = rpb.rpb_record;
@@ -3256,7 +3257,8 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 									BUGCHECK(186);	// msg 186 record disappeared
 								}
 								CCH_RELEASE(tdbb, &rpb.getWindow(tdbb));
-								Record* const record = action->vct_undo->current().setupRecord(transaction);
+
+								AutoUndoRecord record(transaction, &action->vct_undo->current());
 								const bool same_tx = (record->rec_flags & REC_same_tx) != 0;
 								const bool new_ver = (record->rec_flags & REC_new_version) != 0;
 								if (record->rec_length != 0)
@@ -5354,19 +5356,17 @@ static void verb_post(thread_db* tdbb,
 	VerbAction* action;
 	for (action = transaction->tra_save_point->sav_verb_actions; action; action = action->vct_next)
 	{
-		if (action->vct_relation == rpb->rpb_relation) {
+		if (action->vct_relation == rpb->rpb_relation)
 			break;
-		}
 	}
 
 	if (!action)
 	{
-		if ( (action = transaction->tra_save_point->sav_verb_free) ) {
+		if ( (action = transaction->tra_save_point->sav_verb_free) )
 			transaction->tra_save_point->sav_verb_free = action->vct_next;
-		}
-		else {
+		else
 			action = FB_NEW(*tdbb->getDefaultPool()) VerbAction();
-		}
+
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
 		action->vct_relation = rpb->rpb_relation;
@@ -5380,9 +5380,9 @@ static void verb_post(thread_db* tdbb,
 			// An update-in-place is being posted to this savepoint, and this
 			// savepoint hasn't seen this record before.
 
-			if (!action->vct_undo) {
+			if (!action->vct_undo)
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
-			}
+
 			const UCHAR flags = same_tx ? REC_same_tx : 0;
 			action->vct_undo->add(UndoItem(transaction, rpb->rpb_number, old_data, flags));
 		}
@@ -5391,33 +5391,33 @@ static void verb_post(thread_db* tdbb,
 			// An insert/update followed by a delete is posted to this savepoint,
 			// and this savepoint hasn't seen this record before.
 
-			if (!action->vct_undo) {
+			if (!action->vct_undo)
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
-			}
+
 			const UCHAR flags = REC_same_tx | (new_ver ? REC_new_version : 0);
 			action->vct_undo->add(UndoItem(rpb->rpb_number, flags));
 		}
 	}
 	else if (same_tx)
 	{
-		Record* undo = NULL;
-		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue()))
-		{
-			// An insert/update followed by a delete is posted to this savepoint,
-			// and this savepoint has already undo for this record.
-			undo = action->vct_undo->current().setupRecord(transaction, REC_same_tx);
-		}
-		else
+		const bool found = (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue()));
+
+		// An insert/update followed by a delete is posted to this savepoint,
+		// and this savepoint has already undo for this record.
+		AutoUndoRecord undo(transaction, found ? &action->vct_undo->current() : NULL, REC_same_tx);
+
+		if (!found)
 		{
 			// An insert/update followed by a delete is posted to this savepoint,
 			// and this savepoint has seen this record before but it doesn't have undo data.
 
-			if (!action->vct_undo) {
+			if (!action->vct_undo)
 				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
-			}
+
 			const UCHAR flags = REC_same_tx | REC_new_version;
 			action->vct_undo->add(UndoItem(rpb->rpb_number, flags));
 		}
+
 		if (old_data)
 		{
 			// The passed old_data will not be used.  Thus, garbage collect.
@@ -5427,15 +5427,14 @@ static void verb_post(thread_db* tdbb,
 	}
 	else if (old_data)
 	{
+		const bool found = (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue()));
+
 		// We are posting an update-in-place, but the current savepoint has
 		// already undo data for this record.  The old_data will not be used,
 		// so make sure we garbage collect before we lose track of the
 		// in-place-updated record.
 
-		Record* undo = NULL;
-		if (action->vct_undo && action->vct_undo->locate(rpb->rpb_number.getValue())) {
-			undo = action->vct_undo->current().setupRecord(transaction);
-		}
+		AutoUndoRecord undo(transaction, found ? &action->vct_undo->current() : NULL);
 
 		garbage_collect_idx(tdbb, rpb, /*new_rpb,*/ old_data, undo);
 	}
