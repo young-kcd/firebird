@@ -3498,7 +3498,9 @@ static jrd_tra* transaction_start(thread_db* tdbb, jrd_tra* temp)
 
 jrd_tra::~jrd_tra()
 {
-	delete tra_undo_record;
+	while (tra_undo_records.hasData())
+		delete tra_undo_records.pop();
+
 	delete tra_undo_space;
 	delete tra_user_management;
 
