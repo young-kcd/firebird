@@ -199,8 +199,6 @@ public:
 			for (bool cont = accessor.getFirst(); cont; cont = accessor.getNext())
 				accessor.current()->second->dispose();
 		}
-
-		delete module;
 	}
 
 public:
@@ -265,7 +263,7 @@ public:
 
 private:
 	PathName moduleName;
-	ModuleLoader::Module* module;
+	AutoPtr<ModuleLoader::Module> module;
 
 public:
 	FB_BOOLEAN myUnloadFlag;

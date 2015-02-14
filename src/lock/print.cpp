@@ -762,7 +762,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 	// if we can't read this version - admit there's nothing to say and return.
 
-	if (LOCK_header->mhb_header_version != MemoryHeader::HEADER_VERSION || 
+	if (LOCK_header->mhb_header_version != MemoryHeader::HEADER_VERSION ||
 		LOCK_header->mhb_version != LHB_VERSION)
 	{
 		if (LOCK_header->mhb_type == 0 && LOCK_header->mhb_header_version == 0 && LOCK_header->mhb_version == 0)

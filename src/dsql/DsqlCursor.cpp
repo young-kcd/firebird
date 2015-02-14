@@ -30,8 +30,8 @@
 using namespace Firebird;
 using namespace Jrd;
 
-const char* const SCRATCH = "fb_cursor_";
-const ULONG PREFETCH_SIZE = 65536; // 64 KB
+static const char* const SCRATCH = "fb_cursor_";
+static const ULONG PREFETCH_SIZE = 65536; // 64 KB
 
 DsqlCursor::DsqlCursor(dsql_req* req, ULONG flags)
 	: m_request(req), m_flags(flags),

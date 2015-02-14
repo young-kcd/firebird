@@ -48,7 +48,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		Firebird::AutoPtr<Firebird::UtilSvc> uSvc(Firebird::UtilSvc::createStandalone(argc, argv));
  		return alice(uSvc);
  	}
- 	catch(const Firebird::Exception& ex)
+	catch (const Firebird::Exception& ex)
  	{
  		ISC_STATUS_ARRAY st;
  		ex.stuff_exception(st);

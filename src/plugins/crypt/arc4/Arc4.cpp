@@ -127,7 +127,7 @@ void Arc4::setKey(CheckStatusWrapper* status, ICryptKey* key)
 	    k = key->getDecryptKey(&l);
 		de = createCypher(l, k);
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}

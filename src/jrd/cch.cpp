@@ -3242,8 +3242,8 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb, int high)
 			return; // false;
 
 		// hvlad: buffer is in use and we can't downgrade its lock. But if this
-		// buffer blocks some lower precedence buffer, it is enough to just write 
-		// our (high) buffer to clear precedence and thus allow blocked (low) 
+		// buffer blocks some lower precedence buffer, it is enough to just write
+		// our (high) buffer to clear precedence and thus allow blocked (low)
 		// buffer to be downgraded. IO lock guarantees that there is no buffer
 		// modification in progress currently and it is safe to write it right now.
 		// No need to mark our buffer as blocking nor to change state of our lock.
@@ -3255,9 +3255,9 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb, int high)
 			return; // true
 		}
 
-		if (!oldBlocking) {
+		if (!oldBlocking)
 			bdb->bdb_ast_flags &= ~BDB_blocking;
-		}
+
 		justWrite = true;
 	}
 
@@ -3397,6 +3397,7 @@ static void down_grade(thread_db* tdbb, BufferDesc* bdb, int high)
 	} // syncPrec scope
 
 	bdb->bdb_flags &= ~BDB_not_valid;
+
 	if (justWrite)
 		bdb->unLockIO(tdbb);
 	else

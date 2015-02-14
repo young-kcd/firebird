@@ -4495,10 +4495,8 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 				}
 			}
 
-			DsqlCursor* const cursor =
-				DSQL_open(tdbb, &tra, getHandle(),
-						  inMetadata, static_cast<UCHAR*>(inBuffer),
-						  outMetadata, flags);
+			DsqlCursor* const cursor = DSQL_open(tdbb, &tra, getHandle(),
+				inMetadata, static_cast<UCHAR*>(inBuffer), outMetadata, flags);
 
 			rs = new JResultSet(cursor, this);
 			rs->addRef();

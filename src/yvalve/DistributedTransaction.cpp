@@ -502,7 +502,8 @@ void DtcStart::addAttachment(CheckStatusWrapper* status, IAttachment* att)
 	this->addWithTpb(status, att, 0, NULL);
 }
 
-void DtcStart::addWithTpb(CheckStatusWrapper* status, IAttachment* att, unsigned length, const unsigned char* tpb)
+void DtcStart::addWithTpb(CheckStatusWrapper* status, IAttachment* att,
+	unsigned length, const unsigned char* tpb)
 {
 	try
 	{

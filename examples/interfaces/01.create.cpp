@@ -3,7 +3,7 @@
  *	MODULE:		01.create.cpp
  *	DESCRIPTION:	A sample of creating new database and new table in it.
  *					Run second time (whene database already exists) to see
- *					how FbException is caught and handled by thid code.
+ *					how FbException is caught and handled by this code.
  *
  *					Example for the following interfaces:
  *					IMaster - main inteface to access all the rest

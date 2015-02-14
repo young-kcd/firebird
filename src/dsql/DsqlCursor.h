@@ -75,4 +75,3 @@ private:
 } // namespace
 
 #endif // DSQL_CURSOR_H
-

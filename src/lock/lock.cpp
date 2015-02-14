@@ -1686,8 +1686,8 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	{
 		TEXT bug_buffer[BUFFER_TINY];
 		sprintf(bug_buffer, "inconsistent lock table type/version; found %d/%d:%d, expected %d/%d:%d",
-			m_sharedMemory->getHeader()->mhb_type, 
-			m_sharedMemory->getHeader()->mhb_header_version, 
+			m_sharedMemory->getHeader()->mhb_type,
+			m_sharedMemory->getHeader()->mhb_header_version,
 			m_sharedMemory->getHeader()->mhb_version,
 			SharedMemoryBase::SRAM_LOCK_MANAGER, MemoryHeader::HEADER_VERSION, LHB_VERSION);
 		bug(&statusVector, bug_buffer);

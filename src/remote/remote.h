@@ -637,7 +637,8 @@ public:
 };
 
 // CryptKey implementation
-class InternalCryptKey FB_FINAL : public Firebird::VersionedIface<Firebird::ICryptKeyImpl<InternalCryptKey, Firebird::CheckStatusWrapper> >,
+class InternalCryptKey FB_FINAL :
+	public Firebird::VersionedIface<Firebird::ICryptKeyImpl<InternalCryptKey, Firebird::CheckStatusWrapper> >,
 	public Firebird::GlobalStorage
 {
 public:

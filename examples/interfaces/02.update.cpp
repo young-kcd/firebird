@@ -131,7 +131,7 @@ int main()
 			{
 			    stmt->execute(&status, tra, meta, buffer, NULL, NULL);
 			}
-			catch(const FbException& error)
+			catch (const FbException& error)
 			{
 				// Handle exception raised during statement execution
 				int sqlcode = isc_sqlcode(error.getStatus()->getErrors());
@@ -210,4 +210,3 @@ int get_input (char *dept_no, double *percent)
  
     return 1;
 }
-
