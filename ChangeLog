@@ -1,3 +1,10 @@
+ 2015-02-13 13:46  hvlad 
+   M builds/win32/msvc10/legacy_auth.vcxproj
+   M builds/win32/msvc10/legacy_usermanager.vcxproj
+   M builds/win32/msvc12/legacy_auth.vcxproj
+   M builds/win32/msvc12/legacy_usermanager.vcxproj
+This should fix msvc10 and msvc12 builds
+
  2015-02-12 15:50  egorpugin 
    M builds/cmake/BuildFunctions.cmake
    M src/CMakeLists.txt
