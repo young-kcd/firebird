@@ -1,3 +1,13 @@
+ 2015-02-14 08:11  dimitr 
+   M src/jrd/tra.cpp
+Forgotten change for CORE-4383.
+
+ 2015-02-14 07:34  dimitr 
+   M src/jrd/req.h
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Fixed CORE-4383: Index and BLOBs garbage collection doesn't work for update_in_place().
+
  2015-02-12 19:56  dimitr 
    M src/jrd/Optimizer.cpp
    M src/jrd/cmp.cpp
