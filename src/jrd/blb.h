@@ -27,6 +27,8 @@
 #ifndef JRD_BLB_H
 #define JRD_BLB_H
 
+#include "../include/fb_blk.h"
+
 #include "../jrd/RecordNumber.h"
 #include "../jrd/EngineInterface.h"
 #include "../common/classes/array.h"
