@@ -109,6 +109,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -127,6 +128,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -144,6 +146,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -166,6 +169,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX64</TargetMachine>
       <ModuleDefinitionFile>..\defs\plugin.def</ModuleDefinitionFile>
+      <AdditionalDependencies>mpr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
