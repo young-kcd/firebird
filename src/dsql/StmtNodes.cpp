@@ -5975,19 +5975,16 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	newRpb->rpb_length = newFormat->fmt_length;
 	newRpb->rpb_format_number = newFormat->fmt_version;
 
-	const Format* orgFormat;
 	Record* orgRecord = orgRpb->rpb_record;
 
 	if (!orgRecord)
 	{
 		orgRecord = VIO_record(tdbb, orgRpb, newFormat, tdbb->getDefaultPool());
-		orgFormat = orgRecord->rec_format;
+		const Format* const orgFormat = orgRecord->rec_format;
 		orgRpb->rpb_address = orgRecord->rec_data;
 		orgRpb->rpb_length = orgFormat->fmt_length;
 		orgRpb->rpb_format_number = orgFormat->fmt_version;
 	}
-	else
-		orgFormat = orgRecord->rec_format;
 
 	// Copy the original record to the new record.
 
@@ -8625,8 +8622,8 @@ static void dsqlSetParametersName(CompoundStmtNode* statements, const RecordSour
 // we don't want to carry when the RLE algorithm is applied.
 static void cleanupRpb(thread_db* tdbb, record_param* rpb)
 {
-	Record* record = rpb->rpb_record;
-	const Format* format = record->rec_format;
+	Record* const record = rpb->rpb_record;
+	const Format* const format = record->rec_format;
 
 	SET_TDBB(tdbb); // Is it necessary?
 
