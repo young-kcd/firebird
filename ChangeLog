@@ -1,3 +1,26 @@
+ 2015-02-14 18:55  asfernandes 
+   M builds/posix/udr_plugin.vers
+   M examples/interfaces/01.create.cpp
+   M examples/interfaces/02.update.cpp
+   M src/alice/main/aliceMain.cpp
+   M src/burp/main/burpMain.cpp
+   M src/common/isc.cpp
+   M src/dsql/DsqlCursor.cpp
+   M src/dsql/DsqlCursor.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/lock/lock.cpp
+   M src/lock/print.cpp
+   M src/plugins/crypt/arc4/Arc4.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/utilities/gsec/main/gsecMain.cpp
+   M src/utilities/gstat/main/gstatMain.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/DistributedTransaction.h
+Misc.
+
  2015-02-13 13:46  hvlad 
    M builds/win32/msvc10/legacy_auth.vcxproj
    M builds/win32/msvc10/legacy_usermanager.vcxproj
