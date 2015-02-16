@@ -34,6 +34,7 @@
 #include "../jrd/Database.h"
 #include "../jrd/nbak.h"
 #include "../jrd/tra.h"
+#include "../jrd/tpc_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/CryptoManager.h"
 #include "../jrd/os/pio_proto.h"
@@ -106,6 +107,8 @@ namespace Jrd
 			tdbb->deactivate();
 			tdbb->setDatabase(NULL);
 		}
+
+		delete dbb_tip_cache;
 
 		fb_assert(!locked());
 		// This line decrements the usage counter and may cause the destructor to be called.

@@ -45,6 +45,7 @@ TipCache::TipCache(Database* dbb)
 
 TipCache::~TipCache()
 {
+	SyncLockGuard sync(&m_sync, SYNC_EXCLUSIVE, "TipCache::~TipCache");
 	clearCache();
 }
 
