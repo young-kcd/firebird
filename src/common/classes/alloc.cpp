@@ -694,8 +694,8 @@ void MemoryPool::releaseBlock(MemBlock* block) throw ()
 			if (&hunk->blocks == freeBlock)
 			{
 				*ptr = hunk->nextHunk;
-				decrement_mapping(hunk->length);
-				releaseRaw(pool_destroying, hunk, hunk->length);
+				size_t released = releaseRaw(pool_destroying, hunk, hunk->length);
+				decrement_mapping(released);
 				return;
 			}
 		}
@@ -894,7 +894,7 @@ void MemoryPool::validateBigBlock(MemBigObject* block) throw ()
 	}
 }
 
-void MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cache) throw ()
+size_t MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cache) throw ()
 {
 #ifndef USE_VALGRIND
 	if (use_cache && (size == DEFAULT_ALLOCATION))
@@ -903,7 +903,7 @@ void MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_
 		if (extents_cache.getCount() < extents_cache.getCapacity())
 		{
 			extents_cache.push(block);
-			return;
+			return size;
 		}
 	}
 #else
@@ -930,7 +930,7 @@ void MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_
 			item->size = size;
 			item->handle = handle;
 			delayedExtentCount++;
-			return;
+			return size;
 		}
 
 		DelayedExtent* item = &delayedExtents[delayedExtentsPos];
@@ -970,6 +970,8 @@ void MemoryPool::releaseRaw(bool destroying, void* block, size_t size, bool use_
 #endif
 #endif // WIN_NT
 		corrupt("OS memory deallocation error");
+
+	return size;
 }
 
 void MemoryPool::globalFree(void* block) throw ()
