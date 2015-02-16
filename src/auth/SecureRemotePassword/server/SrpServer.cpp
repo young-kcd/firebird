@@ -67,6 +67,11 @@ public:
     int release();
 
 private:
+	~SrpServer()
+	{
+		delete server;
+	}
+
 	RemotePassword* server;
 	string data;
 	string account;

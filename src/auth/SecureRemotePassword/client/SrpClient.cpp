@@ -42,6 +42,11 @@ public:
 		  sessionKey(getPool())
 	{ }
 
+	~SrpClient()
+	{
+		delete client;
+	}
+
 	// IClient implementation
 	int authenticate(CheckStatusWrapper*, IClientBlock* cb);
     int release();
