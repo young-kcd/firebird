@@ -6375,23 +6375,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	// Shut down any extern relations
 
-	if (attachment->att_relations)
-	{
-		vec<jrd_rel*>* vector = attachment->att_relations;
-
-		for (vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr)
-		{
-			jrd_rel* relation = *ptr;
-
-			if (relation)
-			{
-				if (relation->rel_file)
-					EXT_fini(relation, false);
-
-				delete relation;
-			}
-		}
-	}
+	attachment->releaseRelations(tdbb);
 
 	// Release any validation error vector allocated
 

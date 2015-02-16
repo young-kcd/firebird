@@ -2967,6 +2967,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		Monitoring::cleanupAttachment(tdbb);
 		attachment->releaseLocks(tdbb);
 		LCK_fini(tdbb, LCK_OWNER_attachment);
+
+		attachment->releaseRelations(tdbb);
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{

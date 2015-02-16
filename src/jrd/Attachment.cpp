@@ -34,6 +34,7 @@
 
 #include "../jrd/blb_proto.h"
 #include "../jrd/exe_proto.h"
+#include "../jrd/ext_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
 
@@ -592,6 +593,28 @@ void Jrd::Attachment::detachLocks()
 		long_lock = long_lock->detach();
 
 	att_long_locks = NULL;
+}
+
+void Jrd::Attachment::releaseRelations(thread_db* tdbb)
+{
+	if (att_relations)
+	{
+		vec<jrd_rel*>* vector = att_relations;
+
+		for (vec<jrd_rel*>::iterator ptr = vector->begin(), end = vector->end(); ptr < end; ++ptr)
+		{
+			jrd_rel* relation = *ptr;
+
+			if (relation)
+			{
+				if (relation->rel_file)
+					EXT_fini(relation, false);
+
+				delete relation;
+			}
+		}
+	}
+
 }
 
 int Jrd::Attachment::blockingAstShutdown(void* ast_object)

@@ -394,6 +394,8 @@ public:
 	void releaseLocks(thread_db* tdbb);
 	void detachLocks();
 
+	void releaseRelations(thread_db* tdbb);
+
 	static int blockingAstShutdown(void*);
 	static int blockingAstCancel(void*);
 	static int blockingAstMonitor(void*);
