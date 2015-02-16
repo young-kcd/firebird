@@ -1,3 +1,16 @@
+ 2015-02-15 13:25  dimitr 
+   M src/jrd/blb.h
+Misc.
+
+ 2015-02-15 10:38  dimitr 
+   M src/dsql/StmtNodes.cpp
+Misc.
+
+ 2015-02-15 08:31  dimitr 
+   M builds/win32/msvc10/srp.vcxproj
+   M builds/win32/msvc12/srp.vcxproj
+Postfixes for Windows builds.
+
  2015-02-14 18:55  asfernandes 
    M builds/posix/udr_plugin.vers
    M examples/interfaces/01.create.cpp
