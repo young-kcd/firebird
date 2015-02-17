@@ -1,3 +1,26 @@
+ 2015-02-16 13:57  hvlad 
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/cch.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/vio.cpp
+Memory leak (CORE-4683)
+
+ 2015-02-16 13:56  hvlad 
+   M src/jrd/Database.cpp
+   M src/jrd/tpc.cpp
+Memory leak (CORE-4683)
+
+ 2015-02-16 13:54  hvlad 
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+Two small memory leaks (CORE-4683)
+
+ 2015-02-16 13:53  hvlad 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+Correct accounting of mapped memory 
+
  2015-02-15 13:25  dimitr 
    M src/jrd/blb.h
 Misc.
