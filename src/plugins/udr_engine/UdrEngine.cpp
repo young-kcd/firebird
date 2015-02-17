@@ -586,7 +586,7 @@ UdrPluginImpl* Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* 
 			UdrPluginImpl* udrPlugin = new UdrPluginImpl(*moduleName, module);
 			udrPlugin->theirUnloadFlag = entryPoint(status, &udrPlugin->myUnloadFlag, udrPlugin);
 
-			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 			{
 				delete udrPlugin;
 				ThrowStatusWrapper::checkException(status);
@@ -767,7 +767,7 @@ extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(IMaster* master)
 	CachedMasterInterface::set(master);
 
 	PluginManagerInterfacePtr pi;
-	pi->registerPluginFactory(IPluginManager::ExternalEngine, "UDR", &factory);
+	pi->registerPluginFactory(IPluginManager::TYPE_EXTERNAL_ENGINE, "UDR", &factory);
 	getUnloadDetector()->registerMe();
 }
 

@@ -362,7 +362,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 			transaction->tra_save_point = next;
 		}
 
-		trace.finish(ITracePlugin::TRACE_RESULT_SUCCESS);
+		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		return;
 	}
 
@@ -384,7 +384,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 		LocalStatus s;
 		secContext->tra->commit(&s);
 
-		if (s.getStatus() & IStatus::FB_HAS_ERRORS)
+		if (s.getState() & IStatus::STATE_ERRORS)
 			status_exception::raise(&s);
 
 		secContext->tra = NULL;
@@ -412,7 +412,7 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	if (retaining_flag)
 	{
-		trace.finish(ITracePlugin::TRACE_RESULT_SUCCESS);
+		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		retain_context(tdbb, transaction, true, tra_committed);
 		return;
 	}
@@ -981,7 +981,7 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 	{
 		LocalStatus s;
 		secContext->tra->prepare(&s, length, msg);
-		if (s.getStatus() & IStatus::FB_HAS_ERRORS)
+		if (s.getState() & IStatus::STATE_ERRORS)
 			status_exception::raise(&s);
 	}
 
@@ -1192,7 +1192,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 		TRA_precommited(tdbb, transaction->tra_number, 0);
 
 	if (trace)
-		trace->finish(ITracePlugin::TRACE_RESULT_SUCCESS);
+		trace->finish(ITracePlugin::RESULT_SUCCESS);
 
 	// Unlink the transaction from the database block
 
@@ -1378,7 +1378,7 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 
 	if (retaining_flag)
 	{
-		trace.finish(ITracePlugin::TRACE_RESULT_SUCCESS);
+		trace.finish(ITracePlugin::RESULT_SUCCESS);
 		retain_context(tdbb, transaction, false, state);
 		return;
 	}
@@ -1577,12 +1577,12 @@ jrd_tra* TRA_start(thread_db* tdbb, ULONG flags, SSHORT lock_timeout, Jrd::jrd_t
 		throw;
 	}
 
-	if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_TRANSACTION_START))
+	if (attachment->att_trace_manager->needs(ITraceFactory::EVENT_TRANSACTION_START))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(transaction);
 		attachment->att_trace_manager->event_transaction_start(&conn,
-			&tran, 0, NULL, ITracePlugin::TRACE_RESULT_SUCCESS);
+			&tran, 0, NULL, ITracePlugin::RESULT_SUCCESS);
 	}
 
 	return transaction;
@@ -1628,12 +1628,12 @@ jrd_tra* TRA_start(thread_db* tdbb, int tpb_length, const UCHAR* tpb, Jrd::jrd_t
 		throw;
 	}
 
-	if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_TRANSACTION_START))
+	if (attachment->att_trace_manager->needs(ITraceFactory::EVENT_TRANSACTION_START))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(transaction);
 		attachment->att_trace_manager->event_transaction_start(&conn,
-			&tran, tpb_length, tpb, ITracePlugin::TRACE_RESULT_SUCCESS);
+			&tran, tpb_length, tpb, ITracePlugin::RESULT_SUCCESS);
 	}
 
 	return transaction;
@@ -3477,7 +3477,7 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 
 	TraceManager* trace_mgr = att->att_trace_manager;
 
-	m_need_trace = trace_mgr->needs(ITraceFactory::TRACE_EVENT_SWEEP);
+	m_need_trace = trace_mgr->needs(ITraceFactory::EVENT_SWEEP);
 
 	if (!m_need_trace)
 		return;

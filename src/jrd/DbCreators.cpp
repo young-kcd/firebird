@@ -57,7 +57,7 @@ namespace {
 
 void check(const char* s, IStatus* st)
 {
-	if (!(st->getStatus() & IStatus::FB_HAS_ERRORS))
+	if (!(st->getState() & IStatus::STATE_ERRORS))
 		return;
 
 	Arg::StatusVector newStatus(st);
@@ -77,7 +77,7 @@ bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransactio
 	LocalStatus st;
 	att = prov->attachDatabase(&st, securityDb,
 		embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+	if (st.getState() & IStatus::STATE_ERRORS)
 	{
 		if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
 			check("IProvider::attachDatabase", &st);
@@ -133,7 +133,7 @@ bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
 		att->execute(&st, tra, 0, sql, SQL_DIALECT_V6, prm.getMetadata(), prm.getBuffer(),
 			result.getMetadata(), result.getBuffer());
 
-		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+		if (st.getState() & IStatus::STATE_ERRORS)
 		{
 			// isc_dsql_relation_err when exec SQL - i.e. table RDB$USER_PRIVILEGES
 			// is missing due to non-FB security DB
@@ -169,7 +169,7 @@ bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
 		"select count(*) from RDB$DB_CREATORS"
 		" where (RDB$USER_TYPE = ? and RDB$USER = ?) or (RDB$USER_TYPE = ? and RDB$USER = ?)",
 		SQL_DIALECT_V6, gr.getMetadata(), gr.getBuffer(), result.getMetadata(), result.getBuffer());
-	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+	if (st.getState() & IStatus::STATE_ERRORS)
 	{
 		if (fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
 		{
@@ -240,7 +240,7 @@ RecordBuffer* DbCreatorsList::getList(thread_db* tdbb, jrd_rel* relation)
 		"select RDB$USER_TYPE, RDB$USER from RDB$DB_CREATORS",
 		SQL_DIALECT_V6, NULL, NULL, gr.getMetadata(), NULL, 0));
 
-	if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+	if (st.getState() & IStatus::STATE_ERRORS)
 	{
 		if (!fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
 			check("IAttachment::openCursor", &st);
@@ -258,7 +258,7 @@ RecordBuffer* DbCreatorsList::getList(thread_db* tdbb, jrd_rel* relation)
 	try
 	{
 		buffer = makeBuffer(tdbb);
-		while (curs->fetchNext(&st, gr.getBuffer()) == IStatus::FB_OK)
+		while (curs->fetchNext(&st, gr.getBuffer()) == IStatus::OK)
 		{
 			int charset = CS_METADATA;
 			Record* record = buffer->getTempRecord();

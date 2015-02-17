@@ -154,7 +154,7 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 				const char* sql =
 					"SELECT PLG$VERIFIER, PLG$SALT FROM PLG$SRP WHERE PLG$USER_NAME = ? AND PLG$ACTIVE";
 				stmt = att->prepare(status, tra, 0, sql, 3, IStatement::PREPARE_PREFETCH_METADATA);
-				if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+				if (status->getState() & IStatus::STATE_ERRORS)
 				{
 					checkStatusVectorForMissingTable(status->getErrors());
 					status_exception::raise(status);
@@ -223,7 +223,7 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 			dumpIt("Srv: serverPubKey", serverPubKey);
 			dumpBin("Srv: data", data);
 			sb->putData(status, data.length(), data.c_str());
-			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
@@ -233,12 +233,12 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 
 			// output the key
 			ICryptKey* cKey = sb->newKey(status);
-			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
 			cKey->setSymmetric(status, "Symmetric", sessionKey.getCount(), sessionKey.begin());
-			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
@@ -256,12 +256,12 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 		if (clientProof == serverProof)
 		{
 			writerInterface->add(status, account.c_str());
-			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
 			writerInterface->setDb(status, secDbName);
-			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status->getState() & IStatus::STATE_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
@@ -294,7 +294,7 @@ namespace
 
 void registerSrpServer(IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(IPluginManager::AuthServer, RemotePassword::plugName, &factory);
+	iPlugin->registerPluginFactory(IPluginManager::TYPE_AUTH_SERVER, RemotePassword::plugName, &factory);
 }
 
 } // namespace Auth

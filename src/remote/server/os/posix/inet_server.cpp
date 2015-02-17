@@ -423,7 +423,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 
 		//gds_alloc_report(0, __FILE__, __LINE__);
 		Firebird::PathName name = fb_utils::getPrefix(
-			Firebird::IConfigManager::FB_DIR_LOG, "memdebug.log");
+			Firebird::IConfigManager::DIR_LOG, "memdebug.log");
 		FILE* file = os_utils::fopen(name.c_str(), "w+t");
 		if (file)
 		{

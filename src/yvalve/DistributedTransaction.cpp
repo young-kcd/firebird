@@ -107,7 +107,7 @@ bool DTransaction::buildPrepareInfo(CheckStatusWrapper* status, TdrBuffer& tdr, 
 	// limit MAX_USHORT is chosen cause for old API it was limit of all blocks
 	UCHAR* buf = bigBuffer.getBuffer(MAX_USHORT);
 	from->getInfo(status, sizeof(PREPARE_TR_INFO), PREPARE_TR_INFO, bigBuffer.getCount(), buf);
-	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		return false;
 
 	UCHAR* const end = bigBuffer.end();
@@ -188,7 +188,7 @@ void DTransaction::getInfo(CheckStatusWrapper* status,
 			if (sub[i])
 			{
 				sub[i]->getInfo(status, itemsLength, items, bufferLength, buffer);
-				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 				{
 					return;
 				}
@@ -242,7 +242,7 @@ void DTransaction::prepare(CheckStatusWrapper* status,
 			{
 				sub[i]->prepare(status, msgLength, message);
 
-				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 					return;
 			}
 		}
@@ -262,7 +262,7 @@ void DTransaction::commit(CheckStatusWrapper* status)
 		status->init();
 
 		prepare(status, 0, NULL);
-		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		{
 			return;
 		}
@@ -275,7 +275,7 @@ void DTransaction::commit(CheckStatusWrapper* status)
 				if (sub[i])
 				{
 					sub[i]->commit(status);
-					if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+					if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 						return;
 
 					sub[i] = NULL;
@@ -305,7 +305,7 @@ void DTransaction::commitRetaining(CheckStatusWrapper* status)
 			if (sub[i])
 			{
 				sub[i]->commitRetaining(status);
-				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 					return;
 			}
 		}
@@ -332,7 +332,7 @@ void DTransaction::rollback(CheckStatusWrapper* status)
 				if (sub[i])
 				{
 					sub[i]->rollback(status);
-					if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+					if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 						return;
 
 					sub[i] = NULL;
@@ -359,7 +359,7 @@ void DTransaction::rollbackRetaining(CheckStatusWrapper* status)
 			if (sub[i])
 			{
 				sub[i]->rollbackRetaining(status);
-				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 					return;
 			}
 		}
@@ -388,7 +388,7 @@ void DTransaction::disconnect(CheckStatusWrapper* status)
 			if (sub[i])
 			{
 				sub[i]->disconnect(status);
-				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 					return;
 
 				sub[i] = NULL;
@@ -538,7 +538,7 @@ YTransaction* DtcStart::start(CheckStatusWrapper* status)
 		RefPtr<DTransaction> dtransaction(new DTransaction);
 
 		unsigned cnt = components.getCount();
-		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			status_exception::raise(status);
 		if (cnt == 0)
 			(Arg::Gds(isc_random) << "No attachments to start distributed transaction provided").raise();
@@ -546,11 +546,11 @@ YTransaction* DtcStart::start(CheckStatusWrapper* status)
 		for (unsigned i = 0; i < cnt; ++i)
 		{
 			ITransaction* started = components[i].att->startTransaction(status, components[i].tpbLen, components[i].tpb);
-			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+			if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 				status_exception::raise(status);
 
 			dtransaction->join(status, started);
-			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+			if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			{
 				started->release();
 				status_exception::raise(status);
@@ -579,12 +579,12 @@ YTransaction* Dtc::join(CheckStatusWrapper* status, ITransaction* one, ITransact
 		RefPtr<DTransaction> dtransaction(new DTransaction);
 
 		dtransaction->join(status, one);
-		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			return NULL;
 
 		dtransaction->join(status, two);
 		/* We must not return NULL - first transaction is available only inside dtransaction
-		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			return NULL;
 		*/
 

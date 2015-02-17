@@ -58,7 +58,7 @@ int TraceFactoryImpl::release()
 
 ntrace_mask_t TraceFactoryImpl::trace_needs()
 {
-	return (1 << Firebird::ITraceFactory::TRACE_EVENT_MAX) - 1;
+	return (1 << Firebird::ITraceFactory::EVENT_MAX) - 1;
 }
 
 Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::CheckStatusWrapper* status,
@@ -121,7 +121,7 @@ static Firebird::SimpleFactory<TraceFactoryImpl> traceFactory;
 
 void registerTrace(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::Trace, "fbtrace", &traceFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_TRACE, "fbtrace", &traceFactory);
 	Firebird::getUnloadDetector()->registerMe();
 }
 

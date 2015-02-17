@@ -350,7 +350,7 @@ private:
 		{
 			(plugin->*routine)(statusWrapper, node->name, node->factory);
 
-			if (statusWrapper->getStatus() & IStatus::FB_HAS_ERRORS)
+			if (statusWrapper->getState() & IStatus::STATE_ERRORS)
 				return false;
 		}
 

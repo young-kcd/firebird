@@ -486,7 +486,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				ex.stuffException(&st);
 			}
 
-			if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+			if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 			{
 				ISC_STATUS_ARRAY tmp;
 				fb_utils::mergeStatus(tmp, FB_NELEM(tmp), &st);
@@ -566,7 +566,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 						get_security_error(status, ret);
 					}
 
-					if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+					if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 					{
 						Firebird::status_exception::raise(&st);
 					}
@@ -597,7 +597,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				}
 
 				manager->commit(&statusWrapper2);
-				if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 				{
 					Firebird::status_exception::raise(&st);
 				}

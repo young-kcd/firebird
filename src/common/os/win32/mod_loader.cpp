@@ -201,7 +201,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const PathName& modPath)
 	if (PathUtils::isRelative(modPath))
 	{
 		MasterInterfacePtr master;
-		const char* baseDir = master->getConfigManager()->getDirectory(IConfigManager::FB_DIR_BIN);
+		const char* baseDir = master->getConfigManager()->getDirectory(IConfigManager::DIR_BIN);
 
 		PathName fullName;
 		PathUtils::concatPath(fullName, baseDir, modPath);

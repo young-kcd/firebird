@@ -157,7 +157,7 @@ UserManagement::UserManagement(jrd_tra* tra)
 		(Arg::Gds(isc_random) << "Unknown user name for given transaction").raise();
 	}
 
-	plugins = att->att_database->dbb_config->getPlugins(IPluginManager::AuthUserManagement);
+	plugins = att->att_database->dbb_config->getPlugins(IPluginManager::TYPE_AUTH_USER_MANAGEMENT);
 }
 
 
@@ -172,7 +172,7 @@ IManagement* UserManagement::registerManager(Auth::Get& getPlugin, const char* p
 
 	UserIdInfo idInfo(att);
 	manager->start(&statusWrapper, &idInfo);
-	if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+	if (status.getState() & IStatus::STATE_ERRORS)
 	{
 		status_exception::raise(&statusWrapper);
 	}
@@ -264,7 +264,7 @@ UserManagement::~UserManagement()
 			managers[i].second = NULL;
 
 			/***
-			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status.getState() & IStatus::STATE_ERRORS)
 				status_exception::raise(&status);
 			***/
 		}
@@ -282,7 +282,7 @@ void UserManagement::commit()
 			CheckStatusWrapper statusWrapper(&status);
 
 			manager->commit(&statusWrapper);
-			if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+			if (status.getState() & IStatus::STATE_ERRORS)
 				status_exception::raise(&statusWrapper);
 
 			PluginManagerInterfacePtr()->releasePlugin(manager);

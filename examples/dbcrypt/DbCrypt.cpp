@@ -194,11 +194,11 @@ void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolder
 		return;
 
 	IConfig* def = config->getDefaultConfig(status);
-	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		return;
 
 	IConfigEntry* confEntry = def->find(status, "Auto");
-	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 	{
 		def->release();
 		return;
@@ -231,7 +231,7 @@ void DbCrypt::setKey(CheckStatusWrapper* status, unsigned int length, IKeyHolder
 	for (unsigned n = 0; n < length; ++n)
 	{
 		ICryptKeyCallback* callback = sources[n]->keyHandle(status, "sample");
-		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			return;
 
 		if (callback && callback->callback(0, NULL, 1, &key) == 1)
@@ -277,5 +277,5 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
 	pluginManager = master->getPluginManager();
 
 	module.registerMe();
-	pluginManager->registerPluginFactory(IPluginManager::DbCrypt, "DbCrypt_example", &factory);
+	pluginManager->registerPluginFactory(IPluginManager::TYPE_DB_CRYPT, "DbCrypt_example", &factory);
 }

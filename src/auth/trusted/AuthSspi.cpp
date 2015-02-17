@@ -440,12 +440,12 @@ int WinSspiClient::release()
 
 void registerTrustedClient(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthClient, plugName, &clientFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_CLIENT, plugName, &clientFactory);
 }
 
 void registerTrustedServer(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthServer, plugName, &serverFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_SERVER, plugName, &serverFactory);
 }
 
 } // namespace Auth

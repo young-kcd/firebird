@@ -2376,7 +2376,7 @@ dsc* evlSetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		}
 	}
 
-	if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_SET_CONTEXT))
+	if (attachment->att_trace_manager->needs(ITraceFactory::EVENT_SET_CONTEXT))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceTransactionImpl tran(transaction);

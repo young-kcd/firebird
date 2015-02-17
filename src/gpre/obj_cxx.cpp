@@ -159,7 +159,7 @@ static inline void endp(const int column)
 
 static inline void success(const int column, bool ok, const char* status_name, const char* post = "")
 {
-	printa(column, "if (%s%s->getStatus() & Firebird::IStatus::FB_HAS_ERRORS%s)%s",
+	printa(column, "if (%s%s->getState() & Firebird::IStatus::STATE_ERRORS%s)%s",
 					ok ? "!(" : "", global_status_name, ok ? ")" : "", post);
 }
 
@@ -991,7 +991,7 @@ static void gen_blob_end( const act* action, USHORT column)
 static void gen_blob_for( const act* action, USHORT column)
 {
 	PAT args;
-	const TEXT* pattern1 = "%IFif (!(%S1->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)) {\n\
+	const TEXT* pattern1 = "%IFif (!(%S1->getState() & Firebird::IStatus::STATE_ERRORS)) {\n\
 %ENwhile (1)\n\
    {";
 
@@ -1001,8 +1001,8 @@ static void gen_blob_for( const act* action, USHORT column)
 	PATTERN_expand(column, pattern1, &args);
 	column += INDENT;
 	gen_get_segment(action, column);
-	printa(column, "if (fbIStatus == Firebird::IStatus::FB_ERROR || "
-				   "fbIStatus == Firebird::IStatus::FB_NO_DATA) break;");
+	printa(column, "if (fbIStatus == Firebird::IStatus::ERROR || "
+				   "fbIStatus == Firebird::IStatus::NO_DATA) break;");
 }
 
 
@@ -2244,7 +2244,7 @@ static void gen_finish( const act* action, int column)
 		{
 			if ((action->act_error || (action->act_flags & ACT_sql)) && db != gpreGlob.isc_databases)
 			{
-				printa(column, "if (%s && !(%s->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)) ", db->dbb_name->sym_string, global_status_name);
+				printa(column, "if (%s && !(%s->getState() & Firebird::IStatus::STATE_ERRORS)) ", db->dbb_name->sym_string, global_status_name);
 			}
 			else
 				printa(column, "if (%s)", db->dbb_name->sym_string);
@@ -2277,7 +2277,7 @@ static void gen_for( const act* action, int column)
 
 	TEXT s[MAX_REF_SIZE];
 	if (action->act_error || (action->act_flags & ACT_sql))
-		printa(column, "if (!%s || (%s->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)) break;",
+		printa(column, "if (!%s || (%s->getState() & Firebird::IStatus::STATE_ERRORS)) break;",
 			   gen_name(s, request->req_eof, true), global_status_name);
 	else
 		printa(column, "if (!%s) break;", gen_name(s, request->req_eof, true));
@@ -2491,7 +2491,7 @@ static void gen_get_segment( const act* action, int column)
 	{
 		const ref* into = action->act_object;
 		set_sqlcode(action, column);
-		printa(column, "if (fbIStatus == Firebird::IStatus::FB_OK || fbIStatus == Firebird::IStatus::FB_SEGMENT)");
+		printa(column, "if (fbIStatus == Firebird::IStatus::OK || fbIStatus == Firebird::IStatus::SEGMENT)");
 		column += INDENT;
 		begin(column);
 		align(column);
@@ -3944,7 +3944,7 @@ static void t_start_auto(const act* action,
 				align(column);
 				fprintf(gpreGlob.out_file, "if (!%s", db->dbb_name->sym_string);
 				if (stat && buffer[0])
-					fprintf(gpreGlob.out_file, " && !(%s->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)", vector);
+					fprintf(gpreGlob.out_file, " && !(%s->getState() & Firebird::IStatus::STATE_ERRORS)", vector);
 				fprintf(gpreGlob.out_file, ")");
 				make_ready(db, filename, vector, (USHORT) (column + INDENT), 0);
 				if (buffer[0])

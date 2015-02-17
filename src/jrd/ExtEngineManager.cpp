@@ -1360,7 +1360,7 @@ IExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& na
 
 		if (!engines.get(name, engine))
 		{
-			GetPlugins<IExternalEngine> engineControl(IPluginManager::ExternalEngine, name.c_str());
+			GetPlugins<IExternalEngine> engineControl(IPluginManager::TYPE_EXTERNAL_ENGINE, name.c_str());
 
 			if (engineControl.hasData())
 			{

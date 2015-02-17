@@ -260,7 +260,7 @@ namespace
 	{
 	public:
 		explicit AliasesConf(MemoryPool& p)
-			: ConfigCache(p, fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_CONF, ALIAS_FILE)),
+			: ConfigCache(p, fb_utils::getPrefix(Firebird::IConfigManager::DIR_CONF, ALIAS_FILE)),
 			  databases(getPool()), aliases(getPool())
 #ifdef HAVE_ID_BY_NAME
 			  , ids(getPool())

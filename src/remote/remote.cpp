@@ -992,7 +992,7 @@ void ClntAuthBlock::resetClnt(const Firebird::PathName* fileName, const CSTRING*
 	firstTime = true;
 
 	clntConfig = REMOTE_get_config(fileName, &dpbConfig);
-	pluginList = clntConfig->getPlugins(Firebird::IPluginManager::AuthClient);
+	pluginList = clntConfig->getPlugins(Firebird::IPluginManager::TYPE_AUTH_CLIENT);
 
 	Firebird::PathName final;
 	if (serverPluginList.hasData())
@@ -1264,14 +1264,14 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 	// we got correct key's type pair
 	// check what about crypt plugin for it
 	Remote::ParsedList clientPlugins;
-	REMOTE_parseList(clientPlugins, getPortConfig()->getPlugins(Firebird::IPluginManager::WireCrypt));
+	REMOTE_parseList(clientPlugins, getPortConfig()->getPlugins(Firebird::IPluginManager::TYPE_WIRE_CRYPT));
 	for (unsigned n = 0; n < clientPlugins.getCount(); ++n)
 	{
 		Firebird::PathName p(clientPlugins[n]);
 		if (srvKey.plugins.find(" " + p + " ") != Firebird::PathName::npos)
 		{
 			Firebird::GetPlugins<Firebird::IWireCryptPlugin>
-				cp(Firebird::IPluginManager::WireCrypt, p.c_str());
+				cp(Firebird::IPluginManager::TYPE_WIRE_CRYPT, p.c_str());
 			if (cp.hasData())
 			{
 				Firebird::LocalStatus st;
@@ -1283,7 +1283,7 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 
 				// Pass key to plugin
 				port_crypt_plugin->setKey(&statusWrapper, cryptKey);
-				if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+				if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 				{
 					Firebird::status_exception::raise(&st);
 				}

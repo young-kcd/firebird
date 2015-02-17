@@ -1144,7 +1144,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 		}
 	}
 
-	if (lastError.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+	if (lastError.getState() & Firebird::IStatus::STATE_ERRORS)
 	{
 		(Arg::Gds(isc_random) << "Could not find acceptable ICU library"
 			 << Arg::StatusVector(lastError.getErrors())).raise();

@@ -152,9 +152,9 @@ namespace Firebird
 			status->init();
 		}
 
-		virtual unsigned getStatus() const
+		virtual unsigned getState() const
 		{
-			return dirty ? status->getStatus() : 0;
+			return dirty ? status->getState() : 0;
 		}
 
 		virtual void setErrors2(unsigned length, const intptr_t* value)
@@ -226,7 +226,7 @@ namespace Firebird
 	public:
 		static void checkException(ThrowStatusWrapper* status)
 		{
-			if (status->dirty && (status->getStatus() & IStatus::FB_HAS_ERRORS))
+			if (status->dirty && (status->getState() & IStatus::STATE_ERRORS))
 				throw FbException(status->status);
 		}
 	};
