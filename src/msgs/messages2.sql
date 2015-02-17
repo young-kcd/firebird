@@ -1498,6 +1498,7 @@ Roll back all databases or commit databases individually', NULL, NULL);
 (NULL, 'main', 'dtr.cpp', NULL, 1, 529, NULL, 'qli: ignoring unknown switch @1', NULL, NULL)
 (NULL, 'install', 'meta.epp', NULL, 1, 530, NULL, 'Warning: cannot issue DDL statements against database "@1"', NULL, NULL)
 (NULL, 'usage', 'dtr.cpp', NULL, 1, 531, NULL, '   -nod(btriggers)     do not run database triggers', NULL, NULL)
+(NULL, 'usage', 'dtr.cpp', NULL, 1, 532, NULL, '   -e(xit)             exit after end of script instead going to command prompt', NULL, NULL)
 -- GFIX
 ('gfix_db_name', 'ALICE_gfix', 'alice.c', NULL, 3, 1, NULL, 'data base file name (@1) already given', NULL, NULL);
 ('gfix_invalid_sw', 'ALICE_gfix', 'alice.c', NULL, 3, 2, NULL, 'invalid switch @1', NULL, NULL);

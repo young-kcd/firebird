@@ -437,6 +437,12 @@ bool LEX_get_line(const TEXT* prompt, TEXT* buffer, int size)
  **************************************/
 	// UNIX flavor
 
+	if (QLI_quit_flag)
+	{
+		buffer[0] = 0;
+		return false;
+	}
+
 	if (prompt)
 		printf("%s", prompt);
 

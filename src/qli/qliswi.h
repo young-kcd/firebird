@@ -47,7 +47,8 @@ enum qli_switches
 	IN_SW_QLI_Y					= 12,	// Internal switch: do not present in help
 	IN_SW_QLI_Z					= 13,
 	IN_SW_QLI_HELP				= 14,
-	IN_SW_QLI_NODBTRIGGERS		= 15
+	IN_SW_QLI_NODBTRIGGERS		= 15,
+	IN_SW_QLI_EXIT				= 16
 };
 
 
@@ -56,6 +57,7 @@ static const Switches::in_sw_tab_t qli_in_sw_table[] =
 	{IN_SW_QLI_APP_SCRIPT		, 0, "APPSCRIPT"		, 0, 0, 0, false, 0,	1, NULL},
 	{IN_SW_QLI_APP_SCRIPT		, 0, "APP_SCRIPT"		, 0, 0, 0, false, 516,	1, NULL},
 	{IN_SW_QLI_BUFFERS			, 0, "BUFFERS"			, 0, 0, 0, false, 517,	1, NULL},
+	{IN_SW_QLI_EXIT				, 0, "EXIT"				, 0, 0, 0, false, 532,	1, NULL},
 	{IN_SW_QLI_FETCH_PASSWORD	, 0, "FETCH_PASSWORD"	, 0, 0, 0, false, 518,	1, NULL},
 	{IN_SW_QLI_INITIAL_SCRIPT	, 0, "INITSCRIPT"		, 0, 0, 0, false, 0,	1, NULL},
 	{IN_SW_QLI_INITIAL_SCRIPT	, 0, "INIT_SCRIPT"		, 0, 0, 0, false, 519,	1, NULL},

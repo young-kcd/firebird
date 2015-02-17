@@ -139,6 +139,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	QLI_default_user[0] = 0;
 	QLI_default_password[0] = 0;
 	QLI_charset[0] = 0;
+	QLI_quit_flag = false;
 	bool help_flag = false;
 
 #ifdef DEV_BUILD
@@ -182,6 +183,10 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		case IN_SW_QLI_BUFFERS:
 			if (argv < arg_end && **argv != '-')
 				sw_buffers = atoi(*argv++);
+			break;
+
+		case IN_SW_QLI_EXIT:
+			QLI_quit_flag = true;
 			break;
 
 		case IN_SW_QLI_FETCH_PASSWORD:
@@ -283,6 +288,8 @@ int CLIB_ROUTINE main(int argc, char** argv)
 
 	if (application_file)
 		LEX_push_file(application_file, true);
+	else
+		QLI_quit_flag = false;		// Silently ignore -E switch when no script is given
 
 	if (startup_file.length())
 		LEX_push_file(startup_file.c_str(), false);

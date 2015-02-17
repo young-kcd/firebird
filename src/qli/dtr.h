@@ -516,6 +516,7 @@ EXTERN bool		QLI_hex_output;
 EXTERN bool		QLI_trusted;
 #endif
 EXTERN bool		QLI_nodb_triggers;
+EXTERN bool		QLI_quit_flag;
 
 EXTERN const char* QLI_error;
 EXTERN bool sw_verify;
