@@ -648,8 +648,8 @@ namespace {
 
 void registerRedirector(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(IPluginManager::TYPE_PROVIDER, "Remote", &remoteFactory);
-	iPlugin->registerPluginFactory(IPluginManager::TYPE_PROVIDER, "Loopback", &loopbackFactory);
+	iPlugin->registerPluginFactory(IPluginManager::Provider, "Remote", &remoteFactory);
+	iPlugin->registerPluginFactory(IPluginManager::Provider, "Loopback", &loopbackFactory);
 
 	Auth::registerLegacyClient(iPlugin);
 	Auth::registerSrpClient(iPlugin);
@@ -1586,7 +1586,7 @@ void Attachment::freeClientData(IStatus* status, bool force)
 		// free the packet and disconnect the port. Put something into firebird.log
 		// informing the user of the following.
 
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			iscLogStatus("REMOTE INTERFACE/gds__detach: Unsuccesful detach from "
 					"database.\n\tUncommitted work may have been lost.", status);
@@ -1885,7 +1885,7 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 		if (!outFormat)
 		{
 			defaultOutputFormat.assignRefNoIncr(this->getOutputMetadata(status));
-			if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
 				return NULL;
 			}
@@ -1991,13 +1991,13 @@ IResultSet* Attachment::openCursor(CheckStatusWrapper* status, ITransaction* tra
 {
 	Statement* stmt = prepare(status, transaction, stmtLength, sqlStmt, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
-	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
 		return NULL;
 	}
 
 	ResultSet* rc = stmt->openCursor(status, transaction, inMetadata, inBuffer, outMetadata, cursorFlags);
-	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
 		stmt->release();
 		return NULL;
@@ -2006,7 +2006,7 @@ IResultSet* Attachment::openCursor(CheckStatusWrapper* status, ITransaction* tra
 	if (cursorName)
 	{
 		stmt->setCursorName(status, cursorName);
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			rc->release();
 			stmt->release();
@@ -2469,7 +2469,7 @@ Statement* Attachment::prepare(CheckStatusWrapper* status, ITransaction* apiTra,
 		}
 		response->p_resp_data = temp;
 
-		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
+		if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			return stmt;
 		}
@@ -2935,7 +2935,7 @@ int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 				//statement->rsr_flags.clear(Rsr::EOF_SET);
 				statement->rsr_flags.set(Rsr::PAST_EOF);
 
-				return IStatus::NO_DATA;
+				return IStatus::FB_NO_DATA;
 			}
 
 			if (statement->rsr_flags.test(Rsr::STREAM_ERR))
@@ -2973,13 +2973,13 @@ int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 		}
 
 		message->msg_address = NULL;
-		return IStatus::OK;
+		return IStatus::FB_OK;
 	}
 	catch (const Exception& ex)
 	{
 		ex.stuffException(status);
 	}
-	return IStatus::ERROR;
+	return IStatus::FB_ERROR;
 }
 
 
@@ -3368,7 +3368,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 			response->p_resp_data = temp;
 			if (segmentLength)
 				*segmentLength = response->p_resp_data.cstr_length;
-			return IStatus::OK;
+			return IStatus::FB_OK;
 		}
 
 		// New protocol -- ask for a 1K chunk of blob and
@@ -3385,14 +3385,14 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 		{
 			if (segmentLength)
 				*segmentLength = length;
-			return IStatus::NO_DATA;
+			return IStatus::FB_NO_DATA;
 		}
 
 		// Here's the loop, passing out data from our basket & refilling it.
 		//   Our buffer (described by the structure blob) is counted strings
 		//   <count word> <string> <count word> <string>...
 
-		int code = IStatus::OK;
+		int code = IStatus::FB_OK;
 		while (true)
 		{
 			// If there's data to be given away, give some away (p points to the local data)
@@ -3422,7 +3422,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 				{
 					blob->rbl_fragment_length = l - bufferLength;
 					l = bufferLength;
-					code = IStatus::SEGMENT;
+					code = IStatus::FB_SEGMENT;
 				}
 
 				// and, just for yucks, see if we're exactly using up the fragment
@@ -3431,7 +3431,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 
 				if (l == bufferLength && l == blob->rbl_length && (blob->rbl_flags & Rbl::SEGMENT))
 				{
-					code = IStatus::SEGMENT;
+					code = IStatus::FB_SEGMENT;
 				}
 
 				// finally set up the return length, decrement the current length,
@@ -3463,7 +3463,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 			if (blob->rbl_flags & Rbl::EOF_PENDING)
 			{
 				blob->rbl_flags |= Rbl::EOF_SET;
-				code = IStatus::NO_DATA;
+				code = IStatus::FB_NO_DATA;
 				break;
 			}
 
@@ -3529,7 +3529,7 @@ int Blob::getSegment(CheckStatusWrapper* status, unsigned int bufferLength, void
 		ex.stuffException(status);
 	}
 
-	return IStatus::ERROR;
+	return IStatus::FB_ERROR;
 }
 
 
@@ -5305,7 +5305,7 @@ static void authenticateStep0(ClntAuthBlock& cBlock)
 		case IAuth::AUTH_MORE_DATA:
 			return;
 		case IAuth::AUTH_FAILED:
-			if (s.getState() & Firebird::IStatus::STATE_ERRORS)
+			if (s.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			{
 				iscLogStatus("Authentication, client plugin:", &s);
 			}
@@ -5338,7 +5338,7 @@ static void secureAuthentication(ClntAuthBlock& cBlock, rem_port* port)
 		LocalStatus st;
 		authReceiveResponse(true, cBlock, port, rdb, &st, packet, true);
 
-		if (st.getState() & Firebird::IStatus::STATE_ERRORS)
+		if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 			status_exception::raise(&st);
 	}
 }
@@ -7434,7 +7434,7 @@ ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::Clump
 	  userName(getPool()), password(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
 	  cryptKeys(getPool()), dpbConfig(getPool()),
-	  hasCryptKey(false), plugins(IPluginManager::TYPE_AUTH_CLIENT),
+	  hasCryptKey(false), plugins(IPluginManager::AuthClient),
 	  authComplete(false), firstTime(true)
 {
 	if (dpb && tags && dpb->find(tags->config_text))

@@ -136,7 +136,7 @@ void TraceManager::load_plugins()
 	init_factories = true;
 
 	factories = FB_NEW(*getDefaultMemoryPool()) TraceManager::Factories(*getDefaultMemoryPool());
-	for (GetPlugins<ITraceFactory> traceItr(IPluginManager::TYPE_TRACE); traceItr.hasData(); traceItr.next())
+	for (GetPlugins<ITraceFactory> traceItr(IPluginManager::Trace); traceItr.hasData(); traceItr.next())
 	{
 		FactoryInfo info;
 		info.factory = traceItr.plugin();
@@ -257,7 +257,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 			trace_needs |= info->factory->trace_needs();
 		}
-		else if (status.getState() & IStatus::STATE_ERRORS)
+		else if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			string header;
 			header.printf("Trace plugin %s returned error on call trace_create.", info->name);
@@ -268,17 +268,17 @@ void TraceManager::update_session(const TraceSession& session)
 
 bool TraceManager::need_dsql_prepare(Attachment* att)
 {
-	return att->att_trace_manager->needs(ITraceFactory::EVENT_DSQL_PREPARE);
+	return att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DSQL_PREPARE);
 }
 
 bool TraceManager::need_dsql_free(Attachment* att)
 {
-	return att->att_trace_manager->needs(ITraceFactory::EVENT_DSQL_FREE);
+	return att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DSQL_FREE);
 }
 
 bool TraceManager::need_dsql_execute(Attachment* att)
 {
-	return att->att_trace_manager->needs(ITraceFactory::EVENT_DSQL_EXECUTE);
+	return att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DSQL_EXECUTE);
 }
 
 void TraceManager::event_dsql_prepare(Attachment* att, jrd_tra* transaction,

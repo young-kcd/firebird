@@ -1139,7 +1139,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 			EXE_start(tdbb, trigger, transaction);
 
 			const bool ok = (trigger->req_operation != jrd_req::req_unwind);
-			trace.finish(ok ? ITracePlugin::RESULT_SUCCESS : ITracePlugin::RESULT_FAILED);
+			trace.finish(ok ? ITracePlugin::TRACE_RESULT_SUCCESS : ITracePlugin::TRACE_RESULT_FAILED);
 
 			EXE_unwind(tdbb, trigger);
 			trigger->req_attachment = NULL;

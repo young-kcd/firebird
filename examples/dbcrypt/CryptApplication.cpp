@@ -67,7 +67,7 @@ public:
 		if (tra)
 		{
 			tra->rollback(status);
-			if (status->getState() & IStatus::STATE_ERRORS)
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				print("rollback");
 				tra->release();
@@ -76,7 +76,7 @@ public:
 		if (att)
 		{
 			att->detach(status);
-			if (status->getState() & IStatus::STATE_ERRORS)
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				print("detach");
 				att->release();
@@ -98,19 +98,19 @@ public:
 		p = master->getDispatcher();
 
 		p->setDbCryptCallback(status, &key);
-		if (status->getState() & IStatus::STATE_ERRORS)
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			throw "setDbCryptCallback";
 
 		char s[256];
 		sprintf(s, "localhost:%s", dbName);
 		att = p->attachDatabase(status, s, 0, NULL);
-		if (status->getState() & IStatus::STATE_ERRORS)
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			throw "attachDatabase";
 
 		if (a != NONE)
 		{
 			tra = att->startTransaction(status, 0, NULL);
-			if (status->getState() & IStatus::STATE_ERRORS)
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "startTransaction";
 		}
 
@@ -118,20 +118,20 @@ public:
 		{
 			att->execute(status, tra, 0,
 				"ALTER DATABASE ENCRYPT WITH \"DbCrypt_example\"", 3, NULL, NULL, NULL, NULL);
-			if (status->getState() & IStatus::STATE_ERRORS)
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "execute";
 		}
 		if (a == DEC)
 		{
 			att->execute(status, tra, 0, "ALTER DATABASE DECRYPT", 3, NULL, NULL, NULL, NULL);
-			if (status->getState() & IStatus::STATE_ERRORS)
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "execute";
 		}
 
 		if (tra)
 		{
 			tra->commit(status);
-			if (status->getState() & IStatus::STATE_ERRORS)
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				throw "commit";
 			tra = NULL;
 		}
@@ -140,7 +140,7 @@ public:
 		getchar();
 
 		att->detach(status);
-		if (status->getState() & IStatus::STATE_ERRORS)
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 			throw "detach";
 		att = NULL;
 

@@ -1364,7 +1364,7 @@ static void gen_database_data() //(const act* action)
 {
 	Firebird::PathName include_buffer;
 
-	include_buffer = fb_utils::getPrefix(Firebird::IConfigManager::DIR_INC, INCLUDE_FTN_FILE);
+	include_buffer = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_INC, INCLUDE_FTN_FILE);
 	sprintf(output_buffer, INCLUDE_ISC_FTN, include_buffer.c_str());
 
 	FTN_print_buffer(output_buffer);

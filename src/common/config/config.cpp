@@ -51,7 +51,7 @@ public:
 	{
 		try
 		{
-			ConfigFile file(fb_utils::getPrefix(Firebird::IConfigManager::DIR_CONF, CONFIG_FILE),
+			ConfigFile file(fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_CONF, CONFIG_FILE),
 				ConfigFile::ERROR_WHEN_MISS);
 			defaultConfig = new Config(file);
 		}
@@ -692,19 +692,19 @@ const char* Config::getPlugins(unsigned int type) const
 {
 	switch (type)
 	{
-		case Firebird::IPluginManager::TYPE_PROVIDER:
+		case Firebird::IPluginManager::Provider:
 			return (const char*) values[KEY_PLUG_PROVIDERS];
-		case Firebird::IPluginManager::TYPE_AUTH_SERVER:
+		case Firebird::IPluginManager::AuthServer:
 			return (const char*) values[KEY_PLUG_AUTH_SERVER];
-		case Firebird::IPluginManager::TYPE_AUTH_CLIENT:
+		case Firebird::IPluginManager::AuthClient:
 			return (const char*) values[KEY_PLUG_AUTH_CLIENT];
-		case Firebird::IPluginManager::TYPE_AUTH_USER_MANAGEMENT:
+		case Firebird::IPluginManager::AuthUserManagement:
 			return (const char*) values[KEY_PLUG_AUTH_MANAGE];
-		case Firebird::IPluginManager::TYPE_TRACE:
+		case Firebird::IPluginManager::Trace:
 			return (const char*) values[KEY_PLUG_TRACE];
-		case Firebird::IPluginManager::TYPE_WIRE_CRYPT:
+		case Firebird::IPluginManager::WireCrypt:
 			return (const char*) values[KEY_PLUG_WIRE_CRYPT];
-		case Firebird::IPluginManager::TYPE_KEY_HOLDER:
+		case Firebird::IPluginManager::KeyHolder:
 			return (const char*) values[KEY_PLUG_KEY_HOLDER];
 	}
 

@@ -185,7 +185,7 @@ namespace Jrd {
 			return;
 		}
 
-		GetPlugins<IDbCryptPlugin> cryptControl(IPluginManager::TYPE_DB_CRYPT, dbb.dbb_config, pluginName);
+		GetPlugins<IDbCryptPlugin> cryptControl(IPluginManager::DbCrypt, dbb.dbb_config, pluginName);
 		if (!cryptControl.hasData())
 		{
 			(Arg::Gds(isc_no_crypt_plugin) << pluginName).raise();
@@ -555,7 +555,7 @@ namespace Jrd {
 
 				LocalStatus status;
 				cryptPlugin->decrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &page[1], &page[1]);
-				if (status.getState() & IStatus::STATE_ERRORS)
+				if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 				{
 					fb_utils::mergeStatus(sv, FB_NELEM(sv), &status);
 					return false;
@@ -583,7 +583,7 @@ namespace Jrd {
 
 				LocalStatus status;
 				cryptPlugin->encrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &from[1], &to[1]);
-				if (status.getState() & IStatus::STATE_ERRORS)
+				if (status.getStatus() & IStatus::FB_HAS_ERRORS)
 				{
 					fb_utils::mergeStatus(sv, FB_NELEM(sv), &status);
 					return NULL;
@@ -668,7 +668,7 @@ namespace Jrd {
 	{
 		MutexLockGuard g(holdersMutex, FB_FUNCTION);
 
-		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::TYPE_KEY_HOLDER, config);
+		for (GetPlugins<IKeyHolderPlugin> keyControl(IPluginManager::KeyHolder, config);
 			keyControl.hasData(); keyControl.next())
 		{
 			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
@@ -696,7 +696,7 @@ namespace Jrd {
 				ha->registerAttachment(att);
 				break;		// Do not need >1 key from attachment to single DB
 			}
-			else if (st.getState() & IStatus::STATE_ERRORS)
+			else if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 			{
 				status_exception::raise(&st);
 			}
@@ -731,7 +731,7 @@ namespace Jrd {
 
 		LocalStatus st;
 		crypt->setKey(&st, length, vector);
-		if (st.getState() & IStatus::STATE_ERRORS)
+		if (st.getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			status_exception::raise(&st);
 		}

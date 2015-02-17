@@ -80,7 +80,7 @@ int SrpClient::authenticate(CheckStatusWrapper* status, IClientBlock* cb)
 			client->genClientKey(data);
 			dumpIt("Clnt: clientPubKey", data);
 			cb->putData(status, data.length(), data.begin());
-			if (status->getState() & IStatus::STATE_ERRORS)
+			if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 				return AUTH_FAILED;
 			return AUTH_MORE_DATA;
 		}
@@ -132,19 +132,19 @@ int SrpClient::authenticate(CheckStatusWrapper* status, IClientBlock* cb)
 		cProof.getText(data);
 
 		cb->putData(status, data.length(), data.c_str());
-		if (status->getState() & IStatus::STATE_ERRORS)
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			return AUTH_FAILED;
 		}
 
 		// output the key
 		ICryptKey* cKey = cb->newKey(status);
-		if (status->getState() & IStatus::STATE_ERRORS)
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			return AUTH_FAILED;
 		}
 		cKey->setSymmetric(status, "Symmetric", sessionKey.getCount(), sessionKey.begin());
-		if (status->getState() & IStatus::STATE_ERRORS)
+		if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			return AUTH_FAILED;
 		}
@@ -175,7 +175,7 @@ namespace
 
 void registerSrpClient(IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(IPluginManager::TYPE_AUTH_CLIENT, RemotePassword::plugName, &factory);
+	iPlugin->registerPluginFactory(IPluginManager::AuthClient, RemotePassword::plugName, &factory);
 }
 
 } // namespace Auth

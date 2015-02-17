@@ -481,7 +481,7 @@ static bool start_server( ibmgr_data_t* data)
 	// We failed to attach to service, thus server might not be running
 	// You know what? We'll try to start it.
 
-	Firebird::PathName path = fb_utils::getPrefix(Firebird::IConfigManager::DIR_SBIN, SERVER_GUARDIAN);
+	Firebird::PathName path = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_SBIN, SERVER_GUARDIAN);
 
 	// CVC: Newer compilers won't accept assigning literal strings to non-const
 	// char pointers, so this code prevents changing argv's type to const TEXT* argv[4]

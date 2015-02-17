@@ -46,7 +46,7 @@ int SecurityDatabaseClient::authenticate(Firebird::CheckStatusWrapper* status, F
 	TEXT pwt[MAX_LEGACY_PASSWORD_LENGTH + 2];
 	ENC_crypt(pwt, sizeof pwt, cb->getPassword(), LEGACY_PASSWORD_SALT);
 	cb->putData(status, static_cast<unsigned>(strlen(&pwt[2])), &pwt[2]);
-	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 	{
 		return AUTH_FAILED;
 	}
@@ -70,7 +70,7 @@ namespace {
 
 void registerLegacyClient(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_CLIENT, "Legacy_Auth", &factory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthClient, "Legacy_Auth", &factory);
 }
 
 } // namespace Auth

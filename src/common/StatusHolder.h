@@ -77,10 +77,10 @@ public:
 		return warnings.get();
 	}
 
-	unsigned getState() const
+	unsigned getStatus() const
 	{
-		return (errors.vector[1] ? IStatus::STATE_ERRORS : 0) |
-			   (warnings.vector[1] ? IStatus::STATE_WARNINGS  : 0);
+		return (errors.vector[1] ? IStatus::FB_HAS_ERRORS : 0) |
+			   (warnings.vector[1] ? IStatus::FB_HAS_WARNINGS  : 0);
 	}
 
 	IStatus* clone() const

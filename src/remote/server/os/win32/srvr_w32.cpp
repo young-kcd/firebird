@@ -346,7 +346,7 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	// due to remote access
 
 	//gds_alloc_report(0, __FILE__, __LINE__);
-	PathName name = fb_utils::getPrefix(IConfigManager::DIR_LOG, "memdebug.log");
+	PathName name = fb_utils::getPrefix(IConfigManager::FB_DIR_LOG, "memdebug.log");
 	FILE* file = os_utils::fopen(name.c_str(), "w+t");
 	if (file)
 	{

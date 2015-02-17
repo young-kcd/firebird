@@ -28,7 +28,7 @@ public:
 	{
 		Firebird::LocalStatus st;
 		Firebird::IMessageMetadata* m = out ? stmt->getOutputMetadata(&st) : stmt->getInputMetadata(&st);
-		if (st.getState() & Firebird::IStatus::STATE_ERRORS)
+		if (st.getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 			Firebird::status_exception::raise(&st);
 		}
@@ -175,7 +175,7 @@ public:
 
 	static void check(Firebird::IStatus* status)
 	{
-		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 		{
 #ifdef INTERNAL_FIREBIRD
 			Firebird::status_exception::raise(status);

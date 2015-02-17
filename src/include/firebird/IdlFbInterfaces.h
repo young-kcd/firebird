@@ -202,7 +202,7 @@ namespace Firebird
 		struct VTable : public IDisposable::VTable
 		{
 			void (CLOOP_CARG *init)(IStatus* self) throw();
-			unsigned (CLOOP_CARG *getState)(const IStatus* self) throw();
+			unsigned (CLOOP_CARG *getStatus)(const IStatus* self) throw();
 			void (CLOOP_CARG *setErrors2)(IStatus* self, unsigned length, const intptr_t* value) throw();
 			void (CLOOP_CARG *setWarnings2)(IStatus* self, unsigned length, const intptr_t* value) throw();
 			void (CLOOP_CARG *setErrors)(IStatus* self, const intptr_t* value) throw();
@@ -225,21 +225,21 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 3;
 
-		static const unsigned STATE_WARNINGS = 1;
-		static const unsigned STATE_ERRORS = 2;
-		static const int ERROR = -1;
-		static const int OK = 0;
-		static const int NO_DATA = 1;
-		static const int SEGMENT = 2;
+		static const unsigned FB_HAS_WARNINGS = 1;
+		static const unsigned FB_HAS_ERRORS = 2;
+		static const int FB_ERROR = -1;
+		static const int FB_OK = 0;
+		static const int FB_NO_DATA = 1;
+		static const int FB_SEGMENT = 2;
 
 		void init()
 		{
 			static_cast<VTable*>(this->cloopVTable)->init(this);
 		}
 
-		unsigned getState() const
+		unsigned getStatus() const
 		{
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getState(this);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
 			return ret;
 		}
 
@@ -763,17 +763,17 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		static const unsigned TYPE_PROVIDER = 1;
-		static const unsigned TYPE_FIRST_NON_LIB = 2;
-		static const unsigned TYPE_AUTH_SERVER = 3;
-		static const unsigned TYPE_AUTH_CLIENT = 4;
-		static const unsigned TYPE_AUTH_USER_MANAGEMENT = 5;
-		static const unsigned TYPE_EXTERNAL_ENGINE = 6;
-		static const unsigned TYPE_TRACE = 7;
-		static const unsigned TYPE_WIRE_CRYPT = 8;
-		static const unsigned TYPE_DB_CRYPT = 9;
-		static const unsigned TYPE_KEY_HOLDER = 10;
-		static const unsigned TYPE_COUNT = 11;
+		static const unsigned Provider = 1;
+		static const unsigned FirstNonLibPlugin = 2;
+		static const unsigned AuthServer = 3;
+		static const unsigned AuthClient = 4;
+		static const unsigned AuthUserManagement = 5;
+		static const unsigned ExternalEngine = 6;
+		static const unsigned Trace = 7;
+		static const unsigned WireCrypt = 8;
+		static const unsigned DbCrypt = 9;
+		static const unsigned KeyHolder = 10;
+		static const unsigned MaxType = 11;
 
 		void registerPluginFactory(unsigned pluginType, const char* defaultName, IPluginFactory* factory)
 		{
@@ -885,24 +885,24 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		static const unsigned DIR_BIN = 0;
-		static const unsigned DIR_SBIN = 1;
-		static const unsigned DIR_CONF = 2;
-		static const unsigned DIR_LIB = 3;
-		static const unsigned DIR_INC = 4;
-		static const unsigned DIR_DOC = 5;
-		static const unsigned DIR_UDF = 6;
-		static const unsigned DIR_SAMPLE = 7;
-		static const unsigned DIR_SAMPLEDB = 8;
-		static const unsigned DIR_HELP = 9;
-		static const unsigned DIR_INTL = 10;
-		static const unsigned DIR_MISC = 11;
-		static const unsigned DIR_SECDB = 12;
-		static const unsigned DIR_MSG = 13;
-		static const unsigned DIR_LOG = 14;
-		static const unsigned DIR_GUARD = 15;
-		static const unsigned DIR_PLUGINS = 16;
-		static const unsigned DIR_COUNT = 17;
+		static const unsigned FB_DIR_BIN = 0;
+		static const unsigned FB_DIR_SBIN = 1;
+		static const unsigned FB_DIR_CONF = 2;
+		static const unsigned FB_DIR_LIB = 3;
+		static const unsigned FB_DIR_INC = 4;
+		static const unsigned FB_DIR_DOC = 5;
+		static const unsigned FB_DIR_UDF = 6;
+		static const unsigned FB_DIR_SAMPLE = 7;
+		static const unsigned FB_DIR_SAMPLEDB = 8;
+		static const unsigned FB_DIR_HELP = 9;
+		static const unsigned FB_DIR_INTL = 10;
+		static const unsigned FB_DIR_MISC = 11;
+		static const unsigned FB_DIR_SECDB = 12;
+		static const unsigned FB_DIR_MSG = 13;
+		static const unsigned FB_DIR_LOG = 14;
+		static const unsigned FB_DIR_GUARD = 15;
+		static const unsigned FB_DIR_PLUGINS = 16;
+		static const unsigned FB_DIRCOUNT = 17;
 
 		const char* getDirectory(unsigned code)
 		{
@@ -1512,6 +1512,7 @@ namespace Firebird
 		static const unsigned FLAG_HAS_CURSOR = 1;
 		static const unsigned FLAG_REPEAT_EXECUTE = 2;
 		static const unsigned CURSOR_TYPE_SCROLLABLE = 1;
+
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
@@ -3367,8 +3368,8 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		static const unsigned KIND_DATABASE = 1;
-		static const unsigned KIND_SERVICE = 2;
+		static const unsigned TRACE_CONNECTION_DATABASE = 1;
+		static const unsigned TRACE_CONNECTION_SERVICE = 2;
 
 		unsigned getKind()
 		{
@@ -3485,10 +3486,10 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		static const unsigned ISOLATION_CONSISTENCY = 1;
-		static const unsigned ISOLATION_CONCURRENCY = 2;
-		static const unsigned ISOLATION_READ_COMMITTED_RECVER = 3;
-		static const unsigned ISOLATION_READ_COMMITTED_NORECVER = 4;
+		static const unsigned TRA_ISO_CONSISTENCY = 1;
+		static const unsigned TRA_ISO_CONCURRENCY = 2;
+		static const unsigned TRA_ISO_READ_COMMITTED_RECVER = 3;
+		static const unsigned TRA_ISO_READ_COMMITTED_NORECVER = 4;
 
 		unsigned getTransactionID()
 		{
@@ -3889,9 +3890,9 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		static const unsigned TYPE_ALL = 0;
-		static const unsigned TYPE_BEFORE = 1;
-		static const unsigned TYPE_AFTER = 2;
+		static const unsigned TRACE_ALL = 0;
+		static const unsigned TRACE_BEFORE = 1;
+		static const unsigned TRACE_AFTER = 2;
 
 		const char* getTriggerName()
 		{
@@ -4210,9 +4211,9 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 3;
 
-		static const unsigned RESULT_SUCCESS = 0;
-		static const unsigned RESULT_FAILED = 1;
-		static const unsigned RESULT_UNAUTHORIZED = 2;
+		static const unsigned TRACE_RESULT_SUCCESS = 0;
+		static const unsigned TRACE_RESULT_FAILED = 1;
+		static const unsigned TRACE_RESULT_UNAUTHORIZED = 2;
 		static const unsigned SWEEP_STATE_STARTED = 1;
 		static const unsigned SWEEP_STATE_FINISHED = 2;
 		static const unsigned SWEEP_STATE_FAILED = 3;
@@ -4367,27 +4368,27 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 4;
 
-		static const unsigned EVENT_ATTACH = 0;
-		static const unsigned EVENT_DETACH = 1;
-		static const unsigned EVENT_TRANSACTION_START = 2;
-		static const unsigned EVENT_TRANSACTION_END = 3;
-		static const unsigned EVENT_SET_CONTEXT = 4;
-		static const unsigned EVENT_PROC_EXECUTE = 5;
-		static const unsigned EVENT_TRIGGER_EXECUTE = 6;
-		static const unsigned EVENT_DSQL_PREPARE = 7;
-		static const unsigned EVENT_DSQL_FREE = 8;
-		static const unsigned EVENT_DSQL_EXECUTE = 9;
-		static const unsigned EVENT_BLR_COMPILE = 10;
-		static const unsigned EVENT_BLR_EXECUTE = 11;
-		static const unsigned EVENT_DYN_EXECUTE = 12;
-		static const unsigned EVENT_SERVICE_ATTACH = 13;
-		static const unsigned EVENT_SERVICE_START = 14;
-		static const unsigned EVENT_SERVICE_QUERY = 15;
-		static const unsigned EVENT_SERVICE_DETACH = 16;
-		static const unsigned EVENT_ERROR = 17;
-		static const unsigned EVENT_SWEEP = 18;
-		static const unsigned EVENT_FUNC_EXECUTE = 19;
-		static const unsigned EVENT_MAX = 20;
+		static const unsigned TRACE_EVENT_ATTACH = 0;
+		static const unsigned TRACE_EVENT_DETACH = 1;
+		static const unsigned TRACE_EVENT_TRANSACTION_START = 2;
+		static const unsigned TRACE_EVENT_TRANSACTION_END = 3;
+		static const unsigned TRACE_EVENT_SET_CONTEXT = 4;
+		static const unsigned TRACE_EVENT_PROC_EXECUTE = 5;
+		static const unsigned TRACE_EVENT_TRIGGER_EXECUTE = 6;
+		static const unsigned TRACE_EVENT_DSQL_PREPARE = 7;
+		static const unsigned TRACE_EVENT_DSQL_FREE = 8;
+		static const unsigned TRACE_EVENT_DSQL_EXECUTE = 9;
+		static const unsigned TRACE_EVENT_BLR_COMPILE = 10;
+		static const unsigned TRACE_EVENT_BLR_EXECUTE = 11;
+		static const unsigned TRACE_EVENT_DYN_EXECUTE = 12;
+		static const unsigned TRACE_EVENT_SERVICE_ATTACH = 13;
+		static const unsigned TRACE_EVENT_SERVICE_START = 14;
+		static const unsigned TRACE_EVENT_SERVICE_QUERY = 15;
+		static const unsigned TRACE_EVENT_SERVICE_DETACH = 16;
+		static const unsigned TRACE_EVENT_ERROR = 17;
+		static const unsigned TRACE_EVENT_SWEEP = 18;
+		static const unsigned TRACE_EVENT_FUNC_EXECUTE = 19;
+		static const unsigned TRACE_EVENT_MAX = 20;
 
 		ISC_UINT64 trace_needs()
 		{
@@ -4725,7 +4726,7 @@ namespace Firebird
 					this->version = Base::VERSION;
 					this->dispose = &Name::cloopdisposeDispatcher;
 					this->init = &Name::cloopinitDispatcher;
-					this->getState = &Name::cloopgetStateDispatcher;
+					this->getStatus = &Name::cloopgetStatusDispatcher;
 					this->setErrors2 = &Name::cloopsetErrors2Dispatcher;
 					this->setWarnings2 = &Name::cloopsetWarnings2Dispatcher;
 					this->setErrors = &Name::cloopsetErrorsDispatcher;
@@ -4751,11 +4752,11 @@ namespace Firebird
 			}
 		}
 
-		static unsigned CLOOP_CARG cloopgetStateDispatcher(const IStatus* self) throw()
+		static unsigned CLOOP_CARG cloopgetStatusDispatcher(const IStatus* self) throw()
 		{
 			try
 			{
-				return static_cast<const Name*>(self)->Name::getState();
+				return static_cast<const Name*>(self)->Name::getStatus();
 			}
 			catch (...)
 			{
@@ -4878,7 +4879,7 @@ namespace Firebird
 		}
 
 		virtual void init() = 0;
-		virtual unsigned getState() const = 0;
+		virtual unsigned getStatus() const = 0;
 		virtual void setErrors2(unsigned length, const intptr_t* value) = 0;
 		virtual void setWarnings2(unsigned length, const intptr_t* value) = 0;
 		virtual void setErrors(const intptr_t* value) = 0;

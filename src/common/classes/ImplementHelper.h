@@ -322,7 +322,7 @@ UnloadDetectorHelper* getUnloadDetector();
 // Generic status checker
 inline void check(IStatus* status)
 {
-	if (status->getState() & IStatus::STATE_ERRORS)
+	if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 	{
 		status_exception::raise(status);
 	}

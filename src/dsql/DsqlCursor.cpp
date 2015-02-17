@@ -81,7 +81,7 @@ void DsqlCursor::close(thread_db* tdbb, DsqlCursor* cursor)
 			if (request->req_fetch_baseline)
 			{
 				TraceDSQLFetch trace(attachment, request);
-				trace.fetch(true, ITracePlugin::RESULT_SUCCESS);
+				trace.fetch(true, ITracePlugin::TRACE_RESULT_SUCCESS);
 			}
 
 			if (request->req_traced && TraceManager::need_dsql_free(attachment))

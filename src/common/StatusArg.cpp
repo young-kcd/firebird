@@ -77,10 +77,10 @@ StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw() : Bas
 
 	clear();
 
-	if (s->getState() & IStatus::STATE_ERRORS)
+	if (s->getStatus() & IStatus::FB_HAS_ERRORS)
 		append(s->getErrors(), FB_NELEM(m_status_vector) - 1);
 
-	if (s->getState() & IStatus::STATE_WARNINGS)
+	if (s->getStatus() & IStatus::FB_HAS_WARNINGS)
 		append(s->getWarnings(), FB_NELEM(m_status_vector) - 1);
 }
 

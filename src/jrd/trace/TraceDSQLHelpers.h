@@ -62,7 +62,7 @@ public:
 
 	~TraceDSQLPrepare()
 	{
-		prepare(ITracePlugin::RESULT_FAILED);
+		prepare(ITracePlugin::TRACE_RESULT_FAILED);
 	}
 
 	void setStatement(dsql_req* request)
@@ -82,7 +82,7 @@ public:
 		const SINT64 millis = (fb_utils::query_performance_counter() - m_start_clock) * 1000 /
 			fb_utils::query_performance_frequency();
 
-		if ((result == ITracePlugin::RESULT_SUCCESS) && m_request)
+		if ((result == ITracePlugin::TRACE_RESULT_SUCCESS) && m_request)
 		{
 			TraceSQLStatementImpl stmt(m_request, NULL);
 			TraceManager::event_dsql_prepare(m_attachment, m_transaction, &stmt, millis, result);
@@ -121,7 +121,7 @@ public:
 		{	// scope
 			TraceSQLStatementImpl stmt(request, NULL);
 			TraceManager::event_dsql_execute(m_attachment, request->req_transaction, &stmt, true,
-				ITracePlugin::RESULT_SUCCESS);
+				ITracePlugin::TRACE_RESULT_SUCCESS);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();
@@ -164,7 +164,7 @@ public:
 
 	~TraceDSQLExecute()
 	{
-		finish(false, ITracePlugin::RESULT_FAILED);
+		finish(false, ITracePlugin::TRACE_RESULT_FAILED);
 	}
 
 private:
@@ -195,7 +195,7 @@ public:
 
 	~TraceDSQLFetch()
 	{
-		fetch(true, ITracePlugin::RESULT_FAILED);
+		fetch(true, ITracePlugin::TRACE_RESULT_FAILED);
 	}
 
 	void fetch(bool eof, ntrace_result_t result)

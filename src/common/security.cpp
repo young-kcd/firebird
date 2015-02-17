@@ -42,7 +42,7 @@ void raise()
 namespace Auth {
 
 Get::Get(Config* firebirdConf)
-	: GetPlugins<Firebird::IManagement>(IPluginManager::TYPE_AUTH_USER_MANAGEMENT, firebirdConf)
+	: GetPlugins<Firebird::IManagement>(IPluginManager::AuthUserManagement, firebirdConf)
 {
 	if (!hasData())
 	{
@@ -51,7 +51,7 @@ Get::Get(Config* firebirdConf)
 }
 
 Get::Get(Config* firebirdConf, const char* plugName)
-	: GetPlugins<Firebird::IManagement>(IPluginManager::TYPE_AUTH_USER_MANAGEMENT, firebirdConf, plugName)
+	: GetPlugins<Firebird::IManagement>(IPluginManager::AuthUserManagement, firebirdConf, plugName)
 {
 	if (!hasData())
 	{

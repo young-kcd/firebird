@@ -141,11 +141,11 @@ void IbUtil::initialize()
 
 #ifdef WIN_NT
 	// using bin folder
-	if (tryLibrary(fb_utils::getPrefix(IConfigManager::DIR_BIN, LIBNAME), message[1]))
+	if (tryLibrary(fb_utils::getPrefix(IConfigManager::FB_DIR_BIN, LIBNAME), message[1]))
 		return;
 
 	// using firebird root (takes into account environment settings)
-	if (tryLibrary(fb_utils::getPrefix(IConfigManager::DIR_CONF, LIBNAME), message[2]))
+	if (tryLibrary(fb_utils::getPrefix(IConfigManager::FB_DIR_CONF, LIBNAME), message[2]))
 		return;
 #else
 	// using install directory
@@ -153,11 +153,11 @@ void IbUtil::initialize()
 		return;
 
 	// using firebird root (takes into an account environment settings)
-	if (tryLibrary(fb_utils::getPrefix(IConfigManager::DIR_CONF, "lib/" LIBNAME), message[1]))
+	if (tryLibrary(fb_utils::getPrefix(IConfigManager::FB_DIR_CONF, "lib/" LIBNAME), message[1]))
 		return;
 
 	// using libraries directory
-	if (tryLibrary(fb_utils::getPrefix(IConfigManager::DIR_LIB, LIBNAME), message[2]))
+	if (tryLibrary(fb_utils::getPrefix(IConfigManager::FB_DIR_LIB, LIBNAME), message[2]))
 		return;
 #endif // WIN_NT
 

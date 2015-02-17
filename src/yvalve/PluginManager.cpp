@@ -80,7 +80,7 @@ namespace
 	public:
 		explicit StaticConfHolder(MemoryPool& p)
 			: confFile(FB_NEW(p) ConfigFile(p,
-				fb_utils::getPrefix(IConfigManager::DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
+				fb_utils::getPrefix(IConfigManager::FB_DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
 		{
 		}
 
@@ -418,11 +418,11 @@ namespace
 		explicit CountByTypeArray(MemoryPool&)
 		{}
 
-		CountByType values[PluginManager::TYPE_COUNT];
+		CountByType values[PluginManager::MaxType];
 
 		CountByType& get(unsigned int t)
 		{
-			fb_assert(t < PluginManager::TYPE_COUNT);
+			fb_assert(t < PluginManager::MaxType);
 			return values[t];
 		}
 	};
@@ -605,7 +605,7 @@ namespace
 		Firebird::LocalStatus s;
 		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(&s, par);
 
-		if (!(s.getState() & Firebird::IStatus::STATE_ERRORS))
+		if (!(s.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
 		{
 			plugin->setOwner(par);
 			return plugin;
@@ -730,7 +730,7 @@ namespace
 		PluginLoadInfo(const char* pluginName)
 		{
 			// define default values for plugin ...
-			curModule = fb_utils::getPrefix(IConfigManager::DIR_PLUGINS, pluginName);
+			curModule = fb_utils::getPrefix(IConfigManager::FB_DIR_PLUGINS, pluginName);
 			regName = pluginName;
 			required = false;
 
@@ -953,7 +953,7 @@ namespace
 					return p;
 
 				next(status);
-				if (status->getState() & Firebird::IStatus::STATE_ERRORS)
+				if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
 					break;
 			}
 		}
@@ -1011,7 +1011,7 @@ void PluginManager::registerPluginFactory(unsigned int interfaceType, const char
 
 	if (current == builtin)
 	{
-		PathName plugConfigFile = fb_utils::getPrefix(IConfigManager::DIR_PLUGINS, defaultName);
+		PathName plugConfigFile = fb_utils::getPrefix(IConfigManager::FB_DIR_PLUGINS, defaultName);
 		changeExtension(plugConfigFile, "conf");
 
 		ConfiguredPlugin* p = new ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
@@ -1118,7 +1118,7 @@ void PluginManager::shutdown()
 
 void PluginManager::waitForType(unsigned int typeThatMustGoAway)
 {
-	fb_assert(typeThatMustGoAway < PluginManager::TYPE_COUNT);
+	fb_assert(typeThatMustGoAway < PluginManager::MaxType);
 
 	Semaphore sem;
 	Semaphore* semPtr = NULL;
@@ -1158,8 +1158,8 @@ public:
 	explicit DirCache(MemoryPool &p)
 		: cache(p)
 	{
-		cache.resize(IConfigManager::DIR_COUNT);
-		for (unsigned i = 0; i < IConfigManager::DIR_COUNT; ++i)
+		cache.resize(IConfigManager::FB_DIRCOUNT);
+		for (unsigned i = 0; i < IConfigManager::FB_DIRCOUNT; ++i)
 		{
 			cache[i] = fb_utils::getPrefix(i, "");
 		}
@@ -1167,7 +1167,7 @@ public:
 
 	const char* getDir(unsigned code)
 	{
-		fb_assert(code < IConfigManager::DIR_COUNT);
+		fb_assert(code < IConfigManager::FB_DIRCOUNT);
 		return cache[code].c_str();
 	}
 

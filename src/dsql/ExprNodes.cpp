@@ -10849,7 +10849,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		catch (const Exception& ex)
 		{
 			const bool noPriv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
-			trace.finish(noPriv ? ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED);
+			trace.finish(noPriv ? ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED);
 
 			tdbb->setRequest(request);
 			EXE_unwind(tdbb, funcRequest);
@@ -10866,7 +10866,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		if (*nullPtr)
 		{
 			request->req_flags |= req_null;
-			trace.finish(ITracePlugin::RESULT_SUCCESS);
+			trace.finish(ITracePlugin::TRACE_RESULT_SUCCESS);
 		}
 		else
 		{
@@ -10876,7 +10876,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 			value->vlu_desc = *fmtDesc;
 			value->vlu_desc.dsc_address = outMsg + argOffset;
 
-			trace.finish(ITracePlugin::RESULT_SUCCESS, &value->vlu_desc);
+			trace.finish(ITracePlugin::TRACE_RESULT_SUCCESS, &value->vlu_desc);
 		}
 
 		EXE_unwind(tdbb, funcRequest);

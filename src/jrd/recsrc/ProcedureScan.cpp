@@ -115,7 +115,7 @@ void ProcedureScan::open(thread_db* tdbb) const
 		if (iml)
 			EXE_send(tdbb, proc_request, 0, iml, im);
 
-		trace.finish(true, ITracePlugin::RESULT_SUCCESS);
+		trace.finish(true, ITracePlugin::TRACE_RESULT_SUCCESS);
 	}
 	catch (const Exception&)
 	{
@@ -205,19 +205,19 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 
 		if (!eos)
 		{
-			trace.fetch(true, ITracePlugin::RESULT_SUCCESS);
+			trace.fetch(true, ITracePlugin::TRACE_RESULT_SUCCESS);
 			rpb->rpb_number.setValid(false);
 			return false;
 		}
 	}
 	catch (const Exception&)
 	{
-		trace.fetch(true, ITracePlugin::RESULT_FAILED);
+		trace.fetch(true, ITracePlugin::TRACE_RESULT_FAILED);
 		close(tdbb);
 		throw;
 	}
 
-	trace.fetch(false, ITracePlugin::RESULT_SUCCESS);
+	trace.fetch(false, ITracePlugin::TRACE_RESULT_SUCCESS);
 
 	for (unsigned i = 0; i < rec_format->fmt_count; i++)
 	{

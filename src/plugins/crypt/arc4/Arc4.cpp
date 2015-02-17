@@ -164,7 +164,7 @@ namespace
 
 void registerArc4(IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(IPluginManager::TYPE_WIRE_CRYPT, "Arc4", &factory);
+	iPlugin->registerPluginFactory(IPluginManager::WireCrypt, "Arc4", &factory);
 }
 
 } // namespace Crypt

@@ -89,7 +89,7 @@ void HELP_help( qli_syntax* node)
  **************************************/
 	if (!HELP_DB)
 	{
-		Firebird::PathName name = fb_utils::getPrefix(Firebird::IConfigManager::DIR_HELP, TARGET);
+		Firebird::PathName name = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_HELP, TARGET);
 		TEXT target[MAXPATHLEN];
 		name.copyTo(target, sizeof target);
 		READY

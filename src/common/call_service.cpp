@@ -335,7 +335,7 @@ static void setAttr(CheckStatusWrapper* status, Auth::UserData* u)
 	setAttr(attr, "Uid", &u->u);
 	setAttr(attr, "Gid", &u->g);
 	u->attributes()->set(status, attr.c_str());
-	if (status->getState() & IStatus::STATE_ERRORS)
+	if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 		return;
 	u->attributes()->setEntered(status, attr.hasData());
 }

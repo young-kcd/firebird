@@ -528,7 +528,7 @@ int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, I
 #ifdef USE_ATT_RQ_CACHE
 		LocalStatus s;
 		TimerInterfacePtr()->start(&s, instance, 10 * 1000 * 1000);
-		if (s.getState() & IStatus::STATE_ERRORS)
+		if (s.getStatus() & IStatus::FB_HAS_ERRORS)
 			instance->handler();
 #else
 		instance->handler();
@@ -563,7 +563,7 @@ namespace {
 
 void registerLegacyServer(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_SERVER, "Legacy_Auth", &factory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthServer, "Legacy_Auth", &factory);
 }
 
 } // namespace Auth

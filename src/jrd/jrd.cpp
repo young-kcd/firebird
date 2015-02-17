@@ -413,7 +413,7 @@ static Static<EngineFactory> engineFactory;
 void registerEngine(IPluginManager* iPlugin)
 {
 	getUnloadDetector()->setCleanup(shutdownBeforeUnload);
-	iPlugin->registerPluginFactory(IPluginManager::TYPE_PROVIDER, CURRENT_ENGINE, &engineFactory);
+	iPlugin->registerPluginFactory(IPluginManager::Provider, CURRENT_ENGINE, &engineFactory);
 	getUnloadDetector()->registerMe();
 }
 
@@ -974,7 +974,7 @@ public:
 	TraceFailedConnection(const char* filename, const DatabaseOptions* options);
 
 	// TraceConnection implementation
-	unsigned getKind()					{ return KIND_DATABASE; };
+	unsigned getKind()					{ return TRACE_CONNECTION_DATABASE; };
 	int getProcessID()					{ return m_options->dpb_remote_pid; }
 	const char* getUserName()			{ return m_id.usr_user_name.c_str(); }
 	const char* getRoleName()			{ return m_options->dpb_role_name.c_str(); }
@@ -1080,7 +1080,7 @@ static void successful_completion(CheckStatusWrapper* s, ISC_STATUS acceptCode =
 	fb_assert(status[0] != isc_arg_gds || status[1] == FB_SUCCESS || status[1] == acceptCode);
 
 	// Clear the status vector if it doesn't contain a warning
-	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || !(s->getState() & IStatus::STATE_WARNINGS))
+	if (status[0] != isc_arg_gds || status[1] != FB_SUCCESS || !(s->getStatus() & IStatus::FB_HAS_WARNINGS))
 	{
 		s->init();
 	}
@@ -1094,7 +1094,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 	ex.stuffException(vector);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
-	if (func && attachment && attachment->att_trace_manager->needs(ITraceFactory::EVENT_ERROR))
+	if (func && attachment && attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 	{
 		TraceConnectionImpl conn(attachment);
 		TraceStatusVectorImpl traceStatus(vector->getErrors());
@@ -1205,7 +1205,7 @@ static void trace_warning(thread_db* tdbb, IStatus* userStatus, const char* func
 	if (!att)
 		return;
 
-	if (att->att_trace_manager->needs(ITraceFactory::EVENT_ERROR))
+	if (att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 	{
 		TraceStatusVectorImpl traceStatus(userStatus->getWarnings());
 
@@ -1230,25 +1230,25 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 	TraceStatusVectorImpl traceStatus(status);
 
 	const ntrace_result_t result = (status[1] == isc_login || status[1] == isc_no_priv) ?
-		ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED;
+		ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED;
 	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 
 	if (!traceManager)
 	{
 		TraceManager tempMgr(origFilename);
 
-		if (tempMgr.needs(ITraceFactory::EVENT_ATTACH))
+		if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			tempMgr.event_attach(&conn, create, result);
 
-		if (tempMgr.needs(ITraceFactory::EVENT_ERROR))
+		if (tempMgr.needs(ITraceFactory::TRACE_EVENT_ERROR))
 			tempMgr.event_error(&conn, &traceStatus, func);
 	}
 	else
 	{
-		if (traceManager->needs(ITraceFactory::EVENT_ATTACH))
+		if (traceManager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			traceManager->event_attach(&conn, create, result);
 
-		if (traceManager->needs(ITraceFactory::EVENT_ERROR))
+		if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 			traceManager->event_error(&conn, &traceStatus, func);
 	}
 }
@@ -1266,7 +1266,7 @@ JTransaction* JAttachment::getTransactionInterface(CheckStatusWrapper* status, I
 	// If validation is successfull, this means that this attachment and valid transaction
 	// use same provider. I.e. the following cast is safe.
 	JTransaction* jt = static_cast<JTransaction*>(tra->validate(status, this));
-	if (status->getState() & IStatus::STATE_ERRORS)
+	if (status->getStatus() & IStatus::FB_HAS_ERRORS)
 		status_exception::raise(status);
 	if (!jt)
 		Arg::Gds(isc_bad_trans_handle).raise();
@@ -1829,10 +1829,10 @@ JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const ch
 
 			CCH_release_exclusive(tdbb);
 
-			if (attachment->att_trace_manager->needs(ITraceFactory::EVENT_ATTACH))
+			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
-				attachment->att_trace_manager->event_attach(&conn, false, ITracePlugin::RESULT_SUCCESS);
+				attachment->att_trace_manager->event_attach(&conn, false, ITracePlugin::TRACE_RESULT_SUCCESS);
 			}
 			attachTraced = true;
 
@@ -1904,10 +1904,10 @@ JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const ch
 				TraceConnectionImpl conn(attachment);
 				TraceStatusVectorImpl traceStatus(user_status->getErrors());
 
-				if (traceManager->needs(ITraceFactory::EVENT_ERROR))
+				if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 					traceManager->event_error(&conn, &traceStatus, "JProvider::attachDatabase");
 
-				if (traceManager->needs(ITraceFactory::EVENT_DETACH))
+				if (traceManager->needs(ITraceFactory::TRACE_EVENT_DETACH))
 					traceManager->event_detach(&conn, false);
 			}
 			else
@@ -2311,13 +2311,13 @@ JRequest* JAttachment::compileRequest(CheckStatusWrapper* user_status,
 			JRD_compile(tdbb, getHandle(), &request, blr_length, blr, RefStrPtr(), 0, NULL, false);
 			stmt = request->getStatement();
 
-			trace.finish(request, ITracePlugin::RESULT_SUCCESS);
+			trace.finish(request, ITracePlugin::TRACE_RESULT_SUCCESS);
 		}
 		catch (const Exception& ex)
 		{
 			const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JAttachment::compileRequest");
 			const bool no_priv = (exc == isc_no_priv);
-			trace.finish(NULL, no_priv ? ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED);
+			trace.finish(NULL, no_priv ? ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED);
 
 			return NULL;
 		}
@@ -2752,10 +2752,10 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			guardDbInit.leave();
 
 			// Report that we created attachment to Trace API
-			if (attachment->att_trace_manager->needs(ITraceFactory::EVENT_ATTACH))
+			if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ATTACH))
 			{
 				TraceConnectionImpl conn(attachment);
-				attachment->att_trace_manager->event_attach(&conn, true, ITracePlugin::RESULT_SUCCESS);
+				attachment->att_trace_manager->event_attach(&conn, true, ITracePlugin::TRACE_RESULT_SUCCESS);
 			}
 
 			jAtt->getStable()->manualUnlock(attachment->att_flags);
@@ -2998,7 +2998,7 @@ void JAttachment::dropDatabase(CheckStatusWrapper* user_status)
 				CCH_RELEASE(tdbb, &window);
 
 				// Notify Trace API manager about successful drop of database
-				if (attachment->att_trace_manager->needs(ITraceFactory::EVENT_DETACH))
+				if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DETACH))
 				{
 					TraceConnectionImpl conn(attachment);
 					attachment->att_trace_manager->event_detach(&conn, true);
@@ -3074,7 +3074,7 @@ int JBlob::getSegment(CheckStatusWrapper* user_status, unsigned int buffer_lengt
  *
  **************************************/
 	unsigned int len = 0;
-	int cc = IStatus::ERROR;
+	int cc = IStatus::FB_ERROR;
 
 	try
 	{
@@ -3092,11 +3092,11 @@ int JBlob::getSegment(CheckStatusWrapper* user_status, unsigned int buffer_lengt
 		}
 
 		if (getHandle()->blb_flags & BLB_eof)
-			cc = IStatus::NO_DATA;
+			cc = IStatus::FB_NO_DATA;
 		else if (getHandle()->getFragmentSize())
-			cc = IStatus::SEGMENT;
+			cc = IStatus::FB_SEGMENT;
 		else
-			cc = IStatus::OK;
+			cc = IStatus::FB_OK;
 	}
 	catch (const Exception& ex)
 	{
@@ -3956,13 +3956,13 @@ void JRequest::startAndSend(CheckStatusWrapper* user_status, ITransaction* tra, 
 				JRD_start_and_send(tdbb, request, transaction, msg_type, msg_length, msg);
 
 				// Notify Trace API about blr execution
-				trace.finish(ITracePlugin::RESULT_SUCCESS);
+				trace.finish(ITracePlugin::TRACE_RESULT_SUCCESS);
 			}
 			catch (const Exception& ex)
 			{
 				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JRequest::startAndSend");
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-				trace.finish(no_priv ? ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED);
+				trace.finish(no_priv ? ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED);
 
 				return;
 			}
@@ -4016,13 +4016,13 @@ void JRequest::start(CheckStatusWrapper* user_status, ITransaction* tra, int lev
 			try
 			{
 				JRD_start(tdbb, request, transaction);
-				trace.finish(ITracePlugin::RESULT_SUCCESS);
+				trace.finish(ITracePlugin::TRACE_RESULT_SUCCESS);
 			}
 			catch (const Exception& ex)
 			{
 				const ISC_STATUS exc = transliterateException(tdbb, ex, user_status, "JRequest::start");
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
-				trace.finish(no_priv ? ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED);
+				trace.finish(no_priv ? ITracePlugin::TRACE_RESULT_UNAUTHORIZED : ITracePlugin::TRACE_RESULT_FAILED);
 
 				return;
 			}
@@ -4527,7 +4527,7 @@ IResultSet* JAttachment::openCursor(CheckStatusWrapper* user_status, ITransactio
 {
 	IStatement* tmpStatement = prepare(user_status, apiTra, length, string, dialect,
 		(outMetadata ? 0 : IStatement::PREPARE_PREFETCH_OUTPUT_PARAMETERS));
-	if (user_status->getState() & IStatus::STATE_ERRORS)
+	if (user_status->getStatus() & IStatus::FB_HAS_ERRORS)
 	{
 		return NULL;
 	}
@@ -4535,7 +4535,7 @@ IResultSet* JAttachment::openCursor(CheckStatusWrapper* user_status, ITransactio
 	if (cursorName)
 	{
 		tmpStatement->setCursorName(user_status, cursorName);
-		if (user_status->getState() & IStatus::STATE_ERRORS)
+		if (user_status->getStatus() & IStatus::FB_HAS_ERRORS)
 		{
 			tmpStatement->release();
 			return NULL;
@@ -4624,7 +4624,7 @@ int JResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JResultSet::fetchNext");
-			return IStatus::ERROR;
+			return IStatus::FB_ERROR;
 		}
 
 		trace_warning(tdbb, user_status, "JResultSet::fetchNext");
@@ -4632,11 +4632,11 @@ int JResultSet::fetchNext(CheckStatusWrapper* user_status, void* buffer)
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return IStatus::ERROR;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
-	return (state == 0) ? IStatus::OK : IStatus::NO_DATA;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
 int JResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
@@ -4653,7 +4653,7 @@ int JResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JResultSet::fetchPrior");
-			return IStatus::ERROR;
+			return IStatus::FB_ERROR;
 		}
 
 		trace_warning(tdbb, user_status, "JResultSet::fetchPrior");
@@ -4661,11 +4661,11 @@ int JResultSet::fetchPrior(CheckStatusWrapper* user_status, void* buffer)
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return IStatus::ERROR;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
-	return (state == 0) ? IStatus::OK : IStatus::NO_DATA;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
 
@@ -4683,7 +4683,7 @@ int JResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JResultSet::fetchFirst");
-			return IStatus::ERROR;
+			return IStatus::FB_ERROR;
 		}
 
 		trace_warning(tdbb, user_status, "JResultSet::fetchFirst");
@@ -4691,11 +4691,11 @@ int JResultSet::fetchFirst(CheckStatusWrapper* user_status, void* buffer)
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return IStatus::ERROR;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
-	return (state == 0) ? IStatus::OK : IStatus::NO_DATA;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
 
@@ -4713,7 +4713,7 @@ int JResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JResultSet::fetchLast");
-			return IStatus::ERROR;
+			return IStatus::FB_ERROR;
 		}
 
 		trace_warning(tdbb, user_status, "JResultSet::fetchLast");
@@ -4721,11 +4721,11 @@ int JResultSet::fetchLast(CheckStatusWrapper* user_status, void* buffer)
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return IStatus::ERROR;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
-	return (state == 0) ? IStatus::OK : IStatus::NO_DATA;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
 
@@ -4743,7 +4743,7 @@ int JResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, voi
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JResultSet::fetchAbsolute");
-			return IStatus::ERROR;
+			return IStatus::FB_ERROR;
 		}
 
 		trace_warning(tdbb, user_status, "JResultSet::fetchAbsolute");
@@ -4751,11 +4751,11 @@ int JResultSet::fetchAbsolute(CheckStatusWrapper* user_status, int position, voi
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return IStatus::ERROR;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
-	return (state == 0) ? IStatus::OK : IStatus::NO_DATA;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
 
@@ -4773,7 +4773,7 @@ int JResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void*
 		catch (const Exception& ex)
 		{
 			transliterateException(tdbb, ex, user_status, "JResultSet::fetchRelative");
-			return IStatus::ERROR;
+			return IStatus::FB_ERROR;
 		}
 
 		trace_warning(tdbb, user_status, "JResultSet::fetchRelative");
@@ -4781,11 +4781,11 @@ int JResultSet::fetchRelative(CheckStatusWrapper* user_status, int offset, void*
 	catch (const Exception& ex)
 	{
 		ex.stuffException(user_status);
-		return IStatus::ERROR;
+		return IStatus::FB_ERROR;
 	}
 
 	successful_completion(user_status);
-	return (state == 0) ? IStatus::OK : IStatus::NO_DATA;
+	return (state == 0) ? IStatus::FB_OK : IStatus::FB_NO_DATA;
 }
 
 
@@ -5275,7 +5275,7 @@ void JRD_print_procedure_info(thread_db* tdbb, const char* mesg)
  ******************************************************/
 	TEXT fname[MAXPATHLEN];
 
-	Firebird::string fname = fb_utils::getPrefix(IConfigManager::DIR_LOG, "proc_info.log");
+	Firebird::string fname = fb_utils::getPrefix(IConfigManager::FB_DIR_LOG, "proc_info.log");
 	FILE* fptr = os_utils::fopen(fname.c_str(), "a+");
 	if (!fptr)
 	{
@@ -6995,7 +6995,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 	}
 
 	// Notify Trace API manager about disconnect
-	if (attachment->att_trace_manager->needs(ITraceFactory::EVENT_DETACH))
+	if (attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_DETACH))
 	{
 		TraceConnectionImpl conn(attachment);
 		attachment->att_trace_manager->event_detach(&conn, false);

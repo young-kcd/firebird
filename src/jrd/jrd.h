@@ -613,7 +613,7 @@ public:
 	~ThreadContextHolder()
 	{
 		unsigned l = fb_utils::statusLength(context.tdbb_status_vector);
-		if (externStatus && (!(externStatus->getState() & Firebird::IStatus::STATE_ERRORS)) &&
+		if (externStatus && (!(externStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)) &&
 			(l > 2 || context.tdbb_status_vector[1]))
 		{
 			fb_utils::setIStatus(externStatus, context.tdbb_status_vector);
