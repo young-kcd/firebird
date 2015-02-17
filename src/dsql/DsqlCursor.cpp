@@ -34,12 +34,18 @@ static const char* const SCRATCH = "fb_cursor_";
 static const ULONG PREFETCH_SIZE = 65536; // 64 KB
 
 DsqlCursor::DsqlCursor(dsql_req* req, ULONG flags)
-	: m_request(req), m_flags(flags),
+	: m_request(req), m_resultSet(NULL), m_flags(flags),
 	  m_space(req->getPool(), SCRATCH),
 	  m_state(BOS), m_eof(false), m_position(0), m_cachedCount(0),
 	  m_messageSize(req->getStatement()->getReceiveMsg()->msg_length)
 {
 	TRA_link_cursor(m_request->req_transaction, this);
+}
+
+DsqlCursor::~DsqlCursor()
+{
+	if (m_resultSet)
+		m_resultSet->resetHandle();
 }
 
 jrd_tra* DsqlCursor::getTransaction() const
@@ -50,6 +56,12 @@ jrd_tra* DsqlCursor::getTransaction() const
 Attachment* DsqlCursor::getAttachment() const
 {
 	return m_request->req_dbb->dbb_attachment;
+}
+
+void DsqlCursor::setInterfacePtr(JResultSet* interfacePtr) throw()
+{
+	fb_assert(!m_resultSet);
+	m_resultSet = interfacePtr;
 }
 
 void DsqlCursor::close(thread_db* tdbb, DsqlCursor* cursor)

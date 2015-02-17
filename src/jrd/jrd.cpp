@@ -4500,6 +4500,7 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 
 			rs = new JResultSet(cursor, this);
 			rs->addRef();
+			cursor->setInterfacePtr(rs);
 		}
 		catch (const Exception& ex)
 		{

@@ -167,6 +167,11 @@ public:
 		return cursor;
 	}
 
+	void resetHandle()
+	{
+		cursor = NULL;
+	}
+
 private:
 	DsqlCursor* cursor;
 	Firebird::RefPtr<JStatement> statement;

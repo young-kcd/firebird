@@ -28,16 +28,19 @@
 namespace Jrd {
 
 class dsql_req;
+class JResultSet;
 
 class DsqlCursor
 {
 	enum State { BOS, POSITIONED, EOS };
 
 public:
-	explicit DsqlCursor(dsql_req* req, ULONG flags);
+	DsqlCursor(dsql_req* req, ULONG flags);
+	~DsqlCursor();
 
 	jrd_tra* getTransaction() const;
 	Attachment* getAttachment() const;
+	void setInterfacePtr(JResultSet* interfacePtr) throw();
 
 	static void close(thread_db* tdbb, DsqlCursor* cursor);
 
@@ -63,6 +66,7 @@ private:
 	bool cacheInput(thread_db* tdbb, FB_UINT64 position = MAX_UINT64);
 
 	dsql_req* const m_request;
+	JResultSet* m_resultSet;
 	const ULONG m_flags;
 	TempSpace m_space;
 	State m_state;
