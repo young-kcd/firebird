@@ -57,7 +57,7 @@ public:
 
 	~TraceTransactionEnd()
 	{
-		finish(ITracePlugin::TRACE_RESULT_FAILED);
+		finish(ITracePlugin::RESULT_FAILED);
 	}
 
 	void finish(ntrace_result_t result)
@@ -109,7 +109,7 @@ public:
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
 			TraceProcedureImpl proc(m_request, NULL);
 
-			trace_mgr->event_proc_execute(&conn, &tran, &proc, true, ITracePlugin::TRACE_RESULT_SUCCESS);
+			trace_mgr->event_proc_execute(&conn, &tran, &proc, true, ITracePlugin::RESULT_SUCCESS);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();
@@ -125,7 +125,7 @@ public:
 
 	~TraceProcExecute()
 	{
-		finish(false, ITracePlugin::TRACE_RESULT_FAILED);
+		finish(false, ITracePlugin::RESULT_FAILED);
 	}
 
 	void finish(bool have_cursor, ntrace_result_t result)
@@ -182,7 +182,7 @@ public:
 
 	~TraceProcFetch()
 	{
-		fetch(true, ITracePlugin::TRACE_RESULT_FAILED);
+		fetch(true, ITracePlugin::RESULT_FAILED);
 	}
 
 	void fetch(bool eof, ntrace_result_t result)
@@ -252,7 +252,7 @@ public:
 				m_inMsg, m_inMsgLength);
 			TraceFunctionImpl func(m_request, inputs, NULL, NULL);
 
-			trace_mgr->event_func_execute(&conn, &tran, &func, true, ITracePlugin::TRACE_RESULT_SUCCESS);
+			trace_mgr->event_func_execute(&conn, &tran, &func, true, ITracePlugin::RESULT_SUCCESS);
 		}
 
 		m_start_clock = fb_utils::query_performance_counter();
@@ -268,7 +268,7 @@ public:
 
 	~TraceFuncExecute()
 	{
-		finish(ITracePlugin::TRACE_RESULT_FAILED);
+		finish(ITracePlugin::RESULT_FAILED);
 	}
 
 	void finish(ntrace_result_t result, const dsc* value = NULL)
@@ -329,7 +329,7 @@ public:
 			TraceTransactionImpl tran(m_tdbb->getTransaction());
 			TraceTriggerImpl trig(m_request, m_which_trig, NULL);
 
-			trace_mgr->event_trigger_execute(&conn, &tran, &trig, true, ITracePlugin::TRACE_RESULT_SUCCESS);
+			trace_mgr->event_trigger_execute(&conn, &tran, &trig, true, ITracePlugin::RESULT_SUCCESS);
 		}
 
 		fb_assert(!m_request->req_fetch_baseline);
@@ -362,7 +362,7 @@ public:
 
 	~TraceTrigExecute()
 	{
-		finish(ITracePlugin::TRACE_RESULT_FAILED);
+		finish(ITracePlugin::RESULT_FAILED);
 	}
 
 private:
@@ -423,7 +423,7 @@ public:
 
 	~TraceBlrCompile()
 	{
-		finish(NULL, ITracePlugin::TRACE_RESULT_FAILED);
+		finish(NULL, ITracePlugin::RESULT_FAILED);
 	}
 
 private:
@@ -485,7 +485,7 @@ public:
 
 	~TraceBlrExecute()
 	{
-		finish(ITracePlugin::TRACE_RESULT_FAILED);
+		finish(ITracePlugin::RESULT_FAILED);
 	}
 
 private:

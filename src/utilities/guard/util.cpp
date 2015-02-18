@@ -87,7 +87,7 @@ pid_t UTIL_start_process(const char* process, char** argv, const char* prog_name
 	fb_assert(argv != NULL);
 
 	// prepend Firebird home directory to the program name
-	Firebird::PathName string = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_SBIN, process);
+	Firebird::PathName string = fb_utils::getPrefix(Firebird::IConfigManager::DIR_SBIN, process);
 
 	if (prog_name) {
 		gds__log("%s: guardian starting %s\n", prog_name, string.c_str());
@@ -246,7 +246,7 @@ int UTIL_ex_lock(const TEXT* file)
  **************************************/
 
 	// get the file name and prepend the complete path etc
-	Firebird::PathName expanded_filename = fb_utils::getPrefix(Firebird::IConfigManager::FB_DIR_GUARD, file);
+	Firebird::PathName expanded_filename = fb_utils::getPrefix(Firebird::IConfigManager::DIR_GUARD, file);
 
 	// file fd for the opened and locked file
 	int fd_file = open(expanded_filename.c_str(), O_RDWR | O_CREAT, 0660);

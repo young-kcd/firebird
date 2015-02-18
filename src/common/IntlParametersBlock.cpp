@@ -163,7 +163,7 @@ void IntlParametersBlock::processParametersBlock(ProcessString* processString, C
 	{
 		LocalStatus l;
 		st.stuffException(&l);
-		if ((l.getStatus() & IStatus::FB_HAS_ERRORS) && (l.getErrors()[1] == isc_bad_conn_str) && tagName)
+		if ((l.getState() & IStatus::STATE_ERRORS) && (l.getErrors()[1] == isc_bad_conn_str) && tagName)
 		{
 			Arg::Gds newErrors(isc_random);
 			string message("Bad international character in tag ");

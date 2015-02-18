@@ -164,7 +164,7 @@ private:
 				selGrantor.c_str(), SQL_DIALECT_V6, NULL, NULL, out.getMetadata(), NULL, 0);
 			check(&statusWrapper);
 
-			bool hasGrant = curs->fetchNext(&statusWrapper, out.getBuffer()) == Firebird::IStatus::FB_OK;
+			bool hasGrant = curs->fetchNext(&statusWrapper, out.getBuffer()) == Firebird::IStatus::RESULT_OK;
 			curs->close(&statusWrapper);
 			check(&statusWrapper);
 
@@ -301,7 +301,7 @@ public:
 						for (unsigned repeat = 0; ; ++repeat)
 						{
 							stmt = att->prepare(status, tra, 0, insert, SQL_DIALECT_V6, Firebird::IStatement::PREPARE_PREFETCH_METADATA);
-							if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
+							if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 							{
 								break;
 							}
@@ -566,7 +566,7 @@ public:
 							(par ? par->getBuffer() : NULL), om, 0);
 						check(status);
 
-						while (rs->fetchNext(status, di.getBuffer()) == Firebird::IStatus::FB_OK)
+						while (rs->fetchNext(status, di.getBuffer()) == Firebird::IStatus::RESULT_OK)
 						{
 							listField(user->userName(), login);
 							listField(user->firstName(), first);
@@ -617,7 +617,7 @@ public:
 		if (tra)
 		{
 			tra->commit(status);
-			if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
+			if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			{
 				tra = NULL;
 			}
@@ -629,7 +629,7 @@ public:
 		if (tra)
 		{
 			tra->rollback(status);
-			if (!(status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
+			if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 			{
 				tra = NULL;
 			}
@@ -646,7 +646,7 @@ public:
 			if (att)
 			{
 				att->detach(&statusWrapper);
-				if (!(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
+				if (!(status.getState() & Firebird::IStatus::STATE_ERRORS))
 				{
 					att = NULL;
 				}
@@ -695,7 +695,7 @@ private:
 
 	static void check(Firebird::CheckStatusWrapper* status)
 	{
-		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		{
 			checkStatusVectorForMissingTable(status->getErrors());
 			Firebird::status_exception::raise(status);
@@ -853,7 +853,7 @@ private:
 				{
 					int cc = blob->getSegment(&statusWrapper, sizeof(segbuf), segbuf, &len);
 					check(&statusWrapper);
-					if (cc == Firebird::IStatus::FB_NO_DATA)
+					if (cc == Firebird::IStatus::RESULT_NO_DATA)
 						break;
 					s.append(segbuf, len);
 				}
@@ -908,6 +908,6 @@ static Firebird::SimpleFactory<Auth::SrpManagement> factory;
 extern "C" void FB_EXPORTED FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 {
 	Firebird::CachedMasterInterface::set(master);
-	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::IPluginManager::AuthUserManagement, Auth::RemotePassword::plugName, &Auth::factory);
+	Firebird::PluginManagerInterfacePtr()->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_USER_MANAGEMENT, Auth::RemotePassword::plugName, &Auth::factory);
 	Firebird::getUnloadDetector()->registerMe();
 }

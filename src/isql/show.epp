@@ -1611,7 +1611,7 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	{
 		unsigned int length;
 		int cc = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
-		if (cc == Firebird::IStatus::FB_NO_DATA || cc == Firebird::IStatus::FB_ERROR)
+		if (cc == Firebird::IStatus::RESULT_NO_DATA || cc == Firebird::IStatus::RESULT_ERROR)
 			break;
 
 		// ASF: In Windows, \n characters are printed as \r\n in text mode.
@@ -1654,7 +1654,7 @@ void SHOW_print_metadata_text_blob(FILE* fp, ISC_QUAD* blobid, bool escape_squot
 	if (endedWithCr)
 	    fputc('\r', fp);
 
-	if (fbStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+	if (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS)
 		ISQL_errmsg(fbStatus);
 
 	blob->close(fbStatus);
@@ -1770,7 +1770,7 @@ processing_state SHOW_metadata(const SCHAR* const* cmd, SCHAR** lcmd)
 		isqlGlob.printf("Server version:%s", NEWLINE);
 		VersionCallback callback;
 		Firebird::UtilInterfacePtr()->getFbVersion(fbStatus, DB, &callback);
-		if (fbStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS)
 		{
 			IUTILS_msg_get(CANNOT_GET_SRV_VER, msg_string);
 			STDERROUT(msg_string);
@@ -5816,7 +5816,7 @@ static processing_state show_users12()
 
 	processing_state rc = OBJECT_NOT_FOUND;
 	bool newline = false;
-	while (rs->fetchNext(fbStatus, outBuffer) == Firebird::IStatus::FB_OK)
+	while (rs->fetchNext(fbStatus, outBuffer) == Firebird::IStatus::RESULT_OK)
 	{
 		if (rc == OBJECT_NOT_FOUND)
 		{

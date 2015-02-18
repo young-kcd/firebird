@@ -136,7 +136,7 @@ void TraceManager::load_plugins()
 	init_factories = true;
 
 	factories = FB_NEW(*getDefaultMemoryPool()) TraceManager::Factories(*getDefaultMemoryPool());
-	for (GetPlugins<ITraceFactory> traceItr(IPluginManager::Trace); traceItr.hasData(); traceItr.next())
+	for (GetPlugins<ITraceFactory> traceItr(IPluginManager::TYPE_TRACE); traceItr.hasData(); traceItr.next())
 	{
 		FactoryInfo info;
 		info.factory = traceItr.plugin();
@@ -257,7 +257,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 			trace_needs |= info->factory->trace_needs();
 		}
-		else if (status.getStatus() & IStatus::FB_HAS_ERRORS)
+		else if (status.getState() & IStatus::STATE_ERRORS)
 		{
 			string header;
 			header.printf("Trace plugin %s returned error on call trace_create.", info->name);

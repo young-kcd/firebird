@@ -277,7 +277,7 @@ static inline bool commit_trans(Firebird::ITransaction** x)
 	if (ISQL_errmsg (fbStatus))
 	{
 		(*x)->rollback(fbStatus);
-		if (!(fbStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS))
+		if (!(fbStatus->getState() & Firebird::IStatus::STATE_ERRORS))
 		{
 			*x = NULL;
 		}
@@ -956,8 +956,8 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 	TEXT errbuf[MSG_LENGTH];
 	const ISC_STATUS* const status = st->getErrors();
 
-	const unsigned state = st->getStatus();
-	if (Quiet && (state & Firebird::IStatus::FB_HAS_ERRORS))
+	const unsigned state = st->getState();
+	if (Quiet && (state & Firebird::IStatus::STATE_ERRORS))
 		Exit_value = FINI_ERROR;
 	//else
 	{
@@ -965,8 +965,8 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		if (vec[0] != isc_arg_gds)
 			return false;
 
-		if (!(state & Firebird::IStatus::FB_HAS_ERRORS) &&
-			(!(state & Firebird::IStatus::FB_HAS_WARNINGS) || !setValues.Warnings))
+		if (!(state & Firebird::IStatus::STATE_ERRORS) &&
+			(!(state & Firebird::IStatus::STATE_WARNINGS) || !setValues.Warnings))
 		{
 			return false;
 		}
@@ -989,7 +989,7 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		}
 
 		/*
-		if (state & Firebird::IStatus::FB_HAS_WARNINGS)
+		if (state & Firebird::IStatus::STATE_WARNINGS)
 		{
 			const ISC_STATUS* w = st->getWarnings();
 			while (fb_interpret(err, es, &w)) {
@@ -1061,7 +1061,7 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		}
 	}
 
-	return (state & Firebird::IStatus::FB_HAS_ERRORS);
+	return (state & Firebird::IStatus::STATE_ERRORS);
 }
 
 
@@ -1078,7 +1078,7 @@ void ISQL_warning(Firebird::CheckStatusWrapper* st)
  *	Simulate isc_print_status exactly, to control stderr
  **************************************/
 
-	if ((st->getStatus() & Firebird::IStatus::FB_HAS_WARNINGS) && setValues.Warnings)
+	if ((st->getState() & Firebird::IStatus::STATE_WARNINGS) && setValues.Warnings)
 	{
 		const ISC_STATUS* vec = st->getWarnings();
 		TEXT buf[MSG_LENGTH];
@@ -1273,7 +1273,7 @@ void ISQL_get_character_sets(SSHORT char_set_id, SSHORT collation, bool collate_
 
 inline static bool failed()
 {
-	return (fbStatus->getStatus() & Firebird::IStatus::FB_HAS_ERRORS);
+	return (fbStatus->getState() & Firebird::IStatus::STATE_ERRORS);
 }
 
 
@@ -1880,7 +1880,7 @@ void ISQL_print_validation(FILE* fp,
 	{
 		unsigned int length;
 		int cc = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
-		if (cc == Firebird::IStatus::FB_NO_DATA || cc == Firebird::IStatus::FB_ERROR)
+		if (cc == Firebird::IStatus::RESULT_NO_DATA || cc == Firebird::IStatus::RESULT_ERROR)
 			break;
 
 		buffer[length] = 0;
@@ -7598,7 +7598,7 @@ processing_state ISQL_print_item_blob(FILE* fp, const IsqlVar* var, Firebird::IT
 	{
 		unsigned int length;
 		int cc  = blob->getSegment(fbStatus, sizeof(buffer) - 1, buffer, &length);
-		if (cc == Firebird::IStatus::FB_NO_DATA || cc == Firebird::IStatus::FB_ERROR)
+		if (cc == Firebird::IStatus::RESULT_NO_DATA || cc == Firebird::IStatus::RESULT_ERROR)
 			break;
 
 		// Special displays for blr or acl subtypes
@@ -8591,7 +8591,7 @@ static processing_state process_statement(const TEXT* str2)
 
 			// Fetch the current cursor
 
-			if (curs->fetchNext(fbStatus, buffer) == Firebird::IStatus::FB_NO_DATA)
+			if (curs->fetchNext(fbStatus, buffer) == Firebird::IStatus::RESULT_NO_DATA)
 				break;
 
 			// Print the header every Pagelength number of lines for
@@ -8692,7 +8692,7 @@ static int query_abort(const int reason, const int, void*)
 	{
 		Firebird::LocalStatus status;
 		DB->cancelOperation(&status, fb_cancel_raise);
-		flag = !(status.getStatus() & Firebird::IStatus::FB_HAS_ERRORS);
+		flag = !(status.getState() & Firebird::IStatus::STATE_ERRORS);
 	}
 
 	if (flag)

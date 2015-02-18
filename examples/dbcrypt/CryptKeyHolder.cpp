@@ -196,12 +196,12 @@ int CryptKeyHolder::keyCallback(CheckStatusWrapper* status, ICryptKeyCallback* c
 		return 1;
 
 	IConfig* def = config->getDefaultConfig(status);
-	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		return 1;
 
 	IConfigEntry* confEntry = def->find(status, "Auto");
 	def->release();
-	if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		return 1;
 
 	if (confEntry)
@@ -269,6 +269,6 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
 	pluginManager = master->getPluginManager();
 
 	module.registerMe();
-	pluginManager->registerPluginFactory(IPluginManager::KeyHolder, "CryptKeyHolder_example",
+	pluginManager->registerPluginFactory(IPluginManager::TYPE_KEY_HOLDER, "CryptKeyHolder_example",
 		&factory);
 }

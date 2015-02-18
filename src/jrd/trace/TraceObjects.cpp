@@ -62,7 +62,7 @@ namespace Jrd {
 
 unsigned TraceConnectionImpl::getKind()
 {
-	return TRACE_CONNECTION_DATABASE;
+	return KIND_DATABASE;
 }
 
 int TraceConnectionImpl::getConnectionID()
@@ -142,20 +142,20 @@ unsigned TraceTransactionImpl::getIsolation()
 	switch (m_tran->tra_flags & (TRA_read_committed | TRA_rec_version | TRA_degree3))
 	{
 	case TRA_degree3:
-		return TRA_ISO_CONSISTENCY;
+		return ISOLATION_CONSISTENCY;
 
 	case TRA_read_committed:
-		return TRA_ISO_READ_COMMITTED_NORECVER;
+		return ISOLATION_READ_COMMITTED_NORECVER;
 
 	case TRA_read_committed | TRA_rec_version:
-		return TRA_ISO_READ_COMMITTED_RECVER;
+		return ISOLATION_READ_COMMITTED_RECVER;
 
 	case 0:
-		return TRA_ISO_CONCURRENCY;
+		return ISOLATION_CONCURRENCY;
 
 	default:
 		fb_assert(false);
-		return TRA_ISO_CONCURRENCY;
+		return ISOLATION_CONCURRENCY;
 	}
 }
 
@@ -523,7 +523,7 @@ const char* TraceServiceImpl::getServiceName()
 
 unsigned TraceServiceImpl::getKind()
 {
-	return TRACE_CONNECTION_SERVICE;
+	return KIND_SERVICE;
 }
 
 int TraceServiceImpl::getProcessID()

@@ -9841,7 +9841,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 	secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, ddl.c_str(), SQL_DIALECT_V6,
 		NULL, NULL, NULL, NULL);
 
-	if (statusWrapper.getStatus() & IStatus::FB_HAS_ERRORS)
+	if (statusWrapper.getState() & IStatus::STATE_ERRORS)
 	{
 		try
 		{
@@ -9941,7 +9941,7 @@ void MappingNode::runInSecurityDb(SecDbContext* secDbContext)
 		}
 		catch (const Exception&)
 		{
-			if (st.getStatus() & IStatus::FB_HAS_ERRORS)
+			if (st.getState() & IStatus::STATE_ERRORS)
 			{
 				const ISC_STATUS* stat2 = st.getErrors();
 				if (stat2[1] != isc_dsql_token_unk_err)

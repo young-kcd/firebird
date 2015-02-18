@@ -52,18 +52,18 @@ interface Disposable : Versioned
 [exception]
 interface Status : Disposable
 {
-	// flags in value returned by status()
-	const uint FB_HAS_WARNINGS	= 0x01;
-	const uint FB_HAS_ERRORS 	= 0x02;
+	// flags in value returned by getState()
+	const uint STATE_WARNINGS	= 0x01;
+	const uint STATE_ERRORS 	= 0x02;
 
 	// completion codes - not used in Status, but I must have them somewhere
-	const int FB_ERROR = -1;
-	const int FB_OK = 0;
-	const int FB_NO_DATA = 1;
-	const int FB_SEGMENT = 2;
+	const int RESULT_ERROR = -1;
+	const int RESULT_OK = 0;
+	const int RESULT_NO_DATA = 1;
+	const int RESULT_SEGMENT = 2;
 
 	void init();
-	uint getStatus() const;
+	uint getState() const;
 
 	void setErrors2(uint length, const intptr* value);
 	void setWarnings2(uint length, const intptr* value);
@@ -217,17 +217,18 @@ interface PluginModule : Versioned
 interface PluginManager : Versioned
 {
 	// Plugin types
-	const uint Provider = 1;
-	const uint FirstNonLibPlugin = 2;
-	const uint AuthServer = 3;
-	const uint AuthClient = 4;
-	const uint AuthUserManagement = 5;
-	const uint ExternalEngine = 6;
-	const uint Trace = 7;
-	const uint WireCrypt = 8;
-	const uint DbCrypt = 9;
-	const uint KeyHolder = 10;
-	const uint MaxType = 11;	// keep in sync please
+	const uint TYPE_PROVIDER = 1;
+	const uint TYPE_FIRST_NON_LIB = 2;
+	const uint TYPE_AUTH_SERVER = 3;
+	const uint TYPE_AUTH_CLIENT = 4;
+	const uint TYPE_AUTH_USER_MANAGEMENT = 5;
+	const uint TYPE_EXTERNAL_ENGINE = 6;
+	const uint TYPE_TRACE = 7;
+	const uint TYPE_WIRE_CRYPT = 8;
+	const uint TYPE_DB_CRYPT = 9;
+	const uint TYPE_KEY_HOLDER = 10;
+	const uint TYPE_COUNT = 11;	// keep in sync
+	//// TODO: TYPE_COUNT is not count. And these constants starts from 1, different than DIR_* ones.
 
 	// Main function called by plugin modules in firebird_plugin()
 	void registerPluginFactory(uint pluginType, const string defaultName, PluginFactory factory);
@@ -272,24 +273,24 @@ interface CryptKey : Versioned
 interface ConfigManager : Versioned
 {
 	// Codes for ConfigManager::getDirectory()
-	const uint FB_DIR_BIN = 0;
-	const uint FB_DIR_SBIN = 1;
-	const uint FB_DIR_CONF = 2;
-	const uint FB_DIR_LIB = 3;
-	const uint FB_DIR_INC = 4;
-	const uint FB_DIR_DOC = 5;
-	const uint FB_DIR_UDF = 6;
-	const uint FB_DIR_SAMPLE = 7;
-	const uint FB_DIR_SAMPLEDB = 8;
-	const uint FB_DIR_HELP = 9;
-	const uint FB_DIR_INTL = 10;
-	const uint FB_DIR_MISC = 11;
-	const uint FB_DIR_SECDB = 12;
-	const uint FB_DIR_MSG = 13;
-	const uint FB_DIR_LOG = 14;
-	const uint FB_DIR_GUARD = 15;
-	const uint FB_DIR_PLUGINS = 16;
-	const uint FB_DIRCOUNT = 17;
+	const uint DIR_BIN = 0;
+	const uint DIR_SBIN = 1;
+	const uint DIR_CONF = 2;
+	const uint DIR_LIB = 3;
+	const uint DIR_INC = 4;
+	const uint DIR_DOC = 5;
+	const uint DIR_UDF = 6;
+	const uint DIR_SAMPLE = 7;
+	const uint DIR_SAMPLEDB = 8;
+	const uint DIR_HELP = 9;
+	const uint DIR_INTL = 10;
+	const uint DIR_MISC = 11;
+	const uint DIR_SECDB = 12;
+	const uint DIR_MSG = 13;
+	const uint DIR_LOG = 14;
+	const uint DIR_GUARD = 15;
+	const uint DIR_PLUGINS = 16;
+	const uint DIR_COUNT = 17;	// keep in sync
 
 	const string getDirectory(uint code);
 	FirebirdConf getFirebirdConf();
@@ -316,7 +317,7 @@ interface Blob : ReferenceCounted
 						 uint itemsLength, const uchar* items,
 						 uint bufferLength, uchar* buffer);
 
-	[notImplemented(Status::FB_ERROR)]
+	[notImplemented(Status::RESULT_ERROR)]
 	int getSegment(Status status, uint bufferLength, void* buffer, uint* segmentLength);
 
 	void putSegment(Status status, uint length,
@@ -381,12 +382,12 @@ interface MetadataBuilder : ReferenceCounted
 
 interface ResultSet : ReferenceCounted
 {
-	[notImplemented(Status::FB_ERROR)] int fetchNext(Status status, void* message);
-	[notImplemented(Status::FB_ERROR)] int fetchPrior(Status status, void* message);
-	[notImplemented(Status::FB_ERROR)] int fetchFirst(Status status, void* message);
-	[notImplemented(Status::FB_ERROR)] int fetchLast(Status status, void* message);
-	[notImplemented(Status::FB_ERROR)] int fetchAbsolute(Status status, int position, void* message);
-	[notImplemented(Status::FB_ERROR)] int fetchRelative(Status status, int offset, void* message);
+	[notImplemented(Status::RESULT_ERROR)] int fetchNext(Status status, void* message);
+	[notImplemented(Status::RESULT_ERROR)] int fetchPrior(Status status, void* message);
+	[notImplemented(Status::RESULT_ERROR)] int fetchFirst(Status status, void* message);
+	[notImplemented(Status::RESULT_ERROR)] int fetchLast(Status status, void* message);
+	[notImplemented(Status::RESULT_ERROR)] int fetchAbsolute(Status status, int position, void* message);
+	[notImplemented(Status::RESULT_ERROR)] int fetchRelative(Status status, int offset, void* message);
 	boolean isEof(Status status);
 	boolean isBof(Status status);
 	MessageMetadata getMetadata(Status status);
@@ -924,8 +925,8 @@ struct dsc;
 
 interface TraceConnection : Versioned
 {
-	const uint TRACE_CONNECTION_DATABASE = 1;
-	const uint TRACE_CONNECTION_SERVICE = 2;
+	const uint KIND_DATABASE = 1;
+	const uint KIND_SERVICE = 2;
 
 	uint getKind();
 
@@ -947,10 +948,10 @@ interface TraceDatabaseConnection : TraceConnection
 
 interface TraceTransaction : Versioned
 {
-	const uint TRA_ISO_CONSISTENCY = 1;
-	const uint TRA_ISO_CONCURRENCY = 2;
-	const uint TRA_ISO_READ_COMMITTED_RECVER = 3;
-	const uint TRA_ISO_READ_COMMITTED_NORECVER = 4;
+	const uint ISOLATION_CONSISTENCY = 1;
+	const uint ISOLATION_CONCURRENCY = 2;
+	const uint ISOLATION_READ_COMMITTED_RECVER = 3;
+	const uint ISOLATION_READ_COMMITTED_NORECVER = 4;
 
 	uint getTransactionID();
 	boolean getReadOnly();
@@ -1018,9 +1019,13 @@ interface TraceFunction : Versioned
 
 interface TraceTrigger : Versioned
 {
-	const uint TRACE_ALL = 0;
-	const uint TRACE_BEFORE = 1;
-	const uint TRACE_AFTER = 2;
+	//// TODO: TYPE or WHICH? ExternalTrigger has similar constants.
+	const uint TYPE_ALL = 0;
+	const uint TYPE_BEFORE = 1;
+	const uint TYPE_AFTER = 2;
+	//// TODO: What about database triggers?
+
+	//// TODO: Action constants?
 
 	const string getTriggerName();
 	const string getRelationName();
@@ -1072,9 +1077,9 @@ interface TraceInitInfo : Versioned
 // API of trace plugin. Used to deliver notifications for each database
 interface TracePlugin : ReferenceCounted
 {
-	const uint TRACE_RESULT_SUCCESS = 0;
-	const uint TRACE_RESULT_FAILED = 1;
-	const uint TRACE_RESULT_UNAUTHORIZED = 2;
+	const uint RESULT_SUCCESS = 0;
+	const uint RESULT_FAILED = 1;
+	const uint RESULT_UNAUTHORIZED = 2;
 
 	// Function to return error string for hook failure
 	const string trace_get_error();

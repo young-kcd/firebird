@@ -46,8 +46,8 @@ extern "C" void FB_PLUGIN_ENTRY_POINT(Firebird::IMaster* master)
 
 	Firebird::PluginManagerInterfacePtr iPlugin;
 
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthClient, name, &clientFactory);
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::AuthServer, name, &serverFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_CLIENT, name, &clientFactory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_SERVER, name, &serverFactory);
 }
 
 
@@ -84,7 +84,7 @@ int DebugServer::authenticate(Firebird::CheckStatusWrapper* status, Firebird::IS
 			fprintf(stderr, "DebugServer::authenticate1: %s\n", str.c_str());
 #endif
 			sb->putData(status, str.length(), str.c_str());
-			if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+			if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 			{
 				return AUTH_FAILED;
 			}
@@ -165,7 +165,7 @@ int DebugClient::authenticate(Firebird::CheckStatusWrapper* status, Firebird::IC
 		fprintf(stderr, "DebugClient::authenticate: sending %s\n", str.c_str());
 #endif
 		cb->putData(status, str.length(), str.c_str());
-		if (status->getStatus() & Firebird::IStatus::FB_HAS_ERRORS)
+		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		{
 			return AUTH_FAILED;
 		}
