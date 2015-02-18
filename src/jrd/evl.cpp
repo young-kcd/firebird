@@ -318,21 +318,27 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, jrd_nod* node, RecordBitmap* bitmap_a
 		{
 			impure_inversion* impure = (impure_inversion*) ((SCHAR*) tdbb->getRequest() + node->nod_impure);
 			RecordBitmap::reset(impure->inv_bitmap);
-			const dsc* desc = EVL_expr(tdbb, node->nod_arg[0]);
+			const dsc* const desc = EVL_expr(tdbb, node->nod_arg[0]);
 
 			if (!(tdbb->getRequest()->req_flags & req_null) &&
-				desc->dsc_length == sizeof(RecordNumber::Packed))
+				(desc->isText() || desc->dsc_dtype == dtype_dbkey))
 			{
-				const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
-				Firebird::Aligner<RecordNumber::Packed> alignedNumbers(desc->dsc_address, desc->dsc_length);
-				const RecordNumber::Packed* numbers = alignedNumbers;
-				RecordNumber rel_dbkey;
-				rel_dbkey.bid_decode(&numbers[id]);
-				// Decrement the value in order to switch back to the zero based numbering
-				// (from the user point of view the DB_KEY numbering starts from one)
-				rel_dbkey.decrement();
-				if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
-					RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+				UCHAR* ptr = NULL;
+				const int length = MOV_get_string(desc, &ptr, NULL, 0);
+
+				if (length == sizeof(RecordNumber::Packed))
+				{
+					const USHORT id = (USHORT)(IPTR) node->nod_arg[1];
+					Firebird::Aligner<RecordNumber::Packed> alignedNumbers(ptr, length);
+					const RecordNumber::Packed* numbers = alignedNumbers;
+					RecordNumber rel_dbkey;
+					rel_dbkey.bid_decode(&numbers[id]);
+					// Decrement the value in order to switch back to the zero based numbering
+					// (from the user point of view the DB_KEY numbering starts from one)
+					rel_dbkey.decrement();
+					if (!bitmap_and || bitmap_and->test(rel_dbkey.getValue()))
+						RBM_SET(tdbb->getDefaultPool(), &impure->inv_bitmap, rel_dbkey.getValue());
+				}
 			}
 
 			return &impure->inv_bitmap;
