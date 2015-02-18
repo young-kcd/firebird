@@ -2267,7 +2267,7 @@ USHORT CVT_get_string_ptr_common(const dsc* desc, USHORT* ttype, UCHAR** address
 	fb_assert(ttype != NULL);
 	fb_assert(address != NULL);
 	fb_assert(cb != NULL);
-	fb_assert((temp != NULL && length > 0) || desc->isText());
+	fb_assert((temp != NULL && length > 0) || desc->isText() || desc->isDbKey());
 
 	// If the value is already a string (fixed or varying), just return
 	// the address and length.

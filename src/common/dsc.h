@@ -140,6 +140,11 @@ typedef struct dsc
 		return dsc_dtype >= dtype_text && dsc_dtype <= dtype_varying;
 	}
 
+	bool isDbKey() const
+	{
+		return dsc_dtype == dtype_dbkey;
+	}
+
 	bool isDateTime() const
 	{
 		return dsc_dtype >= dtype_sql_date && dsc_dtype <= dtype_timestamp;
