@@ -2237,7 +2237,9 @@ USHORT CVT_get_string_ptr_common(const dsc* desc, USHORT* ttype, UCHAR** address
 	fb_assert(cb != NULL);
 	fb_assert((temp != NULL && length > 0) ||
 			desc->dsc_dtype == dtype_text ||
-			desc->dsc_dtype == dtype_cstring || desc->dsc_dtype == dtype_varying);
+			desc->dsc_dtype == dtype_cstring ||
+			desc->dsc_dtype == dtype_varying ||
+			desc->dsc_dtype == dtype_dbkey);
 
 	// If the value is already a string (fixed or varying), just return
 	// the address and length.
