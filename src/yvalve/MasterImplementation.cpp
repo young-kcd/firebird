@@ -156,6 +156,11 @@ public:
 	static void remove(FPTR_VOID_PTR cleanup, void* arg);
 	static void destructor(void*);
 
+	static void assertNoCleanupChain()
+	{
+		fb_assert(!chain);
+	}
+
 private:
 	FPTR_VOID_PTR function;
 	void* argument;
@@ -221,7 +226,7 @@ public:
 
 	~FiniThreadCleanup()
 	{
-		//fb_assert(!chain);
+		ThreadCleanup::assertNoCleanupChain();
 		if (keySet)
 		{
 			int err = pthread_key_delete(key);
