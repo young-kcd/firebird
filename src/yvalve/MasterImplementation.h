@@ -68,6 +68,7 @@ namespace Why
 	};
 
 	void shutdownTimers();
+	void threadCleanup();
 
 	Firebird::Mutex& pauseTimer();
 } // namespace Why

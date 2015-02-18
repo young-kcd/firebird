@@ -36,7 +36,6 @@
 namespace Firebird {
 
 extern HINSTANCE hDllInst;
-extern bool bEmbedded;
 
 } // namespace
 

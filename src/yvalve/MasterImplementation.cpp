@@ -147,7 +147,6 @@ int MasterImplementation::serverMode(int mode)
 #include <windows.h>
 #endif
 
-#ifdef USE_POSIX_THREADS
 namespace {
 
 class ThreadCleanup
@@ -162,11 +161,22 @@ private:
 	void* argument;
 	ThreadCleanup* next;
 
+	static ThreadCleanup* chain;
+	static GlobalPtr<Mutex> cleanupMutex;
+
 	ThreadCleanup(FPTR_VOID_PTR cleanup, void* arg, ThreadCleanup* chain)
 		: function(cleanup), argument(arg), next(chain) { }
 
+	static void initThreadCleanup();
+	static void finiThreadCleanup();
+
 	static ThreadCleanup** findCleanup(FPTR_VOID_PTR cleanup, void* arg);
 };
+
+ThreadCleanup* ThreadCleanup::chain = NULL;
+GlobalPtr<Mutex> ThreadCleanup::cleanupMutex;
+
+#ifdef USE_POSIX_THREADS
 
 pthread_key_t key;
 pthread_once_t keyOnce = PTHREAD_ONCE_INIT;
@@ -182,7 +192,7 @@ void makeKey()
 	keySet = true;
 }
 
-void initThreadCleanup()
+void ThreadCleanup::initThreadCleanup()
 {
 	int err = pthread_once(&keyOnce, makeKey);
 	if (err)
@@ -197,7 +207,11 @@ void initThreadCleanup()
 	}
 }
 
-ThreadCleanup* chain = NULL;
+void ThreadCleanup::finiThreadCleanup()
+{
+	pthread_setspecific(key, NULL);
+}
+
 
 class FiniThreadCleanup
 {
@@ -217,9 +231,19 @@ public:
 	}
 };
 
-Firebird::GlobalPtr<Firebird::Mutex> cleanupMutex;
 Firebird::GlobalPtr<FiniThreadCleanup> thrCleanup;		// needed to call dtor
 
+#endif // USE_POSIX_THREADS
+
+#ifdef WIN_NT
+void ThreadCleanup::initThreadCleanup()
+{
+}
+
+void ThreadCleanup::finiThreadCleanup()
+{
+}
+#endif // #ifdef WIN_NT
 
 ThreadCleanup** ThreadCleanup::findCleanup(FPTR_VOID_PTR cleanup, void* arg)
 {
@@ -243,7 +267,7 @@ void ThreadCleanup::destructor(void*)
 		ptr->function(ptr->argument);
 	}
 
-	pthread_setspecific(key, NULL);
+	finiThreadCleanup();
 }
 
 void ThreadCleanup::add(FPTR_VOID_PTR cleanup, void* arg)
@@ -276,7 +300,7 @@ void ThreadCleanup::remove(FPTR_VOID_PTR cleanup, void* arg)
 }
 
 } // anonymous namespace
-#endif // USE_POSIX_THREADS
+
 
 namespace {
 
@@ -293,6 +317,11 @@ private:
 
 	public:
 		explicit ThreadBuffer(ThreadId thr) : buffer_ptr(buffer), thread(thr) { }
+
+		static ThreadId generate(const ThreadBuffer* item)
+		{
+			return item->thread;
+		}
 
 		const char* alloc(const char* string, size_t length)
 		{
@@ -345,7 +374,7 @@ private:
 		}
 	};
 
-	typedef Firebird::Array<ThreadBuffer*> ProcessBuffer;
+	typedef Firebird::SortedArray<ThreadBuffer*, EmptyStorage<ThreadBuffer*>, ThreadId, ThreadBuffer> ProcessBuffer;
 
 	ProcessBuffer processBuffer;
 	Firebird::Mutex mutex;
@@ -358,9 +387,7 @@ public:
 
 	~StringsBuffer()
 	{
-#ifdef USE_POSIX_THREADS
 		ThreadCleanup::remove(cleanupAllStrings, this);
-#endif
 	}
 
 private:
@@ -368,11 +395,12 @@ private:
 	{
 		fb_assert(mutex.locked());
 
-		for (FB_SIZE_T i = 0; i < processBuffer.getCount(); ++i)
+		size_t pos;
+		if (processBuffer.find(thr, pos))
 		{
-			if (processBuffer[i]->thisThread(thr))
+			if (processBuffer[pos]->thisThread(thr))
 			{
-				return i;
+				return pos;
 			}
 		}
 
@@ -389,9 +417,8 @@ private:
 			return processBuffer[p];
 		}
 
-#ifdef USE_POSIX_THREADS
 		ThreadCleanup::add(cleanupAllStrings, this);
-#endif
+
 		ThreadBuffer* b = new ThreadBuffer(thr);
 		processBuffer.add(b);
 		return b;
@@ -434,6 +461,11 @@ namespace Why {
 const char* MasterImplementation::circularAlloc(const char* s, unsigned len, intptr_t thr)
 {
 	return allStrings->alloc(s, len, (ThreadId) thr);
+}
+
+void threadCleanup()
+{
+	ThreadCleanup::destructor(NULL);
 }
 
 } // namespace Why

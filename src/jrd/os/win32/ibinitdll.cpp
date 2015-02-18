@@ -23,9 +23,10 @@
  */
 
 #include "firebird.h"
-#include "../../../common/dllinst.h"
-
 #include <windows.h>
+#include "../../../common/dllinst.h"
+#include "../../../yvalve/MasterImplementation.h"
+
 
 using namespace Firebird;
 
@@ -36,10 +37,13 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
 	{
 		case DLL_PROCESS_ATTACH:
 			hDllInst = h;
-//#if defined(EMBEDDED)
-			bEmbedded = true;
-//#endif
 			break;
+
+		case DLL_THREAD_DETACH:
+		{
+			Why::threadCleanup();
+			break;
+		}
 	}
 
 	return TRUE;
