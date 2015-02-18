@@ -221,7 +221,7 @@ public:
 
 	~FiniThreadCleanup()
 	{
-		fb_assert(!chain);
+		//fb_assert(!chain);
 		if (keySet)
 		{
 			int err = pthread_key_delete(key);
@@ -395,7 +395,7 @@ private:
 	{
 		fb_assert(mutex.locked());
 
-		size_t pos;
+		FB_SIZE_T pos;
 		if (processBuffer.find(thr, pos))
 		{
 			if (processBuffer[pos]->thisThread(thr))
