@@ -256,20 +256,13 @@ RecordBitmap** EVL_bitmap(thread_db* tdbb, const InversionNode* node, RecordBitm
 			jrd_req* request = tdbb->getRequest();
 			impure_inversion* impure = request->getImpure<impure_inversion>(node->impure);
 			RecordBitmap::reset(impure->inv_bitmap);
-			const dsc* desc = EVL_expr(tdbb, request, node->value);
+			const dsc* const desc = EVL_expr(tdbb, request, node->value);
 
-			if (!(tdbb->getRequest()->req_flags & req_null))
+			if (!(tdbb->getRequest()->req_flags & req_null) &&
+				(desc->isText() || desc->isDbKey()))
 			{
 				UCHAR* ptr = NULL;
-				USHORT length = 0;
-
-				if (desc->dsc_dtype == dtype_dbkey)
-				{
-					ptr = desc->dsc_address;
-					length = desc->dsc_length;
-				}
-				else if (desc->isText())
-					length = MOV_get_string(desc, &ptr, NULL, 0);
+				const int length = MOV_get_string(desc, &ptr, NULL, 0);
 
 				if (length == sizeof(RecordNumber::Packed))
 				{
