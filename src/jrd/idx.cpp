@@ -367,7 +367,6 @@ void IDX_create_index(thread_db* tdbb,
 		{
 			primary.rpb_record = gc_record;
 			VIO_data(tdbb, &primary, dbb->dbb_permanent);
-			gc_record = primary.rpb_record;
 			stack.push(primary.rpb_record);
 		}
 
