@@ -348,7 +348,7 @@ public:
 			Record* const record = *iter;
 			fb_assert(record);
 
-			if (!record->checkFlags(REC_undo_active))
+			if (!record->testFlags(REC_undo_active))
 			{
 				// initialize record for reuse
 				record->reset(format, REC_undo_active);

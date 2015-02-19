@@ -165,7 +165,7 @@ namespace Jrd
 			return m_data.begin();
 		}
 
-		bool checkFlags(UCHAR mask) const
+		bool testFlags(UCHAR mask) const
 		{
 			return (m_flags & mask != 0);
 		}

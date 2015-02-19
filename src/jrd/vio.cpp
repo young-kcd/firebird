@@ -1949,7 +1949,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 		Record* const record = *iter;
 		fb_assert(record);
 
-		if (!record->checkFlags(REC_gc_active))
+		if (!record->testFlags(REC_gc_active))
 		{
 			// initialize record for reuse
 			record->reset(format, REC_gc_active);
