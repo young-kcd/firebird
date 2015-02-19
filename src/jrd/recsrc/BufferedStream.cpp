@@ -26,7 +26,9 @@
 #include "../jrd/req.h"
 #include "../jrd/cmp_proto.h"
 #include "../jrd/evl_proto.h"
+#include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
+#include "../jrd/vio_proto.h"
 
 #include "RecordSource.h"
 
@@ -147,6 +149,8 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 	if (!(impure->irsb_flags & irsb_open))
 		return false;
 
+	dsc from, to;
+
 	Record* const buffer_record = impure->irsb_buffer->getTempRecord();
 
 	if (impure->irsb_flags & irsb_mustread)
@@ -160,31 +164,31 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 			return false;
 		}
 
+		buffer_record->nullify();
+
 		// Assign the fields to the record to be stored
 		for (FB_SIZE_T i = 0; i < m_map.getCount(); i++)
 		{
 			const FieldMap& map = m_map[i];
 
 			record_param* const rpb = &request->req_rpb[map.map_stream];
+			Record* const record = rpb->rpb_record;
+
+			if (map.map_type == FieldMap::REGULAR_FIELD)
+			{
+				if (!EVL_field(rpb->rpb_relation, record, map.map_id, &from))
+					continue;
+			}
 
 			buffer_record->clearNull(i);
 
-			dsc to;
-			if (!EVL_field(NULL, buffer_record, (USHORT) i, &to))
+			if (!EVL_field(rpb->rpb_relation, buffer_record, (USHORT) i, &to))
 				fb_assert(false);
 
 			switch (map.map_type)
 			{
 			case FieldMap::REGULAR_FIELD:
-				{
-					Record* const record = rpb->rpb_record;
-
-					dsc from;
-					if (EVL_field(NULL, record, map.map_id, &from))
-						MOV_move(tdbb, &from, &to);
-					else
-						buffer_record->setNull(i);
-				}
+				MOV_move(tdbb, &from, &to);
 				break;
 
 			case FieldMap::TRANSACTION_ID:
@@ -213,21 +217,33 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 		if (!impure->irsb_buffer->fetch(impure->irsb_position, buffer_record))
 			return false;
 
+		StreamType stream = INVALID_STREAM;
+
 		// Assign fields back to their original streams
 		for (FB_SIZE_T i = 0; i < m_map.getCount(); i++)
 		{
 			const FieldMap& map = m_map[i];
 
 			record_param* const rpb = &request->req_rpb[map.map_stream];
-			Record* const record = rpb->rpb_record;
 
-			dsc from;
-			if (!EVL_field(NULL, buffer_record, (USHORT) i, &from))
+			if (map.map_stream != stream)
+			{
+				stream = map.map_stream;
+
+				// See SortedStream::mapData() for explanations why we need
+				// to upgrade the record format
+
+				if (rpb->rpb_relation && !rpb->rpb_number.isValid())
+					VIO_record(tdbb, rpb, MET_current(tdbb, rpb->rpb_relation), tdbb->getDefaultPool());
+			}
+
+			Record* const record = rpb->rpb_record;
+			record->reset();
+
+			if (!EVL_field(rpb->rpb_relation, buffer_record, (USHORT) i, &from))
 			{
 				fb_assert(map.map_type == FieldMap::REGULAR_FIELD);
-				fb_assert(record);
-				if (record)
-					record->setNull(map.map_id);
+				record->setNull(map.map_id);
 				continue;
 			}
 
@@ -235,19 +251,9 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 			{
 			case FieldMap::REGULAR_FIELD:
 				{
-					if (record && !record->rec_format)
-					{
-						fb_assert(record->rec_fmt_bk);
-						record->rec_format = record->rec_fmt_bk;
-					}
-
-					record->clearNull(map.map_id);
-
-					dsc to;
-					if (!EVL_field(NULL, record, map.map_id, &to))
-						fb_assert(false);
-
+					EVL_field(rpb->rpb_relation, record, map.map_id, &to);
 					MOV_move(tdbb, &from, &to);
+					record->clearNull(map.map_id);
 				}
 				break;
 

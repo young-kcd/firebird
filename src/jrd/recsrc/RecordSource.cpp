@@ -262,16 +262,11 @@ void RecordStream::nullRecords(thread_db* tdbb) const
 
 	rpb->rpb_number.setValid(false);
 
-	// Make sure a record block has been allocated. If there isn't
-	// one, first find the format, then allocate the record block.
+	// Make sure a record block has been allocated
 
-	Record* record = rpb->rpb_record;
+	Record* const record = VIO_record(tdbb, rpb, m_format, tdbb->getDefaultPool());
 
-	if (!record)
-		record = VIO_record(tdbb, rpb, m_format, tdbb->getDefaultPool());
+	// Mark the record to look like NULL
 
-	if (record->rec_format)
-		record->rec_fmt_bk = record->rec_format;
-
-	record->rec_format = NULL;
+	record->fakeNulls();
 }

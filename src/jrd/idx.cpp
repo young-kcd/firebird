@@ -330,16 +330,16 @@ void IDX_create_index(thread_db* tdbb,
 	USHORT partner_index_id = 0;
 	if (isForeign)
 	{
-		if (!MET_lookup_partner(tdbb, relation, idx, index_name)) {
+		if (!MET_lookup_partner(tdbb, relation, idx, index_name))
 			BUGCHECK(173);		// msg 173 referenced index description not found
-		}
+
 		partner_relation = MET_relation(tdbb, idx->idx_primary_relation);
 		partner_index_id = idx->idx_primary_index;
 	}
 
 	// Checkout a garbage collect record block for fetching data.
 
-	Record* gc_record = VIO_gc_record(tdbb, relation);
+	AutoGCRecord gc_record = VIO_gc_record(tdbb, relation);
 
 	// Unless this is the only attachment or a database restore, worry about
 	// preserving the page working sets of other attachments.
@@ -360,6 +360,7 @@ void IDX_create_index(thread_db* tdbb,
 	{
 		if (!VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
+
 		if (primary.rpb_flags & rpb_deleted)
 			CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
 		else
@@ -369,13 +370,16 @@ void IDX_create_index(thread_db* tdbb,
 			gc_record = primary.rpb_record;
 			stack.push(primary.rpb_record);
 		}
+
 		secondary.rpb_page = primary.rpb_b_page;
 		secondary.rpb_line = primary.rpb_b_line;
 		secondary.rpb_prior = primary.rpb_prior;
+
 		while (secondary.rpb_page)
 		{
 			if (!DPM_fetch(tdbb, &secondary, LCK_read))
 				break;			// must be garbage collected
+
 			secondary.rpb_record = NULL;
 			VIO_data(tdbb, &secondary, tdbb->getDefaultPool());
 			stack.push(secondary.rpb_record);
@@ -418,7 +422,7 @@ void IDX_create_index(thread_db* tdbb,
 					if (record != gc_record)
 						delete record;
 				} while (stack.hasData() && (record = stack.pop()));
-				gc_record->rec_flags &= ~REC_gc_active;
+
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
 
@@ -431,7 +435,7 @@ void IDX_create_index(thread_db* tdbb,
 					if (record != gc_record)
 						delete record;
 				} while (stack.hasData() && (record = stack.pop()));
-				gc_record->rec_flags &= ~REC_gc_active;
+
 				if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 					--relation->rel_scan_count;
 
@@ -487,7 +491,8 @@ void IDX_create_index(thread_db* tdbb,
 			JRD_reschedule(tdbb, 0, true);
 	}
 
-	gc_record->rec_flags &= ~REC_gc_active;
+	gc_record.release();
+
 	if (primary.getWindow(tdbb).win_flags & WIN_large_scan)
 		--relation->rel_scan_count;
 

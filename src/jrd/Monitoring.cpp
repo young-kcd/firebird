@@ -595,7 +595,7 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 {
 	fb_assert(record);
 
-	const Format* const format = record->rec_format;
+	const Format* const format = record->getFormat();
 	fb_assert(format);
 
 	dsc to_desc;
@@ -606,7 +606,7 @@ void SnapshotData::putField(thread_db* tdbb, Record* record, const DumpField& fi
 	if (to_desc.isUnknown())
 		return;
 
-	to_desc.dsc_address += (IPTR) record->rec_data;
+	to_desc.dsc_address += (IPTR) record->getData();
 
 	if (field.type == VALUE_GLOBAL_ID)
 	{

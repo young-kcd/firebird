@@ -322,40 +322,24 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 		return false;
 	}
 
-	const Format* format = record->rec_format;
+	const Format* format = record->getFormat();
+	fb_assert(format);
 
-	if (format && id < format->fmt_count) {
+	if (id < format->fmt_count)
 		*desc = format->fmt_desc[id];
-	}
 
-	/*
-	dimitr: fixed bug SF #562417
-
-	AFAIU, there was an assumption here that if a field descriptor is not
-	filled, then a field doesn't exist. This is not true, because in fact
-	an empty string has dsc_length = 0, and being part of an aggregate it
-	becomes FieldNode with zero length, hence we had NULL as a result.
-
-	if (!format || id >= format->fmt_count || !desc->dsc_length)
-	*/
-	if (!format || id >= format->fmt_count || !desc->dsc_dtype)
+	if (id >= format->fmt_count || desc->isUnknown())
 	{
-		/* Map a non-existent field to a default value, if available.
-		 * This enables automatic format upgrade for data rows.
-		 * Handle Outer Joins and such specially!
-		 * Reference: Bug 10424, 10116
-		 */
+		// Map a non-existent field to a default value, if available.
+		// This enables automatic format upgrade for data rows.
+		// Reference: Bug 10424, 10116
 
-		// rec_format == NULL indicates we're performing a
-		// join-to-null operation for outer joins
-
-		if (record && record->rec_format && relation)
+		if (relation)
 		{
 			thread_db* tdbb = JRD_get_thread_data();
 
-			while (format &&
-				(id >= format->fmt_defaults.getCount() ||
-				 format->fmt_defaults[id].vlu_desc.isUnknown()))
+			while (id >= format->fmt_defaults.getCount() ||
+				 format->fmt_defaults[id].vlu_desc.isUnknown())
 			{
 				if (format->fmt_version >= relation->rel_current_format->fmt_version)
 				{
@@ -364,9 +348,18 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 				}
 
 				format = MET_format(tdbb, relation, format->fmt_version + 1);
+				fb_assert(format);
 			}
 
-			return format && !(*desc = format->fmt_defaults[id].vlu_desc).isUnknown();
+			if (format)
+			{
+				*desc = format->fmt_defaults[id].vlu_desc;
+
+				if (record->isNull())
+					desc->dsc_flags |= DSC_null;
+
+				return !(desc->dsc_flags & DSC_null);
+			}
 		}
 
 		desc->makeText(1, ttype_ascii, (UCHAR*) " ");
@@ -375,11 +368,10 @@ bool EVL_field(jrd_rel* relation, Record* record, USHORT id, dsc* desc)
 
 	// If the offset of the field is 0, the field can't possible exist
 
-	if (!desc->dsc_address) {
+	if (!desc->dsc_address)
 		return false;
-	}
 
-	desc->dsc_address = record->rec_data + (IPTR) desc->dsc_address;
+	desc->dsc_address = record->getData() + (IPTR) desc->dsc_address;
 
 	if (record->isNull(id))
 	{

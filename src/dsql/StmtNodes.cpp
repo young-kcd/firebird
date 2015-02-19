@@ -2261,7 +2261,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 			const Format* format = MET_current(tdbb, rpb->rpb_relation);
 			Record* record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
 
-			rpb->rpb_address = record->rec_data;
+			rpb->rpb_address = record->getData();
 			rpb->rpb_length = format->fmt_length;
 			rpb->rpb_format_number = format->fmt_version;
 
@@ -5858,7 +5858,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 				impure->sta_state = 0;
 				Record* orgRecord = orgRpb->rpb_record;
 				const Record* newRecord = newRpb->rpb_record;
-				memcpy(orgRecord->rec_data, newRecord->rec_data, newRecord->rec_length);
+				orgRecord->copyDataFrom(newRecord, true);
 				request->req_operation = jrd_req::req_evaluate;
 				return statement;
 			}
@@ -5971,7 +5971,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 	const Format* newFormat = MET_current(tdbb, newRpb->rpb_relation);
 	Record* newRecord = VIO_record(tdbb, newRpb, newFormat, tdbb->getDefaultPool());
-	newRpb->rpb_address = newRecord->rec_data;
+	newRpb->rpb_address = newRecord->getData();
 	newRpb->rpb_length = newFormat->fmt_length;
 	newRpb->rpb_format_number = newFormat->fmt_version;
 
@@ -5980,8 +5980,8 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	if (!orgRecord)
 	{
 		orgRecord = VIO_record(tdbb, orgRpb, newFormat, tdbb->getDefaultPool());
-		const Format* const orgFormat = orgRecord->rec_format;
-		orgRpb->rpb_address = orgRecord->rec_data;
+		const Format* const orgFormat = orgRecord->getFormat();
+		orgRpb->rpb_address = orgRecord->getData();
 		orgRpb->rpb_length = orgFormat->fmt_length;
 		orgRpb->rpb_format_number = orgFormat->fmt_version;
 	}
@@ -6770,7 +6770,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 	const Format* format = MET_current(tdbb, relation);
 	Record* record = VIO_record(tdbb, rpb, format, tdbb->getDefaultPool());
 
-	rpb->rpb_address = record->rec_data;
+	rpb->rpb_address = record->getData();
 	rpb->rpb_length = format->fmt_length;
 	rpb->rpb_format_number = format->fmt_version;
 
@@ -8623,7 +8623,7 @@ static void dsqlSetParametersName(CompoundStmtNode* statements, const RecordSour
 static void cleanupRpb(thread_db* tdbb, record_param* rpb)
 {
 	Record* const record = rpb->rpb_record;
-	const Format* const format = record->rec_format;
+	const Format* const format = record->getFormat();
 
 	SET_TDBB(tdbb); // Is it necessary?
 
@@ -8644,7 +8644,7 @@ static void cleanupRpb(thread_db* tdbb, record_param* rpb)
 		if (!desc->dsc_address)
 			continue;
 
-		UCHAR* const p = record->rec_data + (IPTR) desc->dsc_address;
+		UCHAR* const p = record->getData() + (IPTR) desc->dsc_address;
 
 		if (record->isNull(n))
 		{

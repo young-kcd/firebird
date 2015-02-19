@@ -283,6 +283,7 @@ UCHAR* SortedStream::getData(thread_db* tdbb) const
 void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 {
 	StreamType stream = INVALID_STREAM;
+
 	dsc from, to;
 
 	const SortMap::Item* const end_item = m_map->items.begin() + m_map->items.getCount();
@@ -339,7 +340,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 
 			// For the sake of prudence, set all record parameter blocks to contain
 			// the most recent format. This will guarantee that all fields mapped
-			// back to records by get_sort() have homes in the target record.
+			// back to records have homes in the target record.
 
 			// dimitr:	I've added the check for !isValid to ensure that we don't overwrite
 			//			the format for an active rpb (i.e. the one having some record fetched).
@@ -349,19 +350,13 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 		}
 
 		Record* const record = rpb->rpb_record;
-
-		if (record && !flag && !record->rec_format)
-		{
-			fb_assert(record->rec_fmt_bk);
-			record->rec_format = record->rec_fmt_bk;
-		}
+		record->reset();
 
 		if (flag)
 			record->setNull(id);
 		else
 		{
 			EVL_field(rpb->rpb_relation, record, id, &to);
-
 			MOV_move(tdbb, &from, &to);
 			record->clearNull(id);
 		}

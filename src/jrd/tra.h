@@ -154,6 +154,9 @@ class jrd_tra : public pool_alloc<type_tra>
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, SINT64> > > GenIdCache;
 
+	static const size_t MAX_UNDO_RECORDS = 2;
+	typedef Firebird::HalfStaticArray<Record*, MAX_UNDO_RECORDS> UndoRecordList;
+
 public:
 	enum wait_t {
 		tra_no_wait,
@@ -184,7 +187,7 @@ public:
 		tra_interface(NULL),
 		tra_blob_space(NULL),
 		tra_undo_space(NULL),
-		tra_undo_record(NULL),
+		tra_undo_records(*p),
 		tra_user_management(NULL),
 		tra_sec_db_context(NULL),
 		tra_mapping_list(NULL),
@@ -295,7 +298,7 @@ private:
 	TempSpace* tra_blob_space;	// temp blob storage
 	TempSpace* tra_undo_space;	// undo log storage
 
-	Record* tra_undo_record;	// temporary record used for the undo purposes
+	UndoRecordList tra_undo_records;	// temporary records used for the undo purposes
 	UserManagement* tra_user_management;
 	SecDbContext* tra_sec_db_context;
 	MappingList* tra_mapping_list;
@@ -338,17 +341,27 @@ public:
 		return tra_undo_space;
 	}
 
-	Record* getUndoRecord(ULONG length)
+	Record* getUndoRecord(const Format* format)
 	{
-		if (!tra_undo_record || tra_undo_record->rec_length < length)
+		for (Record** iter = tra_undo_records.begin(); iter != tra_undo_records.end(); ++iter)
 		{
-			delete tra_undo_record;
-			tra_undo_record = FB_NEW_RPT(*tra_pool, length) Record(*tra_pool);
+			Record* const record = *iter;
+			fb_assert(record);
+
+			if (!record->checkFlags(REC_undo_active))
+			{
+				// initialize record for reuse
+				record->reset(format, REC_undo_active);
+				return record;
+			}
 		}
 
-		memset(tra_undo_record, 0, sizeof(Record) + length);
+		fb_assert(tra_undo_records.getCount() < MAX_UNDO_RECORDS);
 
-		return tra_undo_record;
+		Record* const record = FB_NEW(*tra_pool) Record(*tra_pool, format, REC_undo_active);
+		tra_undo_records.add(record);
+
+		return record;
 	}
 
 	UserManagement* getUserManagement();
@@ -361,9 +374,7 @@ public:
 	GenIdCache* getGenIdCache()
 	{
 		if (!tra_gen_ids)
-		{
 			tra_gen_ids = FB_NEW(*tra_pool) GenIdCache(*tra_pool);
-		}
 
 		return tra_gen_ids;
 	}
@@ -533,76 +544,83 @@ enum dfw_t {
 
 class UndoItem
 {
+	static const UCHAR FLAG_SAME_TX	= 1;	// record inserted/updated and deleted by same tx
+	static const UCHAR FLAG_NEW_VER	= 2;	// savepoint created new record version and deleted it
+
 public:
-    static const SINT64& generate(const void* /*sender*/, const UndoItem& item)
+	static const SINT64& generate(const void* /*sender*/, const UndoItem& item)
 	{
-		return item.number;
+		return item.m_number;
     }
 
 	UndoItem() {}
 
-	UndoItem(RecordNumber recordNumber, UCHAR recordFlags)
-		: number(recordNumber.getValue()),
-		  flags(recordFlags),
-		  length(0), offset(0), format(NULL)
-	{}
-
-	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record, UCHAR recordFlags)
-		: number(recordNumber.getValue()),
-		  flags(recordFlags),
-		  length(record->rec_length),
-		  offset(0),
-		  format(record->rec_format)
+	UndoItem(RecordNumber recordNumber, bool sameTx, bool newVersion)
+		: m_number(recordNumber.getValue()), m_offset(0), m_format(NULL)
 	{
-		if (length)
-		{
-			offset = transaction->getUndoSpace()->allocateSpace(length);
-			transaction->getUndoSpace()->write(offset, record->rec_data, length);
-		}
+		m_flags = (sameTx ? FLAG_SAME_TX : 0) | (newVersion ? FLAG_NEW_VER : 0);
 	}
 
-	Record* setupRecord(jrd_tra* transaction, UCHAR newFlags = 0)
+	UndoItem(jrd_tra* transaction, RecordNumber recordNumber, const Record* record,
+			 bool sameTx, bool newVersion)
+		: m_number(recordNumber.getValue()), m_format(record->getFormat())
 	{
-		flags |= newFlags;
+		m_flags = (sameTx ? FLAG_SAME_TX : 0) | (newVersion ? FLAG_NEW_VER : 0);
+		m_offset = transaction->getUndoSpace()->allocateSpace(m_format->fmt_length);
+		transaction->getUndoSpace()->write(m_offset, record->getData(), record->getLength());
+	}
 
-		Record* const record = transaction->getUndoRecord(length);
-		record->rec_number.setValue(number);
-		record->rec_flags = flags;
-		record->rec_length = length;
-		record->rec_format = format;
+	Record* setupRecord(jrd_tra* transaction) const
+	{
+		if (m_format)
+		{
+			Record* const record = transaction->getUndoRecord(m_format);
+			transaction->getUndoSpace()->read(m_offset, record->getData(), record->getLength());
+			return record;
+		}
 
-		if (length)
-			transaction->getUndoSpace()->read(offset, record->rec_data, length);
-
-		return record;
+		return NULL;
 	}
 
 	void release(jrd_tra* transaction)
 	{
-		if (length)
+		if (m_format)
 		{
-			transaction->getUndoSpace()->releaseSpace(offset, length);
-			length = 0;
-			format = NULL;
+			transaction->getUndoSpace()->releaseSpace(m_offset, m_format->fmt_length);
+			m_format = NULL;
 		}
 	}
 
-	const UCHAR getFlags() const
+	void markSameTx()
 	{
-		return flags;
+		m_flags |= FLAG_SAME_TX;
 	}
 
-	ULONG getLength() const
+	const bool isSameTx() const
 	{
-		return length;
+		return (m_flags & FLAG_SAME_TX);
+	}
+
+	const bool isNewVersion() const
+	{
+		return (m_flags & FLAG_NEW_VER);
+	}
+
+	bool hasData() const
+	{
+		return (m_format != NULL);
+	}
+
+	bool isEmpty() const
+	{
+		return (m_format == NULL);
 	}
 
 private:
-	SINT64 number;
-	UCHAR flags;
-	ULONG length;
-	offset_t offset;
-	const Format* format;
+	SINT64 m_number;
+	offset_t m_offset;
+	const Format* m_format;
+	UCHAR m_flags;
 };
 
 typedef Firebird::BePlusTree<UndoItem, SINT64, MemoryPool, UndoItem> UndoItemTree;

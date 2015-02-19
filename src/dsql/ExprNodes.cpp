@@ -5579,7 +5579,7 @@ dsc* FieldNode::execute(thread_db* tdbb, jrd_req* request) const
 	// ASF: CORE-1432 - If the record is not on the latest format, upgrade it.
 	// AP: for fields that are missing in original format use record's one.
 	if (format &&
-		record->rec_format->fmt_version != format->fmt_version &&
+		record->getFormat()->fmt_version != format->fmt_version &&
 		fieldId < format->fmt_desc.getCount() &&
 		!DSC_EQUIV(&impure->vlu_desc, &format->fmt_desc[fieldId], true))
 	{

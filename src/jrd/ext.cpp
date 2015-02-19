@@ -360,11 +360,11 @@ bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 	fb_assert(file->ext_ifi);
 
 	Record* const record = rpb->rpb_record;
-	const Format* const format = record->rec_format;
+	const Format* const format = record->getFormat();
 
 	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
-	UCHAR* p = record->rec_data + offset;
-	const ULONG l = record->rec_length - offset;
+	UCHAR* p = record->getData() + offset;
+	const ULONG l = record->getLength() - offset;
 
 	if (file->ext_ifi == NULL)
 	{
@@ -434,7 +434,7 @@ bool EXT_get(thread_db* /*tdbb*/, record_param* rpb, FB_UINT64& position)
 		if (literal)
 		{
 			desc = *desc_ptr;
-			desc.dsc_address = record->rec_data + (IPTR) desc.dsc_address;
+			desc.dsc_address = record->getData() + (IPTR) desc.dsc_address;
 
 			if (!MOV_compare(&literal->litDesc, &desc))
 				continue;
@@ -497,7 +497,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	jrd_rel* relation = rpb->rpb_relation;
 	ExternalFile* file = relation->rel_file;
 	Record* record = rpb->rpb_record;
-	const Format* format = record->rec_format;
+	const Format* const format = record->getFormat();
 
 	if (!file->ext_ifi) {
 		ext_fopen(tdbb->getDatabase(), file);
@@ -530,7 +530,7 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 		const jrd_fld* field = *field_ptr;
 		if (field && !field->fld_computation && desc_ptr->dsc_length && record->isNull(i))
 		{
-			UCHAR* p = record->rec_data + (IPTR) desc_ptr->dsc_address;
+			UCHAR* p = record->getData() + (IPTR) desc_ptr->dsc_address;
 			LiteralNode* literal = ExprNode::as<LiteralNode>(field->fld_missing_value);
 
 			if (literal)
@@ -548,8 +548,8 @@ void EXT_store(thread_db* tdbb, record_param* rpb)
 	}
 
 	const USHORT offset = (USHORT) (IPTR) format->fmt_desc[0].dsc_address;
-	const UCHAR* p = record->rec_data + offset;
-	const ULONG l = record->rec_length - offset;
+	const UCHAR* p = record->getData() + offset;
+	const ULONG l = record->getLength() - offset;
 
 	// hvlad: fseek will flush file buffer and degrade performance, so don't
 	// call it if it is not necessary.	Note that we must flush file buffer if we

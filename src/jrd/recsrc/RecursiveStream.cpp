@@ -167,8 +167,8 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 			}
 			impure->irsb_stack = tmp;
 
-			impure->irsb_data = FB_NEW(*request->req_pool) UCHAR[record->rec_length];
-			memcpy(impure->irsb_data, record->rec_data, record->rec_length);
+			impure->irsb_data = FB_NEW(*request->req_pool) UCHAR[record->getLength()];
+			record->copyDataTo(impure->irsb_data);
 
 			const Impure r = *impure;
 			memset(saveImpure, 0, m_saveSize);
@@ -204,7 +204,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 			rsb = m_inner;
 
 			// Reset our record data so that recursive WHERE clauses work
-			memcpy(record->rec_data, impure->irsb_data, record->rec_length);
+			record->copyDataFrom(impure->irsb_data);
 		}
 		else
 		{
@@ -227,7 +227,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 	}
 
 	// copy target (next level) record into main (current level) record
-	memcpy(record->rec_data, mapRecord->rec_data, record->rec_length);
+	record->copyDataFrom(mapRecord, true);
 
 	rpb->rpb_number.setValid(true);
 	return true;

@@ -3313,9 +3313,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 		lock->lck_type = LCK_tra_pc;		// note, LCK_tra_pc belongs to the same owner as LCK_tra
 		lock->lck_data = 0;
 		if (!LCK_lock(tdbb, lock, LCK_write, LCK_WAIT))
-		{
 			ERR_post(Arg::Gds(isc_lock_conflict));
-		}
 
 		trans->tra_flags |= TRA_precommitted;
 	}
@@ -3327,20 +3325,18 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 
 jrd_tra::~jrd_tra()
 {
-	delete tra_undo_record;
+	while (tra_undo_records.hasData())
+		delete tra_undo_records.pop();
+
 	delete tra_undo_space;
 	delete tra_user_management;
 	delete tra_mapping_list;
 	delete tra_gen_ids;
 
 	if (!tra_outer)
-	{
 		delete tra_blob_space;
-	}
 	else
-	{
 		fb_assert(!tra_arrays);
-	}
 
 	DFW_delete_deferred(this, -1);
 
@@ -3351,9 +3347,7 @@ jrd_tra::~jrd_tra()
 	}
 
 	if (tra_autonomous_pool)
-	{
 		MemoryPool::deletePool(tra_autonomous_pool);
-	}
 
 	delete tra_sec_db_context;
 }
@@ -3382,9 +3376,8 @@ void jrd_tra::setInterface(JTransaction* jt)
 UserManagement* jrd_tra::getUserManagement()
 {
 	if (!tra_user_management)
-	{
 		tra_user_management = FB_NEW(*tra_pool) UserManagement(this);
-	}
+
 	return tra_user_management;
 }
 
@@ -3392,18 +3385,16 @@ UserManagement* jrd_tra::getUserManagement()
 MappingList* jrd_tra::getMappingList()
 {
 	if (!tra_mapping_list)
-	{
 		tra_mapping_list = FB_NEW(*tra_pool) MappingList(this);
-	}
+
 	return tra_mapping_list;
 }
 
 DbCreatorsList* jrd_tra::getDbCreatorsList()
 {
 	if (!tra_dbcreators_list)
-	{
 		tra_dbcreators_list = FB_NEW(*tra_pool) DbCreatorsList(this);
-	}
+
 	return tra_dbcreators_list;
 }
 
@@ -3413,9 +3404,7 @@ jrd_tra* jrd_tra::getOuter()
 	jrd_tra* tra = this;
 
 	while (tra->tra_outer)
-	{
 		tra = tra->tra_outer;
-	}
 
 	return tra;
 }

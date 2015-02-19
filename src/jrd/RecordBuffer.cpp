@@ -35,11 +35,7 @@ RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
 	: count(0)
 {
 	space = FB_NEW(pool) TempSpace(pool, SCRATCH);
-
-	const ULONG length = format->fmt_length;
-	record = FB_NEW_RPT(pool, length) Record(pool);
-	record->rec_format = format;
-	record->rec_length = length;
+	record = FB_NEW(pool) Record(pool, format);
 }
 
 RecordBuffer::~RecordBuffer()
@@ -50,28 +46,28 @@ RecordBuffer::~RecordBuffer()
 
 offset_t RecordBuffer::store(const Record* new_record)
 {
-	const ULONG length = record->rec_length;
-	fb_assert(new_record->rec_length == length);
+	const ULONG length = record->getLength();
+	fb_assert(new_record->getLength() == length);
 
-	space->write(count * length, new_record->rec_data, length);
+	space->write(count * length, new_record->getData(), length);
 
 	return count++;
 }
 
 bool RecordBuffer::fetch(offset_t position, Record* to_record)
 {
-	const ULONG length = record->rec_length;
-	fb_assert(to_record->rec_length == length);
+	const ULONG length = record->getLength();
+	fb_assert(to_record->getLength() == length);
 
 	if (position >= count)
 		return false;
 
-	space->read(position * length, to_record->rec_data, length);
+	space->read(position * length, to_record->getData(), length);
 
 	return true;
 }
 
 const Format* RecordBuffer::getFormat() const
 {
-	return record->rec_format;
+	return record->getFormat();
 }

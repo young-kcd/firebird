@@ -28,14 +28,12 @@
 #ifndef JRD_REQ_H
 #define JRD_REQ_H
 
-#include "../include/fb_blk.h"
-
 #include "../jrd/exe.h"
 #include "../jrd/sort.h"
 #include "../jrd/Attachment.h"
 #include "../jrd/JrdStatement.h"
+#include "../jrd/Record.h"
 #include "../jrd/RecordNumber.h"
-#include "../common/classes/stack.h"
 #include "../common/classes/timestamp.h"
 
 namespace EDS {
@@ -45,15 +43,11 @@ class Statement;
 namespace Jrd {
 
 class Lock;
-class Format;
 class jrd_rel;
 class jrd_prc;
-class Record;
 class ValueListNode;
-template <typename T> class vec;
 class jrd_tra;
 class Savepoint;
-class RecordSource;
 class Cursor;
 class thread_db;
 
@@ -138,57 +132,6 @@ const USHORT RPB_no_undo	= 0x04;	// don't use undo log when retrieving data
 
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records
-
-// Record block (holds data, remember data?)
-
-class Record : public pool_alloc_rpt<SCHAR, type_rec>
-{
-public:
-	explicit Record(MemoryPool& p) : rec_pool(p), rec_precedence(p) { }
-	// ASF: Record is memcopied in realloc_record (vio.cpp), starting at rec_format.
-	// rec_precedence has destructor, so don't move it to after rec_format.
-	MemoryPool& rec_pool;		// pool where record to be expanded
-	PageStack rec_precedence;	// stack of higher precedence pages/transactions
-	const Format* rec_format;	// what the data looks like
-	ULONG rec_length;			// how much there is
-	const Format* rec_fmt_bk;   // backup format to cope with Borland's ill null signaling
-	UCHAR rec_flags;			// misc record flags
-	RecordNumber rec_number;	// original record_param number - used for undoing multiple updates
-	union
-	{
-		double rec_dummy;			// this is to force next field to a double boundary
-		UCHAR rec_data[1];			// THIS VARIABLE MUST BE ALIGNED ON A DOUBLE BOUNDARY
-	};
-
-	void setNull(USHORT id)
-	{
-		rec_data[id >> 3] |= (1 << (id & 7));
-	}
-
-	void clearNull(USHORT id)
-	{
-		rec_data[id >> 3] &= ~(1 << (id & 7));
-	}
-
-	bool isNull(USHORT id) const
-	{
-		return ((rec_data[id >> 3] & (1 << (id & 7))) != 0);
-	}
-
-	void nullify()
-	{
-		// Zero the record buffer and initialize all fields to NULLs
-		const size_t null_bytes = (rec_format->fmt_count + 7) >> 3;
-		memset(rec_data, 0xFF, null_bytes);
-		memset(rec_data + null_bytes, 0, rec_length - null_bytes);
-	}
-};
-
-// rec_flags
-
-const UCHAR REC_same_tx		= 1;	// record inserted/updated and deleted by same tx
-const UCHAR REC_gc_active	= 2;	// relation garbage collect record block in use
-const UCHAR REC_new_version	= 4;	// savepoint created new record version and deleted it
 
 // List of active blobs controlled by request
 
@@ -387,7 +330,6 @@ public:
 	USHORT		idl_id;			// Index id
 	USHORT		idl_count;		// Use count
 };
-
 
 } //namespace Jrd
 

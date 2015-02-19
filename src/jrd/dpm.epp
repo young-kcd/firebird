@@ -2931,7 +2931,7 @@ static UCHAR* find_space(thread_db*	tdbb,
 	rpb->rpb_number.setValue(((SINT64) page->dpg_sequence) * dbb->dbb_max_records + slot);
 
 	if (record) {
-		record->rec_precedence.push(PageNumber(DB_PAGE_SPACE, rpb->rpb_page));
+		record->pushPrecedence(PageNumber(DB_PAGE_SPACE, rpb->rpb_page));
 	}
 
 	if (page->dpg_count == 1)
@@ -3247,7 +3247,7 @@ static rhd* locate_space(thread_db* tdbb,
 	}
 
 	if (record) {
-		record->rec_precedence.push(PageNumber(DB_PAGE_SPACE, window->win_page.getPageNum()));
+		record->pushPrecedence(PageNumber(DB_PAGE_SPACE, window->win_page.getPageNum()));
 	}
 
 #ifdef VIO_DEBUG

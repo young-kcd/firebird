@@ -411,7 +411,7 @@ void BLB_garbage_collect(thread_db* tdbb,
 			continue;
 
 		// Look for active blob records
-		const Format* format = rec->rec_format;
+		const Format* format = rec->getFormat();
 		for (USHORT id = 0; id < format->fmt_count; id++)
 		{
 			DSC desc;
@@ -450,7 +450,7 @@ void BLB_garbage_collect(thread_db* tdbb,
 		if (!rec)
 			continue;
 
-		const Format* format = rec->rec_format;
+		const Format* format = rec->getFormat();
 		for (USHORT id = 0; id < format->fmt_count; id++)
 		{
 			DSC desc;

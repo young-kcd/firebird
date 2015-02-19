@@ -107,13 +107,7 @@ void SingularStream::doGetRecord(thread_db* tdbb) const
 		Record* const orgRecord = rpb.rpb_record;
 
 		if (orgRecord)
-		{
-			const ULONG recordSize = orgRecord->rec_length;
-			Record* const newRecord = FB_NEW_RPT(pool, recordSize) Record(pool);
-			memcpy(&newRecord->rec_format, &orgRecord->rec_format,
-				sizeof(Record) - offsetof(Record, rec_format) + recordSize);
-			rpb.rpb_record = newRecord;
-		}
+			rpb.rpb_record = FB_NEW(pool) Record(pool, orgRecord);
 	}
 
 	if (m_next->getRecord(tdbb))
@@ -132,17 +126,7 @@ void SingularStream::doGetRecord(thread_db* tdbb) const
 				BUGCHECK(284);	// msg 284 cannot restore singleton select data
 
 			rpb.rpb_record = orgRecord;
-
-			const ULONG recordSize = newRecord->rec_length;
-			if (recordSize > orgRecord->rec_length)
-			{
-				// hvlad: saved copy of record has longer format, reallocate
-				// given record to make enough space for saved data
-				orgRecord = VIO_record(tdbb, &rpb, newRecord->rec_format, &pool);
-			}
-
-			memcpy(&orgRecord->rec_format, &newRecord->rec_format,
-				sizeof(Record) - offsetof(Record, rec_format) + recordSize);
+			orgRecord->copyFrom(newRecord);
 		}
 	}
 

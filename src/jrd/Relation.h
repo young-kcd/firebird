@@ -138,6 +138,8 @@ struct frgn
 
 class jrd_rel : public pool_alloc<type_rel>
 {
+	typedef Firebird::HalfStaticArray<Record*, 4> GCRecordList;
+
 public:
 	MemoryPool*		rel_pool;
 	USHORT			rel_id;
@@ -155,7 +157,7 @@ public:
 	Firebird::MetaName	rel_security_name;	// security class name for relation
 	ExternalFile* 	rel_file;			// external file name
 
-	vec<Record*>*	rel_gc_rec;			// vector of records for garbage collection
+	GCRecordList	rel_gc_records;		// records for garbage collection
 
 	USHORT		rel_use_count;		// requests compiled with relation
 	USHORT		rel_sweep_count;	// sweep and/or garbage collector threads active
@@ -235,12 +237,13 @@ private:
 	RelationPages			rel_pages_base;
 	RelationPages*			rel_pages_free;
 
-	RelationPages*	getPagesInternal(thread_db* tdbb, TraNumber tran, bool allocPages);
+	RelationPages* getPagesInternal(thread_db* tdbb, TraNumber tran, bool allocPages);
 
 public:
 	explicit jrd_rel(MemoryPool& p)
-		: rel_pool(&p), rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p)
-	{ }
+		: rel_pool(&p), rel_name(p), rel_owner_name(p),
+		  rel_view_contexts(p), rel_security_name(p), rel_gc_records(p)
+	{}
 
 	bool hasTriggers() const;
 };

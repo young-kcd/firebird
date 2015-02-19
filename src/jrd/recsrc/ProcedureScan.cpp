@@ -168,7 +168,6 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 		return false;
 	}
 
-	const Format* const rec_format = m_format;
 	const Format* const msg_format = m_procedure->getOutputFormat();
 	const ULONG oml = msg_format->fmt_length;
 	UCHAR* om = impure->irsb_message;
@@ -176,17 +175,10 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	if (!om)
 		om = impure->irsb_message = FB_NEW(*tdbb->getDefaultPool()) UCHAR[oml];
 
-	Record* record;
+	Record* record = rpb->rpb_record;
 
-	if (!rpb->rpb_record)
-	{
-		record = rpb->rpb_record =
-			FB_NEW_RPT(*tdbb->getDefaultPool(), rec_format->fmt_length) Record(*tdbb->getDefaultPool());
-		record->rec_format = rec_format;
-		record->rec_length = rec_format->fmt_length;
-	}
-	else
-		record = rpb->rpb_record;
+	if (!record)
+		record = VIO_record(tdbb, rpb, m_format, tdbb->getDefaultPool());
 
 	jrd_req* const proc_request = impure->irsb_req_handle;
 
@@ -219,10 +211,10 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 
 	trace.fetch(false, ITracePlugin::RESULT_SUCCESS);
 
-	for (unsigned i = 0; i < rec_format->fmt_count; i++)
+	for (USHORT i = 0; i < m_format->fmt_count; i++)
 	{
 		assignParams(tdbb, &msg_format->fmt_desc[2 * i], &msg_format->fmt_desc[2 * i + 1],
-					 om, &rec_format->fmt_desc[i], i, record);
+					 om, &m_format->fmt_desc[i], i, record);
 	}
 
 	rpb->rpb_number.setValid(true);
@@ -280,7 +272,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 	{
 		record->setNull(to_id);
 		const USHORT len = to_desc->dsc_length;
-		UCHAR* const p = record->rec_data + (IPTR) to_desc->dsc_address;
+		UCHAR* const p = record->getData() + (IPTR) to_desc->dsc_address;
 		switch (to_desc->dsc_dtype)
 		{
 		case dtype_text:
@@ -321,7 +313,7 @@ void ProcedureScan::assignParams(thread_db* tdbb,
 		desc1 = *from_desc;
 		desc1.dsc_address = const_cast<UCHAR*>(msg) + (IPTR) desc1.dsc_address;
 		desc2 = *to_desc;
-		desc2.dsc_address = record->rec_data + (IPTR) desc2.dsc_address;
+		desc2.dsc_address = record->getData() + (IPTR) desc2.dsc_address;
 		if (!DSC_EQUIV(&desc1, &desc2, false))
 		{
 			MOV_move(tdbb, &desc1, &desc2);
