@@ -402,8 +402,15 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	{
 		// Get rid of user savepoints to allow intermediate garbage collection
 		// in indices and BLOBs after in-place updates
-		while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
-			VIO_verb_cleanup(tdbb, transaction);
+		try
+		{
+			while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
+				VIO_verb_cleanup(tdbb, transaction);
+		}
+		catch (const Exception&)
+		{
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+		}
 
 		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 	}
@@ -1305,11 +1312,27 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 	// We are going to use savepoint to undo transaction
 	if (tran_sav && count > 0)
 	{
-		// Undo all user savepoints work
-		while (transaction->tra_save_point->sav_flags & SAV_user)
+		try
 		{
-			++transaction->tra_save_point->sav_verb_count;	// cause undo
-			VIO_verb_cleanup(tdbb, transaction);
+			// Undo all user savepoints work
+			while (transaction->tra_save_point->sav_flags & SAV_user)
+			{
+				++transaction->tra_save_point->sav_verb_count;	// cause undo
+				VIO_verb_cleanup(tdbb, transaction);
+			}
+		}
+		catch (const Exception&)
+		{
+			fb_utils::init_status(tdbb->tdbb_status_vector);
+
+			// If undo failed, free all savepoints
+			while (transaction->tra_save_point)
+			{
+				Savepoint* const next = transaction->tra_save_point->sav_next;
+				transaction->tra_save_point->sav_next = NULL;
+				VIO_verb_cleanup(tdbb, transaction);
+				transaction->tra_save_point = next;
+			}
 		}
 	}
 	else
@@ -1346,8 +1369,8 @@ void TRA_rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining_fl
 		// Make sure that any error during savepoint undo is handled by marking
 		// the transaction as dead.
 
-		try {
-
+		try
+		{
 			// In an attempt to avoid deadlocks, clear the precedence by writing
 			// all dirty buffers for this transaction.
 
