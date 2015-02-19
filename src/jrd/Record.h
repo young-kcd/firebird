@@ -42,14 +42,15 @@ namespace Jrd
 		Record(MemoryPool& p, const Format* format, UCHAR flags = 0)
 			: m_precedence(p), m_data(p)
 		{
-			reset(format, flags);
+			m_data.resize(format->fmt_length);
+			m_format = format;
+			m_flags = flags;
 		}
 
 		Record(MemoryPool& p, const Record* other)
-			: m_precedence(p), m_data(p, other->getLength())
-		{
-			copyFrom(other);
-		}
+			: m_precedence(p), m_data(p, other->m_data),
+			  m_format(other->m_format), m_flags(other->m_flags)
+		{}
 
 		void reset(const Format* format = NULL, UCHAR flags = 0)
 		{
@@ -65,15 +66,13 @@ namespace Jrd
 		void setNull(USHORT id)
 		{
 			fb_assert(!(m_flags & REC_fake_nulls));
-			UCHAR* const data = m_data.begin();
-			data[id >> 3] |= (1 << (id & 7));
+			getData()[id >> 3] |= (1 << (id & 7));
 		}
 
 		void clearNull(USHORT id)
 		{
 			fb_assert(!(m_flags & REC_fake_nulls));
-			UCHAR* const data = m_data.begin();
-			data[id >> 3] &= ~(1 << (id & 7));
+			getData()[id >> 3] &= ~(1 << (id & 7));
 		}
 
 		bool isNull(USHORT id) const
@@ -81,18 +80,15 @@ namespace Jrd
 			if (m_flags & REC_fake_nulls)
 				return true;
 
-			const UCHAR* const data = m_data.begin();
-			return ((data[id >> 3] & (1 << (id & 7))) != 0);
+			return ((getData()[id >> 3] & (1 << (id & 7))) != 0);
 		}
 
 		void nullify()
 		{
-			UCHAR* const data = m_data.begin();
-
 			// Zero the record buffer and initialize all fields to NULLs
 			const size_t null_bytes = (m_format->fmt_count + 7) >> 3;
-			memset(data, 0xFF, null_bytes);
-			memset(data + null_bytes, 0, getLength() - null_bytes);
+			memset(getData(), 0xFF, null_bytes);
+			memset(getData() + null_bytes, 0, getLength() - null_bytes);
 
 			// Record has real NULLs now, so clear the "fake-nulls" flag
 			m_flags &= ~REC_fake_nulls;
@@ -127,12 +123,12 @@ namespace Jrd
 
 		void copyDataFrom(const UCHAR* data)
 		{
-			memcpy(m_data.begin(), data, m_data.getCount());
+			memcpy(getData(), data, getLength());
 		}
 
 		void copyDataTo(UCHAR* data)
 		{
-			memcpy(data, m_data.begin(), m_data.getCount());
+			memcpy(data, getData(), getLength());
 		}
 
 		const Format* getFormat() const
