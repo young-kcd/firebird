@@ -518,9 +518,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 				{
 					count = *request->getImpure<SLONG>(impureOffset);
 
-					for (const Savepoint* save_point = transaction->tra_save_point;
-						 save_point && count <= save_point->sav_number;
-						 save_point = transaction->tra_save_point)
+					while (transaction->tra_save_point &&
+						transaction->tra_save_point->sav_number >= count)
 					{
 						VIO_verb_cleanup(tdbb, transaction);
 					}
@@ -537,9 +536,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 				// up to, but not including, the savepoint of this block.  The
 				// savepoint of this block will be dealt with below.
 
-				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && count < save_point->sav_number;
-					 save_point = transaction->tra_save_point)
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number > count)
 				{
 					++transaction->tra_save_point->sav_verb_count;
 					VIO_verb_cleanup(tdbb, transaction);
@@ -610,9 +608,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 						if (transaction != sysTransaction)
 						{
-							for (const Savepoint* save_point = transaction->tra_save_point;
-								 save_point && count <= save_point->sav_number;
-								 save_point = transaction->tra_save_point)
+							while (transaction->tra_save_point &&
+								transaction->tra_save_point->sav_number >= count)
 							{
 								VIO_verb_cleanup(tdbb, transaction);
 							}
@@ -629,9 +626,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 
 			if (exeState->errorPending && transaction != sysTransaction)
 			{
-				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && count <= save_point->sav_number;
-					 save_point = transaction->tra_save_point)
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number >= count)
 				{
 					++transaction->tra_save_point->sav_verb_count;
 					VIO_verb_cleanup(tdbb, transaction);
@@ -646,9 +642,8 @@ const StmtNode* BlockNode::execute(thread_db* tdbb, jrd_req* request, ExeState* 
 			{
 				count = *request->getImpure<SLONG>(impureOffset);
 
-				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && count <= save_point->sav_number;
-					 save_point = transaction->tra_save_point)
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number >= count)
 				{
 					VIO_verb_cleanup(tdbb, transaction);
 				}
@@ -2850,9 +2845,8 @@ void ExecProcedureNode::executeProcedure(thread_db* tdbb, jrd_req* request) cons
 
 		if (transaction != attachment->getSysTransaction())
 		{
-			for (const Savepoint* savePoint = transaction->tra_save_point;
-				 savePoint && savePointNumber < savePoint->sav_number;
-				 savePoint = transaction->tra_save_point)
+			while (transaction->tra_save_point &&
+				transaction->tra_save_point->sav_number > savePointNumber)
 			{
 				VIO_verb_cleanup(tdbb, transaction);
 			}
@@ -3606,9 +3600,8 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 					tdbb, &thread_db::getRequest, &thread_db::setRequest, NULL);
 
 				// undo all savepoints up to our one
-				for (const Savepoint* save_point = transaction->tra_save_point;
-					save_point && impure->savNumber <= save_point->sav_number;
-					save_point = transaction->tra_save_point)
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number >= impure->savNumber)
 				{
 					++transaction->tra_save_point->sav_verb_count;
 					VIO_verb_cleanup(tdbb, transaction);
@@ -4538,15 +4531,16 @@ const StmtNode* ForNode::execute(thread_db* tdbb, jrd_req* request, ExeState* /*
 		default:
 		{
 			const SLONG sav_number = *request->getImpure<SLONG>(impureOffset);
+
 			if (sav_number)
 			{
-				for (const Savepoint* save_point = transaction->tra_save_point;
-					 save_point && sav_number <= save_point->sav_number;
-					 save_point = transaction->tra_save_point)
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number >= sav_number)
 				{
 					VIO_verb_cleanup(tdbb, transaction);
 				}
 			}
+
 			cursor->close(tdbb);
 			return parentStmt;
 		}
@@ -5969,24 +5963,22 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	// exists for the stream and is big enough, and copying fields from the
 	// original record to the new record.
 
-	const Format* newFormat = MET_current(tdbb, newRpb->rpb_relation);
+	const Format* const newFormat = MET_current(tdbb, newRpb->rpb_relation);
 	Record* newRecord = VIO_record(tdbb, newRpb, newFormat, tdbb->getDefaultPool());
 	newRpb->rpb_address = newRecord->getData();
 	newRpb->rpb_length = newFormat->fmt_length;
 	newRpb->rpb_format_number = newFormat->fmt_version;
 
-	Record* orgRecord = orgRpb->rpb_record;
-
-	if (!orgRecord)
+	if (!orgRpb->rpb_record)
 	{
-		orgRecord = VIO_record(tdbb, orgRpb, newFormat, tdbb->getDefaultPool());
-		const Format* const orgFormat = orgRecord->getFormat();
+		const Format* const orgFormat = newFormat;
+		Record* const orgRecord = VIO_record(tdbb, orgRpb, orgFormat, tdbb->getDefaultPool());
 		orgRpb->rpb_address = orgRecord->getData();
 		orgRpb->rpb_length = orgFormat->fmt_length;
 		orgRpb->rpb_format_number = orgFormat->fmt_version;
 	}
 
-	// Copy the original record to the new record.
+	// Copy the original record to the new record
 
 	VIO_copy_record(tdbb, orgRpb, newRpb);
 
@@ -6852,7 +6844,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 			if (!savepoint || !(savepoint->sav_flags & SAV_user))
 				break;
 
-			if (!strcmp(name.c_str(), savepoint->sav_name))
+			if (name == savepoint->sav_name)
 			{
 				found = true;
 				break;
@@ -6880,7 +6872,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 
 				// Use the savepoint created by EXE_start
 				transaction->tra_save_point->sav_flags |= SAV_user;
-				strcpy(transaction->tra_save_point->sav_name, name.c_str());
+				transaction->tra_save_point->sav_name = name;
 				break;
 
 			case CMD_RELEASE_ONLY:
@@ -6925,7 +6917,7 @@ const StmtNode* UserSavepointNode::execute(thread_db* tdbb, jrd_req* request, Ex
 				// Now set the savepoint again to allow to return to it later
 				VIO_start_save_point(tdbb, transaction);
 				transaction->tra_save_point->sav_flags |= SAV_user;
-				strcpy(transaction->tra_save_point->sav_name, name.c_str());
+				transaction->tra_save_point->sav_name = name;
 				break;
 			}
 

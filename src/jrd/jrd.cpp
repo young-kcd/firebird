@@ -7043,25 +7043,12 @@ static void run_commit_triggers(thread_db* tdbb, jrd_tra* transaction)
 	if (transaction == attachment->getSysTransaction())
 		return;
 
-	// start a savepoint to rollback changes of all triggers
-	VIO_start_save_point(tdbb, transaction);
+	AutoSavePoint savePoint(tdbb, transaction);
 
-	try
-	{
-		// run ON TRANSACTION COMMIT triggers
-		EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_COMMIT);
-		VIO_verb_cleanup(tdbb, transaction);
-	}
-	catch (const Exception&)
-	{
-		if (!(tdbb->getDatabase()->dbb_flags & DBB_bugcheck))
-		{
-			// rollbacks the created savepoint
-			++transaction->tra_save_point->sav_verb_count;
-			VIO_verb_cleanup(tdbb, transaction);
-		}
-		throw;
-	}
+	// run ON TRANSACTION COMMIT triggers
+	EXE_execute_db_triggers(tdbb, transaction, TRIGGER_TRANS_COMMIT);
+
+	savePoint.release();
 }
 
 

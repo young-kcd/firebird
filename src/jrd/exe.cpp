@@ -1317,9 +1317,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 
 				if (request->req_transaction != sysTransaction)
 				{
-					for (const Savepoint* save_point = request->req_transaction->tra_save_point;
-						((save_point) && (save_point_number <= save_point->sav_number));
-						save_point = request->req_transaction->tra_save_point)
+					while (request->req_transaction->tra_save_point &&
+						request->req_transaction->tra_save_point->sav_number >= save_point_number)
 					{
 						++request->req_transaction->tra_save_point->sav_verb_count;
 						VIO_verb_cleanup(tdbb, request->req_transaction);
@@ -1395,9 +1394,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	{
 		if (request->req_transaction != sysTransaction)
 		{
-			for (const Savepoint* save_point = request->req_transaction->tra_save_point;
-				((save_point) && (save_point_number <= save_point->sav_number));
-				 save_point = request->req_transaction->tra_save_point)
+			while (request->req_transaction->tra_save_point &&
+				request->req_transaction->tra_save_point->sav_number >= save_point_number)
 			{
 				++request->req_transaction->tra_save_point->sav_verb_count;
 				VIO_verb_cleanup(tdbb, request->req_transaction);

@@ -10838,9 +10838,8 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			if (transaction != attachment->getSysTransaction())
 			{
-				for (const Savepoint* savePoint = transaction->tra_save_point;
-					 savePoint && savePointNumber < savePoint->sav_number;
-					 savePoint = transaction->tra_save_point)
+				while (transaction->tra_save_point &&
+					transaction->tra_save_point->sav_number > savePointNumber)
 				{
 					VIO_verb_cleanup(tdbb, transaction);
 				}

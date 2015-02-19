@@ -447,13 +447,13 @@ public:
 		deleteActions(sav_verb_free);
 	}
 
-	VerbAction*		sav_verb_actions;	// verb action list
-	VerbAction*		sav_verb_free;		// free verb actions
-	USHORT			sav_verb_count;		// Active verb count
-	SLONG			sav_number;			// save point number
-	Savepoint*		sav_next;
-	USHORT			sav_flags;
-	TEXT			sav_name[MAX_SQL_IDENTIFIER_SIZE]; // Savepoint name
+	VerbAction*			sav_verb_actions;	// verb action list
+	VerbAction*			sav_verb_free;		// free verb actions
+	USHORT				sav_verb_count;		// active verb count
+	SLONG				sav_number;			// save point number
+	Savepoint*			sav_next;
+	USHORT				sav_flags;
+	Firebird::MetaName	sav_name; 			// savepoint name
 
 private:
 	void deleteActions(VerbAction* list);
