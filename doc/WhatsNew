@@ -1,4 +1,135 @@
   **************************
+  * v2.5.4
+  **************************
+
+    * Bugfix CORE-4690
+        DISTINCT vs non-DISTINCT affects the result of IN subquery
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4678
+        "BLOB not found" error in SC/CS on uncommitted transactions
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4673
+        Computed index based on a computed column stores NULL for all its keys
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4670
+        Constraint violation error may be swallowed in some cases
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4644
+        Get open database errors under heavy concurrent load
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4631
+        Lock manager "out of room" error hides the real cause of this problem
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4627
+        Deadlock with TIP page lock and monitoring lock
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4624
+        Firebird handles ':' characters in mount table entries incorrectly
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4618
+        Rollback doesn`t undo changes when MERGE statement updates the same target rows multiple times and PLAN MERGE is used
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4616
+        Server crashes while accessing context variables concurrently
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4615
+        Classic Server could hung with (near) 100% CPU load
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4604
+        EXECUTE STATEMENT rise varchar char_length() size
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4599
+        REPLACE function works incorrectly with multibyte charsets
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4578
+        ISQL's INPUT file not properly closed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4566
+        Incorrect size of the output parameter/argument when execute block, procedure or function use system field in metadata charset
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4558
+        Superserver dies when client is disconnected abnormally during the index navigational scan
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4530
+        DB_KEY based join of two tables may be ineffective
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4500
+        Firebird crashes after unsuccessful remapping of the lock table's shared memory
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4475
+        After fb_shutdown(), end-of-process cleanup should not do anything
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4461
+        NBACKUP prints error messages to stdout instead of stderr
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4452
+        Cannot create two collations with different names if AUTODDL=OFF in FB 2.5.3
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4384
+        Problems when a table grows beyond 65535 pointer pages
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4383
+        Index and BLOBs garbage collection doesn't work for update_in_place()
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
+    * Bugfix CORE-4075
+        Server bugchecks or crashes on exception in calculated index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4671
+        Release internal temporary blobs early to free some memory\disk space
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+
+  **************************
   * v2.5.3
   **************************
 
