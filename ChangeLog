@@ -1,3 +1,11 @@
+ 2015-02-18 12:53  dimitr 
+   M src/common/cvt.cpp
+Misc.
+
+ 2015-02-18 12:53  dimitr 
+   M src/jrd/evl.cpp
+Fixed DBKEY retrieval after implicit CHAR<->VARCHAR conversions.
+
  2015-02-14 08:11  dimitr 
    M src/jrd/tra.cpp
 Forgotten change for CORE-4383.
