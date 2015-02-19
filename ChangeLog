@@ -1,3 +1,113 @@
+ 2015-02-18 15:01  asfernandes 
+   M examples/dbcrypt/CryptApplication.cpp
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+   M src/auth/AuthDbg.cpp
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/client/SrpClient.cpp
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyClient.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/auth/trusted/AuthSspi.cpp
+   M src/common/IntlParametersBlock.cpp
+   M src/common/StatusArg.cpp
+   M src/common/StatusHolder.h
+   M src/common/call_service.cpp
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/MsgPrint.cpp
+   M src/common/config/config.cpp
+   M src/common/config/config_file.cpp
+   M src/common/db_alias.cpp
+   M src/common/os/win32/mod_loader.cpp
+   M src/common/security.cpp
+   M src/common/unicode_util.cpp
+   M src/common/utils.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DsqlCursor.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/gpre/languages/ftn.cpp
+   M src/gpre/obj_cxx.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/include/firebird/UdrCppEngine.h
+   M src/isql/isql.epp
+   M src/isql/show.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/DbCreators.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/IntlManager.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/UserManagement.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceDSQLHelpers.h
+   M src/jrd/trace/TraceJrdHelpers.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/plugins/crypt/arc4/Arc4.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/qli/help.epp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/remote.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/guard/util.cpp
+   M src/utilities/ibmgr/srvrmgr.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/traceplugin.cpp
+   M src/yvalve/DistributedTransaction.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/gds.cpp
+   M src/yvalve/perf.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Better constant names: avoid FB, enclosing class (double prefix) or wrong prefixes.
+Left some TODOs in FirebirdInterface.idl and utilities/ntrace/TracePluginImpl.cpp related to trace.
+(redo with fix for Windows build, and left another TODO comment in FirebirdInterface.idl)
+
+ 2015-02-18 14:22  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Restore useful assert
+
+ 2015-02-18 13:39  alexpeshkoff 
+   M src/yvalve/MasterImplementation.cpp
+Quick fix for posix build after Vlad's changes
+
+ 2015-02-18 12:55  dimitr 
+   M src/jrd/evl.cpp
+Misc.
+
+ 2015-02-18 12:54  dimitr 
+   M src/common/cvt.cpp
+   M src/common/dsc.h
+Misc.
+
+ 2015-02-18 12:44  hvlad 
+   M src/common/dllinst.cpp
+   M src/common/dllinst.h
+   M src/jrd/os/win32/ibinitdll.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+Attempt to implement thread cleanup for Windows (using DLL entry point).
+It is used in dispatcher (fbclient.dll) only for now.
+Fixed potential memory leak in StringsBuffer (it was possible to allocate few ThreadBuffer's for the same thread), see CORE-4683.
+
  2015-02-17 23:21  asfernandes 
    M examples/dbcrypt/CryptApplication.cpp
    M examples/dbcrypt/CryptKeyHolder.cpp
