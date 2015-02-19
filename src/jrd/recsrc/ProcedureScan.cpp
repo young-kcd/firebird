@@ -175,10 +175,7 @@ bool ProcedureScan::getRecord(thread_db* tdbb) const
 	if (!om)
 		om = impure->irsb_message = FB_NEW(*tdbb->getDefaultPool()) UCHAR[oml];
 
-	Record* record = rpb->rpb_record;
-
-	if (!record)
-		record = VIO_record(tdbb, rpb, m_format, tdbb->getDefaultPool());
+	Record* const record = VIO_record(tdbb, rpb, m_format, tdbb->getDefaultPool());
 
 	jrd_req* const proc_request = impure->irsb_req_handle;
 
