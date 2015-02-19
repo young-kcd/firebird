@@ -448,6 +448,14 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 
 	EXT_trans_commit(transaction);
 
+	if (transaction->tra_flags & TRA_write)
+	{
+		// Get rid of user savepoints to allow intermediate garbage collection
+		// in indices and BLOBs after in-place updates
+		while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
+			VIO_verb_cleanup(tdbb, transaction);
+	}
+
 #ifdef GARBAGE_THREAD
 	// Flush pages if transaction logically modified data
 
@@ -2613,9 +2621,15 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, S
 	{
 		if (!(transaction->tra_save_point->sav_flags & SAV_trans_level))
 			BUGCHECK(287);		// Too many savepoints
+
 		VIO_verb_cleanup(tdbb, transaction);	// get rid of transaction savepoint
-		VIO_start_save_point(tdbb, transaction);	// start new savepoint
-		transaction->tra_save_point->sav_flags |= SAV_trans_level;
+
+		if (!(transaction->tra_flags & TRA_no_auto_undo))
+		{
+			// start new transaction savepoint
+			VIO_start_save_point(tdbb, transaction);
+			transaction->tra_save_point->sav_flags |= SAV_trans_level;
+		}
 	}
 
 	if (transaction->tra_flags & TRA_precommitted)
