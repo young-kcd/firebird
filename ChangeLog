@@ -1,3 +1,74 @@
+ 2015-02-19 19:52  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/tra.h
+Misc code simplification.
+
+ 2015-02-19 19:50  dimitr 
+   M src/jrd/Record.h
+Small changes intended to fix SEGV in the release build.
+
+ 2015-02-19 15:58  dimitr 
+   M src/jrd/tra.cpp
+Protection against exceptions thrown from VIO_verb_cleanup() during commit/rollback.
+
+ 2015-02-19 15:53  dimitr 
+   M src/jrd/Record.h
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Misc.
+
+ 2015-02-19 14:56  dimitr 
+   M src/jrd/idx.cpp
+Postfix for my big commit.
+
+ 2015-02-19 14:43  dimitr 
+   M src/jrd/tra.cpp
+1) Fixed CORE-4382: User savepoints are not released on commit.
+2) Respect the "no-auto-undo" option when retaining a transaction context.
+Thanks to Dimitry Sibiryakov.
+
+ 2015-02-19 14:19  dimitr 
+   M src/jrd/recsrc/ProcedureScan.cpp
+Misc.
+
+ 2015-02-19 14:15  dimitr 
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/Monitoring.cpp
+   A src/jrd/Record.h
+   M src/jrd/RecordBuffer.cpp
+   M src/jrd/Relation.h
+   M src/jrd/blb.cpp
+   M src/jrd/dpm.epp
+   M src/jrd/evl.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/idx.cpp
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/ProcedureScan.cpp
+   M src/jrd/recsrc/RecordSource.cpp
+   M src/jrd/recsrc/RecursiveStream.cpp
+   M src/jrd/recsrc/SingularStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+1) Fixed CORE-4383: Index and BLOBs garbage collection doesn't work for update_in_place().
+2) Applied the same approach to temporary GC records.
+3) Refactored the Record class to avoid reallocations, to improve encapsulation and to simplify the code.
+4) Slightly refactored UndoItem to isolate its logic from the Record class.
+5) Reduced the in-memory size of the undo log.
+6) Slightly better alternative to the legacy NULL reporting for outer joins.
+7) Minor fixes and adjustments in BufferedStream.
+
+ 2015-02-19 14:06  dimitr 
+   M src/jrd/nbak.h
+Misc.
+
  2015-02-18 15:01  asfernandes 
    M examples/dbcrypt/CryptApplication.cpp
    M examples/dbcrypt/CryptKeyHolder.cpp
