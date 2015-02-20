@@ -315,12 +315,9 @@ void getUniqueFileId(const char* name, UCharBuffer& id)
 	{
 		if (errno == EINTR)
 			continue;
-		if (errno == ENOENT)
-		{
-			id.clear();
-			return;
-		}
-		system_call_failed::raise("fstat");
+
+		id.clear();
+		return;
 	}
 
 	makeUniqueFileId(statistics, id);
