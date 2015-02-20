@@ -3962,6 +3962,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 		receive_response(status, rdb, packet);
 
 		Firebird::IEvents* rc = new Events(rem_event);
+		rc->addRef();
 		rem_event->rvnt_iface = rc;
 		return rc;
 	}
