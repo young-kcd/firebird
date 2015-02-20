@@ -163,7 +163,7 @@ namespace Jrd
 
 		bool testFlags(UCHAR mask) const
 		{
-			return (m_flags & mask != 0);
+			return ((m_flags & mask) != 0);
 		}
 
 	private:
