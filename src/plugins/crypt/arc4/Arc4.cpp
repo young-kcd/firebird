@@ -92,6 +92,12 @@ public:
 		: en(NULL), de(NULL)
 	{ }
 
+	~Arc4()
+	{
+		delete en;
+		delete de;
+	}
+
 	// ICryptPlugin implementation
 	const char* getKnownTypes(CheckStatusWrapper* status);
 	void setKey(CheckStatusWrapper* status, ICryptKey* key);

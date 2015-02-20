@@ -503,6 +503,8 @@ public:
 	{
 		if (rsr_self && *rsr_self == this)
 			*rsr_self = NULL;
+
+		delete rsr_status;
 	}
 
 	void saveException(Firebird::IStatus* status, bool overwrite);
