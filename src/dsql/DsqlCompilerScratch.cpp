@@ -739,7 +739,10 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 		recursiveRse = rse;
 	}
 	else
+	{
 		recursiveRse = recursiveStack.pop();
+		recursiveRse->dsqlFlags |= RecordSourceNode::DFLAG_RECURSIVE;
+	}
 
 	// Create and return the final node
 
