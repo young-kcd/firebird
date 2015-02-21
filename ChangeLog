@@ -1,3 +1,24 @@
+ 2015-02-20 16:56  dimitr 
+   M src/dsql/DsqlCompilerScratch.cpp
+Fixed CORE-4694: "Column unknown" error while preparing a recursive query if the recursive part contains ALIASED datasource in the join with anchor table.
+
+ 2015-02-20 15:31  hvlad 
+   M src/jrd/Record.h
+Fix warning
+
+ 2015-02-20 14:27  asfernandes 
+   M src/remote/client/interface.cpp
+Fixed segfault with events and the remote protocol.
+
+ 2015-02-20 10:40  alexpeshkoff 
+   M src/common/os/posix/os_utils.cpp
+Do not raise errors when cannot generate unique ID for file, just keep ID empty
+
+ 2015-02-20 09:38  hvlad 
+   M src/plugins/crypt/arc4/Arc4.cpp
+   M src/remote/remote.h
+More memory leaks (CORE-4683)
+
  2015-02-19 19:52  dimitr 
    M src/dsql/ExprNodes.cpp
    M src/dsql/StmtNodes.cpp
