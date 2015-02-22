@@ -284,7 +284,8 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 		m_transaction.assignRefNoIncr(
 			att->startTransaction(&statusWrapper, tpb.getBufferLength(), tpb.getBuffer()));
 
-		m_transaction->getHandle()->tra_callback_count = localTran->tra_callback_count;
+		if (m_transaction)
+			m_transaction->getHandle()->tra_callback_count = localTran->tra_callback_count;
 	}
 }
 
@@ -690,13 +691,13 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 
 		m_blob.assignRefNoIncr(
 			att->createBlob(&statusWrapper, transaction, &m_blob_id, bpb_len, bpb_buff));
-		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
 
 	if (status.getState() & IStatus::STATE_ERRORS)
 		m_connection.raise(status, tdbb, "JAttachment::createBlob");
 
 	fb_assert(m_blob);
+	memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 }
 
 USHORT InternalBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
