@@ -129,9 +129,9 @@ private:
 	ISC_STATUS *v;
 };
 
-void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
-		const Firebird::string& user, const Firebird::string& pwd,
-		const Firebird::string& role)
+void InternalConnection::attach(thread_db* tdbb, const string& dbName,
+		const string& user, const string& pwd,
+		const string& role)
 {
 	fb_assert(!m_attachment);
 	Database* dbb = tdbb->getDatabase();
@@ -159,11 +159,10 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 
 		{
 			EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-			Firebird::RefPtr<JProvider> jInstance(JProvider::getInstance());
+			RefPtr<JProvider> jInstance(JProvider::getInstance());
 			jInstance->setDbCryptCallback(&statusWrapper, tdbb->getAttachment()->att_crypt_callback);
-			m_attachment = jInstance->attachDatabase(&statusWrapper, m_dbName.c_str(),
-				m_dpb.getBufferLength(), m_dpb.getBuffer());
-			m_attachment->release();
+			m_attachment.assignRefNoIncr(jInstance->attachDatabase(&statusWrapper, m_dbName.c_str(),
+				m_dpb.getBufferLength(), m_dpb.getBuffer()));
 		}
 
 		if (status.getState() & IStatus::STATE_ERRORS)
@@ -232,9 +231,9 @@ bool InternalConnection::isAvailable(thread_db* tdbb, TraScope /*traScope*/) con
 		(m_isCurrent && (tdbb->getAttachment() == m_attachment->getHandle()));
 }
 
-bool InternalConnection::isSameDatabase(thread_db* tdbb, const Firebird::string& dbName,
-		const Firebird::string& user, const Firebird::string& pwd,
-		const Firebird::string& role) const
+bool InternalConnection::isSameDatabase(thread_db* tdbb, const string& dbName,
+		const string& user, const string& pwd,
+		const string& role) const
 {
 	if (m_isCurrent)
 	{
@@ -282,8 +281,8 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 		IntStatus s(status);
 		CheckStatusWrapper statusWrapper(&s);
 
-		m_transaction = att->startTransaction(&statusWrapper, tpb.getBufferLength(), tpb.getBuffer());
-		m_transaction->release();
+		m_transaction.assignRefNoIncr(
+			att->startTransaction(&statusWrapper, tpb.getBufferLength(), tpb.getBuffer()));
 
 		m_transaction->getHandle()->tra_callback_count = localTran->tra_callback_count;
 	}
@@ -424,9 +423,8 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 				tran->getHandle()->tra_caller_name = CallerName();
 		}
 
-		m_request = att->prepare(&statusWrapper, tran, sql.length(), sql.c_str(),
-			m_connection.getSqlDialect(), 0);
-		m_request->release();
+		m_request.assignRefNoIncr(att->prepare(&statusWrapper, tran, sql.length(), sql.c_str(),
+			m_connection.getSqlDialect(), 0));
 		m_allocated = (m_request != NULL);
 
 		tran->getHandle()->tra_caller_name = save_caller_name;
@@ -544,9 +542,8 @@ void InternalStatement::doOpen(thread_db* tdbb)
 
 		fb_assert(m_inMetadata->getMessageLength() == m_in_buffer.getCount());
 
-		m_cursor = m_request->openCursor(&statusWrapper, transaction,
-			m_inMetadata, m_in_buffer.begin(), m_outMetadata, 0);
-		m_cursor->release();
+		m_cursor.assignRefNoIncr(m_request->openCursor(&statusWrapper, transaction,
+			m_inMetadata, m_in_buffer.begin(), m_outMetadata, 0));
 	}
 
 	if (status.getState() & IStatus::STATE_ERRORS)
@@ -663,8 +660,8 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 		USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
-		m_blob = att->openBlob(&statusWrapper, transaction, &m_blob_id, bpb_len, bpb_buff);
-		m_blob->release();
+		m_blob.assignRefNoIncr(
+			att->openBlob(&statusWrapper, transaction, &m_blob_id, bpb_len, bpb_buff));
 	}
 
 	if (status.getState() & IStatus::STATE_ERRORS)
@@ -691,8 +688,8 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 		const USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
-		m_blob = att->createBlob(&statusWrapper, transaction, &m_blob_id, bpb_len, bpb_buff);
-		m_blob->release();
+		m_blob.assignRefNoIncr(
+			att->createBlob(&statusWrapper, transaction, &m_blob_id, bpb_len, bpb_buff));
 		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
 
