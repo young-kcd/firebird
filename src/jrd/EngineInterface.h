@@ -353,6 +353,7 @@ public:
 	}
 
 	Jrd::Attachment* getHandle() throw();
+	const Jrd::Attachment* getHandle() const throw();
 
 	StableAttachmentPart* getAttachment() throw()
 	{

@@ -163,6 +163,7 @@ void InternalConnection::attach(thread_db* tdbb, const Firebird::string& dbName,
 			jInstance->setDbCryptCallback(&statusWrapper, tdbb->getAttachment()->att_crypt_callback);
 			m_attachment = jInstance->attachDatabase(&statusWrapper, m_dbName.c_str(),
 				m_dpb.getBufferLength(), m_dpb.getBuffer());
+			m_attachment->release();
 		}
 
 		if (status.getState() & IStatus::STATE_ERRORS)
@@ -179,14 +180,14 @@ void InternalConnection::doDetach(thread_db* tdbb)
 
 	if (m_isCurrent)
 	{
-		m_attachment = 0;
+		m_attachment = NULL;
 	}
 	else
 	{
 		LocalStatus status;
 		CheckStatusWrapper statusWrapper(&status);
 
-		JAttachment* att = m_attachment;
+		RefPtr<JAttachment> att = m_attachment;
 		m_attachment = NULL;
 
 		{	// scope
@@ -282,6 +283,7 @@ void InternalTransaction::doStart(ISC_STATUS* status, thread_db* tdbb, ClumpletW
 		CheckStatusWrapper statusWrapper(&s);
 
 		m_transaction = att->startTransaction(&statusWrapper, tpb.getBufferLength(), tpb.getBuffer());
+		m_transaction->release();
 
 		m_transaction->getHandle()->tra_callback_count = localTran->tra_callback_count;
 	}
@@ -313,7 +315,10 @@ void InternalTransaction::doCommit(ISC_STATUS* status, thread_db* tdbb, bool ret
 		if (retain)
 			m_transaction->commitRetaining(&statusWrapper);
 		else
+		{
 			m_transaction->commit(&statusWrapper);
+			m_transaction = NULL;
+		}
 	}
 }
 
@@ -336,7 +341,10 @@ void InternalTransaction::doRollback(ISC_STATUS* status, thread_db* tdbb, bool r
 		if (retain)
 			m_transaction->rollbackRetaining(&statusWrapper);
 		else
+		{
 			m_transaction->rollback(&statusWrapper);
+			m_transaction = NULL;
+		}
 	}
 
 	if (status[1] == isc_att_shutdown && !retain)
@@ -418,6 +426,7 @@ void InternalStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 		m_request = att->prepare(&statusWrapper, tran, sql.length(), sql.c_str(),
 			m_connection.getSqlDialect(), 0);
+		m_request->release();
 		m_allocated = (m_request != NULL);
 
 		tran->getHandle()->tra_caller_name = save_caller_name;
@@ -537,6 +546,7 @@ void InternalStatement::doOpen(thread_db* tdbb)
 
 		m_cursor = m_request->openCursor(&statusWrapper, transaction,
 			m_inMetadata, m_in_buffer.begin(), m_outMetadata, 0);
+		m_cursor->release();
 	}
 
 	if (status.getState() & IStatus::STATE_ERRORS)
@@ -654,6 +664,7 @@ void InternalBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, con
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
 		m_blob = att->openBlob(&statusWrapper, transaction, &m_blob_id, bpb_len, bpb_buff);
+		m_blob->release();
 	}
 
 	if (status.getState() & IStatus::STATE_ERRORS)
@@ -681,6 +692,7 @@ void InternalBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const U
 		const UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
 		m_blob = att->createBlob(&statusWrapper, transaction, &m_blob_id, bpb_len, bpb_buff);
+		m_blob->release();
 		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
 
@@ -734,6 +746,7 @@ void InternalBlob::close(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 		m_blob->close(&statusWrapper);
+		m_blob = NULL;
 	}
 
 	if (status.getState() & IStatus::STATE_ERRORS)
@@ -754,6 +767,7 @@ void InternalBlob::cancel(thread_db* tdbb)
 	{
 		EngineCallbackGuard guard(tdbb, m_connection, FB_FUNCTION);
 		m_blob->cancel(&statusWrapper);
+		m_blob = NULL;
 	}
 
 	if (status.getState() & IStatus::STATE_ERRORS)

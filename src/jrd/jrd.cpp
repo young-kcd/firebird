@@ -261,6 +261,11 @@ Attachment* JAttachment::getHandle() throw()
 	return att->getHandle();
 }
 
+const Attachment* JAttachment::getHandle() const throw()
+{
+	return att->getHandle();
+}
+
 //#define DEBUG_ATT_COUNTERS
 
 void JAttachment::addRef()

@@ -88,7 +88,7 @@ protected:
 	virtual Statement* doCreateStatement();
 	virtual void doDetach(Jrd::thread_db* tdbb);
 
-	Jrd::JAttachment* m_attachment;
+	Firebird::RefPtr<Jrd::JAttachment> m_attachment;
 	bool m_isCurrent;
 };
 
@@ -116,7 +116,7 @@ protected:
 	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain);
 
 	InternalConnection& m_IntConnection;
-	Jrd::JTransaction* m_transaction;
+	Firebird::RefPtr<Jrd::JTransaction> m_transaction;
 };
 
 
@@ -146,8 +146,8 @@ protected:
 	InternalConnection& m_intConnection;
 	InternalTransaction* m_intTransaction;
 
-	Jrd::JStatement* m_request;
-	Jrd::JResultSet* m_cursor;
+	Firebird::RefPtr<Jrd::JStatement> m_request;
+	Firebird::RefPtr<Jrd::JResultSet> m_cursor;
 	Firebird::RefPtr<Firebird::MsgMetadata> m_inMetadata, m_outMetadata;
 };
 
@@ -171,7 +171,7 @@ public:
 
 private:
 	InternalConnection& m_connection;
-	Jrd::JBlob* m_blob;
+	Firebird::RefPtr<Jrd::JBlob> m_blob;
 	ISC_QUAD m_blob_id;
 };
 
