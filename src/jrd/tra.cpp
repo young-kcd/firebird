@@ -3494,7 +3494,7 @@ TraceSweepEvent::TraceSweepEvent(thread_db* tdbb)
 
 	gds__log("Sweep is started by %s\n"
 		"\tDatabase \"%s\" \n"
-		"\tOIT %"ULONGFORMAT", OAT %"ULONGFORMAT", OST %"ULONGFORMAT", Next %"ULONGFORMAT,
+		"\tOIT %"UQUADFORMAT", OAT %"UQUADFORMAT", OST %"UQUADFORMAT", Next %"UQUADFORMAT,
 		att->att_user->usr_user_name.c_str(),
 		att->att_filename.c_str(),
 		m_sweep_info.getOIT(),
@@ -3583,7 +3583,7 @@ void TraceSweepEvent::report(ntrace_process_state_t state)
 	{
 		gds__log("Sweep is finished\n"
 			"\tDatabase \"%s\" \n"
-			"\tOIT %"ULONGFORMAT", OAT %"ULONGFORMAT", OST %"ULONGFORMAT", Next %"ULONGFORMAT,
+			"\tOIT %"UQUADFORMAT", OAT %"UQUADFORMAT", OST %"UQUADFORMAT", Next %"UQUADFORMAT,
 			att->att_filename.c_str(),
 			m_sweep_info.getOIT(),
 			m_sweep_info.getOAT(),

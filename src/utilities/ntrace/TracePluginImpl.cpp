@@ -2056,10 +2056,10 @@ void TracePluginImpl::log_event_sweep(ITraceDatabaseConnection* connection, ITra
 		sweep_state == SWEEP_STATE_FINISHED)
 	{
 		record.printf("\nTransaction counters:\n"
-			"\tOldest interesting %10ld\n"
-			"\tOldest active      %10ld\n"
-			"\tOldest snapshot    %10ld\n"
-			"\tNext transaction   %10ld\n",
+			"\tOldest interesting %10"UQUADFORMAT"\n"
+			"\tOldest active      %10"UQUADFORMAT"\n"
+			"\tOldest snapshot    %10"UQUADFORMAT"\n"
+			"\tNext transaction   %10"UQUADFORMAT"\n",
 			sweep->getOIT(),
 			sweep->getOAT(),
 			sweep->getOST(),
