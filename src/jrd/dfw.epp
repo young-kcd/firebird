@@ -5164,7 +5164,7 @@ static Format* make_format(thread_db* tdbb, jrd_rel* relation, USHORT* version, 
 	for (tfb = stack; tfb; tfb = tfb->tfb_next)
 		count = MAX(count, tfb->tfb_id);
 
-	Format* format = Format::newFormat(*dbb->dbb_permanent, count + 1);
+	Format* format = Format::newFormat(*relation->rel_pool, count + 1);
 	format->fmt_version = version ? *version : 0;
 
 	// Fill in the format block from the temporary field blocks
@@ -5563,7 +5563,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 									desc.makeText(len, ttype_none, ptr);
 								}
 
-								EVL_make_value(tdbb, &desc, &tfb->tfb_default, dbb->dbb_permanent);
+								EVL_make_value(tdbb, &desc, &tfb->tfb_default, relation->rel_pool);
 							}
 						}
 						catch (const Exception&)

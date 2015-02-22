@@ -1130,7 +1130,7 @@ void PAG_header(thread_db* tdbb, bool info)
 		// the only call which may call PAG_header multiple times.
 		// In fact, this isc_database_info behavior seems dangerous to me,
 		// but let somebody else fix that problem, I just fix the memory leak.
-		vcl* vector = vcl::newVector(*dbb->dbb_permanent, 1);
+		vcl* vector = vcl::newVector(*relation->rel_pool, 1);
 		relPages->rel_pages = vector;
 		(*vector)[0] = header->hdr_PAGES;
 	}

@@ -297,7 +297,7 @@ Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype, void*
 	// Could we have an AST on this lock? If yes, it will fail if we don't
 	// have lck_object to it, so set ast routine to NULL for safety.
 
-	Lock* lock = FB_NEW_RPT(*tdbb->getDatabase()->dbb_permanent, 0)
+	Lock* lock = FB_NEW_RPT(*tdbb->getAttachment()->att_pool, 0)
 		Lock(tdbb, sizeof(SLONG), LCK_tt_exist, object, (object ? blocking_ast_collation : NULL));
 	lock->lck_key.lck_long = ttype;
 
@@ -388,7 +388,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			info.specificAttributes = specificAttributes;
 		}
 
-		texttype* tt = FB_NEW(*tdbb->getDatabase()->dbb_permanent) texttype;
+		texttype* tt = FB_NEW(*att->att_pool) texttype;
 		memset(tt, 0, sizeof(texttype));
 
 		if (!lookup_texttype(tt, &info))
@@ -416,7 +416,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			}
 		}
 
-		charset_collations[id] = Collation::createInstance(*tdbb->getDatabase()->dbb_permanent, tt_id, tt, charset);
+		charset_collations[id] = Collation::createInstance(*att->att_pool, tt_id, tt, charset);
 		charset_collations[id]->name = info.collationName;
 
 		// we don't need a lock in the charset

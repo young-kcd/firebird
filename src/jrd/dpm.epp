@@ -589,7 +589,7 @@ void DPM_create_relation_pages(thread_db* tdbb, jrd_rel* relation, RelationPages
 
 	if (!relPages->rel_pages)
 	{
-		vcl* vector = vcl::newVector(*dbb->dbb_permanent, 1);
+		vcl* vector = vcl::newVector(*relation->rel_pool, 1);
 		relPages->rel_pages = vector;
 	}
 	(*relPages->rel_pages)[0] = window.win_page.getPageNum();
@@ -1930,6 +1930,7 @@ void DPM_scan_pages( thread_db* tdbb)
 		relation = MET_relation(tdbb, X.RDB$RELATION_ID);
 		relPages = relation->getBasePages();
 		sequence = X.RDB$PAGE_SEQUENCE;
+		MemoryPool* pool = dbb->dbb_permanent;
 		switch (X.RDB$PAGE_TYPE)
 		{
 		case pag_root:
@@ -1938,6 +1939,7 @@ void DPM_scan_pages( thread_db* tdbb)
 
 		case pag_pointer:
 			address = &relPages->rel_pages;
+			pool = relation->rel_pool;
 			break;
 
 		case pag_transactions:
@@ -1951,7 +1953,7 @@ void DPM_scan_pages( thread_db* tdbb)
 		default:
 			CORRUPT(257);		// msg 257 bad record in RDB$PAGES
 		}
-		vector = *address = vcl::newVector(*dbb->dbb_permanent, *address, sequence + 1);
+		vector = *address = vcl::newVector(*pool, *address, sequence + 1);
 		(*vector)[sequence] = X.RDB$PAGE_NUMBER;
 	}
 	END_FOR
@@ -2711,7 +2713,7 @@ static void extend_relation(thread_db* tdbb, jrd_rel* relation, WIN* window, con
 			CCH_RELEASE(tdbb, &new_pp_window);
 
 			vcl* vector = relPages->rel_pages =
-				vcl::newVector(*dbb->dbb_permanent, relPages->rel_pages, pp_sequence + 1);
+				vcl::newVector(*relation->rel_pool, relPages->rel_pages, pp_sequence + 1);
 			(*vector)[pp_sequence] = new_pp_window.win_page.getPageNum();
 
 			// hvlad: temporary tables don't save their pointer pages in RDB$PAGES

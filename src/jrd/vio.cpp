@@ -380,7 +380,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	else
 	{
 		temp.rpb_record = gc_rec1 = VIO_gc_record(tdbb, relation);
-		VIO_data(tdbb, &temp, dbb->dbb_permanent);
+		VIO_data(tdbb, &temp, relation->rel_pool);
 		data = temp.rpb_prior;
 		old_data = temp.rpb_record;
 		rpb->rpb_prior = temp.rpb_prior;
@@ -427,7 +427,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			if (temp.rpb_flags & rpb_deleted)
 				CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
 			else
-				VIO_data(tdbb, &temp, dbb->dbb_permanent);
+				VIO_data(tdbb, &temp, relation->rel_pool);
 
 			temp.rpb_page = rpb->rpb_b_page;
 			temp.rpb_line = rpb->rpb_b_line;
@@ -5594,7 +5594,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	AutoGCRecord gc_rec = VIO_gc_record(tdbb, relation);
 	Record* record = rpb->rpb_record = gc_rec;
 
-	VIO_data(tdbb, rpb, dbb->dbb_permanent);
+	VIO_data(tdbb, rpb, relation->rel_pool);
 
 	temp.rpb_prior = rpb->rpb_prior;
 	rpb->rpb_record = temp.rpb_record;
@@ -5841,7 +5841,7 @@ static void update_in_place(thread_db* tdbb,
 		if (!DPM_fetch(tdbb, &temp2, LCK_read))
 			BUGCHECK(291);	 // msg 291 cannot find record back version
 
-		VIO_data(tdbb, &temp2, dbb->dbb_permanent);
+		VIO_data(tdbb, &temp2, relation->rel_pool);
 
 		temp2.rpb_flags = rpb_chained;
 

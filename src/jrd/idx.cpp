@@ -366,7 +366,7 @@ void IDX_create_index(thread_db* tdbb,
 		else
 		{
 			primary.rpb_record = gc_record;
-			VIO_data(tdbb, &primary, dbb->dbb_permanent);
+			VIO_data(tdbb, &primary, relation->rel_pool);
 			stack.push(primary.rpb_record);
 		}
 
@@ -380,7 +380,7 @@ void IDX_create_index(thread_db* tdbb,
 				break;			// must be garbage collected
 
 			secondary.rpb_record = NULL;
-			VIO_data(tdbb, &secondary, tdbb->getDefaultPool());
+			VIO_data(tdbb, &secondary, relation->rel_pool);
 			stack.push(secondary.rpb_record);
 			secondary.rpb_page = secondary.rpb_b_page;
 			secondary.rpb_line = secondary.rpb_b_line;
@@ -511,7 +511,7 @@ void IDX_create_index(thread_db* tdbb,
 				CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
 			else
 			{
-				VIO_data(tdbb, &primary, dbb->dbb_permanent);
+				VIO_data(tdbb, &primary, relation->rel_pool);
 				error_record = primary.rpb_record;
 			}
 
