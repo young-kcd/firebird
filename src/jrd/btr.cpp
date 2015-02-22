@@ -3843,7 +3843,8 @@ static ULONG fast_load(thread_db* tdbb,
 		if (error)
 			ERR_punt();
 
-		CCH_flush(tdbb, FLUSH_ALL, 0);
+		if (!relation->isTemporary())
+			CCH_flush(tdbb, FLUSH_ALL, 0);
 
 		// Calculate selectivity, also per segment when newer ODS
 		selectivity.grow(segments);
