@@ -1,3 +1,38 @@
+ 2015-02-22 16:04  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+Bit more safety
+
+ 2015-02-22 15:47  asfernandes 
+   M src/jrd/extds/InternalDS.cpp
+Use RefPtr::assignRefNoIncr so we can clearly see the code is not going to crash.
+
+ 2015-02-22 11:17  hvlad 
+   M src/jrd/btr.cpp
+Improvement CORE-4696 :  No need to flush dirty pages to disk after creation of temporary table index
+
+ 2015-02-22 11:02  hvlad 
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/idx.cpp
+   M src/jrd/intl.cpp
+   M src/jrd/met.epp
+   M src/jrd/pag.cpp
+   M src/jrd/vio.cpp
+Use attachment's or relation's pool instead of dbb_permanent where it is more suitable. 
+It fixed memory leak from dbb_permanent (CORE-4683)
+
+ 2015-02-22 10:58  hvlad 
+   M src/jrd/EngineInterface.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/jrd.cpp
+Fixed leak of various J-objects in EXECUTE STATEMENT (CORE-4683)
+
+ 2015-02-22 10:49  hvlad 
+   M src/jrd/tra.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Fixed regression in 32-bit builds: transaction numbers in sweep info (both trace event and firebird.log message) printed incorrectly
+
  2015-02-20 16:56  dimitr 
    M src/dsql/DsqlCompilerScratch.cpp
 Fixed CORE-4694: "Column unknown" error while preparing a recursive query if the recursive part contains ALIASED datasource in the join with anchor table.
