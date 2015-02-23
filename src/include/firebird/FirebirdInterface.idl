@@ -26,9 +26,9 @@
  *
  */
 
-struct ISC_DATE;
-struct ISC_QUAD;
-struct ISC_TIME;
+typedef ISC_DATE;
+typedef ISC_QUAD;
+typedef ISC_TIME;
 
 // Versioned interface - base for all FB interfaces
 interface Versioned
