@@ -1664,6 +1664,7 @@ void rem_port::initCompression()
 		{
 			zlib().deflateEnd(&port_send_stream);
 			zlib().inflateEnd(&port_recv_stream);
+			throw;
 		}
 		memset(port_compressed, 0, port_buff_size * 2);
 		port_recv_stream.next_in = &port_compressed[REM_RECV_OFFSET(port_buff_size)];
