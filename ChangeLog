@@ -1,3 +1,7 @@
+ 2015-02-23 01:44  asfernandes 
+   M src/include/firebird/FirebirdInterface.idl
+Change to make the generated C API work with latest cloop.
+
  2015-02-22 16:04  hvlad 
    M src/jrd/extds/InternalDS.cpp
 Bit more safety
