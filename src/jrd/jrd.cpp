@@ -359,7 +359,9 @@ int JService::release()
 		LocalStatus status;
 		CheckStatusWrapper statusWrapper(&status);
 
+		++refCounter;
 		freeEngineData(&statusWrapper);
+		--refCounter;
 	}
 	if (!svc)
 	{
