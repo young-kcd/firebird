@@ -118,6 +118,11 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
         Dimitry Sibiryakov <sd at ibphoenix.com>
 
+    * Bugfix CORE-4382
+        User savepoints are not released on commit
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
     * Bugfix CORE-4075
         Server bugchecks or crashes on exception in calculated index
       Contributor(s):
