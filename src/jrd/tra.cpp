@@ -402,15 +402,8 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	{
 		// Get rid of user savepoints to allow intermediate garbage collection
 		// in indices and BLOBs after in-place updates
-		try
-		{
-			while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
-				VIO_verb_cleanup(tdbb, transaction);
-		}
-		catch (const Exception&)
-		{
-			fb_utils::init_status(tdbb->tdbb_status_vector);
-		}
+		while (transaction->tra_save_point && (transaction->tra_save_point->sav_flags & SAV_user))
+			VIO_verb_cleanup(tdbb, transaction);
 
 		transaction_flush(tdbb, FLUSH_TRAN, transaction->tra_number);
 	}
