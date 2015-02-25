@@ -423,7 +423,7 @@ public:
 
 public:
 	Events(Rvnt* handle)
-		: rvnt(handle)
+		: rvnt(handle), rdb(rvnt->rvnt_rdb)
 	{
 		rvnt->rvnt_self = &rvnt;
 	}
@@ -432,12 +432,18 @@ private:
 	void freeClientData(IStatus* status, bool force = false);
 
 	Rvnt* rvnt;
+	Rdb* rdb;
 };
+
 
 int Events::release()
 {
-	if (--refCounter != 0)
+	int rc = --refCounter;
+	if (rc != 0)
+	{
+		fb_assert(rc > 0);
 		return 1;
+	}
 
 	if (rvnt)
 	{
@@ -1001,17 +1007,15 @@ void Events::freeClientData(IStatus* status, bool force)
  **************************************/
 	try
 	{
+		CHECK_HANDLE(rdb, isc_bad_db_handle);
+		rem_port* port = rdb->rdb_port;
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
 		if (!rvnt)
 		{
 			return;
 		}
-
 		CHECK_HANDLE(rvnt, isc_bad_events_handle);
-
-		Rdb* rdb = rvnt->rvnt_rdb;
-		CHECK_HANDLE(rdb, isc_bad_db_handle);
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		try
 		{
@@ -3952,9 +3956,6 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 		event->p_event_items.cstr_length = length;
 		event->p_event_items.cstr_address = events;
 		event->p_event_ast = 0;
-		// Nickolay Samofatov: We pass this value to the server (as 32-bit value)
-		// then it returns it to us and we do not use it. Maybe pass zero here
-		// to avoid client-side security risks?
 		event->p_event_arg = 0;
 		event->p_event_rid = rem_event->rvnt_id;
 
@@ -3963,7 +3964,6 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 
 		Firebird::IEvents* rc = new Events(rem_event);
 		rc->addRef();
-		rem_event->rvnt_iface = rc;
 		return rc;
 	}
 	catch (const Exception& ex)
@@ -5953,9 +5953,11 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 
 			if (event)
 			{
+				// Mark event as already processed
+				event->rvnt_id = 0;
+
 				// Call the asynchronous event routine associated
 				// with this event
-
 				const ULONG length = pevent->p_event_items.cstr_length;
 				if (length <= event->rvnt_length)
 				{
@@ -5964,9 +5966,6 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				//else {....
 				//This is error condition, but we have absolutely no ways to report it.
 				//Therefore simply ignore such bad packet.
-
-				event->rvnt_id = 0;
-				event->rvnt_iface = NULL;
 			}
 
 		}						// end of event handling for op_event
@@ -6871,8 +6870,6 @@ static void release_event( Rvnt* event)
 		}
 	}
 
-	event->rvnt_iface = NULL;
-
 	delete event;
 }
 
@@ -7129,9 +7126,8 @@ static void send_cancel_event(Rvnt* event)
 
 	if (event->rvnt_id)
 	{
-		event->rvnt_callback->eventCallbackFunction(0, NULL);
 		event->rvnt_id = 0;
-		event->rvnt_iface = NULL;
+		event->rvnt_callback->eventCallbackFunction(0, NULL);
 	}
 }
 
@@ -7252,9 +7248,8 @@ static void server_death(rem_port* port)
 		{
 			if (event->rvnt_id)
 			{
-				event->rvnt_callback->eventCallbackFunction(0, NULL);
 				event->rvnt_id = 0;
-				event->rvnt_iface = NULL;
+				event->rvnt_callback->eventCallbackFunction(0, NULL);
 			}
 		}
 	}

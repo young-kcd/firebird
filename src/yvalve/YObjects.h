@@ -133,7 +133,8 @@ public:
 
 	int release()
 	{
-		if (--this->refCounter == 0)
+		int rc = --(this->refCounter);
+		if (rc == 0)
 		{
 			Impl* impl = static_cast<Impl*>(this);
 
@@ -146,6 +147,7 @@ public:
 			return 0;
 		}
 
+		fb_assert(rc > 0);
 		return 1;
 	}
 
@@ -181,6 +183,7 @@ public:
 public:
 	YAttachment* attachment;
 	Firebird::RefPtr<Firebird::IEventCallback> callback;
+	bool autoReleased;
 };
 
 class YRequest FB_FINAL :
