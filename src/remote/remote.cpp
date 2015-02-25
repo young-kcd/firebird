@@ -1138,7 +1138,7 @@ void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool ch
 
 	// Translate any gds codes into local operating specific codes
 
-	Firebird::SimpleStatusVector newVector;
+	Firebird::SimpleStatusVector<> newVector;
 
 	while (*vector != isc_arg_end)
 	{

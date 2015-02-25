@@ -36,6 +36,104 @@
 
 namespace Firebird {
 
+unsigned makeDynamicStrings(unsigned length, ISC_STATUS* const dst, const ISC_STATUS* const src);
+void freeDynamicStrings(unsigned length, ISC_STATUS* ptr);
+
+
+// This trivial container is used when we need to grow vector element by element w/o any conversions
+template <unsigned S = ISC_STATUS_LENGTH>
+class SimpleStatusVector : public HalfStaticArray<ISC_STATUS, S>
+{
+public:
+	SimpleStatusVector()
+		: HalfStaticArray<ISC_STATUS, S>()
+	{ }
+
+	SimpleStatusVector(MemoryPool& p)
+		: HalfStaticArray<ISC_STATUS, S>(p)
+	{ }
+};
+
+
+// DynamicVector owns strings, contained in it
+template <unsigned S>
+class DynamicVector : private SimpleStatusVector<S>
+{
+public:
+	DynamicVector(MemoryPool& p)
+		: SimpleStatusVector<S>(p)
+	{
+		fb_utils::init_status(this->getBuffer(3));
+	}
+
+	~DynamicVector()
+	{
+		freeDynamicStrings(this->getCount(), this->begin());
+	}
+
+	void clear()
+	{
+		freeDynamicStrings(this->getCount(), this->begin());
+		this->resize(0);
+		fb_utils::init_status(this->getBuffer(3));
+	}
+
+	void save(unsigned int length, const ISC_STATUS* status)
+	{
+		clear();
+		this->resize(0);
+		unsigned newLen = makeDynamicStrings(length, this->getBuffer(length), status);
+
+		fb_assert(newLen <= length);
+
+		// Sanity check
+		if (newLen < 2)
+			fb_utils::init_status(this->getBuffer(3));
+		else
+			this->resize(newLen);
+	}
+
+	ISC_STATUS save(const ISC_STATUS* status)
+	{
+		save(fb_utils::statusLength(status), status);
+		return status[1];
+	}
+
+	const ISC_STATUS* value() const
+	{
+		return SimpleStatusVector<S>::begin();
+	}
+
+	ISC_STATUS operator[](unsigned int index) const
+	{
+		return SimpleStatusVector<S>::operator[](index);
+	}
+};
+
+
+// DynamicStatusVector performs error/success checks and load from IStatus
+class DynamicStatusVector : public DynamicVector<ISC_STATUS_LENGTH>
+{
+public:
+	DynamicStatusVector()
+		: DynamicVector(*getDefaultMemoryPool())
+	{ }
+
+	ISC_STATUS merge(const IStatus* status);
+
+	ISC_STATUS getError() const
+	{
+		return value()[1];
+	}
+
+	bool isSuccess() const
+	{
+		return getError() == 0;
+	}
+};
+
+
+// Implements IStatus using 2 DynamicVectors
 template <class Final>
 class BaseStatus : public IStatusImpl<Final, CheckStatusWrapper>
 {
@@ -43,44 +141,44 @@ public:
 	// IStatus implementation
 	void init()
 	{
-		errors.init();
-		warnings.init();
+		errors.clear();
+		warnings.clear();
 	}
 
 	void setErrors(const ISC_STATUS* value)
 	{
-		errors.set(fb_utils::statusLength(value), value);
+		errors.save(fb_utils::statusLength(value), value);
 	}
 
 	void setErrors2(unsigned int length, const ISC_STATUS* value)
 	{
-		errors.set(length, value);
+		errors.save(length, value);
 	}
 
 	void setWarnings(const ISC_STATUS* value)
 	{
-		warnings.set(fb_utils::statusLength(value), value);
+		warnings.save(fb_utils::statusLength(value), value);
 	}
 
 	void setWarnings2(unsigned int length, const ISC_STATUS* value)
 	{
-		warnings.set(length, value);
+		warnings.save(length, value);
 	}
 
 	const ISC_STATUS* getErrors() const
 	{
-		return errors.get();
+		return errors.value();
 	}
 
 	const ISC_STATUS* getWarnings() const
 	{
-		return warnings.get();
+		return warnings.value();
 	}
 
 	unsigned getState() const
 	{
-		return (errors.vector[1] ? IStatus::STATE_ERRORS : 0) |
-			   (warnings.vector[1] ? IStatus::STATE_WARNINGS  : 0);
+		return (errors.value()[1] ? IStatus::STATE_ERRORS : 0) |
+			   (warnings.value()[1] ? IStatus::STATE_WARNINGS  : 0);
 	}
 
 	IStatus* clone() const
@@ -94,54 +192,94 @@ public:
 	}
 
 public:
+	BaseStatus(MemoryPool& p)
+		: errors(p), warnings(p)
+	{
+		init();
+	}
+
 	BaseStatus()
-	{ }
+		: errors(*getDefaultMemoryPool()), warnings(*getDefaultMemoryPool())
+	{
+		init();
+	}
 
 	void check()
 	{
-		errors.check();
+		const ISC_STATUS* s = errors.value();
+		if (s[0] == isc_arg_gds && s[1] != isc_arg_end)
+			status_exception::raise(s);
+	}
+
+protected:
+	void clear()
+	{
+		errors.clear();
+		warnings.clear();
 	}
 
 private:
-	class ErrorVector
-	{
-	public:
-		ErrorVector()
-		{
-			init();
-		}
-
-		~ErrorVector() { }
-
-		void set(unsigned int length, const ISC_STATUS* value)
-		{
-			fb_utils::copyStatus(vector, FB_NELEM(vector), value, length);
-		}
-
-		const ISC_STATUS* get() const
-		{
-			return vector;
-		}
-
-		void init()
-		{
-			fb_utils::init_status(vector);
-		}
-
-		void check()
-		{
-			if (vector[1])
-				status_exception::raise(get());
-		}
-
-		ISC_STATUS vector[40];	// FixMe - may be a kind of dynamic storage will be better?
-	};
-
-	ErrorVector errors, warnings;
+	DynamicVector<11> errors;		// gds-code (2) + 3 args (6) + stack trace (2) + end (1)
+	DynamicVector<3> warnings;		// no warnings (empty vector)
 };
 
-class LocalStatus : public AutoIface<BaseStatus<LocalStatus> >
+
+// Hold status vector and raise error on request
+class StatusHolder : public BaseStatus<StatusHolder>
 {
+public:
+	StatusHolder()
+		: BaseStatus(*getDefaultMemoryPool()), m_raised(false)
+	{ }
+
+	ISC_STATUS save(IStatus* status);
+	void clear();
+	void raise();
+
+	ISC_STATUS getError()
+	{
+		return value()->getErrors()[1];
+	}
+
+	const IStatus* value()
+	{
+		if (m_raised)
+			clear();
+
+		return this;
+	}
+
+	bool isSuccess()
+	{
+		return getError() == 0;
+	}
+
+	const StatusHolder& operator=(const StatusHolder& val)
+	{
+		setErrors(val.getErrors());
+		setWarnings(val.getWarnings());
+		m_raised = val.m_raised;
+		return *this;
+	}
+
+public:
+	void dispose()
+	{
+	}
+
+private:
+	bool m_raised;
+};
+
+
+// Status interface to be used on stack when entering engine
+class LocalStatus : public BaseStatus<LocalStatus>
+{
+public:
+	LocalStatus()
+		: BaseStatus<LocalStatus>(AutoStorage::getAutoMemoryPool())
+	{ }
+
 public:
 	void dispose()
 	{
@@ -164,104 +302,6 @@ public:
 			status, interfaceName,currentVersion, expectedVersion);
 	}
 };
-
-
-// This trivial container is used when we need to grow vector element by element w/o any conversions
-typedef HalfStaticArray<ISC_STATUS, ISC_STATUS_LENGTH> SimpleStatusVector;
-
-
-// DynamicStatusVector owns strings, contained in it
-class DynamicStatusVector
-{
-public:
-	DynamicStatusVector()
-		: m_status_vector(*getDefaultMemoryPool())
-	{
-		ISC_STATUS* s = m_status_vector.getBuffer(ISC_STATUS_LENGTH);
-		fb_utils::init_status(s);
-	}
-
-	~DynamicStatusVector()
-	{
-		clear();
-	}
-
-	ISC_STATUS save(const ISC_STATUS* status);
-	ISC_STATUS save(const IStatus* status);
-	void clear();
-
-	ISC_STATUS getError() const
-	{
-		return value()[1];
-	}
-
-	const ISC_STATUS* value() const
-	{
-		return m_status_vector.begin();
-	}
-
-	bool isSuccess() const
-	{
-		return getError() == 0;
-	}
-
-	ISC_STATUS& operator[](unsigned int index)
-	{
-		return m_status_vector[index];
-	}
-
-private:
-	SimpleStatusVector m_status_vector;
-};
-
-
-class StatusHolder
-{
-public:
-	StatusHolder()
-		: m_raised(false)
-	{ }
-
-	ISC_STATUS save(IStatus* status);
-	void clear();
-	void raise();
-
-	ISC_STATUS getError()
-	{
-		return value()->getErrors()[1];
-	}
-
-	const IStatus* value()
-	{
-		if (m_raised) {
-			clear();
-		}
-
-		m_rc.init();
-		m_rc.setErrors(m_error.value());
-		m_rc.setWarnings(m_warning.value());
-		return &m_rc;
-	}
-
-	bool isSuccess()
-	{
-		return getError() == 0;
-	}
-
-	const StatusHolder& operator=(const StatusHolder& val)
-	{
-		m_error.save(val.m_error.value());
-		m_warning.save(val.m_warning.value());
-		m_raised = val.m_raised;
-		return *this;
-	}
-
-private:
-	DynamicStatusVector m_error, m_warning;
-	LocalStatus m_rc;
-	bool m_raised;
-};
-
 
 } // namespace Firebird
 

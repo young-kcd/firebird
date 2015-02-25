@@ -1132,12 +1132,13 @@ unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
 	return copied;
 }
 
-unsigned int mergeStatus(ISC_STATUS* to, unsigned int space,
+unsigned int mergeStatus(ISC_STATUS* const dest, unsigned int space,
 						 const Firebird::IStatus* from) throw()
 {
 	const ISC_STATUS* s;
 	unsigned int copied = 0;
 	int state = from->getState();
+	ISC_STATUS* to = dest;
 
 	if (state & Firebird::IStatus::STATE_ERRORS)
 	{
@@ -1162,7 +1163,9 @@ unsigned int mergeStatus(ISC_STATUS* to, unsigned int space,
 	}
 
 	if (!copied)
-		init_status(to);
+		init_status(dest);
+	else
+		Firebird::makePermanentVector(dest);
 
 	return copied;
 }

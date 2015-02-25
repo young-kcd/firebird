@@ -33,107 +33,14 @@
 
 namespace Firebird {
 
-ISC_STATUS DynamicStatusVector::save(const ISC_STATUS* status)
+ISC_STATUS DynamicStatusVector::merge(const IStatus* status)
 {
-	m_status_vector.clear();
-
-	const ISC_STATUS* from = status;
-
-	while (true)
-	{
-		const ISC_STATUS type = *from++;
-		m_status_vector.push(type == isc_arg_cstring ? isc_arg_string : type);
-		if (type == isc_arg_end)
-			break;
-
-		switch (type)
-		{
-		case isc_arg_cstring:
-			{
-				const size_t len = *from++;
-
-				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
-				const char *temp = reinterpret_cast<const char*>(*from++);
-				memcpy(string, temp, len);
-				string[len] = 0;
-
-				m_status_vector.push((ISC_STATUS)(IPTR) string);
-			}
-			break;
-
-		case isc_arg_string:
-		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			{
-				const char* temp = reinterpret_cast<const char*>(*from++);
-
-				const size_t len = strlen(temp);
-				char* string = FB_NEW(*getDefaultMemoryPool()) char[len + 1];
-				memcpy(string, temp, len + 1);
-
-				m_status_vector.push((ISC_STATUS)(IPTR) string);
-			}
-			break;
-
-		default:
-			m_status_vector.push(*from++);
-			break;
-		}
-	}
-
-	// Sanity check
-	if (m_status_vector.getCount() < 3)
-	{
-		fb_utils::init_status(m_status_vector.getBuffer(3));
-	}
-
-	return m_status_vector[1];
-}
-
-ISC_STATUS DynamicStatusVector::save(const IStatus* status)
-{
-	ISC_STATUS_ARRAY tmp;
-	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), status);
-	return save(tmp);
-}
-
-void DynamicStatusVector::clear()
-{
-	ISC_STATUS *ptr = m_status_vector.begin();
-
-	while (true)
-	{
-		const ISC_STATUS type = *ptr++;
-		if (type == isc_arg_end)
-			break;
-
-		switch (type)
-		{
-		case isc_arg_cstring:
-			ptr++;
-			delete[] reinterpret_cast<char*>(*ptr++);
-			fb_assert(false); // CVC: according to the new logic, this case cannot happen
-			break;
-
-		case isc_arg_string:
-		case isc_arg_interpreted:
-		case isc_arg_sql_state:
-			delete[] reinterpret_cast<char*>(*ptr++);
-			break;
-
-		default:
-			ptr++;
-			break;
-		}
-	}
-
-	// Sanity check
-	if (m_status_vector.getCount() < 3)
-	{
-		m_status_vector.getBuffer(3);
-	}
-
-	fb_utils::init_status(m_status_vector.begin());
+	SimpleStatusVector<> tmp;
+	unsigned length = fb_utils::statusLength(status->getErrors());
+	length += fb_utils::statusLength(status->getWarnings());
+	ISC_STATUS* s = tmp.getBuffer(length + 1);
+	fb_utils::mergeStatus(s, length + 1, status);
+	return save(s);
 }
 
 ISC_STATUS StatusHolder::save(IStatus* status)
@@ -144,15 +51,14 @@ ISC_STATUS StatusHolder::save(IStatus* status)
 		clear();
 	}
 
-	m_error.save(status->getErrors());
-	m_warning.save(status->getWarnings());
-	return m_error.value()[1];
+	setErrors(status->getErrors());
+	setWarnings(status->getWarnings());
+	return getErrors()[1];
 }
 
 void StatusHolder::clear()
 {
-	m_error.clear();
-	m_warning.clear();
+	BaseStatus<StatusHolder>::clear();
 	m_raised = false;
 }
 
@@ -160,10 +66,112 @@ void StatusHolder::raise()
 {
 	if (getError())
 	{
-		Arg::StatusVector tmp(m_error.value());
-		tmp << Arg::StatusVector(m_warning.value());
+		Arg::StatusVector tmp(getErrors());
+		tmp << Arg::StatusVector(getWarnings());
 		m_raised = true;
 		tmp.raise();
+	}
+}
+
+unsigned makeDynamicStrings(unsigned length, ISC_STATUS* const dst, const ISC_STATUS* const src)
+{
+	const ISC_STATUS* end = &src[length];
+
+	// allocate space for strings
+	size_t len = 0;
+	for (const ISC_STATUS* from = src; from < end; ++from)
+	{
+		const ISC_STATUS type = *from++;
+		if (from >= end || type == isc_arg_end)
+		{
+			end = from - 1;
+			break;
+		}
+
+		switch (type)
+		{
+		case isc_arg_cstring:
+			if (from + 1 >= end)
+			{
+				end = from - 1;
+				break;
+			}
+			len += *from++;
+			len++;
+			break;
+
+		case isc_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_sql_state:
+			len += strlen(reinterpret_cast<const char*>(*from));
+			len++;
+			break;
+		}
+	}
+
+	char* string = len ? FB_NEW(*getDefaultMemoryPool()) char[len] : NULL;
+	ISC_STATUS* to = dst;
+
+	// copy status vector saving strings in local buffer
+	for (const ISC_STATUS* from = src; from < end; ++from)
+	{
+		const ISC_STATUS type = *from++;
+		*to++ = type == isc_arg_cstring ? isc_arg_string : type;
+
+		switch (type)
+		{
+		case isc_arg_cstring:
+			fb_assert(string);
+			*to++ = (ISC_STATUS)(IPTR) string;
+			memcpy(string, reinterpret_cast<const char*>(from[1]), from[0]);
+			string += *from++;
+			*string++ = 0;
+			break;
+
+		case isc_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_sql_state:
+			fb_assert(string);
+			*to++ = (ISC_STATUS)(IPTR) string;
+			strcpy(string, reinterpret_cast<const char*>(*from));
+			string += strlen(string);
+			string++;
+			break;
+
+		default:
+			*to++ = *from;
+			break;
+		}
+	}
+
+	*to++ = isc_arg_end;
+	return (to - dst) - 1;
+}
+
+void freeDynamicStrings(unsigned length, ISC_STATUS* ptr)
+{
+	while (length--)
+	{
+		const ISC_STATUS type = *ptr++;
+		if (type == isc_arg_end)
+			return;
+
+		switch (type)
+		{
+		case isc_arg_cstring:
+			fb_assert(false); // CVC: according to the new logic, this case cannot happen
+			ptr++;
+
+		case isc_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_sql_state:
+			delete[] reinterpret_cast<char*>(*ptr++);
+			return;
+
+		default:
+			ptr++;
+			break;
+		}
 	}
 }
 

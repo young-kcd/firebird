@@ -4595,7 +4595,7 @@ ISC_STATUS rem_port::receive_after_start(P_DATA* data, PACKET* sendL, IStatus* s
 	if (!sendL->p_resp.p_resp_status_vector)
 		sendL->p_resp.p_resp_status_vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
 
-	sendL->p_resp.p_resp_status_vector->save(status_vector);
+	sendL->p_resp.p_resp_status_vector->merge(status_vector);
 
 	this->send_partial(sendL);
 
@@ -5058,7 +5058,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 	// Start by translating the status vector into "generic" form
 
-	Firebird::SimpleStatusVector new_vector;
+	Firebird::SimpleStatusVector<> new_vector;
 	const ISC_STATUS* old_vector = status_vector;
 	const ISC_STATUS exit_code = old_vector[1];
 

@@ -1117,11 +1117,9 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 		return vector->getErrors()[1];
 	}
 
-	// OK as long as we do not change vectors length
-	// for current way of keeping strings in vector!
-
-	ISC_STATUS* const vectorStart = const_cast<ISC_STATUS*>(vector->getErrors());
-	ISC_STATUS* status = vectorStart;
+	const ISC_STATUS* const vectorStart = vector->getErrors();
+	const ISC_STATUS* status = vectorStart;
+	SimpleStatusVector<> newVector;
 	Array<UCHAR*> buffers;
 
 	try
@@ -1131,6 +1129,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 		while (cont)
 		{
 			const ISC_STATUS type = *status++;
+			newVector.push(type);
 
 			switch (type)
 			{
@@ -1140,8 +1139,8 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 
 			case isc_arg_cstring:
 				{
-					FB_SIZE_T len = *status;
-					const UCHAR* str = reinterpret_cast<UCHAR*>(status[1]);
+					FB_SIZE_T len = *status++;
+					const UCHAR* str = reinterpret_cast<UCHAR*>(*status++);
 
 					try
 					{
@@ -1154,15 +1153,15 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 					catch (const Exception&)
 					{} // no-op
 
-					*status++ = (ISC_STATUS) len;
-					*status++ = (ISC_STATUS)(IPTR) str;
+					newVector.push(len);
+					newVector.push((ISC_STATUS)(IPTR) str);
 				}
 				break;
 
 			case isc_arg_string:
 			case isc_arg_interpreted:
 				{
-					const UCHAR* str = reinterpret_cast<UCHAR*>(*status);
+					const UCHAR* str = reinterpret_cast<UCHAR*>(*status++);
 					FB_SIZE_T len = fb_strlen((const char*) str);
 
 					try
@@ -1176,22 +1175,22 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 					catch (const Exception&)
 					{} // no-op
 
-					*status++ = (ISC_STATUS)(IPTR) str;
+					newVector.push((ISC_STATUS)(IPTR) str);
 				}
 				break;
 
 			default:
-				++status;
+				newVector.push(*status++);
 				break;
 			}
 		}
 	}
 	catch (...)
 	{
-		return ex.stuff_exception(vectorStart);
+		return ex.stuffException(vector);
 	}
 
-	makePermanentVector(vectorStart);
+	vector->setErrors2(newVector.getCount() - 1, newVector.begin());
 
 	for (Array<UCHAR*>::iterator i = buffers.begin(); i != buffers.end(); ++i)
 		delete [] *i;
