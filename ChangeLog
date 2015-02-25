@@ -1,3 +1,11 @@
+ 2015-02-24 12:58  alexpeshkoff 
+   M src/remote/remote.cpp
+Lost exception when initializing port with compression - thanks to Claudio
+
+ 2015-02-24 09:15  hvlad 
+   M src/jrd/jrd.cpp
+Simplest fix for bug CORE-4698 : typing "add -user SYSDBA -pw masterkey -admin yes" into gsec crashes firebird.exe
+
  2015-02-23 01:44  asfernandes 
    M src/include/firebird/FirebirdInterface.idl
 Change to make the generated C API work with latest cloop.
