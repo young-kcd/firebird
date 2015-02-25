@@ -1,3 +1,7 @@
+ 2015-02-24 08:56  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
  2015-02-19 14:38  dimitr 
    M src/jrd/tra.cpp
 1) Fixed CORE-4382: User savepoints are not released on commit.
