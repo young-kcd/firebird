@@ -1,3 +1,24 @@
+ 2015-02-25 20:35  dimitr 
+   M src/jrd/tra.cpp
+Let's be on the paranoid side when committing.
+
+ 2015-02-25 17:03  alexpeshkoff 
+   M src/common/StatusHolder.cpp
+   M src/common/StatusHolder.h
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/jrd/jrd.cpp
+   M src/remote/protocol.cpp
+   M src/remote/remote.cpp
+   M src/remote/server/server.cpp
+Dynamic buffer for status vector and dynamic strings in IStatus
+
+ 2015-02-25 14:24  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed memory leaks in events API
+
  2015-02-24 12:58  alexpeshkoff 
    M src/remote/remote.cpp
 Lost exception when initializing port with compression - thanks to Claudio
