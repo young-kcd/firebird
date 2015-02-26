@@ -2573,7 +2573,7 @@ ISC_STATUS GDS_DROP_DATABASE(ISC_STATUS* user_status, Attachment** handle)
 				bool err = drop_files(file);
 				for (; shadow; shadow = shadow->sdw_next)
 				{
-					err = err || drop_files(shadow->sdw_file);
+					err = drop_files(shadow->sdw_file) || err;
 				}
 
 				tdbb->setDatabase(NULL);
