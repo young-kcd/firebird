@@ -1,3 +1,7 @@
+ 2015-02-26 09:45  hvlad 
+   M src/jrd/jrd.cpp
+Backport fix from fb3. It fixes bug CORE-4700 : Mistake in GDS_DROP_DATABASE?
+
  2015-02-24 08:56  dimitr 
    M doc/WhatsNew
 Updated the docs.
