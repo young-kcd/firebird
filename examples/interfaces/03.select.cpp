@@ -130,7 +130,7 @@ int main()
 		unsigned char* buffer = new unsigned char[l];
 
 		// fetch records from cursor and print them
-		for (int line = 0; curs->fetchNext(&status, buffer) == IStatus::FB_OK; ++line)
+		for (int line = 0; curs->fetchNext(&status, buffer) == IStatus::RESULT_OK; ++line)
 		{
 			if (line % 10 == 0)
 			{

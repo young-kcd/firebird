@@ -126,7 +126,7 @@ int main()
 		unsigned char* buffer = new unsigned char[l];
 
 		// fetch records from cursor
-		while (curs->fetchNext(&status, buffer) == IStatus::FB_OK)
+		while (curs->fetchNext(&status, buffer) == IStatus::RESULT_OK)
 		{
 			for (unsigned j = 0; j < f; ++j)
 			{
@@ -227,7 +227,7 @@ void MyField::print(ThrowStatusWrapper* st, IAttachment* att, ITransaction* tra,
 			for (;;)
 			{
 				int cc = blob->getSegment(st, sizeof(segbuf), segbuf, &len);
-				if (cc != IStatus::FB_OK && cc != IStatus::FB_SEGMENT)
+				if (cc != IStatus::RESULT_OK && cc != IStatus::RESULT_SEGMENT)
 					break;
 				fwrite(segbuf, sizeof(char), len, stdout);
 			}
