@@ -42,26 +42,26 @@ class Vector
 public:
 	Vector() : count(0) {}
 
-	T& operator[](FB_SIZE_T index)
+	T& operator[](FB_SIZE_T index) throw()
 	{
   		fb_assert(index < count);
   		return data[index];
 	}
 
-	const T& operator[](FB_SIZE_T index) const
+	const T& operator[](FB_SIZE_T index) const throw()
 	{
   		fb_assert(index < count);
   		return data[index];
 	}
 
-	T* begin() { return data; }
-	T* end() { return data + count; }
-	const T* begin() const { return data; }
-	const T* end() const { return data + count; }
-	bool hasData() const { return (count != 0); }
+	T* begin() throw() { return data; }
+	T* end() throw() { return data + count; }
+	const T* begin() const throw() { return data; }
+	const T* end() const throw() { return data + count; }
+	bool hasData() const throw() { return (count != 0); }
 	FB_SIZE_T getCount() const throw() { return count; }
-	FB_SIZE_T getCapacity() const { return Capacity; }
-	void clear() { count = 0; }
+	FB_SIZE_T getCapacity() const throw() { return Capacity; }
+	void clear() throw() { count = 0; }
 
 	void insert(FB_SIZE_T index, const T& item)
 	{
@@ -78,20 +78,20 @@ public:
   		return ++count;
 	}
 
-	T* remove(FB_SIZE_T index)
+	T* remove(FB_SIZE_T index) throw()
 	{
   		fb_assert(index < count);
   		memmove(data + index, data + index + 1, sizeof(T) * (--count - index));
 		return &data[index];
 	}
 
-	void shrink(FB_SIZE_T newCount)
+	void shrink(FB_SIZE_T newCount) throw()
 	{
 		fb_assert(newCount <= count);
 		count = newCount;
 	}
 
-	void join(const Vector<T, Capacity>& L)
+	void join(const Vector<T, Capacity>& L) throw()
 	{
 		fb_assert(count + L.count <= Capacity);
 		memcpy(data + count, L.data, sizeof(T) * L.count);
@@ -99,7 +99,7 @@ public:
 	}
 
 	// prepare vector to be used as a buffer of capacity items
-	T* getBuffer(FB_SIZE_T capacityL)
+	T* getBuffer(FB_SIZE_T capacityL) throw()
 	{
 		fb_assert(capacityL <= Capacity);
 		count = capacityL;
