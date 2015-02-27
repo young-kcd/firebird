@@ -148,14 +148,12 @@ int main()
 		att->detach(&status);
 		att = NULL;
 	}
-	catch (const char* text)
+	catch (const FbException& error)
 	{
-		rc = 1;
-
+		// handle error
 		fflush(stdout);
-		fprintf(stderr, " %s:\n", text);
-		if (st)
-			isc_print_status(st->getErrors());
+		rc = 1;
+		isc_print_status(error.getStatus()->getErrors());
 	}
 
 	if (meta)
