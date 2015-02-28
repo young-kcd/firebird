@@ -1,3 +1,16 @@
+ 2015-02-27 16:01  alexpeshkoff 
+   M src/common/classes/vector.h
+Most of methods of vector never throw
+
+ 2015-02-27 15:59  alexpeshkoff 
+   M examples/interfaces/04.print_table.cpp
+Fixed error handlig in test
+
+ 2015-02-27 15:42  alexpeshkoff 
+   M examples/interfaces/03.select.cpp
+   M examples/interfaces/04.print_table.cpp
+misc
+
  2015-02-25 20:35  dimitr 
    M src/jrd/tra.cpp
 Let's be on the paranoid side when committing.
