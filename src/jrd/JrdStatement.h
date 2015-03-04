@@ -85,7 +85,6 @@ public:
 	Firebird::Array<UCHAR> blr;			// BLR for non-SQL query
 	MapFieldInfo mapFieldInfo;			// Map field name to field info
 	MapItemInfo mapItemInfo;			// Map item to item info
-	JRequest* interface;				// External interface to this JrdStatement
 };
 
 

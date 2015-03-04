@@ -189,35 +189,41 @@ namespace {
 
 using namespace Jrd;
 
-Service::SafeMutexLock::SafeMutexLock(Service* svc, const char* f)
-	: from(f)
+Service::Validate::Validate(Service* svc)
+	: sharedGuard(globalServicesMutex, FB_FUNCTION)
 {
-	MutexLockGuard guard(globalServicesMutex, FB_FUNCTION);
+	sharedGuard.enter();
 
-	if (! svc->locateInAllServices())
+	if (!svc->locateInAllServices())
 	{
 		// Service is so old that it's even missing in allServices array
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
 
 	// Appears we have correct service object, may use it later to lock mutex
-	jSvc = svc->jSvc;
+}
+
+Service::SafeMutexLock::SafeMutexLock(Service* svc, const char* f)
+	: Validate(svc),
+	  existenceMutex(svc->svc_existence),
+	  from(f)
+{
+	sharedGuard.leave();
 }
 
 bool Service::SafeMutexLock::lock()
 {
-	jSvc->mutex.enter(from);
-	return jSvc->svc;
+	existenceMutex->enter(from);
+	return existenceMutex->link;
 }
 
 Service::ExistenceGuard::ExistenceGuard(Service* svc, const char* from)
 	: SafeMutexLock(svc, from)
 {
-	bool lck = lock();
-	if (!lck)
+	if (!lock())
 	{
 		// could not lock service
-		jSvc->mutex.leave();
+		existenceMutex->leave();
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
 }
@@ -226,7 +232,7 @@ Service::ExistenceGuard::~ExistenceGuard()
 {
 	try
 	{
-		jSvc->mutex.leave();
+		existenceMutex->leave();
 	}
 	catch (const Exception&)
 	{
@@ -237,7 +243,7 @@ Service::ExistenceGuard::~ExistenceGuard()
 Service::UnlockGuard::UnlockGuard(Service* svc, const char* from)
 	: SafeMutexLock(svc, from), locked(false), doLock(false)
 {
-	jSvc->mutex.leave();
+	existenceMutex->leave();
 	doLock = true;
 }
 
@@ -744,6 +750,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
 	svc_remote_pid(0), svc_trace_manager(NULL), svc_crypt_callback(crypt_callback),
+	svc_existence(FB_NEW(*getDefaultMemoryPool()) SvcMutex(this)),
 	svc_stdin_size_requested(0), svc_stdin_buffer(NULL), svc_stdin_size_preload(0),
 	svc_stdin_preload_requested(0), svc_stdin_user_size(0)
 {
@@ -952,8 +959,8 @@ Service::~Service()
 	delete svc_trace_manager;
 	svc_trace_manager = NULL;
 
-	fb_assert(jSvc->mutex.locked());
-	jSvc->svc = NULL;
+	fb_assert(svc_existence->locked());
+	svc_existence->link = NULL;
 }
 
 
@@ -1985,7 +1992,7 @@ THREAD_ENTRY_DECLARE Service::run(THREAD_ENTRY_PARAM arg)
 	try
 	{
 		Service* svc = (Service*)arg;
-		RefPtr<JService> ref(svc->jSvc);
+		RefPtr<SvcMutex> ref(svc->svc_existence);
 		int exit_code = svc->svc_service_run->serv_thd(svc);
 
 		svc->started();

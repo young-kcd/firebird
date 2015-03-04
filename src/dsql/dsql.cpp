@@ -1502,8 +1502,7 @@ dsql_req::dsql_req(MemoryPool& pool)
 	  req_cursor_name(req_pool),
 	  req_cursor(NULL),
 	  req_user_descs(req_pool),
-	  req_traced(false),
-	  req_interface(NULL)
+	  req_traced(false)
 {
 }
 

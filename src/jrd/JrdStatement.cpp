@@ -60,8 +60,7 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 	  invariants(*p),
 	  blr(*p),
 	  mapFieldInfo(*p),
-	  mapItemInfo(*p),
-	  interface(NULL)
+	  mapItemInfo(*p)
 {
 	try
 	{

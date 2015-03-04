@@ -161,10 +161,13 @@ int JBlob::release()
 
 		freeEngineData(&statusWrapper);
 	}
-	if (!blob)
+	if (blob)
 	{
-		delete this;
+		// normal cleanup failed, take minimum precautions before deleting JBlob
+		blob->blb_interface = NULL;
+		blob = NULL;
 	}
+	delete this;
 
 	return 0;
 }
@@ -183,10 +186,15 @@ int JTransaction::release()
 
 		freeEngineData(&statusWrapper);
 	}
-	if (!transaction)
+
+	if (transaction)
 	{
-		delete this;
+		fb_assert(!(transaction->tra_flags & TRA_own_interface));
+		transaction->tra_flags |= TRA_own_interface;
+		addRef();
 	}
+	else
+		delete this;
 
 	return 0;
 }
@@ -203,10 +211,7 @@ int JStatement::release()
 
 		freeEngineData(&statusWrapper);
 	}
-	if (!statement)
-	{
-		delete this;
-	}
+	delete this;
 
 	return 0;
 }
@@ -223,10 +228,7 @@ int JRequest::release()
 
 		freeEngineData(&statusWrapper);
 	}
-	if (!rq)
-	{
-		delete this;
-	}
+	delete this;
 
 	return 0;
 }
@@ -243,10 +245,7 @@ int JEvents::release()
 
 		freeEngineData(&statusWrapper);
 	}
-	if (id < 0)
-	{
-		delete this;
-	}
+	delete this;
 
 	return 0;
 }
@@ -297,7 +296,7 @@ int JAttachment::release()
 		LocalStatus status;
 		CheckStatusWrapper statusWrapper(&status);
 
-		freeEngineData(&statusWrapper);
+		freeEngineData(&statusWrapper, true);
 	}
 	if (!att)
 	{
@@ -359,9 +358,7 @@ int JService::release()
 		LocalStatus status;
 		CheckStatusWrapper statusWrapper(&status);
 
-		++refCounter;
 		freeEngineData(&statusWrapper);
-		--refCounter;
 	}
 	if (!svc)
 	{
@@ -1019,7 +1016,7 @@ namespace {
 static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 
 static void			unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
-	Jrd::Attachment* attachment, Database* dbb);
+	Jrd::Attachment* attachment, Database* dbb, unsigned internalFlags);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*);
 static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&, bool newDb);
@@ -1038,6 +1035,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 // purge_attachment() flags
 static const unsigned PURGE_FORCE	= 0x01;
 static const unsigned PURGE_LINGER	= 0x02;
+static const unsigned PURGE_NOCHECK	= 0x04;
 
 TraceFailedConnection::TraceFailedConnection(const char* filename, const DatabaseOptions* options) :
 	m_filename(filename),
@@ -1365,6 +1363,12 @@ static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& opt
 
 JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const char* filename,
 	unsigned int dpb_length, const unsigned char* dpb)
+{
+	return internalAttach(user_status, filename, dpb_length, dpb, 0);
+}
+
+JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const char* filename,
+		unsigned int dpb_length, const unsigned char* dpb, unsigned int internal_flags)
 {
 /**************************************
  *
@@ -1922,7 +1926,7 @@ JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const ch
 					filename, options, false, user_status->getErrors());
 			}
 
-			unwindAttach(tdbb, ex, user_status, attachment, dbb);
+			unwindAttach(tdbb, ex, user_status, attachment, dbb, internal_flags);
 		}
 	}
 	catch (const Exception& ex)
@@ -2337,7 +2341,6 @@ JRequest* JAttachment::compileRequest(CheckStatusWrapper* user_status,
 	successful_completion(user_status);
 
 	JRequest* jr = new JRequest(stmt, getStable());
-	stmt->interface = jr;
 	jr->addRef();
 	return jr;
 }
@@ -2597,7 +2600,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 					OverwriteHolder overwriteCheckHolder(dbb);
 
-					JAttachment* attachment2 = attachDatabase(user_status, filename, dpb_length, dpb);
+					JAttachment* attachment2 = internalAttach(user_status, filename, dpb_length,
+						dpb, INTERNAL_ATT_OVERWRITE_CHECK);
 					if (user_status->getErrors()[1] == isc_adm_task_denied)
 					{
 						throw;
@@ -2774,7 +2778,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
 				filename, options, true, user_status->getErrors());
 
-			unwindAttach(tdbb, ex, user_status, attachment, dbb);
+			unwindAttach(tdbb, ex, user_status, attachment, dbb, 0);
 		}
 	}
 	catch (const Exception& ex)
@@ -2853,11 +2857,11 @@ void JAttachment::detach(CheckStatusWrapper* user_status)
  *
  **************************************/
 	RefDeb(DEB_RLS_JATT, "JAttachment::detach");
-	freeEngineData(user_status);
+	freeEngineData(user_status, false);
 }
 
 
-void JAttachment::freeEngineData(CheckStatusWrapper* user_status)
+void JAttachment::freeEngineData(CheckStatusWrapper* user_status, bool forceFree)
 {
 /**************************************
  *
@@ -2888,6 +2892,9 @@ void JAttachment::freeEngineData(CheckStatusWrapper* user_status)
 			{
 				flags |= PURGE_FORCE;
 			}
+
+			if (forceFree)
+				flags |= PURGE_NOCHECK;
 
 			attachment->signalShutdown();
 			purge_attachment(tdbb, getStable(), flags);
@@ -3763,7 +3770,6 @@ JService* JProvider::attachServiceManager(CheckStatusWrapper* user_status, const
 
 		Service* svc = new Service(service_name, spbLength, spb, cryptCallback);
 		jSvc = new JService(svc);
-		svc->jSvc = jSvc;
 		jSvc->addRef();
 	}
 	catch (const Exception& ex)
@@ -4931,7 +4937,6 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect,
 				&items, &buffer, false);
 			rc = new JStatement(statement, getStable(), buffer);
-			statement->req_interface = rc;
 			rc->addRef();
 
 			trace_warning(tdbb, user_status, "JStatement::prepare");
@@ -6516,7 +6521,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	RefMutexUnlock finiGuard;
 
 	{ // scope
-		fb_assert(!databases_mutex->locked());
+		fb_assert((flags & SHUT_DBB_OVERWRITE_CHECK) || (!databases_mutex->locked()));
 		MutexLockGuard listGuard1(databases_mutex, FB_FUNCTION);
 
 		Database** d_ptr;
@@ -6917,6 +6922,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 
 	Database* const dbb = attachment->att_database;
 	const bool forcedPurge = (flags & PURGE_FORCE);
+	const bool nocheckPurge = (flags & (PURGE_FORCE | PURGE_NOCHECK));
 
 	tdbb->tdbb_flags |= TDBB_detaching;
 
@@ -6972,7 +6978,7 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		}
 		catch (const Exception&)
 		{
-			if (!forcedPurge)
+			if (!nocheckPurge)
 			{
 				attachment->att_flags &= ~ATT_purge_started;
 				throw;
@@ -6988,12 +6994,12 @@ static void purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsign
 		if (!(dbb->dbb_flags & DBB_bugcheck))
 		{
 			// Check for any pending transactions
-			purge_transactions(tdbb, attachment, forcedPurge);
+			purge_transactions(tdbb, attachment, nocheckPurge);
 		}
 	}
 	catch (const Exception&)
 	{
-		if (!forcedPurge)
+		if (!nocheckPurge)
 		{
 			attachment->att_flags &= ~ATT_purge_started;
 			throw;
@@ -7236,7 +7242,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 }
 
 static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStatus,
-	Jrd::Attachment* attachment, Database* dbb)
+	Jrd::Attachment* attachment, Database* dbb, unsigned internalFlags)
 {
 	RefDeb(DEB_RLS_JATT, "unwindAttach");
 	RefDeb(DEB_AR_JATT, "unwindAttach");
@@ -7278,7 +7284,8 @@ static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStat
 				sAtt->release();
 			}
 
-			JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS);
+			JRD_shutdown_database(dbb, SHUT_DBB_RELEASE_POOLS |
+				(internalFlags & INTERNAL_ATT_OVERWRITE_CHECK ? SHUT_DBB_OVERWRITE_CHECK : 0));
 		}
 	}
 	catch (const Exception&)

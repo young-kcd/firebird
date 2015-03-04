@@ -79,7 +79,8 @@ void JRD_cancel_operation(Jrd::thread_db* tdbb, Jrd::Attachment* attachment, int
 
 bool JRD_shutdown_database(Jrd::Database* dbb, const unsigned flags = 0);
 // JRD_shutdown_database() flags
-static const unsigned SHUT_DBB_RELEASE_POOLS =	0x01;
-static const unsigned SHUT_DBB_LINGER =			0x02;
+static const unsigned SHUT_DBB_RELEASE_POOLS =		0x01;
+static const unsigned SHUT_DBB_LINGER =				0x02;
+static const unsigned SHUT_DBB_OVERWRITE_CHECK =	0x04;
 
 #endif /* JRD_JRD_PROTO_H */

@@ -580,8 +580,6 @@ public:
 	SINT64 req_fetch_rowcount;		// Total number of rows returned by this request
 	bool req_traced;				// request is traced via TraceAPI
 
-	JStatement* req_interface;
-
 protected:
 	// Request should never be destroyed using delete.
 	// It dies together with it's pool in release_request().

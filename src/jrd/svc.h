@@ -39,6 +39,7 @@
 #include "../jrd/EngineInterface.h"
 #include "../common/classes/Switches.h"
 #include "../common/classes/ClumpletReader.h"
+#include "../common/classes/RefMutex.h"
 #include "../burp/split/spit.h"
 
 // forward decl.
@@ -309,21 +310,38 @@ public:
 
 	Firebird::Semaphore	svc_detach_sem;
 
-	JService* jSvc;
+	class SvcMutex : public Firebird::RefMutex
+	{
+	public:
+		explicit SvcMutex(Service* svc)
+			: link(svc)
+		{ }
+
+		Service* link;
+	};
+
+	Firebird::RefPtr<SvcMutex> svc_existence;
 
 private:
 	StatusStringsHelper	svc_thread_strings;
 
 	Firebird::Semaphore svc_sem_empty, svc_sem_full;
 
-	class SafeMutexLock
+	class Validate
+	{
+	public:
+		explicit Validate(Service* svc);
+		Firebird::MutexEnsureUnlock sharedGuard;
+	};
+
+	class SafeMutexLock : private Validate
 	{
 	public:
 		SafeMutexLock(Service* svc, const char* f);
 		bool lock();
 
 	protected:
-		Firebird::RefPtr<JService> jSvc;
+		Firebird::RefPtr<SvcMutex> existenceMutex;
 		const char* from;
 	};
 
