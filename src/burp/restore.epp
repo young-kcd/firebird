@@ -2151,6 +2151,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 						if (tdgbl->RESTORE_format >= 10)
 						{
 							GET_TEXT(X.RDB$SECURITY_CLASS);
+							fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 							X.RDB$SECURITY_CLASS.NULL = FALSE;
 							securityClass = true;
 						}
@@ -2452,6 +2453,7 @@ bool get_collation(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 10)
 					{
 						GET_TEXT(X.RDB$SECURITY_CLASS);
+						fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 						X.RDB$SECURITY_CLASS.NULL = FALSE;
 						securityClass = true;
 					}
@@ -3306,6 +3308,7 @@ bool get_exception(BurpGlobals* tdgbl)
 						if (tdgbl->RESTORE_format >= 10)
 						{
 							GET_TEXT(X.RDB$SECURITY_CLASS);
+							fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 							X.RDB$SECURITY_CLASS.NULL = FALSE;
 							securityClass = true;
 						}
@@ -4305,6 +4308,7 @@ bool get_function(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 10)
 					{
 						GET_TEXT(X.RDB$SECURITY_CLASS);
+						fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 						X.RDB$SECURITY_CLASS.NULL = FALSE;
 						securityClass = true;
 					}
@@ -5482,6 +5486,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 					if (tdgbl->RESTORE_format >= 10)
 					{
 						GET_TEXT(X.RDB$SECURITY_CLASS);
+						fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 						X.RDB$SECURITY_CLASS.NULL = FALSE;
 						securityClass = true;
 					}
@@ -10209,6 +10214,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SI
 			if (secclass)
 			{
 				strcpy(X.RDB$SECURITY_CLASS, secclass);
+				fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
 				X.RDB$SECURITY_CLASS.NULL = FALSE;
 			}
 			if (ownername)
