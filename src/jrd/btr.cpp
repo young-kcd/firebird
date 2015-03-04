@@ -528,10 +528,12 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 
 	jrd_req* const org_request = tdbb->getRequest();
 	jrd_req* const expr_request = idx->idx_expression_statement->findRequest(tdbb);
+	fb_assert(expr_request != org_request);
 
 	fb_assert(expr_request->req_caller == NULL);
 	expr_request->req_caller = org_request;
 
+	expr_request->req_flags |= req_active;
 	TRA_attach_request(tdbb->getTransaction(), expr_request);
 	tdbb->setRequest(expr_request);
 
@@ -558,7 +560,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	}
 	catch (const Firebird::Exception&)
 	{
-		TRA_detach_request(expr_request);
+		EXE_unwind(tdbb, expr_request);
 		tdbb->setRequest(org_request);
 
 		expr_request->req_caller = NULL;
@@ -568,7 +570,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 		throw;
 	}
 
-	TRA_detach_request(expr_request);
+	EXE_unwind(tdbb, expr_request);
 	tdbb->setRequest(org_request);
 
 	expr_request->req_caller = NULL;

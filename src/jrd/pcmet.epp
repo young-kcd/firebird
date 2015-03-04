@@ -159,6 +159,9 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 
 	if (!relation)
 	{
+		if (new_pool)
+			attachment->deletePool(new_pool);
+
 		// Msg308: can't create index %s
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_idx_create_err) << Arg::Str(name));
@@ -169,14 +172,26 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 	SelectivityList selectivity(*tdbb->getDefaultPool());
 
 	jrd_tra* const current_transaction = tdbb->getTransaction();
+	jrd_req* const current_request = tdbb->getRequest();
 
-	fb_assert(id <= dbb->dbb_max_idx);
-	idx.idx_id = id;
-	IDX_create_index(tdbb, relation, &idx, name.c_str(), &id, transaction, selectivity);
+	try
+	{
+		fb_assert(id <= dbb->dbb_max_idx);
+		idx.idx_id = id;
+		IDX_create_index(tdbb, relation, &idx, name.c_str(), &id, transaction, selectivity);
+	
+		fb_assert(id == idx.idx_id);
+	}
+	catch (const Exception&)
+	{
+		tdbb->setTransaction(current_transaction);
+		tdbb->setRequest(current_request);
 
-	fb_assert(id == idx.idx_id);
+		throw;
+	}
 
 	tdbb->setTransaction(current_transaction);
+	tdbb->setRequest(current_request);
 
 	DFW_update_index(name.c_str(), idx.idx_id, selectivity, transaction);
 
