@@ -142,8 +142,8 @@ namespace Firebird
 
 		void leave()
 		{
-			m_mutex->leave();
 			m_locked--;
+			m_mutex->leave();
 		}
 
 	private:
