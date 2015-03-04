@@ -43,15 +43,15 @@
 		}	\
 	}	\
 	\
-	extern "C" FB_BOOLEAN* FB_UDR_PLUGIN_ENTRY_POINT(IStatus* status, FB_BOOLEAN* theirUnloadFlag,	\
-		IUdrPlugin* udrPlugin)	\
+	extern "C" FB_BOOLEAN* FB_UDR_PLUGIN_ENTRY_POINT(::Firebird::IStatus* status,	\
+		FB_BOOLEAN* theirUnloadFlag, ::Firebird::IUdrPlugin* udrPlugin)	\
 	{	\
 		::Firebird::Udr::FactoryRegistration::finish(status, udrPlugin);	\
 		\
 		class UnloadDetector	\
 		{	\
 		public:	\
-			UnloadDetector(FB_BOOLEAN* aTheirUnloadFlag, IUdrPlugin* aUdrPlugin)	\
+			UnloadDetector(FB_BOOLEAN* aTheirUnloadFlag, ::Firebird::IUdrPlugin* aUdrPlugin)	\
 				: myUnloadFlag(FB_FALSE),	\
 				  theirUnloadFlag(aTheirUnloadFlag),	\
 				  udrPlugin(aUdrPlugin)	\
@@ -66,7 +66,7 @@
 		\
 			FB_BOOLEAN myUnloadFlag;	\
 			FB_BOOLEAN* theirUnloadFlag;	\
-			IUdrPlugin* udrPlugin;	\
+			::Firebird::IUdrPlugin* udrPlugin;	\
 		};	\
 		\
 		static UnloadDetector unloadDetector(theirUnloadFlag, udrPlugin);	\
