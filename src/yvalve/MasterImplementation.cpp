@@ -414,19 +414,25 @@ private:
 
 	ThreadBuffer* getThreadBuffer(ThreadId thr)
 	{
-		Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
+		{ // scope
+			Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
 
-		FB_SIZE_T p = position(thr);
-		if (p < processBuffer.getCount())
-		{
-			return processBuffer[p];
+			FB_SIZE_T p = position(thr);
+			if (p < processBuffer.getCount())
+			{
+				return processBuffer[p];
+			}
 		}
 
 		ThreadCleanup::add(cleanupAllStrings, this);
 
-		ThreadBuffer* b = new ThreadBuffer(thr);
-		processBuffer.add(b);
-		return b;
+		{ // scope
+			Firebird::MutexLockGuard guard(mutex, FB_FUNCTION);
+
+			ThreadBuffer* b = new ThreadBuffer(thr);
+			processBuffer.add(b);
+			return b;
+		}
 	}
 
 	void cleanup()
