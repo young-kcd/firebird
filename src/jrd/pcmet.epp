@@ -181,6 +181,9 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 
 	if (!relation)
 	{
+		if (new_pool)
+			dbb->deletePool(new_pool);
+
 		// Msg308: can't create index %s
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_idx_create_err) << Arg::Str(name));
@@ -192,16 +195,24 @@ void PCMET_expression_index(thread_db* tdbb, const string& name, USHORT id, jrd_
 
 	current_request = tdbb->getRequest();
 	current_transaction = tdbb->getTransaction();
-	TRA_attach_request(transaction, idx.idx_expression_request);
-	tdbb->setRequest(idx.idx_expression_request);
 
-	fb_assert(id <= dbb->dbb_max_idx);
-	idx.idx_id = id;
-	IDX_create_index(tdbb, relation, &idx, name.c_str(), &id, transaction, selectivity);
+	try
+	{
+		fb_assert(id <= dbb->dbb_max_idx);
+		idx.idx_id = id;
+		IDX_create_index(tdbb, relation, &idx, name.c_str(), &id, transaction, selectivity);
 
-	fb_assert(id == idx.idx_id);
+		fb_assert(id == idx.idx_id);
+	}
+	catch(const Exception&)
+	{
+		tdbb->setRequest(current_request);
+		tdbb->setTransaction(current_transaction);
+		dbb->deletePool(new_pool);
 
-	TRA_detach_request(idx.idx_expression_request);
+		throw;
+	}
+
 	tdbb->setRequest(current_request);
 	tdbb->setTransaction(current_transaction);
 

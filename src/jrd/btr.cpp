@@ -583,6 +583,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 
 	if (!already_attached)
 	{
+		expr_request->req_flags |= req_active;
 		TRA_attach_request(tdbb->getTransaction(), expr_request);
 		tdbb->setRequest(expr_request);
 	}
@@ -612,7 +613,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 	{
 		if (!already_attached)
 		{
-			TRA_detach_request(expr_request);
+			EXE_unwind(tdbb, expr_request);
 			tdbb->setRequest(org_request);
 		}
 
@@ -625,7 +626,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 
 	if (!already_attached)
 	{
-		TRA_detach_request(expr_request);
+		EXE_unwind(tdbb, expr_request);
 		tdbb->setRequest(org_request);
 	}
 
