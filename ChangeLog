@@ -1,3 +1,41 @@
+ 2015-03-04 19:29  egorpugin 
+   M CMakeLists.txt
+[build][cmake] Add compiler switch '/MT(d)' for MSVC. Use '-DMSVC_STATIC_RUNTIME=1' parameter during cmake call to turn on static runtime linking.
+
+ 2015-03-04 17:58  dimitr 
+   M src/burp/restore.epp
+Fixed CORE-4704: Generator/exception permissions get corrupted after backup/restore.
+
+ 2015-03-04 16:18  alexpeshkoff 
+   M src/dsql/dsql.cpp
+   M src/dsql/dsql.h
+   M src/jrd/EngineInterface.h
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/JrdStatement.h
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+Full fix for CORE-4698, also fixed some more or less related leaks, segfaults and assertions
+
+ 2015-03-04 16:01  alexpeshkoff 
+   M src/common/classes/RefMutex.h
+Perform non-atomic counter operations under locked mutex
+
+ 2015-03-04 15:21  asfernandes 
+   M src/include/firebird/UdrCppEngine.h
+Correction.
+
+ 2015-03-04 10:49  hvlad 
+   M src/yvalve/MasterImplementation.cpp
+Fixed rare deadlock (take cleanupMutex before StringsBuffer::mutex)
+
+ 2015-03-04 10:37  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/pcmet.epp
+Additional patch for CORE-4671 : Release internal temporary blobs early to free some memory\disk space
+The patch fixed AV when expression indices with blob-based expression is built (see CORE-952, for example)
+
  2015-02-27 16:01  alexpeshkoff 
    M src/common/classes/vector.h
 Most of methods of vector never throw
