@@ -1,3 +1,11 @@
+ 2015-03-04 09:30  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/pcmet.epp
+Additional patch for CORE-4671 : Release internal temporary blobs early to free some memory\disk space
+The patch dedicated to expression indices with blob-based expression (see CORE-952, for example):
+a) fixed AV when such index is built
+b) makes such index creation a bit faster and use less memory
+
  2015-02-26 09:45  hvlad 
    M src/jrd/jrd.cpp
 Backport fix from fb3. It fixes bug CORE-4700 : Mistake in GDS_DROP_DATABASE?
