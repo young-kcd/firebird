@@ -28,7 +28,6 @@
 // Definition of block types for data allocation in JRD
 #include "../include/fb_blk.h"
 
-#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/Database.h"

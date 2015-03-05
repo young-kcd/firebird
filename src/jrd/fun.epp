@@ -39,7 +39,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/exe.h"
-#include "../jrd/ibase.h"
 #include "../jrd/req.h"
 #include "../jrd/lls.h"
 #include "../jrd/blb.h"

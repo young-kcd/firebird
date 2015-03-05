@@ -71,7 +71,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/os/pio.h"
 #include "../common/os/path_utils.h"
-#include "../jrd/ibase.h"
 #include "../common/gdsassert.h"
 #include "../jrd/lck.h"
 #include "../jrd/sdw.h"

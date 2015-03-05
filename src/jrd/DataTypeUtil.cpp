@@ -30,7 +30,6 @@
 #include "../jrd/align.h"
 #include "../common/cvt.h"
 #include "../common/dsc.h"
-#include "../jrd/ibase.h"
 #include "../jrd/intl.h"
 #include "../common/dsc_proto.h"
 #include "../jrd/intl_proto.h"

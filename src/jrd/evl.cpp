@@ -63,7 +63,6 @@
 #include "firebird.h"
 #include <string.h>
 #include <math.h>
-#include "../jrd/ibase.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"

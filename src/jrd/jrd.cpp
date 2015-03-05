@@ -48,7 +48,6 @@
 #endif
 #include <errno.h>
 
-#include "../jrd/ibase.h"
 #include "../jrd/EngineInterface.h"
 #include "../jrd/jrd.h"
 #include "../jrd/irq.h"

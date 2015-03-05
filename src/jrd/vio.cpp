@@ -53,7 +53,6 @@
 #include "../jrd/lls.h"
 #include "../jrd/scl.h"
 #include "../jrd/sqz.h"
-#include "../jrd/ibase.h"
 #include "../jrd/flags.h"
 #include "../jrd/ods.h"
 #include "../jrd/os/pio.h"

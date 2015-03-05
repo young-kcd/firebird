@@ -25,7 +25,6 @@
 #define JRD_INTL_H
 
 #include "../common/dsc.h"
-#include "../jrd/ibase.h"
 #include "../intl/charsets.h"
 
 #define ASCII_SPACE     32		// ASCII code for space

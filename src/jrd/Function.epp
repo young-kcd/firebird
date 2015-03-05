@@ -20,7 +20,6 @@
 #include "firebird.h"
 #include "../common/gdsassert.h"
 #include "../jrd/flags.h"
-#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"

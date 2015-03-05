@@ -42,7 +42,6 @@
 #include "firebird.h"
 #include <string.h>
 #include <stdlib.h>				// abort
-#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
 #include "../jrd/val.h"

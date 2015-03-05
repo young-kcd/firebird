@@ -40,7 +40,6 @@
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/req.h"
-#include "../jrd/ibase.h"
 #include "../jrd/sqz.h"
 #include "../jrd/irq.h"
 #include "../jrd/blb.h"

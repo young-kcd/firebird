@@ -24,7 +24,6 @@
 #include "firebird.h"
 #include "../jrd/jrd.h"
 #include "../jrd/scl.h"
-#include "../jrd/ibase.h"
 #include "../jrd/nbak.h"
 #include "../jrd/ods.h"
 #include "../jrd/cch_proto.h"

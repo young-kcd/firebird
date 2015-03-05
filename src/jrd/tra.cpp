@@ -32,7 +32,6 @@
 #include "../jrd/ods.h"
 #include "../jrd/pag.h"
 #include "../jrd/lck.h"
-#include "../jrd/ibase.h"
 #include "../jrd/lls.h"
 #include "../jrd/btr.h"
 #include "../jrd/req.h"

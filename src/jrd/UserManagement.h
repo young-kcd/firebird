@@ -26,7 +26,6 @@
 #include "firebird.h"
 #include "../common/classes/objects_array.h"
 #include "../common/classes/fb_string.h"
-#include "../jrd/ibase.h"
 #include "../jrd/Monitoring.h"
 #include "../jrd/recsrc/RecordSource.h"
 #include "firebird/Interface.h"

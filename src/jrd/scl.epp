@@ -30,7 +30,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/ods.h"
 #include "../jrd/scl.h"

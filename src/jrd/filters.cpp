@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"
-#include "../jrd/ibase.h"
 #include "../jrd/acl.h"
 #include "../jrd/val.h"
 #include "../jrd/met.h"

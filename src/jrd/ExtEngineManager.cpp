@@ -33,7 +33,6 @@
 #include "../jrd/req.h"
 #include "../jrd/status.h"
 #include "../jrd/tra.h"
-#include "../jrd/ibase.h"
 #include "../dsql/StmtNodes.h"
 #include "../common/os/path_utils.h"
 #include "../jrd/cmp_proto.h"

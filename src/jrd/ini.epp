@@ -27,7 +27,6 @@
 #include "../jrd/flags.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
-#include "../jrd/ibase.h"
 #include "../jrd/ods.h"
 #include "../jrd/btr.h"
 #include "gen/ids.h"

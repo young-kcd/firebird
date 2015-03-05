@@ -28,7 +28,6 @@
 #include "consts_pub.h"
 #include "fb_exception.h"
 #include "iberror.h"
-#include "../../jrd/ibase.h"
 #include "../../common/classes/fb_string.h"
 #include "../../common/classes/timestamp.h"
 #include "../../common/config/config.h"

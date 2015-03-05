@@ -38,7 +38,6 @@
 #include "firebird.h"
 #include "memory_routines.h"
 #include <string.h>
-#include "../jrd/ibase.h"
 
 #include "../jrd/jrd.h"
 #include "../jrd/tra.h"

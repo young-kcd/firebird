@@ -28,7 +28,6 @@
 
 #include "../common/config/config.h"
 #include "../jrd/jrd.h"
-#include "../jrd/ibase.h"
 #include "../jrd/blob_filter.h"
 #include "../jrd/tra.h"
 #include "../common/gdsassert.h"

@@ -42,7 +42,6 @@
 #include "../intl_proto.h"
 #include "../mov_proto.h"
 
-#include "../jrd/ibase.h"
 
 using namespace Jrd;
 using namespace Firebird;

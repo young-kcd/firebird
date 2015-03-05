@@ -40,7 +40,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "../jrd/jrd.h"
-#include "../jrd/ibase.h"
 #include "../jrd/ini.h"
 #include "../jrd/val.h"
 #include "../jrd/align.h"

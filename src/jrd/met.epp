@@ -42,7 +42,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "../jrd/ibase.h"
 #include "../jrd/jrd.h"
 #include "../jrd/val.h"
 #include "../jrd/irq.h"

@@ -34,7 +34,6 @@
 #include "../jrd/scl.h"
 #include "../jrd/drq.h"
 #include "../jrd/flags.h"
-#include "../jrd/ibase.h"
 #include "../jrd/lls.h"
 #include "../jrd/met.h"
 #include "../jrd/btr.h"
