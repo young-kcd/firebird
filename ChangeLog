@@ -1,3 +1,40 @@
+ 2015-03-05 16:18  alexpeshkoff 
+   M src/jrd/DataTypeUtil.cpp
+   M src/jrd/Database.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/Function.epp
+   M src/jrd/UserManagement.h
+   M src/jrd/blb.cpp
+   M src/jrd/blob_filter.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/cvt2.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/dpm.epp
+   M src/jrd/dyn_util.epp
+   M src/jrd/evl.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/jrd/filters.cpp
+   M src/jrd/fun.epp
+   M src/jrd/grant.epp
+   M src/jrd/inf.cpp
+   M src/jrd/ini.epp
+   M src/jrd/intl.h
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/opt.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/par.cpp
+   M src/jrd/pcmet.epp
+   M src/jrd/scl.epp
+   M src/jrd/shut.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceService.cpp
+   M src/jrd/vio.cpp
+cleanup
+
  2015-03-04 19:29  egorpugin 
    M CMakeLists.txt
 [build][cmake] Add compiler switch '/MT(d)' for MSVC. Use '-DMSVC_STATIC_RUNTIME=1' parameter during cmake call to turn on static runtime linking.
