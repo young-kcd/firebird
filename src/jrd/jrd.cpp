@@ -6483,6 +6483,9 @@ static void rollback(thread_db* tdbb, jrd_tra* transaction, const bool retaining
 
 static void setEngineReleaseDelay(Database* dbb)
 {
+	if (!dbb->dbb_plugin_config)
+		return;
+
 	unsigned maxLinger = 0;
 
 	{ // scope
