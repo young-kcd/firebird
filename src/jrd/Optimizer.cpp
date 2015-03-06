@@ -2615,9 +2615,17 @@ bool OptimizerInnerJoin::cheaperRelationship(IndexRelationship* checkRelationshi
 	const double compareValue = checkRelationship->cost / withRelationship->cost;
 	if (compareValue >= 0.98 && compareValue <= 1.02)
 	{
-		// cost is nearly the same, now check on cardinality
-		if (checkRelationship->cardinality < withRelationship->cardinality)
+		// cost is nearly the same, now check uniqueness and cardinality
+
+		if (checkRelationship->unique == withRelationship->unique)
+		{
+			if (checkRelationship->cardinality < withRelationship->cardinality)
+				return true;
+		}
+		else if (checkRelationship->unique)
 			return true;
+		else if (withRelationship->unique)
+			return false;
 	}
 	else if (checkRelationship->cost < withRelationship->cost)
 		return true;
@@ -2932,7 +2940,8 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		indexRelationship->stream = testStream->stream;
 		indexRelationship->unique = candidate->unique;
 		indexRelationship->cost = candidate->cost;
-		indexRelationship->cardinality = csb_tail->csb_cardinality * candidate->selectivity;
+		indexRelationship->cardinality = candidate->unique ?
+			csb_tail->csb_cardinality : csb_tail->csb_cardinality * candidate->selectivity;
 
 		// indexRelationship are kept sorted on cost and unique in the indexRelations array.
 		// The unique and cheapest indexed relatioships are on the first position.
