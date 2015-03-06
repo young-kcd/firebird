@@ -240,10 +240,10 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 	// We assume that the average index-key can be compressed by a factor 0.5
 	// In the future the average key-length should be stored and retrieved
 	// from a system table (RDB$INDICES for example).
-	// Multipling the selectivity with this cardinality gives the estimated
+	// Multiplying the selectivity with this cardinality gives the estimated
 	// number of index pages that are read for the index retrieval.
 	double factor = 0.5;
-	if (segments.getCount() >= 2)
+	if (segments.getCount() > 1)
 	{
 		// Compound indexes are generally less compressed.
 		factor = 0.7;
@@ -986,7 +986,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 				invCandidate->unique = unique;
 				invCandidate->selectivity = selectivity;
 				// Calculate the cost (only index pages) for this index.
-				invCandidate->cost = DEFAULT_INDEX_COST - 1 + scratch.selectivity * scratch.cardinality;
+				invCandidate->cost = DEFAULT_INDEX_COST + scratch.selectivity * scratch.cardinality;
 				invCandidate->nonFullMatchedSegments = scratch.nonFullMatchedSegments;
 				invCandidate->matchedSegments = MAX(scratch.lowerCount, scratch.upperCount);
 				invCandidate->indexes = 1;
@@ -1589,7 +1589,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 			invCandidate = FB_NEW(pool) InversionCandidate(pool);
 
 		invCandidate->selectivity *= navigationCandidate->selectivity;
-		invCandidate->cost += DEFAULT_INDEX_COST - 1 +
+		invCandidate->cost += DEFAULT_INDEX_COST +
 			navigationCandidate->cardinality * navigationCandidate->selectivity;
 		++invCandidate->indexes;
 		invCandidate->navigated = true;
