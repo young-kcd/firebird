@@ -1,3 +1,20 @@
+ 2015-03-06 20:43  dimitr 
+   M src/jrd/jrd.cpp
+Fixed a possible reason for CORE-4705. Alex, please review.
+
+ 2015-03-06 14:04  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed inconsistency between unique vs non-unique retrievals (see CORE-4702).
+
+ 2015-03-06 10:24  dimitr 
+   M src/jrd/Optimizer.cpp
+Minor adjustments to the join order selection.
+
+ 2015-03-06 09:02  paulbeach 
+   M builds/install/arch-specific/darwin/install-script
+   A builds/install/arch-specific/darwin/launchdss.org.firebird.gds.plist
+StartupItems is now deprecated on Yosemite (10.10), use launchctl for SuperServer as well as Classic
+
  2015-03-05 16:18  alexpeshkoff 
    M src/jrd/DataTypeUtil.cpp
    M src/jrd/Database.cpp
