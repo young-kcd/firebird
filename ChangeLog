@@ -1,3 +1,13 @@
+ 2015-03-06 10:20  dimitr 
+   M src/jrd/Optimizer.cpp
+Minor adjustments to the join order selection.
+
+ 2015-03-06 08:55  paulbeach 
+   M builds/install/arch-specific/darwin/install-script
+   A builds/install/arch-specific/darwin/launchdss.org.firebird.gds.plist
+   M builds/posix/postfix.darwin
+StartupItems is now deprecated on Yosemite (10.10), use launchctl for SuperServer as well as Classic
+
  2015-03-04 09:30  hvlad 
    M src/jrd/btr.cpp
    M src/jrd/pcmet.epp
