@@ -220,7 +220,7 @@ if (NOT LINUX AND (CLANG OR IOS))
     set(LIB_iconv iconv)
 endif()
 
-if (FREEBSD)
+if (FREEBSD OR APPLE)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
 endif()
