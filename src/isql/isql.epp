@@ -7204,7 +7204,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			blobid = var->value.blobid;
 			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid->gds_quad_high,
 					blobid->gds_quad_low);
-			sprintf(p, "%17s ", blobbuf);
+			sprintf(p, "%*s ", MAX(17, length), blobbuf);
 			break;
 
 		case SQL_BLOB:
@@ -7214,7 +7214,7 @@ static unsigned print_item(TEXT** s, const IsqlVar* var, const unsigned length)
 			blobid = var->value.blobid;
 			sprintf(blobbuf, "%"xLONGFORMAT":%"xLONGFORMAT, blobid->gds_quad_high,
 					blobid->gds_quad_low);
-			sprintf(p, "%17s ", blobbuf);
+			sprintf(p, "%*s ", MAX(17, length), blobbuf);
 			if (setValues.List)
 			{
 				isqlGlob.printf("%s%s", blobbuf, NEWLINE);
