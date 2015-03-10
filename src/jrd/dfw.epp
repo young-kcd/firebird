@@ -3566,25 +3566,7 @@ struct TableLock
 	Lock* lock;
 	static const MetaName& generate(const TableLock& item) { return item.relation->rel_name; }
 };
-/*
-class LockedTables
-	: public SortedArray<TableLock, EmptyStorage<TableLock>, MetaName, TableLock>
-{
-public:
-	void unlock(thread_db* tdbb, jrd_tra* transaction)
-	{
-		for (TableLock* lock = begin(); lock != end(); ++lock)
-		{
-			if (lock->lock)
-			{
-				DEBUG_REBUILD_INTL(fprintf(stderr, "Release lock for table %s\n", lock->relation->rel_name.c_str()));
-				release_protect_lock(tdbb, transaction, lock->lock);
-				lock->lock = NULL;
-			}
-		}
-	}
-};
- */
+
 }
 
 
@@ -3632,7 +3614,7 @@ void DFW_reset_icu(thread_db* tdbb)
 			" and coalesce(ind.RDB$INDEX_INACTIVE, 0) = 0 "
 			"group by ind.RDB$INDEX_NAME, ind.RDB$RELATION_NAME, coll.RDB$BASE_COLLATION_NAME, "
 			" coll.RDB$COLLATION_NAME, cs.RDB$CHARACTER_SET_NAME, coll.RDB$SPECIFIC_ATTRIBUTES";
-		Array<Firebird::MetaName> indices;
+		SortedArray<Firebird::MetaName> indices;
 		{	// scope
 			AutoPreparedStatement ps(attachment->prepareStatement(tdbb, transaction, indSql));
 			AutoResultSet rs(ps->executeQuery(tdbb, transaction));
@@ -3651,8 +3633,11 @@ void DFW_reset_icu(thread_db* tdbb)
 				if (newSpecificAttributes == specificAttributes)
 					continue;
 
-				indices.add(rs->getMetaName(tdbb, 1));
-				MetaName t(rs->getMetaName(tdbb, 2));
+				MetaName t(rs->getMetaName(tdbb, 1));
+				if (!indices.exist(t))
+					indices.add(rs->getMetaName(tdbb, 1));
+
+				t = rs->getMetaName(tdbb, 2);
 				if (!tables.exist(t))
 				{
 					TableLock lock;
@@ -3716,15 +3701,6 @@ void DFW_reset_icu(thread_db* tdbb)
 	}
 	catch (const Firebird::Exception&)
 	{
-		/***
-		// Set database to single shutdown mode
-		Database* dbb = tdbb->getDatabase();
-		const SSHORT oldMode =
-			dbb->dbb_ast_flags & (DBB_shutdown_full | DBB_shutdown_single) ? isc_dpb_shut_single :
-			dbb->dbb_ast_flags & DBB_shutdown ?	isc_dpb_shut_multi : isc_dpb_shut_normal;
-		if (oldMode != isc_dpb_shut_single)
-			SHUT_database(tdbb, isc_dpb_shut_single, 0, NULL);
-		***/
 		if (transaction)
 		{
 			TRA_rollback(tdbb, transaction, false, true);
