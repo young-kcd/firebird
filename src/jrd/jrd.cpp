@@ -1014,7 +1014,7 @@ namespace {
 }
 static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
 
-static void			unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
+static void		unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
 	Jrd::Attachment* attachment, Database* dbb, unsigned internalFlags);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*);
@@ -1028,6 +1028,7 @@ static void		strip_quotes(string&);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*,
 	const RefPtr<Config>*, bool, ICryptKeyCallback*);
+static void		makeRoleName(Database*, string&, DatabaseOptions&);
 
 static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM);
 
@@ -1088,6 +1089,44 @@ static void successful_completion(CheckStatusWrapper* s, ISC_STATUS acceptCode =
 	{
 		s->init();
 	}
+}
+
+
+static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& options)
+{
+	if (userIdRole.isEmpty())
+		return;
+
+	switch (options.dpb_sql_dialect)
+	{
+	case 0:
+		// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
+		// It means that client SQL dialect was not set by user
+		// and takes DB SQL dialect as client SQL dialect
+		if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
+		{
+			// DB created in IB V6.0 by client SQL dialect 3
+			options.dpb_sql_dialect = SQL_DIALECT_V6;
+		}
+		else
+		{
+			// old DB was gbaked in IB V6.0
+			options.dpb_sql_dialect = SQL_DIALECT_V5;
+		}
+		break;
+
+	case 99:
+		// V5 Client --> V6 Server, old client has no concept of dialect
+		options.dpb_sql_dialect = SQL_DIALECT_V5;
+		break;
+
+	default:
+		// V6 Client --> V6 Server, but client SQL dialect was set
+		// by user and was passed.
+		break;
+	}
+
+	JRD_make_role_name(userIdRole, options.dpb_sql_dialect);
 }
 
 
@@ -1257,68 +1296,11 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 }
 
 
-namespace Jrd {
-
-JTransaction* JAttachment::getTransactionInterface(CheckStatusWrapper* status, ITransaction* tra)
+void JRD_make_role_name(string& userIdRole, const int dialect)
 {
-	if (!tra)
-		Arg::Gds(isc_bad_trans_handle).raise();
-
-	status->init();
-
-	// If validation is successfull, this means that this attachment and valid transaction
-	// use same provider. I.e. the following cast is safe.
-	JTransaction* jt = static_cast<JTransaction*>(tra->validate(status, this));
-	if (status->getState() & IStatus::STATE_ERRORS)
-		status_exception::raise(status);
-	if (!jt)
-		Arg::Gds(isc_bad_trans_handle).raise();
-
-	return jt;
-}
-
-jrd_tra* JAttachment::getEngineTransaction(CheckStatusWrapper* status, ITransaction* tra)
-{
-	return getTransactionInterface(status, tra)->getHandle();
-}
-
-static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& options)
-{
-	if (userIdRole.isEmpty())
-		return;
-
-	switch (options.dpb_sql_dialect)
-	{
-	case 0:
-		// V6 Client --> V6 Server, dummy client SQL dialect 0 was passed
-		// It means that client SQL dialect was not set by user
-		// and takes DB SQL dialect as client SQL dialect
-		if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
-		{
-			// DB created in IB V6.0 by client SQL dialect 3
-			options.dpb_sql_dialect = SQL_DIALECT_V6;
-		}
-		else
-		{
-			// old DB was gbaked in IB V6.0
-			options.dpb_sql_dialect = SQL_DIALECT_V5;
-		}
-		break;
-
-	case 99:
-		// V5 Client --> V6 Server, old client has no concept of dialect
-		options.dpb_sql_dialect = SQL_DIALECT_V5;
-		break;
-
-	default:
-		// V6 Client --> V6 Server, but client SQL dialect was set
-		// by user and was passed.
-		break;
-	}
-
 	CharSet* utf8CharSet = IntlUtil::getUtf8CharSet();
 
-	switch (options.dpb_sql_dialect)
+	switch (dialect)
 	{
 	case SQL_DIALECT_V5:
 		strip_quotes(userIdRole);
@@ -1358,6 +1340,32 @@ static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& opt
 	default:
 		break;
 	}
+}
+
+
+namespace Jrd {
+
+JTransaction* JAttachment::getTransactionInterface(CheckStatusWrapper* status, ITransaction* tra)
+{
+	if (!tra)
+		Arg::Gds(isc_bad_trans_handle).raise();
+
+	status->init();
+
+	// If validation is successfull, this means that this attachment and valid transaction
+	// use same provider. I.e. the following cast is safe.
+	JTransaction* jt = static_cast<JTransaction*>(tra->validate(status, this));
+	if (status->getState() & IStatus::STATE_ERRORS)
+		status_exception::raise(status);
+	if (!jt)
+		Arg::Gds(isc_bad_trans_handle).raise();
+
+	return jt;
+}
+
+jrd_tra* JAttachment::getEngineTransaction(CheckStatusWrapper* status, ITransaction* tra)
+{
+	return getTransactionInterface(status, tra)->getHandle();
 }
 
 JAttachment* JProvider::attachDatabase(CheckStatusWrapper* user_status, const char* filename,

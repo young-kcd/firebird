@@ -114,7 +114,31 @@ bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
 	string role(sqlRole);
 	if (role.hasData())
 	{
-		role.upper();
+		const UCHAR info[] = { isc_info_db_sql_dialect, isc_info_end };
+		UCHAR buffer[BUFFER_TINY];
+		LocalStatus st;
+		att->getInfo(&st, sizeof(info), info, sizeof(buffer), buffer);
+		check("IAttachment::getInfo", &st);
+
+		int dialect = SQL_DIALECT_V5;		// reasonable default
+		const UCHAR* p = buffer;
+		while (*p != isc_info_end && *p != isc_info_truncated && p < buffer + sizeof(buffer))
+		{
+			const UCHAR item = (UCHAR) *p++;
+			const USHORT length = gds__vax_integer(p, sizeof(USHORT));
+			p += sizeof(USHORT);
+
+			switch (item)
+			{
+			case isc_info_db_sql_dialect:
+				dialect = gds__vax_integer(p, length);
+				break;
+			}
+
+			p += length;
+		}
+
+		JRD_make_role_name(role, dialect);
 
 		// We need to check is admin role granted to userName in security DB
 		const char* sql = "select count(*) from RDB$USER_PRIVILEGES "
@@ -129,7 +153,6 @@ bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
 		Message result;
 		Field<ISC_INT64> cnt(result);
 
-		LocalStatus st;
 		att->execute(&st, tra, 0, sql, SQL_DIALECT_V6, prm.getMetadata(), prm.getBuffer(),
 			result.getMetadata(), result.getBuffer());
 
