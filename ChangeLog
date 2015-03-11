@@ -1,3 +1,11 @@
+ 2015-03-10 16:05  asfernandes 
+   M src/isql/isql.epp
+Fixed CORE-4706 - ISQL pads blob columns wrongly when the column alias has more than 17 characters.
+
+ 2015-03-10 13:48  alexpeshkoff 
+   M src/jrd/dfw.epp
+Postfix for CORE-4571: avoid processing same index more than once when it has segments with different charsets
+
  2015-03-08 13:20  egorpugin 
    M CMakeLists.txt
    M src/CMakeLists.txt
