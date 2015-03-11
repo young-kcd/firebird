@@ -227,14 +227,7 @@ static const struct
 
 // strlen of each element above, + strlen(", ") for separators
 
-const int MAX_PRIV_LIST = (6 + 2 + 7 + 2 + 6 + 2 + 6 + 2 + 6 + 2 + 10 + 1);
-
-
-static const SCHAR db_dialect_info[] =
-{
-	isc_info_db_sql_dialect,
-	isc_info_end
-};
+const int MAX_PRIV_LIST = (6 + 2 + 7 + 2 + 6 + 2 + 6 + 2 + 6 + 2 + 10 + 2 + 6 + 2 + 5 + 2 + 4 + 1);
 
 // Added support to display FORCED WRITES status. - PR 27-NOV-2001
 // Added support to display transaction info when next_transaction id is fixed.
