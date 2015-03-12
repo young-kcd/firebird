@@ -3480,10 +3480,22 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			offset = blr_print_line(control, (SSHORT) offset);
 			if (blr_operator == blr_cursor_fetch_scroll)
 			{
-				blr_print_verb(control, level);
+				static const char* scroll_codes[] =
+				{
+					"forward",
+					"backward",
+					"bof",
+					"eof",
+					"absolute",
+					"relative"
+				};
+
+				n = control->ctl_blr_reader.getByte();
+				blr_indent(control, level);
+				blr_format(control, "blr_scroll_%s,", scroll_codes[n]);
+				offset = blr_print_line(control, (SSHORT) offset);
 				blr_print_verb(control, level);
 			}
-			offset = blr_print_line(control, (SSHORT) offset);
 			break;
 
 		case op_partition_args:
