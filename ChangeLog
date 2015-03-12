@@ -1,3 +1,13 @@
+ 2015-03-11 13:39  alexpeshkoff 
+   M src/jrd/DbCreators.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd_proto.h
+Fixed role's case handling when checking grant for create database - thanks to Claudio
+
+ 2015-03-11 13:37  alexpeshkoff 
+   M src/isql/show.epp
+Fixed BOF, cleanup misc
+
  2015-03-10 16:05  asfernandes 
    M src/isql/isql.epp
 Fixed CORE-4706 - ISQL pads blob columns wrongly when the column alias has more than 17 characters.
