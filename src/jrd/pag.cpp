@@ -2333,7 +2333,7 @@ USHORT PageManager::getTempPageSpaceID(thread_db* tdbb)
 		}
 	}
 	return tempPageSpaceID;
-};
+}
 
 ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 {

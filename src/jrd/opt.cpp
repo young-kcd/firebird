@@ -909,7 +909,7 @@ void OPT_compile_relation(thread_db* tdbb, jrd_rel* relation, CompilerScratch* c
 
 	if (needIndices && !relation->rel_file && !relation->isVirtual())
 	{
-		csb->csb_rpt[stream].csb_indices = BTR_all(tdbb, relation, &tail->csb_idx, relPages);
+		tail->csb_indices = BTR_all(tdbb, relation, &tail->csb_idx, relPages);
 
 		if (tail->csb_plan)
 			mark_indices(tail, relation->rel_id);
@@ -917,9 +917,9 @@ void OPT_compile_relation(thread_db* tdbb, jrd_rel* relation, CompilerScratch* c
 			sort_indices_by_selectivity(tail);
 	}
 	else
-		csb->csb_rpt[stream].csb_indices = 0;
+		tail->csb_indices = 0;
 
-	csb->csb_rpt[stream].csb_cardinality =
+	tail->csb_cardinality =
 		get_cardinality(tdbb, relation, CMP_format(tdbb, csb, stream));
 }
 
@@ -2282,7 +2282,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	else if (relation->isVirtual())
 	{
 		// Virtual table: monitoring or security
-		switch(relation->rel_id)
+		switch (relation->rel_id)
 		{
 		case rel_global_auth_mapping:
 			rsb = FB_NEW(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream, relation);
@@ -3070,7 +3070,7 @@ static double get_cardinality(thread_db* tdbb, jrd_rel* relation, const Format* 
 	if (relation->isVirtual())
 	{
 		// Just a dumb estimation
-		return (double) 100;
+		return 100.0;
 	}
 
 	if (relation->rel_file)

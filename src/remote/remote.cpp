@@ -1360,7 +1360,7 @@ Firebird::ICryptKey* SrvAuthBlock::newKey(Firebird::CheckStatusWrapper* status)
 	return NULL;
 }
 
-void rem_port::versionInfo(Firebird::string& version)
+void rem_port::versionInfo(Firebird::string& version) const
 {
 	version.printf("%s/%s", FB_VERSION, port_version->str_data);
 #ifndef WIRE_COMPRESS_SUPPORT
@@ -1382,7 +1382,7 @@ namespace {
 	class ZLib
 	{
 	public:
-		ZLib(Firebird::MemoryPool&)
+		explicit ZLib(Firebird::MemoryPool&)
 		{
 #ifdef WIN_NT
 			const char* name = "zlib1.dll";
@@ -1520,10 +1520,11 @@ bool REMOTE_inflate(rem_port* port, PacketReceive* packet_receive, UCHAR* buffer
 				return false;
 			}
 
-			if (strm.next_in != &port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)])
+			UCHAR* compressed = &port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)];
+			if (strm.next_in != compressed)
 			{
-				memmove(&port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)], strm.next_in, strm.avail_in);
-				strm.next_in = &port->port_compressed[REM_RECV_OFFSET(port->port_buff_size)];
+				memmove(compressed, strm.next_in, strm.avail_in);
+				strm.next_in = compressed;
 			}
 		}
 		else
@@ -1560,7 +1561,7 @@ bool REMOTE_deflate(XDR* xdrs, ProtoWrite* proto_write, PacketSend* packet_send,
 
 	z_stream& strm = port->port_send_stream;
 	strm.avail_in = xdrs->x_private - xdrs->x_base;
-	strm.next_in = (Bytef*)xdrs->x_base;
+	strm.next_in = (Bytef*) xdrs->x_base;
 
 	if (!strm.next_out)
 	{
@@ -1666,6 +1667,7 @@ void rem_port::initCompression()
 			zlib().inflateEnd(&port_recv_stream);
 			throw;
 		}
+
 		memset(port_compressed, 0, port_buff_size * 2);
 		port_recv_stream.next_in = &port_compressed[REM_RECV_OFFSET(port_buff_size)];
 

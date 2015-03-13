@@ -664,10 +664,10 @@ public:
 
 		void set(unsigned keyLength, const void* key)
 		{
-			assign(reinterpret_cast<const UCHAR*>(key), keyLength);
+			assign(static_cast<const UCHAR*>(key), keyLength);
 		}
 
-		const void* get(unsigned* length)
+		const void* get(unsigned* length) const
 		{
 			if (getCount() > 0)
 			{
@@ -1019,7 +1019,7 @@ public:
 	void linkParent(rem_port* const parent);
 	void unlinkParent();
 	const Firebird::RefPtr<Config>& getPortConfig() const;
-	void versionInfo(Firebird::string& version);
+	void versionInfo(Firebird::string& version) const;
 
 	bool extractNewKeys(CSTRING* to, bool flagPlugList = false)
 	{

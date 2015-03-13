@@ -1855,7 +1855,7 @@ Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird:
 
 
 ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransaction* apiTra,
-	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat, unsigned int flags)
+	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outFormat, unsigned int /*flags*/)
 {
 /**************************************
  *

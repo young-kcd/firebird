@@ -126,7 +126,7 @@ namespace Jrd
 			memcpy(getData(), data, getLength());
 		}
 
-		void copyDataTo(UCHAR* data)
+		void copyDataTo(UCHAR* data) const
 		{
 			memcpy(data, getData(), getLength());
 		}
@@ -179,7 +179,7 @@ namespace Jrd
 	class AutoTempRecord
 	{
 	public:
-		AutoTempRecord(Record* record = NULL)
+		explicit AutoTempRecord(Record* record = NULL)
 			: m_record(record)
 		{
 			// validate record and its flag

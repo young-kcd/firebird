@@ -124,6 +124,7 @@ void ExecInSecurityDb::executeInSecurityDb(jrd_tra* localTransaction)
 	if (!secDbContext)
 	{
 		Attachment* lAtt = localTransaction->getAttachment();
+		fb_assert(lAtt && lAtt->att_database && lAtt->att_database->dbb_config); // paranoid check
 		const char* secDb = lAtt->att_database->dbb_config->getSecurityDatabase();
 		ClumpletWriter dpb(ClumpletWriter::WideTagged, MAX_DPB_SIZE, isc_dpb_version2);
 		if (lAtt->att_user)
@@ -7061,7 +7062,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	dsql_rel* relation;
 	relation = METD_get_relation(dsqlScratch->getTransaction(), dsqlScratch, name);
 
-	if (!relation || (relation && (relation->rel_flags & REL_view)))
+	if (!relation || (relation->rel_flags & REL_view))
 	{
 		status_exception::raise(
 			Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<

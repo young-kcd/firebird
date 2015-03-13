@@ -71,7 +71,8 @@ StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw() : 
 	}
 }
 
-StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw() : Base::ImplBase(0, 0)
+StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw() :
+	Base::ImplBase(0, 0)
 {
 	fb_assert(s);
 
@@ -84,7 +85,8 @@ StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw() : Bas
 		append(s->getWarnings(), FB_NELEM(m_status_vector) - 1);
 }
 
-StatusVector::ImplStatusVector::ImplStatusVector(const Exception& ex) throw() : Base::ImplBase(0, 0)
+StatusVector::ImplStatusVector::ImplStatusVector(const Exception& ex) throw() :
+	Base::ImplBase(0, 0)
 {
 	assign(ex);
 }

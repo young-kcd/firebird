@@ -1779,10 +1779,8 @@ THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM arg)
 
 	return 0;
 }
-#endif
 
 
-#ifdef WIN_NT
 // Windows does not have an inet_aton function.
 bool inet_aton(const char* name, in_addr* address)
 {

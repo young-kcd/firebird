@@ -143,7 +143,8 @@ inline unsigned short SockAddr::family() const
 inline unsigned short SockAddr::port() const
 {
 	const struct sockaddr* sa = (const struct sockaddr*) data;
-	switch(sa->sa_family) {
+	switch (sa->sa_family)
+	{
 	case AF_INET:
 		return ntohs(((const struct sockaddr_in*) data)->sin_port);
 	case AF_INET6:
@@ -156,7 +157,8 @@ inline unsigned short SockAddr::port() const
 inline void SockAddr::setPort(unsigned short x)
 {
 	const struct sockaddr* sa = (const struct sockaddr*) data;
-	switch(sa->sa_family) {
+	switch (sa->sa_family)
+	{
 	case AF_INET:
 		((struct sockaddr_in*) data)->sin_port = htons(x);
 		return;

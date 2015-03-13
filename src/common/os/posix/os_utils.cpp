@@ -234,7 +234,7 @@ bool touchFile(const char* pathname)
 #endif
 }
 
-// check if OS have support for IPv6 protocol
+// check if OS has support for IPv6 protocol
 bool isIPv6supported()
 {
 #ifdef ANDROID
@@ -281,7 +281,7 @@ FILE* fopen(const char* pathname, const char* mode)
 	return f;
 }
 
-static void makeUniqueFileId(struct stat& statistics, UCharBuffer& id)
+static void makeUniqueFileId(const struct stat& statistics, UCharBuffer& id)
 {
 	const size_t len1 = sizeof(statistics.st_dev);
 	const size_t len2 = sizeof(statistics.st_ino);

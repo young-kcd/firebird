@@ -49,7 +49,7 @@ public:
 		: HalfStaticArray<ISC_STATUS, S>()
 	{ }
 
-	SimpleStatusVector(MemoryPool& p)
+	explicit SimpleStatusVector(MemoryPool& p)
 		: HalfStaticArray<ISC_STATUS, S>(p)
 	{ }
 };
@@ -60,7 +60,7 @@ template <unsigned S>
 class DynamicVector : private SimpleStatusVector<S>
 {
 public:
-	DynamicVector(MemoryPool& p)
+	explicit DynamicVector(MemoryPool& p)
 		: SimpleStatusVector<S>(p)
 	{
 		fb_utils::init_status(this->getBuffer(3));
@@ -192,7 +192,7 @@ public:
 	}
 
 public:
-	BaseStatus(MemoryPool& p)
+	explicit BaseStatus(MemoryPool& p)
 		: errors(p), warnings(p)
 	{
 		init();

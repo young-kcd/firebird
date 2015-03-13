@@ -1137,7 +1137,7 @@ unsigned int mergeStatus(ISC_STATUS* const dest, unsigned int space,
 {
 	const ISC_STATUS* s;
 	unsigned int copied = 0;
-	int state = from->getState();
+	const int state = from->getState();
 	ISC_STATUS* to = dest;
 
 	if (state & Firebird::IStatus::STATE_ERRORS)

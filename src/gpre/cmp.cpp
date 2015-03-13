@@ -442,8 +442,9 @@ void CMP_t_start( gpre_tra* trans)
 			{
 				*p++ = lock_block->rrl_lock_mode;
 				const char* q = lock_block->rrl_relation->rel_symbol->sym_string;
-				*p++ = static_cast<char>(strlen(q));
-				while (*q)
+				UCHAR temp = static_cast<UCHAR>(strlen(q));
+				*p++ = temp;
+				while (*q && temp-- > 0)
 					*p++ = *q++;
 				*p++ = lock_block->rrl_lock_level;
 			}
@@ -1016,18 +1017,19 @@ static void cmp_loop( gpre_req* request)
 	CME_rse(selection, request);
 	request->add_byte(blr_begin);
 
+	const bool isReturning = request->req_flags & REQ_sql_returning;
 	gpre_nod* node = (req_node->nod_type == nod_list) ? req_node->nod_arg[0] : req_node;
 
 	switch (node->nod_type)
 	{
 	case nod_modify:
 		{
-			const int blr_op = (request->req_flags & REQ_sql_returning) ? blr_modify2 : blr_modify;
+			const int blr_op = isReturning ? blr_modify2 : blr_modify;
 			request->add_byte(blr_op);
 			request->add_byte(for_context->ctx_internal);
 			request->add_byte(update_context->ctx_internal);
 			cmp_assignment_list(node->nod_arg[0], request);
-			if (request->req_flags & REQ_sql_returning)
+			if (isReturning)
 				cmp_returning(request, node->nod_arg[1]);
 		}
 		break;
@@ -1035,7 +1037,7 @@ static void cmp_loop( gpre_req* request)
 		cmp_store(request, node);
 		break;
 	case nod_erase:
-		if (request->req_flags & REQ_sql_returning)
+		if (isReturning)
 		{
 			request->add_byte(blr_begin);
 			cmp_returning(request, node->nod_arg[0]);

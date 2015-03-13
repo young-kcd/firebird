@@ -6843,7 +6843,7 @@ void DerivedFieldNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			 (context->ctx_flags & CTX_cursor) &&
 			 val->is<FieldNode>())
 	{
-		// ASF: FieldNode::execute do not verify rpb_number.isValid(), and due to system triggers
+		// ASF: FieldNode::execute does not verify rpb_number.isValid(), and due to system triggers
 		// and also singular queries, we cannot start to do it. So to fix CORE-4488, we introduce
 		// the usage of blr_derived_expr for cursor fields, which in practice prefixes the
 		// FieldNode::execute by a test of rpb_number.isValid().

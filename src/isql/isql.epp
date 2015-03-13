@@ -164,7 +164,7 @@ const int UNKNOWN_LEN		= 20;	// Unknown type: %d
 const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
 
 const char* ISQL_COUNTERS_SET = "CurrentMemory, MaxMemory, RealTime, UserTime, Buffers, Reads, Writes, Fetches";
-#define ISQL_COUNTERS 8
+const int ISQL_COUNTERS = 8;
 
 
 namespace IcuUtil
@@ -2596,9 +2596,12 @@ static processing_state bulk_insert_hack(const char* command)
 			return (SKIP);
 	}
 
+	unsigned prepFlags = Firebird::IStatement::PREPARE_PREFETCH_METADATA |
+		(setValues.Plan ? Firebird::IStatement::PREPARE_PREFETCH_DETAILED_PLAN : 0);
+
 	global_Stmt = DB->prepare(fbStatus, setValues.Autocommit ? D__trans : M__trans,  0, command,
-		isqlGlob.SQL_dialect, Firebird::IStatement::PREPARE_PREFETCH_METADATA |
-		(setValues.Plan ? Firebird::IStatement::PREPARE_PREFETCH_DETAILED_PLAN : 0));
+		isqlGlob.SQL_dialect, prepFlags);
+
 	if (failed())
 	{
 		if (isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION && Input_file)
@@ -3272,7 +3275,7 @@ static processing_state bulk_insert_hack(const char* command)
 
 	if (done)
 	{
-		// Save whatever we were able to pump, except when the failed was the commit itself.
+		// Save whatever we were able to pump, except when the failure was the commit itself.
 		if (M__trans)
 		{
 			if (commit_failedM)
@@ -4383,7 +4386,7 @@ static processing_state edit(const TEXT* const* cmd)
 		Ofp.close();
 		PathName tmpfile = Ofp.fileName(false);
 		gds__edit(tmpfile.c_str(), 0);
-		Ofp.init(fopen(tmpfile.c_str(), "r+"), tmpfile.c_str(), tmpfile.c_str()); // We don't check for failed.
+		Ofp.init(fopen(tmpfile.c_str(), "r+"), tmpfile.c_str(), tmpfile.c_str()); // We don't check for failure.
 		Filelist->Ifp().init(Ofp);
 		Input_file = true;
 		getColumn = -1;
@@ -4406,7 +4409,7 @@ static processing_state end_trans()
  *	either commit or rollback
  *
  *	Called by newtrans, createdb, newdb;
- *	Returns success or failed.
+ *	Returns success or failure.
  *
  **************************************/
 
@@ -7745,7 +7748,7 @@ static processing_state print_line(Firebird::IMessageMetadata* message, UCHAR* b
 
 	isqlGlob.printf("%s%s", line, NEWLINE);
 
-	// If blobdisplay is not wanted, set varnum back to -1
+	// If blobdisplay is not wanted, set varnum back to 0
 
 	if (setValues.Doblob == NO_BLOBS)
 		varnum = 0;
@@ -7932,7 +7935,7 @@ static void process_header(Firebird::IMessageMetadata* msg, const unsigned pad[]
 // p r o c e s s _ p l a n
 // ***********************
 // Retrieve and show the server's execution plan.
-// We don't consider critical a failed to get the plan, so we don't return
+// We don't consider critical a failure to get the plan, so we don't return
 // any result to the caller.
 static void process_plan()
 {
@@ -8064,7 +8067,7 @@ static SLONG process_record_count(const int statement_type)
 // p r o c e s s _ r e q u e s t _ t y p e
 // ***************************************
 // Retrieve the statement type according to the DSQL layer.
-// A failed is indicated by returning zero.
+// A failure is indicated by returning zero.
 static int process_request_type()
 {
 	if (!global_Stmt)

@@ -4817,7 +4817,7 @@ static act* act_upsert(void)
 
 	gpre_req* request = MSC_request(REQ_mass_update);
 	request->req_trans = transaction;
-	gpre_ctx* context = SQE_context(request);
+	gpre_ctx* const context = SQE_context(request);
 	gpre_rel* relation = context->ctx_relation;
 
 	int count = 0;

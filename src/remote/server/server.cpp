@@ -3220,7 +3220,7 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		this->port_statement->rsr_format = this->port_statement->rsr_select_format;
 
 		sendL->p_operation = op_sql_response;
-		sendL->p_sqldata.p_sqldata_messages = (status_vector.getState() & Firebird::IStatus::STATE_ERRORS || !out_msg) ? 0 : 1;
+		sendL->p_sqldata.p_sqldata_messages = ((status_vector.getState() & Firebird::IStatus::STATE_ERRORS) || !out_msg) ? 0 : 1;
 		this->send_partial(sendL);
 	}
 

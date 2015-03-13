@@ -6016,7 +6016,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 {
 /**************************************
  *
- *	i n i t
+ *	i n i t A t t a c h m e n t
  *
  **************************************
  *
@@ -6025,7 +6025,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
  *	Upon entry mutex dbInitMutex must be locked.
  *
  **************************************/
-	RefDeb(DEB_AR_JATT, "jrd/init()");
+	RefDeb(DEB_AR_JATT, "jrd/initAttachment()");
 	SET_TDBB(tdbb);
 	fb_assert(dbInitMutex->locked());
 

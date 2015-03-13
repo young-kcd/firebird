@@ -3841,7 +3841,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, SyncType s
 			QUE_DELETE(bdb->bdb_que);
 			QUE_INSERT(bcb->bcb_pending, bdb->bdb_que);
 
-			const bool needCleanup = bdb->bdb_flags & (BDB_dirty | BDB_db_dirty) ||
+			const bool needCleanup = (bdb->bdb_flags & (BDB_dirty | BDB_db_dirty)) ||
 				QUE_NOT_EMPTY(bdb->bdb_higher) || QUE_NOT_EMPTY(bdb->bdb_lower);
 
 			if (needCleanup)

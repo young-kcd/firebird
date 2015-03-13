@@ -508,7 +508,7 @@ ITraceLogWriter* TraceInitInfoImpl::getLogWriter()
 
 void* TraceServiceImpl::getServiceID()
 {
-	return (void*)m_svc;
+	return (void*) m_svc;
 }
 
 const char* TraceServiceImpl::getServiceMgr()

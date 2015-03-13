@@ -1398,7 +1398,7 @@ bool Mnt::get()
 	TEXT device[128], mount_point[128], m_type[16], opts[256], ftime[128];
 
 	const int n = fscanf(mnt_tab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts, ftime);
-	if (n<5)
+	if (n < 5)
 		return false;
 
 	mount = mount_point;
