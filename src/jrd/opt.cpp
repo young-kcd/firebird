@@ -389,16 +389,7 @@ inline bool TEST_DEP_ARRAYS(const ULONG* ar1, const ULONG* ar2)
 }
 */
 
-// some arbitrary fudge factors for calculating costs, etc.--
-// these could probably be better tuned someday
-
-const double ESTIMATED_SELECTIVITY			= 0.01;
-const int INVERSE_ESTIMATE					= 10;
-const double INDEX_COST						= 30.0;
 const int CACHE_PAGES_PER_STREAM			= 15;
-const int SELECTIVITY_THRESHOLD_FACTOR		= 10;
-const int OR_SELECTIVITY_THRESHOLD_FACTOR	= 2000;
-const FB_UINT64 LOWEST_PRIORITY_LEVEL		= 0;
 
 // enumeration of sort datatypes
 
