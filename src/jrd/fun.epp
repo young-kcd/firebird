@@ -1062,7 +1062,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 			ex.stuff_exception(tdbb->tdbb_status_vector);
 		}
 	}
-	catch (const Exception& ex)
+	catch (const Exception&)
 	{} // no-op
 
 	return 0; // error

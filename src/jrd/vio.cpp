@@ -5404,7 +5404,7 @@ static void verb_post(thread_db* tdbb,
 
 		// An insert/update followed by a delete is posted to this savepoint,
 		// and this savepoint has already undo for this record.
-		AutoUndoRecord undo(transaction, found ? &action->vct_undo->current() : NULL, REC_same_tx);
+		AutoUndoRecord undo(transaction, (found ? &action->vct_undo->current() : NULL), REC_same_tx);
 
 		if (!found)
 		{
@@ -5434,7 +5434,7 @@ static void verb_post(thread_db* tdbb,
 		// so make sure we garbage collect before we lose track of the
 		// in-place-updated record.
 
-		AutoUndoRecord undo(transaction, found ? &action->vct_undo->current() : NULL);
+		AutoUndoRecord undo(transaction, (found ? &action->vct_undo->current() : NULL));
 
 		garbage_collect_idx(tdbb, rpb, /*new_rpb,*/ old_data, undo);
 	}
