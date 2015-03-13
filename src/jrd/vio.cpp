@@ -5590,7 +5590,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 
 	record_param temp = *rpb;
 	jrd_rel* const relation = rpb->rpb_relation;
-	AutoGCRecord gc_rec = VIO_gc_record(tdbb, relation);
+	AutoGCRecord gc_rec(VIO_gc_record(tdbb, relation));
 	Record* record = rpb->rpb_record = gc_rec;
 
 	VIO_data(tdbb, rpb, relation->rel_pool);
