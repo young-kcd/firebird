@@ -91,7 +91,7 @@ namespace
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 			R IN RDB$RELATIONS WITH
 			R.RDB$RELATION_NAME EQ relName AND
-			R.RDB$SYSTEM_FLAG EQUIV 1
+			R.RDB$SYSTEM_FLAG EQ 1
 		{
 			rc = true;
 		}
@@ -108,7 +108,7 @@ namespace
 		FOR(REQUEST_HANDLE handle TRANSACTION_HANDLE transaction)
 			R IN RDB$FIELDS WITH
 			R.RDB$FIELD_NAME EQ fldName AND
-			R.RDB$SYSTEM_FLAG EQUIV 1
+			R.RDB$SYSTEM_FLAG EQ 1
 		{
 			rc = true;
 		}

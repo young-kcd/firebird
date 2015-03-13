@@ -1035,7 +1035,6 @@ bool SCL_admin_role(thread_db* tdbb, const TEXT* sql_role)
 
 	FOR(REQUEST_HANDLE request) R IN RDB$ROLES
 		WITH R.RDB$ROLE_NAME EQ sql_role
-		 AND R.RDB$SYSTEM_FLAG NOT MISSING
 		 AND R.RDB$SYSTEM_FLAG != 0
 	{
 		adminRole = true;
