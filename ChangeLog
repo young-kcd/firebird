@@ -1,3 +1,7 @@
+ 2015-03-12 21:52  dimitr 
+   M src/yvalve/gds.cpp
+Improved BLR printer for scrollable cursors. It also fixes ISQL crash for core-0883.fbt.
+
  2015-03-11 13:39  alexpeshkoff 
    M src/jrd/DbCreators.cpp
    M src/jrd/jrd.cpp
