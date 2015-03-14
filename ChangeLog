@@ -1,3 +1,45 @@
+ 2015-03-13 15:31  robocop 
+   M src/dsql/metd.epp
+   M src/jrd/scl.epp
+rdb$system_flag is not nullable in FB3.
+
+ 2015-03-13 15:30  robocop 
+   M src/jrd/idx.cpp
+   M src/jrd/vio.cpp
+Misc.
+
+ 2015-03-13 15:26  robocop 
+   M examples/interfaces/01.create.cpp
+   M src/common/StatusArg.cpp
+   M src/common/StatusHolder.h
+   M src/common/isc_file.cpp
+   M src/common/os/posix/os_utils.cpp
+   M src/common/utils.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/gpre/cmp.cpp
+   M src/gpre/sql.cpp
+   M src/isql/isql.epp
+   M src/jrd/Record.h
+   M src/jrd/cch.cpp
+   M src/jrd/dpm.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/opt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/remote/SockAddr.h
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/PluginManager.cpp
+Misc.
+
+ 2015-03-13 12:07  dimitr 
+   M src/jrd/opt.cpp
+Cleanup.
+
  2015-03-12 21:52  dimitr 
    M src/yvalve/gds.cpp
 Improved BLR printer for scrollable cursors. It also fixes ISQL crash for core-0883.fbt.
