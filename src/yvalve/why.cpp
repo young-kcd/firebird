@@ -2072,8 +2072,11 @@ ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS* userStatus, FB_API_HANDLE* 
 		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
 		attachment->dropDatabase(&statusWrapper);
 
-		if ((!(status.getState() & Firebird::IStatus::STATE_ERRORS)) || status[1] == isc_drdb_completed_with_errs)
+		if ((!(status.getState() & Firebird::IStatus::STATE_ERRORS)) ||
+			status[1] == isc_drdb_completed_with_errs)
+		{
 			*handle = 0;
+		}
 	}
 	catch (const Exception& e)
 	{

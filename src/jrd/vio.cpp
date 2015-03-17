@@ -1943,7 +1943,8 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 	// Set the active flag on an inactive garbage collect record block and return it
 
 	for (Record** iter = relation->rel_gc_records.begin();
-		iter != relation->rel_gc_records.end(); ++iter)
+		 iter != relation->rel_gc_records.end();
+		 ++iter)
 	{
 		Record* const record = *iter;
 		fb_assert(record);
@@ -3648,6 +3649,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 					RecordBitmap::Accessor accessor(action->vct_records);
 					if (accessor.getFirst())
+					{
 						do {
 							rpb.rpb_number.setValue(accessor.current());
 
@@ -3727,6 +3729,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								}
 							}
 						} while (accessor.getNext());
+					}
 				}
 				else
 				{
@@ -3734,6 +3737,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 					RecordBitmap::Accessor accessor(action->vct_records);
 					if (accessor.getFirst())
+					{
 						do {
 							rpb.rpb_number.setValue(accessor.current());
 							if (!action->vct_undo ||
@@ -3761,6 +3765,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 								verb_post(tdbb, transaction, &rpb, record, same_tx, new_ver);
 							}
 						} while (accessor.getNext());
+					}
 				}
 
 				delete rpb.rpb_record;

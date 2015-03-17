@@ -178,7 +178,7 @@ void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jr
 		fb_assert(id <= dbb->dbb_max_idx);
 		idx.idx_id = id;
 		IDX_create_index(tdbb, relation, &idx, name.c_str(), &id, transaction, selectivity);
-	
+
 		fb_assert(id == idx.idx_id);
 	}
 	catch (const Exception&)

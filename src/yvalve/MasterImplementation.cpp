@@ -379,7 +379,8 @@ private:
 		}
 	};
 
-	typedef Firebird::SortedArray<ThreadBuffer*, EmptyStorage<ThreadBuffer*>, ThreadId, ThreadBuffer> ProcessBuffer;
+	typedef Firebird::SortedArray<ThreadBuffer*,
+		EmptyStorage<ThreadBuffer*>, ThreadId, ThreadBuffer> ProcessBuffer;
 
 	ProcessBuffer processBuffer;
 	Firebird::Mutex mutex;

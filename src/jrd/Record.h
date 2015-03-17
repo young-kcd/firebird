@@ -231,4 +231,3 @@ namespace Jrd
 } // namespace
 
 #endif // JRD_RECORD_H
-

@@ -563,7 +563,8 @@ namespace {
 
 void registerLegacyServer(Firebird::IPluginManager* iPlugin)
 {
-	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_SERVER, "Legacy_Auth", &factory);
+	iPlugin->registerPluginFactory(Firebird::IPluginManager::TYPE_AUTH_SERVER,
+		"Legacy_Auth", &factory);
 }
 
 } // namespace Auth
