@@ -10,7 +10,7 @@
 <string>-daemon</string>
 <string>-forever</string>
 </array>
-<key>KeepAlive</key>
+<key>RunAtLoad</key>
 <true/>
 </dict>
 </plist>
