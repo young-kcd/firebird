@@ -1,3 +1,7 @@
+ 2015-03-17 09:16  paulbeach 
+   M builds/install/arch-specific/darwin/launchdss.org.firebird.gds.plist
+Use RunAtLoad rather than KeepAlive
+
  2015-03-13 03:03  robocop 
    M src/jrd/fun.epp
    M src/jrd/isc_file.cpp
