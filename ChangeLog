@@ -1,3 +1,19 @@
+ 2015-03-17 21:44  asfernandes 
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/jrd/Record.h
+   M src/jrd/pcmet.epp
+   M src/jrd/vio.cpp
+   M src/msgs/facilities2.sql
+   M src/remote/server/server.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2015-03-17 09:15  paulbeach 
+   M builds/install/arch-specific/darwin/launchdss.org.firebird.gds.plist
+Use RunAtLoad rather than KeepAlive
+
  2015-03-13 15:31  robocop 
    M src/dsql/metd.epp
    M src/jrd/scl.epp
