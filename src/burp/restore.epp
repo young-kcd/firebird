@@ -6579,8 +6579,8 @@ bool get_package(BurpGlobals* tdgbl)
 
 			case att_package_security_class:
 				GET_TEXT(X.RDB$SECURITY_CLASS);
-				if (strncmp(X.RDB$SECURITY_CLASS, SQL_SECCLASS_PREFIX, SQL_SECCLASS_PREFIX_LEN) != 0)
-					X.RDB$SECURITY_CLASS.NULL = FALSE;
+				fix_security_class_name(tdgbl, X.RDB$SECURITY_CLASS, false);
+				X.RDB$SECURITY_CLASS.NULL = FALSE;
 				break;
 
 			case att_package_owner_name:
