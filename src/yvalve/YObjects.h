@@ -561,6 +561,7 @@ public:
 		unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions);
 	ISC_DATE encodeDate(unsigned year, unsigned month, unsigned day);
 	ISC_TIME encodeTime(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions);
+	unsigned formatStatus(char* buffer, unsigned bufferSize, Firebird::IStatus* status);
 };
 
 }	// namespace Why

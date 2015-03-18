@@ -916,6 +916,7 @@ interface Util : Versioned
 	void decodeTime(ISC_TIME time, uint* hours, uint* minutes, uint* seconds, uint* fractions);
 	ISC_DATE encodeDate(uint year, uint month, uint day);
 	ISC_TIME encodeTime(uint hours, uint minutes, uint seconds, uint fractions);
+	uint formatStatus(string buffer, uint bufferSize, Status status);
 }
 
 // Database trace objects

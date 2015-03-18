@@ -687,6 +687,37 @@ ISC_TIME UtilInterface::encodeTime(unsigned hours, unsigned minutes, unsigned se
 	return time;
 }
 
+unsigned UtilInterface::formatStatus(char* buffer, unsigned bufferSize, IStatus* status)
+{
+	unsigned state = status->getState();
+	unsigned states[] = {IStatus::STATE_ERRORS, IStatus::STATE_WARNINGS};
+	const ISC_STATUS* vectors[] = {status->getErrors(), status->getWarnings()};
+	string s;
+
+	for (int i = 0; i < 2; ++i)
+	{
+		if (state & states[i])
+		{
+			const ISC_STATUS* vector = vectors[i];
+			SLONG n;
+
+			while ((n = fb_interpret(buffer, bufferSize, &vector)) != 0)
+			{
+				if (!s.empty())
+					s += "\n-";
+
+				s += string(buffer, n);
+			}
+		}
+	}
+
+	unsigned ret = MIN((unsigned) s.length(), bufferSize);
+
+	strncpy(buffer, s.c_str(), ret);
+
+	return ret;
+}
+
 } // namespace Why
 
 

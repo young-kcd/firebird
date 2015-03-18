@@ -3269,6 +3269,7 @@ namespace Firebird
 			void (CLOOP_CARG *decodeTime)(IUtil* self, ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) throw();
 			ISC_DATE (CLOOP_CARG *encodeDate)(IUtil* self, unsigned year, unsigned month, unsigned day) throw();
 			ISC_TIME (CLOOP_CARG *encodeTime)(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) throw();
+			unsigned (CLOOP_CARG *formatStatus)(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) throw();
 		};
 
 	protected:
@@ -3334,6 +3335,12 @@ namespace Firebird
 		ISC_TIME encodeTime(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions)
 		{
 			ISC_TIME ret = static_cast<VTable*>(this->cloopVTable)->encodeTime(this, hours, minutes, seconds, fractions);
+			return ret;
+		}
+
+		unsigned formatStatus(char* buffer, unsigned bufferSize, IStatus* status)
+		{
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->formatStatus(this, buffer, bufferSize, status);
 			return ret;
 		}
 	};
@@ -11845,6 +11852,7 @@ namespace Firebird
 					this->decodeTime = &Name::cloopdecodeTimeDispatcher;
 					this->encodeDate = &Name::cloopencodeDateDispatcher;
 					this->encodeTime = &Name::cloopencodeTimeDispatcher;
+					this->formatStatus = &Name::cloopformatStatusDispatcher;
 				}
 			} vTable;
 
@@ -11971,6 +11979,19 @@ namespace Firebird
 				return static_cast<ISC_TIME>(0);
 			}
 		}
+
+		static unsigned CLOOP_CARG cloopformatStatusDispatcher(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::formatStatus(buffer, bufferSize, status);
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -11995,6 +12016,7 @@ namespace Firebird
 		virtual void decodeTime(ISC_TIME time, unsigned* hours, unsigned* minutes, unsigned* seconds, unsigned* fractions) = 0;
 		virtual ISC_DATE encodeDate(unsigned year, unsigned month, unsigned day) = 0;
 		virtual ISC_TIME encodeTime(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) = 0;
+		virtual unsigned formatStatus(char* buffer, unsigned bufferSize, IStatus* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>
