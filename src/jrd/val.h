@@ -93,6 +93,7 @@ struct impure_value
 
 	void make_long(const SLONG val, const signed char scale = 0);
 	void make_int64(const SINT64 val, const signed char scale = 0);
+	void make_double(const double val);
 };
 
 // Do not use these methods where dsc_sub_type is not explicitly set to zero.
@@ -116,11 +117,22 @@ inline void impure_value::make_int64(const SINT64 val, const signed char scale)
 	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_int64);
 }
 
+inline void impure_value::make_double(const double val)
+{
+	this->vlu_misc.vlu_double = val;
+	this->vlu_desc.dsc_dtype = DEFAULT_DOUBLE;
+	this->vlu_desc.dsc_length = sizeof(double);
+	this->vlu_desc.dsc_scale = 0;
+	this->vlu_desc.dsc_sub_type = 0;
+	this->vlu_desc.dsc_address = reinterpret_cast<UCHAR*>(&this->vlu_misc.vlu_double);
+}
+
 struct impure_value_ex : public impure_value
 {
 	SINT64 vlux_count;
 	blb* vlu_blob;
 };
+
 
 const int VLU_computed	= 1;	// An invariant sub-query has been computed
 const int VLU_null		= 2;	// An invariant sub-query computed to null

@@ -572,6 +572,10 @@ using namespace Firebird;
 %token <metaNamePtr> TRUSTED
 %token <metaNamePtr> ROW
 %token <metaNamePtr> OFFSET
+%token <metaNamePtr> STDDEV_SAMP
+%token <metaNamePtr> STDDEV_POP
+%token <metaNamePtr> VAR_SAMP
+%token <metaNamePtr> VAR_POP
 
 // precedence declarations for expression evaluation
 
@@ -3819,8 +3823,12 @@ keyword_or_column
 	| ROW
 	| SCROLL
 	| SQLSTATE
+	| STDDEV_SAMP
+	| STDDEV_POP
 	| KW_TRUE
 	| UNKNOWN
+	| VAR_SAMP
+	| VAR_POP
 	;
 
 col_opt
@@ -6789,6 +6797,14 @@ aggregate_function
 		{ $$ = newNode<ListAggNode>(false, $4, $5); }
 	| LIST '(' DISTINCT value delimiter_opt ')'
 		{ $$ = newNode<ListAggNode>(true, $4, $5); }
+	| STDDEV_SAMP '(' value ')'
+		{ $$ = newNode<StdDevAggNode>(StdDevAggNode::TYPE_STDDEV_SAMP, $3); }
+	| STDDEV_POP '(' value ')'
+		{ $$ = newNode<StdDevAggNode>(StdDevAggNode::TYPE_STDDEV_POP, $3); }
+	| VAR_SAMP '(' value ')'
+		{ $$ = newNode<StdDevAggNode>(StdDevAggNode::TYPE_VAR_SAMP, $3); }
+	| VAR_POP '(' value ')'
+		{ $$ = newNode<StdDevAggNode>(StdDevAggNode::TYPE_VAR_POP, $3); }
 	;
 
 %type <aggNode> window_function

@@ -153,6 +153,44 @@ public:
 	const MaxMinType type;
 };
 
+class StdDevAggNode : public AggNode
+{
+public:
+	enum StdDevType
+	{
+		TYPE_STDDEV_SAMP,
+		TYPE_STDDEV_POP,
+		TYPE_VAR_SAMP,
+		TYPE_VAR_POP
+	};
+
+	struct StdDevImpure
+	{
+		double x, x2;
+	};
+
+	explicit StdDevAggNode(MemoryPool& pool, StdDevType aType, ValueExprNode* aArg = NULL);
+	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+protected:
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
+
+public:
+	const StdDevType type;
+
+private:
+	ULONG impure2Offset;
+};
 
 } // namespace
 

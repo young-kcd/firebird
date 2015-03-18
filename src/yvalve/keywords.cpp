@@ -389,6 +389,8 @@ static const TOK tokens[] =
 	{STARTING, "STARTS", 1, false},	// Alias of STARTING
 	{STATEMENT, "STATEMENT", 2, true},
 	{STATISTICS, "STATISTICS", 1, false},
+	{STDDEV_POP, "STDDEV_POP", 2, false},
+	{STDDEV_SAMP, "STDDEV_SAMP", 2, false},
 	{SUBSTRING,	"SUBSTRING", 2, true},
 	{SUB_TYPE, "SUB_TYPE", 1, false},
 	{SUM, "SUM", 1, false},
@@ -426,6 +428,8 @@ static const TOK tokens[] =
 	{UUID_TO_CHAR, "UUID_TO_CHAR", 2, false},
 	{KW_VALUE, "VALUE", 1, false},
 	{VALUES, "VALUES", 1, false},
+	{VAR_POP, "VAR_POP", 2, false},
+	{VAR_SAMP, "VAR_SAMP", 2, false},
 	{VARCHAR, "VARCHAR", 1, false},
 	{VARIABLE, "VARIABLE", 1, false},
 	{VARYING, "VARYING", 1, false},

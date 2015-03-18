@@ -40,6 +40,7 @@
 #include "../dsql/pass1_proto.h"
 #include "../dsql/utld_proto.h"
 #include "../jrd/DataTypeUtil.h"
+#include <math.h>
 
 using namespace Firebird;
 using namespace Jrd;
@@ -1166,6 +1167,149 @@ dsc* MaxMinAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 AggNode* MaxMinAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
 	return FB_NEW(getPool()) MaxMinAggNode(getPool(), type, doDsqlPass(dsqlScratch, arg));
+}
+
+
+//--------------------
+
+
+static AggNode::Register<StdDevAggNode> stdDevSampAggInfo("STDDEV_SAMP", blr_agg_stddev_samp);
+static AggNode::Register<StdDevAggNode> stdDevPopAggInfo("STDDEV_POP", blr_agg_stddev_pop);
+static AggNode::Register<StdDevAggNode> varSampAggInfo("VAR_SAMP", blr_agg_var_samp);
+static AggNode::Register<StdDevAggNode> varPopAggInfo("VAR_POP", blr_agg_var_pop);
+
+StdDevAggNode::StdDevAggNode(MemoryPool& pool, StdDevType aType, ValueExprNode* aArg)
+	: AggNode(pool,
+		(aType == StdDevAggNode::TYPE_STDDEV_SAMP ? stdDevSampAggInfo :
+		 aType == StdDevAggNode::TYPE_STDDEV_POP ? stdDevPopAggInfo :
+		 aType == StdDevAggNode::TYPE_VAR_SAMP ? varSampAggInfo :
+		 varPopAggInfo),
+		false, false, aArg),
+	  type(aType),
+	  impure2Offset(0)
+{
+}
+
+void StdDevAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
+{
+	AggNode::aggPostRse(tdbb, csb);
+	impure2Offset = CMP_impure(csb, sizeof(StdDevImpure));
+}
+
+DmlNode* StdDevAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
+{
+	StdDevType type;
+
+	switch (blrOp)
+	{
+		case blr_agg_stddev_samp:
+			type = TYPE_STDDEV_SAMP;
+			break;
+
+		case blr_agg_stddev_pop:
+			type = TYPE_STDDEV_POP;
+			break;
+
+		case blr_agg_var_samp:
+			type = TYPE_VAR_SAMP;
+			break;
+
+		case blr_agg_var_pop:
+			type = TYPE_VAR_POP;
+			break;
+
+		default:
+			fb_assert(false);
+	}
+
+	return FB_NEW(pool) StdDevAggNode(pool, type, PAR_parse_value(tdbb, csb));
+}
+
+void StdDevAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	desc->makeDouble();
+	desc->setNullable(true);
+}
+
+void StdDevAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	desc->makeDouble();
+}
+
+ValueExprNode* StdDevAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	StdDevAggNode* node = FB_NEW(*tdbb->getDefaultPool()) StdDevAggNode(*tdbb->getDefaultPool(), type);
+	node->nodScale = nodScale;
+	node->arg = copier.copy(tdbb, arg);
+	return node;
+}
+
+void StdDevAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
+{
+	AggNode::aggInit(tdbb, request);
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	impure->make_double(0);
+
+	StdDevImpure* impure2 = request->getImpure<StdDevImpure>(impure2Offset);
+	impure2->x = impure2->x2 = 0.0;
+}
+
+void StdDevAggNode::aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const
+{
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	++impure->vlux_count;
+
+	const double d = MOV_get_double(desc);
+
+	StdDevImpure* impure2 = request->getImpure<StdDevImpure>(impure2Offset);
+	impure2->x += d;
+	impure2->x2 += d * d;
+}
+
+dsc* StdDevAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	StdDevImpure* impure2 = request->getImpure<StdDevImpure>(impure2Offset);
+	double d;
+
+	switch (type)
+	{
+		case TYPE_STDDEV_SAMP:
+		case TYPE_VAR_SAMP:
+			if (impure->vlux_count < 2)
+				return NULL;
+
+			d = (impure2->x2 - impure2->x * impure2->x / impure->vlux_count) /
+				(impure->vlux_count - 1);
+
+			if (type == TYPE_STDDEV_SAMP)
+				d = sqrt(d);
+			break;
+
+		case TYPE_STDDEV_POP:
+		case TYPE_VAR_POP:
+			if (impure->vlux_count == 0)
+				return NULL;
+
+			d = (impure2->x2 - impure2->x * impure2->x / impure->vlux_count) /
+				impure->vlux_count;
+
+			if (type == TYPE_STDDEV_POP)
+				d = sqrt(d);
+			break;
+	}
+
+	dsc temp;
+	temp.makeDouble(&d);
+	EVL_make_value(tdbb, &temp, impure);
+
+	return &impure->vlu_desc;
+}
+
+AggNode* StdDevAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
+{
+	return FB_NEW(getPool()) StdDevAggNode(getPool(), type, doDsqlPass(dsqlScratch, arg));
 }
 
 

@@ -241,5 +241,9 @@ static const struct
 	{"subfunc", function},
 	{"record_version2", byte_line},
 	{"gen_id2", gen_id2}, // 210
+	{"agg_stddev_samp", one},
+	{"agg_stddev_pop", one},
+	{"agg_var_samp", one},
+	{"agg_var_pop", one},
 	{0, 0}
 };

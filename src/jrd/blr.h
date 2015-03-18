@@ -407,4 +407,9 @@
 #define blr_record_version2			(unsigned char) 209
 #define blr_gen_id2					(unsigned char) 210 // NEXT VALUE FOR generator
 
+#define blr_agg_stddev_samp			(unsigned char) 211
+#define blr_agg_stddev_pop			(unsigned char) 212
+#define blr_agg_var_samp			(unsigned char) 213
+#define blr_agg_var_pop				(unsigned char) 214
+
 #endif // JRD_BLR_H
