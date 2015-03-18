@@ -475,8 +475,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			DPM_backout_mark(tdbb, rpb, transaction);
 
 			RecordStack empty_staying;
-			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
 			IDX_garbage_collect(tdbb, rpb, going, empty_staying);
+			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
 			going.pop();
 
 			if (!DPM_get(tdbb, rpb, LCK_write))
@@ -512,8 +512,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 		rpb->rpb_prior = NULL;
 		list_staying(tdbb, rpb, staying);
-		BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
 		IDX_garbage_collect(tdbb, rpb, going, staying);
+		BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
 
 		if (going.hasData())
 			going.pop();
@@ -4454,8 +4454,8 @@ static void garbage_collect(thread_db* tdbb, record_param* rpb, ULONG prior_page
 			JRD_reschedule(tdbb, 0, true);
 	}
 
-	BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
 	IDX_garbage_collect(tdbb, rpb, going, staying);
+	BLB_garbage_collect(tdbb, going, staying, prior_page, rpb->rpb_relation);
 
 	clearRecordStack(going);
 }
@@ -4495,8 +4495,8 @@ static void garbage_collect_idx(thread_db* tdbb,
 
 	going.push(old_data ? old_data : org_rpb->rpb_record);
 
-	BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page, org_rpb->rpb_relation);
 	IDX_garbage_collect(tdbb, org_rpb, going, staying);
+	BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page, org_rpb->rpb_relation);
 
 	going.pop();
 
@@ -5902,8 +5902,8 @@ static void update_in_place(thread_db* tdbb,
 		RecordStack going;
 		going.push(org_rpb->rpb_record);
 
-		BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page, relation);
 		IDX_garbage_collect(tdbb, org_rpb, going, staying);
+		BLB_garbage_collect(tdbb, going, staying, org_rpb->rpb_page, relation);
 
 		staying.pop();
 		clearRecordStack(staying);
