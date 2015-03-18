@@ -1,4 +1,323 @@
   *************
+  * v3.0 Beta 2
+  *************
+
+    * Bugfix CORE-4713
+        "BLOB not found" error at rollback after insert into table with expression index
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4706
+        ISQL pads blob columns wrongly when the column alias has more than 17 characters
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4705
+        FB3 SC crashes at disconnect after running EXECUTE STATEMENT as non-current user
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4704
+        Generator/exception permissions get corrupted after backup/restore
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4702
+        Join order in v3 is less optimal than in v2.x
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4698
+        Typing "add -user SYSDBA -pw masterkey -admin yes" into GSEC crashes firebird.exe
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4684
+        Error while preparing a complex query ("Too many Contexts of Relation/Procedure/Views. Maximum allowed is 256")
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4675
+        Conditions like WHERE <field> = <cursor>.<field> don't use existing index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4673
+        Computed index based on a computed column stores NULL for all its keys
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4670
+        Constraint violation error may be swallowed in some cases
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4668
+        SELECT FROM MON$TABLE_STATS doesn`t work on SC and CS
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4665
+        Wrong result when use "where <field_C> STARTING WITH <:value> ORDER BY <field_N>' and field_C is leading part
+        of compound index key: { field_C, field_N }
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4659
+        Error "Missing security context for .....\SECURITY3.FDB"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4656
+        Server could hang chasing dead record versions
+      Contributor(s):
+        Dmitriy Starodubov <dmitry.starodubov at red-soft.biz>
+
+    * Bugfix CORE-4655
+        MSVC8 and MSVC9 builds failed
+      Contributor(s):
+        Dmitriy Starodubov <dmitry.starodubov at red-soft.biz>
+
+    * Bugfix CORE-4653
+        Crash on infinite mutual SP calls (instead of "Too many concurrent executions of the same request.")
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4648
+        No permission for CREATE access to DATABASE (for RDB$ADMIN)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4646
+        Attach failure when using LegacyAuth on server and default configuration on client
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4644
+        Get open database errors under heavy concurrent load
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4639
+        Linux server may reject connections with a transliteration error
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4634
+        ORDER BY via an index + WHERE clause: error "no current record for fetch operation"
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4631
+        Lock manager "out of room" error hides the real cause of this problem
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4623
+        PSQL "Domain" and "Type Of" based variables referring BLOB with sub_type < 0 no longer work
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4622
+        Trigger with UPDATE OR INSERT statement and IIF() not working as expected
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4618
+        Rollback doesn`t undo changes when MERGE statement updates the same target rows multiple times and PLAN MERGE is used
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4604
+        EXECUTE STATEMENT raises CHAR_LENGTH() size for VARCHARs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4599
+        REPLACE function works incorrectly with multibyte charsets
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4582
+        Within linger period some database properties cannot be changed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4581
+        FB3 embedded server loads UDFs from wrong place
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4578
+        INPUT file not properly closed
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4572
+        Incorrect error for PSQL function when the number of actual arguments does not match the number of formal arguments
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4571
+        Can't select from table with ICU columns when database is created on Linux with ICU 4.2.1 and then copied to Windows
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4539
+        Server does not accept the right plan
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4507
+        Unable delete procedure source on Firebird 3.0 Alpha 2.0
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4503
+        ISQL command SHOW USERS display only the current user
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4472
+        Message "Modifying function <F> which is currently in use" when <F> is called from internal function declared in other unit
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4471
+        Legacy_Auth plugin does not connect from FB3 to FB2.5 server when tried after Win_Sspi
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4384
+        Problems when a table grows beyond 65535 pointer pages
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4383
+        Index and BLOBs garbage collection doesn't work for in-place updates
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4382
+        User savepoints are not released on commit
+      Contributor(s):
+        Dimitry Sibiryakov <sd at ibphoenix.com>
+
+    * Bugfix CORE-4280
+        Stored PSQL functions accept duplicate input arguments
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4259
+        Don't call setlocale(LC_CTYPE, "") in ISQL for Windows
+      Contributor(s):
+        Frank Schlottmann-Goedde <frank at schlottmann-goedde.de>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4161
+        Cannot insert records into table with column "GENERATED BY DEFAULT AS IDENTITY" in its DDL
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4075
+        Server bugchecks or crashes on exception in calculated index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3632
+        Crash after calling fork() in a process using libfbembed.so
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-2848
+        Page-level "lock conversion denied" or "lock denied" errors
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-4696
+        Avoid flushing dirty pages to disk after creation of temporary table index
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-4685
+        Accessing DB in invalid manner when links (hard or symbolic) are used for it
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4671
+        Release internal temporary blobs early to free some memory\disk space
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-4610
+        Report a tag name in diagnostics when transliteration errors in Parameter Block values occur
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4607
+        Add support for having multiple UserManager's in firebird.conf and use them from SQL
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4605
+        Rename CryptPlugin configuration parameter to WireCryptPlugin
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4590
+        Change resulting data type of CHAR_LENGTH/BIT_LENGTH/OCTET_LENGTH of BLOBs to BIGINT
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4386
+        Report more details for "object in use" errors
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-3526
+        Support for WHEN SQLSTATE error handlers in PSQL
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-3226
+        IPv6 support
+      Contributor(s):
+        Michal Kubeček <mike at mk-sys.cz>
+
+    * Improvement CORE-733
+        Compress data over the network
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * New feature CORE-4707
+        Ability to validate tables and indices online (without exclusive access to the database)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * New feature CORE-4526
+        Support SQL-2008 compliant OFFSET/FETCH clauses instead of FIRST/SKIP or ROWS/TO clauses
+      Contributor(s):
+        Mark Rotteveel <mark at lawinegevaar.nl>
+
+    * New feature CORE-4438
+        Add support for UPDATE OR INSERT statement to Embedded SQL
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * New feature CORE-4437
+        Add support for the RETURNING clause to Embedded SQL
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * New feature CORE-803
+        Server bi-directional (aka scrollable) cursors
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+
+  *************
   * v3.0 Beta 1
   *************
 
