@@ -228,8 +228,8 @@ endif()
 if (APPLE)
     set(OS_DIR darwin)
 
-    include_directories(/opt/local/include)
     if (NOT CMAKE_CROSSCOMPILING)
+        include_directories(/opt/local/include)
         link_directories(/opt/local/lib)
     endif()
 

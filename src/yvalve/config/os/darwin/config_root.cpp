@@ -37,7 +37,9 @@
 #include "../common/os/path_utils.h"
 #include "../common/file_params.h"
 
+#ifndef IOS
 #include <CoreServices/CoreServices.h>
+#endif
 #include <CoreFoundation/CFBundle.h>
 #include <CoreFoundation/CFURL.h>
 #include <mach-o/dyld.h>

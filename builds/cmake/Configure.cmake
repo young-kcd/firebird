@@ -66,7 +66,7 @@ if (ANDROID)
 endif()
 
 if (IOS)
-    set(CMAKE_SYSTEM_PROCESSOR "arm") # armv7 ?
+    set(CMAKE_SYSTEM_PROCESSOR "armv7")
     add_definitions(-D__arm__)
 endif()
 

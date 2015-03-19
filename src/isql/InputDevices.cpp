@@ -22,7 +22,7 @@
  */
 
 #include "firebird.h"
-#ifdef DARWIN
+#if defined(DARWIN) && !defined(IOS)
 #if defined(i386) || defined(__x86_64__)
 #include <architecture/i386/io.h>
 #else
