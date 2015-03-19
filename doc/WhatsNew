@@ -291,6 +291,14 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * New feature CORE-4714
+        Aggregate statistical functions STDDEV_POP, STDDEV_SAMP, VAR_POP and VAR_SAMP
+      See also:
+        /doc/sql.extensions/README.statistical_functions.txt
+      Contributor(s):
+        Hajime Nakagami <nakagami at gmail.com>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * New feature CORE-4707
         Ability to validate tables and indices online (without exclusive access to the database)
       Contributor(s):
@@ -313,6 +321,8 @@
 
     * New feature CORE-803
         Server bi-directional (aka scrollable) cursors
+      See also:
+        /doc/sql.extensions/README.scrollable_cursors.txt
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
