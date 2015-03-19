@@ -1,3 +1,33 @@
+ 2015-03-18 21:38  asfernandes 
+   A doc/sql.extensions/README.statistical_functions.txt
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/parse.y
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/jrd/val.h
+   M src/yvalve/keywords.cpp
+Feature CORE-4714 - Aggregate statistical functions stddev_pop, stddev_samp, var_pop and var_samp - contributed by Hajime Nakagami.
+
+ 2015-03-18 17:28  dimitr 
+   M src/burp/restore.epp
+Complement my recent changes in this module.
+
+ 2015-03-18 17:26  hvlad 
+   M src/jrd/vio.cpp
+Fixed bug CORE-4713 : "BLOB not found" error at rollback after insert into table with expression index
+
+ 2015-03-18 17:22  dimitr 
+   M doc/WhatsNew
+Updated the docs for Beta 2.
+
+ 2015-03-18 02:03  asfernandes 
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/yvalve/YObjects.h
+   M src/yvalve/utl.cpp
+Added IUtil::formatStatus.
+
  2015-03-17 21:44  asfernandes 
    M src/auth/SecurityDatabase/LegacyManagement.epp
    M src/auth/SecurityDatabase/LegacyServer.cpp
