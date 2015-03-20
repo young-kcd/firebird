@@ -1,3 +1,15 @@
+ 2015-03-19 11:34  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/Configure.cmake
+   M src/isql/InputDevices.cpp
+   M src/yvalve/config/os/darwin/config_root.cpp
+[build] [cmake] Add some iOS ifdefs. Hide wrong include dir during crosscompiling.
+
+ 2015-03-19 07:09  dimitr 
+   M doc/WhatsNew
+   A doc/sql.extensions/README.scrollable_cursors.txt
+Updated the docs.
+
  2015-03-18 21:38  asfernandes 
    A doc/sql.extensions/README.statistical_functions.txt
    M src/dsql/AggNodes.cpp
