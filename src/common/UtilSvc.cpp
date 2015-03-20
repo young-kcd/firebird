@@ -139,7 +139,7 @@ public:
 	virtual ULONG getBytes(UCHAR*, ULONG) { return 0; }
 	virtual void setServiceStatus(const ISC_STATUS*) { }
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
-    virtual const ISC_STATUS* getStatus() { return 0; }
+    virtual const Firebird::CheckStatusWrapper* getStatus() { return NULL; }
 	virtual void fillDpb(ClumpletWriter&) { }
 	virtual bool finished() { return false; }
 	virtual void initStatus() { }

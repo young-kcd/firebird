@@ -112,7 +112,7 @@ public:
 	int getFlags() const { return m_flags; }
 
 	// Interprete status and put error description into passed string
-	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const = 0;
+	virtual void getRemoteError(const Jrd::FbStatusVector* status, Firebird::string& err) const = 0;
 
 	static const Firebird::string* generate(const Provider* item)
 	{
@@ -186,8 +186,7 @@ public:
 
 	// Get error description from provider and put it with additional context
 	// info into locally raised exception
-	void raise(const ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere);
-	void raise(const Firebird::IStatus& status, Jrd::thread_db* tdbb, const char* sWhere);
+	void raise(const Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, const char* sWhere);
 
 	// will we wrap external errors into our ones (isc_eds_xxx) or pass them as is
 	bool getWrapErrors() const	{ return m_wrapErrors; }
@@ -279,10 +278,10 @@ protected:
 		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const;
 	void detachFromJrdTran();
 
-	virtual void doStart(ISC_STATUS* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb) = 0;
-	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db* tdbb, int info_len, const char* info) = 0;
-	virtual void doCommit(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain) = 0;
-	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain) = 0;
+	virtual void doStart(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb) = 0;
+	virtual void doPrepare(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, int info_len, const char* info) = 0;
+	virtual void doCommit(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, bool retain) = 0;
+	virtual void doRollback(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, bool retain) = 0;
 
 	Provider& m_provider;
 	Connection& m_connection;
@@ -338,9 +337,7 @@ public:
 
 	// Get error description from provider and put it with additional contex
 	// info into locally raised exception
-	void raise(ISC_STATUS* status, Jrd::thread_db* tdbb, const char* sWhere,
-		const Firebird::string* sQuery = NULL);
-	void raise(const Firebird::IStatus& status, Jrd::thread_db* tdbb, const char* sWhere,
+	void raise(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, const char* sWhere,
 		const Firebird::string* sQuery = NULL);
 
 	// Active statement must be bound to parent jrd request

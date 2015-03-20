@@ -57,7 +57,8 @@ public:
 		  verifier(getPool()), salt(getPool()), sessionKey(getPool()),
 		  secDbName(NULL)
 	{
-		Firebird::LocalStatus s;
+		LocalStatus ls;
+		CheckStatusWrapper s(&ls);
 		config.assignRefNoIncr(par->getFirebirdConf(&s));
 		check(&s);
 	}
@@ -198,7 +199,8 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 			}
 			catch(const Exception&)
 			{
-				LocalStatus s;
+				LocalStatus ls;
+				CheckStatusWrapper s(&ls);
 
 				if (stmt) stmt->free(&s);
 				if (tra) tra->rollback(&s);

@@ -105,14 +105,28 @@ namespace fb_utils
 
 	Firebird::PathName get_process_name();
 	SLONG genUniqueId();
-
 	void getCwd(Firebird::PathName& pn);
+
+	void inline initStatusTo(ISC_STATUS* status, ISC_STATUS to)
+	{
+		status[0] = isc_arg_gds;
+		status[1] = to;
+		status[2] = isc_arg_end;
+	}
 
 	void inline init_status(ISC_STATUS* status)
 	{
-		status[0] = isc_arg_gds;
-		status[1] = FB_SUCCESS;
-		status[2] = isc_arg_end;
+		initStatusTo(status, FB_SUCCESS);
+	}
+
+	void inline statusBadAlloc(ISC_STATUS* status)
+	{
+		initStatusTo(status, isc_virmemexh);
+	}
+
+	void inline statusUnknown(ISC_STATUS* status)
+	{
+		initStatusTo(status, isc_exception_sigill);		// Any better ideas? New error code?
 	}
 
 	void inline init_status(Firebird::CheckStatusWrapper* status)
@@ -122,12 +136,13 @@ namespace fb_utils
 
 	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
 							const ISC_STATUS* const from, const unsigned int count) throw();
-
+	void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw();
 	unsigned int mergeStatus(ISC_STATUS* const to, unsigned int space, const Firebird::IStatus* from) throw();
-
 	void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw();
-
 	unsigned int statusLength(const ISC_STATUS* const status) throw();
+	unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
+						   const ISC_STATUS* sub, unsigned int csub) throw();
+	bool cmpStatus(unsigned int len, const ISC_STATUS* a, const ISC_STATUS* b) throw();
 
 	enum FetchPassResult {
 		FETCH_PASS_OK,

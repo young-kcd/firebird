@@ -91,7 +91,7 @@ void BLF_close_blob(thread_db* tdbb, BlobControl** filter_handle)
 
 	START_CHECK_FOR_EXCEPTIONS(next->ctl_exception_message.c_str())
 
-	ISC_STATUS_ARRAY localStatus = {0};
+	ISC_STATUS_ARRAY localStatus;
 
 	// Sign off from filter
 	// Walk the chain again, telling each filter stage to close
@@ -162,7 +162,6 @@ ISC_STATUS BLF_get_segment(thread_db* tdbb,
  *
  **************************************/
 	ISC_STATUS_ARRAY localStatus;
-	fb_utils::init_status(localStatus);
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
@@ -273,7 +272,6 @@ void BLF_put_segment(thread_db* tdbb,
  **************************************/
 
 	ISC_STATUS_ARRAY localStatus;
-	fb_utils::init_status(localStatus);
 
 	BlobControl* control = *filter_handle;
 	control->ctl_status = localStatus;
@@ -354,14 +352,13 @@ static void open_blob(thread_db* tdbb,
 	temp.ctl_internal[0] = dbb;
 	temp.ctl_internal[1] = tra_handle;
 	temp.ctl_internal[2] = NULL;
-	// CVC: Using ISC_STATUS (SLONG) to return a pointer!!!
+	// CVC: Using FbStatusVector (SLONG) to return a pointer!!!
 	// If we change the function signature, we'll change the public API.
-	// ISC_STATUS to pointer!
+	// FbStatusVector to pointer!
 	BlobControl* prior = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp);
 	prior->ctl_source = callback;
 
 	ISC_STATUS_ARRAY localStatus;
-	fb_utils::init_status(localStatus);
 	prior->ctl_status = localStatus;
 
 	prior->ctl_internal[0] = dbb;
@@ -374,7 +371,7 @@ static void open_blob(thread_db* tdbb,
 		status_exception::raise(localStatus);
 	}
 
-	// ISC_STATUS to pointer!
+	// FbStatusVector to pointer!
 	BlobControl* control = (BlobControl*) (*callback) (isc_blob_filter_alloc, &temp);
 	control->ctl_source = filter->blf_filter;
 	control->ctl_handle = prior;

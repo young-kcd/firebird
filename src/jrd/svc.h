@@ -41,6 +41,7 @@
 #include "../common/classes/ClumpletReader.h"
 #include "../common/classes/RefMutex.h"
 #include "../burp/split/spit.h"
+#include "../jrd/status.h"
 
 // forward decl.
 
@@ -130,7 +131,7 @@ public:		// utilities interface with service
 	// no-op for services
 	virtual void hidePasswd(ArgvType&, int);
 	// return service status
-    virtual const ISC_STATUS* getStatus();
+    virtual const FbStatusVector* getStatus();
 	// reset service status
 	virtual void initStatus();
 	// no-op for services
@@ -163,7 +164,7 @@ public:		// external interface with service
 	// Query service state (v. 1 & 2)
 	void query(USHORT send_item_length, const UCHAR* send_items, USHORT recv_item_length,
 			   const UCHAR* recv_items, USHORT buffer_length, UCHAR* info);
-	ISC_STATUS query2(thread_db* tdbb, USHORT send_item_length, const UCHAR* send_items,
+	FbStatusVector query2(thread_db* tdbb, USHORT send_item_length, const UCHAR* send_items,
 			   USHORT recv_item_length, const UCHAR* recv_items, USHORT buffer_length, UCHAR* info);
 	// Detach from service
 	void detach();
@@ -262,14 +263,14 @@ private:
 	static THREAD_ENTRY_DECLARE run(THREAD_ENTRY_PARAM arg);
 
 private:
-	ISC_STATUS_ARRAY svc_status;		// status vector for running service
-	Firebird::string svc_parsed_sw;		// Here point elements of argv
+	FbLocalStatus svc_status;						// status vector for running service
+	Firebird::string svc_parsed_sw;					// Here point elements of argv
 	ULONG	svc_stdout_head;
 	ULONG	svc_stdout_tail;
 	UCHAR	svc_stdout[SVC_STDOUT_BUFFER_SIZE];		// output from service
 	Firebird::Semaphore	svcStart;
-	const serv_entry*	svc_service;			// attached service's entry
-	const serv_entry*	svc_service_run;		// running service's entry
+	const serv_entry*	svc_service;				// attached service's entry
+	const serv_entry*	svc_service_run;			// running service's entry
 	Firebird::Array<UCHAR> svc_resp_alloc;
 	UCHAR*	svc_resp_buf;
 	const UCHAR*	svc_resp_ptr;
@@ -302,12 +303,6 @@ private:
 	Firebird::ICryptKeyCallback* svc_crypt_callback;
 
 public:
-	struct StatusStringsHelper
-	{
-		ThreadId workerThread;
-		Firebird::Mutex mtx;
-	};
-
 	Firebird::Semaphore	svc_detach_sem;
 
 	class SvcMutex : public Firebird::RefMutex
@@ -323,8 +318,6 @@ public:
 	Firebird::RefPtr<SvcMutex> svc_existence;
 
 private:
-	StatusStringsHelper	svc_thread_strings;
-
 	Firebird::Semaphore svc_sem_empty, svc_sem_full;
 
 	class Validate

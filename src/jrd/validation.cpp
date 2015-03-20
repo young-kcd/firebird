@@ -558,6 +558,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/err_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
@@ -760,7 +761,7 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 
 		Firebird::string err;
 		err.printf("Database: %s\n\tValidation aborted", fileName.c_str());
-		gds__log_status(err.c_str(), tdbb->tdbb_status_vector);
+		iscLogStatus(err.c_str(), tdbb->tdbb_status_vector);
 
 		cleanup();
 		dbb->deletePool(val_pool);

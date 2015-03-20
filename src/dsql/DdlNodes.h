@@ -238,7 +238,8 @@ public:
 		  objType(aObjType),
 		  objName(pool, aObjName),
 		  subName(pool, aSubName),
-		  text(pool, aText)
+		  text(pool, aText),
+		  str(pool)
 	{
 	}
 
@@ -250,23 +251,19 @@ public:
 protected:
 	virtual void putErrorPrefix(Firebird::Arg::StatusVector& statusVector)
 	{
-		Firebird::string str(objName.toString());
+		str = objName.toString();
 
 		if (subName.hasData())
 			str.append(".").append(subName.c_str());
 
-		//// ASF: What a hack, as StatusVector does not save the pointer content!
-		const char* p = Firebird::MasterInterfacePtr()->circularAlloc(str.c_str(), str.length(),
-			(intptr_t) getThreadId());
-
-		statusVector << Firebird::Arg::Gds(isc_dsql_comment_on_failed) << p;
+		statusVector << Firebird::Arg::Gds(isc_dsql_comment_on_failed) << str;
 	}
 
 private:
 	int objType;
 	Firebird::QualifiedName objName;
 	Firebird::MetaName subName;
-	Firebird::string text;
+	Firebird::string text, str;
 };
 
 

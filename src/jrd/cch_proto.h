@@ -74,7 +74,7 @@ void		CCH_unwind(Jrd::thread_db*, const bool);
 bool		CCH_validate(Jrd::win*);
 void		CCH_flush_ast(Jrd::thread_db*);
 bool		CCH_write_all_shadows(Jrd::thread_db*, Jrd::Shadow*, Jrd::BufferDesc*,
-					 ISC_STATUS*, const bool);
+					 Jrd::FbStatusVector*, const bool);
 
 // macros for dealing with cache pages
 

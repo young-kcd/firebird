@@ -31,6 +31,7 @@
 
 #include "fb_exception.h"
 #include "firebird/Interface.h"
+#include "../common/SimpleStatusVector.h"
 
 namespace Firebird {
 
@@ -72,7 +73,7 @@ protected:
 		virtual void assign(const StatusVector& ex) throw() { }
 		virtual void assign(const Exception& ex) throw() { }
 		virtual ISC_STATUS copyTo(ISC_STATUS*) const throw() { return 0; }
-		virtual ISC_STATUS copyTo(IStatus*) const throw() { return 0; }
+		virtual void copyTo(IStatus*) const throw() { }
 
 		virtual void shiftLeft(const Base&) throw() { }
 		virtual void shiftLeft(const Warning&) throw() { }
@@ -103,18 +104,19 @@ protected:
 	class ImplStatusVector : public ImplBase
 	{
 	private:
-		ISC_STATUS_ARRAY m_status_vector;
-		unsigned int m_length, m_warning;
+		SimpleStatusVector<> m_status_vector;
+		unsigned int m_warning;
 
 		bool appendErrors(const ImplBase* const v) throw();
 		bool appendWarnings(const ImplBase* const v) throw();
 		bool append(const ISC_STATUS* const from, const unsigned int count) throw();
+		void append(const ISC_STATUS* const from) throw();
 
 	public:
-		virtual const ISC_STATUS* value() const throw() { return m_status_vector; }
-		virtual unsigned int length() const throw() { return m_length; }
+		virtual const ISC_STATUS* value() const throw() { return m_status_vector.begin(); }
+		virtual unsigned int length() const throw() { return m_status_vector.getCount() - 1u; }
 		virtual unsigned int firstWarning() const throw() { return m_warning; }
-		virtual bool hasData() const throw() { return m_length > 0; }
+		virtual bool hasData() const throw() { return length() > 0u; }
 		virtual void clear() throw();
 		virtual void makePermanent() throw();
 		virtual void append(const StatusVector& v) throw();
@@ -122,7 +124,7 @@ protected:
 		virtual void assign(const StatusVector& v) throw();
 		virtual void assign(const Exception& ex) throw();
 		virtual ISC_STATUS copyTo(ISC_STATUS* dest) const throw();
-		virtual ISC_STATUS copyTo(IStatus* dest) const throw();
+		virtual void copyTo(IStatus* dest) const throw();
 		virtual void shiftLeft(const Base& arg) throw();
 		virtual void shiftLeft(const Warning& arg) throw();
 		virtual void shiftLeft(const char* text) throw();
@@ -130,7 +132,9 @@ protected:
 		virtual void shiftLeft(const MetaName& text) throw();
 		virtual bool compare(const StatusVector& v) const throw();
 
-		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw() : ImplBase(k, c)
+		ImplStatusVector(ISC_STATUS k, ISC_STATUS c) throw()
+			: ImplBase(k, c),
+			  m_status_vector(*getDefaultMemoryPool())
 		{
 			clear();
 		}
@@ -162,7 +166,7 @@ public:
 	void assign(const Exception& ex) throw() { implementation->assign(ex); }
 	void raise() const;
 	ISC_STATUS copyTo(ISC_STATUS* dest) const throw() { return implementation->copyTo(dest); }
-	ISC_STATUS copyTo(IStatus* dest) const throw() { return implementation->copyTo(dest); }
+	void copyTo(IStatus* dest) const throw() { implementation->copyTo(dest); }
 
 	// generic argument insert
 	StatusVector& operator<<(const Base& arg) throw()

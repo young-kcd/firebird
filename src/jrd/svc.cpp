@@ -127,27 +127,6 @@ const char* const SPB_SEC_USERNAME = "isc_spb_sec_username";
 
 namespace {
 
-	// Thread ID holder (may be generic, but needed only here now)
-	class ThreadIdHolder
-	{
-	public:
-		explicit ThreadIdHolder(Jrd::Service::StatusStringsHelper& p)
-			: strHelper(&p)
-		{
-			MutexLockGuard guard(strHelper->mtx, FB_FUNCTION);
-			strHelper->workerThread = getThreadId();
-		}
-
-		~ThreadIdHolder()
-		{
-			MutexLockGuard guard(strHelper->mtx, FB_FUNCTION);
-			strHelper->workerThread = 0;
-		}
-
-	private:
-		Jrd::Service::StatusStringsHelper* strHelper;
-	};
-
 	// Generic mutex to synchronize services
 	GlobalPtr<Mutex> globalServicesMutex;
 
@@ -156,7 +135,7 @@ namespace {
 	GlobalPtr<AllServices> allServices;	// protected by globalServicesMutex
 	volatile bool svcShutdown = false;
 
-	void put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
+	void put_status_arg(Arg::StatusVector& status, const MsgFormat::safe_cell& value)
 	{
 		using MsgFormat::safe_cell;
 
@@ -164,12 +143,10 @@ namespace {
 		{
 		case safe_cell::at_int64:
 		case safe_cell::at_uint64:
-			*status++ = isc_arg_number;
-			*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
+			status << Arg::Num(static_cast<SLONG>(value.i_value)); // May truncate number!
 			break;
 		case safe_cell::at_str:
-			*status++ = isc_arg_string;
-			*status++ = (ISC_STATUS) (IPTR) value.st_value.s_string;
+			status << value.st_value.s_string;
 			break;
 		default:
 			break;
@@ -502,21 +479,6 @@ void Service::putBytes(const UCHAR* bytes, FB_SIZE_T len)
 	enqueue(bytes, len);
 }
 
-void Service::makePermanentStatusVector() throw()
-{
-	// This mutex avoids modification of workerThread
-	MutexLockGuard guard(svc_thread_strings.mtx, FB_FUNCTION);
-
-	if (svc_thread_strings.workerThread)
-	{
-		makePermanentVector(svc_status, svc_thread_strings.workerThread);
-	}
-	else
-	{
-		makePermanentVector(svc_status);
-	}
-}
-
 void Service::setServiceStatus(const ISC_STATUS* status_vector)
 {
 	if (checkForShutdown())
@@ -524,17 +486,8 @@ void Service::setServiceStatus(const ISC_STATUS* status_vector)
 		return;
 	}
 
-	if (status_vector != svc_status)
-	{
-		Arg::StatusVector svc(svc_status);
-		Arg::StatusVector passed(status_vector);
-		if (svc != passed)
-		{
-			svc.append(passed);
-			svc.copyTo(svc_status);
-			makePermanentStatusVector();
-		}
-	}
+	Arg::StatusVector passed(status_vector);
+	ERR_post_nothrow(passed, svc_status);
 }
 
 void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
@@ -546,94 +499,18 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
 	}
 
 	// Append error codes to the status vector
+	Arg::StatusVector status;
 
-	ISC_STATUS_ARRAY tmp_status;
+	// stuff the error code
+	status << Arg::Gds(ENCODE_ISC_MSG(errcode, facility));
 
-	// stuff the status into temp buffer
-	MOVE_CLEAR(tmp_status, sizeof(tmp_status));
-	ISC_STATUS* status = tmp_status;
-	*status++ = isc_arg_gds;
-	*status++ = ENCODE_ISC_MSG(errcode, facility);
-	size_t tmp_status_len = 3;
-
-	// We preserve the five params of the old code.
-	// Don't want to overflow the status vector.
-	for (unsigned int loop = 0; loop < 5 && loop < args.getCount(); ++loop)
+	// stuff params
+	for (unsigned int loop = 0; loop < args.getCount(); ++loop)
 	{
 		put_status_arg(status, args.getCell(loop));
-		tmp_status_len += 2;
 	}
 
-	*status++ = isc_arg_end;
-
-	if (svc_status[0] != isc_arg_gds ||
-		(svc_status[0] == isc_arg_gds && svc_status[1] == 0 && svc_status[2] != isc_arg_warning))
-	{
-		memcpy(svc_status, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
-	}
-	else
-	{
-		FB_SIZE_T status_len = 0, warning_indx = 0;
-		PARSE_STATUS(svc_status, status_len, warning_indx);
-		if (status_len)
-			--status_len;
-
-		// check for duplicated error code
-		bool duplicate = false;
-		size_t i;
-		for (i = 0; i < ISC_STATUS_LENGTH; i++)
-		{
-			if (svc_status[i] == isc_arg_end && i == status_len)
-				break;			// end of argument list
-
-			if (i && i == warning_indx)
-				break;			// vector has no more errors
-
-			if (svc_status[i] == tmp_status[1] && i != 0 &&
-				svc_status[i - 1] != isc_arg_warning &&
-				i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
-				(memcmp(&svc_status[i], &tmp_status[1],
-					sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
-			{
-				// duplicate found
-				duplicate = true;
-				break;
-			}
-		}
-
-		if (!duplicate)
-		{
-			// if the status_vector has only warnings then adjust err_status_len
-			size_t err_status_len = i;
-			if (err_status_len == 2 && warning_indx != 0)
-				err_status_len = 0;
-
-			ISC_STATUS_ARRAY warning_status;
-			FB_SIZE_T warning_count = 0;
-			if (warning_indx)
-			{
-				// copy current warning(s) to a temp buffer
-				MOVE_CLEAR(warning_status, sizeof(warning_status));
-				memcpy(warning_status, &svc_status[warning_indx],
-							sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
-				PARSE_STATUS(warning_status, warning_count, warning_indx);
-			}
-
-			// add the status into a real buffer right in between last error and first warning
-			i = err_status_len + tmp_status_len;
-			if (i < ISC_STATUS_LENGTH)
-			{
-				memcpy(&svc_status[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
-				// copy current warning(s) to the status_vector
-				if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
-				{
-					memcpy(&svc_status[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
-				}
-			}
-		}
-	}
-
-	makePermanentStatusVector();
+	ERR_post_nothrow(status, svc_status);
 }
 
 void Service::hidePasswd(ArgvType&, int)
@@ -641,7 +518,7 @@ void Service::hidePasswd(ArgvType&, int)
 	// no action
 }
 
-const ISC_STATUS* Service::getStatus()
+const FbStatusVector* Service::getStatus()
 {
 	return svc_status;
 }
@@ -677,9 +554,10 @@ void Service::fillDpb(ClumpletWriter& dpb)
 	if (svc_crypt_callback)
 	{
 		// That's not DPB-related, but anyway should be done before attach/create DB
-		if (fb_database_crypt_callback(svc_status, svc_crypt_callback) != 0)
+		ISC_STATUS_ARRAY status;
+		if (fb_database_crypt_callback(status, svc_crypt_callback) != 0)
 		{
-			status_exception::raise(svc_status);
+			status_exception::raise(status);
 		}
 	}
 }
@@ -753,7 +631,6 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_stdin_preload_requested(0), svc_stdin_user_size(0)
 {
 	initStatus();
-	ThreadIdHolder holdId(svc_thread_strings);
 
 	{	// scope
 		// Account service block in global array
@@ -871,7 +748,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	catch (const Firebird::Exception& ex)
 	{
 		TraceManager* trace_manager = NULL;
-		ISC_STATUS_ARRAY status_vector;
+		FbLocalStatus status_vector;
 
 		try
 		{
@@ -1067,7 +944,7 @@ void Service::shutdownServices()
 }
 
 
-ISC_STATUS Service::query2(thread_db* /*tdbb*/,
+FbStatusVector Service::query2(thread_db* /*tdbb*/,
 						   USHORT send_item_length,
 						   const UCHAR* send_items,
 						   USHORT recv_item_length,
@@ -1087,8 +964,6 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 	UCHAR buffer[MAXPATHLEN];
 	USHORT l, length, get_flags;
 	UCHAR* stdin_request_notification = NULL;
-
-	ThreadIdHolder holdId(svc_thread_strings);
 
 	// Setup the status vector
 	Arg::StatusVector status;
@@ -1572,7 +1447,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ISC_STATUS_ARRAY status_vector;
+		FbLocalStatus status_vector;
 
 		if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_QUERY))
 		{
@@ -1955,7 +1830,7 @@ void Service::query(USHORT			send_item_length,
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ISC_STATUS_ARRAY status_vector;
+		FbLocalStatus status_vector;
 
 		if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_QUERY))
 		{
@@ -2016,8 +1891,6 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		// Service was already detached
 		Arg::Gds(isc_bad_svc_handle).raise();
 	}
-
-	ThreadIdHolder holdId(svc_thread_strings);
 
 	try
 	{
@@ -2178,7 +2051,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 	{
 		if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_START))
 		{
-			ISC_STATUS_ARRAY status_vector;
+			FbLocalStatus status_vector;
 			const ISC_STATUS exc = ex.stuff_exception(status_vector);
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
@@ -2195,7 +2068,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		TraceServiceImpl service(this);
 		this->svc_trace_manager->event_service_start(&service,
 			this->svc_switches.length(), this->svc_switches.c_str(),
-			this->svc_status[1] ? ITracePlugin::RESULT_FAILED : ITracePlugin::RESULT_SUCCESS);
+			this->svc_status->getState() & FbStatusVector::STATE_ERRORS ?
+				ITracePlugin::RESULT_FAILED : ITracePlugin::RESULT_SUCCESS);
 	}
 }
 

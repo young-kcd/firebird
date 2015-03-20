@@ -426,9 +426,10 @@ void StatementMetadata::parse(unsigned bufferLength, const UCHAR* buffer)
 void StatementMetadata::getAndParse(unsigned itemsLength, const UCHAR* items,
 	unsigned bufferLength, UCHAR* buffer)
 {
-	LocalStatus status;
+	LocalStatus ls;
+	CheckStatusWrapper status(&ls);
 	statement->getInfo(&status, itemsLength, items, bufferLength, buffer);
-	status.check();
+	ls.check();
 
 	parse(bufferLength, buffer);
 }

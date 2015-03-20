@@ -620,14 +620,14 @@ inline void CompilerScratch::csb_repeat::deactivate()
 
 class StatusXcp
 {
-	ISC_STATUS_ARRAY status;
+	FbLocalStatus status;
 
 public:
 	StatusXcp();
 
 	void clear();
-	void init(const ISC_STATUS*);
-	void copyTo(ISC_STATUS*) const;
+	void init(const Jrd::FbStatusVector*);
+	void copyTo(Jrd::FbStatusVector*) const;
 	bool success() const;
 	SLONG as_gdscode() const;
 	SLONG as_sqlcode() const;

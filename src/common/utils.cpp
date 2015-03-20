@@ -1170,6 +1170,17 @@ unsigned int mergeStatus(ISC_STATUS* const dest, unsigned int space,
 	return copied;
 }
 
+void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw()
+{
+	to->init();
+
+	int flags = from->getState();
+	if (flags & Firebird::CheckStatusWrapper::STATE_ERRORS)
+		to->setErrors(from->getErrors());
+	if (flags & Firebird::CheckStatusWrapper::STATE_WARNINGS)
+		to->setWarnings(from->getWarnings());
+}
+
 void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw()
 {
 	try
@@ -1194,6 +1205,121 @@ unsigned int statusLength(const ISC_STATUS* const status) throw()
 		}
 		l += (status[l] == isc_arg_cstring ? 3 : 2);
 	}
+}
+
+bool cmpStatus(unsigned int len, const ISC_STATUS* a, const ISC_STATUS* b) throw()
+{
+	for (unsigned i = 0; i < len; )
+	{
+		const ISC_STATUS* op1 = &a[i];
+		const ISC_STATUS* op2 = &b[i];
+		if (*op1 != *op2)
+			return false;
+
+		if (i == len - 1 && *op1 == isc_arg_end)
+			break;
+
+		i += (*op1 == isc_arg_cstring ? 3 : 2);
+		if (i > len)		// arg does not fit
+			return false;
+
+		unsigned l1, l2;
+		const char *s1, *s2;
+		switch (*op1)
+		{
+		case isc_arg_cstring:
+		case isc_arg_string:
+		case isc_arg_interpreted:
+		case isc_arg_sql_state:
+			if (*op1 == isc_arg_cstring)
+			{
+				l1 = op1[1];
+				l2 = op2[1];
+				s1 = (const char*)(op1[2]);
+				s2 = (const char*)(op2[2]);
+			}
+			else
+			{
+				s1 = (const char*)(op1[1]);
+				s2 = (const char*)(op2[1]);
+				l1 = strlen(s1);
+				l2 = strlen(s2);
+			}
+
+			if (l1 != l2)
+				return false;
+			if (memcmp(s1, s2, l1) != 0)
+				return false;
+			break;
+
+		default:
+			if (op1[1] != op2[1])
+				return false;
+			break;
+		}
+	}
+
+	return true;
+}
+
+unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
+					   const ISC_STATUS* sub, unsigned int csub) throw()
+{
+	for (unsigned pos = 0; csub <= cin - pos; )
+	{
+		for (unsigned i = 0; i < csub; )
+		{
+			const ISC_STATUS* op1 = &in[pos + i];
+			const ISC_STATUS* op2 = &sub[i];
+			if (*op1 != *op2)
+				goto miss;
+
+			i += (*op1 == isc_arg_cstring ? 3 : 2);
+			if (i > csub)		// arg does not fit
+				goto miss;
+
+			unsigned l1, l2;
+			const char *s1, *s2;
+			switch (*op1)
+			{
+			case isc_arg_cstring:
+			case isc_arg_string:
+			case isc_arg_interpreted:
+			case isc_arg_sql_state:
+				if (*op1 == isc_arg_cstring)
+				{
+					l1 = op1[1];
+					l2 = op2[1];
+					s1 = (const char*)(op1[2]);
+					s2 = (const char*)(op2[2]);
+				}
+				else
+				{
+					s1 = (const char*)(op1[1]);
+					s2 = (const char*)(op2[1]);
+					l1 = strlen(s1);
+					l2 = strlen(s2);
+				}
+
+				if (l1 != l2)
+					goto miss;
+				if (memcmp(s1, s2, l1) != 0)
+					goto miss;
+				break;
+
+			default:
+				if (op1[1] != op2[1])
+					goto miss;
+				break;
+			}
+
+		}
+		return pos;
+
+miss:	pos += (in[pos] == isc_arg_cstring ? 3 : 2);
+	}
+
+	return ~0u;
 }
 
 // moves DB path information (from limbo transaction) to another buffer

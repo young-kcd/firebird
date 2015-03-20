@@ -260,7 +260,8 @@ public:
 			if (att)
 			{
 				// detach from database
-				Firebird::LocalStatus lStatus;
+				Firebird::LocalStatus ls;
+				Firebird::CheckStatusWrapper lStatus(&ls);
 				att->detach(&lStatus);
 				att = NULL;
 			}

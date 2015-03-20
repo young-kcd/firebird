@@ -113,9 +113,9 @@ using namespace Firebird;
 static void release_io_event(jrd_file*, OVERLAPPED*);
 #endif
 static bool	maybeCloseFile(HANDLE&);
-static jrd_file* seek_file(jrd_file*, BufferDesc*, ISC_STATUS*, OVERLAPPED*, OVERLAPPED**);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, FbStatusVector*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool, bool);
-static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* const);
+static bool nt_error(const TEXT*, const jrd_file*, FbStatusVector, FbStatusVector* const);
 static void adjustFileSystemCacheSize();
 
 struct AdjustFsCache
@@ -460,7 +460,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 static Firebird::InitInstance<ZeroBuffer> zeros;
 
 
-USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector,
+USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_vector,
 					 ULONG startPage, USHORT initPages)
 {
 /**************************************
@@ -590,7 +590,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -645,7 +645,7 @@ bool PIO_read_ahead(Database*		dbb,
 				   SCHAR*	buffer,
 				   SLONG	pages,
 				   phys_io_blk*		piob,
-				   ISC_STATUS*	status_vector)
+				   FbStatusVector*	status_vector)
 {
 /**************************************
  *
@@ -737,7 +737,7 @@ bool PIO_read_ahead(Database*		dbb,
 
 
 #ifdef SUPERSERVER_V2
-bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
+bool PIO_status(Database* dbb, phys_io_blk* piob, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -775,7 +775,7 @@ bool PIO_status(Database* dbb, phys_io_blk* piob, ISC_STATUS* status_vector)
 #endif
 
 
-bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -889,7 +889,7 @@ static void release_io_event(jrd_file* file, OVERLAPPED* overlapped)
 
 static jrd_file* seek_file(jrd_file*	file,
 					 	   BufferDesc*	bdb,
-					 	   ISC_STATUS*	/*status_vector*/,
+					 	   FbStatusVector*	/*status_vector*/,
 					 	   OVERLAPPED*	overlapped,
 					 	   OVERLAPPED**	overlapped_ptr)
 {
@@ -1036,8 +1036,8 @@ static bool maybeCloseFile(HANDLE& hFile)
 }
 
 static bool nt_error(const TEXT* string,
-					 const jrd_file* file, ISC_STATUS operation,
-					 ISC_STATUS* const status_vector)
+					 const jrd_file* file, FbStatusVector operation,
+					 FbStatusVector* const status_vector)
 {
 /**************************************
  *

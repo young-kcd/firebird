@@ -402,7 +402,8 @@ public:
 		}
 
 		bool working = true;
-		LocalStatus st;
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
 
 		authPort->port_srv_auth_block->createPluginsItr();
 		authItr = authPort->port_srv_auth_block->plugins;
@@ -786,7 +787,8 @@ public:
 	explicit CryptKeyTypeManager(MemoryPool& p)
 		: PermanentStorage(p), knownTypes(getPool())
 	{
-		LocalStatus st;
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
 		for (GetPlugins<IWireCryptPlugin> cpItr(IPluginManager::TYPE_WIRE_CRYPT); cpItr.hasData(); cpItr.next())
 		{
 			const char* list = cpItr.plugin()->getKnownTypes(&st);
@@ -1084,7 +1086,8 @@ void SRVR_enum_attachments(ULONG& att_cnt, ULONG& dbs_cnt, ULONG& svc_cnt)
 		isc_spb_user_name, 6, 'S', 'Y', 'S', 'D', 'B', 'A'
 	};
 
-	LocalStatus status;
+	LocalStatus ls;
+	CheckStatusWrapper status(&ls);
 	ServService iface(provider->attachServiceManager(&status, "service_mgr",
 					  sizeof(spb_attach), spb_attach));
 
@@ -1492,7 +1495,8 @@ void SRVR_multi_thread( rem_port* main_port, USHORT flags)
 		catch (const Exception& e)
 		{
 			gds__log("SRVR_multi_thread: shutting down due to unhandled exception");
-			LocalStatus status_vector;
+			LocalStatus ls;
+			CheckStatusWrapper status_vector(&ls);
 			e.stuffException(&status_vector);
 			iscLogStatus(NULL, &status_vector);
 
@@ -1753,7 +1757,8 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	}
 
 	// We are going to try authentication handshake
-	LocalStatus status;
+	LocalStatus ls;
+	CheckStatusWrapper status(&ls);
 	bool returnData = false;
 	if (accepted && version >= PROTOCOL_VERSION13)
 	{
@@ -1923,7 +1928,8 @@ static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACK
  *	Allocate a statement handle.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = port->port_context;
 
@@ -2187,7 +2193,8 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 		authPort->port_server_crypt_callback = new ServerCallback(authPort);
 	}
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	provider->setDbCryptCallback(&status_vector, authPort->port_server_crypt_callback->getInterface());
 
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
@@ -2231,7 +2238,8 @@ static void aux_request( rem_port* port, /*P_REQ* request,*/ PACKET* send)
 
 	try
 	{
-		LocalStatus status_vector;
+		LocalStatus ls;
+		CheckStatusWrapper status_vector(&ls);
 
 		Rdb* const rdb = port->port_context;
 		if (bad_db(&status_vector, rdb))
@@ -2319,7 +2327,8 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
  *	Cancel events.
  *
  **************************************/
-    LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	// Which database ?
 
@@ -2377,7 +2386,8 @@ static void cancel_operation(rem_port* port, USHORT kind)
 
 	if (rdb->rdb_iface)
 	{
-		LocalStatus status_vector;
+		LocalStatus ls;
+		CheckStatusWrapper status_vector(&ls);
 		rdb->rdb_iface->cancelOperation(&status_vector, kind);
 	}
 }
@@ -2418,7 +2428,8 @@ static USHORT check_statement_type( Rsr* statement)
  *
  **************************************/
 	UCHAR buffer[16];
-	LocalStatus local_status;
+	LocalStatus ls;
+	CheckStatusWrapper local_status(&ls);
 	USHORT ret = 0;
 	bool done = false;
 
@@ -2478,7 +2489,8 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
  *	Compile and request.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
@@ -2558,7 +2570,8 @@ ISC_STATUS rem_port::ddl(P_DDL* ddlL, PACKET* sendL)
  *	Execute isc_ddl call.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	Rtr* transaction;
 
 	getHandle(transaction, ddlL->p_ddl_transaction);
@@ -2630,7 +2643,8 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 		this->port_async->port_flags |= PORT_disconnect;
 	}
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	if (rdb->rdb_iface)
 	{
 		// Prevent a pending or spurious cancel from aborting
@@ -2728,7 +2742,8 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
  *	End a request.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
@@ -2781,7 +2796,8 @@ ISC_STATUS rem_port::end_blob(P_OP operation, P_RLSE * release, PACKET* sendL)
  *
  **************************************/
 	Rbl* blob;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	getHandle(blob, release->p_rlse_object);
 
@@ -2809,7 +2825,8 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
  *	End a request.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
@@ -2855,7 +2872,8 @@ ISC_STATUS rem_port::end_request(P_RLSE * release, PACKET* sendL)
  *
  **************************************/
 	Rrq* requestL;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	getHandle(requestL, release->p_rlse_object);
 
@@ -2881,7 +2899,8 @@ ISC_STATUS rem_port::end_statement(P_SQLFREE* free_stmt, PACKET* sendL)
  *
  *****************************************/
 	Rsr* statement;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	getHandle(statement, free_stmt->p_sqlfree_statement);
 
@@ -2952,7 +2971,8 @@ ISC_STATUS rem_port::end_transaction(P_OP operation, P_RLSE * release, PACKET* s
  *
  **************************************/
 	Rtr* transaction;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	getHandle(transaction, release->p_rlse_object);
 
@@ -3007,7 +3027,8 @@ ISC_STATUS rem_port::execute_immediate(P_OP op, P_SQLST * exnow, PACKET* sendL)
  *
  *****************************************/
 	Rtr* transaction = NULL;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
@@ -3135,7 +3156,8 @@ ISC_STATUS rem_port::execute_statement(P_OP op, P_SQLDATA* sqldata, PACKET* send
 		getHandle(transaction, sqldata->p_sqldata_transaction);
 	}
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
 	USHORT out_msg_type = (op == op_execute2) ? sqldata->p_sqldata_out_message_number : 0;
@@ -3261,7 +3283,8 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
  *	Fetch next record from a dynamic SQL cursor.
  *
  *****************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	Rsr* statement;
 	getHandle(statement, sqldata->p_sqldata_statement);
 
@@ -3478,7 +3501,8 @@ static bool get_next_msg_no(Rrq* request, USHORT incarnation, USHORT * msg_numbe
  *	in the request.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	UCHAR info_buffer[128];
 
 	request->rrq_iface->getInfo(&status_vector, incarnation,
@@ -3552,7 +3576,8 @@ ISC_STATUS rem_port::get_segment(P_SGMT* segment, PACKET* sendL)
 
 	// Gobble up a buffer's worth of segments
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	UCHAR* p = buffer;
 	int state = 0;
@@ -3606,7 +3631,8 @@ ISC_STATUS rem_port::get_slice(P_SLC * stuff, PACKET* sendL)
  *
  **************************************/
 	Rtr* transaction;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
@@ -3665,7 +3691,8 @@ void rem_port::info(P_OP op, P_INFO* stuff, PACKET* sendL)
  *	statement, or transaction.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if ((op == op_service_info) ? bad_service(&status_vector, rdb) : bad_db(&status_vector, rdb))
@@ -3832,7 +3859,8 @@ static void ping_connection(rem_port* port, PACKET* send)
  *	Check the connection for persistent errors.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = port->port_context;
 	if (!bad_db(&status_vector, rdb))
@@ -3855,7 +3883,8 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
  *
  **************************************/
 	Rtr* transaction;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	getHandle(transaction, stuff->p_blob_transaction);
 
@@ -3921,7 +3950,8 @@ ISC_STATUS rem_port::prepare(P_PREP * stuff, PACKET* sendL)
  *
  **************************************/
 	Rtr* transaction;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	getHandle(transaction, stuff->p_prep_transaction);
 
@@ -3972,7 +4002,8 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 	if (transaction)
 		iface = transaction->rtr_iface;
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	if (statement->rsr_iface)
 	{
@@ -4003,7 +4034,8 @@ ISC_STATUS rem_port::prepare_statement(P_SQLST * prepareL, PACKET* sendL)
 			return this->send_response(sendL, 0, 0, &status_vector, false);
 	}
 
-	LocalStatus s2;
+	LocalStatus ls2;
+	CheckStatusWrapper s2(&ls2);
 	statement->rsr_iface->getInfo(&s2, infoLength, info, prepareL->p_sqlst_buffer_length, buffer);
 	if (s2.getState() & Firebird::IStatus::STATE_ERRORS)
 		return this->send_response(sendL, 0, 0, &s2, false);
@@ -4342,7 +4374,8 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 	catch (const status_exception& ex)
 	{
 		// typical case like bad interface passed
-		LocalStatus local_status;
+		LocalStatus ls;
+		CheckStatusWrapper local_status(&ls);
 
 		ex.stuffException(&local_status);
 
@@ -4352,7 +4385,8 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 	catch (const Exception& ex)
 	{
 		// something more serious happened
-		LocalStatus local_status;
+		LocalStatus ls;
+		CheckStatusWrapper local_status(&ls);
 
 		// Log the error to the user.
 		ex.stuffException(&local_status);
@@ -4460,7 +4494,8 @@ ISC_STATUS rem_port::put_segment(P_OP op, P_SGMT * segment, PACKET* sendL)
 
 	// Do the signal segment version.  If it failed, just pass on the bad news.
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	if (op == op_put_segment)
 	{
@@ -4500,7 +4535,8 @@ ISC_STATUS rem_port::put_slice(P_SLC * stuff, PACKET* sendL)
  *
  **************************************/
 	Rtr* transaction;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	getHandle(transaction, stuff->p_slc_transaction);
 
@@ -4530,7 +4566,8 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
  * Functional description
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
@@ -4599,7 +4636,7 @@ ISC_STATUS rem_port::receive_after_start(P_DATA* data, PACKET* sendL, IStatus* s
 	if (!sendL->p_resp.p_resp_status_vector)
 		sendL->p_resp.p_resp_status_vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
 
-	sendL->p_resp.p_resp_status_vector->merge(status_vector);
+	sendL->p_resp.p_resp_status_vector->load(status_vector);
 
 	this->send_partial(sendL);
 
@@ -4643,7 +4680,8 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 	USHORT count, count2;
 	count2 = count = data->p_data_messages;
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	if (msg_number > requestL->rrq_max_msg)
 	{
@@ -4988,7 +5026,8 @@ ISC_STATUS rem_port::seek_blob(P_SEEK* seek, PACKET* sendL)
 	const SSHORT mode = seek->p_seek_mode;
 	const SLONG offset = seek->p_seek_offset;
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	SLONG result = blob->rbl_iface->seek(&status_vector, mode, offset);
 
 	sendL->p_resp.p_resp_blob_id.gds_quad_low = result;
@@ -5009,7 +5048,8 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
  *	Handle a isc_send operation.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rrq* requestL;
 	getHandle(requestL, data->p_data_request);
@@ -5035,9 +5075,9 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 
 ISC_STATUS rem_port::send_response(PACKET* p, OBJCT obj, ULONG length, const Firebird::IStatus* status, bool defer_flag)
 {
-	ISC_STATUS_BIG_ARRAY tmp;
-	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), status);
-	return send_response(p, obj, length, tmp, defer_flag);
+	SimpleStatusVector<> tmp;
+	tmp.mergeStatus(status);
+	return send_response(p, obj, length, tmp.begin(), defer_flag);
 }
 
 
@@ -5161,7 +5201,8 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 // Maybe this can be a member of rem_port?
 static void send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode)
 {
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	(Arg::Gds(errcode)).copyTo(&status_vector);
 	port->send_response(apacket, 0, 0, &status_vector, false);
 }
@@ -5169,7 +5210,8 @@ static void send_error(rem_port* port, PACKET* apacket, ISC_STATUS errcode)
 // Maybe this can be a member of rem_port?
 static void send_error(rem_port* port, PACKET* apacket, const Firebird::Arg::StatusVector& err)
 {
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	err.copyTo(&status_vector);
 	port->send_response(apacket, 0, 0, &status_vector, false);
 }
@@ -5258,7 +5300,8 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 	}
 
 	DispatcherPtr provider;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	provider->setDbCryptCallback(&status_vector, port_server_crypt_callback->getInterface());
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
@@ -5298,7 +5341,8 @@ ISC_STATUS rem_port::service_end(P_RLSE* /*release*/, PACKET* sendL)
  *	Close down a service.
  *
  **************************************/
-    LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_service(&status_vector, rdb))
@@ -5328,7 +5372,8 @@ void rem_port::service_start(P_INFO * stuff, PACKET* sendL)
  *	Start a service on the server
  *
  **************************************/
-    LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_service(&status_vector, rdb))
@@ -5357,7 +5402,8 @@ ISC_STATUS rem_port::set_cursor(P_SQLCUR * sqlcur, PACKET* sendL)
  *
  *****************************************/
 	Rsr* statement;
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	const char* name = reinterpret_cast<const char*>(sqlcur->p_sqlcur_cursor_name.cstr_address);
 
 	getHandle(statement, sqlcur->p_sqlcur_statement);
@@ -5438,7 +5484,8 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 		}
 
 		// Initialize crypt key
-		LocalStatus st;
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
 		cp.plugin()->setKey(&st, key);
 		check(&st);
 
@@ -5512,7 +5559,8 @@ ISC_STATUS rem_port::start(P_OP operation, P_DATA * data, PACKET* sendL)
 	requestL = REMOTE_find_request(requestL, data->p_data_incarnation);
 	REMOTE_reset_request(requestL, 0);
 
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	requestL->rrq_iface->start(&status_vector, transaction->rtr_iface, data->p_data_incarnation);
 
@@ -5538,7 +5586,8 @@ ISC_STATUS rem_port::start_and_send(P_OP operation, P_DATA* data, PACKET* sendL)
  * Functional description
  *
  **************************************/
-    LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	Rtr* transaction;
 	getHandle(transaction, data->p_data_transaction);
 
@@ -5585,7 +5634,8 @@ ISC_STATUS rem_port::start_transaction(P_OP operation, P_STTR * stuff, PACKET* s
  *	Start a transaction.
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 
 	Rdb* rdb = this->port_context;
 	if (bad_db(&status_vector, rdb))
@@ -5928,7 +5978,8 @@ ISC_STATUS rem_port::transact_request(P_TRRQ* trrq, PACKET* sendL)
  * Functional description
  *
  **************************************/
-	LocalStatus status_vector;
+	LocalStatus ls;
+	CheckStatusWrapper status_vector(&ls);
 	Rtr* transaction;
 
 	getHandle(transaction, trrq->p_trrq_transaction);

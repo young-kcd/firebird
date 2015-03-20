@@ -364,6 +364,7 @@ namespace Firebird
 
 		template <typename StatusType> IMetadataBuilder* getMetadataBuilder(StatusType* status, unsigned fieldCount)
 		{
+			StatusType::clearException(status);
 			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getMetadataBuilder(this, status, fieldCount);
 			StatusType::checkException(status);
 			return ret;
@@ -461,6 +462,7 @@ namespace Firebird
 
 		template <typename StatusType> IPluginBase* getPlugin(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->getPlugin(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -468,12 +470,14 @@ namespace Firebird
 
 		template <typename StatusType> void next(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->next(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void set(StatusType* status, const char* s)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status, s);
 			StatusType::checkException(status);
 		}
@@ -530,6 +534,7 @@ namespace Firebird
 
 		template <typename StatusType> IConfig* getSubConfig(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getSubConfig(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -561,6 +566,7 @@ namespace Firebird
 
 		template <typename StatusType> IConfigEntry* find(StatusType* status, const char* name)
 		{
+			StatusType::clearException(status);
 			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->find(this, status, name);
 			StatusType::checkException(status);
 			return ret;
@@ -568,6 +574,7 @@ namespace Firebird
 
 		template <typename StatusType> IConfigEntry* findValue(StatusType* status, const char* name, const char* value)
 		{
+			StatusType::clearException(status);
 			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findValue(this, status, name, value);
 			StatusType::checkException(status);
 			return ret;
@@ -575,6 +582,7 @@ namespace Firebird
 
 		template <typename StatusType> IConfigEntry* findPos(StatusType* status, const char* name, unsigned pos)
 		{
+			StatusType::clearException(status);
 			IConfigEntry* ret = static_cast<VTable*>(this->cloopVTable)->findPos(this, status, name, pos);
 			StatusType::checkException(status);
 			return ret;
@@ -662,6 +670,7 @@ namespace Firebird
 
 		template <typename StatusType> IConfig* getDefaultConfig(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getDefaultConfig(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -669,6 +678,7 @@ namespace Firebird
 
 		template <typename StatusType> IFirebirdConf* getFirebirdConf(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IFirebirdConf* ret = static_cast<VTable*>(this->cloopVTable)->getFirebirdConf(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -676,6 +686,7 @@ namespace Firebird
 
 		template <typename StatusType> void setReleaseDelay(StatusType* status, ISC_UINT64 microSeconds)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setReleaseDelay(this, status, microSeconds);
 			StatusType::checkException(status);
 		}
@@ -704,6 +715,7 @@ namespace Firebird
 
 		template <typename StatusType> IPluginBase* createPlugin(StatusType* status, IPluginConfig* factoryParameter)
 		{
+			StatusType::clearException(status);
 			IPluginBase* ret = static_cast<VTable*>(this->cloopVTable)->createPlugin(this, status, factoryParameter);
 			StatusType::checkException(status);
 			return ret;
@@ -792,6 +804,7 @@ namespace Firebird
 
 		template <typename StatusType> IPluginSet* getPlugins(StatusType* status, unsigned pluginType, const char* namesList, IFirebirdConf* firebirdConf)
 		{
+			StatusType::clearException(status);
 			IPluginSet* ret = static_cast<VTable*>(this->cloopVTable)->getPlugins(this, status, pluginType, namesList, firebirdConf);
 			StatusType::checkException(status);
 			return ret;
@@ -799,6 +812,7 @@ namespace Firebird
 
 		template <typename StatusType> IConfig* getConfig(StatusType* status, const char* filename)
 		{
+			StatusType::clearException(status);
 			IConfig* ret = static_cast<VTable*>(this->cloopVTable)->getConfig(this, status, filename);
 			StatusType::checkException(status);
 			return ret;
@@ -836,12 +850,14 @@ namespace Firebird
 
 		template <typename StatusType> void setSymmetric(StatusType* status, const char* type, unsigned keyLength, const void* key)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setSymmetric(this, status, type, keyLength, key);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setAsymmetric(StatusType* status, const char* type, unsigned encryptKeyLength, const void* encryptKey, unsigned decryptKeyLength, const void* decryptKey)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setAsymmetric(this, status, type, encryptKeyLength, encryptKey, decryptKeyLength, decryptKey);
 			StatusType::checkException(status);
 		}
@@ -996,12 +1012,14 @@ namespace Firebird
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> int getSegment(StatusType* status, unsigned bufferLength, void* buffer, unsigned* segmentLength)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSegment(this, status, bufferLength, buffer, segmentLength);
 			StatusType::checkException(status);
 			return ret;
@@ -1009,24 +1027,28 @@ namespace Firebird
 
 		template <typename StatusType> void putSegment(StatusType* status, unsigned length, const void* buffer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->putSegment(this, status, length, buffer);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void cancel(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void close(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> int seek(StatusType* status, int mode, int offset)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->seek(this, status, mode, offset);
 			StatusType::checkException(status);
 			return ret;
@@ -1065,48 +1087,56 @@ namespace Firebird
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void prepare(StatusType* status, unsigned msgLength, const unsigned char* message)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->prepare(this, status, msgLength, message);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void commit(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->commit(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void commitRetaining(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->commitRetaining(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void rollback(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->rollback(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void rollbackRetaining(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->rollbackRetaining(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void disconnect(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->disconnect(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> ITransaction* join(StatusType* status, ITransaction* transaction)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status, transaction);
 			StatusType::checkException(status);
 			return ret;
@@ -1114,6 +1144,7 @@ namespace Firebird
 
 		template <typename StatusType> ITransaction* validate(StatusType* status, IAttachment* attachment)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->validate(this, status, attachment);
 			StatusType::checkException(status);
 			return ret;
@@ -1121,6 +1152,7 @@ namespace Firebird
 
 		template <typename StatusType> ITransaction* enterDtc(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->enterDtc(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1164,6 +1196,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getCount(StatusType* status)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCount(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1171,6 +1204,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getField(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getField(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1178,6 +1212,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getRelation(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getRelation(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1185,6 +1220,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getOwner(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getOwner(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1192,6 +1228,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getAlias(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getAlias(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1199,6 +1236,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getType(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1206,6 +1244,7 @@ namespace Firebird
 
 		template <typename StatusType> FB_BOOLEAN isNullable(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isNullable(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1213,6 +1252,7 @@ namespace Firebird
 
 		template <typename StatusType> int getSubType(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSubType(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1220,6 +1260,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getLength(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getLength(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1227,6 +1268,7 @@ namespace Firebird
 
 		template <typename StatusType> int getScale(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getScale(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1234,6 +1276,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getCharSet(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1241,6 +1284,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getOffset(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getOffset(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1248,6 +1292,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getNullOffset(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getNullOffset(this, status, index);
 			StatusType::checkException(status);
 			return ret;
@@ -1255,6 +1300,7 @@ namespace Firebird
 
 		template <typename StatusType> IMetadataBuilder* getBuilder(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IMetadataBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getBuilder(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1262,6 +1308,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getMessageLength(StatusType* status)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getMessageLength(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1300,54 +1347,63 @@ namespace Firebird
 
 		template <typename StatusType> void setType(StatusType* status, unsigned index, unsigned type)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setType(this, status, index, type);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setSubType(StatusType* status, unsigned index, int subType)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setSubType(this, status, index, subType);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setLength(StatusType* status, unsigned index, unsigned length)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setLength(this, status, index, length);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setCharSet(StatusType* status, unsigned index, unsigned charSet)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setCharSet(this, status, index, charSet);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setScale(StatusType* status, unsigned index, unsigned scale)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setScale(this, status, index, scale);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void truncate(StatusType* status, unsigned count)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->truncate(this, status, count);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void moveNameToIndex(StatusType* status, const char* name, unsigned index)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->moveNameToIndex(this, status, name, index);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void remove(StatusType* status, unsigned index)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->remove(this, status, index);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> unsigned addField(StatusType* status)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->addField(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1355,6 +1411,7 @@ namespace Firebird
 
 		template <typename StatusType> IMessageMetadata* getMetadata(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1394,6 +1451,7 @@ namespace Firebird
 
 		template <typename StatusType> int fetchNext(StatusType* status, void* message)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchNext(this, status, message);
 			StatusType::checkException(status);
 			return ret;
@@ -1401,6 +1459,7 @@ namespace Firebird
 
 		template <typename StatusType> int fetchPrior(StatusType* status, void* message)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchPrior(this, status, message);
 			StatusType::checkException(status);
 			return ret;
@@ -1408,6 +1467,7 @@ namespace Firebird
 
 		template <typename StatusType> int fetchFirst(StatusType* status, void* message)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchFirst(this, status, message);
 			StatusType::checkException(status);
 			return ret;
@@ -1415,6 +1475,7 @@ namespace Firebird
 
 		template <typename StatusType> int fetchLast(StatusType* status, void* message)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchLast(this, status, message);
 			StatusType::checkException(status);
 			return ret;
@@ -1422,6 +1483,7 @@ namespace Firebird
 
 		template <typename StatusType> int fetchAbsolute(StatusType* status, int position, void* message)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchAbsolute(this, status, position, message);
 			StatusType::checkException(status);
 			return ret;
@@ -1429,6 +1491,7 @@ namespace Firebird
 
 		template <typename StatusType> int fetchRelative(StatusType* status, int offset, void* message)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->fetchRelative(this, status, offset, message);
 			StatusType::checkException(status);
 			return ret;
@@ -1436,6 +1499,7 @@ namespace Firebird
 
 		template <typename StatusType> FB_BOOLEAN isEof(StatusType* status)
 		{
+			StatusType::clearException(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isEof(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1443,6 +1507,7 @@ namespace Firebird
 
 		template <typename StatusType> FB_BOOLEAN isBof(StatusType* status)
 		{
+			StatusType::clearException(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isBof(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1450,6 +1515,7 @@ namespace Firebird
 
 		template <typename StatusType> IMessageMetadata* getMetadata(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1457,12 +1523,14 @@ namespace Firebird
 
 		template <typename StatusType> void close(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->close(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setDelayedOutputFormat(StatusType* status, IMessageMetadata* format)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setDelayedOutputFormat(this, status, format);
 			StatusType::checkException(status);
 		}
@@ -1515,12 +1583,14 @@ namespace Firebird
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> unsigned getType(StatusType* status)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getType(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1528,6 +1598,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getPlan(StatusType* status, FB_BOOLEAN detailed)
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPlan(this, status, detailed);
 			StatusType::checkException(status);
 			return ret;
@@ -1535,6 +1606,7 @@ namespace Firebird
 
 		template <typename StatusType> ISC_UINT64 getAffectedRecords(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getAffectedRecords(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1542,6 +1614,7 @@ namespace Firebird
 
 		template <typename StatusType> IMessageMetadata* getInputMetadata(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1549,6 +1622,7 @@ namespace Firebird
 
 		template <typename StatusType> IMessageMetadata* getOutputMetadata(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1556,6 +1630,7 @@ namespace Firebird
 
 		template <typename StatusType> ITransaction* execute(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status, transaction, inMetadata, inBuffer, outMetadata, outBuffer);
 			StatusType::checkException(status);
 			return ret;
@@ -1563,6 +1638,7 @@ namespace Firebird
 
 		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned flags)
 		{
+			StatusType::clearException(status);
 			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, inMetadata, inBuffer, outMetadata, flags);
 			StatusType::checkException(status);
 			return ret;
@@ -1570,18 +1646,21 @@ namespace Firebird
 
 		template <typename StatusType> void setCursorName(StatusType* status, const char* name)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setCursorName(this, status, name);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void free(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->free(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> unsigned getFlags(StatusType* status)
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getFlags(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -1617,42 +1696,49 @@ namespace Firebird
 
 		template <typename StatusType> void receive(StatusType* status, int level, unsigned msgType, unsigned length, unsigned char* message)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->receive(this, status, level, msgType, length, message);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void send(StatusType* status, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->send(this, status, level, msgType, length, message);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void getInfo(StatusType* status, int level, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, level, itemsLength, items, bufferLength, buffer);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void start(StatusType* status, ITransaction* tra, int level)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status, tra, level);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void startAndSend(StatusType* status, ITransaction* tra, int level, unsigned msgType, unsigned length, const unsigned char* message)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->startAndSend(this, status, tra, level, msgType, length, message);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void unwind(StatusType* status, int level)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->unwind(this, status, level);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void free(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->free(this, status);
 			StatusType::checkException(status);
 		}
@@ -1681,6 +1767,7 @@ namespace Firebird
 
 		template <typename StatusType> void cancel(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->cancel(this, status);
 			StatusType::checkException(status);
 		}
@@ -1726,12 +1813,14 @@ namespace Firebird
 
 		template <typename StatusType> void getInfo(StatusType* status, unsigned itemsLength, const unsigned char* items, unsigned bufferLength, unsigned char* buffer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getInfo(this, status, itemsLength, items, bufferLength, buffer);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> ITransaction* startTransaction(StatusType* status, unsigned tpbLength, const unsigned char* tpb)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->startTransaction(this, status, tpbLength, tpb);
 			StatusType::checkException(status);
 			return ret;
@@ -1739,6 +1828,7 @@ namespace Firebird
 
 		template <typename StatusType> ITransaction* reconnectTransaction(StatusType* status, unsigned length, const unsigned char* id)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->reconnectTransaction(this, status, length, id);
 			StatusType::checkException(status);
 			return ret;
@@ -1746,6 +1836,7 @@ namespace Firebird
 
 		template <typename StatusType> IRequest* compileRequest(StatusType* status, unsigned blrLength, const unsigned char* blr)
 		{
+			StatusType::clearException(status);
 			IRequest* ret = static_cast<VTable*>(this->cloopVTable)->compileRequest(this, status, blrLength, blr);
 			StatusType::checkException(status);
 			return ret;
@@ -1753,12 +1844,14 @@ namespace Firebird
 
 		template <typename StatusType> void transactRequest(StatusType* status, ITransaction* transaction, unsigned blrLength, const unsigned char* blr, unsigned inMsgLength, const unsigned char* inMsg, unsigned outMsgLength, unsigned char* outMsg)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->transactRequest(this, status, transaction, blrLength, blr, inMsgLength, inMsg, outMsgLength, outMsg);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IBlob* createBlob(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
+			StatusType::clearException(status);
 			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->createBlob(this, status, transaction, id, bpbLength, bpb);
 			StatusType::checkException(status);
 			return ret;
@@ -1766,6 +1859,7 @@ namespace Firebird
 
 		template <typename StatusType> IBlob* openBlob(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned bpbLength, const unsigned char* bpb)
 		{
+			StatusType::clearException(status);
 			IBlob* ret = static_cast<VTable*>(this->cloopVTable)->openBlob(this, status, transaction, id, bpbLength, bpb);
 			StatusType::checkException(status);
 			return ret;
@@ -1773,6 +1867,7 @@ namespace Firebird
 
 		template <typename StatusType> int getSlice(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->getSlice(this, status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			StatusType::checkException(status);
 			return ret;
@@ -1780,18 +1875,21 @@ namespace Firebird
 
 		template <typename StatusType> void putSlice(StatusType* status, ITransaction* transaction, ISC_QUAD* id, unsigned sdlLength, const unsigned char* sdl, unsigned paramLength, const unsigned char* param, int sliceLength, unsigned char* slice)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->putSlice(this, status, transaction, id, sdlLength, sdl, paramLength, param, sliceLength, slice);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void executeDyn(StatusType* status, ITransaction* transaction, unsigned length, const unsigned char* dyn)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->executeDyn(this, status, transaction, length, dyn);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IStatement* prepare(StatusType* status, ITransaction* tra, unsigned stmtLength, const char* sqlStmt, unsigned dialect, unsigned flags)
 		{
+			StatusType::clearException(status);
 			IStatement* ret = static_cast<VTable*>(this->cloopVTable)->prepare(this, status, tra, stmtLength, sqlStmt, dialect, flags);
 			StatusType::checkException(status);
 			return ret;
@@ -1799,6 +1897,7 @@ namespace Firebird
 
 		template <typename StatusType> ITransaction* execute(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, outBuffer);
 			StatusType::checkException(status);
 			return ret;
@@ -1806,6 +1905,7 @@ namespace Firebird
 
 		template <typename StatusType> IResultSet* openCursor(StatusType* status, ITransaction* transaction, unsigned stmtLength, const char* sqlStmt, unsigned dialect, IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, const char* cursorName, unsigned cursorFlags)
 		{
+			StatusType::clearException(status);
 			IResultSet* ret = static_cast<VTable*>(this->cloopVTable)->openCursor(this, status, transaction, stmtLength, sqlStmt, dialect, inMetadata, inBuffer, outMetadata, cursorName, cursorFlags);
 			StatusType::checkException(status);
 			return ret;
@@ -1813,6 +1913,7 @@ namespace Firebird
 
 		template <typename StatusType> IEvents* queEvents(StatusType* status, IEventCallback* callback, unsigned length, const unsigned char* events)
 		{
+			StatusType::clearException(status);
 			IEvents* ret = static_cast<VTable*>(this->cloopVTable)->queEvents(this, status, callback, length, events);
 			StatusType::checkException(status);
 			return ret;
@@ -1820,24 +1921,28 @@ namespace Firebird
 
 		template <typename StatusType> void cancelOperation(StatusType* status, int option)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->cancelOperation(this, status, option);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void ping(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->ping(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void detach(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void dropDatabase(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->dropDatabase(this, status);
 			StatusType::checkException(status);
 		}
@@ -1868,18 +1973,21 @@ namespace Firebird
 
 		template <typename StatusType> void detach(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->detach(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void query(StatusType* status, unsigned sendLength, const unsigned char* sendItems, unsigned receiveLength, const unsigned char* receiveItems, unsigned bufferLength, unsigned char* buffer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->query(this, status, sendLength, sendItems, receiveLength, receiveItems, bufferLength, buffer);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void start(StatusType* status, unsigned spbLength, const unsigned char* spb)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status, spbLength, spb);
 			StatusType::checkException(status);
 		}
@@ -1912,6 +2020,7 @@ namespace Firebird
 
 		template <typename StatusType> IAttachment* attachDatabase(StatusType* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
+			StatusType::clearException(status);
 			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->attachDatabase(this, status, fileName, dpbLength, dpb);
 			StatusType::checkException(status);
 			return ret;
@@ -1919,6 +2028,7 @@ namespace Firebird
 
 		template <typename StatusType> IAttachment* createDatabase(StatusType* status, const char* fileName, unsigned dpbLength, const unsigned char* dpb)
 		{
+			StatusType::clearException(status);
 			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->createDatabase(this, status, fileName, dpbLength, dpb);
 			StatusType::checkException(status);
 			return ret;
@@ -1926,6 +2036,7 @@ namespace Firebird
 
 		template <typename StatusType> IService* attachServiceManager(StatusType* status, const char* service, unsigned spbLength, const unsigned char* spb)
 		{
+			StatusType::clearException(status);
 			IService* ret = static_cast<VTable*>(this->cloopVTable)->attachServiceManager(this, status, service, spbLength, spb);
 			StatusType::checkException(status);
 			return ret;
@@ -1933,12 +2044,14 @@ namespace Firebird
 
 		template <typename StatusType> void shutdown(StatusType* status, unsigned timeout, const int reason)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->shutdown(this, status, timeout, reason);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setDbCryptCallback(StatusType* status, ICryptKeyCallback* cryptCallback)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setDbCryptCallback(this, status, cryptCallback);
 			StatusType::checkException(status);
 		}
@@ -1969,18 +2082,21 @@ namespace Firebird
 
 		template <typename StatusType> void addAttachment(StatusType* status, IAttachment* att)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->addAttachment(this, status, att);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void addWithTpb(StatusType* status, IAttachment* att, unsigned length, const unsigned char* tpb)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->addWithTpb(this, status, att, length, tpb);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> ITransaction* start(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->start(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2011,6 +2127,7 @@ namespace Firebird
 
 		template <typename StatusType> ITransaction* join(StatusType* status, ITransaction* one, ITransaction* two)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->join(this, status, one, two);
 			StatusType::checkException(status);
 			return ret;
@@ -2018,6 +2135,7 @@ namespace Firebird
 
 		template <typename StatusType> IDtcStart* startBuilder(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IDtcStart* ret = static_cast<VTable*>(this->cloopVTable)->startBuilder(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2081,18 +2199,21 @@ namespace Firebird
 
 		template <typename StatusType> void add(StatusType* status, const char* name)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->add(this, status, name);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setType(StatusType* status, const char* value)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setType(this, status, value);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void setDb(StatusType* status, const char* value)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setDb(this, status, value);
 			StatusType::checkException(status);
 		}
@@ -2136,12 +2257,14 @@ namespace Firebird
 
 		template <typename StatusType> void putData(StatusType* status, unsigned length, const void* data)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->putData(this, status, length, data);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> ICryptKey* newKey(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ICryptKey* ret = static_cast<VTable*>(this->cloopVTable)->newKey(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2193,12 +2316,14 @@ namespace Firebird
 
 		template <typename StatusType> void putData(StatusType* status, unsigned length, const void* data)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->putData(this, status, length, data);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> ICryptKey* newKey(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ICryptKey* ret = static_cast<VTable*>(this->cloopVTable)->newKey(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2228,6 +2353,7 @@ namespace Firebird
 
 		template <typename StatusType> int authenticate(StatusType* status, IServerBlock* sBlock, IWriter* writerInterface)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status, sBlock, writerInterface);
 			StatusType::checkException(status);
 			return ret;
@@ -2257,6 +2383,7 @@ namespace Firebird
 
 		template <typename StatusType> int authenticate(StatusType* status, IClientBlock* cBlock)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->authenticate(this, status, cBlock);
 			StatusType::checkException(status);
 			return ret;
@@ -2300,6 +2427,7 @@ namespace Firebird
 
 		template <typename StatusType> void setEntered(StatusType* status, int newValue)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setEntered(this, status, newValue);
 			StatusType::checkException(status);
 		}
@@ -2335,6 +2463,7 @@ namespace Firebird
 
 		template <typename StatusType> void set(StatusType* status, const char* newValue)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status, newValue);
 			StatusType::checkException(status);
 		}
@@ -2370,6 +2499,7 @@ namespace Firebird
 
 		template <typename StatusType> void set(StatusType* status, int newValue)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->set(this, status, newValue);
 			StatusType::checkException(status);
 		}
@@ -2468,6 +2598,7 @@ namespace Firebird
 
 		template <typename StatusType> void clear(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->clear(this, status);
 			StatusType::checkException(status);
 		}
@@ -2496,6 +2627,7 @@ namespace Firebird
 
 		template <typename StatusType> void list(StatusType* status, IUser* user)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->list(this, status, user);
 			StatusType::checkException(status);
 		}
@@ -2583,12 +2715,14 @@ namespace Firebird
 
 		template <typename StatusType> void start(StatusType* status, ILogonInfo* logonInfo)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status, logonInfo);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> int execute(StatusType* status, IUser* user, IListUsers* callback)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->execute(this, status, user, callback);
 			StatusType::checkException(status);
 			return ret;
@@ -2596,12 +2730,14 @@ namespace Firebird
 
 		template <typename StatusType> void commit(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->commit(this, status);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void rollback(StatusType* status)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->rollback(this, status);
 			StatusType::checkException(status);
 		}
@@ -2633,6 +2769,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getKnownTypes(StatusType* status)
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getKnownTypes(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2640,18 +2777,21 @@ namespace Firebird
 
 		template <typename StatusType> void setKey(StatusType* status, ICryptKey* key)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setKey(this, status, key);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void encrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status, length, from, to);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void decrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status, length, from, to);
 			StatusType::checkException(status);
 		}
@@ -2709,6 +2849,7 @@ namespace Firebird
 
 		template <typename StatusType> int keyCallback(StatusType* status, ICryptKeyCallback* callback)
 		{
+			StatusType::clearException(status);
 			int ret = static_cast<VTable*>(this->cloopVTable)->keyCallback(this, status, callback);
 			StatusType::checkException(status);
 			return ret;
@@ -2716,6 +2857,7 @@ namespace Firebird
 
 		template <typename StatusType> ICryptKeyCallback* keyHandle(StatusType* status, const char* keyName)
 		{
+			StatusType::clearException(status);
 			ICryptKeyCallback* ret = static_cast<VTable*>(this->cloopVTable)->keyHandle(this, status, keyName);
 			StatusType::checkException(status);
 			return ret;
@@ -2747,18 +2889,21 @@ namespace Firebird
 
 		template <typename StatusType> void setKey(StatusType* status, unsigned length, IKeyHolderPlugin** sources)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setKey(this, status, length, sources);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void encrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->encrypt(this, status, length, from, to);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void decrypt(StatusType* status, unsigned length, const void* from, void* to)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->decrypt(this, status, length, from, to);
 			StatusType::checkException(status);
 		}
@@ -2802,6 +2947,7 @@ namespace Firebird
 
 		template <typename StatusType> IExternalEngine* getEngine(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IExternalEngine* ret = static_cast<VTable*>(this->cloopVTable)->getEngine(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2809,6 +2955,7 @@ namespace Firebird
 
 		template <typename StatusType> IAttachment* getAttachment(StatusType* status)
 		{
+			StatusType::clearException(status);
 			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->getAttachment(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2816,6 +2963,7 @@ namespace Firebird
 
 		template <typename StatusType> ITransaction* getTransaction(StatusType* status)
 		{
+			StatusType::clearException(status);
 			ITransaction* ret = static_cast<VTable*>(this->cloopVTable)->getTransaction(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2881,6 +3029,7 @@ namespace Firebird
 
 		template <typename StatusType> FB_BOOLEAN fetch(StatusType* status)
 		{
+			StatusType::clearException(status);
 			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->fetch(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -2911,12 +3060,14 @@ namespace Firebird
 
 		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, context, name, nameSize);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void execute(StatusType* status, IExternalContext* context, void* inMsg, void* outMsg)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->execute(this, status, context, inMsg, outMsg);
 			StatusType::checkException(status);
 		}
@@ -2946,12 +3097,14 @@ namespace Firebird
 
 		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, context, name, nameSize);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IExternalResultSet* open(StatusType* status, IExternalContext* context, void* inMsg, void* outMsg)
 		{
+			StatusType::clearException(status);
 			IExternalResultSet* ret = static_cast<VTable*>(this->cloopVTable)->open(this, status, context, inMsg, outMsg);
 			StatusType::checkException(status);
 			return ret;
@@ -2995,12 +3148,14 @@ namespace Firebird
 
 		template <typename StatusType> void getCharSet(StatusType* status, IExternalContext* context, char* name, unsigned nameSize)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getCharSet(this, status, context, name, nameSize);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void execute(StatusType* status, IExternalContext* context, unsigned action, void* oldMsg, void* newMsg)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->execute(this, status, context, action, oldMsg, newMsg);
 			StatusType::checkException(status);
 		}
@@ -3037,6 +3192,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getPackage(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getPackage(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3044,6 +3200,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getName(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getName(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3051,6 +3208,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getEntryPoint(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getEntryPoint(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3058,6 +3216,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getBody(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getBody(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3065,6 +3224,7 @@ namespace Firebird
 
 		template <typename StatusType> IMessageMetadata* getInputMetadata(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getInputMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3072,6 +3232,7 @@ namespace Firebird
 
 		template <typename StatusType> IMessageMetadata* getOutputMetadata(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getOutputMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3079,6 +3240,7 @@ namespace Firebird
 
 		template <typename StatusType> IMessageMetadata* getTriggerMetadata(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			IMessageMetadata* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerMetadata(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3086,6 +3248,7 @@ namespace Firebird
 
 		template <typename StatusType> const char* getTriggerTable(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			const char* ret = static_cast<VTable*>(this->cloopVTable)->getTriggerTable(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3093,6 +3256,7 @@ namespace Firebird
 
 		template <typename StatusType> unsigned getTriggerType(StatusType* status) const
 		{
+			StatusType::clearException(status);
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTriggerType(this, status);
 			StatusType::checkException(status);
 			return ret;
@@ -3127,24 +3291,28 @@ namespace Firebird
 
 		template <typename StatusType> void open(StatusType* status, IExternalContext* context, char* charSet, unsigned charSetSize)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->open(this, status, context, charSet, charSetSize);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void openAttachment(StatusType* status, IExternalContext* context)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->openAttachment(this, status, context);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void closeAttachment(StatusType* status, IExternalContext* context)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->closeAttachment(this, status, context);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IExternalFunction* makeFunction(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
+			StatusType::clearException(status);
 			IExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->makeFunction(this, status, context, metadata, inBuilder, outBuilder);
 			StatusType::checkException(status);
 			return ret;
@@ -3152,6 +3320,7 @@ namespace Firebird
 
 		template <typename StatusType> IExternalProcedure* makeProcedure(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
+			StatusType::clearException(status);
 			IExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->makeProcedure(this, status, context, metadata, inBuilder, outBuilder);
 			StatusType::checkException(status);
 			return ret;
@@ -3159,6 +3328,7 @@ namespace Firebird
 
 		template <typename StatusType> IExternalTrigger* makeTrigger(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 		{
+			StatusType::clearException(status);
 			IExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->makeTrigger(this, status, context, metadata, fieldsBuilder);
 			StatusType::checkException(status);
 			return ret;
@@ -3216,12 +3386,14 @@ namespace Firebird
 
 		template <typename StatusType> void start(StatusType* status, ITimer* timer, ISC_UINT64 microSeconds)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->start(this, status, timer, microSeconds);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void stop(StatusType* status, ITimer* timer)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->stop(this, status, timer);
 			StatusType::checkException(status);
 		}
@@ -3250,6 +3422,7 @@ namespace Firebird
 
 		template <typename StatusType> void callback(StatusType* status, const char* text)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->callback(this, status, text);
 			StatusType::checkException(status);
 		}
@@ -3287,30 +3460,35 @@ namespace Firebird
 
 		template <typename StatusType> void getFbVersion(StatusType* status, IAttachment* att, IVersionCallback* callback)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getFbVersion(this, status, att, callback);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void loadBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->loadBlob(this, status, blobId, att, tra, file, txt);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void dumpBlob(StatusType* status, ISC_QUAD* blobId, IAttachment* att, ITransaction* tra, const char* file, FB_BOOLEAN txt)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->dumpBlob(this, status, blobId, att, tra, file, txt);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void getPerfCounters(StatusType* status, IAttachment* att, const char* countersSet, ISC_INT64* counters)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->getPerfCounters(this, status, att, countersSet, counters);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IAttachment* executeCreateDatabase(StatusType* status, unsigned stmtLength, const char* creatDBstatement, unsigned dialect, FB_BOOLEAN* stmtIsCreateDb)
 		{
+			StatusType::clearException(status);
 			IAttachment* ret = static_cast<VTable*>(this->cloopVTable)->executeCreateDatabase(this, status, stmtLength, creatDBstatement, dialect, stmtIsCreateDb);
 			StatusType::checkException(status);
 			return ret;
@@ -3980,7 +4158,7 @@ namespace Firebird
 		{
 			FB_BOOLEAN (CLOOP_CARG *hasError)(ITraceStatusVector* self) throw();
 			FB_BOOLEAN (CLOOP_CARG *hasWarning)(ITraceStatusVector* self) throw();
-			const intptr_t* (CLOOP_CARG *getStatus)(ITraceStatusVector* self) throw();
+			IStatus* (CLOOP_CARG *getStatus)(ITraceStatusVector* self) throw();
 			const char* (CLOOP_CARG *getText)(ITraceStatusVector* self) throw();
 		};
 
@@ -4009,9 +4187,9 @@ namespace Firebird
 			return ret;
 		}
 
-		const intptr_t* getStatus()
+		IStatus* getStatus()
 		{
-			const intptr_t* ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
+			IStatus* ret = static_cast<VTable*>(this->cloopVTable)->getStatus(this);
 			return ret;
 		}
 
@@ -4404,6 +4582,7 @@ namespace Firebird
 
 		template <typename StatusType> ITracePlugin* trace_create(StatusType* status, ITraceInitInfo* init_info)
 		{
+			StatusType::clearException(status);
 			ITracePlugin* ret = static_cast<VTable*>(this->cloopVTable)->trace_create(this, status, init_info);
 			StatusType::checkException(status);
 			return ret;
@@ -4434,12 +4613,14 @@ namespace Firebird
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setup(this, status, context, metadata, inBuilder, outBuilder);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IExternalFunction* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata)
 		{
+			StatusType::clearException(status);
 			IExternalFunction* ret = static_cast<VTable*>(this->cloopVTable)->newItem(this, status, context, metadata);
 			StatusType::checkException(status);
 			return ret;
@@ -4470,12 +4651,14 @@ namespace Firebird
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setup(this, status, context, metadata, inBuilder, outBuilder);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IExternalProcedure* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata)
 		{
+			StatusType::clearException(status);
 			IExternalProcedure* ret = static_cast<VTable*>(this->cloopVTable)->newItem(this, status, context, metadata);
 			StatusType::checkException(status);
 			return ret;
@@ -4506,12 +4689,14 @@ namespace Firebird
 
 		template <typename StatusType> void setup(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->setup(this, status, context, metadata, fieldsBuilder);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> IExternalTrigger* newItem(StatusType* status, IExternalContext* context, IRoutineMetadata* metadata)
 		{
+			StatusType::clearException(status);
 			IExternalTrigger* ret = static_cast<VTable*>(this->cloopVTable)->newItem(this, status, context, metadata);
 			StatusType::checkException(status);
 			return ret;
@@ -4550,18 +4735,21 @@ namespace Firebird
 
 		template <typename StatusType> void registerFunction(StatusType* status, const char* name, IUdrFunctionFactory* factory)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->registerFunction(this, status, name, factory);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void registerProcedure(StatusType* status, const char* name, IUdrProcedureFactory* factory)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->registerProcedure(this, status, name, factory);
 			StatusType::checkException(status);
 		}
 
 		template <typename StatusType> void registerTrigger(StatusType* status, const char* name, IUdrTriggerFactory* factory)
 		{
+			StatusType::clearException(status);
 			static_cast<VTable*>(this->cloopVTable)->registerTrigger(this, status, name, factory);
 			StatusType::checkException(status);
 		}
@@ -13566,7 +13754,7 @@ namespace Firebird
 			}
 		}
 
-		static const intptr_t* CLOOP_CARG cloopgetStatusDispatcher(ITraceStatusVector* self) throw()
+		static IStatus* CLOOP_CARG cloopgetStatusDispatcher(ITraceStatusVector* self) throw()
 		{
 			try
 			{
@@ -13575,7 +13763,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<const intptr_t*>(0);
+				return static_cast<IStatus*>(0);
 			}
 		}
 
@@ -13608,7 +13796,7 @@ namespace Firebird
 
 		virtual FB_BOOLEAN hasError() = 0;
 		virtual FB_BOOLEAN hasWarning() = 0;
-		virtual const intptr_t* getStatus() = 0;
+		virtual IStatus* getStatus() = 0;
 		virtual const char* getText() = 0;
 	};
 

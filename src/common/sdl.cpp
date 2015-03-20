@@ -44,7 +44,7 @@ struct sdl_arg
 	SLONG* sdl_arg_variables;
 	SDL_walk_callback sdl_arg_callback;
 	array_slice* sdl_arg_argument;
-	ISC_STATUS* sdl_arg_status_vector;
+	CheckStatusWrapper* sdl_arg_status_vector;
 	IPTR sdl_arg_compiled[COMPILE_SIZE];
 	IPTR* sdl_arg_next;
 	const IPTR* sdl_arg_end;
@@ -63,7 +63,7 @@ struct array_range
 };
 
 static const UCHAR* compile(const UCHAR*, sdl_arg*);
-static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v);
+static ISC_STATUS error(CheckStatusWrapper* status_vector, const Arg::StatusVector& v);
 static bool execute(sdl_arg*);
 static const UCHAR* get_range(const UCHAR*, array_range*, SLONG*, SLONG*);
 
@@ -114,7 +114,7 @@ const int op_scalar		= 12;
 */
 
 
-SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
+SLONG SDL_compute_subscript(CheckStatusWrapper* status_vector,
 							const Ods::InternalArrayDesc* desc,
 							USHORT dimensions,
 							const SLONG* subscripts)
@@ -158,6 +158,27 @@ SLONG SDL_compute_subscript(ISC_STATUS* status_vector,
 
 
 ISC_STATUS SDL_info(ISC_STATUS* status_vector,
+					const UCHAR* sdl, sdl_info* info, SLONG* vector)
+{
+/**************************************
+ *
+ *	S D L _ i n f o
+ *
+ **************************************
+ *
+ * Functional description
+ *	Status vector time changing form.
+ *
+ **************************************/
+	LocalStatus s1;
+	CheckStatusWrapper s2(&s1);
+	ISC_STATUS rc = SDL_info(&s2, sdl, info, vector);
+	fb_utils::mergeStatus(status_vector, ISC_STATUS_LENGTH, &s2);
+
+	return rc;
+}
+
+ISC_STATUS SDL_info(CheckStatusWrapper* status_vector,
 					const UCHAR* sdl, sdl_info* info, SLONG* vector)
 {
 /**************************************
@@ -232,7 +253,7 @@ ISC_STATUS SDL_info(ISC_STATUS* status_vector,
 }
 
 
-int	SDL_walk(ISC_STATUS* status_vector,
+int	SDL_walk(CheckStatusWrapper* status_vector,
 			 const UCHAR* sdl,
 			 UCHAR* array,
 			 Ods::InternalArrayDesc* array_desc,
@@ -470,7 +491,7 @@ static const UCHAR* compile(const UCHAR* sdl, sdl_arg* arg)
 }
 
 
-static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+static ISC_STATUS error(CheckStatusWrapper* status_vector, const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -479,15 +500,12 @@ static ISC_STATUS error(ISC_STATUS* status_vector, const Arg::StatusVector& v)
  **************************************
  *
  * Functional description
- *	Post an error sequence to the status vector.  Since an error
- *	sequence can, in theory, be arbitrarily lock, pull a cheap
- *	trick to get the address of the argument vector.
+ *	Post an error sequence to the status vector.
  *
  **************************************/
 	v.copyTo(status_vector);
-	makePermanentVector(status_vector);
 
-	return status_vector[1];
+	return status_vector->getErrors()[1];
 }
 
 

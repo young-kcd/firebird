@@ -42,6 +42,7 @@
 #include "../jrd/intl.h"
 #include "../common/intlobj_new.h"
 #include "../jrd/jrd.h"
+#include "../jrd/status.h"
 #include "../common/CharSet.h"
 #include "../dsql/Parser.h"
 #include "../dsql/ddl_proto.h"
@@ -599,14 +600,13 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	}
 #endif
 
-	ISC_STATUS_ARRAY localStatus;
-	MOVE_CLEAR(localStatus, sizeof(localStatus));
+	FbLocalStatus localStatus;
 
 	// check for warnings
-	if (tdbb->tdbb_status_vector[2] == isc_arg_warning)
+	if (tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_WARNINGS)
 	{
 		// save a status vector
-		memcpy(localStatus, tdbb->tdbb_status_vector, sizeof(ISC_STATUS_ARRAY));
+		fb_utils::copyStatus(localStatus, tdbb->tdbb_status_vector);
 		fb_utils::init_status(tdbb->tdbb_status_vector);
 	}
 
@@ -622,27 +622,19 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	}
 	catch (const Exception&)
 	{
-		status = tdbb->tdbb_status_vector[1];
+		status = tdbb->tdbb_status_vector->getErrors()[1];
 		*traceResult = status == isc_no_priv ?
 			ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED;
 	}
 
 	// restore warnings (if there are any)
-	if (localStatus[2] == isc_arg_warning)
+	if (localStatus->getState() & FbStatusVector::STATE_WARNINGS)
 	{
-		FB_SIZE_T indx, len, warning;
+		Arg::StatusVector cur(tdbb->tdbb_status_vector->getWarnings());
+		Arg::StatusVector saved(localStatus->getWarnings());
+		saved << cur;
 
-		// find end of a status vector
-		PARSE_STATUS(tdbb->tdbb_status_vector, indx, warning);
-		if (indx)
-			--indx;
-
-		// calculate length of saved warnings
-		PARSE_STATUS(localStatus, len, warning);
-		len -= 2;
-
-		if ((len + indx - 1) < ISC_STATUS_LENGTH)
-			memcpy(&tdbb->tdbb_status_vector[indx], &localStatus[2], sizeof(ISC_STATUS) * len);
+		tdbb->tdbb_status_vector->setWarnings2(saved.length(), saved.value());
 	}
 
 	// free blr memory
@@ -738,12 +730,12 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			UCHAR* message_buffer = (UCHAR*) gds__alloc(message->msg_length);
 
 			ISC_STATUS status = FB_SUCCESS;
-			ISC_STATUS_ARRAY localStatus;
+			FbLocalStatus localStatus;
 
 			for (counter = 0; counter < 2 && !status; counter++)
 			{
-				AutoSetRestore<ISC_STATUS*> autoStatus(&tdbb->tdbb_status_vector, localStatus);
-				fb_utils::init_status(localStatus);
+				localStatus->init();
+				AutoSetRestore<Jrd::FbStatusVector*> autoStatus(&tdbb->tdbb_status_vector, localStatus);
 
 				try
 				{
@@ -753,7 +745,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 				}
 				catch (Firebird::Exception&)
 				{
-					status = tdbb->tdbb_status_vector[1];
+					status = tdbb->tdbb_status_vector->getErrors()[1];
 				}
 			}
 
@@ -1195,7 +1187,7 @@ static USHORT parse_metadata(dsql_req* request, IMessageMetadata* meta,
 	if (!meta)
 		return parameters.getCount();
 
-	LocalStatus st;
+	FbLocalStatus st;
 	unsigned count = meta->getCount(&st);
 	checkD(&st);
 

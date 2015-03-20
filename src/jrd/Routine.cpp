@@ -53,7 +53,7 @@ MsgMetadata* Routine::createMetadata(const Array<NestConst<Parameter> >& paramet
 // Create a Format based on an IMessageMetadata.
 Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params, bool addEof)
 {
-	LocalStatus status;
+	FbLocalStatus status;
 
 	unsigned count = params->getCount(&status);
 	status.check();
@@ -67,23 +67,28 @@ Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params, bool a
 	{
 		unsigned descOffset, nullOffset, descDtype, descLength;
 
-		runOffset = fb_utils::sqlTypeToDsc(runOffset, params->getType(&status, i),
-			params->getLength(&status, i), &descDtype, &descLength,
-			&descOffset, &nullOffset);
+		unsigned t = params->getType(&status, i);
 		status.check();
+		unsigned l = params->getLength(&status, i);
+		status.check();
+		runOffset = fb_utils::sqlTypeToDsc(runOffset, t, l, &descDtype, &descLength,
+			&descOffset, &nullOffset);
 
 		desc->clear();
 		desc->dsc_dtype = descDtype;
 		desc->dsc_length = descLength;
 		desc->dsc_scale = params->getScale(&status, i);
+		status.check();
 		desc->dsc_sub_type = params->getSubType(&status, i);
+		status.check();
 		desc->setTextType(params->getCharSet(&status, i));
+		status.check();
 		desc->dsc_address = (UCHAR*)(IPTR) descOffset;
 		desc->dsc_flags = (params->isNullable(&status, i) ? DSC_nullable : 0);
+		status.check();
 
 		++desc;
 		desc->makeShort(0, (SSHORT*)(IPTR) nullOffset);
-		status.check();
 
 		++desc;
 	}

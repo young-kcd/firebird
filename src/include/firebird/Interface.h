@@ -122,6 +122,25 @@ namespace Firebird
 			}
 		}
 
+		static void clearException(BaseStatusWrapper* status)
+		{
+			status->clearException();
+		}
+
+		void clearException()
+		{
+			if (dirty)
+			{
+				dirty = false;
+				status->init();
+			}
+		}
+
+		bool isDirty()
+		{
+			return dirty;
+		}
+
 		static void setVersionError(IStatus* status, const char* interfaceName,
 			unsigned currentVersion, unsigned expectedVersion)
 		{
@@ -149,7 +168,7 @@ namespace Firebird
 
 		virtual void init()
 		{
-			status->init();
+			clearException();
 		}
 
 		virtual unsigned getState() const
@@ -183,12 +202,12 @@ namespace Firebird
 
 		virtual const intptr_t* getErrors() const
 		{
-			return status->getErrors();
+			return dirty ? status->getErrors() : cleanStatus();
 		}
 
 		virtual const intptr_t* getWarnings() const
 		{
-			return status->getWarnings();
+			return dirty ? status->getWarnings() : cleanStatus();
 		}
 
 		virtual IStatus* clone() const
@@ -199,6 +218,12 @@ namespace Firebird
 	protected:
 		IStatus* status;
 		bool dirty;
+
+		static const intptr_t* cleanStatus()
+		{
+			static intptr_t clean[3] = {1, 0, 0};
+			return clean;
+		}
 	};
 
 	class CheckStatusWrapper : public BaseStatusWrapper<CheckStatusWrapper>

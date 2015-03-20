@@ -48,6 +48,8 @@
 namespace Firebird
 {
 class MemoryPool;
+template <unsigned S = ISC_STATUS_LENGTH>
+class SimpleStatusVector;
 
 class Exception
 {
@@ -55,6 +57,11 @@ protected:
 	Exception() throw() { }
 public:
 	ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
+	ISC_STATUS stuff_exception(CheckStatusWrapper* status_vector) const throw()
+	{
+		return stuffException(status_vector);
+	}
+	ISC_STATUS stuffException(SimpleStatusVector<>& status_vector) const throw();
 	virtual ~Exception() throw();
 	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw() = 0;
 	virtual const char* what() const throw() = 0;
@@ -95,7 +102,7 @@ public:
 class status_exception : public Exception
 {
 public:
-	status_exception(const ISC_STATUS *status_vector) throw();
+	explicit status_exception(const ISC_STATUS *status_vector) throw();
 	virtual ~status_exception() throw();
 
 	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw();
@@ -115,7 +122,8 @@ protected:
 	void set_status(const ISC_STATUS *new_vector) throw();
 
 private:
-	ISC_STATUS_ARRAY m_status_vector;
+	ISC_STATUS* m_status_vector;
+	ISC_STATUS_ARRAY m_buffer;
 };
 
 // Parameter syscall later in both system_error & system_call_failed

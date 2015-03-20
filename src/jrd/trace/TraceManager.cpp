@@ -243,7 +243,7 @@ void TraceManager::update_session(const TraceSession& session)
 	for (FactoryInfo* info = factories->begin(); info != factories->end(); ++info)
 	{
 		TraceInitInfoImpl attachInfo(session, attachment, filename);
-		LocalStatus status;
+		FbLocalStatus status;
 		ITracePlugin* plugin = info->factory->trace_create(&status, &attachInfo);
 
 		if (plugin)
@@ -257,7 +257,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 			trace_needs |= info->factory->trace_needs();
 		}
-		else if (status.getState() & IStatus::STATE_ERRORS)
+		else if (status->getState() & IStatus::STATE_ERRORS)
 		{
 			string header;
 			header.printf("Trace plugin %s returned error on call trace_create.", info->name);

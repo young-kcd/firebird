@@ -146,9 +146,10 @@ bool GlobalRWLock::lockWrite(thread_db* tdbb, SSHORT wait)
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_write, wait))
 	{
-		ISC_STATUS* const status = tdbb->tdbb_status_vector;
+		FbStatusVector* const vector = tdbb->tdbb_status_vector;
+		const ISC_STATUS* status = vector->getErrors();
 		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
-			fb_utils::init_status(status);
+			vector->init();
 
 		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
 
@@ -261,9 +262,10 @@ bool GlobalRWLock::lockRead(thread_db* tdbb, SSHORT wait, const bool queueJump)
 
 	if (!LCK_lock(tdbb, cachedLock, LCK_read, wait))
 	{
-		ISC_STATUS* const status = tdbb->tdbb_status_vector;
+		FbStatusVector* const vector = tdbb->tdbb_status_vector;
+		const ISC_STATUS* status = vector->getErrors();
 		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (status[1] == isc_lock_timeout)))
-			fb_utils::init_status(status);
+			vector->init();
 
 		Attachment::CheckoutLockGuard counterGuard(att, counterMutex, FB_FUNCTION, true);
 		--pendingLock;

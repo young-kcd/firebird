@@ -275,9 +275,7 @@ void ConfigStorage::checkFile()
 		}
 		catch(const Exception& ex)
 		{
-			ISC_STATUS_ARRAY temp;
-			ex.stuff_exception(temp);
-			iscLogStatus("Cannot open audit configuration file", temp);
+			iscLogException("Cannot open audit configuration file", ex);
 		}
 
 		if (cfgFile) {
@@ -580,7 +578,7 @@ bool ConfigStorage::getItemLength(ITEM& tag, ULONG& len)
 void ConfigStorage::TouchFile::handler()
 {
 	os_utils::touchFile(fileName);
-	LocalStatus s;
+	FbLocalStatus s;
 	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
 	// ignore error in handler
 }
@@ -588,14 +586,14 @@ void ConfigStorage::TouchFile::handler()
 void ConfigStorage::TouchFile::start(const char* fName)
 {
 	fileName = fName;
-	LocalStatus s;
+	FbLocalStatus s;
 	TimerInterfacePtr()->start(&s, this, TOUCH_INTERVAL * 1000 * 1000);
 	check(&s);
 }
 
 void ConfigStorage::TouchFile::stop()
 {
-	LocalStatus s;
+	FbLocalStatus s;
 	TimerInterfacePtr()->stop(&s, this);
 	// ignore error in stop timer
 }

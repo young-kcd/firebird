@@ -158,37 +158,37 @@ StatusXcp::StatusXcp()
 
 void StatusXcp::clear()
 {
-	fb_utils::init_status(status);
+	status->init();
 }
 
-void StatusXcp::init(const ISC_STATUS* vector)
+void StatusXcp::init(const FbStatusVector* vector)
 {
-	memcpy(status, vector, sizeof(ISC_STATUS_ARRAY));
+	fb_utils::copyStatus(status, vector);
 }
 
-void StatusXcp::copyTo(ISC_STATUS* vector) const
+void StatusXcp::copyTo(FbStatusVector* vector) const
 {
-	memcpy(vector, status, sizeof(ISC_STATUS_ARRAY));
+	fb_utils::copyStatus(vector, status);
 }
 
 bool StatusXcp::success() const
 {
-	return (status[1] == FB_SUCCESS);
+	return !(status->getState() & FbStatusVector::STATE_ERRORS);
 }
 
 SLONG StatusXcp::as_gdscode() const
 {
-	return status[1];
+	return status->getErrors()[1];
 }
 
 SLONG StatusXcp::as_sqlcode() const
 {
-	return gds__sqlcode(status);
+	return gds__sqlcode(status->getErrors());
 }
 
 void StatusXcp::as_sqlstate(char* sqlstate) const
 {
-	fb_sqlstate(sqlstate, status);
+	fb_sqlstate(sqlstate, status->getErrors());
 }
 
 static void execute_looper(thread_db*, jrd_req*, jrd_tra*, const StmtNode*, jrd_req::req_s);

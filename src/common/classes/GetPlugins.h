@@ -42,9 +42,8 @@ class GetPlugins
 public:
 	GetPlugins(unsigned int interfaceType, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(),
-		  pluginSet(NULL), currentPlugin(NULL)
+		  pluginSet(NULL), currentPlugin(NULL), status(&ls)
 	{
-		LocalStatus status;
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : Config::getDefaultConfig()->getPlugins(interfaceType)),
 			NULL));
@@ -56,9 +55,8 @@ public:
 	GetPlugins(unsigned int interfaceType,
 			   Config* knownConfig, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(),
-		  pluginSet(NULL), currentPlugin(NULL)
+		  pluginSet(NULL), currentPlugin(NULL), status(&ls)
 	{
-		LocalStatus status;
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
 			new FirebirdConf(knownConfig)));
@@ -89,7 +87,6 @@ public:
 			pluginInterface->releasePlugin(currentPlugin);
 			currentPlugin = NULL;
 
-			LocalStatus status;
 			pluginSet->next(&status);
 			check(&status);
 			getPlugin();
@@ -104,7 +101,6 @@ public:
 			currentPlugin = NULL;
 		}
 
-		LocalStatus status;
 		pluginSet->set(&status, newName);
 		check(&status);
 		getPlugin();
@@ -124,10 +120,11 @@ private:
 	PluginManagerInterfacePtr pluginInterface;
 	RefPtr<IPluginSet> pluginSet;
 	P* currentPlugin;
+	LocalStatus ls;
+	CheckStatusWrapper status;
 
 	void getPlugin()
 	{
-		LocalStatus status;
 		currentPlugin = (P*) pluginSet->getPlugin(&status);
 		check(&status);
 	}

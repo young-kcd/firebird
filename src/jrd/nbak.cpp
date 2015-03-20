@@ -359,7 +359,7 @@ ULONG BackupManager::getPageCount()
 		{
 			temp_bdb.bdb_buffer = buf;
 			temp_bdb.bdb_page = pageNum;
-			ISC_STATUS_ARRAY status;
+			FbLocalStatus status;
 			// It's PIP - therefore no need to try to decrypt
 			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status))
 			{
@@ -625,7 +625,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb, bool haveGlobalLock)
 	// to difference file pages.
 	const size_t PAGES_PER_ALLOC_PAGE = database->dbb_page_size / sizeof(ULONG) - 1;
 
-	ISC_STATUS *status_vector = tdbb->tdbb_status_vector;
+	FbStatusVector *status_vector = tdbb->tdbb_status_vector;
 	try {
 		NBAK_TRACE(("actualize_alloc last_allocated_page=%d alloc_table=%p",
 			last_allocated_page, alloc_table));
@@ -737,7 +737,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	NBAK_TRACE(("allocate_difference_page"));
 	fb_assert(last_allocated_page % (database->dbb_page_size / sizeof(ULONG)) == alloc_buffer[0]);
 
-	ISC_STATUS* status_vector = tdbb->tdbb_status_vector;
+	FbStatusVector* status_vector = tdbb->tdbb_status_vector;
 	// Grow file first. This is done in such order to keep difference
 	// file consistent in case of write error. We should always be able
 	// to read next alloc page when previous one is full.
@@ -792,7 +792,7 @@ ULONG BackupManager::allocateDifferencePage(thread_db* tdbb, ULONG db_page)
 	return last_allocated_page;
 }
 
-bool BackupManager::writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page)
+bool BackupManager::writeDifference(FbStatusVector* status, ULONG diff_page, Ods::pag* page)
 {
 	if (!diff_page)
 	{
@@ -911,7 +911,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 
 	SET_TDBB(tdbb);
 
-	ISC_STATUS *status = tdbb->tdbb_status_vector;
+	FbStatusVector *status = tdbb->tdbb_status_vector;
 
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;

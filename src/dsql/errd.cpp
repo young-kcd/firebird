@@ -59,7 +59,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 
-static void internal_post(const ISC_STATUS* status_vector);
+static void internal_post(const Arg::StatusVector& v);
 
 #ifdef DEV_BUILD
 /**
@@ -142,42 +142,15 @@ void ERRD_error(const char* text)
     @param
 
  **/
-bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
+void ERRD_post_warning(const Firebird::Arg::StatusVector& v)
 {
     fb_assert(v.value()[0] == isc_arg_warning);
 
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
-	FB_SIZE_T indx = 0;
+	Jrd::FbStatusVector* status_vector = JRD_get_thread_data()->tdbb_status_vector;
 
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-			status_vector[2] != isc_arg_warning))
-	{
-		// this is a blank status vector
-		status_vector[0] = isc_arg_gds;
-		status_vector[1] = 0;
-		status_vector[2] = isc_arg_end;
-		indx = 2;
-	}
-	else
-	{
-		// find end of a status vector
-		FB_SIZE_T warning_indx = 0;
-		PARSE_STATUS(status_vector, indx, warning_indx);
-		if (indx) {
-			--indx;
-		}
-	}
-
-	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
-	{
-		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
-		ERR_make_permanent(&status_vector[indx]);
-		return true;
-	}
-
-	// not enough free space
-	return false;
+	Arg::StatusVector cur(status_vector->getWarnings());
+	cur << v;
+	status_vector->setWarnings2(cur.length(), cur.value());
 }
 
 
@@ -193,11 +166,11 @@ bool ERRD_post_warning(const Firebird::Arg::StatusVector& v)
     @param
 
  **/
-void ERRD_post(const Firebird::Arg::StatusVector& v)
+void ERRD_post(const Arg::StatusVector& v)
 {
     fb_assert(v.value()[0] == isc_arg_gds);
 
-	internal_post(v.value());
+	internal_post(v);
 }
 
 
@@ -213,83 +186,29 @@ void ERRD_post(const Firebird::Arg::StatusVector& v)
     @param
 
  **/
-static void internal_post(const ISC_STATUS* tmp_status)
+static void internal_post(const Arg::StatusVector& v)
 {
-	ISC_STATUS* status_vector = JRD_get_thread_data()->tdbb_status_vector;
-
-	// calculate length of the status
-	FB_SIZE_T tmp_status_len = 0, warning_indx = 0;
-	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
-	fb_assert(warning_indx == 0);
-
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-			status_vector[2] != isc_arg_warning))
+	// start building resulting vector
+	Jrd::FbStatusVector* status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	Arg::StatusVector final(status_vector->getErrors());
+	if (final.length() == 0)
 	{
 		// this is a blank status vector
-		status_vector[0] = isc_arg_gds;
-		status_vector[1] = isc_dsql_error;
-		status_vector[2] = isc_arg_end;
+		final << Arg::Gds(isc_dsql_error);
 	}
-
-    FB_SIZE_T status_len = 0;
-	PARSE_STATUS(status_vector, status_len, warning_indx);
-	if (status_len)
-		--status_len;
 
 	// check for duplicated error code
-	size_t i;
-	for (i = 0; i < ISC_STATUS_LENGTH; i++)
+	if (fb_utils::subStatus(final.value(), final.length(), v.value(), v.length()) == ~0u)
 	{
-		if (status_vector[i] == isc_arg_end && i == status_len) {
-			break;				// end of argument list
-		}
-
-		if (i && i == warning_indx) {
-			break;				// vector has no more errors
-		}
-
-		if (status_vector[i] == tmp_status[1] && i && status_vector[i - 1] != isc_arg_warning &&
-			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
-			(memcmp(&status_vector[i], &tmp_status[1], sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
-		{
-			// duplicate found
-			ERRD_punt();
-		}
+		// no dup - append new vector to old one
+		final << v;
 	}
 
-	// if the status_vector has only warnings then adjust err_status_len
-	size_t err_status_len = i;
-	if (err_status_len == 2 && warning_indx) {
-		err_status_len = 0;
-	}
+	// keep existing warnings
+	final << Arg::StatusVector(status_vector->getWarnings());
 
-	FB_SIZE_T warning_count = 0;
-	ISC_STATUS_ARRAY warning_status;
-
-	if (warning_indx)
-	{
-		// copy current warning(s) to a temp buffer
-		MOVE_CLEAR(warning_status, sizeof(warning_status));
-		memcpy(warning_status, &status_vector[warning_indx],
-					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
-		PARSE_STATUS(warning_status, warning_count, warning_indx);
-	}
-
-	// add the status into a real buffer right in between last
-	// error and first warning
-
-	i = err_status_len + tmp_status_len;
-	if (i < ISC_STATUS_LENGTH)
-	{
-		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
-		ERR_make_permanent(&status_vector[err_status_len]);
-		// copy current warning(s) to the status_vector
-		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH)
-		{
-			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
-		}
-	}
+	// save & punt
+	final.copyTo(status_vector);
 	ERRD_punt();
 }
 
@@ -304,14 +223,13 @@ static void internal_post(const ISC_STATUS* tmp_status)
 
 
  **/
-void ERRD_punt(const ISC_STATUS* local)
+void ERRD_punt(const Jrd::FbStatusVector* local)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	// Save any strings in a permanent location
 	if (local)
 	{
-		Firebird::makePermanentVector(tdbb->tdbb_status_vector, local);
+		fb_utils::copyStatus(tdbb->tdbb_status_vector, local);
 	}
 
 	// Give up whatever we were doing and return to the user.

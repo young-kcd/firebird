@@ -56,7 +56,8 @@ namespace Auth {
 DebugServer::DebugServer(Firebird::IPluginConfig* pConf)
 	: str(getPool())
 {
-	Firebird::LocalStatus s;
+	Firebird::LocalStatus ls;
+	Firebird::CheckStatusWrapper s(&ls);
 	config.assignRefNoIncr(pConf->getDefaultConfig(&s));
 	check(&s);
 }
@@ -96,7 +97,8 @@ int DebugServer::authenticate(Firebird::CheckStatusWrapper* status, Firebird::IS
 #ifdef AUTH_VERBOSE
 		fprintf(stderr, "DebugServer::authenticate2: %s\n", str.c_str());
 #endif
-		Firebird::LocalStatus s;
+		Firebird::LocalStatus ls;
+		Firebird::CheckStatusWrapper s(&ls);
 		writerInterface->add(&s, str.c_str());
 		check(&s);
 		str.erase();

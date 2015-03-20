@@ -380,11 +380,12 @@ void TRA_commit(thread_db* tdbb, jrd_tra* transaction, const bool retaining_flag
 	SecDbContext* secContext = transaction->getSecDbContext();
 	if (secContext && secContext->tra)
 	{
-		LocalStatus s;
-		secContext->tra->commit(&s);
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
+		secContext->tra->commit(&st);
 
-		if (s.getState() & IStatus::STATE_ERRORS)
-			status_exception::raise(&s);
+		if (st.getState() & IStatus::STATE_ERRORS)
+			status_exception::raise(&st);
 
 		secContext->tra = NULL;
 		clearMap(tdbb->getDatabase()->dbb_config->getSecurityDatabase());
@@ -985,10 +986,11 @@ void TRA_prepare(thread_db* tdbb, jrd_tra* transaction, USHORT length, const UCH
 	SecDbContext* secContext = transaction->getSecDbContext();
 	if (secContext && secContext->tra)
 	{
-		LocalStatus s;
-		secContext->tra->prepare(&s, length, msg);
-		if (s.getState() & IStatus::STATE_ERRORS)
-			status_exception::raise(&s);
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
+		secContext->tra->prepare(&st, length, msg);
+		if (st.getState() & IStatus::STATE_ERRORS)
+			status_exception::raise(&st);
 	}
 
 	// Perform any meta data work deferred
@@ -3614,15 +3616,16 @@ SecDbContext::SecDbContext(IAttachment* a, ITransaction* t)
 
 SecDbContext::~SecDbContext()
 {
-	LocalStatus s;
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
 	if (tra)
 	{
-		tra->rollback(&s);
+		tra->rollback(&st);
 		tra = NULL;
 	}
 	if (att)
 	{
-		att->detach(&s);
+		att->detach(&st);
 		att = NULL;
 	}
 }

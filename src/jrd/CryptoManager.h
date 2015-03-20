@@ -37,6 +37,7 @@
 #include "../common/classes/stack.h"
 #include "../common/ThreadStart.h"
 #include "../jrd/ods.h"
+#include "../jrd/status.h"
 #include "firebird/Interface.h"
 
 // forward
@@ -71,8 +72,8 @@ public:
 	void startCryptThread(thread_db* tdbb);
 	void terminateCryptThread(thread_db* tdbb);
 
-	bool decrypt(ISC_STATUS* sv, Ods::pag* page);
-	Ods::pag* encrypt(ISC_STATUS* sv, Ods::pag* from, Ods::pag* to);
+	bool decrypt(FbStatusVector* sv, Ods::pag* page);
+	Ods::pag* encrypt(FbStatusVector* sv, Ods::pag* from, Ods::pag* to);
 
 	void cryptThread();
 

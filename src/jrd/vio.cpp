@@ -73,6 +73,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../jrd/idx_proto.h"
 #include "../common/isc_s_proto.h"
+#include "../common/isc_proto.h"
 #include "../jrd/jrd_proto.h"
 #include "../jrd/ini_proto.h"
 #include "../jrd/lck_proto.h"
@@ -4523,7 +4524,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
  *	improve query response time and throughput.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
+	FbLocalStatus status_vector;
 	Database* const dbb = (Database*) arg;
 
 	try
@@ -4730,7 +4731,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		catch (const Firebird::Exception& ex)
 		{
 			ex.stuff_exception(status_vector);
-			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+			iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 
 			if (relation && relation->rel_sweep_count)
 				--relation->rel_sweep_count;
@@ -4754,7 +4755,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(status_vector);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 	}
 
 	dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
@@ -4767,7 +4768,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(status_vector);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 	}
 
 	return 0;

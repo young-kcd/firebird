@@ -9,6 +9,7 @@
 #include "../common/classes/array.h"
 #include "../common/ThreadStart.h"
 #include "../common/utils_proto.h"
+#include "../common/SimpleStatusVector.h"
 #include "../common/StatusHolder.h"
 
 namespace Firebird {
@@ -90,16 +91,45 @@ ISC_STATUS Exception::stuff_exception(ISC_STATUS* const status_vector) const thr
 	return status_vector[1];
 }
 
+ISC_STATUS Exception::stuffException(SimpleStatusVector<>& status_vector) const throw()
+{
+	LocalStatus status;
+	stuffException(&status);
+	try
+	{
+		status_vector.mergeStatus(&status);
+	}
+	catch(const BadAlloc&)
+	{
+		// do not use stuff here to avoid endless cycle
+		status_vector.shrink(3);
+		ISC_STATUS* s = status_vector.getBuffer(3);	// Should not throw - see assert() in ctor
+		fb_utils::statusBadAlloc(s);
+	}
+	catch(const Exception&)
+	{
+		fb_assert(false);
+
+		status_vector.shrink(3);
+		ISC_STATUS* s = status_vector.getBuffer(3);	// Should not throw - see assert() in ctor
+		fb_utils::statusUnknown(s);
+	}
+
+	return status_vector[1];
+}
+
 // ********************************* status_exception *******************************
 
 status_exception::status_exception() throw()
+	: m_status_vector(m_buffer)
 {
-	memset(m_status_vector, 0, sizeof(m_status_vector));
+	fb_utils::init_status(m_status_vector);
 }
 
 status_exception::status_exception(const ISC_STATUS *status_vector) throw()
+	: m_status_vector(m_buffer)
 {
-	memset(m_status_vector, 0, sizeof(m_status_vector));
+	fb_utils::init_status(m_status_vector);
 
 	if (status_vector)
 	{
@@ -110,12 +140,35 @@ status_exception::status_exception(const ISC_STATUS *status_vector) throw()
 void status_exception::set_status(const ISC_STATUS *new_vector) throw()
 {
 	fb_assert(new_vector != 0);
+	unsigned len = fb_utils::statusLength(new_vector);
 
-	makePermanentVector(m_status_vector, new_vector);
+	try
+	{
+		if (len >= FB_NELEM(m_buffer))
+		{
+			m_status_vector = FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[len + 1];
+		}
+		len = makeDynamicStrings(len, m_status_vector, new_vector);
+		m_status_vector[len] = isc_arg_end;
+	}
+	catch(const BadAlloc&)
+	{
+		if (m_status_vector != m_buffer)
+		{
+			delete[] m_status_vector;
+			m_status_vector = m_buffer;
+		}
+		fb_utils::statusBadAlloc(m_buffer);
+	}
 }
 
 status_exception::~status_exception() throw()
 {
+	delete[] freeDynamicStrings(fb_utils::statusLength(m_status_vector), m_status_vector);
+	if (m_status_vector != m_buffer)
+	{
+		delete[] m_status_vector;
+	}
 }
 
 const char* status_exception::what() const throw()
@@ -130,9 +183,9 @@ void status_exception::raise(const ISC_STATUS *status_vector)
 
 void status_exception::raise(const IStatus* status)
 {
-	ISC_STATUS_ARRAY status_vector;
-	fb_utils::mergeStatus(status_vector, ISC_STATUS_LENGTH, status);
-	throw status_exception(status_vector);
+	SimpleStatusVector<> status_vector;
+	status_vector.mergeStatus(status);
+	throw status_exception(status_vector.begin());
 }
 
 void status_exception::raise(const Arg::StatusVector& statusVector)

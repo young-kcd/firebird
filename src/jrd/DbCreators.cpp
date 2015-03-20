@@ -47,11 +47,13 @@
 #include "../jrd/DbCreators.h"
 #include "../jrd/tra.h"
 #include "../jrd/ini.h"
+#include "../jrd/status.h"
 #include "gen/ids.h"
 
 #define DBC_DEBUG(A)
 
 using namespace Firebird;
+using namespace Jrd;
 
 namespace {
 
@@ -74,13 +76,13 @@ bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransactio
 	embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
 	embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
-	LocalStatus st;
+	FbLocalStatus st;
 	att = prov->attachDatabase(&st, securityDb,
 		embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-	if (st.getState() & IStatus::STATE_ERRORS)
+	if (st->getState() & IStatus::STATE_ERRORS)
 	{
-		if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
-			check("IProvider::attachDatabase", &st);
+		if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
+			check("IProvider::attachDatabase", st);
 
 		// missing security DB - checking granted rights not possible
 		return false;
@@ -90,7 +92,7 @@ bool openDb(const char* securityDb, RefPtr<IAttachment>& att, RefPtr<ITransactio
 	readOnly.insertTag(isc_tpb_read);
 	readOnly.insertTag(isc_tpb_wait);
 	tra = att->startTransaction(&st, readOnly.getBufferLength(), readOnly.getBuffer());
-	check("IAttachment::startTransaction", &st);
+	check("IAttachment::startTransaction", st);
 
 	return true;
 }
@@ -111,12 +113,12 @@ bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
 	if (!openDb(securityDb, att, tra))
 		return false;
 
+	FbLocalStatus st;
 	string role(sqlRole);
 	if (role.hasData())
 	{
 		const UCHAR info[] = { isc_info_db_sql_dialect, isc_info_end };
 		UCHAR buffer[BUFFER_TINY];
-		LocalStatus st;
 		att->getInfo(&st, sizeof(info), info, sizeof(buffer), buffer);
 		check("IAttachment::getInfo", &st);
 
@@ -156,12 +158,12 @@ bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
 		att->execute(&st, tra, 0, sql, SQL_DIALECT_V6, prm.getMetadata(), prm.getBuffer(),
 			result.getMetadata(), result.getBuffer());
 
-		if (st.getState() & IStatus::STATE_ERRORS)
+		if (st->getState() & IStatus::STATE_ERRORS)
 		{
 			// isc_dsql_relation_err when exec SQL - i.e. table RDB$USER_PRIVILEGES
 			// is missing due to non-FB security DB
-			if (!fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
-				check("IAttachment::execute", &st);
+			if (!fb_utils::containsErrorCode(st->getErrors(), isc_dsql_relation_err))
+				check("IAttachment::execute", st);
 
 			role = "";
 		}
@@ -187,20 +189,19 @@ bool checkCreateDatabaseGrant(const string& userName, const string& trustedRole,
 	Message result;
 	Field<ISC_INT64> cnt(result);
 
-	LocalStatus st;
 	att->execute(&st, tra, 0,
 		"select count(*) from RDB$DB_CREATORS"
 		" where (RDB$USER_TYPE = ? and RDB$USER = ?) or (RDB$USER_TYPE = ? and RDB$USER = ?)",
 		SQL_DIALECT_V6, gr.getMetadata(), gr.getBuffer(), result.getMetadata(), result.getBuffer());
-	if (st.getState() & IStatus::STATE_ERRORS)
+	if (st->getState() & IStatus::STATE_ERRORS)
 	{
-		if (fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
+		if (fb_utils::containsErrorCode(st->getErrors(), isc_dsql_relation_err))
 		{
 			// isc_dsql_relation_err when exec SQL - i.e. table RDB$DB_CREATORS
 			// is missing due to non-FB3 security DB
 			return false;
 		}
-		check("IAttachment::execute", &st);
+		check("IAttachment::execute", st);
 	}
 
 	return cnt > 0;
@@ -258,15 +259,15 @@ RecordBuffer* DbCreatorsList::getList(thread_db* tdbb, jrd_rel* relation)
 	Field<ISC_SHORT> uType(gr);
 	Field<Varying> u(gr, MAX_SQL_IDENTIFIER_LEN);
 
-	LocalStatus st;
+	FbLocalStatus st;
 	RefPtr<IResultSet> curs(att->openCursor(&st, tra, 0,
 		"select RDB$USER_TYPE, RDB$USER from RDB$DB_CREATORS",
 		SQL_DIALECT_V6, NULL, NULL, gr.getMetadata(), NULL, 0));
 
-	if (st.getState() & IStatus::STATE_ERRORS)
+	if (st->getState() & IStatus::STATE_ERRORS)
 	{
-		if (!fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
-			check("IAttachment::openCursor", &st);
+		if (!fb_utils::containsErrorCode(st->getErrors(), isc_dsql_relation_err))
+			check("IAttachment::openCursor", st);
 
 		// isc_dsql_relation_err when opening cursor - i.e. table
 		// is missing due to non-FB3 security DB

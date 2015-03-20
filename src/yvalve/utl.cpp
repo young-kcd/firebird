@@ -185,7 +185,8 @@ void load(CheckStatusWrapper* status, ISC_QUAD* blobId, IAttachment* att, ITrans
  *      Load a blob from a file.
  *
  **************************************/
-	LocalStatus temp;
+	LocalStatus ls;
+	CheckStatusWrapper temp(&ls);
 
 	// Open the blob.  If it failed, what the hell -- just return failure
 	IBlob* blob = att->createBlob(status, tra, blobId, 0, NULL);
@@ -267,7 +268,8 @@ void dump(CheckStatusWrapper* status, ISC_QUAD* blobId, IAttachment* att, ITrans
 
 	// Close the blob
 
-	LocalStatus temp;
+	LocalStatus ls;
+	CheckStatusWrapper temp(&ls);
 	blob->close(&temp);
 }
 
@@ -1559,7 +1561,8 @@ int API_ROUTINE isc_version(FB_API_HANDLE* handle, FPTR_VERSION_CALLBACK routine
 	if (!routine)
 		routine = print_version;
 
-	LocalStatus st;
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, handle));
 	if (st.getState() & IStatus::STATE_ERRORS)
 		return FB_FAILURE;
@@ -1799,7 +1802,8 @@ static int any_text_dump(ISC_QUAD* blob_id,
  *	Dump a blob into a file.
  *
  **************************************/
-	LocalStatus st;
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
 	if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 		return FB_FAILURE;
@@ -2015,7 +2019,8 @@ static int any_text_load(ISC_QUAD* blob_id,
  *      Return TRUE is successful.
  *
  **************************************/
-	LocalStatus st;
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
 	RefPtr<IAttachment> att(REF_NO_INCR, handleToIAttachment(&st, &database));
 	if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 		return FB_FAILURE;

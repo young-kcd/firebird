@@ -55,7 +55,8 @@ public:
 		  procedures(getPool()),
 		  triggers(getPool())
 	{
-		LocalStatus s;
+		LocalStatus ls;
+		CheckStatusWrapper s(&ls);
 		RefPtr<IConfig> defaultConfig(REF_NO_INCR, par->getDefaultConfig(&s));
 		check(&s);
 

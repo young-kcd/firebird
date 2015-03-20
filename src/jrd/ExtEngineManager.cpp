@@ -536,7 +536,7 @@ private:
 		{	// scope
 			Attachment::Checkout attCout(attachment, FB_FUNCTION);
 
-			LocalStatus status;
+			FbLocalStatus status;
 			obj->getCharSet(&status, attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
 			status.check();
 			charSetName[MAX_SQL_IDENTIFIER_LEN] = '\0';
@@ -722,7 +722,7 @@ void ExtEngineManager::Function::execute(thread_db* tdbb, UCHAR* inMsg, UCHAR* o
 
 	Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-	LocalStatus status;
+	FbLocalStatus status;
 	function->execute(&status, attInfo->context, inMsg, outMsg);
 	status.check();
 }
@@ -777,7 +777,7 @@ ExtEngineManager::ResultSet::ResultSet(thread_db* tdbb, UCHAR* inMsg, UCHAR* out
 
 	Attachment::Checkout attCout(attachment, FB_FUNCTION);
 
-	LocalStatus status;
+	FbLocalStatus status;
 	resultSet = procedure->procedure->open(&status, attInfo->context, inMsg, outMsg);
 	status.check();
 }
@@ -810,7 +810,7 @@ bool ExtEngineManager::ResultSet::fetch(thread_db* tdbb)
 	fb_assert(attachment == tdbb->getAttachment());
 	Attachment::Checkout attCout(attachment, FB_FUNCTION);
 
-	LocalStatus status;
+	FbLocalStatus status;
 	bool ret = resultSet->fetch(&status);
 	status.check();
 
@@ -850,7 +850,7 @@ ExtEngineManager::Trigger::Trigger(thread_db* tdbb, MemoryPool& pool, ExtEngineM
 
 		format = Routine::createFormat(pool, metadata->triggerFields, false);
 
-		LocalStatus status;
+		FbLocalStatus status;
 
 		for (unsigned i = 0; i < format->fmt_count / 2u; ++i)
 		{
@@ -894,7 +894,7 @@ void ExtEngineManager::Trigger::execute(thread_db* tdbb, unsigned action,
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		LocalStatus status;
+		FbLocalStatus status;
 		trigger->execute(&status, attInfo->context, action,
 			(oldMsg.hasData() ? oldMsg.begin() : NULL), (newMsg.hasData() ? newMsg.begin() : NULL));
 		status.check();
@@ -1025,7 +1025,7 @@ void ExtEngineManager::closeAttachment(thread_db* tdbb, Attachment* attachment)
 		{
 			{	// scope
 				ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-				LocalStatus status;
+				FbLocalStatus status;
 				engine->closeAttachment(&status, attInfo->context);	//// FIXME: log status
 			}
 
@@ -1058,7 +1058,7 @@ void ExtEngineManager::makeFunction(thread_db* tdbb, CompilerScratch* csb, Jrd::
 	metadata->inputParameters = Routine::createMetadata(udf->getInputFields());
 	metadata->outputParameters = Routine::createMetadata(udf->getOutputFields());
 
-	LocalStatus status;
+	FbLocalStatus status;
 
 	RefPtr<IMetadataBuilder> inBuilder(REF_NO_INCR, metadata->inputParameters->getBuilder(&status));
 	status.check();
@@ -1167,7 +1167,7 @@ void ExtEngineManager::makeProcedure(thread_db* tdbb, CompilerScratch* csb, jrd_
 	metadata->inputParameters = Routine::createMetadata(prc->getInputFields());
 	metadata->outputParameters = Routine::createMetadata(prc->getOutputFields());
 
-	LocalStatus status;
+	FbLocalStatus status;
 
 	RefPtr<IMetadataBuilder> inBuilder(REF_NO_INCR, metadata->inputParameters->getBuilder(&status));
 	status.check();
@@ -1293,7 +1293,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 		}
 	}
 
-	LocalStatus status;
+	FbLocalStatus status;
 
 	RefPtr<IMetadataBuilder> fieldsBuilder(REF_NO_INCR, relation ?
 		metadata->triggerFields->getBuilder(&status) : NULL);
@@ -1307,7 +1307,7 @@ void ExtEngineManager::makeTrigger(thread_db* tdbb, CompilerScratch* csb, Jrd::T
 	{	// scope
 		Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
 
-		LocalStatus status;
+		FbLocalStatus status;
 		externalTrigger = attInfo->engine->makeTrigger(&status, attInfo->context, metadata,
 			fieldsBuilder);
 		status.check();
@@ -1383,7 +1383,7 @@ IExternalEngine* ExtEngineManager::getEngine(thread_db* tdbb, const MetaName& na
 						setupAdminCharSet(tdbb, engine, attInfo);
 
 						ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
-						LocalStatus status;
+						FbLocalStatus status;
 						engine->openAttachment(&status, attInfo->context);	//// FIXME: log status
 					}
 				}
@@ -1450,7 +1450,7 @@ ExtEngineManager::EngineAttachmentInfo* ExtEngineManager::getEngineAttachment(
 
 			ContextManager<IExternalFunction> ctxManager(tdbb, attInfo, attInfo->adminCharSet);
 			Attachment::Checkout attCout(tdbb->getAttachment(), FB_FUNCTION);
-			LocalStatus status;
+			FbLocalStatus status;
 			engine->openAttachment(&status, attInfo->context);	//// FIXME: log status
 		}
 
@@ -1475,7 +1475,7 @@ void ExtEngineManager::setupAdminCharSet(thread_db* tdbb, IExternalEngine* engin
 
 	char charSetName[MAX_SQL_IDENTIFIER_SIZE] = "NONE";
 
-	LocalStatus status;
+	FbLocalStatus status;
 	engine->open(&status, attInfo->context, charSetName, MAX_SQL_IDENTIFIER_LEN);
 	status.check();
 

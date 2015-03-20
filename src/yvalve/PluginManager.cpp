@@ -267,7 +267,8 @@ namespace
 
 	IConfig* findDefConfig(ConfigFile* defaultConfig, const PathName& confName)
 	{
-		Firebird::LocalStatus s;
+		LocalStatus ls;
+		CheckStatusWrapper s(&ls);
 		if (defaultConfig)
 		{
 			const ConfigFile::Parameter* p = defaultConfig->findParameter("Config");
@@ -588,7 +589,8 @@ namespace
 			fprintf(stderr, "~FactoryParameter places configuredPlugin %s in unload query for %d seconds\n",
 				configuredPlugin->getPlugName(), configuredPlugin->getReleaseDelay() / 1000000);
 #endif
-			LocalStatus s;
+			LocalStatus ls;
+			CheckStatusWrapper s(&ls);
 			TimerInterfacePtr()->start(&s, configuredPlugin, configuredPlugin->getReleaseDelay());
 			// errors are ignored here - configuredPlugin will be released at once
 		}
@@ -602,7 +604,8 @@ namespace
 		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
 		par->addRef();
 
-		Firebird::LocalStatus s;
+		LocalStatus ls;
+		CheckStatusWrapper s(&ls);
 		IPluginBase* plugin = module->getPlugin(regPlugin).factory->createPlugin(&s, par);
 
 		if (!(s.getState() & Firebird::IStatus::STATE_ERRORS))

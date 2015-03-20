@@ -8693,7 +8693,8 @@ static int query_abort(const int reason, const int, void*)
 
 	if (DB)
 	{
-		Firebird::LocalStatus status;
+		Firebird::LocalStatus ls;
+		Firebird::CheckStatusWrapper status(&ls);
 		DB->cancelOperation(&status, fb_cancel_raise);
 		flag = !(status.getState() & Firebird::IStatus::STATE_ERRORS);
 	}

@@ -1046,7 +1046,7 @@ interface TraceStatusVector : Versioned
 {
 	boolean hasError();
 	boolean hasWarning();
-	const intptr* getStatus();
+	Status getStatus();
 	const string getText();
 }
 

@@ -43,6 +43,7 @@
 #include "../jrd/met_proto.h"
 #include "../jrd/err_proto.h"
 #include "../yvalve/gds_proto.h"
+#include "../common/isc_proto.h"
 #include "../common/config/config.h"
 #include "../common/utils_proto.h"
 
@@ -54,7 +55,6 @@ using namespace Firebird;
 
 
 static void internal_error(ISC_STATUS status, int number, const TEXT* file = NULL, int line = 0);
-static void internal_post(const ISC_STATUS* status_vector);
 
 
 void ERR_bugcheck(int number, const TEXT* file, int line)
@@ -174,7 +174,7 @@ void ERR_log(int facility, int number, const TEXT* message)
 }
 
 
-bool ERR_post_warning(const Arg::StatusVector& v)
+void ERR_post_warning(const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -188,39 +188,14 @@ bool ERR_post_warning(const Arg::StatusVector& v)
  **************************************/
 	fb_assert(v.value()[0] == isc_arg_warning);
 
-	FB_SIZE_T indx = 0, warning_indx = 0;
-	ISC_STATUS* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
-
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-			status_vector[2] != isc_arg_warning))
-	{
-		// this is a blank status vector
-		fb_utils::init_status(status_vector);
-		indx = 2;
-	}
-	else
-	{
-		// find end of a status vector
-		PARSE_STATUS(status_vector, indx, warning_indx);
-		if (indx)
-			--indx;
-	}
-
-	// stuff the warning
-	if (indx + v.length() + 1 < ISC_STATUS_LENGTH)
-	{
-		memcpy(&status_vector[indx], v.value(), sizeof(ISC_STATUS) * (v.length() + 1));
-        ERR_make_permanent(&status_vector[indx]);
-		return true;
-	}
-
-	// not enough free space
-	return false;
+	FbStatusVector* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
+	Arg::StatusVector warnings(status_vector->getWarnings());
+	warnings << v;
+	status_vector->setWarnings(warnings.value());
 }
 
 
-void ERR_post_nothrow(const Arg::StatusVector& v)
+void ERR_post_nothrow(const Arg::StatusVector& v, FbStatusVector* statusVector)
 /**************************************
  *
  *	E R R _ p o s t _ n o t h r o w
@@ -228,47 +203,40 @@ void ERR_post_nothrow(const Arg::StatusVector& v)
  **************************************
  *
  * Functional description
- *	Create a status vector.
+ *	Populate a status vector.
  *
  **************************************/
 {
-    fb_assert(v.value()[0] == isc_arg_gds);
-	ISC_STATUS_ARRAY vector;
-	v.copyTo(vector);
-	ERR_make_permanent(vector);
-	internal_post(vector);
-}
+	// calculate length of the status
+	unsigned lenToAdd = v.length();
+	if (lenToAdd == 0)	// nothing to do
+		return;
+	const ISC_STATUS* toAdd = v.value();
+    fb_assert(toAdd[0] == isc_arg_gds);
 
+	// Use default from tdbb when no vector specified
+	if (!statusVector)
+		statusVector = JRD_get_thread_data()->tdbb_status_vector;
 
-void ERR_make_permanent(ISC_STATUS* s)
-/**************************************
- *
- *	E R R _ m a k e _ p e r m a n e n t
- *
- **************************************
- *
- * Functional description
- *	Make strings in vector permanent
- *
- **************************************/
-{
-	makePermanentVector(s);
-}
+	if (!(statusVector->getState() & FbStatusVector::STATE_ERRORS))
+	{
+		// this is a blank status vector just stuff the status
+		statusVector->setErrors2(lenToAdd, toAdd);
+		return;
+	}
 
+	const ISC_STATUS* oldVector = statusVector->getErrors();
+	unsigned lenOld = fb_utils::statusLength(oldVector);
 
-void ERR_make_permanent(Arg::StatusVector& v)
-/**************************************
- *
- *	E R R _ m a k e _ p e r m a n e n t
- *
- **************************************
- *
- * Functional description
- *	Make strings in vector permanent
- *
- **************************************/
-{
-	ERR_make_permanent(const_cast<ISC_STATUS*>(v.value()));
+	// check for duplicated error code
+	if (fb_utils::subStatus(oldVector, lenOld, toAdd, lenToAdd) != ~0u)
+		return;
+
+	// copy memory from/to
+	SimpleStatusVector<> tmp;
+	tmp.assign(oldVector, lenOld);
+	tmp.append(toAdd, lenToAdd);
+	statusVector->setErrors2(tmp.getCount(), tmp.begin());
 }
 
 
@@ -291,89 +259,6 @@ void ERR_post(const Arg::StatusVector& v)
 }
 
 
-static void internal_post(const ISC_STATUS* tmp_status)
-{
-/**************************************
- *
- *	i n t e r n a l _ p o s t
- *
- **************************************
- *
- * Functional description
- *	Append status vector with new values.
- *
- **************************************/
-
-	// calculate length of the status
-	FB_SIZE_T tmp_status_len = 0, warning_indx = 0;
-	PARSE_STATUS(tmp_status, tmp_status_len, warning_indx);
-	fb_assert(warning_indx == 0);
-
-	ISC_STATUS* const status_vector = JRD_get_thread_data()->tdbb_status_vector;
-
-	if (status_vector[0] != isc_arg_gds ||
-		(status_vector[0] == isc_arg_gds && status_vector[1] == 0 &&
-			status_vector[2] != isc_arg_warning))
-	{
-		// this is a blank status vector just stuff the status
-		memcpy(status_vector, tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
-		return;
-	}
-
-	FB_SIZE_T status_len = 0;
-	PARSE_STATUS(status_vector, status_len, warning_indx);
-	if (status_len)
-		--status_len;
-
-	// check for duplicated error code
-	size_t i;
-	for (i = 0; i < ISC_STATUS_LENGTH; i++)
-	{
-		if (status_vector[i] == isc_arg_end && i == status_len)
-			break;				// end of argument list
-
-		if (i && i == warning_indx)
-			break;				// vector has no more errors
-
-		if (status_vector[i] == tmp_status[1] && i && status_vector[i - 1] != isc_arg_warning &&
-			i + tmp_status_len - 2 < ISC_STATUS_LENGTH &&
-			(memcmp(&status_vector[i], &tmp_status[1], sizeof(ISC_STATUS) * (tmp_status_len - 2)) == 0))
-		{
-			// duplicate found
-			return;
-		}
-	}
-
-	// if the status_vector has only warnings then adjust err_status_len
-	size_t err_status_len = i;
-	if (err_status_len == 2 && warning_indx)
-		err_status_len = 0;
-
-	ISC_STATUS_ARRAY warning_status;
-	FB_SIZE_T warning_count = 0;
-	if (warning_indx)
-	{
-		// copy current warning(s) to a temp buffer
-		MOVE_CLEAR(warning_status, sizeof(warning_status));
-		memcpy(warning_status, &status_vector[warning_indx],
-					sizeof(ISC_STATUS) * (ISC_STATUS_LENGTH - warning_indx));
-		PARSE_STATUS(warning_status, warning_count, warning_indx);
-	}
-
-	// add the status into a real buffer right in between last error and first warning
-
-	if ((i = err_status_len + tmp_status_len) < ISC_STATUS_LENGTH)
-	{
-		memcpy(&status_vector[err_status_len], tmp_status, sizeof(ISC_STATUS) * tmp_status_len);
-		// copy current warning(s) to the status_vector
-		if (warning_count && i + warning_count - 1 < ISC_STATUS_LENGTH) {
-			memcpy(&status_vector[i - 1], warning_status, sizeof(ISC_STATUS) * warning_count);
-		}
-	}
-	return;
-}
-
-
 void ERR_punt()
 {
 /**************************************
@@ -392,14 +277,13 @@ void ERR_punt()
 
 	if (dbb && (dbb->dbb_flags & DBB_bugcheck))
 	{
-		gds__log_status(dbb->dbb_filename.nullStr(), tdbb->tdbb_status_vector);
+		iscDbLogStatus(dbb->dbb_filename.nullStr(), tdbb->tdbb_status_vector);
  		if (Config::getBugcheckAbort())
 		{
 			abort();
 		}
 	}
 
-	ERR_make_permanent(tdbb->tdbb_status_vector);
 	status_exception::raise(tdbb->tdbb_status_vector);
 }
 
@@ -421,16 +305,15 @@ void ERR_warning(const Arg::StatusVector& v)
  *
  **************************************/
 	thread_db* tdbb = JRD_get_thread_data();
-	ISC_STATUS* s = tdbb->tdbb_status_vector;
+	FbStatusVector* s = tdbb->tdbb_status_vector;
 
 	v.copyTo(s);
-	ERR_make_permanent(s);
 	DEBUG;
 	tdbb->getRequest()->req_flags |= req_warning;
 }
 
 
-void ERR_append_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+void ERR_append_status(FbStatusVector* status_vector, const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -450,11 +333,10 @@ void ERR_append_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
 
 	// Return the result
 	passed.copyTo(status_vector);
-	ERR_make_permanent(status_vector);
 }
 
 
-void ERR_build_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
+void ERR_build_status(FbStatusVector* status_vector, const Arg::StatusVector& v)
 {
 /**************************************
  *
@@ -463,11 +345,10 @@ void ERR_build_status(ISC_STATUS* status_vector, const Arg::StatusVector& v)
  **************************************
  *
  * Functional description
- *	Append the given status vector with the passed arguments.
+ *	Set the given status vector to the passed arguments.
  *
  **************************************/
 	v.copyTo(status_vector);
-	ERR_make_permanent(status_vector);
 }
 
 

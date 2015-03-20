@@ -312,9 +312,9 @@ namespace Jrd
 	{
 		if (active)
 		{
-			Firebird::LocalStatus s;
+			FbLocalStatus s;
 			TimerInterfacePtr()->stop(&s, this);
-			if (!(s.getState() & IStatus::STATE_ERRORS))
+			if (!(s->getState() & IStatus::STATE_ERRORS))
 				active = false;
 		}
 	}
@@ -323,7 +323,7 @@ namespace Jrd
 	{
 		if (dbb && !active)
 		{
-			Firebird::LocalStatus s;
+			FbLocalStatus s;
 			TimerInterfacePtr()->start(&s, this, seconds * 1000 * 1000);
 			check(&s);
 			active = true;

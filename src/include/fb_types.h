@@ -156,7 +156,4 @@ inline T FB_ALIGN(T n, uintptr_t b)
 	return (T) ((((uintptr_t) n) + b - 1) & ~(b - 1));
 }
 
-// Big array for holding long temporal vectors from/to IStatus
-typedef ISC_STATUS ISC_STATUS_BIG_ARRAY[ISC_STATUS_LENGTH * 3];
-
 #endif /* INCLUDE_FB_TYPES_H */

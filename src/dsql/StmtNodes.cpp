@@ -663,7 +663,7 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const Excep
 	if (tdbb->tdbb_flags & TDBB_sys_error)
 		return false;
 
-	ISC_STATUS* statusVector = tdbb->tdbb_status_vector;
+	Jrd::FbStatusVector* statusVector = tdbb->tdbb_status_vector;
 
 	bool found = false;
 
@@ -673,7 +673,7 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const Excep
 		{
 			case ExceptionItem::SQL_CODE:
 				{
-					const SSHORT sqlcode = gds__sqlcode(statusVector);
+					const SSHORT sqlcode = gds__sqlcode(statusVector->getErrors());
 					if (sqlcode == conditions[i].code)
 						found = true;
 				}
@@ -682,22 +682,22 @@ bool BlockNode::testAndFixupError(thread_db* tdbb, jrd_req* request, const Excep
 			case ExceptionItem::SQL_STATE:
 				{
 					FB_SQLSTATE_STRING sqlstate;
-					fb_sqlstate(sqlstate, statusVector);
+					fb_sqlstate(sqlstate, statusVector->getErrors());
 					if (conditions[i].name == sqlstate)
 						found = true;
 				}
 				break;
 
 			case ExceptionItem::GDS_CODE:
-				if (statusVector[1] == conditions[i].code)
+				if (statusVector->getErrors()[1] == conditions[i].code)
 					found = true;
 				break;
 
 			case ExceptionItem::XCP_CODE:
 				// Look at set_error() routine to understand how the
 				// exception ID info is encoded inside the status vector.
-				if ((statusVector[1] == isc_except) &&
-					(statusVector[3] == conditions[i].code))
+				if ((statusVector->getErrors()[1] == isc_except) &&
+					(statusVector->getErrors()[3] == conditions[i].code))
 				{
 					found = true;
 				}

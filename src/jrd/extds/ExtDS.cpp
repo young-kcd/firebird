@@ -512,7 +512,7 @@ Transaction* Connection::findTransaction(thread_db* tdbb, TraScope traScope) con
 	return ext_tran;
 }
 
-void Connection::raise(const ISC_STATUS* status, thread_db* /*tdbb*/, const char* sWhere)
+void Connection::raise(const FbStatusVector* status, thread_db* /*tdbb*/, const char* sWhere)
 {
 	if (!getWrapErrors())
 	{
@@ -527,15 +527,6 @@ void Connection::raise(const ISC_STATUS* status, thread_db* /*tdbb*/, const char
 											 Arg::Str(rem_err) <<
 											 Arg::Str(getDataSourceName()));
 }
-
-
-void Connection::raise(const Firebird::IStatus& status, thread_db* tdbb, const char* sWhere)
-{
-	ISC_STATUS_ARRAY tmp;
-	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), &status);
-	raise(tmp, tdbb, sWhere);
-}
-
 
 // Transaction
 
@@ -590,10 +581,10 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 	ClumpletWriter tpb(ClumpletReader::Tpb, 64, isc_tpb_version3);
 	generateTPB(tdbb, tpb, traMode, readOnly, wait, lockTimeout);
 
-	ISC_STATUS_ARRAY status = {0};
+	FbLocalStatus status;
 	doStart(status, tdbb, tpb);
 
-	if (status[1]) {
+	if (status->getState() && FbStatusVector::STATE_ERRORS) {
 		m_connection.raise(status, tdbb, "transaction start");
 	}
 
@@ -616,20 +607,20 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 
 void Transaction::prepare(thread_db* tdbb, int info_len, const char* info)
 {
-	ISC_STATUS_ARRAY status = {0};
+	FbLocalStatus status;
 	doPrepare(status, tdbb, info_len, info);
 
-	if (status[1]) {
+	if (status->getState() && FbStatusVector::STATE_ERRORS) {
 		m_connection.raise(status, tdbb, "transaction prepare");
 	}
 }
 
 void Transaction::commit(thread_db* tdbb, bool retain)
 {
-	ISC_STATUS_ARRAY status = {0};
+	FbLocalStatus status;
 	doCommit(status, tdbb, retain);
 
-	if (status[1]) {
+	if (status->getState() && FbStatusVector::STATE_ERRORS) {
 		m_connection.raise(status, tdbb, "transaction commit");
 	}
 
@@ -642,7 +633,7 @@ void Transaction::commit(thread_db* tdbb, bool retain)
 
 void Transaction::rollback(thread_db* tdbb, bool retain)
 {
-	ISC_STATUS_ARRAY status = {0};
+	FbLocalStatus status;
 	doRollback(status, tdbb, retain);
 
 	Connection& conn = m_connection;
@@ -652,7 +643,7 @@ void Transaction::rollback(thread_db* tdbb, bool retain)
 		m_connection.deleteTransaction(this);
 	}
 
-	if (status[1]) {
+	if (status->getState() && FbStatusVector::STATE_ERRORS) {
 		conn.raise(status, tdbb, "transaction rollback");
 	}
 }
@@ -877,7 +868,7 @@ bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
 	{
 		if (doFetch(tdbb))
 		{
-			ISC_STATUS_ARRAY status;
+			FbLocalStatus status;
 			Arg::Gds(isc_sing_select_err).copyTo(status);
 			raise(status, tdbb, "isc_dsql_fetch");
 		}
@@ -1488,7 +1479,7 @@ void Statement::clearNames()
 }
 
 
-void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
+void Statement::raise(FbStatusVector* status, thread_db* tdbb, const char* sWhere,
 		const string* sQuery)
 {
 	m_error = true;
@@ -1508,26 +1499,6 @@ void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 			fb_utils::init_status(status);
 		}
 	}
-
-	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
-											Arg::Str(rem_err) <<
-											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
-											Arg::Str(m_connection.getDataSourceName()));
-}
-
-void Statement::raise(const Firebird::IStatus& status, thread_db* /*tdbb*/, const char* sWhere,
-		const string* sQuery)
-{
-	m_error = true;
-
-	if (!m_connection.getWrapErrors())
-	{
-		ERR_post(Arg::StatusVector(&status));
-	}
-
-	string rem_err;
-	m_provider.getRemoteError(status.getErrors(), rem_err);
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
 	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<

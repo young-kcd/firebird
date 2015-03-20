@@ -28,6 +28,5 @@
 #define DSQL_UTLD_PROTO_H
 
 USHORT		UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerChar, USHORT overhead);
-ISC_STATUS	UTLD_copy_status(const ISC_STATUS*, ISC_STATUS*);
 
 #endif //  DSQL_UTLD_PROTO_H

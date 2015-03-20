@@ -64,7 +64,8 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 	if (!metadata)
 		return;
 
-	LocalStatus st;
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
 
 	expectedMessageLength = metadata->getMessageLength(&st);
 	check(&st);

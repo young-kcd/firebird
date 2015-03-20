@@ -26,7 +26,8 @@ class Meta : public Firebird::RefPtr<Firebird::IMessageMetadata>
 public:
 	Meta(Firebird::IStatement* stmt, bool out)
 	{
-		Firebird::LocalStatus st;
+		Firebird::LocalStatus ls;
+		Firebird::CheckStatusWrapper st(&ls);
 		Firebird::IMessageMetadata* m = out ? stmt->getOutputMetadata(&st) : stmt->getInputMetadata(&st);
 		if (st.getState() & Firebird::IStatus::STATE_ERRORS)
 		{

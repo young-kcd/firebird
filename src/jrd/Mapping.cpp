@@ -47,6 +47,7 @@
 #include "../jrd/Mapping.h"
 #include "../jrd/tra.h"
 #include "../jrd/ini.h"
+#include "../jrd/status.h"
 #include "gen/ids.h"
 
 #ifdef WIN_NT
@@ -57,6 +58,7 @@
 #define MAP_DEBUG(A)
 
 using namespace Firebird;
+using namespace Jrd;
 
 namespace {
 
@@ -238,7 +240,7 @@ public:
 
 	void populate(IAttachment *att)
 	{
-		LocalStatus st;
+		FbLocalStatus st;
 
 		if (dataFlag)
 		{
@@ -280,9 +282,9 @@ public:
 				"	RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 				"FROM RDB$AUTH_MAPPING",
 				3, NULL, NULL, mMap.getMetadata(), NULL, 0);
-			if (st.getState() & IStatus::STATE_ERRORS)
+			if (st->getState() & IStatus::STATE_ERRORS)
 			{
-				if (fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
+				if (fb_utils::containsErrorCode(st->getErrors(), isc_dsql_relation_err))
 				{
 					// isc_dsql_relation_err when opening cursor - i.e. table RDB$AUTH_MAPPING
 					// is missing due to non-FB3 security DB
@@ -290,7 +292,7 @@ public:
 					dataFlag = true;
 					return;
 				}
-				check("IAttachment::openCursor", &st);
+				check("IAttachment::openCursor", st);
 			}
 
 			while (curs->fetchNext(&st, mMap.getBuffer()) == IStatus::RESULT_OK)
@@ -899,7 +901,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		SyncType syncType = SYNC_SHARED;
 		IAttachment* iDb = NULL;
 		IAttachment* iSec = NULL;
-		LocalStatus st;
+		FbLocalStatus st;
 
 		try
 		{
@@ -925,9 +927,9 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					{
 						iSec = prov->attachDatabase(&st, securityAlias,
 							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-						if (st.getState() & IStatus::STATE_ERRORS)
+						if (st->getState() & IStatus::STATE_ERRORS)
 						{
-							if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
+							if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
 								check("IProvider::attachDatabase", &st);
 
 							// missing security DB is not a reason to fail mapping
@@ -946,9 +948,9 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 								embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 						}
 
-						if (st.getState() & IStatus::STATE_ERRORS)
+						if (st->getState() & IStatus::STATE_ERRORS)
 						{
-							if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
+							if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
 								check("IProvider::attachDatabase", &st);
 
 							// missing DB is not a reason to fail mapping
@@ -1149,7 +1151,7 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		return buffer;
 	}
 
-	LocalStatus st;
+	FbLocalStatus st;
 	DispatcherPtr prov;
 	IAttachment* att = NULL;
 	ITransaction* tra = NULL;
@@ -1167,9 +1169,9 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 		const char* dbName = tdbb->getDatabase()->dbb_config->getSecurityDatabase();
 		att = prov->attachDatabase(&st, dbName,
 			embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-		if (st.getState() & IStatus::STATE_ERRORS)
+		if (st->getState() & IStatus::STATE_ERRORS)
 		{
-			if (!fb_utils::containsErrorCode(st.getErrors(), isc_io_error))
+			if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
 				check("IProvider::attachDatabase", &st);
 
 			// In embedded mode we are not raising any errors - silent return
@@ -1200,9 +1202,9 @@ RecordBuffer* MappingList::getList(thread_db* tdbb, jrd_rel* relation)
 			"	RDB$MAP_FROM_TYPE, RDB$MAP_FROM, RDB$MAP_TO_TYPE, RDB$MAP_TO "
 			"FROM RDB$AUTH_MAPPING",
 			3, NULL, NULL, mMap.getMetadata(), NULL, 0);
-		if (st.getState() & IStatus::STATE_ERRORS)
+		if (st->getState() & IStatus::STATE_ERRORS)
 		{
-			if (!fb_utils::containsErrorCode(st.getErrors(), isc_dsql_relation_err))
+			if (!fb_utils::containsErrorCode(st->getErrors(), isc_dsql_relation_err))
 				check("IAttachment::openCursor", &st);
 
 			// isc_dsql_relation_err when opening cursor - i.e. table RDB$AUTH_MAPPING

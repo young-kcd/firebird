@@ -329,7 +329,8 @@ IMetadataBuilder* MsgMetadata::getBuilder(CheckStatusWrapper* status)
 
 void MsgMetadata::assign(IMessageMetadata* from)
 {
-	LocalStatus status;
+	LocalStatus ls;
+	CheckStatusWrapper status(&ls);
 
 	unsigned count = from->getCount(&status);
 	check(&status);

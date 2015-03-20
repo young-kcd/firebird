@@ -65,7 +65,7 @@ public:
 	virtual ULONG getBytes(UCHAR*, ULONG) = 0;
 	virtual void setServiceStatus(const ISC_STATUS*) = 0;
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) = 0;
-	virtual const ISC_STATUS* getStatus() = 0;
+	virtual const Firebird::CheckStatusWrapper* getStatus() = 0;
 	virtual void initStatus() = 0;
 	virtual void checkService() = 0;
 	virtual void hidePasswd(ArgvType&, int) = 0;

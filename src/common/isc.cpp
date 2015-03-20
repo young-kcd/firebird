@@ -587,9 +587,23 @@ void iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector)
 
 void iscLogStatus(const TEXT* text, Firebird::IStatus* status)
 {
-	ISC_STATUS_BIG_ARRAY tmp;
-	fb_utils::mergeStatus(tmp, FB_NELEM(tmp), status);
-	iscLogStatus(text, tmp);
+	Firebird::SimpleStatusVector<> tmp;
+	tmp.mergeStatus(status);
+	iscLogStatus(text, tmp.begin());
+}
+
+
+void iscDbLogStatus(const TEXT* text, Firebird::IStatus* status)
+{
+	const TEXT* hdr = NULL;
+	Firebird::string buf;
+	if (text)
+	{
+		buf = "Database: ";
+		buf += text;
+		hdr = buf.c_str();
+	}
+	iscLogStatus(hdr, status);
 }
 
 

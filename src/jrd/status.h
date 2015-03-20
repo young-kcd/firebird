@@ -26,12 +26,64 @@
  */
 
 
-#ifndef FB_MISC_STATUS_H
-#define FB_MISC_STATUS_H
+#ifndef FB_MFbStatusVector_H
+#define FB_MFbStatusVector_H
+
+#include "../common/StatusHolder.h"
 
 const int MAX_ERRMSG_LEN	= 128;
 const int MAX_ERRSTR_LEN	= 1024;
 
-void PARSE_STATUS(const ISC_STATUS* status_vector, FB_SIZE_T& length, FB_SIZE_T& warning);
+namespace Jrd
+{
+	typedef Firebird::CheckStatusWrapper FbStatusVector;
 
-#endif // FB_MISC_STATUS_H
+	class FbLocalStatus
+	{
+	public:
+		FbLocalStatus()
+			: localStatusVector(&localStatus)
+		{ }
+
+		operator FbStatusVector*()
+		{
+			return &localStatusVector;
+		}
+
+		FbStatusVector* operator->()
+		{
+			return &localStatusVector;
+		}
+
+		FbStatusVector* operator&()
+		{
+			return &localStatusVector;
+		}
+
+		operator const FbStatusVector*() const
+		{
+			return &localStatusVector;
+		}
+
+		const FbStatusVector* operator->() const
+		{
+			return &localStatusVector;
+		}
+
+		void check()
+		{
+			if (localStatusVector.isDirty())
+			{
+				if (localStatus.getState() && FbStatusVector::STATE_ERRORS)
+					Firebird::status_exception::raise(&localStatus);
+			}
+		}
+
+	private:
+		Firebird::LocalStatus localStatus;
+		FbStatusVector localStatusVector;
+	};
+
+}
+
+#endif // FB_MFbStatusVector_H

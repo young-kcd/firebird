@@ -166,12 +166,11 @@ namespace Jrd {
 		{
 			if (!LCK_lock(tdbb, stateLock, LCK_SR, LCK_WAIT))
 			{
-				fb_assert(tdbb->tdbb_status_vector[1]);
+				fb_assert(tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_ERRORS);
 				ERR_punt();
 			}
 
-			fb_utils::init_status(tdbb->tdbb_status_vector);
-
+			tdbb->tdbb_status_vector->init();
 			needLock = false;
 		}
 	}
@@ -228,7 +227,7 @@ namespace Jrd {
 								  LCK_convert(tdbb, stateLock, LCK_PW, LCK_WAIT);
 			if (!ret)
 			{
-				fb_assert(tdbb->tdbb_status_vector[1]);
+				fb_assert(tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_ERRORS);
 				ERR_punt();
 			}
 			fb_utils::init_status(tdbb->tdbb_status_vector);
@@ -358,7 +357,7 @@ namespace Jrd {
 
 	void CryptoManager::cryptThread()
 	{
-		ISC_STATUS_ARRAY status_vector;
+		FbLocalStatus status_vector;
 
 		try
 		{
@@ -511,7 +510,7 @@ namespace Jrd {
 		}
 	}
 
-	bool CryptoManager::decrypt(ISC_STATUS* sv, Ods::pag* page)
+	bool CryptoManager::decrypt(FbStatusVector* sv, Ods::pag* page)
 	{
 		// Code calling us is not ready to process exceptions correctly
 		// Therefore use old (status vector based) method
@@ -553,13 +552,9 @@ namespace Jrd {
 					}
 				}
 
-				LocalStatus status;
-				cryptPlugin->decrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &page[1], &page[1]);
-				if (status.getState() & IStatus::STATE_ERRORS)
-				{
-					fb_utils::mergeStatus(sv, FB_NELEM(sv), &status);
+				cryptPlugin->decrypt(sv, dbb.dbb_page_size - sizeof(Ods::pag), &page[1], &page[1]);
+				if (sv->getState() & IStatus::STATE_ERRORS)
 					return false;
-				}
 			}
 
 			return true;
@@ -571,7 +566,7 @@ namespace Jrd {
 		return false;
 	}
 
-	Ods::pag* CryptoManager::encrypt(ISC_STATUS* sv, Ods::pag* from, Ods::pag* to)
+	Ods::pag* CryptoManager::encrypt(FbStatusVector* sv, Ods::pag* from, Ods::pag* to)
 	{
 		// Code calling us is not ready to process exceptions correctly
 		// Therefore use old (status vector based) method
@@ -581,13 +576,9 @@ namespace Jrd {
 			{
 				to[0] = from[0];
 
-				LocalStatus status;
-				cryptPlugin->encrypt(&status, dbb.dbb_page_size - sizeof(Ods::pag), &from[1], &to[1]);
-				if (status.getState() & IStatus::STATE_ERRORS)
-				{
-					fb_utils::mergeStatus(sv, FB_NELEM(sv), &status);
+				cryptPlugin->encrypt(sv, dbb.dbb_page_size - sizeof(Ods::pag), &from[1], &to[1]);
+				if (sv->getState() & IStatus::STATE_ERRORS)
 					return NULL;
-				}
 
 				to->pag_flags |= Ods::crypted_page;
 				return to;
@@ -672,7 +663,7 @@ namespace Jrd {
 			keyControl.hasData(); keyControl.next())
 		{
 			IKeyHolderPlugin* keyPlugin = keyControl.plugin();
-			LocalStatus st;
+			FbLocalStatus st;
 			if (keyPlugin->keyCallback(&st, att->att_crypt_callback) == 1)	//// FIXME: 1 ???
 			{
 				// holder accepted attachment's key
@@ -696,10 +687,8 @@ namespace Jrd {
 				ha->registerAttachment(att);
 				break;		// Do not need >1 key from attachment to single DB
 			}
-			else if (st.getState() & IStatus::STATE_ERRORS)
-			{
-				status_exception::raise(&st);
-			}
+			else
+				st.check();
 		}
 	}
 
@@ -729,12 +718,9 @@ namespace Jrd {
 			vector[i] = knownHolders[i].getPlugin();
 		}
 
-		LocalStatus st;
+		FbLocalStatus st;
 		crypt->setKey(&st, length, vector);
-		if (st.getState() & IStatus::STATE_ERRORS)
-		{
-			status_exception::raise(&st);
-		}
+		st.check();
 	}
 
 } // namespace Jrd

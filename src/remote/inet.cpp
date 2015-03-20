@@ -2695,7 +2695,8 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 
 	int n = 0;
 	int inetErrNo;
-	LocalStatus st;
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
 
 	for (;;)
 	{
@@ -2854,7 +2855,8 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 	HalfStaticArray<char, BUFFER_TINY> b;
 	if (port->port_crypt_plugin && port->port_crypt_complete)
 	{
-		LocalStatus st;
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
 
 		char* d = b.getBuffer(buffer_length);
 		port->port_crypt_plugin->encrypt(&st, buffer_length, data, d);

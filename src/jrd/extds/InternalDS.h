@@ -42,7 +42,7 @@ public:
 
 	virtual void initialize() {}
 	virtual void jrdAttachmentEnd(Jrd::thread_db* tdbb, Jrd::Attachment* att);
-	virtual void getRemoteError(const ISC_STATUS* status, Firebird::string& err) const;
+	virtual void getRemoteError(const Jrd::FbStatusVector* status, Firebird::string& err) const;
 
 protected:
 	virtual Connection* doCreateConnection();
@@ -110,10 +110,10 @@ public:
 	Jrd::JTransaction* getJrdTran() { return m_transaction; }
 
 protected:
-	virtual void doStart(ISC_STATUS* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb);
-	virtual void doPrepare(ISC_STATUS* status, Jrd::thread_db* tdbb, int info_len, const char* info);
-	virtual void doCommit(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain);
-	virtual void doRollback(ISC_STATUS* status, Jrd::thread_db* tdbb, bool retain);
+	virtual void doStart(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, Firebird::ClumpletWriter& tpb);
+	virtual void doPrepare(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, int info_len, const char* info);
+	virtual void doCommit(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, bool retain);
+	virtual void doRollback(Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, bool retain);
 
 	InternalConnection& m_IntConnection;
 	Firebird::RefPtr<Jrd::JTransaction> m_transaction;

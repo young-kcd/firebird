@@ -371,7 +371,8 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 		}
 	}
 
-	LocalStatus s;
+	LocalStatus ls;
+	CheckStatusWrapper s(&ls);
 	authBlock->add(&s, login.c_str());
 	check(&s);
 	authBlock->setDb(&s, secureDbName);
@@ -447,7 +448,8 @@ int SecurityDatabase::shutdown()
 		{
 			if (curInstances[i])
 			{
-				LocalStatus s;
+				LocalStatus ls;
+				CheckStatusWrapper s(&ls);
 				TimerInterfacePtr()->stop(&s, curInstances[i]);
 				check(&s);
 				curInstances[i]->release();
@@ -483,7 +485,8 @@ int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, I
 	{
 		PathName secDbName;
 		{ // config scope
-			LocalStatus s;
+			LocalStatus ls;
+			CheckStatusWrapper s(&ls);
 			RefPtr<IFirebirdConf> config(REF_NO_INCR, iParameter->getFirebirdConf(&s));
 			check(&s);
 
@@ -526,7 +529,8 @@ int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, I
 		int rc = instance->verify(writerInterface, sBlock);
 #define USE_ATT_RQ_CACHE
 #ifdef USE_ATT_RQ_CACHE
-		LocalStatus s;
+		LocalStatus ls;
+		CheckStatusWrapper s(&ls);
 		TimerInterfacePtr()->start(&s, instance, 10 * 1000 * 1000);
 		if (s.getState() & IStatus::STATE_ERRORS)
 			instance->handler();

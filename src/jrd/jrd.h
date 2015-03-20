@@ -37,6 +37,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/obj.h"
 #include "../jrd/val.h"
+#include "../jrd/status.h"
 
 #include "../common/classes/fb_atomic.h"
 #include "../common/classes/fb_string.h"
@@ -351,7 +352,7 @@ private:
 	thread_db	*priorThread, *nextThread;
 
 public:
-	explicit thread_db(ISC_STATUS* status)
+	explicit thread_db(FbStatusVector* status)
 		: ThreadData(ThreadData::tddDBB),
 		  defaultPool(NULL),
 		  database(NULL),
@@ -383,7 +384,7 @@ public:
 #endif
 	}
 
-	ISC_STATUS*	tdbb_status_vector;
+	FbStatusVector*	tdbb_status_vector;
 	SSHORT		tdbb_quantum;		// Cycles remaining until voluntary schedule
 	USHORT		tdbb_flags;
 
@@ -585,39 +586,27 @@ public:
 	}
 };
 
-
 class ThreadContextHolder
 {
 public:
-	explicit ThreadContextHolder(ISC_STATUS* status = NULL)
-		: context(status ? status : local_status), externStatus(NULL)
+	explicit ThreadContextHolder(Firebird::CheckStatusWrapper* status = NULL)
+		: currentStatus(status ? status : localStatus), context(currentStatus)
 	{
 		context.putSpecific();
+		currentStatus->init();
 	}
 
-	explicit ThreadContextHolder(Firebird::CheckStatusWrapper* status)
-		: context(local_status), externStatus(status)
-	{
-		context.putSpecific();
-		externStatus->init();
-	}
-
-	ThreadContextHolder(Database* dbb, Jrd::Attachment* att, ISC_STATUS* status = NULL)
-		: context(status ? status : local_status), externStatus(NULL)
+	ThreadContextHolder(Database* dbb, Jrd::Attachment* att, FbStatusVector* status = NULL)
+		: currentStatus(status ? status : localStatus), context(currentStatus)
 	{
 		context.putSpecific();
 		context.setDatabase(dbb);
 		context.setAttachment(att);
+		currentStatus->init();
 	}
 
 	~ThreadContextHolder()
 	{
-		unsigned l = fb_utils::statusLength(context.tdbb_status_vector);
-		if (externStatus && (!(externStatus->getState() & Firebird::IStatus::STATE_ERRORS)) &&
-			(l > 2 || context.tdbb_status_vector[1]))
-		{
-			fb_utils::setIStatus(externStatus, context.tdbb_status_vector);
-		}
 		Firebird::ThreadData::restoreSpecific();
 	}
 
@@ -636,9 +625,9 @@ private:
 	ThreadContextHolder(const ThreadContextHolder&);
 	ThreadContextHolder& operator= (const ThreadContextHolder&);
 
-	ISC_STATUS_ARRAY local_status;
+	FbLocalStatus localStatus;
+	FbStatusVector* currentStatus;
 	thread_db context;
-	Firebird::IStatus* externStatus;
 };
 
 
@@ -650,7 +639,6 @@ public:
 	explicit ThreadStatusGuard(thread_db* tdbb)
 		: m_tdbb(tdbb), m_old_status(tdbb->tdbb_status_vector)
 	{
-		fb_utils::init_status(m_local_status);
 		m_tdbb->tdbb_status_vector = m_local_status;
 	}
 
@@ -659,23 +647,27 @@ public:
 		m_tdbb->tdbb_status_vector = m_old_status;
 	}
 
-	ISC_STATUS* restore()
+	FbStatusVector* restore()
 	{
 		m_tdbb->tdbb_status_vector = m_old_status;
 		return m_old_status;
 	}
 
-	operator ISC_STATUS*() { return m_local_status; }
+	operator FbStatusVector*() { return m_local_status; }
+	FbStatusVector* operator->() { return m_local_status; }
+
+	operator const FbStatusVector*() const { return m_local_status; }
+	const FbStatusVector* operator->() const { return m_local_status; }
 
 	void copyToOriginal()
 	{
-		memcpy(m_old_status, m_local_status, sizeof(ISC_STATUS_ARRAY));
+		fb_utils::copyStatus(m_old_status, m_local_status);
 	}
 
 private:
+	FbLocalStatus m_local_status;
 	thread_db* const m_tdbb;
-	ISC_STATUS* const m_old_status;
-	ISC_STATUS_ARRAY m_local_status;
+	FbStatusVector* const m_old_status;
 
 	// copying is prohibited
 	ThreadStatusGuard(const ThreadStatusGuard&);
@@ -842,7 +834,7 @@ namespace Jrd {
 		public Jrd::Attachment::SyncGuard
 	{
 	public:
-		BackgroundContextHolder(Database* dbb, Jrd::Attachment* att, ISC_STATUS* status, const char* f)
+		BackgroundContextHolder(Database* dbb, Jrd::Attachment* att, FbStatusVector* status, const char* f)
 			: ThreadContextHolder(dbb, att, status),
 			  DatabaseContextHolder(operator thread_db*()),
 			  Jrd::Attachment::SyncGuard(att, f)

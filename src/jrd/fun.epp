@@ -713,7 +713,8 @@ void FUN_evaluate(thread_db* tdbb, const Function* function, const NestValueArra
 
 		invoke(tdbb, function, return_ptr, value, args, return_blob_struct, result_was_null, udfError);
 
-		if (tempStatus[0] == isc_arg_gds && tempStatus[1] != FB_SUCCESS)
+		const ISC_STATUS* status = tdbb->tdbb_status_vector->getErrors();
+		if (status[0] == isc_arg_gds && status[1] != FB_SUCCESS)
 			ERR_post(Arg::StatusVector(tempStatus));
 	}
 

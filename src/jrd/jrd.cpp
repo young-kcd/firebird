@@ -1012,9 +1012,9 @@ static void 		handle_error(Firebird::CheckStatusWrapper*, ISC_STATUS);
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK/*, VDN_SECURITY*/};
 }
-static VdnResult	verifyDatabaseName(const PathName&, ISC_STATUS*, bool);
+static VdnResult	verifyDatabaseName(const PathName&, FbStatusVector*, bool);
 
-static void		unwindAttach(thread_db* tdbb, const Exception& ex, Firebird::IStatus* userStatus,
+static void		unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus,
 	Jrd::Attachment* attachment, Database* dbb, unsigned internalFlags);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
 	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*);
@@ -1131,16 +1131,16 @@ static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& opt
 
 
 // Stuff exception transliterated to the client charset.
-ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus* vector,
+ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbStatusVector* vector,
 	const char* func) throw()
 {
-	ex.stuffException(vector);
+	ex.stuff_exception(vector);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if (func && attachment && attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 	{
 		TraceConnectionImpl conn(attachment);
-		TraceStatusVectorImpl traceStatus(vector->getErrors());
+		TraceStatusVectorImpl traceStatus(vector, TraceStatusVectorImpl::TS_ERRORS);
 
 		attachment->att_trace_manager->event_error(&conn, &traceStatus, func);
 	}
@@ -1156,7 +1156,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 	const ISC_STATUS* const vectorStart = vector->getErrors();
 	const ISC_STATUS* status = vectorStart;
 	SimpleStatusVector<> newVector;
-	Array<UCHAR*> buffers;
+	ObjectsArray<UCharBuffer> buffers;
 
 	try
 	{
@@ -1180,8 +1180,8 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 
 					try
 					{
-						UCHAR* p = new UCHAR[len + 1];
-						buffers.add(p);
+						UCharBuffer& b(buffers.add());
+						UCHAR* p = b.getBuffer(len + 1);
 						len = INTL_convert_bytes(tdbb, charSet, p, len, CS_METADATA, str, len, ERR_post);
 						p[len] = '\0';
 						str = p;
@@ -1202,8 +1202,8 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 
 					try
 					{
-						UCHAR* p = new UCHAR[len + 1];
-						buffers.add(p);
+						UCharBuffer& b(buffers.add());
+						UCHAR* p = b.getBuffer(len + 1);
 						len = INTL_convert_bytes(tdbb, charSet, p, len, CS_METADATA, str, len, ERR_post);
 						p[len] = '\0';
 						str = p;
@@ -1228,9 +1228,6 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, IStatus*
 
 	vector->setErrors2(newVector.getCount() - 1, newVector.begin());
 
-	for (Array<UCHAR*>::iterator i = buffers.begin(); i != buffers.end(); ++i)
-		delete [] *i;
-
 	return vectorStart[1];
 }
 
@@ -1241,7 +1238,7 @@ const char DBL_QUOTE			= '\042';
 const char SINGLE_QUOTE			= '\'';
 
 
-static void trace_warning(thread_db* tdbb, IStatus* userStatus, const char* func)
+static void trace_warning(thread_db* tdbb, FbStatusVector* userStatus, const char* func)
 {
 	Jrd::Attachment* att = tdbb->getAttachment();
 	if (!att)
@@ -1249,7 +1246,7 @@ static void trace_warning(thread_db* tdbb, IStatus* userStatus, const char* func
 
 	if (att->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 	{
-		TraceStatusVectorImpl traceStatus(userStatus->getWarnings());
+		TraceStatusVectorImpl traceStatus(userStatus, TraceStatusVectorImpl::TS_WARNINGS);
 
 		if (traceStatus.hasWarning())
 		{
@@ -1261,7 +1258,7 @@ static void trace_warning(thread_db* tdbb, IStatus* userStatus, const char* func
 
 
 static void trace_failed_attach(TraceManager* traceManager, const char* filename,
-	const DatabaseOptions& options, bool create, const ISC_STATUS* status)
+	const DatabaseOptions& options, bool create, FbStatusVector* status)
 {
 	// Report to Trace API that attachment has not been created
 	const char* origFilename = filename;
@@ -1269,9 +1266,10 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 		origFilename = options.dpb_org_filename.c_str();
 
 	TraceFailedConnection conn(origFilename, &options);
-	TraceStatusVectorImpl traceStatus(status);
+	TraceStatusVectorImpl traceStatus(status, TraceStatusVectorImpl::TS_ERRORS);
 
-	const ntrace_result_t result = (status[1] == isc_login || status[1] == isc_no_priv) ?
+	ISC_STATUS s = status->getErrors()[1];
+	const ntrace_result_t result = (s == isc_login || s == isc_no_priv) ?
 		ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED;
 	const char* func = create ? "JProvider::createDatabase" : "JProvider::attachDatabase";
 
@@ -1464,7 +1462,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, false, user_status->getErrors());
+			trace_failed_attach(NULL, filename, options, false, user_status);
 			throw;
 		}
 
@@ -1919,7 +1917,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			{
 				TraceManager* traceManager = attachment->att_trace_manager;
 				TraceConnectionImpl conn(attachment);
-				TraceStatusVectorImpl traceStatus(user_status->getErrors());
+				TraceStatusVectorImpl traceStatus(user_status, TraceStatusVectorImpl::TS_ERRORS);
 
 				if (traceManager->needs(ITraceFactory::TRACE_EVENT_ERROR))
 					traceManager->event_error(&conn, &traceStatus, "JProvider::attachDatabase");
@@ -1930,7 +1928,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			else
 			{
 				trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-					filename, options, false, user_status->getErrors());
+					filename, options, false, user_status);
 			}
 
 			unwindAttach(tdbb, ex, user_status, attachment, dbb, internal_flags);
@@ -2492,7 +2490,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		catch (const Exception& ex)
 		{
 			ex.stuffException(user_status);
-			trace_failed_attach(NULL, filename, options, true, user_status->getErrors());
+			trace_failed_attach(NULL, filename, options, true, user_status);
 			throw;
 		}
 
@@ -2783,7 +2781,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 		{
 			ex.stuffException(user_status);
 			trace_failed_attach(attachment ? attachment->att_trace_manager : NULL,
-				filename, options, true, user_status->getErrors());
+				filename, options, true, user_status);
 
 			unwindAttach(tdbb, ex, user_status, attachment, dbb, 0);
 		}
@@ -3879,12 +3877,10 @@ void JService::query(CheckStatusWrapper* user_status,
 					    receiveItems, bufferLength, buffer);
 
 			// If there is a status vector from a service thread, copy it into the thread status
-			FB_SIZE_T len, warning;
-			PARSE_STATUS(svc->getStatus(), len, warning);
-
-			if (len)
+			const FbStatusVector* from = svc->getStatus();
+			if (from->getState())
 			{
-				fb_utils::setIStatus(user_status, svc->getStatus());
+				fb_utils::copyStatus(user_status, from);
 				// Empty out the service status vector
 				svc->initStatus();
 				return;
@@ -3926,9 +3922,9 @@ void JService::start(CheckStatusWrapper* user_status, unsigned int spbLength, co
 
 		svc->start(spbLength, spb);
 
-		if (svc->getStatus()[1])
+		if (svc->getStatus()->getState() & CheckStatusWrapper::STATE_ERRORS)
 		{
-			fb_utils::setIStatus(user_status, svc->getStatus());
+			fb_utils::copyStatus(user_status, svc->getStatus());
 			return;
 		}
 	}
@@ -5519,9 +5515,7 @@ static bool drop_files(const jrd_file* file)
  *	drop a linked list of files
  *
  **************************************/
-	ISC_STATUS_ARRAY status;
-
-	status[1] = FB_SUCCESS;
+	FbLocalStatus status;
 
 	for (; file; file = file->fil_next)
 	{
@@ -5532,11 +5526,11 @@ static bool drop_files(const jrd_file* file)
 									 Arg::Gds(isc_io_delete_err) << SYS_ERR(errno));
 			Database* dbb = GET_DBB();
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			gds__log_status(pageSpace->file->fil_string, status);
+			iscDbLogStatus(pageSpace->file->fil_string, status);
 		}
 	}
 
-	return status[1] ? true : false;
+	return status->getState() & FbStatusVector::STATE_ERRORS ? true : false;
 }
 
 
@@ -6508,7 +6502,7 @@ static void setEngineReleaseDelay(Database* dbb)
 
 	++maxLinger;	// avoid rounding errors
 	time_t t = time(NULL);
-	LocalStatus s;
+	FbLocalStatus s;
 	dbb->dbb_plugin_config->setReleaseDelay(&s, maxLinger > t ? (maxLinger - t) * 1000 * 1000 : 0);
 	check(&s);
 }
@@ -7109,7 +7103,7 @@ static jrd_req* verify_request_synchronization(JrdStatement* statement, USHORT l
     @param status
 
  **/
-static VdnResult verifyDatabaseName(const PathName& name, ISC_STATUS* status, bool is_alias)
+static VdnResult verifyDatabaseName(const PathName& name, FbStatusVector* status, bool is_alias)
 {
 	// Check for securityX.fdb
 	static GlobalPtr<PathName> securityNameBuffer, expandedSecurityNameBuffer;
@@ -7251,7 +7245,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 	}
 }
 
-static void unwindAttach(thread_db* tdbb, const Exception& ex, IStatus* userStatus,
+static void unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus,
 	Jrd::Attachment* attachment, Database* dbb, unsigned internalFlags)
 {
 	RefDeb(DEB_RLS_JATT, "unwindAttach");
@@ -7836,9 +7830,9 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 		{
 			if (transliterate)
 			{
-				LocalStatus tempStatus;
-				transliterateException(tdbb, ex, &tempStatus, "startTransaction");
-				status_exception::raise(&tempStatus);
+				FbLocalStatus tempStatus;
+				transliterateException(tdbb, ex, tempStatus, "startTransaction");
+				status_exception::raise(tempStatus);
 			}
 			throw;
 		}

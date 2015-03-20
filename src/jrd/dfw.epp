@@ -513,10 +513,8 @@ static void raiseRoutineInUseError(const Routine* routine)
 
 static void raiseTooManyVersionsError(const int obj_type, const string& obj_name)
 {
-	const ISC_STATUS err_code = getErrorCodeByObjectType(obj_type);
-
 	ERR_post(Arg::Gds(isc_no_meta_update) <<
-			 Arg::Gds(err_code) << Arg::Str(obj_name) <<
+			 Arg::Gds(getErrorCodeByObjectType(obj_type)) << Arg::Str(obj_name) <<
 			 Arg::Gds(isc_version_err));
 }
 
@@ -1300,7 +1298,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 	bool dump_shadow = false;
 	SSHORT phase = 1;
 	bool more;
-	ISC_STATUS_ARRAY err_status = {0};
+	FbLocalStatus err_status;
 
 	do
 	{
@@ -1326,7 +1324,7 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 			}
 			if (!phase)
 			{
-				Firebird::makePermanentVector(tdbb->tdbb_status_vector, err_status);
+				fb_utils::copyStatus(tdbb->tdbb_status_vector, err_status);
 				ERR_punt();
 			}
 			++phase;
@@ -2636,11 +2634,10 @@ static void check_dependencies(thread_db* tdbb,
 	}
 	else
 	{
-		const ISC_STATUS obj_type = getErrorCodeByObjectType(dpdo_type);
-
 		ERR_post(Arg::Gds(isc_no_meta_update) <<
 				 Arg::Gds(isc_no_delete) <<						// can not delete
-				 Arg::Gds(obj_type) << Arg::Str(QualifiedName(dpdo_name, packageName).toString()) <<
+				 Arg::Gds(getErrorCodeByObjectType(dpdo_type)) <<
+				 	Arg::Str(QualifiedName(dpdo_name, packageName).toString()) <<
 				 Arg::Gds(isc_dependency) << Arg::Num(total));	// there are %ld dependencies
 	}
 }

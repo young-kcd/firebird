@@ -38,6 +38,7 @@
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/tra.h"
+#include "../../jrd/status.h"
 #include "../../jrd/Function.h"
 #include "../../jrd/RuntimeStatistics.h"
 #include "../../jrd/trace/TraceSession.h"
@@ -562,22 +563,24 @@ class TraceStatusVectorImpl :
 	public Firebird::AutoIface<Firebird::ITraceStatusVectorImpl<TraceStatusVectorImpl, Firebird::CheckStatusWrapper> >
 {
 public:
-	explicit TraceStatusVectorImpl(const ISC_STATUS* status) :
-		m_status(status)
+	enum Kind {TS_ERRORS, TS_WARNINGS};
+
+	TraceStatusVectorImpl(FbStatusVector* status, Kind k) :
+		m_status(status), kind(k)
 	{
 	}
 
 	FB_BOOLEAN hasError()
 	{
-		return m_status && (m_status[1] != 0);
+		return m_status->getState() && Firebird::IStatus::STATE_ERRORS;
 	}
 
 	FB_BOOLEAN hasWarning()
 	{
-		return m_status && (m_status[1] == 0) && (m_status[2] == isc_arg_warning);
+		return m_status->getState() && Firebird::IStatus::STATE_WARNINGS;
 	}
 
-	const ISC_STATUS* getStatus()
+	Firebird::IStatus* getStatus()
 	{
 		return m_status;
 	}
@@ -585,8 +588,9 @@ public:
 	const char* getText();
 
 private:
-	const ISC_STATUS* m_status;
 	Firebird::string m_error;
+	FbStatusVector* m_status;
+	Kind kind;
 };
 
 class TraceSweepImpl :

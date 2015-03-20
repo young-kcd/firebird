@@ -417,10 +417,10 @@ public:
 	// Return next page index in the difference file to be allocated
 	ULONG allocateDifferencePage(thread_db* tdbb, ULONG db_page);
 
-	// Must have ISC_STATUS because it is called from write_page
+	// Must have FbStatusVector because it is called from write_page
 	void openDelta();
 	void closeDelta();
-	bool writeDifference(ISC_STATUS* status, ULONG diff_page, Ods::pag* page);
+	bool writeDifference(FbStatusVector* status, ULONG diff_page, Ods::pag* page);
 	bool readDifference(thread_db* tdbb, ULONG diff_page, Ods::pag* page);
 	void flushDifference();
 	void setForcedWrites(const bool forceWrite, const bool notUseFSCache);

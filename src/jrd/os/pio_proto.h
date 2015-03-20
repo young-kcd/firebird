@@ -46,22 +46,22 @@ void	PIO_flush(Jrd::Database*, Jrd::jrd_file*);
 void	PIO_force_write(Jrd::jrd_file*, const bool, const bool);
 ULONG	PIO_get_number_of_pages(const Jrd::jrd_file*, const USHORT);
 void	PIO_header(Jrd::Database*, SCHAR*, int);
-USHORT	PIO_init_data(Jrd::Database*, Jrd::jrd_file*, ISC_STATUS*, ULONG, USHORT);
+USHORT	PIO_init_data(Jrd::Database*, Jrd::jrd_file*, Jrd::FbStatusVector*, ULONG, USHORT);
 Jrd::jrd_file*	PIO_open(Jrd::Database*, const Firebird::PathName&,
 						 const Firebird::PathName&);
-bool	PIO_read(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);
+bool	PIO_read(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, Jrd::FbStatusVector*);
 
 #ifdef SUPERSERVER_V2
 bool	PIO_read_ahead(Jrd::Database*, SLONG, SCHAR*, SLONG,
-				   struct Jrd::phys_io_blk*, ISC_STATUS*);
-bool	PIO_status(Jrd::Database*, struct Jrd::phys_io_blk*, ISC_STATUS*);
+				   struct Jrd::phys_io_blk*, Jrd::FbStatusVector*);
+bool	PIO_status(Jrd::Database*, struct Jrd::phys_io_blk*, Jrd::FbStatusVector*);
 #endif
 
 #ifdef SUPPORT_RAW_DEVICES
 bool	PIO_on_raw_device(const Firebird::PathName&);
 int		PIO_unlink(const Firebird::PathName&);
 #endif
-bool	PIO_write(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, ISC_STATUS*);
+bool	PIO_write(Jrd::jrd_file*, Jrd::BufferDesc*, Ods::pag*, Jrd::FbStatusVector*);
 
 #endif // JRD_PIO_PROTO_H
 

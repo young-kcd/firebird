@@ -781,7 +781,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 
 			next_init_pages = init_pages;
 
-			ISC_STATUS_ARRAY status;
+			FbLocalStatus status;
 			const ULONG start = sequence * pageMgr.pagesPerPIP + pip_page->pip_used;
 
 			init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
@@ -1359,7 +1359,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
  **************************************/
 	SET_TDBB(tdbb);
 	Database* const dbb = tdbb->getDatabase();
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	FbStatusVector* status = tdbb->tdbb_status_vector;
 
 	// allocate a spare buffer which is large enough,
 	// and set up to release it in case of error. Align

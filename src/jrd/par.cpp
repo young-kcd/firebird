@@ -748,8 +748,6 @@ static void par_error(BlrReader& blrReader, const Arg::StatusVector& v, bool isS
 	else
 		v.copyTo(tdbb->tdbb_status_vector);
 
-	ERR_make_permanent(tdbb->tdbb_status_vector);
-
 	// Give up whatever we were doing and return to the user.
 	ERR_punt();
 }
@@ -1682,7 +1680,6 @@ void PAR_warning(const Arg::StatusVector& v)
 
 	// Save into tdbb
 	p.copyTo(tdbb->tdbb_status_vector);
-	ERR_make_permanent(tdbb->tdbb_status_vector);
 }
 
 

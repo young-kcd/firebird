@@ -592,11 +592,11 @@ SINT64 TraceRuntimeStats::m_dummy_counts[RuntimeStatistics::TOTAL_ITEMS] = {0};
 
 const char* TraceStatusVectorImpl::getText()
 {
-	if (m_error.isEmpty() && (hasError() || hasWarning()))
+	if (m_error.isEmpty() && (kind == TS_ERRORS ? hasError() : hasWarning()))
 	{
 		char buff[1024];
-		const ISC_STATUS* p = m_status;
-		const ISC_STATUS* end = m_status + ISC_STATUS_LENGTH;
+		const ISC_STATUS* p = kind == TS_ERRORS ? m_status->getErrors() : m_status->getWarnings();
+		const ISC_STATUS* end = p + fb_utils::statusLength(p);
 
 		while (p < end - 1)
 		{
@@ -606,12 +606,12 @@ const char* TraceStatusVectorImpl::getText()
 				continue;
 			}
 
-			const ISC_STATUS code = *p ? p[1] : 0;
+			const ISC_STATUS* code = p + 1;
 			if (!fb_interpret(buff, sizeof(buff), &p))
 				break;
 
 			string s;
-			s.printf("%9lu : %s\n", code, buff);
+			s.printf("%9lu : %s\n", *code, buff);
 			m_error += s;
 		}
 	}

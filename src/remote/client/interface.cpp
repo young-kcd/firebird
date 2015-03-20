@@ -172,7 +172,8 @@ int Blob::release()
 
 	if (blob)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);
 	}
 	delete this;
@@ -236,7 +237,8 @@ int Transaction::release()
 
 	if (transaction)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);	// ASF: Rollback - is this correct for reconnected transactions?
 	}
 	delete this;
@@ -286,7 +288,8 @@ int ResultSet::release()
 
 	if (stmt)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);
 	}
 	delete this;
@@ -359,7 +362,8 @@ int Statement::release()
 
 	if (statement)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);
 	}
 	delete this;
@@ -406,7 +410,8 @@ int Request::release()
 
 	if (rq)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);
 	}
 	delete this;
@@ -447,7 +452,8 @@ int Events::release()
 
 	if (rvnt)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);
 	}
 	delete this;
@@ -534,7 +540,8 @@ int Attachment::release()
 
 	if (rdb)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);
 	}
 	delete this;
@@ -570,7 +577,8 @@ int Service::release()
 
 	if (rdb)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 		freeClientData(&status, true);
 	}
 	delete this;
@@ -5297,7 +5305,9 @@ static void add_working_directory(ClumpletWriter& dpb, const PathName& node_name
 
 static void authenticateStep0(ClntAuthBlock& cBlock)
 {
-	for (LocalStatus s; cBlock.plugins.hasData(); cBlock.plugins.next())
+	LocalStatus ls;
+	CheckStatusWrapper s(&ls);
+	for (; cBlock.plugins.hasData(); cBlock.plugins.next())
 	{
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authenticateStep0(%s)\n", cBlock.plugins.name()));
 		switch(cBlock.plugins.plugin()->authenticate(&s, &cBlock))
@@ -5336,7 +5346,8 @@ static void secureAuthentication(ClntAuthBlock& cBlock, rem_port* port)
 
 	if (packet->p_operation == op_cond_accept)
 	{
-		LocalStatus st;
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
 		authReceiveResponse(true, cBlock, port, rdb, &st, packet, true);
 
 		if (st.getState() & Firebird::IStatus::STATE_ERRORS)
@@ -5568,7 +5579,8 @@ static void batch_dsql_fetch(rem_port*	port,
 	statement->rsr_flags.set(Rsr::FETCHED);
 	while (true)
 	{
-		LocalStatus status;
+		LocalStatus ls;
+		CheckStatusWrapper status(&ls);
 
 		// Swallow up data. If a buffer isn't available, allocate another.
 
@@ -5757,7 +5769,8 @@ static void batch_gds_receive(rem_port*		port,
 			--tail->rrq_batch_count;
 			try
 			{
-				LocalStatus status;
+				LocalStatus ls;
+				CheckStatusWrapper status(&ls);
 				REMOTE_check_response(&status, rdb, packet);
 #ifdef DEBUG
 				fprintf(stderr, "End of batch. rows pending = %d\n", tail->rrq_rows_pending);
@@ -6106,7 +6119,8 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 	if (cBlock.authComplete)
 		return;		// Already authenticated
 
-	LocalStatus s;
+	LocalStatus ls;
+	CheckStatusWrapper s(&ls);
 
 	cBlock.resetDataFromPlugin();
 
@@ -6178,7 +6192,8 @@ static void REMOTE_free_string(CSTRING* tmp)
 static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port* port,
 	Rdb* rdb, IStatus* status, PACKET* packet, bool checkKeys)
 {
-	LocalStatus s;
+	LocalStatus ls;
+	CheckStatusWrapper s(&ls);
 
 	for (;;)
 	{
@@ -6511,7 +6526,8 @@ static void receive_after_start(Rrq* request, USHORT msg_type)
 		{
 			try
 			{
-				LocalStatus status;
+				LocalStatus ls;
+				CheckStatusWrapper status(&ls);
 				REMOTE_check_response(&status, rdb, packet);
 				request->saveStatus(&status);
 			}
@@ -6677,7 +6693,8 @@ static void receive_packet_noqueue(rem_port* port, PACKET* packet)
 				bool bAssign = true;
 				try
 				{
-					LocalStatus status;
+					LocalStatus ls;
+					CheckStatusWrapper status(&ls);
 					REMOTE_check_response(&status, rdb, &p->packet);
 					statement->saveException(&status, false);
 				}
@@ -7113,7 +7130,8 @@ static void send_cancel_event(Rvnt* event)
 
 	try
 	{
-		LocalStatus dummy;
+		LocalStatus ls;
+		CheckStatusWrapper dummy(&ls);
 		send_packet(rdb->rdb_port, packet);
 		receive_response(&dummy, rdb, packet);
 	}
@@ -7405,7 +7423,8 @@ Transaction* Attachment::remoteTransactionInterface(ITransaction* apiTra)
 	if (!apiTra)
 		return NULL;
 
-	LocalStatus dummy;
+	LocalStatus ls;
+	CheckStatusWrapper dummy(&ls);
 	ITransaction* valid = apiTra->validate(&dummy, this);
 	if (!valid)
 		return NULL;

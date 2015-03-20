@@ -121,9 +121,9 @@ static int blocking_ast_bdb(void*);
 #ifdef CACHE_READER
 static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM);
 
-static void prefetch_epilogue(Prefetch*, ISC_STATUS *);
+static void prefetch_epilogue(Prefetch*, FbStatusVector *);
 static void prefetch_init(Prefetch*, thread_db*);
-static void prefetch_io(Prefetch*, ISC_STATUS *);
+static void prefetch_io(Prefetch*, FbStatusVector *);
 static void prefetch_prologue(Prefetch*, SLONG *);
 #endif
 static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM);
@@ -143,9 +143,9 @@ static void page_validation_error(thread_db*, win*, SSHORT);
 static SSHORT related(BufferDesc*, const BufferDesc*, SSHORT, const ULONG);
 static bool writeable(BufferDesc*);
 static bool is_writeable(BufferDesc*, const ULONG);
-static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, ISC_STATUS* const,
+static int write_buffer(thread_db*, BufferDesc*, const PageNumber, const bool, FbStatusVector* const,
 	const bool);
-static bool write_page(thread_db*, BufferDesc*, ISC_STATUS* const, const bool);
+static bool write_page(thread_db*, BufferDesc*, FbStatusVector* const, const bool);
 static bool set_diff_page(thread_db*, BufferDesc*);
 static void set_dirty_flag(thread_db*, BufferDesc*);
 static void clear_dirty_flag(thread_db*, BufferDesc*);
@@ -749,7 +749,7 @@ void CCH_fetch_page(thread_db* tdbb, WIN* window, const bool read_shadow)
 	BufferDesc* bdb = window->win_bdb;
 	BufferControl* bcb = bdb->bdb_bcb;
 
-	ISC_STATUS* const status = tdbb->tdbb_status_vector;
+	FbStatusVector* const status = tdbb->tdbb_status_vector;
 
 	pag* page = bdb->bdb_buffer;
 	bdb->bdb_incarnation = ++bcb->bcb_page_incarnation;
@@ -2187,7 +2187,7 @@ bool CCH_validate(WIN* window)
 
 
 bool CCH_write_all_shadows(thread_db* tdbb, Shadow* shadow, BufferDesc* bdb,
-	ISC_STATUS* status, const bool inAst)
+	FbStatusVector* status, const bool inAst)
 {
 /**************************************
  *
@@ -2469,8 +2469,8 @@ static int blocking_ast_bdb(void* ast_object)
 		if (!keep_pages)
 			bcb->bcb_flags &= ~BCB_keep_pages;
 
-		if (tdbb->tdbb_status_vector[1])
-			gds__log_status(dbb->dbb_filename.c_str(), tdbb->tdbb_status_vector);
+		if (tdbb->tdbb_status_vector->getState() & IStatus::STATE_ERRORS)
+			iscDbLogStatus(dbb->dbb_filename.c_str(), tdbb->tdbb_status_vector);
 	}
 	catch (const Firebird::Exception&)
 	{
@@ -2532,7 +2532,7 @@ static void purgePrecedence(BufferControl* bcb, BufferDesc* bdb)
 static void flushDirty(thread_db* tdbb, SLONG transaction_mask, const bool sys_only)
 {
 	SET_TDBB(tdbb);
-	ISC_STATUS* const status = tdbb->tdbb_status_vector;
+	FbStatusVector* const status = tdbb->tdbb_status_vector;
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush;
@@ -2612,7 +2612,7 @@ static void flushAll(thread_db* tdbb, USHORT flush_flag)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	BufferControl* bcb = dbb->dbb_bcb;
-	ISC_STATUS* status = tdbb->tdbb_status_vector;
+	FbStatusVector* status = tdbb->tdbb_status_vector;
 	Firebird::HalfStaticArray<BufferDesc*, 1024> flush(bcb->bcb_dirty_count);
 
 	const bool all_flag = (flush_flag & FLUSH_ALL) != 0;
@@ -2717,7 +2717,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	Database* dbb = (Database*) arg;
 	Database::SyncGuard dsGuard(dbb);
 
-	ISC_STATUS_ARRAY status_vector;
+	FbLocalStatus status_vector;
 
 	// Establish a thread context.
 	ThreadContextHolder tdbb(status_vector);
@@ -2746,7 +2746,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(status_vector);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 		return 0;
 	}
 
@@ -2847,7 +2847,7 @@ static THREAD_ENTRY_DECLARE cache_reader(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(status_vector);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 	}
 	return 0;
 }
@@ -2866,7 +2866,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
  *	Write dirty pages to database to maintain an adequate supply of free pages.
  *
  **************************************/
-	ISC_STATUS_ARRAY status_vector;
+	FbLocalStatus status_vector;
 	Database* const dbb = (Database*) arg;
 	BufferControl* const bcb = dbb->dbb_bcb;
 
@@ -2960,7 +2960,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		catch (const Firebird::Exception& ex)
 		{
 			ex.stuff_exception(status_vector);
-			gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+			iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 			// continue execution to clean up
 		}
 
@@ -2973,7 +2973,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(status_vector);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 	}
 
 	bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
@@ -2985,7 +2985,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuff_exception(status_vector);
-		gds__log_status(dbb->dbb_filename.c_str(), status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
 	}
 
 	return 0;
@@ -4094,7 +4094,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 		// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (tempStatus[1] == isc_lock_timeout)))
+		if ((wait == LCK_NO_WAIT) || ((wait < 0) && (tempStatus->getErrors()[1] == isc_lock_timeout)))
 		{
 			bdb->release(tdbb, false);
 			return lsLockTimeout;
@@ -4104,7 +4104,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 		// BufferDesc's in an unfortunate order.  Nothing we can do about it, return the
 		// error, and log it to firebird.log.
 
-		ISC_STATUS* const status = tempStatus.restore();
+		FbStatusVector* const status = tempStatus.restore();
 
 		fb_msg_format(0, JRD_BUGCHK, 216, sizeof(errmsg), errmsg,
 			MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
@@ -4137,7 +4137,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 
 	// Case: a timeout was specified, or the caller didn't want to wait, return the error.
 
-	if ((wait < 0) && (tempStatus[1] == isc_lock_timeout))
+	if ((wait < 0) && (tempStatus->getErrors()[1] == isc_lock_timeout))
 	{
 		bdb->release(tdbb, false);
 		return lsLockTimeout;
@@ -4147,7 +4147,7 @@ static LockState lock_buffer(thread_db* tdbb, BufferDesc* bdb, const SSHORT wait
 	// BufferDesc's in an unfortunate order.  Nothing we can do about it, return the
 	// error, and log it to firebird.log.
 
-	ISC_STATUS* const status = tempStatus.restore();
+	FbStatusVector* const status = tempStatus.restore();
 
 	fb_msg_format(0, JRD_BUGCHK, 215, sizeof(errmsg), errmsg,
 					MsgFormat::SafeArg() << bdb->bdb_page.getPageNum() << (int) page_type);
@@ -4304,7 +4304,7 @@ static void page_validation_error(thread_db* tdbb, WIN* window, SSHORT type)
 
 
 #ifdef CACHE_READER
-static void prefetch_epilogue(Prefetch* prefetch, ISC_STATUS* status_vector)
+static void prefetch_epilogue(Prefetch* prefetch, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -4397,7 +4397,7 @@ static void prefetch_init(Prefetch* prefetch, thread_db* tdbb)
 }
 
 
-static void prefetch_io(Prefetch* prefetch, ISC_STATUS* status_vector)
+static void prefetch_io(Prefetch* prefetch, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -4628,7 +4628,7 @@ static int write_buffer(thread_db* tdbb,
 						BufferDesc* bdb,
 						const PageNumber page,
 						const bool write_thru,
-						ISC_STATUS* const status, const bool write_this_page)
+						FbStatusVector* const status, const bool write_this_page)
 {
 /**************************************
  *
@@ -4773,7 +4773,7 @@ static int write_buffer(thread_db* tdbb,
 }
 
 
-static bool write_page(thread_db* tdbb, BufferDesc* bdb, ISC_STATUS* const status, const bool inAst)
+static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const status, const bool inAst)
 {
 /**************************************
  *

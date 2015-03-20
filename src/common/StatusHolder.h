@@ -32,28 +32,10 @@
 #include "firebird/Interface.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/ImplementHelper.h"
-#include "../common/classes/array.h"
+#include "../common/SimpleStatusVector.h"
+#include "../common/DynamicStrings.h"
 
 namespace Firebird {
-
-unsigned makeDynamicStrings(unsigned length, ISC_STATUS* const dst, const ISC_STATUS* const src);
-void freeDynamicStrings(unsigned length, ISC_STATUS* ptr);
-
-
-// This trivial container is used when we need to grow vector element by element w/o any conversions
-template <unsigned S = ISC_STATUS_LENGTH>
-class SimpleStatusVector : public HalfStaticArray<ISC_STATUS, S>
-{
-public:
-	SimpleStatusVector()
-		: HalfStaticArray<ISC_STATUS, S>()
-	{ }
-
-	explicit SimpleStatusVector(MemoryPool& p)
-		: HalfStaticArray<ISC_STATUS, S>(p)
-	{ }
-};
-
 
 // DynamicVector owns strings, contained in it
 template <unsigned S>
@@ -68,34 +50,68 @@ public:
 
 	~DynamicVector()
 	{
-		freeDynamicStrings(this->getCount(), this->begin());
+		delete[] freeDynamicStrings(this->getCount(), this->begin());
 	}
 
+private:
+	char* prepareForNewValue()
+	{
+		char* oldBuffer = freeDynamicStrings(this->getCount(), this->begin());
+		this->resize(0);
+		return oldBuffer;
+	}
+
+public:
 	void clear()
 	{
-		freeDynamicStrings(this->getCount(), this->begin());
-		this->resize(0);
+		delete[] this->prepareForNewValue();
 		fb_utils::init_status(this->getBuffer(3));
 	}
 
-	void save(unsigned int length, const ISC_STATUS* status)
+	void save(unsigned int length, const ISC_STATUS* status, bool warningMode) throw()
 	{
-		clear();
-		this->resize(0);
-		unsigned newLen = makeDynamicStrings(length, this->getBuffer(length), status);
+		try
+		{
+			char* oldBuffer = this->prepareForNewValue();
+			ISC_STATUS* b = this->getBuffer(length + 1);
+			unsigned newLen = makeDynamicStrings(length, b, status);
+			delete[] oldBuffer;
 
-		fb_assert(newLen <= length);
+			fb_assert(newLen <= length);
 
-		// Sanity check
-		if (newLen < 2)
-			fb_utils::init_status(this->getBuffer(3));
-		else
-			this->resize(newLen);
+			// Sanity check
+			if (newLen < 2)
+				fb_utils::init_status(this->getBuffer(3));
+			else
+				this->resize(newLen + 1);
+		}
+		catch(const BadAlloc&)
+		{
+			if (!warningMode)
+			{
+				// do not use stuff here to avoid endless cycle
+				this->shrink(3);
+				ISC_STATUS* s = this->getBuffer(3);	// Should not throw - see assert() in ctor
+				fb_utils::statusBadAlloc(s);
+			}
+			else
+			{
+				this->clear();
+			}
+		}
+		catch(const Exception&)
+		{
+			fb_assert(false);
+
+			this->shrink(3);
+			ISC_STATUS* s = this->getBuffer(3);	// Should not throw - see assert() in ctor
+			fb_utils::statusUnknown(s);
+		}
 	}
 
-	ISC_STATUS save(const ISC_STATUS* status)
+	ISC_STATUS save(const ISC_STATUS* status, bool warningMode = false) throw()
 	{
-		save(fb_utils::statusLength(status), status);
+		save(fb_utils::statusLength(status), status, warningMode);
 		return status[1];
 	}
 
@@ -119,7 +135,7 @@ public:
 		: DynamicVector(*getDefaultMemoryPool())
 	{ }
 
-	ISC_STATUS merge(const IStatus* status);
+	ISC_STATUS load(const IStatus* status);
 
 	ISC_STATUS getError() const
 	{
@@ -147,22 +163,22 @@ public:
 
 	void setErrors(const ISC_STATUS* value)
 	{
-		errors.save(fb_utils::statusLength(value), value);
+		errors.save(fb_utils::statusLength(value), value, false);
 	}
 
 	void setErrors2(unsigned int length, const ISC_STATUS* value)
 	{
-		errors.save(length, value);
+		errors.save(length, value, false);
 	}
 
 	void setWarnings(const ISC_STATUS* value)
 	{
-		warnings.save(fb_utils::statusLength(value), value);
+		warnings.save(fb_utils::statusLength(value), value, true);
 	}
 
 	void setWarnings2(unsigned int length, const ISC_STATUS* value)
 	{
-		warnings.save(length, value);
+		warnings.save(length, value, true);
 	}
 
 	const ISC_STATUS* getErrors() const

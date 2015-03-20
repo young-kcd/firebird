@@ -110,10 +110,10 @@ using namespace Firebird;
 static const mode_t MASK = 0660;
 
 #define FCNTL_BROKEN
-static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
+static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, FbStatusVector*);
 static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool);
 static bool lockDatabaseFile(int desc, const bool shareMode, const bool temporary = false);
-static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = NULL);
+static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, FbStatusVector* = NULL);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR*, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR*, SLONG, SLONG);
@@ -545,7 +545,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 static Firebird::InitInstance<ZeroBuffer> zeros;
 
 
-USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector,
+USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_vector,
 					 ULONG startPage, USHORT initPages)
 {
 /**************************************
@@ -690,7 +690,7 @@ jrd_file* PIO_open(Database* dbb,
 }
 
 
-bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -749,7 +749,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* statu
 }
 
 
-bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -791,7 +791,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* stat
 
 
 static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
-	ISC_STATUS* status_vector)
+	FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -946,7 +946,7 @@ static bool lockDatabaseFile(int desc, const bool share, const bool temporary)
 
 static bool unix_error(const TEXT* string,
 					   const jrd_file* file, ISC_STATUS operation,
-					   ISC_STATUS* status_vector)
+					   FbStatusVector* status_vector)
 {
 /**************************************
  *
@@ -959,17 +959,17 @@ static bool unix_error(const TEXT* string,
  *	to do something about it.  Harumph!
  *
  **************************************/
+	Arg::Gds err(isc_io_error);
+	err << string << file->fil_string <<
+		Arg::Gds(operation) << Arg::Unix(errno);
+
 	if (!status_vector)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
-				 Arg::Gds(operation) << Arg::Unix(errno));
+		ERR_post(err);
 	}
 
-	ERR_build_status(status_vector,
-					 Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
-					 Arg::Gds(operation) << Arg::Unix(errno));
-
-	gds__log_status(0, status_vector);
+	ERR_build_status(status_vector, err);
+	iscLogStatus(NULL, status_vector);
 
 	return false;
 }

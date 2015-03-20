@@ -59,25 +59,3 @@ USHORT UTLD_char_length_to_byte_length(USHORT lengthInChars, USHORT maxBytesPerC
 	return MIN(((MAX_COLUMN_SIZE - overhead) / maxBytesPerChar) * maxBytesPerChar,
 			   (ULONG) lengthInChars * maxBytesPerChar);
 }
-
-
-ISC_STATUS UTLD_copy_status(const ISC_STATUS* from, ISC_STATUS* to)
-{
-/**************************************
- *
- *	c o p y _ s t a t u s
- *
- **************************************
- *
- * Functional description
- *	Copy a status vector.
- *
- **************************************/
-	const ISC_STATUS status = from[1];
-
-	const ISC_STATUS* const end = from + ISC_STATUS_LENGTH;
-	while (from < end)
-		*to++ = *from++;
-
-	return status;
-}
