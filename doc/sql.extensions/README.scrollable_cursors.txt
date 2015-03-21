@@ -13,7 +13,7 @@ Scrollable cursors
 
   Syntax rules (PSQL):
     // To declare a cursor:
-    DECLARE CURSOR <name> SCROLL CURSOR FOR ( <select expression> )
+    DECLARE <name> SCROLL CURSOR FOR ( <select expression> )
 
     // To fetch forward:
     FETCH <cursor name> [INTO <var name> [, <var name> ...]];
