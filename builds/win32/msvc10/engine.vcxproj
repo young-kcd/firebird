@@ -138,7 +138,6 @@
     <ClCompile Include="..\..\..\src\jrd\shut.cpp" />
     <ClCompile Include="..\..\..\src\jrd\sort.cpp" />
     <ClCompile Include="..\..\..\src\jrd\sqz.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\status.cpp" />
     <ClCompile Include="..\..\..\src\jrd\svc.cpp" />
     <ClCompile Include="..\..\..\src\jrd\svc_tab.cpp" />
     <ClCompile Include="..\..\..\src\jrd\SysFunction.cpp" />
@@ -266,9 +265,9 @@
     <ClInclude Include="..\..\..\src\jrd\license.h" />
     <ClInclude Include="..\..\..\src\jrd\lls.h" />
     <ClInclude Include="..\..\..\src\jrd\Mapping.h" />
-    <ClInclude Include="..\..\..\src\jrd\Monitoring.h" />
     <ClInclude Include="..\..\..\src\jrd\met.h" />
     <ClInclude Include="..\..\..\src\jrd\met_proto.h" />
+    <ClInclude Include="..\..\..\src\jrd\Monitoring.h" />
     <ClInclude Include="..\..\..\src\jrd\mov_proto.h" />
     <ClInclude Include="..\..\..\src\jrd\msg.h" />
     <ClInclude Include="..\..\..\src\jrd\msg_encode.h" />

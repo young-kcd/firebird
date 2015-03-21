@@ -53,6 +53,7 @@
     <ClCompile Include="..\..\..\src\common\db_alias.cpp" />
     <ClCompile Include="..\..\..\src\common\dllinst.cpp" />
     <ClCompile Include="..\..\..\src\common\dsc.cpp" />
+    <ClCompile Include="..\..\..\src\common\DynamicStrings.cpp" />
     <ClCompile Include="..\..\..\src\common\enc.cpp" />
     <ClCompile Include="..\..\..\src\common\fb_exception.cpp" />
     <ClCompile Include="..\..\..\src\common\IntlParametersBlock.cpp" />
@@ -149,6 +150,7 @@
     <ClInclude Include="..\..\..\src\common\dsc.h" />
     <ClInclude Include="..\..\..\src\common\dsc_proto.h" />
     <ClInclude Include="..\..\..\src\common\dsc_pub.h" />
+    <ClInclude Include="..\..\..\src\common\DynamicStrings.h" />
     <ClInclude Include="..\..\..\src\common\dyntable.h" />
     <ClInclude Include="..\..\..\src\common\enc_proto.h" />
     <ClInclude Include="..\..\..\src\common\file_params.h" />
@@ -173,6 +175,7 @@
     <ClInclude Include="..\..\..\src\common\sdltable.h" />
     <ClInclude Include="..\..\..\src\common\sdl_proto.h" />
     <ClInclude Include="..\..\..\src\common\sha.h" />
+    <ClInclude Include="..\..\..\src\common\SimpleStatusVector.h" />
     <ClInclude Include="..\..\..\src\common\StatementMetadata.h" />
     <ClInclude Include="..\..\..\src\common\StatusArg.h" />
     <ClInclude Include="..\..\..\src\common\StatusHolder.h" />

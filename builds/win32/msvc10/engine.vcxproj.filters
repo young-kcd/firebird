@@ -351,9 +351,6 @@
     <ClCompile Include="..\..\..\src\jrd\sqz.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\status.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\svc.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
@@ -456,7 +453,12 @@
     <ClCompile Include="..\..\..\src\jrd\Mapping.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\DbCreators.cpp" />
+    <ClCompile Include="..\..\..\src\jrd\DbCreators.cpp">
+      <Filter>JRD files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\dsql\DsqlCursor.cpp">
+      <Filter>DSQL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\jrd\recsrc\RecordSource.h">
@@ -978,7 +980,12 @@
     <ClInclude Include="..\..\..\src\jrd\Mapping.h">
       <Filter>Header files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\jrd\Monitoring.h" />
+    <ClInclude Include="..\..\..\src\dsql\DsqlCursor.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\jrd\Monitoring.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\dsql\DdlNodes.epp">
