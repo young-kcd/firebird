@@ -30,10 +30,9 @@
 #define FB_DYNAMIC_STRINGS
 
 #include "firebird/Interface.h"
+#include "fb_exception.h"
 
 namespace Firebird {
-
-class BadAlloc;
 
 unsigned makeDynamicStrings(unsigned len, ISC_STATUS* const dst, const ISC_STATUS* const src) throw(BadAlloc);
 char* freeDynamicStrings(unsigned len, ISC_STATUS* ptr) throw();
