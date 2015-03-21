@@ -1,3 +1,97 @@
+ 2015-03-20 18:03  alexpeshkoff 
+   A src/common/SimpleStatusVector.h
+Oops - added forgotten file
+
+ 2015-03-20 18:02  alexpeshkoff 
+   M src/auth/AuthDbg.cpp
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   A src/common/DynamicStrings.cpp
+   A src/common/DynamicStrings.h
+   M src/common/MsgMetadata.cpp
+   M src/common/StatementMetadata.cpp
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/StatusHolder.cpp
+   M src/common/StatusHolder.h
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/common/classes/GetPlugins.h
+   M src/common/fb_exception.cpp
+   M src/common/isc.cpp
+   M src/common/isc_proto.h
+   M src/common/sdl.cpp
+   M src/common/sdl_proto.h
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/dsql/DdlNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/dsql.cpp
+   M src/dsql/errd.cpp
+   M src/dsql/errd_proto.h
+   M src/dsql/utld.cpp
+   M src/dsql/utld_proto.h
+   M src/include/fb_exception.h
+   M src/include/fb_types.h
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/isql/isql.epp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/Database.cpp
+   M src/jrd/DbCreators.cpp
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/GlobalRWLock.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/Routine.cpp
+   M src/jrd/blob_filter.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cch_proto.h
+   M src/jrd/dfw.epp
+   M src/jrd/err.cpp
+   M src/jrd/err_proto.h
+   M src/jrd/exe.cpp
+   M src/jrd/exe.h
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/InternalDS.h
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/jrd/fun.epp
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/nbak.cpp
+   M src/jrd/nbak.h
+   M src/jrd/os/pio_proto.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/par.cpp
+   D src/jrd/status.cpp
+   M src/jrd/status.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/plugins/udr_engine/UdrEngine.cpp
+   M src/remote/client/BlrFromMessage.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/server/server.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/utl.cpp
+Avoid limits on size of status vector in engine. Ensure that status is always clean on entry to interface methods.
+
  2015-03-19 11:34  egorpugin 
    M CMakeLists.txt
    M builds/cmake/Configure.cmake
