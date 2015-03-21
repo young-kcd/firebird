@@ -584,7 +584,7 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 	FbLocalStatus status;
 	doStart(status, tdbb, tpb);
 
-	if (status->getState() && FbStatusVector::STATE_ERRORS) {
+	if (status->getState() & FbStatusVector::STATE_ERRORS) {
 		m_connection.raise(status, tdbb, "transaction start");
 	}
 
@@ -610,7 +610,7 @@ void Transaction::prepare(thread_db* tdbb, int info_len, const char* info)
 	FbLocalStatus status;
 	doPrepare(status, tdbb, info_len, info);
 
-	if (status->getState() && FbStatusVector::STATE_ERRORS) {
+	if (status->getState() & FbStatusVector::STATE_ERRORS) {
 		m_connection.raise(status, tdbb, "transaction prepare");
 	}
 }
@@ -620,7 +620,7 @@ void Transaction::commit(thread_db* tdbb, bool retain)
 	FbLocalStatus status;
 	doCommit(status, tdbb, retain);
 
-	if (status->getState() && FbStatusVector::STATE_ERRORS) {
+	if (status->getState() & FbStatusVector::STATE_ERRORS) {
 		m_connection.raise(status, tdbb, "transaction commit");
 	}
 
@@ -643,7 +643,7 @@ void Transaction::rollback(thread_db* tdbb, bool retain)
 		m_connection.deleteTransaction(this);
 	}
 
-	if (status->getState() && FbStatusVector::STATE_ERRORS) {
+	if (status->getState() & FbStatusVector::STATE_ERRORS) {
 		conn.raise(status, tdbb, "transaction rollback");
 	}
 }

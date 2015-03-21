@@ -74,7 +74,7 @@ namespace Jrd
 		{
 			if (localStatusVector.isDirty())
 			{
-				if (localStatus.getState() && FbStatusVector::STATE_ERRORS)
+				if (localStatus.getState() & FbStatusVector::STATE_ERRORS)
 					Firebird::status_exception::raise(&localStatus);
 			}
 		}

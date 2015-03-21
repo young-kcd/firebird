@@ -273,7 +273,7 @@ void IscTransaction::doCommit(FbStatusVector* status, thread_db* tdbb, bool reta
 		m_iscProvider.isc_commit_transaction(status, &m_handle);
 
 	fb_assert(retain && m_handle || !retain && !m_handle ||
-		(status->getState() && FbStatusVector::STATE_ERRORS) && m_handle);
+		(status->getState() & FbStatusVector::STATE_ERRORS) && m_handle);
 }
 
 void IscTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bool retain)
@@ -292,7 +292,7 @@ void IscTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bool re
 	}
 
 	fb_assert(retain && m_handle || !retain && !m_handle ||
-		(status->getState() && FbStatusVector::STATE_ERRORS) && m_handle);
+		(status->getState() & FbStatusVector::STATE_ERRORS) && m_handle);
 }
 
 

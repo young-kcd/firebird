@@ -572,12 +572,12 @@ public:
 
 	FB_BOOLEAN hasError()
 	{
-		return m_status->getState() && Firebird::IStatus::STATE_ERRORS;
+		return m_status->getState() & Firebird::IStatus::STATE_ERRORS;
 	}
 
 	FB_BOOLEAN hasWarning()
 	{
-		return m_status->getState() && Firebird::IStatus::STATE_WARNINGS;
+		return m_status->getState() & Firebird::IStatus::STATE_WARNINGS;
 	}
 
 	Firebird::IStatus* getStatus()
