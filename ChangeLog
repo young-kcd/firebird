@@ -1,3 +1,25 @@
+ 2015-03-21 18:39  asfernandes 
+   M src/common/DynamicStrings.h
+Fix clang build.
+
+ 2015-03-21 18:38  asfernandes 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/status.h
+   M src/jrd/trace/TraceObjects.h
+Corrections.
+
+ 2015-03-21 05:15  dimitr 
+   M doc/sql.extensions/README.scrollable_cursors.txt
+Fixed a mistake.
+
+ 2015-03-21 03:01  robocop 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc10/engine.vcxproj
+   M builds/win32/msvc10/engine.vcxproj.filters
+Modified the MSVC10 build according to Alex's changes but still can't compile.
+
  2015-03-20 18:03  alexpeshkoff 
    A src/common/SimpleStatusVector.h
 Oops - added forgotten file
