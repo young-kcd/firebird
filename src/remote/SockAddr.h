@@ -48,13 +48,13 @@
 class SockAddr
 {
 private:
-	union {
+	union sa_data {
 		struct sockaddr sock;
 		struct sockaddr_in inet;
 		struct sockaddr_in6 inet6;
 	} data;
 	socklen_t len;
-	static const unsigned MAX_LEN = sizeof(data);
+	static const unsigned MAX_LEN = sizeof(sa_data);
 
 public:
 	void clear();

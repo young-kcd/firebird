@@ -115,7 +115,7 @@ static void release_io_event(jrd_file*, OVERLAPPED*);
 static bool	maybeCloseFile(HANDLE&);
 static jrd_file* seek_file(jrd_file*, BufferDesc*, FbStatusVector*, OVERLAPPED*, OVERLAPPED**);
 static jrd_file* setup_file(Database*, const Firebird::PathName&, HANDLE, bool, bool);
-static bool nt_error(const TEXT*, const jrd_file*, FbStatusVector, FbStatusVector* const);
+static bool nt_error(const TEXT*, const jrd_file*, ISC_STATUS, FbStatusVector* const);
 static void adjustFileSystemCacheSize();
 
 struct AdjustFsCache
@@ -1036,8 +1036,8 @@ static bool maybeCloseFile(HANDLE& hFile)
 }
 
 static bool nt_error(const TEXT* string,
-					 const jrd_file* file, FbStatusVector operation,
-					 FbStatusVector* const status_vector)
+	const jrd_file* file, ISC_STATUS operation,
+	FbStatusVector* const status_vector)
 {
 /**************************************
  *
@@ -1061,7 +1061,7 @@ static bool nt_error(const TEXT* string,
 		ERR_post(status);
 
 	ERR_build_status(status_vector, status);
-	gds__log_status(0, status_vector);
+	iscLogStatus(NULL, status_vector);
 
 	return false;
 }
