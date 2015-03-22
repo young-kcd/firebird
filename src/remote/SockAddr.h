@@ -48,9 +48,13 @@
 class SockAddr
 {
 private:
-	static const unsigned maxLen = sizeof(struct sockaddr_in6);
-	char data[maxLen];
+	union {
+		struct sockaddr sock;
+		struct sockaddr_in inet;
+		struct sockaddr_in6 inet6;
+	} data;
 	socklen_t len;
+	static const unsigned MAX_LEN = sizeof(data);
 
 public:
 	void clear();
@@ -61,9 +65,12 @@ public:
 	SockAddr(const unsigned char* p_data, unsigned p_len);
 	~SockAddr() {}
 
-	struct sockaddr* ptr() { return (struct sockaddr*) data; }
-	struct sockaddr_in* ptrIn() { return (struct sockaddr_in*) data; }
-	struct sockaddr_in6* ptrIn6() { return (struct sockaddr_in6*) data; }
+	struct sockaddr* ptr() { return &data.sock; }
+	const struct sockaddr* ptr() const { return &data.sock; }
+	struct sockaddr_in* ptrIn() { return &data.inet; }
+	const struct sockaddr_in* ptrIn() const { return &data.inet; }
+	struct sockaddr_in6* ptrIn6() { return &data.inet6; }
+	const struct sockaddr_in6* ptrIn6() const { return &data.inet6; }
 
 	unsigned length() const { return len; }
 	unsigned short family() const;
@@ -80,13 +87,13 @@ public:
 inline void SockAddr::clear()
 {
 	len = 0;
-	memset(data, 0, maxLen);
+	memset(&data, 0, sizeof(data));
 }
 
 
 inline const SockAddr& SockAddr::operator = (const SockAddr& x)
 {
-	memcpy(data, x.data, maxLen);
+	memcpy(&data, &x.data, MAX_LEN);
 	len = x.len;
 	return *this;
 }
@@ -94,29 +101,29 @@ inline const SockAddr& SockAddr::operator = (const SockAddr& x)
 
 inline SockAddr::SockAddr(const unsigned char* p_data, unsigned p_len)
 {
-	if (p_len > maxLen)
-		p_len = maxLen;
-	memcpy(data, p_data, p_len);
+	if (p_len > MAX_LEN)
+		p_len = MAX_LEN;
+	memcpy(&data, p_data, p_len);
 	len = p_len;
 }
 
 
 inline int SockAddr::connect(SOCKET s) const
 {
-	return ::connect(s, (struct sockaddr*) data, len);
+	return ::connect(s, ptr(), len);
 }
 
 
 inline int SockAddr::accept(SOCKET s)
 {
-	return os_utils::accept(s, (struct sockaddr*) data, &len);
+	return os_utils::accept(s, ptr(), &len);
 }
 
 
 inline int SockAddr::getsockname(SOCKET s)
 {
-	len = maxLen;
-	int R = ::getsockname(s, (struct sockaddr*) data, &len);
+	len = MAX_LEN;
+	int R = ::getsockname(s, ptr(), &len);
 	if (R < 0)
 		clear();
 	return R;
@@ -125,8 +132,8 @@ inline int SockAddr::getsockname(SOCKET s)
 
 inline int SockAddr::getpeername(SOCKET s)
 {
-	len = maxLen;
-	int R = ::getpeername(s, (struct sockaddr*) data, &len);
+	len = MAX_LEN;
+	int R = ::getpeername(s, ptr(), &len);
 	if (R < 0)
 		clear();
 	return R;
@@ -135,20 +142,17 @@ inline int SockAddr::getpeername(SOCKET s)
 
 inline unsigned short SockAddr::family() const
 {
-	const struct sockaddr* sa = (const struct sockaddr*) data;
-	return sa->sa_family;
+	return data.sock.sa_family;
 }
 
 
 inline unsigned short SockAddr::port() const
 {
-	const struct sockaddr* sa = (const struct sockaddr*) data;
-	switch (sa->sa_family)
-	{
+	switch (family()) {
 	case AF_INET:
-		return ntohs(((const struct sockaddr_in*) data)->sin_port);
+		return ntohs(data.inet.sin_port);
 	case AF_INET6:
-		return ntohs(((const struct sockaddr_in6*) data)->sin6_port);
+		return ntohs(data.inet6.sin6_port);
 	}
 	return 0; // exception?
 }
@@ -156,14 +160,13 @@ inline unsigned short SockAddr::port() const
 
 inline void SockAddr::setPort(unsigned short x)
 {
-	const struct sockaddr* sa = (const struct sockaddr*) data;
-	switch (sa->sa_family)
+	switch (family())
 	{
 	case AF_INET:
-		((struct sockaddr_in*) data)->sin_port = htons(x);
+		data.inet.sin_port = htons(x);
 		return;
 	case AF_INET6:
-		((struct sockaddr_in6*) data)->sin6_port = htons(x);
+		data.inet6.sin6_port = htons(x);
 		return;
 	}
 	// exception?
@@ -176,21 +179,19 @@ inline void SockAddr::unmapV4()
 	if (family() != AF_INET6)
 		return;
 
-	const struct sockaddr_in6* sa6 = (const struct sockaddr_in6*) data;
 	// IPv6 mapped IPv4 addresses are ::ffff:0:0/32
 	static const unsigned char v4mapped_pfx[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff};
 
-	if (memcmp(sa6->sin6_addr.s6_addr, v4mapped_pfx, sizeof(v4mapped_pfx)) != 0)
+	if (memcmp(data.inet6.sin6_addr.s6_addr, v4mapped_pfx, sizeof(v4mapped_pfx)) != 0)
 		return;
 
-	unsigned short port = ntohs(sa6->sin6_port);
+	unsigned short port = ntohs(data.inet6.sin6_port);
 	struct in_addr addr;
-	memcpy(&addr, sa6->sin6_addr.s6_addr + sizeof(v4mapped_pfx), sizeof(addr));
+	memcpy(&addr, (char*)(&data.inet6.sin6_addr.s6_addr) + sizeof(v4mapped_pfx), sizeof(addr));
 
-	struct sockaddr_in* sa4 = (struct sockaddr_in*) data;
-	sa4->sin_family = AF_INET;
-	sa4->sin_port = htons(port);
-	sa4->sin_addr.s_addr = addr.s_addr;
+	data.inet.sin_family = AF_INET;
+	data.inet.sin_port = htons(port);
+	data.inet.sin_addr.s_addr = addr.s_addr;
 	len = sizeof(struct sockaddr_in);
 }
 
