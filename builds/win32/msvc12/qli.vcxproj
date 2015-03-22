@@ -203,7 +203,6 @@
     <ClCompile Include="..\..\..\gen\qli\meta.cpp" />
     <ClCompile Include="..\..\..\gen\qli\proc.cpp" />
     <ClCompile Include="..\..\..\gen\qli\show.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\status.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\src\qli\help.epp" />

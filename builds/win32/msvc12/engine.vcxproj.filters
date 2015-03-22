@@ -351,9 +351,6 @@
     <ClCompile Include="..\..\..\src\jrd\sqz.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\status.cpp">
-      <Filter>JRD files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\jrd\svc.cpp">
       <Filter>JRD files</Filter>
     </ClCompile>

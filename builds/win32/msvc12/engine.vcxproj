@@ -138,7 +138,6 @@
     <ClCompile Include="..\..\..\src\jrd\shut.cpp" />
     <ClCompile Include="..\..\..\src\jrd\sort.cpp" />
     <ClCompile Include="..\..\..\src\jrd\sqz.cpp" />
-    <ClCompile Include="..\..\..\src\jrd\status.cpp" />
     <ClCompile Include="..\..\..\src\jrd\svc.cpp" />
     <ClCompile Include="..\..\..\src\jrd\svc_tab.cpp" />
     <ClCompile Include="..\..\..\src\jrd\SysFunction.cpp" />
