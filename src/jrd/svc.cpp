@@ -2068,8 +2068,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		TraceServiceImpl service(this);
 		this->svc_trace_manager->event_service_start(&service,
 			this->svc_switches.length(), this->svc_switches.c_str(),
-			this->svc_status->getState() & FbStatusVector::STATE_ERRORS ?
-				ITracePlugin::RESULT_FAILED : ITracePlugin::RESULT_SUCCESS);
+			(this->svc_status->getState() & FbStatusVector::STATE_ERRORS ?
+				ITracePlugin::RESULT_FAILED : ITracePlugin::RESULT_SUCCESS));
 	}
 }
 

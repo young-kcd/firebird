@@ -136,7 +136,7 @@ namespace Firebird
 			}
 		}
 
-		bool isDirty()
+		bool isDirty() const
 		{
 			return dirty;
 		}

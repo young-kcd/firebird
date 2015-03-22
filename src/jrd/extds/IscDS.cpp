@@ -691,7 +691,7 @@ void IscBlob::cancel(thread_db* tdbb)
 class IscStatus
 {
 public:
-	IscStatus(FbStatusVector* pStatus)
+	explicit IscStatus(FbStatusVector* pStatus)
 		: iStatus(pStatus)
 	{
 		fb_utils::init_status(aStatus);

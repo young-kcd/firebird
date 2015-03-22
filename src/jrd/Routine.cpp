@@ -67,11 +67,11 @@ Format* Routine::createFormat(MemoryPool& pool, IMessageMetadata* params, bool a
 	{
 		unsigned descOffset, nullOffset, descDtype, descLength;
 
-		unsigned t = params->getType(&status, i);
+		unsigned type = params->getType(&status, i);
 		status.check();
-		unsigned l = params->getLength(&status, i);
+		unsigned len = params->getLength(&status, i);
 		status.check();
-		runOffset = fb_utils::sqlTypeToDsc(runOffset, t, l, &descDtype, &descLength,
+		runOffset = fb_utils::sqlTypeToDsc(runOffset, type, len, &descDtype, &descLength,
 			&descOffset, &nullOffset);
 
 		desc->clear();
