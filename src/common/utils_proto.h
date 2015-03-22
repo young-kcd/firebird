@@ -139,6 +139,9 @@ namespace fb_utils
 
 	void logAndDie(const char* text);
 
+	// command-line helpers
+	bool switchMatch(const Firebird::string& sw, const char* target);
+	in_sw_tab_t* findSwitch(in_sw_tab_t* table, Firebird::string sw);
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

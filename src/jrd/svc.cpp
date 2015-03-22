@@ -71,6 +71,7 @@
 #include "../jrd/trace/TraceManager.h"
 #include "../jrd/trace/TraceObjects.h"
 #include "../jrd/trace/TraceService.h"
+#include "../jrd/val_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -657,12 +658,14 @@ THREAD_ENTRY_DECLARE main_gstat(THREAD_ENTRY_PARAM arg);
 #define MAIN_GSTAT		main_gstat
 #define MAIN_NBAK		NBACKUP_main
 #define MAIN_TRACE		TRACE_main
+#define MAIN_VALIDATE	VAL_service
 #else
 #define MAIN_GBAK		NULL
 #define MAIN_GFIX		NULL
 #define MAIN_GSTAT		NULL
 #define MAIN_NBAK		NULL
 #define MAIN_TRACE		NULL
+#define MAIN_VALIDATE	NULL
 #endif
 
 #if !defined(EMBEDDED) && !defined(BOOT_BUILD)
@@ -726,6 +729,7 @@ static const serv_entry services[] =
 	{ isc_action_svc_set_mapping, "Set Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
 	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", NULL, MAIN_GSEC },
 	{ isc_action_svc_display_user_adm, "Display User with Admin Info", NULL, MAIN_GSEC },
+	{ isc_action_svc_validate, "Validate Database", NULL, MAIN_VALIDATE },
 /* actions with no names are undocumented */
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },
@@ -2166,7 +2170,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_trace_resume ||
 		svc_id == isc_action_svc_trace_list ||
 		svc_id == isc_action_svc_set_mapping ||
-		svc_id == isc_action_svc_drop_mapping)
+		svc_id == isc_action_svc_drop_mapping ||
+		svc_id == isc_action_svc_validate)
 	{
 		/* add the username and password to the end of svc_switches if needed */
 		if (svc_switches.hasData())
@@ -2709,6 +2714,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	string nbk_database, nbk_file;
 	int nbk_level = -1;
 
+	bool val_database = false;
+
 	bool found = false;
 
 	do
@@ -3083,6 +3090,31 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			}
 			break;
 
+		case isc_action_svc_validate:
+			if (!get_action_svc_parameter(spb.getClumpTag(), val_option_in_sw_table, switches)) {
+				return false;
+			}
+
+			switch (spb.getClumpTag())
+			{
+			case isc_spb_dbname:
+				if (val_database) {
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_dbname")).raise();
+				}
+				val_database = true;
+				// fall thru
+			case isc_spb_val_tab_incl:
+			case isc_spb_val_tab_excl:
+			case isc_spb_val_idx_incl:
+			case isc_spb_val_idx_excl:
+				get_action_svc_string(spb, switches);
+				break;
+			case isc_spb_val_lock_timeout:
+				get_action_svc_data(spb, switches);
+				break;
+			}
+			break;
+
 		default:
 			return false;
 		}
@@ -3133,6 +3165,13 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		switches += nbk_database;
 		switches += nbk_file;
 		break;
+	
+	case isc_action_svc_validate:
+		if (!val_database)
+		{
+			(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_dbname")).raise();
+		}
+		break;
 	}
 
 	switches.rtrim();
@@ -3179,7 +3218,7 @@ void Service::get_action_svc_data(const ClumpletReader& spb,
 								  string& switches)
 {
 	string s;
-	s.printf("%"ULONGFORMAT" ", spb.getInt());
+	s.printf("%"SLONGFORMAT" ", spb.getInt());
 	switches += s;
 }
 

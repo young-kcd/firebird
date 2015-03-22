@@ -231,21 +231,25 @@ public:
 			m_save_lock = att->att_wait_lock;
 
 		m_cancel_disabled = (m_tdbb->tdbb_flags & TDBB_wait_cancel_disable); 
-		m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
-
-		if (!wait)
-			return;
-
-		switch (lock->lck_type)
+		if (wait == LCK_WAIT)
 		{
-		case LCK_tra:
+			switch (lock->lck_type)
+			{
+			case LCK_tra:
+				m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
+				if (att)
+					att->att_wait_lock = lock;
+			break;
+
+			default:
+				m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
+			}
+		}
+		else
+		{
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 			if (att)
 				att->att_wait_lock = lock;
-		break;
-
-		default:
-			;
 		}
 	}
 
@@ -498,6 +502,7 @@ SLONG LCK_get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_tt_exist:
 	case LCK_shared_counter:
 	case LCK_sweep:
+	case LCK_rel_gc:
 		handle = *LCK_OWNER_HANDLE_DBB(tdbb);
 		break;
 	case LCK_attachment:

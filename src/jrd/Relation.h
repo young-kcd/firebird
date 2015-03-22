@@ -23,6 +23,7 @@
 #define JRD_RELATION_H
 
 #include "../jrd/jrd.h"
+#include "../jrd/lck.h"
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
 
@@ -202,6 +203,7 @@ public:
 
 	Lock*		rel_existence_lock;	// existence lock, if any
 	Lock*		rel_partners_lock;	// partners lock
+	Lock*		rel_gc_lock;		// garbage collection lock
 	IndexLock*	rel_index_locks;	// index existence locks
 	IndexBlock*	rel_index_blocks;	// index blocks for caching index info
 	trig_vec*	rel_pre_erase; 		// Pre-operation erase trigger
@@ -273,11 +275,50 @@ private:
 	RelationPages*	getPagesInternal(thread_db* tdbb, SLONG tran, bool allocPages);
 
 public:
-	explicit jrd_rel(MemoryPool& p)
-		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p)
-	{ }
+	explicit jrd_rel(MemoryPool& p);
 
 	bool hasTriggers() const;
+
+	static Lock* createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, lck_t, bool);
+	static int blocking_ast_gcLock(void*);
+	void downgradeGCLock(thread_db* tdbb);
+	bool acquireGCLock(thread_db* tdbb, int wait);
+
+	// This guard is used by regular code to prevent online validation while 
+	// dead- or back- versions is removed from disk.
+	class GCShared
+	{
+	public:
+		GCShared(thread_db* tdbb, jrd_rel* relation); 
+		~GCShared();
+
+		bool gcEnabled() const
+		{
+			return m_gcEnabled;
+		}
+
+	private:
+		thread_db*	m_tdbb;
+		jrd_rel*	m_relation;
+		bool		m_gcEnabled;
+	};
+
+	// This guard is used by online validation to prevent any modifications of
+	// table data while it is checked.
+	class GCExclusive
+	{
+	public:
+		GCExclusive(thread_db* tdbb, jrd_rel* relation); 
+		~GCExclusive();
+
+		bool acquire(int wait);
+		void release();
+
+	private:
+		thread_db*	m_tdbb;
+		jrd_rel*	m_relation;
+		Lock*		m_lock;
+	};
 };
 
 // rel_flags
@@ -299,7 +340,18 @@ const ULONG REL_temp_tran				= 0x2000;	// relation is a GTT delete rows
 const ULONG REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
 const ULONG REL_virtual					= 0x8000;	// relation is virtual
 const ULONG REL_jrd_view				= 0x10000;	// relation is VIEW
+const ULONG REL_gc_blocking				= 0x20000;	// request to downgrade\release gc lock
+const ULONG REL_gc_disabled				= 0x40000;	// gc is disabled temporary
+const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 
+
+/// class jrd_rel
+
+inline jrd_rel::jrd_rel(MemoryPool& p)
+		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p), 
+		  rel_flags(REL_gc_lockneed)
+{
+}
 
 inline bool jrd_rel::isSystem() const
 {
@@ -328,6 +380,39 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, SLONG tran, bool allocP
 
 	return getPagesInternal(tdbb, tran, allocPages);
 }
+
+/// class jrd_rel::GCShared
+
+inline jrd_rel::GCShared::GCShared(thread_db* tdbb, jrd_rel* relation) :
+	m_tdbb(tdbb),
+	m_relation(relation),
+	m_gcEnabled(false)
+{
+	if (m_relation->rel_flags & (REL_gc_blocking | REL_gc_disabled))
+		return;
+
+	if (m_relation->rel_flags & REL_gc_lockneed)
+		m_relation->acquireGCLock(tdbb, LCK_NO_WAIT);
+
+	if (!(m_relation->rel_flags & (REL_gc_blocking | REL_gc_disabled | REL_gc_lockneed)))
+	{
+		++m_relation->rel_sweep_count;
+		m_gcEnabled = true;
+	}
+
+	if ((m_relation->rel_flags & REL_gc_blocking) && !m_relation->rel_sweep_count)
+		m_relation->downgradeGCLock(m_tdbb);
+}
+
+inline jrd_rel::GCShared::~GCShared()
+{
+	if (m_gcEnabled)
+		--m_relation->rel_sweep_count;
+
+	if ((m_relation->rel_flags & REL_gc_blocking) && !m_relation->rel_sweep_count)
+		m_relation->downgradeGCLock(m_tdbb);
+}
+
 
 // Field block, one for each field in a scanned relation
 

@@ -1028,4 +1028,65 @@ void logAndDie(const char* text)
 #endif
 }
 
+
+const char switch_char = '-';
+
+bool switchMatch(const Firebird::string& sw, const char* target)
+{
+/**************************************
+ *
+ *	s w i t c h M a t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns true if switch matches target
+ *
+ **************************************/
+	size_t n = strlen(target);
+	if (n < sw.length())
+	{
+		return false;
+	}
+	n = sw.length();
+	return memcmp(sw.c_str(), target, n) == 0;
+}
+
+
+in_sw_tab_t* findSwitch(in_sw_tab_t* table, Firebird::string sw)
+{
+/**************************************
+ *
+ *	f i n d S w i t c h
+ *
+ **************************************
+ *
+ * Functional description
+ *	Returns pointer to in_sw_tab entry for current switch
+ *	If not a switch, returns 0.
+ *
+ **************************************/
+	if (sw.isEmpty())
+	{
+		return 0;
+	}
+	if (sw[0] != switch_char)
+	{
+		return 0;
+	}
+	sw.erase(0, 1);
+	sw.upper();
+
+	for (in_sw_tab_t* in_sw_tab = table; in_sw_tab->in_sw_name; in_sw_tab++)
+	{
+		if ((sw.length() >= in_sw_tab->in_sw_min_length) &&
+			switchMatch(sw, in_sw_tab->in_sw_name))
+		{
+			return in_sw_tab;
+		}
+	}
+
+	return 0;
+}
+
 } // namespace fb_utils

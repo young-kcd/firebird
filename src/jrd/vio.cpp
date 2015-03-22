@@ -131,6 +131,45 @@ static void update_in_place(thread_db*, jrd_tra*, record_param*, record_param*);
 static void verb_post(thread_db*, jrd_tra*, record_param*, Record*, //record_param*,
 					  const bool, const bool);
 
+static bool assert_gc_enabled(const jrd_tra* transaction, const jrd_rel* relation)
+{
+/**************************************
+ *
+ *	a s s e r t _ g c _ e n a b l e d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Ensure that calls of purge\expunge\VIO_backout is safe and don't broke
+ *  results of online validation run.
+ *
+ * Notes
+ *  System and temporary relations are not validated online. 
+ *  Non-zero rel_sweep_count is possible only under GCShared control when
+ *  garbage collection is enabled.
+ *
+ *  VIO_backout is more complex as it could run without GCShared control.
+ *  Therefore we additionally check if we own relation lock in "write" mode -
+ *  in this case online validation is not run against given relation.
+ *
+ **************************************/
+	if (relation->rel_sweep_count || relation->isSystem() || relation->isTemporary())
+		return true;
+
+	if (relation->rel_flags & REL_gc_disabled)
+		return false;
+
+	vec<Lock*>* vector = transaction->tra_relation_locks;
+	if (!vector || vector->count() < relation->rel_id)
+		return false;
+
+	Lock* lock = (*vector)[relation->rel_id];
+	if (!lock)
+		return false;
+
+	return (lock->lck_physical == LCK_SW) || (lock->lck_physical == LCK_EX);
+}
+
 // Pick up relation ids
 #include "../jrd/ini.h"
 
@@ -249,6 +288,8 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
+
+	fb_assert(assert_gc_enabled(transaction, rpb->rpb_relation));
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
@@ -755,8 +796,10 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 #endif
 		case tra_precommitted:
+			{// scope
+			jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
 
-			if (attachment->att_flags & ATT_NO_CLEANUP ||
+			if (attachment->att_flags & ATT_NO_CLEANUP || !gcGuard.gcEnabled() ||
 				rpb->rpb_flags & (rpb_chained | rpb_gc_active))
 			{
 				if (rpb->rpb_b_page == 0) {
@@ -816,6 +859,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			if (!DPM_get(tdbb, rpb, LCK_read)) {
 				return false;
 			}
+			} // scope
 			break;
 
 			// If it's active, prepare to fetch the old version.
@@ -982,6 +1026,12 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 #endif
 					{
 						CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+
+						jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
+
+						if (!gcGuard.gcEnabled())
+							return false;
+					
 						expunge(tdbb, rpb, transaction, (SLONG) 0);
 					}
 					return false;
@@ -1024,7 +1074,14 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				return true;
 			}
 #endif
-			purge(tdbb, rpb);
+			{ // scope
+				jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
+
+				if (!gcGuard.gcEnabled())
+					return true;
+
+				purge(tdbb, rpb);
+			}
 
 			// Go back to be primary record version and chase versions all over again.
 			if (!DPM_get(tdbb, rpb, LCK_read)) {
@@ -1651,7 +1708,9 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 	}
 #endif
 
-	if (transaction->tra_attachment->att_flags & ATT_no_cleanup) {
+	jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
+
+	if (transaction->tra_attachment->att_flags & ATT_no_cleanup || !gcGuard.gcEnabled()) {
 		return true;
 	}
 
@@ -1956,7 +2015,14 @@ bool VIO_get_current(thread_db* tdbb,
 			if (transaction->tra_attachment->att_flags & ATT_no_cleanup)
 				return !foreign_key;
 
-			VIO_backout(tdbb, rpb, transaction);
+			{
+				jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
+
+				if (!gcGuard.gcEnabled())
+					return !foreign_key;
+
+				VIO_backout(tdbb, rpb, transaction);
+			}
 			continue;
 		case tra_precommitted:
 			Database::Checkout dcoHolder(dbb);
@@ -2050,7 +2116,14 @@ bool VIO_get_current(thread_db* tdbb,
 				return !foreign_key;
 			}
 
-			VIO_backout(tdbb, rpb, transaction);
+			{
+				jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
+
+				if (!gcGuard.gcEnabled())
+					return !foreign_key;
+
+				VIO_backout(tdbb, rpb, transaction);
+			}
 			break;
 
 		case tra_limbo:
@@ -2939,6 +3012,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 	jrd_rel* relation = 0; // wasn't initialized: memory problem in catch() part.
 	vec<jrd_rel*>* vector = 0;
 
+	bool ret = true;
 	try {
 
 		for (size_t i = 1; (vector = dbb->dbb_relations) && i < vector->count(); i++)
@@ -2952,10 +3026,16 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 				!relation->isTemporary() &&
 				relation->getPages(tdbb)->rel_pages)
 			{
+				jrd_rel::GCShared gcGuard(tdbb, relation);
+				if (!gcGuard.gcEnabled())
+				{
+					ret = false;
+					break;
+				}
+
 				rpb.rpb_relation = relation;
 				rpb.rpb_number.setValue(BOF_NUMBER);
 				rpb.rpb_org_scans = relation->rel_scan_count++;
-				++relation->rel_sweep_count;
 
 				traceSweep->beginSweepRelation(relation);
 
@@ -2984,7 +3064,6 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 				traceSweep->endSweepRelation(relation);
 
-				--relation->rel_sweep_count;
 				--relation->rel_scan_count;
 			}
 		}
@@ -2997,16 +3076,13 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 		delete rpb.rpb_record;
 		if (relation)
 		{
-			if (relation->rel_sweep_count) {
-				--relation->rel_sweep_count;
-			}
 			if (relation->rel_scan_count) {
 				--relation->rel_scan_count;
 			}
 		}
 		ERR_punt();
 	}
-	return true;
+	return ret;
 }
 
 
@@ -3807,6 +3883,8 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 	SET_TDBB(tdbb);
 	Attachment* attachment = transaction->tra_attachment;
 
+	fb_assert(assert_gc_enabled(transaction, rpb->rpb_relation));
+
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_WRITES)
 	{
@@ -4134,7 +4212,10 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						relGarbage->getGarbage(dbb->dbb_oldest_snapshot, &relation->rel_gc_bitmap);
 					}
 
-					++relation->rel_sweep_count;
+					jrd_rel::GCShared gcGuard(tdbb, relation);
+					if (!gcGuard.gcEnabled())
+						continue;
+
 					rpb.rpb_relation = relation;
 
 					if (relation->rel_gc_bitmap)
@@ -4144,7 +4225,6 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 							const ULONG dp_sequence = relation->rel_gc_bitmap->current();
 
 							if (!(dbb->dbb_flags & DBB_garbage_collector)) {
-								--relation->rel_sweep_count;
 								goto gc_exit;
 							}
 
@@ -4185,10 +4265,12 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 
 								if (!(dbb->dbb_flags & DBB_garbage_collector))
 								{
-									--relation->rel_sweep_count;
 									goto gc_exit;
 								}
 								if (relation->rel_flags & REL_deleting) {
+									goto rel_exit;
+								}
+								if (relation->rel_flags & REL_gc_disabled) {
 									goto rel_exit;
 								}
 								if (--tdbb->tdbb_quantum < 0) {
@@ -4221,7 +4303,6 @@ rel_exit:
 						}
 */
 					}
-					--relation->rel_sweep_count;
 				}
 			}
 
@@ -4283,9 +4364,6 @@ rel_exit:
 		Firebird::stuff_exception(status_vector, ex);
 		jrd_file* file = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE)->file;
 		gds__log_status(file->fil_string, status_vector);
-		if (relation && relation->rel_sweep_count) {
-			--relation->rel_sweep_count;
-		}
 	}
 
 gc_exit:
@@ -5002,6 +5080,8 @@ static void purge(thread_db* tdbb, record_param* rpb)
 	SET_TDBB(tdbb);
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
+
+	fb_assert(assert_gc_enabled(tdbb->getTransaction(), rpb->rpb_relation));
 
 #ifdef VIO_DEBUG
 	if (debug_flag > DEBUG_TRACE_ALL) {
