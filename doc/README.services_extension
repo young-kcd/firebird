@@ -192,3 +192,26 @@ value from isc_service_query().
 
 A sample of how services API should be used for remote backup and restore can be
 found in source code of fbsvcmgr.
+
+
+5) Services API extension - online validation.
+(Khorsun Vlad, hvlad@users.sourceforge.net, 2015)
+
+action:
+	isc_action_svc_validate 
+
+parameters:
+	isc_spb_dbname : 
+		database file name, string, mandatory
+
+	isc_spb_val_tab_incl, isc_spb_val_tab_excl,
+	isc_spb_val_idx_incl, isc_spb_val_idx_excl : 
+		patterns for tables\indices names, string, optional
+
+	isc_spb_val_lock_timeout : 
+		lock timeout, integer, optional
+
+output:
+	text messages with progress of online validation process
+
+See also README.online_validation
