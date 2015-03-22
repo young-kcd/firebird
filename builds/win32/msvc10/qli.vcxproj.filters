@@ -4,9 +4,6 @@
     <Filter Include="QLI files">
       <UniqueIdentifier>{da3cf9eb-a5b6-4478-87a3-3da5fa0c95a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="JRD files">
-      <UniqueIdentifier>{f6c663b8-6259-4bf6-b108-0d891c74d097}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header files">
       <UniqueIdentifier>{ea691fcc-ce86-44c7-b53b-40b660c82329}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
@@ -69,9 +66,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\qli\report.cpp">
       <Filter>QLI files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\jrd\status.cpp">
-      <Filter>JRD files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\gen\qli\help.cpp">
       <Filter>QLI files\GPRE cpp</Filter>
