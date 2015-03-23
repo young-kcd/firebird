@@ -581,26 +581,6 @@ void REMOTE_reset_statement( Rsr* statement)
 }
 
 
-void REMOTE_save_status_strings( ISC_STATUS* vector)
-{
-/**************************************
- *
- *	R E M O T E _ s a v e _ s t a t u s _ s t r i n g s
- *
- **************************************
- *
- * Functional description
- *	There has been a failure during attach/create database.
- *	The included string have been allocated off of the database block,
- *	which is going to be released before the message gets passed
- *	back to the user.  So, to preserve information, copy any included
- *	strings to a special buffer.
- *
- **************************************/
-	Firebird::makePermanentVector(vector);
-}
-
-
 // TMN: Beginning of C++ port - ugly but a start
 
 void rem_port::linkParent(rem_port* const parent)
