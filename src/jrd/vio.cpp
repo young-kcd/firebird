@@ -140,7 +140,7 @@ static bool assert_gc_enabled(const jrd_tra* transaction, const jrd_rel* relatio
  **************************************
  *
  * Functional description
- *	Ensure that calls of purge\expunge\VIO_backout is safe and don't broke
+ *	Ensure that calls of purge\expunge\VIO_backout are safe and don't break
  *  results of online validation run.
  *
  * Notes

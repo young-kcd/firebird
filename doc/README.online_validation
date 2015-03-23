@@ -4,7 +4,7 @@ structures and even to fix some minor corruptions. It is recommended procedure
 for any valuable database, i.e. DBA should validate database from time to time
 to make sure it is healthy. But validation process requires exclusive access to 
 database, i.e. it forbids any kind of concurrent access to database while 
-validation run. It could be a big problem to stop user access, especially when 
+validation runs. It could be a big problem to stop user access, especially when 
 database is large and validation takes notable amount of time. 
 
   Online validation is a new feature which allows to perform some consistency
@@ -20,19 +20,19 @@ checks without exclusive access to database. Online validation allows to:
   transaction)
 - while table (and\or its index) is validated any kind of garbage collection at
   this table is disabled - background and cooperative garbage collection will 
-  just skip this table, sweep will be terminated with error
+  just skip this table, sweep will be terminated with error.
 
   When online validation starts to check table it makes few actions to prevent 
 concurrent modifications of table's data:
-- acquires relation lock in PR (protected read) mode;
+- acquires relation lock in PR (protected read) mode
 - acquires (new) garbage collection lock in PW (protected write) mode.
 Both locks are acquired using user-specified lock timeout. If any lock request
 fails error is reported and table is skipped.
-Then table and its indices validated in the same way as full validation does.
+Then table and its indices are validated in the same way as full validation does.
 Then locks are released and next table is validated.
 
-  Online validation implemented as Firebird service and accessible via Services 
-API. Therefore gfix utility can't run online validation. fbsvcmgr utility have
+  Online validation is implemented as Firebird service and accessible via Services 
+API. Therefore gfix utility can't run online validation. fbsvcmgr utility has
 full support for new service, syntax is:
 
 fbsvcmgr [host:]service_mgr [user <...>] [password <...>]
@@ -50,15 +50,15 @@ where
 						by default %, i.e. all indices
 	val_idx_excl		pattern for indices names to exclude from validation run
 	val_lock_timeout 	lock timeout, used to acquire locks for table to validate,
-						seconds, default is 10 sec
+						in seconds, default is 10 sec
 						 0 is no-wait
 						-1 is infinite wait
 
-  Patterns are regular expressions, they processed by the same rules as 
+  Patterns are regular expressions, they are processed by the same rules as 
 "SIMILAR TO" expressions. All patterns are case-sensitive (despite of database 
 dialect!). 
-If patterns for tables is omitted then all user tables will be validated. 
-If patterns for indices is omitted then all indices of tables to validate will 
+If pattern for tables is omitted then all user tables will be validated. 
+If pattern for indices is omitted then all indices of tables to validate will 
 be validated. 
 System tables are not validated.
 
@@ -71,13 +71,13 @@ Examples:
 		val_lock_timeout 0
 
 this command will validate all tables in database "c:\db.fdb" with names 
-starting with "A". Indices are not validated. Lock wait are not performed.
+starting with "A". Indices are not validated. Lock wait is not performed.
 
 2. fbsvcmgr.exe service_mgr user SYSDBA password masterkey 
 		action_validate dbname c:\db.fdb
 		val_tab_incl "TAB1|TAB2"
 
-this command will validate tables TAB1 and TAB2 and all its indices. 
+this command will validate tables TAB1 and TAB2 and all their indices. 
 Lock wait timeout is 10 sec.
 
 Note, to specify list of tables\indices it is necessary to:
