@@ -1,3 +1,38 @@
+ 2015-03-22 22:43  hvlad 
+   M src/jrd/os/win32/winnt.cpp
+   M src/remote/SockAddr.h
+   M src/remote/os/win32/wnet.cpp
+Fixed Windows build
+
+ 2015-03-22 22:42  hvlad 
+   M builds/win32/msvc10/qli.vcxproj
+   M builds/win32/msvc10/qli.vcxproj.filters
+Update MSVC10 build after recent changes
+
+ 2015-03-22 22:40  hvlad 
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/common.vcxproj.filters
+   M builds/win32/msvc12/engine.vcxproj
+   M builds/win32/msvc12/engine.vcxproj.filters
+   M builds/win32/msvc12/qli.vcxproj
+   M builds/win32/msvc12/qli.vcxproj.filters
+Update MSVC12 build after recent changes
+
+ 2015-03-22 14:27  mkubecek 
+   M src/common/config/config.cpp
+fix default security database location
+
+ 2015-03-22 14:26  mkubecek 
+   M src/remote/SockAddr.h
+class SockAddr code cleanup
+
+ 2015-03-22 00:23  robocop 
+   M src/include/firebird/Interface.h
+   M src/jrd/Routine.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/svc.cpp
+Misc.
+
  2015-03-21 18:39  asfernandes 
    M src/common/DynamicStrings.h
 Fix clang build.
