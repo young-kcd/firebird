@@ -164,7 +164,7 @@ void status_exception::set_status(const ISC_STATUS *new_vector) throw()
 
 status_exception::~status_exception() throw()
 {
-	delete[] freeDynamicStrings(fb_utils::statusLength(m_status_vector), m_status_vector);
+	delete[] findDynamicStrings(fb_utils::statusLength(m_status_vector), m_status_vector);
 	if (m_status_vector != m_buffer)
 	{
 		delete[] m_status_vector;

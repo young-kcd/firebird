@@ -1,7 +1,7 @@
 /*
- *	PROGRAM:		Firebird exceptions classes
- *	MODULE:			StatusHolder.cpp
- *	DESCRIPTION:	Firebird's exception classes
+ *	PROGRAM:		Firebird status vector support.
+ *	MODULE:			DynamicStrings.cpp
+ *	DESCRIPTION:	Dynamically store strings in status vector.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
@@ -14,10 +14,10 @@
  *  See the License for the specific language governing rights
  *  and limitations under the License.
  *
- *  The Original Code was created by Vlad Khorsun
+ *  The Original Code was created by Alex Peshkov
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2007 Vlad Khorsun <hvlad at users.sourceforge.net>
+ *  Copyright (c) 2015 Alex Peshkov <peshkoff at mail dot ru>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.
@@ -112,7 +112,7 @@ unsigned makeDynamicStrings(unsigned length, ISC_STATUS* const dst, const ISC_ST
 	return (to - dst) - 1;
 }
 
-char* freeDynamicStrings(unsigned length, ISC_STATUS* ptr) throw()
+char* findDynamicStrings(unsigned length, ISC_STATUS* ptr) throw()
 {
 	while (length--)
 	{

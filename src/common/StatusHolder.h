@@ -50,13 +50,17 @@ public:
 
 	~DynamicVector()
 	{
-		delete[] freeDynamicStrings(this->getCount(), this->begin());
+		delete[] findDynamicStrings(this->getCount(), this->begin());
 	}
 
 private:
 	char* prepareForNewValue()
 	{
-		char* oldBuffer = freeDynamicStrings(this->getCount(), this->begin());
+		// Do not delete old strings buffer because strings from it
+		// may be used in status vector passed to current save() call.
+		// I.e. strings should be first saved in new dynamic buffer and only afterwards
+		// old buffer may be released.
+		char* oldBuffer = findDynamicStrings(this->getCount(), this->begin());
 		this->resize(0);
 		return oldBuffer;
 	}
