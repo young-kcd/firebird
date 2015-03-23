@@ -148,7 +148,8 @@ inline unsigned short SockAddr::family() const
 
 inline unsigned short SockAddr::port() const
 {
-	switch (family()) {
+	switch (family())
+	{
 	case AF_INET:
 		return ntohs(data.inet.sin_port);
 	case AF_INET6:
