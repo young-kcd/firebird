@@ -292,7 +292,7 @@ public:
 					dataFlag = true;
 					return;
 				}
-				check("IAttachment::openCursor", st);
+				check("IAttachment::openCursor", &st);
 			}
 
 			while (curs->fetchNext(&st, mMap.getBuffer()) == IStatus::RESULT_OK)

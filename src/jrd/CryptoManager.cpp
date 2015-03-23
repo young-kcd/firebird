@@ -379,7 +379,7 @@ namespace Jrd {
 			attachment->att_filename = dbb.dbb_filename;
 			attachment->att_user = &user;
 
-			BackgroundContextHolder tdbb(&dbb, attachment, status_vector, FB_FUNCTION);
+			BackgroundContextHolder tdbb(&dbb, attachment, &status_vector, FB_FUNCTION);
 			tdbb->tdbb_quantum = SWEEP_QUANTUM;
 
 			ULONG lastPage = getLastPage(tdbb);

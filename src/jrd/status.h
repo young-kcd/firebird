@@ -30,6 +30,7 @@
 #define FB_MFbStatusVector_H
 
 #include "../common/StatusHolder.h"
+#include "../common/utils_proto.h"
 
 const int MAX_ERRMSG_LEN	= 128;
 const int MAX_ERRSTR_LEN	= 1024;
@@ -45,11 +46,6 @@ namespace Jrd
 			: localStatusVector(&localStatus)
 		{ }
 
-		operator FbStatusVector*()
-		{
-			return &localStatusVector;
-		}
-
 		FbStatusVector* operator->()
 		{
 			return &localStatusVector;
@@ -60,12 +56,18 @@ namespace Jrd
 			return &localStatusVector;
 		}
 
-		operator const FbStatusVector*() const
+		ISC_STATUS operator[](unsigned n) const
+		{
+			fb_assert(n < fb_utils::statusLength(localStatusVector.getErrors()));
+			return localStatusVector.getErrors()[n];
+		}
+
+		const FbStatusVector* operator->() const
 		{
 			return &localStatusVector;
 		}
 
-		const FbStatusVector* operator->() const
+		const FbStatusVector* operator&() const
 		{
 			return &localStatusVector;
 		}

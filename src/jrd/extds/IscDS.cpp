@@ -119,12 +119,12 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		m_iscProvider.isc_attach_database(status, m_dbName.length(), m_dbName.c_str(),
+		m_iscProvider.isc_attach_database(&status, m_dbName.length(), m_dbName.c_str(),
 			&m_handle, m_dpb.getBufferLength(),
 			reinterpret_cast<const char*>(m_dpb.getBuffer()));
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		raise(status, tdbb, "attach");
+		raise(&status, tdbb, "attach");
 	}
 
 	char buff[16];
@@ -132,10 +132,10 @@ void IscConnection::attach(thread_db* tdbb, const string& dbName, const string& 
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
 
 		const char info[] = {isc_info_db_sql_dialect, isc_info_end};
-		m_iscProvider.isc_database_info(status, &m_handle, sizeof(info), info, sizeof(buff), buff);
+		m_iscProvider.isc_database_info(&status, &m_handle, sizeof(info), info, sizeof(buff), buff);
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		raise(status, tdbb, "isc_database_info");
+		raise(&status, tdbb, "isc_database_info");
 	}
 
 	const char* p = buff, *end = buff + sizeof(buff);
@@ -185,14 +185,14 @@ void IscConnection::doDetach(thread_db* tdbb)
 
 		FB_API_HANDLE h = m_handle;
 		m_handle = 0;
-		m_iscProvider.isc_detach_database(status, &h);
+		m_iscProvider.isc_detach_database(&status, &h);
 		m_handle = h;
 	}
 
 	if ((status->getState() & FbStatusVector::STATE_ERRORS) &&
-		!isConnectionBrokenError(status))
+		!isConnectionBrokenError(&status))
 	{
-		raise(status, tdbb, "detach");
+		raise(&status, tdbb, "detach");
 	}
 }
 
@@ -202,12 +202,12 @@ bool IscConnection::cancelExecution()
 
 	if (m_handle)
 	{
-		m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_raise);
+		m_iscProvider.fb_cancel_operation(&status, &m_handle, fb_cancel_raise);
 
 		if (m_handle && (status->getErrors()[1] == isc_wish_list))
 		{
 			status->init();
-			m_iscProvider.fb_cancel_operation(status, &m_handle, fb_cancel_abort);
+			m_iscProvider.fb_cancel_operation(&status, &m_handle, fb_cancel_abort);
 		}
 	}
 	return !(status->getState() & FbStatusVector::STATE_ERRORS);
@@ -336,14 +336,14 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		if (!m_handle)
 		{
 			fb_assert(!m_allocated);
-			if (m_iscProvider.isc_dsql_allocate_statement(status, &h_conn, &m_handle)) {
+			if (m_iscProvider.isc_dsql_allocate_statement(&status, &h_conn, &m_handle)) {
 				sWhereError = "isc_dsql_allocate_statement";
 			}
 			m_allocated = (m_handle != 0);
 		}
 
 		if (!sWhereError) {
-			if (m_iscProvider.isc_dsql_prepare(status, &h_tran, &m_handle, sql.length(),
+			if (m_iscProvider.isc_dsql_prepare(&status, &h_tran, &m_handle, sql.length(),
 				sql.c_str(), m_connection.getSqlDialect(), m_out_xsqlda))
 			{
 				sWhereError = "isc_dsql_prepare";
@@ -351,7 +351,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		}
 	}
 	if (sWhereError) {
-		raise(status, tdbb, sWhereError, &sql);
+		raise(&status, tdbb, sWhereError, &sql);
 	}
 
 	// adjust output parameters
@@ -365,13 +365,13 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_out_xsqlda->version = 1;
 
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		if (m_iscProvider.isc_dsql_describe(status, &m_handle, 1, m_out_xsqlda))
+		if (m_iscProvider.isc_dsql_describe(&status, &m_handle, 1, m_out_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe";
 		}
 	}
 	if (sWhereError) {
-		raise(status, tdbb, sWhereError, &sql);
+		raise(&status, tdbb, sWhereError, &sql);
 	}
 
 	for (int i = 0; i != m_out_xsqlda->sqld; ++i)
@@ -393,13 +393,13 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		if (m_iscProvider.isc_dsql_describe_bind(status, &m_handle, 1, m_in_xsqlda))
+		if (m_iscProvider.isc_dsql_describe_bind(&status, &m_handle, 1, m_in_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe_bind";
 		}
 	}
 	if (sWhereError) {
-		raise(status, tdbb, sWhereError, &sql);
+		raise(&status, tdbb, sWhereError, &sql);
 	}
 
 	// adjust input parameters
@@ -413,13 +413,13 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		m_in_xsqlda->version = 1;
 
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		if (m_iscProvider.isc_dsql_describe_bind(status, &m_handle, 1, m_in_xsqlda))
+		if (m_iscProvider.isc_dsql_describe_bind(&status, &m_handle, 1, m_in_xsqlda))
 		{
 			sWhereError = "isc_dsql_describe_bind";
 		}
 	}
 	if (sWhereError) {
-		raise(status, tdbb, sWhereError, &sql);
+		raise(&status, tdbb, sWhereError, &sql);
 	}
 
 	parseSQLDA(m_in_xsqlda, m_in_buffer, m_inDescs);
@@ -430,22 +430,22 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	char info_buff[16];
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		if (m_iscProvider.isc_dsql_sql_info(status, &m_handle, sizeof(stmt_info), stmt_info,
+		if (m_iscProvider.isc_dsql_sql_info(&status, &m_handle, sizeof(stmt_info), stmt_info,
 			sizeof(info_buff), info_buff))
 		{
 			sWhereError = "isc_dsql_sql_info";
 		}
 	}
 	if (sWhereError) {
-		raise(status, tdbb, sWhereError, &sql);
+		raise(&status, tdbb, sWhereError, &sql);
 	}
 
 	if (info_buff[0] != stmt_info[0])
 	{
-		ERR_build_status(status, Arg::Gds(isc_random) << "Unknown statement type");
+		ERR_build_status(&status, Arg::Gds(isc_random) << "Unknown statement type");
 
 		sWhereError = "isc_dsql_sql_info";
-		raise(status, tdbb, sWhereError, &sql);
+		raise(&status, tdbb, sWhereError, &sql);
 	}
 
 	{
@@ -460,10 +460,10 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 			stmt_type == isc_info_sql_stmt_commit ||
 			stmt_type == isc_info_sql_stmt_rollback)
 		{
-			ERR_build_status(status, Arg::Gds(isc_eds_expl_tran_ctrl));
+			ERR_build_status(&status, Arg::Gds(isc_eds_expl_tran_ctrl));
 
 			sWhereError = "isc_dsql_prepare";
-			raise(status, tdbb, sWhereError, &sql);
+			raise(&status, tdbb, sWhereError, &sql);
 		}
 	}
 }
@@ -475,10 +475,10 @@ void IscStatement::doExecute(thread_db* tdbb)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		m_iscProvider.isc_dsql_execute2(status, &h_tran, &m_handle, 1, m_in_xsqlda, m_out_xsqlda);
+		m_iscProvider.isc_dsql_execute2(&status, &h_tran, &m_handle, 1, m_in_xsqlda, m_out_xsqlda);
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		raise(status, tdbb, "isc_dsql_execute2");
+		raise(&status, tdbb, "isc_dsql_execute2");
 	}
 }
 
@@ -488,10 +488,10 @@ void IscStatement::doOpen(thread_db* tdbb)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		m_iscProvider.isc_dsql_execute(status, &h_tran, &m_handle, 1, m_in_xsqlda);
+		m_iscProvider.isc_dsql_execute(&status, &h_tran, &m_handle, 1, m_in_xsqlda);
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		raise(status, tdbb, "isc_dsql_execute");
+		raise(&status, tdbb, "isc_dsql_execute");
 	}
 }
 
@@ -500,13 +500,13 @@ bool IscStatement::doFetch(thread_db* tdbb)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		const ISC_STATUS res = m_iscProvider.isc_dsql_fetch(status, &m_handle, 1, m_out_xsqlda);
+		const ISC_STATUS res = m_iscProvider.isc_dsql_fetch(&status, &m_handle, 1, m_out_xsqlda);
 		if (res == 100) {
 			return false;
 		}
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		raise(status, tdbb, "isc_dsql_fetch");
+		raise(&status, tdbb, "isc_dsql_fetch");
 	}
 	return true;
 }
@@ -517,14 +517,14 @@ void IscStatement::doClose(thread_db* tdbb, bool drop)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, *this, FB_FUNCTION);
-		m_iscProvider.isc_dsql_free_statement(status, &m_handle, drop ? DSQL_drop : DSQL_close);
+		m_iscProvider.isc_dsql_free_statement(&status, &m_handle, drop ? DSQL_drop : DSQL_close);
 		m_allocated = (m_handle != 0);
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS)
 	{
 		// we can do nothing else with this statement after this point
 		m_allocated = m_handle = 0;
-		raise(status, tdbb, "isc_dsql_free_statement");
+		raise(&status, tdbb, "isc_dsql_free_statement");
 	}
 }
 
@@ -580,11 +580,11 @@ void IscBlob::open(thread_db* tdbb, Transaction& tran, const dsc& desc, const UC
 		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const ISC_UCHAR* bpb_buff = bpb ? bpb->begin() : NULL;
 
-		m_iscProvider.isc_open_blob2(status, &h_db, &h_tran, &m_handle, &m_blob_id,
+		m_iscProvider.isc_open_blob2(&status, &h_db, &h_tran, &m_handle, &m_blob_id,
 			bpb_len, bpb_buff);
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_iscConnection.raise(status, tdbb, "isc_open_blob2");
+		m_iscConnection.raise(&status, tdbb, "isc_open_blob2");
 	}
 	fb_assert(m_handle);
 }
@@ -604,12 +604,12 @@ void IscBlob::create(thread_db* tdbb, Transaction& tran, dsc& desc, const UCharB
 		ISC_USHORT bpb_len = bpb ? bpb->getCount() : 0;
 		const char* bpb_buff = bpb ? reinterpret_cast<const char*>(bpb->begin()) : NULL;
 
-		m_iscProvider.isc_create_blob2(status, &h_db, &h_tran, &m_handle, &m_blob_id,
+		m_iscProvider.isc_create_blob2(&status, &h_db, &h_tran, &m_handle, &m_blob_id,
 			bpb_len, bpb_buff);
 		memcpy(desc.dsc_address, &m_blob_id, sizeof(m_blob_id));
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_iscConnection.raise(status, tdbb, "isc_create_blob2");
+		m_iscConnection.raise(&status, tdbb, "isc_create_blob2");
 	}
 	fb_assert(m_handle);
 }
@@ -622,7 +622,7 @@ USHORT IscBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
-		m_iscProvider.isc_get_segment(status, &m_handle, &result, len, reinterpret_cast<SCHAR*>(buff));
+		m_iscProvider.isc_get_segment(&status, &m_handle, &result, len, reinterpret_cast<SCHAR*>(buff));
 	}
 	switch (status->getErrors()[1])
 	{
@@ -633,7 +633,7 @@ USHORT IscBlob::read(thread_db* tdbb, UCHAR* buff, USHORT len)
 	case 0:
 		break;
 	default:
-		m_iscConnection.raise(status, tdbb, "isc_get_segment");
+		m_iscConnection.raise(&status, tdbb, "isc_get_segment");
 	}
 
 	return result;
@@ -646,10 +646,10 @@ void IscBlob::write(thread_db* tdbb, const UCHAR* buff, USHORT len)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
-		m_iscProvider.isc_put_segment(status, &m_handle, len, reinterpret_cast<const SCHAR*>(buff));
+		m_iscProvider.isc_put_segment(&status, &m_handle, len, reinterpret_cast<const SCHAR*>(buff));
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_iscConnection.raise(status, tdbb, "isc_put_segment");
+		m_iscConnection.raise(&status, tdbb, "isc_put_segment");
 	}
 }
 
@@ -659,10 +659,10 @@ void IscBlob::close(thread_db* tdbb)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
-		m_iscProvider.isc_close_blob(status, &m_handle);
+		m_iscProvider.isc_close_blob(&status, &m_handle);
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_iscConnection.raise(status, tdbb, "isc_close_blob");
+		m_iscConnection.raise(&status, tdbb, "isc_close_blob");
 	}
 	fb_assert(!m_handle);
 }
@@ -676,10 +676,10 @@ void IscBlob::cancel(thread_db* tdbb)
 	FbLocalStatus status;
 	{
 		EngineCallbackGuard guard(tdbb, m_iscConnection, FB_FUNCTION);
-		m_iscProvider.isc_cancel_blob(status, &m_handle);
+		m_iscProvider.isc_cancel_blob(&status, &m_handle);
 	}
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_iscConnection.raise(status, tdbb, "isc_close_blob");
+		m_iscConnection.raise(&status, tdbb, "isc_close_blob");
 	}
 	fb_assert(!m_handle);
 }
@@ -1472,8 +1472,8 @@ ISC_STATUS ISC_EXPORT IscProvider::fb_cancel_operation(FbStatusVector* user_stat
 void IscProvider::loadAPI()
 {
 	FbLocalStatus status;
-	notImplemented(status);
-	status_exception::raise(status);
+	notImplemented(&status);
+	status_exception::raise(&status);
 }
 
 

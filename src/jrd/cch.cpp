@@ -2881,7 +2881,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_user = &user;
 
-		BackgroundContextHolder tdbb(dbb, attachment, status_vector, FB_FUNCTION);
+		BackgroundContextHolder tdbb(dbb, attachment, &status_vector, FB_FUNCTION);
 
 		try
 		{
@@ -2926,7 +2926,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 				{
 					BufferDesc* const bdb = get_buffer(tdbb, FREE_PAGE, SYNC_NONE, 1);
 					if (bdb)
-						write_buffer(tdbb, bdb, bdb->bdb_page, true, status_vector, true);
+						write_buffer(tdbb, bdb, bdb->bdb_page, true, &status_vector, true);
 				}
 
 				// If there's more work to do voluntarily ask to be rescheduled.
@@ -2959,8 +2959,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		}
 		catch (const Firebird::Exception& ex)
 		{
-			ex.stuff_exception(status_vector);
-			iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
+			ex.stuff_exception(&status_vector);
+			iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
 			// continue execution to clean up
 		}
 
@@ -2972,8 +2972,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
+		ex.stuff_exception(&status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
 	}
 
 	bcb->bcb_flags &= ~(BCB_cache_writer | BCB_writer_start);
@@ -2984,8 +2984,8 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
+		ex.stuff_exception(&status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
 	}
 
 	return 0;

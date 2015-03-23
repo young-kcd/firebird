@@ -361,9 +361,9 @@ ULONG BackupManager::getPageCount()
 			temp_bdb.bdb_page = pageNum;
 			FbLocalStatus status;
 			// It's PIP - therefore no need to try to decrypt
-			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, status))
+			if (!PIO_read(pageSpace->file, &temp_bdb, temp_bdb.bdb_buffer, &status))
 			{
-				Firebird::status_exception::raise(status);
+				Firebird::status_exception::raise(&status);
 			}
 		}
 	};

@@ -4539,7 +4539,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		attachment->att_flags |= ATT_garbage_collector;
 		attachment->att_user = &user;
 
-		BackgroundContextHolder tdbb(dbb, attachment, status_vector, FB_FUNCTION);
+		BackgroundContextHolder tdbb(dbb, attachment, &status_vector, FB_FUNCTION);
 		tdbb->tdbb_quantum = SWEEP_QUANTUM;
 		tdbb->tdbb_flags = TDBB_sweeper;
 
@@ -4730,8 +4730,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		}
 		catch (const Firebird::Exception& ex)
 		{
-			ex.stuff_exception(status_vector);
-			iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
+			ex.stuff_exception(&status_vector);
+			iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
 
 			if (relation && relation->rel_sweep_count)
 				--relation->rel_sweep_count;
@@ -4754,8 +4754,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
+		ex.stuff_exception(&status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
 	}
 
 	dbb->dbb_flags &= ~(DBB_garbage_collector | DBB_gc_active | DBB_gc_pending);
@@ -4767,8 +4767,8 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(status_vector);
-		iscDbLogStatus(dbb->dbb_filename.c_str(), status_vector);
+		ex.stuff_exception(&status_vector);
+		iscDbLogStatus(dbb->dbb_filename.c_str(), &status_vector);
 	}
 
 	return 0;

@@ -5521,12 +5521,12 @@ static bool drop_files(const jrd_file* file)
 	{
 		if (unlink(file->fil_string))
 		{
-			ERR_build_status(status, Arg::Gds(isc_io_error) << Arg::Str("unlink") <<
+			ERR_build_status(&status, Arg::Gds(isc_io_error) << Arg::Str("unlink") <<
 							   								   Arg::Str(file->fil_string) <<
 									 Arg::Gds(isc_io_delete_err) << SYS_ERR(errno));
 			Database* dbb = GET_DBB();
 			PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
-			iscDbLogStatus(pageSpace->file->fil_string, status);
+			iscDbLogStatus(pageSpace->file->fil_string, &status);
 		}
 	}
 
@@ -7831,8 +7831,8 @@ static void start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra
 			if (transliterate)
 			{
 				FbLocalStatus tempStatus;
-				transliterateException(tdbb, ex, tempStatus, "startTransaction");
-				status_exception::raise(tempStatus);
+				transliterateException(tdbb, ex, &tempStatus, "startTransaction");
+				status_exception::raise(&tempStatus);
 			}
 			throw;
 		}

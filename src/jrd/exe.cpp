@@ -163,12 +163,12 @@ void StatusXcp::clear()
 
 void StatusXcp::init(const FbStatusVector* vector)
 {
-	fb_utils::copyStatus(status, vector);
+	fb_utils::copyStatus(&status, vector);
 }
 
 void StatusXcp::copyTo(FbStatusVector* vector) const
 {
-	fb_utils::copyStatus(vector, status);
+	fb_utils::copyStatus(vector, &status);
 }
 
 bool StatusXcp::success() const

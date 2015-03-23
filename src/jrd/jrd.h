@@ -590,14 +590,14 @@ class ThreadContextHolder
 {
 public:
 	explicit ThreadContextHolder(Firebird::CheckStatusWrapper* status = NULL)
-		: currentStatus(status ? status : localStatus), context(currentStatus)
+		: currentStatus(status ? status : &localStatus), context(currentStatus)
 	{
 		context.putSpecific();
 		currentStatus->init();
 	}
 
 	ThreadContextHolder(Database* dbb, Jrd::Attachment* att, FbStatusVector* status = NULL)
-		: currentStatus(status ? status : localStatus), context(currentStatus)
+		: currentStatus(status ? status : &localStatus), context(currentStatus)
 	{
 		context.putSpecific();
 		context.setDatabase(dbb);
@@ -639,7 +639,7 @@ public:
 	explicit ThreadStatusGuard(thread_db* tdbb)
 		: m_tdbb(tdbb), m_old_status(tdbb->tdbb_status_vector)
 	{
-		m_tdbb->tdbb_status_vector = m_local_status;
+		m_tdbb->tdbb_status_vector = &m_local_status;
 	}
 
 	~ThreadStatusGuard()
@@ -653,15 +653,15 @@ public:
 		return m_old_status;
 	}
 
-	operator FbStatusVector*() { return m_local_status; }
-	FbStatusVector* operator->() { return m_local_status; }
+	operator FbStatusVector*() { return &m_local_status; }
+	FbStatusVector* operator->() { return &m_local_status; }
 
-	operator const FbStatusVector*() const { return m_local_status; }
-	const FbStatusVector* operator->() const { return m_local_status; }
+	operator const FbStatusVector*() const { return &m_local_status; }
+	const FbStatusVector* operator->() const { return &m_local_status; }
 
 	void copyToOriginal()
 	{
-		fb_utils::copyStatus(m_old_status, m_local_status);
+		fb_utils::copyStatus(m_old_status, &m_local_status);
 	}
 
 private:

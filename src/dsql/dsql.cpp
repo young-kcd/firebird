@@ -606,7 +606,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	if (tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_WARNINGS)
 	{
 		// save a status vector
-		fb_utils::copyStatus(localStatus, tdbb->tdbb_status_vector);
+		fb_utils::copyStatus(&localStatus, tdbb->tdbb_status_vector);
 		fb_utils::init_status(tdbb->tdbb_status_vector);
 	}
 
@@ -735,7 +735,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			for (counter = 0; counter < 2 && !status; counter++)
 			{
 				localStatus->init();
-				AutoSetRestore<Jrd::FbStatusVector*> autoStatus(&tdbb->tdbb_status_vector, localStatus);
+				AutoSetRestore<Jrd::FbStatusVector*> autoStatus(&tdbb->tdbb_status_vector, &localStatus);
 
 				try
 				{
@@ -760,7 +760,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 			else if (status == isc_req_sync && counter == 1)
 				status_exception::raise(Arg::Gds(isc_stream_eof));
 			else if (status != isc_req_sync)
-				status_exception::raise(localStatus);
+				status_exception::raise(&localStatus);
 		}
 	}
 

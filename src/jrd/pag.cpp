@@ -784,7 +784,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 			FbLocalStatus status;
 			const ULONG start = sequence * pageMgr.pagesPerPIP + pip_page->pip_used;
 
-			init_pages = PIO_init_data(dbb, pageSpace->file, status, start, init_pages);
+			init_pages = PIO_init_data(dbb, pageSpace->file, &status, start, init_pages);
 		}
 
 		if (init_pages)

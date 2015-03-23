@@ -582,10 +582,10 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 	generateTPB(tdbb, tpb, traMode, readOnly, wait, lockTimeout);
 
 	FbLocalStatus status;
-	doStart(status, tdbb, tpb);
+	doStart(&status, tdbb, tpb);
 
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_connection.raise(status, tdbb, "transaction start");
+		m_connection.raise(&status, tdbb, "transaction start");
 	}
 
 	jrd_tra* tran = tdbb->getTransaction();
@@ -608,20 +608,20 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 void Transaction::prepare(thread_db* tdbb, int info_len, const char* info)
 {
 	FbLocalStatus status;
-	doPrepare(status, tdbb, info_len, info);
+	doPrepare(&status, tdbb, info_len, info);
 
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_connection.raise(status, tdbb, "transaction prepare");
+		m_connection.raise(&status, tdbb, "transaction prepare");
 	}
 }
 
 void Transaction::commit(thread_db* tdbb, bool retain)
 {
 	FbLocalStatus status;
-	doCommit(status, tdbb, retain);
+	doCommit(&status, tdbb, retain);
 
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_connection.raise(status, tdbb, "transaction commit");
+		m_connection.raise(&status, tdbb, "transaction commit");
 	}
 
 	if (!retain)
@@ -634,7 +634,7 @@ void Transaction::commit(thread_db* tdbb, bool retain)
 void Transaction::rollback(thread_db* tdbb, bool retain)
 {
 	FbLocalStatus status;
-	doRollback(status, tdbb, retain);
+	doRollback(&status, tdbb, retain);
 
 	Connection& conn = m_connection;
 	if (!retain)
@@ -644,7 +644,7 @@ void Transaction::rollback(thread_db* tdbb, bool retain)
 	}
 
 	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		conn.raise(status, tdbb, "transaction rollback");
+		conn.raise(&status, tdbb, "transaction rollback");
 	}
 }
 
@@ -869,8 +869,8 @@ bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
 		if (doFetch(tdbb))
 		{
 			FbLocalStatus status;
-			Arg::Gds(isc_sing_select_err).copyTo(status);
-			raise(status, tdbb, "isc_dsql_fetch");
+			Arg::Gds(isc_sing_select_err).copyTo(&status);
+			raise(&status, tdbb, "isc_dsql_fetch");
 		}
 		return false;
 	}
@@ -1496,7 +1496,7 @@ void Statement::raise(FbStatusVector* status, thread_db* tdbb, const char* sWher
 
 		if (status == tdbb->tdbb_status_vector)
 		{
-			fb_utils::init_status(status);
+			status->init();
 		}
 	}
 

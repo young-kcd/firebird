@@ -164,7 +164,7 @@ public:		// external interface with service
 	// Query service state (v. 1 & 2)
 	void query(USHORT send_item_length, const UCHAR* send_items, USHORT recv_item_length,
 			   const UCHAR* recv_items, USHORT buffer_length, UCHAR* info);
-	FbStatusVector query2(thread_db* tdbb, USHORT send_item_length, const UCHAR* send_items,
+	ISC_STATUS query2(thread_db* tdbb, USHORT send_item_length, const UCHAR* send_items,
 			   USHORT recv_item_length, const UCHAR* recv_items, USHORT buffer_length, UCHAR* info);
 	// Detach from service
 	void detach();
