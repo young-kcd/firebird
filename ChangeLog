@@ -1,3 +1,28 @@
+ 2015-03-22 22:07  hvlad 
+   A doc/README.online_validation
+   M doc/README.services_extension
+Feature CORE-4707 : Implement ability to validate tables and indices online
+Documentation
+
+ 2015-03-22 22:06  hvlad 
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/include/consts_pub.h
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/cmp.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/lck_proto.h
+   M src/jrd/rlck.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/val_proto.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/utilities/fbsvcmgr.cpp
+Feature CORE-4707 : Implement ability to validate tables and indices online
+
  2015-03-18 17:19  hvlad 
    M src/jrd/vio.cpp
 Fixed bug CORE-4713 : "BLOB not found" error at rollback after insert into table with expression index
