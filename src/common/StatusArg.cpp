@@ -270,8 +270,7 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 {
 	if (hasData())
 	{
-		unsigned l = (length() >= ISC_STATUS_LENGTH) ? (ISC_STATUS_LENGTH - 1u) : length();
-		memcpy(dest, value(), (length() + 1u) * sizeof(ISC_STATUS));
+		fb_utils::copyStatus(dest, ISC_STATUS_LENGTH, value(), length() + 1u);
 	}
 	else
 	{
