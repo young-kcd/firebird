@@ -411,5 +411,8 @@
 #define blr_agg_stddev_pop			(unsigned char) 212
 #define blr_agg_var_samp			(unsigned char) 213
 #define blr_agg_var_pop				(unsigned char) 214
+#define blr_agg_covar_samp			(unsigned char) 215
+#define blr_agg_covar_pop			(unsigned char) 216
+#define blr_agg_corr				(unsigned char) 217
 
 #endif // JRD_BLR_H

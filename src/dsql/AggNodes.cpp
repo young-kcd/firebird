@@ -1313,4 +1313,179 @@ AggNode* StdDevAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 }
 
 
+//--------------------
+
+
+static AggNode::Register<CorrAggNode> coVarSampAggInfo("COVAR_SAMP", blr_agg_covar_samp);
+static AggNode::Register<CorrAggNode> coVarPopAggInfo("COVAR_POP", blr_agg_covar_pop);
+static AggNode::Register<CorrAggNode> corrAggInfo("CORR", blr_agg_corr);
+
+CorrAggNode::CorrAggNode(MemoryPool& pool, CorrType aType, ValueExprNode* aArg, ValueExprNode* aArg2)
+	: AggNode(pool,
+		(aType == CorrAggNode::TYPE_COVAR_SAMP ? coVarSampAggInfo :
+		 aType == CorrAggNode::TYPE_COVAR_POP ? coVarPopAggInfo :
+		 corrAggInfo),
+		false, false, aArg),
+	  type(aType),
+	  arg2(aArg2),
+	  impure2Offset(0)
+{
+	addChildNode(arg2, arg2);
+}
+
+void CorrAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
+{
+	AggNode::aggPostRse(tdbb, csb);
+	impure2Offset = CMP_impure(csb, sizeof(CorrImpure));
+}
+
+DmlNode* CorrAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
+{
+	CorrType type;
+
+	switch (blrOp)
+	{
+		case blr_agg_covar_samp:
+			type = TYPE_COVAR_SAMP;
+			break;
+
+		case blr_agg_covar_pop:
+			type = TYPE_COVAR_POP;
+			break;
+
+		case blr_agg_corr:
+			type = TYPE_CORR;
+			break;
+
+		default:
+			fb_assert(false);
+	}
+
+	ValueExprNode* a1 = PAR_parse_value(tdbb, csb);
+	ValueExprNode* a2 = PAR_parse_value(tdbb, csb);
+	return FB_NEW(pool) CorrAggNode(pool, type, a1, a2);
+}
+
+void CorrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	desc->makeDouble();
+	desc->setNullable(true);
+}
+
+void CorrAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	desc->makeDouble();
+}
+
+ValueExprNode* CorrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	CorrAggNode* node = FB_NEW(*tdbb->getDefaultPool()) CorrAggNode(*tdbb->getDefaultPool(), type);
+	node->nodScale = nodScale;
+	node->arg = copier.copy(tdbb, arg);
+	node->arg2 = copier.copy(tdbb, arg2);
+	return node;
+}
+
+void CorrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
+{
+	AggNode::aggInit(tdbb, request);
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	impure->make_double(0);
+
+	CorrImpure* impure2 = request->getImpure<CorrImpure>(impure2Offset);
+	impure2->x = impure2->x2 = impure2->y = impure2->y2 = impure2->xy = 0.0;
+}
+
+bool CorrAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
+{
+	dsc* desc = NULL;
+	dsc* desc2 = NULL;
+
+	desc = EVL_expr(tdbb, request, arg);
+	if (request->req_flags & req_null)
+		return false;
+
+	desc2 = EVL_expr(tdbb, request, arg2);
+	if (request->req_flags & req_null)
+		return false;
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	++impure->vlux_count;
+
+	const double y = MOV_get_double(desc);
+	const double x = MOV_get_double(desc2);
+
+	CorrImpure* impure2 = request->getImpure<CorrImpure>(impure2Offset);
+	impure2->x += x;
+	impure2->x2 += x * x;
+	impure2->y += y;
+	impure2->y2 += y * y;
+	impure2->xy += x * y;
+
+	return true;
+}
+
+void CorrAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
+{
+	fb_assert(false);
+}
+
+dsc* CorrAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	CorrImpure* impure2 = request->getImpure<CorrImpure>(impure2Offset);
+	double d;
+
+	switch (type)
+	{
+		case TYPE_COVAR_SAMP:
+			if (impure->vlux_count < 2)
+				return NULL;
+			d = (impure2->xy - impure2->y * impure2->x / impure->vlux_count) / (impure->vlux_count - 1);
+			break;
+
+		case TYPE_COVAR_POP:
+			if (impure->vlux_count == 0)
+				return NULL;
+			d = (impure2->xy - impure2->y * impure2->x / impure->vlux_count) / impure->vlux_count;
+			break;
+
+		case TYPE_CORR:
+		{
+			// COVAR_POP(Y, X) / (STDDEV_POP(X) * STDDEV_POP(Y))
+			if (impure->vlux_count == 0)
+				return NULL;
+
+			const double covarPop = (impure2->xy - impure2->y * impure2->x / impure->vlux_count) /
+				impure->vlux_count;
+			const double varPopX = (impure2->x2 - impure2->x * impure2->x / impure->vlux_count) /
+				impure->vlux_count;
+			const double varPopY = (impure2->y2 - impure2->y * impure2->y / impure->vlux_count) /
+				impure->vlux_count;
+			const double divisor = sqrt(varPopX) * sqrt(varPopY);
+
+			if (divisor == 0.0)
+				return NULL;
+
+			d = covarPop / divisor;
+			break;
+		}
+	}
+
+	dsc temp;
+	temp.makeDouble(&d);
+
+	EVL_make_value(tdbb, &temp, impure);
+
+	return &impure->vlu_desc;
+}
+
+AggNode* CorrAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
+{
+	return FB_NEW(getPool()) CorrAggNode(getPool(), type,
+		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, arg2));
+}
+
+
 }	// namespace Jrd

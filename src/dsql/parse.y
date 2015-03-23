@@ -576,6 +576,9 @@ using namespace Firebird;
 %token <metaNamePtr> STDDEV_POP
 %token <metaNamePtr> VAR_SAMP
 %token <metaNamePtr> VAR_POP
+%token <metaNamePtr> COVAR_SAMP
+%token <metaNamePtr> COVAR_POP
+%token <metaNamePtr> CORR
 
 // precedence declarations for expression evaluation
 
@@ -3814,6 +3817,9 @@ keyword_or_column
 	| START
 	| SIMILAR				// added in FB 2.5
 	| KW_BOOLEAN			// added in FB 3.0
+	| CORR
+	| COVAR_POP
+	| COVAR_SAMP
 	| DETERMINISTIC
 	| KW_FALSE
 	| OFFSET
@@ -6805,6 +6811,12 @@ aggregate_function
 		{ $$ = newNode<StdDevAggNode>(StdDevAggNode::TYPE_VAR_SAMP, $3); }
 	| VAR_POP '(' value ')'
 		{ $$ = newNode<StdDevAggNode>(StdDevAggNode::TYPE_VAR_POP, $3); }
+	| COVAR_SAMP '(' value ',' value ')'
+		{ $$ = newNode<CorrAggNode>(CorrAggNode::TYPE_COVAR_SAMP, $3, $5); }
+	| COVAR_POP '(' value ',' value ')'
+		{ $$ = newNode<CorrAggNode>(CorrAggNode::TYPE_COVAR_POP, $3, $5); }
+	| CORR '(' value ',' value ')'
+		{ $$ = newNode<CorrAggNode>(CorrAggNode::TYPE_CORR, $3, $5); }
 	;
 
 %type <aggNode> window_function

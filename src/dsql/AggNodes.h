@@ -192,6 +192,48 @@ private:
 	ULONG impure2Offset;
 };
 
+class CorrAggNode : public AggNode
+{
+public:
+	enum CorrType
+	{
+		TYPE_COVAR_SAMP,
+		TYPE_COVAR_POP,
+		TYPE_CORR
+	};
+
+	struct CorrImpure
+	{
+		double x, x2, y, y2, xy;
+	};
+
+	explicit CorrAggNode(MemoryPool& pool, CorrType aType,
+		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
+
+	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+protected:
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
+
+public:
+	const CorrType type;
+	NestConst<ValueExprNode> arg2;
+
+private:
+	ULONG impure2Offset;
+};
+
 } // namespace
 
 #endif // DSQL_AGG_NODES_H

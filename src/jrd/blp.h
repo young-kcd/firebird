@@ -245,5 +245,8 @@ static const struct
 	{"agg_stddev_pop", one},
 	{"agg_var_samp", one},
 	{"agg_var_pop", one},
+	{"agg_covar_samp", two},
+	{"agg_covar_pop", two},
+	{"agg_corr", two},
 	{0, 0}
 };

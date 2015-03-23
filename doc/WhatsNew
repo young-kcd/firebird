@@ -291,6 +291,14 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * New feature CORE-4717
+        Aggregate statistical functions COVAR_SAMP, COVAR_POP and CORR
+      See also:
+        /doc/sql.extensions/README.statistical_functions.txt
+      Contributor(s):
+        Hajime Nakagami <nakagami at gmail.com>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * New feature CORE-4714
         Aggregate statistical functions STDDEV_POP, STDDEV_SAMP, VAR_POP and VAR_SAMP
       See also:
