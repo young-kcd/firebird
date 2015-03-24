@@ -1,3 +1,55 @@
+ 2015-03-23 15:52  alexpeshkoff 
+   M src/remote/remot_proto.h
+   M src/remote/remote.cpp
+Cleanup
+
+ 2015-03-23 11:06  alexpeshkoff 
+   M src/dsql/dsql.cpp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/DbCreators.cpp
+   M src/jrd/Mapping.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/exe.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/nbak.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/status.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/vio.cpp
+Cleanup - avoid automatic type conversion in FbLocalStatus as suggested by Claudio
+
+ 2015-03-23 09:06  alexpeshkoff 
+   M src/common/DynamicStrings.cpp
+   M src/common/DynamicStrings.h
+   M src/common/StatusHolder.h
+   M src/common/fb_exception.cpp
+Misc
+
+ 2015-03-23 08:17  alexpeshkoff 
+   M src/common/StatusArg.cpp
+Fixed potential BOF - thanks to Claudio
+
+ 2015-03-23 04:29  robocop 
+   M src/remote/SockAddr.h
+Misc.
+
+ 2015-03-23 02:55  asfernandes 
+   M doc/WhatsNew
+   M doc/sql.extensions/README.statistical_functions.txt
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/parse.y
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/yvalve/keywords.cpp
+Feature CORE-4717 - Aggregate statistical functions COVAR_SAMP, COVAR_POP and CORR - contributed by Hajime Nakagami.
+
  2015-03-22 22:43  hvlad 
    M src/jrd/os/win32/winnt.cpp
    M src/remote/SockAddr.h
