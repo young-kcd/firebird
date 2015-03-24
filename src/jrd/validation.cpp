@@ -946,7 +946,7 @@ void Validation::output(const char* format, ...)
 //	s.printf("%04d-%02d-%02d %02d:%02d:%02d.%04d ", 
 	s.printf("%02d:%02d:%02d.%02d ", 
 //		now.tm_year + 1900, now.tm_mon + 1, now.tm_mday,
-		now.tm_hour, now.tm_min, now.tm_sec, ms/100);
+		now.tm_hour, now.tm_min, now.tm_sec, ms / 100);
 	vdr_service->outputVerbose(s.c_str());
 
 	s.vprintf(format, params);
@@ -2663,7 +2663,7 @@ RTN Validation::walk_root(thread_db* tdbb, jrd_rel* relation)
 			continue;
 
 		MetaName index;
-		MET_lookup_index(tdbb, index, relation->rel_name, i+1);
+		MET_lookup_index(tdbb, index, relation->rel_name, i + 1);
 
 		if (vdr_idx_incl)
 		{

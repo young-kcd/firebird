@@ -499,7 +499,7 @@ int jrd_rel::blocking_ast_gcLock(void* ast_object)
 
 		if (relation->rel_flags & REL_gc_disabled)
 		{
-			// someone is acquired EX lock
+			// someone acquired EX lock
 
 			fb_assert(lock->lck_id);
 			fb_assert(lock->lck_physical == LCK_SR);
@@ -510,7 +510,7 @@ int jrd_rel::blocking_ast_gcLock(void* ast_object)
 		}
 		else 
 		{
-			// someone is acquired PW lock
+			// someone acquired PW lock
 
 			fb_assert(lock->lck_id);
 			fb_assert(lock->lck_physical == LCK_SW);

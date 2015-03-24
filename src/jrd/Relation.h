@@ -341,7 +341,7 @@ const ULONG REL_temp_conn				= 0x4000;	// relation is a GTT preserve rows
 const ULONG REL_virtual					= 0x8000;	// relation is virtual
 const ULONG REL_jrd_view				= 0x10000;	// relation is VIEW
 const ULONG REL_gc_blocking				= 0x20000;	// request to downgrade\release gc lock
-const ULONG REL_gc_disabled				= 0x40000;	// gc is disabled temporary
+const ULONG REL_gc_disabled				= 0x40000;	// gc is disabled temporarily
 const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 
 

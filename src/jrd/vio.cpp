@@ -800,7 +800,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
 
 			if (attachment->att_flags & ATT_NO_CLEANUP || !gcGuard.gcEnabled() ||
-				rpb->rpb_flags & (rpb_chained | rpb_gc_active))
+				(rpb->rpb_flags & (rpb_chained | rpb_gc_active)))
 			{
 				if (rpb->rpb_b_page == 0) {
 					CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));

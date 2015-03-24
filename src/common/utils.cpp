@@ -1063,7 +1063,7 @@ in_sw_tab_t* findSwitch(in_sw_tab_t* table, Firebird::string sw)
  *
  * Functional description
  *	Returns pointer to in_sw_tab entry for current switch
- *	If not a switch, returns 0.
+ *	If not a switch, returns NULL.
  *
  **************************************/
 	if (sw.isEmpty())
