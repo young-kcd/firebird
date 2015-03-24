@@ -2690,7 +2690,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 					((old_rel_flags = MOV_get_long(&desc2, 0)) != new_rel_flags))
 				{
 					DFW_post_work(transaction,
-								  new_rel_flags & FILE_backing_up ? dfw_begin_backup : dfw_end_backup,
+								  (new_rel_flags & FILE_backing_up ? dfw_begin_backup : dfw_end_backup),
 								  &desc1, 0);
 				}
 			}
