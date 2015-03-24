@@ -2,6 +2,16 @@
   * v2.5.4
   **************************
 
+    * Bugfix CORE-4713
+        "BLOB not found" error at rollback after insert into table with expression index
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4700
+        Mistake in GDS_DROP_DATABASE
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
     * Bugfix CORE-4690
         DISTINCT vs non-DISTINCT affects the result of IN subquery
       Contributor(s):
@@ -130,6 +140,14 @@
 
     * Improvement CORE-4671
         Release internal temporary blobs early to free some memory\disk space
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * New feature CORE-4707
+        Ability to validate tables and indices online
+      See also:
+        /doc/README.online_validation
+        /doc/README.services_extension
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
