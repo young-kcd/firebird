@@ -36,49 +36,16 @@ using namespace Jrd;
 namespace Jrd {
 
 
-static RegisterNode<WinFuncNode> regWinFuncNode(blr_agg_function);
-
-WinFuncNode::Factory* WinFuncNode::factories = NULL;
-
 WinFuncNode::WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, ValueExprNode* aArg)
 	: AggNode(pool, aAggInfo, false, false, aArg)
 {
-}
-
-DmlNode* WinFuncNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
-{
-	MetaName name;
-	PAR_name(csb, name);
-
-	WinFuncNode* node = NULL;
-
-	for (const Factory* factory = factories; factory; factory = factory->next)
-	{
-		if (name == factory->name)
-		{
-			node = factory->newInstance(pool);
-			break;
-		}
-	}
-
-	if (!node)
-		PAR_error(csb, Arg::Gds(isc_funnotdef) << name);
-
-	UCHAR count = csb->csb_blr_reader.getByte();
-
-	if (count != node->jrdChildNodes.getCount())
-		PAR_error(csb, Arg::Gds(isc_funmismat) << name);
-
-	node->parseArgs(tdbb, csb, count);
-
-	return node;
 }
 
 
 //--------------------
 
 
-static WinFuncNode::Register<DenseRankWinNode> denseRankWinInfo("DENSE_RANK");
+static WinFuncNode::RegisterFactory0<DenseRankWinNode> denseRankWinInfo("DENSE_RANK");
 
 DenseRankWinNode::DenseRankWinNode(MemoryPool& pool)
 	: WinFuncNode(pool, denseRankWinInfo)
@@ -134,7 +101,7 @@ AggNode* DenseRankWinNode::dsqlCopy(DsqlCompilerScratch* /*dsqlScratch*/) /*cons
 //--------------------
 
 
-static WinFuncNode::Register<RankWinNode> rankWinInfo("RANK");
+static WinFuncNode::RegisterFactory0<RankWinNode> rankWinInfo("RANK");
 
 RankWinNode::RankWinNode(MemoryPool& pool)
 	: WinFuncNode(pool, rankWinInfo),
@@ -210,7 +177,7 @@ AggNode* RankWinNode::dsqlCopy(DsqlCompilerScratch* /*dsqlScratch*/) /*const*/
 //--------------------
 
 
-static WinFuncNode::Register<RowNumberWinNode> rowNumberWinInfo("ROW_NUMBER");
+static WinFuncNode::RegisterFactory0<RowNumberWinNode> rowNumberWinInfo("ROW_NUMBER");
 
 RowNumberWinNode::RowNumberWinNode(MemoryPool& pool)
 	: WinFuncNode(pool, rowNumberWinInfo)
@@ -272,7 +239,7 @@ AggNode* RowNumberWinNode::dsqlCopy(DsqlCompilerScratch* /*dsqlScratch*/) /*cons
 //--------------------
 
 
-static WinFuncNode::Register<FirstValueWinNode> firstValueWinInfo("FIRST_VALUE");
+static WinFuncNode::RegisterFactory0<FirstValueWinNode> firstValueWinInfo("FIRST_VALUE");
 
 FirstValueWinNode::FirstValueWinNode(MemoryPool& pool, ValueExprNode* aArg)
 	: WinFuncNode(pool, firstValueWinInfo, aArg)
@@ -346,7 +313,7 @@ AggNode* FirstValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 //--------------------
 
 
-static WinFuncNode::Register<LastValueWinNode> lastValueWinInfo("LAST_VALUE");
+static WinFuncNode::RegisterFactory0<LastValueWinNode> lastValueWinInfo("LAST_VALUE");
 
 LastValueWinNode::LastValueWinNode(MemoryPool& pool, ValueExprNode* aArg)
 	: WinFuncNode(pool, lastValueWinInfo, aArg)
@@ -411,7 +378,7 @@ AggNode* LastValueWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 //--------------------
 
 
-static WinFuncNode::Register<NthValueWinNode> nthValueWinInfo("NTH_VALUE");
+static WinFuncNode::RegisterFactory0<NthValueWinNode> nthValueWinInfo("NTH_VALUE");
 
 NthValueWinNode::NthValueWinNode(MemoryPool& pool, ValueExprNode* aArg, ValueExprNode* aRow,
 			ValueExprNode* aFrom)
@@ -603,7 +570,7 @@ dsc* LagLeadWinNode::winPass(thread_db* tdbb, jrd_req* request, SlidingWindow* w
 //--------------------
 
 
-static WinFuncNode::Register<LagWinNode> lagWinInfo("LAG");
+static WinFuncNode::RegisterFactory0<LagWinNode> lagWinInfo("LAG");
 
 LagWinNode::LagWinNode(MemoryPool& pool, ValueExprNode* aArg, ValueExprNode* aRows,
 			ValueExprNode* aOutExpr)
@@ -632,7 +599,7 @@ AggNode* LagWinNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 //--------------------
 
 
-static WinFuncNode::Register<LeadWinNode> leadWinInfo("LEAD");
+static WinFuncNode::RegisterFactory0<LeadWinNode> leadWinInfo("LEAD");
 
 LeadWinNode::LeadWinNode(MemoryPool& pool, ValueExprNode* aArg, ValueExprNode* aRows,
 			ValueExprNode* aOutExpr)

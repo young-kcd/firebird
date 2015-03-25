@@ -48,6 +48,10 @@ using namespace Jrd;
 namespace Jrd {
 
 
+static RegisterNode<AggNode> regAggNode(blr_agg_function);
+
+AggNode::Factory* AggNode::factories = NULL;
+
 AggNode::AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool aDialect1,
 			ValueExprNode* aArg)
 	: TypedNode<ValueExprNode, ExprNode::TYPE_AGGREGATE>(pool),
@@ -59,6 +63,35 @@ AggNode::AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool
 	  indexed(false)
 {
 	addChildNode(arg, arg);
+}
+
+DmlNode* AggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR /*blrOp*/)
+{
+	MetaName name;
+	PAR_name(csb, name);
+
+	AggNode* node = NULL;
+
+	for (const Factory* factory = factories; factory; factory = factory->next)
+	{
+		if (name == factory->name)
+		{
+			node = factory->newInstance(pool);
+			break;
+		}
+	}
+
+	if (!node)
+		PAR_error(csb, Arg::Gds(isc_funnotdef) << name);
+
+	UCHAR count = csb->csb_blr_reader.getByte();
+
+	if (count != node->jrdChildNodes.getCount())
+		PAR_error(csb, Arg::Gds(isc_funmismat) << name);
+
+	node->parseArgs(tdbb, csb, count);
+
+	return node;
 }
 
 AggNode* AggNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -1173,10 +1206,14 @@ AggNode* MaxMinAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 //--------------------
 
 
-static AggNode::Register<StdDevAggNode> stdDevSampAggInfo("STDDEV_SAMP", blr_agg_stddev_samp);
-static AggNode::Register<StdDevAggNode> stdDevPopAggInfo("STDDEV_POP", blr_agg_stddev_pop);
-static AggNode::Register<StdDevAggNode> varSampAggInfo("VAR_SAMP", blr_agg_var_samp);
-static AggNode::Register<StdDevAggNode> varPopAggInfo("VAR_POP", blr_agg_var_pop);
+static AggNode::RegisterFactory1<StdDevAggNode, StdDevAggNode::StdDevType> stdDevSampAggInfo(
+	"STDDEV_SAMP", StdDevAggNode::TYPE_STDDEV_SAMP);
+static AggNode::RegisterFactory1<StdDevAggNode, StdDevAggNode::StdDevType> stdDevPopAggInfo(
+	"STDDEV_POP", StdDevAggNode::TYPE_STDDEV_POP);
+static AggNode::RegisterFactory1<StdDevAggNode, StdDevAggNode::StdDevType> varSampAggInfo(
+	"VAR_SAMP", StdDevAggNode::TYPE_VAR_SAMP);
+static AggNode::RegisterFactory1<StdDevAggNode, StdDevAggNode::StdDevType> varPopAggInfo(
+	"VAR_POP", StdDevAggNode::TYPE_VAR_POP);
 
 StdDevAggNode::StdDevAggNode(MemoryPool& pool, StdDevType aType, ValueExprNode* aArg)
 	: AggNode(pool,
@@ -1190,40 +1227,15 @@ StdDevAggNode::StdDevAggNode(MemoryPool& pool, StdDevType aType, ValueExprNode* 
 {
 }
 
+void StdDevAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
+{
+	arg = PAR_parse_value(tdbb, csb);
+}
+
 void StdDevAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
 {
 	AggNode::aggPostRse(tdbb, csb);
 	impure2Offset = CMP_impure(csb, sizeof(StdDevImpure));
-}
-
-DmlNode* StdDevAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
-{
-	StdDevType type;
-
-	switch (blrOp)
-	{
-		case blr_agg_stddev_samp:
-			type = TYPE_STDDEV_SAMP;
-			break;
-
-		case blr_agg_stddev_pop:
-			type = TYPE_STDDEV_POP;
-			break;
-
-		case blr_agg_var_samp:
-			type = TYPE_VAR_SAMP;
-			break;
-
-		case blr_agg_var_pop:
-			type = TYPE_VAR_POP;
-			break;
-
-		default:
-			fb_assert(false);
-			return NULL;
-	}
-
-	return FB_NEW(pool) StdDevAggNode(pool, type, PAR_parse_value(tdbb, csb));
 }
 
 void StdDevAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -1317,9 +1329,12 @@ AggNode* StdDevAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 //--------------------
 
 
-static AggNode::Register<CorrAggNode> coVarSampAggInfo("COVAR_SAMP", blr_agg_covar_samp);
-static AggNode::Register<CorrAggNode> coVarPopAggInfo("COVAR_POP", blr_agg_covar_pop);
-static AggNode::Register<CorrAggNode> corrAggInfo("CORR", blr_agg_corr);
+static AggNode::RegisterFactory1<CorrAggNode, CorrAggNode::CorrType> coVarSampAggInfo(
+	"COVAR_SAMP", CorrAggNode::TYPE_COVAR_SAMP);
+static AggNode::RegisterFactory1<CorrAggNode, CorrAggNode::CorrType> coVarPopAggInfo(
+	"COVAR_POP", CorrAggNode::TYPE_COVAR_POP);
+static AggNode::RegisterFactory1<CorrAggNode, CorrAggNode::CorrType> corrAggInfo(
+	"CORR", CorrAggNode::TYPE_CORR);
 
 CorrAggNode::CorrAggNode(MemoryPool& pool, CorrType aType, ValueExprNode* aArg, ValueExprNode* aArg2)
 	: AggNode(pool,
@@ -1334,38 +1349,16 @@ CorrAggNode::CorrAggNode(MemoryPool& pool, CorrType aType, ValueExprNode* aArg, 
 	addChildNode(arg2, arg2);
 }
 
+void CorrAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
+{
+	arg = PAR_parse_value(tdbb, csb);
+	arg2 = PAR_parse_value(tdbb, csb);
+}
+
 void CorrAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
 {
 	AggNode::aggPostRse(tdbb, csb);
 	impure2Offset = CMP_impure(csb, sizeof(CorrImpure));
-}
-
-DmlNode* CorrAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
-{
-	CorrType type;
-
-	switch (blrOp)
-	{
-		case blr_agg_covar_samp:
-			type = TYPE_COVAR_SAMP;
-			break;
-
-		case blr_agg_covar_pop:
-			type = TYPE_COVAR_POP;
-			break;
-
-		case blr_agg_corr:
-			type = TYPE_CORR;
-			break;
-
-		default:
-			fb_assert(false);
-			return NULL;
-	}
-
-	ValueExprNode* a1 = PAR_parse_value(tdbb, csb);
-	ValueExprNode* a2 = PAR_parse_value(tdbb, csb);
-	return FB_NEW(pool) CorrAggNode(pool, type, a1, a2);
 }
 
 void CorrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -1492,14 +1485,22 @@ AggNode* CorrAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 
 //--------------------
 
-static AggNode::Register<RegrAggNode> regrAvgxAggInfo("REGR_AVGX", blr_agg_regr_avgx);
-static AggNode::Register<RegrAggNode> regrAvgyAggInfo("REGR_AVGY", blr_agg_regr_avgy);
-static AggNode::Register<RegrAggNode> regrInterceptAggInfo("REGR_INTERCEPT", blr_agg_regr_intercept);
-static AggNode::Register<RegrAggNode> regrR2AggInfo("REGR_R2", blr_agg_regr_r2);
-static AggNode::Register<RegrAggNode> regrSlopeAggInfo("REGR_SLOPE", blr_agg_regr_slope);
-static AggNode::Register<RegrAggNode> regrSxxAggInfo("REGR_SXX", blr_agg_regr_sxx);
-static AggNode::Register<RegrAggNode> regrSxyAggInfo("REGR_SXY", blr_agg_regr_sxy);
-static AggNode::Register<RegrAggNode> regrSyyAggInfo("REGR_SYY", blr_agg_regr_syy);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrAvgxAggInfo(
+	"REGR_AVGX", RegrAggNode::TYPE_REGR_AVGX);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrAvgyAggInfo(
+	"REGR_AVGY", RegrAggNode::TYPE_REGR_AVGY);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrInterceptAggInfo(
+	"REGR_INTERCEPT", RegrAggNode::TYPE_REGR_INTERCEPT);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrR2AggInfo(
+	"REGR_R2", RegrAggNode::TYPE_REGR_R2);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrSlopeAggInfo(
+	"REGR_SLOPE", RegrAggNode::TYPE_REGR_SLOPE);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrSxxAggInfo(
+	"REGR_SXX", RegrAggNode::TYPE_REGR_SXX);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrSxyAggInfo(
+	"REGR_SXY", RegrAggNode::TYPE_REGR_SXY);
+static AggNode::RegisterFactory1<RegrAggNode, RegrAggNode::RegrType> regrSyyAggInfo(
+	"REGR_SYY", RegrAggNode::TYPE_REGR_SYY);
 
 RegrAggNode::RegrAggNode(MemoryPool& pool, RegrType aType, ValueExprNode* aArg, ValueExprNode* aArg2)
 	: AggNode(pool,
@@ -1520,58 +1521,16 @@ RegrAggNode::RegrAggNode(MemoryPool& pool, RegrType aType, ValueExprNode* aArg, 
 	addChildNode(arg2, arg2);
 }
 
+void RegrAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
+{
+	arg = PAR_parse_value(tdbb, csb);
+	arg2 = PAR_parse_value(tdbb, csb);
+}
+
 void RegrAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
 {
 	AggNode::aggPostRse(tdbb, csb);
 	impure2Offset = CMP_impure(csb, sizeof(RegrImpure));
-}
-
-DmlNode* RegrAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
-{
-	RegrType type;
-
-	switch (blrOp)
-	{
-		case blr_agg_regr_avgx:
-			type = TYPE_REGR_AVGX;
-			break;
-
-		case blr_agg_regr_avgy:
-			type = TYPE_REGR_AVGY;
-			break;
-
-		case blr_agg_regr_intercept:
-			type = TYPE_REGR_INTERCEPT;
-			break;
-
-		case blr_agg_regr_r2:
-			type = TYPE_REGR_R2;
-			break;
-
-		case blr_agg_regr_slope:
-			type = TYPE_REGR_SLOPE;
-			break;
-
-		case blr_agg_regr_sxx:
-			type = TYPE_REGR_SXX;
-			break;
-
-		case blr_agg_regr_sxy:
-			type = TYPE_REGR_SXY;
-			break;
-
-		case blr_agg_regr_syy:
-			type = TYPE_REGR_SYY;
-			break;
-
-		default:
-			fb_assert(false);
-			return NULL;
-	}
-
-	ValueExprNode* a1 = PAR_parse_value(tdbb, csb);
-	ValueExprNode* a2 = PAR_parse_value(tdbb, csb);
-	return FB_NEW(pool) RegrAggNode(pool, type, a1, a2);
 }
 
 void RegrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -1724,7 +1683,7 @@ AggNode* RegrAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 //--------------------
 
 
-static AggNode::Register<RegrCountAggNode> regrCountAggInfo("REGR_COUNT", blr_agg_regr_count);
+static AggNode::RegisterFactory0<RegrCountAggNode> regrCountAggInfo("REGR_COUNT");
 
 RegrCountAggNode::RegrCountAggNode(MemoryPool& pool, ValueExprNode* aArg, ValueExprNode* aArg2)
 	: AggNode(pool, regrCountAggInfo, false, false, aArg),
@@ -1733,11 +1692,10 @@ RegrCountAggNode::RegrCountAggNode(MemoryPool& pool, ValueExprNode* aArg, ValueE
 	addChildNode(arg2, arg2);
 }
 
-DmlNode* RegrCountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
+void RegrCountAggNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
 {
-	ValueExprNode* a1 = PAR_parse_value(tdbb, csb);
-	ValueExprNode* a2 = PAR_parse_value(tdbb, csb);
-	return FB_NEW(pool) RegrCountAggNode(pool, a1, a2);
+	arg = PAR_parse_value(tdbb, csb);
+	arg2 = PAR_parse_value(tdbb, csb);
 }
 
 void RegrCountAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)

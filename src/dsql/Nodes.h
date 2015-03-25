@@ -818,7 +818,60 @@ protected:
 		const UCHAR distinctBlr;
 	};
 
+	// Base factory to create instance of subclasses.
+	class Factory : public AggInfo
+	{
+	public:
+		explicit Factory(const char* aName)
+			: AggInfo(aName, 0, 0)
+		{
+			next = factories;
+			factories = this;
+		}
+
+		virtual AggNode* newInstance(MemoryPool& pool) const = 0;
+
+	public:
+		const Factory* next;
+	};
+
 public:
+	// Concrete implementations for the factory.
+
+	template <typename T>
+	class RegisterFactory0 : public Factory
+	{
+	public:
+		explicit RegisterFactory0(const char* aName)
+			: Factory(aName)
+		{
+		}
+
+		AggNode* newInstance(MemoryPool& pool) const
+		{
+			return new T(pool);
+		}
+	};
+
+	template <typename T, typename Type>
+	class RegisterFactory1 : public Factory
+	{
+	public:
+		explicit RegisterFactory1(const char* aName, Type aType)
+			: Factory(aName),
+			  type(aType)
+		{
+		}
+
+		AggNode* newInstance(MemoryPool& pool) const
+		{
+			return new T(pool, type);
+		}
+
+	public:
+		const Type type;
+	};
+
 	template <typename T>
 	class Register : public AggInfo
 	{
@@ -843,6 +896,8 @@ public:
 
 	explicit AggNode(MemoryPool& pool, const AggInfo& aAggInfo, bool aDistinct, bool aDialect1,
 		ValueExprNode* aArg = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
 	virtual void print(Firebird::string& text) const;
 
@@ -916,6 +971,11 @@ public:
 	virtual AggNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 protected:
+	virtual void parseArgs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, unsigned count)
+	{
+		fb_assert(count == 0);
+	}
+
 	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/ = 0;
 
 public:
@@ -925,59 +985,17 @@ public:
 	NestConst<ValueExprNode> arg;
 	const AggregateSort* asb;
 	bool indexed;
+
+private:
+	static Factory* factories;
 };
 
 
 // Base class for window functions.
 class WinFuncNode : public AggNode
 {
-private:
-	// Base factory to create instance of subclasses.
-	class Factory : public AggInfo
-	{
-	public:
-		explicit Factory(const char* aName)
-			: AggInfo(aName, 0, 0)
-		{
-		}
-
-		virtual WinFuncNode* newInstance(MemoryPool& pool) const = 0;
-
-	public:
-		const Factory* next;
-	};
-
 public:
-	// Concrete implementation of the factory.
-	template <typename T>
-	class Register : public Factory
-	{
-	public:
-		explicit Register(const char* aName)
-			: Factory(aName)
-		{
-			next = factories;
-			factories = this;
-		}
-
-		WinFuncNode* newInstance(MemoryPool& pool) const
-		{
-			return new T(pool);
-		}
-	};
-
 	explicit WinFuncNode(MemoryPool& pool, const AggInfo& aAggInfo, ValueExprNode* aArg = NULL);
-
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
-
-protected:
-	virtual void parseArgs(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, unsigned count)
-	{
-		fb_assert(count == 0);
-	}
-
-private:
-	static Factory* factories;
 };
 
 

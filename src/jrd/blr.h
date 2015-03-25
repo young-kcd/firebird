@@ -407,21 +407,4 @@
 #define blr_record_version2			(unsigned char) 209
 #define blr_gen_id2					(unsigned char) 210 // NEXT VALUE FOR generator
 
-#define blr_agg_stddev_samp			(unsigned char) 211
-#define blr_agg_stddev_pop			(unsigned char) 212
-#define blr_agg_var_samp			(unsigned char) 213
-#define blr_agg_var_pop				(unsigned char) 214
-#define blr_agg_covar_samp			(unsigned char) 215
-#define blr_agg_covar_pop			(unsigned char) 216
-#define blr_agg_corr				(unsigned char) 217
-#define blr_agg_regr_avgx			(unsigned char) 218
-#define blr_agg_regr_avgy			(unsigned char) 219
-#define blr_agg_regr_count			(unsigned char) 220
-#define blr_agg_regr_intercept		(unsigned char) 221
-#define blr_agg_regr_r2				(unsigned char) 222
-#define blr_agg_regr_slope			(unsigned char) 223
-#define blr_agg_regr_sxx			(unsigned char) 224
-#define blr_agg_regr_sxy			(unsigned char) 225
-#define blr_agg_regr_syy			(unsigned char) 226
-
 #endif // JRD_BLR_H

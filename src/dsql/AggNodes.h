@@ -170,9 +170,10 @@ public:
 	};
 
 	explicit StdDevAggNode(MemoryPool& pool, StdDevType aType, ValueExprNode* aArg = NULL);
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
+
+	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -210,9 +211,9 @@ public:
 	explicit CorrAggNode(MemoryPool& pool, CorrType aType,
 		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
 
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -257,9 +258,9 @@ public:
 	explicit RegrAggNode(MemoryPool& pool, RegrType aType,
 		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
 
-	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
@@ -287,7 +288,7 @@ public:
 	explicit RegrCountAggNode(MemoryPool& pool,
 		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
 
-	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+	virtual void parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned count);
 
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
