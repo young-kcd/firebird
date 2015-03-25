@@ -1,3 +1,16 @@
+ 2015-03-24 13:18  dimitr 
+   M doc/WhatsNew
+Updated the docs.
+
+ 2015-03-24 00:55  robocop 
+   M src/common/utils.cpp
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/lck_proto.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+Misc.
+
  2015-03-23 05:36  robocop 
    M doc/README.online_validation
    M src/jrd/vio.cpp
