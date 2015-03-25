@@ -1220,6 +1220,7 @@ DmlNode* StdDevAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 		default:
 			fb_assert(false);
+			return NULL;
 	}
 
 	return FB_NEW(pool) StdDevAggNode(pool, type, PAR_parse_value(tdbb, csb));
@@ -1359,6 +1360,7 @@ DmlNode* CorrAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 
 		default:
 			fb_assert(false);
+			return NULL;
 	}
 
 	ValueExprNode* a1 = PAR_parse_value(tdbb, csb);
@@ -1484,6 +1486,324 @@ dsc* CorrAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 AggNode* CorrAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
 	return FB_NEW(getPool()) CorrAggNode(getPool(), type,
+		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, arg2));
+}
+
+
+//--------------------
+
+static AggNode::Register<RegrAggNode> regrAvgxAggInfo("REGR_AVGX", blr_agg_regr_avgx);
+static AggNode::Register<RegrAggNode> regrAvgyAggInfo("REGR_AVGY", blr_agg_regr_avgy);
+static AggNode::Register<RegrAggNode> regrInterceptAggInfo("REGR_INTERCEPT", blr_agg_regr_intercept);
+static AggNode::Register<RegrAggNode> regrR2AggInfo("REGR_R2", blr_agg_regr_r2);
+static AggNode::Register<RegrAggNode> regrSlopeAggInfo("REGR_SLOPE", blr_agg_regr_slope);
+static AggNode::Register<RegrAggNode> regrSxxAggInfo("REGR_SXX", blr_agg_regr_sxx);
+static AggNode::Register<RegrAggNode> regrSxyAggInfo("REGR_SXY", blr_agg_regr_sxy);
+static AggNode::Register<RegrAggNode> regrSyyAggInfo("REGR_SYY", blr_agg_regr_syy);
+
+RegrAggNode::RegrAggNode(MemoryPool& pool, RegrType aType, ValueExprNode* aArg, ValueExprNode* aArg2)
+	: AggNode(pool,
+		(aType == RegrAggNode::TYPE_REGR_AVGX ? regrAvgxAggInfo :
+		 aType == RegrAggNode::TYPE_REGR_AVGY ? regrAvgyAggInfo :
+		 aType == RegrAggNode::TYPE_REGR_INTERCEPT ? regrInterceptAggInfo :
+		 aType == RegrAggNode::TYPE_REGR_R2 ? regrR2AggInfo :
+		 aType == RegrAggNode::TYPE_REGR_SLOPE ? regrSlopeAggInfo :
+		 aType == RegrAggNode::TYPE_REGR_SXX ? regrSxxAggInfo :
+		 aType == RegrAggNode::TYPE_REGR_SXY ? regrSxyAggInfo :
+		 aType == RegrAggNode::TYPE_REGR_SYY ? regrSyyAggInfo :
+		 regrSyyAggInfo),
+		false, false, aArg),
+	  type(aType),
+	  arg2(aArg2),
+	  impure2Offset(0)
+{
+	addChildNode(arg2, arg2);
+}
+
+void RegrAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
+{
+	AggNode::aggPostRse(tdbb, csb);
+	impure2Offset = CMP_impure(csb, sizeof(RegrImpure));
+}
+
+DmlNode* RegrAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
+{
+	RegrType type;
+
+	switch (blrOp)
+	{
+		case blr_agg_regr_avgx:
+			type = TYPE_REGR_AVGX;
+			break;
+
+		case blr_agg_regr_avgy:
+			type = TYPE_REGR_AVGY;
+			break;
+
+		case blr_agg_regr_intercept:
+			type = TYPE_REGR_INTERCEPT;
+			break;
+
+		case blr_agg_regr_r2:
+			type = TYPE_REGR_R2;
+			break;
+
+		case blr_agg_regr_slope:
+			type = TYPE_REGR_SLOPE;
+			break;
+
+		case blr_agg_regr_sxx:
+			type = TYPE_REGR_SXX;
+			break;
+
+		case blr_agg_regr_sxy:
+			type = TYPE_REGR_SXY;
+			break;
+
+		case blr_agg_regr_syy:
+			type = TYPE_REGR_SYY;
+			break;
+
+		default:
+			fb_assert(false);
+			return NULL;
+	}
+
+	ValueExprNode* a1 = PAR_parse_value(tdbb, csb);
+	ValueExprNode* a2 = PAR_parse_value(tdbb, csb);
+	return FB_NEW(pool) RegrAggNode(pool, type, a1, a2);
+}
+
+void RegrAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	desc->makeDouble();
+	desc->setNullable(true);
+}
+
+void RegrAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	desc->makeDouble();
+}
+
+ValueExprNode* RegrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	RegrAggNode* node = FB_NEW(*tdbb->getDefaultPool()) RegrAggNode(*tdbb->getDefaultPool(), type);
+	node->nodScale = nodScale;
+	node->arg = copier.copy(tdbb, arg);
+	node->arg2 = copier.copy(tdbb, arg2);
+	return node;
+}
+
+void RegrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
+{
+	AggNode::aggInit(tdbb, request);
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	impure->make_double(0);
+
+	RegrImpure* impure2 = request->getImpure<RegrImpure>(impure2Offset);
+	impure2->x = impure2->x2 = impure2->y = impure2->y2 = impure2->xy = 0.0;
+}
+
+bool RegrAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
+{
+	dsc* desc = NULL;
+	dsc* desc2 = NULL;
+
+	desc = EVL_expr(tdbb, request, arg);
+	if (request->req_flags & req_null)
+		return false;
+
+	desc2 = EVL_expr(tdbb, request, arg2);
+	if (request->req_flags & req_null)
+		return false;
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	++impure->vlux_count;
+
+	const double y = MOV_get_double(desc);
+	const double x = MOV_get_double(desc2);
+
+	RegrImpure* impure2 = request->getImpure<RegrImpure>(impure2Offset);
+	impure2->x += x;
+	impure2->x2 += x * x;
+	impure2->y += y;
+	impure2->y2 += y * y;
+	impure2->xy += x * y;
+
+	return true;
+}
+
+void RegrAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
+{
+	fb_assert(false);
+}
+
+dsc* RegrAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	RegrImpure* impure2 = request->getImpure<RegrImpure>(impure2Offset);
+
+	if (impure->vlux_count == 0)
+		return NULL;
+
+	const double varPopX = (impure2->x2 - impure2->x * impure2->x / impure->vlux_count) / impure->vlux_count;
+	const double varPopY = (impure2->y2 - impure2->y * impure2->y / impure->vlux_count) / impure->vlux_count;
+	const double covarPop = (impure2->xy - impure2->y * impure2->x / impure->vlux_count) / impure->vlux_count;
+	const double avgX = impure2->x / impure->vlux_count;
+	const double avgY = impure2->y / impure->vlux_count;
+	const double slope = covarPop / varPopX;
+	const double sq = sqrt(varPopX) * sqrt(varPopY);
+	const double corr = covarPop / sq;
+
+	double d;
+
+	switch (type)
+	{
+		case TYPE_REGR_AVGX:
+			d = avgX;
+			break;
+
+		case TYPE_REGR_AVGY:
+			d = avgY;
+			break;
+
+		case TYPE_REGR_INTERCEPT:
+			if (varPopX == 0.0)
+				return NULL;
+			else
+				d = avgY - slope * avgX;
+			break;
+
+		case TYPE_REGR_R2:
+			if (varPopX == 0.0)
+				return NULL;
+			else if (varPopY == 0.0)
+				d = 1.0;
+			else if (sq == 0.0)
+				return NULL;
+			else
+				d = corr * corr;
+			break;
+
+		case TYPE_REGR_SLOPE:
+			if (varPopX == 0.0)
+				return NULL;
+			else
+				d = covarPop / varPopX;
+			break;
+
+		case TYPE_REGR_SXX:
+			d = impure->vlux_count * varPopX;
+			break;
+
+		case TYPE_REGR_SXY:
+			d = impure->vlux_count * covarPop;
+			break;
+
+		case TYPE_REGR_SYY:
+			d = impure->vlux_count * varPopY;
+			break;
+	}
+
+	dsc temp;
+	temp.makeDouble(&d);
+
+	EVL_make_value(tdbb, &temp, impure);
+
+	return &impure->vlu_desc;
+}
+
+AggNode* RegrAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
+{
+	return FB_NEW(getPool()) RegrAggNode(getPool(), type,
+		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, arg2));
+}
+
+
+//--------------------
+
+
+static AggNode::Register<RegrCountAggNode> regrCountAggInfo("REGR_COUNT", blr_agg_regr_count);
+
+RegrCountAggNode::RegrCountAggNode(MemoryPool& pool, ValueExprNode* aArg, ValueExprNode* aArg2)
+	: AggNode(pool, regrCountAggInfo, false, false, aArg),
+	  arg2(aArg2)
+{
+	addChildNode(arg2, arg2);
+}
+
+DmlNode* RegrCountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
+{
+	ValueExprNode* a1 = PAR_parse_value(tdbb, csb);
+	ValueExprNode* a2 = PAR_parse_value(tdbb, csb);
+	return FB_NEW(pool) RegrCountAggNode(pool, a1, a2);
+}
+
+void RegrCountAggNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
+{
+	desc->makeInt64(0);
+}
+
+void RegrCountAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
+{
+	desc->makeInt64(0);
+}
+
+ValueExprNode* RegrCountAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
+{
+	RegrCountAggNode* node = FB_NEW(*tdbb->getDefaultPool()) RegrCountAggNode(*tdbb->getDefaultPool());
+	node->nodScale = nodScale;
+	node->arg = copier.copy(tdbb, arg);
+	node->arg2 = copier.copy(tdbb, arg2);
+	return node;
+}
+
+void RegrCountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
+{
+	AggNode::aggInit(tdbb, request);
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	impure->make_int64(0);
+}
+
+bool RegrCountAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
+{
+	dsc* desc = NULL;
+	dsc* desc2 = NULL;
+
+	desc = EVL_expr(tdbb, request, arg);
+	if (request->req_flags & req_null)
+		return false;
+
+	desc2 = EVL_expr(tdbb, request, arg2);
+	if (request->req_flags & req_null)
+		return false;
+
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+	++impure->vlu_misc.vlu_int64;
+
+	return true;
+}
+
+void RegrCountAggNode::aggPass(thread_db* /*tdbb*/, jrd_req* /*request*/, dsc* /*desc*/) const
+{
+	fb_assert(false);
+}
+
+dsc* RegrCountAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
+{
+	impure_value_ex* impure = request->getImpure<impure_value_ex>(impureOffset);
+
+	if (!impure->vlu_desc.dsc_dtype)
+		return NULL;
+
+	return &impure->vlu_desc;
+}
+
+AggNode* RegrCountAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
+{
+	return FB_NEW(getPool()) RegrCountAggNode(getPool(),
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, arg2));
 }
 

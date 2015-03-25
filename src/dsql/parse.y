@@ -579,6 +579,15 @@ using namespace Firebird;
 %token <metaNamePtr> COVAR_SAMP
 %token <metaNamePtr> COVAR_POP
 %token <metaNamePtr> CORR
+%token <metaNamePtr> REGR_AVGX
+%token <metaNamePtr> REGR_AVGY
+%token <metaNamePtr> REGR_COUNT
+%token <metaNamePtr> REGR_INTERCEPT
+%token <metaNamePtr> REGR_R2
+%token <metaNamePtr> REGR_SLOPE
+%token <metaNamePtr> REGR_SXX
+%token <metaNamePtr> REGR_SXY
+%token <metaNamePtr> REGR_SYY
 
 // precedence declarations for expression evaluation
 
@@ -3824,6 +3833,15 @@ keyword_or_column
 	| KW_FALSE
 	| OFFSET
 	| OVER
+	| REGR_AVGX
+	| REGR_AVGY
+	| REGR_COUNT
+	| REGR_INTERCEPT
+	| REGR_R2
+	| REGR_SLOPE
+	| REGR_SXX
+	| REGR_SXY
+	| REGR_SYY
 	| RETURN
 	| RDB_RECORD_VERSION
 	| ROW
@@ -6817,6 +6835,24 @@ aggregate_function
 		{ $$ = newNode<CorrAggNode>(CorrAggNode::TYPE_COVAR_POP, $3, $5); }
 	| CORR '(' value ',' value ')'
 		{ $$ = newNode<CorrAggNode>(CorrAggNode::TYPE_CORR, $3, $5); }
+	| REGR_AVGX '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_AVGX, $3, $5); }
+	| REGR_AVGY '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_AVGY, $3, $5); }
+	| REGR_COUNT '(' value ',' value ')'
+		{ $$ = newNode<RegrCountAggNode>($3, $5); }
+	| REGR_INTERCEPT '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_INTERCEPT, $3, $5); }
+	| REGR_R2 '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_R2, $3, $5); }
+	| REGR_SLOPE '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_SLOPE, $3, $5); }
+	| REGR_SXX '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_SXX, $3, $5); }
+	| REGR_SXY '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_SXY, $3, $5); }
+	| REGR_SYY '(' value ',' value ')'
+		{ $$ = newNode<RegrAggNode>(RegrAggNode::TYPE_REGR_SYY, $3, $5); }
 	;
 
 %type <aggNode> window_function

@@ -291,6 +291,14 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * New feature CORE-4722
+        Aggregate linear regression functions
+      See also:
+        /doc/sql.extensions/README.regr_functions.txt
+      Contributor(s):
+        Hajime Nakagami <nakagami at gmail.com>
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * New feature CORE-4717
         Aggregate statistical functions COVAR_SAMP, COVAR_POP and CORR
       See also:

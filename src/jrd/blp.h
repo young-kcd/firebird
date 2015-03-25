@@ -248,5 +248,14 @@ static const struct
 	{"agg_covar_samp", two},
 	{"agg_covar_pop", two},
 	{"agg_corr", two},
+	{"blr_agg_regr_avgx", two},
+	{"blr_agg_regr_avgy", two},
+	{"blr_agg_regr_count", two},
+	{"blr_agg_regr_intercept", two},
+	{"blr_agg_regr_r2", two},
+	{"blr_agg_regr_slope", two},
+	{"blr_agg_regr_sxx", two},
+	{"blr_agg_regr_sxy", two},
+	{"blr_agg_regr_syy", two},
 	{0, 0}
 };

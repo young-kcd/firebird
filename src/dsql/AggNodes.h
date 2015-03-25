@@ -234,6 +234,77 @@ private:
 	ULONG impure2Offset;
 };
 
+class RegrAggNode : public AggNode
+{
+public:
+	enum RegrType
+	{
+		TYPE_REGR_AVGX,
+		TYPE_REGR_AVGY,
+		TYPE_REGR_INTERCEPT,
+		TYPE_REGR_R2,
+		TYPE_REGR_SLOPE,
+		TYPE_REGR_SXX,
+		TYPE_REGR_SXY,
+		TYPE_REGR_SYY
+	};
+
+	struct RegrImpure
+	{
+		double x, x2, y, y2, xy;
+	};
+
+	explicit RegrAggNode(MemoryPool& pool, RegrType aType,
+		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
+
+	virtual void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+protected:
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
+
+public:
+	const RegrType type;
+	NestConst<ValueExprNode> arg2;
+
+private:
+	ULONG impure2Offset;
+};
+
+class RegrCountAggNode : public AggNode
+{
+public:
+	explicit RegrCountAggNode(MemoryPool& pool,
+		ValueExprNode* aArg = NULL, ValueExprNode* aArg2 = NULL);
+
+	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
+
+	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
+	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
+	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
+
+	virtual void aggInit(thread_db* tdbb, jrd_req* request) const;
+	virtual bool aggPass(thread_db* tdbb, jrd_req* request) const;
+	virtual void aggPass(thread_db* tdbb, jrd_req* request, dsc* desc) const;
+	virtual dsc* aggExecute(thread_db* tdbb, jrd_req* request) const;
+
+protected:
+	virtual AggNode* dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/;
+
+public:
+	NestConst<ValueExprNode> arg2;
+};
+
 } // namespace
 
 #endif // DSQL_AGG_NODES_H
