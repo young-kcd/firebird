@@ -348,8 +348,8 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 /// class jrd_rel
 
 inline jrd_rel::jrd_rel(MemoryPool& p)
-		: rel_name(p), rel_owner_name(p), rel_view_contexts(p), rel_security_name(p), 
-		  rel_flags(REL_gc_lockneed)
+		: rel_flags(REL_gc_lockneed), rel_name(p), rel_owner_name(p),
+		  rel_view_contexts(p), rel_security_name(p)
 {
 }
 
