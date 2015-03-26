@@ -1,3 +1,7 @@
+ 2015-03-25 10:31  dimitr 
+   M src/jrd/Relation.h
+Avoid compiler warnings.
+
  2015-03-24 13:18  dimitr 
    M doc/WhatsNew
 Updated the docs.
