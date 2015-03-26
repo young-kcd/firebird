@@ -1,3 +1,23 @@
+ 2015-03-25 17:52  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/Nodes.h
+   M src/dsql/WinNodes.cpp
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+Rework new aggregate functions so that they use the single blr_agg_function BLR verb.
+
+ 2015-03-25 17:51  asfernandes 
+   M doc/WhatsNew
+   A doc/sql.extensions/README.regr_functions.txt
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/parse.y
+   M src/jrd/blp.h
+   M src/jrd/blr.h
+   M src/yvalve/keywords.cpp
+Feature CORE-4722 - Aggregate linear regression functions.
+
  2015-03-24 01:30  robocop 
    M src/jrd/vio.cpp
 Misc.
