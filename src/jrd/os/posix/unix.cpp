@@ -28,6 +28,7 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -54,19 +55,19 @@
 #include "../jrd/ods.h"
 #include "../jrd/lck.h"
 #include "../jrd/cch.h"
+#include "../jrd/ibase.h"
 #include "gen/iberror.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/err_proto.h"
-#include "../yvalve/gds_proto.h"
-#include "../common/isc_proto.h"
-#include "../common/isc_f_proto.h"
-#include "../common/os/isc_i_proto.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/isc_proto.h"
+#include "../jrd/isc_f_proto.h"
+#include "../jrd/os/isc_i_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../common/classes/init.h"
-#include "../common/os/os_utils.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -104,16 +105,15 @@ using namespace Firebird;
 #define O_BINARY	0
 #endif
 
-// please undefine FCNTL_BROKEN for operating systems,
-// that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
-
 static const mode_t MASK = 0660;
 
 #define FCNTL_BROKEN
-static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, FbStatusVector*);
-static jrd_file* setup_file(Database*, const PathName&, const int, const bool, const bool);
-static bool lockDatabaseFile(int desc, const bool shareMode, const bool temporary = false);
-static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, FbStatusVector* = NULL);
+// please undefine FCNTL_BROKEN for operating systems,
+// that can successfully change BOTH O_DIRECT and O_SYNC using fcntl()
+
+static jrd_file* seek_file(jrd_file*, BufferDesc*, FB_UINT64*, ISC_STATUS*);
+static jrd_file* setup_file(Database*, const PathName&, int, bool);
+static bool unix_error(const TEXT*, const jrd_file*, ISC_STATUS, ISC_STATUS* = NULL);
 #if !(defined HAVE_PREAD && defined HAVE_PWRITE)
 static SLONG pread(int, SCHAR*, SLONG, SLONG);
 static SLONG pwrite(int, SCHAR*, SLONG, SLONG);
@@ -124,6 +124,7 @@ static int  raw_devices_unlink_database (const PathName&);
 #endif
 static int	openFile(const char*, const bool, const bool, const bool);
 static void	maybeCloseFile(int&);
+
 
 int PIO_add_file(Database* dbb, jrd_file* main_file, const PathName& file_name, SLONG start)
 {
@@ -142,7 +143,7 @@ int PIO_add_file(Database* dbb, jrd_file* main_file, const PathName& file_name, 
  *	have been locked before entry.
  *
  **************************************/
-	jrd_file* new_file = PIO_create(dbb, file_name, false, false);
+	jrd_file* new_file = PIO_create(dbb, file_name, false, false, false);
 	if (!new_file)
 		return 0;
 
@@ -187,7 +188,7 @@ void PIO_close(jrd_file* main_file)
 
 
 jrd_file* PIO_create(Database* dbb, const PathName& file_name,
-	const bool overwrite, const bool temporary)
+	const bool overwrite, const bool temporary, const bool /*share_delete*/)
 {
 /**************************************
  *
@@ -215,22 +216,11 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 #endif
 #endif
 
-	const int desc = os_utils::open(file_name.c_str(), flag, 0666);
+	const int desc = open(file_name.c_str(), flag, 0666);
 	if (desc == -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open O_CREAT") << Arg::Str(file_name) <<
                  Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
-	}
-
-	const bool shareMode = dbb->dbb_config->getSharedDatabase();
-	if (!lockDatabaseFile(desc, shareMode, temporary))
-	{
-		int lockErrno = errno;
-		close(desc);
-		// error when locking file almost always means it's locked by someone else
-		// therefore do not remove file here (contrary to chmod error)
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_create_err) << Arg::Unix(lockErrno));
 	}
 
 #ifdef HAVE_FCHMOD
@@ -272,11 +262,11 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
 	PathName expanded_name(file_name);
 	ISC_expand_filename(expanded_name, false);
 
-	return setup_file(dbb, expanded_name, desc, false, shareMode);
+	return setup_file(dbb, expanded_name, desc, false);
 }
 
 
-bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, FB_SIZE_T len_expanded)
+bool PIO_expand(const TEXT* file_name, USHORT file_length, TEXT* expanded_name, size_t len_expanded)
 {
 /**************************************
  *
@@ -316,7 +306,7 @@ void PIO_extend(Database* dbb, jrd_file* main_file, const ULONG extPages, const 
 									MAX_ULONG : file->fil_max_page - file->fil_min_page + 1;
 		if (filePages < fileMaxPages)
 		{
-			if (file->fil_flags & FIL_no_fast_extend)
+			if (file->fil_flags & FIL_no_fast_extend) 
 				return;
 
 			const ULONG extendBy = MIN(fileMaxPages - filePages + file->fil_fudge, leftPages);
@@ -376,10 +366,9 @@ void PIO_flush(Database* dbb, jrd_file* main_file)
 
 	// Since all SUPERSERVER_V2 database and shadow I/O is synchronous, this is a no-op.
 #ifndef SUPERSERVER_V2
-	MutexLockGuard guard(main_file->fil_mutex, FB_FUNCTION);
+	MutexLockGuard guard(main_file->fil_mutex);
 
-	///Database::Checkout dcoHolder(dbb);
-
+	Database::CheckoutIfNotInAst dcoHolder(dbb);
 	for (jrd_file* file = main_file; file; file = file->fil_next)
 	{
 		if (file->fil_desc != -1)
@@ -434,11 +423,6 @@ void PIO_force_write(jrd_file* file, const bool forcedWrites, const bool notUseF
 		{
 			unix_error("re open() for SYNC/DIRECT", file, isc_io_open_err);
 		}
-
-		if (!lockDatabaseFile(file->fil_desc, file->fil_flags & FIL_sh_write))
-		{
-			unix_error("lock", file, isc_io_open_err);
-		}
 #endif //FCNTL_BROKEN
 
 #ifdef SOLARIS
@@ -487,6 +471,34 @@ ULONG PIO_get_number_of_pages(const jrd_file* file, const USHORT pagesize)
 }
 
 
+void PIO_get_unique_file_id(const Jrd::jrd_file* file, UCharBuffer& id)
+{
+/**************************************
+ *
+ *	P I O _ g e t _ u n i q u e _ f i l e _ i d
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a binary string that uniquely identifies the file.
+ *
+ **************************************/
+	struct stat statistics;
+	if (fstat(file->fil_desc, &statistics) != 0) {
+		unix_error("fstat", file, isc_io_access_err);
+	}
+
+	const size_t len1 = sizeof(statistics.st_dev);
+	const size_t len2 = sizeof(statistics.st_ino);
+
+	UCHAR* p = id.getBuffer(len1 + len2);
+
+	memcpy(p, &statistics.st_dev, len1);
+	p += len1;
+	memcpy(p, &statistics.st_ino, len2);
+}
+
+
 void PIO_header(Database* dbb, SCHAR* address, int length)
 {
 /**************************************
@@ -496,7 +508,8 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
  **************************************
  *
  * Functional description
- *	Read the page header.
+ *	Read the page header.  This assumes that the file has not been
+ *	repositioned since the file was originally mapped.
  *
  **************************************/
 	int i;
@@ -510,6 +523,22 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
+#ifdef ISC_DATABASE_ENCRYPTION
+		if (dbb->dbb_encrypt_key)
+		{
+			SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
+
+			if ((bytes = pread(file->fil_desc, spare_buffer, length, 0)) == (FB_UINT64) -1)
+			{
+				if (SYSCALL_INTERRUPTED(errno))
+					continue;
+				unix_error("read", file, isc_io_read_err);
+			}
+
+			(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data, spare_buffer, length, address);
+		}
+		else
+#endif // ISC_DATABASE_ENCRYPTION
 		if ((bytes = pread(file->fil_desc, address, length, 0)) == (FB_UINT64) -1)
 		{
 			if (SYSCALL_INTERRUPTED(errno))
@@ -545,7 +574,7 @@ void PIO_header(Database* dbb, SCHAR* address, int length)
 static Firebird::InitInstance<ZeroBuffer> zeros;
 
 
-USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_vector,
+USHORT PIO_init_data(Database* dbb, jrd_file* main_file, ISC_STATUS* status_vector,
 					 ULONG startPage, USHORT initPages)
 {
 /**************************************
@@ -563,12 +592,13 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
 
 	// Fake buffer, used in seek_file. Page space ID have no matter there
 	// as we already know file to work with
-	BufferDesc bdb(dbb->dbb_bcb);
+	BufferDesc bdb;
+	bdb.bdb_dbb = dbb;
 	bdb.bdb_page = PageNumber(0, startPage);
 
 	FB_UINT64 offset;
 
-	///Database::Checkout dcoHolder(dbb);
+	Database::CheckoutIfNotInAst dcoHolder(dbb);
 
 	jrd_file* file = seek_file(main_file, &bdb, &offset, status_vector);
 
@@ -614,7 +644,8 @@ USHORT PIO_init_data(Database* dbb, jrd_file* main_file, FbStatusVector* status_
 
 jrd_file* PIO_open(Database* dbb,
 				   const PathName& string,
-				   const PathName& file_name)
+				   const PathName& file_name,
+				   const bool /*share_delete*/)
 {
 /**************************************
  *
@@ -642,20 +673,6 @@ jrd_file* PIO_open(Database* dbb,
 					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 		}
 
-		readOnly = true;
-	}
-	else if (geteuid() == 0)
-	{
-		// root has too many rights - therefore artificially check for readonly file
-		struct stat st;
-		if (fstat(desc, &st) == 0)
-		{
-			readOnly = ((st.st_mode & 0222) == 0);	// nobody has write permissions
-		}
-	}
-
-	if (readOnly)
-	{
 		// If this is the primary file, set Database flag to indicate that it is
 		// being opened ReadOnly. This flag will be used later to compare with
 		// the Header Page flag setting to make sure that the database is set ReadOnly.
@@ -663,13 +680,7 @@ jrd_file* PIO_open(Database* dbb,
 		PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 		if (!pageSpace->file)
 			dbb->dbb_flags |= DBB_being_opened_read_only;
-	}
-
-	const bool shareMode = dbb->dbb_config->getSharedDatabase();
-	if (!lockDatabaseFile(desc, shareMode || readOnly))
-	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
+		readOnly = true;
 	}
 
 	// posix_fadvise(desc, 0, 0, POSIX_FADV_RANDOM);
@@ -686,11 +697,11 @@ jrd_file* PIO_open(Database* dbb,
 	}
 #endif // SUPPORT_RAW_DEVICES
 
-	return setup_file(dbb, string, desc, readOnly, shareMode);
+	return setup_file(dbb, string, desc, readOnly);
 }
 
 
-bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
+bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -709,21 +720,43 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* s
 		return unix_error("read", file, isc_io_read_err, status_vector);
 	}
 
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
-	///Database::Checkout dcoHolder(dbb);
+	Database* dbb = bdb->bdb_dbb;
+	Database::CheckoutIfNotInAst dcoHolder(dbb);
 
 	const FB_UINT64 size = dbb->dbb_page_size;
 
-	for (i = 0; i < IO_RETRY; i++)
+#ifdef ISC_DATABASE_ENCRYPTION
+	if (dbb->dbb_encrypt_key)
 	{
-		if (!(file = seek_file(file, bdb, &offset, status_vector)))
-			return false;
-		if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
-			break;
-		if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
-			return unix_error("read", file, isc_io_read_err, status_vector);
+		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
+
+		for (i = 0; i < IO_RETRY; i++)
+		{
+			if (!(file = seek_file(file, bdb, &offset, status_vector)))
+				return false;
+            if ((bytes = pread (file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
+			{
+				(*dbb->dbb_decrypt) (dbb->dbb_encrypt_key->str_data, spare_buffer, size, page);
+				break;
+			}
+			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
+				return unix_error("read", file, isc_io_read_err, status_vector);
+		}
 	}
+	else
+#endif // ISC_DATABASE_ENCRYPTION
+	{
+		for (i = 0; i < IO_RETRY; i++)
+		{
+			if (!(file = seek_file(file, bdb, &offset, status_vector)))
+				return false;
+			if ((bytes = pread(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
+				break;
+			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
+				return unix_error("read", file, isc_io_read_err, status_vector);
+		}
+	}
+
 
 	if (i == IO_RETRY)
 	{
@@ -749,7 +782,7 @@ bool PIO_read(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* s
 }
 
 
-bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* status_vector)
+bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -768,20 +801,40 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* 
 	if (file->fil_desc == -1)
 		return unix_error("write", file, isc_io_write_err, status_vector);
 
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
-	///Database::Checkout dcoHolder(dbb);
+	Database* dbb = bdb->bdb_dbb;
+	Database::CheckoutIfNotInAst dcoHolder(dbb);
 
 	const SLONG size = dbb->dbb_page_size;
 
-	for (i = 0; i < IO_RETRY; i++)
+#ifdef ISC_DATABASE_ENCRYPTION
+	if (dbb->dbb_encrypt_key)
 	{
-		if (!(file = seek_file(file, bdb, &offset, status_vector)))
-			return false;
-		if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
-			break;
-		if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
-			return unix_error("write", file, isc_io_write_err, status_vector);
+		SLONG spare_buffer[MAX_PAGE_SIZE / sizeof(SLONG)];
+
+		(*dbb->dbb_encrypt) (dbb->dbb_encrypt_key->str_data, page, size, spare_buffer);
+
+		for (i = 0; i < IO_RETRY; i++)
+		{
+			if (!(file = seek_file(file, bdb, &offset, status_vector)))
+				return false;
+			if ((bytes = pwrite(file->fil_desc, spare_buffer, size, LSEEK_OFFSET_CAST offset)) == size)
+				break;
+			if (bytes == -1U && !SYSCALL_INTERRUPTED(errno))
+				return unix_error("write", file, isc_io_write_err, status_vector);
+		}
+	}
+	else
+#endif // ISC_DATABASE_ENCRYPTION
+	{
+		for (i = 0; i < IO_RETRY; i++)
+		{
+			if (!(file = seek_file(file, bdb, &offset, status_vector)))
+				return false;
+			if ((bytes = pwrite(file->fil_desc, page, size, LSEEK_OFFSET_CAST offset)) == size)
+				break;
+			if (bytes == (SLONG) -1 && !SYSCALL_INTERRUPTED(errno))
+				return unix_error("write", file, isc_io_write_err, status_vector);
+		}
 	}
 
 
@@ -791,7 +844,7 @@ bool PIO_write(jrd_file* file, BufferDesc* bdb, Ods::pag* page, FbStatusVector* 
 
 
 static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
-	FbStatusVector* status_vector)
+	ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -804,8 +857,7 @@ static jrd_file* seek_file(jrd_file* file, BufferDesc* bdb, FB_UINT64* offset,
  *	file block and seek to the proper page in that file.
  *
  **************************************/
-	BufferControl* bcb = bdb->bdb_bcb;
-	Database* dbb = bcb->bcb_database;
+	Database* const dbb = bdb->bdb_dbb;
 	ULONG page = bdb->bdb_page.getPageNum();
 
 	for (;; file = file->fil_next)
@@ -865,7 +917,16 @@ static int openFile(const char* name, const bool forcedWrites,
 		flag |= O_DIRECT;
 #endif
 
-	return os_utils::open(name, flag);
+	for (int i = 0; i < IO_RETRY; i++)
+	{
+		int desc = open(name, flag);
+		if (desc != -1)
+			return desc;
+		if (!SYSCALL_INTERRUPTED(errno))
+			break;
+	}
+
+	return -1;
 }
 
 
@@ -892,9 +953,8 @@ static void maybeCloseFile(int& desc)
 
 static jrd_file* setup_file(Database* dbb,
 							const PathName& file_name,
-							const int desc,
-							const bool readOnly,
-							const bool shareMode)
+							int desc,
+							bool read_only)
 {
 /**************************************
  *
@@ -915,10 +975,8 @@ static jrd_file* setup_file(Database* dbb,
 		file->fil_max_page = MAX_ULONG;
 		strcpy(file->fil_string, file_name.c_str());
 
-		if (readOnly)
+		if (read_only)
 			file->fil_flags |= FIL_readonly;
-		if (shareMode)
-			file->fil_flags |= FIL_sh_write;
 	}
 	catch (const Exception&)
 	{
@@ -932,21 +990,9 @@ static jrd_file* setup_file(Database* dbb,
 }
 
 
-static bool lockDatabaseFile(int desc, const bool share, const bool temporary)
-{
-	struct flock lck;
-	lck.l_type = (!temporary && share) ? F_RDLCK : F_WRLCK;
-	lck.l_whence = SEEK_SET;
-	lck.l_start = 0;
-	lck.l_len = 0;
-
-	return fcntl(desc, F_SETLK, &lck) == 0;
-}
-
-
 static bool unix_error(const TEXT* string,
 					   const jrd_file* file, ISC_STATUS operation,
-					   FbStatusVector* status_vector)
+					   ISC_STATUS* status_vector)
 {
 /**************************************
  *
@@ -959,17 +1005,17 @@ static bool unix_error(const TEXT* string,
  *	to do something about it.  Harumph!
  *
  **************************************/
-	Arg::Gds err(isc_io_error);
-	err << string << file->fil_string <<
-		Arg::Gds(operation) << Arg::Unix(errno);
-
 	if (!status_vector)
 	{
-		ERR_post(err);
+		ERR_post(Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+				 Arg::Gds(operation) << Arg::Unix(errno));
 	}
 
-	ERR_build_status(status_vector, err);
-	iscLogStatus(NULL, status_vector);
+	ERR_build_status(status_vector,
+					 Arg::Gds(isc_io_error) << Arg::Str(string) << Arg::Str(file->fil_string) <<
+					 Arg::Gds(operation) << Arg::Unix(errno));
+
+	gds__log_status(0, status_vector);
 
 	return false;
 }
@@ -1157,7 +1203,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	if (!Ods::isSupported(hp->hdr_ods_version, hp->hdr_ods_minor))
 		goto quit;
 
-	if (hp->hdr_page_size < MIN_NEW_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
+	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
 		goto quit;
 
 	// At this point we think we have identified a database on the device.
@@ -1178,12 +1224,18 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 static int raw_devices_unlink_database(const PathName& file_name)
 {
 	char header[MIN_PAGE_SIZE];
+	int desc = -1;
 
-	int desc = os_utils::open(file_name.c_str(), O_RDWR | O_BINARY);
-	if (desc < 0)
+	for (int i = 0; i < IO_RETRY; i++)
 	{
-		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
-				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
+		if ((desc = open (file_name.c_str(), O_RDWR | O_BINARY)) != -1)
+			break;
+
+		if (!SYSCALL_INTERRUPTED(errno))
+		{
+			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("open") << Arg::Str(file_name) <<
+					 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
+		}
 	}
 
 	memset(header, 0xa5, sizeof(header));

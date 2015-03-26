@@ -32,16 +32,21 @@
 
 
 # Please don't use compiler/platform specific flags here - nmcc 02-Nov-2002
-WFLAGS:=-I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include $(CPPFLAGS)
+WFLAGS:=$(CPPFLAGS) -I$(SRC_ROOT)/include/gen -I$(SRC_ROOT)/include -I$(SRC_ROOT)/vulcan \
+	-DNAMESPACE=Vulcan
 
-ifeq ($(TARGET),Release)
+ifeq ($(STD_ICU),false)
+  WFLAGS:= $(WFLAGS) -I$(ROOT)/extern/icu/source/common -I$(ROOT)/extern/icu/source/i18n
+endif
+
+ifeq ($(IsProdTypeBuild),Y)
   WFLAGS:= $(WFLAGS) $(PROD_FLAGS)
 else
   WFLAGS:= $(WFLAGS) $(DEV_FLAGS) -DDEV_BUILD
 endif
 
 WCFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CFLAGS) $(GLOB_OPTIONS)
-WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(RTTI_FLAG) $(CXXFLAGS) $(GLOB_OPTIONS)
+WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(CXXFLAGS) $(GLOB_OPTIONS)
 
 # Here we have definitions for using the preprocessor.
 
@@ -60,9 +65,9 @@ WCXXFLAGS:= $(WFLAGS) $(THR_FLAGS) $(RTTI_FLAG) $(CXXFLAGS) $(GLOB_OPTIONS)
 #	$(ECHO) $(testgpre)
 
 
-GPRE_FLAGS= -m -z -n
-JRD_GPRE_FLAGS = -n -z -gds_cxx -ids
-ISQL_GPRE_FLAGS = -m -z -n -ocxx
+GPRE_FLAGS=	-r -m -z -n
+JRD_GPRE_FLAGS = -n -z -gds_cxx -raw -ids
+DSQL_GPRE_FLAGS = -r -m -z -n
 
 
 .SUFFIXES: .c .e .epp .cpp
@@ -71,32 +76,40 @@ ISQL_GPRE_FLAGS = -m -z -n -ocxx
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $< $@
 
 
-$(OBJ)/jrd/%.cpp: $(SRC_ROOT)/jrd/%.epp
+$(OBJ)/jrd/%.cpp: $(SRC_ROOT)/jrd/%.epp 
 	$(GPRE_CURRENT) $(JRD_GPRE_FLAGS) $(firstword $<) $@
 
-$(OBJ)/isql/%.cpp: $(SRC_ROOT)/isql/%.epp
-	$(GPRE_CURRENT) $(ISQL_GPRE_FLAGS) $< $@
+$(OBJ)/dsql/%.cpp: $(SRC_ROOT)/dsql/%.epp
+	$(GPRE_CURRENT) $(DSQL_GPRE_FLAGS) $< $@
 
-$(OBJ)/%.cpp: $(SRC_ROOT)/%.epp
+$(OBJ)/%.cpp: $(SRC_ROOT)/%.epp 
 	$(GPRE_CURRENT) $(GPRE_FLAGS) $(firstword $<) $@
 
 
 .SUFFIXES: .lo .o .cpp .c
 
-%.o: %.c
+$(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_PATH)/%.cpp
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+
+$(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_PATH)/%.cpp
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+
+ifneq ($(strip $(PLATFORM_FALLBACK)),)
+$(OBJ)/jrd/%.o: $(SRC_ROOT)/jrd/$(PLATFORM_FALLBACK)/%.cpp
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+
+$(OBJ)/utilities/ntrace/%.o: $(SRC_ROOT)/utilities/ntrace/$(PLATFORM_FALLBACK)/%.cpp
+	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
+endif
+
+$(OBJ)/%.o: $(SRC_ROOT)/%.c 
 	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
 
-$(OBJ)/%.o: $(SRC_ROOT)/%.c
-	$(CC) $(WCFLAGS) -c $(firstword $<) -o $@
-	@sed $(INLINE_EDIT_SED) -e "1,2s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
-
-$(OBJ)/%.o: $(OBJ)/%.cpp
+$(OBJ)/%.o: $(OBJ)/%.cpp 
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed $(INLINE_EDIT_SED) -e "1,2s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
-$(OBJ)/%.o: $(SRC_ROOT)/%.cpp
+$(OBJ)/%.o: $(SRC_ROOT)/%.cpp 
 	$(CXX) $(WCXXFLAGS) -c $(firstword $<) -o $@
-	@sed $(INLINE_EDIT_SED) -e "1,2s/:/: \$$(wildcard/" -e "\$$s/\(.*\)/\\1)/" $(patsubst %.o,%.d,$@)
 
 .SUFFIXES: .epp .e
 
@@ -104,13 +117,3 @@ $(OBJ)/%.o: $(SRC_ROOT)/%.cpp
 
 $(GEN_ROOT)/%.res: $(SRC_ROOT)/%.rc
 	windres --output-format=coff --include-dir=$(<D) $< $@
-
-# Rule for making gbak files when cross-compiling
-
-.SUFFIXES: .gbak .fdb
-
-$(GEN_ROOT)/$(TARGET)/%.gbak:	$(GEN_ROOT)/Native/%.fdb
-	$(RUN_GBAK) -b $(firstword $<) $(firstword $@)
-
-$(GEN_ROOT)/%.gbak:	$(GEN_ROOT)/%.fdb
-	$(RUN_GBAK) -b $(firstword $<) $(firstword $@)

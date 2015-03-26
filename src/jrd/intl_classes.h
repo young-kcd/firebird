@@ -29,13 +29,13 @@
 #define JRD_INTL_CLASSES_H
 
 #include "firebird.h"
-
-#include "../common/intlobj_new.h"
+#include "../jrd/jrd.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/constants.h"
-#include "../common/unicode_util.h"
-#include "../common/CsConvert.h"
-#include "../common/CharSet.h"
-#include "../common/TextType.h"
+#include "../jrd/unicode_util.h"
+#include "../jrd/CsConvert.h"
+#include "../jrd/CharSet.h"
+#include "../jrd/TextType.h"
 
 namespace Jrd {
 
@@ -61,17 +61,6 @@ protected:
 	TextType* textType;
 };
 
-class BaseSubstringSimilarMatcher : public PatternMatcher
-{
-public:
-	BaseSubstringSimilarMatcher(MemoryPool& pool, TextType* ttype)
-		: PatternMatcher(pool, ttype)
-	{
-	}
-
-	virtual void getResultInfo(unsigned* start, unsigned* length) = 0;
-};
-
 class NullStrConverter
 {
 public:
@@ -80,7 +69,7 @@ public:
 	}
 };
 
-template <typename PrevConverter = NullStrConverter>
+template <typename PrevConverter>
 class UpcaseConverter : public PrevConverter
 {
 public:
@@ -106,7 +95,7 @@ private:
 	UCHAR* out_str;
 };
 
-template <typename PrevConverter = NullStrConverter>
+template <typename PrevConverter>
 class CanonicalConverter : public PrevConverter
 {
 public:
@@ -141,6 +130,9 @@ private:
 };
 
 } // namespace Jrd
+
+
+#include "../jrd/Collation.h"
 
 
 #endif	// JRD_INTL_CLASSES_H

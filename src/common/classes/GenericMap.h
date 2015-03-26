@@ -133,10 +133,8 @@ public:
 
 		TreeAccessor treeAccessor(&from.tree);
 
-		if (treeAccessor.getFirst())
-		{
-			while (true)
-			{
+		if (treeAccessor.getFirst()) {
+			while (true) {
 				bool haveMore = treeAccessor.fastRemove();
 				if (!haveMore)
 					break;
@@ -151,10 +149,8 @@ public:
 	{
 		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.getFirst())
-		{
-			while (true)
-			{
+		if (treeAccessor.getFirst()) {
+			while (true) {
 				KeyValuePair* temp = treeAccessor.current();
 				bool haveMore = treeAccessor.fastRemove();
 				delete temp;
@@ -171,8 +167,7 @@ public:
 	{
 		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.locate(key))
-		{
+		if (treeAccessor.locate(key)) {
 			KeyValuePair* var = treeAccessor.current();
 			treeAccessor.fastRemove();
 			delete var;
@@ -188,8 +183,7 @@ public:
 	{
 		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.locate(key))
-		{
+		if (treeAccessor.locate(key)) {
 			treeAccessor.current()->second = value;
 			return true;
 		}
@@ -217,12 +211,11 @@ public:
 	}
 
 	// Returns true if value is found
-	bool get(const KeyType& key, ValueType& value) const
+	bool get(const KeyType& key, ValueType& value)
 	{
-		ConstTreeAccessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
-		if (treeAccessor.locate(key))
-		{
+		if (treeAccessor.locate(key)) {
 			value = treeAccessor.current()->second;
 			return true;
 		}
@@ -231,9 +224,9 @@ public:
 	}
 
 	// Returns pointer to the found value or null otherwise
-	ValueType* get(const KeyType& key) const
+	ValueType* get(const KeyType& key)
 	{
-		ConstTreeAccessor treeAccessor(&tree);
+		TreeAccessor treeAccessor(&tree);
 
 		if (treeAccessor.locate(key)) {
 			return &treeAccessor.current()->second;
@@ -242,9 +235,9 @@ public:
 		return NULL;
 	}
 
-	bool exist(const KeyType& key) const
+	bool exist(const KeyType& key)
 	{
-		return ConstTreeAccessor(&tree).locate(key);
+		return TreeAccessor(&tree).locate(key);
 	}
 
 	size_t count() const { return mCount; }

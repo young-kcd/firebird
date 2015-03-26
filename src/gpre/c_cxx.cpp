@@ -32,6 +32,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include "../jrd/common.h"
 #include <stdarg.h>
 #include "../jrd/ibase.h"
 #include "../gpre/gpre.h"
@@ -41,8 +42,8 @@
 #include "../gpre/gpre_proto.h"
 #include "../gpre/lang_proto.h"
 #include "../gpre/pat_proto.h"
-#include "../common/prett_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../gpre/prett_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 
 
@@ -1098,7 +1099,7 @@ static void gen_blr(void* /*user_arg*/, SSHORT /*offset*/, const char* string)
 	indent = MIN(indent, 192);
 
 	bool first_line = true;
-	int length = static_cast<int>(strlen(p));
+	int length = strlen(p);
 	do {
 		const char* q;
 		if (length + indent > 255)
@@ -1272,7 +1273,7 @@ static void gen_create_database( const act* action, int column)
 	args.pat_vector1 = status_vector(action);
 	args.pat_request = request;
 	args.pat_database = db;
-	args.pat_value1 = static_cast<int>(strlen(db->dbb_filename));
+	args.pat_value1 = strlen(db->dbb_filename);
 	args.pat_condition = (request->req_length || (request->req_flags & REQ_extend_dpb));
 	args.pat_string1 = s1;
 	args.pat_string2 = s2;
@@ -1745,11 +1746,11 @@ static void gen_dyn_immediate( const act* action, int column)
 	printa(column,
 		   statement->dyn_sqlda2 ?
 				"isc_embed_dsql_execute_immed2 (%s, &%s, &%s, 0, %s, %d, %s, %s);" :
-				"isc_embed_dsql_execute_immed (%s, &%s, &%s, 0, %s, %d, %s%s);",
+				"isc_embed_dsql_execute_immed (%s, &%s, &%s, 0, %s, %d, %s);",
 		   global_status_name, database->dbb_name->sym_string, transaction,
 		   statement->dyn_string, gpreGlob.sw_sql_dialect,
 		   statement->dyn_sqlda ? statement->dyn_sqlda : NULL_SQLDA,
-		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "");
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : NULL_SQLDA);
 
 	if (gpreGlob.sw_auto)
 		column -= INDENT;
@@ -1815,13 +1816,13 @@ static void gen_dyn_open( const act* action, int column)
 	printa(column,
 		   statement->dyn_sqlda2 ?
 				"isc_embed_dsql_open2 (%s, &%s, %s, %d, %s, %s);" :
-				"isc_embed_dsql_open (%s, &%s, %s, %d, %s%s);",
+				"isc_embed_dsql_open (%s, &%s, %s, %d, %s);",
 		   global_status_name,
 		   transaction,
 		   s,
 		   gpreGlob.sw_sql_dialect,
 		   statement->dyn_sqlda ? statement->dyn_sqlda : NULL_SQLDA,
-		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : "");
+		   statement->dyn_sqlda2 ? statement->dyn_sqlda2 : NULL_SQLDA);
 
 	if (gpreGlob.sw_auto)
 		column -= INDENT;
@@ -2139,6 +2140,54 @@ static void gen_fetch( const act* action, int column)
 {
 	gpre_req* request = action->act_request;
 
+#ifdef SCROLLABLE_CURSORS
+	gpre_port* port = request->req_aport;
+	if (port)
+	{
+		// set up the reference to point to the correct value
+		// in the linked list of values, and prepare for the
+		// next FETCH statement if applicable
+
+		ref* reference;
+		for (reference = port->por_references; reference; reference = reference->ref_next)
+		{
+			gpre_value* value = reference->ref_values;
+			reference->ref_value = value->val_value;
+			reference->ref_values = value->val_next;
+		}
+
+		// find the direction and offset parameters
+
+		reference = port->por_references;
+		const SCHAR* offset = reference->ref_value;
+		reference = reference->ref_next;
+		const SCHAR* direction = reference->ref_value;
+
+		// the direction in which the engine will scroll is sticky, so check to see
+		// the last direction passed to the engine; if the direction is the same and
+		// the offset is 1, then there is no need to pass the message; this prevents
+		// extra packets and allows for batch fetches in either direction
+
+		printa(column, "if (isc_%ddirection %% 2 != %s || %s != 1)",
+			   request->req_ident, direction, offset);
+		column += INDENT;
+		begin(column);
+
+		// assign the direction and offset parameters to the appropriate message,
+		// then send the message to the engine
+
+		asgn_from(action, port->por_references, column);
+		gen_send(action, port, column);
+		printa(column, "isc_%ddirection = %s;", request->req_ident, direction);
+		column -= INDENT;
+		endp(column);
+
+		printa(column, "if (!SQLCODE)");
+		column += INDENT;
+		begin(column);
+	}
+#endif
+
 	if (request->req_sync)
 	{
 		gen_send(action, request->req_sync, column);
@@ -2172,6 +2221,14 @@ static void gen_fetch( const act* action, int column)
 		column -= INDENT;
 		endp(column);
 	}
+
+#ifdef SCROLLABLE_CURSORS
+	if (port)
+	{
+		column -= INDENT;
+		endp(column);
+	}
+#endif
 }
 
 
@@ -2817,6 +2874,11 @@ static void gen_request(const gpre_req* request)
 		if (request->req_flags & REQ_sql_cursor)
 			printa(0, "static isc_stmt_handle\n   isc_%ds;\t\t/* sql statement handle */",
 				   request->req_ident);
+#ifdef SCROLLABLE_CURSORS
+		if (request->req_flags & REQ_scroll)
+			printa(0, "static short\n   isc_%ddirection;\t\t/* last direction sent to engine */",
+				   request->req_ident);
+#endif
 		printa(0, "static %sshort\n   isc_%dl = %d;",
 			   (request->req_flags & REQ_extend_dpb) ? "" : CONST_STR,
 			   request->req_ident, request->req_length);
@@ -3348,12 +3410,12 @@ static void gen_t_start( const act* action, int column)
 
 	// Some systems don't like infinitely long lines.  Limit them to 256.
 
-	int remaining = static_cast<int>(256 - column - strlen(vector) -
-		strlen(trans->tra_handle ? trans->tra_handle : gpreGlob.transaction_name) - 31);
+	int remaining = 256 - column - strlen(vector) -
+		strlen(trans->tra_handle ? trans->tra_handle : gpreGlob.transaction_name) - 31;
 
 	for (tpb_iterator = trans->tra_tpb; tpb_iterator; tpb_iterator = tpb_iterator->tpb_tra_next)
 	{
-		int length = static_cast<int>(strlen(tpb_iterator->tpb_database->dbb_name->sym_string) + 22);
+		int length = strlen(tpb_iterator->tpb_database->dbb_name->sym_string) + 22;
 		if (length > remaining)
 		{
 			align(column + INDENT);
@@ -3640,7 +3702,7 @@ static TEXT* make_name( TEXT* const string, const gpre_sym* symbol)
 		int i = 0;
 		strcpy(string, "\"\\\"");
 		const char* source = symbol->sym_string;
-		for (i = static_cast<int>(strlen(string)); *source && i + 4 < MAX_CURSOR_SIZE; i++)
+		for (i = strlen(string); *source && i + 4 < MAX_CURSOR_SIZE; i++)
 		{
 			if (*source == '\"' || *source == '\'')
 			{
@@ -3980,11 +4042,11 @@ static void t_start_auto(const act* action,
 
 	// Some systems don't like infinitely long lines.  Limit them to 256.
 
-	int remaining = static_cast<int>(256 - column - strlen(vector) - strlen(trname) - 31);
+	int remaining = 256 - column - strlen(vector) - strlen(trname) - 31;
 
 	for (db = gpreGlob.isc_databases; db; db = db->dbb_next)
 	{
-		const int length = static_cast<int>(strlen(db->dbb_name->sym_string) + 17);
+		const int length = strlen(db->dbb_name->sym_string) + 17;
 		if (length > remaining)
 		{
 			align(column + INDENT);

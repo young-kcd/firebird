@@ -31,7 +31,7 @@
 // Setting this define helps (with AV at exit time) detect globals
 // with destructors, declared not using InstanceControl.
 // The reason for AV is that process memory pool (from where globals should allocate memory)
-// is destroyed in atexit(), before destructors are called. Therefore each delete
+// is destoyed in atexit(), before destructors are called. Therefore each delete
 // operator in destructor will cause AV.
 #undef DEBUG_INIT
 
@@ -54,24 +54,10 @@ namespace
 #endif
 
 	// This helps initialize globals, needed before regular ctors run
-	int initDone = 0;
-
-#ifdef HAVE_PTHREAD_ATFORK
-	void child(void)
-	{
-		// turn off dtors execution in forked process
-		initDone = 2;
-	}
-#endif
+	bool initDone = false;
 
 	void allClean()
 	{
-		if (initDone != 1)
-		{
-			return;
-		}
-		initDone = 2;
-
 		Firebird::InstanceControl::destructors();
 
 		try
@@ -118,7 +104,7 @@ namespace
 		// are constructed (which may happen in parallel in different threads),
 		// races are prevented by StaticMutex::mutex.
 
-		if (initDone != 0)
+		if (initDone)
 		{
 			return;
 		}
@@ -131,10 +117,7 @@ namespace
 		atexit(allClean);
 #endif //DEBUG_INIT
 
-		initDone = 1;
-#ifdef HAVE_PTHREAD_ATFORK
-		int ret = pthread_atfork(NULL, NULL, child);
-#endif
+		initDone = true;
 
 		Firebird::MemoryPool::contextPoolInit();
 	}
@@ -156,7 +139,7 @@ namespace Firebird
 	InstanceControl::InstanceList::InstanceList(DtorPriority p)
 		: priority(p)
 	{
-		MutexLockGuard guard(*StaticMutex::mutex, "InstanceControl::InstanceList::InstanceList");
+		MutexLockGuard guard(*StaticMutex::mutex);
 		next = instanceList;
 		instanceList = this;
 	}
@@ -242,7 +225,7 @@ namespace Firebird
 
 	void InstanceControl::registerShutdown(FPTR_VOID shutdown)
 	{
-		fb_assert(!gdsShutdown || !shutdown);
+		fb_assert(!gdsShutdown || !shutdown || gdsShutdown == shutdown);
 		gdsShutdown = shutdown;
 	}
 
@@ -253,7 +236,7 @@ namespace Firebird
 		void create()
 		{
 			static char place[sizeof(Firebird::Mutex) + FB_ALIGNMENT];
-			mutex = new((void*) FB_ALIGN(place, FB_ALIGNMENT)) Firebird::Mutex;
+			mutex = new((void*)(IPTR) FB_ALIGN((size_t)(IPTR) place, FB_ALIGNMENT)) Firebird::Mutex;
 		}
 
 		void release()

@@ -49,7 +49,7 @@ No need to worry about blr_blob or ?blr_blob_id
 
 */
 
-#include "../common/dsc.h"
+#include "../jrd/dsc.h"
 #include "../jrd/RecordNumber.h"
 
 static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
@@ -65,9 +65,7 @@ static const USHORT gds_cvt_blr_dtype[DTYPE_BLR_MAX + 1] =
 	dtype_text,					/* blr_text == 14 */
 	dtype_text,					/* blr_text2 == 15 */
 	dtype_int64,				/* blr_int64 == 16 */
-	0, 0, 0, 0, 0, 0,
-	dtype_boolean,				// blr_bool == 23
-	0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	dtype_double,				/* blr_double == 27 */
 	0, 0, 0, 0, 0, 0, 0,
 	dtype_timestamp,			/* blr_timestamp == 35 */
@@ -92,7 +90,11 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] =
 	sizeof(SCHAR),				/* dtype_byte */
 	sizeof(SSHORT),				/* dtype_short */
 	sizeof(SLONG),				/* dtype_long */
+#ifndef NATIVE_QUAD
 	sizeof(SLONG),				/* dtype_quad */
+#else
+	sizeof(SQUAD),				/* dtype_quad */
+#endif
 	sizeof(float),				/* dtype_real */
 	FB_DOUBLE_ALIGN,			/* dtype_double */
 	FB_DOUBLE_ALIGN,			/* dtype_d_float */
@@ -102,8 +104,7 @@ static const USHORT type_alignments[DTYPE_TYPE_MAX] =
 	sizeof(SLONG),				/* dtype_blob */
 	sizeof(SLONG),				/* dtype_array */
 	sizeof(SINT64),				/* dtype_int64 */
-	sizeof(ULONG),				/* dtype_dbkey */
-	sizeof(UCHAR)				/* dtype_boolean */
+	sizeof(ULONG)				/* dtype_dbkey */
 };
 
 static const USHORT type_lengths[DTYPE_TYPE_MAX] =
@@ -128,8 +129,7 @@ static const USHORT type_lengths[DTYPE_TYPE_MAX] =
 	sizeof(ISC_QUAD),			/* dtype_blob */
 	sizeof(ISC_QUAD),			/* dtype_array */
 	sizeof(SINT64),				/* dtype_int64 */
-	sizeof(RecordNumber::Packed), /*dtype_dbkey */
-	sizeof(UCHAR)				/* dtype_boolean */
+	sizeof(RecordNumber::Packed) /*dtype_dbkey */
 };
 
 
@@ -157,8 +157,7 @@ static const USHORT type_significant_bits[DTYPE_TYPE_MAX] =
 	sizeof(ISC_QUAD) * 8,		/* dtype_blob */
 	sizeof(ISC_QUAD) * 8,		/* dtype_array */
 	sizeof(SINT64) * 8,			/* dtype_int64 */
-	0,							// dtype_dbkey
-	0							// dtype_boolean
+	0							// dbkey
 };
 
 #endif /* JRD_ALIGN_H */

@@ -27,16 +27,44 @@
 #include "../common/classes/objects_array.h"
 #include "../common/classes/init.h"
 #include "../common/classes/tree.h"
-
-struct TraceCounts;		// declared in ntrace.h
-struct PerformanceInfo;	// declared in ntrace.h
+#include "../jrd/ntrace.h"
 
 namespace Jrd {
 
-class Attachment;
+// hvlad: what to use for relation's counters - tree or sorted array ?
+// #define REL_COUNTS_TREE
+// #define REL_COUNTS_PTR
+
 class Database;
-class thread_db;
-class jrd_rel;
+
+// Performance counters for individual table
+struct RelationCounts
+{
+	SLONG rlc_relation_id;	// Relation ID
+	SINT64 rlc_counter[DBB_max_rel_count];
+
+#ifdef REL_COUNTS_PTR
+	inline static const SLONG* generate(const void* /*sender*/, const RelationCounts* item)
+	{
+		return &item->rlc_relation_id;
+	}
+#else
+	inline static const SLONG& generate(const void* /*sender*/, const RelationCounts& item)
+	{
+		return item.rlc_relation_id;
+	}
+#endif
+};
+
+#if defined(REL_COUNTS_TREE)
+typedef Firebird::BePlusTree<RelationCounts, SLONG, Firebird::MemoryPool, RelationCounts> RelCounters;
+#elif defined(REL_COUNTS_PTR)
+typedef Firebird::PointersArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>,
+	SLONG, RelationCounts> RelCounters;
+#else
+typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>,
+	SLONG, RelationCounts> RelCounters;
+#endif
 
 typedef Firebird::HalfStaticArray<TraceCounts, 5> TraceCountsArray;
 
@@ -53,18 +81,12 @@ public:
 		FLUSHES,
 		RECORD_SEQ_READS,
 		RECORD_IDX_READS,
-		RECORD_UPDATES,
 		RECORD_INSERTS,
+		RECORD_UPDATES,
 		RECORD_DELETES,
 		RECORD_BACKOUTS,
 		RECORD_PURGES,
 		RECORD_EXPUNGES,
-		RECORD_LOCKS,
-		RECORD_WAITS,
-		RECORD_CONFLICTS,
-		RECORD_BACKVERSION_READS,
-		RECORD_FRAGMENT_READS,
-		RECORD_RPT_READS,
 		SORTS,
 		SORT_GETS,
 		SORT_PUTS,
@@ -72,91 +94,6 @@ public:
 		STMT_EXECUTES,
 		TOTAL_ITEMS		// last
 	};
-
-	// Performance counters for individual table
-
-	class RelationCounts
-	{
-		static const size_t REL_BASE_OFFSET = RECORD_SEQ_READS;
-
-	public:
-		static const size_t REL_TOTAL_ITEMS = RECORD_RPT_READS - REL_BASE_OFFSET + 1;
-
-		explicit RelationCounts(SLONG relation_id)
-			: rlc_relation_id(relation_id)
-		{
-			memset(rlc_counter, 0, sizeof(rlc_counter));
-		}
-
-		SLONG getRelationId() const
-		{
-			return rlc_relation_id;
-		}
-
-		const SINT64* getCounterVector() const
-		{
-			return rlc_counter;
-		}
-
-		SINT64 getCounter(size_t index) const
-		{
-			fb_assert(index >= REL_BASE_OFFSET && index < REL_BASE_OFFSET + REL_TOTAL_ITEMS);
-			return rlc_counter[index - REL_BASE_OFFSET];
-		}
-
-		void bumpCounter(size_t index, SINT64 delta = 1)
-		{
-			fb_assert(index >= REL_BASE_OFFSET && index < REL_BASE_OFFSET + REL_TOTAL_ITEMS);
-			rlc_counter[index - REL_BASE_OFFSET] += delta;
-		}
-
-		bool setToDiff(const RelationCounts& other)
-		{
-			fb_assert(rlc_relation_id == other.rlc_relation_id);
-
-			bool ret = false;
-
-			for (size_t i = 0; i < REL_TOTAL_ITEMS; i++)
-			{
-				if ( (rlc_counter[i] = other.rlc_counter[i] - rlc_counter[i]) )
-					ret = true;
-			}
-
-			return ret;
-		}
-
-		RelationCounts& operator+=(const RelationCounts& other)
-		{
-			fb_assert(rlc_relation_id == other.rlc_relation_id);
-
-			for (size_t i = 0; i < REL_TOTAL_ITEMS; i++)
-				rlc_counter[i] += other.rlc_counter[i];
-
-			return *this;
-		}
-
-		RelationCounts& operator-=(const RelationCounts& other)
-		{
-			fb_assert(rlc_relation_id == other.rlc_relation_id);
-
-			for (size_t i = 0; i < REL_TOTAL_ITEMS; i++)
-				rlc_counter[i] -= other.rlc_counter[i];
-
-			return *this;
-		}
-
-		inline static const SLONG& generate(const RelationCounts& item)
-		{
-			return item.rlc_relation_id;
-		}
-
-	private:
-		SLONG rlc_relation_id;
-		SINT64 rlc_counter[REL_TOTAL_ITEMS];
-	};
-
-	typedef Firebird::SortedArray<RelationCounts, Firebird::EmptyStorage<RelationCounts>,
-		SLONG, RelationCounts> RelCounters;
 
 	RuntimeStatistics()
 		: Firebird::AutoStorage(), rel_counts(getPool())
@@ -205,24 +142,21 @@ public:
 		return values[index];
 	}
 
-	void bumpValue(const StatType index, SINT64 delta = 1)
+	void bumpValue(const StatType index)
 	{
-		values[index] += delta;
+		++values[index];
 		++allChgNumber;
 	}
 
-	SINT64 getRelValue(const StatType index, SLONG relation_id) const
-	{
-		FB_SIZE_T pos;
-		return rel_counts.find(relation_id, pos) ? rel_counts[pos].getCounter(index) : 0;
-	}
-
-	void bumpRelValue(const StatType index, SLONG relation_id, SINT64 delta = 1);
+	void bumpValue(const StatType index, SLONG relation_id);
 
 	// Calculate difference between counts stored in this object and current
 	// counts of given request. Counts stored in object are destroyed.
-	PerformanceInfo* computeDifference(Attachment* att, const RuntimeStatistics& new_stat,
+	PerformanceInfo* computeDifference(Database* dbb, const RuntimeStatistics& new_stat,
 		PerformanceInfo& dest, TraceCountsArray& temp);
+
+	// bool operator==(const RuntimeStatistics& other) const;
+	// bool operator!=(const RuntimeStatistics& other) const;
 
 	// add difference between newStats and baseStats to our counters
 	// newStats and baseStats must be "in-sync"
@@ -232,7 +166,9 @@ public:
 		{
 			allChgNumber++;
 			for (size_t i = 0; i < TOTAL_ITEMS; ++i)
+			{
 				values[i] += newStats.values[i] - baseStats.values[i];
+			}
 
 			if (baseStats.relChgNumber != newStats.relChgNumber)
 			{
@@ -268,68 +204,6 @@ public:
 	{
 		return &dummy;
 	}
-
-	class Iterator
-	{
-		friend class RuntimeStatistics;
-
-		explicit Iterator(const RelationCounts* counts)
-			: m_counts(counts)
-		{}
-
-	public:
-		bool operator==(const Iterator& other)
-		{
-			return (m_counts == other.m_counts);
-		}
-
-		bool operator!=(const Iterator& other)
-		{
-			return (m_counts != other.m_counts);
-		}
-
-		Iterator& operator++()
-		{
-			m_counts++;
-			return *this;
-		}
-
-		const RelationCounts& operator*() const
-		{
-			return *m_counts;
-		}
-
-	private:
-		const RelationCounts* m_counts;
-	};
-
-	Iterator begin() const
-	{
-		return Iterator(rel_counts.begin());
-	}
-
-	Iterator end() const
-	{
-		return Iterator(rel_counts.end());
-	}
-
-	class Accumulator
-	{
-	public:
-		Accumulator(thread_db* tdbb, const jrd_rel* relation, StatType type);
-		~Accumulator();
-
-		void operator++()
-		{
-			m_counter++;
-		}
-
-	private:
-		thread_db* m_tdbb;
-		StatType m_type;
-		SLONG m_id;
-		SINT64 m_counter;
-	};
 
 private:
 	void addRelCounts(const RelCounters& other, bool add);

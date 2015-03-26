@@ -27,19 +27,17 @@
 #ifndef JRD_SIMILAR_TO_EVALUATOR_H
 #define JRD_SIMILAR_TO_EVALUATOR_H
 
-#include "../jrd/intl_classes.h"
-#include "../jrd/evl_string.h"
-
 // #define DEBUG_SIMILAR
 
 #ifdef DEBUG_SIMILAR
 // #define RECURSIVE_SIMILAR	// useless in production due to stack overflow
 #endif
 
+
 namespace Firebird
 {
 
-template <typename CharType, typename StrConverter = Jrd::CanonicalConverter<> >
+template <typename StrConverter, typename CharType>
 class SimilarToMatcher : public Jrd::PatternMatcher
 {
 private:
@@ -74,9 +72,9 @@ private:
 	class Evaluator : private StaticAllocator
 	{
 	public:
-		Evaluator(MemoryPool& pool, TextType* aTextType,
+		Evaluator(MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType aEscapeChar, bool aUseEscape);
+			CharType escapeChar, bool useEscape);
 
 		~Evaluator()
 		{
@@ -91,7 +89,6 @@ private:
 		enum Op
 		{
 			opRepeat,
-			opRepeatEnd,
 			opBranch,
 			opStart,
 			opEnd,
@@ -99,10 +96,7 @@ private:
 			opNothing,
 			opAny,
 			opAnyOf,
-			opExactly,
-			opExactlyOne,	// optimization for opExactly with a single character
-			opRet			// implementation detail of the non-recursive match
-			// If new codes are added, shifts in MatchState codes may need to change.
+			opExactly
 		};
 
 		struct Node
@@ -167,73 +161,6 @@ private:
 			{
 			}
 
-#ifdef DEBUG_SIMILAR
-			void dump(string& text, int i) const
-			{
-				string temp;
-
-				switch (op)
-				{
-					case opRepeat:
-						temp.printf("opRepeat(%d, %d, %d)", len, len2, i + ref);
-						break;
-
-					case opRepeatEnd:
-						temp.printf("opRepeatEnd(%d)", i + ref);
-						break;
-
-					case opBranch:
-						if (branchNum == -1)
-							temp.printf("opBranch(%d)", i + ref);
-						else
-							temp.printf("opBranch(%d, %d)", i + ref, branchNum);
-						break;
-
-					case opStart:
-						temp = "opStart";
-						break;
-
-					case opEnd:
-						temp = "opEnd";
-						break;
-
-					case opRef:
-						if (branchNum == -1)
-							temp.printf("opRef(%d)", i + ref);
-						else
-							temp.printf("opRef(%d, %d)", i + ref, branchNum);
-						break;
-
-					case opNothing:
-						temp = "opNothing";
-						break;
-
-					case opAny:
-						temp = "opAny";
-						break;
-
-					case opAnyOf:
-						temp.printf("opAnyOf(%.*s, %d, %.*s, %d, %.*s, %d, %.*s, %d)",
-							len, str, len, len2, str2, len2, len3, str3, len3, len4, str4, len4);
-						break;
-
-					case opExactly:
-						temp.printf("opExactly(%.*s, %d)", len, str, len);
-						break;
-
-					case opExactlyOne:
-						temp.printf("opExactlyOne(%.*s)", len, str);
-						break;
-
-					default:
-						temp = "unknown";
-						break;
-				}
-
-				text.printf("%d: %s", i, temp.c_str());
-			}
-#endif	// DEBUG_SIMILAR
-
 			Op op;
 			const CharType* str;
 			SLONG len;
@@ -247,80 +174,26 @@ private:
 			int branchNum;
 		};
 
-#ifndef RECURSIVE_SIMILAR
 		// Struct used to evaluate expressions without recursion.
 		// Represents local variables to implement a "virtual stack".
 		struct Scope
 		{
-			inline explicit Scope(const Node* ai)
+			Scope(int ai, int aLimit)
 				: i(ai),
-				  save(NULL)
+				  limit(aLimit),
+				  save(NULL),
+				  j(0),
+				  flag(false)
 			{
 			}
 
-			inline void operator =(const Node* ai)
-			{
-				i = ai;
-				save = NULL;
-			}
-
-			const Node* i;
+			// variables used in the recursive commented out function
+			int i;
+			int limit;
 			const CharType* save;
+			int j;
+			bool flag;	// aux. variable to make non-recursive logic
 		};
-
-		// Stack for recursion emulation.
-		template <typename T>
-		class SimpleStack
-		{
-		public:
-			SimpleStack()
-				: size(INCREASE_FACTOR)
-			{
-				data = FB_NEW(*getDefaultMemoryPool()) UCHAR[(size + 1) * sizeof(T)];
-				back = (T*) FB_ALIGN(data.get(), sizeof(T));
-				end = back + size;
-
-				// 'back' starts before initial element, then always points to the last pushed element.
-				--back;
-			}
-
-			template <typename T2>
-			inline void push(T2 node)
-			{
-				// If the limit is reached, resize.
-				if (++back == end)
-				{
-					unsigned newSize = size + INCREASE_FACTOR;
-					UCHAR* newData = FB_NEW(*getDefaultMemoryPool()) UCHAR[(newSize + 1) * sizeof(T)];
-
-					T* p = (T*) FB_ALIGN(newData, sizeof(T));
-					memcpy(p, end - size, size * sizeof(T));
-
-					back = p + size;
-					end = p + newSize;
-					size = newSize;
-
-					data.reset(newData);
-				}
-
-				*back = node;
-			}
-
-			inline void pop()
-			{
-				--back;
-			}
-
-		public:
-			T* back;
-
-		private:
-			static const unsigned INCREASE_FACTOR = 50;
-			unsigned size;
-			AutoPtr<UCHAR> data;
-			T* end;
-		};
-#endif	// RECURSIVE_SIMILAR
 
 		static const int FLAG_NOT_EMPTY	= 1;	// known never to match empty string
 		static const int FLAG_EXACTLY	= 2;	// non-escaped string
@@ -343,7 +216,7 @@ private:
 
 	private:
 #ifdef RECURSIVE_SIMILAR
-		bool match(int start);
+		bool match(int limit, int start);
 #else
 		bool match();
 #endif
@@ -359,11 +232,6 @@ private:
 			unsigned length;
 		};
 
-#ifdef DEBUG_SIMILAR
-		Array<char> debugLog;
-		int debugLevel;
-#endif
-
 		TextType* textType;
 		CharType escapeChar;
 		bool useEscape;
@@ -373,6 +241,7 @@ private:
 		StrConverter patternCvt;
 		CharSet* charSet;
 		Array<Node> nodes;
+		Array<Scope> scopes;
 		const CharType* patternStart;
 		const CharType* patternEnd;
 		const CharType* patternPos;
@@ -388,9 +257,9 @@ private:
 
 public:
 	SimilarToMatcher(MemoryPool& pool, TextType* ttype, const UCHAR* str,
-				SLONG strLen, CharType escape, bool useEscape)
+			SLONG str_len, CharType escape, bool use_escape)
 		: PatternMatcher(pool, ttype),
-		  evaluator(pool, ttype, str, strLen, escape, useEscape)
+		  evaluator(pool, ttype, str, str_len, escape, use_escape)
 	{
 	}
 
@@ -422,21 +291,21 @@ public:
 	}
 
 	static SimilarToMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escapeLen)
+		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escape_length)
 	{
-		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
+		StrConverter cvt_escape(pool, ttype, escape, escape_length);
 
 		return FB_NEW(pool) SimilarToMatcher(pool, ttype, str, length,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
 	}
 
 	static bool evaluate(MemoryPool& pool, TextType* ttype, const UCHAR* s, SLONG sl,
-		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escapeLen)
+		const UCHAR* p, SLONG pl, const UCHAR* escape, SLONG escape_length)
 	{
-		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
+		StrConverter cvt_escape(pool, ttype, escape, escape_length);
 
 		Evaluator evaluator(pool, ttype, p, pl,
-			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0);
+			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0);
 		evaluator.processNextChunk(s, sl);
 		return evaluator.getResult();
 	}
@@ -446,25 +315,22 @@ private:
 };
 
 
-template <typename CharType, typename StrConverter>
-SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
-			MemoryPool& pool, TextType* aTextType,
+template <typename StrConverter, typename CharType>
+SimilarToMatcher<StrConverter, CharType>::Evaluator::Evaluator(
+			MemoryPool& pool, TextType* textType,
 			const UCHAR* patternStr, SLONG patternLen,
-			CharType aEscapeChar, bool aUseEscape)
+			CharType escapeChar, bool useEscape)
 	: StaticAllocator(pool),
-#ifdef DEBUG_SIMILAR
-	  debugLog(pool),
-	  debugLevel(-1),
-#endif
-	  textType(aTextType),
-	  escapeChar(aEscapeChar),
-	  useEscape(aUseEscape),
+	  textType(textType),
+	  escapeChar(escapeChar),
+	  useEscape(useEscape),
 	  buffer(pool),
 	  originalPatternStr(patternStr),
 	  originalPatternLen(patternLen),
 	  patternCvt(pool, textType, patternStr, patternLen),
 	  charSet(textType->getCharSet()),
 	  nodes(pool),
+	  scopes(pool),
 	  branchNum(0)
 {
 	fb_assert(patternLen % sizeof(CharType) == 0);
@@ -515,8 +381,8 @@ SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 }
 
 
-template <typename CharType, typename StrConverter>
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
+template <typename StrConverter, typename CharType>
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::getResult()
 {
 	const UCHAR* str = buffer.begin();
 	SLONG len = buffer.getCount();
@@ -528,14 +394,9 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 	bufferStart = bufferPos = (const CharType*) str;
 	bufferEnd = bufferStart + len / sizeof(CharType);
 
-#ifdef DEBUG_SIMILAR
-	debugLog.clear();
-	debugLevel = -1;
-#endif
-
 	const bool matched =
 #ifdef RECURSIVE_SIMILAR
-		match(0);
+		match(nodes.getCount(), 0);
 #else
 		match();
 #endif
@@ -543,16 +404,15 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 #ifdef DEBUG_SIMILAR
 	if (matched)
 	{
+		string s;
 		for (unsigned i = 0; i <= branchNum; ++i)
 		{
 			string x;
-			x.printf("%d: %d, %d\n", i, branches[i].start, branches[i].length);
-			debugLog.add(x.c_str(), x.length());
+			x.printf("%d: %d, %d\n\t", i, branches[i].start, branches[i].length);
+			s += x;
 		}
 
-		debugLog.add('\0');
-
-		gds__log("\n%s", debugLog.begin());
+		gds__log("%s", s.c_str());
 	}
 #endif	// DEBUG_SIMILAR
 
@@ -560,26 +420,27 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::getResult()
 }
 
 
-template <typename CharType, typename StrConverter>
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
+template <typename StrConverter, typename CharType>
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::processNextChunk(const UCHAR* data, SLONG dataLen)
 {
-	const FB_SIZE_T pos = buffer.getCount();
+	const size_t pos = buffer.getCount();
 	memcpy(buffer.getBuffer(pos + dataLen) + pos, data, dataLen);
 	return true;
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::reset()
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::reset()
 {
 	buffer.shrink(0);
+	scopes.shrink(0);
 
 	memset(branches, 0, sizeof(Range) * (branchNum + 1));
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseExpr(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseExpr(int* flagp)
 {
 	*flagp = FLAG_NOT_EMPTY;
 
@@ -618,8 +479,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseExpr(int* flagp)
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseTerm(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseTerm(int* flagp)
 {
 	*flagp = 0;
 
@@ -647,8 +508,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseTerm(int* flagp)
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parseFactor(int* flagp)
 {
 	int atomPos = nodes.getCount();
 
@@ -669,12 +530,11 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 	// If the last primary is a string, split the last character
 	if (flags & FLAG_EXACTLY)
 	{
-		fb_assert(nodes.back().op == opExactly || nodes.back().op == opExactlyOne);
+		fb_assert(nodes.back().op == opExactly);
 
-		if (nodes.back().op == opExactly && nodes.back().len > 1)
+		if (nodes.back().len > 1)
 		{
 			Node last = nodes.back();
-			last.op = opExactlyOne;
 			last.str += nodes.back().len - 1;
 			last.len = 1;
 
@@ -768,8 +628,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 
 		*flagp = n1 == 0 ? 0 : FLAG_NOT_EMPTY;
 
-		nodes.insert(atomPos, Node(opRepeat, n1, n2, nodes.getCount() - atomPos + 1));
-		nodes.add(Node(opRepeatEnd, atomPos - nodes.getCount()));
+		nodes.insert(atomPos, Node(opRepeat, n1, n2, nodes.getCount() - atomPos));
 	}
 
 	++patternPos;
@@ -779,8 +638,8 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 }
 
 
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flagp)
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::parsePrimary(int* flagp)
 {
 	*flagp = 0;
 
@@ -908,46 +767,36 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 				struct
 				{
+					const char* name;
 					const GetCanonicalFunc* funcs;
-					const ULONG nameLen; // in bytes, not characters because all functions accept length in bytes
-					const USHORT name[10];
 				} static const classes[] =
-					{	// Names are in utf16 in order not to convert them every time for comparison and thus save some CPU
-						{alNum, 10, {'A','L','N','U','M'}},
-						{alpha, 10, {'A','L','P','H','A'}},
-						{digit, 10, {'D','I','G','I','T'}},
-						{lower, 10, {'L','O','W','E','R'}},
-						{space, 10, {'S','P','A','C','E'}},
-						{upper, 10, {'U','P','P','E','R'}},
-						{whitespace, 20, {'W','H','I','T','E','S','P','A','C','E'}}
+					{
+						{"ALNUM", alNum},
+						{"ALPHA", alpha},
+						{"DIGIT", digit},
+						{"LOWER", lower},
+						{"SPACE", space},
+						{"UPPER", upper},
+						{"WHITESPACE", whitespace}
 					};
 
-				// Get the exact original substring correspondent to the canonical bytes.
-				HalfStaticArray<UCHAR, 10 * sizeof(ULONG)> classNameStr(
-					len * charSet->maxBytesPerChar());
-				ULONG classNameStrLen = charSet->substring(originalPatternLen, originalPatternStr,
-					classNameStr.getCapacity(), classNameStr.begin(), start - patternStart, len);
+				UCharBuffer className;
 
-				// And then convert it to UTF-16.
-				HalfStaticArray<USHORT, 10 * sizeof(ULONG) / sizeof(USHORT)> classNameUtf16(
-					len * sizeof(ULONG));
-				ULONG classNameUtf16Len = charSet->getConvToUnicode().convert(
-					classNameStrLen, classNameStr.begin(),
-					classNameUtf16.getCapacity() * sizeof(USHORT), classNameUtf16.begin());
+				className.getBuffer(len);
+				className.resize(charSet->substring(originalPatternLen, originalPatternStr,
+													className.getCapacity(), className.begin(),
+													start - patternStart, len));
 
-				// Bring class name to uppercase for case-insensitivity.
-				// Do it in UTF-16 because original collation can have no uppercase conversion.
-				classNameUtf16Len = Jrd::UnicodeUtil::utf16UpperCase(
-					classNameUtf16Len, classNameUtf16.begin(),
-					classNameUtf16.getCapacity() * sizeof(USHORT), classNameUtf16.begin(), NULL);
 				int classN;
+				UCharBuffer buffer;
 
 				for (classN = 0; classN < FB_NELEM(classes); ++classN)
 				{
-					INTL_BOOL errorFlag;
+					const string s = IntlUtil::convertAsciiToUtf16(classes[classN].name);
+					charSet->getConvFromUnicode().convert(s.length(), (const UCHAR*) s.c_str(), buffer);
 
-					if (Jrd::UnicodeUtil::utf16Compare(classNameUtf16Len, classNameUtf16.begin(),
-							classes[classN].nameLen, classes[classN].name, &errorFlag) == 0)
+					if (textType->compare(className.getCount(), className.begin(),
+										  buffer.getCount(), buffer.begin()) == 0)
 					{
 						for (const GetCanonicalFunc* func = classes[classN].funcs; *func; ++func)
 						{
@@ -975,8 +824,9 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 					ULONG len = charSet->substring(originalPatternLen, originalPatternStr,
 												   sizeof(c), c, patternPos - patternStart, 1);
 
+					const int previousRangeBufferCount = rangeBuffer.getCount();
 					rangeBuffer.push(len);
-					FB_SIZE_T rangeCount = rangeBuffer.getCount();
+					size_t rangeCount = rangeBuffer.getCount();
 					memcpy(rangeBuffer.getBuffer(rangeCount + len) + rangeCount, &c, len);
 
 					++patternPos;	// character
@@ -1020,9 +870,9 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 		if (rangeBuffer.getCount() > 0)
 		{
-			UCHAR* r = (UCHAR*) alloc(rangeBuffer.getCount());
-			memcpy(r, rangeBuffer.begin(), rangeBuffer.getCount());
-			*nodeRange = r;
+			UCHAR* p = (UCHAR*) alloc(rangeBuffer.getCount());
+			memcpy(p, rangeBuffer.begin(), rangeBuffer.getCount());
+			*nodeRange = p;
 		}
 
 		*nodeRangeLen = rangeBuffer.getCount();
@@ -1032,10 +882,10 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 	}
 	else if (op == canonicalChar(TextType::CHAR_OPEN_PAREN))
 	{
+		++branchNum;
+
 		int flags;
 		parseExpr(&flags);
-
-		++branchNum;	// This is used for the trace stuff.
 
 		if (patternPos >= patternEnd || *patternPos++ != canonicalChar(TextType::CHAR_CLOSE_PAREN))
 			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
@@ -1053,7 +903,7 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 			status_exception::raise(Arg::Gds(isc_escape_invalid));
 		}
 
-		nodes.push(Node(opExactlyOne, patternPos++, 1));
+		nodes.push(Node(opExactly, patternPos++, 1));
 		*flagp |= FLAG_NOT_EMPTY;
 	}
 	else
@@ -1068,14 +918,14 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parsePrimary(int* flag
 
 		*flagp |= FLAG_NOT_EMPTY | FLAG_EXACTLY;
 
-		nodes.push(Node((len == 1 ? opExactlyOne : opExactly), patternPos, len));
+		nodes.push(Node(opExactly, patternPos, len));
 		patternPos += len;
 	}
 }
 
 
-template <typename CharType, typename StrConverter>
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::isRep(CharType c) const
+template <typename StrConverter, typename CharType>
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::isRep(CharType c) const
 {
 	return (c == canonicalChar(TextType::CHAR_ASTERISK) ||
 			c == canonicalChar(TextType::CHAR_PLUS) ||
@@ -1085,18 +935,70 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::isRep(CharType c) cons
 
 
 #ifdef DEBUG_SIMILAR
-template <typename CharType, typename StrConverter>
-void SimilarToMatcher<CharType, StrConverter>::Evaluator::dump() const
+template <typename StrConverter, typename CharType>
+void SimilarToMatcher<StrConverter, CharType>::Evaluator::dump() const
 {
 	string text;
 
 	for (unsigned i = 0; i < nodes.getCount(); ++i)
 	{
 		string type;
-		nodes[i].dump(type, i);
+
+		switch (nodes[i].op)
+		{
+			case opRepeat:
+				type.printf("opRepeat(%d, %d, %d)", nodes[i].len, nodes[i].len2, nodes[i].ref);
+				break;
+
+			case opBranch:
+				if (nodes[i].branchNum == -1)
+					type.printf("opBranch(%d)", i + nodes[i].ref);
+				else
+					type.printf("opBranch(%d, %d)", i + nodes[i].ref, nodes[i].branchNum);
+				break;
+
+			case opStart:
+				type = "opStart";
+				break;
+
+			case opEnd:
+				type = "opEnd";
+				break;
+
+			case opRef:
+				if (nodes[i].branchNum == -1)
+					type.printf("opRef(%d)", i + nodes[i].ref);
+				else
+					type.printf("opRef(%d, %d)", i + nodes[i].ref, nodes[i].branchNum);
+				break;
+
+			case opNothing:
+				type = "opNothing";
+				break;
+
+			case opAny:
+				type = "opAny";
+				break;
+
+			case opAnyOf:
+				type.printf("opAnyOf(%.*s, %d, %.*s, %d, %.*s, %d, %.*s, %d)",
+					nodes[i].len, nodes[i].str, nodes[i].len,
+					nodes[i].len2, nodes[i].str2, nodes[i].len2,
+					nodes[i].len3, nodes[i].str3, nodes[i].len3,
+					nodes[i].len4, nodes[i].str4, nodes[i].len4);
+				break;
+
+			case opExactly:
+				type.printf("opExactly(%.*s, %d)", nodes[i].len, nodes[i].str, nodes[i].len);
+				break;
+
+			default:
+				type = "unknown";
+				break;
+		}
 
 		string s;
-		s.printf("%s%s", (i > 0 ? ", " : ""), type.c_str());
+		s.printf("%s%d:%s", (i > 0 ? ", " : ""), i, type.c_str());
 
 		text += s;
 	}
@@ -1106,36 +1008,20 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::dump() const
 #endif	// DEBUG_SIMILAR
 
 
-template <typename CharType, typename StrConverter>
+template <typename StrConverter, typename CharType>
 #ifdef RECURSIVE_SIMILAR
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match(int limit, int start)
 {
-#ifdef DEBUG_SIMILAR
-	AutoSetRestore<int> autoDebugLevel(&debugLevel, debugLevel + 1);
-#endif
-
-	for (int i = start;; ++i)
+	for (int i = start; i < limit; ++i)
 	{
 		const Node* node = &nodes[i];
 
-#ifdef DEBUG_SIMILAR
-		string s;
-		node->dump(s, i);
-
-		for (int debugLevelI = 0; debugLevelI < debugLevel; ++debugLevelI)
-			s = "   " + s;
-
-		s = "\n" + s;
-		debugLog.add(s.c_str(), s.length());
-#endif
-
 		switch (node->op)
 		{
-			//// FIXME: Recursive opRepeat has problems!
 			case opRepeat:
 				for (int j = 0; j < node->len; ++j)
 				{
-					if (!match(i + 1))
+					if (!match(i + 1 + node->ref, i + 1))
 						return false;
 				}
 
@@ -1143,20 +1029,17 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 				{
 					const CharType* save = bufferPos;
 
-					if (match(i + 1 + node->ref))
+					if (match(limit, i + 1 + node->ref))
 						return true;
 
 					bufferPos = save;
 
-					if (!match(i + 1))
+					if (!match(i + 1 + node->ref, i + 1))
 						return false;
 				}
 
-				i += 1 + node->ref;
+				++i;
 				break;
-
-			case opRepeatEnd:
-				return true;
 
 			case opBranch:
 			{
@@ -1167,7 +1050,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 					if (node->branchNum != -1)
 						branches[node->branchNum].start = save - bufferStart;
 
-					if (match(i + 1))
+					if (match(limit, i + 1))
 						return true;
 
 					bufferPos = save;
@@ -1180,16 +1063,6 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 
 					if (node->ref == 0)
 						break;
-
-#ifdef DEBUG_SIMILAR
-					node->dump(s, i);
-
-					for (int debugLevelI = 0; debugLevelI < debugLevel; ++debugLevelI)
-						s = "   " + s;
-
-					s = "\n" + s;
-					debugLog.add(s.c_str(), s.length());
-#endif
 				}
 
 				break;
@@ -1201,7 +1074,9 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 				break;
 
 			case opEnd:
-				return (bufferPos == bufferEnd);
+				if (bufferPos != bufferEnd)
+					return false;
+				break;
 
 			case opRef:
 				if (node->branchNum != -1)
@@ -1213,34 +1088,18 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 
 				if (node->ref == 1)	// avoid recursion
 					break;
-				return match(i + node->ref);
+				return match(limit, i + node->ref);
 
 			case opNothing:
 				break;
 
 			case opAny:
-#ifdef DEBUG_SIMILAR
-				if (bufferPos >= bufferEnd)
-					s = " -> <end>";
-				else
-					s.printf(" -> %d", *bufferPos);
-				debugLog.add(s.c_str(), s.length());
-#endif
-
 				if (bufferPos >= bufferEnd)
 					return false;
 				++bufferPos;
 				break;
 
 			case opAnyOf:
-#ifdef DEBUG_SIMILAR
-				if (bufferPos >= bufferEnd)
-					s = " -> <end>";
-				else
-					s.printf(" -> %d", *bufferPos);
-				debugLog.add(s.c_str(), s.length());
-#endif
-
 				if (bufferPos >= bufferEnd)
 					return false;
 
@@ -1298,23 +1157,13 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 				break;
 
 			case opExactly:
-				if (bufferEnd - bufferPos >= node->len &&
-					memcmp(node->str, bufferPos, node->len * sizeof(CharType)) == 0)
+				if (node->len > bufferEnd - bufferPos ||
+					memcmp(node->str, bufferPos, node->len * sizeof(CharType)) != 0)
 				{
-					bufferPos += node->len;
-					break;
-				}
-				else
 					return false;
-
-			case opExactlyOne:
-				if (bufferEnd - bufferPos >= 1 && *node->str == *bufferPos)
-				{
-					bufferPos += node->len;
-					break;
 				}
-				else
-					return false;
+				bufferPos += node->len;
+				break;
 
 			default:
 				fb_assert(false);
@@ -1325,265 +1174,305 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 	return true;
 }
 #else
-bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
+bool SimilarToMatcher<StrConverter, CharType>::Evaluator::match()
 {
-	// Left shift by 4 to OR MatchState's and Op's without additional runtime shifts.
-	static const unsigned MATCH_STATE_SHIFT = 4;
+	//
+	// state  description
+	// ----------------------
+	//   0    recursing
+	//   1    iteration (for)
+	//   2    returning
+	enum MatchState { msRecursing, msIterating, msReturning };
 
-	enum MatchState
+	int start = 0;
+	MatchState state = msRecursing;
+	int limit = nodes.getCount();
+	bool ret = true;
+
+	do
 	{
-		msIterating			= 0x00 << MATCH_STATE_SHIFT,
-		msReturningFalse	= 0x01 << MATCH_STATE_SHIFT,
-		msReturningTrue		= 0x02 << MATCH_STATE_SHIFT,
-		msReturningMask		= (msReturningFalse | msReturningTrue)
-	};
-
-	SimpleStack<Scope> scopeStack;
-
-	// Add special node to return without needing additional comparison after popping
-	// the stack on each return.
-	Node nodeRet(opRet);
-	scopeStack.push(&nodeRet);
-
-	scopeStack.push(nodes.begin());
-
-	MatchState state = msIterating;
-
-	SimpleStack<SLONG> repeatStack;
-
-	while (true)
-	{
-		Scope* const scope = scopeStack.back;
-		const Node* const node = scope->i;
-
-#define ENCODE_OP_STATE(op, state) ((op) | (state))
-
-		// Go directly to op and state with a single switch.
-
-		switch (ENCODE_OP_STATE(node->op, state))
+		if (state == msRecursing)
 		{
-			case ENCODE_OP_STATE(opRepeat, msIterating):
-				repeatStack.push(0);
-				scopeStack.push(scope->i + node->ref);
-				continue;
-
-			case ENCODE_OP_STATE(opRepeat, msReturningFalse):
-			case ENCODE_OP_STATE(opRepeat, msReturningTrue):
-				repeatStack.pop();
-				break;
-
-			case ENCODE_OP_STATE(opRepeatEnd, msIterating):
+			if (start >= limit)
+				state = msReturning;
+			else
 			{
-				const Node* repeatNode = scope->i + node->ref;
-				SLONG* repeatCount = repeatStack.back;
-
-				if (*repeatCount < repeatNode->len2)
-				{
-					++*repeatCount;
-					scopeStack.push(repeatNode + 1);
-					continue;
-				}
-				else
-					break;
+				scopes.push(Scope(start, limit));
+				state = msIterating;
 			}
+		}
 
-			case ENCODE_OP_STATE(opRepeatEnd, msReturningFalse):
+		while (state != 0 && scopes.getCount() != 0)
+		{
+			Scope* scope = &scopes.back();
+			if (scope->i >= scope->limit)
+				break;
+
+			const Node* node = &nodes[scope->i];
+
+			switch (node->op)
 			{
-				const Node* repeatNode = scope->i + node->ref;
-				SLONG* repeatCount = repeatStack.back;
+				case opRepeat:
+					fb_assert(state == msIterating || state == msReturning);
 
-				if (--*repeatCount >= repeatNode->len)
-					state = msIterating;
+					if (state == msIterating)
+						scope->j = 0;
+					else if (state == msReturning)
+					{
+						if (scope->j < node->len)
+						{
+							if (!ret)
+								break;
+						}
+						else if (scope->j < node->len2)
+						{
+							if ((!scope->flag && ret) || (scope->flag && !ret))
+								break;
 
-				break;
-			}
+							if (!scope->flag)
+							{
+								bufferPos = scope->save;
 
-			case ENCODE_OP_STATE(opRepeatEnd, msReturningTrue):
-				break;
+								scope->flag = true;
+								start = scope->i + 1;
+								limit = scope->i + 1 + node->ref;
+								state = msRecursing;
 
-			case ENCODE_OP_STATE(opBranch, msIterating):
-				if (node->branchNum != -1)
-					branches[node->branchNum].start = bufferPos - bufferStart;
+								break;
+							}
+						}
+						++scope->j;
+					}
 
-				scope->save = bufferPos;
-
-				scopeStack.push(scope->i + 1);
-				continue;
-
-			case ENCODE_OP_STATE(opBranch, msReturningFalse):
-				bufferPos = scope->save;
-
-				if (node->ref != 0)
-				{
-					state = msIterating;
-
-					scope->i += node->ref;
-
-					if (scope->i->ref != 0)
+					if (scope->j < node->len)
+					{
+						start = scope->i + 1;
+						limit = scope->i + 1 + node->ref;
+						state = msRecursing;
+					}
+					else if (scope->j < node->len2)
 					{
 						scope->save = bufferPos;
-
-						scopeStack.push(scope->i + 1);
-						continue;
+						scope->flag = false;
+						start = scope->i + 1 + node->ref;
+						limit = scope->limit;
+						state = msRecursing;
 					}
-				}
-
-				break;
-
-			case ENCODE_OP_STATE(opBranch, msReturningTrue):
-				break;
-
-			case ENCODE_OP_STATE(opStart, msIterating):
-				if (bufferPos != bufferStart)
-					state = msReturningFalse;
-				break;
-
-			case ENCODE_OP_STATE(opEnd, msIterating):
-				state = (bufferPos == bufferEnd ? msReturningTrue : msReturningFalse);
-				break;
-
-			case ENCODE_OP_STATE(opRef, msIterating):
-				if (node->branchNum != -1)
-				{
-					fb_assert(unsigned(node->branchNum) <= branchNum);
-					branches[node->branchNum].length =
-						bufferPos - bufferStart - branches[node->branchNum].start;
-				}
-
-				scope->i += node->ref;
-				scope->save = NULL;
-				continue;
-
-			case ENCODE_OP_STATE(opRef, msReturningFalse):
-			case ENCODE_OP_STATE(opRef, msReturningTrue):
-				break;
-
-			case ENCODE_OP_STATE(opNothing, msIterating):
-			case ENCODE_OP_STATE(opNothing, msReturningFalse):
-			case ENCODE_OP_STATE(opNothing, msReturningTrue):
-				break;
-
-			case ENCODE_OP_STATE(opAny, msIterating):
-				if (bufferPos >= bufferEnd)
-					state = msReturningFalse;
-				else
-					++bufferPos;
-				break;
-
-			case ENCODE_OP_STATE(opAnyOf, msIterating):
-				if (bufferPos >= bufferEnd)
-					state = msReturningFalse;
-				else
-				{
-					if (notInSet(bufferPos, 1, node->str, node->len) != 0)
-					{
-						const UCHAR* const end = node->str2 + node->len2;
-						const UCHAR* p = node->str2;
-
-						while (p < end)
-						{
-							UCHAR c[sizeof(ULONG)];
-							const ULONG len = charSet->substring(buffer.getCount(), buffer.begin(),
-													sizeof(c), c, bufferPos - bufferStart, 1);
-
-							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
-								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
-							{
-								break;
-							}
-
-							p += 2 + p[0] + p[1 + p[0]];
-						}
-
-						if (node->len + node->len2 != 0 && p >= end)
-						{
-							state = msReturningFalse;
-							break;
-						}
-					}
-
-					if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
-						state = msReturningFalse;
 					else
 					{
-						const UCHAR* const end = node->str4 + node->len4;
-						const UCHAR* p = node->str4;
+						scope->i += node->ref;
+						state = msIterating;
+					}
 
-						while (p < end)
+					break;
+
+				case opBranch:
+					if (state == msIterating)
+					{
+						if (node->branchNum != -1)
+							branches[node->branchNum].start = bufferPos - bufferStart;
+
+						scope->save = bufferPos;
+						start = scope->i + 1;
+						limit = scope->limit;
+						state = msRecursing;
+					}
+					else
+					{
+						fb_assert(state == msReturning);
+
+						if (!ret)
 						{
-							UCHAR c[sizeof(ULONG)];
-							const ULONG len = charSet->substring(
-								buffer.getCount(), buffer.begin(),
-								sizeof(c), c, bufferPos - bufferStart, 1);
+							bufferPos = scope->save;
 
-							if (textType->compare(len, c, p[0], p + 1) >= 0 &&
-								textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+							if (node->ref == 0)
+								ret = false;
+							else
 							{
-								break;
-							}
+								scope->i += node->ref;
+								node = &nodes[scope->i];
 
-							p += 2 + p[0] + p[1 + p[0]];
+								if (node->ref == 0)
+									state = msIterating;
+								else
+								{
+									scope->save = bufferPos;
+									start = scope->i + 1;
+									limit = scope->limit;
+									state = msRecursing;
+								}
+							}
+						}
+					}
+					break;
+
+				case opStart:
+					fb_assert(state == msIterating);
+					if (bufferPos != bufferStart)
+					{
+						ret = false;
+						state = msReturning;
+					}
+					break;
+
+				case opEnd:
+					fb_assert(state == msIterating);
+					if (bufferPos != bufferEnd)
+					{
+						ret = false;
+						state = msReturning;
+					}
+					break;
+
+				case opRef:
+					fb_assert(state == msIterating || state == msReturning);
+					if (state == msIterating)
+					{
+						if (node->branchNum != -1)
+						{
+							fb_assert(unsigned(node->branchNum) <= branchNum);
+							branches[node->branchNum].length =
+								bufferPos - bufferStart - branches[node->branchNum].start;
 						}
 
-						if (p < end)
-							state = msReturningFalse;
+						if (node->ref != 1)
+						{
+							state = msRecursing;
+							start = scope->i + node->ref;
+							limit = scope->limit;
+						}
 					}
-				}
+					break;
 
-				if (state == msIterating)
-					++bufferPos;
-				break;
+				case opNothing:
+					break;
 
-			case ENCODE_OP_STATE(opExactly, msIterating):
-				if (bufferEnd - bufferPos >= node->len &&
-					memcmp(node->str, bufferPos, node->len * sizeof(CharType)) == 0)
-				{
-					bufferPos += node->len;
-				}
-				else
-					state = msReturningFalse;
-				break;
+				case opAny:
+					fb_assert(state == msIterating);
+					if (bufferPos >= bufferEnd)
+					{
+						ret = false;
+						state = msReturning;
+					}
+					else
+						++bufferPos;
+					break;
 
-			case ENCODE_OP_STATE(opExactlyOne, msIterating):
-				if (bufferEnd - bufferPos >= 1 && *node->str == *bufferPos)
-					++bufferPos;
-				else
-					state = msReturningFalse;
-				break;
+				case opAnyOf:
+					fb_assert(state == msIterating);
+					if (bufferPos >= bufferEnd)
+					{
+						ret = false;
+						state = msReturning;
+					}
+					else
+					{
+						if (notInSet(bufferPos, 1, node->str, node->len) != 0)
+						{
+							const UCHAR* const end = node->str2 + node->len2;
+							const UCHAR* p = node->str2;
 
-			case ENCODE_OP_STATE(opRet, msReturningFalse):
-			case ENCODE_OP_STATE(opRet, msReturningTrue):
-				return state == msReturningTrue;
+							while (p < end)
+							{
+								UCHAR c[sizeof(ULONG)];
+								const ULONG len = charSet->substring(buffer.getCount(), buffer.begin(),
+														sizeof(c), c, bufferPos - bufferStart, 1);
 
-			default:
-				fb_assert(false);
-				return false;
-		}
+								if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+									textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+								{
+									break;
+								}
 
-#undef ENCODE_OP_STATE
+								p += 2 + p[0] + p[1 + p[0]];
+							}
 
-		switch (state)
-		{
-			case msIterating:
+							if (node->len + node->len2 != 0 && p >= end)
+							{
+								ret = false;
+								state = msReturning;
+								break;
+							}
+						}
+
+						if (notInSet(bufferPos, 1, node->str3, node->len3) == 0)
+						{
+							ret = false;
+							state = msReturning;
+						}
+						else
+						{
+							const UCHAR* const end = node->str4 + node->len4;
+							const UCHAR* p = node->str4;
+
+							while (p < end)
+							{
+								UCHAR c[sizeof(ULONG)];
+								const ULONG len = charSet->substring(
+									buffer.getCount(), buffer.begin(),
+									sizeof(c), c, bufferPos - bufferStart, 1);
+
+								if (textType->compare(len, c, p[0], p + 1) >= 0 &&
+									textType->compare(len, c, p[1 + p[0]], p + 2 + p[0]) <= 0)
+								{
+									break;
+								}
+
+								p += 2 + p[0] + p[1 + p[0]];
+							}
+
+							if (p < end)
+							{
+								ret = false;
+								state = msReturning;
+							}
+						}
+					}
+
+					if (state == msIterating)
+						++bufferPos;
+					break;
+
+				case opExactly:
+					fb_assert(state == msIterating);
+					if (node->len > bufferEnd - bufferPos ||
+						memcmp(node->str, bufferPos, node->len * sizeof(CharType)) != 0)
+					{
+						ret = false;
+						state = msReturning;
+					}
+					else
+						bufferPos += node->len;
+					break;
+
+				default:
+					fb_assert(false);
+					return false;
+			}
+
+			if (state == msIterating)
+			{
 				++scope->i;
-				break;
+				if (scope->i >= scope->limit)
+				{
+					ret = true;
+					state = msReturning;
+				}
+			}
 
-			case msReturningFalse:
-			case msReturningTrue:
-				scopeStack.pop();
-				break;
+			if (state == msReturning)
+				scopes.pop();
 		}
-	}
+	} while (scopes.getCount() != 0);
 
-	fb_assert(false);
-	return false;
+	return ret;
 }
 #endif
 
 
 // Returns the number of characters up to first one present in set.
-template <typename CharType, typename StrConverter>
-SLONG SimilarToMatcher<CharType, StrConverter>::Evaluator::notInSet(
+template <typename StrConverter, typename CharType>
+SLONG SimilarToMatcher<StrConverter, CharType>::Evaluator::notInSet(
 	const CharType* str, SLONG strLen, const CharType* set, SLONG setLen)
 {
 	for (const CharType* begin = str; str - begin < strLen; ++str)
@@ -1598,219 +1487,7 @@ SLONG SimilarToMatcher<CharType, StrConverter>::Evaluator::notInSet(
 	return strLen;
 }
 
-
-// Given a regular expression R1<escape>#R2#<escape>R3 and the string S:
-// - Find the shortest substring of S that matches R1 while the remainder (S23) matches R2R3;
-// - Find the longest (S2) substring of S23 that matches R2 while the remainder matches R3;
-// - Return S2.
-template <typename CharType, typename StrConverter = Jrd::CanonicalConverter<> >
-class SubstringSimilarMatcher : public Jrd::BaseSubstringSimilarMatcher
-{
-private:
-	typedef Jrd::CharSet CharSet;
-	typedef Jrd::TextType TextType;
-
-public:
-	SubstringSimilarMatcher(MemoryPool& pool, TextType* ttype,
-				const UCHAR* patternStr, SLONG patternLen, CharType aEscapeChar)
-		: BaseSubstringSimilarMatcher(pool, ttype),
-		  escapeChar(aEscapeChar),
-		  originalPatternStr(patternStr),
-		  originalPatternLen(patternLen),
-		  patternCvt(pool, textType, patternStr, patternLen),
-		  buffer(pool)
-	{
-		CharSet* charSet = textType->getCharSet();
-
-		// Make a new string without the <escape><quote>. While doing it, get the byte
-		// length of each segment.
-
-		UCharBuffer newExpr(originalPatternLen);
-		UCHAR* newExprPos = newExpr.begin();
-
-		const UCHAR* originalPatternEnd = originalPatternStr + originalPatternLen;
-		const UCHAR* originalPatternPos = originalPatternStr;
-
-		const CharType* lastStart = reinterpret_cast<const CharType*>(patternStr);
-		const CharType* end = lastStart + patternLen;
-		unsigned lengths[3];
-		unsigned lengthsNum = 0;
-		UCHAR dummy[sizeof(ULONG) * 2];
-
-		for (const CharType* p = lastStart; p < end; ++p)
-		{
-			if (*p != escapeChar)
-				continue;
-
-			if (++p >= end)
-				status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
-
-			if (*p == canonicalChar(TextType::CHAR_DOUBLE_QUOTE))
-			{
-				if (lengthsNum >= 2)
-					status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
-
-				// Get the byte length since the last segment.
-				ULONG len = charSet->substring(originalPatternEnd - originalPatternPos,
-					originalPatternPos, newExpr.begin() + originalPatternLen - newExprPos,
-					newExprPos, 0, p - lastStart - 1);
-
-				lengths[lengthsNum++] = len;
-				newExprPos += len;
-				originalPatternPos += len;
-
-				// Advance two (<escape><quote>) characters.
-				originalPatternPos += charSet->substring(originalPatternEnd - originalPatternPos,
-					originalPatternPos, sizeof(dummy), dummy, 0, 2);
-
-				lastStart = p + 1;	// Register the start of the next segment.
-			}
-		}
-
-		if (lengthsNum != 2)
-			status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
-
-		// Get the byte length of the last segment.
-		lengths[2] = charSet->substring(originalPatternEnd - originalPatternPos,
-			originalPatternPos, newExpr.begin() + originalPatternLen - newExprPos,
-			newExprPos, 0, end - lastStart);
-
-		// Construct the needed regular expressions.
-
-		r1 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
-				newExpr.begin(), lengths[0], escapeChar, true);
-
-		r2 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
-				newExpr.begin() + lengths[0], lengths[1], escapeChar, true);
-
-		r3 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
-				newExpr.begin() + lengths[0] + lengths[1], lengths[2], escapeChar, true);
-
-		r23 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
-				newExpr.begin() + lengths[0], lengths[1] + lengths[2], escapeChar, true);
-	}
-
-	static SubstringSimilarMatcher* create(MemoryPool& pool, TextType* ttype,
-		const UCHAR* str, SLONG length, const UCHAR* escape, SLONG escapeLen)
-	{
-		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
-
-		return FB_NEW(pool) SubstringSimilarMatcher(pool, ttype, str, length,
-			*reinterpret_cast<const CharType*>(escape));
-	}
-
-	void reset()
-	{
-		buffer.shrink(0);
-
-		r1->reset();
-		r2->reset();
-		r3->reset();
-		r23->reset();
-	}
-
-	bool result()
-	{
-		CharSet* charSet = textType->getCharSet();
-		const UCHAR* p = buffer.begin();
-		UCharBuffer temp(buffer.getCount());
-		UCHAR dummy[sizeof(ULONG)];
-
-		// Find the shortest substring that matches R1 while the full expression matches R1R2R3.
-		do
-		{
-			r1->reset();
-			r1->process(buffer.begin(), p - buffer.begin());
-
-			if (r1->result())
-			{
-				// We have a initial substring matching R1. Let's see if the remainder matches R2R3.
-
-				r23->reset();
-				r23->process(p, buffer.end() - p);
-
-				if (r23->result())
-				{
-					// Now we start to find the longest substring that matches R2 while the
-					// remainder matches R3. Once we found it, it's the result string.
-
-					// We already know its start, based on the substring that matched R1.
-					matchedStart = p - buffer.begin();
-
-					const UCHAR* p3 = buffer.end();
-					SLONG charLen23 = -1;
-					memcpy(temp.begin(), p, p3 - p);
-
-					while (true)
-					{
-						r2->reset();
-						r2->process(temp.begin(), p3 - p);
-
-						if (r2->result())
-						{
-							r3->reset();
-							r3->process(p3, buffer.end() - p3);
-
-							if (r3->result())
-							{
-								matchedLength = p3 - buffer.begin() - matchedStart;
-								return true;
-							}
-						}
-
-						if (charLen23 == -1)
-							charLen23 = charSet->length(p3 - p, p, true);
-
-						if (charLen23-- == 0)
-							break;
-
-						// Shrink in one character the string to match R2.
-						// Move back one character to match R3.
-						p3 = p + charSet->substring(buffer.end() - p, p, temp.getCapacity(),
-							temp.begin(), 0, charLen23);
-					}
-				}
-			}
-
-			// Advance a character.
-			p += charSet->substring(buffer.end() - p, p, sizeof(dummy), dummy, 0, 1);
-		} while (p < buffer.end());
-
-		return false;
-	}
-
-	bool process(const UCHAR* str, SLONG length)
-	{
-		const FB_SIZE_T pos = buffer.getCount();
-		memcpy(buffer.getBuffer(pos + length) + pos, str, length);
-		return true;
-	}
-
-	// We return byte-base start and length.
-	void getResultInfo(unsigned* start, unsigned* length)
-	{
-		*start = matchedStart;
-		*length = matchedLength;
-	}
-
-private:
-	CharType canonicalChar(int ch) const
-	{
-		return *reinterpret_cast<const CharType*>(textType->getCanonicalChar(ch));
-	}
-
-private:
-	CharType escapeChar;
-	const UCHAR* originalPatternStr;
-	SLONG originalPatternLen;
-	StrConverter patternCvt;
-	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-	AutoPtr<PatternMatcher> r1, r2, r3, r23;
-	unsigned matchedStart;
-	unsigned matchedLength;
-};
-
-
 } // namespace Firebird
+
 
 #endif	// JRD_SIMILAR_TO_EVALUATOR_H

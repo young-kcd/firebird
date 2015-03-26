@@ -23,13 +23,13 @@
 
 #include "firebird.h"
 #include "fb_types.h"
+#include "../common.h"
 #include "../../include/fb_blk.h"
 #include "fb_exception.h"
 #include "iberror.h"
 
 #include "../../dsql/chars.h"
-#include "../../dsql/ExprNodes.h"
-#include "../common/dsc.h"
+#include "../dsc.h"
 #include "../exe.h"
 #include "ExtDS.h"
 #include "../jrd.h"
@@ -42,6 +42,7 @@
 #include "../intl_proto.h"
 #include "../mov_proto.h"
 
+#include "../jrd/ibase.h"
 
 using namespace Jrd;
 using namespace Firebird;
@@ -68,6 +69,11 @@ Manager::~Manager()
 		m_providers = m_providers->m_next;
 		delete to_delete;
 	}
+}
+
+void Manager::init()
+{
+	fb_shutdown_callback(0, shutdown, fb_shut_preproviders, 0);
 }
 
 void Manager::addProvider(Provider* provider)
@@ -103,9 +109,10 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 {
 	if (!m_initialized)
 	{
-		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 		if (!m_initialized)
 		{
+			init();
 			m_initialized = true;
 		}
 	}
@@ -121,7 +128,7 @@ Connection* Manager::getConnection(thread_db* tdbb, const string& dataSource,
 	}
 	else
 	{
-		FB_SIZE_T pos = dataSource.find("::");
+		size_t pos = dataSource.find("::");
 		if (pos != string::npos)
 		{
 			prvName = dataSource.substr(0, pos);
@@ -149,10 +156,11 @@ void Manager::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
 	}
 }
 
-int Manager::shutdown()
+int Manager::shutdown(const int /*reason*/, const int /*mask*/, void* /*arg*/)
 {
+	thread_db* tdbb = JRD_get_thread_data();
 	for (Provider* prv = m_providers; prv; prv = prv->m_next) {
-		prv->cancelConnections();
+		prv->cancelConnections(tdbb);
 	}
 	return 0;
 }
@@ -177,13 +185,13 @@ Provider::~Provider()
 Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	const string& user, const string& pwd, const string& role, TraScope tra_scope)
 {
-	const Jrd::Attachment* attachment = tdbb->getAttachment();
+	const Attachment* attachment = tdbb->getAttachment();
 
 	if (attachment->att_ext_call_depth >= MAX_CALLBACKS)
 		ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
 
 	{ // m_mutex scope
-		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 
 		Connection** conn_ptr = m_connections.begin();
 		Connection** end = m_connections.end();
@@ -213,7 +221,7 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 	}
 
 	{ // m_mutex scope
-		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 		m_connections.add(conn);
 	}
 
@@ -225,11 +233,11 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 void Provider::releaseConnection(thread_db* tdbb, Connection& conn, bool /*inPool*/)
 {
 	{ // m_mutex scope
-		MutexLockGuard guard(m_mutex, FB_FUNCTION);
+		Database::CheckoutLockGuard guard(tdbb->getDatabase(), m_mutex);
 
 		conn.m_boundAtt = NULL;
 
-		FB_SIZE_T pos;
+		size_t pos;
 		if (!m_connections.find(&conn, pos))
 		{
 			fb_assert(false);
@@ -245,7 +253,7 @@ void Provider::clearConnections(thread_db* tdbb)
 {
 	fb_assert(!tdbb || !tdbb->getDatabase());
 
-	MutexLockGuard guard(m_mutex, FB_FUNCTION);
+	MutexLockGuard guard(m_mutex);
 
 	Connection** ptr = m_connections.begin();
 	Connection** end = m_connections.end();
@@ -259,15 +267,17 @@ void Provider::clearConnections(thread_db* tdbb)
 	m_connections.clear();
 }
 
-void Provider::cancelConnections()
+void Provider::cancelConnections(thread_db* tdbb)
 {
-	MutexLockGuard guard(m_mutex, FB_FUNCTION);
+	fb_assert(!tdbb || !tdbb->getDatabase());
+
+	MutexLockGuard guard(m_mutex);
 
 	Connection** ptr = m_connections.begin();
 	Connection** end = m_connections.end();
 
 	for (; ptr < end; ptr++) {
-		(*ptr)->cancelExecution();
+		(*ptr)->cancelExecution(tdbb);
 	}
 }
 
@@ -309,13 +319,41 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 {
 	dpb.reset(isc_dpb_version1);
 
-	const Jrd::Attachment* attachment = tdbb->getAttachment();
+	const Attachment *attachment = tdbb->getAttachment();
 	dpb.insertInt(isc_dpb_ext_call_depth, attachment->att_ext_call_depth + 1);
 
+	// Don't forget to set SQL dialect if role is present in DPB.
+
+	const string& attUser = attachment->att_user->usr_user_name;
+	const string& attRole = attachment->att_user->usr_sql_role_name;
+
 	if ((m_provider.getFlags() & prvTrustedAuth) &&
-		user.isEmpty() && pwd.isEmpty() && role.isEmpty())
+		(user.isEmpty() || user == attUser) && pwd.isEmpty() &&
+		(role.isEmpty() || role == attRole))
 	{
-		attachment->att_user->populateDpb(dpb);
+		dpb.insertString(isc_dpb_trusted_auth, attUser);
+
+		// We have exactly one role which could be trusted.
+		// Note: it will be changed in fb3 !
+		if (attachment->att_user->usr_flags & USR_trole)
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
+			dpb.insertString(isc_dpb_trusted_role, ADMIN_ROLE, strlen(ADMIN_ROLE));
+		}
+		// If there is granted role - just use it.
+		else if (attRole.hasData() && attRole != NULL_ROLE)
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
+			dpb.insertString(isc_dpb_sql_role_name, attRole);
+		}
+		// If application requested some role when current connection was 
+		// established - use it, as that role could be successfully granted 
+		// at external database.
+		else if (attachment->att_requested_role.hasData())
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
+    		dpb.insertString(isc_dpb_sql_role_name, attachment->att_requested_role);
+		}
 	}
 	else
 	{
@@ -325,7 +363,10 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 		if (!pwd.isEmpty()) {
 			dpb.insertString(isc_dpb_password, pwd);
 		}
-		if (!role.isEmpty()) {
+
+		if (!role.isEmpty()) 
+		{
+			dpb.insertByte(isc_dpb_sql_dialect, 0);
 			dpb.insertString(isc_dpb_sql_role_name, role);
 		}
 	}
@@ -334,8 +375,6 @@ void Connection::generateDPB(thread_db* tdbb, ClumpletWriter& dpb,
 	if (cs) {
 		dpb.insertString(isc_dpb_lc_ctype, cs->getName());
 	}
-
-	// remote network address???
 }
 
 bool Connection::isSameDatabase(thread_db* tdbb, const string& dbName,
@@ -344,7 +383,7 @@ bool Connection::isSameDatabase(thread_db* tdbb, const string& dbName,
 	if (m_dbName != dbName)
 		return false;
 
-	ClumpletWriter dpb(ClumpletReader::dpbList, MAX_DPB_SIZE);
+	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
 	generateDPB(tdbb, dpb, user, pwd, role);
 
 	return m_dpb.simpleCompare(dpb);
@@ -360,7 +399,7 @@ Transaction* Connection::createTransaction()
 
 void Connection::deleteTransaction(Transaction* tran)
 {
-	FB_SIZE_T pos;
+	size_t pos;
 	if (m_transactions.find(tran, pos))
 	{
 		m_transactions.remove(pos);
@@ -416,7 +455,7 @@ void Connection::releaseStatement(Jrd::thread_db* tdbb, Statement* stmt)
 	}
 	else
 	{
-		FB_SIZE_T pos;
+		size_t pos;
 		if (m_statements.find(stmt, pos))
 		{
 			m_statements.remove(pos);
@@ -512,7 +551,7 @@ Transaction* Connection::findTransaction(thread_db* tdbb, TraScope traScope) con
 	return ext_tran;
 }
 
-void Connection::raise(const FbStatusVector* status, thread_db* /*tdbb*/, const char* sWhere)
+void Connection::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere)
 {
 	if (!getWrapErrors())
 	{
@@ -527,6 +566,7 @@ void Connection::raise(const FbStatusVector* status, thread_db* /*tdbb*/, const 
 											 Arg::Str(rem_err) <<
 											 Arg::Str(getDataSourceName()));
 }
+
 
 // Transaction
 
@@ -543,7 +583,7 @@ Transaction::~Transaction()
 {
 }
 
-void Transaction::generateTPB(thread_db* /*tdbb*/, ClumpletWriter& tpb,
+void Transaction::generateTPB(thread_db* tdbb, ClumpletWriter& tpb,
 		TraModes traMode, bool readOnly, bool wait, int lockTimeout) const
 {
 	switch (traMode)
@@ -581,11 +621,11 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 	ClumpletWriter tpb(ClumpletReader::Tpb, 64, isc_tpb_version3);
 	generateTPB(tdbb, tpb, traMode, readOnly, wait, lockTimeout);
 
-	FbLocalStatus status;
-	doStart(&status, tdbb, tpb);
+	ISC_STATUS_ARRAY status = {0};
+	doStart(status, tdbb, tpb);
 
-	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_connection.raise(&status, tdbb, "transaction start");
+	if (status[1]) {
+		m_connection.raise(status, tdbb, "transaction start");
 	}
 
 	jrd_tra* tran = tdbb->getTransaction();
@@ -607,21 +647,21 @@ void Transaction::start(thread_db* tdbb, TraScope traScope, TraModes traMode,
 
 void Transaction::prepare(thread_db* tdbb, int info_len, const char* info)
 {
-	FbLocalStatus status;
-	doPrepare(&status, tdbb, info_len, info);
+	ISC_STATUS_ARRAY status = {0};
+	doPrepare(status, tdbb, info_len, info);
 
-	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_connection.raise(&status, tdbb, "transaction prepare");
+	if (status[1]) {
+		m_connection.raise(status, tdbb, "transaction prepare");
 	}
 }
 
 void Transaction::commit(thread_db* tdbb, bool retain)
 {
-	FbLocalStatus status;
-	doCommit(&status, tdbb, retain);
+	ISC_STATUS_ARRAY status = {0};
+	doCommit(status, tdbb, retain);
 
-	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		m_connection.raise(&status, tdbb, "transaction commit");
+	if (status[1]) {
+		m_connection.raise(status, tdbb, "transaction commit");
 	}
 
 	if (!retain)
@@ -633,8 +673,8 @@ void Transaction::commit(thread_db* tdbb, bool retain)
 
 void Transaction::rollback(thread_db* tdbb, bool retain)
 {
-	FbLocalStatus status;
-	doRollback(&status, tdbb, retain);
+	ISC_STATUS_ARRAY status = {0};
+	doRollback(status, tdbb, retain);
 
 	Connection& conn = m_connection;
 	if (!retain)
@@ -643,8 +683,8 @@ void Transaction::rollback(thread_db* tdbb, bool retain)
 		m_connection.deleteTransaction(this);
 	}
 
-	if (status->getState() & FbStatusVector::STATE_ERRORS) {
-		conn.raise(&status, tdbb, "transaction rollback");
+	if (status[1]) {
+		conn.raise(status, tdbb, "transaction rollback");
 	}
 }
 
@@ -819,9 +859,8 @@ void Statement::prepare(thread_db* tdbb, Transaction* tran, const string& sql, b
 	m_preparedByReq = m_callerPrivileges ? tdbb->getRequest() : NULL;
 }
 
-void Statement::execute(thread_db* tdbb, Transaction* tran,
-	const MetaName* const* in_names, const ValueListNode* in_params,
-	const ValueListNode* out_params)
+void Statement::execute(thread_db* tdbb, Transaction* tran, int in_count,
+	const string* const* in_names, jrd_nod** in_params, int out_count, jrd_nod** out_params)
 {
 	fb_assert(isAllocated() && !m_stmt_selectable);
 	fb_assert(!m_error);
@@ -829,13 +868,13 @@ void Statement::execute(thread_db* tdbb, Transaction* tran,
 
 	m_transaction = tran;
 
-	setInParams(tdbb, in_names, in_params);
+	setInParams(tdbb, in_count, in_names, in_params);
 	doExecute(tdbb);
-	getOutParams(tdbb, out_params);
+	getOutParams(tdbb, out_count, out_params);
 }
 
-void Statement::open(thread_db* tdbb, Transaction* tran,
-	const MetaName* const* in_names, const ValueListNode* in_params, bool singleton)
+void Statement::open(thread_db* tdbb, Transaction* tran, int in_count,
+	const string* const* in_names, jrd_nod** in_params, bool singleton)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -844,14 +883,14 @@ void Statement::open(thread_db* tdbb, Transaction* tran,
 	m_singleton = singleton;
 	m_transaction = tran;
 
-	setInParams(tdbb, in_names, in_params);
+	setInParams(tdbb, in_count, in_names, in_params);
 	doOpen(tdbb);
 
 	m_active = true;
 	m_fetched = false;
 }
 
-bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
+bool Statement::fetch(thread_db* tdbb, int out_count, jrd_nod** out_params)
 {
 	fb_assert(isAllocated() && m_stmt_selectable);
 	fb_assert(!m_error);
@@ -862,15 +901,15 @@ bool Statement::fetch(thread_db* tdbb, const ValueListNode* out_params)
 
 	m_fetched = true;
 
-	getOutParams(tdbb, out_params);
+	getOutParams(tdbb, out_count, out_params);
 
 	if (m_singleton)
 	{
 		if (doFetch(tdbb))
 		{
-			FbLocalStatus status;
-			Arg::Gds(isc_sing_select_err).copyTo(&status);
-			raise(&status, tdbb, "isc_dsql_fetch");
+			ISC_STATUS_ARRAY status;
+			Arg::Gds(isc_sing_select_err).copyTo(status);
+			raise(status, tdbb, "isc_dsql_fetch");
 		}
 		return false;
 	}
@@ -897,7 +936,7 @@ void Statement::close(thread_db* tdbb)
 			if (!doPunt && !wasError)
 			{
 				doPunt = true;
-				ex.stuff_exception(tdbb->tdbb_status_vector);
+				stuff_exception(tdbb->tdbb_status_vector, ex);
 			}
 		}
 		m_active = false;
@@ -921,7 +960,7 @@ void Statement::close(thread_db* tdbb)
 				if (!doPunt && !wasError)
 				{
 					doPunt = true;
-					ex.stuff_exception(tdbb->tdbb_status_vector);
+					stuff_exception(tdbb->tdbb_status_vector, ex);
 				}
 			}
 		}
@@ -936,7 +975,7 @@ void Statement::close(thread_db* tdbb)
 				if (!doPunt && !wasError)
 				{
 					doPunt = true;
-					ex.stuff_exception(tdbb->tdbb_status_vector);
+					stuff_exception(tdbb->tdbb_status_vector, ex);
 				}
 			}
 		}
@@ -958,8 +997,7 @@ void Statement::deallocate(thread_db* tdbb)
 		try {
 			doClose(tdbb, true);
 		}
-		catch (const Exception&)
-		{
+		catch (const Exception&) {
 			// ignore
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 		}
@@ -1036,13 +1074,13 @@ static TokenType getToken(const char** begin, const char* end)
 	default:
 		if (classes(c) & CHR_DIGIT)
 		{
-			while (p < end && (classes(*p) & CHR_DIGIT))
+			while (p < end && classes(*p) & CHR_DIGIT)
 				p++;
 			ret = ttOther;
 		}
 		else if (classes(c) & CHR_IDENT)
 		{
-			while (p < end && (classes(*p) & CHR_IDENT))
+			while (p < end && classes(*p) & CHR_IDENT)
 				p++;
 			ret = ttIdent;
 		}
@@ -1116,8 +1154,7 @@ void Statement::preprocess(const string& sql, string& ret)
 		execBlock = (ident2 == "BLOCK");
 		passAsIs = false;
 	}
-	else
-	{
+	else {
 		passAsIs = !(ident == "INSERT" || ident == "UPDATE" ||  ident == "DELETE" ||
 			ident == "MERGE" || ident == "SELECT" || ident == "WITH");
 	}
@@ -1128,7 +1165,7 @@ void Statement::preprocess(const string& sql, string& ret)
 		return;
 	}
 
-	ret.append(start, p - start);
+	ret += string(start, p - start);
 
 	while (p < end)
 	{
@@ -1145,7 +1182,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				if (tok == ttIdent)
 					ident.upper();
 
-				FB_SIZE_T n = 0;
+				size_t n = 0;
 				for (; n < m_sqlParamNames.getCount(); n++)
 				{
 					if ((*m_sqlParamNames[n]) == ident)
@@ -1155,7 +1192,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				if (n >= m_sqlParamNames.getCount())
 				{
 					n = m_sqlParamNames.getCount();
-					m_sqlParamNames.add(FB_NEW(getPool()) MetaName(getPool(), ident));
+					m_sqlParamNames.add(FB_NEW(getPool()) string(getPool(), ident));
 				}
 				m_sqlParamsMap.add(m_sqlParamNames[n]);
 			}
@@ -1176,7 +1213,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				ident.upper();
 				if (ident == "AS")
 				{
-					ret.append(start, end - start);
+					ret += string(start, end - start);
 					return;
 				}
 			}
@@ -1186,7 +1223,7 @@ void Statement::preprocess(const string& sql, string& ret)
 		case ttComment:
 		case ttString:
 		case ttOther:
-			ret.append(start, p - start);
+			ret += string(start, p - start);
 			break;
 
 		case ttBrokenComment:
@@ -1209,12 +1246,9 @@ void Statement::preprocess(const string& sql, string& ret)
 	return;
 }
 
-void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
-	const ValueListNode* params)
+void Statement::setInParams(thread_db* tdbb, int count, const string* const* names, jrd_nod** params)
 {
-	const FB_SIZE_T count = params ? params->items.getCount() : 0;
-
-	m_error = (names && (m_sqlParamNames.getCount() != count || count == 0)) ||
+	m_error = (names && ((int) m_sqlParamNames.getCount() != count || !count)) ||
 		(!names && m_sqlParamNames.getCount());
 
 	if (m_error)
@@ -1225,16 +1259,15 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 
 	if (m_sqlParamNames.getCount())
 	{
-		const unsigned int sqlCount = m_sqlParamsMap.getCount();
-		// Here NestConst plays against its objective. It temporary unconstifies the values.
-		Array<NestConst<ValueExprNode> > sqlParamsArray(getPool(), 16);
-		NestConst<ValueExprNode>* sqlParams = sqlParamsArray.getBuffer(sqlCount);
+		const int sqlCount = m_sqlParamsMap.getCount();
+		Array<jrd_nod*> sqlParamsArray(getPool(), 16);
+		jrd_nod** sqlParams = sqlParamsArray.getBuffer(sqlCount);
 
-		for (unsigned int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
+		for (int sqlNum = 0; sqlNum < sqlCount; sqlNum++)
 		{
-			const MetaName* sqlName = m_sqlParamsMap[sqlNum];
+			const string* sqlName = m_sqlParamsMap[sqlNum];
 
-			unsigned int num = 0;
+			int num = 0;
 			for (; num < count; num++)
 			{
 				if (*names[num] == *sqlName)
@@ -1247,17 +1280,18 @@ void Statement::setInParams(thread_db* tdbb, const MetaName* const* names,
 				status_exception::raise(Arg::Gds(isc_eds_input_prm_not_set) << Arg::Str(*sqlName));
 			}
 
-			sqlParams[sqlNum] = params->items[num];
+			sqlParams[sqlNum] = params[num];
 		}
 
 		doSetInParams(tdbb, sqlCount, m_sqlParamsMap.begin(), sqlParams);
 	}
 	else
-		doSetInParams(tdbb, count, names, (params ? params->items.begin() : NULL));
+	{
+		doSetInParams(tdbb, count, names, params);
+	}
 }
 
-void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaName* const* /*names*/,
-	const NestConst<ValueExprNode>* params)
+void Statement::doSetInParams(thread_db* tdbb, int count, const string* const* /*names*/, jrd_nod** params)
 {
 	if (count != getInputs())
 	{
@@ -1269,12 +1303,12 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaNam
 	if (!count)
 		return;
 
-	const NestConst<ValueExprNode>* jrdVar = params;
-	GenericMap<Pair<NonPooled<const ValueExprNode*, dsc*> > > paramDescs(getPool());
+	jrd_nod** jrdVar = params;
+	GenericMap<Pair<NonPooled<jrd_nod*, dsc*> > > paramDescs(getPool());
 
-	jrd_req* request = tdbb->getRequest();
+	const jrd_req* request = tdbb->getRequest();
 
-	for (FB_SIZE_T i = 0; i < count; ++i, ++jrdVar)
+	for (int i = 0; i < count; i++, jrdVar++)
 	{
 		dsc* src = NULL;
 		dsc& dst = m_inDescs[i * 2];
@@ -1282,7 +1316,7 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaNam
 
 		if (!paramDescs.get(*jrdVar, src))
 		{
-			src = EVL_expr(tdbb, request, *jrdVar);
+			src = EVL_expr(tdbb, *jrdVar);
 			paramDescs.put(*jrdVar, src);
 
 			if (src)
@@ -1290,7 +1324,7 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaNam
 				if (request->req_flags & req_null)
 					src->setNull();
 				else
-					src->clearNull();
+					src->dsc_flags &= ~DSC_null;
 			}
 		}
 
@@ -1328,11 +1362,9 @@ void Statement::doSetInParams(thread_db* tdbb, unsigned int count, const MetaNam
 }
 
 
-// m_outDescs -> ValueExprNode
-void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
+// m_outDescs -> jrd_nod
+void Statement::getOutParams(thread_db* tdbb, int count, jrd_nod** params)
 {
-	const size_t count = params ? params->items.getCount() : 0;
-
 	if (count != getOutputs())
 	{
 		m_error = true;
@@ -1343,11 +1375,10 @@ void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 	if (!count)
 		return;
 
-	const NestConst<ValueExprNode>* jrdVar = params->items.begin();
-
-	for (FB_SIZE_T i = 0; i < count; ++i, ++jrdVar)
+	jrd_nod** jrdVar = params;
+	for (int i = 0; i < count; i++, jrdVar++)
 	{
-		/*
+/*
 		dsc* d = EVL_assign_to(tdbb, *jrdVar);
 		if (d->dsc_dtype >= FB_NELEM(sqlType) || sqlType[d->dsc_dtype] < 0)
 		{
@@ -1355,7 +1386,7 @@ void Statement::getOutParams(thread_db* tdbb, const ValueListNode* params)
 			status_exception::raise(
 				Arg::Gds(isc_exec_sql_invalid_var) << Arg::Num(i + 1) << Arg::Str(m_sql.substr(0, 31)));
 		}
-		*/
+*/
 
 		// build the src descriptor
 		dsc& src = m_outDescs[i * 2];
@@ -1390,14 +1421,14 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 		jrd_req* request = tdbb->getRequest();
 		const UCHAR bpb[] = {isc_bpb_version1, isc_bpb_storage, 1, isc_bpb_storage_temp};
 		bid* localBlobID = (bid*) dst.dsc_address;
-		destBlob = blb::create2(tdbb, request->req_transaction, localBlobID, sizeof(bpb), bpb);
+		destBlob = BLB_create2(tdbb, request->req_transaction, localBlobID, sizeof(bpb), bpb);
 
 		// hvlad ?
 		destBlob->blb_sub_type = src.getBlobSubType();
 		destBlob->blb_charset = src.getCharSet();
 
-		Array<UCHAR> buffer;
-		const int bufSize = 32 * 1024 - 2/*input->getMaxSegment()*/;
+		Firebird::Array<UCHAR> buffer;
+		const int bufSize = 32 * 1024 - 2/*input->blb_max_segment*/;
 		UCHAR* buff = buffer.getBuffer(bufSize);
 
 		while (true)
@@ -1406,17 +1437,17 @@ void Statement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 			if (!length)
 				break;
 
-			destBlob->BLB_put_segment(tdbb, buff, length);
+			BLB_put_segment(tdbb, destBlob, buff, length);
 		}
 
 		extBlob->close(tdbb);
-		destBlob->BLB_close(tdbb);
+		BLB_close(tdbb, destBlob);
 	}
 	catch (const Exception&)
 	{
 		extBlob->close(tdbb);
 		if (destBlob) {
-			destBlob->BLB_cancel(tdbb);
+			BLB_cancel(tdbb, destBlob);
 		}
 		throw;
 	}
@@ -1436,15 +1467,15 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 
 		UCharBuffer bpb;
 		BLB_gen_bpb_from_descs(&src, &dst, bpb);
-		srcBlob = blb::open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
+		srcBlob = BLB_open2(tdbb, request->req_transaction, srcBid, bpb.getCount(), bpb.begin());
 
-		HalfStaticArray<UCHAR, 2048> buffer;
-		const int bufSize = srcBlob->getMaxSegment();
+		Firebird::HalfStaticArray<UCHAR, 2048> buffer;
+		const int bufSize = srcBlob->blb_max_segment;
 		UCHAR* buff = buffer.getBuffer(bufSize);
 
 		while (true)
 		{
-			USHORT length = srcBlob->BLB_get_segment(tdbb, buff, srcBlob->getMaxSegment());
+			USHORT length = BLB_get_segment(tdbb, srcBlob, buff, srcBlob->blb_max_segment);
 			if (srcBlob->blb_flags & BLB_eof) {
 				break;
 			}
@@ -1452,14 +1483,14 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 			extBlob->write(tdbb, buff, length);
 		}
 
-		srcBlob->BLB_close(tdbb);
+		BLB_close(tdbb, srcBlob);
 		extBlob->close(tdbb);
 	}
 	catch (const Exception&)
 	{
 		extBlob->cancel(tdbb);
 		if (srcBlob) {
-			srcBlob->BLB_close(tdbb);
+			BLB_close(tdbb, srcBlob);
 		}
 		throw;
 	}
@@ -1467,7 +1498,7 @@ void Statement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 
 void Statement::clearNames()
 {
-	MetaName** s = m_sqlParamNames.begin(), **end = m_sqlParamNames.end();
+	string** s = m_sqlParamNames.begin(), **end = m_sqlParamNames.end();
 	for (; s < end; s++)
 	{
 		delete *s;
@@ -1479,7 +1510,7 @@ void Statement::clearNames()
 }
 
 
-void Statement::raise(FbStatusVector* status, thread_db* tdbb, const char* sWhere,
+void Statement::raise(ISC_STATUS* status, thread_db* tdbb, const char* sWhere,
 		const string* sQuery)
 {
 	m_error = true;
@@ -1496,14 +1527,14 @@ void Statement::raise(FbStatusVector* status, thread_db* tdbb, const char* sWher
 
 		if (status == tdbb->tdbb_status_vector)
 		{
-			status->init();
+			fb_utils::init_status(status);
 		}
 	}
 
 	// Execute statement error at @1 :\n@2Statement : @3\nData source : @4
-	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
+ 	ERR_post(Arg::Gds(isc_eds_statement) << Arg::Str(sWhere) <<
 											Arg::Str(rem_err) <<
-											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
+ 											Arg::Str(sQuery ? sQuery->substr(0, 255) : m_sql.substr(0, 255)) <<
 											Arg::Str(m_connection.getDataSourceName()));
 }
 
@@ -1548,7 +1579,7 @@ void Statement::unBindFromRequest()
 
 //  EngineCallbackGuard
 
-void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* from)
+void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn)
 {
 	m_tdbb = tdbb;
 	m_mutex = conn.isConnected() ? &conn.m_mutex : &conn.m_provider.m_mutex;
@@ -1556,8 +1587,8 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* fr
 
 	if (m_tdbb)
 	{
-		jrd_tra* transaction = m_tdbb->getTransaction();
-		if (transaction)
+		jrd_tra *transaction = m_tdbb->getTransaction();
+		if (transaction) 
 		{
 			if (transaction->tra_callback_count >= MAX_CALLBACKS)
 				ERR_post(Arg::Gds(isc_exec_sql_max_call_exceeded));
@@ -1565,17 +1596,18 @@ void EngineCallbackGuard::init(thread_db* tdbb, Connection& conn, const char* fr
 			transaction->tra_callback_count++;
 		}
 
-		Jrd::Attachment* attachment = m_tdbb->getAttachment();
+		Attachment *attachment = m_tdbb->getAttachment();
 		if (attachment)
 		{
 			m_saveConnection = attachment->att_ext_connection;
 			attachment->att_ext_connection = &conn;
-			attachment->getStable()->getMutex()->leave();
 		}
+
+		m_tdbb->getDatabase()->dbb_sync->unlock();
 	}
 
 	if (m_mutex) {
-		m_mutex->enter(from);
+		m_mutex->enter();
 	}
 }
 
@@ -1587,18 +1619,17 @@ EngineCallbackGuard::~EngineCallbackGuard()
 
 	if (m_tdbb)
 	{
-		Jrd::Attachment* attachment = m_tdbb->getAttachment();
+		m_tdbb->getDatabase()->dbb_sync->lock();
 
-		if (attachment)
-		{
-			attachment->getStable()->getMutex()->enter(FB_FUNCTION);
-			attachment->att_ext_connection = m_saveConnection;
+		jrd_tra *transaction = m_tdbb->getTransaction();
+		if (transaction) {
+			transaction->tra_callback_count--;
 		}
 
-		jrd_tra* transaction = m_tdbb->getTransaction();
-
-		if (transaction)
-			transaction->tra_callback_count--;
+		Attachment *attachment = m_tdbb->getAttachment();
+		if (attachment) {
+			attachment->att_ext_connection = m_saveConnection;
+		}
 	}
 }
 

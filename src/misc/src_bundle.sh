@@ -1,4 +1,4 @@
-#!/bin/sh
+#/bin/sh
 #
 #  The contents of this file are subject to the Initial
 #  Developer's Public License Version 1.0 (the "License");
@@ -36,7 +36,7 @@ popd >/dev/null 2>&1
 
 # What and where to bundle
 MODULE=$SRCROOT/temp/src
-MEMBERS="builds doc examples extern lang_helpers src ChangeLog Makefile.in acx_pthread.m4 autogen.sh binreloc.m4 configure.ac"
+MEMBERS="builds doc examples extern lang_helpers src ChangeLog Makefile.in acx_pthread.m4 autogen.sh binreloc.m4 configure.in"
 
 # Cleanup
 rm -rf $MODULE

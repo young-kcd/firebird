@@ -92,6 +92,7 @@
 
 #include "firebird.h"
 #include <string.h>
+#include "../jrd/common.h"
 #include <stdio.h>
 #include "../jrd/jrd.h"
 #include "../jrd/req.h"
@@ -103,7 +104,7 @@
 #include "../jrd/btr.h"
 #include "../intl/charsets.h"
 #include "../intl/country_codes.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 //#include "../jrd/license.h"
 #ifdef INTL_BUILTIN
 #include "../intl/ld_proto.h"
@@ -112,13 +113,12 @@
 #include "../common/cvt.h"
 #include "../jrd/err_proto.h"
 #include "../jrd/fun_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../jrd/intl_proto.h"
-#include "../common/isc_proto.h"
+#include "../jrd/isc_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
-#include "../common/intlobj_new.h"
-#include "../jrd/Collation.h"
+#include "../jrd/intlobj_new.h"
 #include "../jrd/mov_proto.h"
 #include "../jrd/IntlManager.h"
 #include "../common/classes/init.h"
@@ -131,9 +131,10 @@ using namespace Firebird;
 			 ((x)->dsc_dtype == dtype_cstring))
 
 
-static bool allSpaces(CharSet*, const BYTE*, ULONG, ULONG);
+static bool all_spaces(thread_db*, CHARSET_ID, const BYTE*, ULONG, ULONG);
 static int blocking_ast_collation(void* ast_object);
 static void pad_spaces(thread_db*, CHARSET_ID, BYTE *, ULONG);
+static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info);
 static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info);
 
 static GlobalPtr<Mutex> createCollationMtx;
@@ -144,22 +145,22 @@ class CharSetContainer
 public:
 	CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info);
 
-	void release(thread_db* tdbb)
+	void release()
 	{
-		for (FB_SIZE_T i = 0; i < charset_collations.getCount(); i++)
+		for (size_t i = 0; i < charset_collations.getCount(); i++)
 		{
 			if (charset_collations[i])
-				charset_collations[i]->release(tdbb);
+				charset_collations[i]->release();
 		}
 	}
 
-	void destroy(thread_db* tdbb)
+	void destroy()
 	{
 		cs->destroy();
-		for (FB_SIZE_T i = 0; i < charset_collations.getCount(); i++)
+		for (size_t i = 0; i < charset_collations.getCount(); i++)
 		{
 			if (charset_collations[i])
-				charset_collations[i]->destroy(tdbb);
+				charset_collations[i]->destroy();
 		}
 	}
 
@@ -171,10 +172,7 @@ public:
 	CsConvert lookupConverter(thread_db* tdbb, CHARSET_ID to_cs);
 
 	static CharSetContainer* lookupCharset(thread_db* tdbb, USHORT ttype);
-	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype, void* object = NULL);
-
-private:
-	static bool lookupInternalCharSet(USHORT id, SubtypeInfo* info);
+	static Lock* createCollationLock(thread_db* tdbb, USHORT ttype);
 
 private:
 	Firebird::Array<Collation*> charset_collations;
@@ -204,30 +202,32 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
  *      <never>         - if error
  *
  **************************************/
-	CharSetContainer* cs = NULL;
+	CharSetContainer *cs = NULL;
 
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
-	fb_assert(attachment);
+	Database* dbb = tdbb->getDatabase();
 
 	USHORT id = TTYPE_TO_CHARSET(ttype);
 	if (id == CS_dynamic)
-		id = tdbb->getCharSet();
+		id = tdbb->getAttachment()->att_charset;
 
-	if (id >= attachment->att_charsets.getCount())
-		attachment->att_charsets.resize(id + 10);
+	if (id >= dbb->dbb_charsets.getCount())
+		dbb->dbb_charsets.resize(id + 10);
 	else
-		cs = attachment->att_charsets[id];
+		cs = dbb->dbb_charsets[id];
 
 	// allocate a new character set object if we couldn't find one.
 	if (!cs)
 	{
 		SubtypeInfo info;
 
-		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
+		if (id == CS_UTF16)
+			info.charsetName = "UTF16";
+
+		if ((id == CS_UTF16) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
-			attachment->att_charsets[id] = cs =
-				FB_NEW(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
+			dbb->dbb_charsets[id] = cs =
+				FB_NEW(*dbb->dbb_permanent) CharSetContainer(*dbb->dbb_permanent, id, &info);
 		}
 		else
 			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));
@@ -236,53 +236,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 	return cs;
 }
 
-
-// Lookup a system character set without looking in the database.
-bool CharSetContainer::lookupInternalCharSet(USHORT id, SubtypeInfo* info)
-{
-	if (id == CS_UTF16)
-	{
-		info->charsetName = "UTF16";
-		return true;
-	}
-
-	if (id > ttype_last_internal)
-		return false;
-
-	// ASF: This linear lookup appears slow, but it should be cached per database so should not
-	// cause performance problem.
-	for (const IntlManager::CharSetDefinition* csDef = IntlManager::defaultCharSets;
-		 csDef->name; ++csDef)
-	{
-		if (csDef->id != id)
-			continue;
-
-		for (const IntlManager::CollationDefinition* colDef = IntlManager::defaultCollations;
-			 colDef->name; ++colDef)
-		{
-			if (colDef->charSetId == id && colDef->collationId == 0)
-			{
-				info->charsetName = csDef->name;
-				info->collationName = colDef->name;
-				info->attributes = colDef->attributes;
-				info->ignoreAttributes = false;
-
-				if (colDef->specificAttributes)
-				{
-					info->specificAttributes.push((const UCHAR*) colDef->specificAttributes,
-						fb_strlen(colDef->specificAttributes));
-				}
-
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-
-Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype, void* object)
+Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype)
 {
 /**************************************
  *
@@ -294,28 +248,28 @@ Lock* CharSetContainer::createCollationLock(thread_db* tdbb, USHORT ttype, void*
  *      Create a collation lock.
  *
  **************************************/
-	// Could we have an AST on this lock? If yes, it will fail if we don't
-	// have lck_object to it, so set ast routine to NULL for safety.
-
-	Lock* lock = FB_NEW_RPT(*tdbb->getAttachment()->att_pool, 0)
-		Lock(tdbb, sizeof(SLONG), LCK_tt_exist, object, (object ? blocking_ast_collation : NULL));
+	Lock* lock = FB_NEW_RPT(*tdbb->getDatabase()->dbb_permanent, 0) Lock;
+	lock->lck_parent = tdbb->getDatabase()->dbb_lock;
+	lock->lck_dbb = tdbb->getDatabase();
 	lock->lck_key.lck_long = ttype;
+	lock->lck_length = sizeof(lock->lck_key.lck_long);
+	lock->lck_type = LCK_tt_exist;
+	lock->lck_owner_handle = LCK_get_owner_handle(tdbb, lock->lck_type);
+	lock->lck_object = NULL;
+	lock->lck_ast = blocking_ast_collation;
 
 	return lock;
 }
 
-CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info)
-	: charset_collations(p),
-	  cs(NULL)
+CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInfo* info) :
+	charset_collations(p),
+	cs(NULL)
 {
 	charset* csL = FB_NEW(p) charset;
 	memset(csL, 0, sizeof(charset));
 
-	if (IntlManager::lookupCharSet(info->charsetName.c_str(), csL) &&
-		(csL->charset_flags & CHARSET_ASCII_BASED))
-	{
+	if (lookup_charset(csL, info) && (csL->charset_flags & CHARSET_ASCII_BASED))
 		this->cs = CharSet::createInstance(p, cs_id, csL);
-	}
 	else
 	{
 		delete csL;
@@ -345,11 +299,10 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			return charset_collations[id];
 	}
 
-	Jrd::Attachment* att = tdbb->getAttachment();
-	Jrd::Attachment::CheckoutLockGuard guard(att, createCollationMtx, FB_FUNCTION); // do we need it ?
+	Database* dbb = tdbb->getDatabase();
+	Database::CheckoutLockGuard guard(dbb, createCollationMtx);
 
 	Collation* to_delete = NULL;
-
 	if (id < charset_collations.getCount() && charset_collations[id] != NULL)
 	{
 		if (charset_collations[id]->obsolete)
@@ -358,12 +311,13 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			// else wait until all references are released
 			if (charset_collations[id]->useCount == 0)
 			{
-				charset_collations[id]->destroy(tdbb);
+				charset_collations[id]->destroy();
 				delete charset_collations[id];
 			}
 			else
+			{
 				to_delete = charset_collations[id];
-
+			}
 			charset_collations[id] = NULL;
 		}
 		else
@@ -388,7 +342,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			info.specificAttributes = specificAttributes;
 		}
 
-		texttype* tt = FB_NEW(*att->att_pool) texttype;
+		texttype* tt = FB_NEW(*tdbb->getDatabase()->dbb_permanent) texttype;
 		memset(tt, 0, sizeof(texttype));
 
 		if (!lookup_texttype(tt, &info))
@@ -416,14 +370,15 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			}
 		}
 
-		charset_collations[id] = Collation::createInstance(*att->att_pool, tt_id, tt, charset);
+		charset_collations[id] = Collation::createInstance(*tdbb->getDatabase()->dbb_permanent, tt_id, tt, charset);
 		charset_collations[id]->name = info.collationName;
 
 		// we don't need a lock in the charset
 		if (id != 0)
 		{
 			Lock* lock = charset_collations[id]->existenceLock =
-				CharSetContainer::createCollationLock(tdbb, tt_id, charset_collations[id]);
+				CharSetContainer::createCollationLock(tdbb, tt_id);
+			lock->lck_object = charset_collations[id];
 
 			fb_assert(charset_collations[id]->useCount == 0);
 			fb_assert(!charset_collations[id]->obsolete);
@@ -434,7 +389,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			// we could safely delete obsolete instance
 			if (to_delete)
 			{
-				to_delete->destroy(tdbb);
+				to_delete->destroy();
 				delete to_delete;
 			}
 		}
@@ -444,7 +399,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 		if (to_delete)
 		{
 			LCK_lock(tdbb, to_delete->existenceLock, LCK_SR, LCK_WAIT);
-			to_delete->destroy(tdbb);
+			to_delete->destroy();
 			delete to_delete;
 		}
 
@@ -482,11 +437,21 @@ void CharSetContainer::unloadCollation(thread_db* tdbb, USHORT tt_id)
 		// signal other processes collation is gone
 		Lock* lock = CharSetContainer::createCollationLock(tdbb, tt_id);
 
+		// Could we have an AST on this lock? If yes, it will fail as we don't
+		// assign lck_object to it, so clear ast routine for safety.
+		lock->lck_ast = NULL;
+
 		LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 		LCK_release(tdbb, lock);
 
 		delete lock;
 	}
+}
+
+
+static INTL_BOOL lookup_charset(charset* cs, const SubtypeInfo* info)
+{
+	return IntlManager::lookupCharSet(info->charsetName.c_str(), cs);
 }
 
 
@@ -498,81 +463,26 @@ static INTL_BOOL lookup_texttype(texttype* tt, const SubtypeInfo* info)
 }
 
 
-void Jrd::Attachment::releaseIntlObjects(thread_db* tdbb)
+void Database::releaseIntlObjects()
 {
-	for (FB_SIZE_T i = 0; i < att_charsets.getCount(); i++)
+	for (size_t i = 0; i < dbb_charsets.getCount(); i++)
 	{
-		if (att_charsets[i])
-			att_charsets[i]->release(tdbb);
-	}
-}
-
-
-void Jrd::Attachment::destroyIntlObjects(thread_db* tdbb)
-{
-	for (FB_SIZE_T i = 0; i < att_charsets.getCount(); i++)
-	{
-		if (att_charsets[i])
+		if (dbb_charsets[i])
 		{
-			att_charsets[i]->destroy(tdbb);
-			att_charsets[i] = NULL;
+			dbb_charsets[i]->release();
 		}
 	}
 }
 
 
-void INTL_adjust_text_descriptor(thread_db* tdbb, dsc* desc)
+void Database::destroyIntlObjects()
 {
-/**************************************
- *
- *      I N T L _ a d j u s t _ t e x t _ d e s c r i p t o r
- *
- **************************************
- *
- * Functional description
- *      This function receives a text descriptor with
- *      dsc_length = numberOfCharacters * maxBytesPerChar
- *      and change dsc_length to number of bytes used by the string.
- *
- **************************************/
-	if (desc->dsc_dtype == dtype_text)
+	for (size_t i = 0; i < dbb_charsets.getCount(); i++)
 	{
-		SET_TDBB(tdbb);
-
-		USHORT ttype = INTL_TTYPE(desc);
-
-		CharSet* charSet = INTL_charset_lookup(tdbb, ttype);
-
-		if (charSet->isMultiByte())
+		if (dbb_charsets[i])
 		{
-			Firebird::HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-
-			if (charSet->getFlags() & CHARSET_LEGACY_SEMANTICS)
-			{
-				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address, TEXT_LEN(desc),
-										buffer.getBuffer(TEXT_LEN(desc) * charSet->maxBytesPerChar()), 0,
-										TEXT_LEN(desc));
-
-				const ULONG maxLength = TEXT_LEN(desc) / charSet->maxBytesPerChar();
-				ULONG charLength = charSet->length(desc->dsc_length, desc->dsc_address, true);
-
-				while (charLength > maxLength)
-				{
-					if (desc->dsc_address[desc->dsc_length - 1] == *charSet->getSpace())
-					{
-						--desc->dsc_length;
-						--charLength;
-					}
-					else
-						break;
-				}
-			}
-			else
-			{
-				desc->dsc_length = charSet->substring(TEXT_LEN(desc), desc->dsc_address,
-										TEXT_LEN(desc), buffer.getBuffer(TEXT_LEN(desc)), 0,
-										TEXT_LEN(desc) / charSet->maxBytesPerChar());
-			}
+			dbb_charsets[i]->destroy();
+			dbb_charsets[i] = NULL;
 		}
 	}
 }
@@ -603,14 +513,17 @@ CHARSET_ID INTL_charset(thread_db* tdbb, USHORT ttype)
 		return (CS_BINARY);
 	case ttype_dynamic:
 		SET_TDBB(tdbb);
-		return (tdbb->getCharSet());
+		return (tdbb->getAttachment()->att_charset);
 	default:
 		return (TTYPE_TO_CHARSET(ttype));
 	}
 }
 
 
-int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFunction err)
+int INTL_compare(thread_db* tdbb,
+				const dsc* pText1,
+				const dsc* pText2,
+				ErrorFunction err)
 {
 /**************************************
  *
@@ -630,8 +543,8 @@ int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFun
 	fb_assert(INTL_data_or_binary(pText1) || INTL_data_or_binary(pText2));
 	fb_assert(err);
 
-	// normal compare routine from CVT_compare
-	// trailing spaces in strings are ignored for comparision
+/* normal compare routine from CVT_compare */
+/* trailing spaces in strings are ignored for comparision */
 
 	UCHAR* p1;
 	USHORT t1;
@@ -641,10 +554,10 @@ int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFun
 	USHORT t2;
 	ULONG length2 = CVT_get_string_ptr(pText2, &t2, &p2, NULL, 0, err);
 
-	// YYY - by SQL II compare_type must be explicit in the
-	// SQL statement if there is any doubt
+/* YYY - by SQL II compare_type must be explicit in the
+   SQL statement if there is any doubt */
 
-	USHORT compare_type = MAX(t1, t2);	// YYY
+	USHORT compare_type = MAX(t1, t2);	/* YYY */
 	HalfStaticArray<UCHAR, BUFFER_XLARGE> buffer;
 
 	if (t1 != t2)
@@ -655,7 +568,7 @@ int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFun
 		{
 			if (compare_type != t2)
 			{
-				// convert pText2 to pText1's type, if possible
+				/* convert pText2 to pText1's type, if possible */
 				/* YYY - should failure to convert really return
 				   an error here?
 				   Support joining a 437 & Latin1 Column, and we
@@ -673,7 +586,7 @@ int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFun
 			}
 			else
 			{
-				// convert pText1 to pText2's type, if possible
+				/* convert pText1 to pText2's type, if possible */
 
 				UCHAR* p = buffer.getBuffer(INTL_convert_bytes(tdbb, cs2, NULL, 0,
 					cs1, p1, length1, err));
@@ -693,10 +606,10 @@ int INTL_compare(thread_db* tdbb, const dsc* pText1, const dsc* pText2, ErrorFun
 ULONG INTL_convert_bytes(thread_db* tdbb,
 						 CHARSET_ID dest_type,
 						 BYTE* dest_ptr,
-						 const ULONG dest_len,
+						 ULONG dest_len,
 						 CHARSET_ID src_type,
 						 const BYTE* src_ptr,
-						 const ULONG src_len,
+						 ULONG src_len,
 						 ErrorFunction err)
 {
 /**************************************
@@ -732,7 +645,7 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 	if (dest_type == CS_BINARY || dest_type == CS_NONE ||
 		src_type == CS_BINARY || src_type == CS_NONE)
 	{
-		// See if we just need a length estimate
+		/* See if we just need a length estimate */
 		if (dest_ptr == NULL)
 			return (src_len);
 
@@ -746,24 +659,21 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 
 		ULONG len = MIN(dest_len, src_len);
 		if (len)
-		{
 			do {
 				*dest_ptr++ = *src_ptr++;
 			} while (--len);
-		}
 
-		// See if only space characters are remaining
+		/* See if only space characters are remaining */
 		len = src_len - MIN(dest_len, src_len);
-		if (len == 0 || allSpaces(INTL_charset_lookup(tdbb, src_type), src_ptr, len, 0))
-			return dest_ptr - start_dest_ptr;
+		if (!len || all_spaces(tdbb, src_type, src_ptr, len, 0))
+			return (dest_ptr - start_dest_ptr);
 
-		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-			Arg::Gds(isc_trunc_limits) << Arg::Num(dest_len) << Arg::Num(src_len));
+		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
 	else if (src_len)
 	{
-		// character sets are known to be different
-		// Do we know an object from cs1 to cs2?
+		/* character sets are known to be different */
+		/* Do we know an object from cs1 to cs2? */
 
 		CsConvert cs_obj = INTL_convert_lookup(tdbb, dest_type, src_type);
 		return cs_obj.convert(src_len, src_ptr, dest_len, dest_ptr, NULL, true);
@@ -773,7 +683,9 @@ ULONG INTL_convert_bytes(thread_db* tdbb,
 }
 
 
-CsConvert INTL_convert_lookup(thread_db* tdbb, CHARSET_ID to_cs, CHARSET_ID from_cs)
+CsConvert INTL_convert_lookup(thread_db* tdbb,
+								CHARSET_ID to_cs,
+								CHARSET_ID from_cs)
 {
 /**************************************
  *
@@ -790,12 +702,12 @@ CsConvert INTL_convert_lookup(thread_db* tdbb, CHARSET_ID to_cs, CHARSET_ID from
 	CHECK_DBB(dbb);
 
 	if (from_cs == CS_dynamic)
-		from_cs = tdbb->getCharSet();
+		from_cs = tdbb->getAttachment()->att_charset;
 
 	if (to_cs == CS_dynamic)
-		to_cs = tdbb->getCharSet();
+		to_cs = tdbb->getAttachment()->att_charset;
 
-	// Should from_cs == to_cs? be handled better? YYY
+/* Should from_cs == to_cs? be handled better? YYY */
 
 	fb_assert(from_cs != CS_dynamic);
 	fb_assert(to_cs != CS_dynamic);
@@ -825,11 +737,11 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
  *
  **************************************/
 
-	// Note: This function is called from outside the engine as
-	// well as inside - we likely can't get rid of JRD_get_thread_data here
+/* Note: This function is called from outside the engine as
+   well as inside - we likely can't get rid of JRD_get_thread_data here */
 	thread_db* tdbb = JRD_get_thread_data();
-	if (tdbb == NULL)			// are we in the Engine?
-		return (1);				// no, then can't access intl gah
+	if (tdbb == NULL)			/* are we in the Engine? */
+		return (1);				/* no, then can't access intl gah */
 
 	fb_assert(to != NULL);
 	fb_assert(from != NULL);
@@ -841,7 +753,7 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 	UCHAR* p = to->dsc_address;
 	const UCHAR* start = p;
 
-	// Must convert dtype(cstring,text,vary) and ttype(ascii,binary,..intl..)
+/* Must convert dtype(cstring,text,vary) and ttype(ascii,binary,..intl..) */
 
 	UCHAR* from_ptr;
 	USHORT from_type;
@@ -863,12 +775,12 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			to_fill = to_size - to_len;
-			from_fill = 0;		// Convert_bytes handles source truncation
+			from_fill = 0;		/* Convert_bytes handles source truncation */
 			p += to_len;
 		}
 		else
 		{
-			// binary string can always be converted TO by byte-copy
+			/* binary string can always be converted TO by byte-copy */
 
 			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
@@ -896,11 +808,11 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 										from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			to->dsc_address[to_len] = 0;
-			from_fill = 0;		// Convert_bytes handles source truncation
+			from_fill = 0;		/* Convert_bytes handles source truncation */
 		}
 		else
 		{
-			// binary string can always be converted TO by byte-copy
+			/* binary string can always be converted TO by byte-copy */
 
 			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
@@ -927,11 +839,11 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 										to_size, from_cs, from_ptr, from_len, err);
 			toLength = to_len;
 			((vary*) to->dsc_address)->vary_length = to_len;
-			from_fill = 0;		// Convert_bytes handles source truncation
+			from_fill = 0;		/* Convert_bytes handles source truncation */
 		}
 		else
 		{
-			// binary string can always be converted TO by byte-copy
+			/* binary string can always be converted TO by byte-copy */
 			ULONG to_len = MIN(from_len, to_size);
 			if (!toCharSet->wellFormed(to_len, q))
 				err(Arg::Gds(isc_malformed_string));
@@ -950,24 +862,19 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 		break;
 	}
 
-	const ULONG src_len = toCharSet->length(toLength, start, false);
-	const ULONG dest_len  = (ULONG) to_size / toCharSet->maxBytesPerChar();
-
 	if (toCharSet->isMultiByte() &&
 		!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
-		toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
-		src_len > dest_len)
+		toLength != 31 &&	/* allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset */
+		toCharSet->length(toLength, start, false) > to_size / toCharSet->maxBytesPerChar())
 	{
-		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-			Arg::Gds(isc_trunc_limits) << Arg::Num(dest_len) << Arg::Num(src_len));
+		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
 
 	if (from_fill)
 	{
-		// Make sure remaining characters on From string are spaces
-		if (!allSpaces(INTL_charset_lookup(tdbb, from_cs), q, from_fill, 0))
-			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-				Arg::Gds(isc_trunc_limits) << Arg::Num(dest_len) << Arg::Num(src_len));
+		/* Make sure remaining characters on From string are spaces */
+		if (!all_spaces(tdbb, from_cs, q, from_fill, 0))
+			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 	}
 
 	return 0;
@@ -1081,7 +988,7 @@ USHORT INTL_key_length(thread_db* tdbb, USHORT idxType, USHORT iLength)
 		key_length = obj->key_length(iLength);
 	}
 
-	// Validity checks on the computed key_length
+/* Validity checks on the computed key_length */
 
 	if (key_length > MAX_KEY)
 		key_length = MAX_KEY;
@@ -1120,7 +1027,8 @@ CharSet* INTL_charset_lookup(thread_db* tdbb, USHORT parm1)
 }
 
 
-Collation* INTL_texttype_lookup(thread_db* tdbb, USHORT parm1)
+Collation* INTL_texttype_lookup(thread_db* tdbb,
+								USHORT parm1)
 {
 /**************************************
  *
@@ -1145,7 +1053,7 @@ Collation* INTL_texttype_lookup(thread_db* tdbb, USHORT parm1)
 	SET_TDBB(tdbb);
 
 	if (parm1 == ttype_dynamic)
-		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getCharSet());
+		parm1 = MAP_CHARSET_TO_TTYPE(tdbb->getAttachment()->att_charset);
 
 	CharSetContainer* csc = CharSetContainer::lookupCharset(tdbb, parm1);
 
@@ -1153,7 +1061,8 @@ Collation* INTL_texttype_lookup(thread_db* tdbb, USHORT parm1)
 }
 
 
-void INTL_texttype_unload(thread_db* tdbb, USHORT ttype)
+void INTL_texttype_unload(thread_db* tdbb,
+						  USHORT ttype)
 {
 /**************************************
  *
@@ -1199,7 +1108,7 @@ bool INTL_texttype_validate(Jrd::thread_db* tdbb, const SubtypeInfo* info)
 }
 
 
-void INTL_pad_spaces(thread_db* tdbb, DSC* type, UCHAR* string, ULONG length)
+void INTL_pad_spaces(thread_db* tdbb, DSC * type, UCHAR * string, ULONG length)
 {
 /**************************************
  *
@@ -1276,7 +1185,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 		break;
 	}
 
-	// Make a string into the proper type of text
+/* Make a string into the proper type of text */
 
 	MoveBuffer temp;
 	UCHAR* src;
@@ -1294,7 +1203,7 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 	case ttype_none:
 		while (len-- && destLen-- > 0)
 			*dest++ = *src++;
-		// strip off ending pad characters
+		/* strip off ending pad characters */
 		while (dest > pByte->dsc_address)
 		{
 			if (*(dest - 1) == pad_char)
@@ -1314,7 +1223,9 @@ USHORT INTL_string_to_key(thread_db* tdbb,
 }
 
 
-static bool allSpaces(CharSet* charSet, const BYTE* ptr, ULONG len, ULONG offset)
+static bool all_spaces(thread_db* tdbb,
+					   CHARSET_ID charset,
+					   const BYTE* ptr, ULONG len, ULONG offset)
 {
 /**************************************
  *
@@ -1329,21 +1240,27 @@ static bool allSpaces(CharSet* charSet, const BYTE* ptr, ULONG len, ULONG offset
  *      (0x20 for Ascii, 0x0020 for Unicode, 0x20 for SJIS, but must watch for
  *      0x??20, which is NOT a space.
  **************************************/
+	SET_TDBB(tdbb);
+
 	fb_assert(ptr != NULL);
 
-	// We are assuming offset points to the first byte which was not
-	// consumed in a conversion.  And that offset is pointing
-	// to a character boundary
+	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
-	// Single-octet character sets are optimized here
+/*
+ * We are assuming offset points to the first byte which was not
+ * consumed in a conversion.  And that offset is pointing
+ * to a character boundary
+ */
 
-	if (charSet->getSpaceLength() == 1)
+// Single-octet character sets are optimized here
+
+	if (obj->getSpaceLength() == 1)
 	{
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
 		while (p < end)
 		{
-			if (*p++ != *charSet->getSpace())
+			if (*p++ != *obj->getSpace())
 				return false;
 		}
 	}
@@ -1351,11 +1268,11 @@ static bool allSpaces(CharSet* charSet, const BYTE* ptr, ULONG len, ULONG offset
 	{
 		const BYTE* p = &ptr[offset];
 		const BYTE* const end = &ptr[len];
-		const unsigned char* space = charSet->getSpace();
-		const unsigned char* const end_space = &space[charSet->getSpaceLength()];
+		const unsigned char* space = obj->getSpace();
+		const unsigned char* const end_space = &space[obj->getSpaceLength()];
 		while (p < end)
 		{
-			space = charSet->getSpace();
+			space = obj->getSpace();
 			while (p < end && space < end_space)
 			{
 				if (*p++ != *space++)
@@ -1384,13 +1301,14 @@ static int blocking_ast_collation(void* ast_object)
  *      and release the collation existence lock.
  *
  **************************************/
-	Collation* const tt = static_cast<Collation*>(ast_object);
+	Collation* tt = static_cast<Collation*>(ast_object);
 
 	try
 	{
-		Database* const dbb = tt->existenceLock->lck_dbb;
+		Database* dbb = tt->existenceLock->lck_dbb;
+		AstContextHolder tdbb(dbb, tt->existenceLock->lck_attachment);
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, tt->existenceLock);
+		Jrd::ContextPoolHolder context(tdbb, 0);
 
 		tt->obsolete = true;
 		LCK_release(tdbb, tt->existenceLock);
@@ -1421,7 +1339,7 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len
 
 	CharSet* obj = INTL_charset_lookup(tdbb, charset);
 
-	// Single-octet character sets are optimized here
+/* Single-octet character sets are optimized here */
 	if (obj->getSpaceLength() == 1)
 	{
 		const BYTE* const end = &ptr[len];
@@ -1439,8 +1357,9 @@ static void pad_spaces(thread_db* tdbb, CHARSET_ID charset, BYTE* ptr, ULONG len
 			while (ptr < end && space < end_space) {
 				*ptr++ = *space++;
 			}
-			// This fb_assert is checking that we didn't have a buffer-end
-			// in the middle of a space character
+			/* This fb_assert is checking that we didn't have a buffer-end
+			 * in the middle of a space character
+			 */
 			fb_assert(!(ptr == end) || (space == end_space));
 		}
 	}

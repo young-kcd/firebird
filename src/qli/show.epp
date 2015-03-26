@@ -37,7 +37,7 @@
 #include "../qli/meta_proto.h"
 #include "../qli/proc_proto.h"
 #include "../qli/show_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/UserBlob.h"
 
@@ -501,7 +501,7 @@ static void display_blob(qli_dbb* dbb,
 	const USHORT buffer_length = sizeof(buffer) - 1;
 	for (;;)
 	{
-		FB_SIZE_T length;
+		size_t length;
 		if (!blob.getSegment(buffer_length, buffer, length))
 			break;
 		buffer[length--] = 0;
@@ -1972,7 +1972,6 @@ static void show_names( const TEXT* name, USHORT width, TEXT* buffer)
  *
  **************************************/
 	BASED ON QLI$PROCEDURES.QLI$PROCEDURE_NAME padded_name;
-	FB_UNUSED_VAR(padded_name); // Silence compiler warning
 
 	TEXT* s = buffer + strlen(buffer);
 	SSHORT len = sizeof(padded_name) - 1;
@@ -2759,7 +2758,7 @@ static void show_versions()
  *	Show the version for QLI and all databases.
  *
  **************************************/
-	ERRQ_msg_put(133, FB_VERSION);	// Msg133 QLI, version %s
+	ERRQ_msg_put(133, GDS_VERSION);	// Msg133 QLI, version %s
 
 	for (qli_dbb* dbb = QLI_databases; dbb; dbb = dbb->dbb_next)
 	{

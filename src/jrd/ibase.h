@@ -44,7 +44,7 @@
 #ifndef JRD_IBASE_H
 #define JRD_IBASE_H
 
-#define FB_API_VER 30
+#define FB_API_VER 25
 #define isc_version4
 
 #define  ISC_TRUE	1
@@ -154,7 +154,7 @@ typedef struct bstream
 	short			bstr_length;	/* Length of buffer */
 	short			bstr_cnt;		/* Characters in buffer */
 	char			bstr_mode;		/* (mode) ? OUTPUT : INPUT */
-} BSTREAM, * FB_BLOB_STREAM;
+} BSTREAM, *FB_BLOB_STREAM;
 
 /* Three ugly macros, one even using octal radix... sigh... */
 #define getb(p)	(--(p)->bstr_cnt >= 0 ? *(p)->bstr_ptr++ & 0377: BLOB_get (p))
@@ -225,7 +225,7 @@ typedef struct paramvary {
 } PARAMVARY;
 #endif /* !defined(JRD_VAL_H) */
 
-#include "../common/dsc_pub.h"
+#include "../jrd/dsc_pub.h"
 
 #endif /* !defined(JRD_DSC_H) */
 
@@ -704,7 +704,6 @@ ISC_STATUS ISC_EXPORT isc_compile_request2(ISC_STATUS*,
 										   short,
 										   const ISC_SCHAR*);
 
-// This function always returns error since FB 3.0.
 ISC_STATUS FB_API_DEPRECATED ISC_EXPORT isc_ddl(ISC_STATUS*,
 							  isc_db_handle*,
 							  isc_tr_handle*,
@@ -997,16 +996,16 @@ ISC_STATUS ISC_EXPORT isc_embed_dsql_release(ISC_STATUS*,
 /* Other Blob functions       */
 /******************************/
 
-FB_BLOB_STREAM ISC_EXPORT BLOB_open(isc_blob_handle,
-									ISC_SCHAR*,
-									int);
+BSTREAM* ISC_EXPORT BLOB_open(isc_blob_handle,
+									  ISC_SCHAR*,
+									  int);
 
 int ISC_EXPORT BLOB_put(ISC_SCHAR,
-						FB_BLOB_STREAM);
+						BSTREAM*);
 
-int ISC_EXPORT BLOB_close(FB_BLOB_STREAM);
+int ISC_EXPORT BLOB_close(BSTREAM*);
 
-int ISC_EXPORT BLOB_get(FB_BLOB_STREAM);
+int ISC_EXPORT BLOB_get(BSTREAM*);
 
 int ISC_EXPORT BLOB_display(ISC_QUAD*,
 							isc_db_handle,
@@ -1038,10 +1037,10 @@ int ISC_EXPORT BLOB_text_load(ISC_QUAD*,
 							  isc_tr_handle,
 							  const ISC_SCHAR*);
 
-FB_BLOB_STREAM ISC_EXPORT Bopen(ISC_QUAD*,
-								isc_db_handle,
-								isc_tr_handle,
-								const ISC_SCHAR*);
+BSTREAM* ISC_EXPORT Bopen(ISC_QUAD*,
+								  isc_db_handle,
+								  isc_tr_handle,
+								  const ISC_SCHAR*);
 
 
 /******************************/
@@ -1140,19 +1139,6 @@ ISC_STATUS ISC_EXPORT fb_cancel_operation(ISC_STATUS*,
 										  isc_db_handle*,
 										  ISC_USHORT);
 
-/***********************/
-/* Ping the connection */
-/***********************/
-
-ISC_STATUS ISC_EXPORT fb_ping(ISC_STATUS*, isc_db_handle*);
-
-/********************/
-/* Object interface */
-/********************/
-
-ISC_STATUS ISC_EXPORT fb_get_database_handle(ISC_STATUS*, isc_db_handle*, void*);
-ISC_STATUS ISC_EXPORT fb_get_transaction_handle(ISC_STATUS*, isc_tr_handle*, void*);
-
 /********************************/
 /* Client information functions */
 /********************************/
@@ -1160,12 +1146,6 @@ ISC_STATUS ISC_EXPORT fb_get_transaction_handle(ISC_STATUS*, isc_tr_handle*, voi
 void ISC_EXPORT isc_get_client_version ( ISC_SCHAR  *);
 int  ISC_EXPORT isc_get_client_major_version ();
 int  ISC_EXPORT isc_get_client_minor_version ();
-
-/*******************************************/
-/* Set callback for database crypt plugins */
-/*******************************************/
-
-ISC_STATUS ISC_EXPORT fb_database_crypt_callback(ISC_STATUS*, void*);
 
 #ifdef __cplusplus
 }	/* extern "C" */

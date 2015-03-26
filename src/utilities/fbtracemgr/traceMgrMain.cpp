@@ -84,14 +84,30 @@ void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
 {
 	ISC_STATUS_ARRAY status = {0};
 
-	ClumpletWriter spb(ClumpletWriter::spbList, MAXBUF);
+	ClumpletWriter spb(ClumpletWriter::SpbAttach, MAXBUF, isc_spb_current_version);
 
-	if (user.hasData()) {
+	if (user.isEmpty() && !isAdmin)
+	{
+		string isc_user;
+		if (fb_utils::readenv(ISC_USER, isc_user)) {
+			spb.insertString(isc_spb_user_name, isc_user);
+		}
+	}
+	else if (user.hasData()) {
 		spb.insertString(isc_spb_user_name, user);
 	}
-	if (pwd.hasData()) {
+
+	if (pwd.isEmpty() && !isAdmin)
+	{
+		string isc_pwd;
+		if (fb_utils::readenv(ISC_PASSWORD, isc_pwd)) {
+			spb.insertString(isc_spb_password, isc_pwd);
+		}
+	}
+	else if (pwd.hasData()) {
 		spb.insertString(isc_spb_password, pwd);
 	}
+
 	if (isAdmin) {
 		spb.insertTag(isc_spb_trusted_auth);
 	}
@@ -307,6 +323,18 @@ static void ctrl_c_handler(int signal)
 		prevCtrlCHandler(signal);
 }
 
+static int shutdownCallback(const int reason, const int, void*)
+{
+	static bool recursion = false;
+	if (!recursion)
+	{
+		recursion = true;
+		fb_shutdown(0, reason);
+		recursion = false;
+		return FB_FAILURE;
+	}
+	return FB_SUCCESS;
+}
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -322,6 +350,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  **************************************/
 
 	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
+	fb_shutdown_callback(NULL, shutdownCallback, fb_shut_confirmation, NULL);
 
 	AutoPtr<UtilSvc> uSvc(UtilSvc::createStandalone(argc, argv));
 	try

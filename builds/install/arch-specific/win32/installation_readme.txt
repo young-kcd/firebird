@@ -1,24 +1,5 @@
-Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha1)
-========================================================
-
-
-############## NOTE ####################################
-#                                                      #
-# The installer is in an experimental state.           #
-# This is not the definitive version for Firebird 3.0. #
-#                                                      #
-# o Layout and work sequence of the installer is not   #
-#    definitive.                                       #
-# o Options available are subject to change.           #
-# o Method of library deployment has not been          #
-#   finalized.                                         #
-# o How we will support Legacy Auth is experimental    #
-#   - Adding SYSDBA works                              #
-#   - Modifying SYSDBA from the installer doesn't      #
-# o Don't be surprised to find other anomalies.        #
-#                                                      #
-############## END NOTE ################################
-
+Firebird Database Server $MAJOR.$MINOR.$RELEASE
+==================================================
 
 This document is a guide to installing this package of
 Firebird $MAJOR.$MINOR on the Windows platform. These notes refer
@@ -27,10 +8,10 @@ Firebird $MAJOR.$MINOR in general. In addition, these notes are
 primarily aimed at users of the binary installer.
 
 It is assumed that readers of this document are already
-familiar with Firebird 2.5. If you are evaluating
-Firebird $MAJOR.$MINOR as part of a migration from Fb 2.5 you are
+familiar with Firebird 2.1. If you are evaluating
+Firebird $MAJOR.$MINOR as part of a migration from Fb 2.1 you are
 advised to review the Fb $MAJOR.$MINOR documentation to
-understand the changes made between 2.5 and $MAJOR.$MINOR.
+understand the changes made between 2.1 and $MAJOR.$MINOR.
 
 
 Contents
@@ -133,7 +114,7 @@ o If Firebird is running as an application (instead of
 o Uninstallation leaves five files in the install
   directory:
 
-  - databases.conf
+  - aliases.conf
   - firebird.conf
   - fbtrace.conf
   - firebird.log

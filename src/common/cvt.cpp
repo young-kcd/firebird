@@ -36,21 +36,21 @@
  */
 
 #include "firebird.h"
+#include "../jrd/common.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "gen/iberror.h"
 
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../common/classes/timestamp.h"
 #include "../common/cvt.h"
 #include "../jrd/intl.h"
+#include "../jrd/quad.h"
 #include "../jrd/val.h"
 #include "../common/classes/VaryStr.h"
 #include "../common/classes/FpeControl.h"
-#include "../common/dsc_proto.h"
-#include "../common/utils_proto.h"
-#include "../common/StatusArg.h"
+#include "../jrd/dsc_proto.h"
 
 
 #ifdef HAVE_SYS_TYPES_H
@@ -89,8 +89,8 @@ using namespace Firebird;
 #define QUAD_MIN_real   -9223372036854775808.	// min decimal value of quad
 #define QUAD_MAX_real   9223372036854775807.	// max decimal value of quad
 
-//#define QUAD_MIN_int    quad_min_int	// min integer value of quad
-//#define QUAD_MAX_int    quad_max_int	// max integer value of quad
+#define QUAD_MIN_int    quad_min_int	// min integer value of quad
+#define QUAD_MAX_int    quad_max_int	// max integer value of quad
 
 #ifdef FLT_MAX
 #define FLOAT_MAX FLT_MAX // Approx. 3.4e38 max float (32 bit) value
@@ -114,7 +114,7 @@ using namespace Firebird;
 // NOTE: The syntax for the below line may need modification to ensure
 // the result of 1 << 62 is a quad
 
-//#define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
+#define QUAD_LIMIT      ((((SINT64) 1) << 62) / 5)
 #define INT64_LIMIT     ((((SINT64) 1) << 62) / 5)
 
 #define TODAY           "TODAY"
@@ -123,9 +123,7 @@ using namespace Firebird;
 #define YESTERDAY       "YESTERDAY"
 
 #define CVT_COPY_BUFF(from, to, len) \
-{if (len) {memcpy(to, from, len); from += len; to += len;} }
-// AP,2012: Looks like there is no need making len zero, but I keep old define for a reference.
-// {if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
+{if (len) {memcpy(to, from, len); from += len; to += len; len = 0;} }
 
 enum EXPECT_DATETIME
 {
@@ -144,14 +142,20 @@ static void localError(const Firebird::Arg::StatusVector&);
 class DummyException {};
 
 
-//#ifndef WORDS_BIGENDIAN
-//static const SQUAD quad_min_int = { 0, SLONG_MIN };
-//static const SQUAD quad_max_int = { -1, SLONG_MAX };
-//#else
-//static const SQUAD quad_min_int = { SLONG_MIN, 0 };
-//static const SQUAD quad_max_int = { SLONG_MAX, -1 };
-//#endif
+#ifndef NATIVE_QUAD
+#ifndef WORDS_BIGENDIAN
+static const SQUAD quad_min_int = { 0, SLONG_MIN };
+static const SQUAD quad_max_int = { -1, SLONG_MAX };
+#else
+static const SQUAD quad_min_int = { SLONG_MIN, 0 };
+static const SQUAD quad_max_int = { SLONG_MAX, -1 };
+#endif
+#endif
 
+
+#if !defined (NATIVE_QUAD)
+#include "../jrd/quad.cpp"
+#endif
 
 static const double eps_double = 1e-14;
 static const double eps_float  = 1e-5;
@@ -208,25 +212,18 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	int chars_printed;			// number of characters printed
 	if ((dtype_double == from->dsc_dtype) && (from->dsc_scale < 0))
-	{
-		chars_printed = fb_utils::snprintf(temp, sizeof(temp), "%- #*.*f", width, -from->dsc_scale, d);
-		if (chars_printed <= 0 || chars_printed > width)
-			chars_printed = -1;
-	}
+		chars_printed = sprintf(temp, "%- #*.*f", width, -from->dsc_scale, d);
 	else
-		chars_printed = -1;
+		chars_printed = LONG_MAX_int;	// sure to be greater than to_len
 
 	// If it's not an old-style numeric, or the f-format was too long for the
 	// destination, try g-format with the maximum precision which makes sense
 	// for the input type: if it fits, we're done.
 
-	if (chars_printed == -1)
+	if (chars_printed > width)
 	{
-		char temp2[50];
 		const char num_format[] = "%- #*.*g";
-		chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
-		if (chars_printed <= 0 || static_cast<unsigned int>(chars_printed) >= sizeof(temp2))
-			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+		chars_printed = sprintf(temp, num_format, width, precision, d);
 
 		// If the full-precision result is too wide for the destination,
 		// reduce the precision and try again.
@@ -240,9 +237,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 			if (precision < 2)
 				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 
-			chars_printed = fb_utils::snprintf(temp2, sizeof(temp2), num_format, width, precision, d);
-			if (chars_printed <= 0 || static_cast<unsigned int>(chars_printed) >= sizeof(temp2))
-				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			chars_printed = sprintf(temp, num_format, width, precision, d);
 
 			// It's possible that reducing the precision caused sprintf to switch
 			// from f-format to e-format, and that the output is still too long
@@ -254,16 +249,9 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 				precision -= (chars_printed - width);
 				if (precision < 2)
 					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-				// Note: we use here temp2 with sizeof(temp) because temp2 is bigger than temp.
-				// The check should be chars_printed > width because it's our last chance to
-				// fit into "width" else we should throw error.
-				chars_printed = fb_utils::snprintf(temp2, sizeof(temp), num_format, width, precision, d);
-				if (chars_printed <= 0 || chars_printed > width)
-					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			    chars_printed = sprintf(temp, num_format, width, precision, d);
 			}
 		}
-
-		memcpy(temp, temp2, sizeof(temp));
 	}
 	fb_assert(chars_printed <= width);
 
@@ -280,7 +268,7 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	// CVC: If you think this is dangerous, replace the "else" with a call to
 	// MEMMOVE(temp, temp + 1, chars_printed) or something cleverer.
 	// Paranoid assumption:
-	// UCHAR is unsigned char as seen on common/common.h => same size.
+	// UCHAR is unsigned char as seen on jrd\common.h => same size.
 	if (d < 0)
 	{
 		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp);
@@ -288,7 +276,6 @@ static void float_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	}
 	else
 	{
-		fb_assert(chars_printed > 0);
 		if (!temp[0])
 			temp[1] = 0;
 		intermediate.dsc_address = reinterpret_cast<UCHAR*>(temp) + 1;
@@ -312,7 +299,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
  *      nice, formatted text.
  *
  **************************************/
-
+#ifndef NATIVE_QUAD
 	// For now, this routine does not handle quadwords unless this is
 	// supported by the platform as a native datatype.
 
@@ -321,6 +308,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		fb_assert(false);
 		cb->err(Arg::Gds(isc_badblk));	// internal error
 	}
+#endif
 
 	SSHORT pad_count = 0, decimal = 0, neg = 0;
 
@@ -449,7 +437,7 @@ static void integer_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	}
 
 	// dtype_varying
-	*(USHORT*) (to->dsc_address) = static_cast<USHORT>(q - to->dsc_address - sizeof(SSHORT));
+	*(USHORT*) (to->dsc_address) = q - to->dsc_address - sizeof(SSHORT);
 }
 
 
@@ -613,10 +601,8 @@ static void string_to_datetime(const dsc* desc,
 					description[i] = SPECIAL;
 
 					while (++p < end)
-					{
 						if (*p != ' ' && *p != '\t' && *p != 0)
 							CVT_conversion_error(desc, err);
-					}
 
 					// fetch the current datetime
 					*date = Firebird::TimeStamp::getCurrentTimeStamp().value();
@@ -946,7 +932,7 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 			d = *((float*) p);
 			eps = eps_float;
 		}
-		else // if (desc->dsc_dtype == DEFAULT_DOUBLE)
+		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
 		{
 			d = *((double*) p);
 			eps = eps_double;
@@ -996,7 +982,6 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_timestamp:
 	case dtype_array:
 	case dtype_dbkey:
-	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 
@@ -1039,17 +1024,6 @@ SLONG CVT_get_long(const dsc* desc, SSHORT scale, ErrorFunction err)
 }
 
 
-// Get the value of a boolean descriptor.
-bool CVT_get_boolean(const dsc* desc, ErrorFunction err)
-{
-	if (desc->dsc_dtype == dtype_boolean)
-		return *desc->dsc_address != '\0';
-
-	CVT_conversion_error(desc, err);
-	return false;	// silence warning
-}
-
-
 double CVT_get_double(const dsc* desc, ErrorFunction err)
 {
 /**************************************
@@ -1075,12 +1049,16 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 		break;
 
 	case dtype_quad:
+#ifdef NATIVE_QUAD
+		value = *((SQUAD *) desc->dsc_address);
+#else
 		value = ((SLONG *) desc->dsc_address)[HIGH_WORD];
 		value *= -((double) LONG_MIN_real);
 		if (value < 0)
 			value -= ((ULONG *) desc->dsc_address)[LOW_WORD];
 		else
 			value += ((ULONG *) desc->dsc_address)[LOW_WORD];
+#endif
 		break;
 
 	case dtype_int64:
@@ -1244,7 +1222,6 @@ double CVT_get_double(const dsc* desc, ErrorFunction err)
 	case dtype_blob:
 	case dtype_array:
 	case dtype_dbkey:
-	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 
@@ -1288,6 +1265,7 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
  *      Move (and possible convert) something to something else.
  *
  **************************************/
+	ULONG l;
 	ULONG length = from->dsc_length;
 	UCHAR* p = to->dsc_address;
 	const UCHAR* q = from->dsc_address;
@@ -1308,13 +1286,13 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 	// Special optimization case: RDB$DB_KEY is binary compatible with CHAR(8) OCTETS
 
 	if ((from->dsc_dtype == dtype_text &&
-		 to->dsc_dtype == dtype_dbkey &&
-		 from->dsc_ttype() == ttype_binary &&
-		 from->dsc_length == to->dsc_length) ||
+		to->dsc_dtype == dtype_dbkey &&
+		from->dsc_ttype() == ttype_binary &&
+		from->dsc_length == to->dsc_length) ||
 		(to->dsc_dtype == dtype_text &&
-		 from->dsc_dtype == dtype_dbkey &&
-		 to->dsc_ttype() == ttype_binary &&
-		 from->dsc_length == to->dsc_length))
+		from->dsc_dtype == dtype_dbkey &&
+		to->dsc_ttype() == ttype_binary &&
+		from->dsc_length == to->dsc_length))
 	{
 		memcpy(p, q, length);
 		return;
@@ -1358,7 +1336,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
-		case dtype_boolean:
 			CVT_conversion_error(from, cb->err);
 			break;
 		}
@@ -1391,7 +1368,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
-		case dtype_boolean:
 			CVT_conversion_error(from, cb->err);
 			break;
 		}
@@ -1424,7 +1400,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_quad:
 		case dtype_real:
 		case dtype_double:
-		case dtype_boolean:
 			CVT_conversion_error(from, cb->err);
 			break;
 		}
@@ -1439,31 +1414,44 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		{
 		case dtype_dbkey:
 			{
-				USHORT len = to->getStringLength();
-				UCHAR* ptr = to->dsc_address;
+				UCHAR* ptr = NULL;
+				USHORT l = 0;
 
-				if (to->dsc_dtype == dtype_varying)
-					ptr += sizeof(USHORT);
-
-				if (len < from->dsc_length)
+				switch(to->dsc_dtype)
 				{
-					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-						Arg::Gds(isc_trunc_limits) << Arg::Num(len) << Arg::Num(from->dsc_length));
+				case dtype_text:
+					ptr = to->dsc_address;
+					l = to->dsc_length;
+					break;
+				case dtype_cstring:
+					ptr = to->dsc_address;
+					l = to->dsc_length - 1;
+					break;
+				case dtype_varying:
+					ptr = to->dsc_address + sizeof(USHORT);
+					l = to->dsc_length - sizeof(USHORT);
+					break;
+				default:
+					fb_assert(false);
+					break;
 				}
+
+				if (l < from->dsc_length)
+					cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 
 				Jrd::CharSet* charSet = cb->getToCharset(to->getCharSet());
 				cb->validateData(charSet, from->dsc_length, from->dsc_address);
 
 				memcpy(ptr, from->dsc_address, from->dsc_length);
-				len -= from->dsc_length;
+				l -= from->dsc_length;
 				ptr += from->dsc_length;
 
 				switch (to->dsc_dtype)
 				{
 				case dtype_text:
-					if (len > 0)
+					if (l > 0)
 					{
-						memset(ptr, 0, len);	// Always PAD with nulls, not spaces
+						memset(ptr, 0, l);	// Always PAD with nulls, not spaces
 					}
 					break;
 
@@ -1484,121 +1472,117 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		case dtype_varying:
 		case dtype_cstring:
 		case dtype_text:
+		{
+			/* If we are within the engine, INTL_convert_string
+			 * will convert the string between character sets
+			 * (or die trying).
+			 * This module, however, can be called from outside
+			 * the engine (for instance, moving values around for
+			 * DSQL).
+			 * In that event, we'll move the values if we think
+			 * they are compatible text types, otherwise fail.
+			 * eg: Simple cases can be handled here (no
+			 * character set conversion).
+			 *
+			 * a charset type binary is compatible with all other types.
+			 * if a charset involved is ttype_dynamic, we must look up
+			 *    the charset of the attachment (only if we are in the
+			 *    engine). If we are outside the engine, the
+			 *    assume that the engine has converted the values
+			 *    previously in the request.
+			 *
+			 * Even within the engine, not calling INTL_convert_string
+			 * unless really required is a good optimization.
+			 */
+
+			CHARSET_ID charset2;
+			if (cb->transliterate(from, to, charset2))
+				return;
+
+			{ // scope
+				USHORT strtype_unused;
+				UCHAR *ptr;
+				length = l = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
+				q = ptr;
+			} // end scope
+
+			const USHORT to_size = TEXT_LEN(to);
+			const UCHAR* start = to->dsc_address;
+			UCHAR fill_char = ASCII_SPACE;
+			Jrd::CharSet* toCharset = cb->getToCharset(charset2);
+			ULONG toLength;
+			ULONG fill;
+
+			if (charset2 == ttype_binary)
+				fill_char = 0x00;
+
+			switch (to->dsc_dtype)
 			{
-				/* If we are within the engine, INTL_convert_string
-				 * will convert the string between character sets
-				 * (or die trying).
-				 * This module, however, can be called from outside
-				 * the engine (for instance, moving values around for
-				 * DSQL).
-				 * In that event, we'll move the values if we think
-				 * they are compatible text types, otherwise fail.
-				 * eg: Simple cases can be handled here (no
-				 * character set conversion).
-				 *
-				 * a charset type binary is compatible with all other types.
-				 * if a charset involved is ttype_dynamic, we must look up
-				 *    the charset of the attachment (only if we are in the
-				 *    engine). If we are outside the engine, the
-				 *    assume that the engine has converted the values
-				 *    previously in the request.
-				 *
-				 * Even within the engine, not calling INTL_convert_string
-				 * unless really required is a good optimization.
-				 */
+			case dtype_text:
+				length = MIN(length, to->dsc_length);
+				cb->validateData(toCharset, length, q);
+				toLength = length;
 
-				CHARSET_ID charset2;
-				if (cb->transliterate(from, to, charset2))
-					return;
+				l -= length;
+				fill = ULONG(to->dsc_length) - length;
 
-				ULONG len;
-
-				{ // scope
-					USHORT strtype_unused;
-					UCHAR *ptr;
-					length = len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
-					q = ptr;
-				} // end scope
-
-				const USHORT to_size = TEXT_LEN(to);
-				const UCHAR* start = to->dsc_address;
-				UCHAR fill_char = ASCII_SPACE;
-				Jrd::CharSet* toCharset = cb->getToCharset(charset2);
-				ULONG toLength;
-				ULONG fill;
-
-				if (charset2 == ttype_binary)
-					fill_char = 0x00;
-
-				switch (to->dsc_dtype)
+				CVT_COPY_BUFF(q, p, length);
+				if (fill > 0)
 				{
-				case dtype_text:
-					length = MIN(length, to->dsc_length);
-					cb->validateData(toCharset, length, q);
-					toLength = length;
+					memset(p, fill_char, fill);
+					p += fill;
+					// Note: above is correct only for narrow
+					// and multi-byte character sets which
+					// use ASCII for the SPACE character.
+				}
+				break;
 
-					len -= length;
-					fill = ULONG(to->dsc_length) - length;
+			case dtype_cstring:
+				// Note: Following is only correct for narrow and
+				// multibyte character sets which use a zero
+				// byte to represent end-of-string
 
-					CVT_COPY_BUFF(q, p, length);
-					if (fill > 0)
+				fb_assert(to->dsc_length > 0);
+				length = MIN(length, ULONG(to->dsc_length - 1));
+				cb->validateData(toCharset, length, q);
+				toLength = length;
+
+				l -= length;
+				CVT_COPY_BUFF(q, p, length);
+				*p = 0;
+				break;
+
+			case dtype_varying:
+				length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
+				cb->validateData(toCharset, length, q);
+				toLength = length;
+
+				l -= length;
+				// TMN: Here we should really have the following fb_assert
+				// fb_assert(length <= MAX_USHORT);
+				((vary*) p)->vary_length = (USHORT) length;
+				start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
+				CVT_COPY_BUFF(q, p, length);
+				break;
+			}
+
+			cb->validateLength(toCharset, toLength, start, to_size);
+
+			if (l)
+			{
+				// Scan the truncated string to ensure only spaces lost
+				// Warning: it is correct only for narrow and multi-byte
+				// character sets which use ASCII or NULL for the SPACE character
+
+				do {
+					if (*q++ != fill_char)
 					{
-						memset(p, fill_char, fill);
-						p += fill;
-						// Note: above is correct only for narrow
-						// and multi-byte character sets which
-						// use ASCII for the SPACE character.
+						cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation));
 					}
-					break;
-
-				case dtype_cstring:
-					// Note: Following is only correct for narrow and
-					// multibyte character sets which use a zero
-					// byte to represent end-of-string
-
-					fb_assert(to->dsc_length > 0);
-					length = MIN(length, ULONG(to->dsc_length - 1));
-					cb->validateData(toCharset, length, q);
-					toLength = length;
-
-					len -= length;
-					CVT_COPY_BUFF(q, p, length);
-					*p = 0;
-					break;
-
-				case dtype_varying:
-					length = MIN(length, (ULONG(to->dsc_length) - sizeof(USHORT)));
-					cb->validateData(toCharset, length, q);
-					toLength = length;
-
-					len -= length;
-					// TMN: Here we should really have the following fb_assert
-					// fb_assert(length <= MAX_USHORT);
-					((vary*) p)->vary_length = (USHORT) length;
-					start = p = reinterpret_cast<UCHAR*>(((vary*) p)->vary_string);
-					CVT_COPY_BUFF(q, p, length);
-					break;
-				}
-
-				cb->validateLength(toCharset, toLength, start, to_size);
-
-				if (len)
-				{
-					// Scan the truncated string to ensure only spaces lost
-					// Warning: it is correct only for narrow and multi-byte
-					// character sets which use ASCII or NULL for the SPACE character
-
-					do {
-						if (*q++ != fill_char)
-						{
-							cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<
-									Arg::Gds(isc_trunc_limits) <<
-										Arg::Num(to->getStringLength()) << Arg::Num(from->getStringLength()));
-						}
-					} while (--len);
-				}
+				} while (--l);
 			}
 			return;
+		}
 
 		case dtype_short:
 		case dtype_long:
@@ -1620,8 +1604,6 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 		default:
 			fb_assert(false);		// Fall into ...
-
-		case dtype_boolean:
 		case dtype_blob:
 			CVT_conversion_error(from, cb->err);
 			return;
@@ -1649,14 +1631,12 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 
 	case dtype_short:
-		{
-			ULONG lval = CVT_get_long(from, (SSHORT) to->dsc_scale, cb->err);
-			// TMN: Here we should really have the following fb_assert
-			// fb_assert(lval <= MAX_SSHORT);
-			*(SSHORT*) p = (SSHORT) lval;
-			if (*(SSHORT*) p != SLONG(lval))
-				cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
-		}
+		l = CVT_get_long(from, (SSHORT) to->dsc_scale, cb->err);
+		// TMN: Here we should really have the following fb_assert
+		// fb_assert(l <= MAX_SSHORT);
+		*(SSHORT *) p = (SSHORT) l;
+		if (*(SSHORT *) p != l)
+			cb->err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
 		return;
 
 	case dtype_long:
@@ -1687,15 +1667,15 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 		return;
 
 	case dtype_dbkey:
-		if (from->isText())
+		if (from->dsc_dtype <= dtype_any_text)
 		{
 			USHORT strtype_unused;
 			UCHAR* ptr;
-			USHORT len = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
+			USHORT l = CVT_get_string_ptr_common(from, &strtype_unused, &ptr, NULL, 0, cb);
 
-			if (len == to->dsc_length)
+			if (l == to->dsc_length)
 			{
-				memcpy(to->dsc_address, ptr, len);
+				memcpy(to->dsc_address, ptr, l);
 				return;
 			}
 		}
@@ -1705,18 +1685,12 @@ void CVT_move_common(const dsc* from, dsc* to, Callbacks* cb)
 
 	case DEFAULT_DOUBLE:
 #ifdef HPUX
-		{
-			const double d_value = CVT_get_double(from, cb->err);
-			memcpy(p, &d_value, sizeof(double));
-		}
+		const double d_value = CVT_get_double(from, cb->err);
+		memcpy(p, &d_value, sizeof(double));
 #else
 		*(double*) p = CVT_get_double(from, cb->err);
 #endif
 		return;
-
-	case dtype_boolean:
-		CVT_conversion_error(from, cb->err);
-		break;
 	}
 
 	if (from->dsc_dtype == dtype_array || from->dsc_dtype == dtype_blob)
@@ -1741,14 +1715,12 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
  *      A data conversion error occurred.  Complain.
  *
  **************************************/
-	string message;
+	Firebird::string message;
 
 	if (desc->dsc_dtype == dtype_blob)
 		message = "BLOB";
 	else if (desc->dsc_dtype == dtype_array)
 		message = "ARRAY";
-	else if (desc->dsc_dtype == dtype_boolean)
-		message = "BOOLEAN";
 	else
 	{
 		// CVC: I don't have access here to JRD_get_thread_data())->tdbb_status_vector
@@ -1789,7 +1761,6 @@ void CVT_conversion_error(const dsc* desc, ErrorFunction err)
 		}
 	}
 
-	//// TODO: Need access to transliterate here to convert message to metadata charset.
 	err(Arg::Gds(isc_convert_error) << message);
 }
 
@@ -1821,7 +1792,8 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 	{
 	case dtype_sql_time:
 		Firebird::TimeStamp::decode_time(*(GDS_TIME *) from->dsc_address,
-										 &times.tm_hour, &times.tm_min, &times.tm_sec, &fractions);
+										 &times.tm_hour, &times.tm_min, &times.tm_sec,
+										 &fractions);
 		break;
 
 	case dtype_sql_date:
@@ -1829,7 +1801,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		break;
 
 	case dtype_timestamp:
-		cb->isVersion4(version4); // Used in the conversion to text some lines below.
+		cb->isVersion4(version4);
 		Firebird::TimeStamp::decode_timestamp(*(GDS_TIMESTAMP *) from->dsc_address,
 											  &times, &fractions);
 		break;
@@ -1867,7 +1839,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 
 	// Put in a space to separate date & time components
 
-	if (from->dsc_dtype == dtype_timestamp && !version4)
+	if ((from->dsc_dtype == dtype_timestamp) && (!version4))
 		*p++ = ' ';
 
 	// Add the time part for data types that include it
@@ -1902,7 +1874,7 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 		// Prior to BLR Version5, when a timestamp is converted to a string it
 		// is silently truncated if the destination string is not large enough
 
-		fb_assert(to->isText());
+		fb_assert(to->dsc_dtype <= dtype_any_text);
 
 		const USHORT l = (to->dsc_dtype == dtype_cstring) ? 1 :
 			(to->dsc_dtype == dtype_varying) ? sizeof(USHORT) : 0;
@@ -1913,12 +1885,12 @@ static void datetime_to_text(const dsc* from, dsc* to, Callbacks* cb)
 }
 
 
-USHORT CVT_make_string(const dsc*    desc,
+USHORT CVT_make_string(const dsc*          desc,
 					   USHORT        to_interp,
 					   const char**  address,
 					   vary*         temp,
 					   USHORT        length,
-					   ErrorFunction err)
+					   ErrorFunction    err)
 {
 /**************************************
  *
@@ -1934,15 +1906,10 @@ USHORT CVT_make_string(const dsc*    desc,
 	fb_assert(desc != NULL);
 	fb_assert(address != NULL);
 	fb_assert(err != NULL);
+	fb_assert(((temp != NULL && length > 0) ||
+			(INTL_TTYPE(desc) <= dtype_any_text && INTL_TTYPE(desc) == to_interp)));
 
-	const USHORT from_interp = INTL_TTYPE(desc);
-
-	const bool simple_return = desc->isText() &&
-		(from_interp == to_interp || to_interp == ttype_none || to_interp == ttype_binary);
-
-	fb_assert((temp != NULL && length > 0) || simple_return);
-
-	if (simple_return)
+	if (desc->dsc_dtype <= dtype_any_text && INTL_TTYPE(desc) == to_interp)
 	{
 		*address = reinterpret_cast<char*>(desc->dsc_address);
 		const USHORT from_len = desc->dsc_length;
@@ -1967,8 +1934,8 @@ USHORT CVT_make_string(const dsc*    desc,
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
+	INTL_ASSIGN_TTYPE(&temp_desc, to_interp);
 	temp_desc.dsc_dtype = dtype_varying;
-	temp_desc.setTextType(to_interp);
 	CVT_move(desc, &temp_desc, err);
 	*address = temp->vary_string;
 
@@ -2044,7 +2011,7 @@ SSHORT CVT_decompose(const char* string,
  *      or if it is in hexadecimal notation.
  *
  **************************************/
-
+#ifndef NATIVE_QUAD
 	// For now, this routine does not handle quadwords unless this is
 	// supported by the platform as a native datatype.
 
@@ -2053,6 +2020,7 @@ SSHORT CVT_decompose(const char* string,
 		fb_assert(false);
 		err(Arg::Gds(isc_badblk));	// internal error
 	}
+#endif
 
 	dsc errd;
 	MOVE_CLEAR(&errd, sizeof(errd));
@@ -2267,24 +2235,30 @@ USHORT CVT_get_string_ptr_common(const dsc* desc, USHORT* ttype, UCHAR** address
 	fb_assert(ttype != NULL);
 	fb_assert(address != NULL);
 	fb_assert(cb != NULL);
-	fb_assert((temp != NULL && length > 0) || desc->isText() || desc->isDbKey());
+	fb_assert((temp != NULL && length > 0) ||
+			desc->dsc_dtype == dtype_text ||
+			desc->dsc_dtype == dtype_cstring ||
+			desc->dsc_dtype == dtype_varying ||
+			desc->dsc_dtype == dtype_dbkey);
 
 	// If the value is already a string (fixed or varying), just return
 	// the address and length.
 
-	if (desc->isText())
+	if (desc->dsc_dtype <= dtype_any_text)
 	{
 		*address = desc->dsc_address;
 		*ttype = INTL_TTYPE(desc);
 		if (desc->dsc_dtype == dtype_text)
 			return desc->dsc_length;
 		if (desc->dsc_dtype == dtype_cstring)
-			return MIN((USHORT) strlen((char *) desc->dsc_address), desc->dsc_length - 1);
+			return MIN((USHORT) strlen((char *) desc->dsc_address),
+					   desc->dsc_length - 1);
 		if (desc->dsc_dtype == dtype_varying)
 		{
 			vary* varying = (vary*) desc->dsc_address;
 			*address = reinterpret_cast<UCHAR*>(varying->vary_string);
-			return MIN(varying->vary_length, (USHORT) (desc->dsc_length - sizeof(USHORT)));
+			return MIN(varying->vary_length,
+					   (USHORT) (desc->dsc_length - sizeof(USHORT)));
 		}
 	}
 
@@ -2303,8 +2277,8 @@ USHORT CVT_get_string_ptr_common(const dsc* desc, USHORT* ttype, UCHAR** address
 	MOVE_CLEAR(&temp_desc, sizeof(temp_desc));
 	temp_desc.dsc_length = length;
 	temp_desc.dsc_address = (UCHAR *) temp;
+	INTL_ASSIGN_TTYPE(&temp_desc, ttype_ascii);
 	temp_desc.dsc_dtype = dtype_varying;
-	temp_desc.setTextType(ttype_ascii);
 	CVT_move_common(desc, &temp_desc, cb);
 	*address = reinterpret_cast<UCHAR*>(temp->vary_string);
 	*ttype = INTL_TTYPE(&temp_desc);
@@ -2327,6 +2301,7 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
  *
  **************************************/
 	SQUAD value;
+	double d;
 	VaryStr<50> buffer;			// long enough to represent largest quad in ASCII
 
 	// adjust exact numeric values to same scaling
@@ -2366,13 +2341,56 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 		}
 		break;
 
+	case dtype_real:
+	case dtype_double:
+		if (desc->dsc_dtype == dtype_real)
+			d = *((float*) p);
+		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
+			d = *((double*) p);
+
+		if (scale > 0)
+		{
+			do {
+				d /= 10.;
+			} while (--scale);
+		}
+		else if (scale < 0)
+		{
+			do {
+				d *= 10.;
+			} while (++scale);
+		}
+
+		if (d > 0)
+			d += 0.5;
+		else
+			d -= 0.5;
+
+		// make sure the cast will succeed - different machines
+		// do different things if the value is larger than a quad
+		// can hold
+
+		if (d < (double) QUAD_MIN_real || (double) QUAD_MAX_real < d)
+		{
+			// If rounding would yield a legitimate value, permit it
+
+			if (d > (double) QUAD_MIN_real - 1.)
+				return QUAD_MIN_int;
+
+			if (d < (double) QUAD_MAX_real + 1.)
+				return QUAD_MAX_int;
+
+			err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+		}
+		return QUAD_FROM_DOUBLE(d, err);
+
 	case dtype_varying:
 	case dtype_cstring:
 	case dtype_text:
 		{
 			USHORT length =
 				CVT_make_string(desc, ttype_ascii, &p, &buffer, sizeof(buffer), err);
-			scale -= CVT_decompose(p, length, dtype_quad, &value.gds_quad_high, err);
+			scale -= CVT_decompose(p, length, dtype_quad, &value.high, err);
 		}
 		break;
 
@@ -2382,7 +2400,6 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_timestamp:
 	case dtype_array:
 	case dtype_dbkey:
-	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 
@@ -2394,11 +2411,39 @@ SQUAD CVT_get_quad(const dsc* desc, SSHORT scale, ErrorFunction err)
 
 	// Last, but not least, adjust for scale
 
-	if (scale != 0)
+	if (scale == 0)
+		return value;
+
+#ifndef NATIVE_QUAD
+	fb_assert(false);
+	err(Arg::Gds(isc_badblk));	// internal error
+#else
+	if (scale > 0)
 	{
-		fb_assert(false);
-		err(Arg::Gds(isc_badblk));	// internal error
+		SLONG fraction = 0;
+		do {
+			if (scale == 1)
+				fraction = value % 10;
+			value /= 10;
+		} while (--scale);
+		if (fraction > 4)
+			value++;
+		// The following 2 lines are correct for platforms where
+		// ((-85 / 10 == -8) && (-85 % 10 == -5)).  If we port to
+		// a platform where ((-85 / 10 == -9) && (-85 % 10 == 5)),
+		// we'll have to change this depending on the platform.
+		else if (fraction < -4)
+			value--;
 	}
+	else
+	{
+		do {
+			if (value > QUAD_LIMIT || value < -QUAD_LIMIT)
+				err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_numeric_out_of_range));
+			value *= 10;
+		} while (++scale);
+	}
+#endif
 
 	return value;
 }
@@ -2453,7 +2498,7 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 			d = *((float*) p);
 			eps = eps_float;
 		}
-		else // if (desc->dsc_dtype == DEFAULT_DOUBLE)
+		else if (desc->dsc_dtype == DEFAULT_DOUBLE)
 		{
 			d = *((double*) p);
 			eps = eps_double;
@@ -2501,7 +2546,6 @@ SINT64 CVT_get_int64(const dsc* desc, SSHORT scale, ErrorFunction err)
 	case dtype_timestamp:
 	case dtype_array:
 	case dtype_dbkey:
-	case dtype_boolean:
 		CVT_conversion_error(desc, err);
 		break;
 
@@ -2683,7 +2727,7 @@ USHORT CVT_get_string_ptr(const dsc* desc, USHORT* ttype, UCHAR** address,
  *      already a string, output pointers point to ttype_ascii.
  *
  **************************************/
-	fb_assert(err != NULL);
+	fb_assert(err != NULL); 
 
 	CommonCallbacks callbacks(err);
 	return CVT_get_string_ptr_common(desc, ttype, address, temp, length, &callbacks);

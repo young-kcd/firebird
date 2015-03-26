@@ -28,15 +28,12 @@
 
 #include "firebird.h"
 #include "../common/StatusArg.h"
-#include "../common/utils_proto.h"
 
 #include "../common/classes/fb_string.h"
 #include "../common/classes/MetaName.h"
 #include "../common/classes/alloc.h"
 #include "fb_exception.h"
 #include "gen/iberror.h"
-#include "firebird/Interface.h"
-#include "../common/msg_encode.h"
 
 #ifdef WIN_NT
 #include <windows.h>
@@ -44,107 +41,54 @@
 #include <errno.h>
 #endif
 
-namespace {
-	// Didn't want to bring dyn.h and friends here.
-	const int DYN_MSG_FAC		= 8;
-}
-
 namespace Firebird {
 
 namespace Arg {
 
-Base::Base(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
+Base::Base(ISC_STATUS k, ISC_STATUS c) :
 	implementation(FB_NEW(*getDefaultMemoryPool()) ImplBase(k, c))
 {
 }
 
-StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw()
-	: Base::ImplBase(0, 0),
-	  m_status_vector(*getDefaultMemoryPool())
+StatusVector::ImplStatusVector::ImplStatusVector(const ISC_STATUS* s) throw() : Base::ImplBase(0, 0)
 {
 	fb_assert(s);
 
 	clear();
-
 	// special case - empty initialized status vector, no warnings
 	if (s[0] != isc_arg_gds || s[1] != 0 || s[2] != 0)
-		append(s);
+	{
+		append(s, FB_NELEM(m_status_vector) - 1);
+	}
 }
 
-StatusVector::ImplStatusVector::ImplStatusVector(const IStatus* s) throw()
-	: Base::ImplBase(0, 0),
-	  m_status_vector(*getDefaultMemoryPool())
-{
-	fb_assert(s);
-
-	clear();
-
-	if (s->getState() & IStatus::STATE_ERRORS)
-		append(s->getErrors());
-	if (s->getState() & IStatus::STATE_WARNINGS)
-		append(s->getWarnings());
-}
-
-StatusVector::ImplStatusVector::ImplStatusVector(const Exception& ex) throw()
-	: Base::ImplBase(0, 0),
-	  m_status_vector(*getDefaultMemoryPool())
-{
-	assign(ex);
-}
-
-StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
+StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(k, c))
 {
 	operator<<(*(static_cast<Base*>(this)));
 }
 
-StatusVector::StatusVector(const ISC_STATUS* s) throw(Firebird::BadAlloc) :
+StatusVector::StatusVector(const ISC_STATUS* s) :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s))
 {
 }
 
-StatusVector::StatusVector(const IStatus* s) throw(Firebird::BadAlloc) :
-	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s))
-{
-}
-
-StatusVector::StatusVector(const Exception& ex) throw(Firebird::BadAlloc) :
-	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(ex))
-{
-}
-
-StatusVector::StatusVector() throw(Firebird::BadAlloc) :
+StatusVector::StatusVector() :
 	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(0, 0))
 {
 }
 
 void StatusVector::ImplStatusVector::clear() throw()
 {
+	m_length = 0;
 	m_warning = 0;
-	m_status_vector.clear();
-	m_status_vector.push(isc_arg_end);
+	m_status_vector[0] = isc_arg_end;
 }
 
 bool StatusVector::ImplStatusVector::compare(const StatusVector& v) const throw()
 {
-	return length() == v.length() && fb_utils::cmpStatus(length(), value(), v.value());
-}
-
-void StatusVector::ImplStatusVector::makePermanent() throw()
-{
-	makePermanentVector(m_status_vector.begin());
-}
-
-void StatusVector::ImplStatusVector::assign(const StatusVector& v) throw()
-{
-	clear();
-	append(v);
-}
-
-void StatusVector::ImplStatusVector::assign(const Exception& ex) throw()
-{
-	m_status_vector.clear();
-	ex.stuffException(m_status_vector);
+	return m_length == v.length() &&
+		   memcmp(m_status_vector, v.value(), m_length  * sizeof(ISC_STATUS)) == 0;
 }
 
 void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
@@ -163,22 +107,6 @@ void StatusVector::ImplStatusVector::append(const StatusVector& v) throw()
 	*this = newVector;
 }
 
-void StatusVector::ImplStatusVector::prepend(const StatusVector& v) throw()
-{
-	ImplStatusVector newVector(getKind(), getCode());
-
-	if (newVector.appendErrors(v.implementation))
-	{
-		if (newVector.appendErrors(this))
-		{
-			if (newVector.appendWarnings(v.implementation))
-				newVector.appendWarnings(this);
-		}
-	}
-
-	*this = newVector;
-}
-
 bool StatusVector::ImplStatusVector::appendErrors(const ImplBase* const v) throw()
 {
 	return append(v->value(), v->firstWarning() ? v->firstWarning() : v->length());
@@ -191,52 +119,49 @@ bool StatusVector::ImplStatusVector::appendWarnings(const ImplBase* const v) thr
 	return append(v->value() + v->firstWarning(), v->length() - v->firstWarning());
 }
 
-bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const unsigned int count) throw()
+bool StatusVector::ImplStatusVector::append(const ISC_STATUS* const from, const int count) throw()
 {
 	// CVC: I didn't expect count to be zero but it's, in some calls
-	fb_assert(count >= 0);
+	fb_assert(count >= 0 && count <= ISC_STATUS_LENGTH);
 	if (!count)
 		return true; // not sure it's the best option here
 
-	unsigned lenBefore = length();
-	ISC_STATUS* s = m_status_vector.getBuffer(lenBefore + count + 1);
-	unsigned int copied =
-		fb_utils::copyStatus(&s[lenBefore], count + 1, from, count);
-	if (copied < count)
-		m_status_vector.shrink(lenBefore + copied + 1);
+	unsigned int copied = 0;
 
-	if (!m_warning)
+	for (int i = 0; i < count; )
 	{
-		for (unsigned n = 0; n < length(); )
+		if (from[i] == isc_arg_end)
 		{
-			if (m_status_vector[n] == isc_arg_warning)
-			{
-				m_warning = n;
-				break;
-			}
-			n += (m_status_vector[n] == isc_arg_cstring) ? 3 : 2;
+			break;
 		}
+		i += (from[i] == isc_arg_cstring ? 3 : 2);
+		if (m_length + i > FB_NELEM(m_status_vector) - 1)
+		{
+			break;
+		}
+		copied = i;
 	}
 
-	return copied == count;
-}
+	memcpy(&m_status_vector[m_length], from, copied * sizeof(m_status_vector[0]));
+	m_length += copied;
+	m_status_vector[m_length] = isc_arg_end;
 
-void StatusVector::ImplStatusVector::append(const ISC_STATUS* const from) throw()
-{
-	unsigned l = fb_utils::statusLength(from);
-	append(from, l + 1);
+	return copied == static_cast<unsigned int>(count);
 }
 
 void StatusVector::ImplStatusVector::shiftLeft(const Base& arg) throw()
 {
-	m_status_vector[length()] = arg.getKind();
-	m_status_vector.push(arg.getCode());
-	m_status_vector.push(isc_arg_end);
+	if (m_length < FB_NELEM(m_status_vector) - 2)
+	{
+		m_status_vector[m_length++] = arg.getKind();
+		m_status_vector[m_length++] = arg.getCode();
+		m_status_vector[m_length] = isc_arg_end;
+	}
 }
 
 void StatusVector::ImplStatusVector::shiftLeft(const Warning& arg) throw()
 {
-	const int cur = m_warning ? 0 : length();
+	const int cur = m_warning ? 0 : m_length;
 	shiftLeft(*static_cast<const Base*>(&arg));
 	if (cur && m_status_vector[cur] == isc_arg_warning)
 		m_warning = cur;
@@ -270,7 +195,7 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 {
 	if (hasData())
 	{
-		fb_utils::copyStatus(dest, ISC_STATUS_LENGTH, value(), length() + 1u);
+		memcpy(dest, value(), (length() + 1u) * sizeof(ISC_STATUS));
 	}
 	else
 	{
@@ -281,31 +206,8 @@ ISC_STATUS StatusVector::ImplStatusVector::copyTo(ISC_STATUS* dest) const throw(
 	return dest[1];
 }
 
-void StatusVector::ImplStatusVector::copyTo(IStatus* dest) const throw()
-{
-	dest->init();
-	if (hasData())
-	{
-		const ISC_STATUS* v = m_status_vector.begin();
-		unsigned int len = length();
-		unsigned int warning = m_warning;
-
-		if (v[warning] == isc_arg_warning)
-		{
-			 dest->setWarnings2(len - warning, &v[warning]);
-			 if (warning)
-				dest->setErrors2(warning, v);
-		}
-		else
-			dest->setErrors2(len, v);
-	}
-}
-
 Gds::Gds(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_gds, s) { }
-
-PrivateDyn::PrivateDyn(ISC_STATUS codeWithoutFacility) throw() :
-	Gds(ENCODE_ISC_MSG(codeWithoutFacility, DYN_MSG_FAC)) { }
 
 Num::Num(ISC_STATUS s) throw() :
 	Base(isc_arg_number, s) { }
@@ -328,7 +230,6 @@ Windows::Windows(ISC_STATUS s) throw() :
 Warning::Warning(ISC_STATUS s) throw() :
 	StatusVector(isc_arg_warning, s) { }
 
-// Str overloading.
 Str::Str(const char* text) throw() :
 	Base(isc_arg_string, (ISC_STATUS)(IPTR) text) { }
 
@@ -349,13 +250,6 @@ OsError::OsError() throw() :
 	Base(isc_arg_win32, GetLastError()) { }
 #else
 	Base(isc_arg_unix, errno) { }
-#endif
-
-OsError::OsError(ISC_STATUS s) throw() :
-#ifdef WIN_NT
-	Base(isc_arg_win32, s) { }
-#else
-	Base(isc_arg_unix, s) { }
 #endif
 } // namespace Arg
 

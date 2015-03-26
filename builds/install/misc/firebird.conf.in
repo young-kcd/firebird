@@ -19,76 +19,48 @@
 # To activate an entry, remove the leading "#"s and supply the desired
 # value.
 #
-# Please note, by default a number of the values are specified in **Bytes** (Not KB).
-# You may add obvious abbreviations k, m and g in the end of a number to specify
-# kilobytes, megabytes and gigabytes.
+# Please note, a number of the values are specified in **Bytes** (Not KB).
+# Accordingly, we have provided some simple conversion tables at the bottom
+# of this file.
 #
 # There are three types of configuration values: integer, boolean and string.
 #
 # Integer
-# -------
+# --------
 # Integers is what they sound like, an integral value. Examples:
 #   1
 #   42
 #   4711
-#   24M		# 24 * 1024 * 1024
 #
 # Boolean
 # -------
 # Boolean is expressed as integer values with 0 (zero) being "false" and
 # non-zero is taken to mean "true". For consistency we recommend you
-# only use 0/1. Also strings 'y', 'yes' and 'true' stand for "true".
+# only use 0/1.
 #
 # String
 # ------
 # Strings are also what they sound like, strings. Examples:
-#   RemoteServiceName = gds_db
+#   RootDirectory  = /opt/firebird
 #   RemotePipeName = pipe47
 #
-# Scopes
-# ------
-# Some parameters are marked as per-database / per-connection configurable.
-# Per-database configuration is done in file databases.conf (former aliases.conf).
-# Per-connection configuration is primarily client tool and done using
-# isc_dpb_config parameter in DPB (isc_spb_config for services).
-# Notice that per-database entries also may be tuned using DPB in case of
-# embedded engine when attaching to database first time.
-#
-# Macro substitution
-# ------------------
-# There is a number of predefined macro commands, that can be used in config
-# files where directory name is needed. They are available using $(name) syntax.
-# The complete list of them as follows:
-#	root - root directory of firebird instance
-#	install - directory where firebird is installed
-#	this - directory where current configuration file is located
-#	dir_conf - directory where firebird.conf and databases.conf are located
-#	dir_secDb - directory where default security database is located
-#	dir_plugins - directory where plugins are located
-#	dir_udf - directory where UDFs are located by default
-#	dir_sample - directory where samples are located
-#	dir_sampleDb - directory where sample DB (employee.fdb) is located
-#	dir_intl - directory where international modules are located
-#	dir_msg - directory where messages file (firebird.msg) is located
-# Like the rest of config internals macros are case-insensitive.
-# Capital letters here are used only for better human readability.
-#
-#
-# Includes
-# --------
-# One can include one config file into another one.
-# When relative path is used, it's treated relative to current config file.
-# I.e. when
-#	include some_file.conf
-# is used in /opt/config/master.conf, we include /opt/config/some_file.conf.
-# Traditional wildcards * and ? may be used in include operator. In this case
-# all matching files will be included in undefined order. Example:
-#	include $(dir_plugins)/config/*.conf
 #
 # Portions of this file have been reproduced/made available with the
 # permission of Ann Harrison @ IBPhoenix.
 #
 #######################################
+
+# ==================================
+# Settings for all platforms/engines
+# ==================================
+#
+# ----------------------------
+# Specify the root directory under which Firebird is installed.
+# Can be used to override the OS-specifically determined one.
+#
+# Type: string
+#
+#RootDirectory =
 
 
 # ----------------------------
@@ -96,12 +68,12 @@
 #
 # DatabaseAccess may be None, Full or Restrict. If you choose Restrict,
 # provide ';'-separated trees list, where database files are stored.
-# Relative paths are treated relative to the root directory of firebird.
-# Default value 'Full' gives full access to all files on your site.
-# To specify access to specific trees, enum all required paths 
-# (for Win32 this may be something like 'C:\DataBase;D:\Mirror',
+# Relative paths are treated relative to RootDirectory entry
+# (see above). Default value 'Full' gives full access to all files
+# on your site. To specify access to specific trees, enum all required
+# paths (for Win32 this may be something like 'C:\DataBase;D:\Mirror',
 # for unix - '/db;/mnt/mirrordb'). If you choose 'None', then only
-# databases listed in databases.conf can be attached.
+# databases listed in aliases.conf can be attached.
 #
 # Note: simple quotation marks shown above should *NOT* be used when
 # specifying values and directory path names. Examples:
@@ -123,35 +95,15 @@
 
 
 # ----------------------------
-# Ability to access databases remotely
-#
-# RemoteAccess may be true or false (1/0, Yes/No) - it's boolean value.
-# By default RemoteAccess to all databases except security DB is enabled.
-# If you plan to use more than one dedicated security database it's
-# recommended to disable remote access to them in databases.conf.
-# However (as an additional method to have secure enhanced firebird
-# installation) one can disable remote access globally and re-enable
-# in databases.conf only for specific databases.
-#
-# Per-database configurable.
-#
-# Type: boolean
-#
-#RemoteAccess = true
-
-
-# ----------------------------
 # External File Paths/Directories
 #
 # ExternalFileAccess may be None, Full or Restrict. If you choose
 # Restrict, provide ';'-separated trees list, where external files
-# are stored. Relative paths are treated relative to the root directory 
-# of firebird. Default value 'None' disables any use of external files
+# are stored. Relative paths are treated relative to RootDirectory entry
+# (see above). Default value 'None' disables any use of external files
 # on your site. To specify access to specific trees, enum all required
 # paths (for Win32 this may be something like 'C:\ExternalTables',
 # for unix - '/db/extern;/mnt/extern').
-#
-# Per-database configurable.
 #
 # NOTE: THE EXTERNAL TABLE ENGINE FEATURE COULD BE USED TO COMPROMISE
 # THE SERVER/HOST AS WELL AS DATABASE SECURITY!!
@@ -169,8 +121,8 @@
 #
 # UdfAccess may be None, Full or Restrict. If you choose
 # Restrict, provide ';'-separated trees list, where UDF libraries
-# are stored. Relative paths are treated relative to the root directory 
-# of firebird.
+# are stored. Relative paths are treated relative to RootDirectory entry
+# (see above).
 #
 # Default value 'Restrict UDF' provides the same restrictions
 # as in FB 1.0. To specify access to specific trees, enum all required
@@ -192,10 +144,11 @@
 # Temporary directories
 #
 # Provide ';'-separated trees list, where temporary files are stored.
-# Relative paths are treated relative to the root directory of firebird.
-# Default value is determined using FIREBIRD_TMP, TEMP or TMP 
-# environment options. Once the first specified directory has no 
-# available space, the engine will switch to the next one, and so on.
+# Relative paths are treated relative to RootDirectory entry
+# (see above). Default value is determined using FIREBIRD_TMP,
+# TEMP or TMP environment options. Once the first specified
+# directory has no available space, the engine will switch to the
+# next one, and so on.
 #
 # E.g.:
 # TempDirectories = c:\temp
@@ -205,6 +158,31 @@
 # Type: string (special format)
 #
 #TempDirectories =
+
+
+# ----------------------------
+# Legacy hash makes possible use of old security.fdb
+# after running misc/upgrade/security_database.sql.
+# If you want to disable logons with old passwords
+# after users' migration, set it to 0 (false).
+# Makes no difference when used with original
+# security2.fdb - it can't contain DES hash.
+#
+# Type: boolean
+#
+#LegacyHash = 1
+
+# ----------------------------
+# Which authentication method(s) should be used.
+# "native" means use of only traditional interbase/firebird
+# authentication with security database.
+# "trusted" (Windows Only) makes use of window trusted authentication,
+# and in some aspects this is the most secure way to authenticate.
+# "mixed" means both methods may be used.
+#
+# Type: string
+#
+#Authentication = native
 
 
 # ----------------------------
@@ -231,11 +209,9 @@
 #
 # This sets the number of pages from any one database that can be held
 # in cache at once. If you increase this value, the engine will
-# allocate more pages to the cache for every database. By default, the
-# SuperServer allocates 2048 pages for each database and the classic
-# allocates 256 pages per client connection per database.
-#
-# Per-database configurable.
+# allocate more pages to the cache for every database. By default 
+# SuperServer allocates 2048 pages for each database whilst Classic
+# and SuperClassic allocate 75 pages per client connection per database.
 #
 # Type: integer
 #
@@ -252,11 +228,9 @@
 # default). To disable preallocation set DatabaseGrowthIncrement to zero.
 # Shadow database files are not preallocated.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
-#DatabaseGrowthIncrement = 128M
+#DatabaseGrowthIncrement = 134217728
 
 # ----------------------------
 # File system cache threshold
@@ -272,9 +246,7 @@
 # 
 # Type: integer, measured in database pages
 #
-# Per-database configurable.
-#
-#FileSystemCacheThreshold = 64K
+#FileSystemCacheThreshold = 65536
 
 # ----------------------------
 # File system cache size
@@ -366,7 +338,7 @@
 #
 # Type: integer
 #
-#TempBlockSize = 1M
+#TempBlockSize = 1048576
 
 #
 # The maximum amount of the temporary space that can be cached
@@ -378,78 +350,20 @@
 #
 # Type: integer
 #
-#TempCacheLimit = 64M
+#TempCacheLimit = 67108864
 
 
 # ----------------------------
+# Boolean evaluation method (complete or shortcut)
 #
-# This group of parameters determines what plugins will be used by firebird.
-# Format of string is the list of plugins, separated by space, ',' or ';'.
-# Plugins will be tried in an order, specified here.
-# In many cases correct order is important!
+# If your SQL code depends on side-effects of full evaluation of OR
+# and AND statements (right-hand-side terms), even if the expressions
+# final result could be determined by just examining the value of the
+# first term, you might need to turn this on.
 #
-# Type: string
-
-# AuthServer and AuthClient determine what authentication methods will be used
-# by network server and client redirector. Secure remote passwords plugin
-# is default one. Except configured by default SRP plugin firebird also has
-# Legacy_Auth plugin which is used to emulate pre-FB3 login protocol making it
-# possible for client to talk to old servers and for server to listen to requests
-# from old clients. Legacy_Auth is VERY unsecure. On windows Win_Sspi plugin may
-# be also used - it implements windows trusted authentication and backward
-# compatible with 2.1 and 2.5 clients and servers running on windows.
+# Type: boolean
 #
-# Per-database configurable.
-#
-#AuthServer = Srp
-#
-# Per-connection and per-database configurable.
-#
-#AuthClient = Srp, Win_Sspi, Legacy_Auth
-#
-# If you need to use server plugins that do not provide encryption key (both Legacy_Auth
-# & Win_Sspi) you should also turn off required encryption on the wire with WireCrypt
-# configuration parameter except when working with never encrypted XNET protocol.
-#
-
-# UserManager sets plugin used to work with security database. If more than
-# one plugin is given, first plugin from the list is used. If you need to manage
-# legacy logins set it to Legacy_UserManager.
-#
-# Per-database configurable.
-#
-#UserManager = Srp
-
-# TracePlugin is used by firebird trace facility to send trace data to the user
-# or log file in audit case.
-#
-#TracePlugin = fbtrace
-
-# Wire crypt plugins are used to crypt data transferred over the wire.
-# In default case wire is encrypted using Alleged RC4
-# (key must be generated by auth plugin).
-#
-# Per-connection configurable.
-#
-#WireCryptPlugin = Arc4
-
-# Key holder is a kind of temp storage for DB crypt keys.
-# There is no default for this kind of plugins.
-#
-#KeyHolderPlugin =
-
-
-# ----------------------------
-#
-# This parameter determines what providers will be used by firebird.
-# Format is the same as for the list of plugins (see a few lines before).
-# This is not strange because internally provider is just a kind of plugin.
-#
-# Type: string
-#
-# Per-database & per-connection configurable.
-#
-#Providers = Remote,Engine12,Loopback
+#CompleteBooleanEvaluation = 0
 
 
 # ----------------------------
@@ -459,8 +373,6 @@
 # and doing extra deadlock scan cycle. Engine detects deadlocks instantly
 # in all normal cases, so this value affects things only if something goes
 # wrong. Setting it too low may degrade system performance.
-#
-# Per-database configurable.
 #
 # Type: integer
 #
@@ -476,8 +388,6 @@
 # flushed, at the next transaction commit.  For non-Win32 ports,
 # the default value is -1 (Disabled)
 #
-# Per-database configurable.
-#
 # Type: integer
 #
 #MaxUnflushedWrites = 100
@@ -486,8 +396,6 @@
 # Number of seconds during which unflushed writes will accumulate
 # before they are flushed, at the next transaction commit. For non-Win32
 # ports, the default value is -1 (Disabled)
-#
-# Per-database configurable.
 #
 # Type: integer
 #
@@ -510,6 +418,46 @@
 # Type: boolean
 #
 #BugcheckAbort = 0
+
+
+# Prior to Firebird 1.5 various SELECT expressions generated unnamed
+# columns. This did not conform to the SQL standard. Fb 1.5 saw the
+# introduction of default aliases for these unnamed columns. In some
+# cases, particularly if string concatenation is used (via the ||
+# operator) this breaks existing scripts.
+#
+# This setting will affect aliases generated via CONCATENATION,
+# CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP and EXTRACT. Setting
+# the value to true will disable the alias generation. It is only
+# recommended to be used where legacy scripts need to be supported.
+# It will be marked deprecated in Firebird 2.0 and removed in
+# Firebird 3.0.
+#
+# Type: boolean
+#
+#OldColumnNaming = 0
+
+
+# Prior to Firebird 2.5 the SET clause of the UPDATE statement assigned
+# columns in the user-defined order with the NEW column values being
+# immediately accessible to the subsequent assignments. This did not
+# conform to the SQL standard. Starting with Firebird 2.5, only OLD column
+# values are accessible to all the assignments of the SET clause.
+#
+# Example of the old vs new behaviour:
+#
+# UPDATE T SET A = B, B = A
+# old result: A gets equal to B, B doesn't change
+# new result: A and B get their values exchanged
+#
+# Change this configuration option to 1 (true) only if your SQL code relies
+# on the legacy semantics of the SET clause. It's provided as a temporary
+# solution for backward compatibility issues and will be deprecated in
+# future Firebird versions.
+#
+# Type: boolean
+#
+#OldSetClauseSemantics = 0
 
 
 # ----------------------------
@@ -543,37 +491,9 @@
 #
 # Seconds to wait before concluding an attempt to connect has failed.
 #
-# Per-connection configurable.
-#
 # Type: integer
 #
 #ConnectionTimeout = 180
-
-#
-# Should connection over the wire be encrypted?
-# Has 3 different values: Required, Enabled or Disabled. Enabled behavior
-# depends another side requirements. If both sides set to enabled, connection
-# is encrypted when possible.
-#
-# Attention: default depends upon connection type: incoming (server)
-#            or outgoing (client).
-#
-# Per-connection configurable.
-#
-# Type: integer
-#
-#WireCrypt = Enabled (for client) / Required (for server)
-
-#
-# Should connection over the wire be compressed?
-# Client only value - server should follow client setting if connect using
-# correct protocol (>=13).
-#
-# Per-connection configurable.
-#
-# Type: boolean
-#
-#WireCompression = false
 
 #
 # Seconds to wait on a silent client connection before the server sends
@@ -591,8 +511,6 @@
 # follow instrutions of this article:
 # http://support.microsoft.com/default.aspx?kbid=140325
 #
-# Per-connection configurable.
-#
 # Type: integer
 #
 #DummyPacketInterval = 0
@@ -608,8 +526,6 @@
 # order of precendence is the 'RemoteServiceName' (if an entry is
 # found in the 'services.' file) then the 'RemoteServicePort'.
 #
-# Per-connection configurable.
-#
 # Type: string, integer
 #
 #RemoteServiceName = gds_db
@@ -619,8 +535,6 @@
 # The TCP Port Number to be used for server Event Notification
 # messages.  The value of 0 (Zero) means that the server will choose
 # a port number randomly.
-#
-# Per-connection configurable.
 #
 # Type: integer
 #
@@ -642,23 +556,9 @@
 #
 # Note: Currently is a default for classic and super servers.
 #
-# Per-connection configurable.
-#
 # Type: boolean
 #
 #TcpNoNagle = 1
-
-#
-# Allows setting of IPV6_V6ONLY socket option. If enabled, IPv6 sockets
-# allow only IPv6 communication and separate sockets must be used for
-# IPv4 and IPv6. Default is false.
-#
-# Note: on Windows, the socket option can only be set since Windows Vista,
-# older versions have it always enabled.
-#
-# Type: boolean
-#
-#IPv6V6Only = 0
 
 #
 # Allows incoming connections to be bound to the IP address of a
@@ -679,13 +579,29 @@
 #
 # Bytes of shared memory allocated for lock manager.
 # In Classic mode, the size given is used for the initial allocation. The
-# table expands dynamically up to the limit of memory.
-#
-# Per-database configurable.
+# table expands dynamically up to the limit of memory. In SuperServer, the
+# initial size is also the final size.
 #
 # Type: integer
 #
-#LockMemSize = 1M
+#LockMemSize = 1048576
+
+#
+# When a connection wants to lock an object, it gets a lock request
+# block which specifies the object and the lock level requested. Each
+# locked object has a lock block. Request blocks are connected to those
+# lock blocks either as requests that have been granted, or as pending
+# requests.
+#
+# The settings:
+# 	1 means locks are granted first come, first served.
+#	0 means emulate InterBase v3.3 behavior, where locks are granted
+#	  as soon as they are available; can result in lock request
+#       starvation.
+#
+# Type: integer/boolean
+#
+#LockGrantOrder = 1
 
 #
 # In Classic, only one client process may access the lock table at any
@@ -696,8 +612,6 @@
 # will be made conditionally. Zero value means unconditional mode.
 # Relevant only on SMP machines.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
 #LockAcquireSpins = 0
@@ -706,25 +620,21 @@
 # Tune lock hash list; more hash slots mean shorter hash chains. Only
 # necessary under very high load. Prime number values are recommended.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
-#LockHashSlots = 8191
+#LockHashSlots = 1009
 
 # ----------------------------
 #
 # Bytes of shared memory allocated for event manager.
 #
-# Per-database configurable.
-#
 # Type: integer
 #
-#EventMemSize = 64K
+#EventMemSize = 65536
 
 
 # ===========================
-# Engine Settings
+# SuperServer Engine Settings
 # ===========================
 #
 # ----------------------------
@@ -734,12 +644,42 @@
 # The value is taken from a bit map in which each bit represents a CPU.
 # Thus, to use only the first processor, the value is 1. To use both
 # CPU 1 and CPU 2, the value is 3. To use CPU 2 and CPU 3, the value
-# is 6. The default value is 0 - no affinity will be set.
+# is 6. The default value is 1.
 #
 # Type: integer
 #
-#CpuAffinityMask = 0
+#CpuAffinityMask = 1
 
+
+# ----------------------------
+# Settings for the thread scheduler	 (Windows Only)
+#
+# If you have problems with computer response time, running firebird
+# on workstation, turn off thread scheduler.
+#
+# Type: boolean
+#
+#UsePriorityScheduler = 1
+
+#
+# The wait time, in milli-seconds (ms), before the priority of:
+#	- an active thread is reduced to 'Low', or
+#	- an inactive thread is increased to 'High'
+#
+# Note: The default value was chosen based on experiments on Intel
+# PIII/P4 processors.  It should be increased for using in the computer
+# with lower speed processors.
+#
+# Type: integer
+#
+#PrioritySwitchDelay = 100
+
+#
+# Number of additional 'intervals' given to a 'High' priority thread.
+#
+# Type: integer
+#
+#PriorityBoost = 5
 
 # ----------------------------
 # Garbage collection policy
@@ -749,28 +689,22 @@
 #	background
 #	combined
 #
-# Superserver has by default "combined" policy
-# Classic has by default "cooperative" policy.
-#	Other values are ignored by classic server build
+# Note: this setting affects SuperServer only.
 #
-# Per-database configurable.
+# ClassicServer (and SuperClassic) implements "cooperative" only, therefore it 
+# uses "cooperative" policy regardless of the value.
+#
+# SuperServer implements all three policies and uses "combined" by default.
 #
 # Type: string (special format)
 #
 #GCPolicy = combined
 
 
-# ----------------------------
-# Security database
+# ==============================
+# Classic Server Engine Settings
+# ==============================
 #
-# Defines locations of security database (one that stores logins and passwords),
-# used by server to validate remote connections.
-#
-# Per-database configurable.
-#
-# Type: string (pathname)
-#
-#SecurityDatabase = $(dir_secDb)/security3.fdb
 
 
 # ==============================
@@ -817,8 +751,6 @@
 # Windows Vista/XP SP2/2000 SP4 it will not be accessible using the
 # local protocol from other sessions.
 #
-# Per-connection configurable.
-#
 # Type: string
 #
 #IpcName = FIREBIRD
@@ -827,8 +759,6 @@
 # The name of the pipe used as a transport channel in NetBEUI protocol.
 # Has the same meaning as a port number for TCP/IP. The default value is
 # compatible with IB/FB1.
-#
-# Per-connection configurable.
 #
 # Type: string
 #
@@ -864,21 +794,32 @@
 #
 #Redirection = 0
 
-
-# ============================
-# Settings for Architecture Configuration
-# ============================
-
-
-# Type: boolean
-#SharedCache = true
-
-# Type: boolean
-#SharedDatabase = false
-
-
-# SharedCache	SharedDatabase	Mode
-# false			false			Classic with exclusive access	// single attachment only ?
-# false			true			Classic with shared access		// traditional CS/SC
-# true			false			Super with exclusive access		// traditional SS
-# true			true			Super with shared access		// 
+#######################################
+#
+# KB to Bytes Conversion table
+#
+#######################################
+#
+#    KB     Bytes         KB     Bytes
+#   ----    ---------    ----    ---------
+#      1    1024           32    32768
+#      2    2048           64    65536
+#      4    4096          128    131072
+#      8    8192          256    262144
+#     16    16384         512    524288
+#
+#######################################
+#
+# MB to Bytes Conversion table
+#
+#######################################
+#
+#    MB    Bytes           MB    Bytes            MB    Bytes
+#   ---    ---------      ---    -----------     ---    -----------
+#     1    1048576         64    67108864        448    469762048
+#     2    2097152        128    134217728       512    536870912
+#     4    4194304        192    201326592       640    671088640
+#     8    8388608        256    268435456       768    805306368
+#    16    16777216       320    335544320       896    939524096
+#    32    33554432       384    402653184      1024    1073741824
+#

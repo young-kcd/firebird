@@ -32,7 +32,7 @@
 #include "../qli/err_proto.h"
 #include "../qli/help_proto.h"
 #include "../qli/lex_proto.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/classes/MsgPrint.h"
 
 using MsgFormat::SafeArg;
@@ -258,7 +258,7 @@ void ERRQ_msg_put(USHORT number, const char* str)
 }
 
 
-int ERRQ_msg_get( USHORT number, TEXT* output_msg, FB_SIZE_T s_size)
+int ERRQ_msg_get( USHORT number, TEXT* output_msg, size_t s_size)
 {
 /**************************************
  *

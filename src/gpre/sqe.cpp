@@ -712,7 +712,7 @@ gpre_nod* SQE_list(pfn_SQE_list_cb routine, gpre_req* request, bool aster_ok)
 //		Parse procedure input parameters which are constants or
 //		host variable reference and, perhaps, a missing
 //		flag reference, which may be prefaced by the noiseword,
-//		"INDICATOR".
+//       "INDICATOR".
 //
 
 ref* SQE_parameter(gpre_req* request)
@@ -1236,7 +1236,7 @@ gpre_nod* SQE_value_or_null(gpre_req* request, bool aster_ok, USHORT* paren_coun
 //
 //		Parse host variable reference and, perhaps, a missing
 //		flag reference, which may be prefaced by the noiseword,
-//		"INDICATOR".
+//       "INDICATOR".
 //
 
 gpre_nod* SQE_variable(gpre_req* request, bool /*aster_ok*/, USHORT* /*paren_count*/, bool* /*bool_flag*/)
@@ -1770,7 +1770,7 @@ static gpre_ctx* par_alias_list( gpre_req* request, gpre_nod* alias_list)
 
 	USHORT alias_length = alias_list->nod_count;
 	for (arg = alias_list->nod_arg; arg < end; arg++)
-		alias_length += static_cast<USHORT>(strlen((TEXT*) *arg));
+		alias_length += strlen((TEXT*) *arg);
 
 	TEXT* alias = (TEXT*) MSC_alloc(alias_length);
 
@@ -2245,7 +2245,7 @@ static gpre_nod* par_not( gpre_req* request, USHORT* paren_count)
 //		Parse NULLIF built-in function.
 //
 //		NULLIF(exp1, exp2) is really just a shortcut for
-//		CASE exp1 WHEN exp2 THEN NULL ELSE exp1 END, so
+//      CASE exp1 WHEN exp2 THEN NULL ELSE exp1 END, so
 //		we generate a nod_case1 node.
 
 static gpre_nod* par_nullif(gpre_req* request)
@@ -2529,7 +2529,7 @@ static gpre_nod* par_primitive_value(gpre_req* request, bool aster_ok,
 		return par_stat(request);
 
 	if (MSC_match(KW_MINUS))
-		return MSC_unary(nod_negate, par_primitive_value(request, false, paren_count, NULL));
+		return MSC_unary(nod_negate, par_primitive_value(request, false, paren_count, false));
 
 	MSC_match(KW_PLUS);
 
@@ -3073,7 +3073,7 @@ static gpre_nod* par_stat( gpre_req* request)
 
 //____________________________________________________________
 //
-//		Parse a subscript value.
+//       Parse a subscript value.
 //
 
 static gpre_nod* par_subscript( gpre_req* request)
@@ -3900,7 +3900,7 @@ static void set_ref( gpre_nod* expr, gpre_fld* field_ref)
 
 static char* upcase_string(const char* p)
 {
-	char* const s = (char *) MSC_alloc(static_cast<int>(strlen(p) + 1));
+	char* const s = (char *) MSC_alloc(strlen(p) + 1);
 	char* q = s;
 
 	USHORT l = 0;

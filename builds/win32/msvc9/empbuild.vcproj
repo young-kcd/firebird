@@ -5,6 +5,7 @@
 	Name="empbuild"
 	ProjectGUID="{FC2859B9-56DB-40B4-86C4-2DE31ECE9144}"
 	RootNamespace="empbuild"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -48,7 +49,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="NDEBUG;_CONSOLE;WIN32"
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -64,9 +65,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
+				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
 				SubSystem="1"
 				ProfileGuidedDatabase=""
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -85,9 +89,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -125,7 +126,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="NDEBUG;_CONSOLE;WIN32"
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,NDEBUG,_CONSOLE,SUPERCLIENT,WIN32"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -140,9 +141,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
 				SubSystem="1"
 				ProfileGuidedDatabase=""
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -161,9 +166,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -196,7 +198,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,DEV_BUILD"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -212,9 +214,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
 				SubSystem="1"
 				ProfileGuidedDatabase=""
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -233,9 +239,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -269,7 +272,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../src/include,../../../src/include/gen,../../../src/jrd"
-				PreprocessorDefinitions="_DEBUG;_CONSOLE;WIN32;DEV_BUILD"
+				PreprocessorDefinitions="GPRE_FORTRAN,GPRE_PASCAL,GPRE_COBOL,GPRE_ADA,_DEBUG,_CONSOLE,SUPERCLIENT,WIN32,DEV_BUILD"
 				Detect64BitPortabilityProblems="true"
 			/>
 			<Tool
@@ -285,9 +288,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalLibraryDirectories=""
+				AdditionalDependencies="odbc32.lib odbccp32.lib fbclient.lib"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="..\..\..\temp\$(PlatformName)\$(ConfigurationName)\fbclient"
 				SubSystem="1"
 				ProfileGuidedDatabase=""
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -308,9 +315,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -323,7 +327,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="..\..\..\gen\examples\empbuild.c"
+				RelativePath="..\..\..\gen\$(PlatformName)\examples\empbuild.c"
 				>
 			</File>
 		</Filter>

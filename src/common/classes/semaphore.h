@@ -29,8 +29,7 @@
 #ifndef CLASSES_SEMAPHORE_H
 #define CLASSES_SEMAPHORE_H
 
-#include "../common/gdsassert.h"
-#include "fb_exception.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class
@@ -47,27 +46,43 @@ class Semaphore
 {
 private:
 	HANDLE hSemaphore;
-	void init();
-
-	// Forbid copying (there is no definition of these methods)
-	Semaphore(const Semaphore&);
-	Semaphore& operator=(const Semaphore&);
+	void init()
+	{
+		hSemaphore = CreateSemaphore(NULL, 0 /*initial count*/, INT_MAX, NULL);
+		if (hSemaphore == NULL)
+			system_call_failed::raise("CreateSemaphore");
+	}
 
 public:
 	Semaphore() { init(); }
 	explicit Semaphore(MemoryPool&) { init(); }
 
-	~Semaphore();
+	~Semaphore()
+	{
+		if (hSemaphore && !CloseHandle(hSemaphore))
+			system_call_failed::raise("CloseHandle");
+	}
 
 #define CLASSES_SEMAPHORE_H_HAS_TRYENTER 1
-	bool tryEnter(const int seconds = 0, int milliseconds = 0);
+	bool tryEnter(const int seconds = 0, int milliseconds = 0)
+	{
+		milliseconds += seconds * 1000;
+		DWORD result = WaitForSingleObject(hSemaphore, milliseconds >= 0 ? milliseconds : INFINITE);
+		if (result == WAIT_FAILED)
+			system_call_failed::raise("WaitForSingleObject");
+		return result != WAIT_TIMEOUT;
+	}
 
 	void enter()
 	{
 		tryEnter(-1);
 	}
 
-	void release(SLONG count = 1);
+	void release(SLONG count = 1)
+	{
+		if (!ReleaseSemaphore(hSemaphore, count, NULL))
+			system_call_failed::raise("ReleaseSemaphore");
+	}
 };
 
 } // namespace Firebird
@@ -76,8 +91,8 @@ public:
 
 #ifdef DARWIN
 
-// dispatch semaphore
-#define COMMON_CLASSES_SEMAPHORE_DISPATCH
+// Mach semaphore
+#define COMMON_CLASSES_SEMAPHORE_MACH
 #include <dispatch/dispatch.h>
 
 namespace Firebird
@@ -91,10 +106,6 @@ private:
 	dispatch_semaphore_t semaphore;
 
 	void init();
-
-	// Forbid copying
-	SignalSafeSemaphore(const SignalSafeSemaphore&);
-	SignalSafeSemaphore& operator=(const SignalSafeSemaphore&);
 
 public:
 	SignalSafeSemaphore() { init(); }
@@ -146,10 +157,6 @@ private:
 
 	void init();
 
-	// Forbid copying
-	SignalSafeSemaphore(const SignalSafeSemaphore&);
-	SignalSafeSemaphore& operator=(const SignalSafeSemaphore&);
-
 public:
 	SignalSafeSemaphore() { init(); }
 	explicit SignalSafeSemaphore(MemoryPool&) { init(); }
@@ -197,7 +204,7 @@ typedef SignalSafeSemaphore Semaphore;
 // Should implement Semaphore independent from SignalSafeSemaphore.
 // In the worst case no SignalSafeSemaphore at all (and no SS for that platform).
 #define COMMON_CLASSES_SEMAPHORE_COND_VAR
-#include "fb_pthread.h"
+#include <pthread.h>
 #include <errno.h>
 
 namespace Firebird
@@ -213,10 +220,6 @@ private:
 	void init();
 	void mtxLock();
 	void mtxUnlock();
-
-	// Forbid copying
-	Semaphore(const Semaphore&);
-	Semaphore& operator=(const Semaphore&);
 
 public:
 	Semaphore() { init(); }

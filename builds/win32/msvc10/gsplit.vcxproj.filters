@@ -2,24 +2,27 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="BURP files">
-      <UniqueIdentifier>{61b6181a-cafd-463f-91d6-cf9341064f19}</UniqueIdentifier>
+      <UniqueIdentifier>{d635eccb-b5c4-4651-9495-1a4812617397}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Header files">
-      <UniqueIdentifier>{7d098c02-ec7d-4119-83de-2e08553dab14}</UniqueIdentifier>
+      <UniqueIdentifier>{645f6950-f38d-452d-85db-3db961788ee2}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Resource files">
-      <UniqueIdentifier>{c31574e3-ec81-43e9-9e68-b4fe5340cef5}</UniqueIdentifier>
+      <UniqueIdentifier>{bcbf4bed-7663-442c-afa5-f7f7c292d795}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\src\burp\split\spit.cpp">
+    <ClCompile Include="..\..\..\src\burp\spit.cpp">
       <Filter>BURP files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\src\burp\split\spit.h">
+    <ClInclude Include="..\..\..\src\burp\burpswi.h">
+      <Filter>Header files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\burp\spit.h">
       <Filter>Header files</Filter>
     </ClInclude>
   </ItemGroup>

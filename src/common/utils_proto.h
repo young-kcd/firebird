@@ -31,9 +31,7 @@
 
 #include <string.h>
 #include "../common/classes/fb_string.h"
-#include "../common/classes/array.h"
 #include "gen/iberror.h"
-#include "firebird/Interface.h"
 
 #ifdef SFIO
 #include <stdio.h>
@@ -42,17 +40,16 @@
 namespace fb_utils
 {
 	char* copy_terminate(char* dest, const char* src, size_t bufsize);
-	char* exact_name(char* const name);
+	char* exact_name(char* const str);
 	inline void exact_name(Firebird::string& str)
 	{
 		str.rtrim();
 	}
-	char* exact_name_limit(char* const name, size_t bufsize);
+	char* exact_name_limit(char* const str, size_t bufsize);
 	bool implicit_domain(const char* domain_name);
 	bool implicit_integrity(const char* integ_name);
 	bool implicit_pk(const char* pk_name);
 	int name_length(const TEXT* const name);
-	int name_length_limit(const TEXT* const name, size_t bufsize);
 	bool readenv(const char* env_name, Firebird::string& env_value);
 	bool readenv(const char* env_name, Firebird::PathName& env_value);
 	int snprintf(char* buffer, size_t count, const char* format...);
@@ -105,44 +102,15 @@ namespace fb_utils
 
 	Firebird::PathName get_process_name();
 	SLONG genUniqueId();
-	void getCwd(Firebird::PathName& pn);
 
-	void inline initStatusTo(ISC_STATUS* status, ISC_STATUS to)
-	{
-		status[0] = isc_arg_gds;
-		status[1] = to;
-		status[2] = isc_arg_end;
-	}
+	void getCwd(Firebird::PathName& pn);
 
 	void inline init_status(ISC_STATUS* status)
 	{
-		initStatusTo(status, FB_SUCCESS);
+		status[0] = isc_arg_gds;
+		status[1] = FB_SUCCESS;
+		status[2] = isc_arg_end;
 	}
-
-	void inline statusBadAlloc(ISC_STATUS* status)
-	{
-		initStatusTo(status, isc_virmemexh);
-	}
-
-	void inline statusUnknown(ISC_STATUS* status)
-	{
-		initStatusTo(status, isc_exception_sigill);		// Any better ideas? New error code?
-	}
-
-	void inline init_status(Firebird::CheckStatusWrapper* status)
-	{
-		status->init();
-	}
-
-	unsigned int copyStatus(ISC_STATUS* const to, const unsigned int space,
-							const ISC_STATUS* const from, const unsigned int count) throw();
-	void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw();
-	unsigned int mergeStatus(ISC_STATUS* const to, unsigned int space, const Firebird::IStatus* from) throw();
-	void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw();
-	unsigned int statusLength(const ISC_STATUS* const status) throw();
-	unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
-						   const ISC_STATUS* sub, unsigned int csub) throw();
-	bool cmpStatus(unsigned int len, const ISC_STATUS* a, const ISC_STATUS* b) throw();
 
 	enum FetchPassResult {
 		FETCH_PASS_OK,
@@ -158,38 +126,22 @@ namespace fb_utils
 	// Returns frequency of performance counter in Hz
 	SINT64 query_performance_frequency();
 
-	void get_process_times(SINT64 &userTime, SINT64 &sysTime);
-
 	void exactNumericToStr(SINT64 value, int scale, Firebird::string& target, bool append = false);
 
-	// Returns true if called from firebird build process (appr. environment is set)
-	bool bootBuild();
+	enum FB_DIR {
+		FB_DIR_BIN = 0, FB_DIR_SBIN, FB_DIR_CONF, FB_DIR_LIB, FB_DIR_INC, FB_DIR_DOC, FB_DIR_UDF,
+		FB_DIR_SAMPLE, FB_DIR_SAMPLEDB, FB_DIR_HELP, FB_DIR_INTL, FB_DIR_MISC, FB_DIR_SECDB,
+		FB_DIR_MSG, FB_DIR_LOG, FB_DIR_GUARD, FB_DIR_PLUGINS,
+		FB_DIR_LAST};
 
 	// Add appropriate file prefix.
-	Firebird::PathName getPrefix(unsigned prefType, const char* name);
-
-	// moves DB path information (from limbo transaction) to another buffer
-	void getDbPathInfo(unsigned int& itemsLength, const unsigned char*& items,
-		unsigned int& bufferLength, unsigned char*& buffer,
-		Firebird::Array<unsigned char>& newItemsBuffer, const Firebird::PathName& dbpath);
-
-	// returns true if passed info items work with running svc thread
-	bool isRunningCheck(const UCHAR* items, unsigned int length);
-
-	// converts bytes to BASE64 representation
-	void base64(Firebird::string& b64, const Firebird::UCharBuffer& bin);
-
-	// generate random string in BASE64 representation
-	void random64(Firebird::string& randomValue, FB_SIZE_T length);
+	Firebird::PathName getPrefix(FB_DIR prefType, const char* name);
 
 	void logAndDie(const char* text);
 
-	// Returns next offset value
-	unsigned sqlTypeToDsc(unsigned prevOffset, unsigned sqlType, unsigned sqlLength,
-		unsigned* dtype, unsigned* len, unsigned* offset, unsigned* nullOffset);
-
-	// Check does vector contain particular code or not
-	bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code);
+	// command-line helpers
+	bool switchMatch(const Firebird::string& sw, const char* target);
+	in_sw_tab_t* findSwitch(in_sw_tab_t* table, Firebird::string sw);
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

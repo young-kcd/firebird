@@ -40,11 +40,46 @@ namespace Firebird
 	// This class is useful if mutex can be "deleted" by the
 	// code between enter and leave calls
 
-	class RefMutex : public RefCounted, public Mutex
+	class RefMutex : public RefCounted
 	{
 	public:
 		RefMutex() {}
-		explicit RefMutex(MemoryPool& pool) : Mutex(pool) {}
+		explicit RefMutex(MemoryPool& pool) : mutex(pool) {}
+
+		void enter(const char* f)
+		{
+			mutex.enter();
+			setFrom(f);
+		}
+
+		bool tryEnter(const char* f)
+		{
+			bool rc = mutex.tryEnter();
+			if (rc)
+			{
+				setFrom(f);
+			}
+			return rc;
+		}
+
+		void leave()
+		{
+			mutex.leave();
+		}
+
+	private:
+		Mutex mutex;
+#ifdef DEV_BUILD
+		const char* from[8];
+		unsigned frIndex;
+		void setFrom(const char* fr)
+		{
+			frIndex %= FB_NELEM(from);
+			from[frIndex++] = fr;
+		}
+#else
+		void setFrom(const char*) { }
+#endif
 	};
 
 	// RAII holder
@@ -84,6 +119,16 @@ namespace Firebird
 		{
 			return object->release();
 		}
+
+		static void enter(T* object, const char* f)
+		{
+			object->enter(f);
+		}
+
+		static bool tryEnter(T* object, const char* f)
+		{
+			return object->tryEnter(f);
+		}
 	};
 
 	template <typename T>
@@ -99,20 +144,24 @@ namespace Firebird
 		{
 			return 0;
 		}
+
+		static void enter(T* object, const char*)
+		{
+			object->enter();
+		}
+
+		static bool tryEnter(T* object, const char*)
+		{
+			return object->tryEnter();
+		}
 	};
 
 	template <typename Mtx, typename RefCounted = DefaultRefCounted<Mtx> >
 	class EnsureUnlock
 	{
 	public:
-		EnsureUnlock(Mtx& mutex, const char* f)
+		explicit EnsureUnlock(Mtx& mutex)
 			: m_mutex(&mutex), m_locked(0)
-#ifdef DEV_BUILD
-			  , from(f)
-#define FB_LOCKED_FROM from
-#else
-#define FB_LOCKED_FROM NULL
-#endif
 		{
 			RefCounted::addRef(m_mutex);
 		}
@@ -126,13 +175,13 @@ namespace Firebird
 
 		void enter()
 		{
-			m_mutex->enter(FB_LOCKED_FROM);
+			RefCounted::enter(m_mutex, "EnsureUnlock");
 			m_locked++;
 		}
 
 		bool tryEnter()
 		{
-			if (m_mutex->tryEnter(FB_LOCKED_FROM))
+			if (RefCounted::tryEnter(m_mutex, "EnsureUnlock::tryEnter"))
 			{
 				m_locked++;
 				return true;
@@ -142,18 +191,14 @@ namespace Firebird
 
 		void leave()
 		{
-			m_locked--;
 			m_mutex->leave();
+			m_locked--;
 		}
 
 	private:
 		Mtx* m_mutex;
 		int m_locked;
-#ifdef DEV_BUILD
-		const char* from;
-#endif
 	};
-#undef FB_LOCKED_FROM
 
 	typedef EnsureUnlock<Mutex, NotRefCounted<Mutex> > MutexEnsureUnlock;
 	typedef EnsureUnlock<RefMutex> RefMutexEnsureUnlock;

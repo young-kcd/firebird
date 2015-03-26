@@ -31,7 +31,7 @@
 
 namespace Firebird {
 
-template <FB_SIZE_T x>
+template <size_t x>
 class VaryStr : public vary
 {
 	char vary_tail[x - 1];
@@ -44,7 +44,7 @@ public:
 	}
 };
 
-template <FB_SIZE_T x>
+template <size_t x>
 class DynamicVaryStr : public VaryStr<x>
 {
 	vary* buffer;
@@ -58,7 +58,7 @@ public:
 	DynamicVaryStr() : buffer(NULL) { }
 
 	// It does not preserve string data! Not hard to do, but not required today. AP, 2009.
-	vary* getBuffer(FB_SIZE_T len)
+	vary* getBuffer(size_t len)
 	{
 		if (len <= x)
 		{

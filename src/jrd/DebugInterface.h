@@ -28,30 +28,23 @@
 
 #include "../jrd/blb.h"
 
-// Version 2 of the debug information replaces 16-bit values
-// inside the fb_dbg_map_src2blr tag with 32-bit ones.
-// Also, it introduces some new tags.
-const UCHAR DBG_INFO_VERSION_1 = UCHAR(1);
-const UCHAR DBG_INFO_VERSION_2 = UCHAR(2);
-const UCHAR CURRENT_DBG_INFO_VERSION = DBG_INFO_VERSION_2;
-
 namespace Firebird {
 
 class MapBlrToSrcItem
 {
 public:
-	ULONG mbs_offset;
-	ULONG mbs_src_line;
-	ULONG mbs_src_col;
+	USHORT mbs_offset;
+	USHORT mbs_src_line;
+	USHORT mbs_src_col;
 
-	static ULONG generate(const MapBlrToSrcItem& Item)
+	static USHORT generate(const void*, const MapBlrToSrcItem& Item)
 	{ return Item.mbs_offset; }
 };
 
 typedef Firebird::SortedArray<
 	MapBlrToSrcItem,
 	Firebird::EmptyStorage<MapBlrToSrcItem>,
-	ULONG,
+	USHORT,
 	MapBlrToSrcItem> MapBlrToSrc;
 
 typedef GenericMap<Pair<Right<USHORT, MetaName> > > MapVarIndexToName;
@@ -84,22 +77,17 @@ struct ArgumentInfo
 
 typedef GenericMap<Pair<Right<ArgumentInfo, MetaName> > > MapArgumentInfoToName;
 
-struct DbgInfo : public PermanentStorage
+struct DbgInfo
 {
 	explicit DbgInfo(MemoryPool& p)
-		: PermanentStorage(p),
-		  blrToSrc(p),
+		: blrToSrc(p),
 		  varIndexToName(p),
-		  argInfoToName(p),
-		  curIndexToName(p),
-		  subFuncs(p),
-		  subProcs(p)
+		  argInfoToName(p)
 	{
 	}
 
-	~DbgInfo()
+	DbgInfo()
 	{
-		clear();
 	}
 
 	void clear()
@@ -107,38 +95,16 @@ struct DbgInfo : public PermanentStorage
 		blrToSrc.clear();
 		varIndexToName.clear();
 		argInfoToName.clear();
-		curIndexToName.clear();
-
-		{	// scope
-			GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subFuncs);
-
-			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-				delete accessor.current()->second;
-
-			subFuncs.clear();
-		}
-
-		{	// scope
-			GenericMap<Pair<Left<MetaName, DbgInfo*> > >::Accessor accessor(&subProcs);
-
-			for (bool found = accessor.getFirst(); found; found = accessor.getNext())
-				delete accessor.current()->second;
-
-			subProcs.clear();
-		}
 	}
 
 	MapBlrToSrc blrToSrc;					// mapping between blr offsets and source text position
 	MapVarIndexToName varIndexToName;		// mapping between variable index and name
 	MapArgumentInfoToName argInfoToName;	// mapping between argument info (type, index) and name
-	MapVarIndexToName curIndexToName;		// mapping between cursor index and name
-	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subFuncs;	// sub functions
-	GenericMap<Pair<Left<MetaName, DbgInfo*> > > subProcs;	// sub procedures
 };
 
 } // namespace Firebird
 
 void DBG_parse_debug_info(Jrd::thread_db*, Jrd::bid*, Firebird::DbgInfo&);
-void DBG_parse_debug_info(ULONG, const UCHAR*, Firebird::DbgInfo&);
+void DBG_parse_debug_info(USHORT, const UCHAR*, Firebird::DbgInfo&);
 
 #endif // DEBUG_INTERFACE_H

@@ -1,7 +1,7 @@
 # The contents of this file are subject to the Interbase Public
 # License Version 1.0 (the "License"); you may not use this file
 # except in compliance with the License. You may obtain a copy
-# of the License at http://www.Inprise.com/IPL.html
+# of the License at http://www.firebirdsql.org/en/interbase-public-license/
 #
 # Software distributed under the License is distributed on an
 # "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
@@ -25,3 +25,11 @@
 
 PROD_FLAGS=-O3 -DLINUX -DPPC64EL -pipe -p -MMD -fPIC -fsigned-char -fmessage-length=0
 DEV_FLAGS=-ggdb -DLINUX -DPPC64EL -pipe -p -MMD -fPIC -Wall -fsigned-char -fmessage-length=0 -Wno-non-virtual-dtor
+
+OS_ServerFiles=inet_server.cpp
+
+EMBED_UTIL_TARGETS=gstat gsec fbguard nbackup fb_lock_print fbsvcmgr fbtracemgr
+CLIENT_UTIL_TARGETS=gstat gsec fbguard fbmgr_bin nbackup fb_lock_print fbsvcmgr fbtracemgr
+
+Physical_IO_Module=os/posix/unix.cpp
+

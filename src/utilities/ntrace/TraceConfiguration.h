@@ -31,7 +31,11 @@
 #include "firebird.h"
 #include "../../common/classes/auto.h"
 #include "../../common/classes/fb_string.h"
-#include "../../common/config/config_file.h"
+#include "../../config/ConfigFile.h"
+#include "../../config/ConfObj.h"
+#include "../../config/ConfObject.h"
+#include "../../config/Element.h"
+#include "../../config/AdminException.h"
 #include "TracePluginConfig.h"
 
 #include <sys/types.h>
@@ -58,9 +62,9 @@ private:
 
 	void readConfig();
 
-	void expandPattern(const ConfigFile::Parameter* el, Firebird::PathName& valueToExpand);
-	bool parseBoolean(const ConfigFile::Parameter* el) const;
-	ULONG parseUInteger(const ConfigFile::Parameter* el) const;
+	void expandPattern(const Element* el, Firebird::string& valueToExpand);
+	bool parseBoolean(const Element* el) const;
+	ULONG parseUInteger(const Element* el) const;
 
 	const char* const m_text;
 	const Firebird::PathName& m_databaseName;

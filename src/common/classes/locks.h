@@ -30,16 +30,14 @@
 #define CLASSES_LOCKS_H
 
 #include "firebird.h"
-#include "fb_exception.h"
-#include "../common/gdsassert.h"
-#include "../common/classes/Reasons.h"
+#include "../jrd/gdsassert.h"
 
 #ifdef WIN_NT
 // It is relatively easy to avoid using this header. Maybe do the same stuff like
 // in thd.h ? This is Windows platform maintainers choice
 #include <windows.h>
 #else
-#include "fb_pthread.h"
+#include <pthread.h>
 #include <errno.h>
 #endif
 
@@ -62,35 +60,27 @@ public:
 
 	static bool tryEnter(LPCRITICAL_SECTION lpCS)
 	{
-		return ((m_funct) (lpCS) == TRUE);
+		return ((*m_funct) (lpCS) == TRUE);
 	}
 
 private:
-	typedef BOOL (WINAPI *tTryEnterCriticalSection)(LPCRITICAL_SECTION lpCriticalSection);
+	typedef WINBASEAPI BOOL WINAPI tTryEnterCriticalSection
+		(LPCRITICAL_SECTION lpCriticalSection);
 
-	static tTryEnterCriticalSection m_funct;
+	static tTryEnterCriticalSection* m_funct;
 };
 
-class Mutex : public Reasons
+class Mutex
 {
 protected:
 	CRITICAL_SECTION spinlock;
-#ifdef DEV_BUILD
-	int lockCount;
-#endif
 
 public:
 	Mutex()
-#ifdef DEV_BUILD
-		: lockCount(0)
-#endif
 	{
 		InitializeCriticalSection(&spinlock);
 	}
 	explicit Mutex(MemoryPool&)
-#ifdef DEV_BUILD
-		: lockCount(0)
-#endif
 	{
 		InitializeCriticalSection(&spinlock);
 	}
@@ -100,31 +90,18 @@ public:
 #if defined DEV_BUILD && !defined WIN9X_SUPPORT
 		if (spinlock.OwningThread != 0)
 			DebugBreak();
-		fb_assert(lockCount == 0);
 #endif
 		DeleteCriticalSection(&spinlock);
 	}
 
-	void enter(const char* aReason)
+	void enter()
 	{
 		EnterCriticalSection(&spinlock);
-		reason(aReason);
-#ifdef DEV_BUILD
-		lockCount++;
-#endif
 	}
 
-	bool tryEnter(const char* aReason)
+	bool tryEnter()
 	{
-		const bool ret = TryEnterCS::tryEnter(&spinlock);
-		if (ret)
-		{
-			reason(aReason);
-#ifdef DEV_BUILD
-			lockCount++;
-#endif
-		}
-		return ret;
+		return TryEnterCS::tryEnter(&spinlock);
 	}
 
 	void leave()
@@ -134,37 +111,12 @@ public:
 		// On 9X it works differently, and future OS versions may break this check as well
 		if ((U_IPTR) spinlock.OwningThread != GetCurrentThreadId())
 			DebugBreak();
-
-		lockCount--;
 #endif
 		LeaveCriticalSection(&spinlock);
 	}
 
-#ifdef DEV_BUILD
-	bool locked()
-	{
-		// first of all try to enter the mutex
-		// this will help to make sure it's not locked by other thread
-		if (!tryEnter(FB_FUNCTION))
-		{
-			return false;
-		}
-		// make sure mutex was already locked
-		bool rc = lockCount > 1;
-		// leave to release lock, done by us in tryEnter
-		leave();
-
-		return rc;
-	}
-#endif
-
 public:
 	static void initMutexes() { }
-
-private:
-	// Forbid copying
-	Mutex(const Mutex&);
-	Mutex& operator=(const Mutex&);
 };
 
 class Spinlock : public Mutex
@@ -187,22 +139,16 @@ public:
 #else //WIN_NT
 
 // Pthreads version of the class
-class Mutex : public Reasons
+class Mutex
 {
 friend class Condition;
 private:
 	pthread_mutex_t mlock;
 	static pthread_mutexattr_t attr;
-#ifdef DEV_BUILD
-	int lockCount;
-#endif
 
 private:
 	void init()
 	{
-#ifdef DEV_BUILD
-		lockCount = 0;
-#endif
 		int rc = pthread_mutex_init(&mlock, &attr);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_init", rc);
@@ -214,78 +160,37 @@ public:
 
 	~Mutex()
 	{
-		fb_assert(lockCount == 0);
 		int rc = pthread_mutex_destroy(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_destroy", rc);
 	}
 
-	void enter(const char* aReason)
+	void enter()
 	{
 		int rc = pthread_mutex_lock(&mlock);
 		if (rc)
 			system_call_failed::raise("pthread_mutex_lock", rc);
-		reason(aReason);
-#ifdef DEV_BUILD
-		++lockCount;
-#endif
 	}
 
-	bool tryEnter(const char* aReason)
+	bool tryEnter()
 	{
 		int rc = pthread_mutex_trylock(&mlock);
 		if (rc == EBUSY)
 			return false;
 		if (rc)
 			system_call_failed::raise("pthread_mutex_trylock", rc);
-#ifdef DEV_BUILD
-		reason(aReason);
-		++lockCount;
-#endif
 		return true;
 	}
 
 	void leave()
 	{
-#ifdef DEV_BUILD
-		fb_assert(lockCount > 0);
-		--lockCount;
-#endif
 		int rc = pthread_mutex_unlock(&mlock);
 		if (rc)
-		{
-#ifdef DEV_BUILD
-			++lockCount;
-#endif
 			system_call_failed::raise("pthread_mutex_unlock", rc);
-		}
 	}
-
-#ifdef DEV_BUILD
-	bool locked()
-	{
-		// first of all try to enter the mutex
-		// this will help to make sure it's not locked by other thread
-		if (!tryEnter(FB_FUNCTION))
-		{
-			return false;
-		}
-		// make sure mutex was already locked
-		bool rc = lockCount > 1;
-		// leave to release lock, done by us in tryEnter
-		leave();
-
-		return rc;
-	}
-#endif
 
 public:
 	static void initMutexes();
-
-private:
-	// Forbid copying
-	Mutex(const Mutex&);
-	Mutex& operator=(const Mutex&);
 };
 
 #ifdef NOT_USED_OR_REPLACED		// we do not use spinlocks currently
@@ -323,11 +228,6 @@ public:
 		if (pthread_spin_unlock(&spinlock))
 			system_call_failed::raise("pthread_spin_unlock");
 	}
-
-private:
-	// Forbid copying
-	Spinlock(const Spinlock&);
-	Spinlock& operator=(const Spinlock&);
 };
 #else
 typedef Mutex Spinlock;
@@ -340,16 +240,15 @@ typedef Mutex Spinlock;
 class MutexLockGuard
 {
 public:
-	MutexLockGuard(Mutex& aLock, const char* aReason)
-		: lock(&aLock)
+	explicit MutexLockGuard(Mutex &alock)
+		: lock(&alock)
 	{
-		lock->enter(aReason);
+		lock->enter();
 	}
 
 	~MutexLockGuard()
 	{
-		try
-		{
+		try {
 			lock->leave();
 		}
 		catch (const Exception&)
@@ -369,11 +268,8 @@ private:
 class MutexUnlockGuard
 {
 public:
-	explicit MutexUnlockGuard(Mutex& aLock, const char* aReason)
+	explicit MutexUnlockGuard(Mutex& aLock)
 		: lock(&aLock)
-#ifdef DEV_BUILD
-			, saveReason(aReason)
-#endif
 	{
 		lock->leave();
 	}
@@ -382,11 +278,7 @@ public:
 	{
 		try
 		{
-#ifdef DEV_BUILD
-			lock->enter(saveReason);
-#else
-			lock->enter(NULL);
-#endif
+			lock->enter();
 		}
 		catch (const Exception&)
 		{
@@ -400,28 +292,6 @@ private:
 	MutexUnlockGuard& operator=(const MutexUnlockGuard&);
 
 	Mutex* lock;
-#ifdef DEV_BUILD
-	const char* saveReason;
-#endif
-};
-
-
-class MutexCheckoutGuard
-{
-public:
-	MutexCheckoutGuard(Mutex& mtxCout, Mutex& mtxLock, const char* aReason)
-		: unlock(mtxCout, aReason),
-		  lock(mtxLock, aReason)
-	{
-	}
-
-private:
-	// Forbid copying
-	MutexCheckoutGuard(const MutexCheckoutGuard&);
-	MutexCheckoutGuard& operator=(const MutexCheckoutGuard&);
-
-	MutexUnlockGuard unlock;
-	MutexLockGuard	lock;
 };
 
 } //namespace Firebird

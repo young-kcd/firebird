@@ -34,7 +34,7 @@
 #include "../qli/mov_proto.h"
 #include "../common/classes/timestamp.h"
 #include "../common/classes/VaryStr.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/gds_proto.h"
 #include "../common/classes/FpeControl.h"
 
 const int PRECISION	= 10000;
@@ -480,7 +480,7 @@ static const TEXT* default_edit_string(const dsc* desc, TEXT* buff)
 
 	if (buff == buffer)
 	{
-		qli_str* string = (qli_str*) ALLOCDV(type_str, static_cast<int>(strlen(buff)));
+		qli_str* string = (qli_str*) ALLOCDV(type_str, strlen(buff));
 		strcpy(string->str_data, buff);
 		buff = string->str_data;
 	}
@@ -751,7 +751,7 @@ static void edit_float( const dsc* desc, pics* picture, TEXT** output)
 		width = picture->pic_float_digits - 1 + picture->pic_floats;
 		f_digits = (width > 2) ? width - 2 : 0;
 		sprintf(temp, "%.*f", f_digits, number);
-		w_digits = static_cast<USHORT>(strlen(temp));
+		w_digits = strlen(temp);
 		if (f_digits)
 		{
 			TEXT* p = temp + w_digits;	// find the end
@@ -1090,7 +1090,7 @@ static void edit_numeric(const dsc* desc, pics* picture, TEXT** output)
 			*out++ = c;
 			break;
 		}
-		if ((picture->pic_flags & PIC_suppress_blanks) && out[-1] == ' ')
+		if (picture->pic_flags & PIC_suppress_blanks && out[-1] == ' ')
 			--out;
 	}
 

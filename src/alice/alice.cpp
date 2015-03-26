@@ -41,15 +41,16 @@
 #include <stdio.h>
 
 #include "../jrd/ibase.h"
+#include "../jrd/common.h"
 #include "../jrd/license.h"
 #include "../alice/alice.h"
+#include "../alice/aliceswi.h"
 #include "../alice/exe_proto.h"
-#include "../common/msg_encode.h"
-#include "../yvalve/gds_proto.h"
+#include "../jrd/msg_encode.h"
+#include "../jrd/gds_proto.h"
+#include "../jrd/svc.h"
 #include "../alice/alice_proto.h"
 #include "../common/utils_proto.h"
-#include "../common/classes/Switches.h"
-#include "../alice/aliceswi.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -71,16 +72,7 @@ static const USHORT val_err_table[] =
 	58,				// msg 58: \tNumber of index page errors\t: %ld
 	59,				// msg 59: \tNumber of pointer page errors\t: %ld
 	60,				// msg 60: \tNumber of transaction page errors\t: %ld
-	61,				// msg 61: \tNumber of database page errors\t: %ld
-	122,			// msg 122: \tNumber of inventory page errors\t: @1
-	123,			// msg 123: \tNumber of record level warnings\t: @1
-	124,			// msg 124: \tNumber of Blob page warnings\t: @1
-	125,			// msg 125: \tNumber of data page warnings\t: @1
-	126,			// msg 126: \tNumber of index page warnings\t: @1
-	127,			// msg 127: \tNumber of pointer page warnings\t: @1
-	128,			// msg 128: \tNumber of transaction page warnings\t: @1
-	129,			// msg 129: \tNumber of database page warnings\t: @1
-	130				// msg 130: \tNumber of inventory page warnings\t: @1
+	61				// msg 61: \tNumber of database page errors\t: %ld
 };
 
 
@@ -101,8 +93,9 @@ static void alice_output(bool error, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
 //	Entry point for GFIX in case of service manager.
 //
 
-int ALICE_main(Firebird::UtilSvc* uSvc)
+THREAD_ENTRY_DECLARE ALICE_main(THREAD_ENTRY_PARAM arg)
 {
+	Firebird::UtilSvc* uSvc = (Firebird::UtilSvc*) arg;
 	int exit_code = FINI_OK;
 
 	try {
@@ -117,7 +110,8 @@ int ALICE_main(Firebird::UtilSvc* uSvc)
 		exit_code = FB_FAILURE;
 	}
 
-	return exit_code;
+	uSvc->finish();
+	return (THREAD_ENTRY_RETURN)(IPTR) exit_code;
 }
 
 //____________________________________________________________
@@ -135,34 +129,32 @@ int alice(Firebird::UtilSvc* uSvc)
 
 	try {
 
-	// Perform some special handling when run as a Firebird service.  The
-	// first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
-	// by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
+//  Perform some special handling when run as a Firebird service.  The
+//  first switch can be "-svc" (lower case!) or it can be "-svc_re" followed
+//  by 3 file descriptors to use in re-directing stdin, stdout, and stderr.
 
 	tdgbl->ALICE_data.ua_user = NULL;
-	tdgbl->ALICE_data.ua_role = NULL;
 	tdgbl->ALICE_data.ua_password = NULL;
 #ifdef TRUSTED_AUTH
 	tdgbl->ALICE_data.ua_trusted = false;
 #endif
+	tdgbl->ALICE_data.ua_tr_user = NULL;
+	tdgbl->ALICE_data.ua_tr_role = false;
 
-	//  Start by parsing switches
+//  Start by parsing switches
 
-	bool error = false, help = false, version = false;
+	bool error = false, help = false;
 	SINT64 flags = 0;
 	tdgbl->ALICE_data.ua_shutdown_delay = 0;
 	const TEXT* database = NULL;
-	TEXT string[512] = "";
+	TEXT	string[512];
 
 	const char** argv = uSvc->argv.begin();
 	int argc = uSvc->argv.getCount();
-	if (argc == 1)
-		error = true;
 	++argv;
 
 	// tested outside the loop
-	const Switches::in_sw_tab_t* table = NULL;
-	const Switches switches(alice_in_sw_table, FB_NELEM(alice_in_sw_table), false, true);
+	const in_sw_tab_t* table = alice_in_sw_table;
 
 	while (--argc > 0)
 	{
@@ -178,40 +170,67 @@ int alice(Firebird::UtilSvc* uSvc)
 			continue;
 		}
 
-		const char* opt = *argv++;
-		if (!opt[1]) {
+		ALICE_down_case(*argv++, string, sizeof(string));
+		if (!string[1]) {
 			continue;
 		}
-		if (strcmp(opt, "-?") == 0)
+		if (strcmp(string, "-?") == 0)
 		{
 			error = help = true;
 			break;
 		}
 
-		table = switches.findSwitch(opt);
-		if (!table)
+		for (table = alice_in_sw_table; true; ++table)
 		{
-			ALICE_print(2, SafeArg() << opt);	// msg 2: invalid switch %s
-			error = true;
+			const TEXT* p = (TEXT*) table->in_sw_name;
+			if (!p)
+			{
+				ALICE_print(2, SafeArg() << (*--argv));	// msg 2: invalid switch %s
+				error = true;
+				break;
+			}
+
+			TEXT* q = &string[1];
+			while (*q && *p++ == *q)
+			{
+				q++;
+			}
+			if (!*q && (q - &string[1] >= table->in_sw_min_length))
+			{
+				break;
+			}
+		}
+		if (error) {
 			break;
 		}
-
-		if (table->in_sw == IN_SW_ALICE_X) {
+		if (*table->in_sw_name == 'x') {
 			tdgbl->ALICE_data.ua_debug++;
 		}
-		else if (table->in_sw == IN_SW_ALICE_VERSION)
-		{
-			ALICE_print(3, SafeArg() << FB_VERSION);	// msg 3: gfix version %s
-			version = true;
+        if (table->in_sw_value & sw_trusted_svc)
+        {
+			uSvc->checkService();
+			if (--argc <= 0) {
+				ALICE_error(13);	// msg 13: user name required
+			}
+			tdgbl->ALICE_data.ua_tr_user = *argv++;
+			continue;
 		}
-
+        if (table->in_sw_value & sw_trusted_role)
+        {
+			uSvc->checkService();
+			tdgbl->ALICE_data.ua_tr_role = true;
+			continue;
+		}
 #ifdef TRUSTED_AUTH
-		if (table->in_sw_value & sw_trusted_auth)
-		{
+        if (table->in_sw_value & sw_trusted_auth)
+        {
 			tdgbl->ALICE_data.ua_trusted = true;
 			continue;
 		}
 #endif
+		if (table->in_sw_value == sw_z) {
+			ALICE_print(3, SafeArg() << GDS_VERSION);	// msg 3: gfix version %s
+		}
 		if ((table->in_sw_incompatibilities & flags) ||
 			(table->in_sw_requires && !(table->in_sw_requires & flags)))
 		{
@@ -223,15 +242,15 @@ int alice(Firebird::UtilSvc* uSvc)
 
 		if ((table->in_sw_value & (sw_shut | sw_online)) && (argc > 1))
 		{
-			ALICE_upper_case(*argv, string, sizeof(string));
+			ALICE_down_case(*argv, string, sizeof(string));
 			bool found = true;
-			if (strcmp(string, "NORMAL") == 0)
+			if (strcmp(string, "normal") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_NORMAL;
-			else if (strcmp(string, "MULTI") == 0)
+			else if (strcmp(string, "multi") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_MULTI;
-			else if (strcmp(string, "SINGLE") == 0)
+			else if (strcmp(string, "single") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_SINGLE;
-			else if (strcmp(string, "FULL") == 0)
+			else if (strcmp(string, "full") == 0)
 				tdgbl->ALICE_data.ua_shutdown_mode = SHUT_FULL;
 			else
 				found = false;
@@ -261,7 +280,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(6);	// msg 6: number of page buffers for cache required
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_page_buffers = atoi(string))) && (strcmp(string, "0")))
 			{
 				ALICE_error(7);	// msg 7: numeric value required
@@ -276,7 +295,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(9);	// msg 9: number of transactions per sweep required
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_sweep_interval = atoi(string))) && (strcmp(string, "0")))
 			{
 				ALICE_error(7);	// msg 7: numeric value required
@@ -292,7 +311,7 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(113);	// msg 113: dialect number required
 			}
 
-			ALICE_upper_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string, sizeof(string));
 
 			if ((!(tdgbl->ALICE_data.ua_db_SQL_dialect = atoi(string))) && (strcmp(string, "0")))
 			{
@@ -312,10 +331,10 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(10);	// msg 10: transaction number or "all" required
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string)))
 			{
-				if (strcmp(string, "ALL")) {
+				if (strcmp(string, "all")) {
 					ALICE_error(10);	// msg 10: transaction number or "all" required
 				}
 				else {
@@ -329,7 +348,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(11);	// msg 11: "sync" or "async" required
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_SYNC)) {
 				tdgbl->ALICE_data.ua_force = true;
 			}
@@ -346,11 +365,11 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(12);	// msg 12: "full" or "reserve" required
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
-			if (!strcmp(string, "FULL")) {
+			ALICE_down_case(*argv++, string, sizeof(string));
+			if (!strcmp(string, "full")) {
 				tdgbl->ALICE_data.ua_no_reserve = true;
 			}
-			else if (!strcmp(string, "RESERVE")) {
+			else if (!strcmp(string, "reserve")) {
 				tdgbl->ALICE_data.ua_no_reserve = false;
 			}
 			else {
@@ -364,14 +383,6 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(13);	// msg 13: user name required
 			}
 			tdgbl->ALICE_data.ua_user = *argv++;
-		}
-
-		if (table->in_sw_value & sw_role)
-		{
-			if (--argc <= 0) {
-				ALICE_error(133);	// msg 133: role name required
-			}
-			tdgbl->ALICE_data.ua_role = *argv++;
 		}
 
 		if (table->in_sw_value & sw_password)
@@ -413,8 +424,8 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(15);	// msg 15: subsystem name
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
-			if (strcmp(string, "WAL")) {
+			ALICE_down_case(*argv++, string, sizeof(string));
+			if (strcmp(string, "wal")) {
 				ALICE_error(16);	// msg 16: "wal" required
 			}
 		}
@@ -424,7 +435,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(17);	// msg 17: number of seconds required
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if ((!(tdgbl->ALICE_data.ua_shutdown_delay = atoi(string))) && (strcmp(string, "0")))
 			{
 				ALICE_error(7);	// msg 7: numeric value required
@@ -441,7 +452,7 @@ int alice(Firebird::UtilSvc* uSvc)
 			if (--argc <= 0) {
 				ALICE_error(110);	// msg 110: "read_only" or "read_write" required
 			}
-			ALICE_upper_case(*argv++, string, sizeof(string));
+			ALICE_down_case(*argv++, string, sizeof(string));
 			if (!strcmp(string, ALICE_SW_MODE_RO)) {
 				tdgbl->ALICE_data.ua_read_only = true;
 			}
@@ -455,21 +466,21 @@ int alice(Firebird::UtilSvc* uSvc)
 
 	}
 
-	// put this here since to put it above overly complicates the parsing.
-	// can't use tbl_requires since it only looks backwards on command line.
+//  put this here since to put it above overly complicates the parsing
+//  can't use tbl_requires since it only looks backwards on command line
 	if ((flags & sw_shut) && !(flags & ((sw_attach | sw_force | sw_tran | sw_cache))))
 	{
 		ALICE_error(19);	// msg 19: must specify type of shutdown
 	}
 
-	// catch the case where -z is only command line option.
-	// flags is unset since sw_z == 0
-	if (!flags && !error && version && !tdgbl->ALICE_data.ua_debug)
-	{
+//  catch the case where -z is only command line option
+//  flags is unset since sw_z == 0
+	if (!flags && !error && table->in_sw_value == sw_z) {
 		ALICE_exit(FINI_OK, tdgbl);
 	}
 
-	if (!flags || !(flags & ~(sw_user | sw_password | sw_fetch_password | sw_trusted_auth)))
+	if (!flags || !(flags & ~(sw_user | sw_password | sw_fetch_password |
+								sw_trusted_auth | sw_trusted_svc | sw_trusted_role)))
 	{
 		if (!help && !uSvc->isService())
 		{
@@ -516,7 +527,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	{
 		ret = EXE_action(database, flags);
 
-		const ULONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
+		const SLONG* ua_val_errors = tdgbl->ALICE_data.ua_val_errors;
 
 		if (!ua_val_errors[VAL_INVALID_DB_VERSION])
 		{
@@ -591,14 +602,14 @@ int alice(Firebird::UtilSvc* uSvc)
 
 //____________________________________________________________
 //
-//		Copy a string, uppercasing as we go.
+//		Copy a string, down casing as we go.
 //
 
-void ALICE_upper_case(const TEXT* in, TEXT* out, const size_t buf_size)
+void ALICE_down_case(const TEXT* in, TEXT* out, const size_t buf_size)
 {
 	const TEXT* const end = out + buf_size - 1;
 	for (TEXT c = *in++; c && out < end; c = *in++) {
-		*out++ = (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;
+		*out++ = (c >= 'A' && c <= 'Z') ? c - 'A' + 'a' : c;
 	}
 	*out = 0;
 }
@@ -694,3 +705,4 @@ static void alice_output(bool error, const SCHAR* format, ...)
 	else
 		tdgbl->uSvc->outputVerbose(buf.c_str());
 }
+

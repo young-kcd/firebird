@@ -2,15 +2,15 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="EXTLIB files">
-      <UniqueIdentifier>{07794775-3b18-437c-8583-11e268f3c756}</UniqueIdentifier>
+      <UniqueIdentifier>{a8874773-9774-412e-9f6c-dfbaf1f47bfa}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Header files">
-      <UniqueIdentifier>{3aac0511-0fc8-43ed-b3c7-0b7e532a0fba}</UniqueIdentifier>
+      <UniqueIdentifier>{bde5cc83-6ca3-48f2-8025-3bffc5a2ce1d}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Resource files">
-      <UniqueIdentifier>{78d66bf7-89fd-4613-b91c-17fe6de3f949}</UniqueIdentifier>
+      <UniqueIdentifier>{74895cca-428f-4600-a5a2-1603ab9c6567}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -29,6 +29,8 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\defs\ib_util.def" />
+    <None Include="..\defs\ib_util.def">
+      <Filter>EXTLIB files</Filter>
+    </None>
   </ItemGroup>
 </Project>

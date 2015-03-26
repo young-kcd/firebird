@@ -93,14 +93,6 @@ if (SQLCODE)
     exit (FINI_ERROR);
     }
 
-printf ("Turning forced writes off\n");
-sprintf (cmd, "gfix -write async %s", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn forced writes off\n");
-    exit (FINI_ERROR);
-    }
-
 printf ("Creating tables\n");
 sprintf (cmd, "isql %s -q -i empddl.sql", Db_name);
 if (system (cmd))
@@ -111,27 +103,13 @@ if (system (cmd))
 
 printf ("Turning  off indices and triggers \n");
 sprintf (cmd, "isql %s -i indexoff.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn off indices and triggers \n");
-    exit (FINI_ERROR);
-    }
-
+system (cmd);
 printf ("Loading  column data\n");
 sprintf (cmd, "isql %s -i empdml.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't load column data \n");
-    exit (FINI_ERROR);
-    }
-
+system (cmd);
 printf ("Turning  on indices and triggers \n");
 sprintf (cmd, "isql %s -i indexon.sql", Db_name);
-if (system (cmd))
-    {
-    printf ("Couldn't turn on indices and triggers \n");
-    exit (FINI_ERROR);
-    }
+system (cmd);
 
 EXEC SQL CONNECT DB;
 if (SQLCODE)

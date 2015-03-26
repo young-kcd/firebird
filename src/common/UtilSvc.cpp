@@ -30,19 +30,17 @@
 #include "firebird.h"
 #include "../common/UtilSvc.h"
 #include "../common/classes/alloc.h"
-#include "../common/StatusArg.h"
 #include "iberror.h"
 
 #include <string.h>
 #include <stdarg.h>
 
 
-namespace Firebird {
-
 namespace {
-	void outputFile(FILE* f, const void* text, size_t len)
+	void outputFile(FILE* std, const char* text)
 	{
-		if (::fwrite(text, 1, len, f) != len)
+		size_t len = strlen(text);
+		if (::fwrite(text, 1, len, std) != len)
 		{
 			// ASF: If the console is configured to UTF-8 (chcp 65001) with TrueType font, the MSVC
 			// runtime returns the number of characters (instead of bytes) written and make
@@ -52,17 +50,16 @@ namespace {
 #endif
 		}
 	}
-
-	void outputFile(FILE* std, const char* text)
-	{
-		outputFile(std, text, strlen(text));
-	}
 }
+
+
+namespace Firebird {
 
 class StandaloneUtilityInterface : public UtilSvc
 {
 public:
-	StandaloneUtilityInterface(int ac, char** av)
+	StandaloneUtilityInterface(int ac, char** av) :
+	  m_finished(false)
 	{
 		while (ac--)
 		{
@@ -73,20 +70,20 @@ public:
 	void outputVerbose(const char* text)
 	{
 		outputFile(usvcDataMode ? stderr : stdout, text);
-  	}
+	}
 
 	void outputError(const char* text)
 	{
 		outputFile(stderr, text);
 	}
 
-	void outputData(const void* data, FB_SIZE_T size)
+	void outputData(const char* text)
 	{
 		fb_assert(usvcDataMode);
-		outputFile(stdout, data, size);
+		outputFile(stdout, text);
 	}
-
-	virtual void printf(bool err, const SCHAR* format, ...)
+	
+    virtual void printf(bool err, const SCHAR* format, ...)
 	{
 		va_list arglist;
 		va_start(arglist, format);
@@ -123,27 +120,23 @@ public:
 		status_exception::raise(Arg::Gds(isc_utl_trusted_switch));
 	}
 
-	virtual unsigned int getAuthBlock(const unsigned char** bytes)
-	{
-		// Utility has no auth block
-		*bytes = NULL;
-		return 0;
-	}
-
 	// do nothing for non-service
+	virtual void finish() { m_finished = true; }
 	virtual void started() { }
 	virtual void putLine(char, const char*) { }
 	virtual void putSLong(char, SLONG) { }
 	virtual void putChar(char, char) { }
-	virtual void putBytes(const UCHAR*, FB_SIZE_T) { }
+	virtual void putBytes(const UCHAR*, size_t) { }
 	virtual ULONG getBytes(UCHAR*, ULONG) { return 0; }
 	virtual void setServiceStatus(const ISC_STATUS*) { }
 	virtual void setServiceStatus(const USHORT, const USHORT, const MsgFormat::SafeArg&) { }
-    virtual const Firebird::CheckStatusWrapper* getStatus() { return NULL; }
-	virtual void fillDpb(ClumpletWriter&) { }
-	virtual bool finished() { return false; }
+    virtual const ISC_STATUS* getStatus() { return 0; }
+	virtual void getAddressPath(ClumpletWriter&) { }
+	virtual bool finished() { return m_finished; };
 	virtual void initStatus() { }
-	virtual bool utf8FileNames() { return false; }
+
+private:
+	bool m_finished;
 };
 
 

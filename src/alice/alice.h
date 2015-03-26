@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 #include "../jrd/ibase.h"
-#include "../common/ThreadData.h"
+#include "../jrd/ThreadData.h"
 #include "../include/fb_blk.h"
 #include "../common/classes/alloc.h"
 #include "../common/classes/array.h"
@@ -35,7 +35,6 @@
 
 enum val_errors {
 	VAL_INVALID_DB_VERSION	= 0,
-
 	VAL_RECORD_ERRORS		= 1,
 	VAL_BLOB_PAGE_ERRORS	= 2,
 	VAL_DATA_PAGE_ERRORS	= 3,
@@ -43,18 +42,7 @@ enum val_errors {
 	VAL_POINTER_PAGE_ERRORS	= 5,
 	VAL_TIP_PAGE_ERRORS		= 6,
 	VAL_PAGE_ERRORS			= 7,
-	VAL_PIP_PAGE_ERRORS		= 8,
-
-	VAL_RECORD_WARNS		= 9,
-	VAL_BLOB_PAGE_WARNS		= 10,
-	VAL_DATA_PAGE_WARNS		= 11,
-	VAL_INDEX_PAGE_WARNS	= 12,
-	VAL_POINTER_PAGE_WARNS	= 13,
-	VAL_TIP_PAGE_WARNS		= 14,
-	VAL_PAGE_WARNS			= 15,
-	VAL_PIP_PAGE_WARNS		= 16,
-
-	MAX_VAL_ERRORS			= 17
+	MAX_VAL_ERRORS			= 8
 };
 
 enum alice_shut_mode {
@@ -69,8 +57,9 @@ struct user_action
 {
 	ULONG ua_switches;
 	const char* ua_user;
-	const char* ua_role;
 	const char* ua_password;
+	const char* ua_tr_user;
+	bool ua_tr_role;
 #ifdef TRUSTED_AUTH
 	bool ua_trusted;
 #endif
@@ -82,7 +71,7 @@ struct user_action
 	SLONG ua_transaction;
 	SLONG ua_page_buffers;
 	USHORT ua_debug;
-	ULONG ua_val_errors[MAX_VAL_ERRORS];
+	SLONG ua_val_errors[MAX_VAL_ERRORS];
 	//TEXT ua_log_file[MAXPATHLEN];
 	USHORT ua_db_SQL_dialect;
 	alice_shut_mode ua_shutdown_mode;
@@ -147,7 +136,7 @@ enum tdr_state_vals {
 
 // Global data
 
-class AliceGlobals : public Firebird::ThreadData
+class AliceGlobals : public ThreadData
 {
 private:
 	MemoryPool* ALICE_default_pool;

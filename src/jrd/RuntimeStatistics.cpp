@@ -21,11 +21,10 @@
  */
 
 #include "firebird.h"
-#include "../common/gdsassert.h"
+#include "../jrd/gdsassert.h"
 #include "../jrd/req.h"
 
 #include "../jrd/RuntimeStatistics.h"
-#include "../jrd/ntrace.h"
 
 using namespace Firebird;
 
@@ -33,18 +32,153 @@ namespace Jrd {
 
 GlobalPtr<RuntimeStatistics> RuntimeStatistics::dummy;
 
-void RuntimeStatistics::bumpRelValue(const StatType index, SLONG relation_id, SINT64 delta)
+#ifdef REL_COUNTS_TREE
+
+void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
 {
 	fb_assert(index >= 0);
 	++relChgNumber;
 
-	FB_SIZE_T pos;
-	if (rel_counts.find(relation_id, pos))
-		rel_counts[pos].bumpCounter(index, delta);
+	RelCounters::Accessor accessor(&rel_counts);
+	if (accessor.locate(relation_id))
+		accessor.current().rlc_counter[index]++;
 	else
 	{
-		RelationCounts counts(relation_id);
-		counts.bumpCounter(index, delta);
+		RelationCounts counts;
+		memset(&counts, 0, sizeof(counts));
+		counts.rlc_relation_id = relation_id;
+		counts.rlc_counter[index]++;
+		rel_counts.add(counts);
+	}
+}
+
+
+void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
+{
+	RelCounters::Accessor first(&rel_counts);
+	RelCounters::ConstAccessor second(&other);
+
+	if (second.getFirst())
+	{
+		do
+		{
+			const RelationCounts& src = second.current();
+
+			if (!first.locate(src.rlc_relation_id))
+			{
+				RelationCounts counts;
+				memset(&counts, 0, sizeof(counts));
+				counts.rlc_relation_id = src.rlc_relation_id;
+				first.add(counts);
+
+				first.locate(src.rlc_relation_id);
+			}
+
+			RelationCounts& dst = first.current();
+			fb_assert(src.rlc_relation_id == dst.rlc_relation_id);
+
+			if (add)
+			{
+				for (int index = 0; index < FB_NELEM(src.rlc_counter); index++)
+					dst.rlc_counter[index] += src.rlc_counter[index];
+			}
+			else
+			{
+				for (int index = 0; index < FB_NELEM(src.rlc_counter); index++)
+					dst.rlc_counter[index] -= src.rlc_counter[index];
+			}
+		} while(second.getNext());
+	}
+}
+
+
+PerformanceInfo* RuntimeStatistics::computeDifference(
+	Database* dbb, const RuntimeStatistics& new_stat, PerformanceInfo& dest, TraceCountsArray& temp)
+{
+	// NOTE: we do not initialize dest.pin_time. This must be done by the caller
+
+	// Calculate database-level statistics
+	for (int i = 0; i < TOTAL_ITEMS; i++)
+		values[i] = new_stat.values[i] - values[i];
+
+	dest.pin_counters = values;
+
+	// Calculate relation-level statistics
+	temp.clear();
+
+	RelCounters::ConstAccessor new_acc(&new_stat.rel_counts);
+
+	if (new_acc.getFirst())
+	{
+		// This loop assumes that base array is smaller than new one
+		RelCounters::Accessor base_acc(&rel_counts);
+		bool base_found = base_acc.getFirst();
+
+		do
+		{
+			const RelationCounts* counts = &new_acc.current();
+			if (base_found && base_acc.current().rlc_relation_id == counts->rlc_relation_id)
+			{
+				RelationCounts* base_counts = &base_acc.current();
+				bool all_zeros = true;
+				for (int i = 0; i < DBB_max_rel_count; i++)
+				{
+					if ((base_counts->rlc_counter[i] = counts->rlc_counter[i] - base_counts->rlc_counter[i]))
+						all_zeros = false;
+				}
+
+				// Point TraceCounts to counts array from baseline object
+				if (!all_zeros)
+				{
+					jrd_rel* relation = counts->rlc_relation_id < dbb->dbb_relations->count() ?
+						(*dbb->dbb_relations)[counts->rlc_relation_id] : NULL;
+					TraceCounts traceCounts;
+					traceCounts.trc_relation_id = counts->rlc_relation_id;
+					traceCounts.trc_counters = base_counts->rlc_counter;
+					traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
+					temp.add(traceCounts);
+				}
+
+				base_found = base_acc.getNext();
+			}
+			else
+			{
+				jrd_rel* relation = counts->rlc_relation_id < dbb->dbb_relations->count() ?
+					(*dbb->dbb_relations)[counts->rlc_relation_id] : NULL;
+
+				// Point TraceCounts to counts array from object with updated counters
+				TraceCounts traceCounts;
+				traceCounts.trc_relation_id = counts->rlc_relation_id;
+				traceCounts.trc_counters = counts->rlc_counter;
+				traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
+				temp.add(traceCounts);
+			}
+		} while (new_acc.getNext());
+	}
+
+	dest.pin_count = temp.getCount();
+	dest.pin_tables = temp.begin();
+
+	return &dest;
+}
+
+#else  // REL_COUNTS_TREE
+
+
+void RuntimeStatistics::bumpValue(const StatType index, SLONG relation_id)
+{
+	fb_assert(index >= 0);
+	++relChgNumber;
+
+	size_t pos;
+	if (rel_counts.find(relation_id, pos))
+		rel_counts[pos].rlc_counter[index]++;
+	else
+	{
+		RelationCounts counts;
+		memset(&counts, 0, sizeof(counts));
+		counts.rlc_relation_id = relation_id;
+		counts.rlc_counter[index]++;
 		rel_counts.add(counts);
 	}
 }
@@ -57,31 +191,42 @@ void RuntimeStatistics::addRelCounts(const RelCounters& other, bool add)
 	RelCounters::const_iterator src(other.begin());
 	const RelCounters::const_iterator end(other.end());
 
-	FB_SIZE_T pos;
-	rel_counts.find(src->getRelationId(), pos);
+	size_t pos;
+	rel_counts.find(src->rlc_relation_id, pos);
 	for (; src != end; ++src)
 	{
-		const FB_SIZE_T cnt = rel_counts.getCount();
+		const size_t cnt = rel_counts.getCount();
 
-		while (pos < cnt && rel_counts[pos].getRelationId() < src->getRelationId())
+		while (pos < cnt && rel_counts[pos].rlc_relation_id < src->rlc_relation_id)
 			pos++;
 
-		if (pos >= cnt || rel_counts[pos].getRelationId() > src->getRelationId())
+		if (pos >= cnt || rel_counts[pos].rlc_relation_id > src->rlc_relation_id)
 		{
-			RelationCounts counts(src->getRelationId());
+			RelationCounts counts;
+			memset(&counts, 0, sizeof(counts));
+			counts.rlc_relation_id = src->rlc_relation_id;
 			rel_counts.insert(pos, counts);
 		}
 
 		fb_assert(pos >= 0 && pos < rel_counts.getCount());
 
+		RelationCounts* dst = &(rel_counts[pos]);
+		fb_assert(dst->rlc_relation_id == src->rlc_relation_id);
+
 		if (add)
-			rel_counts[pos] += *src;
+		{
+			for (int index = 0; index < FB_NELEM(src->rlc_counter); index++)
+				dst->rlc_counter[index] += src->rlc_counter[index];
+		}
 		else
-			rel_counts[pos] -= *src;
+		{
+			for (int index = 0; index < FB_NELEM(src->rlc_counter); index++)
+				dst->rlc_counter[index] -= src->rlc_counter[index];
+		}
 	}
 }
 
-PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
+PerformanceInfo* RuntimeStatistics::computeDifference(Database* dbb,
 													  const RuntimeStatistics& new_stat,
 													  PerformanceInfo& dest,
 													  TraceCountsArray& temp)
@@ -105,18 +250,23 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 	const RelCounters::const_iterator end = new_stat.rel_counts.end();
 	for (; new_cnts != end; ++new_cnts)
 	{
-		if (base_found && base_cnts->getRelationId() == new_cnts->getRelationId())
+		if (base_found && base_cnts->rlc_relation_id == new_cnts->rlc_relation_id)
 		{
-			// Point TraceCounts to counts array from baseline object
-			if (base_cnts->setToDiff(*new_cnts))
+			bool all_zeros = true;
+			for (int i = 0; i < DBB_max_rel_count; i++)
 			{
-				jrd_rel* const relation =
-					new_cnts->getRelationId() < static_cast<SLONG>(att->att_relations->count()) ?
-					(*att->att_relations)[new_cnts->getRelationId()] : NULL;
+				if ((base_cnts->rlc_counter[i] = new_cnts->rlc_counter[i] - base_cnts->rlc_counter[i]))
+					all_zeros = false;
+			}
 
+			// Point TraceCounts to counts array from baseline object
+			if (!all_zeros)
+			{
+				jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < dbb->dbb_relations->count() ?
+					(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;
 				TraceCounts traceCounts;
-				traceCounts.trc_relation_id = new_cnts->getRelationId();
-				traceCounts.trc_counters = base_cnts->getCounterVector();
+				traceCounts.trc_relation_id = new_cnts->rlc_relation_id;
+				traceCounts.trc_counters = base_cnts->rlc_counter;
 				traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 				temp.add(traceCounts);
 			}
@@ -126,14 +276,13 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 		}
 		else
 		{
-			jrd_rel* const relation =
-				new_cnts->getRelationId() < static_cast<SLONG>(att->att_relations->count()) ?
-				(*att->att_relations)[new_cnts->getRelationId()] : NULL;
+			jrd_rel* relation = size_t(new_cnts->rlc_relation_id) < dbb->dbb_relations->count() ?
+				(*dbb->dbb_relations)[new_cnts->rlc_relation_id] : NULL;
 
 			// Point TraceCounts to counts array from object with updated counters
 			TraceCounts traceCounts;
-			traceCounts.trc_relation_id = new_cnts->getRelationId();
-			traceCounts.trc_counters = new_cnts->getCounterVector();
+			traceCounts.trc_relation_id = new_cnts->rlc_relation_id;
+			traceCounts.trc_counters = new_cnts->rlc_counter;
 			traceCounts.trc_relation_name = relation ? relation->rel_name.c_str() : NULL;
 			temp.add(traceCounts);
 		}
@@ -144,15 +293,6 @@ PerformanceInfo* RuntimeStatistics::computeDifference(Attachment* att,
 
 	return &dest;
 }
-
-RuntimeStatistics::Accumulator::Accumulator(thread_db* tdbb, const jrd_rel* relation, StatType type)
-	: m_tdbb(tdbb), m_type(type), m_id(relation->rel_id), m_counter(0)
-{}
-
-RuntimeStatistics::Accumulator::~Accumulator()
-{
-	if (m_counter)
-		m_tdbb->bumpRelStats(m_type, m_id, m_counter);
-}
+#endif  // REL_COUNTS_TREE
 
 } // namespace

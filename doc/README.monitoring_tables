@@ -48,6 +48,7 @@ Monitoring tables
   Scope:
     DSQL and PSQL
 
+  ODS 11.1 metadata:
     MON$DATABASE (connected database)
       - MON$DATABASE_NAME (database pathname or alias)
       - MON$PAGE_SIZE (page size)
@@ -70,13 +71,11 @@ Monitoring tables
       - MON$RESERVE_SPACE (reserve space flag)
       - MON$CREATION_DATE (creation date/time)
       - MON$PAGES (number of pages allocated on disk)
-      - MON$STAT_ID (statistics ID)
       - MON$BACKUP_STATE (current physical backup state)
           0: normal
           1: stalled
           2: merge
-      - MON$CRYPT_PAGE (number of page being encrypted)
-      - MON$OWNER (database owner name)
+      - MON$STAT_ID (statistics ID)
 
     MON$ATTACHMENTS (connected attachments)
       - MON$ATTACHMENT_ID (attachment ID)
@@ -95,14 +94,6 @@ Monitoring tables
       - MON$TIMESTAMP (connection date/time)
       - MON$GARBAGE_COLLECTION (garbage collection flag)
       - MON$STAT_ID (statistics ID)
-      - MON$CLIENT_VERSION (version of the client library)
-      - MON$REMOTE_VERSION (version of the remote protocol)
-      - MON$REMOTE_HOST (remote host name)
-      - MON$REMOTE_OS_USER (remote OS user name)
-      - MON$AUTH_METHOD (authentication method used for connection)
-      - MON$SYSTEM_FLAG  (system flag)
-          0: user attachment
-          1: system attachment
 
     MON$TRANSACTIONS (started transactions)
       - MON$TRANSACTION_ID (transaction ID)
@@ -149,7 +140,6 @@ Monitoring tables
       - MON$SOURCE_LINE (SQL source line number)
       - MON$SOURCE_COLUMN (SQL source column number)
       - MON$STAT_ID (statistics ID)
-      - MON$PACKAGE_NAME (PSQL object package name)
 
     MON$IO_STATS (I/O statistics)
       - MON$STAT_ID (statistics ID)
@@ -181,6 +171,7 @@ Monitoring tables
       - MON$RECORD_PURGES (number of purged records)
       - MON$RECORD_EXPUNGES (number of expunged records)
 
+  ODS 11.2 metadata:
     MON$MEMORY_USAGE (current memory usage)
       - MON$STAT_ID (statistics ID)
       - MON$STAT_GROUP (statistics group)
@@ -313,9 +304,6 @@ Modifications of the monitoring tables
        is immediately cancelled and they're rolled back. Once terminated, the client session
        receives the isc_att_shutdown error code. Subsequent attempts to use this connection
        handle will cause network read/write errors.
-
-    3) System attachment can not be cancelled, so engine silently skip system attachments 
-       affected by DELETE FROM MON$ATTACHMENTS statements
 
   Example(s):
     1) Cancel current activity of connection #32:
