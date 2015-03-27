@@ -449,8 +449,8 @@ static THREAD_ENTRY_DECLARE wnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		}
 		catch (const Exception& ex)
 		{
-			ISC_STATUS_ARRAY status_vector;
-			ex.stuff_exception(status_vector);
+			SimpleStatusVector<> status_vector;
+			ex.stuffException(status_vector);
 
 			if (status_vector[1] == isc_net_server_shutdown)
 				break;
@@ -500,8 +500,8 @@ static THREAD_ENTRY_DECLARE xnet_connect_wait_thread(THREAD_ENTRY_PARAM)
 		}
 		catch (const Exception& ex)
 		{
-			ISC_STATUS_ARRAY status_vector;
-			ex.stuff_exception(status_vector);
+			SimpleStatusVector<> status_vector;
+			ex.stuffException(status_vector);
 
 			if (status_vector[1] == isc_net_server_shutdown)
 				break;

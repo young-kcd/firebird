@@ -25,7 +25,7 @@
 #include "firebird.h"
 #include <windows.h>
 #include "../../../common/dllinst.h"
-#include "../../../yvalve/MasterImplementation.h"
+#include "../../../yvalve/utl_proto.h"
 
 
 using namespace Firebird;
