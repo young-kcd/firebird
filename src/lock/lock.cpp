@@ -224,11 +224,12 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 	  , m_extents(getPool())
 #endif
 {
-	Arg::StatusVector localStatus;
-	if (!attach_shared_file(localStatus))
+	LocalStatus ls;
+	CheckStatusWrapper localStatus(&ls);
+	if (!attach_shared_file(&localStatus))
 	{
-		iscLogStatus("LockManager::LockManager()", localStatus.value());
-		localStatus.raise();
+		iscLogStatus("LockManager::LockManager()", &localStatus);
+		status_exception::raise(&localStatus);
 	}
 }
 
@@ -242,7 +243,8 @@ LockManager::~LockManager()
 		m_processOffset = 0;
 	}
 
-	Arg::StatusVector localStatus;
+	LocalStatus ls;
+	CheckStatusWrapper localStatus(&ls);
 
 	if (m_process)
 	{
@@ -260,7 +262,7 @@ LockManager::~LockManager()
 		}
 
 #ifdef HAVE_OBJECT_MAP
-		m_sharedMemory->unmapObject(localStatus, &m_process);
+		m_sharedMemory->unmapObject(&localStatus, &m_process);
 #else
 		m_process = NULL;
 #endif
@@ -289,11 +291,11 @@ LockManager::~LockManager()
 		}
 	}
 
-	detach_shared_file(localStatus);
+	detach_shared_file(&localStatus);
 #ifdef USE_SHMEM_EXT
 	for (ULONG i = 1; i < m_extents.getCount(); ++i)
 	{
-		m_extents[i].unmapFile(localStatus);
+		m_extents[i].unmapFile(&localStatus);
 	}
 #endif //USE_SHMEM_EXT
 }
@@ -332,7 +334,7 @@ void* LockManager::ABS_PTR(SRQ_PTR item)
 #endif //USE_SHMEM_EXT
 
 
-bool LockManager::attach_shared_file(Arg::StatusVector& statusVector)
+bool LockManager::attach_shared_file(CheckStatusWrapper* statusVector)
 {
 	Firebird::PathName name;
 	get_shared_file_name(name);
@@ -345,7 +347,7 @@ bool LockManager::attach_shared_file(Arg::StatusVector& statusVector)
 	}
 	catch (const Exception& ex)
 	{
-		statusVector.assign(ex);
+		ex.stuffException(statusVector);
 		return false;
 	}
 
@@ -361,7 +363,7 @@ bool LockManager::attach_shared_file(Arg::StatusVector& statusVector)
 }
 
 
-void LockManager::detach_shared_file(Arg::StatusVector& statusVector)
+void LockManager::detach_shared_file(CheckStatusWrapper* statusVector)
 {
 	if (m_sharedMemory.hasData() && m_sharedMemory->getHeader())
 	{
@@ -371,7 +373,7 @@ void LockManager::detach_shared_file(Arg::StatusVector& statusVector)
 		}
 		catch (const Exception& ex)
 		{
-			statusVector.assign(ex);
+			ex.stuffException(statusVector);
 		}
 	}
 }
@@ -389,7 +391,7 @@ void LockManager::get_shared_file_name(Firebird::PathName& name, ULONG extent) c
 }
 
 
-bool LockManager::initializeOwner(Arg::StatusVector& statusVector,
+bool LockManager::initializeOwner(CheckStatusWrapper* statusVector,
 								  LOCK_OWNER_T owner_id,
 								  UCHAR owner_type,
 								  SRQ_PTR* owner_handle)
@@ -489,7 +491,7 @@ void LockManager::shutdownOwner(Attachment* attachment, SRQ_PTR* owner_handle)
 
 
 SRQ_PTR LockManager::enqueue(Attachment* attachment,
-							 Arg::StatusVector& statusVector,
+							 CheckStatusWrapper* statusVector,
 							 SRQ_PTR prior_request,
 							 const USHORT series,
 							 const UCHAR* value,
@@ -542,7 +544,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 	ASSERT_ACQUIRED;
 	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_requests))
 	{
-		if (!(request = (lrq*) alloc(sizeof(lrq), &statusVector)))
+		if (!(request = (lrq*) alloc(sizeof(lrq), statusVector)))
 			return 0;
 
 		owner = (own*) SRQ_ABS_PTR(owner_offset);
@@ -588,8 +590,8 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 		if (grant_or_que(attachment, request, lock, lck_wait))
 			return request_offset;
 
-		statusVector << Arg::Gds(lck_wait > 0 ? isc_deadlock :
-			(lck_wait < 0 ? isc_lock_timeout : isc_lock_conflict));
+		Arg::Gds(lck_wait > 0 ? isc_deadlock : lck_wait < 0 ? isc_lock_timeout :
+			isc_lock_conflict).copyTo(statusVector);
 
 		return 0;
 	}
@@ -642,7 +644,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 
 
 bool LockManager::convert(Attachment* attachment,
-						  Arg::StatusVector& statusVector,
+						  CheckStatusWrapper* statusVector,
 						  SRQ_PTR request_offset,
 						  UCHAR type,
 						  SSHORT lck_wait,
@@ -688,7 +690,7 @@ bool LockManager::convert(Attachment* attachment,
 
 
 UCHAR LockManager::downgrade(Attachment* attachment,
-							 Arg::StatusVector& statusVector,
+							 CheckStatusWrapper* statusVector,
 							 const SRQ_PTR request_offset)
 {
 /**************************************
@@ -1094,7 +1096,8 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
  *	Acquire the lock file.  If it's busy, wait for it.
  *
  **************************************/
-	Arg::StatusVector localStatus;
+	LocalStatus ls;
+	CheckStatusWrapper localStatus(&ls);
 
 	// Perform a spin wait on the lock table mutex. This should only
 	// be used on SMP machines; it doesn't make much sense otherwise.
@@ -1126,11 +1129,11 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		{
 			// Someone is going to delete shared file? Reattach.
 			m_sharedMemory->mutexUnlock();
-			detach_shared_file(localStatus);
+			detach_shared_file(&localStatus);
 
 			Thread::yield();
 
-			if (!attach_shared_file(localStatus))
+			if (!attach_shared_file(&localStatus))
 				bug(NULL, "ISC_map_file failed (reattach shared file)");
 
 			m_sharedMemory->mutexLock();
@@ -1176,7 +1179,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 #ifdef USE_SHMEM_EXT
 	while (m_sharedMemory->getHeader()->lhb_length > getTotalMapped())
 	{
-		if (!createExtent(localStatus))
+		if (!createExtent(&localStatus))
 		{
 			bug(NULL, "map of lock file extent failed");
 		}
@@ -1197,7 +1200,7 @@ void LockManager::acquire_shmem(SRQ_PTR owner_offset)
 		// Post remapping notifications
 		remap_local_owners();
 		// Remap the shared memory region
-		if (!m_sharedMemory->remapFile(localStatus, new_length, false))
+		if (!m_sharedMemory->remapFile(&localStatus, new_length, false))
 #endif
 		{
 			bug(NULL, "remap failed");
@@ -1246,7 +1249,7 @@ bool LockManager::Extent::initialize(bool)
 void LockManager::Extent::mutexBug(int, const char*)
 { }
 
-bool LockManager::createExtent(Arg::StatusVector& statusVector)
+bool LockManager::createExtent(CheckStatusWrapper* statusVector)
 {
 	Firebird::PathName name;
 	get_shared_file_name(name, (ULONG) m_extents.getCount());
@@ -1265,7 +1268,7 @@ bool LockManager::createExtent(Arg::StatusVector& statusVector)
 #endif
 
 
-UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
+UCHAR* LockManager::alloc(USHORT size, CheckStatusWrapper* statusVector)
 {
 /**************************************
  *
@@ -1277,7 +1280,8 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
  *	Allocate a block of given size.
  *
  **************************************/
-	Arg::StatusVector localStatus;
+	LocalStatus ls;
+	CheckStatusWrapper localStatus(&ls);
 
 	if (!statusVector)
 		statusVector = &localStatus;
@@ -1304,7 +1308,7 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 		remap_local_owners();
 		// Remap the shared memory region
 		const ULONG new_length = m_sharedMemory->sh_mem_length_mapped + m_memorySize;
-		if (m_sharedMemory->remapFile(*statusVector, new_length, true))
+		if (m_sharedMemory->remapFile(statusVector, new_length, true))
 		{
 			ASSERT_ACQUIRED;
 			m_sharedMemory->getHeader()->lhb_length = m_sharedMemory->sh_mem_length_mapped;
@@ -1315,9 +1319,9 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 			// Do not do abort in case if there is not enough room -- just
 			// return an error
 
-			Arg::Gds prefix(isc_lockmanerr);
-			prefix << Arg::Gds(isc_random) << Arg::Str("lock manager out of room");
-			statusVector->prepend(prefix);
+			(Arg::Gds(isc_lockmanerr) <<
+				Arg::Gds(isc_random) << Arg::Str("lock manager out of room") <<
+				Arg::StatusVector(statusVector)).copyTo(statusVector);
 
 			return NULL;
 		}
@@ -1335,7 +1339,7 @@ UCHAR* LockManager::alloc(USHORT size, Arg::StatusVector* statusVector)
 }
 
 
-lbl* LockManager::alloc_lock(USHORT length, Arg::StatusVector& statusVector)
+lbl* LockManager::alloc_lock(USHORT length, CheckStatusWrapper* statusVector)
 {
 /**************************************
  *
@@ -1369,7 +1373,7 @@ lbl* LockManager::alloc_lock(USHORT length, Arg::StatusVector& statusVector)
 		}
 	}
 
-	lbl* lock = (lbl*) alloc(sizeof(lbl) + length, &statusVector);
+	lbl* lock = (lbl*) alloc(sizeof(lbl) + length, statusVector);
 	if (lock)
 	{
 		lock->lbl_size = length;
@@ -1580,7 +1584,7 @@ void LockManager::bug_assert(const TEXT* string, ULONG line)
 }
 
 
-void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
+void LockManager::bug(CheckStatusWrapper* statusVector, const TEXT* string)
 {
 /**************************************
  *
@@ -1643,9 +1647,9 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 
 		if (statusVector)
 		{
-			Arg::Gds prefix(isc_lockmanerr);
-			prefix << Arg::Gds(isc_random) << Arg::Str(string);
-			statusVector->prepend(prefix);
+			(Arg::Gds(isc_lockmanerr) <<
+				Arg::Gds(isc_random) << Arg::Str(string) <<
+				Arg::StatusVector(statusVector)).copyTo(statusVector);
 
 			return;
 		}
@@ -1666,7 +1670,7 @@ void LockManager::bug(Arg::StatusVector* statusVector, const TEXT* string)
 }
 
 
-SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
+SRQ_PTR LockManager::create_owner(CheckStatusWrapper* statusVector,
 								  LOCK_OWNER_T owner_id,
 								  UCHAR owner_type)
 {
@@ -1690,7 +1694,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 			m_sharedMemory->getHeader()->mhb_header_version,
 			m_sharedMemory->getHeader()->mhb_version,
 			SharedMemoryBase::SRAM_LOCK_MANAGER, MemoryHeader::HEADER_VERSION, LHB_VERSION);
-		bug(&statusVector, bug_buffer);
+		bug(statusVector, bug_buffer);
 		return 0;
 	}
 
@@ -1720,7 +1724,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 	own* owner = 0;
 	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_owners))
 	{
-		if (!(owner = (own*) alloc(sizeof(own), &statusVector)))
+		if (!(owner = (own*) alloc(sizeof(own), statusVector)))
 			return 0;
 	}
 	else
@@ -1744,7 +1748,7 @@ SRQ_PTR LockManager::create_owner(Arg::StatusVector& statusVector,
 }
 
 
-bool LockManager::create_process(Arg::StatusVector& statusVector)
+bool LockManager::create_process(CheckStatusWrapper* statusVector)
 {
 /**************************************
  *
@@ -1770,7 +1774,7 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 	prc* process = NULL;
 	if (SRQ_EMPTY(m_sharedMemory->getHeader()->lhb_free_processes))
 	{
-		if (!(process = (prc*) alloc(sizeof(prc), &statusVector)))
+		if (!(process = (prc*) alloc(sizeof(prc), statusVector)))
 			return false;
 	}
 	else
@@ -1790,7 +1794,7 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 
 	if (m_sharedMemory->eventInit(&process->prc_blocking) != FB_SUCCESS)
 	{
-		statusVector << Arg::Gds(isc_lockmanerr);
+		(Arg::StatusVector(statusVector) << Arg::Gds(isc_lockmanerr)).copyTo(statusVector);
 		return false;
 	}
 
@@ -1813,11 +1817,7 @@ bool LockManager::create_process(Arg::StatusVector& statusVector)
 		}
 		catch (const Exception& ex)
 		{
-			ISC_STATUS_ARRAY vector;
-			ex.stuff_exception(vector);
-
-			statusVector << Arg::Gds(isc_lockmanerr);
-			statusVector << Arg::StatusVector(vector);
+			(Arg::Gds(isc_lockmanerr) << Arg::StatusVector(ex)).copyTo(statusVector);
 
 			return false;
 		}
@@ -2274,7 +2274,7 @@ bool LockManager::grant_or_que(Attachment* attachment, lrq* request, lbl* lock, 
 }
 
 
-bool LockManager::init_owner_block(Arg::StatusVector& statusVector, own* owner, UCHAR owner_type,
+bool LockManager::init_owner_block(CheckStatusWrapper* statusVector, own* owner, UCHAR owner_type,
 	LOCK_OWNER_T owner_id)
 {
 /**************************************
@@ -2306,7 +2306,7 @@ bool LockManager::init_owner_block(Arg::StatusVector& statusVector, own* owner, 
 
 	if (m_sharedMemory->eventInit(&owner->own_wakeup) != FB_SUCCESS)
 	{
-		statusVector << Arg::Gds(isc_lockmanerr);
+		(Arg::StatusVector(statusVector) << Arg::Gds(isc_lockmanerr)).copyTo(statusVector);
 		return false;
 	}
 
@@ -2516,7 +2516,7 @@ void LockManager::insert_tail(SRQ lock_srq, SRQ node)
 
 
 bool LockManager::internal_convert(Attachment* attachment,
-								   Arg::StatusVector& statusVector,
+								   CheckStatusWrapper* statusVector,
 								   SRQ_PTR request_offset,
 								   UCHAR type,
 								   SSHORT lck_wait,
@@ -2602,8 +2602,8 @@ bool LockManager::internal_convert(Attachment* attachment,
 	if (lck_wait < 0)
 		++(m_sharedMemory->getHeader()->lhb_timeouts);
 
-	statusVector << Arg::Gds(lck_wait > 0 ? isc_deadlock :
-		(lck_wait < 0 ? isc_lock_timeout : isc_lock_conflict));
+	(Arg::Gds(lck_wait > 0 ? isc_deadlock : lck_wait < 0 ? isc_lock_timeout :
+		isc_lock_conflict)).copyTo(statusVector);
 
 	return false;
 }

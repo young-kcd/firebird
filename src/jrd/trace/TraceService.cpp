@@ -342,10 +342,10 @@ int TRACE_main(UtilSvc* arg)
 	}
 	catch (const Exception& e)
 	{
-		ISC_STATUS_ARRAY status;
-		e.stuff_exception(status);
+		SimpleStatusVector<> status;
+		e.stuffException(status);
 		svc->initStatus();
-		svc->setServiceStatus(status);
+		svc->setServiceStatus(status.begin());
 		exit_code = FB_FAILURE;
 	}
 

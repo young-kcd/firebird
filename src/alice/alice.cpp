@@ -49,6 +49,7 @@
 #include "../alice/alice_proto.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/Switches.h"
+#include "../common/SimpleStatusVector.h"
 #include "../alice/aliceswi.h"
 
 #ifdef HAVE_UNISTD_H
@@ -110,9 +111,9 @@ int ALICE_main(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		ISC_STATUS_ARRAY status;
-		e.stuff_exception(status);
-		uSvc->setServiceStatus(status);
+		Firebird::SimpleStatusVector<> status;
+		e.stuffException(status);
+		uSvc->setServiceStatus(status.begin());
 		uSvc->started();
 		exit_code = FB_FAILURE;
 	}
@@ -564,7 +565,9 @@ int alice(Firebird::UtilSvc* uSvc)
 	catch (const Firebird::Exception& e)
 	{
 		// Non-alice exception was caught
-		e.stuff_exception(tdgbl->status_vector);
+		Firebird::SimpleStatusVector<> status;
+		e.stuffException(status);
+		fb_utils::copyStatus(tdgbl->status_vector, ISC_STATUS_LENGTH, status.begin(), status.getCount());
 		ALICE_print_status(true, tdgbl->status_vector);
 		exit_code = FINI_ERROR;
 	}

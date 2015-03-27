@@ -365,9 +365,9 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			catch (const Firebird::Exception& ex)
 			{
 				iscLogException("startup:INET_connect:", ex);
-				ISC_STATUS_ARRAY status_vector;
-				ex.stuff_exception(status_vector);
-				gds__print_status(status_vector);
+		 		Firebird::SimpleStatusVector<> st;
+				ex.stuffException(st);
+				gds__print_status(st.begin());
 				exit(STARTUP_ERROR);
 			}
 		}
@@ -441,12 +441,12 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ISC_STATUS_ARRAY status;
-		ex.stuff_exception(status);
+ 		Firebird::SimpleStatusVector<> st;
+		ex.stuffException(st);
 
 		char s[100];
-		const ISC_STATUS* st = status;
-		fb_interpret(s, sizeof(s), &st);
+		const ISC_STATUS* status = st.begin();
+		fb_interpret(s, sizeof(s), &status);
 
 		Firebird::Syslog::Record(Firebird::Syslog::Error, "Firebird startup error");
 		Firebird::Syslog::Record(Firebird::Syslog::Error, s);

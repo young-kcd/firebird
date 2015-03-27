@@ -332,10 +332,10 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ISC_STATUS_ARRAY temp;
+ 		Firebird::SimpleStatusVector<> temp;
 
-		ex.stuff_exception(temp);
-		isc_print_status(temp);
+		ex.stuffException(temp);
+		isc_print_status(temp.begin());
 
 		return FINI_ERROR;
 	}

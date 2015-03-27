@@ -41,10 +41,12 @@
 #include "../yvalve/gds_proto.h"
 #include "../yvalve/why_proto.h"
 #include "../yvalve/user__proto.h"
+#include "../yvalve/utl_proto.h"
 #include "gen/iberror.h"
 #include "../common/classes/init.h"
 #include "../common/classes/rwlock.h"
 #include "../common/StatusArg.h"
+#include "../common/SimpleStatusVector.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1040,15 +1042,18 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* /*dummy*/)
 //
 static ISC_STATUS error(const Firebird::Exception& ex)
 {
+	Firebird::SimpleStatusVector<> v;
+	ex.stuffException(v);
+	makePermanentVector(v.begin());
+
 	if (UDSQL_error->dsql_user_status)
 	{
-		ex.stuff_exception(UDSQL_error->dsql_user_status);
+		fb_utils::copyStatus(UDSQL_error->dsql_user_status, ISC_STATUS_LENGTH, v.begin(), v.getCount());
 		return UDSQL_error->dsql_user_status[1];
 	}
 
-	ex.stuff_exception(UDSQL_error->dsql_status);
+	fb_utils::copyStatus(UDSQL_error->dsql_status, ISC_STATUS_LENGTH, v.begin(), v.getCount());
 	gds__print_status(UDSQL_error->dsql_status);
-
 	exit(UDSQL_error->dsql_status[1]);
 
 	return 0; // suppress compiler warning

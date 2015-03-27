@@ -116,11 +116,10 @@ void MonitoringData::acquire()
 	if (shared_memory->getHeader()->allocated > shared_memory->sh_mem_length_mapped)
 	{
 #ifdef HAVE_OBJECT_MAP
-		Arg::StatusVector statusVector;
-		shared_memory->remapFile(statusVector, shared_memory->getHeader()->allocated, false);
-		if (!shared_memory->remapFile(statusVector, shared_memory->getHeader()->allocated, false))
+		FbLocalStatus statusVector;
+		if (!shared_memory->remapFile(&statusVector, shared_memory->getHeader()->allocated, false))
 		{
-			status_exception::raise(statusVector);
+			status_exception::raise(&statusVector);
 		}
 #else
 		status_exception::raise(Arg::Gds(isc_montabexh));
@@ -258,10 +257,10 @@ void MonitoringData::ensureSpace(ULONG length)
 		newSize = FB_ALIGN(newSize, DEFAULT_SIZE);
 
 #ifdef HAVE_OBJECT_MAP
-		Arg::StatusVector statusVector;
-		if (!shared_memory->remapFile(statusVector, newSize, true))
+		FbLocalStatus statusVector;
+		if (!shared_memory->remapFile(&statusVector, newSize, true))
 		{
-			status_exception::raise(statusVector);
+			status_exception::raise(&statusVector);
 		}
 		shared_memory->getHeader()->allocated = shared_memory->sh_mem_length_mapped;
 #else

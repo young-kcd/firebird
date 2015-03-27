@@ -36,11 +36,8 @@ namespace Firebird {
 ISC_STATUS DynamicStatusVector::load(const IStatus* status)
 {
 	SimpleStatusVector<> tmp;
-	unsigned length = fb_utils::statusLength(status->getErrors());
-	length += fb_utils::statusLength(status->getWarnings());
-	ISC_STATUS* s = tmp.getBuffer(length + 1);
-	fb_utils::mergeStatus(s, length + 1, status);
-	return save(s, false);
+	tmp.mergeStatus(status);
+	return save(tmp.begin(), false);
 }
 
 ISC_STATUS StatusHolder::save(IStatus* status)

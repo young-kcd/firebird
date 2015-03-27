@@ -82,7 +82,6 @@ interface Master : Versioned
 	Status getStatus();
 	Provider getDispatcher();
 	PluginManager getPluginManager();
-	const string circularAlloc(const string s, uint len, intptr thr);
 	TimerControl getTimerControl();
 	Dtc getDtc();
 	Attachment registerAttachment(Provider provider, Attachment attachment);

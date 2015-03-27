@@ -585,7 +585,7 @@ void iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector)
 }
 
 
-void iscLogStatus(const TEXT* text, Firebird::IStatus* status)
+void iscLogStatus(const TEXT* text, const Firebird::IStatus* status)
 {
 	Firebird::SimpleStatusVector<> tmp;
 	tmp.mergeStatus(status);
@@ -619,9 +619,9 @@ void iscLogException(const char* text, const Firebird::Exception& e)
  *	Add record about an exception to firebird.log
  *
  **************************************/
-	ISC_STATUS_ARRAY s;
-	e.stuff_exception(s);
-	iscLogStatus(text, s);
+	Firebird::SimpleStatusVector<> s;
+	e.stuffException(s);
+	iscLogStatus(text, s.begin());
 }
 
 

@@ -48,6 +48,7 @@
 namespace Firebird
 {
 class MemoryPool;
+class DynamicStatusVector;
 template <unsigned S = ISC_STATUS_LENGTH>
 class SimpleStatusVector;
 
@@ -55,15 +56,25 @@ class Exception
 {
 protected:
 	Exception() throw() { }
+	static void processUnexpectedException(ISC_STATUS* vector) throw();
+
 public:
-	ISC_STATUS stuff_exception(ISC_STATUS* const status_vector) const throw();
-	ISC_STATUS stuff_exception(CheckStatusWrapper* status_vector) const throw()
+	void stuff_exception(CheckStatusWrapper* status_vector) const throw()
 	{
 		return stuffException(status_vector);
 	}
-	ISC_STATUS stuffException(SimpleStatusVector<>& status_vector) const throw();
+
+	void stuffException(SimpleStatusVector<>& status_vector) const throw()
+	{
+		stuffByException(status_vector);
+	}
+
+	void stuffException(DynamicStatusVector& status_vector) const throw();
+	void stuffException(IStatus* status_vector) const throw();
 	virtual ~Exception() throw();
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw() = 0;
+private:
+	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw() = 0;
+public:
 	virtual const char* what() const throw() = 0;
 };
 
@@ -71,7 +82,7 @@ public:
 class LongJump : public Exception
 {
 public:
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw();
+	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
 	LongJump() throw() : Exception() { }
@@ -93,7 +104,7 @@ public:
 #endif	// USE_SYSTEM_NEW
 
 public:
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw();
+	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
 };
@@ -105,7 +116,7 @@ public:
 	explicit status_exception(const ISC_STATUS *status_vector) throw();
 	virtual ~status_exception() throw();
 
-	virtual ISC_STATUS stuffException(IStatus* status_vector) const throw();
+	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw();
 	virtual const char* what() const throw();
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }
@@ -169,10 +180,6 @@ public:
 	static void raise(const char* message);
 };
 
-
-// Put status vector strings into strings buffer
-void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, ThreadId thr = getThreadId()) throw();
-void makePermanentVector(ISC_STATUS* v, ThreadId thr = getThreadId()) throw();
 
 }	// namespace Firebird
 

@@ -1069,7 +1069,7 @@ static ISC_STATUS executeSecurityCommand(ISC_STATUS* status,
 	if (handle)
 	{
 		callRemoteServiceManager(status, handle, userInfo, NULL);
-		Firebird::makePermanentVector(status);
+		makePermanentVector(status);
 
 		ISC_STATUS_ARRAY user_status;
 		detachRemoteServiceManager(user_status, handle);

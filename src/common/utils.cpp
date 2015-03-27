@@ -1164,8 +1164,6 @@ unsigned int mergeStatus(ISC_STATUS* const dest, unsigned int space,
 
 	if (!copied)
 		init_status(dest);
-	else
-		Firebird::makePermanentVector(dest);
 
 	return copied;
 }
@@ -1185,10 +1183,19 @@ void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw()
 {
 	try
 	{
-		Firebird::Arg::StatusVector sv(from);
-		sv.copyTo(to);
+		const ISC_STATUS* w = from;
+		while (*w != isc_arg_end)
+		{
+			if (*w == isc_arg_warning)
+			{
+				to->setWarnings(w);
+				break;
+			}
+			w += (*w == isc_arg_cstring ? 3 : 2);
+		}
+		to->setErrors2(w - from, from);
 	}
-	catch (const Firebird::BadAlloc& ex)
+	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(to);
 	}

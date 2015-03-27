@@ -290,7 +290,6 @@ namespace Firebird
 			IStatus* (CLOOP_CARG *getStatus)(IMaster* self) throw();
 			IProvider* (CLOOP_CARG *getDispatcher)(IMaster* self) throw();
 			IPluginManager* (CLOOP_CARG *getPluginManager)(IMaster* self) throw();
-			const char* (CLOOP_CARG *circularAlloc)(IMaster* self, const char* s, unsigned len, intptr_t thr) throw();
 			ITimerControl* (CLOOP_CARG *getTimerControl)(IMaster* self) throw();
 			IDtc* (CLOOP_CARG *getDtc)(IMaster* self) throw();
 			IAttachment* (CLOOP_CARG *registerAttachment)(IMaster* self, IProvider* provider, IAttachment* attachment) throw();
@@ -329,12 +328,6 @@ namespace Firebird
 		IPluginManager* getPluginManager()
 		{
 			IPluginManager* ret = static_cast<VTable*>(this->cloopVTable)->getPluginManager(this);
-			return ret;
-		}
-
-		const char* circularAlloc(const char* s, unsigned len, intptr_t thr)
-		{
-			const char* ret = static_cast<VTable*>(this->cloopVTable)->circularAlloc(this, s, len, thr);
 			return ret;
 		}
 
@@ -5099,7 +5092,6 @@ namespace Firebird
 					this->getStatus = &Name::cloopgetStatusDispatcher;
 					this->getDispatcher = &Name::cloopgetDispatcherDispatcher;
 					this->getPluginManager = &Name::cloopgetPluginManagerDispatcher;
-					this->circularAlloc = &Name::cloopcircularAllocDispatcher;
 					this->getTimerControl = &Name::cloopgetTimerControlDispatcher;
 					this->getDtc = &Name::cloopgetDtcDispatcher;
 					this->registerAttachment = &Name::cloopregisterAttachmentDispatcher;
@@ -5150,19 +5142,6 @@ namespace Firebird
 			{
 				StatusType::catchException(0);
 				return static_cast<IPluginManager*>(0);
-			}
-		}
-
-		static const char* CLOOP_CARG cloopcircularAllocDispatcher(IMaster* self, const char* s, unsigned len, intptr_t thr) throw()
-		{
-			try
-			{
-				return static_cast<Name*>(self)->Name::circularAlloc(s, len, thr);
-			}
-			catch (...)
-			{
-				StatusType::catchException(0);
-				return static_cast<const char*>(0);
 			}
 		}
 
@@ -5289,7 +5268,6 @@ namespace Firebird
 		virtual IStatus* getStatus() = 0;
 		virtual IProvider* getDispatcher() = 0;
 		virtual IPluginManager* getPluginManager() = 0;
-		virtual const char* circularAlloc(const char* s, unsigned len, intptr_t thr) = 0;
 		virtual ITimerControl* getTimerControl() = 0;
 		virtual IDtc* getDtc() = 0;
 		virtual IAttachment* registerAttachment(IProvider* provider, IAttachment* attachment) = 0;

@@ -130,11 +130,6 @@ bool StatusVector::ImplStatusVector::compare(const StatusVector& v) const throw(
 	return length() == v.length() && fb_utils::cmpStatus(length(), value(), v.value());
 }
 
-void StatusVector::ImplStatusVector::makePermanent() throw()
-{
-	makePermanentVector(m_status_vector.begin());
-}
-
 void StatusVector::ImplStatusVector::assign(const StatusVector& v) throw()
 {
 	clear();

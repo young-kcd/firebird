@@ -1223,12 +1223,12 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbStatus
 	}
 	catch (...)
 	{
-		return ex.stuffException(vector);
+		ex.stuffException(vector);
+		return vector->getErrors()[1];
 	}
 
 	vector->setErrors2(newVector.getCount() - 1, newVector.begin());
-
-	return vectorStart[1];
+	return vector->getErrors()[1];
 }
 
 

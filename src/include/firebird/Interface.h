@@ -141,6 +141,16 @@ namespace Firebird
 			return dirty;
 		}
 
+		bool hasData() const
+		{
+			return getState() & IStatus::STATE_ERRORS;
+		}
+
+		bool isEmpty() const
+		{
+			return !hasData();
+		}
+
 		static void setVersionError(IStatus* status, const char* interfaceName,
 			unsigned currentVersion, unsigned expectedVersion)
 		{

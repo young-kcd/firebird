@@ -66,6 +66,7 @@
 #include "../common/isc_f_proto.h"
 #include "../common/StatusHolder.h"
 #include "../common/classes/ImplementHelper.h"
+#include "../common/classes/fb_tls.h"
 #include "../common/os/os_utils.h"
 
 #ifdef HAVE_UNISTD_H
@@ -2502,3 +2503,322 @@ void setLogin(ClumpletWriter& dpb, bool spbFlag)
 			setTag(dpb, isc_spb_expected_db, "FB_EXPECTED_DB", utf8);
 	}
 }
+
+
+//
+// circularAlloc()
+//
+
+#ifdef WIN_NT
+#include <windows.h>
+#endif
+
+namespace {
+
+class ThreadCleanup
+{
+public:
+	static void add(FPTR_VOID_PTR cleanup, void* arg);
+	static void remove(FPTR_VOID_PTR cleanup, void* arg);
+	static void destructor(void*);
+
+	static void assertNoCleanupChain()
+	{
+		fb_assert(!chain);
+	}
+
+private:
+	FPTR_VOID_PTR function;
+	void* argument;
+	ThreadCleanup* next;
+
+	static ThreadCleanup* chain;
+	static GlobalPtr<Mutex> cleanupMutex;
+
+	ThreadCleanup(FPTR_VOID_PTR cleanup, void* arg, ThreadCleanup* chain)
+		: function(cleanup), argument(arg), next(chain) { }
+
+	static void initThreadCleanup();
+	static void finiThreadCleanup();
+
+	static ThreadCleanup** findCleanup(FPTR_VOID_PTR cleanup, void* arg);
+};
+
+ThreadCleanup* ThreadCleanup::chain = NULL;
+GlobalPtr<Mutex> ThreadCleanup::cleanupMutex;
+
+#ifdef USE_POSIX_THREADS
+
+pthread_key_t key;
+pthread_once_t keyOnce = PTHREAD_ONCE_INIT;
+bool keySet = false;
+
+void makeKey()
+{
+	int err = pthread_key_create(&key, ThreadCleanup::destructor);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_key_create", err);
+	}
+	keySet = true;
+}
+
+void ThreadCleanup::initThreadCleanup()
+{
+	int err = pthread_once(&keyOnce, makeKey);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_once", err);
+	}
+
+	err = pthread_setspecific(key, &key);
+	if (err)
+	{
+		Firebird::system_call_failed("pthread_setspecific", err);
+	}
+}
+
+void ThreadCleanup::finiThreadCleanup()
+{
+	pthread_setspecific(key, NULL);
+}
+
+
+class FiniThreadCleanup
+{
+public:
+	FiniThreadCleanup(Firebird::MemoryPool&)
+	{ }
+
+	~FiniThreadCleanup()
+	{
+		ThreadCleanup::assertNoCleanupChain();
+		if (keySet)
+		{
+			int err = pthread_key_delete(key);
+			if (err)
+				Firebird::system_call_failed("pthread_key_delete", err);
+		}
+	}
+};
+
+Firebird::GlobalPtr<FiniThreadCleanup> thrCleanup;		// needed to call dtor
+
+#endif // USE_POSIX_THREADS
+
+#ifdef WIN_NT
+void ThreadCleanup::initThreadCleanup()
+{
+}
+
+void ThreadCleanup::finiThreadCleanup()
+{
+}
+#endif // #ifdef WIN_NT
+
+ThreadCleanup** ThreadCleanup::findCleanup(FPTR_VOID_PTR cleanup, void* arg)
+{
+	for (ThreadCleanup** ptr = &chain; *ptr; ptr = &((*ptr)->next))
+	{
+		if ((*ptr)->function == cleanup && (*ptr)->argument == arg)
+		{
+			return ptr;
+		}
+	}
+
+	return NULL;
+}
+
+void ThreadCleanup::destructor(void*)
+{
+	MutexLockGuard guard(cleanupMutex, FB_FUNCTION);
+
+	for (ThreadCleanup* ptr = chain; ptr; ptr = ptr->next)
+	{
+		ptr->function(ptr->argument);
+	}
+
+	finiThreadCleanup();
+}
+
+void ThreadCleanup::add(FPTR_VOID_PTR cleanup, void* arg)
+{
+	Firebird::MutexLockGuard guard(cleanupMutex, FB_FUNCTION);
+
+	initThreadCleanup();
+
+	if (findCleanup(cleanup, arg))
+	{
+		return;
+	}
+
+	chain = FB_NEW(*getDefaultMemoryPool()) ThreadCleanup(cleanup, arg, chain);
+}
+
+void ThreadCleanup::remove(FPTR_VOID_PTR cleanup, void* arg)
+{
+	MutexLockGuard guard(cleanupMutex, FB_FUNCTION);
+
+	ThreadCleanup** ptr = findCleanup(cleanup, arg);
+	if (!ptr)
+	{
+		return;
+	}
+
+	ThreadCleanup* toDelete = *ptr;
+	*ptr = toDelete->next;
+	delete toDelete;
+}
+
+class ThreadBuffer : public GlobalStorage
+{
+private:
+	const static size_t BUFFER_SIZE = 8192;		// make it match with call stack limit == 2048
+	char buffer[BUFFER_SIZE];
+	char* buffer_ptr;
+
+public:
+	ThreadBuffer() : buffer_ptr(buffer) { }
+
+	const char* alloc(const char* string, size_t length)
+	{
+		// if string is already in our buffer - return it
+		// it was already saved in our buffer once
+		if (string >= buffer && string < &buffer[BUFFER_SIZE])
+			return string;
+
+		// if string too long, truncate it
+		if (length > BUFFER_SIZE / 4)
+			length = BUFFER_SIZE / 4;
+
+		// If there isn't any more room in the buffer, start at the beginning again
+		if (buffer_ptr + length + 1 > buffer + BUFFER_SIZE)
+			buffer_ptr = buffer;
+
+		char* new_string = buffer_ptr;
+		memcpy(new_string, string, length);
+		new_string[length] = 0;
+		buffer_ptr += length + 1;
+
+		return new_string;
+	}
+};
+
+TLS_DECLARE(ThreadBuffer*, threadBuffer);
+
+void cleanupAllStrings(void*)
+{
+	///fprintf(stderr, "Cleanup is called\n");
+
+	delete TLS_GET(threadBuffer);
+	TLS_SET(threadBuffer, NULL);
+
+	///fprintf(stderr, "Buffer removed\n");
+}
+
+ThreadBuffer* getThreadBuffer()
+{
+	ThreadBuffer* rc = TLS_GET(threadBuffer);
+	if (!rc)
+	{
+		ThreadCleanup::add(cleanupAllStrings, NULL);
+		rc = new ThreadBuffer;
+		TLS_SET(threadBuffer, rc);
+	}
+
+	return rc;
+}
+
+// Needed to call dtor
+class Strings
+{
+public:
+	Strings(MemoryPool&)
+	{ }
+
+	~Strings()
+	{
+		ThreadCleanup::remove(cleanupAllStrings, NULL);
+	}
+};
+Firebird::GlobalPtr<Strings> cleanStrings;
+
+const char* circularAlloc(const char* s, unsigned len)
+{
+	return getThreadBuffer()->alloc(s, len);
+}
+
+// CVC: Do not let "perm" be incremented before "trans", because it may lead to serious memory errors,
+// since our code blindly passes the same vector twice.
+void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
+{
+	try
+	{
+		while (true)
+		{
+			const ISC_STATUS type = *perm++ = *trans++;
+
+			switch (type)
+			{
+			case isc_arg_end:
+				return;
+			case isc_arg_cstring:
+				{
+					perm [-1] = isc_arg_string;
+					const size_t len = *trans++;
+					const char* temp = reinterpret_cast<char*>(*trans++);
+					*perm++ = (ISC_STATUS)(IPTR) circularAlloc(temp, len);
+				}
+				break;
+			case isc_arg_string:
+			case isc_arg_interpreted:
+			case isc_arg_sql_state:
+				{
+					const char* temp = reinterpret_cast<char*>(*trans++);
+					const size_t len = strlen(temp);
+					*perm++ = (ISC_STATUS)(IPTR) circularAlloc(temp, len);
+				}
+				break;
+			default:
+				*perm++ = *trans++;
+				break;
+			}
+		}
+	}
+	catch (const system_call_failed& ex)
+	{
+		memcpy(perm, ex.value(), sizeof(ISC_STATUS_ARRAY));
+	}
+	catch (const BadAlloc&)
+	{
+		*perm++ = isc_arg_gds;
+		*perm++ = isc_virmemexh;
+		*perm++ = isc_arg_end;
+	}
+	catch (...)
+	{
+		*perm++ = isc_arg_gds;
+		*perm++ = isc_random;
+		*perm++ = isc_arg_string;
+		*perm++ = (ISC_STATUS)(IPTR) "Unexpected exception in makePermanentVector()";
+		*perm++ = isc_arg_end;
+	}
+}
+
+} // anonymous namespace
+
+void makePermanentVector(ISC_STATUS* v) throw()
+{
+	makePermanentVector(v, v);
+}
+
+#ifdef WIN_NT
+namespace Why
+{
+	// This is called from ibinitdll.cpp:DllMain()
+	void threadCleanup()
+	{
+		ThreadCleanup::destructor(NULL);
+	}
+}
+#endif

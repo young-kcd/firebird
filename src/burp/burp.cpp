@@ -139,10 +139,10 @@ int BURP_main(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		ISC_STATUS_ARRAY status;
-		e.stuff_exception(status);
+		Firebird::SimpleStatusVector<> status;
+		e.stuffException(status);
 		uSvc->initStatus();
-		uSvc->setServiceStatus(status);
+		uSvc->setServiceStatus(status.begin());
 		exit_code = FB_FAILURE;
 	}
 
@@ -386,8 +386,9 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		e.stuff_exception(status);
-		BURP_print_status(true, status);
+		Firebird::SimpleStatusVector<> s;
+		e.stuffException(s);
+		BURP_print_status(true, s.begin());
 		if (svc_handle)
 		{
 			isc_service_detach(status, &svc_handle);
@@ -1236,7 +1237,9 @@ int gbak(Firebird::UtilSvc* uSvc)
 	{
 		// Non-burp exception was caught
 		tdgbl->burp_throw = false;
-		e.stuff_exception(tdgbl->status_vector);
+		Firebird::SimpleStatusVector<> s;
+		e.stuffException(s);
+		fb_utils::copyStatus(tdgbl->status_vector, ISC_STATUS_LENGTH, s.begin(), s.getCount());
 		BURP_print_status(true, tdgbl->status_vector);
 		if (! tdgbl->uSvc->isService())
 		{
@@ -2105,7 +2108,6 @@ static gbak_action open_files(const TEXT* file1,
 			isc_drop_database(status_vector, &tdgbl->db_handle);
 			if (tdgbl->db_handle)
 			{
-				Firebird::makePermanentVector(status_vector);
 				ISC_STATUS_ARRAY status_vector2;
 				if (isc_detach_database(status_vector2, &tdgbl->db_handle)) {
 					BURP_print_status(false, status_vector2);

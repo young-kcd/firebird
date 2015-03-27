@@ -55,6 +55,7 @@
 #include "../common/classes/MsgPrint.h"
 #include "../common/classes/UserBlob.h"
 #include "../common/os/os_utils.h"
+#include "../common/StatusHolder.h"
 
 using MsgFormat::SafeArg;
 
@@ -330,10 +331,10 @@ int main_gstat(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		ISC_STATUS_ARRAY status;
-		e.stuff_exception(status);
+		Firebird::SimpleStatusVector<> status;
+		e.stuffException(status);
 		uSvc->initStatus();
-		uSvc->setServiceStatus(status);
+		uSvc->setServiceStatus(status.begin());
 		exit_code = FB_FAILURE;
 	}
 
@@ -377,6 +378,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 	const char** argv = uSvc->argv.begin();
 
 	ISC_STATUS* status_vector = NULL;
+	Firebird::DynamicStatusVector permStatus;
 
 	try {
 
@@ -1092,7 +1094,8 @@ int gstat(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(status_vector);
+		ex.stuffException(permStatus);
+		fb_utils::copyStatus(status_vector, ISC_STATUS_LENGTH, permStatus.value(), permStatus.length());
 	}
 
 	// free mem

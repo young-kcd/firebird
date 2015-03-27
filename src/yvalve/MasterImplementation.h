@@ -53,7 +53,6 @@ namespace Why
 		Firebird::IStatus* getStatus();
 		Firebird::IProvider* getDispatcher();
 		Firebird::IPluginManager* getPluginManager();
-		const char* circularAlloc(const char* s, unsigned len, intptr_t thr);
 		Firebird::ITimerControl* getTimerControl();
 		Firebird::IAttachment* registerAttachment(Firebird::IProvider* provider,
 			Firebird::IAttachment* attachment);
@@ -68,7 +67,6 @@ namespace Why
 	};
 
 	void shutdownTimers();
-	void threadCleanup();
 
 	Firebird::Mutex& pauseTimer();
 } // namespace Why

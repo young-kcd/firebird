@@ -328,7 +328,6 @@ static void generate_error(CheckStatusWrapper* status, const string& token, SSHO
 		temp_status[8] = isc_arg_string;
 		temp_status[9] = (ISC_STATUS)(err_string.c_str());
 		temp_status[10] = isc_arg_end;
-		Firebird::makePermanentVector(temp_status);
 		break;
 	}
 

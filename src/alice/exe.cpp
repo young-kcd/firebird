@@ -101,12 +101,7 @@ int EXE_action(const TEXT* database, const SINT64 switches)
 
 		if (tdgbl->status[2] == isc_arg_warning)
 		{
-			Firebird::makePermanentVector(tdgbl->status);
 			ALICE_print_status(false, tdgbl->status);
-		}
-		else if (error)
-		{
-			Firebird::makePermanentVector(tdgbl->status);
 		}
 
 		if (handle != 0)

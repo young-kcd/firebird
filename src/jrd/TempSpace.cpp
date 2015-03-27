@@ -371,7 +371,7 @@ TempSpace::Block* TempSpace::findBlock(offset_t& offset) const
 
 TempFile* TempSpace::setupFile(FB_SIZE_T size)
 {
-	ISC_STATUS_ARRAY status_vector = {0};
+	Firebird::SimpleStatusVector<> status_vector;
 
 	for (FB_SIZE_T i = 0; i < tempDirs->getCount(); i++)
 	{
@@ -404,7 +404,7 @@ TempFile* TempSpace::setupFile(FB_SIZE_T size)
 		}
 		catch (const Firebird::system_error& ex)
 		{
-			ex.stuff_exception(status_vector);
+			ex.stuffException(status_vector);
 			continue;
 		}
 
@@ -413,7 +413,7 @@ TempFile* TempSpace::setupFile(FB_SIZE_T size)
 
 	// no room in all directories
 	Firebird::Arg::Gds status(isc_out_of_temp_space);
-	status.append(Firebird::Arg::StatusVector(status_vector));
+	status.append(Firebird::Arg::StatusVector(status_vector.begin()));
 	iscLogStatus(NULL, status.value());
 	status.raise();
 

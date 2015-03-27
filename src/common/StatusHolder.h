@@ -124,6 +124,11 @@ public:
 		return SimpleStatusVector<S>::begin();
 	}
 
+	const unsigned length() const
+	{
+		return SimpleStatusVector<S>::getCount();
+	}
+
 	ISC_STATUS operator[](unsigned int index) const
 	{
 		return SimpleStatusVector<S>::operator[](index);

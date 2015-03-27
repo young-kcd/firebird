@@ -707,14 +707,6 @@ public:
 		return NULL;
 	}
 
-	const char* circularAlloc(const char* s, unsigned len, intptr_t /*thr*/)
-	{
-		char* buf = (char*) malloc(len + 1);
-		memcpy(buf, s, len);
-		buf[len] = 0;
-		return buf;
-	}
-
 	ITimerControl* getTimerControl()
 	{
 		fb_assert(false);

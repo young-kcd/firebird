@@ -27,6 +27,7 @@
 #include "firebird.h"
 #include "init.h"
 #include "alloc.h"
+#include "../common/SimpleStatusVector.h"
 
 // Setting this define helps (with AV at exit time) detect globals
 // with destructors, declared not using InstanceControl.
@@ -40,13 +41,14 @@ namespace
 #ifdef DEV_BUILD
 	void cleanError(const Firebird::Exception* e)
 	{
-		// This is done to be able to look at status in debugger
-		ISC_STATUS_ARRAY status;
 		if (e)
 		{
-			e->stuff_exception(status);
+			// This is done to be able to look at status in debugger
+			Firebird::SimpleStatusVector<> status;
+			e->stuffException(status);
 		}
-		// we do not have big choice in error reporting when running destructors
+
+		// we do not have big choice in error reporting when running global destructors
 		abort();
 	}
 #else

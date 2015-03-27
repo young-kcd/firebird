@@ -228,7 +228,7 @@ public:
 	int setlock(const LockMode mode);
 
 	// Alternative locker is using status vector to report errors
-	bool setlock(Firebird::Arg::StatusVector& status, const LockMode mode);
+	bool setlock(Firebird::CheckStatusWrapper* status, const LockMode mode);
 
 	// unlocking can only put error into log file - we can't throw in dtors
 	void unlock();
@@ -271,10 +271,10 @@ public:
 	~SharedMemoryBase();
 
 #ifdef HAVE_OBJECT_MAP
-	UCHAR* mapObject(Firebird::Arg::StatusVector& status, ULONG offset, ULONG size);
-	void unmapObject(Firebird::Arg::StatusVector& status, UCHAR** object, ULONG size);
+	UCHAR* mapObject(Firebird::CheckStatusWrapper* status, ULONG offset, ULONG size);
+	void unmapObject(Firebird::CheckStatusWrapper* status, UCHAR** object, ULONG size);
 #endif
-	bool remapFile(Firebird::Arg::StatusVector& status, ULONG newSize, bool truncateFlag);
+	bool remapFile(Firebird::CheckStatusWrapper* status, ULONG newSize, bool truncateFlag);
 	void removeMapFile();
 #ifdef UNIX
 	void internalUnmap();
@@ -349,7 +349,7 @@ public:
 	};
 
 protected:
-	void logError(const char* text, const Firebird::Arg::StatusVector& status);
+	void logError(const char* text, const Firebird::CheckStatusWrapper* status);
 };
 
 template <class Header>		// Header must be "public MemoryHeader"
@@ -361,12 +361,12 @@ public:
 	{ }
 
 #ifdef HAVE_OBJECT_MAP
-	template <class Object> Object* mapObject(Firebird::Arg::StatusVector& status, ULONG offset)
+	template <class Object> Object* mapObject(Firebird::CheckStatusWrapper* status, ULONG offset)
 	{
 		return (Object*) SharedMemoryBase::mapObject(status, offset, sizeof(Object));
 	}
 
-	template <class Object> void unmapObject(Firebird::Arg::StatusVector& status, Object** object)
+	template <class Object> void unmapObject(Firebird::CheckStatusWrapper* status, Object** object)
 	{
 		SharedMemoryBase::unmapObject(status, (UCHAR**) object, sizeof(Object));
 	}

@@ -157,27 +157,6 @@ SLONG SDL_compute_subscript(CheckStatusWrapper* status_vector,
 }
 
 
-ISC_STATUS SDL_info(ISC_STATUS* status_vector,
-					const UCHAR* sdl, sdl_info* info, SLONG* vector)
-{
-/**************************************
- *
- *	S D L _ i n f o
- *
- **************************************
- *
- * Functional description
- *	Status vector time changing form.
- *
- **************************************/
-	LocalStatus s1;
-	CheckStatusWrapper s2(&s1);
-	ISC_STATUS rc = SDL_info(&s2, sdl, info, vector);
-	fb_utils::mergeStatus(status_vector, ISC_STATUS_LENGTH, &s2);
-
-	return rc;
-}
-
 ISC_STATUS SDL_info(CheckStatusWrapper* status_vector,
 					const UCHAR* sdl, sdl_info* info, SLONG* vector)
 {

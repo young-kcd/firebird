@@ -36,7 +36,7 @@ SLONG	ISC_set_prefix(const TEXT*, const TEXT*);
 void	iscDbLogStatus(const TEXT* text, Firebird::IStatus* status);
 // Do not add word "Database" in the beginning like gds__log_status / iscDbLogStatus
 void	iscLogStatus(const TEXT* text, const ISC_STATUS* status_vector);
-void	iscLogStatus(const TEXT* text, Firebird::IStatus* status);
+void	iscLogStatus(const TEXT* text, const Firebird::IStatus* status);
 void	iscLogException(const TEXT* text, const Firebird::Exception& e);
 
 #ifdef WIN9X_SUPPORT

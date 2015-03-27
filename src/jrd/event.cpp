@@ -138,7 +138,8 @@ EventManager::~EventManager()
 	m_exiting = true;
 	const SLONG process_offset = m_processOffset;
 
-	Arg::StatusVector localStatus;
+	LocalStatus ls;
+	CheckStatusWrapper localStatus(&ls);
 
 	if (m_process)
 	{
@@ -148,7 +149,7 @@ EventManager::~EventManager()
 		m_cleanupSemaphore.tryEnter(5);
 
 #ifdef HAVE_OBJECT_MAP
-		m_sharedMemory->unmapObject(localStatus, &m_process);
+		m_sharedMemory->unmapObject(&localStatus, &m_process);
 #else
 		m_process = NULL;
 #endif
@@ -549,12 +550,13 @@ void EventManager::acquire_shmem()
 		const ULONG length = m_sharedMemory->getHeader()->evh_length;
 
 #ifdef HAVE_OBJECT_MAP
-		Arg::StatusVector localStatus;
-		if (!m_sharedMemory->remapFile(localStatus, length, false))
+		LocalStatus ls;
+		CheckStatusWrapper localStatus(&ls);
+		if (!m_sharedMemory->remapFile(&localStatus, length, false))
 #endif
 		{
 			release_shmem();
-			iscLogStatus("Event table remap failed", localStatus.value());
+			iscLogStatus("Event table remap failed", &localStatus);
 			exit(FINI_ERROR);
 		}
 	}
@@ -597,8 +599,9 @@ frb* EventManager::alloc_global(UCHAR type, ULONG length, bool recurse)
 		const ULONG old_length = m_sharedMemory->sh_mem_length_mapped;
 		const ULONG ev_length = old_length + m_config->getEventMemSize();
 
-		Arg::StatusVector localStatus;
-		if (m_sharedMemory->remapFile(localStatus, ev_length, true))
+		LocalStatus ls;
+		CheckStatusWrapper localStatus(&ls);
+		if (m_sharedMemory->remapFile(&localStatus, ev_length, true))
 		{
 			free = (frb*) (((UCHAR*) m_sharedMemory->getHeader()) + old_length);
 			//free->frb_header.hdr_length = EVENT_EXTEND_SIZE - sizeof (struct evh);
@@ -669,13 +672,14 @@ void EventManager::create_process()
 	m_processOffset = SRQ_REL_PTR(process);
 
 #ifdef HAVE_OBJECT_MAP
-	Arg::StatusVector localStatus;
-	m_process = m_sharedMemory->mapObject<prb>(localStatus, m_processOffset);
+	LocalStatus ls;
+	CheckStatusWrapper localStatus(&ls);
+	m_process = m_sharedMemory->mapObject<prb>(&localStatus, m_processOffset);
 
 	if (!m_process)
 	{
 		release_shmem();
-		localStatus.raise();
+		status_exception::raise(&localStatus);
 	}
 #else
 	m_process = process;

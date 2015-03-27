@@ -67,7 +67,6 @@ protected:
 		virtual unsigned int firstWarning() const throw() { return 0; }
 		virtual bool hasData() const throw() { return false; }
 		virtual void clear() throw() { }
-		virtual void makePermanent() throw() { }
 		virtual void append(const StatusVector&) throw() { }
 		virtual void prepend(const StatusVector&) throw() { }
 		virtual void assign(const StatusVector& ex) throw() { }
@@ -118,7 +117,6 @@ protected:
 		virtual unsigned int firstWarning() const throw() { return m_warning; }
 		virtual bool hasData() const throw() { return length() > 0u; }
 		virtual void clear() throw();
-		virtual void makePermanent() throw();
 		virtual void append(const StatusVector& v) throw();
 		virtual void prepend(const StatusVector& v) throw();
 		virtual void assign(const StatusVector& v) throw();
@@ -159,7 +157,6 @@ public:
 	bool isEmpty() const throw() { return !implementation->hasData(); }
 
 	void clear() throw() { implementation->clear(); }
-	void makePermanent() throw() { implementation->makePermanent(); }
 	void append(const StatusVector& v) throw() { implementation->append(v); }
 	void prepend(const StatusVector& v) throw() { implementation->prepend(v); }
 	void assign(const StatusVector& v) throw() { implementation->assign(v); }

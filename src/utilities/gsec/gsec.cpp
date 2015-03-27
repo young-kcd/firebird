@@ -89,10 +89,10 @@ int GSEC_main(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		ISC_STATUS_ARRAY status;
-		e.stuff_exception(status);
+		Firebird::SimpleStatusVector<> status;
+		e.stuffException(status);
 		uSvc->initStatus();
-		uSvc->setServiceStatus(status);
+		uSvc->setServiceStatus(status.begin());
 		exit_code = FB_FAILURE;
 	}
 
@@ -346,6 +346,9 @@ int gsec(Firebird::UtilSvc* uSvc)
 	StackUserData u;
 	tdsec->tsec_user_data = &u;
 
+	Firebird::LocalStatus lsManager;
+	Firebird::CheckStatusWrapper statusManager(&lsManager);
+
 	const unsigned char* block;
 	unsigned int bs = uSvc->getAuthBlock(&block);
 	if (bs)
@@ -464,8 +467,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 		fb_assert(user_data->dba.entered() || user_data->authenticationBlock.hasData());
 		if (user_data->dba.entered() || user_data->authenticationBlock.hasData())
 		{
-			Firebird::LocalStatus st;
-			Firebird::CheckStatusWrapper statusWrapper2(&st);
 
 			try
 			{
@@ -479,18 +480,18 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				GsecInfo info(user_data->dba.get(), user_data->role.get(),
 							  network_protocol.c_str(), remote_address.c_str(), &user_data->authenticationBlock);
-				manager->start(&statusWrapper2, &info);
+				manager->start(&statusManager, &info);
 			}
 			catch (const Firebird::Exception& ex)
 			{
-				ex.stuffException(&st);
+				ex.stuffException(&statusManager);
 			}
 
-			if (st.getState() & Firebird::IStatus::STATE_ERRORS)
+			if (statusManager.getState() & Firebird::IStatus::STATE_ERRORS)
 			{
-				ISC_STATUS_ARRAY tmp;
-				fb_utils::mergeStatus(tmp, FB_NELEM(tmp), &st);
-				GSEC_error_redirect(tmp, GsecMsg15);
+				Firebird::SimpleStatusVector<> tmp;
+				tmp.mergeStatus(&statusManager);
+				GSEC_error_redirect(tmp.begin(), GsecMsg15);
 			}
 		}
 	}
@@ -530,9 +531,6 @@ int gsec(Firebird::UtilSvc* uSvc)
 			Display disp(tdsec);
 			if (! useServices)
 			{
-				Firebird::LocalStatus st;
-				Firebird::CheckStatusWrapper statusWrapper2(&st);
-
 				if (user_data->operation() == ADD_OPER)
 				{
 					user_data->act.set(&statusWrapper, 1);
@@ -552,12 +550,12 @@ int gsec(Firebird::UtilSvc* uSvc)
 					check(&statusWrapper);
 
 					Callback cb(&u);
-					ret = manager->execute(&statusWrapper2, &u, &cb);
+					ret = manager->execute(&statusManager, &u, &cb);
 
 					if (ret)
 					{
 						ret = setGsecCode(ret, user_data);		// user_data, not u !
-						fb_utils::mergeStatus(status, FB_NELEM(status), &st);
+						fb_utils::mergeStatus(status, FB_NELEM(status), &statusManager);
 						GSEC_print(ret, user_data->userName()->get());
 						if (status[1])
 						{
@@ -566,9 +564,9 @@ int gsec(Firebird::UtilSvc* uSvc)
 						get_security_error(status, ret);
 					}
 
-					if (st.getState() & Firebird::IStatus::STATE_ERRORS)
+					if (statusManager.getState() & Firebird::IStatus::STATE_ERRORS)
 					{
-						Firebird::status_exception::raise(&st);
+						Firebird::status_exception::raise(&statusManager);
 					}
 
 					merge(&user_data->u, &u.u);
@@ -582,12 +580,12 @@ int gsec(Firebird::UtilSvc* uSvc)
 				user_data->attributes()->set(&statusWrapper, attr.c_str());
 				user_data->attributes()->setEntered(&statusWrapper, attr.hasData() ? 1 : 0);
 
-				ret = manager->execute(&statusWrapper2, user_data, &disp);
+				ret = manager->execute(&statusManager, user_data, &disp);
 
 				if (ret)
 				{
 					ret = setGsecCode(ret, user_data);
-					fb_utils::mergeStatus(status, FB_NELEM(status), &st);
+					fb_utils::mergeStatus(status, FB_NELEM(status), &statusManager);
 					GSEC_print(ret, user_data->userName()->get());
 					if (status[1])
 					{
@@ -596,10 +594,10 @@ int gsec(Firebird::UtilSvc* uSvc)
 					get_security_error(status, ret);
 				}
 
-				manager->commit(&statusWrapper2);
-				if (st.getState() & Firebird::IStatus::STATE_ERRORS)
+				manager->commit(&statusManager);
+				if (statusManager.getState() & Firebird::IStatus::STATE_ERRORS)
 				{
-					Firebird::status_exception::raise(&st);
+					Firebird::status_exception::raise(&statusManager);
 				}
 			}
 			else
@@ -696,14 +694,14 @@ int gsec(Firebird::UtilSvc* uSvc)
 	catch (const Firebird::Exception& e)
 	{
 		// Real exceptions are coming here
-		ISC_STATUS_ARRAY status;
-		e.stuff_exception(status);
+		Firebird::SimpleStatusVector<> status;
+		e.stuffException(status);
 
 		tdsec->tsec_throw = false;
 
-		GSEC_print_status(status);
+		GSEC_print_status(status.begin());
 		uSvc->initStatus();
-		uSvc->setServiceStatus(status);
+		uSvc->setServiceStatus(status.begin());
 
 		exit_code = FINI_ERROR;
 	}

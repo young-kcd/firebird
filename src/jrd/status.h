@@ -72,13 +72,28 @@ namespace Jrd
 			return &localStatusVector;
 		}
 
-		void check()
+		void check() const
 		{
 			if (localStatusVector.isDirty())
 			{
 				if (localStatus.getState() & FbStatusVector::STATE_ERRORS)
-					Firebird::status_exception::raise(&localStatus);
+					raise();
 			}
+		}
+
+		void copyTo(FbStatusVector* to) const
+		{
+			fb_utils::copyStatus(to, &localStatusVector);
+		}
+
+		void raise() const
+		{
+			Firebird::status_exception::raise(&localStatus);
+		}
+
+		bool isEmpty() const
+		{
+			return localStatusVector.isEmpty();
 		}
 
 	private:

@@ -44,6 +44,7 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../common/isc_s_proto.h"
+#include "../common/StatusHolder.h"
 
 namespace Jrd {
 // Lock types
@@ -622,8 +623,10 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 		if (LOCK_header->lhb_length > shmem_data->shared_memory->sh_mem_length_mapped)
 		{
 			const ULONG length = LOCK_header->lhb_length;
-			Firebird::Arg::StatusVector statusVector;
-			shmem_data->shared_memory->remapFile(statusVector, length, false);
+			Firebird::LocalStatus ls;
+			Firebird::CheckStatusWrapper statusVector(&ls);
+
+			shmem_data->shared_memory->remapFile(&statusVector, length, false);
 			LOCK_header = (lhb*)(shmem_data->shared_memory->sh_mem_header);
 		}
 #endif
@@ -658,9 +661,9 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	  {
 		FPRINTF(outfile, "Unable to access lock table.\n");
 
-		ISC_STATUS_ARRAY status;
-		ex.stuff_exception(status);
-		gds__print_status(status);
+ 		Firebird::SimpleStatusVector<> st;
+		ex.stuffException(st);
+		gds__print_status(st.begin());
 
 		exit(FINI_OK);
 	  }

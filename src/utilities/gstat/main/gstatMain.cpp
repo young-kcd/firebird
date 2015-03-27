@@ -29,6 +29,7 @@
 #include "firebird.h"
 #include "../utilities/gstat/dba_proto.h"
 #include "../common/classes/auto.h"
+#include "../common/SimpleStatusVector.h"
 
 
 int CLIB_ROUTINE main(int argc, char* argv[])
@@ -50,9 +51,9 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  	}
 	catch (const Firebird::Exception& ex)
  	{
- 		ISC_STATUS_ARRAY st;
- 		ex.stuff_exception(st);
- 		isc_print_status(st);
+ 		Firebird::SimpleStatusVector<> st;
+ 		ex.stuffException(st);
+ 		isc_print_status(st.begin());
  	}
  	return 1;
 }

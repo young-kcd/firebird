@@ -140,7 +140,7 @@ static size_t getpagesize()
 
 using namespace Firebird;
 
-static void		error(Arg::StatusVector&, const TEXT*, ISC_STATUS);
+static void		error(CheckStatusWrapper*, const TEXT*, ISC_STATUS);
 static bool		event_blocked(const event_t* event, const SLONG value);
 
 #ifdef UNIX
@@ -238,9 +238,10 @@ namespace {
 		explicit FileLockHolder(FileLock* l)
 			: lock(l)
 		{
-			Arg::StatusVector status;
-			if (!lock->setlock(status, FileLock::FLM_EXCLUSIVE))
-				status.raise();
+			LocalStatus ls;
+			CheckStatusWrapper status(&ls);
+			if (!lock->setlock(&status, FileLock::FLM_EXCLUSIVE))
+				status_exception::raise(&status);
 		}
 
 		~FileLockHolder()
@@ -488,7 +489,7 @@ int FileLock::setlock(const LockMode mode)
 	return 0;
 }
 
-bool FileLock::setlock(Arg::StatusVector& status, const LockMode mode)
+bool FileLock::setlock(CheckStatusWrapper* status, const LockMode mode)
 {
 	int rc = setlock(mode);
 	if (rc != 0)
@@ -556,9 +557,10 @@ void FileLock::unlock()
 	if (flock(oFile->fd, LOCK_UN) != 0)
 	{
 #endif
-		Arg::StatusVector local;
-		error(local, NAME, errno);
-		iscLogStatus("Unlock error", local.value());
+		LocalStatus ls;
+		CheckStatusWrapper local(&ls);
+		error(&local, NAME, errno);
+		iscLogStatus("Unlock error", &local);
 	}
 
 	rwUnlock();
@@ -632,7 +634,7 @@ union semun
 };
 #endif
 
-static SLONG	create_semaphores(Arg::StatusVector&, SLONG, int);
+static SLONG	create_semaphores(CheckStatusWrapper*, SLONG, int);
 
 namespace {
 
@@ -1756,8 +1758,9 @@ void SharedMemoryBase::internalUnmap()
 #ifdef USE_SYS5SEMAPHORE
 	if (fileNum != -1 && mainLock.hasData())
 	{
-		Arg::StatusVector statusVector;
-		semTable->cleanup(fileNum, mainLock->setlock(statusVector, FileLock::FLM_TRY_EXCLUSIVE));
+		LocalStatus ls;
+		CheckStatusWrapper statusVector(&ls);
+		semTable->cleanup(fileNum, mainLock->setlock(&statusVector, FileLock::FLM_TRY_EXCLUSIVE));
 	}
 #endif
 	if (sh_mem_header)
@@ -1790,7 +1793,8 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
  *	routine (if given) or punt (leaving the file unmapped).
  *
  **************************************/
-	Arg::StatusVector statusVector;
+	LocalStatus ls;
+	CheckStatusWrapper statusVector(&ls);
 
 	sh_mem_name[0] = '\0';
 
@@ -1840,12 +1844,12 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 	fb_assert(semTable);
 
-	if (semFile->setlock(statusVector, FileLock::FLM_TRY_EXCLUSIVE))
+	if (semFile->setlock(&statusVector, FileLock::FLM_TRY_EXCLUSIVE))
 	{
 		semTable->init(semFile->getFd());
 		semFile->unlock();
 	}
-	if (!semFile->setlock(statusVector, FileLock::FLM_SHARED))
+	if (!semFile->setlock(&statusVector, FileLock::FLM_SHARED))
 	{
 		if (statusVector.hasData())
 			statusVector.raise();
@@ -1913,7 +1917,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 #if defined(HAVE_SHARED_MUTEX_SECTION) && defined(USE_MUTEX_MAP)
 
-	sh_mem_mutex = (mtx*) mapObject(statusVector, offsetof(MemoryHeader, mhb_mutex), sizeof(mtx));
+	sh_mem_mutex = (mtx*) mapObject(&statusVector, offsetof(MemoryHeader, mhb_mutex), sizeof(mtx));
 	if (!sh_mem_mutex)
 	{
 		system_call_failed::raise("mmap");
@@ -1935,7 +1939,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	// Try to get an exclusive lock on the lock file.  This will
 	// fail if somebody else has the exclusive or shared lock
 
-	if (mainLock->setlock(statusVector, FileLock::FLM_TRY_EXCLUSIVE))
+	if (mainLock->setlock(&statusVector, FileLock::FLM_TRY_EXCLUSIVE))
 	{
 		if (trunc_flag)
 			FB_UNUSED(ftruncate(mainLock->getFd(), length));
@@ -2053,10 +2057,10 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 #endif // HAVE_SHARED_MUTEX_SECTION
 
 			mainLock->unlock();
-			if (!mainLock->setlock(statusVector, FileLock::FLM_SHARED))
+			if (!mainLock->setlock(&statusVector, FileLock::FLM_SHARED))
 			{
 				if (statusVector.hasData())
-					status_exception::raise(statusVector);
+					status_exception::raise(&statusVector);
 				else
 					(Arg::Gds(isc_random) << "Unknown error in setlock(SHARED)").raise();
 			}
@@ -2066,10 +2070,10 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	{
 		if (callback->initialize(this, false))
 		{
-			if (!mainLock->setlock(statusVector, FileLock::FLM_SHARED))
+			if (!mainLock->setlock(&statusVector, FileLock::FLM_SHARED))
 			{
 				if (statusVector.hasData())
-					status_exception::raise(statusVector);
+					status_exception::raise(&statusVector);
 				else
 					(Arg::Gds(isc_random) << "Unknown error in setlock(SHARED)").raise();
 			}
@@ -2402,7 +2406,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 
 #ifdef HAVE_MMAP
 
-UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector, ULONG object_offset, ULONG object_length)
+UCHAR* SharedMemoryBase::mapObject(CheckStatusWrapper* statusVector, ULONG object_offset, ULONG object_length)
 {
 /**************************************
  *
@@ -2456,7 +2460,7 @@ UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector, ULONG object
 }
 
 
-void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector, UCHAR** object_pointer, ULONG object_length)
+void SharedMemoryBase::unmapObject(CheckStatusWrapper* statusVector, UCHAR** object_pointer, ULONG object_length)
 {
 /**************************************
  *
@@ -2509,7 +2513,7 @@ void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector, UCHAR** obje
 
 #ifdef WIN_NT
 
-UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector,
+UCHAR* SharedMemoryBase::mapObject(CheckStatusWrapper* statusVector,
 								   ULONG object_offset,
 								   ULONG object_length)
 {
@@ -2550,7 +2554,7 @@ UCHAR* SharedMemoryBase::mapObject(Arg::StatusVector& statusVector,
 }
 
 
-void SharedMemoryBase::unmapObject(Arg::StatusVector& statusVector,
+void SharedMemoryBase::unmapObject(CheckStatusWrapper* statusVector,
 								   UCHAR** object_pointer, ULONG /*object_length*/)
 {
 /**************************************
@@ -3032,7 +3036,7 @@ void ISC_mutex_set_spin_count (struct mtx *mutex, ULONG spins)
 #ifdef UNIX
 #ifdef HAVE_MMAP
 #define ISC_REMAP_FILE_DEFINED
-bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG new_length, bool flag)
+bool SharedMemoryBase::remapFile(CheckStatusWrapper* statusVector, ULONG new_length, bool flag)
 {
 /**************************************
  *
@@ -3080,7 +3084,7 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG new_leng
 
 #ifdef WIN_NT
 #define ISC_REMAP_FILE_DEFINED
-bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector,
+bool SharedMemoryBase::remapFile(CheckStatusWrapper* statusVector,
 								 ULONG new_length, bool flag)
 {
 /**************************************
@@ -3181,7 +3185,7 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector,
 
 
 #ifndef ISC_REMAP_FILE_DEFINED
-bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG, bool)
+bool SharedMemoryBase::remapFile(CheckStatusWrapper* statusVector, ULONG, bool)
 {
 /**************************************
  *
@@ -3194,8 +3198,8 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG, bool)
  *
  **************************************/
 
-	statusVector << Arg::Gds(isc_unavailable) <<
-					Arg::Gds(isc_random) << "SharedMemory::remapFile";
+	(Arg::Gds(isc_unavailable) <<
+		Arg::Gds(isc_random) << "SharedMemory::remapFile").copyTo(statusVector);
 
 	return NULL;
 }
@@ -3204,7 +3208,7 @@ bool SharedMemoryBase::remapFile(Arg::StatusVector& statusVector, ULONG, bool)
 
 #ifdef USE_SYS5SEMAPHORE
 
-static SLONG create_semaphores(Arg::StatusVector& statusVector, SLONG key, int semaphores)
+static SLONG create_semaphores(CheckStatusWrapper* statusVector, SLONG key, int semaphores)
 {
 /**************************************
  *
@@ -3562,9 +3566,10 @@ SharedMemoryBase::~SharedMemoryBase()
 		// Lock init file.
 		FileLockHolder initLock(initFile);
 
-		Arg::StatusVector statusVector;		// ignored
+		LocalStatus ls;
+		CheckStatusWrapper statusVector(&ls);
 		mainLock->unlock();
-		semTable->cleanup(fileNum, mainLock->setlock(statusVector, FileLock::FLM_TRY_EXCLUSIVE));
+		semTable->cleanup(fileNum, mainLock->setlock(&statusVector, FileLock::FLM_TRY_EXCLUSIVE));
 	}
 	catch (const Exception& ex)
 	{
@@ -3575,11 +3580,12 @@ SharedMemoryBase::~SharedMemoryBase()
 #endif
 
 #if defined(HAVE_SHARED_MUTEX_SECTION) && defined(USE_MUTEX_MAP)
-	Arg::StatusVector statusVector;
-	unmapObject(statusVector, (UCHAR**) &sh_mem_mutex, sizeof(mtx));
+	LocalStatus ls;
+	CheckStatusWrapper statusVector(&ls);
+	unmapObject(&statusVector, (UCHAR**) &sh_mem_mutex, sizeof(mtx));
 	if (statusVector.hasData())
 	{
-		iscLogStatus("unmapObject failed", statusVector.value());
+		iscLogStatus("unmapObject failed", &statusVector);
 	}
 #endif
 
@@ -3588,11 +3594,9 @@ SharedMemoryBase::~SharedMemoryBase()
 #endif
 
 #ifdef WIN_NT
-	Arg::StatusVector statusVector;
 	CloseHandle(sh_mem_interest);
 	if (!UnmapViewOfFile(sh_mem_header))
 	{
-		error(statusVector, "UnmapViewOfFile", GetLastError());
 		return;
 	}
 	CloseHandle(sh_mem_object);
@@ -3600,7 +3604,6 @@ SharedMemoryBase::~SharedMemoryBase()
 	CloseHandle(sh_mem_handle);
 	if (!UnmapViewOfFile(sh_mem_hdr_address))
 	{
-		error(statusVector, "UnmapViewOfFile", GetLastError());
 		return;
 	}
 	CloseHandle(sh_mem_hdr_object);
@@ -3632,9 +3635,9 @@ SharedMemoryBase::~SharedMemoryBase()
 #endif
 }
 
-void SharedMemoryBase::logError(const char* text, const Arg::StatusVector& status)
+void SharedMemoryBase::logError(const char* text, const CheckStatusWrapper* status)
 {
-	iscLogStatus(text, status.value());
+	iscLogStatus(text, status);
 }
 
 
@@ -3668,7 +3671,7 @@ static bool event_blocked(const event_t* event, const SLONG value)
 }
 
 
-static void error(Arg::StatusVector& statusVector, const TEXT* string, ISC_STATUS status)
+static void error(CheckStatusWrapper* statusVector, const TEXT* string, ISC_STATUS status)
 {
 /**************************************
  *
@@ -3680,6 +3683,6 @@ static void error(Arg::StatusVector& statusVector, const TEXT* string, ISC_STATU
  *	We've encountered an error, report it.
  *
  **************************************/
-	statusVector << Arg::Gds(isc_sys_request) << Arg::Str(string) << SYS_ERR(status);
-	statusVector.makePermanent();
+	(Arg::StatusVector(statusVector) <<
+		Arg::Gds(isc_sys_request) << string << SYS_ERR(status)).copyTo(statusVector);
 }

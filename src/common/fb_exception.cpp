@@ -14,108 +14,50 @@
 
 namespace Firebird {
 
-// Before using thr parameter, make sure that thread is not going to work with
-// this functions itself.
-// CVC: Do not let "perm" be incremented before "trans", because it may lead to serious memory errors,
-// since several places in our code blindly pass the same vector twice.
-void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans, ThreadId thr) throw()
-{
-	try
-	{
-		while (true)
-		{
-			const ISC_STATUS type = *perm++ = *trans++;
-
-			switch (type)
-			{
-			case isc_arg_end:
-				return;
-			case isc_arg_cstring:
-				{
-					perm [-1] = isc_arg_string;
-					const size_t len = *trans++;
-					const char* temp = reinterpret_cast<char*>(*trans++);
-					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, (intptr_t) thr));
-				}
-				break;
-			case isc_arg_string:
-			case isc_arg_interpreted:
-			case isc_arg_sql_state:
-				{
-					const char* temp = reinterpret_cast<char*>(*trans++);
-					const size_t len = strlen(temp);
-					*perm++ = (ISC_STATUS)(IPTR) (MasterInterfacePtr()->circularAlloc(temp, len, (intptr_t) thr));
-				}
-				break;
-			default:
-				*perm++ = *trans++;
-				break;
-			}
-		}
-	}
-	catch (const system_call_failed& ex)
-	{
-		memcpy(perm, ex.value(), sizeof(ISC_STATUS_ARRAY));
-	}
-	catch (const BadAlloc&)
-	{
-		*perm++ = isc_arg_gds;
-		*perm++ = isc_virmemexh;
-		*perm++ = isc_arg_end;
-	}
-	catch (...)
-	{
-		*perm++ = isc_arg_gds;
-		*perm++ = isc_random;
-		*perm++ = isc_arg_string;
-		*perm++ = (ISC_STATUS)(IPTR) "Unexpected exception in makePermanentVector()";
-		*perm++ = isc_arg_end;
-	}
-}
-
-void makePermanentVector(ISC_STATUS* v, ThreadId thr) throw()
-{
-	makePermanentVector(v, v, thr);
-}
-
 // ********************************* Exception *******************************
 
 Exception::~Exception() throw() { }
 
-ISC_STATUS Exception::stuff_exception(ISC_STATUS* const status_vector) const throw()
+void Exception::stuffException(DynamicStatusVector& status_vector) const throw()
 {
-	LocalStatus status;
-	stuffException(&status);
-	fb_utils::mergeStatus(status_vector, ISC_STATUS_LENGTH, &status);
-
-	return status_vector[1];
-}
-
-ISC_STATUS Exception::stuffException(SimpleStatusVector<>& status_vector) const throw()
-{
-	LocalStatus status;
-	stuffException(&status);
+	SimpleStatusVector<> status;
+	stuffException(status);
 	try
 	{
-		status_vector.mergeStatus(&status);
+		status_vector.save(status.begin());
 	}
 	catch(const BadAlloc&)
 	{
-		// do not use stuff here to avoid endless cycle
-		status_vector.shrink(3);
-		ISC_STATUS* s = status_vector.getBuffer(3);	// Should not throw - see assert() in ctor
-		fb_utils::statusBadAlloc(s);
+		ISC_STATUS tmp[3];
+		processUnexpectedException(tmp);
+		status_vector.save(tmp);
+	}
+}
+
+void Exception::stuffException(IStatus* status_vector) const throw()
+{
+	SimpleStatusVector<> status;
+	stuffException(status);
+	fb_utils::setIStatus(status_vector, status.begin());
+}
+
+void Exception::processUnexpectedException(ISC_STATUS* vector) throw()
+{
+	// do not use stuff_exception() here to avoid endless loop
+	try
+	{
+		throw;
+	}
+	catch(const BadAlloc&)
+	{
+		fb_utils::statusBadAlloc(vector);
 	}
 	catch(const Exception&)
 	{
 		fb_assert(false);
 
-		status_vector.shrink(3);
-		ISC_STATUS* s = status_vector.getBuffer(3);	// Should not throw - see assert() in ctor
-		fb_utils::statusUnknown(s);
+		fb_utils::statusUnknown(vector);
 	}
-
-	return status_vector[1];
 }
 
 // ********************************* status_exception *******************************
@@ -151,14 +93,14 @@ void status_exception::set_status(const ISC_STATUS *new_vector) throw()
 		len = makeDynamicStrings(len, m_status_vector, new_vector);
 		m_status_vector[len] = isc_arg_end;
 	}
-	catch(const BadAlloc&)
+	catch(const Exception&)
 	{
 		if (m_status_vector != m_buffer)
 		{
 			delete[] m_status_vector;
 			m_status_vector = m_buffer;
 		}
-		fb_utils::statusBadAlloc(m_buffer);
+		processUnexpectedException(m_buffer);
 	}
 }
 
@@ -193,14 +135,16 @@ void status_exception::raise(const Arg::StatusVector& statusVector)
 	throw status_exception(statusVector.value());
 }
 
-ISC_STATUS status_exception::stuffException(IStatus* status) const throw()
+void status_exception::stuffByException(SimpleStatusVector<>& status) const throw()
 {
-	if (status)
+	try
 	{
-		fb_utils::setIStatus(status, value());
+		status.assign(m_status_vector, fb_utils::statusLength(m_status_vector) + 1);
 	}
-
-	return value()[1];
+	catch(const BadAlloc&)
+	{
+		processUnexpectedException(status.makeEmergencyStatus());
+	}
 }
 
 // ********************************* BadAlloc ****************************
@@ -210,16 +154,9 @@ void BadAlloc::raise()
 	throw BadAlloc();
 }
 
-ISC_STATUS BadAlloc::stuffException(IStatus* status) const throw()
+void BadAlloc::stuffByException(SimpleStatusVector<>& status) const throw()
 {
-	const ISC_STATUS sv[] = {isc_arg_gds, isc_virmemexh};
-
-	if (status)
-	{
-		status->setErrors2(FB_NELEM(sv), sv);
-	}
-
-	return sv[1];
+	fb_utils::statusBadAlloc(status.makeEmergencyStatus());
 }
 
 const char* BadAlloc::what() const throw()
@@ -234,16 +171,19 @@ void LongJump::raise()
 	throw LongJump();
 }
 
-ISC_STATUS LongJump::stuffException(IStatus* status) const throw()
+void LongJump::stuffByException(SimpleStatusVector<>& status) const throw()
 {
-	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string, (ISC_STATUS)(IPTR) "Unexpected Firebird::LongJump"};
+	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string,
+		(ISC_STATUS)(IPTR) "Unexpected call to Firebird::LongJump::stuffException()", isc_arg_end};
 
-	if (status)
+	try
 	{
-		status->setErrors2(FB_NELEM(sv), sv);
+		status.assign(sv, FB_NELEM(sv));
 	}
-
-	return sv[1];
+	catch(const BadAlloc&)
+	{
+		processUnexpectedException(status.makeEmergencyStatus());
+	}
 }
 
 const char* LongJump::what() const throw()

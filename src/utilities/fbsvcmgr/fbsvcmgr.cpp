@@ -1135,8 +1135,9 @@ int main(int ac, char** av)
 	}
 	catch (const Exception& e)
 	{
-		e.stuff_exception(status);
-		isc_print_status(status);
+ 		Firebird::SimpleStatusVector<> st;
+		e.stuffException(st);
+		isc_print_status(st.begin());
 	}
 	return 2;
 }

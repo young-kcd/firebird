@@ -429,8 +429,9 @@ void SecurityDatabase::handler()
 	}
 	catch (Exception &ex)
 	{
-		ISC_STATUS_ARRAY status;
-		ex.stuff_exception(status);
+ 		SimpleStatusVector<> st;
+ 		ex.stuffException(st);
+		const ISC_STATUS* status = st.begin();
 		if (status[0] == 1 && status[1] != isc_att_shutdown)
 		{
 			iscLogStatus("Legacy security database timer handler", status);
@@ -460,8 +461,9 @@ int SecurityDatabase::shutdown()
 	}
 	catch (Exception &ex)
 	{
-		ISC_STATUS_ARRAY status;
-		ex.stuff_exception(status);
+ 		SimpleStatusVector<> st;
+ 		ex.stuffException(st);
+		const ISC_STATUS* status = st.begin();
 		if (status[0] == 1 && status[1] != isc_att_shutdown)
 		{
 			iscLogStatus("Legacy security database shutdown", status);

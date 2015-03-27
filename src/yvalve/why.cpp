@@ -1057,6 +1057,7 @@ namespace Why
 		void merge()
 		{
 			fb_utils::mergeStatus(localVector, FB_NELEM(localStatus), this);
+			makePermanentVector(localVector);
 		}
 
 		ISC_STATUS_ARRAY localStatus;

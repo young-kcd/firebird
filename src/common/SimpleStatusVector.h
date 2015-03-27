@@ -36,20 +36,20 @@
 namespace Firebird {
 
 // This trivial container is used when we need to grow vector element by element w/o any conversions
-template <unsigned S>		// default set in fb_exception.h
+template <unsigned S>	// Default value is in fb_exception.h
 class SimpleStatusVector : public HalfStaticArray<ISC_STATUS, S>
 {
 public:
 	SimpleStatusVector()
 		: HalfStaticArray<ISC_STATUS, S>()
 	{
-		fb_assert(S >= 3u);		// Required for minimum no-throw support
+		fb_assert(S >= 3u);		// Required for no-throw support in makeEmergencyStatus()
 	}
 
 	SimpleStatusVector(MemoryPool& p)
 		: HalfStaticArray<ISC_STATUS, S>(p)
 	{
-		fb_assert(S >= 3u);		// Required for minimum no-throw support
+		fb_assert(S >= 3u);		// Required for no-throw support in makeEmergencyStatus()
 	}
 
 	void mergeStatus(const IStatus* from)
@@ -78,6 +78,12 @@ public:
 		}
 
 		this->push(isc_arg_end);
+	}
+
+	ISC_STATUS* makeEmergencyStatus() throw()
+	{
+		// Should not throw - see assertions in constructors
+		return this->getBuffer(3);
 	}
 };
 

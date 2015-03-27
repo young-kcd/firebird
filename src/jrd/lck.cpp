@@ -57,7 +57,7 @@ using namespace Firebird;
 
 static void bug_lck(const TEXT*);
 static bool compatible(const Lock*, const Lock*, USHORT);
-static void enqueue(thread_db*, Arg::StatusVector&, Lock*, USHORT, SSHORT);
+static void enqueue(thread_db*, CheckStatusWrapper*, Lock*, USHORT, SSHORT);
 static int external_ast(void*);
 static USHORT hash_func(const UCHAR*, USHORT);
 static void hash_allocate(Lock*);
@@ -67,8 +67,8 @@ static bool hash_remove_lock(Lock*, Lock**);
 static void internal_ast(Lock*);
 static bool internal_compatible(Lock*, const Lock*, USHORT);
 static void internal_dequeue(thread_db*, Lock*);
-static USHORT internal_downgrade(thread_db*, Arg::StatusVector&, Lock*);
-static bool internal_enqueue(thread_db*, Arg::StatusVector&, Lock*, USHORT, SSHORT, bool);
+static USHORT internal_downgrade(thread_db*, CheckStatusWrapper*, Lock*);
+static bool internal_enqueue(thread_db*, CheckStatusWrapper*, Lock*, USHORT, SSHORT, bool);
 static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type);
 
 #ifdef DEBUG_LCK
@@ -141,7 +141,7 @@ static const bool compatibility[LCK_max][LCK_max] =
 const int LOCK_HASH_SIZE	= 19;
 
 
-inline void ENQUEUE(thread_db* tdbb, Arg::StatusVector& statusVector, Lock* lock, USHORT level, SSHORT wait)
+inline void ENQUEUE(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* lock, USHORT level, SSHORT wait)
 {
 	if (lock->lck_compatible)
 		internal_enqueue(tdbb, statusVector, lock, level, wait, false);
@@ -149,7 +149,7 @@ inline void ENQUEUE(thread_db* tdbb, Arg::StatusVector& statusVector, Lock* lock
 		enqueue(tdbb, statusVector, lock, level, wait);
 }
 
-inline bool CONVERT(thread_db* tdbb, Arg::StatusVector& statusVector, Lock* lock, USHORT level, SSHORT wait)
+inline bool CONVERT(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* lock, USHORT level, SSHORT wait)
 {
 	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const att = tdbb->getAttachment();
@@ -175,11 +175,11 @@ inline USHORT DOWNGRADE(thread_db* tdbb, Lock* lock)
 	Database* const dbb = tdbb->getDatabase();
 	Jrd::Attachment* const att = tdbb->getAttachment();
 
-	Arg::StatusVector statusVector;
+	FbLocalStatus statusVector;
 
 	USHORT ret = lock->lck_compatible ?
-		internal_downgrade(tdbb, statusVector, lock) :
-		dbb->dbb_lock_mgr->downgrade(att, statusVector, lock->lck_id);
+		internal_downgrade(tdbb, &statusVector, lock) :
+		dbb->dbb_lock_mgr->downgrade(att, &statusVector, lock->lck_id);
 
 	fb_assert(statusVector.isEmpty());
 
@@ -336,15 +336,15 @@ bool LCK_convert(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 	lock->setLockAttachment(tdbb, tdbb->getAttachment());
 
 	WaitCancelGuard guard(tdbb, lock, wait);
-	Arg::StatusVector statusVector;
+	FbLocalStatus statusVector;
 
-	const bool result = CONVERT(tdbb, statusVector, lock, level, wait);
+	const bool result = CONVERT(tdbb, &statusVector, lock, level, wait);
 
 	if (!result)
 	{
 	    lock->setLockAttachment(tdbb, old_attachment);
 
-		switch (statusVector.value()[1])
+		switch (statusVector[1])
 		{
 		case isc_deadlock:
 		case isc_lock_conflict:
@@ -592,11 +592,11 @@ void LCK_init(thread_db* tdbb, enum lck_owner_t owner_type)
 		break;
 	}
 
-	Arg::StatusVector statusVector;
+	FbLocalStatus statusVector;
 
-	if (!dbb->dbb_lock_mgr->initializeOwner(statusVector, owner_id, owner_type, owner_handle_ptr))
+	if (!dbb->dbb_lock_mgr->initializeOwner(&statusVector, owner_id, owner_type, owner_handle_ptr))
 	{
-		if (statusVector.value()[1] == isc_lockmanerr)
+		if (statusVector[1] == isc_lockmanerr)
 		{
 			statusVector.copyTo(tdbb->tdbb_status_vector);
 			tdbb->getDatabase()->dbb_flags |= DBB_bugcheck;
@@ -630,9 +630,9 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
     lock->setLockAttachment(tdbb, tdbb->getAttachment());
 
 	WaitCancelGuard guard(tdbb, lock, wait);
-	Arg::StatusVector statusVector;
+	FbLocalStatus statusVector;
 
-	ENQUEUE(tdbb, statusVector, lock, level, wait);
+	ENQUEUE(tdbb, &statusVector, lock, level, wait);
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	if (!lock->lck_id)
@@ -644,7 +644,7 @@ bool LCK_lock(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 			return false;
 		}
 
-		switch (statusVector.value()[1])
+		switch (statusVector[1])
 		{
 		case isc_deadlock:
 		case isc_lock_conflict:
@@ -890,7 +890,7 @@ static bool compatible(const Lock* lock1, const Lock* lock2, USHORT level2)
 }
 
 
-static void enqueue(thread_db* tdbb, Arg::StatusVector& statusVector, Lock* lock, USHORT level, SSHORT wait)
+static void enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* lock, USHORT level, SSHORT wait)
 {
 /**************************************
  *
@@ -1293,13 +1293,13 @@ static void internal_dequeue(thread_db* tdbb, Lock* lock)
 
 	// check for a potential downgrade
 
-	Arg::StatusVector statusVector;
-	internal_downgrade(tdbb, statusVector, match);
+	FbLocalStatus statusVector;
+	internal_downgrade(tdbb, &statusVector, match);
 	fb_assert(statusVector.isEmpty());
 }
 
 
-static USHORT internal_downgrade(thread_db* tdbb, Arg::StatusVector& statusVector, Lock* first)
+static USHORT internal_downgrade(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* first)
 {
 /**************************************
  *
@@ -1346,7 +1346,7 @@ static USHORT internal_downgrade(thread_db* tdbb, Arg::StatusVector& statusVecto
 }
 
 
-static bool internal_enqueue(thread_db* tdbb, Arg::StatusVector& statusVector, Lock* lock,
+static bool internal_enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* lock,
 	USHORT level, SSHORT wait, bool convert_flg)
 {
 /**************************************
@@ -1384,7 +1384,7 @@ static bool internal_enqueue(thread_db* tdbb, Arg::StatusVector& statusVector, L
 			// for now return a lock conflict; it would be better if we were to
 			// do a wait on the other lock by setting some flag bit or some such
 
-			statusVector << Arg::Gds(isc_lock_conflict);
+			(Arg::StatusVector(statusVector) << Arg::Gds(isc_lock_conflict)).copyTo(statusVector);
 			return false;
 		}
 

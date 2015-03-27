@@ -41,6 +41,7 @@
 #include "../common/sdl_proto.h"
 #include "../common/xdr_proto.h"
 #include "../common/gdsassert.h"
+#include "../common/StatusHolder.h"
 #include "fb_types.h"
 
 // TMN: Currently we can't include remote/remote.h because we'd get
@@ -408,10 +409,13 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 
 	// Get descriptor of array element
 
-	ISC_STATUS_ARRAY status_vector;
 	sdl_info info;
-	if (SDL_info(status_vector, sdl, &info, 0))
-		return FALSE;
+	{
+		Firebird::LocalStatus ls;
+		Firebird::CheckStatusWrapper s(&ls);
+		if (SDL_info(&s, sdl, &info, 0))
+			return FALSE;
+	}
 
 	dsc* desc = &info.sdl_info_element;
 	const ULONG n = slice->lstr_length / desc->dsc_length;

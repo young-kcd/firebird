@@ -44,7 +44,7 @@
 #include "../../jrd/inf_pub.h"
 #include "../../dsql/sqlda_pub.h"
 #include "../../common/classes/ImplementHelper.h"
-
+#include "../../common/SimpleStatusVector.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -62,8 +62,9 @@ static const char* const DEFAULT_LOG_NAME = "default_trace.log";
 
 const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 {
-	ISC_STATUS_ARRAY status = {0};
-	ex.stuff_exception(status);
+	Firebird::SimpleStatusVector<> st;
+ 	ex.stuffException(st);
+	const ISC_STATUS* status = st.begin();
 
 	char buff[1024];
 	char* p = buff;

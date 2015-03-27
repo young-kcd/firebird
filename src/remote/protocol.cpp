@@ -1433,10 +1433,13 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 
 	// Get descriptor of array element
 
-	ISC_STATUS_ARRAY status_vector;
 	struct sdl_info info;
-	if (SDL_info(status_vector, sdl, &info, 0))
-		return FALSE;
+	{
+		Firebird::LocalStatus ls;
+		Firebird::CheckStatusWrapper s(&ls);
+		if (SDL_info(&s, sdl, &info, 0))
+			return FALSE;
+	}
 
 	const dsc* desc = &info.sdl_info_element;
 	const rem_port* port = (rem_port*) xdrs->x_public;

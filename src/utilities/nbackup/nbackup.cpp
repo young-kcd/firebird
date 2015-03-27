@@ -1538,10 +1538,10 @@ int NBACKUP_main(UtilSvc* uSvc)
 			const ISC_STATUS* s = e.value();
 			isc_print_status(s);
 		}
- 		ISC_STATUS_ARRAY status;
- 		e.stuff_exception(status);
+ 		SimpleStatusVector<> status;
+ 		e.stuffException(status);
  		uSvc->initStatus();
- 		uSvc->setServiceStatus(status);
+ 		uSvc->setServiceStatus(status.begin());
 		exit_code = FB_FAILURE;
 	}
 	catch (const Exception& e)
@@ -1549,10 +1549,10 @@ int NBACKUP_main(UtilSvc* uSvc)
 		if (!uSvc->isService())
 			fprintf(stderr, "%s\n", e.what());
 
- 		ISC_STATUS_ARRAY status;
- 		e.stuff_exception(status);
+ 		SimpleStatusVector<> status;
+ 		e.stuffException(status);
  		uSvc->initStatus();
- 		uSvc->setServiceStatus(status);
+ 		uSvc->setServiceStatus(status.begin());
 		exit_code = FB_FAILURE;
 	}
 
@@ -1808,9 +1808,9 @@ void nbackup(UtilSvc* uSvc)
 	{
 		if (!uSvc->isService() && !nbk.printed())
 		{
-			ISC_STATUS_ARRAY status;
-			e.stuff_exception(status);
-			isc_print_status(status);
+	 		SimpleStatusVector<> status;
+ 			e.stuffException(status);
+			isc_print_status(status.begin());
 		}
 
 		throw;
