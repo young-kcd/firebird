@@ -88,8 +88,8 @@
 
 using namespace Firebird;
 
-IAttachment* handleToIAttachment(IStatus*, FB_API_HANDLE*);
-ITransaction* handleToITransaction(IStatus*, FB_API_HANDLE*);
+IAttachment* handleToIAttachment(CheckStatusWrapper*, FB_API_HANDLE*);
+ITransaction* handleToITransaction(CheckStatusWrapper*, FB_API_HANDLE*);
 
 // Bug 7119 - BLOB_load will open external file for read in BINARY mode.
 
@@ -1742,12 +1742,12 @@ int API_ROUTINE BLOB_display(ISC_QUAD* blob_id,
 	}
 	catch (const Exception& ex)
 	{
-		ex.stuffException(&st);
+		ex.stuffException(&statusWrapper);
 	}
 
-	if (st.getState() & Firebird::IStatus::STATE_ERRORS)
+	if (statusWrapper.getState() & Firebird::IStatus::STATE_ERRORS)
 	{
-		isc_print_status(st.getErrors());
+		isc_print_status(statusWrapper.getErrors());
 		return FB_FAILURE;
 	}
 
@@ -1921,11 +1921,11 @@ int API_ROUTINE BLOB_edit(ISC_QUAD* blob_id,
 	}
 	catch (const Exception& ex)
 	{
-		ex.stuffException(&st);
+		ex.stuffException(&statusWrapper);
 	}
 
-	if (st.getState() & Firebird::IStatus::STATE_ERRORS)
-		isc_print_status(st.getErrors());
+	if (statusWrapper.getState() & Firebird::IStatus::STATE_ERRORS)
+		isc_print_status(statusWrapper.getErrors());
 
 	return rc;
 }

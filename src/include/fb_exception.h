@@ -51,6 +51,7 @@ class MemoryPool;
 class DynamicStatusVector;
 template <unsigned S = ISC_STATUS_LENGTH>
 class SimpleStatusVector;
+typedef SimpleStatusVector<> StaticStatusVector;
 
 class Exception
 {
@@ -59,21 +60,16 @@ protected:
 	static void processUnexpectedException(ISC_STATUS* vector) throw();
 
 public:
-	void stuff_exception(CheckStatusWrapper* status_vector) const throw()
-	{
-		return stuffException(status_vector);
-	}
-
-	void stuffException(SimpleStatusVector<>& status_vector) const throw()
+	void stuffException(StaticStatusVector& status_vector) const throw()
 	{
 		stuffByException(status_vector);
 	}
 
 	void stuffException(DynamicStatusVector& status_vector) const throw();
-	void stuffException(IStatus* status_vector) const throw();
+	void stuffException(CheckStatusWrapper* status_vector) const throw();
 	virtual ~Exception() throw();
 private:
-	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw() = 0;
+	virtual void stuffByException(StaticStatusVector& status_vector) const throw() = 0;
 public:
 	virtual const char* what() const throw() = 0;
 };
@@ -82,7 +78,7 @@ public:
 class LongJump : public Exception
 {
 public:
-	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw();
+	virtual void stuffByException(StaticStatusVector& status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
 	LongJump() throw() : Exception() { }
@@ -104,7 +100,7 @@ public:
 #endif	// USE_SYSTEM_NEW
 
 public:
-	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw();
+	virtual void stuffByException(StaticStatusVector& status_vector) const throw();
 	virtual const char* what() const throw();
 	static void raise();
 };
@@ -116,7 +112,7 @@ public:
 	explicit status_exception(const ISC_STATUS *status_vector) throw();
 	virtual ~status_exception() throw();
 
-	virtual void stuffByException(SimpleStatusVector<>& status_vector) const throw();
+	virtual void stuffByException(StaticStatusVector& status_vector) const throw();
 	virtual const char* what() const throw();
 
 	const ISC_STATUS* value() const throw() { return m_status_vector; }

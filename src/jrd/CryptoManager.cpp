@@ -561,7 +561,7 @@ namespace Jrd {
 		}
 		catch (const Exception& ex)
 		{
-			ex.stuff_exception(sv);
+			ex.stuffException(sv);
 		}
 		return false;
 	}
@@ -591,7 +591,7 @@ namespace Jrd {
 		}
 		catch (const Exception& ex)
 		{
-			ex.stuff_exception(sv);
+			ex.stuffException(sv);
 		}
 		return NULL;
 	}

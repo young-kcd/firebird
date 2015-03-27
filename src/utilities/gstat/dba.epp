@@ -280,7 +280,7 @@ public:
 void inline dba_exit(int code, tdba* tddba)
 {
 	tddba->exit_code = code;
-	// Throw this kind of exception, because gstat uses status vector (and stuff_exception) to
+	// Throw this kind of exception, because gstat uses status vector (and stuffException) to
     // handle errors
 	Firebird::LongJump::raise();
 }
@@ -331,7 +331,7 @@ int main_gstat(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		Firebird::SimpleStatusVector<> status;
+		Firebird::StaticStatusVector status;
 		e.stuffException(status);
 		uSvc->initStatus();
 		uSvc->setServiceStatus(status.begin());

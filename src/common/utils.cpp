@@ -1179,7 +1179,7 @@ void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWra
 		to->setWarnings(from->getWarnings());
 }
 
-void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw()
+void setIStatus(Firebird::CheckStatusWrapper* to, const ISC_STATUS* from) throw()
 {
 	try
 	{

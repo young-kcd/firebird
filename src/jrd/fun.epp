@@ -805,7 +805,7 @@ static SLONG blob_lseek(blb* blob, USHORT mode, SLONG offset)
 		}
 		catch (const Exception& ex)
 		{
-			ex.stuff_exception(tdbb->tdbb_status_vector);
+			ex.stuffException(tdbb->tdbb_status_vector);
 		}
 	}
 	catch (const Exception&)
@@ -840,7 +840,7 @@ static void blob_put_segment(blb* blob, const UCHAR* buffer, USHORT length)
 		}
 		catch (const Exception& ex)
 		{
-			ex.stuff_exception(tdbb->tdbb_status_vector);
+			ex.stuffException(tdbb->tdbb_status_vector);
 		}
 	}
 	catch (const Exception&)
@@ -886,7 +886,7 @@ static SSHORT blob_get_segment(blb* blob, UCHAR* buffer, USHORT length, USHORT* 
 		}
 		catch (const Exception& ex)
 		{
-			ex.stuff_exception(tdbb->tdbb_status_vector);
+			ex.stuffException(tdbb->tdbb_status_vector);
 		}
 	}
 	catch (const Exception&)
@@ -1187,7 +1187,7 @@ static bool private_move(Jrd::thread_db* tdbb, dsc* from, dsc* to)
 	}
 	catch (Firebird::status_exception& e)
 	{
-		e.stuff_exception(tdbb->tdbb_status_vector);
+		e.stuffException(tdbb->tdbb_status_vector);
 		return false;
 	}
 }

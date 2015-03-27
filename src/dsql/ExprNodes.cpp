@@ -10847,7 +10847,7 @@ dsc* UdfCallNode::execute(thread_db* tdbb, jrd_req* request) const
 		}
 		catch (const Exception& ex)
 		{
-			ex.stuff_exception(tdbb->tdbb_status_vector);
+			ex.stuffException(tdbb->tdbb_status_vector);
 			const bool noPriv = (tdbb->tdbb_status_vector->getErrors()[1] == isc_no_priv);
 			trace.finish(noPriv ? ITracePlugin::RESULT_UNAUTHORIZED : ITracePlugin::RESULT_FAILED);
 

@@ -1134,7 +1134,7 @@ static void makeRoleName(Database* dbb, string& userIdRole, DatabaseOptions& opt
 ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbStatusVector* vector,
 	const char* func) throw()
 {
-	ex.stuff_exception(vector);
+	ex.stuffException(vector);
 
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	if (func && attachment && attachment->att_trace_manager->needs(ITraceFactory::TRACE_EVENT_ERROR))
@@ -1155,7 +1155,7 @@ ISC_STATUS transliterateException(thread_db* tdbb, const Exception& ex, FbStatus
 
 	const ISC_STATUS* const vectorStart = vector->getErrors();
 	const ISC_STATUS* status = vectorStart;
-	SimpleStatusVector<> newVector;
+	StaticStatusVector newVector;
 	ObjectsArray<UCharBuffer> buffers;
 
 	try

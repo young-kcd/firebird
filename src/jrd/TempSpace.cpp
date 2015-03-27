@@ -371,7 +371,7 @@ TempSpace::Block* TempSpace::findBlock(offset_t& offset) const
 
 TempFile* TempSpace::setupFile(FB_SIZE_T size)
 {
-	Firebird::SimpleStatusVector<> status_vector;
+	Firebird::StaticStatusVector status_vector;
 
 	for (FB_SIZE_T i = 0; i < tempDirs->getCount(); i++)
 	{

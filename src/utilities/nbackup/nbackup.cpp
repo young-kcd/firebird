@@ -1538,7 +1538,7 @@ int NBACKUP_main(UtilSvc* uSvc)
 			const ISC_STATUS* s = e.value();
 			isc_print_status(s);
 		}
- 		SimpleStatusVector<> status;
+ 		StaticStatusVector status;
  		e.stuffException(status);
  		uSvc->initStatus();
  		uSvc->setServiceStatus(status.begin());
@@ -1549,7 +1549,7 @@ int NBACKUP_main(UtilSvc* uSvc)
 		if (!uSvc->isService())
 			fprintf(stderr, "%s\n", e.what());
 
- 		SimpleStatusVector<> status;
+ 		StaticStatusVector status;
  		e.stuffException(status);
  		uSvc->initStatus();
  		uSvc->setServiceStatus(status.begin());
@@ -1808,7 +1808,7 @@ void nbackup(UtilSvc* uSvc)
 	{
 		if (!uSvc->isService() && !nbk.printed())
 		{
-	 		SimpleStatusVector<> status;
+	 		StaticStatusVector status;
  			e.stuffException(status);
 			isc_print_status(status.begin());
 		}

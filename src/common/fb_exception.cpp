@@ -20,7 +20,7 @@ Exception::~Exception() throw() { }
 
 void Exception::stuffException(DynamicStatusVector& status_vector) const throw()
 {
-	SimpleStatusVector<> status;
+	StaticStatusVector status;
 	stuffException(status);
 	try
 	{
@@ -34,16 +34,16 @@ void Exception::stuffException(DynamicStatusVector& status_vector) const throw()
 	}
 }
 
-void Exception::stuffException(IStatus* status_vector) const throw()
+void Exception::stuffException(CheckStatusWrapper* status_vector) const throw()
 {
-	SimpleStatusVector<> status;
+	StaticStatusVector status;
 	stuffException(status);
 	fb_utils::setIStatus(status_vector, status.begin());
 }
 
 void Exception::processUnexpectedException(ISC_STATUS* vector) throw()
 {
-	// do not use stuff_exception() here to avoid endless loop
+	// do not use stuffException() here to avoid endless loop
 	try
 	{
 		throw;
@@ -125,7 +125,7 @@ void status_exception::raise(const ISC_STATUS *status_vector)
 
 void status_exception::raise(const IStatus* status)
 {
-	SimpleStatusVector<> status_vector;
+	StaticStatusVector status_vector;
 	status_vector.mergeStatus(status);
 	throw status_exception(status_vector.begin());
 }
@@ -135,7 +135,7 @@ void status_exception::raise(const Arg::StatusVector& statusVector)
 	throw status_exception(statusVector.value());
 }
 
-void status_exception::stuffByException(SimpleStatusVector<>& status) const throw()
+void status_exception::stuffByException(StaticStatusVector& status) const throw()
 {
 	try
 	{
@@ -154,7 +154,7 @@ void BadAlloc::raise()
 	throw BadAlloc();
 }
 
-void BadAlloc::stuffByException(SimpleStatusVector<>& status) const throw()
+void BadAlloc::stuffByException(StaticStatusVector& status) const throw()
 {
 	fb_utils::statusBadAlloc(status.makeEmergencyStatus());
 }
@@ -171,7 +171,7 @@ void LongJump::raise()
 	throw LongJump();
 }
 
-void LongJump::stuffByException(SimpleStatusVector<>& status) const throw()
+void LongJump::stuffByException(StaticStatusVector& status) const throw()
 {
 	ISC_STATUS sv[] = {isc_arg_gds, isc_random, isc_arg_string,
 		(ISC_STATUS)(IPTR) "Unexpected call to Firebird::LongJump::stuffException()", isc_arg_end};

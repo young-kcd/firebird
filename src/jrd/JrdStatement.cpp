@@ -273,7 +273,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 			}
 		}
 
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 		tdbb->setRequest(old_request);
 		ERR_punt();
 	}

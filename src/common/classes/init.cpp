@@ -44,7 +44,7 @@ namespace
 		if (e)
 		{
 			// This is done to be able to look at status in debugger
-			Firebird::SimpleStatusVector<> status;
+			Firebird::StaticStatusVector status;
 			e->stuffException(status);
 		}
 

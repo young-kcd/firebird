@@ -5075,7 +5075,7 @@ ISC_STATUS rem_port::send_msg(P_DATA * data, PACKET* sendL)
 
 ISC_STATUS rem_port::send_response(PACKET* p, OBJCT obj, ULONG length, const Firebird::IStatus* status, bool defer_flag)
 {
-	SimpleStatusVector<> tmp;
+	StaticStatusVector tmp;
 	tmp.mergeStatus(status);
 	return send_response(p, obj, length, tmp.begin(), defer_flag);
 }
@@ -5102,7 +5102,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 
 	// Start by translating the status vector into "generic" form
 
-	Firebird::SimpleStatusVector<> new_vector;
+	Firebird::StaticStatusVector new_vector;
 	const ISC_STATUS* old_vector = status_vector;
 	const ISC_STATUS exit_code = old_vector[1];
 

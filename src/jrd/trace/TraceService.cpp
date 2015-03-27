@@ -342,7 +342,7 @@ int TRACE_main(UtilSvc* arg)
 	}
 	catch (const Exception& e)
 	{
-		SimpleStatusVector<> status;
+		StaticStatusVector status;
 		e.stuffException(status);
 		svc->initStatus();
 		svc->setServiceStatus(status.begin());

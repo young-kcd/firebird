@@ -233,7 +233,7 @@ void ERR_post_nothrow(const Arg::StatusVector& v, FbStatusVector* statusVector)
 		return;
 
 	// copy memory from/to
-	SimpleStatusVector<> tmp;
+	StaticStatusVector tmp;
 	tmp.assign(oldVector, lenOld);
 	tmp.append(toAdd, lenToAdd);
 	statusVector->setErrors2(tmp.getCount(), tmp.begin());

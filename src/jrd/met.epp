@@ -3381,7 +3381,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 						}
 						catch (const Exception& ex)
 						{
-							SimpleStatusVector<> temp_status;
+							StaticStatusVector temp_status;
 							ex.stuffException(temp_status);
 							const string name = procedure->getName().toString();
 							(Arg::Gds(isc_bad_proc_BLR) << Arg::Str(name)

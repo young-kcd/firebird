@@ -1123,7 +1123,8 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 		return *convIcu;
 	}
 
-	LocalStatus lastError;
+	LocalStatus ls;
+	CheckStatusWrapper lastError(&ls);
 	string version;
 	const int majorArray[] = {5, 4, 3, 6, 0};
 

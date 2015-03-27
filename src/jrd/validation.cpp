@@ -757,7 +757,7 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 
 		Firebird::string err;
 		err.printf("Database: %s\n\tValidation aborted", fileName.c_str());

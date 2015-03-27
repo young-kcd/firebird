@@ -35,7 +35,7 @@ namespace Firebird {
 
 ISC_STATUS DynamicStatusVector::load(const IStatus* status)
 {
-	SimpleStatusVector<> tmp;
+	StaticStatusVector tmp;
 	tmp.mergeStatus(status);
 	return save(tmp.begin(), false);
 }

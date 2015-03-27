@@ -365,7 +365,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			catch (const Firebird::Exception& ex)
 			{
 				iscLogException("startup:INET_connect:", ex);
-		 		Firebird::SimpleStatusVector<> st;
+		 		Firebird::StaticStatusVector st;
 				ex.stuffException(st);
 				gds__print_status(st.begin());
 				exit(STARTUP_ERROR);
@@ -441,7 +441,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 	}
 	catch (const Firebird::Exception& ex)
 	{
- 		Firebird::SimpleStatusVector<> st;
+ 		Firebird::StaticStatusVector st;
 		ex.stuffException(st);
 
 		char s[100];

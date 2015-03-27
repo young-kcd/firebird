@@ -1071,7 +1071,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 		if (header_fetched) {
 			CCH_RELEASE(tdbb, &window);
 		}
@@ -1236,7 +1236,7 @@ static bool check_for_file(thread_db* tdbb, const SCHAR* name, USHORT length)
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 		return false;
 	}
 

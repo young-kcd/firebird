@@ -103,7 +103,7 @@ protected:
 	class ImplStatusVector : public ImplBase
 	{
 	private:
-		SimpleStatusVector<> m_status_vector;
+		StaticStatusVector m_status_vector;
 		unsigned int m_warning;
 
 		bool appendErrors(const ImplBase* const v) throw();

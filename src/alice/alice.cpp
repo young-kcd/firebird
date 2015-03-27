@@ -111,7 +111,7 @@ int ALICE_main(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		Firebird::SimpleStatusVector<> status;
+		Firebird::StaticStatusVector status;
 		e.stuffException(status);
 		uSvc->setServiceStatus(status.begin());
 		uSvc->started();
@@ -565,7 +565,7 @@ int alice(Firebird::UtilSvc* uSvc)
 	catch (const Firebird::Exception& e)
 	{
 		// Non-alice exception was caught
-		Firebird::SimpleStatusVector<> status;
+		Firebird::StaticStatusVector status;
 		e.stuffException(status);
 		fb_utils::copyStatus(tdgbl->status_vector, ISC_STATUS_LENGTH, status.begin(), status.getCount());
 		ALICE_print_status(true, tdgbl->status_vector);

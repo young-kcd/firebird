@@ -89,7 +89,7 @@ int GSEC_main(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		Firebird::SimpleStatusVector<> status;
+		Firebird::StaticStatusVector status;
 		e.stuffException(status);
 		uSvc->initStatus();
 		uSvc->setServiceStatus(status.begin());
@@ -489,7 +489,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 			if (statusManager.getState() & Firebird::IStatus::STATE_ERRORS)
 			{
-				Firebird::SimpleStatusVector<> tmp;
+				Firebird::StaticStatusVector tmp;
 				tmp.mergeStatus(&statusManager);
 				GSEC_error_redirect(tmp.begin(), GsecMsg15);
 			}
@@ -694,7 +694,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 	catch (const Firebird::Exception& e)
 	{
 		// Real exceptions are coming here
-		Firebird::SimpleStatusVector<> status;
+		Firebird::StaticStatusVector status;
 		e.stuffException(status);
 
 		tdsec->tsec_throw = false;

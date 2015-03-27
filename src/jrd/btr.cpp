@@ -1279,7 +1279,7 @@ idx_e BTR_key(thread_db* tdbb, jrd_rel* relation, Record* record, index_desc* id
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 		key->key_length = 0;
 		return (tdbb->tdbb_flags & TDBB_sys_error) ? idx_e_interrupt : idx_e_conversion;
 	}
@@ -3828,7 +3828,7 @@ static ULONG fast_load(thread_db* tdbb,
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 		error = true;
 	}
 
@@ -3862,7 +3862,7 @@ static ULONG fast_load(thread_db* tdbb,
 	}	// try
 	catch (const Firebird::Exception& ex)
 	{
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 
 		// CCH_unwind does not released page buffers (as we
 		// set TDBB_no_cache_unwind flag), do it now

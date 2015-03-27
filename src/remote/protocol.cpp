@@ -1660,7 +1660,7 @@ static bool_t xdr_status_vector(XDR* xdrs, DynamicStatusVector*& vector)
 	if (!vector)
 		vector = FB_NEW(*getDefaultMemoryPool()) DynamicStatusVector();
 
-	SimpleStatusVector<> vectorDecode;
+	StaticStatusVector vectorDecode;
 	const ISC_STATUS* vectorEncode = vector->value();
 
 	Stack<SCHAR*> space;

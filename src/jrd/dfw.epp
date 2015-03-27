@@ -1337,11 +1337,11 @@ void DFW_perform_work(thread_db* tdbb, jrd_tra* transaction)
 			// Do any necessary cleanup
 			if (!phase)
 			{
-				ex.stuff_exception(tdbb->tdbb_status_vector);
+				ex.stuffException(tdbb->tdbb_status_vector);
 				ERR_punt();
 			}
 			else
-				ex.stuff_exception(&err_status);
+				ex.stuffException(&err_status);
 
 			phase = 0;
 			more = true;

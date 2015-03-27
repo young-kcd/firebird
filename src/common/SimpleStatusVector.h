@@ -87,6 +87,8 @@ public:
 	}
 };
 
+typedef SimpleStatusVector<> StaticStatusVector;
+
 } // namespace Firebird
 
 

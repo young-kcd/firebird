@@ -138,7 +138,7 @@ namespace fb_utils
 							const ISC_STATUS* const from, const unsigned int count) throw();
 	void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWrapper* from) throw();
 	unsigned int mergeStatus(ISC_STATUS* const to, unsigned int space, const Firebird::IStatus* from) throw();
-	void setIStatus(Firebird::IStatus* to, const ISC_STATUS* from) throw();
+	void setIStatus(Firebird::CheckStatusWrapper* to, const ISC_STATUS* from) throw();
 	unsigned int statusLength(const ISC_STATUS* const status) throw();
 	unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
 						   const ISC_STATUS* sub, unsigned int csub) throw();

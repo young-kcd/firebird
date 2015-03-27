@@ -1801,7 +1801,7 @@ void TRA_sweep(thread_db* tdbb)
 	{
 		iscLogException("Error during sweep:", ex);
 
-		ex.stuff_exception(tdbb->tdbb_status_vector);
+		ex.stuffException(tdbb->tdbb_status_vector);
 
 		if (transaction)
 		{
@@ -1811,7 +1811,7 @@ void TRA_sweep(thread_db* tdbb)
 			}
 			catch (const Firebird::Exception& ex2)
 			{
-				ex2.stuff_exception(tdbb->tdbb_status_vector);
+				ex2.stuffException(tdbb->tdbb_status_vector);
 			}
 		}
 

@@ -158,7 +158,7 @@ public:
 	}
 
 private:
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	Rbl* blob;
 };
@@ -224,7 +224,7 @@ private:
 		  transaction(from->transaction)
 	{ }
 
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	Attachment* remAtt;
 	Rtr* transaction;
@@ -272,7 +272,7 @@ public:
 
 private:
 	void releaseStatement();
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	Statement* stmt;
 	RefPtr<IMessageMetadata> outputFormat;
@@ -347,7 +347,7 @@ public:
 	}
 
 private:
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	StatementMetadata metadata;
 	Attachment* remAtt;
@@ -397,7 +397,7 @@ public:
 	}
 
 private:
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	Attachment* remAtt;
 	Rrq* rq;
@@ -434,7 +434,7 @@ public:
 	}
 
 private:
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	Rvnt* rvnt;
 	Rdb* rdb;
@@ -527,7 +527,7 @@ public:
 	Statement* createStatement(CheckStatusWrapper* status, unsigned dialect);
 
 private:
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	Rdb* rdb;
 	const PathName dbPath;
@@ -565,7 +565,7 @@ public:
 	Service(Rdb* handle) : rdb(handle) { }
 
 private:
-	void freeClientData(IStatus* status, bool force = false);
+	void freeClientData(CheckStatusWrapper* status, bool force = false);
 
 	Rdb* rdb;
 };
@@ -900,7 +900,7 @@ void Blob::getInfo(CheckStatusWrapper* status,
 }
 
 
-void Blob::freeClientData(IStatus* status, bool force)
+void Blob::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *
@@ -1001,7 +1001,7 @@ void Blob::close(CheckStatusWrapper* status)
 }
 
 
-void Events::freeClientData(IStatus* status, bool force)
+void Events::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *
@@ -1540,7 +1540,7 @@ void Attachment::executeDyn(CheckStatusWrapper* status, ITransaction* apiTra, un
 }
 
 
-void Attachment::freeClientData(IStatus* status, bool force)
+void Attachment::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *
@@ -2206,7 +2206,7 @@ ITransaction* Attachment::execute(CheckStatusWrapper* status, ITransaction* apiT
 }
 
 
-void Statement::freeClientData(IStatus* status, bool force)
+void Statement::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *
@@ -3212,7 +3212,7 @@ IMessageMetadata* ResultSet::getMetadata(CheckStatusWrapper* status)
 	return outputFormat;
 }
 
-void ResultSet::freeClientData(IStatus* status, bool force)
+void ResultSet::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *
@@ -4181,7 +4181,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(CheckStatusWrapper* sta
 }
 
 
-void Request::freeClientData(IStatus* status, bool force)
+void Request::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *
@@ -4363,7 +4363,7 @@ void Transaction::rollbackRetaining(CheckStatusWrapper* status)
 }
 
 
-void Transaction::freeClientData(IStatus* status, bool force)
+void Transaction::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *
@@ -4650,7 +4650,7 @@ Firebird::IService* Loopback::attachServiceManager(CheckStatusWrapper* status, c
 }
 
 
-void Service::freeClientData(IStatus* status, bool force)
+void Service::freeClientData(CheckStatusWrapper* status, bool force)
 {
 /**************************************
  *

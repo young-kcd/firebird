@@ -1042,7 +1042,7 @@ static void cleanup_database(FB_API_HANDLE* db_handle, void* /*dummy*/)
 //
 static ISC_STATUS error(const Firebird::Exception& ex)
 {
-	Firebird::SimpleStatusVector<> v;
+	Firebird::StaticStatusVector v;
 	ex.stuffException(v);
 	makePermanentVector(v.begin());
 

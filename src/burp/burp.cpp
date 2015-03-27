@@ -139,7 +139,7 @@ int BURP_main(Firebird::UtilSvc* uSvc)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		Firebird::SimpleStatusVector<> status;
+		Firebird::StaticStatusVector status;
 		e.stuffException(status);
 		uSvc->initStatus();
 		uSvc->setServiceStatus(status.begin());
@@ -386,7 +386,7 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 	}
 	catch (const Firebird::Exception& e)
 	{
-		Firebird::SimpleStatusVector<> s;
+		Firebird::StaticStatusVector s;
 		e.stuffException(s);
 		BURP_print_status(true, s.begin());
 		if (svc_handle)
@@ -1237,7 +1237,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	{
 		// Non-burp exception was caught
 		tdgbl->burp_throw = false;
-		Firebird::SimpleStatusVector<> s;
+		Firebird::StaticStatusVector s;
 		e.stuffException(s);
 		fb_utils::copyStatus(tdgbl->status_vector, ISC_STATUS_LENGTH, s.begin(), s.getCount());
 		BURP_print_status(true, tdgbl->status_vector);

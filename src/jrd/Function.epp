@@ -430,7 +430,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 						}
 						catch (const Exception& ex)
 						{
-							SimpleStatusVector<> temp_status;
+							StaticStatusVector temp_status;
 							ex.stuffException(temp_status);
 							const string name = function->getName().toString();
 							(Arg::Gds(isc_bad_fun_BLR) << Arg::Str(name)

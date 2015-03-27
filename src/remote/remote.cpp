@@ -825,7 +825,8 @@ void Rrq::saveStatus(const Firebird::Exception& ex) throw()
 {
 	if (rrqStatus.isSuccess())
 	{
-		Firebird::LocalStatus tmp;
+		Firebird::LocalStatus ls;
+		Firebird::CheckStatusWrapper tmp(&ls);
 		ex.stuffException(&tmp);
 		rrqStatus.save(&tmp);
 	}
@@ -847,7 +848,8 @@ void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
 
 	if (overwrite || !rsr_status->getError())
 	{
-		Firebird::LocalStatus temp;
+		Firebird::LocalStatus ls;
+		Firebird::CheckStatusWrapper temp(&ls);
 		ex.stuffException(&temp);
 		rsr_status->save(&temp);
 	}
@@ -1118,7 +1120,7 @@ void rem_port::checkResponse(Firebird::IStatus* warning, PACKET* packet, bool ch
 
 	// Translate any gds codes into local operating specific codes
 
-	Firebird::SimpleStatusVector<> newVector;
+	Firebird::StaticStatusVector newVector;
 
 	while (*vector != isc_arg_end)
 	{

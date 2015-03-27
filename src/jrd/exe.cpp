@@ -1164,7 +1164,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
 
-			ex.stuff_exception(tdbb->tdbb_status_vector);
+			ex.stuffException(tdbb->tdbb_status_vector);
 			trigger_failure(tdbb, trigger);
 		}
 
@@ -1300,7 +1300,7 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		}	// try
 		catch (const Firebird::Exception& ex)
 		{
-			ex.stuff_exception(tdbb->tdbb_status_vector);
+			ex.stuffException(tdbb->tdbb_status_vector);
 
 			request->adjustCallerStats();
 

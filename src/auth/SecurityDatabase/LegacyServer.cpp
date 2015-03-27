@@ -429,7 +429,7 @@ void SecurityDatabase::handler()
 	}
 	catch (Exception &ex)
 	{
- 		SimpleStatusVector<> st;
+ 		StaticStatusVector st;
  		ex.stuffException(st);
 		const ISC_STATUS* status = st.begin();
 		if (status[0] == 1 && status[1] != isc_att_shutdown)
@@ -461,7 +461,7 @@ int SecurityDatabase::shutdown()
 	}
 	catch (Exception &ex)
 	{
- 		SimpleStatusVector<> st;
+ 		StaticStatusVector st;
  		ex.stuffException(st);
 		const ISC_STATUS* status = st.begin();
 		if (status[0] == 1 && status[1] != isc_att_shutdown)

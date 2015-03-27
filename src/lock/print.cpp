@@ -661,7 +661,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	  {
 		FPRINTF(outfile, "Unable to access lock table.\n");
 
- 		Firebird::SimpleStatusVector<> st;
+ 		Firebird::StaticStatusVector st;
 		ex.stuffException(st);
 		gds__print_status(st.begin());
 

@@ -761,7 +761,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 			if (trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_ATTACH))
 			{
-				ex.stuff_exception(&status_vector);
+				ex.stuffException(&status_vector);
 				const ISC_STATUS exc = status_vector[1];
 				const bool no_priv = (exc == isc_login || exc == isc_no_priv);
 
@@ -1451,7 +1451,7 @@ ISC_STATUS Service::query2(thread_db* /*tdbb*/,
 		if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_QUERY))
 		{
 			FbLocalStatus status_vector;
-			ex.stuff_exception(&status_vector);
+			ex.stuffException(&status_vector);
 
 			const ISC_STATUS exc = status_vector[1];
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv ||
@@ -1835,7 +1835,7 @@ void Service::query(USHORT			send_item_length,
 		if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_QUERY))
 		{
 			FbLocalStatus status_vector;
-			ex.stuff_exception(&status_vector);
+			ex.stuffException(&status_vector);
 
 			const ISC_STATUS exc = status_vector[1];
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
@@ -2055,7 +2055,7 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		if (svc_trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_START))
 		{
 			FbLocalStatus status_vector;
-			ex.stuff_exception(&status_vector);
+			ex.stuffException(&status_vector);
 
 			const ISC_STATUS exc = status_vector[1];
 			const bool no_priv = (exc == isc_login || exc == isc_no_priv);
@@ -2122,7 +2122,7 @@ void Service::readFbLog()
 	catch (const Firebird::Exception& e)
 	{
 		setDataMode(false);
-		e.stuff_exception(&svc_status);
+		e.stuffException(&svc_status);
 	}
 
 	if (file)

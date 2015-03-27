@@ -1546,7 +1546,7 @@ static ISC_STATUS openOrCreateBlob(ISC_STATUS* userStatus, FB_API_HANDLE* dbHand
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1569,7 +1569,7 @@ ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, void* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1579,7 +1579,7 @@ ISC_STATUS API_ROUTINE fb_database_crypt_callback(ISC_STATUS* userStatus, void* 
 //-------------------------------------
 
 
-Firebird::IAttachment* handleToIAttachment(Firebird::IStatus* status, FB_API_HANDLE* handle)
+Firebird::IAttachment* handleToIAttachment(Firebird::CheckStatusWrapper* status, FB_API_HANDLE* handle)
 {
 	try
 	{
@@ -1596,7 +1596,7 @@ Firebird::IAttachment* handleToIAttachment(Firebird::IStatus* status, FB_API_HAN
 }
 
 
-Firebird::ITransaction* handleToITransaction(Firebird::IStatus* status, FB_API_HANDLE* handle)
+Firebird::ITransaction* handleToITransaction(Firebird::CheckStatusWrapper* status, FB_API_HANDLE* handle)
 {
 	try
 	{
@@ -1647,7 +1647,7 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1670,7 +1670,7 @@ ISC_STATUS API_ROUTINE isc_blob_info(ISC_STATUS* userStatus, FB_API_HANDLE* blob
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1702,7 +1702,7 @@ ISC_STATUS API_ROUTINE isc_cancel_blob(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1731,7 +1731,7 @@ ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1752,7 +1752,7 @@ ISC_STATUS API_ROUTINE fb_cancel_operation(ISC_STATUS* userStatus, FB_API_HANDLE
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1776,7 +1776,7 @@ ISC_STATUS API_ROUTINE isc_close_blob(ISC_STATUS* userStatus, FB_API_HANDLE* blo
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1799,7 +1799,7 @@ ISC_STATUS API_ROUTINE isc_commit_transaction(ISC_STATUS* userStatus, FB_API_HAN
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1821,7 +1821,7 @@ ISC_STATUS API_ROUTINE isc_commit_retaining(ISC_STATUS* userStatus, FB_API_HANDL
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1859,7 +1859,7 @@ ISC_STATUS API_ROUTINE isc_compile_request(ISC_STATUS* userStatus, FB_API_HANDLE
 			request->free(&tempCheckStatusWrapper);
 		}
 
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1886,8 +1886,9 @@ ISC_STATUS API_ROUTINE isc_compile_request2(ISC_STATUS* userStatus, FB_API_HANDL
 		isc_release_request(temp, reqHandle);
 
 		StatusVector status(userStatus);
+		CheckStatusWrapper statusWrapper(&status);
 
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 		return status[1];
 	}
 }
@@ -1951,7 +1952,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -1979,7 +1980,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS* userStatus, FB_API_HANDL
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2001,7 +2002,7 @@ ISC_STATUS API_ROUTINE isc_database_info(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2024,7 +2025,7 @@ ISC_STATUS API_ROUTINE isc_ddl(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle,
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2047,7 +2048,7 @@ ISC_STATUS API_ROUTINE isc_detach_database(ISC_STATUS* userStatus, FB_API_HANDLE
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2081,7 +2082,7 @@ ISC_STATUS API_ROUTINE isc_drop_database(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2116,8 +2117,9 @@ ISC_STATUS API_ROUTINE isc_dsql_alloc_statement2(ISC_STATUS* userStatus, FB_API_
 		isc_dsql_free_statement(temp, stmtHandle, DSQL_drop);
 
 		StatusVector status(userStatus);
+		CheckStatusWrapper statusWrapper(&status);
 
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 		return status[1];
 	}
 }
@@ -2128,6 +2130,7 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS* userStatus, FB_AP
 	FB_API_HANDLE* stmtHandle)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 	IscStatement* statement = NULL;
 
 	try
@@ -2147,7 +2150,7 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS* userStatus, FB_AP
 			*stmtHandle = 0;
 			statement->release();
 		}
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2175,7 +2178,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2203,7 +2206,7 @@ ISC_STATUS API_ROUTINE isc_dsql_describe_bind(ISC_STATUS* userStatus, FB_API_HAN
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2266,7 +2269,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2325,7 +2328,7 @@ ISC_STATUS API_ROUTINE isc_dsql_execute2_m(ISC_STATUS* userStatus, FB_API_HANDLE
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2397,7 +2400,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed2(ISC_STATUS* userStatus, FB_API_HANDL
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return 	status[1];
@@ -2475,7 +2478,7 @@ ISC_STATUS API_ROUTINE isc_dsql_exec_immed3_m(ISC_STATUS* userStatus, FB_API_HAN
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2504,7 +2507,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch(ISC_STATUS* userStatus, FB_API_HANDLE* stm
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2538,7 +2541,7 @@ ISC_STATUS API_ROUTINE isc_dsql_fetch_m(ISC_STATUS* userStatus, FB_API_HANDLE* s
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2578,7 +2581,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2646,7 +2649,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare(ISC_STATUS* userStatus, FB_API_HANDLE* t
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2696,7 +2699,7 @@ ISC_STATUS API_ROUTINE isc_dsql_prepare_m(ISC_STATUS* userStatus, FB_API_HANDLE*
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2726,7 +2729,7 @@ ISC_STATUS API_ROUTINE isc_dsql_set_cursor_name(ISC_STATUS* userStatus, FB_API_H
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2751,7 +2754,7 @@ ISC_STATUS API_ROUTINE isc_dsql_sql_info(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2831,7 +2834,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	if (events)
@@ -2929,7 +2932,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 			events->release();
 		}
 
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2965,7 +2968,7 @@ ISC_STATUS API_ROUTINE isc_get_segment(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -2993,7 +2996,7 @@ ISC_STATUS API_ROUTINE isc_get_slice(ISC_STATUS* userStatus, FB_API_HANDLE* dbHa
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3016,7 +3019,7 @@ ISC_STATUS API_ROUTINE fb_disconnect_transaction(ISC_STATUS* userStatus, FB_API_
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3062,7 +3065,7 @@ ISC_STATUS API_ROUTINE isc_prepare_transaction2(ISC_STATUS* userStatus, FB_API_H
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3083,7 +3086,7 @@ ISC_STATUS API_ROUTINE isc_put_segment(ISC_STATUS* userStatus, FB_API_HANDLE* bl
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3108,7 +3111,7 @@ ISC_STATUS API_ROUTINE isc_put_slice(ISC_STATUS* userStatus, FB_API_HANDLE* dbHa
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3129,7 +3132,7 @@ ISC_STATUS API_ROUTINE isc_receive(ISC_STATUS* userStatus, FB_API_HANDLE* reqHan
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3158,7 +3161,7 @@ ISC_STATUS API_ROUTINE isc_reconnect_transaction(ISC_STATUS* userStatus, FB_API_
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3181,7 +3184,7 @@ ISC_STATUS API_ROUTINE isc_release_request(ISC_STATUS* userStatus, FB_API_HANDLE
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3204,7 +3207,7 @@ ISC_STATUS API_ROUTINE isc_request_info(ISC_STATUS* userStatus, FB_API_HANDLE* r
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3243,7 +3246,7 @@ ISC_STATUS API_ROUTINE isc_rollback_retaining(ISC_STATUS* userStatus, FB_API_HAN
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3266,7 +3269,7 @@ ISC_STATUS API_ROUTINE isc_rollback_transaction(ISC_STATUS* userStatus, FB_API_H
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3290,7 +3293,7 @@ ISC_STATUS API_ROUTINE isc_seek_blob(ISC_STATUS* userStatus, FB_API_HANDLE* blob
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3312,7 +3315,7 @@ ISC_STATUS API_ROUTINE isc_send(ISC_STATUS* userStatus, FB_API_HANDLE* reqHandle
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3358,7 +3361,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 			service->detach(&tempCheckStatusWrapper);
 		}
 
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3381,7 +3384,7 @@ ISC_STATUS API_ROUTINE isc_service_detach(ISC_STATUS* userStatus, FB_API_HANDLE*
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3409,7 +3412,7 @@ ISC_STATUS API_ROUTINE isc_service_query(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3433,7 +3436,7 @@ ISC_STATUS API_ROUTINE isc_service_start(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3457,7 +3460,7 @@ ISC_STATUS API_ROUTINE isc_start_and_send(ISC_STATUS* userStatus, FB_API_HANDLE*
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3480,7 +3483,7 @@ ISC_STATUS API_ROUTINE isc_start_request(ISC_STATUS* userStatus, FB_API_HANDLE* 
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3547,7 +3550,7 @@ ISC_STATUS API_ROUTINE isc_start_multiple(ISC_STATUS* userStatus, FB_API_HANDLE*
 		if (multiTrans)
 			multiTrans->release();
 
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3581,8 +3584,9 @@ ISC_STATUS API_ROUTINE_VARARG isc_start_transaction(ISC_STATUS* userStatus,
 	catch (const Exception& e)
 	{
 		StatusVector status(userStatus);
+		CheckStatusWrapper statusWrapper(&status);
 
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 		return status[1];
 	}
 }
@@ -3608,7 +3612,7 @@ ISC_STATUS API_ROUTINE isc_transact_request(ISC_STATUS* userStatus, FB_API_HANDL
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3636,7 +3640,7 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS* userStatus, FB_API_H
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3659,7 +3663,7 @@ ISC_STATUS API_ROUTINE isc_transaction_info(ISC_STATUS* userStatus, FB_API_HANDL
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3680,7 +3684,7 @@ ISC_STATUS API_ROUTINE isc_unwind_request(ISC_STATUS* userStatus, FB_API_HANDLE*
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3705,6 +3709,7 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* userStatus, FB_SHUTDOWN_
 	const int mask, void* arg)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -3712,7 +3717,7 @@ ISC_STATUS API_ROUTINE fb_shutdown_callback(ISC_STATUS* userStatus, FB_SHUTDOWN_
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3732,7 +3737,7 @@ ISC_STATUS API_ROUTINE fb_ping(ISC_STATUS* userStatus, FB_API_HANDLE* dbHandle)
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3744,6 +3749,7 @@ ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HAN
 	void* obj)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -3756,7 +3762,7 @@ ISC_STATUS API_ROUTINE fb_get_database_handle(ISC_STATUS* userStatus, FB_API_HAN
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];
@@ -3768,6 +3774,7 @@ ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_
 	void* obj)
 {
 	StatusVector status(userStatus);
+	CheckStatusWrapper statusWrapper(&status);
 
 	try
 	{
@@ -3780,7 +3787,7 @@ ISC_STATUS API_ROUTINE fb_get_transaction_handle(ISC_STATUS* userStatus, FB_API_
 	}
 	catch (const Exception& e)
 	{
-		e.stuffException(&status);
+		e.stuffException(&statusWrapper);
 	}
 
 	return status[1];

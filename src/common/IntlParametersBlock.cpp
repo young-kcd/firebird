@@ -161,7 +161,8 @@ void IntlParametersBlock::processParametersBlock(ProcessString* processString, C
 	}
 	catch (const Firebird::status_exception& st)
 	{
-		LocalStatus l;
+		LocalStatus ls;
+		CheckStatusWrapper l(&ls);
 		st.stuffException(&l);
 		if ((l.getState() & IStatus::STATE_ERRORS) && (l.getErrors()[1] == isc_bad_conn_str) && tagName)
 		{

@@ -51,7 +51,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  	}
 	catch (const Firebird::Exception& ex)
  	{
- 		Firebird::SimpleStatusVector<> st;
+ 		Firebird::StaticStatusVector st;
  		ex.stuffException(st);
  		isc_print_status(st.begin());
  	}
