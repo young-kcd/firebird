@@ -26,7 +26,7 @@ void Exception::stuffException(DynamicStatusVector& status_vector) const throw()
 	{
 		status_vector.save(status.begin());
 	}
-	catch(const BadAlloc&)
+	catch (const BadAlloc&)
 	{
 		ISC_STATUS tmp[3];
 		processUnexpectedException(tmp);
@@ -48,11 +48,11 @@ void Exception::processUnexpectedException(ISC_STATUS* vector) throw()
 	{
 		throw;
 	}
-	catch(const BadAlloc&)
+	catch (const BadAlloc&)
 	{
 		fb_utils::statusBadAlloc(vector);
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		fb_assert(false);
 
@@ -93,7 +93,7 @@ void status_exception::set_status(const ISC_STATUS *new_vector) throw()
 		len = makeDynamicStrings(len, m_status_vector, new_vector);
 		m_status_vector[len] = isc_arg_end;
 	}
-	catch(const Exception&)
+	catch (const Exception&)
 	{
 		if (m_status_vector != m_buffer)
 		{
@@ -141,7 +141,7 @@ void status_exception::stuffByException(StaticStatusVector& status) const throw(
 	{
 		status.assign(m_status_vector, fb_utils::statusLength(m_status_vector) + 1);
 	}
-	catch(const BadAlloc&)
+	catch (const BadAlloc&)
 	{
 		processUnexpectedException(status.makeEmergencyStatus());
 	}
@@ -180,7 +180,7 @@ void LongJump::stuffByException(StaticStatusVector& status) const throw()
 	{
 		status.assign(sv, FB_NELEM(sv));
 	}
-	catch(const BadAlloc&)
+	catch (const BadAlloc&)
 	{
 		processUnexpectedException(status.makeEmergencyStatus());
 	}

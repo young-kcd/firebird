@@ -1202,7 +1202,7 @@ public:
 		{
 			return dirCache().getDir(code);
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			return NULL;
 		}
@@ -1216,7 +1216,7 @@ public:
 			PluginLoadInfo info(pluginName);
 			return findDefConfig(info.conf, info.plugConfigFile);
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			return NULL;
 		}
@@ -1228,7 +1228,7 @@ public:
 		{
 			return getFirebirdConfig();
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			return NULL;
 		}
@@ -1246,7 +1246,7 @@ public:
 			firebirdConf->addRef();
 			return firebirdConf;
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			return NULL;
 		}

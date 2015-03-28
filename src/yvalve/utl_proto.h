@@ -90,4 +90,3 @@ namespace Why
 }
 
 #endif // JRD_UTL_PROTO_H
-

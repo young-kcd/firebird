@@ -89,7 +89,7 @@ unsigned makeDynamicStrings(unsigned length, ISC_STATUS* const dst, const ISC_ST
 			*to++ = (ISC_STATUS)(IPTR) string;
 			memcpy(string, reinterpret_cast<const char*>(from[1]), from[0]);
 			string += *from++;
-			*string++ = 0;
+			*string++ = '\0';
 			break;
 
 		case isc_arg_string:
@@ -109,6 +109,7 @@ unsigned makeDynamicStrings(unsigned length, ISC_STATUS* const dst, const ISC_ST
 	}
 
 	*to++ = isc_arg_end;
+
 	return (to - dst) - 1;
 }
 
@@ -136,6 +137,7 @@ char* findDynamicStrings(unsigned length, ISC_STATUS* ptr) throw()
 			break;
 		}
 	}
+
 	return NULL;
 }
 

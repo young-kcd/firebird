@@ -133,7 +133,6 @@ struct impure_value_ex : public impure_value
 	blb* vlu_blob;
 };
 
-
 const int VLU_computed	= 1;	// An invariant sub-query has been computed
 const int VLU_null		= 2;	// An invariant sub-query computed to null
 const int VLU_checked	= 4;	// Constraint already checked in first read or assignment to argument/variable

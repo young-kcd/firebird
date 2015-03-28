@@ -57,7 +57,7 @@ public:
 		int state = from->getState();
 		this->clear();
 
-		if (state & Firebird::IStatus::STATE_ERRORS)
+		if (state & IStatus::STATE_ERRORS)
 		{
 			const ISC_STATUS* s = from->getErrors();
 			unsigned copied = fb_utils::statusLength(s);
@@ -70,7 +70,7 @@ public:
 			this->push(0);
 		}
 
-		if (state & Firebird::IStatus::STATE_WARNINGS)
+		if (state & IStatus::STATE_WARNINGS)
 		{
 			const ISC_STATUS* s = from->getWarnings();
 			unsigned copied = fb_utils::statusLength(s);

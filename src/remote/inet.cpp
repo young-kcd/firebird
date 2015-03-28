@@ -653,7 +653,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 			CheckStatusWrapper statusWrapper(&warning);
 			REMOTE_check_response(&statusWrapper, rdb, packet, false);
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			disconnect(port);
 			delete rdb;
@@ -2741,7 +2741,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 					{
 						inet_error(false, port, "select in packet_receive", isc_net_read_err, inetErrNo);
 					}
-					catch(const Exception&) { }
+					catch (const Exception&) { }
 				}
 				return false;
 			}
@@ -2796,7 +2796,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 		{
 			inet_error(false, port, "read", isc_net_read_err, inetErrNo);
 		}
-		catch(const Exception&) { }
+		catch (const Exception&) { }
 		return false;
 	}
 
@@ -2820,7 +2820,7 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 			{
 				inet_error(false, port, "simulated error - read", isc_net_read_err);
 			}
-			catch(const Exception&) { }
+			catch (const Exception&) { }
 			return false;
 		}
 	} // end scope
@@ -2899,7 +2899,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			{
 				inet_error(false, port, "send", isc_net_write_err, INET_ERRNO);
 			}
-			catch(const Exception&) { }
+			catch (const Exception&) { }
 			return false;
 		}
 
@@ -2974,7 +2974,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			{
 				inet_error(false, port, "send/oob", isc_net_write_err, inetErrNo);
 			}
-			catch(const Exception&) { }
+			catch (const Exception&) { }
 			return false;
 		}
 	}
@@ -2993,7 +2993,7 @@ static bool packet_send( rem_port* port, const SCHAR* buffer, SSHORT buffer_leng
 			{
 				inet_error(false, port, "simulated error - send", isc_net_write_err, 0);
 			}
-			catch(const Exception&) { }
+			catch (const Exception&) { }
 			return false;
 		}
 	} // end scope

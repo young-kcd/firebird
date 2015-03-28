@@ -197,7 +197,7 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 				check(status);
 				att = NULL;
 			}
-			catch(const Exception&)
+			catch (const Exception&)
 			{
 				LocalStatus ls;
 				CheckStatusWrapper s(&ls);

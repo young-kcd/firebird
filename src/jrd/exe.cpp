@@ -173,7 +173,7 @@ void StatusXcp::copyTo(FbStatusVector* vector) const
 
 bool StatusXcp::success() const
 {
-	return !(status->getState() & FbStatusVector::STATE_ERRORS);
+	return !(status->getState() & IStatus::STATE_ERRORS);
 }
 
 SLONG StatusXcp::as_gdscode() const

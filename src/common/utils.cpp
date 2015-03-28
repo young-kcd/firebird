@@ -1172,10 +1172,10 @@ void copyStatus(Firebird::CheckStatusWrapper* to, const Firebird::CheckStatusWra
 {
 	to->init();
 
-	int flags = from->getState();
-	if (flags & Firebird::CheckStatusWrapper::STATE_ERRORS)
+	unsigned flags = from->getState();
+	if (flags & Firebird::IStatus::STATE_ERRORS)
 		to->setErrors(from->getErrors());
-	if (flags & Firebird::CheckStatusWrapper::STATE_WARNINGS)
+	if (flags & Firebird::IStatus::STATE_WARNINGS)
 		to->setWarnings(from->getWarnings());
 }
 
@@ -1287,6 +1287,7 @@ unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
 
 			unsigned l1, l2;
 			const char *s1, *s2;
+
 			switch (*op1)
 			{
 			case isc_arg_cstring:
@@ -1297,13 +1298,13 @@ unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
 				{
 					l1 = op1[1];
 					l2 = op2[1];
-					s1 = (const char*)(op1[2]);
-					s2 = (const char*)(op2[2]);
+					s1 = (const char*) (op1[2]);
+					s2 = (const char*) (op2[2]);
 				}
 				else
 				{
-					s1 = (const char*)(op1[1]);
-					s2 = (const char*)(op2[1]);
+					s1 = (const char*) (op1[1]);
+					s2 = (const char*) (op2[1]);
 					l1 = strlen(s1);
 					l2 = strlen(s2);
 				}
@@ -1321,6 +1322,7 @@ unsigned int subStatus(const ISC_STATUS* in, unsigned int cin,
 			}
 
 		}
+
 		return pos;
 
 miss:	pos += (in[pos] == isc_arg_cstring ? 3 : 2);

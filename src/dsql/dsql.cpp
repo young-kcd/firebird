@@ -603,7 +603,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	FbLocalStatus localStatus;
 
 	// check for warnings
-	if (tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_WARNINGS)
+	if (tdbb->tdbb_status_vector->getState() & IStatus::STATE_WARNINGS)
 	{
 		// save a status vector
 		fb_utils::copyStatus(&localStatus, tdbb->tdbb_status_vector);
@@ -628,7 +628,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 	}
 
 	// restore warnings (if there are any)
-	if (localStatus->getState() & FbStatusVector::STATE_WARNINGS)
+	if (localStatus->getState() & IStatus::STATE_WARNINGS)
 	{
 		Arg::StatusVector cur(tdbb->tdbb_status_vector->getWarnings());
 		Arg::StatusVector saved(localStatus->getWarnings());

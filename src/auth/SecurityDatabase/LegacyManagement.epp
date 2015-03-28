@@ -621,7 +621,7 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 
 						found = true;
 					}
-					catch(const Firebird::Exception& ex)
+					catch (const Firebird::Exception& ex)
 					{
 					  	ex.stuffException(s);
 					  	s = &statusWrapper2;
@@ -703,7 +703,7 @@ int SecurityDatabaseManagement::execute(Firebird::CheckStatusWrapper* st, Firebi
 
 						found = true;
 					}
-					catch(const Firebird::Exception& ex)
+					catch (const Firebird::Exception& ex)
 					{
 					  	ex.stuffException(s);
 					  	s = &statusWrapper2;

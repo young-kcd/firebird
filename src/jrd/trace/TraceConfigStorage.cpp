@@ -273,7 +273,7 @@ void ConfigStorage::checkFile()
 
 			addSession(session);
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			iscLogException("Cannot open audit configuration file", ex);
 		}

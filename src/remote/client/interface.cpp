@@ -5777,7 +5777,7 @@ static void batch_gds_receive(rem_port*		port,
 #endif
 				request->saveStatus(&status);
 			}
-			catch(const Exception& ex)
+			catch (const Exception& ex)
 			{
 #ifdef DEBUG
 				fprintf(stderr, "Got batch error %ld Max message = %d\n",
@@ -7135,7 +7135,7 @@ static void send_cancel_event(Rvnt* event)
 		send_packet(rdb->rdb_port, packet);
 		receive_response(&dummy, rdb, packet);
 	}
-	catch(const Exception&) { }
+	catch (const Exception&) { }
 
 	// If the event has never been fired, fire it off with a length of 0.
 	// Note: it is job of person being notified to check that counts

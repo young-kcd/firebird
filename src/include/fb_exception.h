@@ -49,8 +49,7 @@ namespace Firebird
 {
 class MemoryPool;
 class DynamicStatusVector;
-template <unsigned S = ISC_STATUS_LENGTH>
-class SimpleStatusVector;
+template <unsigned S = ISC_STATUS_LENGTH> class SimpleStatusVector;
 typedef SimpleStatusVector<> StaticStatusVector;
 
 class Exception
@@ -68,8 +67,10 @@ public:
 	void stuffException(DynamicStatusVector& status_vector) const throw();
 	void stuffException(CheckStatusWrapper* status_vector) const throw();
 	virtual ~Exception() throw();
+
 private:
 	virtual void stuffByException(StaticStatusVector& status_vector) const throw() = 0;
+
 public:
 	virtual const char* what() const throw() = 0;
 };

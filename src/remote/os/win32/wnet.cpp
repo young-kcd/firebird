@@ -230,7 +230,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 			Firebird::LocalStatus warning;		// Ignore connect warnings for a while
 			REMOTE_check_response(&warning, rdb, packet);
 		}
-		catch(const Firebird::Exception&)
+		catch (const Firebird::Exception&)
 		{
 			disconnect(port);
 			delete rdb;

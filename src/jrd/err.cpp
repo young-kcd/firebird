@@ -218,7 +218,7 @@ void ERR_post_nothrow(const Arg::StatusVector& v, FbStatusVector* statusVector)
 	if (!statusVector)
 		statusVector = JRD_get_thread_data()->tdbb_status_vector;
 
-	if (!(statusVector->getState() & FbStatusVector::STATE_ERRORS))
+	if (!(statusVector->getState() & IStatus::STATE_ERRORS))
 	{
 		// this is a blank status vector just stuff the status
 		statusVector->setErrors2(lenToAdd, toAdd);

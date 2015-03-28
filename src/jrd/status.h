@@ -26,8 +26,8 @@
  */
 
 
-#ifndef FB_MFbStatusVector_H
-#define FB_MFbStatusVector_H
+#ifndef JRD_STATUS_H
+#define JRD_STATUS_H
 
 #include "../common/StatusHolder.h"
 #include "../common/utils_proto.h"
@@ -76,7 +76,7 @@ namespace Jrd
 		{
 			if (localStatusVector.isDirty())
 			{
-				if (localStatus.getState() & FbStatusVector::STATE_ERRORS)
+				if (localStatus.getState() & Firebird::IStatus::STATE_ERRORS)
 					raise();
 			}
 		}
@@ -103,4 +103,4 @@ namespace Jrd
 
 }
 
-#endif // FB_MFbStatusVector_H
+#endif // JRD_STATUS_H

@@ -911,7 +911,7 @@ bool BackupManager::actualizeState(thread_db* tdbb)
 
 	SET_TDBB(tdbb);
 
-	FbStatusVector *status = tdbb->tdbb_status_vector;
+	FbStatusVector* status = tdbb->tdbb_status_vector;
 
 	// Read original page from database file or shadows.
 	SSHORT retryCount = 0;

@@ -1043,7 +1043,7 @@ static idx_e check_duplicates(thread_db* tdbb,
 	Firebird::HalfStaticArray<UCHAR, 256> tmp;
 	RecordBitmap::Accessor accessor(insertion->iib_duplicates);
 
-	fb_assert(!(tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_ERRORS));
+	fb_assert(!(tdbb->tdbb_status_vector->getState() & IStatus::STATE_ERRORS));
 
 	if (accessor.getFirst())
 	do {

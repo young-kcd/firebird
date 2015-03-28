@@ -90,7 +90,7 @@ public:
 				builder->addRef();
 			}
 		}
-		catch(...)
+		catch (...)
 		{
 			s->dispose();
 			throw;

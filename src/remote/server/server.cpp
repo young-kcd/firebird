@@ -1167,7 +1167,7 @@ void SRVR_main(rem_port* main_port, USHORT flags)
 				break;
 			}
 		}
-		catch(const Exception& ex)
+		catch (const Exception& ex)
 		{
 			// even if it's already logged somewhere, repeat it
 			iscLogException("SRVR_main", ex);
@@ -5497,7 +5497,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 		send_response(sendL, 0, 0, &st, false);
 		WIRECRYPT_DEBUG(fprintf(stderr, "Installed cipher %s key %s\n", cp.name(), key->type));
 	}
-	catch(const Exception& ex)
+	catch (const Exception& ex)
 	{
 		iscLogException("start_crypt:", ex);
 		disconnect();

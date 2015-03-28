@@ -3922,7 +3922,7 @@ void JService::start(CheckStatusWrapper* user_status, unsigned int spbLength, co
 
 		svc->start(spbLength, spb);
 
-		if (svc->getStatus()->getState() & CheckStatusWrapper::STATE_ERRORS)
+		if (svc->getStatus()->getState() & IStatus::STATE_ERRORS)
 		{
 			fb_utils::copyStatus(user_status, svc->getStatus());
 			return;
@@ -5530,7 +5530,7 @@ static bool drop_files(const jrd_file* file)
 		}
 	}
 
-	return status->getState() & FbStatusVector::STATE_ERRORS ? true : false;
+	return status->getState() & IStatus::STATE_ERRORS ? true : false;
 }
 
 

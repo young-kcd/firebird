@@ -2762,6 +2762,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
 			{
 			case isc_arg_end:
 				return;
+
 			case isc_arg_cstring:
 				{
 					perm [-1] = isc_arg_string;
@@ -2770,6 +2771,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
 					*perm++ = (ISC_STATUS)(IPTR) circularAlloc(temp, len);
 				}
 				break;
+
 			case isc_arg_string:
 			case isc_arg_interpreted:
 			case isc_arg_sql_state:
@@ -2779,6 +2781,7 @@ void makePermanentVector(ISC_STATUS* perm, const ISC_STATUS* trans) throw()
 					*perm++ = (ISC_STATUS)(IPTR) circularAlloc(temp, len);
 				}
 				break;
+
 			default:
 				*perm++ = *trans++;
 				break;

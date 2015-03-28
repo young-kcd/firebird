@@ -63,7 +63,7 @@ static const char* const DEFAULT_LOG_NAME = "default_trace.log";
 const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 {
 	Firebird::StaticStatusVector st;
- 	ex.stuffException(st);
+	ex.stuffException(st);
 	const ISC_STATUS* status = st.begin();
 
 	char buff[1024];

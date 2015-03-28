@@ -89,7 +89,7 @@ public:
 			else
 				this->resize(newLen + 1);
 		}
-		catch(const BadAlloc&)
+		catch (const BadAlloc&)
 		{
 			if (!warningMode)
 			{
@@ -103,7 +103,7 @@ public:
 				this->clear();
 			}
 		}
-		catch(const Exception&)
+		catch (const Exception&)
 		{
 			fb_assert(false);
 

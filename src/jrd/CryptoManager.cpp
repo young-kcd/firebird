@@ -166,7 +166,7 @@ namespace Jrd {
 		{
 			if (!LCK_lock(tdbb, stateLock, LCK_SR, LCK_WAIT))
 			{
-				fb_assert(tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_ERRORS);
+				fb_assert(tdbb->tdbb_status_vector->getState() & IStatus::STATE_ERRORS);
 				ERR_punt();
 			}
 
@@ -227,7 +227,7 @@ namespace Jrd {
 								  LCK_convert(tdbb, stateLock, LCK_PW, LCK_WAIT);
 			if (!ret)
 			{
-				fb_assert(tdbb->tdbb_status_vector->getState() & FbStatusVector::STATE_ERRORS);
+				fb_assert(tdbb->tdbb_status_vector->getState() & IStatus::STATE_ERRORS);
 				ERR_punt();
 			}
 			fb_utils::init_status(tdbb->tdbb_status_vector);
