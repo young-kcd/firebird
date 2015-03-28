@@ -51,10 +51,10 @@ PATH := ./:$(BIN):$(PATH)
 export PATH
 
 #ifeq ($(PLATFORM),DARWIN)
-#DYLD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
+#DYLD_LIBRARY_PATH := $(DYLD_LIBRARY_PATH):$(GEN_ROOT)/firebird/lib
 #export DYLD_LIBRARY_PATH
 #else
-#LD_LIBRARY_PATH := $(GEN_ROOT)/firebird/lib
+#LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(GEN_ROOT)/firebird/lib
 #export LD_LIBRARY_PATH
 #endif
 GPRE_FLAGS=	-r -m -z -n
