@@ -24,7 +24,7 @@
 # This module was created by members of the firebird development 
 # team.  All individual contributions remain the Copyright (C) of 
 # those individuals and all rights are reserved.  Contributors to 
-# this file are either listed below or can be obtained from a CVS 
+# this file are either listed below or can be obtained from a SVN 
 # history command.
 #
 #  Created by:  Mark O'Donohue <mark.odonohue@ludwig.edu.au>
@@ -76,7 +76,7 @@ Debug:
 # jrd/build_no.h contains the version and build# fields used throughout the
 # program and quoted in the tools.  This routine will update the build_no.h
 # file with the auto update build# script file, writeBuildNum.sh.  The
-# writeBuildNum.sh script is autoupdated by CVS checkins.
+# writeBuildNum.sh script is autoupdated by SVN checkins.
 #
 
 .PHONY: updateBuildNum
@@ -661,14 +661,12 @@ clean_extern_objects:
 # Clear out dependancies files created by the gcc compiler
 # since when .o and other files are deleted the dependant
 # targets need to be recalculated
-# MOD 10-July-2002
 
 clean_dependancies:
 	$(RM) -f `find $(TMP_ROOT)/ -type f -name '*.d' -print`
 
 # delete only all of the files of type regular file in $FIREBIRD
 # leave the directories to make dependacies work still
-# MOD 11-July-2002
 
 clean_build:
 	$(RM) `find $(GEN_ROOT)/*/firebird \( -type f -o -type l \) -print`
