@@ -1,3 +1,132 @@
+ 2015-03-27 17:51  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/main/aliceMain.cpp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/burp/burp.cpp
+   M src/burp/main/burpMain.cpp
+   M src/common/IntlParametersBlock.cpp
+   M src/common/SimpleStatusVector.h
+   M src/common/StatusArg.h
+   M src/common/StatusHolder.cpp
+   M src/common/classes/init.cpp
+   M src/common/fb_exception.cpp
+   M src/common/isc.cpp
+   M src/common/unicode_util.cpp
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/StmtNodes.cpp
+   M src/include/fb_exception.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/Function.epp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/TempSpace.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/dfw.epp
+   M src/jrd/err.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/fun.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/met.epp
+   M src/jrd/nbak.cpp
+   M src/jrd/sdw.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/trace/TraceService.cpp
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/lock/print.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/protocol.cpp
+   M src/remote/remote.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/main/gsecMain.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/gstat/main/gstatMain.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/user_dsql.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/why.cpp
+Be more consistent putting IStatus into fast inline wrapper. Also some syntax sugar as suggested by Dmitry
+
+ 2015-03-27 15:41  hvlad 
+   M src/jrd/os/win32/ibinitdll.cpp
+   M src/remote/server/os/win32/srvr_w32.cpp
+Fixed Windows build
+
+ 2015-03-27 14:36  alexpeshkoff 
+   M src/alice/alice.cpp
+   M src/alice/exe.cpp
+   M src/alice/main/aliceMain.cpp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/burp/burp.cpp
+   M src/burp/canonical.cpp
+   M src/burp/main/burpMain.cpp
+   M src/common/SimpleStatusVector.h
+   M src/common/StatusArg.cpp
+   M src/common/StatusArg.h
+   M src/common/StatusHolder.cpp
+   M src/common/StatusHolder.h
+   M src/common/classes/init.cpp
+   M src/common/fb_exception.cpp
+   M src/common/isc.cpp
+   M src/common/isc_proto.h
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+   M src/common/sdl.cpp
+   M src/common/sdl_proto.h
+   M src/common/utils.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/fb_exception.h
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/include/firebird/Interface.h
+   M src/jrd/Function.epp
+   M src/jrd/Monitoring.cpp
+   M src/jrd/TempSpace.cpp
+   M src/jrd/event.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/met.epp
+   M src/jrd/status.h
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceService.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+   M src/remote/protocol.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+   M src/utilities/gsec/gsec.cpp
+   M src/utilities/gsec/main/gsecMain.cpp
+   M src/utilities/gstat/dba.epp
+   M src/utilities/gstat/main/gstatMain.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/alt.cpp
+   M src/yvalve/preparse.cpp
+   M src/yvalve/user_dsql.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/utl_proto.h
+   M src/yvalve/why.cpp
+Use status interface instead plain status vector when working with exceptions.
+Avoid use of circullar allocation for strings in status vector (except when unavoidable for ISC API backward compatibility).
+Use TLS for circullar allocation buffer instead manually working with threads' list.
+
  2015-03-25 17:52  asfernandes 
    M src/dsql/AggNodes.cpp
    M src/dsql/AggNodes.h
