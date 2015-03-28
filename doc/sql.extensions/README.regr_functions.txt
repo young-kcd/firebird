@@ -22,9 +22,9 @@ Formula:
     REGR_AVGX(Y, X) = SUM(X) / N
     REGR_AVGY(Y, X) = SUM(Y) / N
     REGR_COUNT(Y, X) = N
-    REGR_INTERCEPT(Y, X) = REGR_AVGY(Y, X) - REGR_SLOPE(Y, X) * REGR_AVG_X(Y, X)
+    REGR_INTERCEPT(Y, X) = REGR_AVGY(Y, X) - REGR_SLOPE(Y, X) * REGR_AVGX(Y, X)
     REGR_R2(Y, X) = POWER(CORR(Y, X),2)
-    REGR_SLOPE(Y, X) = COVAR_POP(Y, X)
+    REGR_SLOPE(Y, X) = COVAR_POP(Y, X) / VAR_POP(X)
     REGR_SXX(Y, X) = N * VAR_POP(X)
     REGR_SXY(Y, X) = N * COVAR_POP(Y, X)
     REGR_SYY(Y, X) = N * VAR_POP(Y)
