@@ -970,21 +970,24 @@ bool ISQL_errmsg(Firebird::IStatus* st)
 		{
 			return false;
 		}
-		FB_SQLSTATE_STRING sqlstate;
-		fb_sqlstate(sqlstate, status);
-		IUTILS_msg_get(GEN_ERR, errbuf, SafeArg() << sqlstate);
-		STDERROUT(errbuf);
-		TEXT* err = errbuf;
-		unsigned es = sizeof(errbuf);
-		if (fb_interpret(err, es, &vec))
-		{
-			STDERROUT(errbuf);
 
-			// Continuation of error
-			*err++ = '-';
-			--es;
-			while (fb_interpret(err, es, &vec)) {
+		if (state & Firebird::IStatus::STATE_ERRORS)
+		{
+			FB_SQLSTATE_STRING sqlstate;
+			fb_sqlstate(sqlstate, status);
+			IUTILS_msg_get(GEN_ERR, errbuf, SafeArg() << sqlstate);
+			STDERROUT(errbuf);
+			TEXT* err = errbuf;
+			unsigned es = sizeof(errbuf);
+			if (fb_interpret(err, es, &vec))
+			{
 				STDERROUT(errbuf);
+
+				// Continuation of error
+				*err++ = '-';
+				--es;
+				while (fb_interpret(err, es, &vec))
+					STDERROUT(errbuf);
 			}
 		}
 
