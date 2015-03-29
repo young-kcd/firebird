@@ -7,7 +7,7 @@
  *  Developer's Public License Version 1.0 (the "License");
  *  you may not use this file except in compliance with the
  *  License. You may obtain a copy of the License at
- *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *  https://www.ibphoenix.com/about/firebird/idpl.
  *
  *  Software distributed under the License is distributed AS IS,
  *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
@@ -51,10 +51,6 @@
 
 /* Basic data types */
 
-/* typedef signed char SCHAR;
- * TMN: TODO It seems SCHAR is used just about *everywhere* where a plain
- * "char" is really intended. This currently forces us to this bad definition.
- */
 typedef char SCHAR;
 
 typedef unsigned char UCHAR;
