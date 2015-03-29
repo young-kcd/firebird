@@ -25,44 +25,6 @@
 
 # The pre install routine for Firebird Server
 
-
-
-#------------------------------------------------------------------------
-#  Check for installed RPM package
-
-# (Pavel I've left this in since originally I could test for other packages,
-# even if they did not conflict with current ones, ie we can test InterBase
-# and CS/SS  The package manager does not allow it currently but I've left
-# this in in case that sort of thing gets allowed again
-
-#checkForRPMInstall() {
-#    PackageName=$1
-#
-#    rpm -q $PackageName
-#    STATUS=$? 
-#    if [ $STATUS -eq 0 ]
-#      then 
-#        echo "Previous version of $PackageName is detected on your system." 
-#        echo "this will conflict with the current install of Firebird"
-#        echo "Please unistall the previous version `rpm -q $PackageName` and then proceed." 
-#        exit $STATUS 
-#    fi 
-#
-#}
-
-# Ok so any of the following packages are a problem
-# these don't work at least in the latest rpm manager, since it 
-# has the rpm database locked and it fails.
-#    checkForRPMInstall InterBase
-#    checkForRPMInstall FirebirdCS
-#    checkForRPMInstall FirebirdSS
-
-# That test in general package is wrong also due to the fact that it does not check
-# for presence of rpm in the system - there are many rpm-less distros.
-# I keep it here commented just in order not to loose it in CVS archives. AP - 2008.
-
-
-
 #= Main PreInstall =========================================================
 
 # It's good idea not to have running firebird/interbase instances
