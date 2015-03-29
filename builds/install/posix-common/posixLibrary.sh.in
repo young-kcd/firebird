@@ -371,8 +371,6 @@ replaceLineInFile() {
 
 #------------------------------------------------------------------------
 # "edit" file $1 - replace line starting from $2 with $3
-# This should stop ed/ex/vim/"what else editor" battle.
-# I hope awk is present in any posix system? AP.
 
 editFile() {
     FileName=$1
