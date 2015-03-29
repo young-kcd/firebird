@@ -670,9 +670,7 @@ clean_dependancies:
 
 clean_build:
 	$(RM) `find $(GEN_ROOT)/*/firebird \( -type f -o -type l \) -print`
-#	$(RM) $(GDSLIB_OBJECTS) $(GDSLIB_PHASE3_OBJECTS)
 
-#
 clean_makefiles:
 	$(RM) $(GEN_ROOT)/Make*
 	$(RM) $(GEN_ROOT)/make*
