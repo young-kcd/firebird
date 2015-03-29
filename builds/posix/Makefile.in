@@ -578,9 +578,6 @@ $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 	$(CP) $^ $(INCLUDE_DEST)/
 
 
-# There are also gds*f and gds*ada header files around if someone
-# wants them. You might need to hunt around in the old cvs tree for them.
-
 #___________________________________________________________________________
 # track dependencies
 #
