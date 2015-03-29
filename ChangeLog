@@ -1,3 +1,52 @@
+ 2015-03-28 15:02  mapopa 
+   M builds/posix/Makefile.in
+Cleanup comments
+
+ 2015-03-28 13:55  mapopa 
+   M builds/posix/Makefile.in.examples
+Sync code with firebird 2.5.x tree and libreoffice patch , even if is commented 
+
+ 2015-03-28 00:40  asfernandes 
+   M doc/sql.extensions/README.regr_functions.txt
+Corrections, thanks to Simonov Denis.
+
+ 2015-03-28 00:36  asfernandes 
+   M src/auth/SecureRemotePassword/Message.h
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/auth/SecurityDatabase/LegacyManagement.epp
+   M src/common/DynamicStrings.cpp
+   M src/common/SimpleStatusVector.h
+   M src/common/StatusHolder.h
+   M src/common/fb_exception.cpp
+   M src/common/utils.cpp
+   M src/dsql/dsql.cpp
+   M src/include/fb_exception.h
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/err.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/IscDS.cpp
+   M src/jrd/extds/IscDS.h
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/status.h
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/val.h
+   M src/jrd/vio.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/inet.cpp
+   M src/remote/os/win32/wnet.cpp
+   M src/remote/os/win32/xnet.cpp
+   M src/remote/server/server.cpp
+   M src/utilities/nbackup/nbackup.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/yvalve/PluginManager.cpp
+   M src/yvalve/utl.cpp
+   M src/yvalve/utl_proto.h
+Misc.
+
  2015-03-27 17:51  alexpeshkoff 
    M src/alice/alice.cpp
    M src/alice/main/aliceMain.cpp
