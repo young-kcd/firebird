@@ -36,12 +36,6 @@
 
 // Firebird platform-specific synchronization data structures
 
-/*
-#if defined(DARWIN) || defined(ANDROID)
-#define USE_FILELOCKS
-#endif
-*/
-
 #if defined(DARWIN)
 #define USE_FILELOCKS
 #endif

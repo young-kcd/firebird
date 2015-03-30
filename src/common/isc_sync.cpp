@@ -929,15 +929,16 @@ int Sys5Semaphore::getId()
 
 	if (id < 0)
 	{
-		Arg::StatusVector status;
-		id = create_semaphores(status, semTable->getKey(semSet), SemTable::SEM_PER_SET);
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
+		id = create_semaphores(&st, semTable->getKey(semSet), SemTable::SEM_PER_SET);
 		if (id >= 0)
 		{
 			idCache[semSet] = id;
 		}
 		else
 		{
-			iscLogStatus("create_semaphores failed:", status.value());
+			iscLogStatus("create_semaphores failed:", &st);
 		}
 	}
 
@@ -1014,7 +1015,8 @@ void addTimer(Sys5Semaphore* sem, int microSeconds)
 		timerQueue->push(newTimer);
 	}
 
-	LocalStatus st;
+	LocalStatus ls;
+	CheckStatusWrapper st(&ls);
 	TimerInterfacePtr()->start(&st, newTimer, microSeconds);
 	check(&st);
 }
@@ -1040,7 +1042,8 @@ void delTimer(Sys5Semaphore* sem)
 
 	if (found)
 	{
-		LocalStatus st;
+		LocalStatus ls;
+		CheckStatusWrapper st(&ls);
 		TimerInterfacePtr()->stop(&st, *t);
 		check(&st);
 	}
@@ -1852,7 +1855,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	if (!semFile->setlock(&statusVector, FileLock::FLM_SHARED))
 	{
 		if (statusVector.hasData())
-			statusVector.raise();
+			status_exception::raise(&statusVector);
 		else
 			(Arg::Gds(isc_random) << "Unknown error in setlock").raise();
 	}
