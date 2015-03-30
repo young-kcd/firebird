@@ -7929,7 +7929,7 @@ void JRD_compile(thread_db* tdbb,
 
 namespace
 {
-	class DatabaseDirectoryList : public DirectoryList
+	class DatabaseDirList : public DirectoryList
 	{
 	private:
 		const PathName getConfigString() const
@@ -7937,14 +7937,14 @@ namespace
 			return PathName(Config::getDatabaseAccess());
 		}
 	public:
-		explicit DatabaseDirectoryList(MemoryPool& p)
+		explicit DatabaseDirList(MemoryPool& p)
 			: DirectoryList(p)
 		{
 			initialize();
 		}
 	};
 
-	InitInstance<DatabaseDirectoryList> iDatabaseDirectoryList;
+	InitInstance<DatabaseDirList> iDatabaseDirectoryList;
 }
 
 
