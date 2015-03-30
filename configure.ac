@@ -726,7 +726,6 @@ AC_CHECK_HEADERS(rpc/xdr.h,,,[#include <rpc/rpc.h>])
 AC_CHECK_HEADERS(aio.h)
 AC_CHECK_HEADERS(mntent.h mnttab.h sys/mntent.h sys/mnttab.h)
 AC_CHECK_HEADERS(sys/ipc.h sys/file.h)
-AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
 AC_CHECK_HEADERS(sys/resource.h)
 AC_CHECK_HEADERS(sys/sem.h)
 AC_CHECK_HEADERS(semaphore.h)
@@ -738,6 +737,22 @@ AC_CHECK_HEADERS(langinfo.h)
 AC_CHECK_HEADERS(iconv.h)
 AC_CHECK_HEADERS(libio.h)
 AC_CHECK_HEADERS(linux/falloc.h)
+
+AC_CHECK_HEADERS(socket.h sys/socket.h sys/sockio.h winsock2.h)
+AC_CHECK_DECLS(SOCK_CLOEXEC,,,[[
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_SOCKET_H
+#include <socket.h>
+#endif
+#ifdef HAVE_SYS_SOCKIO_H
+#include <sys/sockio.h>
+#endif
+#ifdef HAVE_WINSOCK2_H
+#include <winsock2.h>
+#endif
+]])
 
 dnl check for compression
 if test "$COMPRESSION" = "Y"; then
