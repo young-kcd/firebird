@@ -1123,6 +1123,18 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 		return *convIcu;
 	}
 
+	// Try "favorite" (distributed on windows) version first
+	const int favMaj = 5;
+	const int favMin = 2;
+	try
+	{
+		if ((convIcu = ImplementConversionICU::create(favMaj, favMin)))
+			return *convIcu;
+	}
+	catch (const Exception& ex)
+	{ }
+
+	// Do a regular search
 	LocalStatus ls;
 	CheckStatusWrapper lastError(&ls);
 	string version;
@@ -1132,6 +1144,11 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 	{
 		for (int minor = 20; minor--; ) // from 19 down to 0
 		{
+			if ((*major == favMaj) && (minor == favMin))
+			{
+				continue;
+			}
+
 			try
 			{
 				if ((convIcu = ImplementConversionICU::create(*major, minor)))
