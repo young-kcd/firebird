@@ -47,6 +47,19 @@ function(check_type_alignment type var)
 endfunction(check_type_alignment)
 
 #######################################
+# FUNCTION check_symbol
+#######################################
+function(check_symbol symbol var)
+    foreach(f ${ARGN})
+        if (NOT ${var})
+            unset(${var} CACHE)
+            message(STATUS "Looking for ${symbol} - ${f}")
+            check_symbol_exists(${symbol} ${f} ${var})
+        endif()
+    endforeach()
+endfunction(check_symbol)
+
+#######################################
 
 include(CheckCSourceCompiles)
 include(CheckCSourceRuns)
@@ -181,6 +194,7 @@ check_includes(include_files_list)
 #fi
 
 set(functions_list
+    accept4
     AO_compare_and_swap_full
     clock_gettime
     dirname
@@ -259,6 +273,7 @@ endif()
 test_big_endian(WORDS_BIGENDIAN)
 check_symbol_exists(INFINITY math.h HAVE_INFINITY)
 check_symbol_exists(va_copy stdarg.h HAVE_VA_COPY)
+check_symbol(SOCK_CLOEXEC HAVE_DECL_SOCK_CLOEXEC socket.h sys/socket.h)
 
 set(CMAKE_EXTRA_INCLUDE_FILES Windows.h)
 check_type_size("char[MAX_PATH]" MAXPATHLEN)

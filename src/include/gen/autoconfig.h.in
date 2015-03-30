@@ -393,6 +393,9 @@
  * Functions
  *
  ******************************************************************************/
+ 
+/* Define to 1 if you have the `accept4' function. */
+#cmakedefine HAVE_ACCEPT4 1
 
 /* Define to 1 if you have the `AO_compare_and_swap_full' function. */
 #cmakedefine HAVE_AO_COMPARE_AND_SWAP_FULL 1
@@ -623,6 +626,9 @@
 
 /* Define this if va_copy() is defined in stdarg.h */
 #cmakedefine HAVE_VA_COPY 1
+
+/* Define this if SOCK_CLOEXEC is defined in socket.h */
+#cmakedefine HAVE_DECL_SOCK_CLOEXEC 1
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 #cmakedefine _FILE_OFFSET_BITS @_FILE_OFFSET_BITS@
