@@ -1,3 +1,52 @@
+ 2015-03-29 19:25  mapopa 
+   M builds/install/posix-common/posixLibrary.sh.in
+Cleanup editors battle comment
+
+ 2015-03-29 19:11  mapopa 
+   M builds/install/posix-common/preinstall.sh.in
+Cleanup preinstall script
+
+ 2015-03-29 18:19  mapopa 
+   M builds/posix/Makefile.in
+Cleanup comments gds*f and gds*ada header files are in the old cvs tree
+
+ 2015-03-29 18:08  mapopa 
+   M builds/posix/Makefile.in
+Cleanup old comments, GDSLIB_OBJECTS are no more
+
+ 2015-03-29 16:44  mapopa 
+   M extern/editline/ChangeLog
+   M extern/editline/src/chared.c
+   M extern/editline/src/chared.h
+   M extern/editline/src/chartype.c
+   M extern/editline/src/chartype.h
+   M extern/editline/src/el.c
+   M extern/editline/src/eln.c
+   M extern/editline/src/filecomplete.c
+   M extern/editline/src/hist.h
+   M extern/editline/src/histedit.h
+   M extern/editline/src/history.c
+   M extern/editline/src/map.c
+   M extern/editline/src/map.h
+   M extern/editline/src/parse.c
+   M extern/editline/src/read.c
+   M extern/editline/src/readline.c
+   M extern/editline/src/tty.c
+   M extern/editline/src/tty.h
+   M extern/editline/src/unvis.c
+   M extern/editline/src/vi.c
+   M extern/editline/src/vis.c
+   M extern/editline/src/vis.h
+Update libedit
+
+ 2015-03-29 15:07  alexpeshkoff 
+   M src/isql/isql.epp
+Fixed CORE-4719:  Message "Statement failed, SQLSTATE = 00000 + unknown ISC error 0" appears when issuing REVOKE ALL ON ALL FROM <existing_user>
+
+ 2015-03-29 12:01  mapopa 
+   M src/include/fb_types.h
+cleanup comments : old bad SCHAR definition
+
  2015-03-28 15:02  mapopa 
    M builds/posix/Makefile.in
 Cleanup comments
