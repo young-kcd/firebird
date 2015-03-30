@@ -200,16 +200,21 @@ private:
 
 SecurityDatabase::~SecurityDatabase()
 {
+	// One can get 'invalid object' errors here cause provider
+	// may get unloaded before authentication plugin
+
 	if (lookup_req)
 	{
 		isc_release_request(status, &lookup_req);
-		checkStatus("isc_release_request", 0);
+		if (status[1] != isc_bad_req_handle)
+			checkStatus("isc_release_request", 0);
 	}
 
 	if (lookup_db)
 	{
 		isc_detach_database(status, &lookup_db);
-		checkStatus("isc_detach_database", 0);
+		if (status[1] != isc_bad_db_handle)
+			checkStatus("isc_detach_database", 0);
 	}
 }
 
