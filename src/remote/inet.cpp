@@ -3059,7 +3059,7 @@ SOCKET socket(int domain, int type, int protocol)
 #else
 	int fd;
 	do {
-		fd = ::socket(domain, type | O_CLOEXEC, protocol);
+		fd = ::socket(domain, type | SOCK_CLOEXEC, protocol);
 	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
 
 	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
@@ -3083,7 +3083,7 @@ SOCKET accept(SOCKET sockfd, struct sockaddr *addr, socklen_t *addrlen)
 	int fd;
 #ifdef HAVE_ACCEPT4
 	do {
-		fd = ::accept4(sockfd, addr, addrlen, O_CLOEXEC);
+		fd = ::accept4(sockfd, addr, addrlen, SOCK_CLOEXEC);
 	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
 
 	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
