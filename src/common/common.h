@@ -74,11 +74,6 @@
 #include "fb_macros.h"
 #include "fb_types.h"
 
-/*
-  do not use links in source code to maintain platform neutrality
-*/
-
-
 /*****************************************************
 * Linux platforms
 *****************************************************/
@@ -242,7 +237,6 @@
 #define IEEE
 #define QUADCONST(n) (n##LL)
 #define QUADFORMAT "q"
-//#define MAP_ANON		correctly defined in sys/mman.h
 
 #define API_ROUTINE __attribute__((visibility("default")))
 #define API_ROUTINE_VARARG API_ROUTINE
@@ -472,8 +466,8 @@ extern "C" int remove(const char* path);
 #define IEEE
 #define SYSCALL_INTERRUPTED(err)        (((err) == EINTR) || ((err) == ERESTART))	/* pjpg 20001102 */
 
-#define QUADFORMAT "ll"			/* TMC 081700 */
-#define QUADCONST(n) (n##LL)	/* TMC 081700 */
+#define QUADFORMAT "ll"
+#define QUADCONST(n) (n##LL)
 
 // Old AIX versions do not pass autoconf's test for mmap() correctness,
 // but we do not use flag (MAP_FIXED) that fails.
