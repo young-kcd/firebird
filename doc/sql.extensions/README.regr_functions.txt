@@ -11,7 +11,7 @@ Syntax:
     <function name> := { REGR_AVGX | REGR_AVGY | REGR_COUNT | REGR_INTERCEPT |
                          REGR_R2 | REGR_SLOPE | REGR_SXX | REGR_SXY | REGR_SYY }
 
-Formula use bellow variable.
+Formula use below variable.
 
 Y: <expr1> (<expr1> IS NOT NULL AND <expr2> IS NOT NULL).
 X: <expr2> (<expr1> IS NOT NULL AND <expr2> IS NOT NULL).

@@ -1131,7 +1131,7 @@ UnicodeUtil::ConversionICU& UnicodeUtil::getConversionICU()
 		if ((convIcu = ImplementConversionICU::create(favMaj, favMin)))
 			return *convIcu;
 	}
-	catch (const Exception& ex)
+	catch (const Exception&)
 	{ }
 
 	// Do a regular search

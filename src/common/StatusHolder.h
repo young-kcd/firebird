@@ -124,7 +124,7 @@ public:
 		return SimpleStatusVector<S>::begin();
 	}
 
-	const unsigned length() const
+	unsigned length() const
 	{
 		return SimpleStatusVector<S>::getCount();
 	}
