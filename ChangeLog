@@ -1,3 +1,34 @@
+ 2015-03-30 17:39  alexpeshkoff 
+   M src/common/unicode_util.cpp
+Fixed CORE-4583: FB 3 embedded tries to load ICU DLLs from PATH folders
+
+ 2015-03-30 14:35  egorpugin 
+   M src/jrd/jrd.cpp
+[build] Fix duplicate symbol error on AppleClang while building for iOS.
+
+ 2015-03-30 14:34  egorpugin 
+   M builds/cmake/Configure.cmake
+   M src/include/gen/autoconfig.h.in
+[build] [cmake] Search for accept4 and SOCK_CLOEXEC symbols during configuration step.
+
+ 2015-03-30 13:49  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+Fixed CORE-4712: Messages "Error in isc_release_request() ... when working with legacy security database" appear in firebird.log for CLASSIC server when connecting with legacy auth
+
+ 2015-03-30 12:03  alexpeshkoff 
+   M src/common/isc_s_proto.h
+   M src/common/isc_sync.cpp
+Fixed compilation on Mac
+
+ 2015-03-30 11:12  alexpeshkoff 
+   M configure.ac
+   M src/remote/inet.cpp
+Added check for SOCK_CLOEXEC
+
+ 2015-03-30 09:34  alexpeshkoff 
+   M src/remote/inet.cpp
+Use better flag name for sockets
+
  2015-03-29 19:25  mapopa 
    M builds/install/posix-common/posixLibrary.sh.in
 Cleanup editors battle comment
