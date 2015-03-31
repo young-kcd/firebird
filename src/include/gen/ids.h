@@ -487,6 +487,7 @@
 	const USHORT  f_mon_db_backup_state = 18;
 	const USHORT  f_mon_db_crypt_page = 19;
 	const USHORT  f_mon_db_owner = 20;
+	const USHORT  f_mon_db_secdb = 21;
 
 
 // Relation 34 (MON$ATTACHMENTS)

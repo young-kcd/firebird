@@ -38,6 +38,7 @@
 #include "../common/isc_proto.h"
 #include "../common/isc_f_proto.h"
 #include "../common/isc_s_proto.h"
+#include "../common/db_alias.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/mov_proto.h"
@@ -806,6 +807,21 @@ void Monitoring::putDatabase(SnapshotData::DumpRecord& record, const Database* d
 
 	// database owner
 	record.storeString(f_mon_db_owner, database->dbb_owner);
+
+	// security database type
+	PathName secDbName;
+	string secDbType = "Other";
+	expandDatabaseName(database->dbb_config->getSecurityDatabase(), secDbName, NULL);
+	if (secDbName == database->dbb_filename)
+		secDbType = "Self";
+	else
+	{
+		PathName defDbName;
+		expandDatabaseName(Config::getDefaultConfig()->getSecurityDatabase(), defDbName, NULL);
+		if (secDbName == defDbName)
+			secDbType = "Default";
+	}
+	record.storeString(f_mon_db_secdb, secDbType);
 
 	// statistics
 	record.storeGlobalId(f_mon_db_stat_id, getGlobalId(stat_id));

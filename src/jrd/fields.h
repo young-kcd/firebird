@@ -181,6 +181,7 @@
 	FIELD(fld_auth_method	, nam_auth_method	, dtype_varying	, 255						, dsc_text_type_ascii		, NULL		, true)
 
 	FIELD(fld_linger		, nam_linger		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
+	FIELD(fld_sec_db		, nam_mon_secdb		, dtype_text	, 7							, dsc_text_type_ascii		, NULL		, false)
 
 	FIELD(fld_map_name		, nam_map_name		, dtype_text	, MAX_SQL_IDENTIFIER_LEN	, dsc_text_type_metadata	, NULL		, false)
 	FIELD(fld_map_using		, nam_map_using		, dtype_text	, 1							, dsc_text_type_metadata	, NULL		, false)
