@@ -3093,7 +3093,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 		case rel_database:
 			if (set_security_class(tdbb, rpb->rpb_record, f_dat_class))
-				DFW_post_work(transaction, dfw_grant, &desc, obj_database);
+				DFW_post_work(transaction, dfw_grant, "", obj_database);
 			break;
 
 		case rel_relations:
