@@ -1,3 +1,22 @@
+ 2015-03-31 17:22  alexpeshkoff 
+   M src/include/gen/ids.h
+   M src/jrd/Monitoring.cpp
+   M src/jrd/fields.h
+   M src/jrd/names.h
+   M src/jrd/relations.h
+Fixed CORE-4729: Add a flag to mon$database helping to decide what type of security database is used - default, self or other
+
+ 2015-03-31 09:57  mapopa 
+   M src/common/common.h
+Comments cleanup
+
+ 2015-03-31 02:10  robocop 
+   M doc/sql.extensions/README.regr_functions.txt
+   M src/common/StatusHolder.h
+   M src/common/unicode_util.cpp
+   M src/isql/isql.epp
+Misc.
+
  2015-03-30 17:39  alexpeshkoff 
    M src/common/unicode_util.cpp
 Fixed CORE-4583: FB 3 embedded tries to load ICU DLLs from PATH folders
