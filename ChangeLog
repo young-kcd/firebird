@@ -1,3 +1,7 @@
+ 2015-04-01 15:10  alexpeshkoff 
+   M src/jrd/vio.cpp
+Fixes assertion in DFW, caused by uninitialized descriptor
+
  2015-03-31 17:22  alexpeshkoff 
    M src/include/gen/ids.h
    M src/jrd/Monitoring.cpp
