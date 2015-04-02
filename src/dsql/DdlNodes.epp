@@ -7159,10 +7159,6 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					const AlterColNullClause* clause =
 						static_cast<const AlterColNullClause*>(i->getObject());
 
-					//// FIXME: This clause allows inconsistencies like setting a field with a
-					//// not null CONSTRAINT as nullable, or setting a field based on a not null
-					//// domain as nullable (while ISQL shows it as not null).
-
 					AutoRequest request;
 					bool found = false;
 
@@ -7174,13 +7170,44 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 						found = true;
 
 						MODIFY RFL
+						{
 							if (!clause->notNullFlag && !RFL.RDB$GENERATOR_NAME.NULL)
 							{
 								// msg 274: Identity column @1 of table @2 cannot be changed to NULLable
 								status_exception::raise(Arg::PrivateDyn(274) << clause->name << name);
 							}
 
-							RFL.RDB$NULL_FLAG = SSHORT(clause->notNullFlag);
+							if (clause->notNullFlag)
+							{
+								RFL.RDB$NULL_FLAG.NULL = FALSE;
+								RFL.RDB$NULL_FLAG = TRUE;
+
+								Constraint nullConstraint(*tdbb->getDefaultPool());
+								nullConstraint.type = Constraint::TYPE_NOT_NULL;
+								nullConstraint.columns.add(clause->name);
+								defineConstraint(tdbb, dsqlScratch, transaction, nullConstraint);
+							}
+							else
+							{
+								RFL.RDB$NULL_FLAG.NULL = TRUE;
+
+								AutoRequest request2;
+
+								FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+									RCL IN RDB$RELATION_CONSTRAINTS CROSS
+									CHK IN RDB$CHECK_CONSTRAINTS
+									WITH RCL.RDB$RELATION_NAME EQ name.c_str() AND
+										 RCL.RDB$CONSTRAINT_TYPE EQ NOT_NULL_CNSTRT AND
+										 CHK.RDB$CONSTRAINT_NAME EQ RCL.RDB$CONSTRAINT_NAME AND
+										 CHK.RDB$TRIGGER_NAME EQ clause->name.c_str()
+								{
+									// ASF: Record in RDB$CHECK_CONSTRAINTS is deleted by a
+									// system trigger.
+									ERASE RCL;
+								}
+								END_FOR
+							}
+						}
 						END_MODIFY
 					}
 					END_FOR

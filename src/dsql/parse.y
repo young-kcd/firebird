@@ -3647,10 +3647,10 @@ alter_domain_op($alterDomainNode)
 		{ setClause($alterDomainNode->dropDefault, "DOMAIN DROP DEFAULT"); }
 	| DROP CONSTRAINT
 		{ setClause($alterDomainNode->dropConstraint, "DOMAIN DROP CONSTRAINT"); }
-	| KW_NULL
-		{ setClause($alterDomainNode->notNullFlag, "[NOT] NULL", false); }
-	| NOT KW_NULL
-		{ setClause($alterDomainNode->notNullFlag, "[NOT] NULL", true); }
+	| DROP NOT KW_NULL
+		{ setClause($alterDomainNode->notNullFlag, "{SET | DROP} NOT NULL", false); }
+	| SET NOT KW_NULL
+		{ setClause($alterDomainNode->notNullFlag, "{SET | DROP} NOT NULL", true); }
 	| TO symbol_column_name
 		{ setClause($alterDomainNode->renameTo, "DOMAIN NAME", *$2); }
 	| KW_TYPE non_array_type
@@ -3700,14 +3700,14 @@ alter_op($relationNode)
 			clause->toName = *$4;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt alter_column_name KW_NULL
+	| col_opt alter_column_name DROP NOT KW_NULL
 		{
 			RelationNode::AlterColNullClause* clause = newNode<RelationNode::AlterColNullClause>();
 			clause->name = *$2;
 			clause->notNullFlag = false;
 			$relationNode->clauses.add(clause);
 		}
-	| col_opt alter_column_name NOT KW_NULL
+	| col_opt alter_column_name SET NOT KW_NULL
 		{
 			RelationNode::AlterColNullClause* clause = newNode<RelationNode::AlterColNullClause>();
 			clause->name = *$2;

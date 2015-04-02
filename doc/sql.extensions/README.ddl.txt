@@ -357,9 +357,9 @@ SQL>
 
 Nullability of a table field or a domain can now be changed with the ALTER command. Syntax:
 
-ALTER TABLE <table name> ALTER <field name> [NOT] NULL
+ALTER TABLE <table name> ALTER <field name> {DROP | SET} NOT NULL
 
-ALTER DOMAIN <domain name> [NOT] NULL
+ALTER DOMAIN <domain name> {DROP | SET} NOT NULL
 
 A change in a table from NULL to NOT NULL is subject to a full data validation on the table.
 A change in a domain changes and validates all the tables using the domain.
