@@ -955,7 +955,6 @@ int INTL_convert_string(dsc* to, const dsc* from, ErrorFunction err)
 
 	if (toCharSet->isMultiByte() &&
 		!(toCharSet->getFlags() & CHARSET_LEGACY_SEMANTICS) &&
-		toLength != 31 &&	// allow non CHARSET_LEGACY_SEMANTICS to be used as connection charset
 		src_len > dest_len)
 	{
 		err(Arg::Gds(isc_arith_except) << Arg::Gds(isc_string_truncation) <<

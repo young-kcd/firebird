@@ -231,6 +231,11 @@
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
 
+    * Bugfix CORE-3373
+        It is possible to store string with lenght 31 chars into column VARCHAR(25)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-2848
         Page-level "lock conversion denied" or "lock denied" errors
       Contributor(s):
@@ -1509,11 +1514,6 @@
 
     * Bugfix CORE-3401
         Collation errors with [type of] <domain>, type of column
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at gmail.com>
-
-    * Bugfix CORE-3373
-        It is possible to store string with lenght 31 chars into column VARCHAR(25)
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
