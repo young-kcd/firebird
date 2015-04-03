@@ -1846,7 +1846,7 @@
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3085
-        Add clause ALTER DOMAIN <name> [NOT] NULL
+        Add clause ALTER DOMAIN <name> {DROP | SET} NOT NULL
       See also:
         /doc/sql.extensions/README.ddl.txt
       Contributor(s):
