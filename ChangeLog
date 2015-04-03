@@ -1,3 +1,9 @@
+ 2015-04-02 02:26  asfernandes 
+   M doc/sql.extensions/README.ddl.txt
+   M src/dsql/DdlNodes.epp
+   M src/dsql/parse.y
+Changes related to CORE-1180: change syntax and semantics to the standard SQL, and also manage RDB$RELATION_CONSTRAINTS records correctly.
+
  2015-04-01 15:10  alexpeshkoff 
    M src/jrd/vio.cpp
 Fixes assertion in DFW, caused by uninitialized descriptor
