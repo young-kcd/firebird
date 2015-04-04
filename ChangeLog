@@ -1,3 +1,16 @@
+ 2015-04-03 10:25  mapopa 
+   D extern/btyacc/makefile.dos
+Dos file not needed
+
+ 2015-04-03 03:07  asfernandes 
+   M doc/WhatsNew
+Misc.
+
+ 2015-04-03 01:31  asfernandes 
+   M doc/WhatsNew
+   M src/jrd/intl.cpp
+Fixed (again) CORE-3373 - It is possible to store string with lenght 31 chars into column varchar(25).
+
  2015-04-02 02:26  asfernandes 
    M doc/sql.extensions/README.ddl.txt
    M src/dsql/DdlNodes.epp
