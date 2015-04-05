@@ -2148,6 +2148,7 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 
 	SET_TDBB(tdbb);
 
+	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Lock* relationLock = NULL;
 	bool releaseRelationLock = false;
 
@@ -2160,14 +2161,32 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 	case 3:
 		try
 		{
-			SortedArray<int>& fields = work->dfw_ids;
-
 			jrd_rel* relation = MET_lookup_relation(tdbb, work->dfw_name);
-			if (relation->rel_view_rse || fields.isEmpty())
+			if (relation->rel_view_rse || work->dfw_ids.isEmpty())
 				break;
 
 			// Protect relation from modification
 			relationLock = protect_relation(tdbb, transaction, relation, releaseRelationLock);
+
+			SortedArray<int> fields;
+			AutoRequest handle;
+
+			for (SortedArray<int>::iterator itr(work->dfw_ids.begin());
+				 itr != work->dfw_ids.end();
+				 ++itr)
+			{
+				FOR(REQUEST_HANDLE handle)
+					RFL IN RDB$RELATION_FIELDS CROSS
+					FLD IN RDB$FIELDS
+					WITH RFL.RDB$RELATION_NAME EQ work->dfw_name.c_str() AND
+						 FLD.RDB$FIELD_NAME EQ RFL.RDB$FIELD_SOURCE AND
+						 RFL.RDB$FIELD_ID EQ *itr AND
+						 (RFL.RDB$NULL_FLAG = TRUE OR FLD.RDB$NULL_FLAG = TRUE)
+				{
+					fields.add(RFL.RDB$FIELD_ID);
+				}
+				END_FOR
+			}
 
 			UCharBuffer blr;
 

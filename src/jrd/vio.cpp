@@ -2567,20 +2567,28 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 				check_class(tdbb, transaction, org_rpb, new_rpb, f_rfr_class);
 
 				bool rc1 = EVL_field(NULL, org_rpb->rpb_record, f_rfr_null_flag, &desc1);
-				bool rc2 = EVL_field(NULL, new_rpb->rpb_record, f_rfr_null_flag, &desc2);
 
-				if ((!rc1 || MOV_get_long(&desc1, 0) == 0) && rc2 && MOV_get_long(&desc2, 0) != 0)
+				if ((!rc1 || MOV_get_long(&desc1, 0) == 0))
 				{
-					EVL_field(0, new_rpb->rpb_record, f_rfr_rname, &desc1);
-					EVL_field(0, new_rpb->rpb_record, f_rfr_id, &desc2);
+					dsc desc3, desc4;
+					bool rc2 = EVL_field(NULL, new_rpb->rpb_record, f_rfr_null_flag, &desc2);
+					bool rc3 = EVL_field(NULL, org_rpb->rpb_record, f_rfr_sname, &desc3);
+					bool rc4 = EVL_field(NULL, new_rpb->rpb_record, f_rfr_sname, &desc4);
 
-					DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc1, 0);
-					SortedArray<int>& ids = DFW_get_ids(work);
+					if ((rc2 && MOV_get_long(&desc2, 0) != 0) ||
+						(rc3 && rc4 && MOV_compare(&desc3, &desc4) != 0))
+					{
+						EVL_field(0, new_rpb->rpb_record, f_rfr_rname, &desc1);
+						EVL_field(0, new_rpb->rpb_record, f_rfr_id, &desc2);
 
-					int id = MOV_get_long(&desc2, 0);
-					FB_SIZE_T pos;
-					if (!ids.find(id, pos))
-						ids.insert(pos, id);
+						DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc1, 0);
+						SortedArray<int>& ids = DFW_get_ids(work);
+
+						int id = MOV_get_long(&desc2, 0);
+						FB_SIZE_T pos;
+						if (!ids.find(id, pos))
+							ids.insert(pos, id);
+					}
 				}
 			}
 			break;

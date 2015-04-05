@@ -4420,6 +4420,33 @@ void AlterDomainNode::checkUpdate(const dyn_fld& origFld, const dyn_fld& newFld)
 		}
 		break;
 
+	case blr_bool:
+		switch (newFld.dyn_dtype)
+		{
+		case blr_bool:
+			break;
+
+		/*** ASF: I'm not yet sure about this, and it is not working internally.
+		// If the original field is a boolean field and the new field is a character field,
+		// is there enough space in the new field?
+		case blr_text:
+		case blr_varying:
+		case blr_cstring:
+			if (newFld.dyn_charlen < origLen)
+			{
+				// msg 208: New size specified for column %s must be at least %d characters.
+				errorCode = isc_dyn_char_fld_too_small;
+			}
+			break;
+		***/
+
+		default:
+			// Cannot change datatype for column %s.  Conversion from base type %s to base type %s is not supported.
+			errorCode = isc_dyn_invalid_dtype_conversion;
+			break;
+		}
+		break;
+
 	default:
 		fb_assert(FALSE);
 		errorCode = ENCODE_ISC_MSG(87, DYN_MSG_FAC);				// MODIFY RDB$FIELDS FAILED

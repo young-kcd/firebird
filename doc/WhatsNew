@@ -2,6 +2,11 @@
   * v3.0 Beta 2
   *************
 
+    * Bugfix CORE-4733
+        Command "Alter table <T> alter TYPE <C> <DOMAIN_WITH_NOT_NULL" does not verifies data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0) for types INT, TIMESTAMP and VARCHAR
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-4713
         "BLOB not found" error at rollback after insert into table with expression index
       Contributor(s):
