@@ -2576,7 +2576,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 
 					DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc1, 0);
 					SortedArray<int>& ids = DFW_get_ids(work);
-					ids.add(MOV_get_long(&desc2, 0));
+
+					int id = MOV_get_long(&desc2, 0);
+					FB_SIZE_T pos;
+					if (!ids.find(id, pos))
+						ids.insert(pos, id);
 				}
 			}
 			break;

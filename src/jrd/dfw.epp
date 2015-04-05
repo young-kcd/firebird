@@ -4005,6 +4005,7 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 					REL IN RDB$RELATIONS
 					WITH REL.RDB$RELATION_NAME EQ RFL.RDB$RELATION_NAME AND
 						 RFL.RDB$FIELD_SOURCE EQ depName.c_str() AND
+						 (RFL.RDB$NULL_FLAG MISSING OR RFL.RDB$NULL_FLAG = FALSE) AND
 						 REL.RDB$VIEW_BLR MISSING
 					REDUCED TO RFL.RDB$RELATION_NAME, RFL.RDB$FIELD_ID
 				{
@@ -4014,7 +4015,10 @@ static bool modify_field(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 					DeferredWork* work = DFW_post_work(transaction, dfw_check_not_null, &desc, 0);
 					SortedArray<int>& ids = DFW_get_ids(work);
-					ids.add(RFL.RDB$FIELD_ID);
+
+					FB_SIZE_T pos;
+					if (!ids.find(RFL.RDB$FIELD_ID, pos))
+						ids.insert(pos, RFL.RDB$FIELD_ID);
 				}
 				END_FOR
 			}
@@ -5413,7 +5417,10 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 											DeferredWork* work = DFW_post_work(transaction,
 												dfw_check_not_null, &desc, 0);
 											SortedArray<int>& ids = DFW_get_ids(work);
-											ids.add(RFR.RDB$FIELD_ID);
+
+											FB_SIZE_T pos;
+											if (!ids.find(RFR.RDB$FIELD_ID, pos))
+												ids.insert(pos, RFR.RDB$FIELD_ID);
 										}
 									}
 								}
