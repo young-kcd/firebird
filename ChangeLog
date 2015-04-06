@@ -1,3 +1,15 @@
+ 2015-04-05 02:24  asfernandes 
+   M doc/WhatsNew
+   M src/dsql/DdlNodes.epp
+   M src/jrd/dfw.epp
+   M src/jrd/vio.cpp
+Fixed CORE-4733 - Command "Alter table <T> alter TYPE <C> <DOMAIN_WITH_NOT_NULL" does not verifies data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0) for types INT, TIMESTAMP and VARCHAR.
+
+ 2015-04-05 02:24  asfernandes 
+   M src/jrd/dfw.epp
+   M src/jrd/vio.cpp
+Optimize check of column NULLs when changing field or domain to NOT NULL.
+
  2015-04-03 10:25  mapopa 
    D extern/btyacc/makefile.dos
 Dos file not needed
