@@ -2188,127 +2188,130 @@ static bool check_not_null(thread_db* tdbb, SSHORT phase, DeferredWork* work, jr
 				END_FOR
 			}
 
-			UCharBuffer blr;
-
-			blr.add(blr_version5);
-			blr.add(blr_begin);
-			blr.add(blr_message);
-			blr.add(1);	// message number
-			blr.add(fields.getCount() & 0xFF);
-			blr.add(fields.getCount() >> 8);
-
-			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
+			if (fields.hasData())
 			{
-				blr.add(blr_short);
-				blr.add(0);
-			}
+				UCharBuffer blr;
 
-			blr.add(blr_for);
-			blr.add(blr_stall);
-			blr.add(blr_rse);
-			blr.add(1);
-			blr.add(blr_rid);
-			blr.add(relation->rel_id & 0xFF);
-			blr.add(relation->rel_id >> 8);
-			blr.add(0);	// stream
-			blr.add(blr_boolean);
-
-			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
-			{
-				if (i != fields.getCount() - 1)
-					blr.add(blr_or);
-
-				blr.add(blr_missing);
-				blr.add(blr_fid);
-				blr.add(0);	// stream
-				blr.add(USHORT(fields[i]) & 0xFF);
-				blr.add(USHORT(fields[i]) >> 8);
-			}
-
-			blr.add(blr_end);
-
-			blr.add(blr_send);
-			blr.add(1);
-			blr.add(blr_begin);
-
-			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
-			{
-				blr.add(blr_assignment);
-
-				blr.add(blr_value_if);
-				blr.add(blr_missing);
-				blr.add(blr_fid);
-				blr.add(0);	// stream
-				blr.add(USHORT(fields[i]) & 0xFF);
-				blr.add(USHORT(fields[i]) >> 8);
-
-				blr.add(blr_literal);
-				blr.add(blr_short);
-				blr.add(0);
-				blr.add(1);
-				blr.add(0);
-
-				blr.add(blr_literal);
-				blr.add(blr_short);
-				blr.add(0);
-				blr.add(0);
-				blr.add(0);
-
-				blr.add(blr_parameter);
+				blr.add(blr_version5);
+				blr.add(blr_begin);
+				blr.add(blr_message);
 				blr.add(1);	// message number
-				blr.add(i & 0xFF);
-				blr.add(i >> 8);
-			}
+				blr.add(fields.getCount() & 0xFF);
+				blr.add(fields.getCount() >> 8);
 
-			blr.add(blr_end);
-
-			blr.add(blr_send);
-			blr.add(1);
-			blr.add(blr_begin);
-
-			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
-			{
-				blr.add(blr_assignment);
-				blr.add(blr_literal);
-				blr.add(blr_short);
-				blr.add(0);
-				blr.add(0);
-				blr.add(0);
-				blr.add(blr_parameter);
-				blr.add(1);	// message number
-				blr.add(i & 0xFF);
-				blr.add(i >> 8);
-			}
-
-			blr.add(blr_end);
-			blr.add(blr_end);
-			blr.add(blr_eoc);
-
-			AutoRequest request;
-			request.compile(tdbb, blr.begin(), blr.getCount());
-
-			HalfStaticArray<USHORT, 5> hasRecord;
-
-			EXE_start(tdbb, request, transaction);
-			EXE_receive(tdbb, request, 1, fields.getCount() * sizeof(USHORT),
-				(UCHAR*) hasRecord.getBuffer(fields.getCount()));
-
-			Arg::Gds errs(isc_no_meta_update);
-			bool hasError = false;
-
-			for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
-			{
-				if (hasRecord[i])
+				for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
 				{
-					hasError = true;
-					errs << Arg::Gds(isc_cannot_make_not_null) <<
-							(*relation->rel_fields)[fields[i]]->fld_name <<
-							relation->rel_name;
+					blr.add(blr_short);
+					blr.add(0);
 				}
-			}
 
-			if (hasError)
-				ERR_post(errs);
+				blr.add(blr_for);
+				blr.add(blr_stall);
+				blr.add(blr_rse);
+				blr.add(1);
+				blr.add(blr_rid);
+				blr.add(relation->rel_id & 0xFF);
+				blr.add(relation->rel_id >> 8);
+				blr.add(0);	// stream
+				blr.add(blr_boolean);
+
+				for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
+				{
+					if (i != fields.getCount() - 1)
+						blr.add(blr_or);
+
+					blr.add(blr_missing);
+					blr.add(blr_fid);
+					blr.add(0);	// stream
+					blr.add(USHORT(fields[i]) & 0xFF);
+					blr.add(USHORT(fields[i]) >> 8);
+				}
+
+				blr.add(blr_end);
+
+				blr.add(blr_send);
+				blr.add(1);
+				blr.add(blr_begin);
+
+				for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
+				{
+					blr.add(blr_assignment);
+
+					blr.add(blr_value_if);
+					blr.add(blr_missing);
+					blr.add(blr_fid);
+					blr.add(0);	// stream
+					blr.add(USHORT(fields[i]) & 0xFF);
+					blr.add(USHORT(fields[i]) >> 8);
+
+					blr.add(blr_literal);
+					blr.add(blr_short);
+					blr.add(0);
+					blr.add(1);
+					blr.add(0);
+
+					blr.add(blr_literal);
+					blr.add(blr_short);
+					blr.add(0);
+					blr.add(0);
+					blr.add(0);
+
+					blr.add(blr_parameter);
+					blr.add(1);	// message number
+					blr.add(i & 0xFF);
+					blr.add(i >> 8);
+				}
+
+				blr.add(blr_end);
+
+				blr.add(blr_send);
+				blr.add(1);
+				blr.add(blr_begin);
+
+				for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
+				{
+					blr.add(blr_assignment);
+					blr.add(blr_literal);
+					blr.add(blr_short);
+					blr.add(0);
+					blr.add(0);
+					blr.add(0);
+					blr.add(blr_parameter);
+					blr.add(1);	// message number
+					blr.add(i & 0xFF);
+					blr.add(i >> 8);
+				}
+
+				blr.add(blr_end);
+				blr.add(blr_end);
+				blr.add(blr_eoc);
+
+				AutoRequest request;
+				request.compile(tdbb, blr.begin(), blr.getCount());
+
+				HalfStaticArray<USHORT, 5> hasRecord;
+
+				EXE_start(tdbb, request, transaction);
+				EXE_receive(tdbb, request, 1, fields.getCount() * sizeof(USHORT),
+					(UCHAR*) hasRecord.getBuffer(fields.getCount()));
+
+				Arg::Gds errs(isc_no_meta_update);
+				bool hasError = false;
+
+				for (FB_SIZE_T i = 0; i < fields.getCount(); ++i)
+				{
+					if (hasRecord[i])
+					{
+						hasError = true;
+						errs << Arg::Gds(isc_cannot_make_not_null) <<
+								(*relation->rel_fields)[fields[i]]->fld_name <<
+								relation->rel_name;
+					}
+				}
+
+				if (hasError)
+					ERR_post(errs);
+			}
 
 			if (relationLock && releaseRelationLock)
 				release_protect_lock(tdbb, transaction, relationLock);
