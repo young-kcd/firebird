@@ -17,6 +17,7 @@ add_src_win32(gpre_common_src
 )
 
 add_library                 (gpre_common ${gpre_common_src})
+add_dependencies_cc         (gpre_common UpdateCloopInterfaces)
 
 
 ###############################################################################

@@ -25,7 +25,8 @@ add_src_win32(remote_src
 )
 file(GLOB remote_include "*.h")
 
-add_library(remote ${remote_src} ${remote_include})
+add_library             (remote ${remote_src} ${remote_include})
+add_dependencies_cc     (remote UpdateCloopInterfaces)
 
 
 ###############################################################################
