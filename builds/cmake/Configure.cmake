@@ -1,12 +1,12 @@
-###############################################################################
+################################################################################
 #
 # configure
 #
-###############################################################################
+################################################################################
 
-#######################################
+########################################
 # FUNCTION check_includes
-#######################################
+########################################
 function(check_includes files)
     foreach(F ${${files}})
         set(name ${F})
@@ -20,9 +20,9 @@ function(check_includes files)
     endforeach()
 endfunction(check_includes)
 
-#######################################
+########################################
 # FUNCTION check_functions
-#######################################
+########################################
 function(check_functions functions)
     foreach(F ${${functions}})
         set(name ${F})
@@ -34,9 +34,9 @@ function(check_functions functions)
     endforeach()
 endfunction(check_functions)
 
-#######################################
+########################################
 # FUNCTION check_type_alignment
-#######################################
+########################################
 function(check_type_alignment type var)
     if (NOT DEFINED ${var})
         check_c_source_runs("main(){struct s{char a;${type} b;};exit((int)&((struct s*)0)->b);}" ${var})
@@ -46,20 +46,23 @@ function(check_type_alignment type var)
     endif()
 endfunction(check_type_alignment)
 
-#######################################
+########################################
 # FUNCTION check_symbol
-#######################################
+########################################
 function(check_symbol symbol var)
-    foreach(f ${ARGN})
-        if (NOT ${var})
-            unset(${var} CACHE)
-            message(STATUS "Looking for ${symbol} - ${f}")
-            check_symbol_exists(${symbol} ${f} ${var})
-        endif()
-    endforeach()
+    if (NOT ${var}_SYMBOL)
+        foreach(f ${ARGN})
+            if (NOT ${var})
+                unset(${var} CACHE)
+                message(STATUS "Looking for ${symbol} - ${f}")
+                check_symbol_exists(${symbol} ${f} ${var})
+            endif()
+        endforeach()
+    endif()
+    set(${var}_SYMBOL 1 CACHE INTERNAL "Do not check this symbol again")
 endfunction(check_symbol)
 
-#######################################
+########################################
 
 include(CheckCSourceCompiles)
 include(CheckCSourceRuns)
@@ -315,7 +318,7 @@ if (EXISTS "/proc/self/exe")
     set(HAVE__PROC_SELF_EXE 1)
 endif()
 
-#######################################
+########################################
 
 if (NOT CMAKE_CROSSCOMPILING)
     check_type_alignment(long FB_ALIGNMENT)
@@ -328,7 +331,7 @@ else() # CMAKE_CROSSCOMPILING
     endif()
 endif()
 
-#######################################
+########################################
 
 if (WIN32)
     set(ENABLE_BINRELOC 0)
@@ -342,4 +345,4 @@ if (APPLE)
     set(CASE_SENSITIVITY "false")
 endif()
 
-###############################################################################
+################################################################################

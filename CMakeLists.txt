@@ -324,6 +324,15 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}/src/include")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}/src/include/gen")
 
 ########################################
+# LIBRARY libtommath
+########################################
+
+file(GLOB libtommath_src "extern/libtommath/*.c" "extern/libtommath/*.h")
+
+add_library             (libtommath ${libtommath_src})
+project_group           (libtommath Extern)
+
+########################################
 # EXECUTABLE btyacc
 ########################################
 
@@ -337,15 +346,14 @@ set_output_directory    (btyacc . CURRENT_DIR)
 
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
-
 ########################################
-# LIBRARY btyacc
+# EXECUTABLE cloop
 ########################################
 
-file(GLOB libtommath_src "extern/libtommath/*.c" "extern/libtommath/*.h")
+file(GLOB cloop_src "extern/cloop/src/cloop/*.cpp" "extern/cloop/src/cloop/*.h")
 
-add_library             (libtommath ${libtommath_src})
-project_group           (libtommath Extern)
+add_executable          (cloop ${cloop_src})
+project_group           (cloop Extern)
 
 ########################################
 # subdirectories

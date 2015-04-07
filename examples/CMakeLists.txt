@@ -91,6 +91,7 @@ project_group           (udrcpp_example Examples)
 add_library             (dbcrypt_example SHARED dbcrypt/DbCrypt.cpp)
 set_target_properties   (dbcrypt_example PROPERTIES OUTPUT_NAME DbCrypt_example)
 set_output_directory    (dbcrypt_example plugins)
+add_dependencies_cc     (dbcrypt_example UpdateCloopInterfaces)
 project_group           (dbcrypt_example Examples)
 
 
@@ -101,6 +102,7 @@ project_group           (dbcrypt_example Examples)
 add_library             (cryptkeyholder_example SHARED dbcrypt/CryptKeyHolder.cpp)
 set_target_properties   (cryptkeyholder_example PROPERTIES OUTPUT_NAME CryptKeyHolder_example)
 set_output_directory    (cryptkeyholder_example plugins)
+add_dependencies_cc     (cryptkeyholder_example UpdateCloopInterfaces)
 project_group           (cryptkeyholder_example Examples)
 
 ###############################################################################

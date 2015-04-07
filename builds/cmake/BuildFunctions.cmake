@@ -1,12 +1,12 @@
-###############################################################################
+################################################################################
 #
 # macros and functions
 #
-###############################################################################
+################################################################################
 
-#######################################
+########################################
 # FUNCTION set_output_directory
-#######################################
+########################################
 function(set_output_directory target dir)
     set(out ${output_dir})
     if (MSVC OR XCODE) # multiconfiguration builds
@@ -31,18 +31,18 @@ function(set_output_directory target dir)
     endif()
 endfunction(set_output_directory)
 
-#######################################
+########################################
 # FUNCTION set_output_directory_unix
-#######################################
+########################################
 function(set_output_directory_unix target dir)
     if (UNIX)
         set_output_directory(${target} ${dir} ${ARGN})
     endif()
 endfunction(set_output_directory_unix)
 
-#######################################
+########################################
 # FUNCTION set_exported_symbols
-#######################################
+########################################
 if (WIN32)
     function(set_exported_symbols target filename)
         set(def_file ${filename}.def)
@@ -79,9 +79,9 @@ if (UNIX)
 endif(UNIX)
 
 
-#######################################
+########################################
 # FUNCTION epp_process
-#######################################
+########################################
 function(epp_process type files)
     set(epp_suffix ".${type}.cpp")
 
@@ -122,9 +122,9 @@ function(epp_process type files)
     endforeach()
 endfunction(epp_process)
 
-#######################################
+########################################
 # FUNCTION add_epp_suffix
-#######################################
+########################################
 function(add_epp_suffix files suffix)
     foreach(F ${${files}})
         list(APPEND ${files}_${suffix} ${CMAKE_CURRENT_SOURCE_DIR}/${F})
@@ -134,72 +134,72 @@ function(add_epp_suffix files suffix)
     set(${files}_${suffix} ${${files}_${suffix}} PARENT_SCOPE)
 endfunction(add_epp_suffix)
 
-#######################################
+########################################
 # FUNCTION set_win32
-#######################################
+########################################
 function(set_win32 var)
     if (WIN32)
         set(${var} "${ARGN}" PARENT_SCOPE)
     endif()
 endfunction(set_win32)
 
-#######################################
+########################################
 # FUNCTION set_unix
-#######################################
+########################################
 function(set_unix var)
     if (UNIX)
         set(${var} "${ARGN}" PARENT_SCOPE)
     endif()
 endfunction(set_unix)
 
-#######################################
+########################################
 # FUNCTION set_apple
-#######################################
+########################################
 function(set_apple var)
     if (APPLE)
         set(${var} "${ARGN}" PARENT_SCOPE)
     endif()
 endfunction(set_apple)
 
-#######################################
+########################################
 # FUNCTION add_src_win32
-#######################################
+########################################
 function(add_src_win32 var)
     if (WIN32)
         set(${var} ${${var}} ${ARGN} PARENT_SCOPE)
     endif()
 endfunction(add_src_win32)
 
-#######################################
+########################################
 # FUNCTION add_src_unix
-#######################################
+########################################
 function(add_src_unix var)
     if (UNIX)
         set(${var} ${${var}} ${ARGN} PARENT_SCOPE)
     endif()
 endfunction(add_src_unix)
 
-#######################################
+########################################
 # FUNCTION add_src_unix_not_apple
-#######################################
+########################################
 function(add_src_unix_not_apple var)
     if (UNIX AND NOT APPLE)
         set(${var} ${${var}} ${ARGN} PARENT_SCOPE)
     endif()
 endfunction(add_src_unix_not_apple)
 
-#######################################
+########################################
 # FUNCTION add_src_apple
-#######################################
+########################################
 function(add_src_apple var)
     if (APPLE)
         set(${var} ${${var}} ${ARGN} PARENT_SCOPE)
     endif()
 endfunction(add_src_apple)
 
-#######################################
+########################################
 # FUNCTION copy_and_rename_lib
-#######################################
+########################################
 function(copy_and_rename_lib target name)
     set(name2 $<TARGET_FILE_DIR:${target}>/${CMAKE_SHARED_LIBRARY_PREFIX}${name}${CMAKE_SHARED_LIBRARY_SUFFIX})
     add_custom_command(
@@ -209,16 +209,16 @@ function(copy_and_rename_lib target name)
     )
 endfunction(copy_and_rename_lib)
 
-#######################################
+########################################
 # FUNCTION project_group
-#######################################
+########################################
 function(project_group target name)
     set_target_properties(${target} PROPERTIES FOLDER ${name})
 endfunction(project_group)
 
-#######################################
+########################################
 # FUNCTION set_generated_directory
-#######################################
+########################################
 function(set_generated_directory)
     if (NOT CMAKE_CROSSCOMPILING)
         set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR} PARENT_SCOPE)
@@ -228,36 +228,36 @@ function(set_generated_directory)
     endif()
 endfunction(set_generated_directory)
 
-#######################################
+########################################
 # FUNCTION add_dependencies_cc (cross compile)
-#######################################
+########################################
 function(add_dependencies_cc target)
     if (NOT CMAKE_CROSSCOMPILING)
         add_dependencies(${target} ${ARGN})
     endif()
 endfunction(add_dependencies_cc)
 
-#######################################
+########################################
 # FUNCTION add_dependencies_unix_cc (cross compile)
-#######################################
+########################################
 function(add_dependencies_unix_cc target)
     if (UNIX)
         add_dependencies_cc(${target} ${ARGN})
     endif()
 endfunction(add_dependencies_unix_cc)
 
-#######################################
+########################################
 # FUNCTION crosscompile_prebuild_steps
-#######################################
+########################################
 function(crosscompile_prebuild_steps)
     if (CMAKE_CROSSCOMPILING)
         execute_process(COMMAND ${CMAKE_COMMAND} -E copy_if_different ${NATIVE_BUILD_DIR}/src/include/gen/parse.h ${CMAKE_BINARY_DIR}/src/include/gen/parse.h)
     endif()
 endfunction(crosscompile_prebuild_steps)
 
-#######################################
+########################################
 # FUNCTION create_command
-#######################################
+########################################
 function(create_command command type out)
     set(dir ${output_dir})
     if ("${type}" STREQUAL "boot")
@@ -307,9 +307,9 @@ function(create_command command type out)
     set(${out} ${CMD}_CMD PARENT_SCOPE)
 endfunction(create_command)
 
-#######################################
+########################################
 # FUNCTION create_boot_commands
-#######################################
+########################################
 function(create_boot_commands)
     set(cmd_list
         boot_isql
@@ -326,9 +326,9 @@ function(create_boot_commands)
     endforeach()
 endfunction(create_boot_commands)
 
-#######################################
+########################################
 # FUNCTION create_master_commands
-#######################################
+########################################
 function(create_master_commands)
     set(cmd_list
         isql
@@ -341,4 +341,4 @@ function(create_master_commands)
     endforeach()
 endfunction(create_master_commands)
 
-###############################################################################
+################################################################################

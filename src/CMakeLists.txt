@@ -269,6 +269,29 @@ add_custom_target(parse
 project_group(parse "Boot/Custom build steps")
 set_source_files_properties(dsql/parse.cpp include/gen/parse.h PROPERTIES GENERATED TRUE)
 
+
+########################################
+# BUILD_STEP UpdateCloopInterfaces
+########################################
+
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/include/firebird/IdlFbInterfaces.h
+    DEPENDS
+        cloop
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/firebird/FirebirdInterface.idl
+    COMMAND cloop
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/firebird/FirebirdInterface.idl
+            c++
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/firebird/IdlFbInterfaces.h
+            IDL_FB_INTERFACES_H Firebird I
+    COMMENT "Updating cloop interfaces..."
+)
+add_custom_target(UpdateCloopInterfaces
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/include/firebird/IdlFbInterfaces.h
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/include/firebird/FirebirdInterface.idl
+)
+project_group(UpdateCloopInterfaces "Boot/Custom build steps")
+
 endif() # if (NOT CMAKE_CROSSCOMPILING)
 
 
@@ -348,6 +371,7 @@ endif()
 
 add_library                 (common ${common_src} ${common_os_src} ${common_include})
 target_link_libraries       (common ${LIB_mpr})
+add_dependencies_cc         (common UpdateCloopInterfaces)
 
 
 ################################################################################
@@ -381,7 +405,7 @@ add_epp_suffix(yvalve_generated_src boot)
 add_epp_suffix(yvalve_generated_src master)
 
 add_library                 (yvalve_common OBJECT ${yvalve_src} ${yvalve_include})
-add_dependencies_cc         (yvalve_common parse)
+add_dependencies_cc         (yvalve_common parse UpdateCloopInterfaces)
 
 if (NOT CMAKE_CROSSCOMPILING)
 
@@ -470,7 +494,7 @@ add_epp_suffix(engine12_generated_src master)
 file(GLOB_RECURSE engine12_include "dsql/*.h" "jrd/*.h" include/gen/iberror.h)
 
 add_library                 (engine12_common ${engine12_src} ${engine12_include} ${parse_src})
-add_dependencies_cc         (engine12_common parse)
+add_dependencies_cc         (engine12_common parse UpdateCloopInterfaces)
 
 if (NOT CMAKE_CROSSCOMPILING)
 
