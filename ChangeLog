@@ -1,3 +1,11 @@
+ 2015-04-06 23:21  asfernandes 
+   M src/jrd/dfw.epp
+Fixed CORE-4738 - Command "Alter table <T> alter <C> type <domain_>" does not work: "BLR syntax error: expected valid BLR code at offset 15, encountered 255" - regression introduced with CORE-4733.
+
+ 2015-04-06 11:12  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+Fixed a bug noticed by Simonov Denis
+
  2015-04-05 02:24  asfernandes 
    M doc/WhatsNew
    M src/dsql/DdlNodes.epp
