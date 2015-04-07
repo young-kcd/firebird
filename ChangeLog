@@ -1,3 +1,66 @@
+ 2015-04-07 13:56  alexpeshkoff 
+   A extern/cloop/Makefile
+Fixed posix build
+
+ 2015-04-07 10:29  egorpugin 
+   M src/gpre/CMakeLists.txt
+   M src/remote/CMakeLists.txt
+[build] [cmake] Add more cloop dependencies.
+
+ 2015-04-07 10:08  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/BuildFunctions.cmake
+   M builds/cmake/Configure.cmake
+   M examples/CMakeLists.txt
+   M src/CMakeLists.txt
+Add cloop to CMake build.
+
+ 2015-04-07 03:19  asfernandes 
+   M builds/posix/Makefile.in
+   M builds/posix/make.defaults
+Integrate cloop in the posix build.
+
+ 2015-04-07 03:19  asfernandes 
+   A extern/cloop
+   A extern/cloop/.gitignore
+   A extern/cloop/cloop.sln
+   A extern/cloop/src
+   A extern/cloop/src/cloop
+   A extern/cloop/src/cloop/Expr.cpp
+   A extern/cloop/src/cloop/Expr.h
+   A extern/cloop/src/cloop/Generator.cpp
+   A extern/cloop/src/cloop/Generator.h
+   A extern/cloop/src/cloop/Lexer.cpp
+   A extern/cloop/src/cloop/Lexer.h
+   A extern/cloop/src/cloop/Main.cpp
+   A extern/cloop/src/cloop/Parser.cpp
+   A extern/cloop/src/cloop/Parser.h
+   A extern/cloop/src/cloop/cloop.vcxproj
+   A extern/cloop/src/cloop/cloop.vcxproj.filters
+   A extern/cloop/src/tests
+   A extern/cloop/src/tests/test1
+   A extern/cloop/src/tests/test1/CTest.c
+   A extern/cloop/src/tests/test1/CalcCApi.c
+   A extern/cloop/src/tests/test1/CalcCApi.h
+   A extern/cloop/src/tests/test1/CalcCppApi.h
+   A extern/cloop/src/tests/test1/CalcPascalApi.implementation.pas
+   A extern/cloop/src/tests/test1/CalcPascalApi.interface.pas
+   A extern/cloop/src/tests/test1/CalcPascalApi.pas
+   A extern/cloop/src/tests/test1/CppTest.cpp
+   A extern/cloop/src/tests/test1/Interface.idl
+   A extern/cloop/src/tests/test1/PascalClasses.pas
+   A extern/cloop/src/tests/test1/PascalLibrary.dpr
+   A extern/cloop/src/tests/test1/PascalTest.dpr
+   A extern/cloop/src/tests/test1/test1-c-dll.vcxproj
+   A extern/cloop/src/tests/test1/test1-c-dll.vcxproj.filters
+   A extern/cloop/src/tests/test1/test1-c-exe.vcxproj
+   A extern/cloop/src/tests/test1/test1-c-exe.vcxproj.filters
+   A extern/cloop/src/tests/test1/test1-cpp-dll.vcxproj
+   A extern/cloop/src/tests/test1/test1-cpp-dll.vcxproj.filters
+   A extern/cloop/src/tests/test1/test1-cpp-exe.vcxproj
+   A extern/cloop/src/tests/test1/test1-cpp-exe.vcxproj.filters
+Import cloop (hash 912a16ee1424c9b8548dfdef78ad18cba901f6c8) utility.
+
  2015-04-06 23:21  asfernandes 
    M src/jrd/dfw.epp
 Fixed CORE-4738 - Command "Alter table <T> alter <C> type <domain_>" does not work: "BLR syntax error: expected valid BLR code at offset 15, encountered 255" - regression introduced with CORE-4733.
