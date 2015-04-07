@@ -79,7 +79,12 @@ Debug:
 # writeBuildNum.sh script is autoupdated by SVN checkins.
 #
 
-.PHONY: updateBuildNum
+.PHONY: updateCloopInterfaces updateBuildNum
+
+updateCloopInterfaces : $(SRC_ROOT)/include/firebird/IdlFbInterfaces.h
+
+$(SRC_ROOT)/include/firebird/IdlFbInterfaces.h: $(SRC_ROOT)/include/firebird/FirebirdInterface.idl
+	$(CLOOP) $< c++ $@ IDL_FB_INTERFACES_H Firebird I
 
 updateBuildNum : $(SRC_ROOT)/jrd/build_no.h $(GEN_ROOT)/Make.Version
 
@@ -96,6 +101,8 @@ $(GEN_ROOT)/Make.Version : $(SRC_ROOT)/misc/writeBuildNum.sh
 
 extern:
 	$(MAKE) -C $(ROOT)/extern/btyacc
+	$(MAKE) -C $(ROOT)/extern/cloop TARGET=release WITH_FPC=0 BUILD_DIR=$(TMP_ROOT)/cloop OUT_DIR=$(GEN_ROOT)/$(TARGET)/cloop
+
 ifeq ($(STD_EDITLINE),false)
 ifeq ($(EDITLINE_FLG),Y)
 	$(MAKE) -f $(GEN_ROOT)/Makefile.extern.editline
@@ -137,6 +144,7 @@ master_process:
 	$(MAKE) updateBuildNum
 	$(MAKE) export_lists
 	$(MAKE) extern
+	$(MAKE) updateCloopInterfaces
 	$(MAKE) boot
 	$(MAKE) yvalve
 ifeq ($(IsDeveloper), Y)
@@ -171,6 +179,7 @@ cross1:
 	$(MAKE) updateBuildNum
 	$(MAKE) export_lists
 	$(MAKE) extern
+	$(MAKE) updateCloopInterfaces
 	$(MAKE) boot
 	$(MAKE) yvalve
 ifeq ($(IsDeveloper), Y)
