@@ -3051,7 +3051,7 @@ void setStopMainThread(FPTR_INT func)
 namespace os_utils
 {
 
-// force socket descriptor to have O_CLOEXEC set
+// force socket descriptor to have SOCK_CLOEXEC set
 SOCKET socket(int domain, int type, int protocol)
 {
 #ifdef WIN_NT
@@ -3063,7 +3063,7 @@ SOCKET socket(int domain, int type, int protocol)
 		fd = ::socket(domain, type | SOCK_CLOEXEC, protocol);
 	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
 
-	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
+	if (fd < 0 && errno == EINVAL)	// probably SOCK_CLOEXEC not accepted
 #endif
 	{
 		do {
@@ -3076,8 +3076,8 @@ SOCKET socket(int domain, int type, int protocol)
 #endif
 }
 
-// force socket descriptor to have O_CLOEXEC set
-SOCKET accept(SOCKET sockfd, struct sockaddr *addr, socklen_t *addrlen)
+// force socket descriptor to have SOCK_CLOEXEC set
+SOCKET accept(SOCKET sockfd, struct sockaddr* addr, socklen_t* addrlen)
 {
 #ifdef WIN_NT
 	return ::accept(sockfd, addr, addrlen);
@@ -3088,7 +3088,7 @@ SOCKET accept(SOCKET sockfd, struct sockaddr *addr, socklen_t *addrlen)
 		fd = ::accept4(sockfd, addr, addrlen, SOCK_CLOEXEC);
 	} while (fd < 0 && SYSCALL_INTERRUPTED(errno));
 
-	if (fd < 0 && errno == EINVAL)	// probably O_CLOEXEC not accepted
+	if (fd < 0 && errno == EINVAL)	// probably SOCK_CLOEXEC not accepted
 #endif
 	{
 		do {
