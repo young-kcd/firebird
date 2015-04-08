@@ -241,6 +241,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
+    * Bugfix CORE-2932
+        Wrong field position after ALTER POSITION
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-2848
         Page-level "lock conversion denied" or "lock denied" errors
       Contributor(s):
@@ -1611,11 +1616,6 @@
         Case-sensitive character class names in SIMILAR TO
       Contributor(s):
         Dimitry Sibiryakov <sd at ibphoenix.com>
-
-    * Bugfix CORE-2932
-        Wrong field position after ALTER POSITION
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Bugfix CORE-2922
         Character set used in constants is not registered as a dependency

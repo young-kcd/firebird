@@ -91,8 +91,7 @@ static void checkRelationType(const rel_t type, const MetaName& name);
 static void checkFkPairTypes(const rel_t masterType, const MetaName& masterName,
 	const rel_t childType, const MetaName& childName);
 static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
-	const MetaName& relationName, const MetaName& fieldName, USHORT newPosition,
-	USHORT existingPosition);
+	const MetaName& relationName, const MetaName& fieldName, USHORT newPosition);
 static rel_t relationType(SSHORT relationTypeNull, SSHORT relationType);
 static void saveField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, const MetaName& fieldName);
 static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -635,9 +634,11 @@ static void checkFkPairTypes(const rel_t masterType, const MetaName& masterName,
 //
 //      if new_position == original_position -- no_op
 static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
-	const MetaName& relationName, const MetaName& fieldName, USHORT newPosition,
-	USHORT existingPosition)
+	const MetaName& relationName, const MetaName& fieldName, USHORT newPosition)
 {
+	USHORT existingPosition = 0;
+	bool found = false;
+
 	// Make sure that there are no duplicate field positions and no gaps in the position sequence.
 	// (gaps are introduced when fields are removed)
 
@@ -656,13 +657,24 @@ static void modifyLocalFieldPosition(thread_db* tdbb, jrd_tra* transaction,
 			END_MODIFY
 		}
 
+		if (fieldName == FLD.RDB$FIELD_NAME)
+		{
+			found = true;
+			existingPosition = newPos;
+		}
+
 		++newPos;
 	}
 	END_FOR
 
+	if (!found)
+	{
+		// msg 176: "column %s does not exist in table/view %s"
+		status_exception::raise(Arg::PrivateDyn(176) << fieldName << relationName);
+	}
+
 	// Find the position of the last field in the relation.
-	SLONG maxPosition = -1;
-	DYN_UTIL_generate_field_position(tdbb, relationName, &maxPosition);
+	SLONG maxPosition = SLONG(newPos) - 1;
 
 	// If the existing position of the field is less than the new position of
 	// the field, subtract 1 to move the fields to their new positions otherwise,
@@ -7255,28 +7267,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 					// CVC: Since now the parser accepts pos=1..N, let's subtract one here.
 					const SSHORT pos = clause->newPos - 1;
 
-					AutoRequest request;
-					bool found = false;
-					SSHORT oldPos;
-
-					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-						RFL IN RDB$RELATION_FIELDS
-						WITH RFL.RDB$FIELD_NAME EQ clause->name.c_str() AND
-							 RFL.RDB$RELATION_NAME EQ name.c_str()
-					{
-						found = true;
-						oldPos = RFL.RDB$FIELD_POSITION;
-					}
-					END_FOR
-
-					if (!found)
-					{
-						// msg 176: "column %s does not exist in table/view %s"
-						status_exception::raise(Arg::PrivateDyn(176) << clause->name << name);
-					}
-
-					if (pos != oldPos)
-						modifyLocalFieldPosition(tdbb, transaction, name, clause->name, pos, oldPos);
+					modifyLocalFieldPosition(tdbb, transaction, name, clause->name, pos);
 
 					break;
 				}
