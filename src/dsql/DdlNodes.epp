@@ -11264,6 +11264,7 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		DFW_post_work(transaction, dfw_db_crypt, "", 0);
 
 	Attachment* const attachment = transaction->tra_attachment;
+	dsql_dbb* dbb = transaction->getDsqlAttachment();
 	SLONG dbAlloc = PageSpace::maxAlloc(tdbb->getDatabase());
 	SLONG start = create ? createLength + 1 : 0;
 	AutoCacheRequest request(tdbb, drq_m_database, DYN_REQUESTS);
@@ -11290,9 +11291,17 @@ void AlterDatabaseNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 			if (setDefaultCharSet.hasData())
 			{
-				//// TODO: Validate!
+				if (!METD_get_charset(transaction, setDefaultCharSet.length(),
+						setDefaultCharSet.c_str()))
+				{
+					// specified character set not found
+					status_exception::raise(Arg::Gds(isc_charset_not_found) << setDefaultCharSet);
+				}
+
 				DBB.RDB$CHARACTER_SET_NAME.NULL = FALSE;
 				strcpy(DBB.RDB$CHARACTER_SET_NAME, setDefaultCharSet.c_str());
+
+				dbb->dbb_dfl_charset = "";	// reset in the cache
 			}
 
 			if (!DBB.RDB$CHARACTER_SET_NAME.NULL && setDefaultCollation.hasData())
