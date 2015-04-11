@@ -1,3 +1,7 @@
+ 2015-04-11 00:59  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4744 - ALTER DATABASE SET DEFAULT CHARACTER SET: 1) take effect only for once for current attachment; 2) does not check that new char set exists untill it will be used.
+
  2015-04-08 15:12  asfernandes 
    M src/lock/print.cpp
 Remove duplicate lck enums.
