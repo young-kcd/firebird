@@ -36,7 +36,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../common/file_params.h"
-#include "../jrd/lck.h"
 #include "../jrd/que.h"
 #include "../jrd/pag.h"
 #include "../lock/lock_proto.h"
@@ -46,6 +45,48 @@
 #include "../common/isc_proto.h"
 #include "../common/isc_s_proto.h"
 #include "../common/StatusHolder.h"
+
+namespace Jrd {
+// Lock types
+
+enum lck_t {
+	LCK_database = 1,			// Root of lock tree
+	LCK_relation,				// Individual relation lock
+	LCK_bdb,					// Individual buffer block
+	LCK_tra,					// Individual transaction lock
+	LCK_rel_exist,				// Relation existence lock
+	LCK_idx_exist,				// Index existence lock
+	LCK_attachment,				// Attachment lock
+	LCK_shadow,					// Lock to synchronize addition of shadows
+	LCK_sweep,					// Sweep lock for single sweeper
+	LCK_expression,				// Expression index caching mechanism
+	LCK_prc_exist,				// Procedure existence lock
+	LCK_update_shadow,			// shadow update sync lock
+	LCK_backup_alloc,           // Lock for page allocation table in backup spare file
+	LCK_backup_database,        // Lock to protect writing to database file
+	LCK_backup_end,				// Lock to protect end_backup consistency
+	LCK_rel_partners,			// Relation partners lock
+	LCK_page_space,				// Page space ID lock
+	LCK_dsql_cache,				// DSQL cache lock
+	LCK_monitor,				// Lock to dump the monitoring data
+	LCK_tt_exist,				// TextType existence lock
+	LCK_cancel,					// Cancellation lock
+	LCK_btr_dont_gc,			// Prevent removal of b-tree page from index
+	LCK_shared_counter,			// Database-wide shared counter
+	LCK_tra_pc,					// Precommitted transaction lock
+	LCK_fun_exist,				// Function existence lock
+	LCK_rel_rescan,				// Relation forced rescan lock
+	LCK_crypt,					// Crypt lock for single crypt thread
+	LCK_crypt_status			// Notifies about changed database encryption status
+};
+
+// Lock owner types
+
+enum lck_owner_t {
+	LCK_OWNER_database = 1,		// A database is the owner of the lock
+	LCK_OWNER_attachment		// An attachment is the owner of the lock
+};
+}
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
