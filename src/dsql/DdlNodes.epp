@@ -1737,7 +1737,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		if (FUN.RDB$SYSTEM_FLAG)
 		{
 			status_exception::raise(
-				Arg::Gds(isc_dyn_cannot_mod_sysfunc) << FUN.RDB$FUNCTION_NAME);
+				Arg::Gds(isc_dyn_cannot_mod_sysfunc) << MetaName(FUN.RDB$FUNCTION_NAME));
 		}
 
 		if (!secondPass && runTriggers && package.isEmpty())
@@ -2357,7 +2357,11 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			 FUN.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (FUN.RDB$SYSTEM_FLAG)
-			status_exception::raise(Arg::Gds(isc_dyn_cannot_mod_sysfunc) << FUN.RDB$FUNCTION_NAME);
+		{
+			status_exception::raise(
+				Arg::Gds(isc_dyn_cannot_mod_sysfunc) <<
+				MetaName(FUN.RDB$FUNCTION_NAME));
+		}
 
 		if (package.isEmpty())
 			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_FUNCTION, name);
@@ -2689,7 +2693,11 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 			 P.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (P.RDB$SYSTEM_FLAG)
-			status_exception::raise(Arg::Gds(isc_dyn_cannot_mod_sysproc) << P.RDB$PROCEDURE_NAME);
+		{
+			status_exception::raise(
+				Arg::Gds(isc_dyn_cannot_mod_sysproc) <<
+				MetaName(P.RDB$PROCEDURE_NAME));
+		}
 
 		if (!secondPass && runTriggers && package.isEmpty())
 		{
@@ -3122,7 +3130,11 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 			 PRC.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
 		if (PRC.RDB$SYSTEM_FLAG)
-			status_exception::raise(Arg::Gds(isc_dyn_cannot_mod_sysproc) << PRC.RDB$PROCEDURE_NAME);
+		{
+			status_exception::raise(
+				Arg::Gds(isc_dyn_cannot_mod_sysproc) <<
+				MetaName(PRC.RDB$PROCEDURE_NAME));
+		}
 
 		if (package.isEmpty())
 		{
@@ -3242,7 +3254,7 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 				case fb_sysflag_system:
 					status_exception::raise(
-						Arg::Gds(isc_dyn_cannot_mod_systrig) << TRG.RDB$TRIGGER_NAME);
+						Arg::Gds(isc_dyn_cannot_mod_systrig) << MetaName(TRG.RDB$TRIGGER_NAME));
 					break;
 
 				default:
@@ -3590,7 +3602,7 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 			case fb_sysflag_system:
 				status_exception::raise(
-					Arg::Gds(isc_dyn_cannot_mod_systrig) << X.RDB$TRIGGER_NAME);
+					Arg::Gds(isc_dyn_cannot_mod_systrig) << MetaName(X.RDB$TRIGGER_NAME));
 				break;
 
 			default:
@@ -4736,6 +4748,30 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 			{
 				FLD.RDB$NULL_FLAG.NULL = FALSE;
 				FLD.RDB$NULL_FLAG = notNullFlag.value;
+
+				if (!notNullFlag.value)
+				{
+					AutoRequest request2;
+
+					FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
+						RFL IN RDB$RELATION_FIELDS CROSS
+						IND IN RDB$INDICES CROSS
+						INDSEG IN RDB$INDEX_SEGMENTS CROSS
+						RELCON IN RDB$RELATION_CONSTRAINTS
+						WITH RFL.RDB$FIELD_SOURCE EQ name.c_str() AND
+							 (RFL.RDB$NULL_FLAG MISSING OR RFL.RDB$NULL_FLAG EQ 0) AND
+							 IND.RDB$RELATION_NAME EQ RFL.RDB$RELATION_NAME AND
+							 INDSEG.RDB$INDEX_NAME EQ IND.RDB$INDEX_NAME AND
+							 INDSEG.RDB$FIELD_NAME EQ RFL.RDB$FIELD_NAME AND
+							 RELCON.RDB$INDEX_NAME EQ INDSEG.RDB$INDEX_NAME AND
+							 RELCON.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY
+					{
+						status_exception::raise(
+							Arg::Gds(isc_domain_primary_key_notnull) <<
+							MetaName(RFL.RDB$RELATION_NAME));
+					}
+					END_FOR
+				}
 			}
 
 			if (type)
@@ -4796,9 +4832,9 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 				if (!newDom.dyn_dsc.isExact() || newDom.dyn_dsc.dsc_scale != 0)
 				{
-					AutoCacheRequest request(tdbb, drq_l_ident_gens, DYN_REQUESTS);
+					AutoCacheRequest request2(tdbb, drq_l_ident_gens, DYN_REQUESTS);
 
-					FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+					FOR (REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 						RFR IN RDB$RELATION_FIELDS
 						WITH RFR.RDB$FIELD_SOURCE = FLD.RDB$FIELD_NAME AND
 							 RFR.RDB$GENERATOR_NAME NOT MISSING

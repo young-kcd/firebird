@@ -807,6 +807,7 @@ Data source : @4"},		/* eds_statement */
 	{335545100, "Interface @3 version too old: expected @1, found @2"},		/* interface_version_too_old */
 	{335545101, "Input parameter mismatch for function @1"},		/* fun_param_mismatch */
 	{335545102, "Error during savepoint backout - transaction invalidated"},		/* savepoint_backout_err */
+	{335545103, "Domain used in the PRIMARY KEY constraint of table @1 must be NOT NULL"},		/* domain_primary_key_notnull */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */

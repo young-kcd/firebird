@@ -804,6 +804,7 @@ static const struct {
 	{"interface_version_too_old", 335545100},
 	{"fun_param_mismatch", 335545101},
 	{"savepoint_backout_err", 335545102},
+	{"domain_primary_key_notnull", 335545103},
 	{"gfix_db_name", 335740929},
 	{"gfix_invalid_sw", 335740930},
 	{"gfix_incmp_sw", 335740932},

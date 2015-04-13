@@ -803,6 +803,7 @@ static const struct {
 	{335545100, -804}, /* 780 interface_version_too_old */
 	{335545101, -170}, /* 781 fun_param_mismatch */
 	{335545102, -901}, /* 782 savepoint_backout_err */
+	{335545103, -291}, /* 783 domain_primary_key_notnull */
 	{335740929, -901}, /*   1 gfix_db_name */
 	{335740930, -901}, /*   2 gfix_invalid_sw */
 	{335740932, -901}, /*   4 gfix_incmp_sw */

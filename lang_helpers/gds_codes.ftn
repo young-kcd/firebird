@@ -1616,6 +1616,8 @@ C --
       PARAMETER (GDS__fun_param_mismatch               = 335545101)
       INTEGER*4 GDS__savepoint_backout_err           
       PARAMETER (GDS__savepoint_backout_err            = 335545102)
+      INTEGER*4 GDS__domain_primary_key_notnull      
+      PARAMETER (GDS__domain_primary_key_notnull       = 335545103)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

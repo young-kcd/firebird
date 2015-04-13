@@ -890,6 +890,7 @@ Data source : @4', NULL, NULL)
 ('interface_version_too_old', NULL, 'Interface.h', NULL, 0, 780, NULL, 'Interface @3 version too old: expected @1, found @2', NULL, NULL);
 ('fun_param_mismatch', 'UdfCallNode::dsqlPass', 'ExprNode.cpp', NULL, 0, 781, NULL, 'Input parameter mismatch for function @1', NULL, NULL);
 ('savepoint_backout_err', 'VIO_verb_cleanup', 'vio.cpp', NULL, 0, 782, NULL, 'Error during savepoint backout - transaction invalidated', NULL, NULL);
+('domain_primary_key_notnull', NULL, 'DdlNodes.epp', NULL, 0, 783, NULL, 'Domain used in the PRIMARY KEY constraint of table @1 must be NOT NULL', NULL, NULL);
 -- QLI
 (NULL, NULL, NULL, NULL, 1, 0, NULL, 'expected type', NULL, NULL);
 (NULL, NULL, NULL, NULL, 1, 1, NULL, 'bad block type', NULL, NULL);
