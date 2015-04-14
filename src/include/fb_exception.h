@@ -111,6 +111,8 @@ class status_exception : public Exception
 {
 public:
 	explicit status_exception(const ISC_STATUS *status_vector) throw();
+	status_exception(const status_exception&) throw();
+
 	virtual ~status_exception() throw();
 
 	virtual void stuffByException(StaticStatusVector& status_vector) const throw();
@@ -132,6 +134,8 @@ protected:
 private:
 	ISC_STATUS* m_status_vector;
 	ISC_STATUS_ARRAY m_buffer;
+
+	status_exception& operator=(const status_exception&);
 };
 
 // Parameter syscall later in both system_error & system_call_failed

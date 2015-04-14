@@ -79,6 +79,14 @@ status_exception::status_exception(const ISC_STATUS *status_vector) throw()
 	}
 }
 
+status_exception::status_exception(const status_exception& from) throw()
+	: m_status_vector(m_buffer)
+{
+	fb_utils::init_status(m_status_vector);
+
+	set_status(from.m_status_vector);
+}
+
 void status_exception::set_status(const ISC_STATUS *new_vector) throw()
 {
 	fb_assert(new_vector != 0);
