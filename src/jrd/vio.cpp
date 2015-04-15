@@ -187,17 +187,29 @@ inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation,
 		protect_system_table_delupd(tdbb, relation, op, true);
 }
 
-// The only table whose contents gbak might delete is RDB$INDEX_SEGMENTS if it detects
-// inconsistencies while restoring. Used in VIO_erase.
+// Used in VIO_erase.
 inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 {
 	const Attachment* const attachment = tdbb->getAttachment();
 
-	// TDBB_dont_post_dfw signals that we are in DFW.
-	if (attachment->isGbak() &&
-		(!(attachment->att_flags & ATT_creator) ||
-			relation->rel_id != rel_segments && !(tdbb->tdbb_flags & TDBB_dont_post_dfw)))
+	if (attachment->isGbak())
 	{
+		if (attachment->att_flags & ATT_creator)
+		{
+			// TDBB_dont_post_dfw signals that we are in DFW.
+			if (tdbb->tdbb_flags & TDBB_dont_post_dfw)
+				return;
+
+			// There are 2 tables whose contents gbak might delete:
+			// - RDB$INDEX_SEGMENTS if it detects inconsistencies while restoring
+			// - RDB$FILES if switch -k is set
+			switch(relation->rel_id)
+			{
+			case rel_segments:
+			case rel_files:
+				return;
+			}
+		}
 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 	}
 }
