@@ -958,13 +958,21 @@ bool ProcedureSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& vis
 	return false;
 }
 
-bool ProcedureSourceNode::dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
+bool ProcedureSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
 {
+	// If relation is a procedure, check if the parameters are valid.
+	if (dsqlContext->ctx_procedure)
+		return visitor.visit(dsqlContext->ctx_proc_inputs);
+
 	return false;
 }
 
-bool ProcedureSourceNode::dsqlFieldFinder(FieldFinder& /*visitor*/)
+bool ProcedureSourceNode::dsqlFieldFinder(FieldFinder& visitor)
 {
+	// If relation is a procedure, check if the parameters are valid.
+	if (dsqlContext->ctx_procedure)
+		return visitor.visit(dsqlContext->ctx_proc_inputs);
+
 	return false;
 }
 
@@ -2135,8 +2143,8 @@ bool RseNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
 
 bool RseNode::dsqlFieldFinder(FieldFinder& visitor)
 {
-	// Pass dsqlWhere and dsqlSelectList
-	return visitor.visit(dsqlWhere) | visitor.visit(dsqlSelectList);
+	// Pass dsqlWhere and dsqlSelectList and dsqlStreams.
+	return visitor.visit(dsqlWhere) | visitor.visit(dsqlSelectList) | visitor.visit(dsqlStreams);
 }
 
 RseNode* RseNode::dsqlFieldRemapper(FieldRemapper& visitor)
