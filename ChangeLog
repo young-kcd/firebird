@@ -1,3 +1,18 @@
+ 2015-04-15 14:01  alexpeshkoff 
+   M src/jrd/vio.cpp
+Fixed CORE-4715: Restore of shadowed database fails using -k ("restore without shadow") switch
+
+ 2015-04-15 13:19  alexpeshkoff 
+   M src/jrd/irq.h
+   M src/jrd/scl.epp
+   M src/jrd/vio.cpp
+Fixed CORE-4731: Prohibit an ability to issue DML or DDL statements on RDB$ tables
+
+ 2015-04-14 17:00  alexpeshkoff 
+   M src/common/fb_exception.cpp
+   M src/include/fb_exception.h
+Fixed segfault caused when compiler used default copy ctor of status_exception
+
  2015-04-13 18:35  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
