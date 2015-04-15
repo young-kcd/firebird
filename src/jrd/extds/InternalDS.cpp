@@ -312,7 +312,7 @@ void InternalTransaction::doCommit(FbStatusVector* status, thread_db* tdbb, bool
 		{
 			m_transaction->commit(&s);
 			m_transaction = NULL;
-		}
+	}
 	}
 }
 
@@ -337,7 +337,7 @@ void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bo
 		{
 			m_transaction->rollback(&s);
 			m_transaction = NULL;
-		}
+	}
 	}
 
 	if (status->getErrors()[1] == isc_att_shutdown && !retain)
@@ -595,9 +595,26 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 	}
 }
 
+// We need to copy external blob from\to dynamic statement.
+// If external blob is permanent one - we could use its blob_id and avoid 
+// copying blob contents into new temporary blob.
+// If external blob is temporary - we could access it by blob_id only if
+// dynamic statement is executed in the same transaction as local (caller) 
+// statement.
+
+static bool isPermanentBlob(const dsc& src)
+{
+	if (src.isBlob())
+	{
+		const bid* srcBlobID = reinterpret_cast<bid*> (src.dsc_address);
+		return (srcBlobID->bid_internal.bid_relation_id != 0);
+	}
+	return false;
+}
+
 void InternalStatement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 {
-	if (m_transaction->getScope() == traCommon)
+	if (isPermanentBlob(src) || m_transaction->getScope() == traCommon && m_intConnection.isCurrent())
 		MOV_move(tdbb, &src, &dst);
 	else
 		Statement::putExtBlob(tdbb, src, dst);
@@ -608,7 +625,7 @@ void InternalStatement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 	fb_assert(dst.dsc_length == src.dsc_length);
 	fb_assert(dst.dsc_length == sizeof(bid));
 
-	if (m_transaction->getScope() == traCommon)
+	if (isPermanentBlob(src) || m_transaction->getScope() == traCommon && m_intConnection.isCurrent())
 		memcpy(dst.dsc_address, src.dsc_address, sizeof(bid));
 	else
 		Statement::getExtBlob(tdbb, src, dst);
