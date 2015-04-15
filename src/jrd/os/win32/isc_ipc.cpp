@@ -181,6 +181,9 @@ void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
 		hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
 	}
 
+	if (hEvent) {
+		SetHandleInformation(hEvent, HANDLE_FLAG_INHERIT, 0);
+	}
 	return hEvent;
 }
 

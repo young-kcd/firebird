@@ -2615,6 +2615,8 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 			Arg::Gds(isc_unavailable).copyTo(status_vector);
 			return NULL;
 		}
+
+		SetHandleInformation(event_handle, HANDLE_FLAG_INHERIT, 0);
 	}
 
 	if (length == 0)
@@ -2739,6 +2741,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		CloseHandle(file_handle);
 		goto retry;
 	}
+	SetHandleInformation(header_obj, HANDLE_FLAG_INHERIT, 0);
 
 	ULONG* const header_address = (ULONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
@@ -2791,6 +2794,7 @@ UCHAR* ISC_map_file(ISC_STATUS* status_vector,
 		CloseHandle(file_handle);
 		return NULL;
 	}
+	SetHandleInformation(file_obj, HANDLE_FLAG_INHERIT, 0);
 
 	UCHAR* const address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
@@ -3715,6 +3719,8 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 
 	if (lpMutex->hEvent)
 	{
+		SetHandleInformation(lpMutex->hEvent, HANDLE_FLAG_INHERIT, 0);
+
 		if (lpName)
 			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
 
@@ -3730,6 +3736,8 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 
 		if (lpMutex->hFileMap)
 		{
+			SetHandleInformation(lpMutex->hFileMap, HANDLE_FLAG_INHERIT, 0);
+
 			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*)
 				MapViewOfFile(lpMutex->hFileMap, FILE_MAP_WRITE, 0, 0, 0);
 
