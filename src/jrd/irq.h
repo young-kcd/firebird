@@ -44,7 +44,9 @@ enum irq_type_t
 	irq_m_index,			// modify index id
 	irq_r_fields,			// pick up field expressions
 	irq_l_security,			// lookup security_classes
-	irq_v_security,			// verify security for relation
+	irq_v_security_r,		// verify security for relation
+	irq_v_security_v,		// verify security for view
+	irq_v_security_o,		// verify security for role
 	irq_l_index,			// lookup index id
 	irq_l_functions,		// lookup function
 	irq_l_args,				// lookup function arguments

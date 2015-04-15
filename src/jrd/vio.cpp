@@ -1391,6 +1391,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 			break;
 
+		case rel_db_creators:
+			if (!tdbb->getAttachment()->locksmith())
+				protect_system_table_delupd(tdbb, relation, "DELETE");
+			break;
+
 		case rel_pages:
 		case rel_formats:
 		case rel_trans:
@@ -1401,6 +1406,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_roles:
 		case rel_sec_users:
 		case rel_sec_user_attributes:
+		case rel_auth_mapping:
+		case rel_dpds:
+		case rel_dims:
+		case rel_filters:
+		case rel_vrel:
 			protect_system_table_delupd(tdbb, relation, "DELETE");
 			break;
 
@@ -2446,6 +2456,8 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_trans:
 		case rel_dims:
 		case rel_prc_prms:
+		case rel_auth_mapping:
+		case rel_roles:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
@@ -2454,6 +2466,11 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		 		protect_system_table_delupd(tdbb, relation, "UPDATE", true);
 			if (EVL_field(0, org_rpb->rpb_record, f_typ_sys_flag, &desc1) && MOV_get_long(&desc1, 0))
 		 		protect_system_table_delupd(tdbb, relation, "UPDATE", true);
+			break;
+
+		case rel_db_creators:
+			if (!tdbb->getAttachment()->locksmith())
+				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			break;
 
 		case rel_pages:
@@ -2470,6 +2487,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_database:
+			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			check_class(tdbb, transaction, org_rpb, new_rpb, f_dat_class);
 			EVL_field(0, org_rpb->rpb_record, f_dat_linger, &desc1);
 			EVL_field(0, new_rpb->rpb_record, f_dat_linger, &desc2);
@@ -3085,7 +3103,16 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 		case rel_msgs:
 		case rel_prc_prms:
 		case rel_args:
+		case rel_auth_mapping:
+		case rel_dpds:
+		case rel_dims:
+		case rel_segments:
 			protect_system_table_insert(tdbb, request, relation);
+			break;
+
+		case rel_db_creators:
+			if (!tdbb->getAttachment()->locksmith())
+				protect_system_table_insert(tdbb, request, relation);
 			break;
 
 		case rel_types:
@@ -3104,11 +3131,13 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_database:
+			protect_system_table_insert(tdbb, request, relation);
 			if (set_security_class(tdbb, rpb->rpb_record, f_dat_class))
 				DFW_post_work(transaction, dfw_grant, "", obj_database);
 			break;
 
 		case rel_relations:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_rel_name, &desc);
 			DFW_post_work(transaction, dfw_create_relation, &desc, 0);
 			DFW_post_work(transaction, dfw_update_format, &desc, 0);
@@ -3119,6 +3148,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_packages:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_pkg_name, &desc);
 			set_system_flag(tdbb, rpb->rpb_record, f_pkg_sys_flag);
 			set_owner_name(tdbb, rpb->rpb_record, f_pkg_owner);
@@ -3127,6 +3157,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_procedures:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_prc_name, &desc);
 
 			if (EVL_field(0, rpb->rpb_record, f_prc_pkg_name, &desc2))
@@ -3156,6 +3187,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_funs:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_fun_name, &desc);
 
 			if (EVL_field(0, rpb->rpb_record, f_fun_pkg_name, &desc2))
@@ -3207,6 +3239,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_classes:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_cls_class, &desc);
 			DFW_post_work(transaction, dfw_compute_security, &desc, 0);
 			break;
@@ -3223,12 +3256,14 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_filters:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_flt_name, &desc);
 			if (set_security_class(tdbb, rpb->rpb_record, f_flt_class))
 				DFW_post_work(transaction, dfw_grant, &desc, obj_blob_filter);
 			break;
 
 		case rel_files:
+			protect_system_table_insert(tdbb, request, relation);
 			{
 				const bool name_defined = EVL_field(0, rpb->rpb_record, f_file_name, &desc);
 				if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
@@ -3285,6 +3320,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_priv:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_prv_rname, &desc);
 			EVL_field(0, rpb->rpb_record, f_prv_o_type, &desc2);
 			object_id = MOV_get_long(&desc2, 0);
@@ -3292,6 +3328,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_vrel:
+			protect_system_table_insert(tdbb, request, relation);
 			// If RDB$CONTEXT_TYPE is NULL, ask DFW to populate it.
 			if (!EVL_field(0, rpb->rpb_record, f_vrl_context_type, &desc))
 			{
@@ -3305,6 +3342,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_gens:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_gen_name, &desc);
 			EVL_field(0, rpb->rpb_record, f_gen_id, &desc2);
 			object_id = set_metadata_id(tdbb, rpb->rpb_record,
@@ -3318,6 +3356,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_charsets:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_cs_cs_name, &desc);
 			set_system_flag(tdbb, rpb->rpb_record, f_cs_sys_flag);
 			set_owner_name(tdbb, rpb->rpb_record, f_cs_owner);
@@ -3326,6 +3365,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_collations:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_coll_name, &desc);
 			set_system_flag(tdbb, rpb->rpb_record, f_coll_sys_flag);
 			set_owner_name(tdbb, rpb->rpb_record, f_coll_owner);
@@ -3334,6 +3374,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_exceptions:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_xcp_name, &desc);
 			set_metadata_id(tdbb, rpb->rpb_record,
 							f_xcp_number, drq_g_nxt_xcp_id, "RDB$EXCEPTIONS");
@@ -3344,6 +3385,8 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_backup_history:
+			if (!tdbb->getAttachment()->locksmith())
+				protect_system_table_insert(tdbb, request, relation);
 			set_metadata_id(tdbb, rpb->rpb_record,
 							f_backup_id, drq_g_nxt_nbakhist_id, "RDB$BACKUP_HISTORY");
 			break;
