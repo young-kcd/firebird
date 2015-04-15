@@ -312,7 +312,7 @@ void InternalTransaction::doCommit(FbStatusVector* status, thread_db* tdbb, bool
 		{
 			m_transaction->commit(&s);
 			m_transaction = NULL;
-	}
+		}
 	}
 }
 
@@ -337,7 +337,7 @@ void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bo
 		{
 			m_transaction->rollback(&s);
 			m_transaction = NULL;
-	}
+		}
 	}
 
 	if (status->getErrors()[1] == isc_att_shutdown && !retain)
@@ -606,7 +606,7 @@ static bool isPermanentBlob(const dsc& src)
 {
 	if (src.isBlob())
 	{
-		const bid* srcBlobID = reinterpret_cast<bid*> (src.dsc_address);
+		const bid* srcBlobID = reinterpret_cast<bid*>(src.dsc_address);
 		return (srcBlobID->bid_internal.bid_relation_id != 0);
 	}
 	return false;
