@@ -4939,7 +4939,7 @@ Firebird::ITransaction* Attachment::startTransaction(CheckStatusWrapper* status,
 		rem_port* port = rdb->rdb_port;
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
-		if (tpbLength < 0 || (tpbLength > 0 && !tpb))
+		if (/***tpbLength < 0 ||***/ (tpbLength > 0 && !tpb))
 		{
 			status_exception::raise(Arg::Gds(isc_bad_tpb_form));
 		}
