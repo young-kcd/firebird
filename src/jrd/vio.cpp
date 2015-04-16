@@ -3229,6 +3229,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 			break;
 
 		case rel_indices:
+			protect_system_table_insert(tdbb, request, relation);
 			EVL_field(0, rpb->rpb_record, f_idx_relation, &desc);
 			SCL_check_relation(tdbb, &desc, SCL_control);
 			EVL_field(0, rpb->rpb_record, f_idx_name, &desc);
