@@ -1,3 +1,19 @@
+ 2015-04-16 11:58  alexpeshkoff 
+   M src/jrd/vio.cpp
+Postfix for CORE-4731
+
+ 2015-04-15 17:38  robocop 
+   M src/jrd/extds/InternalDS.cpp
+Misc.
+
+ 2015-04-15 16:59  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+Fixed bug CORE-4747 : Error "invalid BLOB ID" can occur when retrieving MON$STATEMENTS.MON$SQL_TEXT using ES/EDS and db_connect argument is not specified
+
+ 2015-04-15 16:10  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+More fixes for CORE-1605 - Bugcheck 232 (invalid operation) for an aggregated query.
+
  2015-04-15 14:01  alexpeshkoff 
    M src/jrd/vio.cpp
 Fixed CORE-4715: Restore of shadowed database fails using -k ("restore without shadow") switch
