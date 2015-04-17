@@ -4426,12 +4426,16 @@ void SysStableAttachment::destroy(Attachment* attachment)
 ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction* apiTra,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
-	JTransaction* jt = apiTra ? getAttachment()->getTransactionInterface(user_status, apiTra) : NULL;
-	jrd_tra* tra = jt ? jt->getHandle() : NULL;
+	JTransaction* jt = NULL;
 
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+
+		if (apiTra) {
+			JTransaction* jt = getAttachment()->getTransactionInterface(user_status, apiTra);
+		}
+		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 		if (tra)
 			validateHandle(tdbb, tra);
@@ -4485,13 +4489,14 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction* transaction,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, unsigned int flags)
 {
-	JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
-	jrd_tra* tra = jt ? jt->getHandle() : NULL;
 	JResultSet* rs = NULL;
 
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+
+		JTransaction* jt = transaction ? getAttachment()->getTransactionInterface(user_status, transaction) : NULL;
+		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 		if (tra)
 			validateHandle(tdbb, tra);
@@ -4569,12 +4574,16 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 	unsigned int length, const char* string, unsigned int dialect,
 	IMessageMetadata* inMetadata, void* inBuffer, IMessageMetadata* outMetadata, void* outBuffer)
 {
-	JTransaction* jt = apiTra ? getTransactionInterface(user_status, apiTra) : NULL;
-	jrd_tra* tra = jt ? jt->getHandle() : NULL;
+	JTransaction* jt = NULL;
 
 	try
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
+
+		if (apiTra) {
+			jt = getTransactionInterface(user_status, apiTra);
+		}
+		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 		if (tra)
 			validateHandle(tdbb, tra);
