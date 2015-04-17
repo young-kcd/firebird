@@ -100,8 +100,6 @@ public:
 	bool operator< (const MetaName& m) const { return compare(m) <  0; }
 	bool operator> (const MetaName& m) const { return compare(m) >  0; }
 
-	void upper7();
-	void lower7();
 	void printf(const char*, ...);
 	FB_SIZE_T copyTo(char* to, FB_SIZE_T toSize) const;
 

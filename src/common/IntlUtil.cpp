@@ -591,19 +591,6 @@ ULONG IntlUtil::toUpper(Jrd::CharSet* cs, ULONG srcLen, const UCHAR* src, ULONG 
 }
 
 
-void IntlUtil::toUpper(Jrd::CharSet* cs, string& s)
-{
-	HalfStaticArray<UCHAR, BUFFER_SMALL> buffer;
-	FB_SIZE_T len = s.length();
-	ULONG count = toUpper(cs, len, (const UCHAR*) s.c_str(), len * 4, buffer.getBuffer(len * 4), NULL);
-
-	if (count != INTL_BAD_STR_LENGTH)
-		s.assign(buffer.begin(), count);
-	else
-		fb_assert(false);
-}
-
-
 bool IntlUtil::readOneChar(Jrd::CharSet* cs, const UCHAR** s, const UCHAR* end, ULONG* size)
 {
 	(*s) += *size;

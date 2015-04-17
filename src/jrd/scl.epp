@@ -56,6 +56,7 @@
 #include "../common/config/config.h"
 #include "../common/os/os_utils.h"
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/IntlUtil.h"
 
 
 const int UIC_BASE	= 10;
@@ -997,7 +998,7 @@ bool SCL_role_granted(thread_db* tdbb, const UserId& usr, const TEXT* sql_role)
 	}
 
 	Firebird::string loginName(usr.usr_user_name);
-	loginName.upper();
+	IntlUtil::toUpper(loginName);
 	const TEXT* login_name = loginName.c_str();
 
 	bool found = false;
@@ -1005,7 +1006,7 @@ bool SCL_role_granted(thread_db* tdbb, const UserId& usr, const TEXT* sql_role)
 	AutoCacheRequest request(tdbb, irq_verify_role_name, IRQ_REQUESTS);
 
 	// CVC: The caller has hopefully uppercased the role or stripped quotes. Of course,
-	// uppercase-UPPER7 should only happen if the role wasn't enclosed in quotes.
+	// uppercase should only happen if the role wasn't enclosed in quotes.
 	// Shortsighted developers named the field rdb$relation_name instead of rdb$object_name.
 	// This request is not exactly the same than irq_get_role_mem, sorry, I can't reuse that.
 	// If you think that an unknown role cannot be granted, think again: someone made sure
@@ -1089,7 +1090,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		if (!create)
 		{
 			Firebird::string loginName(tempId.usr_user_name);
-			loginName.upper();
+			IntlUtil::toUpper(loginName);
 			const TEXT* login_name = loginName.c_str();
 
 			AutoCacheRequest request(tdbb, irq_get_role_name, IRQ_REQUESTS);
@@ -1567,18 +1568,12 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 				case id_sql_role:
 					if (!role_name || check_string(a, role_name))
 						hit = false;
-					else if (user.usr_sql_role_name == user.usr_trusted_role)
-						hit = true;
-					else
+					else if (user.usr_sql_role_name != user.usr_trusted_role)
 					{
-						TEXT login_name[129];
-						fb_assert(user.usr_user_name.length() < sizeof(login_name));
-						TEXT* pln = login_name;
-						const TEXT* q = user.usr_user_name.c_str();
-						while (*pln++ = UPPER7(*q)) {
-							++q;
-						}
-						hit = false;
+						Firebird::string loginName(user.usr_user_name);
+						IntlUtil::toUpper(loginName);
+						const TEXT* login_name = loginName.c_str();
+						bool roleHit = false;
 						AutoCacheRequest request(tdbb, irq_get_role_mem, IRQ_REQUESTS);
 
 						FOR(REQUEST_HANDLE request) U IN RDB$USER_PRIVILEGES WITH
@@ -1590,9 +1585,12 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 								U.RDB$PRIVILEGE EQ "M"
 						{
 							if (!U.RDB$USER.NULL)
-								hit = true;
+								roleHit = true;
 						}
 						END_FOR
+
+						if (!roleHit)
+							hit = false;
 					}
 					break;
 

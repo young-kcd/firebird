@@ -58,6 +58,7 @@
 #include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/constants.h"
+#include "../common/IntlUtil.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -246,11 +247,11 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 
 	// Uppercase owner name
 	MetaName ownerName(owner);
-	ownerName.upper7();
+	IntlUtil::toUpper(ownerName);
 
 	// Uppercase charset name
 	MetaName rdbCharSetName(charset.hasData() ? charset.c_str() : DEFAULT_DB_CHARACTER_SET_NAME);
-	rdbCharSetName.upper7();
+	IntlUtil::toUpper(rdbCharSetName);
 
 	const int* fld;
 

@@ -1296,13 +1296,11 @@ static void trace_failed_attach(TraceManager* traceManager, const char* filename
 
 void JRD_make_role_name(string& userIdRole, const int dialect)
 {
-	CharSet* utf8CharSet = IntlUtil::getUtf8CharSet();
-
 	switch (dialect)
 	{
 	case SQL_DIALECT_V5:
 		strip_quotes(userIdRole);
-		IntlUtil::toUpper(utf8CharSet, userIdRole);
+		IntlUtil::toUpper(userIdRole);
 		break;
 
 	case SQL_DIALECT_V6_TRANSITION:
@@ -1331,7 +1329,7 @@ void JRD_make_role_name(string& userIdRole, const int dialect)
 			}
 		}
 		else
-			IntlUtil::toUpper(utf8CharSet, userIdRole);
+			IntlUtil::toUpper(userIdRole);
 
 		break;
 
@@ -4433,7 +4431,7 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
 		if (apiTra) {
-			JTransaction* jt = getAttachment()->getTransactionInterface(user_status, apiTra);
+			jt = getAttachment()->getTransactionInterface(user_status, apiTra);
 		}
 		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
@@ -7204,9 +7202,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 			}
 		}
 
-		ISC_utf8ToSystem(name);
-		name.upper();
-		ISC_systemToUtf8(name);
+		IntlUtil::toUpper(name);
 
 		// if the name from the user database is defined as SYSDBA,
 		// we define that user id as having system privileges

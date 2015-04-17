@@ -89,22 +89,6 @@ namespace Firebird {
 		}
 	}
 
-	void MetaName::upper7()
-	{
-		for (char* p = data; *p; p++)
-		{
-			*p = UPPER7(*p);
-		}
-	}
-
-	void MetaName::lower7()
-	{
-		for (char* p = data; *p; p++)
-		{
-			*p = LOWWER7(*p);
-		}
-	}
-
 	void MetaName::printf(const char* format, ...)
 	{
 		init();
