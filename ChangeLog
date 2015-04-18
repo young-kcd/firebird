@@ -1,3 +1,18 @@
+ 2015-04-17 18:35  alexpeshkoff 
+   M src/common/IntlUtil.cpp
+   M src/common/IntlUtil.h
+   M src/common/classes/MetaName.cpp
+   M src/common/classes/MetaName.h
+   M src/dsql/DdlNodes.epp
+   M src/jrd/ini.epp
+   M src/jrd/jrd.cpp
+   M src/jrd/scl.epp
+Fixed CORE-4743: Granted role does not work with non-ascii username
+
+ 2015-04-17 13:27  hvlad 
+   M src/jrd/jrd.cpp
+Exceptions in getTransactionInterface() should be catched and traced too
+
  2015-04-16 14:50  asfernandes 
    M src/remote/client/interface.cpp
 Warning.
