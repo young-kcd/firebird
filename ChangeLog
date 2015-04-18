@@ -1,3 +1,7 @@
+ 2015-04-18 19:19  asfernandes 
+   M src/dsql/ExprNodes.cpp
+Fixed reintroduction of CORE-1379 per Pavel Zotov comment - Invalid parameter type when using it in CHAR_LENGTH function.
+
  2015-04-17 18:35  alexpeshkoff 
    M src/common/IntlUtil.cpp
    M src/common/IntlUtil.h
