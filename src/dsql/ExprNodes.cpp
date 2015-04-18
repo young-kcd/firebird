@@ -8695,7 +8695,7 @@ void StrLenNode::setParameterName(dsql_par* parameter) const
 bool StrLenNode::setParameterType(DsqlCompilerScratch* dsqlScratch,
 	const dsc* desc, bool forceVarChar)
 {
-	return PASS1_set_parameter_type(dsqlScratch, arg, desc, forceVarChar);
+	return false;
 }
 
 void StrLenNode::genBlr(DsqlCompilerScratch* dsqlScratch)
