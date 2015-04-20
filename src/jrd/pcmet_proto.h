@@ -33,7 +33,7 @@ namespace Jrd {
 	struct index_desc;
 }
 
-void PCMET_expression_index(Jrd::thread_db*, const Firebird::MetaName&, USHORT, Jrd::jrd_tra*);
+void PCMET_expression_index(Jrd::thread_db*, const Firebird::MetaName&, USHORT&, Jrd::jrd_tra*);
 void PCMET_lookup_index(Jrd::thread_db*, Jrd::jrd_rel*, Jrd::index_desc*);
 
 #endif // JRD_PCMET_PROTO_H

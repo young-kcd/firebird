@@ -52,7 +52,7 @@ using namespace Firebird;
 DATABASE DB = FILENAME "ODS.RDB";
 
 
-void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT id, jrd_tra* transaction)
+void PCMET_expression_index(thread_db* tdbb, const MetaName& name, USHORT &id, jrd_tra* transaction)
 {
 /**************************************
  *
