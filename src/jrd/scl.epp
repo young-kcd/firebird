@@ -525,6 +525,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
 	const Firebird::MetaName* relation_name_ptr = &index_name;
 
 	AutoRequest request;
+	int systemFlag = 0;
 
 	// No need to cache this request handle, it's only used when
 	// new constraints are created
@@ -541,6 +542,7 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
                 s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
                 default_s_class = SCL_get_class(tdbb, REL.RDB$DEFAULT_CLASS);
+			systemFlag = REL.RDB$SYSTEM_FLAG;
 		}
         END_FOR
     }
@@ -559,9 +561,17 @@ void SCL_check_index(thread_db* tdbb, const Firebird::MetaName& index_name, UCHA
                 s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
             if (!REL.RDB$DEFAULT_CLASS.NULL)
                 default_s_class = SCL_get_class(tdbb, REL.RDB$DEFAULT_CLASS);
+			systemFlag = REL.RDB$SYSTEM_FLAG;
         }
         END_FOR
     }
+
+	if (systemFlag == 1 && !attachment->isRWGbak())
+	{
+		// Someone is going to reference system table in FK
+		// Usually it's not good idea
+		raiseError(mask, SCL_object_table, reln_name, "");
+	}
 
 	// Check if the relation exists. It may not have been created yet.
 	// Just return in that case.
