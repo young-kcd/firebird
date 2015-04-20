@@ -778,7 +778,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ name.c_str()
 	{
-		if (REL.RDB$SYSTEM_FLAG == 1 && !attachment->locksmith())
+		if (REL.RDB$SYSTEM_FLAG == 1 && !attachment->isRWGbak())
 		{
 			// Someone is going to modify system table layout
 			// Usually it's not good idea
