@@ -1151,8 +1151,10 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 			if (transaction->tra_blobs->locate(source->bid_temp_id()))
 			{
 				blobIndex = &transaction->tra_blobs->current();
+
 				if (blobIndex->bli_materialized)
 				{
+					/*** ASF: This sanity check is not correct for EXECUTE STATEMENT. See CORE-4752.
 					if (blobIndex->bli_request)
 					{
 						// Walk through call stack looking if our BLOB is
@@ -1163,12 +1165,15 @@ void BLB_move(thread_db* tdbb, dsc* from_desc, dsc* to_desc, jrd_nod* field)
 								break;
 							temp_req = temp_req->req_caller;
 						} while (temp_req);
+
 						if (!temp_req)
 						{
 							// Trying to use temporary id of materialized blob from another request
 							ERR_post(Arg::Gds(isc_bad_segstr_id));
 						}
 					}
+					***/
+
 					source = &blobIndex->bli_blob_id;
 					continue;
 				}
