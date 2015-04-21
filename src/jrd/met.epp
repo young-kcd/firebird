@@ -1578,14 +1578,16 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	if ((tdbb->getAttachment()->att_flags & ATT_no_db_triggers) ||
-		tdbb->getDatabase()->dbb_triggers[type] != NULL)
-	{
+	if (tdbb->getAttachment()->att_flags & ATT_no_db_triggers)
 		return;
-	}
 
-	tdbb->getDatabase()->dbb_triggers[type] = FB_NEW(*tdbb->getDatabase()->dbb_permanent)
-		trig_vec(*tdbb->getDatabase()->dbb_permanent);
+	Database::CheckoutLockGuard guard(dbb, dbb->dbb_meta_mutex);
+
+	if (dbb->dbb_triggers[type] != NULL)
+		return;
+
+	dbb->dbb_triggers[type] = FB_NEW(*dbb->dbb_permanent)
+		trig_vec(*dbb->dbb_permanent);
 
 	jrd_req* trigger_request = NULL;
 	int encoded_type = type | TRIGGER_TYPE_DB;
@@ -1597,7 +1599,7 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 			 TRG.RDB$TRIGGER_INACTIVE EQ 0
 		SORTED BY TRG.RDB$TRIGGER_SEQUENCE
 
-		MET_load_trigger(tdbb, NULL, TRG.RDB$TRIGGER_NAME, &tdbb->getDatabase()->dbb_triggers[type]);
+		MET_load_trigger(tdbb, NULL, TRG.RDB$TRIGGER_NAME, &dbb->dbb_triggers[type]);
 
 	END_FOR;
 
