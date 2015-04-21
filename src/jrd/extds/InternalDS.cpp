@@ -614,7 +614,7 @@ static bool isPermanentBlob(const dsc& src)
 
 void InternalStatement::putExtBlob(thread_db* tdbb, dsc& src, dsc& dst)
 {
-	if (isPermanentBlob(src) || m_transaction->getScope() == traCommon && m_intConnection.isCurrent())
+	if (isPermanentBlob(src) || (m_transaction->getScope() == traCommon && m_intConnection.isCurrent()))
 		MOV_move(tdbb, &src, &dst);
 	else
 		Statement::putExtBlob(tdbb, src, dst);
@@ -625,7 +625,7 @@ void InternalStatement::getExtBlob(thread_db* tdbb, const dsc& src, dsc& dst)
 	fb_assert(dst.dsc_length == src.dsc_length);
 	fb_assert(dst.dsc_length == sizeof(bid));
 
-	if (isPermanentBlob(src) || m_transaction->getScope() == traCommon && m_intConnection.isCurrent())
+	if (isPermanentBlob(src) || (m_transaction->getScope() == traCommon && m_intConnection.isCurrent()))
 		memcpy(dst.dsc_address, src.dsc_address, sizeof(bid));
 	else
 		Statement::getExtBlob(tdbb, src, dst);
