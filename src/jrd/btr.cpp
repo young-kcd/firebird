@@ -583,6 +583,7 @@ DSC* BTR_eval_expression(thread_db* tdbb, index_desc* idx, Record* record, bool&
 
 	if (!already_attached)
 	{
+		expr_request->req_flags &= REQ_FLAGS_INIT_MASK;
 		expr_request->req_flags |= req_active;
 		TRA_attach_request(tdbb->getTransaction(), expr_request);
 		tdbb->setRequest(expr_request);
