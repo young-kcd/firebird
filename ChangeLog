@@ -1,3 +1,20 @@
+ 2015-04-20 17:04  alexpeshkoff 
+   M src/jrd/scl.epp
+Disabled use of system tables in foreign key constraints
+
+ 2015-04-20 15:07  alexpeshkoff 
+   M src/jrd/scl.epp
+Do not let SYSDBA modify structure of system tables
+
+ 2015-04-20 11:42  alexpeshkoff 
+   M src/jrd/vio.cpp
+Write-protect one more system relation
+
+ 2015-04-20 09:36  hvlad 
+   M src/jrd/pcmet.epp
+   M src/jrd/pcmet_proto.h
+Fixed bug CORE-4754 : Manipulations with GTT from several attachments (using ES/EDS and different roles) leads to: "internal Firebird consistency check (invalid SEND request (167), file: JrdStatement.cpp line: 325)"
+
  2015-04-18 19:19  asfernandes 
    M src/dsql/ExprNodes.cpp
 Fixed reintroduction of CORE-1379 per Pavel Zotov comment - Invalid parameter type when using it in CHAR_LENGTH function.
