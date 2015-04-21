@@ -176,7 +176,7 @@ int ISC_kill(SLONG pid, SLONG signal_number, void *object_hndl)
 	return SetEvent(handle) ? 0 : -1;
 }
 
-void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int signal_number)
+void* ISC_make_signal(bool /*create_flag*/, bool manual_reset, int process_idL, int signal_number)
 {
 /**************************************
  *
@@ -206,14 +206,11 @@ void* ISC_make_signal(bool create_flag, bool manual_reset, int process_idL, int 
 		return NULL;
 	}
 
-	HANDLE hEvent = OpenEvent(EVENT_ALL_ACCESS, TRUE, event_name);
+	HANDLE hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
 
-	if (create_flag)
-	{
-		fb_assert(!hEvent);
-		hEvent = CreateEvent(ISC_get_security_desc(), man_rst, FALSE, event_name);
+	if (hEvent) {
+		SetHandleInformation(hEvent, HANDLE_FLAG_INHERIT, 0);
 	}
-
 	return hEvent;
 }
 

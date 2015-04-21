@@ -2184,6 +2184,8 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 			CloseHandle(file_handle);
 			Arg::Gds(isc_unavailable).raise();
 		}
+
+		SetHandleInformation(event_handle, HANDLE_FLAG_INHERIT, 0);
 	}
 
 	if (length == 0)
@@ -2303,6 +2305,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		CloseHandle(file_handle);
 		goto retry;
 	}
+	SetHandleInformation(header_obj, HANDLE_FLAG_INHERIT, 0);
 
 	ULONG* const header_address = (ULONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
 
@@ -2354,6 +2357,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		CloseHandle(file_handle);
 		system_call_failed::raise("CreateFileMapping", err);
 	}
+	SetHandleInformation(file_obj, HANDLE_FLAG_INHERIT, 0);
 
 	UCHAR* const address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);
 
@@ -2814,6 +2818,8 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 
 	if (lpMutex->hEvent)
 	{
+		SetHandleInformation(lpMutex->hEvent, HANDLE_FLAG_INHERIT, 0);
+
 		if (lpName)
 			sprintf(sz, FAST_MUTEX_MAP_NAME, lpName);
 
@@ -2829,6 +2835,8 @@ static bool initializeFastMutex(FAST_MUTEX* lpMutex, LPSECURITY_ATTRIBUTES lpAtt
 
 		if (lpMutex->hFileMap)
 		{
+			SetHandleInformation(lpMutex->hFileMap, HANDLE_FLAG_INHERIT, 0);
+
 			lpMutex->lpSharedInfo = (FAST_MUTEX_SHARED_SECTION*)
 				MapViewOfFile(lpMutex->hFileMap, FILE_MAP_WRITE, 0, 0, 0);
 
