@@ -1,3 +1,8 @@
+ 2015-04-20 12:11  hvlad 
+   M src/jrd/pcmet.epp
+   M src/jrd/pcmet_proto.h
+Fixed bug CORE-4754 : Manipulations with GTT from several attachments (using ES/EDS and different roles) leads to: "internal Firebird consistency check (invalid SEND request (167), file: JrdStatement.cpp line: 325)"
+
  2015-04-15 22:10  hvlad 
    M src/jrd/isc_sync.cpp
    M src/jrd/os/win32/isc_ipc.cpp
