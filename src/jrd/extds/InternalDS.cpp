@@ -309,10 +309,7 @@ void InternalTransaction::doCommit(FbStatusVector* status, thread_db* tdbb, bool
 		if (retain)
 			m_transaction->commitRetaining(&s);
 		else
-		{
 			m_transaction->commit(&s);
-			m_transaction = NULL;
-		}
 	}
 }
 
@@ -334,10 +331,7 @@ void InternalTransaction::doRollback(FbStatusVector* status, thread_db* tdbb, bo
 		if (retain)
 			m_transaction->rollbackRetaining(&s);
 		else
-		{
 			m_transaction->rollback(&s);
-			m_transaction = NULL;
-		}
 	}
 
 	if (status->getErrors()[1] == isc_att_shutdown && !retain)
