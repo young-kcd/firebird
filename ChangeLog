@@ -1,3 +1,21 @@
+ 2015-04-21 19:26  asfernandes 
+   M src/jrd/extds/InternalDS.cpp
+Misc.
+
+ 2015-04-21 19:26  asfernandes 
+   M src/jrd/blb.cpp
+Fixed CORE-4752 - EXECUTE STATEMENT using BLOB parameters results in "Invalid BLOB ID" error.
+
+ 2015-04-21 10:39  hvlad 
+   M src/jrd/btr.cpp
+Fixed bug CORE-4759 : request synchronization error when build expression index.
+
+ 2015-04-21 09:36  hvlad 
+   M src/common/isc_sync.cpp
+   M src/common/os/win32/isc_ipc.cpp
+Fixed bug CORE-4753 : Firebird hangs in embed mode.
+Removed annoying wrong assertion.
+
  2015-04-20 17:04  alexpeshkoff 
    M src/jrd/scl.epp
 Disabled use of system tables in foreign key constraints
