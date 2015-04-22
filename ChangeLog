@@ -1,3 +1,19 @@
+ 2015-04-21 19:33  asfernandes 
+   M src/jrd/blb.cpp
+Backport fix for CORE-4752 - EXECUTE STATEMENT using BLOB parameters results in "Invalid BLOB ID" error.
+
+ 2015-04-21 19:23  robocop 
+   M src/jrd/extds/InternalDS.cpp
+Misc.
+
+ 2015-04-21 13:28  hvlad 
+   M src/jrd/met.epp
+Fixed bug CORE-4761 : Db on connect triggers fail to execute some time
+
+ 2015-04-21 10:23  hvlad 
+   M src/jrd/btr.cpp
+Fixed bug CORE-4759 : request synchronization error when build expression index
+
  2015-04-20 12:11  hvlad 
    M src/jrd/pcmet.epp
    M src/jrd/pcmet_proto.h
