@@ -36,6 +36,16 @@
 #include <stdlib.h>
 #endif
 
+// NS 2014-07-23 FIXME: Rework error handling
+// 1. We shall not silently truncate upper bits of integer values read from configuration files.
+// 2. Invalid configuration file values that we ignored shall leave trace in firebird.log
+//    to avoid user confusion.
+// 3. Incorrect syntax for parameter values shall not be ignored silently
+// 4. Integer overflow during parsing of parameter value shall not be ignored silently
+//
+// Currently user can only guess which parameter values have been applied by the engine
+// and which were ignored. Or resort to reading source code and using debugger to find out.
+
 namespace {
 
 /******************************************************************************
@@ -192,7 +202,10 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
 	{TYPE_BOOLEAN,		"RemoteAccess",				(ConfigValue) true},
 	{TYPE_BOOLEAN,		"IPv6V6Only",				(ConfigValue) false},
-	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false}
+	{TYPE_BOOLEAN,		"WireCompression",			(ConfigValue) false},
+	{TYPE_INTEGER,		"SnapshotsMemSize",			(ConfigValue) 65536}, // bytes
+	{TYPE_INTEGER,		"TpcBlockSize",				(ConfigValue) 4194304}, // bytes
+	{TYPE_BOOLEAN,		"ReadConsistency",			(ConfigValue) true}
 };
 
 /******************************************************************************
@@ -701,6 +714,26 @@ int Config::getServerMode()
 	return rc;
 }
 
+ULONG Config::getSnapshotsMemSize() const
+{
+	SINT64 rc = get<SINT64>(KEY_SNAPSHOTS_MEM_SIZE);
+	if (rc <= 0 || rc > MAX_ULONG)
+	{
+		rc = 65536;
+	}
+	return rc;
+}
+
+ULONG Config::getTpcBlockSize() const
+{
+	SINT64 rc = get<SINT64>(KEY_TPC_BLOCK_SIZE);
+	if (rc <= 0 || rc > MAX_ULONG)
+	{
+		rc = 4194304;
+	}
+	return rc;
+}
+
 const char* Config::getPlugins(unsigned int type) const
 {
 	switch (type)
@@ -787,4 +820,9 @@ bool Config::getRemoteAccess() const
 bool Config::getWireCompression() const
 {
 	return get<bool>(KEY_WIRE_COMPRESSION);
+}
+
+bool Config::getReadConsistency() const
+{
+	return get<bool>(KEY_READ_CONSISTENCY);
 }

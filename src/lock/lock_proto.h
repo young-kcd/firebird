@@ -49,6 +49,7 @@
 #include "../jrd/que.h"
 
 typedef FB_UINT64 LOCK_OWNER_T; // Data type for the Owner ID
+typedef ULONG LOCK_DATA_T;
 
 // Maximum lock series for gathering statistics and querying data
 
@@ -168,7 +169,7 @@ struct lbl
 	srq lbl_requests;				// Requests granted
 	srq lbl_lhb_hash;				// Collision que for hash table
 	srq lbl_lhb_data;				// Lock data que by series
-	SLONG lbl_data;					// User data
+	LOCK_DATA_T lbl_data;			// User data
 	UCHAR lbl_series;				// Lock series
 	UCHAR lbl_flags;				// Unused. Misc flags
 	USHORT lbl_pending_lrq_count;	// count of lbl_requests with LRQ_pending
@@ -186,7 +187,7 @@ struct lrq
 	USHORT lrq_flags;				// Misc crud
 	SRQ_PTR lrq_owner;				// Owner making request
 	SRQ_PTR lrq_lock;				// Lock requested
-	SLONG lrq_data;					// Lock data requested
+	LOCK_DATA_T lrq_data;			// Lock data requested
 	srq lrq_own_requests;			// Locks granted for owner
 	srq lrq_lbl_requests;			// Que of requests (active, pending)
 	srq lrq_own_blocks;				// Owner block que
@@ -405,7 +406,7 @@ public:
 	void shutdownOwner(Attachment*, SRQ_PTR*);
 
 	SRQ_PTR enqueue(Attachment*, Firebird::CheckStatusWrapper*, SRQ_PTR, const USHORT,
-		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
+		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, LOCK_DATA_T, SSHORT, SRQ_PTR);
 	bool convert(Attachment*, Firebird::CheckStatusWrapper*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
 	UCHAR downgrade(Attachment*, Firebird::CheckStatusWrapper*, const SRQ_PTR);
 	bool dequeue(const SRQ_PTR);
@@ -413,10 +414,10 @@ public:
 	void repost(Attachment*, lock_ast_t, void*, SRQ_PTR);
 	bool cancelWait(SRQ_PTR);
 
-	SLONG queryData(const USHORT, const USHORT);
-	SLONG readData(SRQ_PTR);
-	SLONG readData2(USHORT, const UCHAR*, USHORT, SRQ_PTR);
-	SLONG writeData(SRQ_PTR, SLONG);
+	LOCK_DATA_T queryData(const USHORT, const USHORT);
+	LOCK_DATA_T readData(SRQ_PTR);
+	LOCK_DATA_T readData2(USHORT, const UCHAR*, USHORT, SRQ_PTR);
+	LOCK_DATA_T writeData(SRQ_PTR, LOCK_DATA_T);
 
 private:
 	explicit LockManager(const Firebird::string&, Firebird::RefPtr<Config>);

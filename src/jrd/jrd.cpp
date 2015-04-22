@@ -1556,8 +1556,6 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				options.setBuffers(dbb->dbb_config);
 				CCH_init(tdbb, options.dpb_buffers);
 
-				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
-
 				// Initialize backup difference subsystem. This must be done before WAL and shadowing
 				// is enabled because nbackup it is a lower level subsystem
 				dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
@@ -1575,6 +1573,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				// initialize shadowing as soon as the database is ready for it
 				// but before any real work is done
 				SDW_init(tdbb, options.dpb_activate_shadow, options.dpb_delete_shadow);
+
+				// Initialize TIP cache. We do this late to give SDW a chance to 
+				// work while we read states for all interesting transactions
+				dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
+				dbb->dbb_tip_cache->initializeTpc(tdbb);
 
 				// linger
 				dbb->dbb_linger_seconds = MET_get_linger(tdbb);
@@ -2662,8 +2665,6 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			else
 				dbb->dbb_database_name = dbb->dbb_filename;
 
-			dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
-
 			// Initialize backup difference subsystem. This must be done before WAL and shadowing
 			// is enabled because nbackup it is a lower level subsystem
 			dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
@@ -2743,6 +2744,10 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			dbb->dbb_backup_manager->dbCreating = false;
 
 			config->notify();
+
+			// Initialize TIP cache
+			dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
+			dbb->dbb_tip_cache->initializeTpc(tdbb);
 
 			// Init complete - we can release dbInitMutex
 			dbb->dbb_flags &= ~(DBB_new | DBB_creating);
@@ -6601,6 +6606,10 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	CCH_shutdown(tdbb);
 
+	if (dbb->dbb_tip_cache) {
+		dbb->dbb_tip_cache->finalizeTpc(tdbb);
+	}
+
 	if (dbb->dbb_backup_manager)
 		dbb->dbb_backup_manager->shutdown(tdbb);
 
@@ -6612,8 +6621,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 
 	if (dbb->dbb_retaining_lock)
 		LCK_release(tdbb, dbb->dbb_retaining_lock);
-
-	dbb->dbb_shared_counter.shutdown(tdbb);
 
 	if (dbb->dbb_sweep_lock)
 		LCK_release(tdbb, dbb->dbb_sweep_lock);

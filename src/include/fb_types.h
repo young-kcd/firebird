@@ -144,6 +144,8 @@ typedef ULONG StreamType;
 
 // The type of Jrd's transaction.
 typedef ULONG TraNumber;
+typedef ULONG CommitNumber;
+typedef ULONG SnapshotHandle;
 
 // Alignment rule
 template <typename T>

@@ -998,7 +998,7 @@ void Monitoring::putRequest(SnapshotData::DumpRecord& record, const jrd_req* req
 	record.reset(rel_mon_statements);
 
 	// request id
-	record.storeInteger(f_mon_stmt_id, request->req_id);
+	record.storeInteger(f_mon_stmt_id, request->getRequestId());
 	// attachment id
 	if (request->req_attachment)
 	{
@@ -1053,13 +1053,13 @@ void Monitoring::putCall(SnapshotData::DumpRecord& record, const jrd_req* reques
 	record.reset(rel_mon_calls);
 
 	// call id
-	record.storeInteger(f_mon_call_id, request->req_id);
+	record.storeInteger(f_mon_call_id, request->getRequestId());
 	// statement id
-	record.storeInteger(f_mon_call_stmt_id, initialRequest->req_id);
+	record.storeInteger(f_mon_call_stmt_id, initialRequest->getRequestId());
 	// caller id
 	if (initialRequest != request->req_caller)
 	{
-		record.storeInteger(f_mon_call_caller_id, request->req_caller->req_id);
+		record.storeInteger(f_mon_call_caller_id, request->req_caller->getRequestId());
 	}
 
 	const JrdStatement* statement = request->getStatement();

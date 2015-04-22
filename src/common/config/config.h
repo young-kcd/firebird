@@ -140,6 +140,9 @@ public:
 		KEY_REMOTE_ACCESS,
 		KEY_IPV6_V6ONLY,
 		KEY_WIRE_COMPRESSION,
+		KEY_SNAPSHOTS_MEM_SIZE,
+		KEY_TPC_BLOCK_SIZE,
+		KEY_READ_CONSISTENCY,
 		MAX_CONFIG_KEY		// keep it last
 	};
 
@@ -343,6 +346,12 @@ public:
 	bool getRemoteAccess() const;
 
 	bool getWireCompression() const;
+	
+	ULONG getSnapshotsMemSize() const;
+
+	ULONG getTpcBlockSize() const;
+
+	bool getReadConsistency() const;
 };
 
 // Implementation of interface to access master configuration file

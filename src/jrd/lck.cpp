@@ -521,10 +521,10 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_shadow:
 	case LCK_backup_alloc:
 	case LCK_backup_database:
-	case LCK_shared_counter:
 	case LCK_sweep:
 	case LCK_crypt:
 	case LCK_crypt_status:
+	case LCK_tpc_block:
 		handle = *LCK_OWNER_HANDLE_DBB(tdbb);
 		break;
 
@@ -540,7 +540,6 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_page_space:
 	case LCK_relation:
 	case LCK_tra:
-	case LCK_tra_pc:
 	case LCK_update_shadow:
 	case LCK_dsql_cache:
 	case LCK_backup_end:
@@ -704,7 +703,7 @@ bool LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 }
 
 
-SLONG LCK_query_data(thread_db* tdbb, enum lck_t lock_type, USHORT aggregate)
+LOCK_DATA_T LCK_query_data(thread_db* tdbb, enum lck_t lock_type, USHORT aggregate)
 {
 /**************************************
  *
@@ -725,7 +724,7 @@ SLONG LCK_query_data(thread_db* tdbb, enum lck_t lock_type, USHORT aggregate)
 }
 
 
-SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
+LOCK_DATA_T LCK_read_data(thread_db* tdbb, Lock* lock)
 {
 /**************************************
  *
@@ -742,7 +741,7 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	const SLONG data =
+	const LOCK_DATA_T data =
 		dbb->dbb_lock_mgr->readData2(lock->lck_type,
 									 (UCHAR*) &lock->lck_key, lock->lck_length,
 									 lock->lck_owner_handle);
@@ -815,7 +814,7 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
 }
 
 
-void LCK_write_data(thread_db* tdbb, Lock* lock, SLONG data)
+void LCK_write_data(thread_db* tdbb, Lock* lock, LOCK_DATA_T data)
 {
 /**************************************
  *

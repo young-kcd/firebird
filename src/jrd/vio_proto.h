@@ -44,7 +44,7 @@ void	VIO_copy_record(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
 void	VIO_data(Jrd::thread_db*, Jrd::record_param*, MemoryPool*);
 void	VIO_erase(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 void	VIO_fini(Jrd::thread_db*);
-bool	VIO_garbage_collect(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
+bool	VIO_garbage_collect(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*);
 Jrd::Record*	VIO_gc_record(Jrd::thread_db*, Jrd::jrd_rel*);
 bool	VIO_get(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*, MemoryPool*);
 bool	VIO_get_current(Jrd::thread_db*, Jrd::record_param*, Jrd::jrd_tra*,
@@ -62,6 +62,7 @@ bool	VIO_sweep(Jrd::thread_db*, Jrd::jrd_tra*, Jrd::TraceSweepEvent*);
 void	VIO_verb_cleanup(Jrd::thread_db*, Jrd::jrd_tra*);
 IPTR	VIO_savepoint_large(const Jrd::Savepoint*, IPTR);
 void	VIO_temp_cleanup(Jrd::jrd_tra*);
+void	VIO_intermediate_gc(Jrd::thread_db* tdbb, Jrd::record_param* rpb, Jrd::jrd_tra* transaction);
 
 namespace Jrd
 {

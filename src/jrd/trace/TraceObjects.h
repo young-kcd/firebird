@@ -147,7 +147,7 @@ public:
 		m_perf(perf)
 	{}
 
-	int getStmtID()				{ return m_stmt->req_id; }
+	int getStmtID()				{ return m_stmt->getRequestId(); }
 	PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:

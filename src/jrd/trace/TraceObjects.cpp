@@ -165,7 +165,7 @@ unsigned TraceTransactionImpl::getIsolation()
 int TraceSQLStatementImpl::getStmtID()
 {
 	if (m_stmt->req_request)
-		return m_stmt->req_request->req_id;
+		return m_stmt->req_request->getRequestId();
 
 	return 0;
 }

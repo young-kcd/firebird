@@ -150,6 +150,25 @@ const int DEFAULT_LOCK_TIMEOUT = -1; // infinite
 const char* const TRA_BLOB_SPACE = "fb_blob_";
 const char* const TRA_UNDO_SPACE = "fb_undo_";
 
+class ActiveSnapshots
+{
+public:
+	explicit ActiveSnapshots(Firebird::MemoryPool& p);
+
+	// Returns snapshot number given version belongs to.
+	// It is not needed to maintain two versions for the same snapshot, so the latter
+	// version can be garbage-collected.
+	//
+	// Function returns CN_ACTIVE if version was committed after we obtained
+	// our list of snapshots. It means GC is not possible for this version.
+	CommitNumber getSnapshotForVersion(CommitNumber version_cn);
+private:
+	UInt32Bitmap m_snapshots; // List of active snapshots as of the moment of time
+	CommitNumber m_lastCommit; // CN_ACTIVE here means object is not populated
+	ULONG m_releaseCount; // Release event counter when list was last updated
+	friend class TipCache;
+};
+
 class jrd_tra : public pool_alloc<type_tra>
 {
 	typedef Firebird::GenericMap<Firebird::Pair<Firebird::NonPooled<USHORT, SINT64> > > GenIdCache;
@@ -180,7 +199,9 @@ public:
 		tra_stats(*p),
 		tra_open_cursors(*p),
 		tra_outer(outer),
-		tra_transactions(*p),
+		tra_snapshot_handle(0),
+		tra_snapshot_number(0),
+		tra_active_snapshots(*p),
 		tra_sorts(*p),
 		tra_public_interface(NULL),
 		tra_gen_ids(NULL),
@@ -285,7 +306,9 @@ public:
 	bool tra_in_use;					// transaction in use (can't be committed or rolled back)
 	jrd_tra* const tra_outer;			// outer transaction of an autonomous transaction
 	CallerName tra_caller_name;			// caller object name
-	Firebird::Array<UCHAR> tra_transactions;
+	SnapshotHandle tra_snapshot_handle;
+	CommitNumber tra_snapshot_number;
+	ActiveSnapshots tra_active_snapshots; // List of currently active snapshots for GC purposes
 	SortOwner tra_sorts;
 
 	EDS::Transaction *tra_ext_common;
@@ -403,6 +426,7 @@ const ULONG TRA_restart_requests	= 0x4000L;	// restart all requests in attachmen
 const ULONG TRA_no_auto_undo		= 0x8000L;	// don't start a savepoint in TRA_start
 const ULONG TRA_precommitted		= 0x10000L;	// transaction committed at startup
 const ULONG TRA_own_interface		= 0x20000L;	// tra_interface was created for internal needs
+const ULONG TRA_read_consistency	= 0x40000L; // ensure read consistency for cursors in this transaction
 
 // flags derived from TPB, see also transaction_options() at tra.cpp
 const ULONG TRA_OPTIONS_MASK = (TRA_degree3 | TRA_readonly | TRA_ignore_limbo | TRA_read_committed |

@@ -361,6 +361,14 @@ void IDX_create_index(thread_db* tdbb,
 		if (!VIO_garbage_collect(tdbb, &primary, transaction))
 			continue;
 
+		// If there are any back-versions left make an attempt at intermediate GC.
+		if (primary.rpb_b_page) {
+			VIO_intermediate_gc(tdbb, &primary, transaction);
+
+			if (!DPM_get(tdbb, &primary, LCK_read))
+				continue;
+		}
+
 		if (primary.rpb_flags & rpb_deleted)
 			CCH_RELEASE(tdbb, &primary.getWindow(tdbb));
 		else

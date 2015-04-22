@@ -176,7 +176,10 @@ public:
 		  req_auto_trans(*req_pool),
 		  req_sorts(*req_pool),
 		  req_rpb(*req_pool),
-		  impureArea(*req_pool)
+		  impureArea(*req_pool),
+		  req_snapshot_owner(NULL),
+		  req_snapshot_handle(0),
+		  req_snapshot_number(0)
 	{
 		fb_assert(statement);
 		setAttachment(attachment);
@@ -211,13 +214,23 @@ public:
 			CS_METADATA : req_attachment->att_charset;
 	}
 
+	SLONG getRequestId() const {
+		if (!req_id)
+			req_id = JRD_get_thread_data()->getDatabase()->generateStatementId();
+		return req_id;
+	}
+
+	void setRequestId(SLONG id) {
+		req_id = id;
+	}
+
 private:
 	JrdStatement* const statement;
+	mutable SLONG		req_id;					// request identifier
 
 public:
 	MemoryPool* req_pool;
 	Attachment*	req_attachment;			// database attachment
-	SLONG		req_id;					// request identifier
 	USHORT		req_incarnation;		// incarnation number
 	Firebird::MemoryStats req_memory_stats;
 
@@ -270,6 +283,11 @@ public:
 	Firebird::Array<UCHAR> impureArea;		// impure area
 	USHORT charSetId;						// "client" character set of the request
 	TriggerAction req_trigger_action;		// action that caused trigger to fire
+
+	// Fields to support READ COMMITTED cursor stability
+	jrd_req*		req_snapshot_owner;
+	SnapshotHandle req_snapshot_handle;
+	CommitNumber req_snapshot_number;
 
 	enum req_s {
 		req_evaluate,

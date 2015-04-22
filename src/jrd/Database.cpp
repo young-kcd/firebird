@@ -55,6 +55,31 @@ namespace Jrd
 #endif
 	}
 
+	SLONG Database::generateAttachmentId() {
+		fb_assert(dbb_tip_cache);
+		return dbb_tip_cache->generateAttachmentId();
+	}
+
+	TraNumber Database::generateTransactionId() {
+		fb_assert(dbb_tip_cache);
+		return dbb_tip_cache->generateTransactionId();
+	}
+
+	/*void Database::assignLatestTransactionId(TraNumber number) {
+		fb_assert(dbb_tip_cache);
+		dbb_tip_cache->assignLatestTransactionId(number);
+	}
+
+	void Database::assignLatestAttachmentId(SLONG number) {
+		fb_assert(dbb_tip_cache);
+		dbb_tip_cache->assignLatestAttachmentId(number);
+	}*/
+
+	SLONG Database::generateStatementId() {
+		if (!dbb_tip_cache) return 0;
+		return dbb_tip_cache->generateStatementId();
+	}
+
 	string Database::getUniqueFileId() const
 	{
 		const PageSpace* const pageSpace = dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
@@ -96,6 +121,7 @@ namespace Jrd
 				MemoryPool::deletePool(dbb_pools[i]);
 		}
 
+		delete dbb_tip_cache;
 		delete dbb_monitoring_data;
 		delete dbb_backup_manager;
 		delete dbb_crypto_manager;
@@ -106,8 +132,6 @@ namespace Jrd
 			tdbb->deactivate();
 			tdbb->setDatabase(NULL);
 		}
-
-		delete dbb_tip_cache;
 
 		fb_assert(!locked());
 		// This line decrements the usage counter and may cause the destructor to be called.
@@ -235,61 +259,6 @@ namespace Jrd
 			LCK_release(tdbb, dbb_sweep_lock);
 
 		dbb_flags &= ~(DBB_sweep_in_progress | DBB_sweep_starting);
-	}
-
-
-	void Database::SharedCounter::shutdown(thread_db* tdbb)
-	{
-		for (size_t i = 0; i < TOTAL_ITEMS; i++)
-		{
-			if (m_counters[i].lock)
-				LCK_release(tdbb, m_counters[i].lock);
-		}
-	}
-
-	SLONG Database::SharedCounter::generate(thread_db* tdbb, ULONG space, ULONG prefetch)
-	{
-		fb_assert(space < TOTAL_ITEMS);
-		ValueCache* const counter = &m_counters[space];
-
-		if (m_localOnly)
-		{
-			SLONG result = 0;
-			while ( !(result = (SLONG) ++counter->curVal) )
-				;
-			return result;
-		}
-
-		Database* const dbb = tdbb->getDatabase();
-		SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::SharedCounter::generate");
-
-		if (!counter->lock)
-		{
-			Lock* const lock =
-				FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock(tdbb, sizeof(SLONG), LCK_shared_counter);
-			counter->lock = lock;
-			lock->lck_key.lck_long = space;
-			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
-		}
-
-		SLONG result = (SLONG) ++counter->curVal;
-
-		if (result > counter->maxVal)
-		{
-			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
-			result = LCK_read_data(tdbb, counter->lock);
-
-			// zero IDs are somewhat special, so let's better skip them
-			if (!result)
-				result = 1;
-
-			counter->curVal = result;
-			counter->maxVal = result + prefetch - 1;
-			LCK_write_data(tdbb, counter->lock, counter->maxVal + 1);
-			LCK_convert(tdbb, counter->lock, LCK_SR, LCK_WAIT);
-		}
-
-		return result;
 	}
 
 	void Database::Linger::handler()
