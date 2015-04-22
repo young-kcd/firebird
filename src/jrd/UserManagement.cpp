@@ -371,11 +371,11 @@ void UserManagement::execute(USHORT id)
 
 		if (command->attr.entered())
 		{
-			ConfigFile ocf(ConfigFile::USE_TEXT, oldAttributes.value.c_str());
+			ConfigFile ocf(ConfigFile::USE_TEXT, oldAttributes.value.c_str(), ConfigFile::NO_COMMENTS);
 			ConfigFile::Parameters::const_iterator old(ocf.getParameters().begin());
 			ConfigFile::Parameters::const_iterator oldEnd(ocf.getParameters().end());
 
-			ConfigFile ccf(ConfigFile::USE_TEXT, command->attr.get());
+			ConfigFile ccf(ConfigFile::USE_TEXT, command->attr.get(), ConfigFile::NO_COMMENTS);
 			ConfigFile::Parameters::const_iterator cur(ccf.getParameters().begin());
 			ConfigFile::Parameters::const_iterator curEnd(ccf.getParameters().end());
 
@@ -529,7 +529,7 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 	{
 		buffer = getData(rel_sec_user_attributes);
 
-		ConfigFile cf(ConfigFile::USE_TEXT, u->attributes()->get());
+		ConfigFile cf(ConfigFile::USE_TEXT, u->attributes()->get(), ConfigFile::NO_COMMENTS);
 		ConfigFile::Parameters::const_iterator e(cf.getParameters().end());
 		for (ConfigFile::Parameters::const_iterator b(cf.getParameters().begin()); b != e; ++b)
 		{

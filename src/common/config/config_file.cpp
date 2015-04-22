@@ -39,6 +39,18 @@
 
 using namespace Firebird;
 
+bool ConfigFile::getLine(Stream* stream, String& str, unsigned int& number)
+{
+	// this loop efficiently skips almost all comment lines
+	while (stream->getLine(str, number))
+	{
+		if ((str[0] != '#') || (flags & NO_COMMENTS))
+			return true;
+	}
+
+	return false;
+}
+
 namespace {
 
 bool hasWildCards(const PathName& s)
@@ -67,7 +79,7 @@ public:
 			return false;
 		}
 
-		// this loop efficiently skips almost all comment lines
+		// this loop efficiently skips almost all empty lines
 		do
 		{
 			if (feof(file))
@@ -80,7 +92,7 @@ public:
 			}
 			++l;
 			input.alltrim(" \t\r");
-		} while (input.isEmpty() || input[0] == '#');
+		} while (input.isEmpty());
 
 		line = l;
 		return true;
@@ -142,7 +154,7 @@ public:
 
 			++l;
 			input.alltrim(" \t\r");
-		} while (input.isEmpty() || input[0] == '#');
+		} while (input.isEmpty());
 
 		line = l;
 		return true;
@@ -298,6 +310,12 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 			break;
 
 		case '#':
+			if (flags & NO_COMMENTS)
+			{
+				if (inString >= 2)      // Something after the end of line
+					return LINE_BAD;
+				break;
+			}
 			if (inString != 1)
 			{
 				eol = n;
@@ -336,7 +354,7 @@ ConfigFile::LineType ConfigFile::parseLine(const char* fileName, const String& i
 					{
 						String s = input.substr(n + 1);
 						s.ltrim(" \t\r");
-						if (s.hasData() && s[0] != '#')
+						if (s.hasData() && ((s[0] != '#') || (flags & NO_COMMENTS)))
 						{
 							return LINE_BAD;
 						}
@@ -591,7 +609,7 @@ void ConfigFile::parse(Stream* stream)
 
 	parameters.setSortMode(FB_ARRAY_SORT_MANUAL);
 
-	while (stream->getLine(inputLine, line))
+	while (getLine(stream, inputLine, line))
 	{
 		Parameter current;
 		current.line = line;
@@ -625,7 +643,7 @@ void ConfigFile::parse(Stream* stream)
 
 			{ // subconf scope
 				SubStream subStream(stream->getFileName());
-				while (stream->getLine(inputLine, line))
+				while (getLine(stream, inputLine, line))
 				{
 					switch(parseLine(streamName, inputLine, current))
 					{
