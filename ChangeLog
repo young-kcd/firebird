@@ -1,3 +1,13 @@
+ 2015-04-22 17:02  alexpeshkoff 
+   M src/common/config/config_file.cpp
+   M src/common/config/config_file.h
+   M src/jrd/UserManagement.cpp
+Fixed CORE-4767: CREATE USER ... TAGS ( attr = "prefix #suffix" ): "suffix" will be removed from storage because of character # in the value of attribute
+
+ 2015-04-22 11:03  hvlad 
+   M src/jrd/extds/InternalDS.cpp
+Fixed bug CORE-4766 :  AV when trying to manage users list using EXECUTE STATEMENT on behalf of non-sysdba user which has RDB$ADMIN role
+
  2015-04-21 19:26  asfernandes 
    M src/jrd/extds/InternalDS.cpp
 Misc.
