@@ -886,8 +886,14 @@ private:
 			blob = att->createBlob(st, tra, &to, 0, NULL);
 			check(st);
 
-			blob->putSegment(st, l, ptr);
-			check(st);
+			while (l)
+			{
+				unsigned seg = l > MAX_USHORT ? MAX_USHORT : l;
+				blob->putSegment(st, seg, ptr);
+				check(st);
+				l -= seg;
+				ptr += seg;
+			}
 
 			blob->close(st);
 			check(st);

@@ -3288,7 +3288,16 @@ void JBlob::putSegment(CheckStatusWrapper* user_status, unsigned int buffer_leng
 
 		try
 		{
-			getHandle()->BLB_put_segment(tdbb, buffer, buffer_length);
+			blb* b = getHandle();
+			if (buffer_length <= MAX_USHORT)
+				b->BLB_put_segment(tdbb, buffer, buffer_length);
+			else if (!b->isSegmented())
+				b->BLB_put_data(tdbb, reinterpret_cast<const UCHAR*>(buffer), buffer_length);
+			else
+			{
+				ERR_post(Arg::Gds(isc_imp_exc) << Arg::Gds(isc_blobtoobig) <<
+						 Arg::Gds(isc_random) << "Segment size >= 64Kb");
+			}
 		}
 		catch (const Exception& ex)
 		{
