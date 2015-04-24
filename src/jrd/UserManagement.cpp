@@ -343,7 +343,6 @@ void UserManagement::execute(USHORT id)
 		return;	// Already executed
 
 	Auth::UserData* command = commands[id];
-		printf("command id=%d for %s\n", id, command->user.get());
 	IManagement* manager = getManager(command->plugin.c_str());
 
 	if (!manager)
