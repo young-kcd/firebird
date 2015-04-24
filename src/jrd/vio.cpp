@@ -95,7 +95,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
-static bool check_nullify_source(record_param*, record_param*, USHORT);
+static bool check_nullify_source(thread_db*, record_param*, record_param*, USHORT);
 static void check_owner(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static bool check_user(thread_db*, const dsc*);
 static int check_precommitted(const jrd_tra*, const record_param*);
@@ -2510,7 +2510,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_relations:
-			if (!check_nullify_source(org_rpb, new_rpb, f_rel_source))
+			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_rel_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			EVL_field(0, org_rpb->rpb_record, f_rel_name, &desc1);
 			SCL_check_relation(tdbb, &desc1, SCL_alter);
@@ -2520,7 +2520,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_packages:
-			if (!check_nullify_source(org_rpb, new_rpb, f_pkg_header_source))
+			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_pkg_header_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			if (EVL_field(0, org_rpb->rpb_record, f_pkg_name, &desc1))
 				SCL_check_package(tdbb, &desc1, SCL_alter);
@@ -2529,7 +2529,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_procedures:
-			if (!check_nullify_source(org_rpb, new_rpb, f_prc_source))
+			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_prc_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			EVL_field(0, org_rpb->rpb_record, f_prc_name, &desc1);
 
@@ -2555,7 +2555,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_funs:
-			if (!check_nullify_source(org_rpb, new_rpb, f_fun_source))
+			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_fun_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			EVL_field(0, org_rpb->rpb_record, f_fun_name, &desc1);
 
@@ -2695,7 +2695,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_triggers:
-			if (!check_nullify_source(org_rpb, new_rpb, f_trg_source))
+			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_trg_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			EVL_field(0, new_rpb->rpb_record, f_trg_rname, &desc1);
 			SCL_check_relation(tdbb, &desc1, SCL_control);
@@ -4135,8 +4135,12 @@ static void check_class(thread_db* tdbb,
  *	and if so, validate whether it was an assignment to NULL.
  *
  **************************************/
-static bool check_nullify_source(record_param* org_rpb, record_param* new_rpb, USHORT field_id)
+static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
+								 USHORT field_id)
 {
+	if (!tdbb->getAttachment()->locksmith())
+		return false;
+
 	bool nullify_found = false;
 
 	dsc org_desc, new_desc;
