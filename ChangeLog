@@ -1,3 +1,17 @@
+ 2015-04-24 17:48  alexpeshkoff 
+   M src/jrd/UserManagement.cpp
+rolled back accidentially committed debug code
+
+ 2015-04-24 17:47  alexpeshkoff 
+   M src/jrd/UserManagement.cpp
+   M src/jrd/vio.cpp
+Make it possible for DBA only to NULLify sources
+
+ 2015-04-24 13:07  alexpeshkoff 
+   M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
+   M src/jrd/jrd.cpp
+Fixed CORE-4768: CREATE USER ... TAGS ( argument_1 = 'value1', ..., argument_N = 'valueN' ) - wrong results of statement when there are many arguments
+
  2015-04-22 17:02  alexpeshkoff 
    M src/common/config/config_file.cpp
    M src/common/config/config_file.h
