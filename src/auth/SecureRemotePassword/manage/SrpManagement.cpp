@@ -878,7 +878,7 @@ private:
 	{
 		to.null = FB_FALSE;
 		const char* ptr = from->get();
-		unsigned l = static_cast<unsigned>(strlen(ptr));
+		unsigned len = static_cast<unsigned>(strlen(ptr));
 
 		Firebird::IBlob* blob = NULL;
 		try
@@ -886,12 +886,12 @@ private:
 			blob = att->createBlob(st, tra, &to, 0, NULL);
 			check(st);
 
-			while (l)
+			while (len)
 			{
-				unsigned seg = l > MAX_USHORT ? MAX_USHORT : l;
+				unsigned seg = len > MAX_USHORT ? MAX_USHORT : len;
 				blob->putSegment(st, seg, ptr);
 				check(st);
-				l -= seg;
+				len -= seg;
 				ptr += seg;
 			}
 
