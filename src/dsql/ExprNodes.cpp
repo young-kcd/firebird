@@ -7773,8 +7773,11 @@ ValueExprNode* RecordKeyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		for (DsqlContextStack::iterator stack(*dsqlScratch->context); stack.hasData(); ++stack)
 		{
 			dsql_ctx* context = stack.object();
-			if (context->ctx_scope_level != dsqlScratch->scopeLevel)
+			if ((context->ctx_flags & CTX_system) ||
+				context->ctx_scope_level != dsqlScratch->scopeLevel)
+			{
 				continue;
+			}
 
 			if (context->ctx_relation)
 				contexts.push(context);
