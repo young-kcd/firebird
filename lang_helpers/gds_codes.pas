@@ -1172,6 +1172,7 @@ const
 	gds_dsql_firstskip_rows              = 336397327;
 	gds_dsql_wlock_aggregates            = 336397328;
 	gds_dsql_wlock_conflict              = 336397329;
+	gds_dsql_max_exception_arguments     = 336397330;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

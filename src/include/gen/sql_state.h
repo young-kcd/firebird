@@ -1160,6 +1160,7 @@ static const struct {
 	{336397327, "42000"}, // 1039 dsql_firstskip_rows
 	{336397328, "42000"}, // 1040 dsql_wlock_aggregates
 	{336397329, "42000"}, // 1041 dsql_wlock_conflict
+	{336397330, "07002"}, // 1042 dsql_max_exception_arguments
 	{336723983, "00000"}, //  15 gsec_cant_open_db
 	{336723984, "00000"}, //  16 gsec_switches_error
 	{336723985, "00000"}, //  17 gsec_no_op_spec

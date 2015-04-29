@@ -64,8 +64,8 @@ typedef DoubleQuad SINT128;
 namespace MsgFormat
 {
 
-// For now we allow 7 parameters; @1..@7 in MsgPrint.
-const FB_SIZE_T SAFEARG_MAX_ARG = 7;
+// For now we allow 9 parameters; @1..@9 in MsgPrint.
+const FB_SIZE_T SAFEARG_MAX_ARG = 9;
 
 // This is the unit that represents one parameter in the format routines.
 // The user of the routines rarely needs to be concerned with it.

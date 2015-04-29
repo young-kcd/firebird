@@ -4060,6 +4060,14 @@ DmlNode* ExceptionNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 
 StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	if (parameters && parameters->items.getCount() > MsgFormat::SAFEARG_MAX_ARG)
+	{
+		status_exception::raise(
+			Arg::Gds(isc_dsql_max_exception_arguments) <<
+				Arg::Num(parameters->items.getCount()) <<
+				Arg::Num(MsgFormat::SAFEARG_MAX_ARG));
+	}
+
 	ExceptionNode* node = FB_NEW(getPool()) ExceptionNode(getPool());
 	if (exception)
 		node->exception = FB_NEW(getPool()) ExceptionItem(getPool(), *exception);

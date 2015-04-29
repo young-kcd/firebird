@@ -101,6 +101,10 @@ Parameterized exceptions (FB 3.0)
     end
 
   Notes:
+    The maximum number of arguments passed is 10.
+
+    In the exception message, @NN (example: @10) is considered as @1 followed by the literal 0.
+
     The status vector is generated using these codes combination:
       isc_except, <exception number>,
       isc_formatted_exception, <formatted exception message>, <exception parameters>
