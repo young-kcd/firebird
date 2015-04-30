@@ -4578,7 +4578,7 @@ Firebird::IService* RProvider::attachSvc(CheckStatusWrapper* status, const char*
 		ClntAuthBlock cBlock(NULL, &newSpb, &spbParam);
 		unsigned flags = 0;
 
-		if (get_new_dpb(newSpb, spbParam))
+		if (user_verification)
 			flags |= ANALYZE_UV;
 
 		if (loopback)
@@ -6037,7 +6037,17 @@ static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
 		}
 	}
 
-	return dpb.find(par.user_name);
+	bool rc = dpb.find(par.user_name);
+	if (rc)
+	{
+		string login;
+		dpb.getString(login);
+		dpb.deleteClumplet();
+		ISC_utf8Upper(login);
+		dpb.insertString(par.user_name, login);
+	}
+
+	return rc;
 }
 
 

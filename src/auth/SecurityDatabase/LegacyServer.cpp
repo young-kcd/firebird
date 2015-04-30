@@ -550,7 +550,7 @@ int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, I
 	catch (const Firebird::Exception& ex)
 	{
 		ex.stuffException(status);
-		HANDSHAKE_DEBUG(fprintf(stderr, "LegacyServer: exception status %d\n", status->getStatus()));
+		HANDSHAKE_DEBUG(fprintf(stderr, "LegacyServer: exception status:\n"));
 		HANDSHAKE_DEBUG(isc_print_status(status->getErrors()));
 		HANDSHAKE_DEBUG(isc_print_status(status->getWarnings()));
 		return IAuth::AUTH_FAILED;

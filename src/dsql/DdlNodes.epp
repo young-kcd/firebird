@@ -10259,6 +10259,17 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 //----------------------
 
 
+Firebird::MetaName UserNode::upper(const Firebird::MetaName& str)
+{
+	Firebird::MetaName tmp(str);
+	IntlUtil::toUpper(tmp);
+	return tmp;
+}
+
+
+//----------------------
+
+
 void CreateAlterUserNode::print(string& text) const
 {
 	text.printf(

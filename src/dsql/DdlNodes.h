@@ -1889,15 +1889,26 @@ public:
 };
 
 
-class CreateAlterUserNode : public DdlNode
+class UserNode : public DdlNode
+{
+public:
+	UserNode(MemoryPool& p)
+		: DdlNode(p)
+	{ }
+protected:
+	Firebird::MetaName upper(const Firebird::MetaName& str);
+};
+
+
+class CreateAlterUserNode : public UserNode
 {
 public:
 	enum Mode {USER_ADD, USER_MOD, USER_RPL};
 
 	CreateAlterUserNode(MemoryPool& p, Mode md, const Firebird::MetaName& aName)
-		: DdlNode(p),
+		: UserNode(p),
 		  properties(p),
-		  name(p, aName),
+		  name(p, upper(aName)),
 		  password(NULL),
 		  firstName(NULL),
 		  middleName(NULL),
@@ -1958,12 +1969,12 @@ public:
 };
 
 
-class DropUserNode : public DdlNode
+class DropUserNode : public UserNode
 {
 public:
 	DropUserNode(MemoryPool& p, const Firebird::MetaName& aName, const Firebird::MetaName* aPlugin = NULL)
-		: DdlNode(p),
-		  name(p, aName),
+		: UserNode(p),
+		  name(p, upper(aName)),
 		  plugin(p)
 	{
 		if (aPlugin)
@@ -1982,7 +1993,7 @@ protected:
 	}
 
 public:
-	Firebird::MetaName name;
+	const Firebird::MetaName name;
 	Firebird::MetaName plugin;
 };
 

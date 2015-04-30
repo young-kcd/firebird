@@ -85,6 +85,7 @@
 #endif
 
 #include "../common/config/config.h"
+#include "../common/unicodeUpper.h"
 
 const char INET_FLAG = ':';
 
@@ -1600,41 +1601,62 @@ namespace {
 class IConv
 {
 public:
-	explicit IConv(MemoryPool& p)
+	static const char* const SYSTEM;
+
+	IConv(MemoryPool& p, const char* from, const char* to)
 		: toBuf(p)
 	{
-#ifdef HAVE_LANGINFO_H
-		string systemCharmap = nl_langinfo(CODESET);
-#else
-		string systemCharmap;
-		if (!fb_utils::readenv("LC_CTYPE", systemCharmap))
-		{
-			systemCharmap = "ANSI_X3.4-1968";		// ascii
-		}
-#endif
-		const char* utfCharmap = "UTF-8";
-
-		toUtf = openIconv(utfCharmap, systemCharmap.c_str());
-		toSystem = openIconv(systemCharmap.c_str(), utfCharmap);
+		string toMap = charmapName(to);
+		string fromMap = charmapName(from);
+		ic = openIconv(toMap.c_str(), fromMap.c_str());
 	}
 
 	~IConv()
 	{
-		closeIconv(toUtf);
-		closeIconv(toSystem);
+		closeIconv(ic);
 	}
 
-	void systemToUtf8(AbstractString& str)
+	void convert(AbstractString& str)
 	{
-		convert(str, toUtf);
-	}
+		MutexLockGuard g(mtx, FB_FUNCTION);
 
-	void utf8ToSystem(AbstractString& str)
-	{
-		convert(str, toSystem);
+		const size_t outlength = str.length() * 4;
+		size_t outsize = outlength;
+		char* outbuf = toBuf.getBuffer(outsize);
+		size_t insize = str.length();
+		char* inbuf = str.begin();
+		if (iconv(ic, &inbuf, &insize, &outbuf, &outsize) == (size_t) -1)
+		{
+			(Arg::Gds(isc_bad_conn_str) <<
+			 Arg::Gds(isc_transliteration_failed) <<
+			 Arg::Unix(errno)).raise();
+		}
+
+		outsize = outlength - outsize;
+		memcpy(str.getBuffer(outsize), toBuf.begin(), outsize);
 	}
 
 private:
+	string charmapName(const char* name)
+	{
+		string charmap;
+		if (name == SYSTEM)
+		{
+#ifdef HAVE_LANGINFO_H
+			charmap = nl_langinfo(CODESET);
+#else
+			if (!fb_utils::readenv("LC_CTYPE", charmap))
+			{
+				charmap = "ANSI_X3.4-1968";		// ascii
+			}
+#endif
+		}
+		else
+			charmap = name;
+
+		return charmap;
+	}
+
 	iconv_t openIconv(const char* tocode, const char* fromcode)
 	{
 		iconv_t ret = iconv_open(tocode, fromcode);
@@ -1656,35 +1678,43 @@ private:
 		}
 	}
 
-	void convert(AbstractString& str, iconv_t id)
-	{
-		MutexLockGuard g(mtx, "IConv::convert");
-
-		const size_t outlength = str.length() * 4;
-		size_t outsize = outlength;
-		char* outbuf = toBuf.getBuffer(outsize);
-		size_t insize = str.length();
-		char* inbuf = str.begin();
-		if (iconv(id, &inbuf, &insize, &outbuf, &outsize) == (size_t) -1)
-		{
-			(Arg::Gds(isc_bad_conn_str) <<
-			 Arg::Gds(isc_transliteration_failed) <<
-			 Arg::Unix(errno)).raise();
-		}
-
-		outsize = outlength - outsize;
-		memcpy(str.getBuffer(outsize), toBuf.begin(), outsize);
-	}
-
-	iconv_t toUtf, toSystem;
+	iconv_t ic;
 	Mutex mtx;
 	Array<char> toBuf;
 };
 
-InitInstance<IConv> iConv;
+const char* const IConv::SYSTEM = NULL;
+
+
+class Converters
+{
+public:
+	explicit Converters(MemoryPool& p)
+		: systemToUtf8(p, IConv::SYSTEM, "UTF-8"), utf8ToSystem(p, "UTF-8", IConv::SYSTEM),
+		  unicodeToUtf8(p, "UNICODE", "UTF-8"), utf8ToUnicode(p, "UTF-8", "UNICODE")
+	{ }
+
+	IConv systemToUtf8, utf8ToSystem, unicodeToUtf8, utf8ToUnicode;
+};
+
+
+InitInstance<Converters> iConv;
 
 }
 #endif // HAVE_ICONV_H
+
+void ISC_utf8Upper(Firebird::AbstractString& str)
+{
+#ifdef HAVE_ICONV_H
+	iConv().utf8ToUnicode.convert(str);
+
+	unsigned short* const end = (unsigned short*)(str.end());
+	for (unsigned short* begin = (unsigned short*)(str.begin()); begin < end; ++begin)
+		*begin = unicodeUpper(*begin);
+
+	iConv().unicodeToUtf8.convert(str);
+#endif // HAVE_ICONV_H
+}
 
 // Converts a string from the system charset to UTF-8.
 void ISC_systemToUtf8(Firebird::AbstractString& str)
@@ -1749,7 +1779,7 @@ void ISC_systemToUtf8(Firebird::AbstractString& str)
 	str.resize(len8);
 
 #elif defined(HAVE_ICONV_H)
-	iConv().systemToUtf8(str);
+	iConv().systemToUtf8.convert(str);
 #endif
 }
 
@@ -1819,7 +1849,7 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 	str.resize(len8);
 
 #elif defined(HAVE_ICONV_H)
-	iConv().utf8ToSystem(str);
+	iConv().utf8ToSystem.convert(str);
 #endif
 }
 
