@@ -101,7 +101,7 @@ Parameterized exceptions (FB 3.0)
     end
 
   Notes:
-    The maximum number of arguments passed is 10.
+    The maximum number of arguments passed is 9.
 
     In the exception message, @NN (example: @10) is considered as @1 followed by the literal 0.
 
