@@ -10307,7 +10307,7 @@ dsc* TrimNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	const UCHAR* charactersAddress;
 	MoveBuffer charactersBuffer;
-	USHORT charactersLength;
+	ULONG charactersLength;
 
 	if (trimCharsDesc)
 	{

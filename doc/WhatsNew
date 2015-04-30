@@ -296,6 +296,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Improvement CORE-3234
+        Support for text BLOBs >= 32K as first argument for TRIM()
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Improvement CORE-3226
         IPv6 support
       Contributor(s):
@@ -1844,11 +1849,6 @@
         Use SSL/TLS support for both encryption and user authentication
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
-
-    * Improvement CORE-3234
-        Support for text BLOBs >= 32K as first argument for TRIM()
-      Contributor(s):
-        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-3085
         Add clause ALTER DOMAIN <name> {DROP | SET} NOT NULL
