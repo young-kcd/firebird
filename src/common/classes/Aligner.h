@@ -81,6 +81,24 @@ public:
 	}
 };
 
+// Align in/out parameter.
+template <typename C>
+class BiAligner : public OutAligner<C>
+{
+public:
+	BiAligner(UCHAR* buf, ULONG len)
+		: OutAligner<C>(buf, len)
+	{
+#ifdef RISC_ALIGNMENT
+		C* ptr = this->operator C*();
+		if (buf != reinterpret_cast<UCHAR*>(ptr))
+		{
+			memcpy(ptr, buf, len);
+		}
+#endif
+	}
+};
+
 // Aligns input parameter.
 template <typename C>
 class Aligner

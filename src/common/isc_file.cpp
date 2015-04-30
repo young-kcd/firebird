@@ -54,6 +54,7 @@
 #include "../common/config/config.h"
 #include "../common/config/dir_list.h"
 #include "../common/classes/init.h"
+#include "../common/classes/Aligner.h"
 #include "../common/utils_proto.h"
 #include "../common/os/os_utils.h"
 
@@ -1708,9 +1709,12 @@ void ISC_utf8Upper(Firebird::AbstractString& str)
 #ifdef HAVE_ICONV_H
 	iConv().utf8ToUnicode.convert(str);
 
-	unsigned short* const end = (unsigned short*)(str.end());
-	for (unsigned short* begin = (unsigned short*)(str.begin()); begin < end; ++begin)
-		*begin = unicodeUpper(*begin);
+	{ // aligner scope
+		Firebird::BiAligner<unsigned short> alignedStr(reinterpret_cast<UCHAR*>(str.begin()), str.length());
+		unsigned short* const end = alignedStr + (str.length() / 2);
+		for (unsigned short* begin = alignedStr; begin < end; ++begin)
+			*begin = unicodeUpper(*begin);
+	}
 
 	iConv().unicodeToUtf8.convert(str);
 #endif // HAVE_ICONV_H
