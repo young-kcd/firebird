@@ -1,3 +1,28 @@
+ 2015-04-30 15:56  asfernandes 
+   M doc/WhatsNew
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-3234 - Support for text BLOBs >= 32K as first argument for TRIM().
+
+ 2015-04-30 15:24  asfernandes 
+   M doc/sql.extensions/README.exception_handling
+Correction - thanks to Simonov Denis.
+
+ 2015-04-30 14:42  alexpeshkoff 
+   M src/common/classes/Aligner.h
+   M src/common/isc_file.cpp
+postfix for CORE-4760: take care about RISC CPUs
+
+ 2015-04-30 13:44  alexpeshkoff 
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/common/isc_f_proto.h
+   M src/common/isc_file.cpp
+   A src/common/unicodeUpper.cpp
+   A src/common/unicodeUpper.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/remote/client/interface.cpp
+Fixed CORE-4760: Can not create user with non-ascii (multi-byte) characters in the name
+
  2015-04-29 15:59  asfernandes 
    M doc/sql.extensions/README.exception_handling
    M lang_helpers/gds_codes.ftn
