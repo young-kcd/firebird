@@ -590,10 +590,10 @@ void InternalStatement::doClose(thread_db* tdbb, bool drop)
 }
 
 // We need to copy external blob from\to dynamic statement.
-// If external blob is permanent one - we could use its blob_id and avoid 
+// If external blob is permanent one - we could use its blob_id and avoid
 // copying blob contents into new temporary blob.
 // If external blob is temporary - we could access it by blob_id only if
-// dynamic statement is executed in the same transaction as local (caller) 
+// dynamic statement is executed in the same transaction as local (caller)
 // statement.
 
 static bool isPermanentBlob(const dsc& src)
@@ -603,6 +603,7 @@ static bool isPermanentBlob(const dsc& src)
 		const bid* srcBlobID = reinterpret_cast<bid*>(src.dsc_address);
 		return (srcBlobID->bid_internal.bid_relation_id != 0);
 	}
+
 	return false;
 }
 

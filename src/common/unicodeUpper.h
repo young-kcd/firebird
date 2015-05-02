@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:		Firebird generic routine
  *	MODULE:			unicodeUpper.h
- *	DESCRIPTION:	Converts unicode string to uppercase.
+ *	DESCRIPTION:	Converts unicode character to uppercase.
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");

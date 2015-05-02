@@ -1691,8 +1691,10 @@ class Converters
 {
 public:
 	explicit Converters(MemoryPool& p)
-		: systemToUtf8(p, IConv::SYSTEM, "UTF-8"), utf8ToSystem(p, "UTF-8", IConv::SYSTEM),
-		  unicodeToUtf8(p, "UNICODE", "UTF-8"), utf8ToUnicode(p, "UTF-8", "UNICODE")
+		: systemToUtf8(p, IConv::SYSTEM, "UTF-8"),
+		  utf8ToSystem(p, "UTF-8", IConv::SYSTEM),
+		  unicodeToUtf8(p, "UNICODE", "UTF-8"),
+		  utf8ToUnicode(p, "UTF-8", "UNICODE")
 	{ }
 
 	IConv systemToUtf8, utf8ToSystem, unicodeToUtf8, utf8ToUnicode;
@@ -1706,6 +1708,8 @@ InitInstance<Converters> iConv;
 
 void ISC_utf8Upper(Firebird::AbstractString& str)
 {
+	//// FIXME: What about Windows?
+
 #ifdef HAVE_ICONV_H
 	iConv().utf8ToUnicode.convert(str);
 

@@ -186,6 +186,7 @@ static void raiseError(SecurityClass::flags_t mask, SLONG type, const Firebird::
 	const char* const typeAsStr = accTypeNumToStr(type);
 	const Firebird::string fullName = r_name.hasData() ?
 		r_name.c_str() + Firebird::string(".") + name.c_str() : name.c_str();
+
 	ERR_post(Arg::Gds(isc_no_priv) << Arg::Str(names->p_names_string) <<
 									  Arg::Str(typeAsStr) <<
 									  Arg::Str(fullName));
@@ -794,10 +795,9 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 			// Usually it's not good idea
 			raiseError(mask, SCL_object_table, name, "");
 		}
+
         if (!REL.RDB$SECURITY_CLASS.NULL)
-		{
 			s_class = SCL_get_class(tdbb, REL.RDB$SECURITY_CLASS);
-		}
 	}
 	END_FOR
 

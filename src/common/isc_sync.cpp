@@ -2305,6 +2305,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		CloseHandle(file_handle);
 		goto retry;
 	}
+
 	SetHandleInformation(header_obj, HANDLE_FLAG_INHERIT, 0);
 
 	ULONG* const header_address = (ULONG*) MapViewOfFile(header_obj, FILE_MAP_WRITE, 0, 0, 0);
@@ -2357,6 +2358,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 		CloseHandle(file_handle);
 		system_call_failed::raise("CreateFileMapping", err);
 	}
+
 	SetHandleInformation(file_obj, HANDLE_FLAG_INHERIT, 0);
 
 	UCHAR* const address = (UCHAR*) MapViewOfFile(file_obj, FILE_MAP_WRITE, 0, 0, 0);

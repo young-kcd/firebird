@@ -1895,6 +1895,7 @@ public:
 	UserNode(MemoryPool& p)
 		: DdlNode(p)
 	{ }
+
 protected:
 	Firebird::MetaName upper(const Firebird::MetaName& str);
 };

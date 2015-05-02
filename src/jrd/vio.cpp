@@ -210,6 +210,7 @@ inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 				return;
 			}
 		}
+
 		protect_system_table_delupd(tdbb, relation, "DELETE", true);
 	}
 }
@@ -4149,7 +4150,7 @@ static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_
 		const bool org_null = !EVL_field(NULL, org_rpb->rpb_record, iter, &org_desc);
 		const bool new_null = !EVL_field(NULL, new_rpb->rpb_record, iter, &new_desc);
 
-		if (iter == field_id && new_null && (!org_null))
+		if (iter == field_id && new_null && !org_null)
 		{
 			fb_assert(org_desc.dsc_dtype == dtype_blob);
 			fb_assert(new_desc.dsc_dtype == dtype_blob);

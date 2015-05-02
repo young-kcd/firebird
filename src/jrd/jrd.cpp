@@ -3289,6 +3289,7 @@ void JBlob::putSegment(CheckStatusWrapper* user_status, unsigned int buffer_leng
 		try
 		{
 			blb* b = getHandle();
+
 			if (buffer_length <= MAX_USHORT)
 				b->BLB_put_segment(tdbb, buffer, buffer_length);
 			else if (!b->isSegmented())
@@ -4439,9 +4440,9 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		if (apiTra) {
+		if (apiTra)
 			jt = getAttachment()->getTransactionInterface(user_status, apiTra);
-		}
+
 		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 		if (tra)
@@ -4587,9 +4588,9 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 	{
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 
-		if (apiTra) {
+		if (apiTra)
 			jt = getTransactionInterface(user_status, apiTra);
-		}
+
 		jrd_tra* tra = jt ? jt->getHandle() : NULL;
 
 		if (tra)
