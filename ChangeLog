@@ -1,3 +1,17 @@
+ 2015-05-02 03:54  asfernandes 
+   M src/common/isc_file.cpp
+   M src/common/isc_sync.cpp
+   M src/common/os/win32/isc_ipc.cpp
+   M src/common/unicodeUpper.cpp
+   M src/common/unicodeUpper.h
+   M src/dsql/DdlNodes.h
+   M src/jrd/extds/InternalDS.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/pcmet.epp
+   M src/jrd/scl.epp
+   M src/jrd/vio.cpp
+Misc.
+
  2015-04-30 15:56  asfernandes 
    M doc/WhatsNew
    M src/dsql/ExprNodes.cpp
