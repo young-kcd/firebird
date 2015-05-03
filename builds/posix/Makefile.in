@@ -554,8 +554,12 @@ $(GEN_ROOT)/$(TARGET)/firebird/msg.gbak:	$(ROOT)/gen/msg.gbak
 
 INCLUDE_DEST=   $(FB_BUILD)/include
 
+NEW_INCLUDES_SRC = $(shell find $(SRC_ROOT)/include/firebird -type f)
+NEW_INCLUDES_DEST = $(patsubst $(SRC_ROOT)/include/firebird/%, $(INCLUDE_DEST)/firebird/%, $(NEW_INCLUDES_SRC))
+
 include_generic: $(INCLUDE_DEST)/ib_util.h  \
-                 $(INCLUDE_DEST)/ibase.h
+                 $(INCLUDE_DEST)/ibase.h	\
+                 $(NEW_INCLUDES_DEST)
 
 # ib_util.h actually is a marker for a number of headers
 
@@ -585,6 +589,10 @@ SRC_OtherDistribHeaders = $(addprefix $(SRC_ROOT)/, $(OtherDistribHeaders))
 $(INCLUDE_DEST)/ib_util.h : $(SRC_OtherDistribHeaders)
 	mkdir -p $(INCLUDE_DEST)
 	$(CP) $^ $(INCLUDE_DEST)/
+
+$(INCLUDE_DEST)/firebird/%: $(SRC_ROOT)/include/firebird/%
+	mkdir -p $(@D)
+	$(CP) $< $@
 
 
 #___________________________________________________________________________
