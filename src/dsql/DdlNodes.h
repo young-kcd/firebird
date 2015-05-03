@@ -1892,7 +1892,7 @@ public:
 class UserNode : public DdlNode
 {
 public:
-	UserNode(MemoryPool& p)
+	explicit UserNode(MemoryPool& p)
 		: DdlNode(p)
 	{ }
 
