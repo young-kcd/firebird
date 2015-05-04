@@ -79,6 +79,7 @@
     <ClCompile Include="..\..\..\src\common\TextType.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadData.cpp" />
     <ClCompile Include="..\..\..\src\common\ThreadStart.cpp" />
+    <ClCompile Include="..\..\..\src\common\unicodeUpper.cpp" />
     <ClCompile Include="..\..\..\src\common\unicode_util.cpp" />
     <ClCompile Include="..\..\..\src\common\utils.cpp" />
     <ClCompile Include="..\..\..\src\common\UtilSvc.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="..\..\..\src\common\sdltable.h" />
     <ClInclude Include="..\..\..\src\common\sdl_proto.h" />
     <ClInclude Include="..\..\..\src\common\sha.h" />
+    <ClInclude Include="..\..\..\src\common\SimpleStatusVector.h" />
     <ClInclude Include="..\..\..\src\common\StatementMetadata.h" />
     <ClInclude Include="..\..\..\src\common\StatusArg.h" />
     <ClInclude Include="..\..\..\src\common\StatusHolder.h" />
@@ -182,6 +184,7 @@
     <ClInclude Include="..\..\..\src\common\TextType.h" />
     <ClInclude Include="..\..\..\src\common\ThreadData.h" />
     <ClInclude Include="..\..\..\src\common\ThreadStart.h" />
+    <ClInclude Include="..\..\..\src\common\unicodeUpper.h" />
     <ClInclude Include="..\..\..\src\common\unicode_util.h" />
     <ClInclude Include="..\..\..\src\common\UtilSvc.h" />
     <ClInclude Include="..\..\..\src\common\utils_proto.h" />

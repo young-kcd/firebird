@@ -207,6 +207,9 @@
     <ClCompile Include="..\..\..\src\common\DynamicStrings.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\common\unicodeUpper.cpp">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\src\common\xdr_proto.h">
@@ -516,6 +519,9 @@
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\common\SimpleStatusVector.h">
+      <Filter>headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\common\unicodeUpper.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>

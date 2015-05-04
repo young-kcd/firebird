@@ -1706,11 +1706,129 @@ InitInstance<Converters> iConv;
 }
 #endif // HAVE_ICONV_H
 
+#if defined WIN_NT
+
+template <int BUFSIZE>
+class WideCharBuffer
+{
+public:
+	WideCharBuffer() :
+		m_len16(0)
+	{}
+
+	bool fromString(UINT codePage, AbstractString &str)
+	{
+		if (str.isEmpty())
+		{
+			m_len16 = 0;
+			return true;
+		}
+
+		int bufSize = m_utf16.getCapacity();
+		WCHAR* utf16Buffer = m_utf16.getBuffer(bufSize);
+		m_len16 = MultiByteToWideChar(codePage, 0, str.c_str(), str.length(), utf16Buffer, bufSize);
+
+		if (m_len16 == 0)
+		{
+			DWORD err = GetLastError();
+			if (err != ERROR_INSUFFICIENT_BUFFER)
+				return false;
+
+			bufSize = MultiByteToWideChar(codePage, 0, str.c_str(), str.length(), NULL, 0);
+			if (bufSize == 0)
+				return false;
+
+			utf16Buffer = m_utf16.getBuffer(bufSize);
+			m_len16 = MultiByteToWideChar(codePage, 0, str.c_str(), str.length(), utf16Buffer, bufSize);
+		}
+		return (m_len16 != 0);
+	}
+
+	bool toString(UINT codePage, AbstractString &str)
+	{
+		if (m_len16 == 0)
+		{
+			str.resize(0);
+			return true;
+		}
+
+		BOOL defaultCharUsed = FALSE;
+		LPBOOL pDefaultCharUsed = &defaultCharUsed;
+		if (codePage == CP_UTF8 || codePage == CP_UTF7)
+			pDefaultCharUsed = NULL;
+
+		WCHAR* utf16Buffer = m_utf16.begin();
+
+		char* utf8Buffer = str.getBuffer(str.capacity());
+		int len8 = WideCharToMultiByte(codePage, 0, utf16Buffer, m_len16,
+			utf8Buffer, str.capacity(), NULL, pDefaultCharUsed);
+
+		if (len8 == 0 || defaultCharUsed)
+		{
+			DWORD err = GetLastError();
+			if (err != ERROR_INSUFFICIENT_BUFFER)
+				return false;
+
+			len8 = WideCharToMultiByte(codePage, 0, utf16Buffer, m_len16, NULL, 0, NULL, pDefaultCharUsed);
+			if (len8 == 0 || defaultCharUsed)
+				return false;
+
+			utf8Buffer = str.getBuffer(len8);
+			len8 = WideCharToMultiByte(codePage, 0, utf16Buffer, m_len16, utf8Buffer, len8, NULL, pDefaultCharUsed);
+		}
+		if (len8 == 0 || defaultCharUsed)
+			return false;
+
+		str.resize(len8);
+		return true;
+	}
+
+	WCHAR* getBuffer()
+	{
+		return m_utf16.begin();
+	}
+
+	int getLength()
+	{
+		return m_len16;
+	}
+
+private:
+	HalfStaticArray<WCHAR, BUFSIZE> m_utf16;
+	int m_len16;
+};
+
+#endif // WIN_NT
+
+
 void ISC_utf8Upper(Firebird::AbstractString& str)
 {
-	//// FIXME: What about Windows?
+	if (str.isEmpty())
+		return;
 
-#ifdef HAVE_ICONV_H
+#if defined(WIN_NT)
+	WideCharBuffer<256> wBuffer;
+	
+	bool error = !wBuffer.fromString(CP_UTF8, str);
+	if (!error)
+	{
+		WCHAR* wch = wBuffer.getBuffer();
+		const WCHAR *const end = wch + wBuffer.getLength();
+		for (; wch < end; wch++)
+			*wch = unicodeUpper(*wch);
+
+		error = !wBuffer.toString(CP_UTF8, str);
+	}
+
+	if (error)
+	{
+		DWORD errCode = GetLastError();
+		status_exception::raise(
+			Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
+			Arg::Windows(errCode));
+	}
+
+#elif defined(HAVE_ICONV_H)
 	iConv().utf8ToUnicode.convert(str);
 
 	{ // aligner scope
@@ -1731,60 +1849,15 @@ void ISC_systemToUtf8(Firebird::AbstractString& str)
 		return;
 
 #if defined(WIN_NT)
-	HalfStaticArray<WCHAR, MAX_PATH> utf16;
-	WCHAR* utf16Buffer = utf16.getBuffer(MAX_PATH);
-	int len16 = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), utf16Buffer, MAX_PATH);
+	WideCharBuffer<MAX_PATH> wBuffer;
 
-	if (len16 == 0)
+	if (!wBuffer.fromString(CP_ACP, str) || !wBuffer.toString(CP_UTF8, str))
 	{
 		DWORD err = GetLastError();
-		if (err != ERROR_INSUFFICIENT_BUFFER)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		len16 = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), NULL, 0);
-		if (len16 == 0)
-		{
-			err = GetLastError();
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		utf16Buffer = utf16.getBuffer(len16);
-		len16 = MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), utf16Buffer, len16);
+		status_exception::raise(
+			Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
+			Arg::Windows(err));
 	}
-
-	char* utf8Buffer = str.getBuffer(str.capacity());
-	int len8 = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer, len16,
-		utf8Buffer, str.capacity(), NULL, NULL);
-
-	if (len8 == 0)
-	{
-		DWORD err = GetLastError();
-		if (err != ERROR_INSUFFICIENT_BUFFER)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		len8 = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer, len16, NULL, 0, NULL, NULL);
-		if (len8 == 0)
-		{
-			err = GetLastError();
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		utf8Buffer = str.getBuffer(len8);
-		len8 = WideCharToMultiByte(CP_UTF8, 0, utf16Buffer, len16, utf8Buffer, len8, NULL, NULL);
-	}
-	str.resize(len8);
 
 #elif defined(HAVE_ICONV_H)
 	iConv().systemToUtf8.convert(str);
@@ -1799,62 +1872,15 @@ void ISC_utf8ToSystem(Firebird::AbstractString& str)
 		return;
 
 #if defined(WIN_NT)
-	HalfStaticArray<WCHAR, MAX_PATH> utf16;
-	WCHAR* utf16Buffer = utf16.getBuffer(MAX_PATH);
-	int len16 = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), utf16Buffer, MAX_PATH);
+	WideCharBuffer<MAX_PATH> wBuffer;
 
-	if (len16 == 0)
+	if (!wBuffer.fromString(CP_UTF8, str) || !wBuffer.toString(CP_ACP, str))
 	{
 		DWORD err = GetLastError();
-		if (err != ERROR_INSUFFICIENT_BUFFER)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		len16 = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), NULL, 0);
-		if (len16 == 0)
-		{
-			err = GetLastError();
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		utf16Buffer = utf16.getBuffer(len16);
-		len16 = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), utf16Buffer, len16);
+		status_exception::raise(
+			Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
+			Arg::Windows(err));
 	}
-
-	BOOL defaultCharUsed;
-	char* ansiBuffer = str.getBuffer(str.capacity());
-	int len8 = WideCharToMultiByte(CP_ACP, 0, utf16Buffer, len16,
-		ansiBuffer, str.capacity(), NULL, &defaultCharUsed);
-
-	if (len8 == 0 || defaultCharUsed)
-	{
-		DWORD err = GetLastError();
-		if (err != ERROR_INSUFFICIENT_BUFFER)
-		{
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		len8 = WideCharToMultiByte(CP_ACP, 0, utf16Buffer, len16, NULL, 0, NULL, &defaultCharUsed);
-		if (len8 == 0 || defaultCharUsed)
-		{
-			err = GetLastError();
-			status_exception::raise(
-				Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-				Arg::Windows(err));
-		}
-
-		ansiBuffer = str.getBuffer(len8);
-		len8 = WideCharToMultiByte(CP_ACP, 0, utf16Buffer, len16,
-			ansiBuffer, len8, NULL, &defaultCharUsed);
-	}
-	str.resize(len8);
 
 #elif defined(HAVE_ICONV_H)
 	iConv().utf8ToSystem.convert(str);
