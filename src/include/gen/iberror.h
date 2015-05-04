@@ -1196,6 +1196,7 @@ const ISC_STATUS isc_dsql_firstskip_rows              = 336397327L;
 const ISC_STATUS isc_dsql_wlock_aggregates            = 336397328L;
 const ISC_STATUS isc_dsql_wlock_conflict              = 336397329L;
 const ISC_STATUS isc_dsql_max_exception_arguments     = 336397330L;
+const ISC_STATUS isc_dsql_string_length               = 336397331L;
 const ISC_STATUS isc_gsec_cant_open_db                = 336723983L;
 const ISC_STATUS isc_gsec_switches_error              = 336723984L;
 const ISC_STATUS isc_gsec_no_op_spec                  = 336723985L;
@@ -1298,7 +1299,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1242;
+const ISC_STATUS isc_err_max                          = 1243;
 
 #else /* c definitions */
 
@@ -2464,6 +2465,7 @@ const ISC_STATUS isc_err_max                          = 1242;
 #define isc_dsql_wlock_aggregates            336397328L
 #define isc_dsql_wlock_conflict              336397329L
 #define isc_dsql_max_exception_arguments     336397330L
+#define isc_dsql_string_length               336397331L
 #define isc_gsec_cant_open_db                336723983L
 #define isc_gsec_switches_error              336723984L
 #define isc_gsec_no_op_spec                  336723985L
@@ -2566,7 +2568,7 @@ const ISC_STATUS isc_err_max                          = 1242;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1242
+#define isc_err_max                          1243
 
 #endif
 

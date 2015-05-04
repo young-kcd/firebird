@@ -1162,6 +1162,7 @@ static const struct {
 	{"dsql_wlock_aggregates", 336397328},
 	{"dsql_wlock_conflict", 336397329},
 	{"dsql_max_exception_arguments", 336397330},
+	{"dsql_string_length", 336397331},
 	{"gsec_cant_open_db", 336723983},
 	{"gsec_switches_error", 336723984},
 	{"gsec_no_op_spec", 336723985},

@@ -1155,6 +1155,7 @@ COMMIT WORK;
 (-104, '42', '000', 13, 1040, 'dsql_wlock_aggregates', NULL, NULL)
 (-104, '42', '000', 13, 1041, 'dsql_wlock_conflict', NULL, NULL)
 (-901, '07', '002', 13, 1042, 'dsql_max_exception_arguments', NULL, NULL)
+(-901, '42', '000', 13, 1043, 'dsql_string_length', NULL, NULL)
 -- GSEC
 (-901, '00', '000', 18, 15, 'gsec_cant_open_db', NULL, NULL)
 (-901, '00', '000', 18, 16, 'gsec_switches_error', NULL, NULL)

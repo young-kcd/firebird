@@ -1165,6 +1165,7 @@ Data source : @4"},		/* eds_statement */
 	{336397328, "WITH LOCK cannot be used with aggregates"},		/* dsql_wlock_aggregates */
 	{336397329, "WITH LOCK cannot be used with @1"},		/* dsql_wlock_conflict */
 	{336397330, "Number of arguments (@1) exceeds the maximum (@2) number of EXCEPTION USING arguments"},		/* dsql_max_exception_arguments */
+	{336397331, "String literal with @1 bytes exceeds the maximum length of @2 bytes"},		/* dsql_string_length */
 	{336723983, "unable to open database"},		/* gsec_cant_open_db */
 	{336723984, "error in switch specifications"},		/* gsec_switches_error */
 	{336723985, "no operation specified"},		/* gsec_no_op_spec */
