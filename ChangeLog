@@ -1,3 +1,7 @@
+ 2015-05-05 12:40  dimitr 
+   M src/isql/isql.epp
+Fixed bad handling of zero-length segments coming from internally filtered blobs. In particular, this fixes ISQL crash in bugs.core_4380.
+
  2015-05-04 16:24  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
