@@ -98,7 +98,6 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 			}
 
 			account = sb->getLogin();
-			account.upper();
 
 			unsigned int length;
 			const unsigned char* val = sb->getData(&length);

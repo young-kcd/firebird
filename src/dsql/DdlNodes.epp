@@ -10335,8 +10335,8 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			(Arg::Gds(isc_random) << "Missing user name for ALTER CURRENT USER").raise();
 
 		text = usr->usr_user_name;
+		IntlUtil::toUpper(text);
 	}
-	text.upper();
 
 	Firebird::LocalStatus s;
 	CheckStatusWrapper statusWrapper(&s);
@@ -10440,7 +10440,6 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	Auth::DynamicUserData* userData = FB_NEW(*transaction->tra_pool) Auth::DynamicUserData;
 
 	string text = name.c_str();
-	text.upper();
 
 	Firebird::LocalStatus s;
 	CheckStatusWrapper statusWrapper(&s);
