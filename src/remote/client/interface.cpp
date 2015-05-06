@@ -7541,7 +7541,6 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 			dpb.getString(userName);
 			makeUtfString(uft8Convert, userName);
 			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB user = %s\n", userName.c_str()));
-			userName.upper();
 		}
 		else if (t == tags->password)
 		{
