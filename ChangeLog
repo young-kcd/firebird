@@ -1,3 +1,12 @@
+ 2015-05-06 16:25  alexpeshkoff 
+   M src/auth/SecureRemotePassword/server/SrpServer.cpp
+   M src/dsql/DdlNodes.epp
+Some more postfixes for CORE-4760
+
+ 2015-05-06 13:47  alexpeshkoff 
+   M src/remote/client/interface.cpp
+Postfix for CORE-4760: it was bad idea to call upper() method for UTF string
+
  2015-05-05 12:40  dimitr 
    M src/isql/isql.epp
 Fixed bad handling of zero-length segments coming from internally filtered blobs. In particular, this fixes ISQL crash in bugs.core_4380.
