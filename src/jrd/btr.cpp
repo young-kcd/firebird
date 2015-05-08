@@ -5796,7 +5796,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 	class Printer
 	{
 	public:
-		explicit Printer(const dsc* desc)
+		explicit Printer(thread_db* tdbb, const dsc* desc)
 		{
 			const int MAX_KEY_STRING_LEN = 250;
 			const char* const NULL_KEY_STRING = "NULL";
@@ -5809,12 +5809,9 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 			fb_assert(!desc->isBlob());
 
-			char temp[BUFFER_TINY];
-			const char* str = NULL;
-			const int len = MOV_make_string(desc, ttype_dynamic, &str,
-											(vary*) temp, sizeof(temp));
-
-			value.assign(str, len);
+			value = MOV_make_string2(tdbb, desc, ttype_dynamic);
+			const int len = (int) value.length();
+			const char* const str = value.c_str();
 
 			if (desc->isText() || desc->isDateTime())
 			{
@@ -5865,7 +5862,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 		{
 			bool notNull = false;
 			const dsc* const desc = BTR_eval_expression(tdbb, idx, record, notNull);
-			value = Printer(notNull ? desc : NULL).get();
+			value = Printer(tdbb, notNull ? desc : NULL).get();
 			key += "<expression> = " + value;
 		}
 		else
@@ -5884,7 +5881,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 				dsc desc;
 				const bool notNull = EVL_field(relation, record, field_id, &desc);
-				value = Printer(notNull ? &desc : NULL).get();
+				value = Printer(tdbb, notNull ? &desc : NULL).get();
 				key += " = " + value;
 
 				if (i < idx->idx_count - 1)
