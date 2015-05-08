@@ -6676,7 +6676,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 	class Printer
 	{
 	public:
-		explicit Printer(const dsc* desc)
+		explicit Printer(thread_db* tdbb, const dsc* desc)
 		{
 			const int MAX_KEY_STRING_LEN = 250;
 			const char* const NULL_KEY_STRING = "NULL";
@@ -6689,12 +6689,11 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 			fb_assert(!desc->isBlob());
 
-			char temp[BUFFER_TINY];
-			const char* str = NULL;
-			const int len = MOV_make_string(desc, ttype_dynamic, &str,
-											(vary*) temp, sizeof(temp));
+			MoveBuffer buffer;
+			UCHAR* str = NULL;
+			const int len = MOV_make_string2(tdbb, desc, ttype_dynamic, &str, buffer);
 
-			value.assign(str, len);
+			value.assign((const char*) str, len);
 
 			if (DTYPE_IS_TEXT(desc->dsc_dtype) || DTYPE_IS_DATE(desc->dsc_dtype))
 			{
@@ -6710,7 +6709,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 					char* s = hex.getBuffer(2 * len);
 					for (int i = 0; i < len; i++)
 					{
-						sprintf(s, "%02X", (int) (unsigned char) str[i]);
+						sprintf(s, "%02X", (int) str[i]);
 						s += 2;
 					}
 					value = "x'" + hex + "'";
@@ -6745,7 +6744,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 		{
 			bool notNull = false;
 			const dsc* const desc = BTR_eval_expression(tdbb, idx, record, notNull);
-			value = Printer(notNull ? desc : NULL).get();
+			value = Printer(tdbb, notNull ? desc : NULL).get();
 			key += "<expression> = " + value;
 		}
 		else
@@ -6764,7 +6763,7 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 				dsc desc;
 				const bool notNull = EVL_field(relation, record, field_id, &desc);
-				value = Printer(notNull ? &desc : NULL).get();
+				value = Printer(tdbb, notNull ? &desc : NULL).get();
 				key += " = " + value;
 
 				if (i < idx->idx_count - 1)
