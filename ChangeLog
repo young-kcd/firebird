@@ -1,3 +1,7 @@
+ 2015-05-08 16:46  dimitr 
+   M src/jrd/btr.cpp
+Fixed CORE-4786: Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters.
+
  2015-05-06 16:25  alexpeshkoff 
    M src/auth/SecureRemotePassword/server/SrpServer.cpp
    M src/dsql/DdlNodes.epp
