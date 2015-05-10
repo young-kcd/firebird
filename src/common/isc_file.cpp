@@ -1716,7 +1716,7 @@ public:
 		m_len16(0)
 	{}
 
-	bool fromString(UINT codePage, AbstractString& str)
+	bool fromString(UINT codePage, const AbstractString& str)
 	{
 		if (str.isEmpty())
 		{
