@@ -1716,7 +1716,7 @@ public:
 		m_len16(0)
 	{}
 
-	bool fromString(UINT codePage, AbstractString &str)
+	bool fromString(UINT codePage, AbstractString& str)
 	{
 		if (str.isEmpty())
 		{
@@ -1741,10 +1741,11 @@ public:
 			utf16Buffer = m_utf16.getBuffer(bufSize);
 			m_len16 = MultiByteToWideChar(codePage, 0, str.c_str(), str.length(), utf16Buffer, bufSize);
 		}
+
 		return (m_len16 != 0);
 	}
 
-	bool toString(UINT codePage, AbstractString &str)
+	bool toString(UINT codePage, AbstractString& str)
 	{
 		if (m_len16 == 0)
 		{
@@ -1774,12 +1775,16 @@ public:
 				return false;
 
 			utf8Buffer = str.getBuffer(len8);
-			len8 = WideCharToMultiByte(codePage, 0, utf16Buffer, m_len16, utf8Buffer, len8, NULL, pDefaultCharUsed);
+
+			len8 = WideCharToMultiByte(codePage, 0, utf16Buffer, m_len16, utf8Buffer, len8,
+				NULL, pDefaultCharUsed);
 		}
+
 		if (len8 == 0 || defaultCharUsed)
 			return false;
 
 		str.resize(len8);
+
 		return true;
 	}
 
@@ -1808,12 +1813,12 @@ void ISC_utf8Upper(Firebird::AbstractString& str)
 
 #if defined(WIN_NT)
 	WideCharBuffer<256> wBuffer;
-	
+
 	bool error = !wBuffer.fromString(CP_UTF8, str);
 	if (!error)
 	{
 		WCHAR* wch = wBuffer.getBuffer();
-		const WCHAR *const end = wch + wBuffer.getLength();
+		const WCHAR* const end = wch + wBuffer.getLength();
 		for (; wch < end; wch++)
 			*wch = unicodeUpper(*wch);
 
