@@ -195,7 +195,12 @@ Connection* Provider::getConnection(thread_db* tdbb, const string& dbName,
 				conn->isSameDatabase(tdbb, dbName, user, pwd, role) &&
 				conn->isAvailable(tdbb, tra_scope))
 			{
-				return conn;
+				if (!conn->isBroken())
+					return conn;
+
+				FbLocalStatus status;
+				status->setErrors(Arg::Gds(isc_att_shutdown).value());
+				conn->raise(&status, tdbb, "Provider::getConnection");
 			}
 		}
 	}
@@ -286,7 +291,8 @@ Connection::Connection(Provider& prov) :
 	m_free_stmts(0),
 	m_deleting(false),
 	m_sqlDialect(0),
-	m_wrapErrors(true)
+	m_wrapErrors(true),
+	m_broken(false)
 {
 }
 
@@ -512,9 +518,10 @@ Transaction* Connection::findTransaction(thread_db* tdbb, TraScope traScope) con
 	return ext_tran;
 }
 
+
 void Connection::raise(const FbStatusVector* status, thread_db* /*tdbb*/, const char* sWhere)
 {
-	if (!getWrapErrors())
+	if (!getWrapErrors(status->getErrors()))
 	{
 		ERR_post(Arg::StatusVector(status));
 	}
@@ -526,6 +533,28 @@ void Connection::raise(const FbStatusVector* status, thread_db* /*tdbb*/, const 
 	ERR_post(Arg::Gds(isc_eds_connection) << Arg::Str(sWhere) <<
 											 Arg::Str(rem_err) <<
 											 Arg::Str(getDataSourceName()));
+}
+
+
+bool Connection::getWrapErrors(const ISC_STATUS* status) 
+{
+	// Detect if connection is broken
+	switch (status[1])
+	{
+		case isc_network_error:
+		case isc_net_read_err:
+		case isc_net_write_err:
+			m_broken = true;
+			break;
+
+		// Always wrap shutdown errors, else user application will disconnect
+		case isc_att_shutdown:
+		case isc_shutdown:
+			m_broken = true;
+			return true;
+	}
+
+	return m_wrapErrors;
 }
 
 // Transaction
@@ -1484,7 +1513,7 @@ void Statement::raise(FbStatusVector* status, thread_db* tdbb, const char* sWher
 {
 	m_error = true;
 
-	if (!m_connection.getWrapErrors())
+	if (!m_connection.getWrapErrors(status->getErrors()))
 	{
 		ERR_post(Arg::StatusVector(status));
 	}

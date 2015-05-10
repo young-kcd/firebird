@@ -176,6 +176,11 @@ public:
 		const Firebird::string& user, const Firebird::string& pwd,
 		const Firebird::string& role) const;
 
+	bool isBroken() const
+	{
+		return m_broken;
+	}
+
 	// Search for existing transaction of given scope, may return NULL.
 	Transaction* findTransaction(Jrd::thread_db* tdbb, TraScope traScope) const;
 
@@ -189,7 +194,7 @@ public:
 	void raise(const Jrd::FbStatusVector* status, Jrd::thread_db* tdbb, const char* sWhere);
 
 	// will we wrap external errors into our ones (isc_eds_xxx) or pass them as is
-	bool getWrapErrors() const	{ return m_wrapErrors; }
+	bool getWrapErrors(const ISC_STATUS* status);
 	void setWrapErrors(bool val) { m_wrapErrors = val; }
 
 	// Transactions management within connection scope : put newly created
@@ -239,6 +244,7 @@ protected:
 	bool m_deleting;
 	int m_sqlDialect;	// must be filled in attach call
 	bool m_wrapErrors;
+	bool m_broken;
 };
 
 
