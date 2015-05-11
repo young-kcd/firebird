@@ -338,8 +338,8 @@ bool MET_domain_lookup(gpre_req* request, gpre_fld* field, const char* string)
 		field->fld_length = F.RDB$FIELD_LENGTH;
 		field->fld_scale = F.RDB$FIELD_SCALE;
 		field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
-		field->fld_dtype =
-			MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
+		field->fld_dtype = MET_get_dtype(
+			F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_LENGTH, &field->fld_length);
 
 		switch (field->fld_dtype)
 		{
@@ -681,8 +681,8 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 		field->fld_scale = F.RDB$FIELD_SCALE;
 		field->fld_position = RFR.RDB$FIELD_POSITION;
 		field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
-		field->fld_dtype =
-			MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
+		field->fld_dtype = MET_get_dtype(
+			F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, F.RDB$CHARACTER_LENGTH, &field->fld_length);
 
 		switch (field->fld_dtype)
 		{
@@ -702,8 +702,6 @@ gpre_fld* MET_field(gpre_rel* relation, const char* string)
 
 		if ((field->fld_dtype <= dtype_any_text) || (field->fld_dtype == dtype_blob))
 		{
-			if (!F.RDB$CHARACTER_LENGTH.NULL)
-				field->fld_char_length = F.RDB$CHARACTER_LENGTH;
 			if (!F.RDB$CHARACTER_SET_ID.NULL)
 				field->fld_charset_id = F.RDB$CHARACTER_SET_ID;
 			if (!RFR.RDB$COLLATION_ID.NULL)
@@ -878,7 +876,7 @@ const SCHAR* MET_generator(const TEXT* string, const gpre_dbb* database)
  *		Compute internal datatype and length based on system relation field values.
  */
 
-USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
+USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT char_length, USHORT* length)
 {
 	USHORT dtype;
 
@@ -888,6 +886,9 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 	{
 	case blr_varying:
 	case blr_text:
+		if (char_length != 0)
+			l = char_length * 4;
+
 		dtype = dtype_text;
 		if (gpreGlob.sw_cstring && sub_type != dsc_text_type_fixed)
 		{
@@ -898,6 +899,8 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT* length)
 
 	case blr_cstring:
 		dtype = dtype_cstring;
+		if (char_length != 0)
+			l = char_length * 4;
 		++l;
 		break;
 
@@ -1024,8 +1027,9 @@ gpre_prc* MET_get_procedure(gpre_dbb* database, const TEXT* string, const TEXT* 
 				field->fld_length = F.RDB$FIELD_LENGTH;
 				field->fld_scale = F.RDB$FIELD_SCALE;
 				field->fld_sub_type = F.RDB$FIELD_SUB_TYPE;
-				field->fld_dtype =
-					MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE, &field->fld_length);
+				field->fld_dtype = MET_get_dtype(F.RDB$FIELD_TYPE, F.RDB$FIELD_SUB_TYPE,
+					F.RDB$CHARACTER_LENGTH, &field->fld_length);
+
 				switch (field->fld_dtype)
 				{
 				case dtype_text:
@@ -1160,8 +1164,9 @@ udf* MET_get_udf(gpre_dbb* database, const TEXT* string)
 		field->fld_length = UDF_ARG.RDB$FIELD_LENGTH;
 		field->fld_scale = UDF_ARG.RDB$FIELD_SCALE;
 		field->fld_sub_type = UDF_ARG.RDB$FIELD_SUB_TYPE;
-		field->fld_dtype =
-			MET_get_dtype(UDF_ARG.RDB$FIELD_TYPE, UDF_ARG.RDB$FIELD_SUB_TYPE, &field->fld_length);
+		field->fld_dtype = MET_get_dtype(UDF_ARG.RDB$FIELD_TYPE, UDF_ARG.RDB$FIELD_SUB_TYPE,
+			UDF_ARG.RDB$CHARACTER_LENGTH, &field->fld_length);
+
 		switch (field->fld_dtype)
 		{
 		case dtype_text:
@@ -1416,8 +1421,8 @@ void MET_load_hash_table(gpre_dbb* database)
 		an_udf->udf_length = ARG.RDB$FIELD_LENGTH;
 		an_udf->udf_scale = ARG.RDB$FIELD_SCALE;
 		an_udf->udf_sub_type = ARG.RDB$FIELD_SUB_TYPE;
-		an_udf->udf_dtype =
-			MET_get_dtype(ARG.RDB$FIELD_TYPE, ARG.RDB$FIELD_SUB_TYPE, &an_udf->udf_length);
+		an_udf->udf_dtype = MET_get_dtype(ARG.RDB$FIELD_TYPE, ARG.RDB$FIELD_SUB_TYPE,
+			ARG.RDB$CHARACTER_LENGTH, &an_udf->udf_length);
 
 		if (an_udf->udf_dtype == dtype_text || an_udf->udf_dtype == dtype_cstring)
 		{

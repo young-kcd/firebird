@@ -80,21 +80,29 @@ void JRDMET_init( gpre_dbb* db)
 			{
 				field->fld_dtype = dtype_cstring;
 				field->fld_flags |= FLD_text;
-				++field->fld_length;
+
 				if (gfield->gfld_sub_type == dsc_text_type_metadata)
 				{
-					field->fld_flags |= FLD_charset;
+					if (gpreGlob.sw_language == lang_internal)
+						field->fld_flags |= FLD_charset;
+					else
+						field->fld_length *= 4;
+
 					field->fld_charset_id = CS_METADATA;
 					field->fld_collate_id = COLLATE_NONE;
 					field->fld_ttype = ttype_metadata;
 				}
 				else
 				{
-					field->fld_flags |= FLD_charset;
+					if (gpreGlob.sw_language == lang_internal)
+						field->fld_flags |= FLD_charset;
+
 					field->fld_charset_id = CS_NONE;
 					field->fld_collate_id = COLLATE_NONE;
 					field->fld_ttype = ttype_none;
 				}
+
+				++field->fld_length;
 			}
 			else if (field->fld_dtype == dtype_blob)
 			{
