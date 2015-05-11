@@ -1,3 +1,19 @@
+ 2015-05-10 20:46  hvlad 
+   M src/jrd/Attachment.cpp
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/ExtDS.h
+   M src/jrd/extds/InternalDS.cpp
+Fixed few stability issues with EDS related with cases when external connection is broken unexpectedly.
+
+ 2015-05-10 03:03  robocop 
+   M src/common/isc_file.cpp
+Misc.
+
+ 2015-05-10 01:12  asfernandes 
+   M src/common/isc_file.cpp
+   M src/msgs/facilities2.sql
+Misc.
+
  2015-05-08 16:46  dimitr 
    M src/jrd/btr.cpp
 Fixed CORE-4786: Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters.
