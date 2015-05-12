@@ -1,3 +1,11 @@
+ 2015-05-11 15:48  asfernandes 
+   M src/gpre/gpre_meta.h
+   M src/gpre/jrdmet.cpp
+   M src/gpre/std/gpre_meta.epp
+Fixed CORE-4782 - Command `SHOW TABLE` fails when the table contains field with unicode collationin its DDL.
+This should fix the problem with QA tests failing with Windows build.
+It also changes Linux build, which was incorrect in a different manner.
+
  2015-05-10 20:46  hvlad 
    M src/jrd/Attachment.cpp
    M src/jrd/extds/ExtDS.cpp
