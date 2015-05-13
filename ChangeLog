@@ -1,3 +1,7 @@
+ 2015-05-12 12:17  alexpeshkoff 
+   M src/remote/inet.cpp
+Fixed CORE-4788: Superclassic server hangs when receiving network packet
+
  2015-05-11 15:48  asfernandes 
    M src/gpre/gpre_meta.h
    M src/gpre/jrdmet.cpp
