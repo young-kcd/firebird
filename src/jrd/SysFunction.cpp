@@ -1769,6 +1769,9 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 			break;
 	}
 
+	if (!TimeStamp::isValidTimeStamp(timestamp.value()))
+		status_exception::raise(Arg::Gds(isc_datetime_range_exceeded));
+
 	EVL_make_value(tdbb, valueDsc, impure);
 
 	switch (impure->vlu_desc.dsc_dtype)
