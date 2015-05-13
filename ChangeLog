@@ -1,3 +1,7 @@
+ 2015-05-12 12:17  alexpeshkoff 
+   M src/remote/inet.cpp
+Backported fix for CORE-4788: Superclassic server hangs when receiving network packet
+
  2015-05-08 17:47  dimitr 
    M src/jrd/btr.cpp
 Fixed CORE-4786: Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters.
