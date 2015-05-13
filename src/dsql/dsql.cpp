@@ -80,7 +80,7 @@ using namespace Firebird;
 
 static ULONG	get_request_info(thread_db*, dsql_req*, ULONG, UCHAR*);
 static dsql_dbb*	init(Jrd::thread_db*, Jrd::Attachment*);
-static void		map_in_out(dsql_req*, bool, const dsql_msg*, IMessageMetadata*, UCHAR*,
+static void		map_in_out(Jrd::thread_db*, dsql_req*, bool, const dsql_msg*, IMessageMetadata*, UCHAR*,
 	const UCHAR* = NULL);
 static USHORT	parse_metadata(dsql_req*, IMessageMetadata*, const Array<dsql_par*>&);
 static dsql_req* prepareRequest(thread_db*, dsql_dbb*, jrd_tra*, ULONG, const TEXT*, USHORT, bool);
@@ -283,7 +283,7 @@ bool DsqlDmlRequest::fetch(thread_db* tdbb, UCHAR* msgBuffer)
 		return false;
 	}
 
-	map_in_out(this, true, message, delayedFormat, msgBuffer);
+	map_in_out(tdbb, this, true, message, delayedFormat, msgBuffer);
 	delayedFormat = NULL;
 
 	trace.fetch(false, ITracePlugin::RESULT_SUCCESS);
@@ -654,7 +654,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 
 	const dsql_msg* message = statement->getSendMsg();
 	if (message)
-		map_in_out(this, false, message, inMetadata, NULL, inMsg);
+		map_in_out(tdbb, this, false, message, inMetadata, NULL, inMsg);
 
 	// we need to map_in_out before tracing of execution start to let trace
 	// manager know statement parameters values
@@ -714,7 +714,7 @@ void DsqlDmlRequest::execute(thread_db* tdbb, jrd_tra** traHandle,
 		JRD_receive(tdbb, req_request, message->msg_number, message->msg_length, msgBuffer);
 
 		if (outMsg)
-			map_in_out(this, true, message, NULL, outMsg);
+			map_in_out(tdbb, this, true, message, NULL, outMsg);
 
 		// if this is a singleton select, make sure there's in fact one record
 
@@ -981,12 +981,22 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
     @param in_dsql_msg_buf
 
  **/
-static void map_in_out(dsql_req* request, bool toExternal, const dsql_msg* message,
+static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, const dsql_msg* message,
 	IMessageMetadata* meta, UCHAR* dsql_msg_buf, const UCHAR* in_dsql_msg_buf)
 {
-	thread_db* tdbb = JRD_get_thread_data();
-
 	USHORT count = parse_metadata(request, meta, message->msg_parameters);
+
+	// Sanity check
+
+	if (count && !(request ? in_dsql_msg_buf : dsql_msg_buf))
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err)
+#ifdef DEV_BUILD
+				  << Arg::Gds(isc_random) << "Missing message data buffer"
+#endif
+				  );
+	}
 
 	bool err = false;
 
