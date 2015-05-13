@@ -1648,6 +1648,9 @@ dsc* evlDateAdd(Jrd::thread_db* tdbb, const SysFunction* function, Jrd::jrd_nod*
 			break;
 	}
 
+	if (!TimeStamp::isValidTimeStamp(timestamp.value()))
+		status_exception::raise(Arg::Gds(isc_datetime_range_exceeded));
+
 	EVL_make_value(tdbb, valueDsc, impure);
 
 	switch (impure->vlu_desc.dsc_dtype)
