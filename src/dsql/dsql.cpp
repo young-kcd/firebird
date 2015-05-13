@@ -91,7 +91,7 @@ static bool		get_indices(SLONG*, const UCHAR**, SLONG*, SCHAR**);
 static USHORT	get_request_info(thread_db*, dsql_req*, SLONG, UCHAR*);
 static bool		get_rsb_item(SLONG*, const UCHAR**, SLONG*, SCHAR**, USHORT*, USHORT*);
 static dsql_dbb*	init(Attachment*);
-static void		map_in_out(dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
+static void		map_in_out(thread_db*, dsql_req*, dsql_msg*, USHORT, const UCHAR*, USHORT, UCHAR*, const UCHAR* = 0);
 static USHORT	parse_blr(USHORT, const UCHAR*, const USHORT, dsql_par*);
 static dsql_req*		prepare(thread_db*, dsql_dbb*, jrd_tra*, USHORT, const TEXT*, USHORT, USHORT);
 static UCHAR*	put_item(UCHAR, const USHORT, const UCHAR*, UCHAR*, const UCHAR* const, const bool copy = true);
@@ -520,7 +520,7 @@ ISC_STATUS DSQL_fetch(thread_db* tdbb,
 		return 100;
 	}
 
-	map_in_out(NULL, message, 0, blr, msg_length, dsql_msg_buf);
+	map_in_out(tdbb, NULL, message, 0, blr, msg_length, dsql_msg_buf);
 
 	trace.fetch(false, res_successful);
 	return FB_SUCCESS;
@@ -1001,7 +1001,7 @@ static void execute_blob(thread_db* tdbb,
 	UCHAR bpb[24];
 
 	dsql_blb* blob = request->req_blob;
-	map_in_out(request, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
+	map_in_out(tdbb, request, blob->blb_open_in_msg, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
 
 	UCHAR* p = bpb;
 	*p++ = isc_bpb_version1;
@@ -1046,7 +1046,7 @@ static void execute_blob(thread_db* tdbb,
 		request->req_blob->blb_blob =
 			BLB_create2(tdbb, request->req_transaction, blob_id, bpb_length, bpb);
 
-		map_in_out(NULL, blob->blb_open_out_msg, out_blr_length, out_blr, out_msg_length, out_msg);
+		map_in_out(tdbb, NULL, blob->blb_open_out_msg, out_blr_length, out_blr, out_msg_length, out_msg);
 	}
 }
 
@@ -1260,7 +1260,7 @@ static void execute_request(thread_db* tdbb,
 
 	dsql_msg* message = request->req_send;
 	if (message)
-		map_in_out(request, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
+		map_in_out(tdbb, request, message, in_blr_length, in_blr, in_msg_length, NULL, in_msg);
 
 	// we need to map_in_out before tracing of execution start to let trace
 	// manager know statement parameters values
@@ -1311,7 +1311,7 @@ static void execute_request(thread_db* tdbb,
 			message->msg_buffer, 0);
 
 		if (out_msg_length)
-			map_in_out(NULL, message, 0, out_blr, out_msg_length, out_msg);
+			map_in_out(tdbb, NULL, message, 0, out_blr, out_msg_length, out_msg);
 
 		// if this is a singleton select, make sure there's in fact one record
 
@@ -2168,7 +2168,8 @@ static dsql_dbb* init(Attachment* attachment)
     @param in_dsql_msg_buf
 
  **/
-static void map_in_out(	dsql_req*		request,
+static void map_in_out(	thread_db*		tdbb,
+						dsql_req*		request,
 						dsql_msg*		message,
 						USHORT	blr_length,
 						const UCHAR*	blr,
@@ -2176,12 +2177,18 @@ static void map_in_out(	dsql_req*		request,
 						UCHAR*	dsql_msg_buf,
 						const UCHAR* in_dsql_msg_buf)
 {
-	thread_db* tdbb = JRD_get_thread_data();
+	// When mapping data from the external world, request will be non-NULL.
+	// When mapping data from an internal message, request will be NULL.
 
 	USHORT count = parse_blr(blr_length, blr, msg_length, message->msg_parameters);
 
-	// When mapping data from the external world, request will be non-NULL.
-	// When mapping data from an internal message, request will be NULL.
+	// Sanity check
+
+	if (count && !(request ? in_dsql_msg_buf : dsql_msg_buf))
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
+				  Arg::Gds(isc_dsql_sqlda_err));
+	}
 
 	dsql_par* parameter;
 
