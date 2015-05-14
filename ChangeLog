@@ -1,3 +1,11 @@
+ 2015-05-13 15:19  asfernandes 
+   M src/jrd/SysFunction.cpp
+Fixed CORE-4789 - Prohibit ability to cast timestamps that out of valid range to varchar.
+
+ 2015-05-13 13:24  alexpeshkoff 
+   M src/dsql/dsql.cpp
+Fixed CORE-4785: Bad packet of op_execute kills the server
+
  2015-05-12 12:17  alexpeshkoff 
    M src/remote/inet.cpp
 Fixed CORE-4788: Superclassic server hangs when receiving network packet
