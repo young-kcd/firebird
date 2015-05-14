@@ -988,7 +988,7 @@ static void map_in_out(thread_db* tdbb, dsql_req* request, bool toExternal, cons
 
 	// Sanity check
 
-	if (count && !(request ? in_dsql_msg_buf : dsql_msg_buf))
+	if (count && !(toExternal ? dsql_msg_buf : in_dsql_msg_buf))
 	{
 		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-804) <<
 				  Arg::Gds(isc_dsql_sqlda_err)
