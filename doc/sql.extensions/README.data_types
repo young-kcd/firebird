@@ -74,9 +74,3 @@ BOOLEAN (FB 3.0)
     5. It's allowed to test booleans without compare with TRUE or FALSE. For example,
        "field1 OR field2" and "NOT field1" are valid expressions. It's also allowed to compare with
        others operators, including the new IS operator: "field1 IS FALSE".
-
-    6. For compatibility reasons, the names INSERTING, UPDATING and DELETING (which aren't keywords)
-       work (like in 2.5 and previous) as boolean expressions and work as values (column or
-       variable) in non-booleans expressions. For example, in:
-       SELECT INSERTING, NOT INSERTING FROM TEST WHERE INSERTING AND INSERTING IS TRUE
-       the INSERTING's are respectively recognized as value, keyword, keyword and value.

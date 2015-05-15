@@ -3829,8 +3829,10 @@ keyword_or_column
 	| CORR
 	| COVAR_POP
 	| COVAR_SAMP
+	| DELETING
 	| DETERMINISTIC
 	| KW_FALSE
+	| INSERTING
 	| OFFSET
 	| OVER
 	| REGR_AVGX
@@ -3851,6 +3853,7 @@ keyword_or_column
 	| STDDEV_POP
 	| KW_TRUE
 	| UNKNOWN
+	| UPDATING
 	| VAR_SAMP
 	| VAR_POP
 	;
@@ -5941,13 +5944,9 @@ boolean_value_expression
 	| '(' boolean_value_expression ')'
 		{ $$ = $2; }
 	| value IS boolean_literal
-		{ $$ = newNode<ComparativeBoolNode>(blr_equiv, newNode<BoolAsValueNode>(valueToBool($1)), $3); }
+		{ $$ = newNode<ComparativeBoolNode>(blr_eql, $1, $3); }
 	| value IS NOT boolean_literal
-		{
-			ComparativeBoolNode* node = newNode<ComparativeBoolNode>(blr_equiv,
-				newNode<BoolAsValueNode>(valueToBool($1)), $4);
-			$$ = newNode<NotBoolNode>(node);
-		}
+		{ $$ = newNode<NotBoolNode>(newNode<ComparativeBoolNode>(blr_eql, $1, $4)); }
 	;
 
 %type <boolExprNode> predicate
@@ -5962,6 +5961,7 @@ predicate
 	| quantified_predicate
 	| exists_predicate
 	| singular_predicate
+	| trigger_action_predicate
 	;
 
 
@@ -6114,6 +6114,28 @@ exists_predicate
 singular_predicate
 	: SINGULAR '(' select_expr ')'
 		{ $$ = newNode<RseBoolNode>(blr_unique, $3); }
+	;
+
+%type <boolExprNode> trigger_action_predicate
+trigger_action_predicate
+	: INSERTING
+		{
+			$$ = newNode<ComparativeBoolNode>(blr_eql,
+					newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_TRIGGER_ACTION)),
+					MAKE_const_slong(1));
+		}
+	| UPDATING
+		{
+			$$ = newNode<ComparativeBoolNode>(blr_eql,
+					newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_TRIGGER_ACTION)),
+					MAKE_const_slong(2));
+		}
+	| DELETING
+		{
+			$$ = newNode<ComparativeBoolNode>(blr_eql,
+					newNode<InternalInfoNode>(MAKE_const_slong(INFO_TYPE_TRIGGER_ACTION)),
+					MAKE_const_slong(3));
+		}
 	;
 
 %type <boolExprNode> null_predicate
@@ -7502,9 +7524,6 @@ non_reserved_word
 	| NULLIF
 	| NULLS
 	| STATEMENT
-	| INSERTING
-	| UPDATING
-	| DELETING
 	| FIRST
 	| SKIP
 	| BLOCK					// added in FB 2.0

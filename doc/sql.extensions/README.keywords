@@ -221,8 +221,10 @@ Firebird 3.0
   Added as reserved words:
 
     BOOLEAN
+    DELETING *
     DETERMINISTIC
     FALSE
+    INSERTING *
     OVER
     RDB$RECORD_VERSION
     RETURN
@@ -230,6 +232,7 @@ Firebird 3.0
     SQLSTATE
     TRUE
     UNKNOWN
+    UPDATING *
 
   Added as non-reserved words:
 

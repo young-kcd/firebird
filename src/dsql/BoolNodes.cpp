@@ -343,7 +343,6 @@ ComparativeBoolNode::ComparativeBoolNode(MemoryPool& pool, UCHAR aBlrOp,
 	: TypedNode<BoolExprNode, ExprNode::TYPE_COMPARATIVE_BOOL>(pool),
 	  blrOp(aBlrOp),
 	  dsqlFlag(DFLAG_NONE),
-	  dsqlWasValue(false),
 	  arg1(aArg1),
 	  arg2(aArg2),
 	  arg3(aArg3),
@@ -389,27 +388,6 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	NestConst<ValueExprNode> procArg2 = arg2;
 	NestConst<ValueExprNode> procArg3 = arg3;
 	FieldNode* fieldNode1;
-
-	// Make INSERTING/UPDATING/DELETING in booleans to read the trigger action.
-
-	if (dsqlWasValue && (fieldNode1 = procArg1->as<FieldNode>()))
-	{
-		static const char* const NAMES[] = {
-			"INSERTING",
-			"UPDATING",
-			"DELETING"
-		};
-
-		for (int i = 0; i < FB_NELEM(NAMES); ++i)
-		{
-			if (fieldNode1->dsqlName == NAMES[i])
-			{
-				procArg1 = FB_NEW(getPool()) InternalInfoNode(getPool(),
-					MAKE_const_slong(INFO_TYPE_TRIGGER_ACTION));
-				procArg2 = MAKE_const_slong(i + 1);
-			}
-		}
-	}
 
 	if (dsqlSpecialArg)
 	{
@@ -1571,7 +1549,6 @@ BoolExprNode* NotBoolNode::process(DsqlCompilerScratch* dsqlScratch, bool invert
 
 				ComparativeBoolNode* node = FB_NEW(getPool()) ComparativeBoolNode(
 					getPool(), newBlrOp, cmpArg->arg1, cmpArg->arg2);
-				node->dsqlWasValue = cmpArg->dsqlWasValue;
 				node->dsqlSpecialArg = cmpArg->dsqlSpecialArg;
 
 				if (cmpArg->dsqlFlag == ComparativeBoolNode::DFLAG_ANSI_ANY)

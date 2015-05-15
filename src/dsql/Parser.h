@@ -213,7 +213,6 @@ private:
 
 		ComparativeBoolNode* cmpNode = newNode<ComparativeBoolNode>(
 			blr_eql, value, MAKE_constant("1", CONSTANT_BOOLEAN));
-		cmpNode->dsqlWasValue = true;
 		return cmpNode;
 	}
 

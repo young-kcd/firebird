@@ -103,7 +103,6 @@ private:
 public:
 	UCHAR blrOp;
 	DsqlFlag dsqlFlag;
-	bool dsqlWasValue;
 	NestConst<ValueExprNode> arg1;
 	NestConst<ValueExprNode> arg2;
 	NestConst<ValueExprNode> arg3;
