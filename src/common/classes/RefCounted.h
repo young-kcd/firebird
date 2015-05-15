@@ -202,12 +202,14 @@ namespace Firebird
 				{
 					p->addRef();
 				}
-				if (ptr)
-				{
-					ptr->release();
-				}
 
+				T* tmp = ptr;
 				ptr = p;
+
+				if (tmp)
+				{
+					tmp->release();
+				}
 			}
 
 			return ptr;
