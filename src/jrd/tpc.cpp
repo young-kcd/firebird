@@ -323,7 +323,7 @@ TipCache::TransactionStatusBlock* TipCache::createTransactionStatusBlock(int blo
 	try
 	{
 		memory = FB_NEW(*m_dbb->dbb_permanent) Firebird::SharedMemory<TransactionStatusBlock>(
-			fileName.c_str(), m_blockSize, &memBlockInitializer);
+			fileName.c_str(), m_blockSize, &memBlockInitializer, true);
 	}
 	catch (const Exception& ex)
 	{

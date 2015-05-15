@@ -238,6 +238,8 @@ namespace {
 		explicit FileLockHolder(FileLock* l)
 			: lock(l)
 		{
+			if (!lock)
+				return;
 			LocalStatus ls;
 			CheckStatusWrapper status(&ls);
 			if (!lock->setlock(&status, FileLock::FLM_EXCLUSIVE))
@@ -246,7 +248,8 @@ namespace {
 
 		~FileLockHolder()
 		{
-			lock->unlock();
+			if (lock)
+				lock->unlock();
 		}
 
 	private:
@@ -1769,7 +1772,7 @@ void SharedMemoryBase::internalUnmap()
 	}
 }
 
-SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject* callback)
+SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject* callback, bool skipLock)
 	:
 #ifdef HAVE_SHARED_MUTEX_SECTION
 	sh_mem_mutex(0),
@@ -1813,9 +1816,10 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	// open the init lock file
 	MutexLockGuard guard(openFdInit, FB_FUNCTION);
 
-	initFile.reset(FB_NEW_POOL(*getDefaultMemoryPool()) FileLock(init_filename));
+	if (!skipLock)
+		initFile.reset(FB_NEW_POOL(*getDefaultMemoryPool()) FileLock(init_filename));
 
-	// get an exclusive lock on the INIT file with blocking
+	// get an exclusive lock on the INIT file with blocking except TransactionStatusBlock since its initialized under FileLock
 	FileLockHolder initLock(initFile);
 
 #ifdef USE_SYS5SEMAPHORE

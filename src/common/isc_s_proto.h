@@ -271,7 +271,7 @@ public:
 class SharedMemoryBase
 {
 public:
-	SharedMemoryBase(const TEXT* fileName, ULONG size, IpcObject* cb);
+	SharedMemoryBase(const TEXT* fileName, ULONG size, IpcObject* cb, bool skipLock);
 	~SharedMemoryBase();
 
 #ifdef HAVE_OBJECT_MAP
@@ -366,8 +366,8 @@ template <class Header>		// Header must be "public MemoryHeader"
 class SharedMemory : public SharedMemoryBase
 {
 public:
-	SharedMemory(const TEXT* fileName, ULONG size, IpcObject* cb)
-		: SharedMemoryBase(fileName, size, cb)
+	SharedMemory(const TEXT* fileName, ULONG size, IpcObject* cb, bool skipLock = false)
+		: SharedMemoryBase(fileName, size, cb, skipLock)
 	{ }
 
 #ifdef HAVE_OBJECT_MAP
