@@ -5966,9 +5966,6 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 
 			if (event)
 			{
-				// Mark event as already processed
-				event->rvnt_id = 0;
-
 				// Call the asynchronous event routine associated
 				// with this event
 				const ULONG length = pevent->p_event_items.cstr_length;
@@ -5979,6 +5976,9 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 				//else {....
 				//This is error condition, but we have absolutely no ways to report it.
 				//Therefore simply ignore such bad packet.
+
+				// Finished processing this event
+				event->rvnt_id = 0;
 			}
 
 		}						// end of event handling for op_event
@@ -7154,8 +7154,8 @@ static void send_cancel_event(Rvnt* event)
 
 	if (event->rvnt_id)
 	{
-		event->rvnt_id = 0;
 		event->rvnt_callback->eventCallbackFunction(0, NULL);
+		event->rvnt_id = 0;
 	}
 }
 

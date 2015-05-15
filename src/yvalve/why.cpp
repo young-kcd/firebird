@@ -2877,9 +2877,13 @@ namespace
 			catch (const Firebird::Exception&)
 			{ }
 
-			fb_assert(events);
-			events->autoReleased = true;
-			events->release();
+			if (events)
+			{
+				events->autoReleased = true;
+				YEvents* tmp = events;
+				events = NULL;
+				tmp->release();
+			}
 		}
 
 		int release()
