@@ -1,3 +1,22 @@
+ 2015-05-15 16:11  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Fixed CORE-4756: Firebird 3 events broken
+
+ 2015-05-15 16:10  asfernandes 
+   M doc/sql.extensions/README.data_types
+   M doc/sql.extensions/README.keywords
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/Parser.h
+   M src/dsql/parse.y
+1) Improvement CORE-4791 - Make INSERTING/UPDATING/DELETING reserved words to fix ambiguity with boolean expresions.
+2) Fixed CORE-4735 -  Expression 'where bool_field IS true | false' should also use index as 'where bool_field = true | false' (if such index exists).
+
+ 2015-05-15 16:08  alexpeshkoff 
+   M src/common/classes/RefCounted.h
+Make ref.counted pointer recursive-call safe
+
  2015-05-14 10:04  alexpeshkoff 
    M src/dsql/dsql.cpp
 Postfix for CORE-4785
