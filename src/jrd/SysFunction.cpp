@@ -1621,6 +1621,8 @@ dsc* evlDateAdd(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	{
 		case dtype_sql_time:
 			timestamp.value().timestamp_time = *(GDS_TIME*) valueDsc->dsc_address;
+			timestamp.value().timestamp_date =
+				(TimeStamp::MAX_DATE - TimeStamp::MIN_DATE) / 2 + TimeStamp::MIN_DATE;
 
 			if (part != blr_extract_hour &&
 				part != blr_extract_minute &&

@@ -55,9 +55,11 @@ namespace Firebird {
 
 class NoThrowTimeStamp
 {
+public:
 	static const ISC_DATE MIN_DATE = -678575;	// 01.01.0001
 	static const ISC_DATE MAX_DATE = 2973483;	// 31.12.9999
 
+private:
 	static const ISC_DATE BAD_DATE = MAX_SLONG;
 	static const ISC_TIME BAD_TIME = MAX_ULONG;
 
