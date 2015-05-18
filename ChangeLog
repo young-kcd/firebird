@@ -1,3 +1,8 @@
+ 2015-05-17 02:22  asfernandes 
+   M src/common/classes/NoThrowTimeStamp.h
+   M src/jrd/SysFunction.cpp
+Postfix for CORE-4789 - Prohibit ability to cast timestamps that out of valid range to varchar.
+
  2015-05-15 16:11  alexpeshkoff 
    M src/remote/client/interface.cpp
    M src/yvalve/why.cpp
