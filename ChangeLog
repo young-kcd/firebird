@@ -1,3 +1,11 @@
+ 2015-05-18 16:46  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed CORE-4795: fbclient executes callback function twice
+
+ 2015-05-18 16:01  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed CORE-4794: isc_cancel_events returns error invalid events id (handle) (code: 335545021) if event is (no longer) queued
+
  2015-05-17 02:22  asfernandes 
    M src/common/classes/NoThrowTimeStamp.h
    M src/jrd/SysFunction.cpp
