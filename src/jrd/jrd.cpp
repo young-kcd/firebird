@@ -1007,8 +1007,6 @@ static void			run_commit_triggers(thread_db* tdbb, jrd_tra* transaction);
 static jrd_req*		verify_request_synchronization(JrdStatement* statement, USHORT level);
 static void			purge_transactions(thread_db*, Jrd::Attachment*, const bool);
 
-static void 		handle_error(Firebird::CheckStatusWrapper*, ISC_STATUS);
-
 namespace {
 	enum VdnResult {VDN_FAIL, VDN_OK/*, VDN_SECURITY*/};
 }
@@ -1432,9 +1430,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			// Check to see if the database is truly local
 			if (ISC_check_if_remote(expanded_name, true))
-			{
-				handle_error(user_status, isc_unavailable);
-			}
+				ERR_post(Arg::Gds(isc_unavailable));
 
 			// Check for correct credentials supplied
 			getUserInfo(userId, options, org_filename.c_str(), expanded_name.c_str(),
@@ -2461,9 +2457,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			// Check to see if the database is truly local or if it just looks
 			// that way
 			if (ISC_check_if_remote(expanded_name, true))
-			{
-				handle_error(user_status, isc_unavailable);
-			}
+				ERR_post(Arg::Gds(isc_unavailable));
 
 			// Check for correct credentials supplied
 			getUserInfo(userId, options, org_filename.c_str(), NULL, &config, true, cryptCallback);
@@ -5997,27 +5991,6 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 	if (! rdr.isEof())
 		ERR_post(Arg::Gds(isc_bad_dpb_form));
-}
-
-
-static void handle_error(CheckStatusWrapper* user_status, ISC_STATUS code)
-{
-/**************************************
- *
- *	h a n d l e _ e r r o r
- *
- **************************************
- *
- * Functional description
- *	An invalid handle has been passed in.  If there is a user status
- *	vector, make it reflect the error.  If not, emulate the routine
- *	"error" and abort.
- *
- **************************************/
- 	if (user_status)
-	{
-		Arg::Gds(code).copyTo(user_status);
-	}
 }
 
 
