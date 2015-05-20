@@ -1380,6 +1380,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 				if (*repeatCount < repeatNode->len2)
 				{
 					++*repeatCount;
+					scope->save = bufferPos;
 					scopeStack.push(repeatNode + 1);
 					continue;
 				}
@@ -1389,6 +1390,8 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 
 			case ENCODE_OP_STATE(opRepeatEnd, msReturningFalse):
 			{
+				bufferPos = scope->save;
+
 				const Node* repeatNode = scope->i + node->ref;
 				SLONG* repeatCount = repeatStack.back;
 
