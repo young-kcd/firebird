@@ -2611,7 +2611,7 @@ static bool_t inet_getbytes( XDR* xdrs, SCHAR* buff, u_int count)
  **************************************/
 #ifdef REM_SERVER
 	const rem_port* port = (rem_port*) xdrs->x_public;
-	if ((port->port_flags & PORT_server) && !(port->port_server_flags & SRVR_debug))
+	if (port->port_flags & PORT_server)
 	{
 		return REMOTE_getbytes(xdrs, buff, count);
 	}
