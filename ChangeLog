@@ -1,3 +1,7 @@
+ 2015-05-22 14:34  alexpeshkoff 
+   M src/remote/inet.cpp
+Fixed -s(tandalone) switch in posix server
+
  2015-05-17 02:21  asfernandes 
    M src/common/classes/timestamp.h
    M src/jrd/SysFunction.cpp
