@@ -33,7 +33,7 @@
 #include "../common/classes/array.h"
 #include "../common/classes/fb_string.h"
 
-#define DEBUG_CLUMPLETS
+//#define DEBUG_CLUMPLETS
 #if defined(DEV_BUILD) && !defined(DEBUG_CLUMPLETS)
 #define DEBUG_CLUMPLETS
 #endif
