@@ -1,3 +1,7 @@
+ 2015-05-26 11:07  alexpeshkoff 
+   M src/common/classes/ClumpletReader.h
+Disable debug code by default
+
  2015-05-22 14:34  alexpeshkoff 
    M src/remote/inet.cpp
 Fixed -s(tandalone) switch in posix server
