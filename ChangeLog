@@ -1,3 +1,9 @@
+ 2015-05-27 17:15  mapopa 
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+-fno-weak is unknown in the Clang 3.4 in current Xcode (5.1)
+http://article.gmane.org/gmane.comp.documentfoundation.libreoffice.scm/46191/
+
  2015-05-26 11:07  alexpeshkoff 
    M src/common/classes/ClumpletReader.h
 Disable debug code by default
