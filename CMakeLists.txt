@@ -199,6 +199,11 @@ if (WIN32)
 endif(WIN32)
 
 if (MINGW)
+    # clear unix-style prefixes
+    set(CMAKE_SHARED_LIBRARY_PREFIX)
+    set(CMAKE_SHARED_MODULE_PREFIX)
+    set(CMAKE_STATIC_LIBRARY_PREFIX)
+
     add_definitions(-D_WIN32_WINNT=0x0600)
 endif()
 

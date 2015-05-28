@@ -1000,12 +1000,22 @@ foreach(F ${files})
 endforeach()
 
 if (WIN32)
+    set(fbclient_lib_src $<CONFIG>/fbclient.lib)
+    set(fbclient_lib_dst fbclient_ms.lib)
+    set( ib_util_lib_src $<CONFIG>/ib_util.lib)
+    set( ib_util_lib_dst ib_util_ms.lib)
+    if (MINGW)
+        set(fbclient_lib_src libfbclient.dll.a)
+        set(fbclient_lib_dst libfbclient.dll.a)
+        set( ib_util_lib_src libib_util.dll.a)
+        set( ib_util_lib_dst libib_util.dll.a)
+    endif()
     add_custom_command(
         TARGET copy_files
         POST_BUILD
         # lib
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<CONFIG>/fbclient.lib ${output_dir}/lib/fbclient_ms.lib
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<CONFIG>/ib_util.lib ${output_dir}/lib/ib_util_ms.lib
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${fbclient_lib_src} ${output_dir}/lib/${fbclient_lib_dst}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${ib_util_lib_src} ${output_dir}/lib/${ib_util_lib_dst}
         # installers
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/builds/install/arch-specific/win32/install_classic.bat ${output_dir}/install_classic.bat
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/builds/install/arch-specific/win32/install_super.bat ${output_dir}/install_super.bat

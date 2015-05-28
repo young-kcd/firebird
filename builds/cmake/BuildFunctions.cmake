@@ -108,7 +108,7 @@ function(epp_process type files)
             set(dir ${dir}/${file}.d)
             add_custom_command(
                 OUTPUT ${out}
-                DEPENDS databases ${in}
+                DEPENDS databases boot_gpre ${in}
                 COMMENT "Calling GPRE master for ${F}"
                 #
                 COMMAND ${CMAKE_COMMAND} -E make_directory ${dir}
