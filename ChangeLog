@@ -1,3 +1,9 @@
+ 2015-05-28 13:27  egorpugin 
+   M CMakeLists.txt
+   M builds/cmake/BuildFunctions.cmake
+   M src/CMakeLists.txt
+[build][cmake] Fix mingw build: removed unix prefixes from output libraries.
+
  2015-05-20 15:27  asfernandes 
    M src/jrd/SimilarToMatcher.h
 Fixed CORE-4740 - SIMILAR TO with quantifier {n,} in the pattern: 1) fails on 2.5 ("Invalid pattern"), 2) strange result in 3.0.
