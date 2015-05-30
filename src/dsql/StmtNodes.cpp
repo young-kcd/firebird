@@ -271,18 +271,52 @@ DmlNode* AssignmentNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratc
 	return node;
 }
 
+void AssignmentNode::validateTarget(CompilerScratch* csb, const ValueExprNode* target)
+{
+	const FieldNode* fieldNode;
+
+	if ((fieldNode = target->as<FieldNode>()))
+	{
+		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[fieldNode->fieldStream];
+
+		// Assignments to the OLD context are prohibited for all trigger types.
+		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == OLD_CONTEXT_VALUE)
+			ERR_post(Arg::Gds(isc_read_only_field));
+
+		// Assignments to the NEW context are prohibited for post-action triggers.
+		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == NEW_CONTEXT_VALUE &&
+			(csb->csb_g_flags & csb_post_trigger))
+		{
+			ERR_post(Arg::Gds(isc_read_only_field));
+		}
+
+		// Assignment to cursor fields are always prohibited.
+		// But we cannot detect FOR cursors here. They are treated in dsqlPass.
+		if (fieldNode->cursorNumber.specified)
+			ERR_post(Arg::Gds(isc_read_only_field));
+	}
+	else if (!(target->is<ParameterNode>() || target->is<VariableNode>() || target->is<NullNode>()))
+		ERR_post(Arg::Gds(isc_read_only_field));
+}
+
+void AssignmentNode::dsqlValidateTarget(const ValueExprNode* target)
+{
+	const DerivedFieldNode* fieldNode = target->as<DerivedFieldNode>();
+
+	if (fieldNode && fieldNode->context &&
+		(fieldNode->context->ctx_flags & (CTX_system | CTX_cursor)) == CTX_cursor)
+	{
+		ERR_post(Arg::Gds(isc_read_only_field));
+	}
+}
+
 AssignmentNode* AssignmentNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	AssignmentNode* node = FB_NEW(getPool()) AssignmentNode(getPool());
 	node->asgnFrom = doDsqlPass(dsqlScratch, asgnFrom);
 	node->asgnTo = doDsqlPass(dsqlScratch, asgnTo);
 
-	DerivedFieldNode* fieldNode = node->asgnTo->as<DerivedFieldNode>();
-	if (fieldNode && fieldNode->context &&
-		(fieldNode->context->ctx_flags & (CTX_system | CTX_cursor)) == CTX_cursor)
-	{
-		ERR_post(Arg::Gds(isc_read_only_field));
-	}
+	dsqlValidateTarget(node->asgnTo);
 
 	// Try to force asgnFrom to be same type as asgnTo eg: ? = FIELD case
 	PASS1_set_parameter_type(dsqlScratch, node->asgnFrom, node->asgnTo, false);
@@ -360,30 +394,7 @@ AssignmentNode* AssignmentNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	ExprNode::doPass2(tdbb, csb, missing.getAddress());
 	ExprNode::doPass2(tdbb, csb, missing2.getAddress());
 
-	FieldNode* fieldNode;
-
-	if ((fieldNode = asgnTo->as<FieldNode>()))
-	{
-		CompilerScratch::csb_repeat* tail = &csb->csb_rpt[fieldNode->fieldStream];
-
-		// Assignments to the OLD context are prohibited for all trigger types.
-		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == OLD_CONTEXT_VALUE)
-			ERR_post(Arg::Gds(isc_read_only_field));
-
-		// Assignments to the NEW context are prohibited for post-action triggers.
-		if ((tail->csb_flags & csb_trigger) && fieldNode->fieldStream == NEW_CONTEXT_VALUE &&
-			(csb->csb_g_flags & csb_post_trigger))
-		{
-			ERR_post(Arg::Gds(isc_read_only_field));
-		}
-
-		// Assignment to cursor fields are always prohibited.
-		// But we cannot detect FOR cursors here. They are treated in dsqlPass.
-		if (fieldNode->cursorNumber.specified)
-			ERR_post(Arg::Gds(isc_read_only_field));
-	}
-	else if (!(asgnTo->is<ParameterNode>() || asgnTo->is<VariableNode>() || asgnTo->is<NullNode>()))
-		ERR_post(Arg::Gds(isc_read_only_field));
+	validateTarget(csb, asgnTo);
 
 	return this;
 }
@@ -2632,6 +2643,16 @@ ExecProcedureNode* ExecProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		node->outputSources = explodeOutputs(dsqlScratch, dsqlScratch->procedure);
 	}
 
+	if (node->outputSources)
+	{
+		for (const NestConst<ValueExprNode>* i = node->outputSources->items.begin();
+			 i != node->outputSources->items.end();
+			 ++i)
+		{
+			AssignmentNode::dsqlValidateTarget(*i);
+		}
+	}
+
 	return node;
 }
 
@@ -2754,6 +2775,17 @@ ExecProcedureNode* ExecProcedureNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	ExprNode::doPass2(tdbb, csb, outputSources.getAddress());
 	ExprNode::doPass2(tdbb, csb, outputTargets.getAddress());
 	doPass2(tdbb, csb, outputMessage.getAddress(), this);
+
+	if (outputTargets)
+	{
+		for (const NestConst<ValueExprNode>* i = outputTargets->items.begin();
+			 i != outputTargets->items.end();
+			 ++i)
+		{
+			AssignmentNode::validateTarget(csb, *i);
+		}
+	}
+
 	return this;
 }
 
@@ -3059,6 +3091,16 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	node->outputs = dsqlPassArray(dsqlScratch, outputs);
 
+	if (node->outputs)
+	{
+		for (const NestConst<ValueExprNode>* i = node->outputs->items.begin();
+			 i != node->outputs->items.end();
+			 ++i)
+		{
+			AssignmentNode::dsqlValidateTarget(*i);
+		}
+	}
+
 	if (innerStmt)
 	{
 		++dsqlScratch->loopLevel;
@@ -3232,6 +3274,16 @@ ExecStatementNode* ExecStatementNode::pass2(thread_db* tdbb, CompilerScratch* cs
 	doPass2(tdbb, csb, innerStmt.getAddress(), this);
 	ExprNode::doPass2(tdbb, csb, inputs.getAddress());
 	ExprNode::doPass2(tdbb, csb, outputs.getAddress());
+
+	if (outputs)
+	{
+		for (const NestConst<ValueExprNode>* i = outputs->items.begin();
+			 i != outputs->items.end();
+			 ++i)
+		{
+			AssignmentNode::validateTarget(csb, *i);
+		}
+	}
 
 	impureOffset = CMP_impure(csb, sizeof(EDS::Statement*));
 
