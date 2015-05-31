@@ -5840,7 +5840,15 @@ string print_key(thread_db* tdbb, jrd_rel* relation, index_desc* idx, Record* re
 
 			if (value.length() > MAX_KEY_STRING_LEN)
 			{
+				fb_assert(desc->isText());
+
 				value.resize(MAX_KEY_STRING_LEN);
+
+				const CharSet* const cs = INTL_charset_lookup(tdbb, desc->getCharSet());
+
+				while (value.hasData() && !cs->wellFormed(value.length(), (const UCHAR*) value.c_str()))
+					value.resize(value.length() - 1);
+
 				value += "...";
 			}
 		}
