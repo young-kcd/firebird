@@ -279,6 +279,7 @@ struct impure_inversion
 struct impure_agg_sort
 {
 	sort_context* iasb_sort_handle;
+	ULONG iasb_dummy;
 };
 
 

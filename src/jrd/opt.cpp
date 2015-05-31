@@ -4139,6 +4139,9 @@ static RecordSource* gen_aggregate(thread_db* tdbb, OptimizerBlk* opt, jrd_nod* 
 				asb->asb_length += sort_key->skd_length;
 
 			asb->asb_length = ROUNDUP(asb->asb_length, sizeof(SLONG));
+			// dimitr:	allocate an extra longword for the purely artificial counter,
+			// 			see AggNode::aggPass() for details; the length remains rounded properly
+			asb->asb_length += sizeof(ULONG);
 
 			sort_key->skd_flags = SKD_ascending;
 			asb->nod_impure = CMP_impure(csb, sizeof(impure_agg_sort));

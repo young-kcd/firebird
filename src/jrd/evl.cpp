@@ -1773,6 +1773,14 @@ USHORT EVL_group(thread_db* tdbb, RecordSource* rsb, jrd_nod *const node, USHORT
 						(asb->asb_intl ? asb->asb_key_desc[1].skd_offset : 0);
 					MOV_move(tdbb, desc, &toDesc);
 
+					// dimitr:	Here we add a monotonically increasing value to the sort record.
+					// 			It allows the record to look more random than it was originally.
+					//			This helps the quick sort algorithm to avoid the worst-case of
+					//			all equal values (see CORE-214).
+
+					ULONG* const pDummy = reinterpret_cast<ULONG*>(data + asb->asb_length - sizeof(ULONG));
+					*pDummy = asb_impure->iasb_dummy++;
+
 					break;
 				}
 
