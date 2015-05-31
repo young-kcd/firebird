@@ -396,6 +396,14 @@ bool AggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 				(asb->intl ? asb->keyItems[1].skd_offset : 0);
 			MOV_move(tdbb, desc, &toDesc);
 
+			// dimitr:	Here we add a monotonically increasing value to the sort record.
+			// 			It allows the record to look more random than it was originally.
+			//			This helps the quick sort algorithm to avoid the worst-case of
+			//			all equal values (see CORE-214).
+
+			ULONG* const pDummy = reinterpret_cast<ULONG*>(data + asb->length - sizeof(ULONG));
+			*pDummy = asbImpure->iasb_dummy++;
+
 			return true;
 		}
 	}
@@ -1727,14 +1735,11 @@ void RegrCountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 
 bool RegrCountAggNode::aggPass(thread_db* tdbb, jrd_req* request) const
 {
-	dsc* desc = NULL;
-	dsc* desc2 = NULL;
-
-	desc = EVL_expr(tdbb, request, arg);
+	dsc* desc = EVL_expr(tdbb, request, arg);
 	if (request->req_flags & req_null)
 		return false;
 
-	desc2 = EVL_expr(tdbb, request, arg2);
+	dsc* desc2 = EVL_expr(tdbb, request, arg2);
 	if (request->req_flags & req_null)
 		return false;
 

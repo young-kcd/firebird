@@ -1973,6 +1973,9 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, MapNode*
 				asb->length += sort_key->skd_length;
 
 			asb->length = ROUNDUP(asb->length, sizeof(SLONG));
+			// dimitr:	allocate an extra longword for the purely artificial counter,
+			// 			see AggNode::aggPass() for details; the length remains rounded properly
+			asb->length += sizeof(ULONG);
 
 			sort_key->skd_flags = SKD_ascending;
 			asb->impure = CMP_impure(csb, sizeof(impure_agg_sort));
