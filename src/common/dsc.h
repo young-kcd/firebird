@@ -182,6 +182,9 @@ typedef struct dsc
 			return CS_BINARY;
 		}
 
+		if (isDbKey())
+			return CS_BINARY;
+
 		return CS_NONE;
 	}
 
@@ -197,6 +200,9 @@ typedef struct dsc
 
 			return CS_BINARY;
 		}
+
+		if (isDbKey())
+			return CS_BINARY;
 
 		return CS_NONE;
 	}
