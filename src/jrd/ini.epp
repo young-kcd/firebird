@@ -478,6 +478,36 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 		add_security_to_sys_obj(tdbb, ownerName, obj_collation, collation->name, length, buffer);
 	}
 
+	// Add default DDL security
+
+	const UCHAR DDL_OWNER_ACL[] =
+		{ACL_priv_list, priv_control, priv_alter, priv_drop, ACL_end};
+
+	const UCHAR DDL_PUBLIC_ACL[] =
+		{ACL_priv_list, ACL_end};
+
+	acl = buffer;
+	*acl++ = ACL_version;
+	*acl++ = ACL_id_list;
+	*acl++ = id_person;
+
+	*acl++ = (UCHAR) ownerNameLength;
+	memcpy(acl, ownerName.c_str(), ownerNameLength);
+	acl += ownerNameLength;
+
+	*acl++ = ACL_end;
+
+	memcpy(acl, DDL_OWNER_ACL, sizeof(DDL_OWNER_ACL));
+	acl += sizeof(DDL_OWNER_ACL);
+
+	*acl++ = ACL_id_list;
+	*acl++ = ACL_end;
+	memcpy(acl, DDL_PUBLIC_ACL, sizeof(DDL_PUBLIC_ACL));
+	acl += sizeof(DDL_PUBLIC_ACL);
+	*acl++ = ACL_end; // Put an extra terminator to avoid scl.epp:walk_acl() missing the end.
+
+	length = acl - buffer;
+
 	for (int ddl_obj = obj_database + 1; ddl_obj < obj_type_MAX; ++ddl_obj)
 	{
 		add_security_class(tdbb, get_object_name(ddl_obj), length, buffer);
