@@ -1506,6 +1506,8 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 		aggregate->descending.add(aggNode->aggInfo.blr == blr_agg_max);
 		// 10-Aug-2004. Nickolay Samofatov - Unneeded nulls seem to be skipped somehow.
 		aggregate->nullOrder.add(rse_nulls_default);
+
+		rse->flags |= RseNode::FLAG_OPT_FIRST_ROWS;
 	}
 
 	RecordSource* const nextRsb = OPT_compile(tdbb, csb, rse, &deliverStack);
