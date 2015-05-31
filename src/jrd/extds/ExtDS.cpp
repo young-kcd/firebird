@@ -536,7 +536,7 @@ void Connection::raise(const FbStatusVector* status, thread_db* /*tdbb*/, const 
 }
 
 
-bool Connection::getWrapErrors(const ISC_STATUS* status) 
+bool Connection::getWrapErrors(const ISC_STATUS* status)
 {
 	// Detect if connection is broken
 	switch (status[1])

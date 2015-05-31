@@ -2691,9 +2691,9 @@ static bool packet_receive(rem_port* port, UCHAR* buffer, SSHORT buffer_length, 
 	const SOCKET ph = port->port_handle;
 	if (ph == INVALID_SOCKET)
 	{
-		if (!(port->port_flags & PORT_disconnect)) {
+		if (!(port->port_flags & PORT_disconnect))
 			inet_error(true, port, "invalid socket in packet_receive", isc_net_read_err, EINVAL);
-		}
+
 		return false;
 	}
 

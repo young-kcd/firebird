@@ -65,9 +65,10 @@ static GlobalPtr<RegisterInternalProvider> reg;
 
 void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
 {
-/* hvlad: this inactive code could be useful in the future, for example when EDS
-   connection pool will be implemented - it allows to remove closed connections
-   from the pool.
+	/***
+	hvlad: this inactive code could be useful in the future, for example when EDS
+	connection pool will be implemented - it allows to remove closed connections
+	from the pool.
 
 	if (m_connections.getCount() == 0)
 		return;
@@ -81,7 +82,7 @@ void InternalProvider::jrdAttachmentEnd(thread_db* tdbb, Jrd::Attachment* att)
 		if (conn->getJrdAtt() == att->getInterface())
 			releaseConnection(tdbb, *conn, false);
 	}
-*/
+	***/
 }
 
 void InternalProvider::getRemoteError(const FbStatusVector* status, string& err) const

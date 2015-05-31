@@ -1724,13 +1724,14 @@ ISC_STATUS API_ROUTINE isc_cancel_events(ISC_STATUS* userStatus, FB_API_HANDLE* 
 			// This cast appears awful, but as long as handles are 32-bit entities it's OK.
 			event = translateHandle(events, (FB_API_HANDLE*) id);
 		}
-		catch(const Firebird::status_exception& ex)
+		catch (const Firebird::status_exception& ex)
 		{
 			if (ex.value()[1] == isc_bad_events_handle)
 			{
 				// Ignore invalid handle/ID in cancelation call for backward compatibility
 				return status[1];
 			}
+
 			throw;
 		}
 
