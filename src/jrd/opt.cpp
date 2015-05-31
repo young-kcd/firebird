@@ -7575,8 +7575,7 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 
 	switch (node->nod_type)
 	{
-
-	case nod_field :
+	case nod_field:
 		{
 			// Check if field references to the river.
 			const UCHAR* streams = river->riv_streams;
@@ -7591,7 +7590,23 @@ static bool river_reference(const River* river, const jrd_nod* node, bool* field
 			return false;
 		}
 
-	default :
+	case nod_rec_version:
+	case nod_dbkey:
+		{
+			// Check if field references to the river.
+			const UCHAR* streams = river->riv_streams;
+			for (const UCHAR* const end = streams + river->riv_count; streams < end; streams++)
+			{
+				if ((USHORT)(IPTR) node->nod_arg[0] == *streams)
+				{
+					*field_found = true;
+					return true;
+				}
+			}
+			return false;
+		}
+
+	default:
 		{
 			const jrd_nod* const* ptr = node->nod_arg;
 			// Check all sub-nodes of this node.
