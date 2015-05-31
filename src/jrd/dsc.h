@@ -135,6 +135,11 @@ typedef struct dsc
 		return dsc_dtype >= dtype_text && dsc_dtype <= dtype_varying;
 	}
 
+	bool isDbKey() const
+	{
+		return dsc_dtype == dtype_dbkey;
+	}
+
 	bool isUnknown() const
 	{
 		return dsc_dtype == dtype_unknown;
@@ -167,6 +172,9 @@ typedef struct dsc
 			return CS_BINARY;
 		}
 
+		if (isDbKey())
+			return CS_BINARY;
+
 		return CS_NONE;
 	}
 
@@ -182,6 +190,9 @@ typedef struct dsc
 
 			return CS_BINARY;
 		}
+
+		if (isDbKey())
+			return CS_BINARY;
 
 		return CS_NONE;
 	}
