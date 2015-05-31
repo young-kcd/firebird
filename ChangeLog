@@ -1,3 +1,8 @@
+ 2015-05-30 19:01  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+Fixed CORE-4819 - EXECUTE PROCEDURE's RETURNING_VALUES and EXECUTE STATEMENT's INTO does not check validity of assignments targets leading to bugcheck.
+
  2015-05-28 13:27  egorpugin 
    M CMakeLists.txt
    M builds/cmake/BuildFunctions.cmake
