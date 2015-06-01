@@ -1,3 +1,21 @@
+ 2015-05-31 16:26  dimitr 
+   M src/jrd/evl.cpp
+   M src/jrd/exe.h
+   M src/jrd/opt.cpp
+Fixed CORE-214: Count ( DISTINCT ... ) is too slow.
+
+ 2015-05-31 13:10  dimitr 
+   M src/jrd/btr.cpp
+Postfix for CORE-4786: Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters.
+
+ 2015-05-31 13:05  dimitr 
+   M src/jrd/dsc.h
+Fixed CORE-4809: HASH/MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses and join is based on DBKEY concatenations.
+
+ 2015-05-31 13:00  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4822: MERGE JOIN cannot be used for DBKEY based expressions.
+
  2015-05-27 17:15  mapopa 
    M builds/posix/prefix.darwin_i386
    M builds/posix/prefix.darwin_x86_64
