@@ -1076,10 +1076,23 @@ rem_port* INET_connect(const TEXT* name,
 			}
 			return NULL;
 		}
+
 #ifdef WIN_NT
 		if (flag & SRVR_debug)
 #else
-		if ((flag & SRVR_debug) || !fork())
+		int pid = 0;
+		if (!(flag & SRVR_debug))
+		{
+			pid = fork();
+			if (pid < 0)
+			{
+				inet_error(port, "fork", isc_net_connect_err, inetErrNo);
+				disconnect(port);
+				return NULL;
+			}
+		}
+
+		if (!pid)
 #endif
 		{
 			SOCLOSE(port->port_handle);
