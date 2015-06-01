@@ -1,3 +1,32 @@
+ 2015-05-31 23:38  asfernandes 
+   M src/jrd/extds/ExtDS.cpp
+   M src/jrd/extds/InternalDS.cpp
+   M src/remote/inet.cpp
+   M src/yvalve/why.cpp
+Misc.
+
+ 2015-05-31 19:23  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-4798: Regression: MIN/MAX with a join ignores possible index navigation.
+
+ 2015-05-31 18:46  dimitr 
+   M src/jrd/ini.epp
+Fixed CORE-4806: Regression: generators can be seen/modified by unprivileged users.
+
+ 2015-05-31 16:14  dimitr 
+   M src/dsql/AggNodes.cpp
+   M src/jrd/exe.h
+   M src/jrd/opt.cpp
+Fixed CORE-214: Count ( DISTINCT ... ) is too slow.
+
+ 2015-05-31 13:15  dimitr 
+   M src/jrd/btr.cpp
+Postfix for CORE-4786: Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters.
+
+ 2015-05-31 13:06  dimitr 
+   M src/common/dsc.h
+Fixed CORE-4809: HASH/MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses and join is based on DBKEY concatenations.
+
  2015-05-30 19:01  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/dsql/StmtNodes.h
