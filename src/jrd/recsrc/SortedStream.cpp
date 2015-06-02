@@ -45,12 +45,6 @@ SortedStream::SortedStream(CompilerScratch* csb, RecordSource* next, SortMap* ma
 	fb_assert(m_next && m_map);
 
 	m_impure = CMP_impure(csb, sizeof(Impure));
-
-	for (const SortMap::Item* item = map->items.begin(); item < map->items.end(); item++)
-	{
-		if (!item->node)
-			csb->csb_rpt[item->stream].csb_flags |= csb_offline;
-	}
 }
 
 void SortedStream::open(thread_db* tdbb) const
@@ -331,6 +325,7 @@ void SortedStream::mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const
 				fb_assert(false);
 			}
 
+			rpb->rpb_runtime_flags |= RPB_refetch;
 			continue;
 		}
 

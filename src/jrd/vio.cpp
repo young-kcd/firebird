@@ -662,7 +662,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			rpb->rpb_flags &= ~rpb_gc_active;
 	}
 
-	rpb->rpb_runtime_flags &= ~RPB_undo_data;
+	rpb->rpb_runtime_flags &= ~(RPB_undo_data | RPB_undo_read);
 	int forceBack = 0;
 
 	if (state == tra_us && !(transaction->tra_flags & TRA_system))
@@ -1353,11 +1353,12 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	// If the stream was sorted, the various fields in the rpb are
 	// probably junk.  Just to make sure that everything is cool, refetch the record.
 
-	if (rpb->rpb_runtime_flags & RPB_refetch)
+	if (rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
 		rpb->rpb_runtime_flags |= RPB_no_undo;
 		VIO_refetch_record(tdbb, rpb, transaction, false);
 		rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		fb_assert(!(rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
 	// deleting tx has updated/inserted this record before
@@ -2434,11 +2435,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 	// probably junk.  Just to make sure that everything is cool,
 	// refetch and release the record.
 
-	if (org_rpb->rpb_runtime_flags & RPB_refetch)
+	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
 	{
 		org_rpb->rpb_runtime_flags |= RPB_no_undo;
 		VIO_refetch_record(tdbb, org_rpb, transaction, false);
 		org_rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
 	}
 
 	// If we're the system transaction, modify stuff in place.  This saves
@@ -3028,7 +3030,9 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
 		(tid_fetch != rpb->rpb_transaction_nr) &&
 		// added to check that it was not current transaction,
 		// who modified the record. Alex P, 18-Jun-03
-		(rpb->rpb_transaction_nr != transaction->tra_number))
+		(rpb->rpb_transaction_nr != transaction->tra_number) &&
+		// dimitr: reads using the undo log are also OK
+		!(rpb->rpb_runtime_flags & RPB_undo_read))
 	{
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_CONFLICTS, rpb->rpb_relation->rel_id);
 
@@ -3925,7 +3929,19 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		return true;
 	}
 
-	jrd_rel* relation = org_rpb->rpb_relation;
+	if (org_rpb->rpb_runtime_flags & (RPB_refetch | RPB_undo_read))
+	{
+		org_rpb->rpb_runtime_flags |= RPB_no_undo;
+		VIO_refetch_record(tdbb, org_rpb, transaction, false);
+		org_rpb->rpb_runtime_flags &= ~(RPB_refetch | RPB_no_undo);
+		fb_assert(!(org_rpb->rpb_runtime_flags & RPB_undo_read));
+	}
+
+	if (org_rpb->rpb_transaction_nr == transaction->tra_number)
+	{
+		// We already own this record, thus no writelock is required
+		return true;
+	}
 
 	transaction->tra_flags |= TRA_write;
 
@@ -3938,11 +3954,7 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 		org_rpb->rpb_format_number = org_format->fmt_version;
 	}
 
-	if (org_rpb->rpb_transaction_nr == transaction->tra_number)
-	{
-		// We already own this record, thus no writelock is required
-		return true;
-	}
+	jrd_rel* const relation = org_rpb->rpb_relation;
 
 	// Set up the descriptor for the new record version. Initially,
 	// it points to the same record data as the original one.
@@ -3965,6 +3977,11 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 		VIO_copy_record(tdbb, org_rpb, &new_rpb);
 	}
+
+	// We're about to lock the record. Post a refetch request
+	// to all the active cursors positioned at this record.
+
+	invalidate_cursor_records(transaction, &new_rpb);
 
 	record_param temp;
 	PageStack stack;
@@ -4905,6 +4922,8 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 			const SINT64 recno = rpb->rpb_number.getValue();
 			if (!RecordBitmap::test(action->vct_records, recno))
 				return udNone;
+
+			rpb->rpb_runtime_flags |= RPB_undo_read;
 
 			if (!action->vct_undo || !action->vct_undo->locate(recno))
 				return udForceBack;

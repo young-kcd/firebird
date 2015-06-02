@@ -152,11 +152,6 @@ JrdStatement::JrdStatement(thread_db* tdbb, MemoryPool* p, CompilerScratch* csb)
 
 		for (record_param* rpb = rpbsSetup.begin(); tail < streams_end; ++rpb, ++tail)
 		{
-			// stream is known to be materialized after retrieving thus making its data outdated,
-			// let's indicate this fact to force a re-fetch when necessary
-			if (tail->csb_flags & csb_offline)
-				 rpb->rpb_stream_flags |= RPB_s_offline;
-
 			// fetch input stream for update if all booleans matched against indices
 			if ((tail->csb_flags & csb_update) && !(tail->csb_flags & csb_unmatched))
 				 rpb->rpb_stream_flags |= RPB_s_update;

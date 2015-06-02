@@ -2287,8 +2287,7 @@ const StmtNode* EraseNode::erase(thread_db* tdbb, jrd_req* request, WhichTrigger
 	// If the stream was sorted, the various fields in the rpb are probably junk.
 	// Just to make sure that everything is cool, refetch and release the record.
 
-	if ((rpb->rpb_stream_flags & RPB_s_offline) ||
-		(rpb->rpb_runtime_flags & RPB_refetch))
+	if (rpb->rpb_runtime_flags & RPB_refetch)
 	{
 		VIO_refetch_record(tdbb, rpb, transaction, false);
 		rpb->rpb_runtime_flags &= ~RPB_refetch;
@@ -6012,8 +6011,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 	// probably junk.  Just to make sure that everything is cool,
 	// refetch and release the record.
 
-	if ((orgRpb->rpb_stream_flags & RPB_s_offline) ||
-		(orgRpb->rpb_runtime_flags & RPB_refetch))
+	if (orgRpb->rpb_runtime_flags & RPB_refetch)
 	{
 		VIO_refetch_record(tdbb, orgRpb, transaction, false);
 		orgRpb->rpb_runtime_flags &= ~RPB_refetch;

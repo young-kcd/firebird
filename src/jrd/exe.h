@@ -606,7 +606,6 @@ const int csb_sub_stream	= 128;		// a sub-stream of the RSE being processed
 const int csb_erase			= 256;		// we are processing an erase
 const int csb_unmatched		= 512;		// stream has conjuncts unmatched by any index
 const int csb_update		= 1024;		// erase or modify for relation
-const int csb_offline		= 2048;		// stream is to be materialized after retrieving
 
 inline void CompilerScratch::csb_repeat::activate()
 {

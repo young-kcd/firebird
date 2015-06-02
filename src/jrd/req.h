@@ -119,16 +119,16 @@ const USHORT rpb_uk_modified= 512;		// record key field values are changed
 
 // Stream flags
 
-const USHORT RPB_s_offline	= 0x01;	// stream data may be outdated due to sorting/buffering
-const USHORT RPB_s_update	= 0x02;	// input stream fetched for update
-const USHORT RPB_s_no_data	= 0x04;	// nobody is going to access the data
-const USHORT RPB_s_sweeper	= 0x08;	// garbage collector - skip swept pages
+const USHORT RPB_s_update	= 0x01;	// input stream fetched for update
+const USHORT RPB_s_no_data	= 0x02;	// nobody is going to access the data
+const USHORT RPB_s_sweeper	= 0x04;	// garbage collector - skip swept pages
 
 // Runtime flags
 
 const USHORT RPB_refetch	= 0x01;	// re-fetch is required
 const USHORT RPB_undo_data	= 0x02;	// data got from undo log
 const USHORT RPB_no_undo	= 0x04;	// don't use undo log when retrieving data
+const USHORT RPB_undo_read	= 0x08;	// read was performed using the undo log
 
 const unsigned int MAX_DIFFERENCES	= 1024;	// Max length of generated Differences string
 											// between two records

@@ -55,7 +55,6 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 	{
 		const StreamType stream = *i;
 		CompilerScratch::csb_repeat* const tail = &csb->csb_rpt[stream];
-		tail->csb_flags |= csb_offline;
 
 		UInt32Bitmap::Accessor accessor(tail->csb_fields);
 
@@ -225,6 +224,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 			const FieldMap& map = m_map[i];
 
 			record_param* const rpb = &request->req_rpb[map.map_stream];
+			rpb->rpb_runtime_flags |= RPB_refetch;
 
 			if (map.map_stream != stream)
 			{
