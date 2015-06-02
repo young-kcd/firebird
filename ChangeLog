@@ -1,3 +1,7 @@
+ 2015-06-01 13:59  alexpeshkoff 
+   M src/remote/inet.cpp
+Added check for failed fork() system call
+
  2015-05-31 16:26  dimitr 
    M src/jrd/evl.cpp
    M src/jrd/exe.h
