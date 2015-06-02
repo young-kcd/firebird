@@ -2,15 +2,172 @@
   * v3.0 Beta 2
   *************
 
-    * Bugfix CORE-4733
-        Command "Alter table <T> alter TYPE <C> <DOMAIN_WITH_NOT_NULL" does not verifies data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0) for types INT, TIMESTAMP and VARCHAR
+    * Bugfix CORE-4819
+        EXECUTE PROCEDURE's RETURNING_VALUES and EXECUTE STATEMENT's INTO does not check validity of assignments targets leading to bugcheck
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4809
+        HASH/MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses
+        and join is based on DBKEY concatenations
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4806
+        Regression: generators can be seen/modified by unprivileged users
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4798
+        Regression: MIN/MAX with a join ignores possible index navigation
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4795
+        fbclient executes event callback function twice
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4794
+        isc_cancel_events() returns error invalid events id (handle) (code: 335545021) if event is no longer queued
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4789
+        Prohibit ability to cast timestamps that out of valid range to [VAR]CHAR
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4788
+        SuperClassic server hangs when receiving network packet
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4786
+        Problematic key value (when attempt to insert duplicate in PK/UK) is not shown where length of key >= 127 characters
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4785
+        Bad packet of op_execute kills the server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4782
+        Command `SHOW TABLE` fails when the table contains field with unicode collation in its DDL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4781
+        Maximum string length (32765 bytes) is not validated by the parser
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4774
+        Table aliasing is unnecessary required when doing UPDATE ... RETURNING RDB$ pseudo-columns
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4768
+        CREATE USER ... TAGS ( argument_1 = 'value1', ..., argument_N = 'valueN' ) - wrong results of statement when there are many arguments
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4767
+        CREATE USER ... TAGS ( attr = "prefix #suffix" ): "suffix" will be removed from storage because of character # in the value of attribute
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4766
+        AV when trying to manage users list using EXECUTE STATEMENT on behalf of non-SYSDBA user which has RDB$ADMIN role
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4760
+        Cannot create user with non-ascii (multi-byte) characters in the name
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4759
+        Request synchronization error when building an expression index
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4756
+        Firebird 3 events broken
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4755
+        Parameterized exception: wrong output when number of arguments greater than 7
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4754
+        Manipulations with GTT from several attachments (using ES/EDS and different roles) leads to:
+        "internal Firebird consistency check (invalid SEND request (167), file: JrdStatement.cpp line: 325)"
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4753
+        Firebird hangs in the embedded mode
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4752
+        EXECUTE STATEMENT using BLOB parameters results in "Invalid BLOB ID" error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4747
+        Error "invalid BLOB ID" can occur when retrieving MON$STATEMENTS.MON$SQL_TEXT using ES/EDS and db_connect argument is not specified
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4744
+        ALTER DATABASE SET DEFAULT CHARACTER SET: 1) take effect only for once for current attachment; 2) does not check that new char set exists untill it will be used
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4743
+        Granted role does not work with non-ASCII user name
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4740
+        SIMILAR TO with quantifier {n,} in the pattern: 1) fails on 2.5 ("Invalid pattern"), 2) strange result in 3.0
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4733
+        Command "ALTER TABLE <T> ALTER TYPE <C> DOMAIN_WITH_NOT_NULL" does not verifies data in column <C> and makes incorrect assignments in <C> to ZERO / JULIAN_DATE / ASCII(0) for types INT, TIMESTAMP and VARCHAR
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4725
+        Inconsistencies with ALTER DOMAIN and ALTER TABLE with DROP NOT NULL and PRIMARY KEYs
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4719
+        Message "Statement failed, SQLSTATE = 00000 + unknown ISC error 0" appears when issuing REVOKE ALL ON ALL FROM <existing_user>
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4715
+        Restore of shadowed database fails using -k ("restore without shadow") switch
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-4713
         "BLOB not found" error at rollback after insert into table with expression index
       Contributor(s):
         Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4712
+        Messages "Error in isc_release_request() ... when working with legacy security database" appear in firebird.log for CLASSIC server when connecting with legacy auth
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-4706
         ISQL pads blob columns wrongly when the column alias has more than 17 characters
@@ -119,6 +276,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-4624
+        Firebird handles ':' characters in mount table entries invalid
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-4623
         PSQL "Domain" and "Type Of" based variables referring BLOB with sub_type < 0 no longer work
       Contributor(s):
@@ -144,6 +306,11 @@
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
+    * Bugfix CORE-4583
+        FB 3 embedded tries to load ICU DLLs from PATH folders
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-4582
         Within linger period some database properties cannot be changed
       Contributor(s):
@@ -168,6 +335,11 @@
         Can't select from table with ICU columns when database is created on Linux with ICU 4.2.1 and then copied to Windows
       Contributor(s):
         Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4561
+        BUGCHECK(183) when use cursor with "order by ID+0" and "for update with lock"
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-4539
         Server does not accept the right plan
@@ -210,6 +382,11 @@
       Contributor(s):
         Dimitry Sibiryakov <sd at ibphoenix.com>
 
+    * Bugfix CORE-4369
+        BUGCHECK(177) for MERGE with multiple matches
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-4280
         Stored PSQL functions accept duplicate input arguments
       Contributor(s):
@@ -250,6 +427,32 @@
         Page-level "lock conversion denied" or "lock denied" errors
       Contributor(s):
         Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-214
+        COUNT (DISTINCT ...) is too slow
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4791
+        Make INSERTING/UPDATING/DELETING reserved words to fix ambiguity with boolean expresions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4735
+        Expression 'where bool_field IS true | false' should also use index as 'where bool_field = true | false' (if such index exists)
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4731
+        Prohibit an ability to issue DML or DDL statements on RDB$ tables
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4729
+        Add a flag to mon$database helping to decide what type of security database is used - default, self or other
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
 
     * Improvement CORE-4696
         Avoid flushing dirty pages to disk after creation of temporary table index
