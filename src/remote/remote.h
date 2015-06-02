@@ -93,7 +93,7 @@ const int BLOB_LENGTH		= 16384;
 
 // Prefetch constants
 
-const ULONG MAX_PACKETS_PER_BATCH = 8;
+const ULONG MAX_PACKETS_PER_BATCH = 16;
 
 const ULONG MIN_ROWS_PER_BATCH = 10;
 const ULONG MAX_ROWS_PER_BATCH = 1000;
