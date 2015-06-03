@@ -1,3 +1,24 @@
+ 2015-06-02 11:07  dimitr 
+   M doc/WhatsNew
+Updated the docs for Beta 2.
+
+ 2015-06-02 10:44  dimitr 
+   M src/remote/remote.h
+Restore the pre-v3 prefetch performance.
+
+ 2015-06-02 10:43  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/JrdStatement.cpp
+   M src/jrd/exe.h
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/vio.cpp
+1) Reverted a more complex refetch logic introduced recently to its original state.
+2) Protected against an undo record being used in VIO modify/erase/writelock routines.
+3) Avoided false deadlocks in read-committed transactions.
+This should cure CORE-4369, CORE-4561 and CORE-4618 at once.
+
  2015-05-31 23:38  asfernandes 
    M src/jrd/extds/ExtDS.cpp
    M src/jrd/extds/InternalDS.cpp
