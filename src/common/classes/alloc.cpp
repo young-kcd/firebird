@@ -1123,7 +1123,7 @@ void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_p
 				if (blk->mbk_flags & MBK_LAST)
 					break;
 			}
-			fprintf(file, "Blocks %"SIZEFORMAT" min %"SIZEFORMAT" max %"SIZEFORMAT" size %"SIZEFORMAT" \n\n",
+			fprintf(file, "Blocks %" SIZEFORMAT " min %" SIZEFORMAT " max %" SIZEFORMAT " size %" SIZEFORMAT " \n\n",
 					cnt, min, max, sum);
 		}
 
@@ -1326,7 +1326,7 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parent, MemoryStats& stats)
 		FreeMemoryBlock* freeBlock = blockToPtr<FreeMemoryBlock*>(blk);
 		freeBlock->fbk_next_fragment = NULL;
 
-		BlockInfo temp = {blockLength, freeBlock};
+		BlockInfo temp = {static_cast<size_t>(blockLength), freeBlock};
 		pool->freeBlocks.add(temp);
 		if (!pool->parent_redirect)
 		{

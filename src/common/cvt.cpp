@@ -144,7 +144,7 @@ class DummyException {};
 
 #ifndef NATIVE_QUAD
 #ifndef WORDS_BIGENDIAN
-static const SQUAD quad_min_int = { 0, SLONG_MIN };
+static const SQUAD quad_min_int = { 0, static_cast<ULONG>(SLONG_MIN) };
 static const SQUAD quad_max_int = { -1, SLONG_MAX };
 #else
 static const SQUAD quad_min_int = { SLONG_MIN, 0 };

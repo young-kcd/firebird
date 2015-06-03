@@ -164,20 +164,20 @@ static int perf_format(const P* before, const P* after,
 			case 'b':
 			case 'c':
 			case 'x':
-				sprintf(p, "%"SQUADFORMAT, delta);
+				sprintf(p, "%" SQUADFORMAT , delta);
 				while (*p)
 					p++;
 				break;
 
 			case 'u':
 			case 's':
-				sprintf(p, "%"SQUADFORMAT".%.2"SQUADFORMAT, delta / TICK, (delta % TICK) * 100 / TICK);
+				sprintf(p, "%" SQUADFORMAT ".%.2" SQUADFORMAT , delta / TICK, (delta % TICK) * 100 / TICK);
 				while (*p)
 					p++;
 				break;
 
 			case 'e':
-				sprintf(p, "%"SQUADFORMAT".%.2"SQUADFORMAT, delta / 100, delta % 100);
+				sprintf(p, "%" SQUADFORMAT ".%.2" SQUADFORMAT , delta / 100, delta % 100);
 				while (*p)
 					p++;
 				break;

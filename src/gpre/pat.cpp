@@ -417,7 +417,7 @@ void PATTERN_expand( USHORT column, const TEXT* pattern, PAT* args)
 			}
 		}
 		else if (long_flag) {
-			sprintf(p, "%"SLONGFORMAT, long_value);
+			sprintf(p, "%" SLONGFORMAT , long_value);
 		}
 		else {
 			sprintf(p, "%d", value);
