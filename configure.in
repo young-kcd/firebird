@@ -455,7 +455,7 @@ dnl CPU_TYPE=ppc64
     SHRLIB_EXT=so
     ;;
 
-  *-*-mingw*) | *-*-cygwin*)
+  *-*-mingw* | *-*-cygwin*)
     MAKEFILE_PREFIX=mingw
     PLATFORM=win32
     AC_DEFINE(WIN_NT, 1, [Define this if OS is Windows NT])
