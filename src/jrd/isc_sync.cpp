@@ -108,10 +108,6 @@ static int process_id;
 //#define SHMEM_DELTA	(1 << 22)
 //#endif
 
-//#ifndef SIGURG
-//#define SIGURG		SIGINT
-//#endif
-
 #ifndef HAVE_SEMUN
 union semun
 {
