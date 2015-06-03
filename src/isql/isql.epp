@@ -60,6 +60,7 @@
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/classes/TempFile.h"
 #include "../common/classes/FpeControl.h"
+#include "../common/classes/GenericMap.h"
 #include "../common/os/path_utils.h"
 #include "../common/StatusHolder.h"
 #include "../common/Tokens.h"
@@ -166,6 +167,8 @@ const int MAX_TERMS		= 10;	// max # of terms in an interactive cmd
 
 const char* ISQL_COUNTERS_SET = "CurrentMemory, MaxMemory, RealTime, UserTime, Buffers, Reads, Writes, Fetches";
 const int ISQL_COUNTERS = 8;
+
+const char* UNKNOWN = "*unknown*";
 
 namespace IcuUtil
 {
@@ -393,6 +396,7 @@ static int query_abort(const int, const int, void*);
 static bool stdin_redirected();
 static void strip_quotes(const TEXT*, TEXT*);
 static const char* sqltype_to_string(unsigned);
+static const char* charset_to_string(unsigned);
 
 // The dialect spoken by the database, should be 0 when no database is connected.
 USHORT global_dialect_spoken = 0;
@@ -3258,7 +3262,7 @@ static processing_state bulk_insert_hack(const char* command)
 
 		if (!done)
 		{
-			// Having completed all columns, try the insert statement with the sqlda.
+			// Having completed all columns, try the insert statement with the message.
 			// This is a non-select DML statement or trans.
 
 			global_Stmt->execute(fbStatus, M__trans, message, msgBuf, NULL, NULL);
@@ -3761,7 +3765,7 @@ static void do_isql()
  **************************************
  *
  * Functional description
- *	Process incoming SQL statements, using the global sqlda
+ *	Process incoming SQL statements, using the global message metadata
  *
  **************************************/
 	TEXT errbuf[MSG_LENGTH];
@@ -7364,7 +7368,7 @@ static processing_state print_line(Firebird::IMessageMetadata* message, UCHAR* b
  * Functional description
  *	Print a line of SQL variables.
  *
- *	Args:  sqlda, an XSQLDA
+ *	Args:  message, a message metadata
  *		pad = an array of the print lengths of all the columns
  *		line = pointer to the line buffer.
  *
@@ -7534,9 +7538,11 @@ static void print_message(Firebird::IMessageMetadata* msg, const char* dir)
 	for (unsigned i = 0; i < n; ++i)
 	{
 		unsigned type = msg->getType(fbStatus, i);
-		isqlGlob.printf("%02d: sqltype: %d %s %s scale: %d subtype: %d len: %d\n",
-				i + 1, type, sqltype_to_string(type), msg->isNullable(fbStatus, i) ? "Nullable" : "		",
-				msg->getScale(fbStatus, i), msg->getSubType(fbStatus, i), msg->getLength(fbStatus, i));
+		unsigned cs = msg->getCharSet(fbStatus, i);
+		isqlGlob.printf("%02d: sqltype: %d %s %sscale: %d subtype: %d len: %d charset: %d %s\n",
+				i + 1, type, sqltype_to_string(type), msg->isNullable(fbStatus, i) ? "Nullable " : "",
+				msg->getScale(fbStatus, i), msg->getSubType(fbStatus, i), msg->getLength(fbStatus, i),
+				cs, charset_to_string(cs));
 		isqlGlob.printf("  :  name: %s  alias: %s\n",
 				msg->getField(fbStatus, i), msg->getAlias(fbStatus, i));
 		isqlGlob.printf("  : table: %s  owner: %s\n",
@@ -8184,7 +8190,7 @@ static processing_state process_statement(const TEXT* str2)
 		process_header(message, pad, header, header2);
 	}
 
-	// If this is an exec procedure, execute into the sqlda with one fetch only
+	// If this is an exec procedure, execute into the buffer with one fetch only
 
 	if (statement_type == isc_info_sql_stmt_exec_procedure)
 	{
@@ -8439,38 +8445,90 @@ static const char* sqltype_to_string(unsigned sqltype)
 	switch (sqltype)
 	{
 	case SQL_TEXT:
-		return "TEXT	 ";
+		return "TEXT";
 	case SQL_VARYING:
-		return "VARYING  ";
+		return "VARYING";
 	case SQL_SHORT:
-		return "SHORT	";
+		return "SHORT";
 	case SQL_LONG:
-		return "LONG	 ";
+		return "LONG";
 	case SQL_INT64:
-		return "INT64	";
+		return "INT64";
 	case SQL_FLOAT:
-		return "FLOAT	";
+		return "FLOAT";
 	case SQL_DOUBLE:
-		return "DOUBLE   ";
+		return "DOUBLE";
 	case SQL_D_FLOAT:
-		return "D_FLOAT  ";
+		return "D_FLOAT";
 	case SQL_TIMESTAMP:
 		return "TIMESTAMP";
 	case SQL_TYPE_DATE:
-		return "SQL DATE ";
+		return "SQL DATE";
 	case SQL_TYPE_TIME:
-		return "TIME	 ";
+		return "TIME";
 	case SQL_BLOB:
-		return "BLOB	 ";
+		return "BLOB";
 	case SQL_ARRAY:
-		return "ARRAY	";
+		return "ARRAY";
 	case SQL_QUAD:
-		return "QUAD	 ";
+		return "QUAD";
 	case SQL_BOOLEAN:
-		return "BOOLEAN  ";
+		return "BOOLEAN";
 	case SQL_NULL:
-		return "NULL	 ";
+		return "NULL";
 	default:
-		return "unknown  ";
+		return UNKNOWN;
 	}
+}
+
+
+static const char* charset_to_string(unsigned charset)
+{
+/**************************************
+ *
+ *	s q l t y p e _ t o _ s t r i n g
+ *
+ **************************************
+ *
+ * Functional description
+ *	Return a more readable version of SQLDA.sqltype
+ *
+ **************************************/
+	static Firebird::GlobalPtr<Firebird::GenericMap<Firebird::Pair<Firebird::Right<unsigned, Firebird::string> > > > csMap;
+
+	Firebird::string* text = csMap->get(charset);
+	if (text)
+		return text->c_str();
+
+	csMap->clear();
+	bool err = false;
+
+	if (!frontendTransaction())
+		return UNKNOWN;
+
+	FOR CS IN RDB$CHARACTER_SETS
+		if (!err)
+		{
+			try
+			{
+				fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
+				csMap->put(CS.RDB$CHARACTER_SET_ID, CS.RDB$CHARACTER_SET_NAME);
+			}
+			catch(const Firebird::Exception& ex)
+			{
+				err = true;
+				ex.stuffException(fbStatus);
+				ISQL_errmsg(fbStatus);
+			}
+		}
+	END_FOR
+	ON_ERROR
+		ISQL_errmsg(fbStatus);
+	END_ERROR;
+
+	text = csMap->get(charset);
+	if (text)
+		return text->c_str();
+
+	return UNKNOWN;
 }
