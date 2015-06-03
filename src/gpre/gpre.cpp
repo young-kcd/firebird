@@ -68,6 +68,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
 // Globals
 GpreGlobals gpreGlob;
 
@@ -247,6 +251,11 @@ const UCHAR CHR_DBLQUOTE	= 64;
 
 int main(int argc, char* argv[])
 {
+#ifdef HAVE_LOCALE_H
+	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
+	setlocale(LC_CTYPE, "");
+#endif
+
 	gpre_sym* symbol;
 	// CVC: COUNT + 1 because IN_SW_GPRE_INTERP is repeated in gpre_in_sw_table.
 	sw_tab_t sw_table[IN_SW_GPRE_COUNT + 1];

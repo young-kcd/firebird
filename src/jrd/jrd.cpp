@@ -1022,7 +1022,6 @@ static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tr
 	Jrd::Attachment* attachment, unsigned int tpb_length, const UCHAR* tpb);
 static void		release_attachment(thread_db*, Jrd::Attachment*);
 static void		rollback(thread_db*, jrd_tra*, const bool);
-static void		strip_quotes(string&);
 static void		purge_attachment(thread_db* tdbb, StableAttachmentPart* sAtt, unsigned flags = 0);
 static void		getUserInfo(UserId&, const DatabaseOptions&, const char*, const char*,
 	const RefPtr<Config>*, bool, ICryptKeyCallback*);
@@ -1297,38 +1296,15 @@ void JRD_make_role_name(string& userIdRole, const int dialect)
 	switch (dialect)
 	{
 	case SQL_DIALECT_V5:
-		strip_quotes(userIdRole);
-		IntlUtil::toUpper(userIdRole);
+		// Invoke utility twice: first to strip quotes, next to uppercase if needed
+		// For unquoted string nothing bad happens
+		fb_utils::dpbItemUpper(userIdRole);
+		fb_utils::dpbItemUpper(userIdRole);
 		break;
 
 	case SQL_DIALECT_V6_TRANSITION:
 	case SQL_DIALECT_V6:
-		if (userIdRole.hasData() && (userIdRole[0] == DBL_QUOTE || userIdRole[0] == SINGLE_QUOTE))
-		{
-			const char end_quote = userIdRole[0];
-			// remove the delimited quotes and escape quote
-			// from ROLE name
-			userIdRole.erase(0, 1);
-			for (string::iterator p = userIdRole.begin(); p < userIdRole.end(); ++p)
-			{
-				if (*p == end_quote)
-				{
-					if (++p < userIdRole.end() && *p == end_quote)
-					{
-						// skip the escape quote here
-						userIdRole.erase(p--);
-					}
-					else
-					{
-						// delimited done
-						userIdRole.erase(--p, userIdRole.end());
-					}
-				}
-			}
-		}
-		else
-			IntlUtil::toUpper(userIdRole);
-
+		fb_utils::dpbItemUpper(userIdRole);
 		break;
 
 	default:
@@ -2694,7 +2670,9 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			if (options.dpb_set_no_reserve)
 				PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 
-			INI_format(attachment->att_user->usr_user_name.c_str(), options.dpb_set_db_charset.c_str());
+			string dpb_set_db_charset(options.dpb_set_db_charset);
+			fb_utils::dpbItemUpper(dpb_set_db_charset);
+			INI_format(attachment->att_user->usr_user_name.c_str(), dpb_set_db_charset.c_str());
 
 			// If we have not allocated first TIP page, do it now.
 			if (!dbb->dbb_t_pages || !dbb->dbb_t_pages->count())
@@ -5636,6 +5614,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	dpb_overwrite = false;
 	dpb_sql_dialect = 99;
 	invalid_client_SQL_dialect = false;
+	dpb_utf8_filename = false;
 
 	if (dpb_length == 0)
 	{
@@ -5649,12 +5628,14 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 	ClumpletReader rdr(ClumpletReader::dpbList, dpb, dpb_length, dpbErrorRaise);
 	dumpAuthBlock("DatabaseOptions::get()", &rdr, isc_dpb_auth_block);
 
-	dpb_utf8_filename = rdr.find(isc_dpb_utf8_filename);
-
 	for (rdr.rewind(); !rdr.isEof(); rdr.moveNext())
 	{
 		switch (rdr.getClumpTag())
 		{
+		case isc_dpb_utf8_filename:
+			dpb_utf8_filename = true;
+			break;
+
 		case isc_dpb_working_directory:
 			getPath(rdr, dpb_working_directory);
 			break;
@@ -6648,39 +6629,6 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 }
 
 
-static void strip_quotes(string& out)
-{
-/**************************************
- *
- *	s t r i p _ q u o t e s
- *
- **************************************
- *
- * Functional description
- *	Get rid of quotes around strings
- *	Quotes in the middle will confuse this routine!
- *
- **************************************/
-	if (out.isEmpty())
-	{
-		return;
-	}
-
-	if (out[0] == DBL_QUOTE || out[0] == SINGLE_QUOTE)
-	{
-		// Skip any initial quote
-		const char quote = out[0];
-		out.erase(0, 1);
-		// Search for same quote
-		FB_SIZE_T pos = out.find(quote);
-		if (pos != string::npos)
-		{
-			out.erase(pos);
-		}
-	}
-}
-
-
 void JRD_enum_attachments(PathNameList* dbList, ULONG& atts, ULONG& dbs, ULONG& svcs)
 {
 /**************************************
@@ -7147,6 +7095,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 
 	if (fb_utils::bootBuild())
 	{
+		auth_method = "bootBuild";
 		wheel = true;
 	}
 	else
@@ -7155,17 +7104,17 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		if (options.dpb_trusted_login.hasData())
 		{
 			name = options.dpb_trusted_login;
+			fb_utils::dpbItemUpper(name);
 		}
 		else if (options.dpb_user_name.hasData())
 		{
 			name = options.dpb_user_name;
+			fb_utils::dpbItemUpper(name);
 		}
 		else if (options.dpb_auth_block.hasData())
 		{
 			mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
 				aliasName, dbName, (config ? (*config)->getSecurityDatabase() : NULL), cryptCb);
-			ISC_systemToUtf8(name);
-			ISC_systemToUtf8(trusted_role);
 
 			if (creating && config)		// when config is NULL we are in error handler
 			{
@@ -7184,8 +7133,6 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 				wheel = true;
 			}
 		}
-
-		IntlUtil::toUpper(name);
 
 		// if the name from the user database is defined as SYSDBA,
 		// we define that user id as having system privileges

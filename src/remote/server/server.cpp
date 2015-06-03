@@ -311,7 +311,7 @@ public:
 		if (aPb->find(tags->user_name))
 		{
 			aPb->getString(userName);
-			userName.upper();
+			fb_utils::dpbItemUpper(userName);
 			if (authPort->port_srv_auth_block->getLogin() &&
 				userName != authPort->port_srv_auth_block->getLogin())
 			{
@@ -6251,7 +6251,7 @@ void SrvAuthBlock::load(Firebird::ClumpletReader& id)
 	if (id.find(CNCT_login))
 	{
 		id.getString(userName);
-		userName.upper();
+		fb_utils::dpbItemUpper(userName);
 		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: AuthBlock: login %s\n", userName.c_str()));
 	}
 

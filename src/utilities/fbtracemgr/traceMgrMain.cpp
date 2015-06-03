@@ -35,6 +35,10 @@
 #include "../../jrd/trace/TraceService.h"
 #include "../../jrd/ibase.h"
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
 namespace Firebird {
 
 class TraceSvcUtil : public TraceSvcIntf
@@ -320,6 +324,10 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  *	Invoke real trace main function
  *
  **************************************/
+#ifdef HAVE_LOCALE_H
+	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
+	setlocale(LC_CTYPE, "");
+#endif
 
 	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
 

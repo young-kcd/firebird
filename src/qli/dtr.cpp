@@ -58,6 +58,10 @@
 #include "../common/classes/Switches.h"
 #include "../qli/qliswi.h"
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
 using MsgFormat::SafeArg;
 
 
@@ -116,6 +120,11 @@ int CLIB_ROUTINE main(int argc, char** argv)
 		startup_file = ".qli_startup";
 	else
 		startup_file.append("/.qli_startup");
+#endif
+
+#ifdef HAVE_LOCALE_H
+	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
+	setlocale(LC_CTYPE, "");
 #endif
 
 	const TEXT* application_file = NULL;

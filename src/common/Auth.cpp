@@ -67,7 +67,7 @@ void WriterImplementation::add(Firebird::CheckStatusWrapper* st, const char* nam
 		putLevel();
 
 		current.clear();
-		current.insertString(AuthReader::AUTH_NAME, name);
+		current.insertString(AuthReader::AUTH_NAME, name, strlen(name));
 		fb_assert(plugin.hasData());
 		if (plugin.hasData())
 		{

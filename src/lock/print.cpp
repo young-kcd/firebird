@@ -106,6 +106,10 @@ enum lck_owner_t {
 #include <fcntl.h>
 #endif
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
@@ -277,6 +281,11 @@ int CLIB_ROUTINE main( int argc, char *argv[])
  *	to stdout.
  *
  **************************************/
+#ifdef HAVE_LOCALE_H
+	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
+	setlocale(LC_CTYPE, "");
+#endif
+
 	OUTFILE outfile = stdout;
 
 	// Perform some special handling when run as a Firebird service.  The

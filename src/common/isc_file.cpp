@@ -86,7 +86,6 @@
 #endif
 
 #include "../common/config/config.h"
-#include "../common/unicodeUpper.h"
 
 const char INET_FLAG = ':';
 
@@ -1692,12 +1691,10 @@ class Converters
 public:
 	explicit Converters(MemoryPool& p)
 		: systemToUtf8(p, IConv::SYSTEM, "UTF-8"),
-		  utf8ToSystem(p, "UTF-8", IConv::SYSTEM),
-		  unicodeToUtf8(p, "UNICODE", "UTF-8"),
-		  utf8ToUnicode(p, "UTF-8", "UNICODE")
+		  utf8ToSystem(p, "UTF-8", IConv::SYSTEM)
 	{ }
 
-	IConv systemToUtf8, utf8ToSystem, unicodeToUtf8, utf8ToUnicode;
+	IConv systemToUtf8, utf8ToSystem;
 };
 
 
@@ -1805,47 +1802,6 @@ private:
 
 #endif // WIN_NT
 
-
-void ISC_utf8Upper(Firebird::AbstractString& str)
-{
-	if (str.isEmpty())
-		return;
-
-#if defined(WIN_NT)
-	WideCharBuffer<256> wBuffer;
-
-	bool error = !wBuffer.fromString(CP_UTF8, str);
-	if (!error)
-	{
-		WCHAR* wch = wBuffer.getBuffer();
-		const WCHAR* const end = wch + wBuffer.getLength();
-		for (; wch < end; wch++)
-			*wch = unicodeUpper(*wch);
-
-		error = !wBuffer.toString(CP_UTF8, str);
-	}
-
-	if (error)
-	{
-		DWORD errCode = GetLastError();
-		status_exception::raise(
-			Arg::Gds(isc_bad_conn_str) << Arg::Gds(isc_transliteration_failed) <<
-			Arg::Windows(errCode));
-	}
-
-#elif defined(HAVE_ICONV_H)
-	iConv().utf8ToUnicode.convert(str);
-
-	{ // aligner scope
-		Firebird::BiAligner<unsigned short> alignedStr(reinterpret_cast<UCHAR*>(str.begin()), str.length());
-		unsigned short* const end = alignedStr + (str.length() / 2);
-		for (unsigned short* begin = alignedStr; begin < end; ++begin)
-			*begin = unicodeUpper(*begin);
-	}
-
-	iConv().unicodeToUtf8.convert(str);
-#endif // HAVE_ICONV_H
-}
 
 // Converts a string from the system charset to UTF-8.
 void ISC_systemToUtf8(Firebird::AbstractString& str)

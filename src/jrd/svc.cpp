@@ -253,7 +253,7 @@ void Service::getOptions(ClumpletReader& spb)
 		{
 		case isc_spb_user_name:
 			spb.getString(svc_username);
-			svc_username.upper();
+			fb_utils::dpbItemUpper(svc_username);
 			break;
 
 		case isc_spb_sql_role_name:
@@ -686,8 +686,6 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 					string trusted_role;
 					mapUser(svc_username, trusted_role, NULL, &svc_auth_block, svc_auth_block,
 						"services manager", NULL, config->getSecurityDatabase(), svc_crypt_callback);
-
-					// to be changed after refsoft special roles patch!!!
 					trusted_role.upper();
 					svc_trusted_role = trusted_role == ADMIN_ROLE;
 				}

@@ -342,8 +342,6 @@ int SecurityDatabase::verify(IWriter* authBlock, IServerBlock* sBlock)
 		return IAuth::AUTH_MORE_DATA;
 	}
 
-	login.upper();
-
 	// Look up the user name in the userinfo database and use the parameters
 	// found there. This means that another database must be accessed, and
 	// that means the current context must be saved and restored.

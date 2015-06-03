@@ -190,6 +190,19 @@ namespace fb_utils
 
 	// Check does vector contain particular code or not
 	bool containsErrorCode(const ISC_STATUS* v, ISC_STATUS code);
+
+	// Uppercase/strip string according to login rules
+	const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf);
+
+	// Uppercase/strip string according to login rules
+	template <typename STR>
+	void dpbItemUpper(STR& name)
+	{
+		Firebird::string buf;
+		const char* up = dpbItemUpper(name.c_str(), name.length(), buf);
+		if (up)
+			name = up;
+	}
 } // namespace fb_utils
 
 #endif // INCLUDE_UTILS_PROTO_H

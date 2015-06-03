@@ -45,7 +45,6 @@ void		ISC_systemToUtf8(Firebird::AbstractString& str);
 void		ISC_utf8ToSystem(Firebird::AbstractString& str);
 void		ISC_escape(Firebird::AbstractString& str);
 void		ISC_unescape(Firebird::AbstractString& str);
-void		ISC_utf8Upper(Firebird::AbstractString& str);
 
 // This form of ISC_expand_filename makes epp files happy
 inline bool	ISC_expand_filename(const TEXT* unexpanded, USHORT len_unexpanded,

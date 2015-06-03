@@ -59,6 +59,10 @@
 #include <io.h>
 #endif
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
 static const int mode_read	= O_RDONLY;
 static const int mode_write	= O_WRONLY | O_CREAT;
 static const int mask		= 0666;
@@ -188,6 +192,11 @@ static int write_header(const b_fil*, header_rec, FILE_DESC, TEXT*);
 
 int main( int argc, char* argv[])
 {
+#ifdef HAVE_LOCALE_H
+	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
+	setlocale(LC_CTYPE, "");
+#endif
+
 	const SCHAR* const prog_name = argv[0];
 
 	if (argc < 2)

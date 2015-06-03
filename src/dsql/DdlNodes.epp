@@ -9473,7 +9473,6 @@ bool CreateFilterNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch*/, jrd_tra* transaction)
 {
 	MetaName ownerName(tdbb->getAttachment()->att_user->usr_user_name);
-	IntlUtil::toUpper(ownerName);
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -9697,7 +9696,6 @@ bool CreateRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
 	MetaName ownerName(tdbb->getAttachment()->att_user->usr_user_name);
-	IntlUtil::toUpper(ownerName);
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -10201,7 +10199,6 @@ bool DropRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction)
 {
 	MetaName user(tdbb->getAttachment()->att_user->usr_user_name);
-	IntlUtil::toUpper(user);
 
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
@@ -10261,9 +10258,7 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 
 Firebird::MetaName UserNode::upper(const Firebird::MetaName& str)
 {
-	Firebird::MetaName tmp(str);
-	IntlUtil::toUpper(tmp);
-	return tmp;
+	return str;
 }
 
 
@@ -10335,7 +10330,6 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 			(Arg::Gds(isc_random) << "Missing user name for ALTER CURRENT USER").raise();
 
 		text = usr->usr_user_name;
-		IntlUtil::toUpper(text);
 	}
 
 	Firebird::LocalStatus s;
@@ -10655,12 +10649,10 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			else
 			{
 				userType = obj_user;
-				IntlUtil::toUpper(user);
 			}
 			break;
 
 		case obj_user:
-			IntlUtil::toUpper(user);
 			break;
 
 		case obj_sql_role:
@@ -10703,8 +10695,6 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 
 	if (grantor && !tdbb->getAttachment()->locksmith())
 		status_exception::raise(Arg::PrivateDyn(252) << SYSDBA_USER_NAME);
-
-	IntlUtil::toUpper(grantorRevoker);
 
 	if (!isGrant && !privs)	// REVOKE ALL ON ALL
 	{

@@ -694,7 +694,8 @@ class ClntAuthBlock FB_FINAL :
 private:
 	Firebird::PathName pluginList;				// To be passed to server
 	Firebird::PathName serverPluginList;		// Received from server
-	Firebird::string userName, password;		// Used by plugin, taken from DPB
+	Firebird::string cliUserName, cliPassword;	// Used by plugin, taken from DPB
+	Firebird::string cliOrigUserName;			// Original user anme, passed to server
 	// These two are legacy encrypted password, trusted auth data and so on - what plugin needs
 	Firebird::UCharBuffer dataForPlugin, dataFromPlugin;
 	Firebird::HalfStaticArray<InternalCryptKey*, 1> cryptKeys;		// Wire crypt keys that came from plugin(s) last time

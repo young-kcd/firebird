@@ -890,7 +890,7 @@ Firebird::PathName ClntAuthBlock::getPluginName()
 }
 
 template <typename T>
-static void addMutliPartConnectParameter(const T& dataToAdd,
+static void addMultiPartConnectParameter(const T& dataToAdd,
 	Firebird::ClumpletWriter& user_id, UCHAR param)
 {
 	FB_SIZE_T remaining = dataToAdd.getCount();
@@ -920,10 +920,10 @@ static void addMutliPartConnectParameter(const T& dataToAdd,
 void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 {
 	// Add user login name
-	if (userName.hasData())
+	if (cliOrigUserName.hasData())
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: userName=%s\n", userName.c_str()));
-		user_id.insertString(CNCT_login, userName);
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: cliOrigUserName=%s\n", cliOrigUserName.c_str()));
+		user_id.insertString(CNCT_login, cliOrigUserName);
 	}
 
 	// Add plugin name
@@ -944,7 +944,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	// and we have no ways to override this limit cause it can be sent to any version server.
 	// Therefore divide data into 254-byte parts, leaving first byte for the number of that part.
 	// This appears more reliable than put them in strict order.
-	addMutliPartConnectParameter(dataFromPlugin, user_id, CNCT_specific_data);
+	addMultiPartConnectParameter(dataFromPlugin, user_id, CNCT_specific_data);
 
 	// Client's wirecrypt requested level
 	user_id.insertInt(CNCT_client_crypt, clntConfig->getWireCrypt(WC_CLIENT));

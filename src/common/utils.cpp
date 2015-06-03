@@ -38,6 +38,7 @@
 #endif
 #include <stdarg.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #include "../common/gdsassert.h"
 #include "../common/utils_proto.h"
@@ -1602,6 +1603,36 @@ const ISC_STATUS* const origen = v;
 	}
 
 	return false;
+}
+
+const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
+{
+	if (l && (s[0] == '"' || s[0] == '\''))
+	{
+		 const char end_quote = s[0];
+		// quoted string - strip quotes
+		for (FB_SIZE_T i = 1; i < l; ++i)
+		{
+			if (s[i] == end_quote)
+			{
+				if (++i >= l || s[i] != end_quote)
+					break;		// delimited quote, done processing
+				// skiped the escape quote, continue processing
+			}
+			buf += s[i];
+		}
+		return buf.c_str();
+	}
+
+	// non-quoted string - try to uppercase
+	for (FB_SIZE_T i = 0; i < l; ++i)
+	{
+		if (!(s[i] & 0x80))
+			buf += toupper(s[i]);
+		else
+			return NULL;				// contains non-ascii data
+	}
+	return buf.c_str();
 }
 
 } // namespace fb_utils

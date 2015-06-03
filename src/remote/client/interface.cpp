@@ -6037,17 +6037,7 @@ static bool get_new_dpb(ClumpletWriter& dpb, const ParametersSet& par)
 		}
 	}
 
-	bool rc = dpb.find(par.user_name);
-	if (rc)
-	{
-		string login;
-		dpb.getString(login);
-		dpb.deleteClumplet();
-		ISC_utf8Upper(login);
-		dpb.insertString(par.user_name, login);
-	}
-
-	return rc;
+	return dpb.find(par.user_name);
 }
 
 
@@ -7456,7 +7446,7 @@ static void cleanDpb(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 ClntAuthBlock::ClntAuthBlock(const Firebird::PathName* fileName, Firebird::ClumpletReader* dpb,
 							 const ParametersSet* tags)
 	: pluginList(getPool()), serverPluginList(getPool()),
-	  userName(getPool()), password(getPool()),
+	  cliUserName(getPool()), cliPassword(getPool()), cliOrigUserName(getPool()),
 	  dataForPlugin(getPool()), dataFromPlugin(getPool()),
 	  cryptKeys(getPool()), dpbConfig(getPool()),
 	  hasCryptKey(false), plugins(IPluginManager::TYPE_AUTH_CLIENT),
@@ -7508,7 +7498,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
 		return;
 	}
 
-	if (REMOTE_legacy_auth(pluginName.c_str(), PROTOCOL_VERSION10))	// dataFromPlugin is encrypted password
+	if (REMOTE_legacy_auth(pluginName.c_str(), PROTOCOL_VERSION10))	// dataFromPlugin is encrypted cliPassword
 	{
 		fb_assert(tags->password_enc);
 		dpb.insertBytes(tags->password_enc, dataFromPlugin.begin(), dataFromPlugin.getCount());
@@ -7538,22 +7528,24 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 		const UCHAR t = dpb.getClumpTag();
 		if (t == tags->user_name)
 		{
-			dpb.getString(userName);
-			makeUtfString(uft8Convert, userName);
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB user = %s\n", userName.c_str()));
+			dpb.getString(cliUserName);
+			makeUtfString(uft8Convert, cliUserName);
+			cliOrigUserName = cliUserName;
+			fb_utils::dpbItemUpper(cliUserName);
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB user = %s(was %s)\n", cliUserName.c_str(), cliOrigUserName.c_str()));
 		}
 		else if (t == tags->password)
 		{
-			dpb.getString(password);
-			makeUtfString(uft8Convert, password);
+			dpb.getString(cliPassword);
+			makeUtfString(uft8Convert, cliPassword);
 			HANDSHAKE_DEBUG(fprintf(stderr,
-				"Cli: loadClnt: Loaded from PB password = %s\n", password.c_str()));
+				"Cli: loadClnt: Loaded from PB cliPassword = %s\n", cliPassword.c_str()));
 		}
 		else if (t == tags->encrypt_key)
 		{
 			hasCryptKey = true;
 			HANDSHAKE_DEBUG(fprintf(stderr,
-				"Cli: loadClnt: PB contains crypt key - need encrypted line to pass\n"));
+				"Cli: loadClnt: PB contains crypt key\n"));
 		}
 	}
 
@@ -7598,12 +7590,12 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 
 const char* ClntAuthBlock::getLogin()
 {
-	return userName.nullStr();
+	return cliUserName.nullStr();
 }
 
 const char* ClntAuthBlock::getPassword()
 {
-	return password.nullStr();
+	return cliPassword.nullStr();
 }
 
 const unsigned char* ClntAuthBlock::getData(unsigned int* length)

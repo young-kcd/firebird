@@ -56,7 +56,6 @@
 #include "../common/config/config.h"
 #include "../common/os/os_utils.h"
 #include "../common/classes/ClumpletWriter.h"
-#include "../common/IntlUtil.h"
 
 
 const int UIC_BASE	= 10;
@@ -1008,7 +1007,6 @@ bool SCL_role_granted(thread_db* tdbb, const UserId& usr, const TEXT* sql_role)
 	}
 
 	Firebird::string loginName(usr.usr_user_name);
-	IntlUtil::toUpper(loginName);
 	const TEXT* login_name = loginName.c_str();
 
 	bool found = false;
@@ -1100,7 +1098,6 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 		if (!create)
 		{
 			Firebird::string loginName(tempId.usr_user_name);
-			IntlUtil::toUpper(loginName);
 			const TEXT* login_name = loginName.c_str();
 
 			AutoCacheRequest request(tdbb, irq_get_role_name, IRQ_REQUESTS);
@@ -1581,7 +1578,6 @@ static SecurityClass::flags_t walk_acl(thread_db* tdbb,
 					else if (user.usr_sql_role_name != user.usr_trusted_role)
 					{
 						Firebird::string loginName(user.usr_user_name);
-						IntlUtil::toUpper(loginName);
 						const TEXT* login_name = loginName.c_str();
 						bool roleHit = false;
 						AutoCacheRequest request(tdbb, irq_get_role_mem, IRQ_REQUESTS);

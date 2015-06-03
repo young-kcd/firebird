@@ -58,7 +58,6 @@
 #include "../jrd/IntlManager.h"
 #include "../jrd/PreparedStatement.h"
 #include "../jrd/constants.h"
-#include "../common/IntlUtil.h"
 
 using namespace Firebird;
 using namespace Jrd;
@@ -226,7 +225,7 @@ static const trigger_msg trigger_messages[] =
 
 
 
-void INI_format(const MetaName& owner, const MetaName& charset)
+void INI_format(const char* owner, const char* charset)
 {
 /**************************************
  *
@@ -243,15 +242,13 @@ void INI_format(const MetaName& owner, const MetaName& charset)
 	thread_db* tdbb = JRD_get_thread_data();
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 
-	fb_assert(owner.hasData());
+	fb_assert(owner && owner[0]);
 
 	// Uppercase owner name
 	MetaName ownerName(owner);
-	IntlUtil::toUpper(ownerName);
 
 	// Uppercase charset name
-	MetaName rdbCharSetName(charset.hasData() ? charset.c_str() : DEFAULT_DB_CHARACTER_SET_NAME);
-	IntlUtil::toUpper(rdbCharSetName);
+	MetaName rdbCharSetName(charset && charset[0] ? charset : DEFAULT_DB_CHARACTER_SET_NAME);
 
 	const int* fld;
 

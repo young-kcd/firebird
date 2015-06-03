@@ -31,6 +31,10 @@
 #include "../common/classes/auto.h"
 #include "../common/SimpleStatusVector.h"
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -44,6 +48,11 @@ int CLIB_ROUTINE main(int argc, char* argv[])
  *	Invoke real gsec main function
  *
  **************************************/
+#ifdef HAVE_LOCALE_H
+	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
+	setlocale(LC_CTYPE, "");
+#endif
+
 	try
 	{
 		Firebird::AutoPtr<Firebird::UtilSvc> uSvc(Firebird::UtilSvc::createStandalone(argc, argv));

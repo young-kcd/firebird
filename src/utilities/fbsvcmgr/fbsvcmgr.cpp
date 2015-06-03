@@ -44,6 +44,10 @@
 #include "../common/StatusArg.h"
 #include "../jrd/license.h"
 
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+
 using namespace Firebird;
 
 // Here we define main control structure
@@ -972,6 +976,11 @@ static void ctrl_c_handler(int signal)
 
 int main(int ac, char** av)
 {
+#ifdef HAVE_LOCALE_H
+	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
+	setlocale(LC_CTYPE, "");
+#endif
+
 	if (ac < 2 || (ac == 2 && strcmp(av[1], "-?") == 0))
 	{
 		usage(ac == 2);
