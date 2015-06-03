@@ -2103,3 +2103,21 @@ void AutoStorage::ProbeStack() const
 #endif
 
 } // namespace Firebird
+
+void* operator new(size_t s) THROW_BAD_ALLOC
+{
+	return Firebird::MemoryPool::globalAlloc(s);
+}
+void* operator new[](size_t s) THROW_BAD_ALLOC
+{
+	return Firebird::MemoryPool::globalAlloc(s);
+}
+
+void operator delete(void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}
+void operator delete[](void* mem) throw()
+{
+	Firebird::MemoryPool::globalFree(mem);
+}

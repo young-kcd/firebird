@@ -492,23 +492,11 @@ using Firebird::MemoryPool;
 inline static MemoryPool* getDefaultMemoryPool() { return Firebird::MemoryPool::processMemoryPool; }
 
 // Global versions of operators new and delete
-inline void* operator new(size_t s) THROW_BAD_ALLOC
-{
-	return Firebird::MemoryPool::globalAlloc(s);
-}
-inline void* operator new[](size_t s) THROW_BAD_ALLOC
-{
-	return Firebird::MemoryPool::globalAlloc(s);
-}
+void* operator new(size_t s) THROW_BAD_ALLOC;
+void* operator new[](size_t s) THROW_BAD_ALLOC;
 
-inline void operator delete(void* mem) throw()
-{
-	Firebird::MemoryPool::globalFree(mem);
-}
-inline void operator delete[](void* mem) throw()
-{
-	Firebird::MemoryPool::globalFree(mem);
-}
+void operator delete(void* mem) throw();
+void operator delete[](void* mem) throw();
 
 #ifdef DEBUG_GDS_ALLOC
 inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line)
