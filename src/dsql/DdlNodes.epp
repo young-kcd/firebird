@@ -10661,7 +10661,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	SSHORT userType = userNod->first;
 	MetaName user(userNod->second);
     MetaName dummyName;
-	const SSHORT objType = object->first;
+	const SSHORT objType = object ? object->first : obj_type_MAX;
     bool crdb = false;
 
 	char privileges[16];
