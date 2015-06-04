@@ -134,6 +134,7 @@ enum drq_type_t
 	drq_get_role_nm,		// get SQL role
 	drq_get_role_au,		// get SQL role auth
 	drq_del_role_1,			// delete SQL role from rdb$user_privilege
+	drq_del_role_2,			// delete SQL role from rdb$db_creators
 	drq_drop_role,			// delete SQL role from rdb$roles
 	drq_get_rel_owner,		// get the owner of any relations
 	drq_get_user_priv,		// get the grantor of user privileges or

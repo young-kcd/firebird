@@ -10235,6 +10235,16 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		}
 		END_FOR
 
+		AutoCacheRequest request3(tdbb, drq_del_role_2, DYN_REQUESTS);
+
+		FOR(REQUEST_HANDLE request3 TRANSACTION_HANDLE transaction)
+			DBC IN RDB$DB_CREATORS
+			WITH DBC.RDB$USER EQ name.c_str() AND DBC.RDB$USER_TYPE = obj_sql_role
+		{
+			ERASE DBC;
+		}
+		END_FOR
+
 		ERASE ROL;
 
 		found = true;
@@ -10532,14 +10542,33 @@ void GrantRevokeNode::runInSecurityDb(SecDbContext* secDbContext)
 		LocalStatus st;
 		CheckStatusWrapper statusWrapper(&st);
 
+		Message result;
+		Field<ISC_INT64> cnt(result);
+
+		if (j.userType == obj_sql_role)
+		{
+			Message isRole;
+			Field<Varying> u(isRole, MAX_SQL_IDENTIFIER_LEN);
+			u = j.user.c_str();
+
+			const char* isRoleSql = "select count(*) from RDB$ROLES where RDB$ROLE_NAME = ?";
+			secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, isRoleSql, SQL_DIALECT_V6,
+				isRole.getMetadata(), isRole.getBuffer(), result.getMetadata(), result.getBuffer());
+			check(&statusWrapper);
+
+			if (cnt == 0)
+			{
+				// msg 188: Role doesn't exist.
+				status_exception::raise(Arg::PrivateDyn(188) << j.user <<
+					Arg::Gds(isc_random) << "in security database");
+			}
+		}
+
 		Message gr;
 		Field<ISC_SHORT> uType(gr);
 		Field<Varying> u(gr, MAX_SQL_IDENTIFIER_LEN);
 		uType = j.userType;
 		u = j.user.c_str();
-
-		Message result;
-		Field<ISC_INT64> cnt(result);
 
 		const char* checkSql = "select count(*) from RDB$DB_CREATORS where RDB$USER_TYPE = ? and RDB$USER = ?";
 		secDbContext->att->execute(&statusWrapper, secDbContext->tra, 0, checkSql, SQL_DIALECT_V6,
@@ -10632,6 +10661,33 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 	SSHORT userType = userNod->first;
 	MetaName user(userNod->second);
     MetaName dummyName;
+	const SSHORT objType = object->first;
+    bool crdb = false;
+
+	char privileges[16];
+	strcpy(privileges, privs ? privs : "");
+	if (strcmp(privileges, "A") == 0)
+		strcpy(privileges, ALL_PRIVILEGES);
+	char* cPtr = strchr(privileges, 'C');
+
+	if (objType == obj_database && cPtr)
+	{
+		if (options || grantor)
+		{
+			(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+			 "GRANT/ADMIN OPTION and GRANTED BY not supported for CREATE DATABASE grants").raise();
+		}
+
+		if (userType != obj_sql_role && userType != obj_user)
+		{
+			(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
+				 "Only grants to USER or ROLE are supported for CREATE DATABASE").raise();
+		}
+
+		crdb = true;
+		size_t len = strlen(cPtr);
+		memmove(cPtr, cPtr + 1, len);
+	}
 
 	switch (userType)
 	{
@@ -10656,7 +10712,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 			break;
 
 		case obj_sql_role:
-			if (!isItSqlRole(tdbb, transaction, user, dummyName))
+			if ((!crdb) && (!isItSqlRole(tdbb, transaction, user, dummyName)))
 			{
 				// msg 188: Role doesn't exist.
 				status_exception::raise(Arg::PrivateDyn(188) << user.c_str());
@@ -10723,13 +10779,7 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		return;
 	}
 
-	const SSHORT objType = object->first;
 	const MetaName objName(object->second);
-
-	char privileges[16];
-	strcpy(privileges, privs);
-	if (strcmp(privileges, "A") == 0)
-		strcpy(privileges, ALL_PRIVILEGES);
 
 	if (objType == obj_sql_role && objName == NULL_ROLE)
 	{
@@ -10745,26 +10795,11 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		}
 	}
 
-	if (objType == obj_database && strchr(privileges, 'C'))
+	if (crdb)
 	{
-		if (options || grantor)
-		{
-			(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
-			 "GRANT/ADMIN OPTION and GRANTED BY not supported for CREATE DATABASE grants").raise();
-		}
-
-		if (userType != obj_sql_role && userType != obj_user)
-		{
-			(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) <<
-				 "Only grants to USER or ROLE are supported for CREATE DATABASE").raise();
-		}
-
 		CreateDbJob job(userType, user);
 		createDbJobs.push(job);
 
-		char* cPtr = strchr(privileges, 'C');
-		size_t len = strlen(cPtr);
-		memmove(cPtr, cPtr + 1, len);
 		if (!privileges[0])
 			return;
 	}
