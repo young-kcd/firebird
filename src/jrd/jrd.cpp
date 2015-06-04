@@ -7349,10 +7349,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 					dbbGuard.lock(SYNC_EXCLUSIVE);
 
 					for (Attachment* att = dbb->dbb_attachments; att; att = att->att_next)
-					{
-						if (!(att->att_flags & ATT_security_db))
-							attachments->add(att->getStable());
-					}
+						attachments->add(att->getStable());
 				}
 			}
 			// No need in databases_mutex any more
