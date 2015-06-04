@@ -1,3 +1,37 @@
+ 2015-06-03 10:39  mapopa 
+   M src/jrd/isc_sync.cpp
+   M src/remote/inet.cpp
+SIGURG is not used anywhere , cleanup comments
+
+ 2015-06-03 08:30  mapopa 
+   M configure.in
+Misc
+
+ 2015-06-03 08:22  mapopa 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+Libreoffice patch : C++11: new/delete replacement functions cannot be inline https://www.mail-archive.com/libreoffice@lists.freedesktop.org/msg79870.html
+
+ 2015-06-03 08:11  mapopa 
+   M src/common/classes/alloc.cpp
+   M src/common/cvt.cpp
+   M src/gpre/c_cxx.cpp
+   M src/gpre/exp.cpp
+   M src/gpre/gpre.cpp
+   M src/gpre/int_cxx.cpp
+   M src/gpre/pat.cpp
+   M src/jrd/perf.cpp
+Apply Partial patch for C++11 compilation of the Firebird code in libreoffice http://cgit.freedesktop.org/libreoffice/core/commit/?id=9fe159ef7cb7cfe5c1c91a6fbf1aa02fe79fec69
+
+ 2015-06-03 08:01  mapopa 
+   M configure.in
+add cygwin target from libreoffice
+
+ 2015-06-03 07:54  mapopa 
+   M builds/posix/prefix.mingw
+   M configure.in
+no-cygwin is deprecated
+
  2015-06-01 13:59  alexpeshkoff 
    M src/remote/inet.cpp
 Added check for failed fork() system call
