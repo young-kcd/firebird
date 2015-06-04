@@ -1,3 +1,45 @@
+ 2015-06-03 18:01  alexpeshkoff 
+   M src/isql/isql.epp
+Make ISQL display character set when sqlda_display is on
+
+ 2015-06-03 13:57  alexpeshkoff 
+   M src/alice/main/aliceMain.cpp
+   M src/auth/SecurityDatabase/LegacyServer.cpp
+   M src/burp/main/burpMain.cpp
+   M src/burp/split/spit.cpp
+   M src/common/Auth.cpp
+   M src/common/IntlUtil.h
+   A src/common/Tokens.cpp
+   A src/common/Tokens.h
+   M src/common/isc_f_proto.h
+   M src/common/isc_file.cpp
+   D src/common/unicodeUpper.cpp
+   D src/common/unicodeUpper.h
+   M src/common/utils.cpp
+   M src/common/utils_proto.h
+   M src/dsql/DdlNodes.epp
+   M src/gpre/gpre.cpp
+   M src/isql/isql.epp
+   M src/jrd/ini.epp
+   M src/jrd/ini_proto.h
+   M src/jrd/jrd.cpp
+   M src/jrd/scl.epp
+   M src/jrd/svc.cpp
+   M src/jrd/trig.h
+   M src/lock/print.cpp
+   M src/qli/dtr.cpp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+   M src/utilities/gsec/main/gsecMain.cpp
+   M src/utilities/gstat/main/gstatMain.cpp
+   M src/utilities/nbackup/main/nbkMain.cpp
+   M src/yvalve/preparse.cpp
+Fixed CORE-4811: Make user names behave according to SQL identifiers rules
+
  2015-06-02 11:07  dimitr 
    M doc/WhatsNew
 Updated the docs for Beta 2.
