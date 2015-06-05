@@ -1,3 +1,16 @@
+ 2015-06-04 14:10  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+Postfix for CORE-4821: fixed segfault in REVOKE ALL ON ALL
+
+ 2015-06-04 13:43  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+   M src/jrd/drq.h
+Fixed CORE-4821: ensure CREATE DATABASE right is granted only to roles that do exist in security database
+
+ 2015-06-04 12:07  alexpeshkoff 
+   M src/jrd/jrd.cpp
+Fixed extremely rare segfault when shutting down server - no use in keeping security database(s) opened during shutdown
+
  2015-06-03 18:01  alexpeshkoff 
    M src/isql/isql.epp
 Make ISQL display character set when sqlda_display is on
