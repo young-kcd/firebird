@@ -114,10 +114,17 @@ AggNode* AggNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return dsqlCopy(dsqlScratch);
 }
 
-void AggNode::print(string& text) const
+string AggNode::internalPrint(NodePrinter& printer) const
 {
-	text = string("AggNode (") + aggInfo.name + ")";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, distinct);
+	NODE_PRINT(printer, dialect1);
+	NODE_PRINT(printer, arg);
+	NODE_PRINT(printer, asb);
+	NODE_PRINT(printer, indexed);
+
+	return aggInfo.name;
 }
 
 bool AggNode::dsqlAggregateFinder(AggregateFinder& visitor)
@@ -615,6 +622,15 @@ void AvgAggNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
 	tempImpure = CMP_impure(csb, sizeof(impure_value_ex));
 }
 
+string AvgAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+
+	NODE_PRINT(printer, tempImpure);
+
+	return "AvgAggNode";
+}
+
 void AvgAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
@@ -730,6 +746,15 @@ ValueExprNode* ListAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->arg = copier.copy(tdbb, arg);
 	node->delimiter = copier.copy(tdbb, delimiter);
 	return node;
+}
+
+string ListAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+
+	NODE_PRINT(printer, delimiter);
+
+	return "ListAggNode";
 }
 
 void ListAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
@@ -862,6 +887,12 @@ ValueExprNode* CountAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
+}
+
+string CountAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+	return "CountAggNode";
 }
 
 void CountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
@@ -1086,6 +1117,12 @@ ValueExprNode* SumAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
+string SumAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+	return "SumAggNode";
+}
+
 void SumAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
@@ -1168,6 +1205,15 @@ ValueExprNode* MaxMinAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
+}
+
+string MaxMinAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+
+	NODE_PRINT(printer, type);
+
+	return "MaxMinAggNode";
 }
 
 void MaxMinAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
@@ -1263,6 +1309,16 @@ ValueExprNode* StdDevAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
+}
+
+string StdDevAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+
+	NODE_PRINT(printer, type);
+	NODE_PRINT(printer, impure2Offset);
+
+	return "StdDevAggNode";
 }
 
 void StdDevAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
@@ -1387,6 +1443,16 @@ ValueExprNode* CorrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->arg = copier.copy(tdbb, arg);
 	node->arg2 = copier.copy(tdbb, arg2);
 	return node;
+}
+
+string CorrAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+
+	NODE_PRINT(printer, type);
+	NODE_PRINT(printer, arg2);
+
+	return "CorrAggNode";
 }
 
 void CorrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
@@ -1561,6 +1627,16 @@ ValueExprNode* RegrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	return node;
 }
 
+string RegrAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+
+	NODE_PRINT(printer, type);
+	NODE_PRINT(printer, arg2);
+
+	return "RegrAggNode";
+}
+
 void RegrAggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 {
 	AggNode::aggInit(tdbb, request);
@@ -1723,6 +1799,15 @@ ValueExprNode* RegrCountAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 	node->arg = copier.copy(tdbb, arg);
 	node->arg2 = copier.copy(tdbb, arg2);
 	return node;
+}
+
+string RegrCountAggNode::internalPrint(NodePrinter& printer) const
+{
+	AggNode::internalPrint(printer);
+
+	NODE_PRINT(printer, arg2);
+
+	return "RegrCountAggNode";
 }
 
 void RegrCountAggNode::aggInit(thread_db* tdbb, jrd_req* request) const

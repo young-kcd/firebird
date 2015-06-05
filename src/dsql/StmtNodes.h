@@ -29,6 +29,7 @@
 #include "../jrd/extds/ExtDS.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/DdlNodes.h"
+#include "../dsql/NodePrinter.h"
 
 namespace Jrd {
 
@@ -43,7 +44,7 @@ typedef Firebird::Pair<
 	Firebird::NonPooled<NestConst<ValueListNode>, NestConst<ValueListNode> > > ReturningClause;
 
 
-class ExceptionItem : public Firebird::PermanentStorage
+class ExceptionItem : public Firebird::PermanentStorage, public Printable
 {
 public:
 	enum Type
@@ -80,6 +81,18 @@ public:
 		return *this;
 	}
 
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		NODE_PRINT(printer, type);
+		NODE_PRINT(printer, code);
+		NODE_PRINT(printer, name);
+		NODE_PRINT(printer, secName);
+
+		return "ExceptionItem";
+	}
+
+public:
 	Type type;
 	SLONG code;
 	// ASF: There are some inconsistencies in the type of 'name'. Metanames have maximum of 31 chars,
@@ -117,7 +130,7 @@ public:
 	static void validateTarget(CompilerScratch* csb, const ValueExprNode* target);
 	static void dsqlValidateTarget(const ValueExprNode* target);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual AssignmentNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual AssignmentNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -146,7 +159,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual BlockNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -180,9 +193,14 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
-		text = "CommitRollbackNode";
+		TransactionNode::internalPrint(printer);
+
+		NODE_PRINT(printer, command);
+		NODE_PRINT(printer, retain);
+
+		return "CommitRollbackNode";
 	}
 
 	virtual CommitRollbackNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -254,7 +272,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual CompoundStmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual CompoundStmtNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -283,7 +301,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ContinueLeaveNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -325,7 +343,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual CursorStmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual CursorStmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -368,7 +386,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DeclareCursorNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual DeclareCursorNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -407,7 +425,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DeclareSubFuncNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -454,7 +472,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DeclareSubProcNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -495,7 +513,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DeclareVariableNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual DeclareVariableNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -533,7 +551,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual EraseNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -573,7 +591,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ErrorHandlerNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ErrorHandlerNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -608,7 +626,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ExecProcedureNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ExecProcedureNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -656,7 +674,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ExecStatementNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -700,7 +718,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual IfNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual IfNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -733,7 +751,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual InAutonomousTransactionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual InAutonomousTransactionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -760,7 +778,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual InitVariableNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual InitVariableNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -787,7 +805,7 @@ public:
 	{
 	}
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ExecBlockNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -827,7 +845,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ExceptionNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -853,7 +871,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 };
 
@@ -880,7 +898,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ForNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual StmtNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -914,7 +932,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual HandlerNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual HandlerNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -939,7 +957,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual LabelNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual LabelNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -964,7 +982,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual LineColumnNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -988,7 +1006,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual LoopNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual LoopNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -1043,7 +1061,7 @@ public:
 	{
 	}
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -1076,7 +1094,7 @@ public:
 	virtual USHORT setupDesc(thread_db* tdbb, CompilerScratch* csb, USHORT index,
 		dsc* desc, ItemInfo* itemInfo);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual MessageNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual MessageNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -1119,7 +1137,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	StmtNode* internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert);
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -1165,7 +1183,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual PostEventNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual PostEventNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -1191,7 +1209,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ReceiveNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual ReceiveNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -1225,7 +1243,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	StmtNode* internalDsqlPass(DsqlCompilerScratch* dsqlScratch, bool updateOrInsert);
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
@@ -1275,7 +1293,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual UserSavepointNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual UserSavepointNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -1304,7 +1322,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual SelectNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual SelectNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -1333,7 +1351,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 
 	// DSQL support is implemented in CreateAlterSequenceNode.
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -1362,7 +1380,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual StallNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual StallNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -1384,7 +1402,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual SuspendNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 	virtual SuspendNode* pass1(thread_db* tdbb, CompilerScratch* csb);
@@ -1406,7 +1424,7 @@ public:
 	{
 	}
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual ReturnNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -1428,7 +1446,7 @@ public:
 public:
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual SavePointNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
@@ -1488,9 +1506,21 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
-		text = "SetTransactionNode";
+		TransactionNode::internalPrint(printer);
+
+		NODE_PRINT(printer, readOnly);
+		NODE_PRINT(printer, wait);
+		NODE_PRINT(printer, isoLevel);
+		NODE_PRINT(printer, noAutoUndo);
+		NODE_PRINT(printer, ignoreLimbo);
+		NODE_PRINT(printer, restartRequests);
+		NODE_PRINT(printer, lockTimeout);
+		//// FIXME-PRINT: NODE_PRINT(printer, reserveList);
+		NODE_PRINT(printer, tpb);
+
+		return "SetTransactionNode";
 	}
 
 	virtual SetTransactionNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -1535,9 +1565,14 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
-		text = "SetRoleNode";
+		TransactionNode::internalPrint(printer);
+
+		NODE_PRINT(printer, trusted);
+		NODE_PRINT(printer, roleName);
+
+		return "SetRoleNode";
 	}
 
 	virtual SetRoleNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -1562,7 +1597,7 @@ public:
 	{
 	}
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual StmtNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 

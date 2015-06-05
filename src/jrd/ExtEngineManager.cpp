@@ -152,9 +152,15 @@ namespace
 				defaultValueNode = CMP_clone_node(tdbb, csb, parameter->prm_default_value);
 		}
 
-		void print(string& text) const
+		string internalPrint(NodePrinter& printer) const
 		{
-			text = "ExtInitParameterNode";
+			StmtNode::internalPrint(printer);
+
+			NODE_PRINT(printer, message);
+			NODE_PRINT(printer, argNumber);
+			NODE_PRINT(printer, defaultValueNode);
+
+			return "ExtInitParameterNode";
 		}
 
 		void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -409,9 +415,10 @@ namespace
 		{
 		}
 
-		void print(string& text) const
+		string internalPrint(NodePrinter& printer) const
 		{
-			text = "ExtTriggerNode";
+			StmtNode::internalPrint(printer);
+			return "ExtTriggerNode";
 		}
 
 		void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)

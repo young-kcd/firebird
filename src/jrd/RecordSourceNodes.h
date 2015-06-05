@@ -45,7 +45,7 @@ class SelectExprNode;
 class ValueListNode;
 
 
-class SortNode : public Firebird::PermanentStorage
+class SortNode : public Firebird::PermanentStorage, public Printable
 {
 public:
 	explicit SortNode(MemoryPool& pool)
@@ -57,19 +57,27 @@ public:
 	{
 	}
 
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		//// FIXME-PRINT:
+		return "SortNode";
+	}
+
 	SortNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	SortNode* pass1(thread_db* tdbb, CompilerScratch* csb);
 	SortNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	bool computable(CompilerScratch* csb, StreamType stream, bool allowOnlyCurrentStream);
 	void findDependentFromStreams(const OptimizerRetrieval* optRet, SortedStreamList* streamList);
 
+public:
 	bool unique;						// sorts using unique key - for distinct and group by
 	NestValueArray expressions;			// sort expressions
 	Firebird::Array<bool> descending;	// true = descending / false = ascending
 	Firebird::Array<int> nullOrder;		// rse_nulls_*
 };
 
-class MapNode : public Firebird::PermanentStorage
+class MapNode : public Firebird::PermanentStorage, public Printable
 {
 public:
 	explicit MapNode(MemoryPool& pool)
@@ -84,11 +92,23 @@ public:
 	MapNode* pass2(thread_db* tdbb, CompilerScratch* csb);
 	void aggPostRse(thread_db* tdbb, CompilerScratch* csb);
 
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		/*** FIXME-PRINT:
+		NODE_PRINT(printer, sourceList);
+		NODE_PRINT(printer, targetList);
+		***/
+
+		return "MapNode";
+	}
+
+public:
 	NestValueArray sourceList;
 	NestValueArray targetList;
 };
 
-class PlanNode : public Firebird::PermanentStorage
+class PlanNode : public Firebird::PermanentStorage, public Printable
 {
 public:
 	enum Type
@@ -147,6 +167,13 @@ public:
 		  dsqlRecordSourceNode(NULL),
 		  dsqlNames(NULL)
 	{
+	}
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		//// FIXME-PRINT:
+		return "PlanNode";
 	}
 
 	PlanNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
@@ -249,6 +276,7 @@ public:
 	static RelationSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp,
 		bool parseContext);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlSubSelectFinder(SubSelectFinder& /*visitor*/)
@@ -329,6 +357,7 @@ public:
 
 	static ProcedureSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
@@ -403,6 +432,7 @@ public:
 
 	static AggregateSourceNode* parse(thread_db* tdbb, CompilerScratch* csb);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
@@ -467,6 +497,7 @@ public:
 
 	static UnionSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 	virtual UnionSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -541,6 +572,8 @@ public:
 		fb_assert(false);
 		return 0;
 	}
+
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 
 	virtual WindowSourceNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 	virtual void ignoreDbKey(thread_db* tdbb, CompilerScratch* csb) const;
@@ -641,6 +674,7 @@ public:
 		return obj;
 	}
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
 	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
@@ -719,6 +753,7 @@ public:
 	{
 	}
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual RseNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
 	virtual RseNode* copy(thread_db* /*tdbb*/, NodeCopier& /*copier*/) const

@@ -31,7 +31,7 @@ namespace Jrd
 {
 	class InversionNode;
 	struct Item;
-	struct ItemInfo;
+	class ItemInfo;
 }
 
 dsc*		EVL_assign_to(Jrd::thread_db* tdbb, const Jrd::ValueExprNode*);

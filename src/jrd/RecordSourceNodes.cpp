@@ -97,6 +97,21 @@ namespace
 //--------------------
 
 
+string RecordSourceNode::internalPrint(NodePrinter& printer) const
+{
+	ExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlFlags);
+	NODE_PRINT(printer, dsqlContext);
+	NODE_PRINT(printer, stream);
+
+	return "RecordSourceNode";
+}
+
+
+//--------------------
+
+
 SortNode* SortNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
 	SortNode* newSort = FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
@@ -539,6 +554,17 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 	return node;
 }
 
+string RelationSourceNode::internalPrint(NodePrinter& printer) const
+{
+	RecordSourceNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlName);
+	NODE_PRINT(printer, alias);
+	NODE_PRINT(printer, context);
+
+	return "RelationSourceNode";
+}
+
 RecordSourceNode* RelationSourceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	return dsqlPassRelProc(dsqlScratch, this);
@@ -924,6 +950,16 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 	return node;
 }
 
+string ProcedureSourceNode::internalPrint(NodePrinter& printer) const
+{
+	RecordSourceNode::internalPrint(printer);
+
+	NODE_PRINT(printer, in_msg);
+	NODE_PRINT(printer, context);
+
+	return "ProcedureSourceNode";
+}
+
 RecordSourceNode* ProcedureSourceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
 	return dsqlPassRelProc(dsqlScratch, this);
@@ -1218,6 +1254,19 @@ AggregateSourceNode* AggregateSourceNode::parse(thread_db* tdbb, CompilerScratch
 	node->map = parseMap(tdbb, csb, node->stream);
 
 	return node;
+}
+
+string AggregateSourceNode::internalPrint(NodePrinter& printer) const
+{
+	RecordSourceNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlGroup);
+	NODE_PRINT(printer, dsqlRse);
+	NODE_PRINT(printer, dsqlWindow);
+	NODE_PRINT(printer, group);
+	NODE_PRINT(printer, map);
+
+	return "AggregateSourceNode";
 }
 
 bool AggregateSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
@@ -1587,6 +1636,17 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, c
 	return node;
 }
 
+string UnionSourceNode::internalPrint(NodePrinter& printer) const
+{
+	RecordSourceNode::internalPrint(printer);
+
+	NODE_PRINT(printer, clauses);
+	NODE_PRINT(printer, maps);
+	NODE_PRINT(printer, mapStream);
+
+	return "UnionSourceNode";
+}
+
 void UnionSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar((recursive ? blr_recurse : blr_union));
@@ -1894,6 +1954,16 @@ WindowSourceNode* WindowSourceNode::parse(thread_db* tdbb, CompilerScratch* csb)
 	return node;
 }
 
+string WindowSourceNode::internalPrint(NodePrinter& printer) const
+{
+	RecordSourceNode::internalPrint(printer);
+
+	NODE_PRINT(printer, rse);
+	//// FIXME-PRINT: NODE_PRINT(printer, partitions);
+
+	return "WindowSourceNode";
+}
+
 // Parse PARTITION BY subclauses of window functions.
 void WindowSourceNode::parsePartitionBy(thread_db* tdbb, CompilerScratch* csb)
 {
@@ -2119,6 +2189,36 @@ void WindowSourceNode::findDependentFromStreams(const OptimizerRetrieval* optRet
 
 //--------------------
 
+
+string RseNode::internalPrint(NodePrinter& printer) const
+{
+	RecordSourceNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlFirst);
+	NODE_PRINT(printer, dsqlSkip);
+	NODE_PRINT(printer, dsqlDistinct);
+	NODE_PRINT(printer, dsqlSelectList);
+	NODE_PRINT(printer, dsqlFrom);
+	NODE_PRINT(printer, dsqlWhere);
+	NODE_PRINT(printer, dsqlJoinUsing);
+	NODE_PRINT(printer, dsqlGroup);
+	NODE_PRINT(printer, dsqlHaving);
+	NODE_PRINT(printer, dsqlOrder);
+	NODE_PRINT(printer, dsqlStreams);
+	NODE_PRINT(printer, dsqlExplicitJoin);
+	NODE_PRINT(printer, rse_jointype);
+	NODE_PRINT(printer, rse_first);
+	NODE_PRINT(printer, rse_skip);
+	NODE_PRINT(printer, rse_boolean);
+	NODE_PRINT(printer, rse_sorted);
+	NODE_PRINT(printer, rse_projection);
+	NODE_PRINT(printer, rse_aggregate);
+	NODE_PRINT(printer, rse_plan);
+	NODE_PRINT(printer, rse_relations);
+	NODE_PRINT(printer, flags);
+
+	return "RseNode";
+}
 
 bool RseNode::dsqlAggregateFinder(AggregateFinder& visitor)
 {
@@ -3069,6 +3169,20 @@ void RseNode::collectStreams(SortedStreamList& streamList) const
 
 //--------------------
 
+
+string SelectExprNode::internalPrint(NodePrinter& printer) const
+{
+	RecordSourceNode::internalPrint(printer);
+
+	NODE_PRINT(printer, querySpec);
+	NODE_PRINT(printer, orderClause);
+	NODE_PRINT(printer, rowsClause);
+	NODE_PRINT(printer, withClause);
+	NODE_PRINT(printer, alias);
+	NODE_PRINT(printer, columns);
+
+	return "SelectExprNode";
+}
 
 RseNode* SelectExprNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {

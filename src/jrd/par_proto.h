@@ -30,7 +30,7 @@ namespace Jrd {
 	class jrd_req;
 	class JrdStatement;
 	class thread_db;
-	struct ItemInfo;
+	class ItemInfo;
 	class BoolExprNode;
 	class CompoundStmtNode;
 	class DmlNode;

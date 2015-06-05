@@ -114,9 +114,41 @@ void NodeRef::pass2(thread_db* tdbb, CompilerScratch* csb)
 //--------------------
 
 
-void ExprNode::print(string& /*text*/) const
+void Printable::print(NodePrinter& printer) const
 {
+	NodePrinter subPrinter(printer.getIndent() + 1);
+	Firebird::string tag(internalPrint(subPrinter));
+	printer.begin(tag);
+	printer.append(subPrinter);
+	printer.end();
 }
+
+
+//--------------------
+
+
+string Node::internalPrint(NodePrinter& printer) const
+{
+	NODE_PRINT(printer, line);
+	NODE_PRINT(printer, column);
+
+	return "Node";
+}
+
+
+//--------------------
+
+
+string ExprNode::internalPrint(NodePrinter& printer) const
+{
+	Node::internalPrint(printer);
+
+	NODE_PRINT(printer, nodFlags);
+	NODE_PRINT(printer, impureOffset);
+
+	return "ExprNode";
+}
+
 
 bool ExprNode::dsqlMatch(const ExprNode* other, bool ignoreMapCast) const
 {
@@ -208,6 +240,40 @@ ExprNode* ExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 //--------------------
 
 
+string ValueExprNode::internalPrint(NodePrinter& printer) const
+{
+	ExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, nodScale);
+	NODE_PRINT(printer, nodDesc);
+
+	return "ValueNode";
+}
+
+
+//--------------------
+
+
+Firebird::string ValueListNode::internalPrint(NodePrinter& printer) const
+{
+	NODE_PRINT(printer, items);
+	return "ValueListNode";
+}
+
+
+//--------------------
+
+
+Firebird::string RecSourceListNode::internalPrint(NodePrinter& printer) const
+{
+	NODE_PRINT(printer, items);
+	return "RecSourceListNode";
+}
+
+
+//--------------------
+
+
 static RegisterNode<ArithmeticNode> regArithmeticNodeAdd(blr_add);
 static RegisterNode<ArithmeticNode> regArithmeticNodeSubtract(blr_subtract);
 static RegisterNode<ArithmeticNode> regArithmeticNodeMultiply(blr_multiply);
@@ -260,10 +326,17 @@ DmlNode* ArithmeticNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratc
 	return node;
 }
 
-void ArithmeticNode::print(string& text) const
+string ArithmeticNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("ArithmeticNode %s (%d)", label.c_str(), (dialect1 ? 1 : 3));
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, dialect1);
+	NODE_PRINT(printer, label);
+	NODE_PRINT(printer, arg1);
+	NODE_PRINT(printer, arg2);
+
+	return "ArithmeticNode";
 }
 
 void ArithmeticNode::setParameterName(dsql_par* parameter) const
@@ -2330,10 +2403,13 @@ ArrayNode::ArrayNode(MemoryPool& pool, FieldNode* aField)
 {
 }
 
-void ArrayNode::print(string& text) const
+string ArrayNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ArrayNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, field);
+
+	return "ArrayNode";
 }
 
 ValueExprNode* ArrayNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -2367,10 +2443,13 @@ DmlNode* BoolAsValueNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-void BoolAsValueNode::print(string& text) const
+string BoolAsValueNode::internalPrint(NodePrinter& printer) const
 {
-	text = "BoolAsValueNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, boolean);
+
+	return "BoolAsValueNode";
 }
 
 ValueExprNode* BoolAsValueNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -2473,10 +2552,17 @@ DmlNode* CastNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 	return node;
 }
 
-void CastNode::print(string& text) const
+string CastNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("CastNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlAlias);
+	NODE_PRINT(printer, dsqlField);
+	NODE_PRINT(printer, castDesc);
+	NODE_PRINT(printer, source);
+	NODE_PRINT(printer, itemInfo);
+
+	return "CastNode";
 }
 
 ValueExprNode* CastNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -2753,10 +2839,13 @@ DmlNode* CoalesceNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	return node;
 }
 
-void CoalesceNode::print(string& text) const
+string CoalesceNode::internalPrint(NodePrinter& printer) const
 {
-	text = "CoalesceNode\n";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, args);
+
+	return "CoalesceNode";
 }
 
 ValueExprNode* CoalesceNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -2867,10 +2956,14 @@ CollateNode::CollateNode(MemoryPool& pool, ValueExprNode* aArg, const Firebird::
 	addDsqlChildNode(arg);
 }
 
-void CollateNode::print(string& text) const
+string CollateNode::internalPrint(NodePrinter& printer) const
 {
-	text = "CollateNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, arg);
+	NODE_PRINT(printer, collation);
+
+	return "CollateNode";
 }
 
 // Turn a collate clause into a cast clause.
@@ -2960,10 +3053,14 @@ DmlNode* ConcatenateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-void ConcatenateNode::print(string& text) const
+string ConcatenateNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ConcatenateNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, arg1);
+	NODE_PRINT(printer, arg2);
+
+	return "ConcatenateNode";
 }
 
 void ConcatenateNode::setParameterName(dsql_par* parameter) const
@@ -3218,10 +3315,11 @@ DmlNode* CurrentDateNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerS
 	return FB_NEW(pool) CurrentDateNode(pool);
 }
 
-void CurrentDateNode::print(string& text) const
+string CurrentDateNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("CurrentDateNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	return "CurrentDateNode";
 }
 
 void CurrentDateNode::setParameterName(dsql_par* parameter) const
@@ -3311,10 +3409,13 @@ DmlNode* CurrentTimeNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerS
 	return FB_NEW(pool) CurrentTimeNode(pool, precision);
 }
 
-void CurrentTimeNode::print(string& text) const
+string CurrentTimeNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("CurrentTimeNode (%d)", precision);
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, precision);
+
+	return "CurrentTimeNode";
 }
 
 void CurrentTimeNode::setParameterName(dsql_par* parameter) const
@@ -3421,10 +3522,13 @@ DmlNode* CurrentTimeStampNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, Comp
 	return FB_NEW(pool) CurrentTimeStampNode(pool, precision);
 }
 
-void CurrentTimeStampNode::print(string& text) const
+string CurrentTimeStampNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("CurrentTimeStampNode (%d)", precision);
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, precision);
+
+	return "CurrentTimeStampNode";
 }
 
 void CurrentTimeStampNode::setParameterName(dsql_par* parameter) const
@@ -3518,10 +3622,11 @@ DmlNode* CurrentRoleNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerS
 	return FB_NEW(pool) CurrentRoleNode(pool);
 }
 
-void CurrentRoleNode::print(string& text) const
+string CurrentRoleNode::internalPrint(NodePrinter& printer) const
 {
-	text = "CurrentRoleNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	return "CurrentRoleNode";
 }
 
 void CurrentRoleNode::setParameterName(dsql_par* parameter) const
@@ -3613,10 +3718,11 @@ DmlNode* CurrentUserNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerS
 	return FB_NEW(pool) CurrentUserNode(pool);
 }
 
-void CurrentUserNode::print(string& text) const
+string CurrentUserNode::internalPrint(NodePrinter& printer) const
 {
-	text = "CurrentUserNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	return "CurrentUserNode";
 }
 
 void CurrentUserNode::setParameterName(dsql_par* parameter) const
@@ -3710,10 +3816,16 @@ DmlNode* DecodeNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void DecodeNode::print(string& text) const
+string DecodeNode::internalPrint(NodePrinter& printer) const
 {
-	text = "DecodeNode\n";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, label);
+	NODE_PRINT(printer, test);
+	NODE_PRINT(printer, conditions);
+	NODE_PRINT(printer, values);
+
+	return "DecodeNode";
 }
 
 ValueExprNode* DecodeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -4079,10 +4191,13 @@ dsc* DerivedExprNode::execute(thread_db* tdbb, jrd_req* request) const
 //--------------------
 
 
-void DomainValidationNode::print(Firebird::string& text) const
+string DomainValidationNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("DomainValidationNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, domDesc);
+
+	return "DomainValidationNode";
 }
 
 ValueExprNode* DomainValidationNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -4169,10 +4284,14 @@ DmlNode* ExtractNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void ExtractNode::print(string& text) const
+string ExtractNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("ExtractNode (%d)", blrSubOp);
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrSubOp);
+	NODE_PRINT(printer, arg);
+
+	return "ExtractNode";
 }
 
 ValueExprNode* ExtractNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -4693,10 +4812,23 @@ DmlNode* FieldNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	return PAR_gen_field(tdbb, stream, id, byId);
 }
 
-void FieldNode::print(string& text) const
+string FieldNode::internalPrint(NodePrinter& printer) const
 {
-	text = "FieldNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlQualifier);
+	NODE_PRINT(printer, dsqlName);
+	NODE_PRINT(printer, dsqlContext);
+	NODE_PRINT(printer, dsqlField);
+	NODE_PRINT(printer, dsqlIndices);
+	NODE_PRINT(printer, fieldStream);
+	NODE_PRINT(printer, format);
+	NODE_PRINT(printer, fieldId);
+	NODE_PRINT(printer, byId);
+	NODE_PRINT(printer, dsqlCursorField);
+	NODE_PRINT(printer, cursorNumber);
+
+	return "FieldNode";
 }
 
 ValueExprNode* FieldNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -5676,10 +5808,19 @@ DmlNode* GenIdNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* cs
 	return node;
 }
 
-void GenIdNode::print(string& text) const
+string GenIdNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("GenIdNode %s (%d)", generator.name.c_str(), (dialect1 ? 1 : 3));
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dialect1);
+	NODE_PRINT(printer, generator);
+	NODE_PRINT(printer, arg);
+	NODE_PRINT(printer, step);
+	NODE_PRINT(printer, sysGen);
+	NODE_PRINT(printer, implicit);
+	NODE_PRINT(printer, identity);
+
+	return "GenIdNode";
 }
 
 ValueExprNode* GenIdNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -5884,10 +6025,13 @@ DmlNode* InternalInfoNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 	return node;
 }
 
-void InternalInfoNode::print(string& text) const
+string InternalInfoNode::internalPrint(NodePrinter& printer) const
 {
-	text = "InternalInfoNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, arg);
+
+	return "InternalInfoNode";
 }
 
 void InternalInfoNode::setParameterName(dsql_par* parameter) const
@@ -6263,10 +6407,14 @@ void LiteralNode::genConstant(DsqlCompilerScratch* dsqlScratch, const dsc* desc,
 	}
 }
 
-void LiteralNode::print(string& text) const
+string LiteralNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("LiteralNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlStr);
+	NODE_PRINT(printer, litDesc);
+
+	return "LiteralNode";
 }
 
 // Turn an international string reference into internal subtype ID.
@@ -6456,10 +6604,15 @@ dsc* LiteralNode::execute(thread_db* /*tdbb*/, jrd_req* /*request*/) const
 //--------------------
 
 
-void DsqlAliasNode::print(string& text) const
+string DsqlAliasNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("DsqlAliasNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, value);
+	NODE_PRINT(printer, implicitJoin);
+
+	return "DsqlAliasNode";
 }
 
 ValueExprNode* DsqlAliasNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -6497,10 +6650,14 @@ DsqlMapNode::DsqlMapNode(MemoryPool& pool, dsql_ctx* aContext, dsql_map* aMap)
 {
 }
 
-void DsqlMapNode::print(string& text) const
+string DsqlMapNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("DsqlMapNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, context);
+	NODE_PRINT(printer, map);
+
+	return "DsqlMapNode";
 }
 
 ValueExprNode* DsqlMapNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -6671,10 +6828,16 @@ DerivedFieldNode::DerivedFieldNode(MemoryPool& pool, const MetaName& aName, USHO
 	addDsqlChildNode(value);
 }
 
-void DerivedFieldNode::print(string& text) const
+string DerivedFieldNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("DerivedFieldNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, scope);
+	NODE_PRINT(printer, value);
+	NODE_PRINT(printer, context);
+
+	return "DerivedFieldNode";
 }
 
 ValueExprNode* DerivedFieldNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -6880,10 +7043,13 @@ DmlNode* NegateNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void NegateNode::print(string& text) const
+string NegateNode::internalPrint(NodePrinter& printer) const
 {
-	text = "NegateNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, arg);
+
+	return "NegateNode";
 }
 
 void NegateNode::setParameterName(dsql_par* parameter) const
@@ -7072,10 +7238,11 @@ DmlNode* NullNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScratch*
 	return FB_NEW(pool) NullNode(pool);
 }
 
-void NullNode::print(string& text) const
+string NullNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("NullNode");
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	return "NullNode";
 }
 
 void NullNode::setParameterName(dsql_par* parameter) const
@@ -7147,10 +7314,15 @@ OrderNode::OrderNode(MemoryPool& pool, ValueExprNode* aValue)
 	addDsqlChildNode(value);
 }
 
-void OrderNode::print(string& text) const
+string OrderNode::internalPrint(NodePrinter& printer) const
 {
-	text = "OrderNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, value);
+	NODE_PRINT(printer, descending);
+	NODE_PRINT(printer, nullsPlacement);
+
+	return "OrderNode";
 }
 
 OrderNode* OrderNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -7187,10 +7359,15 @@ OverNode::OverNode(MemoryPool& pool, AggNode* aAggExpr, ValueListNode* aPartitio
 	addDsqlChildNode(order);
 }
 
-void OverNode::print(string& text) const
+string OverNode::internalPrint(NodePrinter& printer) const
 {
-	text = "OverNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, aggExpr);
+	NODE_PRINT(printer, partition);
+	NODE_PRINT(printer, order);
+
+	return "OverNode";
 }
 
 bool OverNode::dsqlAggregateFinder(AggregateFinder& visitor)
@@ -7450,10 +7627,19 @@ DmlNode* ParameterNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScr
 	return node;
 }
 
-void ParameterNode::print(string& text) const
+string ParameterNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ParameterNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlParameterIndex);
+	NODE_PRINT(printer, dsqlParameter);
+	NODE_PRINT(printer, message);
+	NODE_PRINT(printer, argNumber);
+	NODE_PRINT(printer, argFlag);
+	NODE_PRINT(printer, argIndicator);
+	NODE_PRINT(printer, argInfo);
+
+	return "ParameterNode";
 }
 
 ValueExprNode* ParameterNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -7752,13 +7938,17 @@ DmlNode* RecordKeyNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScr
 	return node;
 }
 
-void RecordKeyNode::print(string& text) const
+string RecordKeyNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("RecordKeyNode (%s)",
-		(blrOp == blr_dbkey ? "dbkey" :
-		 blrOp == blr_record_version2 ? "record_version2" : "record_version"));
+	ValueExprNode::internalPrint(printer);
 
-	ExprNode::print(text);
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, dsqlQualifier);
+	NODE_PRINT(printer, dsqlRelation);
+	NODE_PRINT(printer, recStream);
+	NODE_PRINT(printer, aggregate);
+
+	return "RecordKeyNode";
 }
 
 // Resolve a dbkey to an available context.
@@ -8464,10 +8654,14 @@ DmlNode* StrCaseNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void StrCaseNode::print(string& text) const
+string StrCaseNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("StrCaseNode (%s)", (blrOp == blr_lowcase ? "lower" : "upper"));
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, arg);
+
+	return "StrCaseNode";
 }
 
 ValueExprNode* StrCaseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -8657,10 +8851,14 @@ DmlNode* StrLenNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* c
 	return node;
 }
 
-void StrLenNode::print(string& text) const
+string StrLenNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("StrLenNode (%d)", blrSubOp);
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrSubOp);
+	NODE_PRINT(printer, arg);
+
+	return "StrLenNode";
 }
 
 ValueExprNode* StrLenNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -8919,10 +9117,19 @@ DmlNode* SubQueryNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch*
 	return node;
 }
 
-void SubQueryNode::print(string& text) const
+string SubQueryNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SubQueryNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, ownSavepoint);
+	NODE_PRINT(printer, dsqlRse);
+	NODE_PRINT(printer, rse);
+	NODE_PRINT(printer, value1);
+	NODE_PRINT(printer, value2);
+	NODE_PRINT(printer, rsb);
+
+	return "SubQueryNode";
 }
 
 ValueExprNode* SubQueryNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -9372,10 +9579,15 @@ DmlNode* SubstringNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch
 	return node;
 }
 
-void SubstringNode::print(string& text) const
+string SubstringNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SubstringNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, expr);
+	NODE_PRINT(printer, start);
+	NODE_PRINT(printer, length);
+
+	return "SubstringNode";
 }
 
 ValueExprNode* SubstringNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -9711,10 +9923,15 @@ DmlNode* SubstringSimilarNode::parse(thread_db* tdbb, MemoryPool& pool, Compiler
 	return node;
 }
 
-void SubstringSimilarNode::print(string& text) const
+string SubstringSimilarNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SubstringSimilarNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, expr);
+	NODE_PRINT(printer, pattern);
+	NODE_PRINT(printer, escape);
+
+	return "SubstringSimilarNode";
 }
 
 void SubstringSimilarNode::setParameterName(dsql_par* parameter) const
@@ -9953,10 +10170,15 @@ DmlNode* SysFuncCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-void SysFuncCallNode::print(string& text) const
+string SysFuncCallNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SysFuncCallNode\n\tname: " + string(name.c_str());
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, dsqlSpecialSyntax);
+	NODE_PRINT(printer, args);
+
+	return "SysFuncCallNode";
 }
 
 void SysFuncCallNode::setParameterName(dsql_par* parameter) const
@@ -10141,10 +10363,15 @@ DmlNode* TrimNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb
 	return node;
 }
 
-void TrimNode::print(string& text) const
+string TrimNode::internalPrint(NodePrinter& printer) const
 {
-	text = "TrimNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, where);
+	NODE_PRINT(printer, value);
+	NODE_PRINT(printer, trimChars);
+
+	return "TrimNode";
 }
 
 ValueExprNode* TrimNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -10545,10 +10772,14 @@ DmlNode* UdfCallNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void UdfCallNode::print(string& text) const
+string UdfCallNode::internalPrint(NodePrinter& printer) const
 {
-	text = "UdfCallNode\n\tname: " + name.toString();
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, args);
+
+	return "UdfCallNode";
 }
 
 void UdfCallNode::setParameterName(dsql_par* parameter) const
@@ -11074,10 +11305,15 @@ DmlNode* ValueIfNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void ValueIfNode::print(string& text) const
+string ValueIfNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ValueIfNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, condition);
+	NODE_PRINT(printer, trueValue);
+	NODE_PRINT(printer, falseValue);
+
+	return "ValueIfNode";
 }
 
 ValueExprNode* ValueIfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -11192,10 +11428,17 @@ DmlNode* VariableNode::parse(thread_db* /*tdbb*/, MemoryPool& pool, CompilerScra
 	return node;
 }
 
-void VariableNode::print(string& text) const
+string VariableNode::internalPrint(NodePrinter& printer) const
 {
-	text = "VariableNode";
-	ExprNode::print(text);
+	ValueExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlName);
+	NODE_PRINT(printer, dsqlVar);
+	NODE_PRINT(printer, varId);
+	NODE_PRINT(printer, varDecl);
+	NODE_PRINT(printer, varInfo);
+
+	return "VariableNode";
 }
 
 ValueExprNode* VariableNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -11326,6 +11569,31 @@ dsc* VariableNode::execute(thread_db* tdbb, jrd_req* request) const
 	}
 
 	return (request->req_flags & req_null) ? NULL : &impure->vlu_desc;
+}
+
+
+//--------------------
+
+
+Firebird::string RowsClause::internalPrint(NodePrinter& printer) const
+{
+	NODE_PRINT(printer, length);
+	NODE_PRINT(printer, skip);
+
+	return "RowsClause";
+}
+
+
+//--------------------
+
+
+Firebird::string GeneratorItem::internalPrint(NodePrinter& printer) const
+{
+	NODE_PRINT(printer, id);
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, secName);
+
+	return "GeneratorItem";
 }
 
 

@@ -240,12 +240,13 @@ StmtNode* SavepointEncloseNode::make(MemoryPool& pool, DsqlCompilerScratch* dsql
 	return node;
 }
 
-void SavepointEncloseNode::print(string& text) const
+string SavepointEncloseNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SavepointEncloseNode\n";
-	string s;
-	stmt->print(s);
-	text += s;
+	DsqlOnlyStmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, stmt);
+
+	return "SavepointEncloseNode";
 }
 
 void SavepointEncloseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -329,9 +330,16 @@ AssignmentNode* AssignmentNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void AssignmentNode::print(string& text) const
+string AssignmentNode::internalPrint(NodePrinter& printer) const
 {
-	text = "AssignmentNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, asgnFrom);
+	NODE_PRINT(printer, asgnTo);
+	NODE_PRINT(printer, missing);
+	NODE_PRINT(printer, missing2);
+
+	return "AssignmentNode";
 }
 
 void AssignmentNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -458,10 +466,14 @@ StmtNode* BlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void BlockNode::print(string& text) const
+string BlockNode::internalPrint(NodePrinter& printer) const
 {
-	text = "BlockNode";
-	// print handlers, too?
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, action);
+	NODE_PRINT(printer, handlers);
+
+	return "BlockNode";
 }
 
 void BlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -769,9 +781,14 @@ CompoundStmtNode* CompoundStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void CompoundStmtNode::print(string& text) const
+string CompoundStmtNode::internalPrint(NodePrinter& printer) const
 {
-	text = "CompoundStmtNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, statements);
+	NODE_PRINT(printer, onlyAssignments);
+
+	return "CompoundStmtNode";
 }
 
 void CompoundStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -904,9 +921,15 @@ ContinueLeaveNode* ContinueLeaveNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-void ContinueLeaveNode::print(string& text) const
+string ContinueLeaveNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ContinueLeaveNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, labelNumber);
+	NODE_PRINT(printer, dsqlLabelName);
+
+	return "ContinueLeaveNode";
 }
 
 void ContinueLeaveNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -1002,9 +1025,19 @@ CursorStmtNode* CursorStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-void CursorStmtNode::print(string& text) const
+string CursorStmtNode::internalPrint(NodePrinter& printer) const
 {
-	text = "CursorStmtNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlName);
+	NODE_PRINT(printer, dsqlIntoStmt);
+	NODE_PRINT(printer, cursorOp);
+	NODE_PRINT(printer, cursorNumber);
+	NODE_PRINT(printer, scrollOp);
+	NODE_PRINT(printer, scrollExpr);
+	NODE_PRINT(printer, intoStmt);
+
+	return "CursorStmtNode";
 }
 
 void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -1211,9 +1244,20 @@ DeclareCursorNode* DeclareCursorNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-void DeclareCursorNode::print(string& text) const
+string DeclareCursorNode::internalPrint(NodePrinter& printer) const
 {
-	text = "DeclareCursorNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlCursorType);
+	NODE_PRINT(printer, dsqlScroll);
+	NODE_PRINT(printer, dsqlName);
+	NODE_PRINT(printer, dsqlSelect);
+	NODE_PRINT(printer, rse);
+	NODE_PRINT(printer, refs);
+	NODE_PRINT(printer, cursorNumber);
+	NODE_PRINT(printer, cursor);
+
+	return "DeclareCursorNode";
 }
 
 void DeclareCursorNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -1422,9 +1466,15 @@ void DeclareSubFuncNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 	}
 }
 
-void DeclareSubFuncNode::print(string& text) const
+string DeclareSubFuncNode::internalPrint(NodePrinter& printer) const
 {
-	text = "DeclareSubFuncNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, dsqlDeterministic);
+	NODE_PRINT(printer, dsqlBlock);
+
+	return "DeclareSubFuncNode";
 }
 
 DeclareSubFuncNode* DeclareSubFuncNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -1699,9 +1749,14 @@ void DeclareSubProcNode::parseParameters(thread_db* tdbb, MemoryPool& pool, Comp
 	}
 }
 
-void DeclareSubProcNode::print(string& text) const
+string DeclareSubProcNode::internalPrint(NodePrinter& printer) const
 {
-	text = "DeclareSubProcNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, dsqlBlock);
+
+	return "DeclareSubProcNode";
 }
 
 DeclareSubProcNode* DeclareSubProcNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -1876,9 +1931,15 @@ DeclareVariableNode* DeclareVariableNode::dsqlPass(DsqlCompilerScratch* /*dsqlSc
 	return this;
 }
 
-void DeclareVariableNode::print(string& text) const
+string DeclareVariableNode::internalPrint(NodePrinter& printer) const
 {
-	text = "DeclareVariableNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlDef);
+	NODE_PRINT(printer, varId);
+	NODE_PRINT(printer, varDesc);
+
+	return "DeclareVariableNode";
 }
 
 void DeclareVariableNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -2028,9 +2089,24 @@ StmtNode* EraseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, ret);
 }
 
-void EraseNode::print(string& text) const
+string EraseNode::internalPrint(NodePrinter& printer) const
 {
-	text = "EraseNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlRelation);
+	NODE_PRINT(printer, dsqlBoolean);
+	NODE_PRINT(printer, dsqlPlan);
+	NODE_PRINT(printer, dsqlOrder);
+	NODE_PRINT(printer, dsqlRows);
+	NODE_PRINT(printer, dsqlCursorName);
+	NODE_PRINT(printer, dsqlReturning);
+	NODE_PRINT(printer, dsqlRse);
+	NODE_PRINT(printer, dsqlContext);
+	NODE_PRINT(printer, statement);
+	NODE_PRINT(printer, subStatement);
+	NODE_PRINT(printer, stream);
+
+	return "EraseNode";
 }
 
 void EraseNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -2422,9 +2498,14 @@ ErrorHandlerNode* ErrorHandlerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void ErrorHandlerNode::print(string& text) const
+string ErrorHandlerNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ErrorHandlerNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, action);
+	NODE_PRINT(printer, conditions);
+
+	return "ErrorHandlerNode";
 }
 
 void ErrorHandlerNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -2686,9 +2767,19 @@ ValueListNode* ExecProcedureNode::explodeOutputs(DsqlCompilerScratch* dsqlScratc
 	return output;
 }
 
-void ExecProcedureNode::print(string& text) const
+string ExecProcedureNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ExecProcedureNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlName);
+	NODE_PRINT(printer, inputSources);
+	NODE_PRINT(printer, inputTargets);
+	NODE_PRINT(printer, inputMessage);
+	NODE_PRINT(printer, outputSources);
+	NODE_PRINT(printer, outputTargets);
+	NODE_PRINT(printer, outputMessage);
+
+	return "ExecProcedureNode";
 }
 
 void ExecProcedureNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -3121,9 +3212,25 @@ StmtNode* ExecStatementNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 }
 
-void ExecStatementNode::print(string& text) const
+string ExecStatementNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ExecStatementNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlLabelName);
+	NODE_PRINT(printer, dsqlLabelNumber);
+	NODE_PRINT(printer, sql);
+	NODE_PRINT(printer, dataSource);
+	NODE_PRINT(printer, userName);
+	NODE_PRINT(printer, password);
+	NODE_PRINT(printer, role);
+	NODE_PRINT(printer, innerStmt);
+	NODE_PRINT(printer, inputs);
+	NODE_PRINT(printer, outputs);
+	NODE_PRINT(printer, useCallerPrivs);
+	NODE_PRINT(printer, traScope);
+	NODE_PRINT(printer, inputNames);
+
+	return "ExecStatementNode";
 }
 
 void ExecStatementNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -3418,9 +3525,15 @@ IfNode* IfNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void IfNode::print(string& text) const
+string IfNode::internalPrint(NodePrinter& printer) const
 {
-	text = "IfNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, condition);
+	NODE_PRINT(printer, trueAction);
+	NODE_PRINT(printer, falseAction);
+
+	return "IfNode";
 }
 
 void IfNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -3506,9 +3619,14 @@ InAutonomousTransactionNode* InAutonomousTransactionNode::dsqlPass(DsqlCompilerS
 	return node;
 }
 
-void InAutonomousTransactionNode::print(string& text) const
+string InAutonomousTransactionNode::internalPrint(NodePrinter& printer) const
 {
-	text = "InAutonomousTransactionNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, action);
+	NODE_PRINT(printer, impureOffset);
+
+	return "InAutonomousTransactionNode";
 }
 
 void InAutonomousTransactionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -3706,9 +3824,15 @@ InitVariableNode* InitVariableNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*
 	return this;
 }
 
-void InitVariableNode::print(string& text) const
+string InitVariableNode::internalPrint(NodePrinter& printer) const
 {
-	text = "InitVariableNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, varId);
+	NODE_PRINT(printer, varDecl);
+	NODE_PRINT(printer, varInfo);
+
+	return "InitVariableNode";
 }
 
 void InitVariableNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -3864,27 +3988,16 @@ ExecBlockNode* ExecBlockNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void ExecBlockNode::print(string& text) const
+string ExecBlockNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ExecBlockNode\n";
+	StmtNode::internalPrint(printer);
 
-	text += "  Returns:\n";
+	NODE_PRINT(printer, parameters);
+	NODE_PRINT(printer, returns);
+	NODE_PRINT(printer, localDeclList);
+	NODE_PRINT(printer, body);
 
-	for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
-	{
-		const ParameterClause* parameter = returns[i];
-
-		string s;
-		parameter->print(s);
-		text += "    " + s + "\n";
-	}
-
-	if (localDeclList)
-	{
-		string s;
-		localDeclList->print(s);
-		text += s + "\n";
-	}
+	return "ExecBlockNode";
 }
 
 void ExecBlockNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -4128,9 +4241,15 @@ StmtNode* ExceptionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, node);
 }
 
-void ExceptionNode::print(string& text) const
+string ExceptionNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("ExceptionNode: Name: %s", (exception ? exception->name.c_str() : ""));
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, messageExpr);
+	NODE_PRINT(printer, parameters);
+	NODE_PRINT(printer, exception);
+
+	return "ExceptionNode";
 }
 
 void ExceptionNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -4353,9 +4472,10 @@ void ExceptionNode::setError(thread_db* tdbb) const
 //--------------------
 
 
-void ExitNode::print(string& text) const
+string ExitNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ExitNode";
+	StmtNode::internalPrint(printer);
+	return "ExitNode";
 }
 
 void ExitNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -4453,9 +4573,23 @@ ForNode* ForNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void ForNode::print(string& text) const
+string ForNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ForNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlSelect);
+	NODE_PRINT(printer, dsqlInto);
+	NODE_PRINT(printer, dsqlCursor);
+	NODE_PRINT(printer, dsqlLabelName);
+	NODE_PRINT(printer, dsqlLabelNumber);
+	NODE_PRINT(printer, dsqlForceSingular);
+	NODE_PRINT(printer, stall);
+	NODE_PRINT(printer, rse);
+	NODE_PRINT(printer, statement);
+	NODE_PRINT(printer, cursor);
+	NODE_PRINT(printer, parBlrBeginCnt);
+
+	return "ForNode";
 }
 
 void ForNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -4628,9 +4762,13 @@ HandlerNode* HandlerNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-void HandlerNode::print(string& text) const
+string HandlerNode::internalPrint(NodePrinter& printer) const
 {
-	text = "HandlerNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, statement);
+
+	return "HandlerNode";
 }
 
 void HandlerNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -4686,9 +4824,14 @@ LabelNode* LabelNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-void LabelNode::print(string& text) const
+string LabelNode::internalPrint(NodePrinter& printer) const
 {
-	text = "LabelNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, statement);
+	NODE_PRINT(printer, labelNumber);
+
+	return "LabelNode";
 }
 
 void LabelNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -4734,9 +4877,13 @@ const StmtNode* LabelNode::execute(thread_db* /*tdbb*/, jrd_req* request, ExeSta
 //--------------------
 
 
-void LineColumnNode::print(string& text) const
+string LineColumnNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("LineColumnNode: line %d, col %d", line, column);
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, statement);
+
+	return "LineColumnNode";
 }
 
 LineColumnNode* LineColumnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -4781,9 +4928,16 @@ LoopNode* LoopNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void LoopNode::print(string& text) const
+string LoopNode::internalPrint(NodePrinter& printer) const
 {
-	text = "LoopNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlLabelName);
+	NODE_PRINT(printer, dsqlLabelNumber);
+	NODE_PRINT(printer, dsqlExpr);
+	NODE_PRINT(printer, statement);
+
+	return "LoopNode";
 }
 
 void LoopNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -4858,9 +5012,13 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		}
 
 	public:
-		virtual void print(string& text) const
+		virtual string internalPrint(NodePrinter& printer) const
 		{
-			text = "MergeSendNode";
+			DsqlOnlyStmtNode::internalPrint(printer);
+
+			NODE_PRINT(printer, stmt);
+
+			return "MergeSendNode";
 		}
 
 		// Do not make dsqlPass to process 'stmt'. It's already processed.
@@ -5262,9 +5420,18 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, sendNode);
 }
 
-void MergeNode::print(string& text) const
+string MergeNode::internalPrint(NodePrinter& printer) const
 {
-	text = "MergeNode";
+	DsqlOnlyStmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, relation);
+	NODE_PRINT(printer, usingClause);
+	NODE_PRINT(printer, condition);
+	//// FIXME-PRINT: NODE_PRINT(printer, whenMatched);
+	//// FIXME-PRINT: NODE_PRINT(printer, whenNotMatched);
+	NODE_PRINT(printer, returning);
+
+	return "MergeNode";
 }
 
 void MergeNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -5356,9 +5523,15 @@ MessageNode* MessageNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-void MessageNode::print(string& text) const
+string MessageNode::internalPrint(NodePrinter& printer) const
 {
-	text = "MessageNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, messageNumber);
+	NODE_PRINT(printer, format);
+	NODE_PRINT(printer, impureFlags);
+
+	return "MessageNode";
 }
 
 void MessageNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -5631,9 +5804,29 @@ StmtNode* ModifyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, internalDsqlPass(dsqlScratch, false));
 }
 
-void ModifyNode::print(string& text) const
+string ModifyNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ModifyNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlRelation);
+	NODE_PRINT(printer, dsqlBoolean);
+	NODE_PRINT(printer, dsqlPlan);
+	NODE_PRINT(printer, dsqlOrder);
+	NODE_PRINT(printer, dsqlRows);
+	NODE_PRINT(printer, dsqlCursorName);
+	NODE_PRINT(printer, dsqlReturning);
+	NODE_PRINT(printer, dsqlRseFlags);
+	NODE_PRINT(printer, dsqlRse);
+	NODE_PRINT(printer, dsqlContext);
+	NODE_PRINT(printer, statement);
+	NODE_PRINT(printer, statement2);
+	NODE_PRINT(printer, subMod);
+	//// FIXME-PRINT: NODE_PRINT(printer, validations);
+	NODE_PRINT(printer, mapView);
+	NODE_PRINT(printer, orgStream);
+	NODE_PRINT(printer, newStream);
+
+	return "ModifyNode";
 }
 
 void ModifyNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -6081,9 +6274,14 @@ PostEventNode* PostEventNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void PostEventNode::print(string& text) const
+string PostEventNode::internalPrint(NodePrinter& printer) const
 {
-	text = "PostEventNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, event);
+	NODE_PRINT(printer, argument);
+
+	return "PostEventNode";
 }
 
 void PostEventNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -6160,9 +6358,14 @@ ReceiveNode* ReceiveNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-void ReceiveNode::print(string& text) const
+string ReceiveNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ReceiveNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, statement);
+	NODE_PRINT(printer, message);
+
+	return "ReceiveNode";
 }
 
 void ReceiveNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -6400,9 +6603,21 @@ StmtNode* StoreNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, internalDsqlPass(dsqlScratch, false));
 }
 
-void StoreNode::print(string& text) const
+string StoreNode::internalPrint(NodePrinter& printer) const
 {
-	text = "StoreNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlRelation);
+	NODE_PRINT(printer, dsqlFields);
+	NODE_PRINT(printer, dsqlValues);
+	NODE_PRINT(printer, dsqlReturning);
+	NODE_PRINT(printer, dsqlRse);
+	NODE_PRINT(printer, statement);
+	NODE_PRINT(printer, statement2);
+	//// FIXME-PRINT: NODE_PRINT(printer, validations);
+	NODE_PRINT(printer, relationSource);
+
+	return "StoreNode";
 }
 
 void StoreNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -6863,9 +7078,14 @@ UserSavepointNode* UserSavepointNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-void UserSavepointNode::print(string& text) const
+string UserSavepointNode::internalPrint(NodePrinter& printer) const
 {
-	text = "UserSavepointNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, command);
+	NODE_PRINT(printer, name);
+
+	return "UserSavepointNode";
 }
 
 void UserSavepointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -7045,9 +7265,17 @@ SelectNode* SelectNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void SelectNode::print(string& text) const
+string SelectNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SelectNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlExpr);
+	NODE_PRINT(printer, dsqlForUpdate);
+	NODE_PRINT(printer, dsqlWithLock);
+	NODE_PRINT(printer, dsqlRse);
+	NODE_PRINT(printer, statements);
+
+	return "SelectNode";
 }
 
 // Generate BLR for a SELECT statement.
@@ -7261,9 +7489,14 @@ DmlNode* SetGeneratorNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 	return node;
 }
 
-void SetGeneratorNode::print(string& text) const
+string SetGeneratorNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SetGeneratorNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, generator);
+	NODE_PRINT(printer, value);
+
+	return "SetGeneratorNode";
 }
 
 SetGeneratorNode* SetGeneratorNode::pass1(thread_db* tdbb, CompilerScratch* csb)
@@ -7320,9 +7553,10 @@ StallNode* StallNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-void StallNode::print(string& text) const
+string StallNode::internalPrint(NodePrinter& printer) const
 {
-	text = "StallNode";
+	StmtNode::internalPrint(printer);
+	return "StallNode";
 }
 
 void StallNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
@@ -7402,9 +7636,14 @@ SuspendNode* SuspendNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return this;
 }
 
-void SuspendNode::print(string& text) const
+string SuspendNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SuspendNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, message);
+	NODE_PRINT(printer, statement);
+
+	return "SuspendNode";
 }
 
 void SuspendNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -7502,9 +7741,13 @@ ReturnNode* ReturnNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return node;
 }
 
-void ReturnNode::print(string& text) const
+string ReturnNode::internalPrint(NodePrinter& printer) const
 {
-	text = "ReturnNode";
+	DsqlOnlyStmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, value);
+
+	return "ReturnNode";
 }
 
 void ReturnNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -7538,9 +7781,13 @@ SavePointNode* SavePointNode::dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	return this;
 }
 
-void SavePointNode::print(string& text) const
+string SavePointNode::internalPrint(NodePrinter& printer) const
 {
-	text = "SavePointNode";
+	StmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+
+	return "SavePointNode";
 }
 
 void SavePointNode::genBlr(DsqlCompilerScratch* dsqlScratch)
@@ -7937,9 +8184,17 @@ StmtNode* UpdateOrInsertNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	return SavepointEncloseNode::make(getPool(), dsqlScratch, list);
 }
 
-void UpdateOrInsertNode::print(string& text) const
+string UpdateOrInsertNode::internalPrint(NodePrinter& printer) const
 {
-	text = "UpdateOrInsertNode";
+	DsqlOnlyStmtNode::internalPrint(printer);
+
+	NODE_PRINT(printer, relation);
+	NODE_PRINT(printer, fields);
+	NODE_PRINT(printer, values);
+	NODE_PRINT(printer, matching);
+	NODE_PRINT(printer, returning);
+
+	return "UpdateOrInsertNode";
 }
 
 void UpdateOrInsertNode::genBlr(DsqlCompilerScratch* /*dsqlScratch*/)

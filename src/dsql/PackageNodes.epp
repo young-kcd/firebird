@@ -361,36 +361,19 @@ namespace
 //----------------------
 
 
-void CreateAlterPackageNode::print(string& text) const
+string CreateAlterPackageNode::internalPrint(NodePrinter& printer) const
 {
-	fb_assert(items);
+	DdlNode::internalPrint(printer);
 
-	text.printf(
-		"CreateAlterPackageNode\n"
-		"  name: '%s'  create: %d  alter: %d\n"
-		"  Items:\n"
-		"--------\n",
-		name.c_str(), create, alter);
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, alter);
+	NODE_PRINT(printer, source);
+	//// FIXME-PRINT: NODE_PRINT(printer, items);
+	NODE_PRINT(printer, functionNames);
+	NODE_PRINT(printer, procedureNames);
 
-	for (unsigned i = 0; i < items->getCount(); ++i)
-	{
-		string item;
-
-		switch ((*items)[i].type)
-		{
-			case Item::FUNCTION:
-				(*items)[i].function->print(item);
-				break;
-
-			case Item::PROCEDURE:
-				(*items)[i].procedure->print(item);
-				break;
-		}
-
-		text += item;
-	}
-
-	text += "--------\n";
+	return "CreateAlterPackageNode";
 }
 
 
@@ -629,12 +612,14 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 //----------------------
 
 
-void DropPackageNode::print(string& text) const
+string DropPackageNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropPackageNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, silent);
+
+	return "DropPackageNode";
 }
 
 
@@ -728,62 +713,16 @@ void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 //----------------------
 
 
-void CreatePackageBodyNode::print(string& text) const
+string CreatePackageBodyNode::internalPrint(NodePrinter& printer) const
 {
-	fb_assert(items);
+	DdlNode::internalPrint(printer);
 
-	text.printf(
-		"CreatePackageBodyNode\n"
-		"  name: '%s'\n"
-		"  declaredItems:\n"
-		"--------\n",
-		name.c_str());
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, source);
+	//// FIXME-PRINT: NODE_PRINT(printer, declaredItems);
+	//// FIXME-PRINT: NODE_PRINT(printer, items);
 
-	if (declaredItems)
-	{
-		for (unsigned i = 0; i < declaredItems->getCount(); ++i)
-		{
-			string item;
-
-			switch ((*declaredItems)[i].type)
-			{
-				case CreateAlterPackageNode::Item::FUNCTION:
-					(*declaredItems)[i].function->print(item);
-					break;
-
-				case CreateAlterPackageNode::Item::PROCEDURE:
-					(*declaredItems)[i].procedure->print(item);
-					break;
-			}
-
-			text += item;
-		}
-	}
-
-	text +=
-		"--------\n"
-		"  items:\n"
-		"--------\n";
-
-	for (unsigned i = 0; i < items->getCount(); ++i)
-	{
-		string item;
-
-		switch ((*items)[i].type)
-		{
-			case CreateAlterPackageNode::Item::FUNCTION:
-				(*items)[i].function->print(item);
-				break;
-
-			case CreateAlterPackageNode::Item::PROCEDURE:
-				(*items)[i].procedure->print(item);
-				break;
-		}
-
-		text += item;
-	}
-
-	text += "--------\n";
+	return "CreatePackageBodyNode";
 }
 
 
@@ -1092,12 +1031,14 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 //----------------------
 
 
-void DropPackageBodyNode::print(string& text) const
+string DropPackageBodyNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropPackageBodyNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, silent);
+
+	return "DropPackageBodyNode";
 }
 
 

@@ -1051,24 +1051,29 @@ ParameterClause::ParameterClause(MemoryPool& pool, dsql_fld* field, const MetaNa
 	type->collate = aCollate;
 }
 
-void ParameterClause::print(string& text) const
+string ParameterClause::internalPrint(NodePrinter& printer) const
 {
-	string s;
-	type->print(s);
-	text.printf("name: '%s'  %s", name.c_str(), s.c_str());
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, type);
+	NODE_PRINT(printer, defaultClause);
+	NODE_PRINT(printer, parameterExpr);
+	NODE_PRINT(printer, udfMechanism);
+
+	return "ParameterClause";
 }
 
 
 //----------------------
 
 
-void AlterCharSetNode::print(string& text) const
+string AlterCharSetNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"AlterCharSetNode\n"
-		"  charSet: %s\n"
-		"  defaultCollation: %s\n",
-		charSet.c_str(), defaultCollation.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, charSet);
+	NODE_PRINT(printer, defaultCollation);
+
+	return "AlterCharSetNode";
 }
 
 bool AlterCharSetNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -1135,14 +1140,17 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CommentOnNode::print(string& text) const
+string CommentOnNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CommentOnNode\n"
-		"  objType: %s\n"
-		"  objName: %s\n"
-		"  text: %s\n",
-		objType, objName.toString().c_str(), this->text.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, objType);
+	NODE_PRINT(printer, objName);
+	NODE_PRINT(printer, subName);
+	NODE_PRINT(printer, text);
+	NODE_PRINT(printer, str);
+
+	return "CommentOnNode";
 }
 
 bool CommentOnNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -1470,31 +1478,28 @@ void CommentOnNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 //----------------------
 
 
-void CreateAlterFunctionNode::print(string& text) const
+string CreateAlterFunctionNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateAlterFunctionNode\n"
-		"  name: '%s'  create: %d  alter: %d\n",
-		name.c_str(), create, alter);
+	DdlNode::internalPrint(printer);
 
-	if (external)
-	{
-		string s;
-		s.printf("  external -> name: '%s'  engine: '%s'\n",
-			external->name.c_str(), external->engine.c_str());
-		text += s;
-	}
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, alter);
+	NODE_PRINT(printer, external);
+	NODE_PRINT(printer, deterministic);
+	NODE_PRINT(printer, parameters);
+	NODE_PRINT(printer, returnType);
+	NODE_PRINT(printer, localDeclList);
+	NODE_PRINT(printer, source);
+	NODE_PRINT(printer, body);
+	NODE_PRINT(printer, compiled);
+	NODE_PRINT(printer, invalid);
+	NODE_PRINT(printer, package);
+	NODE_PRINT(printer, packageOwner);
+	NODE_PRINT(printer, privateScope);
+	NODE_PRINT(printer, udfReturnPos);
 
-	text += "  Parameters:\n";
-
-	for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
-	{
-		const ParameterClause* parameter = parameters[i];
-
-		string s;
-		parameter->print(s);
-		text += "    " + s + "\n";
-	}
+	return "CreateAlterFunctionNode";
 }
 
 DdlNode* CreateAlterFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -2197,14 +2202,14 @@ void CreateAlterFunctionNode::collectParamComments(thread_db* tdbb, jrd_tra* tra
 //----------------------
 
 
-void AlterExternalFunctionNode::print(string& text) const
+string AlterExternalFunctionNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"AlterExternalFunctionNode\n"
-		"  name: '%s'\n"
-		"  entrypoint: '%s'\n"
-		"  module: '%s'\n",
-		name.c_str(), clauses.name.c_str(), clauses.udfModule.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, clauses);
+
+	return "AlterExternalFunctionNode";
 }
 
 bool AlterExternalFunctionNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -2318,12 +2323,15 @@ void DropFunctionNode::dropArguments(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 }
 
-void DropFunctionNode::print(string& text) const
+string DropFunctionNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropFunctionNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, silent);
+	NODE_PRINT(printer, package);
+
+	return "DropFunctionNode";
 }
 
 DdlNode* DropFunctionNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -2415,42 +2423,26 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CreateAlterProcedureNode::print(string& text) const
+string CreateAlterProcedureNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateAlterProcedureNode\n"
-		"  name: '%s'  create: %d  alter: %d\n",
-		name.c_str(), create, alter);
+	DdlNode::internalPrint(printer);
 
-	if (external)
-	{
-		string s;
-		s.printf("  external -> name: '%s'  engine: '%s'\n",
-			external->name.c_str(), external->engine.c_str());
-		text += s;
-	}
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, alter);
+	NODE_PRINT(printer, external);
+	NODE_PRINT(printer, parameters);
+	NODE_PRINT(printer, returns);
+	NODE_PRINT(printer, source);
+	NODE_PRINT(printer, localDeclList);
+	NODE_PRINT(printer, body);
+	NODE_PRINT(printer, compiled);
+	NODE_PRINT(printer, invalid);
+	NODE_PRINT(printer, package);
+	NODE_PRINT(printer, packageOwner);
+	NODE_PRINT(printer, privateScope);
 
-	text += "  Parameters:\n";
-
-	for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
-	{
-		const ParameterClause* parameter = parameters[i];
-
-		string s;
-		parameter->print(s);
-		text += "    " + s + "\n";
-	}
-
-	text += "  Returns:\n";
-
-	for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
-	{
-		const ParameterClause* parameter = returns[i];
-
-		string s;
-		parameter->print(s);
-		text += "    " + s + "\n";
-	}
+	return "CreateAlterProcedureNode";
 }
 
 DdlNode* CreateAlterProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -3091,12 +3083,15 @@ void DropProcedureNode::dropParameters(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 }
 
-void DropProcedureNode::print(string& text) const
+string DropProcedureNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropProcedureNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, silent);
+	NODE_PRINT(printer, package);
+
+	return "DropProcedureNode";
 }
 
 DdlNode* DropProcedureNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -3332,22 +3327,18 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CreateAlterTriggerNode::print(string& text) const
+string CreateAlterTriggerNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateAlterTriggerNode\n"
-		"  name: '%s'  create: %d  alter: %d  relationName: '%s'\n"
-		"  type: %d, %d  active: %d, %d  position: %d, %d\n",
-		name.c_str(), create, alter, relationName.c_str(), type.specified, type.value,
-		active.specified, active.value, position.specified, position.value);
+	DdlNode::internalPrint(printer);
 
-	if (external)
-	{
-		string s;
-		s.printf("  external -> name: '%s'  engine: '%s'\n",
-			external->name.c_str(), external->engine.c_str());
-		text += s;
-	}
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, alter);
+	NODE_PRINT(printer, localDeclList);
+	NODE_PRINT(printer, body);
+	NODE_PRINT(printer, compiled);
+	NODE_PRINT(printer, invalid);
+
+	return "CreateAlterTriggerNode";
 }
 
 DdlNode* CreateAlterTriggerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -3548,12 +3539,14 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 //----------------------
 
 
-void DropTriggerNode::print(string& text) const
+string DropTriggerNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropTriggerNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, silent);
+
+	return "DropTriggerNode";
 }
 
 DdlNode* DropTriggerNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -3684,18 +3677,21 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 //----------------------
 
 
-void CreateCollationNode::print(string& text) const
+string CreateCollationNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateCollationNode\n"
-		"  name: '%s'\n"
-		"  forCharSet: '%s'\n"
-		"  fromName: '%s'\n"
-		"  fromExternal: '%s'\n"
-		"  attributesOn: %x\n"
-		"  attributesOff: %x\n",
-		name.c_str(), forCharSet.c_str(), fromName.c_str(), fromExternal.c_str(),
-		attributesOn, attributesOff);
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, forCharSet);
+	NODE_PRINT(printer, fromName);
+	NODE_PRINT(printer, fromExternal);
+	NODE_PRINT(printer, specificAttributes);
+	NODE_PRINT(printer, attributesOn);
+	NODE_PRINT(printer, attributesOff);
+	NODE_PRINT(printer, forCharSetId);
+	NODE_PRINT(printer, fromCollationId);
+
+	return "CreateCollationNode";
 }
 
 bool CreateCollationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -3908,12 +3904,13 @@ DdlNode* CreateCollationNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 //----------------------
 
 
-void DropCollationNode::print(string& text) const
+string DropCollationNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropCollationNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+
+	return "DropCollationNode";
 }
 
 bool DropCollationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -4061,14 +4058,15 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 //----------------------
 
 
-void CreateDomainNode::print(string& text) const
+string CreateDomainNode::internalPrint(NodePrinter& printer) const
 {
-	string nameTypeStr;
-	nameType->print(nameTypeStr);
+	DdlNode::internalPrint(printer);
 
-	text =
-		"CreateDomainNode\n"
-		"  " + nameTypeStr + "\n";
+	NODE_PRINT(printer, nameType);
+	NODE_PRINT(printer, notNull);
+	NODE_PRINT(printer, check);
+
+	return "CreateDomainNode";
 }
 
 bool CreateDomainNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -4615,11 +4613,20 @@ void AlterDomainNode::modifyLocalFieldIndex(thread_db* tdbb, jrd_tra* transactio
 	END_FOR
 }
 
-void AlterDomainNode::print(string& text) const
+string AlterDomainNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"AlterDomainNode\n"
-		"  %s\n", name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, dropConstraint);
+	NODE_PRINT(printer, dropDefault);
+	NODE_PRINT(printer, setConstraint);
+	NODE_PRINT(printer, setDefault);
+	NODE_PRINT(printer, renameTo);
+	NODE_PRINT(printer, type);
+	NODE_PRINT(printer, notNullFlag);
+
+	return "AlterDomainNode";
 }
 
 bool AlterDomainNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -4960,12 +4967,13 @@ bool DropDomainNode::deleteDimensionRecords(thread_db* tdbb, jrd_tra* transactio
 	return found;
 }
 
-void DropDomainNode::print(string& text) const
+string DropDomainNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropDomainNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+
+	return "DropDomainNode";
 }
 
 bool DropDomainNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -5085,13 +5093,16 @@ void DropDomainNode::check(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void CreateAlterExceptionNode::print(string& text) const
+string CreateAlterExceptionNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateAlterExceptionNode\n"
-		"  name: '%s'  create: %d  alter: %d\n"
-		"  message: '%s'\n",
-		name.c_str(), create, alter, message.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, message);
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, alter);
+
+	return "CreateAlterExceptionNode";
 }
 
 bool CreateAlterExceptionNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -5221,12 +5232,14 @@ bool CreateAlterExceptionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 //----------------------
 
 
-void DropExceptionNode::print(string& text) const
+string DropExceptionNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropExceptionNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, silent);
+
+	return "DropExceptionNode";
 }
 
 bool DropExceptionNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -5285,12 +5298,19 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 //----------------------
 
 
-void CreateAlterSequenceNode::print(string& text) const
+string CreateAlterSequenceNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateAlterSequenceNode\n"
-		"  name: %s\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, alter);
+	NODE_PRINT(printer, legacy);
+	NODE_PRINT(printer, restartSpecified);
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, value);
+	NODE_PRINT(printer, step);
+
+	return "CreateAlterSequenceNode";
 }
 
 bool CreateAlterSequenceNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -5541,12 +5561,14 @@ SSHORT CreateAlterSequenceNode::store(thread_db* tdbb, jrd_tra* transaction, con
 //----------------------
 
 
-void DropSequenceNode::print(string& text) const
+string DropSequenceNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropSequenceNode\n"
-		"  name: %s\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, silent);
+
+	return "DropSequenceNode";
 }
 
 bool DropSequenceNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -6983,12 +7005,14 @@ void RelationNode::stuffTriggerFiringCondition(const Constraint& constraint, Blr
 //----------------------
 
 
-void CreateRelationNode::print(string& text) const
+string CreateRelationNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateRelationNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	RelationNode::internalPrint(printer);
+
+	NODE_PRINT(printer, externalFile);
+	NODE_PRINT(printer, relationType);
+
+	return "CreateRelationNode";
 }
 
 bool CreateRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -7113,12 +7137,10 @@ const ObjectsArray<MetaName>* CreateRelationNode::findPkColumns()
 //----------------------
 
 
-void AlterRelationNode::print(string& text) const
+string AlterRelationNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"AlterRelationNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	RelationNode::internalPrint(printer);
+	return "AlterRelationNode";
 }
 
 bool AlterRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -7815,12 +7837,15 @@ void DropRelationNode::deleteGlobalField(thread_db* tdbb, jrd_tra* transaction,
 	END_FOR
 }
 
-void DropRelationNode::print(string& text) const
+string DropRelationNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropRelationNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, view);
+	NODE_PRINT(printer, silent);
+
+	return "DropRelationNode";
 }
 
 bool DropRelationNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -8054,12 +8079,18 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 //----------------------
 
 
-void CreateAlterViewNode::print(string& text) const
+string CreateAlterViewNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateAlterViewNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	RelationNode::internalPrint(printer);
+
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, alter);
+	NODE_PRINT(printer, viewFields);
+	NODE_PRINT(printer, selectExpr);
+	NODE_PRINT(printer, source);
+	NODE_PRINT(printer, withCheckOption);
+
+	return "CreateAlterViewNode";
 }
 
 DdlNode* CreateAlterViewNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -9193,12 +9224,18 @@ void CreateIndexNode::store(thread_db* tdbb, jrd_tra* transaction, MetaName& nam
 }
 
 
-void CreateIndexNode::print(string& text) const
+string CreateIndexNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateIndexNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, unique);
+	NODE_PRINT(printer, descending);
+	NODE_PRINT(printer, relation);
+	NODE_PRINT(printer, columns);
+	NODE_PRINT(printer, computed);
+
+	return "CreateIndexNode";
 }
 
 bool CreateIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9260,13 +9297,14 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 //----------------------
 
 
-void AlterIndexNode::print(string& text) const
+string AlterIndexNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"AlterIndexNode\n"
-		"  name: '%s'\n"
-		"  active: '%d'\n",
-		name.c_str(), active);
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, active);
+
+	return "AlterIndexNode";
 }
 
 bool AlterIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9318,12 +9356,13 @@ void AlterIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 //----------------------
 
 
-void SetStatisticsNode::print(string& text) const
+string SetStatisticsNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"SetStatisticsNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+
+	return "SetStatisticsNode";
 }
 
 bool SetStatisticsNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9394,12 +9433,13 @@ bool DropIndexNode::deleteSegmentRecords(thread_db* tdbb, jrd_tra* transaction,
 	return found;
 }
 
-void DropIndexNode::print(string& text) const
+string DropIndexNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropIndexNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+
+	return "DropIndexNode";
 }
 
 bool DropIndexNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9455,12 +9495,17 @@ void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 //----------------------
 
 
-void CreateFilterNode::print(string& text) const
+string CreateFilterNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateFilterNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, inputFilter);
+	NODE_PRINT(printer, outputFilter);
+	NODE_PRINT(printer, entryPoint);
+	NODE_PRINT(printer, moduleName);
+
+	return "CreateFilterNode";
 }
 
 bool CreateFilterNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9529,12 +9574,13 @@ void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 //----------------------
 
 
-void DropFilterNode::print(string& text) const
+string DropFilterNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropFilterNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+
+	return "DropFilterNode";
 }
 
 bool DropFilterNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9573,12 +9619,17 @@ void DropFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch
 //----------------------
 
 
-void CreateShadowNode::print(string& text) const
+string CreateShadowNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateShadowNode\n"
-		"  number: '%d'\n",
-		number);
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, number);
+	NODE_PRINT(printer, manual);
+	NODE_PRINT(printer, conditional);
+	NODE_PRINT(printer, firstLength);
+	NODE_PRINT(printer, files);
+
+	return "CreateShadowNode";
 }
 
 bool CreateShadowNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9641,12 +9692,13 @@ void CreateShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 //----------------------
 
 
-void DropShadowNode::print(string& text) const
+string DropShadowNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropShadowNode\n"
-		"  number: '%d'\n",
-		number);
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, number);
+
+	return "DropShadowNode";
 }
 
 bool DropShadowNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9679,12 +9731,13 @@ void DropShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch
 //----------------------
 
 
-void CreateRoleNode::print(string& text) const
+string CreateRoleNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateRoleNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+
+	return "CreateRoleNode";
 }
 
 bool CreateRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -9788,25 +9841,22 @@ bool CreateRoleNode::isItUserName(thread_db* tdbb, jrd_tra* transaction)
 //----------------------
 
 
-void MappingNode::print(string& text) const
+string MappingNode::internalPrint(NodePrinter& printer) const
 {
-	const char* null = "<Null>";
+	DdlNode::internalPrint(printer);
 
-	text.printf(
-		"MappingNode\n"
-		"  op: '%s'\n"
-		"  global: '%d'\n"
-		"  mode: '%c'\n"
-		"  plugin: '%s'\n"
-		"  db: '%s'\n"
-		"  fromType: '%s'\n"
-		"  from: '%s'\n"
-		"  role: '%d'\n"
-		"  to: '%s'\n",
-		op, global, mode,
-		plugin ? plugin->c_str() : null, db ? db->c_str() : null,
-		fromType ? fromType->c_str() : null, from ? from->getString().c_str() : null,
-		role, to ? to->c_str() : null);
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, plugin);
+	NODE_PRINT(printer, db);
+	NODE_PRINT(printer, fromType);
+	NODE_PRINT(printer, from);
+	NODE_PRINT(printer, to);
+	NODE_PRINT(printer, op);
+	NODE_PRINT(printer, mode);
+	NODE_PRINT(printer, global);
+	NODE_PRINT(printer, role);
+
+	return "MappingNode";
 }
 
 void MappingNode::validateAdmin()
@@ -10182,12 +10232,13 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 //----------------------
 
 
-void DropRoleNode::print(string& text) const
+string DropRoleNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropRoleNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+
+	return "DropRoleNode";
 }
 
 bool DropRoleNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -10275,12 +10326,23 @@ Firebird::MetaName UserNode::upper(const Firebird::MetaName& str)
 //----------------------
 
 
-void CreateAlterUserNode::print(string& text) const
+string CreateAlterUserNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"CreateAlterUserNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	UserNode::internalPrint(printer);
+
+	//// FIXME-PRINT: NODE_PRINT(printer, properties);
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, password);
+	NODE_PRINT(printer, firstName);
+	NODE_PRINT(printer, middleName);
+	NODE_PRINT(printer, lastName);
+	NODE_PRINT(printer, plugin);
+	NODE_PRINT(printer, comment);
+	NODE_PRINT(printer, adminRole);
+	NODE_PRINT(printer, active);
+	NODE_PRINT(printer, mode);
+
+	return "CreateAlterUserNode";
 }
 
 
@@ -10422,12 +10484,14 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 //----------------------
 
 
-void DropUserNode::print(string& text) const
+string DropUserNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"DropUserNode\n"
-		"  name: '%s'\n",
-		name.c_str());
+	UserNode::internalPrint(printer);
+
+	NODE_PRINT(printer, name);
+	NODE_PRINT(printer, plugin);
+
+	return "DropUserNode";
 }
 
 bool DropUserNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -10470,12 +10534,20 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 //----------------------
 
 
-void GrantRevokeNode::print(string& text) const
+string GrantRevokeNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"GrantRevokeNode\n"
-		"  isGrant: '%d'\n",
-		isGrant);
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, isGrant);
+	NODE_PRINT(printer, privileges);
+	NODE_PRINT(printer, roles);
+	NODE_PRINT(printer, object);
+	NODE_PRINT(printer, users);
+	NODE_PRINT(printer, grantAdminOption);
+	NODE_PRINT(printer, grantor);
+	NODE_PRINT(printer, isDdl);
+
+	return "GrantRevokeNode";
 }
 
 bool GrantRevokeNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -11310,10 +11382,21 @@ void GrantRevokeNode::setFieldClassName(thread_db* tdbb, jrd_tra* transaction,
 //----------------------
 
 
-void AlterDatabaseNode::print(string& text) const
+string AlterDatabaseNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf(
-		"AlterDatabaseNode\n");
+	DdlNode::internalPrint(printer);
+
+	NODE_PRINT(printer, create);
+	NODE_PRINT(printer, createLength);
+	NODE_PRINT(printer, linger);
+	NODE_PRINT(printer, clauses);
+	NODE_PRINT(printer, differenceFile);
+	NODE_PRINT(printer, setDefaultCharSet);
+	NODE_PRINT(printer, setDefaultCollation);
+	NODE_PRINT(printer, files);
+	NODE_PRINT(printer, cryptPlugin);
+
+	return "AlterDatabaseNode";
 }
 
 bool AlterDatabaseNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)

@@ -30,6 +30,7 @@
 #include "../dsql/BlrDebugWriter.h"
 #include "../dsql/Nodes.h"
 #include "../dsql/ExprNodes.h"
+#include "../dsql/NodePrinter.h"
 #include "../common/classes/array.h"
 #include "../common/classes/ByteChunk.h"
 #include "../common/classes/Nullable.h"
@@ -43,33 +44,55 @@ class RelationSourceNode;
 class ValueListNode;
 class SecDbContext;
 
-struct BoolSourceClause
+class BoolSourceClause : public Printable
 {
+public:
 	explicit BoolSourceClause(MemoryPool& p)
 		: value(NULL),
 		  source(p)
 	{
 	}
 
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		NODE_PRINT(printer, value);
+		NODE_PRINT(printer, source);
+
+		return "BoolSourceClause";
+	}
+
+public:
 	NestConst<BoolExprNode> value;
 	Firebird::string source;
 };
 
 
-struct ValueSourceClause
+class ValueSourceClause : public Printable
 {
+public:
 	explicit ValueSourceClause(MemoryPool& p)
 		: value(NULL),
 		  source(p)
 	{
 	}
 
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		NODE_PRINT(printer, value);
+		NODE_PRINT(printer, source);
+
+		return "ValueSourceClause";
+	}
+
+public:
 	NestConst<ValueExprNode> value;
 	Firebird::string source;
 };
 
 
-class DbFileClause
+class DbFileClause : public Printable
 {
 public:
 	DbFileClause(MemoryPool& p, const DbFileClause& o)
@@ -87,13 +110,23 @@ public:
 	}
 
 public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		NODE_PRINT(printer, name);
+		NODE_PRINT(printer, start);
+		NODE_PRINT(printer, length);
+
+		return "DbFileClause";
+	}
+
+public:
 	Firebird::string name;	// File name
 	SLONG start;			// Starting page
 	SLONG length;			// File length in pages
 };
 
 
-class ExternalClause
+class ExternalClause : public Printable
 {
 public:
 	ExternalClause(MemoryPool& p, const ExternalClause& o)
@@ -111,20 +144,30 @@ public:
 	}
 
 public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		NODE_PRINT(printer, name);
+		NODE_PRINT(printer, engine);
+		NODE_PRINT(printer, udfModule);
+
+		return "Node";
+	}
+
+public:
 	Firebird::string name;
 	Firebird::MetaName engine;
 	Firebird::string udfModule;
 };
 
 
-class ParameterClause
+class ParameterClause : public Printable
 {
 public:
 	ParameterClause(MemoryPool& pool, dsql_fld* field, const Firebird::MetaName& aCollate,
 		ValueSourceClause* aDefaultClause = NULL, ValueExprNode* aParameterExpr = NULL);
 
 public:
-	void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 
 public:
 	Firebird::MetaName name;
@@ -160,9 +203,14 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
 	{
-		text.printf("RecreateNode\n");
+		Node::internalPrint(printer);
+
+		NODE_PRINT(printer, createNode);
+		NODE_PRINT(printer, dropNode);
+
+		return "RecreateNode";
 	}
 
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction)
@@ -212,7 +260,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -244,7 +292,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -292,7 +340,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -353,7 +401,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -385,7 +433,7 @@ public:
 		const Firebird::MetaName& functionName, const Firebird::MetaName& packageName);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -430,7 +478,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -488,7 +536,7 @@ public:
 		const Firebird::MetaName& procedureName, const Firebird::MetaName& packageName);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -573,7 +621,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -647,7 +695,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -687,7 +735,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -747,7 +795,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -774,7 +822,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -813,7 +861,7 @@ public:
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName,
 		const Firebird::MetaName& newFieldName);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -851,7 +899,7 @@ public:
 		const Firebird::MetaName& name);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -883,7 +931,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -920,7 +968,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -972,7 +1020,7 @@ public:
 		fb_sysflag sysFlag, SINT64 value, SLONG step);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1015,7 +1063,7 @@ public:
 		const Firebird::MetaName& name);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1324,6 +1372,17 @@ public:
 		const Firebird::MetaName& relationName, const Firebird::MetaName& fieldName);
 
 protected:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		DdlNode::internalPrint(printer);
+
+		//// FIXME-PRINT: NODE_PRINT(printer, dsqlNode);
+		NODE_PRINT(printer, name);
+		//// FIXME-PRINT: NODE_PRINT(printer, clauses);
+
+		return "RelationNode";
+	}
+
 	void defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		AddColumnClause* clause, SSHORT position,
 		const Firebird::ObjectsArray<Firebird::MetaName>* pkcols);
@@ -1369,7 +1428,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1397,7 +1456,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1428,7 +1487,7 @@ public:
 		const Firebird::MetaName& globalName);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1465,7 +1524,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual DdlNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
@@ -1548,7 +1607,7 @@ public:
 		const Definition& definition, Firebird::MetaName* referredIndexName = NULL);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1579,7 +1638,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1605,7 +1664,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1634,7 +1693,7 @@ public:
 		const Firebird::MetaName& name);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1652,8 +1711,9 @@ public:
 class CreateFilterNode : public DdlNode
 {
 public:
-	struct NameNumber
+	class NameNumber : public Printable
 	{
+	public:
 		NameNumber(MemoryPool& p, const Firebird::MetaName& aName)
 			: name(p, aName),
 			  number(0)
@@ -1666,6 +1726,16 @@ public:
 		{
 		}
 
+	public:
+		virtual Firebird::string internalPrint(NodePrinter& printer) const
+		{
+			NODE_PRINT(printer, name);
+			NODE_PRINT(printer, number);
+
+			return "NameNumber";
+		}
+
+	public:
 		Firebird::MetaName name;
 		SSHORT number;
 	};
@@ -1682,7 +1752,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1711,7 +1781,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1739,7 +1809,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1768,7 +1838,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1793,7 +1863,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1834,7 +1904,7 @@ public:
 	void validateAdmin();
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1874,7 +1944,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1920,7 +1990,7 @@ public:
 	{ }
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -1983,7 +2053,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -2020,7 +2090,7 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 
@@ -2133,7 +2203,7 @@ public:
 		return this;
 	}
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual bool checkPermission(thread_db* tdbb, jrd_tra* transaction);
 	virtual void execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction);
 

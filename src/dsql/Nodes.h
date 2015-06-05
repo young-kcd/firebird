@@ -34,6 +34,8 @@ namespace Jrd {
 class AggregateSort;
 class CompilerScratch;
 class Cursor;
+class Node;
+class NodePrinter;
 class ExprNode;
 class OptimizerBlk;
 class OptimizerRetrieval;
@@ -68,6 +70,20 @@ typedef Firebird::SortedArray<StreamType> SortedStreamList;
 typedef Firebird::Array<NestConst<ValueExprNode> > NestValueArray;
 
 
+class Printable
+{
+public:
+	virtual ~Printable()
+	{
+	}
+
+public:
+	void print(NodePrinter& printer) const;
+
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
+};
+
+
 template <typename T>
 class RegisterNode
 {
@@ -89,7 +105,7 @@ public:
 };
 
 
-class Node : public Firebird::PermanentStorage
+class Node : public Firebird::PermanentStorage, public Printable
 {
 public:
 	explicit Node(MemoryPool& pool)
@@ -139,7 +155,7 @@ public:
 		doDsqlPass(dsqlScratch, target, node);
 	}
 
-	virtual void print(Firebird::string& text) const = 0;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual Node* dsqlPass(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
@@ -506,6 +522,8 @@ public:
 		*node = (*node)->pass2(tdbb, csb);
 	}
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
+
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor)
 	{
 		bool ret = false;
@@ -619,7 +637,6 @@ public:
 		return streams.exist(stream);
 	}
 
-	virtual void print(Firebird::string& text) const;
 	virtual bool dsqlMatch(const ExprNode* other, bool ignoreMapCast) const;
 
 	virtual ExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -758,6 +775,9 @@ public:
 	{
 		nodDesc.clear();
 	}
+
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual ValueExprNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
@@ -901,7 +921,7 @@ public:
 
 	static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp);
 
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 
 	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
 	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
@@ -1030,6 +1050,8 @@ public:
 		stream = value;
 	}
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
+
 	virtual RecordSourceNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
 		ExprNode::dsqlPass(dsqlScratch);
@@ -1104,11 +1126,6 @@ public:
 	{
 	}
 
-	virtual void print(Firebird::string& /*text*/) const
-	{
-		fb_assert(false);
-	}
-
 	virtual void genBlr(DsqlCompilerScratch* /*dsqlScratch*/)
 	{
 		fb_assert(false);
@@ -1159,6 +1176,8 @@ public:
 		items.clear();
 		resetChildNodes();
 	}
+
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 
 	virtual ValueListNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
@@ -1230,6 +1249,8 @@ public:
 		resetChildNodes();
 		return this;
 	}
+
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 
 	virtual RecSourceListNode* dsqlPass(DsqlCompilerScratch* dsqlScratch);
 
@@ -1491,7 +1512,7 @@ public:
 	static StmtNode* make(MemoryPool& pool, DsqlCompilerScratch* dsqlScratch, StmtNode* node);
 
 public:
-	virtual void print(Firebird::string& text) const;
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
 private:
@@ -1507,7 +1528,7 @@ struct ScaledNumber
 };
 
 
-class RowsClause : public Firebird::PermanentStorage
+class RowsClause : public Firebird::PermanentStorage, public Printable
 {
 public:
 	explicit RowsClause(MemoryPool& pool)
@@ -1518,12 +1539,15 @@ public:
 	}
 
 public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+
+public:
 	NestConst<ValueExprNode> length;
 	NestConst<ValueExprNode> skip;
 };
 
 
-class GeneratorItem
+class GeneratorItem : public Printable
 {
 public:
 	GeneratorItem(Firebird::MemoryPool& pool, const Firebird::MetaName& name)
@@ -1538,6 +1562,10 @@ public:
 		return *this;
 	}
 
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
+
+public:
 	SLONG id;
 	Firebird::MetaName name;
 	Firebird::MetaName secName;

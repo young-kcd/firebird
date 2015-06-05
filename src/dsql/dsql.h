@@ -230,13 +230,6 @@ public:
 	}
 
 public:
-	virtual void print(Firebird::string& text) const
-	{
-		text.printf("typeOfTable: '%s'  typeOfName: '%s'  notNull: %d  fieldSource: '%s'",
-			typeOfTable.c_str(), typeOfName.c_str(), notNull, fieldSource.c_str());
-	}
-
-public:
 	USHORT dtype;
 	FLD_LENGTH length;
 	SSHORT scale;

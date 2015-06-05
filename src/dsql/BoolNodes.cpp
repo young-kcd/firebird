@@ -153,10 +153,15 @@ DmlNode* BinaryBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratc
 	return node;
 }
 
-void BinaryBoolNode::print(string& text) const
+string BinaryBoolNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("BinaryBoolNode (%d)", blrOp);
-	BoolExprNode::print(text);
+	BoolExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, arg1);
+	NODE_PRINT(printer, arg2);
+
+	return "BinaryBoolNode";
 }
 
 BoolExprNode* BinaryBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -376,10 +381,18 @@ DmlNode* ComparativeBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerS
 	return node;
 }
 
-void ComparativeBoolNode::print(string& text) const
+string ComparativeBoolNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("ComparativeBoolNode (%d)", blrOp);
-	BoolExprNode::print(text);
+	BoolExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, dsqlFlag);
+	NODE_PRINT(printer, arg1);
+	NODE_PRINT(printer, arg2);
+	NODE_PRINT(printer, arg3);
+	NODE_PRINT(printer, dsqlSpecialArg);
+
+	return "ComparativeBoolNode";
 }
 
 BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -1348,10 +1361,14 @@ DmlNode* MissingBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScrat
 	return node;
 }
 
-void MissingBoolNode::print(string& text) const
+string MissingBoolNode::internalPrint(NodePrinter& printer) const
 {
-	text = "MissingBoolNode";
-	BoolExprNode::print(text);
+	BoolExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, dsqlUnknown);
+	NODE_PRINT(printer, arg);
+
+	return "MissingBoolNode";
 }
 
 BoolExprNode* MissingBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -1438,10 +1455,13 @@ DmlNode* NotBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void NotBoolNode::print(string& text) const
+string NotBoolNode::internalPrint(NodePrinter& printer) const
 {
-	text = "NotBoolNode";
-	BoolExprNode::print(text);
+	BoolExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, arg);
+
+	return "NotBoolNode";
 }
 
 BoolExprNode* NotBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
@@ -1635,10 +1655,17 @@ DmlNode* RseBoolNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* 
 	return node;
 }
 
-void RseBoolNode::print(string& text) const
+string RseBoolNode::internalPrint(NodePrinter& printer) const
 {
-	text.printf("RseBoolNode (%d)", blrOp);
-	BoolExprNode::print(text);
+	BoolExprNode::internalPrint(printer);
+
+	NODE_PRINT(printer, blrOp);
+	NODE_PRINT(printer, ownSavepoint);
+	NODE_PRINT(printer, dsqlRse);
+	NODE_PRINT(printer, rse);
+	NODE_PRINT(printer, rsb);
+
+	return "RseBoolNode";
 }
 
 BoolExprNode* RseBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)

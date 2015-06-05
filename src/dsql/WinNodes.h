@@ -25,6 +25,7 @@
 
 #include "../jrd/blr.h"
 #include "../dsql/Nodes.h"
+#include "../dsql/NodePrinter.h"
 
 namespace Jrd {
 
@@ -35,6 +36,7 @@ class DenseRankWinNode : public WinFuncNode
 public:
 	explicit DenseRankWinNode(MemoryPool& pool);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -53,6 +55,7 @@ class RankWinNode : public WinFuncNode
 public:
 	explicit RankWinNode(MemoryPool& pool);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -75,6 +78,7 @@ class RowNumberWinNode : public WinFuncNode
 public:
 	explicit RowNumberWinNode(MemoryPool& pool);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -100,6 +104,7 @@ class FirstValueWinNode : public WinFuncNode
 public:
 	explicit FirstValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -127,6 +132,7 @@ class LastValueWinNode : public WinFuncNode
 public:
 	explicit LastValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -162,6 +168,7 @@ public:
 	explicit NthValueWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL,
 		ValueExprNode* aRow = NULL, ValueExprNode* aFrom = NULL);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
@@ -194,6 +201,7 @@ public:
 	explicit LagLeadWinNode(MemoryPool& pool, const AggInfo& aAggInfo, int aDirection,
 		ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL, ValueExprNode* aOutExpr = NULL);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const = 0;
 	virtual void make(DsqlCompilerScratch* dsqlScratch, dsc* desc);
 	virtual void getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc);
 
@@ -224,6 +232,12 @@ public:
 	explicit LagWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL,
 		ValueExprNode* aOutExpr = NULL);
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		LagLeadWinNode::internalPrint(printer);
+		return "LagWinNode";
+	}
+
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 
 protected:
@@ -236,6 +250,12 @@ class LeadWinNode : public LagLeadWinNode
 public:
 	explicit LeadWinNode(MemoryPool& pool, ValueExprNode* aArg = NULL, ValueExprNode* aRows = NULL,
 		ValueExprNode* aOutExpr = NULL);
+
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		LagLeadWinNode::internalPrint(printer);
+		return "LeadWinNode";
+	}
 
 	virtual ValueExprNode* copy(thread_db* tdbb, NodeCopier& copier) const;
 

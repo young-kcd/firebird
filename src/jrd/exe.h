@@ -94,7 +94,7 @@ const int rse_nulls_last	= 2;
 
 // Aggregate Sort Block (for DISTINCT aggregates)
 
-class AggregateSort : protected Firebird::PermanentStorage
+class AggregateSort : protected Firebird::PermanentStorage, public Printable
 {
 public:
 	explicit AggregateSort(Firebird::MemoryPool& p)
@@ -107,6 +107,13 @@ public:
 		desc.clear();
 	}
 
+public:
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		return "AggregateSort";
+	}
+
+public:
 	dsc desc;
 	ULONG length;
 	bool intl;
@@ -331,8 +338,9 @@ struct FieldInfo
 	NestConst<BoolExprNode> validationExpr;
 };
 
-struct ItemInfo
+class ItemInfo : public Printable
 {
+public:
 	ItemInfo(MemoryPool& p, const ItemInfo& o)
 		: name(p, o.name),
 		  field(p, o.field),
@@ -360,11 +368,26 @@ struct ItemInfo
 	{
 	}
 
+public:
 	bool isSpecial() const
 	{
 		return !nullable || fullDomain;
 	}
 
+	virtual Firebird::string internalPrint(NodePrinter& printer) const
+	{
+		/*** FIXME-PRINT:
+		NODE_PRINT(printer, name);
+		NODE_PRINT(printer, field);
+		NODE_PRINT(printer, nullable);
+		NODE_PRINT(printer, explicitCollation);
+		NODE_PRINT(printer, fullDomain);
+		***/
+
+		return "ItemInfo";
+	}
+
+public:
 	Firebird::MetaName name;
 	Firebird::MetaNamePair field;
 	bool nullable;

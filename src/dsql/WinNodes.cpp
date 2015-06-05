@@ -55,6 +55,12 @@ DenseRankWinNode::DenseRankWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
+string DenseRankWinNode::internalPrint(NodePrinter& printer) const
+{
+	WinFuncNode::internalPrint(printer);
+	return "DenseRankWinNode";
+}
+
 void DenseRankWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	if (dsqlScratch->clientDialect == 1)
@@ -110,6 +116,15 @@ RankWinNode::RankWinNode(MemoryPool& pool)
 	fb_assert(dsqlChildNodes.getCount() == 1 && jrdChildNodes.getCount() == 1);
 	dsqlChildNodes.clear();
 	jrdChildNodes.clear();
+}
+
+string RankWinNode::internalPrint(NodePrinter& printer) const
+{
+	WinFuncNode::internalPrint(printer);
+
+	NODE_PRINT(printer, tempImpure);
+
+	return "RankWinNode";
 }
 
 void RankWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -187,6 +202,12 @@ RowNumberWinNode::RowNumberWinNode(MemoryPool& pool)
 	jrdChildNodes.clear();
 }
 
+string RowNumberWinNode::internalPrint(NodePrinter& printer) const
+{
+	WinFuncNode::internalPrint(printer);
+	return "RowNumberWinNode";
+}
+
 void RowNumberWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	if (dsqlScratch->clientDialect == 1)
@@ -249,6 +270,12 @@ FirstValueWinNode::FirstValueWinNode(MemoryPool& pool, ValueExprNode* aArg)
 void FirstValueWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /*count*/)
 {
 	arg = PAR_parse_value(tdbb, csb);
+}
+
+string FirstValueWinNode::internalPrint(NodePrinter& printer) const
+{
+	WinFuncNode::internalPrint(printer);
+	return "FirstValueWinNode";
 }
 
 void FirstValueWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -325,6 +352,12 @@ void LastValueWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned
 	arg = PAR_parse_value(tdbb, csb);
 }
 
+string LastValueWinNode::internalPrint(NodePrinter& printer) const
+{
+	WinFuncNode::internalPrint(printer);
+	return "LastValueWinNode";
+}
+
 void LastValueWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
 {
 	MAKE_desc(dsqlScratch, desc, arg);
@@ -395,6 +428,16 @@ void NthValueWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned 
 	arg = PAR_parse_value(tdbb, csb);
 	row = PAR_parse_value(tdbb, csb);
 	from = PAR_parse_value(tdbb, csb);
+}
+
+string NthValueWinNode::internalPrint(NodePrinter& printer) const
+{
+	WinFuncNode::internalPrint(printer);
+
+	NODE_PRINT(printer, row);
+	NODE_PRINT(printer, from);
+
+	return "NthValueWinNode";
 }
 
 void NthValueWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
@@ -506,6 +549,17 @@ void LagLeadWinNode::parseArgs(thread_db* tdbb, CompilerScratch* csb, unsigned /
 	arg = PAR_parse_value(tdbb, csb);
 	rows = PAR_parse_value(tdbb, csb);
 	outExpr = PAR_parse_value(tdbb, csb);
+}
+
+string LagLeadWinNode::internalPrint(NodePrinter& printer) const
+{
+	WinFuncNode::internalPrint(printer);
+
+	NODE_PRINT(printer, direction);
+	NODE_PRINT(printer, rows);
+	NODE_PRINT(printer, outExpr);
+
+	return "LagLeadWinNode";
 }
 
 void LagLeadWinNode::make(DsqlCompilerScratch* dsqlScratch, dsc* desc)
