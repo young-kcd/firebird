@@ -1,3 +1,29 @@
+ 2015-06-05 18:26  asfernandes 
+   M src/dsql/AggNodes.cpp
+   M src/dsql/AggNodes.h
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   A src/dsql/NodePrinter.h
+   M src/dsql/Nodes.h
+   M src/dsql/PackageNodes.epp
+   M src/dsql/PackageNodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/dsql/StmtNodes.h
+   M src/dsql/WinNodes.cpp
+   M src/dsql/WinNodes.h
+   M src/dsql/dsql.h
+   M src/jrd/ExtEngineManager.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/RecordSourceNodes.h
+   M src/jrd/evl_proto.h
+   M src/jrd/exe.h
+   M src/jrd/par_proto.h
+Add code to print the parser/executable tree to XML for debugging purposes.
+
  2015-06-04 14:10  alexpeshkoff 
    M src/dsql/DdlNodes.epp
 Postfix for CORE-4821: fixed segfault in REVOKE ALL ON ALL
