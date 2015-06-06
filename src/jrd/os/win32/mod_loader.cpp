@@ -95,6 +95,8 @@ public:
                     "msvcr90.dll",
 #elif _MSC_VER == 1600
                     "msvcr100.dll",
+#elif _MSC_VER == 1700
+                    "msvcr110.dll",
 #elif _MSC_VER == 1800
 		    "mscvr120.dll",
 #else
