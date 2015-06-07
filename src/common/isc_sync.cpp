@@ -100,7 +100,7 @@ static int process_id;
 #include <sys/mman.h>
 
 #define FTOK_KEY	15
-#define PRIV		0666
+#define PRIV		S_IRUSR | S_IWUSR
 
 //#ifndef SHMEM_DELTA
 //#define SHMEM_DELTA	(1 << 22)
