@@ -558,7 +558,7 @@ without specifying a character set.', NULL);
 ('exception_integer_overflow', 'POST_EXCEPTIONS and POST_EXTRENA', 'common.h', NULL, 0, 459, NULL, 'Integer overflow.  The result of an integer operation caused the most significant bit of the result to carry.', NULL, NULL);
 ('exception_unknown', 'POST_EXCEPTIONS and POST_EXTRENA', 'common.h', 'obsolete', 0, 460, NULL, 'An exception occurred that does not have a description.  Exception number @1.', NULL, NULL);
 ('exception_stack_overflow', 'POST_EXCEPTION', 'common.h', NULL, 0, 461, NULL, 'Stack overflow.  The resource requirements of the runtime stack have exceeded the memory available to it.', NULL, NULL);
-('exception_sigsegv', 'ISC_exception_post', 'isc_sync.c', NULL, 0, 462, NULL, 'Segmentation Fault. The code attempted to access memory without priviledges.', NULL, NULL);
+('exception_sigsegv', 'ISC_exception_post', 'isc_sync.c', NULL, 0, 462, NULL, 'Segmentation Fault. The code attempted to access memory without privileges.', NULL, NULL);
 ('exception_sigill', 'ISC_exception_post', 'isc_sync.c', NULL, 0, 463, NULL, 'Illegal Instruction. The Code attempted to perfrom an illegal operation.', NULL, NULL);
 ('exception_sigbus', 'ISC_exception_post', 'isc_sync.c', NULL, 0, 464, NULL, 'Bus Error. The Code caused a system bus error.', NULL, NULL);
 ('exception_sigfpe', 'ISC_exception_post', 'isc_sync.c', NULL, 0, 465, NULL, 'Floating Point Error. The Code caused an Arithmetic Exception or a floating point exception.', NULL, NULL);

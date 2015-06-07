@@ -195,6 +195,6 @@ const static Switches::in_sw_tab_t gpre_in_sw_table[] =
 #ifdef GPRE_COBOL
 	{IN_SW_GPRE_DATE_FMT, 0, "DFM"			, 0, 0, 0, false, 0, 0, "\t\tCobol date format"},
 #endif
-	{IN_SW_NO_QLI		, 0, "NOQLI"		, 0, 0, 0, false, 0, 0, "\t\tsupress QLI syntax"},
+	{IN_SW_NO_QLI		, 0, "NOQLI"		, 0, 0, 0, false, 0, 0, "\t\tsuppress QLI syntax"},
 	{IN_SW_GPRE_0		, 0, NULL			, 0, 0, 0, false, 0, 0, NULL}
 };

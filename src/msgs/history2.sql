@@ -871,8 +871,8 @@ message to appear.', 'Your program encountered an input or output error.', 'c_pg
 (885, 'SYSDBA', '1998-06-10 16:09:21', 0, 420, 'Fatal exception in uder defined function execution', NULL, NULL, 'c_pg');
 (886, 'SYSDBA', '1998-06-10 16:10:08', 0, 447, 'Fatal exception in blob filter execution', NULL, NULL, 'c_pg');
 (887, 'builder', '1998-07-17 13:39:34', 12, 273, 'host name parameter missing', NULL, NULL, 'c_pg');
-(888, 'smistry', '1998-08-03 14:56:22', 0, 462, 'Segmentation Fault: code attempted to acces memory without priviledges', NULL, NULL, 'c_pg');
-(889, 'smistry', '1998-08-03 14:57:07', 0, 462, 'Segmentation Fault: code attempted to access memory without priviledges', NULL, NULL, 'c_pg');
+(888, 'smistry', '1998-08-03 14:56:22', 0, 462, 'Segmentation Fault: code attempted to acces memory without privileges', NULL, NULL, 'c_pg');
+(889, 'smistry', '1998-08-03 14:57:07', 0, 462, 'Segmentation Fault: code attempted to access memory without privileges', NULL, NULL, 'c_pg');
 (890, 'smistry', '1998-08-04 18:16:12', 0, 448, 'Access violation.  The code attempted to access a virtual address without privelege to do so.', NULL, NULL, 'c_pg');
 (891, 'SMISTRY', '1998-08-21 19:09:33', 0, 467, 'EXT_modify', NULL, NULL, 'c_pg');
 (892, 'SMISTRY', '1998-08-21 19:10:19', 0, 466, 'Cannot delete rows from external files', NULL, NULL, 'c_pg');
@@ -894,7 +894,7 @@ message to appear.', 'Your program encountered an input or output error.', 'c_pg
 (908, 'SYSDBA', '1998-09-29 12:47:14', 0, 452, 'Floating-point divide by zero.  The code attempted to divide a floating-point value by a floating-point divisor of zer', NULL, NULL, 'c_pg');
 (909, 'SYSDBA', '1998-09-29 12:47:50', 0, 453, 'Floating-point inexact result.  The result of a floating-point operation cannot be represented exactly as a decimal fr', NULL, NULL, 'c_pg');
 (910, 'SYSDBA', '1998-09-29 12:48:33', 0, 459, 'Interger overflow.  The result of an integer operation caused the most significant bit of the result to carry.', NULL, NULL, 'c_pg');
-(911, 'SYSDBA', '1998-09-29 12:49:25', 0, 462, 'Segmentation Fault: code attempted to access memory without priviledges.', NULL, NULL, 'c_pg');
+(911, 'SYSDBA', '1998-09-29 12:49:25', 0, 462, 'Segmentation Fault: code attempted to access memory without privileges.', NULL, NULL, 'c_pg');
 (912, 'SYSDBA', '1998-09-29 12:50:13', 0, 463, 'Illegal Instruction: code attempted to perfrom an illegal operation', NULL, NULL, 'c_pg');
 (913, 'SYSDBA', '1998-09-29 12:50:32', 0, 464, 'Bus Error: code caused a system bus error', NULL, NULL, 'c_pg');
 (914, 'SYSDBA', '1998-09-29 12:51:01', 0, 465, 'Floating Point Error: Code caused an Arithmetic Exception or a floating point exception', NULL, NULL, 'c_pg');
