@@ -2235,7 +2235,8 @@ bool RseNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
 
 bool RseNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
 {
-	return (flags & FLAG_DSQL_COMPARATIVE) && RecordSourceNode::dsqlInvalidReferenceFinder(visitor);
+	return //// CORE-4807: (flags & FLAG_DSQL_COMPARATIVE) &&
+		RecordSourceNode::dsqlInvalidReferenceFinder(visitor);
 }
 
 bool RseNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
