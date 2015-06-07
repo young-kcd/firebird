@@ -1,3 +1,11 @@
+ 2015-06-06 17:20  hvlad 
+   M src/jrd/met.epp
+Fixed bug CORE-4830 : Memory leak in SuperServer
+
+ 2015-06-06 12:19  mapopa 
+   M src/jrd/os/win32/mod_loader.cpp
+Fix from libreoffice patch http://cgit.freedesktop.org/libreoffice/core/tree/external/firebird/firebird-cygwin-msvc.patch.1
+
  2015-06-03 10:39  mapopa 
    M src/jrd/isc_sync.cpp
    M src/remote/inet.cpp
