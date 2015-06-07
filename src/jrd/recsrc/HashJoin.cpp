@@ -52,6 +52,7 @@ namespace
 	  qsort_compare_callback compare;
 	};
 
+#ifndef HAVE_QSORT_R
 #if defined(WIN_NT) || defined(DARWIN) || defined(FREEBSD)
 	int qsort_ctx_arg_swap(void* arg, const void* a1, const void* a2)
 	{
@@ -59,18 +60,16 @@ namespace
 	  return (ss->compare)(a1, a2, ss->arg);
 	}
 #endif
+#endif
 
 #define USE_QSORT_CTX
 
 	void qsort_ctx(void* base, size_t count, size_t width, qsort_compare_callback compare, void* arg)
 	{
-#if defined(LINUX)
 #ifdef HAVE_QSORT_R
 		qsort_r(base, count, width, compare, arg);
 #else
-#undef USE_QSORT_CTX
-#endif
-#elif defined(WIN_NT)
+#if defined(WIN_NT)
 		struct qsort_ctx_data tmp = {arg, compare};
 		qsort_s(base, count, width, &qsort_ctx_arg_swap, &tmp);
 #elif defined(DARWIN) || defined(FREEBSD)
@@ -78,6 +77,7 @@ namespace
 		qsort_r(base, count, width, &tmp, &qsort_ctx_arg_swap);
 #else
 #undef USE_QSORT_CTX
+#endif
 #endif
 	}
 
