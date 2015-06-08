@@ -593,11 +593,13 @@ int gsec(Firebird::UtilSvc* uSvc)
 					}
 					get_security_error(status, ret);
 				}
-
-				manager->commit(&statusManager);
-				if (statusManager.getState() & Firebird::IStatus::STATE_ERRORS)
+				else
 				{
-					Firebird::status_exception::raise(&statusManager);
+					manager->commit(&statusManager);
+					if (statusManager.getState() & Firebird::IStatus::STATE_ERRORS)
+					{
+						Firebird::status_exception::raise(&statusManager);
+					}
 				}
 			}
 			else
