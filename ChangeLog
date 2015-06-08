@@ -1,3 +1,45 @@
+ 2015-06-07 23:41  asfernandes 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-4807 - Regression: List of aggregation is not checked properly.
+
+ 2015-06-07 19:24  mapopa 
+   M src/common/isc_sync.cpp
+Create semaphores with 0660 permissions
+Yes, a bit later the access mode is set to the one of the
+security database, but in the mean time someone evil could
+find some use of an open (0666) semaphore array
+Author: Damyan Ivanov <dmn@debian.org>
+https://anonscm.debian.org/cgit/pkg-firebird/3.0.git/plain/debian/patches/tighten-sem-perms.patch
+
+ 2015-06-07 19:06  mapopa 
+   M src/gpre/gpreswi.h
+   M src/include/gen/msgs.h
+   M src/msgs/history2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/transmsgs.de_DE2.sql
+   M src/msgs/transmsgs.fr_FR2.sql
+a couple of spelling corrections from debian 3.0 
+supress → suppress
+priviledge → privilege 
+
+ 2015-06-07 18:34  mapopa 
+   M src/jrd/recsrc/HashJoin.cpp
+ USE_QSORT_CTX on Debian/kFreeBSD If qsort_r is available, use it on all platforms. Use the platform-specific
+ code otherwise. Patch https://anonscm.debian.org/cgit/pkg-firebird/3.0.git/commit/?id=feac4328eb7a300c59fbb57c05618d710c9981d2
+
+ 2015-06-07 18:11  egorpugin 
+   M .travis.yml
+[ci] Use default build system until cmake is fixed.
+
+ 2015-06-07 17:17  asfernandes 
+   M README.md
+Correction.
+
+ 2015-06-07 17:13  asfernandes 
+   A .travis.yml
+   A README.md
+Add travis files on request of Egor.
+
  2015-06-05 18:26  asfernandes 
    M src/dsql/AggNodes.cpp
    M src/dsql/AggNodes.h
