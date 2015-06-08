@@ -128,12 +128,22 @@ public:
 		text += temp;
 	}
 
+	void print(const Firebird::string& s, long value)
+	{
+		print(s, (SINT64) value);
+	}
+
+	void print(const Firebird::string& s, unsigned long value)
+	{
+		print(s, (SINT64) value);
+	}
+
 	void print(const Firebird::string& s, int value)
 	{
 		print(s, (SINT64) value);
 	}
 
-	void print(const Firebird::string& s, unsigned value)
+	void print(const Firebird::string& s, unsigned int value)
 	{
 		print(s, (SINT64) value);
 	}
