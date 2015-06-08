@@ -207,7 +207,7 @@
     <ClCompile Include="..\..\..\src\common\DynamicStrings.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\common\unicodeUpper.cpp">
+    <ClCompile Include="..\..\..\src\common\Tokens.cpp">
       <Filter>common</Filter>
     </ClCompile>
   </ItemGroup>
@@ -521,7 +521,7 @@
     <ClInclude Include="..\..\..\src\common\SimpleStatusVector.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\common\unicodeUpper.h">
+    <ClInclude Include="..\..\..\src\common\Tokens.h">
       <Filter>headers</Filter>
     </ClInclude>
   </ItemGroup>
