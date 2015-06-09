@@ -1282,19 +1282,11 @@ SecurityClass::flags_t SCL_get_object_mask(const int object_type)
 	thread_db* tdbb = JRD_get_thread_data();
 	Database* dbb = tdbb->getDatabase();
 
-	UserId* user = tdbb->getAttachment()->att_user;
-
-	/***
-	if (object_type == obj_roles)
-	{
-		if (user->isSecAdmin())
-			return -1 & ~SCL_corrupt;
-	}
-	***/
-
 	const TEXT* object_name = get_object_name(object_type);
-	const Jrd::SecurityClass* s_class = SCL_recompute_class(tdbb, object_name);
+	if (!*object_name)
+		return 0;
 
+	const Jrd::SecurityClass* s_class = SCL_recompute_class(tdbb, object_name);
 	if (s_class)
 		return s_class->scl_flags;
 
