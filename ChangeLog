@@ -1,3 +1,22 @@
+ 2015-06-08 12:13  dimitr 
+   M src/dsql/NodePrinter.h
+Fixed Windows build.
+
+ 2015-06-08 11:43  hvlad 
+   M src/common/classes/ClumpletReader.h
+Disable debug code in release builds
+
+ 2015-06-08 11:05  alexpeshkoff 
+   M src/utilities/gsec/gsec.cpp
+Fixed regression in gsec, reported privately by Adriano - error parameters are reported as garbage
+
+ 2015-06-08 10:55  dimitr 
+   M builds/win32/msvc10/common.vcxproj
+   M builds/win32/msvc10/common.vcxproj.filters
+   M builds/win32/msvc12/common.vcxproj
+   M builds/win32/msvc12/common.vcxproj.filters
+Fixed Windows build.
+
  2015-06-07 23:41  asfernandes 
    M src/jrd/RecordSourceNodes.cpp
 Fixed CORE-4807 - Regression: List of aggregation is not checked properly.
