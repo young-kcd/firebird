@@ -44,14 +44,36 @@ public:
 		const char* stop;
 	};
 
-	Tokens(FB_SIZE_T length, const char* string, const char* spaces, const char* quotes, const Comment* comments);
-
 	struct Tok
 	{
 		const char* text;
 		FB_SIZE_T length, origin;
 		string stripped() const;
 	};
+
+	Tokens();
+
+	void spaces(const char* s)
+	{
+		wsps = s;
+	}
+
+	void quotes(const char* s)
+	{
+		qs = s;
+	}
+
+	void comments(const Comment* ptr)
+	{
+		comms = ptr;
+	}
+
+	void separators(const char* s)
+	{
+		seps = s;
+	}
+
+	void parse(FB_SIZE_T length, const char* string);
 
 	const Tok& operator[](FB_SIZE_T pos) const
 	{
@@ -65,13 +87,16 @@ public:
 
 private:
 	static void error(const char* fmt, ...);
+	Tok* createToken(FB_SIZE_T p, FB_SIZE_T origin);
 
 	HalfStaticArray<Tok, 16> tokens;
 	string str;
-};
 
-extern Tokens::Comment sqlComments[3];
-extern const char* sqlSpaces;
+	const char* wsps;
+	const char* qs;
+	const Comment* comms;
+	const char* seps;
+};
 
 } // namespace Firebird
 

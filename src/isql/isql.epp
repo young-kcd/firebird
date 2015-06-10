@@ -3613,10 +3613,12 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	ISQL_disconnect_database(false);
 
 	// Parse statement to tokens
-	const char* quotes = isqlGlob.SQL_dialect == 1 ? "\"'" : "'";
+	const char* quotes = "\"'";
 	Firebird::string nlStatement(statement);
 	nlStatement += '\n';
-	Firebird::Tokens toks(0, nlStatement.c_str(), Firebird::sqlSpaces, quotes, Firebird::sqlComments);
+	Firebird::Tokens toks;
+	toks.quotes(quotes);
+	toks.parse(0, nlStatement.c_str());
 
 	const unsigned KEY_USER = 0;
 	const unsigned KEY_PASS = 1;

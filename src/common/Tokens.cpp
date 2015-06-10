@@ -29,11 +29,34 @@
 
 #include "../common/StatusArg.h"
 
+namespace {
+
+Firebird::Tokens::Comment sqlComments[3] = {
+	{ "/*", "*/" },
+	{ "--", "\n" },
+	{ NULL, NULL }
+};
+const char* sqlSpaces = " \t\r\n";
+const char* sqlSeps = "!\"#%&'()*+,-./:;<=>?@[\\]^`{|}~";
+const char* sqlQuotes = "\"'";
+
+} // anonymous namespace
+
 namespace Firebird {
 
-Tokens::Tokens(FB_SIZE_T length, const char* toParse, const char* spaces, const char* quotes, const Comment* comments)
-	: tokens(getPool()), str(getPool())
+Tokens::Tokens()
+	: tokens(getPool()),
+	  str(getPool()),
+	  wsps(sqlSpaces),
+	  qs(sqlQuotes),
+	  comms(sqlComments),
+	  seps(sqlSeps)
+{ }
+
+void Tokens::parse(FB_SIZE_T length, const char* toParse)
 {
+	tokens.clear();
+
 	if (!length)
 		length = strlen(toParse);
 	str.assign(toParse, length);
@@ -46,9 +69,9 @@ Tokens::Tokens(FB_SIZE_T length, const char* toParse, const char* spaces, const 
 	FB_SIZE_T p = 0;
 	while (p < str.length())
 	{
-		if (comments && !inStr)
+		if (comms && !inStr)
 		{
-			for (const Comment* comm = comments; comm->start; ++comm)
+			for (const Comment* comm = comms; comm->start; ++comm)
 			{
 				if (strncmp(comm->start, &str[p], strlen(comm->start)) == 0)
 				{
@@ -85,8 +108,7 @@ Tokens::Tokens(FB_SIZE_T length, const char* toParse, const char* spaces, const 
 			continue;
 		}
 
-		bool space = spaces && strchr(spaces, c);
-		if (space)
+		if (wsps && strchr(wsps, c))
 		{
 			if (inToken)
 			{
@@ -98,7 +120,7 @@ Tokens::Tokens(FB_SIZE_T length, const char* toParse, const char* spaces, const 
 			continue;
 		}
 
-		bool quote = quotes && strchr(quotes, c);
+		bool quote = qs && strchr(qs, c);
 		if (quote)
 		{
 			if (inToken)
@@ -110,15 +132,26 @@ Tokens::Tokens(FB_SIZE_T length, const char* toParse, const char* spaces, const 
 			inStr = c;
 		}
 
-		if (!inToken)
+		if ((!quote) && seps && strchr(seps, c))
+		{
+			// close current token
+			if (inToken)
+			{
+				inToken->length = p - startp;
+				inToken = NULL;
+			}
+			// and create new one for one symbol
+			inToken = createToken(p, origin);
+			inToken->length = 1;
+			inToken = NULL;
+		}
+		else if (!inToken)
 		{
 			// start token
 			startp = p;
-			tokens.grow(tokens.getCount() + 1);
-			inToken = &tokens[tokens.getCount() - 1];
-			inToken->text = &str[p];
-			inToken->origin = origin;
+			inToken = createToken(p, origin);
 		}
+
 
 		// done with char
 		++p;
@@ -130,6 +163,20 @@ Tokens::Tokens(FB_SIZE_T length, const char* toParse, const char* spaces, const 
 
 	if (inToken)
 		inToken->length = p - startp;
+//#define DEBUG_TOKENS
+#ifdef DEBUG_TOKENS
+	for (unsigned dbg = 0; dbg < getCount(); ++dbg)
+		printf("%2d %.*s\n", dbg, tokens[dbg].length, tokens[dbg].text);
+#endif
+}
+
+Tokens::Tok* Tokens::createToken(FB_SIZE_T p, FB_SIZE_T origin)
+{
+	tokens.grow(tokens.getCount() + 1);
+	Tok* tok = &tokens[tokens.getCount() - 1];
+	tok->text = &str[p];
+	tok->origin = origin;
+	return tok;
 }
 
 void Tokens::error(const char* fmt, ...)
@@ -156,13 +203,5 @@ string Tokens::Tok::stripped() const
 	}
 	return rc;
 }
-
-Tokens::Comment sqlComments[3] = {
-	{ "/*", "*/" },
-	{ "--", "\n" },
-	{ NULL, NULL }
-};
-
-const char* sqlSpaces = " \t\r\n";
 
 } // namespace Firebird

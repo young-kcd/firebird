@@ -170,7 +170,9 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 			Arg::Gds(isc_command_end_err).raise();
 		}
 
-		Tokens tks(stmt_length, stmt, sqlSpaces, quotes, sqlComments);
+		Tokens tks;
+		tks.quotes(quotes);
+		tks.parse(stmt_length, stmt);
 		unsigned pos = 0;
 
 		if (getToken(pos, tks) != pp_symbols[PP_CREATE].symbol)
