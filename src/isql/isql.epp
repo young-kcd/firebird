@@ -7540,11 +7540,23 @@ static void print_message(Firebird::IMessageMetadata* msg, const char* dir)
 	for (unsigned i = 0; i < n; ++i)
 	{
 		unsigned type = msg->getType(fbStatus, i);
-		unsigned cs = msg->getCharSet(fbStatus, i);
-		isqlGlob.printf("%02d: sqltype: %d %s %sscale: %d subtype: %d len: %d charset: %d %s\n",
+		unsigned subtype = msg->getSubType(fbStatus, i);
+		unsigned cs;
+		isqlGlob.printf("%02d: sqltype: %d %s %sscale: %d subtype: %d len: %d",
 				i + 1, type, sqltype_to_string(type), msg->isNullable(fbStatus, i) ? "Nullable " : "",
-				msg->getScale(fbStatus, i), msg->getSubType(fbStatus, i), msg->getLength(fbStatus, i),
-				cs, charset_to_string(cs));
+				msg->getScale(fbStatus, i), subtype, msg->getLength(fbStatus, i));
+		switch(type)
+		{
+		case SQL_BLOB:
+			if (subtype != 1)
+				break;
+		case SQL_TEXT:
+		case SQL_VARYING:
+			cs = msg->getCharSet(fbStatus, i);
+			isqlGlob.printf(" charset: %d %s", cs, charset_to_string(cs));
+			break;
+		}
+		isqlGlob.printf("\n");
 		isqlGlob.printf("  :  name: %s  alias: %s\n",
 				msg->getField(fbStatus, i), msg->getAlias(fbStatus, i));
 		isqlGlob.printf("  : table: %s  owner: %s\n",
