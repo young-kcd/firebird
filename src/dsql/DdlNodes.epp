@@ -10617,7 +10617,7 @@ void GrantRevokeNode::runInSecurityDb(SecDbContext* secDbContext)
 		Message result;
 		Field<ISC_INT64> cnt(result);
 
-		if (j.userType == obj_sql_role)
+		if (j.userType == obj_sql_role && (!j.allOnAll))
 		{
 			Message isRole;
 			Field<Varying> u(isRole, MAX_SQL_IDENTIFIER_LEN);
