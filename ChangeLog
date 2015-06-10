@@ -1,3 +1,8 @@
+ 2015-06-09 13:18  alexpeshkoff 
+   M src/jrd/scl.epp
+   M src/jrd/scl.h
+Fixed CORE-4802: GRANT UPDATE(<some_column>) on <T> acts like grant update on ALL columns of <T>
+
  2015-06-08 12:13  dimitr 
    M src/dsql/NodePrinter.h
 Fixed Windows build.
