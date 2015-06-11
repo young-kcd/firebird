@@ -1,3 +1,18 @@
+ 2015-06-10 13:42  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4831: Revoke all on all from role <R> -- failed with "SQL role <R> does not exist in security database"
+
+ 2015-06-10 13:10  alexpeshkoff 
+   M src/isql/isql.epp
+Enhance metadata display - show charset only for fields where it makes sense
+
+ 2015-06-10 12:27  alexpeshkoff 
+   M src/common/Tokens.cpp
+   M src/common/Tokens.h
+   M src/isql/isql.epp
+   M src/yvalve/preparse.cpp
+Fixed regression, caused by fix for CORE-4811 - error parsing pagesize=N without spaces
+
  2015-06-09 13:18  alexpeshkoff 
    M src/jrd/scl.epp
    M src/jrd/scl.h
