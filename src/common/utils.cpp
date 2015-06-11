@@ -1617,7 +1617,7 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 			{
 				if (++i >= l || s[i] != end_quote)
 					break;		// delimited quote, done processing
-				// skiped the escape quote, continue processing
+				// skipped the escape quote, continue processing
 			}
 			buf += s[i];
 		}

@@ -33,7 +33,7 @@ namespace Jrd {
 class NodePrinter
 {
 public:
-	NodePrinter(unsigned aIndent = 0)
+	explicit NodePrinter(unsigned aIndent = 0)
 		: indent(aIndent)
 	{
 	}

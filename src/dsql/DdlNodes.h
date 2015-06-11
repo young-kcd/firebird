@@ -150,7 +150,7 @@ public:
 		NODE_PRINT(printer, engine);
 		NODE_PRINT(printer, udfModule);
 
-		return "Node";
+		return "ExternalClause";
 	}
 
 public:

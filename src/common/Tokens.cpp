@@ -31,7 +31,7 @@
 
 namespace {
 
-Firebird::Tokens::Comment sqlComments[3] = {
+const Firebird::Tokens::Comment sqlComments[3] = {
 	{ "/*", "*/" },
 	{ "--", "\n" },
 	{ NULL, NULL }

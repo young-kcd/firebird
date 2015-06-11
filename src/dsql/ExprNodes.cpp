@@ -247,7 +247,7 @@ string ValueExprNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, nodScale);
 	NODE_PRINT(printer, nodDesc);
 
-	return "ValueNode";
+	return "ValueExprNode";
 }
 
 
