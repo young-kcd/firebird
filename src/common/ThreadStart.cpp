@@ -128,14 +128,14 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_init", state);
 
-#if defined(_AIX) || defined(DARWIN)
+#if defined(_AIX) || defined(DARWIN) || defined(HPUX)
 // adjust stack size
 
 // For AIX 32-bit compiled applications, the default stacksize is 96 KB,
 // see <pthread.h>. For 64-bit compiled applications, the default stacksize
 // is 192 KB. This is too small - see HP-UX note above
-
-// For MaxOS default stack is 512 KB, which is also too small in 2012.
+// For MacOS default stack is 512 KB (2012).
+// For HPUX its 64 KB on PA, 256 KB on Itanium (2015)
 
 	size_t stack_size;
 	state = pthread_attr_getstacksize(&pattr, &stack_size);
