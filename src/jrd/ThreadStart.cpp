@@ -181,7 +181,7 @@ void ThreadStart::start(ThreadEntryPoint* routine,
 	if (state)
 		Firebird::system_call_failed::raise("pthread_attr_init", state);
 
-#if defined(_AIX) || defined(DARWIN) || defined (HPUX)
+#if defined(_AIX) || defined(DARWIN) || defined(HPUX)
 // adjust stack size
 
 // For AIX 32-bit compiled applications, the default stacksize is 96 KB,
