@@ -1,3 +1,13 @@
+ 2015-06-12 14:32  egorpugin 
+   M .travis.yml
+   M README.md
+   A travis.sh
+[ci] Initial travis-ci config.
+
+ 2015-06-12 09:06  paulbeach 
+   M src/common/ThreadStart.cpp
+Stack size too small on HPPA and Itanium
+
  2015-06-11 06:42  robocop 
    M src/common/Tokens.cpp
    M src/common/utils.cpp
