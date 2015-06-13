@@ -1,3 +1,11 @@
+ 2015-06-12 09:04  paulbeach 
+   M src/jrd/ThreadStart.cpp
+Typo
+
+ 2015-06-12 08:59  paulbeach 
+   M src/jrd/ThreadStart.cpp
+Default stack size is too small on HPUX - its 64 KB on PA, and 256 KB on Itanium
+
  2015-06-06 17:20  hvlad 
    M src/jrd/met.epp
 Fixed bug CORE-4830 : Memory leak in SuperServer
