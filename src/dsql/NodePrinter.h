@@ -13,7 +13,7 @@
  *  The Original Code was created by Adriano dos Santos Fernandes
  *  for the Firebird Open Source RDBMS project.
  *
- *  Copyright (c) 2015 Adriano dos Santos Fernandes <adrianosf@gmal.com>
+ *  Copyright (c) 2015 Adriano dos Santos Fernandes <adrianosf@gmail.com>
  *  and all contributors signed below.
  *
  *  All Rights Reserved.

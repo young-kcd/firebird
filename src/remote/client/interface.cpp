@@ -7498,7 +7498,7 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& dpb,
 		return;
 	}
 
-	if (REMOTE_legacy_auth(pluginName.c_str(), PROTOCOL_VERSION10))	// dataFromPlugin is encrypted cliPassword
+	if (REMOTE_legacy_auth(pluginName.c_str(), PROTOCOL_VERSION10))	// dataFromPlugin is encrypted password
 	{
 		fb_assert(tags->password_enc);
 		dpb.insertBytes(tags->password_enc, dataFromPlugin.begin(), dataFromPlugin.getCount());
@@ -7532,7 +7532,8 @@ void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet*
 			makeUtfString(uft8Convert, cliUserName);
 			cliOrigUserName = cliUserName;
 			fb_utils::dpbItemUpper(cliUserName);
-			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB user = %s(was %s)\n", cliUserName.c_str(), cliOrigUserName.c_str()));
+			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: loadClnt: Loaded from PB user = %s(was %s)\n",
+				cliUserName.c_str(), cliOrigUserName.c_str()));
 		}
 		else if (t == tags->password)
 		{

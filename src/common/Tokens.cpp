@@ -51,7 +51,8 @@ Tokens::Tokens()
 	  qs(sqlQuotes),
 	  comms(sqlComments),
 	  seps(sqlSeps)
-{ }
+{
+}
 
 void Tokens::parse(FB_SIZE_T length, const char* toParse)
 {
@@ -61,12 +62,13 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 		length = strlen(toParse);
 	str.assign(toParse, length);
 
-	char inStr = 0;
+	char inStr = '\0';
 	Tok* inToken = NULL;
 	FB_SIZE_T startp = 0;
 	FB_SIZE_T origin = 0;
 
 	FB_SIZE_T p = 0;
+
 	while (p < str.length())
 	{
 		if (comms && !inStr)
@@ -88,21 +90,25 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 		}
 
 		char c = str[p];
+
 		if (inStr)
 		{
 			if (c == inStr)
 			{
 				++p;
 				++origin;
+
 				if (p >= str.length() || str[p] != inStr)
 				{
-					inStr = 0;
+					inStr = '\0';
 					inToken->length = p - startp;
 					inToken = NULL;
 					continue;
 				}
+
 				// double quote - continue processing string
 			}
+
 			++p;
 			++origin;
 			continue;
@@ -115,12 +121,14 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 				inToken->length = p - startp;
 				inToken = NULL;
 			}
+
 			++p;
 			++origin;
 			continue;
 		}
 
 		bool quote = qs && strchr(qs, c);
+
 		if (quote)
 		{
 			if (inToken)
@@ -128,6 +136,7 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 				inToken->length = p - startp;
 				inToken = NULL;
 			}
+
 			// start string
 			inStr = c;
 		}
@@ -140,6 +149,7 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 				inToken->length = p - startp;
 				inToken = NULL;
 			}
+
 			// and create new one for one symbol
 			inToken = createToken(p, origin);
 			inToken->length = 1;
@@ -163,6 +173,7 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 
 	if (inToken)
 		inToken->length = p - startp;
+
 //#define DEBUG_TOKENS
 #ifdef DEBUG_TOKENS
 	for (unsigned dbg = 0; dbg < getCount(); ++dbg)
@@ -195,12 +206,14 @@ string Tokens::Tok::stripped() const
 {
 	string rc;
 	char q = text[0];
+
 	for (FB_SIZE_T i = 1; i < length - 1; ++i)
 	{
 		if (text[i] == q)
 			++i;
 		rc += text[i];
 	}
+
 	return rc;
 }
 

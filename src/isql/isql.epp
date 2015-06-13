@@ -3626,10 +3626,12 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	const unsigned KEY_NAMES = 3;
 	const unsigned KEY_SET = 4;
 
-	struct Key {
+	struct Key
+	{
 		const char* text;
 		bool has;
 	};
+
 	Key keys[5] = {
 		{ "USER", false },
 		{ "PASSWORD", false },
@@ -3642,6 +3644,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 	{
 		Firebird::NoCaseString token(toks[t].text, toks[t].length);
 		unsigned k;
+
 		for (k = 0; k < FB_NELEM(keys); ++k)
 		{
 			if (token == keys[k].text)
@@ -3677,12 +3680,16 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 			strcpy(role, isqlGlob.Role);
 
 			Firebird::string clauses;
+
 			if (global_usr && !keys[KEY_USER].has)
 				appendClause(clauses, keys[KEY_USER].text, usr);
+
 			if (global_psw && !keys[KEY_PASS].has)
 				appendClause(clauses, keys[KEY_PASS].text, psw, SINGLE_QUOTE);
+
 			if (global_role && (!keys[KEY_ROLE].has) && createWithoutRole == 0)
 				appendClause(clauses, keys[KEY_ROLE].text, role);
+
 			if (*setValues.ISQL_charset && strcmp(setValues.ISQL_charset, DEFCHARSET)&& !keys[KEY_NAMES].has)
 			{
 				Firebird::string setNames = keys[KEY_SET].text;
@@ -3703,6 +3710,7 @@ static processing_state create_db(const TEXT* statement, TEXT* d_name)
 		unsigned dialect =
 			(isqlGlob.SQL_dialect == 0 || isqlGlob.SQL_dialect == SQL_DIALECT_V6_TRANSITION) ?
 				requested_SQL_dialect : isqlGlob.SQL_dialect;
+
 		DB = Firebird::UtilInterfacePtr()->executeCreateDatabase(fbStatus, modifiedCreateStatement.length(),
 			modifiedCreateStatement.c_str(), dialect, NULL);
 
@@ -7545,17 +7553,20 @@ static void print_message(Firebird::IMessageMetadata* msg, const char* dir)
 		isqlGlob.printf("%02d: sqltype: %d %s %sscale: %d subtype: %d len: %d",
 				i + 1, type, sqltype_to_string(type), msg->isNullable(fbStatus, i) ? "Nullable " : "",
 				msg->getScale(fbStatus, i), subtype, msg->getLength(fbStatus, i));
+
 		switch(type)
 		{
 		case SQL_BLOB:
 			if (subtype != 1)
 				break;
+
 		case SQL_TEXT:
 		case SQL_VARYING:
 			cs = msg->getCharSet(fbStatus, i);
 			isqlGlob.printf(" charset: %d %s", cs, charset_to_string(cs));
 			break;
 		}
+
 		isqlGlob.printf("\n");
 		isqlGlob.printf("  :  name: %s  alias: %s\n",
 				msg->getField(fbStatus, i), msg->getAlias(fbStatus, i));
@@ -8528,7 +8539,7 @@ static const char* charset_to_string(unsigned charset)
 				fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
 				csMap->put(CS.RDB$CHARACTER_SET_ID, CS.RDB$CHARACTER_SET_NAME);
 			}
-			catch(const Firebird::Exception& ex)
+			catch (const Firebird::Exception& ex)
 			{
 				err = true;
 				ex.stuffException(fbStatus);

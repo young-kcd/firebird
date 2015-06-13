@@ -256,7 +256,10 @@ string ValueExprNode::internalPrint(NodePrinter& printer) const
 
 Firebird::string ValueListNode::internalPrint(NodePrinter& printer) const
 {
+	ListExprNode::internalPrint(printer);
+
 	NODE_PRINT(printer, items);
+
 	return "ValueListNode";
 }
 
@@ -266,7 +269,10 @@ Firebird::string ValueListNode::internalPrint(NodePrinter& printer) const
 
 Firebird::string RecSourceListNode::internalPrint(NodePrinter& printer) const
 {
+	ListExprNode::internalPrint(printer);
+
 	NODE_PRINT(printer, items);
+
 	return "RecSourceListNode";
 }
 

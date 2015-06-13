@@ -922,7 +922,8 @@ void ClntAuthBlock::extractDataFromPluginTo(Firebird::ClumpletWriter& user_id)
 	// Add user login name
 	if (cliOrigUserName.hasData())
 	{
-		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: cliOrigUserName=%s\n", cliOrigUserName.c_str()));
+		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: extractDataFromPluginTo: cliOrigUserName=%s\n",
+			cliOrigUserName.c_str()));
 		user_id.insertString(CNCT_login, cliOrigUserName);
 	}
 
