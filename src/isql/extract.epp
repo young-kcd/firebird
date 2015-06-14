@@ -1282,7 +1282,7 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			// Null terminate name string
 			fb_utils::exact_name(XCP.RDB$EXCEPTION_NAME);
 			const processing_state rc =
-				SHOW_grants2(XCP.RDB$EXCEPTION_NAME, terminator, obj_generator,
+				SHOW_grants2(XCP.RDB$EXCEPTION_NAME, terminator, obj_exception,
 													 first ? banner : 0, mangle);
 			if (rc == SKIP)
 				first = false;
