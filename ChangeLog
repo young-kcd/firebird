@@ -1,3 +1,19 @@
+ 2015-06-13 19:00  asfernandes 
+   M src/common/Tokens.cpp
+   M src/common/utils.cpp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/NodePrinter.h
+   M src/isql/isql.epp
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+Misc.
+
+ 2015-06-13 09:39  egorpugin 
+   M .travis.yml
+[ci] Build only master branch.
+
  2015-06-12 14:32  egorpugin 
    M .travis.yml
    M README.md
