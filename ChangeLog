@@ -1,3 +1,11 @@
+ 2015-06-14 11:35  dimitr 
+   M src/isql/show.epp
+Yet another fix for CORE-4839.
+
+ 2015-06-14 08:32  dimitr 
+   M src/isql/extract.epp
+This should fix CORE-4839: SHOW GRANTS does not display info about exceptions which were granted to user.
+
  2015-06-13 19:00  asfernandes 
    M src/common/Tokens.cpp
    M src/common/utils.cpp
