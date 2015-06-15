@@ -156,7 +156,6 @@ darwin_finish_ss_framework:
 	cp ../gen/firebird/bin/isql $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gpre $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/fb_lock_print $(FB_FW)/Resources/bin
-	#cp ../gen/firebird/bin/gds_relay $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gsec $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/gstat $(FB_FW)/Resources/bin
 	cp ../gen/firebird/bin/nbackup $(FB_FW)/Resources/bin
