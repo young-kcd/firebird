@@ -1,3 +1,11 @@
+ 2015-06-15 15:22  mapopa 
+   M builds/posix/postfix.darwin
+gds_relay was removed by Alex
+
+ 2015-06-15 15:20  mapopa 
+   M builds/posix/darwin.defaults
+Apply libreoffice patch in trunk 
+
  2015-06-14 11:35  dimitr 
    M src/isql/show.epp
 Yet another fix for CORE-4839.
