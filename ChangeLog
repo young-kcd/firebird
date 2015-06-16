@@ -1,3 +1,11 @@
+ 2015-06-15 15:11  mapopa 
+   M builds/posix/darwin.defaults
+Apply libo patch for El Capitan https://github.com/LibreOffice/core/commit/a799d7c9a66464f33bd8ee42d535e29a976d64ae
+
+ 2015-06-15 14:54  mapopa 
+   M builds/posix/postfix.darwin
+gds_relay was removed by alex
+
  2015-06-12 09:04  paulbeach 
    M src/jrd/ThreadStart.cpp
 Typo
