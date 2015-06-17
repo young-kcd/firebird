@@ -1,3 +1,11 @@
+ 2015-06-16 11:36  paulbeach 
+   M src/jrd/common.h
+This undef should not be necessary from C/aCC+ A.06.26+
+
+ 2015-06-16 11:24  paulbeach 
+   M builds/posix/darwin.defaults
+Fix for gcc 4.1 problem is no longer needed. gcc 4.2 from MacOSX 10.8 
+
  2015-06-15 15:11  mapopa 
    M builds/posix/darwin.defaults
 Apply libo patch for El Capitan https://github.com/LibreOffice/core/commit/a799d7c9a66464f33bd8ee42d535e29a976d64ae
