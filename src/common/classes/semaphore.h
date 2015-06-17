@@ -31,6 +31,10 @@
 
 #include "../jrd/gdsassert.h"
 
+#ifdef _AIX
+#undef HAVE_SEMAPHORE_H
+#endif
+
 #ifdef WIN_NT
 // Note: Windows does not need signal safe version of the class
 
@@ -89,7 +93,7 @@ public:
 
 #else // WINNT
 
-#ifdef DARWIN
+#if defined(DARWIN)
 
 // Mach semaphore
 #define COMMON_CLASSES_SEMAPHORE_MACH
@@ -131,9 +135,7 @@ public:
 } // namespace Firebird
 
 
-#else // DARWIN
-
-#ifdef HAVE_SEMAPHORE_H
+#elif defined(HAVE_SEMAPHORE_H)
 
 #define COMMON_CLASSES_SEMAPHORE_POSIX_RT
 #include <semaphore.h>
@@ -186,9 +188,11 @@ public:
 
 } // namespace Firebird
 
-#endif // HAVE_SEMAPHORE_H
+#else // posix OS choice - not found a way to have SignalSafeSemaphore
 
-#endif // DARWIN
+#define CLASSES_SEMAPHORE_H_NO_SS_SEM
+
+#endif // posix OS choice
 
 #ifdef CLASSES_SEMAPHORE_H_HAS_TRYENTER
 
@@ -231,6 +235,12 @@ public:
 	void enter();
 	void release(SLONG count = 1);
 };
+
+#ifdef CLASSES_SEMAPHORE_H_NO_SS_SEM
+
+typedef Semaphore SignalSafeSemaphore;
+
+#endif // CLASSES_SEMAPHORE_H_NO_SS_SEM
 
 } // namespace Firebird
 
