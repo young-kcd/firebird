@@ -2881,21 +2881,21 @@ namespace
 		// IEventCallback implementation
 		virtual void eventCallbackFunction(unsigned int length, const UCHAR* list)
 		{
-			if (events)
+			try
 			{
-				try
+				MutexLockGuard g(mtx, FB_FUNCTION);
+				if (events)
 				{
-					MutexLockGuard g(mtx, FB_FUNCTION);
 					ast(arg, length, list);
-				}
-				catch (const Firebird::Exception&)
-				{ }
 
-				events->autoReleased = true;
-				YEvents* tmp = events;
-				events = NULL;
-				tmp->release();
+					events->autoReleased = true;
+					YEvents* tmp = events;
+					events = NULL;
+					tmp->release();
+				}
 			}
+			catch (const Firebird::Exception&)
+			{ }
 		}
 
 		int release()
