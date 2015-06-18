@@ -384,7 +384,7 @@ static processing_state print_performance(const SINT64* perf_before);
 static void print_message(Firebird::IMessageMetadata* msg, const char* dir);
 static void process_header(Firebird::IMessageMetadata*, const unsigned pad[], TEXT header[], TEXT header2[]);
 static void process_plan();
-static SLONG process_record_count(const int statement_type);
+static SINT64 process_record_count(const int statement_type);
 static int process_request_type();
 static unsigned process_message_display(Firebird::IMessageMetadata* msg, unsigned pad[]);
 static processing_state process_statement(const TEXT*);
@@ -1917,7 +1917,8 @@ void ISQL_print_validation(FILE* fp,
 		IUTILS_printf(fp, buffer);
 	} while (true);
 
-	if (!issql)
+	// CVC: If firsttime == true, then it didn't write the "/*" or the "(".
+	if (!issql && !firsttime)
 		IUTILS_printf2(fp, "%s", (isComputedField ? " */" : ")"));
 
 	if (failed())
@@ -7702,7 +7703,7 @@ static void process_plan()
 // Get number of records affected for updates, deletions and insertions.
 // Return -1 if the statement is not one of those or if there's an error
 // retrieving the information from the server.
-static SLONG process_record_count(const int statement_type)
+static SINT64 process_record_count(const int statement_type)
 {
 	if (!global_Stmt)
 		return -1;
@@ -7735,17 +7736,22 @@ static SLONG process_record_count(const int statement_type)
 
 		if (count_buffer[0] == isc_info_sql_records)
 		{
+			SINT64 total = 0;
 			const UCHAR* p = count_buffer + 3;
 			while (*p != isc_info_end)
 			{
 				const UCHAR count_is = *p++;
 				const SSHORT len = gds__vax_integer(p, 2);
 				p += 2;
-				const SLONG count = gds__vax_integer(p, len);
+				const ULONG count = gds__vax_integer(p, len);
 				p += len;
-				if (count_is == count_type)
-					return count;
+				// CVC: Do as StatementMetadata::getAffectedRecords() does:
+				//if (count_is == count_type)
+				//	return count;
+				if (count_is != isc_info_req_select_count)
+					total += count;
 			}
+			return total;
 		}
 	}
 	return -1;
@@ -8142,7 +8148,7 @@ static processing_state process_statement(const TEXT* str2)
 
 		if (setValues.Docount)
 		{
-			const SLONG count = process_record_count(statement_type);
+			const SINT64 count = process_record_count(statement_type);
 			if (count >= 0)
 			{
 				TEXT rec_count_msg[MSG_LENGTH];
