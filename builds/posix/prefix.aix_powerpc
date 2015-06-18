@@ -78,6 +78,7 @@ LINK_FIREBIRD_CLIENT_SYMBOLS=$(LINK_FIREBIRD_SYMBOLS)
 LINK_TRACE_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbtrace.exp
 LINK_FBINTL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/fbintl.exp
 LINK_IBUTIL_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/ib_util.exp
+LINK_EMPTY_SYMBOLS=$(LIB_LINK_MAPFILE)$(ROOT)/builds/posix/empty.exp
 LIB_LINK_MAPFILE=-Wl,-bE:
 
 # These options aren't used by AIX (XCOFF) object files...
