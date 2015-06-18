@@ -1,3 +1,7 @@
+ 2015-06-17 13:54  alexpeshkoff 
+   M src/common/classes/semaphore.h
+AIX port, avoid posix semaphore on AIX due to buggy implementation
+
  2015-06-16 11:36  paulbeach 
    M src/jrd/common.h
 This undef should not be necessary from C/aCC+ A.06.26+
