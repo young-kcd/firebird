@@ -1,3 +1,11 @@
+ 2015-06-18 22:30  robocop 
+   M src/isql/isql.epp
+CORE-4817.
+
+ 2015-06-18 17:31  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed races in events delivery caused by my recent related commit
+
  2015-06-16 11:27  paulbeach 
    M builds/posix/darwin.defaults
 Fix for gcc 4.1 problem is no longer needed. gcc 4.2 from MacOSX 10.8 
