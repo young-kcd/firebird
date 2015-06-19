@@ -472,11 +472,15 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 			 DumpField(f_sec_plugin, VALUE_STRING, static_cast<USHORT>(plugName.length()), plugName.c_str()),
 			 charset);
 
+	bool su = false;
+
 	if (u->userName()->entered())
 	{
+		const char* uname = u->userName()->get();
 		putField(threadDbb, record,
-				 DumpField(f_sec_user_name, VALUE_STRING, static_cast<USHORT>(strlen(u->userName()->get())), u->userName()->get()),
+				 DumpField(f_sec_user_name, VALUE_STRING, static_cast<USHORT>(strlen(uname)), uname),
 				 charset);
+		su = strcmp(uname, SYSDBA_USER_NAME) == 0;
 	}
 
 	if (u->firstName()->entered())
@@ -508,9 +512,9 @@ void UserManagement::list(IUser* u, unsigned cachePosition)
 				 charset);
 	}
 
-	if (u->admin()->entered())
+	if (su || u->admin()->entered())
 	{
-		UCHAR v = u->admin()->get() ? '\1' : '\0';
+		UCHAR v = (su || u->admin()->get()) ? '\1' : '\0';
 		putField(threadDbb, record,
 				 DumpField(f_sec_admin, VALUE_BOOLEAN, sizeof(v), &v),
 				 charset);
