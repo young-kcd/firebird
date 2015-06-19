@@ -241,23 +241,31 @@ public:
 		  m_save_lock(NULL)
 	{
 		Jrd::Attachment* att = m_tdbb->getAttachment();
-		m_save_lock = att ? att->att_wait_lock : NULL;
+		if (att)
+			m_save_lock = att->att_wait_lock;
 
 		m_cancel_disabled = (m_tdbb->tdbb_flags & TDBB_wait_cancel_disable);
-		m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
+		if (wait == LCK_WAIT)
+		{
+			switch (lock->lck_type)
+			{
+			case LCK_tra:
+				m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
+				if (att)
+					att->att_wait_lock = lock;
+			break;
 
-		if (!wait)
-			return;
-
-		if (lock->lck_type == LCK_tra)
+			default:
+				m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
+			}
+		}
+		else
 		{
 			fb_assert(att);
 
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 			if (att)
-			{
 				att->att_wait_lock = lock;
-			}
 		}
 	}
 
@@ -265,9 +273,7 @@ public:
 	{
 		Jrd::Attachment* att = m_tdbb->getAttachment();
 		if (att)
-		{
 			att->att_wait_lock = m_save_lock;
-		}
 
 		if (m_cancel_disabled)
 			m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
@@ -541,6 +547,7 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_cancel:
 	case LCK_monitor:
 	case LCK_btr_dont_gc:
+	case LCK_rel_gc:
 		handle = *LCK_OWNER_HANDLE_ATT(tdbb);
 		break;
 

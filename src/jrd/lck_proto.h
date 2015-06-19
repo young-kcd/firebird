@@ -46,4 +46,53 @@ void	LCK_release(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_re_post(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_write_data(Jrd::thread_db*, Jrd::Lock*, SLONG);
 
+
+class AutoLock
+{
+public:
+	explicit AutoLock(Jrd::thread_db* tdbb, Jrd::Lock* lck = NULL) :
+		m_tdbb(tdbb),
+		m_lock(lck)
+	{
+	}
+
+	~AutoLock()
+	{
+		release();
+	}
+
+	void release()
+	{
+		if (m_lock)
+		{
+			if (m_lock->lck_id)
+				LCK_release(m_tdbb, m_lock);
+			delete m_lock;
+			m_lock = NULL;
+		}
+	}
+
+	Jrd::Lock* operator-> ()
+	{
+		return m_lock;
+	}
+
+	operator Jrd::Lock* ()
+	{
+		return m_lock;
+	}
+
+	Jrd::Lock* operator= (Jrd::Lock* lck)
+	{
+		release();
+		m_lock = lck;
+		return m_lock;
+	}
+
+private:
+	Jrd::thread_db* m_tdbb;
+	Jrd::Lock* m_lock;
+};
+
+
 #endif // JRD_LCK_PROTO_H

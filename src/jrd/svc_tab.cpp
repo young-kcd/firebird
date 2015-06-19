@@ -31,6 +31,7 @@
 #include "gen/iberror.h"
 #include "../jrd/svc.h"
 #include "../jrd/trace/TraceService.h"
+#include "../jrd/val_proto.h"
 
 // Service Functions
 #include "../burp/burp_proto.h"
@@ -119,6 +120,7 @@ const serv_entry services[] =
 	{ isc_action_svc_drop_mapping, "Drop Domain Admins Mapping to RDB$ADMIN", NULL, GSEC_main },
 	{ isc_action_svc_display_user_adm, "Display User with Admin Info", NULL, GSEC_main },
 #endif
+	{ isc_action_svc_validate, "Validate Database", NULL, VAL_service},
 	// actions with no names are undocumented
 	{ isc_action_svc_set_config, NULL, NULL, TEST_THREAD },
 	{ isc_action_svc_default_config, NULL, NULL, TEST_THREAD },

@@ -552,6 +552,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/cch.h"
 #include "../jrd/rse.h"
 #include "../jrd/tra.h"
+#include "../jrd/svc.h"
 #include "../jrd/btr_proto.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/dpm_proto.h"
@@ -563,6 +564,11 @@ VI. ADDITIONAL NOTES
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/validation.h"
+
+#include "../common/classes/ClumpletWriter.h"
+#include "../jrd/intl_proto.h"
+#include "../jrd/lck_proto.h"
+#include "../jrd/Collation.h"
 
 #ifdef DEBUG_VAL_VERBOSE
 #include "../jrd/dmp_proto.h"
@@ -576,11 +582,36 @@ static USHORT VAL_debug_level = 0;
 
 using namespace Jrd;
 using namespace Ods;
+using namespace Firebird;
 
 
 #ifdef DEBUG_VAL_VERBOSE
 static void print_rhd(USHORT, const rhd*);
 #endif
+
+
+static PatternMatcher* createPatternMatcher(thread_db* tdbb, const char* pattern)
+{
+	PatternMatcher* matcher = NULL;
+	try
+	{
+		if (pattern)
+		{
+			const int len = strlen(pattern);
+
+			Collation* obj = INTL_texttype_lookup(tdbb, CS_UTF8);
+			matcher = obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
+				(const UCHAR*)pattern, len, (UCHAR*)"\\", 1);
+		}
+	}
+	catch (const Exception& ex)
+	{
+		Arg::StatusVector status(ex);
+		status << Arg::Gds(isc_random) << Arg::Str(pattern);
+		status.raise();
+	}
+	return matcher;
+}
 
 
 static void explain_pp_bits(const UCHAR bits, Firebird::string& names)
@@ -635,9 +666,131 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	Attachment* att = tdbb->getAttachment();
 
 	if (!att->att_validation)
-		att->att_validation = FB_NEW (*att->att_pool) Validation();
+		att->att_validation = FB_NEW (*att->att_pool) Validation(tdbb);
 
-	return att->att_validation->run(tdbb, switches);
+	USHORT flags = 0;
+	if (switches & isc_dpb_records)
+		flags |= Validation::VDR_records;
+
+	if (switches & isc_dpb_repair)
+		flags |= Validation::VDR_repair;
+
+	if (!(switches & isc_dpb_no_update))
+		flags |= Validation::VDR_update;
+
+	return att->att_validation->run(tdbb, flags);
+}
+
+
+static int validate(Firebird::UtilSvc* svc)
+{
+	PathName dbName;
+	string userName;
+
+	const Switches valSwitches(val_option_in_sw_table, FB_NELEM(val_option_in_sw_table), false, true);
+	const char** argv = svc->argv.begin();
+	const char* const* end = svc->argv.end();
+	for (++argv; argv < end; argv++)
+	{
+		if (!*argv)
+			continue;
+
+		const Switches::in_sw_tab_t* sw = valSwitches.findSwitch(*argv);
+		if (!sw)
+			continue;
+
+		switch (sw->in_sw)
+		{
+		case IN_SW_VAL_DATABASE:
+			*argv = NULL;
+			argv++;
+			if (argv < end && *argv)
+				dbName = *argv;
+			else
+				;// error
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	ClumpletWriter dpb(ClumpletReader::Tagged, MAX_DPB_SIZE, isc_dpb_version1);
+	if (!userName.isEmpty())
+	{
+		dpb.insertString(isc_dpb_trusted_auth, userName);
+	}
+
+	FbLocalStatus status;
+	RefPtr<JProvider> jProv(JProvider::getInstance());
+	RefPtr<JAttachment> jAtt;
+	jAtt.assignRefNoIncr(jProv->attachDatabase(&status, dbName.c_str(), dpb.getBufferLength(), dpb.getBuffer()));
+
+	if (status->getState() & IStatus::STATE_ERRORS)
+	{
+		svc->setServiceStatus(status->getErrors());
+		return FB_FAILURE;
+	}
+
+	Attachment* att = jAtt->getHandle();
+	Database* dbb = att->att_database;
+
+	svc->started();
+
+	MemoryPool* val_pool = NULL;
+	int ret_code = FB_SUCCESS;
+	try
+	{
+		// should be EngineContextHolder but it is declared in jrd.cpp
+		BackgroundContextHolder tdbb(dbb, att, &status, FB_FUNCTION);
+		att->att_use_count++;
+
+
+		tdbb->tdbb_flags |= TDBB_sweeper;
+
+		val_pool = dbb->createPool();
+		Jrd::ContextPoolHolder context(tdbb, val_pool);
+
+		Validation control(tdbb, svc);
+		control.run(tdbb, Validation::VDR_records | Validation::VDR_online | Validation::VDR_partial);
+
+		att->att_use_count--;
+	}
+	catch (const Exception& ex)
+	{
+		att->att_use_count--;
+		ex.stuffException(&status);
+		svc->setServiceStatus(status->getErrors());
+		ret_code = FB_FAILURE;
+	}
+
+	dbb->deletePool(val_pool);
+	jAtt->detach(&status);
+	return ret_code;
+}
+
+
+int VAL_service(Firebird::UtilSvc* svc)
+{
+	svc->initStatus();
+
+	int exit_code = FB_SUCCESS;
+
+	try
+	{
+		exit_code = validate(svc);
+	}
+	catch (const Exception& ex)
+	{
+		FbLocalStatus status;
+		ex.stuffException(&status);
+		svc->setServiceStatus(status->getErrors());
+		exit_code = FB_FAILURE;
+	}
+
+	svc->started();
+
+	return (THREAD_ENTRY_RETURN)(IPTR)exit_code;
 }
 
 
@@ -683,9 +836,9 @@ const Validation::MSG_ENTRY Validation::vdr_msg_table[VAL_MAX_ERROR] =
 	{false, fb_info_ppage_warns,	"Pointer page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} bits {0x%02X %s} are not consistent with data page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} state {0x%02X %s}"}
 };
 
-Validation::Validation()
+Validation::Validation(thread_db* tdbb, UtilSvc* uSvc)
 {
-	vdr_tdbb = NULL;
+	vdr_tdbb = tdbb;
 	vdr_max_page = 0;
 	vdr_flags = 0;
 	vdr_errors = 0;
@@ -697,10 +850,142 @@ Validation::Validation()
 	vdr_rel_records = NULL;
 	vdr_idx_records = NULL;
 	vdr_page_bitmap = NULL;
+
+	vdr_service = uSvc;
+	vdr_tab_incl = vdr_tab_excl = NULL;
+	vdr_idx_incl = vdr_idx_excl = NULL;
+	vdr_lock_tout = -10;
+
+	if (uSvc) {
+		parse_args(tdbb);
+	}
+	output("Validation started\n\n");
+}
+
+Validation::~Validation()
+{
+	delete vdr_tab_incl;
+	delete vdr_tab_excl;
+	delete vdr_idx_incl;
+	delete vdr_idx_excl;
+
+	output("Validation finished\n");
+}
+
+void Validation::parse_args(thread_db* tdbb)
+{
+	Switches local_sw_table(val_option_in_sw_table, FB_NELEM(val_option_in_sw_table), true, true);
+
+	const char** argv = vdr_service->argv.begin();
+	const char* const* end = vdr_service->argv.end();
+	for (++argv; argv < end; argv++)
+	{
+		if (!*argv)
+			continue;
+
+		string arg(*argv);
+		Switches::in_sw_tab_t* sw = local_sw_table.findSwitchMod(arg);
+		if (!sw)
+			continue;
+
+		if (sw->in_sw_state)
+		{
+			string s;
+			s.printf("Switch %s specified more than once", sw->in_sw_name);
+
+			(Arg::Gds(isc_random) << Arg::Str(s)).raise();
+		}
+
+		sw->in_sw_state = true;
+
+		switch (sw->in_sw)
+		{
+		case IN_SW_VAL_TAB_INCL:
+		case IN_SW_VAL_TAB_EXCL:
+		case IN_SW_VAL_IDX_INCL:
+		case IN_SW_VAL_IDX_EXCL:
+		case IN_SW_VAL_LOCK_TIMEOUT:
+			*argv++ = NULL;
+			if (argv >= end || !(*argv))
+			{
+				string s;
+				s.printf("Switch %s requires value", sw->in_sw_name);
+
+				(Arg::Gds(isc_random) << Arg::Str(s)).raise();
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		switch (sw->in_sw)
+		{
+		case IN_SW_VAL_TAB_INCL:
+			vdr_tab_incl = createPatternMatcher(tdbb, *argv);
+			break;
+
+		case IN_SW_VAL_TAB_EXCL:
+			vdr_tab_excl = createPatternMatcher(tdbb, *argv);
+			break;
+
+		case IN_SW_VAL_IDX_INCL:
+			vdr_idx_incl = createPatternMatcher(tdbb, *argv);
+			break;
+
+		case IN_SW_VAL_IDX_EXCL:
+			vdr_idx_excl = createPatternMatcher(tdbb, *argv);
+			break;
+
+		case IN_SW_VAL_LOCK_TIMEOUT:
+			{
+				char* end = (char*) *argv;
+				vdr_lock_tout = -strtol(*argv, &end, 10);
+
+				if (end && *end)
+				{
+					string s;
+					s.printf("Value (%s) is not a valid number", *argv);
+
+					(Arg::Gds(isc_random) << Arg::Str(s)).raise();
+				}
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
 }
 
 
-bool Validation::run(thread_db* tdbb, USHORT switches)
+void Validation::output(const char* format, ...)
+{
+	if (!vdr_service)
+		return;
+
+	va_list params;
+	va_start(params, format);
+
+	string s;
+	tm now;
+	int ms;
+	TimeStamp::getCurrentTimeStamp().decode(&now, &ms);
+
+//	s.printf("%04d-%02d-%02d %02d:%02d:%02d.%04d ", 
+	s.printf("%02d:%02d:%02d.%02d ",
+//		now.tm_year + 1900, now.tm_mon + 1, now.tm_mday,
+		now.tm_hour, now.tm_min, now.tm_sec, ms / 100);
+	vdr_service->outputVerbose(s.c_str());
+
+	s.vprintf(format, params);
+	va_end(params);
+
+	vdr_service->outputVerbose(s.c_str());
+}
+
+
+bool Validation::run(thread_db* tdbb, USHORT flags)
 {
 /**************************************
  *
@@ -722,15 +1007,7 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 		val_pool = dbb->createPool();
 		Jrd::ContextPoolHolder context(tdbb, val_pool);
 
-		vdr_flags = 0;
-		if (switches & isc_dpb_records)
-			vdr_flags |= VDR_records;
-
-		if (switches & isc_dpb_repair)
-			vdr_flags |= VDR_repair;
-
-		if (!(switches & isc_dpb_no_update))
-			vdr_flags |= VDR_update;
+		vdr_flags = flags;
 
 		// initialize validate errors
 		vdr_errors = vdr_warns = vdr_fixed = 0;
@@ -745,7 +1022,9 @@ bool Validation::run(thread_db* tdbb, USHORT switches)
 		if (vdr_errors || vdr_warns)
 			vdr_flags &= ~VDR_update;
 
-		garbage_collect();
+		if (!(vdr_flags & VDR_online) && !(vdr_flags & VDR_partial)) {
+			garbage_collect();
+		}
 		CCH_flush(tdbb, FLUSH_FINI, 0);
 
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
@@ -819,7 +1098,7 @@ Validation::RTN Validation::corrupt(int err_code, const jrd_rel* relation, ...)
 
 	const TEXT* err_string = err_code < VAL_MAX_ERROR ? vdr_msg_table[err_code].msg: "Unknown error code";
 
-	Firebird::string s;
+	string s;
 	va_list ptr;
 	const char* fn = att->att_filename.c_str();
 
@@ -858,11 +1137,14 @@ Validation::RTN Validation::corrupt(int err_code, const jrd_rel* relation, ...)
 	else
 		gds__log("Database: %s\n\t%s", fn, s.c_str());
 
+	s.append("\n");
+	output(s.c_str());
+
 	return rtn_corrupt;
 }
 
 Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
-	USHORT type, WIN* window, void* apage_pointer)
+	USHORT type, WIN* window, void* aPage_pointer)
 {
 /**************************************
  *
@@ -878,12 +1160,22 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 	Database* dbb = vdr_tdbb->getDatabase();
 
 	if (--vdr_tdbb->tdbb_quantum < 0)
+	{
 		JRD_reschedule(vdr_tdbb, 0, true);
+
+		if (vdr_service && vdr_service->finished())
+		{
+			CCH_unwind(vdr_tdbb, false);
+			Arg::Gds(isc_att_shutdown).raise();
+		}
+	}
 
 	window->win_page = page_number;
 	window->win_flags = 0;
-	pag** page_pointer = reinterpret_cast<pag**>(apage_pointer);
-	*page_pointer = CCH_FETCH_NO_SHADOW(vdr_tdbb, window, LCK_write, 0);
+	pag** page_pointer = reinterpret_cast<pag**>(aPage_pointer);
+	*page_pointer = CCH_FETCH_NO_SHADOW(vdr_tdbb, window, 
+		(vdr_flags & VDR_online ? LCK_read : LCK_write), 
+		0);
 
 	if ((*page_pointer)->pag_type != type && type != pag_undefined)
 	{
@@ -1125,6 +1417,7 @@ Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHO
 
 	// Level 1 blobs are a little more complicated
 	WIN window1(DB_PAGE_SPACE, -1), window2(DB_PAGE_SPACE, -1);
+	window1.win_flags = window2.win_flags = WIN_garbage_collector;
 
 	const ULONG* pages1 = header->blh_page;
 	const ULONG* const end1 = pages1 + ((USHORT) (length - BLH_SIZE) >> SHIFTLONG);
@@ -1192,6 +1485,7 @@ Validation::RTN Validation::walk_chain(jrd_rel* relation, const rhd* header,
 	ULONG page_number = header->rhd_b_page;
 	USHORT line_number = header->rhd_b_line;
 	WIN window(DB_PAGE_SPACE, -1);
+	window.win_flags = WIN_garbage_collector;
 
 	while (page_number)
 	{
@@ -1250,25 +1544,72 @@ void Validation::walk_database()
 	fetch_page(true, HEADER_PAGE, pag_header, &window, &page);
 	vdr_max_transaction = page->hdr_next_transaction;
 
-	walk_header(page->hdr_next_page);
-	walk_pip();
-	walk_scns();
-	walk_tip(page->hdr_next_transaction);
-	walk_generators();
+	if (vdr_flags & VDR_online) {
+		CCH_RELEASE(vdr_tdbb, &window);
+	}
+
+	if (!(vdr_flags & VDR_partial))
+	{
+		walk_header(page->hdr_next_page);
+		walk_pip();
+		walk_scns();
+		walk_tip(page->hdr_next_transaction);
+		walk_generators();
+	}
 
 	vec<jrd_rel*>* vector;
 	for (USHORT i = 0; (vector = attachment->att_relations) && i < vector->count(); i++)
 	{
 #ifdef DEBUG_VAL_VERBOSE
-		if (i >= 32 /* rel_MAX */ ) // Why not system flag instead?
+		if (i > dbb->dbb_max_sys_rel) // Why not system flag instead?
 			VAL_debug_level = 2;
 #endif
 		jrd_rel* relation = (*vector)[i];
+
+		if (relation && relation->rel_flags & REL_check_existence)
+			relation = MET_lookup_relation_id(vdr_tdbb, i, false);
+
 		if (relation)
+		{
+			// Can't validate system relations online as they could be modified
+			// by system transaction which not acquires relation locks
+			if ((vdr_flags & VDR_online) && relation->isSystem())
+				continue;
+
+			if (vdr_tab_incl)
+			{
+				vdr_tab_incl->reset();
+				if (!vdr_tab_incl->process((UCHAR*)relation->rel_name.c_str(), relation->rel_name.length()) ||
+					!vdr_tab_incl->result())
+					continue;
+			}
+
+			if (vdr_tab_excl)
+			{
+				vdr_tab_excl->reset();
+				if (!vdr_tab_excl->process((UCHAR*)relation->rel_name.c_str(), relation->rel_name.length()) ||
+					vdr_tab_excl->result())
+					continue;
+			}
+
+			string relName;
+			relName.printf("Relation %d (%s)", relation->rel_id, relation->rel_name.c_str());
+			output("%s\n", relName.c_str());
+
+			int errs = vdr_errors;
 			walk_relation(relation);
+			errs = vdr_errors - errs;
+
+			if (!errs)
+				output("%s is ok\n\n", relName.c_str());
+			else
+				output("%s : %d ERRORS found\n\n", relName.c_str(), errs);
+		}
 	}
 
-	CCH_RELEASE(vdr_tdbb, &window);
+	if (!(vdr_flags & VDR_online)) {
+		CCH_RELEASE(vdr_tdbb, &window);
+	}
 }
 
 Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
@@ -1287,6 +1628,8 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 	Database* dbb = vdr_tdbb->getDatabase();
 
 	WIN window(DB_PAGE_SPACE, -1);
+	window.win_flags = WIN_garbage_collector;
+
 	data_page* page = 0;
 	fetch_page(true, page_number, pag_data, &window, &page);
 
@@ -1544,6 +1887,8 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 	while (next)
 	{
 		WIN window(DB_PAGE_SPACE, -1);
+		window.win_flags = WIN_garbage_collector;
+
 		btree_page* page = 0;
 		fetch_page(true, next, pag_index, &window, &page);
 
@@ -1610,6 +1955,14 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 			pointer = node.readNode(pointer, leafPage);
 			if (pointer > endPointer) {
 				break;
+			}
+
+			if (node.prefix > key.key_length)
+			{
+				corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+						id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
+				CCH_RELEASE(vdr_tdbb, &window);
+				return rtn_corrupt;
 			}
 
 			const UCHAR* p;
@@ -1731,10 +2084,12 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 				const ULONG down_number = node.pageNumber;
 				const RecordNumber down_record_number = node.recordNumber;
 
-				// Note: validate == false for the fetch_page() call here
+				// Note: mark == false for the fetch_page() call here
 				// as we don't want to mark the page as visited yet - we'll
 				// mark it when we visit it for real later on
 				WIN down_window(DB_PAGE_SPACE, -1);
+				down_window.win_flags = WIN_garbage_collector;
+
 				btree_page* down_page = 0;
 				fetch_page(false, down_number, pag_index, &down_window, &down_page);
 				const bool downLeafPage = (down_page->btr_level == 0);
@@ -2014,6 +2369,8 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 
 	pointer_page* page = 0;
 	WIN window(DB_PAGE_SPACE, -1);
+	window.win_flags = WIN_garbage_collector;
+
 	fetch_page(true, (*vector)[sequence], pag_pointer, &window, &page);
 
 #ifdef DEBUG_VAL_VERBOSE
@@ -2100,6 +2457,33 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 		(page->ppg_next && page->ppg_next != (*vector)[sequence]))
 	{
 		CCH_RELEASE(vdr_tdbb, &window);
+
+		if (vdr_flags & VDR_online)
+		{
+			// relation could be extended before we acquired its lock in PR mode
+			// let's re-read pointer pages and check again 
+
+			DPM_scan_pages(vdr_tdbb);
+
+			vector = relation->getBasePages()->rel_pages;
+
+			--sequence;
+			if (!vector || sequence >= static_cast<int>(vector->count())) {
+				return corrupt(VAL_P_PAGE_LOST, relation, sequence);
+			}
+
+			fetch_page(false, (*vector)[sequence], pag_pointer, &window, &page);
+
+			++sequence;
+			const bool error = sequence >= static_cast<int>(vector->count()) ||
+				(page->ppg_next && page->ppg_next != (*vector)[sequence]);
+
+			CCH_RELEASE(vdr_tdbb, &window);
+
+			if (!error)
+				return rtn_ok;
+		}
+
 		return corrupt(VAL_P_PAGE_INCONSISTENT, relation, page->ppg_next, sequence);
 	}
 
@@ -2204,6 +2588,8 @@ Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, US
 	while (flags & rhd_incomplete)
 	{
 		WIN window(DB_PAGE_SPACE, -1);
+		window.win_flags = WIN_garbage_collector;
+
 		fetch_page(true, page_number, pag_data, &window, &page);
 		const data_page::dpg_repeat* line = &page->dpg_rpt[line_number];
 		if (page->dpg_relation != relation->rel_id ||
@@ -2302,6 +2688,31 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 		return rtn_ok;
 	}
 
+	AutoLock lckRead(vdr_tdbb);
+	jrd_rel::GCExclusive lckGC(vdr_tdbb, relation);
+	if (vdr_flags & VDR_online) 
+	{
+		lckRead = jrd_rel::createLock(vdr_tdbb, NULL, relation, LCK_relation, false);
+		if (!LCK_lock(vdr_tdbb, lckRead, LCK_PR, vdr_lock_tout))
+		{
+			output("Acquire relation lock failed\n");
+			vdr_errors++;
+			return rtn_ok;
+		}
+
+		if (!lckGC.acquire(vdr_lock_tout))
+		{
+			output("Acquire garbage collection lock failed\n");
+			vdr_errors++;
+			return rtn_ok;
+		}
+
+		WIN window(DB_PAGE_SPACE, -1);
+		header_page* page = 0;
+		fetch_page(false, (SLONG)HEADER_PAGE, pag_header, &window, &page);
+		vdr_max_transaction = page->hdr_next_transaction;
+		CCH_RELEASE(vdr_tdbb, &window);
+	}
 
 	// Walk pointer and selected data pages associated with relation
 
@@ -2311,6 +2722,11 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 
 	for (ULONG sequence = 0; true; sequence++)
 	{
+		const vcl* vector = relation->getBasePages()->rel_pages;
+		const int ppCnt = vector ? vector->count() : 0;
+
+		output("  process pointer page %4d of %4d\n", sequence, ppCnt);
+
 		const RTN result = walk_pointer_page(relation, sequence);
 		if (result == rtn_eof)
 			break;
@@ -2320,6 +2736,8 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 
 	// Walk indices for the relation
 	walk_root(relation);
+
+	lckGC.release();
 
 	// See if the counts of backversions match
 	if ((vdr_flags & VDR_records) &&
@@ -2332,10 +2750,13 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 	}	// try
 	catch (const Firebird::Exception&)
 	{
-		const char* msg = relation->rel_name.length() > 0 ?
-			"bugcheck during scan of table %d (%s)" :
-			"bugcheck during scan of table %d";
-		gds__log(msg, relation->rel_id, relation->rel_name.c_str());
+		if (!(vdr_flags & VDR_online))
+		{
+			const char* msg = relation->rel_name.length() > 0 ?
+				"bugcheck during scan of table %d (%s)" :
+				"bugcheck during scan of table %d";
+			gds__log(msg, relation->rel_id, relation->rel_name.c_str());
+		}
 #ifdef DEBUG_VAL_VERBOSE
 		if (VAL_debug_level)
 		{
@@ -2375,7 +2796,33 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 	fetch_page(true, relPages->rel_index_root, pag_root, &window, &page);
 
 	for (USHORT i = 0; i < page->irt_count; i++)
+	{
+		if (page->irt_rpt[i].irt_root == 0)
+			continue;
+
+		MetaName index;
+
+		CCH_RELEASE(vdr_tdbb, &window);
+		MET_lookup_index(vdr_tdbb, index, relation->rel_name, i + 1);
+		fetch_page(false, relPages->rel_index_root, pag_root, &window, &page);
+
+		if (vdr_idx_incl)
+		{
+			vdr_idx_incl->reset();
+			if (!vdr_idx_incl->process((UCHAR*)index.c_str(), index.length()) || !vdr_idx_incl->result())
+				continue;
+		}
+
+		if (vdr_idx_excl)
+		{
+			vdr_idx_excl->reset();
+			if (!vdr_idx_excl->process((UCHAR*)index.c_str(), index.length()) || vdr_idx_excl->result())
+				continue;
+		}
+
+		output("Index %d (%s)\n", i + 1, index.c_str());
 		walk_index(relation, *page, i);
+	}
 
 	CCH_RELEASE(vdr_tdbb, &window);
 

@@ -76,6 +76,7 @@
 #include "../utilities/gstat/dbaswi.h"
 #include "../utilities/nbackup/nbkswi.h"
 #include "../jrd/trace/traceswi.h"
+#include "../jrd/val_proto.h"
 
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1970,7 +1971,8 @@ void Service::start(USHORT spb_length, const UCHAR* spb_data)
 		svc_id == isc_action_svc_display_user ||
 		svc_id == isc_action_svc_display_user_adm ||
 		svc_id == isc_action_svc_set_mapping ||
-		svc_id == isc_action_svc_drop_mapping;
+		svc_id == isc_action_svc_drop_mapping ||
+		svc_id == isc_action_svc_validate;
 
 	if (flNeedUser)
 	{
@@ -2496,6 +2498,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	string nbk_database, nbk_file;
 	int nbk_level = -1;
 
+	bool val_database = false;
+
 	bool found = false;
 
 	do
@@ -2868,6 +2872,31 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 			}
 			break;
 
+		case isc_action_svc_validate:
+			if (!get_action_svc_parameter(spb.getClumpTag(), val_option_in_sw_table, switches)) {
+				return false;
+			}
+
+			switch (spb.getClumpTag())
+			{
+			case isc_spb_dbname:
+				if (val_database) {
+					(Arg::Gds(isc_unexp_spb_form) << Arg::Str("only one isc_spb_dbname")).raise();
+				}
+				val_database = true;
+				// fall thru
+			case isc_spb_val_tab_incl:
+			case isc_spb_val_tab_excl:
+			case isc_spb_val_idx_incl:
+			case isc_spb_val_idx_excl:
+				get_action_svc_string(spb, switches);
+				break;
+			case isc_spb_val_lock_timeout:
+				get_action_svc_data(spb, switches);
+				break;
+			}
+			break;
+
 		default:
 			return false;
 		}
@@ -2918,6 +2947,13 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		switches += nbk_database;
 		switches += nbk_file;
 		break;
+
+	case isc_action_svc_validate:
+		if (!val_database)
+		{
+			(Arg::Gds(isc_missing_required_spb) << Arg::Str("isc_spb_dbname")).raise();
+		}
+		break;
 	}
 
 	switches.rtrim();
@@ -2962,7 +2998,7 @@ void Service::get_action_svc_string(const ClumpletReader& spb, string& switches)
 void Service::get_action_svc_data(const ClumpletReader& spb, string& switches)
 {
 	string s;
-	s.printf("%"ULONGFORMAT" ", spb.getInt());
+	s.printf("%"SLONGFORMAT" ", spb.getInt());
 	switches += s;
 }
 

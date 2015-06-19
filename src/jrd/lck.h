@@ -65,6 +65,7 @@ enum lck_t {
 	LCK_btr_dont_gc,			// Prevent removal of b-tree page from index
 	LCK_shared_counter,			// Database-wide shared counter
 	LCK_tra_pc,					// Precommitted transaction lock
+	LCK_rel_gc,					// Allow garbage collection for relation
 	LCK_fun_exist,				// Function existence lock
 	LCK_rel_rescan,				// Relation forced rescan lock
 	LCK_crypt,					// Crypt lock for single crypt thread

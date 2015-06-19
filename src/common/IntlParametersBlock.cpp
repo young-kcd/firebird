@@ -251,6 +251,7 @@ IntlParametersBlock::TagType IntlSpbStart::checkTag(UCHAR tag, const char** tagN
 		case isc_action_svc_nrest:
 		case isc_action_svc_trace_start:
 		case isc_action_svc_db_stats:
+		case isc_action_svc_validate:
 			mode = tag;
 			break;
 		}
@@ -314,6 +315,18 @@ IntlParametersBlock::TagType IntlSpbStart::checkTag(UCHAR tag, const char** tagN
 		{
 		FB_IPB_TAG(isc_spb_command_line);
 			return TAG_COMMAND_LINE;
+		}
+		break;
+
+	case isc_action_svc_validate:
+		switch (tag)
+		{
+		FB_IPB_TAG(isc_spb_dbname);
+		FB_IPB_TAG(isc_spb_val_tab_incl);
+		FB_IPB_TAG(isc_spb_val_tab_excl);
+		FB_IPB_TAG(isc_spb_val_idx_incl);
+		FB_IPB_TAG(isc_spb_val_idx_excl);
+			return TAG_STRING;
 		}
 		break;
 	}

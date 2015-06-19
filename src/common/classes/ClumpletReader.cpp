@@ -454,6 +454,19 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 				return IntSpb;
 			}
 			break;
+		case isc_action_svc_validate:
+			switch(tag)
+			{
+			case isc_spb_val_tab_incl:
+			case isc_spb_val_tab_excl:
+			case isc_spb_val_idx_incl:
+			case isc_spb_val_idx_excl:
+			case isc_spb_dbname:
+				return StringSpb;
+			case isc_spb_val_lock_timeout:
+				return IntSpb;
+			}
+			break;
 		}
 		invalid_structure("wrong spb state");
 		break;

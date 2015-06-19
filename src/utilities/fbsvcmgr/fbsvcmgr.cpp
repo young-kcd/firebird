@@ -250,7 +250,14 @@ bool putNumericArgument(char**& av, ClumpletWriter& spb, unsigned int tag)
 	if (! *av)
 		return false;
 
-	int n = atoi(*av++);
+	char* err = NULL;
+	SLONG n = strtol(*av++, &err, 10);
+
+	if (err && *err)
+	{
+		(Arg::Gds(isc_fbsvcmgr_bad_arg) << av[-2]).raise();
+	}
+
 	spb.insertInt(tag, n);
 
 	return true;
@@ -499,6 +506,17 @@ const SvcSwitches traceChgStateOptions[] =
 	{0, 0, 0, 0, 0}
 };
 
+const SvcSwitches validateOptions[] = 
+{
+	{"dbname", putStringArgument, 0, isc_spb_dbname, 0},
+	{"val_tab_incl", putStringArgument, 0, isc_spb_val_tab_incl, 0},
+	{"val_tab_excl", putStringArgument, 0, isc_spb_val_tab_excl, 0},
+	{"val_idx_incl", putStringArgument, 0, isc_spb_val_idx_incl, 0},
+	{"val_idx_excl", putStringArgument, 0, isc_spb_val_idx_excl, 0},
+	{"val_lock_timeout", putNumericArgument, 0, isc_spb_val_lock_timeout, 0},
+	{0, 0, 0, 0, 0}
+};
+
 const SvcSwitches actionSwitch[] =
 {
 	{"action_backup", putSingleTag, backupOptions, isc_action_svc_backup, isc_info_svc_to_eof},
@@ -522,6 +540,7 @@ const SvcSwitches actionSwitch[] =
 	{"action_trace_list", putSingleTag, 0, isc_action_svc_trace_list, isc_info_svc_line},
 	{"action_set_mapping", putSingleTag, mappingOptions, isc_action_svc_set_mapping, 0},
 	{"action_drop_mapping", putSingleTag, mappingOptions, isc_action_svc_drop_mapping, 0},
+	{"action_validate", putSingleTag, validateOptions, isc_action_svc_validate, isc_info_svc_line},
 	{0, 0, 0, 0, 0}
 };
 

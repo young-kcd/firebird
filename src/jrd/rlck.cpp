@@ -100,8 +100,15 @@ Lock* RLCK_reserve_relation(thread_db* tdbb, jrd_tra* transaction, jrd_rel* rela
 		result = LCK_convert(tdbb, lock, level, transaction->getLockWait());
 	else
 		result = LCK_lock(tdbb, lock, level, transaction->getLockWait());
+
 	if (!result)
+	{
+		string err;
+		err.printf("Acquire lock for relation (%s) failed", relation->rel_name.c_str());
+
+		ERR_append_status(tdbb->tdbb_status_vector, Arg::Gds(isc_random) << Arg::Str(err));
 		ERR_punt();
+	}
 
 	return lock;
 }
@@ -133,10 +140,8 @@ Lock* RLCK_transaction_relation_lock(thread_db* tdbb, jrd_tra* transaction, jrd_
 
 	vector = transaction->tra_relation_locks =
 		vec<Lock*>::newVector(*transaction->tra_pool, transaction->tra_relation_locks, relId + 1);
+	lock = jrd_rel::createLock(tdbb, transaction->tra_pool, relation, LCK_relation, true);
 
-	const USHORT relLockLen = relation->getRelLockKeyLength();
-	lock = FB_NEW_RPT(*transaction->tra_pool, relLockLen) Lock(tdbb, relLockLen, LCK_relation);
-	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
 	// enter all relation locks into the intra-process lock manager and treat
 	// them as compatible within the attachment according to IPLM rules
 	lock->lck_compatible = tdbb->getAttachment();

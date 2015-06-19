@@ -27,6 +27,7 @@
 #include "../jrd/btr_proto.h"
 #include "../jrd/dpm_proto.h"
 #include "../jrd/idx_proto.h"
+#include "../jrd/lck_proto.h"
 #include "../jrd/met_proto.h"
 #include "../jrd/pag_proto.h"
 #include "../jrd/vio_debug.h"
@@ -299,6 +300,222 @@ bool jrd_rel::hasTriggers() const
 	}
 	return false;
 }
+
+Lock* jrd_rel::createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, lck_t lckType, bool noAst)
+{
+	if (!pool)
+		pool = relation->rel_pool;
+
+	const USHORT relLockLen = relation->getRelLockKeyLength();
+
+	Lock* lock = FB_NEW_RPT(*pool, relLockLen) Lock(tdbb, relLockLen, lckType, relation);
+	relation->getRelLockKey(tdbb, &lock->lck_key.lck_string[0]);
+
+	lock->lck_type = lckType;
+	switch (lckType)
+	{
+	case LCK_relation: 
+		break;
+
+	case LCK_rel_gc: 
+		lock->lck_ast = noAst ? NULL : blocking_ast_gcLock;
+		break;
+
+	default:
+		fb_assert(false);
+	}
+
+	return lock;
+}
+
+bool jrd_rel::acquireGCLock(thread_db* tdbb, int wait)
+{
+	fb_assert(rel_flags & REL_gc_lockneed);
+	if (!(rel_flags & REL_gc_lockneed))
+	{
+		fb_assert(rel_gc_lock->lck_id);
+		fb_assert(rel_gc_lock->lck_physical == (rel_flags & REL_gc_disabled ? LCK_SR : LCK_SW));
+		return true;
+	}
+
+	if (!rel_gc_lock) 
+		rel_gc_lock = createLock(tdbb, NULL, this, LCK_rel_gc, false);
+
+	fb_assert(!rel_gc_lock->lck_id);
+	fb_assert(!(rel_flags & REL_gc_blocking));
+
+	ThreadStatusGuard temp_status(tdbb);
+
+	const USHORT level = (rel_flags & REL_gc_disabled) ? LCK_SR : LCK_SW;
+	bool ret = LCK_lock(tdbb, rel_gc_lock, level, wait);
+	if (!ret && (level == LCK_SW))
+	{
+		rel_flags |= REL_gc_disabled;
+		ret = LCK_lock(tdbb, rel_gc_lock, LCK_SR, wait);
+		if (!ret)
+			rel_flags &= ~REL_gc_disabled;
+	}
+
+	if (ret)
+		rel_flags &= ~REL_gc_lockneed;
+
+	return ret;
+}
+
+void jrd_rel::downgradeGCLock(thread_db* tdbb)
+{
+	if (!rel_sweep_count && (rel_flags & REL_gc_blocking))
+	{
+		fb_assert(!(rel_flags & REL_gc_lockneed));
+		fb_assert(rel_gc_lock->lck_id);
+		fb_assert(rel_gc_lock->lck_physical == LCK_SW);
+
+		rel_flags &= ~REL_gc_blocking;
+		rel_flags |= REL_gc_disabled;
+
+		LCK_downgrade(tdbb, rel_gc_lock);
+
+		if (rel_gc_lock->lck_physical != LCK_SR)
+		{
+			rel_flags &= ~REL_gc_disabled;
+			if (rel_gc_lock->lck_physical < LCK_SR)
+				rel_flags |= REL_gc_lockneed;
+		}
+	}
+}
+
+int jrd_rel::blocking_ast_gcLock(void* ast_object)
+{
+/****
+	SR - gc forbidden, awaiting moment to re-establish SW lock
+	SW - gc allowed, usual state
+	PW - gc allowed to the one connection only
+****/
+	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
+
+	try
+	{
+		Lock* lock = relation->rel_gc_lock;
+		Database* dbb = lock->lck_dbb;
+
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
+
+		fb_assert(!(relation->rel_flags & REL_gc_lockneed));
+		if (relation->rel_flags & REL_gc_lockneed) // work already done syncronously ?
+			return 0;
+
+		relation->rel_flags |= REL_gc_blocking;
+		if (relation->rel_sweep_count)
+			return 0;
+
+		if (relation->rel_flags & REL_gc_disabled)
+		{
+			// someone acquired EX lock
+
+			fb_assert(lock->lck_id);
+			fb_assert(lock->lck_physical == LCK_SR);
+
+			LCK_release(tdbb, lock);
+			relation->rel_flags &= ~(REL_gc_disabled | REL_gc_blocking);
+			relation->rel_flags |= REL_gc_lockneed;
+		}
+		else 
+		{
+			// someone acquired PW lock
+
+			fb_assert(lock->lck_id);
+			fb_assert(lock->lck_physical == LCK_SW);
+
+			relation->rel_flags |= REL_gc_disabled;
+			relation->downgradeGCLock(tdbb);
+		}
+	}
+	catch (const Firebird::Exception&)
+	{} // no-op
+
+	return 0;
+}
+
+
+/// jrd_rel::GCExclusive
+
+jrd_rel::GCExclusive::GCExclusive(thread_db* tdbb, jrd_rel* relation) :
+	m_tdbb(tdbb), 
+	m_relation(relation),
+	m_lock(NULL)
+{
+}
+
+jrd_rel::GCExclusive::~GCExclusive()
+{
+	release();
+	delete m_lock;
+}
+
+bool jrd_rel::GCExclusive::acquire(int wait)
+{
+	// if validation is already running - go out
+	if (m_relation->rel_flags & REL_gc_disabled)
+		return false;
+
+	ThreadStatusGuard temp_status(m_tdbb);
+
+	m_relation->rel_flags |= REL_gc_disabled;
+
+	int sleeps = -wait * 10;
+	while (m_relation->rel_sweep_count)
+	{
+		Attachment::Checkout cout(m_tdbb->getAttachment(), FB_FUNCTION);
+		Thread::sleep(100);
+
+		if (wait < 0 && --sleeps == 0)
+			break;
+	}
+
+	if (m_relation->rel_sweep_count)
+	{
+		m_relation->rel_flags &= ~REL_gc_disabled;
+		return false;
+	}
+
+	if (!(m_relation->rel_flags & REL_gc_lockneed))
+	{
+		m_relation->rel_flags |= REL_gc_lockneed;
+		LCK_release(m_tdbb, m_relation->rel_gc_lock);
+	}
+
+	// we need no AST here
+	if (!m_lock)
+		m_lock = jrd_rel::createLock(m_tdbb, NULL, m_relation, LCK_rel_gc, true);
+
+	const bool ret = LCK_lock(m_tdbb, m_lock, LCK_PW, wait);
+	if (!ret)
+		m_relation->rel_flags &= ~REL_gc_disabled;
+
+	return ret;
+}
+
+void jrd_rel::GCExclusive::release()
+{
+	if (!m_lock || !m_lock->lck_id)
+		return;
+
+	fb_assert(m_relation->rel_flags & REL_gc_disabled);
+
+	if (!(m_relation->rel_flags & REL_gc_lockneed))
+	{
+		m_relation->rel_flags |= REL_gc_lockneed;
+		LCK_release(m_tdbb, m_relation->rel_gc_lock);
+	}
+
+	LCK_convert(m_tdbb, m_lock, LCK_EX, LCK_WAIT);
+	m_relation->rel_flags &= ~REL_gc_disabled;
+
+	LCK_release(m_tdbb, m_lock);
+}
+
+
+/// RelationPages
 
 void RelationPages::free(RelationPages*& nextFree)
 {

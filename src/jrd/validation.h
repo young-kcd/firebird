@@ -32,6 +32,11 @@
 #include "../jrd/RecordNumber.h"
 
 
+namespace Firebird
+{
+class UtilSvc;
+}
+
 namespace Jrd
 {
 
@@ -45,6 +50,15 @@ class thread_db;
 
 class Validation
 {
+public:
+	// vdr_flags
+
+	static const USHORT VDR_online = 0x01;		// online validation (no exclusive attachment)
+	static const USHORT VDR_update = 0x02;		// fix simple things
+	static const USHORT VDR_repair = 0x04;		// fix non-simple things (-mend)
+	static const USHORT VDR_records = 0x08;		// Walk all records
+	static const USHORT VDR_partial = 0x10;		// Walk only (some) relations
+
 private:
 
 	enum FETCH_CODE
@@ -112,12 +126,6 @@ private:
 
 	static const MSG_ENTRY vdr_msg_table[VAL_MAX_ERROR];
 
-	// vdr_flags
-
-	static const USHORT VDR_update		= 2;		// fix simple things
-	static const USHORT VDR_repair		= 4;		// fix non-simple things (-mend)
-	static const USHORT VDR_records		= 8;		// Walk all records
-
 	thread_db* vdr_tdbb;
 	ULONG vdr_max_page;
 	USHORT vdr_flags;
@@ -132,11 +140,18 @@ private:
 	PageBitmap* vdr_page_bitmap;
 	ULONG vdr_err_counts[VAL_MAX_ERROR];
 
-public:
-	Validation();
-	~Validation() {};
+	Firebird::UtilSvc* vdr_service;
+	PatternMatcher* vdr_tab_incl;
+	PatternMatcher* vdr_tab_excl;
+	PatternMatcher* vdr_idx_incl;
+	PatternMatcher* vdr_idx_excl;
+	int vdr_lock_tout;
 
-	bool run(thread_db* tdbb, USHORT switches);
+public:
+	Validation(thread_db*, Firebird::UtilSvc* uSvc = NULL);
+	~Validation();
+
+	bool run(thread_db* tdbb, USHORT flags);
 	ULONG getInfo(UCHAR item);
 
 private:
@@ -144,6 +159,9 @@ private:
 	RTN corrupt(int, const jrd_rel*, ...);
 	FETCH_CODE fetch_page(bool validate, ULONG, USHORT, WIN*, void*);
 	void garbage_collect();
+
+	void parse_args(thread_db*);
+	void output(const char*, ...);
 
 	RTN walk_blob(jrd_rel*, const Ods::blh*, USHORT, RecordNumber);
 	RTN walk_chain(jrd_rel*, const Ods::rhd*, RecordNumber);
