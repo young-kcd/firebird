@@ -615,6 +615,8 @@ int gsec(Firebird::UtilSvc* uSvc)
 	}
 	else
 	{
+		util_output(false, "*** gsec is deprecated, will be removed soon ***\n\n");
+
 		Firebird::UtilSvc::ArgvType local_argv;
 		for (;;)
 		{
