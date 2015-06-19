@@ -790,7 +790,7 @@ int VAL_service(Firebird::UtilSvc* svc)
 
 	svc->started();
 
-	return (THREAD_ENTRY_RETURN)(IPTR)exit_code;
+	return exit_code;
 }
 
 
