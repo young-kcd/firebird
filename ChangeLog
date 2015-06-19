@@ -1,3 +1,17 @@
+ 2015-06-18 08:36  paulbeach 
+   M builds/posix/prefix.aix_powerpc
+   M builds/posix/prefix.aix_powerpc_xlc
+
+ 2015-06-18 08:35  paulbeach 
+   A builds/posix/empty.exp
+Link problems on AIX
+
+ 2015-06-18 07:57  alexpeshkoff 
+   M src/jrd/SysFunction.cpp
+   M src/jrd/os/guid.h
+   M src/jrd/os/posix/guid.cpp
+HP-UX port - HP's aCC does not like anonymous struct inside anonymous union
+
  2015-06-17 13:54  alexpeshkoff 
    M src/common/classes/semaphore.h
 AIX port, avoid posix semaphore on AIX due to buggy implementation
