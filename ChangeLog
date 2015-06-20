@@ -1,3 +1,37 @@
+ 2015-06-19 13:55  alexpeshkoff 
+   M src/jrd/validation.cpp
+Fixed gcc build
+
+ 2015-06-19 12:07  hvlad 
+   A doc/README.online_validation
+   M src/common/IntlParametersBlock.cpp
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/SyncObject.cpp
+   M src/include/consts_pub.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/lck_proto.h
+   M src/jrd/rlck.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/svc_tab.cpp
+   M src/jrd/val_proto.h
+   M src/jrd/validation.cpp
+   M src/jrd/validation.h
+   M src/jrd/vio.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Feature CORE-4707 : Implement ability to validate tables and indices online
+
+ 2015-06-19 10:10  alexpeshkoff 
+   M src/jrd/UserManagement.cpp
+Always display SYSDBA as sec$admin (yes, he is really always admin)
+
+ 2015-06-19 09:30  alexpeshkoff 
+   M src/utilities/gsec/gsec.cpp
+Mark gsec as deprecated
+
  2015-06-18 22:30  robocop 
    M src/isql/isql.epp
 CORE-4817.
