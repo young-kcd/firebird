@@ -90,18 +90,20 @@ private:
 	private:
 		enum Op
 		{
-			opRepeat,
-			opRepeatEnd,
 			opBranch,
 			opStart,
 			opEnd,
 			opRef,
+			opRepeatingRefStart,
+			opRepeatingRefEnd,
 			opNothing,
 			opAny,
 			opAnyOf,
 			opExactly,
 			opExactlyOne,	// optimization for opExactly with a single character
-			opRet			// implementation detail of the non-recursive match
+			// Implementation details of the non-recursive match
+			opRet,
+			opRepeatingRestore
 			// If new codes are added, shifts in MatchState codes may need to change.
 		};
 
@@ -174,14 +176,6 @@ private:
 
 				switch (op)
 				{
-					case opRepeat:
-						temp.printf("opRepeat(%d, %d, %d)", len, len2, i + ref);
-						break;
-
-					case opRepeatEnd:
-						temp.printf("opRepeatEnd(%d)", i + ref);
-						break;
-
 					case opBranch:
 						if (branchNum == -1)
 							temp.printf("opBranch(%d)", i + ref);
@@ -204,6 +198,14 @@ private:
 							temp.printf("opRef(%d, %d)", i + ref, branchNum);
 						break;
 
+					case opRepeatingRefStart:
+						temp.printf("opRepeatingRefStart(%d, %d)", i + ref, len);
+						break;
+
+					case opRepeatingRefEnd:
+						temp.printf("opRepeatingRefEnd(%d)", i + ref);
+						break;
+
 					case opNothing:
 						temp = "opNothing";
 						break;
@@ -223,6 +225,14 @@ private:
 
 					case opExactlyOne:
 						temp.printf("opExactlyOne(%.*s)", len, str);
+						break;
+
+					case opRet:
+						temp.printf("opRet");
+						break;
+
+					case opRepeatingRestore:
+						temp.printf("opRepeatingRestore");
 						break;
 
 					default:
@@ -306,9 +316,20 @@ private:
 				*back = node;
 			}
 
-			inline void pop()
+			inline T pop()
 			{
-				--back;
+				fb_assert(getCount() > 0);
+				return *back--;
+			}
+
+			inline T* begin() const
+			{
+				return (T*) FB_ALIGN(data.get(), sizeof(T));
+			}
+
+			inline FB_SIZE_T getCount() const
+			{
+				return (back + 1) - begin();
 			}
 
 		public:
@@ -768,8 +789,64 @@ void SimilarToMatcher<CharType, StrConverter>::Evaluator::parseFactor(int* flagp
 
 		*flagp = n1 == 0 ? 0 : FLAG_NOT_EMPTY;
 
-		nodes.insert(atomPos, Node(opRepeat, n1, n2, nodes.getCount() - atomPos + 1));
-		nodes.add(Node(opRepeatEnd, atomPos - nodes.getCount()));
+		if (n1 == 0 && n2 == INT_MAX)
+		{
+			// Tranforms x{0,} to x*
+			nodes.insert(atomPos, Node(opBranch, nodes.getCount() - atomPos + 2));
+			nodes.push(Node(opRef, atomPos - nodes.getCount()));
+			nodes.push(Node(opBranch));
+		}
+		else
+		{
+			if (n1 == 0)
+			{
+				// Tranforms x{,n} to (x?){n}
+				nodes.insert(atomPos, Node(opBranch, nodes.getCount() - atomPos + 1));
+				nodes.push(Node(opBranch));
+			}
+
+			int exprPos = atomPos + 1;
+			int exprSize = nodes.getCount() - exprPos + 1;
+
+			nodes.insert(atomPos, Node(opRepeatingRefStart, (n1 == 0 ? n2 : n1), 0,
+				nodes.getCount() - atomPos + 1));
+			nodes.push(Node(opRepeatingRefEnd, atomPos - nodes.getCount()));
+
+			if (n2 != n1 && n1 != 0)
+			{
+				if (n2 == INT_MAX)
+				{
+					// Tranforms x{n,} to x{n}x*
+
+					nodes.push(Node(opBranch, exprSize + 2));
+
+					for (int i = 0; i < exprSize; ++i)
+					{
+						Node copy(nodes[exprPos + i]);
+						nodes.push(copy);
+					}
+
+					nodes.push(Node(opRef, -exprSize - 1));
+					nodes.push(Node(opBranch));
+				}
+				else
+				{
+					// Tranforms x{n,m} to x{n}(x?){m-n}
+
+					nodes.push(Node(opRepeatingRefStart, n2 - n1, 0, exprSize + 3));
+					nodes.push(Node(opBranch, exprSize + 1));
+
+					for (int i = 0; i < exprSize; ++i)
+					{
+						Node copy(nodes[exprPos + i]);
+						nodes.push(copy);
+					}
+
+					nodes.push(Node(opBranch));
+					nodes.push(Node(opRepeatingRefEnd, -exprSize  -3));
+				}
+			}
+		}
 	}
 
 	++patternPos;
@@ -1131,33 +1208,6 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 
 		switch (node->op)
 		{
-			//// FIXME: Recursive opRepeat has problems!
-			case opRepeat:
-				for (int j = 0; j < node->len; ++j)
-				{
-					if (!match(i + 1))
-						return false;
-				}
-
-				for (int j = node->len; j < node->len2; ++j)
-				{
-					const CharType* save = bufferPos;
-
-					if (match(i + 1 + node->ref))
-						return true;
-
-					bufferPos = save;
-
-					if (!match(i + 1))
-						return false;
-				}
-
-				i += 1 + node->ref;
-				break;
-
-			case opRepeatEnd:
-				return true;
-
 			case opBranch:
 			{
 				const CharType* const save = bufferPos;
@@ -1214,6 +1264,8 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match(int start)
 				if (node->ref == 1)	// avoid recursion
 					break;
 				return match(i + node->ref);
+
+			//// FIXME: opRepeatingRefStart, opRepeatingRefEnd
 
 			case opNothing:
 				break;
@@ -1350,11 +1402,58 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 	MatchState state = msIterating;
 
 	SimpleStack<SLONG> repeatStack;
+	SLONG repeatCount = 0;
+	Node nodeRepeatingRestore(opRepeatingRestore);
 
 	while (true)
 	{
+		fb_assert(scopeStack.getCount() > 0);
+
 		Scope* const scope = scopeStack.back;
 		const Node* const node = scope->i;
+
+#ifdef DEBUG_SIMILAR
+		string debugText;
+		node->dump(debugText, (node == &nodeRet ? -1 : node - nodes.begin()));
+
+		for (const CharType* p = bufferPos; p != bufferEnd; ++p)
+		{
+			string s;
+			s.printf(" %04d", *p);
+			debugText += s;
+		}
+
+		debugText += "\nrepeat:";
+
+		for (const int* p = repeatStack.begin(); p <= repeatStack.back; ++p)
+		{
+			string s;
+			s.printf(" %d", *p);
+			debugText += s;
+		}
+
+		{
+			string s;
+			s.printf(" %d", repeatCount);
+			debugText += s;
+		}
+
+		debugText += "\nscope:";
+
+		for (const Scope* p = scopeStack.begin(); p <= scopeStack.back; ++p)
+		{
+			string s;
+			s.printf(" %d",
+				(p->i == &nodeRet ?
+					-1 :
+					(p->i == &nodeRepeatingRestore ?
+						-2 :
+						p->i - nodes.begin())));
+			debugText += s;
+		}
+
+		gds__log("%d, %s", state, debugText.c_str());
+#endif
 
 #define ENCODE_OP_STATE(op, state) ((op) | (state))
 
@@ -1362,48 +1461,6 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 
 		switch (ENCODE_OP_STATE(node->op, state))
 		{
-			case ENCODE_OP_STATE(opRepeat, msIterating):
-				repeatStack.push(0);
-				scopeStack.push(scope->i + node->ref);
-				continue;
-
-			case ENCODE_OP_STATE(opRepeat, msReturningFalse):
-			case ENCODE_OP_STATE(opRepeat, msReturningTrue):
-				repeatStack.pop();
-				break;
-
-			case ENCODE_OP_STATE(opRepeatEnd, msIterating):
-			{
-				const Node* repeatNode = scope->i + node->ref;
-				SLONG* repeatCount = repeatStack.back;
-
-				if (*repeatCount < repeatNode->len2)
-				{
-					++*repeatCount;
-					scope->save = bufferPos;
-					scopeStack.push(repeatNode + 1);
-					continue;
-				}
-				else
-					break;
-			}
-
-			case ENCODE_OP_STATE(opRepeatEnd, msReturningFalse):
-			{
-				bufferPos = scope->save;
-
-				const Node* repeatNode = scope->i + node->ref;
-				SLONG* repeatCount = repeatStack.back;
-
-				if (--*repeatCount >= repeatNode->len)
-					state = msIterating;
-
-				break;
-			}
-
-			case ENCODE_OP_STATE(opRepeatEnd, msReturningTrue):
-				break;
-
 			case ENCODE_OP_STATE(opBranch, msIterating):
 				if (node->branchNum != -1)
 					branches[node->branchNum].start = bufferPos - bufferStart;
@@ -1459,6 +1516,45 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 
 			case ENCODE_OP_STATE(opRef, msReturningFalse):
 			case ENCODE_OP_STATE(opRef, msReturningTrue):
+				break;
+
+			case ENCODE_OP_STATE(opRepeatingRefStart, msIterating):
+				repeatStack.push(repeatCount);
+				repeatCount = node->len;
+				scopeStack.push(scope->i + node->ref);
+				continue;
+
+			case ENCODE_OP_STATE(opRepeatingRefStart, msReturningFalse):
+			case ENCODE_OP_STATE(opRepeatingRefStart, msReturningTrue):
+				repeatCount = repeatStack.pop();
+				break;
+
+			case ENCODE_OP_STATE(opRepeatingRefEnd, msIterating):
+				if (repeatCount > 0)
+				{
+					--repeatCount;
+					scopeStack.push(scope->i + node->ref + 1);
+				}
+				else
+				{
+					repeatCount = repeatStack.pop();
+					scopeStack.push(&nodeRepeatingRestore);
+					scopeStack.push(scope->i + 1);
+				}
+
+				continue;
+
+			case ENCODE_OP_STATE(opRepeatingRefEnd, msReturningFalse):
+				++repeatCount;
+				break;
+
+			case ENCODE_OP_STATE(opRepeatingRefEnd, msReturningTrue):
+				break;
+
+			case ENCODE_OP_STATE(opRepeatingRestore, msReturningFalse):
+			case ENCODE_OP_STATE(opRepeatingRestore, msReturningTrue):
+				repeatStack.push(repeatCount);
+				repeatCount = -1;
 				break;
 
 			case ENCODE_OP_STATE(opNothing, msIterating):
@@ -1556,6 +1652,7 @@ bool SimilarToMatcher<CharType, StrConverter>::Evaluator::match()
 
 			case ENCODE_OP_STATE(opRet, msReturningFalse):
 			case ENCODE_OP_STATE(opRet, msReturningTrue):
+				fb_assert(repeatStack.getCount() == 0);
 				return state == msReturningTrue;
 
 			default:
