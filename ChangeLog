@@ -1,3 +1,7 @@
+ 2015-06-21 15:53  asfernandes 
+   M src/jrd/SimilarToMatcher.h
+Postfix for CORE-4740 - SIMILAR TO with quantifier {n,} in the pattern: 1) fails on 2.5 ("Invalid pattern"), 2) strange result in 3.0.
+
  2015-06-19 13:55  alexpeshkoff 
    M src/jrd/validation.cpp
 Fixed gcc build
