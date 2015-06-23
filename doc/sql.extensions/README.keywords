@@ -221,18 +221,36 @@ Firebird 3.0
   Added as reserved words:
 
     BOOLEAN
+    CORR
+    COVAR_POP
+    COVAR_SAMP
     DELETING *
     DETERMINISTIC
     FALSE
     INSERTING *
+    OFFSET
     OVER
-    RDB$RECORD_VERSION
+    RDB$RECORD_VERSION *
+    REGR_AVGX
+    REGR_AVGY
+    REGR_COUNT
+    REGR_INTERCEPT
+    REGR_R2
+    REGR_SLOPE
+    REGR_SXX
+    REGR_SXY
+    REGR_SYY
     RETURN
+    ROW
     SCROLL
-    SQLSTATE
+    SQLSTATE *
+    STDDEV_POP
+    STDDEV_SAMP
     TRUE
     UNKNOWN
     UPDATING *
+    VAR_POP
+    VAR_SAMP
 
   Added as non-reserved words:
 
@@ -253,17 +271,17 @@ Firebird 3.0
     LAST_VALUE
     LAG
     LEAD
-    LINGER
+    LINGER *
     NAME
     NTH_VALUE
     PACKAGE *
     PARTITION
-    PLUGIN
+    PLUGIN *
     PRIOR
     RANK
     RELATIVE
     ROW_NUMBER
-    SERVERWIDE
-    TAGS
-    TRUSTED
+    SERVERWIDE *
+    TAGS *
+    TRUSTED *
     USAGE
