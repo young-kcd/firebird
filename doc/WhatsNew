@@ -2,10 +2,30 @@
   * v3.0 Beta 2
   *************
 
+    * Bugfix CORE-4839
+        SHOW GRANTS does not display info about exceptions which were granted to user
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4831
+        Revoke all on all from role <R> -- failed with "SQL role <R> does not exist in security database"
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4821
+        Ensure CREATE DATABASE right is granted only to roles that do exist in security database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
     * Bugfix CORE-4819
         EXECUTE PROCEDURE's RETURNING_VALUES and EXECUTE STATEMENT's INTO does not check validity of assignments targets leading to bugcheck
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4817
+        ISQL doesn`t show number of affected rows for "MERGE ... WHEN MATCHING" in case when this number surely > 0
+      Contributor(s):
+        Claudio Valderrama C. <cvalde at usa.net>
 
     * Bugfix CORE-4809
         HASH/MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses
@@ -13,10 +33,20 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-4807
+        Regression: List of aggregation is not checked properly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-4806
         Regression: generators can be seen/modified by unprivileged users
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4802
+        GRANT UPDATE(<some_column>) on <T> acts like grant update on ALL columns of <T>
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Bugfix CORE-4798
         Regression: MIN/MAX with a join ignores possible index navigation
@@ -432,6 +462,11 @@
         COUNT (DISTINCT ...) is too slow
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4811
+        Make user names behave according to SQL identifiers rules
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
 
     * Improvement CORE-4791
         Make INSERTING/UPDATING/DELETING reserved words to fix ambiguity with boolean expresions
