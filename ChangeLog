@@ -1,3 +1,11 @@
+ 2015-06-23 22:00  dimitr 
+   M doc/sql.extensions/README.keywords
+Updated the docs for Beta 2.
+
+ 2015-06-23 18:38  dimitr 
+   M doc/WhatsNew
+Updated the docs for Beta 2.
+
  2015-06-22 14:07  alexpeshkoff 
    M src/msgs/messages2.sql
 Change text - looks like we will not have QSG soon enough
