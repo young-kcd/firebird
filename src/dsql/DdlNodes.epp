@@ -10725,6 +10725,7 @@ void GrantRevokeNode::modifyPrivileges(thread_db* tdbb, jrd_tra* transaction, SS
 		grantRevoke(tdbb, transaction, object, user, privs.c_str(), NULL, option);
 }
 
+
 // Execute SQL grant/revoke operation.
 void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const GranteeClause* object,
 	const GranteeClause* userNod, const char* privs,
@@ -10879,6 +10880,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 
 	char priv[2];
 	priv[1] = '\0';
+
+	AutoSetRestoreFlag<USHORT> trDdl(&tdbb->tdbb_flags, TDBB_trusted_ddl, true);
 
 	if (isGrant)
 	{
