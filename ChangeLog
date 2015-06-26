@@ -1,3 +1,12 @@
+ 2015-06-25 16:02  alexpeshkoff 
+   M src/common/classes/auto.h
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4836: Grant update(c) on t to U01 with grant option: user U01 will not be able to "revoke update(c) on t from <user | role>" if this U01 do some DML before revoke
+
+ 2015-06-25 15:23  alexpeshkoff 
+   M src/include/gen/msgs.h
+Generated file
+
  2015-06-23 22:00  dimitr 
    M doc/sql.extensions/README.keywords
 Updated the docs for Beta 2.
