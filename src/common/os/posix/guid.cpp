@@ -70,8 +70,10 @@ void GenerateRandomBytes(void* buffer, FB_SIZE_T size)
 void GenerateGuid(Guid* guid)
 {
 	GenerateRandomBytes(guid, sizeof(Guid));
-	guid->data3 = (4 << 12) | (guid->data3 & 0xFFF);	// version 4
-	guid->data4[0] = 0x80 | (guid->data4[0] & 0x3F);	// variant
+
+	Win32GUID* wg = (Win32GUID*) guid;
+	wg->data3 = (4 << 12) | (wg->data3 & 0xFFF);	// version 4
+	wg->data4[0] = 0x80 | (wg->data4[0] & 0x3F);	// variant
 }
 
 

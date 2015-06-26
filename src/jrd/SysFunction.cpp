@@ -2097,28 +2097,29 @@ dsc* evlGenUuid(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 {
 	fb_assert(args.getCount() == 0);
 
-	Guid guid;
-	fb_assert(sizeof(guid.data) == 16);
+	Guid fbguid;
+	fb_assert(sizeof(fbguid.data) == 16);
 
-	GenerateGuid(&guid);
+	GenerateGuid(&fbguid);
+	Win32GUID* guid = (Win32GUID*)&fbguid;
 
 	UCHAR data[16];
-	data[0] = (guid.data1 >> 24) & 0xFF;
-	data[1] = (guid.data1 >> 16) & 0xFF;
-	data[2] = (guid.data1 >> 8) & 0xFF;
-	data[3] = guid.data1 & 0xFF;
-	data[4] = (guid.data2 >> 8) & 0xFF;
-	data[5] = guid.data2 & 0xFF;
-	data[6] = (guid.data3 >> 8) & 0xFF;
-	data[7] = guid.data3 & 0xFF;
-	data[8] = guid.data4[0];
-	data[9] = guid.data4[1];
-	data[10] = guid.data4[2];
-	data[11] = guid.data4[3];
-	data[12] = guid.data4[4];
-	data[13] = guid.data4[5];
-	data[14] = guid.data4[6];
-	data[15] = guid.data4[7];
+	data[0] = (guid->data1 >> 24) & 0xFF;
+	data[1] = (guid->data1 >> 16) & 0xFF;
+	data[2] = (guid->data1 >> 8) & 0xFF;
+	data[3] = guid->data1 & 0xFF;
+	data[4] = (guid->data2 >> 8) & 0xFF;
+	data[5] = guid->data2 & 0xFF;
+	data[6] = (guid->data3 >> 8) & 0xFF;
+	data[7] = guid->data3 & 0xFF;
+	data[8] = guid->data4[0];
+	data[9] = guid->data4[1];
+	data[10] = guid->data4[2];
+	data[11] = guid->data4[3];
+	data[12] = guid->data4[4];
+	data[13] = guid->data4[5];
+	data[14] = guid->data4[6];
+	data[15] = guid->data4[7];
 
 	dsc result;
 	result.makeText(16, ttype_binary, data);

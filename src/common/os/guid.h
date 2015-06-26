@@ -48,15 +48,16 @@ struct Guid
 	union
 	{
 		USHORT data[8];
-
-		struct	// Compatible with Win32 GUID struct layout.
-		{
-			ULONG data1;
-			USHORT data2;
-			USHORT data3;
-			UCHAR data4[8];
-		};
+		ULONG alignment;	// makes sure C-cast to Win32GUID works correctly
 	};
+};
+
+struct Win32GUID	// Compatible with Win32 GUID struct layout.
+{
+	ULONG data1;
+	USHORT data2;
+	USHORT data3;
+	UCHAR data4[8];
 };
 
 void GenerateRandomBytes(void* buffer, FB_SIZE_T size);
