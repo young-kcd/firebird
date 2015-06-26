@@ -391,7 +391,7 @@ dnl CPU_TYPE=ppc64
     PLATFORM=HPUX
     AC_DEFINE(HPUX, 1, [Define this if OS is HP-UX])
     EDITLINE_FLG=Y
-    SHRLIB_EXT=so
+    SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
 	EXPORT_SYMBOLS_STYLE=hpux
     ;;
