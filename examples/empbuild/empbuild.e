@@ -148,6 +148,7 @@ printf ("Loading Language arrays\n");
 if ( addlang() ) 
 	{
     printf ("Couldn't load Language arrays\n");
+	EXEC SQL DISCONNECT DB;	
     exit (FINI_ERROR);
     }
 
@@ -155,6 +156,7 @@ printf ("Loading Job blobs\n");
 if ( addjob() )
 	{
     printf ("Couldn't load Job blobs\n");
+	EXEC SQL DISCONNECT DB;	
     exit (FINI_ERROR);
     }
 
@@ -162,6 +164,7 @@ printf ("Loading project blobs \n");
 if ( addproj() ) 
 	{
     printf ("Couldn't load project blobs\n");
+	EXEC SQL DISCONNECT DB;	
     exit (FINI_ERROR);
     }
 
@@ -169,6 +172,7 @@ printf ("Loading quarter arrays \n");
 if ( addqtr() )
 	{
     printf ("Couldn't load quarter arrays\n");
+	EXEC SQL DISCONNECT DB;	
     exit (FINI_ERROR);
     }
 
