@@ -138,6 +138,7 @@ if defined FB2_INTLEMP (
 @cd %FB_GEN_DIR%\examples
 @del %FB_GEN_DIR%\examples\employee.fdb 2>nul
 @%FB_ROOT_PATH%\temp\%FB_OBJ_DIR%\empbuild\empbuild.exe %FB_GEN_DB_DIR%/examples/employee.fdb
+if errorlevel 44 (call :ERROR empbuild.exe failed - see %~n0.log for details & goto :EOF)
 
 @if defined FB2_INTLEMP (
 @echo Building intlemp.fdb
@@ -176,6 +177,7 @@ if defined FB2_INTLEMP (
 @echo.
 @echo   Error  - %*
 @echo.
+set ERRLEV=1
 cancel_script > nul 2>&1
 ::End of ERROR
 ::------------
