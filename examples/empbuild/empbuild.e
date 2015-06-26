@@ -140,16 +140,37 @@ if (SQLCODE)
     exit (FINI_ERROR);
     }
 
-EXEC SQL SET TRANSACTION;
+// What is/was the point of this? 
+// Each of the functions below start their own txn.
+//EXEC SQL SET TRANSACTION;
 
-printf ("Loading Language blobs\n");
-addlang();
+printf ("Loading Language arrays\n");
+if ( addlang() ) 
+	{
+    printf ("Couldn't load Language arrays\n");
+    exit (FINI_ERROR);
+    }
+
 printf ("Loading Job blobs\n");
-addjob();
+if ( addjob() )
+	{
+    printf ("Couldn't load Job blobs\n");
+    exit (FINI_ERROR);
+    }
+
 printf ("Loading project blobs \n");
-addproj();
+if ( addproj() ) 
+	{
+    printf ("Couldn't load project blobs\n");
+    exit (FINI_ERROR);
+    }
+
 printf ("Loading quarter arrays \n");
-addqtr();
+if ( addqtr() )
+	{
+    printf ("Couldn't load quarter arrays\n");
+    exit (FINI_ERROR);
+    }
 
 exit (FINI_OK);
 }
@@ -217,6 +238,7 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
+EXEC SQL ROLLBACK;
 return (1);
 }
 
@@ -293,6 +315,7 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
+EXEC SQL ROLLBACK;
 
 return (1);
 }
@@ -367,6 +390,7 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
+EXEC SQL ROLLBACK;
 
 return (1);
 }
@@ -427,6 +451,7 @@ Error:
 
 printf ("SQLCODE=%ld\n", (long)SQLCODE);
 isc_print_status (gds__status);
+EXEC SQL ROLLBACK;
 
 return (1);
 }
