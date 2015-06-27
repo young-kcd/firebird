@@ -1,3 +1,29 @@
+ 2015-06-26 15:52  paul_reeves 
+   M examples/empbuild/empbuild.e
+Disconnect from empbuild database on error.
+
+ 2015-06-26 15:52  paul_reeves 
+   M builds/win32/make_examples.bat
+Set ERRLEV on error so as to break the build process correctly.
+
+ 2015-06-26 13:39  alexpeshkoff 
+   M src/common/os/guid.h
+   M src/common/os/posix/guid.cpp
+   M src/jrd/SysFunction.cpp
+Front-ported HPUX changes
+
+ 2015-06-26 13:23  paul_reeves 
+   M examples/empbuild/empbuild.e
+Improve error handling and document addlang correctly as a function that updates an array, not a blob.
+
+ 2015-06-26 12:55  alexpeshkoff 
+   M src/common/classes/semaphore.h
+Front-port AIX changes
+
+ 2015-06-26 08:15  paulbeach 
+   M configure.ac
+shared lib extension on ia64 hpux is sl
+
  2015-06-25 16:02  alexpeshkoff 
    M src/common/classes/auto.h
    M src/dsql/DdlNodes.epp
