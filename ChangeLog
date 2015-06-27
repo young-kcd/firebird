@@ -1,3 +1,7 @@
+ 2015-06-26 08:14  paulbeach 
+   M configure.in
+shared lib extension on ia64 hpux is sl
+
  2015-06-22 08:17  paulbeach 
    M builds/posix/empty.exp
 add default header
