@@ -886,7 +886,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT char_length, USHO
 	{
 	case blr_varying:
 	case blr_text:
-		if (char_length != 0)
+		if (char_length != 0 && sub_type != dsc_text_type_none)
 			l = char_length * 4;
 
 		dtype = dtype_text;
@@ -899,7 +899,7 @@ USHORT MET_get_dtype(USHORT blr_dtype, USHORT sub_type, USHORT char_length, USHO
 
 	case blr_cstring:
 		dtype = dtype_cstring;
-		if (char_length != 0)
+		if (char_length != 0 && sub_type != dsc_text_type_none)
 			l = char_length * 4;
 		++l;
 		break;

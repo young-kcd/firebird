@@ -57,7 +57,7 @@ export PATH
 #LD_LIBRARY_PATH := $(LD_LIBRARY_PATH):$(GEN_ROOT)/firebird/lib
 #export LD_LIBRARY_PATH
 #endif
-GPRE_FLAGS=	-r -m -z -n
+GPRE_FLAGS=	-m -z -n
 
 LIB_LINK_RPATH = $(call LIB_PLATFORM_RPATH,$(if $(subst intl,,$(1)),$(LIB),$(LIB)/../intl))
 LIB_LINK_MAPFILE =
