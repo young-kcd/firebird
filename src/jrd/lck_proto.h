@@ -50,9 +50,9 @@ void	LCK_write_data(Jrd::thread_db*, Jrd::Lock*, SLONG);
 class AutoLock
 {
 public:
-	explicit AutoLock(Jrd::thread_db* tdbb, Jrd::Lock* lck = NULL) :
-		m_tdbb(tdbb),
-		m_lock(lck)
+	explicit AutoLock(Jrd::thread_db* tdbb, Jrd::Lock* lck = NULL)
+		: m_tdbb(tdbb),
+		  m_lock(lck)
 	{
 	}
 

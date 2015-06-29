@@ -253,7 +253,7 @@ public:
 				m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 				if (att)
 					att->att_wait_lock = lock;
-			break;
+				break;
 
 			default:
 				m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;

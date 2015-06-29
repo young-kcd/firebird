@@ -314,10 +314,10 @@ Lock* jrd_rel::createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, 
 	lock->lck_type = lckType;
 	switch (lckType)
 	{
-	case LCK_relation: 
+	case LCK_relation:
 		break;
 
-	case LCK_rel_gc: 
+	case LCK_rel_gc:
 		lock->lck_ast = noAst ? NULL : blocking_ast_gcLock;
 		break;
 
@@ -338,7 +338,7 @@ bool jrd_rel::acquireGCLock(thread_db* tdbb, int wait)
 		return true;
 	}
 
-	if (!rel_gc_lock) 
+	if (!rel_gc_lock)
 		rel_gc_lock = createLock(tdbb, NULL, this, LCK_rel_gc, false);
 
 	fb_assert(!rel_gc_lock->lck_id);
@@ -386,11 +386,12 @@ void jrd_rel::downgradeGCLock(thread_db* tdbb)
 
 int jrd_rel::blocking_ast_gcLock(void* ast_object)
 {
-/****
+	/****
 	SR - gc forbidden, awaiting moment to re-establish SW lock
 	SW - gc allowed, usual state
 	PW - gc allowed to the one connection only
-****/
+	****/
+
 	jrd_rel* relation = static_cast<jrd_rel*>(ast_object);
 
 	try
@@ -401,7 +402,7 @@ int jrd_rel::blocking_ast_gcLock(void* ast_object)
 		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 		fb_assert(!(relation->rel_flags & REL_gc_lockneed));
-		if (relation->rel_flags & REL_gc_lockneed) // work already done syncronously ?
+		if (relation->rel_flags & REL_gc_lockneed) // work already done synchronously ?
 			return 0;
 
 		relation->rel_flags |= REL_gc_blocking;
@@ -419,7 +420,7 @@ int jrd_rel::blocking_ast_gcLock(void* ast_object)
 			relation->rel_flags &= ~(REL_gc_disabled | REL_gc_blocking);
 			relation->rel_flags |= REL_gc_lockneed;
 		}
-		else 
+		else
 		{
 			// someone acquired PW lock
 
@@ -440,7 +441,7 @@ int jrd_rel::blocking_ast_gcLock(void* ast_object)
 /// jrd_rel::GCExclusive
 
 jrd_rel::GCExclusive::GCExclusive(thread_db* tdbb, jrd_rel* relation) :
-	m_tdbb(tdbb), 
+	m_tdbb(tdbb),
 	m_relation(relation),
 	m_lock(NULL)
 {

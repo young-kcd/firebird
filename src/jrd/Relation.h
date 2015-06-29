@@ -248,15 +248,16 @@ public:
 
 	static Lock* createLock(thread_db* tdbb, MemoryPool* pool, jrd_rel* relation, lck_t, bool);
 	static int blocking_ast_gcLock(void*);
+
 	void downgradeGCLock(thread_db* tdbb);
 	bool acquireGCLock(thread_db* tdbb, int wait);
 
-	// This guard is used by regular code to prevent online validation while 
+	// This guard is used by regular code to prevent online validation while
 	// dead- or back- versions is removed from disk.
 	class GCShared
 	{
 	public:
-		GCShared(thread_db* tdbb, jrd_rel* relation); 
+		GCShared(thread_db* tdbb, jrd_rel* relation);
 		~GCShared();
 
 		bool gcEnabled() const
@@ -275,7 +276,7 @@ public:
 	class GCExclusive
 	{
 	public:
-		GCExclusive(thread_db* tdbb, jrd_rel* relation); 
+		GCExclusive(thread_db* tdbb, jrd_rel* relation);
 		~GCExclusive();
 
 		bool acquire(int wait);
@@ -315,8 +316,8 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 /// class jrd_rel
 
 inline jrd_rel::jrd_rel(MemoryPool& p)
-		: rel_pool(&p), rel_flags(REL_gc_lockneed), rel_name(p), rel_owner_name(p),
-		  rel_view_contexts(p), rel_security_name(p), rel_gc_records(p)
+	: rel_pool(&p), rel_flags(REL_gc_lockneed), rel_name(p), rel_owner_name(p),
+	  rel_view_contexts(p), rel_security_name(p), rel_gc_records(p)
 {
 }
 
@@ -350,10 +351,10 @@ inline RelationPages* jrd_rel::getPages(thread_db* tdbb, TraNumber tran, bool al
 
 /// class jrd_rel::GCShared
 
-inline jrd_rel::GCShared::GCShared(thread_db* tdbb, jrd_rel* relation) :
-	m_tdbb(tdbb),
-	m_relation(relation),
-	m_gcEnabled(false)
+inline jrd_rel::GCShared::GCShared(thread_db* tdbb, jrd_rel* relation)
+	: m_tdbb(tdbb),
+	  m_relation(relation),
+	  m_gcEnabled(false)
 {
 	if (m_relation->rel_flags & (REL_gc_blocking | REL_gc_disabled))
 		return;

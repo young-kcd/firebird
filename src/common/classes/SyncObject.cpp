@@ -48,7 +48,7 @@ bool SyncObject::lock(Sync* sync, SyncType type, const char* from, int timeOut)
 	if (type == SYNC_SHARED)
 	{
 		// In Vulcan SyncObject locking is not fair. Shared locks have priority
-		// before Exclusive locks. To change this behavior we should replace 
+		// before Exclusive locks. To change this behavior we should replace
 		// loop condition below by:
 		//while (waiters == 0)	// activate to make locking fair
 		while (true)

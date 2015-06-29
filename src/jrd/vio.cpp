@@ -859,10 +859,10 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			}
 
 		case tra_precommitted:
-			{// scope
+			{	// scope
 			jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
 
-			if (attachment->att_flags & ATT_NO_CLEANUP || !gcGuard.gcEnabled() ||
+			if ((attachment->att_flags & ATT_NO_CLEANUP) || !gcGuard.gcEnabled() ||
 				(rpb->rpb_flags & (rpb_chained | rpb_gc_active)))
 			{
 				if (rpb->rpb_b_page == 0)
@@ -929,7 +929,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 			if (!DPM_get(tdbb, rpb, LCK_read))
 				return false;
-			} // scope
+			}	// scope
 			break;
 
 			// If it's active, prepare to fetch the old version.
@@ -1939,7 +1939,7 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 
 	jrd_rel::GCShared gcGuard(tdbb, rpb->rpb_relation);
 
-	if (attachment->att_flags & ATT_no_cleanup || !gcGuard.gcEnabled())
+	if ((attachment->att_flags & ATT_no_cleanup) || !gcGuard.gcEnabled())
 		return true;
 
 	const TraNumber oldest_snapshot = rpb->rpb_relation->isTemporary() ?
@@ -3643,6 +3643,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 		ERR_punt();
 	}
+
 	return ret;
 }
 
@@ -4785,7 +4786,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 						jrd_rel::GCShared gcGuard(tdbb, relation);
 						if (!gcGuard.gcEnabled())
 							continue;
-	
+
 						rpb.rpb_relation = relation;
 
 						while (gc_bitmap->getFirst())

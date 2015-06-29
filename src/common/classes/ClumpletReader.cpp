@@ -445,7 +445,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 		case isc_action_svc_trace_stop:
 		case isc_action_svc_trace_suspend:
 		case isc_action_svc_trace_resume:
-			switch(tag)
+			switch (tag)
 			{
 			case isc_spb_trc_cfg:
 			case isc_spb_trc_name:
@@ -455,7 +455,7 @@ ClumpletReader::ClumpletType ClumpletReader::getClumpletType(UCHAR tag) const
 			}
 			break;
 		case isc_action_svc_validate:
-			switch(tag)
+			switch (tag)
 			{
 			case isc_spb_val_tab_incl:
 			case isc_spb_val_tab_excl:

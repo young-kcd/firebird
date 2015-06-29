@@ -601,7 +601,7 @@ static PatternMatcher* createPatternMatcher(thread_db* tdbb, const char* pattern
 
 			Collation* obj = INTL_texttype_lookup(tdbb, CS_UTF8);
 			matcher = obj->createSimilarToMatcher(*tdbb->getDefaultPool(),
-				(const UCHAR*)pattern, len, (UCHAR*)"\\", 1);
+				(const UCHAR*) pattern, len, (UCHAR*) "\\", 1);
 		}
 	}
 	catch (const Exception& ex)
@@ -690,6 +690,7 @@ static int validate(Firebird::UtilSvc* svc)
 	const Switches valSwitches(val_option_in_sw_table, FB_NELEM(val_option_in_sw_table), false, true);
 	const char** argv = svc->argv.begin();
 	const char* const* end = svc->argv.end();
+
 	for (++argv; argv < end; argv++)
 	{
 		if (!*argv)
@@ -707,7 +708,7 @@ static int validate(Firebird::UtilSvc* svc)
 			if (argv < end && *argv)
 				dbName = *argv;
 			else
-				;// error
+				;	// error
 			break;
 
 		default:
@@ -972,9 +973,9 @@ void Validation::output(const char* format, ...)
 	int ms;
 	TimeStamp::getCurrentTimeStamp().decode(&now, &ms);
 
-//	s.printf("%04d-%02d-%02d %02d:%02d:%02d.%04d ", 
+	///s.printf("%04d-%02d-%02d %02d:%02d:%02d.%04d ",
 	s.printf("%02d:%02d:%02d.%02d ",
-//		now.tm_year + 1900, now.tm_mon + 1, now.tm_mday,
+		///now.tm_year + 1900, now.tm_mon + 1, now.tm_mday,
 		now.tm_hour, now.tm_min, now.tm_sec, ms / 100);
 	vdr_service->outputVerbose(s.c_str());
 
@@ -1173,8 +1174,8 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 	window->win_page = page_number;
 	window->win_flags = 0;
 	pag** page_pointer = reinterpret_cast<pag**>(aPage_pointer);
-	*page_pointer = CCH_FETCH_NO_SHADOW(vdr_tdbb, window, 
-		(vdr_flags & VDR_online ? LCK_read : LCK_write), 
+	*page_pointer = CCH_FETCH_NO_SHADOW(vdr_tdbb, window,
+		(vdr_flags & VDR_online ? LCK_read : LCK_write),
 		0);
 
 	if ((*page_pointer)->pag_type != type && type != pag_undefined)
@@ -1579,17 +1580,21 @@ void Validation::walk_database()
 			if (vdr_tab_incl)
 			{
 				vdr_tab_incl->reset();
-				if (!vdr_tab_incl->process((UCHAR*)relation->rel_name.c_str(), relation->rel_name.length()) ||
+				if (!vdr_tab_incl->process((UCHAR*) relation->rel_name.c_str(), relation->rel_name.length()) ||
 					!vdr_tab_incl->result())
+				{
 					continue;
+				}
 			}
 
 			if (vdr_tab_excl)
 			{
 				vdr_tab_excl->reset();
-				if (!vdr_tab_excl->process((UCHAR*)relation->rel_name.c_str(), relation->rel_name.length()) ||
+				if (!vdr_tab_excl->process((UCHAR*) relation->rel_name.c_str(), relation->rel_name.length()) ||
 					vdr_tab_excl->result())
+				{
 					continue;
+				}
 			}
 
 			string relName;
@@ -2461,7 +2466,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 		if (vdr_flags & VDR_online)
 		{
 			// relation could be extended before we acquired its lock in PR mode
-			// let's re-read pointer pages and check again 
+			// let's re-read pointer pages and check again
 
 			DPM_scan_pages(vdr_tdbb);
 
@@ -2690,7 +2695,7 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 
 	AutoLock lckRead(vdr_tdbb);
 	jrd_rel::GCExclusive lckGC(vdr_tdbb, relation);
-	if (vdr_flags & VDR_online) 
+	if (vdr_flags & VDR_online)
 	{
 		lckRead = jrd_rel::createLock(vdr_tdbb, NULL, relation, LCK_relation, false);
 		if (!LCK_lock(vdr_tdbb, lckRead, LCK_PR, vdr_lock_tout))
@@ -2708,8 +2713,8 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 		}
 
 		WIN window(DB_PAGE_SPACE, -1);
-		header_page* page = 0;
-		fetch_page(false, (SLONG)HEADER_PAGE, pag_header, &window, &page);
+		header_page* page = NULL;
+		fetch_page(false, (SLONG) HEADER_PAGE, pag_header, &window, &page);
 		vdr_max_transaction = page->hdr_next_transaction;
 		CCH_RELEASE(vdr_tdbb, &window);
 	}
@@ -2809,14 +2814,14 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 		if (vdr_idx_incl)
 		{
 			vdr_idx_incl->reset();
-			if (!vdr_idx_incl->process((UCHAR*)index.c_str(), index.length()) || !vdr_idx_incl->result())
+			if (!vdr_idx_incl->process((UCHAR*) index.c_str(), index.length()) || !vdr_idx_incl->result())
 				continue;
 		}
 
 		if (vdr_idx_excl)
 		{
 			vdr_idx_excl->reset();
-			if (!vdr_idx_excl->process((UCHAR*)index.c_str(), index.length()) || vdr_idx_excl->result())
+			if (!vdr_idx_excl->process((UCHAR*) index.c_str(), index.length()) || vdr_idx_excl->result())
 				continue;
 		}
 
