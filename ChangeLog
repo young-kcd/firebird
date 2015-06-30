@@ -1,3 +1,20 @@
+ 2015-06-29 01:38  asfernandes 
+   M builds/posix/Makefile.in.examples
+   M src/gpre/std/gpre_meta.epp
+This should fix the problem of building examples in Windows 64-bit, although it does not answear what exactly is happening there.
+
+ 2015-06-29 01:02  asfernandes 
+   M src/common/classes/ClumpletReader.cpp
+   M src/common/classes/SyncObject.cpp
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/lck.cpp
+   M src/jrd/lck_proto.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Misc.
+
  2015-06-26 15:52  paul_reeves 
    M examples/empbuild/empbuild.e
 Disconnect from empbuild database on error.
