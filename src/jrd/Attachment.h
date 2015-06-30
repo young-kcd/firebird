@@ -480,6 +480,7 @@ const ULONG ATT_system				= 0x04000L; // Special system attachment
 const ULONG ATT_creator				= 0x08000L; // This attachment created the DB
 const ULONG ATT_monitor_done		= 0x10000L; // Monitoring data is refreshed
 const ULONG ATT_security_db			= 0x20000L; // Attachment used for security purposes
+const ULONG ATT_mapping				= 0x40000L; // Attachment used for mapping auth block
 
 const ULONG ATT_NO_CLEANUP			= (ATT_no_cleanup | ATT_notify_gc);
 

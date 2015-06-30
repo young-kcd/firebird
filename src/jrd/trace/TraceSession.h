@@ -31,6 +31,7 @@
 
 #include "firebird.h"
 #include "../../common/classes/fb_string.h"
+#include "../../common/classes/ClumpletReader.h"
 
 
 namespace Firebird {
@@ -46,6 +47,7 @@ public:
 	explicit TraceSession(MemoryPool& pool) :
 		ses_id(0),
 		ses_name(pool),
+		ses_auth(pool),
 		ses_user(pool),
 		ses_config(pool),
 		ses_start(0),
@@ -59,6 +61,7 @@ public:
 	{
 		ses_id = 0;
 		ses_name = "";
+		ses_auth.clear();
 		ses_user = "";
 		ses_config = "";
 		ses_start = 0;
@@ -68,6 +71,7 @@ public:
 
 	ULONG	ses_id;
 	string	ses_name;
+	AuthReader::AuthBlock ses_auth;
 	string	ses_user;
 	string	ses_config;
 	time_t	ses_start;

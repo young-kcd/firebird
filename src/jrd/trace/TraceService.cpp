@@ -54,8 +54,8 @@ public:
 
 	virtual ~TraceSvcJrd() {};
 
-	virtual void setAttachInfo(const string& service_name, const string& user,
-		const string& pwd, bool isAdmin);
+	virtual void setAttachInfo(const string& service_name, const string& user, const string& pwd,
+		const AuthReader::AuthBlock& authBlock, bool isAdmin);
 
 	virtual void startSession(TraceSession& session, bool interactive);
 	virtual void stopSession(ULONG id);
@@ -69,13 +69,15 @@ private:
 
 	Service& m_svc;
 	string m_user;
+	AuthReader::AuthBlock m_authBlock;
 	bool   m_admin;
 	ULONG  m_chg_number;
 };
 
-void TraceSvcJrd::setAttachInfo(const string& /*service_name*/, const string& user,
-	const string& /*pwd*/, bool isAdmin)
+void TraceSvcJrd::setAttachInfo(const string& /*svc_name*/, const string& user, const string& pwd,
+	const AuthReader::AuthBlock& authBlock, bool isAdmin)
 {
+	m_authBlock = authBlock;
 	m_user = user;
 	m_admin = isAdmin || (m_user == SYSDBA_USER_NAME);
 }
@@ -93,6 +95,7 @@ void TraceSvcJrd::startSession(TraceSession& session, bool interactive)
 	{	// scope
 		StorageGuard guard(storage);
 
+		session.ses_auth = m_authBlock;
 		session.ses_user = m_user;
 
 		session.ses_flags = trs_active;

@@ -30,10 +30,12 @@
 
 #include "../../jrd/trace/TraceManager.h"
 #include "../../jrd/trace/TraceObjects.h"
+#include "../../jrd/Mapping.h"
 #include "../../common/os/path_utils.h"
 #include "../../common/ScanDir.h"
 #include "../../common/isc_proto.h"
 #include "../../common/classes/GetPlugins.h"
+#include "../../common/db_alias.h"
 
 #ifdef WIN_NT
 #include <process.h>
@@ -223,12 +225,61 @@ void TraceManager::update_session(const TraceSession& session)
 	{
 		if (attachment)
 		{
-			if (!attachment->att_user || attachment->att_user->usr_user_name != session.ses_user)
+			if ((!attachment->att_user) || (attachment->att_flags & ATT_mapping))
 				return;
+
+			string s_user = session.ses_user;
+			string t_role;
+			if (session.ses_auth.hasData())
+			{
+				Database* dbb = attachment->att_database;
+				fb_assert(dbb);
+
+				try
+				{
+					mapUser(s_user, t_role, NULL, NULL, session.ses_auth,
+						attachment->att_filename.c_str(), dbb->dbb_filename.c_str(),
+						dbb->dbb_config->getSecurityDatabase(),
+						dbb->dbb_provider->getCryptCallback());
+				}
+				catch(const Firebird::Exception&)
+				{
+					// Error in mapUser() means missing context, therefore...
+					return;
+				}
+				t_role.upper();
+			}
+
+			if (s_user != SYSDBA_USER_NAME && t_role != ADMIN_ROLE &&
+				attachment->att_user->usr_user_name != s_user)
+			{
+				return;
+			}
 		}
 		else if (service)
 		{
-			if (session.ses_user != service->getUserName())
+			string s_user = session.ses_user;
+			string t_role;
+			if (session.ses_auth.hasData())
+			{
+				PathName dummy;
+				RefPtr<Config> config;
+				expandDatabaseName(service->getExpectedDb(), dummy, &config);
+
+				try
+				{
+					mapUser(s_user, t_role, NULL, NULL, session.ses_auth, "services manager", NULL,
+						config->getSecurityDatabase(), service->getCryptCallback());
+				}
+				catch(const Firebird::Exception&)
+				{
+					// Error in mapUser() means missing context, therefore...
+					return;
+				}
+				t_role.upper();
+			}
+
+			if (s_user != SYSDBA_USER_NAME && t_role != ADMIN_ROLE && service->getUserName() != s_user)
 				return;
 		}
 		else

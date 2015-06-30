@@ -194,6 +194,8 @@ public:		// external interface with service
 	const Firebird::string&	getRemoteAddress() const	{ return svc_remote_address; }
 	const Firebird::string&	getRemoteProcess() const	{ return svc_remote_process; }
 	int	getRemotePID() const { return svc_remote_pid; }
+	const Firebird::PathName& getExpectedDb() const		{ return svc_expected_db; }
+	Firebird::ICryptKeyCallback* getCryptCallback()		{ return svc_crypt_callback; }
 
 private:
 	// Service must have private destructor, called from finish

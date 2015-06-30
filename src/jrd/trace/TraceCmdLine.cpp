@@ -399,35 +399,19 @@ void fbtrace(UtilSvc* uSvc, TraceSvcIntf* traceSvc)
 		}
 	}
 
-	// This is a temporal hack!!!
-	// AuthBlock should be passed inside trace and used on per-database basis
-	//		to make sure which attachments may be traced.
+	AuthReader::AuthBlock authBlock;
 	const unsigned char* bytes;
 	unsigned int authBlockSize = uSvc->getAuthBlock(&bytes);
 	if (authBlockSize)
 	{
-		AuthReader::AuthBlock authBlock;
 		authBlock.add(bytes, authBlockSize);
 
-		AuthReader auth(authBlock);
-		AuthReader::Info info;
-
-		if (auth.getInfo(info))
-		{
-			pwd = "";
-			user = info.name.ToString();
-			adminRole = false;
-
-			if (!info.secDb.hasData())
-			{
-				auth.moveNext();
-				if (auth.getInfo(info))
-					adminRole = true;
-			}
-		}
+		pwd = "";
+		user = "";
+		adminRole = false;
 	}
 
-	traceSvc->setAttachInfo(svc_name, user, pwd, adminRole);
+	traceSvc->setAttachInfo(svc_name, user, pwd, authBlock, adminRole);
 
 	switch (action_sw->in_sw)
 	{

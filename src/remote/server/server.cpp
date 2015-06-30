@@ -2167,6 +2167,10 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 		case isc_dpb_password:
 		case isc_dpb_password_enc:
 
+		// remove tags for specific internal attaches
+		case isc_dpb_map_attach:
+		case isc_dpb_sec_attach:
+
 		// remove client's config information
 		case isc_dpb_config:
 			pb->deleteClumplet();

@@ -921,6 +921,7 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					embeddedSysdba.insertString(isc_dpb_user_name, SYSDBA_USER_NAME,
 						fb_strlen(SYSDBA_USER_NAME));
 					embeddedSysdba.insertByte(isc_dpb_sec_attach, TRUE);
+					embeddedSysdba.insertByte(isc_dpb_map_attach, TRUE);
 					embeddedSysdba.insertByte(isc_dpb_no_db_triggers, TRUE);
 
 					if (!iSec)
@@ -966,10 +967,12 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 				if (db)
 					cDb = locate(alias, db);
 				Cache* cSec = locate(securityAlias, securityDb);
+				if (cDb == cSec)
+					cDb = NULL;
 
-				SyncObject dummySync;
-				Sync sDb((!(flags & FLAG_DB)) ? &cDb->syncObject : &dummySync, FB_FUNCTION);
-				Sync sSec((!(flags & FLAG_SEC)) ? &cSec->syncObject : &dummySync, FB_FUNCTION);
+				SyncObject dummySync1, dummySync2;
+				Sync sDb(((!(flags & FLAG_DB)) && cDb) ? &cDb->syncObject : &dummySync1, FB_FUNCTION);
+				Sync sSec((!(flags & FLAG_SEC)) ? &cSec->syncObject : &dummySync2, FB_FUNCTION);
 
 				sSec.lock(syncType);
 				if (!sDb.lockConditional(syncType))

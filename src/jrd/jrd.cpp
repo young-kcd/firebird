@@ -747,7 +747,7 @@ namespace
 
 	DefaultCallback defCallback;
 
-	ICryptKeyCallback* getCryptCallback(ICryptKeyCallback* callback)
+	ICryptKeyCallback* getDefCryptCallback(ICryptKeyCallback* callback)
 	{
 		return callback ? callback : &defCallback;
 	}
@@ -904,6 +904,7 @@ public:
 	ULONG	dpb_flags;			// to OR'd with dbb_flags
 	bool	dpb_nolinger;
 	bool	dpb_reset_icu;
+	bool	dpb_map_attach;
 
 	// here begin compound objects
 	// for constructor to work properly dpb_user_name
@@ -1015,7 +1016,7 @@ static VdnResult	verifyDatabaseName(const PathName&, FbStatusVector*, bool);
 static void		unwindAttach(thread_db* tdbb, const Exception& ex, FbStatusVector* userStatus,
 	Jrd::Attachment* attachment, Database* dbb, unsigned internalFlags);
 static JAttachment*	initAttachment(thread_db*, const PathName&, const PathName&, RefPtr<Config>, bool,
-	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*);
+	const DatabaseOptions&, RefMutexUnlock&, IPluginConfig*, JProvider*);
 static JAttachment*	create_attachment(const PathName&, Database*, const DatabaseOptions&, bool newDb);
 static void		prepare_tra(thread_db*, jrd_tra*, USHORT, const UCHAR*);
 static void		start_transaction(thread_db* tdbb, bool transliterate, jrd_tra** tra_handle,
@@ -1467,7 +1468,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 			RefMutexUnlock initGuard;
 			JAttachment* jAtt = initAttachment(tdbb, expanded_name,
 				is_alias ? org_filename : expanded_name,
-				config, true, options, initGuard, pluginConfig);
+				config, true, options, initGuard, pluginConfig, this);
 
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
@@ -1483,13 +1484,15 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION, AttachmentHolder::ATT_DONT_LOCK);
 
-			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
+			attachment->att_crypt_callback = getDefCryptCallback(cryptCallback);
 			attachment->att_client_charset = attachment->att_charset = options.dpb_interp;
 
 			if (options.dpb_no_garbage)
 				attachment->att_flags |= ATT_no_cleanup;
 			if (options.dpb_sec_attach)
 				attachment->att_flags |= ATT_security_db;
+			if (options.dpb_map_attach)
+				attachment->att_flags |= ATT_mapping;
 
 			if (options.dpb_gbak_attach)
 				attachment->att_utility = Attachment::UTIL_GBAK;
@@ -2492,7 +2495,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			RefMutexUnlock initGuard;
 			JAttachment* jAtt = initAttachment(tdbb, expanded_name,
 				is_alias ? org_filename : expanded_name,
-				config, false, options, initGuard, pluginConfig);
+				config, false, options, initGuard, pluginConfig, this);
 
 			dbb = tdbb->getDatabase();
 			fb_assert(dbb);
@@ -2506,13 +2509,15 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 
 			EngineContextHolder tdbb(user_status, jAtt, FB_FUNCTION, AttachmentHolder::ATT_DONT_LOCK);
 
-			attachment->att_crypt_callback = getCryptCallback(cryptCallback);
+			attachment->att_crypt_callback = getDefCryptCallback(cryptCallback);
 
 			if (options.dpb_working_directory.hasData())
 				attachment->att_working_directory = options.dpb_working_directory;
 
 			if (options.dpb_sec_attach)
 				attachment->att_flags |= ATT_security_db;
+			if (options.dpb_map_attach)
+				attachment->att_flags |= ATT_mapping;
 
 			if (options.dpb_gbak_attach)
 				attachment->att_utility = Attachment::UTIL_GBAK;
@@ -4120,10 +4125,10 @@ void JProvider::shutdown(CheckStatusWrapper* status, unsigned int timeout, const
 }
 
 
-void JProvider::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* callback)
+void JProvider::setDbCryptCallback(CheckStatusWrapper* status, ICryptKeyCallback* cryptCb)
 {
 	status->init();
-	cryptCallback = callback;
+	cryptCallback = cryptCb;
 }
 
 
@@ -5843,6 +5848,10 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			dpb_sec_attach = rdr.getInt() != 0;
 			break;
 
+		case isc_dpb_map_attach:
+			dpb_map_attach = true;
+			break;
+
 		case isc_dpb_gbak_attach:
 			{
 				string gbakStr;
@@ -5977,7 +5986,8 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_name,
 	const PathName& alias_name, RefPtr<Config> config, bool attach_flag,
-	const DatabaseOptions& options, RefMutexUnlock& initGuard, IPluginConfig* pConf)
+	const DatabaseOptions& options, RefMutexUnlock& initGuard, IPluginConfig* pConf,
+	JProvider* provider)
 {
 /**************************************
  *
@@ -6100,7 +6110,7 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 
 		Config::merge(config, &options.dpb_config);
 
-		dbb = Database::create(pConf, shared);
+		dbb = Database::create(pConf, provider, shared);
 		dbb->dbb_config = config;
 		dbb->dbb_filename = expanded_name;
 #ifdef HAVE_ID_BY_NAME

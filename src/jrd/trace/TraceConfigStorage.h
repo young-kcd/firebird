@@ -109,6 +109,7 @@ private:
 	{
 		tagID = 1,			// session ID
 		tagName,			// session Name
+		tagAuthBlock,		// with which creator logged in
 		tagUserName,		// creator user name
 		tagFlags,			// session flags
 		tagConfig,			// configuration

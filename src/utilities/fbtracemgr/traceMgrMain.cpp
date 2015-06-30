@@ -47,8 +47,8 @@ public:
 	TraceSvcUtil();
 	virtual ~TraceSvcUtil();
 
-	virtual void setAttachInfo(const string& service_name, const string& user,
-		const string& pwd, bool isAdmin);
+	virtual void setAttachInfo(const string& service_name, const string& user, const string& pwd,
+		const AuthReader::AuthBlock& authBlock, bool isAdmin);
 
 	virtual void startSession(TraceSession& session, bool interactive);
 	virtual void stopSession(ULONG id);
@@ -83,8 +83,8 @@ TraceSvcUtil::~TraceSvcUtil()
 	}
 }
 
-void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
-	const string& pwd, bool isAdmin)
+void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user, const string& pwd,
+		const AuthReader::AuthBlock& /*authBlock*/, bool isAdmin)
 {
 	ISC_STATUS_ARRAY status = {0};
 

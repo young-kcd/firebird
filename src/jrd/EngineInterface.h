@@ -409,6 +409,11 @@ public:
 		return p;
 	}
 
+	Firebird::ICryptKeyCallback* getCryptCallback()
+	{
+		return cryptCallback;
+	}
+
 	// IProvider implementation
 	JAttachment* attachDatabase(Firebird::CheckStatusWrapper* status, const char* fileName,
 		unsigned int dpbLength, const unsigned char* dpb);
@@ -418,7 +423,7 @@ public:
 		unsigned int spbLength, const unsigned char* spb);
 	void shutdown(Firebird::CheckStatusWrapper* status, unsigned int timeout, const int reason);
 	void setDbCryptCallback(Firebird::CheckStatusWrapper* status,
-		Firebird::ICryptKeyCallback* cryptCallback);
+		Firebird::ICryptKeyCallback* cryptCb);
 
 	int release();
 

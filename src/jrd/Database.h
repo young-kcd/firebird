@@ -79,6 +79,7 @@ class ExternalFileDirectoryList;
 class MonitoringData;
 class GarbageCollector;
 class CryptoManager;
+class JProvider;
 
 // general purpose vector
 template <class T, BlockType TYPE = type_vec>
@@ -330,12 +331,13 @@ public:
 		bool active;
 	};
 
-	static Database* create(Firebird::IPluginConfig* pConf, bool shared)
+	static Database* create(Firebird::IPluginConfig* pConf, JProvider* provider, bool shared)
 	{
 		Firebird::MemoryStats temp_stats;
 		MemoryPool* const pool = MemoryPool::createPool(NULL, temp_stats);
 		Database* const dbb = FB_NEW(*pool) Database(pool, pConf, shared);
 		pool->setStatsGroup(dbb->dbb_memory_stats);
+		dbb->dbb_provider = provider;
 		return dbb;
 	}
 
@@ -375,6 +377,7 @@ public:
 	LockManager*	dbb_lock_mgr;
 	EventManager*	dbb_event_mgr;
 
+	JProvider*	dbb_provider;
 	Database*	dbb_next;				// Next database block in system
 	Attachment* dbb_attachments;		// Active attachments
 	Attachment* dbb_sys_attachments;	// System attachments
