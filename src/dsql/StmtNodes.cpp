@@ -5226,7 +5226,8 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				processedRet = modify->statement2 = ReturningProcessor(
 					dsqlScratch, oldContext, modContext).process(returning, updRet);
 
-				nullRet = dsqlNullifyReturning(dsqlScratch, modify, false);
+				if (!nullRet)
+					nullRet = dsqlNullifyReturning(dsqlScratch, modify, false);
 
 				// And pop them.
 				dsqlScratch->context->pop();
@@ -5281,7 +5282,8 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				processedRet = erase->statement = ReturningProcessor(
 					dsqlScratch, context, NULL).process(returning, delRet);
 
-				nullRet = dsqlNullifyReturning(dsqlScratch, erase, false);
+				if (!nullRet)
+					nullRet = dsqlNullifyReturning(dsqlScratch, erase, false);
 			}
 
 			// And pop the contexts.
@@ -5347,7 +5349,7 @@ StmtNode* MergeNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			processedRet = store->statement2 = ReturningProcessor(
 				dsqlScratch, oldContext, context).process(returning, insRet);
 
-			if (!processedRet)
+			if (!nullRet)
 				nullRet = dsqlNullifyReturning(dsqlScratch, store, false);
 
 			dsqlScratch->context->pop();
