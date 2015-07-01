@@ -72,6 +72,29 @@
 using namespace Jrd;
 using namespace Firebird;
 
+namespace {
+
+#ifdef SUPERSERVER
+
+typedef Database::Checkout PioCheckout;
+
+#else
+
+class PioCheckout
+{
+public:
+	PioCheckout(Database*) {}
+	~PioCheckout() {}
+
+private:
+	PioCheckout(const PioCheckout&);
+	PioCheckout& operator=(const PioCheckout&);
+};
+
+#endif
+
+};
+
 // Some operating systems have problems with use of write/read with
 // big (>2Gb) files. On the other hand, pwrite/pread works fine for them.
 // Therefore:
