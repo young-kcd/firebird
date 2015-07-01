@@ -148,7 +148,7 @@ private:
 	int vdr_lock_tout;
 
 public:
-	Validation(thread_db*, Firebird::UtilSvc* uSvc = NULL);
+	explicit Validation(thread_db*, Firebird::UtilSvc* uSvc = NULL);
 	~Validation();
 
 	bool run(thread_db* tdbb, USHORT flags);
