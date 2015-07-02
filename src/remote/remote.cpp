@@ -67,7 +67,8 @@ const ParametersSet dpbParam =
 	isc_dpb_remote_protocol,
 	isc_dpb_host_name,
 	isc_dpb_os_user,
-	isc_dpb_config
+	isc_dpb_config,
+	isc_dpb_utf8_filename
 };
 
 const ParametersSet spbParam =
@@ -89,7 +90,8 @@ const ParametersSet spbParam =
 	isc_spb_remote_protocol,
 	isc_spb_host_name,
 	isc_spb_os_user,
-	isc_spb_config
+	isc_spb_config,
+	isc_spb_utf8_filename
 };
 
 const ParametersSet connectParam =
@@ -111,6 +113,7 @@ const ParametersSet connectParam =
 	0,
 	CNCT_host,
 	CNCT_user,
+	0,
 	0
 };
 

@@ -141,7 +141,8 @@ struct ParametersSet
 		  plugin_name, plugin_list, specific_data,
 		  address_path, process_id, process_name,
 		  encrypt_key, client_version, remote_protocol,
-		  host_name, os_user, config_text;
+		  host_name, os_user, config_text,
+		  utf8_filename;
 };
 
 extern const ParametersSet dpbParam, spbParam, connectParam;

@@ -7521,7 +7521,7 @@ static inline void makeUtfString(bool uft8Convert, Firebird::string& s)
 
 void ClntAuthBlock::loadClnt(Firebird::ClumpletWriter& dpb, const ParametersSet* tags)
 {
-	bool uft8Convert = !dpb.find(isc_dpb_utf8_filename);
+	bool uft8Convert = !dpb.find(tags->utf8_filename);
 
 	for (dpb.rewind(); !dpb.isEof(); dpb.moveNext())
 	{
