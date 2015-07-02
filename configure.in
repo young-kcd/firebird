@@ -387,6 +387,7 @@ dnl CPU_TYPE=ppc64
     EDITLINE_FLG=Y
     SHRLIB_EXT=sl
     libdir=/usr/lib/pa20_64
+    ICU_EXTRAS=--disable-extras
     ;;
 
   hppa*-*-hpux*)
@@ -1524,7 +1525,7 @@ else
 AC_OUTPUT
 (cd extern/icu/source
 chmod +x runConfigureICU configure install-sh
-./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" --prefix=`pwd`/..)
+./runConfigureICU "$ICU_PLATFORM" "$DEBUG_ICU" "$ICU_EXTRAS" --prefix=`pwd`/..)
 fi
 
 dnl Print out the build configuration (the most interesting thing)
