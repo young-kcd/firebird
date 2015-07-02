@@ -5683,10 +5683,11 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 		PathName svcName(serviceName);
 		svcName.trim();
 
-		// Take care about SPB
 		ClumpletWriter spbWriter(ClumpletReader::spbList, MAX_DPB_SIZE, spb, spbLength);
-		setLogin(spbWriter, true);
 		bool utfData = spbWriter.find(isc_spb_utf8_filename);
+
+		// Take care about SPB
+		setLogin(spbWriter, true);
 		if (!utfData)
 		{
 			IntlSpb().toUtf8(spbWriter, isc_spb_utf8_filename);
