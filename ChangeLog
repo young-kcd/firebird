@@ -1,3 +1,14 @@
+ 2015-07-01 09:36  hvlad 
+   M src/jrd/os/posix/unix.cpp
+Reworked patch for bug CORE-4615 : Classic Server could hung with (near) 100% CPU load
+Missed piece
+
+ 2015-07-01 09:28  hvlad 
+   M src/jrd/Database.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+Reworked patch for bug CORE-4615 : Classic Server could hung with (near) 100% CPU load
+
  2015-06-26 08:14  paulbeach 
    M configure.in
 shared lib extension on ia64 hpux is sl
