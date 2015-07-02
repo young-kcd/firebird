@@ -132,7 +132,9 @@ void RemotePassword::clientSessionKey(UCharBuffer& sessionKey, const char* accou
 	serverPublicKey = BigInteger(serverPubKey);
 	computeScramble();
 	dumpIt("scramble", scramble);
+	dumpIt("password", password);
 	BigInteger x = getUserHash(account, salt, password);		// x
+	dumpIt("x", x);
 	BigInteger gx = group->generator.modPow(x, group->prime);	// g^x
 	BigInteger kgx = (group->k * gx) % group->prime;			// kg^x
 	dumpIt("kgx", kgx);
