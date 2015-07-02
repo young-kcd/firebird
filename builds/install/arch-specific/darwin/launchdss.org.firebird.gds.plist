@@ -7,10 +7,10 @@
 <key>ProgramArguments</key>
 <array>
 <string>/Library/Frameworks/Firebird.framework/Resources/bin/fbguard</string>
-<string>-daemon</string>
-<string>-forever</string>
 </array>
 <key>RunAtLoad</key>
+<true/>
+<key>KeepAlive</key>
 <true/>
 </dict>
 </plist>
