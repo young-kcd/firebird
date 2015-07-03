@@ -1,3 +1,22 @@
+ 2015-07-02 11:33  paulbeach 
+   M configure.in
+Need to disable extras in ICU for successful build on HPUX ia64
+
+ 2015-07-02 11:15  paulbeach 
+   M builds/posix/Makefile.in.extern.editline
+   M builds/posix/prefix.hpux_ia64
+Solve compilation problem on HPUX with symbols and empty.vers
+
+ 2015-07-02 09:52  paulbeach 
+   A builds/posix/empty.hpux.vers
+   M builds/posix/prefix.hpux
+   M builds/posix/prefix.hpux_aCC
+Solve compilation problem on HPUX with symbols and empty.vers
+
+ 2015-07-02 08:46  paulbeach 
+   M builds/install/arch-specific/darwin/launchdss.org.firebird.gds.plist
+improved plist for SuperServer on Yosemite (10.10), thanks to David Nock
+
  2015-07-01 09:36  hvlad 
    M src/jrd/os/posix/unix.cpp
 Reworked patch for bug CORE-4615 : Classic Server could hung with (near) 100% CPU load
