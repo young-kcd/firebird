@@ -3220,9 +3220,6 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	Attachment* const attachment = transaction->getAttachment();
 	bool modified = false;
 
-	// ASF: Unregistered bug (2.0, 2.1, 2.5, 3.0): CREATE OR ALTER TRIGGER accepts different table
-	// than one used in already created trigger.
-
 	AutoCacheRequest requestHandle(tdbb, drq_m_trigger2, DYN_REQUESTS);
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
@@ -3272,11 +3269,16 @@ bool TriggerDefinition::modify(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 				TRG.RDB$VALID_BLR.NULL = TRUE;
 			}
 
+			TRG.RDB$RELATION_NAME.NULL = relationName.isEmpty();
+			if (relationName.hasData())
+				strcpy(TRG.RDB$RELATION_NAME, relationName.c_str());
+
 			if (type.specified)
 				TRG.RDB$TRIGGER_TYPE = type.value;
 
 			if (position.specified)
 				TRG.RDB$TRIGGER_SEQUENCE = position.value;
+
 			if (active.specified)
 				TRG.RDB$TRIGGER_INACTIVE = (USHORT) !active.value;
 
