@@ -1,3 +1,25 @@
+ 2015-07-02 15:44  alexpeshkoff 
+   M src/remote/client/interface.cpp
+   M src/remote/remote.cpp
+   M src/remote/remote.h
+Fixed CORE-4854: Client library incorrectly handles non-UTF8 representation of international characters in SPB
+
+ 2015-07-02 15:35  alexpeshkoff 
+   M src/auth/SecureRemotePassword/srp.cpp
+Add more debugging info
+
+ 2015-07-02 15:34  alexpeshkoff 
+   M src/yvalve/why.cpp
+Totally misc
+
+ 2015-07-02 11:28  paulbeach 
+   M builds/posix/Makefile.in.extern.editline
+Fix problem where ar flags are duplicated in editline make on HPUX ia64
+
+ 2015-07-02 08:47  paulbeach 
+   M builds/install/arch-specific/darwin/launchdss.org.firebird.gds.plist
+improved plist for SuperServer on Yosemite (10.10), thanks to David Nock
+
  2015-07-01 19:02  dimitr 
    M src/isql/show.epp
 This should fix the SHOW SEQU output on 64-bit Linux.
