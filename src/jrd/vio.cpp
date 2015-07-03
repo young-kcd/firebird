@@ -200,7 +200,7 @@ static bool assert_gc_enabled(const jrd_tra* transaction, const jrd_rel* relatio
 		return false;
 
 	vec<Lock*>* vector = transaction->tra_relation_locks;
-	if (!vector || vector->count() < relation->rel_id)
+	if (!vector || relation->rel_id >= vector->count())
 		return false;
 
 	Lock* lock = (*vector)[relation->rel_id];
