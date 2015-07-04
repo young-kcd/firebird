@@ -1,3 +1,11 @@
+ 2015-07-03 08:03  hvlad 
+   M src/jrd/vio.cpp
+Wrong check, thanks to Claudio
+
+ 2015-07-03 06:44  paulbeach 
+   M builds/posix/Makefile.in.extern.editline
+Typo, adjust AR redefinition in extern.editline
+
  2015-07-02 11:33  paulbeach 
    M configure.in
 Need to disable extras in ICU for successful build on HPUX ia64
