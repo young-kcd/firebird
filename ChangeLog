@@ -1,3 +1,19 @@
+ 2015-07-03 16:18  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4846 - Altering a trigger indicating other table than the original does not reflect the change.
+
+ 2015-07-03 11:48  dimitr 
+   M src/misc/writeBuildNum.sh
+Updated version info.
+
+ 2015-07-03 08:05  hvlad 
+   M src/jrd/vio.cpp
+Wrong check, thanks to Claudio
+
+ 2015-07-03 06:45  paulbeach 
+   M builds/posix/Makefile.in.extern.editline
+Typo, adjust AR redefinition in extern.editline
+
  2015-07-02 15:44  alexpeshkoff 
    M src/remote/client/interface.cpp
    M src/remote/remote.cpp
