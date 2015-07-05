@@ -152,6 +152,7 @@ int AffectedRows::getCount() const
 // StatusXcp class implementation
 
 StatusXcp::StatusXcp()
+	: status(*getDefaultMemoryPool())
 {
 	clear();
 }

@@ -46,6 +46,10 @@ namespace Jrd
 			: localStatusVector(&localStatus)
 		{ }
 
+		FbLocalStatus(Firebird::MemoryPool& p)
+			: localStatus(p), localStatusVector(&localStatus)
+		{ }
+
 		FbStatusVector* operator->()
 		{
 			return &localStatusVector;

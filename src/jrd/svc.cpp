@@ -616,7 +616,7 @@ namespace
 
 Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_data,
 				 Firebird::ICryptKeyCallback* crypt_callback)
-	: svc_parsed_sw(getPool()),
+	: svc_status(getPool()), svc_parsed_sw(getPool()),
 	svc_stdout_head(0), svc_stdout_tail(0), svc_service(NULL), svc_service_run(NULL),
 	svc_resp_alloc(getPool()), svc_resp_buf(0), svc_resp_ptr(0), svc_resp_buf_len(0),
 	svc_resp_len(0), svc_flags(SVC_finished), svc_user_flag(0), svc_spb_version(0),

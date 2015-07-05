@@ -298,11 +298,15 @@ private:
 
 
 // Status interface to be used on stack when entering engine
-class LocalStatus : public BaseStatus<LocalStatus>
+class LocalStatus : public AutoStorage, public BaseStatus<LocalStatus>
 {
 public:
 	LocalStatus()
-		: BaseStatus<LocalStatus>(AutoStorage::getAutoMemoryPool())
+		: AutoStorage(), BaseStatus<LocalStatus>(getPool())
+	{ }
+
+	LocalStatus(MemoryPool& p)
+		: AutoStorage(p), BaseStatus<LocalStatus>(getPool())
 	{ }
 
 public:

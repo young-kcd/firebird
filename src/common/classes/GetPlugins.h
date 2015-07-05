@@ -42,7 +42,8 @@ class GetPlugins
 public:
 	GetPlugins(unsigned int interfaceType, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(),
-		  pluginSet(NULL), currentPlugin(NULL), status(&ls)
+		  pluginSet(NULL), currentPlugin(NULL),
+		  ls(*getDefaultMemoryPool()), status(&ls)
 	{
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : Config::getDefaultConfig()->getPlugins(interfaceType)),
@@ -55,7 +56,8 @@ public:
 	GetPlugins(unsigned int interfaceType,
 			   Config* knownConfig, const char* namesList = NULL)
 		: masterInterface(), pluginInterface(),
-		  pluginSet(NULL), currentPlugin(NULL), status(&ls)
+		  pluginSet(NULL), currentPlugin(NULL),
+		  ls(*getDefaultMemoryPool()), status(&ls)
 	{
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
