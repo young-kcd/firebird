@@ -1034,7 +1034,13 @@ bool Validation::run(thread_db* tdbb, USHORT flags)
 		if (!(vdr_flags & VDR_online) && !(vdr_flags & VDR_partial)) {
 			garbage_collect();
 		}
-		CCH_flush(tdbb, FLUSH_FINI, 0);
+
+		if (vdr_fixed)
+		{
+			const USHORT flushFlags = ((dbb->dbb_flags & DBB_shared) && (vdr_flags & VDR_online)) ?
+				FLUSH_SYSTEM : FLUSH_FINI;
+			CCH_flush(tdbb, flushFlags, 0);
+		}
 
 		tdbb->tdbb_flags &= ~TDBB_sweeper;
 
