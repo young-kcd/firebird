@@ -566,6 +566,7 @@ VI. ADDITIONAL NOTES
 #include "../jrd/validation.h"
 
 #include "../common/classes/ClumpletWriter.h"
+#include "../common/db_alias.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/Collation.h"
@@ -722,10 +723,17 @@ static int validate(Firebird::UtilSvc* svc)
 		dpb.insertString(isc_dpb_trusted_auth, userName);
 	}
 
+	PathName expandedFilename;
+	if (expandDatabaseName(dbName, expandedFilename, NULL))
+		expandedFilename = dbName;
+
+	if (dbName != expandedFilename)
+		dpb.insertPath(isc_dpb_org_filename, dbName);
+
 	FbLocalStatus status;
 	RefPtr<JProvider> jProv(JProvider::getInstance());
 	RefPtr<JAttachment> jAtt;
-	jAtt.assignRefNoIncr(jProv->attachDatabase(&status, dbName.c_str(), dpb.getBufferLength(), dpb.getBuffer()));
+	jAtt.assignRefNoIncr(jProv->attachDatabase(&status, expandedFilename.c_str(), dpb.getBufferLength(), dpb.getBuffer()));
 
 	if (status->getState() & IStatus::STATE_ERRORS)
 	{
