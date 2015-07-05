@@ -2125,7 +2125,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	int retry_count = 0;
 
 	TEXT expanded_filename[MAXPATHLEN];
-	iscPrefixLock(expanded_filename, filename, false);
+	iscPrefixLock(expanded_filename, filename, true);
 
 	const bool trunc_flag = (length != 0);
 	bool init_flag = false;
