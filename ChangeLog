@@ -1,3 +1,23 @@
+ 2015-07-05 22:03  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-4855 : Online validation during DML activity in other connection leads to message "Error while trying to read from file" and "page in use during flush (210), file: cch.cpp line: 2672"
+
+ 2015-07-05 11:40  alexpeshkoff 
+   M src/common/StatusHolder.h
+   M src/common/classes/GetPlugins.h
+   M src/jrd/exe.cpp
+   M src/jrd/status.h
+   M src/jrd/svc.cpp
+Fixed CORE-4861: Segfault when working with saved exception in request
+
+ 2015-07-05 10:36  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-4860 : Online validation fails on WINDOWS if `dbname` argument contains forward slash ('/') and concurrent attachment which also uses '/' exists.
+
+ 2015-07-05 08:47  hvlad 
+   M src/common/isc_sync.cpp
+Fixed bug CORE-4859 : FB 3 embedded not working without folder C:\ProgramData\firebird
+
  2015-07-03 16:18  asfernandes 
    M src/dsql/DdlNodes.epp
 Fixed CORE-4846 - Altering a trigger indicating other table than the original does not reflect the change.
@@ -3316,7 +3336,8 @@ Patch for mingw by Alexey Pavlov : Mingw compilers don't support Win98
  2014-12-18 10:38  hvlad 
    M src/common/classes/locks.cpp
    M src/common/classes/locks.h
-Patch for mingw by Alexey Pavlov : Fix using function pointer
+Patch for mingw by Alexey Pavlov : Fix using function pointer.
+See also CORE-4619
 
  2014-12-18 10:20  alexpeshkoff 
    M src/yvalve/gds.cpp
