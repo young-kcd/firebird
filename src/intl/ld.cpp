@@ -413,7 +413,7 @@ struct
 	{"CYRL", "DB_RUS", CYRL_c1_init},
 	{"CYRL", "PDOX_CYRL", CYRL_c2_init},
 	{"DOS737", "DOS737", DOS737_c0_init},
-	{"DOS737", "DOS775", DOS775_c0_init},
+	{"DOS775", "DOS775", DOS775_c0_init},
 	{"DOS858", "DOS858", DOS858_c0_init},
 	{"DOS862", "DOS862", DOS862_c0_init},
 	{"DOS864", "DOS864", DOS864_c0_init},
