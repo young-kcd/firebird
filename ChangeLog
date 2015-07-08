@@ -1,3 +1,11 @@
+ 2015-07-07 16:02  asfernandes 
+   M src/intl/ld.cpp
+Backported fix for CORE-4276 - Error on create table with "CHARACTER SET DOS775" field.
+
+ 2015-07-07 08:39  paulbeach 
+   M configure.in
+I stand corrected, ia64=so, but can be sl
+
  2015-07-03 08:03  hvlad 
    M src/jrd/vio.cpp
 Wrong check, thanks to Claudio
