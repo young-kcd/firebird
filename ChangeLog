@@ -1,3 +1,15 @@
+ 2015-07-07 15:57  asfernandes 
+   M src/intl/ld.cpp
+Fixed CORE-4276 - Error on create table with "CHARACTER SET DOS775" field.
+
+ 2015-07-07 13:51  alexpeshkoff 
+   M src/dsql/parse.y
+Fixed CORE-4864: CREATE DATABASE fail with ISQL
+
+ 2015-07-07 08:40  paulbeach 
+   M configure.ac
+I stand corrected, ia64=so, but can be sl
+
  2015-07-06 15:10  hvlad 
    M builds/win32/make_all.bat
    M builds/win32/set_build_target.bat
