@@ -1611,6 +1611,11 @@ void Validation::walk_database()
 				}
 			}
 
+			// We can't realiable track double allocated page's when validating online.
+			// All we can check is that page is not double allocated at the same relation.
+			if (vdr_flags & VDR_online)
+				vdr_page_bitmap->clear();
+
 			string relName;
 			relName.printf("Relation %d (%s)", relation->rel_id, relation->rel_name.c_str());
 			output("%s\n", relName.c_str());
