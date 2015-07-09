@@ -559,8 +559,11 @@ void MET_clear_cache(thread_db* tdbb)
 				{
 					MET_release_procedure_request(tdbb, procedure);
 
-					LCK_release(tdbb, procedure->prc_existence_lock);
-					procedure->prc_existence_lock = NULL;
+					if (procedure->prc_existence_lock)
+					{
+						LCK_release(tdbb, procedure->prc_existence_lock);
+						procedure->prc_existence_lock = NULL;
+					}
 					procedure->prc_flags |= PRC_obsolete;
 				}
 				// Leave it in state 0 to avoid extra pass next time to clear it
