@@ -3515,6 +3515,73 @@ static bool node_match(const dsql_nod* node1, const dsql_nod* node2,
 			return node_match(node1->nod_arg[e_derived_table_rse],
 				node2->nod_arg[e_derived_table_rse], ignore_map_cast);
 		}
+
+	case nod_index:
+		{
+			node1 = node1->nod_arg[0];
+			node2 = node2->nod_arg[0];
+
+			if (node1->nod_type != nod_list || node2->nod_type != nod_list)
+				return false;
+
+			if (node1->nod_count != node2->nod_count)
+				return false;
+
+			for (USHORT i = 0; i < node1->nod_count; i++)
+			{
+				const dsql_str* const index1 = (dsql_str*) node1->nod_arg[i];
+				const dsql_str* const index2 = (dsql_str*) node2->nod_arg[i];
+
+				if (index1->str_length != index2->str_length ||
+					strcmp(index1->str_data, index2->str_data))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+	case nod_index_order:
+		{
+			const dsql_str* index1 = (dsql_str*) node1->nod_arg[0];
+			const dsql_str* index2 = (dsql_str*) node2->nod_arg[0];
+
+			if (index1->str_length != index2->str_length ||
+				strcmp(index1->str_data, index2->str_data))
+			{
+				return false;
+			}
+
+			if (!node1->nod_arg[1] && !node2->nod_arg[1])
+				return true;
+
+			if (!node1->nod_arg[1] || !node2->nod_arg[1])
+				return false;
+
+			node1 = node1->nod_arg[1];
+			node2 = node2->nod_arg[1];
+
+			if (node1->nod_type != nod_list || node2->nod_type != nod_list)
+				return false;
+
+			if (node1->nod_count != node2->nod_count)
+				return false;
+
+			for (USHORT i = 0; i < node1->nod_count; i++)
+			{
+				index1 = (dsql_str*) node1->nod_arg[i];
+				index2 = (dsql_str*) node2->nod_arg[i];
+
+				if (index1->str_length != index2->str_length ||
+					strcmp(index1->str_data, index2->str_data))
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}
 	} // switch
 
 	const dsql_nod* const* ptr1 = node1->nod_arg;
