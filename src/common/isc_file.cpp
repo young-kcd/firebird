@@ -1398,7 +1398,7 @@ bool Mnt::get()
 	//  This code is tested on Solaris 2.6 IA
 	TEXT device[128], mount_point[128], m_type[16], opts[256], ftime[128];
 
-	const int n = fscanf(mnt_tab.mtab, "%s %s %s %s %s ", device, mount_point, type, opts, ftime);
+	const int n = fscanf(mtab, "%s %s %s %s %s ", device, mount_point, type, opts, ftime);
 	if (n < 5)
 		return false;
 
