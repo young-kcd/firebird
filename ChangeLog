@@ -1,3 +1,7 @@
+ 2015-07-08 09:56  hvlad 
+   M src/jrd/validation.cpp
+Fixed bug CORE-4865 :  Online validation could wrongly report double allocated pages
+
  2015-07-07 15:57  asfernandes 
    M src/intl/ld.cpp
 Fixed CORE-4276 - Error on create table with "CHARACTER SET DOS775" field.
