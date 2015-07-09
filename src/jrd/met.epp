@@ -766,7 +766,7 @@ void MET_clear_cache(thread_db* tdbb)
 			{
 				routine->releaseStatement(tdbb);
 
-				if (routine->existenceLock)	//// TODO: verify why this IF is necessary now
+				if (routine->existenceLock)
 					LCK_release(tdbb, routine->existenceLock);
 				routine->existenceLock = NULL;
 				routine->flags |= Routine::FLAG_OBSOLETE;
@@ -792,7 +792,7 @@ void MET_clear_cache(thread_db* tdbb)
 			{
 				routine->releaseStatement(tdbb);
 
-				if (routine->existenceLock)	//// TODO: verify why this IF is necessary now
+				if (routine->existenceLock)
 					LCK_release(tdbb, routine->existenceLock);
 				routine->existenceLock = NULL;
 				routine->flags |= Routine::FLAG_OBSOLETE;
