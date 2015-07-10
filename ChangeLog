@@ -1,3 +1,15 @@
+ 2015-07-09 17:21  alexpeshkoff 
+   M src/jrd/met.epp
+Fixed CORE-4869: Segfault when cleaning metadata cache
+
+ 2015-07-09 16:59  alexpeshkoff 
+   M src/jrd/isc_file.cpp
+Solaris port
+
+ 2015-07-09 15:37  dimitr 
+   M src/dsql/pass1.cpp
+Fixed CORE-4867: Server crash when preparing a query with PLAN clause at some CTE.
+
  2015-07-08 09:58  hvlad 
    M src/jrd/validation.cpp
 Fixed bug CORE-4865 :  Online validation could wrongly report double allocated pages
