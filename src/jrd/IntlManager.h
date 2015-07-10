@@ -40,6 +40,8 @@ class IntlManager
 public:
 	static bool initialize();
 
+	static bool charSetInstalled(const Firebird::string& charSetName);
+
 	static bool collationInstalled(const Firebird::string& collationName,
 								   const Firebird::string& charSetName);
 

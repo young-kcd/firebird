@@ -571,6 +571,12 @@ bool IntlManager::initialize()
 }
 
 
+bool IntlManager::charSetInstalled(const string& charSetName)
+{
+	return charSetCollations->exist(charSetName + ":" + charSetName);
+}
+
+
 bool IntlManager::collationInstalled(const string& collationName, const string& charSetName)
 {
 	return charSetCollations->exist(charSetName + ":" + collationName);

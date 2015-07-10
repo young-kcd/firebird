@@ -2675,9 +2675,8 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			if (options.dpb_set_no_reserve)
 				PAG_set_no_reserve(tdbb, options.dpb_no_reserve);
 
-			string dpb_set_db_charset(options.dpb_set_db_charset);
-			fb_utils::dpbItemUpper(dpb_set_db_charset);
-			INI_format(attachment->att_user->usr_user_name.c_str(), dpb_set_db_charset.c_str());
+			INI_format(attachment->att_user->usr_user_name.c_str(),
+				options.dpb_set_db_charset.c_str());
 
 			// If we have not allocated first TIP page, do it now.
 			if (!dbb->dbb_t_pages || !dbb->dbb_t_pages->count())
@@ -5897,6 +5896,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 
 		case isc_dpb_set_db_charset:
 			getString(rdr, dpb_set_db_charset);
+			fb_utils::dpbItemUpper(dpb_set_db_charset);
 			break;
 
 		case isc_dpb_address_path:
@@ -6027,6 +6027,12 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 #endif
 
 	engineStartup.init();
+
+	if (!attach_flag && options.dpb_set_db_charset.hasData() &&
+		!IntlManager::charSetInstalled(options.dpb_set_db_charset))
+	{
+		ERR_post(Arg::Gds(isc_charset_not_installed) << options.dpb_set_db_charset);
+	}
 
 	// Check to see if the database is already attached
 	Database* dbb = NULL;
