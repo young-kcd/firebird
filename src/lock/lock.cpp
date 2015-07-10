@@ -219,7 +219,7 @@ LockManager::LockManager(const Firebird::string& id, RefPtr<Config> conf)
 	  m_config(conf),
 	  m_acquireSpins(m_config->getLockAcquireSpins()),
 	  m_memorySize(m_config->getLockMemSize()),
-	  m_useBlockingThread(m_config->getSharedDatabase())
+	  m_useBlockingThread(m_config->getServerMode() != MODE_SUPER)
 #ifdef USE_SHMEM_EXT
 	  , m_extents(getPool())
 #endif

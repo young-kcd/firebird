@@ -1545,7 +1545,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 					// Here we do not let anyone except SYSDBA (like DBO) to change dbb_page_buffers,
 					// cause other flags is UserId can be set only when DB is opened.
 					// No idea how to test for other cases before init is complete.
-					if (config->getSharedDatabase() ? userId.locksmith() : true)
+					if ((config->getServerMode() != MODE_SUPER) || userId.locksmith())
 						dbb->dbb_page_buffers = options.dpb_page_buffers;
 				}
 
@@ -5656,7 +5656,7 @@ void DatabaseOptions::get(const UCHAR* dpb, USHORT dpb_length, bool& invalid_cli
 			break;
 
 		case isc_dpb_num_buffers:
-			if (!Config::getSharedCache())
+			if (Config::getServerMode() != MODE_SUPER)
 			{
 				dpb_buffers = rdr.getInt();
 				const unsigned TEMP_LIMIT = 25;
@@ -6037,15 +6037,8 @@ static JAttachment* initAttachment(thread_db* tdbb, const PathName& expanded_nam
 	{	// scope
 		MutexLockGuard listGuard(databases_mutex, FB_FUNCTION);
 
-		if (config->getSharedCache())
+		if (config->getServerMode() == MODE_SUPER)
 		{
-			if (config->getSharedDatabase())
-			{
-				const char* const errorMsg =
-					"SharedDatabase and SharedCache settings cannot be both enabled at once";
-				ERR_post(Arg::Gds(isc_wish_list) << Arg::Gds(isc_random) << Arg::Str(errorMsg));
-			}
-
 			shared = true;
 
 			dbb = databases;
@@ -6342,7 +6335,7 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 
 	dbb->dbb_extManager.closeAttachment(tdbb, attachment);
 
-	if (!dbb->dbb_config->getSharedDatabase() && attachment->att_relations)
+	if ((dbb->dbb_config->getServerMode() == MODE_SUPER) && attachment->att_relations)
 	{
 		vec<jrd_rel*>& rels = *attachment->att_relations;
 		for (FB_SIZE_T i = 1; i < rels.count(); i++)
@@ -6544,7 +6537,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 	if ((flags & SHUT_DBB_LINGER) &&
 		(!(engineShutdown || (dbb->dbb_ast_flags & DBB_shutdown))) &&
 		(dbb->dbb_linger_seconds > 0) &&
-		(MasterInterfacePtr()->serverMode(-1) == 1) &&	// multiuser server
+		(dbb->dbb_config->getServerMode() != MODE_CLASSIC) &&
 		(dbb->dbb_flags & DBB_shared))
 	{
 		if (!dbb->dbb_linger_timer)

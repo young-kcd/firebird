@@ -2285,7 +2285,7 @@ void PageManager::initTempPageSpace(thread_db* tdbb)
 
 	fb_assert(tempPageSpaceID == 0);
 
-	if (dbb->dbb_config->getSharedDatabase())
+	if (dbb->dbb_config->getServerMode() != MODE_SUPER)
 	{
 		Jrd::Attachment* const attachment = tdbb->getAttachment();
 

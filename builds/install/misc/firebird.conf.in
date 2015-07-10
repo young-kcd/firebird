@@ -869,16 +869,20 @@
 # Settings for Architecture Configuration
 # ============================
 
-
-# Type: boolean
-#SharedCache = true
-
-# Type: boolean
-#SharedDatabase = false
-
-
-# SharedCache	SharedDatabase	Mode
-# false			false			Classic with exclusive access	// single attachment only ?
-# false			true			Classic with shared access		// traditional CS/SC
-# true			false			Super with exclusive access		// traditional SS
-# true			true			Super with shared access		// 
+#
+# Control a method firebird engine is using to work with databases and
+# related firebird server startup parameters.
+#
+# The values are:
+# Super / ThreadedDedicated - databases are opened exclusive by single server process,
+#	attachments share single DB pages cache inside process
+# SuperClassic / ThreadedShared - databases are opened by single server process,
+#	but it does not prevent opening them in other processes (embedded access),
+#	each attachment has it's own DB pages cache
+# Classic / MultiProcess - for each attachment to server separate process is started,
+#	each database mauy be opened by mu;tiple processes (including local ones for
+#	embedded access), each attachment (process) has it's own DB pages cache
+#
+# Type: string
+#
+#ServerMode = Super

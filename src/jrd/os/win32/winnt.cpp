@@ -221,7 +221,7 @@ jrd_file* PIO_create(Database* dbb, const Firebird::PathName& string,
 	adjustFsCacheOnce.init();
 
 	const TEXT* file_name = string.c_str();
-	const bool shareMode = dbb->dbb_config->getSharedDatabase();
+	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
 
 	DWORD dwShareMode = getShareFlags(shareMode, temporary);
 
@@ -543,7 +543,7 @@ jrd_file* PIO_open(Database* dbb,
  **************************************/
 	const TEXT* const ptr = (string.hasData() ? string : file_name).c_str();
 	bool readOnly = false;
-	const bool shareMode = dbb->dbb_config->getSharedDatabase();
+	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
 
 	adjustFsCacheOnce.init();
 

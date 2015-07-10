@@ -75,6 +75,10 @@ const int WIRE_CRYPT_REQUIRED = 2;
 
 enum WireCryptMode {WC_CLIENT, WC_SERVER};		// Have different defaults
 
+const int MODE_SUPER = 0;
+const int MODE_SUPERCLASSIC = 1;
+const int MODE_CLASSIC = 2;
+
 const char* const CONFIG_FILE = "firebird.conf";
 
 class Config : public Firebird::RefCounted, public Firebird::GlobalStorage
@@ -129,8 +133,7 @@ public:
 		KEY_PLUG_AUTH_MANAGE,
 		KEY_PLUG_TRACE,
 		KEY_SECURITY_DATABASE,
-		KEY_SHARED_CACHE,
-		KEY_SHARED_DATABASE,
+		KEY_SERVER_MODE,
 		KEY_WIRE_CRYPT,
 		KEY_PLUG_WIRE_CRYPT,
 		KEY_PLUG_KEY_HOLDER,
@@ -329,9 +332,7 @@ public:
 
 	static FB_UINT64 getMaxUserTraceLogSize();
 
-	static bool getSharedCache();
-
-	static bool getSharedDatabase();
+	static int getServerMode();
 
 	const char* getPlugins(unsigned int type) const;
 

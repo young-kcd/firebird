@@ -186,8 +186,7 @@ const Config::ConfigEntry Config::entries[MAX_CONFIG_KEY] =
 	{TYPE_STRING,		"UserManager",				(ConfigValue) "Srp"},
 	{TYPE_STRING,		"TracePlugin",				(ConfigValue) "fbtrace"},
 	{TYPE_STRING,		"SecurityDatabase",			(ConfigValue) "$(dir_secDb)/security3.fdb"},	// security database name
-	{TYPE_BOOLEAN,		"SharedCache",				(ConfigValue) true},
-	{TYPE_BOOLEAN,		"SharedDatabase",			(ConfigValue) false},
+	{TYPE_STRING,		"ServerMode",				(ConfigValue) "Super"},
 	{TYPE_STRING,		"WireCrypt",				(ConfigValue) NULL},
 	{TYPE_STRING,		"WireCryptPlugin",			(ConfigValue) "Arc4"},
 	{TYPE_STRING,		"KeyHolderPlugin",			(ConfigValue) ""},
@@ -424,7 +423,7 @@ FB_UINT64 Config::getTempCacheLimit()
 	SINT64 v = (SINT64) getDefaultConfig()->values[KEY_TEMP_CACHE_LIMIT];
 	if (v < 0)
 	{
-		v = getSharedDatabase() ? 8388608 : 67108864;	// bytes
+		v = getServerMode() != MODE_SUPER ? 8388608 : 67108864;	// bytes
 	}
 	return v;
 }
@@ -469,7 +468,7 @@ int Config::getDefaultDbCachePages() const
 	int rc = get<int>(KEY_DEFAULT_DB_CACHE_PAGES);
 	if (rc < 0)
 	{
-		rc = getSharedDatabase() ? 256 : 2048;	// pages
+		rc = getServerMode() != MODE_SUPER ? 256 : 2048;	// pages
 	}
 	return rc;
 }
@@ -636,7 +635,7 @@ const char *Config::getGCPolicy() const
 
 	if (! rc)
 	{
-		rc = getSharedCache() ? GCPolicyCombined : GCPolicyCooperative;
+		rc = getServerMode() == MODE_SUPER ? GCPolicyCombined : GCPolicyCooperative;
 	}
 
 	return rc;
@@ -678,14 +677,27 @@ FB_UINT64 Config::getMaxUserTraceLogSize()
 	return (FB_UINT64)(SINT64) getDefaultConfig()->values[KEY_MAX_TRACELOG_SIZE];
 }
 
-bool Config::getSharedCache()
+int Config::getServerMode()
 {
-	return (bool) getDefaultConfig()->values[KEY_SHARED_CACHE];
-}
+	static int rc = -1;
+	if (rc >= 0)
+		return rc;
 
-bool Config::getSharedDatabase()
-{
-	return (bool) getDefaultConfig()->values[KEY_SHARED_DATABASE];
+	const char* textMode = (const char*) (getDefaultConfig()->values[KEY_SERVER_MODE]);
+	const char* modes[6] =
+		{"Super", "ThreadedDedicated", "SuperClassic", "ThreadedShared", "Classic", "MultiProcess"};
+	for (int x = 0; x < 6; ++x)
+	{
+		if (fb_utils::stricmp(textMode, modes[x]) == 0)
+		{
+			rc = x / 2;
+			return rc;
+		}
+	}
+
+	// use default
+	rc = MODE_SUPER;
+	return rc;
 }
 
 const char* Config::getPlugins(unsigned int type) const

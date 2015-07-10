@@ -718,7 +718,7 @@ void INF_database_info(thread_db* tdbb,
 
 		case isc_info_db_class:
 		    length = INF_convert(
-				(dbb->dbb_config->getSharedDatabase() ?
+				(dbb->dbb_config->getServerMode() != MODE_SUPER ?
 					isc_info_db_class_classic_access : isc_info_db_class_server_access),
 				buffer);
 			break;

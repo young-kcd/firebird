@@ -203,20 +203,6 @@ int CLIB_ROUTINE main( int argc, char** argv)
 						debug = true;
 						break;
 
-					case 'S':
-						if (!classic)
-						{
-							standaloneClassic = true;
-						}
-						break;
-
-					case 'I':
-						if (!classic)
-						{
-							standaloneClassic = false;
-						}
-						break;
-
 					case 'E':
 						if (argv < end)
 						{
@@ -254,8 +240,6 @@ int CLIB_ROUTINE main( int argc, char** argv)
 					case '?':
 						printf("Firebird TCP/IP server options are:\n");
 						printf("  -d        : debug on\n");
-						printf("  -s        : standalone - true\n");
-						printf("  -i        : standalone - false\n");
 						printf("  -p <port> : specify port to listen on\n");
 						printf("  -z        : print version and exit\n");
 						printf("  -h|?      : print this help\n");
@@ -281,8 +265,18 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			}
 		}
 
-		if (!(classic || standaloneClassic))
+		if (Config::getServerMode() == MODE_CLASSIC)
 		{
+			if (!classic)
+				standaloneClassic = true;
+		}
+		else
+		{
+			if (classic)
+			{
+				gds__log("Server misconfigured - to start it from (x)inetd add ServerMode=Classic to firebird.conf");
+				exit(STARTUP_ERROR);
+			}
 			INET_SERVER_flag |= SRVR_multi_client;
 			super = true;
 		}

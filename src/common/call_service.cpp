@@ -245,7 +245,7 @@ isc_svc_handle attachRemoteServiceManager(ISC_STATUS* status,
 	{
 		stuffSpb(spb, isc_spb_trusted_auth, "");
 	}
-	if ((!server[0]) && forceLoopback && (!Config::getSharedDatabase()))
+	if ((!server[0]) && forceLoopback && (Config::getServerMode() == MODE_SUPER))
 	{	// local connection & force   & superserver
 		stuffSpb(spb, isc_spb_config, "Providers=Loopback," CURRENT_ENGINE);
 	}

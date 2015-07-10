@@ -222,7 +222,7 @@ jrd_file* PIO_create(Database* dbb, const PathName& file_name,
                  Arg::Gds(isc_io_create_err) << Arg::Unix(errno));
 	}
 
-	const bool shareMode = dbb->dbb_config->getSharedDatabase();
+	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
 	if (!lockDatabaseFile(desc, shareMode, temporary))
 	{
 		int lockErrno = errno;
@@ -665,7 +665,7 @@ jrd_file* PIO_open(Database* dbb,
 			dbb->dbb_flags |= DBB_being_opened_read_only;
 	}
 
-	const bool shareMode = dbb->dbb_config->getSharedDatabase();
+	const bool shareMode = dbb->dbb_config->getServerMode() != MODE_SUPER;
 	if (!lockDatabaseFile(desc, shareMode || readOnly))
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lock") << Arg::Str(file_name) <<
