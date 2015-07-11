@@ -1,3 +1,24 @@
+ 2015-07-10 16:19  asfernandes 
+   M src/jrd/IntlManager.cpp
+   M src/jrd/IntlManager.h
+   M src/jrd/jrd.cpp
+Fixed CORE-4277 - Can create database with invalid character set.
+
+ 2015-07-10 13:41  alexpeshkoff 
+   M builds/install/misc/firebird.conf.in
+   M src/common/call_service.cpp
+   M src/common/config/config.cpp
+   M src/common/config/config.h
+   M src/jrd/dpm.epp
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/os/win32/winnt.cpp
+   M src/jrd/pag.cpp
+   M src/lock/lock.cpp
+   M src/remote/server/os/posix/inet_server.cpp
+Fixed CORE-4871: Merge SharedDatabase/SharedCache into single parameter ServerMode, affecting the way how server is started
+
  2015-07-09 17:38  alexpeshkoff 
    M src/common/isc_file.cpp
 Solaris port
