@@ -686,6 +686,7 @@ int Config::getServerMode()
 	const char* textMode = (const char*) (getDefaultConfig()->values[KEY_SERVER_MODE]);
 	const char* modes[6] =
 		{"Super", "ThreadedDedicated", "SuperClassic", "ThreadedShared", "Classic", "MultiProcess"};
+
 	for (int x = 0; x < 6; ++x)
 	{
 		if (fb_utils::stricmp(textMode, modes[x]) == 0)

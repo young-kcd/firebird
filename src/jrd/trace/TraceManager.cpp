@@ -230,6 +230,7 @@ void TraceManager::update_session(const TraceSession& session)
 
 			string s_user = session.ses_user;
 			string t_role;
+
 			if (session.ses_auth.hasData())
 			{
 				Database* dbb = attachment->att_database;
@@ -242,11 +243,12 @@ void TraceManager::update_session(const TraceSession& session)
 						dbb->dbb_config->getSecurityDatabase(),
 						dbb->dbb_provider->getCryptCallback());
 				}
-				catch(const Firebird::Exception&)
+				catch (const Firebird::Exception&)
 				{
 					// Error in mapUser() means missing context, therefore...
 					return;
 				}
+
 				t_role.upper();
 			}
 
@@ -260,6 +262,7 @@ void TraceManager::update_session(const TraceSession& session)
 		{
 			string s_user = session.ses_user;
 			string t_role;
+
 			if (session.ses_auth.hasData())
 			{
 				PathName dummy;
@@ -271,11 +274,12 @@ void TraceManager::update_session(const TraceSession& session)
 					mapUser(s_user, t_role, NULL, NULL, session.ses_auth, "services manager", NULL,
 						config->getSecurityDatabase(), service->getCryptCallback());
 				}
-				catch(const Firebird::Exception&)
+				catch (const Firebird::Exception&)
 				{
 					// Error in mapUser() means missing context, therefore...
 					return;
 				}
+
 				t_role.upper();
 			}
 
