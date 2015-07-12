@@ -1647,6 +1647,37 @@ string UnionSourceNode::internalPrint(NodePrinter& printer) const
 	return "UnionSourceNode";
 }
 
+bool UnionSourceNode::dsqlAggregateFinder(AggregateFinder& visitor)
+{
+	return dsqlClauses->dsqlAggregateFinder(visitor);
+}
+
+bool UnionSourceNode::dsqlAggregate2Finder(Aggregate2Finder& visitor)
+{
+	return dsqlClauses->dsqlAggregate2Finder(visitor);
+}
+
+bool UnionSourceNode::dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor)
+{
+	return dsqlClauses->dsqlInvalidReferenceFinder(visitor);
+}
+
+bool UnionSourceNode::dsqlSubSelectFinder(SubSelectFinder& visitor)
+{
+	return dsqlClauses->dsqlSubSelectFinder(visitor);
+}
+
+bool UnionSourceNode::dsqlFieldFinder(FieldFinder& visitor)
+{
+	return dsqlClauses->dsqlFieldFinder(visitor);
+}
+
+RecordSourceNode* UnionSourceNode::dsqlFieldRemapper(FieldRemapper& visitor)
+{
+	dsqlClauses->dsqlFieldRemapper(visitor);
+	return this;
+}
+
 void UnionSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 {
 	dsqlScratch->appendUChar((recursive ? blr_recurse : blr_union));

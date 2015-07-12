@@ -497,6 +497,13 @@ public:
 
 	static UnionSourceNode* parse(thread_db* tdbb, CompilerScratch* csb, const SSHORT blrOp);
 
+	virtual bool dsqlAggregateFinder(AggregateFinder& visitor);
+	virtual bool dsqlAggregate2Finder(Aggregate2Finder& visitor);
+	virtual bool dsqlInvalidReferenceFinder(InvalidReferenceFinder& visitor);
+	virtual bool dsqlSubSelectFinder(SubSelectFinder& visitor);
+	virtual bool dsqlFieldFinder(FieldFinder& visitor);
+	virtual RecordSourceNode* dsqlFieldRemapper(FieldRemapper& visitor);
+
 	virtual Firebird::string internalPrint(NodePrinter& printer) const;
 	virtual void genBlr(DsqlCompilerScratch* dsqlScratch);
 
