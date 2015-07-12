@@ -5574,13 +5574,18 @@ static void find_intl_charset(thread_db* tdbb, Jrd::Attachment* attachment, cons
 	}
 
 	USHORT id;
-
 	const UCHAR* lc_ctype = reinterpret_cast<const UCHAR*>(options->dpb_lc_ctype.c_str());
 
 	if (MET_get_char_coll_subtype(tdbb, &id, lc_ctype, options->dpb_lc_ctype.length()) &&
-		INTL_defined_type(tdbb, id & 0xFF) && ((id & 0xFF) != CS_BINARY))
+		INTL_defined_type(tdbb, id & 0xFF))
 	{
-		attachment->att_client_charset = attachment->att_charset = id & 0xFF;
+		if ((id & 0xFF) == CS_BINARY)
+		{
+			ERR_post(Arg::Gds(isc_bad_dpb_content) <<
+					 Arg::Gds(isc_invalid_attachment_charset) << Arg::Str(options->dpb_lc_ctype));
+		}
+		else
+			attachment->att_client_charset = attachment->att_charset = id & 0xFF;
 	}
 	else
 	{
