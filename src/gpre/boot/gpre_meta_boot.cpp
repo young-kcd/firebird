@@ -771,6 +771,11 @@ void ERR_post(ISC_STATUS, ...)
 {
 }
 
+int ISC_EXPORT fb_shutdown(unsigned int, const int)
+{
+	return 0;
+}
+
 namespace Firebird
 {
 	IMaster* API_ROUTINE fb_get_master_interface()
