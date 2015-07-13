@@ -968,6 +968,7 @@ void CPR_exit( int stat)
 		unlink(trace_file_name);
 #endif
 
+	fb_shutdown(0, fb_shutrsn_app_stopped);
 	exit(stat);
 }
 
