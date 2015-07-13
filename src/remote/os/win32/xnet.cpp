@@ -1023,7 +1023,7 @@ static void cleanup_port(rem_port* port)
 static void raise_lostconn_or_syserror(const char* msg)
 {
 	if (ERRNO == ERROR_FILE_NOT_FOUND)
-		status_exception::raise(Arg::Gds(isc_conn_lost));
+		status_exception::raise(Arg::Gds(isc_lost_db_connection));
 	else
 		system_error::raise(msg);
 }
@@ -1736,7 +1736,7 @@ static bool_t xnet_getbytes(XDR* xdrs, SCHAR* buff, u_int count)
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 			{
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_conn_lost, 0);
+				xnet_error(port, isc_lost_db_connection, 0);
 			}
 			return FALSE;
 		}
@@ -1802,7 +1802,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 			{
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_conn_lost, 0);
+				xnet_error(port, isc_lost_db_connection, 0);
 			}
 			return FALSE;
 		}
@@ -1825,7 +1825,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 						if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 						{
 							xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-							xnet_error(port, isc_conn_lost, 0);
+							xnet_error(port, isc_lost_db_connection, 0);
 						}
 						return FALSE;
 					}
@@ -1853,7 +1853,7 @@ static bool_t xnet_putbytes(XDR* xdrs, const SCHAR* buff, u_int count)
 							server_shutdown(port);
 						}
 
-						xnet_error(port, isc_conn_lost, 0);
+						xnet_error(port, isc_lost_db_connection, 0);
 						return FALSE;
 					}
 
@@ -1925,7 +1925,7 @@ static bool_t xnet_read(XDR* xdrs)
 			if (!(xcc->xcc_flags & XCCF_SERVER_SHUTDOWN))
 			{
 				xcc->xcc_flags |= XCCF_SERVER_SHUTDOWN;
-				xnet_error(port, isc_conn_lost, 0);
+				xnet_error(port, isc_lost_db_connection, 0);
 			}
 			return FALSE;
 		}
@@ -1961,7 +1961,7 @@ static bool_t xnet_read(XDR* xdrs)
 				server_shutdown(port);
 			}
 
-			xnet_error(port, isc_conn_lost, 0);
+			xnet_error(port, isc_lost_db_connection, 0);
 			return FALSE;
 		}
 
