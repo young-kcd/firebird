@@ -1,3 +1,7 @@
+ 2015-07-13 16:10  alexpeshkoff 
+   M src/alice/exe.cpp
+Backported fix for CORE-3548: GFIX returns an error after correctly shutting down a database
+
  2015-07-09 17:21  alexpeshkoff 
    M src/jrd/met.epp
 Fixed CORE-4869: Segfault when cleaning metadata cache
