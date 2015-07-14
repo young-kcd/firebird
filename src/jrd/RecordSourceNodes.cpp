@@ -1336,6 +1336,9 @@ void AggregateSourceNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			ValueListNode* partitionRemapped = (*i)->partitionRemapped;
 			ValueListNode* order = (*i)->order;
 
+			if ((*i)->context > MAX_UCHAR)
+				ERRD_post(Arg::Gds(isc_too_many_contexts));
+
 			dsqlScratch->appendUChar((*i)->context);
 
 			if (partition)
