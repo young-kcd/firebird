@@ -1,3 +1,19 @@
+ 2015-07-13 19:42  hvlad 
+   M src/gpre/boot/gpre_meta_boot.cpp
+Fixed gpre_boot compilation
+
+ 2015-07-13 19:30  hvlad 
+   M src/gpre/gpre.cpp
+This avoids gpre hung on exit if worker database have non-zero LINGER set.
+
+ 2015-07-13 15:55  alexpeshkoff 
+   M src/alice/exe.cpp
+Fixed CORE-3548: GFIX returns an error after correctly shutting down a database
+
+ 2015-07-13 12:47  alexpeshkoff 
+   M src/remote/os/win32/xnet.cpp
+Do not use ancient "Connection lost to pipe server" message in local connections
+
  2015-07-12 21:16  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
