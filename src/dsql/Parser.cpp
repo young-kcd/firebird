@@ -484,7 +484,7 @@ int Parser::yylexAux()
 			*p = *lex.ptr++;
 		}
 
-		if (p - buffer > MAX_COLUMN_SIZE - sizeof(USHORT))
+		if (p - buffer > MAX_COLUMN_SIZE)
 		{
 			if (buffer != string)
 				gds__free (buffer);
@@ -492,7 +492,7 @@ int Parser::yylexAux()
 			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 					  Arg::Gds(isc_dsql_string_length) <<
 					  Arg::Num(p - buffer) <<
-					  Arg::Num(MAX_COLUMN_SIZE - sizeof(USHORT)));
+					  Arg::Num(MAX_COLUMN_SIZE));
 		}
 
 		if (c == '"')
@@ -666,12 +666,12 @@ int Parser::yylexAux()
 					byte = c;
 			}
 
-			if (temp.length() > MAX_COLUMN_SIZE - sizeof(USHORT))
+			if (temp.length() > MAX_COLUMN_SIZE)
 			{
 				ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 						  Arg::Gds(isc_dsql_string_length) <<
 						  Arg::Num(temp.length()) <<
-						  Arg::Num(MAX_COLUMN_SIZE - sizeof(USHORT)));
+						  Arg::Num(MAX_COLUMN_SIZE));
 			}
 
 			yylval.intlStringPtr = newIntlString(temp, "BINARY");
@@ -715,12 +715,12 @@ int Parser::yylexAux()
 			{
 				size_t len = lex.ptr - lex.last_token - 4;
 
-				if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
+				if (len > MAX_COLUMN_SIZE)
 				{
 					ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
 							  Arg::Gds(isc_dsql_string_length) <<
 							  Arg::Num(len) <<
-							  Arg::Num(MAX_COLUMN_SIZE - sizeof(USHORT)));
+							  Arg::Num(MAX_COLUMN_SIZE));
 				}
 
 				yylval.intlStringPtr = newIntlString(Firebird::string(lex.last_token + 3, len));
