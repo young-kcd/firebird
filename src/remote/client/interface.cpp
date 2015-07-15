@@ -1715,19 +1715,27 @@ Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird:
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
-		BlrFromMessage inBlr(inMetadata, dialect);
+		rem_port* port = rdb->rdb_port;
+
+		BlrFromMessage inBlr(inMetadata, dialect, port->port_protocol);
 		const unsigned int in_blr_length = inBlr.getLength();
 		const UCHAR* const in_blr = inBlr.getBytes();
 		const unsigned int in_msg_length = inBlr.getMsgLength();
 		UCHAR* const in_msg = static_cast<UCHAR*>(inBuffer);
 
-		BlrFromMessage outBlr(outMetadata, dialect);
+		BlrFromMessage outBlr(outMetadata, dialect, port->port_protocol);
 		const unsigned int out_blr_length = outBlr.getLength();
 		const UCHAR* const out_blr = outBlr.getBytes();
 		const unsigned int out_msg_length = outBlr.getMsgLength();
 		UCHAR* const out_msg = static_cast<UCHAR*>(outBuffer);
 
-		rem_port* port = rdb->rdb_port;
+		// Validate data length
+
+		CHECK_LENGTH(port, in_blr_length);
+		CHECK_LENGTH(port, in_msg_length);
+		CHECK_LENGTH(port, out_blr_length);
+		CHECK_LENGTH(port, out_msg_length);
+
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = NULL;
@@ -1737,13 +1745,6 @@ Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird:
 			transaction = rt->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
-
-		// Validate data length
-
-		CHECK_LENGTH(port, in_blr_length);
-		CHECK_LENGTH(port, in_msg_length);
-		CHECK_LENGTH(port, out_blr_length);
-		CHECK_LENGTH(port, out_msg_length);
 
 		// 24-Mar-2004 Nickolay Samofatov
 		// Unconditionally deallocate existing formats that are left from
@@ -1887,7 +1888,9 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
-		BlrFromMessage inBlr(inMetadata, dialect);
+		rem_port* port = rdb->rdb_port;
+
+		BlrFromMessage inBlr(inMetadata, dialect, port->port_protocol);
 		const unsigned int in_blr_length = inBlr.getLength();
 		const UCHAR* const in_blr = inBlr.getBytes();
 		const unsigned int in_msg_length = inBlr.getMsgLength();
@@ -1907,11 +1910,16 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 			}
 		}
 
-		BlrFromMessage outBlr((outFormat == DELAYED_OUT_FORMAT ? NULL : outFormat), dialect);
+		BlrFromMessage outBlr((outFormat == DELAYED_OUT_FORMAT ? NULL : outFormat), dialect, port->port_protocol);
 		const unsigned int out_blr_length = outBlr.getLength();
 		const UCHAR* const out_blr = outBlr.getBytes();
 
-		rem_port* port = rdb->rdb_port;
+		// Validate data length
+
+		CHECK_LENGTH(port, in_blr_length);
+		CHECK_LENGTH(port, in_msg_length);
+		CHECK_LENGTH(port, out_blr_length);
+
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		Rtr* transaction = NULL;
@@ -1921,12 +1929,6 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 			transaction = rt->getTransaction();
 			CHECK_HANDLE(transaction, isc_bad_trans_handle);
 		}
-
-		// Validate data length
-
-		CHECK_LENGTH(port, in_blr_length);
-		CHECK_LENGTH(port, in_msg_length);
-		CHECK_LENGTH(port, out_blr_length);
 
 		// 24-Mar-2004 Nickolay Samofatov
 		// Unconditionally deallocate existing formats that are left from
@@ -2052,28 +2054,19 @@ ITransaction* Attachment::execute(CheckStatusWrapper* status, ITransaction* apiT
 
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
-		BlrFromMessage inBlr(inMetadata, dialect);
+		rem_port* port = rdb->rdb_port;
+
+		BlrFromMessage inBlr(inMetadata, dialect, port->port_protocol);
 		const unsigned int in_blr_length = inBlr.getLength();
 		const UCHAR* const in_blr = inBlr.getBytes();
 		const unsigned int in_msg_length = inBlr.getMsgLength();
 		UCHAR* const in_msg = static_cast<UCHAR*>(inBuffer);
 
-		BlrFromMessage outBlr(outMetadata, dialect);
+		BlrFromMessage outBlr(outMetadata, dialect, port->port_protocol);
 		const unsigned int out_blr_length = outBlr.getLength();
 		const UCHAR* const out_blr = outBlr.getBytes();
 		const unsigned int out_msg_length = outBlr.getMsgLength();
 		UCHAR* const out_msg = static_cast<UCHAR*>(outBuffer);
-
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
-		Rtr* transaction = NULL;
-		Transaction* rt = remoteTransactionInterface(apiTra);
-		if (rt)
-		{
-			transaction = rt->getTransaction();
-			CHECK_HANDLE(transaction, isc_bad_trans_handle);
-		}
 
 		// Validate data length
 
@@ -2088,6 +2081,16 @@ ITransaction* Attachment::execute(CheckStatusWrapper* status, ITransaction* apiT
 		// Validate string length
 
 		CHECK_LENGTH(port, stmtLength);
+
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+
+		Rtr* transaction = NULL;
+		Transaction* rt = remoteTransactionInterface(apiTra);
+		if (rt)
+		{
+			transaction = rt->getTransaction();
+			CHECK_HANDLE(transaction, isc_bad_trans_handle);
+		}
 
 		if (dialect > 10)
 		{
@@ -2770,19 +2773,20 @@ int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 		Rdb* rdb = statement->rsr_rdb;
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
 
-		BlrFromMessage outBlr(outputFormat, stmt->getDialect());
+		rem_port* port = rdb->rdb_port;
+
+		BlrFromMessage outBlr(outputFormat, stmt->getDialect(), port->port_protocol);
 		unsigned int blr_length = outBlr.getLength();
 		const UCHAR* blr = outBlr.getBytes();
 		const unsigned int msg_length = outBlr.getMsgLength();
 		UCHAR* msg = static_cast<UCHAR*>(buffer);
 
-		rem_port* port = rdb->rdb_port;
-		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-
 		// Validate data length
 
 		CHECK_LENGTH(port, blr_length);
 		CHECK_LENGTH(port, msg_length);
+
+		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
 
 		// On first fetch, clear the end-of-stream flag & reset the message buffers
 

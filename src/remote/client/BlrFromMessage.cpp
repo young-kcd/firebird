@@ -31,15 +31,16 @@
 #include "../common/StatusHolder.h"
 #include "../jrd/align.h"
 #include "../dsql/sqlda_pub.h"
+#include "../remote/protocol.h"
 
 using namespace Firebird;
 
 namespace Remote
 {
 
-BlrFromMessage::BlrFromMessage(IMessageMetadata* metadata, unsigned aDialect)
+BlrFromMessage::BlrFromMessage(IMessageMetadata* metadata, unsigned aDialect, unsigned aProtocol)
 	: BlrWriter(*getDefaultMemoryPool()),
-	  expectedMessageLength(0), dialect(aDialect)
+	  expectedMessageLength(0), dialect(aDialect), protocol(aProtocol)
 {
 	buildBlr(metadata);
 }
@@ -147,9 +148,19 @@ void BlrFromMessage::buildBlr(IMessageMetadata* metadata)
 				break;
 
 			case SQL_BLOB:
-				appendUChar(blr_blob2);
-				appendUShort(subType);
-				appendUShort(charSet);
+				if (protocol >= PROTOCOL_VERSION12)
+				{
+					appendUChar(blr_blob2);
+					appendUShort(subType);
+					appendUShort(charSet);
+				}
+				else
+				{
+					// Servers prior to FB 2.5 don't expect blr_blob2 in remote messages,
+					// so BLOB IDs are described as blr_quad instead
+					appendUChar(blr_quad);
+					appendUChar(0);
+				}
 				dtype = dtype_blob;
 				break;
 

@@ -37,7 +37,7 @@ namespace Remote {
 class BlrFromMessage : public Firebird::BlrWriter
 {
 public:
-	BlrFromMessage(Firebird::IMessageMetadata* metadata, unsigned dialect);
+	BlrFromMessage(Firebird::IMessageMetadata* metadata, unsigned dialect, unsigned protocol);
 
 	unsigned getLength();
 	const unsigned char* getBytes();
@@ -50,6 +50,7 @@ private:
 
 	unsigned expectedMessageLength;
 	unsigned dialect;
+	unsigned protocol;
 };
 
 } // namespace Firebird
