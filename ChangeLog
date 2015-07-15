@@ -1,3 +1,11 @@
+ 2015-07-14 17:10  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-4710: invalid request BLR at offset 361 context already in use (BLR error).
+
+ 2015-07-14 16:00  asfernandes 
+   M src/dsql/Parser.cpp
+Rework on CORE-4781 - Maximum string length (32767 bytes) is not validated.
+
  2015-07-13 19:42  hvlad 
    M src/gpre/boot/gpre_meta_boot.cpp
 Fixed gpre_boot compilation
