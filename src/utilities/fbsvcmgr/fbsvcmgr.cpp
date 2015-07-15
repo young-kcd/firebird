@@ -501,7 +501,6 @@ const SvcSwitches traceStartOptions[] =
 
 const SvcSwitches traceChgStateOptions[] =
 {
-	{"trc_name", putStringArgument, 0, isc_spb_trc_name, 0},
 	{"trc_id", putNumericArgument, 0, isc_spb_trc_id, 0},
 	{0, 0, 0, 0, 0}
 };
