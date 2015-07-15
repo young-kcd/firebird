@@ -3118,7 +3118,7 @@ static rhd* locate_space(thread_db* tdbb,
 	// Make few tries to lock consecutive data pages without waiting. In highly
 	// concurrent environment with shared page cache it could be faster than wait
 	// in OS for first candidate page.
-	int tries = dbb->dbb_config->getServerMode() != MODE_SUPER ? 8 : 0;
+	int tries = (dbb->dbb_config->getServerMode() == MODE_SUPER) ? 8 : 0;
 
 	ULONG pp_sequence =
 		(type == DPM_primary ? relPages->rel_pri_data_space : relPages->rel_sec_data_space);
