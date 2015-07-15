@@ -129,7 +129,7 @@ static HINSTANCE hInst;
 static TEXT protocol_inet[128];
 static TEXT protocol_wnet[128];
 static TEXT instance[MAXPATHLEN];
-static USHORT server_flag;
+static USHORT server_flag = 0;
 static bool server_shutdown = false;
 
 using namespace Firebird;
@@ -217,8 +217,6 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 		return STARTUP_ERROR;
 	}
 
-	server_flag = 0;
-
 	const DWORD affinity = static_cast<DWORD>(Config::getCpuAffinityMask());
 	if (affinity)
 		SetProcessAffinityMask(GetCurrentProcess(), affinity);
@@ -227,6 +225,9 @@ int WINAPI WinMain(HINSTANCE hThisInst, HINSTANCE /*hPrevInst*/, LPSTR lpszArgs,
 	protocol_wnet[0] = 0;
 
 	strcpy(instance, FB_DEFAULT_INSTANCE);
+
+	if (Config::getServerMode() != MODE_CLASSIC)
+		server_flag = SRVR_multi_client;
 
 	const HANDLE connection_handle = parse_args(lpszArgs, &server_flag);
 
@@ -685,10 +686,6 @@ static HANDLE parse_args(LPCSTR lpszArgs, USHORT* pserver_flag)
 
 				case 'I':
 					*pserver_flag |= SRVR_inet;
-					break;
-
-				case 'M':
-					*pserver_flag |= SRVR_multi_client;
 					break;
 
 				case 'N':
