@@ -53,10 +53,12 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	setlocale(LC_CTYPE, "");
 #endif
 
+	int exitCode = 1;
+
 	try
 	{
 		Firebird::AutoPtr<Firebird::UtilSvc> uSvc(Firebird::UtilSvc::createStandalone(argc, argv));
- 		return gsec(uSvc);
+		exitCode = gsec(uSvc);
  	}
 	catch (const Firebird::Exception& ex)
  	{
@@ -64,5 +66,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		ex.stuffException(st);
 		isc_print_status(st.begin());
  	}
- 	return 1;
+
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+	return exitCode;
 }
