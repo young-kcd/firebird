@@ -383,6 +383,7 @@
 #define isc_spb_bkp_factor               6
 #define isc_spb_bkp_length               7
 #define isc_spb_bkp_skip_data            8
+#define isc_spb_bkp_stat                 15
 #define isc_spb_bkp_ignore_checksums     0x01
 #define isc_spb_bkp_ignore_limbo         0x02
 #define isc_spb_bkp_metadata_only        0x04
@@ -489,6 +490,7 @@
 #define isc_spb_res_access_mode			12
 #define isc_spb_res_fix_fss_data		13
 #define isc_spb_res_fix_fss_metadata	14
+#define isc_spb_res_stat				isc_spb_bkp_stat
 #define isc_spb_res_metadata_only		isc_spb_bkp_metadata_only
 #define isc_spb_res_deactivate_idx		0x0100
 #define isc_spb_res_no_shadow			0x0200

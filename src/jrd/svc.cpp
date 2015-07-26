@@ -136,24 +136,6 @@ namespace {
 	GlobalPtr<AllServices> allServices;	// protected by globalServicesMutex
 	volatile bool svcShutdown = false;
 
-	void put_status_arg(Arg::StatusVector& status, const MsgFormat::safe_cell& value)
-	{
-		using MsgFormat::safe_cell;
-
-		switch (value.type)
-		{
-		case safe_cell::at_int64:
-		case safe_cell::at_uint64:
-			status << Arg::Num(static_cast<SLONG>(value.i_value)); // May truncate number!
-			break;
-		case safe_cell::at_str:
-			status << value.st_value.s_string;
-			break;
-		default:
-			break;
-		}
-	}
-
 	void spbVersionError()
 	{
 		ERR_post(Arg::Gds(isc_bad_spb_form) <<
@@ -506,6 +488,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
 	status << Arg::Gds(ENCODE_ISC_MSG(errcode, facility));
 
 	// stuff params
+	svc_arg_ptr = svc_arg_conv;
 	for (unsigned int loop = 0; loop < args.getCount(); ++loop)
 	{
 		put_status_arg(status, args.getCell(loop));
@@ -513,6 +496,33 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode,
 
 	ERR_post_nothrow(status, &svc_status);
 }
+
+
+void Service::put_status_arg(Arg::StatusVector& status, const MsgFormat::safe_cell& value)
+{
+	using MsgFormat::safe_cell;
+
+	switch (value.type)
+	{
+	case safe_cell::at_int64:
+	case safe_cell::at_uint64:
+		status << Arg::Num(static_cast<SLONG>(value.i_value)); // May truncate number!
+		break;
+	case safe_cell::at_str:
+		status << value.st_value.s_string;
+		break;
+	case safe_cell::at_char:
+		svc_arg_ptr[0] = value.c_value;
+		svc_arg_ptr[1] = 0;
+		status << svc_arg_ptr;
+		svc_arg_ptr += 2;
+		break;
+	default:
+		fb_assert(false);
+		break;
+	}
+}
+
 
 void Service::hidePasswd(ArgvType&, int)
 {
@@ -2770,6 +2780,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				break;
 			case isc_spb_res_fix_fss_data:
 			case isc_spb_res_fix_fss_metadata:
+			case isc_spb_bkp_stat:
 				if (!get_action_svc_parameter(spb.getClumpTag(), reference_burp_in_sw_table, switches))
 				{
 					return false;

@@ -112,12 +112,28 @@ static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
 static int svc_api_gbak(Firebird::UtilSvc*, const Switches& switches);
 static void burp_output(bool err, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
 static void burp_usage(const Switches& switches);
-static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::string& sw);
+static Switches::in_sw_tab_t* findSwitchOrThrow(Firebird::UtilSvc*, Switches& switches, Firebird::string& sw);
 
 // fil.fil_length is FB_UINT64
 const ULONG KBYTE	= 1024;
 const ULONG MBYTE	= KBYTE * KBYTE;
 const ULONG GBYTE	= MBYTE * KBYTE;
+
+// Must be consistent with enum BurpGlobals::StatCounter
+struct StatFormat
+{
+	const char* header;
+	const char* format;
+	char width;
+};
+static const char* STAT_CHARS = "TDRW";
+static const StatFormat STAT_FORMATS[] = 
+{
+	{"time",	"%4lu.%03u ",  9},
+	{"delta",	"%2lu.%03u ",  7},
+	{"reads",	"%6"UQUADFORMAT" ", 7},
+	{"writes",	"%6"UQUADFORMAT" ", 7}
+};
 
 
 int BURP_main(Firebird::UtilSvc* uSvc)
@@ -237,15 +253,13 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 				BURP_error(333, true, SafeArg() << inSw->in_sw_name << verbint_val);
 			if (itr >= argc - 1)
 				BURP_error(326, true); // verbose interval value parameter missing
-			argv[itr++] = 0;
-			verbint_val = get_number(argv[itr]);
+			verbint_val = get_number(argv[++itr]);
 			if (verbint_val < MIN_VERBOSE_INTERVAL)
 			{
 				// verbose interval value cannot be smaller than @1
 				BURP_error(327, true, SafeArg() << MIN_VERBOSE_INTERVAL);
 			}
 			flag_verbint = true;
-			argv[itr] = 0;
 			break;
 #ifdef TRUSTED_AUTH
 		case IN_SW_BURP_TRUSTED_AUTH:	// use trusted auth
@@ -399,7 +413,7 @@ static int svc_api_gbak(Firebird::UtilSvc* uSvc, const Switches& switches)
 }
 
 
-static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::string& sw)
+static Switches::in_sw_tab_t* findSwitchOrThrow(Firebird::UtilSvc* uSvc, Switches& switches, Firebird::string& sw)
 {
 /**************************************
  *
@@ -420,11 +434,19 @@ static Switches::in_sw_tab_t* findSwitchOrThrow(Switches& switches, Firebird::st
 
 	if (invalid)
 	{
-		BURP_print(true, 137, sw.c_str());
-		// msg 137  unknown switch %s
-		burp_usage(switches);
-		BURP_error(1, true);
-		// msg 1: found unknown switch
+		if (! uSvc->isService())
+		{
+			BURP_print(true, 137, sw.c_str());
+			// msg 137  unknown switch %s
+			burp_usage(switches);
+			BURP_error(1, true);
+			// msg 1: found unknown switch
+		}
+		else
+		{
+			BURP_error(137, true, sw.c_str());
+			// msg 137  unknown switch %s
+		}
 	}
 
 	return NULL;
@@ -538,7 +560,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			str = none;
 		}
 
-		Switches::in_sw_tab_t* const in_sw_tab = findSwitchOrThrow(switches, str);
+		Switches::in_sw_tab_t* const in_sw_tab = findSwitchOrThrow(uSvc, switches, str);
 		fb_assert(in_sw_tab);
 		//in_sw_tab->in_sw_state = true; It's not enough with switches that have multiple spellings
 		switches.activate(in_sw_tab->in_sw);
@@ -812,6 +834,28 @@ int gbak(Firebird::UtilSvc* uSvc)
 			if (tdgbl->gbl_sw_verbose)
 				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
 			tdgbl->gbl_sw_verbose = true;
+			break;
+		case IN_SW_BURP_STATS:
+			if (tdgbl->gbl_stat_flags)
+				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
+			if (++itr >= argc)
+					BURP_error(366, true); // statistics parameter missing
+
+			{
+				const char* perf_val = argv[itr];
+				const char* c = perf_val;
+				int len = strlen(STAT_CHARS);
+				for (; *c && len; c++, len--)
+				{
+					const char* pos = strchr(STAT_CHARS, toupper(*c));
+					if (!pos)
+						BURP_error(367, true, SafeArg() << *c); // wrong char "@1" at statistics parameter 
+
+					tdgbl->gbl_stat_flags |= 1 << (pos - STAT_CHARS);
+				}
+				if (*c)
+					BURP_error(368, true); // 'too many chars at statistics parameter'
+			}
 			break;
 		case IN_SW_BURP_CO:
 			if (tdgbl->gbl_sw_convert_ext_tables)
@@ -1628,7 +1672,12 @@ void BURP_verbose(USHORT number, const SafeArg& arg)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->gbl_sw_verbose)
-		BURP_print(false, number, arg);
+	{
+		tdgbl->print_stats_header();
+		BURP_msg_partial(false, 169);	// msg 169: gbak:
+		tdgbl->print_stats(number);
+		BURP_msg_put(false, number, arg);
+	}
 	else
 		burp_output(false, "%s", "");
 }
@@ -1651,7 +1700,12 @@ void BURP_verbose(USHORT number, const char* str)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->gbl_sw_verbose)
-		BURP_print(false, number, str);
+	{
+		tdgbl->print_stats_header();
+		BURP_msg_partial(false, 169);	// msg 169: gbak:
+		tdgbl->print_stats(number);
+		BURP_msg_put(false, number, SafeArg() << str);
+	}
 	else
 		burp_output(false, "%s", "");
 }
@@ -2397,6 +2451,123 @@ bool BurpGlobals::skipRelation(const char* name)
 	skipDataMatcher->reset();
 	skipDataMatcher->process(reinterpret_cast<const UCHAR*>(name), static_cast<SLONG>(strlen(name)));
 	return skipDataMatcher->result();
+}
+
+void BurpGlobals::read_stats(SINT64* stats)
+{
+	if (!db_handle)
+		return;
+
+	const char info[] =
+	{
+		isc_info_reads,
+		isc_info_writes
+	};
+
+	ISC_STATUS_ARRAY status = {0};
+	char buffer[sizeof(info) * (1 + 2 + 8) + 2];
+
+	isc_database_info(status, &db_handle, sizeof(info), info, sizeof(buffer), buffer);
+
+	char *p = buffer, *const e = buffer + sizeof(buffer);
+	while (p < e)
+	{
+		int flag = -1;
+		switch (*p)
+		{
+		case isc_info_reads:
+			flag = READS;
+			break;
+
+		case isc_info_writes:
+			flag = WRITES;
+			break;
+
+		case isc_info_end:
+			default:
+			p = e;
+		}
+
+		if (flag != -1)
+		{
+			const int len = isc_vax_integer(p + 1, 2);
+			stats[flag] = isc_portable_integer((ISC_UCHAR*)p + 1 + 2, len);
+			p += len + 3;
+		}
+	}
+}
+
+void BurpGlobals::print_stats(USHORT number)
+{
+	if (!gbl_stat_flags || gbl_stat_done)
+		return;
+
+	const bool total = (number == 369);
+	// msg 369 total statistics
+
+	burp_output(false, " ");
+
+	const int time_mask = (1 << TIME_TOTAL) | (1 << TIME_DELTA);
+	if (gbl_stat_flags & time_mask)
+	{
+		const SINT64 t0 = fb_utils::query_performance_counter();
+		const SINT64 freq_ms = fb_utils::query_performance_frequency() / 1000;
+
+		if (gbl_stat_flags & (1 << TIME_TOTAL))
+		{
+			SINT64 t1 = (t0 - gbl_stats[TIME_TOTAL]) / freq_ms;
+			burp_output(false, STAT_FORMATS[TIME_TOTAL].format, (int)(t1 / 1000), (int)(t1 % 1000));
+		}
+
+		if (gbl_stat_flags & (1 << TIME_DELTA))
+		{
+			SINT64 t2 = (t0 - gbl_stats[TIME_DELTA]) / freq_ms;
+			burp_output(false, STAT_FORMATS[TIME_DELTA].format, (int)(t2 / 1000), (int)(t2 % 1000));
+
+			gbl_stats[TIME_DELTA] = t0;
+		}
+	}
+
+	SINT64 cur_stats[LAST_COUNTER] = {0};
+	if((gbl_stat_flags & ~time_mask) && !gbl_stat_done)
+		read_stats(cur_stats);
+
+	for (int i = READS; i < LAST_COUNTER; i++)
+	{
+		if (gbl_stat_flags & (1 << i))
+		{
+			SINT64 val = 0;
+			if (total || gbl_stat_done)
+				val = cur_stats[i];
+			else
+				val = cur_stats[i] - gbl_stats[i];
+
+			gbl_stats[i] = cur_stats[i];
+
+			burp_output(false, STAT_FORMATS[i].format, val);
+		}
+	}
+
+	if (total)
+		gbl_stat_done = true;
+}
+
+void BurpGlobals::print_stats_header()
+{
+	if (gbl_stat_header || !gbl_stat_flags)
+		return;
+
+	gbl_stat_header = true;
+
+	BURP_msg_partial(false, 169);	// msg 169: gbak:
+	burp_output(false, " ");
+
+	for (int i = 0; i < LAST_COUNTER; i++)
+	{
+		if (gbl_stat_flags & (1 << i))
+			burp_output(false, "%-*s", STAT_FORMATS[i].width, STAT_FORMATS[i].header);
+	}
+	burp_output(false, "\n");
 }
 
 UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)

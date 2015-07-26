@@ -230,6 +230,8 @@ private:
 	// Sends stdin for a service
 	// Returns number of bytes service wants more
 	ULONG	put(const UCHAR* buffer, ULONG length);
+	// Copies argument value to status vector
+	void put_status_arg(Firebird::Arg::StatusVector& status, const MsgFormat::safe_cell& value);
 
 	// Increment circular buffer pointer
 	static ULONG		add_one(ULONG i);
@@ -287,6 +289,8 @@ private:
 	bool	svc_do_shutdown;
 	bool	svc_shutdown_in_progress;
 	bool	svc_timeout;
+	char	svc_arg_conv[MsgFormat::SAFEARG_MAX_ARG * 2];
+	char*	svc_arg_ptr;
 
 	Firebird::string	svc_username;
 	Firebird::string	svc_sql_role;

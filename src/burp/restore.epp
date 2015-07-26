@@ -536,6 +536,9 @@ int RESTORE_restore (const TEXT* file_name, const TEXT* database_name)
 	//FB_UINT64 cumul_count =
 	MVOL_fini_read();
 
+	BURP_verbose(369);
+	// msg 369 total statistics
+
 	// Close database before we attach to it again.
 	FINISH
 	ON_ERROR

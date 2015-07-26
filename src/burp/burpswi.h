@@ -89,6 +89,7 @@ const int IN_SW_BURP_FIX_FSS_METADATA	= 44;	// fix unicode_fss metadata
 
 const int IN_SW_BURP_FETCHPASS			= 45;	// fetch default password from file to use on attach
 const int IN_SW_BURP_VERBINT			= 46;	// verbose but with specific interval
+const int IN_SW_BURP_STATS				= 47;	// print statistics
 
 /**************************************************************************/
 	// used 0BCDEFGILMNOPRSTUVYZ	available AHJQWX
@@ -165,6 +166,16 @@ static const Switches::in_sw_tab_t reference_burp_in_sw_table[] =
 				// msg 277: @1SE(RVICE) use services manager
 	{IN_SW_BURP_SKIP_DATA, isc_spb_res_skip_data, "SKIP_DATA",		0, 0, 0, false, 355,	6, NULL, boGeneral},
 				// msg 355: @1SKIP_DATA skip data for table
+	{IN_SW_BURP_STATS, isc_spb_bkp_stat,		"STATISTICS",		0, 0, 0, false, 361,	2, NULL, boGeneral},
+				// msg 361: @1ST(ATISTICS) TDRW    show statistics:
+	{-1,				0,							" ",				0, 0, 0, false, 362,	0, NULL, boGeneral},
+				// msg 362: T                  time from start
+	{-1,				0,							" ",				0, 0, 0, false, 363,	0, NULL, boGeneral},
+				// msg 363: D                  delta time
+	{-1,				0,							" ",				0, 0, 0, false, 364,	0, NULL, boGeneral},
+				// msg 364: R                  page reads
+	{-1,				0,							" ",				0, 0, 0, false, 365,	0, NULL, boGeneral},
+				// msg 365: W                  page writes
 	{IN_SW_BURP_T,	  0,						"TRANSPORTABLE",	0, 0, 0, false, 175,	1, NULL, boBackup},
 				// msg 175: @1TRANSPORTABLE transportable backup -- data in XDR format
 #ifdef TRUSTED_AUTH

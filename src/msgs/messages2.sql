@@ -2333,6 +2333,15 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'update_ownership', 'restore.epp', NULL, 12, 358, NULL, 'updating ownership of packages, procedures and tables', NULL, NULL);
 (NULL, 'fix_missing_privileges', 'restore.epp', NULL, 12, 359, NULL, 'adding missing privileges', NULL, NULL);
 (NULL, 'RESTORE_restore', 'restore.epp', NULL, 12, 360, NULL, 'adjusting the ONLINE and FORCED WRITES flags', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 361, NULL, '    @1ST(ATISTICS) TDRW    show statistics:', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 362, NULL, '        T                 time from start', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 363, NULL, '        D                 delta time', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 364, NULL, '        R                 page reads', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 365, NULL, '        W                 page writes', NULL, NULL);
+('gbak_missing_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 366, NULL, 'statistics parameter missing', NULL, NULL);
+('gbak_wrong_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 367, NULL, 'wrong char "@1" at statistics parameter', NULL, NULL);
+('gbak_too_long_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 368, NULL, 'too many chars at statistics parameter', NULL, NULL);
+(NULL, 'api_gbak/gbak', 'burp.cpp', NULL, 12, 369, NULL, 'total statistics', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);
