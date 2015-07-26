@@ -5893,6 +5893,74 @@ static bool isyesno(const TEXT* buffer)
 }
 
 
+static bool printUser11()
+{
+	if (!frontendTransaction())
+		return false;
+
+	const char* sql = "SELECT MON$ATTACHMENT_NAME, MON$USER, MON$ROLE "
+		"FROM MON$ATTACHMENTS WHERE MON$ATTACHMENT_ID = CURRENT_CONNECTION";
+
+	Firebird::RefPtr<Firebird::IStatement> st(Firebird::REF_NO_INCR,
+		DB->prepare(fbStatus, fbTrans, 0, sql, 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA));
+	if (failed())
+		return false;
+	Firebird::RefPtr<Firebird::IMessageMetadata> m(Firebird::REF_NO_INCR,
+		st->getOutputMetadata(fbStatus));
+	if (failed())
+		return false;
+	unsigned bs = m->getMessageLength(fbStatus);
+	if (failed())
+		return false;
+	Firebird::UCharBuffer outBuf;
+	UCHAR* buf = outBuf.getBuffer(bs);
+	st->execute(fbStatus, fbTrans, NULL, NULL, m, buf);
+	if (failed())
+		return false;
+
+	struct FieldInfo
+	{
+		const char* text;
+		const char* skip;
+	};
+	FieldInfo fieldInfo[3] = {
+		{"Database", NULL},
+		{"User", NULL},
+		{"Role", "NONE"}
+	};
+
+	bool wasOut = false;
+	for (unsigned i = 0; i < FB_NELEM(fieldInfo); ++i)
+	{
+		IsqlVar v;
+		if (ISQL_fill_var(&v, m, i, buf) == ps_ERR)
+			return false;
+		if (*v.nullInd)
+			continue;
+
+		Firebird::string txt;
+		switch(v.type & ~1)
+		{
+		case SQL_TEXT:
+			txt.assign(v.value.asChar, v.length);
+			break;
+		case SQL_VARYING:
+			txt.assign(v.value.asVary->vary_string, v.value.asVary->vary_length);
+			break;
+		}
+		txt.trim();
+		if (fieldInfo[i].skip && txt == fieldInfo[i].skip)
+			continue;
+
+		isqlGlob.printf("%s%s: %s", wasOut ? ", " : "", fieldInfo[i].text, txt.c_str());
+		wasOut = true;
+	}
+	if (wasOut)
+		isqlGlob.printf("%s", NEWLINE);
+	return true;
+}
+
+
 static processing_state newdb(TEXT* dbname,
 					const TEXT* usr,
 					const TEXT* psw,
@@ -6053,10 +6121,27 @@ static processing_state newdb(TEXT* dbname,
 		}
 	}
 
+	// CVC: We do not require those pesky transactions for -x or -a options.
+	// Metadata extraction works exclusively with default transaction gds__trans.
+
+	if (start_user_trans)
+	{
+		// Start the user transaction and default transaction
+
+		if (!M__trans)
+		{
+			M_Transaction();
+			if (D__trans)
+				commit_trans(&D__trans);
+			if (setValues.Autocommit)
+				D_Transaction();
+		}
+	}
+
 	// CVC: Do not put the user and pw used to extract metadata in a script!
 	// Only acknowledge user connection parameters in interactive logins.
 
-	if (Interactive)
+	if (Interactive && !printUser11())
 	{
 		if (local_usr[0] != '\0')
 		{
@@ -6077,23 +6162,6 @@ static processing_state newdb(TEXT* dbname,
 			else {
 				isqlGlob.printf("Database:  %s%s", dbname, NEWLINE);
 			}
-		}
-	}
-
-	// CVC: We do not require those pesky transactions for -x or -a options.
-	// Metadata extraction works exclusively with default transaction gds__trans.
-
-	if (start_user_trans)
-	{
-		// Start the user transaction and default transaction
-
-		if (!M__trans)
-		{
-			M_Transaction();
-			if (D__trans)
-				commit_trans(&D__trans);
-			if (setValues.Autocommit)
-				D_Transaction();
 		}
 	}
 
