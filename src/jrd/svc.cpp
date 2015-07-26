@@ -2499,8 +2499,8 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 	int nbk_level = -1;
 
 	bool val_database = false;
-
 	bool found = false;
+	string::size_type userPos = string::npos;
 
 	do
 	{
@@ -2593,6 +2593,7 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
+				found = true;
 
 				if (spb.isEof() && (svc_action == isc_action_svc_display_user ||
 									svc_action == isc_action_svc_display_user_adm))
@@ -2602,15 +2603,10 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 					break;
 				}
 
-				if (spb.getClumpTag() != isc_spb_sec_username &&
-					spb.getClumpTag() != isc_spb_dbname &&
-					spb.getClumpTag() != isc_spb_sql_role_name)
+				if (spb.getClumpTag() != isc_spb_sec_username)
 				{
-					// unexpected item in service parameter block, expected @1
-					status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));
+					userPos = switches.getCount();
 				}
-
-				found = true;
 			}
 
 			switch (spb.getClumpTag())
@@ -2621,13 +2617,16 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				// fall through ....
-			case isc_spb_sec_username:
 				get_action_svc_string(spb, switches);
 				break;
 
+			case isc_spb_sec_username:
+				get_action_svc_string_pos(spb, switches, userPos);
+				break;
+
 			default:
-				return false;
+				fatal_exception::raise("Invalid item in service parameter block - invalid code for security database operation");
+				// no return
 			}
 			break;
 
@@ -2639,13 +2638,12 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
+				found = true;
 
 				if (spb.getClumpTag() != isc_spb_sec_username)
 				{
-					// unexpected item in service parameter block, expected @1
-					status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));
+					userPos = switches.getCount();
 				}
-				found = true;
 			}
 
 			switch (spb.getClumpTag())
@@ -2678,9 +2676,12 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 				{
 					return false;
 				}
-				// fall through ....
-			case isc_spb_sec_username:
 				get_action_svc_string(spb, switches);
+				break;
+
+			case isc_spb_sec_username:
+				get_action_svc_string_pos(spb, switches, userPos);
+				userPos = string::npos;
 				break;
 
 			default:
@@ -2904,6 +2905,13 @@ bool Service::process_switches(ClumpletReader& spb, string& switches)
 		spb.moveNext();
 	} while (! spb.isEof());
 
+	if (userPos != string::npos && svc_action != isc_action_svc_display_user &&
+		svc_action != isc_action_svc_display_user_adm)
+	{
+		// unexpected item in service parameter block, expected @1
+		status_exception::raise(Arg::Gds(isc_unexp_spb_form) << Arg::Str(SPB_SEC_USERNAME));
+	}
+
 	// postfixes for burp & nbackup
 	switch (svc_action)
 	{
@@ -2992,6 +3000,19 @@ void Service::get_action_svc_string(const ClumpletReader& spb, string& switches)
 	string s;
 	spb.getString(s);
 	addStringWithSvcTrmntr(s, switches);
+}
+
+
+void Service::get_action_svc_string_pos(const ClumpletReader& spb, string& switches, string::size_type p)
+{
+	if (p == string::npos)
+		get_action_svc_string(spb, switches);
+	else
+	{
+		string s;
+		get_action_svc_string(spb, s);
+		switches.insert(p, s);
+	}
 }
 
 

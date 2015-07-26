@@ -247,6 +247,9 @@ private:
 									   Firebird::string& sw);
 	// Get string from within spb buffer, add it to the command line
 	static void get_action_svc_string(const Firebird::ClumpletReader& spb, Firebird::string& sw);
+	// Get string from within spb buffer, insert it at given position into command line
+	static void get_action_svc_string_pos(const Firebird::ClumpletReader& spb, Firebird::string& switches,
+										  Firebird::string::size_type p = Firebird::string::npos);
 	// Get integer from within spb buffer, add it to the command line
 	static void get_action_svc_data(const Firebird::ClumpletReader& spb, Firebird::string& sw);
 	// Get parameter from within spb buffer, find corresponding switch within specified table,
