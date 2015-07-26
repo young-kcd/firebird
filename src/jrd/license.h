@@ -130,8 +130,14 @@
 #endif
 #endif	// DARWIN
 
+#ifdef DEV_BUILD
+#define FB_DEV_VERSION "-dev"
+#else
+#define FB_DEV_VERSION ""
+#endif
+
 #ifndef FB_VERSION
-#define FB_VERSION      FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO " " FB_BUILD_SUFFIX
+#define FB_VERSION      FB_PLATFORM "-" FB_BUILD_TYPE FB_MAJOR_VER "." FB_MINOR_VER "." FB_REV_NO "." FB_BUILD_NO FB_DEV_VERSION " " FB_BUILD_SUFFIX
 #endif
 
 #ifndef ISC_VERSION
