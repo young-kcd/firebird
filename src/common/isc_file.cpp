@@ -344,7 +344,7 @@ bool ISC_analyze_protocol(const char* protocol, tstring& expanded_name, tstring&
 	if (separator) // this implies node name is expected!
 	{
 		size p = expanded_name.find_first_of('/');
-		if (p != npos)
+		if (p != 0 && p != npos)
 		{
 			node_name = expanded_name.substr(0, p);
 			expanded_name.erase(0, node_name.length() + 1);
