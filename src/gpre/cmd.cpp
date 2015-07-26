@@ -41,7 +41,6 @@
 
 typedef void (*pfn_local_trigger_cb) (gpre_nod*, gpre_req*);
 
-//static void add_cache(gpre_req*, const act*, gpre_dbb*);
 static void alter_database(gpre_req*, act*);
 static void alter_domain(gpre_req*, const act*);
 static void alter_index(gpre_req*, const act*);
@@ -249,28 +248,6 @@ int CMD_compile_ddl(gpre_req* request)
 
 //____________________________________________________________
 //
-//		Add cache file to a database.
-//
-/*
-static void add_cache( gpre_req* request, const act* action, gpre_dbb* database)
-{
-	TEXT file_name[254]; // CVC: Maybe MAXPATHLEN?
-
-	const gpre_file* file = database->dbb_cache_file;
-	const SSHORT l = MIN((strlen(file->fil_name)), (sizeof(file_name) - 1));
-
-	strncpy(file_name, file->fil_name, l);
-	file_name[l] = '\0';
-	put_cstring(request, isc_dyn_def_cache_file, file_name);
-	request->add_byte(isc_dyn_file_length);
-	request->add_word(4);
-	request->add_long(file->fil_length);
-	request->add_end();
-}
-*/
-
-//____________________________________________________________
-//
 //		Generate dynamic DDL for modifying database.
 //
 
@@ -303,15 +280,6 @@ static void alter_database( gpre_req* request, act* action)
 		request->add_long(file->fil_length);
 		request->add_end();
 	}
-
-	// Drop cache
-/*
-	if (db->dbb_flags & DBB_drop_cache)
-		request->add_byte(isc_dyn_drop_cache);
-
-	if (db->dbb_cache_file)
-		add_cache(request, action, db);
-*/
 
 	if (db->dbb_def_charset)
 		put_cstring(request, isc_dyn_fld_character_set_name, db->dbb_def_charset);
@@ -1473,11 +1441,6 @@ static void create_database_modify_dyn( gpre_req* request, act* action)
 		request->add_end();
 		start += file->fil_length;
 	}
-
-/*
-	if (db->dbb_cache_file)
-		add_cache(request, action, db);
-*/
 
 	if (db->dbb_def_charset)
 		put_cstring(request, isc_dyn_fld_character_set_name, db->dbb_def_charset);
