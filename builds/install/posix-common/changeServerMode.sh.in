@@ -33,6 +33,12 @@ AskQuestion "Which option would you like to choose: (super|classic) [super] " "s
 multiAnswer=$Answer
 
 case "$multiAnswer" in
+s)
+	multiAnswer=super
+	;;
+c)
+	multiAnswer=classic
+	;;
 super)
 	;;
 classic)
@@ -51,14 +57,12 @@ removeServiceAutostart
 echo "Starting firebird in $multiAnswer server mode..."
 fbconf="@FB_CONFDIR@/firebird.conf"
 if [ $multiAnswer == classic ]; then
-	replaceLineInFile $fbconf "SharedCache = false" "^SharedCache"
-	replaceLineInFile $fbconf "SharedDatabase = true" "^SharedDatabase"
+	replaceLineInFile $fbconf "ServerMode = Classic" "^ServerMode"
 
 	updateInetdServiceEntry
 	resetInetdServer
 else
-	replaceLineInFile $fbconf "SharedCache = true" "^SharedCache"
-	replaceLineInFile $fbconf "SharedDatabase = false" "^SharedDatabase"
+	replaceLineInFile $fbconf "ServerMode = Super" "^ServerMode"
 
 	installInitdScript
 	startService
