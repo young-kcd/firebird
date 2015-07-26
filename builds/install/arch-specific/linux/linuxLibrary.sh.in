@@ -29,9 +29,6 @@ export RunGroup
 PidDir=/var/run/firebird
 export PidDir
 
-# Additional OS settings
-OS_Has_Specific_Classic_Startup=yes
-
 #------------------------------------------------------------------------
 # Get correct options & misc.
 
@@ -159,6 +156,7 @@ SYSTEMCTL=systemctl
 CLASSIC_CTRL=firebird-classic.socket
 SUPER_CTRL=firebird-superserver.service
 SYSTEMD_DIR=/usr/lib/systemd/system
+[ -d $SYSTEMD_DIR ] || SYSTEMD_DIR=/lib/systemd/system
 TMPFILE_CONF=/usr/lib/tmpfiles.d/firebird.conf
 
 systemdPresent() {
@@ -264,6 +262,10 @@ stopSuperServer() {
 
 	return 1
 }
+
+
+# Additional OS settings
+systemdPresent && OS_Has_Specific_Classic_Startup=yes
 
 
 #------------------------------------------------------------------------
