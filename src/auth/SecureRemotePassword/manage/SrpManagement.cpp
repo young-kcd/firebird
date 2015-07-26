@@ -554,11 +554,12 @@ public:
 						Blob comment(di), attr(di);
 						Boolean admin(di), active(di);
 
-						Firebird::AutoPtr<Message> par;
+						Message* par = NULL;
+						Meta im(stmt, false);
+						Message tm(im);
 						if (user->userName()->entered())
 						{
-							Meta im(stmt, false);
-							par = new Message(im);
+							par = &tm;
 							Varfield login(*par);
 							setField(login, user->userName());
 						}
