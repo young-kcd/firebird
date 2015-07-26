@@ -851,7 +851,6 @@ enum dbb_flags_valss {
 //	DBB_cascade		= 64,		// only set but not used
 //	DBB_drop_cache	= 128,		// only set but not used
 //	DBB_create_database	= 256,	// unused
-//	DBB_v3			= 512		// Database is V3; not supported anymore in FB2.5
 };
 
 enum dbb_scope_vals {
