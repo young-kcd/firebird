@@ -305,7 +305,7 @@ public:
 		: AutoStorage(), BaseStatus<LocalStatus>(getPool())
 	{ }
 
-	LocalStatus(MemoryPool& p)
+	explicit LocalStatus(MemoryPool& p)
 		: AutoStorage(p), BaseStatus<LocalStatus>(getPool())
 	{ }
 
