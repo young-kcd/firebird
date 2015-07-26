@@ -1126,55 +1126,6 @@ void CPR_get_text( TEXT* buffer, const gpre_txt* text)
 
 //____________________________________________________________
 //
-//       A BASIC-specific function which resides here since it reads from
-//       the input file.  Look for a '\n' with no continuation character (&).
-//       Eat tokens until previous condition is satisfied.
-//       This function is used to "eat" a BASIC external function definition.
-//
-
-#ifdef NOT_USED_OR_REPLACED
-void CPR_raw_read()
-{
-	SCHAR token_string[MAX_SYM_SIZE];
-	bool continue_char = false;
-
-	SCHAR* p = token_string;
-
-	SSHORT c;
-	while (c = get_char(input_file))
-	{
-		position++;
-		if ((get_classes(c) == CHR_WHITE) && sw_trace && token_string)
-		{
-			*p = 0;
-			puts(token_string);
-			token_string[0] = 0;
-			p = token_string;
-		}
-		else
-			*p++ = (SCHAR) c;
-
-		if (c == '\n') // Changed assignment to comparison. Probable archaic bug
-		{
-			line_global++;
-			line_position = 0;
-			if (!continue_char)
-				return;
-			continue_char = false;
-		}
-		else
-		{
-			line_position++;
-			if (get_classes(c) != CHR_WHITE)
-				continue_char = (gpreGlob.token_global.tok_keyword == KW_AMPERSAND);
-		}
-	}
-}
-#endif
-
-
-//____________________________________________________________
-//
 //		Generate a syntax error.
 //
 
