@@ -1882,9 +1882,6 @@ static int show_indices_detail( qli_rel* relation)
 				END_FOR;
 			}
 
-			// Index name can have spaces, we need something like MET_exact_name()
-			// to replace the custom loops that get rid of trailing spaces.
-			// I found truncate_string(). But later replaced it by fb_utils::exact_name().
 			fb_utils::exact_name(X.RDB$INDEX_NAME);
 			ERRQ_msg_put(450, SafeArg() << X.RDB$INDEX_NAME <<
 						 ((X.RDB$UNIQUE_FLAG) ? " (unique)" : "") <<
