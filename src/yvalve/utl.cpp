@@ -57,6 +57,7 @@
 #include "../yvalve/why_proto.h"
 #include "../yvalve/prepa_proto.h"
 #include "../jrd/constants.h"
+#include "../jrd/build_no.h"
 #include "../common/classes/ClumpletWriter.h"
 #include "../common/utils_proto.h"
 #include "../common/classes/MetaName.h"
@@ -719,6 +720,341 @@ unsigned UtilInterface::formatStatus(char* buffer, unsigned bufferSize, IStatus*
 	strncpy(buffer, s.c_str(), ret);
 
 	return ret;
+}
+
+unsigned UtilInterface::getClientVersion()
+{
+	int fv[] = { FILE_VER_NUMBER };
+	return fv[0] * 0x100 + fv[1];
+}
+
+// End-user proxy for ClumpletReader & Writer
+class XpbBuilder FB_FINAL : public DisposeIface<IXpbBuilderImpl<XpbBuilder, CheckStatusWrapper> >
+{
+public:
+	XpbBuilder(unsigned kind, const unsigned char* buf, unsigned len)
+		: pb(NULL), strVal(getPool())
+	{
+		ClumpletReader::Kind k;
+		const ClumpletReader::KindList* kl = NULL;
+
+		switch(kind)
+		{
+		case DPB:
+			kl = ClumpletReader::dpbList;
+			break;
+		case SPB_ATTACH:
+			kl = ClumpletReader::spbList;
+			break;
+		case SPB_START:
+			k = ClumpletReader::SpbStart;
+			break;
+		case TPB:
+			k = ClumpletReader::Tpb;
+			break;
+		default:
+			fatal_exception::raiseFmt("Wrong parameters block kind %d, should be from %d to %d", kind, DPB, TPB);
+			break;
+		}
+
+		if (!buf)
+		{
+			if (kl)
+				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), kl, MAX_DPB_SIZE);
+			else
+				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE);
+		}
+		else
+		{
+			if (kl)
+				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), kl, MAX_DPB_SIZE, buf, len);
+			else
+				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE, buf, len);
+		}
+	}
+
+	~XpbBuilder()
+	{
+		delete pb;
+	}
+
+	// IXpbBuilder implementation
+	void clear(CheckStatusWrapper* status)
+	{
+		try
+		{
+			pb->clear();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void removeCurrent(CheckStatusWrapper* status)
+	{
+		try
+		{
+			pb->deleteClumplet();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void insertInt(CheckStatusWrapper* status, unsigned char tag, int value)
+	{
+		try
+		{
+			pb->insertInt(tag, value);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void insertBigInt(CheckStatusWrapper* status, unsigned char tag, ISC_INT64 value)
+	{
+		try
+		{
+			pb->insertBigInt(tag, value);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void insertBytes(CheckStatusWrapper* status, unsigned char tag, const void* bytes, unsigned length)
+	{
+		try
+		{
+			pb->insertBytes(tag, bytes, length);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void insertString(CheckStatusWrapper* status, unsigned char tag, const char* str)
+	{
+		try
+		{
+			pb->insertString(tag, str, strlen(str));
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void insertTag(CheckStatusWrapper* status, unsigned char tag)
+	{
+		try
+		{
+			pb->insertTag(tag);
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	FB_BOOLEAN isEof(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->isEof() ? FB_TRUE : FB_FALSE;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return FB_TRUE;
+		}
+	}
+
+	void moveNext(CheckStatusWrapper* status)
+	{
+		try
+		{
+			pb->moveNext();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	void rewind(CheckStatusWrapper* status)
+	{
+		try
+		{
+			pb->rewind();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+		}
+	}
+
+	FB_BOOLEAN findFirst(CheckStatusWrapper* status, unsigned char tag)
+	{
+		try
+		{
+			nextTag = tag;
+			return pb->find(nextTag) ? FB_TRUE : FB_FALSE;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return FB_FALSE;
+		}
+	}
+
+	FB_BOOLEAN findNext(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->next(nextTag) ? FB_TRUE : FB_FALSE;
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return FB_FALSE;
+		}
+	}
+
+	unsigned char getTag(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->getClumpTag();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return 0;
+		}
+	}
+
+	unsigned getLength(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->getClumpLength();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return 0;
+		}
+	}
+
+	int getInt(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->getInt();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return 0;
+		}
+	}
+
+	ISC_INT64 getBigInt(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->getBigInt();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return 0;
+		}
+	}
+
+	const char* getString(CheckStatusWrapper* status)
+	{
+		try
+		{
+			pb->getString(strVal);
+			return strVal.c_str();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return NULL;
+		}
+	}
+
+	const unsigned char* getBytes(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->getBytes();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return NULL;
+		}
+	}
+
+	unsigned getBufferLength(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->getBufferLength();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return 0;
+		}
+	}
+
+	const unsigned char* getBuffer(CheckStatusWrapper* status)
+	{
+		try
+		{
+			return pb->getBuffer();
+		}
+		catch (const Exception& ex)
+		{
+			ex.stuffException(status);
+			return NULL;
+		}
+	}
+
+	void dispose()
+	{
+		delete this;
+	}
+
+private:
+	ClumpletWriter *pb;
+	unsigned char nextTag;
+	string strVal;
+};
+
+IXpbBuilder* UtilInterface::getXpbBuilder(CheckStatusWrapper* status,
+	unsigned kind, const unsigned char* buf, unsigned len)
+{
+	try
+	{
+		return new XpbBuilder(kind, buf, len);
+	}
+	catch (const Exception& ex)
+	{
+		ex.stuffException(status);
+		return NULL;
+	}
 }
 
 } // namespace Why

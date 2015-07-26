@@ -84,6 +84,7 @@ namespace Firebird
 	class ITimerControl;
 	class IVersionCallback;
 	class IUtil;
+	class IXpbBuilder;
 	class ITraceConnection;
 	class ITraceDatabaseConnection;
 	class ITraceTransaction;
@@ -3436,6 +3437,8 @@ namespace Firebird
 			ISC_DATE (CLOOP_CARG *encodeDate)(IUtil* self, unsigned year, unsigned month, unsigned day) throw();
 			ISC_TIME (CLOOP_CARG *encodeTime)(IUtil* self, unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) throw();
 			unsigned (CLOOP_CARG *formatStatus)(IUtil* self, char* buffer, unsigned bufferSize, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getClientVersion)(IUtil* self) throw();
+			IXpbBuilder* (CLOOP_CARG *getXpbBuilder)(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) throw();
 		};
 
 	protected:
@@ -3512,6 +3515,217 @@ namespace Firebird
 		unsigned formatStatus(char* buffer, unsigned bufferSize, IStatus* status)
 		{
 			unsigned ret = static_cast<VTable*>(this->cloopVTable)->formatStatus(this, buffer, bufferSize, status);
+			return ret;
+		}
+
+		unsigned getClientVersion()
+		{
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getClientVersion(this);
+			return ret;
+		}
+
+		template <typename StatusType> IXpbBuilder* getXpbBuilder(StatusType* status, unsigned kind, const unsigned char* buf, unsigned len)
+		{
+			StatusType::clearException(status);
+			IXpbBuilder* ret = static_cast<VTable*>(this->cloopVTable)->getXpbBuilder(this, status, kind, buf, len);
+			StatusType::checkException(status);
+			return ret;
+		}
+	};
+
+	class IXpbBuilder : public IDisposable
+	{
+	public:
+		struct VTable : public IDisposable::VTable
+		{
+			void (CLOOP_CARG *clear)(IXpbBuilder* self, IStatus* status) throw();
+			void (CLOOP_CARG *removeCurrent)(IXpbBuilder* self, IStatus* status) throw();
+			void (CLOOP_CARG *insertInt)(IXpbBuilder* self, IStatus* status, unsigned char tag, int value) throw();
+			void (CLOOP_CARG *insertBigInt)(IXpbBuilder* self, IStatus* status, unsigned char tag, ISC_INT64 value) throw();
+			void (CLOOP_CARG *insertBytes)(IXpbBuilder* self, IStatus* status, unsigned char tag, const void* bytes, unsigned length) throw();
+			void (CLOOP_CARG *insertString)(IXpbBuilder* self, IStatus* status, unsigned char tag, const char* str) throw();
+			void (CLOOP_CARG *insertTag)(IXpbBuilder* self, IStatus* status, unsigned char tag) throw();
+			FB_BOOLEAN (CLOOP_CARG *isEof)(IXpbBuilder* self, IStatus* status) throw();
+			void (CLOOP_CARG *moveNext)(IXpbBuilder* self, IStatus* status) throw();
+			void (CLOOP_CARG *rewind)(IXpbBuilder* self, IStatus* status) throw();
+			FB_BOOLEAN (CLOOP_CARG *findFirst)(IXpbBuilder* self, IStatus* status, unsigned char tag) throw();
+			FB_BOOLEAN (CLOOP_CARG *findNext)(IXpbBuilder* self, IStatus* status) throw();
+			unsigned char (CLOOP_CARG *getTag)(IXpbBuilder* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getLength)(IXpbBuilder* self, IStatus* status) throw();
+			int (CLOOP_CARG *getInt)(IXpbBuilder* self, IStatus* status) throw();
+			ISC_INT64 (CLOOP_CARG *getBigInt)(IXpbBuilder* self, IStatus* status) throw();
+			const char* (CLOOP_CARG *getString)(IXpbBuilder* self, IStatus* status) throw();
+			const unsigned char* (CLOOP_CARG *getBytes)(IXpbBuilder* self, IStatus* status) throw();
+			unsigned (CLOOP_CARG *getBufferLength)(IXpbBuilder* self, IStatus* status) throw();
+			const unsigned char* (CLOOP_CARG *getBuffer)(IXpbBuilder* self, IStatus* status) throw();
+		};
+
+	protected:
+		IXpbBuilder(DoNotInherit)
+			: IDisposable(DoNotInherit())
+		{
+		}
+
+		~IXpbBuilder()
+		{
+		}
+
+	public:
+		static const unsigned VERSION = 3;
+
+		static const unsigned DPB = 1;
+		static const unsigned SPB_ATTACH = 2;
+		static const unsigned SPB_START = 3;
+		static const unsigned TPB = 4;
+
+		template <typename StatusType> void clear(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->clear(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void removeCurrent(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->removeCurrent(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void insertInt(StatusType* status, unsigned char tag, int value)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->insertInt(this, status, tag, value);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void insertBigInt(StatusType* status, unsigned char tag, ISC_INT64 value)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->insertBigInt(this, status, tag, value);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void insertBytes(StatusType* status, unsigned char tag, const void* bytes, unsigned length)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->insertBytes(this, status, tag, bytes, length);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void insertString(StatusType* status, unsigned char tag, const char* str)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->insertString(this, status, tag, str);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void insertTag(StatusType* status, unsigned char tag)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->insertTag(this, status, tag);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> FB_BOOLEAN isEof(StatusType* status)
+		{
+			StatusType::clearException(status);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->isEof(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> void moveNext(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->moveNext(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> void rewind(StatusType* status)
+		{
+			StatusType::clearException(status);
+			static_cast<VTable*>(this->cloopVTable)->rewind(this, status);
+			StatusType::checkException(status);
+		}
+
+		template <typename StatusType> FB_BOOLEAN findFirst(StatusType* status, unsigned char tag)
+		{
+			StatusType::clearException(status);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->findFirst(this, status, tag);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> FB_BOOLEAN findNext(StatusType* status)
+		{
+			StatusType::clearException(status);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->findNext(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> unsigned char getTag(StatusType* status)
+		{
+			StatusType::clearException(status);
+			unsigned char ret = static_cast<VTable*>(this->cloopVTable)->getTag(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> unsigned getLength(StatusType* status)
+		{
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getLength(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> int getInt(StatusType* status)
+		{
+			StatusType::clearException(status);
+			int ret = static_cast<VTable*>(this->cloopVTable)->getInt(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> ISC_INT64 getBigInt(StatusType* status)
+		{
+			StatusType::clearException(status);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getBigInt(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> const char* getString(StatusType* status)
+		{
+			StatusType::clearException(status);
+			const char* ret = static_cast<VTable*>(this->cloopVTable)->getString(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> const unsigned char* getBytes(StatusType* status)
+		{
+			StatusType::clearException(status);
+			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getBytes(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> unsigned getBufferLength(StatusType* status)
+		{
+			StatusType::clearException(status);
+			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getBufferLength(this, status);
+			StatusType::checkException(status);
+			return ret;
+		}
+
+		template <typename StatusType> const unsigned char* getBuffer(StatusType* status)
+		{
+			StatusType::clearException(status);
+			const unsigned char* ret = static_cast<VTable*>(this->cloopVTable)->getBuffer(this, status);
+			StatusType::checkException(status);
 			return ret;
 		}
 	};
@@ -12019,6 +12233,8 @@ namespace Firebird
 					this->encodeDate = &Name::cloopencodeDateDispatcher;
 					this->encodeTime = &Name::cloopencodeTimeDispatcher;
 					this->formatStatus = &Name::cloopformatStatusDispatcher;
+					this->getClientVersion = &Name::cloopgetClientVersionDispatcher;
+					this->getXpbBuilder = &Name::cloopgetXpbBuilderDispatcher;
 				}
 			} vTable;
 
@@ -12158,6 +12374,34 @@ namespace Firebird
 				return static_cast<unsigned>(0);
 			}
 		}
+
+		static unsigned CLOOP_CARG cloopgetClientVersionDispatcher(IUtil* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getClientVersion();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static IXpbBuilder* CLOOP_CARG cloopgetXpbBuilderDispatcher(IUtil* self, IStatus* status, unsigned kind, const unsigned char* buf, unsigned len) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getXpbBuilder(&status2, kind, buf, len);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<IXpbBuilder*>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IUtil> > >
@@ -12183,6 +12427,387 @@ namespace Firebird
 		virtual ISC_DATE encodeDate(unsigned year, unsigned month, unsigned day) = 0;
 		virtual ISC_TIME encodeTime(unsigned hours, unsigned minutes, unsigned seconds, unsigned fractions) = 0;
 		virtual unsigned formatStatus(char* buffer, unsigned bufferSize, IStatus* status) = 0;
+		virtual unsigned getClientVersion() = 0;
+		virtual IXpbBuilder* getXpbBuilder(StatusType* status, unsigned kind, const unsigned char* buf, unsigned len) = 0;
+	};
+
+	template <typename Name, typename StatusType, typename Base>
+	class IXpbBuilderBaseImpl : public Base
+	{
+	public:
+		typedef IXpbBuilder Declaration;
+
+		IXpbBuilderBaseImpl(DoNotInherit = DoNotInherit())
+		{
+			static struct VTableImpl : Base::VTable
+			{
+				VTableImpl()
+				{
+					this->version = Base::VERSION;
+					this->dispose = &Name::cloopdisposeDispatcher;
+					this->clear = &Name::cloopclearDispatcher;
+					this->removeCurrent = &Name::cloopremoveCurrentDispatcher;
+					this->insertInt = &Name::cloopinsertIntDispatcher;
+					this->insertBigInt = &Name::cloopinsertBigIntDispatcher;
+					this->insertBytes = &Name::cloopinsertBytesDispatcher;
+					this->insertString = &Name::cloopinsertStringDispatcher;
+					this->insertTag = &Name::cloopinsertTagDispatcher;
+					this->isEof = &Name::cloopisEofDispatcher;
+					this->moveNext = &Name::cloopmoveNextDispatcher;
+					this->rewind = &Name::clooprewindDispatcher;
+					this->findFirst = &Name::cloopfindFirstDispatcher;
+					this->findNext = &Name::cloopfindNextDispatcher;
+					this->getTag = &Name::cloopgetTagDispatcher;
+					this->getLength = &Name::cloopgetLengthDispatcher;
+					this->getInt = &Name::cloopgetIntDispatcher;
+					this->getBigInt = &Name::cloopgetBigIntDispatcher;
+					this->getString = &Name::cloopgetStringDispatcher;
+					this->getBytes = &Name::cloopgetBytesDispatcher;
+					this->getBufferLength = &Name::cloopgetBufferLengthDispatcher;
+					this->getBuffer = &Name::cloopgetBufferDispatcher;
+				}
+			} vTable;
+
+			this->cloopVTable = &vTable;
+		}
+
+		static void CLOOP_CARG cloopclearDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::clear(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopremoveCurrentDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::removeCurrent(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopinsertIntDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, int value) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::insertInt(&status2, tag, value);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopinsertBigIntDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, ISC_INT64 value) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::insertBigInt(&status2, tag, value);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopinsertBytesDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, const void* bytes, unsigned length) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::insertBytes(&status2, tag, bytes, length);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopinsertStringDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag, const char* str) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::insertString(&status2, tag, str);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG cloopinsertTagDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::insertTag(&status2, tag);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static FB_BOOLEAN CLOOP_CARG cloopisEofDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::isEof(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<FB_BOOLEAN>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopmoveNextDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::moveNext(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static void CLOOP_CARG clooprewindDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				static_cast<Name*>(self)->Name::rewind(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+			}
+		}
+
+		static FB_BOOLEAN CLOOP_CARG cloopfindFirstDispatcher(IXpbBuilder* self, IStatus* status, unsigned char tag) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::findFirst(&status2, tag);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<FB_BOOLEAN>(0);
+			}
+		}
+
+		static FB_BOOLEAN CLOOP_CARG cloopfindNextDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::findNext(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<FB_BOOLEAN>(0);
+			}
+		}
+
+		static unsigned char CLOOP_CARG cloopgetTagDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getTag(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned char>(0);
+			}
+		}
+
+		static unsigned CLOOP_CARG cloopgetLengthDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getLength(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static int CLOOP_CARG cloopgetIntDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getInt(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<int>(0);
+			}
+		}
+
+		static ISC_INT64 CLOOP_CARG cloopgetBigIntDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getBigInt(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<ISC_INT64>(0);
+			}
+		}
+
+		static const char* CLOOP_CARG cloopgetStringDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getString(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<const char*>(0);
+			}
+		}
+
+		static const unsigned char* CLOOP_CARG cloopgetBytesDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getBytes(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<const unsigned char*>(0);
+			}
+		}
+
+		static unsigned CLOOP_CARG cloopgetBufferLengthDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getBufferLength(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<unsigned>(0);
+			}
+		}
+
+		static const unsigned char* CLOOP_CARG cloopgetBufferDispatcher(IXpbBuilder* self, IStatus* status) throw()
+		{
+			StatusType status2(status);
+
+			try
+			{
+				return static_cast<Name*>(self)->Name::getBuffer(&status2);
+			}
+			catch (...)
+			{
+				StatusType::catchException(&status2);
+				return static_cast<const unsigned char*>(0);
+			}
+		}
+
+		static void CLOOP_CARG cloopdisposeDispatcher(IDisposable* self) throw()
+		{
+			try
+			{
+				static_cast<Name*>(self)->Name::dispose();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+			}
+		}
+	};
+
+	template <typename Name, typename StatusType, typename Base = IDisposableImpl<Name, StatusType, Inherit<IVersionedImpl<Name, StatusType, Inherit<IXpbBuilder> > > > >
+	class IXpbBuilderImpl : public IXpbBuilderBaseImpl<Name, StatusType, Base>
+	{
+	protected:
+		IXpbBuilderImpl(DoNotInherit = DoNotInherit())
+		{
+		}
+
+	public:
+		virtual ~IXpbBuilderImpl()
+		{
+		}
+
+		virtual void clear(StatusType* status) = 0;
+		virtual void removeCurrent(StatusType* status) = 0;
+		virtual void insertInt(StatusType* status, unsigned char tag, int value) = 0;
+		virtual void insertBigInt(StatusType* status, unsigned char tag, ISC_INT64 value) = 0;
+		virtual void insertBytes(StatusType* status, unsigned char tag, const void* bytes, unsigned length) = 0;
+		virtual void insertString(StatusType* status, unsigned char tag, const char* str) = 0;
+		virtual void insertTag(StatusType* status, unsigned char tag) = 0;
+		virtual FB_BOOLEAN isEof(StatusType* status) = 0;
+		virtual void moveNext(StatusType* status) = 0;
+		virtual void rewind(StatusType* status) = 0;
+		virtual FB_BOOLEAN findFirst(StatusType* status, unsigned char tag) = 0;
+		virtual FB_BOOLEAN findNext(StatusType* status) = 0;
+		virtual unsigned char getTag(StatusType* status) = 0;
+		virtual unsigned getLength(StatusType* status) = 0;
+		virtual int getInt(StatusType* status) = 0;
+		virtual ISC_INT64 getBigInt(StatusType* status) = 0;
+		virtual const char* getString(StatusType* status) = 0;
+		virtual const unsigned char* getBytes(StatusType* status) = 0;
+		virtual unsigned getBufferLength(StatusType* status) = 0;
+		virtual const unsigned char* getBuffer(StatusType* status) = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

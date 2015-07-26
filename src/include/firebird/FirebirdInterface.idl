@@ -916,6 +916,46 @@ interface Util : Versioned
 	ISC_DATE encodeDate(uint year, uint month, uint day);
 	ISC_TIME encodeTime(uint hours, uint minutes, uint seconds, uint fractions);
 	uint formatStatus(string buffer, uint bufferSize, Status status);
+	uint getClientVersion();	// Returns major * 256 + minor
+	XpbBuilder getXpbBuilder(Status status, uint kind, const uchar* buf, uint len);
+}
+
+interface XpbBuilder : Disposable
+{
+	const uint DPB = 1;
+	const uint SPB_ATTACH = 2;
+	const uint SPB_START = 3;
+	const uint TPB = 4;
+
+	// removing data
+	void clear(Status status);
+	void removeCurrent(Status status);
+
+	// adding data
+	void insertInt(Status status, uchar tag, int value);
+	void insertBigInt(Status status, uchar tag, int64 value);
+	void insertBytes(Status status, uchar tag, const void* bytes, uint length);
+	void insertString(Status status, uchar tag, const string str);
+	void insertTag(Status status, uchar tag);
+
+	// navigation
+	boolean isEof(Status status);
+	void moveNext(Status status);
+	void rewind(Status status);
+	boolean findFirst(Status status, uchar tag);
+	boolean findNext(Status status);
+
+    // Methods which work with current selection
+	uchar getTag(Status status);
+	uint getLength(Status status);
+	int getInt(Status status);
+	int64 getBigInt(Status status);
+	const string getString(Status status);
+	const uchar* getBytes(Status status);
+
+	// Methods which work with resulting buffer
+	uint getBufferLength(Status status);
+	const uchar* getBuffer(Status status);
 }
 
 // Database trace objects
