@@ -1488,7 +1488,6 @@ static act* par_based()
 	{
 	case lang_internal:
 	case lang_fortran:
-	//case lang_epascal:
 	case lang_c:
 	case lang_cxx:
 		do {

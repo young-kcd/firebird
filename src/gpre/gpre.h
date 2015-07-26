@@ -96,7 +96,6 @@ enum lang_t
 	lang_internal,
 	lang_pascal,
 	lang_fortran,
-	//lang_epascal,
 	lang_cobol,
 	lang_c,
 	lang_ada,
