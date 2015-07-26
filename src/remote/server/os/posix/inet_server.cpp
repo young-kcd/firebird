@@ -131,6 +131,7 @@ static void logSecurityDatabaseError(const char* path, ISC_STATUS* status)
 	gds__log_status(path, status);
 	gds__put_error(path);
 	gds__print_status(status);
+	Firebird::Syslog::Record(Firebird::Syslog::Error, "Security database error");
 	fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
 	exit(STARTUP_ERROR);
 }
@@ -275,6 +276,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			if (classic)
 			{
 				gds__log("Server misconfigured - to start it from (x)inetd add ServerMode=Classic to firebird.conf");
+				Firebird::Syslog::Record(Firebird::Syslog::Error, "Server misconfigured - add ServerMode=Classic to firebird.conf");
 				exit(STARTUP_ERROR);
 			}
 			INET_SERVER_flag |= SRVR_multi_client;
@@ -371,7 +373,8 @@ int CLIB_ROUTINE main( int argc, char** argv)
 			port = INET_server(channel);
 			if (!port)
 			{
-				fprintf(stderr, "fbserver: Unable to start INET_server\n");
+				gds__log("Unable to start INET_server");
+				Firebird::Syslog::Record(Firebird::Syslog::Error, "Unable to start INET_server");
 				exit(STARTUP_ERROR);
 			}
 		}
@@ -442,6 +445,7 @@ int CLIB_ROUTINE main( int argc, char** argv)
 		const ISC_STATUS* status = st.begin();
 		fb_interpret(s, sizeof(s), &status);
 
+		iscLogException("Firebird startup error:", ex);
 		Firebird::Syslog::Record(Firebird::Syslog::Error, "Firebird startup error");
 		Firebird::Syslog::Record(Firebird::Syslog::Error, s);
 
