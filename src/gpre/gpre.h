@@ -847,10 +847,7 @@ enum dbb_flags_valss {
 	DBB_in_trans	= 4,		// included in this transaction
 //	DBB_drop_log	= 8,
 	DBB_log_serial	= 16
-//	DBB_log_default	= 32,
 //	DBB_cascade		= 64,		// only set but not used
-//	DBB_drop_cache	= 128,		// only set but not used
-//	DBB_create_database	= 256,	// unused
 };
 
 enum dbb_scope_vals {
