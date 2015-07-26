@@ -574,6 +574,7 @@ VI. ADDITIONAL NOTES
 #include "../common/classes/PublicHandle.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/lck_proto.h"
+#include "../jrd/isc_f_proto.h"
 
 #ifdef DEBUG_VAL_VERBOSE
 #include "../jrd/dmp_proto.h"
@@ -1003,10 +1004,16 @@ static int validate(Service* svc)
 		dpb.insertString(isc_dpb_trusted_auth, userName);
 	}
 
+	PathName expandedFilename = dbName;
+	ISC_expand_filename(expandedFilename, NULL);
+
+	if (dbName != expandedFilename)
+		dpb.insertPath(isc_dpb_org_filename, dbName);
+
 	ISC_STATUS_ARRAY status = {0};
 	Attachment *att = NULL;
 
-	if (jrd8_attach_database(status, dbName.c_str(), &att, dpb.getBufferLength(), dpb.getBuffer()))
+	if (jrd8_attach_database(status, expandedFilename.c_str(), &att, dpb.getBufferLength(), dpb.getBuffer()))
 	{
 		svc->setServiceStatus(status);
 		return FB_FAILURE;
