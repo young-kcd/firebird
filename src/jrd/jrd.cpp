@@ -7141,6 +7141,7 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 			auth_method = "OS user name";
 			wheel = ISC_get_user(&name, &id, &group);
 			ISC_systemToUtf8(name);
+			fb_utils::dpbItemUpper(name);
 			if (id == 0)
 			{
 				auth_method = "OS user name / wheel";
