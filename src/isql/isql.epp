@@ -5893,13 +5893,12 @@ static bool isyesno(const TEXT* buffer)
 }
 
 
-static bool printUser11()
+static bool printUser(const char* dbName)
 {
 	if (!frontendTransaction())
 		return false;
 
-	const char* sql = "SELECT MON$ATTACHMENT_NAME, MON$USER, MON$ROLE "
-		"FROM MON$ATTACHMENTS WHERE MON$ATTACHMENT_ID = CURRENT_CONNECTION";
+	const char* sql = "SELECT CURRENT_USER, CURRENT_ROLE FROM RDB$DATABASE";
 
 	Firebird::RefPtr<Firebird::IStatement> st(Firebird::REF_NO_INCR,
 		DB->prepare(fbStatus, fbTrans, 0, sql, 3, Firebird::IStatement::PREPARE_PREFETCH_METADATA));
@@ -5923,13 +5922,15 @@ static bool printUser11()
 		const char* text;
 		const char* skip;
 	};
-	FieldInfo fieldInfo[3] = {
-		{"Database", NULL},
+	FieldInfo fieldInfo[2] = {
 		{"User", NULL},
 		{"Role", "NONE"}
 	};
 
-	bool wasOut = false;
+	bool wasOut = dbName && dbName[0];
+	if (wasOut)
+		isqlGlob.printf("Database: %s", dbName);
+
 	for (unsigned i = 0; i < FB_NELEM(fieldInfo); ++i)
 	{
 		IsqlVar v;
@@ -5955,6 +5956,7 @@ static bool printUser11()
 		isqlGlob.printf("%s%s: %s", wasOut ? ", " : "", fieldInfo[i].text, txt.c_str());
 		wasOut = true;
 	}
+
 	if (wasOut)
 		isqlGlob.printf("%s", NEWLINE);
 	return true;
@@ -6141,7 +6143,7 @@ static processing_state newdb(TEXT* dbname,
 	// CVC: Do not put the user and pw used to extract metadata in a script!
 	// Only acknowledge user connection parameters in interactive logins.
 
-	if (Interactive && !printUser11())
+	if (Interactive && !printUser(dbname))
 	{
 		if (local_usr[0] != '\0')
 		{
