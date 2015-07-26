@@ -39,22 +39,6 @@
 using MsgFormat::SafeArg;
 
 
-#ifdef NOT_USED_OR_REPLACED
-// Same as fb_utils::exact_name, but writes the output to the second argument.
-TEXT* IUTILS_blankterm2(const TEXT* input, TEXT* output)
-{
-	TEXT* q = output - 1;
-	for (TEXT* p = output; (*p = *input) != 0; ++p, ++input)
-	{
-		if (*p != BLANK)
-			q = p;
-	}
-	*(q + 1) = 0;
-	return output;
-}
-#endif
-
-
 void IUTILS_copy_SQL_id(const TEXT* in_str, TEXT* output_str, TEXT escape_char)
 {
 /**************************************

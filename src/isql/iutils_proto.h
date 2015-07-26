@@ -27,9 +27,6 @@
 #include "../common/classes/SafeArg.h"
 #include <stdio.h>
 
-#ifdef NOT_USED_OR_REPLACED
-TEXT*	IUTILS_blankterm2(const TEXT* input, TEXT* output);
-#endif
 void	IUTILS_copy_SQL_id(const TEXT*, TEXT*, TEXT);
 void	IUTILS_make_upper(TEXT*);
 void	IUTILS_msg_get(USHORT number, TEXT* msg,
