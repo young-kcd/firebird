@@ -190,11 +190,13 @@ public:
 	static const unsigned char AUTH_TYPE = 3;		// it can be user/group/role/etc. - what plugin sets
 	static const unsigned char AUTH_SECURE_DB = 4;	// sec. db in which context record was added
 													// missing when plugin is server-wide
+	static const unsigned char AUTH_ORIG_PLUG = 5;	// original plugin that added a mapped record
+													// (human information reasons only)
 	typedef Array<UCHAR> AuthBlock;
 
 	struct Info
 	{
-		NoCaseString type, name, plugin, secDb;
+		NoCaseString type, name, plugin, secDb, origPlug;
 		unsigned found, current;
 
 		Info()

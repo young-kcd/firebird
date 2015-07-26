@@ -862,6 +862,7 @@ bool AuthReader::getInfo(Info& info)
 	erase(info.name);
 	erase(info.plugin);
 	erase(info.secDb);
+	erase(info.origPlug);
 
 	ClumpletReader internal(WideUnTagged, getBytes(), getClumpLength());
 	for (internal.rewind(); !internal.isEof(); internal.moveNext())
@@ -879,6 +880,9 @@ bool AuthReader::getInfo(Info& info)
 			break;
 		case AUTH_SECURE_DB:
 			set(info.secDb, internal);
+			break;
+		case AUTH_ORIG_PLUG:
+			set(info.origPlug, internal);
 			break;
 		default:
 			break;

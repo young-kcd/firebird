@@ -108,6 +108,7 @@ public:
 		add(to, AuthReader::AUTH_NAME, info.name);
 		add(to, AuthReader::AUTH_PLUGIN, info.plugin);
 		add(to, AuthReader::AUTH_SECURE_DB, info.secDb);
+		add(to, AuthReader::AUTH_ORIG_PLUG, info.origPlug);
 
 		if (to.getBufferLength())
 		{
@@ -361,18 +362,19 @@ public:
 		for (Map* to = lookup(from); to; to = to->next(from))
 		{
 			MAP_DEBUG(fprintf(stderr, "Match!!\n"));
-			unsigned flagRole = to->toRole ? FLAG_ROLE : FLAG_USER;
-			if (info.found & flagRole)
+			unsigned flagRolUsr = to->toRole ? FLAG_ROLE : FLAG_USER;
+			if (info.found & flagRolUsr)
 				continue;
-			if (info.current & flagRole)
+			if (info.current & flagRolUsr)
 				(Arg::Gds(isc_map_multi) << originalUserName).raise();
 
-			info.current |= flagRole;
+			info.current |= flagRolUsr;
 
 			AuthReader::Info newInfo;
 			newInfo.type = to->toRole ? NM_ROLE : NM_USER;
 			newInfo.name = to->to == "*" ? originalUserName : to->to;
 	        newInfo.secDb = this->name;
+	        newInfo.origPlug = info.origPlug.hasData() ? info.origPlug : info.plugin;
 			newBlock.add(newInfo);
 		}
 	}
@@ -509,15 +511,18 @@ public:
 		: found(FND_NOTHING)
 	{ }
 
-	void set(What find, NoCaseString& val, NoCaseString& m)
+	void set(What find, const AuthReader::Info& val)
 	{
-		if (find == found && value != val)
+		if (find == found && value != val.name)
 			Arg::Gds(isc_map_undefined).raise();
 		if (find > found)
 		{
 			found = find;
-			value = val;
-			method = m;
+			value = val.name;
+			if (val.plugin.hasData())
+				method = val.plugin;
+			else
+				method = "Mapped from " + val.origPlug;
 		}
 	}
 
@@ -1079,8 +1084,8 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	MAP_DEBUG(fprintf(stderr, "Starting newblock scan\n"));
 	for (AuthReader scan(newBlock); scan.getInfo(info); scan.moveNext())
 	{
-		MAP_DEBUG(fprintf(stderr, "Newblock info: secDb=%s plugin=%s type=%s name=%s\n",
-			info.secDb.c_str(), info.plugin.c_str(), info.type.c_str(), info.name.c_str()));
+		MAP_DEBUG(fprintf(stderr, "Newblock info: secDb=%s plugin=%s type=%s name=%s origPlug=%s\n",
+			info.secDb.c_str(), info.plugin.c_str(), info.type.c_str(), info.name.c_str(), info.origPlug.c_str()));
 
 		Found::What recordWeight =
 			(db && info.secDb == db) ? Found::FND_DB :
@@ -1090,9 +1095,9 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		if (recordWeight != Found::FND_NOTHING)
 		{
 			if (info.type == NM_USER)
-				fName.set(recordWeight, info.name, info.plugin);
+				fName.set(recordWeight, info);
 			else if (info.type == NM_ROLE)
-				fRole.set(recordWeight, info.name, info.plugin);
+				fRole.set(recordWeight, info);
 		}
 	}
 
