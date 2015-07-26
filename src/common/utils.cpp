@@ -1610,6 +1610,7 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 	if (l && (s[0] == '"' || s[0] == '\''))
 	{
 		const char end_quote = s[0];
+		bool ascii = true;
 
 		// quoted string - strip quotes
 		for (FB_SIZE_T i = 1; i < l; ++i)
@@ -1622,8 +1623,13 @@ const char* dpbItemUpper(const char* s, FB_SIZE_T l, Firebird::string& buf)
 				// skipped the escape quote, continue processing
 			}
 
+			if (s[i] & 0x80)
+				ascii = false;
 			buf += s[i];
 		}
+
+		if (ascii && s[0] == '\'')
+			buf.upper();
 
 		return buf.c_str();
 	}
