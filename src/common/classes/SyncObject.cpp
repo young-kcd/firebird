@@ -47,11 +47,8 @@ bool SyncObject::lock(Sync* sync, SyncType type, const char* from, int timeOut)
 
 	if (type == SYNC_SHARED)
 	{
-		// In Vulcan SyncObject locking is not fair. Shared locks have priority
-		// before Exclusive locks. To change this behavior we should replace
-		// loop condition below by:
-		//while (waiters == 0)	// activate to make locking fair
-		while (true)
+		//while (true)
+		while (waiters == 0)	// fair locking
 		{
 			const AtomicCounter::counter_type oldState = lockState;
 			if (oldState < 0)
@@ -75,8 +72,8 @@ bool SyncObject::lock(Sync* sync, SyncType type, const char* from, int timeOut)
 		mutex.enter(FB_FUNCTION);
 		++waiters;
 
-		//while (!waitingThreads)	// activate to make locking fair
-		while (true)
+		//while (true)
+		while (!waitingThreads)	// fair locking 
 		{
 			const AtomicCounter::counter_type oldState = lockState;
 			if (oldState < 0)
