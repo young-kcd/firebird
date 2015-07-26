@@ -52,13 +52,13 @@ fi
 
 start(){
 	ebegin "Starting $FULLNAME"
-	start-stop-daemon --oknodo --start --pidfile $pidfile --chuid $FBRunUser --startas $GUARDIAN -- $FB_OPTS
+	start-stop-daemon --start --pidfile $pidfile --user $FBRunUser --exec $GUARDIAN -- $FB_OPTS
 	eend $?
 }
 
 stop(){
 	ebegin "Stopping $FULLNAME"
-	start-stop-daemon --stop --pidfile $pidfile --oknodo
+	start-stop-daemon --stop --pidfile $pidfile
 	eend $?
 }
 
