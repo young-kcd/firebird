@@ -352,7 +352,6 @@ static void copy_exact_name (const char* from, char* to, SSHORT bsize)
  *
  * Functional description
  *  Copy null terminated name ot stops at bsize - 1.
- *  CVC: This is just another fc like DYN_terminate.
  *
  **************************************/
 	const char* const from_end = from + bsize - 1;

@@ -57,9 +57,7 @@ void IUTILS_copy_SQL_id(const TEXT* in_str, TEXT* output_str, TEXT escape_char)
 
 	/* CVC: Try to detect if we can get rid of double quotes as
 	   requested by Ann. Notice empty names need double quotes.
-	   Assume the caller invoked previously ISQL_blankterm() that's
-	   just another function like DYN_terminate, MET_exact_name, etc.
-	   ISQL_blankterm has been replaced by fb_utils::exact_name. */
+	   Assume the caller invoked previously fb_utils::exact_name. */
 
 	if (escape_char == DBL_QUOTE)
 	{
