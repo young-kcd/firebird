@@ -27,7 +27,9 @@
 #include "firebird.h"
 #include "fb_types.h"
 
+#include "../common/classes/array.h"
 #include "../jrd/ods.h"
+#include "../jrd/cch.h"
 #include "../jrd/sbm.h"
 #include "../jrd/RecordNumber.h"
 
@@ -155,9 +157,33 @@ public:
 	ULONG getInfo(UCHAR item);
 
 private:
+	struct UsedBdb
+	{
+		UsedBdb() : bdb(NULL), count(0) {}
+		UsedBdb(BufferDesc* _bdb) : bdb(_bdb), count(1) {}
+
+		BufferDesc* bdb;
+		int  count;
+
+		static const ULONG generate(const UsedBdb& p)
+		{
+			return p.bdb->bdb_page.getPageNum();
+		}
+	};
+
+	typedef Firebird::SortedArray<
+				UsedBdb,
+				Firebird::EmptyStorage<UsedBdb>,
+				ULONG,
+				UsedBdb> UsedBdbs;
+
+	UsedBdbs vdr_used_bdbs;
+
+
 	void cleanup();
 	RTN corrupt(int, const jrd_rel*, ...);
 	FETCH_CODE fetch_page(bool validate, ULONG, USHORT, WIN*, void*);
+	void release_page(WIN*);
 	void garbage_collect();
 
 	void parse_args(thread_db*);

@@ -845,7 +845,8 @@ const Validation::MSG_ENTRY Validation::vdr_msg_table[VAL_MAX_ERROR] =
 	{false, fb_info_ppage_warns,	"Pointer page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} bits {0x%02X %s} are not consistent with data page %"ULONGFORMAT" {sequence %"ULONGFORMAT"} state {0x%02X %s}"}
 };
 
-Validation::Validation(thread_db* tdbb, UtilSvc* uSvc)
+Validation::Validation(thread_db* tdbb, UtilSvc* uSvc) :
+	vdr_used_bdbs(*tdbb->getDefaultPool())
 {
 	vdr_tdbb = tdbb;
 	vdr_max_page = 0;
@@ -1188,9 +1189,26 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 	window->win_page = page_number;
 	window->win_flags = 0;
 	pag** page_pointer = reinterpret_cast<pag**>(aPage_pointer);
-	*page_pointer = CCH_FETCH_NO_SHADOW(vdr_tdbb, window,
-		(vdr_flags & VDR_online ? LCK_read : LCK_write),
-		0);
+
+	FB_SIZE_T pos;
+	if (vdr_used_bdbs.find(page_number, pos))
+	{
+		vdr_used_bdbs[pos].count++;
+
+		BufferDesc* bdb = vdr_used_bdbs[pos].bdb;
+		fb_assert(bdb->bdb_page == PageNumber(DB_PAGE_SPACE, page_number));
+
+		window->win_bdb = bdb;
+		*page_pointer = window->win_buffer = bdb->bdb_buffer;
+	}
+	else
+	{
+		*page_pointer = CCH_FETCH_NO_SHADOW(vdr_tdbb, window,
+			(vdr_flags & VDR_online ? LCK_read : LCK_write),
+			0);
+
+		vdr_used_bdbs.add(window->win_bdb);
+	}
 
 	if ((*page_pointer)->pag_type != type && type != pag_undefined)
 	{
@@ -1260,13 +1278,30 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 		}
 
 		if (scn_page_num != page_number) {
-			CCH_RELEASE(vdr_tdbb, &scns_window);
+			release_page(&scns_window);
 		}
 	}
 
 	PBM_SET(vdr_tdbb->getDefaultPool(), &vdr_page_bitmap, page_number);
 
 	return fetch_ok;
+}
+
+void Validation::release_page(WIN* window)
+{
+	FB_SIZE_T pos;
+	if (!vdr_used_bdbs.find(window->win_page.getPageNum(), pos))
+	{
+		fb_assert(false);
+		return; // BUG
+	}
+
+	fb_assert(vdr_used_bdbs[pos].bdb == window->win_bdb);
+	if (!--vdr_used_bdbs[pos].count)
+	{
+		CCH_RELEASE(vdr_tdbb, window);
+		vdr_used_bdbs.remove(pos);
+	}
 }
 
 void Validation::garbage_collect()
@@ -1333,7 +1368,7 @@ void Validation::garbage_collect()
 			}
 		}
 		const UCHAR test_byte = p[-1];
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 		if (test_byte & 0x80)
 			break;
 	}
@@ -1448,7 +1483,7 @@ Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHO
 		if ((header->blh_level == 1 && page1->blp_sequence != sequence))
 		{
 			corrupt(VAL_BLOB_CORRUPT, relation, number.getValue());
-			CCH_RELEASE(vdr_tdbb, &window1);
+			release_page(&window1);
 			return rtn_corrupt;
 		}
 		if (header->blh_level == 1)
@@ -1464,14 +1499,14 @@ Validation::RTN Validation::walk_blob(jrd_rel* relation, const blh* header, USHO
 				if (page2->blp_lead_page != header->blh_lead_page || page2->blp_sequence != sequence)
 				{
 					corrupt(VAL_BLOB_CORRUPT, relation, number.getValue());
-					CCH_RELEASE(vdr_tdbb, &window1);
-					CCH_RELEASE(vdr_tdbb, &window2);
+					release_page(&window1);
+					release_page(&window2);
 					return rtn_corrupt;
 				}
-				CCH_RELEASE(vdr_tdbb, &window2);
+				release_page(&window2);
 			}
 		}
-		CCH_RELEASE(vdr_tdbb, &window1);
+		release_page(&window1);
 	}
 
 	if (sequence - 1 != header->blh_max_sequence)
@@ -1519,12 +1554,12 @@ Validation::RTN Validation::walk_chain(jrd_rel* relation, const rhd* header,
 			walk_record(relation, header, line->dpg_length,
 						head_number, delta_flag) != rtn_ok)
 		{
-			CCH_RELEASE(vdr_tdbb, &window);
+			release_page(&window);
 			return corrupt(VAL_REC_CHAIN_BROKEN, relation, head_number.getValue());
 		}
 		page_number = header->rhd_b_page;
 		line_number = header->rhd_b_line;
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 
 	return rtn_ok;
@@ -1560,7 +1595,7 @@ void Validation::walk_database()
 	vdr_max_transaction = page->hdr_next_transaction;
 
 	if (vdr_flags & VDR_online) {
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 
 	if (!(vdr_flags & VDR_partial))
@@ -1632,7 +1667,7 @@ void Validation::walk_database()
 	}
 
 	if (!(vdr_flags & VDR_online)) {
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 }
 
@@ -1669,7 +1704,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 
 	if (page->dpg_relation != relation->rel_id || page->dpg_sequence != sequence)
 	{
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 		return corrupt(VAL_DATA_PAGE_CONFUSED, relation, page_number, sequence);
 	}
 
@@ -1713,7 +1748,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 			rhd* header = (rhd*) ((UCHAR*) page + line->dpg_offset);
 			if ((UCHAR*) header < (UCHAR*) end || (UCHAR*) header + line->dpg_length > end_page)
 			{
-				CCH_RELEASE(vdr_tdbb, &window);
+				release_page(&window);
 				return corrupt(VAL_DATA_PAGE_LINE_ERR, relation, page_number,
 								sequence, (ULONG) (line - page->dpg_rpt));
 			}
@@ -1761,6 +1796,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 				const RTN result = (header->rhd_flags & rhd_blob) ?
 					walk_blob(relation, (const blh*) header, line->dpg_length, number) :
 					walk_record(relation, header, line->dpg_length, number, false);
+
 				if ((result == rtn_corrupt) && (vdr_flags & VDR_repair))
 				{
 					CCH_MARK(vdr_tdbb, &window);
@@ -1775,7 +1811,7 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 #endif
 	}
 
-	CCH_RELEASE(vdr_tdbb, &window);
+	release_page(&window);
 
 #ifdef DEBUG_VAL_VERBOSE
 	if (VAL_debug_level)
@@ -1816,7 +1852,7 @@ void Validation::walk_generators()
 				// It doesn't make a difference generator_page or pointer_page because it's not used.
 				generator_page* page = NULL;
 				fetch_page(true, *ptr, pag_ids, &window, &page);
-				CCH_RELEASE(vdr_tdbb, &window);
+				release_page(&window);
 			}
 		}
 	}
@@ -1845,7 +1881,7 @@ void Validation::walk_header(ULONG page_num)
 		header_page* page = 0;
 		fetch_page(true, page_num, pag_header, &window, &page);
 		page_num = page->hdr_next_page;
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 }
 
@@ -1919,13 +1955,20 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 		// remember each page for circular reference detection
 		visited_pages.set(next);
 
+		//if ((next != page_number) &&
+		//	(page->btr_header.pag_flags & BTR_FLAG_COPY_MASK) != (flags & BTR_FLAG_COPY_MASK))
+		//{
+		//	corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+		//			id + 1, next, page->btr_level, 0, __FILE__, __LINE__);
+		//}
+
 		const bool leafPage = (page->btr_level == 0);
 
 		if (page->btr_relation != relation->rel_id || page->btr_id != (UCHAR) (id % 256))
 		{
 			corrupt(VAL_INDEX_PAGE_CORRUPT, relation, id + 1,
 					next, page->btr_level, 0, __FILE__, __LINE__);
-			CCH_RELEASE(vdr_tdbb, &window);
+			release_page(&window);
 			return rtn_corrupt;
 		}
 
@@ -1985,7 +2028,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 			{
 				corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
 						id + 1, next, page->btr_level, node.nodePointer - (UCHAR*) page, __FILE__, __LINE__);
-				CCH_RELEASE(vdr_tdbb, &window);
+				release_page(&window);
 				return rtn_corrupt;
 			}
 
@@ -2180,7 +2223,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 				}
 				previous_number = down_number;
 
-				CCH_RELEASE(vdr_tdbb, &down_window);
+				release_page(&down_window);
 			}
 		}
 
@@ -2219,7 +2262,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 			corrupt(VAL_INDEX_CYCLE, relation, id + 1, next);
 			next = 0;
 		}
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 
 	// If the index & relation contain different sets of records we
@@ -2366,7 +2409,7 @@ void Validation::walk_pip()
 		}
 
 		const UCHAR byte = page->pip_bits[pageSpaceMgr.bytesBitPIP - 1];
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 		if (byte & 0x80)
 			break;
 	}
@@ -2409,7 +2452,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 
 	if (page->ppg_relation != relation->rel_id || page->ppg_sequence != sequence)
 	{
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 		return corrupt(VAL_P_PAGE_INCONSISTENT, relation, (*vector)[sequence], sequence);
 	}
 
@@ -2471,7 +2514,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 
 	if (page->ppg_header.pag_flags & ppg_eof)
 	{
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 		return rtn_eof;
 	}
 
@@ -2480,7 +2523,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 	if (++sequence >= vector->count() ||
 		(page->ppg_next && page->ppg_next != (*vector)[sequence]))
 	{
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 
 		if (vdr_flags & VDR_online)
 		{
@@ -2502,7 +2545,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 			const bool error = sequence >= static_cast<int>(vector->count()) ||
 				(page->ppg_next && page->ppg_next != (*vector)[sequence]);
 
-			CCH_RELEASE(vdr_tdbb, &window);
+			release_page(&window);
 
 			if (!error)
 				return rtn_ok;
@@ -2511,7 +2554,7 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 		return corrupt(VAL_P_PAGE_INCONSISTENT, relation, page->ppg_next, sequence);
 	}
 
-	CCH_RELEASE(vdr_tdbb, &window);
+	release_page(&window);
 	return rtn_ok;
 }
 
@@ -2620,7 +2663,7 @@ Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, US
 			line_number >= page->dpg_count || !(length = line->dpg_length))
 		{
 			corrupt(VAL_REC_FRAGMENT_CORRUPT, relation, number.getValue());
-			CCH_RELEASE(vdr_tdbb, &window);
+			release_page(&window);
 			return rtn_corrupt;
 		}
 		fragment = (rhdf*) ((UCHAR*) page + line->dpg_offset);
@@ -2658,7 +2701,7 @@ Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, US
 		page_number = fragment->rhdf_f_page;
 		line_number = fragment->rhdf_f_line;
 		flags = fragment->rhdf_flags;
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 
 	// Check out record length and format
@@ -2735,7 +2778,7 @@ Validation::RTN Validation::walk_relation(jrd_rel* relation)
 		header_page* page = NULL;
 		fetch_page(false, (SLONG) HEADER_PAGE, pag_header, &window, &page);
 		vdr_max_transaction = page->hdr_next_transaction;
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 
 	// Walk pointer and selected data pages associated with relation
@@ -2826,7 +2869,7 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 
 		MetaName index;
 
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 		MET_lookup_index(vdr_tdbb, index, relation->rel_name, i + 1);
 		fetch_page(false, relPages->rel_index_root, pag_root, &window, &page);
 
@@ -2848,7 +2891,7 @@ Validation::RTN Validation::walk_root(jrd_rel* relation)
 		walk_index(relation, *page, i);
 	}
 
-	CCH_RELEASE(vdr_tdbb, &window);
+	release_page(&window);
 
 	return rtn_ok;
 }
@@ -2898,7 +2941,7 @@ Validation::RTN Validation::walk_tip(TraNumber transaction)
 		{
 			corrupt(VAL_TIP_CONFUSED, 0, sequence);
 		}
-		CCH_RELEASE(vdr_tdbb, &window);
+		release_page(&window);
 	}
 
 	return rtn_ok;
@@ -2945,7 +2988,7 @@ Validation::RTN Validation::walk_scns()
 			}
 		}
 
-		CCH_RELEASE(vdr_tdbb, &scnWindow);
+		release_page(&scnWindow);
 	}
 
 	return rtn_ok;
