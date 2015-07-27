@@ -873,25 +873,37 @@ static void readNextInputLine(const char* prompt)
 		fflush(stdout);
 	}
 
-	// Read the line
-	char buffer[MAX_USHORT];
-	if (fgets(buffer, sizeof(buffer), Filelist->Ifp().indev_fpointer) != NULL)
+	Firebird::string line;
+	bool end = false;
+
+	do
 	{
-		size_t lineSize = strlen(buffer);
-
-		// If the last non empty line doesn't end in '\n', indev_aux won't be
-		// updated, but then there're no more commands, so it's irrelevant.
-		while (lineSize > 0 &&
-			   (buffer[lineSize - 1] == '\n' || buffer[lineSize - 1] == '\r'))
+		// Read the line
+		char buffer[MAX_USHORT];
+		if (fgets(buffer, sizeof(buffer), Filelist->Ifp().indev_fpointer) != NULL)
 		{
-			buffer[--lineSize] = '\0';
-			++Filelist->Ifp().indev_aux;
+			size_t lineSize = strlen(buffer);
+
+			// If the last non empty line doesn't end in '\n', indev_aux won't be
+			// updated, but then there're no more commands, so it's irrelevant.
+			while (lineSize > 0 &&
+				   (buffer[lineSize - 1] == '\n' || buffer[lineSize - 1] == '\r'))
+			{
+				buffer[--lineSize] = '\0';
+				++Filelist->Ifp().indev_aux;
+				end = true;
+			}
+
+			line.append(buffer, lineSize);
 		}
+		else if (line.isEmpty())
+			return;
+		else
+			end = true;
+	} while (!end);
 
-		lastInputLine = (char*) malloc(lineSize + 1);
-		memcpy(lastInputLine, buffer, lineSize + 1);
-
-	}
+	lastInputLine = (char*) malloc(line.length() + 1);
+	memcpy(lastInputLine, line.c_str(), line.length() + 1);
 }
 
 static void readNextInputLine()
