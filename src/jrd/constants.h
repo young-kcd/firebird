@@ -52,7 +52,8 @@
 
 // Column Limits
 
-const ULONG MAX_COLUMN_SIZE	= 32767;	// Bytes
+const ULONG MAX_COLUMN_SIZE = 32767;	// Bytes
+const ULONG MAX_STR_SIZE = 65535;		// Bytes
 
 // Metadata constants
 

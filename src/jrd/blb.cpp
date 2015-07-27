@@ -2648,7 +2648,7 @@ static void move_to_string(thread_db* tdbb, dsc* fromDesc, dsc* toDesc)
 	buffer.getBuffer((blob->blb_length / fromCharSet->minBytesPerChar()) * toCharSet->maxBytesPerChar());
 	const ULONG len = blob->BLB_get_data(tdbb, buffer.begin(), buffer.getCapacity(), true);
 
-	if (len > MAX_COLUMN_SIZE - sizeof(USHORT))
+	if (len > MAX_STR_SIZE)
 		ERR_post(Arg::Gds(isc_arith_except) << Arg::Gds(isc_blob_truncation));
 
 	blobAsText.dsc_address = buffer.begin();

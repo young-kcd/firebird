@@ -1162,7 +1162,8 @@ static const struct {
 	{336397328, -104}, /* 1040 dsql_wlock_aggregates */
 	{336397329, -104}, /* 1041 dsql_wlock_conflict */
 	{336397330, -901}, /* 1042 dsql_max_exception_arguments */
-	{336397331, -901}, /* 1043 dsql_string_length */
+	{336397331, -901}, /* 1043 dsql_string_byte_length */
+	{336397332, -901}, /* 1044 dsql_string_char_length */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

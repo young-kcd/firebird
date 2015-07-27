@@ -528,7 +528,7 @@ void makeLongStringOrBlobResult(DataTypeUtilBase* dataTypeUtil, const SysFunctio
 	makeFromListResult(dataTypeUtil, function, result, argsCount, args);
 
 	if (result->isText())
-		result->makeVarying(dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE), result->getTextType());
+		result->makeVarying(dataTypeUtil->fixLength(result, MAX_STR_SIZE), result->getTextType());
 }
 ***/
 
@@ -892,7 +892,7 @@ void makePad(DataTypeUtilBase* dataTypeUtil, const SysFunction* function, dsc* r
 		else
 		{
 			result->dsc_length = static_cast<USHORT>(sizeof(USHORT)) +
-				dataTypeUtil->fixLength(result, MAX_COLUMN_SIZE);
+				dataTypeUtil->fixLength(result, MAX_STR_SIZE);
 		}
 	}
 
@@ -2768,7 +2768,7 @@ dsc* evlOverlay(thread_db* tdbb, const SysFunction* function, const NestValueArr
 	if (!value->isBlob() && !placing->isBlob())
 	{
 		const SINT64 newlen = (SINT64) len1 - length + len2;
-		if (newlen > static_cast<SINT64>(MAX_COLUMN_SIZE - sizeof(USHORT)))
+		if (newlen > static_cast<SINT64>(MAX_STR_SIZE))
 			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_imp_exc));
 
 		dsc desc;
@@ -2910,7 +2910,7 @@ dsc* evlPad(thread_db* tdbb, const SysFunction* function, const NestValueArray& 
 	}
 	else
 	{
-		if (padLen * cs->maxBytesPerChar() > MAX_COLUMN_SIZE - sizeof(USHORT))
+		if (padLen * cs->maxBytesPerChar() > MAX_STR_SIZE)
 			status_exception::raise(Arg::Gds(isc_arith_except) << Arg::Gds(isc_imp_exc));
 
 		dsc desc;
@@ -3266,7 +3266,7 @@ dsc* evlReplace(thread_db* tdbb, const SysFunction*, const NestValueArray& args,
 		const unsigned int findLen = canonicals[1].getCount() / canonicalWidth;
 		const unsigned int replacementLen = lengths[2] / cs->minBytesPerChar();
 
-		const USHORT len = MIN(MAX_COLUMN_SIZE, cs->maxBytesPerChar() *
+		const USHORT len = MIN(MAX_STR_SIZE, cs->maxBytesPerChar() *
 			MAX(searchedLen, searchedLen + (searchedLen / findLen) * (replacementLen - findLen)));
 
 		dsc desc;

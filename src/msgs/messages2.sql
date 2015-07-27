@@ -2628,7 +2628,8 @@ ERROR: Backup incomplete', NULL, NULL);
 ('dsql_wlock_aggregates', 'pass1_rse_impl', 'pass1.cpp', NULL, 13, 1040, NULL, 'WITH LOCK cannot be used with aggregates', NULL, NULL);
 ('dsql_wlock_conflict', NULL, 'pass1.cpp', NULL, 13, 1041, NULL, 'WITH LOCK cannot be used with @1', NULL, NULL);
 ('dsql_max_exception_arguments', NULL, 'StmtNodes.cpp', NULL, 13, 1042, NULL, 'Number of arguments (@1) exceeds the maximum (@2) number of EXCEPTION USING arguments', NULL, NULL);
-('dsql_string_length', NULL, 'Parser.cpp', NULL, 13, 1043, NULL, 'String literal with @1 bytes exceeds the maximum length of @2 bytes', NULL, NULL);
+('dsql_string_byte_length', NULL, 'Parser.cpp', NULL, 13, 1043, NULL, 'String literal with @1 bytes exceeds the maximum length of @2 bytes', NULL, NULL);
+('dsql_string_char_length', NULL, 'Parser.cpp', NULL, 13, 1044, NULL, 'String literal with @1 characters exceeds the maximum length of @2 characters for the @3 character set', NULL, NULL);
 -- SQLWARN
 (NULL, NULL, NULL, NULL, 14, 100, NULL, 'Row not found for fetch, update or delete, or the result of a query is an empty table.', NULL, NULL);
 (NULL, NULL, NULL, NULL, 14, 101, NULL, 'segment buffer length shorter than expected', NULL, NULL);

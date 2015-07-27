@@ -3158,7 +3158,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	if (value1->dsc_dtype == dtype_dbkey && value2->dsc_dtype == dtype_dbkey)
 	{
-		if ((ULONG) value1->dsc_length + (ULONG) value2->dsc_length > MAX_COLUMN_SIZE - sizeof(USHORT))
+		if ((ULONG) value1->dsc_length + (ULONG) value2->dsc_length > MAX_STR_SIZE)
 		{
 			ERR_post(Arg::Gds(isc_concat_overflow));
 			return NULL;
@@ -3210,7 +3210,7 @@ dsc* ConcatenateNode::execute(thread_db* tdbb, jrd_req* request) const
 	{
 		fb_assert(desc.dsc_dtype == dtype_varying);
 
-		if ((ULONG) length1 + (ULONG) length2 > MAX_COLUMN_SIZE - sizeof(USHORT))
+		if ((ULONG) length1 + (ULONG) length2 > MAX_STR_SIZE)
 		{
 			ERR_post(Arg::Gds(isc_concat_overflow));
 			return NULL;
@@ -6483,9 +6483,19 @@ ValueExprNode* LiteralNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	}
 	else
 	{
-		constant->litDesc.dsc_length =
-			charSet->length(dsqlStr->getString().length(), constant->litDesc.dsc_address, true) *
-			charSet->maxBytesPerChar();
+		ULONG charLength = charSet->length(
+			dsqlStr->getString().length(), constant->litDesc.dsc_address, true);
+
+		if (charLength > MAX_STR_SIZE / charSet->maxBytesPerChar())
+		{
+			ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-104) <<
+					  Arg::Gds(isc_dsql_string_char_length) <<
+					  Arg::Num(charLength) <<
+					  Arg::Num(MAX_STR_SIZE / charSet->maxBytesPerChar()) <<
+					  METD_get_charset_name(dsqlScratch->getTransaction(), constant->litDesc.getCharSet()));
+		}
+		else
+			constant->litDesc.dsc_length = charLength * charSet->maxBytesPerChar();
 	}
 
 	constant->litDesc.dsc_length += adjust;
@@ -9769,8 +9779,8 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 	ULONG start = (ULONG) sStart;
 	ULONG length = (ULONG) sLength;
 
-	if (desc.isText() && length > MAX_COLUMN_SIZE)
-		length = MAX_COLUMN_SIZE;
+	if (desc.isText() && length > MAX_STR_SIZE)
+		length = MAX_STR_SIZE;
 
 	ULONG dataLen;
 
@@ -9888,7 +9898,7 @@ dsc* SubstringNode::perform(thread_db* tdbb, impure_value* impure, const dsc* va
 			CharSet* charSet = INTL_charset_lookup(tdbb, desc.getCharSet());
 
 			desc.dsc_address = NULL;
-			const ULONG totLen = MIN(MAX_COLUMN_SIZE, length * charSet->maxBytesPerChar());
+			const ULONG totLen = MIN(MAX_STR_SIZE, length * charSet->maxBytesPerChar());
 			desc.dsc_length = totLen;
 			EVL_make_value(tdbb, &desc, impure);
 

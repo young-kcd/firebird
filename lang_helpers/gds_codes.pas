@@ -1174,7 +1174,8 @@ const
 	gds_dsql_wlock_aggregates            = 336397328;
 	gds_dsql_wlock_conflict              = 336397329;
 	gds_dsql_max_exception_arguments     = 336397330;
-	gds_dsql_string_length               = 336397331;
+	gds_dsql_string_byte_length          = 336397331;
+	gds_dsql_string_char_length          = 336397332;
 	gds_gsec_cant_open_db                = 336723983;
 	gds_gsec_switches_error              = 336723984;
 	gds_gsec_no_op_spec                  = 336723985;

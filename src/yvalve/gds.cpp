@@ -3249,9 +3249,15 @@ static void blr_print_verb(gds_ctl* control, SSHORT level)
 			break;
 
 		case op_literal:
-			while (--n >= 0)
+		{
+			USHORT un = (USHORT) n;
+
+			while (un-- > 0)
 				blr_print_char(control);
+
+			n = (SSHORT) un;
 			break;
+		}
 
 		case op_join:
 			blr_print_join(control);

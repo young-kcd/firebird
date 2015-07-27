@@ -234,7 +234,7 @@ ULONG DataTypeUtilBase::fixLength(const dsc* desc, ULONG length)
 	else if (desc->dsc_dtype == dtype_cstring)
 		overhead = sizeof(UCHAR);
 
-	return MIN(((MAX_COLUMN_SIZE - overhead) / bpc) * bpc, length);
+	return MIN(((MAX_STR_SIZE - overhead) / bpc) * bpc, length);
 }
 
 
@@ -308,7 +308,7 @@ void DataTypeUtilBase::makeSubstr(dsc* result, const dsc* value, const dsc* offs
 		{
 			SLONG constant = CVT_get_long(length, 0, ERR_post);
 			fb_assert(constant >= 0);
-			len = MIN(len, MIN(MAX_COLUMN_SIZE, ULONG(constant)) * maxBytesPerChar(result->getCharSet()));
+			len = MIN(len, MIN(MAX_STR_SIZE, ULONG(constant)) * maxBytesPerChar(result->getCharSet()));
 		}
 
 		result->dsc_length = fixLength(result, len) + static_cast<USHORT>(sizeof(USHORT));

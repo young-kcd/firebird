@@ -40,6 +40,7 @@
 #include "../dsql/DdlNodes.h"
 #include "../dsql/ExprNodes.h"
 #include "../dsql/StmtNodes.h"
+#include "../dsql/DSqlDataTypeUtil.h"
 #include "../jrd/RecordSourceNodes.h"
 #include "../jrd/ibase.h"
 #include "../jrd/align.h"
@@ -158,6 +159,7 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 	dsqlScratch->appendUChar(message->msg_number);
 	dsqlScratch->appendUShort(message->msg_parameter);
 
+	DSqlDataTypeUtil dataTypeUtil(dsqlScratch);
 	ULONG offset = 0;
 
 	for (FB_SIZE_T i = 0; i < message->msg_parameters.getCount(); ++i)
@@ -207,7 +209,8 @@ void GEN_port(DsqlCompilerScratch* dsqlScratch, dsql_msg* message)
 			// But we flag it to describe as text.
 			parameter->par_is_text = true;
 			parameter->par_desc.dsc_dtype = dtype_varying;
-			parameter->par_desc.dsc_length += sizeof(USHORT);
+			parameter->par_desc.dsc_length = dataTypeUtil.fixLength(
+				&parameter->par_desc, parameter->par_desc.dsc_length) + sizeof(USHORT);
 		}
 
 		const USHORT align = type_alignments[parameter->par_desc.dsc_dtype];
