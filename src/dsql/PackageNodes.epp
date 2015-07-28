@@ -397,44 +397,44 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		switch ((*items)[i].type)
 		{
 			case CreateAlterPackageNode::Item::FUNCTION:
+			{
+				CreateAlterFunctionNode* const fun = (*items)[i].function;
+
+				if (functionNames.exist(fun->name))
 				{
-					CreateAlterFunctionNode* const fun = (*items)[i].function;
-
-					if (functionNames.exist(fun->name))
-					{
-						status_exception::raise(
-							Arg::Gds(isc_no_meta_update) <<
-							Arg::Gds(isc_dyn_duplicate_package_item) <<
-								Arg::Str("FUNCTION") << Arg::Str(fun->name));
-					}
-
-					functionNames.add(fun->name);
-
-					fun->alter = true;
-					fun->package = name;
-					fun->dsqlPass(itemScratch);
+					status_exception::raise(
+						Arg::Gds(isc_no_meta_update) <<
+						Arg::Gds(isc_dyn_duplicate_package_item) <<
+							Arg::Str("FUNCTION") << Arg::Str(fun->name));
 				}
+
+				functionNames.add(fun->name);
+
+				fun->alter = true;
+				fun->package = name;
+				fun->dsqlPass(itemScratch);
 				break;
+			}
 
 			case CreateAlterPackageNode::Item::PROCEDURE:
+			{
+				CreateAlterProcedureNode* const proc = (*items)[i].procedure;
+
+				if (procedureNames.exist(proc->name))
 				{
-					CreateAlterProcedureNode* const proc = (*items)[i].procedure;
-
-					if (procedureNames.exist(proc->name))
-					{
-						status_exception::raise(
-							Arg::Gds(isc_no_meta_update) <<
-							Arg::Gds(isc_dyn_duplicate_package_item) <<
-								Arg::Str("PROCEDURE") << Arg::Str(proc->name));
-					}
-
-					procedureNames.add(proc->name);
-
-					proc->alter = true;
-					proc->package = name;
-					proc->dsqlPass(itemScratch);
+					status_exception::raise(
+						Arg::Gds(isc_no_meta_update) <<
+						Arg::Gds(isc_dyn_duplicate_package_item) <<
+							Arg::Str("PROCEDURE") << Arg::Str(proc->name));
 				}
+
+				procedureNames.add(proc->name);
+
+				proc->alter = true;
+				proc->package = name;
+				proc->dsqlPass(itemScratch);
 				break;
+			}
 		}
 	}
 
@@ -755,48 +755,54 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 			switch ((*arrays[i])[j].type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
+				{
+					CreateAlterFunctionNode* const fun = (*arrays[i])[j].function;
+
+					if (functionNames[i].exist(fun->name))
 					{
-						CreateAlterFunctionNode* const fun = (*arrays[i])[j].function;
-
-						if (functionNames[i].exist(fun->name))
-						{
-							status_exception::raise(
-								Arg::Gds(isc_no_meta_update) <<
-								Arg::Gds(isc_dyn_duplicate_package_item) <<
-									Arg::Str("FUNCTION") << Arg::Str(fun->name));
-						}
-
-						functionNames[i].add(fun->name);
-
-						fun->package = name;
-						fun->create = true;
-						if (arrays[i] == items)
-							fun->alter = true;
-						fun->dsqlPass(itemScratch);
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_dyn_duplicate_package_item) <<
+								Arg::Str("FUNCTION") << Arg::Str(fun->name));
 					}
+
+					functionNames[i].add(fun->name);
+
+					fun->package = name;
+					fun->create = true;
+
+					if (arrays[i] == items)
+						fun->alter = true;
+
+					fun->dsqlPass(itemScratch);
+
 					break;
+				}
 
 				case CreateAlterPackageNode::Item::PROCEDURE:
+				{
+					CreateAlterProcedureNode* const proc = (*arrays[i])[j].procedure;
+
+					if (procedureNames[i].exist(proc->name))
 					{
-						CreateAlterProcedureNode* const proc = (*arrays[i])[j].procedure;
-
-						if (procedureNames[i].exist(proc->name))
-						{
-							status_exception::raise(
-								Arg::Gds(isc_no_meta_update) <<
-								Arg::Gds(isc_dyn_duplicate_package_item) <<
-									Arg::Str("PROCEDURE") << Arg::Str(proc->name));
-						}
-
-						procedureNames[i].add(proc->name);
-
-						proc->package = name;
-						proc->create = true;
-						if (arrays[i] == items)
-							proc->alter = true;
-						proc->dsqlPass(itemScratch);
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_dyn_duplicate_package_item) <<
+								Arg::Str("PROCEDURE") << Arg::Str(proc->name));
 					}
+
+					procedureNames[i].add(proc->name);
+
+					proc->package = name;
+					proc->create = true;
+
+					if (arrays[i] == items)
+						proc->alter = true;
+
+					proc->dsqlPass(itemScratch);
+
 					break;
+				}
 			}
 		}
 	}
@@ -882,28 +888,28 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			switch (elem.type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
-					{
-						CreateAlterFunctionNode* func = elem.function;
+				{
+					CreateAlterFunctionNode* func = elem.function;
 
-						if (arrays[i] == items)
-							func->privateScope = !headerFuncs.exist(Signature(func->name));
+					if (arrays[i] == items)
+						func->privateScope = !headerFuncs.exist(Signature(func->name));
 
-						func->packageOwner = owner;
-						func->executeDdl(tdbb, elem.dsqlScratch, transaction);
-					}
+					func->packageOwner = owner;
+					func->executeDdl(tdbb, elem.dsqlScratch, transaction);
 					break;
+				}
 
 				case CreateAlterPackageNode::Item::PROCEDURE:
-					{
-						CreateAlterProcedureNode* proc = elem.procedure;
+				{
+					CreateAlterProcedureNode* proc = elem.procedure;
 
-						if (arrays[i] == items)
-							proc->privateScope = !headerProcs.exist(Signature(proc->name));
+					if (arrays[i] == items)
+						proc->privateScope = !headerProcs.exist(Signature(proc->name));
 
-						proc->packageOwner = owner;
-						proc->executeDdl(tdbb, elem.dsqlScratch, transaction);
-					}
+					proc->packageOwner = owner;
+					proc->executeDdl(tdbb, elem.dsqlScratch, transaction);
 					break;
+				}
 			}
 		}
 	}
