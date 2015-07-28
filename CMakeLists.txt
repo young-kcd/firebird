@@ -121,6 +121,7 @@ if (UNIX)
                 /usr/include/x86_64-linux-gnu
                 /usr/local/include
                 /opt/local/include
+                /usr/local/opt/icu4c/include
             CMAKE_FIND_ROOT_PATH_BOTH
         )
         if ("${ICU_INCLUDE_DIR}" STREQUAL "ICU_INCLUDE_DIR-NOTFOUND")
@@ -236,6 +237,7 @@ if (APPLE)
     if (NOT CMAKE_CROSSCOMPILING)
         include_directories(/opt/local/include)
         link_directories(/opt/local/lib)
+        link_directories(/usr/local/opt/icu4c/lib)
     endif()
 
     find_library(LIB_CoreFoundation CoreFoundation)

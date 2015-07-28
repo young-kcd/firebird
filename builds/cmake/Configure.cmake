@@ -245,6 +245,10 @@ set(functions_list
 )
 check_functions(functions_list)
 
+if (APPLE)
+    set(HAVE_QSORT_R 0 CACHE STRING "Disabled on OS X" FORCE)
+endif()
+
 check_cxx_source_compiles("#include <unistd.h>\nmain(){fdatasync(0);}" HAVE_FDATASYNC)
 
 check_library_exists(dl dladdr "${CMAKE_LIBRARY_PREFIX}" HAVE_DLADDR)
