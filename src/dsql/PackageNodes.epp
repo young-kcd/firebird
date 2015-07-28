@@ -483,23 +483,6 @@ void CreateAlterPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlS
 	else
 		executeCreate(tdbb, dsqlScratch, transaction);
 
-	// items
-	for (unsigned i = 0; i < items->getCount(); ++i)
-	{
-		switch ((*items)[i].type)
-		{
-			case Item::FUNCTION:
-				(*items)[i].function->packageOwner = owner;
-				(*items)[i].function->executeDdl(tdbb, (*items)[i].dsqlScratch, transaction);
-				break;
-
-			case Item::PROCEDURE:
-				(*items)[i].procedure->packageOwner = owner;
-				(*items)[i].procedure->executeDdl(tdbb, (*items)[i].dsqlScratch, transaction);
-				break;
-		}
-	}
-
 	savePoint.release();	// everything is ok
 }
 
@@ -535,6 +518,8 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 	storePrivileges(tdbb, transaction, name, obj_package_header, EXEC_PRIVILEGES);
 
 	owner = userName;
+
+	executeItems(tdbb, dsqlScratch, transaction);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE, name);
 }
@@ -603,9 +588,35 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 	END_FOR
 
 	if (modified)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, name);
+	{
+		executeItems(tdbb, dsqlScratch, transaction);
+
+		executeDdlTrigger(tdbb, dsqlScratch, transaction,
+			DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, name);
+	}
 
 	return modified;
+}
+
+
+void CreateAlterPackageNode::executeItems(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
+	jrd_tra* transaction)
+{
+	for (unsigned i = 0; i < items->getCount(); ++i)
+	{
+		switch ((*items)[i].type)
+		{
+			case Item::FUNCTION:
+				(*items)[i].function->packageOwner = owner;
+				(*items)[i].function->executeDdl(tdbb, (*items)[i].dsqlScratch, transaction);
+				break;
+
+			case Item::PROCEDURE:
+				(*items)[i].procedure->packageOwner = owner;
+				(*items)[i].procedure->executeDdl(tdbb, (*items)[i].dsqlScratch, transaction);
+				break;
+		}
+	}
 }
 
 
