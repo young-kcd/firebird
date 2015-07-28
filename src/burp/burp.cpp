@@ -107,7 +107,7 @@ static void close_out_transaction(gbak_action, isc_tr_handle*);
 //static void excp_handler();
 static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
-static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
+static gbak_action open_files(const TEXT *, const TEXT**, USHORT,
 							  const Firebird::ClumpletWriter&);
 static int svc_api_gbak(Firebird::UtilSvc*, const Switches& switches);
 static void burp_output(bool err, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
@@ -844,7 +844,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			{
 				const char* perf_val = argv[itr];
 				const char* c = perf_val;
-				int len = strlen(STAT_CHARS);
+				size_t len = strlen(STAT_CHARS);
 				for (; *c && len; c++, len--)
 				{
 					const char* pos = strchr(STAT_CHARS, toupper(*c));
@@ -1233,7 +1233,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	tdgbl->action->act_file = NULL;
 	tdgbl->action->act_action = ACT_unknown;
 
-	action = open_files(file1, &file2, tdgbl->gbl_sw_verbose, sw_replace, dpb);
+	action = open_files(file1, &file2, sw_replace, dpb);
 
 	MVOL_init(tdgbl->io_buffer_size);
 
@@ -1787,7 +1787,6 @@ static SLONG get_number( const SCHAR* string)
 
 static gbak_action open_files(const TEXT* file1,
 							  const TEXT** file2,
-							  bool sw_verbose,
 							  USHORT sw_replace,
 							  const Firebird::ClumpletWriter& dpb)
 {
@@ -1834,8 +1833,7 @@ static gbak_action open_files(const TEXT* file1,
 				BURP_print(false, 139, file1);
 				isc_version(&tdgbl->db_handle, BURP_output_version, (void*) "\t%s\n");
 			}
-			if (sw_verbose)
-				BURP_print(false, 166, file1); // msg 166: readied database %s for backup
+			BURP_verbose(166, file1); // msg 166: readied database %s for backup
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
 			(status_vector[1] != isc_io_error && status_vector[1] != isc_bad_db_format))
@@ -1888,14 +1886,13 @@ static gbak_action open_files(const TEXT* file1,
 			{
 				tdgbl->action->act_action = ACT_backup_split;
 			}
-			if (sw_verbose)
-			{
-				BURP_print(false, 75, fil->fil_name.c_str());	// msg 75  creating file %s
-			}
+
+			BURP_verbose(75, fil->fil_name.c_str());	// msg 75  creating file %s
+
 			if (fil->fil_name == "stdout")
 			{
 				if (tdgbl->action->act_total >= 2 || fil->fil_next ||
-					(sw_verbose && tdgbl->sw_redirect == NOREDIRECT && tdgbl->uSvc->isService()))
+					(tdgbl->gbl_sw_verbose && tdgbl->sw_redirect == NOREDIRECT && tdgbl->uSvc->isService()))
 				{
 					BURP_error(266, true);
 					// msg 266 standard output is not supported when using split operation or in verbose mode
@@ -2036,11 +2033,8 @@ static gbak_action open_files(const TEXT* file1,
 			return QUIT;
 		}
 
-		if (sw_verbose)
-		{
-			BURP_print(false, 100, fil->fil_name.c_str());
-			// msg 100 opened file %s
-		}
+		BURP_verbose(100, fil->fil_name.c_str());
+		// msg 100 opened file %s
 
 		// read and check a header record
 		tdgbl->action->act_file = fil;
@@ -2085,11 +2079,9 @@ static gbak_action open_files(const TEXT* file1,
 					return QUIT;
 				}
 
-				if (sw_verbose)
-				{
-					BURP_print(false, 100, fil->fil_name.c_str());
-					// msg 100 opened file %s
-				}
+				BURP_verbose(100, fil->fil_name.c_str());
+				// msg 100 opened file %s
+
 				if (MVOL_split_hdr_read())
 				{
 					if ((total != tdgbl->action->act_total) || (seq != fil->fil_seq) || (seq > total))
