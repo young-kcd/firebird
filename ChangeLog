@@ -1,3 +1,10 @@
+ 2015-07-26 11:18  asfernandes 
+On behalf of hvlad after sourceforge crash - Backport fix for bug CORE-4860 : Online validation fails on WINDOWS if `dbname` argument contains forward slash ('/') and concurrent attachment which also uses '/' exists.
+
+ 2015-07-15 10:15  hvlad 
+Fixed bug CORE-4876
+fbsvcmgr shows wrong options for some Trace API services in help screen
+
  2015-07-13 16:10  alexpeshkoff 
    M src/alice/exe.cpp
 Backported fix for CORE-3548: GFIX returns an error after correctly shutting down a database
