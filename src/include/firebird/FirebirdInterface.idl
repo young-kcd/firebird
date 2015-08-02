@@ -945,7 +945,7 @@ interface XpbBuilder : Disposable
 	boolean findFirst(Status status, uchar tag);
 	boolean findNext(Status status);
 
-    // Methods which work with current selection
+	// Methods which work with current selection
 	uchar getTag(Status status);
 	uint getLength(Status status);
 	int getInt(Status status);

@@ -2476,7 +2476,7 @@ void BurpGlobals::read_stats(SINT64* stats)
 			break;
 
 		case isc_info_end:
-			default:
+		default:
 			p = e;
 		}
 
@@ -2521,7 +2521,7 @@ void BurpGlobals::print_stats(USHORT number)
 	}
 
 	SINT64 cur_stats[LAST_COUNTER] = {0};
-	if((gbl_stat_flags & ~time_mask) && !gbl_stat_done)
+	if ((gbl_stat_flags & ~time_mask) && !gbl_stat_done)
 		read_stats(cur_stats);
 
 	for (int i = READS; i < LAST_COUNTER; i++)
