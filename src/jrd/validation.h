@@ -160,14 +160,14 @@ private:
 	struct UsedBdb
 	{
 		UsedBdb() : bdb(NULL), count(0) {}
-		explicit UsedBdb(BufferDesc* _bdb) : bdb(_bdb), count(1) {}
+		UsedBdb(BufferDesc* _bdb) : bdb(_bdb), count(1) {}
 
 		BufferDesc* bdb;
 		int count;
 
 		static const ULONG generate(const UsedBdb& p)
 		{
-			return p.bdb->bdb_page.getPageNum();
+			return p.bdb ? p.bdb->bdb_page.getPageNum() : 0;
 		}
 	};
 
