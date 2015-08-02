@@ -163,7 +163,7 @@ private:
 		explicit UsedBdb(BufferDesc* _bdb) : bdb(_bdb), count(1) {}
 
 		BufferDesc* bdb;
-		int  count;
+		int count;
 
 		static const ULONG generate(const UsedBdb& p)
 		{
@@ -178,7 +178,6 @@ private:
 				UsedBdb> UsedBdbs;
 
 	UsedBdbs vdr_used_bdbs;
-
 
 	void cleanup();
 	RTN corrupt(int, const jrd_rel*, ...);

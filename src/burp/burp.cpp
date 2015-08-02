@@ -127,7 +127,7 @@ struct StatFormat
 	char width;
 };
 static const char* STAT_CHARS = "TDRW";
-static const StatFormat STAT_FORMATS[] = 
+static const StatFormat STAT_FORMATS[] =
 {
 	{"time",	"%4lu.%03u ",  9},
 	{"delta",	"%2lu.%03u ",  7},
@@ -838,25 +838,29 @@ int gbak(Firebird::UtilSvc* uSvc)
 		case IN_SW_BURP_STATS:
 			if (tdgbl->gbl_stat_flags)
 				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
-			if (++itr >= argc)
-					BURP_error(366, true); // statistics parameter missing
 
-			{
+			if (++itr >= argc)
+				BURP_error(366, true); // statistics parameter missing
+
+			{	// scope
 				const char* perf_val = argv[itr];
 				const char* c = perf_val;
 				size_t len = strlen(STAT_CHARS);
+
 				for (; *c && len; c++, len--)
 				{
 					const char* pos = strchr(STAT_CHARS, toupper(*c));
 					if (!pos)
-						BURP_error(367, true, SafeArg() << *c); // wrong char "@1" at statistics parameter 
+						BURP_error(367, true, SafeArg() << *c); // wrong char "@1" at statistics parameter
 
 					tdgbl->gbl_stat_flags |= 1 << (pos - STAT_CHARS);
 				}
+
 				if (*c)
-					BURP_error(368, true); // 'too many chars at statistics parameter'
+					BURP_error(368, true); // too many chars at statistics parameter
 			}
 			break;
+
 		case IN_SW_BURP_CO:
 			if (tdgbl->gbl_sw_convert_ext_tables)
 				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
@@ -2461,7 +2465,7 @@ void BurpGlobals::read_stats(SINT64* stats)
 
 	isc_database_info(status, &db_handle, sizeof(info), info, sizeof(buffer), buffer);
 
-	char *p = buffer, *const e = buffer + sizeof(buffer);
+	char* p = buffer, *const e = buffer + sizeof(buffer);
 	while (p < e)
 	{
 		int flag = -1;
@@ -2483,7 +2487,7 @@ void BurpGlobals::read_stats(SINT64* stats)
 		if (flag != -1)
 		{
 			const int len = isc_vax_integer(p + 1, 2);
-			stats[flag] = isc_portable_integer((ISC_UCHAR*)p + 1 + 2, len);
+			stats[flag] = isc_portable_integer((ISC_UCHAR*) p + 1 + 2, len);
 			p += len + 3;
 		}
 	}
@@ -2559,6 +2563,7 @@ void BurpGlobals::print_stats_header()
 		if (gbl_stat_flags & (1 << i))
 			burp_output(false, "%-*s", STAT_FORMATS[i].width, STAT_FORMATS[i].header);
 	}
+
 	burp_output(false, "\n");
 }
 

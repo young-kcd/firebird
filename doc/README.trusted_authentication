@@ -8,7 +8,7 @@ firebird.conf and tune mappings in your databases.
 Parameter Authentication in firebird.conf file is not used any more - it's replaced with more
 generic AuthServer (and AuthClient) parameters. Also to use trusted authentication one should turn
 off mandatory wire encryption because Win_Sspi plugin (which implements trusted authentication on
-windows) does not provide an encryption key. So minimum changes in firebird.conf you need is:
+Windows) does not provide an encryption key. So minimum changes in firebird.conf you need is:
 
 AuthServer = Srp, Win_Sspi
 WireCrypt = Enabled

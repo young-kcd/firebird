@@ -73,7 +73,7 @@ bool SyncObject::lock(Sync* sync, SyncType type, const char* from, int timeOut)
 		++waiters;
 
 		//while (true)
-		while (!waitingThreads)	// fair locking 
+		while (!waitingThreads)	// fair locking
 		{
 			const AtomicCounter::counter_type oldState = lockState;
 			if (oldState < 0)

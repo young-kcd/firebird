@@ -880,6 +880,7 @@ static void readNextInputLine(const char* prompt)
 	{
 		// Read the line
 		char buffer[MAX_USHORT];
+
 		if (fgets(buffer, sizeof(buffer), Filelist->Ifp().indev_fpointer) != NULL)
 		{
 			size_t lineSize = strlen(buffer);
@@ -5961,7 +5962,9 @@ static bool printUser(const char* dbName)
 			txt.assign(v.value.asVary->vary_string, v.value.asVary->vary_length);
 			break;
 		}
+
 		txt.trim();
+
 		if (fieldInfo[i].skip && txt == fieldInfo[i].skip)
 			continue;
 
@@ -5971,6 +5974,7 @@ static bool printUser(const char* dbName)
 
 	if (wasOut)
 		isqlGlob.printf("%s", NEWLINE);
+
 	return true;
 }
 

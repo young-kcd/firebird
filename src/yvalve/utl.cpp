@@ -1038,7 +1038,7 @@ public:
 	}
 
 private:
-	ClumpletWriter *pb;
+	ClumpletWriter* pb;
 	unsigned char nextTag;
 	string strVal;
 };
