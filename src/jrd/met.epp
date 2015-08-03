@@ -3213,8 +3213,6 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 
 	if (!noscan)
 	{
-		bool valid_blr = true;
-
 		AutoCacheRequest request(tdbb, irq_r_procedure, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request)
@@ -3416,31 +3414,22 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 				procedure->setImplemented(false);
 			}
 
-			if (P.RDB$VALID_BLR.NULL || P.RDB$VALID_BLR == FALSE)
-				valid_blr = false;
-		}
-		END_FOR
+			procedure->flags |= Routine::FLAG_SCANNED;
 
-		procedure->flags |= Routine::FLAG_SCANNED;
-
-		if (!dbb->readOnly() && !valid_blr)
-		{
-			// if the BLR was marked as invalid but the procedure was compiled,
-			// mark the BLR as valid
-
-			AutoRequest request5;
-
-			FOR(REQUEST_HANDLE request5)
-				P IN RDB$PROCEDURES WITH
-					P.RDB$PROCEDURE_ID EQ procedure->getId() AND P.RDB$PROCEDURE_BLR NOT MISSING
+			if (!dbb->readOnly() &&
+				!P.RDB$PROCEDURE_BLR.NULL &&
+				!P.RDB$VALID_BLR.NULL && P.RDB$VALID_BLR == FALSE)
 			{
+				// If the BLR was marked as invalid but the procedure was compiled,
+				// mark the BLR as valid.
+
 				MODIFY P USING
 					P.RDB$VALID_BLR = TRUE;
 					P.RDB$VALID_BLR.NULL = FALSE;
 				END_MODIFY
 			}
-			END_FOR
 		}
+		END_FOR
 	} // if !noscan
 
 	// Make sure that it is really being scanned

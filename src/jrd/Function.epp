@@ -211,8 +211,6 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 
 	if (!noscan)
 	{
-		bool valid_blr = true;
-
 		AutoCacheRequest request_fun(tdbb, irq_l_functions, IRQ_REQUESTS);
 
 		FOR(REQUEST_HANDLE request_fun)
@@ -457,31 +455,22 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 				function->setImplemented(false);
 			}
 
-			if (X.RDB$VALID_BLR.NULL || X.RDB$VALID_BLR == FALSE)
-				valid_blr = false;
-
 			function->flags |= Routine::FLAG_SCANNED;
-		}
-		END_FOR
 
-		if (!dbb->readOnly() && !valid_blr)
-		{
-			// if the BLR was marked as invalid but the function was compiled,
-			// mark the BLR as valid
-
-			AutoRequest request_set_valid;
-
-			FOR(REQUEST_HANDLE request_set_valid)
-				F IN RDB$FUNCTIONS WITH
-					F.RDB$FUNCTION_ID EQ function->getId() AND F.RDB$FUNCTION_BLR NOT MISSING
+			if (!dbb->readOnly() &&
+				!X.RDB$FUNCTION_BLR.NULL &&
+				!X.RDB$VALID_BLR.NULL && X.RDB$VALID_BLR == FALSE)
 			{
-				MODIFY F USING
-					F.RDB$VALID_BLR = TRUE;
-					F.RDB$VALID_BLR.NULL = FALSE;
+				// If the BLR was marked as invalid but the function was compiled,
+				// mark the BLR as valid.
+
+				MODIFY X USING
+					X.RDB$VALID_BLR = TRUE;
+					X.RDB$VALID_BLR.NULL = FALSE;
 				END_MODIFY
 			}
-			END_FOR
 		}
+		END_FOR
 	}
 
 	// Make sure that it is really being scanned
