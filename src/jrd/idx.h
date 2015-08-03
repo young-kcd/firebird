@@ -282,6 +282,10 @@ static const struct ini_idx_t indices[] =
 	//	define index RDB$INDEX_52 for RDB$AUTH_MAPPING RDB$MAP_NAME;
 	INDEX(52, rel_auth_mapping, 0, 1)
 		SEGMENT(f_map_name, idx_metadata)		// mapping name
+	}},
+	// define index RDB$INDEX_53 for RDB$FUNCTIONS unique RDB$FUNCTION_ID;
+	INDEX(53, rel_funs, idx_unique, 1)
+		SEGMENT(f_fun_id, idx_numeric)			// function id
 	}}
 };
 
