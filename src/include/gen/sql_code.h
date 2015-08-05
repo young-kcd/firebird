@@ -1164,6 +1164,7 @@ static const struct {
 	{336397330, -901}, /* 1042 dsql_max_exception_arguments */
 	{336397331, -901}, /* 1043 dsql_string_byte_length */
 	{336397332, -901}, /* 1044 dsql_string_char_length */
+	{336397333, -901}, /* 1045 dsql_max_nesting */
 	{336723983, -901}, /*  15 gsec_cant_open_db */
 	{336723984, -901}, /*  16 gsec_switches_error */
 	{336723985, -901}, /*  17 gsec_no_op_spec */

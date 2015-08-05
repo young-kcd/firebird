@@ -65,6 +65,8 @@ public:
 	static const unsigned FLAG_DDL					= 0x2000;
 	static const unsigned FLAG_FETCH				= 0x4000;
 
+	static const unsigned MAX_NESTING = 512;
+
 public:
 	DsqlCompilerScratch(MemoryPool& p, dsql_dbb* aDbb, jrd_tra* aTransaction,
 				DsqlCompiledStatement* aStatement)
@@ -73,6 +75,7 @@ public:
 		  transaction(aTransaction),
 		  statement(aStatement),
 		  flags(0),
+		  nestingLevel(0),
 		  ports(p),
 		  relation(NULL),
 		  procedure(NULL),
@@ -288,6 +291,7 @@ private:
 
 public:
 	unsigned flags;						// flags
+	unsigned nestingLevel;				// begin...end nesting level
 	Firebird::Array<dsql_msg*> ports;	// Port messages
 	dsql_rel* relation;					// relation created by this request (for DDL)
 	dsql_prc* procedure;				// procedure created by this request (for DDL)

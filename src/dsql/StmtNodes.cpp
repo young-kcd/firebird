@@ -769,6 +769,13 @@ DmlNode* CompoundStmtNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScra
 
 CompoundStmtNode* CompoundStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
+	if (++dsqlScratch->nestingLevel > DsqlCompilerScratch::MAX_NESTING)
+	{
+		ERRD_post(Arg::Gds(isc_sqlerr) << Arg::Num(-901) <<
+				  Arg::Gds(isc_imp_exc) <<
+				  Arg::Gds(isc_dsql_max_nesting) << Arg::Num(DsqlCompilerScratch::MAX_NESTING));
+	}
+
 	CompoundStmtNode* node = FB_NEW(getPool()) CompoundStmtNode(getPool());
 
 	for (NestConst<StmtNode>* i = statements.begin(); i != statements.end(); ++i)
@@ -777,6 +784,8 @@ CompoundStmtNode* CompoundStmtNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		ptr = ptr->dsqlPass(dsqlScratch);
 		node->statements.add(ptr);
 	}
+
+	--dsqlScratch->nestingLevel;
 
 	return node;
 }
