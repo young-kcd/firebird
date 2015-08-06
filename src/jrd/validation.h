@@ -159,7 +159,6 @@ public:
 private:
 	struct UsedBdb
 	{
-		UsedBdb() : bdb(NULL), count(0) {}
 		UsedBdb(BufferDesc* _bdb) : bdb(_bdb), count(1) {}
 
 		BufferDesc* bdb;
