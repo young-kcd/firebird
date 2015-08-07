@@ -63,9 +63,6 @@ static bool detach_service(ibmgr_data_t*);
 static bool print_pool(ibmgr_data_t*);
 static bool start_shutdown(ibmgr_data_t*);
 static bool start_server(ibmgr_data_t*);
-#ifdef NOT_USED_OR_REPLACED
-static bool server_is_ok(ibmgr_data_t*);
-#endif
 static bool server_is_up(ibmgr_data_t*);
 
 void SRVRMGR_cleanup( ibmgr_data_t* data)
