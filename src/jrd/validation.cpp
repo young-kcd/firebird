@@ -1982,7 +1982,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 		}
 
 		UCHAR n = page->btr_jump_count;
-		USHORT jumpersSize = 0;
+		USHORT jumpersSize = 0, jumpDataLen = 0;
 		IndexNode checknode;
 		IndexJumpNode jumpNode;
 		while (n)
@@ -2007,8 +2007,29 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 							__FILE__, __LINE__);
 				}
 
+				// First jump node should have zero prefix
+				if (n == page->btr_jump_count && jumpNode.prefix) {
+					corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+						id + 1, next, page->btr_level, (ULONG) jumpNode.offset,
+						__FILE__, __LINE__);
+				}
+
+				// jump node prefix can't be more than previous jump data length
+				if (n != page->btr_jump_count && jumpNode.prefix > jumpDataLen) {
+					corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+						id + 1, next, page->btr_level, (ULONG) jumpNode.offset,
+						__FILE__, __LINE__);
+				}
+
+				jumpDataLen = jumpNode.prefix + jumpNode.length;
 			}
 			n--;
+		}
+
+		if (jumpersSize > page->btr_jump_size) {
+			corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+				id + 1, next, page->btr_level, (ULONG) page->btr_jump_size + BTR_SIZE,
+				__FILE__, __LINE__);
 		}
 
 		// go through all the nodes on the page and check for validity
