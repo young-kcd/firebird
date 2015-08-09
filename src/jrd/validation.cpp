@@ -1884,13 +1884,14 @@ RTN Validation::walk_index(thread_db* tdbb, jrd_rel* relation, index_root_page& 
 			}
 
 			USHORT n = jumpInfo.jumpers;
-			USHORT jumpersSize = 0;
+			USHORT firstNodeOffset = (UCHAR*)page->btr_nodes - (UCHAR*)page; 
+			USHORT jumpDataLen = 0;
 			IndexNode checknode;
 			IndexJumpNode jumpNode;
 			while (n)
 			{
 				pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
-				jumpersSize += BTreeNode::getJumpNodeSize(&jumpNode, flags);
+				firstNodeOffset += BTreeNode::getJumpNodeSize(&jumpNode, flags);
 				// Check if jump node offset is inside page.
 				if ((jumpNode.offset < jumpInfo.firstNodeOffset) ||
 					(jumpNode.offset > page->btr_length))
@@ -1905,9 +1906,29 @@ RTN Validation::walk_index(thread_db* tdbb, jrd_rel* relation, index_root_page& 
 					if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
 						corrupt(tdbb, VAL_INDEX_PAGE_CORRUPT, relation,
 								id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
+
 					}
+
+					// First jump node should have zero prefix
+					if (n == jumpInfo.jumpers && jumpNode.prefix) {
+						corrupt(tdbb, VAL_INDEX_PAGE_CORRUPT, relation,
+								id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
+					}
+
+					// jump node prefix can't be more than previous jump data length
+					if (n != jumpInfo.jumpers && jumpNode.prefix > jumpDataLen) {
+						corrupt(tdbb, VAL_INDEX_PAGE_CORRUPT, relation,
+								id + 1, next, page->btr_level, jumpNode.offset, __FILE__, __LINE__);
+					}
+
+					jumpDataLen = jumpNode.prefix + jumpNode.length;
 				}
 				n--;
+			}
+
+			if (firstNodeOffset > jumpInfo.firstNodeOffset) {
+				corrupt(tdbb, VAL_INDEX_PAGE_CORRUPT, relation,
+						id + 1, next, page->btr_level, jumpInfo.firstNodeOffset, __FILE__, __LINE__);
 			}
 		}
 

@@ -3180,8 +3180,9 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 
 	// Read the next node after the removing node
 	IndexNode nextNode;
-	localPointer = BTreeNode::readNode(&nextNode, localPointer, flags, leafPage);
 	const USHORT offsetNextPoint = (localPointer - (UCHAR*)page);
+	localPointer = BTreeNode::readNode(&nextNode, localPointer, flags, leafPage);
+
 
 	// Save data in tempKey so we can rebuild from it
 	USHORT newNextPrefix = nextNode.prefix;
@@ -3254,11 +3255,15 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 		bool rebuild = false;
 		USHORT n = jumpInfo.jumpers;
 		IndexJumpNode jumpNode, delJumpNode;
+		IndexJumpNode* jumpPrev = NULL;
+		temporary_key jumpKey;
+		jumpKey.key_length = 0;
+		USHORT newFirstNodeOffset = (UCHAR*)page->btr_nodes - (UCHAR*)page;
 		while (n)
 		{
 			pointer = BTreeNode::readJumpNode(&jumpNode, pointer, flags);
 			// Jump nodes pointing to the deleted node are removed.
-			if ((jumpNode.offset < offsetDeletePoint) || (jumpNode.offset > offsetNextPoint))
+			if ((jumpNode.offset < offsetDeletePoint) || (jumpNode.offset >= offsetNextPoint))
 			{
 				IndexJumpNode newJumpNode;
 				if (rebuild && jumpNode.prefix > delJumpNode.prefix)
@@ -3268,7 +3273,10 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 					newJumpNode.prefix = jumpNode.prefix - addLength;
 					newJumpNode.length = jumpNode.length + addLength;
 					newJumpNode.offset = jumpNode.offset;
-					if (jumpNode.offset > offsetDeletePoint) {
+					if (jumpNode.offset == offsetNextPoint) {
+						newJumpNode.offset = offsetDeletePoint;
+					}
+					else if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
 					newJumpNode.data = tempData;
@@ -3277,13 +3285,18 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 
 					memcpy(newJumpNode.data, delJumpNode.data, addLength);
 					memcpy(newJumpNode.data + addLength, jumpNode.data, jumpNode.length);
+					// update jump key data
+					memcpy(jumpKey.key_data + newJumpNode.prefix, newJumpNode.data, newJumpNode.length);
 				}
 				else
 				{
 					newJumpNode.prefix = jumpNode.prefix;
 					newJumpNode.length = jumpNode.length;
 					newJumpNode.offset = jumpNode.offset;
-					if (jumpNode.offset > offsetDeletePoint) {
+					if (jumpNode.offset == offsetNextPoint) {
+						newJumpNode.offset = offsetDeletePoint;
+					}
+					else if (jumpNode.offset > offsetDeletePoint) {
 						newJumpNode.offset -= delta;
 					}
 					newJumpNode.data = tempData;
@@ -3291,7 +3304,101 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 					fb_assert(tempData < tempEnd);
 					memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
 				}
+
+				// There is no sence in jump node pointing to the first index node on page.
+
+				if (newJumpNode.offset == jumpInfo.firstNodeOffset)
+				{
+					fb_assert(!jumpPrev);
+					delJumpNode = jumpNode;
+					rebuild = true;
+
+					memcpy(jumpKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
+					jumpKey.key_length = jumpNode.prefix + jumpNode.length;
+					n--;
+					continue;
+				}
+
+				IndexNode newNode;
+				BTreeNode::readNode(&newNode, newJumpNode.offset + (UCHAR*)page, flags, leafPage);
+				const USHORT newPrefix = newNode.prefix;
+
+				// We must enforce two conditions below:
+				// newJumpNode.prefix + newJumpNode.length == newPrefix, and
+				// jumpPrev != NULL : newJumpNode.prefix <= jumpPrev->prefix + jumpPrev->length, or
+				// jumpPrev == NULL : newJumpNode.prefix = 0 && newJumpNode.length == newPrefix.
+				// Also, if we know not all bytes in newPrefix, i.e. if
+				// newPrefix > newJumpNode.prefix + newJumpNode.length
+				// then we shoud walk index nodes from previous jump point to the new one and
+				// fill absent bytes in jumpKey
+
+				if (newJumpNode.prefix + newJumpNode.length > newPrefix)
+				{
+					if (newJumpNode.prefix > newPrefix)
+					{
+						newJumpNode.prefix = newPrefix;
+						newJumpNode.length = 0;
+					}
+					else // newJumpNode.prefix <= newPrefix
+					{
+						newJumpNode.length = newPrefix - newJumpNode.prefix;
+					}
+				}
+
+				if (newJumpNode.prefix + newJumpNode.length < newPrefix &&
+					jumpPrev &&
+					newPrefix <= jumpPrev->prefix + jumpPrev->length)
+				{
+					newJumpNode.prefix = newPrefix;
+					newJumpNode.length = 0;
+				}
+
+				if (newJumpNode.prefix + newJumpNode.length != newPrefix ||
+					jumpPrev && (newJumpNode.prefix > jumpPrev->prefix + jumpPrev->length))
+				{
+					UCHAR* prevPtr = BTreeNode::getPointerFirstNode(page);
+					if (jumpPrev)
+					{
+						fb_assert(jumpKey.key_length >= jumpPrev->prefix + jumpPrev->length);
+
+						newJumpNode.prefix = jumpPrev->prefix + jumpPrev->length;
+						newJumpNode.length = newPrefix - newJumpNode.prefix;
+
+						prevPtr = jumpPrev->offset + (UCHAR*) page;
+					}
+					else
+					{
+						newJumpNode.prefix = 0;
+						newJumpNode.length = newPrefix;
+					}
+
+					const UCHAR* endPtr = newJumpNode.offset + (UCHAR*) page;
+					IndexNode prevNode;
+					while (prevPtr < endPtr)
+					{
+						prevPtr = BTreeNode::readNode(&prevNode, prevPtr, flags, leafPage);
+						if (prevNode.prefix < newPrefix && prevNode.length)
+						{
+							const USHORT len = MIN(newPrefix - prevNode.prefix, prevNode.length);
+							memcpy(jumpKey.key_data + prevNode.prefix, prevNode.data, len);
+							jumpKey.key_length = prevNode.prefix + len;
+						}
+					}
+					fb_assert(jumpKey.key_length >= newPrefix);
+
+					memcpy(newJumpNode.data, jumpKey.key_data + newJumpNode.prefix, newJumpNode.length);
+					tempData = newJumpNode.data + newJumpNode.length;
+				}
+
+				memcpy(jumpKey.key_data + newJumpNode.prefix, newJumpNode.data, newJumpNode.length);
+				jumpKey.key_length = newJumpNode.prefix + newJumpNode.length;
+
+				newFirstNodeOffset += BTreeNode::getJumpNodeSize(&newJumpNode, flags);
+				if (newFirstNodeOffset > jumpInfo.firstNodeOffset)
+					break;
+
 				jumpNodes->add(newJumpNode);
+				jumpPrev = &jumpNodes->back();
 				rebuild = false;
 			}
 			else
@@ -3305,6 +3412,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 		// Update jump information.
 		jumpInfo.jumpers = jumpNodes->getCount();
 		pointer = BTreeNode::writeJumpInfo(page, &jumpInfo);
+
 		// Write jump nodes.
 		IndexJumpNode* walkJumpNode = jumpNodes->begin();
 		for (size_t i = 0; i < jumpNodes->getCount(); i++) {
