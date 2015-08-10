@@ -1,24 +1,94 @@
- 2015-07-28 12:40  egorpugin 
+ 2015-08-09 20:57  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/validation.cpp
+Fixed bug CORE-4904 :  Index corruption when add data in long-key-indexed field
+
+ 2015-08-07 05:52  mapopa 
+   M src/utilities/ibmgr/srvrmgr.cpp
+server_is_ok not used or replaced 
+
+ 2015-08-06 11:49  hvlad 
+   M src/jrd/validation.h
+Misc
+
+ 2015-08-05 16:44  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DsqlCompilerScratch.h
+   M src/dsql/StmtNodes.cpp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-4884 - Crash on pasring of script containing `execute block` with lot of nested begin..end statements.
+
+ 2015-08-03 01:41  asfernandes 
+   M src/jrd/idx.h
+Improvement CORE-4898 - Speed up function creation and loading when there are many functions in the database.
+
+ 2015-08-03 01:27  asfernandes 
+   M src/jrd/Function.epp
+   M src/jrd/met.epp
+Improvement CORE-4880 - Increase speed of creating package when number of its functions more than several hundreds.
+
+ 2015-08-02 19:00  hvlad 
+   M src/jrd/validation.h
+1. I see no reason to use explicit constructor in this case. More, it breaks build.
+2. One more paranoid check by Claudio :)
+
+ 2015-08-02 15:51  asfernandes 
+   M doc/README.trusted_authentication
+   M src/burp/burp.cpp
+   M src/common/classes/SyncObject.cpp
+   M src/isql/isql.epp
+   M src/jrd/validation.h
+   M src/yvalve/utl.cpp
+Misc.
+
+ 2015-08-02 03:10  robocop 
+   M src/burp/burp.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/jrd/validation.h
+Misc.
+
+ 2015-07-31 09:21  mapopa 
+   M README.md
+Add Downloads totals image https://img.shields.io/sourceforge/dt/firebird.png
+
+ 2015-07-30 09:50  dimitr 
+   M src/jrd/build_no.h
+   M src/misc/writeBuildNum.sh
+Manual update: changelog + buildno.
+
+ 2015-07-30 09:50  dimitr 
+   M ChangeLog
+Manual update: changelog + buildno.
+
+ 2015-07-28 16:40  egorpugin 
    M CMakeLists.txt
    M builds/cmake/Configure.cmake
 [build][cmake] Fix OS X build with brew.
 
- 2015-07-28 11:56  asfernandes 
+ 2015-07-28 15:56  asfernandes 
    M src/dsql/PackageNodes.epp
    M src/dsql/PackageNodes.h
 Fixed CORE-4887 - AFTER CREATE/ALTER PACKAGE DDL triggers runs in incorrectly moment.
 
- 2015-07-28 11:56  asfernandes 
+ 2015-07-28 15:56  asfernandes 
    M src/dsql/PackageNodes.epp
 Fixed weird indentation.
 
- 2015-07-28 07:26  hvlad 
+ 2015-07-28 11:26  hvlad 
    M src/burp/backup.epp
    M src/burp/burp.cpp
    M src/burp/restore.epp
 Make gbak output a bit more consistent look (see also CORE-1999)
 
- 2015-07-26 21:06  asfernandes 
+ 2015-07-27 01:06  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
    M src/dsql/ExprNodes.cpp
@@ -38,15 +108,15 @@ Make gbak output a bit more consistent look (see also CORE-1999)
    M src/yvalve/gds.cpp
 Fixed CORE-4881 - Increase maximum string literal length to 64K (bytes) while setting a lower limit (of characters) for multibyte charsets based on their max char. length (UTF-8 literals will be limited to 16383 characters).
 
- 2015-07-26 21:06  asfernandes 
+ 2015-07-27 01:06  asfernandes 
    M src/isql/isql.epp
 Fixed CORE-4882 - ISQL input command (or -i option) reads large (> 64K) lines incorrectly.
 
- 2015-07-26 17:03  hvlad 
+ 2015-07-26 21:03  hvlad 
    M src/msgs/facilities2.sql
 Reserve facility code 26 (name "JAYBIRD") for JayBird needs
 
- 2015-07-26 16:49  hvlad 
+ 2015-07-26 20:49  hvlad 
    M src/burp/backup.epp
    M src/burp/burp.cpp
    M src/burp/burp.h
@@ -64,144 +134,144 @@ Minor fixes in service manager.
 Thanks to Alex for help.
 Documentation will follow.
 
- 2015-07-26 15:58  hvlad 
+ 2015-07-26 19:58  hvlad 
    M src/common/classes/SyncObject.cpp
 Restore fair locking in SyncObject (it was disabled until validation code changed to avoid recursive latches).
 
- 2015-07-26 15:56  hvlad 
+ 2015-07-26 19:56  hvlad 
    M src/jrd/validation.cpp
    M src/jrd/validation.h
 Change validation code to avoid recursive latches (as it is not supported in fb3 cch).
 
- 2015-07-26 14:25  alexpeshkoff 
+ 2015-07-26 18:25  alexpeshkoff 
    M src/include/firebird/FirebirdInterface.idl
    M src/include/firebird/IdlFbInterfaces.h
    M src/yvalve/YObjects.h
    M src/yvalve/utl.cpp
 Added getClientVersion() method to Util interface and XpbBuilder interface to work with DPB/SPB/etc formats
 
- 2015-07-26 14:23  alexpeshkoff 
+ 2015-07-26 18:23  alexpeshkoff 
    M src/common/classes/ClumpletReader.cpp
    M src/common/classes/ClumpletReader.h
    M src/jrd/Mapping.cpp
 Fixed an issue with missing auth source info when using trusted auth
 
- 2015-07-26 14:22  alexpeshkoff 
+ 2015-07-26 18:22  alexpeshkoff 
    M src/jrd/license.h
 Minor enhancement - show that build is DEV in "show version"
 
- 2015-07-26 14:13  alexpeshkoff 
+ 2015-07-26 18:13  alexpeshkoff 
    M src/jrd/svc.cpp
    M src/jrd/svc.h
 Fixed CORE-4879: Minor inconvenience in user management via services API - fixed order of parameters in SPB required
 
- 2015-07-26 14:09  alexpeshkoff 
+ 2015-07-26 18:09  alexpeshkoff 
    M src/remote/server/os/posix/inet_server.cpp
 Better statrtup error diags
 
- 2015-07-26 14:07  alexpeshkoff 
+ 2015-07-26 18:07  alexpeshkoff 
    M src/auth/SecureRemotePassword/manage/SrpManagement.cpp
 Minor optimization - use on-stack allocation instead new/delete
 
- 2015-07-26 14:06  alexpeshkoff 
+ 2015-07-26 18:06  alexpeshkoff 
    M doc/README.trusted_authentication
 Fixed old text to make it match v.3 reality
 
- 2015-07-26 14:04  alexpeshkoff 
+ 2015-07-26 18:04  alexpeshkoff 
    M builds/install/posix-common/changeServerMode.sh.in
 Use new ServerMode parameter in the script
 
- 2015-07-26 14:03  alexpeshkoff 
+ 2015-07-26 18:03  alexpeshkoff 
    M builds/install/arch-specific/linux/firebird.init.d.gentoo.in
 Bring gentoo installation up-to-date
 
- 2015-07-26 14:02  alexpeshkoff 
+ 2015-07-26 18:02  alexpeshkoff 
    M builds/install/arch-specific/linux/linuxLibrary.sh.in
 This should fix issues with different systemd location in FS
 
- 2015-07-26 11:38  asfernandes 
+ 2015-07-26 15:38  asfernandes 
    M src/isql/isql.epp
 On behalf of alexpeshkoff after sourceforge crash - Postfix for CORE-4811: Avoid use of monitoring tables in ISQL's frontend as suggested by Dmitry
 
- 2015-07-26 11:38  asfernandes 
+ 2015-07-26 15:38  asfernandes 
    M src/isql/isql.epp
 On behalf of alexpeshkoff after sourceforge crash - Postfix for CORE-4811: display in ISQL database, user and role as server sees them
 
- 2015-07-26 11:38  asfernandes 
+ 2015-07-26 15:38  asfernandes 
    M src/common/utils.cpp
 On behalf of alexpeshkoff after sourceforge crash - Postfix for CORE-4811: strip single quotes, not making them keep case of ascii string, when used in DPB (connect/create database)
 
- 2015-07-26 11:37  asfernandes 
+ 2015-07-26 15:37  asfernandes 
    M src/gpre/gpre.h
 On behalf of mapopa after sourceforge crash - remove unused DBB_ flags from comments
 
- 2015-07-26 11:37  asfernandes 
+ 2015-07-26 15:37  asfernandes 
    M src/gpre/gpre.h
 On behalf of mapopa after sourceforge crash - DBB_v3 was removed , remove from comments http://sourceforge.net/p/firebird/mailman/message/16823672/
 
- 2015-07-26 11:37  asfernandes 
+ 2015-07-26 15:37  asfernandes 
    M src/gpre/cmd.cpp
 On behalf of mapopa after sourceforge crash - FLINT_CACHE was never used , dead leftover from ib 4.0 product years http://sourceforge.net/p/firebird/mailman/message/30668961/
 
- 2015-07-26 11:37  asfernandes 
+ 2015-07-26 15:37  asfernandes 
    M src/qli/show.epp
 On behalf of mapopa after sourceforge crash - remove comment MET_exact_name() is no more replaced with fb_utils::exact_name
 
- 2015-07-26 11:37  asfernandes 
+ 2015-07-26 15:37  asfernandes 
    M src/isql/iutils.cpp
    M src/yvalve/array.epp
    M src/yvalve/blob.epp
 On behalf of mapopa after sourceforge crash - MET_exact_name , DYN_terminate are no more
 
- 2015-07-26 11:36  asfernandes 
+ 2015-07-26 15:36  asfernandes 
    M src/isql/iutils.cpp
    M src/isql/iutils_proto.h
 On behalf of mapopa after sourceforge crash - IUTILS_blankterm2 replaced with fb_utils::exact_name (NOT_USED_OR_REPLACED)
 
- 2015-07-26 11:36  asfernandes 
+ 2015-07-26 15:36  asfernandes 
    M src/gpre/gpre.h
    M src/gpre/par.cpp
 On behalf of mapopa after sourceforge crash - unused enum member lang_epascal
 
- 2015-07-26 11:36  asfernandes 
+ 2015-07-26 15:36  asfernandes 
    M src/gpre/gpre.cpp
    M src/gpre/gpre_proto.h
 On behalf of mapopa after sourceforge crash - Remove gpre BASIC function (NOT_USED_OR_REPLACED)
 
- 2015-07-26 11:36  asfernandes 
+ 2015-07-26 15:36  asfernandes 
    M src/common/StatusHolder.h
    M src/jrd/status.h
 On behalf of robocop after sourceforge crash - Misc.
 
- 2015-07-26 11:35  asfernandes 
+ 2015-07-26 15:35  asfernandes 
    M src/jrd/jrd.cpp
 On behalf of alexpeshkoff after sourceforge crash - Postfix for CORE-4811: fix handling case for OS names
 
- 2015-07-26 03:50  dimitr 
+ 2015-07-26 07:50  dimitr 
    M src/common/isc_file.cpp
 Fixed hostless INET/WNET connections on Linux.
 
- 2015-07-15 10:14  hvlad 
+ 2015-07-15 14:14  hvlad 
    M src/utilities/fbsvcmgr/fbsvcmgr.cpp
 Fixed bug CORE-4876
 fbsvcmgr shows wrong options for some Trace API services in help screen
 
- 2015-07-15 08:07  dimitr 
+ 2015-07-15 12:07  dimitr 
    M src/remote/client/BlrFromMessage.cpp
    M src/remote/client/BlrFromMessage.h
    M src/remote/client/interface.cpp
 This should fix CORE-4872: v3 fbclient cannot work with servers older than v2.5 via the remote protocol.
 
- 2015-07-15 07:10  hvlad 
+ 2015-07-15 11:10  hvlad 
    M src/jrd/dpm.epp
 Correction
 
- 2015-07-15 06:55  hvlad 
+ 2015-07-15 10:55  hvlad 
    M src/utilities/gsec/main/gsecMain.cpp
 gsec also could hung on exit if worker database have non-zero LINGER set.
 Seems we must add fb_shutdown to the every utility which could load embedded engine...
 
- 2015-07-15 06:42  hvlad 
+ 2015-07-15 10:42  hvlad 
    M src/remote/server/os/win32/srvr_w32.cpp
 Windows-specific part for CORE-4871
 
