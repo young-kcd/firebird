@@ -47,6 +47,7 @@
 #include <stdio.h>
 #include "../yvalve/keywords.h"
 //#include "../yvalve/gds_proto.h"
+#include "../jrd/intl.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -203,6 +204,8 @@ namespace IcuUtil
 	// Return the number of characters of a string.
 	static unsigned charLength(SSHORT charset, unsigned len, const char* str)
 	{
+		charset = TTYPE_TO_CHARSET(charset);
+
 		if (charset != CS_UNICODE_FSS && charset != CS_UTF8)
 			return len;
 
@@ -223,6 +226,8 @@ namespace IcuUtil
 	static void pad(char* buffer, SSHORT charset, unsigned len, const char* str, unsigned width,
 		bool right)
 	{
+		charset = TTYPE_TO_CHARSET(charset);
+
 		if (charset != CS_UNICODE_FSS && charset != CS_UTF8)
 		{
 			// Truncate if necessary.
@@ -8612,6 +8617,8 @@ static const char* charset_to_string(unsigned charset)
  *
  **************************************/
 	static Firebird::GlobalPtr<Firebird::GenericMap<Firebird::Pair<Firebird::Right<unsigned, Firebird::string> > > > csMap;
+
+	charset = TTYPE_TO_CHARSET(charset);
 
 	Firebird::string* text = csMap->get(charset);
 	if (text)
