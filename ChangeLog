@@ -1,7 +1,23 @@
- 2015-07-26 11:18  asfernandes 
+ 2015-08-09 20:58  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/validation.cpp
+Backport fix for bug CORE-4904 : Index corruption when add data in long-key-indexed field
+
+ 2015-07-30 10:00  dimitr 
+   M src/jrd/build_no.h
+   M src/misc/writeBuildNum.sh
+Manual update: changelog + buildno.
+
+ 2015-07-30 09:59  dimitr 
+   M ChangeLog
+Manual update: changelog + buildno.
+
+ 2015-07-26 15:18  asfernandes 
+   M src/jrd/validation.cpp
 On behalf of hvlad after sourceforge crash - Backport fix for bug CORE-4860 : Online validation fails on WINDOWS if `dbname` argument contains forward slash ('/') and concurrent attachment which also uses '/' exists.
 
- 2015-07-15 10:15  hvlad 
+ 2015-07-15 14:15  hvlad 
+   M src/utilities/fbsvcmgr.cpp
 Fixed bug CORE-4876
 fbsvcmgr shows wrong options for some Trace API services in help screen
 
