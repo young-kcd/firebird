@@ -134,10 +134,14 @@ public:
 	typedef Firebird::BePlusTree<ServiceData, ServiceId, Firebird::MemoryPool, ServiceData>
 		ServicesTree;
 
-	TracePluginImpl(const TracePluginConfig& configuration, Firebird::ITraceInitInfo* initInfo);
+	TracePluginImpl(Firebird::IPluginBase* factory, const TracePluginConfig& configuration, Firebird::ITraceInitInfo* initInfo);
 
 private:
 	~TracePluginImpl();
+
+	// Used to not allow to destroy plugin factory and unload dll\so if 
+	// instance of TracePluginImpl class exists
+	Firebird::RefPtr<Firebird::IPluginBase> factory;
 
 	bool operational; // Set if plugin is fully initialized and is ready for logging
 					  // Keep this member field first to ensure its correctness

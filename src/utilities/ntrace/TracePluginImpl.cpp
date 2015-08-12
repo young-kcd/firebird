@@ -83,7 +83,10 @@ const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 	return get_error_string();
 }
 
-TracePluginImpl::TracePluginImpl(const TracePluginConfig& configuration, ITraceInitInfo* initInfo) :
+TracePluginImpl::TracePluginImpl(IPluginBase* plugin, 
+								 const TracePluginConfig& configuration, 
+								 ITraceInitInfo* initInfo) :
+	factory(plugin),
 	operational(false),
 	session_id(initInfo->getTraceSessionID()),
 	session_name(*getDefaultMemoryPool()),

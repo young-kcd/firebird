@@ -90,7 +90,7 @@ Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::CheckStatusWrap
 		if (logWriter)
 			config.log_filename = "";
 
-		return new TracePluginImpl(config, initInfo);	// Everything is ok, we created a plugin
+		return new TracePluginImpl(this, config, initInfo);	// Everything is ok, we created a plugin
 
 	}
 	catch (Firebird::Exception& ex)
