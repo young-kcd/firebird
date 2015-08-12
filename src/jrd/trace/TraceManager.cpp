@@ -168,7 +168,9 @@ void TraceManager::shutdown()
 
 void TraceManager::update_sessions()
 {
-	SortedArray<ULONG> liveSessions(*getDefaultMemoryPool());
+	MemoryPool& pool = *getDefaultMemoryPool();
+	SortedArray<ULONG, InlineStorage<ULONG, 64> > liveSessions(pool);
+	HalfStaticArray<TraceSession*, 64> newSessions;
 
 	{	// scope
 		ConfigStorage* storage = getStorage();
@@ -176,13 +178,16 @@ void TraceManager::update_sessions()
 		StorageGuard guard(storage);
 		storage->restart();
 
-		TraceSession session(*getDefaultMemoryPool());
+		TraceSession session(pool);
 		while (storage->getNextSession(session))
 		{
 			if ((session.ses_flags & trs_active) && !(session.ses_flags & trs_log_full))
 			{
-				update_session(session);
-				liveSessions.add(session.ses_id);
+				FB_SIZE_T pos;
+				if (trace_sessions.find(session.ses_id, pos))
+					liveSessions.add(session.ses_id);
+				else
+					newSessions.add(FB_NEW(pool) TraceSession(pool, session));
 			}
 		}
 
@@ -202,6 +207,14 @@ void TraceManager::update_sessions()
 			trace_sessions[i].plugin->release();
 			trace_sessions.remove(i);
 		}
+	}
+
+	// add new sessions
+	while (newSessions.hasData())
+	{
+		TraceSession* s = newSessions.pop();
+		update_session(*s);
+		delete s;
 	}
 
 	// nothing to trace, clear needs

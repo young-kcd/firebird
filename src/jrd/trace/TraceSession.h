@@ -55,6 +55,17 @@ public:
 		ses_logfile(pool)
 	{}
 
+	TraceSession(MemoryPool& pool, TraceSession& other) :
+		ses_id(other.ses_id),
+		ses_name(pool, other.ses_name),
+		ses_auth(pool, other.ses_auth),
+		ses_user(pool, other.ses_user),
+		ses_config(pool, other.ses_config),
+		ses_start(other.ses_start),
+		ses_flags(other.ses_flags),
+		ses_logfile(pool, other.ses_logfile)
+	{}
+
 	~TraceSession() {}
 
 	void clear()
