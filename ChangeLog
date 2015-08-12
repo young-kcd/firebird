@@ -1,3 +1,13 @@
+ 2015-08-11 15:46  asfernandes 
+   M src/include/gen/msgs.h
+Misc.
+
+ 2015-08-11 15:46  asfernandes 
+   M src/isql/isql.epp
+Fixed two problem when a expression is described with a collation (i.e., when the expression charset matches the connection charset):
+- Broken display of charset name with SQLDA_DISPLAY
+- Broken UTF-8 alignment
+
  2015-08-09 20:57  hvlad 
    M src/jrd/btr.cpp
    M src/jrd/validation.cpp
