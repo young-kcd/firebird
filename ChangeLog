@@ -1,3 +1,14 @@
+ 2015-08-12 13:38  hvlad 
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+Fixed bug CORE-4906 : AV when server is shutted down with active trace session(s) 
+
+ 2015-08-12 08:58  hvlad 
+   M src/jrd/trace/TraceManager.cpp
+   M src/jrd/trace/TraceSession.h
+Fixed bug CORE-4889 : FBSVCMGR with `action_trace_start` prevents in 3.0 SuperServer from connecting using local protocol
+
  2015-08-11 15:46  asfernandes 
    M src/include/gen/msgs.h
 Misc.
