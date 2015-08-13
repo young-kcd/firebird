@@ -2981,7 +2981,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 				memcpy(newJumpNode.data, jumpNode.data, newJumpNode.length);
 			}
 
-			// There is no sence in jump node pointing to the first index node on page.
+			// There is no sense in jump node pointing to the first index node on page.
 
 			if ((UCHAR*) page + newJumpNode.offset == page->btr_nodes + page->btr_jump_size)
 			{
