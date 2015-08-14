@@ -3076,6 +3076,14 @@ static int blr_print_dtype(gds_ctl* control)
 			// 0 = blr_domain_type_of; 1 = blr_domain_full
 			blr_print_byte(control);
 
+			if (dtype == blr_column_name || dtype == blr_column_name2)
+			{
+				for (UCHAR n = blr_print_byte(control); n > 0; --n)
+					blr_print_char(control);
+
+				blr_format(control, " ");
+			}
+
 			for (UCHAR n = blr_print_byte(control); n > 0; --n)
 				blr_print_char(control);
 
