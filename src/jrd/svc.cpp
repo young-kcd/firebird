@@ -589,6 +589,8 @@ bool Service::ck_space_for_numeric(UCHAR*& info, const UCHAR* const end)
 	{
 		if (info < end)
 			*info++ = isc_info_truncated;
+		if (info < end)
+			*info++ = isc_info_end;
 		return false;
 	}
 	return true;
@@ -2301,7 +2303,7 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 
 			// If returning a line of information, replace all new line
 			// characters with a space.  This will ensure that the output is
-			// consistent when returning a line or to eof
+			// consistent when returning a line or to eof.
 			if ((flags & GET_LINE) && ch == '\n')
 			{
 				buffer[(*return_length)++] = ' ';
@@ -2312,7 +2314,13 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			buffer[(*return_length)++] = ch;
 		}
 
-		svc_stdout_head = head;
+		if ((!(flags & GET_LINE)) || length == 0 || full())
+			svc_stdout_head = head;
+		else
+		{
+			*return_length = 0;
+			break;
+		}
 	}
 	svc_sem_empty.release();
 }
