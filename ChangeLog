@@ -1,3 +1,7 @@
+ 2015-08-14 15:26  asfernandes 
+   M src/jrd/gds.cpp
+Fixed CORE-4905 - Invalid internal BLR filter conversion.
+
  2015-08-13 04:06  robocop 
    M src/jrd/btr.cpp
 Misc.
