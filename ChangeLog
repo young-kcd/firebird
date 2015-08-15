@@ -1,3 +1,7 @@
+ 2015-08-14 14:41  alexpeshkoff 
+   M src/jrd/svc.cpp
+Fixed CORE-4897: FBSVCMGR can produce broken log when restoring database
+
  2015-08-13 04:09  robocop 
    M src/jrd/btr.cpp
 Misc.
