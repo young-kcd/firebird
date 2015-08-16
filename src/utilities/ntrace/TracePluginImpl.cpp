@@ -83,8 +83,8 @@ const char* TracePluginImpl::marshal_exception(const Firebird::Exception& ex)
 	return get_error_string();
 }
 
-TracePluginImpl::TracePluginImpl(IPluginBase* plugin, 
-								 const TracePluginConfig& configuration, 
+TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
+								 const TracePluginConfig& configuration,
 								 ITraceInitInfo* initInfo) :
 	factory(plugin),
 	operational(false),

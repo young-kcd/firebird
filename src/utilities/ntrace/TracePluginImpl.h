@@ -139,7 +139,7 @@ public:
 private:
 	~TracePluginImpl();
 
-	// Used to not allow to destroy plugin factory and unload dll\so if 
+	// Used to not allow to destroy plugin factory and unload dll\so if
 	// instance of TracePluginImpl class exists
 	Firebird::RefPtr<Firebird::IPluginBase> factory;
 

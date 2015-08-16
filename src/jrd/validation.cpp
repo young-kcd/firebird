@@ -2001,21 +2001,24 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 			{
 				// Check if jump node has same length as data node prefix.
 				checknode.readNode((UCHAR*) page + jumpNode.offset, leafPage);
-				if ((jumpNode.prefix + jumpNode.length) != checknode.prefix) {
+				if ((jumpNode.prefix + jumpNode.length) != checknode.prefix)
+				{
 					corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
 							id + 1, next, page->btr_level, (ULONG) jumpNode.offset,
 							__FILE__, __LINE__);
 				}
 
 				// First jump node should have zero prefix
-				if (n == page->btr_jump_count && jumpNode.prefix) {
+				if (n == page->btr_jump_count && jumpNode.prefix)
+				{
 					corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
 						id + 1, next, page->btr_level, (ULONG) jumpNode.offset,
 						__FILE__, __LINE__);
 				}
 
 				// jump node prefix can't be more than previous jump data length
-				if (n != page->btr_jump_count && jumpNode.prefix > jumpDataLen) {
+				if (n != page->btr_jump_count && jumpNode.prefix > jumpDataLen)
+				{
 					corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
 						id + 1, next, page->btr_level, (ULONG) jumpNode.offset,
 						__FILE__, __LINE__);
@@ -2026,7 +2029,8 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 			n--;
 		}
 
-		if (jumpersSize > page->btr_jump_size) {
+		if (jumpersSize > page->btr_jump_size)
+		{
 			corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
 				id + 1, next, page->btr_level, (ULONG) page->btr_jump_size + BTR_SIZE,
 				__FILE__, __LINE__);

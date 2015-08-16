@@ -2856,11 +2856,11 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 	// Read node that need to be removed
 	IndexNode removingNode;
 	UCHAR* localPointer = removingNode.readNode(pointer, leafPage);
-	const USHORT offsetDeletePoint = (pointer - (UCHAR*)page);
+	const USHORT offsetDeletePoint = (pointer - (UCHAR*) page);
 
 	// Read the next node after the removing node
 	IndexNode nextNode;
-	const USHORT offsetNextPoint = (localPointer - (UCHAR*)page);
+	const USHORT offsetNextPoint = (localPointer - (UCHAR*) page);
 	localPointer = nextNode.readNode(localPointer, leafPage);
 
 	// Save data in tempKey so we can rebuild from it
@@ -2935,6 +2935,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 	temporary_key jumpKey;
 	jumpKey.key_length = 0;
 	USHORT jumpersNewSize = 0;
+
 	while (n)
 	{
 		pointer = jumpNode.readJumpNode(pointer);
@@ -3082,6 +3083,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 			delJumpNode = jumpNode;
 			rebuild = true;
 		}
+
 		n--;
 	}
 
