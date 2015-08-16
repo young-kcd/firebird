@@ -650,7 +650,7 @@ void HashJoin::computeKeys(thread_db* tdbb, jrd_req* request,
 			if (desc->isText())
 			{
 				dsc to;
-				to.makeText(keyLength, ttype_binary, keyBuffer);
+				to.makeText(keyLength, desc->getTextType(), keyBuffer);
 
 				if (IS_INTL_DATA(desc))
 				{
