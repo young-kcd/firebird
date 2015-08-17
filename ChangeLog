@@ -1,3 +1,14 @@
+ 2015-08-16 15:47  dimitr 
+   M src/jrd/recsrc/HashJoin.cpp
+Fixed the hash-join part of CORE-4909: MERGE / HASH JOINs produce incorrect results when VARCHAR join keys differ only by trailing spaces.
+
+ 2015-08-16 13:53  asfernandes 
+   M src/jrd/btr.cpp
+   M src/jrd/validation.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+Misc.
+
  2015-08-14 14:41  alexpeshkoff 
    M src/jrd/svc.cpp
 Fixed CORE-4897: FBSVCMGR can produce broken log when restoring database
