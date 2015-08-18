@@ -1620,6 +1620,8 @@ C --
       PARAMETER (GDS__domain_primary_key_notnull       = 335545103)
       INTEGER*4 GDS__invalid_attachment_charset      
       PARAMETER (GDS__invalid_attachment_charset       = 335545104)
+      INTEGER*4 GDS__map_down                        
+      PARAMETER (GDS__map_down                         = 335545105)
       INTEGER*4 GDS__gfix_db_name                    
       PARAMETER (GDS__gfix_db_name                     = 335740929)
       INTEGER*4 GDS__gfix_invalid_sw                 

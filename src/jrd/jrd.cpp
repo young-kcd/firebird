@@ -731,7 +731,11 @@ namespace
 	{
 		if (!attachment->locksmith())
 		{
-			ERR_post(Arg::Gds(isc_adm_task_denied));
+			UserId* u = attachment->att_user;
+			if (u->usr_flags & USR_mapdown)
+				ERR_post(Arg::Gds(isc_adm_task_denied) << Arg::Gds(isc_map_down));
+			else
+				ERR_post(Arg::Gds(isc_adm_task_denied));
 		}
 	}
 
@@ -1703,7 +1707,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				if (!allow_access)
 				{
 					// Note we throw exception here when entering full-shutdown mode
-					ERR_post(Arg::Gds(isc_shutdown) << Arg::Str(org_filename));
+					Arg::Gds v(isc_shutdown);
+					v << Arg::Str(org_filename);
+					if (attachment->att_user->usr_flags & USR_mapdown)
+						v << Arg::Gds(isc_map_down);
+					ERR_post(v);
 				}
 			}
 
@@ -7127,8 +7135,11 @@ static void getUserInfo(UserId& user, const DatabaseOptions& options,
 		}
 		else if (options.dpb_auth_block.hasData())
 		{
-			mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
-				aliasName, dbName, (config ? (*config)->getSecurityDatabase() : NULL), cryptCb);
+			if (mapUser(name, trusted_role, &auth_method, &user.usr_auth_block, options.dpb_auth_block,
+				aliasName, dbName, (config ? (*config)->getSecurityDatabase() : NULL), cryptCb))
+			{
+				user.usr_flags |= USR_mapdown;
+			}
 
 			if (creating && config)		// when config is NULL we are in error handler
 			{

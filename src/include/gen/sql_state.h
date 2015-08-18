@@ -805,6 +805,7 @@ static const struct {
 	{335545102, "HY000"}, // 782 savepoint_backout_err
 	{335545103, "42000"}, // 783 domain_primary_key_notnull
 	{335545104, "2C000"}, // 784 invalid_attachment_charset
+	{335545105, "08004"}, // 785 map_down
 	{335740929, "00000"}, //   1 gfix_db_name
 	{335740930, "00000"}, //   2 gfix_invalid_sw
 	{335740932, "00000"}, //   4 gfix_incmp_sw

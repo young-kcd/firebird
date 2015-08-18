@@ -161,7 +161,10 @@ void SHUT_database(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* guard)
 
 	if (!attachment->locksmith())
 	{
-		ERR_post(Arg::Gds(isc_no_priv) << "shutdown" << "database" << dbb->dbb_filename);
+		ERR_post_nothrow(Arg::Gds(isc_no_priv) << "shutdown" << "database" << dbb->dbb_filename);
+		if (attachment->att_user->usr_flags & USR_mapdown)
+			ERR_post_nothrow(Arg::Gds(isc_map_down));
+		ERR_punt();
 	}
 
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;
@@ -340,7 +343,10 @@ void SHUT_online(thread_db* tdbb, SSHORT flag, Sync* guard)
 
 	if (!attachment->att_user->locksmith())
 	{
-		ERR_post(Arg::Gds(isc_no_priv) << "bring online" << "database" << dbb->dbb_filename);
+		ERR_post_nothrow(Arg::Gds(isc_no_priv) << "bring online" << "database" << dbb->dbb_filename);
+		if (attachment->att_user->usr_flags & USR_mapdown)
+			ERR_post_nothrow(Arg::Gds(isc_map_down));
+		ERR_punt();
 	}
 
 	const int shut_mode = flag & isc_dpb_shut_mode_mask;

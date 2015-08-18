@@ -85,6 +85,7 @@ const SecurityClass::flags_t SCL_create			= 4096;
 const USHORT USR_locksmith	= 1;		// User has great karma
 const USHORT USR_dba		= 2;		// User has DBA privileges
 const USHORT USR_owner		= 4;		// User owns database
+const USHORT USR_mapdown	= 8;		// Mapping failed when getting context
 
 class UserId
 {

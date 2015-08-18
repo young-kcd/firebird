@@ -234,12 +234,13 @@ class Cache : public MapHash, public GlobalStorage
 {
 public:
 	Cache(const NoCaseString& aliasDb, const NoCaseString& db)
-		: alias(getPool(), aliasDb), name(getPool(), db), dataFlag(false)
+		: alias(getPool(), aliasDb), name(getPool(), db),
+		  dataFlag(false), downFlag(false)
 	{
 		enableDuplicates();
 	}
 
-	void populate(IAttachment *att)
+	void populate(IAttachment *att, bool isDown)
 	{
 		FbLocalStatus st;
 
@@ -251,6 +252,7 @@ public:
 		if (!att)
 		{
 			dataFlag = true;
+			downFlag = isDown;
 			return;
 		}
 
@@ -325,6 +327,7 @@ public:
 			tra = NULL;
 
 			dataFlag = true;
+			downFlag = false;
 		}
 		catch (const Exception&)
 		{
@@ -471,7 +474,7 @@ public:
 public:
 	SyncObject syncObject;
 	NoCaseString alias, name;
-	bool dataFlag;
+	bool dataFlag, downFlag;
 };
 
 typedef GenericMap<Pair<Left<NoCaseString, Cache*> > > CacheTree;
@@ -855,7 +858,7 @@ void setupIpc()
 
 namespace Jrd {
 
-void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
+bool mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	AuthReader::AuthBlock* newAuthBlock, const AuthReader::AuthBlock& authBlock,
 	const char* alias, const char* db, const char* securityAlias,
 	ICryptKeyCallback* cryptCb)
@@ -877,13 +880,15 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 			}
 		}
 
-		return;
+		return false;
 	}
 
 	// expand security database name (db is expected to be expanded, alias - original)
 	PathName secExpanded;
 	expandDatabaseName(securityAlias, secExpanded, NULL);
 	const char* securityDb = secExpanded.c_str();
+	bool secDown = false;
+	bool dbDown = false;
 
 	// Create new writer
 	AuthWriter newBlock;
@@ -935,10 +940,13 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 							embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
 						if (st->getState() & IStatus::STATE_ERRORS)
 						{
-							if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
+							const ISC_STATUS* s = st->getErrors();
+							bool missing = fb_utils::containsErrorCode(s, isc_io_error);
+							secDown = fb_utils::containsErrorCode(s, isc_shutdown);
+							if (!(missing || secDown))
 								check("IProvider::attachDatabase", &st);
 
-							// missing security DB is not a reason to fail mapping
+							// down/missing security DB is not a reason to fail mapping
 							iSec = NULL;
 						}
 					}
@@ -952,15 +960,18 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 						{
 							iDb = prov->attachDatabase(&st, alias,
 								embeddedSysdba.getBufferLength(), embeddedSysdba.getBuffer());
-						}
 
-						if (st->getState() & IStatus::STATE_ERRORS)
-						{
-							if (!fb_utils::containsErrorCode(st->getErrors(), isc_io_error))
-								check("IProvider::attachDatabase", &st);
+							if (st->getState() & IStatus::STATE_ERRORS)
+							{
+								const ISC_STATUS* s = st->getErrors();
+								bool missing = fb_utils::containsErrorCode(s, isc_io_error);
+								dbDown = fb_utils::containsErrorCode(s, isc_shutdown);
+								if (!(missing || dbDown))
+									check("IProvider::attachDatabase", &st);
 
-							// missing DB is not a reason to fail mapping
-							iDb = NULL;
+								// down/missing DB is not a reason to fail mapping
+								iDb = NULL;
+							}
 						}
 					}
 				}
@@ -1006,12 +1017,17 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 					}
 
 					if (cDb)
-						cDb->populate(iDb);
-					cSec->populate(iSec);
+						cDb->populate(iDb, dbDown);
+					cSec->populate(iSec, secDown);
 
 					sSec.downgrade(SYNC_SHARED);
 					sDb.downgrade(SYNC_SHARED);
 				}
+
+				// use down flags from caches
+				if (cDb)
+					dbDown = cDb->downFlag;
+				secDown = cSec->downFlag;
 
 				// Caches are ready somehow - proceed with analysis
 				AuthReader auth(authBlock);
@@ -1102,7 +1118,13 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 	}
 
 	if (fName.found == Found::FND_NOTHING)
-		(Arg::Gds(isc_sec_context) << alias).raise();
+	{
+		Arg::Gds v(isc_sec_context);
+		v << alias;
+		if (secDown || dbDown)
+			v << Arg::Gds(isc_map_down);
+		v.raise();
+	}
 
 	name = fName.value.ToString();
 	trusted_role = fRole.value.ToString();
@@ -1117,6 +1139,8 @@ void mapUser(string& name, string& trusted_role, Firebird::string* auth_method,
 		MAP_DEBUG(fprintf(stderr, "Saved to newAuthBlock %u bytes\n",
 			static_cast<unsigned>(newAuthBlock->getCount())));
 	}
+
+	return secDown || dbDown;
 }
 
 void clearMap(const char* dbName)

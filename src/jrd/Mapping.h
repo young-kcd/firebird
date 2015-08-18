@@ -37,7 +37,7 @@
 
 namespace Jrd {
 
-void mapUser(Firebird::string& name, Firebird::string& trusted_role, Firebird::string* auth_method,
+bool mapUser(Firebird::string& name, Firebird::string& trusted_role, Firebird::string* auth_method,
 	Firebird::AuthReader::AuthBlock* newAuthBlock, const Firebird::AuthReader::AuthBlock& authBlock,
 	const char* alias, const char* db, const char* securityDb, Firebird::ICryptKeyCallback* cryptCb);
 void clearMap(const char* dbName);

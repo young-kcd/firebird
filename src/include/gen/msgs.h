@@ -809,6 +809,7 @@ Data source : @4"},		/* eds_statement */
 	{335545102, "Error during savepoint backout - transaction invalidated"},		/* savepoint_backout_err */
 	{335545103, "Domain used in the PRIMARY KEY constraint of table @1 must be NOT NULL"},		/* domain_primary_key_notnull */
 	{335545104, "CHARACTER SET @1 cannot be used as a attachment character set"},		/* invalid_attachment_charset */
+	{335545105, "Some database(s) were shutdown when trying to read mapping data"},		/* map_down */
 	{335740929, "data base file name (@1) already given"},		/* gfix_db_name */
 	{335740930, "invalid switch @1"},		/* gfix_invalid_sw */
 	{335740932, "incompatible switch combination"},		/* gfix_incmp_sw */
