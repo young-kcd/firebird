@@ -5646,8 +5646,19 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 				return new YAttachment(provider, attachment, expandedFilename);
 			}
 
-			if (currentStatus->getErrors()[1] != isc_unavailable)
+			switch(currentStatus->getErrors()[1])
+			{
+			case isc_io_error:
+			case isc_lock_dir_access:
+			case isc_no_priv:
 				currentStatus = &tempCheckStatusWrapper;
+				// fall down...
+			case isc_unavailable:
+				break;
+
+			default:
+				return NULL;
+			}
 
 			currentStatus->init();
 		}
