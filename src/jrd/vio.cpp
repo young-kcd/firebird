@@ -3573,8 +3573,8 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 	rpb.rpb_stream_flags = RPB_s_no_data | RPB_s_sweeper;
 	rpb.getWindow(tdbb).win_flags = WIN_large_scan;
 
-	jrd_rel* relation = 0; // wasn't initialized: memory problem in catch () part.
-	vec<jrd_rel*>* vector = 0;
+	jrd_rel* relation = NULL; // wasn't initialized: memory problem in catch () part.
+	vec<jrd_rel*>* vector = NULL;
 
 	GarbageCollector* gc = dbb->dbb_garbage_collector;
 	bool ret = true;
