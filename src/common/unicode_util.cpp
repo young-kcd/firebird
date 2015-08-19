@@ -1305,13 +1305,11 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
 		(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
 	{
-		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
 		tt->texttype_canonical_width = 4;	// UTF-32
 	}
 	else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
 	{
-		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
 		tt->texttype_flags |= TEXTTYPE_SEPARATE_UNIQUE;
 		tt->texttype_canonical_width = 4;	// UTF-32
 	}
@@ -1319,11 +1317,29 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 		tt->texttype_flags = TEXTTYPE_DIRECT_MATCH;
 
 	const bool isNumericSort = numericSort == "1";
+
 	if (isNumericSort)
 	{
+		icu->ucolSetAttribute(compareCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
 		icu->ucolSetAttribute(partialCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
 		icu->ucolSetAttribute(sortCollator, UCOL_NUMERIC_COLLATION, UCOL_ON, &status);
+
+		icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_IDENTICAL, &status);
+		icu->ucolSetAttribute(sortCollator, UCOL_STRENGTH, UCOL_IDENTICAL, &status);
+
 		tt->texttype_flags = TEXTTYPE_UNSORTED_UNIQUE;
+	}
+	else
+	{
+		if ((attributes & (TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE)) ==
+			(TEXTTYPE_ATTR_CASE_INSENSITIVE | TEXTTYPE_ATTR_ACCENT_INSENSITIVE))
+		{
+			icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
+		}
+		else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+		{
+			icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
+		}
 	}
 
 	USet* contractions = icu->usetOpen(0, 0);
@@ -1367,30 +1383,33 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 												USHORT dstLen, UCHAR* dst,
 												USHORT key_type) const
 {
-	fb_assert(src != NULL && dst != NULL);
-	fb_assert(srcLen % sizeof(*src) == 0);
+	ULONG srcLenLong = srcLen;
 
-	if (dstLen < keyLength(srcLen))
+	fb_assert(src != NULL && dst != NULL);
+	fb_assert(srcLenLong % sizeof(*src) == 0);
+
+	if (dstLen < keyLength(srcLenLong))
 	{
 		fb_assert(false);
 		return INTL_BAD_KEY_LENGTH;
 	}
 
-	srcLen /= sizeof(*src);
+	srcLenLong /= sizeof(*src);
 
 	if (tt->texttype_pad_option)
 	{
 		const USHORT* pad;
 
-		for (pad = src + srcLen - 1; pad >= src; --pad)
+		for (pad = src + srcLenLong - 1; pad >= src; --pad)
 		{
 			if (*pad != 32)
 				break;
 		}
 
-		srcLen = pad - src + 1;
+		srcLenLong = pad - src + 1;
 	}
 
+	HalfStaticArray<USHORT, BUFFER_SMALL / 2> buffer;
 	const UCollator* coll = NULL;
 
 	switch (key_type)
@@ -1408,15 +1427,16 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 				UErrorCode status = U_ZERO_ERROR;
 				int len = icu->usetGetItem(contractions, i, NULL, NULL, str, sizeof(str), &status);
 
-				if (len > srcLen)
-					len = srcLen;
+				if (len > srcLenLong)
+					len = srcLenLong;
 				else
 					--len;
 
 				// safe cast - alignment not changed
-				if (cIcu.u_strCompare(str, len, reinterpret_cast<const UChar*>(src) + srcLen - len, len, true) == 0)
+				if (cIcu.u_strCompare(str, len,
+						reinterpret_cast<const UChar*>(src) + srcLenLong - len, len, true) == 0)
 				{
-					srcLen -= len;
+					srcLenLong -= len;
 					break;
 				}
 			}
@@ -1425,7 +1445,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			{
 				// ASF: Wee need to remove trailing numbers to return sub key that
 				// matches full key. Example: "abc1" becomes "abc" to match "abc10".
-				const USHORT* p = src + srcLen - 1;
+				const USHORT* p = src + srcLenLong - 1;
 
 				for (; p >= src; --p)
 				{
@@ -1433,7 +1453,7 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 						break;
 				}
 
-				srcLen = p - src + 1;
+				srcLenLong = p - src + 1;
 			}
 
 			break;
@@ -1441,6 +1461,9 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 
 		case INTL_KEY_UNIQUE:
 			coll = compareCollator;
+			srcLenLong *= sizeof(*src);
+			normalize(&srcLenLong, &src, true, buffer);
+			srcLenLong /= sizeof(*src);
 			break;
 
 		case INTL_KEY_SORT:
@@ -1452,11 +1475,11 @@ USHORT UnicodeUtil::Utf16Collation::stringToKey(USHORT srcLen, const USHORT* src
 			return INTL_BAD_KEY_LENGTH;
 	}
 
-	if (srcLen == 0)
+	if (srcLenLong == 0)
 		return 0;
 
 	return icu->ucolGetSortKey(coll,
-		reinterpret_cast<const UChar*>(src), srcLen, dst, dstLen);
+		reinterpret_cast<const UChar*>(src), srcLenLong, dst, dstLen);
 }
 
 
@@ -1494,7 +1517,17 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 		len2 = pad - str2 + 1;
 	}
 
-	return (SSHORT)icu->ucolStrColl(compareCollator,
+	len1 *= sizeof(*str1);
+	len2 *= sizeof(*str2);
+
+	HalfStaticArray<USHORT, BUFFER_SMALL / 2> buffer1, buffer2;
+	normalize(&len1, &str1, true, buffer1);
+	normalize(&len2, &str2, true, buffer2);
+
+	len1 /= sizeof(*str1);
+	len2 /= sizeof(*str2);
+
+	return (SSHORT) icu->ucolStrColl(compareCollator,
 		// safe casts - alignment not changed
 		reinterpret_cast<const UChar*>(str1), len1,
 		reinterpret_cast<const UChar*>(str2), len2);
@@ -1504,41 +1537,8 @@ SSHORT UnicodeUtil::Utf16Collation::compare(ULONG len1, const USHORT* str1,
 ULONG UnicodeUtil::Utf16Collation::canonical(ULONG srcLen, const USHORT* src, ULONG dstLen, ULONG* dst,
 	const ULONG* exceptions)
 {
-	fb_assert(srcLen % sizeof(*src) == 0);
-
 	HalfStaticArray<USHORT, BUFFER_SMALL / 2> upperStr;
-
-	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
-	{
-		srcLen = utf16UpperCase(srcLen, src, srcLen,
-			upperStr.getBuffer(srcLen / sizeof(USHORT)), NULL);
-		src = upperStr.begin();
-
-		if (attributes & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
-		{
-			UTransliterator* trans = icu->getCiAiTransliterator();
-
-			if (trans)
-			{
-				const int32_t capacity = upperStr.getCount();
-				int32_t len = srcLen / sizeof(USHORT);
-				int32_t limit = len;
-
-				UErrorCode errorCode = U_ZERO_ERROR;
-				icu->utransTransUChars(trans, reinterpret_cast<UChar*>(upperStr.begin()),
-					&len, capacity, 0, &limit, &errorCode);
-				icu->releaseCiAiTransliterator(trans);
-
-				len *= sizeof(USHORT);
-				if (ULONG(len) > dstLen)
-					len = INTL_BAD_STR_LENGTH;
-
-				srcLen = len;
-			}
-			else
-				return INTL_BAD_STR_LENGTH;
-		}
-	}
+	normalize(&srcLen, &src, false, upperStr);
 
 	// convert UTF-16 to UTF-32
 	USHORT errCode;
@@ -1584,6 +1584,42 @@ UnicodeUtil::ICU* UnicodeUtil::Utf16Collation::loadICU(
 	}
 
 	return NULL;
+}
+
+
+void UnicodeUtil::Utf16Collation::normalize(ULONG* strLen, const USHORT** str, bool forNumericSort,
+	HalfStaticArray<USHORT, BUFFER_SMALL / 2>& buffer) const
+{
+	fb_assert(*strLen % sizeof(**str) == 0);
+
+	if (forNumericSort && !numericSort)
+		return;
+
+	if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
+	{
+		*strLen = utf16UpperCase(*strLen, *str, *strLen,
+			buffer.getBuffer(*strLen / sizeof(USHORT)), NULL);
+		*str = buffer.begin();
+
+		if (attributes & TEXTTYPE_ATTR_ACCENT_INSENSITIVE)
+		{
+			UTransliterator* trans = icu->getCiAiTransliterator();
+
+			if (trans)
+			{
+				const int32_t capacity = buffer.getCount();
+				int32_t len = *strLen / sizeof(USHORT);
+				int32_t limit = len;
+
+				UErrorCode errorCode = U_ZERO_ERROR;
+				icu->utransTransUChars(trans, reinterpret_cast<UChar*>(buffer.begin()),
+					&len, capacity, 0, &limit, &errorCode);
+				icu->releaseCiAiTransliterator(trans);
+
+				*strLen = len * sizeof(USHORT);
+			}
+		}
+	}
 }
 
 

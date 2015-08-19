@@ -177,6 +177,9 @@ public:
 		static ICU* loadICU(const Firebird::string& collVersion, const Firebird::string& locale,
 			const Firebird::string& configInfo);
 
+		void normalize(ULONG* strLen, const USHORT** str, bool forNumericSort,
+			Firebird::HalfStaticArray<USHORT, BUFFER_SMALL / 2>& buffer) const;
+
 		ICU* icu;
 		texttype* tt;
 		USHORT attributes;
