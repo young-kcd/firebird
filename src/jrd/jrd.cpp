@@ -917,7 +917,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 	bool is_alias = false;
 	MutexEnsureUnlock guardDbInit(dbInitMutex);
 
-#ifdef WIN_NT
+#ifdef REEXPAND_DBNAME
 	guardDbInit.enter();		// Required to correctly expand name of just created database
 #endif
 
@@ -1010,7 +1010,7 @@ ISC_STATUS GDS_ATTACH_DATABASE(ISC_STATUS* user_status,
 										  Arg::Str(file_name));
 	}
 
-#ifndef WIN_NT
+#ifndef REEXPAND_DBNAME
 	guardDbInit.enter();
 #endif
 
@@ -1985,7 +1985,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	PathName file_name, expanded_name;
 	bool is_alias = false;
 
-#ifdef WIN_NT
+#ifdef REEXPAND_DBNAME
 	// In windows expanded filename depends upon file existence
 	// Therefore have to keep lock longer
 	guardDbInit.enter();
@@ -2074,7 +2074,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 	try
 	{
 
-#ifndef WIN_NT
+#ifndef REEXPAND_DBNAME
 	guardDbInit.enter();
 #endif
 
@@ -2192,7 +2192,7 @@ ISC_STATUS GDS_CREATE_DATABASE(ISC_STATUS* user_status,
 
 	const jrd_file* const first_dbb_file = pageSpace->file;
 
-#ifdef WIN_NT
+#ifdef REEXPAND_DBNAME
 	dbb->dbb_filename.assign(first_dbb_file->fil_string);
 #endif
 
@@ -7504,3 +7504,11 @@ void AstAttachmentHolder::destroy()
 	}
 	mtx->release();
 }
+
+
+#ifdef REEXPAND_DBNAME
+Mutex& JRD_get_dbinitmutex()
+{
+	return dbInitMutex;
+}
+#endif

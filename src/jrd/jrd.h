@@ -64,6 +64,9 @@
 #define CORRUPT(number)         ERR_corrupt (number)
 #define IBERROR(number)         ERR_error (number)
 
+#ifdef WIN_NT
+#define REEXPAND_DBNAME
+#endif
 
 #define BLKCHK(blk, type)       if (!blk->checkHandle()) BUGCHECK(147)
 
@@ -1046,5 +1049,9 @@ extern int debug;
 namespace Jrd {
 	typedef Firebird::SubsystemContextPoolHolder <Jrd::thread_db, MemoryPool> ContextPoolHolder;
 }
+
+#ifdef REEXPAND_DBNAME
+Firebird::Mutex& JRD_get_dbinitmutex();
+#endif
 
 #endif // JRD_JRD_H
