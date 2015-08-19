@@ -1,3 +1,29 @@
+ 2015-08-18 15:04  alexpeshkoff 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/Mapping.cpp
+   M src/jrd/Mapping.h
+   M src/jrd/jrd.cpp
+   M src/jrd/scl.h
+   M src/jrd/shut.cpp
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-4899: GFIX -online: message "IProvider::attachDatabase failed when loading mapping cache" appears in Classic (only) if access uses remote protocol
+
+ 2015-08-18 14:57  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed CORE-4911: Providers enumeration should not be continued on most of errors taking place in the provider
+
+ 2015-08-18 10:00  dimitr 
+   M src/jrd/vio.cpp
+Totally misc.
+
  2015-08-16 15:47  dimitr 
    M src/jrd/recsrc/HashJoin.cpp
 Fixed the hash-join part of CORE-4909: MERGE / HASH JOINs produce incorrect results when VARCHAR join keys differ only by trailing spaces.
