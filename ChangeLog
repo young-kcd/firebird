@@ -1,3 +1,9 @@
+ 2015-08-19 12:23  alexpeshkoff 
+   M src/jrd/jrd.cpp
+   M src/jrd/jrd.h
+   M src/jrd/svc.cpp
+Fixed CORE-4908: Firebird 2.5.3 hangs on simultaneous connection to the Services API and database
+
  2015-08-14 15:26  asfernandes 
    M src/jrd/gds.cpp
 Fixed CORE-4905 - Invalid internal BLR filter conversion.
