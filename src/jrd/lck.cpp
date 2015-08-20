@@ -986,7 +986,7 @@ static USHORT hash_func(const UCHAR* value, USHORT length)
 	{
 		if (!(l & 3))
 			p = (UCHAR*) &hash_value;
-		*p++ = *q++;
+		*p++ += *q++;
 	}
 
 	return (USHORT) (hash_value % LOCK_HASH_SIZE);
