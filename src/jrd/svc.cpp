@@ -808,15 +808,10 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 
 #ifdef REEXPAND_DBNAME
 		// Needed to ensure correct locking order with security database mutex
-		MutexEnsureUnlock dbInitGuard(JRD_get_dbinitmutex());
-		dbInitGuard.enter();
+		MutexLockGuard dbInitGuard(JRD_get_dbinitmutex());
 #endif
 
 		SecurityDatabase::InitHolder siHolder;
-
-#ifdef REEXPAND_DBNAME
-		dbInitGuard.leave();
-#endif
 
 		// Perhaps checkout the user in the security database.
 		USHORT user_flag;
