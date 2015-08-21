@@ -32,9 +32,9 @@
 namespace {
 
 const Firebird::Tokens::Comment sqlComments[3] = {
-	{ "/*", "*/" },
-	{ "--", "\n" },
-	{ NULL, NULL }
+	{ "/*", "*/", false },
+	{ "--", "\n", true },
+	{ NULL, NULL, false }
 };
 const char* sqlSpaces = " \t\r\n";
 const char* sqlSeps = "!\"#%&'()*+,-./:;<=>?@[\\]^`{|}~";
@@ -73,6 +73,7 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 	{
 		if (comms && !inStr)
 		{
+			bool foundComment = false;
 			for (const Comment* comm = comms; comm->start; ++comm)
 			{
 				if (strncmp(comm->start, &str[p], strlen(comm->start)) == 0)
@@ -80,13 +81,21 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 					FB_SIZE_T p2 = p + strlen(comm->start);
 					p2 = str.find(comm->stop, p2);
 					if (p2 == str.npos)
-						error("Missing close comment for %s", comm->start);
-					p2 += strlen(comm->stop);
+					{
+						if (!comm->endOnEol)
+							error("Missing close comment for %s", comm->start);
+						p2 = str.length();
+					}
+					else
+						p2 += strlen(comm->stop);
 					str.erase(p, p2 - p);
 					origin += (p2 - p);
-					continue;
+					foundComment = true;
+					break;;
 				}
 			}
+			if (foundComment)
+				continue;
 		}
 
 		char c = str[p];

@@ -42,6 +42,7 @@ public:
 	{
 		const char* start;
 		const char* stop;
+		bool endOnEol;
 	};
 
 	struct Tok
