@@ -1,3 +1,7 @@
+ 2015-08-21 11:16  alexpeshkoff 
+   M src/jrd/svc.cpp
+Postfix for CORE-4908 - need to hold dbInitMutex up to the execution of ~InitHolder
+
  2015-08-19 12:23  alexpeshkoff 
    M src/jrd/jrd.cpp
    M src/jrd/jrd.h
