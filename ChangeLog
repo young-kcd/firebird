@@ -1,3 +1,8 @@
+ 2015-08-21 15:23  alexpeshkoff 
+   M src/common/Tokens.cpp
+   M src/common/Tokens.h
+Fixed CORE-4890: Placing comment (single-lined or multi-lined) between final `END` of creating SP code and terminal character (^) produces compiling error when tool uses old API
+
  2015-08-20 11:23  dimitr 
    M src/jrd/lck.cpp
 Fixed the hash function (broken since the very beginning).
