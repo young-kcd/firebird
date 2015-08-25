@@ -244,6 +244,12 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 			ExprNode::doPass2(tdbb, csb, fieldInfo.validationExpr.getAddress());
 		}
 
+		/*** Print nodes for debugging purposes.
+		NodePrinter printer;
+		csb->csb_node->print(printer);
+		printf("\n%s\n\n\n", printer.getText().c_str());
+		***/
+
 		if (csb->csb_impure > MAX_REQUEST_SIZE)
 			IBERROR(226);			// msg 226 request size limit exceeded
 

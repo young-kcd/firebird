@@ -6177,7 +6177,7 @@ const StmtNode* ModifyNode::modify(thread_db* tdbb, jrd_req* request, WhichTrigg
 
 				if (relation == request->req_top_view_modify)
 				{
-					if (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)
+					if (!subMod && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
 					{
 						request->req_records_updated++;
 						request->req_records_affected.bumpModified(true);
@@ -6625,6 +6625,7 @@ string StoreNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, dsqlRse);
 	NODE_PRINT(printer, statement);
 	NODE_PRINT(printer, statement2);
+	NODE_PRINT(printer, subStore);
 	//// FIXME-PRINT: NODE_PRINT(printer, validations);
 	NODE_PRINT(printer, relationSource);
 
@@ -7013,7 +7014,7 @@ const StmtNode* StoreNode::store(thread_db* tdbb, jrd_req* request, WhichTrigger
 
 			if (relation == request->req_top_view_store)
 			{
-				if (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG)
+				if (!subStore && (whichTrig == ALL_TRIGS || whichTrig == POST_TRIG))
 				{
 					request->req_records_inserted++;
 					request->req_records_affected.bumpModified(true);
