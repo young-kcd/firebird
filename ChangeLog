@@ -1,3 +1,8 @@
+ 2015-08-25 15:22  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/JrdStatement.cpp
+Fixed CORE-4870 - SET COUNT ON: issuing UPDATE on view which was created WITH CHECK OPTION produces wrong number of affected rows (doubled ?).
+
  2015-08-21 15:23  alexpeshkoff 
    M src/common/Tokens.cpp
    M src/common/Tokens.h
