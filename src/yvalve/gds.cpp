@@ -317,6 +317,8 @@ static const UCHAR
 					 op_word, op_line, op_parameters, 0},
 	pid[]		= { op_word, op_pad, op_byte, op_line, op_indent, op_word,
 					op_line, op_parameters, 0},
+	pid2[]		= { op_word, op_byte, op_literal, op_pad, op_byte, op_line, op_indent, op_word,
+					op_line, op_parameters, 0},
 	error_handler[] = { op_word, op_line, op_error_handler, 0},
 	set_error[] = { op_set_error, op_line, 0},
 	cast[]		= { op_dtype, op_line, op_verb, 0},

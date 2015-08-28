@@ -157,7 +157,7 @@ static const struct
 	{"block", begin},
 	{"error_handler", error_handler},	// 130
 	{"cast", cast},
-	{NULL, NULL},
+	{"pid2", pid2},
 	{"procedure2", procedure2},
 	{"start_savepoint", zero},
 	{"end_savepoint", zero},
