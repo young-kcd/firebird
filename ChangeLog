@@ -1,3 +1,8 @@
+ 2015-08-28 15:59  asfernandes 
+   M src/jrd/blp.h
+   M src/yvalve/gds.cpp
+Fixed blr print for blr_pid2.
+
  2015-08-25 15:22  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/jrd/JrdStatement.cpp
