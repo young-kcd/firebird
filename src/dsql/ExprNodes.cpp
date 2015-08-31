@@ -32,6 +32,7 @@
 #include "../jrd/Function.h"
 #include "../jrd/SysFunction.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Optimizer.h"
 #include "../jrd/recsrc/Cursor.h"
 #include "../jrd/blb_proto.h"
@@ -9105,7 +9106,7 @@ SubQueryNode::SubQueryNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDs
 	  dsqlRse(aDsqlRse),
 	  value1(aValue1),
 	  value2(aValue2),
-	  rsb(NULL)
+	  subQuery(NULL)
 {
 	addChildNode(dsqlRse, rse);
 	addChildNode(value1, value1);
@@ -9143,7 +9144,7 @@ string SubQueryNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, rse);
 	NODE_PRINT(printer, value1);
 	NODE_PRINT(printer, value2);
-	NODE_PRINT(printer, rsb);
+	NODE_PRINT(printer, subQuery);
 
 	return "SubQueryNode";
 }
@@ -9397,8 +9398,10 @@ ValueExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 	// Finish up processing of record selection expressions.
 
-	rsb = CMP_post_rse(tdbb, csb, rse);
+	RecordSource* const rsb = CMP_post_rse(tdbb, csb, rse);
 	csb->csb_fors.add(rsb);
+
+	subQuery = FB_NEW(*tdbb->getDefaultPool()) SubQuery(rsb, rse->rse_invariants);
 
 	return this;
 }
@@ -9441,7 +9444,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 		StableCursorSavePoint savePoint(tdbb, request->req_transaction,
 			blrOp == blr_via && ownSavepoint);
 
-		rsb->open(tdbb);
+		subQuery->open(tdbb);
 
 		SLONG count = 0;
 		double d;
@@ -9451,13 +9454,13 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 		{
 			case blr_count:
 				flag = 0;
-				while (rsb->getRecord(tdbb))
+				while (subQuery->fetch(tdbb))
 					++impure->vlu_misc.vlu_long;
 				break;
 
 			case blr_minimum:
 			case blr_maximum:
-				while (rsb->getRecord(tdbb))
+				while (subQuery->fetch(tdbb))
 				{
 					dsc* value = EVL_expr(tdbb, request, value1);
 					if (request->req_flags & req_null)
@@ -9476,7 +9479,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 			case blr_average:	// total or average with dialect-1 semantics
 			case blr_total:
-				while (rsb->getRecord(tdbb))
+				while (subQuery->fetch(tdbb))
 				{
 					desc = EVL_expr(tdbb, request, value1);
 					if (request->req_flags & req_null)
@@ -9511,7 +9514,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 				break;
 
 			case blr_via:
-				if (rsb->getRecord(tdbb))
+				if (subQuery->fetch(tdbb))
 					desc = EVL_expr(tdbb, request, value1);
 				else
 				{
@@ -9533,7 +9536,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 		// Close stream, ignoring any error during it to keep the original error.
 		try
 		{
-			rsb->close(tdbb);
+			subQuery->close(tdbb);
 			request->req_flags &= ~req_null;
 			request->req_flags |= flag;
 		}
@@ -9546,7 +9549,7 @@ dsc* SubQueryNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	// Close stream and return value.
 
-	rsb->close(tdbb);
+	subQuery->close(tdbb);
 	request->req_flags &= ~req_null;
 	request->req_flags |= flag;
 

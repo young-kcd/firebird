@@ -28,7 +28,7 @@
 
 namespace Jrd {
 
-class RecordSource;
+class SubQuery;
 
 
 class BinaryBoolNode : public TypedNode<BoolExprNode, ExprNode::TYPE_BINARY_BOOL>
@@ -207,7 +207,7 @@ public:
 	bool ownSavepoint;
 	NestConst<RecordSourceNode> dsqlRse;
 	NestConst<RseNode> rse;
-	NestConst<RecordSource> rsb;
+	NestConst<SubQuery> subQuery;
 };
 
 

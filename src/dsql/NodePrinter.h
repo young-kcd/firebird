@@ -213,6 +213,11 @@ public:
 		//// FIXME-PRINT:
 	}
 
+	void print(const Firebird::string&, const SubQuery&)
+	{
+		//// FIXME-PRINT:
+	}
+
 	void print(const Firebird::string&, const Cursor&)
 	{
 		//// FIXME-PRINT:

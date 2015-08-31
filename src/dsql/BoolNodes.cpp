@@ -27,6 +27,7 @@
 #include "../jrd/blr.h"
 #include "../jrd/tra.h"
 #include "../jrd/recsrc/RecordSource.h"
+#include "../jrd/recsrc/Cursor.h"
 #include "../jrd/Optimizer.h"
 #include "../jrd/blb_proto.h"
 #include "../jrd/cmp_proto.h"
@@ -1636,7 +1637,7 @@ RseBoolNode::RseBoolNode(MemoryPool& pool, UCHAR aBlrOp, RecordSourceNode* aDsql
 	  ownSavepoint(true),
 	  dsqlRse(aDsqlRse),
 	  rse(NULL),
-	  rsb(NULL)
+	  subQuery(NULL)
 {
 	addChildNode(dsqlRse, rse);
 }
@@ -1663,7 +1664,7 @@ string RseBoolNode::internalPrint(NodePrinter& printer) const
 	NODE_PRINT(printer, ownSavepoint);
 	NODE_PRINT(printer, dsqlRse);
 	NODE_PRINT(printer, rse);
-	NODE_PRINT(printer, rsb);
+	NODE_PRINT(printer, subQuery);
 
 	return "RseBoolNode";
 }
@@ -1792,7 +1793,7 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	if (nodFlags & FLAG_INVARIANT)
 		impureOffset = CMP_impure(csb, sizeof(impure_value));
 
-	rsb = CMP_post_rse(tdbb, csb, rse);
+	RecordSource* const rsb = CMP_post_rse(tdbb, csb, rse);
 
 	// for ansi ANY clauses (and ALL's, which are negated ANY's)
 	// the unoptimized boolean expression must be used, since the
@@ -1806,6 +1807,8 @@ void RseBoolNode::pass2Boolean2(thread_db* tdbb, CompilerScratch* csb)
 	}
 
 	csb->csb_fors.add(rsb);
+
+	subQuery = FB_NEW(*tdbb->getDefaultPool()) SubQuery(rsb, rse->rse_invariants);
 }
 
 bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
@@ -1833,13 +1836,13 @@ bool RseBoolNode::execute(thread_db* tdbb, jrd_req* request) const
 
 	StableCursorSavePoint savePoint(tdbb, request->req_transaction, ownSavepoint);
 
-	rsb->open(tdbb);
-	bool value = rsb->getRecord(tdbb);
+	subQuery->open(tdbb);
+	bool value = subQuery->fetch(tdbb);
 
 	if (blrOp == blr_unique && value)
-		value = !rsb->getRecord(tdbb);
+		value = !subQuery->fetch(tdbb);
 
-	rsb->close(tdbb);
+	subQuery->close(tdbb);
 
 	if (blrOp == blr_any || blrOp == blr_unique)
 		request->req_flags &= ~req_null;

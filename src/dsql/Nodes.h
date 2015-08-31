@@ -33,6 +33,7 @@ namespace Jrd {
 
 class AggregateSort;
 class CompilerScratch;
+class SubQuery;
 class Cursor;
 class Node;
 class NodePrinter;

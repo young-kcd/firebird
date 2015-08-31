@@ -31,6 +31,64 @@
 using namespace Firebird;
 using namespace Jrd;
 
+namespace
+{
+	bool validate(thread_db* tdbb)
+	{
+		const jrd_req* const request = tdbb->getRequest();
+
+		if (request->req_flags & req_abort)
+			return false;
+
+		if (!request->req_transaction)
+			return false;
+
+		return true;
+	}
+}
+
+// ---------------------
+// SubQuery implementation
+// ---------------------
+
+SubQuery::SubQuery(const RecordSource* rsb, const VarInvariantArray* invariants)
+	: m_top(rsb), m_invariants(invariants)
+{
+	fb_assert(m_top);
+}
+
+void SubQuery::open(thread_db* tdbb) const
+{
+	// Initialize dependent invariants
+
+	if (m_invariants)
+	{
+		jrd_req* const request = tdbb->getRequest();
+
+		for (const ULONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
+		{
+			impure_value* const invariantImpure = request->getImpure<impure_value>(*iter);
+			invariantImpure->vlu_flags = 0;
+		}
+	}
+
+	m_top->open(tdbb);
+}
+
+void SubQuery::close(thread_db* tdbb) const
+{
+	m_top->close(tdbb);
+}
+
+bool SubQuery::fetch(thread_db* tdbb) const
+{
+	if (!validate(tdbb))
+		return false;
+
+	return m_top->getRecord(tdbb);
+}
+
+
 // ---------------------
 // Cursor implementation
 // ---------------------
@@ -53,6 +111,7 @@ void Cursor::open(thread_db* tdbb) const
 	impure->irsb_state = BOS;
 
 	// Initialize dependent invariants
+
 	if (m_invariants)
 	{
 		for (const ULONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)

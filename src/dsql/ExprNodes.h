@@ -34,7 +34,7 @@ namespace Jrd {
 
 class ItemInfo;
 class DeclareVariableNode;
-class RecordSource;
+class SubQuery;
 class RelationSourceNode;
 class ValueListNode;
 
@@ -1357,7 +1357,7 @@ public:
 	NestConst<RseNode> rse;
 	NestConst<ValueExprNode> value1;
 	NestConst<ValueExprNode> value2;
-	NestConst<RecordSource> rsb;
+	NestConst<SubQuery> subQuery;
 };
 
 

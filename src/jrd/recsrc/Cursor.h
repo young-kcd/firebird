@@ -24,12 +24,29 @@
 #define JRD_CURSOR_H
 
 #include "../common/classes/array.h"
+#include "../common/classes/MetaName.h"
 
 namespace Jrd
 {
 	class thread_db;
 	class CompilerScratch;
 	class RecordSource;
+
+	// SubQuery class (simplified forward-only cursor)
+
+	class SubQuery
+	{
+	public:
+		SubQuery(const RecordSource* rsb, const VarInvariantArray* invariants);
+
+		void open(thread_db* tdbb) const;
+		void close(thread_db* tdbb) const;
+		bool fetch(thread_db* tdbb) const;
+
+	private:
+		const RecordSource* const m_top;
+		const VarInvariantArray* const m_invariants;
+	};
 
 	// Cursor class (wrapper around the whole access tree)
 
@@ -64,20 +81,6 @@ namespace Jrd
 		const RecordSource* getAccessPath() const
 		{
 			return m_top;
-		}
-
-	private:
-		bool validate(thread_db* tdbb) const
-		{
-			const jrd_req* const request = tdbb->getRequest();
-
-			if (request->req_flags & req_abort)
-				return false;
-
-			if (!request->req_transaction)
-				return false;
-
-			return true;
 		}
 
 	public:
