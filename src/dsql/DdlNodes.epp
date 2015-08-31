@@ -4883,6 +4883,15 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 			if (renameTo.hasData())
 			{
+				// The commented line should be restored when implicit domains get their own sys flag.
+				//if (fb_utils::implicit_domain(renameTo.c_str()))
+				if (strncmp(renameTo.c_str(), IMPLICIT_DOMAIN_PREFIX, IMPLICIT_DOMAIN_PREFIX_LEN) == 0)
+				{
+					status_exception::raise(
+						Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+						Arg::Gds(isc_dsql_implicit_domain_name) << renameTo);
+				}
+
 				rename(tdbb, transaction, (FLD.RDB$DIMENSIONS.NULL ? 0 : FLD.RDB$DIMENSIONS));
 				strcpy(FLD.RDB$FIELD_NAME, renameTo.c_str());
 			}
