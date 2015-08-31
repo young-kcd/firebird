@@ -1380,11 +1380,7 @@ int SharedMemoryBase::eventWait(event_t* event, const SLONG value, const SLONG m
 		{
 			ret = pthread_cond_timedwait(event->event_cond, event->event_mutex, &timer);
 
-#if (defined LINUX || defined DARWIN || defined HP11 || defined FREEBSD)
 			if (ret == ETIMEDOUT)
-#else
-			if (ret == ETIME)
-#endif
 			{
 
 				// The timer expired - see if the event occurred and return
