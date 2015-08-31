@@ -708,6 +708,12 @@ void DYN_modify_global_field(Global* gbl,
 
 					if (GET_STRING(ptr, newfld))
 					{
+						if (fb_utils::implicit_domain(newfld.c_str()))
+						{
+							ERR_post(Arg::Gds(isc_sqlerr) << Arg::Num(-637) <<
+									  Arg::Gds(isc_dsql_implicit_domain_name) << Arg::Str(newfld));
+						}
+
 						if (!domain_exists(tdbb, gbl, newfld))
 						{
 							MODIFY FLD USING
