@@ -4245,6 +4245,7 @@ static void gen_deliver_unmapped(thread_db* tdbb, NodeStack* deliverStack,
 
 		// Reduce to simple comparisons
 		if (!((boolean->nod_type == nod_eql) ||
+			(boolean->nod_type == nod_equiv) ||
 			(boolean->nod_type == nod_gtr) ||
 			(boolean->nod_type == nod_geq) ||
 			(boolean->nod_type == nod_leq) ||
