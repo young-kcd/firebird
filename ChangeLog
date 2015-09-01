@@ -1,3 +1,11 @@
+ 2015-08-31 15:48  asfernandes 
+   M src/jrd/dyn_mod.epp
+Backported fix for CORE-4917 - ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'.
+
+ 2015-08-31 09:29  alexpeshkoff 
+   M src/jrd/isc_sync.cpp
+Fixed CORE-4919: Classic server (all processes) hangs after death of one process on AIX
+
  2015-08-21 11:16  alexpeshkoff 
    M src/jrd/svc.cpp
 Postfix for CORE-4908 - need to hold dbInitMutex up to the execution of ~InitHolder
