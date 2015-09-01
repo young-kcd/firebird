@@ -647,6 +647,6 @@ Firebird::string pagtype(UCHAR type);
 const USHORT PAGE_ALIGNMENT = 1024;
 
 // size of raw I/O operation for header page
-const USHORT RAW_HEADER_SIZE = ROUNDUP(HDR_SIZE, PAGE_ALIGNMENT);
+const USHORT RAW_HEADER_SIZE = 1024;	// ROUNDUP(HDR_SIZE, PAGE_ALIGNMENT);
 
 #endif // JRD_ODS_H
