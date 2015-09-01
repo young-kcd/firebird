@@ -2554,7 +2554,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 				options.dpb_page_size = DEFAULT_PAGE_SIZE;
 			}
 
-			USHORT page_size = MIN_NEW_PAGE_SIZE;
+			USHORT page_size = MIN_PAGE_SIZE;
 			for (; page_size < MAX_PAGE_SIZE; page_size <<= 1)
 			{
 				if (options.dpb_page_size < page_size << 1)
@@ -6286,11 +6286,11 @@ static void init_database_lock(thread_db* tdbb)
 			fb_utils::init_status(tdbb->tdbb_status_vector);
 
 			// If we are in a single-threaded maintenance mode then clean up and stop waiting
-			SCHAR spare_memory[MIN_PAGE_SIZE * 2];
-			SCHAR* header_page_buffer = FB_ALIGN(spare_memory, MIN_PAGE_SIZE);
+			SCHAR spare_memory[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+			SCHAR* header_page_buffer = FB_ALIGN(spare_memory, PAGE_ALIGNMENT);
 			Ods::header_page* const header_page = reinterpret_cast<Ods::header_page*>(header_page_buffer);
 
-			PIO_header(dbb, header_page_buffer, MIN_PAGE_SIZE);
+			PIO_header(dbb, header_page_buffer, RAW_HEADER_SIZE);
 
 			if ((header_page->hdr_flags & Ods::hdr_shutdown_mask) == Ods::hdr_shutdown_single)
 			{

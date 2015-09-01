@@ -195,10 +195,10 @@ const ULONG FIRST_SCN_PAGE	= 2;
 
 // Page size limits
 
-const USHORT MIN_PAGE_SIZE		= 1024;
+const USHORT MIN_PAGE_SIZE		= 4096;
 const USHORT MAX_PAGE_SIZE		= 16384;
-const USHORT DEFAULT_PAGE_SIZE	= 4096;
-const USHORT MIN_NEW_PAGE_SIZE	= 4096;
+
+const USHORT DEFAULT_PAGE_SIZE	= 8192;
 
 namespace Ods {
 
@@ -642,5 +642,11 @@ inline int IAD_LEN(int count)
 Firebird::string pagtype(UCHAR type);
 
 } //namespace Ods
+
+// alignment for raw page access
+const USHORT PAGE_ALIGNMENT = 1024;
+
+// size of raw I/O operation for header page
+const USHORT RAW_HEADER_SIZE = ROUNDUP(HDR_SIZE, PAGE_ALIGNMENT);
 
 #endif // JRD_ODS_H

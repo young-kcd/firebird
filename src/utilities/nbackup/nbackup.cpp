@@ -83,7 +83,7 @@
 // Sector alignment of memory is necessary to use unbuffered IO on Windows.
 // Actually, sectors may be bigger than 1K, but let's be consistent with
 // JRD regarding the matter for the moment.
-const FB_SIZE_T SECTOR_ALIGNMENT = MIN_PAGE_SIZE;
+const FB_SIZE_T SECTOR_ALIGNMENT = PAGE_ALIGNMENT;
 
 using namespace Firebird;
 

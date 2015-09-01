@@ -84,11 +84,11 @@ public:
 	public:
 		operator Ods::pag*()
 		{
-			return reinterpret_cast<Ods::pag*>(FB_ALIGN(buf, MIN_PAGE_SIZE));
+			return reinterpret_cast<Ods::pag*>(FB_ALIGN(buf, PAGE_ALIGNMENT));
 		}
 
 	private:
-		char buf[MAX_PAGE_SIZE + MIN_PAGE_SIZE - 1];
+		char buf[MAX_PAGE_SIZE + PAGE_ALIGNMENT - 1];
 	};
 
 private:

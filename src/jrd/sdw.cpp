@@ -186,11 +186,10 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 	// the spare page buffer for raw disk access.
 
 	SCHAR* const spare_buffer =
-		FB_NEW(*tdbb->getDefaultPool()) char[dbb->dbb_page_size + MIN_PAGE_SIZE];
+		FB_NEW(*tdbb->getDefaultPool()) char[dbb->dbb_page_size + PAGE_ALIGNMENT];
 	// And why doesn't the code check that the allocation succeeds?
 
-	SCHAR* spare_page =
-		(SCHAR*) (((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) & ~((U_IPTR) MIN_PAGE_SIZE - 1));
+	SCHAR* spare_page = FB_ALIGN(spare_buffer, PAGE_ALIGNMENT);
 
 	try {
 
@@ -978,9 +977,8 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 	shadow = NULL;
 	SLONG* const spare_buffer =
-		FB_NEW(*tdbb->getDefaultPool()) SLONG[(dbb->dbb_page_size + MIN_PAGE_SIZE) / sizeof(SLONG)];
-	UCHAR* spare_page = (UCHAR*)(((U_IPTR) spare_buffer + MIN_PAGE_SIZE - 1) &
-													~((U_IPTR) MIN_PAGE_SIZE - 1));
+		FB_NEW(*tdbb->getDefaultPool()) SLONG[(dbb->dbb_page_size + PAGE_ALIGNMENT) / sizeof(SLONG)];
+	UCHAR* spare_page = FB_ALIGN((UCHAR*) spare_buffer, PAGE_ALIGNMENT);
 
 	WIN window(DB_PAGE_SPACE, -1);
 	jrd_file* shadow_file = 0;

@@ -1245,15 +1245,14 @@ void PAG_header_init(thread_db* tdbb)
 	// and unit of transfer is a multiple of physical disk
 	// sector for raw disk access.
 
-	SCHAR temp_buffer[2 * MIN_PAGE_SIZE];
-	SCHAR* const temp_page = FB_ALIGN(temp_buffer, MIN_PAGE_SIZE);
+	SCHAR temp_buffer[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+	SCHAR* const temp_page = FB_ALIGN(temp_buffer, PAGE_ALIGNMENT);
 
-	PIO_header(dbb, temp_page, MIN_PAGE_SIZE);
+	PIO_header(dbb, temp_page, RAW_HEADER_SIZE);
 	const header_page* header = (header_page*) temp_page;
 
-	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence) {
+	if (header->hdr_header.pag_type != pag_header || header->hdr_sequence)
 		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
-	}
 
 	const USHORT ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 
@@ -1281,14 +1280,10 @@ void PAG_header_init(thread_db* tdbb)
 	// is accessed with engine built for another architecture. - Nickolay 9-Feb-2005
 
 	if (!DbImplementation(header).compatible(DbImplementation::current))
-	{
 		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
-	}
 
-	if (header->hdr_page_size < MIN_NEW_PAGE_SIZE || header->hdr_page_size > MAX_PAGE_SIZE)
-	{
+	if (header->hdr_page_size < MIN_PAGE_SIZE || header->hdr_page_size > MAX_PAGE_SIZE)
 		ERR_post(Arg::Gds(isc_bad_db_format) << Arg::Str(attachment->att_filename));
-	}
 
 	dbb->dbb_ods_version = ods_version;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
@@ -1367,7 +1362,7 @@ void PAG_init2(thread_db* tdbb, USHORT shadow_number)
 
 	Array<SCHAR> temp;
 	SCHAR* const temp_page =
-		FB_ALIGN(temp.getBuffer(dbb->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE);
+		FB_ALIGN(temp.getBuffer(dbb->dbb_page_size + PAGE_ALIGNMENT), PAGE_ALIGNMENT);
 
 	PageSpace* pageSpace = dbb->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	jrd_file* file = pageSpace->file;
@@ -2351,7 +2346,7 @@ ULONG PAG_page_count(Database* database, PageCountCallback* cb)
 
 	Array<UCHAR> temp;
 	page_inv_page* pip = reinterpret_cast<Ods::page_inv_page*>
-		(FB_ALIGN(temp.getBuffer(database->dbb_page_size + MIN_PAGE_SIZE), MIN_PAGE_SIZE));
+		(FB_ALIGN(temp.getBuffer(database->dbb_page_size + PAGE_ALIGNMENT), PAGE_ALIGNMENT));
 
 	PageSpace* pageSpace = database->dbb_page_manager.findPageSpace(DB_PAGE_SPACE);
 	fb_assert(pageSpace);

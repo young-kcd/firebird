@@ -1108,8 +1108,9 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
  *	Checks if the special file contains a valid database
  *
  **************************************/
-	char header[MIN_PAGE_SIZE];
-	const Ods::header_page* hp = (Ods::header_page*)header;
+	UCHAR header_buffer[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+	UCHAR* const header = FB_ALIGN(header_buffer, PAGE_ALIGNMENT);
+	const Ods::header_page* hp = (Ods::header_page*) header;
 	bool retval = false;
 
 	// Read in database header. Code lifted from PIO_header.
@@ -1122,14 +1123,14 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
 	for (int i = 0; i < IO_RETRY; i++)
 	{
-		if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
+		if (lseek(desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 		{
 			ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(file_name) <<
 					 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
 		}
 
-		const ssize_t bytes = read (desc, header, sizeof(header));
-		if (bytes == sizeof(header))
+		const ssize_t bytes = read(desc, header, RAW_HEADER_SIZE);
+		if (bytes == RAW_HEADER_SIZE)
 			goto read_finished;
 
 		if (bytes == -1 && !SYSCALL_INTERRUPTED(errno))
@@ -1144,7 +1145,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
   read_finished:
 	// Rewind file pointer
-	if (lseek (desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
+	if (lseek(desc, LSEEK_OFFSET_CAST 0, 0) == (off_t) -1)
 	{
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("lseek") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_read_err) << Arg::Unix(errno));
@@ -1157,7 +1158,7 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 	if (!Ods::isSupported(hp->hdr_ods_version, hp->hdr_ods_minor))
 		goto quit;
 
-	if (hp->hdr_page_size < MIN_NEW_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
+	if (hp->hdr_page_size < MIN_PAGE_SIZE || hp->hdr_page_size > MAX_PAGE_SIZE)
 		goto quit;
 
 	// At this point we think we have identified a database on the device.
@@ -1177,7 +1178,8 @@ static bool raw_devices_validate_database(int desc, const PathName& file_name)
 
 static int raw_devices_unlink_database(const PathName& file_name)
 {
-	char header[MIN_PAGE_SIZE];
+	UCHAR header_buffer[RAW_HEADER_SIZE + PAGE_ALIGNMENT];
+	UCHAR* const header = FB_ALIGN(header_buffer, PAGE_ALIGNMENT);
 
 	int desc = os_utils::open(file_name.c_str(), O_RDWR | O_BINARY);
 	if (desc < 0)
@@ -1186,17 +1188,20 @@ static int raw_devices_unlink_database(const PathName& file_name)
 				 Arg::Gds(isc_io_open_err) << Arg::Unix(errno));
 	}
 
-	memset(header, 0xa5, sizeof(header));
+	memset(header, 0xa5, RAW_HEADER_SIZE);
 
 	int i;
 
 	for (i = 0; i < IO_RETRY; i++)
 	{
-		const ssize_t bytes = write (desc, header, sizeof(header));
-		if (bytes == sizeof(header))
+		const ssize_t bytes = write(desc, header, RAW_HEADER_SIZE);
+
+		if (bytes == RAW_HEADER_SIZE)
 			break;
+
 		if (bytes == -1 && SYSCALL_INTERRUPTED(errno))
 			continue;
+
 		ERR_post(Arg::Gds(isc_io_error) << Arg::Str("write") << Arg::Str(file_name) <<
 				 Arg::Gds(isc_io_write_err) << Arg::Unix(errno));
 	}
