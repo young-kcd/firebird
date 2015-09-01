@@ -2027,7 +2027,7 @@ static const pag* db_read( SLONG page_number, bool ok_enc)
 	USHORT length = tddba->page_size;
 	for (SCHAR* p = (SCHAR *) tddba->global_buffer; length > 0;)
 	{
-		const SSHORT l = read(fil->fil_desc, p, length);
+		const int l = read(fil->fil_desc, p, length);
 		if (l < 0)
 		{
 			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
