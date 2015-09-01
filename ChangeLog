@@ -1,3 +1,22 @@
+ 2015-08-31 15:26  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4917 - ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'.
+
+ 2015-08-31 15:11  dimitr 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/BoolNodes.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/ExprNodes.h
+   M src/dsql/NodePrinter.h
+   M src/dsql/Nodes.h
+   M src/jrd/recsrc/Cursor.cpp
+   M src/jrd/recsrc/Cursor.h
+Fixed invariants handling in independent subqueries (seems to be related to CORE-4497).
+
+ 2015-08-31 09:30  alexpeshkoff 
+   M src/common/isc_sync.cpp
+Frontported fix for CORE-4919: Classic server (all processes) hangs after death of one process on AIX
+
  2015-08-28 15:59  asfernandes 
    M src/jrd/blp.h
    M src/yvalve/gds.cpp
