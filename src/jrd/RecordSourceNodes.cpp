@@ -3509,8 +3509,10 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 		HalfStaticArray<ValueExprNode*, 2> children;
 
 		if (cmpNode &&
-			(cmpNode->blrOp == blr_eql || cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_geq ||
-			 cmpNode->blrOp == blr_leq || cmpNode->blrOp == blr_lss || cmpNode->blrOp == blr_starting))
+			(cmpNode->blrOp == blr_eql || cmpNode->blrOp == blr_equiv ||
+			 cmpNode->blrOp == blr_gtr || cmpNode->blrOp == blr_geq ||
+			 cmpNode->blrOp == blr_leq || cmpNode->blrOp == blr_lss ||
+			 cmpNode->blrOp == blr_starting))
 		{
 			children.add(cmpNode->arg1);
 			children.add(cmpNode->arg2);
