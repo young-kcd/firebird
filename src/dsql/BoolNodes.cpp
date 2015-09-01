@@ -112,16 +112,16 @@ BoolExprNode* BoolExprNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 
 		if (csb->csb_current_nodes.hasData())
 		{
-			RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
-			fb_assert(topRseNode.rseNode);
+			RseNode* topRseNode = csb->csb_current_nodes[0]->as<RseNode>();
+			fb_assert(topRseNode);
 
-			if (!topRseNode.rseNode->rse_invariants)
+			if (!topRseNode->rse_invariants)
 			{
-				topRseNode.rseNode->rse_invariants =
+				topRseNode->rse_invariants =
 					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 			}
 
-			topRseNode.rseNode->rse_invariants->add(impureOffset);
+			topRseNode->rse_invariants->add(impureOffset);
 		}
 	}
 
@@ -623,12 +623,13 @@ BoolExprNode* ComparativeBoolNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 		if ((nodFlags & FLAG_INVARIANT) &&
 			(!arg2->is<LiteralNode>() || (arg3 && !arg3->is<LiteralNode>())))
 		{
-			const RseOrExprNode* ctx_node, *end;
+			ExprNode* const* ctx_node;
+			ExprNode* const* end;
 
 			for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
 				 ctx_node != end; ++ctx_node)
 			{
-				if (ctx_node->rseNode)
+				if ((*ctx_node)->as<RseNode>())
 					break;
 			}
 

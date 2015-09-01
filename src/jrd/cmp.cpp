@@ -527,17 +527,20 @@ void CMP_mark_variant(CompilerScratch* csb, StreamType stream)
 	if (csb->csb_current_nodes.isEmpty())
 		return;
 
-	for (RseOrExprNode* node = csb->csb_current_nodes.end() - 1;
-		 node != csb->csb_current_nodes.begin(); --node)
+	for (ExprNode** node = csb->csb_current_nodes.end() - 1;
+		 node >= csb->csb_current_nodes.begin(); --node)
 	{
-		if (node->rseNode)
+		RseNode* rseNode = (*node)->as<RseNode>();
+
+		if (rseNode)
 		{
-			if (node->rseNode->containsStream(stream))
+			if (rseNode->containsStream(stream))
 				break;
-			node->rseNode->flags |= RseNode::FLAG_VARIANT;
+
+			rseNode->flags |= RseNode::FLAG_VARIANT;
 		}
-		else if (node->exprNode)
-			node->exprNode->nodFlags &= ~ExprNode::FLAG_INVARIANT;
+		else if (*node)
+			(*node)->nodFlags &= ~ExprNode::FLAG_INVARIANT;
 	}
 }
 

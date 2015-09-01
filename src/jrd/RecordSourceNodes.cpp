@@ -2633,10 +2633,10 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 
 	bool topLevelRse = true;
 
-	for (RseOrExprNode* node = csb->csb_current_nodes.begin();
+	for (ExprNode** node = csb->csb_current_nodes.begin();
 		 node != csb->csb_current_nodes.end(); ++node)
 	{
-		if (node->rseNode)
+		if ((*node)->as<RseNode>())
 		{
 			topLevelRse = false;
 			break;

@@ -395,24 +395,6 @@ public:
 	bool fullDomain;
 };
 
-struct RseOrExprNode
-{
-	RseOrExprNode(ExprNode* aExprNode)
-		: exprNode(aExprNode),
-		  rseNode(NULL)
-	{
-	}
-
-	RseOrExprNode(RseNode* aRseNode)
-		: exprNode(NULL),
-		  rseNode(aRseNode)
-	{
-	}
-
-	ExprNode* exprNode;
-	RseNode* rseNode;
-};
-
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::Left<Firebird::MetaNamePair, FieldInfo> > >
 	MapFieldInfo;
 typedef Firebird::GenericMap<Firebird::Pair<Firebird::Right<Item, ItemInfo> > > MapItemInfo;
@@ -520,7 +502,7 @@ public:
 	Firebird::Array<const RecordSource*> csb_fors;	// record sources
 	Firebird::Array<const Cursor*> csb_cursors;	// named cursors
 	Firebird::Array<ULONG*> csb_invariants;		// stack of pointer to nodes invariant offsets
-	Firebird::Array<RseOrExprNode> csb_current_nodes;	// RseNode's and other invariant
+	Firebird::Array<ExprNode*> csb_current_nodes;	// RseNode's and other invariant
 												// candidates within whose scope we are
 	StreamType		csb_n_stream;				// Next available stream
 	USHORT			csb_msg_number;				// Highest used message number

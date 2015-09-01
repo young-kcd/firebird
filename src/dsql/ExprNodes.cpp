@@ -97,16 +97,16 @@ void NodeRef::pass2(thread_db* tdbb, CompilerScratch* csb)
 	{
 		if (csb->csb_current_nodes.hasData())
 		{
-			RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
-			fb_assert(topRseNode.rseNode);
+			RseNode* topRseNode = csb->csb_current_nodes[0]->as<RseNode>();
+			fb_assert(topRseNode);
 
-			if (!topRseNode.rseNode->rse_invariants)
+			if (!topRseNode->rse_invariants)
 			{
-				topRseNode.rseNode->rse_invariants =
+				topRseNode->rse_invariants =
 					FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 			}
 
-			topRseNode.rseNode->rse_invariants->add(node->impureOffset);
+			topRseNode->rse_invariants->add(node->impureOffset);
 		}
 	}
 }
@@ -9384,16 +9384,16 @@ ValueExprNode* SubQueryNode::pass2(thread_db* tdbb, CompilerScratch* csb)
 	// Bind values of invariant nodes to top-level RSE (if present).
 	if ((nodFlags & FLAG_INVARIANT) && csb->csb_current_nodes.hasData())
 	{
-		RseOrExprNode& topRseNode = csb->csb_current_nodes[0];
-		fb_assert(topRseNode.rseNode);
+		RseNode* topRseNode = csb->csb_current_nodes[0]->as<RseNode>();
+		fb_assert(topRseNode);
 
-		if (!topRseNode.rseNode->rse_invariants)
+		if (!topRseNode->rse_invariants)
 		{
-			topRseNode.rseNode->rse_invariants =
+			topRseNode->rse_invariants =
 				FB_NEW(*tdbb->getDefaultPool()) VarInvariantArray(*tdbb->getDefaultPool());
 		}
 
-		topRseNode.rseNode->rse_invariants->add(impureOffset);
+		topRseNode->rse_invariants->add(impureOffset);
 	}
 
 	// Finish up processing of record selection expressions.
@@ -10016,12 +10016,13 @@ ValueExprNode* SubstringSimilarNode::pass1(thread_db* tdbb, CompilerScratch* csb
 	// because it may be dependent on data or variables.
 	if ((nodFlags & FLAG_INVARIANT) && (!pattern->is<LiteralNode>() || !escape->is<LiteralNode>()))
 	{
-		const RseOrExprNode* ctx_node, *end;
+		ExprNode* const* ctx_node;
+		ExprNode* const* end;
 
 		for (ctx_node = csb->csb_current_nodes.begin(), end = csb->csb_current_nodes.end();
 			 ctx_node != end; ++ctx_node)
 		{
-			if (ctx_node->rseNode)
+			if ((*ctx_node)->as<RseNode>())
 				break;
 		}
 
