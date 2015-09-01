@@ -58,7 +58,6 @@ void	DPM_backout(Jrd::thread_db*, Jrd::record_param*);
 void	DPM_backout_mark(Jrd::thread_db*, Jrd::record_param*, const Jrd::jrd_tra*);
 double	DPM_cardinality(Jrd::thread_db*, Jrd::jrd_rel*, const Jrd::Format*);
 bool	DPM_chain(Jrd::thread_db*, Jrd::record_param*, Jrd::record_param*);
-int		DPM_compress(Jrd::thread_db*, Ods::data_page*);
 void	DPM_create_relation(Jrd::thread_db*, Jrd::jrd_rel*);
 ULONG	DPM_data_pages(Jrd::thread_db*, Jrd::jrd_rel*);
 void	DPM_delete(Jrd::thread_db*, Jrd::record_param*, ULONG);

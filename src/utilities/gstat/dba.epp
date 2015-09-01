@@ -248,7 +248,7 @@ public:
 	Firebird::UtilSvc* uSvc;
 	dba_fil* files;
 	dba_rel* relations;
-	SSHORT page_size;
+	USHORT page_size;
 	USHORT dp_per_pp;
 	USHORT max_records;
 	SLONG page_number;
@@ -584,7 +584,7 @@ int gstat(Firebird::UtilSvc* uSvc)
 
 	dba_fil* current = db_open(fileName.c_str(), fileName.length());
 
-	SCHAR temp[1024];
+	SCHAR temp[RAW_HEADER_SIZE];
 	tddba->page_size = sizeof(temp);
 	tddba->global_buffer = (pag*) temp;
 	tddba->page_number = -1;
@@ -2024,10 +2024,10 @@ static const pag* db_read( SLONG page_number, bool ok_enc)
 		db_error(errno);
 	}
 
-	SSHORT length = tddba->page_size;
+	USHORT length = tddba->page_size;
 	for (SCHAR* p = (SCHAR *) tddba->global_buffer; length > 0;)
 	{
-		const SSHORT l = read(fil->fil_desc, p, length);
+		const USHORT l = read(fil->fil_desc, p, length);
 		if (l < 0)
 		{
 			tddba->uSvc->setServiceStatus(GSTAT_MSG_FAC, 30, SafeArg());
