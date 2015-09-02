@@ -1,3 +1,45 @@
+ 2015-09-01 20:51  dimitr 
+   M src/jrd/RecordSourceNodes.cpp
+Fixed CORE-4921: Predicate IS [NOT] DISTINCT FROM is not pushed into unions/aggregates thus causing sub-optimal plans.
+
+ 2015-09-01 15:55  asfernandes 
+   M src/dsql/BoolNodes.cpp
+   M src/dsql/ExprNodes.cpp
+   M src/jrd/RecordSourceNodes.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/exe.h
+Fixed possible similar problems to CORE-4497.
+
+ 2015-09-01 10:50  dimitr 
+   M src/jrd/ods.h
+Ugly fix for MS compilers.
+
+ 2015-09-01 07:42  dimitr 
+   M src/utilities/gstat/dba.epp
+Better correction.
+
+ 2015-09-01 07:39  dimitr 
+   M src/utilities/gstat/dba.epp
+Correction.
+
+ 2015-09-01 07:33  dimitr 
+   M src/jrd/dpm.epp
+   M src/jrd/dpm_proto.h
+   M src/utilities/gstat/dba.epp
+Core support for 32KB page size. Disabled so far.
+
+ 2015-09-01 07:24  dimitr 
+   M src/burp/burp.cpp
+   M src/jrd/CryptoManager.h
+   M src/jrd/jrd.cpp
+   M src/jrd/nbak.cpp
+   M src/jrd/ods.h
+   M src/jrd/os/posix/unix.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/sdw.cpp
+   M src/utilities/nbackup/nbackup.cpp
+Put some order to the page size macros and their usage. Changed the default page size to 8KB.
+
  2015-08-31 15:26  asfernandes 
    M src/dsql/DdlNodes.epp
 Fixed CORE-4917 - ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'.
