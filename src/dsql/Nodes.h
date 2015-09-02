@@ -226,7 +226,7 @@ public:
 
 	static void executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction,
 		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName,
-		const Firebird::string& sqlText);
+		const Firebird::MetaName& oldNewObjectName, const Firebird::string& sqlText);
 
 protected:
 	typedef Firebird::Pair<Firebird::Left<Firebird::MetaName, bid> > MetaNameBidPair;
@@ -250,7 +250,8 @@ protected:
 	}
 
 	void executeDdlTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName);
+		DdlTriggerWhen when, int action, const Firebird::MetaName& objectName,
+		const Firebird::MetaName& oldNewObjectName);
 	void storeGlobalField(thread_db* tdbb, jrd_tra* transaction, Firebird::MetaName& name,
 		const TypeClause* field,
 		const Firebird::string& computedSource = "",

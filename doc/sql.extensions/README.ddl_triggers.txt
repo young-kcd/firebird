@@ -89,6 +89,9 @@ Semantics:
 	   triggers are fired, AFTER triggers will not be fired.
 	8) Packaged procedures and triggers do not fire individual {CREATE | ALTER | DROP} {PROCEDURE |
 	   FUNCTION} triggers.
+	9) ALTER DOMAIN <old name> TO <new name> sets OLD_OBJECT_NAME and NEW_OBJECT_NAME in both BEFORE
+	   and AFTER triggers. Note that for this command, OBJECT_NAME will have the old object name
+	   in BEFORE triggers and the new object name in AFTER TRIGGERS.
 
 Notes:
 	1) COMMENT ON, GRANT, REVOKE and ALTER DATABASE do not fire DDL triggers.
@@ -117,6 +120,8 @@ DDL_TRIGGER context namespace:
 	- OBJECT_TYPE: object type (TABLE, VIEW, etc)
 	- DDL_EVENT: event name (<ddl event item>), where <ddl_event_item> is EVENT_TYPE || ' ' || OBJECT_TYPE
 	- OBJECT_NAME: metadata object name
+	- OLD_OBJECT_NAME: metadata object name before a rename
+	- NEW_OBJECT_NAME: metadata object name after a rename
 	- SQL_TEXT: sql statement text
 
 
@@ -207,6 +212,8 @@ create table ddl_log (
     object_type varchar(25) not null,
     ddl_event varchar(25) not null,
     object_name varchar(31) not null,
+    old_object_name varchar(31),
+    new_object_name varchar(31),
     sql_text blob sub_type text not null,
     ok char(1) not null
 );
@@ -222,12 +229,14 @@ begin
     in autonomous transaction do
     begin
         insert into ddl_log (id, moment, user_name, event_type, object_type, ddl_event, object_name,
-                             sql_text, ok)
+                             old_object_name, new_object_name, sql_text, ok)
             values (next value for ddl_seq, current_timestamp, current_user,
                     rdb$get_context('DDL_TRIGGER', 'EVENT_TYPE'),
                     rdb$get_context('DDL_TRIGGER', 'OBJECT_TYPE'),
                     rdb$get_context('DDL_TRIGGER', 'DDL_EVENT'),
                     rdb$get_context('DDL_TRIGGER', 'OBJECT_NAME'),
+                    rdb$get_context('DDL_TRIGGER', 'OLD_OBJECT_NAME'),
+                    rdb$get_context('DDL_TRIGGER', 'NEW_OBJECT_NAME'),
                     rdb$get_context('DDL_TRIGGER', 'SQL_TEXT'),
                     'N')
             returning id into id;
@@ -277,13 +286,17 @@ recreate table t1 (
     n integer
 );
 
+create domain dom1 as integer;
+alter domain dom1 type bigint;
+alter domain dom1 to dom2;
+
 commit;
 
-select id, ddl_event, object_name, sql_text, ok from ddl_log order by id;
+select id, ddl_event, object_name, old_object_name, new_object_name, sql_text, ok from ddl_log order by id;
 
-                   ID DDL_EVENT                 OBJECT_NAME                              SQL_TEXT OK     
-===================== ========================= =============================== ================= ====== 
-                    2 CREATE TABLE              T1                                           80:3 Y      
+                   ID DDL_EVENT                 OBJECT_NAME                     OLD_OBJECT_NAME                 NEW_OBJECT_NAME                          SQL_TEXT OK     
+===================== ========================= =============================== =============================== =============================== ================= ====== 
+                    2 CREATE TABLE              T1                              <null>                          <null>                                       80:0 Y      
 ==============================================================================
 SQL_TEXT:  
 recreate table t1 (
@@ -291,7 +304,7 @@ recreate table t1 (
     n2 integer
 )
 ==============================================================================
-                    3 CREATE TABLE              T1                                           80:2 N      
+                    3 CREATE TABLE              T1                              <null>                          <null>                                       80:1 N      
 ==============================================================================
 SQL_TEXT:  
 create table t1 (
@@ -299,18 +312,33 @@ create table t1 (
     n2 integer
 )
 ==============================================================================
-                    4 DROP TABLE                T1                                           80:6 Y      
+                    4 DROP TABLE                T1                              <null>                          <null>                                       80:2 Y      
 ==============================================================================
 SQL_TEXT:  
 recreate table t1 (
     n integer
 )
 ==============================================================================
-                    5 CREATE TABLE              T1                                           80:9 Y      
+                    5 CREATE TABLE              T1                              <null>                          <null>                                       80:3 Y      
 ==============================================================================
 SQL_TEXT:  
 recreate table t1 (
     n integer
 )
+==============================================================================
+                    6 CREATE DOMAIN             DOM1                            <null>                          <null>                                       80:4 Y      
+==============================================================================
+SQL_TEXT:  
+create domain dom1 as integer
+==============================================================================
+                    7 ALTER DOMAIN              DOM1                            <null>                          <null>                                       80:5 Y      
+==============================================================================
+SQL_TEXT:  
+alter domain dom1 type bigint
+==============================================================================
+                    8 ALTER DOMAIN              DOM1                            DOM1                            DOM2                                         80:6 Y      
+==============================================================================
+SQL_TEXT:  
+alter domain dom1 to dom2
 ==============================================================================
 

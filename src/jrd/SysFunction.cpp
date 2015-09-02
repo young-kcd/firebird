@@ -223,6 +223,8 @@ const char
 	DDL_EVENT_NAME[] = "DDL_EVENT",
 	EVENT_TYPE_NAME[] = "EVENT_TYPE",
 	OBJECT_NAME[] = "OBJECT_NAME",
+	OLD_OBJECT_NAME[] = "OLD_OBJECT_NAME",
+	NEW_OBJECT_NAME[] = "NEW_OBJECT_NAME",
 	OBJECT_TYPE_NAME[] = "OBJECT_TYPE",
 	SQL_TEXT_NAME[] = "SQL_TEXT";
 
@@ -2244,6 +2246,22 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		else if (nameStr == OBJECT_NAME)
 		{
 			resultStr = context.objectName.c_str();
+			resultType = ttype_metadata;
+		}
+		else if (nameStr == OLD_OBJECT_NAME)
+		{
+			if (context.oldObjectName.isEmpty())
+				return NULL;
+
+			resultStr = context.oldObjectName.c_str();
+			resultType = ttype_metadata;
+		}
+		else if (nameStr == NEW_OBJECT_NAME)
+		{
+			if (context.newObjectName.isEmpty())
+				return NULL;
+
+			resultStr = context.newObjectName.c_str();
 			resultType = ttype_metadata;
 		}
 		else if (nameStr == SQL_TEXT_NAME)

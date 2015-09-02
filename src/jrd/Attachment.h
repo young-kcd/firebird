@@ -99,6 +99,8 @@ struct DdlTriggerContext
 		: eventType(*getDefaultMemoryPool()),
 		  objectType(*getDefaultMemoryPool()),
 		  objectName(*getDefaultMemoryPool()),
+		  oldObjectName(*getDefaultMemoryPool()),
+		  newObjectName(*getDefaultMemoryPool()),
 		  sqlText(*getDefaultMemoryPool())
 	{
 	}
@@ -106,6 +108,8 @@ struct DdlTriggerContext
 	Firebird::string eventType;
 	Firebird::string objectType;
 	Firebird::MetaName objectName;
+	Firebird::MetaName oldObjectName;
+	Firebird::MetaName newObjectName;
 	Firebird::string sqlText;
 };
 

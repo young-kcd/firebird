@@ -7534,13 +7534,13 @@ const StmtNode* SetGeneratorNode::execute(thread_db* tdbb, jrd_req* request, Exe
 		jrd_tra* const transaction = request->req_transaction;
 
 		DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_BEFORE,
-			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, *request->getStatement()->sqlText);
+			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, NULL, *request->getStatement()->sqlText);
 
 		dsc* const desc = EVL_expr(tdbb, request, value);
 		DPM_gen_id(tdbb, generator.id, true, MOV_get_int64(desc, 0));
 
 		DdlNode::executeDdlTrigger(tdbb, transaction, DdlNode::DTW_AFTER,
-			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, *request->getStatement()->sqlText);
+			DDL_TRIGGER_ALTER_SEQUENCE, generator.name, NULL, *request->getStatement()->sqlText);
 
 		request->req_operation = jrd_req::req_return;
 	}

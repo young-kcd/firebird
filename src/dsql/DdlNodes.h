@@ -641,7 +641,7 @@ protected:
 		if (alter)
 		{
 			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-				DDL_TRIGGER_ALTER_TRIGGER, name);
+				DDL_TRIGGER_ALTER_TRIGGER, name, NULL);
 		}
 	}
 
@@ -650,7 +650,7 @@ protected:
 		if (alter)
 		{
 			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-				DDL_TRIGGER_ALTER_TRIGGER, name);
+				DDL_TRIGGER_ALTER_TRIGGER, name, NULL);
 		}
 	}
 

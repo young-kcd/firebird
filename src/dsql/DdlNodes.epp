@@ -903,7 +903,7 @@ void DdlNode::storePrivileges(thread_db* tdbb, jrd_tra* transaction,
 }
 
 void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTriggerWhen when,
-	int action, const MetaName& objectName, const string& sqlText)
+	int action, const MetaName& objectName, const MetaName& oldNewObjectName, const string& sqlText)
 {
 	Attachment* const attachment = transaction->tra_attachment;
 
@@ -918,6 +918,12 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTrigge
 	context.objectName = objectName;
 	context.sqlText = sqlText;
 
+	if (oldNewObjectName.hasData())
+	{
+		context.oldObjectName = when == DTW_BEFORE ? objectName : oldNewObjectName;
+		context.newObjectName = when == DTW_BEFORE ? oldNewObjectName : objectName;
+	}
+
 	Stack<DdlTriggerContext>::AutoPushPop autoContext(attachment->ddlTriggersContext, context);
 	AutoSavePoint savePoint(tdbb, transaction);
 
@@ -927,9 +933,10 @@ void DdlNode::executeDdlTrigger(thread_db* tdbb, jrd_tra* transaction, DdlTrigge
 }
 
 void DdlNode::executeDdlTrigger(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, DdlTriggerWhen when, int action, const MetaName& objectName)
+	jrd_tra* transaction, DdlTriggerWhen when, int action, const MetaName& objectName,
+	const MetaName& oldNewObjectName)
 {
-	executeDdlTrigger(tdbb, transaction, when, action, objectName,
+	executeDdlTrigger(tdbb, transaction, when, action, objectName, oldNewObjectName,
 		*dsqlScratch->getStatement()->getSqlText());
 }
 
@@ -1100,7 +1107,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		charSetFound = true;
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_ALTER_CHARACTER_SET, charSet);
+			DDL_TRIGGER_ALTER_CHARACTER_SET, charSet, NULL);
 
 		AutoCacheRequest requestHandle2(tdbb, drq_l_collation, DYN_REQUESTS);
 
@@ -1133,7 +1140,7 @@ void AlterCharSetNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_ALTER_CHARACTER_SET, charSet);
+		DDL_TRIGGER_ALTER_CHARACTER_SET, charSet, NULL);
 }
 
 
@@ -1628,7 +1635,7 @@ void CreateAlterFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsql
 	if (package.isEmpty())
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-			(altered ? DDL_TRIGGER_ALTER_FUNCTION : DDL_TRIGGER_CREATE_FUNCTION), name);
+			(altered ? DDL_TRIGGER_ALTER_FUNCTION : DDL_TRIGGER_CREATE_FUNCTION), name, NULL);
 	}
 
 	savePoint.release();	// everything is ok
@@ -1650,7 +1657,7 @@ void CreateAlterFunctionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	if (package.isEmpty())
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_CREATE_FUNCTION, name);
+			DDL_TRIGGER_CREATE_FUNCTION, name, NULL);
 
 		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_udf);
 	}
@@ -1748,7 +1755,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		if (!secondPass && runTriggers && package.isEmpty())
 		{
 			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-				DDL_TRIGGER_ALTER_FUNCTION, name);
+				DDL_TRIGGER_ALTER_FUNCTION, name, NULL);
 		}
 
 		MODIFY FUN
@@ -2246,7 +2253,8 @@ void AlterExternalFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* ds
 	{
 		found = true;
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_FUNCTION,
+			name, NULL);
 
 		if (!FUN.RDB$ENGINE_NAME.NULL || !FUN.RDB$FUNCTION_BLR.NULL)
 			status_exception::raise(Arg::Gds(isc_dyn_newfc_oldsyntax) << name);
@@ -2274,7 +2282,10 @@ void AlterExternalFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* ds
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_FUNCTION, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_FUNCTION,
+			name, NULL);
+	}
 	else
 	{
 		// msg 41: "Function %s not found"
@@ -2372,7 +2383,10 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		}
 
 		if (package.isEmpty())
-			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_FUNCTION, name);
+		{
+			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_FUNCTION,
+				name, NULL);
+		}
 
 		ERASE FUN;
 
@@ -2410,7 +2424,10 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 
 	if (found && package.isEmpty())
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_FUNCTION, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_FUNCTION,
+			name, NULL);
+	}
 
 	savePoint.release();	// everything is ok
 
@@ -2582,7 +2599,7 @@ void CreateAlterProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsq
 	if (package.isEmpty())
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-			(altered ? DDL_TRIGGER_ALTER_PROCEDURE : DDL_TRIGGER_CREATE_PROCEDURE), name);
+			(altered ? DDL_TRIGGER_ALTER_PROCEDURE : DDL_TRIGGER_CREATE_PROCEDURE), name, NULL);
 	}
 
 	savePoint.release();	// everything is ok
@@ -2604,7 +2621,7 @@ void CreateAlterProcedureNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 	if (package.isEmpty())
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_CREATE_PROCEDURE, name);
+			DDL_TRIGGER_CREATE_PROCEDURE, name, NULL);
 
 		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_procedure);
 	}
@@ -2694,7 +2711,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 		if (!secondPass && runTriggers && package.isEmpty())
 		{
 			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-				DDL_TRIGGER_ALTER_PROCEDURE, name);
+				DDL_TRIGGER_ALTER_PROCEDURE, name, NULL);
 		}
 
 		MODIFY P
@@ -3134,7 +3151,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		if (package.isEmpty())
 		{
 			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-				DDL_TRIGGER_DROP_PROCEDURE, name);
+				DDL_TRIGGER_DROP_PROCEDURE, name, NULL);
 		}
 
 		ERASE PRC;
@@ -3173,7 +3190,10 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	}
 
 	if (found && package.isEmpty())
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PROCEDURE, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PROCEDURE,
+			name, NULL);
+	}
 
 	savePoint.release();	// everything is ok
 
@@ -3435,9 +3455,13 @@ void CreateAlterTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlS
 void CreateAlterTriggerNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TRIGGER,
+		name, NULL);
+
 	store(tdbb, dsqlScratch, transaction);
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_TRIGGER, name);
+
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_TRIGGER,
+		name, NULL);
 }
 
 void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch)
@@ -3604,7 +3628,8 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 				break;
 		}
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_TRIGGER, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_TRIGGER,
+			name, NULL);
 
 		relationName = X.RDB$RELATION_NAME;
 		ERASE X;
@@ -3670,7 +3695,10 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	}
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_TRIGGER, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_TRIGGER,
+			name, NULL);
+	}
 
 	savePoint.release();	// everything is ok
 }
@@ -3712,7 +3740,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-		DDL_TRIGGER_CREATE_COLLATION, name);
+		DDL_TRIGGER_CREATE_COLLATION, name, NULL);
 
 	AutoCacheRequest request(tdbb, drq_s_colls, DYN_REQUESTS);
 
@@ -3861,7 +3889,7 @@ void CreateCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	storePrivileges(tdbb, transaction, name, obj_collation, USAGE_PRIVILEGES);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_CREATE_COLLATION, name);
+		DDL_TRIGGER_CREATE_COLLATION, name, NULL);
 
 	savePoint.release();	// everything is ok
 
@@ -3937,7 +3965,7 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 			 CS.RDB$CHARACTER_SET_ID EQ COLL.RDB$CHARACTER_SET_ID
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_COLLATION, name);
+			DDL_TRIGGER_DROP_COLLATION, name, NULL);
 
 		if (COLL.RDB$SYSTEM_FLAG)
 			status_exception::raise(Arg::Gds(isc_dyn_cannot_del_syscoll));
@@ -4045,7 +4073,10 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_COLLATION, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_COLLATION,
+			name, NULL);
+	}
 	else
 		status_exception::raise(Arg::Gds(isc_dyn_collation_not_found) << Arg::Str(name));
 
@@ -4111,7 +4142,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-		DDL_TRIGGER_CREATE_DOMAIN, nameType->name);
+		DDL_TRIGGER_CREATE_DOMAIN, nameType->name, NULL);
 
 	storeGlobalField(tdbb, transaction, nameType->name, type);
 
@@ -4183,7 +4214,7 @@ void CreateDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	}
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_CREATE_DOMAIN, nameType->name);
+		DDL_TRIGGER_CREATE_DOMAIN, nameType->name, NULL);
 
 	savePoint.release();	// everything is ok
 }
@@ -4655,7 +4686,7 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		found = true;
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_ALTER_DOMAIN, name);
+			DDL_TRIGGER_ALTER_DOMAIN, name, renameTo);
 
 		if (FLD.RDB$SYSTEM_FLAG == fb_sysflag_system)
 		{
@@ -4905,7 +4936,9 @@ void AlterDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		status_exception::raise(Arg::PrivateDyn(89));
 	}
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_DOMAIN, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_DOMAIN,
+		(renameTo.hasData() ? renameTo : name),
+		(renameTo.hasData() ? name : NULL));
 
 	savePoint.release();	// everything is ok
 }
@@ -5007,7 +5040,7 @@ void DropDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		WITH X.RDB$FIELD_NAME EQ name.c_str()
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_DOMAIN, name);
+			DDL_TRIGGER_DROP_DOMAIN, name, NULL);
 
 		check(tdbb, transaction);
 		deleteDimensionRecords(tdbb, transaction, name);
@@ -5033,7 +5066,10 @@ void DropDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_DOMAIN, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_DOMAIN,
+			name, NULL);
+	}
 	else
 	{
 		// msg 89: "Domain not found"
@@ -5162,7 +5198,7 @@ void CreateAlterExceptionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 	const string& userName = attachment->att_user->usr_user_name;
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-		DDL_TRIGGER_CREATE_EXCEPTION, name);
+		DDL_TRIGGER_CREATE_EXCEPTION, name, NULL);
 
 	DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_exception);
 
@@ -5209,7 +5245,8 @@ void CreateAlterExceptionNode::executeCreate(thread_db* tdbb, DsqlCompilerScratc
 
 	storePrivileges(tdbb, transaction, name, obj_exception, USAGE_PRIVILEGES);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_EXCEPTION, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_EXCEPTION,
+		name, NULL);
 }
 
 bool CreateAlterExceptionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -5223,7 +5260,7 @@ bool CreateAlterExceptionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 		WITH X.RDB$EXCEPTION_NAME EQ name.c_str()
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_ALTER_EXCEPTION, name);
+			DDL_TRIGGER_ALTER_EXCEPTION, name, NULL);
 
 		MODIFY X
 			strcpy(X.RDB$MESSAGE, message.c_str());
@@ -5234,7 +5271,10 @@ bool CreateAlterExceptionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 	END_FOR
 
 	if (modified)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_EXCEPTION, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_EXCEPTION,
+			name, NULL);
+	}
 
 	return modified;
 }
@@ -5273,7 +5313,7 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	    WITH X.RDB$EXCEPTION_NAME EQ name.c_str()
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_EXCEPTION, name);
+			DDL_TRIGGER_DROP_EXCEPTION, name, NULL);
 		ERASE X;
 
 		if (!X.RDB$SECURITY_CLASS.NULL)
@@ -5295,7 +5335,10 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_EXCEPTION, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_EXCEPTION,
+			name, NULL);
+	}
 	else if (!silent)
 	{
 		// msg 144: "Exception not found"
@@ -5389,7 +5432,8 @@ void CreateAlterSequenceNode::putErrorPrefix(Firebird::Arg::StatusVector& status
 void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction)
 {
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_SEQUENCE,
+		name, NULL);
 
 	const SINT64 val = value.specified ? value.value : 0;
 	SLONG initialStep = 1;
@@ -5401,7 +5445,8 @@ void CreateAlterSequenceNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch
 	}
 	store(tdbb, transaction, name, fb_sysflag_user, val, initialStep);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_SEQUENCE,
+		name, NULL);
 }
 
 bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
@@ -5425,7 +5470,8 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		if (forbidden && !tdbb->getAttachment()->isRWGbak())
 			status_exception::raise(Arg::Gds(isc_dyn_cant_modify_sysobj) << "generator" << Arg::Str(name));
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE,
+			name, NULL);
 
 		fb_assert(restartSpecified && value.specified);
 		const SINT64 val = value.specified ? value.value : 0;
@@ -5445,7 +5491,8 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		desc.makeText((USHORT) name.length(), ttype_metadata, (UCHAR*) name.c_str());
 		DFW_post_work(transaction, dfw_set_generator, &desc, id);
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_SEQUENCE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_SEQUENCE,
+			name, NULL);
 
 		return true;
 	}
@@ -5458,7 +5505,8 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		X IN RDB$GENERATORS
 		WITH X.RDB$GENERATOR_NAME EQ name.c_str()
 	{
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_SEQUENCE,
+			name, NULL);
 
 		if (X.RDB$SYSTEM_FLAG == fb_sysflag_system)
 		{
@@ -5493,7 +5541,8 @@ bool CreateAlterSequenceNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		desc.makeText((USHORT) name.length(), ttype_metadata, (UCHAR*) name.c_str());
 		DFW_post_work(transaction, dfw_set_generator, &desc, id);
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_SEQUENCE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_SEQUENCE,
+			name, NULL);
 
 		found = true;
 	}
@@ -5607,7 +5656,7 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		}
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_SEQUENCE, name);
+			DDL_TRIGGER_DROP_SEQUENCE, name, NULL);
 
 		ERASE GEN;
 
@@ -5630,7 +5679,10 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_SEQUENCE, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_SEQUENCE,
+			name, NULL);
+	}
 	else if (!silent)
 		status_exception::raise(Arg::Gds(isc_gennotdef) << Arg::Str(name));
 
@@ -7046,7 +7098,8 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TABLE, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_TABLE,
+		name, NULL);
 
 	DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_relation);
 
@@ -7117,7 +7170,8 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 
 	dsqlScratch->relation->rel_flags &= ~REL_creating;
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_TABLE, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_TABLE,
+		name, NULL);
 
 	savePoint.release();	// everything is ok
 
@@ -7200,7 +7254,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		// run all statements under savepoint control
 		AutoSavePoint savePoint(tdbb, transaction);
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TABLE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TABLE,
+			name, NULL);
 
 		ObjectsArray<Constraint> constraints;
 
@@ -7410,7 +7465,8 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 			defineConstraint(tdbb, dsqlScratch, transaction, *constraint);
 		}
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TABLE, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TABLE,
+			name, NULL);
 
 		savePoint.release();	// everything is ok
 
@@ -7916,7 +7972,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		R IN RDB$RELATIONS
 		WITH R.RDB$RELATION_NAME EQ name.c_str()
 	{
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name, NULL);
 		found = true;
 	}
 	END_FOR
@@ -8073,7 +8129,7 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name, NULL);
 	else
 	{
 		// msg 61: "Relation not found"
@@ -8144,7 +8200,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	const int ddlTriggerAction = (modifyingView ? DDL_TRIGGER_ALTER_VIEW : DDL_TRIGGER_CREATE_VIEW);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name, NULL);
 
 	if (!modifyingView)
 		DYN_UTIL_check_unique_name(tdbb, transaction, name, obj_relation);
@@ -8670,7 +8726,7 @@ void CreateAlterViewNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	dsqlScratch->resetContextStack();
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name, NULL);
 
 	savePoint.release();	// everything is ok
 
@@ -9266,7 +9322,8 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_INDEX, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_CREATE_INDEX,
+		name, NULL);
 
 	CreateIndexNode::Definition definition;
 	definition.type = isc_dyn_def_idx;
@@ -9299,7 +9356,8 @@ void CreateIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 
 	store(tdbb, transaction, name, definition);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_INDEX, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_INDEX,
+		name, NULL);
 
 	savePoint.release();	// everything is ok
 }
@@ -9343,7 +9401,8 @@ void AlterIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	{
 		found = true;
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_INDEX, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_INDEX,
+			name, NULL);
 
 		MODIFY IDX
 			IDX.RDB$INDEX_INACTIVE.NULL = FALSE;
@@ -9353,7 +9412,10 @@ void AlterIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_INDEX, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_INDEX,
+			name, NULL);
+	}
 	else
 	{
 		// msg 48: "Index not found"
@@ -9401,7 +9463,8 @@ void SetStatisticsNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	{
 		found = true;
 
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_INDEX, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_INDEX,
+			name, NULL);
 
 		MODIFY IDX
 			// For V4 index selectivity can be set only to -1.
@@ -9412,7 +9475,10 @@ void SetStatisticsNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_INDEX, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_INDEX,
+			name, NULL);
+	}
 	else
 	{
 		// msg 48: "Index not found"
@@ -9477,7 +9543,7 @@ void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 		WITH IDX.RDB$INDEX_NAME EQ name.c_str()
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_INDEX, name);
+			DDL_TRIGGER_DROP_INDEX, name, NULL);
 
 		ERASE IDX;
 
@@ -9492,7 +9558,10 @@ void DropIndexNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, j
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_INDEX, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_INDEX,
+			name, NULL);
+	}
 	else
 	{
 		// msg 48: "Index not found"
@@ -9533,7 +9602,10 @@ void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	///executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DECLARE_FILTER, name);
+	/***
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DECLARE_FILTER,
+		name, NULL);
+	***/
 
 	AutoCacheRequest request(tdbb, drq_s_filters, DYN_REQUESTS);
 
@@ -9576,7 +9648,10 @@ void CreateFilterNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScrat
 	}
 	END_STORE
 
-	///executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DECLARE_FILTER, name);
+	/***
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DECLARE_FILTER,
+		name, NULL);
+	***/
 
 	savePoint.release();	// everything is ok
 }
@@ -9765,7 +9840,7 @@ void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	AutoSavePoint savePoint(tdbb, transaction);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-		DDL_TRIGGER_CREATE_ROLE, name);
+		DDL_TRIGGER_CREATE_ROLE, name, NULL);
 
 	if (name == ownerName)
 	{
@@ -9804,7 +9879,7 @@ void CreateRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, 
 	END_STORE
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_CREATE_ROLE, name);
+		DDL_TRIGGER_CREATE_ROLE, name, NULL);
 
 	savePoint.release();	// everything is ok
 }
@@ -10136,7 +10211,8 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 		case MAP_MOD:
 		case MAP_RPL:
 			ddlTriggerAction = DDL_TRIGGER_ALTER_MAPPING;
-			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
+			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction,
+				name, NULL);
 
 			MODIFY M
 				if (to)
@@ -10166,7 +10242,8 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 
 		case MAP_DROP:
 			ddlTriggerAction = DDL_TRIGGER_DROP_MAPPING;
-			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
+			executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction,
+				name, NULL);
 
 			ERASE M;
 			break;
@@ -10189,7 +10266,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 			break;
 
 		ddlTriggerAction = DDL_TRIGGER_CREATE_MAPPING;
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlTriggerAction, name, NULL);
 
 		STORE(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 		M IN RDB$AUTH_MAPPING
@@ -10233,7 +10310,7 @@ void MappingNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd
 
 	fb_assert(ddlTriggerAction > 0);
 	if (ddlTriggerAction > 0)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name);
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlTriggerAction, name, NULL);
 
 	DFW_post_work(transaction, dfw_clear_mapping, NULL, 0);
 	savePoint.release();	// everything is ok
@@ -10273,16 +10350,13 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		WITH ROL.RDB$ROLE_NAME EQ name.c_str()
 	{
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_ROLE, name);
-
-
+			DDL_TRIGGER_DROP_ROLE, name, NULL);
 
 		if (ROL.RDB$SYSTEM_FLAG != 0)
 		{
 			// msg 284: can not drop system SQL role @1
 			status_exception::raise(Arg::PrivateDyn(284) << name);
 		}
-
 
 		AutoCacheRequest request2(tdbb, drq_del_role_1, DYN_REQUESTS);
 
@@ -10314,7 +10388,10 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_ROLE, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_ROLE,
+			name, NULL);
+	}
 	else
 	{
 		// msg 155: "Role %s not found"
@@ -10481,12 +10558,14 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 
 	const int ddlAction = mode == USER_ADD ? DDL_TRIGGER_CREATE_USER : DDL_TRIGGER_ALTER_USER;
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlAction, userData->user.get());
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, ddlAction,
+		userData->user.get(), NULL);
 
 	const USHORT id = transaction->getUserManagement()->put(userData);
 	DFW_post_work(transaction, dfw_user_management, NULL, id);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlAction, userData->user.get());
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, ddlAction,
+		userData->user.get(), NULL);
 
 	savePoint.release();	// everything is ok
 }
@@ -10530,13 +10609,13 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	check(&statusWrapper);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_DROP_USER,
-		userData->user.get());
+		userData->user.get(), NULL);
 
 	const USHORT id = transaction->getUserManagement()->put(userData);
 	DFW_post_work(transaction, dfw_user_management, NULL, id);
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_USER,
-		userData->user.get());
+		userData->user.get(), NULL);
 
 	savePoint.release();	// everything is ok
 }

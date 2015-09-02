@@ -494,7 +494,7 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 	const string& userName = attachment->att_user->usr_user_name;
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-		DDL_TRIGGER_CREATE_PACKAGE, name);
+		DDL_TRIGGER_CREATE_PACKAGE, name, NULL);
 
 	AutoCacheRequest requestHandle(tdbb, drq_s_pkg, DYN_REQUESTS);
 
@@ -521,7 +521,8 @@ void CreateAlterPackageNode::executeCreate(thread_db* tdbb, DsqlCompilerScratch*
 
 	executeItems(tdbb, dsqlScratch, transaction);
 
-	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE, name);
+	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_CREATE_PACKAGE,
+		name, NULL);
 }
 
 
@@ -539,7 +540,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 		modified = true;
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_ALTER_PACKAGE, name);
+			DDL_TRIGGER_ALTER_PACKAGE, name, NULL);
 
 		SortedObjectsArray<Signature> existingFuncs(getPool());
 		SortedObjectsArray<Signature> existingProcs(getPool());
@@ -592,7 +593,7 @@ bool CreateAlterPackageNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch* 
 		executeItems(tdbb, dsqlScratch, transaction);
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction,
-			DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, name);
+			DTW_AFTER, DDL_TRIGGER_ALTER_PACKAGE, name, NULL);
 	}
 
 	return modified;
@@ -659,7 +660,7 @@ void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 		found = true;
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_PACKAGE, name);
+			DDL_TRIGGER_DROP_PACKAGE, name, NULL);
 
 		ERASE PKG;
 
@@ -715,7 +716,10 @@ void DropPackageNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	END_FOR
 
 	if (found)
-		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE, name);
+	{
+		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_DROP_PACKAGE,
+			name, NULL);
+	}
 
 	savePoint.release();	// everything is ok
 }
@@ -852,7 +856,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		}
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
+			DDL_TRIGGER_CREATE_PACKAGE_BODY, name, NULL);
 
 		MODIFY PKG
 			PKG.RDB$VALID_BODY_FLAG.NULL = FALSE;
@@ -1039,7 +1043,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	END_FOR
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_CREATE_PACKAGE_BODY, name);
+		DDL_TRIGGER_CREATE_PACKAGE_BODY, name, NULL);
 
 	savePoint.release();	// everything is ok
 }
@@ -1084,7 +1088,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 		found = true;
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE,
-			DDL_TRIGGER_DROP_PACKAGE_BODY, name);
+			DDL_TRIGGER_DROP_PACKAGE_BODY, name, NULL);
 
 		MODIFY PKG
 			PKG.RDB$VALID_BODY_FLAG.NULL = TRUE;
@@ -1159,7 +1163,7 @@ void DropPackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	END_FOR
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
-		DDL_TRIGGER_DROP_PACKAGE_BODY, name);
+		DDL_TRIGGER_DROP_PACKAGE_BODY, name, NULL);
 
 	savePoint.release();	// everything is ok
 }
