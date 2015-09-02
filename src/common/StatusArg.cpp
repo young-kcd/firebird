@@ -89,6 +89,8 @@ StatusVector::ImplStatusVector::ImplStatusVector(const Exception& ex) throw()
 	: Base::ImplBase(0, 0),
 	  m_status_vector(*getDefaultMemoryPool())
 {
+	clear();
+
 	assign(ex);
 }
 
@@ -138,7 +140,7 @@ void StatusVector::ImplStatusVector::assign(const StatusVector& v) throw()
 
 void StatusVector::ImplStatusVector::assign(const Exception& ex) throw()
 {
-	m_status_vector.clear();
+	clear();
 	ex.stuffException(m_status_vector);
 }
 
