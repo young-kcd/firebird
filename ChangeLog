@@ -1,3 +1,7 @@
+ 2015-09-01 20:54  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4921: Predicate IS [NOT] DISTINCT FROM is not pushed into unions/aggregates thus causing sub-optimal plans.
+
  2015-08-31 15:48  asfernandes 
    M src/jrd/dyn_mod.epp
 Backported fix for CORE-4917 - ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'.
