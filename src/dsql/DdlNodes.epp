@@ -6065,6 +6065,23 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 
 	try
 	{
+		FieldDefinition fieldDefinition(*tdbb->getDefaultPool());
+
+		if (field->typeOfName.hasData())
+		{
+			// Get the domain information.
+			if (!METD_get_domain(transaction, field, field->typeOfName))
+			{
+				// Specified domain or source field does not exist
+				status_exception::raise(
+					Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
+					Arg::Gds(isc_dsql_command_err) <<
+					Arg::Gds(isc_dsql_domain_not_found) << field->typeOfName);
+			}
+
+			fieldDefinition.fieldSource = field->typeOfName;
+		}
+
 		// Check for constraints.
 		ObjectsArray<Constraint> constraints;
 		bool notNullFlag = false;
@@ -6088,7 +6105,6 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 			}
 		}
 
-		FieldDefinition fieldDefinition(*tdbb->getDefaultPool());
 		fieldDefinition.relationName = name;
 		fieldDefinition.name = field->fld_name;
 
@@ -6098,21 +6114,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		if (position >= 0)
 			fieldDefinition.position = position;
 
-		if (field->typeOfName.hasData())
-		{
-			// Get the domain information.
-			if (!METD_get_domain(transaction, field, field->typeOfName))
-			{
-				// Specified domain or source field does not exist
-				status_exception::raise(
-					Arg::Gds(isc_sqlerr) << Arg::Num(-607) <<
-					Arg::Gds(isc_dsql_command_err) <<
-					Arg::Gds(isc_dsql_domain_not_found) << field->typeOfName);
-			}
-
-			fieldDefinition.fieldSource = field->typeOfName;
-		}
-		else
+		if (field->typeOfName.isEmpty())
 		{
 			string computedSource;
 			BlrDebugWriter::BlrData computedValue;
