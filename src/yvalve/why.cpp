@@ -5646,7 +5646,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 				return new YAttachment(provider, attachment, expandedFilename);
 			}
 
-			switch(currentStatus->getErrors()[1])
+			switch (currentStatus->getErrors()[1])
 			{
 			case isc_io_error:
 			case isc_lock_dir_access:
