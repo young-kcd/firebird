@@ -3316,6 +3316,7 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 					memcpy(jumpKey.key_data + jumpNode.prefix, jumpNode.data, jumpNode.length);
 					jumpKey.key_length = jumpNode.prefix + jumpNode.length;
 					n--;
+					tempData = newJumpNode.data;
 					continue;
 				}
 
@@ -3385,9 +3386,9 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 						}
 					}
 					fb_assert(jumpKey.key_length >= newPrefix);
+					fb_assert(newJumpNode.data + newJumpNode.length < tempEnd);
 
 					memcpy(newJumpNode.data, jumpKey.key_data + newJumpNode.prefix, newJumpNode.length);
-					tempData = newJumpNode.data + newJumpNode.length;
 				}
 
 				memcpy(jumpKey.key_data + newJumpNode.prefix, newJumpNode.data, newJumpNode.length);
@@ -3400,6 +3401,9 @@ static contents delete_node(thread_db* tdbb, WIN* window, UCHAR* pointer)
 				jumpNodes->add(newJumpNode);
 				jumpPrev = &jumpNodes->back();
 				rebuild = false;
+
+				tempData = newJumpNode.data + newJumpNode.length;
+				fb_assert(tempData < tempEnd);
 			}
 			else
 			{
