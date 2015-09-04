@@ -118,7 +118,6 @@ namespace Jrd
 				fb_assert(getLength() == other->getLength());
 
 			m_data.assign(other->m_data);
-			fb_assert(m_format->fmt_length == m_data.getCount());
 		}
 
 		void copyDataFrom(const UCHAR* data)
