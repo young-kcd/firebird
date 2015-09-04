@@ -1,3 +1,15 @@
+ 2015-09-03 21:14  hvlad 
+   M src/jrd/btr.cpp
+Postfix for CORE-4904
+
+ 2015-09-03 17:42  robocop 
+   M src/yvalve/why.cpp
+Misc.
+
+ 2015-09-03 16:30  asfernandes 
+   M src/dsql/DdlNodes.epp
+Fixed CORE-4585 - Can't create column check constraint when the column is domain based.
+
  2015-09-02 18:17  alexpeshkoff 
    M src/common/StatusArg.cpp
 Fixed segfault, reported privately by Vlad
