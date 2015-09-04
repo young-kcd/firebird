@@ -5916,6 +5916,21 @@ static bool printUser(const char* dbName)
 	if (!frontendTransaction())
 		return false;
 
+	class FbTransCommit
+	{
+	public:
+		~FbTransCommit()
+		{
+			if (DB && fbTrans)
+			{
+				fbTrans->rollback(fbStatus);
+				if (succeeded())
+					fbTrans = NULL;
+			}
+		}
+	};
+	FbTransCommit fbTransCommit;
+
 	const char* sql = "SELECT CURRENT_USER, CURRENT_ROLE FROM RDB$DATABASE";
 
 	Firebird::RefPtr<Firebird::IStatement> st(Firebird::REF_NO_INCR,
