@@ -1,3 +1,7 @@
+ 2015-09-03 21:22  hvlad 
+   M src/jrd/btr.cpp
+Postfix for CORE-4904
+
  2015-09-01 20:54  dimitr 
    M src/jrd/opt.cpp
 Fixed CORE-4921: Predicate IS [NOT] DISTINCT FROM is not pushed into unions/aggregates thus causing sub-optimal plans.
