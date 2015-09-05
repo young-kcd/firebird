@@ -1,3 +1,11 @@
+ 2015-09-04 21:14  dimitr 
+   M src/jrd/Record.h
+Removed incorrect assertion (CORE-4902).
+
+ 2015-09-04 10:53  alexpeshkoff 
+   M src/isql/isql.epp
+Rollback frontend transaction after getting login and role names
+
  2015-09-03 21:14  hvlad 
    M src/jrd/btr.cpp
 Postfix for CORE-4904
