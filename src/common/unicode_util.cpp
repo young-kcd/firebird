@@ -1337,9 +1337,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 			icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_PRIMARY, &status);
 		}
 		else if (attributes & TEXTTYPE_ATTR_CASE_INSENSITIVE)
-		{
 			icu->ucolSetAttribute(compareCollator, UCOL_STRENGTH, UCOL_SECONDARY, &status);
-		}
 	}
 
 	USet* contractions = icu->usetOpen(0, 0);

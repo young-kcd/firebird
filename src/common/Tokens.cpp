@@ -74,12 +74,14 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 		if (comms && !inStr)
 		{
 			bool foundComment = false;
+
 			for (const Comment* comm = comms; comm->start; ++comm)
 			{
 				if (strncmp(comm->start, &str[p], strlen(comm->start)) == 0)
 				{
 					FB_SIZE_T p2 = p + strlen(comm->start);
 					p2 = str.find(comm->stop, p2);
+
 					if (p2 == str.npos)
 					{
 						if (!comm->endOnEol)
@@ -88,12 +90,14 @@ void Tokens::parse(FB_SIZE_T length, const char* toParse)
 					}
 					else
 						p2 += strlen(comm->stop);
+
 					str.erase(p, p2 - p);
 					origin += (p2 - p);
 					foundComment = true;
-					break;;
+					break;
 				}
 			}
+
 			if (foundComment)
 				continue;
 		}

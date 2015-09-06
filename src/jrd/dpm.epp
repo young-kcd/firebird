@@ -2301,12 +2301,12 @@ static USHORT compress(thread_db* tdbb, data_page* page)
 			// This should also work just a little bit faster too.
 			const USHORT l = ROUNDUP(index->dpg_length, ODS_ALIGNMENT);
 			space -= l;
-			memcpy(temp_page + space, (UCHAR *) page + index->dpg_offset, l);
+			memcpy(temp_page + space, (UCHAR*) page + index->dpg_offset, l);
 			index->dpg_offset = space;
 		}
 	}
 
-	memcpy((UCHAR *) page + space, temp_page + space, dbb->dbb_page_size - space);
+	memcpy((UCHAR*) page + space, temp_page + space, dbb->dbb_page_size - space);
 
 	if (page->dpg_header.pag_type != pag_data) {
 		BUGCHECK(251);			// msg 251 damaged data page
@@ -3286,7 +3286,6 @@ static void mark_full(thread_db* tdbb, record_param* rpb)
 		// In case of a latch timeout, release the latch on the pointer page and retry.
 		if (!dpage)
 			CCH_RELEASE(tdbb, &pp_window);
-
 	} while (!dpage);
 
 	const UCHAR flags = dpage->dpg_header.pag_flags;
