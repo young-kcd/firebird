@@ -45,6 +45,19 @@ namespace
 
 		return true;
 	}
+
+	// Initialize dependent invariants
+	void initializeInvariants(jrd_req* request, const VarInvariantArray* invariants)
+	{
+		if (invariants)
+		{
+			for (const ULONG* iter = invariants->begin(); iter < invariants->end(); ++iter)
+			{
+				impure_value* const invariantImpure = request->getImpure<impure_value>(*iter);
+				invariantImpure->vlu_flags = 0;
+			}
+		}
+	}
 }
 
 // ---------------------
@@ -59,19 +72,7 @@ SubQuery::SubQuery(const RecordSource* rsb, const VarInvariantArray* invariants)
 
 void SubQuery::open(thread_db* tdbb) const
 {
-	// Initialize dependent invariants
-
-	if (m_invariants)
-	{
-		jrd_req* const request = tdbb->getRequest();
-
-		for (const ULONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
-		{
-			impure_value* const invariantImpure = request->getImpure<impure_value>(*iter);
-			invariantImpure->vlu_flags = 0;
-		}
-	}
-
+	initializeInvariants(tdbb->getRequest(), m_invariants);
 	m_top->open(tdbb);
 }
 
@@ -110,17 +111,7 @@ void Cursor::open(thread_db* tdbb) const
 	impure->irsb_active = true;
 	impure->irsb_state = BOS;
 
-	// Initialize dependent invariants
-
-	if (m_invariants)
-	{
-		for (const ULONG* iter = m_invariants->begin(); iter < m_invariants->end(); iter++)
-		{
-			impure_value* const invariantImpure = request->getImpure<impure_value>(*iter);
-			invariantImpure->vlu_flags = 0;
-		}
-	}
-
+	initializeInvariants(request, m_invariants);
 	m_top->open(tdbb);
 }
 
