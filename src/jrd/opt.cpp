@@ -2948,6 +2948,7 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
+		case nod_value_if:
 		case nod_sys_function:
 		case nod_derived_expr:
 		case nod_list:
@@ -3136,6 +3137,7 @@ static bool expression_contains_stream(CompilerScratch* csb,
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
+		case nod_value_if:
 		case nod_sys_function:
 		case nod_derived_expr:
 		case nod_list:
@@ -3145,7 +3147,6 @@ static bool expression_contains_stream(CompilerScratch* csb,
 		case nod_similar:
 		case nod_sleuth:
 		case nod_missing:
-		case nod_value_if:
 		case nod_matches:
 		case nod_contains:
 		case nod_starts:
@@ -6176,7 +6177,6 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 
 	switch (node->nod_type)
 	{
-
 		case nod_cast:
 			if (get_unmapped_node(tdbb, node->nod_arg[e_cast_source], map, shellStream, false) != NULL)
 			{
@@ -6229,9 +6229,26 @@ static jrd_nod* get_unmapped_node(thread_db* tdbb, jrd_nod* node,
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
+		case nod_value_if:
 		case nod_sys_function:
 		case nod_derived_expr:
 		case nod_list:
+
+		case nod_like:
+		case nod_between:
+		case nod_similar:
+		case nod_sleuth:
+		case nod_missing:
+		case nod_matches:
+		case nod_contains:
+		case nod_starts:
+		case nod_equiv:
+		case nod_eql:
+		case nod_neq:
+		case nod_geq:
+		case nod_gtr:
+		case nod_lss:
+		case nod_leq:
 		{
 			// Check all sub-nodes of this node.
 			jrd_nod** ptr = node->nod_arg;
