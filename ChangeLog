@@ -1,3 +1,13 @@
+ 2015-09-06 19:00  asfernandes 
+   M src/jrd/recsrc/Cursor.cpp
+Avoid code duplication.
+
+ 2015-09-06 18:52  asfernandes 
+   M src/common/Tokens.cpp
+   M src/common/unicode_util.cpp
+   M src/jrd/dpm.epp
+Misc.
+
  2015-09-04 21:14  dimitr 
    M src/jrd/Record.h
 Removed incorrect assertion (CORE-4902).
