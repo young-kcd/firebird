@@ -1,3 +1,7 @@
+ 2015-09-07 09:56  dimitr 
+   M src/jrd/opt.cpp
+Fixed CORE-4927: IIF function prevents the condition from being pushed into the union for better optimization.
+
  2015-09-03 21:22  hvlad 
    M src/jrd/btr.cpp
 Postfix for CORE-4904
