@@ -1079,8 +1079,6 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 	// Assignment.
 
-	dsqlScratch->appendUChar(blr_begin);
-
 	if (dsqlIntoStmt)
 	{
 		ValueListNode* list = cursor->rse->dsqlSelectList;
@@ -1097,6 +1095,8 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 		dsqlScratch->flags |= DsqlCompilerScratch::FLAG_FETCH;
 
+		dsqlScratch->appendUChar(blr_begin);
+
 		while (ptr != end)
 		{
 			dsqlScratch->appendUChar(blr_assignment);
@@ -1104,10 +1104,10 @@ void CursorStmtNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 			GEN_expr(dsqlScratch, *ptr_to++);
 		}
 
+		dsqlScratch->appendUChar(blr_end);
+
 		dsqlScratch->flags &= ~DsqlCompilerScratch::FLAG_FETCH;
 	}
-
-	dsqlScratch->appendUChar(blr_end);
 }
 
 CursorStmtNode* CursorStmtNode::pass1(thread_db* tdbb, CompilerScratch* csb)
