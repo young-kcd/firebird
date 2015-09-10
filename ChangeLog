@@ -1,3 +1,7 @@
+ 2015-09-09 21:38  dimitr 
+   M src/dsql/StmtNodes.cpp
+This should fix CORE-4929: Cannot compile source with ELSE IF () THEN and commands to manipulate explicit cursor.
+
  2015-09-06 19:00  asfernandes 
    M src/jrd/recsrc/Cursor.cpp
 Avoid code duplication.
