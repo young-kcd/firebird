@@ -2243,10 +2243,10 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 #endif
 
 	*return_length = 0;
-
 	svc_timeout = false;
-
 	bool flagFirst = true;
+	ULONG head = svc_stdout_head;
+
 	while (length)
 	{
 		if ((empty() && (svc_flags & SVC_finished)) || checkForShutdown())
@@ -2292,8 +2292,6 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			break;
 		}
 
-		ULONG head = svc_stdout_head;
-
 		while (head != svc_stdout_tail && length > 0)
 		{
 			flagFirst = true;
@@ -2314,14 +2312,18 @@ void Service::get(UCHAR* buffer, USHORT length, USHORT flags, USHORT timeout, US
 			buffer[(*return_length)++] = ch;
 		}
 
-		if ((!(flags & GET_LINE)) || length == 0 || full())
+		if (!(flags & GET_LINE))
+			svc_stdout_head = head;
+	}
+
+	if (flags & GET_LINE)
+	{
+		if (length == 0 || full())
 			svc_stdout_head = head;
 		else
-		{
 			*return_length = 0;
-			break;
-		}
 	}
+
 	svc_sem_empty.release();
 }
 
