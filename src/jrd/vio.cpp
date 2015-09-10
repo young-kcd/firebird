@@ -219,19 +219,24 @@ static bool assert_gc_enabled(const jrd_tra* transaction, const jrd_rel* relatio
 inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation, const char* op)
 {
 	const Attachment* const attachment = tdbb->getAttachment();
+	const jrd_tra* const transaction = tdbb->getTransaction();
 
 	// It doesn't matter that we use protect_system_table_upd() that's for deletions and updates
 	// but this code is for insertions and updates, because we use force = true.
-	if (attachment->isGbak() && !(attachment->att_flags & ATT_creator))
+	if (attachment->isGbak() && !(attachment->att_flags & ATT_creator) &&
+		!(transaction->tra_flags & TRA_db_triggers))
+	{
 		protect_system_table_delupd(tdbb, relation, op, true);
+	}
 }
 
 // Used in VIO_erase.
 inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 {
 	const Attachment* const attachment = tdbb->getAttachment();
+	const jrd_tra* const transaction = tdbb->getTransaction();
 
-	if (attachment->isGbak())
+	if (attachment->isGbak() && !(transaction->tra_flags & TRA_db_triggers))
 	{
 		if (attachment->att_flags & ATT_creator)
 		{
