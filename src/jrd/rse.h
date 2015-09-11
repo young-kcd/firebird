@@ -351,6 +351,7 @@ const SSHORT SMB_TRANS_ID = -3;		// transaction id of record
 const USHORT SMB_project = 1;		// sort is really a project
 //const USHORT SMB_tag = 2;			// beast is a tag sort. What is this?
 const USHORT SMB_unique_sort = 4;	// sorts using unique key - for distinct and group by
+const USHORT SMB_key_vary = 8;		// sort key contains varying length string(s)
 
 
 // Blocks used to compute optimal join order:

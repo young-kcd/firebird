@@ -5706,6 +5706,7 @@ static RecordSource* gen_sort(thread_db* tdbb,
 		{
 			sort_key->skd_vary_offset = (USHORT) map_length;
 			map_length += sizeof(USHORT);
+			map->smb_flags |= SMB_key_vary;
 		}
 	}
 

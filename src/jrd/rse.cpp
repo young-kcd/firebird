@@ -85,7 +85,7 @@ using namespace Firebird;
 static void close_merge(thread_db*, RecordSource*, irsb_mrg*);
 static void close_procedure(thread_db*, RecordSource*);
 static SSHORT compare(thread_db*, jrd_nod*, jrd_nod*);
-static SSHORT compare_longs(const SLONG*, const SLONG*, USHORT);
+static bool compare_keys(const UCHAR*, const UCHAR*, const SortMap*);
 #ifdef SCROLLABLE_CURSORS
 static bool fetch_record(thread_db*, RecordSource*, USHORT, rse_get_mode);
 static bool get_merge_join(thread_db*, RecordSource*, irsb_mrg*, rse_get_mode);
@@ -689,27 +689,54 @@ static SSHORT compare(thread_db* tdbb, jrd_nod* node1, jrd_nod* node2)
 }
 
 
-static SSHORT compare_longs(const SLONG* p, const SLONG* q, USHORT count)
-{
+static bool compare_keys(const UCHAR* p, const UCHAR* q, const SortMap* map)
 /**************************************
  *
- *	c o m p a r e _ l o n g s
+ *	c o m p a r e _ k e y s
  *
  **************************************
  *
  * Functional description
- *	Compare two strings of SLONG words.
+ *	Compare two keys for equality.
  *
  **************************************/
-	for (; count; p++, q++, --count)
+{
+	if (!memcmp(p, q, map->smb_key_length * sizeof(SLONG)))
+		return true;
+
+	if (!(map->smb_flags & SMB_key_vary))
+		return false;
+
+	// Binary-distinct varying length string keys may in fact be equal.
+	// Re-check the keys at the higher level. See CORE-4909.
+
+	fb_assert(map->smb_keys % 2 == 0);
+	const USHORT count = map->smb_keys / 2;
+
+	for (USHORT i = 0; i < count; i++)
 	{
-		if (*p > *q)
-			return 1;
-		if (*p < *q)
-			return -1;
+		const smb_repeat* const item = &map->smb_rpt[i];
+
+		const UCHAR flag1 = *(p + item->smb_flag_offset);
+		const UCHAR flag2 = *(q + item->smb_flag_offset);
+
+		if (flag1 != flag2)
+			return false;
+
+		if (!flag1)
+		{
+			dsc desc1 = item->smb_desc;
+			desc1.dsc_address = const_cast<UCHAR*>(p) + (IPTR) desc1.dsc_address;
+
+			dsc desc2 = item->smb_desc;
+			desc2.dsc_address = const_cast<UCHAR*>(q) + (IPTR) desc2.dsc_address;
+
+			if (MOV_compare(&desc1, &desc2))
+				return false;
+		}
 	}
 
-	return 0;
+	return true;
 }
 
 
@@ -1355,16 +1382,14 @@ static bool get_merge_join(thread_db* tdbb,
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
 		Firebird::HalfStaticArray<ULONG, 64> key;
-		ULONG* const first_data = key.getBuffer(map->smb_key_length);
+		UCHAR* const first_data = (UCHAR*) key.getBuffer(map->smb_key_length);
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
 
 		SLONG record;
 		while ((record = get_merge_record(tdbb, sort_rsb, tail, mode)) >= 0)
 		{
-			if (compare_longs((const SLONG*) first_data,
-							  (const SLONG*) get_merge_data(tdbb, mfb, record),
-							  map->smb_key_length))
+			if (!compare_keys(first_data, get_merge_data(tdbb, mfb, record), map))
 			{
 				tail->irsb_mrg_last_fetched = record;
 				break;
@@ -1538,16 +1563,14 @@ static bool get_merge_join(thread_db* tdbb, RecordSource* rsb, irsb_mrg* impure)
 		SortMap* map = (SortMap*) sort_rsb->rsb_arg[0];
 		merge_file* mfb = &tail->irsb_mrg_file;
 		Firebird::HalfStaticArray<ULONG, 64> key;
-		ULONG* const first_data = key.getBuffer(map->smb_key_length);
+		UCHAR* const first_data = (UCHAR*) key.getBuffer(map->smb_key_length);
 		const ULONG key_length = map->smb_key_length * sizeof(ULONG);
 		memcpy(first_data, get_merge_data(tdbb, mfb, 0), key_length);
 
 		SLONG record;
 		while ((record = get_merge_record(tdbb, sort_rsb, tail)) >= 0)
 		{
-			if (compare_longs((const SLONG*) first_data,
-							  (const SLONG*) get_merge_data(tdbb, mfb, record),
-							  map->smb_key_length))
+			if (!compare_keys(first_data, get_merge_data(tdbb, mfb, record), map))
 			{
 				tail->irsb_mrg_last_fetched = record;
 				break;
