@@ -263,6 +263,46 @@ Sort* SortedStream::init(thread_db* tdbb) const
 	return scb.release();
 }
 
+bool SortedStream::compareKeys(const UCHAR* p, const UCHAR* q) const
+{
+	if (!memcmp(p, q, m_map->keyLength))
+		return true;
+
+	if (!(m_map->flags & FLAG_KEY_VARY))
+		return false;
+
+	// Binary-distinct varying length string keys may in fact be equal.
+	// Re-check the keys at the higher level. See CORE-4909.
+
+	fb_assert(m_map->keyItems.getCount() % 2 == 0);
+	const USHORT count = m_map->keyItems.getCount() / 2;
+
+	for (USHORT i = 0; i < count; i++)
+	{
+		const SortMap::Item* const item = &m_map->items[i];
+
+		const UCHAR flag1 = *(p + item->flagOffset);
+		const UCHAR flag2 = *(q + item->flagOffset);
+
+		if (flag1 != flag2)
+			return false;
+
+		if (!flag1)
+		{
+			dsc desc1 = item->desc;
+			desc1.dsc_address = const_cast<UCHAR*>(p) + (IPTR) desc1.dsc_address;
+
+			dsc desc2 = item->desc;
+			desc2.dsc_address = const_cast<UCHAR*>(q) + (IPTR) desc2.dsc_address;
+
+			if (MOV_compare(&desc1, &desc2))
+				return false;
+		}
+	}
+
+	return true;
+}
+
 UCHAR* SortedStream::getData(thread_db* tdbb) const
 {
 	jrd_req* const request = tdbb->getRequest();

@@ -261,7 +261,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 			const UCHAR* p = first_data;
 			const UCHAR* q = getData(tdbb, mfb, record);
 
-			if (memcmp(p, q, key_length))
+			if (!sort_rsb->compareKeys(p, q))
 			{
 				tail->irsb_mrg_last_fetched = record;
 				break;

@@ -503,8 +503,9 @@ namespace Jrd
 		};
 
 	public:
-		static const USHORT FLAG_PROJECT = 0x1;	// sort is really a project
-		static const USHORT FLAG_UNIQUE  = 0x2;	// sorts using unique key - for distinct and group by
+		static const USHORT FLAG_PROJECT	= 0x1;	// sort is really a project
+		static const USHORT FLAG_UNIQUE		= 0x2;	// sorts using unique key - for distinct and group by
+		static const USHORT FLAG_KEY_VARY	= 0x4;	// sort key contains varying length string(s)
 
 		// Special values for SortMap::Item::fieldId.
 		static const SSHORT ID_DBKEY		= -1;	// dbkey value
@@ -581,6 +582,8 @@ namespace Jrd
 		{
 			return m_map->keyLength;
 		}
+
+		bool compareKeys(const UCHAR* p, const UCHAR* q) const;
 
 		UCHAR* getData(thread_db* tdbb) const;
 		void mapData(thread_db* tdbb, jrd_req* request, UCHAR* data) const;

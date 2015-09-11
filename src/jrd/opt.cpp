@@ -2735,6 +2735,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		{
 			sort_key->skd_vary_offset = map_length;
 			map_length += sizeof(USHORT);
+			map->flags |= SortedStream::FLAG_KEY_VARY;
 		}
 	}
 
