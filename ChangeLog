@@ -1,3 +1,14 @@
+ 2015-09-10 17:06  asfernandes 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Fixed CORE-4928 - It is not possible to save the connection information in the ON CONNECT trigger, if the connection is created by the gbak.
+
+ 2015-09-10 14:03  alexpeshkoff 
+   M src/jrd/svc.cpp
+Postfix for CORE-4897: avoid problems with clients not understanding "data not ready" state (like IBE)
+
  2015-09-09 21:38  dimitr 
    M src/dsql/StmtNodes.cpp
 This should fix CORE-4929: Cannot compile source with ELSE IF () THEN and commands to manipulate explicit cursor.
