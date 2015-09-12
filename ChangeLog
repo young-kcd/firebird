@@ -1,3 +1,10 @@
+ 2015-09-11 09:57  dimitr 
+   M src/jrd/opt.cpp
+   M src/jrd/recsrc/MergeJoin.cpp
+   M src/jrd/recsrc/RecordSource.h
+   M src/jrd/recsrc/SortedStream.cpp
+Fixed CORE-4909 re. sort/merge joins.
+
  2015-09-10 17:06  asfernandes 
    M src/dsql/StmtNodes.cpp
    M src/jrd/exe.cpp
