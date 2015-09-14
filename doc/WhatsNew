@@ -1,4 +1,161 @@
   **************************
+  * v2.5.5
+  **************************
+
+    * Bugfix CORE-4927
+        IIF function prevents the condition from being pushed into the union for better optimization
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4921
+        Predicate IS [NOT] DISTINCT FROM is not pushed into unions/aggregates thus causing sub-optimal plans
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4919
+        Classic server (all processes) hangs after death of one process (AIX / SOLARIS)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4917
+        ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4909
+        MERGE / HASH JOINs produce incorrect results when VARCHAR join keys differ only by trailing spaces
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4908
+        Firebird hangs on simultaneous connection to the Services API and database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4905
+        Invalid internal BLR filter conversion
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4904
+        Index corruption while inserting data into a long-key-indexed field
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4876
+        Named trace session (launched by fbsvcmgr with non-empty value for 'trc_name' parameter) can not be stopped using its name
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4869
+        Segmentation fault when cleaning metadata cache
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4867
+        Server crash when preparing a query with PLAN clause at some CTE
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4865
+        Online validation could wrongly report double allocated pages
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4860
+        Online validation fails on WINDOWS if `dbname` argument contains forward slash ('/') and concurrent attachment which also uses '/' exists
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4830
+        Memory leak in SuperServer
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4822
+        MERGE JOIN cannot be used for DBKEY based expressions
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4809
+        HASH/MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses
+        and join is based on DBKEY concatenations
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4789
+        Prohibit ability to cast timestamps that out of valid range to varchar
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4788
+        SuperClassic server hangs when receiving network packet
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4786
+        Problematic key value (attempting to insert duplicate in PK/UK) is not shown where length of key >= 127 characters
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4785
+        Bad packet of op_execute kills the server
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4761
+        ON CONNECT triggers occasionally fail to execute
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4759
+        Request synchronization error while building an expression index
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4754
+        Bugcheck 167 (invalid SEND request) while working with GTT from several attachments
+        (using EXECUTE STATEMENT ... ON EXTERNAL and different roles)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4753
+        Firebird hangs in the embedded mode
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4752
+        EXECUTE STATEMENT using BLOB parameters results in "Invalid BLOB ID" error
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4747
+        Error "invalid BLOB ID" can occur when retrieving MON$STATEMENTS.MON$SQL_TEXT using ES/EDS and db_connect argument is not specified
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Bugfix CORE-4276
+        Error on CREATE TABLE with "CHARACTER SET DOS775" field
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4020
+        Firebird2Control.cpl crashes in Windows 8
+      Contributor(s):
+        Paul Reeves <preeves at ibphoenix.com>
+
+    * Bugfix CORE-3548
+        GFIX returns an error after correctly shutting down a database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-214
+        COUNT(DISTINCT ...) is too slow
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+
+  **************************
   * v2.5.4
   **************************
 
