@@ -1,3 +1,254 @@
+  **************************
+  * v3.0 Release Candidate 1
+  **************************
+
+    * Bugfix CORE-4929
+        Cannot compile source with "ELSE IF ( <expr> ) THEN" statement and commands to manupulate explicit cursor inside
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4928
+        Impossible to save the connection information in the ON CONNECT trigger if the connection is created by GBAK
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4921
+        Predicate IS [NOT] DISTINCT FROM is not pushed into unions/aggregates thus causing sub-optimal plans
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4919
+        Classic server (all processes) hangs after death of one process (AIX / SOLARIS)
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4917
+        ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4909
+        MERGE / HASH JOINs produce incorrect results when VARCHAR join keys differ only by trailing spaces
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4906
+        AV when server is shut down with active trace session(s)
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4904
+        Index corruption when add data in long-key-indexed field
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4902
+        Assertion (m_format->fmt_length == m_data.getCount()) failure
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4899
+        GFIX -online: message "IProvider::attachDatabase failed when loading mapping cache" appears in Classic (only) if access uses remote protocol
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4897
+        FBSVCMGR can produce broken log when restoring database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4890
+        Placing comment (single-lined or multi-lined) between final `END` of creating SP code and terminal character (^)
+        produces compiling error when tool uses old API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4889
+        FBSVCMGR with `action_trace_start` prevents in 3.0 SuperServer from connecting using local protocol
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4887
+        AFTER CREATE/ALTER PACKAGE DDL triggers runs in incorrect moment
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4884
+        Crash on parsing of script containing `execute block` with lot of nested begin..end statements
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4882
+        ISQL input command (or -i option) reads large (> 64K) lines incorrectly
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4876
+        Named trace session (launched by fbsvcmgr with non-empty value for 'trc_name' parameter) can not be stopped using its name
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4872
+        v3 fbclient cannot work with servers older than v2.5 via the remote protocol
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4870
+        SET COUNT ON: issuing UPDATE on view which was created WITH CHECK OPTION produces wrong number of affected rows
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4865
+        Online validation could wrongly report double allocated pages
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4864
+        CREATE DATABASE fails with ISQL
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4861
+        Segmentation fault when working with saved exception in request
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4860
+        Online validation fails on WINDOWS if `dbname` argument contains forward slash ('/') and concurrent attachment which also uses '/' exists
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4859
+        Firebird v3 embedded cannot work without folder C:\ProgramData\firebird
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4855
+        Online validation during DML activity in other connection leads to errors:
+        "Error while trying to read from file" and "page in use during flush (210)"
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4854
+        Client library incorrectly handles non-UTF8 representation of international characters in SPB
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4848
+        MERGE ... WHEN NOT MATCHED ... RETURNING returns wrong (non-null) values when no insert is performed
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4846
+        Altering a trigger indicating other table than the original does not reflect the change
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4836
+        GRANT UPDATE(c) ON T TO U01 WITH GRANT OPTION: user U01 will not be able to revoke this privilege if some DML is executed before revoke
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4710
+        Invalid request BLR at offset 361 context already in use (BLR error)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4585
+        Cannot create a column check constraint when the column is domain based
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4497
+        Regression: wrong handling in FOR-cursor when NOT EXISTS( select from <VIEW> ) statement is used to check results obtained from SP
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4279
+        Invalid error message: "CHARACTER SET OCTETS is not defined" on db creation with isc_dpb_lc_ctype = OCTETS
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4277
+        It is possible to create a database with invalid character set
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4276
+        Error on CREATE TABLE with "CHARACTER SET DOS775" field
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4107
+        Wrong resultset (subquery + derived table + union)
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-3717
+        Anomalies between 3 methods of user management regarding valid user names and passwords
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3548
+        GFIX returns an error after correctly shutting down a database
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-3545
+        Inconsistent domain's constraint validation in PSQL
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4923
+        Add ability to track domains rename in DDL triggers
+      See also:
+        /doc/sql.extensions/README.ddl_triggers.txt 
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4911
+        Providers enumeration should not be continued on most of errors taking place in the provider
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4898
+        Speed up function creation and loading when there are many functions in the database
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4881
+         Increase maximum string literal length to 64KB while setting a lower limit (of characters)
+         for multi-byte charsets based on their maximum character length
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4880
+        Better performance of creating packages containing many functions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4879
+        Minor inconvenience in user management via services API
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4851
+        Make tracing/audit aware of multiple security databases authentication
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-3782
+        Convert password/user name into UTF-8 before encryption
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-1999
+        Timestamps in the GBAK output
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+
   *************
   * v3.0 Beta 2
   *************
