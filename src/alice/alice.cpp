@@ -300,12 +300,6 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(7);	// msg 7: numeric value required
 			}
 
-			// JMB: Removed because tdgbl->ALICE_data.ua_db_SQL_dialect is
-			//		an unsigned number.  Therefore this check is useless.
-			// if (tdgbl->ALICE_data.ua_db_SQL_dialect < 0)
-			// {
-			//	ALICE_error(114);	// msg 114: positive or zero numeric value required
-			// }
 		}
 
 		if (table->in_sw_value & (sw_commit | sw_rollback | sw_two_phase))
