@@ -3826,79 +3826,94 @@ static processing_state show_functions(const SCHAR* funcname)
 
 	// If no function name was given, just list the functions
 
-	bool first = true;
-
 	if (!funcname || !strlen(funcname))
 	{
 		// This query gets the function name; the next query
 		// gets all the dependencies if any
 
-		for (int i = 0; i < 2; ++i)
+		bool first = true;
+		string prevPackage;
+
+		FOR FUN IN RDB$FUNCTIONS
+			SORTED BY FUN.RDB$PACKAGE_NAME, FUN.RDB$FUNCTION_NAME
 		{
-			first = true;
+			string package;
 
-			FOR FUN IN RDB$FUNCTIONS
-				SORTED BY FUN.RDB$PACKAGE_NAME, FUN.RDB$FUNCTION_NAME
+			if (!FUN.RDB$PACKAGE_NAME.NULL)
+			{
+				fb_utils::exact_name(FUN.RDB$PACKAGE_NAME);
+				package = FUN.RDB$PACKAGE_NAME;
+			}
 
-				if (first)
+			if (first || package != prevPackage)
+			{
+				if (package.isEmpty())
 				{
-					if (i == 0)
-						isqlGlob.printf("Global functions:%s", NEWLINE);
-					else
-						isqlGlob.printf("%sPackaged functions:%s", NEWLINE, NEWLINE);
+					isqlGlob.printf("Global functions%s%s", NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-							 "Function Name                    Invalid Dependency, Type%s", NEWLINE);
+						"Function Name                    Invalid Dependency, Type%s", NEWLINE);
 					isqlGlob.printf(
-							 "================================ ======= =====================================%s", NEWLINE);
-					first = false;
+						"================================ ======= =====================================%s", NEWLINE);
 				}
-
-				bool private_flag = !FUN.RDB$PACKAGE_NAME.NULL;
-				const char* invalid = "        ";
-
-				if (!(FUN.RDB$VALID_BLR.NULL || FUN.RDB$VALID_BLR))
-					invalid = "   *    ";
-
-				if ((i == 0 && private_flag) || (i == 1 && !private_flag))
-					continue;
-
-				// Strip trailing blanks
-
-				fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
-				isqlGlob.printf("%-34s%s", FUN.RDB$FUNCTION_NAME, invalid);
-
-				if (FUN.RDB$PACKAGE_NAME.NULL)
+				else
 				{
-					bool first_dep = true;
-					FOR DEP IN RDB$DEPENDENCIES WITH
-						FUN.RDB$FUNCTION_NAME EQ DEP.RDB$DEPENDENT_NAME
-						REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-						SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+					if (!first)
+						isqlGlob.printf("%s%s", NEWLINE, NEWLINE);
 
-						fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-						// Get column type name to print
-						if (!first_dep) {
-							isqlGlob.printf("%s%42s", NEWLINE, "");
-						}
-						first_dep = false;
-						isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
-							Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
-					END_FOR
-					ON_ERROR
-						ISQL_errmsg (fbStatus);
-						return ps_ERR;
-					END_ERROR;
+					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
+
+					isqlGlob.printf(
+						"Function Name                    Invalid%s", NEWLINE);
+					isqlGlob.printf(
+						"================================ =======%s", NEWLINE);
 				}
 
-				isqlGlob.printf(NEWLINE);
+				first = false;
+			}
 
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(fbStatus);
-				return ps_ERR;
-			END_ERROR;
+			prevPackage = package;
+
+			const char* invalid = "        ";
+
+			if (!(FUN.RDB$VALID_BLR.NULL || FUN.RDB$VALID_BLR))
+				invalid = "   *    ";
+
+			// Strip trailing blanks
+
+			fb_utils::exact_name(FUN.RDB$FUNCTION_NAME);
+			isqlGlob.printf("%-34s%s", FUN.RDB$FUNCTION_NAME, invalid);
+
+			if (FUN.RDB$PACKAGE_NAME.NULL)
+			{
+				bool first_dep = true;
+				FOR DEP IN RDB$DEPENDENCIES WITH
+					FUN.RDB$FUNCTION_NAME EQ DEP.RDB$DEPENDENT_NAME
+					REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+					SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+
+					fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
+					// Get column type name to print
+					if (!first_dep) {
+						isqlGlob.printf("%s%42s", NEWLINE, "");
+					}
+					first_dep = false;
+					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+						Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg (fbStatus);
+					return ps_ERR;
+				END_ERROR;
+			}
+
+			isqlGlob.printf(NEWLINE);
 		}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(fbStatus);
+			return ps_ERR;
+		END_ERROR;
 
 		if (first)
 			return OBJECT_NOT_FOUND;
@@ -4700,73 +4715,88 @@ static processing_state show_proc(const SCHAR* procname)
 		// gets all the dependencies if any
 
 		bool first_proc = true;
+		string prevPackage;
 
-		for (int i = 0; i < 2; ++i)
+		FOR PRC IN RDB$PROCEDURES
+			SORTED BY PRC.RDB$PACKAGE_NAME, PRC.RDB$PROCEDURE_NAME
 		{
-			first_proc = true;
+			string package;
 
-			FOR PRC IN RDB$PROCEDURES
-				SORTED BY PRC.RDB$PACKAGE_NAME, PRC.RDB$PROCEDURE_NAME
+			if (!PRC.RDB$PACKAGE_NAME.NULL)
+			{
+				fb_utils::exact_name(PRC.RDB$PACKAGE_NAME);
+				package = PRC.RDB$PACKAGE_NAME;
+			}
 
-				if (first_proc)
+			if (first_proc || package != prevPackage)
+			{
+				if (package.isEmpty())
 				{
-					if (i == 0)
-						isqlGlob.printf("Global procedures:%s", NEWLINE);
-					else
-						isqlGlob.printf("%sPackaged procedures:%s", NEWLINE, NEWLINE);
+					isqlGlob.printf("Global procedures%s%s", NEWLINE, NEWLINE);
 
 					isqlGlob.printf(
-							 "Procedure Name                    Invalid Dependency, Type%s", NEWLINE);
+						"Procedure Name                   Invalid Dependency, Type%s", NEWLINE);
 					isqlGlob.printf(
-							 "================================= ======= =====================================%s", NEWLINE);
-					first_proc = false;
+						"================================ ======= =====================================%s", NEWLINE);
 				}
-
-				bool private_flag = !PRC.RDB$PACKAGE_NAME.NULL;
-				const char* invalid = "        ";
-
-				if (!(PRC.RDB$VALID_BLR.NULL || PRC.RDB$VALID_BLR))
-					invalid = "   *    ";
-
-				if (i == 0 && private_flag || i == 1 && !private_flag)
-					continue;
-
-				// Strip trailing blanks
-
-				fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
-				isqlGlob.printf("%-34s%s", PRC.RDB$PROCEDURE_NAME, invalid);
-
-				if (PRC.RDB$PACKAGE_NAME.NULL)
+				else
 				{
-					bool first_dep = true;
-					FOR DEP IN RDB$DEPENDENCIES WITH
-						PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
-						REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
-						SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+					if (!first_proc)
+						isqlGlob.printf("%s%s", NEWLINE, NEWLINE);
 
-						fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
-						// Get column type name to print
-						if (!first_dep)
-							isqlGlob.printf("%s%42s", NEWLINE, "");
+					isqlGlob.printf("Package: %s%s%s", package.c_str(), NEWLINE, NEWLINE);
 
-						first_dep = false;
-						isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
-								 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
-					END_FOR
-					ON_ERROR
-						ISQL_errmsg (fbStatus);
-						return ps_ERR;
-					END_ERROR;
+					isqlGlob.printf(
+						"Procedure Name                   Invalid%s", NEWLINE);
+					isqlGlob.printf(
+						"================================ =======%s", NEWLINE);
 				}
 
-				isqlGlob.printf(NEWLINE);
+				first_proc = false;
+			}
 
-			END_FOR
-			ON_ERROR
-				ISQL_errmsg(fbStatus);
-				return ps_ERR;
-			END_ERROR;
+			prevPackage = package;
+
+			const char* invalid = "        ";
+
+			if (!(PRC.RDB$VALID_BLR.NULL || PRC.RDB$VALID_BLR))
+				invalid = "   *    ";
+
+			// Strip trailing blanks
+
+			fb_utils::exact_name(PRC.RDB$PROCEDURE_NAME);
+			isqlGlob.printf("%-34s%s", PRC.RDB$PROCEDURE_NAME, invalid);
+
+			if (PRC.RDB$PACKAGE_NAME.NULL)
+			{
+				bool first_dep = true;
+				FOR DEP IN RDB$DEPENDENCIES WITH
+					PRC.RDB$PROCEDURE_NAME EQ DEP.RDB$DEPENDENT_NAME
+					REDUCED TO DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+					SORTED BY DEP.RDB$DEPENDED_ON_TYPE, DEP.RDB$DEPENDED_ON_NAME
+
+					fb_utils::exact_name(DEP.RDB$DEPENDED_ON_NAME);
+					// Get column type name to print
+					if (!first_dep)
+						isqlGlob.printf("%s%42s", NEWLINE, "");
+
+					first_dep = false;
+					isqlGlob.printf("%s, %s", DEP.RDB$DEPENDED_ON_NAME,
+							 Object_types[DEP.RDB$DEPENDED_ON_TYPE]);
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg (fbStatus);
+					return ps_ERR;
+				END_ERROR;
+			}
+
+			isqlGlob.printf(NEWLINE);
 		}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(fbStatus);
+			return ps_ERR;
+		END_ERROR;
 
 		if (first_proc)
 			return OBJECT_NOT_FOUND;
