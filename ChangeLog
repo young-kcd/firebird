@@ -1,3 +1,11 @@
+ 2015-09-15 12:33  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
+ 2015-09-15 12:02  mapopa 
+   M src/alice/alice.cpp
+Removed because tdgbl->ALICE_data.ua_db_SQL_dialect is an unsigned number.
+
  2015-09-11 09:57  dimitr 
    M src/jrd/opt.cpp
    M src/jrd/recsrc/MergeJoin.cpp
