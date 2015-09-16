@@ -197,6 +197,9 @@ void DPM_backout_mark(thread_db* tdbb, record_param* rpb, const jrd_tra* transac
 	header->rhd_flags |= rhd_gc_active;
 	header->rhd_transaction = transaction->tra_number;
 
+	rpb->rpb_flags |= rpb_gc_active;
+	rpb->rpb_transaction_nr = transaction->tra_number;
+
 	CCH_RELEASE(tdbb, window);
 }
 
@@ -1569,6 +1572,8 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 	// check processed pages if they were swept.
 
 	const bool sweeper = (rpb->rpb_stream_flags & RPB_s_sweeper);
+	jrd_tra* transaction = tdbb->getTransaction();
+	const TraNumber oldest = transaction ? transaction->tra_oldest : 0;
 
 	if (sweeper && (pp_sequence || slot) && !line)
 	{
@@ -1629,6 +1634,9 @@ bool DPM_next(thread_db* tdbb, record_param* rpb, USHORT lock_type, bool onepage
 					if (get_header(window, line, rpb) &&
 						!(rpb->rpb_flags & (rpb_blob | rpb_chained | rpb_fragment)))
 					{
+						if (sweeper && !rpb->rpb_b_page && rpb->rpb_transaction_nr <= oldest)
+							continue;
+
 						rpb->rpb_number.compose(dbb->dbb_max_records, dbb->dbb_dp_per_pp,
 												line, slot, pp_sequence);
 						return true;

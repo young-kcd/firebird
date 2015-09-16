@@ -32,117 +32,54 @@ namespace Jrd {
 
 void GarbageCollector::RelationData::clear()
 {
-	TranData::ConstAccessor accessor(&m_tranData);
-	if (accessor.getFirst())
-	{
-		do
-		{
-			delete accessor.current()->second;
-		} while (accessor.getNext());
-	}
-
-	m_tranData.clear();
+	m_pages.clear();
 }
 
+
+TraNumber GarbageCollector::RelationData::findPage(const ULONG pageno, const TraNumber tranid)
+{
+	PageTranMap::Accessor pages(&m_pages);
+	if (!pages.locate(pageno))
+		return MAX_TRA_NUMBER;
+
+	// hvlad: this routine could be guarded by shared sync - therefore comparison 
+	// and assignment below should be atomic operation. But we don't require 
+	// exact precision here.
+	if (pages.current().tranid > tranid)
+		pages.current().tranid = tranid;
+
+	return pages.current().tranid;
+}
 
 TraNumber GarbageCollector::RelationData::addPage(const ULONG pageno, const TraNumber tranid)
 {
-	TraNumber minTraID = MAX_TRA_NUMBER;
-	TranData::ConstAccessor accessor(&m_tranData);
-	if (accessor.getFirst())
-		minTraID = accessor.current()->first;
+	TraNumber findTran = findPage(pageno, tranid);
+	if (findTran != MAX_TRA_NUMBER)
+		return findTran;
 
-	// look if given page number is already set at given tx bitmap
-	PageBitmap* bm = NULL;
-	const bool bmExists = m_tranData.get(tranid, bm);
-	if (bm && bm->test(pageno))
-		return minTraID;
-
-	// search for given page at other transactions bitmaps
-	// if found at older tx - we are done, just return
-	// if found at younger tx - clear it as page should be set at oldest tx (our)
-	if (minTraID != MAX_TRA_NUMBER)
-	{
-		do
-		{
-			const TranBitMap* item = accessor.current();
-			if (item->first <= tranid)
-			{
-				if (item->second->test(pageno))
-					return minTraID;
-			}
-			else
-			{
-				if (item->second->clear(pageno))
-					break;
-			}
-		} while(accessor.getNext());
-	}
-
-	// add page to our tx bitmap
-	PBM_SET(&m_pool, &bm, pageno);
-
-	if (!bmExists)
-	{
-		m_tranData.put(tranid, bm);
-		if (minTraID > tranid)
-			minTraID = tranid;
-	}
-
-	return minTraID;
+	m_pages.add(PageTran(pageno, tranid));
+	return tranid;
 }
 
 
-void GarbageCollector::RelationData::getPageBitmap(const TraNumber oldest_snapshot, PageBitmap** sbm)
+void GarbageCollector::RelationData::swept(const TraNumber oldest_snapshot, PageBitmap** bm)
 {
-	TranData::Accessor accessor(&m_tranData);
-	while (accessor.getFirst())
+	PageTranMap::Accessor pages(&m_pages);
+
+	bool next = pages.getFirst();
+	while (next)
 	{
-		TranBitMap* item = accessor.current();
-
-		if (item->first >= oldest_snapshot)
-			break;
-
-		PageBitmap* bm_tran = item->second;
-		PageBitmap** bm_or = PageBitmap::bit_or(sbm, &bm_tran);
-
-		if (*bm_or == item->second)
+		if (pages.current().tranid < oldest_snapshot)
 		{
-			bm_tran = *sbm;
-			*sbm = item->second;
-			item->second = bm_tran;
+			if (bm)
+			{
+				PBM_SET(&m_pool, bm, pages.current().pageno);
+			}
+			next = pages.fastRemove();
 		}
-
-		delete item->second;
-
-		m_tranData.remove(item->first);
+		else
+			next = pages.getNext();
 	}
-}
-
-
-void GarbageCollector::RelationData::swept(const TraNumber oldest_snapshot)
-{
-	TranData::Accessor accessor(&m_tranData);
-	while (accessor.getFirst())
-	{
-		TranBitMap* item = accessor.current();
-
-		if (item->first >= oldest_snapshot)
-			break;
-
-		delete item->second;
-		m_tranData.remove(item->first);
-	}
-}
-
-
-TraNumber GarbageCollector::RelationData::minTranID() const
-{
-	TranData::ConstAccessor accessor(&m_tranData);
-	if (accessor.getFirst())
-		return accessor.current()->first;
-
-	return MAX_TRA_NUMBER;
 }
 
 
@@ -171,22 +108,27 @@ TraNumber GarbageCollector::addPage(const USHORT relID, const ULONG pageno, cons
 	Sync syncGC(&m_sync, "GarbageCollector::addPage");
 	RelationData* relData = getRelData(syncGC, relID, true);
 
-	SyncLockGuard syncData(&relData->m_sync, SYNC_EXCLUSIVE, "GarbageCollector::addPage");
+	SyncLockGuard syncData(&relData->m_sync, SYNC_SHARED, "GarbageCollector::addPage");
+	TraNumber minTraID = relData->findPage(pageno, tranid);
+	if (minTraID != MAX_TRA_NUMBER)
+		return minTraID;
+
+	syncData.unlock();
+	syncData.lock(SYNC_EXCLUSIVE, "GarbageCollector::addPage");
 	syncGC.unlock();
 
 	return relData->addPage(pageno, tranid);
 }
 
 
-bool GarbageCollector::getPageBitmap(const TraNumber oldest_snapshot, USHORT &relID, PageBitmap **sbm)
+PageBitmap* GarbageCollector::getPages(const TraNumber oldest_snapshot, USHORT &relID)
 {
-	*sbm = NULL;
-	SyncLockGuard shGuard(&m_sync, SYNC_EXCLUSIVE, "GarbageCollector::getPageBitmap");
+	SyncLockGuard shGuard(&m_sync, SYNC_SHARED, "GarbageCollector::getPages");
 
 	if (m_relations.isEmpty())
 	{
 		m_nextRelID = 0;
-		return false;
+		return NULL;
 	}
 
 	FB_SIZE_T pos;
@@ -196,20 +138,21 @@ bool GarbageCollector::getPageBitmap(const TraNumber oldest_snapshot, USHORT &re
 	for (; pos < m_relations.getCount(); pos++)
 	{
 		RelationData* relData = m_relations[pos];
-		SyncLockGuard syncData(&relData->m_sync, SYNC_EXCLUSIVE, "GarbageCollector::getPageBitmap");
+		SyncLockGuard syncData(&relData->m_sync, SYNC_EXCLUSIVE, "GarbageCollector::getPages");
 
-		relData->getPageBitmap(oldest_snapshot, sbm);
+		PageBitmap* bm = NULL;
+		relData->swept(oldest_snapshot, &bm);
 
-		if (*sbm)
+		if (bm)
 		{
 			relID = relData->getRelID();
 			m_nextRelID = relID + 1;
-			return true;
+			return bm;
 		}
 	}
 
 	m_nextRelID = 0;
-	return false;
+	return NULL;
 }
 
 
@@ -249,23 +192,6 @@ void GarbageCollector::sweptRelation(const TraNumber oldest_snapshot, const USHO
 }
 
 
-TraNumber GarbageCollector::minTranID(const USHORT relID)
-{
-	Sync syncGC(&m_sync, "GarbageCollector::minTranID");
-
-	RelationData* relData = getRelData(syncGC, relID, false);
-	if (relData)
-	{
-		SyncLockGuard syncData(&relData->m_sync, SYNC_SHARED, "GarbageCollector::minTranID");
-
-		syncGC.unlock();
-		return relData->minTranID();
-	}
-
-	return MAX_TRA_NUMBER;
-}
-
-
 GarbageCollector::RelationData* GarbageCollector::getRelData(Sync &sync, const USHORT relID,
 	bool allowCreate)
 {
@@ -283,6 +209,7 @@ GarbageCollector::RelationData* GarbageCollector::getRelData(Sync &sync, const U
 		{
 			m_relations.insert(pos, FB_NEW(m_pool) RelationData(m_pool, relID));
 		}
+		sync.downgrade(SYNC_SHARED);
 	}
 
 	return m_relations[pos];

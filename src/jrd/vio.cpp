@@ -147,6 +147,7 @@ static UndoDataRet get_undo_data(thread_db* tdbb, jrd_tra* transaction,
 
 static void invalidate_cursor_records(jrd_tra*, record_param*);
 static void list_staying(thread_db*, record_param*, RecordStack&);
+static void list_staying_fast(thread_db*, record_param*, RecordStack&, record_param* = NULL);
 static void notify_garbage_collector(thread_db* tdbb, record_param* rpb,
 	TraNumber tranid = MAX_TRA_NUMBER);
 
@@ -571,7 +572,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		DPM_backout_mark(tdbb, rpb, transaction);
 
 		rpb->rpb_prior = NULL;
-		list_staying(tdbb, rpb, staying);
+		list_staying_fast(tdbb, rpb, staying, &temp);
 		IDX_garbage_collect(tdbb, rpb, going, staying);
 		BLB_garbage_collect(tdbb, going, staying, rpb->rpb_page, relation);
 
@@ -1429,6 +1430,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (transaction->tra_flags & TRA_system)
 	{
+		// hvlad: what if record was created\modified by user tx also, 
+		// i.e. if there is backversion ???
 		VIO_backout(tdbb, rpb, transaction);
 		return;
 	}
@@ -4436,6 +4439,9 @@ static UCHAR* delete_tail(thread_db* tdbb,
 		rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
+	RuntimeStatistics::Accumulator fragments(tdbb, rpb->rpb_relation,
+		RuntimeStatistics::RECORD_FRAGMENT_READS);
+
 	while (rpb->rpb_flags & rpb_incomplete)
 	{
 		rpb->rpb_page = rpb->rpb_f_page;
@@ -4451,6 +4457,8 @@ static UCHAR* delete_tail(thread_db* tdbb,
 
 		DPM_delete(tdbb, rpb, prior_page);
 		prior_page = rpb->rpb_page;
+
+		++fragments;
 	}
 
 	return tail;
@@ -4604,6 +4612,9 @@ static void garbage_collect(thread_db* tdbb, record_param* rpb, ULONG prior_page
 		rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
+	RuntimeStatistics::Accumulator backversions(tdbb, rpb->rpb_relation,
+		RuntimeStatistics::RECORD_BACKVERSION_READS);
+
 	// Delete old versions fetching data for garbage collection.
 
 	RecordStack going;
@@ -4622,6 +4633,8 @@ static void garbage_collect(thread_db* tdbb, record_param* rpb, ULONG prior_page
 
 		if (rpb->rpb_record)
 			going.push(rpb->rpb_record);
+
+		++backversions;
 
 		// Don't monopolize the server while chasing long back version chains.
 		if (--tdbb->tdbb_quantum < 0)
@@ -4776,7 +4789,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 				PageBitmap* gc_bitmap = NULL;
 
 				if ((dbb->dbb_flags & DBB_gc_pending) &&
-					gc->getPageBitmap(dbb->dbb_oldest_snapshot, relID, &gc_bitmap))
+					(gc_bitmap = gc->getPages(dbb->dbb_oldest_snapshot, relID)))
 				{
 					relation = MET_lookup_relation_id(tdbb, relID, false);
 					if (!relation || (relation->rel_flags & (REL_deleted | REL_deleting)))
@@ -5076,6 +5089,119 @@ static void invalidate_cursor_records(jrd_tra* transaction, record_param* mod_rp
 }
 
 
+static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& staying, record_param* back_rpb)
+{
+/**************************************
+*
+*	l i s t _ s t a y i n g _ f a s t
+*
+**************************************
+*
+* Functional description
+*	Get all the data that's staying so we can clean up indexes etc.
+*	without losing anything. This is fast version of old list_staying.
+*   It is used when current transaction own the record and thus guaranteed
+*   that versions chain is not changed during walking.
+*
+**************************************/
+	record_param temp = *rpb;
+
+	if (!DPM_fetch(tdbb, &temp, LCK_read))
+	{
+		// It is impossible as our transaction owns the record
+		BUGCHECK(186);	// msg 186 record disappeared
+		return;
+	}
+
+	fb_assert(temp.rpb_b_page == rpb->rpb_b_page); 
+	fb_assert(temp.rpb_b_line == rpb->rpb_b_line);
+	fb_assert(temp.rpb_flags == rpb->rpb_flags);
+
+	Record* backout_rec = NULL;
+	RuntimeStatistics::Accumulator backversions(tdbb, rpb->rpb_relation,
+		RuntimeStatistics::RECORD_BACKVERSION_READS);
+
+	if (temp.rpb_flags & rpb_deleted)
+	{
+		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
+	}
+	else
+	{
+		temp.rpb_record = NULL;
+
+		// VIO_data below could change the flags
+		const bool backout = (temp.rpb_flags & rpb_gc_active);
+		VIO_data(tdbb, &temp, tdbb->getDefaultPool());
+
+		if (!backout)
+			staying.push(temp.rpb_record);
+		else
+		{
+			fb_assert(!backout_rec);
+			backout_rec = temp.rpb_record;
+		}
+	}
+
+	const TraNumber oldest_active = tdbb->getTransaction()->tra_oldest_active;
+
+	while (temp.rpb_b_page)
+	{
+		ULONG page = temp.rpb_page = temp.rpb_b_page;
+		USHORT line = temp.rpb_line = temp.rpb_b_line;
+		temp.rpb_record = NULL;
+
+		if (temp.rpb_flags & rpb_delta)
+			fb_assert(temp.rpb_prior != NULL);
+		else
+			fb_assert(temp.rpb_prior == NULL);
+
+		bool ok = DPM_fetch(tdbb, &temp, LCK_read);
+		fb_assert(ok);
+		fb_assert(temp.rpb_flags & rpb_chained);
+		fb_assert(!(temp.rpb_flags & (rpb_blob | rpb_fragment)));
+
+		VIO_data(tdbb, &temp, tdbb->getDefaultPool());
+		staying.push(temp.rpb_record);
+
+		++backversions;
+
+		if (temp.rpb_transaction_nr < oldest_active && temp.rpb_b_page)
+		{
+			temp.rpb_page = page;
+			temp.rpb_line = line;
+
+			record_param temp2 = temp;
+			if (DPM_fetch(tdbb, &temp, LCK_write))
+			{
+				temp.rpb_b_page = 0;
+				temp.rpb_b_line = 0;
+				temp.rpb_flags &= ~(rpb_delta | rpb_gc_active);
+				CCH_MARK(tdbb, &temp.getWindow(tdbb));
+				DPM_rewrite_header(tdbb, &temp);
+				CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
+
+				garbage_collect(tdbb, &temp2, temp.rpb_page, staying);
+
+				tdbb->bumpRelStats(RuntimeStatistics::RECORD_PURGES, temp.rpb_relation->rel_id);
+
+				if (back_rpb && back_rpb->rpb_page == page && back_rpb->rpb_line == line)
+				{
+					back_rpb->rpb_b_page = 0;
+					back_rpb->rpb_b_line = 0;
+				}
+				break;
+			}
+		}
+
+		// Don't monopolize the server while chasing long back version chains.
+		if (--tdbb->tdbb_quantum < 0)
+			JRD_reschedule(tdbb, 0, true);
+	}
+
+	delete backout_rec;
+}
+
+
 static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& staying)
 {
 /**************************************
@@ -5095,6 +5221,17 @@ static void list_staying(thread_db* tdbb, record_param* rpb, RecordStack& stayin
  *
  **************************************/
 	SET_TDBB(tdbb);
+
+	// Use fast way if possible
+	if (rpb->rpb_transaction_nr)
+	{
+		jrd_tra* transaction = tdbb->getTransaction();
+		if (transaction && transaction->tra_number == rpb->rpb_transaction_nr)
+		{
+			list_staying_fast(tdbb, rpb, staying);
+			return;
+		}
+	}
 
 	Record* data = rpb->rpb_prior;
 	Record* backout_rec = NULL;
@@ -5565,7 +5702,10 @@ static int prepare_update(	thread_db*		tdbb,
 				continue;
 			}
 
-			stack.push(PageNumber(DB_PAGE_SPACE, temp->rpb_page));
+			{
+				const USHORT pageSpaceID = temp->getWindow(tdbb).win_page.getPageSpaceID();
+				stack.push(PageNumber(pageSpaceID, temp->rpb_page));
+			}
 			return PREPARE_OK;
 
 		case tra_active:
@@ -6035,7 +6175,10 @@ static void update_in_place(thread_db* tdbb,
 		temp2.rpb_number = org_rpb->rpb_number;
 		DPM_store(tdbb, &temp2, stack, DPM_secondary);
 
-		stack.push(PageNumber(DB_PAGE_SPACE, temp2.rpb_page));
+		{
+			const USHORT pageSpaceID = temp2.getWindow(tdbb).win_page.getPageSpaceID();
+			stack.push(PageNumber(pageSpaceID, temp2.rpb_page));
+		}
 	}
 
 	if (!DPM_get(tdbb, org_rpb, LCK_write))

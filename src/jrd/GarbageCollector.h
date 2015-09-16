@@ -45,21 +45,39 @@ public:
 	~GarbageCollector();
 
 	TraNumber addPage(const USHORT relID, const ULONG pageno, const TraNumber tranid);
-	bool getPageBitmap(const TraNumber oldest_snapshot, USHORT &relID, PageBitmap** sbm);
+	PageBitmap* getPages(const TraNumber oldest_snapshot, USHORT &relID);
 	void removeRelation(const USHORT relID);
 	void sweptRelation(const TraNumber oldest_snapshot, const USHORT relID);
 
-	TraNumber minTranID(const USHORT relID);
-
 private:
-	typedef Firebird::Pair<Firebird::NonPooled<TraNumber, PageBitmap*> > TranBitMap;
-	typedef Firebird::GenericMap<TranBitMap> TranData;
+	struct PageTran
+	{
+		PageTran() :
+			pageno(0),
+			tranid(0)
+		{}
+
+		PageTran(const ULONG _pageno, const TraNumber _tranid) :
+			pageno(_pageno),
+			tranid(_tranid)
+		{}
+
+		ULONG pageno;
+		TraNumber tranid;
+
+		static const ULONG& generate(const void*, const PageTran& item)
+		{
+			return item.pageno;
+		}
+	};
+	typedef Firebird::BePlusTree<PageTran, ULONG, MemoryPool, PageTran> PageTranMap;
+
 
 	class RelationData
 	{
 	public:
 		explicit RelationData(MemoryPool& p, USHORT relID)
-			: m_pool(p), m_tranData(p), m_relID(relID)
+			: m_pool(p), m_pages(p), m_relID(relID)
 		{}
 
 		~RelationData()
@@ -68,9 +86,8 @@ private:
 		}
 
 		TraNumber addPage(const ULONG pageno, const TraNumber tranid);
-		void getPageBitmap(const TraNumber oldest_snapshot, PageBitmap** sbm);
-		void swept(const TraNumber oldest_snapshot);
-		TraNumber minTranID() const;
+		TraNumber findPage(const ULONG pageno, const TraNumber tranid);
+		void swept(const TraNumber oldest_snapshot, PageBitmap** bm = NULL);
 
 		USHORT getRelID() const
 		{
@@ -86,7 +103,7 @@ private:
 
 		Firebird::MemoryPool& m_pool;
 		Firebird::SyncObject m_sync;
-		TranData m_tranData;
+		PageTranMap m_pages;
 		USHORT m_relID;
 	};
 
