@@ -1857,37 +1857,6 @@ static void list_collations()
 }
 
 
-#ifdef NOT_USED_OR_REPLACED
-static void print_set(bool* set_used)
-{
-/**************************************
- *
- *	p r i n t _ s e t
- *
- **************************************
- *
- * Functional description
- *    print the word "SET"
- *    in the first line of the ALTER DATABASE
- *    settings options. Also, add trailing
- *    comma for end of prior line if needed.
- *
- * uses Print_buffer, a global
- *
- **************************************/
-	if (!*set_used)
-	{
-		isqlGlob.printf("  SET ");
-		*set_used = true;
-	}
-	else
-	{
-		isqlGlob.printf(", %s      ", NEWLINE);
-	}
-}
-#endif
-
-
 static void list_create_db()
 {
 /**************************************
