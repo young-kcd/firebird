@@ -41,12 +41,6 @@
 #include "../yvalve/gds_proto.h"
 #include "../common/utils_proto.h"
 
-//#pragma FB_COMPILER_MESSAGE("This file is not fit for public consumption")
-// #error compiler halted, 'rogue' not found...
-// TMN: Upon converting this file to C++, it has been noted
-// that this code would never have worked because of (SEGV) bug(s),
-// why I rather than trying to use it currently remove it from compilation.
-
 
 static void align(const int);
 static void asgn_from(const act*, const ref*, int);
