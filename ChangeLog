@@ -1,3 +1,30 @@
+ 2015-09-16 21:16  hvlad 
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/GarbageCollector.h
+   M src/jrd/dpm.epp
+   M src/jrd/vio.cpp
+Improvement CORE-4935 : Increase performance of backout of dead record version (or undo of just created primary record version) when backversions chain is too long
+Improvement CORE-4936 : Reduce internal contention in background garbage collector
+Other small improvements: 
+- garbage collector\sweep now skip record header if transaction is below OIT - it allows to reduce number of page fetches
+- missed points to gather RECORD_FRAGMENT_READS and RECORD_BACKVERSION_READS statistics 
+
+ 2015-09-16 16:11  asfernandes 
+   M src/isql/show.epp
+Sub-task CORE-2881 - isql should show packaged procedures and functions categorized per package.
+
+ 2015-09-16 14:51  mapopa 
+   M src/gpre/lang_proto.h
+Support for BASIC/PLI was removed before IB4
+
+ 2015-09-16 14:36  mapopa 
+   M src/gpre/languages/pas.cpp
+Cleanup
+
+ 2015-09-16 12:35  mapopa 
+   M src/isql/extract.epp
+Cleanup code was used with WAL
+
  2015-09-15 12:33  dimitr 
    M doc/WhatsNew
 Updated docs.
