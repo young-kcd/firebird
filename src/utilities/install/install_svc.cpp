@@ -156,14 +156,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 					sw_guardian = USE_GUARDIAN;
 					break;
 
-				case 'S':
-					sw_arch = ARCH_SS;
-					break;
-
-				case 'C':
-					sw_arch = ARCH_CS;
-					break;
-
 				case 'L':
 					if (++argv < end)
 						username = *argv;
@@ -326,9 +318,6 @@ int CLIB_ROUTINE main( int argc, char **argv)
 		switches.printf("-s \"%s\"", instance);
 	else
 		switches.printf("-s %s", instance);
-
-	if (sw_arch == ARCH_SS)
-		switches += " -m";
 
 	switch (sw_command)
 	{
@@ -743,7 +732,7 @@ static void usage_exit()
  *
  **************************************/
 	printf("\nUsage:\n");
-	printf("  instsvc i[nstall] [ -s[uperserver]* | -c[lassic] ]\n");
+	printf("  instsvc i[nstall] \n");
 	printf("                    [ -a[uto]* | -d[emand] ]\n");
 	printf("                    [ -g[uardian] ]\n");
 	printf("                    [ -l[ogin] username [password] ]\n");
@@ -760,6 +749,9 @@ static void usage_exit()
 	printf("  '-z' can be used with any other option, prints version\n");
 	printf("  'username' refers by default to a local account on this machine.\n");
 	printf("  Use the format 'domain\\username' or 'server\\username' if appropriate.\n");
+	printf("  \n");
+	printf("  Server architecture is determined by the ServerMode setting in firebird.conf.\n");
+	printf("  It cannot be changed by instsvc at the moment.\n");
 
 	exit(FINI_ERROR);
 }
