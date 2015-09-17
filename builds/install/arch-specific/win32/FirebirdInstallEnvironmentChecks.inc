@@ -85,6 +85,7 @@ Const
   AdminInstall          = 2;
   SuperServerInstall    = 4;
   ClassicServerInstall  = 8;
+  MultiServerInstall    = 16;
   BrokenInstall         = 32;   //version or component mismatch found, so mark broken
 
   //Possible product installs
@@ -440,7 +441,7 @@ begin
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
           ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
-          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + ServerInstall;
+          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + ClassicServerInstall;
         end;
       end;
 
@@ -449,7 +450,7 @@ begin
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
           ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
-          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + ServerInstall;
+          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + SuperServerInstall;
         end;
       end;
 
@@ -458,7 +459,7 @@ begin
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
           ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
-          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + ServerInstall;
+          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + SuperServerInstall;
         end;
       end;
 
@@ -467,7 +468,7 @@ begin
           ProductsInstalledArray[product].ServerVersion);
         If ProductsInstalledArray[product].ServerVersion <> '' then begin
           ProductsInstalledArray[product].ActualVersion := ProductsInstalledArray[product].ServerVersion;
-          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + ServerInstall;
+          ProductsInstalledArray[product].InstallType := ProductsInstalledArray[product].InstallType + MultiServerInstall;
         end;
       end;
 
@@ -1073,7 +1074,7 @@ SetArrayLength(InstallSummaryArray,ProductsInstalledCount);
 for product := 0 to MaxProdInstalled -1 do begin
   if (ProductsInstalledArray[product].InstallType <> NotInstalled) then begin
       InstallSummaryArray[i] := Format(ProductsInstalledArray[product].Description, [ProductsInstalledArray[product].ActualVersion]);
-
+//** FIXME
     if (ProductsInstalledArray[product].ServerVersion <> '') then begin
       if ((ProductsInstalledArray[product].InstallType AND ClassicServerInstall) = ClassicServerInstall) then
         InstallSummaryArray[i] := InstallSummaryArray[i] + ' '+ExpandConstant('{cm:ClassicServerInstall}')
