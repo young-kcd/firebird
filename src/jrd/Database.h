@@ -492,8 +492,8 @@ public:
 	SLONG generateAttachmentId();
 	TraNumber generateTransactionId();
 	SLONG generateStatementId();
-	/*void assignLatestTransactionId(TraNumber number);
-	void assignLatestAttachmentId(SLONG number);*/
+//	void assignLatestTransactionId(TraNumber number);
+	void assignLatestAttachmentId(SLONG number);
 	
 
 	USHORT getMaxIndexKeyLength() const

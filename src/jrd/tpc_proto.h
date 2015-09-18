@@ -134,8 +134,8 @@ public:
 	TraNumber generateTransactionId();
 	SLONG generateAttachmentId();
 	SLONG generateStatementId();
-	/*void assignLatestTransactionId(TraNumber number);
-	void assignLatestAttachmentId(SLONG number);*/
+	//void assignLatestTransactionId(TraNumber number);
+	void assignLatestAttachmentId(SLONG number);
 
 private:
 	class GlobalTpcHeader : public Firebird::MemoryHeader {

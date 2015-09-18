@@ -852,15 +852,15 @@ SLONG TipCache::generateStatementId() {
 	return statement_id;
 }
 
-/*void TipCache::assignLatestTransactionId(TraNumber number) {
-	// XXX: there is no paired acquire because value assigned here is not really used for now
-	atomic_int_store_release(&m_tpcHeader->getHeader()->latest_transaction_id, number);
-}
+//void TipCache::assignLatestTransactionId(TraNumber number) {
+//	// XXX: there is no paired acquire because value assigned here is not really used for now
+//	atomic_int_store_release(&m_tpcHeader->getHeader()->latest_transaction_id, number);
+//}
 
 void TipCache::assignLatestAttachmentId(SLONG number) {
 	// XXX: there is no paired acquire because value assigned here is not really used for now
 	atomic_int_store_release(&m_tpcHeader->getHeader()->latest_attachment_id, number);
-}*/
+}
 
 int TPC_snapshot_state(thread_db* tdbb, TraNumber number)
 {

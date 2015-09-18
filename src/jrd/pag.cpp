@@ -869,7 +869,7 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);
 		attachment->att_attachment_id = ++header->hdr_attachment_id;
-		//dbb->assignLatestAttachmentId(attachment->att_attachment_id);
+		dbb->assignLatestAttachmentId(attachment->att_attachment_id);
 
 		CCH_RELEASE(tdbb, &window);
 	}

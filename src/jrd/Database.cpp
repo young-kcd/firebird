@@ -65,15 +65,15 @@ namespace Jrd
 		return dbb_tip_cache->generateTransactionId();
 	}
 
-	/*void Database::assignLatestTransactionId(TraNumber number) {
-		fb_assert(dbb_tip_cache);
-		dbb_tip_cache->assignLatestTransactionId(number);
-	}
+//	void Database::assignLatestTransactionId(TraNumber number) {
+//		fb_assert(dbb_tip_cache);
+//		dbb_tip_cache->assignLatestTransactionId(number);
+//	}
 
 	void Database::assignLatestAttachmentId(SLONG number) {
-		fb_assert(dbb_tip_cache);
-		dbb_tip_cache->assignLatestAttachmentId(number);
-	}*/
+		if (dbb_tip_cache)
+			dbb_tip_cache->assignLatestAttachmentId(number);
+	}
 
 	SLONG Database::generateStatementId() {
 		if (!dbb_tip_cache) return 0;
