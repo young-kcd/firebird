@@ -409,7 +409,7 @@
 #
 # If you need to use server plugins that do not provide encryption key (both Legacy_Auth
 # & Win_Sspi) you should also turn off required encryption on the wire with WireCrypt
-# configuration parameter except when working with newer encrypted XNET protocol.
+# configuration parameter except when working with the XNET protocol which is never encrypted.
 #
 
 # UserManager sets plugin used to work with security database. If more than
@@ -553,7 +553,8 @@
 # Should connection over the wire be encrypted?
 # Has 3 different values: Required, Enabled or Disabled. Enabled behavior
 # depends another side requirements. If both sides set to enabled, connection
-# is encrypted when possible.
+# is encrypted when possible. Note that Wirecrypt should be set to enabled 
+# when running a firebird server with legacy authentication.
 #
 # Attention: default depends upon connection type: incoming (server)
 #            or outgoing (client).
