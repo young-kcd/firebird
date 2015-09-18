@@ -409,7 +409,7 @@
 #
 # If you need to use server plugins that do not provide encryption key (both Legacy_Auth
 # & Win_Sspi) you should also turn off required encryption on the wire with WireCrypt
-# configuration parameter except when working with never encrypted XNET protocol.
+# configuration parameter except when working with newer encrypted XNET protocol.
 #
 
 # UserManager sets plugin used to work with security database. If more than
