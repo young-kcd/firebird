@@ -1,3 +1,19 @@
+ 2015-09-17 13:26  paul_reeves 
+   M src/utilities/install/install_svc.cpp
+Bring install_svc.cpp up-to-date after implementation of ServerMode.
+
+ 2015-09-17 09:59  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Bring trunk up to date with previously committed changes for Beta 2
+Add correct support for configuring architecture at install time
+Make sure that security3.fdb is installed.
+Tidy up uninstall CLEAN option.
+
+ 2015-09-17 09:44  paul_reeves 
+   M builds/win32/make_icu.bat
+Include errors in log file.
+
  2015-09-16 21:16  hvlad 
    M src/jrd/GarbageCollector.cpp
    M src/jrd/GarbageCollector.h
