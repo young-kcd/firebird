@@ -1,3 +1,12 @@
+ 2015-09-18 14:58  paul_reeves 
+   M builds/install/misc/firebird.conf.in
+Roll back previous spelling correction and clarify the original meaning. (I hope.)
+Document that WireCrypt on server should be set to enabled if legacy authentication is chosen.
+
+ 2015-09-18 13:32  paul_reeves 
+   M builds/install/misc/firebird.conf.in
+spelling
+
  2015-09-17 13:26  paul_reeves 
    M src/utilities/install/install_svc.cpp
 Bring install_svc.cpp up-to-date after implementation of ServerMode.
