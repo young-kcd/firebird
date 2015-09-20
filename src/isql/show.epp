@@ -3959,12 +3959,25 @@ static processing_state show_func(const SCHAR* funcname)
 
 		first = false;
 
-		isqlGlob.printf("Function text:%s", NEWLINE);
-		isqlGlob.printf("=============================================================================%s", NEWLINE);
+		if (!FUN.RDB$ENTRYPOINT.NULL)
+		{
+			fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
+			isqlGlob.printf("External name: %s%s", FUN.RDB$ENTRYPOINT, NEWLINE);
+		}
+
+		if (!FUN.RDB$ENGINE_NAME.NULL)
+		{
+			fb_utils::exact_name(FUN.RDB$ENGINE_NAME);
+			isqlGlob.printf("Engine: %s%s", FUN.RDB$ENGINE_NAME, NEWLINE);
+		}
 
 		if (!FUN.RDB$FUNCTION_SOURCE.NULL)
+		{
+			isqlGlob.printf("Function text:%s", NEWLINE);
+			isqlGlob.printf("=============================================================================%s", NEWLINE);
 			SHOW_print_metadata_text_blob(isqlGlob.Out, &FUN.RDB$FUNCTION_SOURCE);
-		isqlGlob.printf("%s=============================================================================%s", NEWLINE, NEWLINE);
+			isqlGlob.printf("%s=============================================================================%s", NEWLINE, NEWLINE);
+		}
 
 		bool first_param = true;
 
@@ -4812,12 +4825,25 @@ static processing_state show_proc(const SCHAR* procname)
 		PRC.RDB$PACKAGE_NAME MISSING
 		first = false;
 
-		isqlGlob.printf("Procedure text:%s", NEWLINE);
-		isqlGlob.printf("=============================================================================%s", NEWLINE);
+		if (!PRC.RDB$ENTRYPOINT.NULL)
+		{
+			fb_utils::exact_name(PRC.RDB$ENTRYPOINT);
+			isqlGlob.printf("External name: %s%s", PRC.RDB$ENTRYPOINT, NEWLINE);
+		}
+
+		if (!PRC.RDB$ENGINE_NAME.NULL)
+		{
+			fb_utils::exact_name(PRC.RDB$ENGINE_NAME);
+			isqlGlob.printf("Engine: %s%s", PRC.RDB$ENGINE_NAME, NEWLINE);
+		}
 
 		if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
+		{
+			isqlGlob.printf("Procedure text:%s", NEWLINE);
+			isqlGlob.printf("=============================================================================%s", NEWLINE);
 			SHOW_print_metadata_text_blob (isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE);
-		isqlGlob.printf("%s=============================================================================%s", NEWLINE, NEWLINE);
+			isqlGlob.printf("%s=============================================================================%s", NEWLINE, NEWLINE);
+		}
 
 		bool first_param = true;
 
@@ -5753,11 +5779,27 @@ static processing_state show_trigger(const SCHAR* object, bool show_source, bool
 
 		if (show_source)
 		{
+			if (!TRG.RDB$ENTRYPOINT.NULL)
+			{
+				fb_utils::exact_name(TRG.RDB$ENTRYPOINT);
+				isqlGlob.printf("External name: %s%s", TRG.RDB$ENTRYPOINT, NEWLINE);
+			}
+
+			if (!TRG.RDB$ENGINE_NAME.NULL)
+			{
+				fb_utils::exact_name(TRG.RDB$ENGINE_NAME);
+				isqlGlob.printf("Engine: %s%s", TRG.RDB$ENGINE_NAME, NEWLINE);
+			}
+
 			// Use print_blob to print the blob
 
 			if (!TRG.RDB$TRIGGER_SOURCE.NULL)
+			{
+				isqlGlob.printf("Trigger text:%s", NEWLINE);
+				isqlGlob.printf("=============================================================================%s", NEWLINE);
 				SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
-			isqlGlob.printf("%s+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%s", NEWLINE, NEWLINE);
+				isqlGlob.printf("%s=============================================================================%s", NEWLINE, NEWLINE);
+			}
 		}
 
 	END_FOR

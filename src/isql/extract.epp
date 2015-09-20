@@ -850,8 +850,6 @@ static void get_procedure_args(const char* proc_name)
 			isqlGlob.printf(")%s", NEWLINE);
 
 	}						// end for ptype
-
-	isqlGlob.printf("AS %s", NEWLINE);
 }
 
 
@@ -1074,8 +1072,6 @@ static void get_function_args_ods12(const char* func_name, USHORT out_arg)
 		}
 
 	}						// end for ptype
-
-	isqlGlob.printf("AS %s", NEWLINE);
 }
 
 
@@ -1400,6 +1396,7 @@ static void list_procedure_headers()
 		}
 
 		get_procedure_args(PRC.RDB$PROCEDURE_NAME);
+		isqlGlob.printf("AS %s", NEWLINE);
 
 		prc_t proc_type = PRC.RDB$PROCEDURE_TYPE.NULL ? prc_legacy : (prc_t) PRC.RDB$PROCEDURE_TYPE;
 
@@ -1460,12 +1457,35 @@ static void list_procedure_bodies()
 		}
 		else
 			isqlGlob.printf("%sALTER PROCEDURE %s ", NEWLINE, PRC.RDB$PROCEDURE_NAME);
+
 		get_procedure_args(PRC.RDB$PROCEDURE_NAME);
 
 		// Print the procedure body
 
-		if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
-			SHOW_print_metadata_text_blob (isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE);
+		if (!PRC.RDB$ENTRYPOINT.NULL)
+		{
+			fb_utils::exact_name(PRC.RDB$ENTRYPOINT);
+			IUTILS_copy_SQL_id(PRC.RDB$ENTRYPOINT, SQL_identifier2, SINGLE_QUOTE);
+			isqlGlob.printf("EXTERNAL NAME %s%s", SQL_identifier2, NEWLINE);
+		}
+
+		if (!PRC.RDB$ENGINE_NAME.NULL)
+		{
+			fb_utils::exact_name(PRC.RDB$ENGINE_NAME);
+			isqlGlob.printf("ENGINE %s", PRC.RDB$ENGINE_NAME);
+
+			if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
+			{
+				isqlGlob.printf("%sAS '", NEWLINE);
+				SHOW_print_metadata_text_blob(isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE, true);
+				isqlGlob.printf("'%s", NEWLINE);
+			}
+		}
+		else if (!PRC.RDB$PROCEDURE_SOURCE.NULL)
+		{
+			isqlGlob.printf("AS %s", NEWLINE);
+			SHOW_print_metadata_text_blob(isqlGlob.Out, &PRC.RDB$PROCEDURE_SOURCE);
+		}
 
 		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
 
@@ -1575,8 +1595,27 @@ static void list_all_triggers()
 				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(), TRG.RDB$TRIGGER_SEQUENCE,
 				 NEWLINE);
 
-		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
-			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
+		if (!TRG.RDB$ENTRYPOINT.NULL)
+		{
+			fb_utils::exact_name(TRG.RDB$ENTRYPOINT);
+			IUTILS_copy_SQL_id(TRG.RDB$ENTRYPOINT, SQL_identifier2, SINGLE_QUOTE);
+			isqlGlob.printf("EXTERNAL NAME %s%s", SQL_identifier2, NEWLINE);
+		}
+
+		if (!TRG.RDB$ENGINE_NAME.NULL)
+		{
+			fb_utils::exact_name(TRG.RDB$ENGINE_NAME);
+			isqlGlob.printf("ENGINE %s", TRG.RDB$ENGINE_NAME);
+
+			if (!TRG.RDB$TRIGGER_SOURCE.NULL)
+			{
+				isqlGlob.printf("%sAS '", NEWLINE);
+				SHOW_print_metadata_text_blob(isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE, true);
+				isqlGlob.printf("'%s", NEWLINE);
+			}
+		}
+		else if (!TRG.RDB$TRIGGER_SOURCE.NULL)
+			SHOW_print_metadata_text_blob(isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
 
 		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
 		isqlGlob.printf(NEWLINE);
@@ -1635,8 +1674,27 @@ static void list_all_triggers()
 				 SHOW_trigger_action(TRG.RDB$TRIGGER_TYPE).c_str(), TRG.RDB$TRIGGER_SEQUENCE,
 				 NEWLINE);
 
-		if (!TRG.RDB$TRIGGER_SOURCE.NULL)
-			SHOW_print_metadata_text_blob (isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
+		if (!TRG.RDB$ENTRYPOINT.NULL)
+		{
+			fb_utils::exact_name(TRG.RDB$ENTRYPOINT);
+			IUTILS_copy_SQL_id(TRG.RDB$ENTRYPOINT, SQL_identifier2, SINGLE_QUOTE);
+			isqlGlob.printf("EXTERNAL NAME %s%s", SQL_identifier2, NEWLINE);
+		}
+
+		if (!TRG.RDB$ENGINE_NAME.NULL)
+		{
+			fb_utils::exact_name(TRG.RDB$ENGINE_NAME);
+			isqlGlob.printf("ENGINE %s", TRG.RDB$ENGINE_NAME);
+
+			if (!TRG.RDB$TRIGGER_SOURCE.NULL)
+			{
+				isqlGlob.printf("%sAS '", NEWLINE);
+				SHOW_print_metadata_text_blob(isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE, true);
+				isqlGlob.printf("'%s", NEWLINE);
+			}
+		}
+		else if (!TRG.RDB$TRIGGER_SOURCE.NULL)
+			SHOW_print_metadata_text_blob(isqlGlob.Out, &TRG.RDB$TRIGGER_SOURCE);
 
 		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
 		isqlGlob.printf(NEWLINE);
@@ -2719,7 +2777,7 @@ static void list_functions_ods12_headers()
 		}
 
 		get_function_args_ods12(FUN.RDB$FUNCTION_NAME, FUN.RDB$RETURN_ARGUMENT);
-
+		isqlGlob.printf("AS %s", NEWLINE);
 		isqlGlob.printf(body_function, Procterm, NEWLINE);
 
 	END_FOR
@@ -2767,8 +2825,30 @@ static void list_functions_ods12_bodies()
 
 		// Print the function body
 
-		if (!FUN.RDB$FUNCTION_SOURCE.NULL)
+		if (!FUN.RDB$ENTRYPOINT.NULL)
+		{
+			fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
+			IUTILS_copy_SQL_id(FUN.RDB$ENTRYPOINT, SQL_identifier2, SINGLE_QUOTE);
+			isqlGlob.printf("EXTERNAL NAME %s%s", SQL_identifier2, NEWLINE);
+		}
+
+		if (!FUN.RDB$ENGINE_NAME.NULL)
+		{
+			fb_utils::exact_name(FUN.RDB$ENGINE_NAME);
+			isqlGlob.printf("ENGINE %s", FUN.RDB$ENGINE_NAME);
+
+			if (!FUN.RDB$FUNCTION_SOURCE.NULL)
+			{
+				isqlGlob.printf("%sAS '", NEWLINE);
+				SHOW_print_metadata_text_blob(isqlGlob.Out, &FUN.RDB$FUNCTION_SOURCE, true);
+				isqlGlob.printf("'%s", NEWLINE);
+			}
+		}
+		else if (!FUN.RDB$FUNCTION_SOURCE.NULL)
+		{
+			isqlGlob.printf("AS %s", NEWLINE);
 			SHOW_print_metadata_text_blob(isqlGlob.Out, &FUN.RDB$FUNCTION_SOURCE);
+		}
 
 		isqlGlob.printf(" %s%s", Procterm, NEWLINE);
 
