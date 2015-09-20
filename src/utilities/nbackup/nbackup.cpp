@@ -256,6 +256,7 @@ static void checkCtrlC(UtilSvc* /*uSvc*/)
 const char localhost[] = "localhost";
 
 const char backup_signature[4] = {'N','B','A','K'};
+const SSHORT BACKUP_VERSION = 2;
 
 struct inc_header
 {
@@ -432,7 +433,7 @@ void NBackup::seek_file(FILE_HANDLE &file, SINT64 pos)
 #ifdef WIN_NT
 	LARGE_INTEGER offset;
 	offset.QuadPart = pos;
-	if (SetFilePointer(dbase, offset.LowPart, &offset.HighPart, FILE_BEGIN) !=
+	if (SetFilePointer(file, offset.LowPart, &offset.HighPart, FILE_BEGIN) !=
 			INVALID_SET_FILE_POINTER ||
 		GetLastError() == NO_ERROR)
 	{
@@ -1017,7 +1018,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 		// Level 0 backup is a full reconstructed database image that can be
 		// used directly after fixup. Incremenal backups of other levels are
 		// consisted of header followed by page data. Each page is preceded
-		// by 4-byte integer page number
+		// by 4-byte integer page number. Note: since ODS12 page header contains
+		// page number, therefore no need to store page numbers before page image.
 
 		// Actual IO is optimized to get maximum performance
 		// from the IO subsystem while taking as little CPU time as possible
@@ -1097,14 +1099,22 @@ void NBackup::backup_database(int level, const PathName& fname)
 		{
 			inc_header bh;
 			memcpy(bh.signature, backup_signature, sizeof(backup_signature));
-			bh.version = 1;
+			bh.version = BACKUP_VERSION;
 			bh.level = level;
 			bh.backup_guid = backup_guid;
 			StringToGuid(&bh.prev_guid, prev_guid);
 			bh.page_size = header->hdr_page_size;
 			bh.backup_scn = backup_scn;
 			bh.prev_scn = prev_scn;
-			write_file(backup, &bh, sizeof(bh));
+
+			memset(page_buff, 0, header->hdr_page_size);
+			memcpy(page_buff, &bh, sizeof(bh));
+			write_file(backup, page_buff, header->hdr_page_size);
+			page_writes++;
+
+			seek_file(dbase, 0);
+			if (read_file(dbase, page_buff, header->hdr_page_size) != header->hdr_page_size)
+				status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrdb) << dbname.c_str() << Arg::Num(2));
 		}
 
 		ULONG curPage = 0;
@@ -1128,17 +1138,8 @@ void NBackup::backup_database(int level, const PathName& fname)
 				status_exception::raise(Arg::Gds(isc_nbackup_page_changed) << Arg::Num(curPage) <<
 										Arg::Num(page_buff->pag_scn) << Arg::Num(backup_scn));
 			}
-			if (level)
-			{
-				if (page_buff->pag_scn > prev_scn)
-				{
-					write_file(backup, &curPage, sizeof(curPage));
-					write_file(backup, page_buff, header->hdr_page_size);
 
-					page_writes++;
-				}
-			}
-			else
+			if (!level || page_buff->pag_scn > prev_scn)
 			{
 				write_file(backup, page_buff, header->hdr_page_size);
 				page_writes++;
@@ -1416,7 +1417,7 @@ void NBackup::restore_database(const BackupFiles& files)
 					status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdrbk) << bakname.c_str());
 				if (memcmp(bakheader.signature, backup_signature, sizeof(backup_signature)) != 0)
 					status_exception::raise(Arg::Gds(isc_nbackup_invalid_incbk) << bakname.c_str());
-				if (bakheader.version != 1)
+				if (bakheader.version != BACKUP_VERSION)
 				{
 					status_exception::raise(Arg::Gds(isc_nbackup_unsupvers_incbk) <<
 										Arg::Num(bakheader.version) << bakname.c_str());
@@ -1429,21 +1430,20 @@ void NBackup::restore_database(const BackupFiles& files)
 				// We may also add SCN check, but GUID check covers this case too
 				if (memcmp(&bakheader.prev_guid, &prev_guid, sizeof(Guid)) != 0)
 					status_exception::raise(Arg::Gds(isc_nbackup_wrong_orderbk) << bakname.c_str());
+				seek_file(backup, bakheader.page_size);
 
 				delete_database = true;
 				prev_guid = bakheader.backup_guid;
 				while (true)
 				{
-					ULONG pageNum;
-					const FB_SIZE_T bytesDone = read_file(backup, &pageNum, sizeof(pageNum));
+					const FB_SIZE_T bytesDone = read_file(backup, page_buffer, bakheader.page_size);
 					if (bytesDone == 0)
 						break;
-					if (bytesDone != sizeof(pageNum) ||
-						read_file(backup, page_buffer, bakheader.page_size) != bakheader.page_size)
-					{
+					if (bytesDone != bakheader.page_size) {
 						status_exception::raise(Arg::Gds(isc_nbackup_err_eofbk) << bakname.c_str());
 					}
-					seek_file(dbase, ((SINT64) pageNum) * bakheader.page_size);
+					const SINT64 pageNum = reinterpret_cast<Ods::pag*> (page_buffer)->pag_pageno;
+					seek_file(dbase, pageNum * bakheader.page_size);
 					write_file(dbase, page_buffer, bakheader.page_size);
 					checkCtrlC(uSvc);
 				}
