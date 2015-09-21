@@ -80,7 +80,7 @@ enum commentMode {cmmShow, cmmExtract};
 
 
 static void remove_delimited_double_quotes(TEXT*);
-static void make_priv_string(USHORT, char*);
+static void make_priv_string(USHORT, char*, bool);
 static processing_state show_all_tables(SSHORT);
 static void show_charsets(const SCHAR*, const SCHAR*, const bool, bool, bool, bool);
 static processing_state show_check(const SCHAR*);
@@ -742,7 +742,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					(prev_object_type != -1 && prev_object_type != PRV.RDB$OBJECT_TYPE))
 				{
 
-					make_priv_string (priv_flags, priv_string);
+					make_priv_string(priv_flags, priv_string, false);
 
 					if (first && optional_msg)
 						isqlGlob.prints(optional_msg);
@@ -859,7 +859,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 			if (prev_option != -1)
 			{
-				make_priv_string (priv_flags, priv_string);
+				make_priv_string(priv_flags, priv_string, false);
 				if (first && optional_msg)
 					isqlGlob.prints(optional_msg);
 				first = false;
@@ -1314,6 +1314,222 @@ processing_state SHOW_grants2 (const SCHAR* object,
 		}
 	}
 
+	if (obj_type == obj_field || obj_type == 255)
+	{
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FIRST 1 F IN RDB$FIELDS WITH F.RDB$FIELD_NAME EQ object
+				FOR PRV IN RDB$USER_PRIVILEGES CROSS
+					FLD IN RDB$FIELDS WITH
+					PRV.RDB$OBJECT_TYPE = obj_field AND
+					PRV.RDB$RELATION_NAME EQ object AND
+					FLD.RDB$FIELD_NAME EQ object AND
+					PRV.RDB$PRIVILEGE EQ 'G' AND
+					FLD.RDB$OWNER_NAME NE PRV.RDB$USER
+					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
+
+					first = false;
+					fb_utils::exact_name(PRV.RDB$USER);
+
+					switch (PRV.RDB$USER_TYPE)
+					{
+					case obj_relation:
+					case obj_view:
+					case obj_trigger:
+					case obj_procedure:
+					case obj_udf:
+					case obj_sql_role:
+					case obj_package_header:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					default:
+						strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					}
+
+					set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+					if (PRV.RDB$GRANT_OPTION)
+						strcpy(with_option, " WITH GRANT OPTION");
+					else
+						with_option[0] = '\0';
+
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, object);
+
+					isqlGlob.printf("GRANT USAGE ON DOMAIN %s TO %s%s%s%s%s",
+							 SQL_identifier, user_string, with_option,
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(fbStatus);
+					return ps_ERR;
+				END_ERROR
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(fbStatus);
+				return ps_ERR;
+			END_ERROR;
+
+			if (!first)
+				return (SKIP);
+		}
+	}
+
+	if (obj_type == obj_charset || obj_type == 255)
+	{
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FIRST 1 C IN RDB$CHARACTER_SETS WITH C.RDB$CHARACTER_SET_NAME EQ object
+				FOR PRV IN RDB$USER_PRIVILEGES CROSS
+					CS IN RDB$CHARACTER_SETS WITH
+					PRV.RDB$OBJECT_TYPE = obj_charset AND
+					PRV.RDB$RELATION_NAME EQ object AND
+					CS.RDB$CHARACTER_SET_NAME EQ object AND
+					PRV.RDB$PRIVILEGE EQ 'G' AND
+					CS.RDB$OWNER_NAME NE PRV.RDB$USER
+					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
+
+					first = false;
+					fb_utils::exact_name(PRV.RDB$USER);
+
+					switch (PRV.RDB$USER_TYPE)
+					{
+					case obj_relation:
+					case obj_view:
+					case obj_trigger:
+					case obj_procedure:
+					case obj_udf:
+					case obj_sql_role:
+					case obj_package_header:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					default:
+						strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					}
+
+					set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+					if (PRV.RDB$GRANT_OPTION)
+						strcpy(with_option, " WITH GRANT OPTION");
+					else
+						with_option[0] = '\0';
+
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, object);
+
+					isqlGlob.printf("GRANT USAGE ON CHARACTER SET %s TO %s%s%s%s%s",
+							 SQL_identifier, user_string, with_option,
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(fbStatus);
+					return ps_ERR;
+				END_ERROR
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(fbStatus);
+				return ps_ERR;
+			END_ERROR;
+
+			if (!first)
+				return (SKIP);
+		}
+	}
+
+	if (obj_type == obj_collation || obj_type == 255)
+	{
+		if (isqlGlob.major_ods >= ODS_VERSION12)
+		{
+			FOR FIRST 1 C IN RDB$COLLATIONS WITH C.RDB$COLLATION_NAME EQ object
+				FOR PRV IN RDB$USER_PRIVILEGES CROSS
+					COL IN RDB$COLLATIONS WITH
+					PRV.RDB$OBJECT_TYPE = obj_collation AND
+					PRV.RDB$RELATION_NAME EQ object AND
+					COL.RDB$COLLATION_NAME EQ object AND
+					PRV.RDB$PRIVILEGE EQ 'G' AND
+					COL.RDB$OWNER_NAME NE PRV.RDB$USER
+					SORTED BY PRV.RDB$USER, PRV.RDB$FIELD_NAME, PRV.RDB$GRANT_OPTION
+
+					if (first && optional_msg)
+						isqlGlob.prints(optional_msg);
+
+					first = false;
+					fb_utils::exact_name(PRV.RDB$USER);
+
+					switch (PRV.RDB$USER_TYPE)
+					{
+					case obj_relation:
+					case obj_view:
+					case obj_trigger:
+					case obj_procedure:
+					case obj_udf:
+					case obj_sql_role:
+					case obj_package_header:
+					case obj_user:
+						if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+							IUTILS_copy_SQL_id(PRV.RDB$USER, SQL_identifier, DBL_QUOTE);
+						else
+							strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					default:
+						strcpy(SQL_identifier, PRV.RDB$USER);
+						break;
+					}
+
+					set_grantee(PRV.RDB$USER_TYPE, SQL_identifier, user_string);
+
+					if (PRV.RDB$GRANT_OPTION)
+						strcpy(with_option, " WITH GRANT OPTION");
+					else
+						with_option[0] = '\0';
+
+					if (mangle && isqlGlob.db_SQL_dialect > SQL_DIALECT_V6_TRANSITION)
+						IUTILS_copy_SQL_id(object, SQL_identifier, DBL_QUOTE);
+					else
+						strcpy(SQL_identifier, object);
+
+					isqlGlob.printf("GRANT USAGE ON COLLATION %s TO %s%s%s%s%s",
+							 SQL_identifier, user_string, with_option,
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+
+				END_FOR
+				ON_ERROR
+					ISQL_errmsg(fbStatus);
+					return ps_ERR;
+				END_ERROR
+			END_FOR
+			ON_ERROR
+				ISQL_errmsg(fbStatus);
+				return ps_ERR;
+			END_ERROR;
+
+			if (!first)
+				return (SKIP);
+		}
+	}
+
 	if (obj_type >= obj_database || obj_type == 255)
 	{
 		if (isqlGlob.major_ods >= ODS_VERSION12)
@@ -1354,7 +1570,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					break;
 				}
 
-				make_priv_string (priv_flags, priv_string);
+				make_priv_string(priv_flags, priv_string, (PRV.RDB$OBJECT_TYPE != obj_database));
 
 				switch (PRV.RDB$USER_TYPE)
 				{
@@ -2385,7 +2601,7 @@ static void remove_delimited_double_quotes(TEXT* string)
 }
 
 
-static void make_priv_string(USHORT flags, char* string)
+static void make_priv_string(USHORT flags, char* string, bool useAny)
 {
 /**************************************
  *
@@ -2404,7 +2620,11 @@ static void make_priv_string(USHORT flags, char* string)
 		{
 			if (*string)
 				strcat(string, ", ");
+
 			strcat(string, privs[i].priv_string);
+
+			if (useAny && (privs[i].priv_flag == priv_ALTER || privs[i].priv_flag == priv_DROP))
+				strcat(string, " ANY");
 		}
 	}
 }

@@ -1288,6 +1288,62 @@ static processing_state list_all_grants2(bool show_role_list, const SCHAR* termi
 			return OBJECT_NOT_FOUND;
 		END_ERROR
 
+		FOR FLD IN RDB$FIELDS WITH
+			FLD.RDB$FIELD_NAME NOT MATCHING "RDB$+" USING "+=[0-9][0-9]* *"
+			AND FLD.RDB$SYSTEM_FLAG NE 1
+			SORTED BY FLD.RDB$FIELD_NAME
+		{
+			// Null terminate name string
+			fb_utils::exact_name(FLD.RDB$FIELD_NAME);
+			const processing_state rc =
+				SHOW_grants2(FLD.RDB$FIELD_NAME, terminator, obj_field,
+					(first ? banner : 0), mangle);
+
+			if (rc == SKIP)
+				first = false;
+		}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(fbStatus);
+			return OBJECT_NOT_FOUND;
+		END_ERROR
+
+		FOR CS IN RDB$CHARACTER_SETS
+			SORTED BY CS.RDB$CHARACTER_SET_NAME
+		{
+			// Null terminate name string
+			fb_utils::exact_name(CS.RDB$CHARACTER_SET_NAME);
+			const processing_state rc =
+				SHOW_grants2(CS.RDB$CHARACTER_SET_NAME, terminator, obj_charset,
+					(first ? banner : 0), mangle);
+
+			if (rc == SKIP)
+				first = false;
+		}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(fbStatus);
+			return OBJECT_NOT_FOUND;
+		END_ERROR
+
+		FOR COL IN RDB$COLLATIONS
+			SORTED BY COL.RDB$COLLATION_NAME
+		{
+			// Null terminate name string
+			fb_utils::exact_name(COL.RDB$COLLATION_NAME);
+			const processing_state rc =
+				SHOW_grants2(COL.RDB$COLLATION_NAME, terminator, obj_collation,
+					(first ? banner : 0), mangle);
+
+			if (rc == SKIP)
+				first = false;
+		}
+		END_FOR
+		ON_ERROR
+			ISQL_errmsg(fbStatus);
+			return OBJECT_NOT_FOUND;
+		END_ERROR
+
 		// Process DDL permissions
 		for (int i = obj_database; i < obj_type_MAX; i++)
 		{
