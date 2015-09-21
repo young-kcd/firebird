@@ -1,3 +1,12 @@
+ 2015-09-20 23:47  asfernandes 
+   M src/isql/extract.epp
+   M src/isql/show.epp
+Fixed CORE-2882 - isql needs to process new external routines.
+
+ 2015-09-20 12:42  hvlad 
+   M src/utilities/nbackup/nbackup.cpp
+Improvement CORE-4939 : Make IO operations with nbackup backup file aligned at page size boundary
+
  2015-09-18 14:58  paul_reeves 
    M builds/install/misc/firebird.conf.in
 Roll back previous spelling correction and clarify the original meaning. (I hope.)
