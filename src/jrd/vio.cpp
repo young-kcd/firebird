@@ -5100,7 +5100,7 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 * Functional description
 *	Get all the data that's staying so we can clean up indexes etc.
 *	without losing anything. This is fast version of old list_staying.
-*   It is used when current transaction own the record and thus guaranteed
+*   It is used when current transaction owns the record and thus guaranteed
 *   that versions chain is not changed during walking.
 *
 **************************************/

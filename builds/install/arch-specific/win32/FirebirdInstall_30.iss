@@ -715,7 +715,7 @@ begin
   if pos('FORCE',Uppercase(CommandLine)) > 0 then
     ForceInstall:=True;
 
-// For now we disable insaltion of the cpl applet until it is fixed.
+// For now we disable installation of the cpl applet until it is fixed.
 //  if pos('NOCPL', Uppercase(CommandLine)) > 0 then
     NoCPL := True;
 
