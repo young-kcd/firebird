@@ -908,6 +908,9 @@ bool TRA_precommited(thread_db* tdbb, TraNumber old_number, TraNumber new_number
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
+	Sync sync(&dbb->dbb_pc_sync, "TRA_precommited");
+	sync.lock(old_number == new_number ? SYNC_SHARED : SYNC_EXCLUSIVE);
+
 	TransactionsVector* vector = dbb->dbb_pc_transactions;
 	if (!vector)
 	{
@@ -2000,6 +2003,7 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 
 	CCH_MARK_MUST_WRITE(tdbb, window);
 	header->hdr_next_transaction = number;
+	dbb->dbb_next_transaction = number;
 
 	if (dbb->dbb_oldest_active > header->hdr_oldest_active)
 		header->hdr_oldest_active = dbb->dbb_oldest_active;

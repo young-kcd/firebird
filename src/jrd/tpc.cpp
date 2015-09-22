@@ -63,11 +63,8 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
  *
  **************************************/
 
-	if (number && m_dbb->dbb_pc_transactions)
-	{
-		if (TRA_precommited(tdbb, number, number))
-			return tra_precommitted;
-	}
+	if (number && TRA_precommited(tdbb, number, number))
+		return tra_precommitted;
 
 	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::cacheState");
 
@@ -279,11 +276,8 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 
 	fb_assert(m_dbb == tdbb->getDatabase());
 
-	if (number && m_dbb->dbb_pc_transactions)
-	{
-		if (TRA_precommited(tdbb, number, number))
-			return tra_precommitted;
-	}
+	if (number && TRA_precommited(tdbb, number, number))
+		return tra_precommitted;
 
 	SyncLockGuard sync(&m_sync, SYNC_SHARED, "TipCache::snapshotState");
 

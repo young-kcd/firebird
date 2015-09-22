@@ -460,6 +460,7 @@ public:
 
 	TipCache*		dbb_tip_cache;		// cache of latest known state of all transactions in system
 	TransactionsVector*	dbb_pc_transactions;				// active precommitted transactions
+	Firebird::SyncObject dbb_pc_sync;						// guard access to dbb_pc_transactions
 	BackupManager*	dbb_backup_manager;						// physical backup manager
 	Firebird::TimeStamp dbb_creation_date; 					// creation date
 	ExternalFileDirectoryList* dbb_external_file_directory_list;
