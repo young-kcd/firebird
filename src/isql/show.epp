@@ -4179,6 +4179,9 @@ static processing_state show_func(const SCHAR* funcname)
 
 		first = false;
 
+		if (!FUN.RDB$DETERMINISTIC_FLAG.NULL && FUN.RDB$DETERMINISTIC_FLAG)
+			isqlGlob.printf("Deterministic function%s", NEWLINE);
+
 		if (!FUN.RDB$ENTRYPOINT.NULL)
 		{
 			fb_utils::exact_name(FUN.RDB$ENTRYPOINT);
