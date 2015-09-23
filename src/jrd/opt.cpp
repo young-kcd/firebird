@@ -2959,7 +2959,6 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_contains:
 		case nod_similar:
 		case nod_starts:
-		case nod_equiv:
 		case nod_eql:
 		case nod_neq:
 		case nod_geq:
