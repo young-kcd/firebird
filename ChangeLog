@@ -1,3 +1,19 @@
+ 2015-09-22 15:45  asfernandes 
+   M src/isql/extract.epp
+   M src/isql/show.epp
+Fixed CORE-4940 - Add label about deterministic flag for stored function in SHOW and extract commands.
+
+ 2015-09-22 10:17  hvlad 
+   M src/jrd/Database.h
+   M src/jrd/tpc.cpp
+   M src/jrd/tra.cpp
+Protect dbb_pc_transactions vector in concurrent environment.
+
+ 2015-09-22 06:00  robocop 
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+   M src/jrd/vio.cpp
+Misc.
+
  2015-09-21 16:46  asfernandes 
    M src/isql/extract.epp
    M src/isql/show.epp
