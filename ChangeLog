@@ -1,3 +1,11 @@
+ 2015-09-23 18:58  dimitr 
+   M src/jrd/opt.cpp
+Corrected a mistake of mine.
+
+ 2015-09-23 18:46  dimitr 
+   M src/jrd/opt.cpp
+Fixed the second example in CORE-4937: View/subselect with "union" does not use computed index.
+
  2015-09-14 14:46  dimitr 
    M doc/WhatsNew
 Updated docs.
