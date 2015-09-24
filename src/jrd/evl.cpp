@@ -2069,7 +2069,7 @@ void EVL_validate(thread_db* tdbb, const Item& item, const ItemInfo* itemInfo, d
 		const bool desc_is_null = !desc || (desc->dsc_flags & DSC_null);
 
 		request->req_domain_validation = desc;
-		const USHORT flags = request->req_flags;
+		const ULONG flags = request->req_flags;
 
 		if (!EVL_boolean(tdbb, fieldInfo.validation) && !(request->req_flags & req_null))
 		{
