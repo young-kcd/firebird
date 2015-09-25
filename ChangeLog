@@ -1,3 +1,7 @@
+ 2015-09-24 16:19  asfernandes 
+   M src/jrd/evl.cpp
+Fixed CORE-4943 - Dialect 1 casting date to string breaks when in the presence a domain with a check constraint.
+
  2015-09-22 15:45  asfernandes 
    M src/isql/extract.epp
    M src/isql/show.epp
