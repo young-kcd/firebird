@@ -1430,7 +1430,7 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 	if (transaction->tra_flags & TRA_system)
 	{
-		// hvlad: what if record was created\modified by user tx also, 
+		// hvlad: what if record was created\modified by user tx also,
 		// i.e. if there is backversion ???
 		VIO_backout(tdbb, rpb, transaction);
 		return;
@@ -5113,7 +5113,7 @@ static void list_staying_fast(thread_db* tdbb, record_param* rpb, RecordStack& s
 		return;
 	}
 
-	fb_assert(temp.rpb_b_page == rpb->rpb_b_page); 
+	fb_assert(temp.rpb_b_page == rpb->rpb_b_page);
 	fb_assert(temp.rpb_b_line == rpb->rpb_b_line);
 	fb_assert(temp.rpb_flags == rpb->rpb_flags);
 

@@ -42,8 +42,8 @@ TraNumber GarbageCollector::RelationData::findPage(const ULONG pageno, const Tra
 	if (!pages.locate(pageno))
 		return MAX_TRA_NUMBER;
 
-	// hvlad: this routine could be guarded by shared sync - therefore comparison 
-	// and assignment below should be atomic operation. But we don't require 
+	// hvlad: this routine could be guarded by shared sync - therefore comparison
+	// and assignment below should be atomic operation. But we don't require
 	// exact precision here.
 	if (pages.current().tranid > tranid)
 		pages.current().tranid = tranid;
