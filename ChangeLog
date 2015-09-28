@@ -1,3 +1,12 @@
+ 2015-09-27 20:02  asfernandes 
+   M src/jrd/GarbageCollector.cpp
+   M src/jrd/vio.cpp
+Misc.
+
+ 2015-09-27 19:39  asfernandes 
+   M src/dsql/StmtNodes.cpp
+Fixed FETCH CURSOR <c> (without INTO) after changes for CORE-4929.
+
  2015-09-24 16:19  asfernandes 
    M src/jrd/evl.cpp
 Fixed CORE-4943 - Dialect 1 casting date to string breaks when in the presence a domain with a check constraint.
