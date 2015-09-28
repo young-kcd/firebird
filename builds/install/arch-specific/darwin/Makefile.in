@@ -15,14 +15,14 @@ export BLOCKSIZE
 
 all: package
 
-FB_INST_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/' -e 's/ /-/g')
-FB_VER_SUFFIX:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
-FB_VER_SUFFIX_SM:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/')
-FB_VER_SUFFIX_M:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -1 | sed -e 's/" "//g' -e 's/"//g' -e 's/Release Candidate/RC/')
-FB_MAJOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/majorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
-FB_MINOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/minorvers.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
-FB_REV_NO:=$(shell cpp -DDARWIN -I. ../builds/install/arch-specific/darwin/revno.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
-FB_BUILD_NO:=$(shell cpp -DDARWIN -I. ../builds/install/arch-specific/darwin/buildno.c | tail -1 | sed -e 's/" "//g' -e 's/"//g')
+FB_INST_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -2 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/' -e 's/ /-/g')
+FB_VER_SUFFIX:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -2 | sed -e 's/" "//g' -e 's/"//g')
+FB_VER_SUFFIX_SM:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -2 | sed -e 's/" "//g' -e 's/"//g' -e 's/Firebird[ ]*//' -e 's/Release Candidate/RC/')
+FB_VER_SUFFIX_M:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/buildsuffix.c | tail -2 | sed -e 's/" "//g' -e 's/"//g' -e 's/Release Candidate/RC/')
+FB_MAJOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/majorvers.c | tail -2 | sed -e 's/" "//g' -e 's/"//g')
+FB_MINOR_VERS:=$(shell cpp -DDARWIN -I.  ../builds/install/arch-specific/darwin/minorvers.c | tail -2 | sed -e 's/" "//g' -e 's/"//g')
+FB_REV_NO:=$(shell cpp -DDARWIN -I. ../builds/install/arch-specific/darwin/revno.c | tail -2 | sed -e 's/" "//g' -e 's/"//g')
+FB_BUILD_NO:=$(shell cpp -DDARWIN -I. ../builds/install/arch-specific/darwin/buildno.c | tail -2 | sed -e 's/" "//g' -e 's/"//g')
 FB_PLATFORM:=$(CpuType)
 
 package packages dist: package_@FIREBIRD_ARCH_TYPE@
