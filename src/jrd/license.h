@@ -128,7 +128,7 @@
 #if defined(ARM)
 #define FB_PLATFORM     "UA"
 #endif
-#endif	// DARWIN
+#endif	
 
 #ifdef DEV_BUILD
 #define FB_DEV_VERSION "-dev"
