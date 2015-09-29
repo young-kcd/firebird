@@ -1162,7 +1162,6 @@ public:
 		explicit Constraint(MemoryPool& p)
 			: PermanentStorage(p),
 			  type(TYPE_CHECK),	// Just something to initialize. Do not assume it.
-			  name(p),
 			  columns(p),
 			  index(NULL),
 			  refRelation(p),
@@ -1175,7 +1174,6 @@ public:
 		}
 
 		Constraint::Type type;
-		Firebird::MetaName name;
 		Firebird::ObjectsArray<Firebird::MetaName> columns;
 		NestConst<IndexConstraintClause> index;
 		Firebird::MetaName refRelation;
@@ -1184,6 +1182,18 @@ public:
 		const char* refDeleteAction;
 		Firebird::ObjectsArray<TriggerDefinition> triggers;
 		Firebird::ObjectsArray<BlrWriter> blrWritersHolder;
+	};
+
+	struct CreateDropConstraint : public PermanentStorage
+	{
+		explicit CreateDropConstraint(MemoryPool& p)
+			: PermanentStorage(p),
+			  name(p)
+		{
+		}
+
+		Firebird::MetaName name;
+		Firebird::AutoPtr<Constraint> create;
 	};
 
 	struct Clause : public PermanentStorage
@@ -1389,10 +1399,10 @@ protected:
 	bool defineDefault(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, dsql_fld* field,
 		ValueSourceClause* clause, Firebird::string& source, BlrDebugWriter::BlrData& value);
 	void makeConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		AddConstraintClause* clause, Firebird::ObjectsArray<Constraint>& constraints,
+		AddConstraintClause* clause, Firebird::ObjectsArray<CreateDropConstraint>& constraints,
 		bool* notNull = NULL);
 	void defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		Constraint& constraint);
+		Firebird::MetaName& constraintName, Constraint& constraint);
 	void defineCheckConstraint(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,
 		BoolSourceClause* clause);
 	void defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch, Constraint& constraint,

@@ -175,6 +175,11 @@ namespace Firebird
 		};
 
 	public:
+		MemoryPool& getPool() const
+		{
+			return inherited::getPool();
+		}
+
 		void insert(size_type index, const T& item)
 		{
 			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);

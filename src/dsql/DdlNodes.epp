@@ -6083,7 +6083,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		}
 
 		// Check for constraints.
-		ObjectsArray<Constraint> constraints;
+		ObjectsArray<CreateDropConstraint> constraints;
 		bool notNullFlag = false;
 
 		if (clause->identity)
@@ -6189,13 +6189,13 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		fieldDefinition.store(tdbb, transaction);
 
 		// Define the field constraints.
-		for (ObjectsArray<Constraint>::iterator constraint(constraints.begin());
+		for (ObjectsArray<CreateDropConstraint>::iterator constraint(constraints.begin());
 			 constraint != constraints.end();
 			 ++constraint)
 		{
-			if (constraint->type != Constraint::TYPE_FK)
-				constraint->columns.add(field->fld_name);
-			defineConstraint(tdbb, dsqlScratch, transaction, *constraint);
+			if (constraint->create->type != Constraint::TYPE_FK)
+				constraint->create->columns.add(field->fld_name);
+			defineConstraint(tdbb, dsqlScratch, transaction, constraint->name, *constraint->create);
 		}
 	}
 	catch (const Exception&)
@@ -6232,9 +6232,11 @@ bool RelationNode::defineDefault(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlS
 
 // Make a constraint object from a legacy node.
 void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, AddConstraintClause* clause, ObjectsArray<Constraint>& constraints,
-	bool* notNull)
+	jrd_tra* transaction, AddConstraintClause* clause,
+	ObjectsArray<CreateDropConstraint>& constraints, bool* notNull)
 {
+	MemoryPool& pool = constraints.getPool();
+
 	switch (clause->constraintType)
 	{
 		case AddConstraintClause::CTYPE_NOT_NULL:
@@ -6243,8 +6245,9 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 			{
 				*notNull = true;
 
-				Constraint& constraint = constraints.add();
-				constraint.type = Constraint::TYPE_NOT_NULL;
+				CreateDropConstraint& constraint = constraints.add();
+				constraint.create = FB_NEW(pool) Constraint(pool);
+				constraint.create->type = Constraint::TYPE_NOT_NULL;
 				if (clause->constraintType == AddConstraintClause::CTYPE_NOT_NULL)
 					constraint.name = clause->name;
 			}
@@ -6255,25 +6258,27 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 		case AddConstraintClause::CTYPE_UNIQUE:
 		{
-			Constraint& constraint = constraints.add();
-			constraint.type = clause->constraintType == AddConstraintClause::CTYPE_PK ?
+			CreateDropConstraint& constraint = constraints.add();
+			constraint.create = FB_NEW(pool) Constraint(pool);
+			constraint.create->type = clause->constraintType == AddConstraintClause::CTYPE_PK ?
 				Constraint::TYPE_PK : Constraint::TYPE_UNIQUE;
 			constraint.name = clause->name;
-			constraint.index = clause->index;
-			if (constraint.index && constraint.index->name.isEmpty())
-				constraint.index->name = constraint.name;
-			constraint.columns = clause->columns;
+			constraint.create->index = clause->index;
+			if (constraint.create->index && constraint.create->index->name.isEmpty())
+				constraint.create->index->name = constraint.name;
+			constraint.create->columns = clause->columns;
 			break;
 		}
 
 		case AddConstraintClause::CTYPE_FK:
 		{
-			Constraint& constraint = constraints.add();
-			constraint.type = Constraint::TYPE_FK;
+			CreateDropConstraint& constraint = constraints.add();
+			constraint.create = FB_NEW(pool) Constraint(pool);
+			constraint.create->type = Constraint::TYPE_FK;
 			constraint.name = clause->name;
-			constraint.columns = clause->columns;
-			constraint.refRelation = clause->refRelation;
-			constraint.refColumns = clause->refColumns;
+			constraint.create->columns = clause->columns;
+			constraint.create->refRelation = clause->refRelation;
+			constraint.create->refColumns = clause->refColumns;
 
 			// If there is a referenced table name but no referenced field names, the
 			// primary key of the referenced table designates the referenced fields.
@@ -6300,11 +6305,11 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 					const NestConst<FieldNode>* ptr = refColumns.begin();
 
 					for (const NestConst<FieldNode>* const end = refColumns.end(); ptr != end; ++ptr)
-						constraint.refColumns.add((*ptr)->dsqlName);
+						constraint.create->refColumns.add((*ptr)->dsqlName);
 				}
 			}
 
-			if (constraint.refColumns.getCount() != constraint.columns.getCount())
+			if (constraint.create->refColumns.getCount() != constraint.create->columns.getCount())
 			{
 				// Foreign key field count does not match primary key.
 				status_exception::raise(
@@ -6315,9 +6320,9 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 			// Define the foreign key index and the triggers that may be needed
 			// for referential integrity action.
-			constraint.index = clause->index;
-			if (constraint.index && constraint.index->name.isEmpty())
-				constraint.index->name = constraint.name;
+			constraint.create->index = clause->index;
+			if (constraint.create->index && constraint.create->index->name.isEmpty())
+				constraint.create->index->name = constraint.name;
 
 			if (clause->refAction)
 			{
@@ -6326,18 +6331,18 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 					switch (clause->refAction->updateAction)
 					{
 						case RefActionClause::ACTION_CASCADE:
-							constraint.refUpdateAction = RI_ACTION_CASCADE;
-							defineUpdateCascadeTrigger(dsqlScratch, constraint);
+							constraint.create->refUpdateAction = RI_ACTION_CASCADE;
+							defineUpdateCascadeTrigger(dsqlScratch, *constraint.create);
 							break;
 
 						case RefActionClause::ACTION_SET_DEFAULT:
-							constraint.refUpdateAction = RI_ACTION_DEFAULT;
-							defineSetDefaultTrigger(dsqlScratch, constraint, true);
+							constraint.create->refUpdateAction = RI_ACTION_DEFAULT;
+							defineSetDefaultTrigger(dsqlScratch, *constraint.create, true);
 							break;
 
 						case RefActionClause::ACTION_SET_NULL:
-							constraint.refUpdateAction = RI_ACTION_NULL;
-							defineSetNullTrigger(dsqlScratch, constraint, true);
+							constraint.create->refUpdateAction = RI_ACTION_NULL;
+							defineSetNullTrigger(dsqlScratch, *constraint.create, true);
 							break;
 
 						default:
@@ -6345,7 +6350,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 							// fall into
 
 						case RefActionClause::ACTION_NONE:
-							constraint.refUpdateAction = RI_ACTION_NONE;
+							constraint.create->refUpdateAction = RI_ACTION_NONE;
 							break;
 					}
 				}
@@ -6355,18 +6360,18 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 					switch (clause->refAction->deleteAction)
 					{
 						case RefActionClause::ACTION_CASCADE:
-							constraint.refDeleteAction = RI_ACTION_CASCADE;
-							defineDeleteCascadeTrigger(dsqlScratch, constraint);
+							constraint.create->refDeleteAction = RI_ACTION_CASCADE;
+							defineDeleteCascadeTrigger(dsqlScratch, *constraint.create);
 							break;
 
 						case RefActionClause::ACTION_SET_DEFAULT:
-							constraint.refDeleteAction = RI_ACTION_DEFAULT;
-							defineSetDefaultTrigger(dsqlScratch, constraint, false);
+							constraint.create->refDeleteAction = RI_ACTION_DEFAULT;
+							defineSetDefaultTrigger(dsqlScratch, *constraint.create, false);
 							break;
 
 						case RefActionClause::ACTION_SET_NULL:
-							constraint.refDeleteAction = RI_ACTION_NULL;
-							defineSetNullTrigger(dsqlScratch, constraint, false);
+							constraint.create->refDeleteAction = RI_ACTION_NULL;
+							defineSetNullTrigger(dsqlScratch, *constraint.create, false);
 							break;
 
 						default:
@@ -6374,7 +6379,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 							// fall into
 
 						case RefActionClause::ACTION_NONE:
-							constraint.refDeleteAction = RI_ACTION_NONE;
+							constraint.create->refDeleteAction = RI_ACTION_NONE;
 							break;
 					}
 				}
@@ -6385,10 +6390,11 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 		case AddConstraintClause::CTYPE_CHECK:
 		{
-			Constraint& constraint = constraints.add();
-			constraint.type = Constraint::TYPE_CHECK;
+			CreateDropConstraint& constraint = constraints.add();
+			constraint.create = FB_NEW(pool) Constraint(pool);
+			constraint.create->type = Constraint::TYPE_CHECK;
 			constraint.name = clause->name;
-			defineCheckConstraint(dsqlScratch, constraint, clause->check);
+			defineCheckConstraint(dsqlScratch, *constraint.create, clause->check);
 			break;
 		}
 	}
@@ -6396,10 +6402,10 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 
 // Define a constraint.
 void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
-	jrd_tra* transaction, Constraint& constraint)
+	jrd_tra* transaction, MetaName& constraintName, Constraint& constraint)
 {
-	if (constraint.name.isEmpty())
-		DYN_UTIL_generate_constraint_name(tdbb, constraint.name);
+	if (constraintName.isEmpty())
+		DYN_UTIL_generate_constraint_name(tdbb, constraintName);
 
 	AutoCacheRequest request(tdbb, drq_s_rel_con, DYN_REQUESTS);
 	MetaName referredIndexName;
@@ -6409,7 +6415,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	{
 		CRT.RDB$INDEX_NAME.NULL = TRUE;
 
-		strcpy(CRT.RDB$CONSTRAINT_NAME, constraint.name.c_str());
+		strcpy(CRT.RDB$CONSTRAINT_NAME, constraintName.c_str());
 		strcpy(CRT.RDB$RELATION_NAME, name.c_str());
 
 		switch (constraint.type)
@@ -6478,7 +6484,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	if (constraint.type == Constraint::TYPE_NOT_NULL)
 	{
 		fb_assert(constraint.columns.getCount() == 1);
-		DYN_UTIL_store_check_constraints(tdbb, transaction, constraint.name,
+		DYN_UTIL_store_check_constraints(tdbb, transaction, constraintName,
 			*constraint.columns.begin());
 	}
 
@@ -6489,7 +6495,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 		 ++trigger)
 	{
 		trigger->store(tdbb, dsqlScratch, transaction);
-		DYN_UTIL_store_check_constraints(tdbb, transaction, constraint.name, trigger->name);
+		DYN_UTIL_store_check_constraints(tdbb, transaction, constraintName, trigger->name);
 	}
 
 	if (constraint.type == Constraint::TYPE_NOT_NULL || constraint.type == Constraint::TYPE_CHECK)
@@ -6542,7 +6548,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	if (uniqueCount != allCount)
 	{
 		// msg 124: "A column name is repeated in the definition of constraint: %s"
-		status_exception::raise(Arg::PrivateDyn(124) << constraint.name);
+		status_exception::raise(Arg::PrivateDyn(124) << constraintName);
 	}
 
 	if (constraint.type == Constraint::TYPE_FK)
@@ -6562,7 +6568,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			{
 				fb_utils::exact_name_limit(CRT.RDB$CONSTRAINT_NAME, sizeof(CRT.RDB$CONSTRAINT_NAME));
 				strcpy(REF.RDB$CONST_NAME_UQ, CRT.RDB$CONSTRAINT_NAME);
-				strcpy(REF.RDB$CONSTRAINT_NAME, constraint.name.c_str());
+				strcpy(REF.RDB$CONSTRAINT_NAME, constraintName.c_str());
 
 				REF.RDB$UPDATE_RULE.NULL = FALSE;
 				strcpy(REF.RDB$UPDATE_RULE, constraint.refUpdateAction);
@@ -6589,7 +6595,7 @@ void RelationNode::defineConstraint(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			CRT IN RDB$RELATION_CONSTRAINTS CROSS
 			IDS IN RDB$INDEX_SEGMENTS OVER RDB$INDEX_NAME
 			WITH CRT.RDB$RELATION_NAME EQ name.c_str() AND
-				 CRT.RDB$CONSTRAINT_NAME NE constraint.name.c_str() AND
+				 CRT.RDB$CONSTRAINT_NAME NE constraintName.c_str() AND
 				 (CRT.RDB$CONSTRAINT_TYPE EQ PRIMARY_KEY OR
 				  CRT.RDB$CONSTRAINT_TYPE EQ UNIQUE_CNSTRT)
 			SORTED BY CRT.RDB$INDEX_NAME, DESCENDING IDS.RDB$FIELD_NAME
@@ -7138,7 +7144,7 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 
 	storePrivileges(tdbb, transaction, name, obj_relation, ALL_PRIVILEGES);
 
-	ObjectsArray<Constraint> constraints;
+	ObjectsArray<CreateDropConstraint> constraints;
 	const ObjectsArray<MetaName>* pkCols = findPkColumns();
 	SSHORT position = 0;
 
@@ -7163,11 +7169,11 @@ void CreateRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScrat
 		}
 	}
 
-	for (ObjectsArray<Constraint>::iterator constraint(constraints.begin());
+	for (ObjectsArray<CreateDropConstraint>::iterator constraint(constraints.begin());
 		 constraint != constraints.end();
 		 ++constraint)
 	{
-		defineConstraint(tdbb, dsqlScratch, transaction, *constraint);
+		defineConstraint(tdbb, dsqlScratch, transaction, constraint->name, *constraint->create);
 	}
 
 	dsqlScratch->relation->rel_flags &= ~REL_creating;
@@ -7259,7 +7265,7 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_BEFORE, DDL_TRIGGER_ALTER_TABLE,
 			name, NULL);
 
-		ObjectsArray<Constraint> constraints;
+		ObjectsArray<CreateDropConstraint> constraints;
 
 		for (NestConst<Clause>* i = clauses.begin(); i != clauses.end(); ++i)
 		{
@@ -7347,10 +7353,12 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 								RFL.RDB$NULL_FLAG.NULL = FALSE;
 								RFL.RDB$NULL_FLAG = TRUE;
 
+								MetaName dummyName;
 								Constraint nullConstraint(*tdbb->getDefaultPool());
 								nullConstraint.type = Constraint::TYPE_NOT_NULL;
 								nullConstraint.columns.add(clause->name);
-								defineConstraint(tdbb, dsqlScratch, transaction, nullConstraint);
+								defineConstraint(tdbb, dsqlScratch, transaction, dummyName,
+									nullConstraint);
 							}
 							else
 							{
@@ -7430,27 +7438,9 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 
 				case Clause::TYPE_DROP_CONSTRAINT:
 				{
-					const MetaName& constraintName =
+					CreateDropConstraint& dropConstraint = constraints.add();
+					dropConstraint.name =
 						static_cast<const DropConstraintClause*>(i->getObject())->name;
-					AutoCacheRequest request(tdbb, drq_e_rel_con, DYN_REQUESTS);
-					bool found = false;
-
-					FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
-						RC IN RDB$RELATION_CONSTRAINTS
-						WITH RC.RDB$CONSTRAINT_NAME EQ constraintName.c_str() AND
-								RC.RDB$RELATION_NAME EQ name.c_str()
-					{
-						found = true;
-						ERASE RC;
-					}
-					END_FOR
-
-					if (!found)
-					{
-						// msg 130: "CONSTRAINT %s does not exist."
-						status_exception::raise(Arg::PrivateDyn(130) << constraintName);
-					}
-
 					break;
 				}
 
@@ -7460,11 +7450,36 @@ void AlterRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 			}
 		}
 
-		for (ObjectsArray<Constraint>::iterator constraint(constraints.begin());
+		for (ObjectsArray<CreateDropConstraint>::iterator constraint(constraints.begin());
 			 constraint != constraints.end();
 			 ++constraint)
 		{
-			defineConstraint(tdbb, dsqlScratch, transaction, *constraint);
+			if (constraint->create)
+			{
+				defineConstraint(tdbb, dsqlScratch, transaction,
+					constraint->name, *constraint->create);
+			}
+			else
+			{
+				AutoCacheRequest request(tdbb, drq_e_rel_con, DYN_REQUESTS);
+				bool found = false;
+
+				FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
+					RC IN RDB$RELATION_CONSTRAINTS
+					WITH RC.RDB$CONSTRAINT_NAME EQ constraint->name.c_str() AND
+						 RC.RDB$RELATION_NAME EQ name.c_str()
+				{
+					found = true;
+					ERASE RC;
+				}
+				END_FOR
+
+				if (!found)
+				{
+					// msg 130: "CONSTRAINT %s does not exist."
+					status_exception::raise(Arg::PrivateDyn(130) << constraint->name);
+				}
+			}
 		}
 
 		executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER, DDL_TRIGGER_ALTER_TABLE,
