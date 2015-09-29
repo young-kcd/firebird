@@ -1,3 +1,16 @@
+ 2015-09-28 13:27  paulbeach 
+   M src/jrd/license.h
+Fix an irritating warning when building packages
+
+ 2015-09-28 13:24  paulbeach 
+   M builds/install/arch-specific/darwin/Makefile.in
+Apple in the last release of OSX have somehow managed to change the default behaviour of tail
+
+ 2015-09-28 12:11  paulbeach 
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+Clang only supports TLS from MacOSX 10.7
+
  2015-09-24 16:19  asfernandes 
    M src/jrd/evl.cpp
 Fixed CORE-4943 - Dialect 1 casting date to string breaks when in the presence a domain with a check constraint.
