@@ -1,3 +1,15 @@
+ 2015-09-28 13:26  paulbeach 
+   M src/jrd/license.h
+Fix an irritating warning when building packages
+
+ 2015-09-28 13:25  paulbeach 
+   M builds/install/arch-specific/darwin/Makefile.in
+Apple in the last release of OSX have somehow managed to change the default behaviour of tail
+
+ 2015-09-28 12:15  paulbeach 
+   M builds/posix/prefix.darwin_i386
+Clang only supports TLS from MacOSX 10.7
+
  2015-09-27 20:02  asfernandes 
    M src/jrd/GarbageCollector.cpp
    M src/jrd/vio.cpp
