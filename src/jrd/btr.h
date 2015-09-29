@@ -133,6 +133,7 @@ struct index_insertion
 	RecordBitmap* iib_duplicates;	// spare bit map of duplicates
 	jrd_tra*	iib_transaction;	// insertion transaction
 	BtrPageGCLock*	iib_dont_gc_lock;	// lock to prevent removal of splitted page
+	UCHAR	iib_btr_level;			// target level to propagate split page to
 };
 
 

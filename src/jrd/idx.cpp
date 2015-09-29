@@ -716,6 +716,7 @@ void IDX_garbage_collect(thread_db* tdbb, record_param* rpb, RecordStack& going,
 	insertion.iib_number = rpb->rpb_number;
 	insertion.iib_relation = rpb->rpb_relation;
 	insertion.iib_key = &key1;
+	insertion.iib_btr_level = 0;
 
 	WIN window(get_root_page(tdbb, rpb->rpb_relation));
 
@@ -832,6 +833,7 @@ void IDX_modify(thread_db* tdbb,
 	insertion.iib_key = &key1;
 	insertion.iib_descriptor = &idx;
 	insertion.iib_transaction = transaction;
+	insertion.iib_btr_level = 0;
 
 	RelationPages* relPages = org_rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
@@ -989,6 +991,7 @@ void IDX_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 	insertion.iib_key = &key;
 	insertion.iib_descriptor = &idx;
 	insertion.iib_transaction = transaction;
+	insertion.iib_btr_level = 0;
 
 	RelationPages* relPages = rpb->rpb_relation->getPages(tdbb);
 	WIN window(relPages->rel_pg_space_id, -1);
@@ -1327,6 +1330,8 @@ static idx_e check_partner_index(thread_db* tdbb,
 			insertion.iib_number.setValue(BOF_NUMBER);
 			insertion.iib_duplicates = bitmap;
 			insertion.iib_transaction = transaction;
+			insertion.iib_btr_level = 0;
+
 			result = check_duplicates(tdbb, record, idx, &insertion, relation);
 			if (idx->idx_flags & (idx_primary | idx_unique))
 				result = result ? idx_e_foreign_references_present : idx_e_ok;

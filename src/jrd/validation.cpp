@@ -1934,6 +1934,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 	temporary_key key;
 	key.key_length = 0;
 	ULONG previous_number = 0;
+	UCHAR level = 255;
 
 	RecordBitmap::reset(vdr_idx_records);
 
@@ -1961,6 +1962,15 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 		//	corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
 		//			id + 1, next, page->btr_level, 0, __FILE__, __LINE__);
 		//}
+
+		if (level == 255) {
+			level = page->btr_level;
+		}
+		else if (level != page->btr_level)
+		{
+			corrupt(VAL_INDEX_PAGE_CORRUPT, relation,
+				id + 1, next, page->btr_level, 0, __FILE__, __LINE__);
+		}
 
 		const bool leafPage = (page->btr_level == 0);
 
@@ -2274,6 +2284,7 @@ Validation::RTN Validation::walk_index(jrd_rel* relation, index_root_page& root_
 		if (!(next = page->btr_sibling))
 		{
 			next = down;
+			level--;
 			key.key_length = 0;
 			previous_number = 0;
 			firstNode = true;
