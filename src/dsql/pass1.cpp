@@ -783,8 +783,13 @@ void PASS1_field_unknown(const TEXT* qualifier_name, const TEXT* field_name,
  **/
 bool PASS1_node_match(const ExprNode* node1, const ExprNode* node2, bool ignoreMapCast)
 {
+	thread_db* tdbb = JRD_get_thread_data();
+
 	DEV_BLKCHK(node1, dsql_type_nod);
 	DEV_BLKCHK(node2, dsql_type_nod);
+
+	if (--tdbb->tdbb_quantum < 0)
+		JRD_reschedule(tdbb, 0, true);
 
 	if (!node1 && !node2)
 		return true;
