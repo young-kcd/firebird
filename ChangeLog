@@ -1,3 +1,21 @@
+ 2015-09-29 16:45  asfernandes 
+   M src/common/classes/objects_array.h
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+Fixed CORE-4947 - Compound ALTER TABLE statement with ADD and DROP the same check constraint fails.
+
+ 2015-09-29 10:04  hvlad 
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/idx.cpp
+   M src/jrd/validation.cpp
+More checks for b-tree page overflow during inset of new node.
+Special care is taken to generate split point so that both new pages do not exceed the page_size.
+Handle case when index key is added and split is propagated up to top-level page and former top-level page is a split by concurrent thread meanwhile.
+Bugcheck when b-tree level become greater than MAX_LEVEL (16 currently) is replaced by isc_imp_exc error.
+Validation code (aka gfix) now check correctness of level assigned to b-tree page (all pages at level should have same value and value should be decremented by one at each level down).
+It should fix bug CORE-4914 and related issues.
+
  2015-09-28 13:26  paulbeach 
    M src/jrd/license.h
 Fix an irritating warning when building packages
