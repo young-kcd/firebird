@@ -1,3 +1,7 @@
+ 2015-09-30 16:35  asfernandes 
+   M src/dsql/pass1.cpp
+Fixed CORE-4292 - Server ignores asynchronous (monitoring or cancellation) requests while preparing a query with lot of windowed functions.
+
  2015-09-29 16:45  asfernandes 
    M src/common/classes/objects_array.h
    M src/dsql/DdlNodes.epp
