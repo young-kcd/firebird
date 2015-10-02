@@ -543,10 +543,13 @@ void INI_format(const char* owner, const char* charset)
 
 	length = acl - buffer;
 
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$ROLES", length, buffer);
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$PAGES", length, buffer);
-	// DFW writes here
-	add_security_to_sys_rel(tdbb, ownerName, "RDB$FORMATS", length, buffer);
+	for (const int* relfld = relfields; relfld[RFLD_R_NAME]; relfld = fld + 1)
+	{
+		for (rdbFieldId = 0, fld = relfld + RFLD_RPT; fld[RFLD_F_NAME]; fld += RFLD_F_LENGTH)
+			++rdbFieldId;
+
+		add_security_to_sys_rel(tdbb, ownerName, names[relfld[RFLD_R_NAME]], length, buffer);
+	}
 }
 
 

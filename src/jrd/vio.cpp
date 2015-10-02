@@ -2758,7 +2758,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 		case rel_indices:
 			protect_system_table_delupd(tdbb, relation, "UPDATE");
 			EVL_field(0, new_rpb->rpb_record, f_idx_relation, &desc1);
-			SCL_check_relation(tdbb, &desc1, SCL_control);
+			SCL_check_relation(tdbb, &desc1, SCL_control, false);
 
 			if (dfw_should_know(org_rpb, new_rpb, f_idx_desc, true))
 			{

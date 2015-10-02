@@ -9462,7 +9462,7 @@ bool SetStatisticsNode::checkPermission(thread_db* tdbb, jrd_tra* transaction)
 	dsc dscName;
 	dscName.makeText(relationName.length(), CS_METADATA, (UCHAR*) relationName.c_str());
 
-	SCL_check_relation(tdbb, &dscName, SCL_alter);
+	SCL_check_relation(tdbb, &dscName, SCL_alter, false);
 	return true;
 }
 

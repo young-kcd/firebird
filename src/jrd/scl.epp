@@ -759,7 +759,8 @@ void SCL_check_filter(thread_db* tdbb, const MetaName &name, SecurityClass::flag
 }
 
 
-void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t mask)
+void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::flags_t mask,
+	bool protectSys)
 {
 /**************************************
  *
@@ -788,7 +789,7 @@ void SCL_check_relation(thread_db* tdbb, const dsc* dsc_name, SecurityClass::fla
 	FOR(REQUEST_HANDLE request) REL IN RDB$RELATIONS
 		WITH REL.RDB$RELATION_NAME EQ name.c_str()
 	{
-		if (REL.RDB$SYSTEM_FLAG == 1 && !attachment->isRWGbak())
+		if (protectSys && REL.RDB$SYSTEM_FLAG == 1 && !attachment->isRWGbak())
 		{
 			// Someone is going to modify system table layout
 			// Usually it's not good idea
