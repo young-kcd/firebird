@@ -1985,6 +1985,32 @@ void CCH_shutdown(thread_db* tdbb)
 	if (!bcb)
 		return;
 
+
+#ifdef CACHE_READER
+	// Shutdown the dedicated cache reader for this database
+
+	if (bcb->bcb_flags & BCB_cache_reader)
+	{
+		bcb->bcb_flags &= ~BCB_cache_reader;
+		dbb->dbb_reader_sem.release();
+		dbb->dbb_reader_fini.enter();
+	}
+#endif
+
+	// Wait for cache writer startup to complete
+
+	while (bcb->bcb_flags & BCB_writer_start)
+		Thread::yield();
+
+	// Shutdown the dedicated cache writer for this database
+
+	if (bcb->bcb_flags & BCB_cache_writer)
+	{
+		bcb->bcb_flags &= ~BCB_cache_writer;
+		bcb->bcb_writer_sem.release(); // Wake up running thread
+		bcb->bcb_writer_fini.enter();
+	}
+
 	SyncLockGuard bcbSync(&bcb->bcb_syncObject, SYNC_EXCLUSIVE, "CCH_shutdown");
 
 	// Flush and release page buffers
@@ -2016,32 +2042,6 @@ void CCH_shutdown(thread_db* tdbb)
 				PAGE_LOCK_RELEASE(tdbb, bcb, bdb->bdb_lock);
 			}
 		}
-	}
-
-#ifdef CACHE_READER
-
-	// Shutdown the dedicated cache reader for this database
-
-	if (bcb->bcb_flags & BCB_cache_reader)
-	{
-		bcb->bcb_flags &= ~BCB_cache_reader;
-		dbb->dbb_reader_sem.release();
-		dbb->dbb_reader_fini.enter();
-	}
-#endif
-
-	// Wait for cache writer startup to complete
-
-	while (bcb->bcb_flags & BCB_writer_start)
-		Thread::yield();
-
-	// Shutdown the dedicated cache writer for this database
-
-	if (bcb->bcb_flags & BCB_cache_writer)
-	{
-		bcb->bcb_flags &= ~BCB_cache_writer;
-		bcb->bcb_writer_sem.release(); // Wake up running thread
-		bcb->bcb_writer_fini.enter();
 	}
 
 	// close the database file and all associated shadow files
