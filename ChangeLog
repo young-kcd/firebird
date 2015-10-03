@@ -1,3 +1,11 @@
+ 2015-10-02 17:30  asfernandes 
+   M src/dsql/DdlNodes.epp
+   M src/jrd/ini.epp
+   M src/jrd/scl.epp
+   M src/jrd/scl_proto.h
+   M src/jrd/vio.cpp
+Fixed CORE-4950 - Statistics for any system index can not be updated/recalculated.
+
  2015-09-30 16:35  asfernandes 
    M src/dsql/pass1.cpp
 Fixed CORE-4292 - Server ignores asynchronous (monitoring or cancellation) requests while preparing a query with lot of windowed functions.
