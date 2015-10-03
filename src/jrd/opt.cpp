@@ -2949,7 +2949,6 @@ static bool expression_possible_unknown(const jrd_nod* node)
 		case nod_lowcase:
 		case nod_substr:
 		case nod_trim:
-		case nod_value_if:
 		case nod_sys_function:
 		case nod_derived_expr:
 		case nod_list:
