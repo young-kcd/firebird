@@ -1,3 +1,7 @@
+ 2015-10-03 05:52  dimitr 
+   M src/jrd/opt.cpp
+Fixed the regression (functional.arno.optimizer.opt_left_join_12) I introduced recently.
+
  2015-09-28 13:27  paulbeach 
    M src/jrd/license.h
 Fix an irritating warning when building packages
