@@ -1,3 +1,7 @@
+ 2015-10-03 13:07  hvlad 
+   M src/jrd/cch.cpp
+Fixed bug CORE-4952 : SuperServer could hung on database shutdown
+
  2015-10-02 17:30  asfernandes 
    M src/dsql/DdlNodes.epp
    M src/jrd/ini.epp
