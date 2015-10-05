@@ -1985,7 +1985,6 @@ void CCH_shutdown(thread_db* tdbb)
 	if (!bcb)
 		return;
 
-
 #ifdef CACHE_READER
 	// Shutdown the dedicated cache reader for this database
 

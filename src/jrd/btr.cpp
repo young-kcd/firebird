@@ -1024,11 +1024,11 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 		// another insert. In that case we are going to insert our split_page
 		// in the existing "top" page instead of making a new "top" page.
 
-		// hvlad: yes, old "top" page could be changed, and more - it could have 
+		// hvlad: yes, old "top" page could be changed, and more - it could have
 		// a split too. In this case we should insert our split page not at the
-		// current "top" page but at the page at correct level. 
-		// Note, while we propagate our split page at lower level, "top" page 
-		// could be splitted again. Thus, to avoid endless loop we won't release 
+		// current "top" page but at the page at correct level.
+		// Note, while we propagate our split page at lower level, "top" page
+		// could be splitted again. Thus, to avoid endless loop we won't release
 		// root page while propagate our split page.
 
 		lock.enablePageGC(tdbb);
@@ -1057,7 +1057,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 			CCH_RELEASE(tdbb, root_window);
 			return;
 		}
-		if (split_page == NO_VALUE_PAGE) 
+		if (split_page == NO_VALUE_PAGE)
 		{
 			CCH_RELEASE(tdbb, &window);
 			CCH_RELEASE(tdbb, root_window);
@@ -1065,7 +1065,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 		}
 
 		window.win_page = root->irt_rpt[idx->idx_id].irt_root;
-		bucket = (btree_page*)CCH_FETCH(tdbb, &window, LCK_write, pag_index);
+		bucket = (btree_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_index);
 		key = ret_key;
 	}
 
@@ -2320,7 +2320,7 @@ static ULONG add_node(thread_db* tdbb,
 	// Fetch the page at the next level down.  If the next level is leaf level,
 	// fetch for write since we know we are going to write to the page (most likely).
 	const PageNumber index = window->win_page;
-	CCH_HANDOFF(tdbb, window, page, 
+	CCH_HANDOFF(tdbb, window, page,
 				(SSHORT) ((bucket->btr_level == 1 + insertion->iib_btr_level) ? LCK_write : LCK_read),
 				pag_index);
 
@@ -5176,12 +5176,12 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 			memcpy(q, node.data, node.length);
 		}
 
-		if (splitIndex && splitPrefix && !*splitIndex) 
+		if (splitIndex && splitPrefix && !*splitIndex)
 		{
 			*splitPrefix += node.prefix;
 
 			leftPageSize = BTR_SIZE + *jumpersSize + (pointer - startpoint);
-			if (leftPageSize + keyLen >= dbb->dbb_page_size) 
+			if (leftPageSize + keyLen >= dbb->dbb_page_size)
 				halfpoint = newAreaPosition = node.nodePointer - 1;
 		}
 
@@ -5223,7 +5223,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 			jumpLength = jumpNode.length + jumpNode.prefix;
 
 			// Check if this could be our split point (if we need to split)
-			if (splitIndex && !*splitIndex && (pointer > halfpoint)) 
+			if (splitIndex && !*splitIndex && (pointer > halfpoint))
 			{
 				*splitIndex = jumpNodes->getCount();
 				splitPageSize = BTR_SIZE + (endpoint - node.nodePointer) + node.prefix + 4;
@@ -5771,7 +5771,7 @@ static ULONG insert_node(thread_db* tdbb,
 
 	// Copy down the remaining data from scratch page.
 	const USHORT l = newBucket->btr_length - (splitpoint - (UCHAR*)newBucket);
-	const ULONG splitLen = ((pointer + l) - (UCHAR*)split);
+	const ULONG splitLen = ((pointer + l) - (UCHAR*) split);
 	if (splitLen > dbb->dbb_page_size) {
 		BUGCHECK(205);	// msg 205 index bucket overfilled
 	}
