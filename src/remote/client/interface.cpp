@@ -723,7 +723,6 @@ static void release_sql_request(Rsr*);
 static void release_transaction(Rtr*);
 static void send_and_receive(IStatus*, Rdb*, PACKET *);
 static void send_blob(CheckStatusWrapper*, Rbl*, USHORT, const UCHAR*);
-static void send_cancel_event(Rvnt*);
 static void send_packet(rem_port*, PACKET *);
 static void send_partial_packet(rem_port*, PACKET *);
 static void server_death(rem_port*);
@@ -1013,6 +1012,8 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
  *	Cancel an outstanding event.
  *
  **************************************/
+	RefPtr<IEventCallback> callback;
+
 	try
 	{
 		CHECK_HANDLE(rdb, isc_bad_db_handle);
@@ -1028,7 +1029,35 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 		try
 		{
 			// Tell the remote server to cancel it and delete it from the list
-			send_cancel_event(rvnt);
+
+			PACKET*	packet = &rdb->rdb_packet;
+
+			// Set the various parameters for the packet:
+			// remote operation to perform, which database,
+			// and which event.
+
+			packet->p_operation = op_cancel_events;
+			packet->p_event.p_event_database = rdb->rdb_id;
+			packet->p_event.p_event_rid = rvnt->rvnt_id;
+
+			// Send the packet, and if that worked, get a response
+
+			try
+			{
+				LocalStatus ls;
+				CheckStatusWrapper dummy(&ls);
+				send_packet(rdb->rdb_port, packet);
+				receive_response(&dummy, rdb, packet);
+			}
+			catch (const Exception&) { }
+
+			// Get ready to fire the event.
+
+			if (rvnt->rvnt_id)
+			{
+				callback = rvnt->rvnt_callback;
+				rvnt->rvnt_id = 0;
+			}
 		}
 		catch (const Exception&)
 		{
@@ -1042,6 +1071,14 @@ void Events::freeClientData(CheckStatusWrapper* status, bool force)
 	{
 		ex.stuffException(status);
 	}
+
+	// If the event has never been fired, fire it off with a length of 0.
+	// Note: it is job of person being notified to check that counts
+	// actually changed and that they were not woken up because of
+	// server death.
+
+	if (callback)
+		callback->eventCallbackFunction(0, NULL);
 }
 
 
@@ -7100,57 +7137,6 @@ static void send_blob(CheckStatusWrapper*		status,
 	// Set up for the response packet.
 
 	receive_response(status, rdb, packet);
-}
-
-
-static void send_cancel_event(Rvnt* event)
-{
-/**************************************
- *
- *	s e n d _ c a n c e l _ e v e n t
- *
- **************************************
- *
- * Functional description
- *	Send a cancel event opcode to a remote
- *	server.
- *
- **************************************/
-
-	// Look up the event's database, port and packet
-
-	Rdb* rdb = event->rvnt_rdb;
-	PACKET*	packet = &rdb->rdb_packet;
-
-	// Set the various parameters for the packet:
-	// remote operation to perform, which database,
-	// and which event.
-
-	packet->p_operation = op_cancel_events;
-	packet->p_event.p_event_database = rdb->rdb_id;
-	packet->p_event.p_event_rid = event->rvnt_id;
-
-	// Send the packet, and if that worked, get a response
-
-	try
-	{
-		LocalStatus ls;
-		CheckStatusWrapper dummy(&ls);
-		send_packet(rdb->rdb_port, packet);
-		receive_response(&dummy, rdb, packet);
-	}
-	catch (const Exception&) { }
-
-	// If the event has never been fired, fire it off with a length of 0.
-	// Note: it is job of person being notified to check that counts
-	// actually changed and that they were not woken up because of
-	// server death.
-
-	if (event->rvnt_id)
-	{
-		event->rvnt_callback->eventCallbackFunction(0, NULL);
-		event->rvnt_id = 0;
-	}
 }
 
 
