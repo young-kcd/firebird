@@ -95,7 +95,7 @@ using namespace Jrd;
 using namespace Firebird;
 
 static void check_class(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
-static bool check_nullify_source(thread_db*, record_param*, record_param*, USHORT);
+static bool check_nullify_source(thread_db*, record_param*, record_param*, int, int = -1);
 static void check_owner(thread_db*, jrd_tra*, record_param*, record_param*, USHORT);
 static bool check_user(thread_db*, const dsc*);
 static int check_precommitted(const jrd_tra*, const record_param*);
@@ -2602,7 +2602,7 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 			break;
 
 		case rel_packages:
-			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_pkg_header_source))
+			if (!check_nullify_source(tdbb, org_rpb, new_rpb, f_pkg_header_source, f_pkg_body_source))
 				protect_system_table_delupd(tdbb, relation, "UPDATE");
 			if (EVL_field(0, org_rpb->rpb_record, f_pkg_name, &desc1))
 				SCL_check_package(tdbb, &desc1, SCL_alter);
@@ -4236,7 +4236,7 @@ static void check_class(thread_db* tdbb,
  *
  **************************************/
 static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb,
-								 USHORT field_id)
+								 int field_id_1, int field_id_2)
 {
 	if (!tdbb->getAttachment()->locksmith())
 		return false;
@@ -4249,13 +4249,17 @@ static bool check_nullify_source(thread_db* tdbb, record_param* org_rpb, record_
 		const bool org_null = !EVL_field(NULL, org_rpb->rpb_record, iter, &org_desc);
 		const bool new_null = !EVL_field(NULL, new_rpb->rpb_record, iter, &new_desc);
 
-		if (iter == field_id && new_null && !org_null)
+		if ((field_id_1 >= 0 && iter == (USHORT) field_id_1) ||
+			(field_id_2 >= 0 && iter == (USHORT) field_id_2))
 		{
 			fb_assert(org_desc.dsc_dtype == dtype_blob);
 			fb_assert(new_desc.dsc_dtype == dtype_blob);
 
-			nullify_found = true;
-			continue;
+			if (new_null && !org_null)
+			{
+				nullify_found = true;
+				continue;
+			}
 		}
 
 		if (org_null != new_null || MOV_compare(&org_desc, &new_desc))
