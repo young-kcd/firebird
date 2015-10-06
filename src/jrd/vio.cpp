@@ -224,8 +224,7 @@ inline void check_gbak_cheating_insupd(thread_db* tdbb, const jrd_rel* relation,
 
 	// It doesn't matter that we use protect_system_table_upd() that's for deletions and updates
 	// but this code is for insertions and updates, because we use force = true.
-	if (attachment->isGbak() && !(attachment->att_flags & ATT_creator) &&
-		!(transaction->tra_flags & TRA_db_triggers))
+	if (relation->isSystem() && attachment->isGbak() && !(attachment->att_flags & ATT_creator))
 	{
 		protect_system_table_delupd(tdbb, relation, op, true);
 	}
@@ -237,7 +236,7 @@ inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 	const Attachment* const attachment = tdbb->getAttachment();
 	const jrd_tra* const transaction = tdbb->getTransaction();
 
-	if (attachment->isGbak() && !(transaction->tra_flags & TRA_db_triggers))
+	if (relation->isSystem() && attachment->isGbak())
 	{
 		if (attachment->att_flags & ATT_creator)
 		{

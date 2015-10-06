@@ -3680,8 +3680,6 @@ const StmtNode* InAutonomousTransactionNode::execute(thread_db* tdbb, jrd_req* r
 											   org_transaction->tra_lock_timeout,
 											   org_transaction);
 
-		transaction->tra_flags |= org_transaction->tra_flags | TRA_db_triggers;
-
 		TRA_attach_request(transaction, request);
 		tdbb->setTransaction(transaction);
 

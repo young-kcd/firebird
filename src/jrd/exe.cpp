@@ -517,8 +517,6 @@ void EXE_execute_db_triggers(thread_db* tdbb, jrd_tra* transaction, TriggerActio
 
 		try
 		{
-			AutoSetRestoreFlag<ULONG> autoFlags(&transaction->tra_flags, TRA_db_triggers, true);
-
 			EXE_execute_triggers(tdbb, &attachment->att_triggers[type],
 				NULL, NULL, trigger_action, StmtNode::ALL_TRIGS);
 			tdbb->setTransaction(old_transaction);
