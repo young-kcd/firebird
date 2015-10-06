@@ -3816,6 +3816,7 @@ void JService::freeEngineData(CheckStatusWrapper* user_status)
 		validateHandle(svc);
 
 		svc->detach();
+		svc = NULL;
 	}
 	catch (const Exception& ex)
 	{

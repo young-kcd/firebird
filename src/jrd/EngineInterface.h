@@ -385,7 +385,6 @@ public:
 
 public:
 	explicit JService(Jrd::Service* handle);
-	Firebird::Mutex mutex;
 	Jrd::Service* svc;
 
 private:
