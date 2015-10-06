@@ -1,3 +1,14 @@
+ 2015-10-05 12:59  hvlad 
+   M src/remote/client/interface.cpp
+It should fix deadlock in fbclient (see CORE-4680).
+Thanks to Alex.
+
+ 2015-10-05 01:25  asfernandes 
+   M src/jrd/btr.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/license.h
+Misc.
+
  2015-10-03 13:07  hvlad 
    M src/jrd/cch.cpp
 Fixed bug CORE-4952 : SuperServer could hung on database shutdown
