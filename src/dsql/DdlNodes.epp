@@ -1906,9 +1906,9 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 	if (!secondPass && modified)
 	{
-		// Get all comments from the old parameter list.
-		MetaNameBidMap comments;
-		collectParamComments(tdbb, transaction, comments);
+		// Get all comments and defaults from the old parameter list.
+		CollectedParameterMap collectedParameters;
+		collectParameters(tdbb, transaction, collectedParameters);
 
 		// delete all old arguments
 		DropFunctionNode::dropArguments(tdbb, transaction, name, package);
@@ -1921,13 +1921,13 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
-			bid comment;
+			CollectedParameter collectedParameter;
 
-			// Find the original comment to recreate in the new parameter.
-			if (!comments.get(parameter->name, comment))
-				comment.clear();
+			// Find the original parameter to recreate in the new parameter.
+			collectedParameters.get(parameter->name, collectedParameter);
 
-			storeArgument(tdbb, dsqlScratch, transaction, i + 1, false, parameter, &comment);
+			storeArgument(tdbb, dsqlScratch, transaction, i + 1, false,
+				parameter, &collectedParameter);
 		}
 	}
 
@@ -1936,7 +1936,7 @@ bool CreateAlterFunctionNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch*
 
 void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction, unsigned pos, bool returnArg, ParameterClause* parameter,
-	const bid* comment)
+	const CollectedParameter* collectedParameter)
 {
 	Attachment* const attachment = transaction->getAttachment();
 	TypeClause* type = parameter->type;
@@ -2053,6 +2053,14 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 
 		if (parameter->defaultClause)
 		{
+			if (preserveDefaults)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_dyn_defvaldecl_package_func) <<
+					package.c_str() <<
+					name.c_str());
+			}
+
 			ARG.RDB$DEFAULT_VALUE.NULL = FALSE;
 			ARG.RDB$DEFAULT_SOURCE.NULL = FALSE;
 
@@ -2072,6 +2080,16 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 
 			attachment->storeBinaryBlob(tdbb, transaction, &ARG.RDB$DEFAULT_VALUE,
 				dsqlScratch->getBlrData());
+		}
+		else if (preserveDefaults && collectedParameter)
+		{
+			ARG.RDB$DEFAULT_SOURCE.NULL = collectedParameter->defaultSource.isEmpty();
+			if (!ARG.RDB$DEFAULT_SOURCE.NULL)
+				ARG.RDB$DEFAULT_SOURCE = collectedParameter->defaultSource;
+
+			ARG.RDB$DEFAULT_VALUE.NULL = collectedParameter->defaultValue.isEmpty();
+			if (!ARG.RDB$DEFAULT_VALUE.NULL)
+				ARG.RDB$DEFAULT_VALUE = collectedParameter->defaultValue;
 		}
 
 		if (isUdf())
@@ -2095,9 +2113,9 @@ void CreateAlterFunctionNode::storeArgument(thread_db* tdbb, DsqlCompilerScratch
 				ARG.RDB$MECHANISM = (SSHORT) FUN_reference;
 		}
 
-		ARG.RDB$DESCRIPTION.NULL = !comment || comment->isEmpty();
+		ARG.RDB$DESCRIPTION.NULL = !collectedParameter || collectedParameter->comment.isEmpty();
 		if (!ARG.RDB$DESCRIPTION.NULL)
-			ARG.RDB$DESCRIPTION = *comment;
+			ARG.RDB$DESCRIPTION = collectedParameter->comment;
 	}
 	END_STORE
 }
@@ -2189,18 +2207,21 @@ void CreateAlterFunctionNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* 
 	invalid = false;
 }
 
-void CreateAlterFunctionNode::collectParamComments(thread_db* tdbb, jrd_tra* transaction,
-	MetaNameBidMap& items)
+void CreateAlterFunctionNode::collectParameters(thread_db* tdbb, jrd_tra* transaction,
+	CollectedParameterMap& items)
 {
 	AutoRequest requestHandle;
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		ARG IN RDB$FUNCTION_ARGUMENTS
 		WITH ARG.RDB$FUNCTION_NAME EQ name.c_str() AND
-			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '') AND
-			 ARG.RDB$DESCRIPTION NOT MISSING
+			 ARG.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
-		items.put(ARG.RDB$ARGUMENT_NAME, ARG.RDB$DESCRIPTION);
+		CollectedParameter parameter;
+		parameter.comment = ARG.RDB$DESCRIPTION;
+		parameter.defaultSource = ARG.RDB$DEFAULT_SOURCE;
+		parameter.defaultValue = ARG.RDB$DEFAULT_VALUE;
+		items.put(ARG.RDB$ARGUMENT_NAME, parameter);
 	}
 	END_FOR
 }
@@ -2792,9 +2813,9 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 	if (!secondPass && modified)
 	{
-		// Get all comments from the old parameter list.
-		MetaNameBidMap comments;
-		collectParamComments(tdbb, transaction, comments);
+		// Get all comments and defaults from the old parameter list.
+		CollectedParameterMap collectedParameters;
+		collectParameters(tdbb, transaction, collectedParameters);
 
 		// Delete all old input and output parameters.
 		DropProcedureNode::dropParameters(tdbb, transaction, name, package);
@@ -2804,25 +2825,23 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 		for (FB_SIZE_T i = 0; i < parameters.getCount(); ++i)
 		{
 			ParameterClause* parameter = parameters[i];
-			bid comment;
+			CollectedParameter collectedParameter;
 
-			// Find the original comment to recreate in the new parameter.
-			if (!comments.get(parameter->name, comment))
-				comment.clear();
+			// Find the original parameter to recreate in the new parameter.
+			collectedParameters.get(parameter->name, collectedParameter);
 
-			storeParameter(tdbb, dsqlScratch, transaction, 0, i, parameter, &comment);
+			storeParameter(tdbb, dsqlScratch, transaction, 0, i, parameter, &collectedParameter);
 		}
 
 		for (FB_SIZE_T i = 0; i < returns.getCount(); ++i)
 		{
 			ParameterClause* parameter = returns[i];
-			bid comment;
+			CollectedParameter collectedParameter;
 
-			// Find the original comment to recreate in the new parameter.
-			if (!comments.get(parameter->name, comment))
-				comment.clear();
+			// Find the original parameter to recreate in the new parameter.
+			collectedParameters.get(parameter->name, collectedParameter);
 
-			storeParameter(tdbb, dsqlScratch, transaction, 1, i, parameter, &comment);
+			storeParameter(tdbb, dsqlScratch, transaction, 1, i, parameter, &collectedParameter);
 		}
 
 		AutoCacheRequest requestHandle2(tdbb, drq_m_prm_view, DYN_REQUESTS);
@@ -2854,7 +2873,7 @@ bool CreateAlterProcedureNode::executeAlter(thread_db* tdbb, DsqlCompilerScratch
 
 void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	jrd_tra* transaction, USHORT parameterType, unsigned pos, ParameterClause* parameter,
-	const bid* comment)
+	const CollectedParameter* collectedParameter)
 {
 	Attachment* const attachment = transaction->getAttachment();
 	TypeClause* type = parameter->type;
@@ -2934,6 +2953,14 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 
 		if (parameter->defaultClause)
 		{
+			if (preserveDefaults)
+			{
+				status_exception::raise(
+					Arg::Gds(isc_dyn_defvaldecl_package_proc) <<
+					package.c_str() <<
+					name.c_str());
+			}
+
 			attachment->storeMetaDataBlob(tdbb, transaction, &PRM.RDB$DEFAULT_SOURCE,
 				parameter->defaultClause->source);
 
@@ -2951,10 +2978,20 @@ void CreateAlterProcedureNode::storeParameter(thread_db* tdbb, DsqlCompilerScrat
 			attachment->storeBinaryBlob(tdbb, transaction, &PRM.RDB$DEFAULT_VALUE,
 				dsqlScratch->getBlrData());
 		}
+		else if (preserveDefaults && collectedParameter)
+		{
+			PRM.RDB$DEFAULT_SOURCE.NULL = collectedParameter->defaultSource.isEmpty();
+			if (!PRM.RDB$DEFAULT_SOURCE.NULL)
+				PRM.RDB$DEFAULT_SOURCE = collectedParameter->defaultSource;
 
-		PRM.RDB$DESCRIPTION.NULL = !comment || comment->isEmpty();
+			PRM.RDB$DEFAULT_VALUE.NULL = collectedParameter->defaultValue.isEmpty();
+			if (!PRM.RDB$DEFAULT_VALUE.NULL)
+				PRM.RDB$DEFAULT_VALUE = collectedParameter->defaultValue;
+		}
+
+		PRM.RDB$DESCRIPTION.NULL = !collectedParameter || collectedParameter->comment.isEmpty();
 		if (!PRM.RDB$DESCRIPTION.NULL)
-			PRM.RDB$DESCRIPTION = *comment;
+			PRM.RDB$DESCRIPTION = collectedParameter->comment;
 	}
 	END_STORE
 }
@@ -3049,18 +3086,21 @@ void CreateAlterProcedureNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch*
 	invalid = false;
 }
 
-void CreateAlterProcedureNode::collectParamComments(thread_db* tdbb, jrd_tra* transaction,
-	MetaNameBidMap& items)
+void CreateAlterProcedureNode::collectParameters(thread_db* tdbb, jrd_tra* transaction,
+	CollectedParameterMap& items)
 {
 	AutoRequest requestHandle;
 
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRM IN RDB$PROCEDURE_PARAMETERS
 		WITH PRM.RDB$PROCEDURE_NAME EQ name.c_str() AND
-			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '') AND
-			 PRM.RDB$DESCRIPTION NOT MISSING
+			 PRM.RDB$PACKAGE_NAME EQUIV NULLIF(package.c_str(), '')
 	{
-		items.put(PRM.RDB$PARAMETER_NAME, PRM.RDB$DESCRIPTION);
+		CollectedParameter parameter;
+		parameter.comment = PRM.RDB$DESCRIPTION;
+		parameter.defaultSource = PRM.RDB$DEFAULT_SOURCE;
+		parameter.defaultValue = PRM.RDB$DEFAULT_VALUE;
+		items.put(PRM.RDB$PARAMETER_NAME, parameter);
 	}
 	END_FOR
 }

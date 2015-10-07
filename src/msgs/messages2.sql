@@ -1934,7 +1934,7 @@ COMMIT WORK;
 ('dyn_procnotdef_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 264, NULL, 'Procedure @1 has not been defined on the package body @2', NULL, NULL);
 ('dyn_funcsignat_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 265, NULL, 'Function @1 has a signature mismatch on package body @2', NULL, NULL);
 ('dyn_procsignat_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 266, NULL, 'Procedure @1 has a signature mismatch on package body @2', NULL, NULL);
-('dyn_defvaldecl_package', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 267, NULL, 'Default values for parameters are allowed only in declaration of packaged procedure @1.@2', NULL, NULL);
+('dyn_defvaldecl_package_proc', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 267, NULL, 'Default values for parameters are allowed only in declaration of packaged procedure @1.@2', NULL, NULL);
 ('dyn_dup_function', 'DYN_define_function', 'dyn_def.epp', NULL, 8, 268, NULL, 'Function @1 already exists', NULL, NULL);
 ('dyn_package_body_exists', NULL, 'DdlNodes.epp/PackageNodes.epp', NULL, 8, 269, NULL, 'Package body @1 already exists', NULL, NULL);
 ('dyn_invalid_ddl_func', 'CreateAlterFunctionNode::compile', 'DdlNodes.epp', NULL, 8, 270, NULL, 'Invalid DDL statement for function @1', NULL, NULL);
@@ -1957,6 +1957,7 @@ COMMIT WORK;
 ('dyn_cant_modify_sysobj', NULL, 'DdlNodes.epp', NULL, 8, 287, NULL, 'System @1 @2 cannot be modified', NULL, 'Ex: System generator rdb$... cannot be modified');
 ('dyn_cant_use_zero_increment', NULL, 'DdlNodes.epp', NULL, 8, 288, NULL, 'INCREMENT BY 0 is an illegal option for sequence @1', NULL, NULL);
 ('dyn_cant_use_in_foreignkey', NULL, 'DdlNodes.epp', NULL, 8, 289, NULL, 'Can''t use @1 in FOREIGN KEY constraint', NULL, NULL);
+('dyn_defvaldecl_package_func', 'CreatePackageBodyNode::execute', 'PackageNodes.epp', NULL, 8, 290, NULL, 'Default values for parameters are allowed only in declaration of packaged function @1.@2', NULL, NULL);
 COMMIT WORK;
 -- TEST
 (NULL, 'main', 'test.c', NULL, 11, 0, NULL, 'This is a modified text message', NULL, NULL);

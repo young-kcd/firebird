@@ -178,6 +178,25 @@ public:
 };
 
 
+struct CollectedParameter
+{
+	CollectedParameter()
+	{
+		comment.clear();
+		defaultSource.clear();
+		defaultValue.clear();
+	}
+
+	bid comment;
+	bid defaultSource;
+	bid defaultValue;
+};
+
+typedef Firebird::GenericMap<
+			Firebird::Pair<Firebird::Left<Firebird::MetaName, CollectedParameter> > >
+	CollectedParameterMap;
+
+
 class ExecInSecurityDb
 {
 public:
@@ -335,6 +354,7 @@ public:
 		  package(pool),
 		  packageOwner(pool),
 		  privateScope(false),
+		  preserveDefaults(false),
 		  udfReturnPos(0)
 	{
 	}
@@ -366,9 +386,10 @@ private:
 		bool secondPass, bool runTriggers);
 
 	void storeArgument(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		unsigned pos, bool returnArg, ParameterClause* parameter, const bid* comment);
+		unsigned pos, bool returnArg, ParameterClause* parameter,
+		const CollectedParameter* collectedParameter);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
-	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
+	void collectParameters(thread_db* tdbb, jrd_tra* transaction, CollectedParameterMap& items);
 
 public:
 	Firebird::MetaName name;
@@ -386,6 +407,7 @@ public:
 	Firebird::MetaName package;
 	Firebird::string packageOwner;
 	bool privateScope;
+	bool preserveDefaults;
 	SLONG udfReturnPos;
 };
 
@@ -473,7 +495,8 @@ public:
 		  invalid(false),
 		  package(pool),
 		  packageOwner(pool),
-		  privateScope(false)
+		  privateScope(false),
+		  preserveDefaults(false)
 	{
 	}
 
@@ -498,9 +521,10 @@ private:
 	bool executeAlter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
 		bool secondPass, bool runTriggers);
 	void storeParameter(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jrd_tra* transaction,
-		USHORT parameterType, unsigned pos, ParameterClause* parameter, const bid* comment);
+		USHORT parameterType, unsigned pos, ParameterClause* parameter,
+		const CollectedParameter* collectedParameter);
 	void compile(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch);
-	void collectParamComments(thread_db* tdbb, jrd_tra* transaction, MetaNameBidMap& items);
+	void collectParameters(thread_db* tdbb, jrd_tra* transaction, CollectedParameterMap& items);
 
 public:
 	Firebird::MetaName name;
@@ -517,6 +541,7 @@ public:
 	Firebird::MetaName package;
 	Firebird::string packageOwner;
 	bool privateScope;
+	bool preserveDefaults;
 };
 
 

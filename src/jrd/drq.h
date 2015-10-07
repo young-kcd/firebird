@@ -205,8 +205,6 @@ enum drq_type_t
 	drq_l_pkg_procs,		// lookup packaged procedures
 	drq_l_pkg_proc_args,	// lookup packaged procedure arguments
 	drq_e_pkg_prv,			// erase package privileges
-	drq_m_pkg_prm_defs,		// modify packaged procedure parameters defaults
-	drq_m_pkg_arg_defs,		// modify packaged function arguments defaults
 	drq_s2_difference,		// Store backup difference file, DYN_mod's change_backup_mode
 	drq_l_relation,			// lookup relation before erase
 	drq_l_fun_name,			// lookup function name

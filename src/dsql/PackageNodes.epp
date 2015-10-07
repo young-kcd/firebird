@@ -895,11 +895,17 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			continue;
 
 		if (arrays[i] == items)
-			collectPackagedItems(tdbb, transaction, name, existingFuncs, existingProcs, true);
+		{
+			existingFuncs.clear();
+			existingProcs.clear();
+		}
+
+		collectPackagedItems(tdbb, transaction, name, existingFuncs, existingProcs, true);
 
 		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
 		{
 			CreateAlterPackageNode::Item& elem = (*arrays[i])[j];
+
 			switch (elem.type)
 			{
 				case CreateAlterPackageNode::Item::FUNCTION:
@@ -908,8 +914,17 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 					if (arrays[i] == items)
 						func->privateScope = !headerFuncs.exist(Signature(func->name));
+					else if (existingFuncs.exist(Signature(func->name)))
+					{
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_dyn_duplicate_package_item) <<
+								Arg::Str("FUNCTION") << Arg::Str(func->name));
+					}
 
 					func->packageOwner = owner;
+					func->preserveDefaults =
+						existingFuncs.exist(Signature(func->name)) && arrays[i] == items;
 					func->executeDdl(tdbb, elem.dsqlScratch, transaction);
 					break;
 				}
@@ -920,8 +935,17 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 
 					if (arrays[i] == items)
 						proc->privateScope = !headerProcs.exist(Signature(proc->name));
+					else if (existingProcs.exist(Signature(proc->name)))
+					{
+						status_exception::raise(
+							Arg::Gds(isc_no_meta_update) <<
+							Arg::Gds(isc_dyn_duplicate_package_item) <<
+								Arg::Str("PROCEDURE") << Arg::Str(proc->name));
+					}
 
 					proc->packageOwner = owner;
+					proc->preserveDefaults =
+						existingProcs.exist(Signature(proc->name)) && arrays[i] == items;
 					proc->executeDdl(tdbb, elem.dsqlScratch, transaction);
 					break;
 				}
@@ -967,80 +991,7 @@ void CreatePackageBodyNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 			status_exception::raise(
 				Arg::Gds(isc_dyn_procsignat_package) << i->name.c_str() << name.c_str());
 		}
-
-		for (SortedObjectsArray<ParameterInfo>::iterator j = newProcs[pos].parameters.begin();
-			 j != newProcs[pos].parameters.end(); ++j)
-		{
-			if (!j->defaultSource.isEmpty() || !j->defaultValue.isEmpty())
-			{
-				status_exception::raise(
-					Arg::Gds(isc_dyn_defvaldecl_package) << name.c_str() << i->name.c_str());
-			}
-		}
 	}
-
-	// Lets recreate default of public procedure/function parameters
-
-	requestHandle.reset(tdbb, drq_m_pkg_prm_defs, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		PRM IN RDB$PROCEDURE_PARAMETERS
-		WITH PRM.RDB$PACKAGE_NAME EQ name.c_str()
-	{
-		FB_SIZE_T pos;
-		if (existingProcs.find(Signature(getPool(), MetaName(PRM.RDB$PROCEDURE_NAME)), pos))
-		{
-			const Signature& proc = existingProcs[pos];
-
-			ParameterInfo paramKey(getPool());
-			paramKey.type = PRM.RDB$PARAMETER_TYPE;
-			paramKey.number = PRM.RDB$PARAMETER_NUMBER;
-
-			if (proc.parameters.find(paramKey, pos))
-			{
-				const ParameterInfo& param = proc.parameters[pos];
-
-				MODIFY PRM
-					PRM.RDB$DEFAULT_SOURCE = param.defaultSource;
-					PRM.RDB$DEFAULT_SOURCE.NULL = param.defaultSource.isEmpty();
-
-					PRM.RDB$DEFAULT_VALUE = param.defaultValue;
-					PRM.RDB$DEFAULT_VALUE.NULL = param.defaultValue.isEmpty();
-				END_MODIFY
-			}
-		}
-	}
-	END_FOR
-
-	requestHandle.reset(tdbb, drq_m_pkg_arg_defs, DYN_REQUESTS);
-
-	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
-		ARG IN RDB$FUNCTION_ARGUMENTS
-		WITH ARG.RDB$PACKAGE_NAME EQ name.c_str()
-	{
-		FB_SIZE_T pos;
-		if (existingFuncs.find(Signature(getPool(), MetaName(ARG.RDB$FUNCTION_NAME)), pos))
-		{
-			const Signature& func = existingFuncs[pos];
-
-			ParameterInfo paramKey(getPool());
-			paramKey.number = ARG.RDB$ARGUMENT_POSITION;
-
-			if (func.parameters.find(paramKey, pos))
-			{
-				const ParameterInfo& param = func.parameters[pos];
-
-				MODIFY ARG
-					ARG.RDB$DEFAULT_SOURCE = param.defaultSource;
-					ARG.RDB$DEFAULT_SOURCE.NULL = param.defaultSource.isEmpty();
-
-					ARG.RDB$DEFAULT_VALUE = param.defaultValue;
-					ARG.RDB$DEFAULT_VALUE.NULL = param.defaultValue.isEmpty();
-				END_MODIFY
-			}
-		}
-	}
-	END_FOR
 
 	executeDdlTrigger(tdbb, dsqlScratch, transaction, DTW_AFTER,
 		DDL_TRIGGER_CREATE_PACKAGE_BODY, name, NULL);

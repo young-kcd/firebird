@@ -937,7 +937,7 @@ const
 	gds_dyn_procnotdef_package           = 336068872;
 	gds_dyn_funcsignat_package           = 336068873;
 	gds_dyn_procsignat_package           = 336068874;
-	gds_dyn_defvaldecl_package           = 336068875;
+	gds_dyn_defvaldecl_package_proc      = 336068875;
 	gds_dyn_package_body_exists          = 336068877;
 	gds_dyn_invalid_ddl_func             = 336068878;
 	gds_dyn_newfc_oldsyntax              = 336068879;
@@ -951,6 +951,7 @@ const
 	gds_dyn_cant_modify_sysobj           = 336068895;
 	gds_dyn_cant_use_zero_increment      = 336068896;
 	gds_dyn_cant_use_in_foreignkey       = 336068897;
+	gds_dyn_defvaldecl_package_func      = 336068898;
 	gds_gbak_unknown_switch              = 336330753;
 	gds_gbak_page_size_missing           = 336330754;
 	gds_gbak_page_size_toobig            = 336330755;

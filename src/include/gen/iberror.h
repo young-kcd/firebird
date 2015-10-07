@@ -960,7 +960,7 @@ const ISC_STATUS isc_dyn_funcnotdef_package           = 336068871L;
 const ISC_STATUS isc_dyn_procnotdef_package           = 336068872L;
 const ISC_STATUS isc_dyn_funcsignat_package           = 336068873L;
 const ISC_STATUS isc_dyn_procsignat_package           = 336068874L;
-const ISC_STATUS isc_dyn_defvaldecl_package           = 336068875L;
+const ISC_STATUS isc_dyn_defvaldecl_package_proc      = 336068875L;
 const ISC_STATUS isc_dyn_package_body_exists          = 336068877L;
 const ISC_STATUS isc_dyn_invalid_ddl_func             = 336068878L;
 const ISC_STATUS isc_dyn_newfc_oldsyntax              = 336068879L;
@@ -974,6 +974,7 @@ const ISC_STATUS isc_dyn_duplicate_package_item       = 336068894L;
 const ISC_STATUS isc_dyn_cant_modify_sysobj           = 336068895L;
 const ISC_STATUS isc_dyn_cant_use_zero_increment      = 336068896L;
 const ISC_STATUS isc_dyn_cant_use_in_foreignkey       = 336068897L;
+const ISC_STATUS isc_dyn_defvaldecl_package_func      = 336068898L;
 const ISC_STATUS isc_gbak_unknown_switch              = 336330753L;
 const ISC_STATUS isc_gbak_page_size_missing           = 336330754L;
 const ISC_STATUS isc_gbak_page_size_toobig            = 336330755L;
@@ -1303,7 +1304,7 @@ const ISC_STATUS isc_trace_switch_user_only           = 337182757L;
 const ISC_STATUS isc_trace_switch_param_miss          = 337182758L;
 const ISC_STATUS isc_trace_param_act_notcompat        = 337182759L;
 const ISC_STATUS isc_trace_mandatory_switch_miss      = 337182760L;
-const ISC_STATUS isc_err_max                          = 1247;
+const ISC_STATUS isc_err_max                          = 1248;
 
 #else /* c definitions */
 
@@ -2233,7 +2234,7 @@ const ISC_STATUS isc_err_max                          = 1247;
 #define isc_dyn_procnotdef_package           336068872L
 #define isc_dyn_funcsignat_package           336068873L
 #define isc_dyn_procsignat_package           336068874L
-#define isc_dyn_defvaldecl_package           336068875L
+#define isc_dyn_defvaldecl_package_proc      336068875L
 #define isc_dyn_package_body_exists          336068877L
 #define isc_dyn_invalid_ddl_func             336068878L
 #define isc_dyn_newfc_oldsyntax              336068879L
@@ -2247,6 +2248,7 @@ const ISC_STATUS isc_err_max                          = 1247;
 #define isc_dyn_cant_modify_sysobj           336068895L
 #define isc_dyn_cant_use_zero_increment      336068896L
 #define isc_dyn_cant_use_in_foreignkey       336068897L
+#define isc_dyn_defvaldecl_package_func      336068898L
 #define isc_gbak_unknown_switch              336330753L
 #define isc_gbak_page_size_missing           336330754L
 #define isc_gbak_page_size_toobig            336330755L
@@ -2576,7 +2578,7 @@ const ISC_STATUS isc_err_max                          = 1247;
 #define isc_trace_switch_param_miss          337182758L
 #define isc_trace_param_act_notcompat        337182759L
 #define isc_trace_mandatory_switch_miss      337182760L
-#define isc_err_max                          1247
+#define isc_err_max                          1248
 
 #endif
 

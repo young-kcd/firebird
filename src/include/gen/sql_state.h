@@ -925,7 +925,7 @@ static const struct {
 	{336068872, "42000"}, // 264 dyn_procnotdef_package
 	{336068873, "42000"}, // 265 dyn_funcsignat_package
 	{336068874, "42000"}, // 266 dyn_procsignat_package
-	{336068875, "42000"}, // 267 dyn_defvaldecl_package
+	{336068875, "42000"}, // 267 dyn_defvaldecl_package_proc
 	{336068877, "42000"}, // 269 dyn_package_body_exists
 	{336068878, "HY000"}, // 270 dyn_invalid_ddl_func
 	{336068879, "42000"}, // 271 dyn_newfc_oldsyntax
@@ -939,6 +939,7 @@ static const struct {
 	{336068895, "42000"}, // 287 dyn_cant_modify_sysobj
 	{336068896, "42000"}, // 288 dyn_cant_use_zero_increment
 	{336068897, "42000"}, // 289 dyn_cant_use_in_foreignkey
+	{336068898, "42000"}, // 290 dyn_defvaldecl_package_func
 	{336330753, "00000"}, //   1 gbak_unknown_switch
 	{336330754, "00000"}, //   2 gbak_page_size_missing
 	{336330755, "00000"}, //   3 gbak_page_size_toobig

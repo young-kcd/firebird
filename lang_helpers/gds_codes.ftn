@@ -1860,8 +1860,8 @@ C --
       PARAMETER (GDS__dyn_funcsignat_package           = 336068873)
       INTEGER*4 GDS__dyn_procsignat_package          
       PARAMETER (GDS__dyn_procsignat_package           = 336068874)
-      INTEGER*4 GDS__dyn_defvaldecl_package          
-      PARAMETER (GDS__dyn_defvaldecl_package           = 336068875)
+      INTEGER*4 GDS__dyn_defvaldecl_package_proc     
+      PARAMETER (GDS__dyn_defvaldecl_package_proc      = 336068875)
       INTEGER*4 GDS__dyn_package_body_exists         
       PARAMETER (GDS__dyn_package_body_exists          = 336068877)
       INTEGER*4 GDS__dyn_invalid_ddl_func            
@@ -1888,6 +1888,8 @@ C --
       PARAMETER (GDS__dyn_cant_use_zero_increment      = 336068896)
       INTEGER*4 GDS__dyn_cant_use_in_foreignkey      
       PARAMETER (GDS__dyn_cant_use_in_foreignkey       = 336068897)
+      INTEGER*4 GDS__dyn_defvaldecl_package_func     
+      PARAMETER (GDS__dyn_defvaldecl_package_func      = 336068898)
       INTEGER*4 GDS__gbak_unknown_switch             
       PARAMETER (GDS__gbak_unknown_switch              = 336330753)
       INTEGER*4 GDS__gbak_page_size_missing          

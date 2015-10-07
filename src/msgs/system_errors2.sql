@@ -914,7 +914,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 8, 264, 'dyn_procnotdef_package', NULL, NULL)
 (-901, '42', '000', 8, 265, 'dyn_funcsignat_package', NULL, NULL)
 (-901, '42', '000', 8, 266, 'dyn_procsignat_package', NULL, NULL)
-(-901, '42', '000', 8, 267, 'dyn_defvaldecl_package', NULL, NULL)
+(-901, '42', '000', 8, 267, 'dyn_defvaldecl_package_proc', NULL, NULL)
 (-901, '42', '000', 8, 269, 'dyn_package_body_exists', NULL, NULL)
 (-607, 'HY', '000', 8, 270, 'dyn_invalid_ddl_func' NULL, NULL)
 (-901, '42', '000', 8, 271, 'dyn_newfc_oldsyntax', NULL, NULL)
@@ -928,6 +928,7 @@ set bulk_insert INSERT INTO SYSTEM_ERRORS (SQL_CODE, SQL_CLASS, SQL_SUBCLASS, FA
 (-901, '42', '000', 8, 287, 'dyn_cant_modify_sysobj', NULL, NULL)
 (-901, '42', '000', 8, 288, 'dyn_cant_use_zero_increment', NULL, NULL)
 (-901, '42', '000', 8, 289, 'dyn_cant_use_in_foreignkey', NULL, NULL)
+(-901, '42', '000', 8, 290, 'dyn_defvaldecl_package_func', NULL, NULL)
 --  GBAK
 (-901, '00', '000', 12, 1, 'gbak_unknown_switch', NULL, NULL)
 (-901, '00', '000', 12, 2, 'gbak_page_size_missing', NULL, NULL)
