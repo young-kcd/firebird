@@ -6278,25 +6278,6 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 			packet->p_acpd.p_acpt_type &= ptype_MASK;
 			break;
 
-		case op_crypt:
-			fb_assert(!checkKeys);
-			{
-				HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: Crypt answer\n"));
-				CSTRING* tmpKeys = REMOTE_dup_string(&packet->p_crypt.p_key);
-				// it was start crypt packet, receive next one
-				receive_response(status, rdb, packet);
-				// add received keys to the list of known ones
-				if (tmpKeys)
-				{
-					port->addServerKeys(tmpKeys);
-					REMOTE_free_string(tmpKeys);
-				}
-			}
-
-			// try to start crypt
-			cBlock.tryNewKeys(port);
-			return;
-
 		default:
 			HANDSHAKE_DEBUG(fprintf(stderr, "Cli: authReceiveResponse: Default answer\n"));
 			REMOTE_check_response(status, rdb, packet, checkKeys);
