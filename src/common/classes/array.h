@@ -143,7 +143,7 @@ protected:
 		// CVC: Warning, after this call, "data" is an invalid pointer, be sure to reassign it
 		// or make it equal to this->getStorage()
 		if (data != this->getStorage())
-			this->getPool().deallocate(data);
+			Firebird::MemoryPool::globalFree(data);
 	}
 
 	void copyFrom(const Array<T, Storage>& source)

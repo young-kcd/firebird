@@ -130,16 +130,16 @@ public:
 		{ return p.calloc(s); }
 #endif
 
-	void operator delete(void* mem, MemoryPool& /*p*/)
+	void operator delete(void* mem, MemoryPool& p)
 	{
 		if (mem)
-			MemoryPool::deallocate(mem);
+			p.deallocate(mem);
 	}
 
-	void operator delete[](void* mem, MemoryPool& /*p*/)
+	void operator delete[](void* mem, MemoryPool& p)
 	{
 		if (mem)
-			MemoryPool::deallocate(mem);
+			p.deallocate(mem);
 	}
 
 	void operator delete(void* mem)

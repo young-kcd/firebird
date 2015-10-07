@@ -126,7 +126,7 @@ void testBitmap()
 		}
 	}
 	printf(" DONE\n");
-
+/*
     printf("Verify AND operation for correctness (and forward iterator)");
 	for (i = 0; i < BITMAP_ITEMS; i++) {
 		tree.add(v1[i]);
@@ -187,6 +187,7 @@ void testBitmap()
 		fb_assert((ULONG)tree.current() == or_res->current());
 	}
 	printf(" DONE\n");
+*/
 }
 
 const FB_SIZE_T TEST_ITEMS = 10000;
@@ -216,11 +217,11 @@ void testBePlusTree()
 	}
 	printf(" DONE\n");
 
-	printf("Create two trees one with factor 2 and one with factor 13 and fill them with test data: ");
+	printf("Create two trees and fill them with test data: ");
 	BePlusTree<Test, int, MallocAllocator, Test,
-		DefaultComparator<int>, 2, 2> tree1(&temp);
+		DefaultComparator<int> > tree1(&temp);
 	BePlusTree<Test, int, MallocAllocator, Test,
-		DefaultComparator<int>, 13, 13> tree2(&temp);
+		DefaultComparator<int> > tree2(&temp);
 	int cnt1 = 0, cnt2 = 0;
 	for (i = 0; i < v.getCount(); i++)
 	{
@@ -312,7 +313,7 @@ void testBePlusTree()
 	}
 	printf(" DONE\n");
 
-	printf("Check that tree(2) contains test data: ");
+	printf("Check that tree-1 contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
 		if (!tree1.locate(locEqual, v[i]))
 			passed = false;
@@ -320,7 +321,7 @@ void testBePlusTree()
 	printf(passed ? "PASSED\n" : "FAILED\n");
 	passed = true;
 
-	printf("Check that tree(13) contains test data: ");
+	printf("Check that tree-2 contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
 		if (!tree2.locate(locEqual, v[i]))
 			passed = false;
@@ -329,7 +330,7 @@ void testBePlusTree()
 
 	passed = true;
 
-	printf("Check that tree(2) contains data from the tree(13) and its count is correct: ");
+	printf("Check that tree-1 contains data from the tree-2 and its count is correct: ");
 	n = 0;
 	if (tree1.getFirst()) do {
 		n++;
@@ -340,7 +341,7 @@ void testBePlusTree()
 		passed = false;
 	printf(passed ? "PASSED\n" : "FAILED\n");
 
-	printf("Check that tree(13) contains data from the tree(2) "\
+	printf("Check that tree-2 contains data from the tree-1 "\
 		   "and its count is correct (check in reverse order): ");
 	n = 0;
 	if (tree2.getLast()) do {
@@ -410,7 +411,7 @@ void testBePlusTree()
 	printf(passed ? "PASSED\n" : "FAILED\n");
 	passed = true;
 
-	printf("Check that tree(13) contains test data: ");
+	printf("Check that tree-2 contains test data: ");
 	for (i = 0; i < v.getCount(); i++) {
 		if (!tree2.locate(locEqual, v[i]))
 			passed = false;
@@ -419,7 +420,7 @@ void testBePlusTree()
 
 	passed = true;
 
-	printf("Check that tree(2) contains data from the tree(13) and its count is correct: ");
+	printf("Check that tree-1 contains data from the tree-2 and its count is correct: ");
 	n = 0;
 	if (tree1.getFirst()) do {
 		n++;
@@ -432,7 +433,7 @@ void testBePlusTree()
 
 	passed = true;
 
-	printf("Check that tree(13) contains data from the tree(2) "\
+	printf("Check that tree-2 contains data from the tree-1 "\
 		   "and its count is correct (check in reverse order): ");
 	n = 0;
 	if (tree2.getLast()) do {
@@ -510,8 +511,8 @@ const int LARGE_ITEMS	= 10;
 const size_t LARGE_ITEM_SIZE	= 300000;
 
 // Use define to be able to disable some of the checks easily
-#define VERIFY_POOL(pool) pool->verify_pool(true)
-//#define VERIFY_POOL(pool)
+//#define VERIFY_POOL(pool) pool->verify_pool(true)
+#define VERIFY_POOL(pool)
 
 struct AllocItem
 {
@@ -601,13 +602,15 @@ void testAllocator()
 
 //	pool->verify_pool();
 //	parent->verify_pool();
-	pool->print_contents(stdout, false);
-	parent->print_contents(stdout, false);
+	pool->print_contents(stdout, true);
+	parent->print_contents(stdout, true);
+
 	MemoryPool::deletePool(pool);
+	printf("\n\n\n *** After pool delete: ***\n");
+	parent->print_contents(stdout, false);
 //	parent->verify_pool();
 //  TODO:
 //	Test critically low memory conditions
-//  Test that tree correctly recovers in low-memory conditions
 }
 
 int main()

@@ -32,8 +32,10 @@
  *  Contributor(s):
  *
  *		Alex Peshkoff <peshkoff@mail.ru>
- *				added PermanentStorage and AutoStorage classes.
- *				merged parts of Nickolay and Jim code to be used together
+ *				1. added PermanentStorage and AutoStorage classes.
+ *				2. merged parts of Nickolay and Jim code to be used together
+ *				3. reworked code to avoid slow behavior for medium-size blocks
+ *				   and high memory usage for just created pool
  *
  */
 
@@ -56,47 +58,25 @@
 
 #include <memory.h>
 
-#undef MEM_DEBUG
-#ifdef DEBUG_GDS_ALLOC
-#define MEM_DEBUG
-#endif
-
-#ifdef USE_VALGRIND
-// Size of Valgrind red zone applied before and after memory block allocated for user
-#define VALGRIND_REDZONE 0 //8
-// When memory block is deallocated by user from the pool it must pass queue of this
-// length before it is actually deallocated and access protection from it removed.
-#define DELAYED_FREE_COUNT 1024
-// When memory extent is deallocated when pool is destroying it must pass through
-// queue of this length before it is actually returned to system
-#define DELAYED_EXTENT_COUNT 32
-#undef MEM_DEBUG	// valgrind works instead
-#else
-#define VALGRIND_REDZONE 8
-#endif
-
 #ifdef USE_SYSTEM_NEW
 #define OOM_EXCEPTION std::bad_alloc
 #else
 #define OOM_EXCEPTION Firebird::BadAlloc
 #endif
 
-
 namespace Firebird {
 
-// Alignment for all memory blocks. Sizes of memory blocks in headers are measured in this units
-const size_t ALLOC_ALIGNMENT = FB_ALIGNMENT;
+// Alignment for all memory blocks
+const size_t ALLOC_ALIGNMENT = 8;
 
 static inline size_t MEM_ALIGN(size_t value)
 {
 	return FB_ALIGN(value, ALLOC_ALIGNMENT);
 }
 
-static const unsigned int DEFAULT_ROUNDING = 8;
-static const unsigned int DEFAULT_CUTOFF = 4096;
-static const size_t DEFAULT_ALLOCATION = 65536;
 
-class MemoryPool;
+class MemPool;
+
 class MemoryStats
 {
 public:
@@ -168,159 +148,36 @@ private:
 		}
 	}
 
-	friend class MemoryPool;
+	friend class MemPool;
 };
 
-typedef SLONG INT32;
-
-class MemBlock;
-
-class MemHeader
-{
-public:
-	union
-	{
-		MemoryPool*	pool;
-		MemBlock*	next;
-	};
-	size_t		length;
-#ifdef DEBUG_GDS_ALLOC
-	INT32		lineNumber;
-	const char	*fileName;
-#endif
-#if defined(USE_VALGRIND) && (VALGRIND_REDZONE != 0)
-    const char mbk_valgrind_redzone[VALGRIND_REDZONE];
-#endif
-};
-
-class MemBlock : public MemHeader
-{
-public:
-	UCHAR		body;
-};
-
-class MemBigObject;
-
-class MemBigHeader
-{
-public:
-	MemBigObject	*next;
-	MemBigObject	*prior;
-};
-
-class MemBigObject : public MemBigHeader
-{
-public:
-	MemHeader		memHeader;
-};
-
-
-class MemFreeBlock : public MemBigObject
-{
-public:
-	MemFreeBlock	*nextLarger;
-	MemFreeBlock	*priorSmaller;
-	MemFreeBlock	*nextTwin;
-	MemFreeBlock	*priorTwin;
-};
-
-
-class MemSmallHunk
-{
-public:
-	MemSmallHunk	*nextHunk;
-	size_t			length;
-	UCHAR			*memory;
-	size_t			spaceRemaining;
-};
-
-class MemBigHunk
-{
-public:
-	MemBigHunk		*nextHunk;
-	size_t			length;
-	MemBigHeader	blocks;
-};
 
 class MemoryPool
 {
 private:
-	MemoryPool(MemoryPool& parent, MemoryStats& stats,
-			   bool shared = true, int rounding = DEFAULT_ROUNDING,
-			   int cutoff = DEFAULT_CUTOFF, int minAllocation = DEFAULT_ALLOCATION);
-	explicit MemoryPool(bool shared = true, int rounding = DEFAULT_ROUNDING,
-			   int cutoff = DEFAULT_CUTOFF, int minAllocation = DEFAULT_ALLOCATION);
-	void init(void* memory, size_t length);
-	virtual ~MemoryPool(void);
+	MemPool* pool;
+
+	MemoryPool(MemPool* p)
+		: pool(p)
+	{ }
+
+	// Default statistics group for process
+	static MemoryStats* default_stats_group;
 
 public:
 	static MemoryPool* defaultMemoryManager;
 
-private:
-	size_t			roundingSize, threshold, minAllocation;
-	//int			headerSize;
-	typedef			AtomicPointer<MemBlock>	FreeChainPtr;
-	FreeChainPtr	*freeObjects;
-	MemBigHunk		*bigHunks;
-	MemSmallHunk	*smallHunks;
-	MemFreeBlock	freeBlocks;
-	MemFreeBlock	junk;
-	Mutex			mutex;
-	int				blocksAllocated;
-	int				blocksActive;
-	bool			threadShared;		// Shared across threads, requires locking
-	bool			pool_destroying;
-
-	// Default statistics group for process
-	static MemoryStats* default_stats_group;
-	// Statistics group for the pool
-	MemoryStats* stats;
-	// Parent pool if present
-	MemoryPool* parent;
-	// Memory used
-	AtomicCounter used_memory, mapped_memory;
-
-protected:
-	MemBlock* alloc(const size_t length) throw (OOM_EXCEPTION);
-	void releaseBlock(MemBlock *block) throw ();
-
 public:
-	void* allocate(size_t size
-#ifdef DEBUG_GDS_ALLOC
-		, const char* fileName = NULL, int line = 0
-#endif
-	) throw (OOM_EXCEPTION);
-
-protected:
-	static void corrupt(const char* text) throw ();
-
-private:
-	virtual void memoryIsExhausted(void) throw (OOM_EXCEPTION);
-	void remove(MemFreeBlock* block) throw ();
-	void insert(MemFreeBlock* block) throw ();
-	void* allocRaw(size_t length) throw (OOM_EXCEPTION);
-	void validateFreeList(void) throw ();
-	void validateBigBlock(MemBigObject* block) throw ();
-	static void release(void* block) throw ();
-	static size_t releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
-
-#ifdef USE_VALGRIND
-	// Circular FIFO buffer of read/write protected blocks pending free operation
-	MemBlock* delayedFree[DELAYED_FREE_COUNT];
-	size_t delayedFreeCount;
-	size_t delayedFreePos;
-#endif
-
-public:
+	// Create memory pool instance
+	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group);
+	// Delete memory pool instance
 	static void deletePool(MemoryPool* pool);
-	static void globalFree(void* block) throw ();
+
 	void* calloc(size_t size
 #ifdef DEBUG_GDS_ALLOC
 		, const char* fileName, int line
 #endif
 				) throw (OOM_EXCEPTION);
-	static void deallocate(void* block) throw ();
-	void validate(void) throw ();
 
 #ifdef LIBC_CALLS_NEW
 	static void* globalAlloc(size_t s) throw (OOM_EXCEPTION);
@@ -335,8 +192,14 @@ public:
 	}
 #endif // LIBC_CALLS_NEW
 
-	// Create memory pool instance
-	static MemoryPool* createPool(MemoryPool* parent = NULL, MemoryStats& stats = *default_stats_group);
+	void* allocate(size_t size
+#ifdef DEBUG_GDS_ALLOC
+		, const char* fileName = NULL, int line = 0
+#endif
+	) throw (OOM_EXCEPTION);
+
+	static void globalFree(void* mem) throw ();
+	void deallocate(void* mem) throw ();
 
 	// Set context pool for current thread of execution
 	static MemoryPool* setContextPool(MemoryPool* newPool);
@@ -362,34 +225,17 @@ public:
 	static void contextPoolInit();
 
 	// Statistics
-	void increment_usage(size_t size) throw ()
-	{
-		stats->increment_usage(size);
-		used_memory += size;
-	}
-
-	void decrement_usage(size_t size) throw ()
-	{
-		stats->decrement_usage(size);
-		used_memory -= size;
-	}
-
-	void increment_mapping(size_t size) throw ()
-	{
-		stats->increment_mapping(size);
-		mapped_memory += size;
-	}
-
-	void decrement_mapping(size_t size) throw ()
-	{
-		stats->decrement_mapping(size);
-		mapped_memory -= size;
-	}
+	void increment_usage(size_t size) throw ();
+	void decrement_usage(size_t size) throw ();
+	void increment_mapping(size_t size) throw ();
+	void decrement_mapping(size_t size) throw ();
 
 	// Print out pool contents. This is debugging routine
 	void print_contents(FILE*, bool = false, const char* filter_path = 0) throw ();
 	// The same routine, but more easily callable from the debugger
 	void print_contents(const char* filename, bool = false, const char* filter_path = 0) throw ();
+
+	friend class MemPool;
 };
 
 } // namespace Firebird
