@@ -1,3 +1,20 @@
+ 2015-10-06 12:10  dimitr 
+   M src/jrd/vio.cpp
+Fixed setting RDB$PACKAGE_BODY_SOURCE to NULL.
+
+ 2015-10-06 10:58  dimitr 
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/exe.cpp
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Use simpler solution for CORE-4928. Let's not open new gates for direct table modifications.
+
+ 2015-10-06 10:27  hvlad 
+   M src/jrd/EngineInterface.h
+   M src/jrd/jrd.cpp
+Removed unused mutex.
+Fixed tiny memory leak.
+
  2015-10-05 12:59  hvlad 
    M src/remote/client/interface.cpp
 It should fix deadlock in fbclient (see CORE-4680).
