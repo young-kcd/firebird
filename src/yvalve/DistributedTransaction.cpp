@@ -98,14 +98,15 @@ bool DTransaction::buildPrepareInfo(CheckStatusWrapper* status, TdrBuffer& tdr, 
 	static const UCHAR PREPARE_TR_INFO[] =
 	{
 		fb_info_tra_dbpath,
-		isc_info_tra_id
+		isc_info_tra_id,
+		isc_info_end
 	};
 
 	Array<UCHAR> bigBuffer;
 	// we need something really big here
 	// output of chaining distributed transaction can be huge
-	// limit MAX_USHORT is chosen cause for old API it was limit of all blocks
-	UCHAR* buf = bigBuffer.getBuffer(MAX_USHORT);
+	// limit MAX_SSHORT is chosen cause for old API larger buffer cause problems
+	UCHAR* buf = bigBuffer.getBuffer(MAX_SSHORT);
 	from->getInfo(status, sizeof(PREPARE_TR_INFO), PREPARE_TR_INFO, bigBuffer.getCount(), buf);
 	if (status->getState() & Firebird::IStatus::STATE_ERRORS)
 		return false;
