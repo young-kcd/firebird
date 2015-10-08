@@ -299,6 +299,7 @@ namespace Firebird
 			int (CLOOP_CARG *serverMode)(IMaster* self, int mode) throw();
 			IUtil* (CLOOP_CARG *getUtilInterface)(IMaster* self) throw();
 			IConfigManager* (CLOOP_CARG *getConfigManager)(IMaster* self) throw();
+			int (CLOOP_CARG *getProcessExiting)(IMaster* self) throw();
 		};
 
 	protected:
@@ -379,6 +380,12 @@ namespace Firebird
 		IConfigManager* getConfigManager()
 		{
 			IConfigManager* ret = static_cast<VTable*>(this->cloopVTable)->getConfigManager(this);
+			return ret;
+		}
+
+		int getProcessExiting()
+		{
+			int ret = static_cast<VTable*>(this->cloopVTable)->getProcessExiting(this);
 			return ret;
 		}
 	};
@@ -5314,6 +5321,7 @@ namespace Firebird
 					this->serverMode = &Name::cloopserverModeDispatcher;
 					this->getUtilInterface = &Name::cloopgetUtilInterfaceDispatcher;
 					this->getConfigManager = &Name::cloopgetConfigManagerDispatcher;
+					this->getProcessExiting = &Name::cloopgetProcessExitingDispatcher;
 				}
 			} vTable;
 
@@ -5464,6 +5472,19 @@ namespace Firebird
 				return static_cast<IConfigManager*>(0);
 			}
 		}
+
+		static int CLOOP_CARG cloopgetProcessExitingDispatcher(IMaster* self) throw()
+		{
+			try
+			{
+				return static_cast<Name*>(self)->Name::getProcessExiting();
+			}
+			catch (...)
+			{
+				StatusType::catchException(0);
+				return static_cast<int>(0);
+			}
+		}
 	};
 
 	template <typename Name, typename StatusType, typename Base = IVersionedImpl<Name, StatusType, Inherit<IMaster> > >
@@ -5490,6 +5511,7 @@ namespace Firebird
 		virtual int serverMode(int mode) = 0;
 		virtual IUtil* getUtilInterface() = 0;
 		virtual IConfigManager* getConfigManager() = 0;
+		virtual int getProcessExiting() = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

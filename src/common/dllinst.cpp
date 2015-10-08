@@ -34,6 +34,7 @@
 namespace Firebird {
 
 HINSTANCE hDllInst = 0;
+extern bool bDllProcessExiting = false;
 
 } // namespace
 

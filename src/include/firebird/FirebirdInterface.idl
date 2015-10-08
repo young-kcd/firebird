@@ -91,6 +91,7 @@ interface Master : Versioned
 	int serverMode(int mode);
 	Util getUtilInterface();
 	ConfigManager getConfigManager();
+	int getProcessExiting();
 }
 
 /*

@@ -789,7 +789,10 @@ public:
 private:
 	static void atExitShutdown()
 	{
-		fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
+		if (MasterInterfacePtr()->getProcessExiting())
+			InstanceControl::cancelCleanup();
+		else
+			fb_shutdown(SHUTDOWN_TIMEOUT, fb_shutrsn_exit_called);
 	}
 };
 
@@ -5756,6 +5759,13 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 
 void Dispatcher::shutdown(CheckStatusWrapper* userStatus, unsigned int timeout, const int reason)
 {
+	if (shutdownStarted)
+		return;
+
+	// can't syncronize with already killed threads, just exit
+	if (MasterInterfacePtr()->getProcessExiting())
+		return;
+
 	try
 	{
 		DispatcherEntry entry(userStatus, true);

@@ -28,6 +28,7 @@
 #include "init.h"
 #include "alloc.h"
 #include "../common/SimpleStatusVector.h"
+#include "../common/dllinst.h"
 
 // Setting this define helps (with AV at exit time) detect globals
 // with destructors, declared not using InstanceControl.
@@ -35,6 +36,8 @@
 // is destroyed in atexit(), before destructors are called. Therefore each delete
 // operator in destructor will cause AV.
 #undef DEBUG_INIT
+
+static bool dontCleanup = false;
 
 namespace
 {
@@ -74,7 +77,17 @@ namespace
 		}
 		initDone = 2;
 
+#ifdef WIN_NT
+		if (Firebird::bDllProcessExiting)
+			dontCleanup = true;
+#endif
+		if (dontCleanup)
+			return;
+
 		Firebird::InstanceControl::destructors();
+
+		if (dontCleanup)
+			return;
 
 		try
 		{
@@ -209,7 +222,7 @@ namespace Firebird
 		{
 			currentPriority = nextPriority;
 
-			for (InstanceList* i = instanceList; i; i = i->next)
+			for (InstanceList* i = instanceList; i && !dontCleanup; i = i->next)
 			{
 				if (i->priority == currentPriority)
 				{
@@ -246,6 +259,11 @@ namespace Firebird
 	{
 		fb_assert(!gdsShutdown || !shutdown);
 		gdsShutdown = shutdown;
+	}
+
+	void InstanceControl::cancelCleanup()
+	{
+		dontCleanup = true;
 	}
 
 	namespace StaticMutex

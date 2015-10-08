@@ -105,6 +105,8 @@ public:
 	static void destructors();
 	static void registerGdsCleanup(FPTR_VOID cleanup);
 	static void registerShutdown(FPTR_VOID shutdown);
+
+	static void cancelCleanup();
 };
 
 

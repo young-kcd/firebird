@@ -31,7 +31,7 @@
 using namespace Firebird;
 
 
-BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
+BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID reserved)
 {
 	switch (reason)
 	{
@@ -44,6 +44,10 @@ BOOL WINAPI DllMain(HINSTANCE h, DWORD reason, LPVOID /*reserved*/)
 			Why::threadCleanup();
 			break;
 		}
+
+		case DLL_PROCESS_DETACH:
+			bDllProcessExiting = (reserved != NULL);
+			break;
 	}
 
 	return TRUE;

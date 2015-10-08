@@ -145,6 +145,19 @@ int MasterImplementation::serverMode(int mode)
 
 namespace Why {
 
+Thread::Handle timerThreadHandle = 0;
+
+int MasterImplementation::getProcessExiting()
+{
+#ifdef WIN_NT
+	if (timerThreadHandle && WaitForSingleObject(timerThreadHandle, 0) != WAIT_TIMEOUT)
+		return 1;
+#endif
+
+	return 0;
+}
+
+
 namespace {
 
 // Protects timerQueue array
@@ -156,7 +169,6 @@ GlobalPtr<Mutex> timerPause;
 GlobalPtr<Semaphore> timerWakeup;
 // Should use atomic flag for thread stop to provide correct membar
 AtomicCounter stopTimerThread(0);
-Thread::Handle timerThreadHandle = 0;
 
 struct TimerEntry
 {

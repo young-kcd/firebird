@@ -758,6 +758,11 @@ public:
 		fb_assert(false);
 		return NULL;
 	}
+
+	int getProcessExiting()
+	{
+		return 0;
+	}
 };
 
 

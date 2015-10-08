@@ -285,6 +285,13 @@ public:
 	{
 		if (flagOsUnload)
 		{
+			const bool dontCleanup = MasterInterfacePtr()->getProcessExiting();
+			if (dontCleanup) 
+			{
+				InstanceControl::cancelCleanup();
+				return;
+			}
+
 			PluginManagerInterfacePtr()->unregisterModule(this);
 			doClean();
 		}
