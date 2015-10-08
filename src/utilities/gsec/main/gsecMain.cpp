@@ -35,6 +35,11 @@
 #include <locale.h>
 #endif
 
+static void atexit_fb_shutdown()
+{
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+}
+
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -53,6 +58,7 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	setlocale(LC_CTYPE, "");
 #endif
 
+	atexit(&atexit_fb_shutdown);
 	int exitCode = 1;
 
 	try
@@ -67,6 +73,5 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 		isc_print_status(st.begin());
  	}
 
-	fb_shutdown(0, fb_shutrsn_app_stopped);
 	return exitCode;
 }

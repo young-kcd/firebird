@@ -242,6 +242,12 @@ const UCHAR CHR_INTRODUCER	= 32;
 const UCHAR CHR_DBLQUOTE	= 64;
 
 
+static void atexit_fb_shutdown()
+{
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+}
+
+
 //____________________________________________________________
 //
 //	Main line routine for C preprocessor.  Initializes
@@ -255,6 +261,7 @@ int main(int argc, char* argv[])
 	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
 	setlocale(LC_CTYPE, "");
 #endif
+	atexit(&atexit_fb_shutdown);
 
 	gpre_sym* symbol;
 	// CVC: COUNT + 1 because IN_SW_GPRE_INTERP is repeated in gpre_in_sw_table.
@@ -968,7 +975,6 @@ void CPR_exit( int stat)
 		unlink(trace_file_name);
 #endif
 
-	fb_shutdown(0, fb_shutrsn_app_stopped);
 	exit(stat);
 }
 

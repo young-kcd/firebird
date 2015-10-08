@@ -589,6 +589,10 @@ static bool frontendTransaction()
 	return startTransaction(&fbTrans, sizeof(default_tpb), default_tpb);
 }
 
+static void atexit_fb_shutdown()
+{
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+}
 
 int CLIB_ROUTINE main(int argc, char* argv[])
 {
@@ -626,6 +630,7 @@ int ISQL_main(int argc, char* argv[])
 #if defined(HAVE_EDITLINE_H) && defined(HAVE_LOCALE_H)
 	setlocale(LC_CTYPE, "");
 #endif
+	atexit(&atexit_fb_shutdown);
 
 	TEXT tabname[WORDLENGTH];
 	tabname[0] = '\0';
@@ -714,7 +719,6 @@ int ISQL_main(int argc, char* argv[])
 	gds_alloc_report(0, fn, 0);
 #endif
 
-	fb_shutdown(0, fb_shutrsn_app_stopped);
 	return Exit_value;
 }
 

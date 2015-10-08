@@ -991,6 +991,11 @@ static void ctrl_c_handler(int signal)
 		prevCtrlCHandler(signal);
 }
 
+static void atexit_fb_shutdown()
+{
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+}
+
 
 // simple main function
 
@@ -1014,6 +1019,7 @@ int main(int ac, char** av)
 	}
 
 	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
+	atexit(&atexit_fb_shutdown);
 
 	ISC_STATUS_ARRAY status;
 

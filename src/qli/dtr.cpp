@@ -96,6 +96,11 @@ static answer_t answer_table[] =
 };
 
 
+static void atexit_fb_shutdown()
+{
+	fb_shutdown(0, fb_shutrsn_app_stopped);
+}
+
 int CLIB_ROUTINE main(int argc, char** argv)
 {
 /**************************************
@@ -126,6 +131,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	// Pick up the system locale to allow SYSTEM<->UTF8 conversions
 	setlocale(LC_CTYPE, "");
 #endif
+	atexit(&atexit_fb_shutdown);
 
 	const TEXT* application_file = NULL;
 	ALLQ_init();
