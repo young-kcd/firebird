@@ -1,3 +1,39 @@
+ 2015-10-07 18:24  asfernandes 
+   M lang_helpers/gds_codes.ftn
+   M lang_helpers/gds_codes.pas
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/PackageNodes.epp
+   M src/include/gen/codetext.h
+   M src/include/gen/iberror.h
+   M src/include/gen/msgs.h
+   M src/include/gen/sql_code.h
+   M src/include/gen/sql_state.h
+   M src/jrd/drq.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/msgs/system_errors2.sql
+Fixed CORE-4954 - The package procedure with value by default isn't called if this parameter isn't specified.
+
+ 2015-10-07 16:59  alexpeshkoff 
+   M src/remote/client/interface.cpp
+op_crypt is not used here - avoid never executed code
+
+ 2015-10-07 16:45  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/array.h
+   M src/common/classes/misc/class_test.cpp
+   A src/common/classes/misc/lowtab.c
+   A src/common/classes/misc/miditab.c
+   M src/common/classes/misc/test.sh
+   M src/common/classes/tree.h
+   M src/include/fb_blk.h
+Reworked memory pool:
+1. Make free small blocks better reusable.
+2. Avoid lists scan when working with medium blocks.
+3. Allocate small hunks from parent pool when possible.
+
  2015-10-06 12:10  dimitr 
    M src/jrd/vio.cpp
 Fixed setting RDB$PACKAGE_BODY_SOURCE to NULL.
