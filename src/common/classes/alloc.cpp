@@ -1519,10 +1519,10 @@ private:
 	virtual void memoryIsExhausted(void) throw (OOM_EXCEPTION);
 	void* allocRaw(size_t length) throw (OOM_EXCEPTION);
 	static void release(void* block) throw ();
-	static size_t releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
+	static void releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
 
 public:
-	static size_t releaseExtent(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
+	static void releaseExtent(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
 
 	// pass desired size, return actual extent size
 	template <class Extent>
@@ -2140,7 +2140,7 @@ void* MemPool::getExtent(size_t& size) throw(OOM_EXCEPTION)		// pass desired min
 }
 
 
-size_t MemPool::releaseExtent(bool destroying, void* block, size_t size, bool use_cache) throw ()
+void MemPool::releaseExtent(bool destroying, void* block, size_t size, bool use_cache) throw ()
 {
 	if (size == PARENT_EXTENT_SIZE)
 		deallocate(block);
@@ -2149,7 +2149,7 @@ size_t MemPool::releaseExtent(bool destroying, void* block, size_t size, bool us
 }
 
 
-size_t MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cache) throw ()
+void MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_cache) throw ()
 {
 #ifndef USE_VALGRIND
 	if (use_cache && (size == DEFAULT_ALLOCATION))
@@ -2158,7 +2158,7 @@ size_t MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_c
 		if (extents_cache.getCount() < extents_cache.getCapacity())
 		{
 			extents_cache.push(block);
-			return size;
+			return;
 		}
 	}
 #else
@@ -2185,7 +2185,7 @@ size_t MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_c
 			item->size = size;
 			item->handle = handle;
 			delayedExtentCount++;
-			return size;
+			return;
 		}
 
 		DelayedExtent* item = &delayedExtents[delayedExtentsPos];
@@ -2225,8 +2225,6 @@ size_t MemPool::releaseRaw(bool destroying, void* block, size_t size, bool use_c
 #endif
 #endif // WIN_NT
 		corrupt("OS memory deallocation error");
-
-	return size;
 }
 
 void MemPool::globalFree(void* block) throw ()
