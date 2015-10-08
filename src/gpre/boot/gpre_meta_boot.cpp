@@ -759,9 +759,9 @@ public:
 		return NULL;
 	}
 
-	int getProcessExiting()
+	FB_BOOLEAN getProcessExiting()
 	{
-		return 0;
+		return false;
 	}
 };
 

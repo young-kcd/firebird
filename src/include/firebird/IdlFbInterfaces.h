@@ -299,7 +299,7 @@ namespace Firebird
 			int (CLOOP_CARG *serverMode)(IMaster* self, int mode) throw();
 			IUtil* (CLOOP_CARG *getUtilInterface)(IMaster* self) throw();
 			IConfigManager* (CLOOP_CARG *getConfigManager)(IMaster* self) throw();
-			int (CLOOP_CARG *getProcessExiting)(IMaster* self) throw();
+			FB_BOOLEAN (CLOOP_CARG *getProcessExiting)(IMaster* self) throw();
 		};
 
 	protected:
@@ -383,9 +383,9 @@ namespace Firebird
 			return ret;
 		}
 
-		int getProcessExiting()
+		FB_BOOLEAN getProcessExiting()
 		{
-			int ret = static_cast<VTable*>(this->cloopVTable)->getProcessExiting(this);
+			FB_BOOLEAN ret = static_cast<VTable*>(this->cloopVTable)->getProcessExiting(this);
 			return ret;
 		}
 	};
@@ -5473,7 +5473,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetProcessExitingDispatcher(IMaster* self) throw()
+		static FB_BOOLEAN CLOOP_CARG cloopgetProcessExitingDispatcher(IMaster* self) throw()
 		{
 			try
 			{
@@ -5482,7 +5482,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<int>(0);
+				return static_cast<FB_BOOLEAN>(0);
 			}
 		}
 	};
@@ -5511,7 +5511,7 @@ namespace Firebird
 		virtual int serverMode(int mode) = 0;
 		virtual IUtil* getUtilInterface() = 0;
 		virtual IConfigManager* getConfigManager() = 0;
-		virtual int getProcessExiting() = 0;
+		virtual FB_BOOLEAN getProcessExiting() = 0;
 	};
 
 	template <typename Name, typename StatusType, typename Base>

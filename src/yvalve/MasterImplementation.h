@@ -64,7 +64,7 @@ namespace Why
 		int serverMode(int mode);
 		Firebird::IUtil* getUtilInterface();
 		Firebird::IConfigManager* getConfigManager();
-		int getProcessExiting();
+		FB_BOOLEAN getProcessExiting();
 	};
 
 	void shutdownTimers();

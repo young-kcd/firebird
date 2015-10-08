@@ -147,14 +147,14 @@ namespace Why {
 
 Thread::Handle timerThreadHandle = 0;
 
-int MasterImplementation::getProcessExiting()
+FB_BOOLEAN MasterImplementation::getProcessExiting()
 {
 #ifdef WIN_NT
 	if (timerThreadHandle && WaitForSingleObject(timerThreadHandle, 0) != WAIT_TIMEOUT)
-		return 1;
+		return true;
 #endif
 
-	return 0;
+	return false;
 }
 
 
