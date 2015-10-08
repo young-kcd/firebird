@@ -401,7 +401,6 @@ BoolExprNode* ComparativeBoolNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	NestConst<ValueExprNode> procArg1 = arg1;
 	NestConst<ValueExprNode> procArg2 = arg2;
 	NestConst<ValueExprNode> procArg3 = arg3;
-	FieldNode* fieldNode1;
 
 	if (dsqlSpecialArg)
 	{
