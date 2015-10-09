@@ -475,3 +475,14 @@ isc_dpb_sql_role_name tag with required value into DPB, but CREATE DATABASE stat
 missed ROLE clause before 3.0.
 
 ISQL now also takes into an account global role setting when creating databases.
+
+
+19) Added {PRESERVE | DELETE} FILE clause to DROP SHADOW statement.
+(Alex Peshkov)
+
+In some cases it's desired to keep shadow file after dropping shadow (for example for
+backup purporse). In FB3 appropriate clause is added to DROP SHADOW. Full syntax is:
+
+DROP SHADOW number [{PRESERVE | DELETE} FILE];
+
+Default behavior is to delete file keeping backwards compatibility.

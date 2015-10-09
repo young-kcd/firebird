@@ -4074,8 +4074,8 @@ drop_clause
 %type <boolVal> opt_no_file_delete
 opt_no_file_delete
 	: /* nothing */			{ $$ = false; }
-	| NO KW_FILE KW_DELETE	{ $$ = true; }
-	| NO KW_DELETE KW_FILE	{ $$ = true; }
+	| PRESERVE KW_FILE		{ $$ = true; }
+	| KW_DELETE KW_FILE		{ $$ = false; }
 	;
 
 // these are the allowable datatypes
