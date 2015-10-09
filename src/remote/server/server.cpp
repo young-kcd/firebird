@@ -5499,7 +5499,7 @@ void rem_port::start_crypt(P_CRYPT * crypt, PACKET* sendL)
 		port_crypt_complete = true;
 
 		send_response(sendL, 0, 0, &st, false);
-		WIRECRYPT_DEBUG(fprintf(stderr, "Installed cipher %s key %s\n", cp.name(), key->type));
+		WIRECRYPT_DEBUG(fprintf(stderr, "Installed cipher %s\n", cp.name()));
 	}
 	catch (const Exception& ex)
 	{
