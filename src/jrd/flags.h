@@ -30,6 +30,7 @@ const USHORT FILE_shadow		= 1;
 const USHORT FILE_inactive		= 2;
 const USHORT FILE_manual		= 4;
 const USHORT FILE_conditional 	= 16;
+const USHORT FILE_nodelete		= 32;
 
 // Flags for backup difference files
 // File is difference

@@ -9840,6 +9840,7 @@ string DropShadowNode::internalPrint(NodePrinter& printer) const
 	DdlNode::internalPrint(printer);
 
 	NODE_PRINT(printer, number);
+	NODE_PRINT(printer, nodelete);
 
 	return "DropShadowNode";
 }
@@ -9861,6 +9862,13 @@ void DropShadowNode::execute(thread_db* tdbb, DsqlCompilerScratch* /*dsqlScratch
 		FIL IN RDB$FILES
 		WITH FIL.RDB$SHADOW_NUMBER EQ number
 	{
+		if (nodelete)
+		{
+			AutoSetRestoreFlag<USHORT> noDfw(&tdbb->tdbb_flags, TDBB_dont_post_dfw, true);
+			MODIFY FIL USING
+				FIL.RDB$FILE_FLAGS |= FILE_nodelete;
+			END_MODIFY
+		}
 		ERASE FIL;
 	}
 	END_FOR

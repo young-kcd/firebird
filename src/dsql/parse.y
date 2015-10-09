@@ -4047,8 +4047,8 @@ drop_clause
 		{ $$ = newNode<DropFunctionNode>(*$3); }
 	| FUNCTION symbol_UDF_name
 		{ $$ = newNode<DropFunctionNode>(*$2); }
-	| SHADOW pos_short_integer
-		{ $$ = newNode<DropShadowNode>($2); }
+	| SHADOW pos_short_integer opt_no_file_delete
+		{ $$ = newNode<DropShadowNode>($2, $3); }
 	| ROLE symbol_role_name
 		{ $$ = newNode<DropRoleNode>(*$2); }
 	| GENERATOR symbol_generator_name
@@ -4071,6 +4071,12 @@ drop_clause
 		{ $$ = $3; }
 	;
 
+%type <boolVal> opt_no_file_delete
+opt_no_file_delete
+	: /* nothing */			{ $$ = false; }
+	| NO KW_FILE KW_DELETE	{ $$ = true; }
+	| NO KW_DELETE KW_FILE	{ $$ = true; }
+	;
 
 // these are the allowable datatypes
 

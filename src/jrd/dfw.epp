@@ -1008,6 +1008,7 @@ static const deferred_task task_table[] =
 	{ dfw_delete_rfr, delete_rfr },
 	{ dfw_delete_relation, delete_relation },
 	{ dfw_delete_shadow, delete_shadow },
+	{ dfw_delete_shadow_nodelete, delete_shadow },
 	{ dfw_create_field, create_field },
 	{ dfw_delete_field, delete_field },
 	{ dfw_modify_field, modify_field },
@@ -1419,7 +1420,8 @@ void DFW_perform_post_commit_work(jrd_tra* transaction)
 			pending_events = true;
 			break;
 		case dfw_delete_shadow:
-			unlink(work->dfw_name.c_str());
+			if (work->dfw_name.hasData())
+				unlink(work->dfw_name.c_str());
 			delete work;
 			break;
 		default:

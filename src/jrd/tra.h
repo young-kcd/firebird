@@ -485,6 +485,7 @@ enum dfw_t {
 	dfw_add_file,
 	dfw_add_shadow,
 	dfw_delete_shadow,
+	dfw_delete_shadow_nodelete,
 	dfw_modify_file,
 	dfw_erase_file,
 	dfw_create_field,

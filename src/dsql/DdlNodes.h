@@ -1866,9 +1866,10 @@ public:
 class DropShadowNode : public DdlNode
 {
 public:
-	DropShadowNode(MemoryPool& p, const SSHORT aNumber)
+	DropShadowNode(MemoryPool& p, const SSHORT aNumber, const bool aNodelete)
 		: DdlNode(p),
-		  number(aNumber)
+		  number(aNumber),
+		  nodelete(aNodelete)
 	{
 	}
 
@@ -1885,6 +1886,7 @@ protected:
 
 public:
 	SSHORT number;
+	bool nodelete;
 };
 
 
