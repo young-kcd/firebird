@@ -1,3 +1,54 @@
+ 2015-10-08 14:45  alexpeshkoff 
+   M src/yvalve/DistributedTransaction.cpp
+Fixed CORE-4951: Message "Incorrect parameters provided to internal function INF_transaction_info Invalid token" is reported when trying to commit 2PC transaction
+
+ 2015-10-08 13:24  dimitr 
+   M src/dsql/BoolNodes.cpp
+Misc.
+
+ 2015-10-08 12:07  hvlad 
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+Change type as Adriano suggests
+
+ 2015-10-08 08:52  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+Fixed return type - thanks to Vlad
+
+ 2015-10-08 08:07  hvlad 
+   M src/alice/main/aliceMain.cpp
+   M src/burp/main/burpMain.cpp
+   M src/gpre/gpre.cpp
+   M src/isql/isql.epp
+   M src/qli/dtr.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+   M src/utilities/gsec/main/gsecMain.cpp
+   M src/utilities/gstat/main/gstatMain.cpp
+   M src/utilities/nbackup/main/nbkMain.cpp
+All utilities call fb_shutdown on exit
+
+ 2015-10-08 07:41  hvlad 
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/init.cpp
+   M src/common/classes/init.h
+   M src/common/dllinst.cpp
+   M src/common/dllinst.h
+   M src/gpre/boot/gpre_meta_boot.cpp
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/jrd/os/win32/ibinitdll.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/MasterImplementation.h
+   M src/yvalve/why.cpp
+Detect case when DLL unloaded after ExitProcess was called. 
+In such case all threads are killed by OS thus any synchronization is potentially dangerous and could lead to hung-up.
+When this condition is detected all kind of cleanup (including engine shutdown) is skipped.
+It fixed CORE-4938 and similar issues.
+
  2015-10-07 18:24  asfernandes 
    M lang_helpers/gds_codes.ftn
    M lang_helpers/gds_codes.pas
