@@ -579,6 +579,12 @@ void testAllocator()
 	VERIFY_POOL(pool);
 	VERIFY_POOL(parent);
 
+	printf("Allocate max recommended medium buffer (%d bytes): ", MemoryPool::MAX_MEDUIM_BLOCK_SIZE);
+	void* maxMedium = pool->allocate(MemoryPool::MAX_MEDUIM_BLOCK_SIZE);
+	printf(" DONE\n");
+	VERIFY_POOL(pool);
+	VERIFY_POOL(parent);
+
 	printf("Deallocate the rest of small items in quasi-random order: ");
 	while (items.getNext()) {
 		pool->deallocate(items.current().item);
@@ -592,6 +598,12 @@ void testAllocator()
 		pool->deallocate(bigItems.current().item);
 	} while (bigItems.getNext());
 	printf(" DONE\n");
+
+	printf("Deallocate max recommended medium buffer: ");
+	pool->deallocate(maxMedium);
+	printf(" DONE\n");
+	VERIFY_POOL(pool);
+	VERIFY_POOL(parent);
 
 	printf("Deallocate %d large items: ", LARGE_ITEMS/2);
 	for (i = 0; i<LARGE_ITEMS/2; i++)

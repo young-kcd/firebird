@@ -165,6 +165,9 @@ private:
 	static MemoryStats* default_stats_group;
 
 public:
+	// This is maximum block size which is cached (not allocated directly from OS)
+	enum RecommendedBufferSize { MAX_MEDUIM_BLOCK_SIZE = 64384 };	// MediumLimits::TOP_LIMIT - 128
+
 	static MemoryPool* defaultMemoryManager;
 
 public:
