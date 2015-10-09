@@ -579,8 +579,8 @@ void testAllocator()
 	VERIFY_POOL(pool);
 	VERIFY_POOL(parent);
 
-	printf("Allocate max recommended medium buffer (%d bytes): ", MemoryPool::MAX_MEDUIM_BLOCK_SIZE);
-	void* maxMedium = pool->allocate(MemoryPool::MAX_MEDUIM_BLOCK_SIZE);
+	printf("Allocate max recommended medium buffer (%d bytes): ", MemoryPool::MAX_MEDIUM_BLOCK_SIZE);
+	void* maxMedium = pool->allocate(MemoryPool::MAX_MEDIUM_BLOCK_SIZE);
 	printf(" DONE\n");
 	VERIFY_POOL(pool);
 	VERIFY_POOL(parent);
