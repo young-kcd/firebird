@@ -17,9 +17,9 @@ LD_FLAGS += -headerpad_max_install_names -arch x86_64
 # Set CFLAGS and CXXFLAGS for relevant MacOS architecture
 # and backwards compatibility. Set accordingly before building.
 
-# Default 64 bit Snow Leopard - intel (MacOS 10.6+)
-CFLAGS += -arch x86_64 -mmacosx-version-min=10.6
-CXXFLAGS += -arch x86_64 -mmacosx-version-min=10.6
+# Default 64 bit Snow Leopard - intel (MacOS 10.7+)
+CFLAGS += -arch x86_64 -mmacosx-version-min=10.7
+CXXFLAGS += -arch x86_64 -mmacosx-version-min=10.7
 
 # 64 bit powerpc
 #CFLAGS += -arch ppc64  -mmacosx-version-min=10.5
@@ -27,8 +27,8 @@ CXXFLAGS += -arch x86_64 -mmacosx-version-min=10.6
 
 # 32bit intel default 
 # DARWIN flag added because of problem with putil.c
-#CFLAGS += -arch i386 -mmacosx-version-min=10.6 -DDARWIN
-#CXXFLAGS += -arch i386 -mmacosx-version-min=10.6
+#CFLAGS += -arch i386 -mmacosx-version-min=10.7 -DDARWIN
+#CXXFLAGS += -arch i386 -mmacosx-version-min=10.7
 
 # 32 bit powerpc
 #CFLAGS += -arch ppc -mmacosx-version-min=10.2
