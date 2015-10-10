@@ -1,3 +1,7 @@
+ 2015-10-09 08:35  paulbeach 
+   M extern/icu/source/config/mh-darwin
+bring icu osx version into line with prefix.darwin*
+
  2015-10-03 05:52  dimitr 
    M src/jrd/opt.cpp
 Fixed the regression (functional.arno.optimizer.opt_left_join_12) I introduced recently.
