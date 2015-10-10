@@ -1,3 +1,32 @@
+ 2015-10-09 14:47  asfernandes 
+   M src/remote/server/server.cpp
+Fix debug code.
+
+ 2015-10-09 13:57  alexpeshkoff 
+   M doc/sql.extensions/README.ddl.txt
+   M src/dsql/parse.y
+Better syntax for CORE-4955 & docs
+
+ 2015-10-09 13:30  alexpeshkoff 
+   M src/dsql/DdlNodes.epp
+   M src/dsql/DdlNodes.h
+   M src/dsql/parse.y
+   M src/jrd/dfw.epp
+   M src/jrd/flags.h
+   M src/jrd/tra.h
+   M src/jrd/vio.cpp
+Implemented CORE-4955: Define a new option for DROP SHADOW command to leave the shadow file in the filesystem
+
+ 2015-10-09 11:58  alexpeshkoff 
+   M src/common/classes/alloc.h
+   M src/common/classes/misc/class_test.cpp
+Spelling fixed - thanks to Adriano
+
+ 2015-10-09 11:45  alexpeshkoff 
+   M src/common/classes/alloc.h
+   M src/common/classes/misc/class_test.cpp
+Added memory pool describing constant MAX_MEDUIM_BLOCK_SIZE
+
  2015-10-08 14:45  alexpeshkoff 
    M src/yvalve/DistributedTransaction.cpp
 Fixed CORE-4951: Message "Incorrect parameters provided to internal function INF_transaction_info Invalid token" is reported when trying to commit 2PC transaction
