@@ -1290,6 +1290,9 @@ bool rem_port::tryKeyType(const KnownServerKey& srvKey, InternalCryptKey* cryptK
 
 				// Complete port-crypt init
 				port_crypt_complete = true;
+
+				REMOTE_free_packet(this, &crypt, true);
+
 				return true;
 			}
 		}
