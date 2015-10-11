@@ -2,6 +2,16 @@
   * v2.5.5
   **************************
 
+    * Bugfix CORE-4943
+        Dialect 1 casting date to string breaks when in the presence a domain with a check constraint
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at uol.com.br>
+
+    * Bugfix CORE-4937
+        View/subselect with "union" does not use computed index
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-4927
         IIF function prevents the condition from being pushed into the union for better optimization
       Contributor(s):
