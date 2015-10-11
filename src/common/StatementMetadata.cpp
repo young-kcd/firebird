@@ -49,7 +49,7 @@ static const UCHAR DESCRIBE_VARS[] =
 	isc_info_sql_describe_end
 };
 
-static const unsigned INFO_BUFFER_SIZE = MAX_USHORT;
+static const unsigned INFO_BUFFER_SIZE = MemoryPool::MAX_MEDIUM_BLOCK_SIZE;
 
 
 static int getNumericInfo(const UCHAR** ptr);
