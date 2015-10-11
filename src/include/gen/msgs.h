@@ -532,7 +532,7 @@ static const struct {
 	{335544828, "Wrong request type in EXECUTE STATEMENT '@1'"},		/* 508, exec_sql_invalid_req */
 	{335544829, "Variable type (position @1) in EXECUTE STATEMENT '@2' INTO does not match returned column type"},		/* 509, exec_sql_invalid_var */
 	{335544830, "Too many recursion levels of EXECUTE STATEMENT"},		/* 510, exec_sql_max_call_exceeded */
-	{335544831, "Access to @1 \"@2\" is denied by server administrator"},		/* 511, conf_access_denied */
+	{335544831, "Use of @1 at location @2 is not allowed by server configuration"},		/* 511, conf_access_denied */
 	{335544832, "Cannot change difference file name while database is in backup mode"},		/* 512, wrong_backup_state */
 	{335544833, "Physical backup is not allowed while Write-Ahead Log is in use"},		/* 513, wal_backup_err */
 	{335544834, "Cursor is not open"},		/* 514, cursor_not_open */
