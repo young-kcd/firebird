@@ -607,7 +607,7 @@ without specifying a character set.', NULL);
 ('exec_sql_invalid_req', '(several)', 'dsql.cpp', NULL, 0, 508, NULL, 'Wrong request type in EXECUTE STATEMENT ''@1''', NULL, NULL);
 ('exec_sql_invalid_var', '(several)', NULL, NULL, 0, 509, NULL, 'Variable type (position @1) in EXECUTE STATEMENT ''@2'' INTO does not match returned column type', NULL, NULL);
 ('exec_sql_max_call_exceeded', '(several)', NULL, NULL, 0, 510, NULL, 'Too many recursion levels of EXECUTE STATEMENT', NULL, NULL);
-('conf_access_denied', '(several)', 'dir_list.cpp', NULL, 0, 511, NULL, 'Access to @1 "@2" is denied by server administrator', NULL, NULL);
+('conf_access_denied', '(several)', 'dir_list.cpp', NULL, 0, 511, NULL, 'Use of @1 at location @2 is not allowed by server configuration', NULL, NULL);
 ('wrong_backup_state', NULL, 'dfw.epp', NULL, 0, 512, NULL, 'Cannot change difference file name while database is in backup mode', NULL, NULL);
 ('wal_backup_err', 'begin_backup', 'dfw.epp', NULL, 0, 513, NULL, 'Physical backup is not allowed while Write-Ahead Log is in use', NULL, NULL);
 ('cursor_not_open', NULL, 'exe.cpp', NULL, 0, 514, NULL, 'Cursor is not open', NULL, NULL);
