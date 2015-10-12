@@ -189,7 +189,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 	}
 
 	if (!function)
-		function = FB_NEW(*attachment->att_pool) Function(*attachment->att_pool);
+		function = FB_NEW_POOL(*attachment->att_pool) Function(*attachment->att_pool);
 
 	try
 	{
@@ -257,7 +257,7 @@ Function* Function::loadMetadata(thread_db* tdbb, USHORT id, bool noscan, USHORT
 					 Y.RDB$PACKAGE_NAME EQUIV NULLIF(function->getName().package.c_str(), '')
 				SORTED BY Y.RDB$ARGUMENT_POSITION
 			{
-				Parameter* parameter = FB_NEW(function->getPool()) Parameter(function->getPool());
+				Parameter* parameter = FB_NEW_POOL(function->getPool()) Parameter(function->getPool());
 
 				if (Y.RDB$ARGUMENT_POSITION != X.RDB$RETURN_ARGUMENT)
 				{

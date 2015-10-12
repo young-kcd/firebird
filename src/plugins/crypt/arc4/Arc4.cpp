@@ -153,7 +153,7 @@ void Arc4::decrypt(CheckStatusWrapper* status, unsigned int length, const void* 
 
 Cypher* Arc4::createCypher(unsigned int l, const void* key)
 {
-	return new Cypher(l, static_cast<const unsigned char*>(key));
+	return FB_NEW Cypher(l, static_cast<const unsigned char*>(key));
 }
 
 const char* Arc4::getKnownTypes(CheckStatusWrapper* status)

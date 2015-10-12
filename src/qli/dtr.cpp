@@ -350,7 +350,7 @@ int CLIB_ROUTINE main(int argc, char** argv)
 	// of the test-base uses QLI so having a report when QLI finishes
 	// could find leaks within the engine.
 
-	gds_alloc_report(0, __FILE__, __LINE__);
+	gds_alloc_report(0 ALLOC_ARGS);
 #endif
 	return (FINI_OK);
 }

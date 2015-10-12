@@ -87,7 +87,7 @@ void MergeJoin::open(thread_db* tdbb) const
 		mfb->mfb_blocking_factor = mfb->mfb_block_size / mfb->mfb_record_size;
 		if (!mfb->mfb_block_data)
 		{
-			mfb->mfb_block_data = FB_NEW(*request->req_pool) UCHAR[mfb->mfb_block_size];
+			mfb->mfb_block_data = FB_NEW_POOL(*request->req_pool) UCHAR[mfb->mfb_block_size];
 		}
 	}
 }
@@ -275,7 +275,7 @@ bool MergeJoin::getRecord(thread_db* tdbb) const
 			if (!mfb->mfb_space)
 			{
 				MemoryPool& pool = *getDefaultMemoryPool();
-				mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH, false);
+				mfb->mfb_space = FB_NEW_POOL(pool) TempSpace(pool, SCRATCH, false);
 			}
 
 			Sort::writeBlock(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,
@@ -456,7 +456,7 @@ SLONG MergeJoin::getRecord(thread_db* tdbb, FB_SIZE_T index) const
 		if (!mfb->mfb_space)
 		{
 			MemoryPool& pool = *getDefaultMemoryPool();
-			mfb->mfb_space = FB_NEW(pool) TempSpace(pool, SCRATCH, false);
+			mfb->mfb_space = FB_NEW_POOL(pool) TempSpace(pool, SCRATCH, false);
 		}
 
 		Sort::writeBlock(mfb->mfb_space, mfb->mfb_block_size * mfb->mfb_current_block,

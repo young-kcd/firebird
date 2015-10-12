@@ -639,7 +639,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 	svc_command_line(getPool()),
 	svc_network_protocol(getPool()), svc_remote_address(getPool()), svc_remote_process(getPool()),
 	svc_remote_pid(0), svc_trace_manager(NULL), svc_crypt_callback(crypt_callback),
-	svc_existence(FB_NEW(*getDefaultMemoryPool()) SvcMutex(this)),
+	svc_existence(FB_NEW_POOL(*getDefaultMemoryPool()) SvcMutex(this)),
 	svc_stdin_size_requested(0), svc_stdin_buffer(NULL), svc_stdin_size_preload(0),
 	svc_stdin_preload_requested(0), svc_stdin_user_size(0)
 {
@@ -747,7 +747,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 		svc_user_flag = user_flag;
 		svc_service = serv;
 
-		svc_trace_manager = FB_NEW(*getDefaultMemoryPool()) TraceManager(this);
+		svc_trace_manager = FB_NEW_POOL(*getDefaultMemoryPool()) TraceManager(this);
 
 		// If an executable is defined for the service, try to fork a new thread.
 		// Only do this if we are working with a version 1 service
@@ -768,7 +768,7 @@ Service::Service(const TEXT* service_name, USHORT spb_length, const UCHAR* spb_d
 			if (hasTrace)
 				trace_manager = svc_trace_manager;
 			else
-				trace_manager = FB_NEW(*getDefaultMemoryPool()) TraceManager(this);
+				trace_manager = FB_NEW_POOL(*getDefaultMemoryPool()) TraceManager(this);
 
 			if (trace_manager->needs(ITraceFactory::TRACE_EVENT_SERVICE_ATTACH))
 			{
@@ -2361,7 +2361,7 @@ ULONG Service::put(const UCHAR* buffer, ULONG length)
 		{
 			if (!svc_stdin_preload)
 			{
-				svc_stdin_preload.reset(FB_NEW(getPool()) UCHAR[PRELOAD_BUFFER_SIZE]);
+				svc_stdin_preload.reset(FB_NEW_POOL(getPool()) UCHAR[PRELOAD_BUFFER_SIZE]);
 			}
 
 			svc_stdin_preload_requested = MIN(blockSize, PRELOAD_BUFFER_SIZE);

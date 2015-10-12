@@ -178,7 +178,7 @@ public:
 					 cvt_match_one(pool, ttype, sql_match_one, match_one_length);
 
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(pool) LikeMatcher(pool, ttype,
+		return FB_NEW_POOL(pool) LikeMatcher(pool, ttype,
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType),
 			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escape_length != 0,
 			*reinterpret_cast<const CharType*>(sql_match_any),
@@ -244,7 +244,7 @@ public:
 	{
 		StrConverter cvt(pool, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(pool) StartsMatcher(pool, ttype,
+		return FB_NEW_POOL(pool) StartsMatcher(pool, ttype,
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
@@ -297,7 +297,7 @@ public:
 	{
 		StrConverter cvt(pool, ttype, str, length);
 		fb_assert(length % sizeof(CharType) == 0);
-		return FB_NEW(pool) ContainsMatcher(pool, ttype,
+		return FB_NEW_POOL(pool) ContainsMatcher(pool, ttype,
 			reinterpret_cast<const CharType*>(str), length / sizeof(CharType));
 	}
 
@@ -840,9 +840,9 @@ Collation* newCollation(MemoryPool& pool, TTYPE_ID id, texttype* tt, CharSet* cs
 	> NonDirectImpl;
 
 	if (tt->texttype_flags & TEXTTYPE_DIRECT_MATCH)
-		return FB_NEW(pool) DirectImpl(id, tt, cs);
+		return FB_NEW_POOL(pool) DirectImpl(id, tt, cs);
 	else
-		return FB_NEW(pool) NonDirectImpl(id, tt, cs);
+		return FB_NEW_POOL(pool) NonDirectImpl(id, tt, cs);
 }
 
 }	// namespace

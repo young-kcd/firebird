@@ -66,7 +66,7 @@ public:
 
 IStatus* MasterImplementation::getStatus()
 {
-	return new UserStatus;
+	return FB_NEW UserStatus;
 }
 
 
@@ -76,7 +76,7 @@ IStatus* MasterImplementation::getStatus()
 
 IProvider* MasterImplementation::getDispatcher()
 {
-	IProvider* dispatcher = new Dispatcher;
+	IProvider* dispatcher = FB_NEW Dispatcher;
 	dispatcher->addRef();
 	return dispatcher;
 }
@@ -107,7 +107,7 @@ IMetadataBuilder* MasterImplementation::getMetadataBuilder(CheckStatusWrapper* s
 {
 	try
 	{
-		IMetadataBuilder* bld = new MetadataBuilder(fieldCount);
+		IMetadataBuilder* bld = FB_NEW MetadataBuilder(fieldCount);
 		bld->addRef();
 		return bld;
 	}

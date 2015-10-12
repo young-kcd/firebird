@@ -79,7 +79,7 @@ namespace
 	{
 	public:
 		explicit StaticConfHolder(MemoryPool& p)
-			: confFile(FB_NEW(p) ConfigFile(p,
+			: confFile(FB_NEW_POOL(p) ConfigFile(p,
 				fb_utils::getPrefix(IConfigManager::DIR_CONF, "plugins.conf"), ConfigFile::HAS_SUB_CONF))
 		{
 		}
@@ -237,7 +237,7 @@ namespace
 		{
 			if (p)
 			{
-				IConfigEntry* rc = new ConfigParameterAccess(this, p);
+				IConfigEntry* rc = FB_NEW ConfigParameterAccess(this, p);
 				rc->addRef();
 				return rc;
 			}
@@ -252,7 +252,7 @@ namespace
 		{
 			if (par && par->sub.hasData())
 			{
-				IConfig* rc = new ConfigAccess(par->sub);
+				IConfig* rc = FB_NEW ConfigAccess(par->sub);
 				rc->addRef();
 				return rc;
 			}
@@ -272,7 +272,7 @@ namespace
 		if (defaultConfig)
 		{
 			const ConfigFile::Parameter* p = defaultConfig->findParameter("Config");
-			IConfig* rc = new ConfigAccess(p ? findConfig("Config", p->value.c_str()) : RefPtr<ConfigFile>(NULL));
+			IConfig* rc = FB_NEW ConfigAccess(p ? findConfig("Config", p->value.c_str()) : RefPtr<ConfigFile>(NULL));
 			rc->addRef();
 			return rc;
 		}
@@ -553,7 +553,7 @@ namespace
 				if (!firebirdConf.hasData())
 				{
 					RefPtr<Config> specificConf(Config::getDefaultConfig());
-					firebirdConf = new FirebirdConf(specificConf);
+					firebirdConf = FB_NEW FirebirdConf(specificConf);
 				}
 
 				firebirdConf->addRef();
@@ -601,7 +601,7 @@ namespace
 
 	IPluginBase* ConfiguredPlugin::factory(IFirebirdConf* firebirdConf)
 	{
-		FactoryParameter* par = new FactoryParameter(this, firebirdConf);
+		FactoryParameter* par = FB_NEW FactoryParameter(this, firebirdConf);
 		par->addRef();
 
 		LocalStatus ls;
@@ -892,7 +892,7 @@ namespace
 							  info.curModule << info.regName << Arg::Num(interfaceType));
 				}
 
-				currentPlugin = new ConfiguredPlugin(m, r, info.conf, info.plugConfigFile, currentName);
+				currentPlugin = FB_NEW ConfiguredPlugin(m, r, info.conf, info.plugConfigFile, currentName);
 
 				plugins->put(MapKey(interfaceType, currentName), currentPlugin);
 				return;
@@ -930,7 +930,7 @@ namespace
 			return RefPtr<PluginModule>(NULL);
 		}
 
-		RefPtr<PluginModule> rc(new PluginModule(module, info.curModule));
+		RefPtr<PluginModule> rc(FB_NEW PluginModule(module, info.curModule));
 		typedef void PluginEntrypoint(IMaster* masterInterface);
 		PluginEntrypoint* startModule;
 		if (module->findSymbol(STRINGIZE(FB_PLUGIN_ENTRY_POINT), startModule))
@@ -992,7 +992,7 @@ PluginManager::PluginManager()
 
 	if (!builtin)
 	{
-		builtin = new PluginModule(NULL, "<builtin>");
+		builtin = FB_NEW PluginModule(NULL, "<builtin>");
 		builtin->addRef();	// Will never be unloaded
 		current = builtin;
 	}
@@ -1017,7 +1017,7 @@ void PluginManager::registerPluginFactory(unsigned int interfaceType, const char
 		PathName plugConfigFile = fb_utils::getPrefix(IConfigManager::DIR_PLUGINS, defaultName);
 		changeExtension(plugConfigFile, "conf");
 
-		ConfiguredPlugin* p = new ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
+		ConfiguredPlugin* p = FB_NEW ConfiguredPlugin(RefPtr<PluginModule>(builtin), r,
 									findConfig("Plugin", defaultName), plugConfigFile, defaultName);
 		p->addRef();  // Will never be unloaded
 		plugins->put(MapKey(interfaceType, defaultName), p);
@@ -1063,7 +1063,7 @@ IPluginSet* PluginManager::getPlugins(CheckStatusWrapper* status, unsigned int i
 
 		MutexLockGuard g(plugins->mutex, FB_FUNCTION);
 
-		IPluginSet* rc = new PluginSet(interfaceType, namesList, firebirdConf);
+		IPluginSet* rc = FB_NEW PluginSet(interfaceType, namesList, firebirdConf);
 		rc->addRef();
 		return rc;
 	}
@@ -1101,8 +1101,8 @@ IConfig* PluginManager::getConfig(CheckStatusWrapper* status, const char* filena
 {
 	try
 	{
-		IConfig* rc = new ConfigAccess(RefPtr<ConfigFile>(
-			FB_NEW(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename)));
+		IConfig* rc = FB_NEW ConfigAccess(RefPtr<ConfigFile>(
+			FB_NEW_POOL(*getDefaultMemoryPool()) ConfigFile(*getDefaultMemoryPool(), filename)));
 		rc->addRef();
 		return rc;
 	}
@@ -1242,7 +1242,7 @@ public:
 			Firebird::RefPtr<Config> config;
 			expandDatabaseName(dbName, dummy, &config);
 
-			IFirebirdConf* firebirdConf = new FirebirdConf(config);
+			IFirebirdConf* firebirdConf = FB_NEW FirebirdConf(config);
 			firebirdConf->addRef();
 			return firebirdConf;
 		}

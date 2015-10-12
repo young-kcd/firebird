@@ -547,7 +547,7 @@ static USHORT svc_query_ex(SC_HANDLE manager)
     if ( GetLastError() == ERROR_MORE_DATA )
 	{
 		const DWORD dwBytes = pcbBytesNeeded + sizeof(ENUM_SERVICE_STATUS);
-		ENUM_SERVICE_STATUS* service_data = new ENUM_SERVICE_STATUS [dwBytes];
+		ENUM_SERVICE_STATUS* service_data = FB_NEW ENUM_SERVICE_STATUS [dwBytes];
 		EnumServicesStatus(manager, SERVICE_WIN32, SERVICE_STATE_ALL, service_data, dwBytes,
 			&pcbBytesNeeded, &lpServicesReturned, &lpResumeHandle);
 
@@ -630,7 +630,7 @@ static void svc_query(const char* name, const char* display_name, SC_HANDLE mana
 
 		ULONG uSize;
 		QueryServiceConfig(service, NULL, 0, &uSize);
-		QUERY_SERVICE_CONFIG* qsc = (QUERY_SERVICE_CONFIG*) new UCHAR[uSize];
+		QUERY_SERVICE_CONFIG* qsc = (QUERY_SERVICE_CONFIG*) FB_NEW UCHAR[uSize];
 		if (qsc && QueryServiceConfig(service, qsc, uSize, &uSize))
 		{
 			CharToOem(qsc->lpBinaryPathName, qsc->lpBinaryPathName);

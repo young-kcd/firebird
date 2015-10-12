@@ -108,7 +108,7 @@ namespace
 	inline void compose(MemoryPool& pool, BoolExprNode** node1, BoolExprNode* node2)
 	{
 		if (node2)
-			*node1 = (*node1) ? FB_NEW(pool) BinaryBoolNode(pool, blr_and, *node1, node2) : node2;
+			*node1 = (*node1) ? FB_NEW_POOL(pool) BinaryBoolNode(pool, blr_and, *node1, node2) : node2;
 	}
 
 	class River
@@ -220,7 +220,7 @@ namespace
 			}
 
 			if (boolean)
-				m_rsb = FB_NEW(csb->csb_pool) FilteredStream(csb, m_rsb, boolean);
+				m_rsb = FB_NEW_POOL(csb->csb_pool) FilteredStream(csb, m_rsb, boolean);
 
 			return m_rsb;
 		}
@@ -296,7 +296,7 @@ namespace
 
 				fb_assert(rsbs.getCount() == riverCount);
 
-				m_rsb = FB_NEW(csb->csb_pool) NestedLoopJoin(csb, riverCount, rsbs.begin());
+				m_rsb = FB_NEW_POOL(csb->csb_pool) NestedLoopJoin(csb, riverCount, rsbs.begin());
 			}
 
 			// Clear the input rivers list
@@ -475,7 +475,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 	MemoryPool* const pool = tdbb->getDefaultPool();
 
-	AutoPtr<OptimizerBlk> opt(FB_NEW(*pool) OptimizerBlk(pool, rse));
+	AutoPtr<OptimizerBlk> opt(FB_NEW_POOL(*pool) OptimizerBlk(pool, rse));
 	opt->opt_streams.grow(csb->csb_n_stream);
 	opt->optimizeFirstRows = (rse->flags & RseNode::FLAG_OPT_FIRST_ROWS) != 0;
 	RecordSource* rsb = NULL;
@@ -656,7 +656,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 					rsb->findUsedStreams(opt->outerStreams);
 			}
 
-			River* const river = FB_NEW(*pool) River(csb, rsb, node, opt->localStreams);
+			River* const river = FB_NEW_POOL(*pool) River(csb, rsb, node, opt->localStreams);
 			river->deactivate(csb);
 			rivers.add(river);
 		}
@@ -753,7 +753,7 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 				// Generate one river which holds a cross join rsb between
 				// all currently available rivers
 
-				River* const river = FB_NEW(*pool) CrossJoin(csb, rivers);
+				River* const river = FB_NEW_POOL(*pool) CrossJoin(csb, rivers);
 				river->activate(csb);
 				rivers.add(river);
 			}
@@ -837,10 +837,10 @@ RecordSource* OPT_compile(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
     // gen_skip before gen_first.
 
     if (rse->rse_skip)
-		rsb = FB_NEW(*pool) SkipRowsStream(csb, rsb, rse->rse_skip);
+		rsb = FB_NEW_POOL(*pool) SkipRowsStream(csb, rsb, rse->rse_skip);
 
 	if (rse->rse_first)
-		rsb = FB_NEW(*pool) FirstRowsStream(csb, rsb, rse->rse_first);
+		rsb = FB_NEW_POOL(*pool) FirstRowsStream(csb, rsb, rse->rse_first);
 
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 	{
@@ -1394,7 +1394,7 @@ static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStac
 
 				while (or_stack.hasData())
 				{
-					BinaryBoolNode* newBoolNode = FB_NEW(csb->csb_pool) BinaryBoolNode(
+					BinaryBoolNode* newBoolNode = FB_NEW_POOL(csb->csb_pool) BinaryBoolNode(
 						csb->csb_pool, blr_and);
 					newBoolNode->arg1 = or_stack.pop();
 					newBoolNode->arg2 = binaryNode->arg1;
@@ -1411,7 +1411,7 @@ static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStac
 
 				while (or_stack.hasData())
 				{
-					BinaryBoolNode* newBoolNode = FB_NEW(csb->csb_pool) BinaryBoolNode(
+					BinaryBoolNode* newBoolNode = FB_NEW_POOL(csb->csb_pool) BinaryBoolNode(
 						csb->csb_pool, blr_and);
 					newBoolNode->arg1 = or_stack.pop();
 					newBoolNode->arg2 = binaryNode->arg2;
@@ -1435,14 +1435,14 @@ static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStac
 				// Msg 493: Unsupported field type specified in BETWEEN predicate
 			}
 
-			ComparativeBoolNode* newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+			ComparativeBoolNode* newCmpNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
 				csb->csb_pool, blr_geq);
 			newCmpNode->arg1 = cmpNode->arg1;
 			newCmpNode->arg2 = cmpNode->arg2;
 
 			stack.push(newCmpNode);
 
-			newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_leq);
+			newCmpNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_leq);
 			newCmpNode->arg1 = CMP_clone_node_opt(tdbb, csb, cmpNode->arg1);
 			newCmpNode->arg2 = cmpNode->arg3;
 
@@ -1458,7 +1458,7 @@ static SLONG decompose(thread_db* tdbb, BoolExprNode* boolNode, BoolExprNodeStac
 
 		if (cmpNode->blrOp == blr_like && (arg = optimize_like(tdbb, csb, cmpNode)))
 		{
-			ComparativeBoolNode* newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+			ComparativeBoolNode* newCmpNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
 				csb->csb_pool, blr_starting);
 			newCmpNode->arg1 = cmpNode->arg1;
 			newCmpNode->arg2 = arg;
@@ -1583,7 +1583,7 @@ static USHORT distribute_equalities(BoolExprNodeStack& org_stack, CompilerScratc
 				for (ValueExprNodeStack::iterator inner(outer); (++inner).hasData(); )
 				{
 					ComparativeBoolNode* cmpNode =
-						FB_NEW(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_eql);
+						FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(csb->csb_pool, blr_eql);
 					cmpNode->arg1 = outer.object();
 					cmpNode->arg2 = inner.object();
 
@@ -1871,10 +1871,10 @@ static bool form_river(thread_db*		tdbb,
 	}
 
 	RecordSource* const rsb = (count == 1) ? rsbs[0] :
-		FB_NEW(*tdbb->getDefaultPool()) NestedLoopJoin(csb, count, rsbs.begin());
+		FB_NEW_POOL(*tdbb->getDefaultPool()) NestedLoopJoin(csb, count, rsbs.begin());
 
 	// Allocate a river block and move the best order into it
-	River* const river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, NULL, streams);
+	River* const river = FB_NEW_POOL(*tdbb->getDefaultPool()) River(csb, rsb, NULL, streams);
 	river->deactivate(csb);
 	river_list.push(river);
 
@@ -1932,7 +1932,7 @@ void OPT_gen_aggregate_distincts(thread_db* tdbb, CompilerScratch* csb, MapNode*
 				desc->dsc_length++;
 			}
 
-			AggregateSort* asb = FB_NEW(*tdbb->getDefaultPool()) AggregateSort(
+			AggregateSort* asb = FB_NEW_POOL(*tdbb->getDefaultPool()) AggregateSort(
 				*tdbb->getDefaultPool());
 			asb->intl = desc->isText() && desc->getTextType() != ttype_none &&
 				desc->getTextType() != ttype_binary && desc->getTextType() != ttype_ascii;
@@ -2123,7 +2123,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 		stream_i.stream_rsb = gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
 
 		// Allocate and fill in the rsb
-		return FB_NEW(*tdbb->getDefaultPool())
+		return FB_NEW_POOL(*tdbb->getDefaultPool())
 			NestedLoopJoin(csb, stream_o.stream_rsb, stream_i.stream_rsb, boolean, false, false);
 	}
 
@@ -2146,7 +2146,7 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 
 	RecordSource* const innerRsb = gen_residual_boolean(tdbb, opt, stream_i.stream_rsb);
 
-	RecordSource* const rsb1 = FB_NEW(*tdbb->getDefaultPool())
+	RecordSource* const rsb1 = FB_NEW_POOL(*tdbb->getDefaultPool())
 		NestedLoopJoin(csb, stream_o.stream_rsb, innerRsb, boolean, false, false);
 
 	for (FB_SIZE_T i = 0; i < opt->opt_conjuncts.getCount(); i++)
@@ -2181,10 +2181,10 @@ static RecordSource* gen_outer(thread_db* tdbb, OptimizerBlk* opt, RseNode* rse,
 
 	RecordSource* const outerRsb = gen_residual_boolean(tdbb, opt, stream_o.stream_rsb);
 
-	RecordSource* const rsb2 = FB_NEW(*tdbb->getDefaultPool())
+	RecordSource* const rsb2 = FB_NEW_POOL(*tdbb->getDefaultPool())
 		NestedLoopJoin(csb, stream_i.stream_rsb, outerRsb, boolean, false, true);
 
-	return FB_NEW(*tdbb->getDefaultPool()) FullOuterJoin(csb, rsb1, rsb2);
+	return FB_NEW_POOL(*tdbb->getDefaultPool()) FullOuterJoin(csb, rsb1, rsb2);
 }
 
 
@@ -2223,7 +2223,7 @@ static RecordSource* gen_residual_boolean(thread_db* tdbb, OptimizerBlk* opt, Re
 	}
 
 	return boolean ?
-		FB_NEW(*tdbb->getDefaultPool()) FilteredStream(opt->opt_csb, prior_rsb, boolean) :
+		FB_NEW_POOL(*tdbb->getDefaultPool()) FilteredStream(opt->opt_csb, prior_rsb, boolean) :
 		prior_rsb;
 }
 
@@ -2280,7 +2280,7 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 	if (relation->rel_file)
 	{
 		// External table
-		rsb = FB_NEW(*tdbb->getDefaultPool()) ExternalTableScan(csb, alias, stream, relation);
+		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) ExternalTableScan(csb, alias, stream, relation);
 	}
 	else if (relation->isVirtual())
 	{
@@ -2288,20 +2288,20 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		switch (relation->rel_id)
 		{
 		case rel_global_auth_mapping:
-			rsb = FB_NEW(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream, relation);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) GlobalMappingScan(csb, alias, stream, relation);
 			break;
 
 		case rel_sec_users:
 		case rel_sec_user_attributes:
-			rsb = FB_NEW(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream, relation);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) UsersTableScan(csb, alias, stream, relation);
 			break;
 
 		case rel_sec_db_creators:
-			rsb = FB_NEW(*tdbb->getDefaultPool()) DbCreatorsScan(csb, alias, stream, relation);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) DbCreatorsScan(csb, alias, stream, relation);
 			break;
 
 		default:
-			rsb = FB_NEW(*tdbb->getDefaultPool()) MonitoringTableScan(csb, alias, stream, relation);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) MonitoringTableScan(csb, alias, stream, relation);
 			break;
 		}
 	}
@@ -2408,26 +2408,26 @@ static RecordSource* gen_retrieval(thread_db*     tdbb,
 		if (inversion && condition)
 		{
 			RecordSource* const rsb1 =
-				FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
+				FB_NEW_POOL(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
 			RecordSource* const rsb2 =
-				FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
+				FB_NEW_POOL(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
 
-			rsb = FB_NEW(*tdbb->getDefaultPool()) ConditionalStream(csb, rsb1, rsb2, condition);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) ConditionalStream(csb, rsb1, rsb2, condition);
 		}
 		else if (inversion)
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) BitmapTableScan(csb, alias, stream, relation, inversion);
 		}
 		else
 		{
-			rsb = FB_NEW(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
+			rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) FullTableScan(csb, alias, stream, relation);
 
 			if (boolean)
 				csb->csb_rpt[stream].csb_flags |= csb_unmatched;
 		}
 	}
 
-	return boolean ? FB_NEW(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, boolean) : rsb;
+	return boolean ? FB_NEW_POOL(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, boolean) : rsb;
 }
 
 
@@ -2511,7 +2511,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 	// Now that we know the number of items, allocate a sort map block.
 	SortedStream::SortMap* map =
-		FB_NEW(*tdbb->getDefaultPool()) SortedStream::SortMap(*tdbb->getDefaultPool());
+		FB_NEW_POOL(*tdbb->getDefaultPool()) SortedStream::SortMap(*tdbb->getDefaultPool());
 
 	if (project_flag)
 		map->flags |= SortedStream::FLAG_PROJECT;
@@ -2749,7 +2749,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 
 	// That was most unpleasant.  Never the less, it's done (except for the debugging).
 	// All that remains is to build the record source block for the sort.
-	return FB_NEW(*tdbb->getDefaultPool()) SortedStream(csb, prior_rsb, map);
+	return FB_NEW_POOL(*tdbb->getDefaultPool()) SortedStream(csb, prior_rsb, map);
 }
 
 
@@ -2824,7 +2824,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 		{
 			if (!DSC_EQUIV(&result, &desc1, true))
 			{
-				CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+				CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 				cast->source = node1;
 				cast->castDesc = result;
 				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
@@ -2833,7 +2833,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 			if (!DSC_EQUIV(&result, &desc2, true))
 			{
-				CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+				CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 				cast->source = node2;
 				cast->castDesc = result;
 				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
@@ -2962,7 +2962,7 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 		// Collect RSBs and keys to join
 
-		SortNode* const key = FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
+		SortNode* const key = FB_NEW_POOL(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 
 		if (prefer_merge_over_hash)
 		{
@@ -3015,12 +3015,12 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 
 	if (prefer_merge_over_hash)
 	{
-		rsb = FB_NEW(*tdbb->getDefaultPool())
+		rsb = FB_NEW_POOL(*tdbb->getDefaultPool())
 			MergeJoin(csb, rsbs.getCount(), (SortedStream**) rsbs.begin(), keys.begin());
 	}
 	else
 	{
-		rsb = FB_NEW(*tdbb->getDefaultPool())
+		rsb = FB_NEW_POOL(*tdbb->getDefaultPool())
 			HashJoin(tdbb, csb, rsbs.getCount(), rsbs.begin(), keys.begin());
 	}
 
@@ -3046,9 +3046,9 @@ static bool gen_equi_join(thread_db* tdbb, OptimizerBlk* opt, RiverList& org_riv
 	}
 
 	if (boolean)
-		rsb = FB_NEW(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, boolean);
+		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) FilteredStream(csb, rsb, boolean);
 
-	River* const merged_river = FB_NEW(*tdbb->getDefaultPool()) River(csb, rsb, rivers_to_merge);
+	River* const merged_river = FB_NEW_POOL(*tdbb->getDefaultPool()) River(csb, rsb, rivers_to_merge);
 
 	org_rivers.insert(lowest_river_position, merged_river);
 
@@ -3135,7 +3135,7 @@ static BoolExprNode* make_inference_node(CompilerScratch* csb, BoolExprNode* boo
 	fb_assert(cmpNode);	// see our caller
 
 	// Clone the input predicate
-	ComparativeBoolNode* newCmpNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+	ComparativeBoolNode* newCmpNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
 		csb->csb_pool, cmpNode->blrOp);
 
 	// We may safely copy invariantness flag because
@@ -3433,9 +3433,9 @@ static ValueExprNode* optimize_like(thread_db* tdbb, CompilerScratch* csb, Compa
 	// assume it will be shorter than the pattern string
 	// CVC: This assumption may not be true if we use "value like field".
 
-	LiteralNode* literal = FB_NEW(csb->csb_pool) LiteralNode(csb->csb_pool);
+	LiteralNode* literal = FB_NEW_POOL(csb->csb_pool) LiteralNode(csb->csb_pool);
 	literal->litDesc = *pattern_desc;
-	UCHAR* q = literal->litDesc.dsc_address = FB_NEW(csb->csb_pool)
+	UCHAR* q = literal->litDesc.dsc_address = FB_NEW_POOL(csb->csb_pool)
 		UCHAR[literal->litDesc.dsc_length];
 
 	// Set the string length to point till the first wildcard character.

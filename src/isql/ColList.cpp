@@ -55,7 +55,7 @@ bool ColList::put(const char* name, unsigned len)
 	if (!m_head)
 	{
 		fb_assert(m_count == 0);
-		m_head = new item(name, len);
+		m_head = FB_NEW item(name, len);
 	}
 	else
 	{
@@ -71,7 +71,7 @@ bool ColList::put(const char* name, unsigned len)
 			return false;
 		}
 		fb_assert(p->next == 0);
-		p->next = new item(name, len);
+		p->next = FB_NEW item(name, len);
 	}
 	++m_count;
 	return true;

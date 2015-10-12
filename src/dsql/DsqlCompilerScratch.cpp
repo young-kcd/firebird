@@ -363,7 +363,7 @@ dsql_var* DsqlCompilerScratch::makeVariable(dsql_fld* field, const char* name,
 
 	MemoryPool& pool = getPool();
 
-	dsql_var* dsqlVar = FB_NEW(pool) dsql_var(pool);
+	dsql_var* dsqlVar = FB_NEW_POOL(pool) dsql_var(pool);
 	dsqlVar->type = type;
 	dsqlVar->msgNumber = msgNumber;
 	dsqlVar->msgItem = itemNumber;
@@ -698,8 +698,8 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 		if (anchorStack.getCount() > 1)
 		{
 			RecordSourceNode* const firstNode = anchorRse ? anchorRse : anchorStack.pop();
-			UnionSourceNode* const rse = FB_NEW(pool) UnionSourceNode(pool);
-			rse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, firstNode);
+			UnionSourceNode* const rse = FB_NEW_POOL(pool) UnionSourceNode(pool);
+			rse->dsqlClauses = FB_NEW_POOL(pool) RecSourceListNode(pool, firstNode);
 			rse->dsqlAll = true;
 			rse->recursive = false;
 
@@ -724,8 +724,8 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 
 	if (recursiveStack.getCount() > 1)
 	{
-		UnionSourceNode* const rse = FB_NEW(pool) UnionSourceNode(pool);
-		rse->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, (unsigned) 0);
+		UnionSourceNode* const rse = FB_NEW_POOL(pool) UnionSourceNode(pool);
+		rse->dsqlClauses = FB_NEW_POOL(pool) RecSourceListNode(pool, (unsigned) 0);
 		rse->dsqlAll = true;
 		rse->recursive = false;
 
@@ -746,14 +746,14 @@ SelectExprNode* DsqlCompilerScratch::pass1RecursiveCte(SelectExprNode* input)
 
 	// Create and return the final node
 
-	UnionSourceNode* unionNode = FB_NEW(pool) UnionSourceNode(pool);
+	UnionSourceNode* unionNode = FB_NEW_POOL(pool) UnionSourceNode(pool);
 	unionNode->dsqlAll = true;
 	unionNode->recursive = true;
-	unionNode->dsqlClauses = FB_NEW(pool) RecSourceListNode(pool, 2);
+	unionNode->dsqlClauses = FB_NEW_POOL(pool) RecSourceListNode(pool, 2);
 	unionNode->dsqlClauses->items[0] = anchorRse;
 	unionNode->dsqlClauses->items[1] = recursiveRse;
 
-	SelectExprNode* select = FB_NEW(getPool()) SelectExprNode(getPool());
+	SelectExprNode* select = FB_NEW_POOL(getPool()) SelectExprNode(getPool());
 	select->querySpec = unionNode;
 
 	select->alias = input->alias;
@@ -769,7 +769,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 {
 	MemoryPool& pool = getPool();
 
-	RseNode* result = FB_NEW(getPool()) RseNode(getPool());
+	RseNode* result = FB_NEW_POOL(getPool()) RseNode(getPool());
 	result->dsqlFirst = input->dsqlFirst;
 	result->dsqlSkip = input->dsqlSkip;
 	result->dsqlDistinct = input->dsqlDistinct;
@@ -780,7 +780,7 @@ RseNode* DsqlCompilerScratch::pass1RseIsRecursive(RseNode* input)
 	result->rse_plan = input->rse_plan;
 
 	RecSourceListNode* srcTables = input->dsqlFrom;
-	RecSourceListNode* dstTables = FB_NEW(pool) RecSourceListNode(pool, srcTables->items.getCount());
+	RecSourceListNode* dstTables = FB_NEW_POOL(pool) RecSourceListNode(pool, srcTables->items.getCount());
 	result->dsqlFrom = dstTables;
 
 	NestConst<RecordSourceNode>* pDstTable = dstTables->items.begin();

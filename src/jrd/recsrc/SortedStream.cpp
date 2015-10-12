@@ -165,7 +165,7 @@ Sort* SortedStream::init(thread_db* tdbb) const
 	// Initialize for sort. If this is really a project operation,
 	// establish a callback routine to reject duplicate records.
 
-	AutoPtr<Sort> scb(FB_NEW(request->req_sorts.getPool())
+	AutoPtr<Sort> scb(FB_NEW_POOL(request->req_sorts.getPool())
 		Sort(tdbb->getDatabase(), &request->req_sorts,
 			 m_map->length, m_map->keyItems.getCount(), m_map->keyItems.getCount(),
 			 m_map->keyItems.begin(),

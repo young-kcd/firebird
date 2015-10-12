@@ -274,7 +274,7 @@ void TraceSvcJrd::readSession(TraceSession& session)
 	}
 
 	MemoryPool& pool = *getDefaultMemoryPool();
-	AutoPtr<TraceLog> log(FB_NEW(pool) TraceLog(pool, session.ses_logfile, true));
+	AutoPtr<TraceLog> log(FB_NEW_POOL(pool) TraceLog(pool, session.ses_logfile, true));
 
 	UCHAR buff[1024];
 	int flags = session.ses_flags;

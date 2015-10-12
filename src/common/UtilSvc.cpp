@@ -102,7 +102,7 @@ public:
 	virtual void hidePasswd(ArgvType& argv, int pos)
 	{
 		const size_t l = strlen(argv[pos]);
-		char* data = FB_NEW(getPool()) char[l + 1];
+		char* data = FB_NEW_POOL(getPool()) char[l + 1];
 		memcpy(data, argv[pos], l);
 		data[l] = 0;
 
@@ -149,7 +149,7 @@ public:
 
 UtilSvc* UtilSvc::createStandalone(int ac, char** av)
 {
-	return new StandaloneUtilityInterface(ac, av);
+	return FB_NEW StandaloneUtilityInterface(ac, av);
 }
 
 } // namespace Firebird

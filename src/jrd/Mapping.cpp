@@ -311,7 +311,7 @@ public:
 					MAP_DEBUG(fprintf(stderr, "expandedDb '%s'\n", expandedDb));
 				}
 
-				Map* map = new Map(usng, plugin.null ? "*" : plugin, expandedDb,
+				Map* map = FB_NEW Map(usng, plugin.null ? "*" : plugin, expandedDb,
 					fromType, from, role, to.null ? "*" : to);
 				MAP_DEBUG(fprintf(stderr, "Add = %s\n", map->makeHashKey().c_str()));
 				add(map);
@@ -497,7 +497,7 @@ Cache* locate(const NoCaseString& alias, const NoCaseString& target)
 	Cache* c = locate(target);
 	if (!c)
 	{
-		c = new Cache(alias, target);
+		c = FB_NEW Cache(alias, target);
 		*(tree().put(target)) = c;
 
 		setupIpc();
@@ -687,7 +687,7 @@ public:
 		Arg::StatusVector statusVector;
 		try
 		{
-			sharedMemory.reset(FB_NEW(*getDefaultMemoryPool())
+			sharedMemory.reset(FB_NEW_POOL(*getDefaultMemoryPool())
 				SharedMemory<MappingHeader>("fb_user_mapping", DEFAULT_SIZE, this));
 		}
 		catch (const Exception& ex)

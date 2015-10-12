@@ -436,7 +436,7 @@ USHORT GetVersion(const TEXT* filename, DWORD& verMS, DWORD& verLS, err_handler_
 		return (*err_handler) (werr, "GetFileVersionInfoSize()");
 	}
 
-	BYTE* hver = new BYTE[rsize];
+	BYTE* hver = FB_NEW BYTE[rsize];
 	if (! GetFileVersionInfo(const_cast<TEXT*>(filename), 0, rsize, hver))
 	{
 		ULONG werr = GetLastError();

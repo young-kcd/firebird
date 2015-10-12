@@ -632,7 +632,7 @@ bool BackupManager::actualizeAlloc(thread_db* tdbb, bool haveGlobalLock)
 		// For SuperServer this routine is really executed only at database startup when
 		// it has exlock or when exclusive access to database is enabled
 		if (!alloc_table)
-			alloc_table = FB_NEW(*database->dbb_permanent) AllocItemTree(database->dbb_permanent);
+			alloc_table = FB_NEW_POOL(*database->dbb_permanent) AllocItemTree(database->dbb_permanent);
 
 		while (true)
 		{
@@ -848,11 +848,11 @@ BackupManager::BackupManager(thread_db* tdbb, Database* _database, int ini_state
 	dbCreating(false), database(_database), diff_file(NULL), alloc_table(NULL),
 	last_allocated_page(0), current_scn(0), diff_name(*_database->dbb_permanent),
 	explicit_diff_name(false), flushInProgress(false), shutDown(false), allocIsValid(false),
-	stateLock(FB_NEW(*database->dbb_permanent) NBackupStateLock(tdbb, *database->dbb_permanent, this)),
-	allocLock(FB_NEW(*database->dbb_permanent) NBackupAllocLock(tdbb, *database->dbb_permanent, this))
+	stateLock(FB_NEW_POOL(*database->dbb_permanent) NBackupStateLock(tdbb, *database->dbb_permanent, this)),
+	allocLock(FB_NEW_POOL(*database->dbb_permanent) NBackupAllocLock(tdbb, *database->dbb_permanent, this))
 {
 	// Allocate various database page buffers needed for operation
-	temp_buffers_space = FB_NEW(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + PAGE_ALIGNMENT];
+	temp_buffers_space = FB_NEW_POOL(*database->dbb_permanent) BYTE[database->dbb_page_size * 3 + PAGE_ALIGNMENT];
 	// Align it at sector boundary for faster IO (also guarantees correct alignment for ULONG later)
 	BYTE* temp_buffers = reinterpret_cast<BYTE*>(FB_ALIGN(temp_buffers_space, PAGE_ALIGNMENT));
 	memset(temp_buffers, 0, database->dbb_page_size * 3);

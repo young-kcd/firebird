@@ -999,7 +999,7 @@ static jrd_file* setup_file(Database* dbb,
 		if (ISC_is_WinNT())
 #endif
 		{
-			file->fil_ext_lock = FB_NEW(*dbb->dbb_permanent) Firebird::RWLock();
+			file->fil_ext_lock = FB_NEW_POOL(*dbb->dbb_permanent) Firebird::RWLock();
 		}
 	}
 	catch (const Firebird::Exception&)

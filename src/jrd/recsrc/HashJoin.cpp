@@ -249,7 +249,7 @@ public:
 		: PermanentStorage(pool), m_streamCount(streamCount),
 		  m_tableSize(tableSize), m_slot(0)
 	{
-		m_collisions = FB_NEW(pool) CollisionList*[streamCount * tableSize];
+		m_collisions = FB_NEW_POOL(pool) CollisionList*[streamCount * tableSize];
 		memset(m_collisions, 0, streamCount * tableSize * sizeof(CollisionList*));
 	}
 
@@ -291,7 +291,7 @@ public:
 
 		if (!collisions)
 		{
-			collisions = FB_NEW(getPool()) CollisionList(getPool(), keyBuffer, keyLength);
+			collisions = FB_NEW_POOL(getPool()) CollisionList(getPool(), keyBuffer, keyLength);
 			m_collisions[stream * m_tableSize + slot] = collisions;
 		}
 
@@ -362,7 +362,7 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 
 	m_leader.source = args[0];
 	m_leader.keys = keys[0];
-	m_leader.keyLengths = FB_NEW(csb->csb_pool)
+	m_leader.keyLengths = FB_NEW_POOL(csb->csb_pool)
 		KeyLengthArray(csb->csb_pool, m_leader.keys->getCount());
 	m_leader.totalKeyLength = 0;
 
@@ -386,9 +386,9 @@ HashJoin::HashJoin(thread_db* tdbb, CompilerScratch* csb, FB_SIZE_T count,
 		fb_assert(sub_rsb);
 
 		SubStream sub;
-		sub.buffer = FB_NEW(csb->csb_pool) BufferedStream(csb, sub_rsb);
+		sub.buffer = FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, sub_rsb);
 		sub.keys = keys[i];
-		sub.keyLengths = FB_NEW(csb->csb_pool)
+		sub.keyLengths = FB_NEW_POOL(csb->csb_pool)
 			KeyLengthArray(csb->csb_pool, sub.keys->getCount());
 		sub.totalKeyLength = 0;
 
@@ -426,10 +426,10 @@ void HashJoin::open(thread_db* tdbb) const
 
 	const size_t argCount = m_args.getCount();
 
-	impure->irsb_arg_buffer = FB_NEW(pool) KeyBuffer(pool, KEYBUF_PREALLOCATE_SIZE);
-	impure->irsb_hash_table = FB_NEW(pool) HashTable(pool, argCount);
-	impure->irsb_leader_buffer = FB_NEW(pool) UCHAR[m_leader.totalKeyLength];
-	impure->irsb_record_counts = FB_NEW(pool) ULONG[argCount];
+	impure->irsb_arg_buffer = FB_NEW_POOL(pool) KeyBuffer(pool, KEYBUF_PREALLOCATE_SIZE);
+	impure->irsb_hash_table = FB_NEW_POOL(pool) HashTable(pool, argCount);
+	impure->irsb_leader_buffer = FB_NEW_POOL(pool) UCHAR[m_leader.totalKeyLength];
+	impure->irsb_record_counts = FB_NEW_POOL(pool) ULONG[argCount];
 
 	for (FB_SIZE_T i = 0; i < argCount; i++)
 	{

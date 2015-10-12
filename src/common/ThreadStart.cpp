@@ -59,7 +59,7 @@ namespace
 // due to same names of parameters for various ThreadData::start(...),
 // we may use common macro for various platforms
 #define THREAD_ENTRYPOINT threadStart
-#define THREAD_ARG static_cast<THREAD_ENTRY_PARAM> (FB_NEW(*getDefaultMemoryPool()) \
+#define THREAD_ARG static_cast<THREAD_ENTRY_PARAM> (FB_NEW_POOL(*getDefaultMemoryPool()) \
 		ThreadArgs(reinterpret_cast<THREAD_ENTRY_RETURN (THREAD_ENTRY_CALL *) (THREAD_ENTRY_PARAM)>(routine), \
 		static_cast<THREAD_ENTRY_PARAM>(arg)))
 

@@ -87,7 +87,7 @@ MonitoringData::MonitoringData(const Database* dbb)
 	Arg::StatusVector statusVector;
 	try
 	{
-		shared_memory.reset(FB_NEW(*dbb->dbb_permanent)
+		shared_memory.reset(FB_NEW_POOL(*dbb->dbb_permanent)
 			SharedMemory<MonitoringHeader>(name.c_str(), DEFAULT_SIZE, this));
 	}
 	catch (const Exception& ex)
@@ -317,7 +317,7 @@ MonitoringSnapshot* MonitoringSnapshot::create(thread_db* tdbb)
 		// Create a database snapshot and store it
 		// in the transaction block
 		MemoryPool& pool = *transaction->tra_pool;
-		transaction->tra_mon_snapshot = FB_NEW(pool) MonitoringSnapshot(tdbb, pool);
+		transaction->tra_mon_snapshot = FB_NEW_POOL(pool) MonitoringSnapshot(tdbb, pool);
 	}
 
 	return transaction->tra_mon_snapshot;
@@ -583,7 +583,7 @@ RecordBuffer* SnapshotData::allocBuffer(thread_db* tdbb, MemoryPool& pool, int r
 	const Format* const format = MET_current(tdbb, relation);
 	fb_assert(format);
 
-	RecordBuffer* const buffer = FB_NEW(pool) RecordBuffer(pool, format);
+	RecordBuffer* const buffer = FB_NEW_POOL(pool) RecordBuffer(pool, format);
 	const RelationData data = {relation->rel_id, buffer};
 	m_snapshot.add(data);
 
@@ -1263,7 +1263,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, const Attachment* attachment, b
 	}
 
 	if (!dbb->dbb_monitoring_data)
-		dbb->dbb_monitoring_data = FB_NEW(pool) MonitoringData(dbb);
+		dbb->dbb_monitoring_data = FB_NEW_POOL(pool) MonitoringData(dbb);
 
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->cleanup(att_id);
@@ -1330,7 +1330,7 @@ void Monitoring::publishAttachment(thread_db* tdbb)
 	Attachment* const attachment = tdbb->getAttachment();
 
 	if (!dbb->dbb_monitoring_data)
-		dbb->dbb_monitoring_data = FB_NEW(*dbb->dbb_permanent) MonitoringData(dbb);
+		dbb->dbb_monitoring_data = FB_NEW_POOL(*dbb->dbb_permanent) MonitoringData(dbb);
 
 	MonitoringData::Guard guard(dbb->dbb_monitoring_data);
 	dbb->dbb_monitoring_data->setup(attachment->att_attachment_id);

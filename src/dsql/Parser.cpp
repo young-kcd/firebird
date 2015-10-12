@@ -58,7 +58,7 @@ namespace
 		{
 			for (const TOK* token = KEYWORD_getTokens(); token->tok_string; ++token)
 			{
-				MetaName* str = FB_NEW(pool) MetaName(token->tok_string);
+				MetaName* str = FB_NEW_POOL(pool) MetaName(token->tok_string);
 				put(*str, KeywordVersion(token->tok_ident, str, token->tok_version));
 			}
 		}
@@ -237,7 +237,7 @@ ParameterNode* Parser::make_parameter()
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	ParameterNode* node = FB_NEW(*tdbb->getDefaultPool()) ParameterNode(*tdbb->getDefaultPool());
+	ParameterNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) ParameterNode(*tdbb->getDefaultPool());
 	node->dsqlParameterIndex = lex.param_number++;
 
 	return node;
@@ -429,7 +429,7 @@ int Parser::yylexAux()
 		*p = 0;
 
 		// make a string value to hold the name, the name is resolved in pass1_constant.
-		yylval.metaNamePtr = FB_NEW(pool) MetaName(pool, string, p - string);
+		yylval.metaNamePtr = FB_NEW_POOL(pool) MetaName(pool, string, p - string);
 
 		return INTRODUCER;
 	}
@@ -532,7 +532,7 @@ int Parser::yylexAux()
 				Attachment* attachment = tdbb->getAttachment();
 				MetaName name(attachment->nameToMetaCharSet(tdbb, MetaName(buffer, p - buffer)));
 
-				yylval.metaNamePtr = FB_NEW(pool) MetaName(pool, name);
+				yylval.metaNamePtr = FB_NEW_POOL(pool) MetaName(pool, name);
 
 				if (buffer != string)
 					gds__free (buffer);
@@ -1100,7 +1100,7 @@ int Parser::yylexAux()
 			return keyVer->keyword;
 		}
 
-		yylval.metaNamePtr = FB_NEW(pool) MetaName(pool, str);
+		yylval.metaNamePtr = FB_NEW_POOL(pool) MetaName(pool, str);
 		lex.last_token_bk = lex.last_token;
 		lex.line_start_bk = lex.line_start;
 		lex.lines_bk = lex.lines;

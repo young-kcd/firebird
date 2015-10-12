@@ -212,7 +212,7 @@ BlobFilter* BLF_lookup_internal_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 
 	if (to == isc_blob_text && from >= 0 && from < FB_NELEM(filters))
 	{
-		BlobFilter* result = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
+		BlobFilter* result = FB_NEW_POOL(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 		result->blf_next = NULL;
 		result->blf_from = from;
 		result->blf_to = to;

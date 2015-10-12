@@ -63,7 +63,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 		inst_id = PAG_attachment_id(tdbb);
 
 	if (!rel_pages_inst)
-		rel_pages_inst = FB_NEW(*rel_pool) RelationPagesInstances(*rel_pool);
+		rel_pages_inst = FB_NEW_POOL(*rel_pool) RelationPagesInstances(*rel_pool);
 
 	FB_SIZE_T pos;
 	if (!rel_pages_inst->find(inst_id, pos))
@@ -77,7 +77,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 			const size_t BULK_ALLOC = 8;
 
 			RelationPages* allocatedPages = newPages =
-				FB_NEW(*rel_pool) RelationPages[BULK_ALLOC];
+				FB_NEW_POOL(*rel_pool) RelationPages[BULK_ALLOC];
 
 			rel_pages_free = ++allocatedPages;
 			for (size_t i = 1; i < BULK_ALLOC - 1; i++, allocatedPages++)

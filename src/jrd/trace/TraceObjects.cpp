@@ -494,7 +494,7 @@ ITraceLogWriter* TraceInitInfoImpl::getLogWriter()
 {
 	if (!m_logWriter && !m_session.ses_logfile.empty())
 	{
-		m_logWriter = new TraceLogWriterImpl(m_session);
+		m_logWriter = FB_NEW TraceLogWriterImpl(m_session);
 	}
 	if (m_logWriter)
 	{

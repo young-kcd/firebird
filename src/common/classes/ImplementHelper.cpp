@@ -76,7 +76,7 @@ public:
 		ReferenceCounterDebuggerPtr* d = TLS_GET(debugArray);
 		if (!d)
 		{
-			d = FB_NEW(*getDefaultMemoryPool()) ReferenceCounterDebuggerPtr[MaxDebugEvent];
+			d = FB_NEW_POOL(*getDefaultMemoryPool()) ReferenceCounterDebuggerPtr[MaxDebugEvent];
 			memset(d, 0, sizeof(ReferenceCounterDebuggerPtr) * MaxDebugEvent);
 			TLS_SET(debugArray, d);
 		}

@@ -671,7 +671,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, 
 {
 	// Finish initialization of the tree if necessary
 	if (!root)
-		root = new (pool->allocate(sizeof(ItemList))) ItemList();
+		root = new (pool->allocate(sizeof(ItemList) ALLOC_ARGS)) ItemList();
 
 	// Find leaf page for our item
 	void *vList = this->root;
@@ -753,7 +753,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, 
 	// No re-enterance allowed !!!
 	// Since we haven't done anything with tree yet, thus we don't need to recover
 	// anything in case of error thrown at this allocation here
-	ItemList *newLeaf = new(this->pool->allocate(sizeof(ItemList))) ItemList(leaf);
+	ItemList *newLeaf = new(this->pool->allocate(sizeof(ItemList) ALLOC_ARGS)) ItemList(leaf);
 
 	// Start building recovery map.
 	// This array contains index of the element we try to add on page of each level
@@ -838,7 +838,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, 
 			// No re-enterance allowed !!!
 			// Exceptions from this point
 			// are cleaned up lower
-			NodeList *newList = new(this->pool->allocate(sizeof(NodeList))) NodeList(nodeList);
+			NodeList *newList = new(this->pool->allocate(sizeof(NodeList) ALLOC_ARGS)) NodeList(nodeList);
 
 			if (pos == NodeCount)
 			{
@@ -863,7 +863,7 @@ bool BePlusTree<Value, Key, Allocator, KeyOfValue, Cmp>::add(const Value& item, 
 
 		// This is the worst case. We reached the top of tree but were not able to insert node
 		// Allocate new root page and increase level of our tree
-		nodeList = new(this->pool->allocate(sizeof(NodeList))) NodeList();
+		nodeList = new(this->pool->allocate(sizeof(NodeList) ALLOC_ARGS)) NodeList();
 		nodeList->level = this->level;
 		nodeList->insert(0, this->root);
 		NodeList::setNodeParentAndLevel(newNode, this->level, nodeList);

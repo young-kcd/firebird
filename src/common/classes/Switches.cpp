@@ -40,12 +40,12 @@ Switches::Switches(const in_sw_tab_t* table, FB_SIZE_T count, bool copy, bool mi
 
 	if (m_copy)
 	{
-		m_table = FB_NEW(*getDefaultMemoryPool()) in_sw_tab_t[m_count];
+		m_table = FB_NEW_POOL(*getDefaultMemoryPool()) in_sw_tab_t[m_count];
 		for (FB_SIZE_T iter = 0; iter < m_count; ++iter)
 			m_table[iter] = m_base[iter];
 	}
 
-	m_opLengths = FB_NEW(*getDefaultMemoryPool()) FB_SIZE_T[m_count];
+	m_opLengths = FB_NEW_POOL(*getDefaultMemoryPool()) FB_SIZE_T[m_count];
 
 	for (FB_SIZE_T iter = 0; iter < m_count; ++iter)
 	{

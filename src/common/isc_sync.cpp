@@ -311,7 +311,7 @@ FileLock::FileLock(const char* fileName, InitFunction* init)
 	if (!oFile)
 	{
 		int fd = os_utils::openCreateSharedFile(fileName, 0);
-		oFile = FB_NEW(*getDefaultMemoryPool()) CountedFd(fd);
+		oFile = FB_NEW_POOL(*getDefaultMemoryPool()) CountedFd(fd);
 		CountedFd** put = fdNodes->put(getNode(fd));
 		fb_assert(put);
 		*put = oFile;
@@ -611,7 +611,7 @@ CountedRWLock* FileLock::getRw()
 
 	if (!rc)
 	{
-		rc = FB_NEW(*getDefaultMemoryPool()) CountedRWLock;
+		rc = FB_NEW_POOL(*getDefaultMemoryPool()) CountedRWLock;
 		CountedRWLock** put = rwlocks->put(id);
 		fb_assert(put);
 		*put = rc;
@@ -1009,7 +1009,7 @@ GlobalPtr<Mutex> timerAccess;
 
 void addTimer(Sys5Semaphore* sem, int microSeconds)
 {
-	TimerEntry* newTimer = new TimerEntry(sem->getId(), sem->semNum);
+	TimerEntry* newTimer = FB_NEW TimerEntry(sem->getId(), sem->semNum);
 	{
 		MutexLockGuard guard(timerAccess, FB_FUNCTION);
 		timerQueue->push(newTimer);
@@ -1813,7 +1813,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	// open the init lock file
 	MutexLockGuard guard(openFdInit, FB_FUNCTION);
 
-	initFile.reset(FB_NEW(*getDefaultMemoryPool()) FileLock(init_filename));
+	initFile.reset(FB_NEW_POOL(*getDefaultMemoryPool()) FileLock(init_filename));
 
 	// get an exclusive lock on the INIT file with blocking
 	FileLockHolder initLock(initFile);
@@ -1839,7 +1839,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	TEXT sem_filename[MAXPATHLEN];
 	iscPrefixLock(sem_filename, SEM_FILE, true);
 
-	semFile.reset(FB_NEW(*getDefaultMemoryPool()) FileLock(sem_filename, Sem5Init::init));
+	semFile.reset(FB_NEW_POOL(*getDefaultMemoryPool()) FileLock(sem_filename, Sem5Init::init));
 
 	fb_assert(semTable);
 
@@ -1858,7 +1858,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 #endif
 
 	// create lock in order to have file autoclosed on error
-	mainLock.reset(FB_NEW(*getDefaultMemoryPool()) FileLock(expanded_filename));
+	mainLock.reset(FB_NEW_POOL(*getDefaultMemoryPool()) FileLock(expanded_filename));
 
 	if (length == 0)
 	{
@@ -2080,7 +2080,7 @@ SharedMemoryBase::SharedMemoryBase(const TEXT* filename, ULONG length, IpcObject
 	}
 
 #ifdef USE_FILELOCKS
-	sh_mem_fileMutex.reset(FB_NEW(*getDefaultMemoryPool()) FileLock(mainLock, 1));
+	sh_mem_fileMutex.reset(FB_NEW_POOL(*getDefaultMemoryPool()) FileLock(mainLock, 1));
 #endif
 
 #ifdef USE_SYS5SEMAPHORE

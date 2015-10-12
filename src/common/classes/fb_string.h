@@ -106,7 +106,7 @@ namespace Firebird
 					newSize = max_length;
 
 				// Allocate new buffer
-				char_type *newBuffer = FB_NEW(getPool()) char_type[newSize];
+				char_type *newBuffer = FB_NEW_POOL(getPool()) char_type[newSize];
 
 				// Carefully copy string data including null terminator
 				memcpy(newBuffer, stringBuffer, sizeof(char_type) * (stringLength + 1u));
@@ -144,7 +144,7 @@ namespace Firebird
 					newSize = max_length;
 
 				// Allocate new buffer
-				stringBuffer = FB_NEW(getPool()) char_type[newSize];
+				stringBuffer = FB_NEW_POOL(getPool()) char_type[newSize];
 				bufferSize = static_cast<internal_size_type>(newSize);
 			}
 			stringLength = static_cast<internal_size_type>(len);

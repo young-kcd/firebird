@@ -76,7 +76,7 @@ int SrpClient::authenticate(CheckStatusWrapper* status, IClientBlock* cb)
 				return AUTH_CONTINUE;
 			}
 
-			client = new RemotePassword;
+			client = FB_NEW RemotePassword;
 			client->genClientKey(data);
 			dumpIt("Clnt: clientPubKey", data);
 			cb->putData(status, data.length(), data.begin());

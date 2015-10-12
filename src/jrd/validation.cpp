@@ -667,7 +667,7 @@ bool VAL_validate(thread_db* tdbb, USHORT switches)
 	Attachment* att = tdbb->getAttachment();
 
 	if (!att->att_validation)
-		att->att_validation = FB_NEW (*att->att_pool) Validation(tdbb);
+		att->att_validation = FB_NEW_POOL (*att->att_pool) Validation(tdbb);
 
 	USHORT flags = 0;
 	if (switches & isc_dpb_records)
@@ -2571,14 +2571,14 @@ Validation::RTN Validation::walk_pointer_page(jrd_rel* relation, ULONG sequence)
 			vector = relation->getBasePages()->rel_pages;
 
 			--sequence;
-			if (!vector || sequence >= static_cast<int>(vector->count())) {
+			if (!vector || sequence >= vector->count()) {
 				return corrupt(VAL_P_PAGE_LOST, relation, sequence);
 			}
 
 			fetch_page(false, (*vector)[sequence], pag_pointer, &window, &page);
 
 			++sequence;
-			const bool error = sequence >= static_cast<int>(vector->count()) ||
+			const bool error = (sequence >= vector->count()) ||
 				(page->ppg_next && page->ppg_next != (*vector)[sequence]);
 
 			release_page(&window);

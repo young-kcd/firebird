@@ -3721,11 +3721,7 @@ VoidPtr API_ROUTINE gds__alloc(SLONG size_request)
 {
 	try
 	{
-		return getDefaultMemoryPool()->allocate(size_request
-#ifdef DEBUG_GDS_ALLOC
-			, __FILE__, __LINE__
-#endif
-		);
+		return getDefaultMemoryPool()->allocate(size_request ALLOC_ARGS);
 	}
 	catch (const Firebird::Exception&)
 	{

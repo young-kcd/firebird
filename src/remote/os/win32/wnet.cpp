@@ -125,7 +125,7 @@ rem_port* WNET_analyze(ClntAuthBlock* cBlock,
 	// We need to establish a connection to a remote server.  Allocate the necessary
 	// blocks and get ready to go.
 
-	Rdb* rdb = new Rdb;
+	Rdb* rdb = FB_NEW Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
@@ -507,7 +507,7 @@ static rem_port* alloc_port( rem_port* parent)
 		}
 	}
 
-	rem_port* port = new rem_port(rem_port::PIPE, BUFFER_SIZE * 2);
+	rem_port* port = FB_NEW rem_port(rem_port::PIPE, BUFFER_SIZE * 2);
 
 	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));

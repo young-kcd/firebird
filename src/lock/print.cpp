@@ -142,7 +142,7 @@ namespace
 	public:
 		explicit sh_mem(bool p_consistency, const char* filename)
 		  :	sh_mem_consistency(p_consistency),
-			shared_memory(FB_NEW(*getDefaultMemoryPool()) Firebird::SharedMemory<lhb>(filename, 0, this))
+			shared_memory(FB_NEW_POOL(*getDefaultMemoryPool()) Firebird::SharedMemory<lhb>(filename, 0, this))
 		{ }
 
 		bool initialize(Firebird::SharedMemoryBase*, bool)
@@ -574,7 +574,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 	{
 	  try
 	  {
-		shmem_data.reset(FB_NEW(*getDefaultMemoryPool()) sh_mem(sw_consistency, filename.c_str()));
+		shmem_data.reset(FB_NEW_POOL(*getDefaultMemoryPool()) sh_mem(sw_consistency, filename.c_str()));
 		LOCK_header = (lhb*) (shmem_data->shared_memory->sh_mem_header);
 
 		// Make sure the lock file is valid - if it's a zero length file we
@@ -600,7 +600,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 		try
 		{
-			buffer = new UCHAR[extentsCount * extentSize];
+			buffer = FB_NEW UCHAR[extentsCount * extentSize];
 		}
 		catch (const Firebird::BadAlloc&)
 		{
@@ -650,7 +650,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 			try
 			{
-				buffer = new UCHAR[LOCK_header->lhb_length];
+				buffer = FB_NEW UCHAR[LOCK_header->lhb_length];
 			}
 			catch (const Firebird::BadAlloc&)
 			{
@@ -703,7 +703,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 		try
 		{
-			buffer = new UCHAR[file_stat.st_size];
+			buffer = FB_NEW UCHAR[file_stat.st_size];
 		}
 		catch (const Firebird::BadAlloc&)
 		{
@@ -729,7 +729,7 @@ int CLIB_ROUTINE main( int argc, char *argv[])
 
 		try
 		{
-			newBuf = new UCHAR[extentsCount * extentSize];
+			newBuf = FB_NEW UCHAR[extentsCount * extentSize];
 		}
 		catch (const Firebird::BadAlloc&)
 		{

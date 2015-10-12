@@ -650,7 +650,7 @@ public:
 
 	RseNode* clone()
 	{
-		RseNode* obj = FB_NEW(getPool()) RseNode(getPool());
+		RseNode* obj = FB_NEW_POOL(getPool()) RseNode(getPool());
 
 		obj->dsqlFirst = dsqlFirst;
 		obj->dsqlSkip = dsqlSkip;

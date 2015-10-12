@@ -829,7 +829,7 @@ public:
 		  messageExpr(aMessageExpr),
 		  parameters(aParameters)
 	{
-		exception = FB_NEW(pool) ExceptionItem(pool);
+		exception = FB_NEW_POOL(pool) ExceptionItem(pool);
 		exception->type = ExceptionItem::XCP_CODE;
 		exception->name = name.c_str();
 	}

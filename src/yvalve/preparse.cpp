@@ -276,7 +276,7 @@ bool PREPARSE_execute(CheckStatusWrapper* status, Why::YAttachment** ptrAtt,
 			} // for
 		} while (matched);
 
-		RefPtr<Why::Dispatcher> dispatcher(new Why::Dispatcher);
+		RefPtr<Why::Dispatcher> dispatcher(FB_NEW Why::Dispatcher);
 		*ptrAtt = dispatcher->createDatabase(status, file_name.c_str(),
 			dpb.getBufferLength(), dpb.getBuffer());
 	}

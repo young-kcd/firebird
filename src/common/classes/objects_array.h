@@ -182,23 +182,23 @@ namespace Firebird
 
 		void insert(size_type index, const T& item)
 		{
-			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
+			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool(), item);
 			inherited::insert(index, dataL);
 		}
 		T& insert(size_type index)
 		{
-			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
+			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool());
 			inherited::insert(index, dataL);
 			return *dataL;
 		}
 		size_type add(const T& item)
 		{
-			T* dataL = FB_NEW(this->getPool()) T(this->getPool(), item);
+			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool(), item);
 			return inherited::add(dataL);
 		}
 		T& add()
 		{
-			T* dataL = FB_NEW(this->getPool()) T(this->getPool());
+			T* dataL = FB_NEW_POOL(this->getPool()) T(this->getPool());
 			inherited::add(dataL);
 			return *dataL;
 		}
@@ -236,7 +236,7 @@ namespace Firebird
 			size_type oldCount = getCount();
 			inherited::grow(newCount);
 			for (size_type i = oldCount; i < newCount; i++) {
-				inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool());
+				inherited::getElement(i) = FB_NEW_POOL(this->getPool()) T(this->getPool());
 			}
 		}
 		void resize(const size_type newCount, const T& val)
@@ -246,7 +246,7 @@ namespace Firebird
 				size_type oldCount = getCount();
 				inherited::grow(newCount);
 				for (size_type i = oldCount; i < newCount; i++) {
-					inherited::getElement(i) = FB_NEW(this->getPool()) T(this->getPool(), val);
+					inherited::getElement(i) = FB_NEW_POOL(this->getPool()) T(this->getPool(), val);
 				}
 			}
 			else {

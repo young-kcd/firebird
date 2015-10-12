@@ -113,7 +113,7 @@ void BufferedStream::open(thread_db* tdbb) const
 
 	delete impure->irsb_buffer;
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	impure->irsb_buffer = FB_NEW(pool) RecordBuffer(pool, m_format);
+	impure->irsb_buffer = FB_NEW_POOL(pool) RecordBuffer(pool, m_format);
 
 	impure->irsb_position = 0;
 }

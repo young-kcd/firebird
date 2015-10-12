@@ -57,8 +57,8 @@ public:
 		  statement(aStatement),
 		  legacyPlan(pool),
 		  detailedPlan(pool),
-		  inputParameters(new Parameters(att)),
-		  outputParameters(new Parameters(att))
+		  inputParameters(FB_NEW Parameters(att)),
+		  outputParameters(FB_NEW Parameters(att))
 	{
 	}
 

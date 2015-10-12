@@ -37,7 +37,7 @@ namespace Jrd {
 // Create a MsgMetadata from a parameters array.
 MsgMetadata* Routine::createMetadata(const Array<NestConst<Parameter> >& parameters)
 {
-	RefPtr<MsgMetadata> metadata(new MsgMetadata);
+	RefPtr<MsgMetadata> metadata(FB_NEW MsgMetadata);
 
 	for (Array<NestConst<Parameter> >::const_iterator i = parameters.begin();
 		 i != parameters.end();

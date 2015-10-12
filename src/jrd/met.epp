@@ -1840,7 +1840,7 @@ void MET_load_db_triggers(thread_db* tdbb, int type)
 		return;
 	}
 
-	attachment->att_triggers[type] = FB_NEW(*attachment->att_pool)
+	attachment->att_triggers[type] = FB_NEW_POOL(*attachment->att_pool)
 		trig_vec(*attachment->att_pool);
 
 	AutoRequest trigger_request;
@@ -1873,7 +1873,7 @@ void MET_load_ddl_triggers(thread_db* tdbb)
 		return;
 	}
 
-	attachment->att_ddl_triggers = FB_NEW(*attachment->att_pool)
+	attachment->att_ddl_triggers = FB_NEW_POOL(*attachment->att_pool)
 		trig_vec(*attachment->att_pool);
 
 	AutoRequest trigger_request;
@@ -2262,7 +2262,7 @@ BlobFilter* MET_lookup_filter(thread_db* tdbb, SSHORT from, SSHORT to)
 			Module::lookup(X.RDB$MODULE_NAME, X.RDB$ENTRYPOINT, dbb->dbb_modules);
 		if (filter)
 		{
-			blf = FB_NEW(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
+			blf = FB_NEW_POOL(*dbb->dbb_permanent) BlobFilter(*dbb->dbb_permanent);
 			blf->blf_next = NULL;
 			blf->blf_from = from;
 			blf->blf_to = to;
@@ -3190,7 +3190,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 
 	if (!procedure)
 	{
-		procedure = FB_NEW(*attachment->att_pool) jrd_prc(*attachment->att_pool);
+		procedure = FB_NEW_POOL(*attachment->att_pool) jrd_prc(*attachment->att_pool);
 	}
 
 	try {
@@ -3267,7 +3267,7 @@ jrd_prc* MET_procedure(thread_db* tdbb, USHORT id, bool noscan, USHORT flags)
 					procedure->getOutputFields() : procedure->getInputFields();
 
 				// should be error if field already exists
-				Parameter* parameter = FB_NEW(*attachment->att_pool) Parameter(*attachment->att_pool);
+				Parameter* parameter = FB_NEW_POOL(*attachment->att_pool) Parameter(*attachment->att_pool);
 				parameter->prm_number = PA.RDB$PARAMETER_NUMBER;
 				paramArray[parameter->prm_number] = parameter;
 				parameter->prm_name = PA.RDB$PARAMETER_NAME;
@@ -3495,7 +3495,7 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	// reserved for system relations
 	const USHORT max_sys_rel = USER_DEF_REL_INIT_ID - 1;
 
-	relation = FB_NEW(*pool) jrd_rel(*pool);
+	relation = FB_NEW_POOL(*pool) jrd_rel(*pool);
 	(*vector)[id] = relation;
 	relation->rel_id = id;
 
@@ -3826,7 +3826,7 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 				}
 				else
 				{
-					field = FB_NEW(*relation->rel_pool) jrd_fld(*relation->rel_pool);
+					field = FB_NEW_POOL(*relation->rel_pool) jrd_fld(*relation->rel_pool);
 					(*vector)[field_id] = field;
 					field->fld_name = reinterpret_cast<char*>(p);
 				}
@@ -4457,7 +4457,7 @@ static void lookup_view_contexts( thread_db* tdbb, jrd_rel* view)
 		// trim trailing spaces
 		fb_utils::exact_name_limit(V.RDB$CONTEXT_NAME, sizeof(V.RDB$CONTEXT_NAME));
 
-		ViewContext* view_context = FB_NEW(*view->rel_pool)
+		ViewContext* view_context = FB_NEW_POOL(*view->rel_pool)
 			ViewContext(*view->rel_pool,
 				V.RDB$CONTEXT_NAME, V.RDB$RELATION_NAME, V.RDB$VIEW_CONTEXT,
 				(V.RDB$CONTEXT_TYPE.NULL ? VCT_TABLE : ViewContextType(V.RDB$CONTEXT_TYPE)));
@@ -4760,7 +4760,7 @@ static void save_trigger_data(thread_db* tdbb, trig_vec** ptr, jrd_rel* relation
 	if (!vector)
 	{
 		MemoryPool* pool = relation ? relation->rel_pool : attachment->att_pool;
-		vector = FB_NEW(*pool) trig_vec(*pool);
+		vector = FB_NEW_POOL(*pool) trig_vec(*pool);
 		*ptr = vector;
 	}
 

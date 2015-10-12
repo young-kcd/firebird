@@ -234,7 +234,7 @@ Sort::Sort(Database* dbb,
 
 		try
 		{
-			m_space = FB_NEW(pool) TempSpace(pool, SCRATCH, false);
+			m_space = FB_NEW_POOL(pool) TempSpace(pool, SCRATCH, false);
 		}
 		catch (const Exception&)
 		{
@@ -505,7 +505,7 @@ void Sort::sort(thread_db* tdbb)
 		}
 
 		AutoPtr<run_merge_hdr*, ArrayDelete<run_merge_hdr*> > streams(
-			FB_NEW(m_owner->getPool()) run_merge_hdr*[run_count]);
+			FB_NEW_POOL(m_owner->getPool()) run_merge_hdr*[run_count]);
 
 		run_merge_hdr** m1 = streams;
 		for (run = m_runs; run; run = run->run_next)
@@ -518,7 +518,7 @@ void Sort::sort(thread_db* tdbb)
 		if (count > 1)
 		{
 			fb_assert(!m_merge_pool);	// shouldn't have a pool
-			m_merge_pool = FB_NEW(m_owner->getPool()) merge_control[count - 1];
+			m_merge_pool = FB_NEW_POOL(m_owner->getPool()) merge_control[count - 1];
 			merge_pool = m_merge_pool;
 			memset(merge_pool, 0, (count - 1) * sizeof(merge_control));
 		}
@@ -596,14 +596,14 @@ void Sort::sort(thread_db* tdbb)
 					UCHAR* mem = NULL;
 					try
 					{
-						mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
+						mem = FB_NEW_POOL(m_owner->getPool()) UCHAR[mem_size];
 					}
 					catch (const BadAlloc&)
 					{
 						mem_size = (mem_size / m_min_alloc_size) * rec_size;
 						if (!mem_size)
 							throw;
-						mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
+						mem = FB_NEW_POOL(m_owner->getPool()) UCHAR[mem_size];
 					}
 					run->run_buff_alloc = true;
 					run->run_buff_cache = false;
@@ -660,7 +660,7 @@ void Sort::allocateBuffer(MemoryPool& pool)
 	try
 	{
 		m_size_memory = m_max_alloc_size;
-		m_memory = FB_NEW(*m_dbb->dbb_permanent) UCHAR[m_size_memory];
+		m_memory = FB_NEW_POOL(*m_dbb->dbb_permanent) UCHAR[m_size_memory];
 	}
 	catch (const BadAlloc&)
 	{
@@ -671,7 +671,7 @@ void Sort::allocateBuffer(MemoryPool& pool)
 			try
 			{
 				m_size_memory /= 2;
-				m_memory = FB_NEW(pool) UCHAR[m_size_memory];
+				m_memory = FB_NEW_POOL(pool) UCHAR[m_size_memory];
 				break;
 			}
 			catch (const BadAlloc&)
@@ -1267,7 +1267,7 @@ void Sort::init()
 
 		try
 		{
-			UCHAR* const mem = FB_NEW(m_owner->getPool()) UCHAR[mem_size];
+			UCHAR* const mem = FB_NEW_POOL(m_owner->getPool()) UCHAR[mem_size];
 
 			releaseBuffer();
 
@@ -1444,7 +1444,7 @@ void Sort::mergeRuns(USHORT n)
 			{
 				if (!run->run_buff_alloc)
 				{
-					run->run_buffer = FB_NEW(m_owner->getPool()) UCHAR[rec_size * 2];
+					run->run_buffer = FB_NEW_POOL(m_owner->getPool()) UCHAR[rec_size * 2];
 					run->run_buff_alloc = true;
 				}
 				run->run_end_buffer = run->run_buffer + (rec_size * 2);
@@ -1889,7 +1889,7 @@ void Sort::putRun()
 		m_free_runs = run->run_next;
 	}
 	else {
-		run = (run_control*) FB_NEW(m_owner->getPool()) run_control;
+		run = (run_control*) FB_NEW_POOL(m_owner->getPool()) run_control;
 	}
 	memset(run, 0, sizeof(run_control));
 

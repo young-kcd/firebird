@@ -34,7 +34,7 @@ See http://developers.sun.com/solaris/articles/atomic_sparc/
 	add %g1,%o1,%o2 ! compute the desired result, %g1 + %o1 (value) -> %o2 (temporary)
 0:
 	cas [%o0],%g1,%o2 ! try to CAS it into place
-	cmp %g1,%o2 ! compare old to new
+	cmp %g1,%o2 ! compare old to FB_NEW
 	bne,a,pn %icc,0b ! CAS failed, try again
 	mov %o2,%g1 ! copy result -> %g1 for next iteration
 	mov %o2,%o0 ! return old value
@@ -42,7 +42,7 @@ See http://developers.sun.com/solaris/articles/atomic_sparc/
 .end
 
 /* sparc version of compare_and_swap, see fb_atomic.h */
-/* extern boolean_t compare_and_swap_il(volatile unsigned *word_addr, unsigned *old_val_addr, int new_val); */
+/* extern boolean_t compare_and_swap_il(volatile unsigned *word_addr, unsigned *old_val_addr, int FB_NEW_val); */
 
 .inline compare_and_swap_il,12
 	membar #LoadStore|#StoreStore

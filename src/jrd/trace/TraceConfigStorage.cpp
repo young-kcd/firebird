@@ -79,7 +79,7 @@ void checkFileError(const char* filename, const char* operation, ISC_STATUS iscE
 }
 
 ConfigStorage::ConfigStorage()
-	: m_timer(new TouchFile),
+	: m_timer(FB_NEW TouchFile),
 	  m_sharedMemory(NULL),
 	  m_recursive(0),
 	  m_mutexTID(0)
@@ -115,7 +115,7 @@ ConfigStorage::ConfigStorage()
 
 	try
 	{
-		m_sharedMemory.reset(FB_NEW(getPool())
+		m_sharedMemory.reset(FB_NEW_POOL(getPool())
 			SharedMemory<TraceCSHeader>(filename.c_str(), sizeof(TraceCSHeader), this));
 	}
 	catch (const Exception& ex)

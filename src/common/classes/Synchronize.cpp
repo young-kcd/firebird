@@ -210,7 +210,7 @@ ThreadSync* ThreadSync::getThread(const char* desc)
 
 	if (!thread)
 	{
-		thread = new ThreadSync(desc);
+		thread = FB_NEW ThreadSync(desc);
 
 		fb_assert(thread == findThread());
 	}

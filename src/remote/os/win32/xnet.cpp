@@ -211,7 +211,7 @@ rem_port* XNET_analyze(ClntAuthBlock* cBlock,
 	// We need to establish a connection to a remote server.
 	// Allocate the necessary blocks and get ready to go.
 
-	Rdb* rdb = new Rdb;
+	Rdb* rdb = FB_NEW Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
@@ -630,7 +630,7 @@ static rem_port* alloc_port(rem_port* parent,
  *	and initialize input and output XDR streams.
  *
  **************************************/
-	rem_port* const port = new rem_port(rem_port::XNET, 0);
+	rem_port* const port = FB_NEW rem_port(rem_port::XNET, 0);
 
 	TEXT buffer[BUFFER_TINY];
 	ISC_get_host(buffer, sizeof(buffer));
@@ -699,7 +699,7 @@ static rem_port* aux_connect(rem_port* port, PACKET* /*packet*/)
 		parent_xcc = port->port_xcc;
 		xps = (XPS) parent_xcc->xcc_mapped_addr;
 
-		xcc = new struct xcc;
+		xcc = FB_NEW struct xcc;
 
 		xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
@@ -820,7 +820,7 @@ static rem_port* aux_request(rem_port* port, PACKET* packet)
 		XCC parent_xcc = port->port_xcc;
 		XPS xps = (XPS) parent_xcc->xcc_mapped_addr;
 
-		xcc = new struct xcc;
+		xcc = FB_NEW struct xcc;
 
 		XPM xpm = xcc->xcc_xpm = parent_xcc->xcc_xpm;
 		xcc->xcc_map_num = parent_xcc->xcc_map_num;
@@ -1195,7 +1195,7 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 					system_error::raise(ERR_STR("MapViewOfFile"));
 				}
 
-				xpm = new struct xpm;
+				xpm = FB_NEW struct xpm;
 
 				xpm->xpm_next = global_client_maps;
 				global_client_maps = xpm;
@@ -1211,7 +1211,7 @@ static rem_port* connect_client(PACKET* packet, const Firebird::RefPtr<Config>* 
 		} // xnet_mutex scope
 
 		// there's no thread structure, so make one
-		xcc = new struct xcc;
+		xcc = FB_NEW struct xcc;
 
 		xcc->xcc_map_handle = xpm->xpm_handle;
 		xcc->xcc_mapped_addr =
@@ -2107,7 +2107,7 @@ static XPM make_xpm(ULONG map_number, ULONG timestamp)
 
 	// allocate XPM structure and initialize it
 
-	XPM xpm = new struct xpm;
+	XPM xpm = FB_NEW struct xpm;
 
 	xpm->xpm_handle = map_handle;
 	xpm->xpm_address = map_address;
@@ -2371,7 +2371,7 @@ static rem_port* get_server_port(ULONG client_pid,
 
 	// allocate a communications control structure and fill it in
 
-	XCC xcc = new struct xcc;
+	XCC xcc = FB_NEW struct xcc;
 
 	try {
 

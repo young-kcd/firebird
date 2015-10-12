@@ -111,7 +111,7 @@ TempSpace::TempSpace(MemoryPool& p, const Firebird::PathName& prefix, bool dynam
 		if (!tempDirs)
 		{
 			MemoryPool& def_pool = *getDefaultMemoryPool();
-			tempDirs = FB_NEW(def_pool) Firebird::TempDirectoryList(def_pool);
+			tempDirs = FB_NEW_POOL(def_pool) Firebird::TempDirectoryList(def_pool);
 			minBlockSize = Config::getTempBlockSize();
 
 			if (minBlockSize < MIN_TEMP_BLOCK_SIZE)
@@ -245,14 +245,14 @@ void TempSpace::extend(FB_SIZE_T size)
 			if (!initialSize)
 			{
 				fb_assert(!head && !tail);
-				head = tail = FB_NEW(pool) InitialBlock(initialBuffer.getBuffer(size), size);
+				head = tail = FB_NEW_POOL(pool) InitialBlock(initialBuffer.getBuffer(size), size);
 			}
 			else
 			{
 				fb_assert(head == tail);
 				size += initialSize;
 				initialBuffer.resize(size);
-				new (head) InitialBlock(initialBuffer.begin(), size);
+				new(head) InitialBlock(initialBuffer.begin(), size);
 			}
 
 			physicalSize = size;
@@ -280,7 +280,7 @@ void TempSpace::extend(FB_SIZE_T size)
 			try
 			{
 				// allocate block in virtual memory
-				block = FB_NEW(pool) MemoryBlock(FB_NEW(pool) UCHAR[size], tail, size);
+				block = FB_NEW_POOL(pool) MemoryBlock(FB_NEW_POOL(pool) UCHAR[size], tail, size);
 				localCacheUsage += size;
 				globalCacheUsage += size;
 			}
@@ -304,7 +304,7 @@ void TempSpace::extend(FB_SIZE_T size)
 				tail->size += size;
 				return;
 			}
-			block = FB_NEW(pool) FileBlock(file, tail, size);
+			block = FB_NEW_POOL(pool) FileBlock(file, tail, size);
 		}
 
 		// preserve the initial contents, if any
@@ -396,7 +396,7 @@ TempFile* TempSpace::setupFile(FB_SIZE_T size)
 		{
 			if (!file)
 			{
-				file = FB_NEW(pool) TempFile(pool, filePrefix, directory);
+				file = FB_NEW_POOL(pool) TempFile(pool, filePrefix, directory);
 				tempFiles.add(file);
 			}
 

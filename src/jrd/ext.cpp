@@ -101,7 +101,7 @@ namespace Jrd
 			if (!dbb->dbb_external_file_directory_list)
 			{
 				dbb->dbb_external_file_directory_list =
-					FB_NEW(*dbb->dbb_permanent) ExternalFileDirectoryList(dbb);
+					FB_NEW_POOL(*dbb->dbb_permanent) ExternalFileDirectoryList(dbb);
 			}
 		}
 

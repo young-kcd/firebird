@@ -709,7 +709,7 @@ void TRA_init(Jrd::Attachment* attachment)
 	CHECK_DBB(dbb);
 
 	MemoryPool* const pool = dbb->dbb_permanent;
-	jrd_tra* const trans = FB_NEW(*pool) jrd_tra(pool, &dbb->dbb_memory_stats, NULL, NULL);
+	jrd_tra* const trans = FB_NEW_POOL(*pool) jrd_tra(pool, &dbb->dbb_memory_stats, NULL, NULL);
 	trans->tra_attachment = attachment;
 	attachment->setSysTransaction(trans);
 	trans->tra_flags |= TRA_system | TRA_ignore_limbo;
@@ -3394,7 +3394,7 @@ JTransaction* jrd_tra::getInterface()
 	if (!tra_interface)
 	{
 		tra_flags |= TRA_own_interface;
-		tra_interface = new JTransaction(this, tra_attachment->getStable());
+		tra_interface = FB_NEW JTransaction(this, tra_attachment->getStable());
 		tra_interface->addRef();
 	}
 
@@ -3412,7 +3412,7 @@ void jrd_tra::setInterface(JTransaction* jt)
 UserManagement* jrd_tra::getUserManagement()
 {
 	if (!tra_user_management)
-		tra_user_management = FB_NEW(*tra_pool) UserManagement(this);
+		tra_user_management = FB_NEW_POOL(*tra_pool) UserManagement(this);
 
 	return tra_user_management;
 }
@@ -3421,7 +3421,7 @@ UserManagement* jrd_tra::getUserManagement()
 MappingList* jrd_tra::getMappingList()
 {
 	if (!tra_mapping_list)
-		tra_mapping_list = FB_NEW(*tra_pool) MappingList(this);
+		tra_mapping_list = FB_NEW_POOL(*tra_pool) MappingList(this);
 
 	return tra_mapping_list;
 }
@@ -3429,7 +3429,7 @@ MappingList* jrd_tra::getMappingList()
 DbCreatorsList* jrd_tra::getDbCreatorsList()
 {
 	if (!tra_dbcreators_list)
-		tra_dbcreators_list = FB_NEW(*tra_pool) DbCreatorsList(this);
+		tra_dbcreators_list = FB_NEW_POOL(*tra_pool) DbCreatorsList(this);
 
 	return tra_dbcreators_list;
 }
@@ -3643,7 +3643,7 @@ SecDbContext* jrd_tra::setSecDbContext(IAttachment* att, ITransaction* tra)
 {
 	fb_assert(!tra_sec_db_context);
 
-	tra_sec_db_context = FB_NEW(*getDefaultMemoryPool()) SecDbContext(att, tra);
+	tra_sec_db_context = FB_NEW_POOL(*getDefaultMemoryPool()) SecDbContext(att, tra);
 	return tra_sec_db_context;
 }
 

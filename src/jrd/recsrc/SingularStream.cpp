@@ -107,7 +107,7 @@ void SingularStream::doGetRecord(thread_db* tdbb) const
 		Record* const orgRecord = rpb.rpb_record;
 
 		if (orgRecord)
-			rpb.rpb_record = FB_NEW(pool) Record(pool, orgRecord);
+			rpb.rpb_record = FB_NEW_POOL(pool) Record(pool, orgRecord);
 	}
 
 	if (m_next->getRecord(tdbb))

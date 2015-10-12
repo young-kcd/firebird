@@ -295,7 +295,7 @@ namespace
 				DbName* db = dbHash.lookup(file);
 				if (! db)
 				{
-					db = FB_NEW(getPool()) DbName(getPool(), file);
+					db = FB_NEW_POOL(getPool()) DbName(getPool(), file);
 #ifdef HAVE_ID_BY_NAME
 					UCharBuffer id;
 					os_utils::getUniqueFileId(db->name.c_str(), id);
@@ -330,9 +330,9 @@ namespace
 					db->config =
 #ifdef HAVE_ID_BY_NAME
 						(!db->id) ?
-							new Config(*par->sub, *Config::getDefaultConfig(), db->name) :
+							FB_NEW Config(*par->sub, *Config::getDefaultConfig(), db->name) :
 #endif
-							new Config(*par->sub, *Config::getDefaultConfig());
+							FB_NEW Config(*par->sub, *Config::getDefaultConfig());
 				}
 
 				PathName correctedAlias(par->name.ToPathName());
@@ -342,7 +342,7 @@ namespace
 					fatal_exception::raiseFmt("Duplicated alias %s\n", correctedAlias.c_str());
 				}
 
-				alias = FB_NEW(getPool()) AliasName(getPool(), correctedAlias, db);
+				alias = FB_NEW_POOL(getPool()) AliasName(getPool(), correctedAlias, db);
 				aliases.add(alias);
 				aliasHash.add(alias);
 			}
@@ -353,7 +353,7 @@ namespace
 		{
 			fb_assert(!db->id);
 
-			Id* i = FB_NEW(getPool()) Id(getPool(), id, db);
+			Id* i = FB_NEW_POOL(getPool()) Id(getPool(), id, db);
 			ids.add(i);
 			idHash.add(i);
 			db->id = i;

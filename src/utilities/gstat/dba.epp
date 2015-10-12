@@ -1178,7 +1178,7 @@ static char* alloc(size_t size)
  *
  **************************************/
 	tdba* tddba = tdba::getSpecific();
-	char* const block = FB_NEW(*getDefaultMemoryPool()) SCHAR[size];
+	char* const block = FB_NEW_POOL(*getDefaultMemoryPool()) SCHAR[size];
 
 	if (!block)
 	{
@@ -1188,7 +1188,7 @@ static char* alloc(size_t size)
 
 	memset(block, 0, size);
 
-	dba_mem* mem_list = FB_NEW(*getDefaultMemoryPool()) dba_mem;
+	dba_mem* mem_list = FB_NEW_POOL(*getDefaultMemoryPool()) dba_mem;
 	if (!mem_list)
 	{
 		// NOMEM: return error
@@ -1784,7 +1784,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		db_error(GetLastError());
 	}
 
-	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
+	open_files* file_list = FB_NEW_POOL(*getDefaultMemoryPool()) open_files;
 	if (!file_list)
 	{
 		// NOMEM: return error
@@ -1969,7 +1969,7 @@ static dba_fil* db_open(const char* file_name, USHORT file_length)
 		db_error(errno);
 	}
 
-	open_files* file_list = FB_NEW(*getDefaultMemoryPool()) open_files;
+	open_files* file_list = FB_NEW_POOL(*getDefaultMemoryPool()) open_files;
 	if (!file_list)
 	{
 		// NOMEM: return error

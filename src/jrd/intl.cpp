@@ -227,7 +227,7 @@ CharSetContainer* CharSetContainer::lookupCharset(thread_db* tdbb, USHORT ttype)
 		if (lookupInternalCharSet(id, &info) || MET_get_char_coll_subtype_info(tdbb, id, &info))
 		{
 			attachment->att_charsets[id] = cs =
-				FB_NEW(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
+				FB_NEW_POOL(*attachment->att_pool) CharSetContainer(*attachment->att_pool, id, &info);
 		}
 		else
 			ERR_post(Arg::Gds(isc_text_subtype) << Arg::Num(ttype));
@@ -308,7 +308,7 @@ CharSetContainer::CharSetContainer(MemoryPool& p, USHORT cs_id, const SubtypeInf
 	: charset_collations(p),
 	  cs(NULL)
 {
-	charset* csL = FB_NEW(p) charset;
+	charset* csL = FB_NEW_POOL(p) charset;
 	memset(csL, 0, sizeof(charset));
 
 	if (IntlManager::lookupCharSet(info->charsetName.c_str(), csL) &&
@@ -388,7 +388,7 @@ Collation* CharSetContainer::lookupCollation(thread_db* tdbb, USHORT tt_id)
 			info.specificAttributes = specificAttributes;
 		}
 
-		texttype* tt = FB_NEW(*att->att_pool) texttype;
+		texttype* tt = FB_NEW_POOL(*att->att_pool) texttype;
 		memset(tt, 0, sizeof(texttype));
 
 		if (!lookup_texttype(tt, &info))

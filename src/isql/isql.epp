@@ -713,7 +713,7 @@ int ISQL_main(int argc, char* argv[])
 	// As ISQL can run under windows, all memory should be freed before
 	// returning.  In debug mode this call will report unfreed blocks.
 
-	//gds_alloc_report(0, __FILE__, __LINE__);
+	//gds_alloc_report(0 ALLOC_ARGS);
 	char fn[] = __FILE__;
 	fn[strlen(fn) - 8] = 0; // all isql files in gen dir
 	gds_alloc_report(0, fn, 0);
@@ -7776,7 +7776,7 @@ static void process_plan()
 			switch (i)
 			{
 			case 0:
-				planSentry.exchange((planPtr = new UCHAR[planSize = MAX_SSHORT]), true);
+				planSentry.exchange((planPtr = FB_NEW UCHAR[planSize = MAX_SSHORT]), true);
 				break;
 			case 1:
 				// Probably FB 2.1 and before will crash with MAX_USHORT.
@@ -7784,7 +7784,7 @@ static void process_plan()
 					isqlGlob.major_ods > 11)
 				{
 					planSentry.clean();
-					planSentry.exchange((planPtr = new UCHAR[planSize = MAX_USHORT]), true);
+					planSentry.exchange((planPtr = FB_NEW UCHAR[planSize = MAX_USHORT]), true);
 					break;
 				}
 				// else fall into

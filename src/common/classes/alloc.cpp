@@ -1855,8 +1855,8 @@ MemoryPool* MemoryPool::createPool(MemoryPool* parentPool, MemoryStats& stats)
 	if (!parentPool)
 		parentPool = getDefaultMemoryPool();
 
-	MemPool* p = FB_NEW(*parentPool) MemPool(*(parentPool->pool), stats);
-	return FB_NEW(*parentPool) MemoryPool(p);
+	MemPool* p = FB_NEW_POOL(*parentPool) MemPool(*(parentPool->pool), stats);
+	return FB_NEW_POOL(*parentPool) MemoryPool(p);
 }
 
 void MemPool::setStatsGroup(MemoryStats& newStats) throw ()
@@ -2130,11 +2130,7 @@ void* MemPool::getExtent(size_t& size) throw(OOM_EXCEPTION)		// pass desired min
 	if (size < PARENT_EXTENT_SIZE)
 		size = PARENT_EXTENT_SIZE;
 
-	MemBlock* extent = allocate2(size, true
-#ifdef DEBUG_GDS_ALLOC
-		, __FILE__, __LINE__
-#endif
-    );
+	MemBlock* extent = allocate2(size, true ALLOC_ARGS);
 
 	return &extent->body;
 }
@@ -2338,7 +2334,7 @@ void MemoryPool::contextPoolInit()
 {
 #ifdef TLS_CLASS
 	// Allocate TLS entry for context pool
-	contextPoolPtr = FB_NEW(*getDefaultMemoryPool()) TLS_CLASS<MemoryPool*>;
+	contextPoolPtr = FB_NEW_POOL(*getDefaultMemoryPool()) TLS_CLASS<MemoryPool*>;
 	// To be deleted by InstanceControl::InstanceList::destructors() at TLS priority
 #endif	// TLS_CLASS
 }
@@ -2356,20 +2352,16 @@ MemoryPool& AutoStorage::getAutoMemoryPool()
 }
 
 #ifdef LIBC_CALLS_NEW
-void* MemoryPool::globalAlloc(size_t s) THROW_BAD_ALLOC
+void* MemoryPool::globalAlloc(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
-	if (!processMemoryPool)
+	if (!defaultMemoryManager)
 	{
 		// this will do all required init, including processMemoryPool creation
 		static Firebird::InstanceControl dummy;
-		fb_assert(processMemoryPool);
+		fb_assert(defaultMemoryManager);
 	}
 
-	return processMemoryPool->allocate(s
-#ifdef DEBUG_GDS_ALLOC
-			,__FILE__, __LINE__
-#endif
-	);
+	return defaultMemoryManager->allocate(s ALLOC_PASS_ARGS);
 }
 #endif // LIBC_CALLS_NEW
 
@@ -2453,3 +2445,20 @@ void AutoStorage::ProbeStack() const
 #endif
 
 } // namespace Firebird
+
+
+// This operators are needed for foreign libraries which use redefined new/delete.
+// Global operator "delete" is always redefined by firebird,
+// in a case when we actually need "new" only with file/line information
+// this version should be also present as a pair for "delete".
+#ifdef DEBUG_GDS_ALLOC
+void* operator new(size_t s) throw (OOM_EXCEPTION)
+{
+	return MemoryPool::globalAlloc(s ALLOC_ARGS);
+}
+void* operator new[](size_t s) throw (OOM_EXCEPTION)
+{
+	return MemoryPool::globalAlloc(s ALLOC_ARGS);
+}
+#endif // DEBUG_GDS_ALLOC
+

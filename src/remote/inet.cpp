@@ -549,7 +549,7 @@ rem_port* INET_analyze(ClntAuthBlock* cBlock,
 	// We need to establish a connection to a remote server.  Allocate the necessary
 	// blocks and get ready to go.
 
-	Rdb* rdb = new Rdb;
+	Rdb* rdb = FB_NEW Rdb;
 	PACKET* packet = &rdb->rdb_packet;
 
 	// Pick up some user identification information
@@ -1027,7 +1027,7 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 		{
 			forkThreadStarted = true;
 			forkEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-			forkSockets = new SocketsArray(*getDefaultMemoryPool());
+			forkSockets = FB_NEW SocketsArray(*getDefaultMemoryPool());
 
 			Thread::start(forkThread, (void*) flag, THREAD_medium);
 		}
@@ -1258,7 +1258,7 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 		}
 	}
 
-	rem_port* const port = new rem_port(rem_port::INET, INET_remote_buffer * 2);
+	rem_port* const port = FB_NEW rem_port(rem_port::INET, INET_remote_buffer * 2);
 	REMOTE_get_timeout_params(port, 0);
 
 	TEXT buffer[BUFFER_SMALL];

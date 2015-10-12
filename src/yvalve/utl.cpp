@@ -760,16 +760,16 @@ public:
 		if (!buf)
 		{
 			if (kl)
-				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), kl, MAX_DPB_SIZE);
+				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), kl, MAX_DPB_SIZE);
 			else
-				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE);
+				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE);
 		}
 		else
 		{
 			if (kl)
-				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), kl, MAX_DPB_SIZE, buf, len);
+				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), kl, MAX_DPB_SIZE, buf, len);
 			else
-				pb = FB_NEW(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE, buf, len);
+				pb = FB_NEW_POOL(getPool()) ClumpletWriter(getPool(), k, MAX_DPB_SIZE, buf, len);
 		}
 	}
 
@@ -1048,7 +1048,7 @@ IXpbBuilder* UtilInterface::getXpbBuilder(CheckStatusWrapper* status,
 {
 	try
 	{
-		return new XpbBuilder(kind, buf, len);
+		return FB_NEW XpbBuilder(kind, buf, len);
 	}
 	catch (const Exception& ex)
 	{
@@ -2988,7 +2988,7 @@ void ThreadCleanup::add(FPTR_VOID_PTR cleanup, void* arg)
 		return;
 	}
 
-	chain = FB_NEW(*getDefaultMemoryPool()) ThreadCleanup(cleanup, arg, chain);
+	chain = FB_NEW_POOL(*getDefaultMemoryPool()) ThreadCleanup(cleanup, arg, chain);
 }
 
 void ThreadCleanup::remove(FPTR_VOID_PTR cleanup, void* arg)
@@ -3058,7 +3058,7 @@ ThreadBuffer* getThreadBuffer()
 	if (!rc)
 	{
 		ThreadCleanup::add(cleanupAllStrings, NULL);
-		rc = new ThreadBuffer;
+		rc = FB_NEW ThreadBuffer;
 		TLS_SET(threadBuffer, rc);
 	}
 

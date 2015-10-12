@@ -546,7 +546,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 				// Miserable thing must be a filename
 				// (dummy in a length for the backup file
 
-				file = FB_NEW(*getDefaultMemoryPool()) burp_fil(*getDefaultMemoryPool());
+				file = FB_NEW_POOL(*getDefaultMemoryPool()) burp_fil(*getDefaultMemoryPool());
 				file->fil_name = str.ToPathName();
 				file->fil_length = file_list ? 0 : MAX_LENGTH;
 				file->fil_next = file_list;
@@ -1344,7 +1344,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 #if defined(DEBUG_GDS_ALLOC)
 	if (!uSvc->isService())
 	{
-		gds_alloc_report(0, __FILE__, __LINE__);
+		gds_alloc_report(0 ALLOC_ARGS);
 	}
 #endif
 
@@ -2412,7 +2412,7 @@ void BurpGlobals::setupSkipData(const Firebird::string& regexp)
 			if (!uSvc->utf8FileNames())
 				ISC_systemToUtf8(filter);
 
-			skipDataMatcher.reset(new Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> >(
+			skipDataMatcher.reset(FB_NEW Firebird::SimilarToMatcher<UCHAR, Jrd::UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true));
 		}
@@ -2569,8 +2569,8 @@ void BurpGlobals::print_stats_header()
 
 UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 {
-	cs = FB_NEW(pool) charset;
-	tt = FB_NEW(pool) texttype;
+	cs = FB_NEW_POOL(pool) charset;
+	tt = FB_NEW_POOL(pool) texttype;
 
 	Firebird::IntlUtil::initUtf8Charset(cs);
 
@@ -2586,7 +2586,7 @@ UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 		Firebird::fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in gbak");
 
 	charSet = Jrd::CharSet::createInstance(pool, 0, cs);
-	textType = FB_NEW(pool) Jrd::TextType(0, tt, charSet);
+	textType = FB_NEW_POOL(pool) Jrd::TextType(0, tt, charSet);
 }
 
 UnicodeCollationHolder::~UnicodeCollationHolder()

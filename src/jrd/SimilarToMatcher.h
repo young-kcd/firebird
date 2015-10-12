@@ -286,7 +286,7 @@ private:
 			SimpleStack()
 				: size(INCREASE_FACTOR)
 			{
-				data = FB_NEW(*getDefaultMemoryPool()) UCHAR[(size + 1) * sizeof(T)];
+				data = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[(size + 1) * sizeof(T)];
 				back = (T*) FB_ALIGN(data.get(), sizeof(T));
 				end = back + size;
 
@@ -301,7 +301,7 @@ private:
 				if (++back == end)
 				{
 					unsigned newSize = size + INCREASE_FACTOR;
-					UCHAR* newData = FB_NEW(*getDefaultMemoryPool()) UCHAR[(newSize + 1) * sizeof(T)];
+					UCHAR* newData = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[(newSize + 1) * sizeof(T)];
 
 					T* p = (T*) FB_ALIGN(newData, sizeof(T));
 					memcpy(p, end - size, size * sizeof(T));
@@ -447,7 +447,7 @@ public:
 	{
 		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
 
-		return FB_NEW(pool) SimilarToMatcher(pool, ttype, str, length,
+		return FB_NEW_POOL(pool) SimilarToMatcher(pool, ttype, str, length,
 			(escape ? *reinterpret_cast<const CharType*>(escape) : 0), escapeLen != 0);
 	}
 
@@ -530,7 +530,7 @@ SimilarToMatcher<CharType, StrConverter>::Evaluator::Evaluator(
 	if (patternPos < patternEnd)
 		status_exception::raise(Arg::Gds(isc_invalid_similar_pattern));
 
-	branches = FB_NEW(pool) Range[branchNum + 1];
+	branches = FB_NEW_POOL(pool) Range[branchNum + 1];
 
 	reset();
 }
@@ -1777,16 +1777,16 @@ public:
 
 		// Construct the needed regular expressions.
 
-		r1 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+		r1 = FB_NEW_POOL(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
 				newExpr.begin(), lengths[0], escapeChar, true);
 
-		r2 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+		r2 = FB_NEW_POOL(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
 				newExpr.begin() + lengths[0], lengths[1], escapeChar, true);
 
-		r3 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+		r3 = FB_NEW_POOL(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
 				newExpr.begin() + lengths[0] + lengths[1], lengths[2], escapeChar, true);
 
-		r23 = FB_NEW(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
+		r23 = FB_NEW_POOL(pool) SimilarToMatcher<CharType, StrConverter>(pool, ttype,
 				newExpr.begin() + lengths[0], lengths[1] + lengths[2], escapeChar, true);
 	}
 
@@ -1795,7 +1795,7 @@ public:
 	{
 		StrConverter cvt_escape(pool, ttype, escape, escapeLen);
 
-		return FB_NEW(pool) SubstringSimilarMatcher(pool, ttype, str, length,
+		return FB_NEW_POOL(pool) SubstringSimilarMatcher(pool, ttype, str, length,
 			*reinterpret_cast<const CharType*>(escape));
 	}
 

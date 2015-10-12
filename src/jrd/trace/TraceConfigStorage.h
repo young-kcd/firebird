@@ -152,7 +152,7 @@ public:
 			Firebird::MutexLockGuard guard(initMtx, FB_FUNCTION);
 			if (!storage)
 			{
-				storage = new ConfigStorage;
+				storage = FB_NEW ConfigStorage;
 			}
 		}
 		return storage;

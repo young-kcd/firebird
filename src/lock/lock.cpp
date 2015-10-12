@@ -173,7 +173,7 @@ LockManager* LockManager::create(const Firebird::string& id, RefPtr<Config> conf
 	LockManager* lockMgr = NULL;
 	if (!g_lmMap->get(id, lockMgr))
 	{
-		lockMgr = new LockManager(id, conf);
+		lockMgr = FB_NEW LockManager(id, conf);
 
 		if (g_lmMap->put(id, lockMgr))
 		{
@@ -341,7 +341,7 @@ bool LockManager::attach_shared_file(CheckStatusWrapper* statusVector)
 
 	try
 	{
-		SharedMemory<lhb>* tmp = FB_NEW(getPool()) SharedMemory<lhb>(name.c_str(), m_memorySize, this);
+		SharedMemory<lhb>* tmp = FB_NEW_POOL(getPool()) SharedMemory<lhb>(name.c_str(), m_memorySize, this);
 		// initialize will reset m_sharedMemory
 		fb_assert(m_sharedMemory == tmp);
 	}

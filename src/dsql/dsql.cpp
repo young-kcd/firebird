@@ -223,7 +223,7 @@ DsqlCursor* DSQL_open(thread_db* tdbb,
 	request->req_transaction = *tra_handle;
 	request->execute(tdbb, tra_handle, in_meta, in_msg, out_meta, NULL, false);
 
-	request->req_cursor = FB_NEW(request->getPool()) DsqlCursor(request, flags);
+	request->req_cursor = FB_NEW_POOL(request->getPool()) DsqlCursor(request, flags);
 	return request->req_cursor;
 }
 
@@ -580,7 +580,7 @@ void DsqlDmlRequest::dsqlPass(thread_db* tdbb, DsqlCompilerScratch* scratch,
 
 		// Allocate buffer for message
 		const ULONG newLen = message->msg_length + FB_DOUBLE_ALIGN - 1;
-		UCHAR* msgBuffer = FB_NEW(*tdbb->getDefaultPool()) UCHAR[newLen];
+		UCHAR* msgBuffer = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[newLen];
 		msgBuffer = FB_ALIGN(msgBuffer, FB_DOUBLE_ALIGN);
 		message->msg_buffer_number = req_msg_buffers.add(msgBuffer);
 	}
@@ -942,7 +942,7 @@ static dsql_dbb* init(thread_db* tdbb, Jrd::Attachment* attachment)
 		return attachment->att_dsql_instance;
 
 	MemoryPool& pool = *attachment->createPool();
-	dsql_dbb* const database = FB_NEW(pool) dsql_dbb(pool);
+	dsql_dbb* const database = FB_NEW_POOL(pool) dsql_dbb(pool);
 	database->dbb_attachment = attachment;
 	attachment->att_dsql_instance = database;
 
@@ -1332,8 +1332,8 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 	Jrd::ContextPoolHolder context(tdbb, database->createPool());
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
-	DsqlCompiledStatement* statement = FB_NEW(pool) DsqlCompiledStatement(pool);
-	DsqlCompilerScratch* scratch = FB_NEW(pool) DsqlCompilerScratch(pool, database,
+	DsqlCompiledStatement* statement = FB_NEW_POOL(pool) DsqlCompiledStatement(pool);
+	DsqlCompilerScratch* scratch = FB_NEW_POOL(pool) DsqlCompilerScratch(pool, database,
 		transaction, statement);
 	scratch->clientDialect = clientDialect;
 
@@ -1393,12 +1393,12 @@ static dsql_req* prepareStatement(thread_db* tdbb, dsql_dbb* database, jrd_tra* 
 			transformedText.assign(temp.begin(), temp.getCount());
 		}
 
-		statement->setSqlText(FB_NEW(pool) RefString(pool, transformedText));
+		statement->setSqlText(FB_NEW_POOL(pool) RefString(pool, transformedText));
 
 		// allocate the send and receive messages
 
-		statement->setSendMsg(FB_NEW(pool) dsql_msg(pool));
-		dsql_msg* message = FB_NEW(pool) dsql_msg(pool);
+		statement->setSendMsg(FB_NEW_POOL(pool) dsql_msg(pool));
+		dsql_msg* message = FB_NEW_POOL(pool) dsql_msg(pool);
 		statement->setReceiveMsg(message);
 		message->msg_number = 1;
 

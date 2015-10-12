@@ -524,7 +524,7 @@ int SecurityDatabaseServer::authenticate(Firebird::CheckStatusWrapper* status, I
 
 			if (!instance)
 			{
-				instance = new SecurityDatabase;
+				instance = FB_NEW SecurityDatabase;
 				instance->addRef();
 				secDbName.copyTo(instance->secureDbName, sizeof(instance->secureDbName));
 				curInstances.add(instance);

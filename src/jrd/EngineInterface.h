@@ -404,7 +404,7 @@ public:
 
 	static Firebird::RefPtr<JProvider> getInstance()
 	{
-		Firebird::RefPtr<JProvider> p(new JProvider(NULL));
+		Firebird::RefPtr<JProvider> p(FB_NEW JProvider(NULL));
 		return p;
 	}
 

@@ -658,7 +658,7 @@ void INI_init(thread_db* tdbb)
 			if (desc->dsc_dtype == dtype_blob && desc->dsc_sub_type == isc_blob_text)
 				desc->dsc_scale = CS_METADATA;	// blob charset
 
-			jrd_fld* field = FB_NEW(*pool) jrd_fld(*pool);
+			jrd_fld* field = FB_NEW_POOL(*pool) jrd_fld(*pool);
 			*itr = field;
 			field->fld_name = names[fld[RFLD_F_NAME]];
 		}
@@ -754,7 +754,7 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 		if (relfld[RFLD_R_ODS] > ENCODE_ODS(majorVersion, minorVersion))
 			continue;
 
-		dsql_rel* relation = FB_NEW(database->dbb_pool) dsql_rel(database->dbb_pool);
+		dsql_rel* relation = FB_NEW_POOL(database->dbb_pool) dsql_rel(database->dbb_pool);
 
 		relation->rel_id = relfld[RFLD_R_ID];
 		relation->rel_name = names[relfld[RFLD_R_NAME]];
@@ -769,7 +769,7 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 			if (ENCODE_ODS(majorVersion, minorVersion) < fld[RFLD_F_ODS])
 				continue;
 
-			dsql_fld* field = FB_NEW(database->dbb_pool) dsql_fld(database->dbb_pool);
+			dsql_fld* field = FB_NEW_POOL(database->dbb_pool) dsql_fld(database->dbb_pool);
 			field->fld_id = n++;
 
 			*ptr = field;
@@ -831,7 +831,7 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 		if (csDef->id > ttype_last_internal)
 			continue;
 
-		dsql_intlsym* csSymbol = FB_NEW(database->dbb_pool) dsql_intlsym(database->dbb_pool);
+		dsql_intlsym* csSymbol = FB_NEW_POOL(database->dbb_pool) dsql_intlsym(database->dbb_pool);
 		csSymbol->intlsym_name = csDef->name;
 		csSymbol->intlsym_charset_id = csDef->id;
 		csSymbol->intlsym_collate_id = 0;
@@ -853,7 +853,7 @@ void INI_init_dsql(thread_db* tdbb, dsql_dbb* database)
 			if (colDef->charSetId != csDef->id)
 				continue;
 
-			dsql_intlsym* colSymbol = FB_NEW(database->dbb_pool) dsql_intlsym(database->dbb_pool);
+			dsql_intlsym* colSymbol = FB_NEW_POOL(database->dbb_pool) dsql_intlsym(database->dbb_pool);
 			colSymbol->intlsym_name = colDef->name;
 			colSymbol->intlsym_flags = 0;
 			colSymbol->intlsym_charset_id = csDef->id;

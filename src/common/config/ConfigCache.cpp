@@ -42,7 +42,7 @@
 using namespace Firebird;
 
 ConfigCache::ConfigCache(MemoryPool& p, const PathName& fName)
-	: PermanentStorage(p), files(FB_NEW(getPool()) ConfigCache::File(getPool(), fName))
+	: PermanentStorage(p), files(FB_NEW_POOL(getPool()) ConfigCache::File(getPool(), fName))
 { }
 
 ConfigCache::~ConfigCache()
@@ -137,7 +137,7 @@ void ConfigCache::File::add(const PathName& fName)
 	}
 	else
 	{
-		next = FB_NEW(getPool()) ConfigCache::File(getPool(), fName);
+		next = FB_NEW_POOL(getPool()) ConfigCache::File(getPool(), fName);
 	}
 }
 

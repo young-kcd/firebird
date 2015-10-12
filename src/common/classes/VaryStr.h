@@ -66,7 +66,7 @@ public:
 		}
 
 		clear();
-		buffer = reinterpret_cast<vary*>(FB_NEW(*getDefaultMemoryPool()) char[len + sizeof(USHORT)]);
+		buffer = reinterpret_cast<vary*>(FB_NEW_POOL(*getDefaultMemoryPool()) char[len + sizeof(USHORT)]);
 		buffer->vary_length = 0;
 		buffer->vary_string[0] = 0;
 

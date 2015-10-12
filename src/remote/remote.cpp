@@ -289,7 +289,7 @@ Rrq* REMOTE_find_request(Rrq* request, USHORT level)
 		const rem_fmt* format = tail->rrq_format;
 		if (!format)
 			continue;
-		RMessage* msg = new RMessage(format->fmt_length);
+		RMessage* msg = FB_NEW RMessage(format->fmt_length);
 		tail->rrq_xdr = msg;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("REMOTE_find_request       allocate message %x\n", msg);
@@ -760,7 +760,7 @@ void PortsCleanup::registerPort(rem_port* port)
 	if (!m_ports)
 	{
 		Firebird::MemoryPool& pool = *getDefaultMemoryPool();
-		m_ports = FB_NEW (pool) PortsArray(pool);
+		m_ports = FB_NEW_POOL (pool) PortsArray(pool);
 	}
 
 	m_ports->add(port);
@@ -846,7 +846,7 @@ void Rrq::saveStatus(Firebird::IStatus* v) throw()
 void Rsr::saveException(const Firebird::Exception& ex, bool overwrite)
 {
 	if (!rsr_status) {
-		rsr_status = new Firebird::StatusHolder();
+		rsr_status = FB_NEW Firebird::StatusHolder();
 	}
 
 	if (overwrite || !rsr_status->getError())
@@ -1334,7 +1334,7 @@ Firebird::ICryptKey* SrvAuthBlock::newKey(Firebird::CheckStatusWrapper* status)
 	status->init();
 	try
 	{
-		InternalCryptKey* k = new InternalCryptKey;
+		InternalCryptKey* k = FB_NEW InternalCryptKey;
 
 		k->t = pluginName.c_str();
 		port->port_crypt_keys.push(k);
@@ -1413,7 +1413,7 @@ namespace {
 
 	void* allocFunc(void*, uInt items, uInt size)
 	{
-		return MemoryPool::globalAlloc(items * size);
+		return MemoryPool::globalAlloc(items * size ALLOC_ARGS);
 	}
 
 	void freeFunc(void*, void* address)
@@ -1648,7 +1648,7 @@ void rem_port::initCompression()
 
 		try
 		{
-			port_compressed.reset(FB_NEW(getPool()) UCHAR[port_buff_size * 2]);
+			port_compressed.reset(FB_NEW_POOL(getPool()) UCHAR[port_buff_size * 2]);
 		}
 		catch (const Firebird::Exception&)
 		{

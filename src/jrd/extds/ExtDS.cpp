@@ -1184,7 +1184,7 @@ void Statement::preprocess(const string& sql, string& ret)
 				if (n >= m_sqlParamNames.getCount())
 				{
 					n = m_sqlParamNames.getCount();
-					m_sqlParamNames.add(FB_NEW(getPool()) MetaName(getPool(), ident));
+					m_sqlParamNames.add(FB_NEW_POOL(getPool()) MetaName(getPool(), ident));
 				}
 				m_sqlParamsMap.add(m_sqlParamNames[n]);
 			}

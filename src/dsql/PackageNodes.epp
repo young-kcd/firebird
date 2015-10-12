@@ -384,10 +384,10 @@ DdlNode* CreateAlterPackageNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	// items
 	for (unsigned i = 0; i < items->getCount(); ++i)
 	{
-		DsqlCompiledStatement* itemStatement = FB_NEW(getPool()) DsqlCompiledStatement(getPool());
+		DsqlCompiledStatement* itemStatement = FB_NEW_POOL(getPool()) DsqlCompiledStatement(getPool());
 
 		DsqlCompilerScratch* itemScratch = (*items)[i].dsqlScratch =
-			FB_NEW(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
+			FB_NEW_POOL(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
 				dsqlScratch->getTransaction(), itemStatement);
 
 		itemScratch->clientDialect = dsqlScratch->clientDialect;
@@ -757,10 +757,10 @@ DdlNode* CreatePackageBodyNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 		for (unsigned j = 0; j < arrays[i]->getCount(); ++j)
 		{
-			DsqlCompiledStatement* itemStatement = FB_NEW(getPool()) DsqlCompiledStatement(getPool());
+			DsqlCompiledStatement* itemStatement = FB_NEW_POOL(getPool()) DsqlCompiledStatement(getPool());
 
 			DsqlCompilerScratch* itemScratch = (*arrays[i])[j].dsqlScratch =
-				FB_NEW(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
+				FB_NEW_POOL(getPool()) DsqlCompilerScratch(getPool(), dsqlScratch->getAttachment(),
 					dsqlScratch->getTransaction(), itemStatement);
 
 			itemScratch->clientDialect = dsqlScratch->clientDialect;

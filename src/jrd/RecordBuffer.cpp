@@ -34,8 +34,8 @@ using namespace Jrd;
 RecordBuffer::RecordBuffer(MemoryPool& pool, const Format* format)
 	: count(0)
 {
-	space = FB_NEW(pool) TempSpace(pool, SCRATCH);
-	record = FB_NEW(pool) Record(pool, format);
+	space = FB_NEW_POOL(pool) TempSpace(pool, SCRATCH);
+	record = FB_NEW_POOL(pool) Record(pool, format);
 }
 
 RecordBuffer::~RecordBuffer()

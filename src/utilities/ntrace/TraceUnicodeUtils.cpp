@@ -33,8 +33,8 @@ using namespace Firebird;
 
 UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 {
-	cs = FB_NEW(pool) charset;
-	tt = FB_NEW(pool) texttype;
+	cs = FB_NEW_POOL(pool) charset;
+	tt = FB_NEW_POOL(pool) texttype;
 
 	IntlUtil::initUtf8Charset(cs);
 
@@ -50,7 +50,7 @@ UnicodeCollationHolder::UnicodeCollationHolder(MemoryPool& pool)
 		fatal_exception::raiseFmt("cannot initialize UNICODE collation to use in trace plugin");
 
 	charSet = Jrd::CharSet::createInstance(pool, 0, cs);
-	textType = FB_NEW(pool) Jrd::TextType(0, tt, charSet);
+	textType = FB_NEW_POOL(pool) Jrd::TextType(0, tt, charSet);
 }
 
 UnicodeCollationHolder::~UnicodeCollationHolder()

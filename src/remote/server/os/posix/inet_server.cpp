@@ -418,7 +418,6 @@ int CLIB_ROUTINE main( int argc, char** argv)
 #ifdef DEBUG_GDS_ALLOC
 		// In Debug mode - this will report all server-side memory leaks due to remote access
 
-		//gds_alloc_report(0, __FILE__, __LINE__);
 		Firebird::PathName name = fb_utils::getPrefix(
 			Firebird::IConfigManager::DIR_LOG, "memdebug.log");
 		FILE* file = os_utils::fopen(name.c_str(), "w+t");

@@ -131,7 +131,7 @@ static inline bool FAMILY_ASCII(texttype* cache,
 		cache->texttype_fn_str_to_upper	= famasc_str_to_upper;
 		cache->texttype_fn_str_to_lower	= famasc_str_to_lower;
 
-		TextTypeImpl* impl = FB_NEW(*getDefaultMemoryPool()) TextTypeImpl;
+		TextTypeImpl* impl = FB_NEW_POOL(*getDefaultMemoryPool()) TextTypeImpl;
 		cache->texttype_impl = impl;
 
 		memset(&impl->cs, 0, sizeof(impl->cs));

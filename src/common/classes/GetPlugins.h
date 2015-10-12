@@ -61,7 +61,7 @@ public:
 	{
 		pluginSet.assignRefNoIncr(pluginInterface->getPlugins(&status, interfaceType,
 			(namesList ? namesList : knownConfig->getPlugins(interfaceType)),
-			new FirebirdConf(knownConfig)));
+			FB_NEW FirebirdConf(knownConfig)));
 		check(&status);
 
 		getPlugin();

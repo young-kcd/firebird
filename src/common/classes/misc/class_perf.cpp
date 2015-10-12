@@ -53,7 +53,7 @@ using namespace Firebird;
 static void testTree()
 {
 	printf("Fill array with test data (%d items)...", TEST_ITEMS);
-	Vector<int, TEST_ITEMS> *v = new Vector<int, TEST_ITEMS>();
+	Vector<int, TEST_ITEMS> *v = FB_NEW Vector<int, TEST_ITEMS>();
 	int n = 0;
 	int i;
 	for (i = 0; i < TEST_ITEMS; i++) {
@@ -281,7 +281,7 @@ static void testAllocatorMalloc()
 {
 	printf("Test run for old MemoryPool...\n");
 	start();
-	::MemoryPool *pool = new ::MemoryPool(0, getDefaultMemoryPool());
+	::MemoryPool *pool = FB_NEW ::MemoryPool(0, getDefaultMemoryPool());
 	MallocAllocator allocator;
 	BePlusTree<AllocItem, AllocItem, MallocAllocator, DefaultKeyValue<AllocItem>, AllocItem> items(&allocator),
 		bigItems(&allocator);

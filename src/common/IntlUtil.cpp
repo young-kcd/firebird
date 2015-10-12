@@ -464,7 +464,7 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 	memset(tt, 0, sizeof(*tt));
 
 	// name comes from stack. Copy it.
-	ASCII* nameCopy = new ASCII[strlen(name) + 1];
+	ASCII* nameCopy = FB_NEW ASCII[strlen(name) + 1];
 	strcpy(nameCopy, name);
 	tt->texttype_name = nameCopy;
 
@@ -533,7 +533,7 @@ bool IntlUtil::initUnicodeCollation(texttype* tt, charset* cs, const ASCII* name
 		return false;
 	}
 
-	tt->texttype_impl = new TextTypeImpl(cs, collation);
+	tt->texttype_impl = FB_NEW TextTypeImpl(cs, collation);
 
 	return true;
 }

@@ -904,7 +904,7 @@ static bool alloc_cstring(XDR* xdrs, CSTRING* cstring)
 	{
 		// fb_assert(!cstring->cstr_allocated);
 		try {
-			cstring->cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[cstring->cstr_length];
+			cstring->cstr_address = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[cstring->cstr_length];
 		}
 		catch (const BadAlloc&) {
 			return false;
@@ -1410,7 +1410,7 @@ static bool_t xdr_slice(XDR* xdrs, lstring* slice, /*USHORT sdl_length,*/ const 
 		if (!slice->lstr_address)
 		{
 			try {
-				slice->lstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[slice->lstr_length];
+				slice->lstr_address = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[slice->lstr_length];
 			}
 			catch (const BadAlloc&) {
 				return false;
@@ -1516,7 +1516,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 	else
 	{
 		if (!(statement = port->port_statement))
-			statement = port->port_statement = new Rsr;
+			statement = port->port_statement = FB_NEW Rsr;
 	}
 
 	if ((xdrs->x_op == XDR_ENCODE) && !direction)
@@ -1562,7 +1562,7 @@ static bool_t xdr_sql_blr(XDR* xdrs,
 		RMessage* const org_message = message;
 		const ULONG org_length = message ? statement->rsr_fmt_length : 0;
 		statement->rsr_fmt_length = statement->rsr_format->fmt_length;
-		statement->rsr_buffer = message = new RMessage(statement->rsr_fmt_length);
+		statement->rsr_buffer = message = FB_NEW RMessage(statement->rsr_fmt_length);
 		statement->rsr_message = message;
 		message->msg_next = message;
 		if (org_length)
@@ -1658,7 +1658,7 @@ static bool_t xdr_status_vector(XDR* xdrs, DynamicStatusVector*& vector)
 	}
 
 	if (!vector)
-		vector = FB_NEW(*getDefaultMemoryPool()) DynamicStatusVector();
+		vector = FB_NEW_POOL(*getDefaultMemoryPool()) DynamicStatusVector();
 
 	StaticStatusVector vectorDecode;
 	const ISC_STATUS* vectorEncode = vector->value();
@@ -1763,7 +1763,7 @@ static bool_t xdr_trrq_blr(XDR* xdrs, CSTRING* blr)
 	rem_port* port = (rem_port*) xdrs->x_public;
 	Rpr* procedure = port->port_rpr;
 	if (!procedure)
-		procedure = port->port_rpr = new Rpr;
+		procedure = port->port_rpr = FB_NEW Rpr;
 
 	// Parse the blr describing the message.
 

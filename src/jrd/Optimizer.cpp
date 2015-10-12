@@ -230,7 +230,7 @@ IndexScratch::IndexScratch(MemoryPool& p, thread_db* tdbb, index_desc* ix,
 
 	IndexScratchSegment** segment = segments.begin();
 	for (FB_SIZE_T i = 0; i < segments.getCount(); i++) {
-		segment[i] = FB_NEW(p) IndexScratchSegment(p);
+		segment[i] = FB_NEW_POOL(p) IndexScratchSegment(p);
 	}
 
 	const int length = ROUNDUP(BTR_key_length(tdbb, csb_tail->csb_relation, idx), sizeof(SLONG));
@@ -282,7 +282,7 @@ IndexScratch::IndexScratch(MemoryPool& p, const IndexScratch& scratch) :
 	IndexScratchSegment* const* scratchSegment = scratch.segments.begin();
 	IndexScratchSegment** segment = segments.begin();
 	for (FB_SIZE_T i = 0; i < segments.getCount(); i++) {
-		segment[i] = FB_NEW(p) IndexScratchSegment(p, scratchSegment[i]);
+		segment[i] = FB_NEW_POOL(p) IndexScratchSegment(p, scratchSegment[i]);
 	}
 }
 
@@ -421,7 +421,7 @@ InversionNode* OptimizerRetrieval::composeInversion(InversionNode* node1, Invers
 		}
 	}
 
-	return FB_NEW(pool) InversionNode(node_type, node1, node2);
+	return FB_NEW_POOL(pool) InversionNode(node_type, node1, node2);
 }
 
 const string& OptimizerRetrieval::getAlias()
@@ -536,7 +536,7 @@ InversionCandidate* OptimizerRetrieval::generateInversion()
 		// No index will be used, thus create a dummy inversion candidate
 		// representing the natural table access. All the necessary properties
 		// (selectivity: 1.0, cost: 0, unique: false) are set up by the constructor.
-		invCandidate = FB_NEW(pool) InversionCandidate(pool);
+		invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 	}
 
 	if (invCandidate->unique)
@@ -625,7 +625,7 @@ IndexTableScan* OptimizerRetrieval::getNavigation()
 
 	InversionNode* const index_node = makeIndexScanNode(navigationCandidate);
 
-	return FB_NEW(*tdbb->getDefaultPool())
+	return FB_NEW_POOL(*tdbb->getDefaultPool())
 		IndexTableScan(csb, getAlias(), stream, relation, index_node, key_length);
 }
 
@@ -982,7 +982,7 @@ void OptimizerRetrieval::getInversionCandidates(InversionCandidateList* inversio
 						selectivity = DEFAULT_SELECTIVITY;
 				}
 
-				InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+				InversionCandidate* invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 				invCandidate->unique = unique;
 				invCandidate->selectivity = selectivity;
 				// Calculate the cost (only index pages) for this index.
@@ -1083,7 +1083,7 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 		MET_lookup_index(tdbb, indexName, relation->rel_name, idx->idx_id + 1);
 
 	IndexRetrieval* const retrieval =
-		FB_NEW(pool) IndexRetrieval(pool, relation, idx, indexName);
+		FB_NEW_POOL(pool) IndexRetrieval(pool, relation, idx, indexName);
 
 	// Pick up lower bound segment values
 	ValueExprNode** lower = retrieval->irb_value;
@@ -1109,7 +1109,7 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	{
 		if (segment[i]->scanType == segmentScanMissing)
 		{
-			*lower++ = *upper++ = FB_NEW(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
+			*lower++ = *upper++ = FB_NEW_POOL(*tdbb->getDefaultPool()) NullNode(*tdbb->getDefaultPool());
 			ignoreNullsOnScan = false;
 		}
 		else
@@ -1181,7 +1181,7 @@ InversionNode* OptimizerRetrieval::makeIndexScanNode(IndexScratch* indexScratch)
 	idx->idx_runtime_flags |= idx_used;
 
 	const ULONG impure = csb ? CMP_impure(csb, sizeof(impure_inversion)) : 0;
-	return FB_NEW(pool) InversionNode(retrieval, impure);
+	return FB_NEW_POOL(pool) InversionNode(retrieval, impure);
 }
 
 InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* inversions) const
@@ -1276,7 +1276,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 					currentInv->scratch != navigationCandidate)
 				{
 					if (!invCandidate)
-						invCandidate = FB_NEW(pool) InversionCandidate(pool);
+						invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 
 					if (!currentInv->inversion && currentInv->scratch)
 						invCandidate->inversion = makeIndexScanNode(currentInv->scratch);
@@ -1501,7 +1501,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 
 				if (!invCandidate)
 				{
-					invCandidate = FB_NEW(pool) InversionCandidate(pool);
+					invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 					if (!bestCandidate->inversion && bestCandidate->scratch) {
 						invCandidate->inversion = makeIndexScanNode(bestCandidate->scratch);
 					}
@@ -1586,7 +1586,7 @@ InversionCandidate* OptimizerRetrieval::makeInversion(InversionCandidateList* in
 	if (navigationCandidate)
 	{
 		if (!invCandidate)
-			invCandidate = FB_NEW(pool) InversionCandidate(pool);
+			invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 
 		invCandidate->selectivity *= navigationCandidate->selectivity;
 		invCandidate->cost += DEFAULT_INDEX_COST +
@@ -1709,7 +1709,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 		if (desc1.dsc_dtype == dtype_int64)
 		{
-			CastNode* cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+			CastNode* cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 			cast->source = value;
 			cast->castDesc = desc1;
 			cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
@@ -1718,7 +1718,7 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 
 			if (value2)
 			{
-				cast = FB_NEW(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
+				cast = FB_NEW_POOL(*tdbb->getDefaultPool()) CastNode(*tdbb->getDefaultPool());
 				cast->source = value2;
 				cast->castDesc = desc1;
 				cast->impureOffset = CMP_impure(csb, sizeof(impure_value));
@@ -1806,17 +1806,17 @@ bool OptimizerRetrieval::matchBoolean(IndexScratch* indexScratch, BoolExprNode* 
 						// Let's make a compare with FALSE so we invert the value.
 
 						static const UCHAR falseValue = '\0';
-						LiteralNode* falseLiteral = FB_NEW(*tdbb->getDefaultPool())
+						LiteralNode* falseLiteral = FB_NEW_POOL(*tdbb->getDefaultPool())
 							LiteralNode(*tdbb->getDefaultPool());
 						falseLiteral->litDesc.makeBoolean(const_cast<UCHAR*>(&falseValue));
 
-						ComparativeBoolNode* newCmp = FB_NEW(*tdbb->getDefaultPool())
+						ComparativeBoolNode* newCmp = FB_NEW_POOL(*tdbb->getDefaultPool())
 							ComparativeBoolNode(*tdbb->getDefaultPool(), blr_eql);
 						newCmp->arg1 = value;
 						newCmp->arg2 = falseLiteral;
 
 						// Recreate the boolean expression as a value.
-						BoolAsValueNode* newValue = FB_NEW(*tdbb->getDefaultPool())
+						BoolAsValueNode* newValue = FB_NEW_POOL(*tdbb->getDefaultPool())
 							BoolAsValueNode(*tdbb->getDefaultPool());
 						newValue->boolean = newCmp;
 
@@ -2014,7 +2014,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	const double cardinality = csb->csb_rpt[stream].csb_cardinality;
 
-	InversionCandidate* const invCandidate = FB_NEW(pool) InversionCandidate(pool);
+	InversionCandidate* const invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 	invCandidate->unique = true;
 	invCandidate->selectivity = cardinality ? 1 / cardinality : DEFAULT_SELECTIVITY;
 	invCandidate->cost = 1;
@@ -2024,7 +2024,7 @@ InversionCandidate* OptimizerRetrieval::matchDbKey(BoolExprNode* boolean) const
 
 	if (createIndexScanNodes)
 	{
-		InversionNode* const inversion = FB_NEW(pool) InversionNode(value, n);
+		InversionNode* const inversion = FB_NEW_POOL(pool) InversionNode(value, n);
 		inversion->impure = CMP_impure(csb, sizeof(impure_inversion));
 		invCandidate->inversion = inversion;
 	}
@@ -2118,7 +2118,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 
 		if (invCandidate1 && invCandidate2)
 		{
-			InversionCandidate* invCandidate = FB_NEW(pool) InversionCandidate(pool);
+			InversionCandidate* invCandidate = FB_NEW_POOL(pool) InversionCandidate(pool);
 			invCandidate->inversion = composeInversion(invCandidate1->inversion,
 				invCandidate2->inversion, InversionNode::TYPE_OR);
 			invCandidate->selectivity = invCandidate1->selectivity + invCandidate2->selectivity -
@@ -2133,7 +2133,7 @@ InversionCandidate* OptimizerRetrieval::matchOnIndexes(
 			if (invCandidate1->condition && invCandidate2->condition)
 			{
 				BinaryBoolNode* const newNode =
-					FB_NEW(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
+					FB_NEW_POOL(*tdbb->getDefaultPool()) BinaryBoolNode(*tdbb->getDefaultPool(), blr_or);
 				newNode->arg1 = invCandidate1->condition;
 				newNode->arg2 = invCandidate2->condition;
 				invCandidate->condition = newNode;
@@ -2477,7 +2477,7 @@ OptimizerInnerJoin::OptimizerInnerJoin(MemoryPool& p, OptimizerBlk* opt, const S
 	InnerJoinStreamInfo** innerStream = innerStreams.begin();
 	for (FB_SIZE_T i = 0; i < innerStreams.getCount(); i++)
 	{
-		innerStream[i] = FB_NEW(p) InnerJoinStreamInfo(p);
+		innerStream[i] = FB_NEW_POOL(p) InnerJoinStreamInfo(p);
 		innerStream[i]->stream = streams[i];
 	}
 
@@ -2936,7 +2936,7 @@ void OptimizerInnerJoin::getIndexedRelationship(InnerJoinStreamInfo* baseStream,
 		// If we could use more conjunctions on the testing stream
 		// with the base stream active as without the base stream
 		// then the test stream has a indexed relationship with the base stream.
-		IndexRelationship* indexRelationship = FB_NEW(pool) IndexRelationship();
+		IndexRelationship* indexRelationship = FB_NEW_POOL(pool) IndexRelationship();
 		indexRelationship->stream = testStream->stream;
 		indexRelationship->unique = candidate->unique;
 		indexRelationship->cost = candidate->cost;

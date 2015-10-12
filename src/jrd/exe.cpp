@@ -1079,7 +1079,7 @@ void EXE_execute_triggers(thread_db* tdbb,
 		fb_assert(record && record->getFormat());
 		// copy the record
 		MemoryPool& pool = *tdbb->getDefaultPool();
-		null_rec = FB_NEW(pool) Record(pool, record->getFormat());
+		null_rec = FB_NEW_POOL(pool) Record(pool, record->getFormat());
 		// initialize all fields to missing
 		null_rec->nullify();
 	}

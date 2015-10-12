@@ -73,7 +73,7 @@ unsigned makeDynamicStrings(unsigned length, ISC_STATUS* const dst, const ISC_ST
 		}
 	}
 
-	char* string = len ? FB_NEW(*getDefaultMemoryPool()) char[len] : NULL;
+	char* string = len ? FB_NEW_POOL(*getDefaultMemoryPool()) char[len] : NULL;
 	ISC_STATUS* to = dst;
 
 	// copy status vector saving strings in local buffer

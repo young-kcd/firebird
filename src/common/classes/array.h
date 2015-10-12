@@ -461,11 +461,7 @@ protected:
 			fb_assert(newcapacity < FB_MAX_SIZEOF / sizeof(T));
 
 			T* newdata = static_cast<T*>
-				(this->getPool().allocate(sizeof(T) * newcapacity
-#ifdef DEBUG_GDS_ALLOC
-					, __FILE__, __LINE__
-#endif
-						));
+				(this->getPool().allocate(sizeof(T) * newcapacity ALLOC_ARGS));
 			if (preserve)
 				memcpy(newdata, data, sizeof(T) * count);
 			freeData();

@@ -96,7 +96,7 @@ void status_exception::set_status(const ISC_STATUS *new_vector) throw()
 	{
 		if (len >= FB_NELEM(m_buffer))
 		{
-			m_status_vector = FB_NEW(*getDefaultMemoryPool()) ISC_STATUS[len + 1];
+			m_status_vector = FB_NEW_POOL(*getDefaultMemoryPool()) ISC_STATUS[len + 1];
 		}
 		len = makeDynamicStrings(len, m_status_vector, new_vector);
 		m_status_vector[len] = isc_arg_end;

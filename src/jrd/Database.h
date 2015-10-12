@@ -92,12 +92,12 @@ public:
 	/*
 	static vec_base* newVector(MemoryPool& p, int len)
 	{
-		return FB_NEW(p) vec_base<T, TYPE>(p, len);
+		return FB_NEW_POOL(p) vec_base<T, TYPE>(p, len);
 	}
 
 	static vec_base* newVector(MemoryPool& p, const vec_base& base)
 	{
-		return FB_NEW(p) vec_base<T, TYPE>(p, base);
+		return FB_NEW_POOL(p) vec_base<T, TYPE>(p, base);
 	}
 	*/
 
@@ -142,18 +142,18 @@ class vec : public vec_base<T, type_vec>
 public:
 	static vec* newVector(MemoryPool& p, int len)
 	{
-		return FB_NEW(p) vec<T>(p, len);
+		return FB_NEW_POOL(p) vec<T>(p, len);
 	}
 
 	static vec* newVector(MemoryPool& p, const vec& base)
 	{
-		return FB_NEW(p) vec<T>(p, base);
+		return FB_NEW_POOL(p) vec<T>(p, base);
 	}
 
 	static vec* newVector(MemoryPool& p, vec* base, int len)
 	{
 		if (!base)
-			base = FB_NEW(p) vec<T>(p, len);
+			base = FB_NEW_POOL(p) vec<T>(p, len);
 		else if (len > (int) base->count())
 			base->resize(len);
 		return base;
@@ -169,18 +169,18 @@ class vcl : public vec_base<ULONG, type_vcl>
 public:
 	static vcl* newVector(MemoryPool& p, int len)
 	{
-		return FB_NEW(p) vcl(p, len);
+		return FB_NEW_POOL(p) vcl(p, len);
 	}
 
 	static vcl* newVector(MemoryPool& p, const vcl& base)
 	{
-		return FB_NEW(p) vcl(p, base);
+		return FB_NEW_POOL(p) vcl(p, base);
 	}
 
 	static vcl* newVector(MemoryPool& p, vcl* base, int len)
 	{
 		if (!base)
-			base = FB_NEW(p) vcl(p, len);
+			base = FB_NEW_POOL(p) vcl(p, len);
 		else if (len > (int) base->count())
 			base->resize(len);
 		return base;
@@ -335,7 +335,7 @@ public:
 	{
 		Firebird::MemoryStats temp_stats;
 		MemoryPool* const pool = MemoryPool::createPool(NULL, temp_stats);
-		Database* const dbb = FB_NEW(*pool) Database(pool, pConf, shared);
+		Database* const dbb = FB_NEW_POOL(*pool) Database(pool, pConf, shared);
 		pool->setStatsGroup(dbb->dbb_memory_stats);
 		dbb->dbb_provider = provider;
 		return dbb;
@@ -520,7 +520,7 @@ private:
 		dbb_creation_date(Firebird::TimeStamp::getCurrentTimeStamp()),
 		dbb_external_file_directory_list(NULL),
 		dbb_shared_counter(shared),
-		dbb_init_fini(FB_NEW(*getDefaultMemoryPool()) ExistenceRefMutex()),
+		dbb_init_fini(FB_NEW_POOL(*getDefaultMemoryPool()) ExistenceRefMutex()),
 		dbb_linger_seconds(0),
 		dbb_linger_end(0),
 		dbb_plugin_config(pConf)

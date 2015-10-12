@@ -674,13 +674,13 @@ protected:
 	template <typename T>
 	void addDsqlChildNode(NestConst<T>& dsqlNode)
 	{
-		dsqlChildNodes.add(FB_NEW(getPool()) NodeRefImpl<T>(dsqlNode.getAddress()));
+		dsqlChildNodes.add(FB_NEW_POOL(getPool()) NodeRefImpl<T>(dsqlNode.getAddress()));
 	}
 
 	template <typename T>
 	void addChildNode(NestConst<T>& jrdNode)
 	{
-		jrdChildNodes.add(FB_NEW(getPool()) NodeRefImpl<T>(jrdNode.getAddress()));
+		jrdChildNodes.add(FB_NEW_POOL(getPool()) NodeRefImpl<T>(jrdNode.getAddress()));
 	}
 
 public:
@@ -873,7 +873,7 @@ public:
 
 		AggNode* newInstance(MemoryPool& pool) const
 		{
-			return new T(pool);
+			return FB_NEW T(pool);
 		}
 	};
 
@@ -889,7 +889,7 @@ public:
 
 		AggNode* newInstance(MemoryPool& pool) const
 		{
-			return new T(pool, type);
+			return FB_NEW T(pool, type);
 		}
 
 	public:
@@ -1183,7 +1183,7 @@ public:
 
 	virtual ValueListNode* dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	{
-		ValueListNode* node = FB_NEW(getPool()) ValueListNode(getPool(), items.getCount());
+		ValueListNode* node = FB_NEW_POOL(getPool()) ValueListNode(getPool(), items.getCount());
 
 		NestConst<ValueExprNode>* dst = node->items.begin();
 
@@ -1213,7 +1213,7 @@ public:
 
 	virtual ValueListNode* copy(thread_db* tdbb, NodeCopier& copier) const
 	{
-		ValueListNode* node = FB_NEW(*tdbb->getDefaultPool()) ValueListNode(*tdbb->getDefaultPool(),
+		ValueListNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) ValueListNode(*tdbb->getDefaultPool(),
 			items.getCount());
 
 		NestConst<ValueExprNode>* j = node->items.begin();

@@ -150,7 +150,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 				status_exception::raise(Arg::Gds(isc_req_max_clones_exceeded));
 
 			// Save where we are
-			UCHAR* const tmp = FB_NEW(*tdbb->getDefaultPool()) UCHAR[m_saveSize + rpbsSize];
+			UCHAR* const tmp = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[m_saveSize + rpbsSize];
 			memcpy(tmp, saveImpure, m_saveSize);
 
 			UCHAR* p = tmp + m_saveSize;
@@ -167,7 +167,7 @@ bool RecursiveStream::getRecord(thread_db* tdbb) const
 			}
 			impure->irsb_stack = tmp;
 
-			impure->irsb_data = FB_NEW(*request->req_pool) UCHAR[record->getLength()];
+			impure->irsb_data = FB_NEW_POOL(*request->req_pool) UCHAR[record->getLength()];
 			record->copyDataTo(impure->irsb_data);
 
 			const Impure r = *impure;

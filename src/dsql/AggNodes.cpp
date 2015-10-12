@@ -355,7 +355,7 @@ void AggNode::aggInit(thread_db* tdbb, jrd_req* request) const
 		delete asbImpure->iasb_sort;
 		asbImpure->iasb_sort = NULL;
 
-		asbImpure->iasb_sort = FB_NEW(request->req_sorts.getPool()) Sort(
+		asbImpure->iasb_sort = FB_NEW_POOL(request->req_sorts.getPool()) Sort(
 			tdbb->getDatabase(), &request->req_sorts, asb->length,
 			asb->keyItems.getCount(), 1, asb->keyItems.begin(),
 			RecordSource::rejectDuplicate, 0);
@@ -486,7 +486,7 @@ AvgAggNode::AvgAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueEx
 
 DmlNode* AvgAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
-	AvgAggNode* node = FB_NEW(pool) AvgAggNode(pool,
+	AvgAggNode* node = FB_NEW_POOL(pool) AvgAggNode(pool,
 		(blrOp == blr_agg_average_distinct),
 		(csb->blrVersion == 4));
 	node->arg = PAR_parse_value(tdbb, csb);
@@ -597,7 +597,7 @@ void AvgAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* AvgAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	AvgAggNode* node = FB_NEW(*tdbb->getDefaultPool()) AvgAggNode(*tdbb->getDefaultPool(),
+	AvgAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) AvgAggNode(*tdbb->getDefaultPool(),
 		distinct, dialect1);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
@@ -691,7 +691,7 @@ dsc* AvgAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* AvgAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) AvgAggNode(getPool(), distinct, dialect1,
+	return FB_NEW_POOL(getPool()) AvgAggNode(getPool(), distinct, dialect1,
 		doDsqlPass(dsqlScratch, arg));
 }
 
@@ -711,7 +711,7 @@ ListAggNode::ListAggNode(MemoryPool& pool, bool aDistinct, ValueExprNode* aArg,
 
 DmlNode* ListAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
-	ListAggNode* node = FB_NEW(pool) ListAggNode(pool,
+	ListAggNode* node = FB_NEW_POOL(pool) ListAggNode(pool,
 		(blrOp == blr_agg_list_distinct));
 	node->arg = PAR_parse_value(tdbb, csb);
 	node->delimiter = PAR_parse_value(tdbb, csb);
@@ -740,7 +740,7 @@ void ListAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* ListAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	ListAggNode* node = FB_NEW(*tdbb->getDefaultPool()) ListAggNode(*tdbb->getDefaultPool(),
+	ListAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) ListAggNode(*tdbb->getDefaultPool(),
 		distinct);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
@@ -827,7 +827,7 @@ dsc* ListAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* ListAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) ListAggNode(getPool(), distinct,
+	return FB_NEW_POOL(getPool()) ListAggNode(getPool(), distinct,
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, delimiter));
 }
 
@@ -846,7 +846,7 @@ CountAggNode::CountAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, Val
 
 DmlNode* CountAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
-	CountAggNode* node = FB_NEW(pool) CountAggNode(pool,
+	CountAggNode* node = FB_NEW_POOL(pool) CountAggNode(pool,
 		(blrOp == blr_agg_count_distinct),
 		(csb->blrVersion == 4));
 
@@ -882,7 +882,7 @@ void CountAggNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* d
 
 ValueExprNode* CountAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	CountAggNode* node = FB_NEW(*tdbb->getDefaultPool()) CountAggNode(*tdbb->getDefaultPool(),
+	CountAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) CountAggNode(*tdbb->getDefaultPool(),
 		distinct, dialect1);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
@@ -925,7 +925,7 @@ dsc* CountAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 
 AggNode* CountAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) CountAggNode(getPool(), distinct, dialect1,
+	return FB_NEW_POOL(getPool()) CountAggNode(getPool(), distinct, dialect1,
 		doDsqlPass(dsqlScratch, arg));
 }
 
@@ -943,7 +943,7 @@ SumAggNode::SumAggNode(MemoryPool& pool, bool aDistinct, bool aDialect1, ValueEx
 
 DmlNode* SumAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
-	SumAggNode* node = FB_NEW(pool) SumAggNode(pool, (blrOp == blr_agg_total_distinct),
+	SumAggNode* node = FB_NEW_POOL(pool) SumAggNode(pool, (blrOp == blr_agg_total_distinct),
 		(csb->blrVersion == 4));
 
 	node->arg = PAR_parse_value(tdbb, csb);
@@ -1110,7 +1110,7 @@ void SumAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* SumAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	SumAggNode* node = FB_NEW(*tdbb->getDefaultPool()) SumAggNode(*tdbb->getDefaultPool(),
+	SumAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) SumAggNode(*tdbb->getDefaultPool(),
 		distinct, dialect1);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
@@ -1162,7 +1162,7 @@ dsc* SumAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 
 AggNode* SumAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) SumAggNode(getPool(), distinct, dialect1,
+	return FB_NEW_POOL(getPool()) SumAggNode(getPool(), distinct, dialect1,
 		doDsqlPass(dsqlScratch, arg));
 }
 
@@ -1181,7 +1181,7 @@ MaxMinAggNode::MaxMinAggNode(MemoryPool& pool, MaxMinType aType, ValueExprNode* 
 
 DmlNode* MaxMinAggNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, const UCHAR blrOp)
 {
-	MaxMinAggNode* node = FB_NEW(pool) MaxMinAggNode(pool,
+	MaxMinAggNode* node = FB_NEW_POOL(pool) MaxMinAggNode(pool,
 		(blrOp == blr_agg_max ? TYPE_MAX : TYPE_MIN));
 	node->arg = PAR_parse_value(tdbb, csb);
 	return node;
@@ -1200,7 +1200,7 @@ void MaxMinAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* MaxMinAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	MaxMinAggNode* node = FB_NEW(*tdbb->getDefaultPool()) MaxMinAggNode(*tdbb->getDefaultPool(),
+	MaxMinAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) MaxMinAggNode(*tdbb->getDefaultPool(),
 		type);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
@@ -1253,7 +1253,7 @@ dsc* MaxMinAggNode::aggExecute(thread_db* /*tdbb*/, jrd_req* request) const
 
 AggNode* MaxMinAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) MaxMinAggNode(getPool(), type, doDsqlPass(dsqlScratch, arg));
+	return FB_NEW_POOL(getPool()) MaxMinAggNode(getPool(), type, doDsqlPass(dsqlScratch, arg));
 }
 
 
@@ -1305,7 +1305,7 @@ void StdDevAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* StdDevAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	StdDevAggNode* node = FB_NEW(*tdbb->getDefaultPool()) StdDevAggNode(*tdbb->getDefaultPool(), type);
+	StdDevAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) StdDevAggNode(*tdbb->getDefaultPool(), type);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	return node;
@@ -1386,7 +1386,7 @@ dsc* StdDevAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* StdDevAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) StdDevAggNode(getPool(), type, doDsqlPass(dsqlScratch, arg));
+	return FB_NEW_POOL(getPool()) StdDevAggNode(getPool(), type, doDsqlPass(dsqlScratch, arg));
 }
 
 
@@ -1438,7 +1438,7 @@ void CorrAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* CorrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	CorrAggNode* node = FB_NEW(*tdbb->getDefaultPool()) CorrAggNode(*tdbb->getDefaultPool(), type);
+	CorrAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) CorrAggNode(*tdbb->getDefaultPool(), type);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	node->arg2 = copier.copy(tdbb, arg2);
@@ -1552,7 +1552,7 @@ dsc* CorrAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* CorrAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) CorrAggNode(getPool(), type,
+	return FB_NEW_POOL(getPool()) CorrAggNode(getPool(), type,
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, arg2));
 }
 
@@ -1620,7 +1620,7 @@ void RegrAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* RegrAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	RegrAggNode* node = FB_NEW(*tdbb->getDefaultPool()) RegrAggNode(*tdbb->getDefaultPool(), type);
+	RegrAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) RegrAggNode(*tdbb->getDefaultPool(), type);
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	node->arg2 = copier.copy(tdbb, arg2);
@@ -1759,7 +1759,7 @@ dsc* RegrAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* RegrAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) RegrAggNode(getPool(), type,
+	return FB_NEW_POOL(getPool()) RegrAggNode(getPool(), type,
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, arg2));
 }
 
@@ -1794,7 +1794,7 @@ void RegrCountAggNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 
 ValueExprNode* RegrCountAggNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	RegrCountAggNode* node = FB_NEW(*tdbb->getDefaultPool()) RegrCountAggNode(*tdbb->getDefaultPool());
+	RegrCountAggNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) RegrCountAggNode(*tdbb->getDefaultPool());
 	node->nodScale = nodScale;
 	node->arg = copier.copy(tdbb, arg);
 	node->arg2 = copier.copy(tdbb, arg2);
@@ -1851,7 +1851,7 @@ dsc* RegrCountAggNode::aggExecute(thread_db* tdbb, jrd_req* request) const
 
 AggNode* RegrCountAggNode::dsqlCopy(DsqlCompilerScratch* dsqlScratch) /*const*/
 {
-	return FB_NEW(getPool()) RegrCountAggNode(getPool(),
+	return FB_NEW_POOL(getPool()) RegrCountAggNode(getPool(),
 		doDsqlPass(dsqlScratch, arg), doDsqlPass(dsqlScratch, arg2));
 }
 

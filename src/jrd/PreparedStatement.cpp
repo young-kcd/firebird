@@ -237,8 +237,8 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 	  builder(NULL),
 	  inValues(pool),
 	  outValues(pool),
-	  inMetadata(new Firebird::MsgMetadata),
-	  outMetadata(new Firebird::MsgMetadata),
+	  inMetadata(FB_NEW Firebird::MsgMetadata),
+	  outMetadata(FB_NEW Firebird::MsgMetadata),
 	  inMessage(pool),
 	  outMessage(pool),
 	  resultSet(NULL)
@@ -254,8 +254,8 @@ PreparedStatement::PreparedStatement(thread_db* tdbb, MemoryPool& pool,
 	  builder(&aBuilder),
 	  inValues(pool),
 	  outValues(pool),
-	  inMetadata(new Firebird::MsgMetadata),
-	  outMetadata(new Firebird::MsgMetadata),
+	  inMetadata(FB_NEW Firebird::MsgMetadata),
+	  outMetadata(FB_NEW Firebird::MsgMetadata),
 	  inMessage(pool),
 	  outMessage(pool),
 	  resultSet(NULL)
@@ -359,7 +359,7 @@ ResultSet* PreparedStatement::executeQuery(thread_db* tdbb, jrd_tra* transaction
 	if (builder)
 		builder->moveToStatement(tdbb, this);
 
-	return FB_NEW(getPool()) ResultSet(tdbb, this, transaction);
+	return FB_NEW_POOL(getPool()) ResultSet(tdbb, this, transaction);
 }
 
 

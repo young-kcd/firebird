@@ -57,7 +57,7 @@ Jrd::Attachment* Jrd::Attachment::create(Database* dbb)
 
 	try
 	{
-		Attachment* const attachment = FB_NEW(*pool) Attachment(pool, dbb);
+		Attachment* const attachment = FB_NEW_POOL(*pool) Attachment(pool, dbb);
 		pool->setStatsGroup(attachment->att_memory_stats);
 		return attachment;
 	}
@@ -194,7 +194,7 @@ Jrd::Attachment::Attachment(MemoryPool* pool, Database* dbb)
 	  att_udf_pointers(*pool),
 	  att_ext_connection(NULL),
 	  att_ext_call_depth(0),
-	  att_trace_manager(FB_NEW(*att_pool) TraceManager(this)),
+	  att_trace_manager(FB_NEW_POOL(*att_pool) TraceManager(this)),
 	  att_utility(UTIL_NONE),
 	  att_procedures(*pool),
 	  att_functions(*pool),
@@ -230,7 +230,7 @@ Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, jrd_t
 	const string& text, Firebird::MemoryPool* pool)
 {
 	pool = pool ? pool : tdbb->getDefaultPool();
-	return FB_NEW(*pool) PreparedStatement(tdbb, *pool, this, transaction, text, true);
+	return FB_NEW_POOL(*pool) PreparedStatement(tdbb, *pool, this, transaction, text, true);
 }
 
 
@@ -238,7 +238,7 @@ Jrd::PreparedStatement* Jrd::Attachment::prepareStatement(thread_db* tdbb, jrd_t
 	const PreparedStatement::Builder& builder, Firebird::MemoryPool* pool)
 {
 	pool = pool ? pool : tdbb->getDefaultPool();
-	return FB_NEW(*pool) PreparedStatement(tdbb, *pool, this, transaction, builder, true);
+	return FB_NEW_POOL(*pool) PreparedStatement(tdbb, *pool, this, transaction, builder, true);
 }
 
 
@@ -246,7 +246,7 @@ PreparedStatement* Jrd::Attachment::prepareUserStatement(thread_db* tdbb, jrd_tr
 	const string& text, Firebird::MemoryPool* pool)
 {
 	pool = pool ? pool : tdbb->getDefaultPool();
-	return FB_NEW(*pool) PreparedStatement(tdbb, *pool, this, transaction, text, false);
+	return FB_NEW_POOL(*pool) PreparedStatement(tdbb, *pool, this, transaction, text, false);
 }
 
 

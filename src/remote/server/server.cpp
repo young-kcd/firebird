@@ -303,7 +303,7 @@ public:
 	{
 		if (!authPort->port_srv_auth_block)
 		{
-			authPort->port_srv_auth_block = new SrvAuthBlock(authPort);
+			authPort->port_srv_auth_block = FB_NEW SrvAuthBlock(authPort);
 		}
 
 		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: ServerAuth()\n"));
@@ -1229,7 +1229,7 @@ static server_req_t* alloc_request()
 		{
 			try
 			{
-				request = new server_req_t;
+				request = FB_NEW server_req_t;
 				break;
 			}
 			catch (const BadAlloc&)
@@ -1737,7 +1737,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 		HANDSHAKE_DEBUG(fprintf(stderr, "accepted && wireEncryption\n"));
 		if (version >= PROTOCOL_VERSION13)
 		{
-			ConnectAuth* cnctAuth = new ConnectAuth(port, id);
+			ConnectAuth* cnctAuth = FB_NEW ConnectAuth(port, id);
 			port->port_srv_auth = cnctAuth;
 			if (port->port_srv_auth->authenticate(send, ServerAuth::USE_COND_ACCEPT))
 			{
@@ -1763,7 +1763,7 @@ static bool accept_connection(rem_port* port, P_CNCT* connect, PACKET* send)
 	if (accepted && version >= PROTOCOL_VERSION13)
 	{
 		HANDSHAKE_DEBUG(fprintf(stderr, "Srv: accept_connection: creates port_srv_auth_block\n"));
-		port->port_srv_auth_block = new SrvAuthBlock(port);
+		port->port_srv_auth_block = FB_NEW SrvAuthBlock(port);
 
 		HANDSHAKE_DEBUG(fprintf(stderr,
 			"Srv: accept_connection: is going to load data to port_srv_auth_block\n"));
@@ -1941,7 +1941,7 @@ static ISC_STATUS allocate_statement( rem_port* port, /*P_RLSE* allocate,*/ PACK
 	OBJCT object = 0;
 	// Allocate SQL request block
 
-	Rsr* statement = new Rsr;
+	Rsr* statement = FB_NEW Rsr;
 	statement->rsr_rdb = rdb;
 	statement->rsr_iface = NULL;
 
@@ -2133,11 +2133,11 @@ static void attach_database(rem_port* port, P_OP operation, P_ATCH* attach, PACK
 		Arg::Gds(isc_miss_wirecrypt).raise();
 	}
 
-	ClumpletWriter* wrt = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+	ClumpletWriter* wrt = FB_NEW_POOL(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
 		ClumpletReader::dpbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address,
 		attach->p_atch_dpb.cstr_length);
 
-	port->port_srv_auth = new DatabaseAuth(port, PathName(attach->p_atch_file.cstr_address,
+	port->port_srv_auth = FB_NEW DatabaseAuth(port, PathName(attach->p_atch_file.cstr_address,
 		attach->p_atch_file.cstr_length), wrt, operation);
 
 	if (port->port_srv_auth->authenticate(send))
@@ -2194,7 +2194,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 
 	if (!authPort->port_server_crypt_callback)
 	{
-		authPort->port_server_crypt_callback = new ServerCallback(authPort);
+		authPort->port_server_crypt_callback = FB_NEW ServerCallback(authPort);
 	}
 
 	LocalStatus ls;
@@ -2209,7 +2209,7 @@ void DatabaseAuth::accept(PACKET* send, Auth::WriterImplementation* authBlock)
 
 		if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
 		{
-			Rdb* rdb = new Rdb;
+			Rdb* rdb = FB_NEW Rdb;
 
 			authPort->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
@@ -2521,7 +2521,7 @@ ISC_STATUS rem_port::compile(P_CMPL* compileL, PACKET* sendL)
 
 	// Allocate block and merge into data structures
 
-	Rrq* requestL = new Rrq(max_msg + 1);
+	Rrq* requestL = FB_NEW Rrq(max_msg + 1);
 #ifdef DEBUG_REMOTE_MEMORY
 	printf("compile(server)           allocate request %x\n", request);
 #endif
@@ -3457,7 +3457,7 @@ ISC_STATUS rem_port::fetch(P_SQLDATA * sqldata, PACKET* sendL)
 				while (next->msg_next != message)
 					next = next->msg_next;
 			}
-			message = new RMessage(statement->rsr_fmt_length);
+			message = FB_NEW RMessage(statement->rsr_fmt_length);
 			message->msg_number = next->msg_number;
 			message->msg_next = next->msg_next;
 			next->msg_next = message;
@@ -3833,7 +3833,7 @@ static Rtr* make_transaction (Rdb* rdb, ITransaction* iface)
  *	Create a local transaction iface.
  *
  **************************************/
-	Rtr* transaction = new Rtr;
+	Rtr* transaction = FB_NEW Rtr;
 	transaction->rtr_rdb = rdb;
 	transaction->rtr_iface = iface;
 	if (transaction->rtr_id = rdb->rdb_port->get_id(transaction))
@@ -3916,7 +3916,7 @@ ISC_STATUS rem_port::open_blob(P_OP op, P_BLOB* stuff, PACKET* sendL)
 	USHORT object = 0;
 	if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
 	{
-		Rbl* blob = new Rbl;
+		Rbl* blob = FB_NEW Rbl;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("open_blob(server)         allocate blob    %x\n", blob);
 #endif
@@ -4588,13 +4588,13 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 
 	if (!event)
 	{
-		event = new Rvnt;
+		event = FB_NEW Rvnt;
 #ifdef DEBUG_REMOTE_MEMORY
 		printf("que_events(server)        allocate event   %x\n", event);
 #endif
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
-		event->rvnt_callback = new Callback(event);
+		event->rvnt_callback = FB_NEW Callback(event);
 	}
 
 	event->rvnt_id = stuff->p_event_rid;
@@ -4638,7 +4638,7 @@ ISC_STATUS rem_port::receive_after_start(P_DATA* data, PACKET* sendL, IStatus* s
 	response->p_resp_data.cstr_length = 0;
 
 	if (!sendL->p_resp.p_resp_status_vector)
-		sendL->p_resp.p_resp_status_vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
+		sendL->p_resp.p_resp_status_vector = FB_NEW_POOL(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
 
 	sendL->p_resp.p_resp_status_vector->load(status_vector);
 
@@ -4789,7 +4789,7 @@ ISC_STATUS rem_port::receive_msg(P_DATA * data, PACKET* sendL)
 
 			// allocate a new message block and put it in the cache
 
-			message = new RMessage(format->fmt_length);
+			message = FB_NEW RMessage(format->fmt_length);
 #ifdef DEBUG_REMOTE_MEMORY
 			printf("receive_msg(server)       allocate message %x\n", message);
 #endif
@@ -5173,7 +5173,7 @@ ISC_STATUS rem_port::send_response(	PACKET*	sendL,
 	// of the response packet may contain valid data.  Don't trash them.
 
 	if (!response->p_resp_status_vector)
-		response->p_resp_status_vector = FB_NEW(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
+		response->p_resp_status_vector = FB_NEW_POOL(*getDefaultMemoryPool()) Firebird::DynamicStatusVector();
 
 	response->p_resp_status_vector->save(new_vector.begin());
 
@@ -5231,9 +5231,9 @@ static void attach_service(rem_port* port, P_ATCH* attach, PACKET* sendL)
 
 	PathName manager(attach->p_atch_file.cstr_address, attach->p_atch_file.cstr_length);
 
-	ClumpletWriter* wrt = FB_NEW(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
+	ClumpletWriter* wrt = FB_NEW_POOL(*getDefaultMemoryPool()) ClumpletWriter(*getDefaultMemoryPool(),
 		ClumpletReader::spbList, MAX_DPB_SIZE, attach->p_atch_dpb.cstr_address, attach->p_atch_dpb.cstr_length);
-	port->port_srv_auth = new ServiceAttachAuth(port,
+	port->port_srv_auth = FB_NEW ServiceAttachAuth(port,
 		PathName(attach->p_atch_file.cstr_address, attach->p_atch_file.cstr_length), wrt);
 
 	if (port->port_srv_auth->authenticate(sendL))
@@ -5300,7 +5300,7 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 
 	if (!port_server_crypt_callback)
 	{
-		port_server_crypt_callback = new ServerCallback(this);
+		port_server_crypt_callback = FB_NEW ServerCallback(this);
 	}
 
 	DispatcherPtr provider;
@@ -5316,14 +5316,14 @@ ISC_STATUS rem_port::service_attach(const char* service_name,
 
 		if (!(status_vector.getState() & Firebird::IStatus::STATE_ERRORS))
 		{
-			Rdb* rdb = new Rdb;
+			Rdb* rdb = FB_NEW Rdb;
 
 			this->port_context = rdb;
 #ifdef DEBUG_REMOTE_MEMORY
 			printf("attach_service(server)  allocate rdb     %x\n", rdb);
 #endif
 			rdb->rdb_port = this;
-			Svc* svc = rdb->rdb_svc = new Svc;
+			Svc* svc = rdb->rdb_svc = FB_NEW Svc;
 			svc->svc_iface = iface;
 		}
 	}
@@ -5534,7 +5534,7 @@ void set_server(rem_port* port, USHORT flags)
 
 	if (!server)
 	{
-		servers = server = new srvr(servers, port, flags);
+		servers = server = FB_NEW srvr(servers, port, flags);
 		fb_shutdown_callback(0, shut_server, fb_shut_postproviders, 0);
 	}
 
@@ -6417,7 +6417,7 @@ void SrvAuthBlock::createPluginsItr()
 	REMOTE_makeList(pluginList, final);
 
 	RefPtr<Config> portConf(port->getPortConfig());
-	plugins = new AuthServerPlugins(IPluginManager::TYPE_AUTH_SERVER, portConf, pluginList.c_str());
+	plugins = FB_NEW AuthServerPlugins(IPluginManager::TYPE_AUTH_SERVER, portConf, pluginList.c_str());
 }
 
 void SrvAuthBlock::reset()

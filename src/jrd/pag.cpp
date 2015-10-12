@@ -2235,7 +2235,7 @@ PageSpace* PageManager::addPageSpace(const USHORT pageSpaceID)
 	PageSpace* newPageSpace = findPageSpace(pageSpaceID);
 	if (!newPageSpace)
 	{
-		newPageSpace = FB_NEW(pool) PageSpace(dbb, pageSpaceID);
+		newPageSpace = FB_NEW_POOL(pool) PageSpace(dbb, pageSpaceID);
 		pageSpaces.add(newPageSpace);
 	}
 

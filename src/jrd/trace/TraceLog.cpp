@@ -62,7 +62,7 @@ TraceLog::TraceLog(MemoryPool& pool, const PathName& fileName, bool reader) :
 
 	try
 	{
-		m_sharedMemory.reset(FB_NEW(pool)
+		m_sharedMemory.reset(FB_NEW_POOL(pool)
 			SharedMemory<TraceLogHeader>(fileName.c_str(), sizeof(TraceLogHeader), this));
 	}
 	catch (const Exception& ex)

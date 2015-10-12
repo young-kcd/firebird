@@ -810,7 +810,7 @@ bool LC_NARROW_family2(
 	if (attributes & ~TEXTTYPE_ATTR_PAD_SPACE)
 		return false;
 
-	TextTypeImpl* impl = FB_NEW(*getDefaultMemoryPool()) TextTypeImpl;
+	TextTypeImpl* impl = FB_NEW_POOL(*getDefaultMemoryPool()) TextTypeImpl;
 
 	tt->texttype_version			= TEXTTYPE_VERSION_1;
 	tt->texttype_name				= name;

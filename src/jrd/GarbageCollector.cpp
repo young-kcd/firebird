@@ -207,7 +207,7 @@ GarbageCollector::RelationData* GarbageCollector::getRelData(Sync &sync, const U
 		sync.lock(SYNC_EXCLUSIVE);
 		if (!m_relations.find(relID, pos))
 		{
-			m_relations.insert(pos, FB_NEW(m_pool) RelationData(m_pool, relID));
+			m_relations.insert(pos, FB_NEW_POOL(m_pool) RelationData(m_pool, relID));
 		}
 		sync.downgrade(SYNC_SHARED);
 	}

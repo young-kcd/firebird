@@ -664,7 +664,7 @@ void ConfigFile::parse(Stream* stream)
 					break;
 				}
 
-				previous->sub = FB_NEW(getPool())
+				previous->sub = FB_NEW_POOL(getPool())
 					ConfigFile(getPool(), &subStream, flags & ~HAS_SUB_CONF);
 			}
 			break;

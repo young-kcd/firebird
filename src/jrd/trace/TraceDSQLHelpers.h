@@ -135,7 +135,7 @@ public:
 		if (jrd_request)
 		{
 			MemoryPool* pool = MemoryPool::getContextPool();
-			m_request->req_fetch_baseline = FB_NEW(*pool) RuntimeStatistics(*pool, jrd_request->req_stats);
+			m_request->req_fetch_baseline = FB_NEW_POOL(*pool) RuntimeStatistics(*pool, jrd_request->req_stats);
 		}
 	}
 

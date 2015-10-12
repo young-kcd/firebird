@@ -678,22 +678,14 @@ private:
 // duplicate context of firebird string
 inline char* stringDup(MemoryPool& p, const Firebird::string& s)
 {
-	char* rc = (char*) p.allocate(s.length() + 1
-#ifdef DEBUG_GDS_ALLOC
-		, __FILE__, __LINE__
-#endif
-		);
+	char* rc = (char*) p.allocate(s.length() + 1 ALLOC_ARGS);
 	strcpy(rc, s.c_str());
 	return rc;
 }
 
 inline char* stringDup(MemoryPool& p, const char* s, size_t l)
 {
-	char* rc = (char*) p.allocate(l + 1
-#ifdef DEBUG_GDS_ALLOC
-		, __FILE__, __LINE__
-#endif
-		);
+	char* rc = (char*) p.allocate(l + 1 ALLOC_ARGS);
 	memcpy(rc, s, l);
 	rc[l] = 0;
 	return rc;

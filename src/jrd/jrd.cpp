@@ -399,7 +399,7 @@ public:
 				Arg::Gds(isc_shutdown).raise();
 			}
 
-			IPluginBase* p = new JProvider(factoryParameter);
+			IPluginBase* p = FB_NEW JProvider(factoryParameter);
 			p->addRef();
 			return p;
 		}
@@ -1556,11 +1556,11 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 				options.setBuffers(dbb->dbb_config);
 				CCH_init(tdbb, options.dpb_buffers);
 
-				dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
+				dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
 
 				// Initialize backup difference subsystem. This must be done before WAL and shadowing
 				// is enabled because nbackup it is a lower level subsystem
-				dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb,
+				dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
 					dbb, Ods::hdr_nbak_unknown);
 				dbb->dbb_backup_manager->initializeAlloc(tdbb);
 
@@ -1569,7 +1569,7 @@ JAttachment* JProvider::internalAttach(CheckStatusWrapper* user_status, const ch
 
 				dbb->dbb_page_manager.initTempPageSpace(tdbb);
 
-				dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
+				dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 				dbb->dbb_crypto_manager->attach(tdbb, attachment);
 
 				// initialize shadowing as soon as the database is ready for it
@@ -2266,7 +2266,7 @@ JTransaction* JTransaction::enterDtc(CheckStatusWrapper* user_status)
 		EngineContextHolder tdbb(user_status, this, FB_FUNCTION);
 		check_database(tdbb);
 
-		JTransaction* copy = new JTransaction(this);
+		JTransaction* copy = FB_NEW JTransaction(this);
 		copy->addRef();
 
 		transaction = NULL;
@@ -2326,7 +2326,7 @@ JRequest* JAttachment::compileRequest(CheckStatusWrapper* user_status,
 
 	successful_completion(user_status);
 
-	JRequest* jr = new JRequest(stmt, getStable());
+	JRequest* jr = FB_NEW JRequest(stmt, getStable());
 	jr->addRef();
 	return jr;
 }
@@ -2373,7 +2373,7 @@ JBlob* JAttachment::createBlob(CheckStatusWrapper* user_status, ITransaction* tr
 
 	successful_completion(user_status);
 
-	JBlob* jb = new JBlob(blob, getStable());
+	JBlob* jb = FB_NEW JBlob(blob, getStable());
 	jb->addRef();
 	blob->blb_interface = jb;
 	return jb;
@@ -2662,11 +2662,11 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			else
 				dbb->dbb_database_name = dbb->dbb_filename;
 
-			dbb->dbb_tip_cache = FB_NEW(*dbb->dbb_permanent) TipCache(dbb);
+			dbb->dbb_tip_cache = FB_NEW_POOL(*dbb->dbb_permanent) TipCache(dbb);
 
 			// Initialize backup difference subsystem. This must be done before WAL and shadowing
 			// is enabled because nbackup it is a lower level subsystem
-			dbb->dbb_backup_manager = FB_NEW(*dbb->dbb_permanent) BackupManager(tdbb,
+			dbb->dbb_backup_manager = FB_NEW_POOL(*dbb->dbb_permanent) BackupManager(tdbb,
 				dbb, Ods::hdr_nbak_normal);
 			dbb->dbb_backup_manager->dbCreating = true;
 
@@ -2675,7 +2675,7 @@ JAttachment* JProvider::createDatabase(CheckStatusWrapper* user_status, const ch
 			PAG_format_pip(tdbb, *pageSpace);
 
 			dbb->dbb_page_manager.initTempPageSpace(tdbb);
-			dbb->dbb_crypto_manager = FB_NEW(*dbb->dbb_permanent) CryptoManager(tdbb);
+			dbb->dbb_crypto_manager = FB_NEW_POOL(*dbb->dbb_permanent) CryptoManager(tdbb);
 
 			if (options.dpb_set_page_buffers)
 				PAG_set_page_buffers(tdbb, options.dpb_page_buffers);
@@ -3208,7 +3208,7 @@ JBlob* JAttachment::openBlob(CheckStatusWrapper* user_status, ITransaction* tra,
 
 	successful_completion(user_status);
 
-	JBlob* jb = new JBlob(blob, getStable());
+	JBlob* jb = FB_NEW JBlob(blob, getStable());
 	jb->addRef();
 	blob->blb_interface = jb;
 	return jb;
@@ -3372,7 +3372,7 @@ JEvents* JAttachment::queEvents(CheckStatusWrapper* user_status, IEventCallback*
 
 			int id = dbb->dbb_event_mgr->queEvents(getHandle()->att_event_session,
 												   length, events, callback);
-			ev = new JEvents(id, getStable(), callback);
+			ev = FB_NEW JEvents(id, getStable(), callback);
 			ev->addRef();
 		}
 		catch (const Exception& ex)
@@ -3470,7 +3470,7 @@ JTransaction* JAttachment::reconnectTransaction(CheckStatusWrapper* user_status,
 
 	successful_completion(user_status);
 
-	JTransaction* jt = new JTransaction(tra, getStable());
+	JTransaction* jt = FB_NEW JTransaction(tra, getStable());
 	tra->setInterface(jt);
 	jt->addRef();
 	return jt;
@@ -3765,8 +3765,8 @@ JService* JProvider::attachServiceManager(CheckStatusWrapper* user_status, const
 	{
 		ThreadContextHolder tdbb(user_status);
 
-		Service* svc = new Service(service_name, spbLength, spb, cryptCallback);
-		jSvc = new JService(svc);
+		Service* svc = FB_NEW Service(service_name, spbLength, spb, cryptCallback);
+		jSvc = FB_NEW JService(svc);
 		jSvc->addRef();
 	}
 	catch (const Exception& ex)
@@ -4170,7 +4170,7 @@ JTransaction* JAttachment::startTransaction(CheckStatusWrapper* user_status,
 
 	successful_completion(user_status);
 
-	JTransaction* jt = new JTransaction(tra, getStable());
+	JTransaction* jt = FB_NEW JTransaction(tra, getStable());
 	tra->setInterface(jt);
 	jt->addRef();
 	return jt;
@@ -4450,7 +4450,7 @@ ITransaction* JStatement::execute(CheckStatusWrapper* user_status, ITransaction*
 			else if (tra && !jt)
 			{
 				apiTra = NULL;		// Get ready for correct return in OOM case
-				jt = new JTransaction(tra, getAttachment());
+				jt = FB_NEW JTransaction(tra, getAttachment());
 				tra->setInterface(jt);
 				jt->addRef();
 			}
@@ -4511,7 +4511,7 @@ JResultSet* JStatement::openCursor(CheckStatusWrapper* user_status, ITransaction
 			DsqlCursor* const cursor = DSQL_open(tdbb, &tra, getHandle(),
 				inMetadata, static_cast<UCHAR*>(inBuffer), outMetadata, flags);
 
-			rs = new JResultSet(cursor, this);
+			rs = FB_NEW JResultSet(cursor, this);
 			rs->addRef();
 			cursor->setInterfacePtr(rs);
 		}
@@ -4599,7 +4599,7 @@ ITransaction* JAttachment::execute(CheckStatusWrapper* user_status, ITransaction
 			else if (tra && !jt)
 			{
 				apiTra = NULL;		// Get ready for correct return in OOM case
-				jt = new JTransaction(tra, getStable());
+				jt = FB_NEW JTransaction(tra, getStable());
 				jt->addRef();
 				tra->setInterface(jt);
 			}
@@ -4941,7 +4941,7 @@ JStatement* JAttachment::prepare(CheckStatusWrapper* user_status, ITransaction* 
 
 			statement = DSQL_prepare(tdbb, getHandle(), tra, stmtLength, sqlStmt, dialect,
 				&items, &buffer, false);
-			rc = new JStatement(statement, getStable(), buffer);
+			rc = FB_NEW JStatement(statement, getStable(), buffer);
 			rc->addRef();
 
 			trace_warning(tdbb, user_status, "JStatement::prepare");
@@ -6223,7 +6223,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 	attachment->att_remote_protocol = options.dpb_remote_protocol;
 	attachment->att_ext_call_depth = options.dpb_ext_call_depth;
 
-	StableAttachmentPart* sAtt = new StableAttachmentPart(attachment);
+	StableAttachmentPart* sAtt = FB_NEW StableAttachmentPart(attachment);
 	attachment->setStable(sAtt);
 	sAtt->addRef();
 
@@ -6231,7 +6231,7 @@ static JAttachment* create_attachment(const PathName& alias_name,
 	try
 	{
 		sAtt->manualLock(attachment->att_flags);
-		jAtt = new JAttachment(sAtt);
+		jAtt = FB_NEW JAttachment(sAtt);
 	}
 	catch (const Exception&)
 	{
@@ -6561,7 +6561,7 @@ bool JRD_shutdown_database(Database* dbb, const unsigned flags)
 		(dbb->dbb_flags & DBB_shared))
 	{
 		if (!dbb->dbb_linger_timer)
-			dbb->dbb_linger_timer = new Database::Linger(dbb);
+			dbb->dbb_linger_timer = FB_NEW Database::Linger(dbb);
 
 		dbb->dbb_linger_end = time(NULL) + dbb->dbb_linger_seconds;
 		dbb->dbb_linger_timer->set(dbb->dbb_linger_seconds);
@@ -7358,7 +7358,7 @@ static THREAD_ENTRY_DECLARE shutdown_thread(THREAD_ENTRY_PARAM arg)
 
 	bool success = true;
 	MemoryPool& pool = *getDefaultMemoryPool();
-	AttachmentsRefHolder* const attachments = FB_NEW(pool) AttachmentsRefHolder(pool);
+	AttachmentsRefHolder* const attachments = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
 
 	try
 	{
@@ -7940,7 +7940,7 @@ void JRD_shutdown_attachments(Database* dbb)
 	try
 	{
 		MemoryPool& pool = *getDefaultMemoryPool();
-		AttachmentsRefHolder* queue = FB_NEW(pool) AttachmentsRefHolder(pool);
+		AttachmentsRefHolder* queue = FB_NEW_POOL(pool) AttachmentsRefHolder(pool);
 
 		{	// scope
 			Sync guard(&dbb->dbb_sync, "JRD_shutdown_attachments");

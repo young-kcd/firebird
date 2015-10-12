@@ -54,7 +54,7 @@ class RegisterInternalProvider
 public:
 	RegisterInternalProvider(MemoryPool&)
 	{
-		InternalProvider* provider = new InternalProvider(INTERNAL_PROVIDER_NAME);
+		InternalProvider* provider = FB_NEW InternalProvider(INTERNAL_PROVIDER_NAME);
 		Manager::addProvider(provider);
 	}
 };
@@ -106,7 +106,7 @@ void InternalProvider::getRemoteError(const FbStatusVector* status, string& err)
 
 Connection* InternalProvider::doCreateConnection()
 {
-	return new InternalConnection(*this);
+	return FB_NEW InternalConnection(*this);
 }
 
 
@@ -255,17 +255,17 @@ bool InternalConnection::isSameDatabase(thread_db* tdbb, const string& dbName,
 
 Transaction* InternalConnection::doCreateTransaction()
 {
-	return new InternalTransaction(*this);
+	return FB_NEW InternalTransaction(*this);
 }
 
 Statement* InternalConnection::doCreateStatement()
 {
-	return new InternalStatement(*this);
+	return FB_NEW InternalStatement(*this);
 }
 
 Blob* InternalConnection::createBlob()
 {
-	return new InternalBlob(*this);
+	return FB_NEW InternalBlob(*this);
 }
 
 
@@ -361,8 +361,8 @@ InternalStatement::InternalStatement(InternalConnection& conn) :
 	m_intTransaction(0),
 	m_request(0),
 	m_cursor(0),
-	m_inMetadata(new MsgMetadata),
-	m_outMetadata(new MsgMetadata)
+	m_inMetadata(FB_NEW MsgMetadata),
+	m_outMetadata(FB_NEW MsgMetadata)
 {
 }
 

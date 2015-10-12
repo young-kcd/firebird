@@ -203,7 +203,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 		DmlNode::doPass1(tdbb, csb, &csb->csb_node);
 
 		// CVC: I'm going to allocate the map before the loop to avoid alloc/dealloc calls.
-		AutoPtr<StreamType, ArrayDelete<StreamType> > localMap(FB_NEW(*tdbb->getDefaultPool())
+		AutoPtr<StreamType, ArrayDelete<StreamType> > localMap(FB_NEW_POOL(*tdbb->getDefaultPool())
 			StreamType[STREAM_MAP_LENGTH]);
 
 		// Copy and compile (pass1) domains DEFAULT and constraints.
@@ -257,7 +257,7 @@ JrdStatement* JrdStatement::makeStatement(thread_db* tdbb, CompilerScratch* csb,
 
 		MemoryPool* const pool = tdbb->getDefaultPool();
 
-		statement = FB_NEW(*pool) JrdStatement(tdbb, pool, csb);
+		statement = FB_NEW_POOL(*pool) JrdStatement(tdbb, pool, csb);
 
 		tdbb->setRequest(old_request);
 	} // try
@@ -382,7 +382,7 @@ jrd_req* JrdStatement::getRequest(thread_db* tdbb, USHORT level)
 		&dbb->dbb_memory_stats : &attachment->att_memory_stats;
 
 	// Create the request.
-	jrd_req* const request = FB_NEW(*pool) jrd_req(attachment, this, parentStats);
+	jrd_req* const request = FB_NEW_POOL(*pool) jrd_req(attachment, this, parentStats);
 	request->req_id = dbb->generateStatementId(tdbb);
 
 	requests[level] = request;

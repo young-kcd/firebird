@@ -176,30 +176,28 @@ public:
 	// Delete memory pool instance
 	static void deletePool(MemoryPool* pool);
 
-	void* calloc(size_t size
 #ifdef DEBUG_GDS_ALLOC
-		, const char* fileName, int line
-#endif
-				) throw (OOM_EXCEPTION);
+#define ALLOC_ARGS , __FILE__, __LINE__
+#define ALLOC_PARAMS , const char* file, int line
+#define ALLOC_PASS_ARGS , file, line
+#else
+#define ALLOC_ARGS
+#define ALLOC_PARAMS
+#define ALLOC_PASS_ARGS
+#endif // DEBUG_GDS_ALLOC
+
+	void* calloc(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION);
 
 #ifdef LIBC_CALLS_NEW
-	static void* globalAlloc(size_t s) throw (OOM_EXCEPTION);
+	static void* globalAlloc(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION);
 #else
-	static void* globalAlloc(size_t s) throw (OOM_EXCEPTION)
+	static void* globalAlloc(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
 	{
-		return defaultMemoryManager->allocate(s
-#ifdef DEBUG_GDS_ALLOC
-				, __FILE__, __LINE__
-#endif
-									);
+		return defaultMemoryManager->allocate(s ALLOC_PASS_ARGS);
 	}
 #endif // LIBC_CALLS_NEW
 
-	void* allocate(size_t size
-#ifdef DEBUG_GDS_ALLOC
-		, const char* fileName = NULL, int line = 0
-#endif
-	) throw (OOM_EXCEPTION);
+	void* allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION);
 
 	static void globalFree(void* mem) throw ();
 	void deallocate(void* mem) throw ();
@@ -299,16 +297,45 @@ private:
 
 using Firebird::MemoryPool;
 
-// Global versions of operators new and delete
-inline void* operator new(size_t s) throw (OOM_EXCEPTION)
+// operators new and delete
+
+inline void* operator new(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
-	return MemoryPool::globalAlloc(s);
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
 }
-inline void* operator new[](size_t s) throw (OOM_EXCEPTION)
+inline void* operator new[](size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
-	return MemoryPool::globalAlloc(s);
+	return MemoryPool::globalAlloc(s ALLOC_PASS_ARGS);
 }
 
+inline void* operator new(size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return pool.allocate(s ALLOC_PASS_ARGS);
+}
+inline void* operator new[](size_t s, Firebird::MemoryPool& pool ALLOC_PARAMS) throw (OOM_EXCEPTION)
+{
+	return pool.allocate(s ALLOC_PASS_ARGS);
+}
+
+inline void operator delete(void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+inline void operator delete[](void* mem ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
+inline void operator delete(void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+inline void operator delete[](void* mem, Firebird::MemoryPool& pool ALLOC_PARAMS) throw()
+{
+	MemoryPool::globalFree(mem);
+}
+
+#ifdef DEBUG_GDS_ALLOC
 inline void operator delete(void* mem) throw()
 {
 	MemoryPool::globalFree(mem);
@@ -318,29 +345,14 @@ inline void operator delete[](void* mem) throw()
 	MemoryPool::globalFree(mem);
 }
 
-#ifdef DEBUG_GDS_ALLOC
-inline void* operator new(size_t s, Firebird::MemoryPool& pool, const char* file, int line) throw (OOM_EXCEPTION)
-{
-	return pool.allocate(s, file, line);
-}
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool, const char* file, int line) throw (OOM_EXCEPTION)
-{
-	return pool.allocate(s, file, line);
-}
-#define FB_NEW(pool) new(pool, __FILE__, __LINE__)
+#define FB_NEW new(__FILE__, __LINE__)
+#define FB_NEW_POOL(pool) new(pool, __FILE__, __LINE__)
 #define FB_NEW_RPT(pool, count) new(pool, count, __FILE__, __LINE__)
-#else
-inline void* operator new(size_t s, Firebird::MemoryPool& pool) throw (OOM_EXCEPTION)
-{
-	return pool.allocate(s);
-}
-inline void* operator new[](size_t s, Firebird::MemoryPool& pool) throw (OOM_EXCEPTION)
-{
-	return pool.allocate(s);
-}
-#define FB_NEW(pool) new(pool)
+#else // DEBUG_GDS_ALLOC
+#define FB_NEW new
+#define FB_NEW_POOL(pool) new(pool)
 #define FB_NEW_RPT(pool, count) new(pool, count)
-#endif
+#endif // DEBUG_GDS_ALLOC
 
 #ifndef USE_SYSTEM_NEW
 // We must define placement operators NEW & DELETE ourselves
@@ -365,9 +377,9 @@ namespace Firebird
 	class GlobalStorage
 	{
 	public:
-		void* operator new(size_t size)
+		void* operator new(size_t size ALLOC_PARAMS)
 		{
-			return getDefaultMemoryPool()->allocate(size);
+			return getDefaultMemoryPool()->allocate(size ALLOC_PASS_ARGS);
 		}
 
 		void operator delete(void* mem)

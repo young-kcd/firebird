@@ -115,7 +115,12 @@ private:
 
 	// Fool-proof requested by Alex
 	// Private memory operators to be sure that this class is used in heap only with launcher
+#ifdef DEBUG_GDS_ALLOC
+	void* operator new (size_t s, const char* file, int line) { return MemoryPool::globalAlloc(s, file, line); }
+	void operator delete (void* mem, const char* file, int line) { MemoryPool::globalFree(mem); }
+#else
 	void* operator new (size_t s) { return MemoryPool::globalAlloc(s); }
+#endif
 	void operator delete (void* mem) { MemoryPool::globalFree(mem); }
 
 public:
@@ -182,7 +187,7 @@ public:
 	{
 		if (sqlda)
 		{
-			metadata = new SQLDAMetadata(sqlda);
+			metadata = FB_NEW SQLDAMetadata(sqlda);
 			metadata->addRef();
 		}
 	}
@@ -428,7 +433,7 @@ void SQLDAMetadata::assign()
 	speedHackEnabled = true; // May be we are lucky...
 	ISC_SCHAR* const base = sqlda->sqlvar[0].sqldata;
 
-	offsets = new OffsetItem[count];
+	offsets = FB_NEW OffsetItem[count];
 	for (unsigned i = 0; i < count; i++)
 	{
 		const XSQLVAR& var = sqlda->sqlvar[i];
@@ -1105,7 +1110,7 @@ namespace Why
 				}
 			}
 
-			list = new ShutChain(list, cb, m, a);
+			list = FB_NEW ShutChain(list, cb, m, a);
 		}
 
 		static int run(const int m, const int reason)
@@ -1635,7 +1640,7 @@ ISC_STATUS API_ROUTINE isc_attach_database(ISC_STATUS* userStatus, SSHORT fileLe
 
 		PathName pathName(filename, fileLength ? fileLength : fb_strlen(filename));
 
-		RefPtr<Dispatcher> dispatcher(new Dispatcher);
+		RefPtr<Dispatcher> dispatcher(FB_NEW Dispatcher);
 
 		dispatcher->setDbCryptCallback(&statusWrapper, TLS_GET(legacyCryptCallback));
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
@@ -1946,7 +1951,7 @@ ISC_STATUS API_ROUTINE isc_create_database(ISC_STATUS* userStatus, USHORT fileLe
 
 		PathName pathName(filename, fileLength ? fileLength : fb_strlen(filename));
 
-		RefPtr<Dispatcher> dispatcher(new Dispatcher);
+		RefPtr<Dispatcher> dispatcher(FB_NEW Dispatcher);
 
 		dispatcher->setDbCryptCallback(&statusWrapper, TLS_GET(legacyCryptCallback));
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
@@ -1988,7 +1993,7 @@ ISC_STATUS API_ROUTINE isc_database_cleanup(ISC_STATUS* userStatus, FB_API_HANDL
 		RefPtr<YAttachment> attachment(translateHandle(attachments, handle));
 
 		AutoPtr<CleanupCallbackImpl<YAttachment, AttachmentCleanupRoutine> > callback(
-			new CleanupCallbackImpl<YAttachment, AttachmentCleanupRoutine>(attachment, routine, arg));
+			FB_NEW CleanupCallbackImpl<YAttachment, AttachmentCleanupRoutine>(attachment, routine, arg));
 
 		attachment->addCleanupHandler(&statusWrapper, callback);
 
@@ -2156,7 +2161,7 @@ ISC_STATUS API_ROUTINE isc_dsql_allocate_statement(ISC_STATUS* userStatus, FB_AP
 
 		nullCheck(stmtHandle, isc_bad_stmt_handle);
 
-		statement = new IscStatement(attachment);
+		statement = FB_NEW IscStatement(attachment);
 		statement->addRef();
 		*stmtHandle = statement->getHandle();
 	}
@@ -2834,7 +2839,7 @@ ISC_STATUS API_ROUTINE isc_wait_for_event(ISC_STATUS* userStatus, FB_API_HANDLE*
 	CheckStatusWrapper statusWrapper(&status);
 	YEvents* events = NULL;
 
-	RefPtr<WaitCallback> callback(new WaitCallback(buffer));
+	RefPtr<WaitCallback> callback(FB_NEW WaitCallback(buffer));
 
 	try
 	{
@@ -2931,7 +2936,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 	{
 		RefPtr<YAttachment> attachment(translateHandle(attachments, dbHandle));
 
-		RefPtr<QueCallback> callback(new QueCallback(ast, arg));
+		RefPtr<QueCallback> callback(FB_NEW QueCallback(ast, arg));
 		events = attachment->queEvents(&statusWrapper, callback, length, eventsData);
 		callback->setEvents(events);		// should be called in case of NULL events too
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
@@ -3356,7 +3361,7 @@ ISC_STATUS API_ROUTINE isc_service_attach(ISC_STATUS* userStatus, USHORT service
 
 		string svcName(serviceName, serviceLength ? serviceLength : fb_strlen(serviceName));
 
-		RefPtr<Dispatcher> dispatcher(new Dispatcher);
+		RefPtr<Dispatcher> dispatcher(FB_NEW Dispatcher);
 
 		dispatcher->setDbCryptCallback(&statusWrapper, TLS_GET(legacyCryptCallback));
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
@@ -3648,7 +3653,7 @@ ISC_STATUS API_ROUTINE gds__transaction_cleanup(ISC_STATUS* userStatus, FB_API_H
 		RefPtr<YTransaction> transaction(translateHandle(transactions, traHandle));
 
 		AutoPtr<CleanupCallbackImpl<YTransaction, TransactionCleanupRoutine> > callback(
-			new CleanupCallbackImpl<YTransaction, TransactionCleanupRoutine>(transaction, routine, arg));
+			FB_NEW CleanupCallbackImpl<YTransaction, TransactionCleanupRoutine>(transaction, routine, arg));
 
 		transaction->addCleanupHandler(&statusWrapper, callback);
 
@@ -3714,7 +3719,7 @@ int API_ROUTINE fb_shutdown(unsigned int timeout, const int reason)
 	StatusVector status(NULL);
 	CheckStatusWrapper statusWrapper(&status);
 
-	RefPtr<Dispatcher> dispatcher(new Dispatcher);
+	RefPtr<Dispatcher> dispatcher(FB_NEW Dispatcher);
 
 	dispatcher->shutdown(&statusWrapper, timeout, reason);
 	return (status.getState() & Firebird::IStatus::STATE_ERRORS) ? FB_FAILURE : FB_SUCCESS;
@@ -3817,7 +3822,7 @@ namespace Why {
 
 IAttachment* MasterImplementation::registerAttachment(IProvider* provider, IAttachment* attachment)
 {
-	IAttachment* rc = new YAttachment(provider, attachment, "");
+	IAttachment* rc = FB_NEW YAttachment(provider, attachment, "");
 	attachment->addRef();
 	return rc;
 }
@@ -3825,7 +3830,7 @@ IAttachment* MasterImplementation::registerAttachment(IProvider* provider, IAtta
 ITransaction* MasterImplementation::registerTransaction(IAttachment* attachment,
 	ITransaction* transaction)
 {
-	ITransaction* rc = new YTransaction(static_cast<YAttachment*>(attachment), transaction);
+	ITransaction* rc = FB_NEW YTransaction(static_cast<YAttachment*>(attachment), transaction);
 	transaction->addRef();
 	return rc;
 }
@@ -4250,7 +4255,7 @@ IMessageMetadata* YMetadata::get(IStatement* next, YStatement* statement)
 		if (!flag)
 		{
 			RefPtr<IMessageMetadata> nextMeta(REF_NO_INCR, statement->getMetadata(input, next));
-			metadata = new MsgMetadata(nextMeta);
+			metadata = FB_NEW MsgMetadata(nextMeta);
 
 			flag = true;
 		}
@@ -4348,7 +4353,7 @@ ITransaction* YStatement::execute(CheckStatusWrapper* status, ITransaction* tran
 			}
 
 			if (newTrans)
-				newTrans = new YTransaction(attachment, newTrans);
+				newTrans = FB_NEW YTransaction(attachment, newTrans);
 		}
 
 		return newTrans;
@@ -4381,7 +4386,7 @@ IResultSet* YStatement::openCursor(Firebird::CheckStatusWrapper* status, ITransa
 
 		YTransaction* const yTra = attachment->getTransaction(status, transaction);
 
-		return new YResultSet(attachment, yTra, this, rs);
+		return FB_NEW YResultSet(attachment, yTra, this, rs);
 	}
 	catch (const Exception& e)
 	{
@@ -4881,7 +4886,7 @@ YTransaction* YTransaction::enterDtc(CheckStatusWrapper* status)
 	{
 		YEntry<YTransaction> entry(status, this);
 
-		YTransaction* copy = new YTransaction(this);
+		YTransaction* copy = FB_NEW YTransaction(this);
 		// copy is created with zero handle
 		copy->addRef();
 		next->addRef();		// We use NoIncr in YTransaction ctor
@@ -4997,7 +5002,7 @@ YStatement* YAttachment::prepare(CheckStatusWrapper* status, ITransaction* trans
 		IStatement* st = entry.next()->prepare(status, trans, stmtLength, sqlStmt, dialect, flags);
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
 		{
-			return new YStatement(this, st);
+			return FB_NEW YStatement(this, st);
 		}
 	}
 	catch (const Exception& e)
@@ -5017,7 +5022,7 @@ YTransaction* YAttachment::startTransaction(CheckStatusWrapper* status, unsigned
 
 		ITransaction* transaction = entry.next()->startTransaction(status, tpbLength, tpb);
 		if (transaction)
-			return new YTransaction(this, transaction);
+			return FB_NEW YTransaction(this, transaction);
 	}
 	catch (const Exception& e)
 	{
@@ -5037,7 +5042,7 @@ YTransaction* YAttachment::reconnectTransaction(CheckStatusWrapper* status, unsi
 		ITransaction* transaction = entry.next()->reconnectTransaction(status, length, id);
 
 		if (transaction)
-			return new YTransaction(this, transaction);
+			return FB_NEW YTransaction(this, transaction);
 	}
 	catch (const Exception& e)
 	{
@@ -5055,7 +5060,7 @@ YRequest* YAttachment::compileRequest(CheckStatusWrapper* status, unsigned int b
 		YEntry<YAttachment> entry(status, this);
 
 		IRequest* request = entry.next()->compileRequest(status, blrLength, blr);
-		return request ? new YRequest(this, request) : NULL;
+		return request ? FB_NEW YRequest(this, request) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -5097,7 +5102,7 @@ YBlob* YAttachment::createBlob(CheckStatusWrapper* status, ITransaction* transac
 		NextTransaction nextTra(yTra->next);
 
 		IBlob* blob = entry.next()->createBlob(status, nextTra, id, bpbLength, bpb);
-		return blob ? new YBlob(this, yTra, blob) : NULL;
+		return blob ? FB_NEW YBlob(this, yTra, blob) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -5118,7 +5123,7 @@ YBlob* YAttachment::openBlob(CheckStatusWrapper* status, ITransaction* transacti
 		NextTransaction nextTra(yTra->next);
 
 		IBlob* blob = entry.next()->openBlob(status, nextTra, id, bpbLength, bpb);
-		return blob ? new YBlob(this, yTra, blob) : NULL;
+		return blob ? FB_NEW YBlob(this, yTra, blob) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -5211,7 +5216,7 @@ IResultSet* YAttachment::openCursor(CheckStatusWrapper* status, ITransaction* tr
 
 		YTransaction* const yTra = getTransaction(status, transaction);
 
-		return new YResultSet(this, yTra, rs);
+		return FB_NEW YResultSet(this, yTra, rs);
 	}
 	catch (const Exception& e)
 	{
@@ -5251,7 +5256,7 @@ ITransaction* YAttachment::execute(CheckStatusWrapper* status, ITransaction* tra
 			}
 
 			if (newTrans)
-				newTrans = new YTransaction(this, newTrans);
+				newTrans = FB_NEW YTransaction(this, newTrans);
 		}
 
 		return newTrans;
@@ -5302,7 +5307,7 @@ YEvents* YAttachment::queEvents(CheckStatusWrapper* status, IEventCallback* call
 		YEntry<YAttachment> entry(status, this);
 
 		IEvents* events = entry.next()->queEvents(status, callback, length, eventsData);
-		return events ? new YEvents(this, events, callback) : NULL;
+		return events ? FB_NEW YEvents(this, events, callback) : NULL;
 	}
 	catch (const Exception& e)
 	{
@@ -5646,7 +5651,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 
 				status->setErrors(currentStatus->getErrors());
 				status->setWarnings(currentStatus->getWarnings());
-				return new YAttachment(provider, attachment, expandedFilename);
+				return FB_NEW YAttachment(provider, attachment, expandedFilename);
 			}
 
 			switch (currentStatus->getErrors()[1])
@@ -5733,7 +5738,7 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 				spbWriter.getBufferLength(), spbWriter.getBuffer());
 
 			if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
-				return new YService(p, service, utfData);
+				return FB_NEW YService(p, service, utfData);
 		}
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))

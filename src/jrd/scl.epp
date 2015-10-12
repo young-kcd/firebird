@@ -917,13 +917,13 @@ SecurityClass* SCL_get_class(thread_db* tdbb, const TEXT* par_string)
 
 	MemoryPool& pool = *attachment->att_pool;
 
-	SecurityClass* const s_class = FB_NEW(pool) SecurityClass(pool, string);
+	SecurityClass* const s_class = FB_NEW_POOL(pool) SecurityClass(pool, string);
 	s_class->scl_flags = compute_access(tdbb, s_class, NULL, 0, NULL);
 
 	if (s_class->scl_flags & SCL_exists)
 	{
 		if (!list) {
-			attachment->att_security_classes = list = FB_NEW(pool) SecurityClassList(pool);
+			attachment->att_security_classes = list = FB_NEW_POOL(pool) SecurityClassList(pool);
 		}
 
 		list->add(s_class);
@@ -1127,7 +1127,7 @@ void SCL_init(thread_db* tdbb, bool create, const UserId& tempId)
 	MetaName role_name(sql_role ? sql_role : NULL_ROLE);
 
 	MemoryPool& pool = *attachment->att_pool;
-	UserId* const user = FB_NEW(pool) UserId(pool, tempId);
+	UserId* const user = FB_NEW_POOL(pool) UserId(pool, tempId);
 	user->usr_sql_role_name = role_name.c_str();
 	attachment->att_user = user;
 

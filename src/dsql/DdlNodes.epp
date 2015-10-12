@@ -736,7 +736,7 @@ static void saveField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, const M
 
 	MemoryPool& p = relation->rel_flags & REL_new_relation ?
 		*tdbb->getDefaultPool() : dsqlScratch->getAttachment()->dbb_pool;
-	dsql_fld* field = FB_NEW(p) dsql_fld(p);
+	dsql_fld* field = FB_NEW_POOL(p) dsql_fld(p);
 	field->fld_name = fieldName.c_str();
 	field->fld_next = relation->rel_fields;
 	relation->rel_fields = field;
@@ -759,7 +759,7 @@ static void saveRelation(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	else
 	{
 		MemoryPool& pool = *tdbb->getDefaultPool();
-		relation = FB_NEW(pool) dsql_rel(pool);
+		relation = FB_NEW_POOL(pool) dsql_rel(pool);
 		relation->rel_name = relationName;
 		if (!view)
 			relation->rel_flags = REL_creating;
@@ -3529,7 +3529,7 @@ void CreateAlterTriggerNode::compile(thread_db* /*tdbb*/, DsqlCompilerScratch* d
 
 		if (relationName.hasData())
 		{
-			RelationSourceNode* relationNode = FB_NEW(getPool()) RelationSourceNode(getPool(),
+			RelationSourceNode* relationNode = FB_NEW_POOL(getPool()) RelationSourceNode(getPool(),
 				relationName);
 
 			const string temp = relationNode->alias;	// always empty?
@@ -6091,7 +6091,7 @@ void RelationNode::defineField(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	{
 		if (!(relation->rel_flags & REL_new_relation))
 		{
-			dsql_fld* permField = FB_NEW(dsqlScratch->getAttachment()->dbb_pool) dsql_fld(
+			dsql_fld* permField = FB_NEW_POOL(dsqlScratch->getAttachment()->dbb_pool) dsql_fld(
 				dsqlScratch->getAttachment()->dbb_pool);
 
 			*permField = *field;
@@ -6286,7 +6286,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 				*notNull = true;
 
 				CreateDropConstraint& constraint = constraints.add();
-				constraint.create = FB_NEW(pool) Constraint(pool);
+				constraint.create = FB_NEW_POOL(pool) Constraint(pool);
 				constraint.create->type = Constraint::TYPE_NOT_NULL;
 				if (clause->constraintType == AddConstraintClause::CTYPE_NOT_NULL)
 					constraint.name = clause->name;
@@ -6299,7 +6299,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 		case AddConstraintClause::CTYPE_UNIQUE:
 		{
 			CreateDropConstraint& constraint = constraints.add();
-			constraint.create = FB_NEW(pool) Constraint(pool);
+			constraint.create = FB_NEW_POOL(pool) Constraint(pool);
 			constraint.create->type = clause->constraintType == AddConstraintClause::CTYPE_PK ?
 				Constraint::TYPE_PK : Constraint::TYPE_UNIQUE;
 			constraint.name = clause->name;
@@ -6313,7 +6313,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 		case AddConstraintClause::CTYPE_FK:
 		{
 			CreateDropConstraint& constraint = constraints.add();
-			constraint.create = FB_NEW(pool) Constraint(pool);
+			constraint.create = FB_NEW_POOL(pool) Constraint(pool);
 			constraint.create->type = Constraint::TYPE_FK;
 			constraint.name = clause->name;
 			constraint.create->columns = clause->columns;
@@ -6431,7 +6431,7 @@ void RelationNode::makeConstraint(thread_db* /*tdbb*/, DsqlCompilerScratch* dsql
 		case AddConstraintClause::CTYPE_CHECK:
 		{
 			CreateDropConstraint& constraint = constraints.add();
-			constraint.create = FB_NEW(pool) Constraint(pool);
+			constraint.create = FB_NEW_POOL(pool) Constraint(pool);
 			constraint.create->type = Constraint::TYPE_CHECK;
 			constraint.name = clause->name;
 			defineCheckConstraint(dsqlScratch, *constraint.create, clause->check);
@@ -6699,9 +6699,9 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 	blrWriter.init(dsqlScratch);
 
 	// Specify that the trigger should abort if the condition is not met.
-	NestConst<CompoundStmtNode> actionNode = FB_NEW(pool) CompoundStmtNode(pool);
+	NestConst<CompoundStmtNode> actionNode = FB_NEW_POOL(pool) CompoundStmtNode(pool);
 
-	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
+	ExceptionNode* exceptionNode = FB_NEW_POOL(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
 	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
 
 	actionNode->statements.add(exceptionNode);
@@ -6733,7 +6733,7 @@ void RelationNode::defineCheckConstraintTrigger(DsqlCompilerScratch* dsqlScratch
 
 	// Generate the condition for firing the trigger.
 
-	NotBoolNode* notNode = FB_NEW(pool) NotBoolNode(pool, clause->value);
+	NotBoolNode* notNode = FB_NEW_POOL(pool) NotBoolNode(pool, clause->value);
 
 	BoolExprNode* condition = notNode->dsqlPass(dsqlScratch);
 
@@ -7581,7 +7581,7 @@ void AlterRelationNode::modifyField(thread_db* tdbb, DsqlCompilerScratch* dsqlSc
 	{
 		if (!(relation->rel_flags & REL_new_relation))
 		{
-			dsql_fld* permField = FB_NEW(dsqlScratch->getAttachment()->dbb_pool)
+			dsql_fld* permField = FB_NEW_POOL(dsqlScratch->getAttachment()->dbb_pool)
 				dsql_fld(dsqlScratch->getAttachment()->dbb_pool);
 			*permField = *field;
 
@@ -8799,7 +8799,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 	MemoryPool& pool = *tdbb->getDefaultPool();
 
 	// Specify that the trigger should abort if the condition is not met.
-	ExceptionNode* exceptionNode = FB_NEW(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
+	ExceptionNode* exceptionNode = FB_NEW_POOL(pool) ExceptionNode(pool, CHECK_CONSTRAINT_EXCEPTION);
 	exceptionNode->exception->type = ExceptionItem::GDS_CODE;
 
 	AutoSetRestore<bool> autoCheckConstraintTrigger(&dsqlScratch->checkConstraintTrigger, true);
@@ -8825,14 +8825,14 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 	{
 		dsqlScratch->contextNumber = 2;
 
-		RelationSourceNode* baseRelation = FB_NEW(pool) RelationSourceNode(pool,
+		RelationSourceNode* baseRelation = FB_NEW_POOL(pool) RelationSourceNode(pool,
 			sourceNode->dsqlName.identifier);
 		baseRelation->alias = sourceNode->alias;
 
 		dsqlScratch->appendUChar(blr_for);
 
-		RseNode* rse = FB_NEW(pool) RseNode(pool);
-		rse->dsqlStreams = FB_NEW(pool) RecSourceListNode(pool, 1);
+		RseNode* rse = FB_NEW_POOL(pool) RseNode(pool);
+		rse->dsqlStreams = FB_NEW_POOL(pool) RecSourceListNode(pool, 1);
 
 		rse->dsqlStreams->items[0] = baseRelation;
 		rse->dsqlStreams->items[0] = doDsqlPass(dsqlScratch, rse->dsqlStreams->items[0]);
@@ -8860,7 +8860,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 		{
 			const dsql_rel* relation = METD_get_relation(dsqlScratch->getTransaction(),
 				dsqlScratch, name);
-			fieldsNode = FB_NEW(pool) ValueListNode(pool, 0u);
+			fieldsNode = FB_NEW_POOL(pool) ValueListNode(pool, 0u);
 
 			for (const dsql_fld* field = relation->rel_fields; field; field = field->fld_next)
 			{
@@ -8880,7 +8880,7 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 		const NestConst<ValueExprNode>* const end2 = valuesNode->items.end();
 		int andArg = 0;
 
-		BinaryBoolNode* andNode = FB_NEW(pool) BinaryBoolNode(pool, blr_and);
+		BinaryBoolNode* andNode = FB_NEW_POOL(pool) BinaryBoolNode(pool, blr_and);
 
 		for (; ptr != end && ptr2 != end2; ++ptr, ++ptr2)
 		{
@@ -8901,14 +8901,14 @@ void CreateAlterViewNode::createCheckTrigger(thread_db* tdbb, DsqlCompilerScratc
 
 			if (fieldNode && valueNode)
 			{
-				FieldNode* oldValueNode = FB_NEW(pool) FieldNode(pool);
+				FieldNode* oldValueNode = FB_NEW_POOL(pool) FieldNode(pool);
 				oldValueNode->dsqlName = (aliasNode ? aliasNode->name : valueNode->dsqlName);
 				oldValueNode->dsqlQualifier = OLD_CONTEXT_NAME;
 
 				valueNod = oldValueNode->dsqlPass(dsqlScratch);
 				fieldNod = fieldNode->dsqlPass(dsqlScratch);
 
-				BoolExprNode* equivNode = FB_NEW(pool) ComparativeBoolNode(pool, blr_equiv,
+				BoolExprNode* equivNode = FB_NEW_POOL(pool) ComparativeBoolNode(pool, blr_equiv,
 					valueNod, fieldNod);
 
 				rse->dsqlWhere = PASS1_compose(rse->dsqlWhere, equivNode, blr_and);
@@ -10542,7 +10542,7 @@ void CreateAlterUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScra
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	Auth::DynamicUserData* userData = FB_NEW(*transaction->tra_pool) Auth::DynamicUserData;
+	Auth::DynamicUserData* userData = FB_NEW_POOL(*transaction->tra_pool) Auth::DynamicUserData;
 
 	string text = name.c_str();
 	if (text.isEmpty() && mode == USER_MOD)
@@ -10660,7 +10660,7 @@ void DropUserNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 	// run all statements under savepoint control
 	AutoSavePoint savePoint(tdbb, transaction);
 
-	Auth::DynamicUserData* userData = FB_NEW(*transaction->tra_pool) Auth::DynamicUserData;
+	Auth::DynamicUserData* userData = FB_NEW_POOL(*transaction->tra_pool) Auth::DynamicUserData;
 
 	string text = name.c_str();
 

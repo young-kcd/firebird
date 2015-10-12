@@ -114,7 +114,7 @@ string RecordSourceNode::internalPrint(NodePrinter& printer) const
 
 SortNode* SortNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	SortNode* newSort = FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
+	SortNode* newSort = FB_NEW_POOL(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 	newSort->unique = unique;
 
 	for (const NestConst<ValueExprNode>* i = expressions.begin(); i != expressions.end(); ++i)
@@ -169,7 +169,7 @@ void SortNode::findDependentFromStreams(const OptimizerRetrieval* optRet,
 
 MapNode* MapNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	MapNode* newMap = FB_NEW(*tdbb->getDefaultPool()) MapNode(*tdbb->getDefaultPool());
+	MapNode* newMap = FB_NEW_POOL(*tdbb->getDefaultPool()) MapNode(*tdbb->getDefaultPool());
 
 	const NestConst<ValueExprNode>* target = targetList.begin();
 
@@ -232,11 +232,11 @@ void MapNode::aggPostRse(thread_db* tdbb, CompilerScratch* csb)
 
 PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	PlanNode* node = FB_NEW(getPool()) PlanNode(getPool(), type);
+	PlanNode* node = FB_NEW_POOL(getPool()) PlanNode(getPool(), type);
 
 	if (accessType)
 	{
-		node->accessType = FB_NEW(getPool()) AccessType(getPool(), accessType->type);
+		node->accessType = FB_NEW_POOL(getPool()) AccessType(getPool(), accessType->type);
 		node->accessType->items = accessType->items;
 	}
 
@@ -247,14 +247,14 @@ PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 	if (dsqlNames)
 	{
-		node->dsqlNames = FB_NEW(getPool()) ObjectsArray<MetaName>(getPool());
+		node->dsqlNames = FB_NEW_POOL(getPool()) ObjectsArray<MetaName>(getPool());
 		*node->dsqlNames = *dsqlNames;
 
 		dsql_ctx* context = dsqlPassAliasList(dsqlScratch);
 
 		if (context->ctx_relation)
 		{
-			RelationSourceNode* relNode = FB_NEW(getPool()) RelationSourceNode(getPool());
+			RelationSourceNode* relNode = FB_NEW_POOL(getPool()) RelationSourceNode(getPool());
 			relNode->dsqlContext = context;
 			node->dsqlRecordSourceNode = relNode;
 		}
@@ -262,7 +262,7 @@ PlanNode* PlanNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		{
 			// ASF: Note that usage of procedure name in a PLAN clause causes errors when
 			// parsing the BLR.
-			ProcedureSourceNode* procNode = FB_NEW(getPool()) ProcedureSourceNode(getPool());
+			ProcedureSourceNode* procNode = FB_NEW_POOL(getPool()) ProcedureSourceNode(getPool());
 			procNode->dsqlContext = context;
 			node->dsqlRecordSourceNode = procNode;
 		}
@@ -323,7 +323,7 @@ dsql_ctx* PlanNode::dsqlPassAliasList(DsqlCompilerScratch* dsqlScratch)
 				{
 					// AB: Pretty ugly huh?
 					// make up a dummy context to hold the resultant relation.
-					dsql_ctx* newContext = FB_NEW(getPool()) dsql_ctx(getPool());
+					dsql_ctx* newContext = FB_NEW_POOL(getPool()) dsql_ctx(getPool());
 					newContext->ctx_context = context->ctx_context;
 					newContext->ctx_relation = relation;
 
@@ -449,7 +449,7 @@ RecSourceListNode::RecSourceListNode(MemoryPool& pool, RecordSourceNode* arg1)
 
 RecSourceListNode* RecSourceListNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 {
-	RecSourceListNode* node = FB_NEW(getPool()) RecSourceListNode(getPool(), items.getCount());
+	RecSourceListNode* node = FB_NEW_POOL(getPool()) RecSourceListNode(getPool(), items.getCount());
 
 	NestConst<RecordSourceNode>* dst = node->items.begin();
 
@@ -471,7 +471,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 
 	// Make a relation reference node
 
-	RelationSourceNode* node = FB_NEW(*tdbb->getDefaultPool()) RelationSourceNode(
+	RelationSourceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) RelationSourceNode(
 		*tdbb->getDefaultPool());
 
 	// Find relation either by id or by name
@@ -487,7 +487,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 
 			if (blrOp == blr_rid2)
 			{
-				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
 				PAR_name(csb, *aliasString);
 			}
 
@@ -504,7 +504,7 @@ RelationSourceNode* RelationSourceNode::parse(thread_db* tdbb, CompilerScratch* 
 
 			if (blrOp == blr_relation2)
 			{
-				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
 				PAR_name(csb, *aliasString);
 			}
 
@@ -605,7 +605,7 @@ RelationSourceNode* RelationSourceNode::copy(thread_db* tdbb, NodeCopier& copier
 	if (!copier.remap)
 		BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
 
-	RelationSourceNode* newSource = FB_NEW(*tdbb->getDefaultPool()) RelationSourceNode(
+	RelationSourceNode* newSource = FB_NEW_POOL(*tdbb->getDefaultPool()) RelationSourceNode(
 		*tdbb->getDefaultPool());
 
 	// Last entry in the remap contains the the original stream number.
@@ -711,7 +711,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 
 		if (ctx.find(key, pos))
 		{
-			element->csb_alias = FB_NEW(csb->csb_pool)
+			element->csb_alias = FB_NEW_POOL(csb->csb_pool)
 				string(csb->csb_pool, ctx[pos]->vcx_context_name);
 		}
 	}
@@ -807,7 +807,7 @@ void RelationSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseN
 			// boolean from the view must appear first so that
 			// it gets expanded first in pass1.
 
-			BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
+			BinaryBoolNode* andNode = FB_NEW_POOL(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
 			andNode->arg1 = node;
 			andNode->arg2 = *boolean;
 
@@ -872,7 +872,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 
 			if (blrOp == blr_pid2)
 			{
-				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
 				PAR_name(csb, *aliasString);
 			}
 
@@ -894,7 +894,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 
 			if (blrOp == blr_procedure2 || blrOp == blr_procedure4 || blrOp == blr_subproc)
 			{
-				aliasString = FB_NEW(csb->csb_pool) string(csb->csb_pool);
+				aliasString = FB_NEW_POOL(csb->csb_pool) string(csb->csb_pool);
 				PAR_name(csb, *aliasString);
 
 				if (blrOp == blr_subproc && aliasString->isEmpty())
@@ -932,7 +932,7 @@ ProcedureSourceNode* ProcedureSourceNode::parse(thread_db* tdbb, CompilerScratch
 			PAR_error(csb, Arg::Gds(isc_illegal_prc_type) << Arg::Str(name));
 	}
 
-	ProcedureSourceNode* node = FB_NEW(*tdbb->getDefaultPool()) ProcedureSourceNode(
+	ProcedureSourceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) ProcedureSourceNode(
 		*tdbb->getDefaultPool());
 
 	node->procedure = procedure;
@@ -1090,7 +1090,7 @@ ProcedureSourceNode* ProcedureSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	if (!copier.remap)
 		BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
 
-	ProcedureSourceNode* newSource = FB_NEW(*tdbb->getDefaultPool()) ProcedureSourceNode(
+	ProcedureSourceNode* newSource = FB_NEW_POOL(*tdbb->getDefaultPool()) ProcedureSourceNode(
 		*tdbb->getDefaultPool());
 
 	// dimitr: See the appropriate code and comment in NodeCopier (in nod_argument).
@@ -1159,7 +1159,7 @@ void ProcedureSourceNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, Rse
 
 		if (ctx.find(key, pos))
 		{
-			element->csb_alias = FB_NEW(csb->csb_pool) string(
+			element->csb_alias = FB_NEW_POOL(csb->csb_pool) string(
 				csb->csb_pool, ctx[pos]->vcx_context_name);
 		}
 	}
@@ -1198,7 +1198,7 @@ ProcedureScan* ProcedureSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt)
 	CompilerScratch::csb_repeat* const csbTail = &csb->csb_rpt[stream];
 	const string alias = OPT_make_alias(tdbb, csb, csbTail);
 
-	return FB_NEW(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, procedure,
+	return FB_NEW_POOL(*tdbb->getDefaultPool()) ProcedureScan(csb, alias, stream, procedure,
 		sourceList, targetList, in_msg);
 }
 
@@ -1244,7 +1244,7 @@ AggregateSourceNode* AggregateSourceNode::parse(thread_db* tdbb, CompilerScratch
 {
 	SET_TDBB(tdbb);
 
-	AggregateSourceNode* node = FB_NEW(*tdbb->getDefaultPool()) AggregateSourceNode(
+	AggregateSourceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) AggregateSourceNode(
 		*tdbb->getDefaultPool());
 
 	node->stream = PAR_context(csb, NULL);
@@ -1414,7 +1414,7 @@ AggregateSourceNode* AggregateSourceNode::copy(thread_db* tdbb, NodeCopier& copi
 	if (!copier.remap)
 		BUGCHECK(221);	// msg 221 (CMP) copy: cannot remap
 
-	AggregateSourceNode* newSource = FB_NEW(*tdbb->getDefaultPool()) AggregateSourceNode(
+	AggregateSourceNode* newSource = FB_NEW_POOL(*tdbb->getDefaultPool()) AggregateSourceNode(
 		*tdbb->getDefaultPool());
 
 	fb_assert(stream <= MAX_STREAMS);
@@ -1551,7 +1551,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 		// generate a sort block which the optimizer will try to map to an index
 
 		SortNode* aggregate = rse->rse_aggregate =
-			FB_NEW(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
+			FB_NEW_POOL(*tdbb->getDefaultPool()) SortNode(*tdbb->getDefaultPool());
 
 		aggregate->expressions.add(aggNode->arg);
 		// in the max case, flag the sort as descending
@@ -1566,7 +1566,7 @@ RecordSource* AggregateSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt,
 
 	// allocate and optimize the record source block
 
-	AggregatedStream* const rsb = FB_NEW(*tdbb->getDefaultPool()) AggregatedStream(tdbb, csb,
+	AggregatedStream* const rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) AggregatedStream(tdbb, csb,
 		stream, (group ? &group->expressions : NULL), map, nextRsb);
 
 	if (rse->rse_aggregate)
@@ -1608,7 +1608,7 @@ UnionSourceNode* UnionSourceNode::parse(thread_db* tdbb, CompilerScratch* csb, c
 	// Make the node, parse the context number, get a stream assigned,
 	// and get the number of sub-RseNode's.
 
-	UnionSourceNode* node = FB_NEW(*tdbb->getDefaultPool()) UnionSourceNode(
+	UnionSourceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) UnionSourceNode(
 		*tdbb->getDefaultPool());
 
 	node->recursive = blrOp == blr_recurse;
@@ -1744,7 +1744,7 @@ UnionSourceNode* UnionSourceNode::copy(thread_db* tdbb, NodeCopier& copier) cons
 	if (!copier.remap)
 		BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
 
-	UnionSourceNode* newSource = FB_NEW(*tdbb->getDefaultPool()) UnionSourceNode(
+	UnionSourceNode* newSource = FB_NEW_POOL(*tdbb->getDefaultPool()) UnionSourceNode(
 		*tdbb->getDefaultPool());
 	newSource->recursive = recursive;
 
@@ -1926,11 +1926,11 @@ RecordSource* UnionSourceNode::generate(thread_db* tdbb, OptimizerBlk* opt, cons
 		fb_assert(rsbs.getCount() == 2 && maps.getCount() == 2);
 		// hvlad: save size of inner impure area and context of mapped record
 		// for recursive processing later
-		return FB_NEW(*tdbb->getDefaultPool()) RecursiveStream(csb, stream, mapStream,
+		return FB_NEW_POOL(*tdbb->getDefaultPool()) RecursiveStream(csb, stream, mapStream,
 			rsbs[0], rsbs[1], maps[0], maps[1], nstreams, streams, baseImpure);
 	}
 
-	return FB_NEW(*tdbb->getDefaultPool()) Union(csb, stream, clauses.getCount(), rsbs.begin(),
+	return FB_NEW_POOL(*tdbb->getDefaultPool()) Union(csb, stream, clauses.getCount(), rsbs.begin(),
 		maps.begin(), nstreams, streams);
 }
 
@@ -1975,7 +1975,7 @@ WindowSourceNode* WindowSourceNode::parse(thread_db* tdbb, CompilerScratch* csb)
 {
 	SET_TDBB(tdbb);
 
-	WindowSourceNode* node = FB_NEW(*tdbb->getDefaultPool()) WindowSourceNode(
+	WindowSourceNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) WindowSourceNode(
 		*tdbb->getDefaultPool());
 
 	node->rse = PAR_rse(tdbb, csb);
@@ -2027,7 +2027,7 @@ WindowSourceNode* WindowSourceNode::copy(thread_db* tdbb, NodeCopier& copier) co
 	if (!copier.remap)
 		BUGCHECK(221);		// msg 221 (CMP) copy: cannot remap
 
-	WindowSourceNode* newSource = FB_NEW(*tdbb->getDefaultPool()) WindowSourceNode(
+	WindowSourceNode* newSource = FB_NEW_POOL(*tdbb->getDefaultPool()) WindowSourceNode(
 		*tdbb->getDefaultPool());
 
 	newSource->rse = rse->copy(tdbb, copier);
@@ -2187,7 +2187,7 @@ RecordSource* WindowSourceNode::compile(thread_db* tdbb, OptimizerBlk* opt, bool
 		opt->beds.add(partition->stream);
 	}
 
-	RecordSource* const rsb = FB_NEW(*tdbb->getDefaultPool()) WindowedStream(tdbb, opt->opt_csb,
+	RecordSource* const rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) WindowedStream(tdbb, opt->opt_csb,
 		partitions, OPT_compile(tdbb, opt->opt_csb, rse, NULL));
 
 	StreamList rsbStreams;
@@ -2333,10 +2333,10 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 	const size_t visibleContexts = temp.getCount();
 
 	RecSourceListNode* fromList = dsqlFrom;
-	RecSourceListNode* streamList = FB_NEW(getPool()) RecSourceListNode(
+	RecSourceListNode* streamList = FB_NEW_POOL(getPool()) RecSourceListNode(
 		getPool(), fromList->items.getCount());
 
-	RseNode* node = FB_NEW(getPool()) RseNode(getPool());
+	RseNode* node = FB_NEW_POOL(getPool()) RseNode(getPool());
 	node->dsqlExplicitJoin = dsqlExplicitJoin;
 	node->rse_jointype = rse_jointype;
 	node->dsqlStreams = streamList;
@@ -2391,7 +2391,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 		if (usingList->items.isEmpty())	// NATURAL JOIN
 		{
 			StrArray leftNames(dsqlScratch->getPool());
-			ValueListNode* matched = FB_NEW(getPool()) ValueListNode(getPool(), 0u);
+			ValueListNode* matched = FB_NEW_POOL(getPool()) ValueListNode(getPool(), 0u);
 
 			PASS1_expand_select_node(dsqlScratch, streamList->items[0], &leftStack, true);
 			PASS1_expand_select_node(dsqlScratch, streamList->items[1], &rightStack, true);
@@ -2480,7 +2480,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				ValueExprNode* arg2 = resolveUsingField(dsqlScratch, field->dsqlName, &rightStack,
 					field, "right", rightCtx);
 
-				ComparativeBoolNode* eqlNode = FB_NEW(getPool()) ComparativeBoolNode(getPool(),
+				ComparativeBoolNode* eqlNode = FB_NEW_POOL(getPool()) ComparativeBoolNode(getPool(),
 					blr_eql, arg1, arg2);
 
 				fb_assert(leftCtx);
@@ -2490,7 +2490,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				ImplicitJoin* impJoinLeft;
 				if (!leftCtx->ctx_imp_join.get(field->dsqlName, impJoinLeft))
 				{
-					impJoinLeft = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
+					impJoinLeft = FB_NEW_POOL(dsqlScratch->getPool()) ImplicitJoin();
 					impJoinLeft->value = eqlNode->arg1;
 					impJoinLeft->visibleInContext = leftCtx;
 				}
@@ -2500,14 +2500,14 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 				ImplicitJoin* impJoinRight;
 				if (!rightCtx->ctx_imp_join.get(field->dsqlName, impJoinRight))
 				{
-					impJoinRight = FB_NEW(dsqlScratch->getPool()) ImplicitJoin();
+					impJoinRight = FB_NEW_POOL(dsqlScratch->getPool()) ImplicitJoin();
 					impJoinRight->value = arg2;
 				}
 				else
 					fb_assert(impJoinRight->visibleInContext == rightCtx);
 
 				// create the COALESCE
-				ValueListNode* stack = FB_NEW(getPool()) ValueListNode(getPool(), 0u);
+				ValueListNode* stack = FB_NEW_POOL(getPool()) ValueListNode(getPool(), 0u);
 
 				NestConst<ValueExprNode> tempNode = impJoinLeft->value;
 				NestConst<DsqlAliasNode> aliasNode = tempNode->as<DsqlAliasNode>();
@@ -2553,9 +2553,9 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 						stack->add(doDsqlPass(dsqlScratch, tempNode));
 				}
 
-				coalesceNode = FB_NEW(getPool()) CoalesceNode(getPool(), stack);
+				coalesceNode = FB_NEW_POOL(getPool()) CoalesceNode(getPool(), stack);
 
-				aliasNode = FB_NEW(getPool()) DsqlAliasNode(getPool(), field->dsqlName, coalesceNode);
+				aliasNode = FB_NEW_POOL(getPool()) DsqlAliasNode(getPool(), field->dsqlName, coalesceNode);
 				aliasNode->implicitJoin = impJoinLeft;
 
 				impJoinLeft->value = aliasNode;
@@ -2587,7 +2587,7 @@ RseNode* RseNode::dsqlPass(DsqlCompilerScratch* dsqlScratch)
 
 RseNode* RseNode::copy(thread_db* tdbb, NodeCopier& copier) const
 {
-	RseNode* newSource = FB_NEW(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
+	RseNode* newSource = FB_NEW_POOL(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
 
 	const NestConst<RecordSourceNode>* ptr = rse_relations.begin();
 
@@ -2689,7 +2689,7 @@ RseNode* RseNode::pass1(thread_db* tdbb, CompilerScratch* csb)
 	{
 		if (rse_boolean)
 		{
-			BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
+			BinaryBoolNode* andNode = FB_NEW_POOL(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
 			andNode->arg1 = boolean;
 			andNode->arg2 = rse_boolean;
 
@@ -2751,7 +2751,7 @@ void RseNode::pass1Source(thread_db* tdbb, CompilerScratch* csb, RseNode* rse,
 
 			if (*boolean)
 			{
-				BinaryBoolNode* andNode = FB_NEW(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
+				BinaryBoolNode* andNode = FB_NEW_POOL(csb->csb_pool) BinaryBoolNode(csb->csb_pool, blr_and);
 				andNode->arg1 = node;
 				andNode->arg2 = *boolean;
 
@@ -3312,7 +3312,7 @@ static MapNode* parseMap(thread_db* tdbb, CompilerScratch* csb, StreamType strea
 		PAR_syntax_error(csb, "blr_map");
 
 	unsigned int count = csb->csb_blr_reader.getWord();
-	MapNode* node = FB_NEW(csb->csb_pool) MapNode(csb->csb_pool);
+	MapNode* node = FB_NEW_POOL(csb->csb_pool) MapNode(csb->csb_pool);
 
 	while (count-- > 0)
 	{
@@ -3489,7 +3489,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 				BoolExprNode* const newArg1 = newStack.pop();
 
 				BinaryBoolNode* const newBinaryNode =
-					FB_NEW(pool) BinaryBoolNode(pool, blr_or, newArg1, newArg2);
+					FB_NEW_POOL(pool) BinaryBoolNode(pool, blr_or, newArg1, newArg2);
 
 				deliverStack->push(newBinaryNode);
 			}
@@ -3545,7 +3545,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 		if (cmpNode)
 		{
 			ComparativeBoolNode* const newCmpNode =
-				FB_NEW(pool) ComparativeBoolNode(pool, cmpNode->blrOp);
+				FB_NEW_POOL(pool) ComparativeBoolNode(pool, cmpNode->blrOp);
 
 			newChildren.add(newCmpNode->arg1.getAddress());
 			newChildren.add(newCmpNode->arg2.getAddress());
@@ -3554,7 +3554,7 @@ static void genDeliverUnmapped(thread_db* tdbb, BoolExprNodeStack* deliverStack,
 		}
 		else if (missingNode)
 		{
-			MissingBoolNode* const newMissingNode = FB_NEW(pool) MissingBoolNode(pool);
+			MissingBoolNode* const newMissingNode = FB_NEW_POOL(pool) MissingBoolNode(pool);
 
 			newChildren.add(newMissingNode->arg.getAddress());
 

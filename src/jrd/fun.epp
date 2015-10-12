@@ -174,7 +174,7 @@ void* IbUtil::alloc(long size)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	void* const ptr = tdbb->getDefaultPool()->allocate(size);
+	void* const ptr = tdbb->getDefaultPool()->allocate(size ALLOC_ARGS);
 
 	if (ptr)
 		tdbb->getAttachment()->att_udf_pointers.add(ptr);
@@ -923,7 +923,7 @@ static SLONG get_scalar_array(const Parameter* arg,
 							  array_desc);
 
 	fb_assert(array_desc->iad_total_length >= 0); // check before upcasting to size_t
-	UCHAR* data = FB_NEW(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(array_desc->iad_total_length)];
+	UCHAR* data = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(array_desc->iad_total_length)];
 	blob->BLB_get_data(tdbb, data, array_desc->iad_total_length);
 	const USHORT dimensions = array_desc->iad_dimensions;
 
@@ -936,7 +936,7 @@ static SLONG get_scalar_array(const Parameter* arg,
 		to.dsc_scale != from.dsc_scale || to.dsc_length != from.dsc_length)
 	{
 		SLONG n = array_desc->iad_count;
-		UCHAR* const temp = FB_NEW(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(to.dsc_length * n)];
+		UCHAR* const temp = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[static_cast<size_t>(to.dsc_length * n)];
 		to.dsc_address = temp;
 		from.dsc_address = data;
 

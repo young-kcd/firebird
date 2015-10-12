@@ -2977,7 +2977,7 @@ named_param($execStatementNode)
 	: symbol_variable_name BIND_PARAM value
 		{
 			if (!$execStatementNode->inputNames)
-				$execStatementNode->inputNames = FB_NEW(getPool()) EDS::ParamNames(getPool());
+				$execStatementNode->inputNames = FB_NEW_POOL(getPool()) EDS::ParamNames(getPool());
 
 			$execStatementNode->inputNames->add($1);
 
@@ -5782,12 +5782,12 @@ returning_clause
 		{ $$ = NULL; }
 	| RETURNING value_opt_alias_list
 		{
-			$$ = FB_NEW(getPool()) ReturningClause(getPool());
+			$$ = FB_NEW_POOL(getPool()) ReturningClause(getPool());
 			$$->first = $2;
 		}
 	| RETURNING value_opt_alias_list INTO variable_list
 		{
-			$$ = FB_NEW(getPool()) ReturningClause(getPool());
+			$$ = FB_NEW_POOL(getPool()) ReturningClause(getPool());
 			$$->first = $2;
 			$$->second = $4;
 		}

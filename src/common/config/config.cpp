@@ -53,7 +53,7 @@ public:
 		{
 			ConfigFile file(fb_utils::getPrefix(Firebird::IConfigManager::DIR_CONF, CONFIG_FILE),
 				ConfigFile::ERROR_WHEN_MISS);
-			defaultConfig = new Config(file);
+			defaultConfig = FB_NEW Config(file);
 		}
 		catch (const Firebird::status_exception& ex)
 		{
@@ -65,7 +65,7 @@ public:
 			missConf = true;
 
 			ConfigFile file(ConfigFile::USE_TEXT, "");
-			defaultConfig = new Config(file);
+			defaultConfig = FB_NEW Config(file);
 		}
 	}
 
@@ -86,7 +86,7 @@ public:
 
 	Firebird::IFirebirdConf* getFirebirdConf()
 	{
-		Firebird::IFirebirdConf* rc = new FirebirdConf(defaultConfig);
+		Firebird::IFirebirdConf* rc = FB_NEW FirebirdConf(defaultConfig);
 		rc->addRef();
 		return rc;
 	}
@@ -267,7 +267,7 @@ void Config::merge(Firebird::RefPtr<Config>& config, const Firebird::string* dpb
 	if (dpbConfig && dpbConfig->hasData())
 	{
 		ConfigFile txtStream(ConfigFile::USE_TEXT, dpbConfig->c_str());
-		config = new Config(txtStream, *(config.hasData() ? config : getDefaultConfig()));
+		config = FB_NEW Config(txtStream, *(config.hasData() ? config : getDefaultConfig()));
 	}
 }
 
@@ -303,7 +303,7 @@ void Config::loadValues(const ConfigFile& file)
 		if (entry.data_type == TYPE_STRING && values[i] != entry.default_value)
 		{
 			const char* src = (const char*) values[i];
-			char* dst = FB_NEW(getPool()) char[strlen(src) + 1];
+			char* dst = FB_NEW_POOL(getPool()) char[strlen(src) + 1];
 			strcpy(dst, src);
 			values[i] = (ConfigValue) dst;
 		}
@@ -356,7 +356,7 @@ static Firebird::PathName* rootFromCommandLine = 0;
 void Config::setRootDirectoryFromCommandLine(const Firebird::PathName& newRoot)
 {
 	delete rootFromCommandLine;
-	rootFromCommandLine = FB_NEW(*getDefaultMemoryPool())
+	rootFromCommandLine = FB_NEW_POOL(*getDefaultMemoryPool())
 		Firebird::PathName(*getDefaultMemoryPool(), newRoot);
 }
 

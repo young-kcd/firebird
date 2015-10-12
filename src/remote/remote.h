@@ -327,7 +327,7 @@ struct RMessage : public Firebird::GlobalStorage
 
 public:
 	explicit RMessage(size_t rpt) :
-		msg_next(0), msg_number(0), msg_address(0), msg_buffer(FB_NEW(getPool()) UCHAR[rpt])
+		msg_next(0), msg_number(0), msg_address(0), msg_buffer(FB_NEW_POOL(getPool()) UCHAR[rpt])
 	{
 		memset(msg_buffer, 0, rpt);
 	}
@@ -395,7 +395,7 @@ public:
 
 	Rrq* clone() const
 	{
-		Rrq* rc = new Rrq(rrq_rpt.getCount());
+		Rrq* rc = FB_NEW Rrq(rrq_rpt.getCount());
 		*rc = *this;
 		rc->rrq_self = NULL;
 		return rc;
@@ -567,7 +567,7 @@ public:
 inline void Rsr::saveException(Firebird::IStatus* status, bool overwrite)
 {
 	if (!rsr_status) {
-		rsr_status = new Firebird::StatusHolder();
+		rsr_status = FB_NEW Firebird::StatusHolder();
 	}
 	if (overwrite || !rsr_status->getError()) {
 		rsr_status->save(status);
@@ -973,9 +973,9 @@ struct rem_port : public Firebird::GlobalStorage, public Firebird::RefCounted
 
 public:
 	rem_port(rem_port_t t, size_t rpt) :
-		port_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_que_sync(FB_NEW(getPool()) Firebird::RefMutex()),
-		port_write_sync(FB_NEW(getPool()) Firebird::RefMutex()),
+		port_sync(FB_NEW_POOL(getPool()) Firebird::RefMutex()),
+		port_que_sync(FB_NEW_POOL(getPool()) Firebird::RefMutex()),
+		port_write_sync(FB_NEW_POOL(getPool()) Firebird::RefMutex()),
 		port_accept(0), port_disconnect(0), port_force_close(0), port_receive_packet(0), port_send_packet(0),
 		port_send_partial(0), port_connect(0), port_request(0), port_select_multi(0),
 		port_type(t), port_state(PENDING), port_clients(0), port_next(0),
@@ -1001,7 +1001,7 @@ public:
 		port_crypt_keys(getPool()), port_crypt_complete(false), port_crypt_level(WIRECRYPT_REQUIRED),
 		port_known_server_keys(getPool()), port_crypt_plugin(NULL),
 		port_client_crypt_callback(NULL), port_server_crypt_callback(NULL),
-		port_buffer(FB_NEW(getPool()) UCHAR[rpt]),
+		port_buffer(FB_NEW_POOL(getPool()) UCHAR[rpt]),
 		port_snd_packets(0), port_rcv_packets(0), port_snd_bytes(0), port_rcv_bytes(0)
 	{
 		addRef();

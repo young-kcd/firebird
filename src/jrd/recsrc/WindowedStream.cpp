@@ -217,7 +217,7 @@ namespace
 	WindowJoin::WindowJoin(CompilerScratch* csb, RecordSource* outer, RecordSource* inner,
 					   const SortNode* outerKeys,
 					   const SortNode* innerKeys)
-		: m_outer(outer), m_inner(FB_NEW(csb->csb_pool) BufferedStream(csb, inner)),
+		: m_outer(outer), m_inner(FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, inner)),
 		  m_outerKeys(outerKeys), m_innerKeys(innerKeys)
 	{
 		fb_assert(m_outerKeys && m_innerKeys);
@@ -418,7 +418,7 @@ namespace
 
 WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 			ObjectsArray<WindowSourceNode::Partition>& partitions, RecordSource* next)
-	: m_next(FB_NEW(csb->csb_pool) BufferedStream(csb, next)),
+	: m_next(FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, next)),
 	  m_joinedStream(NULL)
 {
 	m_impure = CMP_impure(csb, sizeof(Impure));
@@ -447,8 +447,8 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 		{
 			fb_assert(!m_joinedStream);
 
-			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(tdbb, csb, partition->stream,
-				NULL, partition->map, FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next),
+			m_joinedStream = FB_NEW_POOL(csb->csb_pool) AggregatedStream(tdbb, csb, partition->stream,
+				NULL, partition->map, FB_NEW_POOL(csb->csb_pool) BufferedStreamWindow(csb, m_next),
 				NULL);
 
 			OPT_gen_aggregate_distincts(tdbb, csb, partition->map);
@@ -456,7 +456,7 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 	}
 
 	if (!m_joinedStream)
-		m_joinedStream = FB_NEW(csb->csb_pool) BufferedStreamWindow(csb, m_next);
+		m_joinedStream = FB_NEW_POOL(csb->csb_pool) BufferedStreamWindow(csb, m_next);
 
 	// Process ordered partitions.
 
@@ -476,7 +476,7 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 
 		if (partition->group)
 		{
-			partitionOrder = FB_NEW(csb->csb_pool) SortNode(csb->csb_pool);
+			partitionOrder = FB_NEW_POOL(csb->csb_pool) SortNode(csb->csb_pool);
 			partitionOrder->expressions.join(partition->group->expressions);
 			partitionOrder->descending.join(partition->group->descending);
 			partitionOrder->nullOrder.join(partition->group->nullOrder);
@@ -496,10 +496,10 @@ WindowedStream::WindowedStream(thread_db* tdbb, CompilerScratch* csb,
 			SortedStream* sortedStream = OPT_gen_sort(tdbb, csb, streams, NULL,
 				m_joinedStream, partitionOrder, false);
 
-			m_joinedStream = FB_NEW(csb->csb_pool) AggregatedStream(tdbb, csb, partition->stream,
+			m_joinedStream = FB_NEW_POOL(csb->csb_pool) AggregatedStream(tdbb, csb, partition->stream,
 				(partition->group ? &partition->group->expressions : NULL),
 				partition->map,
-				FB_NEW(csb->csb_pool) BufferedStream(csb, sortedStream),
+				FB_NEW_POOL(csb->csb_pool) BufferedStream(csb, sortedStream),
 				(partition->order ? &partition->order->expressions : NULL));
 
 			OPT_gen_aggregate_distincts(tdbb, csb, partition->map);

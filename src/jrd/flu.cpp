@@ -257,7 +257,7 @@ namespace Jrd
 			ModuleLoader::Module* mlm = ModuleLoader::loadModule(fixedModule);
 			if (mlm)
 			{
-				im = FB_NEW(*getDefaultMemoryPool())
+				im = FB_NEW_POOL(*getDefaultMemoryPool())
 					InternalModule(*getDefaultMemoryPool(), mlm, initialModule, fixedModule);
 				loadedModules().add(im);
 				return Module(im);

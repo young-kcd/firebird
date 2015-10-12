@@ -141,7 +141,7 @@ public:
 	{
 		try
 		{
-			P* p = new P(factoryParameter);
+			P* p = FB_NEW P(factoryParameter);
 			p->addRef();
 			return p;
 		}

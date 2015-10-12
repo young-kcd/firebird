@@ -208,7 +208,7 @@ int SrpServer::authenticate(CheckStatusWrapper* status, IServerBlock* sb, IWrite
 				throw;
 			}
 
-			server = new RemotePassword;
+			server = FB_NEW RemotePassword;
 			server->genServerKey(serverPubKey, verifier);
 
 			// Ready to prepare data for client and calculate session key

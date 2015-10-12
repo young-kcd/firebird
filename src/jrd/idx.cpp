@@ -322,7 +322,7 @@ void IDX_create_index(thread_db* tdbb,
 	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
-	AutoPtr<Sort> scb(FB_NEW(transaction->tra_sorts.getPool())
+	AutoPtr<Sort> scb(FB_NEW_POOL(transaction->tra_sorts.getPool())
 		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
 				  2, 1, key_desc, callback, callback_arg));
 
@@ -553,7 +553,7 @@ IndexBlock* IDX_create_index_block(thread_db* tdbb, jrd_rel* relation, USHORT id
 	Database* dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
-	IndexBlock* index_block = FB_NEW(*relation->rel_pool) IndexBlock();
+	IndexBlock* index_block = FB_NEW_POOL(*relation->rel_pool) IndexBlock();
 	index_block->idb_id = id;
 
 	// link the block in with the relation linked list

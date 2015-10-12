@@ -166,7 +166,7 @@ public:
 
 	static Format* newFormat(MemoryPool& p, int len = 0)
 	{
-		return FB_NEW(p) Format(p, len);
+		return FB_NEW_POOL(p) Format(p, len);
 	}
 
 	ULONG fmt_length;

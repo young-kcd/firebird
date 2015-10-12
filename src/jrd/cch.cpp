@@ -1375,7 +1375,7 @@ void CCH_init(thread_db* tdbb, ULONG number)
 	{
 		try
 		{
-			bcb->bcb_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
+			bcb->bcb_rpt = FB_NEW_POOL(*bcb->bcb_bufferpool) bcb_repeat[number];
 			break;
 		}
 		catch (const Firebird::Exception& ex)
@@ -2379,7 +2379,7 @@ static BufferDesc* alloc_bdb(thread_db* tdbb, BufferControl* bcb, UCHAR** memory
  **************************************/
 	SET_TDBB(tdbb);
 
-	BufferDesc* bdb = FB_NEW(*bcb->bcb_bufferpool) BufferDesc(bcb);
+	BufferDesc* bdb = FB_NEW_POOL(*bcb->bcb_bufferpool) BufferDesc(bcb);
 
 	try {
 		bdb->bdb_lock = alloc_page_lock(tdbb, bdb);
@@ -2875,7 +2875,7 @@ static THREAD_ENTRY_DECLARE cache_writer(THREAD_ENTRY_PARAM arg)
 		user.usr_user_name = "Cache Writer";
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-		RefPtr<SysStableAttachment> sAtt(new SysStableAttachment(attachment));
+		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 		attachment->setStable(sAtt);
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_user = &user;
@@ -3118,7 +3118,7 @@ static void check_precedence(thread_db* tdbb, WIN* window, PageNumber page)
 	if (precedence)
 		bcb->bcb_free = (Precedence*) precedence->pre_hi;
 	else
-		precedence = FB_NEW(*bcb->bcb_bufferpool) Precedence;
+		precedence = FB_NEW_POOL(*bcb->bcb_bufferpool) Precedence;
 
 	precedence->pre_low = low;
 	precedence->pre_hi = high;
@@ -3446,7 +3446,7 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
 
 	const bcb_repeat* const old_end = bcb->bcb_rpt + bcb->bcb_count;
 
-	bcb_repeat* const new_rpt = FB_NEW(*bcb->bcb_bufferpool) bcb_repeat[number];
+	bcb_repeat* const new_rpt = FB_NEW_POOL(*bcb->bcb_bufferpool) bcb_repeat[number];
 	bcb_repeat* const old_rpt = bcb->bcb_rpt;
 	bcb->bcb_rpt = new_rpt;
 
@@ -3488,7 +3488,7 @@ static bool expand_buffers(thread_db* tdbb, ULONG number)
 		if (!num_in_seg)
 		{
 			const size_t alloc_size = dbb->dbb_page_size * (num_per_seg + 1);
-			memory = (UCHAR*) bcb->bcb_bufferpool->allocate(alloc_size);
+			memory = (UCHAR*) bcb->bcb_bufferpool->allocate(alloc_size ALLOC_ARGS);
 			bcb->bcb_memory.push(memory);
 			memory = FB_ALIGN(memory, dbb->dbb_page_size);
 
@@ -4198,7 +4198,7 @@ static ULONG memory_init(thread_db* tdbb, BufferControl* bcb, SLONG number)
 			while (true)
 			{
 				try {
-					memory = (UCHAR*) bcb->bcb_bufferpool->allocate(memory_size);
+					memory = (UCHAR*) bcb->bcb_bufferpool->allocate(memory_size ALLOC_ARGS);
 					break;
 				}
 				catch (Firebird::BadAlloc&)
@@ -5059,7 +5059,7 @@ void requeueRecentlyUsed(BufferControl* bcb)
 BufferControl* BufferControl::create(Database* dbb)
 {
 	MemoryPool* const pool = dbb->createPool();
-	BufferControl* const bcb = FB_NEW(*pool) BufferControl(*pool, dbb->dbb_memory_stats);
+	BufferControl* const bcb = FB_NEW_POOL(*pool) BufferControl(*pool, dbb->dbb_memory_stats);
 	pool->setStatsGroup(bcb->bcb_memory_stats);
 	return bcb;
 }

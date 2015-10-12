@@ -213,7 +213,7 @@ void DBG_parse_debug_info(ULONG length, const UCHAR* data, DbgInfo& dbgInfo)
 					break;
 				}
 
-				AutoPtr<DbgInfo> sub(FB_NEW(dbgInfo.getPool()) DbgInfo(dbgInfo.getPool()));
+				AutoPtr<DbgInfo> sub(FB_NEW_POOL(dbgInfo.getPool()) DbgInfo(dbgInfo.getPool()));
 				DBG_parse_debug_info(length, data, *sub);
 				data += length;
 

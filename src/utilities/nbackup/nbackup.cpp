@@ -1477,7 +1477,7 @@ void NBackup::restore_database(const BackupFiles& files)
 				Ods::header_page header;
 				if (read_file(dbase, &header, sizeof(header)) != sizeof(header))
 					status_exception::raise(Arg::Gds(isc_nbackup_err_eofhdr_restdb) << Arg::Num(1));
-				page_buffer = FB_NEW(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size];
+				page_buffer = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[header.hdr_page_size];
 
 				seek_file(dbase, 0);
 

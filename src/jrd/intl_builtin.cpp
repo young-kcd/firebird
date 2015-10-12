@@ -57,7 +57,7 @@ static inline bool FAMILY_INTERNAL(texttype* tt,
 	tt->texttype_fn_str_to_upper	= internal_str_to_upper;
 	tt->texttype_fn_str_to_lower	= internal_str_to_lower;
 	tt->texttype_fn_destroy			= internal_destroy;
-	tt->texttype_impl				= new TextTypeImpl;
+	tt->texttype_impl				= FB_NEW TextTypeImpl;
 	static_cast<TextTypeImpl*>(tt->texttype_impl)->texttype_pad_char = ' ';
 
 	return true;
@@ -1070,7 +1070,7 @@ static INTL_BOOL ttype_unicode8_init(texttype* tt,
  *************************************/
 	static const ASCII POSIX[] = "C.UTF8.UNICODE";
 
-	charset* cs = new charset;
+	charset* cs = FB_NEW charset;
 	memset(cs, 0, sizeof(*cs));
 	cs_utf8_init(cs, "UTF8", config_info);
 
@@ -1718,7 +1718,7 @@ ULONG INTL_builtin_setup_attributes(const ASCII* textTypeName, const ASCII* char
 	// the preprocessor, but this is a task for another day.
 	if (strstr(textTypeName, "UNICODE") && strcmp(textTypeName, "UNICODE_FSS") != 0)
 	{
-		Firebird::AutoPtr<charset, Jrd::CharSet::Delete> cs(new charset);
+		Firebird::AutoPtr<charset, Jrd::CharSet::Delete> cs(FB_NEW charset);
 		memset(cs, 0, sizeof(*cs));
 
 		// test if that charset exists

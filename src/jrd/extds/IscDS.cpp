@@ -53,7 +53,7 @@ class RegisterFBProvider
 public:
 	RegisterFBProvider()
 	{
-		Provider* provider = new FBProvider(FIREBIRD_PROVIDER_NAME);
+		Provider* provider = FB_NEW FBProvider(FIREBIRD_PROVIDER_NAME);
 		Manager::addProvider(provider);
 	}
 };
@@ -94,7 +94,7 @@ void IscProvider::getRemoteError(const FbStatusVector* status, string& err) cons
 
 Connection* IscProvider::doCreateConnection()
 {
-	return new IscConnection(*this);
+	return FB_NEW IscConnection(*this);
 }
 
 // IscConnection
@@ -235,17 +235,17 @@ bool IscConnection::isAvailable(thread_db* tdbb, TraScope traScope) const
 
 Blob* IscConnection::createBlob()
 {
-	return new IscBlob(*this);
+	return FB_NEW IscBlob(*this);
 }
 
 Transaction* IscConnection::doCreateTransaction()
 {
-	return new IscTransaction(*this);
+	return FB_NEW IscTransaction(*this);
 }
 
 Statement* IscConnection::doCreateStatement()
 {
-	return new IscStatement(*this);
+	return FB_NEW IscStatement(*this);
 }
 
 // IscTransaction
@@ -324,7 +324,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	// prepare and get output parameters
 	if (!m_out_xsqlda)
 	{
-		m_out_xsqlda = (XSQLDA*) FB_NEW (getPool()) char [XSQLDA_LENGTH(1)];
+		m_out_xsqlda = (XSQLDA*) FB_NEW_POOL (getPool()) char [XSQLDA_LENGTH(1)];
 		m_out_xsqlda->sqln = 1;
 		m_out_xsqlda->version = 1;
 	}
@@ -360,7 +360,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		const int n = m_out_xsqlda->sqld;
 		delete[] (char*) m_out_xsqlda;
 
-		m_out_xsqlda = (XSQLDA*) FB_NEW (getPool()) char [XSQLDA_LENGTH(n)];
+		m_out_xsqlda = (XSQLDA*) FB_NEW_POOL (getPool()) char [XSQLDA_LENGTH(n)];
 		m_out_xsqlda->sqln = n;
 		m_out_xsqlda->version = 1;
 
@@ -386,7 +386,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 	// get input parameters
 	if (!m_in_xsqlda)
 	{
-		m_in_xsqlda = (XSQLDA*) FB_NEW (getPool()) char [XSQLDA_LENGTH(1)];
+		m_in_xsqlda = (XSQLDA*) FB_NEW_POOL (getPool()) char [XSQLDA_LENGTH(1)];
 		m_in_xsqlda->sqln = 1;
 		m_in_xsqlda->version = 1;
 	}
@@ -408,7 +408,7 @@ void IscStatement::doPrepare(thread_db* tdbb, const string& sql)
 		const int n = m_in_xsqlda->sqld;
 		delete[] (char*) m_in_xsqlda;
 
-		m_in_xsqlda = (XSQLDA*) FB_NEW (getPool()) char [XSQLDA_LENGTH(n)];
+		m_in_xsqlda = (XSQLDA*) FB_NEW_POOL (getPool()) char [XSQLDA_LENGTH(n)];
 		m_in_xsqlda->sqln = n;
 		m_in_xsqlda->version = 1;
 

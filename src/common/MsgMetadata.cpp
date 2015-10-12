@@ -32,13 +32,13 @@
 namespace Firebird {
 
 MetadataBuilder::MetadataBuilder(const MsgMetadata* from)
-	: msgMetadata(new MsgMetadata)
+	: msgMetadata(FB_NEW MsgMetadata)
 {
 	msgMetadata->items = from->items;
 }
 
 MetadataBuilder::MetadataBuilder(unsigned fieldCount)
-	: msgMetadata(new MsgMetadata)
+	: msgMetadata(FB_NEW MsgMetadata)
 {
 	if (fieldCount)
 		msgMetadata->items.grow(fieldCount);
@@ -315,7 +315,7 @@ IMetadataBuilder* MsgMetadata::getBuilder(CheckStatusWrapper* status)
 {
 	try
 	{
-		IMetadataBuilder* rc = new MetadataBuilder(this);
+		IMetadataBuilder* rc = FB_NEW MetadataBuilder(this);
 		rc->addRef();
 		return rc;
 	}

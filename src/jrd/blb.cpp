@@ -1912,7 +1912,7 @@ static ArrayField* alloc_array(jrd_tra* transaction, Ods::InternalArrayDesc* pro
 
 	// Allocate large block to hold array
 
-	array->arr_data = FB_NEW(*transaction->tra_pool) UCHAR[array->arr_desc.iad_total_length];
+	array->arr_data = FB_NEW_POOL(*transaction->tra_pool) UCHAR[array->arr_desc.iad_total_length];
 	array->arr_temp_id = ++transaction->tra_next_blob_id;
 
 	return array;
@@ -1938,7 +1938,7 @@ blb* blb::allocate_blob(thread_db* tdbb, jrd_tra* transaction)
 
 	// Create a blob large enough to hold a single data page.
 
-	blb* blob = FB_NEW(*transaction->tra_pool) blb(*transaction->tra_pool, dbb->dbb_page_size);
+	blb* blob = FB_NEW_POOL(*transaction->tra_pool) blb(*transaction->tra_pool, dbb->dbb_page_size);
 	blob->blb_attachment = tdbb->getAttachment();
 	blob->blb_transaction = transaction;
 
@@ -2040,7 +2040,7 @@ static ISC_STATUS blob_filter(USHORT action, BlobControl* control)
 
 	case isc_blob_filter_alloc:
 	    // pointer to ISC_STATUS!!!
-		return (ISC_STATUS) FB_NEW(*transaction->tra_pool) BlobControl(*transaction->tra_pool);
+		return (ISC_STATUS) FB_NEW_POOL(*transaction->tra_pool) BlobControl(*transaction->tra_pool);
 
 	case isc_blob_filter_free:
 		delete control;

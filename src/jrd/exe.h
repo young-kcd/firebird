@@ -433,7 +433,7 @@ class CompilerScratch : public pool_alloc<type_csb>
 		csb_currentForNode(NULL),
 		csb_rpt(p, len)
 	{
-		csb_dbg_info = FB_NEW(p) Firebird::DbgInfo(p);
+		csb_dbg_info = FB_NEW_POOL(p) Firebird::DbgInfo(p);
 	}
 
 public:
@@ -463,7 +463,7 @@ public:
 	static CompilerScratch* newCsb(MemoryPool& p, FB_SIZE_T len,
 								   const Firebird::MetaName& domain_validation = Firebird::MetaName())
 	{
-		return FB_NEW(p) CompilerScratch(p, len, domain_validation);
+		return FB_NEW_POOL(p) CompilerScratch(p, len, domain_validation);
 	}
 
 	StreamType nextStream(bool check = true)

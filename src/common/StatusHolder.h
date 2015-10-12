@@ -208,7 +208,7 @@ public:
 
 	IStatus* clone() const
 	{
-		Final* ret = new Final();
+		Final* ret = FB_NEW Final();
 
 		ret->setWarnings(getWarnings());
 		ret->setErrors(getErrors());

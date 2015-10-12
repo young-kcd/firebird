@@ -54,7 +54,7 @@ namespace Firebird {
 namespace Arg {
 
 Base::Base(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
-	implementation(FB_NEW(*getDefaultMemoryPool()) ImplBase(k, c))
+	implementation(FB_NEW_POOL(*getDefaultMemoryPool()) ImplBase(k, c))
 {
 }
 
@@ -95,28 +95,28 @@ StatusVector::ImplStatusVector::ImplStatusVector(const Exception& ex) throw()
 }
 
 StatusVector::StatusVector(ISC_STATUS k, ISC_STATUS c) throw(Firebird::BadAlloc) :
-	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(k, c))
+	Base(FB_NEW_POOL(*getDefaultMemoryPool()) ImplStatusVector(k, c))
 {
 	operator<<(*(static_cast<Base*>(this)));
 }
 
 StatusVector::StatusVector(const ISC_STATUS* s) throw(Firebird::BadAlloc) :
-	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s))
+	Base(FB_NEW_POOL(*getDefaultMemoryPool()) ImplStatusVector(s))
 {
 }
 
 StatusVector::StatusVector(const IStatus* s) throw(Firebird::BadAlloc) :
-	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(s))
+	Base(FB_NEW_POOL(*getDefaultMemoryPool()) ImplStatusVector(s))
 {
 }
 
 StatusVector::StatusVector(const Exception& ex) throw(Firebird::BadAlloc) :
-	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(ex))
+	Base(FB_NEW_POOL(*getDefaultMemoryPool()) ImplStatusVector(ex))
 {
 }
 
 StatusVector::StatusVector() throw(Firebird::BadAlloc) :
-	Base(FB_NEW(*getDefaultMemoryPool()) ImplStatusVector(0, 0))
+	Base(FB_NEW_POOL(*getDefaultMemoryPool()) ImplStatusVector(0, 0))
 {
 }
 

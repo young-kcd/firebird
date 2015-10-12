@@ -137,7 +137,7 @@ void TraceManager::load_plugins()
 
 	init_factories = true;
 
-	factories = FB_NEW(*getDefaultMemoryPool()) TraceManager::Factories(*getDefaultMemoryPool());
+	factories = FB_NEW_POOL(*getDefaultMemoryPool()) TraceManager::Factories(*getDefaultMemoryPool());
 	for (GetPlugins<ITraceFactory> traceItr(IPluginManager::TYPE_TRACE); traceItr.hasData(); traceItr.next())
 	{
 		FactoryInfo info;
@@ -187,7 +187,7 @@ void TraceManager::update_sessions()
 				if (trace_sessions.find(session.ses_id, pos))
 					liveSessions.add(session.ses_id);
 				else
-					newSessions.add(FB_NEW(pool) TraceSession(pool, session));
+					newSessions.add(FB_NEW_POOL(pool) TraceSession(pool, session));
 			}
 		}
 

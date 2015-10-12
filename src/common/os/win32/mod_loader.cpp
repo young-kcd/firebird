@@ -221,7 +221,7 @@ ModuleLoader::Module* ModuleLoader::loadModule(const PathName& modPath)
 	char fileName[MAX_PATH];
 	GetModuleFileName(module, fileName, sizeof(fileName));
 
-	return FB_NEW(*getDefaultMemoryPool()) Win32Module(*getDefaultMemoryPool(), fileName, module);
+	return FB_NEW_POOL(*getDefaultMemoryPool()) Win32Module(*getDefaultMemoryPool(), fileName, module);
 }
 
 Win32Module::~Win32Module()

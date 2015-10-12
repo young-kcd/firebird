@@ -58,7 +58,7 @@ void	API_ROUTINE gds_alloc_report(ULONG, const char*, int);
 VoidPtr	API_ROUTINE gds__alloc(SLONG);
 
 #ifdef DEBUG_GDS_ALLOC
-#define gds__alloc(s)		gds__alloc_debug ((s), (TEXT*)__FILE__, (ULONG)__LINE__)
+#define gds__alloc(s)		gds__alloc_debug ((s), __FILE__, __LINE__)
 #endif /* DEBUG_GDS_ALLOC */
 
 

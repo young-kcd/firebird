@@ -38,7 +38,7 @@ void CV_convert_init(csconvert* csptr,
 	csptr->csconvert_name = "DIRECT";
 	csptr->csconvert_fn_convert = cvt_fn;
 	csptr->csconvert_fn_destroy = CV_convert_destroy;
-	csptr->csconvert_impl = new CsConvertImpl();
+	csptr->csconvert_impl = FB_NEW CsConvertImpl();
 	csptr->csconvert_impl->csconvert_datatable = (const BYTE*) datatable;
 	csptr->csconvert_impl->csconvert_misc = (const BYTE*) datatable2;
 }

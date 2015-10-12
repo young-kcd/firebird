@@ -73,7 +73,7 @@ static bool texttype_default_init(texttype* tt,
 	}
 
 	// name comes from stack. Copy it.
-	ASCII* p = FB_NEW(*getDefaultMemoryPool()) ASCII[strlen(name) + 1];
+	ASCII* p = FB_NEW_POOL(*getDefaultMemoryPool()) ASCII[strlen(name) + 1];
 	strcpy(p, name);
 	tt->texttype_name = p;
 
@@ -94,7 +94,7 @@ static bool texttype_unicode_init(texttype* tt,
 								  ULONG specificAttributesLength,
 								  const ASCII* configInfo)
 {
-	charset* cs = FB_NEW(*getDefaultMemoryPool())  charset;
+	charset* cs = FB_NEW_POOL(*getDefaultMemoryPool())  charset;
 	memset(cs, 0, sizeof(*cs));
 
 	// test if that charset exist
@@ -121,7 +121,7 @@ bool LCICU_setup_attributes(const ASCII* name, const ASCII* charSetName, const A
 
 	if (len > 8 && strcmp(name + len - 8, "_UNICODE") == 0)
 	{
-		AutoPtr<charset, Jrd::CharSet::Delete> cs(FB_NEW(*getDefaultMemoryPool()) charset);
+		AutoPtr<charset, Jrd::CharSet::Delete> cs(FB_NEW_POOL(*getDefaultMemoryPool()) charset);
 		memset(cs, 0, sizeof(*cs));
 
 		// test if that charset exist

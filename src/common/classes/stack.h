@@ -65,7 +65,7 @@ namespace Firebird {
 					this->add(e);
 					return this;
 				}
-				Entry* newEntry = FB_NEW(p) Entry(e, this);
+				Entry* newEntry = FB_NEW_POOL(p) Entry(e, this);
 				return newEntry;
 			}
 
@@ -91,7 +91,7 @@ namespace Firebird {
 
 			Entry* dup(MemoryPool& p)
 			{
-				Entry* rc = FB_NEW(p) Entry(next ? next->dup(p) : 0);
+				Entry* rc = FB_NEW_POOL(p) Entry(next ? next->dup(p) : 0);
 				rc->join(*this);
 				return rc;
 			}
@@ -137,7 +137,7 @@ namespace Firebird {
 				stk_cache = 0;
 			}
 			stk = stk ? stk->push(e, getPool())
-					  : FB_NEW(getPool()) Entry(e, 0);
+					  : FB_NEW_POOL(getPool()) Entry(e, 0);
 		}
 
 		Object pop()
@@ -510,7 +510,7 @@ namespace Firebird {
 			}
 			else
 			{
-				Entry* newEntry = FB_NEW(getPool()) Entry(0);
+				Entry* newEntry = FB_NEW_POOL(getPool()) Entry(0);
 				(*toSplit)->split(mark.elem, newEntry);
 				s.stk = *toSplit;
 				*toSplit = newEntry;

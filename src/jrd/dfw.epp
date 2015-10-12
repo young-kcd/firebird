@@ -1210,7 +1210,7 @@ void DFW_merge_work(jrd_tra* transaction, SLONG old_sav_number, SLONG new_sav_nu
 	{
 		if (! newSp)
 		{
-			newSp = FB_NEW(*transaction->tra_pool) DfwSavePoint(new_sav_number);
+			newSp = FB_NEW_POOL(*transaction->tra_pool) DfwSavePoint(new_sav_number);
 			job->hash.add(newSp);
 		}
 
@@ -1497,7 +1497,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 	DeferredJob *job = transaction->tra_deferred_job;
 	if (! job)
 	{
-		transaction->tra_deferred_job = job = FB_NEW(*transaction->tra_pool) DeferredJob;
+		transaction->tra_deferred_job = job = FB_NEW_POOL(*transaction->tra_pool) DeferredJob;
 	}
 
 	// Check to see if work is already posted
@@ -1505,7 +1505,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 	DfwSavePoint* sp = job->hash.lookup(sav_number);
 	if (! sp)
 	{
-		sp = FB_NEW(*transaction->tra_pool) DfwSavePoint(sav_number);
+		sp = FB_NEW_POOL(*transaction->tra_pool) DfwSavePoint(sav_number);
 		job->hash.add(sp);
 	}
 
@@ -1519,7 +1519,7 @@ DeferredWork* DFW_post_work(jrd_tra* transaction, enum dfw_t type, const string&
 
 	// Not already posted, so do so now.
 
-	work = FB_NEW(*transaction->tra_pool)
+	work = FB_NEW_POOL(*transaction->tra_pool)
 		DeferredWork(*transaction->tra_pool, &(job->end), type, id, sav_number, name, package);
 	job->end = work->getNextPtr();
 	fb_assert(!(*job->end));
@@ -1580,7 +1580,7 @@ DeferredWork* DFW_post_work_arg( jrd_tra* transaction, DeferredWork* work, const
 
 	if (! arg)
 	{
-		arg = FB_NEW(*transaction->tra_pool)
+		arg = FB_NEW_POOL(*transaction->tra_pool)
 			DeferredWork(*transaction->tra_pool, 0, type, id, 0, name, "");
 		work->dfw_args.add(arg);
 	}
@@ -5526,7 +5526,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 					// Make a temporary field block
 
-					TemporaryField* tfb = FB_NEW(*tdbb->getDefaultPool()) TemporaryField;
+					TemporaryField* tfb = FB_NEW_POOL(*tdbb->getDefaultPool()) TemporaryField;
 					tfb->tfb_next = stack;
 					stack = tfb;
 
@@ -5631,7 +5631,7 @@ static bool make_version(thread_db* tdbb, SSHORT phase, DeferredWork* work, jrd_
 
 					if (external_flag)
 					{
-						tfb = FB_NEW(*tdbb->getDefaultPool()) TemporaryField;
+						tfb = FB_NEW_POOL(*tdbb->getDefaultPool()) TemporaryField;
 						tfb->tfb_next = external;
 						external = tfb;
 						fb_assert(FLD.RDB$EXTERNAL_TYPE <= MAX_UCHAR);
@@ -5963,7 +5963,7 @@ static void put_summary_record(thread_db* tdbb,
 	UCHAR temp[129];
 
 	UCHAR* const buffer = ((size_t) (length + 1) > sizeof(temp)) ?
-		FB_NEW(*getDefaultMemoryPool()) UCHAR[length + 1] : temp;
+		FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[length + 1] : temp;
 
 	UCHAR* p = buffer;
 	*p++ = (UCHAR) type;

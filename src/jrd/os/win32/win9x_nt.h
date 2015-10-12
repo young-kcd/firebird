@@ -85,7 +85,7 @@ HANDLE CreateFile_9X(
         file_locks_9X.add(
             LocksArrayItem(
                 file,
-                new Firebird::Mutex()));
+                FB_NEW Firebird::Mutex()));
     }
 
     SetLastError(dwLastError);

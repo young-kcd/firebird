@@ -347,11 +347,11 @@ static tdr* get_description(ISC_QUAD* blob_id)
 			id = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), id_length);
 			p += id_length;
 			if (!trans) {
-				trans = ptr = FB_NEW(*tdgbl->getDefaultPool()) tdr;
+				trans = ptr = FB_NEW_POOL(*tdgbl->getDefaultPool()) tdr;
 			}
 			else
 			{
-				ptr->tdr_next = FB_NEW(*tdgbl->getDefaultPool()) tdr;
+				ptr->tdr_next = FB_NEW_POOL(*tdgbl->getDefaultPool()) tdr;
 				ptr = ptr->tdr_next;
 			}
 			ptr->tdr_host_site = host_site;

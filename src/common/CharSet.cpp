@@ -245,9 +245,9 @@ namespace Jrd {
 CharSet* CharSet::createInstance(MemoryPool& pool, USHORT id, charset* cs)
 {
 	if (cs->charset_min_bytes_per_char != cs->charset_max_bytes_per_char)
-		return FB_NEW(pool) MultiByteCharSet(id, cs);
+		return FB_NEW_POOL(pool) MultiByteCharSet(id, cs);
 
-	return FB_NEW(pool) FixedWidthCharSet(id, cs);
+	return FB_NEW_POOL(pool) FixedWidthCharSet(id, cs);
 }
 
 

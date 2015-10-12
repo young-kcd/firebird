@@ -194,7 +194,7 @@ public:
 			return true;
 		}
 
-		KeyValuePair* var = FB_NEW(getPool()) KeyValuePair(getPool(), key, value);
+		KeyValuePair* var = FB_NEW_POOL(getPool()) KeyValuePair(getPool(), key, value);
 		tree.add(var);
 		mCount++;
 		return false;
@@ -209,7 +209,7 @@ public:
 			return NULL;
 		}
 
-		KeyValuePair* var = FB_NEW(getPool()) KeyValuePair(getPool());
+		KeyValuePair* var = FB_NEW_POOL(getPool()) KeyValuePair(getPool());
 		var->first = key;
 		tree.add(var);
 		mCount++;

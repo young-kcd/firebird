@@ -82,7 +82,7 @@ void EventManager::init(Attachment* attachment)
 
 		if (!g_emMap->get(id, eventMgr))
 		{
-			eventMgr = new EventManager(id, dbb->dbb_config);
+			eventMgr = FB_NEW EventManager(id, dbb->dbb_config);
 
 			if (g_emMap->put(id, eventMgr))
 			{
@@ -176,7 +176,7 @@ void EventManager::attach_shared_file()
 	Firebird::PathName name;
 	get_shared_file_name(name);
 
-	SharedMemory<evh>* tmp = FB_NEW(*getDefaultMemoryPool())
+	SharedMemory<evh>* tmp = FB_NEW_POOL(*getDefaultMemoryPool())
 		SharedMemory<evh>(name.c_str(), m_config->getEventMemSize(), this);
 
 	// initialize will reset m_sharedMemory

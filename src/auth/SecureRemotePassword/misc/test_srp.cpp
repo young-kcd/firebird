@@ -13,8 +13,8 @@ int main(int argc, char** argv)
 #endif
 	s.getText(salt);
 
-	RemotePassword* server = new RemotePassword();
-	RemotePassword* client = new RemotePassword();
+	RemotePassword* server = FB_NEW RemotePassword();
+	RemotePassword* client = FB_NEW RemotePassword();
 
 	const char* account = "SYSDBA";
 	const char* password = "masterkey";

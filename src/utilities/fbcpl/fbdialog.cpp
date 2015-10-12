@@ -84,7 +84,7 @@ CFBDialog::CFBDialog(CWnd* pParent /*=NULL*/)
 	fb_status.SufficientUserRights = true;
 	fb_status.ServerName = "";
 
-	new_settings = fb_status;
+	FB_NEW_settings = fb_status;
 }
 
 

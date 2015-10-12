@@ -116,7 +116,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 			logname.insert(0, root);
 		}
 
-		logWriter = new PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
+		logWriter = FB_NEW PluginLogWriter(logname.c_str(), config.max_log_size * 1024 * 1024);
 		logWriter->addRef();
 	}
 
@@ -132,7 +132,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 			string filter(config.include_filter);
 			ISC_systemToUtf8(filter);
 
-			include_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			include_matcher = FB_NEW SimilarToMatcher<UCHAR, UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
@@ -143,7 +143,7 @@ TracePluginImpl::TracePluginImpl(IPluginBase* plugin,
 			string filter(config.exclude_filter);
 			ISC_systemToUtf8(filter);
 
-			exclude_matcher = new SimilarToMatcher<UCHAR, UpcaseConverter<> >(
+			exclude_matcher = FB_NEW SimilarToMatcher<UCHAR, UpcaseConverter<> >(
 				*getDefaultMemoryPool(), textType, (const UCHAR*) filter.c_str(),
 				filter.length(), '\\', true);
 		}
@@ -948,7 +948,7 @@ void TracePluginImpl::register_connection(ITraceDatabaseConnection* connection)
 {
 	ConnectionData conn_data;
 	conn_data.id = connection->getConnectionID();
-	conn_data.description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
+	conn_data.description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 
 	string tmp(*getDefaultMemoryPool());
 
@@ -1049,7 +1049,7 @@ void TracePluginImpl::register_transaction(ITraceTransaction* transaction)
 {
 	TransactionData trans_data;
 	trans_data.id = transaction->getTransactionID();
-	trans_data.description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
+	trans_data.description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 	trans_data.description->printf("\t\t(TRA_%lu, ", trans_data.id);
 
 	switch (transaction->getIsolation())
@@ -1365,7 +1365,7 @@ void TracePluginImpl::register_sql_statement(ITraceSQLStatement* statement)
 
 	if (need_statement)
 	{
-		stmt_data.description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
+		stmt_data.description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 
 		if (stmt_data.id) {
 			stmt_data.description->printf(NEWLINE "Statement %d:", stmt_data.id);
@@ -1523,7 +1523,7 @@ void TracePluginImpl::log_event_dsql_execute(ITraceDatabaseConnection* connectio
 
 void TracePluginImpl::register_blr_statement(ITraceBLRStatement* statement)
 {
-	string* description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
+	string* description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 
 	if (statement->getStmtID()) {
 		description->printf(NEWLINE "Statement %d:" NEWLINE, statement->getStmtID());
@@ -1722,7 +1722,7 @@ void TracePluginImpl::register_service(ITraceServiceConnection* service)
 
 	ServiceData serv_data;
 	serv_data.id = service->getServiceID();
-	serv_data.description = FB_NEW(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
+	serv_data.description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 	serv_data.description->printf("\t%s, (Service %p, %s, %s%s)" NEWLINE,
 		service->getServiceMgr(), serv_data.id,
 		username.c_str(), remote_address.c_str(), remote_process.c_str());

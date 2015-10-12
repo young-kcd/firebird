@@ -163,17 +163,17 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 
 	// 26.09.2002 Nickolay Samofatov: default memory pool will become statement pool
 	// and will be freed by CMP_release
-	MemoryPool* const new_pool = att->createPool();
+	MemoryPool* const FB_NEW_pool = att->createPool();
 
 	try
 	{
-		Jrd::ContextPoolHolder context(tdbb, new_pool);
+		Jrd::ContextPoolHolder context(tdbb, FB_NEW_pool);
 
 		CompilerScratch* csb =
 			PAR_parse(tdbb, blr, blr_length, internal_flag, dbginfo_length, dbginfo);
 
 		request = JrdStatement::makeRequest(tdbb, csb, internal_flag);
-		new_pool->setStatsGroup(request->req_memory_stats);
+		FB_NEW_pool->setStatsGroup(request->req_memory_stats);
 
 #ifdef CMP_DEBUG
 		if (csb->csb_dump.hasData())
@@ -205,7 +205,7 @@ jrd_req* CMP_compile2(thread_db* tdbb, const UCHAR* blr, ULONG blr_length, bool 
 		if (request)
 			CMP_release(tdbb, request);
 		else
-			att->deletePool(new_pool);
+			att->deletePool(FB_NEW_pool);
 		ERR_punt();
 	}
 
@@ -305,7 +305,7 @@ IndexLock* CMP_get_index_lock(thread_db* tdbb, jrd_rel* relation, USHORT id)
 		}
 	}
 
-	IndexLock* index = FB_NEW(*relation->rel_pool) IndexLock();
+	IndexLock* index = FB_NEW_POOL(*relation->rel_pool) IndexLock();
 	index->idl_next = relation->rel_index_locks;
 	relation->rel_index_locks = index;
 	index->idl_relation = relation;
@@ -369,7 +369,7 @@ void CMP_post_access(thread_db* tdbb,
  *
  * Functional description
  *	Post access to security class to request.
- *      We append the new security class to the existing list of
+ *      We append the FB_NEW security class to the existing list of
  *      security classes for that request.
  *
  **************************************/
@@ -469,7 +469,7 @@ StreamType* CMP_alloc_map(thread_db* tdbb, CompilerScratch* csb, StreamType stre
 	SET_TDBB(tdbb);
 
 	fb_assert(stream <= MAX_STREAMS);
-	StreamType* const p = FB_NEW(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
+	StreamType* const p = FB_NEW_POOL(*tdbb->getDefaultPool()) StreamType[STREAM_MAP_LENGTH];
 	memset(p, 0, sizeof(StreamType[STREAM_MAP_LENGTH]));
 	p[0] = stream;
 	csb->csb_rpt[stream].csb_map = p;
@@ -511,7 +511,7 @@ void CMP_expand_view_nodes(thread_db* tdbb, CompilerScratch* csb, StreamType str
 
 	if (allStreams || csb->csb_rpt[stream].csb_relation)
 	{
-		RecordKeyNode* node = FB_NEW(csb->csb_pool) RecordKeyNode(csb->csb_pool, blrOp);
+		RecordKeyNode* node = FB_NEW_POOL(csb->csb_pool) RecordKeyNode(csb->csb_pool, blrOp);
 		node->recStream = stream;
 		stack.push(node);
 	}
@@ -550,7 +550,7 @@ ItemInfo* CMP_pass2_validation(thread_db* tdbb, CompilerScratch* csb, const Item
 {
 	ItemInfo itemInfo;
 	return csb->csb_map_item_info.get(item, itemInfo) ?
-		FB_NEW(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo) : NULL;
+		FB_NEW_POOL(*tdbb->getDefaultPool()) ItemInfo(*tdbb->getDefaultPool(), itemInfo) : NULL;
 }
 
 
@@ -619,18 +619,18 @@ RecordSource* CMP_post_rse(thread_db* tdbb, CompilerScratch* csb, RseNode* rse)
 	RecordSource* rsb = OPT_compile(tdbb, csb, rse, NULL);
 
 	if (rse->flags & RseNode::FLAG_SINGULAR)
-		rsb = FB_NEW(*tdbb->getDefaultPool()) SingularStream(csb, rsb);
+		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) SingularStream(csb, rsb);
 
 	if (rse->flags & RseNode::FLAG_WRITELOCK)
 	{
 		for (StreamType i = 0; i < csb->csb_n_stream; i++)
 			csb->csb_rpt[i].csb_flags |= csb_update;
 
-		rsb = FB_NEW(*tdbb->getDefaultPool()) LockedStream(csb, rsb);
+		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) LockedStream(csb, rsb);
 	}
 
 	if (rse->flags & RseNode::FLAG_SCROLLABLE)
-		rsb = FB_NEW(*tdbb->getDefaultPool()) BufferedStream(csb, rsb);
+		rsb = FB_NEW_POOL(*tdbb->getDefaultPool()) BufferedStream(csb, rsb);
 
 	// mark all the substreams as inactive
 

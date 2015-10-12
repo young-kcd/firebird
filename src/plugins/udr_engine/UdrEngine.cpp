@@ -584,7 +584,7 @@ UdrPluginImpl* Engine::loadModule(ThrowStatusWrapper* status, IRoutineMetadata* 
 				throw FbException(status, statusVector);
 			}
 
-			UdrPluginImpl* udrPlugin = new UdrPluginImpl(*moduleName, module);
+			UdrPluginImpl* udrPlugin = FB_NEW UdrPluginImpl(*moduleName, module);
 			udrPlugin->theirUnloadFlag = entryPoint(status, &udrPlugin->myUnloadFlag, udrPlugin);
 
 			if (status->getState() & IStatus::STATE_ERRORS)
@@ -732,21 +732,21 @@ void Engine::closeAttachment(ThrowStatusWrapper* /*status*/, IExternalContext* c
 IExternalFunction* Engine::makeFunction(ThrowStatusWrapper* status, IExternalContext* context,
 	IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
-	return new SharedFunction(status, this, context, metadata, inBuilder, outBuilder);
+	return FB_NEW SharedFunction(status, this, context, metadata, inBuilder, outBuilder);
 }
 
 
 IExternalProcedure* Engine::makeProcedure(ThrowStatusWrapper* status, IExternalContext* context,
 	IRoutineMetadata* metadata, IMetadataBuilder* inBuilder, IMetadataBuilder* outBuilder)
 {
-	return new SharedProcedure(status, this, context, metadata, inBuilder, outBuilder);
+	return FB_NEW SharedProcedure(status, this, context, metadata, inBuilder, outBuilder);
 }
 
 
 IExternalTrigger* Engine::makeTrigger(ThrowStatusWrapper* status, IExternalContext* context,
 	IRoutineMetadata* metadata, IMetadataBuilder* fieldsBuilder)
 {
-	return new SharedTrigger(status, this, context, metadata, fieldsBuilder);
+	return FB_NEW SharedTrigger(status, this, context, metadata, fieldsBuilder);
 }
 
 

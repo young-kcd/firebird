@@ -2052,7 +2052,7 @@ Record* VIO_gc_record(thread_db* tdbb, jrd_rel* relation)
 
 	// Allocate a garbage collect record block if all are active
 
-	Record* const record = FB_NEW(*relation->rel_pool)
+	Record* const record = FB_NEW_POOL(*relation->rel_pool)
 		Record(*relation->rel_pool, format, REC_gc_active);
 	relation->rel_gc_records.add(record);
 	return record;
@@ -2464,7 +2464,7 @@ void VIO_merge_proc_sav_points(thread_db* tdbb, jrd_tra* transaction, Savepoint*
 		if ( (sav_point = transaction->tra_save_free) )
 			transaction->tra_save_free = sav_point->sav_next;
 		else
-			sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
+			sav_point = FB_NEW_POOL(*transaction->tra_pool) Savepoint();
 
 		sav_point->sav_next = sav_next;
 		sav_point->sav_number = sav_number;
@@ -3050,7 +3050,7 @@ Record* VIO_record(thread_db* tdbb, record_param* rpb, const Format* format, Mem
 		if (!pool)
 			pool = rpb->rpb_relation->rel_pool;
 
-		record = rpb->rpb_record = FB_NEW(*pool) Record(*pool, format);
+		record = rpb->rpb_record = FB_NEW_POOL(*pool) Record(*pool, format);
 	}
 
 	record->reset(format);
@@ -3145,7 +3145,7 @@ void VIO_start_save_point(thread_db* tdbb, jrd_tra* transaction)
 	if (sav_point)
 		transaction->tra_save_free = sav_point->sav_next;
 	else
-		sav_point = FB_NEW(*transaction->tra_pool) Savepoint();
+		sav_point = FB_NEW_POOL(*transaction->tra_pool) Savepoint();
 
 	sav_point->sav_number = ++transaction->tra_save_point_number;
 	sav_point->sav_next = transaction->tra_save_point;
@@ -4725,7 +4725,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		user.usr_user_name = "Garbage Collector";
 
 		Jrd::Attachment* const attachment = Jrd::Attachment::create(dbb);
-		RefPtr<SysStableAttachment> sAtt(new SysStableAttachment(attachment));
+		RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 		attachment->setStable(sAtt);
 		attachment->att_filename = dbb->dbb_filename;
 		attachment->att_flags |= ATT_garbage_collector;
@@ -4742,7 +4742,7 @@ static THREAD_ENTRY_DECLARE garbage_collector(THREAD_ENTRY_PARAM arg)
 		jrd_rel* relation = NULL;
 		jrd_tra* transaction = NULL;
 
-		AutoPtr<GarbageCollector> gc(FB_NEW(*attachment->att_pool) GarbageCollector(
+		AutoPtr<GarbageCollector> gc(FB_NEW_POOL(*attachment->att_pool) GarbageCollector(
 			*attachment->att_pool, dbb));
 
 		try
@@ -6292,7 +6292,7 @@ static void verb_post(thread_db* tdbb,
 		if ( (action = transaction->tra_save_point->sav_verb_free) )
 			transaction->tra_save_point->sav_verb_free = action->vct_next;
 		else
-			action = FB_NEW(*tdbb->getDefaultPool()) VerbAction();
+			action = FB_NEW_POOL(*tdbb->getDefaultPool()) VerbAction();
 
 		action->vct_next = transaction->tra_save_point->sav_verb_actions;
 		transaction->tra_save_point->sav_verb_actions = action;
@@ -6309,7 +6309,7 @@ static void verb_post(thread_db* tdbb,
 			// savepoint hasn't seen this record before.
 
 			if (!action->vct_undo)
-				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
+				action->vct_undo = FB_NEW UndoItemTree(tdbb->getDefaultPool());
 
 			action->vct_undo->add(UndoItem(transaction, rpb->rpb_number, old_data, same_tx, false));
 		}
@@ -6319,7 +6319,7 @@ static void verb_post(thread_db* tdbb,
 			// and this savepoint hasn't seen this record before.
 
 			if (!action->vct_undo)
-				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
+				action->vct_undo = FB_NEW UndoItemTree(tdbb->getDefaultPool());
 
 			action->vct_undo->add(UndoItem(rpb->rpb_number, true, new_ver));
 		}
@@ -6342,7 +6342,7 @@ static void verb_post(thread_db* tdbb,
 			// and this savepoint has seen this record before but it doesn't have undo data.
 
 			if (!action->vct_undo)
-				action->vct_undo = new UndoItemTree(tdbb->getDefaultPool());
+				action->vct_undo = FB_NEW UndoItemTree(tdbb->getDefaultPool());
 
 			action->vct_undo->add(UndoItem(rpb->rpb_number, true, true));
 		}

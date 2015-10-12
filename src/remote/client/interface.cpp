@@ -816,7 +816,7 @@ IAttachment* RProvider::attach(CheckStatusWrapper* status, const char* filename,
 		HANDSHAKE_DEBUG(fprintf(stderr, "Cli: call init for DB='%s'\n", expanded_name.c_str()));
 		init(status, cBlock, port, op_attach, expanded_name, newDpb, intl, cryptCallback);
 
-		Attachment* a = new Attachment(port->port_context, filename);
+		Attachment* a = FB_NEW Attachment(port->port_context, filename);
 		a->addRef();
 		return a;
 	}
@@ -1202,7 +1202,7 @@ Transaction* Transaction::enterDtc(CheckStatusWrapper* status)
 {
 	try
 	{
-		Transaction* copy = new Transaction(this);
+		Transaction* copy = FB_NEW Transaction(this);
 		copy->addRef();
 
 		transaction = NULL;
@@ -1269,7 +1269,7 @@ Firebird::IRequest* Attachment::compileRequest(CheckStatusWrapper* status,
 			max_msg = MAX(max_msg, next->msg_number);
 
 		// Allocate request block
-		Rrq* request = new Rrq(max_msg + 1);
+		Rrq* request = FB_NEW Rrq(max_msg + 1);
 		request->rrq_rdb = rdb;
 		request->rrq_id = packet->p_resp.p_resp_object;
 		request->rrq_max_msg = max_msg;
@@ -1295,7 +1295,7 @@ Firebird::IRequest* Attachment::compileRequest(CheckStatusWrapper* status,
 			message->msg_address = NULL;
 		}
 
-		Firebird::IRequest* r = new Request(request, this);
+		Firebird::IRequest* r = FB_NEW Request(request, this);
 		r->addRef();
 		return r;
 	}
@@ -1364,7 +1364,7 @@ IBlob* Attachment::createBlob(CheckStatusWrapper* status, ITransaction* apiTra, 
 		p_blob->p_blob_bpb.cstr_length = 0;
 		p_blob->p_blob_bpb.cstr_address = NULL;
 
-		Rbl* blob = new Rbl();
+		Rbl* blob = FB_NEW Rbl();
 		*blob_id = packet->p_resp.p_resp_blob_id;
 		blob->rbl_rdb = rdb;
 		blob->rbl_rtr = transaction;
@@ -1374,7 +1374,7 @@ IBlob* Attachment::createBlob(CheckStatusWrapper* status, ITransaction* apiTra, 
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
 
-		Firebird::IBlob* b = new Blob(blob);
+		Firebird::IBlob* b = FB_NEW Blob(blob);
 		b->addRef();
 		return b;
 	}
@@ -1439,7 +1439,7 @@ Firebird::IAttachment* RProvider::create(CheckStatusWrapper* status, const char*
 		IntlDpb intl;
 		init(status, cBlock, port, op_create, expanded_name, newDpb, intl, cryptCallback);
 
-		Firebird::IAttachment* a = new Attachment(rdb, filename);
+		Firebird::IAttachment* a = FB_NEW Attachment(rdb, filename);
 		a->addRef();
 		return a;
 	}
@@ -1807,13 +1807,13 @@ Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird:
 		if (out_blr_length)
 		{
 			if (!port->port_statement)
-				port->port_statement = new Rsr;
+				port->port_statement = FB_NEW Rsr;
 
 			port->port_statement->rsr_select_format = PARSE_msg_format(out_blr, out_blr_length);
 
 			if (!port->port_statement->rsr_buffer)
 			{
-				RMessage* message2 = new RMessage(0);
+				RMessage* message2 = FB_NEW RMessage(0);
 				port->port_statement->rsr_buffer = message2;
 				port->port_statement->rsr_message = message2;
 				message2->msg_next = message2;
@@ -1824,7 +1824,7 @@ Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird:
 		RMessage* message = NULL;
 		if (!statement->rsr_buffer)
 		{
-			statement->rsr_buffer = message = new RMessage(0);
+			statement->rsr_buffer = message = FB_NEW RMessage(0);
 			statement->rsr_message = message;
 
 			message->msg_next = message;
@@ -1887,7 +1887,7 @@ Firebird::ITransaction* Statement::execute(CheckStatusWrapper* status, Firebird:
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
 			statement->rsr_rtr = transaction;
-			Transaction* newTrans = new Transaction(transaction, remAtt);
+			Transaction* newTrans = FB_NEW Transaction(transaction, remAtt);
 			newTrans->addRef();
 			return newTrans;
 		}
@@ -1988,7 +1988,7 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 		RMessage* message = NULL;
 		if (!statement->rsr_buffer)
 		{
-			statement->rsr_buffer = message = new RMessage(0);
+			statement->rsr_buffer = message = FB_NEW RMessage(0);
 			statement->rsr_message = message;
 
 			message->msg_next = message;
@@ -2023,7 +2023,7 @@ ResultSet* Statement::openCursor(CheckStatusWrapper* status, Firebird::ITransact
 		defer_packet(port, packet, true);
 		message->msg_address = NULL;
 
-		ResultSet* rs = new ResultSet(this, outFormat);
+		ResultSet* rs = FB_NEW ResultSet(this, outFormat);
 		rs->addRef();
 		return rs;
 	}
@@ -2141,7 +2141,7 @@ ITransaction* Attachment::execute(CheckStatusWrapper* status, ITransaction* apiT
 
 		Rsr* statement = port->port_statement;
 		if (!statement) {
-			statement = port->port_statement = new Rsr;
+			statement = port->port_statement = FB_NEW Rsr;
 		}
 
 		// reset statement buffers
@@ -2167,7 +2167,7 @@ ITransaction* Attachment::execute(CheckStatusWrapper* status, ITransaction* apiT
 		RMessage* message = 0;
 		if (!statement->rsr_buffer)
 		{
-			statement->rsr_buffer = message = new RMessage(0);
+			statement->rsr_buffer = message = FB_NEW RMessage(0);
 			statement->rsr_message = message;
 			message->msg_next = message;
 			statement->rsr_fmt_length = 0;
@@ -2233,7 +2233,7 @@ ITransaction* Attachment::execute(CheckStatusWrapper* status, ITransaction* apiT
 		else if (!transaction && packet->p_resp.p_resp_object)
 		{
 			transaction = make_transaction(rdb, packet->p_resp.p_resp_object);
-			Firebird::ITransaction* newTrans = new Transaction(transaction, this);
+			Firebird::ITransaction* newTrans = FB_NEW Transaction(transaction, this);
 			newTrans->addRef();
 			return newTrans;
 		}
@@ -2356,7 +2356,7 @@ Statement* Attachment::createStatement(CheckStatusWrapper* status, unsigned dial
 	Rsr* statement = NULL;
 	if (rdb->rdb_port->port_flags & PORT_lazy)
 	{
-		statement = new Rsr;
+		statement = FB_NEW Rsr;
 		statement->rsr_rdb = rdb;
 		statement->rsr_id = INVALID_OBJECT;
 		statement->rsr_flags.set(Rsr::LAZY);
@@ -2371,7 +2371,7 @@ Statement* Attachment::createStatement(CheckStatusWrapper* status, unsigned dial
 
 		// Allocate SQL request block
 
-		statement = new Rsr;
+		statement = FB_NEW Rsr;
 		statement->rsr_rdb = rdb;
 		statement->rsr_id = packet->p_resp.p_resp_object;
 
@@ -2383,7 +2383,7 @@ Statement* Attachment::createStatement(CheckStatusWrapper* status, unsigned dial
 	statement->rsr_next = rdb->rdb_sql_requests;
 	rdb->rdb_sql_requests = statement;
 
-	Statement* s = new Statement(statement, this, dialect);
+	Statement* s = FB_NEW Statement(statement, this, dialect);
 	s->addRef();
 	return s;
 }
@@ -2877,7 +2877,7 @@ int ResultSet::fetchNext(CheckStatusWrapper* status, void* buffer)
 
 		if (!statement->rsr_buffer)
 		{
-			statement->rsr_buffer = new RMessage(0);
+			statement->rsr_buffer = FB_NEW RMessage(0);
 			statement->rsr_message = statement->rsr_buffer;
 			statement->rsr_message->msg_next = statement->rsr_message;
 			statement->rsr_fmt_length = 0;
@@ -3717,7 +3717,7 @@ IBlob* Attachment::openBlob(CheckStatusWrapper* status, ITransaction* apiTra, IS
 		//p_blob->p_blob_bpb.cstr_length = 0;
 		//p_blob->p_blob_bpb.cstr_address = NULL;
 
-		Rbl* blob = new Rbl;
+		Rbl* blob = FB_NEW Rbl;
 		blob->rbl_rdb = rdb;
 		blob->rbl_rtr = transaction;
 		blob->rbl_id = packet->p_resp.p_resp_object;
@@ -3725,7 +3725,7 @@ IBlob* Attachment::openBlob(CheckStatusWrapper* status, ITransaction* apiTra, IS
 		blob->rbl_next = transaction->rtr_blobs;
 		transaction->rtr_blobs = blob;
 
-		Firebird::IBlob* b = new Blob(blob);
+		Firebird::IBlob* b = FB_NEW Blob(blob);
 		b->addRef();
 		return b;
 	}
@@ -4011,7 +4011,7 @@ Firebird::IEvents* Attachment::queEvents(CheckStatusWrapper* status, Firebird::I
 		send_packet(port, packet);
 		receive_response(status, rdb, packet);
 
-		Firebird::IEvents* rc = new Events(rem_event);
+		Firebird::IEvents* rc = FB_NEW Events(rem_event);
 		rc->addRef();
 		return rc;
 	}
@@ -4210,7 +4210,7 @@ Firebird::ITransaction* Attachment::reconnectTransaction(CheckStatusWrapper* sta
 
 		send_and_receive(status, rdb, packet);
 
-		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object), this);
+		Firebird::ITransaction* t = FB_NEW Transaction(make_transaction(rdb, packet->p_resp.p_resp_object), this);
 		t->addRef();
 		return t;
 	}
@@ -4643,7 +4643,7 @@ Firebird::IService* RProvider::attachSvc(CheckStatusWrapper* status, const char*
 		IntlSpb intl;
 		init(status, cBlock, port, op_service_attach, expanded_name, newSpb, intl, cryptCallback);
 
-		Firebird::IService* s = new Service(rdb);
+		Firebird::IService* s = FB_NEW Service(rdb);
 		s->addRef();
 		return s;
 	}
@@ -4998,7 +4998,7 @@ Firebird::ITransaction* Attachment::startTransaction(CheckStatusWrapper* status,
 
 		send_and_receive(status, rdb, packet);
 
-		Firebird::ITransaction* t = new Transaction(make_transaction(rdb, packet->p_resp.p_resp_object), this);
+		Firebird::ITransaction* t = FB_NEW Transaction(make_transaction(rdb, packet->p_resp.p_resp_object), this);
 		t->addRef();
 		return t;
 	}
@@ -5044,7 +5044,7 @@ void Attachment::transactRequest(CheckStatusWrapper* status, ITransaction* apiTr
 
 		Rpr* procedure = port->port_rpr;
 		if (!procedure) {
-			procedure = port->port_rpr = new Rpr;
+			procedure = port->port_rpr = FB_NEW Rpr;
 		}
 
 		// Parse the blr describing the messages
@@ -5248,7 +5248,7 @@ static Rvnt* add_event( rem_port* port)
 
 	if (!event)
 	{
-		event = new Rvnt;
+		event = FB_NEW Rvnt;
 		event->rvnt_next = rdb->rdb_events;
 		rdb->rdb_events = event;
 	}
@@ -5628,7 +5628,7 @@ static void batch_dsql_fetch(rem_port*	port,
 		RMessage* message = statement->rsr_buffer;
 		if (message->msg_address)
 		{
-			RMessage* new_msg = new RMessage(statement->rsr_fmt_length);
+			RMessage* new_msg = FB_NEW RMessage(statement->rsr_fmt_length);
 			statement->rsr_buffer = new_msg;
 
 			new_msg->msg_next = message;
@@ -5776,7 +5776,7 @@ static void batch_gds_receive(rem_port*		port,
 		if (message->msg_address)
 		{
 			const rem_fmt* format = tail->rrq_format;
-			RMessage* new_msg = new RMessage(format->fmt_length);
+			RMessage* new_msg = FB_NEW RMessage(format->fmt_length);
 			tail->rrq_xdr = new_msg;
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
@@ -6201,15 +6201,16 @@ static void authFillParametersBlock(ClntAuthBlock& cBlock, ClumpletWriter& dpb,
 	}
 }
 
+#ifdef NOT_USED_OR_REPLACED
 static CSTRING* REMOTE_dup_string(const CSTRING* from)
 {
 	if (from && from->cstr_length)
 	{
-		CSTRING* rc = FB_NEW(*getDefaultMemoryPool()) CSTRING;
+		CSTRING* rc = FB_NEW_POOL(*getDefaultMemoryPool()) CSTRING;
 		memset(rc, 0, sizeof(CSTRING));
 		rc->cstr_length = from->cstr_length;
 		rc->cstr_allocated = rc->cstr_length;
-		rc->cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[rc->cstr_length];
+		rc->cstr_address = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[rc->cstr_length];
 		memcpy(rc->cstr_address, from->cstr_address, rc->cstr_length);
 		return rc;
 	}
@@ -6229,6 +6230,7 @@ static void REMOTE_free_string(CSTRING* tmp)
 		delete tmp;
 	}
 }
+#endif // NOT_USED_OR_REPLACED
 
 static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port* port,
 	Rdb* rdb, IStatus* status, PACKET* packet, bool checkKeys)
@@ -6363,7 +6365,7 @@ static void init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* po
 		PACKET* packet = &rdb->rdb_packet;
 
 		MemoryPool& pool = *getDefaultMemoryPool();
-		port->port_deferred_packets = FB_NEW(pool) PacketQueue(pool);
+		port->port_deferred_packets = FB_NEW_POOL(pool) PacketQueue(pool);
 
 		if (port->port_protocol < PROTOCOL_VERSION12)
 		{
@@ -6413,7 +6415,7 @@ static Rtr* make_transaction( Rdb* rdb, USHORT id)
  *	Create a local transaction handle.
  *
  **************************************/
-	Rtr* transaction = new Rtr;
+	Rtr* transaction = FB_NEW Rtr;
 	transaction->rtr_rdb = rdb;
 	transaction->rtr_id = id;
 	transaction->rtr_next = rdb->rdb_transactions;
@@ -6522,7 +6524,7 @@ static void receive_after_start(Rrq* request, USHORT msg_type)
 		RMessage* message = tail->rrq_xdr;
 		if (message->msg_address)
 		{
-			RMessage* new_msg = new RMessage(format->fmt_length);
+			RMessage* new_msg = FB_NEW RMessage(format->fmt_length);
 			tail->rrq_xdr = new_msg;
 			new_msg->msg_next = message;
 			new_msg->msg_number = message->msg_number;
@@ -6794,7 +6796,7 @@ static void enqueue_receive(rem_port* port,
  * Functional description
  *
  **************************************/
-	rmtque* const que_inst = new rmtque;
+	rmtque* const que_inst = FB_NEW rmtque;
 
 	// Prepare a queue entry
 
@@ -7537,7 +7539,7 @@ void ClntAuthBlock::extractDataFromPluginTo(P_AUTH_CONT* to)
 
 	PathName pluginName = getPluginName();
 	to->p_name.cstr_length = (ULONG) pluginName.length();
-	to->p_name.cstr_address = FB_NEW(*getDefaultMemoryPool()) UCHAR[to->p_name.cstr_length];
+	to->p_name.cstr_address = FB_NEW_POOL(*getDefaultMemoryPool()) UCHAR[to->p_name.cstr_length];
 	to->p_name.cstr_allocated = to->p_name.cstr_length;
 	memcpy(to->p_name.cstr_address, pluginName.c_str(), to->p_name.cstr_length);
 
@@ -7617,7 +7619,7 @@ Firebird::ICryptKey* ClntAuthBlock::newKey(CheckStatusWrapper* status)
 	status->init();
 	try
 	{
-		InternalCryptKey* k = new InternalCryptKey;
+		InternalCryptKey* k = FB_NEW InternalCryptKey;
 
 		fb_assert(plugins.hasData());
 		k->t = plugins.name();

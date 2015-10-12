@@ -811,7 +811,7 @@ FetchPassResult fetchPassword(const Firebird::PathName& name, const char*& passw
 	}
 
 	// this is planned leak of a few bytes of memory in utilities
-	char* pass = FB_NEW(*getDefaultMemoryPool()) char[pwd.length() + 1];
+	char* pass = FB_NEW_POOL(*getDefaultMemoryPool()) char[pwd.length() + 1];
 	pwd.copyTo(pass, pwd.length() + 1);
 	password = pass;
 	return FETCH_PASS_OK;

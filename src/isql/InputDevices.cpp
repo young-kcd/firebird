@@ -180,13 +180,13 @@ bool InputDevices::insert(FILE* fp, const char* name, const char* display)
 	if (!m_head)
 	{
 		fb_assert(m_count == 0);
-		m_head = new indev(fp, name, display);
+		m_head = FB_NEW indev(fp, name, display);
 	}
 	else
 	{
 		fb_assert(m_count > 0);
 		indev* p = m_head;
-		m_head = new indev(fp, name, display);
+		m_head = FB_NEW indev(fp, name, display);
 		m_head->indev_next = p;
 	}
 	++m_count;
@@ -254,7 +254,7 @@ void InputDevices::saveCommand(const char* statement, const char* term)
 		}
 		else
 		{
-			Command* command = new Command(statement, term);
+			Command* command = FB_NEW Command(statement, term);
 			commands.add(command);
 		}
 	}

@@ -468,7 +468,7 @@ DTransaction* DTransaction::enterDtc(CheckStatusWrapper* status)
 
 		WriteLockGuard guard(rwLock, FB_FUNCTION);
 
-		RefPtr<DTransaction> traCopy(new DTransaction(sub));
+		RefPtr<DTransaction> traCopy(FB_NEW DTransaction(sub));
 		sub.clear();
 		release();
 
@@ -536,7 +536,7 @@ YTransaction* DtcStart::start(CheckStatusWrapper* status)
 	{
 		status->init();
 
-		RefPtr<DTransaction> dtransaction(new DTransaction);
+		RefPtr<DTransaction> dtransaction(FB_NEW DTransaction);
 
 		unsigned cnt = components.getCount();
 		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
@@ -558,7 +558,7 @@ YTransaction* DtcStart::start(CheckStatusWrapper* status)
 			}
 		}
 
-		YTransaction* rc = new YTransaction(NULL, dtransaction);
+		YTransaction* rc = FB_NEW YTransaction(NULL, dtransaction);
 		dtransaction->addRef();
 		this->dispose();
 		return rc;
@@ -577,7 +577,7 @@ YTransaction* Dtc::join(CheckStatusWrapper* status, ITransaction* one, ITransact
 	{
 		status->init();
 
-		RefPtr<DTransaction> dtransaction(new DTransaction);
+		RefPtr<DTransaction> dtransaction(FB_NEW DTransaction);
 
 		dtransaction->join(status, one);
 		if (status->getState() & Firebird::IStatus::STATE_ERRORS)
@@ -590,7 +590,7 @@ YTransaction* Dtc::join(CheckStatusWrapper* status, ITransaction* one, ITransact
 		*/
 
 		dtransaction->addRef();
-		return new YTransaction(NULL, dtransaction);
+		return FB_NEW YTransaction(NULL, dtransaction);
 	}
 	catch (const Exception& ex)
 	{
@@ -606,7 +606,7 @@ DtcStart* Dtc::startBuilder(CheckStatusWrapper* status)
 	{
 		status->init();
 
-		return new DtcStart;
+		return FB_NEW DtcStart;
 	}
 	catch (const Exception& ex)
 	{

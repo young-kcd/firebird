@@ -172,11 +172,11 @@ namespace
 		// Parse a FETCH statement, and map it into FOR x IN relation WITH x.DBKEY EQ value ...
 		static DmlNode* parse(thread_db* tdbb, MemoryPool& pool, CompilerScratch* csb, UCHAR /*blrOp*/)
 		{
-			ForNode* forNode = FB_NEW(pool) ForNode(pool);
+			ForNode* forNode = FB_NEW_POOL(pool) ForNode(pool);
 
 			// Fake RseNode.
 
-			RseNode* rse = forNode->rse = FB_NEW(*tdbb->getDefaultPool()) RseNode(
+			RseNode* rse = forNode->rse = FB_NEW_POOL(*tdbb->getDefaultPool()) RseNode(
 				*tdbb->getDefaultPool());
 
 			DmlNode* relationNode = PAR_parse_node(tdbb, csb);
@@ -191,14 +191,14 @@ namespace
 
 			// Fake boolean.
 
-			ComparativeBoolNode* booleanNode = FB_NEW(csb->csb_pool) ComparativeBoolNode(
+			ComparativeBoolNode* booleanNode = FB_NEW_POOL(csb->csb_pool) ComparativeBoolNode(
 				csb->csb_pool, blr_eql);
 
 			rse->rse_boolean = booleanNode;
 
 			booleanNode->arg2 = PAR_parse_value(tdbb, csb);
 
-			RecordKeyNode* dbKeyNode = FB_NEW(csb->csb_pool) RecordKeyNode(csb->csb_pool, blr_dbkey);
+			RecordKeyNode* dbKeyNode = FB_NEW_POOL(csb->csb_pool) RecordKeyNode(csb->csb_pool, blr_dbkey);
 			dbKeyNode->recStream = relationSource->getStream();
 
 			booleanNode->arg1 = dbKeyNode;
@@ -435,7 +435,7 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 		case blr_domain_name2:
 		{
 			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
-			MetaName* name = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
+			MetaName* name = FB_NEW_POOL(csb->csb_pool) MetaName(csb->csb_pool);
 			PAR_name(csb, *name);
 
 			MetaNamePair namePair(*name, "");
@@ -494,9 +494,9 @@ USHORT PAR_desc(thread_db* tdbb, CompilerScratch* csb, dsc* desc, ItemInfo* item
 		case blr_column_name2:
 		{
 			const bool fullDomain = (csb->csb_blr_reader.getByte() == blr_domain_full);
-			MetaName* relationName = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
+			MetaName* relationName = FB_NEW_POOL(csb->csb_pool) MetaName(csb->csb_pool);
 			PAR_name(csb, *relationName);
-			MetaName* fieldName = FB_NEW(csb->csb_pool) MetaName(csb->csb_pool);
+			MetaName* fieldName = FB_NEW_POOL(csb->csb_pool) MetaName(csb->csb_pool);
 			PAR_name(csb, *fieldName);
 
 			MetaNamePair namePair(*relationName, *fieldName);
@@ -593,7 +593,7 @@ ValueExprNode* PAR_gen_field(thread_db* tdbb, StreamType stream, USHORT id, bool
  **************************************/
 	SET_TDBB(tdbb);
 
-	return FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool(), stream, id, byId);
+	return FB_NEW_POOL(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool(), stream, id, byId);
 }
 
 
@@ -643,7 +643,7 @@ CompoundStmtNode* PAR_make_list(thread_db* tdbb, StmtNodeStack& stack)
 	// Count the number of nodes.
 	USHORT count = stack.getCount();
 
-	CompoundStmtNode* node = FB_NEW(*tdbb->getDefaultPool()) CompoundStmtNode(*tdbb->getDefaultPool());
+	CompoundStmtNode* node = FB_NEW_POOL(*tdbb->getDefaultPool()) CompoundStmtNode(*tdbb->getDefaultPool());
 
 	NestConst<StmtNode>* ptr = node->statements.getBuffer(count) + count;
 
@@ -785,7 +785,7 @@ ValueListNode* PAR_args(thread_db* tdbb, CompilerScratch* csb, UCHAR count,
 	fb_assert(allocCount >= count);
 
 	MemoryPool& pool = *tdbb->getDefaultPool();
-	ValueListNode* node = FB_NEW(pool) ValueListNode(pool, allocCount);
+	ValueListNode* node = FB_NEW_POOL(pool) ValueListNode(pool, allocCount);
 	NestConst<ValueExprNode>* ptr = node->items.begin();
 
 	if (count)
@@ -894,7 +894,7 @@ void PAR_dependency(thread_db* tdbb, CompilerScratch* csb, StreamType stream, SS
 	}
 
 	if (field_name.length() > 0)
-		dependency.subName = FB_NEW(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), field_name);
+		dependency.subName = FB_NEW_POOL(*tdbb->getDefaultPool()) MetaName(*tdbb->getDefaultPool(), field_name);
 	else if (id >= 0)
 		dependency.subNumber = id;
 
@@ -986,7 +986,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 	{
 		// CVC: bottleneck
 		int count = (USHORT) csb->csb_blr_reader.getByte();
-		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_JOIN);
+		PlanNode* plan = FB_NEW_POOL(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_JOIN);
 
 		while (count-- > 0)
 			plan->subNodes.add(par_plan(tdbb, csb));
@@ -998,7 +998,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 
 	if (node_type == blr_retrieve)
 	{
-		PlanNode* plan = FB_NEW(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_RETRIEVE);
+		PlanNode* plan = FB_NEW_POOL(csb->csb_pool) PlanNode(csb->csb_pool, PlanNode::TYPE_RETRIEVE);
 
 		// parse the relation name and context--the relation
 		// itself is redundant except in the case of a view,
@@ -1034,7 +1034,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 		{
 		case blr_navigational:
 			{
-				plan->accessType = FB_NEW(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
+				plan->accessType = FB_NEW_POOL(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
 					PlanNode::AccessType::TYPE_NAVIGATIONAL);
 
 				// pick up the index name and look up the appropriate ids
@@ -1089,7 +1089,7 @@ static PlanNode* par_plan(thread_db* tdbb, CompilerScratch* csb)
 					csb->csb_blr_reader.getByte(); // skip blr_indices
 				else
 				{
-					plan->accessType = FB_NEW(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
+					plan->accessType = FB_NEW_POOL(csb->csb_pool) PlanNode::AccessType(csb->csb_pool,
 						PlanNode::AccessType::TYPE_INDICES);
 				}
 
@@ -1181,7 +1181,7 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 			csb->csb_msg_number = n = 2;
 		CompilerScratch::csb_repeat* tail = CMP_csb_element(csb, n);
 
-		MessageNode* message = tail->csb_message = *message_ptr = FB_NEW(pool) MessageNode(pool);
+		MessageNode* message = tail->csb_message = *message_ptr = FB_NEW_POOL(pool) MessageNode(pool);
 		message->messageNumber = n;
 
 		const Format* format = input_flag ? procedure->getInputFormat() : procedure->getOutputFormat();
@@ -1209,8 +1209,8 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 
 		n = format->fmt_count / 2;
 
-		ValueListNode* sourceValues = *sourceList = FB_NEW(pool) ValueListNode(pool, n);
-		ValueListNode* targetValues = *targetList = FB_NEW(pool) ValueListNode(pool, n);
+		ValueListNode* sourceValues = *sourceList = FB_NEW_POOL(pool) ValueListNode(pool, n);
+		ValueListNode* targetValues = *targetList = FB_NEW_POOL(pool) ValueListNode(pool, n);
 
 		NestConst<ValueExprNode>* sourcePtr =
 			input_flag ? sourceValues->items.begin() : targetValues->items.begin();
@@ -1228,11 +1228,11 @@ void PAR_procedure_parms(thread_db* tdbb, CompilerScratch* csb, jrd_prc* procedu
 			else
 				*sourcePtr++ = PAR_parse_value(tdbb, csb);
 
-			ParameterNode* paramNode = FB_NEW(csb->csb_pool) ParameterNode(csb->csb_pool);
+			ParameterNode* paramNode = FB_NEW_POOL(csb->csb_pool) ParameterNode(csb->csb_pool);
 			paramNode->message = message;
 			paramNode->argNumber = i++;
 
-			ParameterNode* paramFlagNode = FB_NEW(csb->csb_pool) ParameterNode(csb->csb_pool);
+			ParameterNode* paramFlagNode = FB_NEW_POOL(csb->csb_pool) ParameterNode(csb->csb_pool);
 			paramFlagNode->message = message;
 			paramFlagNode->argNumber = i++;
 
@@ -1301,7 +1301,7 @@ RseNode* PAR_rse(thread_db* tdbb, CompilerScratch* csb, SSHORT rse_op)
 	SET_TDBB(tdbb);
 
 	int count = (unsigned int) csb->csb_blr_reader.getByte();
-	RseNode* rse = FB_NEW(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
+	RseNode* rse = FB_NEW_POOL(*tdbb->getDefaultPool()) RseNode(*tdbb->getDefaultPool());
 
 	while (--count >= 0)
 		rse->rse_relations.add(PAR_parseRecordSource(tdbb, csb));
@@ -1484,7 +1484,7 @@ SortNode* PAR_sort_internal(thread_db* tdbb, CompilerScratch* csb, UCHAR blrOp,
 {
 	SET_TDBB(tdbb);
 
-	SortNode* sort = FB_NEW(*tdbb->getDefaultPool()) SortNode(
+	SortNode* sort = FB_NEW_POOL(*tdbb->getDefaultPool()) SortNode(
 		*tdbb->getDefaultPool());
 
 	NestConst<ValueExprNode>* ptr = sort->expressions.getBuffer(count);

@@ -82,9 +82,9 @@ LiteralNode* MAKE_const_slong(SLONG value)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	SLONG* valuePtr = FB_NEW(*tdbb->getDefaultPool()) SLONG(value);
+	SLONG* valuePtr = FB_NEW_POOL(*tdbb->getDefaultPool()) SLONG(value);
 
-	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	LiteralNode* literal = FB_NEW_POOL(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
 	literal->litDesc.dsc_dtype = dtype_long;
 	literal->litDesc.dsc_length = sizeof(SLONG);
 	literal->litDesc.dsc_scale = 0;
@@ -99,9 +99,9 @@ LiteralNode* MAKE_const_sint64(SINT64 value, SCHAR scale)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	SINT64* valuePtr = FB_NEW(*tdbb->getDefaultPool()) SINT64(value);
+	SINT64* valuePtr = FB_NEW_POOL(*tdbb->getDefaultPool()) SINT64(value);
 
-	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	LiteralNode* literal = FB_NEW_POOL(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
 	literal->litDesc.dsc_dtype = dtype_int64;
 	literal->litDesc.dsc_length = sizeof(SINT64);
 	literal->litDesc.dsc_scale = scale;
@@ -127,7 +127,7 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
 {
 	thread_db* tdbb = JRD_get_thread_data();
 
-	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	LiteralNode* literal = FB_NEW_POOL(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
 
 	switch (numeric_flag)
 	{
@@ -169,7 +169,7 @@ ValueExprNode* MAKE_constant(const char* str, dsql_constant_type numeric_flag)
 			literal->litDesc.dsc_scale = 0;
 			literal->litDesc.dsc_length = type_lengths[literal->litDesc.dsc_dtype];
 			literal->litDesc.dsc_address =
-				FB_NEW(*tdbb->getDefaultPool()) UCHAR[literal->litDesc.dsc_length];
+				FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[literal->litDesc.dsc_length];
 
 			// Set up a descriptor to point to the string
 
@@ -218,7 +218,7 @@ LiteralNode* MAKE_str_constant(const IntlString* constant, SSHORT character_set)
 
 	const string& str = constant->getString();
 
-	LiteralNode* literal = FB_NEW(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
+	LiteralNode* literal = FB_NEW_POOL(*tdbb->getDefaultPool()) LiteralNode(*tdbb->getDefaultPool());
 	literal->litDesc.dsc_dtype = dtype_text;
 	literal->litDesc.dsc_sub_type = 0;
 	literal->litDesc.dsc_scale = 0;
@@ -331,7 +331,7 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 	DEV_BLKCHK(field, dsql_type_fld);
 
 	thread_db* const tdbb = JRD_get_thread_data();
-	FieldNode* const node = FB_NEW(*tdbb->getDefaultPool()) FieldNode(
+	FieldNode* const node = FB_NEW_POOL(*tdbb->getDefaultPool()) FieldNode(
 		*tdbb->getDefaultPool(), context, field, indices);
 
 	if (field->dimensions)
@@ -392,7 +392,7 @@ FieldNode* MAKE_field(dsql_ctx* context, dsql_fld* field, ValueListNode* indices
 FieldNode* MAKE_field_name(const char* field_name)
 {
 	thread_db* tdbb = JRD_get_thread_data();
-	FieldNode* fieldNode = FB_NEW(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
+	FieldNode* fieldNode = FB_NEW_POOL(*tdbb->getDefaultPool()) FieldNode(*tdbb->getDefaultPool());
 	fieldNode->dsqlName = field_name;
 	return fieldNode;
 }
@@ -436,7 +436,7 @@ dsql_par* MAKE_parameter(dsql_msg* message, bool sqlda_flag, bool null_flag,
 
 	thread_db* tdbb = JRD_get_thread_data();
 
-	dsql_par* parameter = FB_NEW(*tdbb->getDefaultPool()) dsql_par(*tdbb->getDefaultPool());
+	dsql_par* parameter = FB_NEW_POOL(*tdbb->getDefaultPool()) dsql_par(*tdbb->getDefaultPool());
 	parameter->par_message = message;
 	message->msg_parameters.insert(0, parameter);
 	parameter->par_parameter = message->msg_parameter++;

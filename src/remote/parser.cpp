@@ -86,7 +86,7 @@ RMessage* PARSE_messages(const UCHAR* blr, size_t blr_length)
 			break;
 		}
 
-		RMessage* next = new RMessage(format->fmt_length);
+		RMessage* next = FB_NEW RMessage(format->fmt_length);
 		next->msg_next = message;
 		message = next;
 		message->msg_address = reinterpret_cast<UCHAR*>(format);
@@ -156,7 +156,7 @@ static rem_fmt* parse_format(const UCHAR*& blr, size_t& blr_length)
 	USHORT count = *blr++;
 	count += (*blr++) << 8;
 
-	Firebird::AutoPtr<rem_fmt> format(new rem_fmt(count));
+	Firebird::AutoPtr<rem_fmt> format(FB_NEW rem_fmt(count));
 
 	ULONG net_length = 0;
 	ULONG offset = 0;

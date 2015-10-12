@@ -51,15 +51,15 @@ typedef Firebird::SparseBitmap<ULONG> UInt32Bitmap;
 
 // Bitmap of 64-bit record numbers
 #define RBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
-	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW(*(POOL_PTR)) Jrd::RecordBitmap(*(POOL_PTR))))->set(VALUE)
+	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW_POOL(*(POOL_PTR)) Jrd::RecordBitmap(*(POOL_PTR))))->set(VALUE)
 
 // Bitmap of 32-bit integers
 #define SBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
-	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW(*(POOL_PTR)) Jrd::UInt32Bitmap(*(POOL_PTR))))->set(VALUE)
+	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW_POOL(*(POOL_PTR)) Jrd::UInt32Bitmap(*(POOL_PTR))))->set(VALUE)
 
 // Bitmap of page numbers
 #define PBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
-	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW(*(POOL_PTR)) Jrd::PageBitmap(*(POOL_PTR))))->set(VALUE)
+	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW_POOL(*(POOL_PTR)) Jrd::PageBitmap(*(POOL_PTR))))->set(VALUE)
 
 } //namespace Jrd
 

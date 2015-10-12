@@ -201,7 +201,7 @@ public:
 	static jrd_tra* create(MemoryPool* pool, Attachment* attachment, jrd_tra* outer)
 	{
 		jrd_tra* const transaction =
-			FB_NEW(*pool) jrd_tra(pool, &attachment->att_memory_stats, attachment, outer);
+			FB_NEW_POOL(*pool) jrd_tra(pool, &attachment->att_memory_stats, attachment, outer);
 
 		if (!outer)
 		{
@@ -325,7 +325,7 @@ public:
 		if (!tra_blob_space)
 		{
 			fb_assert(!tra_outer);
-			tra_blob_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
+			tra_blob_space = FB_NEW_POOL(*tra_pool) TempSpace(*tra_pool, TRA_BLOB_SPACE);
 		}
 
 		return tra_blob_space;
@@ -335,7 +335,7 @@ public:
 	{
 		if (!tra_undo_space)
 		{
-			tra_undo_space = FB_NEW(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
+			tra_undo_space = FB_NEW_POOL(*tra_pool) TempSpace(*tra_pool, TRA_UNDO_SPACE);
 		}
 
 		return tra_undo_space;
@@ -358,7 +358,7 @@ public:
 
 		fb_assert(tra_undo_records.getCount() < MAX_UNDO_RECORDS);
 
-		Record* const record = FB_NEW(*tra_pool) Record(*tra_pool, format, REC_undo_active);
+		Record* const record = FB_NEW_POOL(*tra_pool) Record(*tra_pool, format, REC_undo_active);
 		tra_undo_records.add(record);
 
 		return record;
@@ -374,7 +374,7 @@ public:
 	GenIdCache* getGenIdCache()
 	{
 		if (!tra_gen_ids)
-			tra_gen_ids = FB_NEW(*tra_pool) GenIdCache(*tra_pool);
+			tra_gen_ids = FB_NEW_POOL(*tra_pool) GenIdCache(*tra_pool);
 
 		return tra_gen_ids;
 	}

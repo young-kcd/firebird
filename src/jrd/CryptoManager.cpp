@@ -374,7 +374,7 @@ namespace Jrd {
 			user.usr_user_name = "(Crypt thread)";
 
 			Jrd::Attachment* const attachment = Jrd::Attachment::create(&dbb);
-			RefPtr<SysStableAttachment> sAtt(new SysStableAttachment(attachment));
+			RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 			attachment->setStable(sAtt);
 			attachment->att_filename = dbb.dbb_filename;
 			attachment->att_user = &user;
@@ -526,7 +526,7 @@ namespace Jrd {
 					user.usr_user_name = "(Crypt plugin loader)";
 
 					Jrd::Attachment* const attachment = Jrd::Attachment::create(&dbb);
-					RefPtr<SysStableAttachment> sAtt(new SysStableAttachment(attachment));
+					RefPtr<SysStableAttachment> sAtt(FB_NEW SysStableAttachment(attachment));
 					attachment->setStable(sAtt);
 					attachment->att_filename = dbb.dbb_filename;
 					attachment->att_user = &user;

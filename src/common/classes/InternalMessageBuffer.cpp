@@ -211,7 +211,7 @@ InternalMessageBuffer::InternalMessageBuffer(unsigned aBlrLength, const unsigned
 	unsigned aBufferLength, unsigned char* aBuffer)
 {
 	buffer = aBuffer;
-	metadata = new MetadataFromBlr(aBlrLength, aBlr, aBufferLength);
+	metadata = FB_NEW MetadataFromBlr(aBlrLength, aBlr, aBufferLength);
 	metadata->addRef();
 }
 

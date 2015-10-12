@@ -417,8 +417,8 @@ public:
 
 						if (user->password()->entered())
 						{
-							verifier = new Varfield(up);
-							slt = new Varfield(up);
+							verifier = FB_NEW Varfield(up);
+							slt = FB_NEW Varfield(up);
 #if SRP_DEBUG > 1
 							Firebird::BigInteger salt("02E268803000000079A478A700000002D1A6979000000026E1601C000000054F");
 #else
@@ -755,7 +755,7 @@ private:
 	{
 		if (value->entered() || value->specified())
 		{
-			field = new FT(up);
+			field = FB_NEW FT(up);
 		}
 	}
 

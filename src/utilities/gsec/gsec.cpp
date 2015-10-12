@@ -460,7 +460,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 		databaseText.printf("SecurityDatabase = %s\n", databaseName.c_str());
 		ConfigFile gsecDatabase(ConfigFile::USE_TEXT, databaseText.c_str());
 		Firebird::RefPtr<Config> defaultConfig(Config::getDefaultConfig());
-		Firebird::RefPtr<Config> pseudoConfig(new Config(gsecDatabase, *defaultConfig));
+		Firebird::RefPtr<Config> pseudoConfig(FB_NEW Config(gsecDatabase, *defaultConfig));
 
 		uSvc->checkService();
 

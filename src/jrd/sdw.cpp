@@ -186,7 +186,7 @@ int SDW_add_file(thread_db* tdbb, const TEXT* file_name, SLONG start, USHORT sha
 	// the spare page buffer for raw disk access.
 
 	SCHAR* const spare_buffer =
-		FB_NEW(*tdbb->getDefaultPool()) char[dbb->dbb_page_size + PAGE_ALIGNMENT];
+		FB_NEW_POOL(*tdbb->getDefaultPool()) char[dbb->dbb_page_size + PAGE_ALIGNMENT];
 	// And why doesn't the code check that the allocation succeeds?
 
 	SCHAR* spare_page = FB_ALIGN(spare_buffer, PAGE_ALIGNMENT);
@@ -977,7 +977,7 @@ void SDW_start(thread_db* tdbb, const TEXT* file_name,
 
 	shadow = NULL;
 	SLONG* const spare_buffer =
-		FB_NEW(*tdbb->getDefaultPool()) SLONG[(dbb->dbb_page_size + PAGE_ALIGNMENT) / sizeof(SLONG)];
+		FB_NEW_POOL(*tdbb->getDefaultPool()) SLONG[(dbb->dbb_page_size + PAGE_ALIGNMENT) / sizeof(SLONG)];
 	UCHAR* spare_page = FB_ALIGN((UCHAR*) spare_buffer, PAGE_ALIGNMENT);
 
 	WIN window(DB_PAGE_SPACE, -1);
@@ -1139,7 +1139,7 @@ static Shadow* allocate_shadow(jrd_file* shadow_file,
  **************************************/
 	Database* dbb = GET_DBB();
 
-	Shadow* shadow = FB_NEW(*dbb->dbb_permanent) Shadow();
+	Shadow* shadow = FB_NEW_POOL(*dbb->dbb_permanent) Shadow();
 	shadow->sdw_file = shadow_file;
 	shadow->sdw_number = shadow_number;
 	if (file_flags & FILE_manual)

@@ -49,7 +49,7 @@ bool CSICU_charset_init(charset* cs,
 	if (U_SUCCESS(status))
 	{
 		// charSetName comes from stack. Copy it.
-		ASCII* p = new ASCII[strlen(charSetName) + 1];
+		ASCII* p = FB_NEW ASCII[strlen(charSetName) + 1];
 		cs->charset_name = p;
 		strcpy(p, charSetName);
 
@@ -62,7 +62,7 @@ bool CSICU_charset_init(charset* cs,
 
 		const UChar unicodeSpace = 32;
 
-		BYTE* p2 = new BYTE[cs->charset_max_bytes_per_char];
+		BYTE* p2 = FB_NEW BYTE[cs->charset_max_bytes_per_char];
 		cs->charset_space_character = p2;
 		cs->charset_space_length = cIcu.ucnv_fromUChars(conv, reinterpret_cast<char*>(p2),
 			cs->charset_max_bytes_per_char, &unicodeSpace, 1, &status);

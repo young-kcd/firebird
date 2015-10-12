@@ -139,12 +139,12 @@ public:
 
 	Firebird::string* newString(const Firebird::string& s)
 	{
-		return FB_NEW(getPool()) Firebird::string(getPool(), s);
+		return FB_NEW_POOL(getPool()) Firebird::string(getPool(), s);
 	}
 
 	IntlString* newIntlString(const Firebird::string& s, const char* charSet = NULL)
 	{
-		return FB_NEW(getPool()) IntlString(getPool(), s, charSet);
+		return FB_NEW_POOL(getPool()) IntlString(getPool(), s, charSet);
 	}
 
 	// newNode overloads
@@ -152,37 +152,37 @@ public:
 	template <typename T>
 	T* newNode()
 	{
-		return setupNode<T>(FB_NEW(getPool()) T(getPool()));
+		return setupNode<T>(FB_NEW_POOL(getPool()) T(getPool()));
 	}
 
 	template <typename T, typename T1>
 	T* newNode(T1 a1)
 	{
-		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1));
+		return setupNode<T>(FB_NEW_POOL(getPool()) T(getPool(), a1));
 	}
 
 	template <typename T, typename T1, typename T2>
 	T* newNode(T1 a1, T2 a2)
 	{
-		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2));
+		return setupNode<T>(FB_NEW_POOL(getPool()) T(getPool(), a1, a2));
 	}
 
 	template <typename T, typename T1, typename T2, typename T3>
 	T* newNode(T1 a1, T2 a2, T3 a3)
 	{
-		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2, a3));
+		return setupNode<T>(FB_NEW_POOL(getPool()) T(getPool(), a1, a2, a3));
 	}
 
 	template <typename T, typename T1, typename T2, typename T3, typename T4>
 	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4)
 	{
-		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4));
+		return setupNode<T>(FB_NEW_POOL(getPool()) T(getPool(), a1, a2, a3, a4));
 	}
 
 	template <typename T, typename T1, typename T2, typename T3, typename T4, typename T5>
 	T* newNode(T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
 	{
-		return setupNode<T>(FB_NEW(getPool()) T(getPool(), a1, a2, a3, a4, a5));
+		return setupNode<T>(FB_NEW_POOL(getPool()) T(getPool(), a1, a2, a3, a4, a5));
 	}
 
 private:

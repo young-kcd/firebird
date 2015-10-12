@@ -88,7 +88,7 @@ public:
 		: PrevConverter(pool, obj, str, len)
 	{
 		if (len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[len];
+			out_str = FB_NEW_POOL(pool) UCHAR[len];
 		else
 			out_str = tempBuffer;
 		obj->str_to_upper(len, str, len, out_str);
@@ -116,7 +116,7 @@ public:
 		const SLONG out_len = len / obj->getCharSet()->minBytesPerChar() * obj->getCanonicalWidth();
 
 		if (out_len > (int) sizeof(tempBuffer))
-			out_str = FB_NEW(pool) UCHAR[out_len];
+			out_str = FB_NEW_POOL(pool) UCHAR[out_len];
 		else
 			out_str = tempBuffer;
 

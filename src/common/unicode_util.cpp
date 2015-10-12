@@ -289,7 +289,7 @@ private:
 public:
 	static ImplementConversionICU* create(int majorVersion, int minorVersion)
 	{
-		ImplementConversionICU* o = FB_NEW(*getDefaultMemoryPool()) ImplementConversionICU(
+		ImplementConversionICU* o = FB_NEW_POOL(*getDefaultMemoryPool()) ImplementConversionICU(
 			majorVersion, minorVersion);
 
 		if (!o->module)
@@ -996,7 +996,7 @@ UnicodeUtil::ICU* UnicodeUtil::loadICU(const string& icuVersion, const string& c
 		PathName filename;
 		formatFilename(filename, ucTemplate, majorVersion, minorVersion);
 
-		icu = FB_NEW(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
+		icu = FB_NEW_POOL(*getDefaultMemoryPool()) ICU(majorVersion, minorVersion);
 
 		icu->ucModule = ModuleLoader::fixAndLoadModule(filename);
 
@@ -1344,7 +1344,7 @@ UnicodeUtil::Utf16Collation* UnicodeUtil::Utf16Collation::create(
 	// status not verified here.
 	icu->ucolGetContractions(partialCollator, contractions, &status);
 
-	Utf16Collation* obj = new Utf16Collation();
+	Utf16Collation* obj = FB_NEW Utf16Collation();
 	obj->icu = icu;
 	obj->tt = tt;
 	obj->attributes = attributes;

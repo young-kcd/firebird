@@ -3288,7 +3288,6 @@ static ULONG fast_load(thread_db* tdbb,
 	IndexNode levelNode[MAX_LEVELS];
 #ifdef DEBUG_BTR_PAGES
 	TEXT debugtext[1024];
-	//  ,__FILE__, __LINE__
 #endif
 
 	SET_TDBB(tdbb);
@@ -3316,11 +3315,11 @@ static ULONG fast_load(thread_db* tdbb,
 
 	typedef Firebird::Array<jumpNodeList*> jumpNodeListContainer;
 	jumpNodeListContainer jumpNodes;
-	jumpNodes.push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
+	jumpNodes.push(FB_NEW_POOL(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
 
 	keyList jumpKeys;
-	jumpKeys.push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
-	jumpKeys[0]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
+	jumpKeys.push(FB_NEW_POOL(*tdbb->getDefaultPool()) dynKey);
+	jumpKeys[0]->keyData = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[key_length];
 
 	// AB: Let's try to determine to size between the jumps to speed up
 	// index search. Of course the size depends on the key_length. The
@@ -3654,7 +3653,7 @@ static ULONG fast_load(thread_db* tdbb,
 				{
 					// Initialize the rest of the jumpnode
 					jumpNode.offset = (newNode.nodePointer - (UCHAR*)bucket);
-					jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
+					jumpNode.data = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
 					memcpy(jumpNode.data, key->key_data + jumpNode.prefix, jumpNode.length);
 					// Push node on end in list
 					leafJumpNodes->add(jumpNode);
@@ -3709,10 +3708,10 @@ static ULONG fast_load(thread_db* tdbb,
 					key->key_length = 0;
 
 					// Initialize jumpNodes variables for new level
-					jumpNodes.push(FB_NEW(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
-					jumpKeys.push(FB_NEW(*tdbb->getDefaultPool()) dynKey);
+					jumpNodes.push(FB_NEW_POOL(*tdbb->getDefaultPool()) jumpNodeList(*tdbb->getDefaultPool()));
+					jumpKeys.push(FB_NEW_POOL(*tdbb->getDefaultPool()) dynKey);
 					jumpKeys[level]->keyLength = 0;
-					jumpKeys[level]->keyData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[key_length];
+					jumpKeys[level]->keyData = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[key_length];
 					totalJumpSize[level] = 0;
 					newAreaPointers[level] = levelPointer + jumpAreaSize;
 				}
@@ -3860,7 +3859,7 @@ static ULONG fast_load(thread_db* tdbb,
 					{
 						// Initialize the rest of the jumpnode
 						jumpNode.offset = (levelNode[level].nodePointer - (UCHAR*)bucket);
-						jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
+						jumpNode.data = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
 						memcpy(jumpNode.data, temp_key.key_data + jumpNode.prefix, jumpNode.length);
 						// Push node on end in list
 						pageJumpNodes->add(jumpNode);
@@ -5208,7 +5207,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 
 			if (jumpNode.length)
 			{
-				jumpNode.data = FB_NEW(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
+				jumpNode.data = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[jumpNode.length];
 				const UCHAR* const q = currentData + jumpNode.prefix;
 				memcpy(jumpNode.data, q, jumpNode.length);
 			}
@@ -5647,7 +5646,7 @@ static ULONG insert_node(thread_db* tdbb,
 				if (index > splitJumpNodeIndex)
 				{
 					const USHORT length = walkJumpNode[i].prefix + walkJumpNode[i].length;
-					UCHAR* newData = FB_NEW(*tdbb->getDefaultPool()) UCHAR[length];
+					UCHAR* newData = FB_NEW_POOL(*tdbb->getDefaultPool()) UCHAR[length];
 					memcpy(newData, new_key->key_data, walkJumpNode[i].prefix);
 					memcpy(newData + walkJumpNode[i].prefix, walkJumpNode[i].data,
 						walkJumpNode[i].length);

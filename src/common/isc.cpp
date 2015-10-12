@@ -486,7 +486,7 @@ SLONG ISC_set_prefix(const TEXT* sw, const TEXT* path)
 
 	if (! eSw)
 	{
-		eSw = FB_NEW(*getDefaultMemoryPool()) ESwitches(*getDefaultMemoryPool());
+		eSw = FB_NEW_POOL(*getDefaultMemoryPool()) ESwitches(*getDefaultMemoryPool());
 	}
 
 	switch (UPPER(*sw))
