@@ -1,3 +1,16 @@
+ 2015-10-11 14:22  alexpeshkoff 
+   M src/include/gen/msgs.h
+   M src/msgs/messages2.sql
+Changed message text
+
+ 2015-10-11 08:59  hvlad 
+   M src/common/StatementMetadata.cpp
+Avoid too frequent VirtualAlloc\VirtualFree calls
+
+ 2015-10-11 08:58  hvlad 
+   M src/remote/remote.cpp
+Fixed small memory leak (happens on every auth request)
+
  2015-10-09 14:47  asfernandes 
    M src/remote/server/server.cpp
 Fix debug code.
