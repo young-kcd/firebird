@@ -152,7 +152,7 @@ not intended for use with blobs.  Both GDML and the call
 interface have statements or routines that perform
 blob storage, retrieval, and update.', 'Your program tried to do something that cannot be done
 with blob fields.', 'daves', '1993-07-16 12:11:45')
-('attempted read of a FB_NEW, open BLOB', 'Check and correct your program logic.  Close the blob field
+('attempted read of a new, open BLOB', 'Check and correct your program logic.  Close the blob field
 before you try to read from it.', 'Your program tried to read from a blob field that it is
 creating.', 0, 49, 'Essai de lecture d''un BLOB nouvellement ouvert', 'Check and correct your program logic.  Close the blob field
 before you try to read from it.', 'Your program tried to read from a blob field that it is
@@ -506,7 +506,7 @@ segmented) blob.', 'daves', '1993-07-16 12:11:27')
 ('invalid key position', NULL, NULL, 0, 358, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('segments not allowed in expression index @1', NULL, NULL, 0, 359, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('sort error: corruption in data structure', NULL, NULL, 0, 360, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('FB_NEW record size of @1 bytes is too big', NULL, NULL, 0, 361, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('new record size of @1 bytes is too big', NULL, NULL, 0, 361, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Inappropriate self-reference of column', NULL, NULL, 0, 362, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('request depth exceeded. (Recursive definition?)', NULL, NULL, 0, 363, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('cannot access column @1 in view @2', NULL, NULL, 0, 364, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
@@ -729,8 +729,8 @@ segmented) blob.', 'daves', '1993-07-16 12:11:27')
 ('Option length is zero after table reservation @1 in TPB', NULL, NULL, 0, 581, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Option length @1 exceeds the range for option @2 in TPB', NULL, NULL, 0, 582, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Option value @1 is invalid for the option @2 in TPB', NULL, NULL, 0, 583, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('Preserving previous table reservation @1 for table @2, stronger than FB_NEW @3 in TPB', NULL, NULL, 0, 584, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('Table reservation @1 for table @2 already specified and is stronger than FB_NEW @3 in TPB', NULL, NULL, 0, 585, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('Preserving previous table reservation @1 for table @2, stronger than new @3 in TPB', NULL, NULL, 0, 584, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('Table reservation @1 for table @2 already specified and is stronger than new @3 in TPB', NULL, NULL, 0, 585, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Table reservation reached maximum recursion of @1 when expanding views in TPB', NULL, NULL, 0, 586, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Table reservation in TPB cannot be applied to @1 because it''s a virtual table', NULL, NULL, 0, 587, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Table reservation in TPB cannot be applied to @1 because it''s a system table', NULL, NULL, 0, 588, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
@@ -1298,7 +1298,7 @@ type <cr> for next topic or <EOF> to stop: ', NULL, NULL, 1, 503, '#', NULL, NUL
 ('please retry, giving a database name', NULL, NULL, 3, 23, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Summary of validation errors', NULL, NULL, 3, 24, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('	-activate	activate shadow file for database usage', NULL, NULL, 3, 25, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('	-attach		shutdown FB_NEW database attachments', NULL, NULL, 3, 26, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('	-attach		shutdown new database attachments', NULL, NULL, 3, 26, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('	-begin_log	begin logging for replay utility', NULL, NULL, 3, 27, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('	-buffers	set page buffers <n>', NULL, NULL, 3, 28, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('	-commit		commit transaction <tr / all>', NULL, NULL, 3, 29, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
@@ -1638,7 +1638,7 @@ type <cr> for next topic or <EOF> to stop: ', NULL, NULL, 1, 503, '#', NULL, NUL
 ('Maximum number of collations per character set exceeded', NULL, NULL, 8, 221, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Invalid collation attributes', NULL, NULL, 8, 222, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Collation @1 not installed for character set @2', NULL, NULL, 8, 223, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('Cannot use the internal domain @1 as FB_NEW type for field @2', NULL, NULL, 8, 224, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('Cannot use the internal domain @1 as new type for field @2', NULL, NULL, 8, 224, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Default value is not allowed for array type in field @1', NULL, NULL, 8, 225, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Default value is not allowed for array type in domain @1', NULL, NULL, 8, 226, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('DYN_UTIL_is_array failed for domain @1', NULL, NULL, 8, 227, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
@@ -1901,7 +1901,7 @@ Could not write to file "@1"', NULL, NULL, 12, 223, '#', NULL, NULL, 'truser', '
 
 Could not read from file "@1"', NULL, NULL, 12, 224, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Done with volume #@1, "@2"', NULL, NULL, 12, 225, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('	Press return to reopen that file, or type a FB_NEW
+('	Press return to reopen that file, or type a new
 	name followed by return to open a different file.', NULL, NULL, 12, 226, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Type a file name to open and hit return', NULL, NULL, 12, 227, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('  Name: ', NULL, NULL, 12, 228, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
@@ -2035,7 +2035,7 @@ ERROR: Backup incomplete', NULL, NULL, 12, 229, '#', NULL, NULL, 'truser', '1000
 ('cannot access column @1 in view @2', NULL, NULL, 13, 306, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('Too many concurrent executions of the same request', NULL, NULL, 13, 307, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('maximum indexes per table (@1) exceeded', NULL, NULL, 13, 308, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('FB_NEW record size of @1 bytes is too big', NULL, NULL, 13, 309, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('new record size of @1 bytes is too big', NULL, NULL, 13, 309, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('segments not allowed in expression index @1', NULL, NULL, 13, 310, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('wrong page type', NULL, NULL, 13, 311, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('invalid ARRAY or BLOB operation', NULL, NULL, 13, 315, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
@@ -2569,7 +2569,7 @@ Fetches = !f', NULL, NULL, 17, 93, '#', NULL, NULL, 'truser', '1000-01-01 00:00:
 ('<command> [ <parameter> ... ]', NULL, NULL, 18, 47, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('interactive usage:', NULL, NULL, 18, 48, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('available commands:', NULL, NULL, 18, 49, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
-('adding a FB_NEW user:', NULL, NULL, 18, 50, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
+('adding a new user:', NULL, NULL, 18, 50, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('add <name> [ <parameter> ... ]', NULL, NULL, 18, 51, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('deleting a current user:', NULL, NULL, 18, 52, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
 ('delete <name>', NULL, NULL, 18, 53, '#', NULL, NULL, 'truser', '1000-01-01 00:00:00')
