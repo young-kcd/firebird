@@ -314,9 +314,10 @@ private:
 private:
 	static void yySCopy(YYSTYPE* to, YYSTYPE* from, int size);
 	static void yyPCopy(YYPOSN* to, YYPOSN* from, int size);
-	static void yyMoreStack(yyparsestate* yyps);
-	static yyparsestate* yyNewState(int size);
 	static void yyFreeState(yyparsestate* p);
+
+	void yyMoreStack(yyparsestate* yyps);
+	yyparsestate* yyNewState(int size);
 
 private:
 	int parseAux();
