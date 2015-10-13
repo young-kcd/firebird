@@ -1738,7 +1738,8 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 				else if (EVL_field(0, rpb->rpb_record, f_file_shad_num, &desc2) &&
 					(id = MOV_get_long(&desc2, 0)))
 				{
-					if (!(file_flags & FILE_inactive)) {
+					if (!(file_flags & FILE_inactive))
+					{
 						if (file_flags & FILE_nodelete)
 							DFW_post_work(transaction, dfw_delete_shadow_nodelete, &desc, id);
 						else

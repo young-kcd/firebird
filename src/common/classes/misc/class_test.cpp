@@ -126,7 +126,8 @@ void testBitmap()
 		}
 	}
 	printf(" DONE\n");
-/*
+
+	/***
     printf("Verify AND operation for correctness (and forward iterator)");
 	for (i = 0; i < BITMAP_ITEMS; i++) {
 		tree.add(v1[i]);
@@ -187,7 +188,7 @@ void testBitmap()
 		fb_assert((ULONG)tree.current() == or_res->current());
 	}
 	printf(" DONE\n");
-*/
+	***/
 }
 
 const FB_SIZE_T TEST_ITEMS = 10000;

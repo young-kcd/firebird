@@ -483,6 +483,6 @@ ISQL now also takes into an account global role setting when creating databases.
 In some cases it's desired to keep shadow file after dropping shadow (for example for
 backup purporse). In FB3 appropriate clause is added to DROP SHADOW. Full syntax is:
 
-DROP SHADOW number [{PRESERVE | DELETE} FILE];
+DROP SHADOW <number> [{PRESERVE | DELETE} FILE];
 
-Default behavior is to delete file keeping backwards compatibility.
+Default behavior is to delete file, keeping backwards compatibility.

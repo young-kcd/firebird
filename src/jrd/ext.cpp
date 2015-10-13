@@ -121,7 +121,7 @@ namespace {
 #endif
 	static const char* const FOPEN_READ_ONLY	= "rb";
 
-	FILE *ext_fopen(Database* dbb, ExternalFile* ext_file)
+	FILE* ext_fopen(Database* dbb, ExternalFile* ext_file)
 	{
 		const char* file_name = ext_file->ext_filename;
 

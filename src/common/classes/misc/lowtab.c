@@ -26,7 +26,8 @@
 
 #include <stdio.h>
 
-main(int ac, char **av)
+
+main(int ac, char** av)
 {
 	int mode = ac < 2 ? 0 : ((*av[1]) - '0');
 
@@ -40,6 +41,7 @@ main(int ac, char **av)
 	{
 		if (mode == 0)
 			printf ("\t%d, // %d\n", slot, cur);
+
 		if (((cur - prev) * 10) / cur > 0)
 		{
 			if (mode == 1)
@@ -47,6 +49,7 @@ main(int ac, char **av)
 			prev = cur;
 			++slot;
 		}
+
 		cur += dstep;
 	}
 

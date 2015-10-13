@@ -286,7 +286,7 @@ public:
 		if (flagOsUnload)
 		{
 			const bool dontCleanup = MasterInterfacePtr()->getProcessExiting();
-			if (dontCleanup) 
+			if (dontCleanup)
 			{
 				InstanceControl::cancelCleanup();
 				return;

@@ -3122,9 +3122,9 @@ DmlNode* ExecStatementNode::parse(thread_db* tdbb, MemoryPool& pool, CompilerScr
 									MemoryPool& pool = csb->csb_pool;
 
 									if (!node->inputNames)
-										node->inputNames = FB_NEW_POOL (pool) EDS::ParamNames(pool);
+										node->inputNames = FB_NEW_POOL(pool) EDS::ParamNames(pool);
 
-									MetaName* newName = FB_NEW_POOL (pool) MetaName(pool, name);
+									MetaName* newName = FB_NEW_POOL(pool) MetaName(pool, name);
 									node->inputNames->add(newName);
 								}
 							}
