@@ -17,7 +17,7 @@
 # Start of file prefix.darwin:	$(VERSION)	@PLATFORM@
 # 2 Oct 2002, Nickolay Samofatov - Major Cleanup
 #
-# Default build from 10.7
+# Default build from 10.7 using Clang
 # The following exports assume you are using MacPorts ICU, libtommath 
 # export CFLAGS='-I/opt/local/include -I/opt/local/include/libtommath'
 # export CXXFLAGS='-I/opt/local/include -I/opt/local/include/libtommath -L/opt/local/lib'
