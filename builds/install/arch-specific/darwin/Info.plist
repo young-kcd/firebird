@@ -5,7 +5,7 @@
 	<key>CFBundleGetInfoString</key>
 	<string>_MFB_BUILD_SUFFIX_</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.firebirdsql.Firebird</string>
+	<string>com.firebirdsql.Firebird</string>
 	<key>CFBundleName</key>
 	<string>_MFB_BUILD_SUFFIX_</string>
 	<key>CFBundleShortVersionString</key>
