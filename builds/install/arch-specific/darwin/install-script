@@ -84,8 +84,8 @@ else
 fi
 
 
-# Remove all traces of Classic first
-echo "Remove all traces of Classic first"
+# Remove all older traces of Classic first
+echo "Remove all older traces of Classic first"
 if [ -f /etc/inetd.conf ]; then
 	grep -s gds_db /etc/inetd.conf  > /dev/null 2>&1
 	if test $? != 0 ; then
@@ -100,50 +100,9 @@ if [ -f /etc/xinetd.d/firebird ]; then
 	HUPNEEDED='y'
 fi
 
-if [ -f /Library/LaunchDaemons/org.firebird.gds.plist ]; then
-	launchctl unload /Library/LaunchDaemons/org.firebird.gds.plist
-	rm /Library/LaunchDaemons/org.firebird.gds.plist
-	HUPNEEDED='y'
-fi
-
-# Install ourselves in the correct place - SuperServer
-echo "Install StartupItem in the correct place SuperServer"
-if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	rm -fr /Library/StartupItems/Firebird
-	cp -r "$1/Resources/StartupItem" /Library/StartupItems/Firebird
-else
-	cp -r "$1/Resources/StartupItem" $FB_FW/Resources/FirebirdSS
-	rm -fr /Library/StartupItems/Firebird
-fi
-
-# Install ourselves in the correct place - Classic 
-echo "Install ourselves in the correct place Classic"
-
-# launchd 10.7+
-echo "Test launchd"
-if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	if test $OSVERSION -lt 10
-	then 
-	echo -n
-	fi
-fi
-	
-if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	if test $OSVERSION -gt 9
-	then 
-	echo "Yosemite and launchctl"
-	cp $FB_FW/Resources/org.firebird.gds.plist /Library/LaunchDaemons/org.firebird.gds.plist
-	launchctl load /Library/LaunchDaemons/org.firebird.gds.plist
-	fi
-fi
-
-if [ ! -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-cp $FB_FW/Resources/org.firebird.gds.plist /Library/LaunchDaemons/org.firebird.gds.plist
-launchctl load /Library/LaunchDaemons/org.firebird.gds.plist
-fi
-
-# Make sure the hosts.equiv files are set correctly
+# Make sure hosts.equiv files are set correctly
 echo "Make sure hosts.equiv files are set correctly"
+
 cp /etc/hosts.equiv /etc/hosts.equiv.fbsave
 if grep -x "localhost" /etc/hosts.equiv > /dev/null; then                
 	echo -n
@@ -171,35 +130,19 @@ fi
 
 #Install the saved UDF libraries, if any
 echo "Install the saved UDF libraries"
-for file in /tmp/*UDF_save_*; do
-new=`echo $file | sed -e 's/UDF_save_//g'`
-return=`basename $new`
-cp $file "$FB_RES/English.lproj/var/UDF/$return"
-rm $file
-done
+cp /tmp/UDF_Save/*.* $FB_RES/English.lproj/var/UDF/
+
+rm -fr /tmp/UDF_save
 
 #If classic, add libfbclient to dynamic loader search path
 echo "Add libfbclient to dynamic loader search path"
 if [ ! -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-ln -s "$FB_FW/Libraries/libfbclient.dylib" /usr/local/lib/libfbclient.dylib
+	ln -s "$FB_FW/Libraries/libfbclient.dylib" /usr/local/lib/libfbclient.dylib
 fi
 
-# And last but not least, start the server
-echo "Start SuperServer"
-if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	if test $OSVERSION -lt 10 
-	then
-	echo "SuperServer uses StartupItems"
-	chmod u+xg+xo+x /Library/StartupItems/Firebird/Firebird
-	/Library/StartupItems/Firebird/Firebird start
-	fi
-fi
+# And last but not least, start the Servers
+echo "Start the Servers via launchctl"
 
-if [ -f "$FB_FW/Versions/A/Resources/.SuperServer" ]; then
-	if test $OSVERSION -gt 9
-	then 
-	echo "SuperServer uses launchctl"
-	launchctl load /Library/LaunchDaemons/org.firebird.gds.plist	
-	fi
-fi
+cp $FB_FW/Resources/org.firebird.gds.plist /Library/LaunchDaemons/org.firebird.gds.plist
+launchctl load /Library/LaunchDaemons/org.firebird.gds.plist	
 
