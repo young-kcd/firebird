@@ -658,6 +658,12 @@ void EventManager::create_process()
  **************************************/
 	acquire_shmem();
 
+	if (m_processOffset)
+	{
+		release_shmem();
+		return;
+	}
+
 	prb* const process = (prb*) alloc_global(type_prb, sizeof(prb), false);
 	process->prb_process_id = PID;
 	insert_tail(&m_sharedMemory->getHeader()->evh_processes, &process->prb_processes);
