@@ -1,3 +1,15 @@
+ 2015-10-13 12:00  paulbeach 
+   A builds/install/arch-specific/darwin/DistributionCS.xml
+   A builds/install/arch-specific/darwin/DistributionSS.xml
+   M builds/install/arch-specific/darwin/Info.plist
+   M builds/install/arch-specific/darwin/Makefile.in
+   M builds/install/arch-specific/darwin/install-script
+   M builds/install/arch-specific/darwin/preupgrade-script
+   M builds/posix/postfix.darwin
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+New installer based on pkgbuild and productbuild to replace old deprecated installer on El Capitan
+
  2015-10-11 14:43  alexpeshkoff 
    M src/include/gen/msgs.h
    M src/msgs/messages2.sql
