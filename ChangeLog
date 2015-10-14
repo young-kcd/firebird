@@ -1,3 +1,40 @@
+ 2015-10-13 12:10  paulbeach 
+   A builds/install/arch-specific/darwin/DistributionCS.xml
+   A builds/install/arch-specific/darwin/DistributionSS.xml
+   M builds/install/arch-specific/darwin/Info.plist
+   M builds/install/arch-specific/darwin/Makefile.in
+   M builds/install/arch-specific/darwin/install-script
+   M builds/install/arch-specific/darwin/preupgrade-script
+   M builds/posix/postfix.darwin
+   M builds/posix/prefix.darwin_i386
+   M builds/posix/prefix.darwin_x86_64
+New installer based on pkgbuild and productbuild to replace old deprecated installer on El Capitan
+
+ 2015-10-13 09:44  hvlad 
+   M src/common/dllinst.cpp
+   M src/common/isc.cpp
+   M src/utilities/install/install.cpp
+Corrections
+
+ 2015-10-13 02:22  asfernandes 
+   M doc/sql.extensions/README.ddl.txt
+   M src/common/classes/ImplementHelper.h
+   M src/common/classes/fb_atomic.il
+   M src/common/classes/misc/class_test.cpp
+   M src/common/classes/misc/lowtab.c
+   M src/common/classes/misc/miditab.c
+   M src/dsql/StmtNodes.cpp
+   M src/jrd/cmp.cpp
+   M src/jrd/ext.cpp
+   M src/jrd/vio.cpp
+   M src/utilities/fbcpl/fbdialog.cpp
+Misc.
+
+ 2015-10-13 01:49  asfernandes 
+   M src/dsql/Parser.h
+   M src/dsql/btyacc_fb.ske
+Use pools in the btyacc skeleton file.
+
  2015-10-12 14:29  alexpeshkoff 
    M src/msgs/transmsgs.fr_FR2.sql
 Rolled back accidentially committed file
