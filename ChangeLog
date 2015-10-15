@@ -1,3 +1,9 @@
+ 2015-10-14 12:46  paulbeach 
+   M builds/install/arch-specific/darwin/install-script
+   M builds/install/arch-specific/darwin/preupgrade-script
+   M builds/posix/postfix.darwin
+More changes to support the new pkgbuild installer for El Capitan
+
  2015-10-13 12:00  paulbeach 
    A builds/install/arch-specific/darwin/DistributionCS.xml
    A builds/install/arch-specific/darwin/DistributionSS.xml
