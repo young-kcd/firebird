@@ -95,7 +95,7 @@ LONG CFBPanel::OnDblclk(HWND hwndCPl, UINT /*uAppNum*/, LONG /*lData*/)
 			dlg.m_FB_Version = "not known";
 			CString afilename = dlg.m_Root_Path + "gbak.exe";
 			buffer_size = GetFileVersionInfoSize( (LPCTSTR) afilename, 0);
-			void* VersionInfo = FB_NEW char [buffer_size];
+			void* VersionInfo = new char [buffer_size];
 			void* ProductVersion = 0;
 			void* SpecialBuild = 0;
 			void* PrivateBuild = 0;
