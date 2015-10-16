@@ -425,8 +425,10 @@ static int		cleanup_ports(const int, const int, void*);
 static int		fork();
 #endif
 
+typedef Array<SOCKET> SocketsArray;
+
 #ifdef WIN_NT
-static void		wsaExitHandler(void*);
+static int		wsaExitHandler(const int, const int, void*);
 static int		fork(SOCKET, USHORT);
 static THREAD_ENTRY_DECLARE forkThread(THREAD_ENTRY_PARAM);
 
@@ -434,9 +436,7 @@ static GlobalPtr<Mutex> forkMutex;
 static HANDLE forkEvent = INVALID_HANDLE_VALUE;
 static bool forkThreadStarted = false;
 
-typedef Array<SOCKET> SocketsArray;
 static SocketsArray* forkSockets;
-
 #endif
 
 static void		inet_gen_error(bool, rem_port*, const Arg::StatusVector& v);
@@ -520,6 +520,7 @@ static rem_port* inet_async_receive = NULL;
 
 static GlobalPtr<Mutex> port_mutex;
 static GlobalPtr<PortsCleanup>	inet_ports;
+static GlobalPtr<SocketsArray> ports_to_close;
 
 
 rem_port* INET_analyze(ClntAuthBlock* cBlock,
@@ -1237,7 +1238,7 @@ static rem_port* alloc_port(rem_port* const parent, const USHORT flags)
 			{
 				inet_error(false, parent, "WSAStartup", isc_net_init_error, wsaError);
 			}
-			gds__register_cleanup(wsaExitHandler, 0);
+			fb_shutdown_callback(0, wsaExitHandler, fb_shut_finish, 0);
 #endif
 			INET_remote_buffer = Config::getTcpRemoteBufferSize();
 			if (INET_remote_buffer < MAX_DATA_LW || INET_remote_buffer > MAX_DATA_HW)
@@ -1565,15 +1566,31 @@ static void disconnect(rem_port* const port)
 	// is an attempt to return the socket to a state where a graceful shutdown can
 	// occur.
 
-	if (port->port_linger.l_onoff)
-	{
-		setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER,
-				   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
+	// hvlad: for graceful shutdown linger should be turned on (despite of default 
+	// setting by OS)
+	{ // scope
+		struct linger lngr = {1, 10};
+		socklen_t optlen = sizeof(lngr);
+
+		if (port->port_linger.l_onoff)
+			lngr = port->port_linger;
+
+		setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER, (SCHAR*)&lngr, sizeof(lngr));
 	}
 
 	if (port->port_handle != INVALID_SOCKET)
 	{
-		shutdown(port->port_handle, 2);
+		shutdown(port->port_handle, 1);
+
+		fd_set fd = {0};
+		FD_SET(port->port_handle, &fd);
+		timeval tm = {10, 0};
+		int n = select(1, &fd, NULL, NULL, &tm);
+		while (n > 0)
+		{
+			char buff[256];
+			n = recv(port->port_handle, buff, sizeof(buff), 0);
+		}
 	}
 
 	MutexLockGuard guard(port_mutex, FB_FUNCTION);
@@ -1586,13 +1603,29 @@ static void disconnect(rem_port* const port)
 	}
 	port->port_context = NULL;
 
+	// hvlad: delay closing of the server sockets to prevent its reuse
+	// by another (newly accepted) port until next select() call. See
+	// also select_wait() function.
+	const bool delayClose = (port->port_server_flags && port->port_parent);
+
 	// If this is a sub-port, unlink it from its parent
 	port->unlinkParent();
 
 	inet_ports->unRegisterPort(port);
 
-	SOCLOSE(port->port_handle);
-	SOCLOSE(port->port_channel);
+	if (delayClose)
+	{
+		if (port->port_handle != INVALID_SOCKET)
+			ports_to_close->push(port->port_handle);
+
+		if (port->port_channel != INVALID_SOCKET)
+			ports_to_close->push(port->port_channel);
+	}
+	else
+	{
+		SOCLOSE(port->port_handle);
+		SOCLOSE(port->port_channel);
+	}
 
 	port->release();
 
@@ -1656,6 +1689,13 @@ static int cleanup_ports(const int, const int, void* /*arg*/)
 	INET_shutting_down = true;
 
 	inet_ports->closePorts();
+
+	while (ports_to_close->hasData())
+	{
+		SOCKET s = ports_to_close->pop();
+		SOCLOSE(s);
+	}
+
 	return 0;
 }
 
@@ -1679,7 +1719,7 @@ static int fork()
 #endif
 
 #ifdef WIN_NT
-static void wsaExitHandler(void*)
+static int wsaExitHandler(const int, const int, void*)
 {
 /**************************************
  *
@@ -1693,6 +1733,7 @@ static void wsaExitHandler(void*)
  **************************************/
 	SleepEx(0, FALSE);	// let select in other thread(s) shutdown gracefully
 	WSACleanup();
+	return 0;
 }
 
 
@@ -2037,6 +2078,13 @@ static bool select_wait( rem_port* main_port, Select* selct)
 
 		{ // port_mutex scope
 			MutexLockGuard guard(port_mutex, FB_FUNCTION);
+
+			while (ports_to_close->hasData())
+			{
+				SOCKET s = ports_to_close->pop();
+				SOCLOSE(s);
+			}
+
 			for (rem_port* port = main_port; port; port = port->port_next)
 			{
 				if (port->port_state == rem_port::PENDING &&
