@@ -1,3 +1,16 @@
+ 2015-10-15 13:22  paulbeach 
+   M builds/posix/postfix.darwin
+More changes to support the new pkgbuild installer for El Capitan
+
+ 2015-10-15 12:32  paulbeach 
+   M builds/install/arch-specific/darwin/install-script
+   M builds/install/arch-specific/darwin/preupgrade-script
+More changes to support the new pkgbuild installer for El Capitan
+
+ 2015-10-15 07:29  dimitr 
+   M src/utilities/fbcpl/fbpanel.cpp
+This should fix the Windows build.
+
  2015-10-14 08:31  hvlad 
    M src/jrd/event.cpp
 Fixed race condition when many attachments creates event session at the same moment
