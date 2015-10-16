@@ -5938,13 +5938,16 @@ static void disconnect( rem_port* port)
 	// Clear context reference for the associated event handler
 	// to avoid SEGV during shutdown
 
-	if (port->port_async) {
+	if (port->port_async)
+	{
 		port->port_async->port_context = NULL;
+		port->port_async->port_flags |= PORT_disconnect;
 	}
 
 	// Perform physical network disconnect and release
 	// memory for remote database context.
 
+	port->port_flags |= PORT_disconnect;
 	port->disconnect();
 	delete rdb;
 }
@@ -5966,7 +5969,7 @@ static THREAD_ENTRY_DECLARE event_thread(THREAD_ENTRY_PARAM arg)
 //	Reference portRef(*port);
 	PACKET packet;
 
-	for (;;)
+	while (!(port->port_flags & PORT_disconnect))
 	{
 		// zero packet
 
@@ -6338,6 +6341,7 @@ static void authReceiveResponse(bool havePacket, ClntAuthBlock& cBlock, rem_port
 			cBlock.extractDataFromPluginTo(&packet->p_trau.p_trau_data);
 		}
 		send_packet(port, packet);
+		REMOTE_free_packet(port, packet, true);
 		memset(&packet->p_auth_cont, 0, sizeof packet->p_auth_cont);
 	}
 

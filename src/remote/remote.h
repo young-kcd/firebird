@@ -273,6 +273,7 @@ struct Rvnt : public Firebird::GlobalStorage, public TypedHandle<rem_type_rev>
 	SLONG		rvnt_id;	// used to store client-side id
 	USHORT		rvnt_length;
 	Rvnt**		rvnt_self;
+	Firebird::AtomicCounter rvnt_destroyed;
 
 public:
 	Rvnt() :

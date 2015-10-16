@@ -709,15 +709,31 @@ public:
 	 *
 	 **************************************/
 	{
+		const bool allowCancel = event->rvnt_destroyed.compareExchange(0, 1);
+		if (!allowCancel)
+			return;
+
 		Rdb* rdb = event->rvnt_rdb;
 
 		rem_port* port = rdb->rdb_port->port_async;
 		if (!port)
-		{
 			return;
-		}
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
+		
+		// hvlad: it is important to call IEvents::cancel() under protection 
+		// of async port mutex to avoid crash in rem_port::que_events
+
+		if (allowCancel && event->rvnt_iface)
+		{
+			LocalStatus ls;
+			CheckStatusWrapper status_vector(&ls);
+			event->rvnt_iface->cancel(&status_vector);
+			event->rvnt_iface = NULL;
+		}
+
+		if (port->port_flags & PORT_disconnect)
+			return;
 
 		PACKET packet;
 		packet.p_operation = op_event;
@@ -726,8 +742,6 @@ public:
 		p_event->p_event_items.cstr_length = length;
 		p_event->p_event_items.cstr_address = items;
 		p_event->p_event_rid = event->rvnt_id;
-
-		event->rvnt_iface = NULL;
 
 		port->send(&packet);
 	}
@@ -2356,12 +2370,15 @@ static ISC_STATUS cancel_events( rem_port* port, P_EVENT * stuff, PACKET* send)
 
 	// cancel the event
 
-	if (event->rvnt_iface)
+	const bool allowCancel = event->rvnt_destroyed.compareExchange(0, 1);
+	if (allowCancel && event->rvnt_iface)
+	{
 		event->rvnt_iface->cancel(&status_vector);
+		event->rvnt_iface = NULL;
+	}
 
 	// zero event info
 
-	event->rvnt_iface = NULL;
 	event->rvnt_id = 0L;
 
 	// return response
@@ -4599,6 +4616,9 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 
 	event->rvnt_id = stuff->p_event_rid;
 	event->rvnt_rdb = rdb;
+
+	rem_port* asyncPort = rdb->rdb_port->port_async;
+	RefMutexGuard portGuard(*asyncPort->port_sync, FB_FUNCTION);
 
 	event->rvnt_iface = rdb->rdb_iface->queEvents(&status_vector, event->rvnt_callback,
 		stuff->p_event_items.cstr_length, stuff->p_event_items.cstr_address);

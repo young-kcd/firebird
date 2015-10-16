@@ -183,7 +183,9 @@ public:
 public:
 	YAttachment* attachment;
 	Firebird::RefPtr<Firebird::IEventCallback> callback;
-	bool autoReleased;
+
+private:
+	Firebird::AtomicCounter destroyed;
 };
 
 class YRequest FB_FINAL :

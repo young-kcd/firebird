@@ -2587,6 +2587,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 			statement->closeCursor(&statusWrapper, false);
 			statement->closeStatement(&statusWrapper);
 			statement->release();
+			statements->remove(*stmtHandle);
  			*stmtHandle = 0;
 		}
 		else if (option & DSQL_unprepare)
@@ -2889,6 +2890,7 @@ namespace
 		// IEventCallback implementation
 		virtual void eventCallbackFunction(unsigned int length, const UCHAR* list)
 		{
+			RefPtr<YEvents> tmp;
 			try
 			{
 				MutexLockGuard g(mtx, FB_FUNCTION);
@@ -2896,14 +2898,19 @@ namespace
 				{
 					ast(arg, length, list);
 
-					events->autoReleased = true;
-					YEvents* tmp = events;
+					tmp = events;
 					events = NULL;
-					tmp->release();
 				}
 			}
 			catch (const Firebird::Exception&)
 			{ }
+
+			if (tmp)
+			{
+				LocalStatus status;
+				CheckStatusWrapper statusWrapper(&status);
+				tmp->cancel(&statusWrapper);
+			}
 		}
 
 		int release()
@@ -2930,7 +2937,7 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 {
 	StatusVector status(userStatus);
 	CheckStatusWrapper statusWrapper(&status);
-	YEvents* events = NULL;
+	RefPtr<YEvents> events;
 
 	try
 	{
@@ -2938,13 +2945,14 @@ ISC_STATUS API_ROUTINE isc_que_events(ISC_STATUS* userStatus, FB_API_HANDLE* dbH
 
 		RefPtr<QueCallback> callback(FB_NEW QueCallback(ast, arg));
 		events = attachment->queEvents(&statusWrapper, callback, length, eventsData);
+		if (events)
+			*id = FB_API_HANDLE_TO_ULONG(events->getHandle());
+
 		callback->setEvents(events);		// should be called in case of NULL events too
 		if (status.getState() & Firebird::IStatus::STATE_ERRORS)
 		{
 			return status[1];
 		}
-
-		*id = FB_API_HANDLE_TO_ULONG(events->getHandle());
 	}
 	catch (const Exception& e)
 	{
@@ -3846,17 +3854,10 @@ YHelper<Impl, Intf>::YHelper(NextInterface* aNext)
 
 
 YEvents::YEvents(YAttachment* aAttachment, IEvents* aNext, IEventCallback* aCallback)
-	/***
-	: YHelper(aNext),
-	  attachment(aAttachment),
-	  callback(aCallback),
-	  autoReleased(false)
-	***/
 	: YHelper(aNext)
 {
 	attachment = aAttachment;
 	callback = aCallback;
-	autoReleased = false;
 
 	attachment->childEvents.add(this);
 }
@@ -3879,6 +3880,10 @@ void YEvents::destroy(unsigned dstrFlags)
 
 void YEvents::cancel(CheckStatusWrapper* status)
 {
+	const bool allowCancel = destroyed.compareExchange(0, 1);
+	if (!allowCancel)
+		return;
+
 	try
 	{
 		YEntry<YEvents> entry(status, this);
@@ -3886,7 +3891,7 @@ void YEvents::cancel(CheckStatusWrapper* status)
 		entry.next()->cancel(status);
 
 		if (!(status->getState() & Firebird::IStatus::STATE_ERRORS))
-			destroy(autoReleased ? 0 : DF_RELEASE);
+			destroy(DF_RELEASE);
 	}
 	catch (const Exception& e)
 	{
