@@ -1,3 +1,18 @@
+ 2015-10-16 15:30  hvlad 
+   M src/remote/client/interface.cpp
+   M src/remote/remote.h
+   M src/remote/server/server.cpp
+   M src/yvalve/YObjects.h
+   M src/yvalve/why.cpp
+Fixed few issues in event's handling code which could lead to AV (CORE-4680).
+Fixed few small memory leaks.
+
+ 2015-10-16 15:28  hvlad 
+   M src/remote/inet.cpp
+Implemented delayed closing of server sockets - it should fix server hang up (see CORE-4680).
+Fixed socket disconnect handling to allow graceful shutdown of network connection and avoid a lot of network errors in firebird.log (mostly 10053\10054).
+Misc changes.
+
  2015-10-15 13:22  paulbeach 
    M builds/posix/postfix.darwin
 More changes to support the new pkgbuild installer for El Capitan
