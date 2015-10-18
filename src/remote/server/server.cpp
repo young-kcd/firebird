@@ -720,8 +720,8 @@ public:
 			return;
 
 		RefMutexGuard portGuard(*port->port_sync, FB_FUNCTION);
-		
-		// hvlad: it is important to call IEvents::cancel() under protection 
+
+		// hvlad: it is important to call IEvents::cancel() under protection
 		// of async port mutex to avoid crash in rem_port::que_events
 
 		if (allowCancel && event->rvnt_iface)
