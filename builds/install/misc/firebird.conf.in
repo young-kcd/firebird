@@ -552,16 +552,16 @@
 #
 # Should connection over the wire be encrypted?
 # Has 3 different values: Required, Enabled or Disabled. Enabled behavior
-# depends another side requirements. If both sides set to enabled, connection
-# is encrypted when possible. Note that Wirecrypt should be set to enabled 
-# when running a firebird server with legacy authentication.
+# depends on the other side's requirements. If both sides are set to Enabled,
+# the connection is encrypted when possible. Note that Wirecrypt should be set 
+# to Enabled when running a Firebird server with legacy authentication.
 #
 # Attention: default depends upon connection type: incoming (server)
 #            or outgoing (client).
 #
 # Per-connection configurable.
 #
-# Type: integer
+# Type: string (predefined values)
 #
 #WireCrypt = Enabled (for client) / Required (for server)
 
