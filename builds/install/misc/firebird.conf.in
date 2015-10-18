@@ -1,6 +1,6 @@
-#######################################
+#########################################
 #
-# Firebird configuration file
+# Firebird version 3.0 configuration file
 #
 # Comments
 # --------
@@ -88,7 +88,7 @@
 # Portions of this file have been reproduced/made available with the
 # permission of Ann Harrison @ IBPhoenix.
 #
-#######################################
+#########################################
 
 
 # ----------------------------
