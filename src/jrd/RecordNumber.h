@@ -164,23 +164,6 @@ public:
 
 	bool isValid() const { return valid; }
 
-	inline bool checkNumber(USHORT records_per_page, // ~400 (8k page)
-							USHORT data_pages_per_pointer_page) const  // ~2000 (8k page)
-	{
-		// We limit record number value to 40 bits and make sure decomposed value
-		// fits into 3 USHORTs. This all makes practical table size limit (not
-		// counting allocation threshold and overhead) roughtly equal to:
-		// 16k page - 20000 GB
-		// 8k page -  10000 GB
-		// 4k page -   2500 GB
-		// 2k page -    600 GB
-		// 1k page -    150 GB
-		// Large page size values are recommended for large databases because
-		// page allocators are generally linear.
-		return value < QUADCONST(0x10000000000) &&
-			value < (SINT64) MAX_USHORT * records_per_page * data_pages_per_pointer_page;
-	}
-
 	inline void decompose(USHORT records_per_page, // ~400 (8k page)
 						  USHORT data_pages_per_pointer_page,  // ~2000 (8k page)
 						  USHORT& line,
