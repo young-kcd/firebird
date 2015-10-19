@@ -62,7 +62,7 @@ struct record_param
 		  rpb_f_page(0), rpb_f_line(0),
 		  rpb_b_page(0), rpb_b_line(0),
 		  rpb_address(NULL), rpb_length(0), rpb_flags(0), rpb_stream_flags(0),
-		  rpb_org_scans(0),
+		  rpb_org_scans(0), rpb_gc_lock(NULL),
 		  rpb_window(DB_PAGE_SPACE, -1)
 	{
 	}
@@ -90,6 +90,7 @@ struct record_param
 	USHORT rpb_stream_flags;		// stream flags
 	USHORT rpb_runtime_flags;		// runtime flags
 	SSHORT rpb_org_scans;			// relation scan count at stream open
+	Lock* rpb_gc_lock;				// lock for transient record changes
 
 	inline WIN& getWindow(thread_db* tdbb)
 	{
@@ -106,16 +107,17 @@ private:
 
 // Record flags must be an exact replica of ODS record header flags
 
-const USHORT rpb_deleted	= 1;
-const USHORT rpb_chained	= 2;
-const USHORT rpb_fragment	= 4;
-const USHORT rpb_incomplete	= 8;
-const USHORT rpb_blob		= 16;
-const USHORT rpb_delta		= 32;		// prior version is a differences record
-// rpb_large = 64 is missing
-const USHORT rpb_damaged	= 128;		// record is busted
-const USHORT rpb_gc_active	= 256;		// garbage collecting dead record version
-const USHORT rpb_uk_modified= 512;		// record key field values are changed
+const USHORT rpb_deleted		= 1;
+const USHORT rpb_chained		= 2;
+const USHORT rpb_fragment		= 4;
+const USHORT rpb_incomplete		= 8;
+const USHORT rpb_blob			= 16;
+const USHORT rpb_delta			= 32;		// prior version is a differences record
+const USHORT rpb_large			= 64;		// object is large
+const USHORT rpb_damaged		= 128;		// record is busted
+const USHORT rpb_gc_active		= 256;		// garbage collecting dead record version
+const USHORT rpb_uk_modified	= 512;		// record key field values are changed
+const USHORT rpb_long_tranum	= 1024;		// transaction number is 64-bit
 
 // Stream flags
 
@@ -217,7 +219,7 @@ private:
 public:
 	MemoryPool* req_pool;
 	Attachment*	req_attachment;			// database attachment
-	SLONG		req_id;					// request identifier
+	StmtNumber	req_id;					// request identifier
 	USHORT		req_incarnation;		// incarnation number
 	Firebird::MemoryStats req_memory_stats;
 

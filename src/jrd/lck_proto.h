@@ -40,11 +40,11 @@ void	LCK_fini(Jrd::thread_db*, Jrd::lck_owner_t);
 void	LCK_init(Jrd::thread_db*, Jrd::lck_owner_t);
 bool	LCK_lock(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
 bool	LCK_lock_opt(Jrd::thread_db*, Jrd::Lock*, USHORT, SSHORT);
-SLONG	LCK_query_data(Jrd::thread_db*, Jrd::lck_t, USHORT);
-SLONG	LCK_read_data(Jrd::thread_db*, Jrd::Lock*);
+SINT64	LCK_query_data(Jrd::thread_db*, Jrd::lck_t, USHORT);
+SINT64	LCK_read_data(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_release(Jrd::thread_db*, Jrd::Lock*);
 void	LCK_re_post(Jrd::thread_db*, Jrd::Lock*);
-void	LCK_write_data(Jrd::thread_db*, Jrd::Lock*, SLONG);
+void	LCK_write_data(Jrd::thread_db*, Jrd::Lock*, SINT64);
 
 
 class AutoLock

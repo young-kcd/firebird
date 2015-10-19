@@ -28,6 +28,7 @@
 #include "../jrd/pag.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/lck_proto.h"
+#include "../jrd/ods_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 
@@ -85,7 +86,7 @@ int TipCache::cacheState(thread_db* tdbb, TraNumber number)
 	// locate the specific TIP cache block for the transaction
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
-	const ULONG base = number - number % trans_per_tip;
+	const TraNumber base = number - number % trans_per_tip;
 
 	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
@@ -142,7 +143,7 @@ TraNumber TipCache::findLimbo(thread_db* tdbb, TraNumber minNumber, TraNumber ma
 		minNumber = tip_cache->tpc_base;
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
-	const ULONG base = minNumber - minNumber % trans_per_tip;
+	const TraNumber base = minNumber - minNumber % trans_per_tip;
 
 	// Scan the TIP cache and return the first (i.e. oldest) limbo transaction
 
@@ -232,7 +233,7 @@ void TipCache::setState(TraNumber number, SSHORT state)
  **************************************/
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
-	const ULONG base = number - number % trans_per_tip;
+	const TraNumber base = number - number % trans_per_tip;
 	const ULONG byte = TRANS_OFFSET(number % trans_per_tip);
 	const USHORT shift = TRANS_SHIFT(number);
 
@@ -299,7 +300,7 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 	// locate the specific TIP cache block for the transaction
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
-	const ULONG base = number - number % trans_per_tip;
+	const TraNumber base = number - number % trans_per_tip;
 
 	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
@@ -322,7 +323,7 @@ int TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 
 		// see if we can get a lock on the transaction; if we can't
 		// then we know it is still active
-		Lock temp_lock(tdbb, sizeof(SLONG), LCK_tra);
+		Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
 		temp_lock.lck_key.lck_long = number;
 
 		// If we can't get a lock on the transaction, it must be active.
@@ -368,7 +369,7 @@ void TipCache::updateCache(const Ods::tx_inv_page* tip_page, ULONG sequence)
  **************************************/
 
 	const ULONG trans_per_tip = m_dbb->dbb_page_manager.transPerTIP;
-	const TraNumber first_trans = sequence * trans_per_tip;
+	const TraNumber first_trans = (TraNumber) sequence * trans_per_tip;
 
 	// while we're in the area we can check to see if there are
 	// any tip cache pages we can release--this is cheaper and
@@ -462,8 +463,8 @@ TraNumber TipCache::cacheTransactions(thread_db* tdbb, TraNumber oldest)
 #else
 	WIN window(HEADER_PAGE_NUMBER);
 	const Ods::header_page* header = (Ods::header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-	const TraNumber top = header->hdr_next_transaction;
-	const TraNumber hdr_oldest = header->hdr_oldest_transaction;
+	const TraNumber top = Ods::getNT(header);
+	const TraNumber hdr_oldest = Ods::getOIT(header);
 	CCH_RELEASE(tdbb, &window);
 #endif
 
@@ -557,7 +558,8 @@ int TipCache::extendCache(thread_db* tdbb, TraNumber number)
 
 	// find the right block for this transaction and return the state
 
-	const ULONG base = number - number % trans_per_tip;
+	const TraNumber base = number - number % trans_per_tip;
+
 	FB_SIZE_T pos;
 	if (m_cache.find(base, pos))
 	{
@@ -573,6 +575,7 @@ int TipCache::extendCache(thread_db* tdbb, TraNumber number)
 	// we should never get to this point, but if we do the
 	// safest thing to do is return active
 
+	fb_assert(false);
 	return tra_active;
 }
 

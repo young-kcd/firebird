@@ -228,8 +228,8 @@ void TRA_cleanup(thread_db* tdbb)
 
 	WIN window(HEADER_PAGE_NUMBER);
 	const header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_header);
-	const TraNumber ceiling = header->hdr_next_transaction;
-	const TraNumber active = header->hdr_oldest_active;
+	const TraNumber ceiling = Ods::getNT(header);
+	const TraNumber active = Ods::getOAT(header);
 	CCH_RELEASE(tdbb, &window);
 
 	if (ceiling == 0)
@@ -246,7 +246,7 @@ void TRA_cleanup(thread_db* tdbb)
 	{
 		window.win_page = inventory_page(tdbb, sequence);
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_transactions);
-		ULONG max = ceiling - (sequence * trans_per_tip);
+		TraNumber max = ceiling - (TraNumber) sequence * trans_per_tip;
 		if (max > trans_per_tip)
 			max = trans_per_tip - 1;
 		for (; number <= max; number++)
@@ -256,7 +256,7 @@ void TRA_cleanup(thread_db* tdbb)
 			const USHORT shift = TRANS_SHIFT(number);
 			const int state = (*byte >> shift) & TRA_MASK;
 			if (state == tra_limbo && limbo == 0)
-				limbo = sequence * trans_per_tip + number;
+				limbo = (TraNumber) sequence * trans_per_tip + number;
 			else if (state == tra_active)
 			{
 				CCH_MARK(tdbb, &window);
@@ -314,7 +314,7 @@ void TRA_cleanup(thread_db* tdbb)
 		}
 
 		if (!tip->tip_next)
-			dbb->dbb_next_transaction = last * trans_per_tip;
+			dbb->dbb_next_transaction = (TraNumber) last * trans_per_tip;
 	}
 
 	CCH_RELEASE(tdbb, &window);
@@ -579,7 +579,7 @@ void TRA_get_inventory(thread_db* tdbb, UCHAR* bit_vector, TraNumber base, TraNu
 
 	while (sequence <= last)
 	{
-		base = sequence * trans_per_tip;
+		base = (TraNumber) sequence * trans_per_tip;
 
 		// release the read lock as we go, so that some one else can
 		// commit without having to signal all other transactions.
@@ -658,12 +658,17 @@ void TRA_header_write(thread_db* tdbb, Database* dbb, TraNumber number)
 		WIN window(HEADER_PAGE_NUMBER);
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-		if (header->hdr_next_transaction)
+		const TraNumber next_transaction = Ods::getNT(header);
+		const TraNumber oldest_active = Ods::getOAT(header);
+		const TraNumber oldest_transaction = Ods::getOIT(header);
+		const TraNumber oldest_snapshot = Ods::getOST(header);
+
+		if (next_transaction)
 		{
-			if (header->hdr_oldest_active > header->hdr_next_transaction)
+			if (oldest_active > next_transaction)
 				BUGCHECK(266);	//next transaction older than oldest active
 
-			if (header->hdr_oldest_transaction > header->hdr_next_transaction)
+			if (oldest_transaction > next_transaction)
 				BUGCHECK(267);	// next transaction older than oldest transaction
 		}
 
@@ -674,17 +679,18 @@ void TRA_header_write(thread_db* tdbb, Database* dbb, TraNumber number)
 		if (!number || dbb->dbb_last_header_write < number)
 		{
 			CCH_MARK_MUST_WRITE(tdbb, &window);
-			if (dbb->dbb_next_transaction > header->hdr_next_transaction)
-				header->hdr_next_transaction = dbb->dbb_next_transaction;
 
-			if (dbb->dbb_oldest_active > header->hdr_oldest_active)
-				header->hdr_oldest_active = dbb->dbb_oldest_active;
+			if (dbb->dbb_next_transaction > next_transaction)
+				Ods::writeNT(header, dbb->dbb_next_transaction);
 
-			if (dbb->dbb_oldest_transaction > header->hdr_oldest_transaction)
-				header->hdr_oldest_transaction = dbb->dbb_oldest_transaction;
+			if (dbb->dbb_oldest_active > oldest_active)
+				Ods::writeOAT(header, dbb->dbb_oldest_active);
 
-			if (dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
-				header->hdr_oldest_snapshot = dbb->dbb_oldest_snapshot;
+			if (dbb->dbb_oldest_transaction > oldest_transaction)
+				Ods::writeOIT(header, dbb->dbb_oldest_transaction);
+
+			if (dbb->dbb_oldest_snapshot > oldest_snapshot)
+				Ods::writeOST(header, dbb->dbb_oldest_snapshot);
 		}
 
 		CCH_RELEASE(tdbb, &window);
@@ -905,7 +911,7 @@ bool TRA_precommited(thread_db* tdbb, TraNumber old_number, TraNumber new_number
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
+	Database* const dbb = tdbb->getDatabase();
 	CHECK_DBB(dbb);
 
 	Sync sync(&dbb->dbb_pc_sync, "TRA_precommited");
@@ -1104,7 +1110,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Jrd::Attachment* attachment = tdbb->getAttachment();
+	Jrd::Attachment* const attachment = tdbb->getAttachment();
 
 	if (!transaction->tra_outer)
 	{
@@ -1205,7 +1211,7 @@ void TRA_release_transaction(thread_db* tdbb, jrd_tra* transaction, Jrd::TraceTr
 	if (trace)
 		trace->finish(ITracePlugin::RESULT_SUCCESS);
 
-	// Unlink the transaction from the database block
+	// Unlink the transaction from the attachment block
 
 	for (jrd_tra** ptr = &attachment->att_transactions; *ptr; ptr = &(*ptr)->tra_next)
 	{
@@ -1548,12 +1554,10 @@ int TRA_snapshot_state(thread_db* tdbb, const jrd_tra* trans, TraNumber number)
 		return state;
 	}
 
-	// If the transaction is a commited sub-transction - do the easy lookup.
+	// If the transaction is a committed sub-transaction - do the easy lookup.
 
-	if (trans->tra_commit_sub_trans && UInt32Bitmap::test(trans->tra_commit_sub_trans, number))
-	{
+	if (trans->tra_commit_sub_trans && trans->tra_commit_sub_trans->test(number))
 		return tra_committed;
-	}
 
 	// If the transaction is younger than we are and we are not read committed
 	// or the system transaction, the transaction must be considered active.
@@ -1685,7 +1689,7 @@ int TRA_state(const UCHAR* bit_vector, TraNumber oldest, TraNumber number)
  *	to this code make them in the replicated code also.
  *
  **************************************/
-	const ULONG base = oldest & ~TRA_MASK;
+	const TraNumber base = oldest & ~TRA_MASK;
 	const ULONG byte = TRANS_OFFSET(number - base);
 	const USHORT shift = TRANS_SHIFT(number);
 
@@ -1779,12 +1783,12 @@ void TRA_sweep(thread_db* tdbb)
 		CCH_flush(tdbb, FLUSH_SWEEP, 0);
 
 		WIN window(HEADER_PAGE_NUMBER);
-		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
+		header_page* const header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 
-		if (header->hdr_oldest_transaction < --transaction_oldest_active)
+		if (Ods::getOIT(header) < --transaction_oldest_active)
 		{
 			CCH_MARK_MUST_WRITE(tdbb, &window);
-			header->hdr_oldest_transaction = MIN(active, transaction_oldest_active);
+			Ods::writeOIT(header, MIN(active, transaction_oldest_active));
 		}
 
 		traceSweep.update(header);
@@ -1855,7 +1859,7 @@ int TRA_wait(thread_db* tdbb, jrd_tra* trans, TraNumber number, jrd_tra::wait_t 
 
 	if (wait != jrd_tra::tra_no_wait)
 	{
-		Lock temp_lock(tdbb, sizeof(SLONG), LCK_tra);
+		Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
 		temp_lock.lck_key.lck_long = number;
 
 		const SSHORT timeout = (wait == jrd_tra::tra_wait) ? trans->getLockWait() : 0;
@@ -1972,23 +1976,29 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 	window->win_page = HEADER_PAGE_NUMBER;
 	header_page* header = (header_page*) CCH_FETCH(tdbb, window, LCK_write, pag_header);
 
+	const TraNumber next_transaction = Ods::getNT(header);
+	const TraNumber oldest_active = Ods::getOAT(header);
+	const TraNumber oldest_transaction = Ods::getOIT(header);
+	const TraNumber oldest_snapshot = Ods::getOST(header);
+
 	// Before incrementing the next transaction Id, make sure the current one is valid
-	if (header->hdr_next_transaction)
+	if (next_transaction)
 	{
-		if (header->hdr_oldest_active > header->hdr_next_transaction)
+		if (oldest_active > next_transaction)
 			BUGCHECK(266);		//next transaction older than oldest active
 
-		if (header->hdr_oldest_transaction > header->hdr_next_transaction)
+		if (oldest_transaction > next_transaction)
 			BUGCHECK(267);		// next transaction older than oldest transaction
 	}
 
-	if (header->hdr_next_transaction >= MAX_TRA_NUMBER - 1)
+	if (next_transaction >= MAX_TRA_NUMBER - 1)
 	{
 		CCH_RELEASE(tdbb, window);
 		ERR_post(Arg::Gds(isc_imp_exc) <<
 				 Arg::Gds(isc_tra_num_exc));
 	}
-	const TraNumber number = header->hdr_next_transaction + 1;
+
+	const TraNumber number = next_transaction + 1;
 
 	// If this is the first transaction on a TIP, allocate the TIP now.
 	// Note, first TIP page is created with the database itself,
@@ -2002,17 +2012,18 @@ static header_page* bump_transaction_id(thread_db* tdbb, WIN* window)
 	// Extend, if necessary, has apparently succeeded.  Next, update header page
 
 	CCH_MARK_MUST_WRITE(tdbb, window);
-	header->hdr_next_transaction = number;
 	dbb->dbb_next_transaction = number;
 
-	if (dbb->dbb_oldest_active > header->hdr_oldest_active)
-		header->hdr_oldest_active = dbb->dbb_oldest_active;
+	Ods::writeNT(header, number);
 
-	if (dbb->dbb_oldest_transaction > header->hdr_oldest_transaction)
-		header->hdr_oldest_transaction = dbb->dbb_oldest_transaction;
+	if (dbb->dbb_oldest_active > oldest_active)
+		Ods::writeOAT(header, dbb->dbb_oldest_active);
 
-	if (dbb->dbb_oldest_snapshot > header->hdr_oldest_snapshot)
-		header->hdr_oldest_snapshot = dbb->dbb_oldest_snapshot;
+	if (dbb->dbb_oldest_transaction > oldest_transaction)
+		Ods::writeOIT(header, dbb->dbb_oldest_transaction);
+
+	if (dbb->dbb_oldest_snapshot > oldest_snapshot)
+		Ods::writeOST(header, dbb->dbb_oldest_snapshot);
 
 	return header;
 }
@@ -2233,16 +2244,20 @@ static ULONG inventory_page(thread_db* tdbb, ULONG sequence)
 	while (!vector || sequence >= vector->count())
 	{
 		DPM_scan_pages(tdbb);
+
 		if ((vector = dbb->dbb_t_pages) && sequence < vector->count())
 			break;
+
 		if (!vector)
 			BUGCHECK(165);		// msg 165 cannot find tip page
+
 		window.win_page = (*vector)[vector->count() - 1];
 		tx_inv_page* tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_transactions);
 		const ULONG next = tip->tip_next;
 		CCH_RELEASE(tdbb, &window);
 		if (!(window.win_page = next))
 			BUGCHECK(165);		// msg 165 cannot find tip page
+
 		// Type check it
 		tip = (tx_inv_page*) CCH_FETCH(tdbb, &window, LCK_read, pag_transactions);
 		CCH_RELEASE(tdbb, &window);
@@ -2375,10 +2390,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	// its snapshot doesn't contain these operations.
 
 	if (commit)
-	{
-		//fb_assert(sizeof(transaction->tra_number) == sizeof(ULONG));
-		SBM_SET(tdbb->getDefaultPool(), &transaction->tra_commit_sub_trans, transaction->tra_number);
-	}
+		TBM_SET(tdbb->getDefaultPool(), &transaction->tra_commit_sub_trans, transaction->tra_number);
 
 	// Create a new transaction lock, inheriting oldest active from transaction being committed.
 
@@ -2391,8 +2403,8 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 		new_number = dbb->dbb_next_transaction + dbb->generateTransactionId(tdbb);
 	else
 	{
-		const header_page* header = bump_transaction_id(tdbb, &window);
-		new_number = header->hdr_next_transaction;
+		const header_page* const header = bump_transaction_id(tdbb, &window);
+		new_number = Ods::getNT(header);
 	}
 #endif
 
@@ -2400,7 +2412,7 @@ static void retain_context(thread_db* tdbb, jrd_tra* transaction, bool commit, i
 	Lock* old_lock = transaction->tra_lock;
 	if (old_lock)
 	{
-		new_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(SLONG), LCK_tra);
+		new_lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(TraNumber), LCK_tra);
 		new_lock->lck_key.lck_long = new_number;
 		new_lock->lck_data = transaction->tra_lock->lck_data;
 
@@ -3032,11 +3044,12 @@ static void transaction_options(thread_db* tdbb,
 		Lock* lock = (*vector)[id];
 		if (!lock)
 			continue;
+
 		USHORT level = lock->lck_logical;
+
 		if (level == LCK_none || LCK_lock(tdbb, lock, level, transaction->getLockWait()))
-		{
 			continue;
-		}
+
 		for (ULONG l = 0; l < id; l++)
 		{
 			if ( (lock = (*vector)[l]) )
@@ -3046,6 +3059,7 @@ static void transaction_options(thread_db* tdbb,
 				lock->lck_logical = level;
 			}
 		}
+
 		id = 0;
 		ERR_punt();
 	}
@@ -3069,7 +3083,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	Jrd::Attachment* const attachment = tdbb->getAttachment();
 	WIN window(DB_PAGE_SPACE, -1);
 
-	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(SLONG), LCK_tra);
+	Lock* lock = FB_NEW_RPT(*tdbb->getDefaultPool(), 0) Lock(tdbb, sizeof(TraNumber), LCK_tra);
 
 	// Read header page and allocate transaction number.  Since
 	// the transaction inventory page was initialized to zero, it
@@ -3095,10 +3109,10 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	else
 	{
 		const header_page* header = bump_transaction_id(tdbb, &window);
-		number = header->hdr_next_transaction;
-		oldest = header->hdr_oldest_transaction;
-		oldest_active = header->hdr_oldest_active;
-		oldest_snapshot = header->hdr_oldest_snapshot;
+		number = Ods::getNT(header);
+		oldest = Ods::getOIT(header);
+		oldest_active = Ods::getOAT(header);
+		oldest_snapshot = Ods::getOST(header);
 	}
 
 	// oldest (OIT) > oldest_active (OAT) if OIT was advanced by sweep
@@ -3179,7 +3193,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 	// more complicated by the fact that existing transaction may have oldest
 	// actives older than they are.
 
-	Lock temp_lock(tdbb, sizeof(SLONG), LCK_tra, trans);
+	Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra, trans);
 
 	trans->tra_oldest_active = number;
 	base = oldest & ~TRA_MASK;
@@ -3197,6 +3211,7 @@ static void transaction_start(thread_db* tdbb, jrd_tra* trans)
 			const USHORT shift = TRANS_SHIFT(active);
 			oldest_state = (trans->tra_transactions[byte] >> shift) & TRA_MASK;
 		}
+
 		if (oldest_state == tra_active)
 		{
 			temp_lock.lck_key.lck_long = active;

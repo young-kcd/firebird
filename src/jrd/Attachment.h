@@ -327,7 +327,7 @@ private:
 public:
 	Firebird::SortedArray<jrd_req*> att_requests;	// Requests belonging to attachment
 	Lock*		att_id_lock;				// Attachment lock (if any)
-	SLONG		att_attachment_id;			// Attachment ID
+	AttNumber	att_attachment_id;			// Attachment ID
 	Lock*		att_cancel_lock;			// Lock to cancel the active request
 	Lock*		att_monitor_lock;			// Lock for monitoring purposes
 	const ULONG	att_lock_owner_id;			// ID for the lock manager

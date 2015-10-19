@@ -105,6 +105,18 @@ static inline USHORT getNullSegment(const temporary_key& key)
 	return MAX_USHORT;
 }
 
+IndexReserveLock::IndexReserveLock(thread_db* tdbb, const jrd_rel* relation, const index_desc* idx)
+	: Lock(tdbb, sizeof(SLONG), LCK_idx_reserve), m_tdbb(tdbb)
+{
+	lck_key.lck_long = (relation->rel_id << 16) | idx->idx_id;
+}
+
+IndexReserveLock::~IndexReserveLock()
+{
+	LCK_release(m_tdbb, this);
+}
+
+
 void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_rel* relation)
 {
 /**************************************
@@ -129,15 +141,15 @@ void IDX_check_access(thread_db* tdbb, CompilerScratch* csb, jrd_rel* view, jrd_
 	WIN window(relPages->rel_pg_space_id, -1);
 	WIN referenced_window(relPages->rel_pg_space_id, -1);
 
-	while (BTR_next_index(tdbb, relation, 0, &idx, &window))
+	while (BTR_next_index(tdbb, relation, NULL, &idx, &window))
 	{
 		if (idx.idx_flags & idx_foreign)
 		{
 			// find the corresponding primary key index
 
-			if (!MET_lookup_partner(tdbb, relation, &idx, 0)) {
+			if (!MET_lookup_partner(tdbb, relation, &idx, 0))
 				continue;
-			}
+
 			jrd_rel* referenced_relation = MET_relation(tdbb, idx.idx_primary_relation);
 			MET_scan_relation(tdbb, referenced_relation);
 			const USHORT index_id = idx.idx_primary_index;
@@ -264,11 +276,6 @@ void IDX_create_index(thread_db* tdbb,
 
 	fb_assert(transaction);
 
-	BTR_reserve_slot(tdbb, relation, transaction, idx);
-
-	if (index_id)
-		*index_id = idx->idx_id;
-
 	record_param primary, secondary;
 	secondary.rpb_relation = relation;
 	primary.rpb_relation = relation;
@@ -297,6 +304,17 @@ void IDX_create_index(thread_db* tdbb,
 				 Arg::Gds(isc_keytoobig) << Arg::Str(index_name));
 	}
 
+	IndexCreation creation;
+	creation.index = idx;
+	creation.relation = relation;
+	creation.transaction = transaction;
+	creation.key_length = key_length;
+
+	BTR_reserve_slot(tdbb, creation);
+
+	if (index_id)
+		*index_id = idx->idx_id;
+
 	RecordStack stack;
 	const UCHAR pad = isDescending ? -1 : 0;
 
@@ -322,9 +340,10 @@ void IDX_create_index(thread_db* tdbb,
 	FPTR_REJECT_DUP_CALLBACK callback = (idx->idx_flags & idx_unique) ? duplicate_key : NULL;
 	void* callback_arg = (idx->idx_flags & idx_unique) ? &ifl_data : NULL;
 
-	AutoPtr<Sort> scb(FB_NEW_POOL(transaction->tra_sorts.getPool())
+	Sort* const scb = FB_NEW_POOL(transaction->tra_sorts.getPool())
 		Sort(dbb, &transaction->tra_sorts, key_length + sizeof(index_sort_record),
-				  2, 1, key_desc, callback, callback_arg));
+				  2, 1, key_desc, callback, callback_arg);
+	creation.sort = scb;
 
 	jrd_rel* partner_relation = NULL;
 	USHORT partner_index_id = 0;
@@ -520,7 +539,7 @@ void IDX_create_index(thread_db* tdbb,
 		context.raise(tdbb, idx_e_duplicate, error_record);
 	}
 
-	BTR_create(tdbb, relation, idx, key_length, scb, selectivity);
+	BTR_create(tdbb, creation, selectivity);
 
 	if ((relation->rel_flags & REL_temp_conn) && (relation->getPages(tdbb)->rel_instance_id != 0))
 	{
@@ -528,9 +547,8 @@ void IDX_create_index(thread_db* tdbb,
 		if (idx_lock)
 		{
 			++idx_lock->idl_count;
-			if (idx_lock->idl_count == 1) {
+			if (idx_lock->idl_count == 1)
 				LCK_lock(tdbb, idx_lock->idl_lock, LCK_SR, LCK_WAIT);
-			}
 		}
 	}
 }

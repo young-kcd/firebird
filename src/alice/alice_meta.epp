@@ -164,7 +164,7 @@ void MET_get_state(ISC_STATUS* user_status, tdr* trans)
  *		in other databases.
  */
 
-tdr* MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, SLONG id)
+tdr* MET_get_transaction(ISC_STATUS* user_status, isc_db_handle handle, TraNumber id)
 {
 	FB_API_HANDLE request = 0;
 	tdr* trans = NULL;
@@ -328,7 +328,8 @@ static tdr* get_description(ISC_QUAD* blob_id)
 	++p;
 
 	tdr* ptr = NULL; // silence uninitialized warning
-	SLONG id_length, id;
+	SLONG id_length;
+	TraNumber id;
 
 	while (*p)
 	{
@@ -344,7 +345,7 @@ static tdr* get_description(ISC_QUAD* blob_id)
 
 		case TDR_TRANSACTION_ID:
 			id_length = *p++;
-			id = gds__vax_integer(reinterpret_cast<const UCHAR*>(p), id_length);
+			id = isc_portable_integer(reinterpret_cast<const UCHAR*>(p), id_length);
 			p += id_length;
 			if (!trans) {
 				trans = ptr = FB_NEW_POOL(*tdgbl->getDefaultPool()) tdr;

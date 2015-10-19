@@ -119,6 +119,7 @@ public:		// utilities interface with service
 	// put various info items in info buffer
     virtual void putLine(char tag, const char* val);
     virtual void putSLong(char tag, SLONG val);
+    virtual void putSInt64(char tag, SINT64 val);
 	virtual void putChar(char tag, char val);
 	// put raw bytes to svc_stdout
 	virtual void putBytes(const UCHAR*, FB_SIZE_T);

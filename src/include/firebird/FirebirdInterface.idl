@@ -983,7 +983,7 @@ interface TraceConnection : Versioned
 
 interface TraceDatabaseConnection : TraceConnection
 {
-	int getConnectionID();
+	int64 getConnectionID();
 	const string getDatabaseName();
 }
 
@@ -994,7 +994,7 @@ interface TraceTransaction : Versioned
 	const uint ISOLATION_READ_COMMITTED_RECVER = 3;
 	const uint ISOLATION_READ_COMMITTED_NORECVER = 4;
 
-	uint getTransactionID();
+	int64 getTransactionID();
 	boolean getReadOnly();
 	int getWait();
 	uint getIsolation();
@@ -1009,7 +1009,7 @@ interface TraceParams : Versioned
 
 interface TraceStatement : Versioned
 {
-	int getStmtID();
+	int64 getStmtID();
 	PerformanceInfo* getPerf();
 }
 
@@ -1092,10 +1092,10 @@ interface TraceStatusVector : Versioned
 
 interface TraceSweepInfo : Versioned
 {
-	uint64 getOIT();
-	uint64 getOST();
-	uint64 getOAT();
-	uint64 getNext();
+	int64 getOIT();
+	int64 getOST();
+	int64 getOAT();
+	int64 getNext();
 	PerformanceInfo* getPerf();
 }
 

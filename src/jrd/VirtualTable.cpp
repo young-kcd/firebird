@@ -90,10 +90,10 @@ void VirtualTable::erase(thread_db* tdbb, record_param* rpb)
 		return;
 	}
 
-	const SLONG id = MOV_get_long(&desc, 0);
+	const SINT64 id = MOV_get_int64(&desc, 0);
 
 	// Post a blocking request
-	Lock temp_lock(tdbb, sizeof(SLONG), lock_type);
+	Lock temp_lock(tdbb, sizeof(SINT64), lock_type);
 	temp_lock.lck_key.lck_long = id;
 
 	ThreadStatusGuard temp_status(tdbb);

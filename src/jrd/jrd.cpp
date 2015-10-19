@@ -993,7 +993,7 @@ public:
 	const char* getRemoteProcessName()	{ return m_options->dpb_remote_process.c_str(); }
 
 	// TraceDatabaseConnection implementation
-	int getConnectionID()				{ return 0; }
+	ISC_INT64 getConnectionID()			{ return 0; }
 	const char* getDatabaseName()		{ return m_filename; }
 
 private:
@@ -6267,7 +6267,7 @@ static void init_database_lock(thread_db* tdbb)
 
 	// Main database lock
 
-	Lock* lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
+	Lock* const lock = FB_NEW_RPT(*dbb->dbb_permanent, 0)
 		Lock(tdbb, 0, LCK_database, dbb, CCH_down_grade_dbb);
 	dbb->dbb_lock = lock;
 
@@ -6429,7 +6429,6 @@ static void release_attachment(thread_db* tdbb, Jrd::Attachment* attachment)
 			jrd_tra::destroy(attachment, tran);
 		}
 	}
-
 
 	tdbb->setAttachment(NULL);
 	Jrd::Attachment::destroy(attachment);	// string were re-saved in the beginning of this function,

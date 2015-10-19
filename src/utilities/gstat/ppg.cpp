@@ -30,6 +30,7 @@
 #include "../common/classes/timestamp.h"
 #include "../jrd/ibase.h"
 #include "../jrd/ods.h"
+#include "../jrd/ods_proto.h"
 #include "../common/os/guid.h"
 #include "../yvalve/gds_proto.h"
 #include "../common/classes/DbImplementation.h"
@@ -58,7 +59,6 @@ void PPG_print_header(const header_page* header, ULONG page,
 	else
 		uSvc->printf(false, "Database overflow header page information:\n");
 
-
 	if (page == HEADER_PAGE)
 	{
 		uSvc->printf(false, "\tFlags\t\t\t%d\n", header->hdr_header.pag_flags);
@@ -68,13 +68,13 @@ void PPG_print_header(const header_page* header, ULONG page,
 		uSvc->printf(false, "\tPage size\t\t%d\n", header->hdr_page_size);
 		uSvc->printf(false, "\tODS version\t\t%d.%d\n",
 				header->hdr_ods_version & ~ODS_FIREBIRD_FLAG, header->hdr_ods_minor);
-		uSvc->printf(false, "\tOldest transaction\t%"ULONGFORMAT"\n", header->hdr_oldest_transaction);
-		uSvc->printf(false, "\tOldest active\t\t%"ULONGFORMAT"\n", header->hdr_oldest_active);
-		uSvc->printf(false, "\tOldest snapshot\t\t%"ULONGFORMAT"\n", header->hdr_oldest_snapshot);
-		uSvc->printf(false, "\tNext transaction\t%"ULONGFORMAT"\n", header->hdr_next_transaction);
+		uSvc->printf(false, "\tOldest transaction\t%"SQUADFORMAT"\n", Ods::getOIT(header));
+		uSvc->printf(false, "\tOldest active\t\t%"SQUADFORMAT"\n", Ods::getOAT(header));
+		uSvc->printf(false, "\tOldest snapshot\t\t%"SQUADFORMAT"\n", Ods::getOST(header));
+		uSvc->printf(false, "\tNext transaction\t%"SQUADFORMAT"\n", Ods::getNT(header));
 		uSvc->printf(false, "\tSequence number\t\t%d\n", header->hdr_sequence);
 
-		uSvc->printf(false, "\tNext attachment ID\t%"SLONGFORMAT"\n", header->hdr_attachment_id);
+		uSvc->printf(false, "\tNext attachment ID\t%"SQUADFORMAT"\n", header->hdr_attachment_id);
 
 		Firebird::DbImplementation imp(header);
 		uSvc->printf(false, "\tImplementation\t\tHW=%s %s-endian OS=%s CC=%s\n",

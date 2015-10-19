@@ -68,16 +68,26 @@ BufferedStream::BufferedStream(CompilerScratch* csb, RecordSource* next)
 				fields.add(*desc);
 			} while (accessor.getNext());
 		}
+	}
 
-		dsc desc;
+	dsc desc;
 
-		desc.makeLong(0);
+	for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
+	{
+		const StreamType stream = *i;
+
+		desc.makeInt64(0);
 		m_map.add(FieldMap(FieldMap::TRANSACTION_ID, stream, 0));
 		fields.add(desc);
 
 		desc.makeInt64(0);
 		m_map.add(FieldMap(FieldMap::DBKEY_NUMBER, stream, 0));
 		fields.add(desc);
+	}
+
+	for (StreamList::iterator i = streams.begin(); i != streams.end(); ++i)
+	{
+		const StreamType stream = *i;
 
 		desc.makeText(1, CS_BINARY);
 		m_map.add(FieldMap(FieldMap::DBKEY_VALID, stream, 0));
@@ -191,7 +201,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 				break;
 
 			case FieldMap::TRANSACTION_ID:
-				*reinterpret_cast<ULONG*>(to.dsc_address) = rpb->rpb_transaction_nr;
+				*reinterpret_cast<SINT64*>(to.dsc_address) = rpb->rpb_transaction_nr;
 				break;
 
 			case FieldMap::DBKEY_NUMBER:
@@ -258,7 +268,7 @@ bool BufferedStream::getRecord(thread_db* tdbb) const
 				break;
 
 			case FieldMap::TRANSACTION_ID:
-				rpb->rpb_transaction_nr = *reinterpret_cast<ULONG*>(from.dsc_address);
+				rpb->rpb_transaction_nr = *reinterpret_cast<SINT64*>(from.dsc_address);
 				break;
 
 			case FieldMap::DBKEY_NUMBER:

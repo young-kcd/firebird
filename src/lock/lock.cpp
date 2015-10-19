@@ -499,7 +499,7 @@ SRQ_PTR LockManager::enqueue(Attachment* attachment,
 							 UCHAR type,
 							 lock_ast_t ast_routine,
 							 void* ast_argument,
-							 SLONG data,
+							 SINT64 data,
 							 SSHORT lck_wait,
 							 SRQ_PTR owner_offset)
 {
@@ -883,7 +883,7 @@ bool LockManager::cancelWait(SRQ_PTR owner_offset)
 }
 
 
-SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
+SINT64 LockManager::queryData(const USHORT series, const USHORT aggregate)
 {
 /**************************************
  *
@@ -909,7 +909,7 @@ SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 	++(m_sharedMemory->getHeader()->lhb_query_data);
 
 	const srq& data_header = m_sharedMemory->getHeader()->lhb_data[series];
-	SLONG data = 0, count = 0;
+	SINT64 data = 0, count = 0;
 
 	// Simply walk the lock series data queue forward for the minimum
 	// and backward for the maximum -- it's maintained in sorted order.
@@ -981,7 +981,7 @@ SLONG LockManager::queryData(const USHORT series, const USHORT aggregate)
 }
 
 
-SLONG LockManager::readData(SRQ_PTR request_offset)
+SINT64 LockManager::readData(SRQ_PTR request_offset)
 {
 /**************************************
  *
@@ -1003,7 +1003,8 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
 	++(m_sharedMemory->getHeader()->lhb_read_data);
 
 	const lbl* const lock = (lbl*) SRQ_ABS_PTR(request->lrq_lock);
-	const SLONG data = lock->lbl_data;
+	const SINT64 data = lock->lbl_data;
+
 	if (lock->lbl_series < LCK_MAX_SERIES)
 		++(m_sharedMemory->getHeader()->lhb_operations[lock->lbl_series]);
 	else
@@ -1013,10 +1014,10 @@ SLONG LockManager::readData(SRQ_PTR request_offset)
 }
 
 
-SLONG LockManager::readData2(USHORT series,
-							 const UCHAR* value,
-							 USHORT length,
-							 SRQ_PTR owner_offset)
+SINT64 LockManager::readData2(USHORT series,
+							  const UCHAR* value,
+							  USHORT length,
+							  SRQ_PTR owner_offset)
 {
 /**************************************
  *
@@ -1049,7 +1050,7 @@ SLONG LockManager::readData2(USHORT series,
 }
 
 
-SLONG LockManager::writeData(SRQ_PTR request_offset, SLONG data)
+SINT64 LockManager::writeData(SRQ_PTR request_offset, SINT64 data)
 {
 /**************************************
  *

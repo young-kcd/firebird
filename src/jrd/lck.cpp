@@ -140,7 +140,6 @@ static const bool compatibility[LCK_max][LCK_max] =
 //#define COMPATIBLE(st1, st2)	compatibility [st1 * LCK_max + st2]
 const int LOCK_HASH_SIZE	= 19;
 
-
 inline void ENQUEUE(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* lock, USHORT level, SSHORT wait)
 {
 	if (lock->lck_compatible)
@@ -547,7 +546,9 @@ static SLONG get_owner_handle(thread_db* tdbb, enum lck_t lock_type)
 	case LCK_cancel:
 	case LCK_monitor:
 	case LCK_btr_dont_gc:
+	case LCK_idx_reserve:
 	case LCK_rel_gc:
+	case LCK_record_gc:
 		handle = *LCK_OWNER_HANDLE_ATT(tdbb);
 		break;
 
@@ -704,7 +705,7 @@ bool LCK_lock_opt(thread_db* tdbb, Lock* lock, USHORT level, SSHORT wait)
 }
 
 
-SLONG LCK_query_data(thread_db* tdbb, enum lck_t lock_type, USHORT aggregate)
+SINT64 LCK_query_data(thread_db* tdbb, enum lck_t lock_type, USHORT aggregate)
 {
 /**************************************
  *
@@ -725,7 +726,7 @@ SLONG LCK_query_data(thread_db* tdbb, enum lck_t lock_type, USHORT aggregate)
 }
 
 
-SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
+SINT64 LCK_read_data(thread_db* tdbb, Lock* lock)
 {
 /**************************************
  *
@@ -742,9 +743,9 @@ SLONG LCK_read_data(thread_db* tdbb, Lock* lock)
 
 	fb_assert(LCK_CHECK_LOCK(lock));
 
-	const SLONG data =
+	const SINT64 data =
 		dbb->dbb_lock_mgr->readData2(lock->lck_type,
-									 (UCHAR*) &lock->lck_key, lock->lck_length,
+									 lock->lck_key.lck_string, lock->lck_length,
 									 lock->lck_owner_handle);
 	fb_assert(LCK_CHECK_LOCK(lock));
 	return data;
@@ -815,7 +816,7 @@ void LCK_re_post(thread_db* tdbb, Lock* lock)
 }
 
 
-void LCK_write_data(thread_db* tdbb, Lock* lock, SLONG data)
+void LCK_write_data(thread_db* tdbb, Lock* lock, SINT64 data)
 {
 /**************************************
  *
@@ -916,7 +917,7 @@ static void enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, Lock* loc
 	fb_assert(LCK_CHECK_LOCK(lock));
 
 	lock->lck_id = dbb->dbb_lock_mgr->enqueue(att, statusVector, lock->lck_id,
-		lock->lck_type, (const UCHAR*) &lock->lck_key, lock->lck_length,
+		lock->lck_type, lock->lck_key.lck_string, lock->lck_length,
 		level, lock->lck_ast, lock->lck_object, lock->lck_data, wait,
 		lock->lck_owner_handle);
 
@@ -1459,21 +1460,21 @@ static bool internal_enqueue(thread_db* tdbb, CheckStatusWrapper* statusVector, 
 
 Lock::Lock(thread_db* tdbb, USHORT length, lck_t type, void* object, lock_ast_t ast)
 :	lck_dbb(tdbb->getDatabase()),
-	lck_attachment(0),
-	lck_compatible(0),
-	lck_compatible2(0),
+ 	lck_attachment(NULL),
+	lck_compatible(NULL),
+	lck_compatible2(NULL),
 	lck_ast(ast),
 	lck_object(object),
-	lck_next(0),
-	lck_prior(0),
-	lck_collision(0),
-	lck_identical(0),
+	lck_next(NULL),
+	lck_prior(NULL),
+	lck_collision(NULL),
+	lck_identical(NULL),
 	lck_id(0),
 	lck_owner_handle(get_owner_handle(tdbb, type)),
 	lck_length(length),
 	lck_type(type),
-	lck_logical(0),
-	lck_physical(0),
+	lck_logical(LCK_none),
+	lck_physical(LCK_none),
 	lck_data(0)
 {
 	lck_key.lck_long = 0;
@@ -1524,7 +1525,6 @@ void Lock::setLockAttachment(thread_db* tdbb, Jrd::Attachment* attachment)
 		lck_next = NULL;
 		lck_prior = NULL;
 	}
-
 
 	// Enlist in new attachment
 	if (attachment)

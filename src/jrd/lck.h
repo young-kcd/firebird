@@ -69,7 +69,9 @@ enum lck_t {
 	LCK_fun_exist,				// Function existence lock
 	LCK_rel_rescan,				// Relation forced rescan lock
 	LCK_crypt,					// Crypt lock for single crypt thread
-	LCK_crypt_status			// Notifies about changed database encryption status
+	LCK_crypt_status,			// Notifies about changed database encryption status
+	LCK_idx_reserve,			// Index reservation lock
+	LCK_record_gc				// Record-level GC lock
 };
 
 // Lock owner types
@@ -129,12 +131,12 @@ public:
 public:
 	UCHAR lck_logical;				// Logical lock level
 	UCHAR lck_physical;				// Physical lock level
-	SLONG lck_data;					// Data associated with a lock
+	SINT64 lck_data;				// Data associated with a lock
 
 	union
 	{
 		UCHAR lck_string[1];
-		SLONG lck_long;
+		SINT64 lck_long;
 	} lck_key;						// Lock key string
 
 	UCHAR lck_tail[1];				// Makes the allocator happy

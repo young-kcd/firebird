@@ -134,6 +134,7 @@ public:
 	virtual void started() { }
 	virtual void putLine(char, const char*) { }
 	virtual void putSLong(char, SLONG) { }
+	virtual void putSInt64(char, SINT64) { }
 	virtual void putChar(char, char) { }
 	virtual void putBytes(const UCHAR*, FB_SIZE_T) { }
 	virtual ULONG getBytes(UCHAR*, ULONG) { return 0; }

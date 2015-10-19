@@ -259,15 +259,43 @@ inline void check_gbak_cheating_delete(thread_db* tdbb, const jrd_rel* relation)
 	}
 }
 
-inline int wait(thread_db* tdbb, jrd_tra* transaction,
-				const record_param* rpb, jrd_tra::wait_t wait)
+inline int wait(thread_db* tdbb, jrd_tra* transaction, const record_param* rpb)
 {
-	const SSHORT timeout = (wait == jrd_tra::tra_wait) ? transaction->getLockWait() : 0;
-
-	if (timeout)
+	if (transaction->getLockWait())
 		tdbb->bumpRelStats(RuntimeStatistics::RECORD_WAITS, rpb->rpb_relation->rel_id);
 
-	return TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, wait);
+	return TRA_wait(tdbb, transaction, rpb->rpb_transaction_nr, jrd_tra::tra_wait);
+}
+
+inline bool checkGCActive(thread_db* tdbb, record_param* rpb, int& state)
+{
+	Lock temp_lock(tdbb, sizeof(SINT64), LCK_record_gc);
+	temp_lock.lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+
+	ThreadStatusGuard temp_status(tdbb);
+
+	if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_NO_WAIT))
+	{
+		rpb->rpb_transaction_nr = LCK_read_data(tdbb, &temp_lock);
+		state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_active;
+		return true;
+	}
+
+	LCK_release(tdbb, &temp_lock);
+	rpb->rpb_flags &= ~rpb_gc_active;
+	state = tra_dead;
+	return false;
+}
+
+inline void waitGCActive(thread_db* tdbb, const record_param* rpb)
+{
+	Lock temp_lock(tdbb, sizeof(SINT64), LCK_record_gc);
+	temp_lock.lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+
+	if (!LCK_lock(tdbb, &temp_lock, LCK_SR, LCK_WAIT))
+		ERR_punt();
+
+	LCK_release(tdbb, &temp_lock);
 }
 
 static const UCHAR gc_tpb[] =
@@ -386,7 +414,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_backout (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT")\n",
+		"VIO_backout (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT")\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 #endif
 
@@ -403,7 +431,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		temp.rpb_page, temp.rpb_line, temp.rpb_transaction_nr,
 		temp.rpb_flags, temp.rpb_b_page, temp.rpb_b_line,
@@ -534,19 +562,34 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		{
 			DPM_backout_mark(tdbb, rpb, transaction);
 
+			// dimitr:	We don't need to clear the GC flag on the data page
+			//			as the record version is to be removed. Just ensure
+			//			that the appropriate lock is released at the same time.
+
+			AutoLock gcLockGuard(tdbb, rpb->rpb_gc_lock);
+			rpb->rpb_gc_lock = NULL;
+
 			RecordStack empty_staying;
 			IDX_garbage_collect(tdbb, rpb, going, empty_staying);
 			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
 			going.pop();
 
 			if (!DPM_get(tdbb, rpb, LCK_write))
-				return;
-
-			if (rpb->rpb_transaction_nr != transaction->tra_number)
 			{
+				fb_assert(false);
+				return;
+			}
+
+			if (rpb->rpb_b_page != temp2.rpb_b_page || rpb->rpb_b_line != temp2.rpb_b_line ||
+				rpb->rpb_transaction_nr != temp2.rpb_transaction_nr)
+			{
+				fb_assert(false);
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 				return;
 			}
+
+			fb_assert(rpb->rpb_flags & rpb_gc_active);
+			rpb->rpb_flags &= ~rpb_gc_active;
 
 			temp2 = *rpb;
 			rpb->rpb_undo = old_data;
@@ -581,10 +624,15 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		clearRecordStack(staying);
 
 		if (!DPM_get(tdbb, rpb, LCK_write))
-			return;
-
-		if (rpb->rpb_transaction_nr != transaction->tra_number)
 		{
+			fb_assert(false);
+			return;
+		}
+
+		if (rpb->rpb_b_page != temp2.rpb_b_page || rpb->rpb_b_line != temp2.rpb_b_line ||
+			rpb->rpb_transaction_nr != temp2.rpb_transaction_nr)
+		{
+			fb_assert(false);
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			return;
 		}
@@ -624,7 +672,7 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		{
 			// There is cleanup to be done.  Bring the old version forward first
 
-			rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
+			rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active | rpb_long_tranum);
 			DPM_update(tdbb, rpb, 0, transaction);
 			delete_tail(tdbb, &temp2, rpb->rpb_page, 0, 0);
 		}
@@ -672,41 +720,26 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
 		"VIO_chase_record_version (record_param %"QUADFORMAT"d, transaction %"
-		ULONGFORMAT", pool %p)\n",
+		SQUADFORMAT", pool %p)\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
 		rpb->rpb_f_page, rpb->rpb_f_line);
 #endif
 
-	// Handle the fast path first.  If the record is committed, isn't deleted,
-	// and doesn't have an old version that is a candidate for garbage collection,
-	// return without further ado
-
 	int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-	// Reset the garbage collect active flag if the transaction state is
-	// in a terminal state. If committed it must have been a precommitted
-	// transaction that was backing out a dead record version and the
-	// system crashed. Clear the flag and set the state to tra_dead to
-	// reattempt the backout.
+	// Reset (if appropriate) the garbage collect active flag to reattempt the backout
 
 	if (rpb->rpb_flags & rpb_gc_active)
-	{
-		if (!rpb->rpb_transaction_nr)
-			state = tra_active;
+		checkGCActive(tdbb, rpb, state);
 
-		if (state == tra_committed)
-			state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-
-		if (state == tra_dead)
-			rpb->rpb_flags &= ~rpb_gc_active;
-	}
+	// Take care about modifications performed by our own transaction
 
 	rpb->rpb_runtime_flags &= ~(RPB_undo_data | RPB_undo_read);
 	int forceBack = 0;
@@ -727,6 +760,10 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				break;
 		}
 	}
+
+	// Handle the fast path first.  If the record is committed, isn't deleted,
+	// and doesn't have an old version that is a candidate for garbage collection,
+	// return without further ado
 
 	if ((state == tra_committed || state == tra_us) && !forceBack &&
 		!(rpb->rpb_flags & (rpb_deleted | rpb_damaged)) &&
@@ -751,7 +788,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 	{
 #ifdef VIO_DEBUG
 		VIO_trace(DEBUG_READS_INFO,
-			"   chase record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+			"   chase record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 			", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -766,7 +803,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 		if (state == tra_limbo && !(transaction->tra_flags & TRA_ignore_limbo))
 		{
-			state = wait(tdbb, transaction, rpb, jrd_tra::tra_wait);
+			state = wait(tdbb, transaction, rpb);
 			if (state == tra_active)
 				state = tra_limbo;
 		}
@@ -783,7 +820,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			if (state == tra_limbo)
 			{
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				state = wait(tdbb, transaction, rpb, jrd_tra::tra_wait);
+				state = wait(tdbb, transaction, rpb);
 
 				if (!DPM_get(tdbb, rpb, LCK_read))
 					return false;
@@ -814,7 +851,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 				// of a dead record version.
 
 				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				state = wait(tdbb, transaction, rpb, jrd_tra::tra_wait);
+				state = wait(tdbb, transaction, rpb);
 
 				if (state == tra_precommitted)
 					state = check_precommitted(transaction, rpb);
@@ -854,7 +891,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		case tra_dead:
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_READS_INFO,
-				"    record's transaction (%"ULONGFORMAT") is dead (my TID - %"ULONGFORMAT")\n",
+				"    record's transaction (%"SQUADFORMAT") is dead (my TID - %"SQUADFORMAT")\n",
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 			if (gcPolicyBackground && !(rpb->rpb_flags & rpb_chained) &&
@@ -942,7 +979,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		case tra_limbo:
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_READS_INFO,
-				"    record's transaction (%"ULONGFORMAT") is in limbo (my TID - %"ULONGFORMAT")\n",
+				"    record's transaction (%"SQUADFORMAT") is in limbo (my TID - %"SQUADFORMAT")\n",
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 
@@ -957,7 +994,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 			if (state == tra_active)
 			{
 				VIO_trace(DEBUG_READS_INFO,
-					"    record's transaction (%"ULONGFORMAT") is active (my TID - %"ULONGFORMAT")\n",
+					"    record's transaction (%"SQUADFORMAT") is active (my TID - %"SQUADFORMAT")\n",
 					rpb->rpb_transaction_nr, transaction->tra_number);
 			}
 #endif
@@ -1065,7 +1102,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		case tra_us:
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_READS_INFO,
-				"    record's transaction (%"ULONGFORMAT") is us (my TID - %"ULONGFORMAT")\n",
+				"    record's transaction (%"SQUADFORMAT") is us (my TID - %"SQUADFORMAT")\n",
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 
@@ -1103,7 +1140,7 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 		case tra_committed:
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_READS_INFO,
-				"    record's transaction (%"ULONGFORMAT") is committed (my TID - %"ULONGFORMAT")\n",
+				"    record's transaction (%"SQUADFORMAT") is committed (my TID - %"SQUADFORMAT")\n",
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 			if (rpb->rpb_flags & rpb_deleted)
@@ -1184,23 +1221,10 @@ bool VIO_chase_record_version(thread_db* tdbb, record_param* rpb,
 
 		state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		// Reset the garbage collect active flag if the transaction state is
-		// in a terminal state. If committed it must have been a precommitted
-		// transaction that was backing out a dead record version and the
-		// system crashed. Clear the flag and set the state to tra_dead to
-		// reattempt the backout.
+		// Reset (if appropriate) the garbage collect active flag to reattempt the backout
 
 		if (!(rpb->rpb_flags & rpb_chained) && (rpb->rpb_flags & rpb_gc_active))
-		{
-			if (!rpb->rpb_transaction_nr)
-				state = tra_active;
-
-			if (state == tra_committed)
-				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-
-			if (state == tra_dead)
-				rpb->rpb_flags &= ~rpb_gc_active;
-		}
+			checkGCActive(tdbb, rpb, state);
 	}
 }
 
@@ -1278,7 +1302,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 
 
 	VIO_trace(DEBUG_READS_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line,
 		rpb->rpb_transaction_nr, rpb->rpb_flags,
@@ -1363,7 +1387,7 @@ void VIO_data(thread_db* tdbb, record_param* rpb, MemoryPool* pool)
 			rpb->rpb_number.getValue(), length, format->fmt_length);
 
 		VIO_trace(DEBUG_WRITES_INFO,
-			"   record  %"SLONGFORMAT"d:%d, rpb_trans %"ULONGFORMAT
+			"   record  %"SLONGFORMAT"d:%d, rpb_trans %"SQUADFORMAT
 			"d, flags %d, back %"SLONGFORMAT"d:%d, fragment %"SLONGFORMAT"d:%d\n",
 			rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr, rpb->rpb_flags,
 			rpb->rpb_b_page, rpb->rpb_b_line, rpb->rpb_f_page, rpb->rpb_f_line);
@@ -1399,11 +1423,11 @@ void VIO_erase(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_erase (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT")\n",
+		"VIO_erase (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT")\n",
 		rpb->rpb_number.getValue(), transaction->tra_number);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -1937,11 +1961,11 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE,
 		"VIO_garbage_collect (record_param %"QUADFORMAT"d, transaction %"
-		ULONGFORMAT")\n",
+		SQUADFORMAT")\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_TRACE_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -1966,20 +1990,15 @@ bool VIO_garbage_collect(thread_db* tdbb, record_param* rpb, const jrd_tra* tran
 
 		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		// Reset the garbage collect active flag if the transaction state is
-		// in a terminal state. If committed it must have been a precommitted
-		// transaction that was backing out a dead record version and the
-		// system crashed. Clear the flag and set the state to tra_dead to
-		// reattempt the backout.
+		// Reset (if appropriate) the garbage collect active flag to reattempt the backout
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			if (state == tra_committed)
-				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-
-			if (state == tra_dead)
-				rpb->rpb_flags &= ~rpb_gc_active;
+			if (checkGCActive(tdbb, rpb, state))
+				return true;
 		}
+
+		fb_assert(!(rpb->rpb_flags & rpb_gc_active));
 
 		if (state == tra_precommitted)
 			state = check_precommitted(transaction, rpb);
@@ -2076,7 +2095,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"VIO_get (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT", pool %p)\n",
+		"VIO_get (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT", pool %p)\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 #endif
@@ -2095,7 +2114,7 @@ bool VIO_get(thread_db* tdbb, record_param* rpb, jrd_tra* transaction, MemoryPoo
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -2155,7 +2174,7 @@ bool VIO_get_current(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE,
-		"VIO_get_current (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT", pool %p)\n",
+		"VIO_get_current (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT", pool %p)\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 #endif
@@ -2173,7 +2192,7 @@ bool VIO_get_current(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 		VIO_trace(DEBUG_TRACE_INFO,
-			"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+			"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 			", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -2203,25 +2222,22 @@ bool VIO_get_current(thread_db* tdbb,
 		// For now check the state in the tip_cache or tip bitmap. If
 		// record is committed (most cases), this will be faster.
 
-
 		int state = (transaction->tra_flags & TRA_read_committed) ?
 			TPC_cache_state(tdbb, rpb->rpb_transaction_nr) :
 			TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		// Reset the garbage collect active flag if the transaction state is
-		// in a terminal state. If committed it must have been a precommitted
-		// transaction that was backing out a dead record version and the
-		// system crashed. Clear the flag and set the state to tra_dead to
-		// reattempt the backout.
+		// Reset (if appropriate) the garbage collect active flag to reattempt the backout
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			if (state == tra_committed)
-				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-
-			if (state == tra_dead)
-				rpb->rpb_flags &= ~rpb_gc_active;
+			if (checkGCActive(tdbb, rpb, state))
+			{
+				waitGCActive(tdbb, rpb);
+				continue;
+			}
 		}
+
+		fb_assert(!(rpb->rpb_flags & rpb_gc_active));
 
 		if (state == tra_precommitted)
 			state = check_precommitted(transaction, rpb);
@@ -2243,10 +2259,6 @@ bool VIO_get_current(thread_db* tdbb,
 				VIO_backout(tdbb, rpb, transaction);
 			}
 			continue;
-		case tra_precommitted:
-			Attachment::Checkout cout(attachment, FB_FUNCTION);
-			Thread::sleep(100);	// milliseconds
-			continue;
 		}
 
 		// The record belongs to somebody else.  Wait for him to commit, rollback, or die.
@@ -2254,27 +2266,12 @@ bool VIO_get_current(thread_db* tdbb,
 		const TraNumber tid_fetch = rpb->rpb_transaction_nr;
 
 		// Wait as long as it takes for an active transaction which has modified
-		// the record. If an active transaction has used its TID to safely
-		// backout a fragmented dead record version, spin wait because it will finish shortly.
+		// the record.
 
-		if (!(rpb->rpb_flags & rpb_gc_active))
-		{
-			state = wait(tdbb, transaction, rpb, jrd_tra::tra_wait);
+		state = wait(tdbb, transaction, rpb);
 
-			if (state == tra_precommitted)
-				state = check_precommitted(transaction, rpb);
-		}
-		else
-		{
-			state = wait(tdbb, transaction, rpb, jrd_tra::tra_probe);
-
-			if (state == tra_active)
-			{
-				Attachment::Checkout cout(attachment, FB_FUNCTION);
-				Thread::sleep(100);	// milliseconds
-				continue;
-			}
-		}
+		if (state == tra_precommitted)
+			state = check_precommitted(transaction, rpb);
 
 		switch (state)
 		{
@@ -2496,12 +2493,12 @@ void VIO_modify(thread_db* tdbb, record_param* org_rpb, record_param* new_rpb, j
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
 		"VIO_modify (org_rpb %"QUADFORMAT"d, new_rpb %"QUADFORMAT"d, "
-		"transaction %"ULONGFORMAT")\n",
+		"transaction %"SQUADFORMAT")\n",
 		org_rpb->rpb_number.getValue(), new_rpb->rpb_number.getValue(),
 		transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   old record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   old record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 		org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
@@ -2967,12 +2964,12 @@ bool VIO_next_record(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE,
-		"VIO_next_record (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT", pool %p)\n",
+		"VIO_next_record (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT", pool %p)\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		(void*) pool);
 
 	VIO_trace(DEBUG_TRACE_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -3006,7 +3003,7 @@ bool VIO_next_record(thread_db* tdbb,
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS_INFO,
 		"VIO_next_record got record  %"SLONGFORMAT":%d, rpb_trans %"
-		ULONGFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"
+		SQUADFORMAT", flags %d, back %"SLONGFORMAT":%d, fragment %"
 		SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -3075,7 +3072,7 @@ bool VIO_refetch_record(thread_db* tdbb, record_param* rpb, jrd_tra* transaction
  **************************************/
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_READS,
-		"VIO_refetch_record (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT")\n",
+		"VIO_refetch_record (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT")\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 #endif
 
@@ -3176,7 +3173,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_store (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT
+		"VIO_store (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT
 		")\n", rpb->rpb_number.getValue(),
 		transaction ? transaction->tra_number : 0);
 #endif
@@ -3528,7 +3525,7 @@ void VIO_store(thread_db* tdbb, record_param* rpb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-			"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+			"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 			", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 			rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 			rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -3568,7 +3565,7 @@ bool VIO_sweep(thread_db* tdbb, jrd_tra* transaction, TraceSweepEvent* traceSwee
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE,
-		"VIO_sweep (transaction %"ULONGFORMAT")\n", transaction ? transaction->tra_number : 0);
+		"VIO_sweep (transaction %"SQUADFORMAT")\n", transaction ? transaction->tra_number : 0);
 #endif
 
 	if (transaction->tra_attachment->att_flags & ATT_NO_CLEANUP)
@@ -3729,7 +3726,7 @@ void VIO_verb_cleanup(thread_db* tdbb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE,
-		"VIO_verb_cleanup (transaction %"ULONGFORMAT")\n",
+		"VIO_verb_cleanup (transaction %"SQUADFORMAT")\n",
 		transaction ? transaction->tra_number : 0);
 #endif
 	if (transaction->tra_flags & TRA_system)
@@ -3998,11 +3995,11 @@ bool VIO_writelock(thread_db* tdbb, record_param* org_rpb, jrd_tra* transaction)
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"VIO_writelock (org_rpb %"QUADFORMAT"d, transaction %"ULONGFORMAT")\n",
+		"VIO_writelock (org_rpb %"QUADFORMAT"d, transaction %"SQUADFORMAT")\n",
 		org_rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   old record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   old record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 		org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,
@@ -4362,7 +4359,7 @@ static void delete_record(thread_db* tdbb, record_param* rpb, ULONG prior_page, 
 		rpb->rpb_number.getValue(), prior_page, (void*) pool);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   delete_record record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   delete_record record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -4439,7 +4436,7 @@ static UCHAR* delete_tail(thread_db* tdbb,
 		rpb->rpb_number.getValue(), prior_page, tail, tail_end);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   tail of record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   tail of record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -4523,7 +4520,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES,
-		"expunge (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT
+		"expunge (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT
 		", prior_page %"SLONGFORMAT")\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0,
 		prior_page);
@@ -4545,7 +4542,7 @@ static void expunge(thread_db* tdbb, record_param* rpb, const jrd_tra* transacti
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   expunge record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   expunge record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -4612,7 +4609,7 @@ static void garbage_collect(thread_db* tdbb, record_param* rpb, ULONG prior_page
 		rpb->rpb_number.getValue(), prior_page);
 
 	VIO_trace(DEBUG_WRITES_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -5462,8 +5459,8 @@ static int prepare_update(	thread_db*		tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"prepare_update (transaction %"ULONGFORMAT
-		", commit_tid read %"ULONGFORMAT", record_param %"QUADFORMAT"d, ",
+		"prepare_update (transaction %"SQUADFORMAT
+		", commit_tid read %"SQUADFORMAT", record_param %"QUADFORMAT"d, ",
 		transaction ? transaction->tra_number : 0, commit_tid_read,
 		rpb ? rpb->rpb_number.getValue() : 0);
 
@@ -5473,7 +5470,7 @@ static int prepare_update(	thread_db*		tdbb,
 		new_rpb ? new_rpb->rpb_number.getValue() : 0);
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
-		"   old record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   old record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT
 		":%d, prior %p\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
@@ -5588,20 +5585,19 @@ static int prepare_update(	thread_db*		tdbb,
 
 		int state = TRA_snapshot_state(tdbb, transaction, rpb->rpb_transaction_nr);
 
-		// Reset the garbage collect active flag if the transaction state is
-		// in a terminal state. If committed it must have been a precommitted
-		// transaction that was backing out a dead record version and the
-		// system crashed. Clear the flag and set the state to tra_dead to
-		// reattempt the backout.
+		// Reset (if appropriate) the garbage collect active flag to reattempt the backout
 
 		if (rpb->rpb_flags & rpb_gc_active)
 		{
-			if (state == tra_committed)
-				state = TRA_pc_active(tdbb, rpb->rpb_transaction_nr) ? tra_precommitted : tra_dead;
-
-			if (state == tra_dead)
-				rpb->rpb_flags &= ~rpb_gc_active;
+			if (checkGCActive(tdbb, rpb, state))
+			{
+				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+				waitGCActive(tdbb, rpb);
+				continue;
+			}
 		}
+
+		fb_assert(!(rpb->rpb_flags & rpb_gc_active));
 
 		if (state == tra_precommitted)
 			state = check_precommitted(transaction, rpb);
@@ -5611,8 +5607,8 @@ static int prepare_update(	thread_db*		tdbb,
 		case tra_committed:
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_READS_INFO,
-				"    record's transaction (%"ULONGFORMAT
-				") is committed (my TID - %"ULONGFORMAT")\n",
+				"    record's transaction (%"SQUADFORMAT
+				") is committed (my TID - %"SQUADFORMAT")\n",
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 			if (rpb->rpb_flags & rpb_deleted)
@@ -5641,7 +5637,6 @@ static int prepare_update(	thread_db*		tdbb,
 			// and started the update
 			// has been updated by another transaction which committed in the
 			// meantime, we cannot proceed further - update conflict error.
-
 
 			if ((transaction->tra_flags & TRA_read_committed) &&
 				(commit_tid_read != rpb->rpb_transaction_nr))
@@ -5672,8 +5667,8 @@ static int prepare_update(	thread_db*		tdbb,
 			if (state == tra_us)
 			{
 				VIO_trace(DEBUG_READS_INFO,
-					"    record's transaction (%"ULONGFORMAT
-					") is us (my TID - %"ULONGFORMAT")\n",
+					"    record's transaction (%"SQUADFORMAT
+					") is us (my TID - %"SQUADFORMAT")\n",
 					rpb->rpb_transaction_nr, transaction->tra_number);
 			}
 #endif
@@ -5719,35 +5714,19 @@ static int prepare_update(	thread_db*		tdbb,
 		case tra_limbo:
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_READS_INFO,
-				"    record's transaction (%"ULONGFORMAT") is %s (my TID - %"ULONGFORMAT")\n",
+				"    record's transaction (%"SQUADFORMAT") is %s (my TID - %"SQUADFORMAT")\n",
 				rpb->rpb_transaction_nr, (state == tra_active) ? "active" : "limbo",
 				transaction->tra_number);
 #endif
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 
 			// Wait as long as it takes for an active transaction which has modified
-			// the record. If an active transaction has used its TID to safely
-			// backout a fragmented dead record version, spin wait because it will
-			// finish shortly.
+			// the record.
 
-			if (!(rpb->rpb_flags & rpb_gc_active))
-			{
-				state = wait(tdbb, transaction, rpb, jrd_tra::tra_wait);
+			state = wait(tdbb, transaction, rpb);
 
-				if (state == tra_precommitted)
-					state = check_precommitted(transaction, rpb);
-			}
-			else
-			{
-				state = wait(tdbb, transaction, rpb, jrd_tra::tra_probe);
-
-				if (state == tra_active)
-				{
-					Attachment::Checkout cout(attachment, FB_FUNCTION);
-					Thread::sleep(100);	// milliseconds
-					continue;
-				}
-			}
+			if (state == tra_precommitted)
+				state = check_precommitted(transaction, rpb);
 
 			// The snapshot says: transaction was active.  The TIP page says: transaction
 			// is committed.  Maybe the transaction was rolled back via a transaction
@@ -5796,21 +5775,13 @@ static int prepare_update(	thread_db*		tdbb,
 			break;
 
 		case tra_dead:
-		case tra_precommitted:
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_READS_INFO,
-				"    record's transaction (%"ULONGFORMAT") is dead (my TID - %"ULONGFORMAT")\n",
+				"    record's transaction (%"SQUADFORMAT") is dead (my TID - %"SQUADFORMAT")\n",
 				rpb->rpb_transaction_nr, transaction->tra_number);
 #endif
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			break;
-		}
-
-		if (state == tra_precommitted)
-		{
-			Attachment::Checkout cout(attachment, FB_FUNCTION);
-			Thread::sleep(100);	// milliseconds
-			continue;
 		}
 
 		VIO_backout(tdbb, rpb, transaction);
@@ -5909,7 +5880,7 @@ static void purge(thread_db* tdbb, record_param* rpb)
 		"purge (record_param %"QUADFORMAT"d)\n", rpb->rpb_number.getValue());
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
 		rpb->rpb_flags, rpb->rpb_b_page, rpb->rpb_b_line,
@@ -5984,11 +5955,11 @@ static void replace_record(thread_db*		tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"replace_record (record_param %"QUADFORMAT"d, transaction %"ULONGFORMAT")\n",
+		"replace_record (record_param %"QUADFORMAT"d, transaction %"SQUADFORMAT")\n",
 		rpb->rpb_number.getValue(), transaction ? transaction->tra_number : 0);
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
-		"   record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT
 		":%d, prior %p\n",
 		rpb->rpb_page, rpb->rpb_line, rpb->rpb_transaction_nr,
@@ -5997,7 +5968,7 @@ static void replace_record(thread_db*		tdbb,
 #endif
 
 	record_param temp = *rpb;
-	rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active);
+	rpb->rpb_flags &= ~(rpb_fragment | rpb_incomplete | rpb_chained | rpb_gc_active | rpb_long_tranum);
 	DPM_update(tdbb, rpb, stack, transaction);
 	delete_tail(tdbb, &temp, rpb->rpb_page, 0, 0);
 
@@ -6136,13 +6107,13 @@ static void update_in_place(thread_db* tdbb,
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_TRACE_ALL,
-		"update_in_place (transaction %"ULONGFORMAT", org_rpb %"QUADFORMAT"d, "
+		"update_in_place (transaction %"SQUADFORMAT", org_rpb %"QUADFORMAT"d, "
 		"new_rpb %"QUADFORMAT"d)\n",
 		transaction ? transaction->tra_number : 0, org_rpb->rpb_number.getValue(),
 		new_rpb ? new_rpb->rpb_number.getValue() : 0);
 
 	VIO_trace(DEBUG_TRACE_ALL_INFO,
-		"   old record  %"SLONGFORMAT":%d, rpb_trans %"ULONGFORMAT
+		"   old record  %"SLONGFORMAT":%d, rpb_trans %"SQUADFORMAT
 		", flags %d, back %"SLONGFORMAT":%d, fragment %"SLONGFORMAT":%d\n",
 		org_rpb->rpb_page, org_rpb->rpb_line, org_rpb->rpb_transaction_nr,
 		org_rpb->rpb_flags, org_rpb->rpb_b_page, org_rpb->rpb_b_line,

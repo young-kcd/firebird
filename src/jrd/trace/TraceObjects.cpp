@@ -65,7 +65,7 @@ unsigned TraceConnectionImpl::getKind()
 	return KIND_DATABASE;
 }
 
-int TraceConnectionImpl::getConnectionID()
+ISC_INT64 TraceConnectionImpl::getConnectionID()
 {
 	return m_att->att_attachment_id;
 	//return PAG_attachment_id(JRD_get_thread_data());
@@ -122,7 +122,7 @@ const char* TraceConnectionImpl::getRemoteProcessName()
 
 /// TraceTransactionImpl
 
-unsigned TraceTransactionImpl::getTransactionID()
+ISC_INT64 TraceTransactionImpl::getTransactionID()
 {
 	return m_tran->tra_number;
 }
@@ -162,7 +162,7 @@ unsigned TraceTransactionImpl::getIsolation()
 
 /// TraceSQLStatementImpl
 
-int TraceSQLStatementImpl::getStmtID()
+ISC_INT64 TraceSQLStatementImpl::getStmtID()
 {
 	if (m_stmt->req_request)
 		return m_stmt->req_request->req_id;

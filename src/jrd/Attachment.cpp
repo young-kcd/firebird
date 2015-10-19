@@ -37,6 +37,7 @@
 #include "../jrd/ext_proto.h"
 #include "../jrd/intl_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/tra_proto.h"
 
 #include "../jrd/extds/ExtDS.h"
 
@@ -423,16 +424,16 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 
 	const lock_ast_t ast = (att_flags & ATT_system) ? NULL : blockingAstShutdown;
 
-	Lock* lock = FB_NEW_RPT(*att_pool, sizeof(SLONG))
-		Lock(tdbb, sizeof(SLONG), LCK_attachment, this, ast);
+	Lock* lock = FB_NEW_RPT(*att_pool, 0)
+		Lock(tdbb, sizeof(AttNumber), LCK_attachment, this, ast);
 	att_id_lock = lock;
-	lock->lck_key.lck_long = lock->lck_data = att_attachment_id;
+	lock->lck_key.lck_long = att_attachment_id;
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
 
 	// Allocate and take the monitoring lock
 
-	lock = FB_NEW_RPT(*att_pool, sizeof(SLONG))
-		Lock(tdbb, sizeof(SLONG), LCK_monitor, this, blockingAstMonitor);
+	lock = FB_NEW_RPT(*att_pool, 0)
+		Lock(tdbb, sizeof(AttNumber), LCK_monitor, this, blockingAstMonitor);
 	att_monitor_lock = lock;
 	lock->lck_key.lck_long = att_attachment_id;
 	LCK_lock(tdbb, lock, LCK_EX, LCK_WAIT);
@@ -441,8 +442,8 @@ void Jrd::Attachment::initLocks(thread_db* tdbb)
 
 	if (!(att_flags & ATT_system))
 	{
-		lock = FB_NEW_RPT(*att_pool, sizeof(SLONG))
-			Lock(tdbb, sizeof(SLONG), LCK_cancel, this, blockingAstCancel);
+		lock = FB_NEW_RPT(*att_pool, 0)
+			Lock(tdbb, sizeof(AttNumber), LCK_cancel, this, blockingAstCancel);
 		att_cancel_lock = lock;
 		lock->lck_key.lck_long = att_attachment_id;
 	}
@@ -620,7 +621,6 @@ void Jrd::Attachment::releaseRelations(thread_db* tdbb)
 			}
 		}
 	}
-
 }
 
 int Jrd::Attachment::blockingAstShutdown(void* ast_object)

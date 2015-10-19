@@ -79,7 +79,7 @@ Firebird::ITracePlugin* TraceFactoryImpl::trace_create(Firebird::CheckStatusWrap
 
 		if (!config.enabled ||
 			(config.connection_id && connection &&
-				(connection->getConnectionID() != SLONG(config.connection_id))))
+				(connection->getConnectionID() != config.connection_id)))
 		{
 			return NULL; // Plugin is not needed, no error happened.
 		}

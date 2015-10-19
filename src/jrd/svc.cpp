@@ -449,6 +449,21 @@ void Service::putSLong(char tag, SLONG val)
 	enqueue(buf, sizeof buf);
 }
 
+void Service::putSInt64(char tag, SINT64 val)
+{
+	UCHAR buf[5];
+	buf[0] = tag;
+	buf[1] = val;
+	buf[2] = val >> 8;
+	buf[3] = val >> 16;
+	buf[4] = val >> 24;
+	buf[5] = val >> 32;
+	buf[6] = val >> 40;
+	buf[7] = val >> 48;
+	buf[8] = val >> 56;
+	enqueue(buf, sizeof buf);
+}
+
 void Service::putChar(char tag, char val)
 {
 	UCHAR buf[2];

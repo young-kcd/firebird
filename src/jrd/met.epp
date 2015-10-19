@@ -135,14 +135,10 @@ static bool verify_TRG_ignore_perm(thread_db*, const MetaName&);
 static void release_cached_triggers(thread_db* tdbb, trig_vec* vector)
 {
 	if (!vector)
-	{
 		return;
-	}
 
 	for (FB_SIZE_T i = 0; i < vector->getCount(); i++)
-	{
 		(*vector)[i].release(tdbb);
-	}
 }
 
 
@@ -186,9 +182,7 @@ static void inc_int_use_count(JrdStatement* statement)
 static void post_used_procedures(trig_vec* vector)
 {
 	if (!vector)
-	{
 		return;
-	}
 
 	for (FB_SIZE_T i = 0; i < vector->getCount(); i++)
 	{
@@ -355,7 +349,7 @@ void MET_update_partners(thread_db* tdbb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Attachment* attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	vec<jrd_rel*>* relations = attachment->att_relations;
 
@@ -363,9 +357,8 @@ void MET_update_partners(thread_db* tdbb)
 	for (const vec<jrd_rel*>::const_iterator end = relations->end(); ptr < end; ++ptr)
 	{
 		jrd_rel* relation = *ptr;
-		if (!relation) {
+		if (!relation)
 			continue;
-		}
 
 		// signal other processes
 		LCK_lock(tdbb, relation->rel_partners_lock, LCK_EX, LCK_WAIT);
@@ -706,7 +699,7 @@ void MET_clear_cache(thread_db* tdbb)
 
 	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
 	{
-		Routine* routine = *iter;
+		Routine* const routine = *iter;
 
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) )
@@ -717,7 +710,7 @@ void MET_clear_cache(thread_db* tdbb)
 
 	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
 	{
-		Function* routine = *iter;
+		Function* const routine = *iter;
 
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) )
@@ -730,7 +723,7 @@ void MET_clear_cache(thread_db* tdbb)
 
 	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
 	{
-		Routine* routine = *iter;
+		Routine* const routine = *iter;
 
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) &&
@@ -742,7 +735,7 @@ void MET_clear_cache(thread_db* tdbb)
 
 	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
 	{
-		Function* routine = *iter;
+		Function* const routine = *iter;
 
 		if (routine && routine->getStatement() &&
 			!(routine->flags & Routine::FLAG_OBSOLETE) &&
@@ -756,7 +749,7 @@ void MET_clear_cache(thread_db* tdbb)
 
 	for (jrd_prc** iter = att->att_procedures.begin(); iter != att->att_procedures.end(); ++iter)
 	{
-		Routine* routine = *iter;
+		Routine* const routine = *iter;
 
 		if (routine)
 		{
@@ -782,7 +775,7 @@ void MET_clear_cache(thread_db* tdbb)
 
 	for (Function** iter = att->att_functions.begin(); iter != att->att_functions.end(); ++iter)
 	{
-		Function* routine = *iter;
+		Function* const routine = *iter;
 
 		if (routine)
 		{
@@ -831,7 +824,7 @@ bool MET_routine_in_use(thread_db* tdbb, Routine* routine)
 	MET_verify_cache(tdbb);
 #endif
 
-	Attachment* att = tdbb->getAttachment();
+	Attachment* const att = tdbb->getAttachment();
 
 	vec<jrd_rel*>* relations = att->att_relations;
 	{ // scope
@@ -2214,9 +2207,7 @@ int MET_lookup_field(thread_db* tdbb, jrd_rel* relation, const MetaName& name)
 	int id = -1;
 
 	if (relation->rel_flags & REL_deleted)
-	{
 		return id;
-	}
 
 	AutoCacheRequest request(tdbb, irq_l_field, IRQ_REQUESTS);
 
@@ -2521,9 +2512,8 @@ bool MET_lookup_partner(thread_db* tdbb, jrd_rel* relation, index_desc* idx, con
 	SET_TDBB(tdbb);
 	Attachment* attachment = tdbb->getAttachment();
 
-	if (relation->rel_flags & REL_check_partners) {
+	if (relation->rel_flags & REL_check_partners)
 		scan_partners(tdbb, relation);
-	}
 
 	if (idx->idx_flags & idx_foreign)
 	{
@@ -2846,7 +2836,7 @@ jrd_rel* MET_lookup_relation_id(thread_db* tdbb, SLONG id, bool return_deleted)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Attachment* attachment = tdbb->getAttachment();
+	Attachment* const attachment = tdbb->getAttachment();
 
 	// System relations are above suspicion
 
@@ -3514,9 +3504,8 @@ jrd_rel* MET_relation(thread_db* tdbb, USHORT id)
 	}
 
 	// This should check system flag instead.
-	if (relation->rel_id <= max_sys_rel) {
+	if (relation->rel_id <= max_sys_rel)
 		return relation;
-	}
 
 	{ // Scope block.
 		Lock* lock = FB_NEW_RPT(*pool, 0)
@@ -3631,9 +3620,7 @@ void MET_scan_partners(thread_db* tdbb, jrd_rel* relation)
 	SET_TDBB(tdbb);
 
 	if (relation->rel_flags & REL_check_partners)
-	{
 		scan_partners(tdbb, relation);
-	}
 }
 
 
@@ -3691,9 +3678,8 @@ void MET_scan_relation(thread_db* tdbb, jrd_rel* relation)
 		relation->rel_current_fmt = REL.RDB$FORMAT;
 		vec<jrd_fld*>* vector = relation->rel_fields =
 			vec<jrd_fld*>::newVector(*relation->rel_pool, relation->rel_fields, REL.RDB$FIELD_ID + 1);
-		if (!REL.RDB$SECURITY_CLASS.NULL) {
+		if (!REL.RDB$SECURITY_CLASS.NULL)
 			relation->rel_security_name = REL.RDB$SECURITY_CLASS;
-		}
 
 		relation->rel_name = REL.RDB$RELATION_NAME;
 		relation->rel_owner_name = REL.RDB$OWNER_NAME;
@@ -4595,10 +4581,9 @@ void MET_release_triggers( thread_db* tdbb, trig_vec** vector_ptr)
  *
  **************************************/
 	trig_vec* vector = *vector_ptr;
+
 	if (!vector)
-	{
 		return;
-	}
 
 	SET_TDBB(tdbb);
 

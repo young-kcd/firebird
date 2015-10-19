@@ -168,7 +168,7 @@ struct lbl
 	srq lbl_requests;				// Requests granted
 	srq lbl_lhb_hash;				// Collision que for hash table
 	srq lbl_lhb_data;				// Lock data que by series
-	SLONG lbl_data;					// User data
+	SINT64 lbl_data;				// User data
 	UCHAR lbl_series;				// Lock series
 	UCHAR lbl_flags;				// Unused. Misc flags
 	USHORT lbl_pending_lrq_count;	// count of lbl_requests with LRQ_pending
@@ -186,7 +186,7 @@ struct lrq
 	USHORT lrq_flags;				// Misc crud
 	SRQ_PTR lrq_owner;				// Owner making request
 	SRQ_PTR lrq_lock;				// Lock requested
-	SLONG lrq_data;					// Lock data requested
+	SINT64 lrq_data;				// Lock data requested
 	srq lrq_own_requests;			// Locks granted for owner
 	srq lrq_lbl_requests;			// Que of requests (active, pending)
 	srq lrq_own_blocks;				// Owner block que
@@ -405,7 +405,7 @@ public:
 	void shutdownOwner(Attachment*, SRQ_PTR*);
 
 	SRQ_PTR enqueue(Attachment*, Firebird::CheckStatusWrapper*, SRQ_PTR, const USHORT,
-		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, SLONG, SSHORT, SRQ_PTR);
+		const UCHAR*, const USHORT, UCHAR, lock_ast_t, void*, SINT64, SSHORT, SRQ_PTR);
 	bool convert(Attachment*, Firebird::CheckStatusWrapper*, SRQ_PTR, UCHAR, SSHORT, lock_ast_t, void*);
 	UCHAR downgrade(Attachment*, Firebird::CheckStatusWrapper*, const SRQ_PTR);
 	bool dequeue(const SRQ_PTR);
@@ -413,10 +413,10 @@ public:
 	void repost(Attachment*, lock_ast_t, void*, SRQ_PTR);
 	bool cancelWait(SRQ_PTR);
 
-	SLONG queryData(const USHORT, const USHORT);
-	SLONG readData(SRQ_PTR);
-	SLONG readData2(USHORT, const UCHAR*, USHORT, SRQ_PTR);
-	SLONG writeData(SRQ_PTR, SLONG);
+	SINT64 queryData(const USHORT, const USHORT);
+	SINT64 readData(SRQ_PTR);
+	SINT64 readData2(USHORT, const UCHAR*, USHORT, SRQ_PTR);
+	SINT64 writeData(SRQ_PTR, SINT64);
 
 private:
 	explicit LockManager(const Firebird::string&, Firebird::RefPtr<Config>);

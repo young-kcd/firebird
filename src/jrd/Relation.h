@@ -23,6 +23,7 @@
 #define JRD_RELATION_H
 
 #include "../jrd/jrd.h"
+#include "../jrd/btr.h"
 #include "../jrd/lck.h"
 #include "../jrd/pag.h"
 #include "../jrd/val.h"
@@ -68,29 +69,27 @@ typedef Firebird::SortedArray<ViewContext*, Firebird::EmptyStorage<ViewContext*>
 class RelationPages
 {
 public:
-	typedef ULONG RP_INSTANCE_ID;
-	vcl*	rel_pages;			// vector of pointer page numbers
-	RP_INSTANCE_ID	rel_instance_id;	// 0 or att_attachment_id or tra_number
+	typedef SINT64 RP_INSTANCE_ID;
+	vcl* rel_pages;				// vector of pointer page numbers
+	RP_INSTANCE_ID rel_instance_id;		// 0 or att_attachment_id or tra_number
 	// Vlad asked for this compile-time check to make sure we can contain a txn number here
-	typedef int RangeCheck[sizeof(RP_INSTANCE_ID) >= sizeof(TraNumber)];
+	typedef int RangeCheck1[sizeof(RP_INSTANCE_ID) >= sizeof(TraNumber)];
+	typedef int RangeCheck2[sizeof(RP_INSTANCE_ID) >= sizeof(AttNumber)];
 
-	SLONG	rel_index_root;			// index root page number
-	SLONG	rel_data_pages;			// count of relation data pages
-	ULONG	rel_slot_space;			// lowest pointer page with slot space
-	ULONG	rel_pri_data_space;		// lowest pointer page with primary data page space
-	ULONG	rel_sec_data_space;		// lowest pointer page with secondary data page space
-	USHORT	rel_pg_space_id;
+	SLONG rel_index_root;		// index root page number
+	SLONG rel_data_pages;		// count of relation data pages
+	ULONG rel_slot_space;		// lowest pointer page with slot space
+	ULONG rel_pri_data_space;	// lowest pointer page with primary data page space
+	ULONG rel_sec_data_space;	// lowest pointer page with secondary data page space
+	USHORT rel_pg_space_id;
 
-	RelationPages()
-	{
-		rel_pages = 0;
-		rel_index_root = rel_data_pages = 0;
-		rel_instance_id = 0;
-		rel_slot_space = rel_pri_data_space = rel_sec_data_space = 0;
-		rel_pg_space_id = DB_PAGE_SPACE;
-		rel_next_free = 0;
-		useCount = 0;
-	}
+	explicit RelationPages()
+		: rel_pages(NULL), rel_instance_id(0),
+		  rel_index_root(0), rel_data_pages(0), rel_slot_space(0),
+		  rel_pri_data_space(0), rel_sec_data_space(0),
+		  rel_pg_space_id(DB_PAGE_SPACE), rel_next_free(NULL),
+		  useCount(0)
+	{}
 
 	inline SLONG addRef()
 	{
@@ -99,7 +98,7 @@ public:
 
 	void free(RelationPages*& nextFree);
 
-	static inline ULONG generate(const RelationPages* item)
+	static inline RP_INSTANCE_ID generate(const RelationPages* item)
 	{
 		return item->rel_instance_id;
 	}
@@ -132,7 +131,6 @@ struct frgn
 	vec<int>* frgn_indexes;
 };
 
-
 // Relation block; one is created for each relation referenced
 // in the database, though it is not really filled out until
 // the relation is scanned
@@ -147,15 +145,17 @@ public:
 	USHORT			rel_current_fmt;	// Current format number
 	ULONG			rel_flags;
 	Format*			rel_current_format;	// Current record format
+
 	Firebird::MetaName	rel_name;		// ascii relation name
-	vec<Format*>*	rel_formats;		// Known record formats
 	Firebird::MetaName	rel_owner_name;	// ascii owner
+	Firebird::MetaName	rel_security_name;	// security class name for relation
+
+	vec<Format*>*	rel_formats;		// Known record formats
 	vec<jrd_fld*>*	rel_fields;			// vector of field blocks
 
 	RseNode*		rel_view_rse;		// view record select expression
 	ViewContexts	rel_view_contexts;	// sorted array of view contexts
 
-	Firebird::MetaName	rel_security_name;	// security class name for relation
 	ExternalFile* 	rel_file;			// external file name
 
 	GCRecordList	rel_gc_records;		// records for garbage collection
@@ -228,12 +228,13 @@ private:
 	typedef Firebird::SortedArray<
 				RelationPages*,
 				Firebird::EmptyStorage<RelationPages*>,
-				ULONG, // This type should be able to hold a TraNumber value
+				SINT64,
 				RelationPages>
 			RelationPagesInstances;
 
 	// Vlad asked for this compile-time check to make sure we can contain a txn number here
-	typedef int RangeCheck[sizeof(ULONG) >= sizeof(TraNumber)];
+	typedef int RangeCheck1[sizeof(SINT64) >= sizeof(TraNumber)];
+	typedef int RangeCheck2[sizeof(SINT64) >= sizeof(AttNumber)];
 
 	RelationPagesInstances* rel_pages_inst;
 	RelationPages			rel_pages_base;
@@ -316,8 +317,9 @@ const ULONG REL_gc_lockneed				= 0x80000;	// gc lock should be acquired
 /// class jrd_rel
 
 inline jrd_rel::jrd_rel(MemoryPool& p)
-	: rel_pool(&p), rel_flags(REL_gc_lockneed), rel_name(p), rel_owner_name(p),
-	  rel_view_contexts(p), rel_security_name(p), rel_gc_records(p)
+	: rel_pool(&p), rel_flags(REL_gc_lockneed),
+	  rel_name(p), rel_owner_name(p), rel_security_name(p),
+	  rel_view_contexts(p), rel_gc_records(p)
 {
 }
 

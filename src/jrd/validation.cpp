@@ -561,6 +561,7 @@ VI. ADDITIONAL NOTES
 #include "../yvalve/gds_proto.h"
 #include "../common/isc_proto.h"
 #include "../jrd/met_proto.h"
+#include "../jrd/ods_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../jrd/val_proto.h"
 #include "../jrd/validation.h"
@@ -1404,8 +1405,8 @@ static void print_rhd(USHORT length, const rhd* header)
  **************************************/
 	if (VAL_debug_level)
 	{
-		fprintf(stdout, "rhd: len %d TX %d format %d ",
-				   length, header->rhd_transaction, (int) header->rhd_format);
+		fprintf(stdout, "rhd: len %d TX %"SQUADFORMAT" format %d ",
+				   length, Ods::getTraNum(header), (int) header->rhd_format);
 		fprintf(stdout, "BP %d/%d flags 0x%x ",
 				   header->rhd_b_page, header->rhd_b_line, header->rhd_flags);
 		if (header->rhd_flags & rhd_incomplete)
@@ -1769,11 +1770,11 @@ Validation::RTN Validation::walk_data_page(jrd_rel* relation, ULONG page_number,
 					RBM_SET(vdr_tdbb->getDefaultPool(), &vdr_rel_records, number.getValue());
 				else
 				{
-					int state;
-					if (header->rhd_transaction < dbb->dbb_oldest_transaction)
-						state = tra_committed;
-					else
-						state = TRA_fetch_state(vdr_tdbb, header->rhd_transaction);
+					const TraNumber transaction = Ods::getTraNum(header);
+
+					const int state = (transaction < dbb->dbb_oldest_transaction) ?
+						tra_committed : TRA_fetch_state(vdr_tdbb, transaction);
+
 					if (state == tra_committed || state == tra_limbo)
 						RBM_SET(vdr_tdbb->getDefaultPool(), &vdr_rel_records, number.getValue());
 				}
@@ -2626,8 +2627,10 @@ Validation::RTN Validation::walk_record(jrd_rel* relation, const rhd* header, US
 		return rtn_ok;
 	}
 
-	if (header->rhd_transaction > vdr_max_transaction)
-		corrupt(VAL_REC_BAD_TID, relation, number.getValue(), header->rhd_transaction);
+	const TraNumber transaction = Ods::getTraNum(header);
+
+	if (transaction > vdr_max_transaction)
+		corrupt(VAL_REC_BAD_TID, relation, number.getValue(), transaction);
 
 	// If there's a back pointer, verify that it's good
 

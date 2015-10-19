@@ -834,7 +834,7 @@ static ULONG ensureDiskSpace(thread_db* tdbb, WIN* pip_window, const PageNumber 
 }
 
 
-SLONG PAG_attachment_id(thread_db* tdbb)
+AttNumber PAG_attachment_id(thread_db* tdbb)
 {
 /******************************************
  *
@@ -860,15 +860,18 @@ SLONG PAG_attachment_id(thread_db* tdbb)
 
 	// Get new attachment id
 
-	if (dbb->readOnly()) {
+	if (dbb->readOnly())
 		attachment->att_attachment_id = dbb->dbb_attachment_id + dbb->generateAttachmentId(tdbb);
-	}
 	else
 	{
 		window.win_page = HEADER_PAGE_NUMBER;
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);
-		attachment->att_attachment_id = ++header->hdr_attachment_id;
+		const AttNumber att_id =
+			((SINT64) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id) + 1;
+		attachment->att_attachment_id = att_id;
+		header->hdr_att_high = att_id >> BITS_PER_LONG;
+		header->hdr_attachment_id = (ULONG) (att_id & MAX_ULONG);
 
 		CCH_RELEASE(tdbb, &window);
 	}
@@ -960,9 +963,8 @@ void PAG_format_header(thread_db* tdbb)
 	header->hdr_end = HDR_SIZE;
 	header->hdr_data[0] = HDR_end;
 
-	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3) {
+	if (dbb->dbb_flags & DBB_DB_SQL_dialect_3)
 		header->hdr_flags |= hdr_SQL_dialect_3;
-	}
 
 	dbb->dbb_ods_version = header->hdr_ods_version & ~ODS_FIREBIRD_FLAG;
 	dbb->dbb_minor_version = header->hdr_ods_minor;
@@ -1106,12 +1108,17 @@ void PAG_header(thread_db* tdbb, bool info)
 
 	try {
 
-	if (header->hdr_next_transaction)
+	const TraNumber next_transaction = Ods::getNT(header);
+	const TraNumber oldest_transaction = Ods::getOIT(header);
+	const TraNumber oldest_active = Ods::getOAT(header);
+	const TraNumber oldest_snapshot = Ods::getOST(header);
+
+	if (next_transaction)
 	{
-		if (header->hdr_oldest_active > header->hdr_next_transaction)
+		if (oldest_active > next_transaction)
 			BUGCHECK(266);		// next transaction older than oldest active
 
-		if (header->hdr_oldest_transaction > header->hdr_next_transaction)
+		if (oldest_transaction > next_transaction)
 			BUGCHECK(267);		// next transaction older than oldest transaction
 	}
 
@@ -1134,17 +1141,16 @@ void PAG_header(thread_db* tdbb, bool info)
 		(*vector)[0] = header->hdr_PAGES;
 	}
 
-	dbb->dbb_next_transaction = header->hdr_next_transaction;
+	dbb->dbb_next_transaction = next_transaction;
 
-	if (!info || dbb->dbb_oldest_transaction < header->hdr_oldest_transaction) {
-		dbb->dbb_oldest_transaction = header->hdr_oldest_transaction;
-	}
-	if (!info || dbb->dbb_oldest_active < header->hdr_oldest_active) {
-		dbb->dbb_oldest_active = header->hdr_oldest_active;
-	}
-	if (!info || dbb->dbb_oldest_snapshot < header->hdr_oldest_snapshot) {
-		dbb->dbb_oldest_snapshot = header->hdr_oldest_snapshot;
-	}
+	if (!info || dbb->dbb_oldest_transaction < oldest_transaction)
+		dbb->dbb_oldest_transaction = oldest_transaction;
+
+	if (!info || dbb->dbb_oldest_active < oldest_active)
+		dbb->dbb_oldest_active = oldest_active;
+
+	if (!info || dbb->dbb_oldest_snapshot < oldest_snapshot)
+		dbb->dbb_oldest_snapshot = oldest_snapshot;
 
 	dbb->dbb_attachment_id = header->hdr_attachment_id;
 	dbb->dbb_creation_date = *(ISC_TIMESTAMP*) header->hdr_creation_date;
@@ -2286,7 +2292,8 @@ void PageManager::initTempPageSpace(thread_db* tdbb)
 
 		if (!attachment->att_temp_pg_lock)
 		{
-			Lock* lock = FB_NEW_RPT(*attachment->att_pool, 0) Lock(tdbb, sizeof(SLONG), LCK_page_space);
+			Lock* const lock = FB_NEW_RPT(*attachment->att_pool, 0)
+				Lock(tdbb, sizeof(SLONG), LCK_page_space);
 
 			while (true)
 			{

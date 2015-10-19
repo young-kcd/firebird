@@ -237,7 +237,6 @@ namespace Jrd
 		dbb_flags &= ~(DBB_sweep_in_progress | DBB_sweep_starting);
 	}
 
-
 	void Database::SharedCounter::shutdown(thread_db* tdbb)
 	{
 		for (size_t i = 0; i < TOTAL_ITEMS; i++)
@@ -247,36 +246,28 @@ namespace Jrd
 		}
 	}
 
-	SLONG Database::SharedCounter::generate(thread_db* tdbb, ULONG space, ULONG prefetch)
+	SINT64 Database::SharedCounter::generate(thread_db* tdbb, ULONG space, ULONG prefetch)
 	{
 		fb_assert(space < TOTAL_ITEMS);
 		ValueCache* const counter = &m_counters[space];
 
-		if (m_localOnly)
-		{
-			SLONG result = 0;
-			while ( !(result = (SLONG) ++counter->curVal) )
-				;
-			return result;
-		}
-
 		Database* const dbb = tdbb->getDatabase();
 		SyncLockGuard guard(&dbb->dbb_sh_counter_sync, SYNC_EXCLUSIVE, "Database::SharedCounter::generate");
 
-		if (!counter->lock)
-		{
-			Lock* const lock =
-				FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock(tdbb, sizeof(SLONG), LCK_shared_counter);
-			counter->lock = lock;
-			lock->lck_key.lck_long = space;
-			LCK_lock(tdbb, lock, LCK_PW, LCK_WAIT);
-		}
+		SINT64 result = ++counter->curVal;
 
-		SLONG result = (SLONG) ++counter->curVal;
-
-		if (result > counter->maxVal)
+		if (!m_localOnly && result > counter->maxVal)
 		{
-			LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
+			if (!counter->lock)
+			{
+				counter->lock =
+					FB_NEW_RPT(*dbb->dbb_permanent, 0) Lock(tdbb, sizeof(SLONG), LCK_shared_counter);
+				counter->lock->lck_key.lck_long = space;
+				LCK_lock(tdbb, counter->lock, LCK_PW, LCK_WAIT);
+			}
+			else
+				LCK_convert(tdbb, counter->lock, LCK_PW, LCK_WAIT);
+
 			result = LCK_read_data(tdbb, counter->lock);
 
 			// zero IDs are somewhat special, so let's better skip them

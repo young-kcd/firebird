@@ -243,8 +243,8 @@ public:
 		struct ValueCache
 		{
 			Lock* lock;						// lock which holds shared counter value
-			Firebird::AtomicCounter curVal;	// current value of shared counter lock
-			SLONG maxVal;					// maximum cached value of shared counter lock
+			SINT64 curVal;					// current value of shared counter lock
+			SINT64 maxVal;					// maximum cached value of shared counter lock
 		};
 
 	public:
@@ -266,7 +266,7 @@ public:
 				delete m_counters[i].lock;
 		}
 
-		SLONG generate(thread_db* tdbb, ULONG space, ULONG prefetch = DEFAULT_CACHE_SIZE);
+		SINT64 generate(thread_db* tdbb, ULONG space, ULONG prefetch = DEFAULT_CACHE_SIZE);
 		void shutdown(thread_db* tdbb);
 
 	private:
@@ -438,7 +438,7 @@ public:
 	TraNumber dbb_oldest_transaction;	// Cached "oldest interesting" transaction
 	TraNumber dbb_oldest_snapshot;		// Cached "oldest snapshot" of all active transactions
 	TraNumber dbb_next_transaction;		// Next transaction id used by NETWARE
-	SLONG dbb_attachment_id;			// Next attachment id for ReadOnly DB's
+	AttNumber dbb_attachment_id;		// Next attachment id for ReadOnly DB's
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
 	GarbageCollector*	dbb_garbage_collector;	// GarbageCollector class
@@ -531,17 +531,17 @@ private:
 	~Database();
 
 public:
-	SLONG generateAttachmentId(thread_db* tdbb)
+	AttNumber generateAttachmentId(thread_db* tdbb)
 	{
 		return dbb_shared_counter.generate(tdbb, SharedCounter::ATTACHMENT_ID_SPACE, 1);
 	}
 
-	SLONG generateTransactionId(thread_db* tdbb)
+	TraNumber generateTransactionId(thread_db* tdbb)
 	{
 		return dbb_shared_counter.generate(tdbb, SharedCounter::TRANSACTION_ID_SPACE, 1);
 	}
 
-	SLONG generateStatementId(thread_db* tdbb)
+	StmtNumber generateStatementId(thread_db* tdbb)
 	{
 		return dbb_shared_counter.generate(tdbb, SharedCounter::STATEMENT_ID_SPACE);
 	}

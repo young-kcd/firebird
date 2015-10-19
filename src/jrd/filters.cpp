@@ -1110,11 +1110,8 @@ ISC_STATUS filter_trans(USHORT action, BlobControl* control)
 				break;
 
 			case TDR_TRANSACTION_ID:
-				{
-					const SLONG id = gds__vax_integer(p, length);
-					sprintf(out, "    Transaction id: %"SLONGFORMAT, id);
-					break;
-				}
+				sprintf(out, "    Transaction id: %"SQUADFORMAT, isc_portable_integer(p, length));
+				break;
 
 			default:
 				sprintf(out, "item %d not understood", (int) p[-1]);

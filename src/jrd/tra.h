@@ -80,12 +80,6 @@ public:
 	int savePoint;
 };
 
-//Moved to fb_types.h
-//typedef ULONG TraNumber;
-
-// Moved to constants.h
-//const TraNumber MAX_TRA_NUMBER = ~TraNumber(0);
-
 // Blobs active in transaction identified by bli_temp_id. Please keep this
 // structure small as there can be huge amount of them floating in memory.
 struct BlobIndex
@@ -263,8 +257,8 @@ public:
 	BlobIndexTree* tra_blobs;			// pointer to actual list of active blobs
 	ArrayField*	tra_arrays;				// Linked list of active arrays
 	Lock*		tra_lock;				// lock for transaction
-	vec<Lock*>*		tra_relation_locks;	// locks for relations
-	UInt32Bitmap*	tra_commit_sub_trans;	// commited sub-transactions
+	vec<Lock*>*			tra_relation_locks;	// locks for relations
+	TransactionBitmap*	tra_commit_sub_trans;	// commited sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
 	Savepoint*	tra_save_free;			// free savepoints
 	SLONG tra_save_point_number;		// next save point number to use
@@ -432,9 +426,6 @@ const int tra_dead			= 2;
 const int tra_committed		= 3;
 const int tra_us			= 4;	// Transaction is us
 const int tra_precommitted	= 5;	// Transaction is precommitted
-
-// The highest transaction number possible.  This is 0x7fffffff if SLONG is 32 bits.
-//#define MAX_TRA_NUMBER		 (~(1L << (BITS_PER_LONG - 1)))
 
 // Savepoint block
 

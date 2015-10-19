@@ -35,6 +35,7 @@
 #include "../../jrd/ntrace.h"
 #include "../../common/dsc.h"
 #include "../../common/isc_s_proto.h"
+#include "../../jrd/ods_proto.h"
 #include "../../jrd/req.h"
 #include "../../jrd/svc.h"
 #include "../../jrd/tra.h"
@@ -72,7 +73,7 @@ public:
 	const char* getRemoteProcessName();
 
 	// TraceDatabaseConnection implementation
-	int getConnectionID();
+	ISC_INT64 getConnectionID();
 	const char* getDatabaseName();
 private:
 	const Attachment* const m_att;
@@ -89,7 +90,7 @@ public:
 	{}
 
 	// TraceTransaction implementation
-	unsigned getTransactionID();
+	ISC_INT64 getTransactionID();
 	FB_BOOLEAN getReadOnly();
 	int getWait();
 	unsigned getIsolation();
@@ -147,7 +148,7 @@ public:
 		m_perf(perf)
 	{}
 
-	int getStmtID()				{ return m_stmt->req_id; }
+	ISC_INT64 getStmtID()		{ return m_stmt->req_id; }
 	PerformanceInfo* getPerf()	{ return m_perf; }
 
 private:
@@ -163,7 +164,7 @@ public:
 		BLRPrinter(blr, length)
 	{}
 
-	int getStmtID()				{ return 0; }
+	ISC_INT64 getStmtID()		{ return 0; }
 	PerformanceInfo* getPerf()	{ return NULL; }
 };
 
@@ -180,7 +181,7 @@ public:
 	{}
 
 	// TraceSQLStatement implementation
-	int getStmtID();
+	ISC_INT64 getStmtID();
 	PerformanceInfo* getPerf();
 	Firebird::ITraceParams* getInputs();
 	const char* getText();
@@ -234,7 +235,7 @@ public:
 	{}
 
 	// TraceSQLStatement implementation
-	int getStmtID()				{ return 0; }
+	ISC_INT64 getStmtID()		{ return 0; }
 	PerformanceInfo* getPerf()	{ return NULL; }
 	Firebird::ITraceParams* getInputs()	{ return NULL; }
 	const char* getText()		{ return m_text.c_str(); }
@@ -608,10 +609,10 @@ public:
 
 	void update(const Ods::header_page* header)
 	{
-		m_oit = header->hdr_oldest_transaction;
-		m_ost = header->hdr_oldest_snapshot;
-		m_oat = header->hdr_oldest_active;
-		m_next = header->hdr_next_transaction;
+		m_oit = Ods::getOIT(header);
+		m_ost = Ods::getOST(header);
+		m_oat = Ods::getOAT(header);
+		m_next = Ods::getNT(header);
 	}
 
 	void setPerf(PerformanceInfo* perf)
@@ -619,10 +620,10 @@ public:
 		m_perf = perf;
 	}
 
-	ISC_UINT64 getOIT()	{ return m_oit; };
-	ISC_UINT64 getOST()	{ return m_ost; };
-	ISC_UINT64 getOAT()	{ return m_oat; };
-	ISC_UINT64 getNext()		{ return m_next; };
+	ISC_INT64 getOIT()	{ return m_oit; };
+	ISC_INT64 getOST()	{ return m_ost; };
+	ISC_INT64 getOAT()	{ return m_oat; };
+	ISC_INT64 getNext()		{ return m_next; };
 	PerformanceInfo* getPerf()	{ return m_perf; };
 
 private:

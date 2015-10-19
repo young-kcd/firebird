@@ -60,6 +60,7 @@ public:
 	virtual void printf(bool err, const SCHAR* format, ...) = 0;
 	virtual void putLine(char, const char*) = 0;
 	virtual void putSLong(char, SLONG) = 0;
+	virtual void putSInt64(char, SINT64) = 0;
 	virtual void putChar(char, char) = 0;
 	virtual void putBytes(const UCHAR*, FB_SIZE_T) = 0;
 	virtual ULONG getBytes(UCHAR*, ULONG) = 0;
