@@ -1209,7 +1209,7 @@ static void prt_lock(OUTFILE outfile, const lhb* LOCK_header, const lbl* lock, U
 				preLock, rel_lock, rel_lock);
 	}
 	FPRINTF(outfile,
-			"\tSeries: %d, State: %d, Size: %d, Length: %d, Data: %"ULONGFORMAT"\n",
+			"\tSeries: %d, State: %d, Size: %d, Length: %d, Data: %"SQUADFORMAT"\n",
 			lock->lbl_series, lock->lbl_state, lock->lbl_size, lock->lbl_length, lock->lbl_data);
 
 	if ((lock->lbl_series == Jrd::LCK_bdb || lock->lbl_series == Jrd::LCK_btr_dont_gc) &&

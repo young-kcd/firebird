@@ -3829,7 +3829,7 @@ namespace Firebird
 	public:
 		struct VTable : public ITraceConnection::VTable
 		{
-			int (CLOOP_CARG *getConnectionID)(ITraceDatabaseConnection* self) throw();
+			ISC_INT64 (CLOOP_CARG *getConnectionID)(ITraceDatabaseConnection* self) throw();
 			const char* (CLOOP_CARG *getDatabaseName)(ITraceDatabaseConnection* self) throw();
 		};
 
@@ -3846,9 +3846,9 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 3;
 
-		int getConnectionID()
+		ISC_INT64 getConnectionID()
 		{
-			int ret = static_cast<VTable*>(this->cloopVTable)->getConnectionID(this);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getConnectionID(this);
 			return ret;
 		}
 
@@ -3864,7 +3864,7 @@ namespace Firebird
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			unsigned (CLOOP_CARG *getTransactionID)(ITraceTransaction* self) throw();
+			ISC_INT64 (CLOOP_CARG *getTransactionID)(ITraceTransaction* self) throw();
 			FB_BOOLEAN (CLOOP_CARG *getReadOnly)(ITraceTransaction* self) throw();
 			int (CLOOP_CARG *getWait)(ITraceTransaction* self) throw();
 			unsigned (CLOOP_CARG *getIsolation)(ITraceTransaction* self) throw();
@@ -3889,9 +3889,9 @@ namespace Firebird
 		static const unsigned ISOLATION_READ_COMMITTED_RECVER = 3;
 		static const unsigned ISOLATION_READ_COMMITTED_NORECVER = 4;
 
-		unsigned getTransactionID()
+		ISC_INT64 getTransactionID()
 		{
-			unsigned ret = static_cast<VTable*>(this->cloopVTable)->getTransactionID(this);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getTransactionID(this);
 			return ret;
 		}
 
@@ -3960,7 +3960,7 @@ namespace Firebird
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			int (CLOOP_CARG *getStmtID)(ITraceStatement* self) throw();
+			ISC_INT64 (CLOOP_CARG *getStmtID)(ITraceStatement* self) throw();
 			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceStatement* self) throw();
 		};
 
@@ -3977,9 +3977,9 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		int getStmtID()
+		ISC_INT64 getStmtID()
 		{
-			int ret = static_cast<VTable*>(this->cloopVTable)->getStmtID(this);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getStmtID(this);
 			return ret;
 		}
 
@@ -4419,10 +4419,10 @@ namespace Firebird
 	public:
 		struct VTable : public IVersioned::VTable
 		{
-			ISC_UINT64 (CLOOP_CARG *getOIT)(ITraceSweepInfo* self) throw();
-			ISC_UINT64 (CLOOP_CARG *getOST)(ITraceSweepInfo* self) throw();
-			ISC_UINT64 (CLOOP_CARG *getOAT)(ITraceSweepInfo* self) throw();
-			ISC_UINT64 (CLOOP_CARG *getNext)(ITraceSweepInfo* self) throw();
+			ISC_INT64 (CLOOP_CARG *getOIT)(ITraceSweepInfo* self) throw();
+			ISC_INT64 (CLOOP_CARG *getOST)(ITraceSweepInfo* self) throw();
+			ISC_INT64 (CLOOP_CARG *getOAT)(ITraceSweepInfo* self) throw();
+			ISC_INT64 (CLOOP_CARG *getNext)(ITraceSweepInfo* self) throw();
 			PerformanceInfo* (CLOOP_CARG *getPerf)(ITraceSweepInfo* self) throw();
 		};
 
@@ -4439,27 +4439,27 @@ namespace Firebird
 	public:
 		static const unsigned VERSION = 2;
 
-		ISC_UINT64 getOIT()
+		ISC_INT64 getOIT()
 		{
-			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getOIT(this);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getOIT(this);
 			return ret;
 		}
 
-		ISC_UINT64 getOST()
+		ISC_INT64 getOST()
 		{
-			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getOST(this);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getOST(this);
 			return ret;
 		}
 
-		ISC_UINT64 getOAT()
+		ISC_INT64 getOAT()
 		{
-			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getOAT(this);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getOAT(this);
 			return ret;
 		}
 
-		ISC_UINT64 getNext()
+		ISC_INT64 getNext()
 		{
-			ISC_UINT64 ret = static_cast<VTable*>(this->cloopVTable)->getNext(this);
+			ISC_INT64 ret = static_cast<VTable*>(this->cloopVTable)->getNext(this);
 			return ret;
 		}
 
@@ -13032,7 +13032,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopgetConnectionIDDispatcher(ITraceDatabaseConnection* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetConnectionIDDispatcher(ITraceDatabaseConnection* self) throw()
 		{
 			try
 			{
@@ -13041,7 +13041,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<int>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
@@ -13189,7 +13189,7 @@ namespace Firebird
 		{
 		}
 
-		virtual int getConnectionID() = 0;
+		virtual ISC_INT64 getConnectionID() = 0;
 		virtual const char* getDatabaseName() = 0;
 	};
 
@@ -13217,7 +13217,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static unsigned CLOOP_CARG cloopgetTransactionIDDispatcher(ITraceTransaction* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetTransactionIDDispatcher(ITraceTransaction* self) throw()
 		{
 			try
 			{
@@ -13226,7 +13226,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<unsigned>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
@@ -13296,7 +13296,7 @@ namespace Firebird
 		{
 		}
 
-		virtual unsigned getTransactionID() = 0;
+		virtual ISC_INT64 getTransactionID() = 0;
 		virtual FB_BOOLEAN getReadOnly() = 0;
 		virtual int getWait() = 0;
 		virtual unsigned getIsolation() = 0;
@@ -13389,7 +13389,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static int CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -13398,7 +13398,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<int>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
@@ -13429,7 +13429,7 @@ namespace Firebird
 		{
 		}
 
-		virtual int getStmtID() = 0;
+		virtual ISC_INT64 getStmtID() = 0;
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 
@@ -13524,7 +13524,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -13533,7 +13533,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<int>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
@@ -13634,7 +13634,7 @@ namespace Firebird
 			}
 		}
 
-		static int CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetStmtIDDispatcher(ITraceStatement* self) throw()
 		{
 			try
 			{
@@ -13643,7 +13643,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<int>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
@@ -14449,7 +14449,7 @@ namespace Firebird
 			this->cloopVTable = &vTable;
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetOITDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetOITDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14458,11 +14458,11 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<ISC_UINT64>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetOSTDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetOSTDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14471,11 +14471,11 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<ISC_UINT64>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetOATDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetOATDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14484,11 +14484,11 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<ISC_UINT64>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
-		static ISC_UINT64 CLOOP_CARG cloopgetNextDispatcher(ITraceSweepInfo* self) throw()
+		static ISC_INT64 CLOOP_CARG cloopgetNextDispatcher(ITraceSweepInfo* self) throw()
 		{
 			try
 			{
@@ -14497,7 +14497,7 @@ namespace Firebird
 			catch (...)
 			{
 				StatusType::catchException(0);
-				return static_cast<ISC_UINT64>(0);
+				return static_cast<ISC_INT64>(0);
 			}
 		}
 
@@ -14528,10 +14528,10 @@ namespace Firebird
 		{
 		}
 
-		virtual ISC_UINT64 getOIT() = 0;
-		virtual ISC_UINT64 getOST() = 0;
-		virtual ISC_UINT64 getOAT() = 0;
-		virtual ISC_UINT64 getNext() = 0;
+		virtual ISC_INT64 getOIT() = 0;
+		virtual ISC_INT64 getOST() = 0;
+		virtual ISC_INT64 getOAT() = 0;
+		virtual ISC_INT64 getNext() = 0;
 		virtual PerformanceInfo* getPerf() = 0;
 	};
 

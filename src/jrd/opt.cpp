@@ -2647,7 +2647,7 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		map_item++;
 	}
 
-	// Make fields for record numbers record for all streams
+	// Make fields for record numbers and transaction ids for all streams
 
 	map_length = ROUNDUP(map_length, sizeof(SINT64));
 	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
@@ -2660,18 +2660,15 @@ SortedStream* OPT_gen_sort(thread_db* tdbb, CompilerScratch* csb, const StreamLi
 		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
-	}
 
-	// Make fields for transaction id of record for all streams
+		map_item++;
 
-	for (const StreamType* ptr = streams.begin(); ptr < end_ptr; ptr++, map_item++)
-	{
 		map_item->clear();
 		map_item->fieldId = SortedStream::ID_TRANS;
 		map_item->stream = *ptr;
-		dsc* desc = &map_item->desc;
-		desc->dsc_dtype = dtype_long;
-		desc->dsc_length = sizeof(SLONG);
+		desc = &map_item->desc;
+		desc->dsc_dtype = dtype_int64;
+		desc->dsc_length = sizeof(SINT64);
 		desc->dsc_address = (UCHAR*)(IPTR) map_length;
 		map_length += desc->dsc_length;
 	}

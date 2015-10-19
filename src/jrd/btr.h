@@ -47,6 +47,7 @@ class JrdStatement;
 struct temporary_key;
 class jrd_tra;
 class BtrPageGCLock;
+class Sort;
 
 // Index descriptor block -- used to hold info from index root page
 
@@ -252,6 +253,27 @@ public:
 	static bool isPageGCAllowed(thread_db* tdbb, const PageNumber& page);
 };
 
+class IndexReserveLock : public Lock
+{
+public:
+	IndexReserveLock(thread_db* tdbb, const jrd_rel* relation, const index_desc* idx);
+	~IndexReserveLock();
+
+private:
+	thread_db* const m_tdbb;
+};
+
+// Struct used for index creation
+
+struct IndexCreation
+{
+	jrd_rel* relation;
+	index_desc* index;
+	jrd_tra* transaction;
+	USHORT key_length;
+	Firebird::AutoPtr<IndexReserveLock> lock;
+	Firebird::AutoPtr<Sort> sort;
+};
 
 // Class used to report any index related errors
 

@@ -6055,12 +6055,29 @@ void InternalInfoNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 void InternalInfoNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 {
-	InfoType infoType = static_cast<InfoType>(arg->as<LiteralNode>()->getSlong());
+	const InfoType infoType = static_cast<InfoType>(arg->as<LiteralNode>()->getSlong());
 
-	if (infoType == INFO_TYPE_SQLSTATE)
-		desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
-	else
-		desc->makeLong(0);
+	switch (infoType)
+	{
+		case INFO_TYPE_SQLSTATE:
+			desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
+			break;
+
+		case INFO_TYPE_CONNECTION_ID:
+		case INFO_TYPE_TRANSACTION_ID:
+		case INFO_TYPE_ROWS_AFFECTED:
+			desc->makeInt64(0);
+			break;
+
+		case INFO_TYPE_GDSCODE:
+		case INFO_TYPE_SQLCODE:
+		case INFO_TYPE_TRIGGER_ACTION:
+			desc->makeLong(0);
+			break;
+
+		default:
+			fb_assert(false);
+	}
 }
 
 void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
@@ -6071,12 +6088,29 @@ void InternalInfoNode::getDesc(thread_db* tdbb, CompilerScratch* csb, dsc* desc)
 	arg->getDesc(tdbb, csb, &argDesc);
 	fb_assert(argDesc.dsc_dtype == dtype_long);
 
-	InfoType infoType = static_cast<InfoType>(*reinterpret_cast<SLONG*>(argDesc.dsc_address));
+	const InfoType infoType = static_cast<InfoType>(*reinterpret_cast<SLONG*>(argDesc.dsc_address));
 
-	if (infoType == INFO_TYPE_SQLSTATE)
-		desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
-	else
-		desc->makeLong(0);
+	switch (infoType)
+	{
+		case INFO_TYPE_SQLSTATE:
+			desc->makeText(FB_SQLSTATE_LENGTH, ttype_ascii);
+			break;
+
+		case INFO_TYPE_CONNECTION_ID:
+		case INFO_TYPE_TRANSACTION_ID:
+		case INFO_TYPE_ROWS_AFFECTED:
+			desc->makeInt64(0);
+			break;
+
+		case INFO_TYPE_GDSCODE:
+		case INFO_TYPE_SQLCODE:
+		case INFO_TYPE_TRIGGER_ACTION:
+			desc->makeLong(0);
+			break;
+
+		default:
+			fb_assert(false);
+	}
 }
 
 ValueExprNode* InternalInfoNode::copy(thread_db* tdbb, NodeCopier& copier) const
@@ -6108,53 +6142,53 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 		return NULL;
 
 	fb_assert(value->dsc_dtype == dtype_long);
-	InfoType infoType = static_cast<InfoType>(*reinterpret_cast<SLONG*>(value->dsc_address));
+	const InfoType infoType = static_cast<InfoType>(*reinterpret_cast<SLONG*>(value->dsc_address));
+
+	dsc desc;
 
 	if (infoType == INFO_TYPE_SQLSTATE)
 	{
 		FB_SQLSTATE_STRING sqlstate;
 		request->req_last_xcp.as_sqlstate(sqlstate);
 
-		dsc desc;
 		desc.makeText(FB_SQLSTATE_LENGTH, ttype_ascii, (UCHAR*) sqlstate);
-		EVL_make_value(tdbb, &desc, impure);
-
-		return &impure->vlu_desc;
 	}
-
-	SLONG result = 0;
-
-	switch (infoType)
+	else
 	{
-		case INFO_TYPE_CONNECTION_ID:
-			result = PAG_attachment_id(tdbb);
-			break;
-		case INFO_TYPE_TRANSACTION_ID:
-			//fb_assert(sizeof(result) == sizeof(tdbb->getTransaction()->tra_number));
-			// Conversion from unsigned to SLONG, big values will be reported as negative.
-			result = tdbb->getTransaction()->tra_number;
-			break;
-		case INFO_TYPE_GDSCODE:
-			result = request->req_last_xcp.as_gdscode();
-			break;
-		case INFO_TYPE_SQLCODE:
-			result = request->req_last_xcp.as_sqlcode();
-			break;
-		case INFO_TYPE_ROWS_AFFECTED:
-			// CVC: Not sure if this counter can overflow in extreme cases
-			result = request->req_records_affected.getCount();
-			break;
-		case INFO_TYPE_TRIGGER_ACTION:
-			result = request->req_trigger_action;
-			break;
-		default:
-			BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
+		SLONG int32_result = 0;
+		SINT64 int64_result = 0;
+
+		switch (infoType)
+		{
+			case INFO_TYPE_CONNECTION_ID:
+				int64_result = PAG_attachment_id(tdbb);
+				break;
+			case INFO_TYPE_TRANSACTION_ID:
+				int64_result = tdbb->getTransaction()->tra_number;
+				break;
+			case INFO_TYPE_GDSCODE:
+				int32_result = request->req_last_xcp.as_gdscode();
+				break;
+			case INFO_TYPE_SQLCODE:
+				int32_result = request->req_last_xcp.as_sqlcode();
+				break;
+			case INFO_TYPE_ROWS_AFFECTED:
+				int64_result = request->req_records_affected.getCount();
+				break;
+			case INFO_TYPE_TRIGGER_ACTION:
+				int32_result = request->req_trigger_action;
+				break;
+			default:
+				BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
+		}
+
+		if (int64_result)
+			desc.makeInt64(0, &int64_result);
+		else
+			desc.makeLong(0, &int32_result);
 	}
 
-	dsc desc;
-	desc.makeLong(0, &result);
 	EVL_make_value(tdbb, &desc, impure);
-
 	return &impure->vlu_desc;
 }
 
@@ -8130,7 +8164,7 @@ void RecordKeyNode::make(DsqlCompilerScratch* /*dsqlScratch*/, dsc* desc)
 		{
 			if (dbKeyLength == 8)
 			{
-				desc->makeLong(0);
+				desc->makeInt64(0);
 				desc->setNullable(true);
 			}
 			else
@@ -8181,13 +8215,13 @@ void RecordKeyNode::getDesc(thread_db* /*tdbb*/, CompilerScratch* /*csb*/, dsc* 
 		case blr_record_version:
 			desc->dsc_dtype = dtype_text;
 			desc->dsc_ttype() = ttype_binary;
-			desc->dsc_length = sizeof(SLONG);
+			desc->dsc_length = sizeof(SINT64);
 			desc->dsc_scale = 0;
 			desc->dsc_flags = 0;
 			break;
 
 		case blr_record_version2:
-			desc->makeLong(0);
+			desc->makeInt64(0);
 			break;
 	}
 }
@@ -8433,10 +8467,10 @@ dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 
 		// Initialize descriptor
 
-		impure->vlu_misc.vlu_long = rpb->rpb_transaction_nr;
-		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_long;
+		impure->vlu_misc.vlu_int64 = rpb->rpb_transaction_nr;
+		impure->vlu_desc.dsc_address = (UCHAR*) &impure->vlu_misc.vlu_int64;
 		impure->vlu_desc.dsc_dtype = dtype_text;
-		impure->vlu_desc.dsc_length = 4;
+		impure->vlu_desc.dsc_length = sizeof(SINT64);
 		impure->vlu_desc.dsc_ttype() = ttype_binary;
 	}
 	else if (blrOp == blr_record_version2)
@@ -8450,8 +8484,8 @@ dsc* RecordKeyNode::execute(thread_db* /*tdbb*/, jrd_req* request) const
 			return NULL;
 		}
 
-		impure->vlu_misc.vlu_long = rpb->rpb_transaction_nr;
-		impure->vlu_desc.makeLong(0, &impure->vlu_misc.vlu_long);
+		impure->vlu_misc.vlu_int64 = rpb->rpb_transaction_nr;
+		impure->vlu_desc.makeInt64(0, &impure->vlu_misc.vlu_int64);
 	}
 
 	return &impure->vlu_desc;

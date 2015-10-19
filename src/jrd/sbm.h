@@ -42,6 +42,9 @@ typedef Firebird::SparseBitmap<ULONG> PageBitmap;
 // Bitmap of generic 32-bit integers
 typedef Firebird::SparseBitmap<ULONG> UInt32Bitmap;
 
+// Bitmap of transaction numbers
+typedef Firebird::SparseBitmap<TraNumber> TransactionBitmap;
+
 // Please do not try to turn these macros to inline routines simply.
 // They are used in very performance-sensitive places and we don't want
 // pool thread-specific pool pointer be expanded unless necessary.
@@ -60,6 +63,10 @@ typedef Firebird::SparseBitmap<ULONG> UInt32Bitmap;
 // Bitmap of page numbers
 #define PBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
 	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW_POOL(*(POOL_PTR)) Jrd::PageBitmap(*(POOL_PTR))))->set(VALUE)
+
+// Bitmap of transaction numbers
+#define TBM_SET(POOL_PTR, BITMAP_PPTR, VALUE) \
+	(*(BITMAP_PPTR) ? *(BITMAP_PPTR) : (*(BITMAP_PPTR) = FB_NEW_POOL(*(POOL_PTR)) Jrd::TransactionBitmap(*(POOL_PTR))))->set(VALUE)
 
 } //namespace Jrd
 

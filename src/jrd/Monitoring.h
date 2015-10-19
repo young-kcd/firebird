@@ -242,7 +242,7 @@ class MonitoringData FB_FINAL : public Firebird::IpcObject
 
 	struct Element
 	{
-		SLONG attId;
+		AttNumber attId;
 		ULONG length;
 	};
 
@@ -273,7 +273,7 @@ public:
 	class Writer
 	{
 	public:
-		Writer(MonitoringData* data, SLONG att_id)
+		Writer(MonitoringData* data, AttNumber att_id)
 			: dump(data)
 		{
 			fb_assert(dump);
@@ -325,7 +325,7 @@ public:
 		Firebird::UCharBuffer buffer;
 	};
 
-	typedef Firebird::HalfStaticArray<SLONG, 64> SessionList;
+	typedef Firebird::HalfStaticArray<AttNumber, 64> SessionList;
 
 	explicit MonitoringData(const Database*);
 	~MonitoringData();
@@ -336,11 +336,11 @@ public:
 	void acquire();
 	void release();
 
-	void read(SLONG, TempSpace&);
-	ULONG setup(SLONG);
+	void read(AttNumber, TempSpace&);
+	ULONG setup(AttNumber);
 	void write(ULONG, ULONG, const void*);
 
-	void cleanup(SLONG);
+	void cleanup(AttNumber);
 	void enumerate(SessionList&);
 
 private:
@@ -405,7 +405,7 @@ private:
 	static void putStatistics(SnapshotData::DumpRecord&, const RuntimeStatistics&,
 							  MonitoringData::Writer&, int, int);
 	static void putContextVars(SnapshotData::DumpRecord&, const Firebird::StringMap&,
-							   MonitoringData::Writer&, int, bool);
+							   MonitoringData::Writer&, SINT64, bool);
 	static void putMemoryUsage(SnapshotData::DumpRecord&, const Firebird::MemoryStats&,
 							   MonitoringData::Writer&, int, int);
 };

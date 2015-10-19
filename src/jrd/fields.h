@@ -76,7 +76,7 @@
 	FIELD(fld_mechanism		, nam_mechanism		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 	FIELD(fld_f_descr		, nam_desc			, dtype_blob	, BLOB_SIZE					, isc_blob_format			, NULL		, true)
 	FIELD(fld_fun_type		, nam_fun_type		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
-	FIELD(fld_trans_id		, nam_trans_id		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
+	FIELD(fld_trans_id		, nam_trans_id		, dtype_int64	, sizeof(SINT64)			, 0							, NULL		, true)
 	FIELD(fld_trans_state	, nam_trans_state	, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 	FIELD(fld_time			, nam_time			, dtype_timestamp, TIMESTAMP_SIZE			, 0							, NULL		, true)
 	FIELD(fld_trans_desc	, nam_trans_desc	, dtype_blob	, BLOB_SIZE					, isc_blob_tra				, NULL		, true)
@@ -127,9 +127,9 @@
 	FIELD(fld_r_type		, nam_r_type		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 	FIELD(fld_prc_type		, nam_prc_type		, dtype_short	, sizeof(SSHORT)			, 0							, NULL		, true)
 
-	FIELD(fld_att_id		, nam_att_id		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
-	FIELD(fld_stmt_id		, nam_stmt_id		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
-	FIELD(fld_call_id		, nam_call_id		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
+	FIELD(fld_att_id		, nam_att_id		, dtype_int64	, sizeof(SINT64)			, 0							, NULL		, true)
+	FIELD(fld_stmt_id		, nam_stmt_id		, dtype_int64	, sizeof(SINT64)			, 0							, NULL		, true)
+	FIELD(fld_call_id		, nam_call_id		, dtype_int64	, sizeof(SINT64)			, 0							, NULL		, true)
 	FIELD(fld_stat_id		, nam_stat_id		, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)
 
 	FIELD(fld_pid			, nam_pid			, dtype_long	, sizeof(SLONG)				, 0							, NULL		, true)

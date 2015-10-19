@@ -28,6 +28,7 @@
 #include "../jrd/pag.h"
 #include "../jrd/cch_proto.h"
 #include "../jrd/lck_proto.h"
+#include "../jrd/ods_proto.h"
 #include "../jrd/tpc_proto.h"
 #include "../jrd/tra_proto.h"
 #include "../common/isc_proto.h"
@@ -196,7 +197,7 @@ void TipCache::initializeTpc(thread_db *tdbb)
 			(m_blockSize - 
 				offsetof(TransactionStatusBlock, data[0])) / sizeof(CommitNumber));
 
-	int blockCount = MAX_TRA_NUMBER / m_transactionsPerBlock + 1;
+	int blockCount = MAX_SLONG / m_transactionsPerBlock + 1; // hvlad: MAX_SLONG ?
 
 	PTransactionStatusBlock* status_blocks = FB_NEW_POOL(*m_dbb->dbb_permanent) PTransactionStatusBlock[blockCount];
 	memset(status_blocks, 0, sizeof(PTransactionStatusBlock) * blockCount);
@@ -511,7 +512,7 @@ CommitNumber TipCache::snapshotState(thread_db* tdbb, TraNumber number)
 	// 1. We use read_data instead of taking a lock, to avoid possible race conditions
 	//    (they were probably not causing much harm, but consistency is a good thing)
 	// 2. Old TPC returned tra_active for transactions in limbo, which was not correct
-	Lock temp_lock(tdbb, sizeof(SLONG), LCK_tra);
+	Lock temp_lock(tdbb, sizeof(TraNumber), LCK_tra);
 	temp_lock.lck_key.lck_long = number;
 
 	if (LCK_read_data(tdbb, &temp_lock))
@@ -829,7 +830,7 @@ void TipCache::updateActiveSnapshots(thread_db* tdbb, ActiveSnapshots* activeSna
 				if (!att_states.get(slot_attachment_id, isAttachmentDead)) 
 				{
 					ThreadStatusGuard temp_status(tdbb);
-					Lock temp_lock(tdbb, sizeof(SLONG), LCK_attachment);
+					Lock temp_lock(tdbb, sizeof(AttNumber), LCK_attachment);
 					temp_lock.lck_key.lck_long = slot_attachment_id;
 					if ((isAttachmentDead = LCK_lock(tdbb, &temp_lock, LCK_EX, LCK_NO_WAIT)))
 						LCK_release(tdbb, &temp_lock);

@@ -55,7 +55,7 @@ public:
 	// Data for tracked (active) connections
 	struct ConnectionData
 	{
-        int id;
+		AttNumber id;
 		Firebird::string* description;
 
 		// Deallocate memory used by objects hanging off this structure
@@ -65,19 +65,19 @@ public:
 			description = NULL;
 		}
 
-		static const int& generate(const void* /*sender*/, const ConnectionData& item)
+		static const AttNumber& generate(const void* /*sender*/, const ConnectionData& item)
 		{
 			return item.id;
 		}
 	};
 
-	typedef Firebird::BePlusTree<ConnectionData, int, Firebird::MemoryPool, ConnectionData>
+	typedef Firebird::BePlusTree<ConnectionData, AttNumber, Firebird::MemoryPool, ConnectionData>
 		ConnectionsTree;
 
 	// Data for tracked (active) transactions
 	struct TransactionData
 	{
-		unsigned id;
+		TraNumber id;
 		Firebird::string* description;
 
 		// Deallocate memory used by objects hanging off this structure
@@ -87,28 +87,28 @@ public:
 			description = NULL;
 		}
 
-		static const unsigned& generate(const void* /*sender*/, const TransactionData& item)
+		static const TraNumber& generate(const void* /*sender*/, const TransactionData& item)
 		{
 			return item.id;
 		}
 	};
 
-	typedef Firebird::BePlusTree<TransactionData, unsigned, Firebird::MemoryPool, TransactionData>
+	typedef Firebird::BePlusTree<TransactionData, TraNumber, Firebird::MemoryPool, TransactionData>
 		TransactionsTree;
 
 	// Data for tracked (active) statements
 	struct StatementData
 	{
-		unsigned int id;
+		StmtNumber id;
 		Firebird::string* description; // NULL in this field indicates that tracing of this statement is not desired
 
-		static const unsigned int& generate(const void* /*sender*/, const StatementData& item)
+		static const StmtNumber& generate(const void* /*sender*/, const StatementData& item)
 		{
 			return item.id;
 		}
 	};
 
-	typedef Firebird::BePlusTree<StatementData, unsigned int, Firebird::MemoryPool, StatementData>
+	typedef Firebird::BePlusTree<StatementData, StmtNumber, Firebird::MemoryPool, StatementData>
 		StatementsTree;
 
 	typedef void* ServiceId;

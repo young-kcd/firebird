@@ -24,6 +24,16 @@
 #include "../jrd/ods.h"
 #include "../jrd/ods_proto.h"
 
+using namespace Firebird;
+
+namespace
+{
+	const FB_SIZE_T NEXT_INDEX = 0;
+	const FB_SIZE_T OIT_INDEX = 1;
+	const FB_SIZE_T OAT_INDEX = 2;
+	const FB_SIZE_T OST_INDEX = 3;
+}
+
 namespace Ods {
 
 bool isSupported(USHORT majorVersion, USHORT minorVersion)
@@ -33,24 +43,6 @@ bool isSupported(USHORT majorVersion, USHORT minorVersion)
 
 	if (!isFirebird)
 		return false;
-
-#ifdef ODS_8_TO_CURRENT
-	// Obsolete: Support InterBase major ODS numbers from 8 to 10
-	/*
-	if (!isFirebird)
-	{
-		return (majorVersion >= ODS_VERSION8 &&
-				majorVersion <= ODS_VERSION10);
-	}
-	*/
-
-	// This is for future ODS versions
-	if (majorVersion > ODS_VERSION10 &&
-		majorVersion < ODS_VERSION)
-	{
-		return true;
-	}
-#endif
 
 	// Support current ODS of the engine
 	if (majorVersion == ODS_VERSION &&
@@ -166,6 +158,99 @@ Firebird::string pagtype(UCHAR type)
 		rc.printf("unknown (%d)", type);
 
 	return rc;
+}
+
+TraNumber getNT(const header_page* page)
+{
+	return (TraNumber) page->hdr_tra_high[NEXT_INDEX] << BITS_PER_LONG | page->hdr_next_transaction;
+}
+
+TraNumber getOIT(const header_page* page)
+{
+	return (TraNumber) page->hdr_tra_high[OIT_INDEX] << BITS_PER_LONG | page->hdr_oldest_transaction;
+}
+
+TraNumber getOAT(const header_page* page)
+{
+	return (TraNumber) page->hdr_tra_high[OAT_INDEX] << BITS_PER_LONG | page->hdr_oldest_active;
+}
+
+TraNumber getOST(const header_page* page)
+{
+	return (TraNumber) page->hdr_tra_high[OST_INDEX] << BITS_PER_LONG | page->hdr_oldest_snapshot;
+}
+
+void writeNT(header_page* page, TraNumber number)
+{
+	page->hdr_next_transaction = (ULONG) (number & MAX_ULONG);
+	const SLONG high_word = number >> BITS_PER_LONG;
+	fb_assert(high_word <= MAX_USHORT);
+	page->hdr_tra_high[NEXT_INDEX] = (USHORT) high_word;
+}
+
+void writeOIT(header_page* page, TraNumber number)
+{
+	page->hdr_oldest_transaction = (ULONG) (number & MAX_ULONG);
+	const SLONG high_word = number >> BITS_PER_LONG;
+	fb_assert(high_word <= MAX_USHORT);
+	page->hdr_tra_high[OIT_INDEX] = (USHORT) high_word;
+}
+
+void writeOAT(header_page* page, TraNumber number)
+{
+	page->hdr_oldest_active = (ULONG) (number & MAX_ULONG);
+	const SLONG high_word = number >> BITS_PER_LONG;
+	fb_assert(high_word <= MAX_USHORT);
+	page->hdr_tra_high[OAT_INDEX] = (USHORT) high_word;
+}
+
+void writeOST(header_page* page, TraNumber number)
+{
+	page->hdr_oldest_snapshot = (ULONG) (number & MAX_ULONG);
+	const SLONG high_word = number >> BITS_PER_LONG;
+	fb_assert(high_word <= MAX_USHORT);
+	page->hdr_tra_high[OST_INDEX] = (USHORT) high_word;
+}
+
+TraNumber getTraNum(const void* ptr)
+{
+	rhd* const record = (rhd*) ptr;
+	USHORT high_word = 0;
+
+	if (record->rhd_flags & rhd_long_tranum)
+	{
+		high_word = (record->rhd_flags & rhd_incomplete) ?
+			((rhdf*) ptr)->rhdf_tra_high : ((rhde*) ptr)->rhde_tra_high;
+	}
+
+	return ((TraNumber) high_word << BITS_PER_LONG) | record->rhd_transaction;
+}
+
+void writeTraNum(void* ptr, TraNumber number, FB_SIZE_T header_size)
+{
+	rhd* const record = (rhd*) ptr;
+
+	record->rhd_transaction = (ULONG) (number & MAX_ULONG);
+
+	const SLONG high_word = number >> BITS_PER_LONG;
+	fb_assert(high_word <= MAX_USHORT);
+
+	if (high_word)
+		record->rhd_flags |= rhd_long_tranum;
+
+	if (record->rhd_flags & rhd_long_tranum)
+	{
+		if (record->rhd_flags & rhd_incomplete)
+		{
+			fb_assert(header_size == RHDF_SIZE);
+			((rhdf*) ptr)->rhdf_tra_high = (USHORT) high_word;
+		}
+		else
+		{
+			fb_assert(header_size == RHDE_SIZE);
+			((rhde*) ptr)->rhde_tra_high = (USHORT) high_word;
+		}
+	}
 }
 
 } // namespace

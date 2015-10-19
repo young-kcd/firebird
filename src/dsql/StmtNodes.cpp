@@ -7358,7 +7358,7 @@ void SelectNode::genBlr(DsqlCompilerScratch* dsqlScratch)
 
 					parameter->par_desc.dsc_dtype = dtype_text;
 					parameter->par_desc.dsc_ttype() = ttype_binary;
-					parameter->par_desc.dsc_length = relation->rel_dbkey_length / 2;
+					parameter->par_desc.dsc_length = sizeof(SINT64);
 				}
 			}
 		}

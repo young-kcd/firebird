@@ -60,11 +60,6 @@ const StreamType STREAM_MAP_LENGTH = MAX_STREAMS + 2;
 // New formula is simply MAX_STREAMS / BITS_PER_LONG
 const int OPT_STREAM_BITS = MAX_STREAMS / BITS_PER_LONG; // 128 with 4096 streams
 
-// Number of streams, conjuncts, indices that will be statically allocated
-// in various arrays. Larger numbers will have to be allocated dynamically
-// CVC: I think we need to have a special, higher value for streams.
-const int OPT_STATIC_ITEMS = 64;
-
 typedef Firebird::HalfStaticArray<StreamType, OPT_STATIC_ITEMS> StreamList;
 typedef Firebird::SortedArray<StreamType> SortedStreamList;
 

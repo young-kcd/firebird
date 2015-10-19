@@ -2164,7 +2164,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 		else if (nameStr == DATABASE_NAME)
 			resultStr = dbb->dbb_database_name.ToString();
 		else if (nameStr == SESSION_ID_NAME)
-			resultStr.printf("%d", PAG_attachment_id(tdbb));
+			resultStr.printf("%"SQUADFORMAT, PAG_attachment_id(tdbb));
 		else if (nameStr == NETWORK_PROTOCOL_NAME)
 		{
 			if (attachment->att_network_protocol.isEmpty())
@@ -2184,7 +2184,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			if (!attachment->att_remote_pid)
 				return NULL;
 
-			resultStr.printf("%d", attachment->att_remote_pid);
+			resultStr.printf("%"SLONGFORMAT, attachment->att_remote_pid);
 		}
 		else if (nameStr == CLIENT_PROCESS_NAME)
 		{
@@ -2208,7 +2208,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 			resultStr = attachment->att_user->usr_sql_role_name;
 		}
 		else if (nameStr == TRANSACTION_ID_NAME)
-			resultStr.printf("%lu", transaction->tra_number);
+			resultStr.printf("%"SQUADFORMAT, transaction->tra_number);
 		else if (nameStr == ISOLATION_LEVEL_NAME)
 		{
 			if (transaction->tra_flags & TRA_read_committed)
@@ -2219,7 +2219,7 @@ dsc* evlGetContext(thread_db* tdbb, const SysFunction*, const NestValueArray& ar
 				resultStr = SNAPSHOT_VALUE;
 		}
 		else if (nameStr == LOCK_TIMEOUT_NAME)
-			resultStr.printf("%d", transaction->tra_lock_timeout);
+			resultStr.printf("%"SLONGFORMAT, transaction->tra_lock_timeout);
 		else if (nameStr == READ_ONLY_NAME)
 			resultStr = (transaction->tra_flags & TRA_readonly) ? TRUE_VALUE : FALSE_VALUE;
 		else

@@ -51,6 +51,7 @@
 #include "../jrd/jrd_proto.h"
 #include "../jrd/lck_proto.h"
 #include "../jrd/pag_proto.h"
+#include "../jrd/ods_proto.h"
 #include "../jrd/os/pio_proto.h"
 #include "../jrd/sdw_proto.h"
 #include "../jrd/shut_proto.h"
@@ -2412,8 +2413,8 @@ static Lock* alloc_page_lock(thread_db* tdbb, BufferDesc* bdb)
  *
  **************************************/
 	SET_TDBB(tdbb);
-	Database* dbb = tdbb->getDatabase();
-	BufferControl *bcb = bdb->bdb_bcb;
+	Database* const dbb = tdbb->getDatabase();
+	BufferControl* const bcb = bdb->bdb_bcb;
 
 	const USHORT lockLen = PageNumber::getLockLen();
 
@@ -4805,13 +4806,18 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 	// the next_transaction > oldest_active transaction
 	if (bdb->bdb_page == HEADER_PAGE_NUMBER)
 	{
-		const header_page* header = (header_page*) page;
-		if (header->hdr_next_transaction)
+		const header_page* const header = (header_page*) page;
+
+		const TraNumber next_transaction = Ods::getNT(header);
+		const TraNumber oldest_active = Ods::getOAT(header);
+		const TraNumber oldest_transaction = Ods::getOIT(header);
+
+		if (next_transaction)
 		{
-			if (header->hdr_oldest_active > header->hdr_next_transaction)
+			if (oldest_active > next_transaction)
 				BUGCHECK(266);	// next transaction older than oldest active
 
-			if (header->hdr_oldest_transaction > header->hdr_next_transaction)
+			if (oldest_transaction > next_transaction)
 				BUGCHECK(267);	// next transaction older than oldest transaction
 		}
 	}
@@ -4887,7 +4893,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 			{
 				// We finished. Adjust transaction accounting and get ready for exit
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER)
-					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
+					dbb->dbb_last_header_write = Ods::getNT((header_page*) page);
 			}
 			else
 			{
@@ -4916,7 +4922,7 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 				}
 
 				if (bdb->bdb_page == HEADER_PAGE_NUMBER)
-					dbb->dbb_last_header_write = ((header_page*) page)->hdr_next_transaction;
+					dbb->dbb_last_header_write = Ods::getNT((header_page*) page);
 
 				if (dbb->dbb_shadow && !isTempPage)
 					result = CCH_write_all_shadows(tdbb, 0, bdb, status, inAst);
@@ -4945,7 +4951,8 @@ static bool write_page(thread_db* tdbb, BufferDesc* bdb, FbStatusVector* const s
 		// Destination difference page number is only valid between MARK and
 		// write_page so clean it now to avoid confusion
 		bdb->bdb_difference_page = 0;
-		bdb->bdb_transactions = bdb->bdb_mark_transaction = 0;
+		bdb->bdb_transactions = 0;
+		bdb->bdb_mark_transaction = 0;
 
 		if (!(bdb->bdb_bcb->bcb_flags & BCB_keep_pages))
 			removeDirty(bdb->bdb_bcb, bdb);

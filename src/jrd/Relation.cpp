@@ -44,9 +44,10 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 	Jrd::Attachment* attachment = tdbb->getAttachment();
 	Database* dbb = tdbb->getDatabase();
 
-	ULONG inst_id;
+	SINT64 inst_id;
 	// Vlad asked for this compile-time check to make sure we can contain a txn number here
-	typedef int RangeCheck[sizeof(inst_id) >= sizeof(TraNumber)];
+	typedef int RangeCheck1[sizeof(inst_id) >= sizeof(TraNumber)];
+	typedef int RangeCheck2[sizeof(inst_id) >= sizeof(AttNumber)];
 
 	if (rel_flags & REL_temp_tran)
 	{
@@ -136,7 +137,7 @@ RelationPages* jrd_rel::getPagesInternal(thread_db* tdbb, TraNumber tran, bool a
 
 #ifdef VIO_DEBUG
 			VIO_trace(DEBUG_WRITES,
-				"jrd_rel::getPages inst %"ULONGFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
+				"jrd_rel::getPages inst %"SQUADFORMAT", irp %"SLONGFORMAT", idx %u, idx_root %"SLONGFORMAT", addr 0x%x\n",
 				newPages->rel_instance_id,
 				newPages->rel_index_root,
 				idx->idx_id,
@@ -190,13 +191,11 @@ bool jrd_rel::delPages(thread_db* tdbb, TraNumber tran, RelationPages* aPages)
 
 	rel_pages_inst->remove(pos);
 
-	if (pages->rel_index_root) {
+	if (pages->rel_index_root)
 		IDX_delete_indices(tdbb, this, pages);
-	}
 
-	if (pages->rel_pages) {
+	if (pages->rel_pages)
 		DPM_delete_relation_pages(tdbb, this, pages);
-	}
 
 	pages->free(rel_pages_free);
 	return true;
@@ -208,13 +207,13 @@ void jrd_rel::getRelLockKey(thread_db* tdbb, UCHAR* key)
 	memcpy(key, &val, sizeof(ULONG));
 	key += sizeof(ULONG);
 
-	const ULONG inst_id = getPages(tdbb)->rel_instance_id;
-	memcpy(key, &inst_id, sizeof(ULONG));
+	const SINT64 inst_id = getPages(tdbb)->rel_instance_id;
+	memcpy(key, &inst_id, sizeof(SINT64));
 }
 
 USHORT jrd_rel::getRelLockKeyLength() const
 {
-	return sizeof(ULONG) + sizeof(SLONG);
+	return sizeof(ULONG) + sizeof(SINT64);
 }
 
 void jrd_rel::cleanUp()
@@ -238,7 +237,7 @@ void jrd_rel::fillPagesSnapshot(RelPagesSnapshot& snapshot, const bool attachmen
 				relPages->addRef();
 			}
 			else if ((rel_flags & REL_temp_conn) &&
-				(ULONG) PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id)
+				PAG_attachment_id(snapshot.spt_tdbb) == relPages->rel_instance_id)
 			{
 				snapshot.add(relPages);
 				relPages->addRef();

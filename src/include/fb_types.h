@@ -142,16 +142,19 @@ typedef USHORT TTYPE_ID;
 // Stream type, had to move it from dsql/Nodes.h due to circular dependencies.
 typedef ULONG StreamType;
 
-// The type of Jrd's transaction.
-typedef ULONG TraNumber;
-typedef ULONG CommitNumber;
-typedef ULONG SnapshotHandle;
-
 // Alignment rule
 template <typename T>
 inline T FB_ALIGN(T n, uintptr_t b)
 {
 	return (T) ((((uintptr_t) n) + b - 1) & ~(b - 1));
 }
+
+// Various object IDs (longer-than-32-bit)
+
+typedef FB_UINT64 AttNumber;
+typedef FB_UINT64 TraNumber;
+typedef FB_UINT64 StmtNumber;
+typedef FB_UINT64 CommitNumber;
+typedef ULONG SnapshotHandle;
 
 #endif /* INCLUDE_FB_TYPES_H */

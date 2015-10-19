@@ -233,7 +233,7 @@ void TracePluginImpl::logRecord(const char* action)
 void TracePluginImpl::logRecordConn(const char* action, ITraceDatabaseConnection* connection)
 {
 	// Lookup connection description
-	const int conn_id = connection->getConnectionID();
+	const AttNumber conn_id = connection->getConnectionID();
 	bool reg = false;
 
 	while (true)
@@ -251,7 +251,7 @@ void TracePluginImpl::logRecordConn(const char* action, ITraceDatabaseConnection
 		if (reg)
 		{
 			string temp;
-			temp.printf("\t%s (ATT_%d, <unknown, bug?>)" NEWLINE,
+			temp.printf("\t%s (ATT_%"SQUADFORMAT", <unknown, bug?>)" NEWLINE,
 				config.db_filename.c_str(), conn_id);
 			record.insert(0, temp);
 			break;
@@ -279,7 +279,7 @@ void TracePluginImpl::logRecordConn(const char* action, ITraceDatabaseConnection
 void TracePluginImpl::logRecordTrans(const char* action, ITraceDatabaseConnection* connection,
 	ITraceTransaction* transaction)
 {
-	const unsigned tra_id = transaction->getTransactionID();
+	const TraNumber tra_id = transaction->getTransactionID();
 	bool reg = false;
 	while (true)
 	{
@@ -297,7 +297,7 @@ void TracePluginImpl::logRecordTrans(const char* action, ITraceDatabaseConnectio
 		if (reg)
 		{
 			string temp;
-			temp.printf("\t\t(TRA_%lu, <unknown, bug?>)" NEWLINE, transaction->getTransactionID());
+			temp.printf("\t\t(TRA_%"SQUADFORMAT", <unknown, bug?>)" NEWLINE, transaction->getTransactionID());
 			record.insert(0, temp);
 			break;
 		}
@@ -327,7 +327,7 @@ void TracePluginImpl::logRecordProcFunc(const char* action, ITraceDatabaseConnec
 void TracePluginImpl::logRecordStmt(const char* action, ITraceDatabaseConnection* connection,
 	ITraceTransaction* transaction, ITraceStatement* statement, bool isSQL)
 {
-	const int stmt_id = statement->getStmtID();
+	const StmtNumber stmt_id = statement->getStmtID();
 	bool reg = false;
 	bool log = true;
 
@@ -354,7 +354,7 @@ void TracePluginImpl::logRecordStmt(const char* action, ITraceDatabaseConnection
 		if (reg)
 		{
 			string temp;
-			temp.printf(NEWLINE "Statement %d, <unknown, bug?>:" NEWLINE, stmt_id);
+			temp.printf(NEWLINE "Statement %"SQUADFORMAT", <unknown, bug?>:" NEWLINE, stmt_id);
 			record.insert(0, temp);
 			break;
 		}
@@ -952,7 +952,7 @@ void TracePluginImpl::register_connection(ITraceDatabaseConnection* connection)
 
 	string tmp(*getDefaultMemoryPool());
 
-	conn_data.description->printf("\t%s (ATT_%d",  connection->getDatabaseName(), connection->getConnectionID());
+	conn_data.description->printf("\t%s (ATT_%"SQUADFORMAT, connection->getDatabaseName(), connection->getConnectionID());
 
 	const char* user = connection->getUserName();
 	if (user)
@@ -1050,7 +1050,7 @@ void TracePluginImpl::register_transaction(ITraceTransaction* transaction)
 	TransactionData trans_data;
 	trans_data.id = transaction->getTransactionID();
 	trans_data.description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
-	trans_data.description->printf("\t\t(TRA_%lu, ", trans_data.id);
+	trans_data.description->printf("\t\t(TRA_%"SQUADFORMAT", ", trans_data.id);
 
 	switch (transaction->getIsolation())
 	{
@@ -1526,7 +1526,7 @@ void TracePluginImpl::register_blr_statement(ITraceBLRStatement* statement)
 	string* description = FB_NEW_POOL(*getDefaultMemoryPool()) string(*getDefaultMemoryPool());
 
 	if (statement->getStmtID()) {
-		description->printf(NEWLINE "Statement %d:" NEWLINE, statement->getStmtID());
+		description->printf(NEWLINE "Statement %"SQUADFORMAT":" NEWLINE, statement->getStmtID());
 	}
 
 	if (config.print_blr)

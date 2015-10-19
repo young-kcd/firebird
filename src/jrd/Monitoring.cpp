@@ -135,7 +135,7 @@ void MonitoringData::release()
 }
 
 
-void MonitoringData::read(SLONG att_id, TempSpace& temp)
+void MonitoringData::read(AttNumber att_id, TempSpace& temp)
 {
 	offset_t position = 0;
 
@@ -177,7 +177,7 @@ void MonitoringData::read(SLONG att_id, TempSpace& temp)
 }
 
 
-ULONG MonitoringData::setup(SLONG att_id)
+ULONG MonitoringData::setup(AttNumber att_id)
 {
 	ensureSpace(sizeof(Element));
 
@@ -209,7 +209,7 @@ void MonitoringData::write(ULONG offset, ULONG length, const void* buffer)
 }
 
 
-void MonitoringData::cleanup(SLONG att_id)
+void MonitoringData::cleanup(AttNumber att_id)
 {
 	// Remove information about the given session
 
@@ -337,7 +337,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 	Attachment* const attachment = tdbb->getAttachment();
 	fb_assert(attachment);
 
-	const SLONG self_att_id = attachment->att_attachment_id;
+	const AttNumber self_att_id = attachment->att_attachment_id;
 
 	// Initialize record buffers
 	RecordBuffer* const dbb_buffer = allocBuffer(tdbb, pool, rel_mon_database);
@@ -379,7 +379,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 		ThreadStatusGuard temp_status(tdbb);
 
-		for (SLONG* iter = sessions.begin(); iter != sessions.end(); iter++)
+		for (AttNumber* iter = sessions.begin(); iter != sessions.end(); iter++)
 		{
 			if (*iter != self_att_id)
 			{
@@ -403,7 +403,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 		ThreadStatusGuard temp_status(tdbb);
 		lock->lck_type = LCK_attachment;
 
-		for (SLONG* iter = sessions.begin(); iter != sessions.end(); iter++)
+		for (AttNumber* iter = sessions.begin(); iter != sessions.end(); iter++)
 		{
 			if (*iter != self_att_id)
 			{
@@ -1172,7 +1172,8 @@ void Monitoring::putStatistics(SnapshotData::DumpRecord& record, const RuntimeSt
 }
 
 void Monitoring::putContextVars(SnapshotData::DumpRecord& record, const StringMap& variables,
-								MonitoringData::Writer& writer, int object_id, bool is_attachment)
+								MonitoringData::Writer& writer, SINT64 object_id,
+								bool is_attachment)
 {
 	StringMap::ConstAccessor accessor(&variables);
 
@@ -1180,10 +1181,8 @@ void Monitoring::putContextVars(SnapshotData::DumpRecord& record, const StringMa
 	{
 		record.reset(rel_mon_ctx_vars);
 
-		if (is_attachment)
-			record.storeInteger(f_mon_ctx_var_att_id, object_id);
-		else
-			record.storeInteger(f_mon_ctx_var_tra_id, object_id);
+		const int field_id = is_attachment ? f_mon_ctx_var_att_id : f_mon_ctx_var_tra_id;
+		record.storeInteger(field_id, object_id);
 
 		record.storeString(f_mon_ctx_var_name, accessor.current()->first);
 		record.storeString(f_mon_ctx_var_value, accessor.current()->second);

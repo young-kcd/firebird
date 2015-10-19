@@ -468,6 +468,9 @@
 #define isc_spb_tra_advise_commit		30
 #define isc_spb_tra_advise_rollback		31
 #define isc_spb_tra_advise_unknown		33
+#define isc_spb_tra_id_64				46
+#define isc_spb_single_tra_id_64		47
+#define isc_spb_multi_tra_id_64			48
 
 #define isc_spb_rpr_validate_db			0x01
 #define isc_spb_rpr_sweep_db			0x02

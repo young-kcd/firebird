@@ -310,7 +310,7 @@ struct index_root_page
 	struct irt_repeat
 	{
 		ULONG irt_root;				// page number of index root
-		TraNumber irt_transaction;	// transaction in progress
+		ULONG irt_transaction;		// transaction in progress (lowest 32 bits)
 		USHORT irt_desc;			// offset to key descriptions
 		UCHAR irt_keys;				// number of keys in index
 		UCHAR irt_flags;
@@ -348,13 +348,13 @@ struct header_page
 	USHORT hdr_ods_version;			// Version of on-disk structure
 	ULONG hdr_PAGES;				// Page number of PAGES relation
 	ULONG hdr_next_page;			// Page number of next hdr page
-	TraNumber hdr_oldest_transaction;	// Oldest interesting transaction
-	TraNumber hdr_oldest_active;		// Oldest transaction thought active
-	TraNumber hdr_next_transaction;		// Next transaction id
+	ULONG hdr_oldest_transaction;	// Oldest interesting transaction
+	ULONG hdr_oldest_active;		// Oldest transaction thought active
+	ULONG hdr_next_transaction;		// Next transaction id
 	USHORT hdr_sequence;			// sequence number of file
 	USHORT hdr_flags;				// Flag settings, see below
 	SLONG hdr_creation_date[2];		// Date/time of creation
-	SLONG hdr_attachment_id;		// Next attachment id
+	ULONG hdr_attachment_id;		// Next attachment id
 	SLONG hdr_shadow_count;			// Event count for shadow synchronization
 	UCHAR hdr_cpu;					// CPU database was created on
 	UCHAR hdr_os;					// OS database was created under
@@ -363,12 +363,13 @@ struct header_page
 	USHORT hdr_ods_minor;			// Update version of ODS
 	USHORT hdr_end;					// offset of HDR_end in page
 	ULONG hdr_page_buffers;			// Page buffers for database cache
-	TraNumber hdr_oldest_snapshot;		// Oldest snapshot of active transactions
+	ULONG hdr_oldest_snapshot;		// Oldest snapshot of active transactions
 	SLONG hdr_backup_pages; 		// The amount of pages in files locked for backup
 	ULONG hdr_crypt_page;			// Page at which processing is in progress
 	ULONG hdr_top_crypt;			// Last page to crypt
 	TEXT hdr_crypt_plugin[32];		// Name of plugin used to crypt this DB
-	SLONG hdr_misc[3];				// Stuff to be named later - reserved for minor changes
+	SLONG hdr_att_high;				// High word of the next attachment counter
+	USHORT hdr_tra_high[4];			// High words of the transaction counters
 	UCHAR hdr_data[1];				// Misc data
 };
 
@@ -527,28 +528,44 @@ struct generator_page
 
 struct rhd
 {
-	TraNumber rhd_transaction;	// transaction id
+	ULONG rhd_transaction;		// transaction id (lowest 32 bits)
 	ULONG rhd_b_page;			// back pointer
 	USHORT rhd_b_line;			// back line
 	USHORT rhd_flags;			// flags, etc
 	UCHAR rhd_format;			// format version
-	UCHAR rhd_data[1];
+	UCHAR rhd_data[1];			// record data
 };
 
 #define RHD_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::rhd, rhd_data[0]))
+
+// Record header extended to hold long transaction id
+
+struct rhde
+{
+	ULONG rhde_transaction;		// transaction id (lowest 32 bits)
+	ULONG rhde_b_page;			// back pointer
+	USHORT rhde_b_line;			// back line
+	USHORT rhde_flags;			// flags, etc
+	UCHAR rhde_format;			// format version	// until here, same as rhd
+	USHORT rhde_tra_high;		// higher bits of transaction id
+	UCHAR rhde_data[1];			// record data
+};
+
+#define RHDE_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::rhde, rhde_data[0]))
 
 // Record header for fragmented record
 
 struct rhdf
 {
-	TraNumber rhdf_transaction;	// transaction id
+	ULONG rhdf_transaction;		// transaction id (lowest 32 bits)
 	ULONG rhdf_b_page;			// back pointer
 	USHORT rhdf_b_line;			// back line
 	USHORT rhdf_flags;			// flags, etc
-	UCHAR rhdf_format;			// format version    // until here, same than rhd
+	UCHAR rhdf_format;			// format version    // until here, same as rhd
+	USHORT rhdf_tra_high;		// higher bits of transaction id
 	ULONG rhdf_f_page;			// next fragment page
 	USHORT rhdf_f_line;			// next fragment line
-	UCHAR rhdf_data[1];			// Blob data
+	UCHAR rhdf_data[1];			// record data
 };
 
 #define RHDF_SIZE static_cast<FB_SIZE_T>(offsetof(Ods::rhdf, rhdf_data[0]))
@@ -583,12 +600,11 @@ const USHORT rhd_incomplete		= 8;		// record is incomplete
 const USHORT rhd_blob			= 16;		// isn't a record but a blob
 const USHORT rhd_stream_blob	= 32;		// blob is a stream mode blob
 const USHORT rhd_delta			= 32;		// prior version is differences only
-											// Tested in validation.cpp's walk_chain but never set
 const USHORT rhd_large			= 64;		// object is large
 const USHORT rhd_damaged		= 128;		// object is known to be damaged
 const USHORT rhd_gc_active		= 256;		// garbage collecting dead record version
-//const USHORT rhd_uk_modified	= 512;		// record key field values are changed
-
+const USHORT rhd_uk_modified	= 512;		// record key field values are changed
+const USHORT rhd_long_tranum	= 1024;		// transaction number is 64-bit
 
 
 // This (not exact) copy of class DSC is used to store descriptors on disk.

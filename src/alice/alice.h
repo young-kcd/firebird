@@ -79,7 +79,7 @@ struct user_action
 	bool ua_read_only;
 	SLONG ua_shutdown_delay;
 	SLONG ua_sweep_interval;
-	SLONG ua_transaction;
+	TraNumber ua_transaction;
 	SLONG ua_page_buffers;
 	USHORT ua_debug;
 	ULONG ua_val_errors[MAX_VAL_ERRORS];
@@ -100,19 +100,19 @@ public:
 	UCHAR str_data[2];
 };
 
-// Transaction block: used to store info about a multidatabase transaction.
+// Transaction block: used to store info about a multi-database transaction.
 // Transaction Description Record
 
 struct tdr : public pool_alloc<alice_type_tdr>
 {
-	tdr* tdr_next;					// next subtransaction
-	SLONG tdr_id;					// database-specific transaction id
+	tdr* tdr_next;					// next sub-transaction
+	TraNumber tdr_id;				// database-specific transaction id
 	alice_str* tdr_fullpath;		// full (possibly) remote pathname
 	const TEXT* tdr_filename;		// filename within full pathname
 	alice_str* tdr_host_site;		// host for transaction
 	alice_str* tdr_remote_site;		// site for remote transaction
 	FB_API_HANDLE tdr_handle;		// reconnected transaction handle
-	FB_API_HANDLE tdr_db_handle;	// reattached database handle
+	FB_API_HANDLE tdr_db_handle;	// re-attached database handle
 	USHORT tdr_db_caps;				// capabilities of database
 	USHORT tdr_state;				// see flags below
 };

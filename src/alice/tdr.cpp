@@ -53,7 +53,7 @@ static SINT64 ask();
 static void print_description(const tdr*);
 static void reattach_database(tdr*);
 static void reattach_databases(tdr*);
-static bool reconnect(FB_API_HANDLE, SLONG, const TEXT*, SINT64);
+static bool reconnect(FB_API_HANDLE, TraNumber, const TEXT*, SINT64);
 
 
 static const UCHAR limbo_info[] = { isc_info_limbo, isc_info_end };
@@ -285,7 +285,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switche
 		return;
 	}
 
-    SLONG id;
+    TraNumber id;
    	tdr* trans;
 	UCHAR* ptr = buffer;
 	bool flag = true;
@@ -298,7 +298,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switche
 		switch (item)
 		{
 		case isc_info_limbo:
-			id = gds__vax_integer(ptr, length);
+			id = isc_portable_integer(ptr, length);
 			if (switches & (sw_commit | sw_rollback | sw_two_phase | sw_prompt))
 			{
 				TDR_reconnect_multiple(handle, id, name, switches);
@@ -312,16 +312,19 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switche
 			}
 			if (trans = MET_get_transaction(status_vector, handle, id))
 			{
-				tdgbl->uSvc->putSLong(isc_spb_multi_tra_id, id);
+				if (id > TraNumber(MAX_SLONG))
+					tdgbl->uSvc->putSInt64(isc_spb_multi_tra_id_64, id);
+				else
+					tdgbl->uSvc->putSLong(isc_spb_multi_tra_id, (SLONG) id);
 				reattach_databases(trans);
 				TDR_get_states(trans);
 				TDR_shutdown_databases(trans);
 				print_description(trans);
 			}
+			else if (id > TraNumber(MAX_SLONG))
+				tdgbl->uSvc->putSInt64(isc_spb_single_tra_id_64, id);
 			else
-			{
-				tdgbl->uSvc->putSLong(isc_spb_single_tra_id, id);
-			}
+				tdgbl->uSvc->putSLong(isc_spb_single_tra_id, (SLONG) id);
 			ptr += length;
 			break;
 
@@ -362,7 +365,7 @@ void TDR_list_limbo(FB_API_HANDLE handle, const TEXT* name, const SINT64 switche
 //		gfix user.
 //
 
-bool TDR_reconnect_multiple(FB_API_HANDLE handle, SLONG id, const TEXT* name, SINT64 switches)
+bool TDR_reconnect_multiple(FB_API_HANDLE handle, TraNumber id, const TEXT* name, SINT64 switches)
 {
 	ISC_STATUS_ARRAY status_vector;
 
@@ -531,7 +534,10 @@ static void print_description(const tdr* trans)
 				// msg 94: Transaction %ld
 				ALICE_print(94, SafeArg() << ptr->tdr_id);
 			}
-			tdgbl->uSvc->putSLong(isc_spb_tra_id, ptr->tdr_id);
+			if (ptr->tdr_id > TraNumber(MAX_SLONG))
+				tdgbl->uSvc->putSInt64(isc_spb_tra_id_64, ptr->tdr_id);
+			else
+				tdgbl->uSvc->putSLong(isc_spb_tra_id, (SLONG) ptr->tdr_id);
 		}
 
 		switch (ptr->tdr_state)
@@ -808,14 +814,13 @@ static void reattach_databases(tdr* trans)
 //		Commit or rollback a named transaction.
 //
 
-static bool reconnect(FB_API_HANDLE handle, SLONG number, const TEXT* name, SINT64 switches)
+static bool reconnect(FB_API_HANDLE handle, TraNumber number, const TEXT* name, SINT64 switches)
 {
 	ISC_STATUS_ARRAY status_vector;
 
-	const SLONG id = gds__vax_integer(reinterpret_cast<const UCHAR*>(&number), 4);
 	FB_API_HANDLE transaction = 0;
 	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
-								   sizeof(id), reinterpret_cast<const char*>(&id)))
+								  sizeof(number), reinterpret_cast<const char*>(&number)))
 	{
 		ALICE_print(90, SafeArg() << name);
 		// msg 90: failed to reconnect to a transaction in database %s

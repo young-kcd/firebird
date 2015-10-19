@@ -308,7 +308,7 @@ int alice(Firebird::UtilSvc* uSvc)
 				ALICE_error(10);	// msg 10: transaction number or "all" required
 			}
 			ALICE_upper_case(*argv++, string, sizeof(string));
-			if (!(tdgbl->ALICE_data.ua_transaction = atoi(string)))
+			if (!sscanf(string, "%"SQUADFORMAT, &tdgbl->ALICE_data.ua_transaction))
 			{
 				if (strcmp(string, "ALL")) {
 					ALICE_error(10);	// msg 10: transaction number or "all" required

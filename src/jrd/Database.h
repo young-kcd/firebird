@@ -400,7 +400,7 @@ public:
 	TraNumber dbb_oldest_transaction;	// Cached "oldest interesting" transaction
 	TraNumber dbb_oldest_snapshot;		// Cached "oldest snapshot" of all active transactions
 	TraNumber dbb_next_transaction;		// Next transaction id used by NETWARE
-	SLONG dbb_attachment_id;			// Next attachment id for ReadOnly DB's
+	AttNumber dbb_attachment_id;		// Next attachment id for ReadOnly DB's
 	ULONG dbb_page_buffers;				// Page buffers from header page
 
 	GarbageCollector*	dbb_garbage_collector;	// GarbageCollector class
@@ -489,11 +489,11 @@ private:
 	~Database();
 
 public:
-	SLONG generateAttachmentId();
+	AttNumber generateAttachmentId();
 	TraNumber generateTransactionId();
-	SLONG generateStatementId();
+	StmtNumber generateStatementId();
 //	void assignLatestTransactionId(TraNumber number);
-	void assignLatestAttachmentId(SLONG number);
+	void assignLatestAttachmentId(AttNumber number);
 	
 
 	USHORT getMaxIndexKeyLength() const

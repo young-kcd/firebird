@@ -549,17 +549,24 @@ const SvcSwitches actionSwitch[] =
 
 bool getLine(string& dest, const char*& p)
 {
-	unsigned short length = (unsigned short) isc_vax_integer (p, sizeof(unsigned short));
-	p += sizeof (unsigned short);
+	const USHORT length = (USHORT) isc_vax_integer(p, sizeof(USHORT));
+	p += sizeof(USHORT);
 	dest.assign(p, length);
 	p += length;
 	return length > 0;
 }
 
-int getNumeric(const char*& p)
+SLONG getInt(const char*& p)
 {
-	unsigned int num = (unsigned int) isc_vax_integer (p, sizeof(unsigned int));
-	p += sizeof (unsigned int);
+	const SLONG num = isc_vax_integer(p, sizeof(SLONG));
+	p += sizeof(SLONG);
+	return num;
+}
+
+SINT64 getInt64(const char*& p)
+{
+	const SINT64 num = isc_portable_integer(reinterpret_cast<const UCHAR*>(p), sizeof(SINT64));
+	p += sizeof(SINT64);
 	return num;
 }
 
@@ -618,9 +625,14 @@ void printMessage(USHORT number, const SafeArg& arg, bool newLine = true)
 		printf("%s", buffer);
 }
 
-void printNumeric(const char*& p, int num)
+void printInt(const char*& p, SLONG num)
 {
-	printf ("%s: %d\n", getMessage(num).c_str(), getNumeric(p));
+	printf ("%s: %"SLONGFORMAT"\n", getMessage(num).c_str(), getInt(p));
+}
+
+void printInt64(const char*& p, SINT64 num)
+{
+	printf ("%s: %"SQUADFORMAT"\n", getMessage(num).c_str(), getInt64(p));
 }
 
 const char* capArray[] = {
@@ -641,7 +653,7 @@ void printCapabilities(const char*& p)
 {
 	printMessage(57);
 
-	int caps = getNumeric(p);
+	int caps = getInt(p);
 	bool print = false;
 
 	for (unsigned i = 0; capArray[i]; ++i)
@@ -718,7 +730,7 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 		switch (*p++)
 		{
 		case isc_info_svc_version:
-			printNumeric(p, 7);
+			printInt(p, 7);
 			break;
 		case isc_info_svc_server_version:
 			printString(p, 8);
@@ -749,10 +761,10 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 					printString(p, 15);
 					break;
 				case isc_spb_num_att:
-					printNumeric(p, 16);
+					printInt(p, 16);
 					break;
 				case isc_spb_num_db:
-					printNumeric(p, 17);
+					printInt(p, 17);
 					break;
 				default:
 					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
@@ -814,13 +826,22 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 					}
 					break;
 				case isc_spb_multi_tra_id:
-					printNumeric(p, 35);
+					printInt(p, 35);
 					break;
 				case isc_spb_single_tra_id:
-					printNumeric(p, 34);
+					printInt(p, 34);
 					break;
 				case isc_spb_tra_id:
-					printNumeric(p, 37);
+					printInt(p, 37);
+					break;
+				case isc_spb_multi_tra_id_64:
+					printInt64(p, 35);
+					break;
+				case isc_spb_single_tra_id_64:
+					printInt64(p, 34);
+					break;
+				case isc_spb_tra_id_64:
+					printInt64(p, 37);
 					break;
 				default:
 					status_exception::raise(Arg::Gds(isc_fbsvcmgr_info_err) <<
@@ -847,13 +868,13 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 			getLine(up.last, p);
 			break;
 		case isc_spb_sec_groupid:
-			up.gid = getNumeric(p);
+			up.gid = getInt(p);
 			break;
 		case isc_spb_sec_userid:
-			up.uid = getNumeric(p);
+			up.uid = getInt(p);
 			break;
 		case isc_spb_sec_admin:
-			up.admin = getNumeric(p);
+			up.admin = getInt(p);
 			break;
 
 		case isc_info_svc_line:
@@ -880,7 +901,7 @@ bool printInfo(const char* p, size_t pSize, UserPrint& up, ULONG& stdinRq)
 			break;
 
 		case isc_info_svc_stdin:
-			stdinRq = getNumeric(p);
+			stdinRq = getInt(p);
 			if (stdinRq > 0)
 			{
 				ret = true;
