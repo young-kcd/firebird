@@ -2,8 +2,49 @@
   * v3.0 Release Candidate 1
   **************************
 
+    * Bugfix CORE-4954
+        Packaged procedure with value by default isn't called if this parameter isn't specified
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4952
+        SuperServer could hung on database shutdown
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4951
+        Message "Incorrect parameters provided to internal function INF_transaction_info Invalid token"
+        is reported when trying to commit 2PC transaction
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Bugfix CORE-4950
+        Statistics for any system index can not be updated/recalculated
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4947
+        Compound ALTER TABLE statement with ADD and DROP the same check constraint fails
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4943
+        Dialect 1 casting date to string breaks when in the presence a domain with a check constraint
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4940
+        Add label about deterministic flag for stored function in SHOW and extract commands
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4938
+        Cannot complete operations (get statistics, change FW, make backup) on database when FB works in embedded mode
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
     * Bugfix CORE-4929
-        Cannot compile source with "ELSE IF ( <expr> ) THEN" statement and commands to manupulate explicit cursor inside
+        Cannot compile source with "ELSE IF ( <expr> ) THEN" statement and commands to manipulate explicit cursor inside
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
@@ -11,6 +52,7 @@
         Impossible to save the connection information in the ON CONNECT trigger if the connection is created by GBAK
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+        Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-4921
         Predicate IS [NOT] DISTINCT FROM is not pushed into unions/aggregates thus causing sub-optimal plans
@@ -26,6 +68,11 @@
         ALTER DOMAIN ... TO <new_name> allows to specify <new_name> matching to 'RDB$[[:DIGIT:]]*'
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Bugfix CORE-4914
+        Moving database to 'full shutdown' state can corrupt index (at least) on long-key text field
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
 
     * Bugfix CORE-4909
         MERGE / HASH JOINs produce incorrect results when VARCHAR join keys differ only by trailing spaces
@@ -165,6 +212,11 @@
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
+    * Bugfix CORE-4292
+        Server ignores asynchronous (monitoring or cancellation) requests while preparing a query with lot of windowed functions
+      Contributor(s):
+        Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
     * Bugfix CORE-4279
         Invalid error message: "CHARACTER SET OCTETS is not defined" on db creation with isc_dpb_lc_ctype = OCTETS
       Contributor(s):
@@ -199,6 +251,32 @@
         Inconsistent domain's constraint validation in PSQL
       Contributor(s):
         Adriano dos Santos Fernandes <adrianosf at gmail.com>
+
+    * Improvement CORE-4965
+        Extend the transaction ID space beyond 2^32 transactions
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4955
+        Define a new option for DROP SHADOW command to leave the shadow file in the filesystem
+      Contributor(s):
+        Alex Peshkov <peshkoff at mail.ru>
+
+    * Improvement CORE-4939
+        Make I/O operations with nbackup backup file aligned at page size boundary
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-4936
+        Reduce internal contention in background garbage collector
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Improvement CORE-4935
+        Increase performance of backout of dead record version (or undo of just created
+        primary record version) when backversions chain is too long
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
 
     * Improvement CORE-4923
         Add ability to track domains rename in DDL triggers
