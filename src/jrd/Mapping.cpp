@@ -593,10 +593,11 @@ public:
 
 		MappingHeader* sMem = sharedMemory->getHeader();
 
+		startupSemaphore.tryEnter(5);
 		sMem->process[process].flags &= ~MappingHeader::FLAG_ACTIVE;
 		(void)  // Ignore errors in cleanup
             sharedMemory->eventPost(&sMem->process[process].notifyEvent);
-		Thread::waitForCompletion(threadHandle);
+		cleanupSemaphore.tryEnter(5);
 
 		// Ignore errors in cleanup
 		sharedMemory->eventFini(&sMem->process[process].notifyEvent);
@@ -737,7 +738,7 @@ public:
 
 		try
 		{
-			Thread::start(clearDelivery, this, THREAD_high, &threadHandle);
+			Thread::start(clearDelivery, this, THREAD_high);
 		}
 		catch (const Exception&)
 		{
@@ -749,6 +750,7 @@ public:
 private:
 	void clearDeliveryThread()
 	{
+		bool startup = true;
 		try
 		{
 			MappingHeader::Process* p = &sharedMemory->getHeader()->process[process];
@@ -769,11 +771,21 @@ private:
 					p->flags &= ~MappingHeader::FLAG_DELIVER;
 				}
 
+				if (startup)
+				{
+					startup = false;
+					startupSemaphore.release();
+				}
+
 				if (sharedMemory->eventWait(&p->notifyEvent, value, 0) != FB_SUCCESS)
 				{
 					(Arg::Gds(isc_random) << "Error waiting for notifyEvent in mapping shared memory").raise();
 				}
 			}
+			if (startup)
+				startupSemaphore.release();
+
+			cleanupSemaphore.release();
 		}
 		catch (const Exception& ex)
 		{
@@ -842,9 +854,10 @@ private:
 
 	AutoPtr<SharedMemory<MappingHeader> > sharedMemory;
 	Mutex initMutex;
-	Thread::Handle threadHandle;
 	const SLONG processId;
 	unsigned process;
+	Semaphore startupSemaphore;
+	Semaphore cleanupSemaphore;
 };
 
 GlobalPtr<MappingIpc, InstanceControl::PRIORITY_DELETE_FIRST> mappingIpc;
