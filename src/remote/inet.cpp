@@ -452,7 +452,7 @@ static rem_port*		inet_try_connect(	PACKET*,
 									RefPtr<Config>*,
 									const PathName*);
 static bool		inet_write(XDR*);
-static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai);
+static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai);
 
 #ifdef DEBUG
 static void packet_print(const TEXT*, const UCHAR*, int, ULONG);
@@ -735,7 +735,7 @@ rem_port* INET_connect(const TEXT* name,
 	}
 #endif
 
-	rem_port* const port = alloc_port(NULL);
+	rem_port* port = alloc_port(NULL);
 	if (config)
 	{
 		port->port_config = *config;
@@ -881,7 +881,7 @@ rem_port* INET_connect(const TEXT* name,
 		else
 		{
 			// server
-			INET_server_socket(port, flag, pai);
+			port = listener_socket(port, flag, pai);
 			goto exit_free;
 		}
 
@@ -900,17 +900,22 @@ exit_free:
 	return port;
 }
 
-static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
+static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 {
 /**************************************
  *
- *	I N E T _ s e r v e r _ s o c k e t
+ *	l i s t e n e r _ s o c k e t
  *
  **************************************
  *
  * Functional description
  *	Final part of server (listening) socket setup. Sets socket options,
  *	binds the socket and calls listen().
+ *  For multy-client server (SuperServer or SuperClassic) return listner
+ *  port.
+ *  For classic server - accept incoming connections and fork worker 
+ *  processes, return NULL at exit;
+ *  On error throw exception.
  *
  **************************************/
 
@@ -997,7 +1002,7 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 		port->port_dummy_packet_interval = 0;
 		port->port_dummy_timeout = 0;
 		port->port_server_flags |= (SRVR_server | SRVR_multi_client);
-		return;
+		return port;
 	}
 
 	while (true)
@@ -1006,7 +1011,8 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 		const int inetErrNo = INET_ERRNO;
 		if (s == INVALID_SOCKET)
 		{
-			// if (!INET_shutting_down)
+			if (INET_shutting_down)
+				return NULL;
 			inet_error(true, port, "accept", isc_net_connect_err, inetErrNo);
 		}
 #ifdef WIN_NT
@@ -1019,7 +1025,7 @@ static void INET_server_socket(rem_port* port, USHORT flag, const addrinfo* pai)
 			port->port_handle = s;
 			port->port_server_flags |= SRVR_server;
 			port->port_flags |= PORT_server;
-			return;
+			return port;
 		}
 
 #ifdef WIN_NT
