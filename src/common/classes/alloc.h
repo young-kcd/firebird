@@ -225,16 +225,12 @@ public:
 	// Initialize context pool
 	static void contextPoolInit();
 
-	// Statistics
-	void increment_usage(size_t size) throw ();
-	void decrement_usage(size_t size) throw ();
-	void increment_mapping(size_t size) throw ();
-	void decrement_mapping(size_t size) throw ();
-
 	// Print out pool contents. This is debugging routine
-	void print_contents(FILE*, bool = false, const char* filter_path = 0) throw ();
+	static const unsigned PRINT_USED_ONLY = 0x01;
+	static const unsigned PRINT_RECURSIVE = 0x02;
+	void print_contents(FILE*, unsigned flags = 0, const char* filter_path = 0) throw ();
 	// The same routine, but more easily callable from the debugger
-	void print_contents(const char* filename, bool = false, const char* filter_path = 0) throw ();
+	void print_contents(const char* filename, unsigned flags = 0, const char* filter_path = 0) throw ();
 
 	friend class MemPool;
 };

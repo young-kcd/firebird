@@ -228,14 +228,14 @@ public:
 #endif
 
 	MemHeader(size_t size)
-		: hdrLength(size)
+		: pool(NULL), hdrLength(size)
 	{
 		fb_assert(size < MAX_USHORT);
 		fb_assert(!(size & MEM_MASK));
 	}
 
 	MemHeader(size_t size, MemMediumHunk* hunk)
-		: hdrLength(size | ((((UCHAR*)this) - ((UCHAR*)hunk)) << OFFSET_SHIFT))
+		: pool(NULL), hdrLength(size | ((((UCHAR*)this) - ((UCHAR*)hunk)) << OFFSET_SHIFT))
 	{
 		off_t fromTheHunk = ((UCHAR*)this) - ((UCHAR*)hunk);	// dup !!!
 
@@ -396,7 +396,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-		const char* filter_path, const size_t filter_len)
+		const char* filter_path, const size_t filter_len) throw()
 	{
 		UCHAR* m = ((UCHAR*) this) + hdrSize();
 		fprintf(file, "Small hunk %p: memory=[%p:%p) spaceRemaining=%" SIZEFORMAT " length=%" SIZEFORMAT "\n",
@@ -469,7 +469,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-		const char* filter_path, const size_t filter_len)
+		const char* filter_path, const size_t filter_len) throw()
 	{
 		UCHAR* m = ((UCHAR*) this) + hdrSize();
 		fprintf(file, "Medium hunk %p: memory=[%p:%p) spaceRemaining=%" SIZEFORMAT " length=%" SIZEFORMAT "\n",
@@ -501,7 +501,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-		const char* filter_path, const size_t filter_len)
+		const char* filter_path, const size_t filter_len) throw()
 	{
 		fprintf(file, "Big hunk %p: memory=%p length=%" SIZEFORMAT "\n",
 			this, &block, length);
@@ -1337,7 +1337,7 @@ public:
 		*to = block;
 	}
 
-	void decrUsage(MemSmallHunk*)
+	void decrUsage(MemSmallHunk*, MemPool*)
 	{ }
 
 	static void validate(MemBlock* block, unsigned length) throw ()
@@ -1386,7 +1386,7 @@ public:
 		}
 	}
 
-	void decrUsage(MemMediumHunk* hunk);
+	void decrUsage(MemMediumHunk* hunk, MemPool* pool);
 
 private:
 	MemMediumHunk* candidateForFree;
@@ -1443,7 +1443,7 @@ public:
 
 #ifdef MEM_DEBUG
 	void print_contents(FILE* file, MemPool* pool, bool used_only,
-						const char* filter_path, const size_t filter_len)
+						const char* filter_path, const size_t filter_len) throw()
 	{
 		if (currentExtent)
 			currentExtent->print_contents(file, pool, used_only, filter_path, filter_len);
@@ -1522,7 +1522,7 @@ private:
 	static void releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
 
 public:
-	static void releaseExtent(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
+	static void releaseExtent(bool destroying, void *block, size_t size, MemPool* pool) throw ();
 
 	// pass desired size, return actual extent size
 	template <class Extent>
@@ -1595,22 +1595,30 @@ public:
 		mapped_memory -= size;
 	}
 
+#ifdef MEM_DEBUG
 	// Print out pool contents. This is debugging routine
-	void print_contents(FILE*, bool = false, const char* filter_path = 0) throw ();
+	void print_contents(FILE*, unsigned flags, const char* filter_path) throw ();
 	// The same routine, but more easily callable from the debugger
-	void print_contents(const char* filename, bool = false, const char* filter_path = 0) throw ();
+	void print_contents(const char* filename, unsigned flags, const char* filter_path) throw ();
+
+private:
+	MemPool* next;
+	MemPool* child;
+#endif
 };
 
 
 void DoubleLinkedList::putElement(MemBlock** to, MemBlock* block)
 {
+	MemPool* pool = block->pool;
+	MemMediumHunk* hunk = block->getHunk();
+
 	SemiDoubleLink::push(to, block);
 
-	MemMediumHunk* hunk = block->getHunk();
-	decrUsage(hunk);
+	decrUsage(hunk, pool);
 }
 
-void DoubleLinkedList::decrUsage(MemMediumHunk* hunk)
+void DoubleLinkedList::decrUsage(MemMediumHunk* hunk, MemPool* pool)
 {
 	if (hunk->decrUsage())
 	{
@@ -1618,7 +1626,9 @@ void DoubleLinkedList::decrUsage(MemMediumHunk* hunk)
 		{
 			candidateForFree->unlinkBlocks();
 			SemiDoubleLink::remove(candidateForFree);
-			MemPool::releaseExtent(false, candidateForFree, candidateForFree->length, true);
+
+			fb_assert(pool);
+			MemPool::releaseExtent(false, candidateForFree, candidateForFree->length, pool);
 		}
 
 		candidateForFree = hunk;
@@ -1647,7 +1657,7 @@ MemBlock* FreeObjects<ListBuilder, Limits>::newBlock(MemPool* pool, unsigned slo
 			listBuilder.putElement(&freeObjects[sl1], b);
 		}
 		currentExtent->spaceRemaining = 0;
-		listBuilder.decrUsage(currentExtent);
+		listBuilder.decrUsage(currentExtent, pool);
 	}
 
 	if (!(currentExtent && currentExtent->spaceRemaining))
@@ -1668,7 +1678,7 @@ FreeObjects<ListBuilder, Limits>::~FreeObjects()
 		Extent* e = currentExtent;
 		currentExtent = currentExtent->next;
 
-		MemPool::releaseExtent(true, e, e->length);
+		MemPool::releaseExtent(true, e, e->length, NULL);
 	}
 }
 
@@ -1790,6 +1800,17 @@ void MemPool::initialize()
 
 	bigHunks = NULL;
 	pool_destroying = false;
+
+#ifdef MEM_DEBUG
+	next = child = NULL;
+
+	if (parent)
+	{
+		MutexLockGuard linkGuard(parent->mutex, FB_FUNCTION);
+		next = parent->child;
+		parent->child = this;
+	}
+#endif
 }
 
 MemPool::~MemPool(void)
@@ -1815,13 +1836,31 @@ MemPool::~MemPool(void)
 	}
 #endif
 
-	// release free objects!!
+	// release big objects
 	while (bigHunks)
 	{
 		MemBigHunk* hunk = bigHunks;
 		bigHunks = hunk->next;
 		releaseRaw(pool_destroying, hunk, hunk->length);
 	}
+
+#ifdef MEM_DEBUG
+	if (parent)
+	{
+		MutexLockGuard unlinkGuard(parent->mutex, FB_FUNCTION);
+		bool flag = false;
+		for (MemPool** pp = &(parent->child); *pp; pp = &((*pp)->next))
+		{
+			if (*pp == this)
+			{
+				*pp = (*pp)->next;
+				flag = true;
+				break;
+			}
+		}
+		fb_assert(flag);
+	}
+#endif
 }
 
 template <class Extent>
@@ -2057,6 +2096,7 @@ void MemPool::releaseBlock(MemBlock* block) throw ()
 
 	MemBigHunk* hunk = (MemBigHunk*)(((UCHAR*)block) - MemBigHunk::hdrSize());
 	SemiDoubleLink::remove(hunk);
+	decrement_mapping(hunk->length);
 	releaseRaw(pool_destroying, hunk, hunk->length, false);
 }
 
@@ -2136,12 +2176,20 @@ void* MemPool::getExtent(size_t& size) throw(OOM_EXCEPTION)		// pass desired min
 }
 
 
-void MemPool::releaseExtent(bool destroying, void* block, size_t size, bool use_cache) throw ()
+void MemPool::releaseExtent(bool destroying, void* block, size_t size, MemPool* pool) throw ()
 {
 	if (size == PARENT_EXTENT_SIZE)
+	{
+		MemBlock* blk = (MemBlock*) ((UCHAR*) block - offsetof(MemBlock, body));
+		blk->pool->increment_usage(size);
 		deallocate(block);
+	}
 	else
-		releaseRaw(true, block, size, use_cache);
+	{
+		if (pool)
+			pool->decrement_mapping(size);
+		releaseRaw(true, block, size, pool);
+	}
 }
 
 
@@ -2266,25 +2314,27 @@ void MemPool::validate(void) throw ()
 	}
 }
 
-void MemPool::print_contents(const char* filename, bool used_only, const char* filter_path) throw ()
+#ifdef MEM_DEBUG
+void MemPool::print_contents(const char* filename, unsigned flags, const char* filter_path) throw ()
 {
 	FILE* out = os_utils::fopen(filename, "w");
 	if (!out)
 		return;
 
-	print_contents(out, used_only, filter_path);
+	print_contents(out, flags, filter_path);
 	fclose(out);
 }
 
 
 // This member function can't be const because there are calls to the mutex.
-void MemPool::print_contents(FILE* file, bool used_only, const char* filter_path) throw ()
+void MemPool::print_contents(FILE* file, unsigned flags, const char* filter_path) throw ()
 {
-#ifdef MEM_DEBUG
+	bool used_only = flags & MemoryPool::PRINT_USED_ONLY;
+
 	MutexLockGuard guard(mutex, "MemPool::print_contents");
 
-	fprintf(file, "********* Printing contents of pool %p used=%ld mapped=%ld\n",
-		this, (long) used_memory.value(), (long) mapped_memory.value());
+	fprintf(file, "********* Printing contents of pool %p (parent %p) used=%ld mapped=%ld\n",
+		this, parent, (long) used_memory.value(), (long) mapped_memory.value());
 
 	if (!used_only)
 	{
@@ -2299,8 +2349,14 @@ void MemPool::print_contents(FILE* file, bool used_only, const char* filter_path
 	// big hunks
 	for (MemBigHunk* hunk = bigHunks; hunk; hunk = hunk->next)
 		hunk->print_contents(file, this, used_only, filter_path, filter_len);
-#endif
+
+	if (flags & MemoryPool::PRINT_RECURSIVE)
+	{
+		for (MemPool* p = child; p; p = p->next)
+			p->print_contents(file, flags, filter_path);
+	}
 }
+#endif
 
 // Declare thread-specific variable for context memory pool
 #ifndef TLS_CLASS
@@ -2365,26 +2421,6 @@ void* MemoryPool::globalAlloc(size_t s ALLOC_PARAMS) throw (OOM_EXCEPTION)
 }
 #endif // LIBC_CALLS_NEW
 
-void MemoryPool::increment_usage(size_t size) throw ()
-{
-	pool->increment_usage(size);
-}
-
-void MemoryPool::decrement_usage(size_t size) throw ()
-{
-	pool->decrement_usage(size);
-}
-
-void MemoryPool::increment_mapping(size_t size) throw ()
-{
-	pool->increment_mapping(size);
-}
-
-void MemoryPool::decrement_mapping(size_t size) throw ()
-{
-	pool->decrement_mapping(size);
-}
-
 void MemoryPool::globalFree(void* block) throw ()
 {
 	MemPool::globalFree(block);
@@ -2415,14 +2451,18 @@ void MemoryPool::deletePool(MemoryPool* pool)
 	delete pool;
 }
 
-void MemoryPool::print_contents(FILE* file, bool used_only, const char* filter_path) throw ()
+void MemoryPool::print_contents(FILE* file, unsigned flags, const char* filter_path) throw ()
 {
-	pool->print_contents(file, used_only, filter_path);
+#ifdef MEM_DEBUG
+	pool->print_contents(file, flags, filter_path);
+#endif
 }
 
-void MemoryPool::print_contents(const char* filename, bool used_only, const char* filter_path) throw ()
+void MemoryPool::print_contents(const char* filename, unsigned flags, const char* filter_path) throw ()
 {
-	pool->print_contents(filename, used_only, filter_path);
+#ifdef MEM_DEBUG
+	pool->print_contents(filename, flags, filter_path);
+#endif
 }
 
 

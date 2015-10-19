@@ -615,12 +615,12 @@ void testAllocator()
 
 //	pool->verify_pool();
 //	parent->verify_pool();
-	pool->print_contents(stdout, true);
-	parent->print_contents(stdout, true);
+	pool->print_contents(stdout, MemoryPool::PRINT_USED_ONLY);
+	parent->print_contents(stdout, MemoryPool::PRINT_USED_ONLY);
 
 	MemoryPool::deletePool(pool);
 	printf("\n\n\n *** After pool delete: ***\n");
-	parent->print_contents(stdout, false);
+	parent->print_contents(stdout, 0);
 //	parent->verify_pool();
 //  TODO:
 //	Test critically low memory conditions

@@ -678,7 +678,8 @@ void API_ROUTINE gds_alloc_report(ULONG flags, const char* filter_filename, int 
 	Firebird::PathName report_name = fb_utils::getPrefix(Firebird::IConfigManager::DIR_LOG, "fbsrvreport.txt");
 	// Our new facilities don't expose flags for reporting.
 	const bool used_only = !(flags & ALLOC_verbose);
-	getDefaultMemoryPool()->print_contents(report_name.c_str(), used_only, filter_filename);
+	getDefaultMemoryPool()->print_contents(report_name.c_str(),
+		used_only ? MemoryPool::PRINT_USED_ONLY : 0, filter_filename);
 }
 
 
@@ -1264,7 +1265,7 @@ void gds__print_pool(MemoryPool* pool, const TEXT* text, ...)
 		vfprintf(file, text, ptr);
 		va_end(ptr);
 		fprintf(file, "\n");
-		pool->print_contents(file, false);
+		pool->print_contents(file, 0);
 		fprintf(file, "\n");
 		fclose(file);
 	}
