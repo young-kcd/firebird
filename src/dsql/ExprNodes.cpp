@@ -6144,49 +6144,51 @@ dsc* InternalInfoNode::execute(thread_db* tdbb, jrd_req* request) const
 	fb_assert(value->dsc_dtype == dtype_long);
 	const InfoType infoType = static_cast<InfoType>(*reinterpret_cast<SLONG*>(value->dsc_address));
 
-	dsc desc;
-
 	if (infoType == INFO_TYPE_SQLSTATE)
 	{
 		FB_SQLSTATE_STRING sqlstate;
 		request->req_last_xcp.as_sqlstate(sqlstate);
 
+		dsc desc;
 		desc.makeText(FB_SQLSTATE_LENGTH, ttype_ascii, (UCHAR*) sqlstate);
+		EVL_make_value(tdbb, &desc, impure);
+
+		return &impure->vlu_desc;
 	}
-	else
+
+	SLONG int32_result = 0;
+	SINT64 int64_result = 0;
+
+	switch (infoType)
 	{
-		SLONG int32_result = 0;
-		SINT64 int64_result = 0;
-
-		switch (infoType)
-		{
-			case INFO_TYPE_CONNECTION_ID:
-				int64_result = PAG_attachment_id(tdbb);
-				break;
-			case INFO_TYPE_TRANSACTION_ID:
-				int64_result = tdbb->getTransaction()->tra_number;
-				break;
-			case INFO_TYPE_GDSCODE:
-				int32_result = request->req_last_xcp.as_gdscode();
-				break;
-			case INFO_TYPE_SQLCODE:
-				int32_result = request->req_last_xcp.as_sqlcode();
-				break;
-			case INFO_TYPE_ROWS_AFFECTED:
-				int64_result = request->req_records_affected.getCount();
-				break;
-			case INFO_TYPE_TRIGGER_ACTION:
-				int32_result = request->req_trigger_action;
-				break;
-			default:
-				BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
-		}
-
-		if (int64_result)
-			desc.makeInt64(0, &int64_result);
-		else
-			desc.makeLong(0, &int32_result);
+		case INFO_TYPE_CONNECTION_ID:
+			int64_result = PAG_attachment_id(tdbb);
+			break;
+		case INFO_TYPE_TRANSACTION_ID:
+			int64_result = tdbb->getTransaction()->tra_number;
+			break;
+		case INFO_TYPE_GDSCODE:
+			int32_result = request->req_last_xcp.as_gdscode();
+			break;
+		case INFO_TYPE_SQLCODE:
+			int32_result = request->req_last_xcp.as_sqlcode();
+			break;
+		case INFO_TYPE_ROWS_AFFECTED:
+			int64_result = request->req_records_affected.getCount();
+			break;
+		case INFO_TYPE_TRIGGER_ACTION:
+			int32_result = request->req_trigger_action;
+			break;
+		default:
+			BUGCHECK(232);	// msg 232 EVL_expr: invalid operation
 	}
+
+	dsc desc;
+
+	if (int64_result)
+		desc.makeInt64(0, &int64_result);
+	else
+		desc.makeLong(0, &int32_result);
 
 	EVL_make_value(tdbb, &desc, impure);
 	return &impure->vlu_desc;
