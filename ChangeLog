@@ -1,3 +1,128 @@
+ 2015-10-20 13:07  dimitr 
+   M src/jrd/tra.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+Misc.
+
+ 2015-10-20 13:06  dimitr 
+   M src/dsql/ExprNodes.cpp
+Fixed CORE-4970: Table trigger does not see its mode: inserting or updating or deleting.
+
+ 2015-10-19 14:55  hvlad 
+   M src/remote/inet.cpp
+Fixed logging WSAEINTR error on shutdown of Classic listener process (Windows-specific).
+Error looks like
+	INET_connect
+	Unable to complete network request to host ...
+	Failed to establish a connection.
+	A blocking operation was interrupted by a call to WSACancelBlockingCall.
+
+ 2015-10-19 14:51  hvlad 
+   M src/jrd/Mapping.cpp
+Fixed delays on disconnect (Classic mode only, seems Windows-specific)
+
+ 2015-10-19 14:15  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
+ 2015-10-19 14:02  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/misc/class_test.cpp
+   M src/common/classes/misc/string_test.cpp
+   M src/yvalve/gds.cpp
+Fixed memory statistics collection
+
+ 2015-10-19 13:37  dimitr 
+   M src/jrd/RecordNumber.h
+Removed unused method (its calculations are outdated anyway).
+
+ 2015-10-19 13:32  dimitr 
+   M src/alice/alice.cpp
+   M src/alice/alice.h
+   M src/alice/alice_meta.epp
+   M src/alice/alice_meta.h
+   M src/alice/tdr.cpp
+   M src/alice/tdr_proto.h
+   M src/common/UtilSvc.cpp
+   M src/common/UtilSvc.h
+   M src/dsql/ExprNodes.cpp
+   M src/dsql/Nodes.h
+   M src/dsql/StmtNodes.cpp
+   M src/include/consts_pub.h
+   M src/include/fb_types.h
+   M src/include/firebird/FirebirdInterface.idl
+   M src/include/firebird/IdlFbInterfaces.h
+   M src/jrd/Attachment.cpp
+   M src/jrd/Attachment.h
+   M src/jrd/Database.cpp
+   M src/jrd/Database.h
+   M src/jrd/Monitoring.cpp
+   M src/jrd/Monitoring.h
+   M src/jrd/Relation.cpp
+   M src/jrd/Relation.h
+   M src/jrd/RuntimeStatistics.cpp
+   M src/jrd/SysFunction.cpp
+   M src/jrd/VirtualTable.cpp
+   M src/jrd/btr.cpp
+   M src/jrd/btr.h
+   M src/jrd/btr_proto.h
+   M src/jrd/cch.cpp
+   M src/jrd/constants.h
+   M src/jrd/dpm.epp
+   M src/jrd/fields.h
+   M src/jrd/filters.cpp
+   M src/jrd/idx.cpp
+   M src/jrd/jrd.cpp
+   M src/jrd/lck.cpp
+   M src/jrd/lck.h
+   M src/jrd/lck_proto.h
+   M src/jrd/met.epp
+   M src/jrd/ods.cpp
+   M src/jrd/ods.h
+   M src/jrd/ods_proto.h
+   M src/jrd/opt.cpp
+   M src/jrd/pag.cpp
+   M src/jrd/pag_proto.h
+   M src/jrd/recsrc/BufferedStream.cpp
+   M src/jrd/recsrc/SortedStream.cpp
+   M src/jrd/req.h
+   M src/jrd/sbm.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/jrd/tpc.cpp
+   M src/jrd/tra.cpp
+   M src/jrd/tra.h
+   M src/jrd/trace/TraceObjects.cpp
+   M src/jrd/trace/TraceObjects.h
+   M src/jrd/validation.cpp
+   M src/jrd/vio.cpp
+   M src/lock/lock.cpp
+   M src/lock/lock_proto.h
+   M src/lock/print.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/gstat/ppg.cpp
+   M src/utilities/ntrace/TracePluginImpl.cpp
+   M src/utilities/ntrace/TracePluginImpl.h
+   M src/utilities/ntrace/traceplugin.cpp
+CORE-4965: Extend the transaction ID space beyond 2^32 transactions. Initially developed in the v2.5 custom branch, then reworked and now merged into v3.0.
+
+ 2015-10-18 12:14  dimitr 
+   M builds/install/misc/firebird.conf.in
+Added version info to the conf file.
+
+ 2015-10-18 12:03  dimitr 
+   M builds/install/misc/firebird.conf.in
+Misc corrections by Helen.
+
+ 2015-10-18 11:59  dimitr 
+   A doc/README.connection_strings
+Some new docs.
+
+ 2015-10-18 01:30  asfernandes 
+   M src/remote/inet.cpp
+   M src/remote/server/server.cpp
+Misc.
+
  2015-10-16 15:30  hvlad 
    M src/remote/client/interface.cpp
    M src/remote/remote.h
