@@ -67,7 +67,7 @@ const int MAX_TREE_LEVEL = 30;
 class MallocAllocator
 {
 public:
-	void *allocate(size_t size)
+	void *allocate(size_t size ALLOC_PARAMS)
 	{
 		return malloc(size);
 	}

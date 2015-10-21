@@ -52,6 +52,7 @@
 #include "../common/classes/locks.h"
 #include "../common/classes/init.h"
 #include "../common/classes/vector.h"
+#include "../common/classes/RefMutex.h"
 #include "../common/os/os_utils.h"
 #include "gen/iberror.h"
 
@@ -113,7 +114,6 @@ size_t delayedExtentsPos = 0;
 // We cache this amount of extents to avoid memory mapping overhead
 const int MAP_CACHE_SIZE = 16; // == 1 MB
 const size_t DEFAULT_ALLOCATION = 65536;
-const size_t PARENT_EXTENT_SIZE = 8192;
 
 Firebird::Vector<void*, MAP_CACHE_SIZE> extents_cache;
 
@@ -205,6 +205,7 @@ public:
 	static const size_t SIZE_MASK = 0xFFF8;
 	static const size_t MEM_MASK = 0x7;
 	static const size_t MEM_HUGE = 0x1;
+	static const size_t MEM_REDIRECT = 0x2;
 	static const unsigned OFFSET_SHIFT = 16;
 
 	enum HugeBlock {HUGE_BLOCK};
@@ -216,7 +217,7 @@ public:
 	};
 
 private:
-	const size_t	hdrLength;
+	size_t	hdrLength;
 
 public:
 #ifdef DEBUG_GDS_ALLOC
@@ -262,6 +263,24 @@ public:
 		off_t offset = hdrLength >> OFFSET_SHIFT;
 		fb_assert(offset > 0);
 		return (MemMediumHunk*)(((UCHAR*)this) - offset);
+	}
+
+	void setRedirect()
+	{
+		fb_assert(!redirected());
+		hdrLength |= MEM_REDIRECT;
+	}
+
+	void resetRedirect(MemPool* parent)
+	{
+		fb_assert(redirected());
+		hdrLength &= ~MEM_REDIRECT;
+		pool = parent;
+	}
+
+	bool redirected() const
+	{
+		return hdrLength & MEM_REDIRECT;
 	}
 
 	void assertBig()
@@ -1275,6 +1294,7 @@ const unsigned short mediumLimits[] =
 
 const size_t MEDIUM_SLOTS = FB_NELEM(mediumLimits);
 const unsigned short* MEDIUM_BLOCK_LIMIT = &mediumLimits[MEDIUM_SLOTS - 1];
+const size_t PARENT_REDIRECT_THRESHOLD = 48 * 1024;
 
 // Access to slots for medium (>1Kb, <64Kb) blocks
 
@@ -1411,21 +1431,38 @@ public:
 
 	~FreeObjects();
 
-	FreeObjPtr allocateBlock(MemPool* pool, size_t& size) throw (OOM_EXCEPTION)
+	FreeObjPtr allocateBlock(MemPool* pool, size_t from, size_t& size) throw (OOM_EXCEPTION)
 	{
-		size_t full_size = size + ListBuilder::MEM_OVERHEAD;
+		size_t full_size = size + (from ? 0 : ListBuilder::MEM_OVERHEAD);
 		if (full_size > Limits::TOP_LIMIT)
 			return NULL;
 
 		unsigned slot = Limits::getSlot(full_size, SLOT_ALLOC);
-
 		full_size = Limits::getSize(slot);
-		size = full_size - ListBuilder::MEM_OVERHEAD;
 
 		FreeObjPtr blk = ListBuilder::getElement(&freeObjects[slot]);
+		if ((!blk) && from)
+		{
+			for (unsigned slot1 = slot - 1; Limits::getSize(slot1) >= from; --slot1)
+			{
+				blk = ListBuilder::getElement(&freeObjects[slot1]);
+				if (blk)
+				{
+					full_size = Limits::getSize(slot1);
+					break;
+				}
+
+				// This should not happen but try to be as safe as possible
+				fb_assert(slot1 > 0);
+				if (!slot1)
+					break;
+			}
+		}
+
 		if (!blk)
 			blk = newBlock(pool, slot);
 
+		size = full_size - ListBuilder::MEM_OVERHEAD;
 		return blk;
 	}
 
@@ -1484,13 +1521,14 @@ private:
 	static const size_t roundingSize = 8;
 
 	FreeObjects<LinkedList, LowLimits> smallObjects;
+	Vector<MemBlock*, 16> parentRedirected;
 	FreeObjects<DoubleLinkedList, MediumLimits> mediumObjects;
 	MemBigHunk*		bigHunks;
 
 	Mutex			mutex;
 	int				blocksAllocated;
 	int				blocksActive;
-	bool			pool_destroying;
+	bool			pool_destroying, parent_redirect;
 
 	// Statistics group for the pool
 	MemoryStats* stats;
@@ -1499,35 +1537,27 @@ private:
 	// Memory used
 	AtomicCounter used_memory, mapped_memory;
 
-protected:
-	MemBlock* alloc(size_t length) throw (OOM_EXCEPTION);
+private:
+	MemBlock* alloc(size_t from, size_t& length, bool flagRedirect) throw (OOM_EXCEPTION);
 	void releaseBlock(MemBlock *block) throw ();
 
 public:
-	void* allocate(size_t size
-#ifdef DEBUG_GDS_ALLOC
-		, const char* fileName = NULL, int line = 0
-#endif
-	) throw (OOM_EXCEPTION);
-	MemBlock* allocate2(size_t& size, bool incrSize
-#ifdef DEBUG_GDS_ALLOC
-		, const char* fileName, int line
-#endif
-	) throw (OOM_EXCEPTION);
+	void* allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION);
+	MemBlock* allocate2(size_t from, size_t& size ALLOC_PARAMS) throw (OOM_EXCEPTION);
 
 private:
 	virtual void memoryIsExhausted(void) throw (OOM_EXCEPTION);
 	void* allocRaw(size_t length) throw (OOM_EXCEPTION);
-	static void release(void* block) throw ();
+	static void release(void* block, bool flagDecr) throw ();
 	static void releaseRaw(bool destroying, void *block, size_t size, bool use_cache = true) throw ();
+	void* getExtent(size_t from, size_t& to) throw (OOM_EXCEPTION);
 
 public:
 	static void releaseExtent(bool destroying, void *block, size_t size, MemPool* pool) throw ();
 
 	// pass desired size, return actual extent size
 	template <class Extent>
-	void newExtent(size_t& size, Extent** linkedList, bool useParent) throw (OOM_EXCEPTION);
-	void* getExtent(size_t& size) throw (OOM_EXCEPTION);
+	void newExtent(size_t& size, Extent** linkedList) throw (OOM_EXCEPTION);
 
 private:
 #ifdef USE_VALGRIND
@@ -1663,7 +1693,7 @@ MemBlock* FreeObjects<ListBuilder, Limits>::newBlock(MemPool* pool, unsigned slo
 	if (!(currentExtent && currentExtent->spaceRemaining))
 	{
 		size_t size2 = size;
-		pool->newExtent(size2, &currentExtent, true);
+		pool->newExtent(size2, &currentExtent);
 		currentExtent->incrUsage();
 	}
 
@@ -1775,13 +1805,13 @@ void MemoryPool::cleanup()
 
 
 MemPool::MemPool()
-  :	pool_destroying(false), stats(MemoryPool::default_stats_group), parent(NULL)
+  :	pool_destroying(false), parent_redirect(false), stats(MemoryPool::default_stats_group), parent(NULL)
 {
 	initialize();
 }
 
 MemPool::MemPool(MemPool& p, MemoryStats& s)
-  :	pool_destroying(false), stats(&s), parent(&p)
+  :	pool_destroying(false), parent_redirect(true), stats(&s), parent(&p)
 {
 	initialize();
 }
@@ -1844,6 +1874,14 @@ MemPool::~MemPool(void)
 		releaseRaw(pool_destroying, hunk, hunk->length);
 	}
 
+	// release blocks redirected to parent
+	while (parentRedirected.getCount())
+	{
+		MemBlock* block = parentRedirected.pop();
+		block->resetRedirect(parent);
+		parent->releaseBlock(block);
+	}
+
 #ifdef MEM_DEBUG
 	if (parent)
 	{
@@ -1864,22 +1902,32 @@ MemPool::~MemPool(void)
 }
 
 template <class Extent>
-void MemPool::newExtent(size_t& size, Extent** linkedList, bool useParent) throw(OOM_EXCEPTION)
+void MemPool::newExtent(size_t& size, Extent** linkedList) throw(OOM_EXCEPTION)
 {
 	// No large enough block found. We need to extend the pool
 	void* memory = NULL;
+	const unsigned TOTAL_OVERHEAD = DoubleLinkedList::MEM_OVERHEAD + GUARD_BYTES + VALGRIND_REDZONE;
+	const unsigned FROM_LIMIT = mediumLimits[10];	// 4224 // 10
+	const unsigned TO_LIMIT = mediumLimits[15];		// 7552 // 15
 
 	size_t ext_size = size + MEM_ALIGN(sizeof(Extent));
-	const bool allocByParent = parent && useParent && (ext_size <= PARENT_EXTENT_SIZE);
+	const bool allocByParent = parent && (ext_size <= TO_LIMIT);
 
 	if (allocByParent)
 	{
-		ext_size = PARENT_EXTENT_SIZE;
+		size_t from = FROM_LIMIT;
+		if (ext_size + TOTAL_OVERHEAD > from)
+			from = ext_size + TOTAL_OVERHEAD;
+		ext_size = TO_LIMIT;
+		if (ext_size < from)
+			ext_size = from;
+
 		fb_assert(ext_size < DEFAULT_ALLOCATION);
-		memory = parent->getExtent(ext_size);
+		memory = parent->getExtent(from, ext_size);
 	}
 	else
 	{
+		fb_assert(ext_size <= DEFAULT_ALLOCATION);
 		ext_size = DEFAULT_ALLOCATION;
 		memory = allocRaw(ext_size);
 		fb_assert(ext_size == DEFAULT_ALLOCATION); // Make sure extent size is as expected
@@ -1919,17 +1967,45 @@ void MemoryPool::setStatsGroup(MemoryStats& newStats) throw ()
 	pool->setStatsGroup(newStats);
 }
 
-MemBlock* MemPool::alloc(size_t length) throw (OOM_EXCEPTION)
+MemBlock* MemPool::alloc(size_t from, size_t& length, bool flagRedirect) throw (OOM_EXCEPTION)
 {
-	MutexLockGuard guard(mutex, "MemPool::alloc");
+	MutexEnsureUnlock guard(mutex, "MemPool::alloc");
+	guard.enter();
 
 	// If this is a small block, look for it there
 
-	MemBlock* block = smallObjects.allocateBlock(this, length);
+	MemBlock* block = smallObjects.allocateBlock(this, from, length);
 	if (block)
 		return block;
 
-	block = mediumObjects.allocateBlock(this, length);
+	if (parent_redirect && flagRedirect && length < PARENT_REDIRECT_THRESHOLD)
+	{
+		guard.leave();
+		block = parent->alloc(from, length, false);
+		guard.enter();
+
+		if (block)
+		{
+			if (parent_redirect)	// someone else redirected block in this pool?
+			{
+				block->setRedirect();
+
+				parentRedirected.push(block);
+				if (parentRedirected.getCount() == parentRedirected.getCapacity())
+					parent_redirect = false;
+
+				return block;
+			}
+			else					// worst case - very low possibility
+			{
+				guard.leave();
+				parent->releaseBlock(block);
+				guard.enter();
+			}
+		}
+	}
+
+	block = mediumObjects.allocateBlock(this, from, length);
 	if (block)
 		return block;
 
@@ -1937,28 +2013,24 @@ MemBlock* MemPool::alloc(size_t length) throw (OOM_EXCEPTION)
 	 *  OK, we've got a "big block" on hands.  To maximize confusing, the indicated
 	 *  "length" of a free big block is the length of MemHeader plus body*/
 
+	fb_assert(from == 0);
 	size_t hunkLength = MemBigHunk::hdrSize() + offsetof(MemBlock, body) + length;
 
 	// Allocate the new hunk
 
 	MemBigHunk* hunk = new(allocRaw(hunkLength)) MemBigHunk(&bigHunks, hunkLength);
-
-	block = &hunk->block;
-	block->pool = this;
-
-	return block;
+	return &hunk->block;
 }
 
-MemBlock* MemPool::allocate2(size_t& size, bool incrSize
+MemBlock* MemPool::allocate2(size_t from, size_t& size
 #ifdef DEBUG_GDS_ALLOC
 	, const char* fileName, int line
 #endif
 ) throw (OOM_EXCEPTION)
 {
-	size_t length = ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + GUARD_BYTES;
-	MemBlock* memory = alloc(length);
-	if (incrSize)
-		size = length - GUARD_BYTES - VALGRIND_REDZONE;
+	size_t length = from ? size : ROUNDUP(size + VALGRIND_REDZONE, roundingSize) + GUARD_BYTES;
+	MemBlock* memory = alloc(from, length, true);
+	size = length - (VALGRIND_REDZONE + GUARD_BYTES);
 
 #ifdef USE_VALGRIND
 	VALGRIND_MEMPOOL_ALLOC(this, &memory->body, size);
@@ -1983,17 +2055,9 @@ MemBlock* MemPool::allocate2(size_t& size, bool incrSize
 }
 
 
-void* MemPool::allocate(size_t size
-#ifdef DEBUG_GDS_ALLOC
-	, const char* fileName, int line
-#endif
-) throw (OOM_EXCEPTION)
+void* MemPool::allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
-	MemBlock* memory = allocate2(size, false
-#ifdef DEBUG_GDS_ALLOC
-		, fileName, line
-#endif
-								);
+	MemBlock* memory = allocate2(0, size ALLOC_PASS_ARGS);
 
 	increment_usage(memory->getSize());
 
@@ -2001,7 +2065,7 @@ void* MemPool::allocate(size_t size
 }
 
 
-void MemPool::release(void* object) throw ()
+void MemPool::release(void* object, bool flagDecr) throw ()
 {
 	if (object)
 	{
@@ -2057,7 +2121,9 @@ void MemPool::release(void* object) throw ()
 		block->fileName = NULL;
 #endif
 		pool->releaseBlock(block);
-		pool->decrement_usage(size);
+
+		if (flagDecr)
+			pool->decrement_usage(size);
 	}
 }
 
@@ -2077,13 +2143,27 @@ void MemPool::releaseBlock(MemBlock* block) throw ()
 	--blocksActive;
 	const size_t length = block->getSize();
 
-	MutexLockGuard guard(mutex, "MemPool::release");
+	MutexEnsureUnlock guard(mutex, "MemPool::release");
+	guard.enter();
 
 	// If length is less than threshold, this is a small block
 	if (smallObjects.deallocateBlock(block))
 		return;
 
-	// .. or medium - with another threshold
+	// Redirected to parent block?
+	if (block->redirected())
+	{
+		FB_SIZE_T pos;
+		if (parentRedirected.find(block, pos))
+			parentRedirected.remove(pos);
+		guard.leave();
+
+		block->resetRedirect(parent);
+		parent->releaseBlock(block);
+		return;
+	}
+
+	// Medium block - with another threshold
 	if (mediumObjects.deallocateBlock(block))
 		return;
 
@@ -2165,25 +2245,17 @@ void* MemPool::allocRaw(size_t size) throw (OOM_EXCEPTION)
 }
 
 
-void* MemPool::getExtent(size_t& size) throw(OOM_EXCEPTION)		// pass desired minimum size, return actual extent size
+void* MemPool::getExtent(size_t from, size_t& to) throw(OOM_EXCEPTION)		// pass desired minimum size, return actual extent size
 {
-	if (size < PARENT_EXTENT_SIZE)
-		size = PARENT_EXTENT_SIZE;
-
-	MemBlock* extent = allocate2(size, true ALLOC_ARGS);
-
+	MemBlock* extent = allocate2(from, to ALLOC_ARGS);
 	return &extent->body;
 }
 
 
 void MemPool::releaseExtent(bool destroying, void* block, size_t size, MemPool* pool) throw ()
 {
-	if (size == PARENT_EXTENT_SIZE)
-	{
-		MemBlock* blk = (MemBlock*) ((UCHAR*) block - offsetof(MemBlock, body));
-		blk->pool->increment_usage(size);
-		deallocate(block);
-	}
+	if (size < DEFAULT_ALLOCATION)
+		release(block, false);
 	else
 	{
 		if (pool)
@@ -2276,25 +2348,16 @@ void MemPool::globalFree(void* block) throw ()
 	deallocate(block);
 }
 
-void* MemoryPool::calloc(size_t size
-#ifdef DEBUG_GDS_ALLOC
-	, const char* fileName, int line
-#endif
-) throw (OOM_EXCEPTION)
+void* MemoryPool::calloc(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
-	void* block = allocate((int) size
-#ifdef DEBUG_GDS_ALLOC
-					 , fileName, line
-#endif
-									 );
+	void* block = allocate(size ALLOC_PASS_ARGS);
 	memset(block, 0, size);
-
 	return block;
 }
 
 void MemPool::deallocate(void* block) throw ()
 {
-	release(block);
+	release(block, true);
 }
 
 void MemPool::deletePool(MemPool* pool)
@@ -2426,17 +2489,9 @@ void MemoryPool::globalFree(void* block) throw ()
 	MemPool::globalFree(block);
 }
 
-void* MemoryPool::allocate(size_t size
-#ifdef DEBUG_GDS_ALLOC
-									  , const char* filename, int line
-#endif
-									  ) throw (OOM_EXCEPTION)
+void* MemoryPool::allocate(size_t size ALLOC_PARAMS) throw (OOM_EXCEPTION)
 {
-	return pool->allocate(size
-#ifdef DEBUG_GDS_ALLOC
-							  , filename, line
-#endif
-							  );
+	return pool->allocate(size ALLOC_PASS_ARGS);
 }
 
 void MemoryPool::deallocate(void* block) throw ()

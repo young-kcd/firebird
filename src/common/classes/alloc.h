@@ -1,7 +1,7 @@
 /*
  *	PROGRAM:	Client/Server Common Code
  *	MODULE:		alloc.h
- *	DESCRIPTION:	Memory Pool Manager (based on B+ tree)
+ *	DESCRIPTION:	Memory Pool Manager
  *
  *  The contents of this file are subject to the Initial
  *  Developer's Public License Version 1.0 (the "License");
