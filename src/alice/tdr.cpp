@@ -34,6 +34,7 @@
 #include "firebird.h"
 #include <stdio.h>
 #include <string.h>
+#include "memory_routines.h"
 #include "../jrd/ibase.h"
 #include "../alice/alice.h"
 #include "../common/classes/Switches.h"
@@ -818,9 +819,23 @@ static bool reconnect(FB_API_HANDLE handle, TraNumber number, const TEXT* name, 
 {
 	ISC_STATUS_ARRAY status_vector;
 
+	UCHAR numbuf[sizeof(TraNumber)];
+	USHORT numlen;
+
+	if (number > TraNumber(MAX_SLONG))
+	{
+		put_vax_int64(numbuf, number);
+		numlen = sizeof(SINT64);
+	}
+	else
+	{
+		put_vax_long(numbuf, (SLONG) number);
+		numlen = sizeof(SLONG);
+	}
+
 	FB_API_HANDLE transaction = 0;
 	if (isc_reconnect_transaction(status_vector, &handle, &transaction,
-								  sizeof(number), reinterpret_cast<const char*>(&number)))
+								  numlen, reinterpret_cast<const char*>(numbuf)))
 	{
 		ALICE_print(90, SafeArg() << name);
 		// msg 90: failed to reconnect to a transaction in database %s
