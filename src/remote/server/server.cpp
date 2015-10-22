@@ -4600,7 +4600,10 @@ ISC_STATUS rem_port::que_events(P_EVENT * stuff, PACKET* sendL)
 	for (event = rdb->rdb_events; event; event = event->rvnt_next)
 	{
 		if (!event->rvnt_iface)
+		{
+			event->rvnt_destroyed = 0;
 			break;
+		}
 	}
 
 	if (!event)
