@@ -3872,8 +3872,14 @@ FB_API_HANDLE& YEvents::getHandle()
 void YEvents::destroy(unsigned dstrFlags)
 {
 	attachment->childEvents.remove(this);
-
 	removeHandle(&events, handle);
+
+	if (!(dstrFlags & DF_RELEASE))
+	{
+		const bool allowCancel = destroyed.compareExchange(0, 1);
+		if (!allowCancel)
+			return;
+	}
 
 	destroy2(dstrFlags);
 }
