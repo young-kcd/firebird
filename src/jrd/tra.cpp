@@ -1048,7 +1048,7 @@ jrd_tra* TRA_reconnect(thread_db* tdbb, const UCHAR* id, USHORT length)
 	if (dbb->readOnly())
 		ERR_post(Arg::Gds(isc_read_only_database));
 
-	const TraNumber number = gds__vax_integer(id, length);
+	const TraNumber number = isc_portable_integer(id, length);
 	if (number > dbb->dbb_next_transaction)
 		PAG_header(tdbb, true);
 
