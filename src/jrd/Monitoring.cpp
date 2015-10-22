@@ -365,7 +365,7 @@ MonitoringSnapshot::MonitoringSnapshot(thread_db* tdbb, MemoryPool& pool)
 
 	MonitoringData::SessionList sessions(pool);
 
-	Lock temp_lock(tdbb, sizeof(SLONG), LCK_monitor), *lock = &temp_lock;
+	Lock temp_lock(tdbb, sizeof(AttNumber), LCK_monitor), *lock = &temp_lock;
 
 	{ // scope for the guard
 
@@ -1233,7 +1233,7 @@ void Monitoring::dumpAttachment(thread_db* tdbb, const Attachment* attachment, b
 	Database* const dbb = tdbb->getDatabase();
 	MemoryPool& pool = *dbb->dbb_permanent;
 
-	const SLONG att_id = attachment->att_attachment_id;
+	const AttNumber att_id = attachment->att_attachment_id;
 
 	// Determine the backup state
 	int backup_state = backup_state_unknown;
