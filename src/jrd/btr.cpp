@@ -5214,7 +5214,7 @@ static void generate_jump_nodes(thread_db* tdbb, btree_page* page,
 														   currentData, node.prefix);
 			jumpNode.length = node.prefix - jumpNode.prefix;
 
-			// make sure split page have enough space for new jump node
+			// make sure split page has enough space for new jump node
 			if (splitIndex && *splitIndex)
 			{
 				ULONG splitSize = splitPageSize + jumpNode.getJumpNodeSize();
