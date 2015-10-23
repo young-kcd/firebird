@@ -2542,7 +2542,7 @@ void AutoStorage::ProbeStack() const
 } // namespace Firebird
 
 
-// This operators are needed for foreign libraries which use redefined new/delete.
+// These operators are needed for foreign libraries which use redefined new/delete.
 // Global operator "delete" is always redefined by firebird,
 // in a case when we actually need "new" only with file/line information
 // this version should be also present as a pair for "delete".
