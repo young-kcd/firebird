@@ -1,3 +1,31 @@
+ 2015-10-22 17:43  dimitr 
+   M src/alice/tdr.cpp
+Fixed gfix -commit / -rollback on big-endian platforms. Seems to be a very old bug.
+
+ 2015-10-22 17:40  dimitr 
+   M src/jrd/tra.cpp
+Fixed regression for bugs.core_2268.
+
+ 2015-10-22 17:15  dimitr 
+   M src/jrd/Monitoring.cpp
+Fixed regression in the monitoring code.
+
+ 2015-10-22 13:40  hvlad 
+   M src/yvalve/why.cpp
+Fixed AV on client : when disconnect happens while event callback run
+
+ 2015-10-22 10:15  hvlad 
+   M src/remote/server/server.cpp
+It should fix TCS issue with events reported privately by Alex
+
+ 2015-10-21 16:51  alexpeshkoff 
+   M src/common/classes/alloc.cpp
+   M src/common/classes/alloc.h
+   M src/common/classes/misc/class_test.cpp
+   M src/common/classes/tree.h
+   M src/common/classes/vector.h
+Make memory consumption smaller using redirection to parent pool for small extents and medium blocks. This makes simple requests to compile without requesting memory from OS.
+
  2015-10-20 13:07  dimitr 
    M src/jrd/tra.cpp
    M src/utilities/ntrace/TracePluginImpl.cpp
