@@ -1208,7 +1208,7 @@ Validation::FETCH_CODE Validation::fetch_page(bool mark, ULONG page_number,
 			(vdr_flags & VDR_online ? LCK_read : LCK_write),
 			0);
 
-		vdr_used_bdbs.add(window->win_bdb);
+		vdr_used_bdbs.add(UsedBdb(window->win_bdb));
 	}
 
 	if ((*page_pointer)->pag_type != type && type != pag_undefined)
