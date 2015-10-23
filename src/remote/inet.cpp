@@ -911,7 +911,7 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
  * Functional description
  *	Final part of server (listening) socket setup. Sets socket options,
  *	binds the socket and calls listen().
- *  For multy-client server (SuperServer or SuperClassic) return listner
+ *  For multi-client server (SuperServer or SuperClassic) return listener
  *  port.
  *  For classic server - accept incoming connections and fork worker 
  *  processes, return NULL at exit;
