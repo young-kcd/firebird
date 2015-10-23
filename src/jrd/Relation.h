@@ -83,7 +83,7 @@ public:
 	ULONG rel_sec_data_space;	// lowest pointer page with secondary data page space
 	USHORT rel_pg_space_id;
 
-	explicit RelationPages()
+	RelationPages()
 		: rel_pages(NULL), rel_instance_id(0),
 		  rel_index_root(0), rel_data_pages(0), rel_slot_space(0),
 		  rel_pri_data_space(0), rel_sec_data_space(0),
