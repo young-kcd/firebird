@@ -468,15 +468,23 @@ bool IntlManager::initialize()
 					filename = fname->value.ToPathName();
 					configInfo = getConfigInfo(objModule);
 
-					if (!modules->exist(filename))
+					ModuleLoader::Module* mod = NULL;
+					bool exists = modules->exist(filename);
+
+					if (!exists)
 					{
-						ModuleLoader::Module* mod = ModuleLoader::loadModule(filename);
+						mod = ModuleLoader::loadModule(filename);
 						if (!mod)
 						{
 							ModuleLoader::doctorModuleExtension(filename);
-							mod = ModuleLoader::loadModule(filename);
+							exists = modules->exist(filename);
+							if (!exists)
+								mod = ModuleLoader::loadModule(filename);
 						}
+					}
 
+					if (!exists)
+					{
 						if (mod)
 						{
 							// Negotiate version
