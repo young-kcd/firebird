@@ -451,7 +451,7 @@ void Service::putSLong(char tag, SLONG val)
 
 void Service::putSInt64(char tag, SINT64 val)
 {
-	UCHAR buf[5];
+	UCHAR buf[9];
 	buf[0] = tag;
 	buf[1] = val;
 	buf[2] = val >> 8;
