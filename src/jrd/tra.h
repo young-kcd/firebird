@@ -258,7 +258,7 @@ public:
 	ArrayField*	tra_arrays;				// Linked list of active arrays
 	Lock*		tra_lock;				// lock for transaction
 	vec<Lock*>*			tra_relation_locks;	// locks for relations
-	TransactionBitmap*	tra_commit_sub_trans;	// commited sub-transactions
+	TransactionBitmap*	tra_commit_sub_trans;	// committed sub-transactions
 	Savepoint*	tra_save_point;			// list of savepoints
 	Savepoint*	tra_save_free;			// free savepoints
 	SLONG tra_save_point_number;		// next save point number to use
