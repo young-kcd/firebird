@@ -1,3 +1,36 @@
+ 2015-10-23 13:09  alexpeshkoff 
+   M src/jrd/IntlManager.cpp
+Avoid loading same international module many times
+
+ 2015-10-23 05:27  robocop 
+   M src/jrd/validation.cpp
+   M src/jrd/validation.h
+I prefer explicit conversions instead of guessing what the compiler did.
+
+ 2015-10-23 03:09  robocop 
+   M src/common/classes/alloc.cpp
+Misc.
+
+ 2015-10-23 03:08  robocop 
+   M src/jrd/btr.cpp
+Misc.
+
+ 2015-10-23 03:08  robocop 
+   M src/jrd/Relation.h
+Misc.
+
+ 2015-10-23 03:07  robocop 
+   M src/jrd/tra.h
+Misc.
+
+ 2015-10-23 02:50  robocop 
+   M src/remote/inet.cpp
+Misc.
+
+ 2015-10-23 02:48  robocop 
+   M src/jrd/svc.cpp
+I suppose putSInt64 author meant 9 not 5.
+
  2015-10-22 17:43  dimitr 
    M src/alice/tdr.cpp
 Fixed gfix -commit / -rollback on big-endian platforms. Seems to be a very old bug.
