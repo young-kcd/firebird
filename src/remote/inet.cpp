@@ -1061,6 +1061,7 @@ static rem_port* listener_socket(rem_port* port, USHORT flag, const addrinfo* pa
 		forkSockets = NULL;
 	}
 #endif
+	return NULL;
 }
 
 
@@ -1572,32 +1573,15 @@ static void disconnect(rem_port* const port)
 	// is an attempt to return the socket to a state where a graceful shutdown can
 	// occur.
 
-	// hvlad: for graceful shutdown linger should be turned on (despite of default
-	// setting by OS)
-	{ // scope
-		struct linger lngr = {1, 10};
-		socklen_t optlen = sizeof(lngr);
-
-		if (port->port_linger.l_onoff)
-			lngr = port->port_linger;
-
-		setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER, (SCHAR*) &lngr, sizeof(lngr));
+	if (port->port_linger.l_onoff)
+	{
+		setsockopt(port->port_handle, SOL_SOCKET, SO_LINGER,
+				   (SCHAR*) &port->port_linger, sizeof(port->port_linger));
 	}
 
 	if (port->port_handle != INVALID_SOCKET)
 	{
-		shutdown(port->port_handle, 1);
-
-		fd_set fd = {0};
-		FD_SET(port->port_handle, &fd);
-		timeval tm = {10, 0};
-		int n = select(1, &fd, NULL, NULL, &tm);
-
-		while (n > 0)
-		{
-			char buff[256];
-			n = recv(port->port_handle, buff, sizeof(buff), 0);
-		}
+		shutdown(port->port_handle, 2);
 	}
 
 	MutexLockGuard guard(port_mutex, FB_FUNCTION);
