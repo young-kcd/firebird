@@ -1005,8 +1005,8 @@ static bool terminated = false;
 
 static void ctrl_c_handler(int signal)
 {
-	if (signal == SIGINT)
-		terminated = true;
+	terminated = true;
+	printf("\n");
 
 	if (prevCtrlCHandler)
 		prevCtrlCHandler(signal);
@@ -1175,7 +1175,8 @@ int main(int ac, char** av)
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))
 				{
-					isc_print_status(status);
+					if (!terminated)
+						isc_print_status(status);
 					isc_service_detach(status, &svc_handle);
 					return 1;
 				}
@@ -1184,7 +1185,8 @@ int main(int ac, char** av)
 
 		if (isc_service_detach(status, &svc_handle))
 		{
-			isc_print_status(status);
+			if (!terminated)
+				isc_print_status(status);
 			return 1;
 		}
 		return 0;
