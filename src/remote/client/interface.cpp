@@ -6375,7 +6375,7 @@ static void init(CheckStatusWrapper* status, ClntAuthBlock& cBlock, rem_port* po
 		{
 			// This is FB < 2.5. Lets remove that not recognized DPB/SPB and convert the UTF8
 			// strings to the OS codepage.
-			intlParametersBlock.fromUtf8(dpb, isc_dpb_utf8_filename);
+			intlParametersBlock.fromUtf8(dpb);
 			ISC_unescape(file_name);
 			ISC_utf8ToSystem(file_name);
 		}
@@ -7274,7 +7274,7 @@ static void svcstart(CheckStatusWrapper*	status,
 	if (rdb->rdb_port->port_protocol < PROTOCOL_VERSION13)
 	{
 		// This is FB < 3.0. Lets convert the UTF8 strings to the OS codepage.
-		IntlSpbStart().fromUtf8(send, 0);
+		IntlSpbStart().fromUtf8(send);
 	}
 
 	// Build the primary packet to get the operation started.

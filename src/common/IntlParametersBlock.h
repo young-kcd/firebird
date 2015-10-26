@@ -42,9 +42,10 @@ public:
 	typedef void ProcessString(string& s);
 
 	virtual TagType checkTag(UCHAR tag, const char** tagName) = 0;
+	virtual UCHAR getUtf8Tag() = 0;
 
-	void toUtf8(ClumpletWriter& pb, UCHAR utf8Tag);
-	void fromUtf8(ClumpletWriter& pb, UCHAR utf8Tag);
+	void toUtf8(ClumpletWriter& pb);
+	void fromUtf8(ClumpletWriter& pb);
 
 private:
 	void processParametersBlock(ProcessString* processString, ClumpletWriter& pb);
@@ -54,12 +55,14 @@ class IntlDpb : public IntlParametersBlock
 {
 public:
 	TagType checkTag(UCHAR tag, const char** tagName);
+	UCHAR getUtf8Tag();
 };
 
 class IntlSpb : public IntlParametersBlock
 {
 public:
 	TagType checkTag(UCHAR tag, const char** tagName);
+	UCHAR getUtf8Tag();
 };
 
 class IntlSpbStart : public IntlParametersBlock
@@ -70,6 +73,7 @@ public:
 	{ }
 
 	TagType checkTag(UCHAR tag, const char** tagName);
+	UCHAR getUtf8Tag();
 
 private:
 	UCHAR mode;

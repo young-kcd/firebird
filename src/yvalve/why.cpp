@@ -5537,7 +5537,7 @@ void YService::start(CheckStatusWrapper* status, unsigned int spbLength, const u
 		ClumpletWriter spb(ClumpletReader::SpbStart, MAX_DPB_SIZE, spbItems, spbLength);
 		if (!utf8Connection)
 		{
-			IntlSpbStart().toUtf8(spb, 0);
+			IntlSpbStart().toUtf8(spb);
 		}
 
 		YEntry<YService> entry(status, this);
@@ -5588,7 +5588,7 @@ YAttachment* Dispatcher::attachOrCreateDatabase(Firebird::CheckStatusWrapper* st
 		setLogin(newDpb, false);
 		if (!utfData)
 		{
-			IntlDpb().toUtf8(newDpb, isc_dpb_utf8_filename);
+			IntlDpb().toUtf8(newDpb);
 		}
 
 		// Take care about filename
@@ -5720,7 +5720,7 @@ YService* Dispatcher::attachServiceManager(CheckStatusWrapper* status, const cha
 		setLogin(spbWriter, true);
 		if (!utfData)
 		{
-			IntlSpb().toUtf8(spbWriter, isc_spb_utf8_filename);
+			IntlSpb().toUtf8(spbWriter);
 		}
 
 		// Build correct config
