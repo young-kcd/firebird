@@ -868,7 +868,7 @@ AttNumber PAG_attachment_id(thread_db* tdbb)
 		header_page* header = (header_page*) CCH_FETCH(tdbb, &window, LCK_write, pag_header);
 		CCH_MARK(tdbb, &window);
 		const AttNumber att_id =
-			((SINT64) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id) + 1;
+			((AttNumber) header->hdr_att_high << BITS_PER_LONG | header->hdr_attachment_id) + 1;
 		attachment->att_attachment_id = att_id;
 		header->hdr_att_high = att_id >> BITS_PER_LONG;
 		header->hdr_attachment_id = (ULONG) (att_id & MAX_ULONG);
