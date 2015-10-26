@@ -2587,7 +2587,7 @@ ISC_STATUS API_ROUTINE isc_dsql_free_statement(ISC_STATUS* userStatus, FB_API_HA
 			statement->closeCursor(&statusWrapper, false);
 			statement->closeStatement(&statusWrapper);
 			statement->release();
-			statements->remove(*stmtHandle);
+			removeHandle(&statements, *stmtHandle);
  			*stmtHandle = 0;
 		}
 		else if (option & DSQL_unprepare)
