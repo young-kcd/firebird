@@ -2506,6 +2506,15 @@ ERROR: Backup incomplete', NULL, NULL);
 (NULL, 'restore', 'restore.epp', NULL, 12, 349, NULL, 'backup version is @1', NULL, NULL);
 (NULL, 'fix_system_generators', 'restore.epp', NULL, 12, 350, NULL, 'fixing system generators', NULL, NULL);
 (NULL, 'BURP_abort', 'burp.cpp', NULL, 12, 351, NULL, 'Error closing database, but backup file is OK', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 361, NULL, '        @1ST(ATISTICS) TDRW    show statistics:', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 362, NULL, '            T                 time from start', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 363, NULL, '            D                 delta time', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 364, NULL, '            R                 page reads', NULL, NULL);
+(NULL, 'burp_usage', 'burp.c', NULL, 12, 365, NULL, '            W                 page writes', NULL, NULL);
+('gbak_missing_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 366, NULL, 'statistics parameter missing', NULL, NULL);
+('gbak_wrong_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 367, NULL, 'wrong char "@1" at statistics parameter', NULL, NULL);
+('gbak_too_long_perf', 'api_gbak/gbak', 'burp.cpp', NULL, 12, 368, NULL, 'too many chars at statistics parameter', NULL, NULL);
+(NULL, 'api_gbak/gbak', 'burp.cpp', NULL, 12, 369, NULL, 'total statistics', NULL, NULL);
 -- SQLERR
 (NULL, NULL, NULL, NULL, 13, 1, NULL, 'Firebird error', NULL, NULL);
 (NULL, NULL, NULL, NULL, 13, 74, NULL, 'Rollback not performed', NULL, NULL);

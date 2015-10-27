@@ -274,26 +274,6 @@ namespace {
 	typedef Array<Jrd::Service*> AllServices;
 	GlobalPtr<AllServices> allServices;	// protected by globalServicesMutex
 	volatile bool svcShutdown = false;
-
-	void put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
-	{
-		using MsgFormat::safe_cell;
-
-		switch (value.type)
-		{
-		case safe_cell::at_int64:
-		case safe_cell::at_uint64:
-			*status++ = isc_arg_number;
-			*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
-			break;
-		case safe_cell::at_str:
-			*status++ = isc_arg_string;
-			*status++ = (ISC_STATUS) (IPTR) value.st_value.s_string;
-			break;
-		default:
-			break;
-		}
-	}
 } // anonymous namespace
 
 
@@ -513,6 +493,7 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 
 	// We preserve the five params of the old code.
 	// Don't want to overflow the status vector.
+	svc_arg_ptr = svc_arg_conv;
 	for (unsigned int loop = 0; loop < 5 && loop < args.getCount(); ++loop)
 	{
 		put_status_arg(status, args.getCell(loop));
@@ -590,6 +571,36 @@ void Service::setServiceStatus(const USHORT facility, const USHORT errcode, cons
 
 	makePermanentStatusVector();
 }
+
+void Service::put_status_arg(ISC_STATUS*& status, const MsgFormat::safe_cell& value)
+{
+	using MsgFormat::safe_cell;
+
+	switch (value.type)
+	{
+	case safe_cell::at_int64:
+	case safe_cell::at_uint64:
+		*status++ = isc_arg_number;
+		*status++ = static_cast<SLONG>(value.i_value); // May truncate number!
+		break;
+	case safe_cell::at_str:
+		*status++ = isc_arg_string;
+		*status++ = (ISC_STATUS) (IPTR) value.st_value.s_string;
+		break;
+	case safe_cell::at_char:
+		svc_arg_ptr[0] = value.c_value;
+		svc_arg_ptr[1] = 0;
+
+		*status++ = isc_arg_string;
+		*status++ = (ISC_STATUS) (IPTR) &svc_arg_ptr[0];
+
+		svc_arg_ptr += 2;
+		break;
+	default:
+		break;
+	}
+}
+
 
 void Service::hidePasswd(ArgvType&, int)
 {

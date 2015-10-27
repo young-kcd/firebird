@@ -102,17 +102,33 @@ static void close_out_transaction(gbak_action, isc_tr_handle*);
 //static void excp_handler();
 static SLONG get_number(const SCHAR*);
 static ULONG get_size(const SCHAR*, burp_fil*);
-static gbak_action open_files(const TEXT *, const TEXT**, bool, USHORT,
+static gbak_action open_files(const TEXT *, const TEXT**, USHORT,
 							  const Firebird::ClumpletWriter&);
 static int api_gbak(Firebird::UtilSvc*, in_sw_tab_t* const in_sw_tab);
 static void burp_output(bool err, const SCHAR*, ...) ATTRIBUTE_FORMAT(2,3);
 static void burp_usage(const in_sw_tab_t* const in_sw_tab);
-static in_sw_tab_t* findSwitch(in_sw_tab_t* const in_sw_tab, Firebird::string, bool);
+static in_sw_tab_t* findSwitch(Firebird::UtilSvc*, in_sw_tab_t* const in_sw_tab, Firebird::string, bool);
 
 // fil.fil_length is ULONG
 const ULONG KBYTE	= 1024;
 const ULONG MBYTE	= KBYTE * KBYTE;
 const ULONG GBYTE	= MBYTE * KBYTE;
+
+// Must be consistent with enum BurpGlobals::StatCounter
+struct StatFormat
+{
+	const char* header;
+	const char* format;
+	char width;
+};
+static const char* STAT_CHARS = "TDRW";
+static const StatFormat STAT_FORMATS[] = 
+{
+	{"time",	"%4lu.%03u ",  9},
+	{"delta",	"%2lu.%03u ",  7},
+	{"reads",	"%6"UQUADFORMAT" ", 7},
+	{"writes",	"%6"UQUADFORMAT" ", 7}
+};
 
 
 THREAD_ENTRY_DECLARE BURP_main(THREAD_ENTRY_PARAM arg)
@@ -171,7 +187,7 @@ static int api_gbak(Firebird::UtilSvc* uSvc, in_sw_tab_t* const in_sw_tab)
 
 	for (int itr = 1; itr < argc; ++itr)
 	{
-		const in_sw_tab_t* inSw = findSwitch(in_sw_tab, argv[itr], false);
+		const in_sw_tab_t* inSw = findSwitch(uSvc, in_sw_tab, argv[itr], false);
 		if (! inSw)
 		{
 			continue;
@@ -395,7 +411,7 @@ static bool switchMatch(const Firebird::string& sw, const char* target)
 }
 
 
-static in_sw_tab_t* findSwitch(in_sw_tab_t* const table, Firebird::string sw, bool throwErrors)
+static in_sw_tab_t* findSwitch(Firebird::UtilSvc* uSvc, in_sw_tab_t* const table, Firebird::string sw, bool throwErrors)
 {
 /**************************************
  *
@@ -434,11 +450,19 @@ static in_sw_tab_t* findSwitch(in_sw_tab_t* const table, Firebird::string sw, bo
 
 	if (throwErrors)
 	{
-		BURP_print(true, 137, sw.c_str());
-		// msg 137  unknown switch %s
-		burp_usage(table);
-		BURP_error(1, true);
-		// msg 1: found unknown switch
+		if (! uSvc->isService())
+		{
+			BURP_print(true, 137, sw.c_str());
+			// msg 137  unknown switch %s
+			burp_usage(table);
+			BURP_error(1, true);
+			// msg 1: found unknown switch
+		}
+		else
+		{
+			BURP_print(true, 137, sw.c_str());
+			// msg 137  unknown switch %s
+		}
 	}
 
 	return 0;
@@ -482,7 +506,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	// test for "-service" switch
 	for (int itr = 1; itr < argc; ++itr)
 	{
-		const in_sw_tab_t* inSw = findSwitch(burp_in_sw_table, argv[itr], false);
+		const in_sw_tab_t* inSw = findSwitch(uSvc, burp_in_sw_table, argv[itr], false);
 
 		if (inSw && inSw->in_sw == IN_SW_BURP_SE)
 		{
@@ -560,7 +584,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 			str = none;
 		}
 
-		in_sw_tab = findSwitch(burp_in_sw_table, str, true);
+		in_sw_tab = findSwitch(uSvc, burp_in_sw_table, str, true);
 		fb_assert(in_sw_tab);
 		in_sw_tab->in_sw_state = true;
 
@@ -765,6 +789,33 @@ int gbak(Firebird::UtilSvc* uSvc)
 			// skip a service specification
 			in_sw_tab->in_sw_state = false;
 		}
+		else if (in_sw_tab->in_sw == IN_SW_BURP_STATS)
+		{
+			if (tdgbl->gbl_stat_flags)
+				BURP_error(334, true, SafeArg() << in_sw_tab->in_sw_name);
+
+			if (++itr >= argc)
+				BURP_error(366, true); // statistics parameter missing
+
+			{	// scope
+				const char* perf_val = argv[itr];
+				const char* c = perf_val;
+				size_t len = strlen(STAT_CHARS);
+
+				for (; *c && len; c++, len--)
+				{
+					const char* pos = strchr(STAT_CHARS, toupper(*c));
+					if (!pos)
+						BURP_error(367, true, SafeArg() << *c); // wrong char "@1" at statistics parameter
+
+					tdgbl->gbl_stat_flags |= 1 << (pos - STAT_CHARS);
+				}
+
+				if (*c)
+					BURP_error(368, true); // too many chars at statistics parameter
+			}
+		}
+
 		else if (in_sw_tab->in_sw == IN_SW_BURP_Y)
 		{
 			// want to do output redirect handling now instead of waiting
@@ -1070,7 +1121,7 @@ int gbak(Firebird::UtilSvc* uSvc)
 	tdgbl->action->act_file = NULL;
 	tdgbl->action->act_action = ACT_unknown;
 
-	action = open_files(file1, &file2, tdgbl->gbl_sw_verbose, sw_replace, dpb);
+	action = open_files(file1, &file2, sw_replace, dpb);
 
 	MVOL_init(tdgbl->io_buffer_size);
 
@@ -1486,7 +1537,12 @@ void BURP_verbose(USHORT number, const SafeArg& arg)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->gbl_sw_verbose)
-		BURP_print(false, number, arg);
+	{
+		tdgbl->print_stats_header();
+		BURP_msg_partial(false, 169);	// msg 169: gbak:
+		tdgbl->print_stats(number);
+		BURP_msg_put(false, number, arg);
+	}
 	else
 		burp_output(false, "%s", "");
 }
@@ -1509,7 +1565,12 @@ void BURP_verbose(USHORT number, const char* str)
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	if (tdgbl->gbl_sw_verbose)
-		BURP_print(false, number, str);
+	{
+		tdgbl->print_stats_header();
+		BURP_msg_partial(false, 169);	// msg 169: gbak:
+		tdgbl->print_stats(number);
+		BURP_msg_put(false, number, SafeArg() << str);
+	}
 	else
 		burp_output(false, "%s", "");
 }
@@ -1588,7 +1649,6 @@ static SLONG get_number( const SCHAR* string)
 
 static gbak_action open_files(const TEXT* file1,
 							  const TEXT** file2,
-							  bool sw_verbose,
 							  USHORT sw_replace,
 							  const Firebird::ClumpletWriter& dpb)
 {
@@ -1634,9 +1694,8 @@ static gbak_action open_files(const TEXT* file1,
 				BURP_print(false, 139, file1);
 				isc_version(&tdgbl->db_handle, BURP_output_version, (void*) "\t%s\n");
 			}
-			if (sw_verbose)
-				BURP_print(false, 166, file1);
-				// msg 166: readied database %s for backup
+			BURP_verbose(166, file1);
+			// msg 166: readied database %s for backup
 		}
 		else if (sw_replace == IN_SW_BURP_B ||
 			(status_vector[1] != isc_io_error && status_vector[1] != isc_bad_db_format))
@@ -1686,14 +1745,13 @@ static gbak_action open_files(const TEXT* file1,
 			{
 				tdgbl->action->act_action = ACT_backup_split;
 			}
-			if (sw_verbose)
-			{
-				BURP_print(false, 75, fil->fil_name.c_str());	// msg 75  creating file %s
-			}
+
+			BURP_verbose(75, fil->fil_name.c_str());	// msg 75  creating file %s
+
 			if (fil->fil_name == "stdout")
 			{
 				if (tdgbl->action->act_total >= 2 || fil->fil_next ||
-					(sw_verbose && tdgbl->sw_redirect == NOREDIRECT && tdgbl->uSvc->isService()))
+					(tdgbl->gbl_sw_verbose && tdgbl->sw_redirect == NOREDIRECT && tdgbl->uSvc->isService()))
 				{
 					BURP_error(266, true);
 					// msg 266 standard output is not supported when using split operation or in verbose mode
@@ -1833,11 +1891,8 @@ static gbak_action open_files(const TEXT* file1,
 			return QUIT;
 		}
 
-		if (sw_verbose)
-		{
-			BURP_print(false, 100, fil->fil_name.c_str());
-			// msg 100 opened file %s
-		}
+		BURP_verbose(100, fil->fil_name.c_str());
+		// msg 100 opened file %s
 
 		// read and check a header record
 		tdgbl->action->act_file = fil;
@@ -1881,11 +1936,9 @@ static gbak_action open_files(const TEXT* file1,
 					return QUIT;
 				}
 
-				if (sw_verbose)
-				{
-					BURP_print(false, 100, fil->fil_name.c_str());
-					// msg 100 opened file %s
-				}
+				BURP_verbose(100, fil->fil_name.c_str());
+				// msg 100 opened file %s
+
 				if (MVOL_split_hdr_read())
 				{
 					if ((total != tdgbl->action->act_total) || (seq != fil->fil_seq) || (seq > total))
@@ -2184,3 +2237,122 @@ void close_platf(DESC file)
 	close(file);
 }
 #endif // WIN_NT
+
+void BurpGlobals::read_stats(SINT64* stats)
+{
+	if (!db_handle)
+		return;
+
+	const char info[] =
+	{
+		isc_info_reads,
+		isc_info_writes
+	};
+
+	ISC_STATUS_ARRAY status = {0};
+	char buffer[sizeof(info) * (1 + 2 + 8) + 2];
+
+	isc_database_info(status, &db_handle, sizeof(info), info, sizeof(buffer), buffer);
+
+	char* p = buffer, *const e = buffer + sizeof(buffer);
+	while (p < e)
+	{
+		int flag = -1;
+		switch (*p)
+		{
+		case isc_info_reads:
+			flag = READS;
+			break;
+
+		case isc_info_writes:
+			flag = WRITES;
+			break;
+
+		case isc_info_end:
+		default:
+			p = e;
+		}
+
+		if (flag != -1)
+		{
+			const int len = isc_vax_integer(p + 1, 2);
+			stats[flag] = isc_portable_integer((ISC_UCHAR*) p + 1 + 2, len);
+			p += len + 3;
+		}
+	}
+}
+
+void BurpGlobals::print_stats(USHORT number)
+{
+	if (!gbl_stat_flags || gbl_stat_done)
+		return;
+
+	const bool total = (number == 369);
+	// msg 369 total statistics
+
+	burp_output(false, " ");
+
+	const int time_mask = (1 << TIME_TOTAL) | (1 << TIME_DELTA);
+	if (gbl_stat_flags & time_mask)
+	{
+		const SINT64 t0 = fb_utils::query_performance_counter();
+		const SINT64 freq_ms = fb_utils::query_performance_frequency() / 1000;
+
+		if (gbl_stat_flags & (1 << TIME_TOTAL))
+		{
+			SINT64 t1 = (t0 - gbl_stats[TIME_TOTAL]) / freq_ms;
+			burp_output(false, STAT_FORMATS[TIME_TOTAL].format, (int)(t1 / 1000), (int)(t1 % 1000));
+		}
+
+		if (gbl_stat_flags & (1 << TIME_DELTA))
+		{
+			SINT64 t2 = (t0 - gbl_stats[TIME_DELTA]) / freq_ms;
+			burp_output(false, STAT_FORMATS[TIME_DELTA].format, (int)(t2 / 1000), (int)(t2 % 1000));
+
+			gbl_stats[TIME_DELTA] = t0;
+		}
+	}
+
+	SINT64 cur_stats[LAST_COUNTER] = {0};
+	if ((gbl_stat_flags & ~time_mask) && !gbl_stat_done)
+		read_stats(cur_stats);
+
+	for (int i = READS; i < LAST_COUNTER; i++)
+	{
+		if (gbl_stat_flags & (1 << i))
+		{
+			SINT64 val = 0;
+			if (total || gbl_stat_done)
+				val = cur_stats[i];
+			else
+				val = cur_stats[i] - gbl_stats[i];
+
+			gbl_stats[i] = cur_stats[i];
+
+			burp_output(false, STAT_FORMATS[i].format, val);
+		}
+	}
+
+	if (total)
+		gbl_stat_done = true;
+}
+
+void BurpGlobals::print_stats_header()
+{
+	if (gbl_stat_header || !gbl_stat_flags)
+		return;
+
+	gbl_stat_header = true;
+
+	BURP_msg_partial(false, 169);	// msg 169: gbak:
+	burp_output(false, " ");
+
+	for (int i = 0; i < LAST_COUNTER; i++)
+	{
+		if (gbl_stat_flags & (1 << i))
+			burp_output(false, "%-*s", STAT_FORMATS[i].width, STAT_FORMATS[i].header);
+	}
+
+	burp_output(false, "\n");
+}
+

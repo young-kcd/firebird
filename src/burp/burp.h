@@ -823,6 +823,12 @@ public:
 			&veryEnd - reinterpret_cast<char*>(&gbl_database_file_name));
 		memset(status_vector, 0, sizeof(status_vector));
 
+		gbl_stat_flags = 0;
+		gbl_stat_header = false;
+		gbl_stat_done = false;
+		memset(gbl_stats, 0, sizeof(gbl_stats));
+		gbl_stats[TIME_TOTAL] = gbl_stats[TIME_DELTA] = fb_utils::query_performance_counter();
+
 		// normal code follows
 		exit_code = FINI_ERROR;	// prevent FINI_OK in case of unknown error thrown
 								// would be set to FINI_OK (==0) in exit_local
@@ -979,6 +985,17 @@ public:
 	Firebird::UtilSvc* uSvc;
 	bool firstMap;      // this is the first time we entered get_mapping()
 	bool stdIoMode;		// stdin or stdout is used as backup file
+
+	enum StatCounter { TIME_TOTAL = 0, TIME_DELTA, READS, WRITES, LAST_COUNTER};
+
+	void read_stats(SINT64* stats);
+	void print_stats(USHORT number);
+	void print_stats_header();
+
+	int gbl_stat_flags;					// bitmask, bit numbers see at enum StatCounter
+	bool gbl_stat_header;				// true, if stats header was printed
+	bool gbl_stat_done;					// true, if main process is done, stop to collect db-level stats
+	SINT64 gbl_stats[LAST_COUNTER];
 };
 
 // CVC: This aux routine declared here to not force inclusion of burp.h with burp_proto.h

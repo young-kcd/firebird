@@ -92,6 +92,7 @@ const int IN_SW_BURP_FIX_FSS_DATA		= 43;      // fix unicode_fss data
 const int IN_SW_BURP_FIX_FSS_METADATA	= 44;      // fix unicode_fss metadata
 
 const int IN_SW_BURP_FETCHPASS		= 45;      // fetch default password from file to use on attach
+const int IN_SW_BURP_STATS				= 46;	// print statistics
 
 /**************************************************************************/
     // used 0BCDEFGILMNOPRSTUVYZ    available AHJQWX
@@ -166,6 +167,16 @@ static const in_sw_tab_t reference_burp_in_sw_table[] =
     {IN_SW_BURP_S,    0,						"SKIP_BAD_DATA",	0, 0, 0, false, 0,		0, NULL, boRestore},
     {IN_SW_BURP_SE,   0,						"SERVICE",			0, 0, 0, false, 277,	0, NULL, boGeneral},
 				// msg 277: %sSE(RVICE) use services manager
+	{IN_SW_BURP_STATS, isc_spb_bkp_stat,		"STATISTICS",		0, 0, 0, false, 361,	2, NULL, boGeneral},
+				// msg 361: @1ST(ATISTICS) TDRW    show statistics:
+	{-1,				0,							" ",				0, 0, 0, false, 362,	0, NULL, boGeneral},
+				// msg 362: T                  time from start
+	{-1,				0,							" ",				0, 0, 0, false, 363,	0, NULL, boGeneral},
+				// msg 363: D                  delta time
+	{-1,				0,							" ",				0, 0, 0, false, 364,	0, NULL, boGeneral},
+				// msg 364: R                  page reads
+	{-1,				0,							" ",				0, 0, 0, false, 365,	0, NULL, boGeneral},
+				// msg 365: W                  page writes
     {IN_SW_BURP_T,    0,						"TRANSPORTABLE",	0, 0, 0, false, 175,	0, NULL, boBackup},
 				// msg 175: %sTRANSPORTABLE transportable backup -- data in XDR format
 #ifdef TRUSTED_AUTH

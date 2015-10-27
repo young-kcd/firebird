@@ -539,6 +539,10 @@ int BACKUP_backup(const TEXT* dbb_file, const TEXT* file_name)
 		general_on_error();
 	END_ERROR;
 
+	if (tdgbl->gbl_stat_flags)
+		BURP_verbose(369);
+	// msg 369 total statistics
+
 	FINISH
 	ON_ERROR
 		general_on_error();
