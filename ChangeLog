@@ -1,3 +1,44 @@
+ 2015-10-26 21:22  dimitr 
+   M src/yvalve/why.cpp
+Fixed CORE-4972: Invalid statement handle.
+
+ 2015-10-26 16:55  alexpeshkoff 
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+Do not type "invalid service handle" error message after pressing ctrl-C (as Vlad requested)
+
+ 2015-10-26 15:07  alexpeshkoff 
+   M src/yvalve/why.cpp
+Fixed a case when second copy of fb_shutdown() is called in another thread while first copy of it is still running (restored old code)
+
+ 2015-10-26 15:04  alexpeshkoff 
+   M src/common/IntlParametersBlock.cpp
+   M src/common/IntlParametersBlock.h
+   M src/remote/client/interface.cpp
+   M src/yvalve/why.cpp
+Fixed bug related with IntlParametersBlock noticed by Mark Rotteveel
+
+ 2015-10-26 10:28  dimitr 
+   M src/jrd/pag.cpp
+   M src/utilities/gstat/ppg.cpp
+Misc.
+
+ 2015-10-26 10:17  dimitr 
+   M src/utilities/gstat/ppg.cpp
+Fixed gstat output.
+
+ 2015-10-25 13:54  hvlad 
+   M src/utilities/ntrace/fbtrace.conf
+Fixed bug CORE-4968 : fbtrace.conf in FB30-HOME: missing equality sign ('=') between parameter  "log_errors" and its default values ("false")
+
+ 2015-10-25 13:48  hvlad 
+   M src/remote/server/server.cpp
+Avoid send over closing socket (it put errors 10058 (WSAESHUTDOWN) in firebird.log)
+
+ 2015-10-25 13:45  hvlad 
+   M src/remote/inet.cpp
+Revert some of my recent changes in socket closing sequence as it causes delays client side on Linux.
+It also should fix CORE-4977 : Detach of 3.x database from 3.x Linux client takes much longer than from 3.x Windows client
+
  2015-10-23 13:09  alexpeshkoff 
    M src/jrd/IntlManager.cpp
 Avoid loading same international module many times
