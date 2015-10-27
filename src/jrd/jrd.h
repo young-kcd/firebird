@@ -188,6 +188,7 @@ const int DYN_REQUESTS				= 2;
 //
 // Errors during validation - will be returned on info calls
 // CVC: It seems they will be better in a header for val.cpp that's not val.h
+// Do not forget to add new constants to inf.cpp:INF_database_info
 //
 const int VAL_PAG_WRONG_TYPE			= 0;
 const int VAL_PAG_CHECKSUM_ERR			= 1;
@@ -217,7 +218,11 @@ const int VAL_INDEX_ORPHAN_CHILD		= 24;
 const int VAL_INDEX_CYCLE				= 25;
 const int VAL_INDEX_BAD_LEFT_SIBLING	= 26;
 const int VAL_INDEX_MISSES_NODE			= 27;
-const int VAL_MAX_ERROR					= 28;
+const int VAL_DATA_PAGE_ISNT_IN_PIP		= 28;
+const int VAL_DATA_PAGE_SLOT_NOT_FOUND	= 29;
+const int VAL_DATA_PAGE_SLOT_BAD_VAL	= 30;
+const int VAL_DATA_PAGE_HASNO_PP		= 31;
+const int VAL_MAX_ERROR					= 32;
 
 
 struct DSqlCacheItem

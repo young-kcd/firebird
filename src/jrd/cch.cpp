@@ -4983,7 +4983,7 @@ static BufferDesc* get_buffer(thread_db* tdbb, const PageNumber page, LATCH latc
 #ifndef SUPERSERVER
 				if (page.getPageNum() >= 0)
 				{
-					CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page));
+					CCH_TRACE(("bdb->bdb_lock->lck_logical = LCK_none; page=%i", bdb->bdb_page.getPageNum()));
 					bdb->bdb_lock->lck_logical = LCK_none;
 				}
 				else {

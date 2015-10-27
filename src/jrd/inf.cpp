@@ -624,6 +624,10 @@ void INF_database_info(const UCHAR* items,
 			if (err_att->att_val_errors)
 			{
 				err_val = (*err_att->att_val_errors)[VAL_DATA_PAGE_CONFUSED] +
+						  (*err_att->att_val_errors)[VAL_DATA_PAGE_ISNT_IN_PIP] +
+						  (*err_att->att_val_errors)[VAL_DATA_PAGE_SLOT_NOT_FOUND] +
+						  (*err_att->att_val_errors)[VAL_DATA_PAGE_SLOT_BAD_VAL] +
+						  (*err_att->att_val_errors)[VAL_DATA_PAGE_HASNO_PP] +
 						  (*err_att->att_val_errors)[VAL_DATA_PAGE_LINE_ERR];
 			}
 			else
