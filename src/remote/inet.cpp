@@ -432,6 +432,8 @@ static int		cleanup_ports(const int, const int, void*);
 static int		fork();
 #endif
 
+typedef Firebird::Array<SOCKET> SocketsArray;
+
 #ifdef WIN_NT
 static void		wsaExitHandler(void*);
 static int		fork(SOCKET, USHORT);
@@ -441,9 +443,7 @@ static Firebird::GlobalPtr<Firebird::Mutex> forkMutex;
 static HANDLE forkEvent = INVALID_HANDLE_VALUE;
 static bool forkThreadStarted = false;
 
-typedef Firebird::Array<SOCKET> SocketsArray;
 static SocketsArray* forkSockets;
-
 #endif
 
 static in_addr get_bind_address();
@@ -544,7 +544,7 @@ static rem_port* inet_async_receive = NULL;
 
 static Firebird::GlobalPtr<Firebird::Mutex> port_mutex;
 static Firebird::GlobalPtr<PortsCleanup>	inet_ports;
-
+static Firebird::GlobalPtr<SocketsArray>	ports_to_close;
 
 rem_port* INET_analyze(const Firebird::PathName& file_name,
 					ISC_STATUS*	status_vector,
@@ -1744,13 +1744,29 @@ static void disconnect(rem_port* const port)
 		port->port_async = NULL;
 	}
 
+	// hvlad: delay closing of the server sockets to prevent its reuse
+	// by another (newly accepted) port until next select() call. See
+	// also select_wait() function.
+	const bool delayClose = (port->port_server_flags && port->port_parent);
+
 	// If this is a sub-port, unlink it from its parent
 	port->unlinkParent();
 
 	inet_ports->unRegisterPort(port);
 
-	SOCLOSE(port->port_handle);
-	SOCLOSE(port->port_channel);
+	if (delayClose)
+	{
+		if (port->port_handle != INVALID_SOCKET)
+			ports_to_close->push(port->port_handle);
+
+		if (port->port_channel != INVALID_SOCKET)
+			ports_to_close->push(port->port_channel);
+	}
+	else
+	{
+		SOCLOSE(port->port_handle);
+		SOCLOSE(port->port_channel);
+	}
 
 	port->release();
 
@@ -1811,6 +1827,13 @@ static int cleanup_ports(const int, const int, void* /*arg*/)
 	INET_shutting_down = true;
 
 	inet_ports->closePorts();
+
+	while (ports_to_close->hasData())
+	{
+		SOCKET s = ports_to_close->pop();
+		SOCLOSE(s);
+	}
+
 	return 0;
 }
 
@@ -2332,6 +2355,13 @@ static bool select_wait( rem_port* main_port, Select* selct)
 
 		{ // port_mutex scope
 			Firebird::MutexLockGuard guard(port_mutex);
+
+			while (ports_to_close->hasData())
+			{
+				SOCKET s = ports_to_close->pop();
+				SOCLOSE(s);
+			}
+
 			for (rem_port* port = main_port; port; port = port->port_next)
 			{
 				if (port->port_state == rem_port::PENDING && 
