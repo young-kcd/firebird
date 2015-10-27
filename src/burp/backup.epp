@@ -4366,6 +4366,7 @@ void write_user_privileges()
 
 	FOR (REQUEST_HANDLE req_handle1)
 		X IN RDB$USER_PRIVILEGES
+		WITH X.RDB$GRANTOR NOT MISSING
 		put(tdgbl, rec_user_privilege);
 		const SSHORT l = PUT_TEXT (att_priv_user, X.RDB$USER);
 		MISC_terminate (X.RDB$USER, temp, l, sizeof(temp));
