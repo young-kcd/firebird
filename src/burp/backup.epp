@@ -3661,7 +3661,10 @@ void write_rel_constraints()
 	BurpGlobals* tdgbl = BurpGlobals::getSpecific();
 
 	FOR (REQUEST_HANDLE req_handle1)
-		X IN RDB$RELATION_CONSTRAINTS
+		X IN RDB$RELATION_CONSTRAINTS CROSS
+		REL IN RDB$RELATIONS
+		WITH REL.RDB$RELATION_NAME EQ X.RDB$RELATION_NAME AND
+			 (REL.RDB$SYSTEM_FLAG MISSING OR REL.RDB$SYSTEM_FLAG NE 1)
 		put(tdgbl, rec_rel_constraint);
 		const SSHORT l = PUT_TEXT (att_rel_constraint_name, X.RDB$CONSTRAINT_NAME);
 		MISC_terminate (X.RDB$CONSTRAINT_NAME, temp, l, sizeof(temp));
