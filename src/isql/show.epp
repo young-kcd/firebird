@@ -563,7 +563,7 @@ void SHOW_read_owner()
 }
 
 
-static const char* granted_by(char* buffer, const char* grantor)
+static const char* granted_by(char* buffer, const char* grantor, bool nullGrantor)
 {
 /**************************************
  *
@@ -600,7 +600,7 @@ static const char* granted_by(char* buffer, const char* grantor)
 
  	strcpy(buffer, grantor);
 	fb_utils::exact_name(buffer);
-	if (!strcmp(buffer, owner))
+	if ((!strcmp(buffer, owner)) || nullGrantor)
 		buffer[0] = '\0';
 	else
 	{
@@ -757,7 +757,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
 						priv_string, col_string,
 						SQL_identifier,
-						user_string, with_option, granted_by(buf_grantor, prev_grantor),
+						user_string, with_option, granted_by(buf_grantor, prev_grantor, false),
 						terminator, NEWLINE);
 
 					// re-initialize strings
@@ -872,7 +872,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 				isqlGlob.printf("GRANT %s%s ON %s TO %s%s%s%s%s",
 					priv_string, col_string,
 					SQL_identifier,
-					user_string, with_option, granted_by(buf_grantor, prev_grantor), terminator, NEWLINE);
+					user_string, with_option, granted_by(buf_grantor, prev_grantor, false), terminator, NEWLINE);
 			}
 
 		END_FOR
@@ -944,7 +944,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				isqlGlob.printf("GRANT EXECUTE ON PROCEDURE %s TO %s%s%s%s%s",
 						 SQL_identifier, user_string, with_option,
-						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+						 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL), terminator, NEWLINE);
 
 			END_FOR
 			ON_ERROR
@@ -997,7 +997,7 @@ processing_state SHOW_grants2 (const SCHAR* object,
 					with_option[0] = '\0';
 
 				sprintf(Print_buffer, "GRANT %s TO %s%s%s%s%s", SQL_identifier,
-						user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR),
+						user_string, with_option, granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
 						terminator, NEWLINE);
 
 				if (first && optional_msg)
@@ -1076,7 +1076,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT EXECUTE ON PACKAGE %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1152,7 +1153,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT EXECUTE ON FUNCTION %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1224,7 +1226,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON SEQUENCE %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1296,7 +1299,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON EXCEPTION %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1368,7 +1372,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON DOMAIN %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1440,7 +1445,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON CHARACTER SET %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1512,7 +1518,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 					isqlGlob.printf("GRANT USAGE ON COLLATION %s TO %s%s%s%s%s",
 							 SQL_identifier, user_string, with_option,
-							 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+							 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+							 terminator, NEWLINE);
 
 				END_FOR
 				ON_ERROR
@@ -1656,7 +1663,8 @@ processing_state SHOW_grants2 (const SCHAR* object,
 
 				isqlGlob.printf("GRANT %s %s TO %s%s%s%s%s",
 						 priv_string, obj_string, user_string, with_option,
-						 granted_by(buf_grantor, PRV.RDB$GRANTOR), terminator, NEWLINE);
+						 granted_by(buf_grantor, PRV.RDB$GRANTOR, PRV.RDB$GRANTOR.NULL),
+						 terminator, NEWLINE);
 
 			END_FOR
 			ON_ERROR
@@ -1780,7 +1788,7 @@ void SHOW_grant_roles2 (const SCHAR* terminator,
 			user_string = SQL_identifier2;
 		}
 		isqlGlob.printf("GRANT %s TO %s%s%s%s%s", role,
-			user_string, with_option, granted_by(buf_grantor, grantor), terminator, NEWLINE);
+			user_string, with_option, granted_by(buf_grantor, grantor, false), terminator, NEWLINE);
 
 	END_FOR
 	ON_ERROR

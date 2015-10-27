@@ -2428,6 +2428,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
 				AND PRIV.RDB$OBJECT_TYPE = obj_udf
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -2438,6 +2439,7 @@ void DropFunctionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name.c_str()
 				AND PRIV.RDB$USER_TYPE = obj_udf
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -3213,6 +3215,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$RELATION_NAME EQ name.c_str()
 				AND PRIV.RDB$OBJECT_TYPE = obj_procedure
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -3223,6 +3226,7 @@ void DropProcedureNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 		FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES WITH PRIV.RDB$USER EQ name.c_str()
 				AND PRIV.RDB$USER_TYPE = obj_procedure
+				AND PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -3695,7 +3699,8 @@ void DropTriggerNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	FOR (REQUEST_HANDLE requestHandle TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$USER EQ name.c_str() AND
-			 PRIV.RDB$USER_TYPE = obj_trigger
+			 PRIV.RDB$USER_TYPE = obj_trigger AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -4106,7 +4111,8 @@ void DropCollationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_collation
+			 PRIV.RDB$OBJECT_TYPE = obj_collation AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -5099,7 +5105,8 @@ void DropDomainNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch,
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_field
+			 PRIV.RDB$OBJECT_TYPE = obj_field AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -5368,7 +5375,8 @@ void DropExceptionNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratc
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_exception
+			 PRIV.RDB$OBJECT_TYPE = obj_exception AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -5712,7 +5720,8 @@ void DropSequenceNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	FOR (REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_generator
+			 PRIV.RDB$OBJECT_TYPE = obj_generator AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -6064,7 +6073,8 @@ void RelationNode::deleteLocalField(thread_db* tdbb, jrd_tra* transaction,
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ relationName.c_str() AND
 			 PRIV.RDB$FIELD_NAME EQ fieldName.c_str() AND
-		     PRIV.RDB$OBJECT_TYPE = obj_relation
+		     PRIV.RDB$OBJECT_TYPE = obj_relation AND
+		     PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -8155,7 +8165,8 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES
 			WITH PRIV.RDB$USER EQ triggerName.c_str() AND
-					PRIV.RDB$USER_TYPE = obj_trigger
+				PRIV.RDB$USER_TYPE = obj_trigger AND
+				PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -8168,7 +8179,8 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$RELATION_NAME EQ name.c_str() AND
-			 PRIV.RDB$OBJECT_TYPE = obj_relation
+			 PRIV.RDB$OBJECT_TYPE = obj_relation AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -8179,7 +8191,8 @@ void DropRelationNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch
 	FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 		PRIV IN RDB$USER_PRIVILEGES
 		WITH PRIV.RDB$USER EQ name.c_str() AND
-			 PRIV.RDB$USER_TYPE = obj_view
+			 PRIV.RDB$USER_TYPE = obj_view AND
+			 PRIV.RDB$GRANTOR NOT MISSING
 	{
 		ERASE PRIV;
 	}
@@ -10429,8 +10442,9 @@ void DropRoleNode::execute(thread_db* tdbb, DsqlCompilerScratch* dsqlScratch, jr
 		// The 2nd OR clause finds all privileges granted to the role
 		FOR(REQUEST_HANDLE request2 TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES
-			WITH (PRIV.RDB$RELATION_NAME EQ name.c_str() AND PRIV.RDB$OBJECT_TYPE = obj_sql_role) OR
-					(PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_sql_role)
+			WITH ((PRIV.RDB$RELATION_NAME EQ name.c_str() AND PRIV.RDB$OBJECT_TYPE = obj_sql_role) OR
+				  (PRIV.RDB$USER EQ name.c_str() AND PRIV.RDB$USER_TYPE = obj_sql_role)) AND
+				 PRIV.RDB$GRANTOR NOT MISSING
 		{
 			ERASE PRIV;
 		}
@@ -10991,7 +11005,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 		FOR(REQUEST_HANDLE request TRANSACTION_HANDLE transaction)
 			PRIV IN RDB$USER_PRIVILEGES
 			WITH PRIV.RDB$USER = user.c_str() AND
-				 PRIV.RDB$USER_TYPE = userType
+				 PRIV.RDB$USER_TYPE = userType AND
+				 PRIV.RDB$GRANTOR NOT MISSING
 		{
 			if (tdbb->getAttachment()->att_user->locksmith() || grantorRevoker == PRIV.RDB$GRANTOR)
 			{
@@ -11131,7 +11146,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						 PRIV.RDB$PRIVILEGE EQ priv AND
 						 PRIV.RDB$USER = user.c_str() AND
 						 PRIV.RDB$USER_TYPE = userType AND
-						 PRIV.RDB$FIELD_NAME EQ field.c_str()
+						 PRIV.RDB$FIELD_NAME EQ field.c_str() AND
+						 PRIV.RDB$GRANTOR NOT MISSING
 				{
 					if (grantorRevoker == PRIV.RDB$GRANTOR)
 					{
@@ -11151,7 +11167,8 @@ void GrantRevokeNode::grantRevoke(thread_db* tdbb, jrd_tra* transaction, const G
 						 PRIV.RDB$RELATION_NAME EQ objName.c_str() AND
 						 PRIV.RDB$OBJECT_TYPE = objType AND
 						 PRIV.RDB$USER EQ user.c_str() AND
-						 PRIV.RDB$USER_TYPE = userType
+						 PRIV.RDB$USER_TYPE = userType AND
+						 PRIV.RDB$GRANTOR NOT MISSING
 				{
 					// Revoking a permission at the table level implies revoking the perm. on all
 					// columns. So for all fields in this table which have been granted the

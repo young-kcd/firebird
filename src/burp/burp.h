@@ -762,6 +762,7 @@ struct burp_meta_obj
 	burp_meta_obj*	obj_next;
 	USHORT			obj_type;
 	GDS_NAME		obj_name;
+	bool			obj_class;
 };
 
 // CVC: Could use MAXPATHLEN, but what about restoring in a different system?

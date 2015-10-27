@@ -237,12 +237,13 @@ const int USER_PRIV_FIELD_NAME		= 32;
 const int USER_PRIV_USER_TYPE		= 64;
 const int USER_PRIV_OBJECT_TYPE		= 128;
 
-static inline void collect_missing_privs(BurpGlobals* tdgbl, USHORT type, const GDS_NAME name)
+static inline void collect_missing_privs(BurpGlobals* tdgbl, USHORT type, const GDS_NAME name, bool hasSecClass)
 {
 	burp_meta_obj* object = (burp_meta_obj*) BURP_alloc_zero(sizeof(burp_meta_obj));
 	object->obj_next = tdgbl->miss_privs;
 	object->obj_type = type;
 	strcpy(object->obj_name, name);
+	object->obj_class = hasSecClass;
 	tdgbl->miss_privs = object;
 }
 
@@ -2196,8 +2197,7 @@ bool get_character_set(BurpGlobals* tdgbl)
 				general_on_error ();
 			END_ERROR;
 
-			if (!securityClass)
-				collect_missing_privs(tdgbl, obj_charset, charset_name);
+			collect_missing_privs(tdgbl, obj_charset, charset_name, securityClass);
 		}
 		else
 		{
@@ -2489,8 +2489,7 @@ bool get_collation(BurpGlobals* tdgbl)
 			general_on_error ();
 		END_ERROR;
 
-		if (!securityClass)
-			collect_missing_privs(tdgbl, obj_collation, coll_name);
+		collect_missing_privs(tdgbl, obj_collation, coll_name, securityClass);
 	}
 	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11)
 	{
@@ -3360,8 +3359,7 @@ bool get_exception(BurpGlobals* tdgbl)
 			general_on_error ();
 		END_ERROR;
 
-		if (!securityClass)
-			collect_missing_privs(tdgbl, obj_exception, exception_name);
+		collect_missing_privs(tdgbl, obj_exception, exception_name, securityClass);
 	}
 	else
 	{
@@ -4366,8 +4364,7 @@ bool get_function(BurpGlobals* tdgbl)
 				existFlag = true;
 		END_ERROR;
 
-		if (!securityClass)
-			collect_missing_privs(tdgbl, obj_udf, function_name);
+		collect_missing_privs(tdgbl, obj_udf, function_name, securityClass);
 	}
 	else
 	{
@@ -5545,8 +5542,7 @@ bool get_global_field(BurpGlobals* tdgbl)
 			general_on_error ();
 		END_ERROR;
 
-		if (!securityClass)
-			collect_missing_privs(tdgbl, obj_field, field_name);
+		collect_missing_privs(tdgbl, obj_field, field_name, securityClass);
 	}
 	else if (tdgbl->runtimeODS >= DB_VERSION_DDL10)
 	{
@@ -8935,6 +8931,7 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 
 	user_type = obj_user;
 	object_type = obj_relation;
+	grantor[0] = 0;
 
 	skip_init(&scan_next_attr);
 	while (skip_scan(&scan_next_attr), get_attribute(&attribute, tdgbl) != att_end)
@@ -8995,7 +8992,8 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 	// Check if object exists
 	isc_tr_handle	local_trans = 0;
 	bool exists = false;
-	switch (object_type)
+	// if grantor is not set than it's system privilege which should not be restored
+	if (grantor[0]) switch (object_type)
 	{
 	case obj_package_header:
 		{
@@ -9029,9 +9027,29 @@ bool get_user_privilege(BurpGlobals* tdgbl)
 				exists = true;
 				if (rel->rel_flags & REL_view)
 					local_trans = tdgbl->global_trans ? tdgbl->global_trans : gds_trans;
-			break;
+				break;
 			}
 		}
+		break;
+
+	case obj_charset:
+	case obj_collation:
+	case obj_exception:
+	case obj_udf:
+	case obj_field:
+	case obj_generator:
+		{
+		for (burp_meta_obj* object = tdgbl->miss_privs; object; object = object->obj_next)
+			if (object->obj_type == object_type && strcmp(object->obj_name, relation_name) == 0)
+			{
+				if (object->obj_class)
+					exists = true;
+				break;
+			}
+		}
+		break;
+
+	case obj_database:
 		break;
 
 	default:
@@ -10234,8 +10252,7 @@ void store_blr_gen_id(BurpGlobals* tdgbl, const TEXT* gen_name, SINT64 value, SI
 			general_on_error ();
 		END_ERROR;
 
-		if (!secclass)
-			collect_missing_privs(tdgbl, obj_generator, gen_name);
+		collect_missing_privs(tdgbl, obj_generator, gen_name, secclass);
 	}
 	else if (tdgbl->runtimeODS >= DB_VERSION_DDL11)
 	{
@@ -10637,6 +10654,9 @@ void fix_missing_privileges(BurpGlobals* tdgbl)
 
 	for (burp_meta_obj* object = tdgbl->miss_privs; object; object = object->obj_next)
 	{
+		if (object->obj_class)
+			continue;
+
 		const char* const privilege = (object->obj_type == obj_udf) ? "X" : "G";
 
 		for (int i = 1; i >= 0; i--)

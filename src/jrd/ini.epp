@@ -389,32 +389,6 @@ void INI_format(const char* owner, const char* charset)
 	// Store symbols for international character sets & collations
 	store_intlnames(tdbb, ownerName);
 
-	// Create generators to be used by system triggers
-
-	handle1.reset();
-
-	for (const gen* generator = generators; generator->gen_name; generator++)
-		store_generator(tdbb, generator, handle1, ownerName);
-
-	// Adjust the value of the hidden generator RDB$GENERATORS
-	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
-
-	// store system-defined triggers
-
-	handle1.reset();
-
-	for (const jrd_trg* trigger = triggers; trigger->trg_relation; ++trigger)
-		store_trigger(tdbb, trigger, handle1);
-
-	// store trigger messages to go with triggers
-
-	handle1.reset();
-
-	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
-		store_message(tdbb, message, handle1);
-
-	DFW_perform_system_work(tdbb);
-
 	const size_t ownerNameLength = ownerName.length();
 	fb_assert(ownerNameLength <= MAX_UCHAR);
 
@@ -550,6 +524,32 @@ void INI_format(const char* owner, const char* charset)
 
 		add_security_to_sys_rel(tdbb, ownerName, names[relfld[RFLD_R_NAME]], length, buffer);
 	}
+
+	// Create generators to be used by system triggers
+
+	handle1.reset();
+
+	for (const gen* generator = generators; generator->gen_name; generator++)
+		store_generator(tdbb, generator, handle1, ownerName);
+
+	// Adjust the value of the hidden generator RDB$GENERATORS
+	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
+
+	// store system-defined triggers
+
+	handle1.reset();
+
+	for (const jrd_trg* trigger = triggers; trigger->trg_relation; ++trigger)
+		store_trigger(tdbb, trigger, handle1);
+
+	// store trigger messages to go with triggers
+
+	handle1.reset();
+
+	for (const trigger_msg* message = trigger_messages; message->trigmsg_name; ++message)
+		store_message(tdbb, message, handle1);
+
+	DFW_perform_system_work(tdbb);
 }
 
 
@@ -1073,8 +1073,8 @@ static void add_security_to_sys_rel(thread_db*	tdbb,
 				PRIV.RDB$GRANT_OPTION = 0;
 				break;
 			}
-			strcpy(PRIV.RDB$GRANTOR, user_name.c_str());
 			PRIV.RDB$PRIVILEGE[1] = 0;
+			PRIV.RDB$GRANTOR.NULL = TRUE;
 			strcpy(PRIV.RDB$RELATION_NAME, rel_name);
 			PRIV.RDB$FIELD_NAME.NULL = TRUE;
 			PRIV.RDB$USER_TYPE = obj_user;
@@ -1199,6 +1199,7 @@ static void add_security_to_sys_obj(thread_db* tdbb,
 			PRIV.RDB$GRANT_OPTION = 1;
 			PRIV.RDB$USER_TYPE = obj_user;
 			PRIV.RDB$OBJECT_TYPE = obj_type;
+			PRIV.RDB$GRANTOR.NULL = TRUE;
 		END_STORE
 	}
 }
