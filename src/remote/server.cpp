@@ -1701,7 +1701,8 @@ void rem_port::disconnect(PACKET* sendL, PACKET* receiveL)
 
 	if (this->port_flags & PORT_async)
 	{
-		if (rdb && rdb->rdb_port && !(rdb->rdb_port->port_flags & PORT_disconnect))
+		if (!(this->port_flags & PORT_detached) &&
+			rdb && rdb->rdb_port && !(rdb->rdb_port->port_flags & PORT_disconnect))
 		{
 			PACKET *packet = &rdb->rdb_packet;
 			packet->p_operation = op_dummy;
@@ -1864,6 +1865,8 @@ void rem_port::drop_database(P_RLSE* /*release*/, PACKET* sendL)
 	}
 
 	port_flags |= PORT_detached;
+	if (port_async)
+		port_async->port_flags |= PORT_detached;
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
@@ -1971,6 +1974,8 @@ ISC_STATUS rem_port::end_database(P_RLSE* /*release*/, PACKET* sendL)
 		return this->send_response(sendL, 0, 0, status_vector, false);
 
 	port_flags |= PORT_detached;
+	if (port_async)
+		port_async->port_flags |= PORT_detached;
 
 	while (rdb->rdb_events)
 		release_event(rdb->rdb_events);
