@@ -5355,13 +5355,16 @@ static void disconnect( rem_port* port)
 	// Clear context reference for the associated event handler
 	// to avoid SEGV during shutdown
 
-	if (port->port_async) {
+	if (port->port_async) 
+	{
 		port->port_async->port_context = NULL;
+		port->port_async->port_flags |= PORT_disconnect;
 	}
 
 	// Perform physical network disconnect and release
 	// memory for remote database context.
 
+	port->port_flags |= PORT_disconnect;
 	port->disconnect();
 	delete rdb;
 }
