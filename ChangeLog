@@ -1,3 +1,42 @@
+ 2015-10-27 11:23  hvlad 
+   M src/burp/backup.epp
+Forward compatibility with ODS12 - don't put into backup relation constraints of system relations (which was introduced by ODS12).
+It allows to backup fb3 database using gbak v2.5 and later restore such backup by v3 engine.
+
+ 2015-10-27 11:20  hvlad 
+   M src/burp/backup.epp
+   M src/burp/burp.cpp
+   M src/burp/burp.h
+   M src/burp/burpswi.h
+   M src/burp/restore.epp
+   M src/common/classes/ClumpletReader.cpp
+   M src/include/consts_pub.h
+   M src/jrd/svc.cpp
+   M src/jrd/svc.h
+   M src/msgs/facilities2.sql
+   M src/msgs/messages2.sql
+   M src/utilities/fbsvcmgr.cpp
+Backport feature CORE-1999 : TimeStamp in the every line output gbak.exe utility
+
+ 2015-10-27 10:27  hvlad 
+   M src/remote/server.cpp
+Backport from trunk: avoid send over closing socket (it put errors 10058 (WSAESHUTDOWN) in firebird.log)
+
+ 2015-10-27 10:20  hvlad 
+   M src/remote/interface.cpp
+Backport from trunk: mark port as disconnecting to avoid reporting (expected) network errors
+
+ 2015-10-27 10:06  hvlad 
+   M src/remote/inet.cpp
+Backport fix for bug CORE-4680 : Possible deadlock in firebird connect.
+
+ 2015-10-27 08:38  roman-simakov 
+   M src/jrd/cch.cpp
+   M src/jrd/inf.cpp
+   M src/jrd/jrd.h
+   M src/jrd/validation.cpp
+Fidex CORE-4978: Improved validation and fix of lost data pages
+
  2015-10-14 12:46  paulbeach 
    M builds/install/arch-specific/darwin/install-script
    M builds/install/arch-specific/darwin/preupgrade-script
