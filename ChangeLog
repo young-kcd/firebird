@@ -1,3 +1,20 @@
+ 2015-10-27 16:57  alexpeshkoff 
+   M src/burp/backup.epp
+Postfix for CORE-4980: no use to backup rights granted to system tables
+
+ 2015-10-27 16:48  alexpeshkoff 
+   M src/burp/burp.h
+   M src/burp/restore.epp
+   M src/dsql/DdlNodes.epp
+   M src/dsql/PackageNodes.epp
+   M src/isql/show.epp
+   M src/jrd/ini.epp
+Fixed CORE-4980: Operator REVOKE can modify rights granted to system tables at DB creation time
+
+ 2015-10-27 12:19  dimitr 
+   M src/dsql/parse.y
+Disabled GRANT/REVOKE for privileges not currently enforced: USAGE/DOMAIN, USAGE/CHARSET, USAGE/COLLATION.
+
  2015-10-26 21:22  dimitr 
    M src/yvalve/why.cpp
 Fixed CORE-4972: Invalid statement handle.
