@@ -1739,6 +1739,7 @@ static bool get_procedure(thread_db*			tdbb,
 	catch (const Firebird::Exception&)
 	{
 		trace.fetch(true, res_failed);
+		tdbb->setRequest(request);
 		close_procedure(tdbb, rsb);
 		throw;
 	}
@@ -2894,6 +2895,7 @@ static void open_procedure(thread_db* tdbb, RecordSource* rsb, irsb_procedure* i
 		trace.finish(true, res_successful);
 	}
 	catch (const Firebird::Exception&) {
+		tdbb->setRequest(request);
 		close_procedure(tdbb, rsb);
 		throw;
 	}

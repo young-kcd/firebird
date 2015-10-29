@@ -1517,6 +1517,7 @@ static void execute_procedure(thread_db* tdbb, jrd_nod* node)
 		const bool no_priv = (ex.stuff_exception(tdbb->tdbb_status_vector) == isc_no_priv);
 		trace.finish(false, no_priv ? res_unauthorized : res_failed);
 
+		tdbb->setRequest(request);
 		EXE_unwind(tdbb, proc_request);
 		proc_request->req_attachment = NULL;
 		proc_request->req_flags &= ~(req_in_use | req_proc_fetch);
@@ -1746,6 +1747,7 @@ static jrd_req* execute_triggers(thread_db* tdbb,
 	{
 		if (trigger)
 		{
+			tdbb->setRequest(request);
 			EXE_unwind(tdbb, trigger);
 			trigger->req_attachment = NULL;
 			trigger->req_flags &= ~req_in_use;
