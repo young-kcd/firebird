@@ -1260,11 +1260,8 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 		BUGCHECK(147);
 
 	// Save the old pool and request to restore on exit
-	StmtNode::ExeState exeState(tdbb);
+	StmtNode::ExeState exeState(tdbb, request, request->req_transaction);
 	Jrd::ContextPoolHolder context(tdbb, request->req_pool);
-
-	tdbb->setRequest(request);
-	tdbb->setTransaction(request->req_transaction);
 
 	fb_assert(request->req_caller == NULL);
 	request->req_caller = exeState.oldRequest;
@@ -1313,9 +1310,6 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 			// our own savepoints.
 			if (exeState.catchDisabled)
 			{
-				tdbb->setTransaction(exeState.oldTransaction);
-				tdbb->setRequest(exeState.oldRequest);
-
 				if (request->req_transaction != sysTransaction)
 				{
 					while (request->req_transaction->tra_save_point &&
@@ -1378,8 +1372,6 @@ const StmtNode* EXE_looper(thread_db* tdbb, jrd_req* request, const StmtNode* no
 	}
 
 	request->req_next = node;
-	tdbb->setTransaction(exeState.oldTransaction);
-	tdbb->setRequest(exeState.oldRequest);
 
 	fb_assert(request->req_caller == exeState.oldRequest);
 	request->req_caller = NULL;

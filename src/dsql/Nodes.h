@@ -1348,8 +1348,9 @@ public:
 
 	struct ExeState
 	{
-		explicit ExeState(thread_db* tdbb)
-			: oldPool(tdbb->getDefaultPool()),
+		ExeState(thread_db* tdbb, jrd_req* request, jrd_tra* transaction)
+			: savedTdbb(tdbb),
+			  oldPool(tdbb->getDefaultPool()),
 			  oldRequest(tdbb->getRequest()),
 			  oldTransaction(tdbb->getTransaction()),
 			  errorPending(false),
@@ -1361,8 +1362,17 @@ public:
 			  prevNode(NULL),
 			  exit(false)
 		{
+			savedTdbb->setTransaction(transaction);
+			savedTdbb->setRequest(request);
 		}
 
+		~ExeState()
+		{
+			savedTdbb->setTransaction(oldTransaction);
+			savedTdbb->setRequest(oldRequest);
+		}
+
+		thread_db* savedTdbb;
 		MemoryPool* oldPool;		// Save the old pool to restore on exit.
 		jrd_req* oldRequest;		// Save the old request to restore on exit.
 		jrd_tra* oldTransaction;	// Save the old transcation to restore on exit.
