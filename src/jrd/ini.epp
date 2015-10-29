@@ -389,6 +389,16 @@ void INI_format(const char* owner, const char* charset)
 	// Store symbols for international character sets & collations
 	store_intlnames(tdbb, ownerName);
 
+	// Create system generators
+
+	handle1.reset();
+
+	for (const gen* generator = generators; generator->gen_name; generator++)
+		store_generator(tdbb, generator, handle1, ownerName);
+
+	// Adjust the value of the hidden generator RDB$GENERATORS
+	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
+
 	const size_t ownerNameLength = ownerName.length();
 	fb_assert(ownerNameLength <= MAX_UCHAR);
 
@@ -524,16 +534,6 @@ void INI_format(const char* owner, const char* charset)
 
 		add_security_to_sys_rel(tdbb, ownerName, names[relfld[RFLD_R_NAME]], length, buffer);
 	}
-
-	// Create generators to be used by system triggers
-
-	handle1.reset();
-
-	for (const gen* generator = generators; generator->gen_name; generator++)
-		store_generator(tdbb, generator, handle1, ownerName);
-
-	// Adjust the value of the hidden generator RDB$GENERATORS
-	DPM_gen_id(tdbb, 0, true, FB_NELEM(generators) - 1);
 
 	// store system-defined triggers
 
