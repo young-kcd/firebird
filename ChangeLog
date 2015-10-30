@@ -1,3 +1,12 @@
+ 2015-10-29 15:17  alexpeshkoff 
+   M src/jrd/ini.epp
+Fixed regression cause by fix for CORE-4980: restore creation of generators before privileges - one generator is required to create privileges correctly
+
+ 2015-10-29 11:18  dimitr 
+   M src/dsql/Nodes.h
+   M src/jrd/exe.cpp
+Generic solution for CORE-4982: Server crashes during "select from procedure" if exception is thrown while backing out the current savepoint.
+
  2015-10-27 16:57  alexpeshkoff 
    M src/burp/backup.epp
 Postfix for CORE-4980: no use to backup rights granted to system tables
