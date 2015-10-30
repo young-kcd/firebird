@@ -1,3 +1,8 @@
+ 2015-10-29 11:07  dimitr 
+   M src/jrd/exe.cpp
+   M src/jrd/rse.cpp
+Simplified fix for CORE-4982: Server crashes during select
+
  2015-10-27 11:23  hvlad 
    M src/burp/backup.epp
 Forward compatibility with ODS12 - don't put into backup relation constraints of system relations (which was introduced by ODS12).
