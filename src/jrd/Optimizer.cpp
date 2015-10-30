@@ -681,8 +681,12 @@ void OptimizerRetrieval::analyzeNavigation()
 
 		for (; segment < end_segment; segment++)
 		{
-			if ((*segment)->scanType != segmentScanStarting)
+			if ((*segment)->scanType == segmentScanEqual ||
+				(*segment)->scanType == segmentScanEquivalent ||
+				(*segment)->scanType == segmentScanMissing)
+			{
 				equalSegments++;
+			}
 		}
 
 		bool usableIndex = true;
