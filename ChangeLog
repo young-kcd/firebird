@@ -1,3 +1,7 @@
+ 2015-10-30 06:08  dimitr 
+   M src/jrd/Optimizer.cpp
+Fixed CORE-4984: Ordering by compound index together with a range condition gives wrong results.
+
  2015-10-29 15:17  alexpeshkoff 
    M src/jrd/ini.epp
 Fixed regression cause by fix for CORE-4980: restore creation of generators before privileges - one generator is required to create privileges correctly
