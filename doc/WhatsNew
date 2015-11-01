@@ -2,6 +2,11 @@
   * v3.0 Release Candidate 1
   **************************
 
+    * Bugfix CORE-4984
+        Ordering by compound index together with a range condition gives wrong results
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
     * Bugfix CORE-4954
         Packaged procedure with value by default isn't called if this parameter isn't specified
       Contributor(s):
@@ -201,6 +206,11 @@
         Invalid request BLR at offset 361 context already in use (BLR error)
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4680
+        Possible deadlock in firebird connect
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
 
     * Bugfix CORE-4585
         Cannot create a column check constraint when the column is domain based
