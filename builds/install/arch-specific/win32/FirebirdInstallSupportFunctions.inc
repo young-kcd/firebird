@@ -27,7 +27,15 @@ Function Prototypes
 
   function IsWin32: boolean;
   function Is32BitInstallMode: boolean;
+	function IsWinTen: boolean;
+	function IsWinEightOne: boolean;
+	function IsWinEight: boolean;
+	function IsW2K12: boolean;
   function IsVista: boolean;
+	function IsVistaSP1: boolean;
+	function IsWin2K8R1: boolean;
+	function IsWinSeven: boolean;
+	function IsWin2K8R2: boolean;
   function IsWin2k3: boolean;
   function IsWinXP: boolean;
   function IsWin2K: boolean;
@@ -38,19 +46,12 @@ Function Prototypes
   function CheckWinsock2(): Boolean;
   function GetAppPath: String;
   function GetSysPath: String;
-  function WIVersion: string;
   function ReplaceLine(Filename, StringToFind, NewLine,CommentType: string): boolean;
   procedure DecodeVersion( VerStr: String; var VerInt: array of Integer );
   function CompareVersion( ver1, ver2: String ) : Integer;
   function GetInstalledVersion(BinaryFile: String): Array of Integer;
   function ConvertIBVerStrToFbVerStr( VerStr: String) : String;
   function GetRegistryEntry(RegKey, RegEntry: string): String;
-  procedure CreateHelpDlg;
-  function ShowHelpDlg: Integer;
-  procedure CloseHelpDlg;
-  procedure CreateDebugDlg(aString: String; aDescription: String);
-  function ShowDebugDlg(aString: String; aDescription: String): Integer;
-  procedure CloseDebugDlg;
 	
  *)
 
@@ -77,57 +78,13 @@ Windows NT versions:
 6.0.6002 			Windows Vista with Service Pack 2
 6.1.7600 			Windows 7 
 							or Windows Server 2008 R2 
-
+6.2.9200 			Windows 8 or Windows Server 2012
+6.3.9200 			Windows 8.1 or Windows Server 2012 R2 
+6.3.9600 			Windows 8.1 with Update 1 
+10.0.10240 		Windows 10 
 
 *)
 
-(*
-Windows Installer versions: (extracted from MSDN)
-Release Version                     Description
------------------------------------------------
-v2.0    2.0.2600.0                  Released with Windows XP.
-v2.0    2.0.2600.1                  Released with Windows 2000 Server SP3.
-v2.0    2.0.2600.1183               Released with Windows 2000 Server SP4.
-v2.0    2.0.2600.2                  Released as a redistributable.
-v2.0    2.0.2600.1106               Released with Windows XP SP1.
-v2.0    2.0.3790.0                  Released with Windows Server 2003.
-v3.0    3.0.3790.2180               Released with Windows XP SP2.
-                                    Released as a redistributable.
-v3.1    3.1.4000.1823               Released as a redistributable.
-                                    This version has the same functionality as version 3.1.4000.2435.
-v3.1    3.1.4000.1830               Released with Windows Server 2003 SP1 and
-                                    Windows XP Professional x64 Edition.
-                                    Update this version to version 3.1.4000.2435
-                                    to address the issue discussed in KB898628.
-v3.1    3.1.4000.2435               Released with a fix to address the issue
-                                    discussed in KB898628. This is the latest version
-                                    of Windows Installer 3.1.
-v4.0    4.0.6000.16386              Released with Windows Vista.
-v4.0    4.0.6001.16531							Released with Windows Vista SP1 and
-                                    Windows Server 2008.
-v4.5		4.5.6002.18005							Released with Windows Vista with Service Pack 2 (SP2) 
-																		and Windows Server 2008 with Service Pack (SP2.)
-v4.5		4.5.6000.20817							Released as a redistributable for Windows Vista.
-v4.5		4.5.6001.22162							Released as a redistributable for Windows Server 2008 
-																		and Windows Vista with SP1.
-v4.5		4.5.6001.22159							Released as a redistributable for Windows XP with Service Pack 2 (SP2) and later, 
-																		and Windows Server 2003 with SP1 and later.
-v5.0		5.0.7600.16385 or greater 	Released with Windows Server 2008 R2 
-																		and Windows 7.
- 																		
-(NB1 - msi.dll stores the correct version number and is updated
-        automatically by Windows Update. msiexec.exe will be the original shipped version.
-
- NB2 - Re v3.1 build numbers and KB 898628 - This KB article refers to the
-        fact that initial releases of WI 3.1 would error and STOP if an attempt
-        was made to overwrite a system file in the WFP list. Previous behaviour
-        was to error, log and continue. This behaviour is irrelevant to us because
-        we don't do anything sophisticated with the msi. OTOH, if we used msi
-        for all our installation needs this would be a serious problem.
-
- NB3 - Our installer will not run msiexec on systems before XP. However, some early XP and W2K3
-       systems do not have v3.0 of the Windows Installer.
-*)
 
 
 function IsWin32: boolean;
@@ -142,6 +99,25 @@ begin
   result := not Is64BitInstallMode;
 end;
 
+
+function IsWinTen: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 10) and (Version.Minor = 0) then
+     result := true;
+end;
+
+
+function IsWinEightOne: boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  if (Version.Major = 6) and (Version.Minor = 3) then
+     result := true;
+end;
 
 function IsWinEight: boolean;
 var
@@ -168,7 +144,7 @@ var
   Version: TWindowsVersion;
 begin
   GetWindowsVersionEx(Version);
-  if ( Version.Major = 6 ) and ( Version.Minor = 0 ) and ( Version.build = 6000 )then
+  if ( Version.Major = 6 ) and ( Version.Minor = 0 ) and ( Version.build = 6000 ) then
      result := true;
 end;
 
@@ -277,6 +253,7 @@ begin
      result := true;
 end;
 
+
 const
   sWinSock2 = 'ws2_32.dll';
   sNoWinsock2 = 'Please Install Winsock 2 Update before continuing';
@@ -310,15 +287,6 @@ function GetSysPath: String;
 begin
   Result := ExpandConstant('{sys}');
 //  Result := '"' + Result +'"';
-end;
-
-function WIVersion: string;
-//Get version of Windows Installer
-var
-  VersionStr: string;
-begin
-  GetVersionNumbersString(GetSysPath + '\msi.dll', VersionStr);
-  result := VersionStr;
 end;
 
 
@@ -482,118 +450,6 @@ begin
       Result := ''
     else
       RegQueryStringValue(RootKey, RegKey, RegEntry, Result);
-end;
-
-
-var
-  HelpDlg: TForm;
-
-procedure CreateHelpDlg;
-var
-  HelpFileName: String;
-  HelpMemo: TMemo;
-  OKButton: TButton;
-begin
-  ExtractTemporaryFile ('installation_scripted.txt');
-  HelpFileName := ExpandConstant ('{tmp}\installation_scripted.txt');
-  HelpDlg := TForm.create(nil);
-  with HelpDlg do begin
-      BorderStyle := bsDialog;
-      Position := poScreenCenter;
-      ClientWidth := 450;
-      ClientHeight := 550;
-      Caption := 'Firebird Installation - command-line parameters.';
-  end;
-  HelpMemo := TMemo.Create(HelpDlg);
-  with HelpMemo do begin
-      Parent := HelpDlg;
-      ScrollBars := ssVertical;
-      Lines.LoadFromFile(HelpFileName);
-      Align := alTop;
-      Height := 500;
-      ReadOnly := True;
-    end;
-  OKButton := TButton.create(HelpDlg);
-  with OKButton do begin
-      Parent := HelpDlg;
-      Left := (Parent.width  div 2) - width div 2;
-      top := Parent.ClientHeight - 40;
-      Caption := 'OK';
-      ModalResult := mrOK;
-  end;
-  HelpDlg.ActiveControl := OKButton;
-end;
-
-procedure CloseHelpDlg;
-begin
-  with HelpDlg do begin
-     Close;
-     Free;
-  end;
-end;
-
-function ShowHelpDlg: Integer;
-begin
-	CreateHelpDlg;
-  result := HelpDlg.ShowModal;
-	CloseHelpDlg;
-end;
-
-
-
-
-// Add a simple debug dialogue
-var 
-	DebugDlg: TForm;
-	
-procedure CreateDebugDlg(aString: String; ADescription: String);
-var
-  DebugText: TMemo;
-	DebugDescription: TLabel;
-  OKButton: TButton;
-begin
-  DebugDlg := TForm.create(nil);
-  with DebugDlg do begin
-      BorderStyle := bsSizeable;
-      Position := poScreenCenter;
-      ClientWidth := 450;
-      ClientHeight := 350;
-      Caption := 'Firebird Installation - command-line parameters.';
-  end;
-  DebugText := TMemo.Create(DebugDlg);
-  with DebugText do begin
-      Parent := DebugDlg;
-      ScrollBars := ssVertical;
-      Lines.Text :=aString;
-      Align := alTop;
-      Height := 200;
-      ReadOnly := True;
-    end;
-  OKButton := TButton.create(DebugDlg);
-  with OKButton do begin
-      Parent := DebugDlg;
-      Left := (Parent.width  div 2) - width div 2;
-      top := Parent.ClientHeight - 40;
-      Caption := 'OK';
-      ModalResult := mrOK;
-  end;
-  DebugDlg.ActiveControl := OKButton;
-
-end;
-	
-procedure CloseDebugDlg;
-begin
-  with DebugDlg do begin
-     Close;
-     Free;
-  end;
-end;
-
-function ShowDebugDlg(aString: String; aDescription: String): Integer;
-begin
-	CreateDebugDlg(aString,aDescription);
-  result := DebugDlg.ShowModal;
-	CloseDebugDlg;
 end;
 
 
