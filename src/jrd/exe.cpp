@@ -978,6 +978,7 @@ void EXE_unwind(thread_db* tdbb, jrd_req* request)
 	request->req_flags &= ~(req_active | req_proc_fetch | req_reserved);
 	request->req_flags |= req_abort | req_stall;
 	request->req_timestamp.invalidate();
+	request->req_caller = NULL;
 	request->req_proc_inputs = NULL;
 	request->req_proc_caller = NULL;
 }
