@@ -298,6 +298,21 @@ inline void waitGCActive(thread_db* tdbb, const record_param* rpb)
 	LCK_release(tdbb, &temp_lock);
 }
 
+inline Lock* lockGCActive(thread_db* tdbb, const jrd_tra* transaction, const record_param* rpb)
+{
+	AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
+		Lock(tdbb, sizeof(SINT64), LCK_record_gc));
+	lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+	lock->lck_data = transaction->tra_number;
+
+	ThreadStatusGuard temp_status(tdbb);
+
+	if (!LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
+		return NULL;
+
+	return lock.release();
+}
+
 static const UCHAR gc_tpb[] =
 {
 	isc_tpb_version1, isc_tpb_read,
@@ -452,6 +467,14 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		return;
 	}
 
+	AutoLock gcLockGuard(tdbb, lockGCActive(tdbb, transaction, &temp));
+
+	if (!gcLockGuard)
+	{
+		CCH_RELEASE(tdbb, &temp.getWindow(tdbb));
+		return;
+	}
+
 	RecordStack going, staying;
 	Record* data = NULL;
 	Record* old_data = NULL;
@@ -562,13 +585,6 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 		{
 			DPM_backout_mark(tdbb, rpb, transaction);
 
-			// dimitr:	We don't need to clear the GC flag on the data page
-			//			as the record version is to be removed. Just ensure
-			//			that the appropriate lock is released at the same time.
-
-			AutoLock gcLockGuard(tdbb, rpb->rpb_gc_lock);
-			rpb->rpb_gc_lock = NULL;
-
 			RecordStack empty_staying;
 			IDX_garbage_collect(tdbb, rpb, going, empty_staying);
 			BLB_garbage_collect(tdbb, going, empty_staying, rpb->rpb_page, relation);
@@ -636,6 +652,9 @@ void VIO_backout(thread_db* tdbb, record_param* rpb, const jrd_tra* transaction)
 			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
 			return;
 		}
+
+		fb_assert(rpb->rpb_flags & rpb_gc_active);
+		rpb->rpb_flags &= ~rpb_gc_active;
 
 		temp2 = *rpb;
 		rpb->rpb_undo = old_data;
