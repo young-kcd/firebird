@@ -31,6 +31,7 @@
 #include "../common/classes/init.h"
 #include "../common/gdsassert.h"
 #include "../common/os/os_utils.h"
+#include "../common/os/isc_i_proto.h"
 #include "../jrd/constants.h"
 
 #ifdef HAVE_UNISTD_H
@@ -321,6 +322,29 @@ void getUniqueFileId(const char* name, UCharBuffer& id)
 	}
 
 	makeUniqueFileId(statistics, id);
+}
+
+/// class CtrlCHandler
+
+bool CtrlCHandler::terminated = false;
+
+CtrlCHandler::CtrlCHandler()
+{
+	procInt = ISC_signal(SIGINT, handler, 0);
+	procTerm = ISC_signal(SIGTERM, handler, 0);
+}
+
+CtrlCHandler::~CtrlCHandler()
+{
+	if (procInt)
+		ISC_signal_cancel(SIGINT, handler, 0);
+	if (procTerm)
+		ISC_signal_cancel(SIGTERM, handler, 0);
+}
+
+void CtrlCHandler::handler(void*)
+{
+	terminated = true;
 }
 
 } // namespace os_utils

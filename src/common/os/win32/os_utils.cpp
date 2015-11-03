@@ -336,4 +336,33 @@ void getUniqueFileId(HANDLE fd, Firebird::UCharBuffer& id)
 }
 
 
+/// class CtrlCHandler
+
+bool CtrlCHandler::terminated = false;
+
+CtrlCHandler::CtrlCHandler()
+{
+	SetConsoleCtrlHandler(handler, TRUE);
+}
+
+CtrlCHandler::~CtrlCHandler()
+{
+	SetConsoleCtrlHandler(handler, FALSE);
+}
+
+BOOL WINAPI CtrlCHandler::handler(DWORD dwCtrlType)
+{
+	switch (dwCtrlType)
+	{
+	case CTRL_C_EVENT:
+	case CTRL_BREAK_EVENT:
+	case CTRL_CLOSE_EVENT:
+		terminated = true;
+		return TRUE;
+
+	default:
+		return FALSE;
+	}
+}
+
 } // namespace os_utils

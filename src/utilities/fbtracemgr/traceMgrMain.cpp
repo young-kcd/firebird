@@ -32,6 +32,7 @@
 #include "../../common/classes/auto.h"
 #include "../../common/classes/ClumpletWriter.h"
 #include "../../common/utils_proto.h"
+#include "../../common/os/os_utils.h"
 #include "../../jrd/trace/TraceService.h"
 #include "../../jrd/ibase.h"
 
@@ -55,19 +56,14 @@ public:
 	virtual void setActive(ULONG id, bool active);
 	virtual void listSessions();
 
-	static void stopRead();
-
 private:
 	void runService(size_t spbSize, const UCHAR* spb);
 
 	isc_svc_handle m_svcHandle;
-	static bool m_stop;
 };
 
 
 const int MAXBUF = 16384;
-
-bool TraceSvcUtil::m_stop = true;
 
 TraceSvcUtil::TraceSvcUtil()
 {
@@ -110,8 +106,6 @@ void TraceSvcUtil::setAttachInfo(const string& service_name, const string& user,
 
 void TraceSvcUtil::startSession(TraceSession& session, bool /*interactive*/)
 {
-	m_stop = false;
-
 	HalfStaticArray<UCHAR, 1024> buff(*getDefaultMemoryPool());
 	UCHAR* p = NULL;
 	long len = 0;
@@ -198,13 +192,10 @@ void TraceSvcUtil::listSessions()
 	runService(spb.getBufferLength(), spb.getBuffer());
 }
 
-void TraceSvcUtil::stopRead()
-{
-	m_stop = true;
-}
-
 void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 {
+	os_utils::CtrlCHandler ctrlCHandler;
+
 	ISC_STATUS_ARRAY status;
 
 	if (isc_service_start(status, &m_svcHandle, 0,
@@ -288,28 +279,13 @@ void TraceSvcUtil::runService(size_t spbSize, const UCHAR* spb)
 										Arg::Num(static_cast<unsigned char>(p[-1])));
 			}
 		}
-	} while (!(m_stop || noData));
+	} while (!(ctrlCHandler.getTerminated() || noData));
 }
 
 } // namespace Firebird
 
 
 using namespace Firebird;
-
-
-typedef void (*SignalHandlerPointer)(int);
-
-static SignalHandlerPointer prevCtrlCHandler = NULL;
-static bool terminated = false;
-
-static void ctrl_c_handler(int signal)
-{
-	if (signal == SIGINT)
-		TraceSvcUtil::stopRead();
-
-	if (prevCtrlCHandler)
-		prevCtrlCHandler(signal);
-}
 
 static void atexit_fb_shutdown()
 {
@@ -334,7 +310,6 @@ int CLIB_ROUTINE main(int argc, char* argv[])
 	setlocale(LC_CTYPE, "");
 #endif
 
-	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
 	atexit(&atexit_fb_shutdown);
 
 	AutoPtr<UtilSvc> uSvc(UtilSvc::createStandalone(argc, argv));

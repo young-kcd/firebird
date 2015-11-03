@@ -42,6 +42,7 @@
 #include "../common/utils_proto.h"
 #include "../common/classes/MsgPrint.h"
 #include "../common/StatusArg.h"
+#include "../common/os/os_utils.h"
 #include "../jrd/license.h"
 
 #ifdef HAVE_LOCALE_H
@@ -998,20 +999,6 @@ void usage(bool listSwitches)
 }
 
 
-typedef void (*SignalHandlerPointer)(int);
-
-static SignalHandlerPointer prevCtrlCHandler = NULL;
-static bool terminated = false;
-
-static void ctrl_c_handler(int signal)
-{
-	terminated = true;
-	printf("\n");
-
-	if (prevCtrlCHandler)
-		prevCtrlCHandler(signal);
-}
-
 static void atexit_fb_shutdown()
 {
 	fb_shutdown(0, fb_shutrsn_app_stopped);
@@ -1039,7 +1026,7 @@ int main(int ac, char** av)
 		return 0;
 	}
 
-	prevCtrlCHandler = signal(SIGINT, ctrl_c_handler);
+	os_utils::CtrlCHandler ctrlCHandler;
 	atexit(&atexit_fb_shutdown);
 
 	ISC_STATUS_ARRAY status;
@@ -1175,17 +1162,17 @@ int main(int ac, char** av)
 						reinterpret_cast<const char*>(spbItems.getBuffer()),
 						sizeof(results), results))
 				{
-					if (!terminated)
+					if (!ctrlCHandler.getTerminated())
 						isc_print_status(status);
 					isc_service_detach(status, &svc_handle);
 					return 1;
 				}
-			} while (printInfo(results, sizeof(results), uPrint, stdinRequest) && !terminated);
+			} while (printInfo(results, sizeof(results), uPrint, stdinRequest) && !ctrlCHandler.getTerminated());
 		}
 
 		if (isc_service_detach(status, &svc_handle))
 		{
-			if (!terminated)
+			if (!ctrlCHandler.getTerminated())
 				isc_print_status(status);
 			return 1;
 		}
