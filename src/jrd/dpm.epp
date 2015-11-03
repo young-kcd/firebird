@@ -88,45 +88,27 @@ static void store_big_record(thread_db*, record_param*, PageStack&, const UCHAR*
 
 namespace
 {
-	void lock_gc_active(thread_db* tdbb, const jrd_tra* transaction, record_param* rpb)
+	Lock* lock_gc_active(thread_db* tdbb, const jrd_tra* transaction, record_param* rpb)
 	{
-		if (rpb->rpb_gc_lock)
+		AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
+			Lock(tdbb, sizeof(SINT64), LCK_record_gc));
+		lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
+		lock->lck_data = transaction->tra_number;
+
+		ThreadStatusGuard temp_status(tdbb);
+
+		if (LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
+			return lock.release();
+
+		if (lock->lck_data != LCK_read_data(tdbb, lock))
 		{
-			fb_assert(rpb->rpb_gc_lock->lck_id);
-			fb_assert(rpb->rpb_gc_lock->lck_logical == LCK_EX);
-			fb_assert(rpb->rpb_gc_lock->lck_data == transaction->tra_number);
+			fb_assert(false);
+			CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
+			temp_status.copyToOriginal();
+			ERR_punt();
 		}
-		else
-		{
-			AutoPtr<Lock> lock(FB_NEW_RPT(*tdbb->getDefaultPool(), 0)
-				Lock(tdbb, sizeof(SINT64), LCK_record_gc));
-			lock->lck_key.lck_long = ((SINT64) rpb->rpb_page << 16) | rpb->rpb_line;
-			lock->lck_data = transaction->tra_number;
 
-			ThreadStatusGuard temp_status(tdbb);
-
-			if (!LCK_lock(tdbb, lock, LCK_EX, LCK_NO_WAIT))
-			{
-				fb_assert(false);
-				CCH_RELEASE(tdbb, &rpb->getWindow(tdbb));
-				ERR_punt();
-			}
-
-			rpb->rpb_gc_lock = lock.release();
-		}
-	}
-
-	void release_gc_active(thread_db* tdbb, record_param* rpb)
-	{
-		if (rpb->rpb_gc_lock)
-		{
-			fb_assert(rpb->rpb_gc_lock->lck_id);
-			fb_assert(rpb->rpb_gc_lock->lck_logical == LCK_EX);
-
-			LCK_release(tdbb, rpb->rpb_gc_lock);
-			delete rpb->rpb_gc_lock;
-			rpb->rpb_gc_lock = NULL;
-		}
+		return NULL;
 	}
 }
 
@@ -198,8 +180,6 @@ void DPM_backout( thread_db* tdbb, record_param* rpb)
 	rhd* header = (rhd*) ((SCHAR *) page + index1->dpg_offset);
 	header->rhd_flags &= ~(rhd_chain | rhd_gc_active);
 
-	release_gc_active(tdbb, rpb);
-
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
 		"    old record %"ULONGFORMAT":%d, new record %"ULONGFORMAT
@@ -244,8 +224,6 @@ void DPM_backout_mark(thread_db* tdbb, record_param* rpb, const jrd_tra* transac
 
 	header->rhd_flags |= rhd_gc_active;
 	rpb->rpb_flags |= rpb_gc_active;
-
-	lock_gc_active(tdbb, transaction, rpb);
 
 	CCH_RELEASE(tdbb, window);
 }
@@ -2241,8 +2219,6 @@ void DPM_update( thread_db* tdbb, record_param* rpb, PageStack* stack, const jrd
 	header->rhd_b_page = rpb->rpb_b_page;
 	header->rhd_b_line = rpb->rpb_b_line;
 
-	release_gc_active(tdbb, rpb);
-
 	UCHAR* const data = (UCHAR*) header + header_size;
 
 	dcc.pack(rpb->rpb_address, data);
@@ -2588,7 +2564,8 @@ static void fragment(thread_db* tdbb,
 	}
 
 	header->rhdf_flags |= rhd_gc_active;
-	lock_gc_active(tdbb, transaction, rpb);
+
+	AutoLock gcLockGuard(tdbb, lock_gc_active(tdbb, transaction, rpb));
 
 #ifdef VIO_DEBUG
 	VIO_trace(DEBUG_WRITES_INFO,
@@ -2647,7 +2624,7 @@ static void fragment(thread_db* tdbb,
 		header->rhdf_b_line = rpb->rpb_b_line;
 	}
 
-	release_gc_active(tdbb, rpb);
+	gcLockGuard.release();
 
 	const size_t post_header_length =
 		dcc.pack(rpb->rpb_address, available_space - RHDF_SIZE, header->rhdf_data);

@@ -62,8 +62,7 @@ struct record_param
 		  rpb_f_page(0), rpb_f_line(0),
 		  rpb_b_page(0), rpb_b_line(0),
 		  rpb_address(NULL), rpb_length(0), rpb_flags(0), rpb_stream_flags(0),
-		  rpb_org_scans(0), rpb_gc_lock(NULL),
-		  rpb_window(DB_PAGE_SPACE, -1)
+		  rpb_org_scans(0), rpb_window(DB_PAGE_SPACE, -1)
 	{
 	}
 
@@ -90,7 +89,6 @@ struct record_param
 	USHORT rpb_stream_flags;		// stream flags
 	USHORT rpb_runtime_flags;		// runtime flags
 	SSHORT rpb_org_scans;			// relation scan count at stream open
-	Lock* rpb_gc_lock;				// lock for transient record changes
 
 	inline WIN& getWindow(thread_db* tdbb)
 	{
