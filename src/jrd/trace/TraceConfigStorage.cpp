@@ -136,7 +136,16 @@ ConfigStorage::ConfigStorage()
 
 ConfigStorage::~ConfigStorage()
 {
+	fb_assert(!m_timer);
+}
+
+void ConfigStorage::shutdown()
+{
+	if (!m_timer)
+		return;
+
 	m_timer->stop();
+	m_timer = NULL;
 
 	::close(m_cfg_file);
 	m_cfg_file = -1;
@@ -153,6 +162,7 @@ ConfigStorage::~ConfigStorage()
 			m_sharedMemory->removeMapFile();
 		}
 	}
+	m_sharedMemory = NULL;
 }
 
 void ConfigStorage::mutexBug(int state, const TEXT* string)

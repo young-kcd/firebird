@@ -849,7 +849,7 @@ void Service::detach()
 	if (localDoShutdown)
 	{
 		// run in separate thread to avoid blocking in remote
-		Thread::start(svcShutdownThread, 0, 0);
+		Thread::start(svcShutdownThread, 0, THREAD_medium);
 	}
 }
 

@@ -43,6 +43,7 @@
 #include "../common/isc_proto.h"
 #include "../common/ThreadStart.h"
 #include "../common/utils_proto.h"
+#include "../common/dllinst.h"
 #include "../jrd/ibase.h"
 #include "../yvalve/utl_proto.h"
 
@@ -167,6 +168,7 @@ GlobalPtr<Mutex> timerAccess;
 GlobalPtr<Mutex> timerPause;
 
 GlobalPtr<Semaphore> timerWakeup;
+GlobalPtr<Semaphore> timerCleanup;
 // Should use atomic flag for thread stop to provide correct membar
 AtomicCounter stopTimerThread(0);
 
@@ -180,7 +182,7 @@ struct TimerEntry
 
 	static void init()
 	{
-		Thread::start(timeThread, 0, 0, &timerThreadHandle);
+		Thread::start(timeThread, 0, THREAD_high, &timerThreadHandle);
 	}
 
 	static void cleanup();
@@ -199,6 +201,7 @@ void TimerEntry::cleanup()
 		stopTimerThread.setValue(1);
 		timerWakeup->release();
 	}
+	timerCleanup->tryEnter(5);
 	Thread::waitForCompletion(timerThreadHandle);
 
 	while (timerQueue->hasData())
@@ -241,7 +244,25 @@ TimerEntry* getTimer(ITimer* timer)
 
 THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 {
-	while (stopTimerThread.value() == 0)
+#ifdef WIN_NT
+	// The timer thread could unload plugins. Plugins almost always linked with
+	// dispatcher (fbclient.dll) thus, when plugin unloaded it decrement usage
+	// count of fbclient.dll. If application unload fbclient.dll not calling
+	// fb_shutdown, then last unloaded plugin will finally unload fbclient.dll
+	// and the code that is currently running, leading to AV.
+	// To prevent such scenario we increment usage count of fbclient.dll and 
+	// will decrement it in safe way at the end of the timer thread.
+
+	char buff[MAX_PATH];
+	GetModuleFileName(hDllInst, buff, sizeof(buff));
+	HMODULE hDll = LoadLibrary(buff);
+#endif
+
+	while (stopTimerThread.value() == 0 
+#ifdef WIN_NT
+			&& Firebird::dDllUnloadTID == 0
+#endif
+			)
 	{
 		ISC_UINT64 microSeconds = 0;
 
@@ -251,7 +272,7 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 			const ISC_UINT64 cur = curTime();
 
-			while (timerQueue->getCount() > 0)
+			if (timerQueue->getCount() > 0)
 			{
 				TimerEntry e(timerQueue->operator[](0));
 
@@ -264,11 +285,11 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 
 					e.timer->handler();
 					e.timer->release();
+					continue;
 				}
 				else
 				{
 					microSeconds = e.fireTime - cur;
-					break;
 				}
 			}
 		}
@@ -282,6 +303,19 @@ THREAD_ENTRY_DECLARE TimerEntry::timeThread(THREAD_ENTRY_PARAM)
 			timerWakeup->enter();
 		}
 	}
+
+	timerCleanup->release();
+
+#ifdef WIN_NT
+	if (Firebird::dDllUnloadTID)
+		// fb_shutdown is called as result of FreeLibrary, not by application.
+		// Sooner of all we are the last user of fbclient.dll, and code will be
+		// physically unloaded as result of FreeLibrary() call.
+		FreeLibraryAndExitThread(hDll, 0);
+	else
+		// It is safe to decrement usage count here
+		FreeLibrary(hDll);
+#endif
 
 	return 0;
 }

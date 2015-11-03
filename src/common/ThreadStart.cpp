@@ -38,6 +38,7 @@
 #ifdef WIN_NT
 #include <process.h>
 #include <windows.h>
+#include "../common/dllinst.h"
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -319,7 +320,12 @@ void Thread::start(ThreadEntryPoint* routine, void* arg, int priority_arg, Handl
 
 void Thread::waitForCompletion(Handle& handle)
 {
-	WaitForSingleObject(handle, 500);
+	// When current DLL is unloading, OS loader holds loader lock. When thread is
+	// exiting, OS notifies every DLL about it, and acquires loader lock. In such
+	// scenario waiting on thread handle will never succeed.
+	if (!Firebird::dDllUnloadTID) {
+		WaitForSingleObject(handle, 500);
+	}
 	CloseHandle(handle);
 	handle = 0;
 }

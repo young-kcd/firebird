@@ -332,7 +332,7 @@ namespace Jrd {
 
 			// ready to go
 			guard.leave();		// release in advance to avoid races with cryptThread()
-			Thread::start(cryptThreadStatic, (THREAD_ENTRY_PARAM) this, 0, &cryptThreadId);
+			Thread::start(cryptThreadStatic, (THREAD_ENTRY_PARAM) this, THREAD_medium, &cryptThreadId);
 		}
 		catch (const Firebird::Exception&)
 		{

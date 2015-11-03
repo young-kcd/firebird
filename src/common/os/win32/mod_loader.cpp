@@ -226,7 +226,9 @@ ModuleLoader::Module* ModuleLoader::loadModule(const PathName& modPath)
 
 Win32Module::~Win32Module()
 {
-	if (module)
+	// If we in process of unloading of some DLL, don't unload modules manually
+	// else we could hang up waiting for OS loader lock.
+	if (module && !dDllUnloadTID)
 		FreeLibrary(module);
 }
 
