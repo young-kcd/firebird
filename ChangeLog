@@ -1,3 +1,13 @@
+ 2015-11-02 11:48  dimitr 
+   M src/jrd/exe.cpp
+Fixed the assertion inside the looper (req_caller was not cleared for procedure requests terminated due to exception).
+
+ 2015-11-02 11:46  dimitr 
+   M src/jrd/dpm.epp
+   M src/jrd/req.h
+   M src/jrd/vio.cpp
+Simplified the locking logic and fixed races during record backout.
+
  2015-11-01 06:27  dimitr 
    M doc/WhatsNew
 Updated the docs.
