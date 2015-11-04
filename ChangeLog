@@ -1,3 +1,36 @@
+ 2015-11-03 11:01  hvlad 
+   M src/common/os/os_utils.h
+   M src/common/os/posix/os_utils.cpp
+   M src/common/os/win32/os_utils.cpp
+   M src/utilities/fbsvcmgr/fbsvcmgr.cpp
+   M src/utilities/fbtracemgr/traceMgrMain.cpp
+Improved reaction on Ctrl+C\Ctrl+Break\console close request in Trace Manager and Services Manager console utilities on Windows.
+
+ 2015-11-03 10:37  dimitr 
+   M src/dsql/ExprNodes.cpp
+Remove the code no longer neccessary.
+
+ 2015-11-03 09:36  hvlad 
+   M src/utilities/ntrace/fbtrace.conf
+Correction
+
+ 2015-11-03 09:12  hvlad 
+   M src/common/ThreadStart.cpp
+   M src/common/dllinst.cpp
+   M src/common/dllinst.h
+   M src/common/os/win32/mod_loader.cpp
+   M src/jrd/CryptoManager.cpp
+   M src/jrd/os/win32/ibinitdll.cpp
+   M src/jrd/svc.cpp
+   M src/jrd/trace/TraceConfigStorage.cpp
+   M src/jrd/trace/TraceConfigStorage.h
+   M src/jrd/trace/TraceManager.cpp
+   M src/yvalve/MasterImplementation.cpp
+   M src/yvalve/PluginManager.cpp
+Additional means to avoid crash\hangup when application unload fbclient.dll not calling fb_shutdown.
+Fixed reason of 500 ms delay experienced by such applications (described by Arno in fb-devel).
+Fixed missing assignment of thread priorities.
+
  2015-11-02 11:48  dimitr 
    M src/jrd/exe.cpp
 Fixed the assertion inside the looper (req_caller was not cleared for procedure requests terminated due to exception).
