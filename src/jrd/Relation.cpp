@@ -398,7 +398,7 @@ int jrd_rel::blocking_ast_gcLock(void* ast_object)
 		Lock* lock = relation->rel_gc_lock;
 		Database* dbb = lock->lck_dbb;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock);
 
 		fb_assert(!(relation->rel_flags & REL_gc_lockneed));
 		if (relation->rel_flags & REL_gc_lockneed) // work already done synchronously ?

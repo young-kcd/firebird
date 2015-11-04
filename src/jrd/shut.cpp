@@ -69,10 +69,10 @@ static void same_mode(Database* dbb)
 
 static void check_backup_state(thread_db*);
 static bool notify_shutdown(thread_db*, SSHORT, SSHORT, Sync*);
-static void shutdown(thread_db*, SSHORT, bool);
+static bool shutdown(thread_db*, SSHORT, bool);
 
 
-void SHUT_blocking_ast(thread_db* tdbb, bool ast)
+bool SHUT_blocking_ast(thread_db* tdbb, bool ast)
 {
 /**************************************
  *
@@ -123,14 +123,11 @@ void SHUT_blocking_ast(thread_db* tdbb, bool ast)
 			}
 		}
 
-		return;
+		return false;
 	}
 
 	if ((flag & isc_dpb_shut_force) && !delay)
-	{
-		shutdown(tdbb, flag, ast);
-		return;
-	}
+		return shutdown(tdbb, flag, ast);
 
 	if (flag & isc_dpb_shut_attachment)
 		dbb->dbb_ast_flags |= DBB_shut_attach;
@@ -138,6 +135,8 @@ void SHUT_blocking_ast(thread_db* tdbb, bool ast)
 		dbb->dbb_ast_flags |= DBB_shut_force;
 	if (flag & isc_dpb_shut_transaction)
 		dbb->dbb_ast_flags |= DBB_shut_tran;
+
+	return false;
 }
 
 
@@ -485,7 +484,7 @@ static bool notify_shutdown(thread_db* tdbb, SSHORT flag, SSHORT delay, Sync* gu
 }
 
 
-static void shutdown(thread_db* tdbb, SSHORT flag, bool force)
+static bool shutdown(thread_db* tdbb, SSHORT flag, bool force)
 {
 /**************************************
  *
@@ -541,5 +540,9 @@ static void shutdown(thread_db* tdbb, SSHORT flag, bool force)
 
 		if (found)
 			JRD_shutdown_attachments(dbb);
+
+		return true;
 	}
+
+	return false;
 }

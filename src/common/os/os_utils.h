@@ -69,6 +69,31 @@ namespace os_utils
 #define HAVE_ID_BY_NAME
 	void getUniqueFileId(const char* name, Firebird::UCharBuffer& id);
 #endif
+
+
+	class CtrlCHandler
+	{
+	public:
+		CtrlCHandler();
+		~CtrlCHandler();
+
+		bool getTerminated() const 
+		{
+			return terminated;
+		}
+
+	private:
+		static bool terminated;
+
+#ifdef WIN_NT
+		static BOOL WINAPI handler(DWORD dwCtrlType);
+#else
+		static void handler(void*);
+
+		bool procInt;
+		bool procTerm;
+#endif
+	};
 } // namespace os_utils
 
 #endif // INCLUDE_OS_FILE_UTILS_H
