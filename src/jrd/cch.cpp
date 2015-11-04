@@ -226,7 +226,7 @@ int CCH_down_grade_dbb(void* ast_object)
 	{
 		Lock* const lock = dbb->dbb_lock;
 
-		AsyncContextHolder tdbb(dbb, FB_FUNCTION, lock);
+		AsyncContextHolder tdbb(dbb, FB_FUNCTION);
 
 		SyncLockGuard dsGuard(&dbb->dbb_sync, SYNC_EXCLUSIVE, "CCH_down_grade_dbb");
 
@@ -234,7 +234,8 @@ int CCH_down_grade_dbb(void* ast_object)
 
 		// Process the database shutdown request, if any
 
-		SHUT_blocking_ast(tdbb, true);
+		if (SHUT_blocking_ast(tdbb, true))
+			return 0;
 
 		// If we are already shared, there is nothing more we can do.
 		// If any case, the other guy probably wants exclusive access,
