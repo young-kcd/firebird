@@ -258,10 +258,8 @@ public:
 				m_tdbb->tdbb_flags |= TDBB_wait_cancel_disable;
 			}
 		}
-		else
+		else if (wait != LCK_NO_WAIT)
 		{
-			fb_assert(att);
-
 			m_tdbb->tdbb_flags &= ~TDBB_wait_cancel_disable;
 			if (att)
 				att->att_wait_lock = lock;
