@@ -1,3 +1,14 @@
+ 2015-11-04 07:23  hvlad 
+   M src/jrd/lck.cpp
+Removed unneeded assert, correct code a bit as Dmitry suggested
+
+ 2015-11-04 06:06  dimitr 
+   M src/jrd/Relation.cpp
+   M src/jrd/cch.cpp
+   M src/jrd/shut.cpp
+   M src/jrd/shut_proto.h
+Fixed attachment lock usage. Minimized chances for races during database shutdown.
+
  2015-11-03 11:01  hvlad 
    M src/common/os/os_utils.h
    M src/common/os/posix/os_utils.cpp
