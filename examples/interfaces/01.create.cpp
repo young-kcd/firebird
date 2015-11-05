@@ -11,6 +11,8 @@
  *					IProvider - main interface to access DB / service
  *					IAttachment - database attachment interface
  *					ITransaction - transaction interface
+ *					IUtil - helper calls here and there
+ *					IXpbBuilder - build various parameters blocks
  *
  *					Run something like this to build: c++ 01.create.cpp -lfbclient
  *
@@ -51,38 +53,34 @@ int main()
 
 	// Declare pointers to required interfaces
 	// IStatus is used to return wide error description to user
-	IStatus* st = NULL;
-
 	// IProvider is needed to start to work with database (or service)
-	IProvider* prov = NULL;
+	// Status vector, main dispatcher and utility interfaces are returned by IMaster functions
+	// No error return may happen - these functions always succeed
+	IStatus* st = master->getStatus();
+	IProvider* prov = master->getDispatcher();
+	IUtil* utl = master->getUtilInterface();
 
 	// IAttachment and ITransaction contain methods to work with database attachment
 	// and transactions
 	IAttachment* att = NULL;
 	ITransaction* tra = NULL;
 
+	// IXpbBuilder is used to access various parameters blocks used in API
+	IXpbBuilder* dpb = NULL;
+
 	try
 	{
-		// status vector and main dispatcher are returned by calls to IMaster functions
-		// no error return may happen - these functions always succeed
-		st = master->getStatus();
-		prov = master->getDispatcher();
-
-		// status wrapper - will be used later in all calls where status interface is needed
+		// Status wrapper - will be used later in all calls where status interface is needed
 		// With ThrowStatusWrapper passed as status interface FbException will be thrown on error
 		ThrowStatusWrapper status(st);
 
-		// create DPB (to be replaced with IPBWriter)
-		unsigned char dpbBuf[32];
-		unsigned char *dpb = dpbBuf;
-		*dpb++ = isc_dpb_version1;
-		*dpb++ = isc_dpb_page_size;
-		*dpb++ = 2;
-		*dpb++ = (8 * 1024) & 0xFF;
-		*dpb++ = (8 * 1024) >> 8;
+		// create DPB - use non-default page size 4Kb
+		dpb = utl->getXpbBuilder(&status, IXpbBuilder::DPB, NULL, 0);
+		dpb->insertInt(&status, isc_dpb_page_size, 4 * 1024);
 
 		// create empty database
-		att = prov->createDatabase(&status, "fbtests.fdb", dpb - dpbBuf, dpbBuf);
+		att = prov->createDatabase(&status, "fbtests.fdb", dpb->getBufferLength(&status),
+			dpb->getBuffer(&status));
 		printf("Database fbtests.fdb created\n");
 
 		// detach from database
@@ -122,7 +120,10 @@ int main()
 	{
 		// handle error
 		rc = 1;
-		isc_print_status(error.getStatus()->getErrors());
+
+		char buf[256];
+		utl->formatStatus(buf, sizeof(buf), error.getStatus());
+		fprintf(stderr, "%s\n", buf);
 	}
 
 	// release interfaces after error caught
@@ -130,10 +131,11 @@ int main()
 		tra->release();
 	if (att)
 		att->release();
-	if (prov)
-		prov->release();
-	if (st)
-		st->dispose();
+	if (dpb)
+		dpb->dispose();
+
+	st->dispose();
+	prov->release();
 
 	return rc;
 }
