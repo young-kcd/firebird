@@ -717,7 +717,9 @@ unsigned UtilInterface::formatStatus(char* buffer, unsigned bufferSize, IStatus*
 
 	unsigned ret = MIN((unsigned) s.length(), bufferSize);
 
-	strncpy(buffer, s.c_str(), ret);
+	memcpy(buffer, s.c_str(), ret);
+	if (ret < bufferSize)
+		buffer[ret] = 0;
 
 	return ret;
 }
