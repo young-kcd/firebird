@@ -71,7 +71,7 @@ en.RunISQL=Run command-line based Interactive SQL tool
 
 en.ReadmeFile=readme.txt
 en.InstallationReadmeFile=installation_readme.txt
-;en.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
+en.IncompleteTranslationNotice=This document is not up-to-date. Please refer to the original english language version for the latest information.
 en.RunCS=Run Firebird in Classic server mode
 en.RunSC=Run Firebird SuperClassic server
 en.RunSS=Run Firebird in SuperServer mode
