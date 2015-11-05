@@ -67,6 +67,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#if defined(HAVE_SIGNAL_H)
+#include <signal.h>
+#elif defined(HAVE_SYS_SIGNAL_H)
+#include <sys/signal.h>
+#endif
+
 using namespace Firebird;
 
 namespace os_utils
