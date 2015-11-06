@@ -41,9 +41,6 @@
     function ShowCopyGds32Task: boolean;
     function CopyFbClientLib: boolean;
     function ShowCopyFbClientLibTask: boolean;
-
-    function HasWI30: boolean;
-    function HasNotWI30: boolean;
 		
 		function SummarizeInstalledProducts: String;
 		function AnalysisAssessment: boolean;
@@ -996,6 +993,14 @@ begin
 end;
 
 
+function InstallGuardian: boolean;
+begin
+  result := False;
+  if ( (ConfigureFirebird) AND (not NoCPL) ) then
+     result := IsTaskSelected('UseSuperServerTask\UseGuardianTask') 
+			or IsTaskSelected('UseSuperClassicTask\UseGuardianTask');
+end;
+
 
 function CopyGds32: boolean;
 begin
@@ -1034,27 +1039,6 @@ begin
     result := ((not CopyFbClient) and ConfigureFirebird);
 end;
 
-
-function HasWI30: boolean;
-//We need at least Windows Installer 3.0 available if we
-//are installing the msi bundles for the VC8 CRT libraries.
-var
-  VersionStr: String;
-  VerInt: array of Integer;
-begin
-  Result := False;
-  VersionStr := WIVersion;
-  DecodeVersion(VersionStr, VerInt);
-  if (VerInt[0] >= 3) then
-    Result := True;
-
-end;
-
-function HasNotWI30: boolean;
-//Used to check if O/S does NOT have minimum version of Windows Installer
-begin
-  result := NOT HasWI30;
-end;
 
 function SummarizeInstalledProducts: String;
 var
@@ -1177,4 +1161,30 @@ begin
     if ((InstallAndConfigure AND Configure) = Configure) then
       InstallAndConfigure := InstallAndConfigure - Configure;
 end;
+
+
+procedure RenamePreFB3RC1Files;
+//The method of specifying the architecture used changed after Beta 2
+//Detect this old config and rename it.
+var
+  FirebirdConfStr: AnsiString;
+begin
+  if FileExists(GetAppPath+'\firebird.conf') then begin
+    LoadStringFromFile( GetAppPath+'\firebird.conf', FirebirdConfStr );
+    if  pos('SharedDatabase', FirebirdConfStr) > 0 then begin
+      RenameFile(GetAppPath+'\firebird.conf', GetAppPath+'\firebird.conf.preRC1');
+      RenameFile(GetAppPath+'\security3.fdb', GetAppPath+'\security3.fdb.preRC1');
+		end
+  end
+end;
+
+
+function ConfigureAuthentication: boolean;
+begin
+  if FileExists(WizardDirValue + '\security3.fdb') then
+		Result := false
+	else
+		Result := true;
+end;
+
 
