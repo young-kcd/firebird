@@ -63,7 +63,7 @@ if DEFINED VS71COMNTOOLS (
 @SET SERVER_NAME=localhost
 
 @cd ..\..
-@for /f "delims=" %%a in ('@cd') do (set FB_ROOT_PATH=%%a)
+@for /f "delims=" %%a in ('@cd') do (set FB_ROOT_PATH=%%~sa)
 @cd %~dp0
 @for /f "tokens=*" %%a in ('@echo %FB_ROOT_PATH:\=/%') do (set FB_DB_PATH=%%a)
 
