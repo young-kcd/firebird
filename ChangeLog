@@ -1,3 +1,19 @@
+ 2015-11-05 17:15  alexpeshkoff 
+   M examples/interfaces/01.create.cpp
+   M examples/interfaces/02.update.cpp
+   M examples/interfaces/03.select.cpp
+   M examples/interfaces/04.print_table.cpp
+Update samples - use IUtil and IXpbBuilder
+Avoid plain isc_ calls
+
+ 2015-11-05 16:06  alexpeshkoff 
+   M src/yvalve/utl.cpp
+Make returned string C-style (with 0 terminator byte) when possible
+
+ 2015-11-05 09:57  alexpeshkoff 
+   M src/common/os/posix/os_utils.cpp
+Fixed build error, reported by Pavel Zotov
+
  2015-11-04 07:23  hvlad 
    M src/jrd/lck.cpp
 Removed unneeded assert, correct code a bit as Dmitry suggested
