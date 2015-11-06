@@ -303,13 +303,13 @@ USHORT UserManagement::put(Auth::DynamicUserData* userData)
 }
 
 void UserManagement::checkSecurityResult(int errcode, IStatus* status,
-	const char* userName, IUser* user)
+	const char* userName, int operation)
 {
 	if (!errcode)
 	{
 	    return;
 	}
-	errcode = Auth::setGsecCode(errcode, user);
+	errcode = Auth::setGsecCode(errcode, operation);
 
 	Arg::StatusVector tmp;
 	tmp << Arg::Gds(ENCODE_ISC_MSG(errcode, GSEC_MSG_FAC));
@@ -362,7 +362,7 @@ void UserManagement::execute(USHORT id)
 
 		OldAttributes oldAttributes;
 		int ret = manager->execute(&statusWrapper, &cmd, &oldAttributes);
-		checkSecurityResult(ret, &status, command->userName()->get(), command);
+		checkSecurityResult(ret, &status, command->userName()->get(), command->operation());
 
 		if (command->op == Auth::ADDMOD_OPER)
 		{
@@ -453,7 +453,7 @@ void UserManagement::execute(USHORT id)
 	}
 
 	int errcode = manager->execute(&statusWrapper, command, NULL);
-	checkSecurityResult(errcode, &status, command->userName()->get(), command);
+	checkSecurityResult(errcode, &status, command->userName()->get(), command->operation());
 
 	delete commands[id];
 	commands[id] = NULL;
@@ -571,6 +571,13 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 	try
 	{
 		openAllManagers();
+		bool flagSuccess = false;
+		LocalStatus st1, st2;
+		CheckStatusWrapper statusWrapper1(&st1);
+		CheckStatusWrapper statusWrapper2(&st2);
+		CheckStatusWrapper* currentWrapper(&statusWrapper1);
+		int errcode1, errcode2;
+		int* ec(&errcode1);
 
 		threadDbb = tdbb;
 		MemoryPool* const pool = threadDbb->getTransaction()->tra_pool;
@@ -579,15 +586,21 @@ RecordBuffer* UserManagement::getList(thread_db* tdbb, jrd_rel* relation)
 
 		for (FillSnapshot fillSnapshot(this); fillSnapshot.pos < managers.getCount(); ++fillSnapshot.pos)
 		{
-			LocalStatus status;
-			CheckStatusWrapper statusWrapper(&status);
-
 			Auth::StackUserData u;
 			u.op = Auth::DIS_OPER;
 
-			int errcode = managers[fillSnapshot.pos].second->execute(&statusWrapper, &u, &fillSnapshot);
-			checkSecurityResult(errcode, &status, "Unknown", &u);
+			*ec = managers[fillSnapshot.pos].second->execute(currentWrapper, &u, &fillSnapshot);
+			if (*ec)
+			{
+				currentWrapper = &statusWrapper2;
+				ec = &errcode2;
+			}
+			else
+				flagSuccess = true;
 		}
+
+		if (!flagSuccess)
+			checkSecurityResult(errcode1, &st1, "Unknown", Auth::DIS_OPER);
 	}
 	catch (const Exception&)
 	{

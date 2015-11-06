@@ -261,7 +261,7 @@ public:
 	Get(Config* firebirdConf, const char* plugName);
 };
 
-int setGsecCode(int code, Firebird::IUser* iUser);
+int setGsecCode(int code, int operation);
 
 } // namespace Auth
 

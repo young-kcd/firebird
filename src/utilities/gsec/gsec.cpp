@@ -554,7 +554,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 					if (ret)
 					{
-						ret = setGsecCode(ret, user_data);		// user_data, not u !
+						ret = setGsecCode(ret, user_data->operation());
 						fb_utils::mergeStatus(status, FB_NELEM(status), &statusManager);
 						GSEC_print(ret, user_data->userName()->get());
 						if (status[1])
@@ -584,7 +584,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 
 				if (ret)
 				{
-					ret = setGsecCode(ret, user_data);
+					ret = setGsecCode(ret, user_data->operation());
 					fb_utils::mergeStatus(status, FB_NELEM(status), &statusManager);
 					GSEC_print(ret, user_data->userName()->get());
 					if (status[1])
@@ -608,7 +608,7 @@ int gsec(Firebird::UtilSvc* uSvc)
 				if (status[1])
 				{
 					GSEC_print_status(status);
-					ret = setGsecCode(-1, user_data);
+					ret = setGsecCode(-1, user_data->operation());
 				}
 			}
 		}
