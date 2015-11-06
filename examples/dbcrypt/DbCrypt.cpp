@@ -271,7 +271,7 @@ Factory factory;
 
 } // anonymous namespace
 
-extern "C" void FB_PLUGIN_ENTRY_POINT(IMaster* m)
+extern "C" void FB_DLL_EXPORT FB_PLUGIN_ENTRY_POINT(IMaster* m)
 {
 	master = m;
 	pluginManager = master->getPluginManager();
