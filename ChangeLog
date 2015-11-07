@@ -1,3 +1,20 @@
+ 2015-11-06 17:10  alexpeshkoff 
+   M src/common/security.cpp
+   M src/common/security.h
+   M src/jrd/UserManagement.cpp
+   M src/jrd/UserManagement.h
+   M src/utilities/gsec/gsec.cpp
+Fixed CORE-4969: SEC$USERS table is unavailable in case of any error in any configured user manager plugin
+
+ 2015-11-06 16:58  aafemt 
+   M builds/win32/setenvvar.bat
+Allow build in path containing spaces (CORE-4910)
+
+ 2015-11-06 16:43  aafemt 
+   M examples/dbcrypt/CryptKeyHolder.cpp
+   M examples/dbcrypt/DbCrypt.cpp
+Missing export direcrive
+
  2015-11-05 17:15  alexpeshkoff 
    M examples/interfaces/01.create.cpp
    M examples/interfaces/02.update.cpp
