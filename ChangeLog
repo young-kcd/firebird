@@ -1,3 +1,7 @@
+ 2015-11-06 14:12  hvlad 
+   M src/jrd/vio.cpp
+Backported fix for bug CORE-4656 : Server could hang during chasing dead record version
+
  2015-10-29 11:07  dimitr 
    M src/jrd/exe.cpp
    M src/jrd/rse.cpp
