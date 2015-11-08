@@ -686,6 +686,14 @@ interface WireCryptPlugin : PluginBase
 // between different components of firebird.
 interface CryptKeyCallback : Versioned
 {
+	// First two parameters can be used by calling side to identify
+	// itself for callback object.
+	// Buffer must be big enough to hold a key.
+	// It may be NULL, in this case just a key size will be returned
+	// (not recommended because callback may cause network roundtrip).
+	// Returning value is a real size of the key.
+	// Returning of zero means error, but there is no way to provide
+	// any further details.
 	uint callback(uint dataLength, const void* data,
 		uint bufferLength, void* buffer);
 }
@@ -696,10 +704,13 @@ interface CryptKeyCallback : Versioned
 // and sends it to database crypt plugin on request.
 interface KeyHolderPlugin : PluginBase
 {
-	// keyCallback() is called when new attachment is probably ready to provide keys
-	// to key holder plugin, CryptKeyCallback interface is provided by attachment.
+	// keyCallback() signals that a new attachment will need a key.
+	// Key holder can call callback to send upstairs a request for
+	// some additional information (if needed). For example, RSA key
+	// holder can send request to end user application for passphrase.
+	// Return value is 1 if key is ready.
 	int keyCallback(Status status, CryptKeyCallback callback);
-	// Crypt plugin calls keyHandle() when it needs a key, stored in key holder.
+	// Crypt plugin calls keyHandle() when it needs a key with a given name, stored in key holder.
 	// Key is not returned directly - instead of it callback interface is returned.
 	// Missing key with given name is not an error condition for keyHandle().
 	// It should just return NULL in this case
