@@ -936,8 +936,7 @@ static void		append_request_chain(server_req_t*, server_req_t**);
 static void		append_request_next(server_req_t*, server_req_t**);
 static void		attach_database(rem_port*, P_OP, P_ATCH*, PACKET*);
 static void		attach_service(rem_port*, P_ATCH*, PACKET*);
-static void		trusted_auth(rem_port*, const P_TRAU*, PACKET*);
-static void		continue_authentication(rem_port*, const p_auth_continue*, PACKET*);
+static bool		continue_authentication(rem_port*, PACKET*, PACKET*);
 
 static void		aux_request(rem_port*, /*P_REQ*,*/ PACKET*);
 static bool		bad_port_context(IStatus*, IReferenceCounted*, const ISC_STATUS);
@@ -4179,11 +4178,9 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 			break;
 
 		case op_trusted_auth:	// PROTOCOL < 13
-			trusted_auth(port, &receive->p_trau, sendL);
-			break;
-
 		case op_cont_auth:		// PROTOCOL >= 13
-			continue_authentication(port, &receive->p_auth_cont, sendL);
+			if (!continue_authentication(port, sendL, receive))
+				return false;
 			break;
 
 		case op_update_account_info:
@@ -4435,40 +4432,7 @@ static bool process_packet(rem_port* port, PACKET* sendL, PACKET* receive, rem_p
 }
 
 
-static void trusted_auth(rem_port* port, const P_TRAU* p_trau, PACKET* send)
-{
-/**************************************
- *
- *	t r u s t e d _ a u t h
- *
- **************************************
- *
- * Functional description
- *	Server side of trusted auth handshake.
- *
- **************************************/
-	ServerAuthBase* sa = port->port_srv_auth;
-	if (! sa)
-	{
-		send_error(port, send, isc_unavailable);
-	}
-
-	if (port->port_protocol < PROTOCOL_VERSION11 || port->port_protocol >= PROTOCOL_VERSION13)
-	{
-		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
-	}
-
-	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: trusted_auth\n"));
-	port->port_srv_auth_block->setDataForPlugin(p_trau->p_trau_data);
-	if (sa->authenticate(send, ServerAuth::CONT_AUTH))
-	{
-		delete sa;
-		port->port_srv_auth = NULL;
-	}
-}
-
-
-static void continue_authentication(rem_port* port, const p_auth_continue* p_auth_c, PACKET* send)
+static bool continue_authentication(rem_port* port, PACKET* send, PACKET* receive)
 {
 /**************************************
  *
@@ -4478,26 +4442,52 @@ static void continue_authentication(rem_port* port, const p_auth_continue* p_aut
  *
  * Functional description
  *	Server side of multi-hop auth handshake.
+ *  Returns false if auth failed and port was disconnected.
  *
  **************************************/
 	ServerAuthBase* sa = port->port_srv_auth;
-	if (! sa)
+	if (!sa)
 	{
 		send_error(port, send, isc_unavailable);
 	}
-
-	if (port->port_protocol < PROTOCOL_VERSION13)
+	else if (port->port_protocol < PROTOCOL_VERSION11 ||
+			 receive->p_operation == op_trusted_auth && port->port_protocol >= PROTOCOL_VERSION13 ||
+			 receive->p_operation == op_cont_auth && port->port_protocol < PROTOCOL_VERSION13)
 	{
 		send_error(port, send, (Arg::Gds(isc_random) << "Operation not supported for network protocol"));
 	}
-
-	HANDSHAKE_DEBUG(fprintf(stderr, "Srv: continue_authentication\n"));
-	port->port_srv_auth_block->setDataForPlugin(p_auth_c);
-	if (sa->authenticate(send, ServerAuth::CONT_AUTH))
+	else try
 	{
-		delete sa;
-		port->port_srv_auth = NULL;
+		if (receive->p_operation == op_trusted_auth)
+		{
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: trusted_auth\n"));
+			port->port_srv_auth_block->setDataForPlugin(receive->p_trau.p_trau_data);
+		}
+		else if (receive->p_operation == op_cont_auth)
+		{
+			HANDSHAKE_DEBUG(fprintf(stderr, "Srv: continue_authentication\n"));
+			port->port_srv_auth_block->setDataForPlugin(&receive->p_auth_cont);
+		}
+
+		if (sa->authenticate(send, ServerAuth::CONT_AUTH))
+		{
+			delete sa;
+			port->port_srv_auth = NULL;
+		}
+		return true;
 	}
+	catch (const Exception& ex)
+	{
+		LocalStatus ls;
+		CheckStatusWrapper status_vector(&ls);
+		ex.stuffException(&status_vector);
+
+		port->send_response(send, 0, 0, &status_vector, false);
+	}
+
+	port->disconnect(send, receive);
+
+	return false;
 }
 
 

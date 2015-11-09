@@ -5526,7 +5526,15 @@ static rem_port* analyze(ClntAuthBlock& cBlock, PathName& attach_name, unsigned 
 	if (!port)
 		Arg::Gds(isc_unavailable).raise();
 
-	secureAuthentication(cBlock, port);
+	try
+	{
+		secureAuthentication(cBlock, port);
+	}
+	catch (const Exception&)
+	{
+		disconnect(port);
+		throw;
+	}
 
 	return port;
 }
@@ -5905,12 +5913,14 @@ static void disconnect( rem_port* port)
 		PACKET* packet = &rdb->rdb_packet;
 
 		// Deliver the pending deferred packets
-
-		for (rem_que_packet* p = port->port_deferred_packets->begin();
-			 p < port->port_deferred_packets->end(); p++)
+		if (port->port_deferred_packets)
 		{
-			if (!p->sent) {
-				port->send(&p->packet);
+			for (rem_que_packet* p = port->port_deferred_packets->begin();
+				p < port->port_deferred_packets->end(); p++)
+			{
+				if (!p->sent) {
+					port->send(&p->packet);
+				}
 			}
 		}
 
