@@ -426,7 +426,10 @@ void SDW_close()
  *
  **************************************/
 	Database* dbb = GET_DBB();
-	SyncLockGuard guard(&dbb->dbb_shadow_sync, SYNC_SHARED, "SDW_close");
+
+	Sync guard(&dbb->dbb_shadow_sync, "SDW_close");
+	if (!dbb->dbb_shadow_sync.ourExclusiveLock())
+		guard.lock(SYNC_SHARED);
 
 	for (Shadow* shadow = dbb->dbb_shadow; shadow; shadow = shadow->sdw_next)
 		PIO_close(shadow->sdw_file);
