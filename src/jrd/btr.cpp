@@ -1099,7 +1099,7 @@ void BTR_insert(thread_db* tdbb, WIN* root_window, index_insertion* insertion)
 	CCH_RELEASE(tdbb, &new_window);
 	CCH_RELEASE(tdbb, &window);
 
-	if (btr_level > MAX_LEVELS)
+	if (btr_level >= MAX_LEVELS)
 	{
 		CCH_RELEASE(tdbb, root_window);
 
