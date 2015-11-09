@@ -1,3 +1,7 @@
+ 2015-11-08 17:01  aafemt 
+   M src/include/firebird/FirebirdInterface.idl
+A little more decription of key holder interface
+
  2015-11-06 17:10  alexpeshkoff 
    M src/common/security.cpp
    M src/common/security.h
