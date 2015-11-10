@@ -46,7 +46,9 @@ MsgMetadata* Routine::createMetadata(const Array<NestConst<Parameter> >& paramet
 		metadata->addItem((*i)->prm_name, (*i)->prm_nullable, (*i)->prm_desc);
 	}
 
+	metadata->makeOffsets();
 	metadata->addRef();
+
 	return metadata;
 }
 
