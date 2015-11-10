@@ -1,23 +1,5 @@
-Firebird Database Server $MAJOR.$MINOR.$RELEASE (Alpha1)
+Firebird Database Server $MAJOR.$MINOR.$RELEASE (Release Candidate 1)
 ========================================================
-
-
-############## NOTE ####################################
-#                                                      #
-# The installer is in an experimental state.           #
-# This is not the definitive version for Firebird 3.0. #
-#                                                      #
-# o Layout and work sequence of the installer is not   #
-#    definitive.                                       #
-# o Options available are subject to change.           #
-# o Method of library deployment has not been          #
-#   finalized.                                         #
-# o How we will support Legacy Auth is experimental    #
-#   - Adding SYSDBA works                              #
-#   - Modifying SYSDBA from the installer doesn't      #
-# o Don't be surprised to find other anomalies.        #
-#                                                      #
-############## END NOTE ################################
 
 
 This document is a guide to installing this package of
@@ -37,10 +19,12 @@ Contents
 --------
 
 o Before installation
-o Problems with installation of MS VC runtime libraries
-o Known installation problems
+o Installation of MS VC runtime libraries
+o Deployment of gds32.dll
+o Installation of the Guardian
+o Re-installation of Firebird 3
+o Other known installation problems
 o Uninstallation
-o Other Notes
 o Installation from a batch file
 
 
@@ -51,30 +35,56 @@ It is recommended that you UNINSTALL all previous
 versions of Firebird or InterBase before installing
 this package. It is especially important to verify that
 fbclient.dll and gds32.dll are removed from <system32>.
+See the UNINSTALL section below for more info on this.
+
+If you have installed a beta or alpha version 
+firebird 3 the installer will rename firebid.conf and
+security3.fdb as these files are no longer compatible.
 
 
-Problems with installation of MS VC runtime libraries
------------------------------------------------------
+Installation of MS VC runtime libraries
+---------------------------------------
 
-Much work has been done to ensure that the MS Visual
-C runtime libraries are correctly installed by the
-binary installer. Since v2.1.2 Firebird will work with
-locally deployed instances of the runtime libraries.
-This especially simplifies deployment of the Firebird
-client or embedded dll with your own application.
-
-However, in case of problems it may be necessary to
-deploy the official vcredist.exe. The correct versions
-for this build of Firebird can be found here:
-
-    http://www.microsoft.com/downloads/details.aspx?familyid=32BC1BEE-A3F9-4C13-9C99-220B62A191EE&displaylang=en
-
-  and x64 here:
-
-    http://www.microsoft.com/downloads/details.aspx?familyid=90548130-4468-4BBC-9673-D6ACABD5D13B&displaylang=en
+Firebird 3 no longer needs to deploy the MSVC runtimes
+into the windows system directories so no redistributable
+run-timme package is deployed. Firebird 3.0 loads the runtime
+libraries  from the root installation directory.
 
 
-Other Known installation problems
+Deployment of gds32.dll
+-----------------------
+
+This compatibility library is no longer deployed into 
+then windows system directory by default. We cannot
+guarantee that the required MSVC runtimes will be 
+available. However it remains an option at install
+time, along with system deployment of fbclient.dll.
+
+Be sure to check that your target system has the 
+appropriate MSVC10 runtimes if you use these options.
+
+
+Installation of the Guardian 
+----------------------------
+
+We are hoping to phase out the Guardian. It doesn't 
+work with the Classic server and the binary installer 
+does not offer it at install time if Classic is 
+chosen. If SuperServer or SuperClassic are chosen 
+it is offered but not selected by default.
+
+
+Re-installation of Firebird 3
+-----------------------------
+
+The binary installer does its best to detect and 
+preserve a previous install. If the installer detects 
+firebird.conf or security3.fdb it will not offer the option 
+to install legacy_auth. Neither will it offer the 
+option to set the SYSDBA username and password.
+
+
+Other known installation problems
 ---------------------------------
 
 o It is only possible to use the binary installer
@@ -99,17 +109,16 @@ o There are known areas of overlap between the
     installed they will both point to the same default
     instance.
 
-o When installing under Vista be sure to install as an
-  administrator. ie, if using the binary installer
-  right click and choose 'Run as administrator'.
-  Otherwise the installer will be unable to start the
-  Firebird service at the end of installation.
+o Be sure to install as an administrator. ie, if 
+  using the binary installer right click and choose 
+  'Run as administrator'. Otherwise the installer will be 
+  may be unable to start the Firebird service at 
+  the end of installation.
 
-o Libraries deployed by instclient will fail to load if
-  the MS runtime libraries have not been installed
-  correctly. In case of problems users should install
-  the appropriate version of vcredist.exe mentioned
-  above.
+o Libraries deployed by instclient may fail to load if
+  the MS runtime libraries have not been installed. 
+  This may be a problem if installing on older Windows
+  platforms.
 
 
 Uninstallation
@@ -137,7 +146,7 @@ o Uninstallation leaves five files in the install
   - firebird.conf
   - fbtrace.conf
   - firebird.log
-  - security2.fdb
+  - security3.fdb
 
   This is intentional. These files are all
   potentially modifiable by users and may be required
@@ -148,25 +157,6 @@ o A new feature of the uninstaller is an option to
   run it with the /CLEAN parameter. This will check
   the shared file count of each of the above files. If
   possible it will delete them.
-
-o Uninstallation will not remove the MS VC runtime
-  libraries from the system directory. These can be
-  removed manually via the control panel, but this
-  should not be required under normal circumstances.
-
-
-Other Notes
------------
-
-  Firebird requires WinSock2. All Win32 platforms
-  should have this, except for Win95. A test for the
-  Winsock2 library is made during install. If it is
-  not found the install will fail. You can visit
-  this link:
-
-    http://support.microsoft.com/default.aspx?scid=kb;EN-US;q177719
-
-  to find out how to go about upgrading.
 
 
 Installation from a batch file

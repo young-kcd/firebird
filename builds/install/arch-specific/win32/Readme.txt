@@ -18,10 +18,8 @@ Welcome to Firebird $MAJOR.$MINOR.
 Intended Users
 ==============
 
-This is an alpha version of Firebird.
+This is a Firebird 3 Release Candidate.
 
-It is not intended for production use. It is for
-test purposes only.
 
 
 Reporting Bugs
