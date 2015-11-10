@@ -1,3 +1,20 @@
+ 2015-11-09 21:39  hvlad 
+   M src/jrd/btr.cpp
+Correct check for maximum index depth 
+
+ 2015-11-09 15:10  alexpeshkoff 
+   M src/jrd/sdw.cpp
+Fixed CORE-4999: Deadlock when trying to access database with invalid crypt key
+
+ 2015-11-09 13:26  hvlad 
+   M src/remote/client/interface.cpp
+   M src/remote/server/server.cpp
+Fixed bug CORE-4998 : Both client and server could not close connection after failed authentification
+
+ 2015-11-09 09:52  alexpeshkoff 
+   M src/common/classes/init.h
+Fixed CORE-4997: Races when 2 threads try to establish first enbedded connections to engine simultaneously
+
  2015-11-08 17:01  aafemt 
    M src/include/firebird/FirebirdInterface.idl
 A little more decription of key holder interface
