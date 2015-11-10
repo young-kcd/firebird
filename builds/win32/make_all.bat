@@ -117,9 +117,8 @@ copy %FB_ROOT_PATH%\src\extlib\ib_udf2.sql %FB_OUTPUT_DIR%\udf > nul
 copy %FB_ROOT_PATH%\src\extlib\fbudf\fbudf.sql %FB_OUTPUT_DIR%\udf > nul
 
 :: Installers
-@copy %FB_INSTALL_SCRIPTS%\install_super.bat %FB_OUTPUT_DIR% >nul
-@copy %FB_INSTALL_SCRIPTS%\install_classic.bat %FB_OUTPUT_DIR% >nul
-@copy %FB_INSTALL_SCRIPTS%\uninstall.bat %FB_OUTPUT_DIR% >nul
+@copy %FB_INSTALL_SCRIPTS%\install_service.bat %FB_OUTPUT_DIR% >nul
+@copy %FB_INSTALL_SCRIPTS%\uninstall_service.bat %FB_OUTPUT_DIR% >nul
 
 :: MSVC runtime
 if %MSVC_VERSION% == 12 (
