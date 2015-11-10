@@ -581,6 +581,7 @@ namespace Jrd {
 					return NULL;
 
 				to->pag_flags |= Ods::crypted_page;
+				from->pag_flags |= Ods::crypted_page;
 				return to;
 			}
 			else
