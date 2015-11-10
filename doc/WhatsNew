@@ -2,6 +2,16 @@
   * v2.5.5
   **************************
 
+    * Bugfix CORE-4982
+        Server crashes during "select from procedure" if exception is thrown while backing out the current savepoint
+      Contributor(s):
+        Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Bugfix CORE-4966
+        Firebird installer fails on El Capitan (MacOSX 10.11)
+      Contributor(s):
+        Paul Beach <pbeach at ibphoenix.com>
+
     * Bugfix CORE-4943
         Dialect 1 casting date to string breaks when in the presence a domain with a check constraint
       Contributor(s):
@@ -88,7 +98,7 @@
         Dmitry Yemanov <dimitr at firebirdsql.org>
 
     * Bugfix CORE-4809
-        HASH/MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses
+        MERGE JOIN is not used for more than two streams if they are joined via USING/NATURAL clauses
         and join is based on DBKEY concatenations
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
@@ -144,6 +154,16 @@
       Contributor(s):
         Vlad Khorsun <hvlad at users.sourceforge.net>
 
+    * Bugfix CORE-4680
+        Possible deadlock in firebird connect
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
+
+    * Bugfix CORE-4656
+        Server could hang chasing dead record versions
+      Contributor(s):
+        Dmitriy Starodubov <dmitry.starodubov at red-soft.biz>
+
     * Bugfix CORE-4276
         Error on CREATE TABLE with "CHARACTER SET DOS775" field
       Contributor(s):
@@ -163,6 +183,17 @@
         COUNT(DISTINCT ...) is too slow
       Contributor(s):
         Dmitry Yemanov <dimitr at firebirdsql.org>
+
+    * Improvement CORE-4978
+        Improve validation and fixup of lost data pages
+      Contributor(s):
+        Roman Simakov <roman.simakov at red-soft.biz>
+        Vlad Khorsun <hvlad at users.sourceforge.net>
+
+    * Improvement CORE-1999
+        Timestamps in the GBAK output
+      Contributor(s):
+        Vlad Khorsun <hvlad at users.sf.net>
 
 
   **************************
