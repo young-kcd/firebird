@@ -996,7 +996,7 @@ end;
 function InstallGuardian: boolean;
 begin
   result := False;
-  if ( (ConfigureFirebird) AND (not NoCPL) ) then
+  if (ConfigureFirebird) then
      result := IsTaskSelected('UseSuperServerTask\UseGuardianTask') 
 			or IsTaskSelected('UseSuperClassicTask\UseGuardianTask');
 end;
