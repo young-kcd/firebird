@@ -116,7 +116,7 @@
 ;     uses them.
 #define release
 #define no_pdb
-;#define i18n
+#define i18n
 
 
 ;------If necessary we can turn off i18n by uncommenting this undefine
@@ -378,23 +378,20 @@ Name: ClientComponent; Description: {cm:ClientComponent}; Types: ServerInstall D
 ;Server tasks
 Name: UseClassicServerTask; Description: {cm:RunCS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseSuperClassicTask; Description: {cm:RunSC}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
+Name: UseSuperClassicTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: unchecked dontinheritcheck;Check: ConfigureFirebird;
 Name: UseSuperServerTask; Description: {cm:RunSS}; GroupDescription: {cm:ServerTaskDescription}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: exclusive; Check: ConfigureFirebird;
-;Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
-;Name: UseGuardianTask; Description: {cm:UseGuardianTask}; GroupDescription: {cm:UseGuardianTaskDecription}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ConfigureFirebird;
-;Allow user to not install cpl applet
-Name: UseSuperServerTask\InstallCPLAppletTask; Description: {cm:InstallCPLAppletTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Check: ShowInstallCPLAppletTask;
+Name: UseSuperServerTask\UseGuardianTask; Description: {cm:UseGuardianTask}; Components: ServerComponent; MinVersion: 4.0,4.0; Flags: unchecked dontinheritcheck; Check: ConfigureFirebird;
 Name: UseApplicationTask; Description: {cm:UseApplicationTaskMsg}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 4,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: UseServiceTask; Description: {cm:UseServiceTask}; GroupDescription: {cm:TaskGroupDescription}; Components: ServerComponent; MinVersion: 0,4; Flags: exclusive; Check: ConfigureFirebird;
 Name: AutoStartTask; Description: {cm:AutoStartTask}; Components: ServerComponent; MinVersion: 4,4; Check: ConfigureFirebird;
 ;Name: MenuGroupTask; Description: Create a Menu &Group; Components: DevAdminComponent; MinVersion: 4,4
 ;Copying of client libs to <sys>
 Name: CopyFbClientToSysTask; Description: {cm:CopyFbClientToSysTask}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyFbClientLibTask;
-Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Check: ShowCopyGds32Task;
-Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Check: ConfigureFirebird;
+Name: CopyFbClientAsGds32Task; Description: {cm:CopyFbClientAsGds32Task}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ShowCopyGds32Task;
+Name: EnableLegacyClientAuth; Description: {cm:EnableLegacyClientAuth}; Components: ClientComponent; MinVersion: 4,4; Flags: Unchecked; Check: ConfigureAuthentication;
 
 
 [Run]
-
 ;Only register Firebird if we are installing AND configuring
 Filename: {app}\instreg.exe; Parameters: "install "; StatusMsg: {cm:instreg}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized; Check: ConfigureFirebird;
 
@@ -404,8 +401,6 @@ Filename: {app}\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:inst
 Filename: {app}\WOW64\instclient.exe; Parameters: "install fbclient"; StatusMsg: {cm:instclientCopyFbClient}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized 32bit; Check: CopyFBClientLib;
 Filename: {app}\WOW64\instclient.exe; Parameters: "install gds32"; StatusMsg: {cm:instclientGenGds32}; MinVersion: 4.0,4.0; Components: ClientComponent; Flags: runminimized 32bit; Check: CopyGds32
 #endif
-
-Filename: {app}\gsec.exe; Parameters: "{code:InitSecurityDb} "; StatusMsg: {cm:initSecurityDb}; MinVersion: 0,4.0; Components: ServerComponent; Flags: nowait runhidden; Check: ConfigureFirebird;
 
 ;If 'Install and start service' requested
 ;First, if installing service we must try and remove remnants of old service. Otherwise the new install will fail and when we start the service the old service will be started.
@@ -431,10 +426,10 @@ Root: HKLM; Subkey: "SOFTWARE\FirebirdSQL"; ValueType: none; Flags: deletekey;
 
 [Icons]
 Name: {group}\Firebird Server; Filename: {app}\firebird.exe; Parameters: {code:StartAppParams}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallServerIcon; IconIndex: 0; Components: ServerComponent; Comment: Run Firebird Server (without guardian)
-;Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: {code:StartAppParams}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Server (with guardian)
+Name: {group}\Firebird Guardian; Filename: {app}\fbguard.exe; Parameters: {code:StartAppParams}; Flags: runminimized; MinVersion: 4.0,4.0;  Check: InstallGuardianIcon; IconIndex: 1; Components: ServerComponent; Comment: Run Firebird Server (with guardian); 
 Name: {group}\Firebird ISQL Tool; Filename: {app}\isql.exe; Parameters: -z; WorkingDir: {app}; MinVersion: 4.0,4.0;  Comment: {cm:RunISQL}
 Name: {group}\Firebird {#FB_cur_ver} Release Notes; Filename: {app}\doc\Firebird_v{#FB_cur_ver}.ReleaseNotes.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {cm:ReleaseNotes}
-Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-2.5-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver}
+;Name: {group}\Firebird {#GroupnameVer} Quick Start Guide; Filename: {app}\doc\Firebird-2.5-QuickStart.pdf; MinVersion: 4.0,4.0; Comment: {#MyAppName} {#FB_cur_ver}
 Name: "{group}\After Installation"; Filename: "{app}\doc\After_Installation.url"; Comment: "New User? Here's a quick guide to what you should do next."
 Name: "{group}\Firebird Web-site"; Filename: "{app}\doc\firebirdsql.org.url"
 ;Always install the original english version
@@ -483,7 +478,7 @@ Source: {#FilesDir}\gpre.exe; DestDir: {app}; Components: DevAdminComponent; Fla
 Source: {#FilesDir}\gsec.exe; DestDir: {app}; Components: DevAdminComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\gsplit.exe; DestDir: {app}; Components: DevAdminComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\gstat.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
-;Source: {#FilesDir}\fbguard.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
+Source: {#FilesDir}\fbguard.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion; Check: InstallGuardian;
 Source: {#FilesDir}\firebird.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\fb_lock_print.exe; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
 Source: {#FilesDir}\ib_util.dll; DestDir: {app}; Components: ServerComponent; Flags: sharedfile ignoreversion
@@ -521,27 +516,6 @@ Source: {#WOW64Dir}\msvcp{#msvc_version}?.dll; DestDir: {app}\WOW64; Components:
 #endif
 #endif  /* if msvc_version >= 10 */
 
-;#if msvc_version == 8
-;;Try to install CRT libraries to <sys> via msi, _IF_ msvc_version is 8.
-;#if PlatformTarget == "x64"
-;;MinVersion 0,5.0 means no version of Win9x and at least Win2k if NT O/S
-;;In addition, O/S must have Windows Installer 3.0.
-;Source: {#FilesDir}\system32\vccrt8_x64.msi; DestDir: {tmp};  Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
-;Source: {#WOW64Dir}\system32\vccrt8_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
-;#else
-;Source: {#FilesDir}\system32\vccrt8_Win32.msi; DestDir: {tmp}; Check: HasWI30; MinVersion: 0,5.0; Components: ClientComponent;
-;#endif
-;
-;;Otherwise, have a go at copying the files into <sys>.
-;Source: {#FilesDir}\msvcr{#msvc_version}?.dll; DestDir: {sys}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
-;Source: {#FilesDir}\msvcp{#msvc_version}?.dll; DestDir: {sys}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
-;Source: {#FilesDir}\Microsoft.VC80.CRT.manifest; DestDir: {sys}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
-;#if PlatformTarget == "x64"
-;Source: {#WOW64Dir}\msvcr{#msvc_version}?.dll; DestDir: {syswow64}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
-;Source: {#WOW64Dir}\msvcp{#msvc_version}?.dll; DestDir: {syswow64}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
-;Source: {#WOW64Dir}\Microsoft.VC80.CRT.manifest; DestDir: {syswow64}; Check: HasNotWI30; Components: ClientComponent; Flags: sharedfile uninsneveruninstall;
-;#endif
-;#endif /* if msvc_version == 8 */
 
 ;Docs
 Source: {#ScriptsDir}\installation_scripted.txt; DestDir: {app}\doc; Components: DevAdminComponent; Flags: skipifsourcedoesntexist  ignoreversion
@@ -564,15 +538,14 @@ Source: {#FilesDir}\UDF\*.sql; DestDir: {app}\UDF; Components: ServerComponent; 
 Source: {#FilesDir}\UDF\*.txt; DestDir: {app}\UDF; Components: ServerComponent; Flags: ignoreversion;
 
 Source: {#FilesDir}\plugins\*.dll; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
+Source: {#FilesDir}\plugins\*.conf; DestDir: {app}\plugins; Components: ServerComponent; Flags: ignoreversion;
 
 Source: {#FilesDir}\misc\*.*; DestDir: {app}\misc; Components: ServerComponent; Flags: ignoreversion;
 ;Source: {#FilesDir}\misc\upgrade\security\*.*; DestDir: {app}\misc\upgrade\security; Components: ServerComponent; Flags: ignoreversion;
 Source: {#FilesDir}\misc\upgrade\ib_udf\*.*; DestDir: {app}\misc\upgrade\ib_udf; Components: ServerComponent; Flags: ignoreversion;
 ;Source: {#FilesDir}\misc\upgrade\metadata\*.*; DestDir: {app}\misc\upgrade\metadata; Components: ServerComponent; Flags: ignoreversion;
 
-;Note - Win9x requires 8.3 filenames for the uninsrestartdelete option to work
 ;Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Components: ServerComponent; MinVersion: 0,4.0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
-;Source: {#FilesDir}\system32\Firebird2Control.cpl; DestDir: {sys}; Destname: FIREBI~1.CPL; Components: ServerComponent; MinVersion: 4.0,0; Flags: sharedfile ignoreversion promptifolder restartreplace uninsrestartdelete; Check: InstallCPLApplet
 #endif /* files */
 
 #ifdef examples
@@ -644,7 +617,6 @@ Var
   NoCPL: Boolean;                   // pass /nocpl on command-line.
   NoGdsClient: Boolean;             // pass /nogds32 on command line.
   CopyFbClient: Boolean;            // pass /copyfbclient on command line.
-  SupportLegacyClientAuth: Boolean; // pass /supportlegacyclients on the command line
 
   // Options for scripted uninstall.
   CleanUninstall: Boolean;      // If /clean is passed to the uninstaller it will delete
@@ -704,6 +676,7 @@ begin
   CommandLine:=GetCmdTail;
 
   if ((pos('HELP',Uppercase(CommandLine)) > 0) or
+    (pos('--',Uppercase(CommandLine)) > 0) or
     (pos('/?',Uppercase(CommandLine)) > 0) or
     (pos('/H',Uppercase(CommandLine)) > 0) ) then begin
     ShowHelpDlg;
@@ -724,9 +697,6 @@ begin
 
   if pos('COPYFBCLIENT', Uppercase(CommandLine)) > 0 then
     CopyFbClient := True;
-
-  if pos('SUPPORTLEGACYCLIENTAUTH', Uppercase(CommandLine)) > 0 then
-    SupportLegacyClientAuth := True;
 
     cmdParams := TStringList.create;
     for i:=0 to ParamCount do begin
@@ -792,9 +762,9 @@ begin
 
 end;
 
-//This function tries to find an existing install of Firebird 2.n
+//This function tries to find an existing install of Firebird M.N
 //If it succeeds it suggests that directory for the install
-//Otherwise it suggests the default for Fb 2.n
+//Otherwise it suggests the default for Fb M.N
 function ChooseInstallDir(Default: String): String;
 var
   InterBaseRootDir,
@@ -863,7 +833,8 @@ begin
 
   SvcParams := ServerType + SvcParams;
 
-  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
+  if IsComponentSelected('ServerComponent') and ( IsTaskSelected('UseSuperServerTask\UseGuardianTask')
+      or ( IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) ) then
     SvcParams := ServerType + SvcParams +  ' -guardian ';
   
   InstanceName := ServiceName('We currently do not support or test for a different instance name');
@@ -889,10 +860,30 @@ begin
       Result := 'masterkey';
 end;
 
-function InitSecurityDb(Default: String): String;
-begin
-    Result := ' -user SYSDBA -pas anytext -add ' + GetAdminUserName + ' -pw ' + GetAdminUserPassword  + ' -admin yes' ; 
 
+
+
+function InitSecurityDB: Boolean;
+var
+  AStringList: TStringList;
+  TempDir: String;
+	ResultCode: Integer;
+  TempStr: string;
+begin
+	TempDir := ExpandConstant( '{tmp}' );
+  TempStr := ExpandConstant( '{app}\isql.exe' );
+	AStringList := TStringList.create;
+	with AStringList do begin
+		Add( 'create user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Srp;' );
+    if IsTaskSelected('EnableLegacyClientAuth') then
+      if ( ( uppercase( GetAdminUserName ) <> 'SYSDBA' ) or ( GetAdminUserPassword <> 'masterkey' ) ) then
+        Add( 'create or alter user ' + GetAdminUserName + ' password ''' + GetAdminUserPassword + ''' using plugin Legacy_UserManager;' );
+		Add( 'commit;' );  //Technically exit implies a commit so this not necessary. OTOH, explicitly committing makes for more readable code.
+		Add( 'exit;' );
+		SaveToFile( Tempdir +'\temp.sql' );
+	end;
+	Result := Exec( ExpandConstant( '{app}\isql.exe' ) , ' -m -m2 -user SYSDBA -i ' + TempDir + '\temp.sql -o ' + TempDir + '\temp.sql.txt employee ' , TempDir, SW_HIDE, ewWaitUntilTerminated, ResultCode );
+	DeleteFile( TempDir + +'\temp.sql ');
 end;
 
 
@@ -900,8 +891,9 @@ function InstallGuardianIcon(): Boolean;
 begin
   result := false;
   if IsTaskSelected('UseApplicationTask') and
-    IsComponentSelected('ServerComponent') and 
-    IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
+    IsComponentSelected('ServerComponent') and (
+    IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
+    IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
       result := true;
 end;
 
@@ -910,13 +902,16 @@ begin
   result := false;
   if IsTaskSelected('UseApplicationTask') and 
     IsComponentSelected('ServerComponent') and 
-      not ( IsTaskSelected('UseSuperServerTask\UseGuardianTask') ) then
+      not ( IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
+            IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
       result := true;
 end;
 
 function StartApp(Default: String): String;
 begin
-  if IsComponentSelected('ServerComponent') and IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
+  if IsComponentSelected('ServerComponent') and ( 
+      IsTaskSelected('UseSuperServerTask\UseGuardianTask') or
+      IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
     Result := GetAppPath+'\fbguard.exe'
   else
     Result := GetAppPath+'\firebird.exe' ;
@@ -951,17 +946,13 @@ begin
     DeleteFile( FirebirdConfSaved );
 end;
 
+
 procedure UpdateFirebirdConf;
 // Update firebird conf. 
 // If user has deselected the guardian we should update firebird.conf accordingly. 
 // We also test if user has asked for classic or super server
 // If EnableLegacyClientAuth has ben selected we update the file.......
 // Otherwise we leave the file unchanged.
-var
-  fbconf: TArrayOfString;
-  i, position: Integer;
-  ArraySize: Integer;
-  FileChanged: boolean;
 begin
   //There is no simple, foolproof and futureproof way to check whether
   //we are doing a server install, so the easiest way is to see if a
@@ -969,9 +960,12 @@ begin
   if FileExists(GetAppPath+'\firebird.conf') then begin
 
     if (IsComponentSelected('ServerComponent') ) then begin 
-	
-      if not IsTaskSelected('UseSuperServerTask\UseGuardianTask') then
-				ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
+
+// Setting GuardianOption to 0 makes no sense. If the user deploys the guardian 
+// there is an expectation that it will restart the server in the event of a crash. 
+// Otherwise, why start firebird with the guardian?
+//      if not ( IsTaskSelected('UseSuperServerTask\UseGuardianTask') or  IsTaskSelected('UseSuperClassicTask\UseGuardianTask') ) then
+//				ReplaceLine(GetAppPath+'\firebird.conf','GuardianOption','GuardianOption = 0','#');
 
       // These attempts to modify firebird.conf may not survice repeated installs.  
 
@@ -985,7 +979,10 @@ begin
 				ReplaceLine(GetAppPath+'\firebird.conf','ServerMode = ','ServerMode = Super','#');
 
       if IsTaskSelected('EnableLegacyClientAuth') then begin
-				ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Srp, Win_Sspi, Legacy_Auth','#');
+				ReplaceLine(GetAppPath+'\firebird.conf','AuthServer = ','AuthServer = Legacy_Auth, Srp, Win_Sspi','#');
+				ReplaceLine(GetAppPath+'\firebird.conf','AuthClient = ','AuthClient = Legacy_Auth, Srp, Win_Sspi','#');
+				ReplaceLine(GetAppPath+'\firebird.conf','UserManager = ','UserManager = Legacy_UserManager, Srp','#');
+				ReplaceLine(GetAppPath+'\firebird.conf','WireCrypt = ','WireCrypt = enabled','#');
       end;
 
 		end;	
@@ -1002,7 +999,7 @@ end;
 
 //Make installation form a little taller and wider.
 const
-  HEIGHT_INCREASE = 100;
+  HEIGHT_INCREASE = 175;
   WIDTH_INCREASE = 40;
 
 procedure ResizeWizardForm(Increase: Boolean);
@@ -1026,6 +1023,10 @@ begin
 end;
 
 procedure CurPageChanged(CurPage: Integer);
+// These are the predefined page IDs of the Wizard form as of InnoSetup 5.5.6
+// wpWelcome, wpLicense, wpPassword, wpInfoBefore, wpUserInfo, 
+// wpSelectDir, wpSelectComponents, wpSelectProgramGroup, wpSelectTasks, 
+// wpReady, wpPreparing, wpInstalling, wpInfoAfter, wpFinished 
 begin
   case CurPage of
     wpWelcome:      ResizeWizardForm(True); //There was a bug: every time when "go back" pressed the form was resized!
@@ -1036,14 +1037,16 @@ end;
 
 
 procedure CurStepChanged(CurStep: TSetupStep);
+// currently just three steps - ssInstall, ssPostInstall, ssDone 
 var
   AppStr: String;
   ReadMeFileStr: String;
 begin
    case CurStep of
     ssInstall: begin
-              SetupSharedFilesArray;
-              GetSharedLibCountBeforeCopy;
+      RenamePreFB3RC1Files;
+      SetupSharedFilesArray;
+      GetSharedLibCountBeforeCopy;
       end;
 
     ssPostInstall: begin
@@ -1054,9 +1057,13 @@ begin
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\fbtrace.conf', false);
       IncrementSharedCount(Is64BitInstallMode, GetAppPath+'\security3.fdb', false);
 
+			InitSecurityDB;
+
       //Fix up conf file
       UpdateFirebirdConf;
       RemoveSavedConfIfNoDiff;
+
+				
       end;
 
     ssDone: begin
@@ -1198,6 +1205,8 @@ begin
     { If we are not configuring Firebird then don't prompt for SYSDBA pw. }
     if not ConfigureFirebird then
       Result := True
+    else if not ConfigureAuthentication then
+      Result := True
     else 
       Result := False;
 end;
@@ -1209,19 +1218,29 @@ var
 begin
   { check user has entered sysdba password correctly. }
 	Result := True;
-  if CurPageID = AdminUserPage.ID then begin
-		if not (AdminUserPage.Values[0] = '') and (AdminUserPage.Values[1] = '') then begin
-			Result := False;
-      MsgBox(ExpandConstant('{cm:SYSDBAPasswordEmpty}'), mbError, MB_OK);
-		end;
-		i := CompareStr(AdminUserPage.Values[1],AdminUserPage.Values[2]);
-		If  not (i = 0) then begin
-			Result := False;
-			AdminUserPage.Values[1] :='';
-			AdminUserPage.Values[2] :='';
-      MsgBox(ExpandConstant('{cm:SYSDBAPasswordMismatch}'), mbError, MB_OK);
+  case CurPageID of
+    AdminUserPage.ID : begin
+      if not (AdminUserPage.Values[0] = '') and (AdminUserPage.Values[1] = '') then begin
+        Result := False;
+        MsgBox(ExpandConstant('{cm:SYSDBAPasswordEmpty}'), mbError, MB_OK);
+      end;
+      i := CompareStr(AdminUserPage.Values[1],AdminUserPage.Values[2]);
+      If  not (i = 0) then begin
+        Result := False;
+        AdminUserPage.Values[1] :='';
+        AdminUserPage.Values[2] :='';
+        MsgBox(ExpandConstant('{cm:SYSDBAPasswordMismatch}'), mbError, MB_OK);
+      end;
     end;
-	end;
+  
+(*    wpSelectDir :    begin 
+      if PreFB3RC1InstallDetected then begin
+        MsgBox(ExpandConstant('{cm:PreFB3RC1VersionInstalled}'), mbError, MB_OK)
+        Result := false;
+      end;
+    end;
+*)
+  end;
 end;
 	
 begin
