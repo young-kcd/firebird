@@ -1,3 +1,52 @@
+ 2015-11-10 17:04  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+Fix dumb error which has been lurking in the windows packaging code for a while.
+
+ 2015-11-10 15:54  alexpeshkoff 
+   M src/jrd/CryptoManager.cpp
+Fixed CORE-4990: Database is not decrypted completely
+
+ 2015-11-10 14:47  asfernandes 
+   M src/jrd/Routine.cpp
+Pass MessageMetadata with offsets to external routines make* methods.
+
+ 2015-11-10 09:08  paul_reeves 
+   D builds/install/arch-specific/win32/install_classic.bat
+   A builds/install/arch-specific/win32/install_service.bat
+   D builds/install/arch-specific/win32/install_super.bat
+   D builds/install/arch-specific/win32/uninstall.bat
+   A builds/install/arch-specific/win32/uninstall_service.bat
+Sync RC1 windows installer changes to trunk.
+Remove old manual install/uninstall scripts
+Add new ones
+
+ 2015-11-10 09:01  paul_reeves 
+   M builds/install/arch-specific/win32/FirebirdInstallEnvironmentChecks.inc
+   M builds/install/arch-specific/win32/FirebirdInstallGUIFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstallSupportFunctions.inc
+   M builds/install/arch-specific/win32/FirebirdInstall_30.iss
+Sync RC1 windows installer changes to trunk.
+
+ 2015-11-10 08:52  paul_reeves 
+   M builds/install/arch-specific/win32/Readme.txt
+   M builds/install/arch-specific/win32/custom_messages.inc
+   M builds/install/arch-specific/win32/installation_readme.txt
+   M builds/install/arch-specific/win32/installation_scripted.txt
+Sync RC1 windows installer changes to trunk.
+Misc changes
+
+ 2015-11-10 08:50  paul_reeves 
+   M builds/install/arch-specific/win32/BuildExecutableInstall.bat
+Sync RC1 windows installer changes to trunk.
+Remove references to embedded kits
+Include all relevant pdb files in the pdb kits
+Bring the contents of the zip kits up-to-date
+
+ 2015-11-10 08:44  paul_reeves 
+   M builds/win32/make_all.bat
+Sync RC1 windows installer changes to trunk.
+Make sure that renamed batch files to aid manual deployment get copied across at end of build.
+
  2015-11-09 21:39  hvlad 
    M src/jrd/btr.cpp
 Correct check for maximum index depth 
