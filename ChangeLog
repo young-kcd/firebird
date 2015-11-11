@@ -1,3 +1,11 @@
+ 2015-11-10 18:08  hvlad 
+   M src/jrd/svc.cpp
+Missed part for CORE-1999
+
+ 2015-11-10 16:19  dimitr 
+   M doc/WhatsNew
+Updated docs.
+
  2015-11-06 14:12  hvlad 
    M src/jrd/vio.cpp
 Backported fix for bug CORE-4656 : Server could hang during chasing dead record version
