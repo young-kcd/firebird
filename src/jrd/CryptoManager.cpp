@@ -580,8 +580,10 @@ namespace Jrd {
 				if (sv->getState() & IStatus::STATE_ERRORS)
 					return NULL;
 
-				to->pag_flags |= Ods::crypted_page;
-				from->pag_flags |= Ods::crypted_page;
+				to->pag_flags |= Ods::crypted_page; // Mark page that is going to be written as encrypted
+				from->pag_flags |= Ods::crypted_page; // Set the mark for page in cache as well
+													// If page write fail, nothing bad can happen
+													// it will be encrypted next time is modified
 				return to;
 			}
 			else

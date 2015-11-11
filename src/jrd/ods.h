@@ -211,7 +211,7 @@ const bool pag_crypt_page[pag_max + 1] = {false, false, false,
 
 // pag_flags for any page type
 
-const UCHAR crypted_page	= 0x80;		// Page encrypted
+const UCHAR crypted_page	= 0x80;		// Page on disk is encrypted (in memory cache it always isn't)
 
 // Basic page header
 
